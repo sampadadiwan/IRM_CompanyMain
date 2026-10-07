@@ -44,7 +44,7 @@ class EsignHelper
     else
       e = StandardError.new("eSign webhook not supported - \n #{params}")
       Rails.logger.error(e.message)
-      ExceptionNotifier.notify_exception(e)
+      ErrorReport.notify(e, source: "EsignHelper webhook")
     end
     helper.update_signature_progress(params)
   end

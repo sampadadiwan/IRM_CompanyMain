@@ -47,7 +47,7 @@ class EntityDbDumpJob < ApplicationJob
         rescue StandardError => e
           # Log errors per entity so one failure doesn't stop the entire batch.
           Rails.logger.error "Error dumping DB for entity #{entity.id}: #{e.message}"
-          ExceptionNotifier.notify_exception(e, data: { entity_id: entity.id })
+          ErrorReport.notify(e, job: self, entity_id: entity.id)
         end
       end
     end

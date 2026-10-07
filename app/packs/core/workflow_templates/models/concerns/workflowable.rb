@@ -203,7 +203,7 @@ module Workflowable
     WorkflowEvaluator.for(self, cause: :undo, actor:, note:, undo_started_at: started_at)
   rescue StandardError => e
     Rails.logger.error("[journey_undo] #{self.class.name}##{id} #{note}: #{e.class}: #{e.message}")
-    ExceptionNotifier.notify_exception(e, data: { record: "#{self.class.name}##{id}", note: })
+    ErrorReport.notify(e, source: "Workflowable#journey_undo_evaluate", record: "#{self.class.name}##{id}", entity_id: try(:entity_id), note:)
     nil
   end
 
@@ -216,7 +216,7 @@ module Workflowable
     WorkflowStepInvalidate.call(record: self, check_keys:, actor:, reason:, **guards.slice(:only_if_passed, :only_if_not_passed))
   rescue StandardError => e
     Rails.logger.error("[journey_invalidate] #{self.class.name}##{id}: #{e.class}: #{e.message}")
-    ExceptionNotifier.notify_exception(e, data: { record: "#{self.class.name}##{id}", check_keys: })
+    ErrorReport.notify(e, source: "Workflowable#journey_invalidate", record: "#{self.class.name}##{id}", entity_id: try(:entity_id), check_keys:)
     nil
   end
 
@@ -227,7 +227,7 @@ module Workflowable
     WorkflowEvaluator.for(self, cause: :progress, actor:)
   rescue StandardError => e
     Rails.logger.error("[journey_progress!] #{self.class.name}##{id}: #{e.class}: #{e.message}")
-    ExceptionNotifier.notify_exception(e, data: { record: "#{self.class.name}##{id}" })
+    ErrorReport.notify(e, source: "Workflowable#journey_progress!", record: "#{self.class.name}##{id}", entity_id: try(:entity_id))
     nil
   end
 

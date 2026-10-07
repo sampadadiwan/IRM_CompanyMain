@@ -58,7 +58,7 @@ class JourneyEmailEdit
     end
   rescue StandardError => e
     Rails.logger.error("[JourneyEmailEdit] notification #{notification.id}: #{e.message}")
-    ExceptionNotifier.notify_exception(e, data: { custom_notification_id: notification.id })
+    ErrorReport.notify(e, source: "JourneyEmailEdit", custom_notification_id: notification.id, entity_id: notification.entity_id)
   end
 
   # Records of `type` whose journey the notification can affect, limited to ones that have a journey

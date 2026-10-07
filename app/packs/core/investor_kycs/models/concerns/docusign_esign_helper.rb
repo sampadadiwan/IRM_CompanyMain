@@ -52,7 +52,7 @@ class DocusignEsignHelper
     if params["event"].blank?
       e = StandardError.new("eSign webhook not supported - \n #{params}")
       Rails.logger.error(e.message)
-      ExceptionNotifier.notify_exception(e)
+      ErrorReport.notify(e, source: "DocusignEsignHelper webhook")
       return
     end
     doc = Document.find_by(provider_doc_id: params["data"]["envelopeId"])
@@ -60,7 +60,7 @@ class DocusignEsignHelper
     if doc.blank?
       e = StandardError.new("Document not found for #{params}")
       Rails.logger.error(e.message)
-      ExceptionNotifier.notify_exception(e)
+      ErrorReport.notify(e, source: "DocusignEsignHelper webhook")
       return
     end
 
@@ -129,7 +129,7 @@ class DocusignEsignHelper
 
   def signatures_failed(doc, envelope)
     e = StandardError.new("Error getting status for #{doc.name} - #{envelope}")
-    ExceptionNotifier.notify_exception(e)
+    ErrorReport.notify(e, source: "DocusignEsignHelper#signatures_failed", **ErrorReport.document_context(doc))
     doc.update(esign_status: "failed")
     Rails.logger.error e.message
   end

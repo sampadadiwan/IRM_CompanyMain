@@ -461,7 +461,9 @@ class WorkflowEvaluator < Trailblazer::Operation
     Rails.logger.error("[WorkflowEvaluator] entity=#{instance.entity_id} instance=#{instance.id} " \
                        "#{instance.workflowable_type}##{instance.workflowable_id} step=#{step[:position]} " \
                        "check=#{step[:check_key]}: #{error.class}: #{error.message}")
-    ExceptionNotifier.notify_exception(error, data: { instance_id: instance.id, step: step[:position], check: step[:check_key] })
+    ErrorReport.notify(error, source: "WorkflowEvaluator", entity_id: instance.entity_id,
+                              record: "#{instance.workflowable_type}##{instance.workflowable_id}",
+                              instance_id: instance.id, step: step[:position], check: step[:check_key])
   end
 
   # Reads the instance's history once per evaluation
