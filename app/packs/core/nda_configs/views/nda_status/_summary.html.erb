@@ -8,6 +8,14 @@
   <% counters = status_data[:counters] %>
   <% investor_rows = status_data[:investor_rows] %>
 
+  <%# Changed: Added dashboard link at top of summary for quick access.
+       Why: Product feedback — GP should not have to scroll to find the full dashboard link. %>
+  <div class="d-flex justify-content-end mb-2">
+    <%= link_to "View Full Dashboard →",
+        nda_status_path(nda_config_id: nda_config.id, folder_id: folder.id),
+        class: "btn btn-outline-primary btn-sm", target: "_blank" %>
+  </div>
+
   <%# Status counters — Changed: Module 8 — added Revoked counter badge.
        Why: GPs need to see how many investors have been revoked. %>
   <div class="d-flex gap-3 mb-3">
