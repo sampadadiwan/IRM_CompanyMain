@@ -139,12 +139,20 @@ class NdaConfigsController < ApplicationController
     #   so saved_change_to_version is nil. The old version is always current minus one.
     old_version = @nda_config.version - 1
 
+    # Changed: Added folder_link for email CTA.
+    # Why: LP needs a clickable link in the "NDA Updated" email to re-accept.
+    #   Uses _url helper for absolute URL (emails can't use relative paths).
+    folder_link = if @nda_config.owner.is_a?(Folder)
+                    folder_documents_url(entity_id: @nda_config.entity_id, folder_id: @nda_config.owner_id)
+                  end
+
     gp_params = {
       entity_id: @nda_config.entity_id,
       folder_name: folder_name,
       old_version: old_version,
       new_version: @nda_config.version,
-      contact_email: @nda_config.contact_email
+      contact_email: @nda_config.contact_email,
+      folder_link: folder_link
     }
 
     # Changed: Send directly to each GP notification email (not through Noticed).
@@ -164,7 +172,8 @@ class NdaConfigsController < ApplicationController
         folder_name: folder_name,
         old_version: old_version,
         new_version: @nda_config.version,
-        contact_email: @nda_config.contact_email
+        contact_email: @nda_config.contact_email,
+        folder_link: folder_link
       ).deliver_later(user)
     end
   rescue StandardError => e

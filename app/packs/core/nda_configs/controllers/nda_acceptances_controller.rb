@@ -221,7 +221,7 @@ class NdaAcceptancesController < ApplicationController
         folder_name: folder_name,
         signed_by: acceptance.user.full_name,
         signed_at: acceptance.accepted_at,
-        folder_link: safe_return_to(params[:return_to])
+        folder_link: folder_link_for(acceptance.nda_config)
       ).deliver_later(user)
     end
   rescue StandardError => e
@@ -267,5 +267,16 @@ class NdaAcceptancesController < ApplicationController
     return data_rooms_folders_path if path.include?("://")
 
     path
+  end
+
+  # Changed: Added folder_link_for helper for absolute URLs in email links.
+  # Why: Email clients need full URLs with host — relative paths don't resolve.
+  #
+  # @param nda_config [NdaConfig] the NDA config
+  # @return [String, nil] the absolute folder URL for email links
+  def folder_link_for(nda_config)
+    return nil unless nda_config.owner.is_a?(Folder)
+
+    folder_documents_url(entity_id: nda_config.entity_id, folder_id: nda_config.owner_id)
   end
 end

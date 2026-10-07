@@ -45,12 +45,15 @@ class NdaReminderJob < ApplicationJob
 
   private
 
+  # Changed: Use _url instead of _path for absolute URLs in emails.
+  # Why: Email clients need full URLs with host — relative paths don't work.
+  #
   # @param nda_config [NdaConfig] the NDA config
-  # @return [String] the folder documents URL for the NDA config's owner
+  # @return [String, nil] the absolute folder URL for email links
   def folder_link_for(nda_config)
-    return "#" unless nda_config.owner.is_a?(Folder)
+    return nil unless nda_config.owner.is_a?(Folder)
 
-    Rails.application.routes.url_helpers.folder_documents_path(
+    Rails.application.routes.url_helpers.folder_documents_url(
       entity_id: nda_config.entity_id,
       folder_id: nda_config.owner_id
     )

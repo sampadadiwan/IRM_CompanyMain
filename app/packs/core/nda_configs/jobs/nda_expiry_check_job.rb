@@ -115,12 +115,17 @@ class NdaExpiryCheckJob < ApplicationJob
     email_method = kind == "approaching" ? :nda_expiry_approaching : :nda_expired
     recipients = NdaNotificationRecipients.resolve(kind.to_sym, nda_config, investor)
 
+    # Changed: Added folder_link for email CTA.
+    # Why: LP needs a clickable link in expiry emails to re-accept the NDA.
+    folder_link = folder_link_for(nda_config)
+
     shared_params = {
       entity_id: nda_config.entity_id,
       investor_name: investor.name,
       folder_name: folder_name,
       expiry_date: expiry_date,
-      contact_email: nda_config.contact_email
+      contact_email: nda_config.contact_email,
+      folder_link: folder_link
     }
 
     # Changed: Send directly to each GP notification email (not through Noticed).
@@ -139,6 +144,17 @@ class NdaExpiryCheckJob < ApplicationJob
         )
       ).deliver_later(user)
     end
+  end
+
+  # @param nda_config [NdaConfig] the NDA config
+  # @return [String, nil] the absolute folder URL for email links
+  def folder_link_for(nda_config)
+    return nil unless nda_config.owner.is_a?(Folder)
+
+    Rails.application.routes.url_helpers.folder_documents_url(
+      entity_id: nda_config.entity_id,
+      folder_id: nda_config.owner_id
+    )
   end
 
   # @param nda_config [NdaConfig] the NDA config
