@@ -13,6 +13,8 @@
     without this, changing tag/period/category drops view_unapproved from
     the URL and hides staged KPIs mid-review. %>
 <input name="view_unapproved" value="<%= params[:view_unapproved] %>" hidden="hidden">
+<%# Keeps the review tab's banner back to the KPI report (kpi_reports/_journey_return_banner) across filter changes %>
+<% if params[:journey_report_id].present? %><input name="journey_report_id" value="<%= params[:journey_report_id] %>" hidden="hidden"><% end %>
 
   <% form.hidden_field :entity_id, value: current_user.entity_id %>
 

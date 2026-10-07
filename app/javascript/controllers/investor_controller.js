@@ -26,11 +26,9 @@ connect() {
     const categorySelect = this.element.querySelector("select[name*='category']")
     if (!categorySelect || !this.hasSectorFieldTarget) return
 
-    if (categorySelect.value === "Portfolio Company") {
-      this.sectorFieldTarget.style.display = ""
-    } else {
-      this.sectorFieldTarget.style.display = "none"
-    }
+    // Every Portfolio Company-only field (Sector, Managed by) shows or hides together
+    const show = categorySelect.value === "Portfolio Company"
+    this.sectorFieldTargets.forEach((el) => { el.style.display = show ? "" : "none" })
 }
 
   close(event) {

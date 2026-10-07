@@ -169,6 +169,21 @@ module Workflowable
     @workflow_default_owner = audits.where(action: "create").order(:created_at).first&.user
   end
 
+  # Owners that beat the step's named owner/actors for THIS record (e.g. a KPI report's portfolio
+  # company manager). [] — the default — means the step's own owner applies, as before.
+  # Worked examples H7, X3 — openspec/changes/kpi-report-journey/design.md#worked-examples
+  def workflow_override_owners
+    []
+  end
+
+  # Who is reminded when neither an override nor the step names anyone. Defaults to the single
+  # creator, so journeys that don't override this behave exactly as before; a type may return
+  # several people (a KPI report: every employee tagged Kpi).
+  # Worked examples E8, E17 — openspec/changes/kpi-report-journey/design.md#worked-examples
+  def workflow_default_owners
+    [workflow_default_owner].compact
+  end
+
   # Wraps an undoing action (Unapprove, a figures edit, Recompute…). The start time is taken before
   # the action changes anything, so every sign-off given before it is reset even if a page view or
   # tick records the move back first (design Decision 11). An evaluation failure is reported but

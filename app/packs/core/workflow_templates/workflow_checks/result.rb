@@ -18,8 +18,10 @@
 #                             document), so it passes with no click — if newer than any invalidation;
 #                :requested — still needs "Mark reviewed", but show this check's message and offer its
 #                             action as a second button (e.g. "Open validation").
-# new_tab      — :requested only: open that second button in a new tab, for a page the user reads and
-#                comes back from (e.g. the call's custom notification) rather than one where they act.
+# new_tab      — open the action in a new tab, so the record (and its live step bar) stays open in this one:
+#                with :requested, the second button (e.g. the call's custom notification, a page the user
+#                reads and comes back from); on a failing check, the panel's main button (e.g. the KPI
+#                grid, where the user approves values and then returns to the report).
 # Worked examples H5, E3 — openspec/changes/investor-kyc-journey/design.md#worked-examples
 module WorkflowChecks
   Result = Data.define(:passed, :message, :action_label, :action_path, :action_target, :passed_since, :fresh_since, :review, :new_tab) do
@@ -29,8 +31,8 @@ module WorkflowChecks
     end
 
     # The task is not done yet; message tells the user what is missing
-    def self.fail(message:, action_label: nil, action_path: nil, action_target: nil)
-      new(passed: false, message:, action_label:, action_path:, action_target:, passed_since: nil, fresh_since: nil, review: nil, new_tab: false)
+    def self.fail(message:, action_label: nil, action_path: nil, action_target: nil, new_tab: false)
+      new(passed: false, message:, action_label:, action_path:, action_target:, passed_since: nil, fresh_since: nil, review: nil, new_tab:)
     end
 
     # Acknowledge step: the data confirms it, no "Mark reviewed" needed

@@ -232,6 +232,7 @@
       <% end %>
     </div>
   <% end %>
+  <%= render "kpi_reports/journey_return_banner" if params[:journey_report_id].present? %>
   <%= render "kpi_reports/unapproved_stats" if params[:view_unapproved] == 'true' %>
 
   <%# kpi_reports is already a loaded array here, so .any? is a free in-memory check %>
@@ -275,8 +276,11 @@
       investor_kpi_mappings = set_investor_kpi_mappings(kpi_reports, investor, current_user, category: params[:category])
     %>
 
+    <%# The default chart plots approved KPIs only, so in the staged review (View Including Staged) it is an
+        empty "No data" card — skip it there. The container stays for the kpi-chart controller (a saved
+        chart picked from the menu still renders into it). %>
     <div id="kpi_grid_view_chart_container" data-kpi-chart-target="chartContainer">
-      <%= render "/kpi_reports/grid_view_chart", kpi_reports:, investor_kpi_mappings:, chart_configs: [], investor: investor  %>
+      <%= render "/kpi_reports/grid_view_chart", kpi_reports:, investor_kpi_mappings:, chart_configs: [], investor: investor unless params[:view_unapproved] == 'true' %>
     </div>
 
     <%# .present? does not handle string "false" properly - and returns true

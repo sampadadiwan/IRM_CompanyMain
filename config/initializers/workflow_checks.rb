@@ -7,6 +7,8 @@
 # (Worked examples H2 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples).
 # Investor KYC checks: app/packs/core/investor_kycs/workflow_checks/investor_kyc/
 # (Worked examples H2 — openspec/changes/investor-kyc-journey/design.md#worked-examples).
+# KPI report checks: app/packs/startups/kpis/workflow_checks/kpi_report/
+# (Worked examples H1 — openspec/changes/kpi-report-journey/design.md#worked-examples).
 Rails.application.config.to_prepare do
   WorkflowChecks::Registry.reset!
 
@@ -56,6 +58,14 @@ Rails.application.config.to_prepare do
     WorkflowChecks::InvestorKyc::NoRequiredDocuments
     WorkflowChecks::InvestorKyc::AmlOff
     WorkflowChecks::InvestorKyc::NoAmlMatch
+    WorkflowChecks::KpiReport::SetupMappings
+    WorkflowChecks::KpiReport::SendRequest
+    WorkflowChecks::KpiReport::Submit
+    WorkflowChecks::KpiReport::Import
+    WorkflowChecks::KpiReport::Approve
+    WorkflowChecks::KpiReport::Close
+    WorkflowChecks::KpiReport::SendCompletionEmail
+    WorkflowChecks::KpiReport::FundUploaded
   ]
   check_classes.each { |name| WorkflowChecks::Registry.register(name.constantize) }
 end

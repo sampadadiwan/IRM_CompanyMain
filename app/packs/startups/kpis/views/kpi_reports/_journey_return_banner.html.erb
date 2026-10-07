@@ -1,0 +1,26 @@
+<%# The KPI grid opened from a KPI report journey's "Review pending KPIs" (a new tab, ?journey_report_id=…):
+    says which report the review is for, how many KPIs of the portfolio company still await a decision (the
+    same count the "Approve or reject KPIs" step uses), and links back. Approve / reject redirect back here,
+    so the count is fresh after each decision. Shown only for a report the viewer can see.
+    Worked examples H19 — openspec/changes/kpi-report-journey/design.md#worked-examples %>
+<% journey_report = KpiReport.find_by(id: params[:journey_report_id], entity_id: current_user.entity_id) if params[:journey_report_id].present? %>
+<% if journey_report&.portfolio_company_id.present? && policy(journey_report).show? %>
+  <% pending = Kpi.unapproved.where(entity_id: journey_report.entity_id, portfolio_company_id: journey_report.portfolio_company_id).count %>
+  <div id="kpi_journey_return_banner"
+       class="alert <%= pending.zero? ? "alert-success" : "alert-info" %> d-flex justify-content-between align-items-center gap-3 mb-3">
+    <div>
+      <% if pending.zero? %>
+        <i class="ti ti-circle-check me-1"></i>
+        <strong>All KPIs decided</strong> for <%= journey_report.for_name %> · <%= l(journey_report.as_of) %><% unless journey_report.status_reviewed? %> — next: <strong>Close report</strong><% end %>
+      <% else %>
+        <i class="ti ti-route me-1"></i>
+        Reviewing for KPI report <strong><%= journey_report.for_name %> · <%= l(journey_report.as_of) %></strong> —
+        <%= pluralize(pending, "KPI") %> pending
+      <% end %>
+    </div>
+    <%= link_to kpi_report_path(journey_report), id: "kpi_journey_return_link",
+                class: "btn btn-sm #{pending.zero? ? 'btn-success' : 'btn-outline-primary'} text-nowrap", data: { turbo: false } do %>
+      <i class="ti ti-arrow-left me-1"></i>Back to the report
+    <% end %>
+  </div>
+<% end %>

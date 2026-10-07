@@ -10,13 +10,14 @@ This guide provides a comprehensive overview of the Key Performance Indicator (K
 3. [The Reporting Workflow](#-the-reporting-workflow)
 4. [The Workbook Check](#-the-workbook-check)
 5. [Report Status Lifecycle](#-report-status-lifecycle)
-6. [Workbook Preparation Checklist](#-workbook-preparation-checklist)
-7. [How Numbers Are Read](#-how-numbers-are-read)
-8. [Supported Date Formats](#-supported-date-formats)
-9. [Parent & Child KPIs](#-parent--child-kpis)
-10. [Automated System Actions](#-automated-system-actions)
-11. [Common Pitfalls & Troubleshooting](#-common-pitfalls--troubleshooting)
-12. [FAQ](#-faq)
+6. [Tracking a Report: the Journey Step Bar](#-tracking-a-report-the-journey-step-bar)
+7. [Workbook Preparation Checklist](#-workbook-preparation-checklist)
+8. [How Numbers Are Read](#-how-numbers-are-read)
+9. [Supported Date Formats](#-supported-date-formats)
+10. [Parent & Child KPIs](#-parent--child-kpis)
+11. [Automated System Actions](#-automated-system-actions)
+12. [Common Pitfalls & Troubleshooting](#-common-pitfalls--troubleshooting)
+13. [FAQ](#-faq)
 
 ---
 
@@ -135,7 +136,7 @@ Portfolio company users can open the [**Pending KPI Reports**](/kpi_reports/port
 *   Click **View Including Staged** (outlined green, shown only when the status is **Submitted**) to open the KPI **Grid View** filtered to this portfolio company with staged KPIs highlighted in orange.
 *   From the grid view the admin can approve individual KPIs or use **Actions → Approve All Staged** to promote all staged data in one step (or **Reject** / **Reject All Staged** to discard staged values). Growth and cumulative recalculations trigger automatically on approval.
 *   **Reopen & ask to re-upload** (on submitted reports) sends the report back to the portfolio company with a fresh link when something needs correcting.
-*   There is no *Mark reviewed* button today; approving the staged values is the review step. **Submitted** (and **Reviewed**) reports are excluded from all future reminder cycles.
+*   **Close report** (on the report page, once the report has KPIs) approves every KPI still pending for the portfolio company — on every period the upload filled, not just this report — and marks the report **Reviewed**. See [Tracking a Report](#-tracking-a-report-the-journey-step-bar). **Submitted** (and **Reviewed**) reports are excluded from all future reminder cycles.
 
 ```mermaid
 sequenceDiagram
@@ -235,9 +236,49 @@ Each portco self-reporting request moves through these states:
 | **Link Sent** | Reminder email delivered to portco (also after the fund reopens a report) | Both |
 | **Draft Saved** | Portco saved progress, not yet submitted — also where a report lands if a submission's import failed | Both |
 | **Submitted** | Portco clicked Submit; the workbook is being / has been imported (see the *Workbook import* row: pending → imported) and the fund has been notified | Both |
-| **Reviewed** | Marked as reviewed (the report page has no button for this today) | Both |
+| **Reviewed** | Closed with **Close report** on the report page | Both |
 
 The status badge is visible on the report form for both the fund admin and the portfolio company user.
+
+---
+
+## 🧭 Tracking a Report: the Journey Step Bar
+
+Every KPI report you **request** after your company's KPI report journeys were set up shows a **step bar** at the top of its page, listing every task the report goes through, and a **What's needed now** panel with the next thing to do and a button that takes you there. CapHive works out which task the report is on from its own data — sending the request, the portfolio company submitting, the import finishing and approvals all move it on by themselves. Only fund users see it; the portfolio company does not.
+
+A report gets a step bar when it is created on the **New Kpi Report** screen, sent to a portfolio company with **Send Portco Notification** (including a period an earlier upload already created), created as a scheduled request, or when a workbook is uploaded on it. The extra reports an upload creates for the other periods and roll-ups in the file (Apr, May, YTD, Budget …) get **no** step bar, so a first upload with three years of history still gives you one journey, not thirty. Reports that existed before the journeys were set up, and a company's own KPI reports (no portfolio company), show no step bar.
+
+Each task in the bar has a mark: ✓ done · **●** we are here (waiting on this, not done yet) · ○ later · **↺** done before but undone, so it must be done again · n/a not needed for this report (hover to see why).
+
+```mermaid
+flowchart LR
+    A["Set up KPI<br/>mappings"] --> B["Send upload<br/>request"]
+    B --> C["Submit KPIs"]
+    C --> D["Import<br/>workbook"]
+    D --> E["Approve or<br/>reject KPIs"]
+    E --> F["Close report"]
+    F -. optional .-> G["Send completion<br/>email"]
+```
+
+| Task | Done when | n/a when | Moves back when |
+|---|---|---|---|
+| **Set up KPI mappings** | the portfolio company has at least one KPI mapping (computed ones don't count) | — | its last mapping is deleted |
+| **Send upload request** | the upload link was sent to the portfolio company (the step bar's button clicks **Send upload request** on the report page) | the fund uploads the KPIs itself | — |
+| **Submit KPIs** | the portfolio company submitted the report | the fund uploads the KPIs itself | **Reopen & ask to re-upload**, or the import of a submission failed |
+| **Import workbook** | the report's workbook imported without blocking errors and the report has KPIs | — | the report's KPIs are deleted, or every KPI on it was rejected |
+| **Approve or reject KPIs** | no KPI of the portfolio company is still pending, on any period (the step bar's **Review pending KPIs** opens the grid in a new tab) | — | a KPI of the portfolio company is unapproved |
+| **Close report** | someone clicked **Close report** | — | the report is reopened |
+| **Send completion email** *(optional)* | someone clicked **Send completion email** | — | any of the above (it can then be sent again) |
+
+**Close report** approves every KPI still pending for the portfolio company — the upload staged values on every period it found, so they sit on several reports — then marks the report **Reviewed**. A confirm popup says how many KPIs and periods it will approve. To reject some values first, use the grid view (**Actions → Reject All Staged** or the reject button on a value).
+
+**Send completion email** is not part of the standard journey. A company admin adds it: Company menu (house icon) → [**Workflows**](/workflow_templates) → open **KPI Report Review** → **Add Step**, choose **Kind** *System*, **Check** *Send completion email*, and pick the **Actors** who should receive it. Once a report is closed, its page shows **Send completion email**; clicking it emails "KPIs for Acme Pvt Ltd — Jun 30, 2026 are complete" (company and period date) with a link to the report. It is sent once; the button disappears afterwards. The portfolio company is never emailed by it.
+
+**Who is reminded.** When a task stalls longer than the template's reminder interval, CapHive emails its owner, and the completion email goes to the same people, in this order: the portfolio company's **Managed by** employee (set it on the stakeholder's edit page — it appears for Portfolio Company stakeholders); otherwise the step's **Owner** (reminders) or **Actors** (completion email) on the template; otherwise every employee tagged **Kpi**. If nobody is found, the panel shows **Owner unavailable** and nobody is emailed.
+
+**Setting it up.** A company admin opens Company menu (house icon) → [**Workflows**](/workflow_templates) → **Set up journeys** → **Set up KPI report journeys**. It adds the **KPI Report Review** template and a rule giving it to every requested KPI report; existing reports are left alone and nobody is emailed. A new fund company that already has KPIs enabled when it is created gets it automatically.
+
+**Deleting a KPI mapping.** A mapping no KPI uses is deleted as before. If KPIs use it, **Delete** first shows what will go: how many KPIs and periods (and how many are approved), any computed KPI whose formula uses its name, and that it cannot be undone — confirming deletes the mapping together with its KPIs and recalculates the company's totals and % changes. A mapping with child mappings cannot be deleted; move or delete the children first (the **Delete** button is disabled and says which).
 
 ---
 
@@ -371,6 +412,12 @@ After approval, the system automatically triggers several high-impact tasks:
 
 ### Navigation & getting there
 
+**Where do I see where a KPI report stands (the journey step bar)?**
+Open the KPI report from the [**KPI Reports**](/kpi_reports) list. Reports requested after your company's KPI report journeys were set up show a step bar at the top with every task and a **What's needed now** panel with the next step and a button for it. See [Tracking a Report](#-tracking-a-report-the-journey-step-bar).
+
+**How do I set up the KPI report journey for my company?**
+A company admin opens Company menu (house icon) → [**Workflows**](/workflow_templates) → **Set up journeys** → **Set up KPI report journeys** and confirms. It adds the **KPI Report Review** template and a rule giving it to every requested KPI report; existing reports are left alone and nobody is emailed.
+
 **Where do I find the KPI Reports page in CapHive?**
 Fund logins: open the [**KPI Reports**](/kpi_reports) list (there is no sidebar entry for it on the fund sidebar), or open the portfolio company under Sidebar → [**Stakeholders → View Stakeholders**](/investors) and click its **Kpis** tab, which embeds the KPI grid for that company. Company (portfolio company) logins have Sidebar → [**Stakeholders → KPIs**](/kpi_reports). The page needs the *Enable Kpis* permission (see below).
 
@@ -381,7 +428,7 @@ On the [**KPI Reports**](/kpi_reports) list click the report row (or use **Grid 
 The **Kpis** and **Kpi Mapping** tabs appear only on stakeholders whose **Category** is *Portfolio Company*, and only when your login has *Enable Kpis*. Ordinary LP stakeholders do not get these tabs.
 
 **Where do I see the KPI grid with staged values?**
-On the [**KPI Reports**](/kpi_reports) list click **Grid View**, then [**Actions → View Including Staged**](/kpi_reports?grid_view=true&view_unapproved=true), or click **View Including Staged** on a submitted report's page. Staged values are orange with a **Pending** badge. See [Authorized Approval](#6-authorized-approval).
+On the [**KPI Reports**](/kpi_reports) list click **Grid View**, then [**Actions → View Including Staged**](/kpi_reports?grid_view=true&view_unapproved=true), or click **View Including Staged** on a submitted report's page. Staged values are orange with a **Pending** badge. The **KPIs** chart is hidden in this view because it plots approved values only; it shows again after **Hide Staged**. See [Authorized Approval](#6-authorized-approval).
 
 **Where is the Pending KPI Reports dashboard for a portfolio company user?**
 Open the [**Pending KPI Reports**](/kpi_reports/portco_pending) page (there is no menu link to it today, so bookmark it). It lists every outstanding request from any fund with a **Fill Report** button that opens the report's edit page. See [Portco Pending Dashboard](#3-portco-pending-dashboard).
@@ -395,7 +442,7 @@ Your user needs the **Enable Kpis** permission toggle and your company must have
 On the [**KPI Reports**](/kpi_reports) list click [**New Kpi Report**](/kpi_reports/new), pick the **Portfolio Company**, set **As Of**, **Period** and **Tag** (Actual / Budget / IC), attach the workbook, tick **Upload new KPIs** and click **Save**. The Workbook check panel runs as soon as the file is uploaded. See [The Workbook Check](#-the-workbook-check).
 
 **How do I ask a portfolio company to upload its own KPIs?**
-On the [**KPI Reports**](/kpi_reports) list click **Send Portco Notification** (shown for Investment Fund entities), pick one or more companies (or **All Companies**), set **As Of** and **Period** and click **Send Reminders**. The same modal is under Sidebar → **Stakeholders → View Stakeholders** → **Actions → Send KPI Reminder**, and per company via **Actions → Send Reminder** on the grid view. See [Notification & Request](#1-notification--request).
+On the [**KPI Reports**](/kpi_reports) list click **Send Portco Notification** (shown for Investment Fund entities), pick one or more companies (or **All Companies**), set **As Of** and **Period** and click **Send Reminders**. The same modal is under Sidebar → **Stakeholders → View Stakeholders** → **Actions → Send KPI Reminder**, and per company via **Actions → Send Reminder** on the grid view. For a report that already exists, open it and click **Send upload request**. See [Notification & Request](#1-notification--request).
 
 **How do I edit an existing KPI report?**
 Open the report and click **Edit**. Fund users can change the company, date, period, tag, notes and workbook; a portfolio company can only change notes and the workbook. A report that is **Submitted** or **Reviewed** can be edited by the fund only.
@@ -418,10 +465,31 @@ Open the grid with **View Including Staged** and click **Approve** on an individ
 **How do I reject staged values I don't want?**
 In the same staged grid click **Reject** on a value, or **Actions → Reject All Staged**. Rejecting deletes the unapproved row immediately and cannot be undone; the previously approved value is untouched.
 
-**How do I mark a report as Reviewed?**
-The **Reviewed** status exists in the lifecycle, but the report page has no *Mark reviewed* button today. In practice, approving the staged values (**Approve All Staged**) is the review step; a submitted report stops receiving reminders as soon as it is **Submitted**, so nothing is lost by leaving it there.
+**How do I mark a report as Reviewed (close a KPI report)?**
+Open the report and click **Close report** (shown once the report has KPIs and isn't reviewed yet). The popup says how many pending KPIs it will approve across how many periods; confirm and the report becomes **Reviewed**. Reject any wrong values on the grid view first, because closing approves everything still pending for that portfolio company.
+
+**How do I set who manages a portfolio company (Managed by)?**
+Open the stakeholder from Sidebar → [**Stakeholders → View Stakeholders**](/investors), click **Edit** and pick an employee in **Managed by** (shown for stakeholders whose Category is *Portfolio Company*), then save. That person gets the reminders and the completion email for the company's KPI report journeys.
+
+**How do I add the completion email to the KPI report journey?**
+A company admin opens Company menu (house icon) → [**Workflows**](/workflow_templates), opens **KPI Report Review**, clicks **Add Step**, chooses **Kind** *System* and **Check** *Send completion email*, and picks the **Actors** to receive it. Reports requested afterwards include the task; it is optional and not added by default.
+
+**How do I delete a KPI mapping that already has KPIs?**
+Open the mapping and click **Delete**. A popup lists how many KPIs and periods will be deleted (and how many are approved), any computed KPI whose formula uses the mapping, and that it can't be undone; confirm to delete the mapping and its KPIs. To keep the history, rename the mapping instead.
 
 ### Why it matters
+
+**Why use the KPI report journey?**
+It shows on one page where each period's KPI report stands — mappings, request, submission, import, approval and closing — and what is needed next, instead of checking status badges, the grid and your inbox. It also reminds the right person when a task stalls and can tell your team when a portfolio company's period is complete.
+
+**How do I send the upload request for one KPI report from its page?**
+Open the report and click **Send upload request** (or the same button in its step bar), then **Proceed**. The popup says how many portal users get the magic link. It sends the link for that report's own period, so no new report is created. The button shows to the fund while the report is set up for portfolio company upload and the link hasn't been sent yet.
+
+**Why is Send upload request greyed out on a KPI report?**
+The portfolio company has no approved portal user who receives KPI emails; hovering the button says so. Users whose notification tags leave out KPIs don't count. Add or approve a user for the company under **Stakeholders**, then reload the report. Until then the step bar stays on **Send upload request**.
+
+**Why does a report the fund uploaded show Send upload request and Submit KPIs as n/a?**
+Those tasks are for portfolio companies that upload their own KPIs. When the fund uploads the workbook itself the report isn't set up for portfolio company upload, so both show "Uploaded by the fund" and the journey goes straight from the mappings to the import.
 
 **Why should I use KPI reports instead of keeping a spreadsheet?**
 You get one approved, auditable number per KPI per period per company, with the fund deciding what to collect (via KPI mappings) and the portfolio company doing the typing. Everything downstream (dashboards, performance tables, growth %, RAG status, flexible charts, portfolio reports and the AI portfolio agents) reads only approved KPIs.
@@ -436,6 +504,21 @@ Nothing is collected automatically. The Portfolio Company agent will report ever
 Fund operations or portfolio-monitoring staff (create, remind, approve), portfolio company finance staff (upload through the magic link or Pending dashboard) and approvers or company admins (approve and reject staged values).
 
 ### What happens when I…
+
+**What happens when I click Close report on a KPI report?**
+Every KPI still pending for that portfolio company is approved — on all the periods the upload filled, not only this report — growth and cumulative totals are recalculated, and the report becomes **Reviewed**. Its journey moves past **Approve or reject KPIs** and **Close report**. Nobody is emailed. To undo, unapprove values on the grid or use **Reopen & ask to re-upload**.
+
+**What happens when I click Send completion email?**
+The portfolio company's **Managed by** employee is emailed "KPIs for Acme Pvt Ltd — Jun 30, 2026 are complete" (company and period date) with a link to the report; if nobody manages it, the step's actors are, else every employee tagged Kpi. The portfolio company is not emailed. It is sent once; the task is then done and the button disappears.
+
+**What happens to the step bar when I reopen a report or unapprove a KPI?**
+The journey moves back: **Reopen & ask to re-upload** or a failed import returns it to **Submit KPIs**, unapproving a KPI returns every open report of that company to **Approve or reject KPIs**, and deleting the report's KPIs returns it to **Import workbook**. The move is recorded in the journey history and the completion email can be sent again later.
+
+**What happens when I delete a KPI mapping that KPIs use?**
+After you confirm the popup, the mapping and all its KPIs are deleted together (if anything fails, nothing is deleted and you see a message), and the company's cumulative values and % changes are recalculated in the background. Open KPI report journeys of that company move back if needed — for example to **Set up KPI mappings** when it was the last mapping.
+
+**What happens when a journey task stalls — who gets reminded?**
+After the template's reminder interval, CapHive emails the task's owner: the portfolio company's **Managed by** employee if set and active, otherwise the step's owner on the template, otherwise every employee tagged **Kpi**. It repeats each interval while the task stays current. If nobody is found, the panel shows **Owner unavailable**.
 
 **What happens when I click Send Reminders?**
 `SendPortcoNotificationJob` finds or creates the report shell for each company (tag *Actual*, requested period, self-reporting enabled), sets its status to **Link Sent** and emails the company's approved portal users via `KpiReportNotifier` (email plus in-app notification, WhatsApp if enabled). Companies already **Submitted** or **Reviewed** are skipped, and you get an in-app notice per company sent.
@@ -478,6 +561,27 @@ The report goes back to **Draft Saved**, its submission markers are cleared, and
 
 ### Existing questions & troubleshooting
 
+**Why doesn't my KPI report show a step bar?**
+Only reports requested after your company's KPI report journeys were set up get one: created on **New Kpi Report**, requested with **Send Portco Notification**, created as a scheduled request, or uploaded on. Reports an upload creates for other periods, reports from before setup, and a company's own KPI reports get none. Portfolio company users never see it.
+
+**Why did one upload create many reports but only one has a journey?**
+A workbook usually has several period columns, so the import fills one report per period (and Budget or roll-up reports). Only the report you asked for or uploaded on is the request, so only it gets a journey; the others hold data and stay without a step bar.
+
+**Why is Approve or reject KPIs still waiting after I approved everything on the report?**
+The task counts every pending KPI of the portfolio company, not just this report's, because an upload stages values on every period it finds. Open **Review pending KPIs** from the panel (the grid with staged values) and approve or reject the rest, or click **Close report** to approve them all.
+
+**Why does Import workbook say "No KPIs on this report"?**
+The report has no KPIs left: every value on it was rejected, or the workbook had no column for this report's period, so the values went to other periods. Upload a workbook that has this period's column, or ask the portfolio company to re-upload.
+
+**Why does the panel say Owner unavailable?**
+Nobody is set to be reminded about the task: the portfolio company has no active **Managed by** employee, the step has no owner on the template, and no employee is tagged **Kpi**. Set **Managed by** on the stakeholder, pick an owner on the template step, or tag an employee **Kpi**.
+
+**Why can't I delete a KPI mapping — the Delete button is disabled?**
+The mapping is a parent of other mappings. Hover the button to see which; move those child mappings under another parent or delete them first, then delete this one.
+
+**Why don't I see the Send completion email button?**
+It shows only on a closed (**Reviewed**) report whose journey template has the **Send completion email** step, until the email has been sent. Add the step to **KPI Report Review** under [**Workflows**](/workflow_templates); reports requested afterwards include it.
+
 **I uploaded my KPIs, but the dashboard hasn't updated. Why?**
 Your data is likely in the **Staged (Unapproved)** state. Dashboards only reflect **Approved** data. Ask your fund admin to open the report and click **View Including Staged**, then approve the values from the grid.
 
@@ -504,6 +608,12 @@ Ensure your dates are in one of the supported formats (see [Supported Date Forma
 
 **What is the difference between "Save Draft" and "Submit Report"?**
 **Save Draft** saves your progress without notifying the fund — you can come back and continue editing. **Submit Report** re-checks the workbook, imports it, notifies the fund team once the data is staged, and locks the report for editing. Use Save Draft freely while you're working, and Submit only when all numbers are final.
+
+**How do I get back to the KPI report after approving KPIs?**
+The step bar's **Review pending KPIs** opens the grid in a new tab, so the report stays open in your first tab. The grid shows a banner with how many KPIs are still pending and **Back to the report**. When none are left it says **All KPIs decided** and that **Close report** is next. The report tab's step bar has already moved on, without a refresh.
+
+**What does the portfolio company see after submitting its KPIs?**
+A **KPIs submitted** page with the company, period and submission date, whether the workbook is still being imported or is with the fund for review, and the file it sent. The upload steps are gone because a submitted report can't be changed. Opening the link again shows the same page. If the fund reopens the report, the next link shows the upload steps again.
 
 **My magic link expired. How do I get a new one?**
 Magic links are valid for 15 days (the expiry date is shown in the reminder email). If your link has expired, contact your fund manager and ask them to resend the notification.

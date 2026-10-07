@@ -6,7 +6,7 @@ class WorkflowInstancesController < ApplicationController
   # this list is deliberately separate (not a reference to the constant) so a
   # security review of this controller doesn't need to trust another file's contents.
   # CapitalDistribution: capital-distribution-journey (Worked examples H2 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples)
-  ALLOWED_WORKFLOWABLE_TYPES = %w[Folder InvestorKyc CapitalCommitment CapitalCall CapitalDistribution Approval Investor].freeze
+  ALLOWED_WORKFLOWABLE_TYPES = %w[Folder InvestorKyc CapitalCommitment CapitalCall CapitalDistribution Approval Investor KpiReport].freeze
 
   before_action :set_instance, only: %i[show advance reset archive send_reminder export_audit_trail acknowledge step_info]
 
