@@ -495,6 +495,11 @@ class InvestorKycsController < ApplicationController
                          alert: "This KYC has already been submitted and cannot be edited."
     end
     status_attrs = resolve_status_transition(params[:submit_action], investor_user:)
+    # Carried into the operation so its updated_notification step can send the submission
+    # notification instead of the generic "KYC updated" one, rather than both firing for the
+    # same save. was_already_completed is read before assign_attributes, so a fund admin
+    # re-saving an already-submitted KYC does not re-notify.
+    submitted = status_attrs[:submission_status] == "completed" && !was_already_completed
 
     @investor_kyc.assign_attributes(investor_kyc_params.merge(status_attrs))
     existing_docs = @investor_kyc.documents.select(&:persisted?)
@@ -507,8 +512,7 @@ class InvestorKycsController < ApplicationController
     @investor_kyc.documents.each(&:validate)
 
     respond_to do |format|
-      if InvestorKycUpdate.call(investor_kyc: @investor_kyc, investor_user:, validate:).success?
-        notify_fund_on_submission(@investor_kyc) if status_attrs[:submission_status] == "completed" && !was_already_completed
+      if InvestorKycUpdate.call(investor_kyc: @investor_kyc, investor_user:, validate:, submitted:).success?
         notice = status_attrs[:submission_status] == "completed" ? "KYC submitted. The fund team has been notified." : "Investor kyc was successfully saved."
         status_attrs[:submission_status]
         format.html do
@@ -803,18 +807,5 @@ class InvestorKycsController < ApplicationController
 
   def commit_param
     params.require(:commit)
-  end
-
-  def notify_fund_on_submission(investor_kyc)
-    recipients = investor_kyc.entity.employees.active.select { |e| e.enable_kycs && !e.investor_advisor? }
-    recipients.each do |employee|
-      InvestorKycNotifier.with(
-        record: investor_kyc,
-        entity_id: investor_kyc.entity_id,
-        email_method: :notify_kyc_submitted,
-        msg: "KYC submitted by investor: #{investor_kyc.full_name}",
-        user_id: employee.id
-      ).deliver_later(employee)
-    end
   end
 end
