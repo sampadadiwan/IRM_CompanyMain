@@ -25,6 +25,11 @@ new tests).
 - `config.log_level` defaults to `:warn` (was `:debug`), and
   `verbose_query_logs` only turns on when `LOG_LEVEL=debug` is set. The old defaults
   logged every SQL statement with its call site across all 1561 scenarios.
+- `LOGS=<level>` (`debug`/`info`/`warn`/`error`/`fatal`) overrides the level for one run, e.g.
+  `LOGS=info TEST_ENV_NUMBER=<n> bundle exec cucumber` for a faster full-suite run. Note that
+  without `LOGS`, the per-worker logger built in `features/support/env.rb` (when
+  `TEST_ENV_NUMBER` is set) starts at DEBUG and ignores the `:warn` default above. `LOGS`
+  is applied after that swap, so it takes effect.
 - To get the old verbose behavior back for a debugging session:
   `LOG_LEVEL=debug BULLET=1 TEST_ENV_NUMBER=<n> bundle exec cucumber ...`, then
   `tail -f log/test_<n>.log` (each worker logs to its own `log/test_<TEST_ENV_NUMBER>.log`;

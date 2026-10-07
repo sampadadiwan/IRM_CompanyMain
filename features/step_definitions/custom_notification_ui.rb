@@ -24,7 +24,9 @@ end
 
 When('I click {string} in the new notification dropdown') do |option|
   step 'I open the new notification dropdown'
-  click_on(option)
+  # Scoped to the menu: the journey panel can show a link with the same label (e.g. the
+  # distribution's "New Distribution Notification" action), which makes a bare click_on ambiguous
+  within(".dropdown-menu.show") { click_on(option) }
   # The form defaults to the guided wizard (fields split across steps, hidden until
   # "Next" is clicked). Existing UI steps expect every field visible at once, so
   # switch to the classic single-page mode right after landing on the form.
@@ -33,12 +35,12 @@ end
 
 Then('the new notification dropdown should offer {string}') do |option|
   step 'I open the new notification dropdown'
-  expect(page).to have_link(option)
+  expect(page).to have_css(".dropdown-menu.show a", text: option)
 end
 
 Then('the new notification dropdown should not offer {string}') do |option|
   step 'I open the new notification dropdown'
-  expect(page).not_to have_link(option)
+  expect(page).to have_no_css(".dropdown-menu.show a", text: option)
 end
 
 Then('the custom notification form should target owner_type {string} and for_type {string}') do |owner_type, for_type|
