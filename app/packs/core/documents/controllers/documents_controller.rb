@@ -618,11 +618,28 @@ class DocumentsController < ApplicationController
     blocked_nda_acceptances_path(nda_config_id: nda_config.id, folder_id: folder.id)
   end
 
+  # Changed: Version check now respects per-version resign_required flag.
+  # Why: When a GP uploads a new PDF without requiring re-sign, existing acceptances
+  #   should remain valid. The gate queries NdaConfigVersion records between the
+  #   acceptance's version and the current version — if any required resign, the
+  #   acceptance is stale. Falls back to strict equality when no version records
+  #   exist (pre-feature data or missing backfill).
+  #
   # @param acceptance [NdaAcceptance] the LP's latest acceptance record
   # @param nda_config [NdaConfig] the NDA config to check against
-  # @return [Boolean] true if the acceptance's nda_version matches the config's current version
+  # @return [Boolean] true if the acceptance is still valid for the current version
   def acceptance_version_current?(acceptance, nda_config)
-    acceptance.nda_version == nda_config.version
+    return true if acceptance.nda_version == nda_config.version
+
+    resign_exists = NdaConfigVersion.where(
+      nda_config_id: nda_config.id,
+      version: (acceptance.nda_version + 1)..nda_config.version,
+      resign_required: true
+    ).exists?
+
+    return false if resign_exists
+
+    NdaConfigVersion.where(nda_config_id: nda_config.id).exists?
   end
 
   # @param acceptance [NdaAcceptance] the LP's latest acceptance record

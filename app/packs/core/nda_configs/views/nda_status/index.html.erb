@@ -67,6 +67,78 @@
     </span>
   </div>
 
+  <%# Version History collapsible section — shows all NDA PDF versions with metadata.
+       Changed: Added version history audit trail section.
+       Why: GP needs to see what PDF was uploaded at each version, who uploaded it, when,
+         and whether re-signing was required. Each version's PDF is downloadable.
+         Collapsed by default to keep the dashboard clean. %>
+  <% version_records = @version_records || [] %>
+  <% if version_records.any? %>
+    <div class="mb-3">
+      <button class="btn btn-outline-secondary btn-sm" type="button"
+              data-bs-toggle="collapse" data-bs-target="#versionHistory"
+              aria-expanded="false" aria-controls="versionHistory">
+        <i class="ti ti-history me-1"></i>
+        Version History (<%= version_records.size %> <%= "version".pluralize(version_records.size) %>)
+      </button>
+      <div class="collapse mt-2" id="versionHistory">
+        <div class="table-responsive">
+          <table class="table table-sm table-bordered">
+            <thead class="table-light">
+              <tr>
+                <th>Version</th>
+                <th>Uploaded</th>
+                <th>Uploaded By</th>
+                <th>Re-sign Required</th>
+                <th>Download</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% version_records.each do |vr| %>
+                <tr>
+                  <td>
+                    v<%= vr.version %>
+                    <% if vr.version == nda_config.version %>
+                      <span class="badge bg-primary-subtle text-primary ms-1">current</span>
+                    <% end %>
+                  </td>
+                  <td><%= l(vr.created_at, format: :short) %></td>
+                  <td><%= vr.uploaded_by&.full_name || "—" %></td>
+                  <td>
+                    <% if vr.version == 1 && version_records.size > 1 %>
+                      <span class="text-muted">(Initial upload)</span>
+                    <% elsif vr.resign_required? %>
+                      <span class="badge bg-warning-subtle text-warning">Yes</span>
+                    <% else %>
+                      <span class="badge bg-success-subtle text-success">No</span>
+                    <% end %>
+                  </td>
+                  <td>
+                    <%# Changed: Reconstruct Shrine URL from stored nda_document_data JSON.
+                         Why: Each version record stores the raw Shrine JSON pointer to the
+                           S3 object. Parsing it and creating an UploadedFile gives a valid
+                           download URL without duplicating files. %>
+                    <% begin
+                         doc_data = vr.nda_document_data.is_a?(String) ? JSON.parse(vr.nda_document_data) : vr.nda_document_data
+                         uploaded_file = FileUploader::UploadedFile.new(doc_data)
+                    %>
+                      <%= link_to uploaded_file.url, target: "_blank", rel: "noopener noreferrer",
+                          class: "btn btn-outline-primary btn-sm" do %>
+                        <i class="ti ti-download me-1"></i> PDF
+                      <% end %>
+                    <% rescue => _e %>
+                      <span class="text-muted">—</span>
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
   <%# Toolbar: filter and search — Changed: Module 8 — added Revoked filter option.
        Why: GPs need to filter the dashboard to show only revoked investors. %>
   <div class="nested-fields">

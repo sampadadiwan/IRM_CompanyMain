@@ -1,20 +1,12 @@
 <%# LP notification: NDA has been updated to a new version, re-acceptance required. %>
 <%# Sent to all InvestorAccess users of investors with stale acceptances. %>
 
-<p>The NDA for a Data Room folder you previously accepted has been updated. You will need to re-accept the new version to maintain access.</p>
+<p>The NDA for a Data Room folder you previously accepted has been updated. You will need to re-accept the new NDA to maintain access.</p>
 
 <table style="border-collapse:collapse;width:100%">
   <tr>
     <td style="padding:6px 12px;font-weight:bold">Folder</td>
     <td style="padding:6px 12px"><%= @folder_name %></td>
-  </tr>
-  <tr>
-    <td style="padding:6px 12px;font-weight:bold">Previous Version</td>
-    <td style="padding:6px 12px"><%= @old_version %></td>
-  </tr>
-  <tr>
-    <td style="padding:6px 12px;font-weight:bold">New Version</td>
-    <td style="padding:6px 12px"><%= @new_version %></td>
   </tr>
 </table>
 

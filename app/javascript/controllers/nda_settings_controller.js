@@ -35,17 +35,13 @@ export default class extends Controller {
     }
   }
 
-  // Changed: Module 4 — shows version bump warning when a new PDF is uploaded.
-  // Changed: Module 9 — also updates the "Current" filename display with the new file.
-  // Why: GP needs immediate feedback showing which file they just uploaded, without
-  //   waiting for the form to save. The filename link is replaced with plain text
-  //   (no download URL yet — file is only cached on S3, not persisted).
+  // Changed: Shows version bump warning and updates version display on new PDF upload.
+  // Why: GP needs immediate visual feedback — the banner with resign checkbox appears,
+  //   the version badge updates to show the next version number, and the filename updates.
+  //   All client-side only; actual version increment happens on save.
   showVersionWarning(event) {
     if (this.hasVersionWarningTarget) {
-      const count = parseInt(this.versionWarningTarget.dataset.acceptedCount, 10) || 0
-      if (count > 0) {
-        this.versionWarningTarget.classList.remove("d-none")
-      }
+      this.versionWarningTarget.classList.remove("d-none")
     }
 
     const file = event?.detail?.file

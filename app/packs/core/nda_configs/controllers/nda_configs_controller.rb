@@ -52,6 +52,11 @@ class NdaConfigsController < ApplicationController
         #   adjust from the NDA Status Dashboard afterward.
         auto_tag_default_signatories(@nda_config)
 
+        # Changed: Create version 1 history record on first NDA creation.
+        # Why: Seeds the version history audit trail. resign_required is false
+        #   because the first version has no prior acceptances to invalidate.
+        create_version_record(@nda_config, resign_required: false)
+
         flash.now[:notice] = "NDA settings saved successfully."
         format.turbo_stream
         format.html do
@@ -89,11 +94,24 @@ class NdaConfigsController < ApplicationController
 
     respond_to do |format|
       if @nda_config.update(nda_config_params)
-        # Changed: Module 8 — fire version change notification when NDA PDF is replaced.
-        # Why: When the GP uploads a new PDF, version auto-increments (before_save callback).
-        #   All investors who accepted the old version need to be notified to re-accept.
-        #   Checked after update so saved_change_to_version? reflects the committed change.
-        notify_version_change if @nda_config.saved_change_to_version?
+        # Changed: Moved version increment from model before_save to controller.
+        # Why: Shrine's cache→store promotion triggers a second save that changes
+        #   nda_document_data, causing false version bumps or missed bumps in the
+        #   model callback. The controller reliably detects a genuine new upload via
+        #   saved_change_to_nda_document_data? (only true when the GP submitted a
+        #   new file, not on Shrine promotion). Version is incremented with a direct
+        #   update_column to avoid re-triggering Shrine callbacks.
+        if @nda_config.saved_change_to_nda_document_data? && @nda_config.enabled?
+          @nda_config.update_column(:version, @nda_config.version + 1)
+          @nda_config.reload
+
+          resign_required = ActiveModel::Type::Boolean.new.cast(
+            params.dig(:nda_config, :resign_required)
+          )
+          resign_required = true if resign_required.nil?
+          create_version_record(@nda_config, resign_required: resign_required)
+          notify_version_change if resign_required
+        end
         flash.now[:notice] = "NDA settings updated successfully."
         format.turbo_stream
         format.html { redirect_to @owner, notice: "NDA settings updated successfully." }
@@ -116,10 +134,10 @@ class NdaConfigsController < ApplicationController
     recipients = NdaNotificationRecipients.resolve(:new_version, @nda_config)
     folder_name = @nda_config.owner&.name
 
-    # Changed: Extract previous version from ActiveModel dirty tracking.
-    # Why: saved_change_to_version returns [old, new] after a successful update.
-    #   old_version is passed to the email template so LPs see which version they had.
-    old_version = @nda_config.saved_change_to_version[0]
+    # Changed: Compute previous version directly instead of dirty tracking.
+    # Why: Version is now bumped via update_column (bypasses ActiveModel dirty tracking),
+    #   so saved_change_to_version is nil. The old version is always current minus one.
+    old_version = @nda_config.version - 1
 
     gp_params = {
       entity_id: @nda_config.entity_id,
@@ -153,6 +171,27 @@ class NdaConfigsController < ApplicationController
     # Changed: Rescue notification errors to never block the update flow.
     # Why: The NDA config update is already saved — notification failure is non-critical.
     Rails.logger.error("[NdaNotification] Version change notification failed: #{e.message} (nda_config_id=#{@nda_config.id})")
+  end
+
+  # Changed: Creates a version history record after a version bump or first creation.
+  # Why: Each NDA PDF upload gets a snapshot record storing the version number, Shrine file
+  #   reference, resign decision, and uploader. This powers the audit trail and the conditional
+  #   acceptance gate (versions with resign_required: false don't invalidate existing acceptances).
+  #
+  # @param nda_config [NdaConfig] The NDA config that was just saved
+  # @param resign_required [Boolean] Whether this version requires existing investors to re-sign
+  # @return [NdaConfigVersion, nil] The created record, or nil if creation failed
+  def create_version_record(nda_config, resign_required:)
+    NdaConfigVersion.create!(
+      nda_config: nda_config,
+      version: nda_config.version,
+      nda_document_data: nda_config.nda_document_data,
+      resign_required: resign_required,
+      uploaded_by: current_user
+    )
+  rescue StandardError => e
+    Rails.logger.error("[NdaVersionHistory] Version record creation failed: #{e.message} (nda_config_id=#{nda_config.id}, version=#{nda_config.version})")
+    nil
   end
 
   # Changed: Module 9 — auto-tags the oldest approved user per investor as default NDA signatory.
