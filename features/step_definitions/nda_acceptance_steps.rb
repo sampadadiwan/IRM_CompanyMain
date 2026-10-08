@@ -178,27 +178,32 @@ Given("there is a GP user for the entity") do
 end
 
 # Creates an approved InvestorAccess linking the LP to the GP entity.
-# Why: Investor model has complex callbacks (update_name, find_or_build_investor_entity).
-#   We skip callbacks and set required fields directly to isolate the policy test.
+# Changed: Reuse @lp_investor created by "LP user for GP entity" step if present.
+# Why: That step now creates an Investor (needed for NdaAcceptance validation),
+#   so creating a second one here hits the unique index on (investor_name, entity_id).
 Given("the LP has approved investor access to the GP entity") do
-  investor = Investor.new(
-    entity: @gp_entity,
-    investor_entity: @lp_entity,
-    investor_name: "LP Entity",
-    primary_email: @lp_user.email
-  )
-  investor.save!(validate: false)
+  investor = @lp_investor || begin
+    inv = Investor.new(
+      entity: @gp_entity,
+      investor_entity: @lp_entity,
+      investor_name: "LP Entity",
+      primary_email: @lp_user.email
+    )
+    inv.save!(validate: false)
+    inv
+  end
 
-  InvestorAccess.create!(
+  InvestorAccess.find_or_create_by!(
     investor: investor,
     entity: @gp_entity,
-    investor_entity: @lp_entity,
-    user: @lp_user,
-    email: @lp_user.email,
-    first_name: @lp_user.first_name,
-    last_name: @lp_user.last_name,
-    approved: true
-  )
+    user: @lp_user
+  ) do |ia|
+    ia.investor_entity = @lp_entity
+    ia.email = @lp_user.email
+    ia.first_name = @lp_user.first_name
+    ia.last_name = @lp_user.last_name
+    ia.approved = true
+  end
 end
 
 # Verifies GP is denied by NdaAcceptancePolicy.
