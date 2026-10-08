@@ -10,8 +10,12 @@
 
 # ── Setup steps — Version ────────────────────────────────────────────────────
 
-# Simulates a GP uploading a new NDA PDF by changing nda_document_data and
-# incrementing the version via update_column (mirrors NdaConfigsController#update).
+# Simulates a GP uploading a new NDA PDF by changing nda_document_data,
+# incrementing the version, and creating a NdaConfigVersion record.
+# Changed: Added NdaConfigVersion.create! after version bump.
+# Why: Controller creates a version history record on every version bump
+#   (NdaConfigsController#update → create_version_record). The step must
+#   mirror that behavior for version history scenarios to pass.
 When("the GP uploads a new NDA PDF on the config") do
   new_doc = {
     id: "test/nda_configs/test_nda_v2.pdf",
@@ -21,6 +25,13 @@ When("the GP uploads a new NDA PDF on the config") do
   @nda_config.update!(nda_document_data: new_doc)
   @nda_config.update_column(:version, @nda_config.version + 1)
   @nda_config.reload
+  NdaConfigVersion.create!(
+    nda_config: @nda_config,
+    version: @nda_config.version,
+    nda_document_data: new_doc,
+    resign_required: true,
+    uploaded_by: @user
+  )
 end
 
 # Creates a version 1 record for the NDA config (mirrors NdaConfigsController#create).

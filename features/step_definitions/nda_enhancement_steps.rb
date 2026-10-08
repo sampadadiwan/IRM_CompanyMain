@@ -39,6 +39,16 @@ Given("there is a second LP investor {string} with approved access to the GP ent
     last_name: @lp_user_2.last_name,
     approved: true
   )
+  # Changed: Create folder-level AccessRight for second investor.
+  # Why: NdaStatusResolver uses folder-scoped access rights.
+  if @data_room_folder
+    AccessRight.find_or_create_by!(
+      owner: @data_room_folder,
+      entity_id: @gp_entity.id,
+      access_to_investor_id: @lp_investor_2.id,
+      cascade: false
+    )
+  end
 end
 
 # Creates an LP investor with two approved users.
@@ -94,6 +104,17 @@ Given("there is an LP investor {string} with two approved users") do |investor_n
 
   # Set @lp_user for compatibility with shared steps
   @lp_user = @lp_user_oldest
+
+  # Changed: Create folder-level AccessRight for two-user investor.
+  # Why: NdaStatusResolver uses folder-scoped access rights.
+  if @data_room_folder
+    AccessRight.find_or_create_by!(
+      owner: @data_room_folder,
+      entity_id: @gp_entity.id,
+      access_to_investor_id: @lp_investor.id,
+      cascade: false
+    )
+  end
 end
 
 # ── Action steps — Auto-tagging ──────────────────────────────────────────────
@@ -230,8 +251,13 @@ Then("the version record nda_document_data should match the NDA config") do
 end
 
 # Verifies duplicate version number is rejected.
+# Changed: Use rescue-based check instead of compound raise_error matcher.
+# Why: RSpec cannot combine two raise_error matchers with .or because both
+#   expect a call stack jump. DB may raise RecordNotUnique or model validation
+#   may raise RecordInvalid depending on which check fires first.
 Then("creating a duplicate version 1 record should raise an error") do
-  expect do
+  error_raised = false
+  begin
     NdaConfigVersion.create!(
       nda_config: @nda_config,
       version: 1,
@@ -239,7 +265,10 @@ Then("creating a duplicate version 1 record should raise an error") do
       resign_required: false,
       uploaded_by: @user
     )
-  end.to raise_error(ActiveRecord::RecordInvalid).or raise_error(ActiveRecord::RecordNotUnique)
+  rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique
+    error_raised = true
+  end
+  expect(error_raised).to be(true), "Expected duplicate version to raise an error but it did not"
 end
 
 # ── Assertion steps — VALID_REASONS ──────────────────────────────────────────

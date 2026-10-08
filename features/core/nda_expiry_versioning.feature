@@ -41,7 +41,8 @@ Feature: NDA Expiry & Versioning (Module 4)
 
   # LP accepted version 2, config is version 2 — acceptance is current.
   Scenario: Acceptance is current when version matches
-    Given the investor "Acme Capital" has accepted the NDA at version 2
+    Given the NDA config version is bumped to 2
+    And the investor "Acme Capital" has accepted the NDA at version 2
     Then the acceptance should be version-current for the NDA config
 
   # ── resign_required flag ────────────────────────────────────────────────────

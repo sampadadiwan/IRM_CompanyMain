@@ -156,8 +156,11 @@ Then("there should be {int} expiry reminder(s) for the NDA config") do |count|
 end
 
 # Duplicate expiry reminder raises an error.
+# Changed: Use rescue-based check instead of compound raise_error matcher.
+# Why: RSpec cannot combine two raise_error matchers with .or.
 Then("creating a duplicate expiry reminder should raise an error") do
-  expect do
+  error_raised = false
+  begin
     NdaExpiryReminder.create!(
       nda_config: @nda_config,
       investor: @lp_investor,
@@ -165,7 +168,10 @@ Then("creating a duplicate expiry reminder should raise an error") do
       kind: "approaching",
       sent_at: Time.current
     )
-  end.to raise_error(ActiveRecord::RecordInvalid).or raise_error(ActiveRecord::RecordNotUnique)
+  rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique
+    error_raised = true
+  end
+  expect(error_raised).to be(true), "Expected duplicate expiry reminder to raise an error but it did not"
 end
 
 # Verifies already_sent? returns true.
