@@ -259,16 +259,14 @@ Examples:
   | orig_folio_committed_amount_cents=100000000 | percentage_called=20 | 50 | 50 | first_name=Test |name=Urban;entity_type=Investment Fund |
 
 
-# Edge case: a fund with no commitments can't get a call at all (openspec funds/capital-call-creation);
-# more cases in capital_call_requires_commitments.feature
-Scenario Outline: Capital call on a fund with no commitments is refused
+# Edge case: fund with no commitments should generate zero remittances, not error
+Scenario Outline: Capital call on a fund with no commitments creates zero remittances
   Given there is a user "<user>" for an entity "<entity>"
   Given Im logged in as a user "<user>" for an entity "<entity>"
   Given the user has role "company_admin"
   Given there is a fund "name=EmptyFund;currency=INR" for the entity
-  When I submit the new capital call form named "Empty fund call"
-  Then the capital call form shows the no commitments error and keeps the name "Empty fund call"
-  And no capital call is created
+  When I create a new capital call "percentage_called=20"
+  Then no capital remittances should be created
 
   Examples:
     | user             | entity                                                   |

@@ -188,7 +188,6 @@ Open a **Fund**, go to its **Calls** tab and click **New Call**.
 - Both Call Date and Due Date are required.
 - Percentage Called cannot exceed 100%.
 - Fund Closes must be chosen for every basis except "Upload".
-- At least one commitment in the fund must belong to the call's fund closes ("All" means any commitment in the fund). This applies to every basis, including "Upload", and to calls created by import. Otherwise the call is not saved and you see: *"No commitments in this fund apply to this call. Add commitments for the selected fund closes before creating a capital call."* Editing an existing call is not checked.
 - If you later change the percentage, total amount or fund closes, the system re-runs generation for any folio still missing a remittance; existing remittances are not recalculated (use **Recompute Call**).
 
 ---
@@ -771,9 +770,6 @@ No. In this release it is advisory only: Approve and Send Notification work as b
 
 **Who gets the "needs attention" reminder emails?**
 The person who created the call, or the owner set on the task by your company admin, once a task has waited longer than its reminder interval. Approvers of an approval step get the usual workflow reminders.
-
-**Why can't I create a call on my new fund?**
-A call needs at least one commitment in the fund closes it calls, otherwise it would have no investor to collect from. Add the commitments first, or pick closes that have commitments. When importing, import the commitments before the calls; a call row whose closes have no commitments fails with this reason in the import result. See [Rules to keep in mind](#rules-to-keep-in-mind).
 
 **Where do I find capital calls in CapHive?**
 Sidebar → [**Funds → Funds**](/funds), open the fund, then click the **Calls** tab on the fund page. The tab lists every call for that fund with its due date, call, collected and due amounts and approval status, and each row opens the call's own page. The [capital calls across all funds](/capital_calls) are also in one list. See [Where Capital Calls Fit](#where-capital-calls-fit).
