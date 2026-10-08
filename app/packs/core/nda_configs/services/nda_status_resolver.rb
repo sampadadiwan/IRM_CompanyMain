@@ -47,20 +47,15 @@ class NdaStatusResolver
 
   private
 
-  # Resolves the investor universe from InvestorAccess for the NDA config's entity.
-  # Changed: Uses InvestorAccess instead of AccessRight to determine investor universe.
-  # Why: Data Room folder visibility for LPs is driven by InvestorAccess (entity-level),
-  #   not by AccessRight (folder-level). The NDA gate also resolves investors via
-  #   InvestorAccess, so the dashboard must use the same source for consistency.
+  # Changed: Switched from entity-level InvestorAccess to folder-level AccessRight.
+  # Why: NDA is configured per-folder, so the status dashboard must only show investors
+  #   who have been granted access to THIS specific folder — not all entity investors.
+  #   Uses Investor.owner_access_rights which matches by access_to_investor_id or
+  #   access_to_category against the folder's AccessRight records.
   #
-  # @return [Array<Investor>] all investors with approved InvestorAccess to this entity
+  # @return [ActiveRecord::Relation<Investor>] investors with access to this folder
   def resolve_investors
-    investor_ids = InvestorAccess
-                   .where(entity_id: @nda_config.entity_id, approved: true)
-                   .distinct
-                   .pluck(:investor_id)
-
-    Investor.where(id: investor_ids)
+    Investor.owner_access_rights(@folder, nil)
   end
 
   # @param investor_ids [Array<Integer>] investor IDs to resolve users for
