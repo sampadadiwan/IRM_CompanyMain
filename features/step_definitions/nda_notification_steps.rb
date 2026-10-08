@@ -234,11 +234,7 @@ Then("there should be {int} LP user recipients") do |count|
 end
 
 # ── Assertion steps — Cascade ────────────────────────────────────────────────
-
-# Verifies expiry reminders are destroyed after NdaConfig deletion.
-Then("there should be {int} expiry reminders for the NDA config") do |count|
-  expect(NdaExpiryReminder.where(nda_config_id: @nda_config.id).count).to eq(count)
-end
+# (Cascade count check reuses "there should be {int} expiry reminder(s)" step above)
 
 # ── Helper methods (mirror NdaExpiryCheckJob private methods) ────────────────
 
