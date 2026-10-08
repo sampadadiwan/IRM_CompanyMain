@@ -80,6 +80,10 @@ When("the GP creates an NDA config on the data room folder with:") do |table|
 
   if @nda_config.valid?
     @nda_config.save!
+    # Changed: Set folder's nda_inheritance_mode to "own" after saving config.
+    # Why: Mirrors NdaConfigsController#create which sets this on save.
+    #   effective_nda_config checks nda_own? so without this, nda_required? returns false.
+    @data_room_folder.update!(nda_inheritance_mode: "own")
   else
     @nda_config_errors = @nda_config.errors
   end

@@ -9,7 +9,10 @@
 # ── Setup steps ──────────────────────────────────────────────────────────────
 
 # Creates an LP user associated with the GP entity via an investor relationship.
+# Changed: Also creates Investor and InvestorAccess records.
+# Why: NdaAcceptance has belongs_to :investor (validated), so tests need an investor.
 # @note Uses a separate entity for the LP to simulate cross-entity access.
+#   Investor.save!(validate: false) skips complex callbacks (update_name, find_or_build_investor_entity).
 Given("there is an LP user for the GP entity") do
   @lp_entity = Entity.create!(name: "LP Entity", entity_type: "Limited Partner", primary_email: "lp_entity@example.com")
   @lp_user = User.create!(
@@ -18,6 +21,25 @@ Given("there is an LP user for the GP entity") do
     entity: @lp_entity,
     first_name: "LP",
     last_name: "User"
+  )
+
+  @lp_investor = Investor.new(
+    entity: @gp_entity,
+    investor_entity: @lp_entity,
+    investor_name: "LP Entity",
+    primary_email: @lp_user.email
+  )
+  @lp_investor.save!(validate: false)
+
+  InvestorAccess.create!(
+    investor: @lp_investor,
+    entity: @gp_entity,
+    investor_entity: @lp_entity,
+    user: @lp_user,
+    email: @lp_user.email,
+    first_name: @lp_user.first_name,
+    last_name: @lp_user.last_name,
+    approved: true
   )
 end
 
@@ -28,6 +50,7 @@ When("the LP accepts the NDA with audit metadata") do
   @nda_acceptance = NdaAcceptance.create!(
     nda_config: @nda_config,
     user: @lp_user,
+    investor: @lp_investor,          # Changed: pass investor. Why: required by belongs_to validation.
     entity: @nda_config.entity,
     status: "accepted",
     nda_version: @nda_config.version,
@@ -42,6 +65,7 @@ When("the LP declines the NDA with audit metadata") do
   @nda_acceptance = NdaAcceptance.create!(
     nda_config: @nda_config,
     user: @lp_user,
+    investor: @lp_investor,          # Changed: pass investor. Why: required by belongs_to validation.
     entity: @nda_config.entity,
     status: "declined",
     nda_version: @nda_config.version,
@@ -131,6 +155,7 @@ Then("creating an NDA acceptance with status {string} should fail validation") d
   record = NdaAcceptance.new(
     nda_config: @nda_config,
     user: @lp_user,
+    investor: @lp_investor,          # Changed: pass investor. Why: required by belongs_to validation.
     entity: @nda_config.entity,
     status: status,
     nda_version: @nda_config.version
