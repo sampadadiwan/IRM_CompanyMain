@@ -110,7 +110,8 @@
       <% else %>
         <% position = steps.index(current) + 1 %>
         <% step_data = instance.snapshot_steps.find { |st| st[:position].to_i == current[:position].to_i } || {} %>
-        <% owner = step_data[:kind].to_s != "human" ? WorkflowAutoReminderJob.owner_for(instance, step_data) : nil %>
+        <%# Everyone reminded about this task (several for a KPI report with no manager: the Kpi team) %>
+        <% owners = step_data[:kind].to_s != "human" ? WorkflowAutoReminderJob.owners_for(instance, step_data) : [] %>
         <% days = instance.current_step_since ? (Date.current - instance.current_step_since.to_date).to_i : nil %>
         <% now_view = journey_now_view(current) %>
 
@@ -130,10 +131,10 @@
                 <i class="ti ti-route" aria-hidden="true"></i> Step <%= position %> of <%= steps.size %>
               </span>
 
-              <% if owner %>
+              <% if owners.any? %>
                 <span class="cc-chip" data-bs-toggle="tooltip"
-                      data-bs-title="Owner — reminders about this task go to them">
-                  <i class="ti ti-user" aria-hidden="true"></i> <%= owner.full_name %>
+                      data-bs-title="<%= owners.one? ? "Owner — reminders about this task go to them" : "Owners — reminders about this task go to each of them" %>">
+                  <i class="ti ti-user" aria-hidden="true"></i> <%= owners.map(&:full_name).to_sentence %>
                 </span>
               <% elsif step_data[:kind].to_s != "human" %>
                 <%# No owner means nobody is being reminded: the template needs fixing %>
@@ -156,6 +157,16 @@
           <%# The action that moves this task on. An errored step has none — the evaluator returns
               no action_path for it, there is nothing for the user to click. %>
           <div class="align-self-center">
+            <%# A sign-off step that is stuck: re-emails the approvers who haven't responded yet
+                (WorkflowInstancesController#send_reminder — the same action as Remind on the workflow page) %>
+            <% if current[:kind] == "human" && policy(instance).send_reminder? && instance.instance_active? %>
+              <%= button_to send_reminder_workflow_instance_path(instance, return_to: polymorphic_path(record)), method: :post,
+                    form_class: "d-inline", id: "journey_resend_email",
+                    data: { confirm: "Resend the sign-off email to approvers who haven't responded?", turbo: false },
+                    class: "btn btn-sm btn-outline-info px-3 me-1" do %>
+                <i class="ti ti-mail-forward" aria-hidden="true"></i> Resend email
+              <% end %>
+            <% end %>
             <% if current[:kind] == "acknowledge" && policy(record).update? %>
               <%= button_to acknowledge_workflow_instance_path(instance, step_position: current[:position]),
                     method: :post, class: "btn btn-sm btn-primary px-3", id: "journey_mark_reviewed",
@@ -185,12 +196,15 @@
                   action_target names it and the journey-action controller clicks it instead of
                   navigating — following action_path would just reload the page we are on. The
                   href stays as the fallback for when that control isn't rendered. %>
+              <%# action_new_tab: a screen where the user works and then comes back (the KPI grid's approvals),
+                  so this record and its live step bar stay open in this tab %>
               <%= link_to current[:action_path], class: "btn btn-sm btn-primary px-3",
+                    target: ("_blank" if current[:action_new_tab]), rel: ("noopener" if current[:action_new_tab]),
                     id: "journey_action", data: { turbo_frame: "_top",
                                                   controller: ("journey-action" if current[:action_target].present?),
                                                   journey_action_control_value: current[:action_target],
                                                   action: ("click->journey-action#run" if current[:action_target].present?) }.compact do %>
-                <%= current[:action_label] %> <i class="ti ti-arrow-right" aria-hidden="true"></i>
+                <%= current[:action_label] %> <i class="ti <%= current[:action_new_tab] ? "ti-external-link" : "ti-arrow-right" %>" aria-hidden="true"></i>
               <% end %>
             <% end %>
           </div>

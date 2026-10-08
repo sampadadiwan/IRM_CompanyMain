@@ -530,9 +530,8 @@ end
 # Manual QA 4.4: timestamp is rendered next to the status badge on the form.
 Then('the submitted_at timestamp is visible on the form') do
   @kpi_report.reload
-  # The view renders submitted_at via I18n.l(date, format: :short) which uses "%b %d"
-  # (zero-padded day), so match with the same formatter rather than .day.to_s.
-  expect(page).to have_content(I18n.l(@kpi_report.submitted_at.to_date, format: :short))
+  # After submitting, the portco lands on the KPIs submitted page, which renders submitted_at with l(date)
+  expect(page).to have_content(I18n.l(@kpi_report.submitted_at.to_date))
 end
 
 # ── Scenario 22: Double-submit guard ─────────────────────────────────────────
@@ -605,11 +604,28 @@ end
 # ── Scenario 34: Fields read-only after submission ────────────────────────────
 
 Then('the notes field is not editable') do
-  # The form enforces read-only state by removing Save Draft / Submit buttons on
-  # submitted reports rather than disabling individual fields.
+  # A submitted report shows the portco a confirmation page instead of the wizard, so there is no form at all
+  steps %(Then I should see the KPIs submitted page instead of the wizard)
+  expect(page).not_to have_field('kpi_report[notes]')
+end
+
+# The portco's confirmation page on a submitted/reviewed report (kpi_reports/_portco_submitted.html.erb)
+Then('I should see the KPIs submitted page instead of the wizard') do
+  expect(page).to have_css('#kpi_report_portco_submitted', text: 'KPIs submitted')
+  expect(page).to have_content('This report can no longer be changed')
+  expect(page).not_to have_content("Let's get started")
   expect(page).not_to have_button('Save Draft')
   expect(page).not_to have_button('Submit Report')
-  expect(page).to have_content('Report Already Submitted')
+end
+
+Then('the KPIs submitted page shows the import finished') do
+  expect(page).to have_content("Imported for the fund's review")
+  expect(page).to have_css('#kpi_report_submitted_file')
+end
+
+# KpiReport#reopen_for_portco! — what the fund's "Reopen & ask to re-upload" does
+When('the fund reopens the KPI report') do
+  @kpi_report.reload.reopen_for_portco!(@kpi_report.entity_id)
 end
 
 # ── Scenario 36: Grid view navigation via View Including Staged ───────────────
@@ -885,4 +901,26 @@ Then('validating the generated template reports the requested period as present 
   # Header parsed to the requested quarter; the sheet is empty so the only complaint is "blank"
   expect(verdict['errors'].pluck('code')).to include('requested_period_blank')
   expect(verdict['errors'].pluck('code')).not_to include('requested_period_missing', 'no_header')
+end
+
+# ── Scenario 51: no empty chart in the staged review ─────────────────────────
+
+When('I open the KPI grid for {string} including staged values') do |portco_name|
+  portco = Investor.find_by!(investor_name: portco_name)
+  visit(kpi_reports_path(portfolio_company_id: portco.id, grid_view: true, view_unapproved: true))
+  expect(page).to have_css("#kpi_grid_view_chart_container", visible: :all)
+end
+
+When('I open the KPI grid for {string}') do |portco_name|
+  portco = Investor.find_by!(investor_name: portco_name)
+  visit(kpi_reports_path(portfolio_company_id: portco.id, grid_view: true))
+  expect(page).to have_css("#kpi_grid_view_chart_container", visible: :all)
+end
+
+Then('the grid shows no KPIs chart') do
+  expect(page).not_to have_css("#kpi_grid_view_chart_container .card")
+end
+
+Then('the grid shows the KPIs chart') do
+  expect(page).to have_css("#kpi_grid_view_chart_container .card", text: "KPIs")
 end

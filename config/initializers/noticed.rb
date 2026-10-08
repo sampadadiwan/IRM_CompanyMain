@@ -27,9 +27,89 @@ module NotificationExtensions
   end
 
   def email_enabled
-    # Either the recipient belongs to the model entity or the investor_access email_enabled is true
+    # Either the recipient belongs to the model entity, the investor_access email_enabled is true,
+    # or the recipient is an investor advisor authorized by the model's own show? policy - this
+    # last check does not require the recipient to currently be switched into the model's entity,
+    # since an investor advisor's access does not depend on which persona they're switched into.
     model.entity_id == recipient.entity_id ||
-      investor_access&.email_enabled
+      investor_access&.email_enabled ||
+      investor_advisor_show_enabled
+  end
+
+  # Deferring to Pundit.policy(...).show? generically (rather than a KYC-specific check) means this
+  # is correct for any model/policy that has been made switch-state-independent, not just InvestorKyc
+  # - today that's only InvestorKycPolicy#show?, but nothing here assumes that stays true.
+  #
+  # Gated on an entity-scoped InvestorAdvisor grant (not a bare has_cached_role? check): some
+  # policies' #show? is true for reasons unrelated to any advisor grant - e.g. DocumentPolicy#show?
+  # returns true unconditionally for a public document - and a cheap role-only gate would dispatch
+  # into those too, overriding an explicit investor_access opt-out and emailing every
+  # investor-advisor-role recipient app-wide. Scoping to "does this recipient hold a grant on this
+  # model's own entity" keeps the dispatch confined to the relationship it exists to recognize.
+  #
+  # Fails closed (no email) either way, since email_enabled runs outside a controller's rescue_from
+  # and a raise here would fail this recipient's delivery job. The two cases differ in whether
+  # anyone needs to hear about it:
+  #   * Pundit::NotDefinedError - the model has no policy. An expected "no", logged only.
+  #   * anything else - a policy's #show? raised. That is a bug the policy owner must see, so it is
+  #     reported through ExceptionNotifier rather than only logged: rescuing it quietly would make
+  #     it indistinguishable from an intentional denial, and the advisor would just stop getting
+  #     emails with nobody the wiser.
+  def investor_advisor_show_enabled
+    return false unless model.respond_to?(:entity) && model.entity.present?
+    return false unless model.entity.investor_advisors.exists?(user_id: recipient.id)
+
+    Pundit.policy!(recipient, model).show?
+  rescue Pundit::NotDefinedError => e
+    Rails.logger.info { "investor_advisor_show_enabled: no policy for #{model.class.name}##{model.id}, recipient #{recipient.id}: #{e.message}" }
+    false
+  rescue StandardError => e
+    ExceptionNotifier.notify_exception(e, data: investor_advisor_show_failure_report(e))
+    false
+  end
+
+  # The data block of the ExceptionNotifier email for a failed advisor check: enough to troubleshoot
+  # from the email alone - which email, about what, to whom, where they were switched in, what their
+  # grant says, which policy raised, and a console line that re-raises it.
+  # Worked example X1: openspec/changes/kyc-advisor-notification-delivery-fix/design.md#worked-examples
+  def investor_advisor_show_failure_report(error)
+    sections = {
+      # First, so the email preview says what happened without scrolling.
+      summary: -> { "Email to investor advisor skipped: #{Pundit::PolicyFinder.new(model).policy}#show? raised #{error.class} for #{model.class.name}##{model.id}" },
+      impact: -> { "Only this recipient's email was skipped; other recipients of this notification were unaffected." },
+      reproduce: -> { "Pundit.policy!(User.find(#{recipient.id}), #{model.class.name}.find(#{model.id})).show?" },
+      notification: lambda {
+        { notifier: event&.type, email_method: event&.params&.dig(:email_method), event_id: event&.id, notification_id: id }
+      },
+      record: -> { { model: "#{model.class.name}##{model.id}", entity: "#{model.entity&.name} (##{model.entity_id})" } },
+      # Where the recipient is switched in right now is the usual cause: most policies assume the
+      # user is inside the record's entity, and a switched-out advisor is not.
+      recipient: lambda {
+        {
+          id: recipient.id, email: recipient.email, name: recipient.full_name,
+          switched_into: "#{recipient.entity&.name} (##{recipient.entity_id})",
+          home_firm: "#{Entity.find_by(id: recipient.advisor_entity_id)&.name} (##{recipient.advisor_entity_id})",
+          curr_role: recipient.curr_role, roles: recipient.roles.pluck(:name)
+        }
+      },
+      # The settings the access check reads for a switched-out advisor (InvestorKycPolicy path 2).
+      advisor_grant: lambda {
+        grant = model.entity.investor_advisors.find_by(user_id: recipient.id)
+        next "none" unless grant
+
+        { id: grant.id, allowed_roles: Array(grant.allowed_roles).map(&:to_s),
+          enable_kycs: grant.permissions.enable_kycs?, extended_permissions: grant.extended_permissions.to_a }
+      },
+      policy: -> { Pundit::PolicyFinder.new(model).policy&.name }
+    }
+
+    # Each section is gathered on its own, so one failing lookup loses only that section - building
+    # the report must never be the thing that breaks delivery or hides the original error.
+    sections.transform_values do |build|
+      build.call
+    rescue StandardError => e
+      "could not be gathered: #{e.class}: #{e.message}"
+    end
   end
 
   def whatsapp_enabled

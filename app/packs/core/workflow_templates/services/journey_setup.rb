@@ -40,7 +40,8 @@ class JourneySetup < Trailblazer::Operation
   KINDS = {
     "capital_call" => "CapitalCallJourneySetup",
     "capital_distribution" => "CapitalDistributionJourneySetup",
-    "investor_kyc" => "InvestorKycJourneySetup"
+    "investor_kyc" => "InvestorKycJourneySetup",
+    "kpi_report" => "KpiReportJourneySetup"
   }.freeze
 
   # The seeded approval step (a human step: approvers vote; any one approval passes it)
@@ -103,9 +104,10 @@ class JourneySetup < Trailblazer::Operation
             else
               ", and the #{plan[:steps].to_sentence} #{'task'.pluralize(plan[:steps].size)} in the #{self::FULL_LABEL} journey"
             end
+    # A kind without a sign-off step (the KPI report journey) has no approver to warn about
+    approver = self::SIGN_OFF_NAME ? "The #{self::SIGN_OFF_NAME} step has no approver: edit it to pick one (until then it is skipped). " : ""
     "This adds the standard #{self::LABEL} for this company: #{templates}#{rules}#{sign_off}#{steps}. " \
-      "The #{self::SIGN_OFF_NAME} step has no approver: edit it to pick one (until then it is skipped). " \
-      "Only #{records} created from now on get a journey. Anything already set up is kept."
+      "#{approver}Only #{records} created from now on get a journey. Anything already set up is kept."
   end
 
   step :plan
@@ -127,6 +129,9 @@ class JourneySetup < Trailblazer::Operation
     failures = []
 
     entities.find_each do |entity|
+      # A kind may narrow its entity types further (the KPI report journey: funds that use KPIs)
+      next unless setup.available_for?(entity)
+
       # One transaction per entity inside the setup, so one failure doesn't stop the rest
       report = setup.call(entity:, execute:)[:report]
       planned = []
@@ -159,7 +164,10 @@ class JourneySetup < Trailblazer::Operation
              end,
       flag: !entity.permissions.enable_workflow_templates?,
       # A Full template seeded before the CFO sign-off step existed (a new template gets it seeded)
-      cfo: templates[self.class::FULL_KEY].present? && !templates[self.class::FULL_KEY].workflow_steps.exists?(name: self.class::SIGN_OFF_NAME),
+      # A kind with no sign-off step at all (SIGN_OFF_NAME nil — the KPI report journey) never gets one added
+      # Worked examples E1 — openspec/changes/kpi-report-journey/design.md#worked-examples
+      cfo: self.class::SIGN_OFF_NAME.present? && templates[self.class::FULL_KEY].present? &&
+           !templates[self.class::FULL_KEY].workflow_steps.exists?(name: self.class::SIGN_OFF_NAME),
       # Seeded tasks an existing Full template predates, in BACKFILL_STEPS order. [] for a template
       # about to be seeded whole, for a kind that declares no backfill, and once they are all there.
       steps: missing_backfill_steps(templates[self.class::FULL_KEY]),

@@ -31,12 +31,13 @@ This guide covers the full lifecycle of Know Your Customer (KYC) records in CapH
 21. [Admin Verification](#admin-verification)
 22. [KYC Expiry](#kyc-expiry)
 23. [AML Reports](#aml-reports)
-24. [Notifications](#notifications)
-25. [Filtering and Finding KYC Records](#filtering-and-finding-kyc-records)
-26. [Importing KYC Records](#importing-kyc-records)
-27. [Worked Example](#worked-example)
-28. [Frequently Asked Questions](#frequently-asked-questions)
-29. [Related Guides](#related-guides)
+24. [Who Can See a KYC and Get Its Emails](#who-can-see-a-kyc-and-get-its-emails)
+25. [Notifications](#notifications)
+26. [Filtering and Finding KYC Records](#filtering-and-finding-kyc-records)
+27. [Importing KYC Records](#importing-kyc-records)
+28. [Worked Example](#worked-example)
+29. [Frequently Asked Questions](#frequently-asked-questions)
+30. [Related Guides](#related-guides)
 
 ---
 
@@ -462,7 +463,7 @@ When the investor clicks **Submit KYC** and confirms in the **Submit KYC?** dial
 - PAN format is checked.
 - Bank fields are checked for completeness.
 
-After submission, the status becomes **Completed**, the form is locked for the investor, and every active employee with the KYCs feature is emailed that the KYC was submitted.
+After submission, the status becomes **Completed**, the form is locked for the investor, and everyone who can see the KYC is emailed that it was submitted (see [Who Can See a KYC and Get Its Emails](#who-can-see-a-kyc-and-get-its-emails)).
 
 ---
 
@@ -759,6 +760,77 @@ Contact your administrator if AML checking is not running for your organisation.
 
 ---
 
+## Who Can See a KYC and Get Its Emails
+
+One rule decides who sees a KYC on the KYCs list, who can open its page, and who gets its three fund-side emails (**KYC Submitted**, **KYC Updated** and **Updates Requested**). Because it is one rule, nobody is emailed a KYC they cannot open, and nobody can open a KYC their list hides.
+
+A person in your organisation can see a KYC when **Enable Kycs** is on for them **and** at least one of these is true:
+
+- they are a **company admin**;
+- they have **Investor Kyc Read** turned on — every KYC in your organisation, whatever the fund;
+- they have **Investor Kyc Update** turned on — every KYC in your organisation, whatever the fund;
+- they have access to a fund the KYC is committed to (the fund's **Access** tab);
+- the KYC has **no commitment yet**, so there is no fund to check.
+
+Company admins are the one exception to **Enable Kycs**: they always see every KYC, but get the KYC emails only while **Enable Kycs** is on for them.
+
+```mermaid
+flowchart TD
+    A["Person in your organisation<br/>(or an advisor, judged by their grant)"] --> B{"Enable Kycs on?"}
+    B -- No --> N["Does not see the KYC<br/>No KYC emails<br/>(company admins still see it)"]
+    B -- Yes --> C{"Company admin?"}
+    C -- Yes --> Y["Sees the KYC<br/>Gets its emails"]
+    C -- No --> D{"Investor Kyc Read or<br/>Investor Kyc Update on?"}
+    D -- Yes --> Y
+    D -- No --> E{"KYC has a commitment?"}
+    E -- No --> Y
+    E -- Yes --> F{"Access to one of the<br/>KYC's funds?"}
+    F -- Yes --> Y
+    F -- No --> X["Does not see the KYC<br/>No KYC emails"]
+```
+
+### The matrix: employees
+
+Each cell answers both questions at once — sees the KYC on the list and its page, **and** gets its emails — except where it says otherwise. "Fund A" is a fund the person has access to; "Fund B" is one they do not.
+
+| Employee set up with | KYC committed to Fund A | KYC committed to Fund B | KYC with no commitment yet |
+|---|---|---|---|
+| Company admin, **Enable Kycs** on | ✅ | ✅ | ✅ |
+| Company admin, **Enable Kycs** off | Sees it, no emails | Sees it, no emails | Sees it, no emails |
+| **Investor Kyc Read** on | ✅ | ✅ | ✅ |
+| **Investor Kyc Update** on | ✅ | ✅ | ✅ |
+| Fund access only (no Investor Kyc toggles) | ✅ | ❌ | ✅ |
+| No fund access, no Investor Kyc toggles | — | ❌ | ✅ |
+| **Enable Kycs** off (any other setup) | ❌ | ❌ | ❌ |
+
+Seeing a KYC is not the same as changing it: editing, **Request Updates** and **KYC Actions → Generate Docs** still need **Investor Kyc Update**, deleting needs **Investor Kyc Delete**, and **Verify** needs **Investor Kyc Approve** — each only on KYCs the person can see.
+
+### The matrix: investor advisors
+
+An investor advisor is judged by their advisor grant on **your** organisation (Company menu → **Advisors**), using the same rule — whichever company they are switched into at the time. That is what lets an advisor keep getting your KYC emails while they work in another client's account or their own firm.
+
+| Advisor grant set up with | KYC committed to Fund A | KYC committed to Fund B | KYC with no commitment yet |
+|---|---|---|---|
+| **Allowed Roles** includes *company_admin*, **Enable Kycs** on | ✅ | ✅ | ✅ |
+| **Investor Kyc Read** or **Investor Kyc Update** on | ✅ | ✅ | ✅ |
+| Fund access only | ✅ | ❌ | ✅ |
+| **Enable Kycs** off on the grant | ❌ | ❌ | ❌ |
+| **Allowed Roles** without *employee* or *company_admin* | Only what the advisor's client relationship allows, as an investor would | | |
+
+For an advisor, "Fund A" means a fund whose **Access** tab lists them under **Select Advisor**, and **Enable Kycs**, **Investor Kyc Read** and **Investor Kyc Update** are the toggles on the grant, not on the advisor's own login.
+
+### Which emails follow this rule
+
+| Email | Sent when |
+|---|---|
+| **KYC Submitted** | The KYC is submitted and its status becomes **Completed**. A final submit sends only this email, never **KYC Updated** as well. |
+| **KYC Updated** | The investor saves the full form (with validation) without it being the final submit. **Save Draft** sends nothing. |
+| **Updates Requested** | The investor clicks **Updates Required** on a submitted or verified KYC. |
+
+Each email also appears as an in-app notification. The emails are sent a few seconds after the investor's action, in the background, so the investor's save is never slowed down by a long recipient list.
+
+---
+
 ## Notifications
 
 CapHive sends automated email notifications at key points in the KYC lifecycle:
@@ -767,9 +839,10 @@ CapHive sends automated email notifications at key points in the KYC lifecycle:
 |---|---|---|
 | **KYC Required** | Investor | KYC form is sent to the investor for the first time |
 | **KYC Reminder** | Investor | Sent as a follow-up if the investor has not completed the form |
-| **KYC Updated** / **KYC Submitted** | Active employees with the KYCs feature | Investor saves or submits their KYC form |
+| **KYC Updated** | Everyone who can see the KYC ([who that is](#who-can-see-a-kyc-and-get-its-emails)), including investor advisors | Investor saves the full form without submitting it |
+| **KYC Submitted** | Everyone who can see the KYC, including investor advisors | The KYC is submitted (status becomes **Completed**) |
 | **Updates Requested** | Investor | Admin clicks **Request Updates** and sends a correction request |
-| **Updates Requested** | Active employees with the KYCs feature | Investor clicks **Updates Required** on a submitted or verified KYC |
+| **Updates Requested** | Everyone who can see the KYC, including investor advisors | Investor clicks **Updates Required** on a submitted or verified KYC |
 
 To use your own wording for any of these emails, create a **Custom KYC Notification** from **New KYC** (see [The New KYC dropdown](#the-new-kyc-dropdown) and [Custom Notifications](custom_notifications_user_guide)). Tagged reminder templates add their own **Send Reminder** items to **Bulk Actions** and **KYC Actions**.
 
@@ -891,6 +964,16 @@ Onboarding an individual investor into a SEBI-regulated fund, end to end:
 
 ### Navigation and getting there
 
+
+**Who can see a KYC, and who gets its emails?**
+Everyone in your organisation with **Enable Kycs** who is a company admin, has **Investor Kyc Read** or **Investor Kyc Update**, or has access to a fund the KYC is committed to. A KYC with no commitment yet is seen by everyone with **Enable Kycs**. The same people get its **KYC Submitted**, **KYC Updated** and **Updates Requested** emails. See the matrix in [Who Can See a KYC and Get Its Emails](#who-can-see-a-kyc-and-get-its-emails).
+
+**Where do I turn on Investor Kyc Read or Investor Kyc Update for someone?**
+A company admin opens Company menu → [**User / Company Employees**](/users), opens the person, clicks **Edit** and switches on **Investor Kyc Read** or **Investor Kyc Update**, with **Enable Kycs** on as well. For an investor advisor, edit their grant under Company menu → **Advisors** instead; the advisor's own login settings do not count for your KYCs.
+
+**How do I give an employee or advisor access to one fund's KYCs only?**
+Leave **Investor Kyc Read** and **Investor Kyc Update** off and give them fund access: open the fund, go to its **Access** tab, click **Grant Access** and pick them under **Select Employee** (or **Select Advisor**). They then see and are emailed about KYCs committed to that fund, plus KYCs with no commitment yet.
+
 **Where do I find KYC records in CapHive?**
 Sidebar → [**Funds → KYCs**](/investor_kycs) lists every KYC you are allowed to see, with **Verified**, **Unverified**, **Completed**, **Expired**, **Individual** and **Non Individual** count tiles at the top. The link sits in the **Funds** sidebar block (shown when the *Funds* feature is on) and the page needs the *KYCs* feature on your user. See [Filtering and Finding KYC Records](#filtering-and-finding-kyc-records).
 
@@ -940,6 +1023,13 @@ Either the form has already been sent (or the investor has started it) — the i
 Yes, the next time a company admin runs **Set up journeys → Set up investor KYC journeys**. They are inserted before **Send KYC form**, everything you have changed on the template is kept, and nothing is added twice. KYCs that were waiting at **Send KYC form** move back one step to **Set up KYC email**.
 
 ### Creating, updating and managing KYCs
+
+
+**Does Investor Kyc Read let someone see KYCs in every fund?**
+Yes. **Investor Kyc Read** shows every KYC in your organisation on the KYCs list and lets the person open each one, whatever the fund and even without fund access. They also get the KYC emails for all of them. **Investor Kyc Update** does the same and also lets them edit those KYCs.
+
+**Does seeing a KYC let someone change it?**
+No. Seeing a KYC only lets them open it and get its emails. Editing it, **Request Updates** and **KYC Actions → Generate Docs** need **Investor Kyc Update**; deleting needs **Investor Kyc Delete**; **Verify** needs **Investor Kyc Approve**. Each works only on KYCs the person can see.
 
 **How do I create a KYC record?**
 On the stakeholder's **KYC** tab (or on **Funds → KYCs**), click **New KYC** and choose **Individual** or **Non Individual**; if you have several KYC form types, each is listed with its tag, for example **Individual (SEBI)**. Fill in what you have and **Save**. See [Creating a KYC Record](#creating-a-kyc-record).
@@ -996,7 +1086,7 @@ On **Funds → KYCs** open **Upload/Download → Upload KYC Details**. Use **Upl
 **Upload/Download → Download: IndividualKyc …** or **Download: NonIndividualKyc …** on **Funds → KYCs** downloads an Excel file of the current list for that form type, custom fields included.
 
 **Which permissions do I need?**
-Your user needs the *KYCs* feature. Company admins can do everything; other employees need *KYC Read*, *KYC Create*, *KYC Update*, *KYC Delete* or *KYC Approve* on their user, and only see KYCs linked to commitments in funds they have access to. **Send KYC Reminders** and **Upload/Download** need the employee role.
+Your user needs **Enable Kycs**. Company admins can do everything. Other employees see every KYC with **Investor Kyc Read** or **Investor Kyc Update**, otherwise KYCs on funds they can access plus KYCs with no commitment yet. Changing a KYC needs **Investor Kyc Create**, **Update**, **Delete** or **Approve** as well. **Send KYC Reminders** and **Upload/Download** need the employee role. See [Who Can See a KYC and Get Its Emails](#who-can-see-a-kyc-and-get-its-emails).
 
 **How do I set up the KYC journey for my company?**
 As a company admin of an Investment Fund or Angel Fund company, open the [workflow templates](/workflow_templates) page and choose **Set up journeys → Set up investor KYC journeys**. It adds the **Investor KYC** journey and a rule giving it to every new KYC. New fund companies get it automatically.
@@ -1018,6 +1108,10 @@ When **Validate documents** is current, open the documents (the panel's **Open v
 
 ### Why use Investor KYC
 
+
+**Why do the KYC list, the KYC page and the KYC emails use one rule?**
+So they can never disagree. Before, someone could be emailed about a KYC and then get "access denied" when they clicked the link, or see a KYC on their list they could not open. Now the emails go to exactly the people who can open the KYC, and the list shows exactly the KYCs they can open.
+
 **Why should I manage KYC in CapHive?**
 Regulators require identity, address, bank and category details for every investor before they participate. CapHive collects them from the investor directly, runs PAN, bank, CKYC/KRA and AML checks, keeps documents and an audit trail on the record, and shows at a glance who is still pending or expired.
 
@@ -1038,6 +1132,16 @@ It shows at a glance which step each new KYC is on — form, documents, validati
 
 ### What happens when I …
 
+
+**What happens when I turn on Investor Kyc Read for an employee?**
+From their next page load they see every KYC in your organisation on the KYCs list and can open each one, whatever the fund. From the next KYC that is submitted, saved or flagged with **Updates Required**, they also get those emails for every KYC. Nothing is sent to them about earlier activity. Turn it off to return them to their funds' KYCs only.
+
+**What happens when I turn off Enable Kycs for someone?**
+An employee or advisor stops seeing KYCs on the list and pages straight away, whatever else they have, and stops getting KYC emails. A company admin still sees every KYC, but no longer gets the KYC emails. Turning it back on restores both.
+
+**What happens when a KYC gets its first commitment?**
+Until then everyone with **Enable Kycs** sees the KYC and gets its emails, because there is no fund to check. Once it is committed to a fund, people without **Investor Kyc Read** or **Investor Kyc Update** see it only if they have access to that fund, and only they keep getting its emails.
+
 **What happens when I save a new KYC?**
 The record is saved with status **Not Sent** and gets its own `KYC-<id>` document folder, and KYC is switched on for the investor's portal. PAN and bank verification jobs are queued in the background when the needed fields are present and those checks are enabled for your entity. The investor is not emailed unless you used **Send KYC to Stakeholder**.
 
@@ -1045,7 +1149,7 @@ The record is saved with status **Not Sent** and gets its own `KYC-<id>` documen
 The status becomes **Link Sent** and each approved user of the stakeholder who can see the KYC, and whose Notification Topics are blank or include `KYC`, gets an email and in-app notification with a 30-day link. If the stakeholder has no approved users, **KYC Actions** shows "could not be sent as no user has been assigned to the investor" and nothing is sent.
 
 **What happens when the investor clicks Save Draft or Submit KYC?**
-**Save Draft** keeps partial data without full validation and sets the status to **Draft Saved**. **Submit KYC** enforces required fields, sets the status to **Completed**, locks the form for the investor, and emails every active employee who has the KYCs feature that the KYC was submitted.
+**Save Draft** keeps partial data without full validation and sets the status to **Draft Saved**. **Submit KYC** enforces required fields, sets the status to **Completed**, locks the form for the investor, and emails everyone who can see the KYC that it was submitted — your employees and investor advisors, under the rule in [Who Can See a KYC and Get Its Emails](#who-can-see-a-kyc-and-get-its-emails). Only the **KYC Submitted** email is sent, not **KYC Updated** as well.
 
 **What happens when I click Verify?**
 The status becomes **Verified** and CapHive records who verified it. The KYC can no longer be edited, deleted or sent back with **Request Updates**, and document generation for that investor's commitments, calls and distributions is allowed. Nobody is notified; **UnVerify** reverses it and sets the status back to **Completed**.
@@ -1054,7 +1158,7 @@ The status becomes **Verified** and CapHive records who verified it. The KYC can
 The KYC goes back to **Link Sent**, the submitted flag and time are cleared, and the stakeholder's approved users (filtered by the `KYC` topic) get an email with your message and a fresh link. Existing data and documents are kept; when the investor resubmits, your team is notified again.
 
 **What happens when the investor clicks Updates Required?**
-On a submitted or verified KYC, the investor can click **Updates Required** to ask your team to change something. Every active employee with the KYCs feature gets an email and in-app notification; the KYC itself is not changed, so unverify and edit it or use **Request Updates**.
+On a submitted or verified KYC, the investor can click **Updates Required** to ask your team to change something. Everyone who can see the KYC, including investor advisors, gets an email and in-app notification; the KYC itself is not changed, so unverify and edit it or use **Request Updates**.
 
 **What happens when I delete a KYC?**
 The KYC is soft-deleted together with its AML reports and CKYC/KRA data records, and disappears from both KYC lists. No one is notified, and there is no restore button in the KYC screens, so recreate or re-import it if deleted by mistake.
@@ -1102,6 +1206,22 @@ If **Validate documents** was already done, it moves back with "Documents change
 Nothing changes until the investor submits: uploading documents first and letting the AI pre-fill the form does not complete **Submit KYC**, and pre-filling is not validation, so **Validate documents** is not ticked.
 
 ### Troubleshooting and edge cases
+
+
+**Why did a colleague get a KYC email and I did not?**
+You probably cannot see that KYC. Without **Investor Kyc Read** or **Investor Kyc Update** you are emailed only about KYCs committed to funds you have access to, plus KYCs with no commitment yet. Your colleague may have one of those toggles or access to the KYC's fund. If **Enable Kycs** is off for you, you get no KYC emails at all.
+
+**Why do I get KYC emails for funds I do not work on?**
+You have **Investor Kyc Read** or **Investor Kyc Update**, which cover every KYC in your organisation. If you should only follow certain funds, ask a company admin to turn those toggles off and give you access on those funds' **Access** tab instead.
+
+**Does an investor advisor still get our KYC emails when switched into another company?**
+Yes. An advisor is judged by their grant on your organisation, not by the company they are in at the time. If the grant has **Enable Kycs** and either **Investor Kyc Read**, **Investor Kyc Update**, the *company_admin* role or access to the KYC's fund, they get the email wherever they are working.
+
+**Why does an investor advisor not get our KYC emails?**
+Check their grant under Company menu → **Advisors**: **Enable Kycs** must be on, **Allowed Roles** must include *employee* or *company_admin*, and they need **Investor Kyc Read**, **Investor Kyc Update** or access on the fund's **Access** tab. The advisor's own login settings, and the company they are switched into, make no difference.
+
+**Why can a company admin see a KYC but gets no KYC emails?**
+Company admins always see every KYC, but the KYC emails also need **Enable Kycs** on for them. Turn it on from Company menu → [**User / Company Employees**](/users) → the admin → **Edit**.
 
 **Can I change a KYC record from Individual to Non-Individual?**
 No. The KYC type is fixed at creation. If the wrong type was selected, create a new KYC record with the correct type.
@@ -1161,7 +1281,7 @@ A review workflow may be assigned to this KYC; gated buttons stay disabled until
 Existing commitments keep the value copied from the KYC when they were created; KYC changes are not copied to them. Open each commitment, click **Edit**, update its **Investor Signatory Emails** and save, then generate the document again, because signers are fixed when a document is generated (cancel and delete it first if it was already sent). See [eSigning](esigning_user_guide#changing-signers-on-documents-already-generated-or-sent).
 
 **I cannot see some KYCs, or the KYCs menu is missing.**
-The **Funds → KYCs** link needs the *Funds* feature and the page needs the *KYCs* feature on your user. Employees who are not company admins only see KYCs linked to commitments in funds they have been given access to, so a KYC with no commitment is visible only to company admins.
+The **Funds → KYCs** link needs the *Funds* feature and your user needs **Enable Kycs**. Without **Investor Kyc Read** or **Investor Kyc Update** you see only KYCs committed to funds you can access, plus KYCs with no commitment yet. Ask a company admin to turn one of those toggles on for you, or to add you on the fund's **Access** tab.
 
 **The import says "a KYC already exists … Set Update Only to Yes".**
 A KYC with the same stakeholder, PAN and **Investing Entity** name is already in CapHive. Set **Update Only** to `Yes` on that row to update it instead of creating a duplicate.

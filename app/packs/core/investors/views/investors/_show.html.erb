@@ -75,6 +75,14 @@
         <%= @investor.sector %>
       </td>
     </tr>
+    <tr>
+      <td>
+        Managed by
+      </td>
+      <td id="investor_managed_by">
+        <%= @investor.managed_by&.full_name %>
+      </td>
+    </tr>
     <% end %>
 
 

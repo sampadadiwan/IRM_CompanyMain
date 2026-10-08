@@ -25,9 +25,9 @@ class SqliteSnapshotStrategy < Cucumber::Rails::Database::Strategy
       "#{live_db_path}.template"
     end
 
-    # Runs once per worker process, on the first scenario's before hook —
-    # at that point nothing has run yet, so the live db is still the
-    # freshly-migrated, empty state. Built via the Backup API (not `cp`)
+    # Runs once per worker process, on the first scenario's before hook.
+    # The live db is emptied first (empty_live_db!) so the snapshot is the
+    # freshly-migrated state even if the file was reused dirty. Built via the Backup API (not `cp`)
     # so a mid-write/WAL-checkpoint file state can't produce a torn copy.
     #
     # Deliberately memoized in-process (@template_ready), not by checking
@@ -41,6 +41,10 @@ class SqliteSnapshotStrategy < Cucumber::Rails::Database::Strategy
 
       path = template_path
       src = ActiveRecord::Base.connection.raw_connection
+      # The live db is NOT guaranteed empty: pcuc reuses /dev/shm/test_N.sqlite3 whenever the file
+      # exists, so rows left by an interrupted run (or written after the last restore) would be baked
+      # into the template and restored into every scenario, with ids no longer starting at 1.
+      empty_live_db!(src)
       dst = SQLite3::Database.new(path)
       begin
         backup = SQLite3::Backup.new(dst, "main", src, "main")
@@ -51,6 +55,34 @@ class SqliteSnapshotStrategy < Cucumber::Rails::Database::Strategy
       end
       Rails.logger.info("[SqliteSnapshotStrategy] snapshot taken -> #{path}")
       @template_ready = true
+    end
+
+    # Tables that hold schema state, not test data: emptying them would make Rails think the
+    # db is unmigrated.
+    KEEP_TABLES = %w[schema_migrations ar_internal_metadata].freeze
+
+    # Deletes every row from every data table and resets the AUTOINCREMENT counters, so the
+    # template is the freshly-migrated state whatever the file held before. Logs what it removed
+    # so a dirty worker db is visible in log/test_N.log rather than silent.
+    def empty_live_db!(db)
+      # Rails' raw connection returns rows as hashes (results_as_hash), a bare SQLite3::Database as arrays
+      tables = db.execute("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'")
+                 .map { |row| row.is_a?(Hash) ? row["name"] : row.first } - KEEP_TABLES
+      # Count first, only to report the leftovers
+      leftovers = tables.index_with { |t| db.get_first_value("SELECT COUNT(*) FROM \"#{t}\"") }.select { |_, n| n.positive? }
+      # A db can hold no rows yet still have advanced id counters (rows inserted, then deleted)
+      counters = db.get_first_value("SELECT COUNT(*) FROM sqlite_sequence WHERE seq > 0")
+      return if leftovers.empty? && counters.zero?
+
+      db.transaction do
+        # FK checks wait until commit, when every table is empty, so delete order does not matter
+        db.execute("PRAGMA defer_foreign_keys = ON")
+        tables.each { |t| db.execute("DELETE FROM \"#{t}\"") }
+        # Restart every id at 1, as on a fresh db:test:prepare
+        db.execute("DELETE FROM sqlite_sequence")
+      end
+      Rails.logger.warn("[SqliteSnapshotStrategy] live db was not fresh; before the snapshot removed leftover rows #{leftovers} " \
+                        "and reset #{counters} id counter(s)")
     end
 
     def cleanup!

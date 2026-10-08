@@ -29,7 +29,16 @@ if ENV['VULN_SCAN'].blank?
     config.add_notifier :email, {
       email_prefix: "[Error] #{Rails.env}:(#{ENV.fetch('BASE_DOMAIN', nil)})",
       sender_address: ENV.fetch('SUPPORT_EMAIL_FROM', nil),
-      exception_recipients: ENV.fetch('ERROR_EMAIL', '').split(',')
+      exception_recipients: ENV.fetch('ERROR_EMAIL', '').split(','),
+      # "report" first: data[:report], the who / where / which-entity block (ErrorReportContext),
+      # rendered by app/views/exception_notifier/_report.text.erb. In the gem's own layout it sat in
+      # the "data" section, which always comes last - after a ~25-line backtrace in job emails and
+      # the ~100-line Environment dump in request emails - so the emails looked unchanged at a
+      # glance. "data" stays (overridden to omit the report): the gem appends it to request emails
+      # itself, and in job emails it still carries the raw Sidekiq payload. An email with no
+      # report simply has no Report section.
+      sections: %w[report request session environment backtrace],
+      background_sections: %w[report backtrace data]
     }
   end
 
@@ -80,10 +89,18 @@ if ENV['VULN_SCAN'].blank?
         Sidekiq.logger.error("[exception_notification] suppression check failed, notifying anyway: #{e.class}: #{e.message}")
       end
 
-      ExceptionNotifier.notify_exception(
-        ex,
-        data: ctx # job_class, args, jid, queue, etc.
-      )
+      # The readable "who / what / where" block (ErrorReportContext.for_sidekiq). Guarded like the
+      # suppression check above, ScriptError included: the report is a nicety, the email is the
+      # point, and a raise here would make Sidekiq drop the notification entirely.
+      report = begin
+        ErrorReportContext.for_sidekiq(ctx)
+      rescue StandardError, ScriptError => e
+        { "Context" => "unavailable (#{e.class})" }
+      end
+
+      # report first so it heads the email; the raw ctx (job payload, jid, queue...) follows
+      # unchanged as top-level keys - CriticalErrorWhatsapp.source reads data[:job] from it.
+      ExceptionNotifier.notify_exception(ex, data: { report: }.merge(ctx))
     end
   end
 end

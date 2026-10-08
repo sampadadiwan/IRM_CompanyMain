@@ -1,0 +1,11 @@
+<%#
+  Overrides the gem's "data" section (exception_notification views/exception_notifier/_data.text.erb)
+  to leave out data[:report], which already heads the email in its own "Report" section
+  (_report.text.erb). Everything else - e.g. the raw Sidekiq job payload - still prints here, the
+  way the gem prints it. When only the report was passed this renders nothing and the gem skips
+  the section.
+%>
+<% rest = @data.except(:report) %>
+<% if rest.any? %>
+* data: <%= raw PP.pp(rest, +"") %>
+<% end %>

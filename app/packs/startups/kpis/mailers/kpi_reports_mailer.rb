@@ -24,6 +24,16 @@ class KpiReportsMailer < ApplicationMailer
     send_mail(subject:)
   end
 
+  # The KPI report journey's completion email (KpiReportCompletedNotifier). The date in the subject uses
+  # the email format with locale :en forced, as every email does (EmailDateLocalization).
+  # Worked examples H8 — openspec/changes/kpi-report-journey/design.md#worked-examples
+  def completed_notification
+    @kpi_report = KpiReport.find params[:kpi_report_id]
+    @portfolio_company = @kpi_report.portfolio_company
+    subject = "KPIs for #{@kpi_report.for_name} — #{I18n.l(@kpi_report.as_of, format: :email, locale: :en)} are complete"
+    send_mail(subject:)
+  end
+
   def send_no_users_warning
     @portfolio_company = Investor.find(params[:portfolio_company_id])
     @kpi_report = KpiReport.find(params[:kpi_report_id])

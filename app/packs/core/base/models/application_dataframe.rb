@@ -29,7 +29,7 @@ class ApplicationDataframe
     rescue StandardError => e
       # Log the error and notify the exception
       Rails.logger.debug e.backtrace
-      ExceptionNotifier.notify_exception(e, data: { message: "Error in generating account entries DF" })
+      ErrorReport.notify(e, source: "#{self.class.name}#df", message: "Error in generating account entries DF")
     end
 
     # Return the dataframe

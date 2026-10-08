@@ -31,7 +31,7 @@ class WeeklyTaskDigestJob < ApplicationJob
       Rails.logger.info { "[WeeklyTaskDigestJob] #{entity.name}: queued #{sent} digest(s)" }
     rescue StandardError => e
       Rails.logger.error { "[WeeklyTaskDigestJob] Error for entity #{entity.id}: #{e.message}" }
-      ExceptionNotifier.notify_exception(e, data: { entity_id: entity.id, job: "WeeklyTaskDigestJob" })
+      ErrorReport.notify(e, job: self, entity_id: entity.id)
     end
   end
 

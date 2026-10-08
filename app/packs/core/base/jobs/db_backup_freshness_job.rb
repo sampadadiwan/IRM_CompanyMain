@@ -59,7 +59,7 @@ class DbBackupFreshnessJob < ApplicationJob
       log(:error, msg)
       # Same alert channel S3CheckJob uses — lands wherever exception
       # notifications are delivered (email/Slack per environment config).
-      ExceptionNotifier.notify_exception(StandardError.new(msg), data: { failures: failures })
+      ErrorReport.notify(StandardError.new(msg), job: self, failures:)
     else
       log(:info, "✓ DB backup freshness check passed (primary + replica buckets).")
     end
