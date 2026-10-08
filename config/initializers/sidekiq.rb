@@ -137,6 +137,9 @@ Sidekiq.configure_server do |config|
     # config/schedule.rb).
     workflow_reminder_cron = in_region ? '30 0 * * *' : '30 10 * * *'
     Sidekiq::Cron::Job.create(name: 'WorkflowAutoReminderJob', cron: workflow_reminder_cron, class: 'WorkflowAutoReminderJob')
+    # capital-call-journey: re-checks every journey every 15 minutes so progress is picked up and
+    # approvers are told promptly even when nobody opens the record (WorkflowEvaluateJob)
+    Sidekiq::Cron::Job.create(name: 'WorkflowEvaluateJob', cron: '*/15 * * * *', class: 'WorkflowEvaluateJob')
     # Drives ALL support agent schedules (AgentSchedule → AgentRunnerJob): scans
     # due schedules and enqueues runs. Was never cron-registered before, so no
     # scheduled agent (incl. the SideLetterObligationAgent daily enforcement
@@ -159,6 +162,10 @@ Sidekiq.configure_server do |config|
     # entity_setting.weekly_task_digest_enabled.
     Sidekiq::Cron::Job.create(name: 'WeeklyTaskDigestJob', cron: ENV.fetch('WEEKLY_TASK_DIGEST_CRON', '30 11 * * 5'), class: 'WeeklyTaskDigestJob')
     Sidekiq::Cron::Job.create(name: 'MultiSiteUserSyncAllJob', cron: multi_site_sync_cron, class: 'MultiSiteUserSyncAllJob')
+    # Confirms both regions still share CROSS_INSTANCE_SECRET. Hourly and always-on rather
+    # than in the off-peak block above: a divergence breaks EVERY region switch, and the
+    # 90-minute cache TTL on the result assumes an hourly cadence.
+    Sidekiq::Cron::Job.create(name: 'CrossSiteTrustCheckJob', cron: ENV.fetch('CROSS_SITE_TRUST_CRON', 'every 1 hour'), class: 'CrossSiteTrustCheckJob')
     Sidekiq::Cron::Job.create(name: 'TrackingCurrencyJob', cron: tracking_currency_cron, class: 'TrackingCurrencyJob')
 
     # Used to cleanup various models in the DB

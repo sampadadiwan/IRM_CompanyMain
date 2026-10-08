@@ -112,9 +112,14 @@ module WithAuthentication
     default
   end
 
+  # The developer error email for a failing page carries ErrorReportContext.for_request under
+  # data[:report]: who, switched into which entity, impersonated by whom, roles, request id.
+  # It used to carry a raw dump of current_user, which named the user but none of that.
+  # Lazy: nothing is looked up unless this request actually fails and the email is rendered,
+  # and what it shows is the state at that moment (after a persona switch or login-as).
   def prepare_exception_notifier
     request.env["exception_notifier.exception_data"] = {
-      current_user:
+      report: ErrorReportContext::Lazy.new { ErrorReportContext.for_request(self) }
     }
   end
 

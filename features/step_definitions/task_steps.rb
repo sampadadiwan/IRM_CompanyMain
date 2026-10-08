@@ -42,7 +42,9 @@ Given('the following tasks exist:') do |table|
 end
 
 When('I filter by {string}') do |filter_name|
-  click_on(filter_name)
+  # Show All / Incomplete live in the header's Actions menu — see
+  # features/support/task_header_helpers.rb
+  click_task_header_action(filter_name)
 end
 
 Then('I should see {string} message') do |content|

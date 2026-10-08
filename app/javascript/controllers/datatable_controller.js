@@ -1,6 +1,40 @@
 import { Controller } from "@hotwired/stimulus"
 import { setupAccessiblePagination } from "controllers/datatable_accessibility"
 
+// DataTables Responsive decides which columns to collapse by summing each column's
+// minimum width (read via offsetWidth, i.e. rounded to whole px) and comparing that to the
+// container's width. At fractional zoom levels (e.g. Chrome at 90% on Windows, where
+// devicePixelRatio is 0.9 / 1.125) each rounded column width can be off by a fraction of
+// a pixel, and across ~10 columns that's enough to push a table that actually fits over
+// the limit — so the last column (usually the Show/Edit actions) gets folded into the
+// expandable "child" row. Give each column a small tolerance only at fractional ratios.
+const RESPONSIVE_ZOOM_TOLERANCE_PX = 2;
+
+function patchResponsiveZoomTolerance() {
+  const Responsive = $.fn.dataTable && $.fn.dataTable.Responsive;
+  if (!Responsive || Responsive.prototype._zoomTolerancePatched) return;
+
+  const original = Responsive.prototype._columnsVisiblity;
+  Responsive.prototype._columnsVisiblity = function(breakpoint) {
+    if (Number.isInteger(window.devicePixelRatio)) return original.call(this, breakpoint);
+
+    // s.columns is a DataTables Api instance (array-like, no forEach), so index it directly.
+    const columns = this.s.columns;
+    const saved = [];
+    for (let i = 0; i < columns.length; i++) {
+      const col = columns[i];
+      saved[i] = col.minWidth;
+      if (col.minWidth) col.minWidth = Math.max(col.minWidth - RESPONSIVE_ZOOM_TOLERANCE_PX, 1);
+    }
+    try {
+      return original.call(this, breakpoint);
+    } finally {
+      for (let i = 0; i < columns.length; i++) columns[i].minWidth = saved[i];
+    }
+  };
+  Responsive.prototype._zoomTolerancePatched = true;
+}
+
 export default class extends Controller {
   static values = {
     moneyColumns: String, // Which columns are money, so we can appply better sorting
@@ -15,6 +49,8 @@ export default class extends Controller {
     console.log(`responsiveDetails = ${this.responsiveDetailsValue}`);
     console.log(`responsive = ${this.responsiveValue}`);
 
+      patchResponsiveZoomTolerance();
+
       let table = {};
 
       let columnDefs = this.columnDefs();
@@ -25,6 +61,11 @@ export default class extends Controller {
         if ( $.fn.dataTable.isDataTable( value ) ) {
         }
         else {
+          // Responsive collapses columns right-to-left, so the action column (Show / Edit
+          // buttons, always last) is the first to be folded behind the ▶ toggle when the
+          // table is a little too wide (e.g. 110% zoom). Give it top priority so data
+          // columns collapse first and the row actions stay visible.
+          $(value).find('thead th.action-col:not([data-priority])').attr('data-priority', 1);
           table[key] = $(value).DataTable({
             order: [],
             stateSave: false,
@@ -57,6 +98,7 @@ export default class extends Controller {
           // controller's initial scan — so any data-bs-toggle="tooltip" buttons that landed
           // in a hidden column never got a Bootstrap Tooltip instance. Re-scan on expand.
           table[key].on('responsive-display.dt', () => controller.element.dispatchEvent(new CustomEvent('tooltip:reinit')));
+          controller.scheduleRelayout(table[key]);
         }
 
       });
@@ -76,6 +118,45 @@ export default class extends Controller {
       if (searchTerm.length > 0) {
         table.search(searchTerm.val()).draw();
       }
+  }
+
+  disconnect() {
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
+      this.resizeObserver = null;
+    }
+  }
+
+  // Column widths (and Responsive's decision of which columns to collapse) are measured
+  // once at init. On a cold load — notably Windows with fractional zoom (e.g. 90%) — that
+  // can happen before web fonts / stylesheets / the sidebar have settled, leaving a broken
+  // layout that only fixes itself on reload (when everything is cached). Re-measure once
+  // layout settles and whenever the container is resized.
+  scheduleRelayout(dt) {
+    const relayout = () => {
+      if (!$.fn.dataTable.isDataTable(dt.table().node())) return;
+      dt.columns.adjust();
+      if (dt.responsive) dt.responsive.recalc();
+    };
+
+    requestAnimationFrame(relayout);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(relayout);
+    if (document.readyState !== 'complete') window.addEventListener('load', relayout, { once: true });
+
+    if (typeof ResizeObserver !== 'undefined') {
+      let lastWidth = null;
+      let frame = null;
+      this.resizeObserver ||= new ResizeObserver(entries => {
+        const width = Math.round(entries[0].contentRect.width);
+        if (width === lastWidth) return;
+        lastWidth = width;
+        cancelAnimationFrame(frame);
+        frame = requestAnimationFrame(() => this.relayoutCallbacks.forEach(cb => cb()));
+      });
+      this.relayoutCallbacks ||= [];
+      this.relayoutCallbacks.push(relayout);
+      this.resizeObserver.observe(this.element);
+    }
   }
 
   // Use position:fixed strategy so dropdowns inside the table escape overflow clipping

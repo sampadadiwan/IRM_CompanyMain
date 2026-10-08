@@ -34,8 +34,13 @@
     </div>
 
     <div class="form-group">
-      <%= form.label :investment_type %>
+      <%= form.label :investment_type, "Instrument Type" %>
       <%= form.select :investment_type, Investment::TYPES, {include_blank: true}, class: "form-control", data: { action: "change->investment-form#toggleFields", investment_form_target: "investmentType" }  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :subgroup %>
+      <%= form.text_field :subgroup, class: "form-control"  %>
     </div>
 
     <div class="form-group">

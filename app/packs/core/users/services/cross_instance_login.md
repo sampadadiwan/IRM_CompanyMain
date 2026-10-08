@@ -98,8 +98,12 @@ Here’s a structured brainstorm of **requirements, edge cases, and error scenar
 
 1. **Invalid or Tampered Magic Link**
 
-   * Must show “Invalid or expired link” error.
-   * Should not leak details (like which region failed).
+   * Must send the user to the destination region's own sign-in screen with a banner naming
+     one of `expired`, `already_used`, `invalid`, `missing`, `wrong_region`, `secret_mismatch`
+     or `no_account`, plus a link back to the origin region where retrying can help.
+     (This used to render a bare `Invalid or expired link` page with no log line and no
+     navigation — the five causes were indistinguishable. See `CrossSiteRejection`.)
+   * Must not leak the token, a server name or an internal error class to the page.
 
 2. **User Not Permissioned in Target Region**
 
@@ -143,6 +147,133 @@ Here’s a structured brainstorm of **requirements, edge cases, and error scenar
 Let’s walk through the **full lifecycle** of how a user logged into **US** can seamlessly log into **India** using the `CrossSiteLink` service.
 
 ---
+
+---
+
+## 🔩 Mechanism: how a `CrossSiteLink` is forged and redeemed
+
+The hand-off link is a **signed, self-describing, single-use bearer credential**. Nothing about
+the user is looked up from shared state — the destination region learns who is arriving entirely
+from the link itself, which is why the two regions need no shared database.
+
+### Where it is forged
+
+| | |
+|---|---|
+| **Minted by** | `CrossSiteLink#generate` (`app/packs/core/users/services/cross_site_link.rb`) |
+| **Called from** | `UsersController#cross_site_link` — the **origin** region only, once per switch |
+| **Signed with** | `CROSS_INSTANCE_SECRET`, from that region's encrypted credentials |
+| **Lives for** | `CrossSiteLink::LIFETIME` = 5 minutes |
+| **Carried in** | the `token` query parameter, across two redirects |
+
+A region can only mint a link **for a region on the requesting user's own profile** — that is
+`UserPolicy#cross_site_link?(site:)`, checked before `generate` is reached.
+
+### What is actually in it
+
+A real token is **314 characters** and has exactly two parts joined by `--`:
+
+```
+eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaDdDVG9LWlcxaGFXeEpJaGx1W...  --  a3f9...  (64 hex)
+└──────────────────── data (248 chars, Base64-url-safe) ─────┘      └ HMAC-SHA256 ┘
+```
+
+Peeling the data apart, outermost first:
+
+```mermaid
+flowchart TB
+    T["token<br/>data--digest"] --> D["data: Base64-url-safe"]
+    T --> S["digest: HMAC-SHA256 of data,<br/>keyed by CROSS_INSTANCE_SECRET"]
+    D --> E["JSON envelope<br/>{_rails: {message, exp, pur}}"]
+    E --> X["exp: absolute UTC timestamp<br/>2026-10-01T02:46:23.363Z"]
+    E --> M["message: Base64 of a Marshal dump"]
+    M --> P["payload:<br/>email, purpose, site, from"]
+```
+
+| Field | Example | What it is for |
+|---|---|---|
+| `email` | `neha@siliconroad.com` | How the destination region finds the user in **its own** database. Email, not an id, because primary keys differ between regions |
+| `purpose` | `:login` | Pins the token to this flow. A token minted for anything else is refused, so it cannot be replayed here |
+| `site` | `"US"` | The region that may redeem it. Checked against `SiteRegistry.current_code` |
+| `from` | `"IN"` | Where the user came from. Used to log both ends of a successful switch |
+| `exp` | absolute UTC | Written by the **issuing** region's clock, compared against the **verifying** region's. This is why clock drift between regions matters |
+
+### Signed, not encrypted — read this before adding anything to the payload
+
+`MessageVerifier` guarantees **integrity**, not **confidentiality**. The data half is plain
+Base64 and anyone holding the link can decode it without the secret:
+
+```ruby
+JSON.parse(Base64.urlsafe_decode64(token.split("--").first))
+# => {"_rails" => {"message" => "BAh7CTo...", "exp" => "...", "pur" => nil}}
+```
+
+So the user's email address is visible to anyone who gets the URL. That is acceptable for an
+email, and it is why **nothing else goes in the payload**. Never put a role, an entity id, a
+permission or anything else a holder should not see in here — use the destination region's own
+database for that, which is what `redirect_to_subdomain` and `cross_site_login` already do.
+
+### Why an attacker cannot forge one
+
+The digest is `HMAC-SHA256(data, CROSS_INSTANCE_SECRET)`. Changing a single byte of the payload —
+the email, the region, the expiry — changes the data, so the digest no longer matches and
+`valid_message?` returns false. Without the secret there is no way to compute a matching digest,
+and the comparison is constant-time (`ActiveSupport::SecurityUtils.secure_compare`, via
+`MessageVerifier#digest_matches_data?`), so it leaks nothing by timing.
+
+What an attacker **can** do is use a link they have stolen verbatim. That is the point of a
+bearer credential, and it is why the window is short and the link dies on first use.
+
+### How it is redeemed
+
+Two different reads, deliberately:
+
+| Hop | Method | Checks | Consumes? |
+|---|---|---|---|
+| `redirect_to_subdomain` | `#peek` | signature, expiry | **No** |
+| `cross_site_login` | `#verify` | signature, expiry, purpose, destination region | **Yes**, via `Nonce.claim` |
+
+`peek` must not consume. It runs before the browser has reached the host that will establish the
+session, so claiming the link there would break every switch. Only the final hop claims it.
+
+```mermaid
+sequenceDiagram
+    participant L as cross_site_login
+    participant V as CrossSiteLink
+    participant N as Nonce
+    participant C as solid_cache
+
+    L->>V: verify(token, purpose, site)
+    V-->>L: Result(ok) or Result(reason)
+    L->>N: claim(token)
+    N->>C: write(sha256(token), unless_exist: true)
+    alt first use
+        C-->>N: written
+        N-->>L: won -> sign_in
+    else replay
+        C-->>N: key already held
+        N-->>L: refused -> already_used
+    end
+```
+
+The claim key is `cross_site_handoff:<sha256 of the token>` — the token itself is never stored,
+and the entry expires one minute after the credential does, so it can never outlive what it
+guards. `unless_exist` is atomic (Solid Cache takes a row lock), which is what makes two
+simultaneous presentations produce exactly one session.
+
+### Order of checks, and why it is that order
+
+```
+missing → invalid (bad signature) → expired → wrong purpose → wrong region → already used → no account
+```
+
+Two deliberate choices:
+
+* **Signature before expiry.** `valid_message?` ignores the expiry, so a token whose signature is
+  good but whose `exp` has passed is reported as `expired`, while a tampered one is `invalid`.
+  Only the first is worth telling a user to retry about.
+* **The claim is last.** A link rejected for any other reason is not burned, so a user retrying
+  after a misconfiguration is not then told "already used".
 
 ## 🌐 Flow: US → India login with `CrossSiteLink`
 
@@ -234,7 +365,10 @@ Let’s walk through the **full lifecycle** of how a user logged into **US** can
 ## ✅ Guarantees
 
 * **Unforgeable**: Token cannot be created or modified without `CROSS_INSTANCE_SECRET`.
-* **Time-bound**: Token only valid for a short window (30 seconds).
+* **Time-bound**: Token only valid for a short window (5 minutes — see `CrossSiteLink::LIFETIME`).
+* **Single-use**: The first successful sign-in consumes the token (`CrossSiteLink::Nonce`); a
+  second presentation is refused as `already_used`. This is what makes the 5-minute window safe.
+  It was 30 seconds and replayable, which failed constantly and protected nothing.
 * **Purpose-scoped**: A login token cannot be reused for another purpose.
 * **Email-based mapping**: Works even if primary keys differ between DBs.
 
@@ -261,7 +395,7 @@ sequenceDiagram
         India_App->>India_App: sign_in(user)
         India_App-->>User: Logged into India App
     else Token invalid/expired
-        India_App-->>User: Show "Invalid or expired link"
+        India_App-->>User: 302 to sign-in, reason banner + way back
     end
   ```
 

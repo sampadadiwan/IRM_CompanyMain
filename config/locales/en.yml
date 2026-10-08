@@ -1,5 +1,19 @@
 ---
 en:
+  cross_region:
+    unavailable: "That region is not available right now."
+    regions:
+      IN: "India"
+      US: "US"
+    rejection:
+      return_to: "Return to %{region}"
+      expired: "We couldn't complete your switch to the %{region} site because the hand-off link had expired. Return to the site you came from and try again, or sign in below."
+      already_used: "We couldn't complete your switch to the %{region} site because that hand-off link had already been used. Return to the site you came from and try again, or sign in below."
+      invalid: "We couldn't complete your switch to the %{region} site because the hand-off link was not valid. Please sign in below."
+      missing: "We couldn't complete your switch to the %{region} site. Please sign in below."
+      wrong_region: "We couldn't complete your switch to the %{region} site because that link was meant for a different region. Return to the site you came from and try again, or sign in below."
+      secret_mismatch: "We couldn't complete your switch to the %{region} site because of a configuration problem on our side. Please sign in below."
+      no_account: "We couldn't find an account for you on the %{region} site."
   # Shown inside a turbo-frame when its content fails to load (see layouts/_frame_error)
   turbo_frame_error:
     message: "This section couldn't load."
@@ -154,6 +168,9 @@ en:
     create: Investment was created
     destroy: Investment was deleted
     update: Investment was updated
+    upload_investments: Upload Investments
+    download_investments: Download Investments
+    download_shareholding_patterns: Download Shareholding Patterns
   investor:
     create: Investor was created
     destroy: Investor was deleted
@@ -390,11 +407,16 @@ en:
     my_profile: My Profile
     my_task: My Task
     notices: Notices
+    workflows: Workflows
+    manage_workflow_templates: Manage Workflow Templates
     personalize_investor_notices: Personalize Investor Notices
     provide_access: Provide Access
     setup_compliance_rules: Setup Compliance Rules
     todo_daily_tasks: To-do and Daily Tasks
     user_guides: User Guides
+    help: Help
+    faqs: FAQs
+    frequently_asked_questions: Frequently asked questions
     release_notes: Release Notes
     internal_docs: Internal Docs
     internal_docs_subtitle: Marketing and strategy documentation

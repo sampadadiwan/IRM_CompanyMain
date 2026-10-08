@@ -2,6 +2,9 @@ class Folder < ApplicationRecord
   include Trackable.new
   include Workflowable
 
+  # Auto-assignment rules use the folder's search fields (folders have no custom fields)
+  workflow_rule_fields
+
   has_ancestry orphan_strategy: :destroy, touch: true
 
   update_index('folder') { self if index_record? }

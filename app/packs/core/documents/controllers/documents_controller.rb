@@ -283,7 +283,10 @@ class DocumentsController < ApplicationController
       # on kpi_reports#update, a separate path that is intentionally left unchanged.
       # H7: approved/approved_by_id/public_visibility are applied above (gated), never mass-assigned.
       # pdf_conversion_engine is applied above (gated), never mass-assigned.
+      journey_started_at = Time.current
       if @document.update(document_params.except(:entity_id, :approved, :approved_by_id, :public_visibility, :pdf_conversion_engine))
+        evaluate_journey_if_notice_unapproved(journey_started_at)
+        evaluate_journey_if_notice_approved
         format.html { save_and_upload }
         format.json { render :show, status: :ok, location: @document }
       else
@@ -375,6 +378,14 @@ class DocumentsController < ApplicationController
   # list. See docs/modules/notifications/document_notification_cc_resolution.md.
   def show_email_list
     @notification_recipients = @document.notification_recipients
+  end
+
+  # WithBulkActions#bulk_actions, plus a marker for the page it redirects back to: an approver sent
+  # here by a journey's "Approve notices" step sees "approval started — close this tab" instead of
+  # the "these still need approval" banner while the job runs (documents/_approval_hint).
+  def bulk_actions
+    super
+    flash[:bulk_approve_started] = true if params[:bulk_action].to_s.casecmp?("approve")
   end
 
   private
@@ -490,6 +501,23 @@ class DocumentsController < ApplicationController
                                      :signature_enabled, :public_visibility, :send_email, :display_on_page, :embed,
                                      :download, :printing, :orignal, :owner_id, :owner_type, :owner_tag, :approved, :approved_by_id,
                                      :tag_list, :folder_id, :file, :force_esign_order, :as_of, properties: {}, e_signatures_attributes: %i[id user_id label signature_type notes _destroy], stamp_papers_attributes: %i[id tags sign_on_page notes note_on_page _destroy], emails: [])
+  end
+
+  # Approving a generated notice moves its call's or distribution's journey on (real time; no-op
+  # without a journey); unapproving one is an undoing action for that journey.
+  # Worked examples E7, E10, J2.2 — openspec/changes/archive/2026-10-02-capital-call-journey/design.md#worked-examples
+  # Worked examples E12 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples
+  def evaluate_journey_if_notice_approved
+    return unless @document.saved_change_to_approved? && @document.approved
+
+    @document.notice_journey_record&.journey_progress!(actor: current_user)
+  end
+
+  def evaluate_journey_if_notice_unapproved(started_at)
+    return unless @document.saved_change_to_approved? && !@document.approved
+
+    @document.notice_journey_record&.journey_undo_evaluate(note: "Notice unapproved by #{current_user.full_name}",
+                                                           actor: current_user, started_at:)
   end
 end
 # rubocop:enable Metrics/ClassLength

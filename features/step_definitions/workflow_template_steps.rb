@@ -31,6 +31,7 @@ Given("there is a workflow template {string}") do |params_str|
     name: attrs["name"],
     description: attrs["description"],
     reminder_interval_days: attrs["reminder_interval_days"]&.to_i,
+    workflowable_type: attrs["workflowable_type"],
     entity: @entity
   )
 end
@@ -147,6 +148,121 @@ end
 
 # ── Add / Remove step rows (Stimulus nested-form controller, requires @javascript) ──
 
+# ── Enable / disable ──────────────────────────────────────────────────────────
+
+# Works as a Given (setup) and as a When (the admin retires it mid-scenario)
+Given("the workflow template {string} is disabled") do |name|
+  WorkflowTemplate.find_by!(name: name, entity: @entity).update!(enabled: false)
+end
+
+# The other direction, for scenarios that retire a template and then bring it back
+Given("the workflow template {string} is enabled") do |name|
+  WorkflowTemplate.find_by!(name: name, entity: @entity).update!(enabled: true)
+end
+
+# Disabling must leave the rules alone — they are dormant configuration, not deleted
+Then("the template {string} should still have {int} auto-assignment rule(s)") do |name, count|
+  template = WorkflowTemplate.find_by!(name: name, entity: @entity)
+  expect(template.workflow_auto_assignment_rules.count).to eq(count)
+end
+
+# A rule left behind by a template row deleted straight in the database. delete_all skips the
+# dependent: :destroy that would take the rule with it, and referential integrity has to be lifted
+# for the orphan to exist at all — which is the point: the service must survive data the schema
+# would normally prevent.
+Given("the auto-assignment rule for template {string} points at a missing template") do |name|
+  template = WorkflowTemplate.find_by!(name: name, entity: @entity)
+  ActiveRecord::Base.connection.disable_referential_integrity do
+    WorkflowTemplate.where(id: template.id).delete_all
+  end
+  expect(WorkflowAutoAssignmentRule.find_by!(workflow_template_id: template.id).workflow_template).to be_nil
+end
+
+When("I visit the workflow template page for {string}") do |name|
+  visit workflow_template_path(WorkflowTemplate.find_by!(name: name, entity: @entity))
+end
+
+# Enable/Disable goes through the shared confirm modal, so the popup has to be accepted. The page
+# comes back with the button flipped — waiting for that is how we know the redirect has landed.
+When("I press {string} on the workflow template page") do |label|
+  click_button(label)
+  within("#confirmModal") { click_on("Proceed") }
+  expect(page).to have_button(label == "Disable" ? "Enable" : "Disable", wait: 10)
+end
+
+Then("the workflow template {string} should be disabled") do |name|
+  WorkflowTemplate.find_by!(name: name, entity: @entity).reload.enabled.should == false
+end
+
+Then("the workflow template {string} should be enabled") do |name|
+  WorkflowTemplate.find_by!(name: name, entity: @entity).reload.enabled.should == true
+end
+
+When("I visit the workflow templates page") do
+  visit workflow_templates_path
+end
+
+# The confirm modal is filled from the button's data-msg by the shared confirm controller, so the
+# attribute is the text itself — asserting on it keeps the scenario out of a JS driver.
+Then("the disable confirmation should say that records will fall through to {string}") do |template_name|
+  msg = page.find("#toggle_enabled_btn")["data-msg"]
+  expect(msg).to include(%(fall through to "#{template_name}"))
+end
+
+Then("the rules note should say the rules are dormant") do
+  expect(page).to have_css("#rules_inert_note", text: /dormant/i)
+  expect(page).to have_css("#rules_inert_note", text: /resume/i)
+end
+
+# The rules table has one row per rule in these scenarios, so the first Status cell is the one
+Then("the rule status should be {string}") do |status|
+  expect(page).to have_css("#auto-assignment-rules-tab tbody tr:first-child td:nth-child(2)", text: status)
+end
+
+Then("the shadowed rule should name {string} as the blocker") do |template_name|
+  cell = page.find("#auto-assignment-rules-tab tbody tr:first-child td:nth-child(2)")
+  expect(cell).to have_link(template_name)
+  expect(cell.text).to match(/priority \d+/)
+end
+
+Then("the page should warn that new {word} get no workflow") do |records|
+  expect(page).to have_css("div.alert-warning", text: /New #{records} get no workflow/i)
+end
+
+Then("the page should not warn that new {word} get no workflow") do |records|
+  expect(page).to have_no_css("div.alert-warning", text: /New #{records} get no workflow/i)
+end
+
+Then("the workflow template page should warn that the template is disabled") do
+  expect(page).to have_css("#template_disabled_banner", text: /disabled/i)
+end
+
+# The launch picker is the select inside the Workflow tab's Launch Workflow modal. The modal is in
+# the DOM but closed, so the options are matched with visible: :all — and compared by value (the
+# template id), because a real browser reports no text for an element inside a hidden modal.
+def launch_picker_template_ids(page)
+  expect(page).to have_css("#launch_workflow_template_id", visible: :all)
+  page.all("#launch_workflow_template_id option", visible: :all).map(&:value)
+end
+
+Then("the launch template picker should offer {string}") do |template_name|
+  template = WorkflowTemplate.find_by!(name: template_name, entity: @entity)
+  launch_picker_template_ids(page).should include(template.id.to_s)
+end
+
+Then("the launch template picker should not offer {string}") do |template_name|
+  template = WorkflowTemplate.find_by!(name: template_name, entity: @entity)
+  launch_picker_template_ids(page).should_not include(template.id.to_s)
+end
+
+# Counterpart of "should have an active workflow instance" (workflow_instance_steps.rb). Spelled out
+# for folders rather than taking a {word} type: investor_workflow_auto_assignment_steps.rb already
+# defines the investor wording, and a generic version would make that step ambiguous.
+Then("the folder {string} should not have an active workflow instance") do |folder_name|
+  folder = Folder.find_by!(name: folder_name, entity: @entity)
+  expect(folder.workflow_instances.instance_active).not_to exist
+end
+
 When("I visit the edit page for the workflow template {string}") do |name|
   template = WorkflowTemplate.find_by!(name: name, entity: @entity)
   visit edit_workflow_template_path(template)
@@ -191,4 +307,28 @@ When("I save the workflow template edit form") do
   click_button("Save")
   # Wait for Turbo to complete navigation before subsequent DB assertions run
   expect(page).to have_text("successfully updated")
+end
+
+# ── Channel switches (Send email / Send WhatsApp) ───────────────────────────
+# Existing templates email by default and only send WhatsApp once an admin ticks it
+
+Then("the Send email box should be ticked and the Send WhatsApp box unticked") do
+  expect(page).to have_checked_field("workflow_template_notify_by_email")
+  expect(page).to have_unchecked_field("workflow_template_notify_by_whatsapp")
+end
+
+When("I untick Send email and tick Send WhatsApp") do
+  uncheck "workflow_template_notify_by_email"
+  check "workflow_template_notify_by_whatsapp"
+end
+
+Then("the workflow template {string} should notify by email {string} and WhatsApp {string}") do |name, email, whatsapp|
+  template = WorkflowTemplate.find_by!(name: name, entity: @entity).reload
+  expect(template.notify_by_email.to_s).to eq(email)
+  expect(template.notify_by_whatsapp.to_s).to eq(whatsapp)
+end
+
+Then("the workflow template show page should say it notifies by {string}") do |channels|
+  expect(page).to have_css(".wf-meta-label", text: /notify by/i)
+  expect(page).to have_css(".wf-meta-value", text: channels)
 end

@@ -8,6 +8,8 @@
 # 3. Support: Has specific permissions bypassing standard employee checks.
 #
 class InvestorPolicy < ApplicationPolicy
+  include WorkflowablePolicyMethods # journey?, assign_workflow?
+
   # Scope defines which Investor records a user can view in lists/searches.
   class Scope < Scope
     def resolve
@@ -133,14 +135,6 @@ class InvestorPolicy < ApplicationPolicy
   # Checks 'enable_investors' flag and standard CRUD permissions (Company Admin or Employee with create perm).
   def upload?
     user.enable_investors && company_admin_or_emp_crud?(user, Investor.new, :create)
-  end
-
-  # Only company_admin can assign / remove a workflow template on an investor,
-  # and only when the entity has workflow_templates enabled.
-  # Mirrors FolderPolicy#assign_workflow? / InvestorKycPolicy#assign_workflow? verbatim —
-  # workflow assignment permission is intentionally the same across every workflowable type.
-  def assign_workflow?
-    user.entity&.permissions&.enable_workflow_templates? && user.company_admin? && belongs_to_entity?(user, record)
   end
 
   # Helper to check for specific employee permissions or support role.

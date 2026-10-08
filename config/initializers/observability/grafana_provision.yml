@@ -193,6 +193,65 @@ alert_rules:
       severity: critical
       category: database
 
+  # ---- Cross-region hand-off (region switching) --------------------------------------
+  # The hand-off credential's validity is judged by comparing an ABSOLUTE expiry stamped by
+  # the issuing region against the verifying region's own clock, so drift between the regions
+  # subtracts directly from its 5-minute lifetime. node_timex_* is already scraped by the
+  # `node` job and already charted on both regions' node dashboards; only these rules are new.
+  #
+  # Prometheus cannot see the DIFFERENCE between two regions' clocks - each server reports
+  # only its own offset from its NTP source - so two servers at +29s and -29s both pass while
+  # differing by 58s. That is acceptable against a 5-minute credential, and is exactly why the
+  # lifetime, not this alert, is the actual fix. 30s is an order of magnitude below it.
+  - title: "Server Clock Drift (>30s)"
+    group: infrastructure
+    expr: 'max by(instance)(abs(node_timex_offset_seconds{job="node"}))'
+    threshold_gt: 30
+    for: 5m
+    summary: "Clock on {{ $labels.instance }} is {{ printf \"%.1f\" $values.A.Value }}s from its time source - cross-region logins will start failing"
+    labels:
+      severity: warning
+      category: infra
+
+  # Catches a stopped chrony/systemd-timesyncd BEFORE any offset has accumulated.
+  - title: "Server Clock Unsynchronised"
+    group: infrastructure
+    # Inverted so it can use threshold_gt, the only comparator the provisioner builds
+    # (lib/tasks/grafana_provision.rake): 1 - sync_status is 1 when synchronisation is off.
+    expr: 'max by(instance)(1 - node_timex_sync_status{job="node"})'
+    threshold_gt: 0
+    for: 10m
+    summary: "Clock synchronisation is not running on {{ $labels.instance }}"
+    labels:
+      severity: warning
+      category: infra
+
+  # CrossSiteTrustCheckJob sets this hourly: 1 when this region's CROSS_INSTANCE_SECRET
+  # matches the peer's, 0 when it does not. A divergence breaks EVERY region switch, and the
+  # two secrets live in separate encrypted credentials files that can drift apart silently.
+  - title: "Cross-Region Trust Broken"
+    group: rails
+    # Inverted for the same reason as the rule above.
+    expr: 'max(1 - caphive_cross_region_trust)'
+    threshold_gt: 0
+    for: 5m
+    summary: "This region's inter-region secret no longer matches peer {{ $labels.peer }} - all region switches are failing"
+    labels:
+      severity: critical
+      category: rails
+
+  # Sustained rejections mean a bad deploy, a drifted clock or a broken peer. The reason label
+  # says which, without reading logs.
+  - title: "Cross-Region Hand-off Rejections"
+    group: rails
+    expr: 'sum(rate(caphive_cross_region_handoff_total{result="rejected"}[15m]))'
+    threshold_gt: 0.05
+    for: 15m
+    summary: "Region switches are being rejected ({{ printf \"%.2f\" $values.A.Value }}/s)"
+    labels:
+      severity: warning
+      category: rails
+
   # Slow queries sustained above 1/s indicate missing indexes or expensive queries
   - title: "MySQL Slow Queries High (>1/s)"
     group: database

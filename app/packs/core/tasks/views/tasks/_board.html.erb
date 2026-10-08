@@ -7,7 +7,10 @@
     fire for the first card opened (subsequent ones re-render the same frame). %>
 <div data-controller="task-board"
      data-action="turbo:frame-render->task-board#scrollToForm turbo:frame-load->task-board#scrollToForm">
-  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <%# task_header matches the list's header class: it is what the Cucumber
+      helper scopes "Actions" to (features/support/task_header_helpers.rb), and
+      both headers now carry the same buttons. %>
+  <div class="d-sm-flex align-items-center justify-content-between mb-4 task_header">
     <%# Name what the board is scoped to (a deal, a deal investor, a stakeholder,
         a person) — otherwise every board reads as the same "Tasks Board" and
         there is no way to tell a scoped board from the firm-wide one. The name
@@ -25,10 +28,17 @@
       <% end %>
     </h1>
 
-    <%# flex-nowrap + overflow-auto: the row scrolls horizontally instead of
-        wrapping to a second line when the heading + selects don't fit. %>
-    <div class="d-flex flex-nowrap align-items-center gap-2 overflow-auto">
-      <%= render "/tasks/filter_bar" %>
+    <div class="d-flex flex-nowrap align-items-center gap-2">
+      <%# Only the selects scroll. The buttons must stay OUT of this overflow
+          container: an `overflow: auto` box clips its descendants, so an Actions
+          menu opened inside it renders into a few clipped pixels with its own
+          scrollbar instead of over the board. min-width:0 lets this flex item
+          shrink below its content width — without it the row just gets wider and
+          never scrolls. flex-nowrap keeps the selects on one line rather than
+          wrapping to a second row. %>
+      <div class="d-flex flex-nowrap align-items-center gap-2 overflow-auto" style="min-width: 0;">
+        <%= render "/tasks/filter_bar" %>
+      </div>
 
       <%# Carries the full filter scope back — including an owner filter that
           arrived as owner_id/owner_type from the list's Board link %>
@@ -45,6 +55,17 @@
                   data: { turbo_frame: "_top" } do %>
         <i class="ti ti-list"></i> List
       <% end %>
+
+      <%# New Task / Actions — the same set the list renders (tasks/_index), so
+          the board is no longer a read-only view you have to leave to create or
+          import a task. owner comes from assign_board_scope!, which resolves the
+          same deal/owner/investor params the list derives its owner from, but
+          whitelisted and entity-scoped. board: true keeps Show All / Incomplete
+          on the board. %>
+      <%= render "/tasks/header_actions",
+                 owner: @board_scope_owner,
+                 for_entity: @for_entity,
+                 board: true %>
     </div>
   </div>
 

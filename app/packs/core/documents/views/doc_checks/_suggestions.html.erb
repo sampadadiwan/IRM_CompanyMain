@@ -1,0 +1,79 @@
+<%# Suggested checks: a banner saying how many standard checks fit the entity's documents, and a side panel to
+    review them (all ticked) and add them in one go. Only real preset rows can be added — the server recomputes
+    them from the picks. locals: recommendations ([DocChecks::Presets::Recommendation]), record_type.
+    openspec/changes/document-checks/design.md (card ① Setup). Worked examples H1, E4, E5. %>
+<% addable = recommendations.select { |rec| rec.rows.any? }
+   total = addable.sum { |rec| rec.rows.size }
+   no_preset = recommendations.select { |rec| rec.preset_name.nil? && rec.existing_count.zero? }
+   not_added = recommendations.flat_map { |rec| rec.not_added.map { |label| [rec.document_name, label] } } %>
+<% if addable.any? %>
+  <div class="alert alert-primary border-0 shadow-sm d-flex flex-wrap align-items-center justify-content-between gap-2 mb-4" id="doc_check_suggestions_banner">
+    <div class="d-flex align-items-center gap-2">
+      <i class="ti ti-bulb fs-3"></i>
+      <div>
+        <strong><%= t("doc_checks.setup.suggested_banner", count: total, documents: addable.size) %></strong>
+        <div class="small"><%= t("doc_checks.setup.suggested_banner_help") %></div>
+      </div>
+    </div>
+    <button type="button" class="btn btn-primary" data-bs-toggle="offcanvas" data-bs-target="#doc_check_suggestions"
+            aria-controls="doc_check_suggestions">
+      <i class="ti ti-list-check"></i> <%= t("doc_checks.setup.review_and_add") %>
+    </button>
+  </div>
+
+  <div class="offcanvas offcanvas-end" tabindex="-1" id="doc_check_suggestions" aria-labelledby="doc_check_suggestions_title"
+       style="width: min(640px, 100vw)">
+    <%= form_with url: add_recommended_doc_checks_path(record_type:), method: :post, data: { turbo: false },
+                  class: "d-flex flex-column h-100", id: "doc_check_recommended" do %>
+      <div class="offcanvas-header border-bottom">
+        <div>
+          <h5 class="offcanvas-title mb-0" id="doc_check_suggestions_title"><i class="ti ti-bulb text-primary"></i> <%= t("doc_checks.setup.recommended_title") %></h5>
+          <div class="small text-muted"><%= t("doc_checks.setup.recommended_intro") %></div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+      </div>
+      <div class="offcanvas-body">
+        <% addable.each do |rec| %>
+          <div class="border rounded-3 p-3 mb-2 doc-check-recommendation" data-document-name="<%= rec.document_name %>">
+            <label class="form-check-label fw-semibold d-flex align-items-center gap-2 mb-2">
+              <input type="checkbox" class="form-check-input mt-0" checked data-action="doc-check-page#toggleDocument">
+              <i class="ti <%= doc_check_document_icon(rec.document_name) %> text-primary"></i>
+              <%= rec.document_name %>
+              <% if rec.existing_count.positive? %>
+                <span class="badge text-bg-light fw-normal"><%= t("doc_checks.setup.already_has", count: rec.existing_count) %></span>
+              <% end %>
+            </label>
+            <% rec.rows.each do |row| %>
+              <label class="form-check d-flex align-items-start gap-2 ms-4 mb-1">
+                <%= check_box_tag "picks[]", rec.pick_key(row), true, id: nil, class: "form-check-input mt-1",
+                      data: { action: "doc-check-page#countPicks", role: "pick" } %>
+                <span class="form-check-label">
+                  <span class="badge text-bg-light"><i class="ti <%= doc_check_action_icon(row.action) %>"></i> <%= t("doc_checks.setup.actions.#{row.action}") %></span>
+                  <% if row.question? %>
+                    <%= row.look_for %>
+                  <% else %>
+                    <%= row.field&.label || row.field_name %> <span class="text-muted">← <%= row.look_for %></span>
+                  <% end %>
+                </span>
+              </label>
+            <% end %>
+          </div>
+        <% end %>
+        <% if no_preset.any? %>
+          <p class="small text-muted mb-1"><i class="ti ti-info-circle"></i> <%= t("doc_checks.setup.no_recommendation", documents: no_preset.map(&:document_name).to_sentence) %></p>
+        <% end %>
+        <% if not_added.any? %>
+          <p class="small text-warning-emphasis mb-0 doc-check-not-added"><i class="ti ti-alert-triangle"></i>
+            <%= t("doc_checks.setup.not_added_all", items: not_added.map { |doc, label| "#{doc} · #{label}" }.join(", ")) %>
+          </p>
+        <% end %>
+      </div>
+      <div class="border-top p-3 d-flex justify-content-end gap-2 bg-body-tertiary">
+        <button type="button" class="btn btn-link" data-bs-dismiss="offcanvas"><%= t("doc_checks.panel.cancel") %></button>
+        <button type="submit" class="btn btn-primary" id="doc_check_add_recommended_btn" data-doc-check-page-target="addButton">
+          <%= t("doc_checks.setup.add_checks", count: total) %>
+        </button>
+      </div>
+    <% end %>
+  </div>
+<% end %>

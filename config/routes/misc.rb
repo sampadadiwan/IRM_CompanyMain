@@ -6,6 +6,8 @@ get "/health_check/elastic_check", to: "health_check#elastic_check"
 get "/health_check/xirr_check", to: "health_check#xirr_check"
 get "/health_check/replication_check", to: "health_check#replication_check"
 get "/health_check/disk_check", to: "health_check#disk_check"
+# Lets the peer region and operators confirm both regions still share CROSS_INSTANCE_SECRET.
+get "/health_check/cross_site_trust", to: "health_check#cross_site_trust"
 
 get '/oauth2callback', to: 'entities#dashboard'
 

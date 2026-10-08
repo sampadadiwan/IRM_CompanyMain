@@ -1,0 +1,8 @@
+<%# The "Generating remittances…" line above the call's tabs. Broadcast as-is by
+    CapitalCall#broadcast_remittance_progress while CapitalCallJob runs, and rendered by show.html.erb
+    from the cached progress when the page is opened mid-run. Same for every viewer: no per-user content.
+    Locals: done, total %>
+<div class="alert alert-info d-flex align-items-center gap-2 py-2 mb-2" role="status">
+  <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+  <span>Generating remittances… <%= number_with_delimiter(done) %> of <%= number_with_delimiter(total) %></span>
+</div>

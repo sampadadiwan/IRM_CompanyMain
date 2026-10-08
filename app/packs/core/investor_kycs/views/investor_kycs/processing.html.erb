@@ -31,6 +31,11 @@
   }
 </style>
 
+<%# Poller sits outside #extraction_processing so the Turbo Stream replace does not remove it.
+    It covers a broadcast sent before the stream subscription above was open. %>
+<div data-controller="processing-poll"
+     data-processing-poll-url-value="<%= processing_investor_kyc_path(@investor_kyc, signed_id: params[:signed_id].presence) %>">
+
 <%# id="extraction_processing" is the Turbo Stream target replaced by KycDocExtractorJob on completion %>
 <div id="extraction_processing" class="container py-5">
   <div class="row justify-content-center">
@@ -63,4 +68,6 @@
       </div>
     </div>
   </div>
+</div>
+
 </div>

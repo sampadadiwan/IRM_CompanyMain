@@ -18,6 +18,39 @@ class CapitalCallAction < Trailblazer::Operation
     true
   end
 
+  # ── Capital call journey: undoing actions (capital-call-journey) ───────────────
+  # Worked examples E8, E10b, E13 — openspec/changes/archive/2026-10-02-capital-call-journey/design.md#worked-examples
+
+  # Taken before the action changes anything, so the undo resets every sign-off given before it
+  def start_journey_undo(ctx, **)
+    ctx[:journey_undo_started_at] = Time.current
+    true
+  end
+
+  # Unapprove: re-check the journey now, as an undo (moves back to Approve call)
+  def evaluate_journey_undo(ctx, capital_call:, current_user: nil, **)
+    capital_call.journey_undo_evaluate(note: ctx[:journey_undo_note] || "Call changed", actor: current_user,
+                                       started_at: ctx[:journey_undo_started_at] || Time.current)
+    true
+  end
+
+  # Figures or call date edited once remittances exist: the remittances and notices still carry the
+  # old amounts, which no check can see, so mark both tasks stale and re-check as an undo
+  def invalidate_if_figures_changed(ctx, capital_call:, current_user: nil, **)
+    figures = %i[percentage_called amount_to_be_called_cents fund_closes call_date]
+    changed = figures.select { |attr| capital_call.saved_change_to_attribute?(attr) }
+    return true if changed.empty? || !capital_call.capital_remittances.exists?
+
+    note = "Call figures changed by #{current_user&.full_name || 'a user'}"
+    # Each task gets the message that tells the user what to do; the history note says who and when
+    WorkflowStepInvalidate.call(record: capital_call, actor: current_user, check_keys: %w[capital_call.create_remittances],
+                                reason: "Remittances were calculated before the call figures changed — recompute")
+    WorkflowStepInvalidate.call(record: capital_call, actor: current_user, check_keys: %w[capital_call.generate_notices],
+                                reason: "Notices were generated before the call figures changed — unapprove them on the Documents screen, then click Generate Documents")
+    capital_call.journey_undo_evaluate(note:, actor: current_user, started_at: ctx[:journey_undo_started_at] || Time.current)
+    true
+  end
+
   # Editing call_date after remittances already exist re-dates every capital_remittance to match
   # (see docs/modules/funds/call_and_distribution_date_cascade_plan.md) and triggers a fee recompute,
   # since the new date changes the exchange-rate lookup used for fee/amount conversions.

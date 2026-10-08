@@ -147,7 +147,9 @@ class PortfolioReportsController < ApplicationController
     if params[:previewed].present?
       matching = @portfolio_companies
       fund_ids = Array(params[:fund_ids]).compact_blank
-      matching = matching.joins(:portfolio_investments).where(portfolio_investments: { fund_id: fund_ids }).distinct if fund_ids.present?
+      # Subquery instead of joins(...).distinct: MySQL rejects SELECT DISTINCT id ... ORDER BY investor_name
+      # (order column not in the select list), and @portfolio_companies is already ordered by investor_name.
+      matching = matching.where(id: PortfolioInvestment.where(fund_id: fund_ids).select(:portfolio_company_id)) if fund_ids.present?
       matching = matching.with_tag_list(params[:tag_list]) if params[:tag_list].present?
       matching = matching.in_sector(params[:sector]) if params[:sector].present?
       @matching_ids = matching.pluck(:id)

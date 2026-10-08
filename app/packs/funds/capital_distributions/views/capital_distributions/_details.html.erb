@@ -12,6 +12,12 @@
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#custom-notification-tab">
             Notification</a>
 
+      <%# The distribution's workflows, including its journey (company admins with workflow templates on).
+          UI journey J2.7 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#what-users-see %>
+      <% if policy(capital_distribution).assign_workflow? %>
+        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#workflow-tab">Workflow</a>
+      <% end %>
+
     </nav>
 
     <div class="tab-content" data-controller="datatable">
@@ -42,6 +48,12 @@
 
           </div>
         </div>
+
+        <% if policy(capital_distribution).assign_workflow? %>
+          <div id="workflow-tab" class="tab-pane fade">
+            <%= render "workflow_templates/workflow_tab", workflowable: capital_distribution %>
+          </div>
+        <% end %>
 
     </div>
 

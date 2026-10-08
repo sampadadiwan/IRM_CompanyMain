@@ -9,6 +9,8 @@ class GenerateCapTable < Trailblazer::Operation
   def initialize_params(options, params:, **)
     options[:funding_rounds] = params[:funding_rounds]
     options[:portfolio_company_id] = params[:portfolio_company_id]
+    # group_by_field may also be an Array of fields (e.g. [:investor_name, :category]) to keep
+    # the same investor in separate rows per category - each grouping value is then an Array.
     options[:group_by_field] = params[:group_by_field] || :investor_name
   end
 
@@ -21,26 +23,43 @@ class GenerateCapTable < Trailblazer::Operation
   end
 
   def calculate_holdings(options, investments:, group_by_field:, **)
-    # Separate equity and convertible investments
-    equity_investments = investments.where(investment_type: "Equity")
-    convertible_investments = investments.where(investment_type: "Convertible")
+    # Grouped in Ruby rather than with SQL GROUP BY so group_by_field can include the derived
+    # :instrument key (see investment_grouping_value), which has no single backing column.
+    #
+    # A Convertible's Quantity is its fully diluted (as-converted) quantity, while its Instrument
+    # Quantity is the actual number of instruments held (e.g. 15 CCPS converting into 1500 shares).
+    # So "Quantity actual" is Equity quantity plus Convertible instrument_quantity, and only the
+    # remainder of the Convertible's Quantity goes into the dilution bucket - mirroring how
+    # merge_shareholder_positions splits Quantity Actuals from the Fully Diluted Quantity below,
+    # so actual + convertibles still sums back to the Quantity column.
+    current_holdings = {}
+    convertibles = {}
 
-    # Compute current holdings (excluding convertibles)
-    options[:current_holdings] = equity_investments.group(group_by_field).sum(:quantity)
-
-    # Compute total convertibles for each investor
-    options[:convertibles] = convertible_investments.group(group_by_field).sum(:quantity)
-
-    # Track each group's distinct Investment#instrument_name value(s), so format_result can
-    # expose an "Instrument" column here too - mirrored by merge_shareholder_positions below,
-    # which folds in ShareholderPosition#instrument the same way.
+    # Track each group's distinct Instrument value(s), so format_result can expose an
+    # "Instrument" column here too - mirrored by merge_shareholder_positions below, which folds
+    # in ShareholderPosition#instrument the same way.
     instruments_by_group = Hash.new { |h, k| h[k] = Set.new }
-    investments.each do |investment|
-      grouping_value = investment.send(group_by_field)
-      next if grouping_value.blank? || investment.instrument_name.blank?
 
-      instruments_by_group[grouping_value] << investment.instrument_name.strip
+    investments.each do |investment|
+      grouping_value = self.class.investment_grouping_value(investment, group_by_field)
+
+      case investment.investment_type
+      when "Equity"
+        current_holdings[grouping_value] = current_holdings[grouping_value].to_f + investment.quantity.to_f
+      when "Convertible"
+        instrument_quantity = investment.instrument_quantity.to_f
+        current_holdings[grouping_value] = current_holdings[grouping_value].to_f + instrument_quantity if instrument_quantity.positive?
+        convertibles[grouping_value] = convertibles[grouping_value].to_f + investment.quantity.to_f - instrument_quantity
+      end
+
+      next if Array(grouping_value).first.blank?
+
+      instrument_label = self.class.investment_instrument_label(investment)
+      instruments_by_group[grouping_value] << instrument_label if instrument_label.present?
     end
+
+    options[:current_holdings] = current_holdings
+    options[:convertibles] = convertibles
     options[:instruments_by_group] = instruments_by_group
   end
 
@@ -74,8 +93,8 @@ class GenerateCapTable < Trailblazer::Operation
     latest_position_by_group = {}
 
     positions.sort_by { |sp| [sp.created_at, sp.id] }.each do |sp|
-      grouping_value = group_by_field.to_sym == :category ? sp.category : (sp.investor_label.presence || sp.investor&.investor_name)
-      next if grouping_value.blank?
+      grouping_value = self.class.shareholder_position_grouping_value(sp, group_by_field)
+      next if Array(grouping_value).first.blank?
 
       latest_position_by_group[grouping_value] = sp
     end
@@ -84,10 +103,7 @@ class GenerateCapTable < Trailblazer::Operation
     # percentage_overrides) - iterating every matching row here would double-count a group that
     # has a snapshot in more than one round within the cumulative funding_rounds window, the same
     # way summing every row's % would.
-    latest_position_by_group.each_value do |sp|
-      grouping_value = group_by_field.to_sym == :category ? sp.category : (sp.investor_label.presence || sp.investor&.investor_name)
-      next if grouping_value.blank?
-
+    latest_position_by_group.each do |grouping_value, sp|
       fully_diluted_amount = sp.position_amount.to_f
       quantity_actual_amount = sp.quantity_actual.presence&.to_f || 0.0
 
@@ -131,13 +147,19 @@ class GenerateCapTable < Trailblazer::Operation
     # Generate the cap table
     cap_table = all_investors.map do |grouping_field|
       # Find one investment to get the category
-      investment = investments.find { |i| i.send(group_by_field) == grouping_field }
+      investment = investments.find { |i| self.class.investment_grouping_value(i, group_by_field) == grouping_field }
 
-      # When grouping by :category, grouping_field IS the category itself (e.g. "Self"), so we
-      # can determine is_self directly - this also covers companies whose "Self" holdings come
-      # only from ShareholderPosition uploads and have no matching Investment record at all.
-      is_self = group_by_field.to_sym == :category ? grouping_field == "Self" : investment&.category == "Self"
-      display_name = is_self ? (portfolio_company&.entity&.name || grouping_field) : grouping_field
+      # When grouping by :category (alone or as part of a composite key), the category IS part of
+      # grouping_field itself (e.g. "Self"), so we can determine is_self directly - this also
+      # covers companies whose "Self" holdings come only from ShareholderPosition uploads and have
+      # no matching Investment record at all.
+      fields = Array(group_by_field).map(&:to_sym)
+      values = Array(grouping_field)
+      category = fields.include?(:category) ? values[fields.index(:category)] : investment&.category
+      label = values[fields.index { |f| %i[category instrument].exclude?(f) } || 0]
+
+      is_self = category == "Self"
+      display_name = is_self ? (portfolio_company&.entity&.name || label) : label
 
       equity_quantity = current_holdings[grouping_field] || 0
       convertible_quantity = convertibles[grouping_field] || 0
@@ -160,6 +182,7 @@ class GenerateCapTable < Trailblazer::Operation
 
       {
         grouping_field: display_name,
+        category: category,
         is_self: is_self,
         instrument: instrument,
         quantity: equity_quantity.to_f.round(2),
@@ -184,6 +207,36 @@ class GenerateCapTable < Trailblazer::Operation
     }
 
     options[:model] = cap_table
+  end
+
+  # The value an Investment is grouped under - a single value for a single group_by_field, or an
+  # Array of values (matching the keys ActiveRecord's group(...).sum returns) for a composite one.
+  # :instrument is a derived key (see investment_instrument_label), not a column.
+  def self.investment_grouping_value(investment, group_by_field)
+    values = Array(group_by_field).map do |field|
+      field.to_sym == :instrument ? investment_instrument_label(investment) : investment.send(field)
+    end
+    group_by_field.is_a?(Array) ? values : values.first
+  end
+
+  # An Equity investment always shows the literal "Equity" label (it has no instrument_name on
+  # the form); a Convertible shows whatever instrument_name was entered for it (nil if blank).
+  def self.investment_instrument_label(investment)
+    investment.investment_type == "Equity" ? "Equity" : investment.instrument_name.to_s.strip.presence
+  end
+
+  # The value a ShareholderPosition is grouped under: its category for :category, its instrument
+  # for :instrument, otherwise its investor label (falling back to the linked Investor's name) -
+  # an Array for a composite key.
+  def self.shareholder_position_grouping_value(shareholder_position, group_by_field)
+    values = Array(group_by_field).map do |field|
+      case field.to_sym
+      when :category then shareholder_position.category
+      when :instrument then shareholder_position.instrument.to_s.strip.presence
+      else shareholder_position.investor_label.presence || shareholder_position.investor&.investor_name
+      end
+    end
+    group_by_field.is_a?(Array) ? values : values.first
   end
 
   # A ShareholderPosition's round matches one of the requested funding rounds either via an

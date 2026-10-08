@@ -7,7 +7,9 @@ class SendPortcoNotificationJob < ApplicationJob
   # @param user_id [Integer] The ID of the user triggering the notification.
   # @param as_of [String, NilClass] Optional ISO date string. If provided, targets a specific report date.
   # @param period [String, NilClass] Optional period string (e.g., 'Month', 'Quarter', 'Year').
-  def perform(portfolio_company_ids, user_id:, as_of: nil, period: nil)
+  # @param kpi_report_id [Integer, NilClass] Optional: send for this exact report (the report page's
+  #   "Send upload request" button) instead of finding one by date and period.
+  def perform(portfolio_company_ids, user_id:, as_of: nil, period: nil, kpi_report_id: nil)
     portfolio_company_ids = Array(portfolio_company_ids)
     user = User.find(user_id)
     @error_msgs = []
@@ -15,7 +17,7 @@ class SendPortcoNotificationJob < ApplicationJob
     # Process each PortCo individually. Rescuing at this level ensures one failure
     # doesn't prevent other PortCos from receiving notifications.
     portfolio_company_ids.each do |pc_id|
-      process_portfolio_company(pc_id, user, as_of, period)
+      process_portfolio_company(pc_id, user, as_of, period, kpi_report_id)
     rescue StandardError => e
       error_info = "Critical error processing PortfolioCompany ID #{pc_id}: #{e.message}"
       Rails.logger.error error_info
@@ -26,31 +28,49 @@ class SendPortcoNotificationJob < ApplicationJob
     send_error_email(user) if @error_msgs.present?
   end
 
+  # The report a reminder for this date and period targets — found, or created as an upload shell.
+  # Public so the controller can create the same shell up front for a single company and send the
+  # user straight to it; the job then finds that report rather than making a second one.
+  def self.find_or_create_dated_report(portfolio_company, user, as_of_param, period_param)
+    KpiReport.find_or_create_by!(
+      entity_id: user.entity_id,
+      portfolio_company_id: portfolio_company.id,
+      as_of: Date.local_parse(as_of_param),
+      period: period_param.presence || "Quarter",
+      tag_list: "Actual"
+    ) do |report|
+      report.user_id = user.id
+      report.enable_portco_upload = true
+    end
+  end
+
   private
 
   # Finds or creates a KPI report for the PortCo and triggers the notification service.
-  def process_portfolio_company(pc_id, user, as_of_param, period_param)
+  def process_portfolio_company(pc_id, user, as_of_param, period_param, kpi_report_id = nil)
     portfolio_company = Investor.find(pc_id)
     Rails.logger.debug { "--- SendPortcoNotificationJob DEBUG [PC: #{pc_id}] ---" }
 
     # 1. Determine which KPI report to target
-    kpi_report = if as_of_param.present?
+    kpi_report = if kpi_report_id.present?
+                   # The report page asked for this exact report — never find or create another one
+                   # (its tag or period may not match what a date lookup would pick).
+                   # Worked examples H18 — openspec/changes/kpi-report-journey/design.md#worked-examples
+                   KpiReport.find_by!(id: kpi_report_id, entity_id: user.entity_id, portfolio_company_id: portfolio_company.id)
+                 elsif as_of_param.present?
                    # Use the explicitly provided date
-                   as_of = Date.local_parse(as_of_param)
-                   KpiReport.find_or_create_by!(
-                     entity_id: user.entity_id,
-                     portfolio_company_id: portfolio_company.id,
-                     as_of: as_of,
-                     period: period_param || "Quarter",
-                     tag_list: "Actual"
-                   ) do |report|
-                     report.user_id = user.id
-                     report.enable_portco_upload = true
-                   end
+                   self.class.find_or_create_dated_report(portfolio_company, user, as_of_param, period_param)
                  else
                    # Fallback to the intelligent quarter-end shell logic
                    find_or_create_kpi_report_shell(portfolio_company, user)
                  end
+
+    # 1b. The report page's button sends once: a second click queued before the first job ran finds the
+    # link already sent and stops (resending is the grid's Send Reminder). Worked examples H18.
+    if kpi_report_id.present? && kpi_report.link_sent_at.present?
+      Rails.logger.info "SendPortcoNotificationJob: report #{kpi_report.id} link already sent — skipping duplicate request"
+      return
+    end
 
     # 2. Skip portcos that have already submitted — no need to nag them.
     if kpi_report.status_submitted? || kpi_report.status_reviewed?
@@ -69,8 +89,14 @@ class SendPortcoNotificationJob < ApplicationJob
       return
     end
 
-    # 3b. Business logic check: portco must have at least one approved portal user to receive the email.
-    unless portfolio_company.investor_accesses.approved.exists?
+    # The fund asked for this period, so the report is a request and gets the KPI report journey — even
+    # when the email below can't go out (no portal users): the step bar then shows what's missing.
+    # Worked examples H15 — openspec/changes/kpi-report-journey/design.md#worked-examples
+    kpi_report.start_journey!(user)
+
+    # 3b. Business logic check: portco must have at least one approved portal user who gets KPI emails —
+    # the same people SendPortcoNotification emails (approved, tagged Kpi or untagged)
+    if portfolio_company.notification_users(kpi_report, with_tag: 'Kpi').empty?
       @error_msgs << {
         pc_id: pc_id,
         pc_name: portfolio_company.name,

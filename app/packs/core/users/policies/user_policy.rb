@@ -51,8 +51,21 @@ class UserPolicy < ApplicationPolicy
     false
   end
 
-  def cross_site_link?
-    user.regions.present?
+  # Who may mint a cross-region hand-off credential, and FOR WHICH region.
+  #
+  # This used to be `user.regions.present?` - "does the requester have any region access at
+  # all" - and the controller then signed a credential for whatever `params[:site]` said. A
+  # user whose profile listed only IN could therefore hand-craft `?site=US` and be signed in on
+  # a region they have no access to. The requested destination is now the thing being
+  # authorised, not just the requester.
+  #
+  # `site` is nil only when something calls the policy without a destination; that is not a
+  # request we can authorise, so it is refused.
+  def cross_site_link?(site: nil)
+    code = SiteRegistry.normalize(site)
+    return false if code.nil?
+
+    record.switchable_region_codes.include?(code)
   end
 
   # Who may see the two-factor row on the user page (status + method badge). Widened from

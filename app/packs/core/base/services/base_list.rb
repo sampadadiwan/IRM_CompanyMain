@@ -48,17 +48,6 @@ class BaseList
     @params[:q] = {}
   end
 
-  # Translates json_fields.* keys in params[:q] into Ransack's advanced-condition
-  # format before the search is built. Call this before Model.ransack(@params[:q])
-  # in any list service whose model includes WithCustomField.
-  #
-  # @param model_class [Class] The ActiveRecord class (must include WithCustomField)
-  def translate_json_fields_params(model_class)
-    return unless @params[:q].present? && model_class.include?(WithCustomField)
-
-    @params[:q] = model_class.json_fields_query(@params[:q])
-  end
-
   # Applies Pundit policy scope to a relation.
   # If a block is given, yields to it (allowing controllers to use policy_scope helper).
   # Otherwise, uses Pundit.policy_scope! directly.

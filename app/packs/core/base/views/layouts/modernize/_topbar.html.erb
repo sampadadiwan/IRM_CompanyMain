@@ -49,9 +49,14 @@
                 <%= render "/investor_advisors/personas" %>
             <% end %>
 
-            <% if current_user && current_user.regions.present? %>
+            <%# `switchable_region_codes`, not `regions.present?`: a user whose profile lists one
+                deployed region (or only undeployed ones) has nothing to switch to, and used to
+                get a one-option dropdown and a divider anyway. Computed once here and passed
+                down - this runs on every authenticated page render. %>
+            <% region_codes = current_user&.switchable_region_codes || [] %>
+            <% if region_codes.many? %>
                 <div class="topbar-divider "></div>
-                <%= render "/layouts/sites" %>
+                <%= render "/layouts/sites", codes: region_codes %>
             <% end %>
 
             <% if current_user && !current_user.investor_advisor? &&

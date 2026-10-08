@@ -5,6 +5,7 @@ Feature: Workflow Button Gating
   workflowable object's current workflow instance is Incomplete (active) or Failed
   (rejected), and re-enabled once it Completes. This is a JS/UX gate, not a server-side
   authorization check — it only changes what's rendered as disabled on the show page.
+  Worked examples E2 in openspec/changes/archive/2026-10-02-capital-call-journey/design.md#worked-examples
 
   Background:
     Given Im logged in as a user "" for an entity "entity_type=Company"
@@ -75,6 +76,23 @@ Feature: Workflow Button Gating
     And the entity has an investor_kyc "name=Untouched Kyc"
     And the investor_kyc "Untouched Kyc" has workflow template "KYC Edit Lock"
     When I visit the investor_kyc show page for "Untouched Kyc"
+    Then the button labeled "Edit" should not be disabled
+
+    Examples:
+      | user | entity              |
+      |      | entity_type=Company |
+
+  # E2 (capital-call-journey) — journeys only warn in this release; they never disable buttons,
+  # while the human-only scenarios above keep today's gating unchanged
+  Scenario Outline: A journey with gated button labels does not disable buttons
+    Given there is a journey template "KYC Journey" with steps:
+      | name      | kind   | check       |
+      | Documents | system | test.flag_1 |
+    And the workflow template "KYC Journey" has gated_button_labels "Edit"
+    And the entity has an investor_kyc "name=Journey Kyc"
+    And the investor_kyc "Journey Kyc" has workflow template "KYC Journey"
+    And I launch the workflow for investor_kyc "Journey Kyc"
+    When I visit the investor_kyc show page for "Journey Kyc"
     Then the button labeled "Edit" should not be disabled
 
     Examples:

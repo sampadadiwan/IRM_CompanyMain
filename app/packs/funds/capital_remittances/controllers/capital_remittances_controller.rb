@@ -58,6 +58,8 @@ class CapitalRemittancesController < ApplicationController
     else
       reminder = @capital_remittance.notification_sent
       @capital_remittance.send_notification(reminder:)
+      # Real-time journey progress (no-op without a journey). Worked examples J2.2 — openspec/changes/archive/2026-10-02-capital-call-journey/design.md#worked-examples
+      @capital_remittance.capital_call.journey_progress!(actor: current_user)
       redirect_to capital_remittance_path(@capital_remittance), notice: "Sent notification."
     end
   end

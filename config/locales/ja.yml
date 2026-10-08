@@ -1,5 +1,19 @@
 ---
 ja:
+  cross_region:
+    unavailable: "That region is not available right now."
+    regions:
+      IN: "India"
+      US: "US"
+    rejection:
+      return_to: "Return to %{region}"
+      expired: "We couldn't complete your switch to the %{region} site because the hand-off link had expired. Return to the site you came from and try again, or sign in below."
+      already_used: "We couldn't complete your switch to the %{region} site because that hand-off link had already been used. Return to the site you came from and try again, or sign in below."
+      invalid: "We couldn't complete your switch to the %{region} site because the hand-off link was not valid. Please sign in below."
+      missing: "We couldn't complete your switch to the %{region} site. Please sign in below."
+      wrong_region: "We couldn't complete your switch to the %{region} site because that link was meant for a different region. Return to the site you came from and try again, or sign in below."
+      secret_mismatch: "We couldn't complete your switch to the %{region} site because of a configuration problem on our side. Please sign in below."
+      no_account: "We couldn't find an account for you on the %{region} site."
   # Shown inside a turbo-frame when its content fails to load (see layouts/_frame_error)
   turbo_frame_error:
     message: このセクションを読み込めませんでした。
@@ -147,6 +161,9 @@ ja:
     create: 投資が作成されました
     destroy: 投資が削除されました
     update: 投資が更新されました
+    upload_investments: 投資をアップロード
+    download_investments: 投資をダウンロード
+    download_shareholding_patterns: 株主持分をダウンロード
   investor:
     create: 投資家が作成されました
     destroy: 投資家が削除されました
@@ -373,11 +390,16 @@ ja:
     my_profile: マイプロフィール
     my_task: マイタスク
     notices: 通知
+    workflows: ワークフロー
+    manage_workflow_templates: ワークフローテンプレート管理
     personalize_investor_notices: 投資家通知のパーソナライズ
     provide_access: アクセスを提供する
     setup_compliance_rules: コンプライアンスルールの設定
     todo_daily_tasks: ToDoと日次タスク
     user_guides: ユーザーガイド
+    help: ヘルプ
+    faqs: よくある質問
+    frequently_asked_questions: よくある質問とその回答
     learn_how_to_use: IRMの使い方を学ぶ
     user: ユーザー
     user_profile: ユーザープロフィール

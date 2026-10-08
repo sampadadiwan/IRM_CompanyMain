@@ -7,6 +7,7 @@ class InvestorKycUpdate < InvestorKycAction
   step :validate_pan_card
   step :updated_notification
   step :update_kyc_data
+  step :journey_hook
 
   def update_kyc_data(_ctx, investor_kyc:, **)
     return true if investor_kyc.destroyed?

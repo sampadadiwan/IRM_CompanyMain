@@ -13,27 +13,28 @@ This guide walks you through the full journey - issuing a call, working out each
 1. [Where Capital Calls Fit](#where-capital-calls-fit)
 2. [Key Terms in Plain English](#key-terms-in-plain-english)
 3. [The Capital Call Journey](#the-capital-call-journey)
-4. [Creating a Capital Call](#creating-a-capital-call)
-5. [How Each Investor's Amount Is Calculated (Call Basis)](#how-each-investors-amount-is-calculated-call-basis)
-6. [Calling Different Closes at Different Rates](#calling-different-closes-at-different-rates)
-7. [Adding Fees to a Call](#adding-fees-to-a-call)
-8. [Generating Investor Remittances](#generating-investor-remittances)
-9. [Generating and Approving Call Notices](#generating-and-approving-call-notices)
-10. [Approving the Capital Call](#approving-the-capital-call)
-11. [Sending the Call Notice](#sending-the-call-notice)
-12. [Understanding Remittances](#understanding-remittances)
-13. [The Remittance Status Lifecycle](#the-remittance-status-lifecycle)
-14. [Recording Investor Payments](#recording-investor-payments)
-15. [Verifying a Remittance](#verifying-a-remittance)
-16. [Bulk Actions on Remittances](#bulk-actions-on-remittances)
-17. [Working Across Currencies](#working-across-currencies)
-18. [Investor Notifications](#investor-notifications)
-19. [Allocating Fund Units](#allocating-fund-units)
-20. [Refreshing Fees After a Change](#refreshing-fees-after-a-change)
-21. [Importing Calls, Remittances and Payments](#importing-calls-remittances-and-payments)
-22. [Worked Example, End to End](#worked-example-end-to-end)
-23. [Quick Calculation Reference](#quick-calculation-reference)
-24. [Frequently Asked Questions](#frequently-asked-questions)
+4. [Tracking a Call: the Journey Step Bar](#tracking-a-call-the-journey-step-bar)
+5. [Creating a Capital Call](#creating-a-capital-call)
+6. [How Each Investor's Amount Is Calculated (Call Basis)](#how-each-investors-amount-is-calculated-call-basis)
+7. [Calling Different Closes at Different Rates](#calling-different-closes-at-different-rates)
+8. [Adding Fees to a Call](#adding-fees-to-a-call)
+9. [Generating Investor Remittances](#generating-investor-remittances)
+10. [Generating and Approving Call Notices](#generating-and-approving-call-notices)
+11. [Approving the Capital Call](#approving-the-capital-call)
+12. [Sending the Call Notice](#sending-the-call-notice)
+13. [Understanding Remittances](#understanding-remittances)
+14. [The Remittance Status Lifecycle](#the-remittance-status-lifecycle)
+15. [Recording Investor Payments](#recording-investor-payments)
+16. [Verifying a Remittance](#verifying-a-remittance)
+17. [Bulk Actions on Remittances](#bulk-actions-on-remittances)
+18. [Working Across Currencies](#working-across-currencies)
+19. [Investor Notifications](#investor-notifications)
+20. [Allocating Fund Units](#allocating-fund-units)
+21. [Refreshing Fees After a Change](#refreshing-fees-after-a-change)
+22. [Importing Calls, Remittances and Payments](#importing-calls-remittances-and-payments)
+23. [Worked Example, End to End](#worked-example-end-to-end)
+24. [Quick Calculation Reference](#quick-calculation-reference)
+25. [Frequently Asked Questions](#frequently-asked-questions)
 
 ---
 
@@ -88,6 +89,69 @@ flowchart TD
 ```
 
 > **Why approval matters:** once notices have gone out, investors are acting on those numbers, so treat an approved call with care; to correct one, an approver can **Unapprove** it first. Approving the call and sending its notice are two separate, deliberate steps — see [Approving the Capital Call](#approving-the-capital-call) and [Sending the Call Notice](#sending-the-call-notice).
+
+---
+
+## Tracking a Call: the Journey Step Bar
+
+Every capital call created after your company's journeys were set up shows a **step bar** at the top of its page, listing every task the call goes through, and a **What's needed now** panel with the next thing to do and a button that takes you there. CapHive works out which task the call is on from the call's own data: approving notices, recording payments or verifying remittances moves it on by itself. You only click **Mark reviewed** for the two review tasks, which leave no trace in the data. Calls that existed before the journeys were set up show no step bar.
+
+Once every task is done, the step bar stays on the page for the rest of the day so you can see the journey finish, then folds itself away: a day after the last task passed, the call page opens without it. It is never lost — a green route icon appears in the breadcrumb bar at the top of the page, next to the heart and the user guide icon, and clicking it shows the finished journey again (clicking it again puts it away).
+
+Each task in the bar has a mark:
+
+| Mark | Means |
+|---|---|
+| ✓ | done |
+| **●** | **we are here**: the call is waiting on this task, it is not done yet |
+| ○ | later; not reached yet |
+| **↺** | **back here**: this task was done, but something was undone, so it must be done again |
+| n/a | this call doesn't need the task (hover to see why) |
+
+### The two journeys
+
+Your company has two journeys. **Full: Notify Investors** is the default for new calls; **Light: Record Only** is used for calls created by the call importer, which are never approved or notified in CapHive. A company admin can change which one new calls get, add an approval step (for example a CFO sign-off) or remove tasks, under the [workflow templates](/workflow_templates).
+
+```mermaid
+flowchart LR
+    A["Create remittances"] --> B["Add call notice template"] --> C["Generate notices"] --> D["Approve notices"]
+    D --> E["Review email"] --> F["Check preview"] --> CFO["CFO sign-off"] --> G["Approve call"] --> H["Send notices"]
+    H --> I["Collect payments"] --> J["Verify remittances"] --> K["Allocate units"]
+```
+
+| Task (Full) | Done when | Not applicable when | Moves back when |
+|---|---|---|---|
+| Create remittances | every commitment in the call's closes with a committed amount has a remittance (or, for an Upload call, the remittance upload has finished) | — | the call's percentage, amount, closes or date change: run **Recompute Call** |
+| Add call notice template | the fund has a call notice template | the call is imported or set not to notify | the fund's template is removed |
+| Generate notices | every investor who is emailed has a notice; an investor with unverified KYC gets none, and the panel says so | as above | Recompute Call ran after the notices were made |
+| Approve notices | every generated notice is approved on the Documents screen | as above | a notice is unapproved |
+| Review email | someone clicked **Mark reviewed** | not notifying, or notices already sent | the call's or fund's capital call email is edited |
+| Check preview | someone clicked **Mark reviewed** | as above | as above |
+| CFO sign-off | an approver on the step approves (any one of them) | no approver has been picked on the step yet | earlier work is undone after the sign-off (the sign-off is reset) |
+| Approve call | the call is approved | the call is imported | the call is unapproved |
+| Send notices | every investor who should be emailed has been sent the notice | not notifying | a notice is marked unsent |
+| Collect payments | every remittance has collected what it calls | — | a payment is deleted |
+| Verify remittances | every remittance is verified | — | a remittance is unverified |
+| Allocate units | every verified remittance has fund units | the call has no unit prices | units are removed |
+
+```mermaid
+flowchart LR
+    A["Create remittances"] --> I["Collect payments"] --> J["Verify remittances"] --> K["Allocate units"]
+```
+
+**Light: Record Only** has just these four tasks, with the same rules.
+
+### The CFO sign-off
+
+The Full journey includes a **CFO sign-off** approval step before **Approve call**, set up with no approver. To use it, a company admin opens the Full journey under the [workflow templates](/workflow_templates), edits the **CFO sign-off** step and picks the approver(s); any one approval passes it, and a rejection sends the call back a step. Until someone is picked the step shows as n/a ("No approver set"), so no call waits on it. Approvers are fixed when a call's journey starts, so picking them affects calls created afterwards; to drop the step, delete it from the template.
+
+### When work is undone
+
+If someone undoes earlier work (unapproves the call, unapproves a notice, regenerates notices, marks a notice unsent, unverifies a remittance, changes the call's figures or date, runs Recompute Call, or edits the call email) the journey moves back at once and shows ↺. Sign-offs on **later** tasks that were given before the change are reset, because they no longer cover the current figures; approvers whose sign-off was reset get an email. A company admin can tick **Keep sign-off when moved back** on an approval step to opt it out.
+
+### Reminders
+
+When a task stays current longer than its reminder interval (2 days by default), the person who created the call (or the owner set on the task) gets a daily reminder email naming the task and what is missing. Approvers of an approval step are reminded as they are today. The panel also shows how long the current task has been waiting.
 
 ---
 
@@ -676,6 +740,36 @@ Fund-, call-, and commitment-level totals (called and collected) are kept in ste
 ---
 
 ## Frequently Asked Questions
+
+**What is the step bar at the top of a capital call?**
+It lists every task the call goes through and marks each one: ✓ done, ● the task the call is waiting on now, ○ later, ↺ done before but undone, n/a not needed for this call. CapHive works it out from the call's data, so it moves on as notices are approved, payments recorded and remittances verified. See [Tracking a Call: the Journey Step Bar](#tracking-a-call-the-journey-step-bar).
+
+**Why does my call show no step bar?**
+Only calls created after your company's journeys were set up get one; older calls are left exactly as they were. A call also has none if your company's journeys have not been set up yet.
+
+**How do I set up the journeys for my company?**
+A company admin opens [Workflow Templates](/workflow_templates) and chooses **Set up journeys → Set up capital call journeys** (once set up, the item shows **✓ Capital call journeys set up**). The confirmation says what will be added: the Full and Light journey templates, including a **CFO sign-off** step with no approver, and the rules that give imported calls Light and every other call Full. Confirming adds them; from then on every new call gets a journey, while existing calls are left as they are. Running it again never duplicates anything or undoes your changes; pick the CFO by editing the **CFO sign-off** step of the Full template. New fund companies get the journeys automatically, and CapHive support can set them up for many companies at once with the `capital_call_journeys:rollout` task, which does exactly the same thing.
+
+**Do I need to refresh the call page to see the step bar move?**
+No. When work finishes in the background — remittances or notices generated, notices approved, payments recorded or imported, units allocated, a sign-off given — every open page for that call updates its step bar and panel by itself, each showing what that viewer is allowed to see.
+
+**Where has the step bar gone on an old call?**
+It is hidden, not removed. A journey hides itself a day after its last task passed, so a settled call opens on its figures rather than on a finished checklist. Click the green route icon in the breadcrumb bar at the top of the page (next to the heart and the user guide icon) to show the whole journey again, including when each task was done; click it again to put it away. The icon only appears on records whose journey is complete.
+
+**Why did the step bar move back and show ↺?**
+Someone undid earlier work, such as unapproving the call or a notice, changing the call's figures, running Recompute Call or editing the call email. The banner above the bar says what changed, who did it and when, and the task marked ↺ is the one to redo.
+
+**Why was my sign-off reset?**
+You signed off before earlier work on the call was undone, so your approval no longer covers the current figures or documents. You get an email with the reason and are asked to sign off again once the earlier tasks are done. An admin can opt an approval step out with **Keep sign-off when moved back**.
+
+**Why does Generate notices stay current after I generated the documents?**
+Notices are not generated for investors whose KYC is not verified; the panel names how many. Verify their KYC and generate again. After a figures change, approved notices are never replaced automatically: unapprove them on the Documents screen first, then click **Generate Documents**.
+
+**Does the step bar stop me approving or sending the call?**
+No. In this release it is advisory only: Approve and Send Notification work as before. The confirmation dialogs don't list unfinished tasks — the step bar and **What's needed now** panel on the same page already show them, and they update by themselves as work finishes, so check them before you approve or send.
+
+**Who gets the "needs attention" reminder emails?**
+The person who created the call, or the owner set on the task by your company admin, once a task has waited longer than its reminder interval. Approvers of an approval step get the usual workflow reminders.
 
 **Where do I find capital calls in CapHive?**
 Sidebar → [**Funds → Funds**](/funds), open the fund, then click the **Calls** tab on the fund page. The tab lists every call for that fund with its due date, call, collected and due amounts and approval status, and each row opens the call's own page. The [capital calls across all funds](/capital_calls) are also in one list. See [Where Capital Calls Fit](#where-capital-calls-fit).

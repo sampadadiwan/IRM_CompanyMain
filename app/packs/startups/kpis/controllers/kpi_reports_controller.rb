@@ -1,9 +1,13 @@
 class KpiReportsController < ApplicationController
+  include WithJourneyPanel # show's journey evaluation and the journey action (kpi-report-journey)
+
   skip_before_action :authenticate_user!, only: %i[show edit update validate_upload template], if: -> { params[:signed_id].present? }
   # validate_upload is called by JS after Uppy finishes; the magic link's signed_id keeps it usable
   # by unauthenticated portco users, and CSRF is enforced by the token the form page carries.
-  before_action :set_kpi_report, only: %i[show edit update destroy recompute_percentage_change recompute_cumulative recompute_fx_conversion analyze refresh_import mark_reviewed reopen]
+  before_action :set_kpi_report, only: %i[show edit update destroy recompute_percentage_change recompute_cumulative recompute_fx_conversion analyze refresh_import mark_reviewed reopen journey send_completion_email]
   before_action :set_kpi_report_for_validation, only: %i[validate_upload template]
+  # edit.html.erb shows a portfolio company the submitted page instead of the wizard by the same rule
+  helper_method :portco_actor?
   after_action :verify_authorized, except: %i[index search show_performance chart_refresh refresh_import portco_pending]
   after_action :verify_policy_scoped, only: %i[index chart_refresh]
 
@@ -41,7 +45,32 @@ class KpiReportsController < ApplicationController
   end
 
   # GET /kpi_reports/1 or /kpi_reports/1.json
-  def show; end
+  # Fund users see the KPI report journey (step bar + what's needed now) — never portco users, who
+  # reach this page by magic link or as investors.
+  # Worked examples H4, H9 — openspec/changes/kpi-report-journey/design.md#worked-examples
+  def show
+    @journey = evaluate_journey(@kpi_report) if current_user && policy(@kpi_report).journey?
+  end
+
+  # GET /kpi_reports/:id/journey — just the journey panel, for the frame a real-time update inserts.
+  # Worked examples H9 — openspec/changes/kpi-report-journey/design.md#worked-examples
+  def journey
+    authorize @kpi_report
+    render_journey_panel(@kpi_report)
+  end
+
+  # PATCH /kpi_reports/:id/send_completion_email — the optional "Send completion email" step's button.
+  # Worked examples H8, E10 — openspec/changes/kpi-report-journey/design.md#worked-examples
+  def send_completion_email
+    authorize @kpi_report
+    result = KpiReportCompletionEmail.call(kpi_report: @kpi_report, user: current_user)
+    flash_key, message = case result[:outcome]
+                         when :sent then [:notice, "Completion email sent to #{result[:recipients].map(&:full_name).to_sentence}."]
+                         when :already_sent then [:notice, "The completion email was already sent."]
+                         else [:alert, "No recipients — set Managed by on the portfolio company or pick the step's actors."]
+                         end
+    redirect_to kpi_report_url(@kpi_report), flash_key => message
+  end
 
   def analyze
     @prev_kpi_report = KpiReport.where(entity_id: @kpi_report.entity_id, as_of: ..(@kpi_report.as_of - 1.day)).order(as_of: :asc).last
@@ -94,6 +123,9 @@ class KpiReportsController < ApplicationController
 
     respond_to do |format|
       if @kpi_report.save
+        # A report created on the New screen is a request: it gets the KPI report journey (no email)
+        # Worked examples H14 — openspec/changes/kpi-report-journey/design.md#worked-examples
+        @kpi_report.start_journey!(current_user)
         format.html { redirect_to edit_kpi_report_url(@kpi_report, signed_id: params[:signed_id]), notice: "Kpi report was successfully created." }
         format.json { render :show, status: :created, location: @kpi_report }
       else
@@ -161,9 +193,19 @@ class KpiReportsController < ApplicationController
     # Hard-deletes every Kpi on the report — fund-only, so leave a trace of who asked for it.
     Rails.logger.warn "KpiReport##{@kpi_report.id}: delete_kpis requested by user #{acting_user&.id} (#{@kpi_report.kpis.count} rows)" if %w[1 true].include?(merged[:delete_kpis].to_s)
 
+    # Taken before anything changes, for the journey undo below (sign-offs given before it are reset)
+    journey_started_at = Time.current
     respond_to do |format|
       if @kpi_report.update(merged)
         Rails.logger.info "KPI update succeeded!"
+        # KPI report journey: deleting the report's KPIs is an undo (back to "Import workbook"); any other
+        # save — a portco submit, a fund edit — only moves it on. Worked examples E12 —
+        # openspec/changes/kpi-report-journey/design.md#worked-examples
+        if %w[1 true].include?(merged[:delete_kpis].to_s)
+          @kpi_report.journey_undo_evaluate(note: "KPIs deleted", started_at: journey_started_at, actor: acting_user)
+        else
+          @kpi_report.journey_progress!(actor: acting_user)
+        end
         # The document just attached (if any) is now the report's KPIs file — refresh the stored
         # verdict so the panel the user lands on reflects it (display only; the gate recomputed above).
         KpiUploadValidate.call(kpi_report: @kpi_report, user: acting_user) if merged[:documents_attributes].present? && @kpi_report.documents.exists?(name: "KPIs")
@@ -220,7 +262,7 @@ class KpiReportsController < ApplicationController
   # draft_saved, submission markers cleared, magic link re-sent to the portco's Kpi users.
   def reopen
     authorize @kpi_report
-    @kpi_report.reopen_for_portco!(current_user.entity_id)
+    @kpi_report.reopen_for_portco!(current_user.entity_id, actor: current_user)
     redirect_to kpi_report_url(@kpi_report), notice: "Report reopened and the portfolio company has been asked to upload again."
   end
 
@@ -236,13 +278,14 @@ class KpiReportsController < ApplicationController
                              type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
   end
 
-  # PATCH /kpi_reports/:id/mark_reviewed
+  # PATCH /kpi_reports/:id/mark_reviewed — the Close report button: approves every KPI still pending
+  # for the portfolio company (on any period of the upload, not just this report) and marks it reviewed.
+  # Worked examples H5 — openspec/changes/kpi-report-journey/design.md#worked-examples
   def mark_reviewed
     authorize @kpi_report
-    kpi_ids = Kpi.unapproved.where(kpi_report_id: @kpi_report.id).pluck(:id)
-    KpiApproveService.call(kpi_ids, current_user.id) if kpi_ids.any?
-    @kpi_report.update(status: 'reviewed')
-    redirect_to kpi_report_url(@kpi_report), notice: "All KPIs approved and report marked as reviewed."
+    result = KpiReportClose.call(kpi_report: @kpi_report, user: current_user)
+    redirect_to kpi_report_url(@kpi_report),
+                notice: "Report closed — #{helpers.pluralize(result[:approved], 'KPI')} approved across #{helpers.pluralize(result[:periods], 'period')}."
   end
 
   # GET /kpi_reports/portco_pending — dashboard of outstanding requests for the logged-in portco user
@@ -340,37 +383,68 @@ class KpiReportsController < ApplicationController
       end
     end
 
-    SendPortcoNotificationJob.perform_later(
-      portfolio_company_ids,
-      user_id: current_user.id,
-      as_of: params[:as_of],
-      period: params[:period]
-    )
+    # The report page's "Send upload request" names its own report: it must be this entity's and belong to
+    # the one portfolio company being sent to. Worked examples H18 — openspec/changes/kpi-report-journey/design.md#worked-examples
+    kpi_report_id = params[:kpi_report_id].presence
+    if kpi_report_id && (portfolio_company_ids.size != 1 ||
+                          !KpiReport.exists?(id: kpi_report_id, entity_id: current_user.entity_id, portfolio_company_id: portfolio_company_ids.first))
+      redirect_to request.referer || kpi_reports_path, alert: "That KPI report was not found for this portfolio company."
+      return
+    end
 
-    notice = portfolio_company_ids.size > 1 ? "Notifications are being sent." : "Notification is being sent."
+    # One company with a date (the investor page's Send Reminder, or a single pick in the reminder modal):
+    # create — or find — its report shell now and start its journey, so the user can be sent straight to
+    # it. The job below finds this same report (same lookup), emails the link and moves it to Link Sent.
+    target_report = nil
+    if kpi_report_id.nil? && portfolio_company_ids.size == 1 && params[:as_of].present?
+      target_report = SendPortcoNotificationJob.find_or_create_dated_report(
+        Investor.find(portfolio_company_ids.first), current_user, params[:as_of], params[:period]
+      )
+      target_report.start_journey!(current_user)
+    end
+
+    # A period the company already submitted gets no reminder — the job would skip it anyway, so say so now
+    already_submitted = target_report && (target_report.status_submitted? || target_report.status_reviewed?)
+    unless already_submitted
+      SendPortcoNotificationJob.perform_later(
+        portfolio_company_ids,
+        user_id: current_user.id,
+        as_of: params[:as_of],
+        period: params[:period],
+        kpi_report_id:
+      )
+    end
+
+    notice = if already_submitted
+               "The KPI report for #{l(target_report.as_of)} is already #{target_report.status.humanize.downcase} — no reminder was sent."
+             elsif portfolio_company_ids.size > 1
+               "Notifications are being sent."
+             else
+               "Notification is being sent."
+             end
     # A portco with no non-computed KPI mappings can upload nothing usable — say so now, at send time (§2.7).
     unmapped = Investor.where(id: portfolio_company_ids)
                        .where.not(id: InvestorKpiMapping.not_compute.select(:investor_id))
                        .order(:investor_name).pluck(:investor_name)
     unmapped_alert = "No KPI mappings configured for: #{unmapped.join(', ')} — their uploads will be rejected until mappings are added under Investors → KPI Mappings." if unmapped.any?
+
+    # Land on the report the reminder is for, with its journey step bar. A full-page visit (the forms target
+    # _top) also closes the reminder modal and its backdrop. Users who can't open the report stay put.
+    if target_report && policy(target_report).show?
+      redirect_to kpi_report_path(target_report), status: :see_other, notice: notice, alert: unmapped_alert
+      return
+    end
+
     respond_to do |format|
       format.html { redirect_to request.referer || kpi_reports_path, notice: notice, alert: unmapped_alert }
       format.turbo_stream do
         flash.now[:notice] = notice
         flash.now[:alert] = unmapped_alert if unmapped_alert
-        streams = [
+        render turbo_stream: [
           turbo_stream.update("remote_modal", ""),
           turbo_stream.append("remote_modal", partial: "kpi_reports/alerts"),
           turbo_stream.update("remote_modal_alerts", partial: "kpi_reports/alerts")
         ]
-        # Use a data attribute on the stream to carry the modal ID so the browser-side
-        # JS can close it — never interpolate params into a script tag.
-        if params[:modal_id].present?
-          safe_id = params[:modal_id].gsub(/[^a-zA-Z0-9_-]/, "")
-          streams << turbo_stream.append("remote_modal_alerts",
-                                         helpers.content_tag(:div, "", data: { modal_close_id: safe_id }, class: "d-none"))
-        end
-        render turbo_stream: streams
       end
     end
   end

@@ -95,14 +95,14 @@ class DigioEsignHelper
         esign.update(status: "failed", api_updates: esign.api_updates)
       end
       msg = "Error sending #{doc.name} for eSigning - #{json_res['message']}"
-      ExceptionNotifier.notify_exception(StandardError.new(msg))
+      ErrorReport.notify(StandardError.new(msg), source: "DigioEsignHelper send", **ErrorReport.document_context(doc))
       Rails.logger.error msg
       DigioResult.new(false, msg, nil)
     end
   rescue JSON::ParserError => e
     # 502 bad gateway response cannot be parsed
     msg = "Error sending #{doc.name} for eSigning - #{e.message}"
-    ExceptionNotifier.notify_exception(StandardError.new(msg))
+    ErrorReport.notify(StandardError.new(msg), source: "DigioEsignHelper send", **ErrorReport.document_context(doc))
     Rails.logger.error msg
     DigioResult.new(false, msg, nil)
   end
@@ -268,7 +268,7 @@ class DigioEsignHelper
       end
     else
       e = StandardError.new("Document not found for #{params}")
-      ExceptionNotifier.notify_exception(e)
+      ErrorReport.notify(e, source: "DigioEsignHelper webhook")
       Rails.logger.error e.message
     end
   end
@@ -336,7 +336,7 @@ class DigioEsignHelper
     if doc.present?
       esign = doc.e_signatures.find_by(email:)
       esign&.update_esign_response("failed", params['payload'])
-      ExceptionNotifier.notify_exception(StandardError.new("eSign not found for #{doc&.name} and email #{email} - #{params}")) if esign.blank?
+      ErrorReport.notify(StandardError.new("eSign not found for #{doc&.name} and email #{email} - #{params}"), source: "DigioEsignHelper webhook", signer_email: email, **ErrorReport.document_context(doc)) if esign.blank?
       if doc.esign_log.present?
         doc.esign_log.webhook_data.present? ? doc.esign_log.webhook_data[Time.zone.now.to_s] = params : doc.esign_log.webhook_data = { "#{Time.zone.now}": params }
         doc.esign_log.save
@@ -348,7 +348,7 @@ class DigioEsignHelper
 
   def signatures_failed(doc, response)
     e = StandardError.new("Error getting status for #{doc.name}")
-    ExceptionNotifier.notify_exception(e)
+    ErrorReport.notify(e, source: "DigioEsignHelper#signatures_failed", **ErrorReport.document_context(doc))
     doc.update(esign_status: "failed")
     doc.e_signatures.includes(:entity).find_each do |esign|
       esign.add_api_update(response)

@@ -53,7 +53,7 @@ class Entity < ApplicationRecord
   has_many :investor_notices, dependent: :destroy
 
   has_many :documents, dependent: :destroy
-  has_many :doc_questions, dependent: :destroy
+  has_many :doc_checks, dependent: :destroy
   has_many :tasks, dependent: :destroy
   has_many :form_types, dependent: :destroy
   has_many :approvals, dependent: :destroy
@@ -288,8 +288,8 @@ class Entity < ApplicationRecord
     children.each(&:really_destroy!)
     dashboard_widgets.each(&:really_destroy!)
     support_client_mappings.each(&:really_destroy!)
-    kpi_reports.each(&:really_destroy!)
-    kpis.each(&:really_destroy!)
+    kpi_reports.each(&:destroy)
+    kpis.each(&:destroy)
     investor_kpi_mappings.each(&:really_destroy!)
     deals.each(&:really_destroy!)
     deal_investors.each(&:really_destroy!)
@@ -301,7 +301,6 @@ class Entity < ApplicationRecord
     valuations.each(&:really_destroy!)
     investor_notices.each(&:really_destroy!)
     documents.find_each(&:really_destroy!)
-    doc_questions.each(&:really_destroy!)
     # messages.each(&:really_destroy!)
     tasks.each(&:really_destroy!)
     form_types.each(&:really_destroy!)

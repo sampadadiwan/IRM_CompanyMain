@@ -206,7 +206,9 @@ end
 
 When('I go to the deal tasks tab and click {string}') do |label|
   visit tasks_path(deal_id: @deal.id, embedded_task_context: 'deal_tab')
-  click_on(label)
+  # Show All / Incomplete live in the header's Actions menu — see
+  # features/support/task_header_helpers.rb
+  click_task_header_action(label)
 end
 
 When('I edit the task {string} from its own page and save') do |details|

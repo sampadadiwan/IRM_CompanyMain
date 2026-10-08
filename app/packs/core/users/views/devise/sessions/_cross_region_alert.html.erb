@@ -1,0 +1,31 @@
+<%#
+  Shown when a region switch could not be completed. The whole user-facing surface of a failed
+  hand-off lives here: before this, the destination region rendered `plain: "Invalid or expired
+  link"` - a bare white page with no explanation and no way back, while the user was still
+  signed in on the region they came from.
+
+  Driven by flash[:cross_region], which is a Hash. The generic `flash.each` loop in
+  sessions/new.html.erb is guarded by `msg.is_a?(String)`, so a Hash entry is skipped there and
+  rendered once, here, by name. That is what lets the "return to" link be a real anchor without
+  putting html_safe markup into a flash message.
+
+  The reason phrase and the link come from CrossSiteRejection; nothing technical (the
+  credential, a host, an error class) reaches this template.
+%>
+<% cross_region = flash[:cross_region] %>
+<% if cross_region.present? %>
+  <div class="alert alert-warning text-start" id="flash_cross_region"
+       role="alert" data-reason="<%= cross_region["reason"] %>">
+    <i class="ti ti-alert-triangle me-1"></i>
+    <%= cross_region["message"] %>
+    <% if cross_region["origin_url"].present? %>
+      <div class="mt-2">
+        <%= link_to t("cross_region.rejection.return_to",
+                      region: t("cross_region.regions.#{cross_region['origin_code']}",
+                                default: cross_region["origin_code"])),
+                    cross_region["origin_url"],
+                    class: "btn btn-sm btn-outline-secondary" %>
+      </div>
+    <% end %>
+  </div>
+<% end %>

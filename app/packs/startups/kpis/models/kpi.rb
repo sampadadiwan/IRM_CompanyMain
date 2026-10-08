@@ -1,7 +1,6 @@
 class Kpi < ApplicationRecord
   include WithCustomField
   include ForInvestor
-  include Trackable.new(on: %i[create update], audit_fields: %i[value display_value notes percentage_change])
   include KpiCumulative
 
   enum :status, { unapproved: 'unapproved', approved: 'approved' }, default: :approved
@@ -34,7 +33,7 @@ class Kpi < ApplicationRecord
   validates :source, length: { maximum: 100 }, allow_blank: true
 
   validates :status, presence: true
-  validates :name, uniqueness: { scope: %i[kpi_report_id portfolio_company_id status deleted_at] }, if: -> { approved? }
+  validates :name, uniqueness: { scope: %i[kpi_report_id portfolio_company_id status] }, if: -> { approved? }
 
   # KPIs created before this date predate mapping-id assignment (backfilled by the workbook job),
   # so they're exempt. Everything created on or after it must carry an investor_kpi_mapping_id.

@@ -189,70 +189,84 @@ artifacts:
       - **No repetition.** Each fact lives in exactly one section. The proposal owns user-facing
         behaviour and mockups, the spec owns requirements, design owns how. Link instead of
         restating.
-      - **FAQ tables are optional.** Add one only where a reader will ask a non-obvious "why" or
-        "why not X".
+      - **FAQ per section.** Part 1, Part 2, every card in Part 3 and Part 4 each end with a
+        FAQ table (Question | Answer) of the real "why", "why not X" and "what if" questions a
+        reviewer will ask about that section, answered from the design. No filler questions.
       - **Diagrams must render.** Before finishing, lint every mermaid block and fix failures
         until it exits 0:
         `d=$(mktemp -d); echo '{"args":["--no-sandbox"]}' > $d/p.json; npx -y @mermaid-js/mermaid-cli -q -p $d/p.json -i <changeRoot>/design.md -o $d/out.md; echo exit=$?`
         (known gotcha: `Note` is reserved in sequence diagrams, so never use it as a participant id).
+        Keep every flowchart edge label AND stateDiagram transition label to about 16 characters per
+        line, breaking longer ones with
+        `<br/>`: VS Code's Markdown preview measures text differently from mermaid-cli and clips long
+        single-line edge labels, even when the lint passes.
+
+      **Zoom one picture.** The whole design hangs off ONE numbered picture so it is easy to
+      grasp. Part 1 draws it in plain words. Part 2 redraws the SAME picture (same shape, same
+      numbers ①②③, same arrows) with real names. Part 3 has one card per box in the same order.
+      Part 4 holds reference material spanning several boxes. A reader can stop at any depth and
+      always knows which box they are in. Do not use C4 diagrams (tried and rejected by the user).
+      Render the two pictures to PNG (`-e png`) and check that they have the same layout.
 
       Sections, in the template's order:
-      - **Contents** (CORE): a table of contents at the top linking every ## and ### heading
-        (GitHub anchors). Regenerate it after the document is finished so no heading is missing.
-      - **Overview** (CORE): 2-3 sentences, naming the existing pattern it follows.
-      - **Architecture** (CORE):
-        - **Component Boundaries**: flowchart subgraphs (UI, scheduling, domain, integration,
-          existing CapHive modules, notifications, external systems) with every boundary-crossing
-          arrow labelled, plus a From → To | Contract | Direction rule table.
-        - **Class Diagram**: `classDiagram` of every new or changed class, enclosed in
-          `namespace` blocks that match the boundaries, with stereotypes, public methods and the
-          edges between namespaces.
-        - **Change Footprint**: the only list of new (green), modified (amber) and reused (grey)
-          parts, as one flowchart. Exact file paths belong in tasks.md.
-      - **Data Model and States**:
-        - **Data Model** (CONDITIONAL, when tables or columns change): an `erDiagram`, indexes on
-          one line, rationale for non-obvious columns only, and changes to existing models as
-          bullets.
-        - **State Transitions** (CORE if any stored or derived status/lifecycle exists): a
-          `stateDiagram-v2` per lifecycle with every transition's trigger labelled.
-      - **Behaviour**:
-        - **Pipeline / Flow** (CONDITIONAL, only for multi-branch processing): a flowchart.
-        - **Sequence Diagrams** (CORE): the happy path plus each error/edge flow worth explaining,
-          with real participants and alt/else/loop.
-        - **Worked Examples** (CORE, placed right after the sequences): Happy Path (H1..), Edge
-          Cases (E1..) and Error Cases (X1.., X for eXception) tables with columns # | Scenario | Given | When |
-          Then | Spec scenario | Feature, using real-ish data from a shared-setup table. Every
-          spec scenario must appear in the Spec scenario column of at least one row. Check this
-          before finishing and add rows for any gaps. Each row becomes exactly one Cucumber
-          scenario. Prose Given/When/Then bullets are not acceptable.
-      - **Key Components** (CONDITIONAL, when there are services/jobs): a responsibility table,
-        plus a decision flowchart for every non-trivial decision (matching, routing,
-        eligibility, fallbacks).
-      - **Controllers and Routes** (CONDITIONAL): one table row per route.
-      - **Policy** (CORE): a role → access table, a decision flowchart when access has more than
-        one condition, and how entity_id scoping is enforced. No policy code.
-      - **UI Changes** (CONDITIONAL, whenever a screen, email or alert changes): written for a
-        reader who has never seen the feature, as user journeys rather than widget states. An
-        "At a glance" before/after table of where the feature shows up, plus a flowchart of the
-        journeys. Then one subsection per journey, with a small ASCII wireframe carrying
-        numbered callouts (①②③) and a step table (Step | The user… | They see) that cites the
-        callouts. Add a stateDiagram-v2 with plain-English state names only for components with
-        several visual states. Implementation terms (Turbo, Stimulus, controllers, no-reload
-        behaviour) go only in a closing "Build notes" subsection. User-facing messages and
-        validation rules stay in the proposal.
-      - **Cross-cutting Concerns**: Transactions and Queries (CONDITIONAL, in plain language: every
-        read with its N+1 risk, every multi-table write with its transaction boundary);
-        Exception Handling and Monitoring (CONDITIONAL, one table row per failure mode with who
-        is alerted and how, tied to `Noticed` notifications; the X-rows give the concrete
-        cases); Performance and Security (CORE, a bullet or two each).
-      - **Design Decisions** (CORE): choice, alternative, why rejected. Favour the simpler/DRYer
-        option, and say why when you don't.
-      - **Testing** (CORE, 2-4 lines): Cucumber only, since there is no RSpec tier. Shared setup
-        (stubs, tags, factories) and reused vs new step files. The Feature column in Worked
-        Examples is the mapping, so don't repeat it.
-      - **Risks and Open Questions** (CORE): risk → mitigation bullets. Open questions are for
-        genuinely deferrable unknowns only. If a question would change the specs, approach or
-        task breakdown, resolve it with the user now instead of guessing.
+      - **Contents** (CORE): links to every ## and ### heading (GitHub anchors keep ①②③).
+        Regenerate it after the document is finished.
+      - **1. The idea** (CORE, readable in five minutes):
+        - **What this adds**: 2-3 sentences, naming the existing pattern it follows.
+        - **The idea in one picture**: ONE flowchart, 5-9 boxes numbered ①②③ in reading order,
+          plain-English names plus a one-line description each, the core of the idea in the
+          middle, every arrow labelled. No class names, subgraphs, colours or error paths.
+        - **Walkthrough: one example, start to finish**: a realistic example told as a story right
+          after the picture: setup, a legend for any notation, optional mermaid `timeline`, then
+          phase tables (# | When | What happens | Behind the scenes citing ①②③ | Result) including
+          at least one undo/mistake and one stall/failure (Result spelled out: every step by name with
+          its mark, one per line, current in bold, never a compact symbol string; unchanged rows say
+          "Same as row N"), one ASCII snapshot of the key moment, and
+          "What to notice" bullets.
+        - **Key ideas**: 3-7 rows (Idea | In one line | Card), each linking to its card.
+        - **FAQ**.
+      - **2. The same picture with real names** (CORE):
+        - **Picture**: the same flowchart with real classes/tables/partials in the boxes, plus one
+          italic line per box saying what it does, a `click` link per box to its card, and real
+          contracts on the arrows. Boxes coloured new (green), modified (amber) or reused (grey);
+          this is the only footprint list (file paths belong in lld.md and tasks.md).
+        - **What each box does**: # | Box | Real parts | What it does | When it runs | What it
+          decides | Details (link to the card).
+        - **One run, end to end**: one sequenceDiagram of the main happy path across the boxes.
+        - **Lifecycles** (CORE if any stored or derived status exists): a stateDiagram-v2 per
+          lifecycle, triggers labelled, stored vs derived stated.
+        - **What users see** (CONDITIONAL, whenever a screen, email or alert changes): an "At a
+          glance" table plus the main everyday journey (ASCII wireframe with ①②③ callouts and a
+          Step | The user… | They see table). Other journeys go in their box's card. Messages stay
+          in the proposal.
+        - **Design decisions**: choice, alternative, why rejected. Favour the simpler/DRYer option.
+        - **FAQ**.
+      - **3. One card per box** (CORE): one ### card per box, in picture order (a trivial box may
+        share a card with its neighbour). Every card: what it is (1-2 sentences); an Owns | Reads /
+        receives | Produces row; only the detail that box owns (edge/error sequence diagrams,
+        decision flowcharts, component responsibility rows with queue/retry/idempotency/transaction,
+        routes and build notes for UI, the role → access table with entity_id scoping where access
+        is checked, secondary user journeys); **Worked examples:** the H/E/X IDs that prove it;
+        **FAQ**. Link to Part 4 for schema and class diagram instead of copying them.
+      - **4. Reference**:
+        - **Class diagram** (CORE): classDiagram of every new or changed class in `namespace`
+          blocks, with stereotypes and public methods.
+        - **Data model and schema changes** (CONDITIONAL, when tables or columns change): an
+          `erDiagram`, indexes on one line, a **Schema changes** block (per new/changed table: one
+          sentence on why it changes, then a Column / index | What changed | Why it's needed row
+          for EVERY new or changed column and index), and changes to existing models as bullets.
+        - **Component contracts** (CORE): From → To | Contract | Direction rule, one row per arrow
+          in the Part 2 picture.
+        - **Cross-cutting concerns**: Transactions and queries (CONDITIONAL); Exception handling
+          and monitoring (CONDITIONAL, tied to `Noticed`); Performance and security (CORE).
+        - **Worked examples** (CORE): Happy Path (H1..), Edge Cases (E1..), Error Cases (X1..)
+          tables with columns # | Scenario | Given | When | Then | Spec scenario | Feature, using
+          real-ish data from a shared-setup table. Every spec scenario must appear in the Spec
+          scenario column of at least one row. Each row becomes exactly one Cucumber scenario.
+        - **Testing** (CORE, 2-4 lines): Cucumber only. Shared setup and reused vs new step files.
+        - **Risks and open questions** (CORE): risk → mitigation bullets; open questions only if
+          genuinely deferrable, otherwise resolve them with the user now.
+        - **FAQ**.
     requires:
       - proposal
 
@@ -299,7 +313,7 @@ artifacts:
       Sources, with nothing new invented:
       - Every worked example in design.md (H/E/X IDs) becomes one checklist row with the SAME ID,
         so a failed row maps straight to its Cucumber scenario.
-      - Every step of every UI journey in design.md "UI Changes" becomes a row, with IDs J1.1,
+      - Every step of every UI journey in design.md (Part 2 "What users see" and the cards) becomes a row, with IDs J1.1,
         J1.2, ... (journey.step).
       - Every user-facing message in the proposal's Behavior Rules / Validation Rules is checked
         verbatim in at least one row's Expected result.
@@ -387,7 +401,7 @@ artifacts:
       name the LLD section it implements. The last phase ends with a task to run qa-checklist.md
       on a deployed build and record the sign-off (that task is for QA, not for the apply agent).
       Each phase's closing feature task names the worked-example IDs it covers (H = happy path, E = edge case,
-      X = error case), taken from the Feature column of design.md's Worked Examples tables.
+      X = error case), taken from the Feature column of design.md's Worked examples tables (Part 4).
     requires:
       - specs
       - design

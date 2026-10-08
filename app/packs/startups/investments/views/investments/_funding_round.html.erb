@@ -1,7 +1,10 @@
 <%
+  # Grouped by investor AND instrument, so an investor holding e.g. Equity plus a CCPS gets a
+  # separate row (and fully diluted %) per instrument - matching the horizontal cap table.
   result = GenerateCapTable.call(params: {
     funding_rounds: funding_rounds,
-    portfolio_company_id: portfolio_company_id
+    portfolio_company_id: portfolio_company_id,
+    group_by_field: %i[investor_name instrument]
   })
   investments = result[:model]
 

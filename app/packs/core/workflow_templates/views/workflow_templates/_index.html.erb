@@ -2,6 +2,51 @@
   <h1 class="h3 mb-0 text-gray-800">Workflow Templates</h1>
   <div class="d-flex align-items-center gap-2">
     <%= user_guide_info_icon %>
+    <%# "Set up journeys" menu: one item per journey kind (JourneySetup::KINDS), shown to admins who may run
+        the setup (WorkflowTemplatesController#journey_setup_plans). A kind's item is active while anything
+        is missing and confirms what it adds; once its journeys and rules exist it is a disabled "✓ … set up".
+        A menu rather than a button per kind so later journey types fit. Item ids: setup_<kind>_journeys_btn.
+        Worked examples H1, E14 — openspec/changes/archive/2026-10-02-capital-call-journey/design.md#worked-examples
+        Worked examples H10, E20, E25, X3 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples %>
+    <% if @journey_setup_plans.any? %>
+      <%# plan[:steps]: seeded tasks this company's existing template predates, so a kind with
+          nothing else missing still reads as pending (investor-kyc-email-review-steps H7) %>
+      <% pending = @journey_setup_plans.count { |_kind, plan| plan[:templates].any? || plan[:rules].any? || plan[:cfo] || plan[:steps].any? } %>
+      <div class="dropdown" id="setup_journeys_menu">
+        <button type="button" id="setup_journeys_menu_btn" class="btn btn-outline-primary dropdown-toggle"
+                data-bs-toggle="dropdown" aria-expanded="false">
+          <i class="ti ti-route"></i> Set up journeys
+          <% if pending.positive? %><span class="badge bg-primary ms-1"><%= pending %></span><% end %>
+        </button>
+        <div class="dropdown-menu dropdown-menu-end">
+          <% @journey_setup_plans.each do |kind, plan| %>
+            <% setup = JourneySetup.for_kind(kind) %>
+            <% records = setup::RECORD.pluralize %>
+            <% if plan[:templates].any? || plan[:rules].any? || plan[:cfo] || plan[:steps].any? %>
+              <%# The Full journey's sign-off has no approver yet: pick one by editing that step (E24, E25); text per kind in JourneySetup.confirm_message %>
+              <% msg = setup.confirm_message(plan) %>
+              <%= button_to setup_journeys_workflow_templates_path(kind:), id: "setup_#{kind}_journeys_btn",
+                    class: "dropdown-item", form_class: "deleteButton",
+                    data: { action: "click->confirm#popup", method: :post, title: "Set up #{setup::LABEL}", msg: } do %>
+                <i class="ti ti-route me-1"></i> Set up <%= setup::LABEL %>
+              <% end %>
+            <% elsif plan[:disabled].any? %>
+              <%# Everything is seeded but the admin has disabled some or all of it, so new records get
+                  no journey from those templates. Say that instead of a green "set up" tick. %>
+              <button type="button" id="setup_<%= kind %>_journeys_btn" class="dropdown-item text-warning" disabled
+                      title="<%= plan[:disabled].to_sentence %> <%= plan[:disabled].one? ? 'is' : 'are' %> disabled, so new <%= records %> get no journey from <%= plan[:disabled].one? ? 'it' : 'them' %>. Enable the template below to start using it again.">
+                <i class="ti ti-player-pause me-1"></i> <%= setup::LABEL.upcase_first %> disabled
+              </button>
+            <% else %>
+              <button type="button" id="setup_<%= kind %>_journeys_btn" class="dropdown-item text-success" disabled
+                      title="<%= setup.light? ? "The Full and Light journeys and their rules" : "The journey and its rule" %> already exist. Edit the <%= setup::WORKFLOWABLE_TYPE.titleize %> templates below to change them.">
+                <i class="ti ti-check me-1"></i> <%= setup::LABEL.upcase_first %> set up
+              </button>
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
     <% if policy(WorkflowTemplate.new(entity_id: current_user.entity_id)).new? %>
       <%= link_to new_workflow_template_path, class: "btn btn-outline-primary" do %>
         <i class="ti ti-playlist-add"></i> New Template
@@ -10,11 +55,28 @@
   </div>
 </div>
 
+<%# ── Dead rule chains ──────────────────────────────────────────────────────────
+    A record type whose every rule belongs to a disabled template: the rules still match, but each one
+    stands aside, so new records of that type get no workflow. Said here because the rules themselves
+    live on individual template pages, where a chain-wide problem cannot be seen. %>
+<% Array(@dormant_rule_chains).each do |chain| %>
+  <div class="alert alert-warning d-flex align-items-start gap-2" id="dormant_chain_<%= chain[:type].underscore %>">
+    <i class="ti ti-alert-triangle mt-1"></i>
+    <div>
+      <strong>New <%= chain[:type].underscore.humanize.downcase.pluralize %> get no workflow.</strong>
+      Every auto-assignment rule for this type belongs to a disabled template
+      (<%= chain[:templates].to_sentence %>), so each rule is skipped and nothing is assigned.
+      Enable one of those templates, or add a rule on a template that is enabled.
+    </div>
+  </div>
+<% end %>
+
 <div class="table-responsive" data-controller="datatable">
   <table class="table table-bordered dataTable jqDataTable">
     <thead>
       <tr>
         <th>Name</th>
+        <th>Status</th>
         <th>Type</th>
         <th>Steps</th>
         <th>Auto Assignment Rules</th>

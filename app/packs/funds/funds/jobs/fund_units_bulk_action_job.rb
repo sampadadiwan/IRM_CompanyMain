@@ -1,4 +1,24 @@
 class FundUnitsBulkActionJob < BulkActionJob
+  # Deleting units redeemed by a distribution undoes its Redeem units task: re-check each affected
+  # distribution's journey once, as an undo (no-op without a journey).
+  # Worked examples E13 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples
+  def perform(record_ids, user_id, bulk_action, params: {})
+    started_at = Time.current
+    # Read before deleting: the units (and so their owners) are gone afterwards
+    distribution_ids = if bulk_action.to_s.downcase == "delete"
+                         CapitalDistributionPayment.where(id: FundUnit.where(id: record_ids, owner_type: "CapitalDistributionPayment").select(:owner_id))
+                                                   .distinct.pluck(:capital_distribution_id)
+                       else
+                         []
+                       end
+    result = super
+    actor = User.find_by(id: user_id)
+    CapitalDistribution.where(id: distribution_ids).find_each do |distribution|
+      distribution.journey_undo_evaluate(note: "Redeemed units deleted", started_at:, actor:)
+    end
+    result
+  end
+
   def get_class
     FundUnit
   end
