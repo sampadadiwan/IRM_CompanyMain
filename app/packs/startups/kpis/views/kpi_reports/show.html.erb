@@ -3,7 +3,7 @@
 <% if @journey.present? %>
   <%= render "/kpi_reports/journey", record: @kpi_report, journey: @journey, instance: nil %>
   <%# Real-time: an evaluation that changes this report's journey reloads the panel above in place (H9) %>
-  <%= turbo_stream_from @kpi_report, :journey %>
+  <%= render "workflow_instances/journey_stream", record: @kpi_report %>
 <% end %>
 <%= render FormCard.new(title: "Kpi Report #{@kpi_report.portfolio_company} : #{l(@kpi_report.as_of)}") do %>
 <table class="table table-bordered dataTable">

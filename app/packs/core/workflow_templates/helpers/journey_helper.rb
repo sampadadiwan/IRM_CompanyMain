@@ -40,6 +40,13 @@ module JourneyHelper
     "not_yet" => "not started", "na" => "not applicable"
   }.freeze
 
+  # Fingerprint of an evaluated journey (WorkflowEvaluator results, or nil): the same results always
+  # give the same value, so the page and a fresh /<plural>/:id/journey fetch can be compared without
+  # comparing HTML (journey_catch_up_controller.js)
+  def journey_version(journey)
+    Digest::MD5.hexdigest(journey.to_json)
+  end
+
   # Icon + callout modifier for the "What's needed now" panel, keyed by the current step's state
   def journey_now_view(step)
     return { icon: "ti-rotate-2", modifier: "cc-now--moved" } if step[:regressed]
