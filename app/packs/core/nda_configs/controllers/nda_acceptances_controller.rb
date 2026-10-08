@@ -207,11 +207,13 @@ class NdaAcceptancesController < ApplicationController
       NdaMailer.with(gp_params.merge(direct_to: email)).nda_accepted.deliver_later
     end
 
-    # Changed: Send LP acceptance confirmation via Noticed (excludes signer).
-    # Why: LP users are system Users — they get the standard Noticed pipeline.
+    # Changed: Send LP acceptance confirmation via Noticed (includes signer).
+    # Why: The signer should also receive a confirmation email that their NDA
+    #   acceptance was recorded and folder access is now open. Previously the
+    #   signer was excluded via exclude_user_id — removed so all LP users of
+    #   the investor (including the signer) get the "NDA Access Granted" email.
     confirm_recipients = NdaNotificationRecipients.resolve(
-      :acceptance_confirm, acceptance.nda_config, acceptance.investor,
-      { exclude_user_id: acceptance.user_id }
+      :acceptance_confirm, acceptance.nda_config, acceptance.investor
     )
     confirm_recipients[:lp_users].each do |user|
       NdaEventNotifier.with(
