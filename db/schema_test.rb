@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_07_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_07_100100) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -2017,7 +2017,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_07_100000) do
     t.boolean "knowledge_base", default: false
     t.integer "level"
     t.string "name"
-    t.string "nda_inheritance_mode", limit: 10, default: "inherit", null: false
     t.boolean "orignal", default: false
     t.bigint "owner_id"
     t.string "owner_type"
@@ -2028,7 +2027,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_07_100000) do
     t.index ["deleted_at"], name: "index_folders_on_deleted_at"
     t.index ["entity_id"], name: "index_folders_on_entity_id"
     t.index ["full_path", "owner_id", "owner_type", "entity_id", "deleted_at"], name: "index_folders_on_full_path_and_owner_entity_with_deleted_at", unique: true
-    t.index ["nda_inheritance_mode"], name: "idx_folders_nda_inheritance_mode"
     t.index ["owner_type", "owner_id"], name: "index_folders_on_owner"
   end
 
@@ -2635,7 +2633,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_07_100000) do
     t.string "email"
     t.boolean "email_enabled", default: true
     t.integer "entity_id"
-    t.boolean "exempt_from_nda", default: false, null: false
     t.string "first_name"
     t.bigint "form_type_id"
     t.integer "granted_by"
@@ -2852,6 +2849,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_07_100000) do
     t.boolean "is_trust", default: false
     t.json "json_fields"
     t.date "last_interaction_date"
+    t.bigint "managed_by_user_id"
     t.string "pan", limit: 40
     t.string "primary_email"
     t.string "primary_email_domain", limit: 191
@@ -2868,6 +2866,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_07_100000) do
     t.index ["investor_entity_id", "entity_id", "deleted_at"], name: "idx_on_investor_entity_id_entity_id_deleted_at_983d7c8e7a", unique: true
     t.index ["investor_entity_id"], name: "index_investors_on_investor_entity_id"
     t.index ["investor_name", "entity_id"], name: "index_investors_on_investor_name_and_entity_id", unique: true
+    t.index ["managed_by_user_id"], name: "index_investors_on_managed_by_user_id"
     t.index ["pan"], name: "index_investors_on_pan"
     t.index ["primary_email_domain", "entity_id"], name: "idx_investors_on_email_domain_entity"
     t.index ["slug"], name: "index_investors_on_slug", unique: true
@@ -2948,6 +2947,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_07_100000) do
     t.text "analysis"
     t.date "as_of"
     t.boolean "autofill_completed", default: false, null: false
+    t.datetime "completion_notified_at"
     t.datetime "created_at", null: false
     t.bigint "document_folder_id"
     t.boolean "enable_portco_upload", default: false, null: false
@@ -3038,76 +3038,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_07_100000) do
     t.index ["investor_kyc_id"], name: "index_kyc_data_on_investor_kyc_id"
   end
 
-  create_table "kyc_inspection_records", force: :cascade do |t|
-    t.string "agent_name", null: false
-    t.string "check_name", null: false
-    t.datetime "created_at", null: false
-    t.json "details"
-    t.bigint "entity_id", null: false
-    t.bigint "investor_kyc_id"
-    t.bigint "kyc_onboarding_id"
-    t.text "resolution_note"
-    t.datetime "resolved_at"
-    t.bigint "resolved_by_id"
-    t.string "severity", null: false
-    t.string "status", default: "open", null: false
-    t.datetime "updated_at", null: false
-    t.index ["entity_id", "investor_kyc_id", "check_name", "created_at"], name: "idx_kyc_inspection_records_idempotency"
-    t.index ["entity_id", "status", "severity"], name: "idx_inspection_entity_status_severity"
-    t.index ["entity_id"], name: "index_kyc_inspection_records_on_entity_id"
-    t.index ["investor_kyc_id"], name: "index_kyc_inspection_records_on_investor_kyc_id"
-    t.index ["kyc_onboarding_id"], name: "index_kyc_inspection_records_on_kyc_onboarding_id"
-    t.index ["resolved_by_id"], name: "index_kyc_inspection_records_on_resolved_by_id"
-  end
-
-  create_table "kyc_onboarding_wizards", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.integer "current_step", default: 1, null: false
-    t.bigint "kyc_onboarding_id", null: false
-    t.json "segment_data"
-    t.text "staged_file_data"
-    t.string "status", default: "draft", null: false
-    t.datetime "updated_at", null: false
-    t.index ["kyc_onboarding_id"], name: "idx_kyc_onboarding_wizards_onboarding_unique", unique: true
-    t.index ["kyc_onboarding_id"], name: "index_kyc_onboarding_wizards_on_kyc_onboarding_id"
-  end
-
-  create_table "kyc_onboardings", force: :cascade do |t|
-    t.datetime "completed_at"
-    t.datetime "created_at", null: false
-    t.bigint "entity_id", null: false
-    t.string "last_weekly_report_sent_week"
-    t.datetime "launched_at"
-    t.integer "max_open_window_days", default: 30, null: false
-    t.string "name", null: false
-    t.json "nudge_schedule_days"
-    t.date "onboarding_deadline"
-    t.integer "stale_threshold_days", default: 14, null: false
-    t.string "status", default: "draft", null: false
-    t.datetime "updated_at", null: false
-    t.index ["entity_id", "name"], name: "idx_kyc_onboardings_entity_name", unique: true
-    t.index ["entity_id"], name: "index_kyc_onboardings_on_entity_id"
-  end
-
-  create_table "mcp_audit_logs", force: :cascade do |t|
-    t.text "arguments"
-    t.string "client_name"
-    t.datetime "created_at", null: false
-    t.integer "duration_ms"
-    t.bigint "entity_id", null: false
-    t.string "error"
-    t.string "method", null: false
-    t.bigint "oauth_application_id"
-    t.string "tool_name"
-    t.bigint "user_id", null: false
-    t.index ["entity_id", "created_at"], name: "index_mcp_audit_logs_on_entity_id_and_created_at"
-    t.index ["entity_id"], name: "index_mcp_audit_logs_on_entity_id"
-    t.index ["oauth_application_id"], name: "index_mcp_audit_logs_on_oauth_application_id"
-    t.index ["tool_name"], name: "index_mcp_audit_logs_on_tool_name"
-    t.index ["user_id", "created_at"], name: "index_mcp_audit_logs_on_user_id_and_created_at"
-    t.index ["user_id"], name: "index_mcp_audit_logs_on_user_id"
-  end
-
   create_table "messages", force: :cascade do |t|
     t.integer "cache_creation_tokens"
     t.integer "cached_tokens"
@@ -3145,100 +3075,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_07_100000) do
     t.index ["family"], name: "index_models_on_family"
     t.index ["provider", "model_id"], name: "index_models_on_provider_and_model_id", unique: true
     t.index ["provider"], name: "index_models_on_provider"
-  end
-
-  create_table "nda_acceptances", force: :cascade do |t|
-    t.datetime "accepted_at"
-    t.datetime "created_at", null: false
-    t.datetime "declined_at"
-    t.bigint "entity_id", null: false
-    t.bigint "investor_id", null: false
-    t.string "ip_address", limit: 45
-    t.bigint "nda_config_id", null: false
-    t.integer "nda_version", default: 1, null: false
-    t.text "reason"
-    t.string "status", limit: 20, null: false
-    t.string "user_agent", limit: 500
-    t.bigint "user_id", null: false
-    t.index ["entity_id"], name: "idx_nda_acceptances_entity"
-    t.index ["investor_id"], name: "idx_nda_acceptances_investor"
-    t.index ["nda_config_id", "investor_id", "created_at"], name: "idx_nda_acceptances_gate_lookup"
-    t.index ["user_id"], name: "idx_nda_acceptances_user"
-  end
-
-  create_table "nda_config_versions", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.bigint "nda_config_id", null: false
-    t.text "nda_document_data", null: false
-    t.boolean "resign_required", default: true, null: false
-    t.datetime "updated_at", null: false
-    t.bigint "uploaded_by_id", null: false
-    t.integer "version", null: false
-    t.index ["nda_config_id", "resign_required", "version"], name: "idx_nda_config_versions_resign_lookup"
-    t.index ["nda_config_id", "version"], name: "idx_nda_config_versions_config_version", unique: true
-    t.index ["nda_config_id"], name: "index_nda_config_versions_on_nda_config_id"
-    t.index ["uploaded_by_id"], name: "index_nda_config_versions_on_uploaded_by_id"
-  end
-
-  create_table "nda_configs", force: :cascade do |t|
-    t.string "acceptance_method", limit: 20, default: "click_through", null: false
-    t.string "contact_email"
-    t.datetime "created_at", null: false
-    t.bigint "created_by_id"
-    t.datetime "deleted_at"
-    t.boolean "enabled", default: true, null: false
-    t.bigint "entity_id", null: false
-    t.text "nda_document_data"
-    t.text "notification_emails"
-    t.bigint "owner_id", null: false
-    t.string "owner_type", null: false
-    t.datetime "updated_at", null: false
-    t.bigint "updated_by_id"
-    t.date "validity_date"
-    t.integer "validity_days"
-    t.string "validity_type", limit: 20, default: "until_revoked", null: false
-    t.integer "version", default: 1, null: false
-    t.index ["created_by_id"], name: "index_nda_configs_on_created_by_id"
-    t.index ["deleted_at"], name: "idx_nda_configs_deleted_at"
-    t.index ["entity_id"], name: "index_nda_configs_on_entity_id"
-    t.index ["owner_type", "owner_id"], name: "idx_nda_configs_owner_uniq", unique: true
-    t.index ["updated_by_id"], name: "index_nda_configs_on_updated_by_id"
-  end
-
-  create_table "nda_exemptions", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.bigint "exempted_by_id", null: false
-    t.bigint "nda_config_id", null: false
-    t.string "reason", limit: 500
-    t.datetime "updated_at", null: false
-    t.bigint "user_id", null: false
-    t.index ["exempted_by_id"], name: "fk_rails_5f97b1d2e6"
-    t.index ["nda_config_id", "user_id"], name: "idx_nda_exemptions_config_user", unique: true
-    t.index ["user_id"], name: "idx_nda_exemptions_user"
-  end
-
-  create_table "nda_expiry_reminders", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.date "expiry_date", null: false
-    t.bigint "investor_id", null: false
-    t.string "kind", limit: 20, null: false
-    t.bigint "nda_config_id", null: false
-    t.datetime "sent_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["investor_id"], name: "fk_nda_expiry_reminders_investor"
-    t.index ["nda_config_id", "investor_id", "expiry_date", "kind"], name: "idx_nda_expiry_reminders_dedup", unique: true
-    t.index ["nda_config_id"], name: "idx_nda_expiry_reminders_config"
-  end
-
-  create_table "nda_signatories", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.bigint "nda_config_id", null: false
-    t.bigint "tagged_by_id", null: false
-    t.datetime "updated_at", null: false
-    t.bigint "user_id", null: false
-    t.index ["nda_config_id", "user_id"], name: "idx_nda_signatories_config_user", unique: true
-    t.index ["tagged_by_id"], name: "fk_rails_5f7e75e570"
-    t.index ["user_id"], name: "idx_nda_signatories_user"
   end
 
   create_table "notes", force: :cascade do |t|
@@ -4018,6 +3854,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_07_100000) do
     t.datetime "created_at", null: false
     t.datetime "deleted_at"
     t.bigint "entity_id", null: false
+    t.decimal "fully_diluted_percentage", precision: 10, scale: 4
     t.bigint "fund_id"
     t.bigint "import_upload_id"
     t.string "instrument"
@@ -4098,32 +3935,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_07_100000) do
     t.index ["capital_commitment_id"], name: "index_side_letters_on_capital_commitment_id"
     t.index ["document_id"], name: "index_side_letters_on_document_id"
     t.index ["entity_id"], name: "index_side_letters_on_entity_id"
-  end
-
-  create_table "simulation_events", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.string "event_type", null: false
-    t.bigint "investor_kyc_id"
-    t.string "message", null: false
-    t.json "payload"
-    t.bigint "simulation_run_id", null: false
-    t.integer "virtual_day", null: false
-    t.index ["investor_kyc_id"], name: "index_simulation_events_on_investor_kyc_id"
-    t.index ["simulation_run_id", "virtual_day"], name: "index_simulation_events_on_simulation_run_id_and_virtual_day"
-    t.index ["simulation_run_id"], name: "index_simulation_events_on_simulation_run_id"
-  end
-
-  create_table "simulation_runs", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.bigint "kyc_onboarding_id", null: false
-    t.json "response_config"
-    t.string "scenario_key", null: false
-    t.string "status", default: "pending", null: false
-    t.json "stub_config"
-    t.datetime "updated_at", null: false
-    t.integer "virtual_day", default: 0, null: false
-    t.index ["kyc_onboarding_id"], name: "index_simulation_runs_on_kyc_onboarding_id"
-    t.index ["status"], name: "index_simulation_runs_on_status"
   end
 
   create_table "solid_cache_entries", force: :cascade do |t|
@@ -4364,6 +4175,68 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_07_100000) do
     t.datetime "updated_at", null: false
     t.index ["entity_id"], name: "index_tear_sheet_presentations_on_entity_id"
     t.index ["portfolio_report_extract_id"], name: "index_tear_sheet_presentations_on_portfolio_report_extract_id", unique: true
+  end
+
+  create_table "template_authoring_runs", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "entity_id", null: false
+    t.text "error"
+    t.integer "max_rounds", default: 5, null: false
+    t.bigint "primary_proof_document_id"
+    t.bigint "primary_sample_id", null: false
+    t.string "primary_sample_type", null: false
+    t.bigint "requested_by_id", null: false
+    t.bigint "result_document_id"
+    t.integer "round", default: 0, null: false
+    t.bigint "second_proof_document_id"
+    t.bigint "second_sample_id"
+    t.string "second_sample_type"
+    t.string "source_checksum", limit: 64
+    t.bigint "source_document_id", null: false
+    t.string "state", limit: 20, default: "analysing", null: false
+    t.bigint "support_agent_id", null: false
+    t.string "template_type", limit: 40, null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id", "state"], name: "index_template_authoring_runs_on_entity_id_and_state"
+    t.index ["entity_id"], name: "index_template_authoring_runs_on_entity_id"
+    t.index ["primary_proof_document_id"], name: "idx_tar_on_primary_proof"
+    t.index ["primary_sample_type", "primary_sample_id"], name: "idx_tar_on_primary_sample"
+    t.index ["requested_by_id"], name: "index_template_authoring_runs_on_requested_by_id"
+    t.index ["result_document_id"], name: "idx_tar_on_result_document"
+    t.index ["second_proof_document_id"], name: "idx_tar_on_second_proof"
+    t.index ["second_sample_type", "second_sample_id"], name: "idx_tar_on_second_sample"
+    t.index ["source_document_id"], name: "index_template_authoring_runs_on_source_document_id"
+    t.index ["support_agent_id"], name: "index_template_authoring_runs_on_support_agent_id"
+  end
+
+  create_table "template_brackets", force: :cascade do |t|
+    t.decimal "ai_confidence", precision: 5, scale: 4
+    t.datetime "answered_at"
+    t.bigint "answered_by_id"
+    t.string "consistency_verdict", limit: 20
+    t.text "context_sentence"
+    t.datetime "created_at", null: false
+    t.string "exercised_by", limit: 20
+    t.string "expected_meaning", limit: 500
+    t.string "expression"
+    t.string "kind", limit: 20
+    t.json "locations", null: false
+    t.string "normalised_text", null: false
+    t.integer "occurrence_count", default: 0, null: false
+    t.text "question"
+    t.string "raw_text", limit: 500, null: false
+    t.text "reason"
+    t.json "rejected_expressions"
+    t.text "rendered_value"
+    t.string "review_status", limit: 20, default: "proposed", null: false
+    t.text "second_rendered_value"
+    t.json "shown_values"
+    t.bigint "template_authoring_run_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["answered_by_id"], name: "idx_tb_on_answered_by"
+    t.index ["template_authoring_run_id", "normalised_text"], name: "idx_tb_unique_text_per_run", unique: true
+    t.index ["template_authoring_run_id", "review_status"], name: "idx_tb_on_run_and_review_status"
+    t.index ["template_authoring_run_id"], name: "idx_tb_on_run"
   end
 
   create_table "ticker_feeds", force: :cascade do |t|
@@ -5061,6 +4934,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_07_100000) do
   add_foreign_key "investor_notices", "entities"
   add_foreign_key "investors", "folders", column: "document_folder_id"
   add_foreign_key "investors", "form_types"
+  add_foreign_key "investors", "users", column: "managed_by_user_id"
   add_foreign_key "kanban_boards", "entities"
   add_foreign_key "kanban_cards", "entities"
   add_foreign_key "kanban_cards", "kanban_boards"
@@ -5084,30 +4958,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_07_100000) do
   add_foreign_key "kpis", "kpi_reports"
   add_foreign_key "kyc_data", "entities"
   add_foreign_key "kyc_data", "investor_kycs"
-  add_foreign_key "kyc_inspection_records", "entities"
-  add_foreign_key "kyc_inspection_records", "investor_kycs"
-  add_foreign_key "kyc_inspection_records", "kyc_onboardings"
-  add_foreign_key "kyc_inspection_records", "users", column: "resolved_by_id"
-  add_foreign_key "kyc_onboarding_wizards", "kyc_onboardings"
-  add_foreign_key "kyc_onboardings", "entities"
-  add_foreign_key "mcp_audit_logs", "entities"
-  add_foreign_key "mcp_audit_logs", "oauth_applications"
-  add_foreign_key "mcp_audit_logs", "users"
   add_foreign_key "messages", "chats"
   add_foreign_key "messages", "models"
   add_foreign_key "messages", "tool_calls"
-  add_foreign_key "nda_acceptances", "entities"
-  add_foreign_key "nda_acceptances", "investors"
-  add_foreign_key "nda_acceptances", "nda_configs"
-  add_foreign_key "nda_acceptances", "users"
-  add_foreign_key "nda_config_versions", "nda_configs", on_delete: :cascade
-  add_foreign_key "nda_config_versions", "users", column: "uploaded_by_id"
-  add_foreign_key "nda_exemptions", "nda_configs"
-  add_foreign_key "nda_exemptions", "users"
-  add_foreign_key "nda_exemptions", "users", column: "exempted_by_id"
-  add_foreign_key "nda_signatories", "nda_configs"
-  add_foreign_key "nda_signatories", "users"
-  add_foreign_key "nda_signatories", "users", column: "tagged_by_id"
   add_foreign_key "nudges", "entities"
   add_foreign_key "nudges", "users"
   add_foreign_key "oauth_access_grants", "oauth_applications", column: "application_id"
@@ -5205,8 +5058,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_07_100000) do
   add_foreign_key "side_letters", "capital_commitments"
   add_foreign_key "side_letters", "documents"
   add_foreign_key "side_letters", "entities"
-  add_foreign_key "simulation_events", "simulation_runs"
-  add_foreign_key "simulation_runs", "kyc_onboardings"
   add_foreign_key "stamp_papers", "entities"
   add_foreign_key "stock_adjustments", "entities"
   add_foreign_key "stock_adjustments", "investment_instruments"
@@ -5235,6 +5086,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_07_100000) do
   add_foreign_key "tasks", "users"
   add_foreign_key "tear_sheet_presentations", "entities"
   add_foreign_key "tear_sheet_presentations", "portfolio_report_extracts"
+  add_foreign_key "template_authoring_runs", "documents", column: "primary_proof_document_id"
+  add_foreign_key "template_authoring_runs", "documents", column: "result_document_id"
+  add_foreign_key "template_authoring_runs", "documents", column: "second_proof_document_id"
+  add_foreign_key "template_authoring_runs", "documents", column: "source_document_id"
+  add_foreign_key "template_authoring_runs", "entities"
+  add_foreign_key "template_authoring_runs", "support_agents"
+  add_foreign_key "template_authoring_runs", "users", column: "requested_by_id"
+  add_foreign_key "template_brackets", "template_authoring_runs"
+  add_foreign_key "template_brackets", "users", column: "answered_by_id"
   add_foreign_key "tie_out_figures", "capital_commitments"
   add_foreign_key "tie_out_figures", "entities"
   add_foreign_key "tie_out_figures", "funds"
