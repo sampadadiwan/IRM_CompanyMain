@@ -112,11 +112,18 @@ class NdaNotificationRecipients
     User.where(id: matching_ids).to_a
   end
 
+  # Changed: Scoped to folder-level access rights instead of entity-level InvestorAccess.
+  # Why: NDA is per-folder — only investors with access to THIS folder should receive
+  #   version change notifications, not all entity investors.
+  #
   # @return [Array<User>] LP users of all investors with stale acceptances (accepted
   #   an older NDA version). Used for version change notifications.
   def stale_acceptance_users
+    folder_investor_ids = folder_scoped_investor_ids
+    return [] if folder_investor_ids.empty?
+
     stale_investor_ids = NdaAcceptance
-                         .where(nda_config_id: @nda_config.id, status: "accepted")
+                         .where(nda_config_id: @nda_config.id, investor_id: folder_investor_ids, status: "accepted")
                          .where.not(nda_version: @nda_config.version)
                          .distinct
                          .pluck(:investor_id)
@@ -139,28 +146,30 @@ class NdaNotificationRecipients
       .filter_map(&:user)
   end
 
+  # Changed: Scoped to folder-level access rights instead of entity-level InvestorAccess.
+  # Why: NDA is per-folder — only investors with access to THIS folder should receive
+  #   reminders, not all entity investors.
+  #
   # @return [Array<User>] NDA signatory users of all Pending investors. Used for
   #   GP-triggered bulk reminders. Excludes exempt investors.
   def pending_signatory_users
-    # Changed: Resolve pending investors by finding those without a valid acceptance.
-    # Why: "Pending" is a derived status — no acceptance record or latest is declined/revoked.
-    all_investor_ids = InvestorAccess
-                       .where(entity_id: @nda_config.entity_id, approved: true)
-                       .where(exempt_from_nda: [false, nil])
-                       .distinct
-                       .pluck(:investor_id)
+    folder_investor_ids = folder_scoped_investor_ids
+    return [] if folder_investor_ids.empty?
 
-    return [] if all_investor_ids.empty?
+    # Changed: Exclude exempt investors from reminder resolution.
+    # Why: Exempt investors bypass the NDA gate — no need to remind them.
+    non_exempt_ids = folder_investor_ids - exempt_investor_ids_from(folder_investor_ids)
+    return [] if non_exempt_ids.empty?
 
     # Changed: Find investors with a valid accepted acceptance (current version, not expired).
     # Why: Only investors without a valid acceptance are "Pending" for reminder purposes.
     accepted_investor_ids = NdaAcceptance
-                            .where(nda_config_id: @nda_config.id, investor_id: all_investor_ids, status: "accepted")
+                            .where(nda_config_id: @nda_config.id, investor_id: non_exempt_ids, status: "accepted")
                             .where(nda_version: @nda_config.version)
                             .distinct
                             .pluck(:investor_id)
 
-    pending_investor_ids = all_investor_ids - accepted_investor_ids
+    pending_investor_ids = non_exempt_ids - accepted_investor_ids
     return [] if pending_investor_ids.empty?
 
     signatory_user_ids = NdaSignatory.where(nda_config_id: @nda_config.id).pluck(:user_id)
@@ -181,5 +190,27 @@ class NdaNotificationRecipients
   def investor_exempt?(investor)
     InvestorAccess
       .exists?(entity_id: @nda_config.entity_id, investor_id: investor.id, exempt_from_nda: true)
+  end
+
+  # Changed: Added folder-scoped investor resolution for bulk notification methods.
+  # Why: NDA is per-folder — pending_signatory_users and stale_acceptance_users must
+  #   only consider investors with access to THIS folder, not all entity investors.
+  #   Uses Investor.owner_access_rights which matches by AccessRight on the folder.
+  #
+  # @return [Array<Integer>] investor IDs with folder-level access rights
+  def folder_scoped_investor_ids
+    folder = @nda_config.owner
+    return [] unless folder.is_a?(Folder)
+
+    Investor.owner_access_rights(folder, nil).pluck(:id)
+  end
+
+  # @param investor_ids [Array<Integer>] investor IDs to check
+  # @return [Array<Integer>] subset of investor_ids that are exempt from NDA
+  def exempt_investor_ids_from(investor_ids)
+    InvestorAccess
+      .where(entity_id: @nda_config.entity_id, investor_id: investor_ids, exempt_from_nda: true)
+      .distinct
+      .pluck(:investor_id)
   end
 end
