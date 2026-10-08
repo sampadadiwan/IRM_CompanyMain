@@ -43,6 +43,20 @@ Given("there is an LP user for the GP entity") do
   )
 end
 
+# Creates an LP user WITHOUT investor or InvestorAccess records.
+# Why: Policy "deny without investor access" scenario needs an LP user
+#   who has no InvestorAccess to the GP entity.
+Given("there is an LP user without investor access for the GP entity") do
+  @lp_entity = Entity.create!(name: "LP Entity", entity_type: "Limited Partner", primary_email: "lp_entity@example.com")
+  @lp_user = User.create!(
+    email: "lp_test_#{SecureRandom.hex(4)}@example.com",
+    password: "password",
+    entity: @lp_entity,
+    first_name: "LP",
+    last_name: "User"
+  )
+end
+
 # ── Action steps ─────────────────────────────────────────────────────────────
 
 # Creates an NdaAcceptance with status "accepted" and full audit metadata.
