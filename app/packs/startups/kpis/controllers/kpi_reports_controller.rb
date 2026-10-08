@@ -392,38 +392,59 @@ class KpiReportsController < ApplicationController
       return
     end
 
-    SendPortcoNotificationJob.perform_later(
-      portfolio_company_ids,
-      user_id: current_user.id,
-      as_of: params[:as_of],
-      period: params[:period],
-      kpi_report_id:
-    )
+    # One company with a date (the investor page's Send Reminder, or a single pick in the reminder modal):
+    # create — or find — its report shell now and start its journey, so the user can be sent straight to
+    # it. The job below finds this same report (same lookup), emails the link and moves it to Link Sent.
+    target_report = nil
+    if kpi_report_id.nil? && portfolio_company_ids.size == 1 && params[:as_of].present?
+      target_report = SendPortcoNotificationJob.find_or_create_dated_report(
+        Investor.find(portfolio_company_ids.first), current_user, params[:as_of], params[:period]
+      )
+      target_report.start_journey!(current_user)
+    end
 
-    notice = portfolio_company_ids.size > 1 ? "Notifications are being sent." : "Notification is being sent."
+    # A period the company already submitted gets no reminder — the job would skip it anyway, so say so now
+    already_submitted = target_report && (target_report.status_submitted? || target_report.status_reviewed?)
+    unless already_submitted
+      SendPortcoNotificationJob.perform_later(
+        portfolio_company_ids,
+        user_id: current_user.id,
+        as_of: params[:as_of],
+        period: params[:period],
+        kpi_report_id:
+      )
+    end
+
+    notice = if already_submitted
+               "The KPI report for #{l(target_report.as_of)} is already #{target_report.status.humanize.downcase} — no reminder was sent."
+             elsif portfolio_company_ids.size > 1
+               "Notifications are being sent."
+             else
+               "Notification is being sent."
+             end
     # A portco with no non-computed KPI mappings can upload nothing usable — say so now, at send time (§2.7).
     unmapped = Investor.where(id: portfolio_company_ids)
                        .where.not(id: InvestorKpiMapping.not_compute.select(:investor_id))
                        .order(:investor_name).pluck(:investor_name)
     unmapped_alert = "No KPI mappings configured for: #{unmapped.join(', ')} — their uploads will be rejected until mappings are added under Investors → KPI Mappings." if unmapped.any?
+
+    # Land on the report the reminder is for, with its journey step bar. A full-page visit (the forms target
+    # _top) also closes the reminder modal and its backdrop. Users who can't open the report stay put.
+    if target_report && policy(target_report).show?
+      redirect_to kpi_report_path(target_report), status: :see_other, notice: notice, alert: unmapped_alert
+      return
+    end
+
     respond_to do |format|
       format.html { redirect_to request.referer || kpi_reports_path, notice: notice, alert: unmapped_alert }
       format.turbo_stream do
         flash.now[:notice] = notice
         flash.now[:alert] = unmapped_alert if unmapped_alert
-        streams = [
+        render turbo_stream: [
           turbo_stream.update("remote_modal", ""),
           turbo_stream.append("remote_modal", partial: "kpi_reports/alerts"),
           turbo_stream.update("remote_modal_alerts", partial: "kpi_reports/alerts")
         ]
-        # Use a data attribute on the stream to carry the modal ID so the browser-side
-        # JS can close it — never interpolate params into a script tag.
-        if params[:modal_id].present?
-          safe_id = params[:modal_id].gsub(/[^a-zA-Z0-9_-]/, "")
-          streams << turbo_stream.append("remote_modal_alerts",
-                                         helpers.content_tag(:div, "", data: { modal_close_id: safe_id }, class: "d-none"))
-        end
-        render turbo_stream: streams
       end
     end
   end

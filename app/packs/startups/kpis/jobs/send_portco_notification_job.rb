@@ -28,6 +28,22 @@ class SendPortcoNotificationJob < ApplicationJob
     send_error_email(user) if @error_msgs.present?
   end
 
+  # The report a reminder for this date and period targets — found, or created as an upload shell.
+  # Public so the controller can create the same shell up front for a single company and send the
+  # user straight to it; the job then finds that report rather than making a second one.
+  def self.find_or_create_dated_report(portfolio_company, user, as_of_param, period_param)
+    KpiReport.find_or_create_by!(
+      entity_id: user.entity_id,
+      portfolio_company_id: portfolio_company.id,
+      as_of: Date.local_parse(as_of_param),
+      period: period_param.presence || "Quarter",
+      tag_list: "Actual"
+    ) do |report|
+      report.user_id = user.id
+      report.enable_portco_upload = true
+    end
+  end
+
   private
 
   # Finds or creates a KPI report for the PortCo and triggers the notification service.
@@ -43,17 +59,7 @@ class SendPortcoNotificationJob < ApplicationJob
                    KpiReport.find_by!(id: kpi_report_id, entity_id: user.entity_id, portfolio_company_id: portfolio_company.id)
                  elsif as_of_param.present?
                    # Use the explicitly provided date
-                   as_of = Date.local_parse(as_of_param)
-                   KpiReport.find_or_create_by!(
-                     entity_id: user.entity_id,
-                     portfolio_company_id: portfolio_company.id,
-                     as_of: as_of,
-                     period: period_param || "Quarter",
-                     tag_list: "Actual"
-                   ) do |report|
-                     report.user_id = user.id
-                     report.enable_portco_upload = true
-                   end
+                   self.class.find_or_create_dated_report(portfolio_company, user, as_of_param, period_param)
                  else
                    # Fallback to the intelligent quarter-end shell logic
                    find_or_create_kpi_report_shell(portfolio_company, user)
