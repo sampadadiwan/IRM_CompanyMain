@@ -176,6 +176,12 @@
           <% end %>
         <% end %>
 
+        <%# Every value the run recorded, step by step — the lookups and settings the tree above
+            does not show because they are not terms of the result. %>
+        <% if explanation.breakdown_recorded? && explanation.leaf_reason.nil? %>
+          <%= render "account_entries/explanation_steps", explanation: explanation, entry: entry, ai_data: ai_data %>
+        <% end %>
+
         <%# The AI's write-up, in sentences, when one has been asked for. %>
         <% if ai_data.is_a?(Hash) && (ai_data["summary"].present? || ai_data["conclusion"].present?) %>
           <div class="border-top mt-4 pt-3">

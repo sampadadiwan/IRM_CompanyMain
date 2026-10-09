@@ -29,6 +29,11 @@
 
     # kpi_reports is already a loaded, as_of-sorted array at this point - free in-memory lookup.
     last_kpi_report_id = kpi_reports.last&.id
+
+    # Send Reminder is only offered when someone can receive it: the same recipients the reminder email
+    # goes to (approved, tagged Kpi or untagged, with a login — SendPortcoNotification). No report exists
+    # yet, so the per-report policy check the job also does can't run here.
+    can_send_reminder = investor.present? && investor.notification_users(nil, with_tag: "Kpi").any?
 %>
 <!-- FLEXIBLE CHART VERSION 2.0 -->
 <div data-controller="kpi-chart <%= 'kpi-currency-toggle' if show_currency_toggle %>"
@@ -123,10 +128,18 @@
               <%= button_to "Recompute Percentages", recompute_percentage_change_kpi_report_path(last_kpi_report_id), method: :patch, class: "dropdown-item ti ti-percentage", data: {bs_toggle: "tooltip", bs_title: "Regenrate % change compared to the previous period (by default this is computed when uploading KPI data)"} if last_kpi_report_id %>
               <%= button_to "Recompute Auto-Fill", recompute_cumulative_kpi_report_path(last_kpi_report_id), method: :patch, class: "dropdown-item ti ti-refresh", data: {bs_toggle: "tooltip", bs_title: "Recompute cumulative and forward fill calculations for this company"} if last_kpi_report_id %>
               <%= button_to "Recompute FX Conversion", recompute_fx_conversion_kpi_report_path(last_kpi_report_id), method: :patch, class: "dropdown-item ti ti-currency-dollar", data: {bs_toggle: "tooltip", bs_title: "Recompute currency conversion using current exchange rates for this company"} if last_kpi_report_id %>
-              <% if investor %>
-                <a href="#" class="dropdown-item ti ti-bell" data-bs-toggle="modal" data-bs-target="#sendReminderModal-<%= investor.id %>">
+              <% if can_send_reminder %>
+                <a href="#" id="kpi_send_reminder_link" class="dropdown-item ti ti-bell" data-bs-toggle="modal" data-bs-target="#sendReminderModal-<%= investor.id %>">
                   Send Reminder
                 </a>
+              <% elsif investor %>
+                <%# Greyed out with the reason — Bootstrap shows no tooltip on a disabled element, so the span carries it %>
+                <span class="d-block" data-bs-toggle="tooltip"
+                      title="<%= "#{investor.investor_name} has no approved portal user for KPI requests — add one under Stakeholders first" %>">
+                  <a href="#" id="kpi_send_reminder_link" class="dropdown-item ti ti-bell disabled" aria-disabled="true" tabindex="-1">
+                    Send Reminder
+                  </a>
+                </span>
               <% end %>
               <!-- This is no longer used - its there just to satisfy tests. See KpiWorkbookReader -->
               <%= link_to "Upload",
@@ -143,11 +156,11 @@
           </div>
         </div>
       </span>
-      <% if investor %>
+      <% if can_send_reminder %>
         <div class="modal fade" id="sendReminderModal-<%= investor.id %>" tabindex="-1" aria-labelledby="sendReminderModalLabel" aria-hidden="true">
           <div class="modal-dialog">
             <div class="modal-content">
-              <%= form_with url: send_portco_notification_kpi_reports_path(modal_id: "sendReminderModal-#{investor.id}"), method: :post do |f| %>
+              <%= form_with url: send_portco_notification_kpi_reports_path, method: :post, data: { turbo_frame: "_top" } do |f| %>
                 <div class="modal-header">
                   <h5 class="modal-title" id="sendReminderModalLabel">Send KPI Report Reminder</h5>
                   <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>

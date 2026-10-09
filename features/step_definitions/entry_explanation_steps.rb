@@ -124,3 +124,34 @@ end
 Then('the explanation should say {string}') do |text|
   expect(@ex.leaf_reason.to_s).to include(text)
 end
+
+Then('term {string} should have no parts') do |label|
+  expect(ex_term!(label).children).to be_empty
+end
+
+Then('the calculation steps should be {string}') do |pairs|
+  expected = pairs.split(",").map { |pair| pair.split("=", 2).map(&:strip) }
+  expect(@ex.steps.map { |key, value| [key, value.to_s] }).to eq(expected)
+end
+
+Then('there should be no calculation steps') do
+  expect(@ex.steps).to be_empty
+end
+
+# Draws the steps partial on its own — it takes only the explanation, so no request or policy is
+# needed — and keeps the HTML for the checks below.
+When('the calculation steps table is drawn') do
+  html = AccountEntriesController.render(partial: "account_entries/explanation_steps",
+                                         locals: { explanation: @ex, entry: @ex.entry, ai_data: nil })
+  @ex_steps_html = Nokogiri::HTML.fragment(html)
+end
+
+Then('the steps table should show {string} as {string}') do |expression, value|
+  row = @ex_steps_html.css("#explanation_steps tbody tr").find { |tr| tr["data-step-expr"] == expression }
+  expect(row).not_to be_nil, "No row for #{expression.inspect}"
+  expect(row.css("td")[2].text.strip).to eq(value)
+end
+
+Then('the steps table should not be drawn') do
+  expect(@ex_steps_html.css("#explanation_steps")).to be_empty
+end

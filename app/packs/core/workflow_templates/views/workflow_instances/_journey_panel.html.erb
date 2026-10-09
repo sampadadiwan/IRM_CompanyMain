@@ -22,6 +22,9 @@
     (layouts/_breadcrumbs, journey_reveal_controller.js) shows and hides it. %>
 <% instance ||= record.workflow_instances.evaluated.where.not(status: :archived).order(created_at: :desc).first %>
 <%= turbo_frame_tag frame_id do %>
+  <%# Fingerprint of the journey this panel was drawn from: journey_catch_up_controller.js compares it
+      with a fresh copy and only swaps the panel in when the journey changed while the page loaded %>
+  <span hidden data-journey-version="<%= journey_version(journey) %>"></span>
   <% if journey.present? && instance %>
     <% steps = journey.map(&:with_indifferent_access) %>
     <% current = steps.find { |s| s[:status].in?(%w[current error]) } %>

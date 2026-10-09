@@ -19,6 +19,15 @@ artifacts:
       - **What Changes**: What changes for the user/business, in plain language, with a mermaid
         flowchart pair (before/after, never ASCII art) for each existing flow the change alters. Mark breaking changes with
         **BREAKING**.
+      - **Workflow Journey** (REQUIRED, placed before User Stories and linked from the header):
+        one worked journey from "nothing set up" to the outcome, listing EVERY action in order -
+        who is involved; one mermaid flowchart of the whole journey (subgraph per part: before
+        you start / once / every time / if something changes later, numbered steps, decision
+        diamonds, fix-and-retry loops); prerequisites; a table per part with Step | Who | Where
+        (screen › button) | Action | What the system does | What you see; ASCII mockups of the
+        key screens with realistic example figures and the arithmetic behind any computed value;
+        at least one failing path and its fix; and a minimum-actions summary (who, how often).
+        A reader must be able to follow the feature end to end from this section alone.
       - **User Stories**, **UI Behavior**, **What This Feature Does NOT Cover**, **Validation
         Rules**, **Behavior Rules**, **Resolved Design Decisions**: fill these in with concrete,
         testable detail - specific UI elements, messages, and scenarios, not code. These sections

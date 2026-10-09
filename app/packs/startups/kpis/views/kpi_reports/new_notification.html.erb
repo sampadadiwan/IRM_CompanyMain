@@ -2,7 +2,7 @@
   <div class="modal fade" data-controller="modal" tabindex="-1">
     <div class="modal-dialog modal-lg">
       <div class="modal-content">
-        <%= form_with url: send_portco_notification_kpi_reports_path, method: :post do |f| %>
+        <%= form_with url: send_portco_notification_kpi_reports_path, method: :post, data: { turbo_frame: "_top" } do |f| %>
           <div class="modal-header border-bottom-0 pb-0">
             <div>
               <h5 class="modal-title fw-semibold">Send KPI Report Reminder</h5>
