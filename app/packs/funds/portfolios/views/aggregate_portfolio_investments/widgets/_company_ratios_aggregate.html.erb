@@ -21,7 +21,7 @@
 
   fund_ratios = fund_ratio_list(owner_ids, fund_ids, owner_types: owner_types, ratio_names: ratio_names, latest: latest, end_date: args[:end_date])
   ratio_names.each do |ratio_name|
-    ratios_by_name[ratio_name] = fund_ratios.where(name: ratio_name).map do |fr|
+    ratios_by_name[ratio_name] = fund_ratios.where(name: ratio_name).select(&:owner).map do |fr|
       # For IRR, use fr.value with decimals precision
       # For MOIC, parse from display_value to get the correct value
       if ratio_name.upcase.include?('IRR')

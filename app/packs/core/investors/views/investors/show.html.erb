@@ -26,11 +26,26 @@
     <% end %>
 
     <% if policy(@investor).destroy? %>
+      <%
+        delete_data = { action: "click->confirm#popup", turbo: false }
+        fund_ratio_count = @investor.fund_ratios.count
+        # msg is rendered as HTML by confirm#popup: keep it to static text and a number only.
+        # title is rendered as text, so the investor name is safe there.
+        # With no ratios the popup's default title and message are used.
+        if fund_ratio_count.positive?
+          delete_data[:title] = "Delete #{@investor.investor_name}?"
+          delete_data[:msg] = if fund_ratio_count == 1
+                                "Deleting this investor will also delete its associated fund ratio. Proceed?"
+                              else
+                                "Deleting this investor will also delete its #{fund_ratio_count} associated fund ratios. Proceed?"
+                              end
+        end
+      %>
       <%= button_to @investor,
                     method: :delete,
                     class: "btn btn-outline-danger d-inline-flex align-items-center",
                     form_class: "deleteButton",
-                    data: { action: "click->confirm#popup", turbo: false } do %>
+                    data: delete_data do %>
         <i class="ti ti-trash"></i> <%= t_common(:delete) %>
       <% end %>
     <% end %>

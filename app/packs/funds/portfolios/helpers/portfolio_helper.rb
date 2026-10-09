@@ -156,7 +156,7 @@ module PortfolioHelper
   end
 
   def portfolio_last_xirr(fund)
-    pc_frs = FundRatio.latest.where(entity_id: fund.entity_id, fund_id: fund.id, name: %w[IRR MOIC], owner_type: "Investor").includes(:owner)
+    pc_frs = FundRatio.latest.where(entity_id: fund.entity_id, fund_id: fund.id, name: %w[IRR MOIC], owner_type: "Investor").includes(:owner).select(&:owner)
     if pc_frs.present?
       grouped = pc_frs.group_by { |fr| fr.owner.name }
       chart_data = [

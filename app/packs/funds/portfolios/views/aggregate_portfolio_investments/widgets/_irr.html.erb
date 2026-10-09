@@ -21,6 +21,7 @@
                              .where(entity_id: fund.entity_id, fund_id: fund.id, name: ["IRR", "MOIC"], owner_type: "Investor")
                              .includes(:owner)
                              .order(end_date: :desc)
+                             .select(&:owner)
                              .group_by { |fr| fr.owner.name }
     %>
     <%= render "aggregate_portfolio_investments/widgets/fund_ratio_list", fund_ratios_by_owner: fund_ratios %>
