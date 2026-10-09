@@ -3,6 +3,7 @@
 class SendPortcoNotification < Trailblazer::Operation
   step :enable_self_reporting
   step :notify_users
+  step :start_journey
 
   # Ensure the report has self-reporting enabled and advance status to link_sent.
   def enable_self_reporting(_ctx, model:, **)
@@ -22,5 +23,14 @@ class SendPortcoNotification < Trailblazer::Operation
     model.portfolio_company.notification_users(model, with_tag: 'Kpi').each do |user|
       KpiReportNotifier.with(record: model, entity_id: entity_id).deliver_later(user)
     end
+  end
+
+  # Asking a portco for a period makes the report a request — including a report an earlier import
+  # created for that period — so it gets the KPI report journey; one that has it moves on.
+  # Worked examples E18 — openspec/changes/kpi-report-journey/design.md#worked-examples
+  def start_journey(_ctx, model:, **)
+    model.start_journey!
+    model.journey_progress!
+    true
   end
 end

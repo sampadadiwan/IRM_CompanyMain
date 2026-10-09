@@ -81,18 +81,27 @@ Given("the remittance for the first commitment will fail to save") do
 end
 
 # The progress line is replaced and then emptied faster than Capybara polls, so a MutationObserver
-# records every text it showed for the assertions below
+# records every text it showed for the assertions below. It reads each mutation's added nodes, not the
+# element's text when the callback runs: one callback can batch several updates ("2 of 2" then the
+# clear), and reading the element then would only see the last of them.
 When("I watch the call page's progress line") do
   page.execute_script(<<~JS)
     window.progressSeen = [];
     const el = document.getElementById("#{@capital_call.remittance_progress_target_id}");
-    new MutationObserver(() => window.progressSeen.push(el.textContent.trim().replace(/\s+/g, " ")))
-      .observe(el, { childList: true, subtree: true, characterData: true });
+    new MutationObserver((records) => records.forEach((record) => {
+      // Turbo's update action empties the element, then appends the new content: one record per append
+      const text = Array.from(record.addedNodes).map((node) => node.textContent).join("").trim().replace(/\\s+/g, " ");
+      if (text) window.progressSeen.push(text);
+    })).observe(el, { childList: true });
   JS
 end
 
+# Retried like any Capybara matcher: the broadcast can still be on its way when the job step returns
 Then("the progress line should have shown {string}") do |text|
-  expect(page.evaluate_script("window.progressSeen")).to include(text)
+  page.document.synchronize do
+    seen = page.evaluate_script("window.progressSeen")
+    raise Capybara::ExpectationNotMet, "progress line showed #{seen.inspect}, never #{text.inspect}" unless seen.include?(text)
+  end
 end
 
 Then("the progress line should be empty") do

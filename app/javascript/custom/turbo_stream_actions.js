@@ -23,16 +23,55 @@ Turbo.StreamActions.reload_frame = function () {
   // No src: reload whatever the frame is showing now, keeping any filter the user applied to it
   // (the capital call's remittances list — CapitalCall#broadcast_remittances_change)
   if (!src) {
-    if (frame.getAttribute("src")) frame.reload()
+    if (frame.getAttribute("src")) reloadWhenIdle(frame)
     return
   }
 
   // Same source: reload (morphs when refresh="morph"). New source: setting it loads it once.
   if (frame.getAttribute("src") === src) {
-    frame.reload()
+    reloadWhenIdle(frame)
   } else {
     frame.src = src
   }
+}
+
+/**
+ * frame.reload(), but never while a load is in flight. Reloading cancels the in-flight request, and when that
+ * request is a lazy frame's first load Turbo (8.0.x FrameController) never starts another: it only reloads a
+ * lazy frame on a src change once #hasBeenLoaded, which the cancelled load never sets. The frame then keeps
+ * its loading spinner for good — e.g. a call page opened while CapitalCallJob runs, whose first remittances
+ * fetch is cut off by the job's next reload_frame.
+ * So a busy frame is reloaded once a load has finished; a burst of broadcasts meanwhile becomes one reload
+ * (the reload fetches the latest state anyway).
+ * Waits on events rather than frame.loaded: that promise never settles if its load is cancelled (e.g. the
+ * user picks a remittances filter, which sets a new src), and the queued reload would then never run.
+ */
+function reloadWhenIdle(frame) {
+  // Idle: reload now (cancels nothing)
+  if (!frame.hasAttribute("busy")) {
+    frame.reload()
+    return
+  }
+
+  // Busy: one queued reload per frame
+  if (frame.reloadQueued) return
+  frame.reloadQueued = true
+
+  // Whichever load finishes next — rendered (turbo:frame-load) or failed at the network (turbo:fetch-request-error)
+  const done = () => {
+    frame.removeEventListener("turbo:frame-load", done)
+    frame.removeEventListener("turbo:fetch-request-error", done)
+    // Next task, not now: both events fire before Turbo has finished with the load — the error one while the
+    // frame is still busy, and frame-load before Turbo marks the frame as loaded (#hasBeenLoaded), so
+    // reloading inside the event would hit the same stuck-spinner case
+    setTimeout(() => {
+      frame.reloadQueued = false
+      // The frame may have left the page (navigation) while it was loading
+      if (frame.isConnected) reloadWhenIdle(frame)
+    }, 0)
+  }
+  frame.addEventListener("turbo:frame-load", done)
+  frame.addEventListener("turbo:fetch-request-error", done)
 }
 
 // Inside a morphing frame, keep a <details> the user opened (e.g. the "Keep the KYC's …" reason box)

@@ -94,12 +94,15 @@ class WorkflowEvaluator < Trailblazer::Operation
   # one current) — they are already looking at it.
   def owner_mail(instance, mail, actor)
     step = instance.snapshot_steps.find { |s| s[:position].to_i == mail[:position] }
-    owner = step && WorkflowAutoReminderJob.owner_for(instance, step)
-    return unless owner
-    return if actor && owner.id == actor.id
+    return unless step
 
-    WorkflowNotifier.with(record: instance, entity_id: instance.entity_id, email_method: mail[:type],
-                          step_position: mail[:position]).deliver_later(owner)
+    # Every resolved owner (one for most journeys; a KPI report may have several) — minus the actor
+    WorkflowAutoReminderJob.owners_for(instance, step).each do |owner|
+      next if actor && owner.id == actor.id
+
+      WorkflowNotifier.with(record: instance, entity_id: instance.entity_id, email_method: mail[:type],
+                            step_position: mail[:position]).deliver_later(owner)
+    end
   end
 
   # Worked examples H2, H8 (walk), E3, E4, E22, E23 (n/a), X6 (errors) — openspec/changes/archive/2026-10-02-capital-call-journey/design.md#worked-examples
@@ -167,6 +170,8 @@ class WorkflowEvaluator < Trailblazer::Operation
         # An acknowledge check's own button beside "Mark reviewed" — only when it asked for one, so
         # other journeys' stored results stay byte-identical (no new nil keys)
         row.merge!(outcome.slice(:review_action_label, :review_action_path, :review_action_target, :review_action_new_tab).compact)
+        # The main button opens in a new tab — likewise only when the check asked (KPI approvals, H19)
+        row[:action_new_tab] = true if outcome[:action_new_tab]
         results << row
       end
     end
@@ -292,7 +297,8 @@ class WorkflowEvaluator < Trailblazer::Operation
       fresh = [result.fresh_since, history.last_at(step[:position], "recomputed")].compact.max
       unless fresh && fresh > invalidated_at
         return { status: "current", message: history.last_note(step[:position], "invalidated") || "Needs to be done again",
-                 action_label: result.action_label, action_path: result.action_path, action_target: result.action_target }
+                 action_label: result.action_label, action_path: result.action_path, action_target: result.action_target,
+                 action_new_tab: (true if result.new_tab) }
       end
     end
 
@@ -378,7 +384,7 @@ class WorkflowEvaluator < Trailblazer::Operation
 
   def current_from(result)
     { status: "current", message: result.message, action_label: result.action_label, action_path: result.action_path,
-      action_target: result.action_target }
+      action_target: result.action_target, action_new_tab: (true if result.new_tab) }
   end
 
   # The skip check's result for a step (nil when it has none); a passing result means "n/a" and its
@@ -455,7 +461,9 @@ class WorkflowEvaluator < Trailblazer::Operation
     Rails.logger.error("[WorkflowEvaluator] entity=#{instance.entity_id} instance=#{instance.id} " \
                        "#{instance.workflowable_type}##{instance.workflowable_id} step=#{step[:position]} " \
                        "check=#{step[:check_key]}: #{error.class}: #{error.message}")
-    ExceptionNotifier.notify_exception(error, data: { instance_id: instance.id, step: step[:position], check: step[:check_key] })
+    ErrorReport.notify(error, source: "WorkflowEvaluator", entity_id: instance.entity_id,
+                              record: "#{instance.workflowable_type}##{instance.workflowable_id}",
+                              instance_id: instance.id, step: step[:position], check: step[:check_key])
   end
 
   # Reads the instance's history once per evaluation

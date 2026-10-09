@@ -20,7 +20,7 @@ class FundDeleteAllJob < ApplicationJob
       end
     rescue StandardError => e
       msg = "Failed deleting #{delete_class_name} for fund #{fund.name} with error #{e.message}"
-      ExceptionNotifier.notify_exception(e, data: { message: msg })
+      ErrorReport.notify(e, job: self, fund_id: fund.id, entity_id: fund.entity_id, message: msg)
       Rails.logger.error(msg)
       send_notification(msg, user_id, :error)
       failed = true

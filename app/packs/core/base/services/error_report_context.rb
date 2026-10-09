@@ -18,6 +18,28 @@ class ErrorReportContext
   # a console invocation, or a job enqueued before ApplicationJob started carrying the actor.
   UNATTRIBUTED = "Not attributed — scheduled (sidekiq-cron) or console run"
 
+  # Defers building a context until it is printed. ExceptionNotifier reads the request's
+  # exception data from the Rack env, which must be set before the action runs - but building
+  # the block then would mean a database lookup on every request, almost all of which succeed.
+  # The email renders its data with PP, so computing on pretty_print / inspect builds the block
+  # only for the requests that actually fail, and only once.
+  class Lazy
+    def initialize(&builder)
+      @builder = builder
+    end
+
+    def value
+      @value ||= @builder.call
+    end
+
+    # inspect / to_s cover the email's other renderers and any logging of the data hash.
+    delegate :inspect, :to_s, to: :value
+
+    def pretty_print(printer)
+      printer.pp(value)
+    end
+  end
+
   class << self
     # Context for an error raised inside an ActiveJob. `job` is normally `self` from within the
     # job. Extra keys are appended before the environment block; symbol keys are humanized
@@ -41,6 +63,55 @@ class ErrorReportContext
     # `source` names the entry point, e.g. "MultiSiteUserSyncOrchestrator.sync_all".
     def for_service(source, user: nil, **extra)
       finish({ "Source" => source.to_s, "Triggered by" => actor(user || Current.user) }, extra)
+    rescue StandardError => e
+      fallback(e)
+    end
+
+    # Context for an error raised while serving a web request — the block the developer error email
+    # (ExceptionNotifier) carries for page errors. Built when the error is reported, not when the
+    # request starts (see Lazy), so it shows the state at the moment of failure — after a persona
+    # switch, with the support login-as already applied — and costs nothing on requests that succeed.
+    def for_request(controller)
+      user = safely { controller.send(:current_user) }
+      request = controller.request
+      base = {
+        "Source" => "#{controller.class.name}##{controller.action_name}",
+        "Request" => "#{request.request_method} #{request.fullpath}",
+        "Request id" => request.request_id,
+        "User" => user ? actor(user) : "Not signed in",
+        # session, not user.support_user_id: that is set by authenticate_user!, which may not have
+        # run yet when an early before_action raises.
+        "Impersonated by" => safely { (id = controller.session[:support_user_id]).present? ? actor(User.find_by(id:)) : nil }
+      }.merge(user ? user_whereabouts(user) : {})
+      finish(base, {})
+    rescue StandardError => e
+      fallback(e)
+    end
+
+    # Context for a Sidekiq job failure, from the ctx Sidekiq hands its error handlers. Sidekiq's
+    # payload holds the ActiveJob envelope as raw JSON, so the actor is an id, the arguments carry
+    # ActiveJob's own "_aj_" bookkeeping and the job class hides behind Sidekiq's wrapper. This
+    # unpacks it into the same rows for_job produces from inside a running job.
+    def for_sidekiq(ctx)
+      job = ctx[:job] || ctx["job"]
+      return finish({ "Source" => "Sidekiq (#{ctx[:context] || ctx['context'] || 'no job'})" }, {}) unless job.is_a?(Hash)
+
+      # ActiveJob jobs arrive wrapped: Sidekiq's "class" is the wrapper and the real job, its
+      # arguments, acting_user_id and enqueued_from sit in the single envelope in "args".
+      envelope = job["wrapped"] && job["args"]&.first.is_a?(Hash) ? job["args"].first : nil
+      acting_user_id = envelope&.dig("acting_user_id")
+      base = {
+        "Source" => job["wrapped"] || job["class"],
+        "Triggered by" => acting_user_id ? safely { actor(User.with_deleted.find_by(id: acting_user_id)) } : actor(nil),
+        "Triggered from" => envelope&.dig("enqueued_from"),
+        "Job arguments" => clean_arguments(envelope ? envelope["arguments"] : job["args"]),
+        "Job id" => envelope&.dig("job_id"),
+        "Sidekiq jid" => job["jid"],
+        "Queue" => job["queue"],
+        "Retry count" => job["retry_count"],
+        "Sidekiq context" => ctx[:context] || ctx["context"]
+      }
+      finish(base, {})
     rescue StandardError => e
       fallback(e)
     end
@@ -93,6 +164,30 @@ class ErrorReportContext
       end
     end
 
+    # Where the user was when it failed. The entity they are switched into is the most common
+    # hidden cause - many checks assume the user is inside the record's entity - so it is spelled
+    # out, along with an advisor's home firm and the roles in force at that moment.
+    def user_whereabouts(user)
+      {
+        "Switched into" => safely { "#{user.entity&.name} (##{user.entity_id}, #{user.entity_type})" },
+        "Home firm" => safely do
+          next if user.advisor_entity_id.blank? || user.advisor_entity_id == user.entity_id
+
+          "#{Entity.find_by(id: user.advisor_entity_id)&.name} (##{user.advisor_entity_id})"
+        end,
+        "Current role" => user.try(:curr_role),
+        "Roles" => safely { user.roles.map(&:name).sort }
+      }
+    end
+
+    # One row's lookup failing (the database is often what is broken when these emails go out)
+    # must cost only that row, not the whole block.
+    def safely
+      yield
+    rescue StandardError => e
+      "unavailable (#{e.class})"
+    end
+
     def actor(user)
       return UNATTRIBUTED if user.blank?
 
@@ -110,10 +205,13 @@ class ErrorReportContext
       # only in @serialized_arguments until perform_now unpacks them. That unpacking has always
       # happened by the time a job reports its own errors, but falling back keeps the block
       # populated for any caller that builds the context earlier.
-      args = job.try(:arguments).presence || job.instance_variable_get(:@serialized_arguments)
+      clean_arguments(job.try(:arguments).presence || job.instance_variable_get(:@serialized_arguments))
+    end
+
+    def clean_arguments(args)
       return nil if args.blank?
 
-      args.map { |arg| arg.is_a?(Hash) ? arg.reject { |key, _| key.to_s.start_with?("_aj_") } : arg }
+      Array(args).map { |arg| arg.is_a?(Hash) ? arg.reject { |key, _| key.to_s.start_with?("_aj_") } : arg }
     end
 
     def stringify(value)

@@ -21,30 +21,3 @@ Then('the investor {string} should have exactly {int} workflow instance(s) in to
   investor = Investor.find_by!(investor_name: investor_name, entity: @entity)
   investor.reload.workflow_instances.count.should == expected_count
 end
-
-# Simulates the last two lines of ImportKpiWorkbookJob#perform (creating a Kpi row, then
-# calling KpiReport#launch_portfolio_company_workflow) without needing to drive an actual
-# workbook file upload. Reuses the KpiReport created by the existing
-# 'a KPI report shell exists for {string} as of {string}...' step.
-When('Kpis are imported into the KPI report for {string} as of {string}') do |portco_name, as_of|
-  portco = Investor.find_by!(investor_name: portco_name, entity: @entity)
-  @kpi_report = KpiReport.find_by!(portfolio_company: portco, as_of: Date.parse(as_of))
-  name = "Revenue"
-  mapping = InvestorKpiMapping.find_or_create_by(standard_kpi_name: name, entity: @entity, investor: portco, reported_kpi_name: name)
-  FactoryBot.create(:kpi,
-    kpi_report:        @kpi_report,
-    entity:            @entity,
-    portfolio_company: portco,
-    name:              name,
-    value:             100.0,
-    investor_kpi_mapping_id: mapping.id)
-  @kpi_report.launch_portfolio_company_workflow(@user)
-end
-
-# Archives the currently active workflow instance for a named Investor — needed to prove
-# a *fresh* review can launch on the next KPI upload once the previous one is resolved.
-When('I archive the active workflow for investor {string}') do |investor_name|
-  investor = Investor.find_by!(investor_name: investor_name, entity: @entity)
-  instance = investor.workflow_instances.instance_active.first!
-  WorkflowArchiver.call(instance: instance)
-end

@@ -7,6 +7,7 @@ class KpiReportCreateShell < Trailblazer::Operation
   step :check_existence
   step :create_report
   step :notify_users
+  step :start_journey
 
   # Gather all attributes required for the KpiReport model.
   # We assign a default user_id from the Fund entity to act as the initial "creator".
@@ -49,11 +50,21 @@ class KpiReportCreateShell < Trailblazer::Operation
   # Trigger notifications for all eligible users at the Portfolio Company.
   # The notifier handles the actual email delivery (KpiReportNotifier).
   def notify_users(_ctx, model:, params:, **)
-    params[:portfolio_company].notification_users(model, with_tag: 'Kpi').each do |user|
+    notified = params[:portfolio_company].notification_users(model, with_tag: 'Kpi').each do |user|
       KpiReportNotifier.with(record: model, entity_id: params[:entity].id).deliver_later(user)
     end
+    # The upload link went out, so record it the way SendPortcoNotification does — the journey's
+    # "Send upload request" step reads link_sent_at
+    model.update_columns(status: 'link_sent', link_sent_at: Time.current) if notified.any?
 
     Rails.logger.info "Created KPI Report shell and triggered notifications for #{params[:portfolio_company].investor_name} in #{params[:entity].name}"
+    true
+  end
+
+  # A shell is a request for the portco's KPIs: it gets the KPI report journey (no email). Never fails
+  # the operation. Worked examples H3 — openspec/changes/kpi-report-journey/design.md#worked-examples
+  def start_journey(_ctx, model:, **)
+    model.start_journey!
     true
   end
 end

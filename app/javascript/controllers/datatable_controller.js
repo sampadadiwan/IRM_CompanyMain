@@ -18,15 +18,18 @@ function patchResponsiveZoomTolerance() {
   Responsive.prototype._columnsVisiblity = function(breakpoint) {
     if (Number.isInteger(window.devicePixelRatio)) return original.call(this, breakpoint);
 
+    // s.columns is a DataTables Api instance (array-like, no forEach), so index it directly.
     const columns = this.s.columns;
-    const saved = columns.map(col => col.minWidth);
-    columns.forEach(col => {
+    const saved = [];
+    for (let i = 0; i < columns.length; i++) {
+      const col = columns[i];
+      saved[i] = col.minWidth;
       if (col.minWidth) col.minWidth = Math.max(col.minWidth - RESPONSIVE_ZOOM_TOLERANCE_PX, 1);
-    });
+    }
     try {
       return original.call(this, breakpoint);
     } finally {
-      columns.forEach((col, i) => { col.minWidth = saved[i]; });
+      for (let i = 0; i < columns.length; i++) columns[i].minWidth = saved[i];
     }
   };
   Responsive.prototype._zoomTolerancePatched = true;

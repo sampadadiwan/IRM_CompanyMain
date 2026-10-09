@@ -6,7 +6,7 @@ class WorkflowInstancesController < ApplicationController
   # this list is deliberately separate (not a reference to the constant) so a
   # security review of this controller doesn't need to trust another file's contents.
   # CapitalDistribution: capital-distribution-journey (Worked examples H2 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples)
-  ALLOWED_WORKFLOWABLE_TYPES = %w[Folder InvestorKyc CapitalCommitment CapitalCall CapitalDistribution Approval Investor].freeze
+  ALLOWED_WORKFLOWABLE_TYPES = %w[Folder InvestorKyc CapitalCommitment CapitalCall CapitalDistribution Approval Investor KpiReport].freeze
 
   before_action :set_instance, only: %i[show advance reset archive send_reminder export_audit_trail acknowledge step_info]
 
@@ -195,14 +195,14 @@ class WorkflowInstancesController < ApplicationController
   def send_reminder
     authorize @instance
     unless @instance.instance_active?
-      redirect_to workflow_instance_path(@instance),
+      redirect_to reminder_return_path,
                   alert: "Reminders can only be sent while the workflow is active."
       return
     end
 
     step_data = @instance.current_step_data
     unless step_data
-      redirect_to workflow_instance_path(@instance),
+      redirect_to reminder_return_path,
                   alert: "Current step data is unavailable."
       return
     end
@@ -214,7 +214,7 @@ class WorkflowInstancesController < ApplicationController
     pending_ids = Array(step_data[:actor_ids]).map(&:to_i) - responded_ids
 
     if pending_ids.empty?
-      redirect_to workflow_instance_path(@instance),
+      redirect_to reminder_return_path,
                   notice: "All actors have already responded — no reminders sent."
       return
     end
@@ -237,7 +237,7 @@ class WorkflowInstancesController < ApplicationController
       )
     end
 
-    redirect_to workflow_instance_path(@instance),
+    redirect_to reminder_return_path,
                 notice: "Reminder emails sent to #{pending_ids.size} pending actor(s)."
   end
 
@@ -290,6 +290,14 @@ class WorkflowInstancesController < ApplicationController
     end
     klass = type.constantize
     klass.find(params[:workflowable_id])
+  end
+
+  # Where send_reminder lands: the page the button was clicked on (the journey panel passes the
+  # record's path), else the workflow page. Local paths only, so it can't be used as an open redirect.
+  def reminder_return_path
+    path = params[:return_to].to_s
+    # "//host" and "/\host" are both read by browsers as another host, so neither counts as local
+    path.match?(%r{\A/(?![/\\])}) ? path : workflow_instance_path(@instance)
   end
 
   def set_instance

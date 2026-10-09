@@ -4,14 +4,11 @@
 
 <% else %>
 
+    <%# Always the formatted default body, regardless of @message/msg: - msg: is still passed so the in-app notification (which shares #message with this email) has a body of its own. %>
     <p>
-        <% if @message.present? %>
-            <%= @message %>
-        <% else %>
-            The investor <strong><%= @investor_kyc.full_name %></strong> has submitted their KYC for review.
-            <% if @investor_kyc.submitted_at.present? %>
-              <br>Submitted on <%= I18n.l(@investor_kyc.submitted_at.to_date, format: :long) %>.
-            <% end %>
+        The investor <strong><%= @investor_kyc.full_name %></strong> has submitted their KYC for review.
+        <% if @investor_kyc.submitted_at.present? %>
+          <br>Submitted on <%= I18n.l(@investor_kyc.submitted_at.to_date, format: :long) %>.
         <% end %>
     </p>
 

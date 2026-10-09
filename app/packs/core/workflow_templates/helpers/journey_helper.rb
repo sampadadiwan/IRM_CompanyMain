@@ -40,6 +40,13 @@ module JourneyHelper
     "not_yet" => "not started", "na" => "not applicable"
   }.freeze
 
+  # Fingerprint of an evaluated journey (WorkflowEvaluator results, or nil): the same results always
+  # give the same value, so the page and a fresh /<plural>/:id/journey fetch can be compared without
+  # comparing HTML (journey_catch_up_controller.js)
+  def journey_version(journey)
+    Digest::MD5.hexdigest(journey.to_json)
+  end
+
   # Icon + callout modifier for the "What's needed now" panel, keyed by the current step's state
   def journey_now_view(step)
     return { icon: "ti-rotate-2", modifier: "cc-now--moved" } if step[:regressed]
@@ -152,7 +159,10 @@ module JourneyHelper
   def journey_step_notify_lines(instance, step, kind, steps)
     lines = []
     interval = step[:reminder_interval_days].to_i
-    owner = WorkflowAutoReminderJob.owner_for(instance, step) unless kind == "human"
+    # Several owners are possible (a KPI report's Kpi team); name them all
+    owners = kind == "human" ? [] : WorkflowAutoReminderJob.owners_for(instance, step)
+    owner_names = owners.map(&:full_name).to_sentence.presence
+    owner_verb = owners.many? ? "are" : "is"
 
     # When it starts: approvers of a sign-off are emailed; a review step's owner is emailed
     case kind
@@ -164,7 +174,7 @@ module JourneyHelper
         lines << ["ti-user-off", "No approvers yet: edit this step on the journey template to pick them"]
       end
     when "acknowledge"
-      lines << ["ti-mail", "When it starts: #{owner.full_name} is emailed to review"] if step[:notify_on_activation] && owner
+      lines << ["ti-mail", "When it starts: #{owner_names} #{owner_verb} emailed to review"] if step[:notify_on_activation] && owner_names
     end
 
     # If it stalls: sign-offs chase the approvers who haven't answered; other steps chase the owner
@@ -172,11 +182,11 @@ module JourneyHelper
       who = if kind == "human"
               "approvers who haven't signed off are"
             else
-              (owner ? "#{owner.full_name} is" : nil)
+              (owner_names ? "#{owner_names} #{owner_verb}" : nil)
             end
       lines << ["ti-clock", "If it stalls: #{who} reminded every #{pluralize(interval, 'day')}"] if who
     end
-    lines << ["ti-user-off", "Nobody is reminded: set an owner on the journey template"] if kind != "human" && owner.nil?
+    lines << ["ti-user-off", "Nobody is reminded: set an owner on the journey template"] if kind != "human" && owners.empty?
 
     # When done: the next step starts, or the owner hears the journey is complete
     # (skipping steps that don't apply to this record — they never start)
@@ -184,8 +194,10 @@ module JourneyHelper
     if following
       lines << ["ti-arrow-right", "When done: \"#{following[:name]}\" starts"]
     else
-      last_owner = WorkflowAutoReminderJob.owner_for(instance, step)
-      lines << ["ti-flag", "When done: #{last_owner ? last_owner.full_name : 'the owner'} is emailed that the journey is complete"]
+      last_owners = WorkflowAutoReminderJob.owners_for(instance, step)
+      verb = last_owners.many? ? "are" : "is"
+      who = last_owners.any? ? "#{last_owners.map(&:full_name).to_sentence} #{verb}" : "the owner is"
+      lines << ["ti-flag", "When done: #{who} emailed that the journey is complete"]
     end
     lines
   end

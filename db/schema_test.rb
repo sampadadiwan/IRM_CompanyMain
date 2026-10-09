@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_06_100001) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_07_100100) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -2852,6 +2852,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_100001) do
     t.boolean "is_trust", default: false
     t.json "json_fields"
     t.date "last_interaction_date"
+    t.bigint "managed_by_user_id"
     t.string "pan", limit: 40
     t.string "primary_email"
     t.string "primary_email_domain", limit: 191
@@ -2868,6 +2869,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_100001) do
     t.index ["investor_entity_id", "entity_id", "deleted_at"], name: "idx_on_investor_entity_id_entity_id_deleted_at_983d7c8e7a", unique: true
     t.index ["investor_entity_id"], name: "index_investors_on_investor_entity_id"
     t.index ["investor_name", "entity_id"], name: "index_investors_on_investor_name_and_entity_id", unique: true
+    t.index ["managed_by_user_id"], name: "index_investors_on_managed_by_user_id"
     t.index ["pan"], name: "index_investors_on_pan"
     t.index ["primary_email_domain", "entity_id"], name: "idx_investors_on_email_domain_entity"
     t.index ["slug"], name: "index_investors_on_slug", unique: true
@@ -2948,6 +2950,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_100001) do
     t.text "analysis"
     t.date "as_of"
     t.boolean "autofill_completed", default: false, null: false
+    t.datetime "completion_notified_at"
     t.datetime "created_at", null: false
     t.bigint "document_folder_id"
     t.boolean "enable_portco_upload", default: false, null: false
@@ -5047,6 +5050,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_100001) do
   add_foreign_key "investor_notices", "entities"
   add_foreign_key "investors", "folders", column: "document_folder_id"
   add_foreign_key "investors", "form_types"
+  add_foreign_key "investors", "users", column: "managed_by_user_id"
   add_foreign_key "kanban_boards", "entities"
   add_foreign_key "kanban_cards", "entities"
   add_foreign_key "kanban_cards", "kanban_boards"

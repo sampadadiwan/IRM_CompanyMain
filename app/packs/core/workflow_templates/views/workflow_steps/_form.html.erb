@@ -58,7 +58,8 @@
         <div class="col-md-6 form-group">
           <%= form.label :check_key, "Check" %>
           <%= form.select :check_key, check_options, { include_blank: "Select a check" },
-                class: "form-control" %>
+                class: "form-control",
+                data: { workflow_step_kind_target: "checkSelect", action: "change->workflow-step-kind#refresh" } %>
         </div>
         <div class="col-md-6 form-group">
           <%= form.label :skip_key, "Skip when" %>
@@ -132,7 +133,11 @@
         are reset unless this is ticked.</small>
     </div>
 
-    <div class="form-group" data-workflow-step-kind-target="humanFields">
+    <%# Actors: approvers on a human step; also the recipients of the few system checks that email
+        someone (WorkflowStep::ACTOR_CHECK_KEYS, e.g. the KPI report's "Send completion email").
+        Worked examples H8 — openspec/changes/kpi-report-journey/design.md#worked-examples %>
+    <div class="form-group" data-workflow-step-kind-target="actorFields"
+         data-actor-check-keys="<%= WorkflowStep::ACTOR_CHECK_KEYS.to_json %>">
       <%= form.label :actor_user_ids, "Actors (entity employees)" %>
       <%= form.select :actor_user_ids,
             entity_users_for_select.map { |u| [u.full_name, u.id] },

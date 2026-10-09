@@ -3,6 +3,24 @@
 # your test database is "scratch space" for the test suite and is wiped
 # and recreated between test runs. Don't rely on the data there!
 
+# Give each test process its own Redis db so test traffic never lands on the dev
+# databases (0 = dev Sidekiq, 1 = dev ActionCable). Without this the Sidekiq client
+# defaulted to db 0, and Chewy's :sidekiq strategy (which pushes via Sidekiq::Client,
+# bypassing the inline ActiveJob adapter) handed index jobs to the running dev Sidekiq.
+# features/support/redis_isolation.rb flushes this db before every scenario.
+#   pcuc workers 1..8   -> dbs 2..9 (fixed, so parallel workers never share one)
+#   any other number    -> a db in 10..15 (e.g. TEST_ENV_NUMBER=$RANDOM single runs);
+#                          under cucumber, redis_isolation.rb replaces this with the
+#                          first FREE db in 10..15, so concurrent ad-hoc runs never share.
+# An explicit REDIS_URL still wins, and redis_isolation.rb leaves it untouched.
+unless ENV.key?('REDIS_URL')
+  test_env_number = ENV['TEST_ENV_NUMBER'].to_i
+  redis_db = (1..8).cover?(test_env_number) ? test_env_number + 1 : 10 + (test_env_number % 6)
+  ENV['REDIS_URL'] = "redis://localhost:6379/#{redis_db}"
+  # Tells redis_isolation.rb this db was picked here, so it may swap it for a free one.
+  ENV['REDIS_URL_FROM_TEST_ENV'] = '1'
+end
+
 Rails.application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
 
@@ -191,8 +209,9 @@ Rails.application.configure do
   # config.logger = Logger.new(STDOUT)
   # :debug + verbose_query_logs logs every SQL statement with its call site across
   # 1500+ scenarios. Bump back up with LOG_LEVEL=debug when debugging a specific run.
-  config.log_level = ENV.fetch("LOG_LEVEL", "warn").to_sym
-  config.active_record.verbose_query_logs = ENV["LOG_LEVEL"] == "debug"
+  # LOGS=<level> on the cucumber command line overrides this (see features/support/env.rb).
+  config.log_level = (ENV["LOGS"].presence || ENV.fetch("LOG_LEVEL", "warn")).downcase.to_sym
+  config.active_record.verbose_query_logs = (ENV["LOGS"].presence || ENV["LOG_LEVEL"]) == "debug"
 
   config.after_initialize do
     Chewy.logger = Rails.logger

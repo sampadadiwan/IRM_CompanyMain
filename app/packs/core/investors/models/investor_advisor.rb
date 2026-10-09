@@ -248,4 +248,12 @@ class InvestorAdvisor < ApplicationRecord
       InvestorAdvisorNotifier.with(record: self, entity_id:, owner_name:, email_method: :notify_investor_advisor_addition, msg: "Investor Advisor #{user.full_name} has been added").deliver_later(employee)
     end
   end
+
+  def is_employee?
+    Array(allowed_roles).map(&:to_s).include?("employee")
+  end
+
+  def is_company_admin?
+    Array(allowed_roles).map(&:to_s).include?("company_admin")
+  end
 end
