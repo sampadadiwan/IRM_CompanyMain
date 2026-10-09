@@ -1,0 +1,23 @@
+<%# Changed: Added Turbo Stream response for folder updates that change nda_inheritance_mode.
+     Why: Opt-out and revert actions from the NDA Settings modal submit as PATCH to
+     FoldersController#update. This turbo_stream response dismisses the modal and refreshes
+     lock icons on this folder and its inheriting descendants without a full page reload. %>
+
+<%# 1. Clear the modal frame — removes modal DOM %>
+<%= turbo_stream.replace "nda_settings_modal" do %>
+  <%= turbo_frame_tag "nda_settings_modal" %>
+<% end %>
+
+<%# 2. Replace this folder's caret to update lock icon %>
+<%= turbo_stream.replace "folder_caret_#{@folder.id}",
+    partial: "folders/tree_caret", locals: { folder: @folder } %>
+
+<%# 3. Cascade lock icon updates to inheriting descendants %>
+<% @folder.descendants.select(&:nda_inheriting?).each do |child| %>
+  <%= turbo_stream.replace "folder_caret_#{child.id}",
+      partial: "folders/tree_caret", locals: { folder: child } %>
+<% end %>
+
+<%# 4. Show success message %>
+<%= turbo_stream.update "user_alert", partial: "layouts/alerts",
+    locals: { notice: "NDA settings updated successfully." } %>

@@ -1,0 +1,27 @@
+<%# GP + LP notification: NDA acceptance has expired. %>
+<%# Sent to notification_emails (GP, direct) and NDA signatories (LP, via Noticed). %>
+
+<p>An NDA acceptance on your Data Room folder has expired.</p>
+
+<table style="border-collapse:collapse;width:100%">
+  <tr>
+    <td style="padding:6px 12px;font-weight:bold">Investor</td>
+    <td style="padding:6px 12px"><%= @investor_name %></td>
+  </tr>
+  <tr>
+    <td style="padding:6px 12px;font-weight:bold">Folder</td>
+    <td style="padding:6px 12px"><%= @folder_name %></td>
+  </tr>
+  <tr>
+    <td style="padding:6px 12px;font-weight:bold">Expiry Date</td>
+    <td style="padding:6px 12px"><%= l(@expiry_date) %></td>
+  </tr>
+</table>
+
+<p style="margin-top:16px">The investor will need to re-accept the NDA to regain folder access.</p>
+
+<% if @folder_link.present? %>
+  <p>
+    <a href="<%= @folder_link %>" style="color:#1a73e8;text-decoration:none">Re-accept NDA →</a>
+  </p>
+<% end %>

@@ -1,0 +1,102 @@
+<%# NDA Acceptance Screen (Module 2) — shown to LPs when accessing an NDA-protected folder. %>
+<%# Renders the NDA PDF in an iframe with accept/decline buttons. %>
+<%# Wrapped in documents_frame turbo-frame so it renders inside the right pane %>
+<%# when navigated via the folder tree (Turbo Frame request). %>
+<%# Changed: Module 4 — added contextual re-acceptance note banner between title and PDF. %>
+<%# Why: Gate now redirects with reason param (version_mismatch or expired) so the LP %>
+<%#   understands why they must re-accept. No note shown on first-time acceptance. %>
+
+<%= turbo_frame_tag "documents_frame" do %>
+<div class="px-3">
+
+    <%# ① Logo and ② Back to Data Rooms %>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <% logo = @nda_config.entity&.logo&.url || "/img/logo_big.png" %>
+        <%= image_tag(logo, class: "img-fluid", style: "max-height: 48px;", alt: @nda_config.entity&.name) %>
+      </div>
+      <%= link_to "Back to Data Rooms", data_rooms_folders_path, class: "btn btn-outline-secondary btn-sm" %>
+    </div>
+
+    <%# ③ Title %>
+    <h3 class="mb-2">Non-Disclosure Agreement</h3>
+
+    <%# ④ Entity and folder context %>
+    <p class="text-muted mb-4">
+      <strong><%= @nda_config.entity&.name %></strong>
+      <% if @folder %>
+        &nbsp;|&nbsp; Folder: <strong><%= @folder.name %></strong>
+      <% end %>
+    </p>
+
+    <%# ④b Module 4: Contextual re-acceptance note — shown when gate redirected with a reason. %>
+    <% if @reason == "version_mismatch" %>
+      <div class="alert alert-info mb-4">
+        <i class="ti ti-refresh me-1"></i>
+        The NDA has been updated since you last signed. Please review and accept the new version.
+      </div>
+    <% elsif @reason == "expired" %>
+      <div class="alert alert-info mb-4">
+        <i class="ti ti-clock me-1"></i>
+        Your NDA acceptance has expired. Please review and re-accept.
+      </div>
+    <%# Module 8: Contextual note when LP's acceptance was revoked by the GP. %>
+    <% elsif @reason == "revoked" %>
+      <div class="alert alert-warning mb-4">
+        <i class="ti ti-lock me-1"></i>
+        Your NDA access has been revoked. Please review and re-accept to regain access.
+      </div>
+    <% end %>
+
+    <%# ⑤ NDA PDF iframe %>
+    <% if @nda_config.nda_document_url %>
+      <div class="border rounded mb-4" style="height: 75vh;">
+        <iframe src="<%= @nda_config.nda_document_url %>" width="100%" height="100%" frameborder="0"
+                title="NDA Document"></iframe>
+      </div>
+    <% end %>
+
+    <%# ⑥ Confirmation checkbox — shared by both forms via Stimulus controller %>
+    <div class="form-check mb-4" data-controller="nda-acceptance">
+      <input type="checkbox" class="form-check-input" id="nda_confirm_checkbox"
+             data-nda-acceptance-target="checkbox"
+             data-action="change->nda-acceptance#toggleAccept">
+      <label class="form-check-label" for="nda_confirm_checkbox">
+        I have read and agree to the terms of this Non-Disclosure Agreement
+      </label>
+
+      <%# ⑦ Accept button — targets _top to reload full page back to the folder %>
+      <%# ⑧ Decline button — stays inside documents_frame to render declined view in-pane %>
+      <div class="d-flex gap-3 mt-3">
+        <%= form_with url: nda_acceptances_path, method: :post,
+                      data: { turbo_frame: "_top" }, class: "d-inline" do %>
+          <%= hidden_field_tag :nda_config_id, @nda_config.id %>
+          <%= hidden_field_tag :folder_id, @folder&.id %>
+          <%= hidden_field_tag :return_to, @return_to %>
+          <button type="submit" class="btn btn-primary"
+                  data-nda-acceptance-target="acceptButton" disabled>
+            Accept
+          </button>
+        <% end %>
+
+        <%= form_with url: decline_nda_acceptances_path, method: :post,
+                      data: { turbo_frame: "documents_frame" }, class: "d-inline" do %>
+          <%= hidden_field_tag :nda_config_id, @nda_config.id %>
+          <%= hidden_field_tag :folder_id, @folder&.id %>
+          <%= hidden_field_tag :return_to, @return_to %>
+          <button type="submit" class="btn btn-outline-danger">
+            Decline
+          </button>
+        <% end %>
+      </div>
+    </div>
+
+    <%# ⑨ Contact email %>
+    <% if @nda_config.contact_email.present? %>
+      <p class="text-muted small">
+        Questions? Contact: <%= mail_to @nda_config.contact_email %>
+      </p>
+    <% end %>
+
+</div>
+<% end %>

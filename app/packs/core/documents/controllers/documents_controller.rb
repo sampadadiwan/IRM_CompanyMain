@@ -4,6 +4,9 @@ class DocumentsController < ApplicationController
 
   skip_before_action :verify_authenticity_token, :authenticate_user!, :set_current_entity, only: %i[signature_progress]
   before_action :set_document, only: %w[show update destroy edit send_for_esign fetch_esign_updates force_send_for_esign cancel_esign send_document_notification resend_for_esign show_email_list verify_accessibility run_fix]
+  # Changed: Added NDA gate for LP folder access.
+  # Why: Module 2 — LPs must accept an NDA before viewing NDA-protected folder contents.
+  before_action :ensure_nda_accepted, only: [:folder]
   after_action :verify_authorized, except: %i[index search investor folder signature_progress approve bulk_actions download show_email_list]
   after_action :verify_policy_scoped, only: []
 
@@ -501,6 +504,170 @@ class DocumentsController < ApplicationController
                                      :signature_enabled, :public_visibility, :send_email, :display_on_page, :embed,
                                      :download, :printing, :orignal, :owner_id, :owner_type, :owner_tag, :approved, :approved_by_id,
                                      :tag_list, :folder_id, :file, :force_esign_order, :as_of, properties: {}, e_signatures_attributes: %i[id user_id label signature_type notes _destroy], stamp_papers_attributes: %i[id tags sign_on_page notes note_on_page _destroy], emails: [])
+  end
+
+  # @return [void] NDA gate — redirects LP to acceptance screen if folder has an active NDA
+  #   that the user has not yet accepted at the current version, or whose acceptance has expired.
+  # Gate order: GP bypass → investor_ids lookup → exemption check (by investor_id) →
+  #   revoked check → acceptance exists+accepted → version match → time expiry → pass.
+  # Exemption is checked by investor_id, not user_id, so that if ANY InvestorAccess record
+  #   for the user's investor is exempt, all users under that investor bypass the gate.
+  # Version is checked before time because version mismatch is more actionable
+  #   (LP needs to read the new document).
+  # @see InvestorAccess#exempt_from_nda
+  # @see NdaConfig#version
+  def ensure_nda_accepted
+    return if params[:folder_id].blank?
+
+    @folder ||= Folder.find(params[:folder_id])
+
+    return unless @folder.in_data_room?
+    return if @folder.entity_id == current_user.entity_id
+
+    nda_config = @folder.effective_nda_config
+    return if nda_config.nil?
+    return unless nda_config.enabled?
+
+    investor_ids = InvestorAccess
+                   .where(user_id: current_user.id, entity_id: nda_config.entity_id, approved: true)
+                   .pluck(:investor_id)
+
+    return if investor_ids.empty?
+
+    # Stakeholder-level exemption — checks by investor_id so all users under an exempt
+    # investor bypass the gate, even if the exempt flag is on a different user's record.
+    return if InvestorAccess.exists?(investor_id: investor_ids, entity_id: nda_config.entity_id, approved: true, exempt_from_nda: true)
+
+    # Changed: Module 9 — resolve whether the current user is a designated NDA signatory.
+    # Why: Only signatories can accept/decline. Non-signatories must see the blocked page
+    #   instead of the acceptance screen. This flag is checked before every redirect below
+    #   (revoked, not-accepted, version mismatch, expired) so non-signatories never reach
+    #   the acceptance screen regardless of the re-acceptance reason.
+    is_signatory = NdaSignatory.exists?(nda_config_id: nda_config.id, user_id: current_user.id)
+
+    latest = NdaAcceptance
+             .where(nda_config_id: nda_config.id, investor_id: investor_ids)
+             .order(created_at: :desc)
+             .limit(1)
+             .first
+
+    # Changed: Module 8 — revoked acceptance check. LP sees a contextual note on the
+    # acceptance screen explaining their NDA was revoked and they must re-accept.
+    # Why: Without this, revoked LPs see a generic first-time acceptance screen with no
+    #   context about why they lost access.
+    # Changed: Module 9 — non-signatories see the blocked page instead.
+    if latest&.revoked?
+      redirect_to is_signatory ? nda_acceptance_url(nda_config, @folder, reason: "revoked") : nda_blocked_url(nda_config, @folder)
+      return
+    end
+
+    # No accepted acceptance → redirect to acceptance screen (first-time or post-decline).
+    # Changed: Module 9 — non-signatories see the blocked page instead.
+    unless latest&.accepted?
+      redirect_to is_signatory ? nda_acceptance_url(nda_config, @folder) : nda_blocked_url(nda_config, @folder)
+      return
+    end
+
+    # Changed: Module 4 — version mismatch check. LP's acceptance is at an older NDA version.
+    # Why: GP uploaded a new PDF, version incremented, LP must re-read and re-accept.
+    # Changed: Module 9 — non-signatories see the blocked page instead.
+    unless acceptance_version_current?(latest, nda_config)
+      redirect_to is_signatory ? nda_acceptance_url(nda_config, @folder, reason: "version_mismatch") : nda_blocked_url(nda_config, @folder)
+      return
+    end
+
+    # Changed: Module 4 — time-based expiry check. Specific-date lapsed = dead-end page.
+    # Why: specific_date past means re-accepting would create an immediately-expired record
+    #   (infinite loop), so redirect to the lapsed page instead of the acceptance screen.
+    # Changed: Module 9 — non-signatories see the blocked page instead of lapsed or expired.
+    unless acceptance_time_valid?(latest, nda_config)
+      if is_signatory
+        if nda_config.validity_type == "specific_date" && nda_config.validity_date < Date.current
+          redirect_to lapsed_nda_acceptances_path(
+            nda_config_id: nda_config.id,
+            folder_id: @folder.id
+          )
+        else
+          redirect_to nda_acceptance_url(nda_config, @folder, reason: "expired")
+        end
+      else
+        redirect_to nda_blocked_url(nda_config, @folder)
+      end
+      return
+    end
+  end
+
+  # @param nda_config [NdaConfig] the NDA config to build the acceptance URL for
+  # @param folder [Folder] the folder being accessed
+  # @param reason [String, nil] optional reason param for contextual re-acceptance note
+  # @return [String] the NDA acceptance screen URL with query params
+  def nda_acceptance_url(nda_config, folder, reason: nil)
+    params = { nda_config_id: nda_config.id, folder_id: folder.id, return_to: request.fullpath }
+    params[:reason] = reason if reason.present?
+    nda_acceptances_path(params)
+  end
+
+  # Changed: Module 9 — helper to build the blocked page URL for non-signatories.
+  # Why: Mirrors nda_acceptance_url but targets the blocked action instead of index.
+  #   No return_to param needed — the blocked page has no "try again" flow, only "Back to Data Rooms".
+  #
+  # @param nda_config [NdaConfig] the NDA config the blocked page relates to
+  # @param folder [Folder] the folder being accessed
+  # @return [String] the NDA blocked page URL with query params
+  def nda_blocked_url(nda_config, folder)
+    blocked_nda_acceptances_path(nda_config_id: nda_config.id, folder_id: folder.id)
+  end
+
+  # Changed: Version check now respects per-version resign_required flag.
+  # Why: When a GP uploads a new PDF without requiring re-sign, existing acceptances
+  #   should remain valid. The gate queries NdaConfigVersion records between the
+  #   acceptance's version and the current version — if any required resign, the
+  #   acceptance is stale. Falls back to strict equality when no version records
+  #   exist (pre-feature data or missing backfill).
+  #
+  # @param acceptance [NdaAcceptance] the LP's latest acceptance record
+  # @param nda_config [NdaConfig] the NDA config to check against
+  # @return [Boolean] true if the acceptance is still valid for the current version
+  def acceptance_version_current?(acceptance, nda_config)
+    return true if acceptance.nda_version == nda_config.version
+
+    resign_exists = NdaConfigVersion.where(
+      nda_config_id: nda_config.id,
+      version: (acceptance.nda_version + 1)..nda_config.version,
+      resign_required: true
+    ).exists?
+
+    return false if resign_exists
+
+    NdaConfigVersion.where(nda_config_id: nda_config.id).exists?
+  end
+
+  # @param acceptance [NdaAcceptance] the LP's latest acceptance record
+  # @param nda_config [NdaConfig] the NDA config to check against
+  # @return [Boolean] true if the acceptance has not expired per the config's validity settings
+  def acceptance_time_valid?(acceptance, nda_config)
+    case nda_config.validity_type
+    when "until_revoked"
+      true
+    when "fixed_period"
+      acceptance.accepted_at + nda_config.validity_days.days > Time.current
+    when "specific_date"
+      nda_config.validity_date >= Date.current
+    else
+      true
+    end
+  end
+
+  # @param path [String, nil] The return_to path from params.
+  # @return [String] A validated relative path, or the data rooms fallback.
+  #   Rejects nil, empty, external URLs, and protocol-relative URLs to prevent open redirects.
+  def safe_return_to(path)
+    return data_rooms_folders_path if path.blank?
+    return data_rooms_folders_path unless path.start_with?("/")
+    return data_rooms_folders_path if path.start_with?("//")
+    return data_rooms_folders_path if path.include?("://")
+
+    path
   end
 
   # Approving a generated notice moves its call's or distribution's journey on (real time; no-op

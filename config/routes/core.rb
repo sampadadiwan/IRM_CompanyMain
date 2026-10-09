@@ -212,7 +212,42 @@ resources :folders do
   get  'data_rooms',       on: :collection
   put  :restore_deleted,   on: :member
   get  :show_deleted,      on: :collection
+  # Changed: Controller from "folder_nda_configs" to "nda_configs".
+  # Why: NdaConfig is now polymorphic — controller moved to core/nda_configs pack.
+  # Singular resource (not resources) because each owner has at most one NDA config.
+  # No destroy action — NDA configs are disabled, not deleted (soft delete via Trackable).
+  resource :nda_config, controller: "nda_configs", only: %i[new create edit update]
 end
+
+# Changed: Added NDA acceptance routes for Module 2 LP Acceptance Flow.
+# Why: Standalone resource (not nested under folders) — NDA acceptance is tied to
+#   NdaConfig (polymorphic), not to a specific owner type. folder_id passed as query param.
+resources :nda_acceptances, controller: "nda_acceptances", only: %i[index create] do
+  post :decline, on: :collection
+  # Changed: Added lapsed route for Module 4 dead-end page.
+  # Why: When a specific_date NDA has expired, LPs see a dead-end page (no re-accept possible).
+  get :lapsed, on: :collection
+  # Changed: Module 9 — blocked page route for non-signatories.
+  # Why: Non-signatory LPs are redirected here when the NDA is not yet accepted
+  #   and they are not a designated signatory. Dead-end page with no accept/decline buttons.
+  get :blocked, on: :collection
+end
+
+# Changed: NDA status dashboard routes — removed exemption routes.
+# Why: Exemption is now a boolean on InvestorAccess (stakeholder-level),
+#   managed from InvestorAccess form, not from the NDA dashboard.
+get  "nda_status/summary",       controller: "nda_status", action: :summary, as: :nda_status_summary
+get  "nda_status",               controller: "nda_status", action: :index, as: :nda_status
+# Changed: Added signatory routes for tag/untag actions.
+# Why: Per-NDA signatory designation replaces entity-wide InvestorAccess tag_list.
+post   "nda_status/signatories",     controller: "nda_status", action: :create_signatory, as: :nda_status_signatories
+delete "nda_status/signatories/:id", controller: "nda_status", action: :destroy_signatory, as: :nda_status_signatory
+
+# Changed: Module 8 — added revoke and send_reminders routes.
+# Why: GP can revoke an accepted investor's NDA and send bulk reminders to pending
+#   investors from the NDA Status Dashboard.
+post "nda_status/revoke",          controller: "nda_status", action: :revoke,          as: :nda_status_revoke
+post "nda_status/send_reminders",  controller: "nda_status", action: :send_reminders,  as: :nda_status_send_reminders
 
 # Workflow instances are standalone — not nested under any workflowable object.
 # workflowable_type and workflowable_id are passed as params on create.
@@ -281,6 +316,8 @@ resources :investors do
   get 'show_deleted', on: :collection
   get 'report_detail', on: :collection
   get 'multi_portfolio_stat_currency', on: :collection
+  # NDA Module 3 — investor-level exemption toggle (bulk-updates InvestorAccess records)
+  patch 'toggle_nda_exemption', on: :member
 end
 
 resources :investor_notice_entries

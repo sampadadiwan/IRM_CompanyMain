@@ -41,11 +41,14 @@ module DocumentHelper
     entity_id = params[:entity_id].present? ? params[:entity_id].to_i : current_user.entity_id
 
     # If the user is from the same company show him all the folders
+    # Changed: Added .includes(:nda_config) to all four query paths below.
+    # Why: The folder tree now renders an NDA lock icon via folder.nda_required? — without
+    # eager-loading, each folder triggers a separate query for its nda_config (N+1).
     if belongs_to_entity_id?(current_user, entity_id) && current_user.has_cached_role?(:company_admin)
       folders = if params[:folder_id].present?
-                  Folder.find(params[:folder_id]).subtree.order(:name).arrange
+                  Folder.find(params[:folder_id]).subtree.includes(:nda_config).order(:name).arrange
                 else
-                  entity.root_folder.subtree.order(:name).arrange
+                  entity.root_folder.subtree.includes(:nda_config).order(:name).arrange
                 end
     else
       # If the user is NOT from the same company show him only the folders for the documents he has access to
@@ -58,11 +61,17 @@ module DocumentHelper
         # descendant_ids = parent.descendant_ids
         # descendant_ids << parent.id
         # folders = Folder.where(id: descendant_ids).where(id: aids).order(:name).arrange
-        folders = Folder.where(level: parent.level..).where(id: aids).order(:name).arrange
+        folders = Folder.where(level: parent.level..).where(id: aids).includes(:nda_config).order(:name).arrange
       else
-        folders = Folder.where(id: aids).order(:name).arrange
+        folders = Folder.where(id: aids).includes(:nda_config).order(:name).arrange
       end
     end
+
+    # Changed: Instantiate NdaInheritanceResolver for batch lock icon rendering.
+    # Why: The tree view uses @nda_resolver to resolve each folder's effective NDA in a single
+    # in-memory pass instead of per-folder ancestry walks (N+1). Only created for GP employees
+    # who see lock icons; nil for LPs (tree view checks @nda_resolver presence).
+    @nda_resolver = (NdaInheritanceResolver.new(folders) if current_user.curr_role_employee?)
 
     folders
   end

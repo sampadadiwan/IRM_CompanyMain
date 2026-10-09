@@ -1,0 +1,89 @@
+<%# NDA Settings modal content. Shared by new.html.erb, edit.html.erb, and turbo_stream responses.
+     Rendered inside turbo_frame_tag "nda_settings_modal".
+     Changed: Added inheritance_state branching to render three modal variants.
+     Why: Module 5 introduces inherit/opt_out modes alongside the original "own" (full form).
+     Inherited folders show an info panel with override/opt-out actions. Opted-out folders
+     show a different info panel with a revert action. Only "own" mode shows the NDA config form. %>
+<%
+  nda_config ||= @nda_config
+  folder ||= @folder
+  inheritance_state ||= @inheritance_state || folder.nda_inheritance_mode
+%>
+<%= turbo_frame_tag "nda_settings_modal" do %>
+  <div class="modal fade" id="ndaSettingsModal" data-controller="modal" tabindex="-1"
+       aria-labelledby="ndaSettingsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="ndaSettingsModalLabel">
+            <i class="ti ti-shield-lock me-1"></i> NDA Settings &mdash; <%= folder.name %>
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <%# Tabs: Settings + Status. Only show tab bar when Status tab is available
+             (NDA config exists and is enabled). Otherwise the lone Settings tab is a
+             non-functional visual element — hide it and render content directly.
+             Changed: Module 9 — hide tab bar when only Settings tab exists.
+             Why: A single-tab bar looks clickable but does nothing, confusing GPs. %>
+        <% show_status_tab = nda_config.persisted? && nda_config.enabled? %>
+        <% if show_status_tab %>
+          <ul class="nav nav-tabs px-3 pt-2" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active" id="nda-settings-tab" data-bs-toggle="tab"
+                      data-bs-target="#nda-settings-pane" type="button" role="tab"
+                      aria-controls="nda-settings-pane" aria-selected="true">
+                Settings
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="nda-status-tab" data-bs-toggle="tab"
+                      data-bs-target="#nda-status-pane" type="button" role="tab"
+                      aria-controls="nda-status-pane" aria-selected="false">
+                Status
+              </button>
+            </li>
+          </ul>
+        <% end %>
+
+        <div class="tab-content">
+          <div class="tab-pane fade show active p-3" id="nda-settings-pane" role="tabpanel"
+               aria-labelledby="nda-settings-tab">
+            <% if inheritance_state == "own" %>
+              <%# Full NDA config form — folder has its own config (create or edit) %>
+              <%= render "nda_configs/form", folder: folder, nda_config: nda_config %>
+            <% elsif inheritance_state == "inherit" %>
+              <%# Changed: Added inherited_info partial rendering for "inherit" mode.
+                   Why: Folders inheriting a parent's NDA show the parent's NDA details
+                   and offer "Set Own NDA" / "Opt Out" actions instead of the full form. %>
+              <%= render "nda_configs/inherited_info", folder: folder %>
+            <% elsif inheritance_state == "opt_out" %>
+              <%# Changed: Added opted_out_info partial rendering for "opt_out" mode.
+                   Why: Opted-out folders show an info panel explaining the state
+                   with a "Revert to Inherit" action. %>
+              <%= render "nda_configs/opted_out_info", folder: folder %>
+            <% end %>
+          </div>
+
+          <%# Changed: Added Status tab pane with Turbo Frame lazy-load.
+               Why: Status data requires multiple queries; lazy-loading means the Settings tab
+               renders instantly and status loads only when the Status tab is clicked. %>
+          <% if show_status_tab %>
+            <div class="tab-pane fade p-3" id="nda-status-pane" role="tabpanel"
+                 aria-labelledby="nda-status-tab">
+              <%= turbo_frame_tag "nda_status_summary", loading: :lazy,
+                  src: nda_status_summary_path(nda_config_id: nda_config.id, folder_id: folder.id) do %>
+                <div class="text-center py-4">
+                  <div class="spinner-border spinner-border-sm text-muted" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                  </div>
+                  <p class="text-muted mt-2 mb-0">Loading status...</p>
+                </div>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+<% end %>

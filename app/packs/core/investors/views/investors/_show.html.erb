@@ -95,6 +95,10 @@
       </td>
     </tr>
 
+    <%# Changed: Removed NDA exemption toggle from investor show page.
+         Why: Exemption is now managed from the NDA Status dashboard via the
+           three-dot kebab menu per investor row. Keeps all NDA actions in one place. %>
+
     <%= display_custom_fields(@investor) if current_user %>
 
 

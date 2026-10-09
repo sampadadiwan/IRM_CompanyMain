@@ -119,6 +119,21 @@
                   <% end %>
                 <% end %>
               <% end %>
+              <%# Changed: Hide NDA Settings on Data Room root folder — NDA is configured on sub-folders only.
+                  Why: The root is just a container gated by enable_data_rooms permission; showing
+                  NDA Settings on it would be confusing. NDA belongs on folders inside the Data Room
+                  (e.g. Financials, Legal). data_room_root? checks name == "Data Room" && parent.system?. %>
+              <% if @folder&.in_data_room? && !@folder&.data_room_root? && current_user.curr_role_employee? %>
+                <div class="dropdown-divider"></div>
+                <%
+                  nda_config = @folder.nda_config
+                  nda_path = nda_config.present? ? edit_folder_nda_config_path(@folder) : new_folder_nda_config_path(@folder)
+                %>
+                <%= link_to nda_path, class: "dropdown-item d-flex align-items-center",
+                    data: { turbo_frame: "nda_settings_modal" } do %>
+                  <i class="ti ti-shield-lock"></i> NDA Settings
+                <% end %>
+              <% end %>
               <!-- Future (Send for eSignatures) link is disabled for now -->
             <% else %>
               <% if document && policy(document).create? %>
@@ -210,3 +225,8 @@ if false && msg.present?
     <span class="alert alert-info"><%= msg %></span>
   </div>
 <% end %>
+
+<%# Changed: Added empty Turbo Frame placeholder for the NDA Settings modal.
+    Why: The "NDA Settings" link above targets this frame — clicking it loads the modal
+    content from NdaConfigsController#new/edit into this frame without full page reload. %>
+<%= turbo_frame_tag "nda_settings_modal" %>

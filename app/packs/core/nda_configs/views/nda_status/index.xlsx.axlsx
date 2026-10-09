@@ -1,0 +1,43 @@
+# NDA Status XLSX export — flat rows with one row per user across all investors.
+# Columns: Investor Name, User Name, Email, Status, Expiry Reason, Signed By, Signed Date.
+# Changed: Module 8 — added Revoked status support, removed stale NdaExemption reference.
+# Why: Exemption is now a boolean on InvestorAccess, not a separate model. Revoked investors
+#   appear in the export with their status. Exemption Reason column removed (no longer applicable).
+
+wb = xlsx_package.workbook
+
+wb.add_worksheet(name: "NDA Status") do |sheet|
+  sheet.add_row([
+                  "Investor Name",
+                  "User Name",
+                  "Email",
+                  "Investor Status",
+                  "Expiry Reason",
+                  "User Status",
+                  "NDA Tagged",
+                  "Signed By",
+                  "Signed Date"
+                ])
+
+  @status_data[:investor_rows].each do |row|
+    row[:users].each do |user_row|
+      expiry_label = case row[:expiry_reason]
+                     when "version" then "Version mismatch"
+                     when "period" then "Period expired"
+                     else ""
+                     end
+
+      sheet.add_row [
+        row[:investor].investor_name,
+        user_row[:user].full_name,
+        user_row[:user].email,
+        row[:status],
+        expiry_label,
+        user_row[:status],
+        user_row[:nda_tagged] ? "Yes" : "No",
+        row[:signed_by]&.full_name || "—",
+        row[:signed_at] ? I18n.l(row[:signed_at], format: :short) : "—"
+      ]
+    end
+  end
+end

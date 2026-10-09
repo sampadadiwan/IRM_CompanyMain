@@ -1,0 +1,94 @@
+<%# NDA Status summary partial — rendered inside the NDA Settings modal Status tab.
+     Loaded via Turbo Frame lazy-load when the GP clicks the Status tab.
+     Shows status counters (Accepted, Pending, Declined, Revoked, Expired, Exempt) and a simple HTML
+     table of investors with their current NDA status.
+     Changed: Module 8 — added Revoked counter badge and Revoked status badge.
+     Why: GPs need to see which investors have had their NDA revoked. %>
+<%= turbo_frame_tag "nda_status_summary" do %>
+  <% counters = status_data[:counters] %>
+  <% investor_rows = status_data[:investor_rows] %>
+
+  <%# Changed: Added dashboard link at top of summary for quick access.
+       Why: Product feedback — GP should not have to scroll to find the full dashboard link. %>
+  <div class="d-flex justify-content-end mb-2">
+    <%= link_to "View Full Dashboard →",
+        nda_status_path(nda_config_id: nda_config.id, folder_id: folder.id),
+        class: "btn btn-outline-primary btn-sm", target: "_blank" %>
+  </div>
+
+  <%# Status counters — Changed: Module 8 — added Revoked counter badge.
+       Why: GPs need to see how many investors have been revoked. %>
+  <div class="d-flex gap-3 mb-3">
+    <span class="badge bg-success-subtle text-success px-3 py-2">
+      Accepted: <%= counters[:accepted] %>
+    </span>
+    <span class="badge bg-warning-subtle text-warning px-3 py-2">
+      Pending: <%= counters[:pending] %>
+    </span>
+    <span class="badge bg-danger-subtle text-danger px-3 py-2">
+      Declined: <%= counters[:declined] %>
+    </span>
+    <span class="badge px-3 py-2" style="background-color: #e8daef; color: #6c3483;">
+      Revoked: <%= counters[:revoked] %>
+    </span>
+    <span class="badge bg-secondary-subtle text-secondary px-3 py-2">
+      Expired: <%= counters[:expired] %>
+    </span>
+    <span class="badge bg-info-subtle text-info px-3 py-2">
+      Exempt: <%= counters[:exempt] %>
+    </span>
+  </div>
+
+  <% if investor_rows.any? %>
+    <div class="table-responsive">
+      <table class="table table-sm table-bordered align-middle mb-3">
+        <thead class="table-light">
+          <tr>
+            <th>Investor</th>
+            <th>Status</th>
+            <th>Signed By</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% investor_rows.each do |row| %>
+            <tr>
+              <td><%= row[:investor].investor_name %></td>
+              <td>
+                <%# Changed: Module 8 — added Revoked status badge (dark theme).
+                     Why: Distinct from Pending (they had access, it was taken away). %>
+                <% case row[:status] %>
+                <% when "Accepted" %>
+                  <span class="badge bg-success-subtle text-success"><%= row[:status] %></span>
+                <% when "Pending" %>
+                  <span class="badge bg-warning-subtle text-warning"><%= row[:status] %></span>
+                <% when "Declined" %>
+                  <span class="badge bg-danger-subtle text-danger"><%= row[:status] %></span>
+                <% when "Revoked" %>
+                  <span class="badge" style="background-color: #e8daef; color: #6c3483;"><%= row[:status] %></span>
+                <% when "Expired" %>
+                  <span class="badge bg-secondary-subtle text-secondary" title="<%= row[:expiry_reason] == 'version' ? 'Version mismatch' : 'Period expired' %>">
+                    <%= row[:status] %>
+                  </span>
+                <% when "Exempt" %>
+                  <span class="badge bg-info-subtle text-info"><%= row[:status] %></span>
+                <% end %>
+              </td>
+              <td><%= row[:signed_by]&.full_name || "—" %></td>
+              <td><%= row[:signed_at] ? l(row[:signed_at], format: :short) : "—" %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <p class="text-muted">No investors have access to this folder.</p>
+  <% end %>
+
+  <%# Link to full dashboard page %>
+  <div class="text-end">
+    <%= link_to "View Full Dashboard →",
+        nda_status_path(nda_config_id: nda_config.id, folder_id: folder.id),
+        class: "btn btn-outline-primary btn-sm", target: "_blank" %>
+  </div>
+<% end %>
