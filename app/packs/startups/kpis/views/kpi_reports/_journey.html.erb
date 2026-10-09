@@ -1,0 +1,10 @@
+<%# KPI report journey: the shared journey card (workflow_instances/_journey_panel) with the report's frame
+    id. Kept as this file because WorkflowInstancesController#render_journey_frame and
+    KpiReportsController#journey render "kpi_reports/journey" by convention.
+    Locals: record (the KPI report), journey (WorkflowEvaluator results, or nil), instance (or nil).
+    No readiness warnings: each task's own message says what is missing.
+    Worked examples H4, H9 — openspec/changes/kpi-report-journey/design.md#worked-examples
+    UI journey J1.1–J1.4 — openspec/changes/kpi-report-journey/design.md#what-users-see %>
+<%= render "workflow_instances/journey_panel",
+           record:, journey:, instance: local_assigns[:instance], frame_id: "kpi_report_journey", noun: "report",
+           warnings: -> { [] }, warning_tip: nil %>

@@ -6,6 +6,9 @@ class Folder < ApplicationRecord
   # nda_required? predicate so any model (Folder, IO, etc.) can include it.
   include WithNda
 
+  # Auto-assignment rules use the folder's search fields (folders have no custom fields)
+  workflow_rule_fields
+
   has_ancestry orphan_strategy: :destroy, touch: true
 
   # Changed: Added NDA_INHERITANCE_MODES constant and validation for nda_inheritance_mode column.

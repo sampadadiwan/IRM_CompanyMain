@@ -1,0 +1,11 @@
+<%# Investor KYC journey: the shared journey card (workflow_instances/_journey_panel) with the KYC's
+    frame id and readiness warnings. Kept as this file because WorkflowInstancesController#render_journey_frame
+    and InvestorKycsController#journey render "investor_kycs/journey" by convention (base class name).
+    Locals: record (the KYC), journey (WorkflowEvaluator results, or nil), instance (or nil).
+    Worked examples H3, E22 — openspec/changes/investor-kyc-journey/design.md#worked-examples
+    UI journey J2.1–J2.6 — openspec/changes/investor-kyc-journey/design.md#what-users-see %>
+<%= render "workflow_instances/journey_panel",
+           record:, journey:, instance: local_assigns[:instance], frame_id: "investor_kyc_journey", noun: "KYC",
+           # Readiness warnings, only worked out when the card shows (they hold until the KYC is verified)
+           warnings: -> { WorkflowChecks::InvestorKycWarnings.new(record).to_a },
+           warning_tip: "Check these before verifying" %>

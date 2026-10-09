@@ -223,5 +223,6 @@ When('I submit the investor form') do
 end
 
 Then('I should see {string} on the page') do |text|
-  expect(page).to have_content(text, wait: 5)
+  # Default wait (15s), not 5s: under parallel load a redirected page can take longer to render visibly
+  expect(page).to have_content(text)
 end

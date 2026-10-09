@@ -1,4 +1,13 @@
 class CapitalDistribution < ApplicationRecord
+  # Journeys (capital-distribution-journey): auto-assigned on create, evaluated from the data.
+  # Worked examples H2, H9 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples
+  include Workflowable
+
+  # Auto-assignment rules may also test "Imported" — the seeded Light journey rule routes on it.
+  # distribution_amount / gross_amount are rolled up from payments after commit (always 0 when the
+  # distribution is created, the only time a rule is checked), so they are left out
+  workflow_rule_fields extra: %w[manual_generation],
+                       except: %w[updated_at distribution_amount gross_amount]
   include WithCustomField
   include Trackable.new
 
@@ -113,6 +122,24 @@ class CapitalDistribution < ApplicationRecord
 
   def distribution_on_upload?
     distribution_on == "Upload"
+  end
+
+  # The journey panel on the distribution page: real-time refresh, creator as default owner and
+  # journey_progress_for all come from Workflowable.
+  # Worked examples E16, E17, E18 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples
+  has_journey
+
+  # Ids of the fund's commitments set to Skip Doc Gen. Memoized: one journey evaluation (and its
+  # warnings) asks for it ~10 times, and each lookup plucks json_fields for every commitment.
+  # Worked examples E3, E6 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples
+  def skip_doc_gen_commitment_ids
+    @skip_doc_gen_commitment_ids ||= CapitalCommitment.skip_doc_gen_ids(fund.capital_commitments)
+  end
+
+  # Drops memoized lookups along with the attributes
+  def reload(*)
+    @skip_doc_gen_commitment_ids = nil
+    super
   end
 
   # Units that must be deleted before this record can be (see BlocksDestroyWithFundUnits)

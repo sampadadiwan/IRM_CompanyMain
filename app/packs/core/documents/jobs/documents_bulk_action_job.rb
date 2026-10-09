@@ -1,4 +1,17 @@
 class DocumentsBulkActionJob < BulkActionJob
+  # Runs the bulk action, then re-checks once per affected call or distribution (not once per
+  # document) when their notices were approved.
+  # Worked examples J2.2 — openspec/changes/archive/2026-10-02-capital-call-journey/design.md#worked-examples
+  # Worked examples E18 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples
+  def perform(record_ids, user_id, bulk_action, params: {})
+    result = super
+    if bulk_action.to_s.downcase == "approve"
+      Document.notices_journey_progress!(Document.notice_journey_ids(Document.where(id: record_ids)),
+                                         actor: User.find_by(id: user_id))
+    end
+    result
+  end
+
   def perform_action(document, user_id, bulk_action, params: {})
     msg = "#{bulk_action}: #{document.name}"
     send_notification(msg, user_id, :success)

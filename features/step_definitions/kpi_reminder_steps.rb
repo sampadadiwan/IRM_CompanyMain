@@ -90,3 +90,26 @@ Then('a KpiReport {string} should exist for the portfolio company {string}') do 
   expect(kpi_report).not_to be_nil
   key_values(kpi_report, args)
 end
+
+# Send Reminder redirects to the report it created — the report's own page, not the grid it was sent from
+Then('I am on the KPI report for {string} as of {string}') do |portco_name, as_of|
+  portfolio_company = Investor.find_by!(investor_name: portco_name)
+  kpi_report = KpiReport.find_by!(portfolio_company_id: portfolio_company.id, as_of: Date.parse(as_of))
+  expect(page).to have_current_path(kpi_report_path(kpi_report))
+end
+
+# No reminder modal (or its backdrop) is left open over the page
+Then('the KPI reminder modal is closed') do
+  expect(page).to have_no_css(".modal.show")
+  expect(page).to have_no_css(".modal-backdrop")
+end
+
+# The greyed-out dropdown entry: disabled, no modal behind it, and the reason on its tooltip wrapper
+Then('Send Reminder is disabled saying {string}') do |message|
+  link = find("#kpi_send_reminder_link.disabled", text: "Send Reminder")
+  expect(link['data-bs-toggle']).to be_nil
+  # Bootstrap moves title to data-bs-original-title once the tooltip initialises
+  wrapper = link.find(:xpath, "..")
+  expect(wrapper[:title].presence || wrapper['data-bs-original-title']).to include(message)
+  expect(page).to have_no_css("[id^='sendReminderModal-']", visible: :all)
+end

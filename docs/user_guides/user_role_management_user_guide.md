@@ -176,6 +176,19 @@ A user is given the RM role when their account is created, if they already have 
 
 Beyond the entity-wide feature toggles, each user has their own feature access, granted in full by default. For example, giving a user **Deals** access also enables **kanban boards** for them. This lets you fine-tune what an individual can use within an entity that has a feature switched on.
 
+### KYC toggles on a user
+
+A company admin sees these toggles on a user's **Edit** page. Together they decide which KYCs the user sees on the KYCs list and pages, and which KYC emails they get:
+
+| Toggle | What it gives |
+|---|---|
+| **Enable Kycs** | Required for everything below; with it off an employee sees no KYCs and gets no KYC emails |
+| **Investor Kyc Read** | Every KYC in your organisation, whatever the fund, plus their **KYC Submitted**, **KYC Updated** and **Updates Requested** emails |
+| **Investor Kyc Update** | The same as **Investor Kyc Read**, plus editing those KYCs |
+| **Investor Kyc Create** / **Delete** / **Approve** | Creating KYCs, and deleting or verifying the KYCs the user can see |
+
+Without **Investor Kyc Read** or **Investor Kyc Update**, an employee sees only KYCs committed to funds they have access to (the fund's **Access** tab), plus KYCs with no commitment yet. Company admins see every KYC regardless. The full rule and matrix are in [Who Can See a KYC and Get Its Emails](investor_kyc_user_guide#who-can-see-a-kyc-and-get-its-emails).
+
 ---
 
 ## Joining and Password Setup
@@ -246,6 +259,9 @@ If your account holds both the employee and investor roles, a persona dropdown i
 
 ### Creating, updating and managing users
 
+**How do I let a user see KYCs in every fund?**
+Company menu → [**User / Company Employees**](/users) → the user → **Edit**, then switch on **Enable Kycs** and **Investor Kyc Read** (or **Investor Kyc Update** if they should also edit). They then see every KYC in your organisation and get its emails. Only company admins see these toggles. See [KYC toggles on a user](#kyc-toggles-on-a-user).
+
 **How do I create a staff user?**
 Company menu → [**User / Company Employees**](/users) → **New User**. Enter **First Name**, **Last Name**, **Email**, optionally country code, **Mobile Phone** and **Department**, set a **Password** and **Password Confirmation**, and click **Save**. The user is always created in your own entity. See [Creating a User](#creating-a-user).
 
@@ -286,6 +302,9 @@ A company admin at the fund or company (often operations or compliance) creates 
 
 ### What happens when I …
 
+**What happens when I turn on Investor Kyc Read for a user?**
+They see every KYC in your organisation on the KYCs list and can open each one, whatever the fund and even without fund access. They also start getting the **KYC Submitted**, **KYC Updated** and **Updates Requested** emails for all of them. It does not let them change a KYC; that needs **Investor Kyc Update**.
+
 **What happens when I create a user?**
 The account is created in your entity, marked active, given a role from the entity type (employee for companies and funds, investor for investor entities, investor advisor for advisor entities) and all features switched on. Any Stakeholder User records already added for that email are linked to the new account. No invitation email is sent, so share the password or ask them to use **Log in with an email link instead** on the login page.
 
@@ -305,6 +324,9 @@ They can no longer sign in; their records, notes, tasks and audit history are ke
 The support user sees exactly what that user sees. It is only possible when the client has an enabled support mapping that whitelists that support user, and the audit trail records the real support user behind every action. See [Impersonation (Support)](#impersonation-support).
 
 ### Troubleshooting and edge cases
+
+**Why does a user see only some KYCs?**
+They have neither **Investor Kyc Read** nor **Investor Kyc Update**, so they see only KYCs committed to funds they have access to, plus KYCs with no commitment yet. Turn one of those toggles on from their **Edit** page, or add them on the fund's **Access** tab. If they see no KYCs at all, check **Enable Kycs**.
 
 **Can a user belong to multiple entities?**
 Not directly — a user has one home entity. Investor advisors can act for several investors through their advisor persona. For genuine multi-entity staff, create a separate account per entity.

@@ -81,6 +81,20 @@ class AccountEntryExplanation
 
   def breakdown_recorded? = breakdown.any?
 
+  # Every value the run recorded, as [source text or name, value] pairs, for the calculation
+  # steps table: the rule's named steps first, in the order it assigns them, so the table reads
+  # down the rule; then the sub-expressions recorded inside them, in the order they were
+  # recorded. The engine's own inputs ("@start_date", "@end_date") are left out — they are the
+  # run's dates, not steps of this rule. ES4 (order), ES6 (nothing recorded) —
+  # features/fund/entry_explanation.feature.
+  # @return [Array<Array(String, Object)>]
+  def steps
+    rows = breakdown.reject { |key, _| key.start_with?("@") && key.exclude?(" ") }.to_a
+    order = parsed ? assignment_order : []
+    named, rest = rows.partition { |key, _| order.include?(key) }
+    named.sort_by { |key, _| order.index(key) } + rest
+  end
+
   # The entry, with what it is made of beneath it.
   # @return [Node]
   def root
@@ -199,11 +213,38 @@ class AccountEntryExplanation
     @locals ||= {}.tap { |acc| collect_locals(parsed, acc) }
   end
 
+  # Walks the rule in the order it runs, so a later assignment replaces an earlier one — a rule
+  # that starts "forex_result = 0.0" and sets it for real inside an if must open into the real
+  # one, not the zero. Only the branch the run took is walked: an assignment in a branch that did
+  # not run never happened.
+  # Covered by ES1 (reassigned after a starting zero) and ES3 (an if that did not run) —
+  # features/fund/entry_explanation.feature.
   def collect_locals(node, acc)
     return unless node.is_a?(Parser::AST::Node)
 
-    acc[node.children[0].to_s] ||= node.children[1] if node.type == :lvasgn
+    if node.type == :if
+      # The condition is evaluated either way; then only the branch that ran.
+      collect_locals(node.children[0], acc)
+      collect_locals(chosen_branch(node), acc)
+      return
+    end
+
+    # The right-hand side runs before the name is bound, so nested assignments come first.
     node.children.each { |child| collect_locals(child, acc) }
+    acc[node.children[0].to_s] = node.children[1] if node.type == :lvasgn
+  end
+
+  # Every local the rule assigns, in the order it first appears in the text, whichever branch
+  # it sits in — the order the calculation steps are listed in.
+  def assignment_order
+    @assignment_order ||= [].tap { |names| collect_assignment_names(parsed, names) }
+  end
+
+  def collect_assignment_names(node, names)
+    return unless node.is_a?(Parser::AST::Node)
+
+    names << node.children[0].to_s if node.type == :lvasgn && names.exclude?(node.children[0].to_s)
+    node.children.each { |child| collect_assignment_names(child, names) }
   end
 
   def result_node = result_of(parsed)
@@ -569,11 +610,31 @@ class AccountEntryExplanation
     node
   end
 
-  # The branch the run took, known by which one's result it recorded a value for; the "then"
-  # branch otherwise. A branch that is a nested if is judged by its own chosen branch.
+  # The branch the run took. Known first from the condition's own recorded true/false — a false
+  # condition with no else ran nothing, so that is nil. Failing that, by which branch's result it
+  # recorded a value for; the "then" branch otherwise. A branch that is a nested if is judged by
+  # its own chosen branch. ES2 (nested ifs, recorded false) and ES3 (false, no else) —
+  # features/fund/entry_explanation.feature.
   def chosen_branch(node)
+    # "unless" parses as an if with its branches swapped, so children[1] is always the
+    # branch taken when the condition is true.
+    case condition_value(node.children[0])
+    when true then return node.children[1]
+    when false then return node.children[2]
+    end
+
     branches = node.children[1..].compact
     branches.find { |b| !lookup(result_of(b)).nil? } || branches.first
+  end
+
+  # The recorded value of an if's condition, when it was recorded as a boolean; nil otherwise —
+  # a truthy number or an unrecorded condition says nothing certain about which branch ran.
+  def condition_value(condition)
+    value = lookup(unwrap(condition))
+    return true if value == true || value.to_s == "true"
+    return false if value == false || value.to_s == "false"
+
+    nil
   end
 
   def lookup(node)

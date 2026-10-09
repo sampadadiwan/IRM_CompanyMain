@@ -1,0 +1,8 @@
+<%# The call's stats cards in a frame of their own, so CapitalCall#broadcast_stats_change can reload just
+    this part once CapitalRemittancesCountersJob has fixed the totals. Rendered by show.html.erb and by
+    CapitalCallsController#stats (the frame's response). No src on first render: the broadcast supplies it.
+    refresh="morph" patches only the numbers that changed on later reloads.
+    Locals: capital_call %>
+<%= turbo_frame_tag capital_call.stats_frame_id, refresh: "morph" do %>
+  <%= render "/capital_calls/capital_call_stats", capital_call: %>
+<% end %>

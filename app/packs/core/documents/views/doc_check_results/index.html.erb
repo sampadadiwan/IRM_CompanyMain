@@ -1,0 +1,72 @@
+<%# Documents needing attention: items of the entity's current Document Checks results that need a person,
+    newest first, with Check again for the selected records.
+    openspec/changes/document-checks/design.md (card ⑧ — attention list). Worked example H9, journey J2. %>
+<div class="d-sm-flex align-items-center justify-content-between mb-3">
+  <h1 class="h3 mb-0"><%= t("doc_checks.attention.title") %></h1>
+  <%= link_to t("doc_checks.panel.set_up"), doc_checks_path, class: "btn btn-outline-secondary btn-sm", target: "_blank", rel: "noopener" %>
+</div>
+
+<%= form_with url: doc_check_results_path, method: :get, class: "d-flex flex-wrap gap-2 align-items-end mb-3", id: "doc_check_results_filter" do %>
+  <div>
+    <label class="form-label small mb-0" for="reason">Reason</label>
+    <%= select_tag :reason, options_for_select(DocCheckResult::REASONS.keys.push("document_changed").map { |k| [t("doc_checks.attention.reasons.#{k}"), k] }, params[:reason]),
+          include_blank: "Any", class: "form-select form-select-sm" %>
+  </div>
+  <div>
+    <label class="form-label small mb-0" for="document_name">Document</label>
+    <%= select_tag :document_name, options_for_select(policy_scope(DocCheck).distinct.order(:document_name).pluck(:document_name), params[:document_name]),
+          include_blank: "Any", class: "form-select form-select-sm" %>
+  </div>
+  <div>
+    <label class="form-label small mb-0">Checked from</label>
+    <%= date_field_tag :checked_from, params[:checked_from], class: "form-control form-control-sm" %>
+  </div>
+  <div>
+    <label class="form-label small mb-0">Checked to</label>
+    <%= date_field_tag :checked_to, params[:checked_to], class: "form-control form-control-sm" %>
+  </div>
+  <%= submit_tag "Filter", class: "btn btn-sm btn-outline-primary", name: nil %>
+<% end %>
+
+<% if @results.empty? %>
+  <div class="alert alert-success" id="doc_check_results_empty"><%= t("doc_checks.attention.nothing") %></div>
+<% else %>
+  <%= form_with url: check_again_doc_check_results_path, method: :post, data: { controller: "doc-check-select" }, id: "doc_check_results_form" do %>
+    <%= hidden_field_tag :record_type, "InvestorKyc" %>
+    <%= hidden_field_tag :reason, params[:reason] %>
+    <div class="table-responsive">
+      <table class="table table-sm align-middle" id="doc_check_results_table">
+        <thead>
+          <tr>
+            <th style="width: 2rem"></th>
+            <th>KYC</th>
+            <th>Document</th>
+            <th>Item</th>
+            <th>Reason</th>
+            <th>Checked</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @results.each do |result| %>
+            <% record = result.doc_check_run.record
+               reason_key = changed?(result) ? "document_changed" : DocCheckResult::REASONS.find { |_k, codes| codes.include?(result.outcome) }&.first %>
+            <tr data-record-id="<%= record.id %>" class="doc-check-attention-row">
+              <td><%= check_box_tag "record_ids[]", record.id, false, id: nil, class: "form-check-input", data: { action: "doc-check-select#changed", doc_check_select_target: "box" } %></td>
+              <td><%= link_to record.to_s, DocChecks::Registry.for(record).show_path(record) + "#docs-validation-tab" %></td>
+              <td><%= result.document_name %></td>
+              <td><%= result.document_level? ? "—" : result.look_for %></td>
+              <td><%= reason_key ? t("doc_checks.attention.reasons.#{reason_key}") : "" %></td>
+              <td><%= l(result.doc_check_run.finished_at.to_date) if result.doc_check_run.finished_at %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+    <div class="d-flex justify-content-between align-items-center">
+      <%= raw pagy_bootstrap_nav(@pagy) if @pagy.pages > 1 %>
+      <button type="submit" class="btn btn-primary btn-sm ms-auto" disabled data-doc-check-select-target="button" id="doc_check_again_btn">
+        <%= t("doc_checks.attention.check_again", count: 0) %>
+      </button>
+    </div>
+  <% end %>
+<% end %>

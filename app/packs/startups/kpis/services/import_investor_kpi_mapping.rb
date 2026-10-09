@@ -212,4 +212,13 @@ class ImportInvestorKpiMapping < ImportUtil
     Rails.logger.debug { "Successfully saved investor_kpi_mapping with ID: #{investor_kpi_mapping.id}" }
     true
   end
+
+  # After the import: imported mappings may pass "Set up KPI mappings" on the entity's open KPI report
+  # journeys (only reports with a journey are evaluated, in one SQL-filtered pass).
+  # Worked examples H15 — openspec/changes/kpi-report-journey/design.md#worked-examples
+  def post_process(ctx, import_upload:, **)
+    super
+    KpiReport.journey_progress_for(KpiReport.where(entity_id: import_upload.entity_id).select(:id), actor: import_upload.user)
+    true
+  end
 end

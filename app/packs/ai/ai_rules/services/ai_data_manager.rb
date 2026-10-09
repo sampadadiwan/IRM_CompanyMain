@@ -59,10 +59,12 @@ class AiDataManager
     @audit_log[:validate_document] = msg
     Rails.logger.debug { msg }
     document = @document
-    doc_question = DocQuestion.new(question:)
-    result = DocLlmValidator.call(model: document.owner, document:, doc_questions: [doc_question], save_check_results: false)
+    # An unsaved yes-no Document Check: the reader answers it from the document alone (it never sees the
+    # record). Worked example H13 — openspec/changes/document-checks/design.md#worked-examples
+    check = DocCheck.new(action: "question", look_for: question.to_s.truncate(100), tip: question.to_s.truncate(255))
+    result = DocChecks::DocumentReader.call(document:, checks: [check])
 
-    validation_results = result.success? ? result[:doc_question_answers] : "Error in validation"
+    validation_results = result.success? ? { question => result[:readings][check.reply_key] }.to_json : "Error in validation"
     msg = "CDM: Validation results: #{validation_results}"
     Rails.logger.debug { msg }
     @audit_log[question] = validation_results
@@ -74,7 +76,6 @@ class AiDataManager
     @audit_log[:extract_info] = msg
     Rails.logger.debug { msg }
     document = @document
-    DocQuestion.new(question:)
     result = DocLlmExtractor.call(model: document.owner, document:, save_check_results: false)
 
     extracted_info = result.success? ? result[:extracted_info] : "Error in validation"

@@ -353,27 +353,78 @@ class FundFormula < ApplicationRecord
   # never appeared in the breakdown at all. Now summarise_array converts them to
   # a readable "N portfolio companies: [...]" string before the skip check, so
   # they are included and the LLM knows what was actually filtered.
+  #
+  # Performance: the allocation engine calls this once per generated account entry, with the
+  # same formula text every time. Parsing (Parser::CurrentRuby) was ~70% of the cost, yet which
+  # expressions get evaluated depends only on the text — so the ordered list of expressions is
+  # built once per text (#explain_plan) and only the evals run per entry. Output is unchanged.
   def parse_statement(binding, external_formula: nil)
     statement = external_formula || formula
-    buffer    = Parser::Source::Buffer.new('(string)')
+    expression_map = {}
+
+    # Evaluate each planned expression, in plan order, against this entry's binding.
+    # The rescue scope per kind is exactly what the inline version had:
+    #   :ivar   — an input that fails anywhere (eval or summarising) is skipped silently
+    #   :addend — only a failing eval is skipped silently
+    #   :log    — a failure anywhere is logged and skipped
+    # rubocop:disable Style/RescueStandardError
+    explain_plan(statement).each do |exp, kind|
+      case kind
+      when :addend
+        val = begin
+          eval(ApplicationRecord.safe_eval!(exp, context: "FundFormula##{id}"), binding)
+        rescue
+          next
+        end
+        record_explained_value(expression_map, exp, val)
+      else
+        begin
+          val = eval(ApplicationRecord.safe_eval!(exp, context: "FundFormula##{id}"), binding)
+          record_explained_value(expression_map, exp, val)
+        rescue
+          logger.error "Error evaluating expression '#{exp}'" if kind == :log
+        end
+      end
+    end
+    # rubocop:enable Style/RescueStandardError
+
+    expression_map
+  end
+
+  # Summarises an evaluated value for display and stores it, unless it carries no information
+  def record_explained_value(expression_map, exp, val)
+    val = summarise_array(val, exp)  if val.is_a?(Array)
+    val = summarise_record(val)      if val.is_a?(ApplicationRecord)
+    expression_map[exp] = val unless skip_statement(exp, val)
+  end
+
+  # Ordered [expression_source, kind] pairs (kind: :ivar, :addend or :log — see parse_statement)
+  # that parse_statement evaluates for a formula text.
+  # Depends only on the text, so it is memoised per text on this instance — an allocation run keeps
+  # one FundFormula per formula, used by one thread, for the whole run. Capped so a long-lived instance
+  # cannot grow it without bound: GenerateAccountEntryMultiple adds one text per entry name and the
+  # YTD/Quarterly rollups a few more, so 500 leaves a lot of headroom (a plan is a few KB at most).
+  EXPLAIN_PLAN_CACHE_LIMIT = 500
+
+  def explain_plan(statement)
+    @explain_plans ||= {}
+    @explain_plans.clear if @explain_plans.size >= EXPLAIN_PLAN_CACHE_LIMIT
+    @explain_plans[statement] ||= build_explain_plan(statement).freeze
+  end
+
+  def build_explain_plan(statement)
+    buffer = Parser::Source::Buffer.new('(string)')
     buffer.source = statement
     ast = Parser::CurrentRuby.new.parse(buffer)
 
-    expression_map = {}
+    plan = []
 
-    # rubocop:disable Style/RescueStandardError
     if ast.type == :begin
       # Pass 1 — instance-variable inputs (external context, not derived by formula)
       ivar_exprs = []
       collect_ivar_expressions(ast, ivar_exprs)
-      ivar_exprs.uniq.each do |exp|
-        val = eval(ApplicationRecord.safe_eval!(exp, context: "FundFormula##{id}"), binding)
-        val = summarise_array(val, exp)  if val.is_a?(Array)
-        val = summarise_record(val)      if val.is_a?(ApplicationRecord)
-        expression_map[exp] = val unless skip_statement(exp, val)
-      rescue
-        # Silently skip — the ivar may not be set in this particular binding context
-      end
+      # Silently skip on error — the ivar may not be set in this particular binding context
+      ivar_exprs.uniq.each { |exp| plan << [exp, :ivar] }
 
       # Pass 2 — walk top-level statements in formula order, per-node strategy:
       #
@@ -408,38 +459,19 @@ class FundFormula < ApplicationRecord
             addends.each do |addend_exp|
               next if addend_exp.blank? || addend_exp.include?("SkipRule")
 
-              val = begin
-                eval(ApplicationRecord.safe_eval!(addend_exp, context: "FundFormula##{id}"), binding)
-              rescue # rubocop:disable Style/RescueStandardError, Metrics/BlockNesting
-                next
-              end
-              val = summarise_array(val, addend_exp) if val.is_a?(Array)
-              val = summarise_record(val)            if val.is_a?(ApplicationRecord)
-              expression_map[addend_exp] = val unless skip_statement(addend_exp, val)
+              # An addend that fails to evaluate is skipped silently
+              plan << [addend_exp, :addend]
             end
           end
-          begin
-            val = eval(ApplicationRecord.safe_eval!(exp, context: "FundFormula##{id}"), binding)
-            val = summarise_array(val, exp)  if val.is_a?(Array)
-            val = summarise_record(val)      if val.is_a?(ApplicationRecord)
-            expression_map[exp] = val unless skip_statement(exp, val)
-          rescue
-            logger.error "Error evaluating expression '#{exp}'"
-          end
+          # The variable itself — logged if it fails
+          plan << [exp, :log]
         else
           exprs = []
           find_expressions(node, exprs)
           exprs.uniq.each do |exp|
             next if exp.include?("SkipRule")
 
-            begin
-              val = eval(ApplicationRecord.safe_eval!(exp, context: "FundFormula##{id}"), binding)
-              val = summarise_array(val, exp)  if val.is_a?(Array)
-              val = summarise_record(val)      if val.is_a?(ApplicationRecord)
-              expression_map[exp] = val unless skip_statement(exp, val)
-            rescue
-              logger.error "Error evaluating expression '#{exp}'"
-            end
+            plan << [exp, :log]
           end
         end
       end
@@ -451,20 +483,13 @@ class FundFormula < ApplicationRecord
       exprs.uniq.each do |exp|
         next if exp.include?("SkipRule")
 
-        begin
-          val = eval(ApplicationRecord.safe_eval!(exp, context: "FundFormula##{id}"), binding)
-          val = summarise_array(val, exp)  if val.is_a?(Array)
-          val = summarise_record(val)      if val.is_a?(ApplicationRecord)
-          expression_map[exp] = val unless skip_statement(exp, val)
-        rescue
-          logger.error "Error evaluating expression '#{exp}'"
-        end
+        plan << [exp, :log]
       end
     end
-    # rubocop:enable Style/RescueStandardError
 
-    expression_map
+    plan
   end
+  private :build_explain_plan, :record_explained_value
 
   # Rebuilds the formula breakdown for an existing AccountEntry and persists it.
   # Use this when the breakdown is stale (e.g. after a parse_statement logic change)

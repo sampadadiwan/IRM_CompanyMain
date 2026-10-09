@@ -6,7 +6,6 @@ class Investor < ApplicationRecord
   include WithFriendlyId
   include WithIncomingEmail
   include Pundit::Authorization
-  include WithDocQuestions
   include ForInvestor
   include WithSupportAgent
   include InvestorShared
@@ -14,6 +13,9 @@ class Investor < ApplicationRecord
   # Lets an Investor have a WorkflowTemplate assigned/launched against it —
   # used for both LP onboarding and portfolio-company KPI report review.
   include Workflowable
+
+  # Auto-assignment rules: access counters change constantly and are not routing data
+  workflow_rule_fields except: %w[investor_access_count unapproved_investor_access_count]
 
   update_index('investor') { self if index_record? }
 
@@ -32,6 +34,12 @@ class Investor < ApplicationRecord
 
   belongs_to :entity, touch: true
   counter_culture :entity
+
+  # The fund employee who looks after this portfolio company: their KPI report journeys remind them
+  # (ahead of the template's owner and the Kpi-tagged team) and the completion email goes to them.
+  # Worked examples H6, H7, X1 — openspec/changes/kpi-report-journey/design.md#worked-examples
+  belongs_to :managed_by, class_name: "User", foreign_key: :managed_by_user_id, optional: true
+  validate :managed_by_is_employee
 
   # The InvestorAccess attached to this investor
   has_many :investor_accesses, dependent: :destroy
@@ -138,6 +146,15 @@ class Investor < ApplicationRecord
   validates :tag_list, length: { maximum: 120 }
 
   validates :sector, length: { maximum: 255 }
+
+  # Managed by must be one of the fund's own employees — never a user of another entity, however
+  # the id arrived (the form only offers employees; this guards the request itself). X1.
+  def managed_by_is_employee
+    return if managed_by_user_id.blank?
+    return if managed_by && managed_by.entity_id == entity_id
+
+    errors.add(:managed_by, "must be an employee of this organisation")
+  end
 
   scope :with_tag_list, lambda { |tags|
     tags = tags.split(",").map(&:strip) unless tags.is_a?(Array)

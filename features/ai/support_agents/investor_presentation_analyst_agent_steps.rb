@@ -148,7 +148,7 @@ end
 # Creates a KpiReport and attaches a real text file (via Shrine) containing +text+.
 # The doc.file is set from a Tempfile so read_document_text can download and read it
 # exactly like production — no file I/O stubs.
-def create_presentation_report(portfolio_company:, text:, doc_name: "Investor Update", as_of:, period: "Quarter")
+def attach_kpi_presentation(portfolio_company:, text:, doc_name: "Investor Update", as_of:, period: "Quarter")
   report = KpiReport.create!(
     entity:            @entity,
     portfolio_company: portfolio_company,
@@ -245,7 +245,7 @@ end
 # ─── Presentation Document Creation ──────────────────────────────────────────
 
 Given("Acme Analytics has a Q1 2025 investor presentation attached to a KPI report") do
-  create_presentation_report(
+  attach_kpi_presentation(
     portfolio_company: @portfolio_company,
     text:              Q1_2025_TEXT,
     as_of:             Date.new(2025, 3, 31)
@@ -253,7 +253,7 @@ Given("Acme Analytics has a Q1 2025 investor presentation attached to a KPI repo
 end
 
 Given("Acme Analytics has a Q3 2025 investor presentation with a declining NRR") do
-  create_presentation_report(
+  attach_kpi_presentation(
     portfolio_company: @portfolio_company,
     text:              Q3_2025_TEXT,
     as_of:             Date.new(2025, 9, 30)
@@ -261,7 +261,7 @@ Given("Acme Analytics has a Q3 2025 investor presentation with a declining NRR")
 end
 
 Given("Acme Analytics has a Q4 2025 investor presentation showing a missed ARR target") do
-  create_presentation_report(
+  attach_kpi_presentation(
     portfolio_company: @portfolio_company,
     text:              Q4_2025_TEXT,
     as_of:             Date.new(2025, 12, 31)
@@ -291,7 +291,7 @@ end
 
 Given("Beta Corp has a Q4 2025 investor presentation") do
   @beta_corp ||= Investor.find_by(investor_name: "Beta Corp", entity: @entity)
-  create_presentation_report(
+  attach_kpi_presentation(
     portfolio_company: @beta_corp,
     text:              BETA_CORP_TEXT,
     as_of:             Date.new(2025, 12, 31)
@@ -310,7 +310,7 @@ end
 # Custom doc name filter: overrides DEFAULT_DOC_NAMES so only "Board Update"- or
 # "Q-Report"-named documents are picked up (PRD §12.1 — presentation_doc_names).
 Given("Acme Analytics has a KPI report with a document named {string} matching the custom filter") do |doc_name|
-  create_presentation_report(
+  attach_kpi_presentation(
     portfolio_company: @portfolio_company,
     text:              Q4_2025_TEXT,
     doc_name:          doc_name,

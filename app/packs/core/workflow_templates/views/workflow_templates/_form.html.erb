@@ -51,6 +51,25 @@
       </small>
     </div>
 
+    <%# ── Channels for every workflow message (activation, reminders, review needed, complete) ── %>
+    <div class="form-group form-check">
+      <%= form.check_box :notify_by_email, class: "form-check-input" %>
+      <%= form.label :notify_by_email, "Send email" %>
+      <small class="text-muted d-block">
+        Email approvers and step owners when a step needs them, with reminders and a note when the
+        journey completes. Turning this off also silences workflows already running.
+      </small>
+    </div>
+
+    <div class="form-group form-check">
+      <%= form.check_box :notify_by_whatsapp, class: "form-check-input" %>
+      <%= form.label :notify_by_whatsapp, "Send WhatsApp" %>
+      <small class="text-muted d-block">
+        Also send the same messages on WhatsApp — to your organisation's employees only, never to
+        investors. Needs WhatsApp enabled for your organisation and on the employee's profile, with a phone number.
+      </small>
+    </div>
+
     <div class="form-group form-check">
       <%= form.check_box :attach_document_in_email, class: "form-check-input" %>
       <%= form.label :attach_document_in_email, "Attach document to notification emails" %>
@@ -74,7 +93,9 @@
     <%# ── Steps ───────────────────────────────────────────────────────────── %>
     <hr>
     <h6 class="font-weight-bold">Steps
-      <small class="text-muted fw-normal ms-2">Drag to reorder</small>
+      <small class="text-muted fw-normal ms-2">
+        Change a step's number to reorder — steps are renumbered 1, 2, 3… when you save
+      </small>
     </h6>
 
     <%# Stimulus nested-form controller handles add/remove rows %>

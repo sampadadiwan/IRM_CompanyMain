@@ -183,13 +183,18 @@ class SearchUserGuidesTool < RubyLLM::Tool
   # Ranks passages by how many distinct keywords they contain (a passage matching every
   # keyword beats one matching a single common word like "create"), then by keywords in the
   # guide's filename, then headings (and the heading-like FAQ question and "Where to find it"
-  # lines, see HEADING_LIKE) before body text, then by keywords on the matched line.
+  # lines, see HEADING_LIKE) before body text, then by keywords on the matched line, then by
+  # keywords on the matched line spelled as typed rather than as a synonym (so for "create
+  # stakeholder", "Creating a Stakeholder" beats "a KYC the investor created" instead of the
+  # tie falling to the alphabetical filename order).
   #
   # @param terms [Array<String>] search keywords
   # @param limit [Integer] maximum passages to return
   # @return [Array<Hash>] matched file/line/snippet triples
   def search_files(terms, limit: MAX_RESULTS)
     term_patterns = terms.map { |t| term_pattern(t) }
+    # The keyword itself, in any inflection, without its synonyms
+    literal_patterns = terms.map { |t| GuideSearch.term_pattern(t, {}) }
     any_term = Regexp.union(term_patterns)
     results = []
 
@@ -218,6 +223,7 @@ class SearchUserGuidesTool < RubyLLM::Tool
           filename_hits: filename_hits,
           term_hits: term_patterns.count { |p| snippet.match?(p) },
           line_hits: term_patterns.count { |p| line.match?(p) },
+          literal_line_hits: literal_patterns.count { |p| line.match?(p) },
           heading: line.match?(HEADING_LIKE)
         }
         last_matched_line = idx
@@ -225,7 +231,7 @@ class SearchUserGuidesTool < RubyLLM::Tool
     end
 
     ranked = results.sort_by do |r|
-      [-r[:term_hits], -r[:filename_hits], r[:heading] ? 0 : 1, -r[:line_hits], r[:file], r[:line]]
+      [-r[:term_hits], -r[:filename_hits], r[:heading] ? 0 : 1, -r[:line_hits], -r[:literal_line_hits], r[:file], r[:line]]
     end
     per_file = Hash.new(0)
     ranked.select { |r| (per_file[r[:file]] += 1) <= MAX_RESULTS_PER_FILE }

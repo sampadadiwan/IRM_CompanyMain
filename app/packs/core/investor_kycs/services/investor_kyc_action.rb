@@ -1,5 +1,18 @@
 class InvestorKycAction < Trailblazer::Operation
+  # Columns whose change is bookkeeping (status, verification and AI/AML results, timestamps), not
+  # the KYC's details: changing only these after "Review KYC" does not move the journey back to it.
+  # Worked examples E12 — openspec/changes/investor-kyc-journey/design.md#worked-examples
+  JOURNEY_BOOKKEEPING_COLUMNS = %w[
+    submission_status completed_by_investor verified verified_by_id submitted_at link_sent_at reminder_sent
+    reminder_sent_date send_kyc_form_to_user pan_verified pan_verification_status pan_verification_response
+    bank_verified bank_verification_status bank_verification_response aml_status aml_manual_override
+    aml_override_reason doc_question_answers all_docs_valid docs_completed investor_user_updated_at
+    notification_msg document_folder_id type investor_name updated_at created_at
+  ].freeze
+
   def save(ctx, investor_kyc:, **)
+    # Taken before anything changes, so sign-offs given before this save are reset if it moves the journey back
+    ctx[:journey_started_at] = Time.current
     # We get this param validate to decide whether to validate or not, if the investor is doing an interim save validate is false, and he will complete the form later.
     validate = ctx[:validate].nil? ? ctx[:investor_user] : ctx[:validate]
     # If the KYC is verified, then its also completed by the investor
@@ -10,7 +23,40 @@ class InvestorKycAction < Trailblazer::Operation
       investor_kyc.submission_status = "draft_saved"
       investor_kyc.submitted_at = nil
     end
+    # And the reverse: a fund user ticking "I confirm … complete" on a KYC they filled in marks it
+    # submitted (until now the tick was reset by sync_boolean_fields_from_status and thrown away).
+    # Worked examples H9 — openspec/changes/investor-kyc-journey/design.md#worked-examples
+    if !ctx[:investor_user] && !investor_kyc.completed_by_investor_was && investor_kyc.completed_by_investor &&
+       !(investor_kyc.submission_completed? || investor_kyc.submission_verified?)
+      investor_kyc.submission_status = "completed"
+      investor_kyc.submitted_at = Time.current
+    end
     investor_kyc.save(validate:)
+  end
+
+  # Last step of create and update: tells the KYC's journey what this save did (a no-op without a
+  # journey, and never fails the save). Moves back with the reason when the save undid something —
+  # unverified (single or bulk), marked incomplete, or details edited after "Review KYC" — and
+  # otherwise just re-checks (submitted, verified, imported, ...), so open pages update.
+  # Worked examples H4, E11, E12, E16, E17 — openspec/changes/investor-kyc-journey/design.md#worked-examples
+  def journey_hook(ctx, investor_kyc:, **)
+    return true if investor_kyc.destroyed?
+
+    changes = investor_kyc.saved_changes
+    from_status, to_status = changes["submission_status"]
+    actor = journey_actor
+    started_at = ctx[:journey_started_at] || Time.current
+    if from_status == "verified"
+      investor_kyc.journey_undo_evaluate(note: "Unverified", started_at:, actor:)
+    elsif %w[completed verified].include?(from_status) && %w[draft_saved link_sent not_sent].include?(to_status)
+      investor_kyc.journey_undo_evaluate(note: "Marked incomplete", started_at:, actor:)
+    elsif (changes.keys - JOURNEY_BOOKKEEPING_COLUMNS).any? && !investor_kyc.previously_new_record?
+      # Shared with Document Checks' field writes (InvestorKycConcern#journey_details_changed!)
+      investor_kyc.journey_details_changed!(actor:, started_at:)
+    else
+      investor_kyc.journey_progress!(actor:)
+    end
+    true
   end
 
   def handle_errors(ctx, investor_kyc:, **)
@@ -57,11 +103,28 @@ class InvestorKycAction < Trailblazer::Operation
     true
   end
 
+  # The signed-in user behind this request (audited's own lookup), nil in jobs and imports
+  def journey_actor
+    ::Audited.store[:audited_user] || ::Audited.store[:current_user].try(:call)
+  rescue StandardError
+    nil
+  end
+
+  # A final submit is also an update, so it used to fire both this and the controller's own
+  # submission notification - two emails and two in-app notifications for one investor action.
+  # The submission is the more specific event, so it wins outright. ctx[:submitted] is set only
+  # by InvestorKycsController#update, so a create or an interim save still takes the generic path.
+  # Deliberately not folded into the investor_user && validate guard below: the submission
+  # notification never depended on who was acting, only on the status transition.
   def updated_notification(ctx, investor_kyc:, investor_user:, **)
     # reload the kyc in case it was changed from individual to non individual or visa versa
     validate = ctx[:validate].nil? ? ctx[:investor_user] : ctx[:validate]
     investor_kyc = InvestorKyc.find(investor_kyc.id)
-    investor_kyc.updated_notification if investor_user && validate
+    if ctx[:submitted]
+      investor_kyc.submitted_notification
+    elsif investor_user && validate
+      investor_kyc.updated_notification
+    end
     true
   end
 end

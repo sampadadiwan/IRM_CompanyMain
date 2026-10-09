@@ -114,6 +114,9 @@ Scenario Outline: Bulk distribution document generation doesn't re-query the dis
   Given there is a fund "<fund>" for the entity
   Given the investors are added to the fund
   Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+  # This guard measures the notice generator alone: without a journey the doc job skips its
+  # journey re-check (a fixed set of queries per run, covered by capital_distribution_journey.feature)
+  And the entity's capital distribution journeys are removed
   When I create a new capital distribution "cost_of_investment_cents=10050000;"
   Then I should see the capital distrbution details
   Then when the capital distrbution is approved

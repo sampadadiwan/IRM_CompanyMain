@@ -1,0 +1,17 @@
+# Settings → Document Checks → Export: one row per check, in the columns ImportDocCheck reads back, so the
+# sheet can be edited and uploaded (ImportUpload type DocCheck). Id makes an edited row update its check.
+# See openspec/changes/document-checks/design.md (card ① Setup — Export and import). Worked example H14.
+actions = ImportDocCheck::ACTIONS.invert
+yes_no = ->(flag) { flag ? "Yes" : "No" }
+
+xlsx_package.workbook.add_worksheet(name: "Document Checks") do |sheet|
+  sheet.add_row(["Id", *ImportDocCheck::STANDARD_HEADERS])
+  @doc_checks.each do |check|
+    # A question has no field and no replace; the other kinds have no expected answer
+    sheet.add_row([check.id, check.document_name, actions[check.action], check.look_for,
+                   check.question? ? nil : (@field_labels[check.field_name] || check.field_name),
+                   check.tip, check.fill_in? ? yes_no.call(check.replace_existing) : nil,
+                   check.question? ? check.expected_answer.capitalize : nil],
+                  types: [:integer] + [:string] * ImportDocCheck::STANDARD_HEADERS.size)
+  end
+end

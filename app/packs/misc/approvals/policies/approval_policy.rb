@@ -1,4 +1,6 @@
 class ApprovalPolicy < ApprovalBasePolicy
+  include WorkflowablePolicyMethods # journey?, assign_workflow?
+
   class Scope < BaseScope
     def resolve
       if user.curr_role == "investor"
@@ -49,11 +51,5 @@ class ApprovalPolicy < ApprovalBasePolicy
 
   def send_reminder?
     update? && record.due_date >= Time.zone.today && record.approved
-  end
-
-  # Only company_admin can assign / remove a workflow template on an approval,
-  # and only when the entity has workflow_templates enabled.
-  def assign_workflow?
-    user.entity&.permissions&.enable_workflow_templates? && user.company_admin? && belongs_to_entity?(user, record)
   end
 end

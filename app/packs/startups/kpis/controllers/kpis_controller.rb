@@ -130,7 +130,11 @@ class KpisController < ApplicationController
   end
 
   def approve
+    entity_id = @kpi.entity_id
+    portfolio_company_id = @kpi.portfolio_company_id
     @kpi = KpiApproveService.call([@kpi.id], current_user.id)
+    # Approvals only move KPI report journeys forward, on every report of the portfolio company (H10)
+    KpiReport.journey_progress_for_portco(entity_id, portfolio_company_id, actor: current_user)
     respond_to do |format|
       format.html { redirect_back_or_to(kpi_reports_path, notice: "KPI was successfully approved.") }
       format.json { render :show, status: :ok, location: @kpi }
@@ -139,6 +143,8 @@ class KpisController < ApplicationController
 
   def reject
     @kpi.destroy
+    # A rejection is a decision too: forward only (an emptied report waits on "Import workbook" — E5)
+    KpiReport.journey_progress_for_portco(@kpi.entity_id, @kpi.portfolio_company_id, actor: current_user)
     respond_to do |format|
       format.html { redirect_back_or_to(kpi_reports_path, notice: "KPI was successfully rejected.") }
       format.json { head :no_content }
@@ -146,7 +152,12 @@ class KpisController < ApplicationController
   end
 
   def unapprove
+    # An undo: something is pending again, so every journey of the portfolio company may move back to
+    # "Approve or reject KPIs" with later sign-offs reset (started_at taken before the change — E13)
+    started_at = Time.current
     @kpi.unapprove!
+    KpiReport.journey_undo_for_portco(@kpi.entity_id, @kpi.portfolio_company_id,
+                                      note: "KPI #{@kpi.name} unapproved", started_at:, actor: current_user)
     respond_to do |format|
       format.html { redirect_back_or_to(kpi_path(@kpi), notice: "KPI was successfully unapproved.") }
       format.json { render :show, status: :ok, location: @kpi }
@@ -175,6 +186,9 @@ class KpisController < ApplicationController
       KpiApproveService.call(kpi_ids, current_user.id)
       notice = "All pending KPIs were successfully approved."
     end
+
+    # Approve all / Reject all move every KPI report journey of the portfolio company on, once (H10)
+    KpiReport.journey_progress_for_portco(entity_id, portfolio_company_id, actor: current_user)
 
     respond_to do |format|
       format.html { redirect_back_or_to(kpi_reports_path, notice: notice) }

@@ -137,6 +137,9 @@ Sidekiq.configure_server do |config|
     # config/schedule.rb).
     workflow_reminder_cron = in_region ? '30 0 * * *' : '30 10 * * *'
     Sidekiq::Cron::Job.create(name: 'WorkflowAutoReminderJob', cron: workflow_reminder_cron, class: 'WorkflowAutoReminderJob')
+    # capital-call-journey: re-checks every journey every 15 minutes so progress is picked up and
+    # approvers are told promptly even when nobody opens the record (WorkflowEvaluateJob)
+    Sidekiq::Cron::Job.create(name: 'WorkflowEvaluateJob', cron: '*/15 * * * *', class: 'WorkflowEvaluateJob')
     # Drives ALL support agent schedules (AgentSchedule → AgentRunnerJob): scans
     # due schedules and enqueues runs. Was never cron-registered before, so no
     # scheduled agent (incl. the SideLetterObligationAgent daily enforcement

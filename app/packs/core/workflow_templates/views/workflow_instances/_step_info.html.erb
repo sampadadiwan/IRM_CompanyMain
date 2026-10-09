@@ -1,0 +1,135 @@
+<%# A journey step's popup, opened by clicking its pill in the step rail (journey_step_info_controller.js
+    fetches this from WorkflowInstancesController#step_info and appends it to <body>).
+
+    Header is just the step name. The body, one sentence per card:
+      Done / What to do — where the step stands (its live message, and when it was done), or the
+                          check's `how` with the panel's own buttons when this is the current step
+      What happens      — the check's `effects`: what completing it changes, and whether investors
+                          are emailed
+      Why it matters    — the check's `why`
+      Team reminders    — who on the team is emailed and when (journey_step_notify_lines); not once done
+    A step that doesn't apply shows only its reason.
+    Locals: instance, record, step (snapshot step data). Content from JourneyHelper#journey_step_info. %>
+<% info = journey_step_info(instance, step) %>
+<% result = info[:result] %>
+<% status = info[:status] %>
+<% frame_id = record.journey_frame_id %>
+
+<div class="modal fade" id="journeyStepInfoModal" tabindex="-1" aria-labelledby="journeyStepInfoModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="journeyStepInfoModalLabel"><%= info[:name] %></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <div class="modal-body">
+        <% if status == "na" %>
+          <%# Doesn't apply to this record: the reason is the whole story %>
+          <div class="action-summary__item action-summary__item--grey mb-0">
+            <span class="action-summary__icon"><i class="ti ti-circle-minus"></i></span>
+            <div>
+              <div class="action-summary__title">Not applicable</div>
+              <div class="action-summary__desc small"><%= result[:message].presence || "This step doesn't apply here." %></div>
+            </div>
+          </div>
+        <% else %>
+          <div class="action-summary__list mb-0">
+            <%# What to do — or, once passed, when it was done %>
+            <% if status == "passed" %>
+              <div class="action-summary__item action-summary__item--green">
+                <span class="action-summary__icon"><i class="ti ti-circle-check"></i></span>
+                <div>
+                  <%# When, then what the step found, e.g. "2 notices generated" %>
+                  <div class="action-summary__title">Done<% if result[:passed_at].present? %> · <%= l(Time.zone.parse(result[:passed_at]), format: :abbr_date_time) %><% end %></div>
+                  <% if result[:message].present? %>
+                    <div class="action-summary__desc small"><%= result[:message] %></div>
+                  <% end %>
+                </div>
+              </div>
+            <% elsif info[:how] %>
+              <div class="action-summary__item action-summary__item--blue">
+                <span class="action-summary__icon"><i class="ti ti-hand-finger"></i></span>
+                <div class="flex-grow-1">
+                  <%# Where it stands now (the step's live message), then how to finish it %>
+                  <div class="action-summary__title">What to do</div>
+                  <% if result[:message].present? && status != "not_yet" %>
+                    <div class="small fw-semibold text-dark mt-1"><%= result[:message] %></div>
+                  <% end %>
+                  <div class="action-summary__desc small"><%= info[:how] %></div>
+
+                  <%# The current step's own buttons, exactly as the panel offers them. Clicking one closes
+                      the popup (journey-step-info#dismiss) without stopping the link or form. %>
+                  <% if status.in?(%w[current error]) %>
+                    <div class="d-flex flex-wrap gap-1 mt-2" data-action="click->journey-step-info#dismiss">
+                      <% if info[:kind] == "acknowledge" %>
+                        <% if result[:review_action_path].present? %>
+                          <%= link_to result[:review_action_path], class: "btn btn-sm btn-outline-primary",
+                                target: ("_blank" if result[:review_action_new_tab]), rel: ("noopener" if result[:review_action_new_tab]),
+                                data: { turbo_frame: "_top",
+                                        controller: ("journey-action" if result[:review_action_target].present?),
+                                        journey_action_control_value: result[:review_action_target],
+                                        action: ("click->journey-action#run" if result[:review_action_target].present?) }.compact do %>
+                            <%= result[:review_action_label] %> <i class="ti ti-arrow-right"></i>
+                          <% end %>
+                        <% end %>
+                        <% if status == "current" && policy(record).update? %>
+                          <%= button_to acknowledge_workflow_instance_path(instance, step_position: step[:position]),
+                                method: :post, class: "btn btn-sm btn-primary", form: { data: { turbo_frame: frame_id } } do %>
+                            <i class="ti ti-check"></i> Mark reviewed
+                          <% end %>
+                        <% end %>
+                      <% elsif result[:action_path].present? %>
+                        <%= link_to result[:action_path], class: "btn btn-sm btn-primary",
+                              data: { turbo_frame: "_top",
+                                      controller: ("journey-action" if result[:action_target].present?),
+                                      journey_action_control_value: result[:action_target],
+                                      action: ("click->journey-action#run" if result[:action_target].present?) }.compact do %>
+                          <%= result[:action_label] %> <i class="ti ti-arrow-right"></i>
+                        <% end %>
+                      <% end %>
+                    </div>
+                  <% end %>
+                </div>
+              </div>
+            <% end %>
+
+            <%# What completing it changes, and whether investors are emailed %>
+            <% if info[:effects] %>
+              <div class="action-summary__item action-summary__item--purple">
+                <span class="action-summary__icon"><i class="ti ti-bolt"></i></span>
+                <div>
+                  <div class="action-summary__title">What happens</div>
+                  <div class="action-summary__desc small"><%= info[:effects] %></div>
+                </div>
+              </div>
+            <% end %>
+
+            <% if info[:why] %>
+              <div class="action-summary__item action-summary__item--amber">
+                <span class="action-summary__icon"><i class="ti ti-bulb"></i></span>
+                <div>
+                  <div class="action-summary__title">Why it matters</div>
+                  <div class="action-summary__desc small"><%= info[:why] %></div>
+                </div>
+              </div>
+            <% end %>
+
+            <%# Team reminders — irrelevant once the step is done %>
+            <% if status != "passed" && info[:notify].any? %>
+              <div class="action-summary__item action-summary__item--grey">
+                <span class="action-summary__icon"><i class="ti ti-bell"></i></span>
+                <div>
+                  <div class="action-summary__title">Team reminders</div>
+                  <% info[:notify].each do |icon, text| %>
+                    <div class="action-summary__desc small d-flex gap-1"><i class="ti <%= icon %> mt-1"></i><span><%= text %></span></div>
+                  <% end %>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>

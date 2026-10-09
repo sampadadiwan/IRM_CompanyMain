@@ -2,6 +2,11 @@ class KpiReport < ApplicationRecord
   include WithCustomField
   include ForInvestor
   include WithFolder
+  include Workflowable
+
+  # The KPI report journey: a step bar on requested reports (kpi_reports/_journey), live updates.
+  # Worked examples H3 — openspec/changes/kpi-report-journey/design.md#worked-examples
+  has_journey
 
   attr_accessor :delete_kpis, :upload_new_kpis, :update_existing_kpis
 
@@ -113,7 +118,10 @@ class KpiReport < ApplicationRecord
   # Tells the fund a portco submission could not be imported (post-gate failure — rare) and reopens the
   # report so the portco can fix and resubmit; reminders resume because the status leaves `submitted`.
   def reopen_after_failed_import!
-    update_columns(status: 'draft_saved', import_status: 'failed', submitted_at: nil)
+    # An undo for the KPI report journey: back to "Submit KPIs" (X4)
+    journey_undo(note: "Import failed — reopened for the portco") do
+      update_columns(status: 'draft_saved', import_status: 'failed', submitted_at: nil)
+    end
     recipients = entity.employees.with_tag('Kpi')
     recipients = entity.employees if recipients.empty?
     recipients.find_each do |employee|
@@ -122,8 +130,12 @@ class KpiReport < ApplicationRecord
   end
 
   # Fund-side "reopen and ask for re-upload": back to draft_saved, clear submission markers, re-send the link.
-  def reopen_for_portco!(entity_id_for_notification)
-    update_columns(status: 'draft_saved', submitted_at: nil, import_status: nil, fund_notified_at: nil)
+  def reopen_for_portco!(entity_id_for_notification, actor: nil)
+    # An undo for the KPI report journey: back to "Submit KPIs", later sign-offs reset, and the
+    # completion email can be sent again (E12)
+    journey_undo(note: "Reopened for the portco to upload again", actor:) do
+      update_columns(status: 'draft_saved', submitted_at: nil, import_status: nil, fund_notified_at: nil)
+    end
     SendPortcoNotification.call(model: self, entity_id: entity_id_for_notification)
   end
 
@@ -141,40 +153,74 @@ class KpiReport < ApplicationRecord
     end
   end
 
-  # Launches a new workflow instance on the portfolio company (an Investor) each time a
-  # KPI workbook finishes importing for it. This is deliberately an *explicit* call rather
-  # than a WorkflowAutoAssignmentRule condition: the auto-assignment engine
-  # (see Workflowable#apply_workflow_auto_assignment_on_update) only ever assigns/launches a
-  # template ONCE per record — it bails out as soon as workflow_assignment is present. That
-  # is correct for the one-time "which template applies to this portfolio company" decision
-  # (handled separately, at Investor-creation time, by a category-based auto-assignment rule),
-  # but wrong for "launch a fresh review every time new KPIs arrive", since KPI reports are
-  # periodic. WorkflowInstanceLaunch itself already refuses to start a second instance while
-  # one is still active, so this call is safe to make on every import without extra guarding.
-  def launch_portfolio_company_workflow(user)
-    # portfolio_company_id has no category constraint at the DB/association level — it can
-    # point at any Investor (kpi_reports_controller permits it directly). Without this check,
-    # a KpiReport misdirected at a regular (non-portfolio-company) Investor would re-launch
-    # a workflow against a record whose one-time "Investor Onboarding" may already be complete.
-    return if portfolio_company.blank? || portfolio_company.category != "Portfolio Company" || kpis.none?
+  # ── Journey ────────────────────────────────────────────────────────────────
+  # Design: openspec/changes/kpi-report-journey/design.md (card ① Request, card ⑥ Who is told)
 
-    result = WorkflowInstanceLaunch.call(workflowable: portfolio_company, launched_by: user)
-    return if result.success?
+  # KPI reports never pick up a journey from a save: an import creates one report per period (and
+  # roll-up) it finds, through the same model, and only the caller knows whether a report is a request.
+  # So the Workflowable callbacks do nothing here, and the request entry points call start_journey!
+  # (design Decision 1). Worked examples H3, E2 — openspec/changes/kpi-report-journey/design.md#worked-examples
+  def apply_workflow_auto_assignment; end
 
-    # Best-effort: a missing template assignment or an already-active review are both
-    # expected, non-error outcomes (e.g. entity hasn't set up the workflow yet, or the
-    # previous period's review is still in progress) — log and move on, never raise.
-    Rails.logger.warn("[KpiReport#launch_portfolio_company_workflow] KpiReport##{id}: #{result[:errors]}")
+  def apply_workflow_auto_assignment_on_update; end
+
+  # Starts this report's journey — runs the entity's KPI report auto-assignment rules, which launch the
+  # template (first evaluation, no email). Called by the request entry points only: the New KPI Report
+  # screen, KpiReportCreateShell, SendPortcoNotification, and ImportKpiWorkbookJob for the report the
+  # workbook was uploaded on (never the reports that import creates for other periods).
+  # A no-op for a report without a portfolio company, a portfolio company that isn't one, or a report
+  # that already has a journey. Never raises: a request must not fail because of its journey.
+  # Worked examples H3, E3, E18 — openspec/changes/kpi-report-journey/design.md#worked-examples
+  def start_journey!(actor = nil)
+    return if portfolio_company.blank? || portfolio_company.category != "Portfolio Company"
+    return if workflow_assignment.present?
+
+    WorkflowAutoAssignmentService.call(workflowable: self, launched_by: actor)
   rescue StandardError => e
-    # WorkflowInstanceLaunch's step-actor notification (an email) can raise for reasons
-    # unrelated to the KPI import itself (e.g. a mail delivery error) — the WorkflowInstance
-    # row is already committed by that point (see WorkflowInstanceLaunch's own comment on
-    # why notification runs after the transaction), so the review still launched even if the
-    # notification failed. Every other call site into this engine (Workflowable#apply_workflow_
-    # auto_assignment/_on_update) treats notification failures the same way: log, never let it
-    # crash the caller. Here the caller is ImportKpiWorkbookJob — a notification hiccup must
-    # not fail the whole KPI import.
-    Rails.logger.warn("[KpiReport#launch_portfolio_company_workflow] KpiReport##{id}: #{e.message}")
+    Rails.logger.warn("[KpiReport#start_journey!] KpiReport##{id}: #{e.class}: #{e.message}")
+    nil
+  end
+
+  # The portfolio company's manager beats the step's owner and actors for this report's journey (H7)
+  def workflow_override_owners
+    [portfolio_company&.managed_by].compact
+  end
+
+  # KPI reports have no audit trail and user_id is overwritten by portco saves, so "the creator" isn't
+  # knowable: with no manager and no step owner, every employee tagged Kpi is reminded (E8)
+  def workflow_default_owners
+    @workflow_default_owners ||= entity.employees.with_tag("Kpi").where(active: true).to_a
+  end
+
+  # Every undo also clears the completion email record, so it can be sent again once the report is
+  # complete again (E12). journey_undo ends here too, so this covers every undoing action.
+  def journey_undo_evaluate(note:, started_at:, actor: nil)
+    update_columns(completion_notified_at: nil) if completion_notified_at.present?
+    super
+  end
+
+  # The portfolio company's reports that have a journey, for portco-wide changes (approvals, mapping
+  # changes): Workflowable.journey_progress_for already skips reports without one in SQL.
+  # Worked examples H10 — openspec/changes/kpi-report-journey/design.md#worked-examples
+  def self.journey_progress_for_portco(entity_id, portfolio_company_id, actor: nil)
+    return if portfolio_company_id.blank?
+
+    journey_progress_for(where(entity_id:, portfolio_company_id:).select(:id), actor:)
+  rescue StandardError => e
+    Rails.logger.warn("[KpiReport.journey_progress_for_portco] pc #{portfolio_company_id}: #{e.class}: #{e.message}")
+  end
+
+  # The undo version, for portco-wide undoing actions (unapprove a KPI, delete a mapping): every report
+  # of the portfolio company with a live journey moves back as needed and has its completion email
+  # record cleared. started_at must be taken before the action changed anything.
+  # Worked examples E13, E16 — openspec/changes/kpi-report-journey/design.md#worked-examples
+  def self.journey_undo_for_portco(entity_id, portfolio_company_id, note:, started_at:, actor: nil)
+    return if portfolio_company_id.blank?
+
+    with_journey = WorkflowInstance.evaluated.where(workflowable_type: name).where.not(status: :archived)
+    where(entity_id:, portfolio_company_id:).where(id: with_journey.select(:workflowable_id)).find_each do |report|
+      report.journey_undo_evaluate(note:, started_at:, actor:)
+    end
   end
 
   def custom_kpis

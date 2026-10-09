@@ -1,0 +1,95 @@
+// Settings → Document Checks (app/packs/core/documents/views/doc_checks). Sizes for the round icon badges,
+// tile hover, and the inline sentence inputs of a check.
+// openspec/changes/document-checks/design.md (card ① Setup).
+
+.doc-check-doc-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  flex-shrink: 0;
+
+  .ti {
+    font-size: 1.35rem;
+  }
+}
+
+.doc-check-action-icon {
+  width: 2rem;
+  height: 2rem;
+  flex-shrink: 0;
+
+  .ti {
+    font-size: 1.1rem;
+  }
+}
+
+// Empty documents recede a little, so the ones with checks lead
+.doc-check-tile-empty {
+  background-color: var(--bs-tertiary-bg);
+}
+
+// A check's labelled lines in the side panel
+.doc-check-item .doc-check-label {
+  font-size: 0.8rem;
+  color: var(--bs-secondary-color);
+  margin-bottom: 0.15rem;
+}
+
+.doc-check-step {
+  width: 1.75rem;
+  height: 1.75rem;
+  flex-shrink: 0;
+}
+
+.doc-check-tile {
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+
+  &:hover {
+    box-shadow: var(--bs-box-shadow) !important;
+    transform: translateY(-1px);
+  }
+}
+
+// The inputs inside "Read [look for] … the KYC's [field]" sit inline and wrap on narrow screens
+.doc-check-sentence-edit .doc-check-inline {
+  max-width: 100%;
+}
+
+.doc-check-item summary {
+  cursor: pointer;
+}
+
+// KYC → Document checks tab: a settled item as one aligned row (item | status + value | Undo).
+// minmax(0, 1fr) lets a long value (an address) truncate instead of pushing the row onto two lines.
+.doc-check-ok-row {
+  display: grid;
+  grid-template-columns: minmax(8rem, 14rem) minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.35rem 0;
+
+  & + & {
+    border-top: 1px solid var(--bs-border-color-translucent);
+  }
+
+  // Statuses share a width, so the values start in one column
+  .doc-check-ok-status {
+    display: inline-block;
+    min-width: 12rem;
+    margin-right: 0.5rem;
+  }
+
+  // Phones: item on its own line, the rest under it
+  @media (max-width: 575.98px) {
+    grid-template-columns: minmax(0, 1fr) auto;
+
+    > :first-child {
+      grid-column: 1 / -1;
+    }
+  }
+}
+
+// Section headings on the tab: body size, regular weight, muted — set apart by space, not by caps or bold
+.doc-checks-panel .doc-check-section {
+  color: var(--bs-secondary-color);
+  margin: 1.5rem 0 0.5rem;
+}

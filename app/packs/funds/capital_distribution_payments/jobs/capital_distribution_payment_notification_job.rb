@@ -53,5 +53,9 @@ class CapitalDistributionPaymentNotificationJob < ApplicationJob
       @main_error = "Distribution payment notifications completed with #{@error_msg.length} errors."
       email_errors if failure.positive?
     end
+
+    # Real-time journey progress: Email investors can pass now (no-op without a journey)
+    # Worked examples H7 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples
+    @capital_distribution.journey_progress!(actor: User.find_by(id: user_id))
   end
 end
