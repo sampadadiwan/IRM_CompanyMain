@@ -64,6 +64,9 @@ Feature: Investor KYC Send Workflow
     Then the investor kyc submission_status should be "completed"
     And the submitted_at timestamp is set on the investor kyc
     And the fund admin receives a KYC submission notification email
+    And the fund admin's KYC submission email body reads the default submitted text
+    And the fund admin has a KYC submitted notification with a non-blank message
+    And the fund admin does not receive a KYC updated notification email
     And I should be on the investor kyc show page
 
   # ─────────────────────────────────────────────────────────────────────────────
@@ -179,3 +182,211 @@ Feature: Investor KYC Send Workflow
     And I am logged in as the fund admin
     When I visit the investor kycs index filtered by submission_status "link_sent"
     Then I should see "KycInvestor1"
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # 14. KYC updated notification reaches both entity employees and investor-advisor
+  #     employees, including an advisor currently switched into a different entity
+  # ─────────────────────────────────────────────────────────────────────────────
+  @kyc_workflow @kyc_notification @notification
+  Scenario: Investor editing the KYC notifies entity employees and investor-advisor employees, even one switched elsewhere
+    Given there is a KYC for the investor with submission_status "link_sent"
+    And there is a fund "name=KycFund" for the entity "name=KycTestFund"
+    And the investor kyc has a capital commitment on the fund
+    And there is a user "email=employee@example.com" for the entity "name=KycTestFund"
+    And the user "employee@example.com" has role "employee"
+    And I grant "read" access to the fund for user "employee@example.com"
+    And there is an entity "name=Advisor Firm;entity_type=Investor Advisor"
+    And there is a user "email=advisor1@example.com" for the entity "name=Advisor Firm"
+    And the user "advisor1@example.com" has role "investor_advisor"
+    And the advisor "advisor1@example.com" is switched into entity "name=KycTestFund"
+    And I grant "read" access to the fund for user "advisor1@example.com"
+    And there is a user "email=advisor2@example.com" for the entity "name=Advisor Firm"
+    And the user "advisor2@example.com" has role "investor_advisor"
+    And the advisor "advisor2@example.com" is switched into entity "name=KycTestFund"
+    And I grant "read" access to the fund for user "advisor2@example.com"
+    # advisor2 then switches away to an unrelated entity before the investor edits the KYC -
+    # their InvestorAdvisor grant on KycTestFund (and its AccessRight) still stand regardless.
+    And there is an entity "name=Other Portco;entity_type=Investment Fund"
+    And the advisor "advisor2@example.com" is switched into entity "name=Other Portco"
+    And the email queue is cleared
+    When the investor submits an update to the KYC
+    Then the user "employee@example.com" receives a KYC updated notification email
+    And the user "advisor1@example.com" receives a KYC updated notification email
+    And the user "advisor2@example.com" receives a KYC updated notification email
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # 15. Employees/investor-advisors without show? access to the KYC are not notified
+  # ─────────────────────────────────────────────────────────────────────────────
+  @kyc_workflow @kyc_notification @notification
+  Scenario: Employees and investor advisors without show access to the KYC are not notified
+    Given there is a KYC for the investor with submission_status "link_sent"
+    And there is a fund "name=KycFund2" for the entity "name=KycTestFund"
+    And the investor kyc has a capital commitment on the fund
+    # Proper employees: one with fund access, one with investor_kyc_read but no fund access
+    # (Investor Kyc Read alone shows every KYC in the entity - V1 in the change's design.md),
+    # one with neither.
+    And there is a user "email=emp_with_show@example.com" for the entity "name=KycTestFund"
+    And the user "emp_with_show@example.com" has role "employee"
+    And I grant "read" access to the fund for user "emp_with_show@example.com"
+    And there is a user "email=emp_kyc_read_only@example.com" for the entity "name=KycTestFund"
+    And the user "emp_kyc_read_only@example.com" has role "employee"
+    And the user "emp_kyc_read_only@example.com" has extended permission "investor_kyc_read"
+    And there is a user "email=emp_no_access@example.com" for the entity "name=KycTestFund"
+    And the user "emp_no_access@example.com" has role "employee"
+    # Investor-advisor employees: one with fund access, one switched in but with no fund access,
+    # one switched OUT to a different entity but who still has the grant + fund access on
+    # KycTestFund (must still be notified - notify_kyc/show? do not depend on current switch state),
+    # and one who is only an advisor of a DIFFERENT entity (with show access there - irrelevant here).
+    And there is an entity "name=Advisor Firm 2;entity_type=Investor Advisor"
+    And there is a user "email=adv_with_show@example.com" for the entity "name=Advisor Firm 2"
+    And the user "adv_with_show@example.com" has role "investor_advisor"
+    And the advisor "adv_with_show@example.com" is switched into entity "name=KycTestFund"
+    And I grant "read" access to the fund for user "adv_with_show@example.com"
+    And there is a user "email=adv_no_access@example.com" for the entity "name=Advisor Firm 2"
+    And the user "adv_no_access@example.com" has role "investor_advisor"
+    And the advisor "adv_no_access@example.com" is switched into entity "name=KycTestFund"
+    And there is a user "email=adv_switched_away_with_show@example.com" for the entity "name=Advisor Firm 2"
+    And the user "adv_switched_away_with_show@example.com" has role "investor_advisor"
+    And the advisor "adv_switched_away_with_show@example.com" is switched into entity "name=KycTestFund"
+    And I grant "read" access to the fund for user "adv_switched_away_with_show@example.com"
+    And there is a user "email=adv_other_entity@example.com" for the entity "name=Advisor Firm 2"
+    And the user "adv_other_entity@example.com" has role "investor_advisor"
+    And there is an entity "name=Other Portco 2;entity_type=Investment Fund"
+    And there is a fund "name=OtherFund2" for the entity "name=Other Portco 2"
+    And the advisor "adv_other_entity@example.com" is switched into entity "name=Other Portco 2"
+    And I grant "read" access to "OtherFund2" for user "adv_other_entity@example.com"
+    # Now move adv_switched_away_with_show out of KycTestFund - their grant and AccessRight there stand regardless.
+    And the advisor "adv_switched_away_with_show@example.com" is switched into entity "name=Other Portco 2"
+    And the email queue is cleared
+    When the investor submits an update to the KYC
+    Then the user "emp_with_show@example.com" receives a KYC updated notification email
+    And the user "emp_kyc_read_only@example.com" receives a KYC updated notification email
+    And the user "emp_no_access@example.com" does not receive a KYC updated notification email
+    And the user "adv_with_show@example.com" receives a KYC updated notification email
+    And the user "adv_no_access@example.com" does not receive a KYC updated notification email
+    And the user "adv_switched_away_with_show@example.com" receives a KYC updated notification email
+    And the user "adv_other_entity@example.com" does not receive a KYC updated notification email
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # 16. A corporate/fund-of-funds LP user can still view their own KYC, even though
+  #     User#setup_defaults also gives them the :employee role
+  # ─────────────────────────────────────────────────────────────────────────────
+  @kyc_workflow @kyc_notification
+  Scenario: Corporate LP investor can still view their own KYC despite also carrying the employee role
+    Given there is an existing investor "investor_name=KycCorpInvestor" of entity_type "Company" with "1" users
+    And there is a KYC for the investor with submission_status "link_sent"
+    Then the investor user should have show access to the investor kyc
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # 17. An InvestorAdvisor grant without employee/company_admin privilege must not
+  #     exclusively deny show? - it should fall through to the investor-advisor role
+  #     check (InvestorKyc.for_investor_advisor) instead
+  # ─────────────────────────────────────────────────────────────────────────────
+  @kyc_workflow @kyc_notification
+  Scenario: A non-employee advisor grant falls through to the investor-advisor role check instead of being denied outright
+    Given there is a KYC for the investor with submission_status "link_sent"
+    And there is an entity "name=KycGrantAdvisorFirm;entity_type=Investor Advisor"
+    And there is a user "email=kyc_grant_advisor@example.com" for the entity "name=KycGrantAdvisorFirm"
+    And the user "kyc_grant_advisor@example.com" has role "investor_advisor"
+    And there is an investor advisor grant for "kyc_grant_advisor@example.com" on entity "name=KycTestFund" with allowed_roles "investor"
+    And InvestorKyc.for_investor_advisor is stubbed to return the investor kyc for "kyc_grant_advisor@example.com"
+    Then the user "kyc_grant_advisor@example.com" should have show access to the investor kyc
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # 18. A grant privileged as company_admin (no "employee" role) is at least as
+  #     capable as an employee grant, including while switched away
+  # ─────────────────────────────────────────────────────────────────────────────
+  @kyc_workflow @kyc_notification
+  Scenario: A switched-away advisor granted only company_admin still has show access
+    Given there is a KYC for the investor with submission_status "link_sent"
+    And there is a fund "name=KycCompanyAdminFund" for the entity "name=KycTestFund"
+    And the investor kyc has a capital commitment on the fund
+    And there is an entity "name=KycCompanyAdminAdvisorFirm;entity_type=Investor Advisor"
+    And there is a user "email=kyc_company_admin_advisor@example.com" for the entity "name=KycCompanyAdminAdvisorFirm"
+    And the user "kyc_company_admin_advisor@example.com" has role "investor_advisor"
+    And there is an investor advisor grant for "kyc_company_admin_advisor@example.com" on entity "name=KycTestFund" with allowed_roles "company_admin"
+    And I grant "read" access to the fund for user "kyc_company_admin_advisor@example.com"
+    Then the user "kyc_company_admin_advisor@example.com" should have show access to the investor kyc
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # 19. A legacy symbol-serialized allowed_roles grant (still functional per
+  #     InvestorAdvisor#setup_issues) still satisfies the employee-grant check
+  # ─────────────────────────────────────────────────────────────────────────────
+  @kyc_workflow @kyc_notification
+  Scenario: A legacy symbol-serialized allowed_roles grant still satisfies the advisor-grant check
+    Given there is a KYC for the investor with submission_status "link_sent"
+    And there is a fund "name=KycSymbolRolesFund" for the entity "name=KycTestFund"
+    And the investor kyc has a capital commitment on the fund
+    And there is an entity "name=KycSymbolRolesAdvisorFirm;entity_type=Investor Advisor"
+    And there is a user "email=kyc_symbol_roles_advisor@example.com" for the entity "name=KycSymbolRolesAdvisorFirm"
+    And the user "kyc_symbol_roles_advisor@example.com" has role "investor_advisor"
+    And there is an investor advisor grant for "kyc_symbol_roles_advisor@example.com" on entity "name=KycTestFund" with legacy symbol allowed_roles
+    And I grant "read" access to the fund for user "kyc_symbol_roles_advisor@example.com"
+    Then the user "kyc_symbol_roles_advisor@example.com" should have show access to the investor kyc
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # 20. A KYC with no commitment yet is visible to every employee with enable_kycs (V5),
+  #     so the onboarding-window notifications still reach ordinary employees
+  # ─────────────────────────────────────────────────────────────────────────────
+  @kyc_workflow @kyc_notification @notification
+  Scenario: KYC with no capital commitments still notifies entity employees
+    Given there is a KYC for the investor with submission_status "link_sent"
+    And there is a user "email=zero_commitment_employee@example.com" for the entity "name=KycTestFund"
+    And the user "zero_commitment_employee@example.com" has role "employee"
+    And the email queue is cleared
+    When the investor submits an update to the KYC
+    Then the user "zero_commitment_employee@example.com" receives a KYC updated notification email
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # 21. notify_kyc's two loops are deduplicated by user id
+  # ─────────────────────────────────────────────────────────────────────────────
+  @kyc_workflow @kyc_notification @notification
+  Scenario: Advisor with a legacy nil advisor_entity_id receives exactly one notification, not two
+    Given there is a KYC for the investor with submission_status "link_sent"
+    And there is a fund "name=KycDedupFund" for the entity "name=KycTestFund"
+    And the investor kyc has a capital commitment on the fund
+    And there is an entity "name=KycDedupAdvisorFirm;entity_type=Investor Advisor"
+    And there is a user "email=kyc_dedup_advisor@example.com" for the entity "name=KycDedupAdvisorFirm"
+    And the user "kyc_dedup_advisor@example.com" has role "investor_advisor"
+    And the advisor "kyc_dedup_advisor@example.com" is switched into entity "name=KycTestFund"
+    And I grant "read" access to the fund for user "kyc_dedup_advisor@example.com"
+    And the user "kyc_dedup_advisor@example.com" has a nil advisor_entity_id
+    And the email queue is cleared
+    When the investor submits an update to the KYC
+    Then the user "kyc_dedup_advisor@example.com" receives exactly one KYC updated notification email
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # 22. notify_kyc's second loop now gates on enable_kycs consistently with the first
+  # ─────────────────────────────────────────────────────────────────────────────
+  @kyc_workflow @kyc_notification @notification
+  Scenario: Switched-in company_admin advisor with enable_kycs disabled on their grant is not notified
+    Given there is a KYC for the investor with submission_status "link_sent"
+    And there is a fund "name=KycCompanyAdminDisabledFund" for the entity "name=KycTestFund"
+    And the investor kyc has a capital commitment on the fund
+    And there is an entity "name=KycCompanyAdminDisabledAdvisorFirm;entity_type=Investor Advisor"
+    And there is a user "email=kyc_company_admin_disabled@example.com" for the entity "name=KycCompanyAdminDisabledAdvisorFirm"
+    And the user "kyc_company_admin_disabled@example.com" has role "investor_advisor"
+    And the advisor "kyc_company_admin_disabled@example.com" is switched into entity "name=KycTestFund" with allowed_roles "employee,company_admin,investor_advisor" and enable_kycs disabled
+    And the email queue is cleared
+    When the investor submits an update to the KYC
+    Then the user "kyc_company_admin_disabled@example.com" does not receive a KYC updated notification email
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # 23. The final submit routes through notify_kyc, so an investor advisor with
+  #     access now receives the submitted notification too - the controller's own
+  #     sender only ever addressed entity employees
+  # ─────────────────────────────────────────────────────────────────────────────
+  @kyc_workflow @kyc_notification @notification
+  Scenario: Final submit notifies an investor advisor with access, and only once
+    Given there is a KYC for the investor with submission_status "link_sent"
+    And there is a fund "name=KycSubmitFund" for the entity "name=KycTestFund"
+    And the investor kyc has a capital commitment on the fund
+    And there is an entity "name=KycSubmitAdvisorFirm;entity_type=Investor Advisor"
+    And there is a user "email=kyc_submit_advisor@example.com" for the entity "name=KycSubmitAdvisorFirm"
+    And the user "kyc_submit_advisor@example.com" has role "investor_advisor"
+    And the advisor "kyc_submit_advisor@example.com" is switched into entity "name=KycTestFund"
+    And I grant "read" access to the fund for user "kyc_submit_advisor@example.com"
+    And the email queue is cleared
+    When the investor submits the KYC as final
+    Then the user "kyc_submit_advisor@example.com" receives exactly one KYC submission notification email
+    And the user "kyc_submit_advisor@example.com" does not receive a KYC updated notification email

@@ -1,4 +1,7 @@
 class KpiReportPolicy < KpiPolicyBase
+  # journey? / assign_workflow? for the KPI report journey (kpi-report-journey)
+  include WorkflowablePolicyMethods
+
   class Scope < Scope
     def resolve
       # scope.for_user(user)
@@ -101,6 +104,18 @@ class KpiReportPolicy < KpiPolicyBase
 
   # Fund-only: reopen a submitted report and ask the portco to upload again.
   def reopen?
+    mark_reviewed?
+  end
+
+  # The journey panel is for the fund only — never the portfolio company's users, who can open the
+  # report itself (WorkflowablePolicyMethods#journey? would otherwise follow show?).
+  # Worked examples R1 — openspec/changes/kpi-report-journey/qa-checklist.md#role-sweep
+  def journey?
+    show? && belongs_to_entity?(user, record)
+  end
+
+  # Fund-only, like closing the report (H8)
+  def send_completion_email?
     mark_reviewed?
   end
 

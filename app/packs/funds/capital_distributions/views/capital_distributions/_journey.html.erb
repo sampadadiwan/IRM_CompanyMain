@@ -1,0 +1,12 @@
+<%# Capital distribution journey: the shared journey card (workflow_instances/_journey_panel) with the
+    distribution's frame id and readiness warnings. Kept as this file because
+    WorkflowInstancesController#render_journey_frame and CapitalDistributionsController#journey render
+    "capital_distributions/journey" by convention.
+    Locals: record (the distribution), journey (WorkflowEvaluator results, or nil), instance (or nil).
+    Worked examples H3, H4, E6 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples
+    UI journey J2.1–J2.6 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#what-users-see %>
+<%= render "workflow_instances/journey_panel",
+           record:, journey:, instance: local_assigns[:instance], frame_id: "capital_distribution_journey", noun: "distribution",
+           # Readiness warnings, only worked out when the card shows (they hold until investors are emailed)
+           warnings: -> { WorkflowChecks::CapitalDistributionWarnings.new(record).to_a },
+           warning_tip: "Check these before investors are emailed and paid" %>

@@ -1,5 +1,20 @@
 <tr id="<%= dom_id workflow_template %>">
-  <td><%= link_to workflow_template.name, workflow_template_path(workflow_template) %></td>
+  <td>
+    <%# A disabled template is muted rather than hidden: it is still editable history, just not in use %>
+    <%= link_to workflow_template.name, workflow_template_path(workflow_template),
+          class: ("text-muted" unless workflow_template.enabled) %>
+  </td>
+  <td>
+    <% if workflow_template.enabled %>
+      <span class="badge bg-success-subtle text-success border border-success-subtle">Enabled</span>
+    <% else %>
+      <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle"
+            data-bs-toggle="tooltip"
+            data-bs-title="Not assigned or launched on new records. Workflows already running are unaffected.">
+        Disabled
+      </span>
+    <% end %>
+  </td>
   <td>
     <% if workflow_template.workflowable_type.present? %>
       <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">
@@ -26,6 +41,17 @@
     <% if policy(workflow_template).edit? %>
       <%= link_to edit_workflow_template_path(workflow_template), class: "btn btn-sm btn-outline-secondary" do %>
         <i class="ti ti-edit"></i>
+      <% end %>
+      <%# Retire / bring back. Confirmed like a delete because it changes what happens to every
+          future record this template would have been assigned to. %>
+      <%= button_to toggle_enabled_workflow_template_path(workflow_template), method: :patch,
+            id: "toggle_enabled_#{workflow_template.id}",
+            class: "btn btn-sm btn-outline-secondary", form_class: "d-inline deleteButton",
+            title: workflow_template.enabled ? "Disable" : "Enable",
+            data: { action: "click->confirm#popup", turbo: false, method: :patch,
+                    title: "#{workflow_template.enabled ? 'Disable' : 'Enable'} #{workflow_template.name}",
+                    msg: workflow_template_toggle_message(workflow_template) } do %>
+        <i class="ti <%= workflow_template.enabled ? 'ti-player-pause' : 'ti-player-play' %>"></i>
       <% end %>
       <%= button_to workflow_template_path(workflow_template), method: :delete,
             class: "btn btn-sm btn-outline-danger", form_class: "d-inline deleteButton",

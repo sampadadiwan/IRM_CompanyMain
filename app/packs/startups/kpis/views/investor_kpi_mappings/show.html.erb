@@ -142,7 +142,24 @@
   <div data-controller="confirm">
     <% if policy(@investor_kpi_mapping).edit? %>
       <%= link_to  t_common(:edit), edit_investor_kpi_mapping_path(@investor_kpi_mapping), {class: "btn btn-outline-primary"} %>
-      <%= button_to t_common(:delete), @investor_kpi_mapping, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+      <%# Delete: refused for a parent mapping (disabled, the tooltip names the children); a mapping KPIs use
+          warns what goes with it; an unused one confirms as before.
+          Worked examples H11, H12, X5 — openspec/changes/kpi-report-journey/design.md#worked-examples %>
+      <% delete_impact = InvestorKpiMappingDelete.impact(@investor_kpi_mapping) %>
+      <% if delete_impact[:children].any? %>
+        <span class="d-inline-block" tabindex="0" id="investor_kpi_mapping_delete_blocked"
+              data-bs-toggle="tooltip" data-bs-title="Move or delete <%= delete_impact[:children].to_sentence %> first">
+          <button type="button" class="btn btn-outline-danger" disabled><%= t_common(:delete) %></button>
+        </span>
+      <% elsif delete_impact[:kpis].positive? %>
+        <%= button_to t_common(:delete), @investor_kpi_mapping, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton",
+                      id: "investor_kpi_mapping_delete_btn",
+                      data: { action: "click->confirm#popup", turbo: false, method: :delete,
+                              msg: investor_kpi_mapping_delete_action_summary(@investor_kpi_mapping, delete_impact) } %>
+      <% else %>
+        <%= button_to t_common(:delete), @investor_kpi_mapping, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton",
+                      id: "investor_kpi_mapping_delete_btn", data: {action: "click->confirm#popup", turbo:false}  %>
+      <% end %>
     <% end %>
     <% if policy(@investor_kpi_mapping).recompute_rag? %>
       <%= button_to "Recompute RAG Status", recompute_rag_investor_kpi_mapping_path(@investor_kpi_mapping), method: :patch, class: "btn btn-outline-success",

@@ -10,7 +10,6 @@ class CapitalCommitmentList < BaseList
   Result = Struct.new(:q, :capital_commitments, :data_frame, :adhoc_json, :template, keyword_init: true)
 
   def call(&)
-    translate_json_fields_params(CapitalCommitment)
     @q = CapitalCommitment.ransack(@params[:q])
     @capital_commitments = apply_policy_scope(@q.result, &)
     @capital_commitments = @capital_commitments.includes(:entity, :fund, :investor_kyc, :investor)

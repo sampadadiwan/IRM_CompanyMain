@@ -93,14 +93,13 @@ end
 
 # ── Filter action steps ───────────────────────────────────────────────────────
 
-# Filterable custom fields are registered as Ransack named ransackers via
-# WithCustomFieldFilter#load_filterable_custom_fields. Passing json_fields.*
-# params in the URL triggers translate_json_fields_params in CapitalCommitmentList
-# which converts them to Ransack condition format before the query is built.
+# Filterable custom fields are registered as Ransack named ransackers, per company, by
+# WithCustomFieldFilter#load_filterable_custom_fields; the filter params use the field
+# name directly (e.g. q[source_of_funds_cont]).
 
 When('I filter capital commitments by {string} contains {string}') do |field_name, value|
   # Use named ransacker params — the before_action registers the named ransacker,
-  # then Ransack uses it directly without going through json_fields_query.
+  # then Ransack uses it directly.
   visit(capital_commitments_path(q: {"#{field_name}_cont" => value}))
 end
 
@@ -148,4 +147,55 @@ end
 
 Then('the result should not contain committed amount {string}') do |amount|
   expect(page).not_to have_content(amount)
+end
+
+# ── Number fields and cross-company isolation (fix-custom-field-filter-scoping) ──────────────────
+# Worked examples H1, E1–E3, X1 in openspec/changes/fix-custom-field-filter-scoping/report.md
+
+Given('the form type has a filterable number field {string} labelled {string}') do |name, label|
+  fcf = @form_type.form_custom_fields.find_or_initialize_by(name: FormCustomField.to_name(name))
+  position = fcf.position || (@form_type.form_custom_fields.count + 1)
+  fcf.assign_attributes(field_type: "NumberField", label:, filter_in_search: true, position:)
+  fcf.save!
+end
+
+# A second company with its own filterable field on its commitment form, whose user then opens the
+# capital commitments filter in a separate browser session — as another tenant's request would, on
+# the same server process. @user / @entity are restored afterwards.
+Given('another company has a filterable {string} field {string} labelled {string} and its user has opened the commitments filter') do |field_type, name, label|
+  me = @user
+  my_entity = @entity
+  other_entity = FactoryBot.create(:entity, entity_type: "Investment Fund")
+  other_entity.permissions.set(:enable_funds)
+  other_entity.save!(validate: false)
+  form_type = FormType.find_or_create_by!(entity: other_entity, name: "CapitalCommitment", tag: "Default")
+  FormCustomField.create!(form_type:, name: FormCustomField.to_name(name), label:, field_type:, filter_in_search: true, position: 1)
+  @user = FactoryBot.create(:user, entity: other_entity)
+  @user.add_role(:company_admin)
+  Capybara.using_session(:other_company) do
+    steps %(
+      Given I am at the login page
+      When I fill and submit the login page
+    )
+    visit capital_commitments_path(filter: true)
+    expect(page).to have_css("select[name*='a][0][name]'] option[value='#{FormCustomField.to_name(name)}']", visible: false)
+  end
+ensure
+  @user = me
+  @entity = my_entity
+end
+
+When('I filter capital commitments by {string} greater than {string}') do |field_name, value|
+  visit(capital_commitments_path(q: { "#{field_name}_gt" => value }))
+end
+
+When('the field {string} is no longer shown in filters') do |name|
+  @form_type.form_custom_fields.find_by!(name: FormCustomField.to_name(name)).update!(filter_in_search: false)
+end
+
+# Background work (jobs, MCP, console) has no signed-in user: no custom-field filter names apply
+Then('without a signed-in user the commitment search fields should not include {string}') do |name|
+  Current.set(user: nil) do
+    expect(CapitalCommitment.ransackable_attributes).not_to include(FormCustomField.to_name(name))
+  end
 end

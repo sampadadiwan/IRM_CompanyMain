@@ -3,15 +3,11 @@ class WorkflowAutoAssignmentRule < ApplicationRecord
   belongs_to :workflow_template
   belongs_to :created_by, class_name: "User", optional: true
 
-  # Supported operators for condition matching.
-  # DB columns only are allowed as attribute names to prevent arbitrary method calls.
-  OPERATORS = %w[eq not_eq gt lt gte lte in not_in present blank].freeze
-
   validates :workflowable_type, presence: true,
                                 inclusion: { in: WorkflowTemplate::WORKFLOWABLE_TYPE_OPTIONS }
   validates :priority,          presence: true, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validate  :template_scoped_to_correct_type
-  validate  :conditions_are_valid_json_array
+  validate  :conditions_fit_field_list
 
   # Serialize the text column as a Ruby array of hashes.
   # MySQL does not have native JSON array columns; we use text + manual serialize here.
@@ -19,11 +15,11 @@ class WorkflowAutoAssignmentRule < ApplicationRecord
 
   after_initialize :set_conditions_default
 
-  # Evaluate all conditions against the given workflowable object.
-  # Returns true only if every condition in the array matches.
-  # An empty conditions array always returns true (catch-all / default rule).
-  def matches?(workflowable)
-    Array(conditions).all? { |cond| evaluate_condition(workflowable, cond) }
+  # Whether every condition holds for the given saved workflowable; an empty conditions array always
+  # matches (catch-all / default rule). Pass `fields:` when checking several rules for one record so
+  # the field list is built once. Design: workflow-rule-condition-builder card 7
+  def matches?(workflowable, fields: nil)
+    WorkflowRuleMatcher.call(self, workflowable, fields:)
   end
 
   private
@@ -40,41 +36,13 @@ class WorkflowAutoAssignmentRule < ApplicationRecord
                "is scoped to #{workflow_template.workflowable_type} but this rule is for #{workflowable_type}")
   end
 
-  def conditions_are_valid_json_array
-    return if Array(conditions).all? { |c| c.is_a?(Hash) && c["attribute"].present? && OPERATORS.include?(c["operator"]) }
-    errors.add(:conditions, "must be an array of {attribute, operator, value} hashes with a valid operator")
-  end
+  # Every condition must be on this type's field list for this entity, with an operator and value the
+  # field allows — otherwise the rule would save and silently never match.
+  # Worked examples X1–X5 — openspec/changes/workflow-rule-condition-builder/design.md#worked-examples
+  def conditions_fit_field_list
+    # The type's own inclusion validation reports an unknown type; nothing to check fields against
+    return unless entity && WorkflowTemplate::WORKFLOWABLE_TYPE_OPTIONS.include?(workflowable_type)
 
-  # Evaluate a single condition hash against the workflowable.
-  # Only reads DB column values — never calls arbitrary methods to prevent injection.
-  def evaluate_condition(workflowable, cond)
-    attribute = cond["attribute"].to_s
-    operator  = cond["operator"].to_s
-    expected  = cond["value"]
-
-    # Guard: only allow DB columns so arbitrary method dispatch is impossible
-    unless workflowable.class.column_names.include?(attribute)
-      Rails.logger.warn("[WorkflowAutoAssignmentRule] Skipped unknown attribute '#{attribute}' on #{workflowable.class.name}")
-      return false
-    end
-
-    actual = workflowable.read_attribute(attribute)
-
-    case operator
-    when "eq"      then actual.to_s  == expected.to_s
-    when "not_eq"  then actual.to_s  != expected.to_s
-    when "gt"      then actual.to_d  >  expected.to_d
-    when "lt"      then actual.to_d  <  expected.to_d
-    when "gte"     then actual.to_d  >= expected.to_d
-    when "lte"     then actual.to_d  <= expected.to_d
-    when "in"      then Array(expected).map(&:to_s).include?(actual.to_s)
-    when "not_in"  then !Array(expected).map(&:to_s).include?(actual.to_s)
-    when "present" then actual.present?
-    when "blank"   then actual.blank?
-    else false
-    end
-  rescue StandardError => e
-    Rails.logger.error("[WorkflowAutoAssignmentRule] Condition evaluation error: #{e.message}")
-    false
+    WorkflowRuleFields.for(workflowable_type, entity).errors_for(conditions).each { |message| errors.add(:base, message) }
   end
 end

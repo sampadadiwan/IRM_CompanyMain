@@ -201,6 +201,21 @@ if ENV['TEST_ENV_NUMBER'].present?
   ActiveRecord::Base.logger = Rails.logger
 end
 
+# LOGS=<level> (debug/info/warn/error/fatal) overrides the log level for this run, e.g.
+# `LOGS=info` to cut the per-statement SQL debug output on full-suite runs. Unset keeps the
+# current behavior. Applied after the per-worker logger swap above, because that swap builds a
+# fresh logger at DEBUG and would otherwise discard any level set in config/environments/test.rb.
+if ENV['LOGS'].present?
+  # Fail loudly on a typo (e.g. LOGS=inf) rather than silently logging at the old level
+  logs_level = ENV['LOGS'].downcase
+  valid_levels = %w[debug info warn error fatal]
+  raise ArgumentError, "LOGS=#{ENV['LOGS']} is not one of #{valid_levels.join('/')}" unless valid_levels.include?(logs_level)
+
+  # Rails.logger and ActiveRecord::Base.logger are the same object here, so one assignment covers both
+  Rails.logger.level = logs_level.to_sym
+  ActiveRecord::Base.logger&.level = logs_level.to_sym
+end
+
 
 # Chromium launch flags that cut each worker's memory footprint. A parallel run
 # puts one Rails + Puma + `node run-driver` + a multi-process Chromium in RAM per
@@ -223,7 +238,7 @@ Capybara.register_driver(:playwright) do |app|
                                    screen_size: { width: 1680, height: 1100 },
                                    viewport: { width: 1680, height: 1100 },
                                    default_wait_for_load_state: "domcontentloaded",
-                                   navigation_timeout: 60_000)
+                                   default_navigation_timeout: 60)
 end
 
 Capybara.default_max_wait_time = 15
@@ -252,7 +267,11 @@ module IRMUtils
 
   def key_values(model, args)
     puts "Setting #{args} on #{model.class} #{model.id}"
-    key_val = args.split(";").map { |kv| kv.split("=") }.to_h
+    # Limit the split to 2 so an intentionally empty value survives: "unit_type=" has to
+    # parse as {"unit_type" => ""} (a commitment with no unit type), but a plain
+    # split("=") drops the trailing empty field and to_h then raises ArgumentError.
+    # It also lets a value contain "=" instead of blowing up on the extra field.
+    key_val = args.split(";").map { |kv| kv.split("=", 2) }.to_h
     key_val.each do |k, v|
       # model[k] = v
       puts "Setting #{k} to #{v} on #{model.class} #{model.id}"

@@ -18,6 +18,7 @@ import "custom/charts_handler"
 import "custom/select2_handler"
 import "custom/turbo_handler"
 import "custom/turbo_frame_error_handler"
+import "custom/turbo_stream_actions"
 
 window.bootstrap = bootstrap
 

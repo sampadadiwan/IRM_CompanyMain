@@ -13,8 +13,15 @@ class InvestorKycsBulkActionJob < BulkActionJob
     when "bankverification"
       VerifyBankJob.set(wait: rand(DELAY_SECONDS).seconds).perform_later(obj_class: investor_kyc.class.to_s, obj_id: investor_kyc.id)
     when "unverify"
+      # Back to "completed", exactly like the KYC page's UnVerify; Request Updates is what reopens a KYC
+      # for the investor. InvestorKycUpdate's journey hook moves the journey back ("Unverified").
+      # Only verified KYCs: an unsubmitted one must not be marked submitted by unverifying it.
+      # Worked examples E17 — openspec/changes/investor-kyc-journey/design.md#worked-examples
+      return unless investor_kyc.submission_verified?
+
       investor_kyc.verified = false
-      investor_kyc.submission_status = "link_sent"
+      investor_kyc.verified_by_id = nil
+      investor_kyc.submission_status = "completed"
       InvestorKycUpdate.call(investor_kyc:, investor_user: false)
     when "sendkyclink"
       send_kyc_link(investor_kyc, user_id, custom_notification_id: params[:custom_notification_id])
@@ -42,10 +49,19 @@ class InvestorKycsBulkActionJob < BulkActionJob
     [:document_folder, :form_type, { investor: [:approved_users, { investor_entity: :entity_setting }] }]
   end
 
+  # Bulk "Check documents": a Document Checks run per KYC, performed here (not queued) so the 2s pacing
+  # below still protects the AI provider. Worked example H8 —
+  # openspec/changes/document-checks/design.md#worked-examples
   def validate_docs_with_ai(investor_kyc, user_id)
-    if InvestorKycPolicy.new(User.find(user_id), investor_kyc).validate_docs_with_ai? && !investor_kyc.verified
-      error_msgs = DocLlmValidationJob.perform_now("InvestorKyc", investor_kyc.id, user_id)
-      @error_msg += error_msgs if error_msgs.present?
+    user = User.find(user_id)
+    if InvestorKycPolicy.new(user, investor_kyc).validate_docs_with_ai? && !investor_kyc.verified
+      begin
+        run = DocChecks::StartRun.call(record: investor_kyc, user:, trigger: "bulk", enqueue: false)
+        error_msgs = DocChecks::RunJob.perform_now(run.id)
+        @error_msg += error_msgs if error_msgs.present?
+      rescue DocChecks::Error::AlreadyRunning => e
+        send_notification(e.message, user_id, "warning")
+      end
     else
       msg = investor_kyc.verified ? "Cannot modify verified KYC" : "User not authorized to validate docs with AI for #{investor_kyc}"
       send_notification(msg, user_id, "danger")

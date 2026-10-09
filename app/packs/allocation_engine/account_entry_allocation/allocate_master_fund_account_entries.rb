@@ -105,70 +105,101 @@ module AccountEntryAllocation
 
       # Pre-load master fund account entries to avoid repeated queries in the loop
       master_fund_account_entries_array = master_fund_account_entries.to_a
+      # Formulas and setup_defaults read account_entry.parent for every master entry; load them
+      # in one query per parent type instead of one query per entry.
+      preload_parents(master_fund_account_entries_array) unless grouped
 
-      ctx[:commitments].each.with_index do |capital_commitment, idx|
-        Rails.logger.debug { "Processing commitment #{capital_commitment.id} for #{fund_formula.name}" } unless Rails.env.production?
-        commitment_cache.computed_fields_cache(capital_commitment, start_date, end_date)
+      # Every master entry is evaluated once per feeder commitment, so the formulas run the same
+      # lookups over and over (e.g. the master commitment's latest entry). This loop only reads the
+      # scratch DB -- the generated entries are inserted after it -- so the repeats are answered
+      # from the query cache, which is emptied again when the loop ends.
+      with_scratch_query_cache do
+        ctx[:commitments].each.with_index do |capital_commitment, idx|
+          Rails.logger.debug { "Processing commitment #{capital_commitment.id} for #{fund_formula.name}" } unless Rails.env.production?
+          commitment_cache.computed_fields_cache(capital_commitment, start_date, end_date)
 
-        if grouped
-          # In some formulas we need both the master fund and the feeder fund account entries to allocate to the commitments
-          master_aggregate_entry = generate_account_entry_to_allocate(fund_formula, start_date, end_date)
+          if grouped
+            # In some formulas we need both the master fund and the feeder fund account entries to allocate to the commitments
+            master_aggregate_entry = generate_account_entry_to_allocate(fund_formula, start_date, end_date)
 
-          # We need to pass an account_entry into the CreateAccountEntry operation
-          feeder_aggregate_entry = master_aggregate_entry
-          feeder_aggregate_entry.fund_id = fund.id
-          begin
-            create_instance_variables(ctx)
-            AccountEntryAllocation::CreateAccountEntry.call(ctx.merge(account_entry: feeder_aggregate_entry, capital_commitment: capital_commitment, parent: nil, bdg: binding))
-          rescue StandardError => e
-            raise "Error in #{fund_formula.name}:#{fund_formula.id} for #{capital_commitment}: #{e.message}"
-          end
-        else
-          # This is the case where we need to allocate the master fund & feeder account entries to the commitments of the feeder fund
-
-          # Loop and process
-          master_fund_account_entries_array.each_with_index do |account_entry, aidx|
-            # Create a new AccountEntry for the feeder fund.
-            feeder_account_entry = account_entry.dup
-
-            parent = account_entry.parent_type == "AccountEntry" || account_entry.parent_type.nil? ? account_entry : account_entry.parent
-
-            feeder_account_entry.assign_attributes(
-              cumulative: false,
-              rule_for: fund_formula.rule_for,
-              fund_id: fund_formula.fund_id,
-              entity_id: fund_formula.entity_id,
-              parent: parent,
-              folio_amount_cents: 0
-            )
-
-            # if the formula has a specific assign_name in meta_data_hash, we need to use that name for the feeder account entry instead of the master account entry name.
-            feeder_account_entry.name = fund_formula.meta_data_hash["assign_name"].strip if fund_formula.meta_data_hash.present? && fund_formula.meta_data_hash["assign_name"]&.strip.present?
-            feeder_account_entry.entry_type = fund_formula.meta_data_hash["assign_entry_type"].strip if fund_formula.meta_data_hash.present? && fund_formula.meta_data_hash["assign_entry_type"]&.strip.present?
-
+            # We need to pass an account_entry into the CreateAccountEntry operation
+            feeder_aggregate_entry = master_aggregate_entry
+            feeder_aggregate_entry.fund_id = fund.id
             begin
-              Rails.logger.debug { "Processing account entry #{account_entry.id} #{account_entry} for commitment #{capital_commitment.id} in formula #{fund_formula.name}" } unless Rails.env.production?
-
               create_instance_variables(ctx)
-              AccountEntryAllocation::CreateAccountEntry.call(ctx.merge(account_entry: feeder_account_entry, capital_commitment: capital_commitment, parent: parent, bdg: binding))
+              AccountEntryAllocation::CreateAccountEntry.call(ctx.merge(account_entry: feeder_aggregate_entry, capital_commitment: capital_commitment, parent: nil, bdg: binding))
             rescue StandardError => e
               raise "Error in #{fund_formula.name}:#{fund_formula.id} for #{capital_commitment}: #{e.message}"
             end
+          else
+            # This is the case where we need to allocate the master fund & feeder account entries to the commitments of the feeder fund
 
-            notify("Completed #{ctx[:formula_index] + 1} of #{ctx[:formula_count]}: #{fund_formula.name} : #{idx + 1} commitments, #{aidx + 1} master account entries", :success, user_id) if ((aidx + 1) % 1000).zero? && (aidx + 1) > 1000
+            # Loop and process
+            master_fund_account_entries_array.each_with_index do |account_entry, aidx|
+              # Create a new AccountEntry for the feeder fund.
+              feeder_account_entry = account_entry.dup
 
-            # Push to queue for background loading into the primary DB
-            # ctx[:queue] << fund_formula.id
+              parent = account_entry.parent_type == "AccountEntry" || account_entry.parent_type.nil? ? account_entry : account_entry.parent
+
+              feeder_account_entry.assign_attributes(
+                cumulative: false,
+                rule_for: fund_formula.rule_for,
+                fund_id: fund_formula.fund_id,
+                entity_id: fund_formula.entity_id,
+                parent: parent,
+                folio_amount_cents: 0
+              )
+
+              # if the formula has a specific assign_name in meta_data_hash, we need to use that name for the feeder account entry instead of the master account entry name.
+              feeder_account_entry.name = fund_formula.meta_data_hash["assign_name"].strip if fund_formula.meta_data_hash.present? && fund_formula.meta_data_hash["assign_name"]&.strip.present?
+              feeder_account_entry.entry_type = fund_formula.meta_data_hash["assign_entry_type"].strip if fund_formula.meta_data_hash.present? && fund_formula.meta_data_hash["assign_entry_type"]&.strip.present?
+
+              begin
+                Rails.logger.debug { "Processing account entry #{account_entry.id} #{account_entry} for commitment #{capital_commitment.id} in formula #{fund_formula.name}" } unless Rails.env.production?
+
+                create_instance_variables(ctx)
+                AccountEntryAllocation::CreateAccountEntry.call(ctx.merge(account_entry: feeder_account_entry, capital_commitment: capital_commitment, parent: parent, bdg: binding))
+              rescue StandardError => e
+                raise "Error in #{fund_formula.name}:#{fund_formula.id} for #{capital_commitment}: #{e.message}"
+              end
+
+              notify("Completed #{ctx[:formula_index] + 1} of #{ctx[:formula_count]}: #{fund_formula.name} : #{idx + 1} commitments, #{aidx + 1} master account entries", :success, user_id) if ((aidx + 1) % 1000).zero? && (aidx + 1) > 1000
+
+              # Push to queue for background loading into the primary DB
+              # ctx[:queue] << fund_formula.id
+            end
           end
+
+          # Move cache refresh outside the inner loop. CreateAccountEntry updates the cache internally.
+          commitment_cache.computed_fields_cache(capital_commitment, start_date, end_date)
+
+          notify("Completed #{ctx[:formula_index] + 1} of #{ctx[:formula_count]}: #{fund_formula.name} : #{idx + 1} commitments", :success, user_id) if ((idx + 1) % 10).zero?
         end
-
-        # Move cache refresh outside the inner loop. CreateAccountEntry updates the cache internally.
-        commitment_cache.computed_fields_cache(capital_commitment, start_date, end_date)
-
-        notify("Completed #{ctx[:formula_index] + 1} of #{ctx[:formula_count]}: #{fund_formula.name} : #{idx + 1} commitments", :success, user_id) if ((idx + 1) % 10).zero?
       end
 
       true
+    end
+
+    # Loads the master commitments and the polymorphic parents of the given entries, one query per
+    # association (per parent type), instead of one query per entry on first use.
+    # Parent types whose class cannot be resolved, or whose primary key is composite (AccountEntry's
+    # is [id, reporting_date]), are left to load lazily exactly as before.
+    def preload_parents(account_entries)
+      # The master fund commitment each entry belongs to (formulas read account_entry.capital_commitment)
+      ActiveRecord::Associations::Preloader.new(records: account_entries, associations: :capital_commitment).call
+
+      account_entries.group_by(&:parent_type).each do |parent_type, entries|
+        next if parent_type.blank?
+
+        # Only plain single-column primary keys can be loaded by id in one query
+        klass = parent_type.safe_constantize
+        next unless klass.is_a?(Class) && klass < ActiveRecord::Base && klass.primary_key.is_a?(String)
+
+        ActiveRecord::Associations::Preloader.new(records: entries, associations: :parent).call
+      end
+    rescue StandardError => e
+      # Preloading is only an optimisation; anything it could not load still loads on first use
+      Rails.logger.warn { "AllocateMasterFundAccountEntries: parent preload skipped: #{e.message}" }
     end
 
     # Generates an aggregated account entry for allocation based on the provided fund formula, date range, and exchange rate. We have account_entries in the master fund that are allocated to commitments of the feeder fund. We need to aggregate these account entries and add the feeder fund's account entries to get the total amount to allocate to the commitments.

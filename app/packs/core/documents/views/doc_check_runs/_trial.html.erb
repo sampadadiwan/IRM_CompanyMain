@@ -1,0 +1,33 @@
+<%# A trial run's results on the setup page, under the trial banner. Nothing on the record changed and the
+    results are not its current ones. locals: run (DocCheckRun, trial).
+    openspec/changes/document-checks/design.md (card ① Setup — Try on a KYC). Worked example H4. %>
+<% entry = DocChecks::Registry.for(run.record) %>
+<%= turbo_frame_tag DocChecks::Broadcast.trial_frame_id(run), refresh: "morph" do %>
+  <div class="card border-info" id="doc_check_trial_panel">
+    <div class="card-header bg-info-subtle d-flex justify-content-between">
+      <strong><%= t("doc_checks.setup.trial_banner") %></strong>
+      <span class="text-muted"><%= run.record.to_s %></span>
+    </div>
+    <div class="card-body">
+      <% if run.active? %>
+        <p class="text-muted mb-0" id="doc_check_trial_progress">
+          <%= run.current_document.present? ? t("doc_checks.panel.checking", document: run.current_document, n: run.documents_done + 1, total: run.documents_total) : t("doc_checks.panel.checking_start") %>
+        </p>
+      <% elsif run.could_not_run? %>
+        <p class="text-danger mb-0"><%= run.error_message %></p>
+      <% else %>
+        <% run.doc_check_results.group_by(&:document_name).each do |name, results| %>
+          <div class="mb-2" data-document-name="<%= name %>">
+            <strong><%= name %></strong>
+            <% results.each do |result| %>
+              <% ok, sentence = doc_check_result_sentence(result, record_label: entry.record_label) %>
+              <div class="doc-check-row" data-item="<%= result.look_for %>" data-outcome="<%= result.outcome %>">
+                <%= ok ? "✓" : "⚠" %> <span class="doc-check-sentence"><%= sentence %></span>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+<% end %>

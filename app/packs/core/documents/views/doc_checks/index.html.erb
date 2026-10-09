@@ -1,0 +1,93 @@
+<%# Settings → Document Checks. Reads as a summary: how it works, suggestions to add in one go, then a tile
+    per document saying what its checks do. Each document is edited in its own side panel.
+    openspec/changes/document-checks/design.md (card ① Setup). Worked examples H1, H2, H4, E1–E5, E16. %>
+<% fields = DocChecks::Registry.for(@record_type).fields_for(current_user.entity)
+   total_checks = @cards.sum { |card| card.rows.size }
+   without = @cards.count { |card| card.rows.empty? } %>
+<div data-controller="doc-check-page" data-doc-check-page-open-value="<%= @open_panel %>">
+  <div class="mb-4">
+    <h1 class="h3 mb-1"><i class="ti ti-file-search text-primary"></i> <%= t("doc_checks.setup.title") %></h1>
+    <p class="text-muted mb-0"><%= t("doc_checks.setup.intro") %></p>
+  </div>
+
+  <%# How it works, in three steps %>
+  <div class="row row-cols-1 row-cols-md-3 g-3 mb-4" id="doc_check_how_it_works">
+    <% [%w[ti-list-check choose], %w[ti-flask test], %w[ti-shield-check run]].each_with_index do |(icon, key), index| %>
+      <div class="col">
+        <div class="d-flex gap-3 p-3 rounded-3 bg-body-tertiary h-100">
+          <span class="doc-check-step rounded-circle d-inline-flex align-items-center justify-content-center bg-primary text-white fw-semibold"><%= index + 1 %></span>
+          <div>
+            <div class="fw-semibold"><i class="ti <%= icon %> text-primary"></i> <%= t("doc_checks.setup.steps.#{key}.title") %></div>
+            <div class="small text-muted"><%= t("doc_checks.setup.steps.#{key}.text") %></div>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <% if @missing_field_count.positive? %>
+    <div class="alert alert-warning d-flex justify-content-between align-items-center" id="doc_check_missing_fields">
+      <span><i class="ti ti-alert-triangle"></i> <%= t("doc_checks.setup.missing_fields", count: @missing_field_count) %></span>
+    </div>
+  <% end %>
+
+  <% if params[:trial_run_id].present? && (trial = policy_scope(DocCheckRun).find_by(id: params[:trial_run_id], trial: true)) %>
+    <div class="mb-4" id="doc_check_trial">
+      <%= turbo_stream_from trial, :trial %>
+      <%= turbo_frame_tag DocChecks::Broadcast.trial_frame_id(trial), src: doc_check_run_path(trial) %>
+    </div>
+  <% end %>
+
+  <% if @cards.empty? %>
+    <div class="alert alert-info" id="doc_check_no_documents"><i class="ti ti-info-circle"></i> <%= t("doc_checks.setup.no_documents") %></div>
+  <% else %>
+    <%= render "doc_checks/suggestions", recommendations: @recommendations, record_type: @record_type %>
+
+    <%# Summary line and the test tool, on one bar %>
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3 p-3 rounded-3 bg-body-tertiary">
+      <div class="d-flex flex-wrap align-items-center gap-3">
+        <div class="fw-semibold" id="doc_check_summary">
+          <i class="ti ti-files text-primary"></i>
+          <%= t("doc_checks.setup.summary_line", documents: @cards.size, checks: total_checks, without:) %>
+        </div>
+        <%# Export is the import format: edit the sheet and upload it back (Worked examples H14, H15) %>
+        <div class="d-flex gap-2">
+          <%= link_to doc_checks_path(format: :xlsx, record_type: @record_type), class: "btn btn-sm btn-outline-secondary",
+                id: "doc_check_export_btn", data: { turbo: false } do %>
+            <i class="ti ti-download"></i> <%= t("doc_checks.setup.export") %>
+          <% end %>
+          <% if policy(DocCheck).import? && policy(ImportUpload).index? %>
+            <%= link_to new_import_upload_path("import_upload[import_type]": "DocCheck", sample_upload: "DOC_CHECK_SAMPLE"),
+                  class: "btn btn-sm btn-outline-secondary", id: "doc_check_import_btn", data: { turbo: false },
+                  title: t("doc_checks.setup.import_help") do %>
+              <i class="ti ti-upload"></i> <%= t("doc_checks.setup.import") %>
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+      <%= form_with url: trial_doc_checks_path(record_type: @record_type), method: :post, data: { turbo: false },
+                    class: "d-flex flex-wrap gap-2 align-items-center", id: "doc_check_try_form" do %>
+        <span class="small text-muted" title="<%= t('doc_checks.setup.test_help') %>"><i class="ti ti-flask"></i> <%= t("doc_checks.setup.test_label") %></span>
+        <div style="width: 15rem">
+          <%= select_tag :record_id,
+                options_for_select(policy_scope(InvestorKyc).order(updated_at: :desc).limit(500).map { |k| [k.to_s.presence || "KYC ##{k.id}", k.id] }),
+                include_blank: t("doc_checks.setup.pick_kyc"), class: "form-select form-select-sm select2", style: "width: 100%",
+                id: "doc_check_try_record", data: { doc_check_page_target: "trialPicker" } %>
+        </div>
+        <%= submit_tag t("doc_checks.setup.try_on"), class: "btn btn-sm btn-outline-primary", id: "doc_check_try_btn", disabled: true,
+              name: nil, data: { doc_check_page_target: "trialButton" } %>
+      <% end %>
+    </div>
+
+    <% suggestions = @recommendations.index_by { |rec| rec.document_name.downcase } %>
+    <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3" id="doc_check_tiles">
+      <% @cards.each do |card| %>
+        <%= render "doc_checks/tile", card:, fields:, suggestion: suggestions[card.document_name.downcase] %>
+      <% end %>
+    </div>
+
+    <% @cards.each do |card| %>
+      <%= render "doc_checks/panel", card:, fields:, open: @open_panel == doc_check_card_dom_id(card.document_name) %>
+    <% end %>
+  <% end %>
+</div>

@@ -54,6 +54,22 @@
               <% end %>
             <% end %>
 
+            <%# Completed journey — the journey card (workflow_instances/_journey_panel) hides itself
+                a day after its last task passed, and this brings it back (and puts away one that
+                has only just finished). Rendered on every page but hidden:
+                journey_reveal_controller decides whether to show it by looking for a completed card,
+                so the layout needs no per-record-type knowledge and the icon still appears when a
+                Turbo frame update completes the journey without a page reload. %>
+            <button type="button"
+                    class="fs-5 btn mb-1 btn-success rounded-circle round d-none align-items-center justify-content-center"
+                    id="show-completed-journey-button"
+                    data-bs-toggle="tooltip"
+                    title="Show/hide the completed journey"
+                    data-controller="journey-reveal"
+                    data-action="journey-reveal#toggle">
+              <i class="ti ti-route"></i>
+            </button>
+
             <%# Workflow breadcrumb action — two modes:
                 1. Pending actor: highlighted dropdown with inline response form so the
                    actor can complete their step without leaving this page.

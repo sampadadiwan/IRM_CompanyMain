@@ -1,5 +1,19 @@
 class InvestorKyc < ApplicationRecord
   include Workflowable
+
+  # Auto-assignment rules may also test the form type, and offer every KYC form's custom fields.
+  # Left out: identifiers (routing mistakes, not routing data), and the amounts rolled up from
+  # commitments and remittances — always 0 when a KYC is created, the only time a rule is checked
+  # (workflow-rule-condition-builder card 1)
+  workflow_rule_fields extra: %w[form_type_id],
+                       except: %w[PAN bank_account_number ifsc_code address
+                                  committed_amount call_amount collected_amount distribution_amount],
+                       form_type_names: %w[IndividualKyc NonIndividualKyc InvestorKyc]
+
+  # The KYC page shows a journey panel (investor-kyc-journey): open pages update live, and stalled
+  # tasks remind the KYC's creator when that creator works for the fund (workflow_default_owner).
+  has_journey
+
   STANDARD_COLUMNS = { "Investor; text-col" => "investor_name; text-col",
                        "Investing Entity; text-col" => "full_name; text-col",
                        "Type; text-col" => "kyc_type; text-col",
@@ -62,7 +76,6 @@ class InvestorKyc < ApplicationRecord
   include WithFriendlyId
   include WithIncomingEmail
   include InvestorKycConcern
-  include WithDocQuestions
   include WithSupportAgent
 
   belongs_to :investor
@@ -84,6 +97,8 @@ class InvestorKyc < ApplicationRecord
 
   has_many :aml_reports, dependent: :destroy
   has_many :kyc_datas, dependent: :destroy
+  # Document Checks runs of this KYC (results go with them)
+  has_many :doc_check_runs, as: :record, dependent: :destroy
 
   scope :uncalled, -> { where('committed_amount_cents > call_amount_cents') }
   scope :due, -> { where('committed_amount_cents > collected_amount_cents') }
@@ -244,6 +259,10 @@ class InvestorKyc < ApplicationRecord
         update_column(:send_kyc_form_to_user, false)
       end
       # rubocop:enable Rails/SkipsModelValidations
+
+      # update_columns skips callbacks, so tell the journey ("Send KYC form" is done) explicitly
+      # Worked examples H3 — openspec/changes/investor-kyc-journey/design.md#worked-examples
+      journey_progress!
     end
   end
 
@@ -270,24 +289,61 @@ class InvestorKyc < ApplicationRecord
   end
 
   def updated_notification(msg: nil)
-    msg ||= "KYC updated for #{full_name}"
-    entity.employees.active.each do |user|
-      if user.enable_kycs && !user.investor_advisor?
-        InvestorKycNotifier.with(record: self, entity_id:, email_method: "notify_kyc_updated", msg:, user_id: user.id).deliver_later(user)
-      else
-        Rails.logger.debug { "Not sending KYC updated notification to user #{user.id} as they do not have enable_kycs permission or are an investor_advisor" }
-      end
-    end
+    NotifyKycJob.perform_later(id, email_method: "notify_kyc_updated", msg: msg || "KYC updated for #{full_name}")
   end
 
   def updates_requested_notification(msg: nil)
-    msg ||= "Updates requested for KYC: #{full_name}"
-    entity.employees.active.each do |user|
-      if user.enable_kycs && !user.investor_advisor?
-        InvestorKycNotifier.with(record: self, entity_id:, email_method: "notify_updates_requested", msg:, user_id: user.id).deliver_later(user)
+    NotifyKycJob.perform_later(id, email_method: "notify_updates_requested", msg: msg || "Updates requested for KYC: #{full_name}")
+  end
+
+  # The investor's final submit, as distinct from updated_notification's "they changed something".
+  # Routed through notify_kyc like the other two so all three share one recipient rule - this used
+  # to be sent straight from InvestorKycsController with a recipient list of its own, which meant a
+  # final submit fired both it and updated_notification, and investor advisors got only the latter.
+  # The email itself ignores msg: (notify_kyc_submitted.html.erb always renders its own formatted
+  # body); it is still passed so the in-app notification - which shares InvestorKycNotifier#message
+  # with the email - has a non-blank body of its own.
+  def submitted_notification(msg: nil)
+    NotifyKycJob.perform_later(id, email_method: "notify_kyc_submitted", msg: msg || "KYC submitted by investor: #{full_name}")
+  end
+
+  # Shared by updated_notification, updates_requested_notification and submitted_notification (via
+  # NotifyKycJob, which runs this off the request thread): notifies the entity's own employees and
+  # any investor advisors holding a grant on the entity. Each recipient must pass
+  # InvestorKycPolicy#show? - the same rule as the KYC list and page - so nobody is emailed a link
+  # they will get "access denied" on. That rule already covers a KYC with no commitment yet (V5),
+  # so there is no separate onboarding fallback here any more.
+  # Worked examples V1-V11: openspec/changes/kyc-advisor-notification-delivery-fix/design.md#worked-examples
+  # Deduplicated by user id across both loops, since a legacy advisor account with a nil
+  # advisor_entity_id can appear in both.
+  def notify_kyc(msg:, email_method:)
+    notified_user_ids = Set.new
+
+    entity.employees.not_investor_advisor_roles.active.each do |user|
+      # enable_kycs is checked here as well as inside show? because show? lets a company admin
+      # open any KYC without it, while the KYC emails need it for everyone (V6).
+      if user.enable_kycs && InvestorKycPolicy.new(user, self).show?
+        InvestorKycNotifier.with(record: self, entity_id:, email_method:, msg:, user_id: user.id).deliver_later(user)
+        notified_user_ids << user.id
       else
-        Rails.logger.debug { "Not sending 'Updates requested for KYC' notification to user #{user.id} as they do not have enable_kycs permission or are an investor_advisor" }
+        Rails.logger.debug { "Not sending KYC notification (#{email_method}) to user #{user.id} as they do not have enable_kycs permission or show access" }
       end
+    end
+
+    entity.investor_advisors.includes(:user).find_each do |investor_advisor|
+      user = investor_advisor.user
+      # A grant can outlive its user row, so skip rather than abort the job and lose every
+      # remaining advisor's notification.
+      next if user.nil? || notified_user_ids.include?(user.id)
+      next unless user.active
+
+      # The grant's enable_kycs, not user.enable_kycs: the latter reads whichever entity the
+      # advisor is switched into right now, so a switched-out advisor would be emailed or not
+      # depending on an unrelated entity's settings (V7, V9).
+      next unless investor_advisor.permissions.enable_kycs? && entity.permissions.enable_kycs?
+      next unless InvestorKycPolicy.new(user, self).show?
+
+      InvestorKycNotifier.with(record: self, entity_id:, email_method:, msg:, user_id: user.id).deliver_later(user)
     end
   end
 
@@ -347,6 +403,15 @@ class InvestorKyc < ApplicationRecord
   # Override workflow_attachable_files: documents are polymorphically linked, not a direct association.
   def workflow_attachable_files
     Document.where(owner: self).to_a
+  end
+
+  # Who is reminded about a stalled journey task when the step names no owner: the creator, but only
+  # when they work for the fund — an investor who created their own KYC must never get reminders
+  # about the fund's tasks (design Decision 10).
+  # Worked examples E23 — openspec/changes/investor-kyc-journey/design.md#worked-examples
+  def workflow_default_owner
+    creator = super
+    creator if creator && creator.entity_id == entity_id
   end
 
   def enable_kyc
@@ -442,10 +507,6 @@ class InvestorKyc < ApplicationRecord
   # And we need the corresponding fund unit setting (for document generation), from any fund in the entity. This is for Angel Funds only. For other funds, the agreement_unit_type is not used.
   def agreement_unit_setting
     entity.funds.first.fund_unit_settings.where(name: agreement_unit_type).first
-  end
-
-  def doc_questions
-    entity.doc_questions.where(owner: entity, for_class: "InvestorKyc")
   end
 
   def ckyc_data

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_02_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_07_100100) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -1522,21 +1522,76 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_100000) do
     t.index ["fund_id"], name: "index_distribution_fees_on_fund_id"
   end
 
-  create_table "doc_questions", force: :cascade do |t|
+  create_table "doc_check_results", force: :cascade do |t|
+    t.string "action", limit: 12, null: false
     t.datetime "created_at", null: false
-    t.string "document_name"
+    t.bigint "doc_check_id"
+    t.bigint "doc_check_run_id", null: false
+    t.text "doc_value"
+    t.string "document_file_id"
+    t.bigint "document_id"
+    t.string "document_name", limit: 100, null: false
     t.bigint "entity_id", null: false
-    t.string "for_class", limit: 25
-    t.integer "import_upload_id"
-    t.bigint "owner_id", null: false
-    t.string "owner_type", null: false
-    t.string "qtype", limit: 10
-    t.text "question"
-    t.string "response_hint"
-    t.string "tags", limit: 100
+    t.text "explanation"
+    t.string "field_name", limit: 100
+    t.string "look_for", limit: 100, null: false
+    t.string "note"
+    t.string "outcome", limit: 20, null: false, comment: "ok, or the reason it needs attention"
+    t.text "record_value"
+    t.string "resolution", limit: 20, comment: "marked_ok | used_document_value"
+    t.string "resolve_reason"
+    t.datetime "resolved_at"
+    t.bigint "resolved_by_id"
     t.datetime "updated_at", null: false
-    t.index ["entity_id"], name: "index_doc_questions_on_entity_id"
-    t.index ["owner_type", "owner_id"], name: "index_doc_questions_on_owner"
+    t.index ["doc_check_id"], name: "index_doc_check_results_on_doc_check_id"
+    t.index ["doc_check_run_id"], name: "index_doc_check_results_on_doc_check_run_id"
+    t.index ["entity_id", "outcome"], name: "index_doc_check_results_on_entity_id_and_outcome"
+    t.index ["resolved_by_id"], name: "index_doc_check_results_on_resolved_by_id"
+  end
+
+  create_table "doc_check_runs", force: :cascade do |t|
+    t.json "counts"
+    t.datetime "created_at", null: false
+    t.boolean "current", default: false, null: false
+    t.string "current_document", limit: 100
+    t.integer "documents_done", default: 0, null: false
+    t.integer "documents_total", default: 0, null: false
+    t.bigint "entity_id", null: false
+    t.string "error_message"
+    t.datetime "finished_at"
+    t.bigint "record_id", null: false
+    t.string "record_type", limit: 40, null: false
+    t.datetime "started_at"
+    t.string "status", limit: 15, default: "queued", null: false, comment: "queued | running | done | could_not_run"
+    t.boolean "trial", default: false, null: false
+    t.string "trigger", limit: 10, default: "manual", null: false, comment: "manual | bulk | again | trial"
+    t.datetime "updated_at", null: false
+    t.bigint "user_id"
+    t.index ["entity_id", "current", "finished_at"], name: "index_doc_check_runs_on_entity_current"
+    t.index ["record_type", "record_id", "current"], name: "index_doc_check_runs_on_record_current"
+    t.index ["record_type", "record_id", "status"], name: "index_doc_check_runs_on_record_status"
+    t.index ["user_id"], name: "index_doc_check_runs_on_user_id"
+  end
+
+  create_table "doc_checks", force: :cascade do |t|
+    t.string "action", limit: 12, default: "fill_in", null: false, comment: "fill_in | compare | question"
+    t.datetime "created_at", null: false
+    t.string "document_name", limit: 100, null: false
+    t.bigint "entity_id", null: false
+    t.string "expected_answer", limit: 3, default: "yes", null: false
+    t.string "field_name", limit: 100
+    t.bigint "import_upload_id", comment: "The ImportUpload that created this check, if any"
+    t.bigint "legacy_doc_question_id"
+    t.string "look_for", limit: 100, null: false, comment: "What the AI looks for, or the question"
+    t.integer "position", default: 0, null: false
+    t.string "record_type", limit: 40, default: "InvestorKyc", null: false
+    t.boolean "replace_existing", default: false, null: false, comment: "Fill in: overwrite a value already on the record"
+    t.string "tip", comment: "Optional guidance for the AI"
+    t.datetime "updated_at", null: false
+    t.index ["entity_id", "record_type", "document_name", "field_name"], name: "index_doc_checks_on_card_field", unique: true
+    t.index ["entity_id", "record_type", "document_name", "look_for"], name: "index_doc_checks_on_card_look_for", unique: true
+    t.index ["import_upload_id"], name: "index_doc_checks_on_import_upload_id"
+    t.index ["legacy_doc_question_id"], name: "index_doc_checks_on_legacy_doc_question_id", unique: true
   end
 
   create_table "doc_shares", force: :cascade do |t|
@@ -1584,7 +1639,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_100000) do
     t.boolean "printing"
     t.string "provider_doc_id"
     t.boolean "public_visibility", default: false
-    t.text "qna"
     t.boolean "send_email", null: false
     t.boolean "sent_for_esign", default: false, null: false
     t.datetime "sent_for_esign_date"
@@ -2560,15 +2614,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_100000) do
     t.string "investor_name"
     t.json "json_fields"
     t.text "notes"
-    t.string "subgroup", limit: 100
     t.bigint "portfolio_company_id", null: false
     t.decimal "price_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "quantity", precision: 10
+    t.string "subgroup", limit: 100
     t.datetime "updated_at", null: false
-    t.index ["subgroup"], name: "index_investments_on_subgroup"
     t.index ["entity_id"], name: "index_investments_on_entity_id"
     t.index ["form_type_id"], name: "index_investments_on_form_type_id"
     t.index ["portfolio_company_id"], name: "index_investments_on_portfolio_company_id"
+    t.index ["subgroup"], name: "index_investments_on_subgroup"
   end
 
   create_table "investor_accesses", force: :cascade do |t|
@@ -2795,6 +2849,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_100000) do
     t.boolean "is_trust", default: false
     t.json "json_fields"
     t.date "last_interaction_date"
+    t.bigint "managed_by_user_id"
     t.string "pan", limit: 40
     t.string "primary_email"
     t.string "primary_email_domain", limit: 191
@@ -2811,6 +2866,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_100000) do
     t.index ["investor_entity_id", "entity_id", "deleted_at"], name: "idx_on_investor_entity_id_entity_id_deleted_at_983d7c8e7a", unique: true
     t.index ["investor_entity_id"], name: "index_investors_on_investor_entity_id"
     t.index ["investor_name", "entity_id"], name: "index_investors_on_investor_name_and_entity_id", unique: true
+    t.index ["managed_by_user_id"], name: "index_investors_on_managed_by_user_id"
     t.index ["pan"], name: "index_investors_on_pan"
     t.index ["primary_email_domain", "entity_id"], name: "idx_investors_on_email_domain_entity"
     t.index ["slug"], name: "index_investors_on_slug", unique: true
@@ -2891,6 +2947,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_100000) do
     t.text "analysis"
     t.date "as_of"
     t.boolean "autofill_completed", default: false, null: false
+    t.datetime "completion_notified_at"
     t.datetime "created_at", null: false
     t.bigint "document_folder_id"
     t.boolean "enable_portco_upload", default: false, null: false
@@ -4145,6 +4202,68 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_100000) do
     t.index ["portfolio_report_extract_id"], name: "index_tear_sheet_presentations_on_portfolio_report_extract_id", unique: true
   end
 
+  create_table "template_authoring_runs", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "entity_id", null: false
+    t.text "error"
+    t.integer "max_rounds", default: 5, null: false
+    t.bigint "primary_proof_document_id"
+    t.bigint "primary_sample_id", null: false
+    t.string "primary_sample_type", null: false
+    t.bigint "requested_by_id", null: false
+    t.bigint "result_document_id"
+    t.integer "round", default: 0, null: false
+    t.bigint "second_proof_document_id"
+    t.bigint "second_sample_id"
+    t.string "second_sample_type"
+    t.string "source_checksum", limit: 64
+    t.bigint "source_document_id", null: false
+    t.string "state", limit: 20, default: "analysing", null: false
+    t.bigint "support_agent_id", null: false
+    t.string "template_type", limit: 40, null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id", "state"], name: "index_template_authoring_runs_on_entity_id_and_state"
+    t.index ["entity_id"], name: "index_template_authoring_runs_on_entity_id"
+    t.index ["primary_proof_document_id"], name: "idx_tar_on_primary_proof"
+    t.index ["primary_sample_type", "primary_sample_id"], name: "idx_tar_on_primary_sample"
+    t.index ["requested_by_id"], name: "index_template_authoring_runs_on_requested_by_id"
+    t.index ["result_document_id"], name: "idx_tar_on_result_document"
+    t.index ["second_proof_document_id"], name: "idx_tar_on_second_proof"
+    t.index ["second_sample_type", "second_sample_id"], name: "idx_tar_on_second_sample"
+    t.index ["source_document_id"], name: "index_template_authoring_runs_on_source_document_id"
+    t.index ["support_agent_id"], name: "index_template_authoring_runs_on_support_agent_id"
+  end
+
+  create_table "template_brackets", force: :cascade do |t|
+    t.decimal "ai_confidence", precision: 5, scale: 4
+    t.datetime "answered_at"
+    t.bigint "answered_by_id"
+    t.string "consistency_verdict", limit: 20
+    t.text "context_sentence"
+    t.datetime "created_at", null: false
+    t.string "exercised_by", limit: 20
+    t.string "expected_meaning", limit: 500
+    t.string "expression"
+    t.string "kind", limit: 20
+    t.json "locations", null: false
+    t.string "normalised_text", null: false
+    t.integer "occurrence_count", default: 0, null: false
+    t.text "question"
+    t.string "raw_text", limit: 500, null: false
+    t.text "reason"
+    t.json "rejected_expressions"
+    t.text "rendered_value"
+    t.string "review_status", limit: 20, default: "proposed", null: false
+    t.text "second_rendered_value"
+    t.json "shown_values"
+    t.bigint "template_authoring_run_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["answered_by_id"], name: "idx_tb_on_answered_by"
+    t.index ["template_authoring_run_id", "normalised_text"], name: "idx_tb_unique_text_per_run", unique: true
+    t.index ["template_authoring_run_id", "review_status"], name: "idx_tb_on_run_and_review_status"
+    t.index ["template_authoring_run_id"], name: "idx_tb_on_run"
+  end
+
   create_table "ticker_feeds", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "currency", limit: 3
@@ -4461,11 +4580,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_100000) do
   end
 
   create_table "workflow_instances", force: :cascade do |t|
+    t.datetime "completed_at", comment: "When the instance last completed; it can reopen, and the tick stops 30 days after this"
     t.datetime "created_at", null: false
     t.integer "current_step_position", default: 1, null: false
+    t.datetime "current_step_since", comment: "When the current step became current, stamped from the data; reminder intervals run from here"
     t.bigint "entity_id", null: false
+    t.boolean "evaluated", default: false, null: false, comment: "True when the snapshot has a non-human step; only these are evaluated from data and ticked"
     t.bigint "launched_by_id"
     t.integer "status", default: 0, null: false
+    t.json "step_results", comment: "Cache of the last evaluation per step position (status, message, link, times); never the source of truth"
     t.json "template_snapshot", null: false
     t.datetime "updated_at", null: false
     t.bigint "workflow_assignment_id"
@@ -4473,6 +4596,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_100000) do
     t.bigint "workflowable_id", null: false
     t.string "workflowable_type", null: false
     t.index ["entity_id"], name: "index_workflow_instances_on_entity_id"
+    t.index ["evaluated", "status"], name: "index_workflow_instances_on_evaluated_and_status"
     t.index ["launched_by_id"], name: "index_workflow_instances_on_launched_by_id"
     t.index ["workflow_assignment_id"], name: "index_workflow_instances_on_workflow_assignment_id"
     t.index ["workflow_template_id"], name: "index_workflow_instances_on_workflow_template_id"
@@ -4490,6 +4614,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_100000) do
     t.datetime "updated_at", null: false
     t.bigint "workflow_instance_id", null: false
     t.index ["actor_id"], name: "index_workflow_state_changes_on_actor_id"
+    t.index ["workflow_instance_id", "step_position", "to_state", "created_at"], name: "index_workflow_state_changes_on_instance_position_state_time"
     t.index ["workflow_instance_id", "step_position"], name: "index_wf_state_changes_on_instance_and_step"
     t.index ["workflow_instance_id"], name: "index_workflow_state_changes_on_workflow_instance_id"
   end
@@ -4505,18 +4630,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_100000) do
   end
 
   create_table "workflow_steps", force: :cascade do |t|
+    t.string "check_key", limit: 100, comment: "Registered check deciding a system/acknowledge step, e.g. capital_call.approve_notices"
     t.datetime "created_at", null: false
     t.text "description"
+    t.boolean "keep_on_regress", default: false, null: false, comment: "Keep this step's sign-offs when an undoing action moves the workflow back before it"
+    t.integer "kind", default: 0, null: false, comment: "How the step completes: 0=human (votes), 1=system (data check), 2=acknowledge (one confirmation)"
     t.string "name", null: false
     t.boolean "notify_on_activation", default: true, null: false
     t.integer "on_reject_rule", default: 0, null: false
     t.integer "on_reject_target_step"
+    t.bigint "owner_user_id", comment: "User reminded when a system/acknowledge step stalls; NULL = the record's default owner (e.g. the call's creator)"
     t.integer "position", null: false
     t.integer "quorum_rule", default: 0, null: false
     t.integer "reminder_interval_days"
+    t.string "skip_key", limit: 100, comment: "Registered check that makes the step not applicable when true"
     t.string "states", default: "Approved,Rejected,Needs Info", null: false
+    t.string "unlocks", comment: "CSV of button labels this step unlocks once passed or not applicable"
     t.datetime "updated_at", null: false
     t.bigint "workflow_template_id", null: false
+    t.index ["owner_user_id"], name: "index_workflow_steps_on_owner_user_id"
     t.index ["workflow_template_id", "position"], name: "index_workflow_steps_on_template_and_position", unique: true
     t.index ["workflow_template_id"], name: "index_workflow_steps_on_workflow_template_id"
   end
@@ -4525,12 +4657,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_100000) do
     t.boolean "attach_document_in_email", default: false, null: false
     t.datetime "created_at", null: false
     t.text "description"
+    t.boolean "enabled", default: true, null: false, comment: "False stops the template being assigned or launched on new records; workflows already running keep going"
     t.bigint "entity_id", null: false
     t.string "gated_button_labels"
     t.string "name", null: false
+    t.boolean "notify_by_email", default: true, null: false, comment: "Send workflow emails (step activation, reminders, review needed, journey complete) for this template"
+    t.boolean "notify_by_whatsapp", default: false, null: false, comment: "Also send workflow messages on WhatsApp — only ever to employees of the entity"
     t.integer "reminder_interval_days"
+    t.string "system_key", limit: 50, comment: "Identity of a seeded template (capital_call_full, capital_call_light) so re-seeding finds it after a rename"
     t.datetime "updated_at", null: false
     t.string "workflowable_type"
+    t.index ["entity_id", "system_key"], name: "index_workflow_templates_on_entity_id_and_system_key", unique: true
     t.index ["entity_id"], name: "index_workflow_templates_on_entity_id"
   end
 
@@ -4694,7 +4831,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_100000) do
   add_foreign_key "deals", "folders", column: "data_room_folder_id"
   add_foreign_key "deals", "folders", column: "document_folder_id"
   add_foreign_key "deals", "form_types"
-  add_foreign_key "doc_questions", "entities"
+  add_foreign_key "doc_check_results", "doc_check_runs", on_delete: :cascade
+  add_foreign_key "doc_check_results", "doc_checks", on_delete: :nullify
+  add_foreign_key "doc_check_results", "entities"
+  add_foreign_key "doc_check_results", "users", column: "resolved_by_id", on_delete: :nullify
+  add_foreign_key "doc_check_runs", "entities"
+  add_foreign_key "doc_check_runs", "users", on_delete: :nullify
+  add_foreign_key "doc_checks", "entities"
   add_foreign_key "doc_shares", "documents"
   add_foreign_key "documents", "folders"
   add_foreign_key "documents", "form_types"
@@ -4816,6 +4959,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_100000) do
   add_foreign_key "investor_notices", "entities"
   add_foreign_key "investors", "folders", column: "document_folder_id"
   add_foreign_key "investors", "form_types"
+  add_foreign_key "investors", "users", column: "managed_by_user_id"
   add_foreign_key "kanban_boards", "entities"
   add_foreign_key "kanban_cards", "entities"
   add_foreign_key "kanban_cards", "kanban_boards"
@@ -4967,6 +5111,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_100000) do
   add_foreign_key "tasks", "users"
   add_foreign_key "tear_sheet_presentations", "entities"
   add_foreign_key "tear_sheet_presentations", "portfolio_report_extracts"
+  add_foreign_key "template_authoring_runs", "documents", column: "primary_proof_document_id"
+  add_foreign_key "template_authoring_runs", "documents", column: "result_document_id"
+  add_foreign_key "template_authoring_runs", "documents", column: "second_proof_document_id"
+  add_foreign_key "template_authoring_runs", "documents", column: "source_document_id"
+  add_foreign_key "template_authoring_runs", "entities"
+  add_foreign_key "template_authoring_runs", "support_agents"
+  add_foreign_key "template_authoring_runs", "users", column: "requested_by_id"
+  add_foreign_key "template_brackets", "template_authoring_runs"
+  add_foreign_key "template_brackets", "users", column: "answered_by_id"
   add_foreign_key "tie_out_figures", "capital_commitments"
   add_foreign_key "tie_out_figures", "entities"
   add_foreign_key "tie_out_figures", "funds"
@@ -5002,6 +5155,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_100000) do
   add_foreign_key "workflow_state_changes", "workflow_instances"
   add_foreign_key "workflow_step_actors", "users"
   add_foreign_key "workflow_step_actors", "workflow_steps"
+  add_foreign_key "workflow_steps", "users", column: "owner_user_id"
   add_foreign_key "workflow_steps", "workflow_templates"
   add_foreign_key "workflow_templates", "entities"
 end

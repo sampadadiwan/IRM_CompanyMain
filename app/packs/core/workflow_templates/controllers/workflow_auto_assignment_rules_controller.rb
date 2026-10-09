@@ -79,15 +79,31 @@ class WorkflowAutoAssignmentRulesController < ApplicationController
   def rule_params
     params.require(:workflow_auto_assignment_rule).permit(
       :workflowable_type, :priority, :auto_launch,
-      # conditions come in as a JSON string from a hidden textarea, parsed to an array
+      # The condition builder (or View as JSON) posts the conditions as one JSON string
       :conditions_json
     ).tap do |p|
-      # Parse the conditions_json string into the conditions array attribute
-      if p[:conditions_json].present?
-        p[:conditions] = JSON.parse(p.delete(:conditions_json))
-      else
-        p.delete(:conditions_json)
-      end
+      json = p.delete(:conditions_json)
+      next if json.nil?
+
+      # Parsed into a plain array kept off the params: reading it back out of the params would turn
+      # each hash into unpermitted Parameters, which then fail on save. Unreadable JSON is stored as
+      # the raw string so the save check reports "not a valid list" and the form shows it again.
+      p[:conditions] = json.blank? ? [] : parse_conditions(json)
     end
   end
+
+  def parse_conditions(json)
+    JSON.parse(json)
+  rescue JSON::ParserError
+    json
+  end
+
+  # The field list for this template's type and the user's entity: drives the builder's dropdowns
+  # (workflow-rule-condition-builder card 4). nil for a template with no record type.
+  def rule_fields
+    return unless WorkflowTemplate::WORKFLOWABLE_TYPE_OPTIONS.include?(@rule.workflowable_type)
+
+    @rule_fields ||= WorkflowRuleFields.for(@rule.workflowable_type, current_user.entity)
+  end
+  helper_method :rule_fields
 end

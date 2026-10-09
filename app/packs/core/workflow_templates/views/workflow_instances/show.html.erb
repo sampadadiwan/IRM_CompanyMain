@@ -127,6 +127,33 @@
   <% end %>
 <% end %>
 
+<%# ── Journey history (evaluated workflows only) ─────────────────────────────
+    Steps passing, moving back, sign-offs reset and reminders — written by WorkflowEvaluator. %>
+<% if @instance.evaluated %>
+  <% journey_events = @state_changes.select { |c| c.to_state.in?(%w[passed skipped regressed invalidated reopened owner_reminded recomputed rejected_step]) } %>
+  <div class="card shadow-sm mb-4" id="journey_history">
+    <div class="card-header py-2">
+      <i class="ti ti-route me-1 text-muted"></i>Journey History
+    </div>
+    <% if journey_events.any? %>
+      <ul class="list-group list-group-flush">
+        <% journey_steps = @instance.snapshot_steps.index_by { |st| st[:position].to_i } %>
+        <% journey_events.reverse_each do |event| %>
+          <li class="list-group-item small">
+            <span class="text-muted"><%= l(event.created_at, format: :abbr_date_time) %></span>
+            · <strong><%= journey_steps[event.step_position]&.dig(:name) || "Step #{event.step_position}" %></strong>
+            · <%= event.to_state.humanize %>
+            <% if event.actor %> · <%= event.actor.full_name %><% end %>
+            <% if event.note.present? %> · <%= event.note %><% end %>
+          </li>
+        <% end %>
+      </ul>
+    <% else %>
+      <div class="card-body text-muted small">Nothing has happened on this journey yet.</div>
+    <% end %>
+  </div>
+<% end %>
+
 <%# ── Audit Trail ─────────────────────────────────────────────────────────── %>
 <div class="card shadow-sm">
   <div class="card-header d-flex align-items-center justify-content-between py-2">

@@ -1,0 +1,71 @@
+<%# One item that needs a person: what's wrong in a sentence; for a mismatch, the two values side by side; the
+    AI's reason; and buttons named for the outcome — use the document's value, or keep the KYC's (asks why and
+    records it as Marked OK).
+    locals: result (DocCheckResult), entry, can_edit, frame, error (Mark as OK refusal, optional).
+    openspec/changes/document-checks/design.md (card ⑦ Results — Resolutions). Worked examples H5, H6, E11, E17, E18, X8. %>
+<% label = result.look_for
+   compare = result.outcome.in?(%w[mismatch kyc_blank]) %>
+<div class="py-2 doc-check-row" id="doc_check_result_<%= result.id %>"
+     data-item="<%= label %>" data-outcome="<%= result.outcome %>" data-resolution="<%= result.resolution %>">
+  <div class="fw-semibold doc-check-sentence">
+    <i class="ti ti-alert-triangle text-warning"></i>
+    <%= t("doc_checks.panel.decision.#{result.outcome}", label:, value: doc_check_display_value(result, result.doc_value)) %>
+  </div>
+
+  <% if compare %>
+    <div class="row g-2 my-2 doc-check-values">
+      <div class="col-12 col-md-6">
+        <div class="p-2 rounded-3 bg-body-tertiary h-100">
+          <div class="text-body-secondary"><%= t("doc_checks.panel.on_document") %></div>
+          <div class="text-break"><%= doc_check_display_value(result, result.doc_value).presence || t("doc_checks.panel.empty_value") %></div>
+        </div>
+      </div>
+      <div class="col-12 col-md-6">
+        <div class="p-2 rounded-3 bg-body-tertiary h-100">
+          <div class="text-body-secondary"><%= t("doc_checks.panel.on_kyc") %></div>
+          <div class="text-break"><%= doc_check_display_value(result, result.record_value).presence || t("doc_checks.panel.empty_value") %></div>
+        </div>
+      </div>
+    </div>
+  <% elsif (help = t("doc_checks.panel.decision_help.#{result.outcome}", default: "")).present? %>
+    <div class="text-body-secondary mb-1"><%= help %></div>
+  <% end %>
+
+  <% if result.explanation.present? %>
+    <div class="text-body-secondary mb-2"><i class="ti ti-robot"></i> <%= result.explanation %></div>
+  <% end %>
+
+  <% if can_edit %>
+    <div class="d-flex flex-wrap align-items-start gap-2">
+      <% if result.can_use_document_value? %>
+        <%# Confirmed in the app's shared Bootstrap modal (#confirmModal, confirm_controller.js) in the
+            "Immediate Actions" card layout; the modal replays this form and the action answers with a
+            turbo_stream that replaces the tab. Values are text the AI read off a document: tag escapes them. %>
+        <% confirm_msg = doc_check_use_value_confirm_msg(result, label) %>
+        <%= button_to use_document_value_doc_check_result_path(result), method: :patch, class: "btn btn-sm btn-primary",
+              data: { action: "click->confirm#popup", method: "patch", title: t("doc_checks.panel.confirm_use_title", field: label),
+                      msg: confirm_msg },
+              form: { data: { turbo_frame: frame } } do %>
+          <i class="ti ti-check"></i> <%= t("doc_checks.panel.use_value", label:) %>
+        <% end %>
+      <% end %>
+      <% if result.can_mark_ok? %>
+        <details class="doc-check-mark-ok" <%= 'open' if error %>>
+          <summary class="btn btn-sm btn-outline-secondary">
+            <%= compare ? t("doc_checks.panel.keep_value", label:) : t("doc_checks.panel.mark_ok_short") %>
+          </summary>
+          <%= form_with url: mark_ok_doc_check_result_path(result), method: :patch, data: { turbo_frame: frame },
+                        class: "d-flex flex-wrap gap-2 align-items-start mt-2" do %>
+            <div>
+              <%= text_field_tag :reason, nil, maxlength: 255, placeholder: t("doc_checks.panel.why_ok_placeholder"),
+                    aria: { label: t("doc_checks.panel.why_ok") }, class: "form-control form-control-sm #{'is-invalid' if error}",
+                    style: "min-width: 18rem" %>
+              <% if error %><div class="invalid-feedback d-block"><%= error %></div><% end %>
+            </div>
+            <%= submit_tag t("doc_checks.panel.mark_ok"), class: "btn btn-sm btn-primary", name: nil %>
+          <% end %>
+        </details>
+      <% end %>
+    </div>
+  <% end %>
+</div>

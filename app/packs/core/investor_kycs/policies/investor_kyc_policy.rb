@@ -1,4 +1,6 @@
 class InvestorKycPolicy < ApplicationPolicy
+  include WorkflowablePolicyMethods # journey?, assign_workflow?
+
   class Scope < Scope
     def resolve
       if user.investor_advisor? && user.curr_role == "investor"
@@ -9,13 +11,48 @@ class InvestorKycPolicy < ApplicationPolicy
       elsif user.entity_type == "Group Company" || user.has_cached_role?(:company_admin)
         scope.for_company_admin(user)
       elsif user.has_cached_role?(:employee)
-        # We cant show them all the KYCs, only the ones for the funds they have been permissioned
-        fund_ids = Fund.for_employee(user).pluck(:id)
-        scope.joins(capital_commitments: :fund).where('funds.id': fund_ids)
+        # enable_kycs is the one condition every staff path needs (V6) - without it the
+        # employee sees no KYCs at all, whatever else they hold.
+        return scope.none unless user.enable_kycs
+
+        # get_extended_permissions, not extended_permissions: for an advisor switched into this
+        # entity it reads their grant's toggles, which is what applies to them here.
+        InvestorKycPolicy.staff_visible_kycs(scope, entity_id: user.entity_id, user_id: user.id,
+                                                    extended_permissions: user.get_extended_permissions)
       else
         scope.none
       end
     end
+  end
+
+  # The KYC visibility rule for an entity's own staff - its employees, and investor advisors
+  # acting through a staff grant on it. One rule for the KYC list (Scope above), the KYC page
+  # (show?) and the KYC notification emails (InvestorKyc#notify_kyc gates on show?), so nobody is
+  # emailed a KYC they cannot open, and nobody can open a KYC their list hides.
+  # Worked examples V1-V11: openspec/changes/kyc-advisor-notification-delivery-fix/design.md#worked-examples
+  #
+  # Takes the entity, user and toggles explicitly (rather than reading them off a user) because a
+  # switched-out advisor is checked against their grant on the KYC's entity, not against whatever
+  # entity and persona they are currently in.
+  def self.staff_visible_kycs(scope, entity_id:, user_id:, extended_permissions:)
+    kycs = scope.where(entity_id:)
+
+    # Investor Kyc Read or Investor Kyc Update: every KYC in the entity, whatever the fund (V1, V2).
+    # Before this rule these toggles only applied on top of fund access, so on their own they
+    # showed nothing.
+    return kycs if extended_permissions.set?(:investor_kyc_read) || extended_permissions.set?(:investor_kyc_update)
+
+    # Otherwise: KYCs committed to a fund the user holds an access right on (V3, V4). Subqueries
+    # rather than a join, so a KYC with several commitments is not returned once per commitment.
+    my_fund_ids = AccessRight.where(entity_id:, user_id:, owner_type: "Fund").select(:owner_id)
+    on_my_funds = CapitalCommitment.where(entity_id:, fund_id: my_fund_ids).select(:investor_kyc_id)
+
+    # ...plus KYCs with no commitment yet (V5): there is no fund to check, and this is the
+    # onboarding window when the KYC emails actually fire. NULLs are excluded from the subquery
+    # because NOT IN (..., NULL) matches nothing in SQL.
+    with_a_commitment = CapitalCommitment.where(entity_id:).where.not(investor_kyc_id: nil).select(:investor_kyc_id)
+
+    kycs.where(id: on_my_funds).or(kycs.where.not(id: with_a_commitment))
   end
 
   def index?
@@ -30,15 +67,24 @@ class InvestorKycPolicy < ApplicationPolicy
     index?
   end
 
+  # Each path below is additive (return true if ...), never an exclusive elsif: failing one path
+  # must not stop a user who qualifies by another, e.g. a fund-of-funds LP whose users carry the
+  # :employee role still reaches the investor-owns-this-KYC check at the end (V10).
   def show?(across_all_entities: false)
-    if permissioned_employee?(:investor_kyc_read)
-      true
-    elsif user.has_cached_role?(:investor_advisor)
+    # 1. The entity's own staff, while in it: the KYC must be in their KYC list (Scope), which is
+    #    where staff_visible_kycs is applied - so the page and the list can never disagree.
+    return true if entity_staff_can_see?
+
+    # 2. A staff grant on the KYC's entity, judged by the grant itself - covers an advisor who is
+    #    switched out of the entity, which is what lets their KYC emails reach them (V7, V8, V9).
+    return true if advisor_grant_can_see?
+
+    # 3. Pre-existing investor-side paths, unchanged.
+    if user.has_cached_role?(:investor_advisor)
       InvestorKyc.for_investor_advisor(user, across_all_entities:).exists?(id: record.id)
-    elsif !user.has_cached_role?(:investor_advisor)
-      user.entity_id == record.investor&.investor_entity_id
     else
-      false
+      # Investor viewing their own KYC.
+      user.entity_id == record.investor&.investor_entity_id
     end
   end
 
@@ -178,13 +224,43 @@ class InvestorKycPolicy < ApplicationPolicy
     extended_permissioned_employee?(perm)
   end
 
-  # Only company_admin can assign / remove a workflow template on a KYC record,
-  # and only when the entity has workflow_templates enabled.
-  def assign_workflow?
-    user.entity&.permissions&.enable_workflow_templates? && user.company_admin? && belongs_to_entity?(user, record)
+  private
+
+  # show? path 1: a user currently in the KYC's entity (or its Group Company parent).
+  def entity_staff_can_see?
+    return false unless belongs_to_entity?(user, record)
+
+    # The same list the KYC index shows them: every KYC for a company admin or Group Company user,
+    # staff_visible_kycs (with its enable_kycs gate) for an employee. No investor_kyc_read check
+    # here any more - under the visibility rule fund access alone is enough to open a KYC (V3).
+    # Scoped from the base class, not record.class (ApplicationPolicy#policy_scope): KYCs are STI,
+    # and for an IndividualKyc the company-admin scope (ForInvestor.for_company_admin) derives its
+    # table name from the class name - "individual_kycs.entity_id", a table that does not exist.
+    Pundit.policy_scope!(user, InvestorKyc).exists?(id: record.id)
   end
 
-  private
+  # show? path 2: the user holds a staff grant on the KYC's entity. Everything is read off the
+  # grant and the KYC's entity - never user.enable_kycs or user.get_extended_permissions, which
+  # follow whichever entity the advisor is switched into right now. Reading those made a
+  # switched-out advisor's KYC emails depend on an unrelated entity's settings (V7).
+  def advisor_grant_can_see?
+    grant = record.entity.investor_advisors.find_by(user_id: user.id)
+    # A grant with only investor-side roles is not a staff grant; path 3 handles those users.
+    return false unless grant && (grant.is_employee? || grant.is_company_admin?)
+
+    # enable_kycs on both the grant and the KYC's entity - the switched-out equivalent of the
+    # user.enable_kycs gate staff get in Scope (V9).
+    return false unless grant.permissions.enable_kycs? && record.entity.permissions.enable_kycs?
+
+    # A company_admin grant sees every KYC in the entity, as a company admin does when switched
+    # in, without needing fund access rights (V8).
+    return true if grant.is_company_admin?
+
+    # Otherwise the same rule as the entity's employees, applied to the grant's toggles.
+    InvestorKycPolicy.staff_visible_kycs(InvestorKyc.all, entity_id: record.entity_id, user_id: user.id,
+                                                          extended_permissions: grant.extended_permissions)
+                     .exists?(id: record.id)
+  end
 
   # Returns true when access was granted via a signed magic link token and
   # the KYC is not yet completed or verified (investor can still edit it).

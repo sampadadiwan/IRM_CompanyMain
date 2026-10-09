@@ -69,6 +69,85 @@ Feature: How an entry's number was worked out
     When I open the explanation of "Fee" for folio "101"
     Then the explanation should list "Base,2,100"
 
+  # ── Which assignment ran ──────────────────────────────────────────────────────
+  # A rule often starts a step at zero and sets it for real inside an if. The step opens into the
+  # assignment that ran: later assignments replace earlier ones, and only the branch the run took
+  # counts — chosen from the condition's recorded true/false. Ids ES1–ES3 are named in
+  # AccountEntryExplanation#collect_locals and #chosen_branch.
+
+  # ES1 — Edge case: a step set to zero, then reassigned inside an if, opens into the reassignment
+  Scenario: A step reassigned inside an if opens into the assignment that ran, not its starting zero
+    Given the run produced "Base" of "100000" for folio "101"
+    And the run produced "Fee" of "2000" for folio "101" computed by "result = 0; if @base > 0; result = @base * 2 / 100; end; result" recording:
+      | expression | value |
+      | @base > 0  | true  |
+      | result     | 2000  |
+    When I open the explanation of "Fee" for folio "101"
+    Then term "Result" should show "2000"
+    And term "Result" should open into "Base,2,100"
+
+  # ES2 — Edge case: nested ifs — the branch is picked by the recorded false, not by being first
+  Scenario: A nested if takes the branch its recorded condition chose
+    Given the run produced "Base" of "100000" for folio "101"
+    And the run produced "Fee" of "2000" for folio "101" computed by "result = 0; if @base > 0; if @base > 500000; result = @base * 3 / 100; else; result = @base * 2 / 100; end; end; result" recording:
+      | expression     | value |
+      | @base > 0      | true  |
+      | @base > 500000 | false |
+      | result         | 2000  |
+    When I open the explanation of "Fee" for folio "101"
+    Then term "Result" should open into "Base,2,100"
+
+  # ES3 — Edge case: a false condition with no else ran nothing, so the starting zero stands
+  Scenario: A step whose if did not run keeps its starting value and has nothing to open
+    Given the run produced "Base" of "100000" for folio "101"
+    And the run produced "Fee" of "0" for folio "101" computed by "result = 0; if @base > 500000; result = @base * 2 / 100; end; result" recording:
+      | expression     | value |
+      | @base > 500000 | false |
+      | result         | 0     |
+    When I open the explanation of "Fee" for folio "101"
+    Then term "Result" should show "0"
+    And term "Result" should have no parts
+
+  # ── Calculation steps ─────────────────────────────────────────────────────────
+  # Beneath the tree, every value the run recorded, so the lookups and settings that are not
+  # terms of the result (a rate, a date, the ids a rule picked) can be read too. Ids ES4–ES6 are
+  # named in AccountEntryExplanation#steps and _explanation_steps.html.erb.
+
+  # ES4 — Happy path: named steps first, in the order the rule sets them, then the parts inside them; the run's dates are left out
+  Scenario: The calculation steps list the rule's named steps in order, then the parts inside them
+    Given the run produced "Base" of "100000" for folio "101"
+    And the run produced "Fee" of "22000" for folio "101" computed by "rate = 2; months = 12 - 1; @base * months * rate / 100" recording:
+      | expression  | value      |
+      | @end_date   | 2024-03-31 |
+      | 12 - 1      | 11         |
+      | months      | 11         |
+      | rate        | 2          |
+    When I open the explanation of "Fee" for folio "101"
+    Then the calculation steps should be "rate=2,months=11,12 - 1=11"
+
+  # ES5 — Happy path: the steps table renders each step with its value formatted for reading
+  Scenario: The calculation steps table shows each step and its value
+    Given the run produced "Base" of "100000" for folio "101"
+    And the run produced "Fee" of "2000" for folio "101" computed by "fx_rate = 96.3234; total = @base * 2; total / 100" recording:
+      | expression | value          |
+      | fx_rate    | 96.3234        |
+      | total      | 200000.0       |
+      | first_dist | Distribution 1 |
+    When I open the explanation of "Fee" for folio "101"
+    And the calculation steps table is drawn
+    Then the steps table should show "fx_rate" as "96.32"
+    And the steps table should show "total" as "200,000"
+    And the steps table should show "first_dist" as "Distribution 1"
+
+  # ES6 — Edge case: a run made without "Explain Formulas" recorded nothing, so there is no steps table
+  Scenario: A run that recorded no values has no calculation steps
+    Given the run produced "Base" of "100000" for folio "101"
+    And the run produced "Fee" of "2000" for folio "101" computed by "@base * 2 / 100" with no breakdown
+    When I open the explanation of "Fee" for folio "101"
+    Then there should be no calculation steps
+    And the calculation steps table is drawn
+    Then the steps table should not be drawn
+
   # ── Reading other entries ─────────────────────────────────────────────────────
 
   Scenario: A same-period read by name is another entry

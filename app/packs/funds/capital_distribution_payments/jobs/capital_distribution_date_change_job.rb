@@ -1,5 +1,6 @@
 class CapitalDistributionDateChangeJob < BulkActionJob
   def perform(capital_distribution_id, user_id = nil)
+    started_at = Time.current # the journey's undo window starts with the date change, not the recompute
     @capital_distribution = CapitalDistribution.find(capital_distribution_id)
     send_notification("Updating payment dates to #{I18n.l(@capital_distribution.distribution_date)} for all payments of #{@capital_distribution}", user_id, :info) if user_id.present?
 
@@ -24,6 +25,7 @@ class CapitalDistributionDateChangeJob < BulkActionJob
       send_notification("Updated payment dates for all payments of #{@capital_distribution}. Recomputing fees...", user_id, :info)
     end
 
-    CapitalDistributionPaymentRecomputeFeesJob.perform_later(@capital_distribution.id, user_id)
+    # Worked examples E15 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples
+    CapitalDistributionPaymentRecomputeFeesJob.perform_later(@capital_distribution.id, user_id, started_at:)
   end
 end

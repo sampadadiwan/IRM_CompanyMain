@@ -1,7 +1,21 @@
 
-<%= render "/capital_calls/capital_call_stats", capital_call: @capital_call %>
+<%= render "/capital_calls/stats_frame", capital_call: @capital_call %>
+<%# Real-time: CapitalCallJob / CapitalRemittancesCountersJob reload the stats cards above and the
+    Remittances tab when remittances are generated in the background (CapitalCall#broadcast_remittances_change) %>
+<%= turbo_stream_from @capital_call, :remittances %>
+<%# Progress of a remittance generation run: always present so broadcasts have a target; filled
+    from the cache when the page is opened mid-run, emptied by the job when it ends %>
+<div id="<%= @capital_call.remittance_progress_target_id %>" class="px-3">
+  <% if (progress = @capital_call.remittance_progress) %>
+    <%= render "/capital_calls/remittance_progress", done: progress[:done], total: progress[:total] %>
+  <% end %>
+</div>
 
 <div class="container-fluid p-3">
+<%# Capital call journey (step bar + what's needed now); nothing renders for calls without one %>
+<%= render "/capital_calls/journey", record: @capital_call, journey: @journey, instance: nil %>
+<%# Real-time: an evaluation that changes this call's journey reloads the panel above in place %>
+<%= render "workflow_instances/journey_stream", record: @capital_call if @journey.present? %>
 <%= render "/capital_calls/show", capital_call: @capital_call %>
 
 <div id="capital_call_<%= @capital_call.id %>_actions"
@@ -39,7 +53,37 @@
 
 
           <%= link_to "View Generated Documents", generated_docs_path, id: "capital_call_view_generate_docs_btn", class: "dropdown-item ti ti-search", data: { bs_toggle: "tooltip", bs_title: "Review and approve the generated call notices for attaching to Call Notification" } %>
+        <% end %>
 
+        <%# The same list as "View Generated Documents", narrowed to the notices still awaiting
+            approval - on a call with a few hundred remittances the unfiltered list buries them.
+            Gated on update? rather than generate_docs? (which is !approved && update?) so it stays
+            reachable after the call is approved: an unapproved notice still blocks the
+            per-remittance send (CapitalRemittance#notification_blocked_reasons), and regenerating
+            a notice resets it to unapproved.
+
+            No pending count is shown next to the label: that would mean a COUNT over documents
+            (a large table) on every render of this page, for a number the linked list itself
+            shows anyway. %>
+        <% if policy(@capital_call).update? %>
+          <%
+            # hint= tells the documents index which contextual banner to show - a known key, not
+            # free text, so nothing from the URL is rendered. See documents/_approval_hint.
+            pending_notices_path = documents_path(no_folders: true, filter: true, hint: "approve_notices",
+                                                  q: ransack_query_params_multiple([[:capital_call_id, :eq, @capital_call.id],
+                                                                                    [:owner_tag, :cont, "Generated"],
+                                                                                    [:approved, :eq, false]]))
+          %>
+
+          <%# Opens in a new window so the call page (and its journey panel) stays put while notices are
+              approved; the panel's "Approve notices" action clicks this link (action_target) %>
+          <%= link_to "View Generated Notices To Approve", pending_notices_path,
+                      id: "capital_call_view_notices_to_approve_btn", class: "dropdown-item ti ti-checklist",
+                      target: "_blank", rel: "noopener",
+                      data: { bs_toggle: "tooltip", bs_container: "body",
+                              bs_title: "Only the generated call notices that still need approval" } %>
+
+          <%# generate_docs? implies update?, so this closes off whichever of the items above rendered %>
           <div class="dropdown-divider"></div>
         <% end %>
 

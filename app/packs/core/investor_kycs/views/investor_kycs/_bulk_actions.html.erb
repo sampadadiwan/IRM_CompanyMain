@@ -37,10 +37,11 @@
             class: "dropdown-item", form_class: "w-100",
             data: {msg: "This will generate AML Reports for all filtered KYCs. Proceed?", action: "click->confirm#popup", method: :post, turbo: false} if current_user.entity.entity_setting.aml_enabled %>
 
-            <%= button_to "Validate Document Data",
+            <%# Document Checks for every KYC in the results (the bulk key stays ValidateDocsWithAi: saved in bulk-action URLs) %>
+            <%= button_to t("doc_checks.panel.check_documents"),
             bulk_actions_investor_kycs_path("bulk_action": "ValidateDocsWithAi", q: params.to_unsafe_h[:q], all: true),
-            class: "dropdown-item", form_class: "w-100",
-            data: {msg: "This will validate docs or extract data from docs into the KYCs as defined by the DocQuestions. Proceed?", action: "click->confirm#popup", method: :post, turbo: false} if current_user.entity.enable_doc_llm_validation %>
+            class: "dropdown-item", form_class: "w-100", id: "bulk_check_documents_btn",
+            data: {title: t("doc_checks.run_confirm.title"), msg: doc_check_bulk_confirm_msg, action: "click->confirm#popup", method: :post, turbo: false} if current_user.entity.enable_doc_llm_validation %>
 
 
             <% custom_notifications = current_user.entity.custom_notifications
@@ -79,11 +80,6 @@
             data: {msg:, action: "click->confirm#popup", method: :post}  if current_user.entity.entity_setting.bank_verification %>
 
 
-            <% msg = "This will try and extract information from documents into the KYC (based on rules which have been setup). Proceed?" %>
-            <%= button_to "Validate Document Data",
-            bulk_actions_investor_kycs_path("bulk_action": "ValidateDocsWithAi", q: params.to_unsafe_h[:q], all: true),
-            class: "dropdown-item", form_class: "w-100",
-            data: {msg:, action: "click->confirm#popup", method: :post}  if current_user.entity.enable_doc_llm_validation %>
 
         </div>
     </div>

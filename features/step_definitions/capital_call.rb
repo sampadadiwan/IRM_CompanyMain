@@ -736,7 +736,8 @@ Then('Given I upload {string} file for Call remittances of the fund') do |file|
   click_on("Remittances")
   # sleep((2)
   click_on("Upload / Download")
-  click_on("Upload Remittances")
+  # The menu item, not the journey card's "Upload Remittances" button (shown while an Upload call has none)
+  within(".dropdown-menu.show") { click_on("Upload Remittances") }
   fill_in('import_upload_name', with: "Test Upload")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{file}"), make_visible: true)
   # sleep((2)
@@ -852,10 +853,11 @@ end
 Then('when the capital call docs are generated') do
   CapitalCall.find_each do |cc|
     visit(capital_call_path(cc))
+    # Both inside the Actions menu: the journey panel has its own "Generate Documents" button too
     within "#capital_call_#{cc.id}_actions" do
       click_on("Actions")
+      click_on("Generate Documents")
     end
-    click_on("Generate Documents")
     click_on("Proceed")
     # sleep(1)
     cc.capital_remittances.each_with_index do |cr, _count|
@@ -1166,6 +1168,9 @@ Given('I approve the capital call') do
   end
   click_on("Approve")
   click_on("Confirm & Save")
+  # Wait for the redirect back to the approved call. Without this the next step can open the Actions
+  # menu on the old page, which the redirect then replaces — so its links vanish under parallel load.
+  expect(page).to have_content("Capital call was successfully approved.")
 end
 
 Then('I send the capital call notification') do

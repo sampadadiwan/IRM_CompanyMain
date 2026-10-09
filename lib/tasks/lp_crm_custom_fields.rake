@@ -32,7 +32,7 @@ namespace :lp_crm do
     #   field_type — one of FormCustomField::VALID_FIELD_TYPES
     #   meta_data  — comma-separated options (Select fields only)
     #   help_text  — small print under the input
-    #   filter     — mark the field filterable in list searches (register_cf_ransacker)
+    #   filter     — mark the field filterable in list searches (register_cf_ransackers)
     seeds = {
       # Touch-point (contact) fields — rendered on the stakeholder access form
       "InvestorAccess" => [

@@ -20,6 +20,19 @@
           <i class="ti ti-chart-bar"></i> Analytics
         </button>
       <% end %>
+      <%# Document Checks: setup and the attention list (openspec/changes/document-checks, card ⑧) %>
+      <% if policy(DocCheck).index? %>
+        <div class="dropdown">
+          <button class="btn btn-outline-secondary dropdown-toggle d-inline-flex align-items-center" type="button"
+                  id="doc_checks_menu" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="ti ti-file-search"></i> Document checks
+          </button>
+          <div class="dropdown-menu" aria-labelledby="doc_checks_menu">
+            <%= link_to t("doc_checks.attention.title"), doc_check_results_path, class: "dropdown-item" %>
+            <%= link_to t("doc_checks.panel.set_up"), doc_checks_path, class: "dropdown-item", target: "_blank", rel: "noopener" %>
+          </div>
+        </div>
+      <% end %>
     <% end %>
     <% entity_id = @investor ? @investor.entity_id : current_user.entity_id %>
     <% investor_kyc = InvestorKyc.new(investor_id: @investor&.id, entity_id: entity_id) %>

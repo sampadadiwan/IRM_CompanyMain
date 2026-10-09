@@ -40,25 +40,108 @@ module InvestorKycConcern
 
   # Ovveride the include with_folder method
   def document_changed(document)
+    started_at = Time.current
     grant_access_rights_to_investor(document)
     # Check if all the required docs have been uploaded
     local_docs_completed = docs_completed?
     update_column(:docs_completed, local_docs_completed) if local_docs_completed != docs_completed
+    journey_document_changed(document, started_at)
+  end
+
+  # The KYC's details changed outside InvestorKycAction (a Document Checks fill-in or "Use document
+  # value"): reset "Review KYC" exactly as InvestorKycAction#journey_hook does for a fund user's edit.
+  # No-op without a journey; never raises.
+  # Worked examples H5 — openspec/changes/document-checks/design.md#worked-examples
+  def journey_details_changed!(actor: nil, started_at: Time.current)
+    return unless respond_to?(:journey_progress!)
+
+    journey_invalidate(check_keys: "investor_kyc.review_kyc", reason: "KYC details changed after review",
+                       actor:, only_if_passed: "investor_kyc.review_kyc")
+    journey_undo_evaluate(note: "KYC details changed after review", started_at:, actor:)
+  end
+
+  # The names of the documents this KYC must have: the entity's list for its KYC type (Settings →
+  # individual / non-individual KYC documents) plus the KYC form's required document fields. Order kept,
+  # duplicates removed. Shared by the journey's document tasks and Document Checks.
+  def required_document_names
+    setting = entity.entity_setting
+    list = individual? ? setting&.individual_kyc_doc_list : setting&.non_individual_kyc_doc_list
+    names = list.to_s.split(",").map(&:strip).compact_blank
+    if form_type_id
+      ::FormCustomField.where(form_type_id:, field_type: "File", required: true)
+                       .pluck(:label, :name).each { |label, name| names << (label.presence || name.to_s.humanize) }
+    end
+    names.uniq
+  end
+
+  # The newest uploaded (not generated) document that satisfies a required name, matched the same way as
+  # missing_required_document_names: by name or owner_tag, ignoring case and an "Upload "/"Attach your "
+  # prefix. Matches on plucked names (no wide rows loaded), then loads the one document found.
+  # Worked example E7 — openspec/changes/document-checks/design.md#worked-examples
+  def find_document_by_name(name)
+    wanted = normalize_required_doc_name(name)
+    # Newest first, so a re-upload wins over the document it replaced
+    # (Generated is filtered in Ruby: where.not(owner_tag:) would also drop the untagged NULL rows)
+    match = documents.not_generated.order(updated_at: :desc, id: :desc).pluck(:id, :name, :owner_tag).find do |_id, doc_name, owner_tag|
+      owner_tag != "Generated" && [doc_name, owner_tag].any? { |v| normalize_required_doc_name(v) == wanted }
+    end
+    ::Document.find(match.first) if match
+  end
+
+  # The KYC's journey after one of its documents is added, replaced or deleted: documents that were
+  # validated are no longer the ones on file, so "Validate documents" goes back — but only once it had
+  # passed (an upload while the investor is still filling the form is not a move back). Deleting a
+  # document may also undo "Upload required documents". No-op without a journey; never raises.
+  # Worked examples E5, E13 — openspec/changes/investor-kyc-journey/design.md#worked-examples
+  def journey_document_changed(document, started_at)
+    return unless respond_to?(:journey_progress!)
+    # Documents CapHive generates for the KYC are not what was validated
+    return if document.owner_tag == "Generated"
+
+    # An added, replaced or removed document makes its Document Checks results out of date, so the KYC is
+    # no longer "all documents valid" until it is checked again. Here (not in document_changed) because a
+    # file replacement reaches only this method (Document#kyc_document_replaced). Worked example E13 —
+    # openspec/changes/document-checks/design.md#worked-examples
+    DocChecks::Kyc.reassess(self)
+
+    # A deleted document leaves the remaining ones validated; a missing required one shows on
+    # "Upload required documents" by itself
+    # (Documents are soft-deleted, and destroyed? is not yet true inside the owner callback: ask the table)
+    if document.destroyed? || !::Document.exists?(document.id)
+      journey_undo_evaluate(note: "Document deleted", started_at:)
+    else
+      journey_invalidate(check_keys: "investor_kyc.validate_documents", reason: "Documents changed after validation",
+                         only_if_passed: "investor_kyc.validate_documents")
+      journey_undo_evaluate(note: "Documents changed after validation", started_at:)
+    end
   end
   # rubocop:enable Rails/SkipsModelValidations
+
+  # Leading words the upload forms put in front of a document's name ("Upload Tax ID",
+  # "Attach your CML") — stripped before comparing with the required names
+  REQUIRED_DOC_NAME_PREFIX = /\A(upload|attach your|attach)\s+/i
 
   # Check if all the required docs have been uploaded
   def docs_completed?
     # The required_docs depend on the kyc_type
     required_docs = individual? ? entity.entity_setting.individual_kyc_doc_list : entity.entity_setting.non_individual_kyc_doc_list
-    if required_docs.present?
-      required_docs = Set.new(required_docs.split(",").map(&:strip))
-      uploaded_docs = Set.new(documents.pluck(:name))
-      # Sometimes other docs are also uploaded - so we check for subset
-      required_docs.present? && required_docs.subset?(uploaded_docs)
-    else
-      false
-    end
+    required_docs = required_docs.to_s.split(",").map(&:strip).compact_blank
+    # No list configured means nothing can be "complete"; otherwise every required name must be matched
+    # (other, unrequired docs may also be uploaded)
+    required_docs.present? && missing_required_document_names(required_docs).empty?
+  end
+
+  # The names in required_names that no document on this KYC satisfies. A document satisfies a name when
+  # its name or its owner_tag matches it after normalising - so "Upload Address Proof" counts as
+  # "Address Proof", and "Upload Tax ID" (owner_tag "PAN", set by the form field's meta_data) counts as "PAN".
+  # "Upload Correspondence Address Proof" does NOT count as "Address Proof": it is a different document.
+  def missing_required_document_names(required_names)
+    return [] if required_names.empty?
+
+    # Every normalised name and tag on the KYC's documents, from one distinct query
+    present = documents.distinct.pluck(:name, :owner_tag).flatten.filter_map { |v| normalize_required_doc_name(v).presence }.to_set
+    # Keep the required names (as written in settings) that nothing matched
+    required_names.reject { |name| present.include?(normalize_required_doc_name(name)) }
   end
 
   def docs_for_investor
@@ -67,5 +150,12 @@ module InvestorKycConcern
       .or(documents.where.not(owner_tag: "Generated"))
       .or(documents.where(owner_tag: nil))
       .not_template
+  end
+
+  private
+
+  # "  Upload  Address Proof " -> "address proof": lowercase, collapse whitespace, drop an upload/attach prefix
+  def normalize_required_doc_name(value)
+    value.to_s.squish.downcase.sub(REQUIRED_DOC_NAME_PREFIX, "")
   end
 end

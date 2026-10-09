@@ -81,12 +81,12 @@ class ImportKpiWorkbookJob < ApplicationJob
       end
     end
 
-    # Must run after extract_kpis: launch_portfolio_company_workflow checks kpis.none?
-    # to decide whether anything was actually imported, so the Kpi rows need to exist first.
-    # Guarded on errors? (blocking issues only — warnings such as a missing KPI or a touched
-    # historic period do not mean the import failed) — kpis.none? alone isn't enough to detect a
-    # failed import, since a KpiReport that already has KPIs from a prior successful upload would
-    # still pass kpis.none? even if THIS extraction attempt failed and wrote nothing new.
-    kpi_report.launch_portfolio_company_workflow(user) unless @kpi_reader.errors?
+    # The KPI report journey (kpi-report-journey). The report the workbook was uploaded on is a request,
+    # so it gets a journey if it hasn't one — never the reports this import created for other periods.
+    # Then every open journey of the portfolio company moves on: the staged KPIs are counted portco-wide.
+    # (This replaces launching a workflow on the portfolio company itself — design Decision 10.)
+    # Worked examples H3, H9, E14 — openspec/changes/kpi-report-journey/design.md#worked-examples
+    kpi_report.start_journey!(user) unless @kpi_reader.errors?
+    KpiReport.journey_progress_for_portco(kpi_report.entity_id, kpi_report.portfolio_company_id, actor: user)
   end
 end

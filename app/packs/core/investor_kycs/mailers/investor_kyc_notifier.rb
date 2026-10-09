@@ -32,7 +32,10 @@ class InvestorKycNotifier < BaseNotifier
     end
 
     def url
-      if %i[notify_kyc_required kyc_required_reminder].include? params[:email_method]
+      # Compared as strings: email_method arrives as a Symbol from a direct call but as a String
+      # once it has crossed a job boundary (ActiveJob serialization), and only the editable form
+      # is a valid destination for the two KYC-request emails.
+      if %w[notify_kyc_required kyc_required_reminder].include?(params[:email_method].to_s)
         edit_investor_kyc_path(id: record.id, sub_domain: record.entity.sub_domain)
       else
         investor_kyc_path(id: record.id, sub_domain: record.entity.sub_domain)

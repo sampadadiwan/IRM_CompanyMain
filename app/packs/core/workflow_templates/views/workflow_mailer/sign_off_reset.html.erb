@@ -1,0 +1,23 @@
+<h3>Hello <%= @user.full_name %>,</h3>
+
+<p>
+  Your sign-off on <strong><%= @step[:name] %></strong> for
+  <% if @workflowable_url %>
+    <strong><%= link_to @workflowable_name, @workflowable_url %></strong>
+  <% else %>
+    <strong><%= @workflowable_name %></strong>
+  <% end %>
+  was reset, because earlier work was undone.
+</p>
+
+<% if @reason.present? %>
+  <p><strong>What changed:</strong> <%= @reason %></p>
+<% end %>
+
+<p>
+  You will be asked to sign off again once the earlier steps are complete.
+</p>
+
+<p style="color:#888;font-size:0.85em;">
+  <%= link_to "View the journey history", @instance_url %>
+</p>

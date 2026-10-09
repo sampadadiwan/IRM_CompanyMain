@@ -2,6 +2,9 @@ class WorkflowInstance < ApplicationRecord
   belongs_to :workflowable,       polymorphic: true
   belongs_to :workflow_assignment, optional: true  # nullable — assignment may be removed after launch
   belongs_to :workflow_template
+  # entity_id is denormalized and validated below; the association lets WorkflowNotifier (and the
+  # shared NotificationExtensions helpers it inherits) reach the entity's settings and sub_domain
+  belongs_to :entity, optional: true
   # optional: true because auto-assignment rules launch with no interactive user (system-initiated)
   belongs_to :launched_by, class_name: "User", optional: true
 
@@ -18,6 +21,14 @@ class WorkflowInstance < ApplicationRecord
 
   # Ordered history of all instances for a given workflowable object
   scope :for_workflowable, ->(obj) { where(workflowable: obj).order(created_at: :desc) }
+
+  # Journeys: instances whose snapshot has a system/acknowledge step (set at launch)
+  scope :evaluated, -> { where(evaluated: true) }
+
+  # The last evaluation's result for one step position, e.g. { "status" => "passed", ... }
+  def step_result(position)
+    (step_results || {})[position.to_s]
+  end
 
   # Returns the current step's data from the frozen snapshot
   def current_step_data

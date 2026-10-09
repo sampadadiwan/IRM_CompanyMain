@@ -28,7 +28,8 @@
 
         <div id="remittances-tab" class="tab-pane fade show active">
           <div id="remittances" class="associated_entity">
-            <%= turbo_frame_tag "capital_remittances_frame", target: "_top", loading: :lazy, src: capital_remittances_path(capital_call_id: capital_call.id, status: "", verified: "") do %>
+            <%# refresh="morph": the reload CapitalCall#broadcast_remittances_change triggers patches the rows in place %>
+            <%= turbo_frame_tag CapitalCall::REMITTANCES_FRAME_ID, target: "_top", loading: :lazy, refresh: "morph", src: capital_remittances_path(capital_call_id: capital_call.id, status: "", verified: "") do %>
               <%= render "/layouts/loading" %>
             <% end %>
           </div>

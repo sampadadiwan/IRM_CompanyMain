@@ -33,6 +33,7 @@ class CapitalRemittancePaymentsController < ApplicationController
     authorize(@capital_remittance_payment)
     respond_to do |format|
       if result.success?
+        journey_progress
         format.html { redirect_to capital_remittance_payment_url(@capital_remittance_payment), notice: "Capital remittance payment was successfully created." }
         format.json { render :show, status: :created, location: @capital_remittance_payment }
       else
@@ -48,6 +49,7 @@ class CapitalRemittancePaymentsController < ApplicationController
     result = CapitalRemittancePaymentUpdate.call(capital_remittance_payment: @capital_remittance_payment)
     respond_to do |format|
       if result.success?
+        journey_progress
         format.html { redirect_to capital_remittance_payment_url(@capital_remittance_payment), notice: "Capital remittance payment was successfully updated." }
         format.json { render :show, status: :ok, location: @capital_remittance_payment }
       else
@@ -63,6 +65,7 @@ class CapitalRemittancePaymentsController < ApplicationController
 
     respond_to do |format|
       if result.success?
+        journey_progress
         format.html { redirect_to capital_remittance_url(@capital_remittance_payment.capital_remittance), notice: "Capital remittance payment was successfully destroyed." }
         format.json { head :no_content }
       else
@@ -70,6 +73,11 @@ class CapitalRemittancePaymentsController < ApplicationController
         format.json { render json: result.error_message, status: :unprocessable_entity }
       end
     end
+  end
+
+  # Real-time journey progress (no-op without a journey). Worked examples J2.2 — openspec/changes/archive/2026-10-02-capital-call-journey/design.md#worked-examples
+  def journey_progress
+    @capital_remittance_payment.capital_remittance&.capital_call&.journey_progress!(actor: current_user)
   end
 
   private

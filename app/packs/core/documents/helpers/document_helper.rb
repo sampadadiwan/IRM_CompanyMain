@@ -70,6 +70,35 @@ module DocumentHelper
     folders
   end
 
+  # Journey records whose notices an "approve_notices" list can be filtered to, by the ransack
+  # attribute the call's / distribution's "View Generated Notices To Approve" link filters on
+  APPROVAL_HINT_RECORDS = { "capital_call_id" => "CapitalCall", "capital_distribution_id" => "CapitalDistribution" }.freeze
+
+  # The call or distribution an approve_notices list is filtered to, or nil. Read from the ransack
+  # search the list itself ran, so both the flat (q[capital_call_id_eq]) and the grouped
+  # (RansackQueryBuilder.multiple) link shapes work. The id is looked up and authorized — nothing from
+  # the URL is printed as-is.
+  def approval_hint_record(search)
+    return if search.blank?
+
+    APPROVAL_HINT_RECORDS.each do |attr, klass|
+      # Only a plain "<attr> = id" condition identifies one record
+      condition = search.base.conditions.find { |c| c.predicate.name == "eq" && c.attributes.map { |a| a.name.to_s } == [attr] }
+      next unless condition
+
+      record = klass.constantize.find_by(id: condition.values.first&.value)
+      return record if record && policy(record).show?
+    end
+    nil
+  end
+
+  # True while any generated notice of the call / distribution is unapproved. exists?, not a count:
+  # documents is a large table (CLAUDE.md).
+  def notices_awaiting_approval?(record)
+    owners = record.is_a?(CapitalCall) ? record.capital_remittances : record.capital_distribution_payments
+    Document.not_templates.exists?(owner_type: owners.klass.name, owner_id: owners.select(:id), owner_tag: "Generated", approved: false)
+  end
+
   def with_ancestor_ids(documents)
     ids = documents.joins(:folder).pluck("documents.folder_id, folders.ancestry")
     ids.map { |p| p[1] ? (p[1].split("/") << p[0]) : [p[0]] }.flatten.map(&:to_i).uniq

@@ -42,10 +42,10 @@ The Documents Module is a core component of the project, designed to provide rob
 *   **Resend for E-sign:** Ability to resend documents for e-signing if the previous attempt failed, was cancelled, voided, or expired.
 *   **E-sign Logging:** `EsignLog` records e-signing events.
 
-### Document Questions (LLM Integration)
-*   **Question Association:** Documents can have associated `DocQuestion` records, which are polymorphic and linked to an owner.
-*   **Question Types:** Supports "Validation", "Extraction", and "General" question types.
-*   **Dynamic Questioning:** Questions can be associated with documents by name or tags, enabling LLM-driven validation or data extraction from document content.
+### Document Checks (LLM Integration)
+*   **What to read:** `DocCheck` rows per entity, record type and document name — fill in a field, compare with a field, or a yes-no question (replaces the retired `DocQuestion`).
+*   **Runs and results:** `DocCheckRun` / `DocCheckResult` store one outcome per check per run (OK or a reason it needs attention), resolvable on the record's tab.
+*   **Design:** openspec/changes/document-checks/design.md.
 
 ### Stamp Paper Management
 *   **Stamp Paper Association:** Documents can be associated with `StampPaper` records, which are polymorphic and linked to an owner.
