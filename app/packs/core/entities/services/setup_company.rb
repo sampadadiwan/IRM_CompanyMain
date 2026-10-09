@@ -3,6 +3,7 @@ class SetupCompany < Trailblazer::Operation
   step :setup_capital_call_journeys
   step :setup_capital_distribution_journeys
   step :setup_investor_kyc_journeys
+  step :setup_kpi_report_journeys
 
   def setup_folders(_ctx, entity:, **)
     if entity.root_folder.blank?
@@ -31,6 +32,13 @@ class SetupCompany < Trailblazer::Operation
   # Worked examples H1 — openspec/changes/investor-kyc-journey/design.md#worked-examples
   def setup_investor_kyc_journeys(_ctx, entity:, **)
     InvestorKycJourneySetup.call(entity:) if InvestorKycJourneySetup.available_for?(entity)
+    true
+  end
+
+  # And the KPI report journey, for funds that use KPIs (kpi-report-journey).
+  # Worked examples H1 — openspec/changes/kpi-report-journey/design.md#worked-examples
+  def setup_kpi_report_journeys(_ctx, entity:, **)
+    KpiReportJourneySetup.call(entity:) if KpiReportJourneySetup.available_for?(entity)
     true
   end
   # rubocop:enable Rails/SkipsModelValidations

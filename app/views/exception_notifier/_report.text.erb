@@ -1,0 +1,15 @@
+<%#
+  The "Report" section of developer error emails: data[:report], the who / where / which-entity block
+  built by ErrorReportContext (for_request, for_sidekiq, for_job, for_service). Listed first in the
+  notifier's sections (config/initializers/exception_notification.rb) so it is what the email opens
+  with. @report is set by the gem from data[:report]; for a web request it is an
+  ErrorReportContext::Lazy, built only now that the email is rendered. Renders nothing - and the gem
+  then skips the section - when there is no report.
+%>
+<% report = @report.respond_to?(:value) ? @report.value : @report %>
+<% if report.is_a?(Hash) && report.any? %>
+<% width = report.keys.map { |label| label.to_s.length }.max %>
+<% report.each do |label, value| %>
+* <%= label.to_s.ljust(width) %> : <%= raw value.to_s %>
+<% end %>
+<% end %>

@@ -1,0 +1,143 @@
+<%#
+  Every value the run recorded while it evaluated this entry's rule, one row per step, so the
+  reader can follow the rule down line by line with the figure each line came to. Sits under the
+  "What it is made of" tree, which answers a different question — how the result breaks into its
+  terms, and how each dependent entry was itself worked out. This table was the old Explanation
+  card's "Calculation Steps"; it is kept because the tree only shows what the result is made of,
+  never the lookups and settings along the way (an exchange rate, the ids a rule picked, a date).
+
+  Rows: AccountEntryExplanation#steps — named steps first in the order the rule assigns them.
+  The AI's "What this means" column and the "Walk me through it" panel appear once an AI
+  explanation with per-step meanings has been written (formula_walkthrough_controller.js).
+
+  Covered by ES4–ES6 in features/fund/entry_explanation.feature.
+
+  Locals: explanation, entry, ai_data
+%>
+<% steps = explanation.steps %>
+<% if steps.any? %>
+  <%
+    # The AI writes one meaning per expression; index them so each row can find its own.
+    meaning_by_expr = {}
+    if ai_data.is_a?(Hash) && ai_data["steps"].is_a?(Array)
+      ai_data["steps"].each { |s| meaning_by_expr[s["expression"]] = s["meaning"] if s.is_a?(Hash) }
+    end
+    has_meanings = meaning_by_expr.any?
+
+    # The walkthrough tells the story in order: the AI's summary, each step, its conclusion.
+    wt_steps = []
+    if has_meanings
+      wt_steps << { "type" => "summary", "expression" => "", "value" => "", "meaning" => ai_data["summary"].to_s } if ai_data["summary"].present?
+      steps.each do |key, val|
+        wt_steps << { "type" => "step", "expression" => key, "value" => explanation_step_value(val),
+                      "meaning" => meaning_by_expr[key].to_s }
+      end
+      wt_steps << { "type" => "conclusion", "expression" => "", "value" => "", "meaning" => ai_data["conclusion"].to_s } if ai_data["conclusion"].present?
+    end
+  %>
+  <div class="border-top mt-4 pt-3 explanation-steps"
+       data-controller="formula-walkthrough"
+       data-formula-walkthrough-steps-value="<%= wt_steps.to_json %>"
+       data-formula-walkthrough-formula-value="<%= explanation.formula.to_s %>"
+       data-formula-walkthrough-summary-value="<%= ai_data.is_a?(Hash) ? ai_data["summary"].to_s : "" %>"
+       data-formula-walkthrough-conclusion-value="<%= ai_data.is_a?(Hash) ? ai_data["conclusion"].to_s : "" %>">
+    <div class="d-flex align-items-center justify-content-between mb-2">
+      <span class="text-body-secondary small text-uppercase fw-semibold" style="letter-spacing:.06em;">
+        <i class="ti ti-list-numbers me-1"></i>Calculation steps
+      </span>
+      <%# The walkthrough panel is desktop-only, as the controller enforces. %>
+      <% if wt_steps.any? %>
+        <button type="button" class="btn btn-sm btn-outline-warning d-none d-lg-inline-flex"
+                data-action="click->formula-walkthrough#toggle">
+          <i class="ti ti-player-play me-1"></i>Walk me through it
+        </button>
+      <% end %>
+    </div>
+    <p class="text-body-secondary small mb-2">
+      Every value the run recorded while working out this rule — the named steps in the order the rule sets them, then the parts inside them.
+    </p>
+
+    <div style="display:flex;gap:20px;align-items:flex-start;">
+      <%# Left: the table scrolls on its own so a long rule does not push the page down. %>
+      <div style="flex:1;min-width:0;max-height:70vh;overflow-y:auto;">
+        <table class="table table-sm table-hover mb-0" id="explanation_steps">
+          <thead class="table-light" style="position:sticky;top:0;z-index:1;">
+            <tr>
+              <th class="fw-semibold py-2" style="width:2rem;">#</th>
+              <th class="fw-semibold py-2">Expression</th>
+              <th class="fw-semibold py-2 text-end" style="width:30%;">Value</th>
+              <% if has_meanings %>
+                <th class="fw-semibold py-2" style="width:35%;">What this means</th>
+              <% end %>
+            </tr>
+          </thead>
+          <tbody>
+            <% steps.each_with_index do |(key, val), i| %>
+              <tr data-step-expr="<%= key %>">
+                <td class="text-body-secondary align-top pt-2"><%= i + 1 %></td>
+                <td class="align-top pt-2"><code class="small" style="white-space:normal;word-break:break-word;"><%= key %></code></td>
+                <td class="fw-medium text-end align-top pt-2 figure" style="word-break:break-word;"><%= explanation_step_value(val) %></td>
+                <% if has_meanings %>
+                  <td class="text-body-secondary small align-top pt-2" style="line-height:1.5;"><%= meaning_by_expr[key] %></td>
+                <% end %>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+
+      <%# Right: the walkthrough panel, hidden until "Walk me through it" is pressed. %>
+      <% if wt_steps.any? %>
+        <div class="d-none border rounded-3 bg-body shadow-sm" style="width:420px;flex-shrink:0;"
+             data-formula-walkthrough-target="panel">
+          <%# Prev/Next live in the header so pressing them never shifts the layout. %>
+          <div class="border-bottom px-3 py-2">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <span class="fw-semibold"><i class="ti ti-player-play me-1 text-warning"></i>Walkthrough</span>
+              <div class="d-flex gap-2">
+                <button type="button" class="btn btn-sm btn-outline-secondary"
+                        data-action="click->formula-walkthrough#prev" data-formula-walkthrough-target="prevBtn">
+                  <i class="ti ti-chevron-left me-1"></i>Prev
+                </button>
+                <button type="button" class="btn btn-sm btn-warning"
+                        data-action="click->formula-walkthrough#next" data-formula-walkthrough-target="nextBtn">
+                  Next<i class="ti ti-chevron-right ms-1"></i>
+                </button>
+              </div>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <span class="text-body-secondary small">
+                Step <strong data-formula-walkthrough-target="stepNum">1</strong>
+                of <span data-formula-walkthrough-target="stepTotal"><%= wt_steps.length %></span>
+              </span>
+              <div class="progress flex-grow-1" style="height:4px;">
+                <div class="progress-bar bg-warning" data-formula-walkthrough-target="progressBar"
+                     role="progressbar" style="width:0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-3 d-flex flex-column gap-3">
+            <%# Expression and value are hidden for the summary and conclusion steps. %>
+            <div data-formula-walkthrough-target="expressionSection">
+              <p class="text-body-secondary text-uppercase fw-semibold mb-1" style="font-size:0.65rem;">Expression</p>
+              <code class="text-secondary" style="font-size:0.82rem;white-space:normal;word-break:break-word;line-height:1.5;"
+                    data-formula-walkthrough-target="expression"></code>
+            </div>
+            <div data-formula-walkthrough-target="valueSection">
+              <p class="text-body-secondary text-uppercase fw-semibold mb-1" style="font-size:0.65rem;">Value</p>
+              <span class="fw-bold fs-4 text-body" data-formula-walkthrough-target="value"></span>
+            </div>
+            <div class="bg-body-secondary border rounded p-3" style="min-height:6rem;">
+              <p class="text-body-secondary text-uppercase fw-semibold mb-2" style="font-size:0.65rem;">
+                <i class="ti ti-sparkles text-warning me-1"></i>
+                <span data-formula-walkthrough-target="meaningLabel">What this means</span>
+              </p>
+              <p class="mb-0 lh-lg" data-formula-walkthrough-target="meaning"></p>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+<% end %>

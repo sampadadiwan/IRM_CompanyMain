@@ -15,7 +15,7 @@
 <%# Capital call journey (step bar + what's needed now); nothing renders for calls without one %>
 <%= render "/capital_calls/journey", record: @capital_call, journey: @journey, instance: nil %>
 <%# Real-time: an evaluation that changes this call's journey reloads the panel above in place %>
-<%= turbo_stream_from @capital_call, :journey if @journey.present? %>
+<%= render "workflow_instances/journey_stream", record: @capital_call if @journey.present? %>
 <%= render "/capital_calls/show", capital_call: @capital_call %>
 
 <div id="capital_call_<%= @capital_call.id %>_actions"

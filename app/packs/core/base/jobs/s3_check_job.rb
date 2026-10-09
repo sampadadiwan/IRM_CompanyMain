@@ -26,7 +26,7 @@ class S3CheckJob < ApplicationJob
     if report[:failures].any?
       msg = "S3 replication check FAILED: #{report[:failures].join(' | ')}"
       Rails.logger.error msg
-      ExceptionNotifier.notify_exception(StandardError.new(msg), data: report.except(:failures))
+      ErrorReport.notify(StandardError.new(msg), job: self, **report.except(:failures))
     else
       Rails.logger.info { "✓ S3 replication check #{report[:status]}: #{report[:detail]}" }
     end

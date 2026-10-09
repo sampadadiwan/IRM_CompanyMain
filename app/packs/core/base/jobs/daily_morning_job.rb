@@ -51,7 +51,7 @@ class DailyMorningJob < ApplicationJob
       message = "Error in DailyMorningJob: #{e.message}"
       Rails.logger.error message
       Rails.logger.error e.backtrace.join("\n")
-      ExceptionNotifier.notify_exception(e, data: { message: })
+      ErrorReport.notify(e, job: self, message:)
     end
     # rubocop:enable Metrics/BlockLength
   end

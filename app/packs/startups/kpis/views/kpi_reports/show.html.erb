@@ -1,3 +1,10 @@
+<%# KPI report journey (step bar + what's needed now) for fund users; nothing renders without one or for
+    portco users. Worked examples H4, H9 — openspec/changes/kpi-report-journey/design.md#worked-examples %>
+<% if @journey.present? %>
+  <%= render "/kpi_reports/journey", record: @kpi_report, journey: @journey, instance: nil %>
+  <%# Real-time: an evaluation that changes this report's journey reloads the panel above in place (H9) %>
+  <%= render "workflow_instances/journey_stream", record: @kpi_report %>
+<% end %>
 <%= render FormCard.new(title: "Kpi Report #{@kpi_report.portfolio_company} : #{l(@kpi_report.as_of)}") do %>
 <table class="table table-bordered dataTable">
   <tr>
@@ -150,7 +157,25 @@
   <% if policy(@kpi_report).update? %>
     <%= button_to "Analyze", analyze_kpi_report_path(@kpi_report), class: "btn btn-outline-warning", data: {action: "click->confirm#popup", msg: "Analysis will be done using an LLM and will take time, so please be patient. Your data will be sent to an external LLM. Proceed?", turbo:false, method: :post} if current_user.entity.enable_ai_chat %>
 
-    <%= button_to "Send Notification", send_portco_notification_kpi_reports_path(portfolio_company_id: @kpi_report.portfolio_company_id), method: :post, class: "btn btn-outline-info", data: {action: "click->confirm#popup", msg: "Send a notification reminder to the Portfolio Company to complete this KPI report", method: :post, bs_toggle: "tooltip", bs_title: "Send a notification reminder to the Portfolio Company to complete this KPI report"} if policy(@kpi_report).send_portco_notification? && false  %>
+    <%# Send upload request: emails the portfolio company the magic link for THIS report (its id is sent, so no
+        other report is found or created). Fund side only (reopen?), shown while the request is still due — the negation of the journey's
+        "Send upload request" check — and disabled with the reason when the company has no approved portal user.
+        The journey panel's button clicks this one (WorkflowChecks::KpiReport::Support::SEND_REQUEST_BTN).
+        Worked examples H18, E19 — openspec/changes/kpi-report-journey/design.md#worked-examples %>
+    <% if policy(@kpi_report).send_portco_notification? && policy(@kpi_report).reopen? && @kpi_report.enable_portco_upload && @kpi_report.link_sent_at.nil? &&
+          WorkflowChecks::KpiReport::Support::PAST_LINK_SENT.exclude?(@kpi_report.status) %>
+      <%# Who the email really goes to: approved users subscribed to KPI notifications (SendPortcoNotification) %>
+      <% portal_users = @kpi_report.portfolio_company&.notification_users(@kpi_report, with_tag: "Kpi")&.size.to_i %>
+      <% if portal_users.positive? %>
+        <%= button_to "Send upload request",
+                      send_portco_notification_kpi_reports_path(portfolio_company_id: @kpi_report.portfolio_company_id, kpi_report_id: @kpi_report.id),
+                      method: :post, form_class: "d-inline", id: "kpi_report_send_request_btn", class: "btn btn-outline-info",
+                      data: { action: "click->confirm#popup", msg: send_request_action_summary(@kpi_report, portal_users), method: :post, turbo: false } %>
+      <% else %>
+        <button type="button" id="kpi_report_send_request_btn" class="btn btn-outline-info" disabled
+                title="<%= "#{@kpi_report.for_name} has no approved portal user for KPI requests — add one under Stakeholders first" %>">Send upload request</button>
+      <% end %>
+    <% end %>
 
 <%= link_to  t_common(:edit), edit_kpi_report_path(@kpi_report, signed_id: params[:signed_id]), {class: "btn btn-outline-primary"} %>
 
@@ -180,9 +205,30 @@
 
     <%= button_to t_common(:delete), @kpi_report, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  if policy(@kpi_report).destroy? %>
 
+    <%# Close report: approves every KPI still pending for the portfolio company and marks the report
+        reviewed. Shown once the report has KPIs (imported or entered) and isn't closed. The journey panel's
+        "Close report" button clicks this one (WorkflowChecks::KpiReport::Support::CLOSE_BTN).
+        Worked examples H5, E6 — openspec/changes/kpi-report-journey/design.md#worked-examples %>
+    <% if policy(@kpi_report).mark_reviewed? && !@kpi_report.status_reviewed? && @kpi_report.kpis.exists? %>
+      <%= button_to "Close report", mark_reviewed_kpi_report_path(@kpi_report), method: :patch, form_class: "d-inline",
+                    id: "kpi_report_close_btn", class: "btn btn-outline-success",
+                    data: { action: "click->confirm#popup", msg: close_report_action_summary(@kpi_report), method: :patch, turbo: false } %>
+    <% end %>
+
+    <%# Send completion email: only on a closed report whose journey template has that (optional) step,
+        until it has been sent. Visibility follows the report's data, not the journey's state.
+        Worked examples H8, E10, E11 — openspec/changes/kpi-report-journey/design.md#worked-examples %>
+    <% if policy(@kpi_report).send_completion_email? && @kpi_report.status_reviewed? && @kpi_report.completion_notified_at.nil? &&
+          @kpi_report.workflow_template&.workflow_steps&.exists?(check_key: KpiReportCompletionEmail::CHECK_KEY) %>
+      <%= button_to "Send completion email", send_completion_email_kpi_report_path(@kpi_report), method: :patch, form_class: "d-inline",
+                    id: "kpi_report_send_completion_btn", class: "btn btn-outline-primary",
+                    data: { action: "click->confirm#popup", msg: completion_email_action_summary(@kpi_report), method: :patch, turbo: false } %>
+    <% end %>
+
     <% if policy(@kpi_report).mark_reviewed? && @kpi_report.status_submitted? %>
       <%= link_to "View Including Staged",
-            kpi_reports_path(portfolio_company_id: @kpi_report.portfolio_company_id, view_unapproved: true, grid_view: true),
+            kpi_reports_path(portfolio_company_id: @kpi_report.portfolio_company_id, view_unapproved: true, grid_view: true,
+                             journey_report_id: @kpi_report.id),
             class: "btn btn-outline-success" %>
     <% end %>
 

@@ -18,7 +18,7 @@
   <% if @journey.present? %>
     <%= render "/investor_kycs/journey", record: @investor_kyc, journey: @journey, instance: nil %>
     <%# Real-time: an evaluation that changes this KYC's journey reloads the panel above in place (E15) %>
-    <%= turbo_stream_from @investor_kyc, :journey %>
+    <%= render "workflow_instances/journey_stream", record: @investor_kyc %>
   <% end %>
   <!-- Show the main KYC details -->
   <%= render "investor_kycs/show", investor_kyc: @investor_kyc, ckyc_data: ckyc_data, kra_data: kra_data %>

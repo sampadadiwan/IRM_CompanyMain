@@ -19,11 +19,44 @@ class WorkflowAutoReminderJob < ApplicationJob
   # Read from the live template step first, so fixing an owner in the template fixes in-flight
   # journeys (design Decision 18).
   def self.owner_for(instance, step_data)
-    live_step = instance.workflow_template&.workflow_steps&.find_by(position: step_data[:position].to_i)
-    owner_id = live_step ? live_step.owner_user_id : step_data[:owner_user_id]
-    owner = owner_id ? User.find_by(id: owner_id) : instance.workflowable.workflow_default_owner
-    owner if owner&.active
+    owners_for(instance, step_data).first
   end
+
+  # Everyone to remind (or email) for a step, active users only, resolved level by level:
+  #   1. the record's override owners (e.g. a portfolio company's "Managed by");
+  #   2. the step's named owner — or, with use: :actors, the step's actors (live template first);
+  #   3. the record's default owners (the creator by default; a type may give several).
+  # The first level that still has someone active after filtering wins, so an inactive manager falls
+  # through to the step owner rather than leaving nobody. For a record type that overrides nothing,
+  # this returns exactly what owner_for used to: [named owner] or [creator].
+  # Worked examples H7, E7, E8, E9, E17, X3 — openspec/changes/kpi-report-journey/design.md#worked-examples
+  def self.owners_for(instance, step_data, use: :owner)
+    record = instance.workflowable
+    levels = [
+      -> { record.workflow_override_owners },
+      -> { step_named_users(instance, step_data, use) },
+      -> { record.workflow_default_owners }
+    ]
+    levels.each do |level|
+      active = Array(level.call).compact.select(&:active).uniq
+      return active if active.any?
+    end
+    []
+  end
+
+  # The step's own people, read from the live template step so fixing the template fixes in-flight
+  # journeys (falls back to the snapshot when the step was removed from the template)
+  def self.step_named_users(instance, step_data, use)
+    live_step = instance.workflow_template&.workflow_steps&.find_by(position: step_data[:position].to_i)
+    if use == :actors
+      ids = live_step ? live_step.actor_user_ids : Array(step_data[:actor_ids])
+      return User.where(id: ids).to_a
+    end
+
+    owner_id = live_step ? live_step.owner_user_id : step_data[:owner_user_id]
+    owner_id ? [User.find_by(id: owner_id)].compact : []
+  end
+  private_class_method :step_named_users
 
   private
 
@@ -97,14 +130,17 @@ class WorkflowAutoReminderJob < ApplicationJob
     reference_time = [last_reminder_at, instance.current_step_since].compact.max || instance.updated_at
     return unless reference_time < interval.days.ago
 
-    owner = self.class.owner_for(instance, step_data)
-    return unless owner # the panel shows "Owner unavailable — update the journey template"
+    owners = self.class.owners_for(instance, step_data)
+    return if owners.empty? # the panel shows "Owner unavailable — update the journey template"
 
+    # One reminder per owner (a KPI report may have several: everyone tagged Kpi), one history row each
     message = instance.step_result(position)&.dig("message")
-    WorkflowNotifier.with(record: instance, entity_id: instance.entity_id, email_method: :owner_reminder,
-                          step_position: position, message:).deliver_later(owner)
-    WorkflowStateChange.create!(workflow_instance: instance, step_position: position, actor: owner,
-                                to_state: "owner_reminded", note: message, channel: :auto_reminder)
+    owners.each do |owner|
+      WorkflowNotifier.with(record: instance, entity_id: instance.entity_id, email_method: :owner_reminder,
+                            step_position: position, message:).deliver_later(owner)
+      WorkflowStateChange.create!(workflow_instance: instance, step_position: position, actor: owner,
+                                  to_state: "owner_reminded", note: message, channel: :auto_reminder)
+    end
   end
 
   # Returns the effective reminder interval for this step in days, or nil to skip.
