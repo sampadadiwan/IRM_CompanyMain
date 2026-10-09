@@ -177,17 +177,8 @@
       </div>
 
       <div class="form-check mt-2">
-        <%= form.radio_button :acceptance_method, "esign", class: "form-check-input",
-            disabled: !entity_has_esign %>
-        <%= form.label :acceptance_method_esign, "Electronic signature", class: "form-check-label" %>
-        <% if entity_has_esign %>
-          <div class="text-muted small ms-4">LP signs the NDA via Zoho Sign</div>
-        <% else %>
-          <div class="text-muted small ms-4 text-warning">
-            <i class="ti ti-alert-triangle me-1"></i>
-            Configure an e-sign provider in Entity Settings to enable this option
-          </div>
-        <% end %>
+        <%= form.radio_button :acceptance_method, "esign", class: "form-check-input", disabled: true %>
+        <%= form.label :acceptance_method_esign, "Electronic signature", class: "form-check-label text-muted" %>
       </div>
     </div>
 
