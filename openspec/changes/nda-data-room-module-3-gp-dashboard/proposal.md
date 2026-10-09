@@ -16,7 +16,7 @@ GPs can now configure NDAs on Data Room folders (Module 1) and LPs are gated fro
 
 - The existing disabled **"Status" tab** in the NDA Settings modal is enabled. It shows a **summary view**: counters for each status (Accepted, Pending, Declined, Exempt) and a simple HTML table of investors with their current NDA status.
 - A **"View Full Dashboard"** link in the modal opens a **dedicated full-page dashboard** with an AG Grid table showing all investors who have access to the folder, their NDA status, who signed, when, NDA version, and validity. The grid supports filtering by status, searching by investor name, and row grouping (investor-level rows expandable to individual users).
-- The GP can **mark entire investors (stakeholders) as exempt** from NDA at the time of granting access. When the `exempt_from_nda` checkbox is checked on InvestorAccess, all users under that investor bypass the NDA gate. Exemption status appears as "Exempt" on the dashboard.
+- The GP can **mark entire investors (stakeholders) as exempt** from NDA via a toggle on the **Investor show page**. Toggling "Exempt from NDA" bulk-updates all InvestorAccess records for that investor, so all users under that investor bypass the NDA gate. Exemption status appears as "Exempt" on the dashboard. The toggle does not appear on individual user InvestorAccess forms — it is an investor-level decision.
 - The GP can **export** the NDA status records as an XLSX file from the dedicated dashboard.
 - The GP can **send bulk reminders** to NDA-tagged users of pending investors (investors whose stakeholder has not yet accepted or declined).
 - The NDA gate in the folder view is updated to **check stakeholder exemptions before stakeholder-level acceptance** — an exempt investor's users always pass, even if their investor hasn't signed.
@@ -96,18 +96,20 @@ flowchart TD
 - The grid supports filtering by status and searching by investor/user name
 - The page title shows the folder name and NDA config context
 
-### US-3: GP exempts an investor from NDA at access time
+### US-3: GP exempts an investor from NDA
 
 **As a** GP/admin,
-**I want** to exempt an entire investor (stakeholder) from the NDA requirement when granting them access,
+**I want** to exempt an entire investor (stakeholder) from the NDA requirement via a toggle on the Investor show page,
 **So that** trusted investors (legal counsel firms, co-investors with existing NDAs, internal advisory firms) can access the folder without signing.
 
 **Acceptance criteria:**
-- On the InvestorAccess form, a checkbox `exempt_from_nda` is available when creating or editing access
-- When checked, all users under that investor bypass the NDA gate entirely — they see folder contents immediately
+- On the Investor show page (stakeholder info card), a toggle "Exempt from NDA" is available
+- Toggling it on bulk-updates all InvestorAccess records for that investor with `exempt_from_nda = true`
+- When exempt, all users under that investor bypass the NDA gate entirely — they see folder contents immediately
 - The investor's status appears as "Exempt" on the NDA status dashboard
 - The exemption is independent of the stakeholder-level acceptance — even if no one from the investor has signed, all their users get through
-- To remove an exemption, the GP deletes the InvestorAccess and re-adds it without the `exempt_from_nda` flag checked
+- To remove an exemption, the GP toggles it off on the same Investor page — all InvestorAccess records are set to `exempt_from_nda = false`
+- The `exempt_from_nda` checkbox does **not** appear on individual user InvestorAccess forms
 - No separate exemption management UI on the dashboard — the dashboard displays exemption status read-only
 
 ### US-4: GP exports NDA acceptance records
@@ -144,8 +146,8 @@ flowchart TD
 **Acceptance criteria:**
 - When I navigate to the NDA-protected folder, I see folder contents immediately — no NDA screen
 - This works even if no one from my investor has signed the NDA yet
-- Exemption is at the investor level — if my investor's InvestorAccess has `exempt_from_nda` checked, all users under that investor bypass the gate
-- If the GP removes the exemption (deletes InvestorAccess and re-adds without the flag), I am subject to the normal NDA gate on my next visit
+- Exemption is at the investor level — if the GP has toggled "Exempt from NDA" on the Investor page, all users under that investor bypass the gate
+- If the GP toggles the exemption off, I am subject to the normal NDA gate on my next visit
 
 ---
 
@@ -231,9 +233,9 @@ flowchart TD
 
 | Field | Rule | Default |
 |---|---|---|
-| InvestorAccess.exempt_from_nda | Boolean, set at creation time via checkbox on InvestorAccess form | false |
-| InvestorAccess.exempt_from_nda scope | Applies to the specific InvestorAccess record — all users under that investor inherit the exemption | — |
-| InvestorAccess.exempt_from_nda removal | To remove exemption, GP deletes the InvestorAccess and re-adds without the flag | — |
+| InvestorAccess.exempt_from_nda | Boolean, bulk-set via toggle on Investor show page | false |
+| InvestorAccess.exempt_from_nda scope | Toggle bulk-updates all InvestorAccess records for the investor under the entity — all users under that investor inherit the exemption | — |
+| InvestorAccess.exempt_from_nda removal | GP toggles "Exempt from NDA" off on the Investor page — all records set to false | — |
 
 ---
 
@@ -245,8 +247,8 @@ flowchart TD
 | GP opens Status tab on folder without NDA | Status tab not visible (only Settings tab shown) |
 | GP opens Status tab on inherited NDA folder | Status shows investors for the effective NDA config (may be parent's config) |
 | GP clicks "View Full Dashboard" | Navigates to dedicated dashboard page for this NDA config |
-| GP creates InvestorAccess with exempt_from_nda checked | Investor's status shows as "Exempt" on dashboard; all users under that investor bypass the NDA gate |
-| GP deletes InvestorAccess and re-adds without exempt_from_nda | Investor's status reverts to their stakeholder's status (Accepted/Pending/Declined); all users are subject to the NDA gate again |
+| GP toggles "Exempt from NDA" on for an investor | All InvestorAccess records for that investor are set to exempt_from_nda=true. Investor's status shows as "Exempt" on dashboard; all users under that investor bypass the NDA gate |
+| GP toggles "Exempt from NDA" off for an investor | All InvestorAccess records for that investor are set to exempt_from_nda=false. Investor's status reverts to their stakeholder's status (Accepted/Pending/Declined); all users are subject to the NDA gate again |
 | GP clicks "Send Reminders" | Confirmation dialog → reminders sent to NDA-tagged users of Pending investors → success message |
 | GP clicks "Send Reminders" with no pending investors | Button disabled or message "No pending investors to remind" |
 | GP clicks "Export" | XLSX file downloads with all investor + user NDA status records |
@@ -265,8 +267,8 @@ flowchart TD
 | 1 | Where does the dashboard live? | Two views: summary in the NDA modal Status tab, full dashboard on a dedicated page |
 | 2 | What AG Grid is used in the modal? | No AG Grid in modal — simple HTML table. AG Grid on the dedicated page only. |
 | 3 | Dashboard rows: user or investor level? | Investor-level rows with expandable user detail (AG Grid row grouping) |
-| 4 | Exemptions: investor or user level? | Stakeholder-level. A boolean on InvestorAccess, set at access grant time. All users under an exempt investor bypass the NDA gate. |
-| 5 | Where is exemption stored? | Boolean `exempt_from_nda` on InvestorAccess. Set at creation time. Not on NdaAcceptance (different concept). |
+| 4 | Exemptions: investor or user level? | Stakeholder-level. A boolean on InvestorAccess, toggled from the Investor show page (bulk-updates all records for that investor). All users under an exempt investor bypass the NDA gate. |
+| 5 | Where is exemption stored? | Boolean `exempt_from_nda` on InvestorAccess, bulk-managed via toggle on Investor page. Not on individual InvestorAccess forms. Not on NdaAcceptance (different concept). |
 | 6 | Gate order with exemptions | GP bypass → stakeholder exemption check (InvestorAccess.exempt_from_nda) → stakeholder acceptance check → redirect to NDA screen |
 | 7 | Who receives reminders? | NDA-tagged users of investors with "Pending" status. Consistent with Module 2's signatory designation model. |
 | 8 | Modal size | Stays modal-lg — summary view is simple HTML, fits comfortably |
@@ -293,7 +295,8 @@ flowchart TD
 - **NDA Settings modal** — Status tab enabled, loads investor status data via a new controller action
 - **Folder Documents page** — NDA gate updated to check stakeholder exemptions (InvestorAccess.exempt_from_nda) before stakeholder acceptance
 - **New dedicated page** — Route, controller, views, AG Grid JSON endpoint, XLSX export template
-- **Modified table** — `investor_accesses` gains `exempt_from_nda` boolean for stakeholder-level exemptions
+- **Modified table** — `investor_accesses` gains `exempt_from_nda` boolean for stakeholder-level exemptions (bulk-set from Investor page toggle, not per-user InvestorAccess form)
+- **Modified page** — Investor show page gains "Exempt from NDA" toggle on the stakeholder info card
 - **Notifications** — New NDA reminder notifier and mailer for bulk reminders
 - **AccessRight queries** — Dashboard resolves the investor universe from folder access rights (existing model, no changes to AccessRight itself)
 - **InvestorAccess queries** — Dashboard shows NDA tag and reads `exempt_from_nda` from InvestorAccess (read-only display); reminders target NDA-tagged users
@@ -315,8 +318,8 @@ flowchart TD
 | Question | Answer |
 |---|---|
 | Who can see the NDA status dashboard? | Only GP employees (company_admin / employees) of the entity that owns the folder. LPs and other-entity users cannot access it. |
-| Can the GP exempt an entire investor at once? | Yes — exemption is per-investor (stakeholder), not per-user. The GP checks the `exempt_from_nda` checkbox when granting InvestorAccess. All users under that investor bypass the NDA gate. |
-| What happens if an exempt investor's access to the folder is removed? | Deleting the InvestorAccess removes both the access and the exemption (since `exempt_from_nda` lives on InvestorAccess). If the GP re-adds the InvestorAccess, they choose whether to check `exempt_from_nda` again. |
+| Can the GP exempt an entire investor at once? | Yes — exemption is per-investor (stakeholder), not per-user. The GP toggles "Exempt from NDA" on the Investor show page. All users under that investor bypass the NDA gate. |
+| What happens if an exempt investor's access to the folder is removed? | Deleting the InvestorAccess removes both the access and the exemption flag on that record (since `exempt_from_nda` lives on InvestorAccess). If the GP re-adds the InvestorAccess, the new record defaults to `exempt_from_nda: false` — the GP would need to re-toggle exemption on the Investor page. |
 | Does the reminder go to all users of a pending investor? | No — only to NDA-tagged users (designated signatories). If no user of a pending investor is NDA-tagged, no reminder is sent for that investor. |
 | What about the "Expired" status from the product doc? | Deferred to Module 9 (NDA expiry). Module 3 shows four statuses: Accepted, Pending, Declined, Exempt. |
 | Can the GP revoke an accepted NDA from this dashboard? | Not in Module 3. Revocation is a future module. Module 3 displays exemption status (read-only) and sends reminders. |
@@ -332,4 +335,5 @@ flowchart TD
 - **Status computation is read-time, not stored** — Investor NDA status (Accepted/Pending/Declined) is derived dynamically from NdaAcceptance records and AccessRight queries. Do not cache or denormalize status into a column — it would go stale. The only stored state is the `exempt_from_nda` boolean on InvestorAccess.
 - **Keep modal summary lightweight** — The Status tab in the modal is a simple HTML partial loaded via Turbo Frame, not a full AG Grid. Keep it fast and simple.
 - **Exemption is a separate concept from acceptance** — `exempt_from_nda` on InvestorAccess is a GP configuration flag, NdaAcceptance is an LP action record. They are checked separately in the gate. Do not mix them.
+- **Exemption is investor-level, not per-user** — The `exempt_from_nda` boolean lives on InvestorAccess but is managed from the Investor show page as a bulk toggle. The checkbox must NOT appear on individual InvestorAccess forms — that would make it a per-user setting.
 - **Investor universe from AccessRight** — The dashboard must resolve which investors have folder access via AccessRight (both direct investor_id and category expansion). This is an existing pattern — reuse `access_right.investors` rather than building new queries.

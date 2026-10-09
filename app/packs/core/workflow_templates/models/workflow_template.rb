@@ -14,7 +14,7 @@ class WorkflowTemplate < ApplicationRecord
   # (KPI report review) — the two use cases are distinguished by `category` in the
   # auto-assignment rule's conditions, not by a separate workflowable_type.
   # CapitalDistribution: capital-distribution-journey (Worked examples H2 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples)
-  WORKFLOWABLE_TYPE_OPTIONS = %w[Folder InvestorKyc CapitalCommitment CapitalCall CapitalDistribution Approval Investor].freeze
+  WORKFLOWABLE_TYPE_OPTIONS = %w[Folder InvestorKyc CapitalCommitment CapitalCall CapitalDistribution Approval Investor KpiReport].freeze
 
   # How far saved step positions are moved aside while they are being resequenced (see
   # park_step_positions) — comfortably beyond any real template's step count

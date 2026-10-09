@@ -33,7 +33,7 @@ step (J2.3 = journey 2, step 3) · **R** = Role sweep · **C** = Cross-cutting c
 | GP Admin account | fm1@ian.com / password — entity "Alpha Ventures", company_admin role |
 | GP Employee account | A second GP employee in Alpha Ventures (for role sweep) |
 | LP User account | A user under "Acme Capital" investor (e.g. alice@acme.com) with InvestorAccess to Alpha Ventures, approved, NDA-tagged |
-| Exempt investor InvestorAccess | An InvestorAccess record with exempt_from_nda=true for an investor (e.g. "Delta LP") used for exemption testing |
+| Exempt investor | An investor (e.g. "Delta LP") with exemption toggled on from the Investor show page (all InvestorAccess records have exempt_from_nda=true) for exemption testing |
 | Other-entity GP | A GP admin from a different entity (e.g. "Beta Corp") for isolation checks |
 | Second entity | "Beta Corp" with its own folder + NDA config for isolation |
 | Seed data — Folder | Create or use a Data Room folder "Fund Alpha Docs" under Alpha Ventures |
@@ -50,8 +50,8 @@ step (J2.3 = journey 2, step 3) · **R** = Role sweep · **C** = Cross-cutting c
 |---|---|---|---|---|---|---|---|
 | ☐ | H1 | GP views NDA status summary in modal | NDA enabled on folder. Acme=accepted, Beta=pending, Gamma=declined. No exempt InvestorAccess records. | 1. Log in as GP Admin (fm1@ian.com) 2. Navigate to Data Room → "Fund Alpha Docs" 3. Open NDA Settings modal 4. Click the "Status" tab | Counters show: Accepted: 1, Pending: 1, Declined: 1, Exempt: 0. Table shows 3 investor rows: Acme Capital = Accepted, Beta Holdings = Pending, Gamma Fund = Declined. "View Full Dashboard" link visible at bottom. | | |
 | ☐ | H2 | GP opens dedicated dashboard | Same as H1 | 1. From the Status tab in the modal, click "View Full Dashboard" | Dedicated page opens with AG Grid table. 3 investor rows visible. Click to expand Acme Capital → 5 user rows appear: Alice (NDA) = Signer, Bob (NDA) = —, Carol = —, Dave = —, Eve = —. | | |
-| ☐ | H3 | GP creates InvestorAccess with exemption | Dashboard open. No exempt InvestorAccess for the target investor. | 1. Go to Investor > Add Stakeholder User 2. Fill email, check "Exempt from NDA" checkbox 3. Save | InvestorAccess created with exempt_from_nda=true. Dashboard shows investor status = "Exempt". | | |
-| ☐ | H4 | GP removes exemption by re-adding InvestorAccess | An InvestorAccess with exempt_from_nda=true exists (from H3). | 1. Delete the exempt InvestorAccess 2. Re-add the stakeholder without checking "Exempt from NDA" | Investor status reverts to Pending/Accepted/Declined (based on NDA acceptance state). | | |
+| ☐ | H3 | GP exempts investor from NDA via Investor page | Dashboard open. Investor "Delta LP" exists with InvestorAccess records, not yet exempt. | 1. Navigate to Stakeholders → "Delta LP" Investor page 2. Toggle "Exempt from NDA" on in the stakeholder info card 3. Observe flash/confirmation | All InvestorAccess records for Delta LP now have exempt_from_nda=true. Dashboard shows Delta LP status = "Exempt". | | |
+| ☐ | H4 | GP removes exemption via Investor page | Delta LP is exempt (from H3). | 1. Navigate to Stakeholders → "Delta LP" Investor page 2. Toggle "Exempt from NDA" off | All InvestorAccess records for Delta LP now have exempt_from_nda=false. Investor status reverts to Pending/Accepted/Declined (based on NDA acceptance state). | | |
 | ☐ | H5 | GP exports NDA status | Dashboard open with all data. | 1. Click "Export" button on the dedicated dashboard | An XLSX file downloads. Open it and verify it contains all investors and users with columns: Investor Name, User Name, Email, Status, NDA Version, Signed Date, Valid Until. | | |
 
 ---
@@ -60,13 +60,13 @@ step (J2.3 = journey 2, step 3) · **R** = Role sweep · **C** = Cross-cutting c
 
 | ☐ | ID | What to check | Preconditions | Steps | Expected result | Pass / Fail | Notes |
 |---|---|---|---|---|---|---|---|
-| ☐ | E1 | Exempt investor accesses folder before stakeholder signs | Investor has InvestorAccess with exempt_from_nda=true. Investor has NOT accepted NDA (remove acceptance or use a fresh investor with no acceptance). | 1. Log in as a user of that investor 2. Navigate to Data Room → "Fund Alpha Docs" | Folder contents are shown immediately — no NDA acceptance screen. | | |
-| ☐ | E2 | Exemption removed, stakeholder not accepted | Exempt InvestorAccess deleted, re-added without exempt flag. Investor has NOT accepted NDA. | 1. As GP, delete the exempt InvestorAccess and re-add without exempt_from_nda 2. Log in as a user of that investor 3. Navigate to Data Room → "Fund Alpha Docs" | User sees the NDA acceptance screen (redirected to sign NDA). | | |
+| ☐ | E1 | Exempt investor accesses folder before stakeholder signs | Investor has exemption toggled on (all InvestorAccess records have exempt_from_nda=true). Investor has NOT accepted NDA (remove acceptance or use a fresh investor with no acceptance). | 1. Log in as a user of that investor 2. Navigate to Data Room → "Fund Alpha Docs" | Folder contents are shown immediately — no NDA acceptance screen. | | |
+| ☐ | E2 | Exemption removed, stakeholder not accepted | GP toggled exemption off for the investor. Investor has NOT accepted NDA. | 1. As GP, toggle "Exempt from NDA" off on the Investor page 2. Log in as a user of that investor 3. Navigate to Data Room → "Fund Alpha Docs" | User sees the NDA acceptance screen (redirected to sign NDA). | | |
 | ☐ | E3 | Category-based access right expands | Folder has an AccessRight with category "LP" (not specific investors). Multiple LP investors in the entity. | 1. Log in as GP Admin 2. Open the NDA status dashboard for the folder | All LP-category investors in Alpha Ventures appear in the dashboard, not just individually assigned ones. | | |
 | ☐ | E4 | Investor removed from access rights | Acme Capital has access to folder. Dashboard shows Acme. | 1. Remove Acme Capital's access right from the folder 2. Reload the NDA status dashboard | Acme Capital no longer appears in the dashboard. | | |
 | ☐ | E9 | Status tab hidden for folder without NDA | A folder that does NOT have an NDA config enabled. | 1. Open NDA Settings modal for that folder | Only the Settings tab is visible. The Status tab is not shown. | | |
 | ☐ | E10 | Inherited NDA status | A child folder inherits NDA from its parent folder. The child has its own access rights. | 1. Open NDA Settings modal on the child folder 2. Click Status tab | Status tab shows investor statuses for the parent's NDA config. The investor list comes from the child folder's access rights (may differ from parent). | | |
-| ☐ | E11 | Investor fully exempt | Investor has InvestorAccess with exempt_from_nda=true. | 1. Open the dashboard | Investor-level status = "Exempt". No need for multiple users to be individually exempted. | | |
+| ☐ | E11 | Investor fully exempt | Investor has exemption toggled on from Investor page (all InvestorAccess records have exempt_from_nda=true). | 1. Open the dashboard | Investor-level status = "Exempt". All users under the investor are exempt — no per-user exemption needed. | | |
 | ☐ | E12 | NDA Settings hidden on Data Room root | GP Admin logged in. | 1. Navigate to Data Room root folder 2. Open Actions dropdown | No "NDA Settings" option visible in the dropdown. | | |
 
 ---

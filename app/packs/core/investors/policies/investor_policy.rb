@@ -116,6 +116,12 @@ class InvestorPolicy < ApplicationPolicy
     update?
   end
 
+  # @return [Boolean] whether the user can toggle NDA exemption for this investor.
+  #   Same permission as update — GP employees with :investor_update.
+  def toggle_nda_exemption?
+    update?
+  end
+
   # Permission to delete an investor. Requires :investor_destroy permission.
   def destroy?
     specific_permissions?(:investor_destroy)

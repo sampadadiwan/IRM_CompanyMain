@@ -103,10 +103,7 @@ Feature: Portco KPI Self-Reporting Workflow
     Given a KPI report shell exists for "TestStartup" as of "2025-03-31" with status "submitted"
     And I am logged in as the portco user
     When I open the KPI report for "TestStartup" as of "2025-03-31"
-    And I go to the "Additional Details" step of the KPI report wizard
-    Then I should see "Report Already Submitted"
-    And I should not see a "Save Draft" button
-    And I should not see a "Submit Report" button
+    Then I should see the KPIs submitted page instead of the wizard
 
   # ─────────────────────────────────────────────────────────
   # 8. Bulk send skips already-submitted portcos
@@ -297,10 +294,7 @@ Feature: Portco KPI Self-Reporting Workflow
   Scenario: Opening a submitted report via magic link shows the locked state
     Given a KPI report shell exists for "TestStartup" as of "2025-03-31" with status "submitted"
     When I open the KPI report edit page as the portco user via a valid signed link
-    And I go to the "Additional Details" step of the KPI report wizard
-    Then I should see "Report Already Submitted"
-    And I should not see a "Submit Report" button
-    And I should not see a "Save Draft" button
+    Then I should see the KPIs submitted page instead of the wizard
 
   # ─────────────────────────────────────────────────────────
   # 22. Double-submit guard — no second fund notification (Manual QA 6.2)
@@ -434,7 +428,6 @@ Feature: Portco KPI Self-Reporting Workflow
     Given a KPI report shell exists for "TestStartup" as of "2025-03-31" with status "submitted"
     And I am logged in as the portco user
     When I open the KPI report for "TestStartup" as of "2025-03-31"
-    And I go to the "Additional Details" step of the KPI report wizard
     Then the notes field is not editable
 
   # ─────────────────────────────────────────────────────────
@@ -637,3 +630,37 @@ Feature: Portco KPI Self-Reporting Workflow
     Then I should see "Download KPI template"
     And the generated KPI template for the report has header "Jan-Mar 2025" and rows "Revenue, EBITDA"
     And validating the generated template reports the requested period as present but blank
+
+  # ─────────────────────────────────────────────────────────
+  # 50. After submitting, the portco sees a confirmation — not the wizard's "Let's get started" — on the same
+  #     link, until the fund reopens the report
+  # ─────────────────────────────────────────────────────────
+  @kpi_workflow @kpi_locked @kpi_magic_link
+  Scenario: After submitting, the portco's link shows KPIs submitted until the fund reopens the report
+    Given a KPI report shell exists for "TestStartup" as of "2025-03-31" with status "link_sent"
+    And the KPI report has a valid KPIs workbook attached
+    When I open the KPI report edit page as the portco user via a valid signed link
+    And I go to the "Upload & Validate KPIs" step of the KPI report wizard
+    And I acknowledge all KPI warnings
+    And I go to the "Additional Details" step of the KPI report wizard
+    And I click "Submit Report" and confirm the dialog
+    Then I should see the KPIs submitted page instead of the wizard
+    And the KPIs submitted page shows the import finished
+    When I open the KPI report edit page as the portco user via a valid signed link
+    Then I should see the KPIs submitted page instead of the wizard
+    When the fund reopens the KPI report
+    And I open the KPI report edit page as the portco user via a valid signed link
+    Then I should see "Let's get started"
+
+  # ─────────────────────────────────────────────────────────
+  # 51. The staged review has no empty KPIs chart (the chart plots approved values only)
+  # ─────────────────────────────────────────────────────────
+  @kpi_workflow @kpi_reviewed
+  Scenario: The grid's KPIs chart is hidden while reviewing staged values and shown otherwise
+    Given a KPI report shell exists for "TestStartup" as of "2025-03-31" with status "submitted"
+    And the KPI report has an unapproved KPI
+    And I am logged in as the fund admin
+    When I open the KPI grid for "TestStartup" including staged values
+    Then the grid shows no KPIs chart
+    When I open the KPI grid for "TestStartup"
+    Then the grid shows the KPIs chart

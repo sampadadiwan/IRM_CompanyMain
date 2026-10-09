@@ -85,32 +85,39 @@ The system SHALL derive the list of investors shown on the dashboard from the fo
 - **WHEN** an investor's access right to the folder is deleted
 - **THEN** that investor no longer appears on the dashboard (status is computed dynamically)
 
-### Requirement: Stakeholder-level NDA exemption via InvestorAccess
+### Requirement: Stakeholder-level NDA exemption via Investor page toggle
 
-The system SHALL allow a GP to mark an investor as exempt from NDA by checking `exempt_from_nda` on InvestorAccess when granting or editing access.
+The system SHALL allow a GP to mark an investor as exempt from NDA via a toggle on the Investor show page, which bulk-updates all InvestorAccess records for that investor.
 
-#### Scenario: GP creates InvestorAccess with exemption
+#### Scenario: GP toggles exemption on for an investor
 
-- **WHEN** a GP creates or edits an InvestorAccess record and checks the `exempt_from_nda` checkbox
-- **THEN** the InvestorAccess is saved with `exempt_from_nda = true`
+- **WHEN** a GP navigates to the Investor show page and toggles "Exempt from NDA" on
+- **THEN** all InvestorAccess records for that investor under the entity are set to `exempt_from_nda = true`
 - **AND** the investor's status on the NDA dashboard shows "Exempt"
 
-#### Scenario: GP removes exemption by re-adding InvestorAccess
+#### Scenario: GP toggles exemption off for an investor
 
-- **WHEN** a GP deletes an InvestorAccess that had `exempt_from_nda = true` and re-adds it without the exempt flag
-- **THEN** the investor's status on the dashboard reverts to their NDA acceptance status (Accepted, Pending, or Declined)
+- **WHEN** a GP navigates to the Investor show page and toggles "Exempt from NDA" off
+- **THEN** all InvestorAccess records for that investor under the entity are set to `exempt_from_nda = false`
+- **AND** the investor's status on the dashboard reverts to their NDA acceptance status (Accepted, Pending, or Declined)
 
 #### Scenario: Exemption is a simple boolean
 
 - **WHEN** `exempt_from_nda` is set on InvestorAccess
 - **THEN** there is no reason field; it is a boolean flag only
 
+#### Scenario: Exemption toggle is not on per-user InvestorAccess form
+
+- **WHEN** a GP creates or edits an individual InvestorAccess record
+- **THEN** there is no `exempt_from_nda` checkbox on the form
+- **AND** exemption is managed only from the Investor show page toggle
+
 #### Scenario: Dashboard displays exemption read-only
 
 - **WHEN** a GP views the NDA status dashboard
 - **THEN** exempt investors are shown with status "Exempt"
 - **AND** there are no exempt/revoke action buttons on the dashboard itself
-- **AND** exemption is managed solely through the InvestorAccess form
+- **AND** exemption is managed solely through the Investor show page toggle
 
 ### Requirement: Exempt investor's users bypass NDA gate
 
@@ -138,9 +145,10 @@ The system SHALL check for stakeholder-level exemption via InvestorAccess before
 #### Scenario: Gate check order
 
 - **WHEN** a non-GP user navigates to an NDA-protected folder
-- **THEN** the gate checks `InvestorAccess.exists?(user_id:, entity_id:, approved: true, exempt_from_nda: true)`
-- **AND** the system checks in order: (1) GP bypass, (2) stakeholder exemption (InvestorAccess.exempt_from_nda), (3) stakeholder acceptance, (4) redirect to NDA screen
-- **AND** an exempt investor's user passes at step 2 without reaching step 3
+- **THEN** the gate resolves the user's investor_ids via `InvestorAccess.where(user_id:, entity_id:, approved: true).pluck(:investor_id)`
+- **AND** the gate checks `InvestorAccess.exists?(investor_id: investor_ids, entity_id:, approved: true, exempt_from_nda: true)`
+- **AND** the system checks in order: (1) GP bypass, (2) investor_ids lookup, (3) stakeholder exemption (by investor_id, not user_id), (4) stakeholder acceptance, (5) redirect to NDA screen
+- **AND** an exempt investor's user passes at step 3 without reaching step 4, even if the exempt flag is on a different user's InvestorAccess record for the same investor
 
 ### Requirement: GP can export NDA status records
 

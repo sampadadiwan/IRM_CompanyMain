@@ -25,7 +25,9 @@ resources :kpi_reports do
   put :restore_deleted, on: :member
   get :show_deleted, on: :collection
   patch "refresh_import", on: :member
-  patch "mark_reviewed", on: :member
+  patch "mark_reviewed", on: :member         # Close report (kpi-report-journey)
+  get "journey", on: :member                 # the journey panel alone, for real-time refresh
+  patch "send_completion_email", on: :member # the optional "Send completion email" journey step
   post "validate_upload", on: :member      # dry-run workbook validation for the pre-save panel (saved report)
   post "validate_upload", on: :collection  # same, for the New page (report context from form fields)
   patch "reopen", on: :member              # fund: reopen a submitted report and ask the portco to re-upload

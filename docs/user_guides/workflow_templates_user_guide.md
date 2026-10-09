@@ -104,16 +104,16 @@ A step can be completed in one of three ways, chosen with **Kind** at the top of
 | Kind | Completed when | Fields used |
 |---|---|---|
 | **Human** | the actors vote, as described above (the default; every existing step is human) | allowable states, quorum, on reject, actors |
-| **System** | its **Check** finds the data in place, e.g. "every call notice is approved". Nobody votes | Check, Skip when, Owner |
+| **System** | its **Check** finds the data in place, e.g. "every call notice is approved". Nobody votes | Check, Skip when, Owner (and **Actors** for the KPI report's *Send completion email* check — they are who it emails) |
 | **Acknowledge** | one person with edit rights on the record clicks **Mark reviewed** | Check, Skip when, Owner |
 
-A template that contains a system or acknowledge step is a **journey**: CapHive works out which step it is on from the record's data every time the record is opened, every 15 minutes, and when someone undoes earlier work, so it can move forwards and backwards on its own. The two capital call journeys are seeded for fund managers; see the [Capital Calls guide](capital_calls_user_guide).
+A template that contains a system or acknowledge step is a **journey**: CapHive works out which step it is on from the record's data every time the record is opened, every 15 minutes, and when someone undoes earlier work, so it can move forwards and backwards on its own. The two capital call journeys are seeded for fund managers; see the [Capital Calls guide](capital_calls_user_guide). The KPI report journey (**KPI Report Review**) is seeded from **Set up journeys** for funds that use KPIs; see [KPI Management & Workbook Upload](kpi_upload_user_guide#-tracking-a-report-the-journey-step-bar).
 
 | Field | Description |
 |---|---|
 | **Check** | The question that decides a system or acknowledge step. Only checks for the template's record type are offered. |
 | **Skip when** | A check that makes the step "not applicable" for a particular record, e.g. notices on an imported call. |
-| **Owner** | Who is reminded when a system or acknowledge step has waited longer than its reminder interval. Blank means the person who created the record. |
+| **Owner** | Who is reminded when a system or acknowledge step has waited longer than its reminder interval. Blank means the person who created the record — except on KPI reports, which have no recorded creator: there, blank means every employee tagged **Kpi**. On a KPI report journey the portfolio company's **Managed by** employee, when set, is reminded instead of this owner. |
 | **Unlocks buttons** | Button labels this step unlocks once done. In this release that only adds a warning to those buttons' confirmations. |
 | **Keep sign-off when moved back** | When earlier work is undone, votes and confirmations on later steps are reset unless this is ticked. |
 
@@ -185,6 +185,7 @@ Workflows can be run on any of the following record types:
 | **Capital Commitment** | Commitment records under a fund's investor list. |
 | **Capital Call** | Capital call records under a fund's Capital Calls tab. |
 | **Approval** | Approval items in the Approvals section. |
+| **KPI Report** | KPI reports of portfolio companies. Only requested reports get one (the reports an upload creates for other periods never do) — see [KPI Management & Workbook Upload](kpi_upload_user_guide#-tracking-a-report-the-journey-step-bar). |
 
 When creating a template you can leave "Applies to" blank to allow the template on any type, or restrict it to one type for stricter governance. A type-restricted template cannot be assigned to the wrong kind of object.
 

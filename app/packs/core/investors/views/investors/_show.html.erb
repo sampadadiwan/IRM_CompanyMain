@@ -75,6 +75,14 @@
         <%= @investor.sector %>
       </td>
     </tr>
+    <tr>
+      <td>
+        Managed by
+      </td>
+      <td id="investor_managed_by">
+        <%= @investor.managed_by&.full_name %>
+      </td>
+    </tr>
     <% end %>
 
 
@@ -86,6 +94,22 @@
         <%= @investor.city %>
       </td>
     </tr>
+
+    <%# NDA exemption toggle — investor-level control that bulk-updates all InvestorAccess
+         records for this investor. Only visible when entity has Data Rooms enabled and
+         the current user is a GP employee. Per product decision (2026-10-06). %>
+    <% if @investor.entity.permissions.enable_data_rooms? && current_user.curr_role_employee? %>
+      <% exempt = @investor.investor_accesses.where(entity_id: current_user.entity_id).exists?(exempt_from_nda: true) %>
+      <tr>
+        <td>Exempt from NDA</td>
+        <td>
+          <%= form_with url: toggle_nda_exemption_investor_path(@investor), method: :patch, data: { turbo: false } do |f| %>
+            <%= f.check_box :exempt_from_nda, checked: exempt, class: "form-check-input", onchange: "this.form.submit()" %>
+            <small class="text-muted ms-2"><%= exempt ? "All users bypass NDA" : "Users must accept NDA" %></small>
+          <% end %>
+        </td>
+      </tr>
+    <% end %>
 
     <%= display_custom_fields(@investor) if current_user %>
 

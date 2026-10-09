@@ -58,6 +58,11 @@ module AccountEntryAllocation
       account_entry.fund_formula_id = fund_formula.id
       account_entry.allocation_run_id = ctx[:allocation_run_id]
 
+      # Hand the save callbacks below the records we already hold, so they do not load them again
+      # per entry: setup_defaults reads capital_commitment, set_folio_amount reads fund,
+      # setup_rule_for reads fund_formula. Only the association caches change, never a column.
+      preload_associations(account_entry, capital_commitment:, fund_formula:)
+
       if account_entry.parent_id.nil? && account_entry.parent_id != parent&.id && parent.present?
         account_entry.parent_id = parent.id
         account_entry.parent_type = parent.class.name
@@ -66,12 +71,18 @@ module AccountEntryAllocation
 
       # Evaluate the formula, but not for Percentage rules, as thats precomputed See ComputeCustomPercentage
       unless fund_formula.rule_type == "Percentage"
-        account_entry.amount_cents = safe_eval(formula, bdg)
-        # Explanation data
-        account_entry.explanation = []
-        account_entry.explanation << formula
-        account_entry.explanation << fund_formula.description if fund_formula.description.present?
-        account_entry.explanation << fund_formula.parse_statement(bdg, external_formula: formula).to_json if explain && fund_formula.explain
+        explained = explain && fund_formula.explain
+        # The explanation re-evaluates the formula's sub-expressions, re-running the SELECTs the
+        # formula just ran for this entry. With the scratch connection's query cache on for this one
+        # entry they are answered from memory — same SQL, same unchanged scratch DB, same result.
+        with_scratch_query_cache(enabled: explained) do
+          account_entry.amount_cents = safe_eval(formula, bdg)
+          # Explanation data
+          account_entry.explanation = []
+          account_entry.explanation << formula
+          account_entry.explanation << fund_formula.description if fund_formula.description.present?
+          account_entry.explanation << fund_formula.parse_statement(bdg, external_formula: formula).to_json if explained
+        end
       end
 
       # Validate and simulate save
@@ -88,6 +99,27 @@ module AccountEntryAllocation
       # ctx[:instance_variables][@variable_name] = account_entry.amount_cents
 
       ctx[:bulk_insert_records] = bulk_records
+    end
+
+    # Seeds the belongs_to caches of a new entry with records the run already has in memory.
+    # Each is set only when it is exactly the record the foreign key points at, so a lookup
+    # through the association returns what it would have loaded.
+    def preload_associations(account_entry, capital_commitment:, fund_formula:)
+      # The commitment being allocated to (entries of AccountEntrySqlite point at CapitalCommitmentSqlite)
+      if capital_commitment && account_entry.capital_commitment_id == capital_commitment.id &&
+         account_entry.association(:capital_commitment).klass == capital_commitment.class
+        account_entry.association(:capital_commitment).target = capital_commitment
+      end
+
+      # The fund: commitments are loaded with includes(:fund), so the commitment already holds it
+      commitment_fund = capital_commitment&.association(:fund)&.target
+      if commitment_fund && account_entry.fund_id == commitment_fund.id &&
+         account_entry.association(:fund).klass == commitment_fund.class
+        account_entry.association(:fund).target = commitment_fund
+      end
+
+      # The formula being run
+      account_entry.association(:fund_formula).target = fund_formula if fund_formula && account_entry.fund_formula_id == fund_formula.id
     end
 
     def create_quarterly_account_entry(ctx, fund_formula:, account_entry:, capital_commitment:, bdg:, parent:, **)

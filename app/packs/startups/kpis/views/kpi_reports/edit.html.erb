@@ -1,1 +1,8 @@
-<%= render "form", kpi_report: @kpi_report %>
+<%# A portfolio company (magic link or its own login) on a submitted/reviewed report gets a confirmation page,
+    not the wizard — it can't change the report any more. Fund users always get the wizard. portco_actor? is
+    the controller's own rule (a magic link always counts as the portfolio company). %>
+<% if portco_actor? && (@kpi_report.status_submitted? || @kpi_report.status_reviewed?) %>
+  <%= render "kpi_reports/portco_submitted", kpi_report: @kpi_report %>
+<% else %>
+  <%= render "form", kpi_report: @kpi_report %>
+<% end %>

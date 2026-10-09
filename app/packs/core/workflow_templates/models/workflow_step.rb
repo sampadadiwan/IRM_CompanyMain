@@ -21,6 +21,11 @@ class WorkflowStep < ApplicationRecord
   ACKNOWLEDGE_STATES = "Reviewed".freeze
   DEFAULT_HUMAN_STATES = "Approved,Rejected,Needs Info".freeze
 
+  # Non-human checks whose step uses actors — as the people it emails, not as voters — so the step
+  # editor offers the Actors picker for them too.
+  # Worked examples H8 — openspec/changes/kpi-report-journey/design.md#worked-examples
+  ACTOR_CHECK_KEYS = %w[kpi_report.send_completion_email].freeze
+
   before_validation :default_states_for_kind
   before_validation :assign_next_position
 

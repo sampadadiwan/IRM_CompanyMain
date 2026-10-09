@@ -110,11 +110,21 @@ class InvestorKycAction < Trailblazer::Operation
     nil
   end
 
+  # A final submit is also an update, so it used to fire both this and the controller's own
+  # submission notification - two emails and two in-app notifications for one investor action.
+  # The submission is the more specific event, so it wins outright. ctx[:submitted] is set only
+  # by InvestorKycsController#update, so a create or an interim save still takes the generic path.
+  # Deliberately not folded into the investor_user && validate guard below: the submission
+  # notification never depended on who was acting, only on the status transition.
   def updated_notification(ctx, investor_kyc:, investor_user:, **)
     # reload the kyc in case it was changed from individual to non individual or visa versa
     validate = ctx[:validate].nil? ? ctx[:investor_user] : ctx[:validate]
     investor_kyc = InvestorKyc.find(investor_kyc.id)
-    investor_kyc.updated_notification if investor_user && validate
+    if ctx[:submitted]
+      investor_kyc.submitted_notification
+    elsif investor_user && validate
+      investor_kyc.updated_notification
+    end
     true
   end
 end

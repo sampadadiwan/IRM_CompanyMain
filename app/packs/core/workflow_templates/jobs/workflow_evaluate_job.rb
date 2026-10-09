@@ -21,7 +21,8 @@ class WorkflowEvaluateJob < ApplicationJob
       rescue StandardError => e
         # One bad journey must not stop the others
         Rails.logger.error("[WorkflowEvaluateJob] instance #{instance.id}: #{e.class} – #{e.message}")
-        ExceptionNotifier.notify_exception(e, data: { instance_id: instance.id, job: "WorkflowEvaluateJob" })
+        ErrorReport.notify(e, job: self, instance_id: instance.id, entity_id: instance.entity_id,
+                              record: "#{instance.workflowable_type}##{instance.workflowable_id}")
       end
     end
   end

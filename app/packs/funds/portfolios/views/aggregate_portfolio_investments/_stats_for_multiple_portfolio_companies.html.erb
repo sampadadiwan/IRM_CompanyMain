@@ -113,7 +113,7 @@
         cards_data = fields.blank? ? all_cards_data : all_cards_data.select { |card| fields.include?(card[:subtitle]) }
       rescue => e
         error = "Error fetching stats for multiple investors: #{e.message}"
-        ExceptionNotifier.notify_exception(e, data: { portfolio_company_ids: @investors.map(&:id), user_id: current_user&.id })
+        ErrorReport.notify(e, source: "aggregate_portfolio_investments/_stats_for_multiple_portfolio_companies", user: current_user, portfolio_company_ids: @investors.map(&:id))
       end
     %>
 

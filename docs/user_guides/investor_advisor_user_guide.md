@@ -14,9 +14,10 @@ This guide explains what an advisor is, how to set one up, and exactly what they
 2. [How Advisor Access Works](#how-advisor-access-works)
 3. [Setting Up an Advisor](#setting-up-an-advisor)
 4. [What an Advisor Can Do](#what-an-advisor-can-do)
-5. [What an Advisor Cannot Do](#what-an-advisor-cannot-do)
-6. [Frequently Asked Questions](#frequently-asked-questions)
-7. [Related Guides](#related-guides)
+5. [KYCs and KYC Emails for Advisors](#kycs-and-kyc-emails-for-advisors)
+6. [What an Advisor Cannot Do](#what-an-advisor-cannot-do)
+7. [Frequently Asked Questions](#frequently-asked-questions)
+8. [Related Guides](#related-guides)
 
 ---
 
@@ -82,7 +83,33 @@ Once switched into the client investor's persona, an advisor can — for the fun
 - **View permissioned funds** — dashboards, reports, and documents.
 - **Manage KYC** — view, and where permitted, update KYC details for their clients.
 - **Track investments** — follow commitments, capital calls, and distributions for their clients.
-- **Receive notifications** — get alerts about KYC updates and fund activity relevant to their clients.
+- **Receive notifications** — get alerts about fund activity relevant to their clients, and your KYC emails as described in [KYCs and KYC Emails for Advisors](#kycs-and-kyc-emails-for-advisors).
+
+---
+
+## KYCs and KYC Emails for Advisors
+
+An advisor sees your KYCs, and gets your **KYC Submitted**, **KYC Updated** and **Updates Requested** emails, under the same rule as your employees — but judged by their **advisor grant** on your organisation (Company menu → **Advisors** → the advisor → **Edit**), not by their own login. It does not matter which company they are switched into at the time: an advisor working in another client's account, or back in their own firm, still gets your KYC emails.
+
+An advisor sees a KYC, and gets its emails, when the grant has **Enable Kycs** on, its **Allowed Roles** include *employee* or *company_admin*, and at least one of these is true: the roles include *company_admin*; the grant has **Investor Kyc Read** or **Investor Kyc Update**; the advisor has access to a fund the KYC is committed to (the fund's **Access** tab → **Grant Access** → **Select Advisor**); or the KYC has no commitment yet.
+
+| Advisor grant set up with | KYC on a fund they can access | KYC on another fund | KYC with no commitment yet |
+|---|---|---|---|
+| **Allowed Roles** includes *company_admin*, **Enable Kycs** on | ✅ | ✅ | ✅ |
+| **Investor Kyc Read** or **Investor Kyc Update** on | ✅ | ✅ | ✅ |
+| Fund access only | ✅ | ❌ | ✅ |
+| **Enable Kycs** off on the grant | ❌ | ❌ | ❌ |
+| **Allowed Roles** without *employee* or *company_admin* | Only what the client relationship allows, as an investor would | | |
+
+✅ means the advisor sees the KYC on the list and its page, and gets its emails. The full rule, with the matching matrix for employees, is in [Who Can See a KYC and Get Its Emails](investor_kyc_user_guide#who-can-see-a-kyc-and-get-its-emails).
+
+```mermaid
+flowchart LR
+    G["Advisor grant on your organisation<br/>Enable Kycs · Allowed Roles · Investor Kyc toggles · fund Access"] --> R{"Same rule as<br/>your employees"}
+    S["Company the advisor is<br/>switched into right now"] -. ignored .-> R
+    R -- passes --> Y["Sees the KYC<br/>Gets the KYC emails"]
+    R -- fails --> N["No access, no KYC emails"]
+```
 
 ---
 
@@ -155,6 +182,12 @@ The **New Users** form on a stakeholder refuses anyone who already holds the Inv
 
 ### What happens when I …
 
+**Does an advisor get our KYC emails while switched into another company?**
+Yes. The **KYC Submitted**, **KYC Updated** and **Updates Requested** emails follow the advisor's grant on your organisation, not the company they are in. If the grant can see the KYC, the email reaches them whether they are in your organisation, another client's or their own firm. See [KYCs and KYC Emails for Advisors](#kycs-and-kyc-emails-for-advisors).
+
+**What happens when I turn on Investor Kyc Read on an advisor's grant?**
+The advisor sees every KYC in your organisation and gets the KYC emails for all of them, whatever the fund and wherever they are switched in. **Investor Kyc Update** does the same and also lets them edit those KYCs while switched into your organisation. Turn the toggle off to limit them to the funds on their **Access** tabs again.
+
 **What happens when I save a new advisor from a commitment?**
 If the email is new, CapHive creates an Investor Advisor entity for their firm and a user with the Investor Advisor role. It then creates the advisor record under the investor's entity (with investor-level role and *Investor Read* / *Investor Kyc Read*), a fund access right for that user, and an approved Stakeholder User on the investor with email enabled.
 
@@ -174,6 +207,12 @@ Every access right the advisor user holds in that entity is removed and their St
 The row is soft-deleted and the advisor's fund access is revoked for any fund where no other approved advisor access still links them to an investor in that fund. The advisor record itself stays, so they can still be re-added to a fund later.
 
 ### Troubleshooting and edge cases
+
+**Why does an advisor not get our KYC emails?**
+Open Company menu → **Advisors** → the advisor and check the grant: **Enable Kycs** must be on, **Allowed Roles** must include *employee* or *company_admin*, and the grant needs **Investor Kyc Read**, **Investor Kyc Update** or access on the KYC's fund (the fund's **Access** tab → **Select Advisor**). The advisor's own login settings and the company they are switched into make no difference.
+
+**Why does an advisor get KYC emails for funds they do not cover?**
+Their grant has **Investor Kyc Read** or **Investor Kyc Update**, or *company_admin* in **Allowed Roles**, each of which covers every KYC in your organisation. Turn those off on the grant and give access on the right funds' **Access** tabs instead.
 
 **Can one advisor work with several of my funds?**
 Yes. Add them from a commitment in each fund you want to share; their access expands to exactly those funds.
