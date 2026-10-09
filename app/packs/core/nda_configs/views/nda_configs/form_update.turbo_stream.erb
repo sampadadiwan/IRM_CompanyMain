@@ -1,0 +1,7 @@
+<%# Validation error response: re-renders only the modal with the form showing error messages.
+     No tree update — nothing was saved.
+     Changed: Partial path from "folder_nda_configs/modal" to "nda_configs/modal".
+     Why: Views moved to nda_configs pack. %>
+
+<%= turbo_stream.replace "nda_settings_modal",
+    partial: "nda_configs/modal", locals: { folder: @folder, nda_config: @nda_config } %>

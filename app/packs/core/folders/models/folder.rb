@@ -1,6 +1,10 @@
 class Folder < ApplicationRecord
   include Trackable.new
   include Workflowable
+  # Changed: Replaced direct has_one :nda_config with WithNda concern.
+  # Why: NdaConfig is now polymorphic — WithNda encapsulates the association and
+  # nda_required? predicate so any model (Folder, IO, etc.) can include it.
+  include WithNda
 
   # Auto-assignment rules use the folder's search fields (folders have no custom fields)
   workflow_rule_fields
@@ -30,6 +34,18 @@ class Folder < ApplicationRecord
   scope :for, ->(user) { where("folders.entity_id=?", user.entity_id).order(:full_path) }
   scope :for_entity, ->(entity) { where("folders.entity_id=?", entity.id).order(:full_path) }
   scope :private_folders, -> { where("folders.private=?", true) }
+
+  # @return [Boolean] Whether this folder is inside a Data Room hierarchy.
+  def in_data_room?
+    return @in_data_room if defined?(@in_data_room)
+
+    @in_data_room = data_room_root? || ancestors.any? { |a| a.name == "Data Room" && a.parent&.system? }
+  end
+
+  # @return [Boolean] Whether this folder is the root of a Data Room.
+  def data_room_root?
+    name == "Data Room" && parent&.system?
+  end
 
   def set_defaults
     if parent

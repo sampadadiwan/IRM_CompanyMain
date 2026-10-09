@@ -36,7 +36,9 @@ module CapHive
     config.autoload_paths += Rails.root.glob('app/packs/**/controllers/concerns/')
     config.autoload_paths << Rails.root.join('lib')
 
-    core_view_paths = %w[access_rights documents entities folders notes permissions reminders tasks users investors investor_accesses valuations nudges base investor_kycs fees signature_workflows kyc_datas notifications core support_client_mappings validation_rules workflow_templates email_deliverability]
+    # Changed: Added nda_configs to core view paths.
+    # Why: New NdaConfig pack needs its views directory registered for template resolution.
+    core_view_paths = %w[access_rights documents entities folders notes permissions reminders tasks users investors investor_accesses valuations nudges base investor_kycs fees signature_workflows kyc_datas notifications core support_client_mappings validation_rules workflow_templates email_deliverability nda_configs]
 
     core_view_paths.each do |view_path|
       config.paths['app/views'].unshift("#{Rails.root}/app/packs/core/#{view_path}/views")

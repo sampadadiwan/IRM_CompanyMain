@@ -1,0 +1,13 @@
+<%# Renders a single folder's caret span for Turbo Stream updates (lock icon toggle).
+     Matches the <span class="caret"> markup in _tree_view.html.erb. %>
+<span class="caret" id="folder_caret_<%= folder.id %>">
+  <%= link_to folder.name,
+        folder_documents_path(folder_id: folder.id, entity_id: params[:entity_id],
+                              parent_folder_id: params[:parent_folder_id], no_folders: true),
+        class: ["truncate", (folder.id.to_s == params[:folder_id].to_s ? "selected" : nil)].compact.join(" "),
+        data: { folder_id: folder.id } %>
+  <% if folder.nda_required? && current_user.curr_role_employee? %>
+    <i class="ti ti-lock text-warning ms-1" style="font-size: 0.75rem;"
+       data-bs-toggle="tooltip" title="NDA required"></i>
+  <% end %>
+</span>

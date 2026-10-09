@@ -212,6 +212,11 @@ resources :folders do
   get  'data_rooms',       on: :collection
   put  :restore_deleted,   on: :member
   get  :show_deleted,      on: :collection
+  # Changed: Controller from "folder_nda_configs" to "nda_configs".
+  # Why: NdaConfig is now polymorphic — controller moved to core/nda_configs pack.
+  # Singular resource (not resources) because each owner has at most one NDA config.
+  # No destroy action — NDA configs are disabled, not deleted (soft delete via Trackable).
+  resource :nda_config, controller: "nda_configs", only: %i[new create edit update]
 end
 
 # Workflow instances are standalone — not nested under any workflowable object.

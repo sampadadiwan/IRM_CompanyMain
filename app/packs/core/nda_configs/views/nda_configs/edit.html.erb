@@ -1,0 +1,4 @@
+<%# Renders the NDA Settings modal for editing an existing config.
+     Changed: Render path from "folder_nda_configs/modal" to "nda_configs/modal".
+     Why: Views moved to nda_configs pack. %>
+<%= render "nda_configs/modal", folder: @folder, nda_config: @nda_config %>

@@ -1,0 +1,169 @@
+<%# NDA Settings form rendered inside the modal. Uses nda-settings Stimulus controller
+     for client-side toggle/show/hide of conditional fields. Uppy handles PDF upload via
+     the existing _single_upload partial.
+     Changed: Moved from folder_nda_configs/ to nda_configs/, for_model updated.
+     Why: NdaConfig is now polymorphic — views live in the nda_configs pack. %>
+<%
+  nda_config ||= @nda_config
+  folder ||= @folder
+  url = nda_config.persisted? ? folder_nda_config_path(folder) : folder_nda_config_path(folder)
+  method = nda_config.persisted? ? :patch : :post
+  entity_has_esign = folder.entity&.entity_setting&.esign_provider.present?
+%>
+
+<%= form_with model: nda_config, url: url, method: method,
+             data: { controller: "nda-settings", nda_settings_enabled_value: nda_config.enabled? } do |form| %>
+
+  <%# Error messages %>
+  <% if nda_config.errors.any? %>
+    <div class="alert alert-danger mb-3">
+      <ul class="mb-0">
+        <% nda_config.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <%# Require NDA toggle %>
+  <div class="mb-3">
+    <label class="form-label fw-semibold">Require NDA before access</label>
+    <div class="d-flex gap-3">
+      <div class="form-check">
+        <%= form.radio_button :enabled, false, class: "form-check-input",
+            data: { action: "change->nda-settings#toggleEnabled" } %>
+        <%= form.label :enabled_false, "No", class: "form-check-label" %>
+      </div>
+      <div class="form-check">
+        <%= form.radio_button :enabled, true, class: "form-check-input",
+            data: { action: "change->nda-settings#toggleEnabled" } %>
+        <%= form.label :enabled_true, "Yes", class: "form-check-label" %>
+      </div>
+    </div>
+  </div>
+
+  <%# Conditional fields — shown/hidden by Stimulus based on enabled toggle %>
+  <div data-nda-settings-target="fields" class="<%= 'd-none' unless nda_config.enabled? %>">
+
+    <%# NDA Document upload %>
+    <div class="mb-3">
+      <%# Changed: for_model from "folder_nda_config" to "nda_config".
+          Why: Model renamed — Shrine/Uppy uses this to build the upload endpoint key. %>
+      <%= render "layouts/single_upload", form: form,
+                 field_label: "NDA Document (PDF only)",
+                 for_model: "nda_config",
+                 field_name: "nda_document",
+                 model: nda_config,
+                 allowed_types: ["application/pdf"] %>
+      <% if nda_config.nda_document.present? %>
+        <div class="text-muted small mt-1">
+          <i class="ti ti-file-text me-1"></i>
+          Current: <%= nda_config.nda_document.original_filename %>
+          (<%= number_to_human_size(nda_config.nda_document.size) %>)
+        </div>
+      <% end %>
+    </div>
+
+    <%# Validity type %>
+    <div class="mb-3">
+      <label class="form-label fw-semibold">Validity</label>
+
+      <div class="form-check">
+        <%= form.radio_button :validity_type, "until_revoked", class: "form-check-input",
+            data: { action: "change->nda-settings#toggleValidity" } %>
+        <%= form.label :validity_type_until_revoked, "Until revoked", class: "form-check-label" %>
+      </div>
+
+      <div class="form-check">
+        <%= form.radio_button :validity_type, "fixed_period", class: "form-check-input",
+            data: { action: "change->nda-settings#toggleValidity" } %>
+        <%= form.label :validity_type_fixed_period, "Fixed period", class: "form-check-label" %>
+      </div>
+
+      <%# Fixed period sub-field %>
+      <div data-nda-settings-target="fixedPeriod"
+           class="ms-4 mt-1 mb-2 <%= 'd-none' unless nda_config.validity_type == 'fixed_period' %>">
+        <%= form.select :validity_days,
+            options_for_select(
+              [["30 days", 30], ["90 days", 90], ["6 months", 180], ["12 months", 365]],
+              nda_config.validity_days
+            ),
+            { include_blank: "Select period..." },
+            class: "form-select form-select-sm", style: "max-width: 200px;" %>
+      </div>
+
+      <div class="form-check">
+        <%= form.radio_button :validity_type, "specific_date", class: "form-check-input",
+            data: { action: "change->nda-settings#toggleValidity" } %>
+        <%= form.label :validity_type_specific_date, "Specific expiry date", class: "form-check-label" %>
+      </div>
+
+      <%# Specific date sub-field %>
+      <div data-nda-settings-target="specificDate"
+           class="ms-4 mt-1 mb-2 <%= 'd-none' unless nda_config.validity_type == 'specific_date' %>">
+        <%= form.date_field :validity_date, class: "form-control form-control-sm",
+            min: Date.tomorrow.to_s, style: "max-width: 200px;",
+            value: nda_config.validity_date&.to_s %>
+      </div>
+    </div>
+
+    <%# Acceptance method %>
+    <div class="mb-3">
+      <label class="form-label fw-semibold">Acceptance Method</label>
+
+      <div class="form-check">
+        <%= form.radio_button :acceptance_method, "click_through", class: "form-check-input" %>
+        <%= form.label :acceptance_method_click_through, "Click-through", class: "form-check-label" %>
+        <div class="text-muted small ms-4">LP reads the NDA and clicks "I Accept"</div>
+      </div>
+
+      <div class="form-check mt-2">
+        <%= form.radio_button :acceptance_method, "esign", class: "form-check-input",
+            disabled: !entity_has_esign %>
+        <%= form.label :acceptance_method_esign, "Electronic signature", class: "form-check-label" %>
+        <% if entity_has_esign %>
+          <div class="text-muted small ms-4">LP signs the NDA via Zoho Sign</div>
+        <% else %>
+          <div class="text-muted small ms-4 text-warning">
+            <i class="ti ti-alert-triangle me-1"></i>
+            Configure an e-sign provider in Entity Settings to enable this option
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <%# Contact email %>
+    <div class="mb-3">
+      <label class="form-label fw-semibold">Contact Email</label>
+      <%= form.email_field :contact_email, class: "form-control",
+          placeholder: "legal@firm.com" %>
+      <div class="text-muted small mt-1">Optional. Shown to LPs if they have questions about the NDA.</div>
+    </div>
+
+    <%# Notification recipients %>
+    <div class="mb-3">
+      <label class="form-label fw-semibold">Notification Recipients</label>
+      <%
+        emails_value = if nda_config.notification_emails.present?
+                         begin
+                           JSON.parse(nda_config.notification_emails).join(", ")
+                         rescue JSON::ParserError
+                           nda_config.notification_emails
+                         end
+                       else
+                         ""
+                       end
+      %>
+      <%= form.text_field :notification_emails, class: "form-control",
+          placeholder: "ops@firm.com, legal@firm.com",
+          value: emails_value %>
+      <div class="text-muted small mt-1">Optional. Comma-separated emails notified when an LP accepts the NDA.</div>
+    </div>
+  </div>
+
+  <%# Footer %>
+  <div class="d-flex justify-content-end gap-2 mt-3 pt-3 border-top">
+    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+    <%= form.submit "Save Settings", class: "btn btn-primary" %>
+  </div>
+<% end %>

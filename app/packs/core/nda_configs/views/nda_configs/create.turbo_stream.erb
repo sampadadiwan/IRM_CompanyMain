@@ -1,0 +1,15 @@
+<%# After successful NDA config creation: clear the modal frame (dismisses the modal),
+     replace the folder's caret span in the tree to add the lock icon, and show flash. %>
+
+<%# 1. Clear the modal frame — removes modal DOM, triggers disconnect/hide %>
+<%= turbo_stream.replace "nda_settings_modal" do %>
+  <%= turbo_frame_tag "nda_settings_modal" %>
+<% end %>
+
+<%# 2. Replace the folder's caret span in the tree to show/hide the lock icon %>
+<%= turbo_stream.replace "folder_caret_#{@folder.id}",
+    partial: "folders/tree_caret", locals: { folder: @folder } %>
+
+<%# 3. Show success message %>
+<%= turbo_stream.update "user_alert", partial: "layouts/alerts",
+    locals: { notice: "NDA settings saved successfully." } %>
