@@ -44,7 +44,13 @@ When("I open Change Tracking Currency from the fund's actions menu") do
   click_on("Actions")
   expect(page).to have_css('#misc_action_menu', visible: true)
   find('#misc_action_menu').hover
-  click_on("Change Tracking Currency")
+  # The Misc submenu is shown only while the pointer hovers it (CSS `.dropdown-submenu:hover`), and
+  # this link is its last entry. A Playwright click waits for the link to be "stable" and scrolls it
+  # into view; that scroll can take the submenu out from under the pointer, the submenu hides, and the
+  # click then waits on "element is not visible" until it times out. So wait until the hover has
+  # revealed the link, then click it via JS. That still checks the menu entry exists and is visible.
+  link = find_link("Change Tracking Currency", wait: 10)
+  page.execute_script("arguments[0].click()", link.native)
   expect(page).to have_current_path(change_tracking_currency_fund_path(@fund))
 end
 

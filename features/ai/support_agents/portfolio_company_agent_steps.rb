@@ -7,7 +7,7 @@ def build_portfolio_company_agent(entity, flags)
   SupportAgent.find_or_create_by!(agent_type: "PortfolioCompanyAgent", entity: entity) do |agent|
     agent.name        = "Portfolio Company Analyst"
     agent.enabled     = true
-    agent.llm_model   = "gemini-2.0-flash"
+    agent.llm_model   = "gemini-3.7-flash"
     agent.json_fields = flags
   end
 end

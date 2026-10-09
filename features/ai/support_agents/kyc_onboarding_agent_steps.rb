@@ -21,7 +21,7 @@ def build_kyc_onboarding_agent(entity, flags)
   SupportAgent.find_or_create_by!(agent_type: "KycOnboardingAgent", entity: entity) do |agent|
     agent.name        = "KYC Onboarding Validator"
     agent.enabled     = true
-    agent.llm_model   = "gemini-2.0-flash"
+    agent.llm_model   = "gemini-3.7-flash"
     agent.json_fields = flags
   end
 end
