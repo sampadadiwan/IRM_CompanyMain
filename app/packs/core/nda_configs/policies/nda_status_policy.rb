@@ -30,6 +30,24 @@ class NdaStatusPolicy < ApplicationPolicy
     gp_same_entity?
   end
 
+  # Changed: Module 8 — added revoke policy method.
+  # Why: GP can revoke an accepted investor's NDA from the dashboard.
+  #   Same entity-scoping as other dashboard actions.
+  #
+  # @return [Boolean] GP can revoke an investor's accepted NDA
+  def revoke?
+    gp_same_entity?
+  end
+
+  # Changed: Module 8 — added send_reminders policy method.
+  # Why: GP can send bulk NDA reminders to pending investors' signatories.
+  #   Same entity-scoping as other dashboard actions.
+  #
+  # @return [Boolean] GP can send NDA reminders to pending investors
+  def send_reminders?
+    gp_same_entity?
+  end
+
   private
 
   # @return [Boolean] Whether the user is a GP employee of the same entity as the NDA config.

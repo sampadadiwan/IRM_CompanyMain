@@ -43,7 +43,7 @@ class NdaConfigsController < ApplicationController
         # Changed: Set folder's nda_inheritance_mode to "own" after saving config.
         # Why: Creating an NDA config means this folder now has its own NDA — it should
         # not inherit from a parent. This keeps mode and config in sync.
-        @folder.update!(nda_inheritance_mode: "own") if @folder
+        @folder&.update!(nda_inheritance_mode: "own")
         flash.now[:notice] = "NDA settings saved successfully."
         format.turbo_stream
         format.html { redirect_to @owner, notice: "NDA settings saved successfully." }
@@ -76,6 +76,11 @@ class NdaConfigsController < ApplicationController
 
     respond_to do |format|
       if @nda_config.update(nda_config_params)
+        # Changed: Module 8 — fire version change notification when NDA PDF is replaced.
+        # Why: When the GP uploads a new PDF, version auto-increments (before_save callback).
+        #   All investors who accepted the old version need to be notified to re-accept.
+        #   Checked after update so saved_change_to_version? reflects the committed change.
+        notify_version_change if @nda_config.saved_change_to_version?
         flash.now[:notice] = "NDA settings updated successfully."
         format.turbo_stream
         format.html { redirect_to @owner, notice: "NDA settings updated successfully." }
@@ -87,6 +92,55 @@ class NdaConfigsController < ApplicationController
   end
 
   private
+
+  # Changed: Module 8 — sends new-version notification to LPs with stale acceptances.
+  # Why: When the GP uploads a new NDA PDF, the version auto-increments. All investors
+  #   who accepted an older version must re-accept. GP notification_emails get a direct
+  #   mailer delivery; each stale LP user gets a Noticed notification.
+  #
+  # @return [void]
+  def notify_version_change
+    recipients = NdaNotificationRecipients.resolve(:new_version, @nda_config)
+    folder_name = @nda_config.owner&.name
+
+    # Changed: Extract previous version from ActiveModel dirty tracking.
+    # Why: saved_change_to_version returns [old, new] after a successful update.
+    #   old_version is passed to the email template so LPs see which version they had.
+    old_version = @nda_config.saved_change_to_version[0]
+
+    gp_params = {
+      entity_id: @nda_config.entity_id,
+      folder_name: folder_name,
+      old_version: old_version,
+      new_version: @nda_config.version,
+      contact_email: @nda_config.contact_email
+    }
+
+    # Changed: Send directly to each GP notification email (not through Noticed).
+    # Why: notification_emails are external addresses, not system Users.
+    recipients[:gp_emails].each do |email|
+      NdaMailer.with(gp_params.merge(direct_to: email)).nda_new_version.deliver_later
+    end
+
+    # Changed: Send LP new-version notification via Noticed.
+    # Why: LP users are system Users — they get the standard Noticed pipeline with
+    #   email_delay and sandbox handling.
+    recipients[:lp_users].each do |user|
+      NdaEventNotifier.with(
+        entity_id: @nda_config.entity_id,
+        email_method: :nda_new_version,
+        record: @nda_config,
+        folder_name: folder_name,
+        old_version: old_version,
+        new_version: @nda_config.version,
+        contact_email: @nda_config.contact_email
+      ).deliver_later(user)
+    end
+  rescue StandardError => e
+    # Changed: Rescue notification errors to never block the update flow.
+    # Why: The NDA config update is already saved — notification failure is non-critical.
+    Rails.logger.error("[NdaNotification] Version change notification failed: #{e.message} (nda_config_id=#{@nda_config.id})")
+  end
 
   # @return [void] Resolves the polymorphic owner from route params and verifies entity scoping.
   # Changed: set_folder → set_owner, resolves owner from folder_id (extensible for future owner types).

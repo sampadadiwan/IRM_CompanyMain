@@ -17,7 +17,9 @@ class NdaAcceptancesController < ApplicationController
   # Changed: Added VALID_REASONS whitelist for Module 4 contextual re-acceptance notes.
   # Why: The gate passes a reason query param on redirect. Only whitelisted values are
   #   accepted — any other value is treated as nil (first-time acceptance, no note shown).
-  VALID_REASONS = %w[version_mismatch expired].freeze
+  # Changed: Added "revoked" to VALID_REASONS.
+  # Why: Revoked LPs need a contextual note explaining their access was revoked by the GP.
+  VALID_REASONS = %w[version_mismatch expired revoked].freeze
 
   # Changed: Skip CSRF verification for accept/decline actions.
   # Why: The Turbo Frame → Turbo.visit() redirect chain from DocumentsController#ensure_nda_accepted
@@ -66,6 +68,11 @@ class NdaAcceptancesController < ApplicationController
     authorize @nda_acceptance
 
     if @nda_acceptance.save
+      # Changed: Module 8 — fire accept notifications after successful save.
+      # Why: GP team needs to know an LP accepted; other LP users of the same investor
+      #   need to know they now have folder access. Notifications are background-only
+      #   (deliver_later) — the redirect is never delayed.
+      notify_acceptance(@nda_acceptance)
       redirect_to safe_return_to(params[:return_to])
     else
       flash.now[:alert] = "Unable to record your acceptance. Please try again."
@@ -91,6 +98,10 @@ class NdaAcceptancesController < ApplicationController
     authorize @nda_acceptance
 
     if @nda_acceptance.save
+      # Changed: Module 8 — fire decline notification after successful save.
+      # Why: GP team needs to know an LP declined. No LP notification on decline
+      #   (avoids alarm — another signatory could still accept).
+      notify_decline(@nda_acceptance)
       @return_to = params[:return_to]
       # Changed: Use 422 status so Turbo processes the response inside the turbo-frame.
       # Why: Turbo ignores 200 responses to POST requests (treats them as redirects it can't follow).
@@ -136,6 +147,82 @@ class NdaAcceptancesController < ApplicationController
       approved: true
     ).first!
     @investor = investor_access.investor
+  end
+
+  # Changed: Module 8 — sends GP accept notification + LP acceptance confirmation.
+  # Why: GP notification_emails receive "NDA Accepted" via direct mailer delivery.
+  #   Other LP users of the investor receive "NDA Access Granted" via NdaEventNotifier.
+  #   The signer is excluded from LP confirmation (they already know).
+  #
+  # @param acceptance [NdaAcceptance] the just-saved acceptance record
+  # @return [void]
+  def notify_acceptance(acceptance)
+    folder_name = @folder&.name || acceptance.nda_config.owner&.name
+    recipients = NdaNotificationRecipients.resolve(:accepted, acceptance.nda_config, acceptance.investor)
+
+    gp_params = {
+      entity_id: acceptance.entity_id,
+      investor_name: acceptance.investor.name,
+      folder_name: folder_name,
+      nda_version: acceptance.nda_version,
+      signed_by: acceptance.user.full_name,
+      signed_at: acceptance.accepted_at
+    }
+
+    # Changed: Send directly to each GP notification email (not through Noticed).
+    # Why: notification_emails are external addresses, not system Users.
+    recipients[:gp_emails].each do |email|
+      NdaMailer.with(gp_params.merge(direct_to: email)).nda_accepted.deliver_later
+    end
+
+    # Changed: Send LP acceptance confirmation via Noticed (excludes signer).
+    # Why: LP users are system Users — they get the standard Noticed pipeline.
+    confirm_recipients = NdaNotificationRecipients.resolve(
+      :acceptance_confirm, acceptance.nda_config, acceptance.investor,
+      { exclude_user_id: acceptance.user_id }
+    )
+    confirm_recipients[:lp_users].each do |user|
+      NdaEventNotifier.with(
+        entity_id: acceptance.entity_id,
+        email_method: :nda_acceptance_confirm,
+        record: acceptance,
+        folder_name: folder_name,
+        signed_by: acceptance.user.full_name,
+        signed_at: acceptance.accepted_at,
+        folder_link: safe_return_to(params[:return_to])
+      ).deliver_later(user)
+    end
+  rescue StandardError => e
+    # Changed: Rescue notification errors to never block the acceptance flow.
+    # Why: The acceptance is already saved — notification failure is non-critical.
+    Rails.logger.error("[NdaNotification] Accept notification failed: #{e.message} (acceptance_id=#{acceptance.id})")
+  end
+
+  # Changed: Module 8 — sends GP decline notification.
+  # Why: GP notification_emails receive "NDA Declined" via direct mailer delivery.
+  #   No LP notification on decline (another signatory could still accept).
+  #
+  # @param acceptance [NdaAcceptance] the just-saved decline record
+  # @return [void]
+  def notify_decline(acceptance)
+    recipients = NdaNotificationRecipients.resolve(:declined, acceptance.nda_config, acceptance.investor)
+    folder_name = @folder&.name || acceptance.nda_config.owner&.name
+
+    gp_params = {
+      entity_id: acceptance.entity_id,
+      investor_name: acceptance.investor.name,
+      folder_name: folder_name,
+      nda_version: acceptance.nda_version,
+      declined_by: acceptance.user.full_name,
+      declined_at: acceptance.declined_at,
+      direct_to: nil
+    }
+
+    recipients[:gp_emails].each do |email|
+      NdaMailer.with(gp_params.merge(direct_to: email)).nda_declined.deliver_later
+    end
+  rescue StandardError => e
+    Rails.logger.error("[NdaNotification] Decline notification failed: #{e.message} (acceptance_id=#{acceptance.id})")
   end
 
   # @param path [String, nil] The return_to path from params.

@@ -45,6 +45,12 @@ class DailyMorningJob < ApplicationJob
       Rails.logger.debug "Check Cash Flow staleness reminders"
       CashFlowStalenessReminderService.new.call
 
+      # Changed: Module 8 — daily NDA expiry check for approaching/expired alerts.
+      # Why: Scans all enabled NDA configs for time-based expiry (fixed_period,
+      #   specific_date). NdaExpiryReminder dedup prevents re-alerts on subsequent runs.
+      Rails.logger.debug "Check NDA expiry alerts"
+      NdaExpiryCheckJob.perform_now
+
       Rails.logger.debug "Entity DB Dump Job"
       EntityDbDumpJob.perform_later
     rescue StandardError => e

@@ -3160,6 +3160,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_07_100100) do
     t.string "ip_address", limit: 45
     t.bigint "nda_config_id", null: false
     t.integer "nda_version", default: 1, null: false
+    t.text "reason"
     t.string "status", limit: 20, null: false
     t.string "user_agent", limit: 500
     t.bigint "user_id", null: false
@@ -3204,6 +3205,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_07_100100) do
     t.index ["exempted_by_id"], name: "fk_rails_5f97b1d2e6"
     t.index ["nda_config_id", "user_id"], name: "idx_nda_exemptions_config_user", unique: true
     t.index ["user_id"], name: "idx_nda_exemptions_user"
+  end
+
+  create_table "nda_expiry_reminders", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.date "expiry_date", null: false
+    t.bigint "investor_id", null: false
+    t.string "kind", limit: 20, null: false
+    t.bigint "nda_config_id", null: false
+    t.datetime "sent_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["investor_id"], name: "fk_nda_expiry_reminders_investor"
+    t.index ["nda_config_id", "investor_id", "expiry_date", "kind"], name: "idx_nda_expiry_reminders_dedup", unique: true
+    t.index ["nda_config_id"], name: "idx_nda_expiry_reminders_config"
   end
 
   create_table "nda_signatories", force: :cascade do |t|

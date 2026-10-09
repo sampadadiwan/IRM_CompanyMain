@@ -1,7 +1,8 @@
 // NDA Status dashboard Stimulus controller.
-// Handles client-side status filtering, text search, and signatory tag/untag actions.
-// Changed: Removed exemption actions — exemption is now on InvestorAccess (stakeholder-level).
-// Why: Per product decision (2026-10-05) — exemption managed from InvestorAccess form.
+// Handles client-side status filtering, text search, signatory tag/untag,
+// revocation, and bulk reminder actions.
+// Changed: Module 8 — added revokeAcceptance and sendReminders actions.
+// Why: GP needs to revoke accepted NDAs and bulk-remind pending investors from the dashboard.
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
@@ -101,6 +102,86 @@ export default class extends Controller {
       }
     } catch (e) {
       alert("Network error — please try again")
+    }
+  }
+
+  // Changed: Module 8 — revokeAcceptance action with confirmation dialog and optional reason.
+  // Why: GP can revoke an accepted investor's NDA from the dashboard. Creates append-only
+  //   NdaAcceptance row (status: "revoked") and fires LP notification.
+  async revokeAcceptance(event) {
+    const button = event.currentTarget
+    const investorId = button.dataset.investorId
+    const investorName = button.dataset.investorName
+
+    const reason = prompt(
+      `Revoke NDA acceptance for ${investorName}?\n\nEnter an optional reason (or leave blank):`,
+      ""
+    )
+
+    // Changed: prompt() returns null on Cancel, empty string on OK-with-no-text.
+    // Why: null means the GP cancelled — do nothing. Empty string means proceed without reason.
+    if (reason === null) return
+
+    try {
+      button.disabled = true
+      const response = await fetch("/nda_status/revoke", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRF-Token": document.querySelector("meta[name='csrf-token']").content
+        },
+        body: JSON.stringify({
+          nda_config_id: this.ndaConfigIdValue,
+          investor_id: investorId,
+          reason: reason || null
+        })
+      })
+
+      if (response.ok) {
+        window.location.reload()
+      } else {
+        const data = await response.json()
+        alert(data.error || "Failed to revoke NDA acceptance")
+        button.disabled = false
+      }
+    } catch (e) {
+      alert("Network error — please try again")
+      button.disabled = false
+    }
+  }
+
+  // Changed: Module 8 — sendReminders action with confirmation dialog.
+  // Why: GP can bulk-send NDA reminders to all pending investors' signatories.
+  //   Enqueues NdaReminderJob in background. Shows count of users who will be emailed.
+  async sendReminders(event) {
+    const button = event.currentTarget
+
+    if (!confirm("Send NDA reminders to all pending investors' signatories?")) return
+
+    try {
+      button.disabled = true
+      const response = await fetch("/nda_status/send_reminders", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRF-Token": document.querySelector("meta[name='csrf-token']").content
+        },
+        body: JSON.stringify({
+          nda_config_id: this.ndaConfigIdValue
+        })
+      })
+
+      const data = await response.json()
+      if (response.ok) {
+        alert(data.message || "Reminders sent successfully")
+        button.disabled = false
+      } else {
+        alert(data.error || "Failed to send reminders")
+        button.disabled = false
+      }
+    } catch (e) {
+      alert("Network error — please try again")
+      button.disabled = false
     }
   }
 

@@ -239,6 +239,12 @@ get  "nda_status",               controller: "nda_status", action: :index, as: :
 post   "nda_status/signatories",     controller: "nda_status", action: :create_signatory, as: :nda_status_signatories
 delete "nda_status/signatories/:id", controller: "nda_status", action: :destroy_signatory, as: :nda_status_signatory
 
+# Changed: Module 8 — added revoke and send_reminders routes.
+# Why: GP can revoke an accepted investor's NDA and send bulk reminders to pending
+#   investors from the NDA Status Dashboard.
+post "nda_status/revoke",          controller: "nda_status", action: :revoke,          as: :nda_status_revoke
+post "nda_status/send_reminders",  controller: "nda_status", action: :send_reminders,  as: :nda_status_send_reminders
+
 # Workflow instances are standalone — not nested under any workflowable object.
 # workflowable_type and workflowable_id are passed as params on create.
 resources :workflow_instances, only: %i[index create show] do

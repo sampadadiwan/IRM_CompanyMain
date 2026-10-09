@@ -1,30 +1,26 @@
 # NDA Status XLSX export — flat rows with one row per user across all investors.
-# Columns: Investor Name, User Name, Email, Status, Expiry Reason, Signed By, Signed Date, Exemption Reason.
-# Changed: Module 4 — added Expiry Reason column for version mismatch / period expired.
-# Why: GPs need to see why an investor's acceptance is expired in the exported compliance record.
+# Columns: Investor Name, User Name, Email, Status, Expiry Reason, Signed By, Signed Date.
+# Changed: Module 8 — added Revoked status support, removed stale NdaExemption reference.
+# Why: Exemption is now a boolean on InvestorAccess, not a separate model. Revoked investors
+#   appear in the export with their status. Exemption Reason column removed (no longer applicable).
 
 wb = xlsx_package.workbook
 
 wb.add_worksheet(name: "NDA Status") do |sheet|
   sheet.add_row([
-    "Investor Name",
-    "User Name",
-    "Email",
-    "Investor Status",
-    "Expiry Reason",
-    "User Status",
-    "NDA Tagged",
-    "Signed By",
-    "Signed Date",
-    "Exemption Reason"
-  ])
+                  "Investor Name",
+                  "User Name",
+                  "Email",
+                  "Investor Status",
+                  "Expiry Reason",
+                  "User Status",
+                  "NDA Tagged",
+                  "Signed By",
+                  "Signed Date"
+                ])
 
   @status_data[:investor_rows].each do |row|
     row[:users].each do |user_row|
-      exemption_reason = if user_row[:exempt]
-                           NdaExemption.find_by(nda_config_id: @nda_config.id, user_id: user_row[:user].id)&.reason
-                         end
-
       expiry_label = case row[:expiry_reason]
                      when "version" then "Version mismatch"
                      when "period" then "Period expired"
@@ -40,8 +36,7 @@ wb.add_worksheet(name: "NDA Status") do |sheet|
         user_row[:status],
         user_row[:nda_tagged] ? "Yes" : "No",
         row[:signed_by]&.full_name || "—",
-        row[:signed_at] ? I18n.l(row[:signed_at], format: :short) : "—",
-        exemption_reason || ""
+        row[:signed_at] ? I18n.l(row[:signed_at], format: :short) : "—"
       ]
     end
   end

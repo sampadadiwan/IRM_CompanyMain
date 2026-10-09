@@ -38,6 +38,11 @@ class NdaConfig < ApplicationRecord
   # Why: Module 3 GP Dashboard — tracks per-NDA signatory designations (replaces entity-wide tag_list).
   has_many :nda_signatories, dependent: :destroy
 
+  # Changed: Added has_many :nda_expiry_reminders association.
+  # Why: Module 8 — tracks which expiry alerts have been sent per investor per NDA config.
+  #   Used by NdaExpiryCheckJob for idempotency and by cleanup if NDA config is deleted.
+  has_many :nda_expiry_reminders, dependent: :destroy
+
   validates :validity_type, inclusion: { in: VALIDITY_TYPES }
   validates :acceptance_method, inclusion: { in: ACCEPTANCE_METHODS }
   validates :validity_days, inclusion: { in: VALIDITY_DAY_OPTIONS }, if: -> { validity_type == "fixed_period" }
@@ -80,8 +85,8 @@ class NdaConfig < ApplicationRecord
 
     return if old_data.blank? || new_data.blank?
 
-    old_id = old_data.is_a?(String) ? JSON.parse(old_data).dig("id") : old_data.dig("id")
-    new_id = new_data.is_a?(String) ? JSON.parse(new_data).dig("id") : new_data.dig("id")
+    old_id = old_data.is_a?(String) ? JSON.parse(old_data)["id"] : old_data["id"]
+    new_id = new_data.is_a?(String) ? JSON.parse(new_data)["id"] : new_data["id"]
 
     self.version += 1 if old_id.present? && new_id.present? && old_id != new_id
   end

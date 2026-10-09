@@ -508,13 +508,12 @@ class DocumentsController < ApplicationController
 
   # @return [void] NDA gate — redirects LP to acceptance screen if folder has an active NDA
   #   that the user has not yet accepted at the current version, or whose acceptance has expired.
-  # Changed: Module 4 — added version match and time expiry checks after acceptance lookup.
-  # Why: Acceptances can become stale via two triggers: (1) GP uploads new PDF → version bump,
-  #   (2) validity period elapses. Gate order: GP bypass → investor_ids lookup → exemption check
-  #   (by investor_id) → stakeholder acceptance → version match → time expiry → pass.
-  #   Version is checked before time because version mismatch is more actionable.
-  #   Exemption is checked by investor_id, not user_id, so that if ANY InvestorAccess record
+  # Gate order: GP bypass → investor_ids lookup → exemption check (by investor_id) →
+  #   revoked check → acceptance exists+accepted → version match → time expiry → pass.
+  # Exemption is checked by investor_id, not user_id, so that if ANY InvestorAccess record
   #   for the user's investor is exempt, all users under that investor bypass the gate.
+  # Version is checked before time because version mismatch is more actionable
+  #   (LP needs to read the new document).
   # @see InvestorAccess#exempt_from_nda
   # @see NdaConfig#version
   def ensure_nda_accepted
@@ -544,6 +543,15 @@ class DocumentsController < ApplicationController
              .order(created_at: :desc)
              .limit(1)
              .first
+
+    # Changed: Module 8 — revoked acceptance check. LP sees a contextual note on the
+    # acceptance screen explaining their NDA was revoked and they must re-accept.
+    # Why: Without this, revoked LPs see a generic first-time acceptance screen with no
+    #   context about why they lost access.
+    if latest&.revoked?
+      redirect_to nda_acceptance_url(nda_config, @folder, reason: "revoked")
+      return
+    end
 
     # No accepted acceptance → redirect to acceptance screen (first-time or post-decline).
     unless latest&.accepted?
