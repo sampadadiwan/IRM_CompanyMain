@@ -48,7 +48,29 @@ When(/^I fill and submit the login page$/) do
   # Wait for Devise to redirect away from the sign-in page before reading the DB.
   # A fixed sleep is too short under parallel load; Capybara retries until true.
   expect(page).not_to have_current_path('/users/sign_in', wait: 15)
+  wait_for_page_to_settle
   User.find_by_email(@user.email).sign_in_count.should > 0
+end
+
+# Lets the post-login page finish its own requests (lazy turbo-frames, chart fetches) before the
+# scenario moves on. The session is a cookie re-issued on EVERY response (expire_after in
+# config/initializers/session_store.rb), so a dashboard request still in flight when the next step
+# visits a page carries the pre-visit session and, finishing late, overwrites the cookie that
+# redirect just set — dropping its flash ("Access Denied") or even the login. Only bites under
+# parallel load, when those requests are slow.
+def wait_for_page_to_settle
+  # rack_test has no browser and no background requests
+  return unless page.driver.respond_to?(:with_playwright_page)
+
+  # Turbo marks a frame [busy] while it is fetching
+  expect(page).to have_no_css("turbo-frame[busy]")
+  page.driver.with_playwright_page do |pw_page|
+    # No HTTP requests for 500 ms (ActionCable's websocket doesn't count)
+    pw_page.wait_for_load_state(state: 'networkidle', timeout: Capybara.default_max_wait_time * 1000)
+  rescue Playwright::TimeoutError
+    # A page that polls never goes idle; carry on rather than fail the login
+    nil
+  end
 end
 
 When(/^I fill the password incorrectly and submit the login page$/) do

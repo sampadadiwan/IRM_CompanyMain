@@ -45,12 +45,164 @@ Feature: Workflow Templates
       | user | entity              |
       |      | entity_type=Company |
 
+  Scenario Outline: Admin chooses which channels a template's messages go out on
+    Given Im logged in as a user "<user>" for an entity "<entity>"
+    And the user has role "company_admin"
+    And there is a workflow template "name=Channel Template"
+    When I visit the edit page for the workflow template "Channel Template"
+    Then the Send email box should be ticked and the Send WhatsApp box unticked
+    When I untick Send email and tick Send WhatsApp
+    And I save the workflow template edit form
+    Then the workflow template "Channel Template" should notify by email "false" and WhatsApp "true"
+    And the workflow template show page should say it notifies by "WhatsApp"
+
+    Examples:
+      | user | entity              |
+      |      | entity_type=Company |
+
   Scenario Outline: Admin deletes a template that is not in use
     Given Im logged in as a user "<user>" for an entity "<entity>"
     And the user has role "company_admin"
     And there is a workflow template "name=Deletable Template"
     When I delete the workflow template "Deletable Template"
     Then the workflow template "Deletable Template" should not exist
+
+    Examples:
+      | user | entity              |
+      |      | entity_type=Company |
+
+  # ── Enable / disable ──────────────────────────────────────────────────────────
+  # Disabling retires a template without deleting it (a template with assignments or history cannot
+  # be deleted at all): nothing new is assigned to it or launched on it, while workflows already
+  # running carry on from the snapshot taken at their launch.
+
+  Scenario Outline: Admin disables a template from its page
+    Given Im logged in as a user "<user>" for an entity "<entity>"
+    And the user has role "company_admin"
+    And there is a workflow template "name=Retired Review"
+    When I visit the workflow template page for "Retired Review"
+    And I press "Disable" on the workflow template page
+    Then the workflow template "Retired Review" should be disabled
+    And the workflow template page should warn that the template is disabled
+
+    Examples:
+      | user | entity              |
+      |      | entity_type=Company |
+
+  Scenario Outline: Admin enables a disabled template again
+    Given Im logged in as a user "<user>" for an entity "<entity>"
+    And the user has role "company_admin"
+    And there is a workflow template "name=Retired Review"
+    And the workflow template "Retired Review" is disabled
+    When I visit the workflow template page for "Retired Review"
+    And I press "Enable" on the workflow template page
+    Then the workflow template "Retired Review" should be enabled
+
+    Examples:
+      | user | entity              |
+      |      | entity_type=Company |
+
+  # E6 — the one consequence of disabling that cannot be seen from this page: which template the
+  # records this one's rules matched will be given instead.
+  Scenario Outline: The disable confirmation names the template that takes over
+    Given Im logged in as a user "<user>" for an entity "<entity>"
+    And the user has role "company_admin"
+    And there is a workflow template "name=Retired Review" with 1 step "name=Sign-off;states=Approved,Rejected;quorum_rule=any_one;on_reject_rule=stop;actors=admin"
+    And the workflow template "Retired Review" has workflowable_type "Folder"
+    And there is an auto-assignment rule for template "Retired Review" type "Folder" with conditions "[]" auto_launch false priority 0
+    And there is a workflow template "name=Successor Review" with 1 step "name=Sign-off;states=Approved,Rejected;quorum_rule=any_one;on_reject_rule=stop;actors=admin"
+    And the workflow template "Successor Review" has workflowable_type "Folder"
+    And there is an auto-assignment rule for template "Successor Review" type "Folder" with conditions "[]" auto_launch false priority 10
+    When I visit the workflow template page for "Retired Review"
+    Then the disable confirmation should say that records will fall through to "Successor Review"
+
+    Examples:
+      | user | entity              |
+      |      | entity_type=Company |
+
+  # E7 — the rules table of a disabled template: dormant and reversible, not dead.
+  Scenario Outline: A disabled template says its rules are dormant
+    Given Im logged in as a user "<user>" for an entity "<entity>"
+    And the user has role "company_admin"
+    And there is a workflow template "name=Retired Review" with 1 step "name=Sign-off;states=Approved,Rejected;quorum_rule=any_one;on_reject_rule=stop;actors=admin"
+    And the workflow template "Retired Review" has workflowable_type "Folder"
+    And there is an auto-assignment rule for template "Retired Review" type "Folder" with conditions "[]" auto_launch false priority 0
+    And the workflow template "Retired Review" is disabled
+    When I visit the workflow template page for "Retired Review"
+    Then the rules note should say the rules are dormant
+    And the rule status should be "Dormant"
+
+    Examples:
+      | user | entity              |
+      |      | entity_type=Company |
+
+  # E8 — a rule that can never win because an identical catch-all is ahead of it. The blocker is
+  # named and linked, because it lives on another template's page.
+  Scenario Outline: A shadowed rule is badged with the rule that blocks it
+    Given Im logged in as a user "<user>" for an entity "<entity>"
+    And the user has role "company_admin"
+    And there is a workflow template "name=First Catch All" with 1 step "name=Sign-off;states=Approved,Rejected;quorum_rule=any_one;on_reject_rule=stop;actors=admin"
+    And the workflow template "First Catch All" has workflowable_type "Folder"
+    And there is an auto-assignment rule for template "First Catch All" type "Folder" with conditions "[]" auto_launch false priority 0
+    And there is a workflow template "name=Blocked Template" with 1 step "name=Sign-off;states=Approved,Rejected;quorum_rule=any_one;on_reject_rule=stop;actors=admin"
+    And the workflow template "Blocked Template" has workflowable_type "Folder"
+    And there is an auto-assignment rule for template "Blocked Template" type "Folder" with conditions "[]" auto_launch false priority 0
+    When I visit the workflow template page for "Blocked Template"
+    Then the rule status should be "Shadowed"
+    And the shadowed rule should name "First Catch All" as the blocker
+    When I visit the workflow template page for "First Catch All"
+    Then the rule status should be "Active"
+
+    Examples:
+      | user | entity              |
+      |      | entity_type=Company |
+
+  # E9 — every rule for a type dormant: no screen would otherwise say that new records of that type
+  # are getting nothing.
+  Scenario Outline: The template list warns when every rule for a type is dormant
+    Given Im logged in as a user "<user>" for an entity "<entity>"
+    And the user has role "company_admin"
+    And there is a workflow template "name=Only Template" with 1 step "name=Sign-off;states=Approved,Rejected;quorum_rule=any_one;on_reject_rule=stop;actors=admin"
+    And the workflow template "Only Template" has workflowable_type "Folder"
+    And there is an auto-assignment rule for template "Only Template" type "Folder" with conditions "[]" auto_launch false priority 0
+    And the workflow template "Only Template" is disabled
+    When I visit the workflow templates page
+    Then the page should warn that new folders get no workflow
+    When the workflow template "Only Template" is enabled
+    And I visit the workflow templates page
+    Then the page should not warn that new folders get no workflow
+
+    Examples:
+      | user | entity              |
+      |      | entity_type=Company |
+
+  Scenario Outline: A disabled template is not offered when launching a workflow
+    Given Im logged in as a user "<user>" for an entity "<entity>"
+    And the user has role "company_admin"
+    And there is a workflow template "name=Live Review" with 1 step "name=Sign-off;states=Approved,Rejected;quorum_rule=any_one;on_reject_rule=stop;actors=admin"
+    And the workflow template "Live Review" has workflowable_type "Folder"
+    And there is a workflow template "name=Retired Review" with 1 step "name=Sign-off;states=Approved,Rejected;quorum_rule=any_one;on_reject_rule=stop;actors=admin"
+    And the workflow template "Retired Review" has workflowable_type "Folder"
+    And the workflow template "Retired Review" is disabled
+    And the entity has a folder "name=Picker Folder"
+    When I visit the folder show page for "Picker Folder"
+    Then the launch template picker should offer "Live Review"
+    And the launch template picker should not offer "Retired Review"
+
+    Examples:
+      | user | entity              |
+      |      | entity_type=Company |
+
+  Scenario Outline: A workflow cannot be launched on a disabled template
+    Given Im logged in as a user "<user>" for an entity "<entity>"
+    And the user has role "company_admin"
+    And there is a workflow template "name=Retired Review" with 1 step "name=Sign-off;states=Approved,Rejected;quorum_rule=any_one;on_reject_rule=stop;actors=admin"
+    And the entity has a folder "name=Launch Folder"
+    And the folder "Launch Folder" has workflow template "Retired Review"
+    And the workflow template "Retired Review" is disabled
+    When I launch the workflow for folder "Launch Folder"
+    Then I should see a workflow launch error
+    And the folder "Launch Folder" should not have an active workflow instance
 
     Examples:
       | user | entity              |

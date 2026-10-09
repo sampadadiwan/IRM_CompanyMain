@@ -1,0 +1,65 @@
+<%# One document's checks, edited in a side panel (Bootstrap offcanvas) and saved on their own. New checks
+    are added by kind — Fill in / Compare / Ask yes-no — each with a line saying what it does.
+    locals: card (DocChecks::CardForm), fields, open (true to show it on load, after a refused save).
+    openspec/changes/document-checks/design.md (card ① Setup). Worked examples H2, E3, E16. %>
+<% open ||= false
+   card_key = doc_check_card_dom_id(card.document_name) %>
+<div class="offcanvas offcanvas-end doc-check-panel <%= 'show' if open %>" tabindex="-1" id="<%= card_key %>"
+     data-doc-check-panel data-document-name="<%= card.document_name %>" aria-labelledby="<%= card_key %>_title"
+     style="width: min(640px, 100vw)">
+  <%= form_with url: save_document_doc_checks_path(record_type: card.record_type), method: :patch,
+                data: { turbo: false }, class: "d-flex flex-column h-100" do %>
+    <%= hidden_field_tag :document_name, card.document_name, id: nil %>
+    <div class="offcanvas-header border-bottom">
+      <div class="d-flex align-items-center gap-2">
+        <span class="doc-check-doc-icon rounded-3 d-inline-flex align-items-center justify-content-center bg-primary-subtle text-primary">
+          <i class="ti <%= doc_check_document_icon(card.document_name) %> fs-4"></i>
+        </span>
+        <div>
+          <h5 class="offcanvas-title mb-0" id="<%= card_key %>_title"><%= card.document_name %></h5>
+          <div class="small text-muted"><%= t("doc_checks.setup.panel_intro") %></div>
+        </div>
+      </div>
+      <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+
+    <div class="offcanvas-body">
+      <div data-doc-check-page-target="rows" data-role="checks">
+        <% card.rows.each_with_index do |row, index| %>
+          <%= render "doc_checks/check", row:, fields:, name: "rows[#{row.persisted? ? "r#{row.id}" : "n#{index}"}]" %>
+        <% end %>
+      </div>
+      <p class="text-muted small <%= 'd-none' if card.rows.any? %>" data-role="empty">
+        <i class="ti ti-info-circle"></i> <%= t("doc_checks.setup.panel_empty") %>
+      </p>
+
+      <div class="mt-3">
+        <div class="small text-muted mb-2"><%= t("doc_checks.setup.add_check") %></div>
+        <div class="d-grid gap-2">
+          <% DocCheck::ACTIONS.each do |action| %>
+            <button type="button" class="btn btn-outline-primary text-start d-flex align-items-center gap-2"
+                    data-action="doc-check-page#addCheck" data-kind="<%= action %>">
+              <i class="ti <%= doc_check_action_icon(action) %> fs-5"></i>
+              <span>
+                <span class="fw-semibold"><%= t("doc_checks.setup.add_kind.#{action}") %></span>
+                <span class="d-block small opacity-75"><%= t("doc_checks.setup.action_help.#{action}") %></span>
+              </span>
+            </button>
+          <% end %>
+        </div>
+      </div>
+
+      <% DocCheck::ACTIONS.each do |action| %>
+        <template data-role="template-<%= action %>">
+          <%= render "doc_checks/check", row: DocCheck.new(action:), fields:, name: "rows[__KEY__]" %>
+        </template>
+      <% end %>
+    </div>
+
+    <div class="border-top p-3 d-flex justify-content-end gap-2 bg-body-tertiary">
+      <button type="button" class="btn btn-link" data-bs-dismiss="offcanvas"><%= t("doc_checks.panel.cancel") %></button>
+      <%= submit_tag t("doc_checks.setup.save_document", document: card.document_name), class: "btn btn-primary", name: nil,
+            data: { role: "save" } %>
+    </div>
+  <% end %>
+</div>

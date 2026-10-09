@@ -1,0 +1,10 @@
+<%# Real-time subscription for a record's journey panel: an evaluation that changes the journey
+    (Workflowable#broadcast_journey_change) reloads the panel in place. The journey-catch-up controller
+    also reloads it once the subscription is confirmed (and after any reconnect), so a change broadcast
+    before this page was listening — a job that finished while the page was still loading after a
+    redirect — still shows up rather than leaving the panel a step behind.
+    Locals: record — the workflowable whose journey panel is on the page %>
+<%= turbo_stream_from record, :journey,
+                      data: { controller: "journey-catch-up",
+                              journey_catch_up_frame_value: record.journey_frame_id,
+                              journey_catch_up_src_value: polymorphic_path(record.becomes(record.class.base_class), action: :journey) } %>

@@ -1,0 +1,65 @@
+<%# What a portfolio company sees on its link once the report is submitted (or reviewed): a confirmation,
+    not the upload wizard — the report can no longer be changed from their side (KpiReportPolicy#update?).
+    After a failed import the report is back at draft_saved, so the wizard shows again for a re-upload. %>
+<% workbook = kpi_report.documents.where(name: "KPIs").order(created_at: :desc).first %>
+<div class="row justify-content-md-center" id="kpi_report_portco_submitted">
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-body p-4">
+        <div class="d-flex align-items-center gap-3 mb-3">
+          <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 kpi-info-icon bg-success-subtle">
+            <i class="ti ti-circle-check fs-4 text-success-emphasis"></i>
+          </span>
+          <div>
+            <h3 class="mb-0 d-flex align-items-center gap-2">
+              KPIs submitted
+              <%# Same status badge the wizard header shows %>
+              <span class="badge fs-6 <%= kpi_report.status_reviewed? ? "bg-primary" : "bg-success" %>"><%= kpi_report.status.humanize.titleize %></span>
+            </h3>
+            <div class="text-muted">
+              <%= kpi_report.for_name %> · <%= kpi_report.period %> ending <%= l(kpi_report.as_of) %>
+              <% if kpi_report.submitted_at.present? %> · submitted <%= l(kpi_report.submitted_at.to_date) %><% end %>
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex flex-column gap-2 mb-3">
+          <%# Import status: pending while ImportKpiWorkbookJob runs; imported once the values are staged %>
+          <div class="d-flex align-items-start gap-3 p-3 rounded-3 bg-primary-subtle">
+            <i class="ti <%= kpi_report.import_status == "pending" ? "ti-loader" : "ti-database-import" %> fs-5 text-primary-emphasis"></i>
+            <div>
+              <% if kpi_report.import_status == "pending" %>
+                <div class="fw-semibold text-dark">Your workbook is being imported</div>
+                <div class="text-muted small mt-1">This usually takes a minute. The fund team is notified once your values are in.</div>
+              <% elsif kpi_report.status_reviewed? %>
+                <div class="fw-semibold text-dark">Reviewed by the fund</div>
+                <div class="text-muted small mt-1">The fund team has reviewed this report.</div>
+              <% else %>
+                <div class="fw-semibold text-dark">Imported for the fund's review</div>
+                <div class="text-muted small mt-1">Your values are with the fund team and will show on their dashboards once approved.</div>
+              <% end %>
+            </div>
+          </div>
+
+          <div class="d-flex align-items-start gap-3 p-3 rounded-3 bg-warning-subtle">
+            <i class="ti ti-lock fs-5 text-warning-emphasis"></i>
+            <div>
+              <div class="fw-semibold text-dark">This report can no longer be changed</div>
+              <div class="text-muted small mt-1">If something needs to change, contact your fund manager. If they reopen the report, you'll get a fresh link by email.</div>
+            </div>
+          </div>
+
+          <% if workbook&.file.present? %>
+            <div class="d-flex align-items-start gap-3 p-3 rounded-3 bg-light">
+              <i class="ti ti-file-spreadsheet fs-5 text-muted"></i>
+              <div>
+                <div class="fw-semibold text-dark">Your file</div>
+                <div class="text-muted small mt-1" id="kpi_report_submitted_file"><%= workbook.file.original_filename %></div>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

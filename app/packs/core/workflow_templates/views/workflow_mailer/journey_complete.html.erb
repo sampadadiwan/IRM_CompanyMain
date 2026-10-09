@@ -1,0 +1,27 @@
+<h3>Hello <%= @user.full_name %>,</h3>
+
+<p>
+  Every step of the <%= @instance.template_name %> journey on
+  <% if @workflowable_url %>
+    <strong><%= link_to @workflowable_name, @workflowable_url %></strong>
+  <% else %>
+    <strong><%= @workflowable_name %></strong>
+  <% end %>
+  is done.
+</p>
+
+<% if @instance.completed_at %>
+  <p><strong>Completed on:</strong> <%= l(@instance.completed_at.to_date) %></p>
+<% end %>
+
+<% if @workflowable_url %>
+  <p>
+    <%= link_to "Open #{@workflowable_name}", @workflowable_url,
+          style: "display:inline-block;padding:10px 20px;background:#0d6efd;color:#fff;text-decoration:none;border-radius:4px" %>
+  </p>
+<% end %>
+
+<p style="color:#888;font-size:0.85em;">
+  You are receiving this because you own the final step of this journey.
+  <%= link_to "View the journey history", @instance_url %>
+</p>

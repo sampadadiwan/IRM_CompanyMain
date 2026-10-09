@@ -8,7 +8,6 @@ class AggregatePortfolioInvestment < ApplicationRecord
   include Trackable.new
   include ForInvestor
   include WithCustomField
-  include WithDocQuestions
   include AggregatePortfolioInvestmentShared
 
   # Adds dynamic search capabilities for monetary fields

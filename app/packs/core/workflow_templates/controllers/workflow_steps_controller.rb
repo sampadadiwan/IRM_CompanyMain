@@ -14,7 +14,7 @@ class WorkflowStepsController < ApplicationController
     @step = @workflow_template.workflow_steps.build(step_params)
     authorize @step
 
-    if @step.save
+    if save_through_template
       redirect_to workflow_template_path(@workflow_template),
                   notice: "Step \"#{@step.name}\" added."
     else
@@ -29,7 +29,9 @@ class WorkflowStepsController < ApplicationController
   end
 
   def update
-    if @step.update(step_params)
+    @step.assign_attributes(step_params)
+
+    if save_through_template
       redirect_to workflow_template_path(@workflow_template),
                   notice: "Step updated."
     else
@@ -38,21 +40,12 @@ class WorkflowStepsController < ApplicationController
   end
 
   def destroy
-    @step.destroy
+    # Destroy through the template so the surviving steps close the gap and stay numbered 1..n
+    @step.mark_for_destruction
+    @workflow_template.save
+
     redirect_to workflow_template_path(@workflow_template),
                 notice: "Step removed."
-  end
-
-  # PATCH /workflow_templates/:workflow_template_id/workflow_steps/reorder
-  # Receives { positions: { step_id => new_position, ... } } from Stimulus drag controller
-  # Authorization is enforced by set_workflow_template (:edit? on the parent template)
-  def reorder
-    ActiveRecord::Base.transaction do
-      params[:positions].each do |step_id, pos|
-        @workflow_template.workflow_steps.find(step_id).update!(position: pos.to_i)
-      end
-    end
-    head :ok
   end
 
   private
@@ -62,9 +55,25 @@ class WorkflowStepsController < ApplicationController
     authorize @workflow_template, :edit?
   end
 
+  # Pick the step out of the loaded collection rather than re-querying it, so the object the form
+  # edits is the same one the template renumbers and autosaves (see save_through_template)
   def set_step
-    @step = @workflow_template.workflow_steps.find(params[:id])
+    @step = @workflow_template.workflow_steps.detect { |step| step.id == params[:id].to_i }
+    raise ActiveRecord::RecordNotFound, "step #{params[:id]} not found" unless @step
+
     authorize @step
+  end
+
+  # Save a step by saving its template, so WorkflowTemplate's renumbering runs: typing an existing
+  # step's number moves this step into that slot and the siblings close ranks, instead of tripping
+  # the UNIQUE index on [workflow_template_id, position].
+  def save_through_template
+    return true if @workflow_template.save
+
+    # Autosave copies the step's own errors onto the template; a failure the step doesn't know
+    # about (a template that no longer validates) would otherwise render a form with no message
+    @workflow_template.errors.full_messages.each { |message| @step.errors.add(:base, message) } if @step.errors.empty?
+    false
   end
 
   def next_position
@@ -76,6 +85,8 @@ class WorkflowStepsController < ApplicationController
       :position, :name, :description, :states,
       :quorum_rule, :on_reject_rule, :on_reject_target_step, :reminder_interval_days,
       :notify_on_activation,
+      # Journey fields: how the step completes, its check, skip rule, owner and unlocked buttons
+      :kind, :check_key, :skip_key, :owner_user_id, :unlocks, :keep_on_regress,
       actor_user_ids: [],
       workflow_step_actors_attributes: [:id, :user_id, :_destroy]
     )

@@ -97,13 +97,35 @@ Each step in the template represents a sequential gate. Steps run in position or
 | **Email actors when this step becomes active** | Untick to skip the "Action Required" email when the step starts. |
 | **Actors (entity employees)** | Internal users assigned to this step. Select from your organisation's employees. |
 
+### Step kinds (journeys)
+
+A step can be completed in one of three ways, chosen with **Kind** at the top of the step form:
+
+| Kind | Completed when | Fields used |
+|---|---|---|
+| **Human** | the actors vote, as described above (the default; every existing step is human) | allowable states, quorum, on reject, actors |
+| **System** | its **Check** finds the data in place, e.g. "every call notice is approved". Nobody votes | Check, Skip when, Owner (and **Actors** for the KPI report's *Send completion email* check — they are who it emails) |
+| **Acknowledge** | one person with edit rights on the record clicks **Mark reviewed** | Check, Skip when, Owner |
+
+A template that contains a system or acknowledge step is a **journey**: CapHive works out which step it is on from the record's data every time the record is opened, every 15 minutes, and when someone undoes earlier work, so it can move forwards and backwards on its own. The two capital call journeys are seeded for fund managers; see the [Capital Calls guide](capital_calls_user_guide). The KPI report journey (**KPI Report Review**) is seeded from **Set up journeys** for funds that use KPIs; see [KPI Management & Workbook Upload](kpi_upload_user_guide#-tracking-a-report-the-journey-step-bar).
+
+| Field | Description |
+|---|---|
+| **Check** | The question that decides a system or acknowledge step. Only checks for the template's record type are offered. |
+| **Skip when** | A check that makes the step "not applicable" for a particular record, e.g. notices on an imported call. |
+| **Owner** | Who is reminded when a system or acknowledge step has waited longer than its reminder interval. Blank means the person who created the record — except on KPI reports, which have no recorded creator: there, blank means every employee tagged **Kpi**. On a KPI report journey the portfolio company's **Managed by** employee, when set, is reminded instead of this owner. |
+| **Unlocks buttons** | Button labels this step unlocks once done. In this release that only adds a warning to those buttons' confirmations. |
+| **Keep sign-off when moved back** | When earlier work is undone, votes and confirmations on later steps are reset unless this is ticked. |
+
+In a journey, rejecting a human step does not end the workflow: the step stays current with the rejection note and the actors can vote again.
+
 ---
 
 ## Managing Templates
 
 ### Template list
 
-The **Workflow Templates** list shows each template's name, the object type it applies to, a numbered list of its steps, how many objects it is currently assigned to, and whether it attaches documents to emails.
+The **Workflow Templates** list shows each template's name, its status (**Enabled** or **Disabled**), the object type it applies to, a numbered list of its steps, how many auto-assignment rules it has, and whether it attaches documents to emails. Each row has an edit (pencil), enable/disable (pause or play) and delete (bin) button. A disabled template's name is greyed out.
 
 ### Editing a template
 
@@ -111,13 +133,43 @@ Open [**Workflow Templates**](/workflow_templates), click the template name, the
 
 Note that the **Applies to** type cannot be changed once the template has been saved.
 
+### Enabling and disabling a template
+
+Disabling retires a template without losing it or its history. Use the **Disable** button on the template's page, or the pause button on its row in the list; both ask you to confirm first, and the page then shows a **Disabled** banner.
+
+While a template is disabled:
+
+- **No new object is assigned to it, but its rules step aside rather than block.** Its auto-assignment rules stay exactly as they are and go **dormant**: a record they would have matched is passed down the chain, so the next matching rule for that record type applies instead. A record gets no template only when no enabled template's rule matches it. The rules resume their place the moment you enable the template again — nothing is edited or deleted.
+- **For a journey template (capital calls, capital distributions, investor KYC) that means new records get no journey at all** — no step bar, no "What's needed now" panel and no task reminders.
+- **It is not offered in the Launch Workflow dialog**, and a workflow cannot be launched on it even if an object was assigned to it earlier.
+- **Workflows already running carry on unchanged.** A running workflow follows the snapshot taken when it launched, so its steps, actors, reminders and timeline are unaffected, and it can still be completed, reset or archived.
+- **Nothing is deleted.** The template, its steps, its rules and every past run stay on the page, and **Enable** puts it straight back into use.
+
+Enabling again applies to records created from then on; records created while the template was disabled are not given a workflow retrospectively.
+
+```mermaid
+flowchart TD
+  A[New object created] --> B[Walk the rules for this type<br/>priority order, then oldest first]
+  B --> C{Next rule in the chain}
+  C -- Template disabled --> B2[Skip it — the rule is dormant<br/>carry on down the chain]
+  B2 --> C
+  C -- Template enabled, conditions match --> D[Template assigned]
+  C -- No rules left --> Z[No template assigned<br/>no journey]
+  D --> E{Rule set to auto-launch?}
+  E -- Yes --> F[Workflow launched]
+  E -- No --> G[Waits for Launch Workflow]
+  H[Workflow already running] --> I[Unaffected by disabling<br/>runs from its launch snapshot]
+```
+
+On [**Workflow Templates**](/workflow_templates), the **Set up journeys** menu shows a journey kind as *disabled* rather than *set up* when its seeded templates have been disabled, because new records are getting no journey. Running the setup again never re-enables them — that stays your decision.
+
 ### Deleting a template
 
 A template can only be deleted if:
 - It is not currently assigned to any object.
 - It has no workflow runs at all (active, complete, rejected, or archived).
 
-If either condition is not met, you will see an error. Archiving runs does not remove them, and there is no button to remove a template assignment from an object, so in practice a template that has ever been assigned or launched cannot be deleted from the UI — rename it or stop using it instead.
+If either condition is not met, you will see an error telling you to disable it instead. Archiving runs does not remove them, and there is no button to remove a template assignment from an object, so in practice a template that has ever been assigned or launched cannot be deleted from the UI — **disable** it, which stops it being used while keeping its history.
 
 ---
 
@@ -133,6 +185,7 @@ Workflows can be run on any of the following record types:
 | **Capital Commitment** | Commitment records under a fund's investor list. |
 | **Capital Call** | Capital call records under a fund's Capital Calls tab. |
 | **Approval** | Approval items in the Approvals section. |
+| **KPI Report** | KPI reports of portfolio companies. Only requested reports get one (the reports an upload creates for other periods never do) — see [KPI Management & Workbook Upload](kpi_upload_user_guide#-tracking-a-report-the-journey-step-bar). |
 
 When creating a template you can leave "Applies to" blank to allow the template on any type, or restrict it to one type for stricter governance. A type-restricted template cannot be assigned to the wrong kind of object.
 
@@ -252,19 +305,19 @@ Magic links never expire by time; once the step is no longer current (or the wor
 
 ```mermaid
 sequenceDiagram
-  participant Actor
+  participant R as Reviewer
   participant Email
   participant MagicLinkPage
   participant System
 
   System->>Email: Step-activation email with magic link
-  Email->>Actor: Delivered
-  Actor->>MagicLinkPage: Click magic link
-  MagicLinkPage->>Actor: Show object name + View button + step description + state options
-  Actor->>MagicLinkPage: Optionally click View to open the object in a new tab
-  Actor->>MagicLinkPage: Select state + optional note → Submit
+  Email->>R: Delivered
+  R->>MagicLinkPage: Click magic link
+  MagicLinkPage->>R: Show object name + View button + step description + state options
+  R->>MagicLinkPage: Optionally click View to open the object in a new tab
+  R->>MagicLinkPage: Select state + optional note → Submit
   MagicLinkPage->>System: Record response
-  System->>System: Evaluate quorum; advance if met
+  System->>System: Evaluate quorum, then advance if met
 ```
 
 ---
@@ -341,25 +394,53 @@ Auto-assignment rules let you automatically assign a workflow template to an obj
 |-------|-------------|
 | **Applies to** | Inherited from the template's type. Read-only. |
 | **Priority (lower number runs first)** | When multiple rules match, the one with the lowest priority number wins. |
-| **Conditions (JSON)** | An optional list of attribute/operator/value checks. If left empty, the rule matches every object of the correct type (catch-all). |
+| **Conditions** | Rows of **field / operator / value**, all of which must match. Add one with **Add condition**; remove one with its **✕**. With no rows the rule matches every object of the correct type (catch-all). See [How conditions work](#how-conditions-work). |
 | **Automatically launch a workflow instance after assigning the template** | When ticked, a workflow instance is launched immediately after the template is assigned — no admin action required. |
 
 A template with rules for a type also appears in the **Launch Workflow** dialog only for records that match at least one of its rules.
 
+### Rule status — can this rule ever win?
+
+Rules for one record type form a single chain across **every** template: they are walked in priority order (lowest number first, and oldest first where two share a priority), and the first rule that applies assigns its template. Nothing else is tried after that. Because the rules live on separate template pages, a rule that can never be reached looks exactly like one that fires every day — so each row in the **Auto-assignment Rules** table carries a **Status**:
+
+| Status | Meaning | What to do |
+|--------|---------|-----------|
+| **Active** | The rule can win for some record. | Nothing. |
+| **Dormant** | Its template is disabled, so the rule is skipped and the next matching rule for the type applies. | Nothing, unless you want the template back — **Enable** restores the rule's place in the chain untouched. |
+| **Shadowed** | An earlier rule always matches first, so no record ever reaches this one. The badge names and links the rule that blocks it. | Open the blocking rule and either give it conditions, raise its priority number, or delete it. You cannot out-prioritise it from this side: the lowest priority number allowed is 0. |
+| **No template** | The rule points at a template that no longer exists. | Delete the rule. |
+
+A rule is called **Shadowed** only when an earlier rule is a catch-all (no conditions), or asks for exactly the same conditions. Two rules with different conditions both stay **Active**, even if one is in practice narrower than the other.
+
+On [**Workflow Templates**](/workflow_templates), a warning appears above the list for any record type where **every** rule is dormant: *"New folders get no workflow"*. That is the one case where records match a rule and still end up with nothing, and it cannot be seen from any single template's page.
+
 ### How conditions work
 
-Each condition checks a single field on the object:
+Each condition is one row: pick a **field**, an **operator** and a **value**. Every row must match (AND); to match one thing *or* another, add two rules. A rule with no rows matches every new object of its type.
 
-| Operator | Matches when… |
-|----------|--------------|
-| `eq` | The field equals the value. |
-| `not_eq` | The field does not equal the value. |
-| `gt` / `lt` / `gte` / `lte` | The field is greater/less than the value (numeric). |
-| `in` / `not_in` | The field is (or isn't) one of a list of values. |
-| `present` | The field has any non-blank value. |
-| `blank` | The field is empty or null. |
+**Which fields you can pick.** The field list depends on the record type and your company:
 
-All conditions in a rule must match simultaneously (AND logic). An empty conditions list always matches.
+- the fields you can search on for that record type, for example **Verified** and **Expiry date** on a KYC, **Imported** and **Percentage called** on a capital call, **Name** on a folder;
+- **Form type** on KYCs and capital commitments, and **Fund** where the record has one, picked from your own company's form types and funds;
+- every **custom field** on your company's forms for that record type, listed under **Custom fields** by its label. File, Header, Grid columns, Calculation and Check box custom fields are not offered.
+
+Totals that CapHive adds up from other records after the record is created are not offered, because they are always 0 when the rule is checked: a capital call's call amount, fees and collected amount; a KYC's committed, called, collected and distributed amounts; a commitment's called, collected and distributed amounts; a distribution's distribution and gross amounts. A commitment's **Committed amount** is entered when it is created, so it is offered.
+
+**Operators and values.** The value box matches the field: a dropdown for form types, funds, yes/no fields and custom fields with fixed options; a number box for numbers and amounts; the date picker for dates; a text box otherwise.
+
+| Operator | Matches when… | Offered for |
+|----------|--------------|-------------|
+| **is** / **is not** | The field equals / does not equal the value. | All fields (yes/no fields offer **is** only) |
+| **is one of** / **is not one of** | The field is / isn't one of several values. | Text, dropdowns |
+| **contains** | The text contains the value. | Text; multi-select custom fields |
+| **greater than** / **at least** / **less than** / **at most** | The number, amount or date compares as stated. | Numbers, amounts, dates |
+| **is blank** / **is present** | The field is empty / has any value. No value is needed. | Text and custom dropdowns |
+
+Amounts are in the fund's currency units, not cents: **at least 5000000** means five million. A record with no value for a field never matches **is**, **is not** or a comparison on that field; use **is blank** to catch it.
+
+**View as JSON.** The **View as JSON** link under the rows shows the same conditions as text, for copying or bulk edits; **View as rows** goes back. The JSON is checked exactly like the rows.
+
+**Checked on save.** **Save** refuses a condition that could never match, and says which row and why, for example *Condition 1: Unknown field "nationalty".*, *Condition 1: "greater than" can't be used with Form type.*, *Condition 1: Form type 999 is not one of this company's form types.*, *Condition 1: Ticket size needs a number.* or *The JSON is not a valid list of conditions.*
 
 ### When rules are evaluated
 
@@ -368,7 +449,7 @@ Rules are evaluated in two situations:
 1. **When a new object is created** — immediately after it is saved for the first time.
 2. **When an existing object is updated** — while rules exist for its type and the object does not already have a template assigned.
 
-This means you can configure a rule like "assign the AML Remediation Review to any Investor KYC where `verified` equals `true`" and it will trigger both when a KYC is created already-verified and when an existing KYC is later marked as verified.
+This means you can configure a rule like "assign the AML Remediation Review to any Investor KYC where **Verified** is **Yes**" and it will trigger both when a KYC is created already-verified and when an existing KYC is later marked as verified.
 
 Once a template is assigned, the rule will not re-trigger on further updates — the object already has an assignment.
 
@@ -403,9 +484,10 @@ sequenceDiagram
 
 | Use case | Type | Condition | Auto-launch |
 |----------|------|-----------|-------------|
-| Assign AML review to all verified KYCs | Investor KYC | `verified eq true` | No |
+| Assign AML review to all verified KYCs | Investor KYC | **Verified** is **Yes** | No |
 | Auto-launch IC vote on every new Approval | Approval | *(none — catch-all)* | Yes |
-| Assign LP data room review to folders named "Q3 2026" | Folder | `name eq Q3 2026` | No |
+| Assign LP data room review to folders named "Q3 2026" | Folder | **Name** is **Q3 2026** | No |
+| Give Fund IV KYCs of Indian nationals their own journey | Investor KYC | **Form type** is **Individual — Fund IV** and **Nationality** (custom field) is **India** | Yes |
 
 ---
 
@@ -471,7 +553,7 @@ Click **Export CSV** in the audit trail card header to download the full history
 
 **Setup:**
 1. Create a template "AML Remediation Review" with `Applies to = Investor KYC` and two steps: "AML Report Review" (states `Cleared, Escalate`, any one actor) and "Compliance Head Sign-off" (states `Approved, Rejected`, any one actor).
-2. On the template's show page, add an auto-assignment rule: condition `verified eq true`, auto-launch off, priority 0.
+2. On the template's show page, add an auto-assignment rule with the condition **Verified** is **Yes**, auto-launch off, priority 0.
 
 **What happens when a KYC is marked verified:**
 
@@ -499,6 +581,12 @@ sequenceDiagram
 ---
 
 ## Frequently Asked Questions
+
+**What is the difference between a human, system and acknowledge step?**
+A human step is completed by its actors voting. A system step completes on its own when its check finds the data in place, and an acknowledge step when one person clicks **Mark reviewed**. A template with system or acknowledge steps is a journey that CapHive keeps up to date from the record's data. See [Step kinds (journeys)](#step-kinds-journeys).
+
+**Why did a journey step's votes disappear?**
+Someone undid earlier work on the record, so sign-offs on later steps given before the change were reset, and their approvers were emailed. Tick **Keep sign-off when moved back** on a step to keep its votes in that case.
 
 ### Navigation and getting there
 
@@ -531,8 +619,14 @@ Steps can be added on the template form, or from the template page with **Add St
 **How do I edit a template?**
 Open it from [**Workflow Templates**](/workflow_templates) and click **Edit Template**. Everything can change except **Applies to** once it has been set. Running workflows keep the steps, actors and rules they were launched with. See [Editing a template](#editing-a-template).
 
+**How do I stop a template being used without deleting it?**
+Disable it: open it from [**Workflow Templates**](/workflow_templates) and click **Disable**, or press the pause button on its row in the list, then confirm. It keeps its steps, rules and history, stops being assigned or launched on anything new, and **Enable** brings it back. See [Enabling and disabling a template](#enabling-and-disabling-a-template).
+
 **How do I delete a template?**
-Open it and click **Delete**. It is refused while the template is assigned to any object or has any workflow run (active, complete, rejected or archived). See [Deleting a template](#deleting-a-template).
+Open it and click **Delete**. It is refused while the template is assigned to any object or has any workflow run (active, complete, rejected or archived) — disable it instead. See [Deleting a template](#deleting-a-template).
+
+**Why disable a template rather than delete it or empty its steps?**
+Deleting is refused once a template has ever been assigned or launched, because its runs are part of the audit trail. Disabling is the supported way to retire one: nothing new starts on it, everything it has already done stays readable, and you can reverse it with one click. Deleting its rules instead would lose how it was targeted, and emptying its steps would leave live workflows pointing at a template that no longer makes sense.
 
 **How do I launch a workflow on an object?**
 Open the object → **Workflow** tab → **Launch Workflow**, choose a template in **Select Review Template** and click **Launch Workflow**. The chosen template becomes the object's assigned template. See [Launching a Workflow](#launching-a-workflow).
@@ -541,7 +635,19 @@ Open the object → **Workflow** tab → **Launch Workflow**, choose a template 
 Click the link in the step email, pick a state on the card buttons, optionally add a note and click **Submit Response**; or, logged in, use **Your Response** on the timeline or the step button in the object's breadcrumb bar. See [How Actors Respond](#how-actors-respond).
 
 **How do I set up auto-assignment rules?**
-Open the template and, in **Auto-assignment Rules**, click **Add Rule**. Set **Priority (lower number runs first)**, the **Conditions (JSON)** list of attribute/operator/value checks, and tick **Automatically launch a workflow instance after assigning the template** if it should start on its own. See [Auto-Assignment Rules](#auto-assignment-rules).
+Open the template and, in **Auto-assignment Rules**, click **Add Rule**. Set **Priority (lower number runs first)**, add conditions with **Add condition** (field, operator, value), and tick **Automatically launch a workflow instance after assigning the template** if it should start on its own. With no conditions the rule applies to every new record of the type. See [Auto-Assignment Rules](#auto-assignment-rules).
+
+**How do I add a condition to an auto-assignment rule?**
+On the rule form click **Add condition**, then pick the **field**, the **operator** (for example **is**, **at least**, **is one of**) and the **value**; the value box becomes a dropdown, number box or date picker to suit the field. Add more rows for more conditions: all of them must match. Remove a row with its **✕**, then **Save**.
+
+**Which fields can an auto-assignment rule's conditions use?**
+The fields you can search on for that record type, **Form type** (KYCs and commitments) and **Fund**, plus every custom field on your company's forms for that type, listed under **Custom fields**. File, Header, Grid columns, Calculation and Check box custom fields, and totals that are added up after the record is created, are not offered. See [How conditions work](#how-conditions-work).
+
+**Can a workflow rule use a custom field, like Nationality on a KYC?**
+Yes. Custom fields from your company's forms for the record type appear under **Custom fields** in the field list, by their label. Fields with fixed options offer those options as values, and number fields compare as numbers. A record whose form has no such field, or which left it empty, matches only **is blank**.
+
+**How do I edit a rule's conditions as JSON?**
+Click **View as JSON** under the condition rows to see and edit the same conditions as text; **View as rows** switches back and redraws the rows from your edits. **Save** checks the JSON the same way as rows, and refuses text that is not a list of conditions.
 
 **How do I remind, reset or archive a running workflow?**
 Open the timeline page and click **Remind**, **Reset** or **Archive** in the header; **Reset to Step 1** and **Archive** are also on the object's **Workflow** tab. They appear only while the workflow is active and only for company admins. See [Manual Controls — Reset, Archive, Remind](#manual-controls--reset-archive-remind).
@@ -567,6 +673,12 @@ Nothing is blocked: objects work as normal, locked buttons never apply to an obj
 
 **What happens when I save a template?**
 The template and its steps are stored for your company and appear on [**Workflow Templates**](/workflow_templates) and in the Launch dialog of matching objects. Nothing is launched and no one is notified. Its auto-assignment rules start applying to objects created or updated afterwards.
+
+**What happens when I disable a template?**
+Nothing new is assigned to it or launched on it, and its auto-assignment rules go dormant: a record they would have matched falls through to the next matching rule for that type instead, and gets nothing only when no enabled template's rule matches it. The confirmation dialog names the template that will take over before you confirm. Where no rule takes over on a journey type, new capital calls, distributions or KYCs get no journey, step bar or task reminders. It disappears from the **Launch Workflow** dialog, and a workflow cannot be launched on it even where an object was assigned to it earlier. Workflows already running are untouched and can still be completed, reset or archived, and nothing is deleted. See [Enabling and disabling a template](#enabling-and-disabling-a-template).
+
+**What happens when I enable a template again?**
+It is available immediately: its rules start assigning it to records created or updated from then on, and it is offered in the **Launch Workflow** dialog again. Records created while it was disabled are not given a workflow retrospectively — launch one on them from their **Workflow** tab if you want one.
 
 **What happens when I launch a workflow?**
 The template is assigned to the object, a copy of its steps, actors and rules is stored with the run, and the run starts as **Active** at the first step. Each actor on that step gets an "Action Required" email with a personal response link (if **Email actors when this step becomes active** is on), with the object's files attached for folders and KYCs when the template says so.
@@ -595,6 +707,12 @@ A job at 06:00 each day checks every active run. When the current step's interva
 **What happens when an auto-assignment rule matches?**
 When an object without an assigned template is created, or updated while rules exist for its type, the lowest-priority-number matching rule assigns its template. With auto-launch on, the workflow launches immediately and step 1 actors are emailed; otherwise the template just becomes the default choice in **Launch Workflow**.
 
+**What happens when I save an auto-assignment rule with a condition that can't work?**
+**Save** refuses it and the form stays open with what you entered, naming the row and the problem, for example *Condition 2: Unknown field "nationalty".* or *Condition 1: Ticket size needs a number.* This covers a misspelt field, an operator the field doesn't support, another company's form type or fund, a missing value and JSON that isn't a list of conditions. Nothing is saved until every row is valid.
+
+**What happens to a workflow rule when a custom field it uses is deleted?**
+The rule stops matching: new records skip it and the next matching rule applies, so it never assigns its template to more records than before. When you edit the rule, that row shows in red as **Unknown field: <name>**, and **Save** is refused until you remove or change it.
+
 ### Troubleshooting and edge cases
 
 **Can I edit a template while a workflow is running?**
@@ -613,7 +731,16 @@ Yes. The magic link page includes a **View** button next to the object's name. C
 Only if the template's "Applies to" field is left blank (untyped). Once a type is set on a template, it can only be assigned to objects of that type.
 
 **Can I remove a template assignment from an object?**
-There is no remove button. Launching a different template on the object replaces the assignment. Because assignments stay in place, a template that has ever been assigned cannot be deleted from the UI; rename it or stop using it instead.
+There is no remove button. Launching a different template on the object replaces the assignment. Because assignments stay in place, a template that has ever been assigned cannot be deleted from the UI; disable it instead.
+
+**A new capital call, distribution or KYC got no journey. Why?**
+One of three things. The company's journeys were never set up — use **Set up journeys** on [**Workflow Templates**](/workflow_templates). Or every auto-assignment rule for that record type belongs to a **disabled** template, in which case each rule is skipped and nothing is left to assign; the template list shows a warning saying exactly that, the **Status** column shows which templates are off, and the **Set up journeys** menu shows the kind as *disabled*. Or the journey template has no rule of its own, so nothing points at it — check its **Auto-assignment Rules** tab, and whether the rule you added shows as **Shadowed**. Enabling a template, or fixing a rule, gives journeys to records created from then on; a record created while nothing matched picks one up the next time it is saved.
+
+**A template is disabled but its workflows are still running and sending reminders. Is that expected?**
+Yes. Disabling only stops new work: a run already under way follows the snapshot taken when it launched, so it keeps advancing, reminding and completing. Archive the run if you want it to stop.
+
+**My new rule shows as Shadowed. Why, and how do I fix it?**
+Because an earlier rule in the chain always matches first, so no record ever reaches yours. Rules for a record type are walked across all templates in priority order, lowest number first, and where two rules share a priority the older one wins — so a catch-all rule created before yours at the same priority takes every record. The badge names the blocking rule and links its template. Fix it from that side: give the blocking rule conditions so it stops matching everything, raise its priority number so it runs later, or delete it. Lowering your own rule's priority cannot help, because 0 is the lowest number allowed. Nothing is assigned differently until you change one of the two rules.
 
 **Will auto-assignment trigger again on an object that already has a template?**
 No. Rules only run for objects with no assigned template, so once a template is assigned (manually or by a rule) further updates never re-assign or re-launch.
@@ -644,6 +771,18 @@ Only buttons the page has marked as lockable. On a capital call: **Edit**, **Del
 
 **The actors of a step were not emailed. Why?**
 Either **Email actors when this step becomes active** is unticked on that step, or the actor list was empty or changed after launch (runs use the actors captured at launch). Use **Remind** to email pending actors, or share the timeline link with them.
+
+**Why can't I pick Call amount, or a KYC's Committed amount, in a rule's conditions?**
+Those totals are added up from remittances, commitments or payments after the record is created, so they are always 0 at the moment the rule is checked and a rule on them would never fire. The same applies to a call's fees and collected amount and a distribution's distribution and gross amounts. A commitment's **Committed amount** is entered when it is created, so commitment rules offer it.
+
+**Is an amount in a workflow rule condition in cents?**
+No. Amounts are compared in the fund's currency units, the same as search: **Committed amount** **at least** **5000000** means five million.
+
+**My rule uses "is not", but a record with no value didn't match. Why?**
+A record with no value for a field never matches **is**, **is not** or a comparison on that field, because there is nothing to compare. Add a separate rule using **is blank** for records that left the field empty.
+
+**Can a rule match one condition or another (OR)?**
+No. All conditions in one rule must match. To route records that meet either of two conditions to the same template, add two rules to that template, one per condition.
 
 ## Related Guides
 

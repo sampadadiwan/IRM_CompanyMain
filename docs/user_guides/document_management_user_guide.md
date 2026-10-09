@@ -23,7 +23,7 @@ CapHive organises files in a folder tree with automatic access inheritance, docu
 13. [Sharing a Document Externally](#sharing-a-document-externally)
 14. [Document Access Rights](#document-access-rights)
 15. [Who Viewed a Document](#who-viewed-a-document)
-16. [Document Q&A](#document-qa)
+16. [AI checks of KYC documents](#ai-checks-of-kyc-documents)
 17. [Download and Print Controls](#download-and-print-controls)
 18. [Private Folders](#private-folders)
 19. [Bulk Actions on Documents](#bulk-actions-on-documents)
@@ -43,7 +43,7 @@ CapHive organises files in a folder tree with automatic access inheritance, docu
 | **Owner** | The business record a document belongs to (a fund, commitment, deal…). |
 | **Owner Tag** | A functional label that workflows use to find specific document types (e.g. `KYC`, `Offer Template`). |
 | **Share** | Giving an external email address access to one document. |
-| **Document Q&A** | AI-extracted question-and-answer facts from a document's content. |
+| **Document Checks** | AI checks that read KYC documents to fill in or compare KYC fields — see [Document Checks](document_checks_user_guide). |
 | **Access Right** | A permission controlling who can see a folder or document. |
 
 ---
@@ -227,9 +227,9 @@ Each document records **who viewed it and when** — useful for audit and for co
 
 ---
 
-## Document Q&A
+## AI checks of KYC documents
 
-CapHive can read a document with AI and extract key facts as question-and-answer pairs — for example pulling fields out of a KYC form or financial statement. Review extracted facts on the document's **Q&A** tab, which appears next to **Tasks** once CapHive holds extracted facts for the file; there is no separate "Document Questions" page. Extraction is not triggered by upload and has no button — it runs when CapHive support enables it for a document type. These answers also power the support agents and AI rules, so the system can answer questions about a document's content without someone reading it manually.
+CapHive can read the documents investors upload with their KYC and fill in or check KYC fields from them. That is set up in [Document Checks](document_checks_user_guide), and the results show on each KYC's **Document checks** tab. Documents themselves have no AI Q&A tab.
 
 ---
 
@@ -443,8 +443,8 @@ Any file can be uploaded. PDFs preview in the viewer; other formats render in th
 **How do I grant a single user or stakeholder access to one document?**
 Open the document, go to the **Access Rights** tab and click **Grant Access**, then choose the user or stakeholder. Document-level rights extend the folder's rights; they never remove access the folder already grants. See [Document Access Rights](#document-access-rights).
 
-**Where do I see the AI-extracted Q&A for a document?**
-Open the document page; a **Q&A** tab appears next to **Tasks** once CapHive holds extracted facts for the file. Extraction is not triggered by upload and there is no button for it; it runs when support enables it for a document type. There is no separate "Document Questions" page. See [Document Q&A](#document-qa).
+**Where do I see what the AI read from a KYC document?**
+On the KYC's **Document checks** tab, after **Check documents** has run. Set up what the AI reads in [Document Checks](document_checks_user_guide). See [AI checks of KYC documents](#ai-checks-of-kyc-documents).
 
 **How do I make a folder private?**
 Private folders are set up by the platform (for example when a private parent folder gets a sub-folder, or through support), not from the folder form; there is no **Private** checkbox. A private folder shows **Private: Yes** on its page and is hidden from everyone without an explicit access right, including employees whose rights come only from the owner record. See [Private Folders](#private-folders).

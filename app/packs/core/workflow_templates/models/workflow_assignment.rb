@@ -31,7 +31,15 @@ class WorkflowAssignment < ApplicationRecord
   end
 
   def block_if_active_instance
-    if WorkflowInstance.where(workflowable: workflowable).instance_active.exists?
+    active = WorkflowInstance.where(workflowable: workflowable).instance_active
+    # Deleting the record itself (this assignment goes with it via dependent: :destroy) while only an
+    # evaluated journey is active: let it go — a journey is advisory tracking, and every new capital
+    # call has one, so blocking here made such calls undeletable. Unassigning a live workflow, or
+    # deleting a record mid human-approval workflow, is still refused as before.
+    # Worked examples E17 — openspec/changes/archive/2026-10-02-capital-call-journey/design.md#worked-examples
+    return if destroyed_by_association && !active.exists?(evaluated: false)
+
+    if active.exists?
       errors.add(:base, "Cannot remove the workflow assignment while a workflow is active. Archive the active workflow first.")
       throw :abort
     end

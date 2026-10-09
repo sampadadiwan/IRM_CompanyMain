@@ -407,11 +407,16 @@ en:
     my_profile: My Profile
     my_task: My Task
     notices: Notices
+    workflows: Workflows
+    manage_workflow_templates: Manage Workflow Templates
     personalize_investor_notices: Personalize Investor Notices
     provide_access: Provide Access
     setup_compliance_rules: Setup Compliance Rules
     todo_daily_tasks: To-do and Daily Tasks
     user_guides: User Guides
+    help: Help
+    faqs: FAQs
+    frequently_asked_questions: Frequently asked questions
     release_notes: Release Notes
     internal_docs: Internal Docs
     internal_docs_subtitle: Marketing and strategy documentation

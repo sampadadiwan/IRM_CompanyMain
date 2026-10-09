@@ -88,6 +88,12 @@ Scenario Outline: Bulk Actions on kycs
   And Given I upload an investors file for the company
   And the investors have approved investor access
   And Given import file "investor_kycs.xlsx" for "InvestorKyc"
+  # Reminders go to KYCs the investor hasn't submitted, so send them before verifying: bulk Unverify
+  # now leaves KYCs "Completed" like the single UnVerify (investor-kyc-journey E17), which a reminder skips
+  Given I filter the "investor_kycs" by "verified=false"
+  And I trigger the bulk action for "Send Reminder"
+  Then I should see the "SendReminder completed"
+  Then the kycs users should receive the kyc reminder email
   Given I filter the "investor_kycs" by "verified=false"
   And I trigger the bulk action for "Verify"
   Then I should see the "Verify completed"
@@ -96,10 +102,7 @@ Scenario Outline: Bulk Actions on kycs
   And I trigger the bulk action for "Unverify"
   Then I should see the "Unverify completed"
   Then the kycs should be unverified
-  Given I filter the "investor_kycs" by "verified=false"
-  And I trigger the bulk action for "Send Reminder"
-  Then I should see the "SendReminder completed"
-  Then the kycs users should receive the kyc reminder email
+  And the unverified kycs should be completed
 
 
 

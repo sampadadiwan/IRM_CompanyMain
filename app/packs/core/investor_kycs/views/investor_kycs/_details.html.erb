@@ -12,8 +12,15 @@
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#audit-trail-tab">Audit Trail</a>
     <% end %>
 
-    <% if policy(@investor_kyc).validate_docs_with_ai? %>
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-validation-tab" >Doc Validations</a>
+    <%# Document Checks (openspec/changes/document-checks, card ⑧) — fund users only; id kept for the journey %>
+    <% doc_checks_visible = policy(@investor_kyc).validate_docs_with_ai? && current_user.entity_id == @investor_kyc.entity_id && !current_user.curr_role_investor? %>
+    <% if doc_checks_visible %>
+      <%# One assessment for the tab title and the tab itself (each one looks up every document) %>
+      <% doc_check_assessment = DocChecks::Assessment.new(@investor_kyc) %>
+      <% doc_check_attention = doc_check_assessment.attention_count %>
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-validation-tab" id="doc_checks_tab_link">
+        <%= t("doc_checks.panel.title") %><%= " (#{doc_check_attention})" if doc_check_attention.positive? %>
+      </a>
     <% end %>
 
     <% if policy(@investor_kyc).assign_workflow? %>
@@ -34,11 +41,12 @@
         </div>
       </div>
 
-      <% if policy(@investor_kyc).validate_docs_with_ai? %>
+      <% if doc_checks_visible %>
 
         <div id="docs-validation-tab" class="tab-pane fade in show">
           <div id="docs_validation" class="associated_entity">
-            <%= Json2table.get_html_table(@investor_kyc.doc_question_answers, JsonTable::TABLE_OPTIONS).html_safe if @investor_kyc.doc_question_answers.present? %>
+            <%= turbo_stream_from @investor_kyc, :doc_checks %>
+            <%= render "doc_check_runs/panel", record: @investor_kyc, assessment: doc_check_assessment %>
           </div>
         </div>
 

@@ -13,23 +13,24 @@ This guide explains how to declare a distribution, allocate it across investors,
 1. [Where Distributions Fit](#where-distributions-fit)
 2. [Key Terms in Plain English](#key-terms-in-plain-english)
 3. [The Distribution Journey](#the-distribution-journey)
-4. [Creating a Distribution](#creating-a-distribution)
-5. [How Each Investor's Share Is Allocated](#how-each-investors-share-is-allocated)
-6. [Per-Investor Adjustments (Distribution Fees)](#per-investor-adjustments-distribution-fees)
-7. [Generating Distribution Payments](#generating-distribution-payments)
-8. [Approving a Distribution](#approving-a-distribution)
-9. [Understanding a Distribution Payment](#understanding-a-distribution-payment)
-10. [Gross Payable vs Net Payable](#gross-payable-vs-net-payable)
-11. [Completing Payments](#completing-payments)
-12. [Working Across Currencies](#working-across-currencies)
-13. [Investor Notifications](#investor-notifications)
-14. [Generating Distribution Notices](#generating-distribution-notices)
-15. [Redeeming Fund Units](#redeeming-fund-units)
-16. [Refreshing Adjustments After a Change](#refreshing-adjustments-after-a-change)
-17. [Linking a Portfolio Company Sale](#linking-a-portfolio-company-sale)
-18. [Importing Distributions and Payments](#importing-distributions-and-payments)
-19. [Worked Example](#worked-example)
-20. [Frequently Asked Questions](#frequently-asked-questions)
+4. [Tracking a Distribution: the Journey Step Bar](#tracking-a-distribution-the-journey-step-bar)
+5. [Creating a Distribution](#creating-a-distribution)
+6. [How Each Investor's Share Is Allocated](#how-each-investors-share-is-allocated)
+7. [Per-Investor Adjustments (Distribution Fees)](#per-investor-adjustments-distribution-fees)
+8. [Generating Distribution Payments](#generating-distribution-payments)
+9. [Approving a Distribution](#approving-a-distribution)
+10. [Understanding a Distribution Payment](#understanding-a-distribution-payment)
+11. [Gross Payable vs Net Payable](#gross-payable-vs-net-payable)
+12. [Completing Payments](#completing-payments)
+13. [Working Across Currencies](#working-across-currencies)
+14. [Investor Notifications](#investor-notifications)
+15. [Generating Distribution Notices](#generating-distribution-notices)
+16. [Redeeming Fund Units](#redeeming-fund-units)
+17. [Refreshing Adjustments After a Change](#refreshing-adjustments-after-a-change)
+18. [Linking a Portfolio Company Sale](#linking-a-portfolio-company-sale)
+19. [Importing Distributions and Payments](#importing-distributions-and-payments)
+20. [Worked Example](#worked-example)
+21. [Frequently Asked Questions](#frequently-asked-questions)
 
 ---
 
@@ -77,6 +78,75 @@ flowchart TD
     C --> D[4. Mark payments complete<br/>confirm money sent]
     D --> E[5. Notify investors]
 ```
+
+---
+
+## Tracking a Distribution: the Journey Step Bar
+
+Every distribution created after your company's distribution journeys were set up shows a **step bar** at the top of its page, listing every task the distribution goes through, and a **What's needed now** panel with the next thing to do and a button that does it. CapHive works out which task the distribution is on from its own data: generating payments, approving notices, completing payments or sending the emails moves it on by itself, and the page updates without a refresh, even when a colleague does the work. You only click **Mark reviewed** for the two review tasks, which leave no trace in the data. Distributions that existed before the journeys were set up show no step bar.
+
+Once every task is done, the step bar stays on the page for the rest of the day so you can see the journey finish, then folds itself away: a day after the last task passed, the distribution page opens without it. It is never lost — a green route icon appears in the breadcrumb bar at the top of the page, next to the heart and the user guide icon, and clicking it shows the finished journey again (clicking it again puts it away).
+
+Each task in the bar has a mark:
+
+| Mark | Means |
+|---|---|
+| ✓ | done |
+| **●** | **we are here**: the distribution is waiting on this task, it is not done yet |
+| ○ | later; not reached yet |
+| **↺** | **back here**: this task was done, but something was undone, so it must be done again |
+| n/a | this distribution doesn't need the task (hover to see why) |
+
+The panel's button runs the real control on the page: for example it opens the **Actions** menu and clicks **Mark Payments Completed**, which then asks you to confirm as usual. "Approve notices" opens **View Generated Notices To Approve** in a new window, so the distribution page stays where it is.
+
+### The two journeys
+
+Your company has two journeys. **Full: Notify Investors** is used for new distributions; **Light: Record Only** is used for distributions created by the distribution importer, which never email investors. A company admin can add an approval step (for example a CFO sign-off) or remove tasks under the [workflow templates](/workflow_templates).
+
+```mermaid
+flowchart LR
+    A["Create payments"] --> B["Generate notices"] --> C["Approve notices"] --> D["Review email"]
+    D --> E["Check preview"] --> CFO["CFO sign-off"] --> F["Approve distribution"] --> G["Mark payments completed"]
+    G --> H["Email investors"] --> I["Redeem units"]
+```
+
+Payments are marked completed **before** investors are emailed, because CapHive only emails a completed payment.
+
+| Task (Full) | Done when | Not applicable when | Moves back when |
+|---|---|---|---|
+| Create payments | every commitment the fund had when the distribution was created has a payment (for an Upload distribution: payments exist and the upload finished without errors) | — | a payment is deleted |
+| Generate notices | every investor who is emailed has a notice; an investor with unverified KYC gets none, and the panel says so | the fund has no **Distribution Template**, or investors are not emailed | Recompute Fees, a date change or a payment's figures changed after the notices were made |
+| Approve notices | every generated notice is approved on the Documents screen | as above | a notice is unapproved, or notices are regenerated |
+| Review email | someone clicked **Mark reviewed** | investors are not emailed, or they already have been | the distribution's or fund's distribution email is edited |
+| Check preview | someone clicked **Mark reviewed** | as above | as above |
+| CFO sign-off | an approver on the step approves (any one of them) | no approver has been picked on the step yet | earlier work is undone after the sign-off (the sign-off is reset) |
+| Approve distribution | the distribution is approved | the distribution is imported | — |
+| Mark payments completed | every payment is completed | — | a payment's **Completed** box is unticked |
+| Email investors | every investor who should be emailed has been sent the email | investors are not emailed | — |
+| Redeem units | every completed payment with a face value for redemption has redeemed units | the distribution has no unit prices | redeemed units are deleted |
+
+"Investors are not emailed" means the distribution was imported, its **Send Notification** setting is off, or every commitment is set to Skip Doc Gen.
+
+```mermaid
+flowchart LR
+    A["Create payments"] --> G["Mark payments completed"] --> I["Redeem units"]
+```
+
+**Light: Record Only** has just these three tasks, with the same rules.
+
+Until investors are emailed, the panel also warns about commitments set to Skip Doc Gen, investors with nobody subscribed to Distribution emails, and KYCs with no bank account number.
+
+### The CFO sign-off
+
+The Full journey includes a **CFO sign-off** approval step before **Approve distribution**, set up with no approver. To use it, a company admin opens the Full journey under the [workflow templates](/workflow_templates), edits the **CFO sign-off** step and picks the approver(s); any one approval passes it, and a rejection sends the distribution back a step. Until someone is picked the step shows as n/a ("No approver set"), so no distribution waits on it. Approvers are fixed when a distribution's journey starts, so picking them affects distributions created afterwards; to drop the step, delete it from the template.
+
+### When work is undone
+
+If someone undoes earlier work (deletes a payment, unticks **Completed**, runs **Recompute Fees**, changes the distribution date, unapproves or regenerates a notice, deletes redeemed units, or edits the distribution email) the journey moves back at once and shows ↺ with the reason. Sign-offs on **later** tasks that were given before the change are reset, because they no longer cover the current figures; approvers whose sign-off was reset get an email.
+
+### Setting it up
+
+A company admin opens the [workflow templates](/workflow_templates) page and chooses **Set up journeys → Set up capital distribution journeys**; once done that menu item shows **✓ Capital distribution journeys set up**. The menu's number badge counts the journey types still to set up. New fund companies get the journeys automatically. Only distributions created afterwards get a journey.
 
 ---
 
@@ -204,6 +274,8 @@ Approval is a formal confirmation step:
 1. Open the distribution.
 2. Choose **Actions → Approve**. The system records who approved it.
 
+Approving needs the **Approver** role as well as update access on the fund, as for capital calls; without it **Approve** is not shown.
+
 Investors can only be emailed **after** the distribution is approved. Approval does not control what investors can see: an investor with access to the fund sees their payment as soon as it is generated.
 
 ---
@@ -272,7 +344,7 @@ The $300 gap between gross (1,550) and net (1,250) is the tax withheld plus the 
 "Completing" a payment confirms the cash has been sent to the investor.
 
 - **One payment:** open the payment and choose **Actions → Mark Payment Completed**.
-- **All payments at once:** open the approved distribution and choose **Actions → Mark Payments Completed** — the system completes them in turn and reports how many succeeded.
+- **All payments at once:** open the approved distribution and choose **Actions → Mark Payments Completed** — the system completes them in turn and reports how many succeeded. This is refused for a distribution that is not approved yet.
 
 When a payment completes, the distribution's completed total updates. No email is sent: use **Send Payment Notifications** afterwards.
 
@@ -459,7 +531,7 @@ To edit or delete, open the payment from the **Payments** tab and use **Edit** o
 Distributions: on the fund's **Distributions** tab use **Upload** (an import of type CapitalDistribution) and **Download** (Excel). Payments: on the distribution's **Payments** tab use **Upload** (enabled only when the basis is "Upload") and **Download**. Generate Payments and Payments Paid can only be set through the distribution import. See [Importing Distributions and Payments](#importing-distributions-and-payments).
 
 **How do I approve a distribution?**
-Open the distribution and choose **Actions → Approve**, then confirm "This will mark the distribution as approved". The entry is shown to anyone with update access on the fund while the distribution is unapproved; no separate approver role is checked. See [Approving a Distribution](#approving-a-distribution).
+Open the distribution and choose **Actions → Approve**, then confirm "This will mark the distribution as approved". The entry is shown to users with the **Approver** role and update access on the fund while the distribution is unapproved. See [Approving a Distribution](#approving-a-distribution).
 
 **How do I mark payments as completed?**
 All at once: open the approved distribution and choose **Actions → Mark Payments Completed**; the notice tells you how many payments were completed. One at a time: open the payment and choose **Actions → Mark Payment Completed**, or **Edit** it and tick **Completed**. See [Completing Payments](#completing-payments).
@@ -554,8 +626,32 @@ Generate Documents skips that payment with "Investor Kyc not verified", so there
 
 ### Troubleshooting and edge cases
 
+**Why does my distribution have no step bar?**
+Only distributions created after your company's distribution journeys were set up have one. Distributions created before then keep today's page; nothing is added to them later. If none of your new distributions show a step bar, the journeys were never set up: a company admin can choose **Set up journeys → Set up capital distribution journeys** on the [workflow templates](/workflow_templates) page. See [Tracking a Distribution](#tracking-a-distribution-the-journey-step-bar).
+
+**Why are Generate notices and Approve notices shown as n/a?**
+Because the fund has no **Distribution Template**, so no notice is ever made and the email goes without one. Add a template under the fund (**Actions → Misc → New Template**, tag **Distribution Template**) and the two tasks apply from the next check. They are also n/a when investors are not emailed at all: an imported distribution, **Send Notification** off, or every commitment set to Skip Doc Gen.
+
+**Why did the step bar move back to an earlier task?**
+Something undid earlier work, and the panel names it, for example "Fees were recomputed after the notices were generated". Recompute Fees, a date change or a payment's figures changing make the notices out of date: unapprove them on the Documents screen, then click **Generate Documents** (approved notices are never replaced). Deleting a payment, unticking **Completed** or deleting redeemed units move back the matching task.
+
+**Why was my sign-off on the distribution reset?**
+Your sign-off was given before an undo that moved the journey back past your step, so it no longer covers the current figures. You get an email naming the change; sign off again once the earlier tasks are done. An admin can tick **Keep sign-off when moved back** on the approval step to opt it out.
+
+**Why does the CFO sign-off show as n/a?**
+Nobody has been picked to sign off yet. The step is set up with no approver; a company admin edits the **CFO sign-off** step of the Full journey under the [workflow templates](/workflow_templates) and picks the approver(s). Distributions created after that wait for the sign-off; ones created before keep it as n/a, because a journey's approvers are fixed when it starts.
+
+**Why can't I see Approve on a distribution?**
+Approving needs the **Approver** role as well as update access on the fund (the same as capital calls), and the distribution must not be approved already. Ask a company admin to give you the role.
+
+**Do I need to refresh the distribution page to see the journey move on?**
+No. When the background work finishes (payments generated, notices generated, emails sent, units redeemed) or a colleague approves, completes or emails, the step bar and panel update by themselves on every open page.
+
+**Where has the step bar gone on an old distribution?**
+It is hidden, not removed. A journey hides itself a day after its last task passed, so a settled distribution opens on its figures rather than on a finished checklist. Click the green route icon in the breadcrumb bar at the top of the page (next to the heart and the user guide icon) to show the whole journey again, including when each task was done; click it again to put it away. The icon only appears on records whose journey is complete.
+
 **Mark Payments Completed or Send Payment Notifications is missing from the Actions menu - why?**
-Both only appear once the distribution is **approved** and you have update access on the fund. **Redeem Units** only appears when unit prices are set on the distribution, and **Send Notification** on a single payment only appears after that payment is completed.
+Both only appear once the distribution is **approved** and you have update access on the fund; a direct request to complete the payments of an unapproved distribution is refused with "Access Denied". **Redeem Units** only appears when unit prices are set on the distribution, and **Send Notification** on a single payment only appears after that payment is completed.
 
 **I completed the payments but investors got no email - why?**
 Completing never sends email on its own. Choose **Actions → Send Payment Notifications** on the distribution. If some investors still receive nothing, check the error summary: the distribution may be imported, **Send Notification** may be off, the commitment may have `skip_doc_gen` Yes, or the investor may have no approved user subscribed to Distribution notifications.

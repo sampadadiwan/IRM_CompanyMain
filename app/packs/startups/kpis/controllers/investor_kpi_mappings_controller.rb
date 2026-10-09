@@ -37,6 +37,9 @@ class InvestorKpiMappingsController < ApplicationController
     authorize @investor_kpi_mapping
     respond_to do |format|
       if @investor_kpi_mapping.save
+        # The portco's first mapping passes "Set up KPI mappings" on its open KPI report journeys
+        # Worked examples H15 — openspec/changes/kpi-report-journey/design.md#worked-examples
+        KpiReport.journey_progress_for_portco(@investor_kpi_mapping.entity_id, @investor_kpi_mapping.investor_id, actor: current_user)
         format.html { redirect_to investor_kpi_mapping_url(@investor_kpi_mapping), notice: "Investor kpi mapping was successfully created." }
         format.json { render :show, status: :created, location: @investor_kpi_mapping }
       else
@@ -78,12 +81,26 @@ class InvestorKpiMappingsController < ApplicationController
   end
 
   # DELETE /investor_kpi_mappings/1 or /investor_kpi_mappings/1.json
+  # Refused for a parent mapping; otherwise deletes the mapping and the KPIs that use it (the page's
+  # popup warned how many) — never an error page.
+  # Worked examples H11, H13, X2, X5 — openspec/changes/kpi-report-journey/design.md#worked-examples
   def destroy
-    @investor_kpi_mapping.destroy!
+    result = InvestorKpiMappingDelete.call(mapping: @investor_kpi_mapping, user: current_user)
 
     respond_to do |format|
-      format.html { redirect_to investor_path(@investor_kpi_mapping.investor_id, tab: "kpi-mappings-tab"), notice: "Investor kpi mapping was successfully destroyed." }
-      format.json { head :no_content }
+      if result.success?
+        deleted = result[:kpis_deleted].to_i
+        notice = if deleted.positive?
+                   "#{@investor_kpi_mapping.reported_kpi_name} and #{helpers.pluralize(deleted, 'KPI')} deleted."
+                 else
+                   "Investor kpi mapping was successfully destroyed."
+                 end
+        format.html { redirect_to investor_path(@investor_kpi_mapping.investor_id, tab: "kpi-mappings-tab"), notice: }
+        format.json { head :no_content }
+      else
+        format.html { redirect_to investor_kpi_mapping_path(@investor_kpi_mapping), alert: result[:error] }
+        format.json { render json: { error: result[:error] }, status: :unprocessable_entity }
+      end
     end
   end
 

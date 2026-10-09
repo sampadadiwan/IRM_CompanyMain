@@ -1,6 +1,7 @@
 <%# Standalone step form — used for new/edit step pages (not nested in template form) %>
 <%= render FormCard.new(title: "Step: #{step.name.presence || 'New'}") do %>
-  <%= form_with(model: [@workflow_template, step], validate: true) do |form| %>
+  <%= form_with(model: [@workflow_template, step], validate: true,
+        data: { controller: "workflow-step-kind" }) do |form| %>
     <% if step.errors.any? %>
       <div class="alert alert-danger">
         <ul class="mb-0">
@@ -11,11 +12,22 @@
       </div>
     <% end %>
 
-    <%= form.hidden_field :position %>
+    <%# Step number sits beside the name — typing an existing step's number moves this step into
+        that slot and pushes the rest down; the template's steps are renumbered 1, 2, 3… on save %>
+    <div class="row">
+      <div class="col-md-3 form-group">
+        <%= form.label :position, "Step number" %>
+        <%= form.number_field :position, class: "form-control", min: 1 %>
+        <small class="text-muted">Change it to move this step.</small>
+      </div>
 
-    <div class="form-group">
-      <%= form.label :name %>
-      <%= form.text_field :name, class: "form-control", placeholder: "e.g. Legal Review" %>
+      <div class="col-md-9 form-group">
+        <%= form.label :name %>
+        <%= form.text_field :name, class: "form-control", placeholder: "e.g. Legal Review" %>
+        <small class="text-muted">
+          The other steps close ranks and are renumbered 1, 2, 3… when you save.
+        </small>
+      </div>
     </div>
 
     <div class="form-group">
@@ -23,14 +35,53 @@
       <%= form.text_area :description, class: "form-control", rows: 2 %>
     </div>
 
+    <%# How the step completes. Human steps keep today's fields; system and acknowledge steps are
+        decided by a registered check (see WorkflowChecks::Registry) and chase an owner instead. %>
     <div class="form-group">
+      <%= form.label :kind, "Kind" %>
+      <div>
+        <% WorkflowStep.kinds.each_key do |kind| %>
+          <div class="form-check form-check-inline">
+            <%= form.radio_button :kind, kind, class: "form-check-input",
+                  data: { action: "change->workflow-step-kind#change" } %>
+            <%= form.label "kind_#{kind}", kind.humanize, class: "form-check-label" %>
+          </div>
+        <% end %>
+      </div>
+      <small class="text-muted">Human: approvers vote. System: passes when its check finds the data
+        in place. Acknowledge: one person clicks Mark reviewed.</small>
+    </div>
+
+    <% check_options = WorkflowChecks::Registry.options_for(@workflow_template.workflowable_type) %>
+    <div data-workflow-step-kind-target="checkFields">
+      <div class="row">
+        <div class="col-md-6 form-group">
+          <%= form.label :check_key, "Check" %>
+          <%= form.select :check_key, check_options, { include_blank: "Select a check" },
+                class: "form-control",
+                data: { workflow_step_kind_target: "checkSelect", action: "change->workflow-step-kind#refresh" } %>
+        </div>
+        <div class="col-md-6 form-group">
+          <%= form.label :skip_key, "Skip when" %>
+          <%= form.select :skip_key, check_options, { include_blank: "Never skip" },
+                class: "form-control" %>
+        </div>
+      </div>
+      <div class="form-group">
+        <%= form.label :owner_user_id, "Owner (reminded when this step stalls)" %>
+        <%= form.select :owner_user_id, entity_users_for_select.map { |u| [u.full_name, u.id] },
+              { include_blank: "Record creator" }, class: "form-control" %>
+      </div>
+    </div>
+
+    <div class="form-group" data-workflow-step-kind-target="humanFields">
       <%= form.label :states, "Allowable states (comma-separated)" %>
       <%= form.text_field :states, class: "form-control",
             placeholder: "Approved,Rejected,Needs Info" %>
       <small class="text-muted">First value is the displayed default.</small>
     </div>
 
-    <div class="row">
+    <div class="row" data-workflow-step-kind-target="humanFields">
       <div class="col-md-6 form-group">
         <%= form.label :quorum_rule, "Quorum rule" %>
         <%= form.select :quorum_rule, WorkflowStep.quorum_rules.keys.map { |k|
@@ -68,6 +119,25 @@
     </div>
 
     <div class="form-group">
+      <%= form.label :unlocks, "Unlocks buttons (comma-separated labels)" %>
+      <%= form.text_field :unlocks, class: "form-control", placeholder: "e.g. Approve" %>
+      <small class="text-muted">Reserved for a later release, where the named buttons (e.g. Approve) will stay
+        disabled until this step is done or not applicable. It has no effect today. This does not set the
+        button shown in the journey panel; that comes from the Check chosen above.</small>
+    </div>
+
+    <div class="form-group form-check">
+      <%= form.check_box :keep_on_regress, class: "form-check-input" %>
+      <%= form.label :keep_on_regress, "Keep sign-off when moved back", class: "form-check-label" %>
+      <small class="text-muted d-block">When someone undoes earlier work, sign-offs on later steps
+        are reset unless this is ticked.</small>
+    </div>
+
+    <%# Actors: approvers on a human step; also the recipients of the few system checks that email
+        someone (WorkflowStep::ACTOR_CHECK_KEYS, e.g. the KPI report's "Send completion email").
+        Worked examples H8 — openspec/changes/kpi-report-journey/design.md#worked-examples %>
+    <div class="form-group" data-workflow-step-kind-target="actorFields"
+         data-actor-check-keys="<%= WorkflowStep::ACTOR_CHECK_KEYS.to_json %>">
       <%= form.label :actor_user_ids, "Actors (entity employees)" %>
       <%= form.select :actor_user_ids,
             entity_users_for_select.map { |u| [u.full_name, u.id] },

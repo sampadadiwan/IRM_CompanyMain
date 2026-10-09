@@ -315,8 +315,9 @@
           </div>
           <% end %>
 
-
-          <%= custom_form_fields(investor_kyc, form, required: is_investor) %>
+          <%# Pin to step: :end — without a step, custom_form_fields renders fields from every step, so step 1/2 fields %>
+          <%# would render again here and their blank copies would overwrite the user's step 1/2 edits on save %>
+          <%= custom_form_fields(investor_kyc, form, step: :end, required: is_investor) %>
 
           <% unless current_user&.curr_role == "investor" || params[:signed_id].present? %>
             <div class="form-group">

@@ -1,5 +1,8 @@
 class Approval < ApplicationRecord
   include Workflowable
+
+  # Auto-assignment rules use ransackable_attributes (end of file) plus the approval forms' custom fields
+  workflow_rule_fields
   include Trackable.new
   include WithFolder
   include WithCustomField
@@ -125,5 +128,15 @@ class Approval < ApplicationRecord
       Rails.logger.debug "No access rights to setup"
     end
     true
+  end
+
+  # Approvals had no Ransack allowlist, so nothing could be searched or tested by an auto-assignment
+  # rule; these are the approval's own routing-relevant columns (workflow-rule-condition-builder card 1)
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[approved due_date locked owner_type response_status title]
+  end
+
+  def self.ransackable_associations(_auth_object = nil)
+    []
   end
 end

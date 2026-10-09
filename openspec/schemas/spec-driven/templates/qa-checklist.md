@@ -64,7 +64,7 @@ step (J2.3 = journey 2, step 3) · **R** = Role sweep · **C** = Cross-cutting c
 
 ## UI Journeys
 
-<!-- CONDITIONAL: include when design.md has UI Changes. One row per journey step. Check that
+<!-- CONDITIONAL: include when design.md has user journeys (Part 2 "What users see" and the cards). One row per journey step. Check that
      each numbered callout on the design's wireframe behaves as described. -->
 
 | ☐ | ID | Screen | Do | Expect to see | Pass / Fail | Notes |

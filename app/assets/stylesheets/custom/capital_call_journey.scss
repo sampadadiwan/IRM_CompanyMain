@@ -1,0 +1,342 @@
+// =============================================================================
+//  Capital call journey — the step rail and "What's needed now" panel rendered by
+//  app/packs/funds/capital_calls/views/capital_calls/_journey.html.erb.
+//
+//  Colours come from the Bootstrap theme variables so the card follows whichever
+//  Modernize colour theme the entity has picked; the hex fallbacks are the Blue
+//  theme's, used only if a variable is missing.
+// =============================================================================
+
+.cc-journey {
+  border: none;
+  border-radius: 14px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, .05);
+  overflow: hidden;
+
+  [data-bs-theme=dark] & { box-shadow: 0 2px 10px rgba(0, 0, 0, .4); }
+}
+
+// ── Header strip ────────────────────────────────────────────────────────────
+.cc-journey-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--bs-border-color, #e5eaef);
+  // Faint wash so the header reads as a banner without needing a solid fill
+  background: linear-gradient(90deg, rgba(var(--bs-primary-rgb, 93, 135, 255), .06), transparent 60%);
+}
+
+.cc-journey-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  background: rgba(var(--bs-primary-rgb, 93, 135, 255), .12);
+  color: var(--bs-primary, #5d87ff);
+}
+
+.cc-journey-eyebrow {
+  font-size: .68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--bs-secondary-color, #5a6a85);
+  line-height: 1.1;
+}
+
+.cc-journey-title {
+  font-size: .98rem;
+  font-weight: 600;
+  line-height: 1.3;
+  margin: 0;
+}
+
+.cc-journey-progress {
+  min-width: 150px;
+  margin-left: auto;
+
+  .progress { height: 6px; border-radius: 99px; background: var(--bs-secondary-bg, #f2f6fa); }
+  .progress-bar { border-radius: 99px; }
+}
+
+.cc-journey-count {
+  font-size: .72rem;
+  font-weight: 600;
+  color: var(--bs-secondary-color, #5a6a85);
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+// ── Step rail ───────────────────────────────────────────────────────────────
+// A grid rather than a flex-wrap: with a fixed number of columns we know exactly
+// which pill starts a row, so the connector into it can be suppressed and no line
+// is left dangling at a wrap. The column count drops with the viewport.
+.cc-rail {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  row-gap: 18px;
+  padding: 20px 18px 16px;
+
+  .cc-step:nth-child(6n + 1)::before { display: none; }
+
+  @media (max-width: 1199px) {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    .cc-step::before { display: block; }
+    .cc-step:nth-child(4n + 1)::before { display: none; }
+  }
+
+  @media (max-width: 767px) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    .cc-step::before { display: block; }
+    .cc-step:nth-child(3n + 1)::before { display: none; }
+  }
+
+  @media (max-width: 479px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    .cc-step::before { display: block; }
+    .cc-step:nth-child(2n + 1)::before { display: none; }
+  }
+}
+
+.cc-step {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  text-align: center;
+  padding: 0 4px;
+  cursor: default;
+
+  // Connector: runs from the previous pill's centre to this one's, behind both dots
+  &::before {
+    content: "";
+    position: absolute;
+    top: 14px;
+    left: -50%;
+    right: 50%;
+    height: 2px;
+    background: var(--bs-border-color, #e5eaef);
+    z-index: 0;
+  }
+
+  // Coloured only when the step before it is done, so the rail shows how far progress got
+  &.cc-step--linked::before { background: var(--bs-success, #13deb9); }
+
+  &:hover .cc-step-dot { transform: scale(1.12); }
+
+  // Clickable: opens the step's popup (journey_step_info_controller.js)
+  &[role="button"] {
+    cursor: pointer;
+
+    &:hover .cc-step-label { text-decoration: underline; }
+    &:focus-visible { outline: 2px solid var(--bs-primary, #2563eb); outline-offset: 4px; border-radius: 6px; }
+  }
+}
+
+.cc-step-dot {
+  position: relative;
+  z-index: 1;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  background: var(--bs-body-bg, #fff);
+  border: 2px solid var(--bs-border-color, #e5eaef);
+  color: var(--bs-secondary-color, #5a6a85);
+  transition: transform .15s ease;
+}
+
+.cc-step-label {
+  font-size: .76rem;
+  line-height: 1.25;
+  color: var(--bs-secondary-color, #5a6a85);
+  max-width: 14ch;
+}
+
+// Status variants. Shape of the icon differs per status as well as the colour, so the
+// state is still readable without colour vision.
+.cc-step--passed {
+  .cc-step-dot { background: var(--bs-success, #13deb9); border-color: var(--bs-success, #13deb9); color: #fff; }
+  .cc-step-label { color: var(--bs-body-color, #2a3547); }
+}
+
+.cc-step--current {
+  .cc-step-dot {
+    background: var(--bs-primary, #5d87ff);
+    border-color: var(--bs-primary, #5d87ff);
+    color: #fff;
+    box-shadow: 0 0 0 5px rgba(var(--bs-primary-rgb, 93, 135, 255), .18);
+  }
+  .cc-step-label { color: var(--bs-primary, #5d87ff); font-weight: 700; }
+}
+
+.cc-step--error {
+  .cc-step-dot {
+    background: var(--bs-danger, #fa896b);
+    border-color: var(--bs-danger, #fa896b);
+    color: #fff;
+    box-shadow: 0 0 0 5px rgba(var(--bs-danger-rgb, 250, 137, 107), .18);
+  }
+  .cc-step-label { color: var(--bs-danger, #fa896b); font-weight: 700; }
+}
+
+.cc-step--moved {
+  .cc-step-dot {
+    background: var(--bs-warning, #ffae1f);
+    border-color: var(--bs-warning, #ffae1f);
+    color: #fff;
+    box-shadow: 0 0 0 5px rgba(var(--bs-warning-rgb, 255, 174, 31), .18);
+  }
+  // Darkened in light mode: the warning yellow fails contrast on a white card
+  .cc-step-label { color: #9a6700; font-weight: 700; }
+  [data-bs-theme=dark] & .cc-step-label { color: var(--bs-warning, #ffae1f); }
+}
+
+// Skipped on purpose — "this one never applied to this record". Told apart from a task that simply
+// has not started (a plain empty ring) by three things that survive greyscale: the slash in the dot,
+// the dashed ring, and the struck-through label. Less faded than before so the slash actually reads.
+.cc-step--na {
+  .cc-step-dot {
+    border-style: dashed;
+    border-color: var(--bs-secondary-color, #5a6a85);
+    background: var(--bs-secondary-bg, #f2f6fa);
+    color: var(--bs-secondary-color, #5a6a85);
+    opacity: .75;
+  }
+
+  .cc-step-label {
+    opacity: .7;
+    text-decoration: line-through;
+    text-decoration-thickness: 1px;
+  }
+}
+
+// ── "What's needed now" callout ─────────────────────────────────────────────
+.cc-now {
+  display: flex;
+  gap: 14px;
+  padding: 16px 18px;
+  border-top: 1px solid var(--bs-border-color, #e5eaef);
+  border-left: 4px solid var(--bs-primary, #5d87ff);
+  background: rgba(var(--bs-primary-rgb, 93, 135, 255), .04);
+
+  &.cc-now--error { border-left-color: var(--bs-danger, #fa896b); background: rgba(var(--bs-danger-rgb, 250, 137, 107), .05); }
+  &.cc-now--moved { border-left-color: var(--bs-warning, #ffae1f); background: rgba(var(--bs-warning-rgb, 255, 174, 31), .06); }
+  &.cc-now--done  { border-left-color: var(--bs-success, #13deb9); background: rgba(var(--bs-success-rgb, 19, 222, 185), .06); }
+}
+
+.cc-now-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  background: rgba(var(--bs-primary-rgb, 93, 135, 255), .14);
+  color: var(--bs-primary, #5d87ff);
+
+  .cc-now--error & { background: rgba(var(--bs-danger-rgb, 250, 137, 107), .14); color: var(--bs-danger, #fa896b); }
+  .cc-now--moved & { background: rgba(var(--bs-warning-rgb, 255, 174, 31), .16); color: #9a6700; }
+  .cc-now--done  & { background: rgba(var(--bs-success-rgb, 19, 222, 185), .16); color: var(--bs-success, #13deb9); }
+}
+
+.cc-now-eyebrow {
+  font-size: .68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--bs-secondary-color, #5a6a85);
+  margin-bottom: 3px;
+}
+
+.cc-now-msg { font-size: .95rem; line-height: 1.4; margin-bottom: 8px; }
+
+// ── Meta chips ──────────────────────────────────────────────────────────────
+.cc-meta { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.cc-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 99px;
+  font-size: .73rem;
+  font-weight: 600;
+  background: var(--bs-secondary-bg, #f2f6fa);
+  color: var(--bs-secondary-color, #5a6a85);
+  border: 1px solid var(--bs-border-color, #e5eaef);
+
+  i { font-size: .9rem; }
+
+  &.cc-chip--warn {
+    background: rgba(var(--bs-warning-rgb, 255, 174, 31), .14);
+    color: #8a5a00;
+    border-color: rgba(var(--bs-warning-rgb, 255, 174, 31), .35);
+
+    [data-bs-theme=dark] & { color: var(--bs-warning, #ffae1f); }
+  }
+
+  &.cc-chip--danger {
+    background: rgba(var(--bs-danger-rgb, 250, 137, 107), .14);
+    color: var(--bs-danger, #fa896b);
+    border-color: rgba(var(--bs-danger-rgb, 250, 137, 107), .35);
+  }
+}
+
+// ── Readiness warnings and the moved-back banner ────────────────────────────
+.cc-warnings {
+  padding: 12px 18px;
+  border-top: 1px dashed var(--bs-border-color, #e5eaef);
+  background: rgba(var(--bs-warning-rgb, 255, 174, 31), .06);
+}
+
+.journey-warning {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  font-size: .82rem;
+  line-height: 1.45;
+  color: #8a5a00;
+
+  + .journey-warning { margin-top: 6px; }
+  i { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+
+  [data-bs-theme=dark] & { color: #ffcd71; }
+}
+
+.cc-moved {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  padding: 10px 18px;
+  font-size: .84rem;
+  background: rgba(var(--bs-warning-rgb, 255, 174, 31), .16);
+  color: #8a5a00;
+
+  [data-bs-theme=dark] & { color: #ffcd71; }
+}
+
+// Flash on the control the journey panel just clicked (journey_action_controller.js), so the user
+// sees WHERE the action they pressed actually lives — the panel's button is only a shortcut to it.
+.journey-action-flash {
+  animation: journey-action-flash 1.6s ease-out;
+  border-radius: 6px;
+}
+
+@keyframes journey-action-flash {
+  0%, 60% { box-shadow: 0 0 0 3px rgba(var(--bs-primary-rgb, 93, 135, 255), .55); }
+  100%    { box-shadow: 0 0 0 3px rgba(var(--bs-primary-rgb, 93, 135, 255), 0); }
+}

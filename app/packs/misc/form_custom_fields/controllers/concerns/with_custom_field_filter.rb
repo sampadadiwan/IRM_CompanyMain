@@ -30,8 +30,8 @@ module WithCustomFieldFilter
   end
 
   # Loads filterable FCFs for one model class (union across all entity FormTypes,
-  # deduped by name), registers a named ransacker on that class for each, and
-  # returns the deduplicated list.
+  # deduped by name), registers them on that class as THIS company's filter fields
+  # (replacing its previous set), and returns the deduplicated list.
   def register_filterable_ransackers_for(model_class)
     form_types = FormType.where(entity_id: current_user.entity_id, name: model_class.name)
     all_filterable = FormCustomField
@@ -40,7 +40,7 @@ module WithCustomFieldFilter
                      .order(:form_type_id, :position)
 
     deduped = all_filterable.index_by(&:name).values
-    deduped.each { |fcf| model_class.register_cf_ransacker(fcf.name, label: fcf.human_label) }
+    model_class.register_cf_ransackers(current_user.entity_id, deduped)
     deduped
   end
 

@@ -54,6 +54,16 @@
     <small class="text-muted">Sector of the Portfolio Company</small>
   </div>
 
+  <%# Managed by: the employee who gets this portfolio company's KPI reminders and completion emails.
+      Shown with the sector (Portfolio Companies only). Worked examples H6 — openspec/changes/kpi-report-journey/design.md#worked-examples %>
+  <div class="form-group" data-investor-target="sectorField" style="<%= investor.category == 'Portfolio Company' ? '' : 'display: none;' %>">
+    <%= form.label :managed_by_user_id, "Managed by" %>
+    <%= form.select :managed_by_user_id,
+          (investor.entity || current_user.entity).employees.order(:first_name, :last_name).map { |u| [u.full_name, u.id] },
+          { include_blank: true }, class: "form-control" %>
+    <small class="text-muted">Gets KPI reminders and completion emails for this company. Leave empty to use the KPI journey template / employees tagged Kpi.</small>
+  </div>
+
   <div class="form-group" id="investor_name_group">
     <%= form.label :city %>
     <%= form.text_field :city, class: "form-control" %>

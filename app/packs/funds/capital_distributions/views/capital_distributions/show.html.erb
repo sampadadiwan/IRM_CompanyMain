@@ -1,5 +1,10 @@
 <%= render "/capital_distributions/stats", capital_distribution: @capital_distribution %>
 <div class="container-fluid p-3">
+  <%# Distribution journey (step bar + what's needed now); nothing renders for distributions without one.
+      Worked examples H3, E6 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples %>
+  <%= render "/capital_distributions/journey", record: @capital_distribution, journey: @journey, instance: nil %>
+  <%# Real-time: an evaluation that changes this distribution's journey reloads the panel above in place (E16, E17) %>
+  <%= render "workflow_instances/journey_stream", record: @capital_distribution if @journey.present? %>
   <%= render ToggleCard.new(title: "Distribution: #{@capital_distribution.title}", css_class: "show_cd", state: "closed") do %>
 
   <div class="row">
@@ -223,7 +228,10 @@
             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
               <% if policy(@capital_distribution).approve? %>
-                <%= button_to approve_capital_distribution_path(@capital_distribution), method: :post, class: "dropdown-item", form_class: "deleteButton",
+                <%# Ids on these Actions items are what the journey panel clicks (WorkflowChecks::CapitalDistribution::Support).
+                    Worked examples H5 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples %>
+                <%= button_to approve_capital_distribution_path(@capital_distribution), id: "capital_distribution_approve_btn",
+                      method: :post, class: "dropdown-item", form_class: "deleteButton",
                     data: { action: "click->confirm#popup", turbo: false,
                             msg: "This will mark the distribution as approved.",
                             method: :post } do %>
@@ -231,12 +239,14 @@
                 <% end %>
               <% end %>
 
-              <% if policy(@capital_distribution).mark_payments_completed? %>
+              <%# Same policy method the controller authorizes (approved distributions only).
+                  Worked examples X2 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples %>
+              <% if policy(@capital_distribution).payments_completed? %>
 
                 <%
                   payments_completed_msg = "This will mark all payments in this distribution as completed. No notification will be sent."
                 %>
-                <%= button_to payments_completed_capital_distribution_path(@capital_distribution),
+                <%= button_to payments_completed_capital_distribution_path(@capital_distribution), id: "capital_distribution_payments_completed_btn",
                       method: :patch, class: "dropdown-item", form_class: "deleteButton",
                       data: { action: "click->confirm#popup", turbo: false,
                               msg: payments_completed_msg,
@@ -246,7 +256,7 @@
               <% end %>
 
               <% if policy(@capital_distribution).redeem_units? %>
-                <%= button_to redeem_units_capital_distribution_path(@capital_distribution),
+                <%= button_to redeem_units_capital_distribution_path(@capital_distribution), id: "capital_distribution_redeem_units_btn",
                       method: :patch, class: "dropdown-item", form_class: "deleteButton",
                       data: { action: "click->confirm#popup", turbo: false,
                               msg: "This will compute the units to be redeemed against each commitment in this fund.",
@@ -264,15 +274,28 @@
               <% end %>
 
               <%= button_to "Send Payment Notifications", send_payment_notifications_capital_distribution_path(@capital_distribution),
-                  method: :patch, class: "dropdown-item ti ti-mail",
+                  id: "capital_distribution_notify_btn", method: :patch, class: "dropdown-item ti ti-mail",
                   data: { action: "click->confirm#popup",
                           msg: "This will send payment notification to all investors in this distribution, who have not been notified. It will not resend notifications to those who have already received it. Proceed?",
                           method: :patch } if policy(@capital_distribution).send_payment_notifications? %>
 
               <%= button_to "Generate Documents" ,
                   generate_docs_capital_distribution_path(@capital_distribution),
-                  method: :patch, class: "dropdown-item ti ti-files",
+                  id: "capital_distribution_generate_docs_btn", method: :patch, class: "dropdown-item ti ti-files",
                   form_class: "deleteButton", data: {action: "click->confirm#popup", method: :patch, msg: "This will generate the distribution notices for all payments in this distribution. Proceed?"} if policy(@capital_distribution).generate_docs? %>
+
+              <%# This distribution's generated notices still awaiting approval, on the Documents screen with its
+                  approval banner. Opens in a new window so this page (and its journey panel) stays put; the
+                  journey's "Approve notices" button clicks this link. hint= is a known key, not free text.
+                  Plain ransack params (as WorkflowChecks::CapitalDistribution::Support#pending_notices_path).
+                  Worked examples H3, E22 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples %>
+              <% if policy(@capital_distribution).update? %>
+                <%= link_to "View Generated Notices To Approve",
+                      documents_path(no_folders: true, filter: true, hint: "approve_notices",
+                                     q: { capital_distribution_id_eq: @capital_distribution.id, owner_tag_cont: "Generated", approved_eq: false }),
+                      id: "capital_distribution_view_notices_to_approve_btn", class: "dropdown-item ti ti-checklist",
+                      target: "_blank", rel: "noopener", data: { turbo: false } %>
+              <% end %>
 
               <div class="dropdown-divider"></div>
               <% if @capital_distribution.entity.support_agents.set?(:distribution_readiness_agent) %>

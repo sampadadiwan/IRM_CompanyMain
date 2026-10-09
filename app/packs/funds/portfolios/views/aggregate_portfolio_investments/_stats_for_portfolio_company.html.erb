@@ -69,7 +69,7 @@
 
       rescue => e
         error = "Error fetching portfolio company stats: #{e.message}"
-        ExceptionNotifier.notify_exception(e, data: { portfolio_company_id: portfolio_company.id, user_id: current_user&.id })
+        ErrorReport.notify(e, source: "aggregate_portfolio_investments/_stats_for_portfolio_company", user: current_user, portfolio_company_id: portfolio_company.id, entity_id: portfolio_company.entity_id)
       end
     %>
 

@@ -50,7 +50,7 @@
 
 ## File Map
 
-<!-- CORE. Every new and modified file, grouped by the design's Component Boundaries. Tasks
+<!-- CORE. Every new and modified file, grouped by the design's numbered boxes (①②③). Tasks
      reference these rows. -->
 
 | Boundary | File | New / Modified | Responsibility |
@@ -66,18 +66,22 @@
 ## Schema Detail
 
 <!-- CONDITIONAL: include when tables or columns change. Column-level detail the ER diagram
-     omits. One table per database table. -->
+     omits. One table per database table, opened by one sentence on why the table changes. Every
+     row says what changed (Added / Changed from X / New index) and why it is needed; the design's
+     Schema changes block holds the business reason, this one the type-level reason (why this
+     type, limit, null and default). -->
 
-**`table_name`** (<!-- new / existing -->)
+**`table_name`** (<!-- new / existing -->): <!-- why this table changes, one sentence -->
 
-| Column | Type | Limit | Null | Default | Index / FK | Notes |
-|---|---|---|---|---|---|---|
-| <!-- `status` --> | <!-- string --> | <!-- 20 --> | <!-- no --> | <!-- "draft" --> | <!-- composite idx --> | <!-- enum values --> |
+| Column | Change | Type | Limit | Null | Default | Index / FK | Why it's needed |
+|---|---|---|---|---|---|---|---|
+| <!-- `status` --> | <!-- Added --> | <!-- string --> | <!-- 20 --> | <!-- no --> | <!-- "draft" --> | <!-- composite idx --> | <!-- why this column, and why this type/limit/default --> |
 
 **Migration safety:** <!-- table size in prod, lock/DDL impact, backfill needed?, reversible?, order
 of migrations; schema.rb / schema_test.rb both updated -->
 
 **Reviewer checks**
+- [ ] Every new or changed column and index has a "why", and none is unjustified
 - [ ] Every foreign key has an index, and every uniqueness rule is enforced by a unique index
 - [ ] Column limits match validation limits
 - [ ] Migration is reversible and safe on the production table size
@@ -224,7 +228,7 @@ of migrations; schema.rb / schema_test.rb both updated -->
 
 ## Test Plumbing
 
-<!-- CORE. What the Cucumber features in design.md's Worked Examples need to run. -->
+<!-- CORE. What the Cucumber features in design.md's Worked examples (Part 4) need to run. -->
 
 | Feature file | Stubs / fixtures | Factories | New step definitions |
 |---|---|---|---|

@@ -15,11 +15,63 @@ class WorkflowAutoReminderJob < ApplicationJob
     end
   end
 
+  # The owner to remind for a step, or nil when there is none or they are no longer active.
+  # Read from the live template step first, so fixing an owner in the template fixes in-flight
+  # journeys (design Decision 18).
+  def self.owner_for(instance, step_data)
+    owners_for(instance, step_data).first
+  end
+
+  # Everyone to remind (or email) for a step, active users only, resolved level by level:
+  #   1. the record's override owners (e.g. a portfolio company's "Managed by");
+  #   2. the step's named owner — or, with use: :actors, the step's actors (live template first);
+  #   3. the record's default owners (the creator by default; a type may give several).
+  # The first level that still has someone active after filtering wins, so an inactive manager falls
+  # through to the step owner rather than leaving nobody. For a record type that overrides nothing,
+  # this returns exactly what owner_for used to: [named owner] or [creator].
+  # Worked examples H7, E7, E8, E9, E17, X3 — openspec/changes/kpi-report-journey/design.md#worked-examples
+  def self.owners_for(instance, step_data, use: :owner)
+    record = instance.workflowable
+    levels = [
+      -> { record.workflow_override_owners },
+      -> { step_named_users(instance, step_data, use) },
+      -> { record.workflow_default_owners }
+    ]
+    levels.each do |level|
+      active = Array(level.call).compact.select(&:active).uniq
+      return active if active.any?
+    end
+    []
+  end
+
+  # The step's own people, read from the live template step so fixing the template fixes in-flight
+  # journeys (falls back to the snapshot when the step was removed from the template)
+  def self.step_named_users(instance, step_data, use)
+    live_step = instance.workflow_template&.workflow_steps&.find_by(position: step_data[:position].to_i)
+    if use == :actors
+      ids = live_step ? live_step.actor_user_ids : Array(step_data[:actor_ids])
+      return User.where(id: ids).to_a
+    end
+
+    owner_id = live_step ? live_step.owner_user_id : step_data[:owner_user_id]
+    owner_id ? [User.find_by(id: owner_id)].compact : []
+  end
+  private_class_method :step_named_users
+
   private
 
   def send_reminders_for(instance)
+    # Journeys: bring the instance up to date from the data first, so nobody is reminded about a
+    # step that is already done, then remind the right person for the step's kind
+    if instance.evaluated
+      WorkflowEvaluator.call(instance:, cause: :progress)
+      instance.reload
+      return unless instance.instance_active?
+    end
+
     step_data = instance.current_step_data
     return unless step_data
+    return send_owner_reminder(instance, step_data) if instance.evaluated && step_data[:kind].to_s.in?(%w[system acknowledge])
 
     interval = effective_interval(instance, step_data)
     return unless interval
@@ -30,7 +82,13 @@ class WorkflowAutoReminderJob < ApplicationJob
                                 .where(step_position: instance.current_step_position,
                                        channel: :auto_reminder)
                                 .maximum(:created_at)
-    reference_time = last_reminder_at || instance.updated_at
+    # Journeys time reminders from when the step became current (stamped from the data);
+    # instance.updated_at moves on every evaluation so it can't be used for them
+    reference_time = if instance.evaluated
+                       [last_reminder_at, instance.current_step_since].compact.max || instance.updated_at
+                     else
+                       last_reminder_at || instance.updated_at
+                     end
     return unless reference_time < interval.days.ago
 
     # Actors who still haven't submitted a response for this step
@@ -45,12 +103,8 @@ class WorkflowAutoReminderJob < ApplicationJob
       actor = User.find_by(id: actor_id)
       next unless actor
 
-      WorkflowMailer.with(
-        user_id:       actor.id,
-        entity_id:     instance.entity_id,  # denormalized — no folder join needed
-        instance_id:   instance.id,
-        step_position: instance.current_step_position
-      ).reminder.deliver_later
+      WorkflowNotifier.with(record: instance, entity_id: instance.entity_id, # denormalized — no folder join needed
+                            email_method: :reminder, step_position: instance.current_step_position).deliver_later(actor)
 
       # Record the dispatch so the next job run can calculate from this timestamp
       WorkflowStateChange.create!(
@@ -62,6 +116,30 @@ class WorkflowAutoReminderJob < ApplicationJob
         note:              "Auto-reminder dispatched",
         channel:           :auto_reminder
       )
+    end
+  end
+
+  # Worked examples H9, H15, E16, X4 — openspec/changes/archive/2026-10-02-capital-call-journey/design.md#worked-examples
+  def send_owner_reminder(instance, step_data)
+    interval = effective_interval(instance, step_data)
+    return unless interval
+
+    position = instance.current_step_position
+    last_reminder_at = instance.workflow_state_changes.where(step_position: position, to_state: "owner_reminded")
+                               .maximum(:created_at)
+    reference_time = [last_reminder_at, instance.current_step_since].compact.max || instance.updated_at
+    return unless reference_time < interval.days.ago
+
+    owners = self.class.owners_for(instance, step_data)
+    return if owners.empty? # the panel shows "Owner unavailable — update the journey template"
+
+    # One reminder per owner (a KPI report may have several: everyone tagged Kpi), one history row each
+    message = instance.step_result(position)&.dig("message")
+    owners.each do |owner|
+      WorkflowNotifier.with(record: instance, entity_id: instance.entity_id, email_method: :owner_reminder,
+                            step_position: position, message:).deliver_later(owner)
+      WorkflowStateChange.create!(workflow_instance: instance, step_position: position, actor: owner,
+                                  to_state: "owner_reminded", note: message, channel: :auto_reminder)
     end
   end
 

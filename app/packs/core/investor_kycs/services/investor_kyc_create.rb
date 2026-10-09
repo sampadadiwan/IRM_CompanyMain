@@ -9,6 +9,7 @@ class InvestorKycCreate < InvestorKycAction
   step :validate_bank
   step :validate_pan_card
   step :updated_notification
+  step :journey_hook
 
   # Checks required File-type custom fields BEFORE save because company admins use save(validate:false),
   # which bypasses model validations. File fields store docs as Documents (not json_fields), so we
