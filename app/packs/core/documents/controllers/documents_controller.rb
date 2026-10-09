@@ -507,11 +507,12 @@ class DocumentsController < ApplicationController
   end
 
   # @return [void] NDA gate — redirects LP to acceptance screen if folder has an active NDA
-  #   that the user has not yet accepted at the current version. GP employees are bypassed.
-  # Changed: Stakeholder-level gate — resolves investor via InvestorAccess, checks acceptance
-  #   by investor_id instead of user_id. One user's acceptance unlocks all users of that investor.
-  # Why: NDAs are signed between companies. The gate must check whether the user's stakeholder
-  #   (investor) has accepted, not just the individual user.
+  #   that the user has not yet accepted at the current version, or whose acceptance has expired.
+  # Gate order: GP bypass → investor_ids lookup → exemption check (by investor_id) →
+  #   stakeholder acceptance → version match → time expiry → pass.
+  # Exemption is checked by investor_id, not user_id, so that if ANY InvestorAccess record
+  #   for the user's investor is exempt, all users under that investor bypass the gate.
+  # @see InvestorAccess#exempt_from_nda
   def ensure_nda_accepted
     return if params[:folder_id].blank?
 
@@ -529,6 +530,10 @@ class DocumentsController < ApplicationController
                    .pluck(:investor_id)
 
     return if investor_ids.empty?
+
+    # Stakeholder-level exemption — checks by investor_id so all users under an exempt
+    # investor bypass the gate, even if the exempt flag is on a different user's record.
+    return if InvestorAccess.exists?(investor_id: investor_ids, entity_id: nda_config.entity_id, approved: true, exempt_from_nda: true)
 
     latest = NdaAcceptance
              .where(nda_config_id: nda_config.id, investor_id: investor_ids)

@@ -119,11 +119,11 @@
                   <% end %>
                 <% end %>
               <% end %>
-              <%# Changed: Added "NDA Settings" dropdown item to the Actions menu.
-                  Why: GPs need to configure NDA requirements on Data Room folders. Gated by
-                  in_data_room? (non-DR folders don't get NDA) + curr_role_employee? (LPs cannot
-                  configure). Opens as a Turbo Frame modal via turbo_frame_tag at page bottom. %>
-              <% if @folder&.in_data_room? && current_user.curr_role_employee? %>
+              <%# Changed: Hide NDA Settings on Data Room root folder — NDA is configured on sub-folders only.
+                  Why: The root is just a container gated by enable_data_rooms permission; showing
+                  NDA Settings on it would be confusing. NDA belongs on folders inside the Data Room
+                  (e.g. Financials, Legal). data_room_root? checks name == "Data Room" && parent.system?. %>
+              <% if @folder&.in_data_room? && !@folder&.data_room_root? && current_user.curr_role_employee? %>
                 <div class="dropdown-divider"></div>
                 <%
                   nda_config = @folder.nda_config

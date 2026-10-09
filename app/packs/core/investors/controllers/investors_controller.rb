@@ -4,7 +4,7 @@ class InvestorsController < ApplicationController
   include HasWorkflowable
 
   helper InvestorAnalyticsHelper
-  before_action :set_investor, only: %w[show update destroy edit dashboard generate_reports kpi_data_preview portfolio_investments_report generate_agent_charts portfolio_analytics]
+  before_action :set_investor, only: %w[show update destroy edit dashboard generate_reports kpi_data_preview portfolio_investments_report generate_agent_charts portfolio_analytics toggle_nda_exemption]
   before_action :set_workflowable, only: [:show]
   after_action :verify_authorized, except: %i[merge portfolio_investments_report_all]
 
@@ -441,6 +441,20 @@ class InvestorsController < ApplicationController
         format.json { render json: @investor.errors, status: :unprocessable_entity }
       end
     end
+  end
+
+  # @return [void] Bulk-toggles exempt_from_nda on all InvestorAccess records for this
+  #   investor under the current user's entity. Exemption is an investor-level decision,
+  #   not per-user — toggling it here sets all records uniformly.
+  # @see InvestorAccess#exempt_from_nda
+  def toggle_nda_exemption
+    exempt = ActiveModel::Type::Boolean.new.cast(params[:exempt_from_nda])
+    @investor.investor_accesses
+             .where(entity_id: current_user.entity_id)
+             .update_all(exempt_from_nda: exempt)
+
+    redirect_back fallback_location: investor_path(@investor),
+                  notice: exempt ? "#{@investor.investor_name} is now exempt from NDA." : "NDA exemption removed for #{@investor.investor_name}."
   end
 
   private

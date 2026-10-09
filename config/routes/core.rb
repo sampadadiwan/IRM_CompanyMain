@@ -226,6 +226,16 @@ resources :nda_acceptances, controller: "nda_acceptances", only: %i[index create
   post :decline, on: :collection
 end
 
+# Changed: NDA status dashboard routes — removed exemption routes.
+# Why: Exemption is now a boolean on InvestorAccess (stakeholder-level),
+#   managed from InvestorAccess form, not from the NDA dashboard.
+get  "nda_status/summary",       controller: "nda_status", action: :summary, as: :nda_status_summary
+get  "nda_status",               controller: "nda_status", action: :index, as: :nda_status
+# Changed: Added signatory routes for tag/untag actions.
+# Why: Per-NDA signatory designation replaces entity-wide InvestorAccess tag_list.
+post   "nda_status/signatories",     controller: "nda_status", action: :create_signatory, as: :nda_status_signatories
+delete "nda_status/signatories/:id", controller: "nda_status", action: :destroy_signatory, as: :nda_status_signatory
+
 # Workflow instances are standalone — not nested under any workflowable object.
 # workflowable_type and workflowable_id are passed as params on create.
 resources :workflow_instances, only: %i[index create show] do
@@ -293,6 +303,8 @@ resources :investors do
   get 'show_deleted', on: :collection
   get 'report_detail', on: :collection
   get 'multi_portfolio_stat_currency', on: :collection
+  # NDA Module 3 — investor-level exemption toggle (bulk-updates InvestorAccess records)
+  patch 'toggle_nda_exemption', on: :member
 end
 
 resources :investor_notice_entries
