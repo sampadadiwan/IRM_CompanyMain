@@ -15,7 +15,8 @@
 %>
 
 <%= form_with model: nda_config, url: url, method: method,
-             data: { controller: "nda-settings", nda_settings_enabled_value: nda_config.enabled? } do |form| %>
+             data: { controller: "nda-settings", nda_settings_enabled_value: nda_config.enabled?,
+                     action: "upload:complete->nda-settings#showVersionWarning" } do |form| %>
 
   <%# Error messages %>
   <% if nda_config.errors.any? %>
@@ -74,27 +75,50 @@
                  field_name: "nda_document",
                  model: nda_config,
                  allowed_types: ["application/pdf"] %>
-      <% if nda_config.nda_document.present? %>
-        <div class="text-muted small mt-1">
-          <i class="ti ti-file-text me-1"></i>
-          Current: <%= nda_config.nda_document.original_filename %>
+      <%# Changed: Module 9 — current file display with download link and live upload preview.
+           Why: GP needs to verify which PDF is currently set (download link), and see
+             the new filename immediately after uploading (before saving). Stimulus targets
+             let the nda-settings controller update the filename on upload:complete. %>
+      <div class="text-muted small mt-1 <%= 'd-none' unless nda_config.nda_document.present? %>"
+           data-nda-settings-target="currentFile">
+        <i class="ti ti-file-text me-1"></i>
+        <% if nda_config.nda_document.present? %>
+          <%= link_to nda_config.nda_document.original_filename,
+              nda_config.nda_document.url,
+              target: "_blank", rel: "noopener noreferrer",
+              class: "text-primary text-decoration-underline",
+              data: { nda_settings_target: "currentFileName" } %>
           (<%= number_to_human_size(nda_config.nda_document.size) %>)
-          <span class="ms-2 badge bg-secondary">Version <%= nda_config.version %></span>
-        </div>
-      <% end %>
+        <% else %>
+          <span data-nda-settings-target="currentFileName"></span>
+        <% end %>
+      </div>
 
       <%# Module 4: Version bump warning — shown by Stimulus when a new PDF is selected via Uppy.
            Hidden by default; the nda-settings controller listens for upload:complete and toggles visibility.
-           @accepted_count is set in NdaConfigsController#edit. %>
+           @accepted_count is set in NdaConfigsController#edit.
+           Changed: Added resign checkbox inside the warning banner.
+           Why: GP chooses whether existing accepted investors must re-sign this version.
+             Defaults to checked (current behavior preserved). When unchecked, version still
+             increments for audit trail but existing acceptances stay valid. %>
       <% accepted_count = defined?(@accepted_count) ? @accepted_count : 0 %>
       <div class="alert alert-warning small mt-2 d-none"
            data-nda-settings-target="versionWarning"
            data-accepted-count="<%= accepted_count %>">
         <i class="ti ti-alert-triangle me-1"></i>
-        <strong>Version bump:</strong>
-        Uploading a new document will increment the NDA version.
+        <strong>New NDA document:</strong>
+        A new version will be created on save.
         <% if accepted_count > 0 %>
-          <strong><%= accepted_count %></strong> accepted <%= "investor".pluralize(accepted_count) %> will need to re-accept the NDA.
+          <strong><%= accepted_count %></strong> <%= "investor".pluralize(accepted_count) %> <%= accepted_count == 1 ? "has" : "have" %> already accepted the current version.
+        <% end %>
+        <% if nda_config.persisted? %>
+          <div class="form-check mt-2">
+            <%= check_box_tag "nda_config[resign_required]", "1", true,
+                class: "form-check-input", id: "resign_required" %>
+            <label class="form-check-label" for="resign_required">
+              Require existing signatories to re-sign this version
+            </label>
+          </div>
         <% end %>
       </div>
     </div>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_07_100100) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_08_100000) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -3170,6 +3170,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_07_100100) do
     t.index ["user_id"], name: "idx_nda_acceptances_user"
   end
 
+  create_table "nda_config_versions", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "nda_config_id", null: false
+    t.text "nda_document_data", null: false
+    t.boolean "resign_required", default: true, null: false
+    t.datetime "updated_at", null: false
+    t.bigint "uploaded_by_id", null: false
+    t.integer "version", null: false
+    t.index ["nda_config_id", "resign_required", "version"], name: "idx_nda_config_versions_resign_lookup"
+    t.index ["nda_config_id", "version"], name: "idx_nda_config_versions_config_version", unique: true
+    t.index ["nda_config_id"], name: "index_nda_config_versions_on_nda_config_id"
+    t.index ["uploaded_by_id"], name: "index_nda_config_versions_on_uploaded_by_id"
+  end
+
   create_table "nda_configs", force: :cascade do |t|
     t.string "acceptance_method", limit: 20, default: "click_through", null: false
     t.string "contact_email"
@@ -5091,6 +5105,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_07_100100) do
   add_foreign_key "nda_acceptances", "investors"
   add_foreign_key "nda_acceptances", "nda_configs"
   add_foreign_key "nda_acceptances", "users"
+  add_foreign_key "nda_config_versions", "nda_configs", on_delete: :cascade
+  add_foreign_key "nda_config_versions", "users", column: "uploaded_by_id"
   add_foreign_key "nda_exemptions", "nda_configs"
   add_foreign_key "nda_exemptions", "users"
   add_foreign_key "nda_exemptions", "users", column: "exempted_by_id"

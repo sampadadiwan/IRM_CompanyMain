@@ -9,8 +9,44 @@
 # ── Setup steps ──────────────────────────────────────────────────────────────
 
 # Creates an LP user associated with the GP entity via an investor relationship.
+# Changed: Also creates Investor and InvestorAccess records.
+# Why: NdaAcceptance has belongs_to :investor (validated), so tests need an investor.
 # @note Uses a separate entity for the LP to simulate cross-entity access.
+#   Investor.save!(validate: false) skips complex callbacks (update_name, find_or_build_investor_entity).
 Given("there is an LP user for the GP entity") do
+  @lp_entity = Entity.create!(name: "LP Entity", entity_type: "Limited Partner", primary_email: "lp_entity@example.com")
+  @lp_user = User.create!(
+    email: "lp_test_#{SecureRandom.hex(4)}@example.com",
+    password: "password",
+    entity: @lp_entity,
+    first_name: "LP",
+    last_name: "User"
+  )
+
+  @lp_investor = Investor.new(
+    entity: @gp_entity,
+    investor_entity: @lp_entity,
+    investor_name: "LP Entity",
+    primary_email: @lp_user.email
+  )
+  @lp_investor.save!(validate: false)
+
+  InvestorAccess.create!(
+    investor: @lp_investor,
+    entity: @gp_entity,
+    investor_entity: @lp_entity,
+    user: @lp_user,
+    email: @lp_user.email,
+    first_name: @lp_user.first_name,
+    last_name: @lp_user.last_name,
+    approved: true
+  )
+end
+
+# Creates an LP user WITHOUT investor or InvestorAccess records.
+# Why: Policy "deny without investor access" scenario needs an LP user
+#   who has no InvestorAccess to the GP entity.
+Given("there is an LP user without investor access for the GP entity") do
   @lp_entity = Entity.create!(name: "LP Entity", entity_type: "Limited Partner", primary_email: "lp_entity@example.com")
   @lp_user = User.create!(
     email: "lp_test_#{SecureRandom.hex(4)}@example.com",
@@ -28,6 +64,7 @@ When("the LP accepts the NDA with audit metadata") do
   @nda_acceptance = NdaAcceptance.create!(
     nda_config: @nda_config,
     user: @lp_user,
+    investor: @lp_investor,          # Changed: pass investor. Why: required by belongs_to validation.
     entity: @nda_config.entity,
     status: "accepted",
     nda_version: @nda_config.version,
@@ -42,6 +79,7 @@ When("the LP declines the NDA with audit metadata") do
   @nda_acceptance = NdaAcceptance.create!(
     nda_config: @nda_config,
     user: @lp_user,
+    investor: @lp_investor,          # Changed: pass investor. Why: required by belongs_to validation.
     entity: @nda_config.entity,
     status: "declined",
     nda_version: @nda_config.version,
@@ -131,6 +169,7 @@ Then("creating an NDA acceptance with status {string} should fail validation") d
   record = NdaAcceptance.new(
     nda_config: @nda_config,
     user: @lp_user,
+    investor: @lp_investor,          # Changed: pass investor. Why: required by belongs_to validation.
     entity: @nda_config.entity,
     status: status,
     nda_version: @nda_config.version
@@ -153,27 +192,32 @@ Given("there is a GP user for the entity") do
 end
 
 # Creates an approved InvestorAccess linking the LP to the GP entity.
-# Why: Investor model has complex callbacks (update_name, find_or_build_investor_entity).
-#   We skip callbacks and set required fields directly to isolate the policy test.
+# Changed: Reuse @lp_investor created by "LP user for GP entity" step if present.
+# Why: That step now creates an Investor (needed for NdaAcceptance validation),
+#   so creating a second one here hits the unique index on (investor_name, entity_id).
 Given("the LP has approved investor access to the GP entity") do
-  investor = Investor.new(
-    entity: @gp_entity,
-    investor_entity: @lp_entity,
-    investor_name: "LP Entity",
-    primary_email: @lp_user.email
-  )
-  investor.save!(validate: false)
+  investor = @lp_investor || begin
+    inv = Investor.new(
+      entity: @gp_entity,
+      investor_entity: @lp_entity,
+      investor_name: "LP Entity",
+      primary_email: @lp_user.email
+    )
+    inv.save!(validate: false)
+    inv
+  end
 
-  InvestorAccess.create!(
+  InvestorAccess.find_or_create_by!(
     investor: investor,
     entity: @gp_entity,
-    investor_entity: @lp_entity,
-    user: @lp_user,
-    email: @lp_user.email,
-    first_name: @lp_user.first_name,
-    last_name: @lp_user.last_name,
-    approved: true
-  )
+    user: @lp_user
+  ) do |ia|
+    ia.investor_entity = @lp_entity
+    ia.email = @lp_user.email
+    ia.first_name = @lp_user.first_name
+    ia.last_name = @lp_user.last_name
+    ia.approved = true
+  end
 end
 
 # Verifies GP is denied by NdaAcceptancePolicy.

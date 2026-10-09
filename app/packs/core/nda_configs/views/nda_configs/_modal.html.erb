@@ -21,18 +21,21 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
 
-        <%# Tabs: Settings (active) and Status (enabled when NDA config exists and is active) %>
-        <%# Changed: Enabled Status tab with Turbo Frame lazy-load for Module 3 GP Dashboard.
-             Why: GPs need at-a-glance NDA compliance visibility from the modal. %>
-        <ul class="nav nav-tabs px-3 pt-2" role="tablist">
-          <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="nda-settings-tab" data-bs-toggle="tab"
-                    data-bs-target="#nda-settings-pane" type="button" role="tab"
-                    aria-controls="nda-settings-pane" aria-selected="true">
-              Settings
-            </button>
-          </li>
-          <% if nda_config.persisted? && nda_config.enabled? %>
+        <%# Tabs: Settings + Status. Only show tab bar when Status tab is available
+             (NDA config exists and is enabled). Otherwise the lone Settings tab is a
+             non-functional visual element — hide it and render content directly.
+             Changed: Module 9 — hide tab bar when only Settings tab exists.
+             Why: A single-tab bar looks clickable but does nothing, confusing GPs. %>
+        <% show_status_tab = nda_config.persisted? && nda_config.enabled? %>
+        <% if show_status_tab %>
+          <ul class="nav nav-tabs px-3 pt-2" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active" id="nda-settings-tab" data-bs-toggle="tab"
+                      data-bs-target="#nda-settings-pane" type="button" role="tab"
+                      aria-controls="nda-settings-pane" aria-selected="true">
+                Settings
+              </button>
+            </li>
             <li class="nav-item" role="presentation">
               <button class="nav-link" id="nda-status-tab" data-bs-toggle="tab"
                       data-bs-target="#nda-status-pane" type="button" role="tab"
@@ -40,8 +43,8 @@
                 Status
               </button>
             </li>
-          <% end %>
-        </ul>
+          </ul>
+        <% end %>
 
         <div class="tab-content">
           <div class="tab-pane fade show active p-3" id="nda-settings-pane" role="tabpanel"
@@ -65,7 +68,7 @@
           <%# Changed: Added Status tab pane with Turbo Frame lazy-load.
                Why: Status data requires multiple queries; lazy-loading means the Settings tab
                renders instantly and status loads only when the Status tab is clicked. %>
-          <% if nda_config.persisted? && nda_config.enabled? %>
+          <% if show_status_tab %>
             <div class="tab-pane fade p-3" id="nda-status-pane" role="tabpanel"
                  aria-labelledby="nda-status-tab">
               <%= turbo_frame_tag "nda_status_summary", loading: :lazy,

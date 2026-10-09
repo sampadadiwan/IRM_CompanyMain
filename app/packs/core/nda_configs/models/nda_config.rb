@@ -38,6 +38,11 @@ class NdaConfig < ApplicationRecord
   # Why: Module 3 GP Dashboard — tracks per-NDA signatory designations (replaces entity-wide tag_list).
   has_many :nda_signatories, dependent: :destroy
 
+  # Changed: Added has_many :nda_config_versions association.
+  # Why: Version history audit trail — each PDF upload creates a snapshot record
+  #   with version number, file reference, resign decision, and uploader.
+  has_many :nda_config_versions, dependent: :destroy
+
   # Changed: Added has_many :nda_expiry_reminders association.
   # Why: Module 8 — tracks which expiry alerts have been sent per investor per NDA config.
   #   Used by NdaExpiryCheckJob for idempotency and by cleanup if NDA config is deleted.
@@ -62,34 +67,7 @@ class NdaConfig < ApplicationRecord
   before_validation :set_entity_from_owner
   before_validation :normalize_notification_emails
 
-  # Changed: Added before_save callback to auto-increment version on NDA document replacement.
-  # Why: Module 4 — version tracks NDA content (what the LP signs). When the GP uploads a new
-  #   PDF, all existing acceptances become stale and LPs must re-accept.
-  before_save :increment_version_if_document_changed
-
   private
-
-  # @return [void] Auto-increments version when the NDA PDF document is replaced.
-  #   Uses Shrine's JSON-stored nda_document_data column to detect a genuine file change
-  #   by comparing the Shrine-generated file "id" key (unique per upload). This avoids
-  #   false positives from Shrine promotion (which changes storage/metadata but keeps
-  #   the same id). Only increments when the config is enabled — uploading a PDF on a
-  #   disabled config has no version semantics since the NDA gate is inactive.
-  # @see NdaAcceptance#nda_version — gate compares acceptance version against this
-  def increment_version_if_document_changed
-    return unless enabled?
-    return unless will_save_change_to_nda_document_data?
-
-    old_data = nda_document_data_was
-    new_data = nda_document_data
-
-    return if old_data.blank? || new_data.blank?
-
-    old_id = old_data.is_a?(String) ? JSON.parse(old_data)["id"] : old_data["id"]
-    new_id = new_data.is_a?(String) ? JSON.parse(new_data)["id"] : new_data["id"]
-
-    self.version += 1 if old_id.present? && new_id.present? && old_id != new_id
-  end
 
   # @return [void] Sets entity_id from the polymorphic owner's entity.
   def set_entity_from_owner

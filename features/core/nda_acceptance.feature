@@ -68,7 +68,7 @@ Feature: NDA Acceptance (Module 2)
 
   # User from unrelated entity (no investor access) is denied by policy (R5).
   Scenario: Policy denies user with no investor access
-    Given there is an LP user for the GP entity
+    Given there is an LP user without investor access for the GP entity
     Then the NDA acceptance policy should deny the LP user without investor access
 
   # ── Phase 4: NDA Gate on DocumentsController ─────────────────────────────

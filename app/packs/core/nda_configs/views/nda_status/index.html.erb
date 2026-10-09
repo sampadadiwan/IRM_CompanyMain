@@ -2,7 +2,9 @@
      Provides status filtering, search, XLSX export, and user-level exemption management.
      Changed: Module 8 — added Revoked counter/filter/badge, Revoke button on Accepted rows,
        and Send Reminders button in page header.
-     Why: GPs need to revoke accepted NDAs, see revoked investors, and bulk-remind pending ones. %>
+     Why: GPs need to revoke accepted NDAs, see revoked investors, and bulk-remind pending ones.
+     Changed: Module 9 — added zero-signatory ⚠ warnings per investor row.
+     Why: ⚠ icons flag investors with no tagged signatories so GPs can spot and fix the gap. %>
 <%
   status_data = @status_data
   nda_config = @nda_config
@@ -13,7 +15,8 @@
 
 <div class="container-fluid py-4" data-controller="nda-status"
      data-nda-status-nda-config-id-value="<%= nda_config.id %>"
-     data-nda-status-folder-id-value="<%= folder.id %>">
+     data-nda-status-folder-id-value="<%= folder.id %>"
+>
 
   <%# Page header with Send Reminders + Export buttons %>
   <div class="d-flex align-items-center justify-content-between mb-4">
@@ -63,6 +66,78 @@
       Exempt: <%= counters[:exempt] %>
     </span>
   </div>
+
+  <%# Version History collapsible section — shows all NDA PDF versions with metadata.
+       Changed: Added version history audit trail section.
+       Why: GP needs to see what PDF was uploaded at each version, who uploaded it, when,
+         and whether re-signing was required. Each version's PDF is downloadable.
+         Collapsed by default to keep the dashboard clean. %>
+  <% version_records = @version_records || [] %>
+  <% if version_records.any? %>
+    <div class="mb-3">
+      <button class="btn btn-outline-secondary btn-sm" type="button"
+              data-bs-toggle="collapse" data-bs-target="#versionHistory"
+              aria-expanded="false" aria-controls="versionHistory">
+        <i class="ti ti-history me-1"></i>
+        Version History (<%= version_records.size %> <%= "version".pluralize(version_records.size) %>)
+      </button>
+      <div class="collapse mt-2" id="versionHistory">
+        <div class="table-responsive">
+          <table class="table table-sm table-bordered">
+            <thead class="table-light">
+              <tr>
+                <th>Version</th>
+                <th>Uploaded</th>
+                <th>Uploaded By</th>
+                <th>Re-sign Required</th>
+                <th>Download</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% version_records.each do |vr| %>
+                <tr>
+                  <td>
+                    v<%= vr.version %>
+                    <% if vr.version == nda_config.version %>
+                      <span class="badge bg-primary-subtle text-primary ms-1">current</span>
+                    <% end %>
+                  </td>
+                  <td><%= l(vr.created_at, format: :short) %></td>
+                  <td><%= vr.uploaded_by&.full_name || "—" %></td>
+                  <td>
+                    <% if vr.version == 1 && version_records.size > 1 %>
+                      <span class="text-muted">(Initial upload)</span>
+                    <% elsif vr.resign_required? %>
+                      <span class="badge bg-warning-subtle text-warning">Yes</span>
+                    <% else %>
+                      <span class="badge bg-success-subtle text-success">No</span>
+                    <% end %>
+                  </td>
+                  <td>
+                    <%# Changed: Reconstruct Shrine URL from stored nda_document_data JSON.
+                         Why: Each version record stores the raw Shrine JSON pointer to the
+                           S3 object. Parsing it and creating an UploadedFile gives a valid
+                           download URL without duplicating files. %>
+                    <% begin
+                         doc_data = vr.nda_document_data.is_a?(String) ? JSON.parse(vr.nda_document_data) : vr.nda_document_data
+                         uploaded_file = FileUploader::UploadedFile.new(doc_data)
+                    %>
+                      <%= link_to uploaded_file.url, target: "_blank", rel: "noopener noreferrer",
+                          class: "btn btn-outline-primary btn-sm" do %>
+                        <i class="ti ti-download me-1"></i> PDF
+                      <% end %>
+                    <% rescue => _e %>
+                      <span class="text-muted">—</span>
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  <% end %>
 
   <%# Toolbar: filter and search — Changed: Module 8 — added Revoked filter option.
        Why: GPs need to filter the dashboard to show only revoked investors. %>
@@ -134,6 +209,14 @@
                   <%= row[:status] %>
                 </span>
               <% end %>
+              <%# Module 9: Zero-signatory warning — shown when a non-exempt investor has no
+                   tagged signatories. Why: No one can accept the NDA for this investor until
+                   the GP tags at least one signatory. %>
+              <% if row[:status] != "Exempt" && row[:users].present? && row[:users].none? { |u| u[:nda_tagged] } %>
+                <i class="ti ti-alert-triangle text-warning ms-1"
+                   data-bs-toggle="tooltip"
+                   data-bs-title="No signatories tagged — no one can accept the NDA for this investor"></i>
+              <% end %>
             </td>
             <td><%= row[:signed_by]&.full_name || "—" %></td>
             <td><%= row[:signed_at] ? l(row[:signed_at], format: :short) : "—" %></td>
@@ -147,18 +230,50 @@
                   <i class="ti ti-users me-1"></i> <%= row[:users].size %> users
                 </button>
               <% end %>
-              <%# Changed: Module 8 — Revoke button on Accepted investor rows.
-                   Why: GP can revoke an accepted NDA. Shows confirmation dialog with optional reason. %>
-              <% if row[:status] == "Accepted" %>
-                <button class="btn btn-outline-danger btn-sm ms-1"
-                        data-action="click->nda-status#revokeAcceptance"
-                        data-investor-id="<%= row[:investor].id %>"
-                        data-investor-name="<%= row[:investor].investor_name %>"
-                        data-bs-toggle="tooltip"
-                        data-bs-title="Revoke this investor's NDA acceptance">
-                  <i class="ti ti-shield-x me-1"></i> Revoke
+              <%# Changed: Three-dot kebab menu — contextual actions per investor status.
+                   Why: Consolidates Revoke, Exempt, and Remove Exemption into a single
+                     dropdown. Keeps the table clean and scalable for future actions.
+                     Replaces the inline Revoke button and moves NDA exemption control
+                     from the investor show page to here (where the GP manages NDA). %>
+              <div class="dropdown d-inline-block ms-1">
+                <button class="btn btn-outline-secondary btn-sm" type="button"
+                        data-bs-toggle="dropdown" aria-expanded="false">
+                  <i class="ti ti-dots-vertical"></i>
                 </button>
-              <% end %>
+                <ul class="dropdown-menu dropdown-menu-end">
+                  <% if row[:status] == "Accepted" %>
+                    <li>
+                      <a class="dropdown-item text-danger" href="#"
+                         data-action="click->nda-status#revokeAcceptance"
+                         data-investor-id="<%= row[:investor].id %>"
+                         data-investor-name="<%= row[:investor].investor_name %>">
+                        <i class="ti ti-shield-x me-1"></i> Revoke
+                      </a>
+                    </li>
+                  <% end %>
+                  <% if row[:status] == "Exempt" %>
+                    <li>
+                      <a class="dropdown-item" href="#"
+                         data-action="click->nda-status#toggleExemption"
+                         data-investor-id="<%= row[:investor].id %>"
+                         data-investor-name="<%= row[:investor].investor_name %>"
+                         data-exempt="false">
+                        <i class="ti ti-shield-check me-1"></i> Remove Exemption
+                      </a>
+                    </li>
+                  <% else %>
+                    <li>
+                      <a class="dropdown-item" href="#"
+                         data-action="click->nda-status#toggleExemption"
+                         data-investor-id="<%= row[:investor].id %>"
+                         data-investor-name="<%= row[:investor].investor_name %>"
+                         data-exempt="true">
+                        <i class="ti ti-shield-off me-1"></i> Exempt from NDA
+                      </a>
+                    </li>
+                  <% end %>
+                </ul>
+              </div>
             </td>
           </tr>
           <%# Collapsible user detail rows %>

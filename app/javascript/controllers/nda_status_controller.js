@@ -150,6 +150,39 @@ export default class extends Controller {
     }
   }
 
+  // Changed: Toggle NDA exemption for an investor via the existing InvestorsController endpoint.
+  // Why: Moved exemption control from the investor show page to the NDA dashboard kebab menu,
+  //   so GPs manage all NDA actions in one place.
+  async toggleExemption(event) {
+    event.preventDefault()
+    const link = event.currentTarget
+    const investorId = link.dataset.investorId
+    const investorName = link.dataset.investorName
+    const exempt = link.dataset.exempt === "true"
+    const action = exempt ? "exempt" : "remove exemption for"
+
+    if (!confirm(`Are you sure you want to ${action} ${investorName}?`)) return
+
+    try {
+      const response = await fetch(`/investors/${investorId}/toggle_nda_exemption`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "X-CSRF-Token": document.querySelector("meta[name='csrf-token']").content
+        },
+        body: `exempt_from_nda=${exempt}`
+      })
+
+      if (response.ok || response.redirected) {
+        window.location.reload()
+      } else {
+        alert("Failed to update exemption status")
+      }
+    } catch (e) {
+      alert("Network error — please try again")
+    }
+  }
+
   // Changed: Module 8 — sendReminders action with confirmation dialog.
   // Why: GP can bulk-send NDA reminders to all pending investors' signatories.
   //   Enqueues NdaReminderJob in background. Shows count of users who will be emailed.

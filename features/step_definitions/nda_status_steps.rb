@@ -47,6 +47,17 @@ Given("there is an LP investor {string} with approved access to the GP entity") 
     last_name: @lp_user.last_name,
     approved: true
   )
+  # Changed: Create folder-level AccessRight so Investor.owner_access_rights finds this investor.
+  # Why: NdaStatusResolver now uses folder-scoped access rights instead of entity-level InvestorAccess.
+  #   Without an AccessRight on the data room folder, the resolver returns 0 investors.
+  if @data_room_folder
+    AccessRight.find_or_create_by!(
+      owner: @data_room_folder,
+      entity_id: @gp_entity.id,
+      access_to_investor_id: @lp_investor.id,
+      cascade: false
+    )
+  end
 end
 
 # Creates an LP investor with unapproved InvestorAccess (approved: false).

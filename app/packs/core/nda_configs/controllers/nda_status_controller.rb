@@ -40,6 +40,13 @@ class NdaStatusController < ApplicationController
     authorize @nda_config, policy_class: NdaStatusPolicy
     @status_data = NdaStatusResolver.resolve(@nda_config, @folder)
 
+    # Changed: Load version history records for the dashboard collapsible section.
+    # Why: GP needs to see all NDA versions with upload date, uploader, resign decision,
+    #   and a download link for each version's PDF. Eager-load uploaded_by to avoid N+1.
+    @version_records = @nda_config.nda_config_versions
+                                  .includes(:uploaded_by)
+                                  .order(version: :desc)
+
     # Changed: Set breadcrumbs for the standard layout breadcrumb partial.
     # Why: Matches the app-wide breadcrumb style (Home • Documents • Folder — NDA Status).
     @bread_crumbs = [
