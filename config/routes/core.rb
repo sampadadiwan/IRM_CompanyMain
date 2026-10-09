@@ -219,6 +219,13 @@ resources :folders do
   resource :nda_config, controller: "nda_configs", only: %i[new create edit update]
 end
 
+# Changed: Added NDA acceptance routes for Module 2 LP Acceptance Flow.
+# Why: Standalone resource (not nested under folders) — NDA acceptance is tied to
+#   NdaConfig (polymorphic), not to a specific owner type. folder_id passed as query param.
+resources :nda_acceptances, controller: "nda_acceptances", only: %i[index create] do
+  post :decline, on: :collection
+end
+
 # Workflow instances are standalone — not nested under any workflowable object.
 # workflowable_type and workflowable_id are passed as params on create.
 resources :workflow_instances, only: %i[index create show] do

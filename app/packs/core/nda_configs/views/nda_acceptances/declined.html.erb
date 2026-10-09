@@ -1,0 +1,51 @@
+<%# NDA Declined Page (Module 2) — shown after an LP clicks Decline. %>
+<%# Explains the consequence, provides contact info, and offers retry/back actions. %>
+<%# Wrapped in documents_frame turbo-frame so it renders inside the right pane. %>
+
+<%= turbo_frame_tag "documents_frame" do %>
+<div class="px-3">
+
+    <%# ① Logo and ② Back to Data Rooms %>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <% logo = @nda_config.entity&.logo&.url || "/img/logo_big.png" %>
+        <%= image_tag(logo, class: "img-fluid", style: "max-height: 48px;", alt: @nda_config.entity&.name) %>
+      </div>
+      <%= link_to "Back to Data Rooms", data_rooms_folders_path, class: "btn btn-outline-secondary btn-sm" %>
+    </div>
+
+    <%# ③ NDA Declined heading %>
+    <h3 class="mb-3">NDA Declined</h3>
+
+    <%# ④ Explanation with folder context %>
+    <p>
+      You have declined the Non-Disclosure Agreement
+      <% if @folder %>
+        for the folder "<strong><%= @folder.name %></strong>".
+      <% else %>
+        .
+      <% end %>
+    </p>
+
+    <%# ⑤ Consequence message %>
+    <p class="text-muted">
+      You cannot access this folder's contents without accepting the NDA.
+    </p>
+
+    <%# ⑥ Contact email %>
+    <% if @nda_config.contact_email.present? %>
+      <p class="text-muted">
+        Questions? Contact: <%= mail_to @nda_config.contact_email %>
+      </p>
+    <% end %>
+
+    <%# ⑦ Try Again and ⑧ Back to Data Rooms %>
+    <div class="d-flex gap-3 mt-4">
+      <%= link_to "Try Again",
+            nda_acceptances_path(nda_config_id: @nda_config.id, folder_id: @folder&.id, return_to: @return_to),
+            class: "btn btn-primary", data: { turbo_frame: "documents_frame" } %>
+      <%= link_to "Back to Data Rooms", data_rooms_folders_path, class: "btn btn-outline-secondary" %>
+    </div>
+
+</div>
+<% end %>

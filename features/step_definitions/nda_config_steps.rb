@@ -30,6 +30,10 @@ Given("the data room folder has an enabled NDA config") do
     validity_type: "until_revoked",
     acceptance_method: "click_through"
   )
+  # Changed: Set folder mode to "own" after creating NDA config.
+  # Why: Matches controller behavior (NdaConfigsController#create sets mode to "own").
+  #   Without this, effective_nda_config returns nil for mode="inherit" folders with no ancestor.
+  @data_room_folder.update!(nda_inheritance_mode: "own")
 end
 
 # Creates a child folder directly under the data room folder.
