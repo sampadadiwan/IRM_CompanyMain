@@ -97,13 +97,25 @@ module KpiCumulative
   end
 
   # Performs forward fill by taking the latest monthly 'Actual' KPI value and applying it to
-  # Quarterly and YTD reports.
+  # Quarterly and YTD reports. When no monthly data exists, falls back to directly-reported
+  # Quarter KPIs — mirroring how perform_cumulation uses process_quarterly_derived_cumulatives
+  # for entities that report at Quarter granularity.
+  #
+  # @param force [Boolean] when true, overwrites existing values
   def perform_forward_fill(force: false)
     related_kpis = fetch_related_monthly_kpis
-    return if related_kpis.empty?
+    monthly_years = related_kpis.to_set { |kpi| fiscal_year_key(kpi.kpi_report.as_of, style: :start_year) }
 
-    process_quarterly_forward_fill(related_kpis, force: force)
-    process_yearly_forward_fill(related_kpis, force: force)
+    unless related_kpis.empty?
+      process_quarterly_forward_fill(related_kpis, force: force)
+      process_yearly_forward_fill(related_kpis, force: force)
+    end
+
+    # Fallback: when data is reported at Quarter granularity (no monthly data),
+    # carry the latest quarter value into YTD and Year. Fiscal years already
+    # covered by monthly data are skipped via skip_years so values are never
+    # written from both sources.
+    process_quarterly_derived_forward_fill(force: force, skip_years: monthly_years)
   end
 
   # Performs computation based on a custom formula defined in the KPI mapping.
@@ -158,7 +170,7 @@ module KpiCumulative
       # Basic safety check: allow only numbers and math operators
       if %r{\A[\d\s+\-*/.()]+\z}.match?(clean_formula)
         computed_val = eval(clean_formula) # rubocop:disable Security/Eval
-        process_cumulative_kpi(nil, computed_val, report.period, nil, report.as_of, note: "Auto-generated Computed", user_id: report.user_id, force: force)
+        process_cumulative_kpi(nil, computed_val, report.period, nil, report.as_of, note: "Auto-generated Computed", user_id: report.user_id, force: force, tag_list: report.tag_list)
       else
         error_msg = "Invalid formula after replacement for report #{report.id} (#{report.period} #{report.as_of}): #{clean_formula}"
         Rails.logger.error "--- [#{name}] #{error_msg}"
@@ -170,8 +182,10 @@ module KpiCumulative
     end
   end
 
-  # Fetches all monthly KPIs with the 'Actual' tag for this specific KPI name and portfolio company.
-  # Results are ordered chronologically by the report's as_of date.
+  # Fetches all monthly KPIs matching this KPI's report tag (Actual/Budget/IC) for the same
+  # name and portfolio company. Results are ordered chronologically by the report's as_of date.
+  # Uses kpi_report.tag_list so cumulation stays within the same tag family — Budget monthly
+  # KPIs cumulate into Budget quarterly/YTD, IC into IC, etc.
   #
   # entity_id/portfolio_company_id/status/name here are covered by a single composite index
   # (see 20260924160000_add_sort_memory_fix_indexes.rb) so MySQL can satisfy this WHERE with one
@@ -196,7 +210,7 @@ module KpiCumulative
   def fetch_related_monthly_kpis
     entity.kpis.approved.joins(:kpi_report).preload(:kpi_report)
           .where(name: name, portfolio_company_id: portfolio_company_id)
-          .where(kpi_reports: { tag_list: 'Actual', period: 'Month' })
+          .where(kpi_reports: { tag_list: kpi_report.tag_list, period: 'Month' })
           .order("kpi_reports.as_of ASC")
   end
 
@@ -210,17 +224,18 @@ module KpiCumulative
       quarterly_sum = kpis_in_quarter.sum { |kpi| kpi.value.to_f }
       quarter_end = Date.new(year, ((quarter - 1) * 3) + 1, 1).end_of_quarter
 
-      # If the quarter end is in the future and the source monthly KPIs are tagged as 'Actual',
-      # skip creating/updating the Quarterly cumulative to avoid generating future-dated Actual records.
-      next if quarter_end > Date.current
+      # Skip future-dated quarterly cumulation only for Actual KPIs to avoid generating
+      # future-dated Actual records. Budget and IC reports are intentionally future-dated.
+      next if quarter_end > Date.current && kpi_report.tag_list == 'Actual'
 
       process_cumulative_kpi(nil, quarterly_sum, 'Quarter', nil, quarter_end, force: force)
     end
   end
 
-  # Fetches all quarterly KPIs with the 'Actual' tag for this specific KPI name and portfolio
-  # company. These are directly-reported Quarter figures (not auto-generated cumulative ones,
-  # which never carry the 'Actual' tag), so this only matches genuine quarterly source data.
+  # Fetches all quarterly KPIs matching this KPI's report tag (Actual/Budget/IC) for the same
+  # name and portfolio company. These are directly-reported Quarter figures (not auto-generated
+  # cumulative ones), so this only matches genuine quarterly source data. Uses kpi_report.tag_list
+  # so the quarterly fallback respects the same tag family as the source KPI.
   #
   # Same index_merge/sort-memory concern, same composite index, and same eager_load-vs-preload
   # fix as fetch_related_monthly_kpis above.
@@ -229,7 +244,7 @@ module KpiCumulative
   def fetch_related_quarterly_kpis
     entity.kpis.approved.joins(:kpi_report).preload(:kpi_report)
           .where(name: name, portfolio_company_id: portfolio_company_id)
-          .where(kpi_reports: { tag_list: 'Actual', period: 'Quarter' })
+          .where(kpi_reports: { tag_list: kpi_report.tag_list, period: 'Quarter' })
           .order("kpi_reports.as_of ASC")
   end
 
@@ -311,9 +326,9 @@ module KpiCumulative
       quarter_end = Date.new(year, ((quarter - 1) * 3) + 1, 1).end_of_quarter
       existing = Kpi.approved.joins(:kpi_report).where(name: name, entity_id: entity_id, kpi_reports: { period: 'Quarter', as_of: quarter_end }).last
 
-      # If the quarter end is in the future and the source monthly KPIs are tagged as 'Actual',
-      # skip creating/updating the Quarterly forward_fill to avoid generating future-dated Actual records.
-      next if quarter_end > Date.current
+      # Skip future-dated quarterly forward fill only for Actual KPIs.
+      # Budget and IC reports are intentionally future-dated.
+      next if quarter_end > Date.current && kpi_report.tag_list == 'Actual'
 
       if existing.nil? || existing.value.nil? || force
         last_val = kpis_in_quarter.last.value.to_f
@@ -322,18 +337,58 @@ module KpiCumulative
     end
   end
 
-  # Takes the last monthly value available in the fiscal year and applies it as the YTD KPI value.
+  # Creates a YTD record for each month in the fiscal year, carrying that month's value forward.
+  # Mirrors process_yearly_cumulatives but uses last-value semantics instead of progressive sum.
   def process_yearly_forward_fill(related_kpis, force: false)
     kpis_by_year = related_kpis.group_by { |kpi| fiscal_year_key(kpi.kpi_report.as_of, style: :start_year) }
 
     kpis_by_year.each_value do |kpis_in_year|
-      last_date = kpis_in_year.last.kpi_report.as_of
-      existing = Kpi.approved.joins(:kpi_report).where(name: name, entity_id: entity_id, kpi_reports: { period: 'YTD', as_of: last_date }).last
-
-      if existing.nil? || existing.value.nil? || force
-        last_val = kpis_in_year.last.value.to_f
-        process_cumulative_kpi(nil, last_val, 'YTD', nil, last_date, note: "Auto-generated Forward Fill", force: force)
+      kpis_in_year.each do |kpi|
+        as_of = kpi.kpi_report.as_of
+        last_val = kpi.value.to_f
+        process_cumulative_kpi(nil, last_val, 'YTD', nil, as_of, note: "Auto-generated Forward Fill", force: force)
       end
+    end
+  end
+
+  # Carries the latest directly-reported quarterly value into YTD and Year for entities
+  # that report at Quarter granularity without underlying monthly 'Actual' data. Mirrors
+  # process_quarterly_derived_cumulatives but uses last-value (forward fill) semantics
+  # instead of summing.
+  #
+  # @param force [Boolean] when true, overwrites existing values
+  # @param skip_years [Set] fiscal years that already have monthly data — skip to avoid
+  #   writing the same period from both monthly and quarterly sources
+  def process_quarterly_derived_forward_fill(force: false, skip_years: [])
+    related_quarters = fetch_related_quarterly_kpis
+    return if related_quarters.empty?
+
+    quarters_by_year = related_quarters.group_by { |kpi| fiscal_year_key(kpi.kpi_report.as_of, style: :start_year) }
+
+    quarters_by_year.each do |fiscal_year, kpis_in_year|
+      next if skip_years.include?(fiscal_year)
+
+      quarters_present = kpis_in_year.index_by { |kpi| fiscal_quarter_number(kpi.kpi_report.as_of) }
+
+      # Each quarter's value is carried forward as the YTD snapshot at that date.
+      # Unlike cumulate (which requires contiguous quarters from Q1), forward fill
+      # treats each quarter independently — each is a point-in-time balance.
+      quarters_present.keys.sort.each do |quarter|
+        as_of = quarters_present[quarter].kpi_report.as_of
+        next if as_of > Date.current
+
+        last_val = quarters_present[quarter].value.to_f
+        process_cumulative_kpi(nil, last_val, 'YTD', nil, as_of, note: "Auto-generated Forward Fill (from quarters)", force: force)
+      end
+
+      # Year = Q4 value (the final balance) when all 4 quarters are present
+      next unless (1..4).all? { |q| quarters_present.key?(q) }
+
+      fy_end = fiscal_year_key(quarters_present[4].kpi_report.as_of, style: :range).last
+      next if fy_end > Date.current
+
+      last_val = quarters_present[4].value.to_f
+      process_cumulative_kpi(nil, last_val, 'Year', nil, fy_end, note: "Auto-generated Forward Fill (from quarters)", force: force)
     end
   end
 
@@ -347,16 +402,17 @@ module KpiCumulative
   # @param note [String, nil] Optional note to attach to the KPI.
   # @param user_id [Integer, nil] The user to associate with the report if it needs to be created.
   # @param force [Boolean] If true, updates the value even if it matches the current value.
-  def process_cumulative_kpi(_curr_kpi, cumulative_sum, period, _start_date, end_date, note: nil, user_id: nil, force: false)
+  # @param tag_list [String, nil] report tag (Actual/Budget/IC) to scope the target report lookup.
+  #   Callers in the cumulation/forward_fill path pass nil (falls back to self.kpi_report.tag_list);
+  #   the compute path passes the report's tag explicitly because the in-memory Kpi has no kpi_report.
+  def process_cumulative_kpi(_curr_kpi, cumulative_sum, period, _start_date, end_date, note: nil, user_id: nil, force: false, tag_list: nil)
     note ||= "Auto-generated #{period} cumulative"
-    Rails.logger.debug { "Kpi:  [#{name}] Processing #{period} KPI for #{end_date}, value: #{cumulative_sum}" }
+    tag_list ||= kpi_report&.tag_list
+    Rails.logger.debug { "Kpi:  [#{name}] Processing #{period} KPI for #{end_date}, value: #{cumulative_sum}, tag: #{tag_list}" }
 
-    report_for_period = KpiReport.find_by(
-      period: period,
-      as_of: end_date,
-      entity_id: entity_id,
-      portfolio_company_id: portfolio_company_id
-    )
+    find_conditions = { period: period, as_of: end_date, entity_id: entity_id, portfolio_company_id: portfolio_company_id }
+    find_conditions[:tag_list] = tag_list if tag_list.present?
+    report_for_period = KpiReport.find_by(find_conditions)
 
     cumulative_kpi = report_for_period&.kpis&.approved&.find_by(
       entity_id: entity_id,
@@ -365,9 +421,13 @@ module KpiCumulative
     )
 
     if cumulative_kpi
+      # Backfill mapping on existing cumulated KPIs that predate mapping inheritance.
+      # Without the mapping the grid view cannot match the KPI to its row and shows N/A.
+      cumulative_kpi.investor_kpi_mapping ||= investor_kpi_mapping || fallback_investor_kpi_mapping
+
       existing_value = cumulative_kpi.value
       same_value = existing_value.to_d.round(6) == cumulative_sum.to_d.round(6)
-      return if same_value && !force
+      return if same_value && !force && !cumulative_kpi.investor_kpi_mapping_id_changed?
 
       cumulative_kpi.value = cumulative_sum
       cumulative_kpi.notes = note
@@ -385,13 +445,9 @@ module KpiCumulative
     # Assuming user might be optional or handled elsewhere if nil.
     # But usually report belongs to user.
 
-    report_for_period ||= KpiReport.find_or_create_by(
-      period: period,
-      as_of: end_date,
-      entity_id: entity_id,
-      portfolio_company_id: portfolio_company_id,
-      user_id: user_id
-    )
+    create_conditions = { period: period, as_of: end_date, entity_id: entity_id, portfolio_company_id: portfolio_company_id, user_id: user_id }
+    create_conditions[:tag_list] = tag_list if tag_list.present?
+    report_for_period ||= KpiReport.find_or_create_by(create_conditions)
 
     kpi = Kpi.approved.find_or_initialize_by(
       entity_id: entity_id,
@@ -405,7 +461,9 @@ module KpiCumulative
     # validation (required for records created after MAPPING_ID_REQUIRED_FROM) and nothing would
     # be written. Legacy sources that predate mapping assignment may not be linked even though a
     # mapping exists for the company, so fall back to looking it up by standard name.
-    kpi.investor_kpi_mapping ||= investor_kpi_mapping || fallback_investor_kpi_mapping if kpi.new_record?
+    # Applied to both new and existing records: existing cumulated KPIs created before mapping
+    # inheritance was added may still have a nil mapping_id, which breaks grid view display.
+    kpi.investor_kpi_mapping ||= investor_kpi_mapping || fallback_investor_kpi_mapping
 
     kpi.value = cumulative_sum
     kpi.notes = note

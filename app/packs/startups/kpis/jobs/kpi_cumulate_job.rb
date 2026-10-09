@@ -5,9 +5,16 @@ class KpiCumulateJob < ApplicationJob
   # Callers (e.g. KpiApproveService) use this instead of queuing the percentage job themselves,
   # because two independently queued jobs have no ordering guarantee — the percentage job could
   # run before the Quarter/YTD/Year KPIs created here exist, leaving them without MoM/YoY changes.
-  def perform(portfolio_company_id, user_id: nil, force: false, compute_percentage_change: false)
+  #
+  # @param portfolio_company_id [Integer, Array<Integer>] portfolio company ID(s) to process
+  # @param user_id [Integer, nil] user triggering the job (used for notifications and percentage change)
+  # @param force [Boolean] when true, reprocesses all reports ignoring the autofill_completed gate
+  # @param report_ids [Array<Integer>, nil] when present, restricts processing to only these reports
+  #   (with force behavior). Used by KpiApproveService to scope recomputation to affected reports.
+  # @param compute_percentage_change [Boolean] when true, runs KpiPercentageChangeJob inline after cumulation
+  def perform(portfolio_company_id, user_id: nil, force: false, report_ids: nil, compute_percentage_change: false)
     Chewy.strategy(:sidekiq) do
-      run_cumulation(portfolio_company_id, user_id, force)
+      run_cumulation(portfolio_company_id, user_id, force, report_ids)
     end
 
     # Runs last and UNCONDITIONALLY: run_cumulation may bail out early when no report needs
@@ -25,11 +32,11 @@ class KpiCumulateJob < ApplicationJob
   # The cumulation body, split out of #perform so its early return (no reports to process)
   # cannot short-circuit the percentage-change trigger above — that's exactly the bug this
   # structure prevents from reappearing.
-  def run_cumulation(portfolio_company_id, user_id, force)
+  def run_cumulation(portfolio_company_id, user_id, force, report_ids = nil)
     @error_msgs = []
     send_notification("Started KPI cumulation for PortfolioCompany ID: #{portfolio_company_id}", user_id, :info)
 
-    kpi_reports = get_kpi_reports(portfolio_company_id, force: force)
+    kpi_reports = get_kpi_reports(portfolio_company_id, force: force, report_ids: report_ids)
     return unless kpi_reports.exists?
 
     Rails.logger.debug { "Found #{kpi_reports.count} KpiReports to process for PortfolioCompany ID: #{portfolio_company_id} (force: #{force})" }
@@ -60,23 +67,27 @@ class KpiCumulateJob < ApplicationJob
     # This runs AFTER aggregation is complete for all processed reports.
     # It finds all mappings that require computation and triggers the calculation.
     # The computation logic in KpiCumulative#perform_computation iterates over all relevant Q/YTD reports for the PC.
-    begin
-      InvestorKpiMapping.where(investor_id: portfolio_company_id, autofill: 'compute').find_each do |mapping|
-        # We need an instance to call the concern method.
-        # Create a temporary KPI object to trigger the logic defined in the Concern.
-        kpi = Kpi.new(
-          portfolio_company_id: portfolio_company_id,
-          entity_id: mapping.entity_id,
-          name: mapping.standard_kpi_name,
-          investor_kpi_mapping: mapping
-        )
-        kpi.autofill(force: force)
-        @error_msgs.concat(kpi.autofill_errors) if kpi.respond_to?(:autofill_errors) && kpi.autofill_errors.present?
+    # Array() ensures each pc_id is a single integer — Kpi.new requires a scalar
+    # portfolio_company_id; passing an array silently casts to nil and queries the
+    # wrong reports. KpiApproveService now sends a scalar, but this guard protects
+    # against any other caller that might still pass an array.
+    Array(portfolio_company_id).each do |pc_id|
+      begin
+        InvestorKpiMapping.where(investor_id: pc_id, autofill: 'compute').find_each do |mapping|
+          kpi = Kpi.new(
+            portfolio_company_id: pc_id,
+            entity_id: mapping.entity_id,
+            name: mapping.standard_kpi_name,
+            investor_kpi_mapping: mapping
+          )
+          kpi.autofill(force: force)
+          @error_msgs.concat(kpi.autofill_errors) if kpi.respond_to?(:autofill_errors) && kpi.autofill_errors.present?
+        end
+      rescue StandardError => e
+        error_info = "Failed to compute KPI data for PortfolioCompany #{pc_id}: #{e.message}"
+        Rails.logger.error error_info
+        @error_msgs << { pc_id: pc_id, message: error_info }
       end
-    rescue StandardError => e
-      error_info = "Failed to compute KPI data for PortfolioCompany #{portfolio_company_id}: #{e.message}"
-      Rails.logger.error error_info
-      @error_msgs << { pc_id: portfolio_company_id, message: error_info }
     end
 
     if @error_msgs.present?
@@ -102,8 +113,18 @@ class KpiCumulateJob < ApplicationJob
     end
   end
 
-  def get_kpi_reports(portfolio_company_id, force: false)
+  # @param portfolio_company_id [Integer, Array<Integer>] portfolio company ID(s)
+  # @param force [Boolean] bypass the autofill_completed / 24h-recency gate
+  # @param report_ids [Array<Integer>, nil] when present, return only these reports (force-style)
+  # @return [ActiveRecord::Relation<KpiReport>]
+  def get_kpi_reports(portfolio_company_id, force: false, report_ids: nil)
     kpi_reports = KpiReport.where(portfolio_company_id: portfolio_company_id)
+
+    # Scoped mode: only the caller-specified reports, ordered chronologically.
+    # Used by KpiApproveService to limit recomputation to the approved KPIs'
+    # reports and their downstream Quarter/YTD/Year reports.
+    return kpi_reports.where(id: report_ids).order(:as_of).distinct if report_ids.present?
+
     # In tests, we want to process all reports, but chronologically!
     # Also include those that don't have KPIs yet (for Compute)
     return kpi_reports.order(:as_of).distinct if Rails.env.test? || force

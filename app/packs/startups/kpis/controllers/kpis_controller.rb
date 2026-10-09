@@ -136,7 +136,7 @@ class KpisController < ApplicationController
     # Approvals only move KPI report journeys forward, on every report of the portfolio company (H10)
     KpiReport.journey_progress_for_portco(entity_id, portfolio_company_id, actor: current_user)
     respond_to do |format|
-      format.html { redirect_back_or_to(kpi_reports_path, notice: "KPI was successfully approved.") }
+      format.html { redirect_back_or_to(kpi_reports_path, notice: "KPI approved. Cumulative values are being computed — refresh the page in a few seconds.") }
       format.json { render :show, status: :ok, location: @kpi }
     end
   end
@@ -184,7 +184,7 @@ class KpisController < ApplicationController
       end
 
       KpiApproveService.call(kpi_ids, current_user.id)
-      notice = "All pending KPIs were successfully approved."
+      notice = "All pending KPIs approved. Cumulative values are being computed — refresh the page in a few seconds."
     end
 
     # Approve all / Reject all move every KPI report journey of the portfolio company on, once (H10)
