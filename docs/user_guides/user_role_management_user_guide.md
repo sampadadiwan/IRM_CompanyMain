@@ -187,7 +187,7 @@ A company admin sees these toggles on a user's **Edit** page. Together they deci
 | **Investor Kyc Update** | The same as **Investor Kyc Read**, plus editing those KYCs |
 | **Investor Kyc Create** / **Delete** / **Approve** | Creating KYCs, and deleting or verifying the KYCs the user can see |
 
-Without **Investor Kyc Read** or **Investor Kyc Update**, an employee sees only KYCs committed to funds they have access to (the fund's **Access** tab), plus KYCs with no commitment yet. Company admins see every KYC regardless. The full rule and matrix are in [Who Can See a KYC and Get Its Emails](investor_kyc_user_guide#who-can-see-a-kyc-and-get-its-emails).
+Without **Investor Kyc Read** or **Investor Kyc Update**, an employee sees only KYCs committed to funds they have access to (the fund's **Access** tab) — never a KYC with no commitment yet, since it has no fund to check. Company admins see every KYC regardless. The full rule and matrix are in [Who Can See a KYC and Get Its Emails](investor_kyc_user_guide#who-can-see-a-kyc-and-get-its-emails).
 
 ---
 
@@ -326,7 +326,7 @@ The support user sees exactly what that user sees. It is only possible when the 
 ### Troubleshooting and edge cases
 
 **Why does a user see only some KYCs?**
-They have neither **Investor Kyc Read** nor **Investor Kyc Update**, so they see only KYCs committed to funds they have access to, plus KYCs with no commitment yet. Turn one of those toggles on from their **Edit** page, or add them on the fund's **Access** tab. If they see no KYCs at all, check **Enable Kycs**.
+They have neither **Investor Kyc Read** nor **Investor Kyc Update**, so they see only KYCs committed to funds they have access to — not KYCs with no commitment yet (common during onboarding). Turn one of those toggles on from their **Edit** page, or add them on the fund's **Access** tab. If they see no KYCs at all, check **Enable Kycs**.
 
 **Can a user belong to multiple entities?**
 Not directly — a user has one home entity. Investor advisors can act for several investors through their advisor persona. For genuine multi-entity staff, create a separate account per entity.

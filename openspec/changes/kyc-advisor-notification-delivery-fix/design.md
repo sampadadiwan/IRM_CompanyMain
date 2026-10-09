@@ -61,9 +61,12 @@ switched in. It follows the existing pattern of Pundit `Scope` + `show?` as the 
 Enable Kycs  AND  ( company admin
                     OR Investor Kyc Read            ← any KYC in the entity
                     OR Investor Kyc Update          ← any KYC in the entity
-                    OR access to the KYC's fund
-                    OR the KYC has no commitment yet )
+                    OR access to the KYC's fund )
 ```
+
+A KYC with no commitment yet has no fund to check, so only a company admin or someone with
+**Investor Kyc Read / Update** sees it and is emailed about it (V5, V5a). An earlier version of this
+rule showed uncommitted KYCs to everyone with **Enable Kycs**; that was too open and was removed.
 
 ### The idea in one picture
 
@@ -118,7 +121,7 @@ flowchart LR
 | Advisor switched into another company | Never emailed (the email gate looked at their *current* company) | Emailed if their grant on the fund's entity passes the rule |
 | What does **Investor Kyc Read** give? | Nothing on its own (needed fund access too) | Every KYC in the entity, list + page + emails |
 | Employee with fund access but no Kyc Read | Not allowed to open the KYC page | Opens KYCs on their funds |
-| KYC with no commitment yet | List/page: company admins only | Everyone with **Enable Kycs** |
+| KYC with no commitment yet | List/page: company admins only | Company admins and **Investor Kyc Read / Update** only (fund access cannot apply — there is no fund yet) |
 | Fund-of-funds LP opening its own KYC | Works on main; broke mid-branch | Works (investor check always reached) |
 | When are emails sent? | Inside the investor's web request | In `NotifyKycJob`, a few seconds later |
 
@@ -155,14 +158,14 @@ timeline
 | # | When | What happens | Behind the scenes | Result&nbsp;(who&nbsp;is&nbsp;told) |
 |---|---|---|---|---|
 | 1 | Day 1, 10:00 | Mehta saves the full form | The investor action (①) queues the notification job (②) with "KYC Updated" | Nothing sent yet — the save returns at once |
-| 2 | Day 1, 10:00 + 2 s | The job runs | The job (②) asks the per-person check (④) for each employee and advisor; the rule (③) says "no commitment yet → everyone with Enable Kycs" | Asha&nbsp;✓<br>Ben&nbsp;✓<br>Chen&nbsp;✓<br>Dev&nbsp;✓<br>Ela&nbsp;✗&nbsp;(Enable&nbsp;Kycs&nbsp;off)<br>Priya&nbsp;✓ |
+| 2 | Day 1, 10:00 + 2 s | The job runs | The job (②) asks the per-person check (④) for each employee and advisor; the rule (③) has no fund to check, so only company admins and Kyc Read / Update pass | Asha&nbsp;✓<br>Ben&nbsp;✓&nbsp;(Kyc&nbsp;Read)<br>Chen&nbsp;✗&nbsp;(no&nbsp;fund&nbsp;yet)<br>Dev&nbsp;✗&nbsp;(no&nbsp;fund&nbsp;yet)<br>Ela&nbsp;✗&nbsp;(Enable&nbsp;Kycs&nbsp;off)<br>Priya&nbsp;✓&nbsp;(grant&nbsp;Kyc&nbsp;Read) |
 | 3 | Day 1, 10:00 + 2 s | Priya's email reaches the gate | The email gate (⑤) sees Priya is not in Urban Capital right now, finds her grant there and re-asks the check (④), which judges her **grant**, not Zen Holdings | Priya's email is delivered (⑥) |
 
 **Phase 2 — the KYC is committed to Fund A**
 
 | # | When | What happens | Behind the scenes | Result&nbsp;(who&nbsp;is&nbsp;told) |
 |---|---|---|---|---|
-| 4 | Day 3 | A commitment on Fund A is created for this KYC | Nothing is sent; the rule (③) now has a fund to check | Same people can see it except Dev |
+| 4 | Day 3 | A commitment on Fund A is created for this KYC | Nothing is sent; the rule (③) now has a fund to check | Chen can now see it (Fund A); Dev still cannot |
 | 5 | Day 3, 15:00 | Mehta clicks **Updates Required** | The investor action (①) queues "Updates Requested"; the job (②) asks the check (④) for each person | Asha&nbsp;✓<br>Ben&nbsp;✓&nbsp;(Kyc&nbsp;Read)<br>Chen&nbsp;✓&nbsp;(Fund&nbsp;A)<br>**Dev&nbsp;✗&nbsp;(only&nbsp;Fund&nbsp;B)**<br>Ela&nbsp;✗<br>Priya&nbsp;✓&nbsp;(grant&nbsp;Kyc&nbsp;Read) |
 
 **Phase 3 — a change of mind, and a failure**
@@ -429,7 +432,7 @@ flowchart TD
 
 | Question | Answer |
 |---|---|
-| Where did the "no commitment → everyone" fallback go? | Into the rule (③). `notify_kyc` now just asks `show?`, so emails and the page agree. |
+| Where did the "no commitment → everyone" fallback go? | Removed. `notify_kyc` just asks `show?`, so emails and the page agree; an uncommitted KYC is emailed only to company admins and Investor Kyc Read / Update holders. |
 | Can this mass-email during a bulk import? | No — only investor actions trigger it (card ①). |
 | Why `find_each` on advisors but `each` on employees? | Employees per entity are few and need `.active`; advisor grants use `find_each` with `includes(:user)` to avoid N+1 on the user. |
 
@@ -439,7 +442,7 @@ The one place the rule lives, as an `InvestorKyc` relation.
 
 | Owns | Reads / receives | Produces |
 |---|---|---|
-| "Which KYCs may this staff member see?" | `scope`, `entity_id`, `user_id`, `extended_permissions` (passed explicitly) | A relation: all of the entity's KYCs, or those on the user's funds plus uncommitted ones |
+| "Which KYCs may this staff member see?" | `scope`, `entity_id`, `user_id`, `extended_permissions` (passed explicitly) | A relation: all of the entity's KYCs, or only those committed to the user's funds |
 
 ```mermaid
 flowchart TD
@@ -447,8 +450,7 @@ flowchart TD
     K --> P{"investor_kyc_read or<br/>investor_kyc_update?"}
     P -- yes --> ALL["return kycs<br/>(every KYC in entity)"]
     P -- no --> F["on_my_funds:<br/>AccessRight(Fund, user)<br/>→ commitments → kyc ids"]
-    F --> U["OR not in commitments<br/>(no commitment yet)"]
-    U --> OUT["kycs.where(id: on_my_funds)<br/>.or(kycs.where.not(id: committed))"]
+    F --> OUT["kycs.where(id: on_my_funds)<br/>(uncommitted KYCs excluded)"]
 ```
 
 | Input | Where it comes from for an employee | For a switched-out advisor |
@@ -460,8 +462,7 @@ flowchart TD
 `enable_kycs` is **not** inside this method — callers check it, because it comes from a different place
 for employees (`user.enable_kycs`) and advisors (grant + KYC entity).
 
-Subqueries (`IN` / `NOT IN`), not joins, so a KYC with several commitments is not returned twice. `NULL`
-`investor_kyc_id`s are excluded from the `NOT IN` list (otherwise it matches nothing).
+A subquery (`IN`), not a join, so a KYC with several commitments is not returned twice.
 
 **Worked examples:** V1–V5.
 
@@ -761,7 +762,8 @@ company admin; one investor with one user; one KYC.
 | V1 | Kyc Read alone | employee, Kyc Read, no fund access | investor saves | sees, in list, emailed | `investor_kyc_visibility_rule.feature` |
 | V2 | Kyc Update alone | employee, Kyc Update, no fund access | investor saves | sees, in list, emailed | same |
 | V3 | Fund access alone | employee, access on Fund A only | investor saves | sees, in list, emailed | same |
-| V5 | No commitment yet | new KYC with no commitment; plain employee | investor saves | sees, in list, emailed | same |
+| V5 | No commitment yet | new KYC with no commitment; employee with fund access but no KYC toggles | investor saves | does not see, not in list, not emailed (only company admin / Investor Kyc Read / Update see a KYC with no commitment) | same |
+| V5a | No commitment yet, KYC toggle | new KYC with no commitment; employee with Investor Kyc Read | investor saves | sees, in list, emailed | same |
 | V7 | Advisor switched out | grant Kyc Read; advisor in an entity with KYCs off | updated, updates requested, final submit | gets all three, one Submitted | same |
 | V8 | Company-admin grant | grant roles `company_admin`, no fund access, switched out | investor saves | sees, emailed | same |
 | V11 | Advisor switched in | grant + Fund A access | investor saves / submits | exactly one email each | `investor_kyc_send_workflow.feature` sc. 21, 23 |

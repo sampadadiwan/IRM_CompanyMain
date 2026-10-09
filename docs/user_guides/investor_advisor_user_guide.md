@@ -91,13 +91,13 @@ Once switched into the client investor's persona, an advisor can — for the fun
 
 An advisor sees your KYCs, and gets your **KYC Submitted**, **KYC Updated** and **Updates Requested** emails, under the same rule as your employees — but judged by their **advisor grant** on your organisation (Company menu → **Advisors** → the advisor → **Edit**), not by their own login. It does not matter which company they are switched into at the time: an advisor working in another client's account, or back in their own firm, still gets your KYC emails.
 
-An advisor sees a KYC, and gets its emails, when the grant has **Enable Kycs** on, its **Allowed Roles** include *employee* or *company_admin*, and at least one of these is true: the roles include *company_admin*; the grant has **Investor Kyc Read** or **Investor Kyc Update**; the advisor has access to a fund the KYC is committed to (the fund's **Access** tab → **Grant Access** → **Select Advisor**); or the KYC has no commitment yet.
+An advisor sees a KYC, and gets its emails, when the grant has **Enable Kycs** on, its **Allowed Roles** include *employee* or *company_admin*, and at least one of these is true: the roles include *company_admin*; the grant has **Investor Kyc Read** or **Investor Kyc Update**; the advisor has access to a fund the KYC is committed to (the fund's **Access** tab → **Grant Access** → **Select Advisor**). A KYC with no commitment yet has no fund to check, so fund access alone never reveals it — the grant needs *company_admin*, **Investor Kyc Read** or **Investor Kyc Update**.
 
 | Advisor grant set up with | KYC on a fund they can access | KYC on another fund | KYC with no commitment yet |
 |---|---|---|---|
 | **Allowed Roles** includes *company_admin*, **Enable Kycs** on | ✅ | ✅ | ✅ |
 | **Investor Kyc Read** or **Investor Kyc Update** on | ✅ | ✅ | ✅ |
-| Fund access only | ✅ | ❌ | ✅ |
+| Fund access only | ✅ | ❌ | ❌ |
 | **Enable Kycs** off on the grant | ❌ | ❌ | ❌ |
 | **Allowed Roles** without *employee* or *company_admin* | Only what the client relationship allows, as an investor would | | |
 

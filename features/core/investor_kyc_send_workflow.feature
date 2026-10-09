@@ -325,17 +325,21 @@ Feature: Investor KYC Send Workflow
     Then the user "kyc_symbol_roles_advisor@example.com" should have show access to the investor kyc
 
   # ─────────────────────────────────────────────────────────────────────────────
-  # 20. A KYC with no commitment yet is visible to every employee with enable_kycs (V5),
-  #     so the onboarding-window notifications still reach ordinary employees
+  # 20. A KYC with no commitment yet is visible only to company admins and employees with
+  #     Investor Kyc Read / Update (V5), so only they get its onboarding-window notifications
   # ─────────────────────────────────────────────────────────────────────────────
   @kyc_workflow @kyc_notification @notification
-  Scenario: KYC with no capital commitments still notifies entity employees
+  Scenario: KYC with no capital commitments notifies only employees with the KYC toggles
     Given there is a KYC for the investor with submission_status "link_sent"
     And there is a user "email=zero_commitment_employee@example.com" for the entity "name=KycTestFund"
     And the user "zero_commitment_employee@example.com" has role "employee"
+    And there is a user "email=zero_commitment_kyc_read@example.com" for the entity "name=KycTestFund"
+    And the user "zero_commitment_kyc_read@example.com" has role "employee"
+    And the user "zero_commitment_kyc_read@example.com" has extended permission "investor_kyc_read"
     And the email queue is cleared
     When the investor submits an update to the KYC
-    Then the user "zero_commitment_employee@example.com" receives a KYC updated notification email
+    Then the user "zero_commitment_employee@example.com" does not receive a KYC updated notification email
+    And the user "zero_commitment_kyc_read@example.com" receives a KYC updated notification email
 
   # ─────────────────────────────────────────────────────────────────────────────
   # 21. notify_kyc's two loops are deduplicated by user id

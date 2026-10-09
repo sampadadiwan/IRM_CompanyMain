@@ -311,8 +311,9 @@ class InvestorKyc < ApplicationRecord
   # NotifyKycJob, which runs this off the request thread): notifies the entity's own employees and
   # any investor advisors holding a grant on the entity. Each recipient must pass
   # InvestorKycPolicy#show? - the same rule as the KYC list and page - so nobody is emailed a link
-  # they will get "access denied" on. That rule already covers a KYC with no commitment yet (V5),
-  # so there is no separate onboarding fallback here any more.
+  # they will get "access denied" on. A KYC with no commitment yet is emailed only to those who can
+  # see it - company admins and employees with Investor Kyc Read / Update (V5); there is no
+  # separate onboarding fallback for other employees.
   # Worked examples V1-V11: openspec/changes/kyc-advisor-notification-delivery-fix/design.md#worked-examples
   # Deduplicated by user id across both loops, since a legacy advisor account with a nil
   # advisor_entity_id can appear in both.

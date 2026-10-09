@@ -769,8 +769,9 @@ A person in your organisation can see a KYC when **Enable Kycs** is on for them 
 - they are a **company admin**;
 - they have **Investor Kyc Read** turned on — every KYC in your organisation, whatever the fund;
 - they have **Investor Kyc Update** turned on — every KYC in your organisation, whatever the fund;
-- they have access to a fund the KYC is committed to (the fund's **Access** tab);
-- the KYC has **no commitment yet**, so there is no fund to check.
+- they have access to a fund the KYC is committed to (the fund's **Access** tab).
+
+A KYC with **no commitment yet** has no fund to check, so fund access cannot reveal it: only company admins and people with **Investor Kyc Read** or **Investor Kyc Update** see it and get its emails. This matters during onboarding, when most KYCs have no commitment — give the people who handle onboarding one of those toggles.
 
 Company admins are the one exception to **Enable Kycs**: they always see every KYC, but get the KYC emails only while **Enable Kycs** is on for them.
 
@@ -783,7 +784,7 @@ flowchart TD
     C -- No --> D{"Investor Kyc Read or<br/>Investor Kyc Update on?"}
     D -- Yes --> Y
     D -- No --> E{"KYC has a commitment?"}
-    E -- No --> Y
+    E -- No --> X
     E -- Yes --> F{"Access to one of the<br/>KYC's funds?"}
     F -- Yes --> Y
     F -- No --> X["Does not see the KYC<br/>No KYC emails"]
@@ -799,8 +800,8 @@ Each cell answers both questions at once — sees the KYC on the list and its pa
 | Company admin, **Enable Kycs** off | Sees it, no emails | Sees it, no emails | Sees it, no emails |
 | **Investor Kyc Read** on | ✅ | ✅ | ✅ |
 | **Investor Kyc Update** on | ✅ | ✅ | ✅ |
-| Fund access only (no Investor Kyc toggles) | ✅ | ❌ | ✅ |
-| No fund access, no Investor Kyc toggles | — | ❌ | ✅ |
+| Fund access only (no Investor Kyc toggles) | ✅ | ❌ | ❌ |
+| No fund access, no Investor Kyc toggles | — | ❌ | ❌ |
 | **Enable Kycs** off (any other setup) | ❌ | ❌ | ❌ |
 
 Seeing a KYC is not the same as changing it: editing, **Request Updates** and **KYC Actions → Generate Docs** still need **Investor Kyc Update**, deleting needs **Investor Kyc Delete**, and **Verify** needs **Investor Kyc Approve** — each only on KYCs the person can see.
@@ -813,7 +814,7 @@ An investor advisor is judged by their advisor grant on **your** organisation (C
 |---|---|---|---|
 | **Allowed Roles** includes *company_admin*, **Enable Kycs** on | ✅ | ✅ | ✅ |
 | **Investor Kyc Read** or **Investor Kyc Update** on | ✅ | ✅ | ✅ |
-| Fund access only | ✅ | ❌ | ✅ |
+| Fund access only | ✅ | ❌ | ❌ |
 | **Enable Kycs** off on the grant | ❌ | ❌ | ❌ |
 | **Allowed Roles** without *employee* or *company_admin* | Only what the advisor's client relationship allows, as an investor would | | |
 
@@ -966,13 +967,13 @@ Onboarding an individual investor into a SEBI-regulated fund, end to end:
 
 
 **Who can see a KYC, and who gets its emails?**
-Everyone in your organisation with **Enable Kycs** who is a company admin, has **Investor Kyc Read** or **Investor Kyc Update**, or has access to a fund the KYC is committed to. A KYC with no commitment yet is seen by everyone with **Enable Kycs**. The same people get its **KYC Submitted**, **KYC Updated** and **Updates Requested** emails. See the matrix in [Who Can See a KYC and Get Its Emails](#who-can-see-a-kyc-and-get-its-emails).
+Everyone in your organisation with **Enable Kycs** who is a company admin, has **Investor Kyc Read** or **Investor Kyc Update**, or has access to a fund the KYC is committed to. A KYC with no commitment yet has no fund to check, so only company admins and people with **Investor Kyc Read** or **Investor Kyc Update** see it. The same people get its **KYC Submitted**, **KYC Updated** and **Updates Requested** emails. See the matrix in [Who Can See a KYC and Get Its Emails](#who-can-see-a-kyc-and-get-its-emails).
 
 **Where do I turn on Investor Kyc Read or Investor Kyc Update for someone?**
 A company admin opens Company menu → [**User / Company Employees**](/users), opens the person, clicks **Edit** and switches on **Investor Kyc Read** or **Investor Kyc Update**, with **Enable Kycs** on as well. For an investor advisor, edit their grant under Company menu → **Advisors** instead; the advisor's own login settings do not count for your KYCs.
 
 **How do I give an employee or advisor access to one fund's KYCs only?**
-Leave **Investor Kyc Read** and **Investor Kyc Update** off and give them fund access: open the fund, go to its **Access** tab, click **Grant Access** and pick them under **Select Employee** (or **Select Advisor**). They then see and are emailed about KYCs committed to that fund, plus KYCs with no commitment yet.
+Leave **Investor Kyc Read** and **Investor Kyc Update** off and give them fund access: open the fund, go to its **Access** tab, click **Grant Access** and pick them under **Select Employee** (or **Select Advisor**). They then see and are emailed about KYCs committed to that fund only — not KYCs with no commitment yet, which need **Investor Kyc Read** or **Investor Kyc Update**.
 
 **Where do I find KYC records in CapHive?**
 Sidebar → [**Funds → KYCs**](/investor_kycs) lists every KYC you are allowed to see, with **Verified**, **Unverified**, **Completed**, **Expired**, **Individual** and **Non Individual** count tiles at the top. The link sits in the **Funds** sidebar block (shown when the *Funds* feature is on) and the page needs the *KYCs* feature on your user. See [Filtering and Finding KYC Records](#filtering-and-finding-kyc-records).
@@ -1086,7 +1087,7 @@ On **Funds → KYCs** open **Upload/Download → Upload KYC Details**. Use **Upl
 **Upload/Download → Download: IndividualKyc …** or **Download: NonIndividualKyc …** on **Funds → KYCs** downloads an Excel file of the current list for that form type, custom fields included.
 
 **Which permissions do I need?**
-Your user needs **Enable Kycs**. Company admins can do everything. Other employees see every KYC with **Investor Kyc Read** or **Investor Kyc Update**, otherwise KYCs on funds they can access plus KYCs with no commitment yet. Changing a KYC needs **Investor Kyc Create**, **Update**, **Delete** or **Approve** as well. **Send KYC Reminders** and **Upload/Download** need the employee role. See [Who Can See a KYC and Get Its Emails](#who-can-see-a-kyc-and-get-its-emails).
+Your user needs **Enable Kycs**. Company admins can do everything. Other employees see every KYC with **Investor Kyc Read** or **Investor Kyc Update**, otherwise only KYCs committed to funds they can access (a KYC with no commitment yet stays hidden from them). Changing a KYC needs **Investor Kyc Create**, **Update**, **Delete** or **Approve** as well. **Send KYC Reminders** and **Upload/Download** need the employee role. See [Who Can See a KYC and Get Its Emails](#who-can-see-a-kyc-and-get-its-emails).
 
 **How do I set up the KYC journey for my company?**
 As a company admin of an Investment Fund or Angel Fund company, open the [workflow templates](/workflow_templates) page and choose **Set up journeys → Set up investor KYC journeys**. It adds the **Investor KYC** journey and a rule giving it to every new KYC. New fund companies get it automatically.
@@ -1209,7 +1210,7 @@ Nothing changes until the investor submits: uploading documents first and lettin
 
 
 **Why did a colleague get a KYC email and I did not?**
-You probably cannot see that KYC. Without **Investor Kyc Read** or **Investor Kyc Update** you are emailed only about KYCs committed to funds you have access to, plus KYCs with no commitment yet. Your colleague may have one of those toggles or access to the KYC's fund. If **Enable Kycs** is off for you, you get no KYC emails at all.
+You probably cannot see that KYC. Without **Investor Kyc Read** or **Investor Kyc Update** you are emailed only about KYCs committed to funds you have access to — never about a KYC with no commitment yet. Your colleague may have one of those toggles or access to the KYC's fund. If **Enable Kycs** is off for you, you get no KYC emails at all.
 
 **Why do I get KYC emails for funds I do not work on?**
 You have **Investor Kyc Read** or **Investor Kyc Update**, which cover every KYC in your organisation. If you should only follow certain funds, ask a company admin to turn those toggles off and give you access on those funds' **Access** tab instead.
@@ -1281,7 +1282,7 @@ A review workflow may be assigned to this KYC; gated buttons stay disabled until
 Existing commitments keep the value copied from the KYC when they were created; KYC changes are not copied to them. Open each commitment, click **Edit**, update its **Investor Signatory Emails** and save, then generate the document again, because signers are fixed when a document is generated (cancel and delete it first if it was already sent). See [eSigning](esigning_user_guide#changing-signers-on-documents-already-generated-or-sent).
 
 **I cannot see some KYCs, or the KYCs menu is missing.**
-The **Funds → KYCs** link needs the *Funds* feature and your user needs **Enable Kycs**. Without **Investor Kyc Read** or **Investor Kyc Update** you see only KYCs committed to funds you can access, plus KYCs with no commitment yet. Ask a company admin to turn one of those toggles on for you, or to add you on the fund's **Access** tab.
+The **Funds → KYCs** link needs the *Funds* feature and your user needs **Enable Kycs**. Without **Investor Kyc Read** or **Investor Kyc Update** you see only KYCs committed to funds you can access — a KYC with no commitment yet stays hidden until it is committed to one of them. Ask a company admin to turn one of those toggles on for you, or to add you on the fund's **Access** tab.
 
 **The import says "a KYC already exists … Set Update Only to Yes".**
 A KYC with the same stakeholder, PAN and **Investing Entity** name is already in CapHive. Set **Update Only** to `Yes` on that row to update it instead of creating a duplicate.

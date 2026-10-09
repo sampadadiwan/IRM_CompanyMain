@@ -42,17 +42,14 @@ class InvestorKycPolicy < ApplicationPolicy
     # showed nothing.
     return kycs if extended_permissions.set?(:investor_kyc_read) || extended_permissions.set?(:investor_kyc_update)
 
-    # Otherwise: KYCs committed to a fund the user holds an access right on (V3, V4). Subqueries
-    # rather than a join, so a KYC with several commitments is not returned once per commitment.
+    # Otherwise: only KYCs committed to a fund the user holds an access right on (V3, V4). A KYC
+    # with no commitment yet has no fund to check, so it stays hidden here (V5) - only the toggles
+    # above (or company admin) reveal it, and so only those users get its emails. Subquery rather
+    # than a join, so a KYC with several commitments is not returned once per commitment.
     my_fund_ids = AccessRight.where(entity_id:, user_id:, owner_type: "Fund").select(:owner_id)
     on_my_funds = CapitalCommitment.where(entity_id:, fund_id: my_fund_ids).select(:investor_kyc_id)
 
-    # ...plus KYCs with no commitment yet (V5): there is no fund to check, and this is the
-    # onboarding window when the KYC emails actually fire. NULLs are excluded from the subquery
-    # because NOT IN (..., NULL) matches nothing in SQL.
-    with_a_commitment = CapitalCommitment.where(entity_id:).where.not(investor_kyc_id: nil).select(:investor_kyc_id)
-
-    kycs.where(id: on_my_funds).or(kycs.where.not(id: with_a_commitment))
+    kycs.where(id: on_my_funds)
   end
 
   def index?

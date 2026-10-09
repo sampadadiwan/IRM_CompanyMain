@@ -3,8 +3,10 @@ Feature: Investor KYC visibility rule
   notification emails (submitted, updated, updates requested) all follow it:
 
     enable_kycs AND ( company admin OR Investor Kyc Read OR Investor Kyc Update
-                      OR access to a fund the KYC is committed to
-                      OR the KYC has no commitment yet )
+                      OR access to a fund the KYC is committed to )
+
+  A KYC with no commitment yet has no fund to check, so only a company admin or an employee
+  with Investor Kyc Read / Update sees it (and is emailed about it).
 
   An investor advisor is judged by their grant on the KYC's entity, whichever entity they are
   currently switched into. Each scenario is one row of the worked examples (V1-V11) in
@@ -64,14 +66,28 @@ Feature: Investor KYC visibility rule
     Then the user "rule_fund_b@example.com" does not receive a KYC updated notification email
 
   @kyc_notification @kyc_visibility
-  Scenario: V5 - A KYC with no commitment yet is seen by an employee with no fund access or KYC toggles
+  Scenario: V5 - A KYC with no commitment yet is hidden from an employee with no KYC toggles
+    # V5 — Edge case: no commitment means no fund to check; fund access alone never reveals it
     Given there is a KYC for the investor with submission_status "link_sent"
     And there is a user "email=rule_plain@example.com" for the entity "name=KycRuleFund"
     And the user "rule_plain@example.com" has role "employee"
-    Then the user "rule_plain@example.com" should have show access to the investor kyc
-    And the investor kyc should be in the KYC list of "rule_plain@example.com"
+    And I grant "read" access to "KycRuleFundA" for user "rule_plain@example.com"
+    Then the user "rule_plain@example.com" should not have show access to the investor kyc
+    And the investor kyc should not be in the KYC list of "rule_plain@example.com"
     When the investor submits an update to the KYC
-    Then the user "rule_plain@example.com" receives a KYC updated notification email
+    Then the user "rule_plain@example.com" does not receive a KYC updated notification email
+
+  @kyc_notification @kyc_visibility
+  Scenario: V5a - A KYC with no commitment yet is seen by an employee with Investor Kyc Read
+    # V5a — Edge case: the KYC toggles reveal every KYC in the entity, committed or not
+    Given there is a KYC for the investor with submission_status "link_sent"
+    And there is a user "email=rule_nocommit_read@example.com" for the entity "name=KycRuleFund"
+    And the user "rule_nocommit_read@example.com" has role "employee"
+    And the user "rule_nocommit_read@example.com" has extended permission "investor_kyc_read"
+    Then the user "rule_nocommit_read@example.com" should have show access to the investor kyc
+    And the investor kyc should be in the KYC list of "rule_nocommit_read@example.com"
+    When the investor submits an update to the KYC
+    Then the user "rule_nocommit_read@example.com" receives a KYC updated notification email
 
   @kyc_notification @kyc_visibility
   Scenario: V6 - With enable_kycs off nothing else counts
