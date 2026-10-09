@@ -1,0 +1,2 @@
+class FinancialStatementAccountPolicy < FinancialStatementBasePolicy
+end

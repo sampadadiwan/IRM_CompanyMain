@@ -98,6 +98,10 @@ step (J2.3 = journey 2, step 3) · **R** = Role sweep · **C** = Cross-cutting c
 | ☐ | E24 | Flip sign | Distributions entries stored negative; account "Distributions" with flip sign on | 1. Preview / generate Q3 | Distributions shown positive on Changes in Partners' Capital; roll-forward ✓ | | |
 | ☐ | E25 | Double-click Generate | — | 1. Double-click Generate (or two tabs, both submit) | One statements run; second attempt shows "An allocation run is in progress for this fund. Try again when it finishes." | | |
 | ☐ | E26 | Re-lock after unlock | After H17, regenerate | 1. As Ravi Lock again | New figures frozen; drift banner gone | | |
+| ☐ | E27 | AI names an entry the fund lacks | Stubbed/real AI answer with a rule for "Non Deal Expense · Audit Fee" | 1. Suggest from statements | Draft lists it under "Dropped by CapHive — not an entry of this fund" | | |
+| ☐ | E28 | Same end date, different period | Q3 2026 set exists | 1. Generate 01/01/2026 – 30/09/2026 | "Statements ending 30/09/2026 already exist (01/07/2026 – 30/09/2026)…" | | |
+| ☐ | E29 | Stale balance | Cash uploaded as a running total, latest 30/06/2026 | 1. Generate Q3 2026 | Cash shows the 30 Jun value; Warnings: "Cash: … last value 30/06/2026"; Lock popup lists it | | |
+| ☐ | E30 | Account with no entries | Add "Accrued expenses" (liability), no rule | 1. Mapping › preview Q3 | Line 0; Warnings: "Accrued expenses: no entries feed this line" | | |
 
 ## Error Cases
 
@@ -119,6 +123,8 @@ step (J2.3 = journey 2, step 3) · **R** = Role sweep · **C** = Cross-cutting c
 | ☐ | X13 | Read-only lock attempt | Priya | 1. *Direct request*: lock Q3 as Priya | Not authorised; statement unchanged | | |
 | ☐ | X14 | Other entity | Note a statement URL from Alpha Fund I | 1. As Omar open that URL | Not found | | |
 | ☐ | X15 | Statement formula disabled | Fund › Formulas › disable the statement formula | 1. Generate | "Enable the fund's financial statement formula first." | | |
+| ☐ | X18 | Scanned PDF | A scanned (image-only) PDF | 1. Suggest from statements | Draft Failed: "We couldn't read any text from this file…"; Retry shown | | |
+| ☐ | X19 | Account name with the statement prefix | — | 1. Mapping › + Add account "FS · Professional fees" | "Name can't start with "FS ·" — CapHive adds that to the stored statement lines itself" | | |
 | ☐ | X16 | Locked statements run overlapping | Lock the statements run from Fund › Allocation runs, statement still Draft | 1. Generate same period | "Unlock the statements run for this period first." | | |
 
 ---

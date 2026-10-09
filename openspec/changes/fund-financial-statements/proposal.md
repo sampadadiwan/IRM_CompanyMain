@@ -242,6 +242,53 @@ that last part itself from the P&L accounts, so the Balance Sheet can balance wi
 | **A5** | Meera | **Layout** › Balance Sheet, then Profit & Loss | Adds section headings, places accounts, adds subtotals, drags to reorder | Saves the order | The statement skeleton (see below) |
 | **A6** | Meera | Mapping › Preview period **Q3 2026** | Looks at **Unmapped** and **Checks** | Computes every line and the four checks from the live entries; writes nothing | Unmapped (0), checks ✓. If not, back to A4 |
 
+### How the AI first draft works (step A3, route 1)
+
+**In one line:** the AI reads last year's printed statements, sees the list of account entries the
+fund has in CapHive, and proposes "these entries make up this printed line". CapHive then **checks
+the proposal against the printed numbers** before anyone saves it.
+
+The AI never invents figures, and nothing it reads is imported. It only proposes the mapping.
+Every figure on the draft comes from CapHive's own account entries.
+
+```mermaid
+flowchart TD
+    U["1 Meera uploads FY 2025 statements (PDF or Excel)<br/>and says 'as at 31 Dec 2025'"] --> R["2 CapHive reads the text of the file"]
+    R --> E["3 CapHive lists the fund's account entries<br/>(type, name, total at 31 Dec 2025)"]
+    E --> A["4 AI gets: the statement text + the entry list<br/>and returns a structured proposal"]
+    A --> V["5 CapHive validates the proposal<br/>(drops anything that names an entry the fund doesn't have)"]
+    V --> C["6 CapHive computes every proposed line<br/>from the entries and compares it to the printed figure"]
+    C --> D["7 Draft shown: Printed · CapHive · ✓ / ⚠<br/>plus entries the AI couldn't place"]
+    D --> F{"8 Meera fixes ⚠ lines<br/>(move an entry to another line, flip sign)"}
+    F --> C
+    F -- "Approve draft" --> S["9 Accounts, layout and rules saved<br/>in one go"]
+    F -- "Discard" --> X["Nothing saved"]
+    classDef ai fill:#ede7f6,stroke:#5e35b1,color:#000
+    classDef caphive fill:#d4edda,stroke:#2e7d32,color:#000
+    class A ai
+    class R,E,V,C caphive
+```
+
+| Step | What happens | Example (Alpha Fund I, FY 2025) |
+|---|---|---|
+| 1 Upload | One PDF or Excel file, up to 20 MB, plus the date the statements are "as at" | `Alpha Fund I FY2025 audited.pdf`, as at 31 Dec 2025 |
+| 2 Read the file | CapHive extracts the text (PDF keeps column layout; Excel reads every sheet). A scanned PDF with no text fails here with a clear message | The P&L page reads "Professional fees ..... 88,400" |
+| 3 List the entries | CapHive lists every fund-level entry type + name with its total **at the as-at date** (balance since inception, and the year-to-date total). Statement lines CapHive generated itself are left out | `Non Deal Expense · Audit Fees · year to date 60,000`, `Non Deal Expense · Legal Fees · 28,400`, `Cash · Bank Balance · 520,000` … |
+| 4 Ask the AI | The AI gets the statement text, the entry list and strict instructions. It returns, as structured data: the statements it found (and their printed titles), every printed line with its section, type (asset, expense…), behaviour (balance or movement), printed amount, which lines are subtotals of which, and which entries feed each line | "Professional fees": Expense, Movement, printed 88,400, fed by *Audit Fees* + *Legal Fees* |
+| 5 Validate | CapHive rejects malformed answers, drops any rule naming an entry the fund doesn't have (the AI can't invent names), and keeps types and statement names to the allowed list | A rule for "Audit Fee" (no such entry) is dropped and noted on the draft |
+| 6 Reconcile | CapHive computes each proposed line with the same calculator the statements use, at the as-at date, and compares it to the printed figure. A difference under 1.00 is a match | Professional fees: 60,000 + 28,400 = 88,400 → ✓. Other expenses: printed 12,800, CapHive 11,650 → ⚠ diff 1,150 |
+| 7 Draft | A review page per statement: line, printed, CapHive, ✓ / ⚠, the entries feeding it, and a list of entries the AI left unplaced. If the fund already has a mapping, each line is tagged **New**, **Changed** or **Same** | 36 lines ✓, 2 ⚠, *Tax · TDS (1,150)* unplaced |
+| 8 Fix | Meera moves an entry to a line (or Excluded) or flips a line's sign; the match column recalculates straight away. She can also leave a ⚠ and approve: the mismatch stays visible and the balance checks will catch it later | She moves *Tax · TDS* to Other expenses → 11,650 + 1,150 = 12,800 ✓ |
+| 9 Approve | One step saves the accounts, the layout of each statement (headings, lines, subtotals in printed order), the mapping rules and the renamed core statements (e.g. "Statement of Operations"). Accounts and rules that already exist are updated, not duplicated | 38 accounts, 4 statements, 22 rules saved |
+
+**What the AI sees and doesn't see:** the uploaded file's text, and the fund's entry types, names
+and totals. It does not see investor names, folios or anything else. It runs with the fund
+entity's own AI keys when the entity has them.
+
+**When the AI gets it wrong:** every wrong line shows ⚠ because CapHive recomputes it. A wrong
+answer can't slip through unnoticed. If the AI fails outright (service down, unreadable answer),
+the draft shows **Failed** with the reason and a **Retry** button, and Meera gets an in-app alert.
+
 **Accounts Meera ends up with (Balance Sheet + P&L only):**
 
 | Statement account | Type | Behaviour | Fed by (mapping rules) |
@@ -293,6 +340,7 @@ period. Meera only comes back to it when a new kind of entry appears (it shows u
 | **B4** | Meera | Same page | Decides whether anything needs fixing | — | **Lock** is disabled if any check fails or anything is unmapped, with the reason shown |
 | **B5** | Meera | Unmapped **[View]** › **Map**, or fix the data | (a) New entry name → maps it (same as A4). (b) Wrong figure → fixes the account entry, or asks Ops to unlock, correct and rerun the accounting run. Then clicks **Regenerate** | Regenerate re-runs only the statements run for the same Draft. It deletes only its own "Financial Statement" entries for the period and writes them again | Updated figures; checks and Unmapped refreshed |
 | **B6** | Ravi | Statement view › **Lock** | Locks the set | Saves a **frozen copy** of every figure, the mapping and layout used, and the check results. Records who and when. Locks the statements run | "Locked on 09/10/2026 by R. Iyer". Figures are now fixed for investors, auditors and next year's comparatives |
+| **B6a** | — | Statement view | — | — | A note says the figures are also saved as account entries of type *Financial Statement* named **"FS · <line>"** (e.g. "FS · Professional fees"), with **View statement lines**. The statements themselves print plain names |
 | **B7** | Anyone with access (incl. Priya) | Statement view › **Excel** / **PDF** | Downloads | Excel: one sheet per statement. PDF: one section per statement. A Draft is watermarked "DRAFT". A Locked set uses the frozen figures | The files |
 
 **What Meera and Ravi see at B3 (Alpha Fund I, Q3 2026):**
@@ -357,6 +405,43 @@ regenerating fixes both.
 | Someone edits or deletes an account entry in a locked period | Opening the locked statement recomputes it and shows a yellow **Changed since locked** banner with old → new per line. Downloads still use the frozen figures | Decide whether to restate: ask Ops to unlock (below), then regenerate and lock again |
 | Ops clicks **Unlock** / **Unlock all** on allocation runs covering a locked statement's period | A popup first lists the affected statements. On **Unlock anyway**, the runs unlock, those statements go back to **Draft** (frozen copy kept until re-locked), and every *Fund accounting* user gets an email and in-app alert | After the accounting rerun, Meera regenerates (B1), Ravi locks again (B6) |
 | Next period is generated | The P&L's last-year column and the Balance Sheet's prior year-end column come from the **frozen copy** of the locked statements. If those drifted, the column is marked ⚠ | Nothing; or restate the earlier period if needed |
+
+### How do we know a statement is right? Every validation
+
+Three kinds of safeguard stand between the account entries and a locked statement. **Blocking**
+ones disable Lock until fixed. **Warnings** don't block, but Lock asks the reviewer to confirm each
+one. **Guards** stop a run from starting at all.
+
+**What if something the Balance Sheet needs wasn't uploaded or generated for the period?**
+
+| What's missing | What CapHive does | What you see |
+|---|---|---|
+| A running-total entry (e.g. *Cash / Bank Balance*, uploaded as a balance each quarter) has no value dated in the period | Uses its latest earlier value, and raises a **Stale balance** warning | "Cash: last value 30/06/2026 (520,000); nothing dated 01/07/2026 – 30/09/2026" |
+| A statement line has no entries at all (no rule matches anything) | Shows 0, and raises a **No entries** warning | "Accrued expenses: no entries feed this line" |
+| A movement entry (e.g. *Audit Fees*) simply wasn't uploaded for the quarter | The line is lower than it should be. Usually the **Balance** or **NAV tie-out** check fails, because the NAV formula and investor capital accounts include the fee | "✗ NAV tie-out (diff 30,000)" |
+| A new kind of entry was uploaded with no rule | Kept off every line and listed under **Unmapped**; Lock disabled | "Map or exclude 1 entry before locking" |
+| The period's accounting allocations haven't been run | Generate refuses | "Run and complete the fund's allocations for this period first." |
+
+**The full list**
+
+| # | Validation | Kind | Passes when | Catches |
+|---|---|---|---|---|
+| V1 | Accounting run covers the period | Guard | A successful accounting run covers start–end | Statements built before the period's allocations |
+| V2 | Nothing in progress | Guard | No allocation run is running on the fund | Statements built from half-written data |
+| V3 | One statement set per end date | Guard | No other set ends on the same date | One set silently replacing another's lines |
+| V4 | Statements run succeeded | Blocking | The run finished with Success and the checks were stored | Missing or partial lines |
+| V5 | Nothing unmapped | Blocking | Every non-zero fund-level entry has a rule (an account or Excluded) | New expense names silently dropping out |
+| V6 | Balance | Blocking | Assets − liabilities − partners' capital is under 1.00 | Missing, double-counted or wrongly signed lines |
+| V7 | NAV tie-out | Blocking (skipped if not set up, or no NAV entry yet) | Partners' capital − the fund's NAV entry is under 1.00 | Statements that disagree with the NAV the fund reports |
+| V8 | Partners' capital tie-out | Blocking (skipped if not set up) | Partners' capital − the sum of every investor's capital account is under 1.00 | Statements that disagree with investor statements |
+| V9 | Roll-forward | Blocking (skipped if the Changes statement has no account rows) | Opening capital + every movement on the Changes statement − closing capital is under 1.00 | A Changes statement missing a movement (e.g. distributions) |
+| V10 | Stale balance | Warning | Every running-total entry feeding a line has a value dated in the period | Balances not updated this period |
+| V11 | No entries | Warning | Every account placed on a statement is fed by at least one entry | Lines that will always print 0 |
+| V12 | Mixed running total / movements | Warning | No entry is uploaded both ways | Double counting from inconsistent uploads |
+| V13 | Changed since locked | Warning on a locked set | Current data still gives the locked figures | Edits behind published statements |
+| V14 | Comparative source | Shown on the column | The prior column comes from a locked set that hasn't changed | Comparatives that aren't what was published |
+
+A **Skipped** check is shown as skipped, never as passed, so a reviewer can see what wasn't tested.
 
 ### Summary: the minimum actions, start to finish
 
@@ -607,6 +692,11 @@ regenerating fixes both.
 | Generate with no successful accounting run covering the period | "Run and complete the fund's allocations for this period first." |
 | Generate while an allocation run is in progress on the fund | "An allocation run is in progress for this fund. Try again when it finishes." |
 | Generate on a period whose accounting run is locked | Allowed — the statements run only replaces statement lines |
+| Generate a period ending on the same date as existing statements (e.g. 1 Jan–30 Sep when 1 Jul–30 Sep exists) | "Statements ending 30/09/2026 already exist (01/07/2026 – 30/09/2026). Open them instead; their year-to-date column covers this period." |
+| Statement lines saved as account entries | Entry type *Financial Statement*, names "FS · <line>" ("FS · YTD …", "FS · Opening …") so they never clash with the fund's own entries; statements, Excel and PDF print plain names |
+| Account name starting with "FS ·" | "Name can't start with "FS ·" — CapHive adds that to the stored statement lines itself" |
+| Uploaded statement is a scanned image (no text) | Draft fails: "We couldn't read any text from this file. Upload a text PDF or the Excel version." with Retry |
+| AI proposes a rule for an entry name the fund doesn't have | Rule dropped and listed under "Dropped by CapHive" on the draft |
 | Ordinary (untagged) allocation run | Does not produce or delete statement lines |
 | New expense name uploaded after the mapping was built, type already mapped by "any name" rule | Included automatically |
 | New expense name with no matching rule | Appears under Unmapped; Lock disabled |

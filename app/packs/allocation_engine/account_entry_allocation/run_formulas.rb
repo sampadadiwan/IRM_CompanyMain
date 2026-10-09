@@ -27,6 +27,7 @@ module AccountEntryAllocation
     left :persist_check_results, id: :ensure_persist_check_results
     step :generate_fund_ratios
     step :generate_soa
+    step :refresh_financial_statements
     step :cleanup_sqlite
     left :cleanup_sqlite, id: :ensure_cleanup_sqlite
     step :display_generated_links
@@ -574,6 +575,21 @@ module AccountEntryAllocation
     end
     # rubocop:enable Lint/RescueException
 
+    # After a run that wrote statement lines, stores the statement set's checks and unmapped count.
+    # Always true: a statement refresh problem must never fail the allocation run itself. A run with
+    # no statement set pointing at it is a no-op inside the job.
+    # Worked examples H12, X11 — openspec/changes/fund-financial-statements/design.md#worked-examples
+    def refresh_financial_statements(ctx, **)
+      return true unless ctx[:run_allocations] && ctx[:allocation_run_id]
+      return true unless FinancialStatement.exists?(statements_allocation_run_id: ctx[:allocation_run_id])
+
+      FinancialStatementRefreshJob.perform_later(ctx[:allocation_run_id])
+      true
+    rescue StandardError => e
+      Rails.logger.error { "refresh_financial_statements: allocation run #{ctx[:allocation_run_id]}: #{e.message}" }
+      true
+    end
+
     private
 
     def start_background_loader(ctx, queue)
@@ -763,6 +779,13 @@ module AccountEntryAllocation
       formulas = FundFormula.enabled.where(fund_id: fund.id).order(sequence: :asc).includes(:fund, :entity)
       formulas = formulas.where(rule_for: rule_for) if rule_for.present?
       formulas = formulas.with_tags(tag_list.split(",")) if tag_list.present?
+      # Statement formulas only run when the run asks for them by tag: an untagged accounting run must
+      # neither regenerate nor delete statement lines (worked example E12 —
+      # openspec/changes/fund-financial-statements/design.md#worked-examples)
+      unless tag_list.to_s.split(",").map(&:strip).include?(FundFormula::FINANCIAL_STATEMENTS_TAG)
+        # Explicit NULL branch: NOT IN / <> is never true for a legacy formula with no rule_type
+        formulas = formulas.where("fund_formulas.rule_type IS NULL OR fund_formulas.rule_type <> ?", "GenerateFinancialStatementLines")
+      end
       formulas
     end
 

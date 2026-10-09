@@ -1,0 +1,172 @@
+<%# Mapping tab (journey steps A4 + A6): which account entries feed which statement account, what is
+    Unmapped, and a live preview of every figure and check for the chosen period. Nothing here runs or saves. %>
+<% can_edit = policy(FinancialStatementMappingRule.new(fund: @fund, entity_id: @fund.entity_id)).create? %>
+<% here = request.fullpath %>
+<%= render "financial_statements/tabs", fund: @fund, active: "mapping" %>
+
+<%# ---- Preview period ---- %>
+<div class="card shadow-sm mb-3">
+  <div class="card-body">
+    <%= form_with url: financial_statement_mappings_path, method: :get, class: "row g-2 align-items-end", id: "fs_preview_form" do %>
+      <%= hidden_field_tag :fund_id, @fund.id %>
+      <div class="col-auto"><label class="form-label mb-0 small">Preview from</label><%= date_field_tag :period_start, @period_start %></div>
+      <div class="col-auto"><label class="form-label mb-0 small">to</label><%= date_field_tag :period_end, @period_end %></div>
+      <div class="col-auto"><%= submit_tag "Preview", class: "btn btn-outline-primary", name: nil, id: "fs_preview_btn" %></div>
+      <div class="col text-end">
+        <%# Opens the statements preview in its own browser tab, for this period %>
+        <%= link_to preview_financial_statement_mappings_path(fund_id: @fund.id, period_start: @period_start, period_end: @period_end),
+                    class: "btn btn-outline-secondary", id: "fs_preview_statements", target: "_blank", rel: "noopener" do %>
+          <i class="ti ti-external-link"></i> Preview statements
+        <% end %>
+      </div>
+    <% end %>
+    <div class="small text-muted mt-2">Figures below are computed live from the fund-level account entries for this period. Change a rule and the preview changes with it.</div>
+  </div>
+</div>
+
+<%# ---- At a glance ---- %>
+<% failed = @result.checks.count { |c| c["status"] == "failed" } %>
+<div class="row mb-3 g-3">
+  <div class="col-6 col-md-3"><div class="card shadow-sm"><div class="card-body py-2"><div class="small text-muted">Accounts</div><div class="h4 mb-0"><%= @accounts.size %></div></div></div></div>
+  <div class="col-6 col-md-3"><div class="card shadow-sm"><div class="card-body py-2"><div class="small text-muted">Rules</div><div class="h4 mb-0"><%= @rules.size %></div></div></div></div>
+  <div class="col-6 col-md-3"><div class="card shadow-sm"><div class="card-body py-2"><div class="small text-muted">Unmapped entries</div>
+    <div class="h4 mb-0 <%= @result.unmapped.any? ? 'text-danger' : 'text-success' %>" id="fs_unmapped_count"><%= @result.unmapped.size %></div></div></div></div>
+  <div class="col-6 col-md-3"><div class="card shadow-sm"><div class="card-body py-2"><div class="small text-muted">Checks failing</div>
+    <div class="h4 mb-0 <%= failed.positive? ? 'text-danger' : 'text-success' %>"><%= failed %></div></div></div></div>
+</div>
+
+<div class="row">
+  <div class="col-lg-8">
+    <%# ---- Unmapped (first: it's what blocks locking) ---- %>
+    <div class="card shadow-sm mb-3 <%= 'border-danger' if @result.unmapped.any? %>" id="fs_unmapped">
+      <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h6 class="mb-0">Unmapped entries</h6>
+        <span class="small text-muted">Fund-level entries with amounts in this period and no rule</span>
+      </div>
+      <div class="card-body">
+        <% if @result.unmapped.empty? %>
+          <p class="mb-0 text-success" id="fs_unmapped_none"><i class="ti ti-circle-check"></i> Every entry in this period is mapped or excluded.</p>
+        <% else %>
+          <table class="table table-bordered dataTable action_table hover mb-0" id="fs_unmapped_table">
+            <thead><tr><th>Entry type</th><th>Name</th><th class="text-end">This period</th><th class="text-end">Balance</th><% if can_edit %><th>Actions</th><% end %></tr></thead>
+            <tbody>
+              <% @result.unmapped.each do |u| %>
+                <tr>
+                  <td><%= u["entry_type"] %></td>
+                  <td><%= u["name"] %></td>
+                  <td class="text-end"><%= fs_amount(u["period"], @fund) %></td>
+                  <td class="text-end"><%= fs_amount(u["balance"], @fund) %></td>
+                  <% if can_edit %>
+                    <td class="text-nowrap">
+                      <%= link_to "Map", new_financial_statement_mapping_rule_path(fund_id: @fund.id, entry_type: u["entry_type"], name: u["name"], return_to: here),
+                                  class: "btn btn-sm btn-outline-primary" %>
+                      <%= button_to "Exclude", financial_statement_mapping_rules_path(return_to: here), method: :post, class: "btn btn-sm btn-outline-secondary", form_class: "d-inline",
+                                    params: { "financial_statement_mapping_rule[fund_id]" => @fund.id, "financial_statement_mapping_rule[entry_type]" => u["entry_type"],
+                                              "financial_statement_mapping_rule[name]" => u["name"], "financial_statement_mapping_rule[target]" => "excluded" } %>
+                    </td>
+                  <% end %>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        <% end %>
+      </div>
+    </div>
+
+    <%# ---- Accounts ---- %>
+    <div class="card shadow-sm mb-3" id="fs_accounts">
+      <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h6 class="mb-0">Statement accounts</h6>
+        <%= link_to "+ Add account", new_financial_statement_account_path(fund_id: @fund.id, return_to: here), class: "btn btn-sm btn-outline-primary", id: "fs_add_account" if can_edit %>
+      </div>
+      <div class="card-body">
+        <% if @accounts.empty? %>
+          <p class="text-muted mb-0">No accounts yet. Add the lines your statements print (e.g. <em>Professional fees</em>, an expense), or use
+            <strong>Suggest mapping from statements</strong> above.</p>
+        <% else %>
+          <table class="table table-bordered dataTable action_table hover mb-0" id="fs_accounts_table">
+            <thead><tr><th>Account</th><th>Type</th><th>Behaviour</th><th class="text-end">This period</th><th class="text-end">Balance</th><% if can_edit %><th>Actions</th><% end %></tr></thead>
+            <tbody>
+              <% @accounts.each do |account| %>
+                <% f = @result.figures[account.id] || {} %>
+                <tr id="fs_account_<%= account.id %>">
+                  <td><%= account.name %><%= tag.span(" sign flipped", class: "badge bg-light text-muted") if account.flip_sign %></td>
+                  <td><%= account.type_label %></td>
+                  <td><%= account.behaviour.humanize %></td>
+                  <td class="text-end fs-preview-period"><%= fs_amount(f["period"], @fund) %></td>
+                  <td class="text-end"><%= fs_amount(f["balance"], @fund) %></td>
+                  <% if can_edit %>
+                    <td class="text-nowrap">
+                      <%= link_to "Edit", edit_financial_statement_account_path(account, return_to: here), class: "btn btn-sm btn-outline-primary" %>
+                      <%= button_to "Delete", financial_statement_account_path(account, return_to: here), method: :delete, class: "btn btn-sm btn-outline-danger", form_class: "d-inline",
+                                    data: { action: "click->confirm#popup", turbo: false, method: :delete, title: "Delete #{account.name}?",
+                                            msg: "The account is removed. This is refused while a rule or a statement row still uses it." } %>
+                    </td>
+                  <% end %>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        <% end %>
+      </div>
+    </div>
+
+    <%# ---- Rules ---- %>
+    <div class="card shadow-sm mb-3" id="fs_rules">
+      <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h6 class="mb-0">Mapping rules</h6>
+        <%= link_to "+ Add rule", new_financial_statement_mapping_rule_path(fund_id: @fund.id, return_to: here), class: "btn btn-sm btn-outline-primary", id: "fs_add_rule" if can_edit && @accounts.any? %>
+      </div>
+      <div class="card-body">
+        <p class="small text-muted">A rule with no name catches every name of its entry type, including names uploaded later.
+          A rule for an exact name wins over it.</p>
+        <% if @rules.empty? %>
+          <p class="text-muted mb-0">No rules yet. Use <strong>Map</strong> on an unmapped entry, or <strong>+ Add rule</strong>.</p>
+        <% else %>
+          <table class="table table-bordered dataTable action_table hover mb-0" id="fs_rules_table">
+            <thead><tr><th>Entry type</th><th>Name</th><th>Goes to</th><th class="text-end">Entries</th><th class="text-end">This period</th><% if can_edit %><th>Actions</th><% end %></tr></thead>
+            <tbody>
+              <% @rules.each do |rule| %>
+                <% preview = @rule_previews[[rule.entry_type, rule.name.to_s]] %>
+                <tr id="fs_rule_<%= rule.id %>">
+                  <td><%= rule.entry_type %></td>
+                  <td><%= rule.any_name? ? tag.em("(any name)", class: "text-muted") : rule.name %></td>
+                  <td><%= rule.excluded ? tag.span("Excluded", class: "badge bg-light text-muted") : rule.account&.name %></td>
+                  <td class="text-end"><%= preview["count"] %></td>
+                  <td class="text-end"><%= rule.excluded ? "—" : fs_amount(preview["period"], @fund) %></td>
+                  <% if can_edit %>
+                    <td class="text-nowrap">
+                      <%= link_to "Edit", edit_financial_statement_mapping_rule_path(rule, return_to: here), class: "btn btn-sm btn-outline-primary" %>
+                      <%= button_to "Delete", financial_statement_mapping_rule_path(rule, return_to: here), method: :delete, class: "btn btn-sm btn-outline-danger", form_class: "d-inline",
+                                    data: { action: "click->confirm#popup", turbo: false, method: :delete, title: "Delete this rule?",
+                                            msg: "Entries it catches (#{ERB::Util.h(rule.key_label)}) become Unmapped until another rule covers them." } %>
+                    </td>
+                  <% end %>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="mb-3"><%= render "financial_statements/checks", checks: @result.checks, fund: @fund %></div>
+    <div class="card shadow-sm mb-3">
+      <div class="card-header bg-white"><h6 class="mb-0">How the mapping works</h6></div>
+      <div class="card-body small">
+        <ol class="ps-3 mb-0">
+          <li>Each <strong>account</strong> is a line on your statements, typed as an asset, liability, partners' capital, income, expense or gain/loss.</li>
+          <li>A <strong>rule</strong> sends account entries (by entry type, and optionally an exact name) to an account, or excludes them.</li>
+          <li>Anything with amounts and no rule shows under <strong>Unmapped</strong>. Statements can't be locked until it's empty.</li>
+          <li>Partners' capital automatically includes the P&amp;L result since the fund started, so the Balance Sheet balances.</li>
+          <li>Rules match the fund's own entries by their existing names — nothing is renamed. When statements are generated, each line is
+            also saved as an account entry named <strong>"<%= FinancialStatementCalculator::FS_NAME_PREFIX %><em>account</em>"</strong>; the statements
+            themselves print the plain account name.</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>
+

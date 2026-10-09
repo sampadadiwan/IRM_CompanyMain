@@ -1,0 +1,41 @@
+<%# Add / edit a statement account. A new account is placed on its default statement automatically. %>
+<div class="row">
+  <div class="col-lg-6 mb-4">
+    <%= render FormCard.new(title: account.new_record? ? "New statement account" : "Account: #{account.name}") do %>
+      <%= form_with(model: account, id: "fs_account_form") do |form| %>
+        <%= render "financial_statement_accounts/errors", record: account %>
+        <%= form.hidden_field :fund_id if account.new_record? %>
+        <%= hidden_field_tag :return_to, params[:return_to] %>
+        <div class="form-group mb-3">
+          <%= form.label :name, "Account name" %>
+          <%= form.text_field :name, class: "form-control", placeholder: "e.g. Professional fees", maxlength: 100 %>
+          <div class="form-text">The line label printed on the statements, exactly as typed. The statement lines CapHive saves as
+            account entries are named <strong>"<%= FinancialStatementCalculator::FS_NAME_PREFIX %><em>this name</em>"</strong> (and
+            "<%= FinancialStatementCalculator::FS_NAME_PREFIX %>YTD …") so they never clash with the fund's own entries; don't add the prefix yourself.</div>
+        </div>
+        <div class="form-group mb-3">
+          <%= form.label :account_type, "Type" %>
+          <%= form.select :account_type, FinancialStatementAccount::TYPE_LABELS.invert, {}, class: "form-select" %>
+        </div>
+        <div class="form-group mb-3">
+          <%= form.label :behaviour %>
+          <%= form.select :behaviour, FinancialStatementAccount::BEHAVIOUR_LABELS.invert, { include_blank: "Default for the type" }, class: "form-select" %>
+          <div class="form-text">Assets, liabilities and partners' capital are values at a date; income, expenses and gains are changes over the period.</div>
+        </div>
+        <div class="form-check mb-3">
+          <%= form.check_box :flip_sign, class: "form-check-input" %>
+          <%= form.label :flip_sign, "Flip the sign of the entries", class: "form-check-label" %>
+          <div class="form-text">Tick when the fund stores these entries the other way round (e.g. expenses uploaded as negatives, distributions as positives).</div>
+        </div>
+        <% if account.new_record? %>
+          <div class="form-check mb-3">
+            <%= check_box_tag :place, "1", true, class: "form-check-input", id: "fs_place_account" %>
+            <%= label_tag :fs_place_account, "Add it to the Balance Sheet or Profit & Loss under its section", class: "form-check-label" %>
+          </div>
+        <% end %>
+        <%= form.submit account.new_record? ? "Add account" : "Save account", class: "btn btn-outline-primary" %>
+        <%= link_to "Cancel", params[:return_to].presence || financial_statement_mappings_path(fund_id: account.fund_id), class: "btn btn-link" %>
+      <% end %>
+    <% end %>
+  </div>
+</div>

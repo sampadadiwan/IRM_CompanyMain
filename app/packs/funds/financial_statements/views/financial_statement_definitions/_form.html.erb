@@ -1,0 +1,24 @@
+<%# Add a schedule / rename a statement. Core statements keep their column style. %>
+<div class="row">
+  <div class="col-lg-6 mb-4">
+    <%= render FormCard.new(title: definition.new_record? ? "Add a schedule" : "Rename #{definition.name_was}") do %>
+      <%= form_with(model: definition, id: "fs_definition_form") do |form| %>
+        <%= render "financial_statement_accounts/errors", record: definition %>
+        <%= form.hidden_field :fund_id if definition.new_record? %>
+        <div class="form-group mb-3">
+          <%= form.label :name %>
+          <%= form.text_field :name, class: "form-control", maxlength: 100, placeholder: "e.g. Schedule of Fund Expenses" %>
+        </div>
+        <% unless definition.core? %>
+          <div class="form-group mb-3">
+            <%= form.label :column_style, "Columns" %>
+            <%= form.select :column_style, [["For a period (this period, year to date, last year) — like the P&L", "for_period"],
+                                            ["At a date (period end, prior year-end) — like the Balance Sheet", "at_date"]], {}, class: "form-select" %>
+          </div>
+        <% end %>
+        <%= form.submit definition.new_record? ? "Add schedule" : "Save", class: "btn btn-outline-primary" %>
+        <%= link_to "Cancel", financial_statement_definitions_path(fund_id: definition.fund_id, definition_id: definition.id), class: "btn btn-link" %>
+      <% end %>
+    <% end %>
+  </div>
+</div>

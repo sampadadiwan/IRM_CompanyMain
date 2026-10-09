@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_08_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_09_100000) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -1448,6 +1448,114 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_08_100000) do
     t.index ["slug"], name: "index_deal_investors_on_slug", unique: true
   end
 
+  create_table "dealing_dates", force: :cascade do |t|
+    t.datetime "closed_at"
+    t.bigint "closed_by_id"
+    t.datetime "confirmed_at"
+    t.bigint "confirmed_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "cutoff_at", null: false
+    t.date "date", null: false
+    t.bigint "entity_id", null: false
+    t.bigint "fund_id", null: false
+    t.json "gate_snapshot"
+    t.boolean "has_redemptions", default: false, null: false
+    t.boolean "has_subscriptions", default: false, null: false
+    t.string "payment_timing", limit: 10, null: false
+    t.bigint "redemption_distribution_id"
+    t.json "settings_snapshot"
+    t.string "status", limit: 10, default: "open", null: false
+    t.bigint "subscription_call_id"
+    t.datetime "updated_at", null: false
+    t.index ["closed_by_id"], name: "index_dealing_dates_on_closed_by_id"
+    t.index ["confirmed_by_id"], name: "index_dealing_dates_on_confirmed_by_id"
+    t.index ["entity_id"], name: "index_dealing_dates_on_entity_id"
+    t.index ["fund_id", "date"], name: "index_dealing_dates_on_fund_id_and_date", unique: true
+    t.index ["fund_id", "status"], name: "index_dealing_dates_on_fund_id_and_status"
+    t.index ["redemption_distribution_id"], name: "index_dealing_dates_on_redemption_distribution_id"
+    t.index ["subscription_call_id"], name: "index_dealing_dates_on_subscription_call_id"
+  end
+
+  create_table "dealing_fills", force: :cascade do |t|
+    t.decimal "amount_cents", precision: 20, scale: 2, default: "0.0", null: false
+    t.bigint "capital_distribution_payment_id"
+    t.bigint "capital_remittance_id"
+    t.decimal "carried_units", precision: 26, scale: 8, default: "0.0", null: false
+    t.datetime "created_at", null: false
+    t.bigint "dealing_date_id", null: false
+    t.bigint "dealing_order_id", null: false
+    t.bigint "document_id"
+    t.datetime "document_sent_at"
+    t.decimal "early_fee_cents", precision: 20, scale: 2, default: "0.0", null: false
+    t.bigint "entity_id", null: false
+    t.bigint "fund_id", null: false
+    t.bigint "fund_nav_id"
+    t.bigint "fund_unit_id"
+    t.datetime "instructions_sent_at"
+    t.string "kind", limit: 12, null: false
+    t.decimal "nav_per_unit_cents", precision: 24, scale: 4, null: false
+    t.decimal "requested_units", precision: 26, scale: 8, default: "0.0", null: false
+    t.string "unit_type", limit: 40, null: false
+    t.decimal "units", precision: 26, scale: 8, default: "0.0", null: false
+    t.datetime "updated_at", null: false
+    t.index ["capital_distribution_payment_id"], name: "index_dealing_fills_on_capital_distribution_payment_id"
+    t.index ["capital_remittance_id"], name: "index_dealing_fills_on_capital_remittance_id"
+    t.index ["dealing_date_id", "dealing_order_id"], name: "index_dealing_fills_on_dealing_date_id_and_dealing_order_id", unique: true
+    t.index ["dealing_order_id"], name: "index_dealing_fills_on_dealing_order_id"
+    t.index ["document_id"], name: "index_dealing_fills_on_document_id"
+    t.index ["entity_id"], name: "index_dealing_fills_on_entity_id"
+    t.index ["fund_id"], name: "index_dealing_fills_on_fund_id"
+    t.index ["fund_nav_id"], name: "index_dealing_fills_on_fund_nav_id"
+    t.index ["fund_unit_id"], name: "index_dealing_fills_on_fund_unit_id"
+  end
+
+  create_table "dealing_orders", force: :cascade do |t|
+    t.datetime "accepted_at"
+    t.bigint "accepted_by_id"
+    t.boolean "all_units", default: false, null: false
+    t.decimal "amount_cents", precision: 20, scale: 2
+    t.datetime "amount_reduced_at"
+    t.bigint "amount_reduced_by_id"
+    t.datetime "cancelled_at"
+    t.bigint "cancelled_by_id"
+    t.bigint "capital_commitment_id"
+    t.bigint "capital_remittance_id"
+    t.datetime "created_at", null: false
+    t.bigint "dealing_date_id", null: false
+    t.decimal "early_fee_pct", precision: 7, scale: 4, default: "0.0", null: false
+    t.bigint "entered_by_id"
+    t.bigint "entity_id", null: false
+    t.bigint "fund_id", null: false
+    t.bigint "import_upload_id"
+    t.bigint "investor_id", null: false
+    t.string "kind", limit: 12, null: false
+    t.decimal "locked_units", precision: 26, scale: 8, default: "0.0", null: false
+    t.text "note"
+    t.decimal "original_amount_cents", precision: 20, scale: 2
+    t.datetime "received_at", null: false
+    t.string "rejected_reason"
+    t.integer "rolled_count", default: 0, null: false
+    t.datetime "signatory_verified_at"
+    t.bigint "signatory_verified_by_id"
+    t.string "source", limit: 10, default: "portal", null: false
+    t.string "status", limit: 20, default: "pending", null: false
+    t.string "unit_type", limit: 40, null: false
+    t.decimal "units", precision: 26, scale: 8
+    t.datetime "updated_at", null: false
+    t.index ["accepted_by_id"], name: "index_dealing_orders_on_accepted_by_id"
+    t.index ["amount_reduced_by_id"], name: "index_dealing_orders_on_amount_reduced_by_id"
+    t.index ["cancelled_by_id"], name: "index_dealing_orders_on_cancelled_by_id"
+    t.index ["capital_commitment_id"], name: "index_dealing_orders_on_capital_commitment_id"
+    t.index ["capital_remittance_id"], name: "index_dealing_orders_on_capital_remittance_id"
+    t.index ["dealing_date_id"], name: "index_dealing_orders_on_dealing_date_id"
+    t.index ["entered_by_id"], name: "index_dealing_orders_on_entered_by_id"
+    t.index ["entity_id"], name: "index_dealing_orders_on_entity_id"
+    t.index ["fund_id", "kind", "status", "received_at"], name: "idx_on_fund_id_kind_status_received_at_91694c0c2a"
+    t.index ["import_upload_id"], name: "index_dealing_orders_on_import_upload_id"
+    t.index ["investor_id"], name: "index_dealing_orders_on_investor_id"
+    t.index ["signatory_verified_by_id"], name: "index_dealing_orders_on_signatory_verified_by_id"
+  end
+
   create_table "deals", force: :cascade do |t|
     t.text "activity_list"
     t.decimal "amount_cents", precision: 20, scale: 2, default: "0.0"
@@ -1861,6 +1969,97 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_08_100000) do
     t.index ["user_id"], name: "index_events_on_user_id"
   end
 
+  create_table "evergreen_class_terms", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "crystallisation", limit: 15, default: "annual", null: false
+    t.json "early_redemption_fee"
+    t.bigint "entity_id", null: false
+    t.bigint "evergreen_fund_setting_id", null: false
+    t.bigint "fund_id", null: false
+    t.decimal "hurdle_pct", precision: 7, scale: 4, default: "0.0", null: false
+    t.string "hurdle_type", limit: 5, default: "hard", null: false
+    t.decimal "initial_price_cents", precision: 24, scale: 4
+    t.integer "lock_up_months"
+    t.string "lock_up_type", limit: 5
+    t.decimal "min_additional_subscription_cents", precision: 20, scale: 2
+    t.decimal "min_holding_cents", precision: 20, scale: 2
+    t.decimal "min_initial_subscription_cents", precision: 20, scale: 2
+    t.integer "notice_days"
+    t.string "perf_fee_model", limit: 15, default: "none", null: false
+    t.decimal "perf_fee_pct", precision: 7, scale: 4, default: "0.0", null: false
+    t.string "unit_type", limit: 40, null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_evergreen_class_terms_on_entity_id"
+    t.index ["evergreen_fund_setting_id"], name: "index_evergreen_class_terms_on_evergreen_fund_setting_id"
+    t.index ["fund_id", "unit_type"], name: "index_evergreen_class_terms_on_fund_id_and_unit_type", unique: true
+  end
+
+  create_table "evergreen_fund_settings", force: :cascade do |t|
+    t.string "cash_entry_name", limit: 125, default: "Cash In Hand", null: false
+    t.bigint "contract_note_template_id"
+    t.datetime "created_at", null: false
+    t.string "dealing_day", limit: 10, default: "first", null: false
+    t.integer "dealing_day_n"
+    t.json "early_redemption_fee"
+    t.bigint "enabled_by_id"
+    t.bigint "entity_id", null: false
+    t.string "fund_close_name", default: "Evergreen", null: false
+    t.bigint "fund_id", null: false
+    t.string "gate_level", limit: 5, default: "fund", null: false
+    t.string "gate_method", limit: 10, default: "pro_rata", null: false
+    t.decimal "gate_pct", precision: 7, scale: 4, default: "0.0", null: false
+    t.string "gate_period", limit: 15, default: "dealing_date", null: false
+    t.decimal "investor_gate_pct", precision: 7, scale: 4, default: "0.0", null: false
+    t.integer "lock_up_months", default: 0, null: false
+    t.string "lock_up_type", limit: 5, default: "hard", null: false
+    t.string "mgmt_fee_paid_entry_name", limit: 125, default: "Management Fee Paid", null: false
+    t.decimal "min_additional_subscription_cents", precision: 20, scale: 2, default: "0.0", null: false
+    t.decimal "min_holding_cents", precision: 20, scale: 2, default: "0.0", null: false
+    t.decimal "min_initial_subscription_cents", precision: 20, scale: 2, default: "0.0", null: false
+    t.integer "notice_days", default: 30, null: false
+    t.json "notifications"
+    t.string "order_journeys", limit: 15, default: "off", null: false
+    t.string "other_assets_entry_name", limit: 125, default: "Net Current Assets", null: false
+    t.string "other_liabilities_entry_name", limit: 125, default: "Other Liabilities", null: false
+    t.integer "pay_after_days", default: 7, null: false
+    t.text "payment_instructions"
+    t.string "payment_timing", limit: 10, default: "before", null: false
+    t.string "perf_fee_paid_entry_name", limit: 125, default: "Performance Fee Paid", null: false
+    t.string "preset", limit: 40
+    t.bigint "redemption_advice_template_id"
+    t.string "redemption_calendar", limit: 15, default: "quarterly", null: false
+    t.json "redemption_dates"
+    t.json "redemption_forms"
+    t.bigint "redemption_journey_template_id"
+    t.integer "redemption_settlement_days", default: 10, null: false
+    t.string "subscription_calendar", limit: 15, default: "monthly", null: false
+    t.integer "subscription_cutoff_days", default: 5, null: false
+    t.json "subscription_dates"
+    t.bigint "subscription_journey_template_id"
+    t.string "unready_handling", limit: 10, default: "roll", null: false
+    t.datetime "updated_at", null: false
+    t.index ["contract_note_template_id"], name: "index_evergreen_fund_settings_on_contract_note_template_id"
+    t.index ["enabled_by_id"], name: "index_evergreen_fund_settings_on_enabled_by_id"
+    t.index ["entity_id"], name: "index_evergreen_fund_settings_on_entity_id"
+    t.index ["fund_id"], name: "index_evergreen_fund_settings_on_fund_id", unique: true
+    t.index ["redemption_advice_template_id"], name: "index_evergreen_fund_settings_on_redemption_advice_template_id"
+    t.index ["redemption_journey_template_id"], name: "idx_on_redemption_journey_template_id_3abff09045"
+    t.index ["subscription_journey_template_id"], name: "idx_on_subscription_journey_template_id_ff4215bce4"
+  end
+
+  create_table "evergreen_notification_logs", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "entity_id", null: false
+    t.bigint "fund_id", null: false
+    t.string "key", limit: 50, null: false
+    t.bigint "record_id", null: false
+    t.string "record_type", limit: 50, null: false
+    t.date "sent_on", null: false
+    t.index ["entity_id"], name: "index_evergreen_notification_logs_on_entity_id"
+    t.index ["fund_id"], name: "index_evergreen_notification_logs_on_fund_id"
+    t.index ["key", "record_type", "record_id", "sent_on"], name: "idx_evergreen_notification_logs_once", unique: true
+  end
+
   create_table "exception_tracks", force: :cascade do |t|
     t.text "body"
     t.datetime "created_at", precision: nil, null: false
@@ -2005,6 +2204,121 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_08_100000) do
     t.index ["owner_type", "owner_id"], name: "index_fees_on_owner"
   end
 
+  create_table "financial_statement_accounts", force: :cascade do |t|
+    t.string "account_type", limit: 12, null: false
+    t.string "behaviour", limit: 10, null: false
+    t.datetime "created_at", null: false
+    t.bigint "entity_id", null: false
+    t.boolean "flip_sign", default: false, null: false
+    t.bigint "fund_id", null: false
+    t.string "name", limit: 100, null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_financial_statement_accounts_on_entity_id"
+    t.index ["fund_id", "name"], name: "index_financial_statement_accounts_on_fund_id_and_name", unique: true
+    t.index ["fund_id"], name: "index_financial_statement_accounts_on_fund_id"
+  end
+
+  create_table "financial_statement_definitions", force: :cascade do |t|
+    t.string "column_style", limit: 12, default: "for_period", null: false
+    t.datetime "created_at", null: false
+    t.bigint "entity_id", null: false
+    t.bigint "fund_id", null: false
+    t.string "kind", limit: 20, default: "schedule", null: false
+    t.string "name", limit: 100, null: false
+    t.integer "position", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_financial_statement_definitions_on_entity_id"
+    t.index ["fund_id", "name"], name: "index_financial_statement_definitions_on_fund_id_and_name", unique: true
+    t.index ["fund_id"], name: "index_financial_statement_definitions_on_fund_id"
+  end
+
+  create_table "financial_statement_layout_rows", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "entity_id", null: false
+    t.bigint "financial_statement_account_id"
+    t.bigint "financial_statement_definition_id", null: false
+    t.bigint "fund_id", null: false
+    t.string "label", limit: 150
+    t.integer "position", default: 0, null: false
+    t.string "row_type", limit: 10, null: false
+    t.json "subtotal_of"
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_financial_statement_layout_rows_on_entity_id"
+    t.index ["financial_statement_account_id"], name: "idx_on_financial_statement_account_id_fs_layout_rows"
+    t.index ["financial_statement_definition_id", "position"], name: "idx_fs_layout_rows_on_definition_position"
+    t.index ["fund_id"], name: "index_financial_statement_layout_rows_on_fund_id"
+  end
+
+  create_table "financial_statement_mapping_rules", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "entity_id", null: false
+    t.string "entry_type", limit: 60, null: false
+    t.boolean "excluded", default: false, null: false
+    t.bigint "financial_statement_account_id"
+    t.bigint "fund_id", null: false
+    t.string "name", limit: 125, default: "", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_financial_statement_mapping_rules_on_entity_id"
+    t.index ["financial_statement_account_id"], name: "idx_on_financial_statement_account_id_fs_mapping_rules"
+    t.index ["fund_id", "entry_type", "name"], name: "idx_fs_mapping_rules_on_fund_type_name", unique: true
+    t.index ["fund_id"], name: "index_financial_statement_mapping_rules_on_fund_id"
+  end
+
+  create_table "financial_statement_mapping_suggestions", force: :cascade do |t|
+    t.date "as_at_date", null: false
+    t.datetime "created_at", null: false
+    t.bigint "entity_id", null: false
+    t.text "error"
+    t.text "file_data"
+    t.bigint "fund_id", null: false
+    t.date "period_start"
+    t.json "proposal"
+    t.string "status", limit: 12, default: "processing", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["entity_id"], name: "index_financial_statement_mapping_suggestions_on_entity_id"
+    t.index ["fund_id"], name: "index_financial_statement_mapping_suggestions_on_fund_id"
+    t.index ["user_id"], name: "index_financial_statement_mapping_suggestions_on_user_id"
+  end
+
+  create_table "financial_statement_settings", force: :cascade do |t|
+    t.string "capital_entry_name", limit: 125
+    t.string "capital_entry_type", limit: 60
+    t.datetime "created_at", null: false
+    t.bigint "entity_id", null: false
+    t.integer "fiscal_year_start_month", default: 1, null: false
+    t.bigint "fund_id", null: false
+    t.string "nav_entry_name", limit: 125
+    t.string "nav_entry_type", limit: 60
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_financial_statement_settings_on_entity_id"
+    t.index ["fund_id"], name: "index_financial_statement_settings_on_fund_id", unique: true
+  end
+
+  create_table "financial_statements", force: :cascade do |t|
+    t.bigint "accounting_allocation_run_id"
+    t.json "checks"
+    t.datetime "created_at", null: false
+    t.date "end_date", null: false
+    t.bigint "entity_id", null: false
+    t.json "frozen_data"
+    t.bigint "fund_id", null: false
+    t.datetime "locked_at"
+    t.bigint "locked_by_id"
+    t.datetime "refreshed_at"
+    t.date "start_date", null: false
+    t.bigint "statements_allocation_run_id"
+    t.string "status", limit: 10, default: "draft", null: false
+    t.integer "unmapped_count", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.index ["accounting_allocation_run_id"], name: "index_financial_statements_on_accounting_allocation_run_id"
+    t.index ["entity_id"], name: "index_financial_statements_on_entity_id"
+    t.index ["fund_id", "start_date", "end_date"], name: "idx_financial_statements_on_fund_period", unique: true
+    t.index ["fund_id"], name: "index_financial_statements_on_fund_id"
+    t.index ["locked_by_id"], name: "index_financial_statements_on_locked_by_id"
+    t.index ["statements_allocation_run_id"], name: "index_financial_statements_on_statements_allocation_run_id"
+  end
+
   create_table "folders", force: :cascade do |t|
     t.string "ancestry"
     t.datetime "created_at", null: false
@@ -2131,6 +2445,47 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_08_100000) do
     t.index ["deleted_at"], name: "index_fund_formulas_on_deleted_at"
     t.index ["entity_id"], name: "index_fund_formulas_on_entity_id"
     t.index ["fund_id"], name: "index_fund_formulas_on_fund_id"
+  end
+
+  create_table "fund_navs", force: :cascade do |t|
+    t.datetime "approved_at"
+    t.bigint "approved_by_id"
+    t.json "breakdown"
+    t.decimal "cash_cents", precision: 20, scale: 2, default: "0.0", null: false
+    t.decimal "class_share", precision: 12, scale: 10, default: "1.0", null: false
+    t.datetime "created_at", null: false
+    t.boolean "crystallised", default: false, null: false
+    t.decimal "dealing_in_progress_cents", precision: 20, scale: 2, default: "0.0", null: false
+    t.bigint "entity_id", null: false
+    t.bigint "fund_id", null: false
+    t.decimal "hwm_after_cents", precision: 24, scale: 4
+    t.decimal "hwm_cents", precision: 24, scale: 4
+    t.bigint "import_upload_id"
+    t.string "inputs_fingerprint", limit: 64
+    t.decimal "investments_fmv_cents", precision: 20, scale: 2, default: "0.0", null: false
+    t.date "mgmt_fee_accrued_to"
+    t.decimal "mgmt_fee_payable_cents", precision: 20, scale: 2, default: "0.0", null: false
+    t.decimal "nav_cents", precision: 20, scale: 2, default: "0.0", null: false
+    t.date "nav_date", null: false
+    t.decimal "nav_per_unit_before_perf_cents", precision: 24, scale: 4
+    t.decimal "nav_per_unit_cents", precision: 24, scale: 4
+    t.decimal "other_assets_cents", precision: 20, scale: 2, default: "0.0", null: false
+    t.decimal "other_liabilities_cents", precision: 20, scale: 2, default: "0.0", null: false
+    t.json "overrides"
+    t.decimal "perf_fee_accrued_cents", precision: 20, scale: 2, default: "0.0", null: false
+    t.decimal "perf_fee_payable_cents", precision: 20, scale: 2, default: "0.0", null: false
+    t.bigint "prepared_by_id"
+    t.string "source", limit: 10, default: "computed", null: false
+    t.string "status", limit: 10, default: "draft", null: false
+    t.string "unit_type", limit: 40, null: false
+    t.decimal "units_outstanding", precision: 26, scale: 8, default: "0.0", null: false
+    t.datetime "updated_at", null: false
+    t.index ["approved_by_id"], name: "index_fund_navs_on_approved_by_id"
+    t.index ["entity_id"], name: "index_fund_navs_on_entity_id"
+    t.index ["fund_id", "unit_type", "nav_date"], name: "index_fund_navs_on_fund_id_and_unit_type_and_nav_date", unique: true
+    t.index ["fund_id", "unit_type", "status", "nav_date"], name: "idx_on_fund_id_unit_type_status_nav_date_6eeda9f78e"
+    t.index ["import_upload_id"], name: "index_fund_navs_on_import_upload_id"
+    t.index ["prepared_by_id"], name: "index_fund_navs_on_prepared_by_id"
   end
 
   create_table "fund_ratio_run_templates", force: :cascade do |t|
@@ -4931,6 +5286,32 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_08_100000) do
   add_foreign_key "deal_investors", "folders", column: "document_folder_id"
   add_foreign_key "deal_investors", "form_types"
   add_foreign_key "deal_investors", "investors"
+  add_foreign_key "dealing_dates", "capital_calls", column: "subscription_call_id"
+  add_foreign_key "dealing_dates", "capital_distributions", column: "redemption_distribution_id"
+  add_foreign_key "dealing_dates", "entities"
+  add_foreign_key "dealing_dates", "funds"
+  add_foreign_key "dealing_dates", "users", column: "closed_by_id"
+  add_foreign_key "dealing_dates", "users", column: "confirmed_by_id"
+  add_foreign_key "dealing_fills", "capital_distribution_payments"
+  add_foreign_key "dealing_fills", "capital_remittances"
+  add_foreign_key "dealing_fills", "dealing_dates"
+  add_foreign_key "dealing_fills", "dealing_orders"
+  add_foreign_key "dealing_fills", "documents"
+  add_foreign_key "dealing_fills", "entities"
+  add_foreign_key "dealing_fills", "fund_navs"
+  add_foreign_key "dealing_fills", "fund_units"
+  add_foreign_key "dealing_fills", "funds"
+  add_foreign_key "dealing_orders", "capital_commitments"
+  add_foreign_key "dealing_orders", "capital_remittances"
+  add_foreign_key "dealing_orders", "dealing_dates"
+  add_foreign_key "dealing_orders", "entities"
+  add_foreign_key "dealing_orders", "funds"
+  add_foreign_key "dealing_orders", "investors"
+  add_foreign_key "dealing_orders", "users", column: "accepted_by_id"
+  add_foreign_key "dealing_orders", "users", column: "amount_reduced_by_id"
+  add_foreign_key "dealing_orders", "users", column: "cancelled_by_id"
+  add_foreign_key "dealing_orders", "users", column: "entered_by_id"
+  add_foreign_key "dealing_orders", "users", column: "signatory_verified_by_id"
   add_foreign_key "deals", "deals", column: "clone_from_id"
   add_foreign_key "deals", "entities"
   add_foreign_key "deals", "folders", column: "data_room_folder_id"
@@ -4956,6 +5337,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_08_100000) do
   add_foreign_key "esign_logs", "documents"
   add_foreign_key "esign_logs", "entities"
   add_foreign_key "events", "entities"
+  add_foreign_key "evergreen_class_terms", "entities"
+  add_foreign_key "evergreen_class_terms", "evergreen_fund_settings"
+  add_foreign_key "evergreen_class_terms", "funds"
+  add_foreign_key "evergreen_fund_settings", "documents", column: "contract_note_template_id"
+  add_foreign_key "evergreen_fund_settings", "documents", column: "redemption_advice_template_id"
+  add_foreign_key "evergreen_fund_settings", "entities"
+  add_foreign_key "evergreen_fund_settings", "funds"
+  add_foreign_key "evergreen_fund_settings", "users", column: "enabled_by_id"
+  add_foreign_key "evergreen_fund_settings", "workflow_templates", column: "redemption_journey_template_id"
+  add_foreign_key "evergreen_fund_settings", "workflow_templates", column: "subscription_journey_template_id"
+  add_foreign_key "evergreen_notification_logs", "entities"
+  add_foreign_key "evergreen_notification_logs", "funds"
   add_foreign_key "exchange_rates", "entities"
   add_foreign_key "exchange_rates", "folders", column: "document_folder_id"
   add_foreign_key "exchange_rates", "import_uploads"
@@ -4977,11 +5370,36 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_08_100000) do
   add_foreign_key "faq_threads", "users"
   add_foreign_key "favorites", "users"
   add_foreign_key "fees", "entities"
+  add_foreign_key "financial_statement_accounts", "entities"
+  add_foreign_key "financial_statement_accounts", "funds"
+  add_foreign_key "financial_statement_definitions", "entities"
+  add_foreign_key "financial_statement_definitions", "funds"
+  add_foreign_key "financial_statement_layout_rows", "entities"
+  add_foreign_key "financial_statement_layout_rows", "financial_statement_accounts"
+  add_foreign_key "financial_statement_layout_rows", "financial_statement_definitions"
+  add_foreign_key "financial_statement_layout_rows", "funds"
+  add_foreign_key "financial_statement_mapping_rules", "entities"
+  add_foreign_key "financial_statement_mapping_rules", "financial_statement_accounts"
+  add_foreign_key "financial_statement_mapping_rules", "funds"
+  add_foreign_key "financial_statement_mapping_suggestions", "entities"
+  add_foreign_key "financial_statement_mapping_suggestions", "funds"
+  add_foreign_key "financial_statement_mapping_suggestions", "users"
+  add_foreign_key "financial_statement_settings", "entities"
+  add_foreign_key "financial_statement_settings", "funds"
+  add_foreign_key "financial_statements", "allocation_runs", column: "accounting_allocation_run_id", on_delete: :nullify
+  add_foreign_key "financial_statements", "allocation_runs", column: "statements_allocation_run_id", on_delete: :nullify
+  add_foreign_key "financial_statements", "entities"
+  add_foreign_key "financial_statements", "funds"
+  add_foreign_key "financial_statements", "users", column: "locked_by_id"
   add_foreign_key "folders", "entities"
   add_foreign_key "form_custom_fields", "form_types"
   add_foreign_key "form_types", "entities"
   add_foreign_key "fund_formulas", "entities"
   add_foreign_key "fund_formulas", "funds"
+  add_foreign_key "fund_navs", "entities"
+  add_foreign_key "fund_navs", "funds"
+  add_foreign_key "fund_navs", "users", column: "approved_by_id"
+  add_foreign_key "fund_navs", "users", column: "prepared_by_id"
   add_foreign_key "fund_ratio_run_templates", "entities"
   add_foreign_key "fund_ratio_run_templates", "funds", column: "anchor_fund_id"
   add_foreign_key "fund_ratio_run_templates", "users"

@@ -128,18 +128,19 @@ latest cumulative value at the end, or the sum of all periodic entries up to the
 
 ### Requirement: AI-drafted mapping from existing statements
 The system SHALL accept one PDF or Excel file of the fund's existing financial statements (≤ 20 MB)
-and a statements-as-at date, and SHALL produce a draft of accounts, layout and rules. Each
-drafted line SHALL show the printed figure, the figure computed from the fund's account entries
-under the draft rules, and whether they match (to the unit). A draft SHALL NOT change the
-fund's mapping until a user approves it; Discard SHALL remove it.
+— any period — and SHALL produce a draft of accounts, layout and rules: for each printed line, the
+fund's account entries that will feed it. The draft SHALL propose the mapping only and SHALL NOT
+compare printed amounts with CapHive figures. It SHALL list mapping gaps: lines no entry feeds and
+entries not used by any line. A draft SHALL NOT change the fund's mapping until a user approves it;
+Discard SHALL remove it.
 
-#### Scenario: Draft reconciles against printed figures
-- **WHEN** the uploaded statement prints "Professional fees 45,200" and the draft maps Audit Fees (30,000) and Legal Fees (15,200) there
-- **THEN** the draft line shows 45,200 / 45,200 with a ✓
+#### Scenario: Draft maps printed lines to account entries
+- **WHEN** the uploaded statement prints "Professional fees" and the fund has entries Non Deal Expense · Audit Fees and Legal Fees
+- **THEN** the draft shows Professional fees fed by both entries, marked Mapped, with no amounts compared
 
-#### Scenario: Mismatch flagged
-- **WHEN** a drafted line's computed figure differs from its printed figure
-- **THEN** the line is marked ⚠ showing both figures and the difference
+#### Scenario: Mapping gaps listed
+- **WHEN** the draft leaves Tax · TDS on no line
+- **THEN** it is listed as an entry not used, and the user can place it on a line or Exclude it from the review
 
 #### Scenario: Nothing saved before approval
 - **WHEN** a user discards a draft

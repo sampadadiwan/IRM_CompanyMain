@@ -1,0 +1,27 @@
+<%# Shared header + tab bar of the Financial Statements pages (Statements · Mapping · Layout · Settings).
+    Plain links (not lazy frames) so every tab is deep-linkable and the browser back button works. %>
+<% setting = FinancialStatementSetting.find_by(fund_id: fund.id) %>
+<div class="d-sm-flex align-items-center justify-content-between mb-3">
+  <h1 class="h3 mb-0 text-gray-800">Financial Statements <span class="text-muted fs-5">· <%= link_to fund.name, fund_path(fund) %></span></h1>
+  <% if setting && policy(FinancialStatementMappingSuggestion.new(fund:, entity_id: fund.entity_id)).create? %>
+    <%= link_to new_financial_statement_mapping_suggestion_path(fund_id: fund.id), class: "btn btn-outline-info" do %>
+      <i class="ti ti-robot-face"></i> Suggest mapping from statements
+    <% end %>
+  <% end %>
+</div>
+<% if setting %>
+  <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row" role="tablist" id="fs_tabs">
+    <%= link_to financial_statements_path(fund_id: fund.id), class: "nav-link #{'active' if active == 'statements'}" do %>
+      <i class="ti ti-file-spreadsheet"></i> Statements
+    <% end %>
+    <%= link_to financial_statement_mappings_path(fund_id: fund.id), class: "nav-link #{'active' if active == 'mapping'}" do %>
+      <i class="ti ti-arrows-split"></i> Mapping
+    <% end %>
+    <%= link_to financial_statement_definitions_path(fund_id: fund.id), class: "nav-link #{'active' if active == 'layout'}" do %>
+      <i class="ti ti-layout-list"></i> Layout
+    <% end %>
+    <%= link_to edit_financial_statement_setting_path(setting), class: "nav-link #{'active' if active == 'settings'}" do %>
+      <i class="ti ti-settings"></i> Settings
+    <% end %>
+  </nav>
+<% end %>

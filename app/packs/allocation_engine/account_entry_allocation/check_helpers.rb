@@ -463,6 +463,9 @@ module AccountEntryAllocation
     def fund_level_entries_not_from_this_run
       run_id = run_id!
       scope = AccountEntry.where(fund_id: @fund.id, capital_commitment_id: nil, reporting_date: @start_date..@end_date, deleted_at: nil)
+      # Financial statement lines are never allocated (the scratch load skips them), so they are not
+      # source entries either (worked example E31 — openspec/changes/fund-financial-statements/design.md)
+      scope = scope.where("account_entries.entry_type IS NULL OR account_entries.entry_type <> ?", "Financial Statement")
       scope.where(allocation_run_id: nil).or(scope.where.not(allocation_run_id: run_id))
     end
 

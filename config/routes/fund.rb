@@ -18,6 +18,31 @@ resources :portfolio_scenarios do
   post 'finalize', on: :member
 end
 
+# Fund financial statements from account entries — see openspec/changes/fund-financial-statements
+resources :financial_statements, only: %i[index show create] do
+  post 'setup', on: :collection
+  post 'regenerate', on: :member
+  patch 'lock', on: :member
+end
+resources :financial_statement_mappings, only: %i[index] do
+  # Statements preview, opened in its own browser tab from the Mapping tab
+  get 'preview', on: :collection
+end
+resources :financial_statement_accounts, only: %i[new create edit update destroy]
+resources :financial_statement_mapping_rules, only: %i[new create edit update destroy]
+resources :financial_statement_definitions, only: %i[index new create edit update destroy]
+resources :financial_statement_layout_rows, only: %i[new create edit update destroy] do
+  post 'sort', on: :collection
+end
+resources :financial_statement_settings, only: %i[edit update]
+resources :financial_statement_mapping_suggestions, only: %i[new create show] do
+  patch 'approve', on: :member
+  patch 'discard', on: :member
+  patch 'retry_draft', on: :member
+  patch 'move', on: :member
+  patch 'flip', on: :member
+end
+
 resources :fund_reports do
   patch "regenerate", on: :member
   patch "download_page", on: :member

@@ -1,0 +1,126 @@
+<%# One statement set: status and actions, banners (generating / failed / unmapped / drift / warnings),
+    the statement switcher, the selected statement and the Checks panel (journey steps B3–B7). %>
+<% statement = @financial_statement %>
+<% state = statement.state %>
+<% can_edit = policy(statement).update? %>
+<%= render "financial_statements/tabs", fund: @fund, active: "statements" %>
+
+<%= turbo_frame_tag "financial_statement_body" do %>
+<div data-controller="auto-refresh" data-auto-refresh-url-value="<%= financial_statement_path(statement, definition_id: @definition_id) %>"
+     data-auto-refresh-active-value="<%= state == 'generating' %>">
+
+  <div class="card shadow-sm mb-3">
+    <div class="card-body d-sm-flex align-items-center justify-content-between">
+      <div>
+        <h4 class="mb-1" id="fs_period"><%= statement.period_label %> <%= fs_state_badge(statement, drifted: statement.locked? && statement.drifted?) %></h4>
+        <div class="text-muted small">
+          <% if statement.accounting_allocation_run %>
+            Built from accounting run #<%= statement.accounting_allocation_run_id %><%= " (locked)" if statement.accounting_allocation_run.locked %>
+          <% end %>
+          <% if statement.statements_allocation_run_id %> · Statements run #<%= statement.statements_allocation_run_id %><% end %>
+          <% if statement.locked? %> · <span id="fs_locked_by">Locked on <%= l(statement.locked_at.to_date) %> by <%= statement.locked_by&.name %></span><% end %>
+        </div>
+      </div>
+      <div class="d-flex gap-2 mt-2 mt-sm-0">
+        <% if can_edit && statement.draft? %>
+          <%= button_to regenerate_financial_statement_path(statement, definition_id: @definition_id), class: "btn btn-outline-secondary", id: "fs_regenerate_btn",
+                        data: { action: "click->confirm#popup", turbo: false, method: :post, title: "Regenerate statements?",
+                                msg: fs_regenerate_action_summary(statement) } do %>
+            <i class="ti ti-refresh"></i> Regenerate
+          <% end %>
+          <% lockable, reason = statement.lockable_with_reason %>
+          <% if lockable %>
+            <%= button_to lock_financial_statement_path(statement, definition_id: @definition_id), method: :patch, class: "btn btn-outline-success", id: "fs_lock_btn",
+                          data: { action: "click->confirm#popup", turbo: false, method: :patch, title: "Lock these statements?",
+                                  msg: fs_lock_action_summary(statement) } do %>
+              <i class="ti ti-lock"></i> Lock
+            <% end %>
+          <% else %>
+            <span class="d-inline-block" tabindex="0" data-bs-toggle="tooltip" data-bs-title="<%= reason %>" id="fs_lock_disabled">
+              <button type="button" class="btn btn-outline-success" disabled><i class="ti ti-lock"></i> Lock</button>
+            </span>
+          <% end %>
+        <% end %>
+        <% if %w[ready locked].include?(state) %>
+          <%= link_to financial_statement_path(statement, format: :xlsx), class: "btn btn-outline-primary", id: "fs_excel_btn", data: { turbo: false } do %>
+            <i class="ti ti-file-spreadsheet"></i> Excel
+          <% end %>
+          <%= link_to financial_statement_path(statement, format: :pdf), class: "btn btn-outline-primary", id: "fs_pdf_btn", data: { turbo: false } do %>
+            <i class="ti ti-file-type-pdf"></i> PDF
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <%# ---- Banners ---- %>
+  <% if state == "generating" %>
+    <div class="alert alert-info" id="fs_generating"><i class="ti ti-loader-2"></i> Generating the statements. This page updates by itself when they are ready.</div>
+  <% elsif state == "failed" %>
+    <div class="alert alert-danger" id="fs_failed">
+      <strong>The statements run failed.</strong> <%= statement.run_error.to_s.truncate(400) %>
+      <%= link_to "See the fund's allocation runs", allocate_form_fund_path(@fund, run_allocations: true), class: "alert-link", target: "_top" %>
+      <div class="small mt-1">Fix the cause and click <strong>Regenerate</strong>.</div>
+    </div>
+  <% end %>
+
+  <% if state == "ready" && statement.unmapped_count.positive? %>
+    <div class="alert alert-warning d-flex justify-content-between align-items-center" id="fs_unmapped_banner">
+      <span><i class="ti ti-alert-triangle"></i> <strong><%= pluralize(statement.unmapped_count, "account entry") %></strong> in this period
+        <%= statement.unmapped_count == 1 ? "isn't" : "aren't" %> mapped to any line, so Lock is disabled.</span>
+      <%= link_to "Map them", fs_mapping_path_for(statement), class: "btn btn-sm btn-outline-warning", target: "_top" %>
+    </div>
+  <% end %>
+
+  <% if statement.locked? && statement.drifted? %>
+    <div class="alert alert-warning" id="fs_drift_banner">
+      <strong><i class="ti ti-alert-triangle"></i> Changed since locked.</strong>
+      The account entries behind these statements were edited after they were locked. The statements and downloads
+      still show the locked figures; current figures differ for:
+      <ul class="mb-0 mt-1">
+        <% statement.drift.each do |d| %>
+          <li><%= d["account"] %> <%= fs_amount(d["locked"], @fund) %> → <%= fs_amount(d["current"], @fund) %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <% if %w[ready locked].include?(state) %>
+    <%# Where the statement lines live as account entries, and why their names carry "FS · " %>
+    <% prefix = FinancialStatementCalculator::FS_NAME_PREFIX %>
+    <div class="alert alert-light border small d-flex justify-content-between align-items-center" id="fs_entries_note">
+      <span>
+        <i class="ti ti-info-circle"></i>
+        These figures are also saved as account entries of type <strong><%= FinancialStatementCalculator::FS_ENTRY_TYPE %></strong>, named
+        <strong>"<%= prefix %><em>line</em>"</strong> (e.g. "<%= prefix %>Professional fees", "<%= prefix %>YTD Professional fees") so they never clash
+        with the fund's own entries. The statements, Excel and PDF show the plain line names. Use the <%= prefix.strip %> names in document templates.
+      </span>
+      <% if statement.statements_allocation_run_id %>
+        <%= link_to "View statement lines",
+                    account_entries_path(fund_id: @fund.id, filter: true,
+                                         q: ransack_query_params_multiple([["allocation_run_id", :eq, statement.statements_allocation_run_id],
+                                                                           # ISO: a ransack filter value, not display text
+                                                                           ["reporting_date", :eq, statement.end_date.to_fs(:db)],
+                                                                           [:entry_type, :eq, FinancialStatementCalculator::FS_ENTRY_TYPE]])),
+                    class: "btn btn-sm btn-outline-secondary ms-2 text-nowrap", target: "_top", id: "fs_view_lines" %>
+      <% end %>
+    </div>
+    <div class="row">
+      <div class="col-lg-9 mb-3">
+        <%# ---- Statement switcher ---- %>
+        <%# Same tab bar as the fund details page: justified, equal-width pills %>
+        <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row" id="fs_switcher">
+          <% @statements.each do |s| %>
+            <%= link_to s["name"], financial_statement_path(statement, definition_id: s["definition_id"]),
+                        class: "nav-link #{'active' if s['definition_id'].to_i == @current['definition_id'].to_i}" %>
+          <% end %>
+        </nav>
+        <%= render "financial_statements/statement_table", statement_data: @current, fund: @fund %>
+      </div>
+      <div class="col-lg-3 mb-3">
+        <%= render "financial_statements/checks", checks: statement.checks_list, fund: @fund %>
+      </div>
+    </div>
+  <% end %>
+</div>
+<% end %>

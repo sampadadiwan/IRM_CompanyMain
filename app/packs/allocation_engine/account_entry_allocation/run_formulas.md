@@ -33,7 +33,8 @@ graph TD
     PCS --> O
     POST -- No --> PCR
     O --> P[Generate Investor Statements]
-    P --> Q[Cleanup SQLite Files]
+    P --> FS[Refresh Financial Statements]
+    FS --> Q[Cleanup SQLite Files]
     Q --> R[Display Generated Links]
     R --> S[End]
 
@@ -111,8 +112,29 @@ This is the core execution logic:
 
 - **Generate Fund Ratios**: Triggers `FundRatiosJob` if requested.
 - **Generate SOA**: Triggers `CapitalCommitmentSoaJob` to create Investor Statements.
+- **Refresh Financial Statements** (`refresh_financial_statements`): when a `FinancialStatement` points at this
+  run (`statements_allocation_run_id`), queues `FinancialStatementRefreshJob`, which stores the set's checks
+  and Unmapped count. Always returns true and never raises, so a statement problem can't fail the run.
 - **Cleanup**: Deletes the temporary SQLite and TSV files.
 - **Notification**: Sends a success notification to the user with direct links to view the generated entries, expenses, and allocations.
+
+## GenerateFinancialStatementLines Rule Type (statements runs)
+
+Writes a fund's financial statement lines from its statement mapping
+(`app/packs/funds/financial_statements`, `openspec/changes/fund-financial-statements/design.md` card ④).
+
+- **Only in runs tagged "Financial Statements".** `formulas_in_scope` drops formulas of this rule type unless
+  the run's `tag_list` includes `FundFormula::FINANCIAL_STATEMENTS_TAG`, so an ordinary accounting run neither
+  runs nor deletes statement lines. Legacy formulas with a NULL `rule_type` are kept in scope.
+- **Started by `FinancialStatementGenerate`**, which creates a new `AllocationRun` whose start and end dates are
+  the statement's **end date only**: the delete step then removes only this formula's lines on that date, never
+  another statement set's. The op reads the real period start from the `FinancialStatement` of the run.
+- **Once per fund**, like `GeneratePortfolioNumbersForFund`. `FinancialStatementCalculator` computes every
+  account's figures from the **live database** (`AccountEntry`), because an incremental fund's scratch copy holds
+  only recent entries. Three fund-level entries per account (entry type "Financial Statement", named
+  "FS · <account>" / "FS · YTD <account>" / … so they never share a name with an input entry, `json_fields
+  {fs_account_id, column}`) are appended to `ctx[:bulk_insert_records]` and inserted/migrated as usual.
+- The formula's `formula` text (`"true"`) is never evaluated: the mapping is the formula.
 
 ## GenerateAccountEntryMultiple Rule Type
 

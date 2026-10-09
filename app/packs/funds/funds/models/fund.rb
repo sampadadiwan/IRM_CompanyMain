@@ -67,6 +67,13 @@ class Fund < ApplicationRecord
   has_many :investor_accesses, through: :committed_investors
 
   has_many :fund_formulas, dependent: :destroy
+  # Fund financial statements (app/packs/funds/financial_statements): mapping, layout and statement sets
+  has_one :financial_statement_setting, dependent: :destroy
+  has_many :financial_statements, dependent: :destroy
+  has_many :financial_statement_mapping_suggestions, dependent: :destroy
+  has_many :financial_statement_mapping_rules, dependent: :destroy
+  has_many :financial_statement_definitions, dependent: :destroy
+  has_many :financial_statement_accounts, dependent: :destroy
   has_many :shareholder_positions, dependent: :destroy
 
   has_many :fund_account_entries, ->(_ae) { where(account_entries: { capital_commitment_id: nil }) }, class_name: "AccountEntry", dependent: :destroy

@@ -1,0 +1,36 @@
+<%# First visit: the fund has no statement setup yet. Two ways in (journey step A3). %>
+<div class="card shadow-sm mb-4" id="fs_setup">
+  <div class="card-body p-4">
+    <h4 class="mb-2">Produce this fund's Balance Sheet and P&amp;L from its account entries</h4>
+    <p class="text-muted mb-4">
+      CapHive needs to know which account entries make up each statement line. You do this once; after that,
+      generate statements for any period in one click. Every set is checked to balance and to tie to the NAV
+      before it can be locked.
+    </p>
+    <div class="row g-3">
+      <div class="col-md-6">
+        <div class="border rounded p-3 h-100">
+          <h6><i class="ti ti-robot-face text-info"></i> Start from last year's statements</h6>
+          <p class="small text-muted mb-3">Upload the fund's latest financial statements (PDF or Excel). The AI proposes the
+            accounts, layout and mapping, and CapHive checks every line against the printed figures. Nothing is saved until you approve.</p>
+          <% if policy(FinancialStatementMappingSuggestion.new(fund:, entity_id: fund.entity_id)).create? %>
+            <%= link_to "Suggest from statements", new_financial_statement_mapping_suggestion_path(fund_id: fund.id), class: "btn btn-outline-info", id: "fs_setup_ai" %>
+          <% end %>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="border rounded p-3 h-100">
+          <h6><i class="ti ti-pencil text-primary"></i> Set up by hand</h6>
+          <p class="small text-muted mb-3">Creates the Balance Sheet, Profit &amp; Loss and Statement of Changes in Partners' Capital with
+            standard sections. You then add accounts and map the fund's entries to them.</p>
+          <% if policy(FinancialStatement.new(fund:, entity_id: fund.entity_id)).setup? %>
+            <%= button_to "Set up by hand", setup_financial_statements_path(fund_id: fund.id), class: "btn btn-outline-primary", id: "fs_setup_manual" %>
+          <% end %>
+        </div>
+      </div>
+    </div>
+    <% unless policy(FinancialStatement.new(fund:, entity_id: fund.entity_id)).setup? %>
+      <p class="text-muted mt-3 mb-0">Ask a user with edit access to this fund to set up its financial statements.</p>
+    <% end %>
+  </div>
+</div>

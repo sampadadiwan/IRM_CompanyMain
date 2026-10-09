@@ -127,10 +127,17 @@ Given("there is an unapproved generated document in the advisor's home entity th
                          first_name: @user.first_name, last_name: @user.last_name,
                          email: @user.email, approved: true)
   home_kyc = FactoryBot.create(:investor_kyc, entity: home, investor: @home_investor, kyc_type: "individual")
-  # from_template_id + not approved => subject_to_approval? and not yet approved: only the
-  # company_admin branch of DocumentPolicy#show? ignores approval state.
+  # A private folder: only the company_admin branch of DocumentPolicy#show? ignores folder
+  # privacy, so the home persona cannot reach the draft through the KYC owner policy - which
+  # now shows a commitment-less KYC to home-entity staff (#1746 visibility rule).
+  # Owner is set explicitly: Folder#set_parent_permissions copies the parent's private flag
+  # onto an ownerless child, which would undo private: true.
+  private_folder = Folder.create!(name: "Drafts", parent: home_kyc.document_folder, entity: home,
+                                  owner: home_kyc, private: true)
+  # from_template_id + not approved => subject_to_approval? and not yet approved: the
+  # investor-side paths of DocumentPolicy#show? require approval.
   @hidden_document = Document.create!(entity: home, name: "Generated draft", owner: home_kyc,
-                                      folder: home_kyc.document_folder, user: @user,
+                                      folder: private_folder, user: @user,
                                       file: File.new("public/img/whatsappQR.png", "r"),
                                       from_template_id: @document.id, approved: false)
   AccessRight.where(owner: @hidden_document, access_to_investor_id: @home_investor.id).first ||
@@ -138,6 +145,8 @@ Given("there is an unapproved generated document in the advisor's home entity th
                         access_type: "Document", notify: false)
   expect(@hidden_document.reload.subject_to_approval?).to be true
   expect(@hidden_document.approved).to be false
+  # Guard the premise: if the folder stops being private, the home persona can see the draft.
+  expect(@hidden_document.folder.reload.private).to be true
 end
 
 Then('the switched-in roles combined with the home entity would expose that document') do

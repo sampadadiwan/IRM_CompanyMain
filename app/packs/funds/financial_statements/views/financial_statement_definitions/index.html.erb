@@ -1,0 +1,75 @@
+<%# Layout tab (journey step A5): the fund's statements and the rows of the selected one, with a live
+    preview beside them. Rows move with ↑ / ↓. %>
+<% can_edit = policy(@definition).update? %>
+<%= render "financial_statements/tabs", fund: @fund, active: "layout" %>
+
+<div class="d-flex flex-wrap align-items-center justify-content-between mb-3">
+  <nav class="nav nav-pills" id="fs_definition_pills">
+    <% @definitions.each do |definition| %>
+      <%= link_to definition.name, financial_statement_definitions_path(fund_id: @fund.id, definition_id: definition.id),
+                  class: "nav-link #{'active' if definition.id == @definition.id}" %>
+    <% end %>
+  </nav>
+  <%= link_to "+ Add schedule", new_financial_statement_definition_path(fund_id: @fund.id), class: "btn btn-outline-primary", id: "fs_add_schedule" if can_edit %>
+</div>
+
+<div class="row">
+  <div class="col-lg-6 mb-3">
+    <div class="card shadow-sm">
+      <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <div>
+          <h6 class="mb-0"><%= @definition.name %></h6>
+          <div class="small text-muted"><%= @definition.core? ? "Core statement" : "Schedule" %> ·
+            <%= @definition.at_date? ? "At a date (period end, prior year-end)" : "For a period (period, year to date, last year)" %></div>
+        </div>
+        <% if can_edit %>
+          <div class="text-nowrap">
+            <%= link_to "Rename", edit_financial_statement_definition_path(@definition), class: "btn btn-sm btn-outline-primary", id: "fs_rename_statement" %>
+            <% unless @definition.core? %>
+              <%= button_to "Delete", financial_statement_definition_path(@definition), method: :delete, class: "btn btn-sm btn-outline-danger", form_class: "d-inline",
+                            data: { action: "click->confirm#popup", turbo: false, method: :delete, title: "Delete #{@definition.name}?",
+                                    msg: "The schedule and its rows are removed. Accounts and rules are kept." } %>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-sm mb-0" id="fs_layout_rows">
+          <thead><tr><th>Row</th><th>Type</th><% if can_edit %><th class="text-end">Actions</th><% end %></tr></thead>
+          <tbody>
+            <% @rows.each_with_index do |row, i| %>
+              <tr id="fs_layout_row_<%= row.id %>" class="<%= 'table-light' if row.row_type == 'heading' %>">
+                <td class="<%= 'ps-4' if row.row_type == 'account' %> <%= 'fw-bold' unless row.row_type == 'account' %>"><%= row.display_label %></td>
+                <td class="small text-muted"><%= FinancialStatementLayoutRow::ROW_TYPE_LABELS[row.row_type] %></td>
+                <% if can_edit %>
+                  <td class="text-end text-nowrap">
+                    <%= button_to "↑", sort_financial_statement_layout_rows_path(id: row.id, direction: "up"), class: "btn btn-sm btn-outline-secondary", form_class: "d-inline",
+                                  disabled: i.zero?, title: "Move up" %>
+                    <%= button_to "↓", sort_financial_statement_layout_rows_path(id: row.id, direction: "down"), class: "btn btn-sm btn-outline-secondary", form_class: "d-inline",
+                                  disabled: i == @rows.size - 1, title: "Move down" %>
+                    <%= link_to "Edit", edit_financial_statement_layout_row_path(row), class: "btn btn-sm btn-outline-primary" %>
+                    <%= button_to "Remove", financial_statement_layout_row_path(row), method: :delete, class: "btn btn-sm btn-outline-danger", form_class: "d-inline",
+                                  data: { action: "click->confirm#popup", turbo: false, method: :delete, title: "Remove this row?",
+                                          msg: "Removes \"#{ERB::Util.h(row.display_label)}\" from #{ERB::Util.h(@definition.name)} only. The account and its rules are kept." } %>
+                  </td>
+                <% end %>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+      <% if can_edit %>
+        <div class="card-footer bg-white">
+          <span class="small text-muted me-2">Add:</span>
+          <% { "heading" => "Heading", "account" => "Account", "subtotal" => "Subtotal", "net_result" => "Net result", "opening" => "Opening capital", "closing" => "Closing capital" }.each do |type, label| %>
+            <%= link_to "+ #{label}", new_financial_statement_layout_row_path(definition_id: @definition.id, row_type: type), class: "btn btn-sm btn-outline-primary mb-1", id: "fs_add_row_#{type}" %>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+  <div class="col-lg-6 mb-3">
+    <div class="small text-muted mb-1">Preview for <%= l(@period_start) %> – <%= l(@period_end) %></div>
+    <%= render "financial_statements/statement_table", statement_data: @preview_statement, fund: @fund if @preview_statement %>
+  </div>
+</div>

@@ -55,7 +55,7 @@ Pack: `app/packs/funds/financial_statements/` (new sub-domain of the `funds` pac
 | ① | `.../controllers/financial_statement_accounts_controller.rb` | New | Account CRUD |
 | ① | `.../controllers/financial_statement_mapping_rules_controller.rb` | New | Rule CRUD |
 | ① | `.../controllers/financial_statement_definitions_controller.rb` | New | Statement/schedule CRUD |
-| ① | `.../controllers/financial_statement_layouts_controller.rb` | New | Layout edit + reorder |
+| ① | `.../controllers/financial_statement_definitions_controller.rb` (Layout tab) + `financial_statement_layout_rows_controller.rb` | New | Layout tab, rows CRUD, ↑ / ↓ reorder |
 | ① | `.../controllers/financial_statement_settings_controller.rb` | New | Settings update |
 | ①⑥ | `.../views/financial_statement_*/**` | New | Tabs, tables, forms, frames |
 | ①⑤⑥ | `.../policies/financial_statement_*_policy.rb` (one per model) | New | Delegates to `FundPolicy#show?/#update?`, `entity_id` scope |
@@ -75,7 +75,7 @@ Pack: `app/packs/funds/financial_statements/` (new sub-domain of the `funds` pac
 | ⑤ | `.../jobs/financial_statement_refresh_job.rb` | New | Checks/unmapped after run |
 | ⑥ | `.../controllers/financial_statements_controller.rb` | New | index/show/create/regenerate/lock/export |
 | ⑥ | `.../services/financial_statement_xlsx.rb` | New | caxlsx workbook, one sheet per definition |
-| ⑥ | `.../services/financial_statement_pdf.rb` + `views/financial_statements/pdf.html.erb` | New | wicked_pdf, DRAFT watermark |
+| ⑥ | `.../services/financial_statement_pdf.rb` + `views/financial_statements/pdf.html.erb` | New | FerrumPdf (headless Chrome, as FundsController#dashboard), DRAFT watermark |
 | ⑦ | `app/packs/funds/funds/controllers/allocation_runs_controller.rb` | Modified | `#unlock`, `#unlock_all` call guard |
 | ⑦ | `app/packs/funds/funds/views/funds/_allocation_runs.html.erb` | Modified | Action-summary popup when locked statements overlap |
 | ⑦ | `.../services/financial_statement_unlock_guard.rb` | New | `affected`, `demote!` |
@@ -84,12 +84,22 @@ Pack: `app/packs/funds/financial_statements/` (new sub-domain of the `funds` pac
 | Routes | `config/routes/fund.rb` | Modified | Nested resources |
 | DB | `db/migrate/*_create_financial_statement_tables.rb`, `db/schema.rb`, `db/schema_test.rb` | New / Modified | Six tables |
 | Tests | `features/funds/financial_statements/*.feature`, `features/step_definitions/financial_statement_steps.rb`, `spec/factories/financial_statement*.rb` | New | See [Test Plumbing](#test-plumbing) |
-| Docs | `docs/user_guides/financial_statements.md` | New | User guide with FAQ |
+| Docs | `docs/user_guides/financial_statements_user_guide.md` | New | User guide with FAQ |
+| ③⑥ | `.../services/financial_statement_presenter.rb` | New (added in build) | Renders statements → rows → column values; one structure for screen, Excel, PDF and the frozen copy |
+| ①③ | `.../services/financial_statement_preview.rb` | New (added in build) | Unsaved statement set for the Mapping/Layout previews (quacks like `FinancialStatement`) |
+| ⑥ | `.../helpers/financial_statements_helper.rb` | New (added in build) | Amounts, badges, action-summary popup cards (Lock, Regenerate, Unlock) |
+| ① | `.../controllers/concerns/financial_statement_fund_context.rb` | New (added in build) | Fund lookup, breadcrumbs, return-to, preview period |
+| ⑦ | `.../mailers/financial_statements_mailer.rb` + `views/financial_statements_mailer/unlocked_notification.html.erb` | New | Email for the notifier |
+| ⑦ | `app/packs/core/users/models/user.rb` | Modified (constant only) | `NOTIFICATION_TAGS` += `FundAccounting` so the user form suggests the tag |
+| Fund | `app/packs/funds/funds/models/fund.rb` | Modified (associations only) | `has_one/has_many … dependent: :destroy` for the new tables |
+| Config | `config/application.rb` | Modified | `financial_statements` added to the funds view paths |
+| ⑦ | `funds/_allocation_runs.html.erb` | Modified | Row `id="allocation_run_<id>"`; action-summary popup on Unlock / Unlock All when locked sets overlap |
+| UI | `funds/show.html.erb` | Modified | Actions → Account Entries → **Financial Statements** link |
 
 **Reviewer checks**
 - [ ] Every class in the design's class diagram has a file here, and nothing here is missing from it
 - [ ] Files follow the pack layout (`app/packs/<domain>/<sub_domain>/...`) and Packwerk boundaries
-- [ ] `allocation_engine` only references `FinancialStatementCalculator` and `FinancialStatementRefreshJob` (two constants) from the new sub-domain
+- [ ] `allocation_engine` only references `FinancialStatementCalculator`, `FinancialStatementRefreshJob`, `FinancialStatementAccount` and `FinancialStatement` (the op reads the period start from the set its run belongs to) from the new sub-domain
 
 ---
 
@@ -119,7 +129,7 @@ All six tables are new; nothing existing changes. Every table carries `entity_id
 
 | Column | Change | Type | Limit | Null | Default | Index / FK | Why it's needed |
 |---|---|---|---|---|---|---|---|
-| `name` | Added | string | 100 | no | — | unique `[fund_id, name]` | FS entry `name` is "YTD " + name ≤ 104 < 125 |
+| `name` | Added | string | 100 | no | — | unique `[fund_id, name]` | Longest stored statement line is "FS · YTD Opening " (17) + name ≤ 117 < 125; a name may not start with "FS ·" (X19) |
 | `account_type` | Added | string | 12 | no | — | — | asset/liability/capital/income/expense/gain_loss |
 | `behaviour` | Added | string | 10 | no | — | — | balance/movement (default set in model by type) |
 | `flip_sign` | Added | boolean | — | no | false | — | Sign normalisation |
@@ -167,6 +177,8 @@ All six tables are new; nothing existing changes. Every table carries `entity_id
 | `status` | Added | string | 12 | no | "processing" | — | Lifecycle |
 | `proposal` | Added | json | — | yes | nil | — | Draft lines/rules + match |
 | `error` | Added | text | — | yes | nil | — | Failure reason |
+| `period_start` | Added | date | — | yes | nil | — | "P&L period from" of the uploaded statements (default: financial year start) |
+| `file_data` | Added | text | — | yes | nil | — | Shrine attachment of the uploaded statement (like `Valuation#report`) |
 
 **Migration safety:** new tables only; no lock on existing tables; reversible (`create_table`). Per the repo memory, after `db:migrate` restore `schema.rb`/`schema_test.rb` and hand-insert the six tables, then `db:clean_schema`.
 
@@ -391,7 +403,7 @@ Notifications are delivered after commit (`deliver_later`), never inside a trans
 | `.../financial_statement_calculator.feature` | — | same | `When I preview the period … to …`, `Then the check "…" is …` |
 | `.../financial_statement_ai_draft.feature` | `LlmService.ruby_llm_chat` stubbed to return fixture JSON (`features/support/fixtures/fs_draft.json`) | `:financial_statement_mapping_suggestion` | `When I upload "fs_2025.pdf" as at …` |
 | `.../financial_statement_generation.feature` | allocation job run inline (`perform_now`) | `:allocation_run` (Success, locked) | `Given accounting run for … is locked`, `When I generate statements for …` |
-| `.../financial_statements.feature` | wicked_pdf output inspected via text | — | `Then the statement shows …`, `When I lock the statements` |
+| `.../financial_statements.feature` | PDF text read back with pdf-reader; AI fixture PDFs rendered with FerrumPdf | — | `Then the statement shows …`, `When I lock the statements` |
 | `.../financial_statement_unlock_guard.feature` | Noticed deliveries checked via existing email steps | users tagged FundAccounting | reuse existing allocation-run unlock steps |
 
 ---

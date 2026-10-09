@@ -101,6 +101,9 @@ module AccountEntryAllocation
         AccountEntryAllocation::ComputeCustomPercentage.call(ctx)
       when "GeneratePortfolioNumbersForFund"
         AccountEntryAllocation::GeneratePortfolioNumbersForFund.call(ctx)
+      when "GenerateFinancialStatementLines"
+        # Once per fund: the fund's statement mapping -> "Financial Statement" entries
+        AccountEntryAllocation::GenerateFinancialStatementLines.call(ctx)
       when "AllocateForPortfolioCompany"
         # Calculates a 'cumulative' value for each portfolio company at the fund level by aggregating amounts from account entries by matching the account entry name with the formula name
         AccountEntryAllocation::AllocateForPortfolioCompany.call(ctx.merge(for_folios: false))

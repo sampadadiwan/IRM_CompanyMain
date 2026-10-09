@@ -1,0 +1,16 @@
+<%= render "financial_statements/tabs", fund: @fund, active: "statements" %>
+
+<% if @setting.nil? %>
+  <%= render "financial_statements/setup", fund: @fund %>
+<% else %>
+  <div class="row">
+    <% if policy(FinancialStatement.new(fund: @fund, entity_id: @fund.entity_id)).create? %>
+      <div class="col-lg-4 mb-4">
+        <%= render "financial_statements/generate_form", fund: @fund, period_start: @period_start, period_end: @period_end %>
+      </div>
+    <% end %>
+    <div class="<%= policy(FinancialStatement.new(fund: @fund, entity_id: @fund.entity_id)).create? ? 'col-lg-8' : 'col-12' %> mb-4">
+      <%= render "financial_statements/list", fund: @fund, financial_statements: @financial_statements %>
+    </div>
+  </div>
+<% end %>

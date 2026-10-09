@@ -1,0 +1,17 @@
+<p>Dear <%= @user.name %>,</p>
+
+<p><strong><%= @unlocked_by %></strong> unlocked allocation runs for <strong><%= @fund.name %></strong>.
+These locked financial statements are now back to <strong>Draft</strong>:</p>
+
+<ul>
+  <% @period_dates.each do |from, to| %>
+    <li><%= l(from) %> – <%= l(to) %></li>
+  <% end %>
+</ul>
+
+<p>What was published is kept as the frozen copy until the statements are locked again. Once the
+allocations are re-run, regenerate the statements, review the checks and lock them again.</p>
+
+<p><%= link_to "Open Financial Statements", financial_statements_url(fund_id: @fund.id, host: @entity.sub_domain + '.' + ENV.fetch('DOMAIN', 'localhost')), class: "btn btn-outline-primary" %></p>
+
+<p>Thank you,<br><%= @entity.name %> System</p>

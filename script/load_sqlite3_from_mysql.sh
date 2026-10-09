@@ -1073,6 +1073,15 @@ for table in "${TABLES[@]}"; do
     fi
   fi
 
+  # Financial statement lines (entry type "Financial Statement", written by the statements run) are
+  # output for people, never input to formulas: an "AllocateAccountEntry-Name" formula matches fund
+  # entries by name alone and would allocate a statement line named like a real entry. The
+  # statements run itself reads the live database, so nothing needs them here.
+  # Worked example E31 — openspec/changes/fund-financial-statements/design.md#worked-examples (card ④)
+  if [[ "$table" == "account_entries" ]]; then
+    WHERE_CLAUSE="${WHERE_CLAUSE} AND (entry_type IS NULL OR entry_type <> 'Financial Statement')"
+  fi
+
   # Trimmed account_entries for incremental funds (set by RunFormulas#load_sqlite_db only when
   # fund.json_fields["incremental_since_inception"] is on). Instead of all history, keep:
   #   1. every row from AE_COPY_FROM to AE_COPY_TO (financial-year floor to the window end;

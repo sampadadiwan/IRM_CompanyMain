@@ -1,5 +1,9 @@
 <%
   fund ||= @fund
+  # Locked financial statement sets, loaded once: an Unlock overlapping one shows the action-summary
+  # popup instead of the plain confirm (worked examples H16, E8, E23 —
+  # openspec/changes/fund-financial-statements/design.md#worked-examples)
+  locked_statements = fund ? FinancialStatement.locked.where(fund_id: fund.id).order(:end_date).to_a : []
 %>
 
 <div class="associated_entity" data-controller="datatable tooltip">
@@ -25,7 +29,8 @@
         <% end %>
       <% end %>
       <% if policy(AllocationRun).unlock_all? && fund.present? %>
-        <%= button_to "Unlock All", unlock_all_allocation_runs_path(fund_id: fund.id), class: "btn btn-sm btn-outline-warning", method: :patch, form_class: "deleteButton", data: { action: "click->confirm#popup", method: :patch, msg: "Are you sure you want to unlock all AllocationRuns?" } %>
+        <% unlock_all_msg = locked_statements.any? ? fs_unlock_action_summary(locked_statements, runs_text: "Every locked run of the fund") : "Are you sure you want to unlock all AllocationRuns?" %>
+        <%= button_to "Unlock All", unlock_all_allocation_runs_path(fund_id: fund.id), class: "btn btn-sm btn-outline-warning", method: :patch, form_class: "deleteButton", id: "unlock_all_btn", data: { action: "click->confirm#popup", method: :patch, msg: unlock_all_msg } %>
       <% end %>
     </div>
   </div>
@@ -83,7 +88,7 @@
         can_check_run = policy(AllocationRunReport.new(entity_id: fund.entity_id, fund: fund)).create?
       %>
       <% all_runs.each do |runs|  %>
-        <tr>
+        <tr id="allocation_run_<%= runs.id %>">
           <td>
             <%= l runs.start_date, format: :abbr_month_day_year %>
           </td>
@@ -162,10 +167,20 @@
                   title). aria-label carries the accessible name instead — same pattern used for
                   "Save as template" and "Check" below. %>
               <% if runs.locked %>
+                <% overlapping_statements = locked_statements.select { |s| s.start_date <= runs.end_date && s.end_date >= runs.start_date } %>
                 <%= form_with model: false, url: unlock_allocation_run_path(runs), method: :patch, class: "d-inline" do %>
+                  <%# H16: locked statements overlap — action-summary popup; otherwise the plain confirm, as before (E8).
+                      E23: Cancel in the popup submits nothing, so runs and statements stay locked %>
+                  <% unlock_data = if overlapping_statements.any?
+                                     { action: "click->confirm#popup", method: :patch, turbo: false, title: "Unlock allocation runs for #{l(runs.start_date)} – #{l(runs.end_date)}?",
+                                       msg: fs_unlock_action_summary(overlapping_statements, runs_text: "This run and every locked run overlapping its period"),
+                                       bs_title: "Unlock — allow this run's period to be edited or re-run again" }
+                                   else
+                                     { confirm: "Are you sure you want to unlock this AllocationRun?",
+                                       bs_title: "Unlock — allow this run's period to be edited or re-run again" }
+                                   end %>
                   <%= button_tag class: "btn btn-sm btn-outline-warning",
-                                 data: { confirm: "Are you sure you want to unlock this AllocationRun?",
-                                         bs_title: "Unlock — allow this run's period to be edited or re-run again" },
+                                 data: unlock_data,
                                  "aria-label": "Unlock" do %>
                     <i class="ti ti-lock-open"></i>
                   <% end %>

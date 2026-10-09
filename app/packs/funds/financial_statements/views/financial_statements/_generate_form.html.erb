@@ -1,0 +1,19 @@
+<%# Generate statements for a period (journey step B1). The guards' refusals come back as a flash. %>
+<%= render FormCard.new(title: "Generate statements") do %>
+  <%= form_with url: financial_statements_path(fund_id: fund.id), method: :post, id: "fs_generate_form" do |form| %>
+    <p class="small text-muted">Builds the Balance Sheet, P&amp;L, Changes in Partners' Capital and every schedule for the period,
+      from the fund's account entries. The period's accounting allocations must have been run.</p>
+    <div class="form-group mb-2">
+      <%= label_tag "financial_statement_start_date", "From" %>
+      <%= date_field_tag "financial_statement[start_date]", period_start, id: "financial_statement_start_date" %>
+    </div>
+    <div class="form-group mb-3">
+      <%= label_tag "financial_statement_end_date", "To" %>
+      <%= date_field_tag "financial_statement[end_date]", period_end, id: "financial_statement_end_date" %>
+    </div>
+    <%# Action-summary popup first: what runs, what is written, what to expect, preconditions (checked live) %>
+    <%= button_tag "Generate statements", type: "submit", class: "btn btn-outline-primary", id: "fs_generate_btn",
+                   data: { action: "click->confirm#popup", method: :post, turbo: false, title: "Generate statements?",
+                           msg: fs_generate_action_summary(fund) } %>
+  <% end %>
+<% end %>

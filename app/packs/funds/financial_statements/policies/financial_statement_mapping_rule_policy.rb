@@ -1,0 +1,2 @@
+class FinancialStatementMappingRulePolicy < FinancialStatementBasePolicy
+end

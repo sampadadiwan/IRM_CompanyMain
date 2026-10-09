@@ -1,0 +1,48 @@
+<%# Statement sets of the fund, newest first. Reloads itself every 5 s while one is generating. %>
+<% generating = financial_statements.any? { |s| s.state == "generating" } %>
+<%= turbo_frame_tag "financial_statements_list" do %>
+  <div data-controller="auto-refresh" data-auto-refresh-url-value="<%= financial_statements_path(fund_id: fund.id) %>"
+       data-auto-refresh-active-value="<%= generating %>">
+    <div class="card shadow-sm">
+      <div class="card-header bg-white"><h6 class="mb-0">Statement sets</h6></div>
+      <div class="card-body">
+        <% if financial_statements.empty? %>
+          <p class="text-muted mb-0" id="fs_list_empty">No statements yet. Choose a period and click <strong>Generate statements</strong>.</p>
+        <% else %>
+          <table class="table table-bordered dataTable action_table hover" id="financial_statements_table">
+            <thead>
+              <tr>
+                <th>Period</th>
+                <th>Status</th>
+                <th>Checks</th>
+                <th>Unmapped</th>
+                <th>Built from</th>
+                <th>Locked by</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% financial_statements.each do |statement| %>
+                <tr id="financial_statement_<%= statement.id %>">
+                  <td><%= statement.period_label %></td>
+                  <td><%= fs_state_badge(statement, drifted: statement.drifted_cached?) %></td>
+                  <td><%= fs_checks_summary(statement) %></td>
+                  <td>
+                    <% if statement.state == "ready" && statement.unmapped_count.positive? %>
+                      <%= link_to statement.unmapped_count, fs_mapping_path_for(statement), class: "text-danger fw-bold", target: "_top" %>
+                    <% else %>
+                      <%= statement.state == "ready" || statement.locked? ? statement.unmapped_count : "—" %>
+                    <% end %>
+                  </td>
+                  <td><%= statement.accounting_allocation_run ? "Accounting run ##{statement.accounting_allocation_run_id}" : "—" %></td>
+                  <td><%= statement.locked? ? "#{statement.locked_by&.name}, #{l(statement.locked_at.to_date)}" : "—" %></td>
+                  <td><%= link_to "Open", financial_statement_path(statement), class: "btn btn-sm btn-outline-primary", target: "_top" %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        <% end %>
+      </div>
+    </div>
+  </div>
+<% end %>

@@ -1,0 +1,100 @@
+<%# The integrity checks (V6–V9) and completeness warnings (V10–V12) of a statement set or a preview. %>
+<% integrity = checks.reject { |c| c["status"] == "warning" } %>
+<% warnings = checks.select { |c| c["status"] == "warning" } %>
+<div class="card shadow-sm" id="fs_checks" data-controller="tooltip">
+  <div class="card-header bg-white d-flex justify-content-between align-items-center">
+    <h6 class="mb-0">Checks</h6>
+    <%# Full explanation of every check in a popup (below) %>
+    <a href="#" class="small text-nowrap ms-2" data-bs-toggle="modal" data-bs-target="#fs_checks_help" id="fs_checks_help_link"><i class="ti ti-help-circle"></i> How checks work</a>
+  </div>
+  <ul class="list-group list-group-flush">
+    <% integrity.each do |check| %>
+      <li class="list-group-item" id="fs_check_<%= check['key'] %>">
+        <div class="d-flex justify-content-between">
+          <span><%= fs_check_label(check) %>
+            <i class="ti ti-info-circle text-muted small" data-bs-toggle="tooltip" data-bs-title="<%= fs_check_help(check)[:short] %>"></i></span>
+          <%= fs_check_icon(check) %>
+        </div>
+        <% if check["status"] == "failed" %>
+          <div class="small text-danger">Difference <%= fs_amount(check["diff"], fund, decimals: 2) %></div>
+        <% elsif check["note"].present? %>
+          <div class="small text-muted"><%= check["note"] %></div>
+        <% end %>
+      </li>
+    <% end %>
+    <% if integrity.empty? %>
+      <li class="list-group-item text-muted">Checks appear once the statements are generated.</li>
+    <% end %>
+  </ul>
+  <% if warnings.any? %>
+    <div class="card-header bg-white border-top"><h6 class="mb-0 text-warning"><i class="ti ti-alert-triangle"></i> Warnings</h6></div>
+    <ul class="list-group list-group-flush" id="fs_warnings">
+      <% warnings.each do |warning| %>
+        <li class="list-group-item small" id="fs_warning_<%= warning['key'] %>">
+          <strong><%= fs_check_label(warning) %>
+            <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip" data-bs-title="<%= fs_check_help(warning)[:short] %>"></i>:</strong> <%= warning["note"] %>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+  <div class="card-footer bg-white small text-muted">A difference under 1.00 passes. Skipped checks were not tested; set them up under Settings.</div>
+</div>
+
+<%# "How checks work": the full explanation of each check, opened from the panel header %>
+<% help_cards = { "balance" => ["", "ti-scale"], "nav" => ["fs-accent-green", "ti-chart-line"],
+                  "capital" => ["fs-accent-purple", "ti-users"], "roll_forward" => ["fs-accent-amber", "ti-arrows-right-left"] } %>
+<div class="modal fade" id="fs_checks_help" tabindex="-1" aria-labelledby="fs_checks_help_title" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title mb-0" id="fs_checks_help_title">How the checks work</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <%# In the body, not the header: the theme colours modal headers, which made a grey subtitle unreadable %>
+        <p class="mb-3">Every check uses the figures the statements show. <strong>Partners' capital</strong> = contributions − distributions
+          + the P&amp;L result since the fund started.</p>
+        <div class="fs-help-intro">
+          <span class="fs-chip"><i class="ti ti-circle-check text-success"></i> A difference under 1.00 passes</span>
+          <span class="fs-chip"><i class="ti ti-lock text-danger"></i> A failed check keeps Lock disabled</span>
+          <span class="fs-chip"><i class="ti ti-circle-minus text-muted"></i> Skipped = not tested, never counted as passed</span>
+        </div>
+
+        <div class="fs-help-grid">
+          <% help_cards.each do |key, (accent, icon)| %>
+            <% help = FinancialStatementsHelper::CHECK_HELP[key] %>
+            <div class="fs-help-card <%= accent %>">
+              <div class="fs-help-card__head">
+                <span class="fs-help-icon"><i class="ti <%= icon %>"></i></span>
+                <h6 class="fs-help-card__title"><%= FinancialStatementCalculator::CHECK_LABELS[key] %></h6>
+              </div>
+              <div class="fs-help-card__q"><%= help[:question] %></div>
+              <dl class="fs-help-rows">
+                <dt>How it's worked out</dt><dd><%= help[:how] %></dd>
+                <dt>Skipped when</dt><dd><%= help[:skipped] %></dd>
+                <dt>If it fails</dt><dd><%= help[:fails] %></dd>
+              </dl>
+            </div>
+          <% end %>
+        </div>
+
+        <div class="fs-help-section-title">Warnings — they don't block Lock, the Lock popup asks you to confirm them</div>
+        <ul class="fs-help-list">
+          <% %w[stale_balance no_entries mixed_cumulative].each do |key| %>
+            <li><i class="ti ti-alert-triangle text-warning"></i>
+              <span><strong><%= FinancialStatementCalculator::CHECK_LABELS[key] %></strong> — <%= FinancialStatementsHelper::CHECK_HELP[key][:short] %></span></li>
+          <% end %>
+        </ul>
+
+        <div class="fs-help-section-title">Reading a failed check's difference</div>
+        <ul class="fs-help-list">
+          <li><span class="fs-step">1</span><span>Equals an amount under <strong>Unmapped</strong>? → map that entry.</span></li>
+          <li><span class="fs-step">2</span><span>Twice one account's figure? → its sign is the wrong way round: tick <strong>Flip the sign</strong>.</span></li>
+          <li><span class="fs-step">3</span><span>Only <strong>Roll-forward</strong> failed? → a capital movement is missing from the Changes statement (Layout tab).</span></li>
+          <li><span class="fs-step">4</span><span>Only <strong>NAV tie-out</strong> failed? → compare what the NAV includes with the mapping; check the NAV entry's date.</span></li>
+          <li><span class="fs-step">5</span><span>Balance and NAV fail by the same amount? → something is missing from, or doubled in, the statements.</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>

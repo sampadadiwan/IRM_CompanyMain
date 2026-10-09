@@ -1,0 +1,47 @@
+<%# Add / edit a layout row. Subtotals pick the rows they add up (a heading = its whole section). %>
+<% definition = row.definition %>
+<% others = definition.layout_rows.where.not(id: row.id).includes(:account).to_a %>
+<div class="row">
+  <div class="col-lg-6 mb-4">
+    <%= render FormCard.new(title: "#{definition.name}: #{row.new_record? ? 'add' : 'edit'} #{FinancialStatementLayoutRow::ROW_TYPE_LABELS[row.row_type].downcase} row") do %>
+      <%= form_with(model: row, id: "fs_row_form") do |form| %>
+        <%= render "financial_statement_accounts/errors", record: row %>
+        <%= form.hidden_field :financial_statement_definition_id if row.new_record? %>
+        <%= form.hidden_field :row_type %>
+        <% if row.row_type == "account" %>
+          <div class="form-group mb-3">
+            <%= form.label :financial_statement_account_id, "Account" %>
+            <%= form.select :financial_statement_account_id, FinancialStatementAccount.where(fund_id: row.fund_id).ordered.map { |a| [a.name, a.id] },
+                            { include_blank: "— choose —" }, class: "form-select" %>
+          </div>
+        <% end %>
+        <div class="form-group mb-3">
+          <%= form.label :label, row.row_type == "account" ? "Label (optional — defaults to the account name)" : "Label" %>
+          <%= form.text_field :label, class: "form-control", maxlength: 150 %>
+        </div>
+        <% if row.row_type == "subtotal" %>
+          <div class="form-group mb-3">
+            <label>Adds up</label>
+            <div class="form-text mb-2">Choose <strong>Add</strong> or <strong>Subtract</strong> for each row it uses. Expenses and liabilities
+              print in brackets, so subtract them to add their amount (e.g. Total liabilities and partners' capital).</div>
+            <%= hidden_field_tag "financial_statement_layout_row[subtotal_of][]", "" %>
+            <% others.each do |other| %>
+              <% next if other.row_type == "subtotal" && row.persisted? && other.position > row.position %>
+              <% current = if row.subtotal_ids.include?(other.id) then other.id.to_s elsif row.subtracts?(other.id) then (-other.id).to_s else "" end %>
+              <div class="d-flex align-items-center gap-2 mb-1">
+                <%= select_tag "financial_statement_layout_row[subtotal_of][]",
+                               options_for_select([["—", ""], ["Add", other.id.to_s], ["Subtract", (-other.id).to_s]], current),
+                               class: "form-select form-select-sm w-auto", id: "fs_subtotal_of_#{other.id}" %>
+                <%= label_tag "fs_subtotal_of_#{other.id}", class: "mb-0" do %>
+                  <%= other.display_label %> <span class="small text-muted">(<%= other.row_type == "heading" ? "whole section" : FinancialStatementLayoutRow::ROW_TYPE_LABELS[other.row_type].downcase %>)</span>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+        <%= form.submit row.new_record? ? "Add row" : "Save row", class: "btn btn-outline-primary" %>
+        <%= link_to "Cancel", financial_statement_definitions_path(fund_id: row.fund_id, definition_id: definition.id), class: "btn btn-link" %>
+      <% end %>
+    <% end %>
+  </div>
+</div>

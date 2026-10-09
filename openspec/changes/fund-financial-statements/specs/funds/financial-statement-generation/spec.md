@@ -51,6 +51,15 @@ statement.
 - **WHEN** generation succeeds with accounting run #3331 covering the period
 - **THEN** the statement shows "Built from accounting run #3331"
 
+### Requirement: One statement set per end date
+The system SHALL refuse to generate statements for a period whose end date equals the end date of
+another statement set of the same fund with a different start date, naming that set; the existing
+set's year-to-date column covers the longer period.
+
+#### Scenario: Same end date, different period
+- **WHEN** Q3 2026 statements (1 Jul–30 Sep 2026) exist and the user generates 1 Jan–30 Sep 2026
+- **THEN** generation is refused with a message naming the 1 Jul–30 Sep 2026 statements and nothing is created
+
 ### Requirement: Statements run allowed over locked accounting runs
 A locked allocation run SHALL NOT block a new run whose formulas are all statement formulas. It
 SHALL continue to block every other overlapping run as today. A locked statements run SHALL block
@@ -67,6 +76,20 @@ another statements run over an overlapping period.
 #### Scenario: Ordinary run still blocked
 - **WHEN** accounting run #3331 is locked and a user starts an ordinary allocation run for Q3 2026
 - **THEN** it is refused as today
+
+### Requirement: Completeness warnings
+The system SHALL warn, without blocking Lock, when a cumulative entry feeding an account has no
+row dated within the period (stale balance), when an account placed on a statement is fed by no
+entries, and when an entry is stored both as a running total and as movements. Locking a set with
+warnings SHALL ask the user to confirm them.
+
+#### Scenario: Stale balance
+- **WHEN** Cash is uploaded as a running total whose latest row is 30 Jun 2026 and Q3 2026 statements are generated
+- **THEN** Cash shows its 30 Jun 2026 value and a warning names the date of that value
+
+#### Scenario: Account with no entries
+- **WHEN** "Accrued expenses" is on the Balance Sheet and no rule feeds it
+- **THEN** the line shows 0 and a warning says no entries feed it
 
 ### Requirement: Integrity checks
 Each generated statement SHALL carry four checks with pass/fail and the difference:

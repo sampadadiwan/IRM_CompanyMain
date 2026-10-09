@@ -1,0 +1,119 @@
+<%# Settings tab: what each setting is for, what to enter, what the current values find, and
+    candidate entries from the fund's own data ("Use" pre-fills; nothing is saved until Save settings). %>
+<%= render "financial_statements/tabs", fund: @fund, active: "settings" %>
+<% types = AccountEntry.where(fund_id: @fund.id, deleted_at: nil).where.not(entry_type: FinancialStatementCalculator::FS_ENTRY_TYPE).distinct.order(:entry_type).limit(200).pluck(:entry_type) %>
+<div class="row">
+  <div class="col-lg-7 mb-4">
+    <%= render FormCard.new(title: "Financial statement settings") do %>
+      <%= form_with(model: @setting, id: "fs_settings_form") do |form| %>
+        <%= render "financial_statement_accounts/errors", record: @setting %>
+
+        <%# ---- Financial year ---- %>
+        <h6 class="mb-1">1 · Financial year</h6>
+        <p class="small text-muted mb-2">Decides where <strong>year to date</strong> starts and which date the Balance Sheet's prior column shows.
+          Pick the month the fund's financial year begins (January for a calendar year, April for an April–March year).</p>
+        <div class="form-group mb-4">
+          <%= form.label :fiscal_year_start_month, "Financial year starts in" %>
+          <%= form.select :fiscal_year_start_month, (1..12).map { |m| [Date::MONTHNAMES[m], m] }, {}, class: "form-select" %>
+        </div>
+
+        <%# ---- NAV tie-out ---- %>
+        <h6 class="mb-1">2 · NAV tie-out <span class="badge bg-light text-muted">optional check</span></h6>
+        <p class="small text-muted mb-2">Checks the statements agree with the NAV the fund reports: partners' capital must equal the latest value of
+          <strong>the fund-level entry your NAV formula writes</strong> (often entry type <em>NAV</em>). Leave both blank to skip this check.</p>
+        <div class="row mb-2">
+          <div class="col"><%= form.label :nav_entry_type, "Entry type" %><%= form.text_field :nav_entry_type, class: "form-control", list: "fs_setting_types", maxlength: 60, placeholder: "e.g. NAV" %></div>
+          <div class="col"><%= form.label :nav_entry_name, "Name" %><%= form.text_field :nav_entry_name, class: "form-control", maxlength: 125, placeholder: "e.g. NAV Post Carry" %></div>
+        </div>
+        <div class="small mb-4" id="fs_nav_status">
+          <% if @nav_status.nil? %>
+            <span class="text-muted"><i class="ti ti-circle-minus"></i> Not set — the NAV tie-out will show <em>Skipped</em>.</span>
+          <% elsif @nav_status[:missing] %>
+            <span class="text-danger"><i class="ti ti-alert-triangle"></i> No fund-level entry <%= @setting.nav_entry_type %> · <%= @setting.nav_entry_name %> found — check the spelling.</span>
+          <% else %>
+            <span class="text-success"><i class="ti ti-circle-check"></i> Found: latest value <%= fs_amount(@nav_status[:value], @fund, decimals: 2) %> on <%= l(@nav_status[:date]) %>.</span>
+          <% end %>
+        </div>
+
+        <%# ---- Partners' capital tie-out ---- %>
+        <h6 class="mb-1">3 · Partners' capital tie-out <span class="badge bg-light text-muted">optional check</span></h6>
+        <p class="small text-muted mb-2">Checks the investors' capital accounts add up to the fund's partners' capital. Enter <strong>the entry that holds
+          each investor's closing capital on their folio</strong> (often produced by the fund's capital account formulas, e.g. <em>Capital · Closing Capital</em>).
+          Leave both blank to skip this check.</p>
+        <div class="row mb-2">
+          <div class="col"><%= form.label :capital_entry_type, "Entry type" %><%= form.text_field :capital_entry_type, class: "form-control", list: "fs_setting_types", maxlength: 60, placeholder: "e.g. Capital" %></div>
+          <div class="col"><%= form.label :capital_entry_name, "Name" %><%= form.text_field :capital_entry_name, class: "form-control", maxlength: 125, placeholder: "e.g. Closing Capital" %></div>
+        </div>
+        <div class="small mb-4" id="fs_capital_status">
+          <% if @capital_status.nil? %>
+            <span class="text-muted"><i class="ti ti-circle-minus"></i> Not set — the partners' capital tie-out will show <em>Skipped</em>.</span>
+          <% elsif @capital_status[:missing] %>
+            <span class="text-danger"><i class="ti ti-alert-triangle"></i> No folio has an entry <%= @setting.capital_entry_type %> · <%= @setting.capital_entry_name %> — check the spelling.</span>
+          <% else %>
+            <span class="text-success"><i class="ti ti-circle-check"></i> Found on <%= pluralize(@capital_status[:folios], "folio") %>; their latest values add up to <%= fs_amount(@capital_status[:value], @fund, decimals: 2) %>.</span>
+          <% end %>
+        </div>
+
+        <datalist id="fs_setting_types"><% types.each do |t| %><option value="<%= t %>"><% end %></datalist>
+        <%= form.submit "Save settings", class: "btn btn-outline-primary" %>
+      <% end %>
+    <% end %>
+  </div>
+
+  <div class="col-lg-5 mb-4">
+    <%# What these settings are for %>
+    <div class="fs-side-card shadow-sm mb-3" id="fs_settings_help">
+      <div class="fs-side-card__head">
+        <span class="fs-help-icon"><i class="ti ti-info-circle"></i></span>
+        <h6 class="fs-side-card__title">What these settings do</h6>
+      </div>
+      <div class="fs-side-card__body">
+        <ul class="fs-help-list mb-2">
+          <li><span class="fs-step">1</span><span><strong>Financial year</strong> — shapes the columns: where year to date starts and the Balance Sheet's prior year-end.</span></li>
+          <li><span class="fs-step">2</span><span><strong>NAV tie-out</strong> — proves the statements agree with the NAV the fund reports to investors.</span></li>
+          <li><span class="fs-step">3</span><span><strong>Partners' capital tie-out</strong> — proves they agree with the investors' own capital accounts.</span></li>
+        </ul>
+        <div class="text-muted">The two tie-outs are optional: if not set they show <em>Skipped</em> and don't stop you locking. Setting both is what shows the
+          statements match the rest of the fund's reporting. Also <strong>Exclude</strong> the NAV entry on the Mapping tab so it isn't listed as Unmapped.</div>
+      </div>
+    </div>
+
+    <%# Entries from this fund that look like the right ones %>
+    <div class="fs-side-card shadow-sm" id="fs_settings_suggestions">
+      <div class="fs-side-card__head">
+        <span class="fs-help-icon" style="--fs-accent:#16a34a;--fs-accent-bg:#f0fdf4"><i class="ti ti-bulb"></i></span>
+        <h6 class="fs-side-card__title">Entries in this fund that look right</h6>
+      </div>
+      <div class="fs-side-card__body">
+        <div class="fs-help-section-title mt-0">For the NAV tie-out · fund level</div>
+        <% if @nav_suggestions.empty? %>
+          <p class="text-muted">No fund-level entry with "NAV" in its type or name.</p>
+        <% else %>
+          <% @nav_suggestions.each do |type, name| %>
+            <div class="fs-suggestion">
+              <div><span class="badge bg-primary-subtle text-primary fs-suggestion__type"><%= type %></span> <span class="fs-suggestion__name"><%= name %></span></div>
+              <%= link_to "Use", edit_financial_statement_setting_path(@setting, nav_entry_type: type, nav_entry_name: name,
+                                                                       capital_entry_type: @setting.capital_entry_type, capital_entry_name: @setting.capital_entry_name),
+                          class: "btn btn-sm btn-outline-primary" %>
+            </div>
+          <% end %>
+        <% end %>
+
+        <div class="fs-help-section-title">For the partners' capital tie-out · on folios</div>
+        <% if @capital_suggestions.empty? %>
+          <p class="text-muted mb-0">No folio entry with "Capital" in its name.</p>
+        <% else %>
+          <% @capital_suggestions.each do |type, name| %>
+            <div class="fs-suggestion">
+              <div><span class="badge bg-success-subtle text-success fs-suggestion__type"><%= type %></span> <span class="fs-suggestion__name"><%= name %></span></div>
+              <%= link_to "Use", edit_financial_statement_setting_path(@setting, capital_entry_type: type, capital_entry_name: name,
+                                                                       nav_entry_type: @setting.nav_entry_type, nav_entry_name: @setting.nav_entry_name),
+                          class: "btn btn-sm btn-outline-primary" %>
+            </div>
+          <% end %>
+        <% end %>
+        <div class="text-muted mt-2"><i class="ti ti-hand-click"></i> <strong>Use</strong> fills the fields; click <strong>Save settings</strong> to keep it.</div>
+      </div>
+    </div>
+  </div>
+</div>

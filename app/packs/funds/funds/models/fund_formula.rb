@@ -6,7 +6,7 @@ class FundFormula < ApplicationRecord
   # Make all models searchable
   update_index('fund_formula') { self if index_record? }
 
-  TYPES = %w[AllocateMasterFundAccountEntry-Name AllocateMasterFundAccountEntryIndividual-Name AllocateMasterFundAccountEntry-EntryType AllocateMasterFundAccountEntryIndividual-EntryType AllocateAccountEntry-Name AllocateAccountEntryIndividual-Name AllocateAccountEntry-EntryType AllocateAccountEntryIndividual-EntryType AllocateAggregatePortfolios AllocatePortfolioInvestment AllocatePortfolioInvestment-Proforma AllocateMasterFundPortfolioInvestment AllocateMasterFundPortfolioInvestment-Proforma GenerateAccountEntry GenerateAccountEntryMultiple CumulateAccountEntry GenerateCustomField Percentage GeneratePortfolioNumbersForFund AllocateForPortfolioCompany AllocateForPortfolioCompany-Folio PreRunCheck PostRunCheck].sort.freeze
+  TYPES = %w[AllocateMasterFundAccountEntry-Name AllocateMasterFundAccountEntryIndividual-Name AllocateMasterFundAccountEntry-EntryType AllocateMasterFundAccountEntryIndividual-EntryType AllocateAccountEntry-Name AllocateAccountEntryIndividual-Name AllocateAccountEntry-EntryType AllocateAccountEntryIndividual-EntryType AllocateAggregatePortfolios AllocatePortfolioInvestment AllocatePortfolioInvestment-Proforma AllocateMasterFundPortfolioInvestment AllocateMasterFundPortfolioInvestment-Proforma GenerateAccountEntry GenerateAccountEntryMultiple CumulateAccountEntry GenerateCustomField Percentage GeneratePortfolioNumbersForFund GenerateFinancialStatementLines AllocateForPortfolioCompany AllocateForPortfolioCompany-Folio PreRunCheck PostRunCheck].sort.freeze
 
   # Rule types that assert something about the fund's data instead of computing entries.
   # AccountEntryAllocation::RunFormulas runs them in their own steps -- pre-run checks before
@@ -15,6 +15,9 @@ class FundFormula < ApplicationRecord
   PRE_RUN_CHECK = "PreRunCheck".freeze
   POST_RUN_CHECK = "PostRunCheck".freeze
   RUN_CHECK_TYPES = [PRE_RUN_CHECK, POST_RUN_CHECK].freeze
+  # Statement formulas (GenerateFinancialStatementLines) run only in runs tagged with this; every other
+  # run leaves them out (RunFormulas#formulas_in_scope). See app/packs/funds/financial_statements.
+  FINANCIAL_STATEMENTS_TAG = "Financial Statements".freeze
 
   # Maps the period helper wrapping the names array of a GenerateAccountEntryMultiple
   # formula to the prefix used when naming the generated entries

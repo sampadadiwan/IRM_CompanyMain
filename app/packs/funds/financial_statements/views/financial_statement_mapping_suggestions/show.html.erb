@@ -1,0 +1,271 @@
+<%# The AI draft: processing → review the proposed mapping (printed line ← account entries) → Approve or Discard.
+    Mapping only — amounts are never compared (users upload whatever statement they have). %>
+<% s = @suggestion %>
+<% can_edit = policy(s).update? %>
+<%= render "financial_statements/tabs", fund: @fund, active: "mapping" %>
+
+<%= turbo_frame_tag "fs_suggestion" do %>
+<div data-controller="auto-refresh" data-auto-refresh-url-value="<%= financial_statement_mapping_suggestion_path(s) %>"
+     data-auto-refresh-active-value="<%= s.status == 'processing' %>">
+
+  <div class="card shadow-sm mb-3">
+    <div class="card-body d-sm-flex justify-content-between align-items-center">
+      <div>
+        <h4 class="mb-1">Mapping draft from your uploaded statements</h4>
+        <div class="small text-muted"><i class="ti ti-file"></i> <%= s.file&.original_filename %> · uploaded by <%= s.user.name %></div>
+      </div>
+      <div class="d-flex gap-2" id="fs_suggestion_actions">
+        <% if s.ready? && can_edit %>
+          <%= button_to "Approve draft", approve_financial_statement_mapping_suggestion_path(s), method: :patch, class: "btn btn-outline-success", id: "fs_approve_btn",
+                        data: { action: "click->confirm#popup", turbo: false, method: :patch, title: "Approve this draft?",
+                                msg: fs_action_summary([["green", "ti-list-check", "Accounts and rules saved", "#{pluralize(s.account_lines.uniq { |l| l['label'] }.size, 'account')} and #{pluralize(Array(s.proposal_data['rules']).size, 'rule')} written to the fund's mapping"],
+                                                        ["blue", "ti-layout-list", "Layouts replaced", "Each statement found in the file is laid out as printed"],
+                                                        ["amber", "ti-alert-triangle", (s.unmapped_line_count.positive? ? "#{pluralize(s.unmapped_line_count, 'line')} without entries" : "Every line has entries"), "You can keep changing the mapping afterwards on the Mapping tab"]],
+                                                       intro_action: "Approve draft") } %>
+          <%= button_to "Discard", discard_financial_statement_mapping_suggestion_path(s), method: :patch, class: "btn btn-outline-danger", id: "fs_discard_btn",
+                        data: { action: "click->confirm#popup", turbo: false, method: :patch, title: "Discard this draft?", msg: "The draft is thrown away. The fund's mapping is not changed." } %>
+        <% end %>
+        <% if %w[ready failed].include?(s.status) && can_edit %>
+          <%# Ask the AI again with the same file (e.g. after fixing the dates) %>
+          <%= button_to (s.status == "failed" ? "Retry" : "Read again"), retry_draft_financial_statement_mapping_suggestion_path(s), method: :patch,
+                        class: "btn btn-outline-secondary", id: "fs_retry_btn" %>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <% case s.status %>
+  <% when "processing" %>
+    <div class="alert alert-info" id="fs_suggestion_processing"><i class="ti ti-loader-2"></i> Reading the statements and asking the AI. This page updates by itself.</div>
+  <% when "failed" %>
+    <div class="alert alert-danger" id="fs_suggestion_failed"><strong>The draft failed.</strong> <%= s.error %></div>
+  <% when "approved" %>
+    <div class="alert alert-success">This draft was approved. <%= link_to "Open the Mapping tab", financial_statement_mappings_path(fund_id: @fund.id), target: "_top" %>.</div>
+  <% when "discarded" %>
+    <div class="alert alert-secondary">This draft was discarded. The mapping was not changed.</div>
+  <% end %>
+
+  <% if s.status == "ready" %>
+    <div>
+    <% lines = s.lines %>
+    <% overview = fs_draft_entries_overview(s) %>
+    <% account_rows = lines.select { |l| l["role"] == "account" } %>
+    <% no_entries = account_rows.select { |l| fs_draft_line_action(s, l).first == "danger" } %>
+    <% unused = overview.select { |e| e[:state] == :unused } %>
+
+    <%# ---- How to read this page: three steps, in the dashboard stats-card style (dashboard_widgets/_stats) ---- %>
+    <div class="card shadow-sm mb-3" id="fs_draft_howto">
+      <div class="card-header bg-white"><h6 class="mb-0">What the AI proposes, and what you do here</h6></div>
+      <div class="card-body">
+        <div class="row row-cols-1 row-cols-lg-3 g-2">
+          <% [["info", "ti-file-text", "① Lines from your statement", "The statements and lines the AI found in your file. They become your statement accounts and layout."],
+              ["success", "ti-database", "② Account entries in CapHive", "The fund's own entries proposed for each line. Generating statements adds them up into that line."],
+              ["danger", "ti-checklist", "③ What you do", "Fill the gaps — lines with no entries, entries not used — then Approve draft. Nothing is saved before that."]].each do |color, icon, title, text| %>
+            <div class="col">
+              <div class="card overflow-hidden h-100 shadow-none border mb-0">
+                <div class="d-flex flex-row h-100">
+                  <div class="p-2 bg-<%= color %>-subtle d-flex align-items-center"><h3 class="text-<%= color %> mb-0 fs-6"><i class="ti <%= icon %>"></i></h3></div>
+                  <div class="p-2">
+                    <h3 class="text-<%= color %> mb-1 fs-5"><%= title %></h3>
+                    <span class="text-muted small d-block"><%= text %></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          <% end %>
+        </div>
+        <div class="small text-muted mt-2"><i class="ti ti-info-circle"></i> Only the mapping is proposed — amounts aren't compared. After approving, generate
+          statements: their checks (Balance, NAV tie-out…) show whether the figures add up.</div>
+        <%# ---- Summary: dashboard stats cards ---- %>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-2 mt-1" id="fs_draft_summary">
+          <% [["info", "ti-list-details", account_rows.size, "lines found in your statement (plus #{lines.size - account_rows.size} totals)"],
+              ["success", "ti-circle-check", account_rows.size - no_entries.size, "lines mapped to entries"],
+              [no_entries.any? ? "danger" : "success", no_entries.any? ? "ti-alert-triangle" : "ti-circle-check", no_entries.size, "lines with no entries yet"],
+              [unused.any? ? "danger" : "success", unused.any? ? "ti-alert-triangle" : "ti-circle-check", "#{unused.size} of #{overview.size}", "account entries not used"]].each do |color, icon, value, label| %>
+            <div class="col">
+              <div class="card overflow-hidden h-100 shadow-none border mb-0">
+                <div class="d-flex flex-row h-100">
+                  <div class="p-2 bg-<%= color %>-subtle d-flex align-items-center"><h3 class="text-<%= color %> mb-0 fs-6"><i class="ti <%= icon %>"></i></h3></div>
+                  <div class="p-2 text-truncate">
+                    <h3 class="text-<%= color %> mb-0 fs-4"><%= value %></h3>
+                    <span class="text-muted small text-truncate d-block" style="font-size: 0.75rem;" title="<%= label %>"><%= label %></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <% if no_entries.any? || unused.any? %>
+      <%# Mapping gaps: one row per gap — tinted icon (stats-card style), what is missing, and a link to fix it %>
+      <div class="card shadow-sm mb-3" id="fs_draft_attention">
+        <div class="card-header bg-white d-flex align-items-center">
+          <i class="ti ti-alert-triangle text-danger me-2"></i>
+          <h6 class="mb-0">Mapping gaps to look at before you approve</h6>
+          <span class="badge bg-danger-subtle text-danger ms-2"><%= no_entries.size + unused.size %></span>
+        </div>
+        <ul class="list-group list-group-flush">
+          <% no_entries.each do |line| %>
+            <li class="list-group-item d-flex align-items-center gap-3 py-3">
+              <span class="bg-danger-subtle text-danger rounded p-2 d-flex align-items-center"><i class="ti ti-file-text"></i></span>
+              <div class="flex-grow-1">
+                <div class="fw-semibold"><%= line["label"] %></div>
+                <div class="small text-muted">Line on <%= line["statement_title"].to_s.truncate(60) %> — no account entries feed it yet</div>
+              </div>
+              <%= link_to financial_statement_mapping_suggestion_path(s, tab: "lines", anchor: "line-#{line['key']}"), class: "btn btn-sm btn-outline-primary text-nowrap", data: { turbo: false } do %><i class="ti ti-arrow-down"></i> Go to line<% end %>
+            </li>
+          <% end %>
+          <% unused.each do |e| %>
+            <li class="list-group-item d-flex align-items-center gap-3 py-3">
+              <span class="bg-danger-subtle text-danger rounded p-2 d-flex align-items-center"><i class="ti ti-database"></i></span>
+              <div class="flex-grow-1">
+                <div class="fw-semibold"><%= e[:entry_type] %> · <%= e[:name] %></div>
+                <div class="small text-muted">Account entry not on any line — choose a line, or Excluded if it isn't a statement figure</div>
+              </div>
+              <%= link_to financial_statement_mapping_suggestion_path(s, tab: "entries", anchor: fs_draft_entry_anchor(e[:entry_type], e[:name])), class: "btn btn-sm btn-outline-primary text-nowrap", data: { turbo: false } do %><i class="ti ti-arrow-down"></i> Go to entry<% end %>
+            </li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <%# ---- Two views of the same mapping, as tabs (same tab bar as allocation_run_template_groups/show) ---- %>
+    <div class="card mb-3" id="fs_draft_tabs_card">
+      <nav class="nav nav-pills nav-justified p-3 pb-2 rounded align-items-center flex-row" role="tablist" id="fs_draft_tabs">
+        <a class="nav-link <%= 'active' if @tab == 'lines' %>" data-bs-toggle="tab" href="#fs_tab_lines" id="fs_tab_lines_link">
+          By statement line<span class="d-block small opacity-75">Each printed line ← the account entries that make it up</span></a>
+        <a class="nav-link <%= 'active' if @tab == 'entries' %>" data-bs-toggle="tab" href="#fs_tab_entries" id="fs_tab_entries_link">
+          By account entry<span class="d-block small opacity-75">Each account entry → the line it goes to</span></a>
+      </nav>
+      <div class="px-3 pb-3 small text-muted text-center" id="fs_tabs_note"><i class="ti ti-arrows-exchange me-1"></i>Both tabs show the same mapping, read in opposite
+        directions — a change made on either tab shows on the other.</div>
+    </div>
+    <div class="tab-content">
+      <div id="fs_tab_lines" class="tab-pane fade <%= 'show active' if @tab == 'lines' %>">
+    <%# ---- Each statement: printed line ← the account entries that will feed it ---- %>
+    <% s.statements_found.each do |statement| %>
+      <% statement_lines = lines.select { |l| l["statement_title"] == statement["title"] } %>
+      <div class="card shadow-sm mb-3">
+        <div class="card-header bg-white"><h6 class="mb-0"><%= statement["title"] %></h6></div>
+        <div class="card-body p-0">
+          <table class="table table-bordered mb-0 align-top">
+            <thead>
+              <tr>
+                <th><i class="ti ti-file-text"></i> ① Line from your statement</th>
+                <th><i class="ti ti-database"></i> ② Account entries in CapHive that will feed it</th>
+                <th>Status</th>
+                <th style="min-width: 260px"><i class="ti ti-checklist"></i> ③ What to do</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% section = nil %>
+              <% statement_lines.each do |line| %>
+                <% if line["section"].present? && line["section"] != section %>
+                  <% section = line["section"] %>
+                  <tr class="table-light"><td colspan="4" class="small fw-semibold text-muted"><%= section %></td></tr>
+                <% end %>
+                <% css, status, todo = fs_draft_line_action(s, line) %>
+                <% entries = line["role"] == "account" ? fs_draft_line_entries(s, line) : [] %>
+                <tr id="line-<%= line['key'] %>" class="<%= 'table-light' unless line['role'] == 'account' %>">
+                  <td>
+                    <div class="fw-semibold"><%= line["label"] %></div>
+                    <div class="small text-muted">
+                      <%= line["role"] == "account" ? FinancialStatementAccount::TYPE_LABELS[line["account_type"]] : FinancialStatementLayoutRow::ROW_TYPE_LABELS[line["role"]] %>
+                      <% if line["change"] == "new" %>· new account<% elsif line["change"] == "changed" %>· changes an existing account<% elsif line["change"] == "same" %>· existing account<% end %>
+                    </div>
+                  </td>
+                  <td class="small">
+                    <% if line["role"] != "account" %>
+                      <span class="text-muted"><%= fs_draft_row_note(s, line) %></span>
+                    <% elsif entries.any? %>
+                      <% entries.each do |label| %>
+                        <div><i class="ti ti-arrow-narrow-right text-success"></i> <%= label %></div>
+                      <% end %>
+                    <% elsif status == "Mapped on another statement" %>
+                      <span class="text-muted">Same account as on another statement — its entries are mapped there</span>
+                    <% else %>
+                      <span class="text-danger">No account entries feed this line yet</span>
+                    <% end %>
+                  </td>
+                  <td class="text-nowrap"><%= fs_draft_status_badge(css, status) %></td>
+                  <td class="small">
+                    <% if todo.present? %><div class="text-muted mb-1"><%= todo %></div><% end %>
+                    <% if can_edit && line["role"] == "account" %>
+                      <% rules = s.rules_for(line["key"]) %>
+                      <% if rules.any? %>
+                        <%# Each entry's own dropdown, always visible: choose another line, Excluded or Not placed %>
+                        <% rules.each do |rule| %>
+                          <%# Dimmed: the line is already mapped; full strength on hover / focus %>
+                          <%= form_with url: move_financial_statement_mapping_suggestion_path(s), method: :patch, class: "mb-1 fs-draft__quiet", data: { turbo_frame: "_top" } do %>
+                            <%= hidden_field_tag :entry_type, rule["entry_type"], id: nil %><%= hidden_field_tag :name, rule["name"], id: nil %>
+                            <label class="form-label small mb-0 text-muted">Move <%= rule["entry_type"] %> · <%= rule["name"].presence || "(every name)" %> to</label>
+                            <%= select_tag :target, fs_draft_move_options(s, line["key"]), class: "form-select form-select-sm", id: nil, onchange: "this.form.requestSubmit()" %>
+                          <% end %>
+                        <% end %>
+                      <% elsif status != "Mapped on another statement" %>
+                        <%= form_with url: move_financial_statement_mapping_suggestion_path(s), method: :patch, data: { turbo_frame: "_top" } do %>
+                          <%= hidden_field_tag :target, line["key"], id: nil %>
+                          <%= select_tag :entry, fs_draft_entry_options(s), prompt: "+ Add an entry to this line…", class: "form-select form-select-sm", id: nil,
+                                         onchange: "this.form.requestSubmit()" %>
+                        <% end %>
+                      <% end %>
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    <% end %>
+
+      </div>
+      <div id="fs_tab_entries" class="tab-pane fade <%= 'show active' if @tab == 'entries' %>">
+    <%# ---- The other way round: every account entry and where it goes ---- %>
+    <div class="card shadow-sm mb-3" id="fs_unplaced">
+      <div class="card-header bg-white">
+        <h6 class="mb-0"><i class="ti ti-database"></i> Your account entries in CapHive</h6>
+        <div class="small text-muted">Each should go to a line, or be <strong>Excluded</strong> if it isn't a statement figure (e.g. NAV). Entries not used are listed first.</div>
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-sm mb-0 align-middle">
+          <thead><tr><th>Account entry (entry type · name)</th><th>Goes to</th><% if can_edit %><th>Change</th><% end %></tr></thead>
+          <tbody>
+            <% overview.each do |e| %>
+              <tr id="<%= fs_draft_entry_anchor(e[:entry_type], e[:name]) %>">
+                <td class="fw-semibold"><%= e[:entry_type] %> · <%= e[:name] %></td>
+                <td><%= fs_draft_entry_badge(e) %></td>
+                <% if can_edit %>
+                  <td>
+                    <%= form_with url: move_financial_statement_mapping_suggestion_path(s), method: :patch, class: ("fs-draft__quiet" unless e[:state] == :unused), data: { turbo_frame: "_top" } do %>
+                      <%= hidden_field_tag :entry_type, e[:entry_type], id: nil %><%= hidden_field_tag :name, e[:rule_name], id: nil %><%= hidden_field_tag :tab, "entries", id: nil %><%= hidden_field_tag :row, fs_draft_entry_anchor(e[:entry_type], e[:name]), id: nil %>
+                      <%= select_tag :target, fs_draft_move_options(s, e[:state] == :line ? e[:goes_to]&.dig("key") : (e[:state] == :excluded ? FinancialStatementMappingSuggestion::EXCLUDED : FinancialStatementMappingSuggestion::UNPLACED)),
+                                     class: "form-select form-select-sm", id: nil, onchange: "this.form.requestSubmit()" %>
+                    <% end %>
+                  </td>
+                <% end %>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+      </div>
+    </div>
+
+    <% dropped = Array(s.proposal_data["dropped"]) %>
+    <% if dropped.any? %>
+      <div class="card shadow-sm mb-3" id="fs_dropped">
+        <div class="card-header bg-white"><h6 class="mb-0">Parts of the AI's answer CapHive ignored (<%= dropped.size %>)</h6></div>
+        <div class="card-body small">
+          <ul class="mb-0"><% dropped.each do |d| %><li><%= [d["entry_type"], d["name"]].compact_blank.join(" · ") %> — <%= d["reason"] %></li><% end %></ul>
+        </div>
+      </div>
+    <% end %>
+    </div>
+  <% end %>
+</div>
+<% end %>

@@ -1,0 +1,63 @@
+<%# One rendered statement (FinancialStatementPresenter shape), styled like a printed statement
+    (custom/financial_statements.scss). Shared by the statement view, the mapping/layout previews and
+    the statement tabs. bare: true drops the card frame (used inside a tab). %>
+<% bare ||= false %>
+<% table = capture do %>
+  <table class="fs-statement" data-statement="<%= statement_data["name"] %>">
+    <thead>
+      <tr>
+        <th></th>
+        <% statement_data["columns"].each do |column| %>
+          <th class="fs-amount">
+            <%= column["label"] %>
+            <% if column["note"].present? %>
+              <div class="fs-col-note <%= column['note'].include?('changed') ? 'text-warning' : '' %>"><%= column["note"] %></div>
+            <% end %>
+          </th>
+        <% end %>
+      </tr>
+    </thead>
+    <tbody>
+      <% statement_data["rows"].each do |row| %>
+        <% type = row["row_type"] %>
+        <tr class="fs-row-<%= type %>">
+          <td><%= row["label"] %></td>
+          <% statement_data["columns"].each do |column| %>
+            <% value = row["values"][column["key"]] %>
+            <td class="fs-amount <%= 'fs-negative' if value.present? && value.to_d.negative? %>"><%= fs_amount(value, fund) unless type == "heading" %></td>
+          <% end %>
+        </tr>
+      <% end %>
+    </tbody>
+    <% if statement_data["balance_line"] %>
+      <%# Balance Sheet: Assets = Liabilities + Partners' capital on one line, per column %>
+      <tfoot>
+        <tr class="fs-row-equality">
+          <td>Assets = Liabilities + Partners' capital</td>
+          <% statement_data["columns"].each do |column| %>
+            <% line = statement_data["balance_line"][column["key"]] %>
+            <td class="fs-amount">
+              <%= fs_amount(line["assets"], fund) %> = <%= fs_amount(line["liabilities"], fund) %> + <%= fs_amount(line["capital"], fund) %>
+              <% if line["balanced"] %>
+                <span class="text-success" title="Balances">✓</span>
+              <% else %>
+                <span class="text-danger" title="Doesn't balance">✗ <%= fs_amount(line["assets"].to_d - line["liabilities"].to_d - line["capital"].to_d, fund) %></span>
+              <% end %>
+            </td>
+          <% end %>
+        </tr>
+      </tfoot>
+    <% end %>
+  </table>
+<% end %>
+<% if bare %>
+  <%= table %>
+<% else %>
+  <div class="fs-statement-card shadow-sm bg-white">
+    <div class="fs-statement-card__head">
+      <h5 class="fs-statement-card__title" id="fs_statement_title"><%= statement_data["name"] %></h5>
+      <div class="fs-statement-card__sub"><%= fund.name %> · <%= fund.currency %></div>
+    </div>
+    <div id="fs_statement_table"><%= table %></div>
+  </div>
+<% end %>

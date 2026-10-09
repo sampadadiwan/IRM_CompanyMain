@@ -1,0 +1,40 @@
+<%# Add / edit a mapping rule: entry type + optional exact name -> account, or Excluded. %>
+<% entry_types = AccountEntry.where(fund_id: rule.fund_id, capital_commitment_id: nil, deleted_at: nil)
+                             .where.not(entry_type: FinancialStatementCalculator::FS_ENTRY_TYPE).distinct.order(:entry_type).pluck(:entry_type) %>
+<% names = AccountEntry.where(fund_id: rule.fund_id, capital_commitment_id: nil, deleted_at: nil, entry_type: rule.entry_type.presence || entry_types.first)
+                       .distinct.order(:name).limit(500).pluck(:name) %>
+<% accounts = FinancialStatementAccount.where(fund_id: rule.fund_id).ordered %>
+<% target = rule.excluded ? "excluded" : rule.financial_statement_account_id %>
+<div class="row">
+  <div class="col-lg-6 mb-4">
+    <%= render FormCard.new(title: rule.new_record? ? "Map account entries" : "Rule: #{rule.key_label}") do %>
+      <%= form_with(model: rule, id: "fs_rule_form") do |form| %>
+        <%= render "financial_statement_accounts/errors", record: rule %>
+        <%= form.hidden_field :fund_id if rule.new_record? %>
+        <%= hidden_field_tag :return_to, params[:return_to] %>
+        <div class="form-group mb-3">
+          <%= form.label :entry_type %>
+          <%= form.text_field :entry_type, class: "form-control", list: "fs_entry_types", maxlength: 60 %>
+          <datalist id="fs_entry_types"><% entry_types.each do |t| %><option value="<%= t %>"><% end %></datalist>
+        </div>
+        <div class="form-group mb-3">
+          <%= form.label :name, "Name (leave blank for every name of this entry type)" %>
+          <%= form.text_field :name, class: "form-control", list: "fs_entry_names", maxlength: 125 %>
+          <datalist id="fs_entry_names"><% names.each do |n| %><option value="<%= n %>"><% end %></datalist>
+          <div class="form-text">Blank catches names uploaded later too (e.g. one "Deal Expense" per portfolio company).</div>
+        </div>
+        <div class="form-group mb-3">
+          <%= label_tag "financial_statement_mapping_rule_target", "Goes to" %>
+          <%= select_tag "financial_statement_mapping_rule[target]",
+                         options_for_select([["— choose an account —", ""]] + accounts.map { |a| [a.name, a.id] } + [["Excluded (not on any statement)", "excluded"]], target),
+                         class: "form-select", id: "financial_statement_mapping_rule_target" %>
+          <div class="form-text">
+            No suitable account? <%= link_to "Add one", new_financial_statement_account_path(fund_id: rule.fund_id, return_to: request.fullpath) %> first.
+          </div>
+        </div>
+        <%= form.submit rule.new_record? ? "Save rule" : "Save rule", class: "btn btn-outline-primary" %>
+        <%= link_to "Cancel", params[:return_to].presence || financial_statement_mappings_path(fund_id: rule.fund_id), class: "btn btn-link" %>
+      <% end %>
+    <% end %>
+  </div>
+</div>

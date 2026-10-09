@@ -240,6 +240,12 @@ commands = [
                           <% end %>
                         </li>
                       <% end %>
+                      <li>
+                        <%# Fund financial statements (Balance Sheet, P&L, ...) built from the account entries %>
+                        <%= link_to financial_statements_path(fund_id: @fund.id), class: "dropdown-item", id: "fund_financial_statements_link", data: {bs_toggle: "tooltip", bs_title: "Balance Sheet, P&L and schedules built from this fund's account entries"} do %>
+                          <i class="ti ti-file-spreadsheet"></i>Financial Statements
+                        <% end %>
+                      </li>
                     </ul>
                   </li>
                 <% end %>

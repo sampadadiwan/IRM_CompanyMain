@@ -1,0 +1,82 @@
+<%# Statements preview (opened in its own browser tab from the Mapping tab): one tab per statement,
+    and under each statement only the accounts it uses, with the account entries feeding each one. %>
+<% definitions = FinancialStatementDefinition.where(fund_id: @fund.id).ordered.to_a %>
+<div class="d-sm-flex align-items-center justify-content-between mb-3">
+  <h1 class="h3 mb-0 text-gray-800">Statements preview <span class="text-muted fs-5">· <%= @fund.name %></span></h1>
+  <%= form_with url: preview_financial_statement_mappings_path, method: :get, class: "d-flex align-items-end gap-2", id: "fs_preview_period_form" do %>
+    <%= hidden_field_tag :fund_id, @fund.id %>
+    <div><label class="form-label mb-0 small">From</label><%= date_field_tag :period_start, @period_start %></div>
+    <div><label class="form-label mb-0 small">To</label><%= date_field_tag :period_end, @period_end %></div>
+    <%= submit_tag "Preview", class: "btn btn-outline-primary", name: nil %>
+  <% end %>
+</div>
+<p class="small text-muted">Computed live from the fund's account entries and its mapping for <%= @preview.period_label %>. Nothing is run or saved.
+  <%= link_to "Back to the mapping", financial_statement_mappings_path(fund_id: @fund.id, period_start: @period_start, period_end: @period_end) %></p>
+
+<div class="row">
+  <div class="col-xl-9 mb-3">
+    <div id="fs_preview_statement_tabs">
+      <%# Same tab bar as the fund details page (_owner_fund_details): justified, equal-width pills %>
+      <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row" role="tablist">
+        <% @preview.statements.each_with_index do |statement_data, i| %>
+          <a class="nav-link <%= 'active' if i.zero? %>" data-bs-toggle="pill" href="#fs_preview_tab_<%= i %>" role="tab"><%= statement_data["name"] %></a>
+        <% end %>
+      </nav>
+      <div class="tab-content">
+        <% @preview.statements.each_with_index do |statement_data, i| %>
+          <% account_ids = @accounts_by_definition[statement_data["definition_id"]] || [] %>
+          <div class="tab-pane fade <%= 'show active' if i.zero? %>" id="fs_preview_tab_<%= i %>" role="tabpanel">
+            <%= render "financial_statements/statement_table", statement_data:, fund: @fund %>
+
+            <%# Only the accounts this statement uses, and what feeds them %>
+            <h6 class="mt-4 mb-2">Accounts on this statement (<%= account_ids.size %>)</h6>
+            <% if account_ids.empty? %>
+              <p class="text-muted small">No accounts are placed on this statement yet. Add them on the <%= link_to "Layout", financial_statement_definitions_path(fund_id: @fund.id, definition_id: statement_data["definition_id"]) %> tab.</p>
+            <% else %>
+              <table class="table table-sm align-middle fs-preview-accounts" data-statement="<%= statement_data["name"] %>">
+                <thead>
+                  <tr><th>Account</th><th>Type</th><th>Entries feeding it</th><th class="text-end">This period</th><th class="text-end">Balance</th></tr>
+                </thead>
+                <tbody>
+                  <% account_ids.each do |account_id| %>
+                    <% account = @accounts[account_id] %>
+                    <% next unless account %>
+                    <% figures = @result.figures[account_id] || {} %>
+                    <% entries = @entries_by_account[account_id] %>
+                    <tr>
+                      <td class="fw-semibold"><%= account.name %><%= tag.span(" sign flipped", class: "badge bg-light text-muted") if account.flip_sign %></td>
+                      <td class="small text-muted"><%= account.type_label %> · <%= account.behaviour.humanize %></td>
+                      <td class="small">
+                        <% if entries.empty? %>
+                          <span class="text-warning"><i class="ti ti-alert-triangle"></i> No entries feed this account</span>
+                        <% else %>
+                          <% entries.each do |entry_type, name, entry_figures| %>
+                            <div class="d-flex justify-content-between gap-3">
+                              <span><%= entry_type %> · <%= name %></span>
+                              <span class="text-muted text-nowrap"><%= fs_amount(entry_figures[account.behaviour == "movement" ? "period" : "balance"], @fund) %></span>
+                            </div>
+                          <% end %>
+                        <% end %>
+                      </td>
+                      <td class="text-end text-nowrap"><%= fs_amount(figures["period"], @fund) %></td>
+                      <td class="text-end text-nowrap"><%= fs_amount(figures["balance"], @fund) %></td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+  <div class="col-xl-3 mb-3">
+    <%= render "financial_statements/checks", checks: @result.checks, fund: @fund %>
+    <% if @result.unmapped.any? %>
+      <div class="alert alert-warning mt-3 small" id="fs_preview_unmapped">
+        <strong><%= pluralize(@result.unmapped.size, "entry") %> not mapped</strong> — not on any statement above.
+        <%= link_to "Map them", financial_statement_mappings_path(fund_id: @fund.id, period_start: @period_start, period_end: @period_end) %>
+      </div>
+    <% end %>
+  </div>
+</div>

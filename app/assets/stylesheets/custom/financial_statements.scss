@@ -1,0 +1,226 @@
+// Fund financial statements: a printed-statement look for the statement view, the Mapping/Layout
+// previews and the AI draft (app/packs/funds/financial_statements). Overrides the app's default
+// table header colours inside .fs-statement only.
+.fs-statement-card {
+  border: 1px solid var(--bs-border-color);
+  border-radius: 0.5rem;
+  overflow: hidden;
+
+  .fs-statement-card__head {
+    padding: 0.9rem 1.25rem 0.6rem;
+    border-bottom: 1px solid var(--bs-border-color);
+    background: var(--bs-body-bg);
+
+    .fs-statement-card__title { font-size: 1.05rem; font-weight: 600; margin: 0; }
+    .fs-statement-card__sub { font-size: 0.8rem; color: var(--bs-secondary-color); }
+  }
+}
+
+table.fs-statement {
+  width: 100%;
+  margin: 0;
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+
+  thead th {
+    background: transparent !important;
+    color: var(--bs-secondary-color) !important;
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    border-bottom: 2px solid var(--bs-border-color) !important;
+    padding: 0.6rem 1.25rem;
+    white-space: nowrap;
+    vertical-align: bottom;
+
+    .fs-col-note { text-transform: none; letter-spacing: 0; font-weight: 400; font-size: 0.72rem; }
+  }
+
+  td {
+    padding: 0.35rem 1.25rem;
+    border: 0;
+    background: transparent;
+  }
+
+  td.fs-amount { text-align: right; white-space: nowrap; width: 18%; }
+  th.fs-amount { text-align: right; width: 18%; }
+
+  // Section heading: small caps, a little air above
+  tr.fs-row-heading td {
+    padding-top: 0.9rem;
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--bs-secondary-color);
+  }
+
+  tr.fs-row-account td:first-child { padding-left: 2.25rem; }
+  tr.fs-row-account:hover td { background: var(--bs-tertiary-bg); }
+
+  // Subtotals: ruled above the figures
+  tr.fs-row-subtotal td { font-weight: 600; }
+  tr.fs-row-subtotal td.fs-amount { border-top: 1px solid var(--bs-border-color-translucent); }
+
+  // Net result / opening / closing capital: bold; closing gets the double rule of a final total
+  tr.fs-row-net_result td,
+  tr.fs-row-opening td { font-weight: 600; }
+  tr.fs-row-closing td { font-weight: 700; }
+  tr.fs-row-closing td.fs-amount { border-top: 1px solid var(--bs-emphasis-color); border-bottom: 3px double var(--bs-emphasis-color); }
+
+  .fs-negative { color: var(--bs-danger-text-emphasis); }
+}
+
+// Balance Sheet foot line: Assets = Liabilities + Partners' capital
+table.fs-statement tfoot tr.fs-row-equality td {
+  border-top: 2px solid var(--bs-border-color);
+  padding-top: 0.6rem;
+  padding-bottom: 0.6rem;
+  font-size: 0.8rem;
+  color: var(--bs-secondary-color);
+  background: var(--bs-tertiary-bg);
+}
+
+// ---- "How checks work" popup and the Settings side cards ----
+.fs-help-intro {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+
+  .fs-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.7rem;
+    border-radius: 999px;
+    background: var(--bs-tertiary-bg);
+    font-size: 0.8rem;
+    color: var(--bs-body-color);
+  }
+}
+
+.fs-help-grid { display: grid; gap: 0.75rem; }
+
+.fs-help-card {
+  --fs-accent: #2563eb;
+  --fs-accent-bg: #eff6ff;
+  border: 1px solid var(--bs-border-color);
+  border-left: 4px solid var(--fs-accent);
+  border-radius: 0.6rem;
+  padding: 0.9rem 1rem;
+  background: var(--bs-body-bg);
+
+  &.fs-accent-green { --fs-accent: #16a34a; --fs-accent-bg: #f0fdf4; }
+  &.fs-accent-purple { --fs-accent: #7c3aed; --fs-accent-bg: #f5f3ff; }
+  &.fs-accent-amber { --fs-accent: #d97706; --fs-accent-bg: #fffbeb; }
+
+  .fs-help-card__head { display: flex; align-items: center; gap: 0.65rem; margin-bottom: 0.4rem; }
+  .fs-help-card__title { font-weight: 600; font-size: 0.95rem; margin: 0; }
+  .fs-help-card__q { font-size: 0.85rem; color: var(--bs-secondary-color); margin-bottom: 0.6rem; }
+
+  .fs-help-rows {
+    display: grid;
+    grid-template-columns: 9rem 1fr;
+    gap: 0.35rem 0.75rem;
+    font-size: 0.83rem;
+    margin: 0;
+
+    dt { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--bs-secondary-color); padding-top: 0.15rem; }
+    dd { margin: 0; }
+  }
+}
+
+.fs-help-icon {
+  flex: 0 0 2rem;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--fs-accent-bg, #eff6ff);
+  color: var(--fs-accent, #2563eb);
+  font-size: 1rem;
+}
+
+.fs-help-section-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--bs-secondary-color);
+  margin: 1.25rem 0 0.5rem;
+}
+
+.fs-help-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 0.85rem;
+
+  li { display: flex; gap: 0.6rem; align-items: flex-start; padding: 0.4rem 0; border-bottom: 1px dashed var(--bs-border-color); }
+  li:last-child { border-bottom: 0; }
+
+  .fs-step {
+    flex: 0 0 1.4rem;
+    height: 1.4rem;
+    border-radius: 50%;
+    background: var(--bs-tertiary-bg);
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 576px) {
+  .fs-help-card .fs-help-rows { grid-template-columns: 1fr; }
+}
+
+// Settings side cards
+.fs-side-card {
+  border: 1px solid var(--bs-border-color);
+  border-radius: 0.6rem;
+  background: var(--bs-body-bg);
+  overflow: hidden;
+
+  .fs-side-card__head { display: flex; align-items: center; gap: 0.65rem; padding: 0.85rem 1rem; border-bottom: 1px solid var(--bs-border-color); }
+  .fs-side-card__title { font-weight: 600; margin: 0; font-size: 0.95rem; }
+  .fs-side-card__body { padding: 0.85rem 1rem; font-size: 0.85rem; }
+}
+
+.fs-suggestion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--bs-border-color);
+  border-radius: 0.5rem;
+  margin-bottom: 0.4rem;
+
+  .fs-suggestion__type { font-size: 0.72rem; }
+  .fs-suggestion__name { font-weight: 500; }
+}
+
+// AI draft review: colour-coded sources (① uploaded statement, ② CapHive entries, ③ result)
+
+
+// Already-mapped controls on the AI draft: dimmed until hovered / focused, so the unmapped ones stand out
+.fs-draft__quiet {
+  opacity: 0.45;
+  transition: opacity 0.15s ease-in-out;
+
+  &:hover, &:focus-within { opacity: 1; }
+}
+
+
+
+
+
+
+
+
