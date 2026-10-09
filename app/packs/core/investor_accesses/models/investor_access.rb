@@ -172,11 +172,64 @@ class InvestorAccess < ApplicationRecord
     cc&.scan(%r{\b[a-zA-Z0-9.!\#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\b})&.join(",")
   end
 
+  # Changed: Module 10 — auto-tag as NDA signatory when investor access is approved.
+  # Why: When new investors are added to a folder after the NDA is already configured, they have
+  #   zero signatories and their LPs see the "blocked" page. This callback ensures the first
+  #   approved user per investor is auto-tagged for any existing NDA configs on folders they have
+  #   access to — matching the on-creation behavior in NdaConfigsController#auto_tag_default_signatories.
+  after_commit :auto_tag_nda_signatory_if_needed, on: %i[create update], if: :approved?
+
   # When an advisor's InvestorAccess is destroyed, revoke their fund-level AccessRight for any
   # fund where they no longer have another active InvestorAccess (i.e. no remaining approved
   # InvestorAccess for investors in that fund via this user).  Previously the cache rebuild
   # handled this; now we clean the AR directly.
   after_commit :remove_advisor_fund_access_rights, on: :destroy, if: :is_investor_advisor?
+
+  # Changed: Module 10 — auto-tags this user as NDA signatory for folder NDAs the investor can access.
+  # Why: Without this, investors added after NDA setup have zero signatories and their LPs are blocked.
+  #   Scoped to folder-level AccessRight (not entity-wide) to match NdaStatusResolver behavior.
+  #
+  # N+1 analysis:
+  #   Query 1: NdaConfig.where(entity_id:, enabled:, owner_type:) — indexed on entity_id, 1-3 rows typical
+  #   Query 2 (per NDA): AccessRight.exists?(...) — indexed on [owner_type, owner_id], existence check only
+  #   Query 3 (per NDA): NdaSignatory.exists?(...) — indexed on unique [nda_config_id, user_id]
+  #   Query 4 (per NDA, conditional): NdaSignatory.create — single insert
+  #   Total: 1 + (2-3 per NDA config). Typical entity has 1-3 NDA configs = 3-10 queries. All indexed.
+  #
+  # @return [void]
+  def auto_tag_nda_signatory_if_needed
+    # Changed: Only check enabled NDA configs on folders (not other owner types).
+    # Why: NDA signatory gating is folder-specific; other owner types don't use this flow yet.
+    nda_configs = NdaConfig.where(entity_id: entity_id, enabled: true, owner_type: "Folder")
+    return if nda_configs.none?
+
+    nda_configs.each do |nda_config|
+      # Changed: Check folder-level access via AccessRight before tagging.
+      # Why: The investor must have an AccessRight on this specific folder — entity-wide access alone
+      #   does not grant folder access and should not trigger signatory tagging.
+      next unless AccessRight.exists?(
+        ["owner_type = ? AND owner_id = ? AND entity_id = ? AND (access_to_investor_id = ? OR access_to_category = ?)",
+         "Folder", nda_config.owner_id, entity_id, investor_id, investor.category]
+      )
+
+      # Changed: Check if ANY user of this investor already has a signatory for this NDA.
+      # Why: One signatory per investor is sufficient — the investor is "covered" once any of their
+      #   users is tagged. Avoids redundant signatory rows.
+      investor_user_ids = InvestorAccess.where(investor_id: investor_id, entity_id: entity_id, approved: true).select(:user_id)
+      next if NdaSignatory.exists?(nda_config_id: nda_config.id, user_id: investor_user_ids)
+
+      # Changed: Use create (not create!) with rescue for idempotency.
+      # Why: Race condition — two accesses approved simultaneously could both pass the exists? check.
+      #   The unique index on [nda_config_id, user_id] catches the duplicate; we skip silently.
+      NdaSignatory.create!(
+        nda_config: nda_config,
+        user_id: user_id,
+        tagged_by_id: granted_by || user_id
+      )
+    rescue ActiveRecord::RecordNotUnique, ActiveRecord::RecordInvalid
+      next
+    end
+  end
 
   def remove_advisor_fund_access_rights
     fund_ids = investor.capital_commitments.pluck(:fund_id).uniq
