@@ -6,8 +6,21 @@
                               parent_folder_id: params[:parent_folder_id], no_folders: true),
         class: ["truncate", (folder.id.to_s == params[:folder_id].to_s ? "selected" : nil)].compact.join(" "),
         data: { folder_id: folder.id } %>
-  <% if folder.nda_required? && current_user.curr_role_employee? %>
-    <i class="ti ti-lock text-warning ms-1" style="font-size: 0.75rem;"
-       data-bs-toggle="tooltip" title="NDA required"></i>
+  <%# Changed: Added inheritance-aware lock icon with "(Inherited)" label.
+       Why: When a single folder's caret is replaced via Turbo Stream (after NDA config create/update),
+       the resolver isn't available. Uses model methods (effective_nda_config, nda_source_folder)
+       directly — acceptable here because it's a single folder, not the full tree (no N+1 risk). %>
+  <% if folder.in_data_room? && current_user.curr_role_employee? %>
+    <% nda_config = folder.effective_nda_config %>
+    <% if nda_config&.enabled? %>
+      <% source = folder.nda_source_folder %>
+      <% inherited = source && source.id != folder.id %>
+      <i class="ti ti-lock text-warning ms-1" style="font-size: 0.75rem;"
+         data-bs-toggle="tooltip"
+         title="<%= inherited ? "NDA inherited from: #{source.name}" : "NDA required" %>"></i>
+      <% if inherited %>
+        <span class="text-muted ms-1" style="font-size: 0.7rem;">(Inherited)</span>
+      <% end %>
+    <% end %>
   <% end %>
 </span>

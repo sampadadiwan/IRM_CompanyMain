@@ -14,10 +14,20 @@ class NdaConfigsController < ApplicationController
   before_action :set_nda_config, only: %i[edit update]
 
   # GET /folders/:folder_id/nda_config/new
-  # @return [void] Renders the NDA settings modal with an empty or existing config form.
+  # Changed: Added inheritance state detection to render context-appropriate modal variant.
+  # Why: Module 5 introduces three NDA modes (inherit/own/opt_out). The same "new" action must
+  # show different content: an info panel for inherited/opted-out folders, or the full form
+  # when the folder has its own config or the GP clicks "Set Own NDA" (override param).
+  # @return [void] Renders the NDA settings modal with context-appropriate content.
   def new
     @nda_config = @owner.nda_config || @owner.build_nda_config
     authorize @nda_config
+
+    @inheritance_state = if params[:override].present?
+                           "own"
+                         else
+                           @folder.nda_inheritance_mode
+                         end
   end
 
   # POST /folders/:folder_id/nda_config
@@ -30,6 +40,10 @@ class NdaConfigsController < ApplicationController
 
     respond_to do |format|
       if @nda_config.save
+        # Changed: Set folder's nda_inheritance_mode to "own" after saving config.
+        # Why: Creating an NDA config means this folder now has its own NDA — it should
+        # not inherit from a parent. This keeps mode and config in sync.
+        @folder.update!(nda_inheritance_mode: "own") if @folder
         flash.now[:notice] = "NDA settings saved successfully."
         format.turbo_stream
         format.html { redirect_to @owner, notice: "NDA settings saved successfully." }
@@ -80,9 +94,12 @@ class NdaConfigsController < ApplicationController
     # Why: Turbo Stream templates replace folder-specific DOM elements by @folder.id.
     @folder = @owner if @owner.is_a?(Folder)
 
-    return if @owner.entity_id == current_user.entity_id
+    raise Pundit::NotAuthorizedError, "not allowed to access this resource" unless @owner.entity_id == current_user.entity_id
 
-    raise Pundit::NotAuthorizedError, "not allowed to access this resource"
+    # Changed: Added in_data_room? guard for folder owners.
+    # Why: NDA config is only valid for Data Room folders. Without this guard, a crafted
+    # request could create an NDA config on a non-Data-Room folder.
+    raise Pundit::NotAuthorizedError, "NDA settings are only available for Data Room folders" if @folder && !@folder.in_data_room?
   end
 
   # @return [void] Loads the existing NDA config for edit/update actions.

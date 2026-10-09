@@ -48,13 +48,23 @@
                     <%= link_to folder_name, send(folder_url_method, folder_id: folder.id, entity_id: params[:entity_id], parent_folder_id: params[:parent_folder_id], no_folders: true, widget_id: widget_id, documents_as_tags: documents_as_tags, show_action_buttons: show_action_buttons),
                           class: ["truncate", (folder.id.to_s == params[:folder_id].to_s ? "selected" : nil)].compact.join(" "),
                           data: { folder_id: folder.id } %>
-                    <%# Changed: Added NDA lock icon + id="folder_caret_{id}" on the caret span above.
-                        Why: GP employees need a visual indicator for NDA-protected folders. The id
-                        enables Turbo Stream to replace just the caret when NDA config changes,
-                        without re-rendering the full tree (preserves expand/collapse state). %>
-                    <% if folder.nda_required? && current_user.curr_role_employee? %>
-                      <i class="ti ti-lock text-warning ms-1" style="font-size: 0.75rem;"
-                         data-bs-toggle="tooltip" title="NDA required"></i>
+                    <%# Changed: Replaced simple nda_required? check with NdaInheritanceResolver lookup.
+                         Why: With inheritance, a folder may not have its own config but still require NDA
+                         via a parent. The resolver does a single in-memory pass (no N+1) and provides
+                         source_folder_for() to render "(Inherited)" labels. @nda_resolver is nil for
+                         non-Data-Room contexts, so no per-folder in_data_room? query is needed. %>
+                    <% if @nda_resolver && current_user.curr_role_employee? %>
+                      <% nda_config = @nda_resolver.effective_config_for(folder) %>
+                      <% if nda_config&.enabled? %>
+                        <% source = @nda_resolver.source_folder_for(folder) %>
+                        <% inherited = source && source.id != folder.id %>
+                        <i class="ti ti-lock text-warning ms-1" style="font-size: 0.75rem;"
+                           data-bs-toggle="tooltip"
+                           title="<%= inherited ? "NDA inherited from: #{source.name}" : "NDA required" %>"></i>
+                        <% if inherited %>
+                          <span class="text-muted ms-1" style="font-size: 0.7rem;">(Inherited)</span>
+                        <% end %>
+                      <% end %>
                     <% end %>
                 </span>
                 <%= render "/folders/tree_view", folders: children, ul_class: "nested", widget_id: widget_id, documents_as_tags: documents_as_tags, show_action_buttons: show_action_buttons, folder_url_method: folder_url_method, use_entity_name_for_root: use_entity_name_for_root, virtual_root: nil if children.present? %>

@@ -25,6 +25,22 @@
     </div>
   <% end %>
 
+  <%# Module 5: Context banner when overriding an inherited NDA — reminds GP this replaces the parent's NDA.
+       Guard: only check parent NDA for Data Room folders. %>
+  <% parent_source = if folder.in_data_room? && folder.parent&.effective_nda_config&.enabled?
+                        folder.parent.nda_source_folder
+                      end %>
+  <% if parent_source %>
+    <div class="alert alert-info d-flex align-items-start mb-3">
+      <i class="ti ti-info-circle me-2 mt-1"></i>
+      <div class="small">
+        <strong>Overriding inherited NDA.</strong>
+        The parent folder "<%= parent_source.name %>" has an active NDA.
+        Setting an NDA here will <strong>replace</strong> it for this folder — LPs will only need to accept this folder's NDA, not the parent's.
+      </div>
+    </div>
+  <% end %>
+
   <%# Require NDA toggle %>
   <div class="mb-3">
     <label class="form-label fw-semibold">Require NDA before access</label>

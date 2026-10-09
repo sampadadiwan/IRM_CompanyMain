@@ -87,9 +87,20 @@ class FoldersController < ApplicationController
     if safe_params.key?(:workflow_template_id) && !policy(@folder).assign_workflow?
       safe_params = safe_params.except(:workflow_template_id)
     end
+    # Changed: Strip nda_inheritance_mode from params for non-Data-Room folders.
+    # Why: NDA inheritance only applies to Data Room folders. Without this guard, a crafted
+    # PATCH could set nda_inheritance_mode on a regular folder, which has no meaning.
+    safe_params = safe_params.except(:nda_inheritance_mode) if safe_params.key?(:nda_inheritance_mode) && !@folder.in_data_room?
 
     respond_to do |format|
       if @folder.update(safe_params)
+        # Changed: Added turbo_stream format to folder update response.
+        # Why: Opt-out and revert actions from the NDA Settings modal submit as PATCH to
+        # FoldersController#update. The turbo_stream response dismisses the modal and
+        # refreshes lock icons on the folder tree without a full page reload.
+        format.turbo_stream do
+          flash.now[:notice] = "NDA settings updated successfully."
+        end
         format.html { redirect_to folder_url(@folder), notice: "Folder was successfully updated." }
         format.json { render :show, status: :ok, location: @folder }
       else
@@ -119,6 +130,9 @@ class FoldersController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def folder_params
-    params.require(:folder).permit(:name, :knowledge_base, :parent_id, :full_path, :level, :entity_id, :download, :printing, :orignal, :workflow_template_id, docs: [], documents_attributes: Document::NESTED_ATTRIBUTES)
+    # Changed: Added :nda_inheritance_mode to permitted params.
+    # Why: The NDA Settings modal sends opt-out and revert actions as folder updates,
+    # which need nda_inheritance_mode in the permitted params to change the mode.
+    params.require(:folder).permit(:name, :knowledge_base, :parent_id, :full_path, :level, :entity_id, :download, :printing, :orignal, :workflow_template_id, :nda_inheritance_mode, docs: [], documents_attributes: Document::NESTED_ATTRIBUTES)
   end
 end

@@ -67,6 +67,12 @@ module DocumentHelper
       end
     end
 
+    # Changed: Instantiate NdaInheritanceResolver for batch lock icon rendering.
+    # Why: The tree view uses @nda_resolver to resolve each folder's effective NDA in a single
+    # in-memory pass instead of per-folder ancestry walks (N+1). Only created for GP employees
+    # who see lock icons; nil for LPs (tree view checks @nda_resolver presence).
+    @nda_resolver = (NdaInheritanceResolver.new(folders) if current_user.curr_role_employee?)
+
     folders
   end
 
