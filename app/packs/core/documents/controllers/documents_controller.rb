@@ -508,11 +508,15 @@ class DocumentsController < ApplicationController
 
   # @return [void] NDA gate — redirects LP to acceptance screen if folder has an active NDA
   #   that the user has not yet accepted at the current version, or whose acceptance has expired.
-  # Gate order: GP bypass → investor_ids lookup → exemption check (by investor_id) →
-  #   stakeholder acceptance → version match → time expiry → pass.
-  # Exemption is checked by investor_id, not user_id, so that if ANY InvestorAccess record
+  # Changed: Module 4 — added version match and time expiry checks after acceptance lookup.
+  # Why: Acceptances can become stale via two triggers: (1) GP uploads new PDF → version bump,
+  #   (2) validity period elapses. Gate order: GP bypass → investor_ids lookup → exemption check
+  #   (by investor_id) → stakeholder acceptance → version match → time expiry → pass.
+  #   Version is checked before time because version mismatch is more actionable.
+  #   Exemption is checked by investor_id, not user_id, so that if ANY InvestorAccess record
   #   for the user's investor is exempt, all users under that investor bypass the gate.
   # @see InvestorAccess#exempt_from_nda
+  # @see NdaConfig#version
   def ensure_nda_accepted
     return if params[:folder_id].blank?
 
@@ -541,19 +545,66 @@ class DocumentsController < ApplicationController
              .limit(1)
              .first
 
-    return if latest&.accepted?
+    # No accepted acceptance → redirect to acceptance screen (first-time or post-decline).
+    unless latest&.accepted?
+      redirect_to nda_acceptance_url(nda_config, @folder)
+      return
+    end
 
-    nda_url = nda_acceptances_path(
-      nda_config_id: nda_config.id,
-      folder_id: @folder.id,
-      return_to: request.fullpath
-    )
+    # Changed: Module 4 — version mismatch check. LP's acceptance is at an older NDA version.
+    # Why: GP uploaded a new PDF, version incremented, LP must re-read and re-accept.
+    unless acceptance_version_current?(latest, nda_config)
+      redirect_to nda_acceptance_url(nda_config, @folder, reason: "version_mismatch")
+      return
+    end
 
-    # Changed: Simple redirect for both regular and Turbo Frame requests.
-    # Why: The NDA acceptance views wrap content in a turbo_frame_tag "documents_frame",
-    #   so Turbo Frame requests render the acceptance screen inside the right pane naturally.
-    #   No need for inline JS breakout — the frame stays intact with sidebar/topbar visible.
-    redirect_to nda_url
+    # Changed: Module 4 — time-based expiry check. Specific-date lapsed = dead-end page.
+    # Why: specific_date past means re-accepting would create an immediately-expired record
+    #   (infinite loop), so redirect to the lapsed page instead of the acceptance screen.
+    unless acceptance_time_valid?(latest, nda_config)
+      if nda_config.validity_type == "specific_date" && nda_config.validity_date < Date.current
+        redirect_to lapsed_nda_acceptances_path(
+          nda_config_id: nda_config.id,
+          folder_id: @folder.id
+        )
+      else
+        redirect_to nda_acceptance_url(nda_config, @folder, reason: "expired")
+      end
+      return
+    end
+  end
+
+  # @param nda_config [NdaConfig] the NDA config to build the acceptance URL for
+  # @param folder [Folder] the folder being accessed
+  # @param reason [String, nil] optional reason param for contextual re-acceptance note
+  # @return [String] the NDA acceptance screen URL with query params
+  def nda_acceptance_url(nda_config, folder, reason: nil)
+    params = { nda_config_id: nda_config.id, folder_id: folder.id, return_to: request.fullpath }
+    params[:reason] = reason if reason.present?
+    nda_acceptances_path(params)
+  end
+
+  # @param acceptance [NdaAcceptance] the LP's latest acceptance record
+  # @param nda_config [NdaConfig] the NDA config to check against
+  # @return [Boolean] true if the acceptance's nda_version matches the config's current version
+  def acceptance_version_current?(acceptance, nda_config)
+    acceptance.nda_version == nda_config.version
+  end
+
+  # @param acceptance [NdaAcceptance] the LP's latest acceptance record
+  # @param nda_config [NdaConfig] the NDA config to check against
+  # @return [Boolean] true if the acceptance has not expired per the config's validity settings
+  def acceptance_time_valid?(acceptance, nda_config)
+    case nda_config.validity_type
+    when "until_revoked"
+      true
+    when "fixed_period"
+      acceptance.accepted_at + nda_config.validity_days.days > Time.current
+    when "specific_date"
+      nda_config.validity_date >= Date.current
+    else
+      true
+    end
   end
 
   # @param path [String, nil] The return_to path from params.

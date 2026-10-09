@@ -134,19 +134,29 @@ class NdaStatusResolver
         }
       end
 
-      investor_status = if any_exempt
-                          "Exempt"
-                        elsif acceptance&.accepted?
-                          "Accepted"
-                        elsif acceptance&.declined?
-                          "Declined"
-                        else
-                          "Pending"
-                        end
+      # Changed: Module 4 — added Expired status derivation with expiry reason.
+      # Why: Accepted investors whose acceptance is stale (version mismatch or time expired)
+      #   show as "Expired" on the dashboard, with a reason for the GP's tooltip.
+      investor_status, expiry_reason = if any_exempt
+                                         ["Exempt", nil]
+                                       elsif acceptance&.accepted?
+                                         if acceptance.nda_version != @nda_config.version
+                                           ["Expired", "version"]
+                                         elsif acceptance_expired?(acceptance)
+                                           ["Expired", "period"]
+                                         else
+                                           ["Accepted", nil]
+                                         end
+                                       elsif acceptance&.declined?
+                                         ["Declined", nil]
+                                       else
+                                         ["Pending", nil]
+                                       end
 
       {
         investor: investor,
         status: investor_status,
+        expiry_reason: expiry_reason,
         signed_by: acceptance&.accepted? ? acceptance.user : nil,
         signed_at: acceptance&.accepted? ? acceptance.created_at : nil,
         users: user_rows
@@ -156,21 +166,42 @@ class NdaStatusResolver
 
   # @param investor_rows [Array<Hash>] investor rows with :status
   # @return [Hash{Symbol => Integer}] counts per status
+  # Changed: Module 4 — added :expired counter.
+  # Why: Dashboard summary and filter need to show Expired investor count.
   def compute_counters(investor_rows)
-    { accepted: 0, pending: 0, declined: 0, exempt: 0 }.tap do |c|
+    { accepted: 0, pending: 0, declined: 0, expired: 0, exempt: 0 }.tap do |c|
       investor_rows.each do |row|
         case row[:status]
         when "Accepted" then c[:accepted] += 1
         when "Pending"  then c[:pending] += 1
         when "Declined" then c[:declined] += 1
+        when "Expired"  then c[:expired] += 1
         when "Exempt"   then c[:exempt] += 1
         end
       end
     end
   end
 
+  # @param acceptance [NdaAcceptance] the latest acceptance record for an investor
+  # @return [Boolean] true if the acceptance has exceeded the NDA config's validity period.
+  #   Uses the same logic as DocumentsController#acceptance_time_valid? (inverted).
+  #   Does NOT check version — that is handled separately before this method is called.
+  def acceptance_expired?(acceptance)
+    case @nda_config.validity_type
+    when "until_revoked"
+      false
+    when "fixed_period"
+      acceptance.accepted_at + @nda_config.validity_days.days <= Time.current
+    when "specific_date"
+      @nda_config.validity_date < Date.current
+    else
+      false
+    end
+  end
+
   # @return [Hash] empty result when no investors have folder access
+  # Changed: Module 4 — added :expired counter to empty result.
   def empty_result
-    { counters: { accepted: 0, pending: 0, declined: 0, exempt: 0 }, investor_rows: [] }
+    { counters: { accepted: 0, pending: 0, declined: 0, expired: 0, exempt: 0 }, investor_rows: [] }
   end
 end

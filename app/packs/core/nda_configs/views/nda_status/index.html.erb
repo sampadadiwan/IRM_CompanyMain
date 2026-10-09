@@ -1,7 +1,8 @@
 <%# NDA Status dedicated dashboard page — server-rendered HTML table with investor-level rows.
      Provides status filtering, search, XLSX export, and user-level exemption management.
-     Changed: Switched from AG Grid to standard HTML table for visual consistency.
-     Why: The rest of the app uses Ransack-style HTML tables; AG Grid looked out of place. %>
+     Changed: Module 4 — added Expired counter, filter option, and status badge with reason tooltip.
+     Why: Investors with stale acceptances (version mismatch or time expiry) show as Expired
+       so the GP can see who needs to re-accept. %>
 <%
   status_data = @status_data
   nda_config = @nda_config
@@ -43,6 +44,9 @@
     <span class="badge bg-danger-subtle text-danger px-3 py-2 fs-6">
       Declined: <%= counters[:declined] %>
     </span>
+    <span class="badge bg-secondary-subtle text-secondary px-3 py-2 fs-6">
+      Expired: <%= counters[:expired] %>
+    </span>
     <span class="badge bg-info-subtle text-info px-3 py-2 fs-6">
       Exempt: <%= counters[:exempt] %>
     </span>
@@ -59,6 +63,7 @@
           <option value="Accepted">Accepted</option>
           <option value="Pending">Pending</option>
           <option value="Declined">Declined</option>
+          <option value="Expired">Expired</option>
           <option value="Exempt">Exempt</option>
         </select>
       </div>
@@ -96,9 +101,14 @@
                                 when "Accepted" then "success"
                                 when "Pending" then "warning"
                                 when "Declined" then "danger"
+                                when "Expired" then "secondary"
                                 when "Exempt" then "info"
                                 end %>
-              <span class="badge bg-<%= status_class %>-subtle text-<%= status_class %>">
+              <span class="badge bg-<%= status_class %>-subtle text-<%= status_class %>"
+                    <% if row[:status] == "Expired" && row[:expiry_reason] %>
+                      title="<%= row[:expiry_reason] == 'version' ? 'Version mismatch' : 'Period expired' %>"
+                      data-bs-toggle="tooltip"
+                    <% end %>>
                 <%= row[:status] %>
               </span>
             </td>

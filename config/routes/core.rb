@@ -224,6 +224,9 @@ end
 #   NdaConfig (polymorphic), not to a specific owner type. folder_id passed as query param.
 resources :nda_acceptances, controller: "nda_acceptances", only: %i[index create] do
   post :decline, on: :collection
+  # Changed: Added lapsed route for Module 4 dead-end page.
+  # Why: When a specific_date NDA has expired, LPs see a dead-end page (no re-accept possible).
+  get :lapsed, on: :collection
 end
 
 # Changed: NDA status dashboard routes — removed exemption routes.

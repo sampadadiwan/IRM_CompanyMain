@@ -2,7 +2,10 @@
      for client-side toggle/show/hide of conditional fields. Uppy handles PDF upload via
      the existing _single_upload partial.
      Changed: Moved from folder_nda_configs/ to nda_configs/, for_model updated.
-     Why: NdaConfig is now polymorphic — views live in the nda_configs pack. %>
+     Why: NdaConfig is now polymorphic — views live in the nda_configs pack.
+     Changed: Added version display and version bump warning banner (Module 4).
+     Why: When a GP uploads a new PDF, version auto-increments and all accepted investors
+       must re-accept. The warning shows the accepted count so the GP understands the impact. %>
 <%
   nda_config ||= @nda_config
   folder ||= @folder
@@ -76,8 +79,24 @@
           <i class="ti ti-file-text me-1"></i>
           Current: <%= nda_config.nda_document.original_filename %>
           (<%= number_to_human_size(nda_config.nda_document.size) %>)
+          <span class="ms-2 badge bg-secondary">Version <%= nda_config.version %></span>
         </div>
       <% end %>
+
+      <%# Module 4: Version bump warning — shown by Stimulus when a new PDF is selected via Uppy.
+           Hidden by default; the nda-settings controller listens for upload:complete and toggles visibility.
+           @accepted_count is set in NdaConfigsController#edit. %>
+      <% accepted_count = defined?(@accepted_count) ? @accepted_count : 0 %>
+      <div class="alert alert-warning small mt-2 d-none"
+           data-nda-settings-target="versionWarning"
+           data-accepted-count="<%= accepted_count %>">
+        <i class="ti ti-alert-triangle me-1"></i>
+        <strong>Version bump:</strong>
+        Uploading a new document will increment the NDA version.
+        <% if accepted_count > 0 %>
+          <strong><%= accepted_count %></strong> accepted <%= "investor".pluralize(accepted_count) %> will need to re-accept the NDA.
+        <% end %>
+      </div>
     </div>
 
     <%# Validity type %>

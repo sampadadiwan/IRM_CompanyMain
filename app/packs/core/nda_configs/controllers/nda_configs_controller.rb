@@ -55,9 +55,17 @@ class NdaConfigsController < ApplicationController
   end
 
   # GET /folders/:folder_id/nda_config/edit
+  # Changed: Added @accepted_count for version bump warning in the form.
+  # Why: Module 4 — when a GP selects a new PDF, the form shows a warning banner
+  #   with the count of currently accepted investors who will need to re-accept.
   # @return [void] Renders the NDA settings modal with pre-filled config values.
   def edit
     authorize @nda_config
+    @accepted_count = @nda_config.nda_acceptances
+                                 .where(status: "accepted")
+                                 .select(:investor_id)
+                                 .distinct
+                                 .count
   end
 
   # PATCH /folders/:folder_id/nda_config
