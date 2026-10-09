@@ -67,7 +67,7 @@
           <div id="collapseUnits" class="accordion-collapse collapse" aria-labelledby="units-tab" data-bs-parent="#investorFundDetailsAccordion">
             <div class="accordion-body">
               <div id="fund_units" class="">
-                <%= turbo_frame_tag "fund_units_list", src: fund_units_path(fund_id: fund.id), loading: :lazy, target: "_top" do %>
+                <%= turbo_frame_tag "fund_units_frame", src: fund_units_path(fund_id: fund.id), loading: :lazy, target: "_top" do %>
                    <%= render "/layouts/loading" %>
                 <% end %>
               </div>

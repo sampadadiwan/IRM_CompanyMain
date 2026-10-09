@@ -1,6 +1,9 @@
 class FundUnitsController < ApplicationController
   include FundsHelper
 
+  DEFAULT_PER_PAGE = 25
+  MAX_PER_PAGE = 500
+
   before_action :set_fund_unit, only: %i[show edit update destroy]
 
   # GET /fund_units or /fund_units.json
@@ -16,6 +19,7 @@ class FundUnitsController < ApplicationController
     service = FundUnitList.call(current_user, params) { |relation| policy_scope(relation) }
     @q = service.q
     @fund_units = service.fund_units
+    paginate_fund_units if paginate?
 
     @fund_units
   end
@@ -72,6 +76,25 @@ class FundUnitsController < ApplicationController
   end
 
   private
+
+  # The xlsx download and json keep returning every matching unit
+  def paginate?
+    params[:all].blank? && request.format.html?
+  end
+
+  # Pagy raises for a page outside 1..total_pages, so clamp it ourselves: a stale
+  # bookmark or a filter change that shrinks the list shows the nearest valid page.
+  def paginate_fund_units
+    per_page = params[:per_page].to_i
+    per_page = DEFAULT_PER_PAGE unless per_page.positive?
+    per_page = [per_page, MAX_PER_PAGE].min
+
+    count = @fund_units.count
+    total_pages = [(count.to_f / per_page).ceil, 1].max
+    page = params[:page].to_i.clamp(1, total_pages)
+
+    @pagy, @fund_units = pagy(@fund_units, limit: per_page, page:, count:)
+  end
 
   # Use callbacks to share common setup or constraints between actions.
   def set_fund_unit

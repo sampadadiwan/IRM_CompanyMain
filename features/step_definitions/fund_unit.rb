@@ -535,3 +535,140 @@ Then('adjustments are create upon fund unit transfer') do
   to_adjustment.as_of.should == @from_cc.commitment_date
   to_adjustment.transfer_date.should == @transfer.transfer_date
 end
+
+Given('the fund has {int} fund units of type {string}') do |count, unit_type|
+  create_fund_units_for_pagination(count, unit_type)
+end
+
+Given('the fund has {int} fund units of type {string} with reason {string}') do |count, unit_type, reason|
+  create_fund_units_for_pagination(count, unit_type, reason:)
+end
+
+Given('the fund has an old fund unit with reason {string}') do |reason|
+  create_fund_units_for_pagination(1, "A", reason:, issue_date: Date.new(2020, 1, 1))
+end
+
+Given('the fund units have increasing quantities') do
+  FundUnit.order(:id).each_with_index { |fund_unit, index| fund_unit.update_columns(quantity: index + 1) }
+end
+
+When('I open the fund units list') do
+  visit(fund_units_url)
+end
+
+When('I open the fund units list with {string}') do |query|
+  visit("#{fund_units_url}?#{query}")
+end
+
+Given('the fund units belong to an import upload') do
+  @import_upload = ImportUpload.create!(entity: @fund.entity, owner: @fund, import_type: "FundUnit", name: "Fund units import",
+                                        user_id: @user.id, status: "Completed",
+                                        import_file: File.open(File.absolute_path("./public/sample_uploads/fund_units.xlsx")))
+  FundUnit.where(fund_id: @fund.id).update_all(import_upload_id: @import_upload.id)
+end
+
+When('I open the import upload page') do
+  visit(import_upload_url(@import_upload))
+  page.execute_script("document.getElementById('fund_units_frame').scrollIntoView()")
+end
+
+When('I open the investor page with the fund units section') do
+  @fund_units_investor = @fund.capital_commitments.first.investor
+  visit(investor_url(@fund_units_investor))
+  find("a[href='#fund-units-tab']").click
+end
+
+Then('I should still be on the investor page') do
+  expect(page).to have_current_path(investor_path(@fund_units_investor))
+end
+
+When('I click the fund units page link {string}') do |label|
+  within(".pagination") { click_on(label, exact: true) }
+end
+
+Then('I should see {int} fund unit rows') do |count|
+  expect(page).to have_css("table#fund_units tbody tr", count:)
+end
+
+Then('I should see the fund units pager text {string}') do |text|
+  # pagy_info renders ranges with a non-breaking hyphen (U+2011)
+  expect(page.text.tr("\u2011", "-")).to include(text)
+end
+
+Then('I should not see a fund units pager') do
+  expect(page).not_to have_css(".pagination")
+  expect(page).not_to have_content("Showing")
+end
+
+Then('I should not see fund units page links') do
+  expect(page).not_to have_css(".pagination")
+end
+
+Then('I should see exactly one fund units pager') do
+  expect(page).to have_css(".pagination", count: 1)
+  expect(page).not_to have_css(".dataTables_paginate")
+end
+
+Then('the fund units should be listed by latest issue date first') do
+  row_ids = page.all("table#fund_units tbody tr").map { |tr| tr[:id] }
+  expected = FundUnit.order(issue_date: :desc, id: :desc).limit(row_ids.size).map { |fu| "fund_unit_#{fu.id}" }
+  expect(row_ids).to eq(expected)
+end
+
+Then('the fund units download should contain {int} unit rows') do |count|
+  b64 = page.evaluate_async_script(<<~JS, "/fund_units.xlsx?all=true")
+    var url = arguments[0];
+    var done = arguments[arguments.length - 1];
+    fetch(url, { credentials: "same-origin" })
+      .then(function (r) { return r.arrayBuffer(); })
+      .then(function (buf) {
+        var bytes = new Uint8Array(buf);
+        var bin = "";
+        for (var i = 0; i < bytes.length; i++) { bin += String.fromCharCode(bytes[i]); }
+        done(btoa(bin));
+      });
+  JS
+  tmp = Tempfile.new(["fund_units", ".xlsx"], binmode: true)
+  tmp.write(Base64.decode64(b64))
+  tmp.close
+  sheet = Roo::Spreadsheet.open(tmp.path, extension: :xlsx)
+  (sheet.last_row - 1).should == count
+end
+
+When('I search the fund units list for {string}') do |text|
+  find_field("search").send_keys(text, :enter)
+end
+
+When('I search the fund units section for {string}') do |text|
+  within("div#fund_units") { find_field("search").send_keys(text, :enter) }
+end
+
+When('I sort the fund units list by {string}') do |label|
+  within("table#fund_units thead") { click_on(label, exact: true) }
+end
+
+Then('I should see only fund units with reason {string}') do |reason|
+  rows = page.all("table#fund_units tbody tr")
+  expect(rows).not_to be_empty
+  rows.each { |row| expect(row.text).to include(reason) }
+end
+
+Then('the fund unit rows should be ordered by quantity ascending') do
+  # Quantity is the 4th column without cols=all: type, folio, issue date, quantity
+  quantities = page.all("table#fund_units tbody tr").map { |row| row.all("td")[3].text.delete(",").to_f }
+  expect(quantities).to eq(quantities.sort)
+  expect(quantities.first).to eq(FundUnit.minimum(:quantity).to_f)
+end
+
+def create_fund_units_for_pagination(count, unit_type, reason: nil, issue_date: nil)
+  commitment = @fund.capital_commitments.first
+  @fund_unit_issue_date_offset ||= 0
+  count.times do
+    @fund_unit_issue_date_offset += 1
+    attrs = { capital_commitment: commitment, fund_id: commitment.fund_id, entity_id: @fund.entity_id,
+              investor_id: commitment.investor_id, unit_type:,
+              issue_date: issue_date || (Date.new(2025, 1, 1) + @fund_unit_issue_date_offset.days) }
+    attrs[:reason] = reason if reason
+    FactoryBot.create(:fund_unit, **attrs)
+  end
+end

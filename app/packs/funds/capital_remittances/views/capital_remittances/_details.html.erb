@@ -40,7 +40,7 @@
     <% if capital_remittance.entity.permissions.enable_units? && !(current_user.curr_role_investor? && !capital_remittance.fund.show_fund_units) %>
       <div id="fund-units-tab" class="tab-pane fade">
         <div id="fund_units" class="associated_entity">
-          <%= turbo_frame_tag "fund_units_list", target: "_top", src: fund_units_path(owner_id: capital_remittance.id, owner_type: "CapitalRemittance"), loading: :lazy do %>
+          <%= turbo_frame_tag "fund_units_frame", target: "_top", src: fund_units_path(owner_id: capital_remittance.id, owner_type: "CapitalRemittance"), loading: :lazy do %>
             <%= render "/layouts/loading" %>
           <% end %>
         </div>

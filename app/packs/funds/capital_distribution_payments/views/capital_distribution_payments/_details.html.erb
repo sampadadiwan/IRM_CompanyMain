@@ -17,7 +17,7 @@
 
     <div id="fund-units-tab" class="tab-pane fade">
       <div id="fund_units" class="associated_entity">
-        <%= turbo_frame_tag "fund_units_list", target: "_top", src: fund_units_path(owner_type: "CapitalDistributionPayment", owner_id: capital_distribution_payment.id), loading: :lazy do %>
+        <%= turbo_frame_tag "fund_units_frame", target: "_top", src: fund_units_path(owner_type: "CapitalDistributionPayment", owner_id: capital_distribution_payment.id), loading: :lazy do %>
           <%= render "/layouts/loading" %>
         <% end %>
       </div>

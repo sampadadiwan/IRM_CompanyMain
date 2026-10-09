@@ -29,28 +29,36 @@
     <% end %>
   </div>
 </div>
-<div class="table-responsive" data-controller="datatable">
-  <table id="fund_units" class="table table-bordered dataTable jqDataTable">
+<% frame = with_frame("fund_units_frame") %>
+<% sort = ->(attribute, label) { sort_link(@q, attribute, label, { page: nil }, { data: { turbo_frame: frame } }) } %>
+<%= form_with url: fund_units_path, method: :get, data: { turbo_frame: frame }, class: "d-flex justify-content-end mb-2" do %>
+  <% flatten_params(request.query_parameters.except("page", "search")).each do |name, value| %>
+    <%= hidden_field_tag name, value, id: nil %>
+  <% end %>
+  <%= search_field_tag :search, params[:search], placeholder: "Search...", class: "form-control w-auto", autocomplete: "off", "aria-label": "Search fund units" %>
+<% end %>
+<div class="table-responsive">
+  <table id="fund_units" class="table table-bordered dataTable">
     <thead>
       <tr>
         <% if cols == "all" && params[:investor_id].blank? %>
-          <th class="text-col">Fund</th>
-          <th class="text-col">Investor</th>
+          <th class="text-col"><%= sort.call(:capital_commitment_fund_name, "Fund") %></th>
+          <th class="text-col"><%= sort.call(:investor_investor_name, "Investor") %></th>
         <% elsif cols == "all" %>
-          <th class="text-col">Fund</th>
-          <th class="text-col">Investing Entity</th>
+          <th class="text-col"><%= sort.call(:capital_commitment_fund_name, "Fund") %></th>
+          <th class="text-col"><%= sort.call(:capital_commitment_investor_kyc_full_name, "Investing Entity") %></th>
         <% end %>
         <th class="text-col">
-          Unit Type
+          <%= sort.call(:unit_type, "Unit Type") %>
         </th>
         <th class="text-col">
-          Folio Id
+          <%= sort.call(:capital_commitment_folio_id, "Folio Id") %>
         </th>
         <th class="date-col">
-          Issue Date
+          <%= sort.call(:issue_date, "Issue Date") %>
         </th>
         <th class="num-col">
-          Quantity
+          <%= sort.call(:quantity, "Quantity") %>
         </th>
         <th class="num-col">
           Price
@@ -62,7 +70,7 @@
           Amount
         </th>
         <th class="text-col">
-          Reason
+          <%= sort.call(:reason, "Reason") %>
         </th>
         <th class="action-col">
         </th>
@@ -74,4 +82,13 @@
       <% end %>
     </tbody>
   </table>
+
+  <% if @pagy.count.positive? %>
+    <div class="d-flex justify-content-between align-items-center">
+      <%= raw pagy_info(@pagy) %>
+      <% if @pagy.pages > 1 %>
+        <%= raw pagy_bootstrap_nav(@pagy, anchor_string: %(data-turbo-frame="#{frame}" data-remote="true")) %>
+      <% end %>
+    </div>
+  <% end %>
 </div>
