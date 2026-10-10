@@ -132,6 +132,118 @@ Given("there is an LP investor {string} with entity access but no folder access"
   instance_variable_set("@user_#{investor_name.parameterize(separator: '_')}", @no_folder_lp_user)
 end
 
+# ── Setup steps — LP investor with approved access but NO folder AccessRight ──
+
+# Changed: Creates an LP investor with approved InvestorAccess but no folder AccessRight.
+# Why: Tests the AccessRight callback path — when folder access is granted later,
+#   the investor's existing approved user should be auto-tagged as signatory.
+#
+# @param investor_name [String] the investor name to create
+Given("there is a new LP investor {string} with approved access but no folder access right") do |investor_name|
+  lp_entity = Entity.create!(
+    name: "#{investor_name} Entity",
+    entity_type: "Limited Partner",
+    primary_email: "#{investor_name.parameterize}@example.com"
+  )
+  lp_user = User.create!(
+    email: "#{investor_name.parameterize}_#{SecureRandom.hex(4)}@example.com",
+    password: "password",
+    entity: lp_entity,
+    first_name: investor_name.split.first,
+    last_name: investor_name.split.last || "User"
+  )
+  lp_investor = Investor.create!(
+    investor_name: investor_name,
+    entity: @gp_entity,
+    investor_entity: lp_entity,
+    category: "LP",
+    primary_email: lp_entity.primary_email
+  )
+  # Changed: Create approved InvestorAccess but NO folder AccessRight.
+  # Why: The AccessRight callback should fire when folder access is granted later.
+  InvestorAccess.create!(
+    entity: @gp_entity,
+    investor: lp_investor,
+    user: lp_user,
+    email: lp_user.email,
+    first_name: lp_user.first_name,
+    last_name: lp_user.last_name,
+    approved: true
+  )
+  instance_variable_set("@investor_#{investor_name.parameterize(separator: '_')}", lp_investor)
+  instance_variable_set("@user_#{investor_name.parameterize(separator: '_')}", lp_user)
+end
+
+# Changed: Creates an LP investor with NO approved access and NO folder AccessRight.
+# Why: Tests that granting folder access alone does not auto-tag when there are no approved users.
+#
+# @param investor_name [String] the investor name to create
+Given("there is an LP investor {string} with no approved investor access and no folder access right") do |investor_name|
+  lp_entity = Entity.create!(
+    name: "#{investor_name} Entity",
+    entity_type: "Limited Partner",
+    primary_email: "#{investor_name.parameterize}@example.com"
+  )
+  lp_user = User.create!(
+    email: "#{investor_name.parameterize}_#{SecureRandom.hex(4)}@example.com",
+    password: "password",
+    entity: lp_entity,
+    first_name: investor_name.split.first,
+    last_name: investor_name.split.last || "User"
+  )
+  lp_investor = Investor.create!(
+    investor_name: investor_name,
+    entity: @gp_entity,
+    investor_entity: lp_entity,
+    category: "LP",
+    primary_email: lp_entity.primary_email
+  )
+  # Changed: Unapproved access — auto-tag should NOT fire when AccessRight is granted.
+  # Why: The callback checks for approved InvestorAccess before tagging.
+  InvestorAccess.create!(
+    entity: @gp_entity,
+    investor: lp_investor,
+    user: lp_user,
+    email: lp_user.email,
+    first_name: lp_user.first_name,
+    last_name: lp_user.last_name,
+    approved: false
+  )
+  instance_variable_set("@investor_#{investor_name.parameterize(separator: '_')}", lp_investor)
+  instance_variable_set("@user_#{investor_name.parameterize(separator: '_')}", lp_user)
+end
+
+# ── Action steps — Grant folder AccessRight ──────────────────────────────────
+
+# Changed: Grants a folder-level AccessRight for a specific investor.
+# Why: This triggers the AccessRight after_commit callback which should auto-tag
+#   the investor's oldest approved user as NDA signatory.
+#
+# @param investor_name [String] the investor to grant folder access to
+When("the GP grants folder access right for {string}") do |investor_name|
+  investor = Investor.find_by!(investor_name: investor_name, entity: @gp_entity)
+  AccessRight.create!(
+    owner: @data_room_folder,
+    entity_id: @gp_entity.id,
+    access_to_investor_id: investor.id,
+    cascade: false
+  )
+end
+
+# Changed: Grants a category-level AccessRight on the folder.
+# Why: Tests that the AccessRight callback resolves all investors matching the category
+#   and auto-tags each one with approved access.
+#
+# @param category [String] the investor category to grant access to
+When("the GP grants category access right {string} on the folder") do |category|
+  AccessRight.create!(
+    owner: @data_room_folder,
+    entity_id: @gp_entity.id,
+    access_to_category: category,
+    cascade: false
+  )
+end
+
 # ── Setup steps — Pre-existing signatory ─────────────────────────────────────
 
 # Changed: Tags an existing LP user as signatory for the folder's NDA config.

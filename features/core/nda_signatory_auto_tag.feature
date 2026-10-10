@@ -56,6 +56,35 @@ Feature: NDA Signatory Auto-Tag (Module 10)
     Then there should be 1 NDA signatory for investor "Acme Capital"
     And there should be 0 NDA signatories for investor "No Folder LP"
 
+  # ── Auto-tag on Folder AccessRight Grant ───────────────────────────────────
+
+  # When a folder AccessRight is granted to an investor who already has an
+  # approved InvestorAccess, the oldest approved user should be auto-tagged.
+  Scenario: Auto-tag fires when folder AccessRight is granted to investor with approved access
+    Given the data room folder has an enabled NDA config
+    And there is a new LP investor "Zeta LP" with approved access but no folder access right
+    When the GP grants folder access right for "Zeta LP"
+    Then there should be 1 NDA signatory for investor "Zeta LP"
+    And the signatory for "Zeta LP" should be the newly added user
+
+  # When a category AccessRight is granted on a folder, all matching investors
+  # with approved access should get auto-tagged.
+  Scenario: Auto-tag fires for category AccessRight matching multiple investors
+    Given the data room folder has an enabled NDA config
+    And there is a new LP investor "Eta LP" with approved access but no folder access right
+    And there is a new LP investor "Theta LP" with approved access but no folder access right
+    When the GP grants category access right "LP" on the folder
+    Then there should be 1 NDA signatory for investor "Eta LP"
+    And there should be 1 NDA signatory for investor "Theta LP"
+
+  # When a folder AccessRight is granted but the investor has no approved
+  # InvestorAccess, no signatory should be created.
+  Scenario: No auto-tag when AccessRight granted but investor has no approved access
+    Given the data room folder has an enabled NDA config
+    And there is an LP investor "No Access LP" with no approved investor access and no folder access right
+    When the GP grants folder access right for "No Access LP"
+    Then there should be 0 NDA signatories for investor "No Access LP"
+
   # ── Entity-Level Investor Not Tagged ───────────────────────────────────────
 
   # An investor with entity access but no folder AccessRight is not auto-tagged
