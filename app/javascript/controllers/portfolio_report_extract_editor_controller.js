@@ -35,8 +35,9 @@ export default class extends Controller {
     `;
     this.stepWizardRowTarget.insertAdjacentHTML("beforeend", newStep);
 
-    // Re-initialize the wizard to recognize the new step
-    wizardController.initialize();
+    // Re-initialize the wizard to recognize the new step. Null-safe: with lazy-loaded controllers
+    // the wizard may not be connected yet, and it scans the steps itself when it does connect.
+    wizardController?.initialize();
 
     // Programmatically click the "Next" button on the previous section to navigate to the new one.
     const nextButton = lastSection.querySelector(".nextBtn");

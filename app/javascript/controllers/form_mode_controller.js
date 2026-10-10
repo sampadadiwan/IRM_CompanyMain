@@ -20,6 +20,8 @@ export default class extends Controller {
     // Re-run the wizard controller's own setup so the per-step Next/Back click
     // handlers and the "only validate the current step" submit intercept are
     // restored (it was left in place before, .off/.on inside makes this safe to redo).
+    // Null when called from connect() before the wizard controller has loaded/connected
+    // (controllers are lazy-loaded) - fine, the wizard runs its own setup when it connects.
     const wizardController = this.application.getControllerForElementAndIdentifier(this.element, "wizard")
     if (wizardController) wizardController.initialize()
 
