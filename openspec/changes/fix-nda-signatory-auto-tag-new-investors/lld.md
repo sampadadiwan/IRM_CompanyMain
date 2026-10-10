@@ -30,6 +30,7 @@
 ## Review Summary
 
 - Callback fires on every approved InvestorAccess save — confirm the query cost is acceptable for bulk imports — see [Queries and Indexes](#queries-and-indexes)
+- Second callback fires on every folder-level AccessRight save with investor — confirm guard is tight enough — see [Method Contracts](#method-contracts)
 - Controller auto-tag changes from entity-wide to folder-scoped — verify `Investor.owner_access_rights` returns the right set — see [Method Contracts](#method-contracts)
 - Race condition handled by rescue on unique constraint — see [Transactions, Locking and Concurrency](#transactions-locking-and-concurrency)
 - No schema changes — see [Schema Detail](#schema-detail)
@@ -41,8 +42,9 @@
 | Boundary | File | New / Modified | Responsibility |
 |---|---|---|---|
 | ① Trigger | `app/packs/core/investor_accesses/models/investor_access.rb` | Modified | Add `after_commit` callback and `auto_tag_nda_signatory_if_needed` method |
+| ④ Trigger | `app/packs/core/access_rights/models/access_right.rb` | Modified | Add `after_commit` callback, `auto_tag_nda_signatory_for_folder` method, and `folder_with_investor?` guard |
 | ① Trigger | `app/packs/core/nda_configs/controllers/nda_configs_controller.rb` | Modified | Fix `auto_tag_default_signatories` to use folder-scoped investor query |
-| Tests | `features/core/nda_signatory_auto_tag.feature` | New | Cucumber scenarios for auto-tag on access approval and folder-scoped creation |
+| Tests | `features/core/nda_signatory_auto_tag.feature` | New | Cucumber scenarios for auto-tag on access approval, folder access grant, and folder-scoped creation |
 | Tests | `features/step_definitions/nda_signatory_auto_tag_steps.rb` | New | Step definitions for auto-tag scenarios |
 
 **Reviewer checks**
@@ -64,6 +66,22 @@ N/A — no schema changes. All tables (`nda_configs`, `nda_signatories`, `invest
 | Method | Arguments | Returns | Raises | Side effects | Idempotent? |
 |---|---|---|---|---|---|
 | `auto_tag_nda_signatory_if_needed` (private) | none (uses `self`) | void | none (rescues RecordNotUnique, RecordInvalid) | Creates NdaSignatory records | Yes — checks existence before creating, rescues duplicates |
+
+**`AccessRight`** (Model)
+
+| Method | Arguments | Returns | Raises | Side effects | Idempotent? |
+|---|---|---|---|---|---|
+| `folder_with_investor?` (private) | none (uses `self`) | boolean | none | none | Yes |
+| `auto_tag_nda_signatory_for_folder` (private) | none (uses `self`) | void | none (rescues RecordNotUnique, RecordInvalid) | Creates NdaSignatory records | Yes — checks existence before creating, rescues duplicates |
+
+**Guard logic (`folder_with_investor?`):**
+- Returns true when `owner_type == 'Folder'` AND (`access_to_investor_id.present?` OR `access_to_category.present?`)
+- Excludes user-level AccessRights (no investor to check) and non-folder owners
+
+**Callback logic (`auto_tag_nda_signatory_for_folder`):**
+1. Find NDA config on the folder: `NdaConfig.find_by(owner: owner, enabled: true)`
+2. Resolve matched investors: direct (`access_to_investor_id`) or category-based (`entity.investors.where(category:)`)
+3. For each investor with approved InvestorAccess but no signatory, tag the oldest approved user
 
 **`NdaConfigsController`** (Controller — existing private method, modified)
 
@@ -95,6 +113,9 @@ N/A — no new controller actions. The only controller change is to the private 
 | `auto_tag_nda_signatory_if_needed` | `AccessRight.exists?(owner_type: 'Folder', owner_id:, entity_id:, access_to_investor_id:)` OR category match | `[owner_type, owner_id]` | 0-1 | Existence check |
 | `auto_tag_nda_signatory_if_needed` | `NdaSignatory.where(nda_config_id:).where(user_id: InvestorAccess.where(investor_id:, entity_id:, approved: true).select(:user_id)).exists?` | `[nda_config_id, user_id]` unique index | 0-1 | Existence check |
 | `auto_tag_nda_signatory_if_needed` | `NdaSignatory.create(...)` | unique index on `[nda_config_id, user_id]` | 1 insert | — |
+| `auto_tag_nda_signatory_for_folder` (AR callback) | `NdaConfig.find_by(owner_type: 'Folder', owner_id:, enabled: true)` | `[owner_type, owner_id]` | 0-1 | Single lookup |
+| `auto_tag_nda_signatory_for_folder` (AR callback) | `InvestorAccess.where(investor_id:, entity_id:, approved: true).order(:created_at)` | `[entity_id, investor_id]` | 1-5 | Group by investor |
+| `auto_tag_nda_signatory_for_folder` (AR callback) | `NdaSignatory.exists?(nda_config_id:, user_id:)` | `[nda_config_id, user_id]` unique index | 0-1 | Existence check |
 | `auto_tag_default_signatories` (controller) | `Investor.owner_access_rights(@folder, nil)` | `[owner_type, owner_id]` on access_rights | 1-50 | `.pluck(:id)` |
 | `auto_tag_default_signatories` (controller) | `InvestorAccess.where(entity_id:, investor_id: ids, approved: true).order(:created_at).group_by(&:investor_id)` | `[entity_id, investor_id]` | 1-100 | Group in Ruby |
 

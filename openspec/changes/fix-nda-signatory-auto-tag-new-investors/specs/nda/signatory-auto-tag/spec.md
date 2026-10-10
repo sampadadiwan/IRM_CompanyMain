@@ -35,6 +35,30 @@ When an investor access record becomes approved (either created as approved or t
 - **WHEN** two investor access records for the same investor are approved simultaneously for the same folder NDA
 - **THEN** only one signatory is created; the second attempt is silently skipped via the unique database constraint
 
+### Requirement: Auto-tag signatory on folder AccessRight grant
+
+When a folder-level AccessRight is created or updated for an investor (direct `access_to_investor_id` or category `access_to_category` match), the system must check if the folder has an enabled NDA config. For each matched investor with approved InvestorAccess but zero existing signatories for that NDA, the oldest approved user is automatically designated as a signatory.
+
+#### Scenario: Folder AccessRight granted to investor who already has approved InvestorAccess
+
+- **WHEN** a folder-level AccessRight is created for an investor AND the folder has an enabled NDA AND the investor has approved InvestorAccess AND the investor has no existing signatory for that NDA
+- **THEN** the system creates an NdaSignatory record for the oldest approved user of that investor on that NDA config
+
+#### Scenario: Folder AccessRight granted by category matching multiple investors
+
+- **WHEN** a folder-level AccessRight is created with `access_to_category` AND the folder has an enabled NDA AND matching investors have approved InvestorAccess with no existing signatories
+- **THEN** the system creates NdaSignatory records for the oldest approved user of each qualifying investor
+
+#### Scenario: Folder AccessRight granted but investor has no approved InvestorAccess
+
+- **WHEN** a folder-level AccessRight is created for an investor AND the investor has no approved InvestorAccess
+- **THEN** no signatory is created (the InvestorAccess callback will handle it when access is later approved)
+
+#### Scenario: Non-folder AccessRight created
+
+- **WHEN** an AccessRight is created for a non-folder owner (Fund, Deal, etc.)
+- **THEN** no NDA signatory auto-tag logic runs
+
 ### Requirement: Folder-scoped auto-tag on NDA creation
 
 When an NDA is first created on a folder, the auto-tag logic must only consider investors with folder-level access rights (via AccessRight records on that folder), not all investors in the entity.

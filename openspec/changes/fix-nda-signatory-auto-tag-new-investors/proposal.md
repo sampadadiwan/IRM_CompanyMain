@@ -15,7 +15,9 @@ When a GP sets up an NDA on a Data Room folder, the system auto-tags the first u
 
 ## What Changes
 
-- **New investors get auto-tagged:** When an investor access is created or approved, the system checks if any NDA-protected folders grant access to that investor. If one exists and the investor has no signatory for it yet, the new user is auto-tagged as the default signatory.
+- **New investors get auto-tagged (two triggers):**
+  1. **InvestorAccess trigger:** When an investor access is created or approved, the system checks if any NDA-protected folders grant access to that investor. If one exists and the investor has no signatory for it yet, the new user is auto-tagged as the default signatory.
+  2. **AccessRight trigger:** When a folder-level AccessRight is granted to an investor, the system checks if that folder has an enabled NDA. For each matched investor with approved InvestorAccess but no signatory, the oldest approved user is auto-tagged. This covers the common GP workflow: NDA is set up first, then folder access is granted to investors who already have InvestorAccess.
 - **Folder-scoped tagging:** Both the on-creation auto-tag (existing) and the new on-access auto-tag are scoped to investors with folder-level access rights, not entity-wide.
 
 ### Flow Diagram
@@ -34,16 +36,19 @@ flowchart LR
     class A,B ok
 ```
 
-**After — NDA signatory auto-tagging (on NDA creation + on investor access)**
+**After — NDA signatory auto-tagging (on NDA creation + on investor access + on folder access grant)**
 
 ```mermaid
 flowchart LR
     A["GP creates NDA on folder"] --> B["System tags first user of FOLDER investors only"]
     B --> C["GP adds new investor later"]
-    C --> D["System auto-tags new user as signatory"]
-    D --> E["LP sees NDA acceptance form"]
+    C --> D1{"Which happens?"}
+    D1 -- "InvestorAccess approved<br/>(investor already has folder access)" --> D2["InvestorAccess callback auto-tags"]
+    D1 -- "AccessRight granted on folder<br/>(investor already has InvestorAccess)" --> D3["AccessRight callback auto-tags"]
+    D2 --> E["LP sees NDA acceptance form"]
+    D3 --> E
     classDef new fill:#d4edda,stroke:#2e7d32,color:#000
-    class A,B,C,D,E new
+    class A,B,C,D1,D2,D3,E new
 ```
 
 ---
@@ -117,6 +122,15 @@ flowchart TD
 | B3 | — | — | — | Creates NdaSignatory for Meera on the folder's NdaConfig | No visible change (background) |
 | B4 | Meera | Documents › clicks on NDA-protected folder | Visits folder | Checks Meera is a designated signatory → shows acceptance form | NDA acceptance screen with PDF and "I Accept" button |
 
+### Part C — alternate path (folder access granted after InvestorAccess exists)
+
+| Step | Who | Where | Action | What the system does | What you see |
+|---|---|---|---|---|---|
+| C1 | Priya | Stakeholders | Adds Meera as investor access (approved) | Creates InvestorAccess. No folder AccessRight yet → InvestorAccess callback finds no NDA-enabled folders for this investor → no auto-tag | Access shows as approved |
+| C2 | Priya | Documents › folder tree › Access Rights | Grants folder AccessRight to Meera's investor | Creates AccessRight. Folder has NDA → checks if investor has approved InvestorAccess → yes → checks if signatory exists → no → auto-tags oldest approved user | Access right row appears |
+| C3 | — | — | — | Creates NdaSignatory for Meera on the folder's NdaConfig | No visible change (background) |
+| C4 | Meera | Documents › clicks on NDA-protected folder | Visits folder | Checks Meera is a designated signatory → shows acceptance form | NDA acceptance screen |
+
 ### What you see
 
 **LP visits NDA-protected folder (signatory — can accept):**
@@ -177,9 +191,9 @@ The investor has no `AccessRight` for the NDA-protected folder. The auto-tag cal
 | # | Action | Who | How often |
 |---|---|---|---|
 | 1 | Set up NDA on folder | GP | Once per folder |
-| 2 | Add investor access | GP | Each new investor |
-| 3 | Approve investor access | GP | Each new investor |
-| 4 | (Automatic) System auto-tags signatory | System | Each approval |
+| 2 | Add investor access OR grant folder AccessRight | GP | Each new investor |
+| 3 | Approve investor access (if not already approved) | GP | Each new investor |
+| 4 | (Automatic) System auto-tags signatory | System | On each InvestorAccess approval OR AccessRight grant (whichever completes the pair) |
 
 ---
 
@@ -196,6 +210,18 @@ The investor has no `AccessRight` for the NDA-protected folder. The auto-tag cal
 - For each folder NDA where the investor has zero signatories, the approved user is auto-tagged as signatory
 - If the investor already has a signatory for that NDA, no duplicate is created
 - The auto-tag works for both new access creation and approval toggle
+
+### US-3: Auto-tag signatory when folder AccessRight is granted
+
+**As a** GP,
+**I want** the system to auto-tag signatories when I grant folder access to an investor who already has approved InvestorAccess,
+**So that** investors are auto-tagged regardless of whether the InvestorAccess or the AccessRight was created first.
+
+**Acceptance criteria:**
+- When a folder-level AccessRight is created for an investor (direct or category match), and the folder has an enabled NDA, the system checks for each matched investor with approved InvestorAccess
+- For each matched investor with zero signatories for that NDA, the oldest approved user is auto-tagged
+- If the investor already has a signatory, no duplicate is created
+- AccessRights on non-folder owners (Fund, Deal, etc.) do not trigger this callback
 
 ### US-2: Folder-scoped auto-tag on NDA creation
 
@@ -223,7 +249,6 @@ This fix is entirely backend logic. There are no new screens, buttons, or visibl
 | Excluded | Covered In |
 |---|---|
 | GP manually choosing which user to auto-tag (always picks the approved user being added) | Future enhancement if needed |
-| Auto-tagging when folder access rights change (AccessRight created/modified) | Out of scope — only fires on InvestorAccess changes |
 | Removing signatory when investor access is revoked | Future consideration |
 
 ---
@@ -246,6 +271,9 @@ This fix is entirely backend logic. There are no new screens, buttons, or visibl
 | New investor access created as unapproved | No auto-tag; LP cannot access anything |
 | Unapproved access toggled to approved + folder has NDA | User auto-tagged as signatory on approval |
 | Investor has no folder-level access right | No NDA configs found; no signatory created |
+| Folder AccessRight granted for investor + folder has NDA + investor has approved InvestorAccess + no signatory | Oldest approved user auto-tagged as signatory |
+| Folder AccessRight granted for investor + folder has no NDA | No auto-tag; no NDA configs to check |
+| Folder AccessRight granted for category + folder has NDA + matching investors have approved access | Each matching investor's oldest approved user auto-tagged |
 | NDA created on folder (first time) | Only folder-access investors tagged (not all entity investors) |
 | Race condition: two accesses approved simultaneously | Idempotent — second create silently skipped via unique constraint |
 
@@ -255,10 +283,11 @@ This fix is entirely backend logic. There are no new screens, buttons, or visibl
 
 | # | Decision | Resolution |
 |---|---|---|
-| 1 | Where to hook the auto-tag logic? | `after_commit` callback on InvestorAccess model — catches all creation paths (UI, CSV import, admin) |
+| 1 | Where to hook the auto-tag logic? | `after_commit` callbacks on BOTH InvestorAccess AND AccessRight models — together they cover both ordering paths |
 | 2 | Entity-wide vs folder-scoped tagging? | Folder-scoped — use `Investor.owner_access_rights` pattern matching NdaStatusResolver |
-| 3 | Which user to tag for the new investor? | The user being approved (not oldest by created_at) — they are the one triggering the flow |
+| 3 | Which user to tag for the new investor? | InvestorAccess trigger: the user being approved. AccessRight trigger: the oldest approved user per investor |
 | 4 | What about the existing controller auto-tag? | Fix to also be folder-scoped, for consistency |
+| 5 | Why two callbacks (InvestorAccess + AccessRight)? | GP workflow order varies — sometimes InvestorAccess is created first (then AccessRight), sometimes AccessRight exists first (then InvestorAccess is approved). Both paths must trigger auto-tag |
 
 ---
 
