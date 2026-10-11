@@ -9,6 +9,13 @@
     <%= link_to "Show All", exchange_rates_path(all: true), {class: "btn btn-outline-success"}  %>
   </span>
 </div>
+<%# Source filter — openspec fund-market-data, card ③ %>
+<div class="mb-3">
+  <span class="me-2">Source:</span>
+  <% [["All", nil], ["Manual", "manual"], ["Market", "market"], ["Derived", "derived"]].each do |label, src| %>
+    <%= link_to label, exchange_rates_path(all: params[:all], source: src), class: "btn btn-sm #{params[:source] == src ? 'btn-primary' : 'btn-outline-secondary'}" %>
+  <% end %>
+</div>
 <div class="table-responsive" data-controller="datatable">
   <table id="exchange_rates" class="table table-bordered dataTable jqDataTable">
     <thead>
@@ -27,6 +34,15 @@
         </th>
         <th class="text-col">
           Latest
+        </th>
+        <th class="text-col">
+          Source
+        </th>
+        <th class="text-col">
+          Rate Type
+        </th>
+        <th class="text-col">
+          Fund
         </th>
         <th class="action-col">
         </th>

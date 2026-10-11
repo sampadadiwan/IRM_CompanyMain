@@ -182,6 +182,20 @@
                 </li>
             <% end %>
 
+<% if @portfolio_investment.investment_instrument.currency != @portfolio_investment.fund.currency %>
+                <%# Gain split into price and currency effect (H9, E33 — fund-market-data) %>
+                <% price_cents = @portfolio_investment.sell? ? @portfolio_investment.realized_price_effect_cents : @portfolio_investment.unrealized_price_effect_cents %>
+                <% fx_cents = @portfolio_investment.sell? ? @portfolio_investment.realized_fx_effect_cents : @portfolio_investment.unrealized_fx_effect_cents %>
+                 <li class="list-group-item d-flex justify-content-between align-items-center py-3" id="price_effect">
+                    <span class="text-muted">Price effect</span>
+                    <span class="fw-bold "><%= money_to_currency Money.new(price_cents, @portfolio_investment.fund.currency), params %></span>
+                </li>
+                 <li class="list-group-item d-flex justify-content-between align-items-center py-3" id="currency_effect">
+                    <span class="text-muted">Currency effect</span>
+                    <span class="fw-bold "><%= money_to_currency Money.new(fx_cents, @portfolio_investment.fund.currency), params %></span>
+                </li>
+            <% end %>
+
             <% if params[:debug].present? && @portfolio_investment.sell? %>
                  <li class="list-group-item d-flex justify-content-between align-items-center py-3">
                     <span class="text-muted">Cost of Sold (Debug)</span>

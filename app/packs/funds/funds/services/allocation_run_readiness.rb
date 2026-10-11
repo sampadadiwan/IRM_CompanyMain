@@ -66,7 +66,7 @@ class AllocationRunReadiness
     return nil if sources.empty?
 
     sources.reject do |(from, to), _|
-      ExchangeRate.where(entity_id: @entity_id, from:, to:).exists?(as_of: since..@end_date)
+      accepted_rates(from, to).exists?(as_of: since..@end_date)
     end
   end
 
@@ -97,6 +97,15 @@ class AllocationRunReadiness
   # The latest rate dated on or before end_date for a pair, for saying how stale.
   # @return [Date, nil]
   def latest_fx_rate_date(from, to)
-    ExchangeRate.where(entity_id: @entity_id, from:, to:, as_of: ..@end_date).maximum(:as_of)
+    accepted_rates(from, to).where(as_of: ..@end_date).maximum(:as_of)
+  end
+
+  # Rates the fund accepts (fund-market-data): entity-wide rates of its direct sources plus its own
+  # rates when it uses them — the same candidates FxRateResolver starts from
+  def accepted_rates(from, to)
+    policy = SourcePolicy.for(@fund)
+    scope = ExchangeRate.where(entity_id: @entity_id, from:, to:)
+    accepted = scope.where(owner_type: nil, source: policy.direct_rate_sources)
+    policy.own_fund_id ? accepted.or(scope.where(owner_type: "Fund", owner_id: policy.own_fund_id, source: "manual")) : accepted
   end
 end

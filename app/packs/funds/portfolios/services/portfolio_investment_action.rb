@@ -1,6 +1,10 @@
 class PortfolioInvestmentAction < Trailblazer::Operation
   def set_valuation(ctx, portfolio_investment:, **)
-    portfolio_investment.valuation = (ctx[:valuation].presence || portfolio_investment.valuations.order(valuation_date: :desc).first)
+    # The latest price this fund accepts (PriceResolver), not simply the latest row (H7)
+    accepted = portfolio_investment.fund && portfolio_investment.investment_instrument &&
+               PriceResolver.lookup(instrument: portfolio_investment.investment_instrument, owner: portfolio_investment.portfolio_company,
+                                    as_of: Time.zone.today, policy: SourcePolicy.for(portfolio_investment.fund))&.valuation
+    portfolio_investment.valuation = accepted || ctx[:valuation].presence || portfolio_investment.valuations.order(valuation_date: :desc).first
     true
   end
 

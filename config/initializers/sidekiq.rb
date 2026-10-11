@@ -46,7 +46,7 @@ class SidekiqJobMemoryMetrics
       # class (DocGenJob), matching the job_name label on the built-in job metrics.
       labels = {
         job_name: PrometheusExporter::Instrumentation::Sidekiq.get_name(worker.class.to_s, msg),
-        queue:    queue,
+        queue: queue
       }
       rss_delta = current_rss_bytes - rss_before
       self.class.rss_growth_counter.observe(rss_delta, labels) if rss_delta.positive?
@@ -167,6 +167,14 @@ Sidekiq.configure_server do |config|
     # 90-minute cache TTL on the result assumes an hourly cadence.
     Sidekiq::Cron::Job.create(name: 'CrossSiteTrustCheckJob', cron: ENV.fetch('CROSS_SITE_TRUST_CRON', 'every 1 hour'), class: 'CrossSiteTrustCheckJob')
     Sidekiq::Cron::Job.create(name: 'TrackingCurrencyJob', cron: tracking_currency_cron, class: 'TrackingCurrencyJob')
+    # fund-market-data: ECB publishes its reference rates around 16:00 CET on TARGET business days;
+    # load them at 15:30 UTC on weekdays in both regions (FxFeedJob skips weekends itself).
+    Sidekiq::Cron::Job.create(name: 'FxFeedJob', cron: '30 15 * * 1-5', class: 'FxFeedJob')
+    # fund-market-data: NSE/BSE publish their daily bhavcopy by about 19:00 IST and AMFI its NAVs by
+    # about 21:00 IST; load prices at 16:00 UTC (21:30 IST) on weekdays.
+    Sidekiq::Cron::Job.create(name: 'PriceFeedJob', cron: '0 16 * * 1-5', class: 'PriceFeedJob')
+    # fund-market-data: one reminder 5 business days before an open derivative contract expires
+    Sidekiq::Cron::Job.create(name: 'DerivativeExpiryJob', cron: '30 3 * * *', class: 'DerivativeExpiryJob')
 
     # Used to cleanup various models in the DB
     Sidekiq::Cron::Job.create(name: 'DailyMorningJob', cron: daily_morning_cron, class: 'DailyMorningJob')
@@ -207,7 +215,7 @@ Sidekiq.configure_server do |config|
       Sidekiq::Cron::Job.create(name: 'ReplicationHealthJob', cron: 'every 5 minutes', class: 'ReplicationHealthJob')
     end
 
-    Sidekiq::Cron::Job.create(name: 'DbRestoreJob', cron: 'every 4 hours', class: 'DbRestoreJob') if Rails.env.production? # Rails.env.staging? works # rubocop:disable Rails/UnknownEnv
+    Sidekiq::Cron::Job.create(name: 'DbRestoreJob', cron: 'every 4 hours', class: 'DbRestoreJob') if Rails.env.production? # Rails.env.staging? works
 
     # Sidekiq::Cron::Job.create(name: 'Weekly Compliance Checks', cron: '59 23 * * 0', class: 'Com')
   end
@@ -228,7 +236,7 @@ Sidekiq.configure_server do |config|
   PrometheusExporter::Instrumentation::Sidekiq.class_eval do
     ACTIVEJOB_WRAPPER_NAMES = [
       "ActiveJob::QueueAdapters::SidekiqAdapter::JobWrapper", # Rails <7 / old Sidekiq adapter
-      "Sidekiq::ActiveJob::Wrapper",                          # Sidekiq 7+ native ActiveJob wrapper
+      "Sidekiq::ActiveJob::Wrapper" # Sidekiq 7+ native ActiveJob wrapper
     ].freeze
 
     DELAYED_WRAPPER_NAMES = %w[

@@ -24,13 +24,15 @@ class PortfolioInvestmentCreate < PortfolioInvestmentAction
     else
       from_currency = portfolio_investment.investment_instrument.currency
       to_currency = portfolio_investment.fund.currency
-      er = ExchangeRate.where(from: from_currency, to: to_currency).last
-      if er
-        # If we have an exchange rate, we can proceed
+      fund = portfolio_investment.fund
+      # The fund must have an accepted rate on the investment date (its own entity's rates only).
+      # X9 — Error case: a manual-only fund with no manual EUR→INR rate is refused, naming its sources.
+      policy = SourcePolicy.for(fund)
+      as_of = portfolio_investment.investment_date || Time.zone.today
+      if FxRateResolver.lookup(entity_id: fund.entity_id, from: from_currency, to: to_currency, as_of:, policy:)
         true
       else
-        # If we do not have an exchange rate, we cannot proceed
-        portfolio_investment.errors.add(:investment_instrument, "Exchange rate #{from_currency}->#{to_currency} not found")
+        portfolio_investment.errors.add(:base, FxRateResolver::MissingRate.new(from: from_currency, to: to_currency, as_of:, policy:).message)
         false
       end
     end
@@ -65,11 +67,15 @@ class PortfolioInvestmentCreate < PortfolioInvestmentAction
       entity_id = portfolio_investment.entity_id
       portfolio_investment.fund
 
+      # The purchase records a Cost price for its date; it never replaces a Manual or Market price
+      # for that date (E40 — Edge case: purchase never overwrites)
       last_valuation = portfolio_investment.portfolio_company.valuations.find_or_initialize_by(
         investment_instrument_id: investment_instrument_id,
         valuation_date: investment_date,
-        entity_id: entity_id
+        entity_id: entity_id,
+        source: "cost"
       )
+      last_valuation.provider = "Purchase"
 
       last_valuation.per_share_value_cents = base_cost_cents
       ctx[:valuation] = last_valuation

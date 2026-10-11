@@ -30,11 +30,11 @@ module AccountEntryAllocation
         exchange_rate = ctx[:exchange_rates_cache][cache_key]
 
         if exchange_rate.nil?
-          # Possibly exchange rate conversions, etc.
-          exchange_rate = fund.entity.exchange_rates.where(
-            from: fund.master_fund.currency,
-            to: fund.currency
-          ).where(as_of: ..end_date).order(as_of: :asc).last
+          # The feeder fund's accepted sources decide the rate (FxRateResolver) — openspec
+          # fund-market-data, apply note A4
+          exchange_rate = FxRateResolver.lookup(entity_id: fund.entity_id, from: fund.master_fund.currency,
+                                                to: fund.currency, as_of: end_date,
+                                                policy: SourcePolicy.for(Fund.find(fund.id)))&.row
 
           if exchange_rate.blank?
             msg = "No exchange rate found for #{fund.master_fund.currency} to #{fund.currency}"

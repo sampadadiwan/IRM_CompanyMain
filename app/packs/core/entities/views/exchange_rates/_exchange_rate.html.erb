@@ -14,6 +14,15 @@
   <td class="text-col">
     <%= display_boolean exchange_rate.latest %>
   </td>
+  <td class="text-col">
+    <%= exchange_rate.source_label %>
+  </td>
+  <td class="text-col">
+    <%= exchange_rate.rate_type&.capitalize %>
+  </td>
+  <td class="text-col">
+    <%= exchange_rate.owner_fund&.name || "All funds" %>
+  </td>
   <td class="action-col">
     <%= link_to  t_common(:show), exchange_rate , {class: "btn btn-outline-primary ti ti-eye"}%>
     <%= link_to "Reverse", new_exchange_rate_path(to: exchange_rate.from, from: exchange_rate.to) , {class: "btn btn-outline-success ti ti-arrow-back-up-double"}%>

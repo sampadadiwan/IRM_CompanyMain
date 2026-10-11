@@ -64,6 +64,20 @@ module PortfolioComputations
     self.instrument_currency_fmv_cents = compute_instrument_currency_fmv_cents_on(date)
     self.instrument_currency_cost_of_remaining_cents = net_quantity * base_cost_cents
     self.instrument_currency_unrealized_gain_cents = instrument_currency_fmv_cents - instrument_currency_cost_of_remaining_cents
+
+    # Gain split (H9): price effect = local-currency gain × today's rate; currency effect is the rest,
+    # so the two always add up to the gain exactly (E32 — Edge case: rounding).
+    self.unrealized_price_effect_cents = price_effect_cents(instrument_currency_unrealized_gain_cents, fmv_cents, instrument_currency_fmv_cents, unrealized_gain_cents)
+    self.realized_price_effect_cents = 0
+  end
+
+  # Currency effect = total gain − price effect (shown on screens and in reports)
+  def unrealized_fx_effect_cents
+    unrealized_gain_cents.to_d - unrealized_price_effect_cents.to_d
+  end
+
+  def realized_fx_effect_cents
+    gain_cents.to_d - realized_price_effect_cents.to_d
   end
 
   # Compute metrics for a sell transaction
@@ -84,6 +98,19 @@ module PortfolioComputations
     self.instrument_currency_fmv_cents = 0
     self.instrument_currency_cost_of_remaining_cents = 0
     self.instrument_currency_unrealized_gain_cents = 0
+
+    # E33 — Edge case: realised gain split, using the cost (local) of the lots this sale consumed
+    self.unrealized_price_effect_cents = 0
+    local_cost_of_sold = portfolio_attributions.includes(:bought_pi).sum { |a| a.quantity.abs * a.bought_pi.base_cost_cents }
+    self.realized_price_effect_cents = price_effect_cents(base_amount_cents.abs - local_cost_of_sold, amount_cents.abs, base_amount_cents.abs, gain_cents)
+  end
+
+  # Local gain converted at the rate implied by the fund-currency and local-currency values; when
+  # there is no local value (no valuation, or same currency) the whole gain is price effect.
+  def price_effect_cents(local_gain_cents, fund_value_cents, local_value_cents, total_gain_cents)
+    return total_gain_cents.to_d if local_value_cents.to_d.zero?
+
+    (local_gain_cents.to_d * (fund_value_cents.to_d / local_value_cents.to_d)).round(2)
   end
 
   # Sets sold and transferred quantities before a given date
@@ -110,7 +137,7 @@ module PortfolioComputations
     valuation = latest_valuation_on(date)
     quantity_to_use = date == Time.zone.today ? net_quantity : net_quantity_on(date)
 
-    valuation ? quantity_to_use * valuation.per_share_value_in(fund.currency, date) : 0
+    valuation ? quantity_to_use * valuation.per_share_value_in(fund.currency, date, fund:) : 0
   end
 
   # FMV = latest price * quantity held (in base/instrument currency)
@@ -122,10 +149,9 @@ module PortfolioComputations
   end
 
   # Fetches the latest valuation on or before a date
+  # The price this fund accepts (PriceResolver): manual and cost always, market when chosen (H7)
   def latest_valuation_on(date)
-    valuations.where(investment_instrument_id: investment_instrument_id, valuation_date: ..date)
-              .order(valuation_date: :desc)
-              .first
+    PriceResolver.lookup(instrument: investment_instrument, owner: portfolio_company, as_of: date, policy: SourcePolicy.for(fund))&.valuation
   end
 
   # Calculates net quantity as of a given date

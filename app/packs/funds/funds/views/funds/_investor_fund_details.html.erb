@@ -57,7 +57,7 @@
       </div>
 
       <!-- Units -->
-      <% if fund.show_fund_units %>
+      <% if fund.features.show_fund_units? %>
         <div class="accordion-item">
           <h2 class="accordion-header" id="units-tab">
             <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseUnits" aria-expanded="false" aria-controls="collapseUnits" aria-label="Expand units section">
@@ -77,7 +77,7 @@
       <% end %>
 
       <!-- Ratios -->
-      <% if fund.show_fund_ratios %>
+      <% if fund.features.show_fund_ratios? %>
         <div class="accordion-item">
           <h2 class="accordion-header" id="ratios-tab">
             <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseRatios" aria-expanded="false" aria-controls="collapseRatios" aria-label="Expand ratios section">
@@ -101,7 +101,7 @@
       <% end %>
 
       <!-- Portfolio -->
-      <% if fund.show_portfolios %>
+      <% if fund.features.show_portfolios? %>
         <div class="accordion-item">
           <h2 class="accordion-header" id="portfolio-tab">
             <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePortfolio" aria-expanded="false" aria-controls="collapsePortfolio" aria-label="Expand portfolio section">

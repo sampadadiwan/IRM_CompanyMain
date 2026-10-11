@@ -1,0 +1,7 @@
+<p>Dear <%= @user.name %>,</p>
+
+<p>The <strong><%= @contract.type_label %></strong> contract <strong><%= @contract.name %></strong> in <strong><%= @contract.fund.name %></strong> expires on <strong><%= l @contract.expiry_date %></strong>.</p>
+
+<p>Record its expiry, exercise, close-out or settlement on the contract page, or roll it, before that date.</p>
+
+<p>Thank you,<br><%= @entity.name %> System</p>

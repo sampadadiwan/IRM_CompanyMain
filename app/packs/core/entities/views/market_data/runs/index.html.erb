@@ -1,0 +1,36 @@
+<%# Market Data › Run history — openspec/changes/fund-market-data, design card ② %>
+<%= render ReportingComponent.new do %>
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0">Market data runs</h1>
+    <%= link_to "Market Data settings", market_data_settings_path, class: "btn btn-outline-primary" %>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-bordered" id="market_data_runs">
+      <thead>
+        <tr>
+          <th class="date-col">Date</th>
+          <th class="text-col">Feed</th>
+          <th class="text-col">Provider</th>
+          <th class="text-col">Status</th>
+          <th class="num-col">Loaded</th>
+          <th class="text-col">Missing</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @runs.each do |run| %>
+          <tr id="<%= dom_id run %>">
+            <td class="date-col"><%= l run.run_date %></td>
+            <td class="text-col"><%= run.kind == "fx" ? "FX rates" : run.kind.humanize %></td>
+            <td class="text-col"><%= run.provider.upcase %></td>
+            <td class="text-col">
+              <% badge = { "ok" => "success", "partial" => "warning", "empty" => "danger", "failed" => "danger", "running" => "secondary" }[run.status] %>
+              <span class="badge bg-<%= badge %>-subtle text-<%= badge %>"><%= run.status.capitalize %></span>
+            </td>
+            <td class="num-col"><%= run.loaded_count %></td>
+            <td class="text-col"><%= run.missing_items.map { |m| "#{m['key'].to_s.sub('/', '→')} (#{m['reason']})" }.join(", ") %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

@@ -188,6 +188,12 @@ commands = [
                 <i class="ti ti-settings"></i> <%= t_common(:actions) %>
               </button>
               <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                <%# Derivatives — only when the entity and the fund have the feature (fund-market-data, card ⑥) %>
+                <% if @fund.feature_enabled?(:enable_derivatives) %>
+                  <%= link_to fund_derivative_contracts_path(@fund), class: "dropdown-item" do %>
+                    <i class="ti ti-chart-arrows"></i> Derivatives
+                  <% end %>
+                <% end %>
                 <% if policy(@fund).update? %>
                   <%= link_to edit_fund_path(@fund), class: "dropdown-item", data: {bs_toggle: "tooltip", bs_title: "Edit fund level setting such as defining unit types, linking Master Fund, Fund signatory email"} do %>
                     <i class="ti ti-edit"></i> <%= t_common(:edit) %> Fund

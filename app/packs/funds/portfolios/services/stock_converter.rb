@@ -11,7 +11,10 @@ class StockConverter < Trailblazer::Operation
     to_currency = stock_conversion.to_instrument.currency
     from_portfolio_investment = stock_conversion.from_portfolio_investment
     if from_currency != to_currency
-      exchange_rate = stock_conversion.entity.exchange_rates.where(from: from_currency, to: to_currency, as_of: ..from_portfolio_investment.investment_date).first
+      # The rate the fund accepts (FxRateResolver) — fund-market-data
+      fund = from_portfolio_investment.fund
+      exchange_rate = FxRateResolver.lookup(entity_id: fund.entity_id, from: from_currency, to: to_currency,
+                                            as_of: from_portfolio_investment.investment_date, policy: SourcePolicy.for(fund))
       if exchange_rate.present?
         true
       else

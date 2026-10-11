@@ -46,8 +46,9 @@ class TrackingRateValidator
   end
 
   def self.rate_on_or_before?(fund, new_currency, date)
-    ExchangeRate.where(entity_id: fund.entity_id, from: fund.currency, to: new_currency)
-                .exists?(as_of: ..date)
+    # Any rate the fund accepts on or before the date, as FxRateResolver would find it (fund-market-data)
+    FxRateResolver.lookup(entity_id: fund.entity_id, from: fund.currency, to: new_currency, as_of: date,
+                          policy: SourcePolicy.for(fund)).present?
   end
 
   # TrackingCurrencyJob converts each portfolio investment's FMV at the date of the latest

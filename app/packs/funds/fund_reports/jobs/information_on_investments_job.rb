@@ -37,7 +37,8 @@ class InformationOnInvestmentsJob
       data[index]["Type of Security"]["Value"] = inv_instrument.custom_fields.sebi_type_of_security
       data[index]["Other Security Type"]["Value"] = inv_instrument.custom_fields.sebi_details_of_security
       data[index]["Whether its an offshore investment?"]["Value"] = inv_instrument.custom_fields.sebi_offshore_investment
-      data[index]["ISIN"]["Value"] = inv_instrument.custom_fields.sebi_isin
+      # The ISIN column (fund-market-data), falling back to the older SEBI custom field
+      data[index]["ISIN"]["Value"] = inv_instrument.isin.presence || inv_instrument.custom_fields.sebi_isin
       data[index]["SEBI Registration Number of investee Company"]["Value"] = inv_instrument.custom_fields.sebi_registration_number
       data[index]["Whether Investee company is an Associate"]["Value"] = inv_instrument.custom_fields.sebi_is_associate
       data[index]["Whether it is managed or sponsored by AIF's manager or sponsor or their associates"]["Value"] = inv_instrument.custom_fields.sebi_is_managed_or_sponsored_by_aif
@@ -88,7 +89,7 @@ class InformationOnInvestmentsJob
         type_of_security = inv_instrument.custom_fields.sebi_type_of_security
         details_of_security = inv_instrument.custom_fields.sebi_details_of_security
         offshore_investment = inv_instrument.custom_fields.sebi_offshore_investment
-        isin = inv_instrument.custom_fields.sebi_isin
+        isin = inv_instrument.isin.presence || inv_instrument.custom_fields.sebi_isin
         sebi_registration_number = inv_instrument.custom_fields.sebi_registration_number
         is_associate = inv_instrument.custom_fields.sebi_is_associate
         is_managed_or_sponsored_by_aif = inv_instrument.custom_fields.sebi_is_managed_or_sponsored_by_aif

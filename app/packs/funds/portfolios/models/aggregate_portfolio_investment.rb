@@ -123,6 +123,9 @@ class AggregatePortfolioInvestment < ApplicationRecord
     api.instrument_currency_fmv_cents = buys.sum(&:instrument_currency_fmv_cents)
     api.instrument_currency_cost_of_remaining_cents = buys.sum(&:instrument_currency_cost_of_remaining_cents)
     api.instrument_currency_unrealized_gain_cents = buys.sum(&:instrument_currency_unrealized_gain_cents)
+    # Gain split rolled up from the transactions (H9, E33)
+    api.unrealized_price_effect_cents = buys.sum(&:unrealized_price_effect_cents)
+    api.realized_price_effect_cents = sells.sum(&:realized_price_effect_cents)
     api.portfolio_income_cents = portfolio_cashflows.where(payment_date: ..end_date).sum(:amount_cents)
     api.freeze
   end
@@ -187,14 +190,20 @@ class AggregatePortfolioInvestment < ApplicationRecord
   end
 
   # Calculates FMV as of a given date based on the latest valuation
+  # FMV with the price and rate this fund accepts (PriceResolver + FxRateResolver). The open-ended
+  # NAV reads this, so it is policy-aware with no NAV change (design › Bridge).
   def fmv_on_date(end_date)
     qty = net_quantity_on(end_date)
     return 0 if qty.zero?
 
-    val = Valuation.where(owner_id: portfolio_company_id, owner_type: "Investor", investment_instrument: investment_instrument, valuation_date: ..end_date).order(:valuation_date).last
+    val = accepted_valuation_on(end_date)
     raise "No valuation found for #{portfolio_company.investor_name}, #{investment_instrument.name} prior to #{end_date}" unless val
 
-    qty * val.per_share_value_in(fund.currency, end_date)
+    qty * val.per_share_value_in(fund.currency, end_date, fund:)
+  end
+
+  def accepted_valuation_on(end_date)
+    PriceResolver.lookup(instrument: investment_instrument, owner: portfolio_company, as_of: end_date, policy: SourcePolicy.for(fund))&.valuation
   end
 
   # Calculates FMV in base currency (raw cents)
@@ -202,7 +211,7 @@ class AggregatePortfolioInvestment < ApplicationRecord
     qty = net_quantity_on(end_date)
     return 0 if qty.zero?
 
-    val = Valuation.where(owner_id: portfolio_company_id, owner_type: "Investor", investment_instrument: investment_instrument, valuation_date: ..end_date).order(:valuation_date).last
+    val = accepted_valuation_on(end_date)
     raise "No valuation found for #{portfolio_company.investor_name}, #{investment_instrument.name} prior to #{end_date}" unless val
 
     qty * val.per_share_value_cents

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_09_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_11_100700) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -380,6 +380,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_100000) do
     t.string "portfolio_company_name", limit: 100
     t.decimal "portfolio_income_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "quantity", precision: 24, scale: 8, default: "0.0"
+    t.decimal "realized_price_effect_cents", precision: 20, scale: 2, default: "0.0", null: false
     t.boolean "show_portfolio", default: false
     t.boolean "snapshot", default: false
     t.date "snapshot_date"
@@ -391,6 +392,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_100000) do
     t.decimal "transfer_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "transfer_quantity", precision: 20, scale: 2, default: "0.0"
     t.decimal "unrealized_gain_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "unrealized_price_effect_cents", precision: 20, scale: 2, default: "0.0", null: false
     t.datetime "updated_at", null: false
     t.index ["deleted_at"], name: "index_aggregate_portfolio_investments_on_deleted_at"
     t.index ["document_folder_id"], name: "index_aggregate_portfolio_investments_on_document_folder_id"
@@ -1253,6 +1255,31 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_100000) do
     t.index ["owner_type", "owner_id"], name: "index_commitment_adjustments_on_owner"
   end
 
+  create_table "corporate_action_suggestions", force: :cascade do |t|
+    t.decimal "amount_per_share_cents", precision: 20, scale: 2
+    t.datetime "created_at", null: false
+    t.string "currency", limit: 5
+    t.bigint "entity_id", null: false
+    t.date "ex_date", null: false
+    t.bigint "investment_instrument_id", null: false
+    t.string "kind", limit: 10, null: false
+    t.string "provider", limit: 20, null: false
+    t.string "provider_ref", limit: 100, null: false
+    t.decimal "ratio", precision: 12, scale: 8
+    t.datetime "resolved_at"
+    t.bigint "resolved_by_id"
+    t.string "status", limit: 10, default: "pending", null: false
+    t.bigint "stock_adjustment_id"
+    t.string "subject"
+    t.datetime "updated_at", null: false
+    t.index ["entity_id", "provider_ref"], name: "idx_corporate_action_suggestions_ref", unique: true
+    t.index ["entity_id", "status"], name: "index_corporate_action_suggestions_on_entity_id_and_status"
+    t.index ["entity_id"], name: "index_corporate_action_suggestions_on_entity_id"
+    t.index ["investment_instrument_id"], name: "index_corporate_action_suggestions_on_investment_instrument_id"
+    t.index ["resolved_by_id"], name: "index_corporate_action_suggestions_on_resolved_by_id"
+    t.index ["stock_adjustment_id"], name: "index_corporate_action_suggestions_on_stock_adjustment_id"
+  end
+
   create_table "custom_grid_views", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.bigint "owner_id", null: false
@@ -1590,6 +1617,78 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_100000) do
     t.index ["entity_id"], name: "index_deals_on_entity_id"
     t.index ["form_type_id"], name: "index_deals_on_form_type_id"
     t.index ["slug"], name: "index_deals_on_slug", unique: true
+  end
+
+  create_table "derivative_contracts", force: :cascade do |t|
+    t.bigint "agreement_document_id"
+    t.string "contract_type", limit: 20, null: false
+    t.string "counterparty_name", limit: 100
+    t.datetime "created_at", null: false
+    t.string "currency", limit: 5, null: false
+    t.datetime "deleted_at"
+    t.bigint "entity_id", null: false
+    t.string "exchange", limit: 10
+    t.date "expiry_date", null: false
+    t.datetime "expiry_reminded_at"
+    t.string "feed_symbol", limit: 60
+    t.decimal "forward_rate", precision: 20, scale: 8
+    t.bigint "fund_id", null: false
+    t.bigint "hedge_of_id"
+    t.string "hedge_of_type", limit: 40
+    t.string "hedge_unit_type", limit: 40
+    t.json "json_fields"
+    t.boolean "listed", default: false, null: false
+    t.decimal "lot_size", precision: 24, scale: 8
+    t.decimal "lots", precision: 24, scale: 8
+    t.string "name", limit: 100, null: false
+    t.decimal "notional_cents", precision: 20, scale: 2
+    t.decimal "open_lots", precision: 24, scale: 8
+    t.string "option_type", limit: 4
+    t.decimal "premium_cents", precision: 20, scale: 2, default: "0.0", null: false
+    t.string "settlement", limit: 10, default: "cash", null: false
+    t.string "side", limit: 5, null: false
+    t.string "status", limit: 10, default: "open", null: false
+    t.decimal "strike", precision: 20, scale: 8
+    t.date "trade_date", null: false
+    t.bigint "underlying_instrument_id"
+    t.string "underlying_name", limit: 30
+    t.string "underlying_type", limit: 15, null: false
+    t.datetime "updated_at", null: false
+    t.index ["agreement_document_id"], name: "index_derivative_contracts_on_agreement_document_id"
+    t.index ["deleted_at"], name: "index_derivative_contracts_on_deleted_at"
+    t.index ["entity_id"], name: "index_derivative_contracts_on_entity_id"
+    t.index ["expiry_date", "status"], name: "index_derivative_contracts_on_expiry_date_and_status"
+    t.index ["fund_id", "status"], name: "index_derivative_contracts_on_fund_id_and_status"
+    t.index ["fund_id"], name: "index_derivative_contracts_on_fund_id"
+    t.index ["hedge_of_type", "hedge_of_id"], name: "index_derivative_contracts_on_hedge_of_type_and_hedge_of_id"
+    t.index ["underlying_instrument_id"], name: "index_derivative_contracts_on_underlying_instrument_id"
+  end
+
+  create_table "derivative_events", force: :cascade do |t|
+    t.decimal "amount_cents", precision: 20, scale: 2
+    t.datetime "created_at", null: false
+    t.decimal "delta", precision: 10, scale: 6
+    t.bigint "derivative_contract_id", null: false
+    t.bigint "entity_id", null: false
+    t.date "event_date", null: false
+    t.string "event_type", limit: 15, null: false
+    t.bigint "fund_id", null: false
+    t.string "idempotency_key", limit: 64, null: false
+    t.bigint "import_upload_id"
+    t.decimal "lots", precision: 24, scale: 8
+    t.text "notes"
+    t.bigint "portfolio_investment_id"
+    t.string "provider", limit: 40
+    t.string "source", limit: 10, default: "manual", null: false
+    t.datetime "updated_at", null: false
+    t.decimal "value_cents", precision: 20, scale: 2
+    t.index ["derivative_contract_id", "event_date"], name: "index_derivative_events_on_derivative_contract_id_and_event_date"
+    t.index ["derivative_contract_id"], name: "index_derivative_events_on_derivative_contract_id"
+    t.index ["entity_id"], name: "index_derivative_events_on_entity_id"
+    t.index ["fund_id"], name: "index_derivative_events_on_fund_id"
+    t.index ["idempotency_key"], name: "index_derivative_events_on_idempotency_key", unique: true
+    t.index ["import_upload_id"], name: "index_derivative_events_on_import_upload_id"
+    t.index ["portfolio_investment_id"], name: "index_derivative_events_on_portfolio_investment_id"
   end
 
   create_table "devise_api_tokens", force: :cascade do |t|
@@ -2076,14 +2175,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_100000) do
     t.string "from", limit: 5
     t.bigint "import_upload_id"
     t.boolean "latest", default: true
+    t.bigint "leg1_id"
+    t.bigint "leg2_id"
     t.text "notes"
+    t.bigint "owner_id"
+    t.string "owner_type", limit: 20
+    t.string "provider", limit: 40
     t.decimal "rate", precision: 20, scale: 8, default: "0.0"
+    t.string "rate_type", limit: 10, default: "reference", null: false
+    t.string "source", limit: 10, default: "manual", null: false
     t.string "to", limit: 5
     t.datetime "updated_at", null: false
     t.index ["document_folder_id"], name: "index_exchange_rates_on_document_folder_id"
     t.index ["entity_id", "from", "to", "as_of"], name: "idx_exchange_rates_entity_from_to_as_of", order: { as_of: :desc }
+    t.index ["entity_id", "owner_type", "owner_id", "from", "to", "as_of", "source"], name: "idx_exchange_rates_source"
     t.index ["entity_id"], name: "index_exchange_rates_on_entity_id"
     t.index ["import_upload_id"], name: "index_exchange_rates_on_import_upload_id"
+    t.index ["leg1_id"], name: "index_exchange_rates_on_leg1_id"
+    t.index ["leg2_id"], name: "index_exchange_rates_on_leg2_id"
+    t.index ["owner_type", "owner_id", "from", "to", "as_of"], name: "idx_exchange_rates_owner"
   end
 
   create_table "excused_investors", force: :cascade do |t|
@@ -2698,6 +2808,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_100000) do
     t.boolean "enable_ai_commentary", default: true, null: false
     t.bigint "entity_id", null: false
     t.string "esign_emails"
+    t.bigint "features", default: 0, null: false
     t.date "first_close_date"
     t.bigint "form_type_id"
     t.bigint "fund_signatory_id"
@@ -2907,17 +3018,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_100000) do
     t.string "currency", limit: 5
     t.datetime "deleted_at"
     t.bigint "entity_id", null: false
+    t.string "exchange", limit: 10
     t.bigint "form_type_id"
     t.bigint "import_upload_id"
     t.string "investment_domicile", limit: 15
+    t.string "isin", limit: 12
     t.json "json_fields"
     t.string "name"
     t.bigint "portfolio_company_id", null: false
+    t.string "pricing_method", limit: 10, default: "manual", null: false
     t.string "sector", limit: 100
     t.boolean "startup", default: false
     t.string "sub_category", limit: 100
+    t.string "ticker", limit: 30
     t.datetime "updated_at", null: false
     t.index ["deleted_at"], name: "index_investment_instruments_on_deleted_at"
+    t.index ["entity_id", "exchange", "ticker"], name: "idx_instruments_entity_exchange_ticker", unique: true
+    t.index ["entity_id", "isin"], name: "idx_instruments_entity_isin"
     t.index ["entity_id"], name: "index_investment_instruments_on_entity_id"
     t.index ["form_type_id"], name: "index_investment_instruments_on_form_type_id"
     t.index ["portfolio_company_id"], name: "index_investment_instruments_on_portfolio_company_id"
@@ -3445,6 +3562,45 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_100000) do
     t.datetime "updated_at", null: false
     t.index ["entity_id", "name"], name: "idx_kyc_onboardings_entity_name", unique: true
     t.index ["entity_id"], name: "index_kyc_onboardings_on_entity_id"
+  end
+
+  create_table "market_data_runs", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "entity_id", null: false
+    t.text "error_message"
+    t.datetime "finished_at"
+    t.string "kind", limit: 15, null: false
+    t.integer "loaded_count", default: 0, null: false
+    t.json "missing"
+    t.datetime "notified_at"
+    t.string "provider", limit: 20, null: false
+    t.date "run_date", null: false
+    t.datetime "started_at"
+    t.string "status", limit: 10, default: "running", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id", "kind", "provider", "run_date"], name: "idx_market_data_runs_unique", unique: true
+    t.index ["entity_id"], name: "index_market_data_runs_on_entity_id"
+  end
+
+  create_table "market_data_settings", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "deleted_at"
+    t.bigint "entity_id", null: false
+    t.json "fund_defaults"
+    t.bigint "fund_id"
+    t.boolean "fx_feed_enabled", default: false, null: false
+    t.json "fx_providers"
+    t.integer "max_price_age_days"
+    t.integer "max_rate_age_days"
+    t.string "pivot_currency", limit: 5, default: "USD", null: false
+    t.boolean "price_feed_enabled", default: false, null: false
+    t.decimal "price_move_threshold_pct", precision: 5, scale: 2
+    t.json "price_providers"
+    t.datetime "updated_at", null: false
+    t.index ["deleted_at"], name: "index_market_data_settings_on_deleted_at"
+    t.index ["entity_id", "fund_id"], name: "index_market_data_settings_on_entity_id_and_fund_id", unique: true
+    t.index ["entity_id"], name: "index_market_data_settings_on_entity_id"
+    t.index ["fund_id"], name: "index_market_data_settings_on_fund_id"
   end
 
   create_table "mcp_audit_logs", force: :cascade do |t|
@@ -3996,6 +4152,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_100000) do
     t.boolean "proforma", default: false, null: false
     t.decimal "quantity", precision: 24, scale: 8, default: "0.0"
     t.decimal "quantity_as_of_date", precision: 10, default: "0"
+    t.decimal "realized_price_effect_cents", precision: 20, scale: 2, default: "0.0", null: false
     t.bigint "ref_id", default: 0, null: false
     t.string "sector", limit: 100
     t.boolean "snapshot", default: false
@@ -4008,6 +4165,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_100000) do
     t.decimal "transfer_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "transfer_quantity", precision: 20, scale: 2, default: "0.0"
     t.decimal "unrealized_gain_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "unrealized_price_effect_cents", precision: 20, scale: 2, default: "0.0", null: false
     t.datetime "updated_at", null: false
     t.bigint "valuation_id"
     t.index ["aggregate_portfolio_investment_id"], name: "index_portfolio_investments_on_aggregate_portfolio_investment_id"
@@ -4903,7 +5061,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_100000) do
     t.bigint "owner_id"
     t.string "owner_type"
     t.decimal "per_share_value_cents", precision: 20, scale: 8, default: "0.0"
+    t.string "price_type", limit: 10, default: "close", null: false
+    t.string "provider", limit: 40
     t.text "report_data"
+    t.string "source", limit: 10, default: "manual", null: false
     t.string "sub_category", limit: 100
     t.boolean "synthetic", default: false, null: false
     t.datetime "updated_at", null: false
@@ -4912,7 +5073,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_100000) do
     t.index ["deleted_at"], name: "index_valuations_on_deleted_at"
     t.index ["entity_id"], name: "index_valuations_on_entity_id"
     t.index ["form_type_id"], name: "index_valuations_on_form_type_id"
-    t.index ["investment_instrument_id", "deleted_at", "synthetic", "valuation_date"], name: "idx_latest_valuation"
+    t.index ["investment_instrument_id", "deleted_at", "synthetic", "source", "valuation_date"], name: "idx_latest_valuation"
     t.index ["investment_instrument_id"], name: "index_valuations_on_investment_instrument_id"
     t.index ["owner_id", "owner_type", "deleted_at"], name: "idx_valuations_full_optimized"
     t.index ["owner_type", "owner_id"], name: "index_valuations_on_owner"
@@ -5265,6 +5426,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_100000) do
   add_foreign_key "commitment_adjustments", "entities"
   add_foreign_key "commitment_adjustments", "exchange_rates"
   add_foreign_key "commitment_adjustments", "funds"
+  add_foreign_key "corporate_action_suggestions", "entities"
+  add_foreign_key "corporate_action_suggestions", "investment_instruments"
+  add_foreign_key "corporate_action_suggestions", "stock_adjustments"
+  add_foreign_key "corporate_action_suggestions", "users", column: "resolved_by_id"
   add_foreign_key "custom_notifications", "entities"
   add_foreign_key "custom_notifications", "folders", column: "document_folder_id"
   add_foreign_key "customer_support_escalations", "agent_chat_sessions"
@@ -5317,6 +5482,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_100000) do
   add_foreign_key "deals", "folders", column: "data_room_folder_id"
   add_foreign_key "deals", "folders", column: "document_folder_id"
   add_foreign_key "deals", "form_types"
+  add_foreign_key "derivative_contracts", "documents", column: "agreement_document_id"
+  add_foreign_key "derivative_contracts", "entities"
+  add_foreign_key "derivative_contracts", "funds"
+  add_foreign_key "derivative_contracts", "investment_instruments", column: "underlying_instrument_id"
+  add_foreign_key "derivative_events", "derivative_contracts"
+  add_foreign_key "derivative_events", "entities"
+  add_foreign_key "derivative_events", "funds"
+  add_foreign_key "derivative_events", "import_uploads"
+  add_foreign_key "derivative_events", "portfolio_investments"
   add_foreign_key "doc_check_results", "doc_check_runs", on_delete: :cascade
   add_foreign_key "doc_check_results", "doc_checks", on_delete: :nullify
   add_foreign_key "doc_check_results", "entities"
@@ -5512,6 +5686,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_100000) do
   add_foreign_key "kyc_inspection_records", "users", column: "resolved_by_id"
   add_foreign_key "kyc_onboarding_wizards", "kyc_onboardings"
   add_foreign_key "kyc_onboardings", "entities"
+  add_foreign_key "market_data_runs", "entities"
+  add_foreign_key "market_data_settings", "entities"
+  add_foreign_key "market_data_settings", "funds"
   add_foreign_key "mcp_audit_logs", "entities"
   add_foreign_key "mcp_audit_logs", "oauth_applications"
   add_foreign_key "mcp_audit_logs", "users"

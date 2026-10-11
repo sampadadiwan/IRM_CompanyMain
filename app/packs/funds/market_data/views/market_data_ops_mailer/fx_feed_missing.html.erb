@@ -1,0 +1,17 @@
+<p>Dear <%= @user.name %>,</p>
+
+<p>The <strong><%= @run.provider.upcase %></strong> FX rate feed could not load every rate for <strong><%= l @run.run_date %></strong>.</p>
+
+<ul>
+  <% @run.missing_items.each do |item| %>
+    <li><%= item["key"].to_s.sub("/", "→") %> — <%= item["reason"] %></li>
+  <% end %>
+</ul>
+
+<% if @run.error_message.present? %>
+  <p>Provider message: <%= @run.error_message %></p>
+<% end %>
+
+<p>Until the feed loads them, enter the missing rates by hand under Exchange Rates (they are stored as Manual rates and win over feed rates on the same date).</p>
+
+<p>Thank you,<br><%= @entity.name %> System</p>

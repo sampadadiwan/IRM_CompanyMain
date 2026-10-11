@@ -67,6 +67,27 @@
     <%= form.text_field :investment_domicile, class: "form-control"  %>
   </div>
 
+  <%# Identifiers and pricing method — openspec fund-market-data, card ④ (H6, X11–X13, X35) %>
+  <div class="row">
+    <div class="col-md-4 form-group">
+      <%= form.label :isin, "ISIN" %>
+      <%= form.text_field :isin, class: "form-control", maxlength: 12 %>
+    </div>
+    <div class="col-md-4 form-group">
+      <%= form.label :ticker %>
+      <%= form.text_field :ticker, class: "form-control", maxlength: 30 %>
+    </div>
+    <div class="col-md-4 form-group">
+      <%= form.label :exchange %>
+      <%= form.text_field :exchange, class: "form-control", maxlength: 10, placeholder: "NSE, BSE, NASDAQ…" %>
+    </div>
+  </div>
+  <div class="form-group">
+    <%= form.label :pricing_method %>
+    <%= form.select :pricing_method, InvestmentInstrument::PRICING_METHODS.map { |m| [m.capitalize, m] }, {}, class: "form-select" %>
+    <small class="text-muted">Market: priced daily from the price feed. Manual, Model or Cost: priced from valuations you enter.</small>
+  </div>
+
   <%= custom_form_fields(investment_instrument, form) %>
 
   <% regulatory_custom_fields = investment_instrument.form_type.present? ? investment_instrument.form_custom_fields.regulatory.includes(:rich_text_info) : [] %>

@@ -121,6 +121,25 @@ resources :exchange_rates do
   post 'generate_tracking_numbers', on: :member
 end
 
+# Entity Market Data settings and feed runs — openspec/changes/fund-market-data (card ①, ②)
+namespace :market_data do
+  resource :settings, only: %i[show update] do
+    post :test_feed
+  end
+  resources :runs, only: %i[index]
+end
+# Derivatives — fund-market-data, card ⑥
+resources :funds, only: [] do
+  resources :derivative_contracts, only: %i[index new create], shallow: true
+end
+resources :derivative_contracts, only: %i[show edit update] do
+  post :record_event, on: :member
+end
+resources :corporate_action_suggestions, only: %i[index] do
+  patch :confirm, on: :member
+  patch :dismiss, on: :member
+end
+
 resources :approval_responses do
   patch 'approve', on: :member
   get 'email_response', on: :member

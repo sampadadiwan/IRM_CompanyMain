@@ -1,0 +1,127 @@
+<%# Record or edit a derivative contract — fund-market-data, card ⑥ (H11, H12, X19, X20) %>
+<%= render FormCard.new(title: contract.new_record? ? "New derivative contract" : "Edit #{contract.name}") do %>
+  <% url = contract.new_record? ? fund_derivative_contracts_path(contract.fund) : derivative_contract_path(contract) %>
+  <%= form_with(model: contract, url:, scope: :derivative_contract) do |form| %>
+    <% if contract.errors.any? %>
+      <div class="alert alert-danger"><ul class="mb-0"><% contract.errors.full_messages.each do |m| %><li><%= m %></li><% end %></ul></div>
+    <% end %>
+    <% locked = contract.persisted? %>
+    <div class="row">
+      <div class="col-md-4 form-group">
+        <%= form.label :contract_type, "Type" %>
+        <%= form.select :contract_type, DerivativeContract::TYPE_LABELS.map { |k, v| [v, k] }, {}, class: "form-select", disabled: locked %>
+      </div>
+      <div class="col-md-4 form-group">
+        <%= form.label :side %>
+        <%= form.select :side, [["Long", "long"], ["Short", "short"]], {}, class: "form-select", disabled: locked %>
+      </div>
+      <div class="col-md-4 form-group">
+        <%= form.label :name, "Name (optional)" %>
+        <%= form.text_field :name, class: "form-control", maxlength: 100 %>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-4 form-group">
+        <%= form.label :underlying_type, "Underlying" %>
+        <%= form.select :underlying_type, [["Holding", "instrument"], ["Currency pair", "currency_pair"], ["Index", "index"], ["Interest rate", "rate"], ["Credit", "credit"]], {}, class: "form-select" %>
+      </div>
+      <div class="col-md-4 form-group">
+        <%= form.label :underlying_instrument_id, "Underlying holding" %>
+        <%= form.select :underlying_instrument_id, InvestmentInstrument.where(entity_id: contract.entity_id).order(:name).map { |i| [i.name, i.id] }, { include_blank: true }, class: "form-select" %>
+      </div>
+      <div class="col-md-4 form-group">
+        <%= form.label :underlying_name, "Underlying name (index or pair, e.g. NIFTY, USD/INR)" %>
+        <%= form.text_field :underlying_name, class: "form-control", maxlength: 30 %>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-3 form-group">
+        <%= form.label :option_type, "Call / put" %>
+        <%= form.select :option_type, [["Call", "call"], ["Put", "put"]], { include_blank: true }, class: "form-select" %>
+      </div>
+      <div class="col-md-3 form-group">
+        <%= form.label :strike %>
+        <%= form.number_field :strike, step: "any", class: "form-control" %>
+      </div>
+      <div class="col-md-3 form-group">
+        <%= form.label :lots %>
+        <%= form.number_field :lots, step: "any", class: "form-control", disabled: locked %>
+      </div>
+      <div class="col-md-3 form-group">
+        <%= form.label :lot_size %>
+        <%= form.number_field :lot_size, step: "any", class: "form-control" %>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-3 form-group">
+        <%= form.label :notional %>
+        <%= form.number_field :notional, step: "any", class: "form-control", value: contract.notional_cents && (contract.notional_cents.to_d / 100) %>
+      </div>
+      <div class="col-md-3 form-group">
+        <%= form.label :forward_rate %>
+        <%= form.number_field :forward_rate, step: "any", class: "form-control" %>
+      </div>
+      <div class="col-md-3 form-group">
+        <%= form.label :currency %>
+        <%= form.text_field :currency, class: "form-control", maxlength: 5 %>
+      </div>
+      <% if contract.new_record? %>
+        <div class="col-md-3 form-group">
+          <%= label_tag "derivative_contract_premium", "Premium (paid if long, received if short)" %>
+          <%= number_field_tag "derivative_contract[premium]", params.dig(:derivative_contract, :premium), step: "any", class: "form-control", id: "derivative_contract_premium" %>
+        </div>
+      <% end %>
+    </div>
+    <div class="row">
+      <div class="col-md-3 form-group">
+        <%= form.label :trade_date %>
+        <%= form.date_field :trade_date, class: "form-control", disabled: locked %>
+      </div>
+      <div class="col-md-3 form-group">
+        <%= form.label :expiry_date, "Expiry / maturity" %>
+        <%= form.date_field :expiry_date, class: "form-control" %>
+      </div>
+      <div class="col-md-3 form-group">
+        <%= form.label :settlement %>
+        <%= form.select :settlement, [["Cash", "cash"], ["Physical (into shares)", "physical"]], {}, class: "form-select" %>
+      </div>
+      <div class="col-md-3 form-group">
+        <div class="form-check mt-4">
+          <%= form.check_box :listed, class: "form-check-input" %>
+          <%= form.label :listed, "Exchange-traded", class: "form-check-label" %>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-3 form-group">
+        <%= form.label :exchange %>
+        <%= form.text_field :exchange, class: "form-control", maxlength: 10, placeholder: "NSE" %>
+      </div>
+      <div class="col-md-3 form-group">
+        <%= form.label :feed_symbol, "Exchange symbol (for the daily settlement price)" %>
+        <%= form.text_field :feed_symbol, class: "form-control", maxlength: 60, placeholder: "NIFTY26NOV24000PE" %>
+      </div>
+      <div class="col-md-3 form-group">
+        <%= form.label :counterparty_name, "Counterparty (OTC)" %>
+        <%= form.text_field :counterparty_name, class: "form-control", maxlength: 100 %>
+      </div>
+      <div class="col-md-3 form-group">
+        <%= form.label :agreement_document_id, "Agreement (ISDA/CSA)" %>
+        <%= form.select :agreement_document_id, Document.where(entity_id: contract.entity_id, owner: contract.fund).order(:name).map { |d| [d.name, d.id] }, { include_blank: true }, class: "form-select" %>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-6 form-group">
+        <%= form.label :hedge_of_id, "Hedges holding (optional)" %>
+        <%= form.select :hedge_of_id, AggregatePortfolioInvestment.where(fund_id: contract.fund_id).includes(:investment_instrument).map { |a| [a.investment_instrument.name, a.id] }, { include_blank: true }, class: "form-select" %>
+      </div>
+      <div class="col-md-6 form-group">
+        <%= form.label :hedge_unit_type, "Hedges share class (optional)" %>
+        <%= form.text_field :hedge_unit_type, class: "form-control", maxlength: 40 %>
+      </div>
+    </div>
+    <div class="form-group">
+      <%= form.submit t_common(:save), class: "btn btn-outline-primary" %>
+    </div>
+  <% end %>
+<% end %>

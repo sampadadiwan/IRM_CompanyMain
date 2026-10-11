@@ -8,7 +8,7 @@
       Documents
     </a>
 
-    <% if capital_remittance.entity.permissions.enable_units? && !(current_user.curr_role_investor? && !capital_remittance.fund.show_fund_units) %>
+    <% if capital_remittance.entity.permissions.enable_units? && !(current_user.curr_role_investor? && !capital_remittance.fund.features.show_fund_units?) %>
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#fund-units-tab">
         Units
       </a>
@@ -37,7 +37,7 @@
       </div>
     </div>
 
-    <% if capital_remittance.entity.permissions.enable_units? && !(current_user.curr_role_investor? && !capital_remittance.fund.show_fund_units) %>
+    <% if capital_remittance.entity.permissions.enable_units? && !(current_user.curr_role_investor? && !capital_remittance.fund.features.show_fund_units?) %>
       <div id="fund-units-tab" class="tab-pane fade">
         <div id="fund_units" class="associated_entity">
           <%= turbo_frame_tag "fund_units_frame", target: "_top", src: fund_units_path(owner_id: capital_remittance.id, owner_type: "CapitalRemittance"), loading: :lazy do %>

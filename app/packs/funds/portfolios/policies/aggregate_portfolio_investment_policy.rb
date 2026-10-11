@@ -12,7 +12,7 @@ class AggregatePortfolioInvestmentPolicy < FundBasePolicy
         # compatible joins requirement for #or.
         scope.joins(:fund)
              .where(fund_id: FeederMasterFundAccess.eligible_ids_for_investor(user))
-             .where("funds.show_portfolios = true")
+             .where("funds.features & ? > 0", Fund.features.maps[:show_portfolios])
       else
         # Non-investors: use the standard role-based scope chain
         # (rm / company_admin / employee / super).
@@ -27,7 +27,7 @@ class AggregatePortfolioInvestmentPolicy < FundBasePolicy
 
   def show?
     (user.enable_funds && permissioned_employee?) ||
-      (record.fund.show_portfolios &&
+      (record.fund.features.show_portfolios? &&
         (
           # Direct case: investor has an AccessRight on this exact fund.
           FundPolicy.new(user, record.fund).permissioned_investor? ||

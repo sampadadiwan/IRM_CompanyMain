@@ -1,8 +1,14 @@
 class ImportValuation < ImportUtil
   STANDARD_HEADERS = ["Instrument", "Valuation Date", "Valuation", "Per Share Value", "Portfolio Company"].freeze
+  # Optional (fund-market-data E37): close / bid / mid. Uploaded valuations are always Manual.
+  OPTIONAL_HEADERS = ["Price Type"].freeze
 
   def standard_headers
     STANDARD_HEADERS
+  end
+
+  def ignore_headers
+    OPTIONAL_HEADERS
   end
 
   def save_row(user_data, import_upload, custom_field_headers, _ctx)
@@ -30,6 +36,8 @@ class ImportValuation < ImportUtil
     if valuation.new_record?
       Rails.logger.debug user_data
       valuation.import_upload_id = import_upload.id
+      valuation.assign_attributes(source: "manual", provider: "Upload",
+                                  price_type: user_data["Price Type"].presence&.downcase || "close")
       setup_custom_fields(user_data, valuation, custom_field_headers)
       valuation.save!
     else

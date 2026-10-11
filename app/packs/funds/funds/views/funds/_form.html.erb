@@ -140,29 +140,7 @@
                     <small class="text-muted">Brief commentary shown to LPs on their landing page (e.g. "Fund performing strongly – Q1 exits completed"). Leave blank for auto-generated text.</small>
                   </div>
 
-                  <div class="form-group">
-                    <%= form.label :show_fund_ratios, "Show fund ratios to LPs" %>
-                    <%= form.check_box :show_fund_ratios, class: "form-check-input"  %>
-                    <small class="text-muted">Check this to show fund ratios to LPs</small>
-                  </div>
-
-                  <div class="form-group">
-                    <%= form.label :show_portfolios, "Show fund portfolios to LPs" %>
-                    <%= form.check_box :show_portfolios, class: "form-check-input"  %>
-                    <small class="text-muted">Check this to show fund portfolios to LPs</small>
-                  </div>
-
-                  <div class="form-group">
-                    <%= form.label :enable_ai_commentary, "Enable AI commentary on Account Entries Reports" %>
-                    <%= form.check_box :enable_ai_commentary, class: "form-check-input"  %>
-                    <small class="text-muted">When off, AI commentary won't auto-generate on the Account Entries Period Report; individual sections can still be generated on demand.</small>
-                  </div>
-
-                  <div class="form-group">
-                    <%= form.label :show_fund_units, "Show fund units to LPs" %>
-                    <%= form.check_box :show_fund_units, class: "form-check-input"  %>
-                    <small class="text-muted">Check this to show fund units to LPs</small>
-                  </div>
+                  <%= render "funds/features", fund: fund, form: form %>
 
                   <%= custom_form_fields(fund, form, step: :end) %>
 

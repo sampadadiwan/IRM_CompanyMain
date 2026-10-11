@@ -1,8 +1,14 @@
 class ImportInvestmentInstrument < ImportUtil
   STANDARD_HEADERS = ["Portfolio Company", "Name", "Currency", "Investment Domicile", "Update Only"].freeze
+  # Optional market-pricing columns (fund-market-data); older sheets without them still upload
+  OPTIONAL_HEADERS = ["ISIN", "Ticker", "Exchange", "Pricing Method"].freeze
 
   def standard_headers
     STANDARD_HEADERS
+  end
+
+  def ignore_headers
+    OPTIONAL_HEADERS
   end
 
   def save_row(row_data, import_upload, custom_field_headers, _ctx)
@@ -50,6 +56,11 @@ class ImportInvestmentInstrument < ImportUtil
                                             name: row_data["Name"]&.strip,
                                             currency: row_data["Currency"]&.to_s&.strip&.upcase,
                                             investment_domicile: row_data["Investment Domicile"]&.to_s)
+    # Optional identifiers / pricing method; blank cells leave existing values alone
+    { isin: "ISIN", ticker: "Ticker", exchange: "Exchange" }.each do |attr, header|
+      investment_instrument.public_send(:"#{attr}=", row_data[header]) if row_data[header].present?
+    end
+    investment_instrument.pricing_method = row_data["Pricing Method"].to_s.strip.downcase if row_data["Pricing Method"].present?
 
     setup_custom_fields(row_data, investment_instrument, custom_field_headers)
 
