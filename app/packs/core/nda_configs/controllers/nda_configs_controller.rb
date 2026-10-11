@@ -108,7 +108,9 @@ class NdaConfigsController < ApplicationController
           resign_required = ActiveModel::Type::Boolean.new.cast(
             params.dig(:nda_config, :resign_required)
           )
-          resign_required = true if resign_required.nil?
+          # Changed: Default to false when checkbox is unchecked (param not sent).
+          # Why: Unchecked checkbox means GP does not want existing signatories to re-sign.
+          resign_required = false if resign_required.nil?
           create_version_record(@nda_config, resign_required: resign_required)
           notify_version_change if resign_required
         end
