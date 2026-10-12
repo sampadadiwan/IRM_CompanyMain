@@ -102,7 +102,7 @@ Given('I am logged in as the fund admin') do
   fill_in('user_email', with: @user.email)
   fill_in('user_password', with: 'password')
   click_on('Log In')
-  sleep(1)
+  expect(page).not_to have_current_path('/users/sign_in', wait: 15)
 end
 
 Given('I am logged in as the portco user') do
@@ -110,7 +110,7 @@ Given('I am logged in as the portco user') do
   fill_in('user_email', with: @portco_user.email)
   fill_in('user_password', with: 'password')
   click_on('Log In')
-  sleep(1)
+  expect(page).not_to have_current_path('/users/sign_in', wait: 15)
 end
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -240,18 +240,21 @@ When('I click {string} and confirm the dialog') do |button_text|
   # Try window.confirm first (used by interim-save#final); fall back to Bootstrap modal
   # (used by KpiReport submit and confirm#popup).
   begin
-    page.accept_confirm { click_on(button_text) }
+    # A native confirm opens the instant the button is clicked, so 2 s is plenty; the default wait
+    # (15 s) was spent in full on every button that uses the Bootstrap modal instead.
+    page.accept_confirm(wait: 2) { click_on(button_text) }
   rescue Capybara::ModalNotFound
     click_on(button_text) unless page.has_css?('.modal.show', wait: 0)
     if page.has_css?('.modal.show', wait: 2)
+      # The modal is shown, so its buttons are already there - look without waiting
       within('.modal.show') do
-        if page.has_button?('Yes, Submit KYC', wait: 1)
+        if page.has_button?('Yes, Submit KYC', wait: 0)
           click_on('Yes, Submit KYC')
-        elsif page.has_button?('Confirm & Submit', wait: 1)
+        elsif page.has_button?('Confirm & Submit', wait: 0)
           click_on('Confirm & Submit')
-        elsif page.has_button?('Confirm', wait: 1)
+        elsif page.has_button?('Confirm', wait: 0)
           click_on('Confirm')
-        elsif page.has_button?('Proceed', wait: 1)
+        elsif page.has_button?('Proceed', wait: 0)
           click_on('Proceed')
         end
       end

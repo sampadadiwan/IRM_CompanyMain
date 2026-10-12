@@ -115,6 +115,13 @@ class DefaultUnitAllocationEngine
 
   # Allocates units for a specific distribution payment
   def allocate_distribution_payment(capital_distribution_payment, reason)
+    # Evergreen redemptions cancel the exact units dealt, not amount ÷ price. The lookup is false for
+    # every closed-ended payment, so the method below runs unchanged for them.
+    # Backward compatibility B6 — openspec/changes/open-ended-funds/design.md#backward-compatibility
+    if (dealing_fill = DealingFill.find_by(capital_distribution_payment_id: capital_distribution_payment.id))
+      return allocate_dealing_redemption(capital_distribution_payment, dealing_fill, reason)
+    end
+
     capital_commitment = capital_distribution_payment.capital_commitment
     capital_distribution = capital_distribution_payment.capital_distribution
     msg = []
@@ -155,6 +162,21 @@ class DefaultUnitAllocationEngine
       Rails.logger.debug msg.join(", ")
       [nil, msg]
     end
+  end
+
+  # Cancels exactly the units an evergreen dealing date filled for this payment, at its NAV per unit.
+  # Idempotent: a payment that already owns a unit is skipped.
+  # Worked examples H24, E32 — openspec/changes/open-ended-funds/design.md#worked-examples
+  def allocate_dealing_redemption(capital_distribution_payment, dealing_fill, reason)
+    return [nil, ["Fund units already redeemed"]] if capital_distribution_payment.fund_units.exists?
+    return [nil, ["Payment not completed"]] unless capital_distribution_payment.completed
+
+    fund_unit = find_or_new_payment(capital_distribution_payment, dealing_fill.unit_type)
+    fund_unit.quantity = -dealing_fill.units
+    fund_unit.price_cents = dealing_fill.nav_per_unit_cents
+    fund_unit.reason = reason
+    fund_unit.issue_date = capital_distribution_payment.payment_date
+    fund_unit.save ? [fund_unit, []] : [fund_unit, fund_unit.errors.full_messages]
   end
 
   # Finds or initializes a fund unit for a distribution payment

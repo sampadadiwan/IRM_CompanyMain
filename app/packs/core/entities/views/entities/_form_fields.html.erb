@@ -133,6 +133,27 @@
         <%= entity_setting_subform.check_box :weekly_task_digest_enabled, class: "form-check-input" %>
         <small class="text-muted d-block">Each recipient sees only the tasks they can already open in the app.</small>
       </div>
+
+      <%# Open-ended fund wording (EvergreenLabels): blank keeps the default shown as the placeholder, which
+          comes from the deployment's locale (APP_LOCALE). Worked examples E212–E214 %>
+      <hr class="my-4">
+      <h5>Open-ended fund wording</h5>
+      <small class="text-muted d-block mb-3">The words your open-ended funds use on screens, emails and confirmations, for your team and your investors. Leave a field blank to keep the default shown. Wording only — no figure changes.</small>
+      <% labels = entity_setting_subform.object.evergreen_labels.to_h %>
+      <div class="row" id="evergreen_wording">
+        <div class="col-md-4 form-group">
+          <%= label_tag "evergreen_label_unit", "What investors hold" %>
+          <%= select_tag "entity[entity_setting_attributes][evergreen_labels][unit]", options_for_select([["Units", ""], ["Shares", "share"]], labels["unit"]), class: "form-select", id: "evergreen_label_unit" %>
+          <small class="text-muted">A fund can still choose its own in its settings.</small>
+        </div>
+        <% EvergreenLabels::OVERRIDABLE.each do |key| %>
+          <div class="col-md-4 form-group">
+            <%= label_tag "evergreen_label_#{key}", key.humanize %>
+            <%= text_field_tag "entity[entity_setting_attributes][evergreen_labels][#{key}]", labels[key], class: "form-control", id: "evergreen_label_#{key}",
+                               placeholder: I18n.t("evergreen.labels.#{key}", unit: "unit", units: "units", Unit: "Unit", Units: "Units"), maxlength: 40 %>
+          </div>
+        <% end %>
+      </div>
     <% end %>
 
     <hr class="my-4">

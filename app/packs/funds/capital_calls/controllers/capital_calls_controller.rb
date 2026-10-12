@@ -40,6 +40,9 @@ class CapitalCallsController < ApplicationController
   # Evaluates the call's journey on every view so the step bar is always current (WithJourneyPanel).
   # Worked examples H3, J2 — openspec/changes/archive/2026-10-02-capital-call-journey/design.md#worked-examples
   def show
+    # Evergreen settlement records open on the evergreen settlement page (open-ended-funds B3)
+    return redirect_to(evergreen_settlement_path(@capital_call.fund_id, @capital_call.id, kind: "subscription")) if request.format.html? && @capital_call.fund.evergreen? && DealingDate.exists?(subscription_call_id: @capital_call.id)
+
     @journey = evaluate_journey(@capital_call)
   end
 

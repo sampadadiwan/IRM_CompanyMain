@@ -236,9 +236,7 @@ When('I click {string} for the pending update for {string}') do |button_label, i
   row = page.all("tr").find { |r| r.has_content?(investor_name) && r.has_button?(button_label) }
   raise "No row with a #{button_label} button found for #{investor_name}" unless row
 
-  row.click_button(button_label)
-  if page.has_css?("#confirmModal", wait: 5)
-    within("#confirmModal") { click_on I18n.t("common.proceed") }
-  end
+  # Confirms in #confirmModal only if the button asks (features/support/confirm_modal_helpers.rb)
+  click_and_confirm_if_asked(row.find_button(button_label))
   sleep 1
 end

@@ -96,8 +96,7 @@ Feature: Fund Ratio Run Templates — configuration, bulk trigger, tag trigger
 
   @javascript
   Scenario: Run modal for a specific template opens and submits to the server
-    Given I am at the login page
-    When I fill and submit the login page
+    Given I am signed in as the current user
     And there is a template "name=Modal-Test;run_type=cross-fund" for the entity
     When I visit the ratio run templates index
     And I open the Run modal for template "Modal-Test"

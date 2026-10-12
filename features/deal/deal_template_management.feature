@@ -8,14 +8,14 @@ Feature: Deal Template Management
 
   # ── Feature 1: No Templates checkbox ────────────────────────────────────────
 
-  @templates
+  @templates @rack_test
   Scenario: Creating a deal with "no templates" skips template seeding
     Given there exists a deal "name=Source Deal;amount_cents=500000" for my company without templates
     And the deal has "3" step templates
     When I create a deal cloning from the source deal with skip_templates
     Then the cloned deal should have "0" step templates
 
-  @templates
+  @templates @rack_test
   Scenario: Creating a deal without the flag inherits cloned templates
     Given there exists a deal "name=Source Deal;amount_cents=500000" for my company without templates
     And the deal has "3" step templates

@@ -1,3 +1,4 @@
+@rack_test
 Feature: SupportClientMapping Policy
   As a system enforcing authorization
   I want to check the policy rules for support client mappings

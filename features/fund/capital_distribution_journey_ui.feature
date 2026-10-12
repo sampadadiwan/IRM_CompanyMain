@@ -22,6 +22,7 @@ Feature: Capital distribution journey — the distribution page
     And there is a capital distribution "title=Q3 2026 Exit Proceeds;income_cents=300000000;approved=false"
 
   # H3 — panel while notices are partly approved; its button clicks the Actions menu link
+  @rack_test
   Scenario: The panel shows how many notices await approval and links to them
     Given the distribution's notices are generated and 1 of them is approved
     When I open the distribution's journey page
@@ -35,6 +36,7 @@ Feature: Capital distribution journey — the distribution page
     And the panel action "View notices to approve" should click "capital_distribution_view_notices_to_approve_btn"
 
   # H4 — Mark reviewed on the page moves the journey on (J2.4)
+  @rack_test
   Scenario: Mark reviewed on the page moves the journey on
     Given the distribution's notices are generated and 3 of them is approved
     When I open the distribution's journey page
@@ -45,6 +47,7 @@ Feature: Capital distribution journey — the distribution page
     And the panel review action "Open payments" should click "#payments-tab"
 
   # Review custom notification names the distribution's own notification and opens it in a new tab
+  @rack_test
   Scenario: Review custom notification shows the distribution's own notification in a new tab
     Given the distribution's notices are generated and 3 of them is approved
     And there is a custom notification for the capital distribution with subject "Your distribution" with email_method "send_notification"
@@ -63,6 +66,7 @@ Feature: Capital distribution journey — the distribution page
     And the panel should say "Mark payments completed: 0 of 3 payments marked completed"
 
   # E6 — readiness warnings until investors are emailed (J2.6)
+  @rack_test
   Scenario: Readiness warnings show until investors are emailed
     Given 1 commitment of the distribution is set to skip doc gen
     And 1 investor of the distribution has nobody subscribed to Distribution emails
@@ -83,6 +87,7 @@ Feature: Capital distribution journey — the distribution page
     And the distribution page should still be open in the original window
 
   # X6 — a user of another company can't load the journey panel
+  @rack_test
   Scenario: A user of another company cannot load the distribution's journey panel
     Given the distribution belongs to another company
     When I load the distribution's journey panel directly

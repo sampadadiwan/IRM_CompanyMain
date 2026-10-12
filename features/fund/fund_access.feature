@@ -1,6 +1,7 @@
 Feature: Fund Access
   Can create and view a fund as a company
 
+@rack_test
 Scenario Outline: Access fund
   Given there is a user "<user>" for an entity "<entity>"
   Given the user has role "<role>"
@@ -17,6 +18,7 @@ Scenario Outline: Access fund
     
 
 
+@rack_test
 Scenario Outline: Access fund & details as Employee
   Given there is a user "" for an entity "entity_type=Investment Fund"
   Given the user has role "<role>"
@@ -61,6 +63,7 @@ Scenario Outline: Access fund & details as Employee
     |employee       |yes   |true   |show,update,destroy        | create,read,update,destroy |
         
 
+@rack_test
 Scenario Outline: Access fund & details as Investor
   Given there is a user "first_name=Mohith" for an entity "entity_type=Investment Fund"
   Given there is an existing investor "entity_type=Family Office"
@@ -101,6 +104,7 @@ Scenario Outline: Access fund & details as Investor
     |investor   |yes   |false  |edit,update,destroy| |
 
 
+@rack_test
 Scenario Outline: Access fund & details as Advisor
   Given there is a user "<user>" for an entity "<entity>"
   Given there is an existing investor "entity_type=Family Office"
@@ -126,6 +130,7 @@ Scenario Outline: Access fund & details as Advisor
     |  	        |entity_type=Investment Fund  |employee   |yes   |false   |edit,update,destroy     ||
     
 
+@rack_test
 Scenario Outline: Access fund & details as Investor Advisor
   Given there is a user "<user>" for an entity "<entity>"
   Given there is an existing investor "entity_type=Family Office"
@@ -157,6 +162,7 @@ Scenario Outline: Access fund & details as Investor Advisor
     |  	        |entity_type=Investment Fund  |company_admin   |yes   |false   |     |edit,update |
 
 
+@rack_test
 Scenario Outline: Access fund & details as Advisor with update access
   Given there is a user "<user>" for an entity "<entity>"
   Given there is an existing investor "entity_type=Family Office"

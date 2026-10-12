@@ -12,6 +12,7 @@ Feature: NDA Acceptance (Module 2)
 
   # An NdaAcceptance record can be created with status "accepted" and
   # all audit fields are correctly populated.
+  @rack_test
   Scenario: NdaAcceptance record stores accepted status and audit fields (X4)
     Given there is an LP user for the GP entity
     When the LP accepts the NDA with audit metadata
@@ -24,6 +25,7 @@ Feature: NDA Acceptance (Module 2)
 
   # An NdaAcceptance record can be created with status "declined" and
   # the declined_at timestamp is set instead of accepted_at.
+  @rack_test
   Scenario: NdaAcceptance record stores declined status and audit fields
     Given there is an LP user for the GP entity
     When the LP declines the NDA with audit metadata
@@ -33,6 +35,7 @@ Feature: NDA Acceptance (Module 2)
 
   # Multiple acceptance records can exist for the same user and NDA config.
   # The latest record determines current access.
+  @rack_test
   Scenario: Multiple acceptance records are preserved (append-only)
     Given there is an LP user for the GP entity
     When the LP declines the NDA with audit metadata
@@ -41,6 +44,7 @@ Feature: NDA Acceptance (Module 2)
     And the latest NDA acceptance should have status "accepted"
 
   # The accepted? predicate returns true only for accepted records.
+  @rack_test
   Scenario: accepted? predicate returns correct values
     Given there is an LP user for the GP entity
     When the LP accepts the NDA with audit metadata
@@ -49,6 +53,7 @@ Feature: NDA Acceptance (Module 2)
     Then the latest NDA acceptance accepted? should be false
 
   # Validation rejects invalid status values.
+  @rack_test
   Scenario: NdaAcceptance rejects invalid status
     Given there is an LP user for the GP entity
     Then creating an NDA acceptance with status "pending" should fail validation
@@ -56,11 +61,13 @@ Feature: NDA Acceptance (Module 2)
   # ── Phase 2: Policy ──────────────────────────────────────────────────────
 
   # GP employees (same entity as the NDA config) are denied by policy (R1).
+  @rack_test
   Scenario: Policy denies GP employee
     Given there is a GP user for the entity
     Then the NDA acceptance policy should deny the GP user
 
   # LP with approved investor access is allowed by policy (R2).
+  @rack_test
   Scenario: Policy allows LP with investor access
     Given there is an LP user for the GP entity
     And the LP has approved investor access to the GP entity
@@ -91,6 +98,7 @@ Feature: NDA Acceptance (Module 2)
     Then the NDA gate should not block the LP for the data room folder
 
   # LP without acceptance is redirected by the gate (H1 precondition).
+  @rack_test
   Scenario: LP without acceptance is redirected by gate
     Given there is an LP user for the GP entity
     Then the NDA gate should redirect the LP to the acceptance screen
@@ -115,6 +123,7 @@ Feature: NDA Acceptance (Module 2)
     Then the NDA gate should not block the LP for the opted-out folder
 
   # safe_return_to rejects external URLs to prevent open redirect (X1).
+  @rack_test
   Scenario: safe_return_to rejects external URLs
     Then safe_return_to should reject "https://evil.com"
     And safe_return_to should reject "//evil.com"

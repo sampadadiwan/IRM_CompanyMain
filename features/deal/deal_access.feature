@@ -1,6 +1,7 @@
 Feature: Access
   Can access models as a company
 
+@rack_test
 Scenario Outline: Access Deal employee
   Given there is a user "<user>" for an entity "<entity>"
   Given the user has role "<role>"
@@ -18,6 +19,7 @@ Scenario Outline: Access Deal employee
     # |  	      |entity_type=Company  |name=Series B;amount_cents=120 | employee | true | true |
 
 
+@rack_test
 Scenario Outline: Access Deal employee
   Given there is a user "" for an entity "<entity>"
   Given the user has role "<role>"
@@ -33,6 +35,7 @@ Scenario Outline: Access Deal employee
     | yes 	    |entity_type=Company  |name=Series A;amount_cents=100 | employee | true | true |
     | yes       |entity_type=Company  |name=Series B;amount_cents=120 | employee | true | true |
 
+@rack_test
 Scenario Outline: Access Deal as Other User
   Given there is a user "<user>" for an entity "<entity>"
   And given there is a deal "<deal>" for the entity
@@ -48,6 +51,7 @@ Scenario Outline: Access Deal as Other User
     |  	      |entity_type=Company  |name=Series B;amount_cents=120 |
 
 
+@rack_test
 Scenario Outline: Access Deal as Investor without access
   Given there is a user "<user>" for an entity "<entity>"
   And given there is a deal "<deal>" for the entity
@@ -65,6 +69,7 @@ Scenario Outline: Access Deal as Investor without access
     |  	      |entity_type=Company  |name=Series B;amount_cents=120 |
 
 
+@rack_test
 Scenario Outline: Access Deal as Investor with access
   Given there is a user "" for an entity "<entity>"
   And given there is a deal "<deal>" for the entity
@@ -89,6 +94,7 @@ Scenario Outline: Access Deal as Investor with access
 
 
 
+@rack_test
 Scenario Outline: Access Deal as Investor without investor access
   Given there is a user "" for an entity "<entity>"
   And given there is a deal "<deal>" for the entity
@@ -103,6 +109,7 @@ Scenario Outline: Access Deal as Investor without investor access
     |false      |entity_type=Company  |name=Series B;amount_cents=120 | access_type=Deal;access_to_category=Lead Investor |
 
 
+@rack_test
 Scenario Outline: Access Deal as Investor without access right
   Given there is a user "" for an entity "<entity>"
   And given there is a deal "<deal>" for the entity

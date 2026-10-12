@@ -1,4 +1,4 @@
-@investor_kyc_xlsx_export
+@investor_kyc_xlsx_export @rack_test
 Feature: Investor KYC xlsx export formats custom fields by type
   The investor_kycs xlsx export must render each custom field according to its
   field type instead of exporting every value as plain text: DateField values

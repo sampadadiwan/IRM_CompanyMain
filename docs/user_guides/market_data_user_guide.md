@@ -125,7 +125,7 @@ Open the fund and choose **Actions → Derivatives**. The item appears only when
 ### Creating, updating and managing market data settings
 
 **How do I turn on the FX rate feed or the price feed?**
-In Company menu → [**Market Data**](/market_data/settings), tick **FX rate feed** or **Price feed**, tick at least one provider under it and click **Save**. Only company admins and CapHive support can save this page.
+In Company menu → [**Market Data**](/market_data/settings), turn on the **FX rate feed** switch (in the **FX rates** card) or the **Price feed** switch (in the **Prices** card), tick at least one source under it and click **Save**. Saving with a feed on and no source ticked is refused with "Choose at least one provider". Only company admins and CapHive support can save this page.
 
 **Which providers can I choose?**
 For FX rates: ECB. For prices: NSE, BSE, AMFI and NSE F&O. All are free public files; a licensed data vendor for other markets is added only when a client asks for it.
@@ -158,7 +158,7 @@ Open the instrument, choose **Edit**, enter the **Ticker** and **Exchange** (or 
 Yes. The instrument upload accepts optional **ISIN**, **Ticker**, **Exchange** and **Pricing Method** columns, and the valuation upload accepts an optional **Price Type** column (Close, Bid or Mid). Older sheets without these columns still upload.
 
 **How do I check the feeds before relying on them?**
-On the Market Data page click **Test feed**. CapHive fetches from every selected provider for the latest weekday and shows, for example, "2 of 2 found" with each item found or missing and why. Nothing is stored.
+On the Market Data page click **Test feed**. CapHive fetches from every selected provider for the latest weekday and shows a **Test feed results** card: the totals found and missing, then one table per source (for example "NSE · Prices — 2 of 2 found") listing each pair or holding, why it is missing and what to do about it. Nothing is stored, so you can reload the page to run the test again. An ECB pair marked "Not published" usually means ECB has not yet published that day's rates (it does so around 16:00 CET on business days) — try again later.
 
 **How do I confirm or dismiss a corporate action?**
 On [**Corporate actions**](/corporate_action_suggestions) click **Confirm** to create the stock adjustment (split or bonus) or the dividend income for each fund holding the share, exactly as if entered by hand. Click **Dismiss** to ignore it; a dismissed action is not suggested again.

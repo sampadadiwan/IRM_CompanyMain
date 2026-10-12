@@ -1,0 +1,129 @@
+<%# One fill's row actions on a confirmed dealing date (proposal GP-3): View plus whatever settling it needs,
+    as the same outline buttons as the rest of the app. Actions that send or change something confirm first
+    with the "Immediate Actions" popup (Resend, Regenerate, Verify); Record payment and Mark paid open a
+    small form (date + reference) whose Save is the confirmation. Ids are what the settlement steps use.
+    Also on the order page's Dealing card, which passes show_view: false (it is the order) and
+    accept_received: false (the order's own actions row already has it).
+    Worked examples H21–H25, E141, X30 %>
+<% f = fill %>
+<% fund = f.fund %>
+<% order = f.dealing_order %>
+<% investor = order.investor.investor_name %>
+<% dd_policy = policy(f.dealing_date) %>
+<%# Review fix 5c: a closed dealing date is final ("No more settlement actions" in its Close popup) — no
+    payment, verify or resend buttons once closed; DealingFillsController refuses them too. Viewing stays. %>
+<% settle = dd_policy.update? && !f.dealing_date.closed? %>
+<% btn = "btn btn-outline-primary" %>
+<% show_view = local_assigns.fetch(:show_view, true) %>
+<% accept_received = local_assigns.fetch(:accept_received, true) %>
+<div class="d-inline-flex flex-wrap gap-1 align-items-center">
+  <% if show_view %>
+    <%= link_to t_common(:view), evergreen_order_path(fund, order), class: "#{btn} ti ti-eye", data: { turbo_frame: "_top", bs_toggle: "tooltip", bs_title: "Open order of #{investor}" }, aria: { label: "Open order of #{investor}" } %>
+  <% end %>
+
+  <% if settle %>
+    <%# --- Subscription money: verify, accept a part payment, or record (more) money --- %>
+    <% if f.subscription? && !f.fund_unit_id && (rem = f.capital_remittance) %>
+      <%# Review fix 5a: the same 10-paise tolerance as allotment (EvergreenAllotment, DealingOrder#fully_paid?).
+          Money within 10 paise of the amount due used to hide Verify (needed the full amount) while Record
+          payment refused ("Nothing is owed") — the row could not be verified from here. %>
+      <% paid_in_full = rem.collected_amount_cents.to_d >= rem.call_amount_cents.to_d - 10 %>
+      <% if paid_in_full && !rem.verified %>
+        <%
+          units = rem.collected_amount_cents.to_d / f.nav_per_unit_cents.to_d
+          doc = EvergreenDealingDocuments.template_for(f) ? "#{eg_t(:contract_note, fund:)} to generate and approve" : "#{eg_t(:contract_note, fund:)} emailed to #{investor}"
+          msg = evergreen_action_summary([
+            ["green", "ti-coins", eg_t(:allocate_units, fund:), "#{eg_units(units, fund:)} at #{evergreen_nav_per_unit(f.nav_per_unit_cents)}, the #{EvergreenLabels.lower(eg_t(:transaction_date, fund:))}'s #{eg_t(:nav_per_unit, fund:)}"],
+            ["blue", "ti-mail", eg_t(:contract_note, fund:), doc]
+          ])
+        %>
+        <%= button_to verify_evergreen_dealing_date_fill_path(f.fund_id, f.dealing_date_id, f), method: :post, class: btn, form: { class: "d-inline" }, id: "verify_fill_#{f.id}",
+              data: { action: "click->confirm#popup", method: "post", title: "Verify the payment of #{investor}", msg:, bs_toggle: "tooltip", bs_title: "Confirm the money arrived and allot the #{eg_t(:units, fund:)}" } do %><i class="ti ti-check"></i> Verify<% end %>
+      <% end %>
+      <% if accept_received && order.part_paid? && policy(order).accept_received? %>
+        <%= render "evergreen/orders/accept_received_button", order:, css: btn %>
+      <% end %>
+      <%# Review fix 5a: Record payment only while more than 10 paise is owed (EvergreenPayments refuses less) %>
+      <% unless paid_in_full %>
+        <button type="button" class="<%= btn %>" data-bs-toggle="modal" data-bs-target="#record_payment_modal_<%= f.id %>" id="record_payment_open_<%= f.id %>"><i class="ti ti-cash"></i> Record payment</button>
+        <div class="modal fade" id="record_payment_modal_<%= f.id %>" tabindex="-1" aria-labelledby="record_payment_label_<%= f.id %>" aria-hidden="true">
+          <div class="modal-dialog" role="document">
+            <div class="modal-content">
+              <%= form_with url: record_payment_evergreen_dealing_date_fill_path(f.fund_id, f.dealing_date_id, f), method: :post, id: "record_payment_form_#{f.id}" do |frm| %>
+                <div class="modal-header">
+                  <h5 class="modal-title" id="record_payment_label_<%= f.id %>">Record payment · <%= investor %></h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                  <div class="text-muted small mb-3"><%= evergreen_money(rem.call_amount_cents.to_d - rem.collected_amount_cents.to_d, fund) %> still owed of <%= evergreen_money(rem.call_amount_cents, fund) %>.</div>
+                  <div class="mb-3"><%= frm.label :payment_date, "Payment date", class: "form-label", for: "payment_date_#{f.id}" %><%= frm.date_field :payment_date, class: "form-control", id: "payment_date_#{f.id}" %></div>
+                  <div class="mb-1"><%= frm.label :reference, "Reference", class: "form-label", for: "payment_reference_#{f.id}" %><%= frm.text_field :reference, class: "form-control", placeholder: "Bank reference", id: "payment_reference_#{f.id}" %></div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal"><%= t_common(:cancel) %></button>
+                  <%= frm.submit "Record payment", class: "btn btn-outline-success", id: "record_payment_#{f.id}" %>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    <% end %>
+
+    <%# --- Redemption payout: mark paid with its reference (units are cancelled then) --- %>
+    <% if f.redemption? && f.units.positive? && !f.capital_distribution_payment&.completed %>
+      <button type="button" class="<%= btn %>" data-bs-toggle="modal" data-bs-target="#mark_paid_modal_<%= f.id %>" id="mark_paid_open_<%= f.id %>"><i class="ti ti-cash"></i> Mark paid</button>
+      <div class="modal fade" id="mark_paid_modal_<%= f.id %>" tabindex="-1" aria-labelledby="mark_paid_label_<%= f.id %>" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <%= form_with url: mark_paid_evergreen_dealing_date_fill_path(f.fund_id, f.dealing_date_id, f), method: :post, id: "mark_paid_form_#{f.id}" do |frm| %>
+              <div class="modal-header">
+                <h5 class="modal-title" id="mark_paid_label_<%= f.id %>">Mark paid · <%= investor %></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <div class="text-muted small mb-3"><%= evergreen_money(f.net_payment_cents, fund) %> to <%= investor %>; saving cancels <%= eg_units(f.units, fund:) %>.</div>
+                <div class="mb-3"><%= frm.label :payment_date, "Payment date", class: "form-label", for: "paid_date_#{f.id}" %><%= frm.date_field :payment_date, class: "form-control", id: "paid_date_#{f.id}" %></div>
+                <div class="mb-1"><%= frm.label :reference, "Reference", class: "form-label", for: "paid_reference_#{f.id}" %><%= frm.text_field :reference, class: "form-control", placeholder: "Bank reference", id: "paid_reference_#{f.id}" %></div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal"><%= t_common(:cancel) %></button>
+                <%= frm.submit "Mark paid", class: "btn btn-outline-success", id: "mark_paid_#{f.id}" %>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+
+  <% end %>
+
+  <%# --- The document: resend once sent; view / regenerate while unapproved or failed (same rights as before:
+      Resend needs update, Regenerate needs generate_documents, View document anyone who sees the page) --- %>
+  <% doc_label = f.subscription? ? eg_t(:contract_note, fund:) : eg_t(:redemption_advice, fund:) %>
+  <% if f.document_sent_at %>
+    <% if settle %>
+      <%
+        msg = evergreen_action_summary([
+          ["blue", "ti-mail", "Email #{investor} again", "The same #{doc_label.downcase}, attached"],
+          ["grey", "ti-lock", "Nothing else changes", "#{eg_t(:Units, fund:)}, money and the document stay as they are"]
+        ])
+      %>
+      <%= button_to resend_evergreen_dealing_date_fill_path(f.fund_id, f.dealing_date_id, f), method: :post, class: btn, form: { class: "d-inline" }, id: "resend_#{f.id}",
+            data: { action: "click->confirm#popup", method: "post", title: "Resend the #{doc_label.downcase}", msg:, bs_toggle: "tooltip", bs_title: "Email the #{doc_label.downcase} to #{investor} again" } do %><i class="ti ti-mail"></i> Resend<% end %>
+    <% end %>
+  <% elsif f.document && !f.document.approved %>
+      <%= link_to document_path(f.document), class: btn, target: "_blank", id: "view_document_#{f.id}", data: { turbo_frame: "_top", bs_toggle: "tooltip", bs_title: "Open the #{doc_label.downcase} awaiting approval" } do %><i class="ti ti-file-text"></i> Document<% end %>
+    <% end %>
+    <% failed = !f.document_sent_at && !f.document && EvergreenDealingDocuments.template_for(f) && f.dealing_date.dealing_fills.where.not(document_id: nil).exists? %>
+    <% if dd_policy.generate_documents? && !f.document_sent_at && ((f.document && !f.document.approved) || failed) %>
+      <%
+        msg = evergreen_action_summary([
+          ["amber", "ti-refresh", "Replace the #{doc_label.downcase}", "Rebuilt from the fund's current template"],
+          ["grey", "ti-eye-off", "Still unapproved", "Hidden from #{investor} until Approve & send"]
+        ])
+      %>
+      <%= button_to regenerate_evergreen_dealing_date_fill_path(f.fund_id, f.dealing_date_id, f), method: :post, class: btn, form: { class: "d-inline" }, id: "regenerate_#{f.id}",
+            data: { action: "click->confirm#popup", method: "post", title: "Regenerate the #{doc_label.downcase}", msg:, bs_toggle: "tooltip", bs_title: "Rebuild this #{doc_label.downcase} from the template" } do %><i class="ti ti-refresh"></i> Regenerate<% end %>
+  <% end %>
+</div>

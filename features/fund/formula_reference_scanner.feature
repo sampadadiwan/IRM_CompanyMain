@@ -1,4 +1,4 @@
-@entry_explanation
+@entry_explanation @rack_test
 Feature: Reading what a formula depends on
   FormulaReferenceScanner reads a fund formula's text — never evaluating it — and reports the
   other entries it reads, the engine inputs it uses, and whether each is added or taken away.

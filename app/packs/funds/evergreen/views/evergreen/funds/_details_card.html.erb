@@ -1,0 +1,76 @@
+<%# Evergreen block in the fund details card — same list-group rows as "Settings & Visibility"
+    (label left, value right), with the status badges used on the evergreen tabs. Worked examples H31, H33 %>
+<% setting = fund.evergreen_fund_setting %>
+<% figures = EvergreenFundFigures.new(fund) %>
+<% nxt = figures.next_dealing_date %>
+<% pct = ->(v) { v.to_d.round(2).to_s.sub(/\.0+$/, "") } %>
+<div class="card shadow-sm border-0 mb-4" id="evergreen_details_card" data-controller="tooltip">
+  <div class="card-header border-bottom py-3">
+    <h6 class="mb-0 fw-bold d-flex align-items-center"><i class="ti ti-infinity me-2 text-success"></i><%= eg_t(:evergreen, fund:) %></h6>
+  </div>
+  <ul class="list-group list-group-flush">
+    <%# NAV per unit, one row per class %>
+    <% figures.navs.each do |ut, nav| %>
+      <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+        <span class="text-muted"><i class="ti ti-chart-line me-1"></i><%= eg_t(:nav_per_unit_short, fund:) %> · Class <%= ut %></span>
+        <% if nav %>
+          <span class="text-end"><strong><%= evergreen_nav_per_unit(nav.nav_per_unit_cents) %></strong>
+            <small class="d-block text-muted"><%= l(nav.nav_date) %></small></span>
+        <% else %>
+          <%= eg_badge(:grey, "hourglass", "No NAV yet", "Draft and approve a NAV on the NAV tab.") %>
+        <% end %>
+      </li>
+    <% end %>
+
+    <%# Next dealing date and where it stands %>
+    <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+      <span class="text-muted"><i class="ti ti-calendar-event me-1"></i>Next <%= EvergreenLabels.lower(eg_t(:transaction_date, fund:)) %></span>
+      <% if nxt %>
+        <span class="text-end">
+          <%= link_to l(nxt.date), evergreen_dealing_date_path(fund, nxt), class: "fw-bold" %>
+          <small class="d-block text-muted">cut-off <%= l(nxt.cutoff_at.to_date) %> <%= eg_cutoff_badge(nxt) %></small>
+        </span>
+      <% else %>
+        <span>—</span>
+      <% end %>
+    </li>
+    <% if nxt %>
+      <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+        <span class="text-muted"><i class="ti ti-progress me-1"></i>Step</span>
+        <%= eg_dealing_step_badge(nxt) %>
+      </li>
+    <% end %>
+
+    <%# Calendar and payment timing (wording follows the fund: dealing date / transaction date) %>
+    <% dealing_word = EvergreenLabels.lower(eg_t(:transaction_date, fund:)) %>
+    <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+      <span class="text-muted"><i class="ti ti-login me-1"></i>Subscriptions</span>
+      <%= eg_badge(:blue, "calendar", setting.subscription_calendar.humanize, "How often there is a #{EvergreenLabels.lower(eg_t(:subscription_date, fund:))}.") %>
+    </li>
+    <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+      <span class="text-muted"><i class="ti ti-logout me-1"></i>Redemptions</span>
+      <%= eg_badge(:blue, "calendar", setting.redemption_calendar.humanize, "How often there is a #{EvergreenLabels.lower(eg_t(:redemption_date, fund:))}.") %>
+    </li>
+    <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+      <span class="text-muted"><i class="ti ti-clock-dollar me-1"></i>Payment</span>
+      <%= setting.pre_funded? ? eg_badge(:teal, "cash", "Before the #{dealing_word}", "Subscribers pay by the cut-off; #{eg_t(:units, fund:)} are allotted when the #{EvergreenLabels.lower(eg_t(:subscription_date, fund:))} is confirmed.") : eg_badge(:teal, "cash", "After the #{dealing_word}", "Subscribers pay within #{setting.pay_after_days} days of the #{EvergreenLabels.lower(eg_t(:subscription_date, fund:))}; #{eg_t(:units, fund:)} are allotted when the money is recorded.") %>
+    </li>
+
+    <%# Gate: rule, then what is queued against it (one plain line; the bar is on the Redemptions tab) %>
+    <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+      <span class="text-muted"><i class="ti ti-filter me-1"></i>Gate</span>
+      <% if setting.gate_pct.to_d.positive? %>
+        <%= eg_badge(:grey, "filter", "#{pct.call(setting.gate_pct)}% · #{setting.gate_method == 'fifo' ? 'FIFO' : 'pro-rata'}",
+                     "At most #{pct.call(setting.gate_pct)}% of NAV is redeemed per #{setting.gate_period.humanize.downcase}; the rest is #{EvergreenLabels.lower(eg_t(:carried, fund:))} to the next date.") %>
+      <% else %>
+        <%= eg_badge(:grey, "filter-off", "None") %>
+      <% end %>
+    </li>
+    <% if setting.gate_pct.to_d.positive? %>
+      <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+        <span class="text-muted"><i class="ti ti-list-numbers me-1"></i>Queued</span>
+        <span class="text-end"><strong><%= evergreen_money(figures.queued_redemption_cents, fund) %></strong> <small class="text-muted">of <%= evergreen_money(figures.gate_cents, fund) %> gate</small></span>
+      </li>
+    <% end %>
+  </ul>
+</div>

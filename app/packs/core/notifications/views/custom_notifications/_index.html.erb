@@ -49,6 +49,19 @@
                   title: "Default template for capital distribution payment emails used by any distribution in this fund that doesn't have its own override.",
                   data: { "bs-toggle": "tooltip", "bs-placement": "left" } if owner.is_a?(Fund) %>
 
+      <%# Evergreen funds: templates for the investor emails (acknowledgements, contract notes, advices…) %>
+      <%= link_to "New Evergreen Notification", new_custom_notification_path(
+                                "custom_notification[entity_id]": owner.entity_id,
+                                "custom_notification[owner_id]": owner.id,
+                                "custom_notification[owner_type]": "Fund",
+                                "custom_notification[for_type]": "Evergreen"),
+                  id: "create_evergreen_custom_notification", class: "dropdown-item",
+                  title: "Template for an evergreen investor email (acknowledgement, payment instructions, gate notice, contract note, redemption advice…) used by every order in this fund.",
+                  data: { "bs-toggle": "tooltip", "bs-placement": "left" } if owner.is_a?(Fund) && owner.evergreen? %>
+      <%= link_to "Copy from fund…", new_evergreen_notification_copy_path(owner), id: "copy_evergreen_notifications", class: "dropdown-item",
+                  data: { turbo_frame: "_top", "bs-toggle": "tooltip", "bs-placement": "left" },
+                  title: "Copy the investor-email templates of another evergreen fund instead of setting them up from scratch." if owner.is_a?(Fund) && owner.evergreen? %>
+
       <%= link_to "Document Notification", new_custom_notification_path(
                                 "custom_notification[for_type]": "Send Document",
                                 "custom_notification[entity_id]": current_user.entity_id),

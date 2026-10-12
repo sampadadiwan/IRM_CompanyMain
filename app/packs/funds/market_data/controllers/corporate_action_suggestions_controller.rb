@@ -12,16 +12,18 @@ class CorporateActionSuggestionsController < ApplicationController
 
   def confirm
     @suggestion.confirm!(current_user)
-    redirect_to corporate_action_suggestions_path, notice: "Corporate action confirmed."
+    # Back to where the button was pressed — the Corporate actions list or an instrument's tab
+    redirect_back_or_to corporate_action_suggestions_path, notice: "Corporate action confirmed."
   rescue CorporateActionSuggestion::InvalidTransition, ActiveRecord::RecordInvalid => e
-    redirect_to corporate_action_suggestions_path, alert: e.message
+    redirect_back_or_to corporate_action_suggestions_path, alert: e.message
   end
 
   def dismiss
     @suggestion.dismiss!(current_user)
-    redirect_to corporate_action_suggestions_path, notice: "Corporate action dismissed."
+    # Back to where the button was pressed — the Corporate actions list or an instrument's tab
+    redirect_back_or_to corporate_action_suggestions_path, notice: "Corporate action dismissed."
   rescue CorporateActionSuggestion::InvalidTransition => e
-    redirect_to corporate_action_suggestions_path, alert: e.message
+    redirect_back_or_to corporate_action_suggestions_path, alert: e.message
   end
 
   private

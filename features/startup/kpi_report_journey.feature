@@ -17,6 +17,7 @@ Feature: KPI report journey
       | EBITDA  | 10       | 12       |
 
   # H3 — Upload creates many reports, one journey
+  @rack_test
   Scenario: Only the requested report gets a journey when an import creates reports for other periods
     Given the fund requests KPIs from "Acme Pvt Ltd" for "2026-06-30" period "Month"
     When the portco submits the workbook for the KPI report
@@ -24,6 +25,7 @@ Feature: KPI report journey
     And the KPI report for "Acme Pvt Ltd" as of "2026-05-31" has no journey
 
   # H4 — Pending across periods
+  @rack_test
   Scenario: Approve or reject KPIs counts the portfolio company's pending KPIs on every period
     Given the fund requests KPIs from "Acme Pvt Ltd" for "2026-06-30" period "Month"
     When the portco submits the workbook for the KPI report
@@ -37,6 +39,7 @@ Feature: KPI report journey
     And the KPI report's journey action for "Approve or reject KPIs" links to the pending KPIs of "Acme Pvt Ltd"
 
   # H14 — Fund upload skips the portco steps
+  @rack_test
   Scenario: A report the fund creates itself shows the portco steps as not applicable
     When the fund creates a KPI report for "Acme Pvt Ltd" as of "2026-06-30" period "Month"
     Then the KPI report's journey should show:
@@ -46,6 +49,7 @@ Feature: KPI report journey
       | Import workbook     | current| No KPI workbook uploaded yet |
 
   # H15 — No KPI mappings yet
+  @rack_test
   Scenario: A portfolio company without KPI mappings is stuck on the first task
     Given there is an existing portfolio company "name=Beta Foods;category=Portfolio Company"
     When the fund requests KPIs from "Beta Foods" for "2026-06-30" period "Month"
@@ -67,6 +71,7 @@ Feature: KPI report journey
     Then that KPI report has no journey
 
   # E5 — Everything rejected
+  @rack_test
   Scenario: Rejecting every KPI on the report sends the journey back to the import
     Given the fund requests KPIs from "Acme Pvt Ltd" for "2026-06-30" period "Month"
     And the portco submits the workbook for the KPI report
@@ -84,6 +89,7 @@ Feature: KPI report journey
     Then "Acme Pvt Ltd" has no workflow instance
 
   # E18 — Asking the portco for an existing report
+  @rack_test
   Scenario: Requesting a period an import already created gives that report a journey
     Given a KPI report exists for "Acme Pvt Ltd" as of "2026-05-31" period "Month" without a journey
     When the fund requests KPIs from "Acme Pvt Ltd" for "2026-05-31" period "Month"
@@ -100,6 +106,7 @@ Feature: KPI report journey
     Then the journeys of "Acme Pvt Ltd" as of "2026-06-30" and "2026-05-31" are on "Close report"
 
   # H15 (found in the local pre-QA run) — a company with no portal users still gets the journey
+  @rack_test
   Scenario: Requesting KPIs from a company with no portal users still starts its journey
     Given there is an existing portfolio company "name=Beta Foods;category=Portfolio Company"
     When the fund sends a KPI request to "Beta Foods" for "2026-06-30" period "Month" from the grid

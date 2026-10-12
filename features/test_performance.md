@@ -7,11 +7,12 @@ new tests).
 
 ## Current setup
 
-- 253 feature files, ~1561 scenarios.
+- 377 feature files, 3944 scenarios with outlines expanded (3539 outside `features/ai` and
+  `features/customer_support_agent`).
 - Test DB is SQLite, stored in `/dev/shm` (RAM-backed tmpfs), one file per
   `TEST_ENV_NUMBER` — see `config/database.yml`.
-- `parallel_tests` is wired up (`config/cucumber.yml`'s `parallel` profile, the `pcuc`
-  shell alias, and `cucumber_dashboard/`). The dashboard defaults to 3 workers on an
+- `parallel_tests` is wired up (`config/cucumber.yml`'s `parallel` profile, `bin/pcuc`
+  (watch a run with `bin/pcuc-status -w`), and `cucumber_dashboard/`). The dashboard defaults to 3 workers on an
   8-core machine — capped low because each worker that drives Playwright also boots a
   full headless Chromium, and more than ~3 concurrent instances risks OOM (see the
   `CHROMIUM_LOW_MEMORY_ARGS` comment in `features/support/env.rb`).
@@ -35,40 +36,53 @@ new tests).
   `tail -f log/test_<n>.log` (each worker logs to its own `log/test_<TEST_ENV_NUMBER>.log`;
   an unset `TEST_ENV_NUMBER` goes to `log/test.log`).
 
-## Tried and reverted: forcing `rack_test` for non-`@javascript` scenarios
+## Applied: `@rack_test` for scenarios that pass without a browser
 
-Only 20 of 253 feature files are tagged `@javascript`, yet `Capybara.default_driver`
-is `:playwright` globally — every scenario boots a real headless Chromium against a
-real Puma server thread, even ones that never touch JS. `capybara/cucumber` (loaded
-automatically by `cucumber-rails`) already supports switching driver per-scenario via
-tag name, so tagging a feature `@rack_test` runs just that file in-process with no
-browser, no real HTTP round trip:
+`Capybara.default_driver` is `:playwright`, so every scenario used to boot a headless
+Chromium and drive a real Puma thread - even ones that never touch JavaScript. A browser page
+load is dominated by compiling and running ~240 importmap modules (measured on the sign-in
+page: ~5 s with the modules cached vs ~0.9 s with JavaScript off, on a loaded machine).
 
-```ruby
-# capybara-3.40.0/lib/capybara/cucumber.rb
-Before do |scenario|
-  scenario.source_tag_names.each do |tag|
-    driver_name = tag.sub(/^@/, '').to_sym
-    Capybara.current_driver = driver_name if Capybara.drivers[driver_name]
-  end
-end
+`capybara/cucumber` switches driver per scenario by tag name, so a feature or scenario tagged
+`@rack_test` runs in-process with no browser. Being untagged does **not** mean a scenario needs
+no JavaScript - every Uppy upload, Stimulus action and AG Grid needs it - so the tags were set
+from a measured run, not by guessing:
+
+```mermaid
+flowchart LR
+  A[All non-@javascript features] -->|CAPYBARA_DRIVER=rack_test CAPYBARA_WAIT=2| B[One run, no browser]
+  B --> C{Scenario passed?}
+  C -->|no| D[Stays on Playwright]
+  C -->|yes| E{Every check after the first Then is negative?}
+  E -->|yes| D
+  E -->|no| F["@rack_test (whole Feature when every scenario qualifies)"]
 ```
 
-This was piloted on `features/login/password_reset.feature` and
-`features/login/user_registration_edit.feature`. `user_registration_edit` passed
-under `rack_test`. `password_reset` **failed** — the "click the link in the emailed
-reset-password mail" step landed on what looks like the caphive.com marketing page
-instead of the app's reset-password form, while the identical scenario passed cleanly
-under Playwright. Likely cause: `lib/middleware/website.rb`'s host-based routing
-behaves differently for a request that isn't going through a real
-browser/TCP connection. Both tags were reverted — **not currently applied to any
-feature file.**
+- 2026-10-09: of 3324 non-AI, non-`@javascript` scenarios, 2576 passed without a browser;
+  87 files were tagged at the Feature level and scenarios in 153 more individually, 2165
+  scenarios in all (61% of the non-AI suite).
+- **Hollow-pass guard.** A scenario whose checks are all negative ("should not see X") passes
+  without a browser simply because the JavaScript that would show X never runs. Those 222 were
+  left on Playwright even though they passed.
+- The earlier pilot failed because `lib/middleware/website.rb` served the marketing site for
+  `localhost`; that middleware is now opt-in via `WEBSITE_HOSTS` (unset in tests), so emailed
+  links resolve to the app under `rack_test` too.
+- **Adding a scenario:** leave it untagged (Playwright). If it needs no browser, run it with
+  `CAPYBARA_DRIVER=rack_test` and tag it `@rack_test` once it passes. A `@rack_test` scenario
+  that starts needing JavaScript fails loudly (`Capybara::NotSupportedByDriverError` on
+  `execute_script`, or a missing element) - drop the tag then.
+- `CAPYBARA_DRIVER` and `CAPYBARA_WAIT` (`features/support/env.rb`) only change the defaults
+  for one run; with neither set nothing differs from before. Under `rack_test` a page is
+  complete the moment it is returned, so a short wait only makes failures quicker.
 
-Takeaway: `@rack_test` is a real, low-risk mechanism (tag one file, everything else is
-untouched), but each file needs to actually be run and verified before tagging it —
-anything that follows an absolute-URL link (emailed links, external redirects,
-subdomain-based routing) is a candidate to fail the same way. Don't apply it in bulk
-without testing.
+## Applied: waiting for uploads instead of sleeping
+
+Steps used to `sleep(8)`/`sleep(10)` after `attach_file('files[]', ...)` to let Uppy's direct
+upload finish - the full window on every run, though a local upload takes well under a second
+(~25 minutes per full suite). `wait_for_upload(file)` (`features/support/upload_helpers.rb`)
+returns as soon as the hidden field Uppy fills on success mentions the file, and fails naming
+the file after 30 s. Other fixed sleeps in front of an `expect` that already waits were removed,
+and polling checks use `eventually { ... }`.
 
 ## Snapshot-restore DB strategy (default)
 

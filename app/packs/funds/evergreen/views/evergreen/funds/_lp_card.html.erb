@@ -1,0 +1,115 @@
+<%# Investor landing card for an evergreen folio — the closed-ended capital_commitments/_card layout
+    (logo + title, chart beside an hstack stats column, outline buttons, Recent Documents), with
+    units / value / gain instead of committed / called. Worked examples H37, E48, X115 %>
+<% cc = capital_commitment %>
+<% fund = cc.fund %>
+<% terms = fund.evergreen_fund_setting.terms_for(cc.unit_type) %>
+<% row = EvergreenUnitRegister.new(fund, investor_ids: [cc.investor_id]).rows.find { |r| r.folio.id == cc.id } %>
+<% free = row ? eg_free_units(row, terms) : 0 %>
+<%# Why Redeem is disabled when nothing is free: hard lock-up and/or units already queued (X115, E173) %>
+<% blocked = eg_redeem_blocked_reason(row, terms, fund) %>
+<%# Requests still in progress — the same rule as the Requests list this links to (eg_lp_order_in_progress?:
+    open, or dealt but units not yet allotted / payout not yet paid), so the two numbers agree %>
+<% open_requests = DealingOrder.where(fund_id: fund.id, capital_commitment_id: cc.id, status: DealingOrder::OPEN_STATUSES + %w[dealt])
+                               .includes(dealing_fills: :capital_distribution_payment).count { |o| eg_lp_order_in_progress?(o) } %>
+<% row_order = { capital_commitment_id: cc.id, unit_type: cc.unit_type } %>
+<% nxt = fund.dealing_dates.where(date: Time.zone.today..).order(:date).first %>
+<%# NAV per unit over the last 12 approved NAVs of the folio's class — the chart beside the stats %>
+<% history = FundNav.approved.where(fund_id: fund.id, unit_type: cc.unit_type).order(nav_date: :desc).limit(12).reverse %>
+<div class="row" id="lp_card_<%= cc.id %>">
+  <div class="col-lg-8 d-flex align-items-stretch">
+    <div class="card w-100">
+      <div class="card-body">
+        <div class="d-sm-flex d-block align-items-center justify-content-between mb-9">
+          <div class="mb-3 mb-sm-0">
+            <div class="row">
+              <% if cc.entity.logo %>
+                <%= image_tag(cc.entity.logo.url(expires_in: 60 * 60 * 24 * 7), alt: "#{cc.entity.name} logo", class: "col cc-card-logo") %>
+              <% end %>
+              <span class="col">
+                <h3 class="card-title fw-semibold"><%= link_to "#{fund.name}: #{cc.entity.name}", fund %></h3>
+                <span class="fs-3 mb-1">
+                  <%= cc.investor_kyc&.full_name %> <%= eg_t(:capital_commitment, fund:) %>: <%= cc.folio_id %> · Class <%= cc.unit_type %>
+                  <span class="badge bg-success-subtle text-success ms-1"><%= eg_t(:evergreen, fund:) %></span>
+                </span>
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="row align-items-center">
+          <div class="col-md-7">
+            <% if history.size > 1 %>
+              <%= line_chart history.map { |n| [n.nav_date, (n.nav_per_unit_cents.to_d / 100).to_f] },
+                             library: { plotOptions: { series: { dataLabels: { enabled: false } } }, **chart_theme_color } %>
+            <% elsif row&.nav %>
+              <p class="text-muted small mb-0"><%= eg_t(:nav_per_unit, fund:) %> <%= eg_nav_money(row.nav.nav_per_unit_cents, fund) %> on <%= l(row.nav.nav_date) %>. The chart appears after the next NAV.</p>
+            <% else %>
+              <p class="text-muted small mb-0">NAV not yet published</p>
+            <% end %>
+          </div>
+          <div class="col-md-5">
+            <%# Same hstack stat rows as the closed-ended card %>
+            <%# Value and gain are at the latest approved NAV, so the label names its date %>
+            <% nav_label = row&.nav ? " · NAV #{l(row.nav.nav_date)}" : "" %>
+            <% stats = [["Value#{nav_label}", row&.nav ? evergreen_money(row.value_cents, fund) : "NAV not yet published"],
+                        [eg_t(:Units, fund:), number_with_precision(row&.units || 0, precision: 4, delimiter: ",")],
+                        ["Gain#{nav_label}", row&.nav ? safe_join([evergreen_money(row.value_cents - row.cost_cents, fund), " ", eg_gain_badge(row.gain_pct)]) : "—"]] %>
+            <% stats << ["Next #{EvergreenLabels.lower(eg_t(:transaction_date, fund:))} · cut-off #{l(nxt.cutoff_at.to_date)}", l(nxt.date)] if nxt %>
+            <% stats.each do |label, value| %>
+              <div class="hstack mb-4 pb-1">
+                <div class="p-8 bg-info-subtle rounded-1 me-3 d-flex align-items-center justify-content-center">
+                  <i class="ti ti-grid-dots text-info fs-6"></i>
+                </div>
+                <div>
+                  <span class="mb-0 fs-7"><%= value %></span>
+                  <p class="fs-3 mb-0"><%= label %></p>
+                </div>
+              </div>
+            <% end %>
+            <div class="text-center">
+              <div class="row g-2">
+                <div class="col-4">
+                  <%= link_to new_evergreen_order_path(fund, kind: "subscription", dealing_order: row_order), class: "btn btn-outline-primary w-100" do %><i class="ti ti-circle-plus me-1"></i>Subscribe<% end %>
+                </div>
+                <div class="col-4">
+                  <%# X115: nothing free (all hard-locked or queued) → Redeem disabled, with the reason %>
+                  <% if free.positive? %>
+                    <%= link_to new_evergreen_order_path(fund, kind: "redemption", dealing_order: row_order), class: "btn btn-outline-primary w-100", id: "lp_card_redeem_#{cc.id}" do %><i class="ti ti-circle-minus me-1"></i>Redeem<% end %>
+                  <% elsif blocked %>
+                    <span class="btn btn-outline-primary w-100 disabled" id="lp_card_redeem_<%= cc.id %>" data-bs-toggle="tooltip" title="<%= blocked %>"><i class="ti ti-circle-minus me-1"></i>Redeem</span>
+                  <% end %>
+                </div>
+                <div class="col-4">
+                  <%= link_to fund_path(fund), class: "btn btn-outline-primary w-100" do %><i class="ti ti-building-bank me-1"></i>Fund Details<% end %>
+                </div>
+              </div>
+              <% if blocked %>
+                <small class="text-muted d-block mt-2"><%= blocked %></small>
+              <% end %>
+              <% if open_requests.positive? %>
+                <%# Opens the fund page on its Requests section %>
+                <%= link_to fund_path(fund, requests: "open"), class: "small d-block mt-2", id: "lp_card_open_requests_#{cc.id}" do %><i class="ti ti-clock me-1"></i>Requests in progress (<%= open_requests %>)<% end %>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title mb-9 fw-semibold">Recent Documents</h5>
+        <table class="table">
+          <%# docs_for_investor already hides unapproved generated documents (E69) %>
+          <% cc.docs_for_investor.limit(2).order(id: :desc).each do |doc| %>
+            <tr role="presentation"><td><%= link_to doc.name, doc %></td><td><%= l doc.created_at.to_date %></td></tr>
+          <% end %>
+          <% fund.data_room_folder&.documents&.limit(2)&.order(id: :desc)&.each do |doc| %>
+            <tr role="presentation"><td><%= link_to doc.name, doc %></td><td><%= l doc.created_at.to_date %></td></tr>
+          <% end %>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

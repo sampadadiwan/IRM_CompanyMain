@@ -9,6 +9,7 @@ Feature: Workflow Auto-Assignment Rules
 
   # ── On create ─────────────────────────────────────────────────────────────────
 
+  @rack_test
   Scenario Outline: Catch-all rule assigns template when any object of the right type is created
     Given there is a workflow template "name=Auto Folder Template" with 1 step "name=Step 1;states=Approved,Rejected;quorum_rule=any_one;on_reject_rule=stop;actors=admin"
     And the workflow template "Auto Folder Template" has workflowable_type "Folder"
@@ -20,6 +21,7 @@ Feature: Workflow Auto-Assignment Rules
       | user | entity              |
       |      | entity_type=Company |
 
+  @rack_test
   Scenario Outline: Condition-matched rule assigns template only when attribute matches on create
     Given there is a workflow template "name=Conditioned Template" with 1 step "name=Step 1;states=Approved,Rejected;quorum_rule=any_one;on_reject_rule=stop;actors=admin"
     And the workflow template "Conditioned Template" has workflowable_type "Folder"
@@ -42,6 +44,7 @@ Feature: Workflow Auto-Assignment Rules
       | user | entity              |
       |      | entity_type=Company |
 
+  @rack_test
   Scenario Outline: Auto-launch rule creates an active instance immediately on create
     Given there is a workflow template "name=Auto Launch Template" with 1 step "name=Step 1;states=Approved,Rejected;quorum_rule=any_one;on_reject_rule=stop;actors=admin"
     And the workflow template "Auto Launch Template" has workflowable_type "Folder"
@@ -56,6 +59,7 @@ Feature: Workflow Auto-Assignment Rules
 
   # ── Priority ordering ─────────────────────────────────────────────────────────
 
+  @rack_test
   Scenario Outline: Highest-priority rule wins when multiple rules match
     Given there is a workflow template "name=High Priority Template" with 1 step "name=Step 1;states=Approved,Rejected;quorum_rule=any_one;on_reject_rule=stop;actors=admin"
     And the workflow template "High Priority Template" has workflowable_type "Folder"
@@ -72,6 +76,7 @@ Feature: Workflow Auto-Assignment Rules
 
   # ── On update ─────────────────────────────────────────────────────────────────
 
+  @rack_test
   Scenario Outline: Rule fires on update when object changes to match the condition
     Given there is a workflow template "name=Update Triggered Template" with 1 step "name=Step 1;states=Approved,Rejected;quorum_rule=any_one;on_reject_rule=stop;actors=admin"
     And the workflow template "Update Triggered Template" has workflowable_type "Folder"
@@ -87,6 +92,7 @@ Feature: Workflow Auto-Assignment Rules
 
   # ── Idempotency ───────────────────────────────────────────────────────────────
 
+  @rack_test
   Scenario Outline: Rule does not fire again on a second update once template is already assigned
     Given there is a workflow template "name=Idempotent Template" with 1 step "name=Step 1;states=Approved,Rejected;quorum_rule=any_one;on_reject_rule=stop;actors=admin"
     And the workflow template "Idempotent Template" has workflowable_type "Folder"
@@ -100,6 +106,7 @@ Feature: Workflow Auto-Assignment Rules
       | user | entity              |
       |      | entity_type=Company |
 
+  @rack_test
   Scenario Outline: Rule does not fire when object already has a manually assigned template
     Given there is a workflow template "name=Manual Template" with 1 step "name=Step 1;states=Approved,Rejected;quorum_rule=any_one;on_reject_rule=stop;actors=admin"
     And the workflow template "Manual Template" has workflowable_type "Folder"
@@ -136,6 +143,7 @@ Feature: Workflow Auto-Assignment Rules
 
   # E2 — the rule that matched points at a retired template, so the walk goes on to the catch-all.
   # A folder the retired rule singled out is treated like any other folder.
+  @rack_test
   Scenario Outline: A disabled template's narrow rule falls through to the live catch-all
     Given there is a workflow template "name=Disabled Specific" with 1 step "name=Step 1;states=Approved,Rejected;quorum_rule=any_one;on_reject_rule=stop;actors=admin"
     And the workflow template "Disabled Specific" has workflowable_type "Folder"
@@ -155,6 +163,7 @@ Feature: Workflow Auto-Assignment Rules
 
   # H1 — the case that sent records away empty-handed: a retired catch-all ahead of a live one at the
   # same priority. The live rule is reached, and its auto_launch starts the workflow.
+  @rack_test
   Scenario Outline: A disabled template's catch-all is skipped and the next catch-all applies
     Given there is a workflow template "name=Retired Catch All" with 1 step "name=Step 1;states=Approved,Rejected;quorum_rule=any_one;on_reject_rule=stop;actors=admin"
     And the workflow template "Retired Catch All" has workflowable_type "Folder"
@@ -173,6 +182,7 @@ Feature: Workflow Auto-Assignment Rules
 
   # H2 — disabling is reversible configuration: the rule was never edited or deleted, so enabling the
   # template puts it back at the front of the chain.
+  @rack_test
   Scenario Outline: Enabling a template again restores its rule's precedence
     Given there is a workflow template "name=Retired Catch All" with 1 step "name=Step 1;states=Approved,Rejected;quorum_rule=any_one;on_reject_rule=stop;actors=admin"
     And the workflow template "Retired Catch All" has workflowable_type "Folder"
@@ -212,6 +222,7 @@ Feature: Workflow Auto-Assignment Rules
 
   # E4 — two live rules at the same priority: order(:priority, :id) makes the earlier-created rule
   # win every time, rather than leaving it to whatever the database happens to return.
+  @rack_test
   Scenario Outline: Equal priorities resolve by creation order, repeatably
     Given there is a workflow template "name=First Created" with 1 step "name=Step 1;states=Approved,Rejected;quorum_rule=any_one;on_reject_rule=stop;actors=admin"
     And the workflow template "First Created" has workflowable_type "Folder"
@@ -232,6 +243,7 @@ Feature: Workflow Auto-Assignment Rules
 
   # E5 — a record created while nothing could be assigned is not stranded: the after_update hook
   # re-walks the chain on its next save. Nothing is back-filled until then.
+  @rack_test
   Scenario Outline: A record created while every template was disabled picks one up on its next save
     Given there is a workflow template "name=Later Enabled" with 1 step "name=Step 1;states=Approved,Rejected;quorum_rule=any_one;on_reject_rule=stop;actors=admin"
     And the workflow template "Later Enabled" has workflowable_type "Folder"
@@ -249,6 +261,7 @@ Feature: Workflow Auto-Assignment Rules
 
   # X1 — a rule whose template row has gone (deleted straight in the database) must not take the
   # record down with it: it is skipped like any dormant rule and the walk continues.
+  @rack_test
   Scenario Outline: A rule pointing at a missing template is skipped without raising
     Given there is a workflow template "name=Vanished Template" with 1 step "name=Step 1;states=Approved,Rejected;quorum_rule=any_one;on_reject_rule=stop;actors=admin"
     And the workflow template "Vanished Template" has workflowable_type "Folder"

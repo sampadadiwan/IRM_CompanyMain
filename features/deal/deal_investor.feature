@@ -1,6 +1,7 @@
 Feature: Deal Investor
   Can create and view a deal investor as a company
 
+@rack_test
 Scenario Outline: Create new deal investor
   Given Im logged in as a user "<user>" for an entity "<entity>"
   Given the user has role "company_admin"
@@ -33,6 +34,7 @@ Scenario Outline: View Deal Investors in a deal as company_admin
   	|  	        |primary_amount_cents=10000 |entity_type=Company  |name=Series A;amount_cents=10000 |Deal Investor was successfully created|
     |  	        |primary_amount_cents=12000 |entity_type=Company  |name=Series B;amount_cents=12000 |Deal Investor was successfully created|
 
+@rack_test
 Scenario Outline: View Deal Investors in a deal as employee
   Given Im logged in as a user "" for an entity "<entity>"
   Given the user has role "<role>"

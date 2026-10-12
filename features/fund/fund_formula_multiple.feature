@@ -14,6 +14,7 @@ Feature: GenerateAccountEntryMultiple fund formulas
 
   # ─── Model level: name parsing, prefix derivation, per-name substitution ───
 
+  @rack_test
   Scenario: Entry names are parsed from the formula's array literal
     Given a multiple fund formula with formula:
       """
@@ -21,6 +22,7 @@ Feature: GenerateAccountEntryMultiple fund formulas
       """
     Then the multiple entry names should be "Management Fees, Custody Fees, Audit Fees"
 
+  @rack_test
   Scenario Outline: Entry name prefix is derived from the period helper
     Given a multiple fund formula with formula:
       """
@@ -35,6 +37,7 @@ Feature: GenerateAccountEntryMultiple fund formulas
       | year_to_date    | YTD              |
       | since_inception | Since Inception  |
 
+  @rack_test
   Scenario: meta_data name_prefix overrides the derived prefix
     Given a multiple fund formula with formula:
       """
@@ -43,6 +46,7 @@ Feature: GenerateAccountEntryMultiple fund formulas
     And the multiple fund formula has meta_data "name_prefix=Custom Prefix "
     Then the multiple entry prefix should be exactly "Custom Prefix "
 
+  @rack_test
   Scenario: No prefix when the formula does not use a known period helper
     Given a multiple fund formula with formula:
       """
@@ -50,6 +54,7 @@ Feature: GenerateAccountEntryMultiple fund formulas
       """
     Then the multiple entry prefix should be exactly ""
 
+  @rack_test
   Scenario: The names array is substituted with each single name
     Given a multiple fund formula with formula:
       """
@@ -60,6 +65,7 @@ Feature: GenerateAccountEntryMultiple fund formulas
       capital_commitment.quarterly("Custody Fees", nil, @start_date, @end_date)
       """
 
+  @rack_test
   Scenario: The names array is found even when a guard clause contains another string array
     # Guard arrays appear as method receivers (["active"].include?(...)), not as
     # call arguments, so the argument-position preference skips them.
@@ -74,6 +80,7 @@ Feature: GenerateAccountEntryMultiple fund formulas
       raise SkipRule.new("skip") unless ["active", "closed"].include?(capital_commitment.json_fields["status"]); capital_commitment.quarterly("Management Fees", nil, @start_date, @end_date)
       """
 
+  @rack_test
   Scenario: Duplicate names in the array are de-duplicated
     Given a multiple fund formula with formula:
       """
@@ -81,6 +88,7 @@ Feature: GenerateAccountEntryMultiple fund formulas
       """
     Then the multiple entry names should be "Management Fees, Custody Fees"
 
+  @rack_test
   Scenario: Names with quotes are substituted safely
     Given a multiple fund formula with formula:
       """
@@ -93,6 +101,7 @@ Feature: GenerateAccountEntryMultiple fund formulas
 
   # ─── Model level: validations ───
 
+  @rack_test
   Scenario: A well-formed multiple formula is valid
     Given a multiple fund formula with formula:
       """
@@ -101,6 +110,7 @@ Feature: GenerateAccountEntryMultiple fund formulas
     When I validate the multiple fund formula
     Then the multiple fund formula should be valid
 
+  @rack_test
   Scenario: A multiple formula without a names array is rejected
     Given a multiple fund formula with formula:
       """
@@ -118,6 +128,7 @@ Feature: GenerateAccountEntryMultiple fund formulas
     When I validate the multiple fund formula
     Then the multiple fund formula should be invalid with a generate_ytd_qtly error containing "cannot be enabled for GenerateAccountEntryMultiple"
 
+  @rack_test
   Scenario: GenerateAccountEntry formulas are not affected by the multiple names validation
     Given a fund formula with formula "@committed_capital * @fee_rate / 365"
     When I validate the fund formula
@@ -125,6 +136,7 @@ Feature: GenerateAccountEntryMultiple fund formulas
 
   # ─── Engine level: full allocation run ───
 
+  @rack_test
   Scenario: One formula generates separate entries and fund rollups per name
     Given there is a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund;currency=INR"
     Given the user has role "company_admin"
@@ -183,6 +195,7 @@ Feature: GenerateAccountEntryMultiple fund formulas
     And there should be exactly "2" generated entries named "Custom Management Fees"
     And each commitment should have a generated account entry "Quarterly Management Fees" with amount cents "25000"
 
+  @rack_test
   Scenario: Multiple formulas see entries generated earlier in the same run despite memoized period helpers
     # Regression for the fund 54 / allocation run 1812 mismatch: quarterly and
     # since_inception are memoized per commitment instance + arguments

@@ -758,7 +758,7 @@ Then('Given I upload {string} file for {string} of the fund with errors') do |fi
   click_on("Upload")
   fill_in('import_upload_name', with: "Test Upload")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
-  sleep(2)
+  wait_for_upload("./public/sample_uploads/#{@import_file}") # JS direct-upload to /upload; returns once it lands (was sleep 2)
   click_on("Save")
   expect(page).to have_content("Import Upload:")
   ImportUploadJob.perform_now(ImportUpload.last.id)
@@ -1563,7 +1563,7 @@ When('I try to upload another template {string} of type {string} from {string} f
   select(owner_tag, from: "document_owner_tag")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{file}"), make_visible: true)
   page.execute_script('window.scrollTo(0, document.body.scrollHeight);')
-  sleep(10) # JS direct-upload to /upload endpoint; larger window for parallel load
+  wait_for_upload("./public/sample_uploads/#{file}") # JS direct-upload to /upload; returns once it lands (was sleep 10)
   check("document_template")
   click_on("Save")
 end

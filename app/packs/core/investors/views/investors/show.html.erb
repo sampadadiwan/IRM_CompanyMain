@@ -1,4 +1,12 @@
+<%# Workflow state, worked out once for the top card and the Misc menu items below (admins only) %>
+<% if policy(@investor).assign_workflow? %>
+  <% active_workflow = @investor.workflow_instances.instance_active.first %>
+  <% launchable_templates = active_workflow ? [] : @investor.launchable_workflow_templates %>
+<% end %>
 <div class="container-fluid mb-0">
+  <%# Running workflow (and the launch modal) above the details, like the capital call journey %>
+  <%= render "investors/workflow_summary", investor: @investor,
+             active_instance: active_workflow, available_templates: launchable_templates || [] %>
   <%= render "investors/show" %>
 
   <div class="d-flex flex-wrap align-items-center gap-2">
@@ -171,6 +179,21 @@
           <% end %>
 
 
+
+          <%# Workflows (admins): launch one when nothing is running, and every past run for this investor %>
+          <% if policy(@investor).assign_workflow? %>
+            <% if launchable_templates.any? %>
+              <button type="button" class="dropdown-item d-flex align-items-center"
+                      data-bs-toggle="modal" data-bs-target="#launchWorkflowModal">
+                <i class="ti ti-player-play"></i> Launch Workflow
+              </button>
+            <% end %>
+            <%= link_to workflow_instances_path(workflowable_type: "Investor", workflowable_id: @investor.id),
+                        class: "dropdown-item d-flex align-items-center",
+                        data: { turbo: false, bs_toggle: "tooltip", bs_title: "Every workflow run on this investor" } do %>
+              <i class="ti ti-history"></i> Workflow History
+            <% end %>
+          <% end %>
 
           <%= link_to incoming_emails_path(owner_id: @investor.id, owner_type: "Investor"),
                       class: "dropdown-item d-flex align-items-center",

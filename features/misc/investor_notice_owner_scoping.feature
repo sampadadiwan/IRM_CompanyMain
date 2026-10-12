@@ -1,3 +1,4 @@
+@rack_test
 Feature: Investor notice audience is scoped by owner
   As a GP publishing an investor notice from a Fund's or SecondarySale's page
   I want InvestorNoticeJob to generate entries only for investors who actually

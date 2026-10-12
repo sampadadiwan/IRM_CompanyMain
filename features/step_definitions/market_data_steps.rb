@@ -39,9 +39,9 @@ end
 
 When('I turn on the FX feed with {string} and the price feed with {string} and save') do |fx, prices|
   visit(market_data_settings_path)
-  check("market_data_setting_fx_feed_enabled")
+  check("market_data_setting_fx_feed_enabled", allow_label_click: true)
   fx.split(",").each { |p| check("fx_provider_#{p}") }
-  check("market_data_setting_price_feed_enabled")
+  check("market_data_setting_price_feed_enabled", allow_label_click: true)
   prices.split(",").each { |p| check("price_provider_#{p}") }
   fill_in("market_data_setting_pivot_currency", with: "USD")
   click_on("Save")
@@ -49,7 +49,7 @@ end
 
 When('I turn on the price feed with no provider and save') do
   visit(market_data_settings_path)
-  check("market_data_setting_price_feed_enabled")
+  check("market_data_setting_price_feed_enabled", allow_label_click: true)
   MarketDataSetting::PRICE_PROVIDERS.each { |p| uncheck("price_provider_#{p}") }
   click_on("Save")
 end

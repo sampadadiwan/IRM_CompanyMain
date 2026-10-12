@@ -14,6 +14,7 @@ Feature: ReportBuilderSchedulerJob — automated report delivery
   # The crontab half guards against it being wired in both places (a double
   # hourly run), rendered the same way `whenever` does at deploy time.
 
+  @rack_test
   Scenario: sidekiq-cron wires ReportBuilderSchedulerJob into the hourly cron
     When I read the sidekiq-cron registrations from config/initializers/sidekiq.rb
     Then sidekiq-cron should run "ReportBuilderSchedulerJob" on the cron "0 * * * *"
@@ -22,6 +23,7 @@ Feature: ReportBuilderSchedulerJob — automated report delivery
 
   # ── next_run_at calculation (shared with AgentSchedule via Schedulable) ───
 
+  @rack_test
   Scenario: Creating a schedule computes a future next_run_at
     Given a "daily" schedule for the report
     Then the schedule's next_run_at should be in the future
@@ -31,6 +33,7 @@ Feature: ReportBuilderSchedulerJob — automated report delivery
   # in production via `runner "ReportBuilderSchedulerJob.perform_later"`. These
   # scenarios cover the full chain: scheduler -> export job -> document + email.
 
+  @rack_test
   Scenario: Running the scheduler triggers an export and emails recipients for a due schedule
     Given the entity has a root folder
     And a "daily" schedule for the report

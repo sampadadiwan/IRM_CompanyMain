@@ -1,0 +1,44 @@
+<%# Stats row for an evergreen fund — same NumberStatsComponent cards as funds/_fund_stats, with NAV
+    figures in place of committed / called / distributed. Worked examples H31, H33, E45 %>
+<%
+  # Five cards with one-line subtitles, like funds/_fund_stats; per-class detail and the gate sit in the details card
+  figures = EvergreenFundFigures.new(fund)
+  nxt = figures.next_dealing_date
+  ut, nav = figures.navs.find { |_, n| n } || [fund.unit_types_list.first, nil]
+  # Name the class the NAV per unit card shows; with several classes, say the others are in the details card
+  others = figures.navs.size - 1
+  nav_subtitle = "#{eg_t(:nav_per_unit_short, fund:)} · Class #{ut}#{" (+#{others} more in details)" if others.positive?}"
+  # F9: NAV and units are as at the latest approved NAV — say which date, so they aren't read as today's
+  # (the unit register values today's units, which include any dealt since)
+  nav_dates = figures.navs.values.compact.map(&:nav_date).uniq
+  as_of = case nav_dates.size
+          when 0 then ""
+          when 1 then " at #{l(nav_dates.first)}"
+          else " at each class's latest NAV"
+          end
+  # F10: dealt this quarter (at Confirm), with the working and what hasn't settled yet in the tooltip
+  flows = figures.flows_qtd
+  flows_tip = ["Subscriptions dealt this quarter #{evergreen_money(flows[:in], fund)}#{" (#{evergreen_money(flows[:unallotted_in], fund)} not yet allotted)" if flows[:unallotted_in].positive?}",
+               "− redemptions dealt #{evergreen_money(flows[:out], fund)}#{" (#{evergreen_money(flows[:unpaid_out], fund)} not yet paid)" if flows[:unpaid_out].positive?}",
+               "Counted when a #{EvergreenLabels.lower(eg_t(:transaction_date, fund:))} is confirmed — that is when units are priced, whether or not the money has moved yet."].join(" ")
+  cards_data = [
+    { stat: evergreen_money(figures.total_nav_cents, fund), subtitle: "NAV#{as_of}", color: "success" },
+    { stat: nav ? evergreen_nav_per_unit(nav.nav_per_unit_cents) : "—", subtitle: nav_subtitle, color: "secondary" },
+    { stat: number_with_precision(figures.total_units, precision: 4, delimiter: ","), subtitle: "#{eg_t(:Units, fund:)}#{as_of}", color: "danger" },
+    { stat: evergreen_money(flows[:net], fund), subtitle: safe_join(["Net flows QTD", eg_tip(flows_tip)]), color: "info" },
+    { stat: nxt ? l(nxt.date) : "—", subtitle: "Next #{EvergreenLabels.lower(eg_t(:transaction_date, fund:))}", color: "secondary" }
+  ]
+%>
+<div class="row" id="evergreen_stats">
+  <% cards_data.each do |card| %>
+    <%= render(NumberStatsComponent.new(path: nil, amount: card[:stat], subtitle: card[:subtitle], progress_bar_color: card[:color])) %>
+  <% end %>
+</div>
+<%# A newer draft NAV: a notice in line with the cards above (col padding + the cards' m-2), linking to it %>
+<% if (draft = figures.newer_draft) %>
+  <div class="row">
+    <div class="col-12">
+      <div class="alert alert-info mx-2 py-2 small" id="newer_draft"><i class="ti ti-info-circle me-1"></i><%= link_to "Draft NAV #{l(draft.nav_date)}", evergreen_nav_path(fund, draft), data: { turbo_frame: "_top" } %> awaiting approval — the figures above use the latest approved NAV</div>
+    </div>
+  </div>
+<% end %>

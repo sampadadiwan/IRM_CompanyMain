@@ -259,8 +259,7 @@ end
 When('I log in as the investor user') do
   @user = @investor_user
   steps %(
-    And I am at the login page
-    When I fill and submit the login page
+    And I am signed in as the current user
   )
 end
 

@@ -14,6 +14,7 @@ Feature: Investor KYC fixes that ship with the KYC journey
     And AML is not enabled for the entity
 
   # H9 — the fund fills the KYC in and ticks complete
+  @rack_test
   Scenario: A fund user ticking complete marks the KYC submitted
     Given there is an individual KYC for the investor
     When a fund user ticks complete on the KYC
@@ -25,6 +26,7 @@ Feature: Investor KYC fixes that ship with the KYC journey
       | Submit KYC    | passed |                       |
 
   # E16 — unticking moves it back to draft and the journey back to Submit KYC
+  @rack_test
   Scenario: A fund user unticking complete moves the journey back
     Given there is an individual KYC for the investor
     And the KYC has the documents "PAN Card, Address Proof, Photo"
@@ -34,6 +36,7 @@ Feature: Investor KYC fixes that ship with the KYC journey
     And the KYC's journey should have moved back to "Submit KYC" with "Marked incomplete"
 
   # E17 — bulk Unverify matches the single UnVerify
+  @rack_test
   Scenario: Bulk Unverify puts KYCs back to completed
     Given there are 3 verified individual KYCs with journeys
     When I bulk "unverify" the KYCs
@@ -41,6 +44,7 @@ Feature: Investor KYC fixes that ship with the KYC journey
     And the investor should not be able to edit the KYC
 
   # Review fix — bulk Unverify leaves KYCs that were never verified alone (no fake submission)
+  @rack_test
   Scenario: Bulk Unverify does not mark an unsubmitted KYC as submitted
     Given there is an individual KYC for the investor that was never submitted
     When I bulk "unverify" the KYCs

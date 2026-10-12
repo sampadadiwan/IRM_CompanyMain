@@ -1,0 +1,207 @@
+<%# One class's NAV: lines with sources and overrides, warnings, approve / reopen (proposal GP-5).
+    Worked examples H3, H4, H6, E9, E10, E11, E35, X6, X8, X9
+    Same layout as a closed-ended capital call page: details card (NAV lines in the main card), actions row %>
+<% nav = @fund_nav %>
+<% nav_policy = policy(nav) %>
+<% dealing_word = EvergreenLabels.lower(eg_t(:transaction_date)) %>
+<div class="container-fluid p-3" data-controller="tooltip">
+  <%= render ToggleCard.new(title: "NAV — Class #{nav.unit_type} — #{l(nav.nav_date)}", css_class: "show_nav") do |card| %>
+    <%# Status beside the title, so a draft or stale NAV is plain before reading the lines %>
+    <% card.with_header do %><span class="me-2" id="nav_title_status"><%= eg_nav_status_badge(nav) %></span><% end %>
+    <div class="row" id="fund_nav_card">
+      <!-- Left Column: NAV lines -->
+      <div class="col-lg-8">
+        <div class="card shadow-sm border-0 mb-4">
+          <div class="card-body">
+            <% unless nav.approved? %>
+              <p class="text-muted small mb-3" id="nav_draft_note"><i class="ti ti-info-circle me-1"></i>Draft — not used for <%= dealing_word.pluralize %> or shown to investors until approved</p>
+            <% end %>
+            <%# Stale and cash-balance problems make the figures wrong (danger); the rest are notices (info) %>
+            <% if nav.stale? %>
+              <div class="alert alert-danger" id="nav_stale">
+                <i class="ti ti-alert-triangle me-1"></i>
+                <% if nav.draft? %>
+                  Inputs changed since drafted — recalculate before approving
+                <% else %>
+                  Inputs changed after approval on <%= l(nav.approved_at.to_date) %> — reopen to recalculate
+                <% end %>
+              </div>
+            <% end %>
+            <% if (cash_warning = evergreen_cash_warning(nav)) %>
+              <div class="alert alert-danger" id="cash_balance_warning"><i class="ti ti-alert-triangle me-1"></i><%= cash_warning %></div>
+            <% end %>
+            <% if (warning = evergreen_mgmt_fee_warning(nav)) %>
+              <div class="alert alert-info" id="mgmt_fee_warning"><i class="ti ti-info-circle me-1"></i><%= warning %></div>
+            <% end %>
+            <% if (unclaimed = evergreen_unclaimed_entries_warning(nav)) %>
+              <div class="alert alert-info" id="unclaimed_class_entries_warning"><i class="ti ti-info-circle me-1"></i><%= unclaimed %></div>
+            <% end %>
+            <% if nav.units_outstanding.to_d.zero? %>
+              <div class="alert alert-info" id="no_units"><i class="ti ti-info-circle me-1"></i>No <%= eg_t(:units) %> outstanding — initial price</div>
+            <% end %>
+
+            <div class="table-responsive">
+              <%# The app's standard grid (same classes and header row as the other evergreen tables) %>
+              <table class="table table-bordered dataTable hover mb-0" id="nav_lines">
+                <thead><tr><th>Line</th><th class="text-end">Amount</th><th>How it's worked out</th></tr></thead>
+                <tbody>
+                  <% FundNav::LINES.each do |line| %>
+                    <% next if line.start_with?("perf_fee") && nav.fund.evergreen_class_terms.find_by(unit_type: nav.unit_type)&.perf_fee_model == "none" %>
+                    <% next if line == "class_expenses_payable" && !evergreen_show_class_expenses?(nav) %>
+                    <% liability = FundNav::LIABILITY_LINES.include?(line) %>
+                    <tr id="nav_line_<%= line %>">
+                      <td><%= EvergreenNavHelper::LINE_LABELS[line] %></td>
+                      <td class="text-end"><%= liability ? "(#{evergreen_money(nav["#{line}_cents"], @fund)})" : evergreen_money(nav["#{line}_cents"], @fund) %></td>
+                      <td class="text-muted small">
+                        <% if nav.overridden?(line) %>
+                          <% ov = nav.overrides_hash[line] %>
+                          <%= eg_badge(:grey, "edit", "Overridden", "The computed figure was replaced with a reason; it survives a recalculation.") %> <%= ov["reason"] %>
+                          <span class="d-block">by <%= User.find_by(id: ov["user_id"])&.full_name || "—" %><%= " · #{l(Time.zone.parse(ov['at']), format: :abbr_date_time)}" if ov["at"].present? %></span>
+                        <% else %>
+                          <%= nav.breakdown.to_h[line] %>
+                        <% end %>
+                        <% if line == "perf_fee_accrued" && nav.hwm_cents %> · HWM <%= evergreen_nav_per_unit(nav.hwm_cents) %><% end %>
+                      </td>
+                    </tr>
+                  <% end %>
+                  <tr class="fw-bold"><td>NAV</td><td class="text-end" id="nav_total"><%= evergreen_money(nav.nav_cents, @fund) %></td><td></td></tr>
+                  <tr><td><%= eg_t(:Units) %> outstanding</td><td class="text-end" id="nav_units"><%= number_with_precision(nav.units_outstanding, precision: 4, delimiter: ",") %></td><td></td></tr>
+                  <tr class="fw-bold"><td><%= eg_t(:nav_per_unit) %></td><td class="text-end" id="nav_per_unit"><%= evergreen_nav_per_unit(nav.nav_per_unit_cents) %></td><td></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: attributes (the figures are the table's total rows, not repeated here) -->
+      <div class="col-lg-4">
+        <div class="card shadow-sm border-0 mb-4">
+          <div class="card-header border-bottom py-3 px-4">
+            <h6 class="mb-0 fw-bold d-flex align-items-center"><i class="ti ti-list me-2 text-secondary"></i>Attributes</h6>
+          </div>
+          <ul class="list-group list-group-flush">
+            <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+              <span class="text-muted">NAV Date</span>
+              <span class="fw-bold"><%= l(nav.nav_date) %></span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+              <span class="text-muted">Class</span>
+              <span class="fw-bold"><%= nav.unit_type %></span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+              <span class="text-muted">Status</span>
+              <span class="text-end" id="nav_status"><%= eg_nav_status_badge(nav) %> <%= eg_nav_source_badge(nav) %></span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+              <span class="text-muted">Prepared by</span>
+              <span class="fw-bold"><%= nav.prepared_by&.full_name %></span>
+            </li>
+            <% if nav.approved? %>
+              <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+                <span class="text-muted">Approved by</span>
+                <span class="fw-bold text-end"><%= nav.approved_by&.full_name %> <%= l(nav.approved_at.to_date) %></span>
+              </li>
+            <% end %>
+          </ul>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <%# Late management fees (R9.12–R9.17): decided here, before Approve, which they can block %>
+  <%= render "evergreen/navs/late_fees", nav:, nav_policy: %>
+
+  <%# Actions row — outline buttons, as on the capital call page. Everything that changes the NAV confirms
+      first with the "Immediate Actions" popup; Override line opens a small form. Ids are what the NAV steps use %>
+  <div class="d-flex flex-wrap align-items-center gap-2 mb-3" id="nav_actions">
+    <% if nav.draft? %>
+      <%# Review fix 2 / R9.2: a draft that can't be approved yet (stale, fee not accrued) shows why — the same
+          reason FundNavApprove refuses a direct request with %>
+      <% block_reason = nav_policy.approve? && FundNavApprove.block_reason(nav) %>
+      <% if block_reason %>
+        <span class="btn btn-outline-success disabled" id="approve_nav_disabled" data-bs-toggle="tooltip" title="<%= block_reason %>"><i class="ti ti-check"></i> Approve</span>
+        <span class="text-muted small" id="approve_blocked_reason"><%= block_reason %></span>
+      <% elsif nav_policy.approve? %>
+        <%
+          msg = evergreen_action_summary([
+            ["green", "ti-circle-check", "Approve NAV #{l(nav.nav_date)}", "#{eg_t(:nav_per_unit)} #{evergreen_nav_per_unit(nav.nav_per_unit_cents)} for class #{nav.unit_type}"],
+            ["blue", "ti-calendar-event", "Used for #{dealing_word.pluralize}", "Orders are priced at this #{eg_t(:nav_per_unit_short)}"],
+            ["purple", "ti-eye", "Shown to investors", "On the investor portal and in statements"]
+          ])
+        %>
+        <%= button_to approve_evergreen_nav_path(@fund, nav), method: :patch, class: "btn btn-outline-success", id: "approve_nav", form: { class: "d-inline" },
+              data: { action: "click->confirm#popup", method: "patch", title: "Approve this NAV", msg: } do %><i class="ti ti-check"></i> Approve<% end %>
+      <% else %>
+        <span class="btn btn-outline-success disabled" id="approve_nav_disabled" data-bs-toggle="tooltip" title="Only users with the approver role can approve a NAV"><i class="ti ti-check"></i> Approve</span>
+        <span class="text-muted small">Needs the approver role</span>
+      <% end %>
+      <%# Recalculate re-drafts every class for this date from the ledger (FundNavBuilder); overrides are kept %>
+      <% if nav.stale? && nav_policy.update? %>
+        <%
+          msg = evergreen_action_summary([
+            ["amber", "ti-refresh", "Re-draft from the ledger", "Every class's draft NAV for #{l(nav.nav_date)} is rebuilt from current valuations and entries"],
+            ["grey", "ti-edit", "Overrides kept", "Overridden lines keep their value and reason"]
+          ])
+        %>
+        <%= button_to recalculate_evergreen_nav_path(@fund, nav), method: :patch, class: "btn btn-outline-primary", id: "recalculate_nav", form: { class: "d-inline" },
+              data: { action: "click->confirm#popup", method: "patch", title: "Recalculate this NAV", msg: } do %><i class="ti ti-refresh"></i> Recalculate<% end %>
+      <% end %>
+      <%# Uploaded NAVs have totals only — correct them by uploading again %>
+      <% if nav_policy.update? && nav.source != "uploaded" %>
+        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#override_modal" id="override_open"><i class="ti ti-pencil"></i> Override line</button>
+      <% end %>
+      <% if nav_policy.destroy? %>
+        <%
+          msg = evergreen_action_summary([
+            ["red", "ti-trash", "Delete the draft", "Class #{nav.unit_type} NAV for #{l(nav.nav_date)} and its overrides are removed"],
+            ["grey", "ti-lock", "Approved NAVs untouched", "Draft again from the NAV list when needed"]
+          ])
+        %>
+        <%= button_to evergreen_nav_path(@fund, nav), method: :delete, class: "btn btn-outline-danger", id: "delete_nav", form: { class: "d-inline" },
+              data: { action: "click->confirm#popup", method: "delete", title: "Delete this draft NAV", msg: } do %><i class="ti ti-trash"></i> Delete draft<% end %>
+      <% end %>
+    <% elsif nav.approved? && current_user.has_cached_role?(:approver) %>
+      <% if nav.used_by_dealing? %>
+        <% used_by = nav.used_by_dealing_date %>
+        <span class="btn btn-outline-secondary disabled" id="reopen_nav_disabled"><i class="ti ti-lock-open"></i> Reopen</span>
+        <span class="text-muted small" id="reopen_blocked">Used by <%= dealing_word %> <%= link_to l(used_by.date), evergreen_dealing_date_path(@fund, used_by) %> — cannot reopen</span>
+      <% elsif nav_policy.reopen? %>
+        <%= render "evergreen/navs/reopen_button", nav: %>
+      <% end %>
+    <% end %>
+  </div>
+
+  <%# Override a line: a small form in a modal (same markup as the dealing date's Record payment); Save is
+      the confirmation. A class without a performance fee has no performance-fee lines to override (E42) %>
+  <% if nav.draft? && nav_policy.update? && nav.source != "uploaded" %>
+    <% no_perf = nav.fund.evergreen_class_terms.find_by(unit_type: nav.unit_type)&.perf_fee_model == "none" %>
+    <div class="modal fade" id="override_modal" tabindex="-1" aria-labelledby="override_label" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <%= form_with url: override_evergreen_nav_path(@fund, nav), method: :patch, id: "override_form" do |f| %>
+            <div class="modal-header">
+              <h5 class="modal-title" id="override_label">Override line · Class <%= nav.unit_type %> · <%= l(nav.nav_date) %></h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <div class="text-muted small mb-3">The value replaces the computed figure and is kept when the NAV is recalculated.</div>
+              <div class="mb-3"><%= f.label :line, "Line", class: "form-label", for: "override_line" %>
+                <%= f.select :line, EvergreenNavHelper::LINE_LABELS.reject { |k, _| no_perf && k.start_with?("perf_fee") }.invert.to_a, {}, class: "form-select", id: "override_line" %></div>
+              <div class="mb-3"><%= f.label :value, "Value (#{@fund.currency})", class: "form-label", for: "override_value" %>
+                <%= f.number_field :value, step: :any, class: "form-control", id: "override_value" %></div>
+              <div class="mb-1"><%= f.label :reason, "Reason", class: "form-label", for: "override_reason" %>
+                <%= f.text_field :reason, class: "form-control", placeholder: "Required, e.g. per administrator statement", maxlength: 255, id: "override_reason" %></div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal"><%= t_common(:cancel) %></button>
+              <%= f.submit "Override line", class: "btn btn-outline-success", id: "override_submit" %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  <% end %>
+  <%# Audit trail: drafts, overrides (who, from → to, reason), approvals and reopens %>
+  <%= render AuditTrail.new(nav, title: "NAV audit trail") %>
+</div>

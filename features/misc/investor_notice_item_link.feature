@@ -1,3 +1,4 @@
+@rack_test
 Feature: InvestorNoticeItem link can reference [user.xxx] variables
   As a GP publishing a notice line item
   I want the item's link to optionally reference the viewing user's own

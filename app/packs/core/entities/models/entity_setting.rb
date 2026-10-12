@@ -23,8 +23,28 @@ class EntitySetting < ApplicationRecord
   before_create :set_kanban_steps
 
   before_save :validate_document_colors
+  # Evergreen wording overrides (EvergreenLabels): only a known unit word, and a fresh cache when they change
+  validate :evergreen_unit_label_allowed
+  before_validation :compact_evergreen_labels
+  after_commit :clear_evergreen_labels_cache, if: -> { saved_change_to_evergreen_labels? }
   # Add new flags to the end of this list
   flag :custom_flags, %i[no_password_login]
+
+  # Keep only the words actually changed (a blank field means "use the default"); nil when none
+  def compact_evergreen_labels
+    return if evergreen_labels.nil?
+
+    self.evergreen_labels = evergreen_labels.to_h.transform_values { |v| v.to_s.strip }.compact_blank.presence
+  end
+
+  def evergreen_unit_label_allowed
+    unit = evergreen_labels.to_h["unit"].presence
+    errors.add(:evergreen_labels, "unit must be one of #{EvergreenLabels::UNIT_TERMS.join(', ')}") if unit && EvergreenLabels::UNIT_TERMS.exclude?(unit)
+  end
+
+  def clear_evergreen_labels_cache
+    Rails.cache.delete(EvergreenLabels.cache_key(entity_id))
+  end
 
   def validate_document_colors
     if document_colors.blank?

@@ -15,7 +15,7 @@ Feature: Server-side KPI workbook validation — extended coverage
   # ─────────────────────────────────────────────────────────
   # §2.9 Plausibility warnings (never blocking)
   # ─────────────────────────────────────────────────────────
-  @kpi_validation_ext
+  @kpi_validation_ext @rack_test
   Scenario: A bare number on a percentage KPI whose scale disagrees with history warns
     Given the KPI mapping "Gross Margin" exists with data type "percentage"
     And an approved KPI "Gross Margin" of 0.40 exists for "TestStartup" as of "2026-05-31" period "Month"
@@ -27,7 +27,7 @@ Feature: Server-side KPI workbook validation — extended coverage
     And the validation has warning "percentage_scale_suspect"
     And the cell "MIS!B2" is stored as "42"
 
-  @kpi_validation_ext
+  @kpi_validation_ext @rack_test
   Scenario: A change beyond the mapping's thresholds warns; within them it does not
     Given the KPI mapping "Revenue" exists with lower threshold 20 and upper threshold 30
     And an approved KPI "Revenue" of 100 exists for "TestStartup" as of "2026-05-31" period "Month"
@@ -43,7 +43,7 @@ Feature: Server-side KPI workbook validation — extended coverage
     When the workbook is validated for the KPI report
     Then the validation has no warning "threshold_breach"
 
-  @kpi_validation_ext
+  @kpi_validation_ext @rack_test
   Scenario: Without thresholds a swing beyond 200 percent is an outlier warning, and a sign flip is flagged
     Given the target KPIs are "Revenue, EBITDA"
     And an approved KPI "Revenue" of 100 exists for "TestStartup" as of "2026-05-31" period "Month"
@@ -58,7 +58,7 @@ Feature: Server-side KPI workbook validation — extended coverage
     And the validation has warning "outlier"
     And the validation has warning "sign_flip"
 
-  @kpi_validation_ext
+  @kpi_validation_ext @rack_test
   Scenario: A value in the red RAG band against the approved budget warns
     Given the KPI mapping "Churn" exists with RAG comparator "Budget", direction "lower_is_better", red threshold 1.5, green threshold 1.0
     And an approved "Budget" KPI "Churn" of 10 exists for "TestStartup" as of "2026-06-30" period "Month"
@@ -69,7 +69,7 @@ Feature: Server-side KPI workbook validation — extended coverage
     Then the validation has no errors
     And the validation has warning "rag_red"
 
-  @kpi_validation_ext
+  @kpi_validation_ext @rack_test
   Scenario: A value in the amber RAG band against the approved budget warns
     Given the KPI mapping "Retention" exists with RAG comparator "Budget", direction "higher_is_better", red threshold 0.7, green threshold 0.9
     And an approved "Budget" KPI "Retention" of 10 exists for "TestStartup" as of "2026-06-30" period "Month"
@@ -80,7 +80,7 @@ Feature: Server-side KPI workbook validation — extended coverage
     Then the validation has no errors
     And the validation has warning "rag_amber"
 
-  @kpi_validation_ext
+  @kpi_validation_ext @rack_test
   Scenario: Net Burn overspending against budget in the red RAG band warns
     Given the KPI mapping "Net Burn" exists with RAG comparator "Budget", direction "lower_is_better", red threshold 1.2, green threshold 1.0
     And an approved "Budget" KPI "Net Burn" of 100 exists for "TestStartup" as of "2026-06-30" period "Month"
@@ -91,7 +91,7 @@ Feature: Server-side KPI workbook validation — extended coverage
     Then the validation has no errors
     And the validation has warning "rag_red"
 
-  @kpi_validation_ext
+  @kpi_validation_ext @rack_test
   Scenario: Headcount overshooting budget in the red RAG band warns
     Given the KPI mapping "Headcount" exists with RAG comparator "Budget", direction "lower_is_better", red threshold 1.1, green threshold 1.0
     And an approved "Budget" KPI "Headcount" of 100 exists for "TestStartup" as of "2026-06-30" period "Month"
@@ -125,7 +125,7 @@ Feature: Server-side KPI workbook validation — extended coverage
     And the validation has no warning "rag_red"
     And the validation has no warning "rag_amber"
 
-  @kpi_validation_ext
+  @kpi_validation_ext @rack_test
   Scenario: A flat-threshold RAG rule (no comparator) warns without needing an approved Budget
     Given the KPI mapping "Gross Margin" exists with RAG comparator "none", direction "higher_is_better", red threshold 0.40, green threshold 0.55
     And a KPI workbook with sheet "MIS":
@@ -149,7 +149,7 @@ Feature: Server-side KPI workbook validation — extended coverage
   # ─────────────────────────────────────────────────────────
   # §2.3 / §2.6 Header quirks and number locales
   # ─────────────────────────────────────────────────────────
-  @kpi_validation_ext
+  @kpi_validation_ext @rack_test
   Scenario: A non-period header column is ignored with a warning; a duplicated period header is an error
     Given the target KPIs are "Revenue"
     And a KPI workbook with sheet "MIS":
@@ -165,7 +165,7 @@ Feature: Server-side KPI workbook validation — extended coverage
     When the workbook is validated for the KPI report
     Then the validation has error "duplicate_period"
 
-  @kpi_validation_ext
+  @kpi_validation_ext @rack_test
   Scenario: A mapped KPI missing from the file is a warning, and a wholly empty sheet is skipped with a warning
     Given the target KPIs are "Revenue, EBITDA"
     And a KPI workbook with sheet "MIS":
@@ -179,7 +179,7 @@ Feature: Server-side KPI workbook validation — extended coverage
     And the validation warning "kpi_missing" mentions "EBITDA"
     And the validation has warning "empty_sheet"
 
-  @kpi_validation_ext
+  @kpi_validation_ext @rack_test
   Scenario: A consistently European-formatted sheet is read correctly; a sheet mixing formats is ambiguous
     Given the target KPIs are "Revenue, EBITDA"
     And a KPI workbook with sheet "MIS":
@@ -199,7 +199,7 @@ Feature: Server-side KPI workbook validation — extended coverage
     When the workbook is validated for the KPI report
     Then the validation has error "ambiguous_value"
 
-  @kpi_validation_ext
+  @kpi_validation_ext @rack_test
   Scenario: Tag rows (ACT / BUDGET side by side) still satisfy an Actual request
     Given the target KPIs are "Revenue"
     And a KPI workbook with sheet "MIS":
@@ -213,7 +213,7 @@ Feature: Server-side KPI workbook validation — extended coverage
   # ─────────────────────────────────────────────────────────
   # §2.5 Fund-side (non-portco) reports get requested-period findings as warnings
   # ─────────────────────────────────────────────────────────
-  @kpi_validation_ext
+  @kpi_validation_ext @rack_test
   Scenario: On a fund-created report the requested-period check does not block
     Given the target KPIs are "Revenue"
     And a fund-created KPI report exists for "TestStartup" as of "2026-05-31" period "Month"
@@ -265,7 +265,7 @@ Feature: Server-side KPI workbook validation — extended coverage
     And I should see "Re-check file"
     And the KPI report has a stored validation result for its attached document
 
-  @kpi_validation_ext @kpi_magic_link
+  @kpi_validation_ext @kpi_magic_link @rack_test
   Scenario: The KPI file picker only accepts spreadsheets and offers the template
     Given the target KPIs are "Revenue"
     When I open the KPI report edit page as the portco user via a valid signed link
@@ -275,7 +275,7 @@ Feature: Server-side KPI workbook validation — extended coverage
   # ─────────────────────────────────────────────────────────
   # §2.2 Import job emails: warnings alone are quiet, blocking errors are not
   # ─────────────────────────────────────────────────────────
-  @kpi_validation_ext
+  @kpi_validation_ext @rack_test
   Scenario: An import with only informational warnings sends no error email; one with blocking errors does
     Given the target KPIs are "Revenue"
     And an approved KPI "Revenue" of 100 exists for "TestStartup" as of "2026-05-31" period "Month"
@@ -295,7 +295,7 @@ Feature: Server-side KPI workbook validation — extended coverage
   # ─────────────────────────────────────────────────────────
   # Fund show page and submitted email content
   # ─────────────────────────────────────────────────────────
-  @kpi_validation_ext
+  @kpi_validation_ext @rack_test
   Scenario: The fund's show page summarises the import and the submitted email states what was staged
     Given the target KPIs are "Revenue"
     And a KPI workbook with sheet "MIS":
@@ -323,7 +323,7 @@ Feature: Server-side KPI workbook validation — extended coverage
   # ─────────────────────────────────────────────────────────
   # §3.4 P Template variants
   # ─────────────────────────────────────────────────────────
-  @kpi_validation_ext
+  @kpi_validation_ext @rack_test
   Scenario: The template shows units, uses the requested period label and follows the fund's fiscal year
     Given the following KPI mappings with denominations exist for the portfolio company:
       | reported_kpi_name | denomination |
@@ -341,12 +341,12 @@ Feature: Server-side KPI workbook validation — extended coverage
   # ─────────────────────────────────────────────────────────
   # Review-gate fixes: shell dates, unrecognised tag columns, odd quarters, stuck imports
   # ─────────────────────────────────────────────────────────
-  @kpi_validation_ext
+  @kpi_validation_ext @rack_test
   Scenario: A shell created for a mid-month date lives on the month end so uploads can match it
     When a KPI report shell is created through the service for "TestStartup" as of "2026-07-18" period "Month"
     Then the created shell has as_of "2026-07-31"
 
-  @kpi_validation_ext
+  @kpi_validation_ext @rack_test
   Scenario: A Variance column next to Actual and Budget is ignored instead of colliding with Actual
     Given the target KPIs are "Revenue"
     And a KPI workbook with sheet "MIS":
@@ -358,14 +358,14 @@ Feature: Server-side KPI workbook validation — extended coverage
     And the validation has warning "unrecognized_tag_column"
     And the requested period is present with "1" KPIs filled
 
-  @kpi_validation_ext
+  @kpi_validation_ext @rack_test
   Scenario: A quarter that does not start in Jan/Apr/Jul/Oct still round-trips through the template
     Given the target KPIs are "Revenue"
     And a KPI report shell exists for "TestStartup" as of "2026-05-31" with status "link_sent" and period "Quarter"
     Then the generated KPI template for the report has header "Mar-May 2026" and rows "Revenue"
     And validating the generated template reports the requested period as present but blank
 
-  @kpi_validation_ext
+  @kpi_validation_ext @rack_test
   Scenario: An import job that crashes after a submission reopens the report instead of leaving it pending
     Given the target KPIs are "Revenue"
     And a KPI workbook with sheet "MIS":
@@ -382,7 +382,7 @@ Feature: Server-side KPI workbook validation — extended coverage
   # Parent–child KPI mappings (Revenue → North/South/East/West style) keep working through the
   # new check: the same child name under two parents is two mappings, never a "duplicate row".
   # ─────────────────────────────────────────────────────────
-  @kpi_validation_ext
+  @kpi_validation_ext @rack_test
   Scenario: Parent-child mappings validate and import through the new checks without false duplicates
     Given the following parent-child KPI mappings exist for the portfolio company:
       | parent_name    | reported_kpi_name |
@@ -434,7 +434,7 @@ Feature: Server-side KPI workbook validation — extended coverage
     And the KPI report has an unapproved KPI "Revenue - West" as of "2026-06-30" with value 150
     And the KPI report has an unapproved KPI "Revenue" as of "2026-06-30" with value 1200
 
-  @kpi_validation_ext
+  @kpi_validation_ext @rack_test
   Scenario: Filled-down parent labels (parent repeated on every child row) are read as child rows
     Given the following parent-child KPI mappings exist for the portfolio company:
       | parent_name    | reported_kpi_name |
@@ -457,7 +457,7 @@ Feature: Server-side KPI workbook validation — extended coverage
     And the validated cell for KPI "Net Sales - SMB" in "Jun 2026" is stored as "400"
     And the validated cell for KPI "Operating Cost - Enterprise" in "Jun 2026" is stored as "440"
 
-  @kpi_validation_ext
+  @kpi_validation_ext @rack_test
   Scenario: A child name mapped under two parents is not guessed when the sheet gives no parent context
     Given the following parent-child KPI mappings exist for the portfolio company:
       | parent_name    | reported_kpi_name |
@@ -475,7 +475,7 @@ Feature: Server-side KPI workbook validation — extended coverage
     And the validated cell for KPI "Net Sales" in "Jun 2026" is stored as "1000"
     And there is no validated cell for KPI "Net Sales - Enterprise"
 
-  @kpi_validation_ext
+  @kpi_validation_ext @rack_test
   Scenario: A parent that does not equal the sum of all its children gets a hint
     Given the following parent-child KPI mappings exist for the portfolio company:
       | parent_name | reported_kpi_name |

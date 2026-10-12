@@ -1,3 +1,4 @@
+@rack_test
 Feature: Access
   Can access models as a company
 

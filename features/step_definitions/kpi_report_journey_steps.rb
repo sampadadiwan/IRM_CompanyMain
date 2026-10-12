@@ -452,7 +452,7 @@ When('I approve all pending KPIs of {string} on the KPI grid') do |portco_name|
   expect(page).to have_css(form, visible: :all)
   # A native submit (no submit event), as the real button does with data-turbo=false
   page.execute_script("document.querySelector(\"#{form}\").submit()")
-  expect(page).to have_text("All pending KPIs were successfully approved")
+  expect(page).to have_text("All pending KPIs approved")
 end
 
 Then('the journeys of {string} as of {string} and {string} are on {string}') do |portco_name, first, second, task|
@@ -589,7 +589,8 @@ When('I create a KPI report for {string} as of {string} period {string} with the
   advance_kpi_wizard_to(:upload)
   attach_file("files[]", SAMPLE_KPI_UPLOADS_DIR.join(file).to_s, make_visible: true)
   within("#kpi_validation_panel") { expect(page).to have_content("No blocking errors", wait: 20) }
-  check("kpi_warnings_ack_all") if page.has_field?("kpi_warnings_ack_all", wait: 2)
+  # The panel has rendered (line above), so whether it has warnings to acknowledge is already settled
+  check("kpi_warnings_ack_all") if page.has_field?("kpi_warnings_ack_all", wait: 0)
   advance_kpi_wizard_to(:additional_details)
   click_on("Save")
   expect(page).to have_text("Kpi report was successfully created")
@@ -629,7 +630,7 @@ When('I approve all staged KPIs in the new tab') do
     expect(page).to have_css(form, visible: :all)
     # A native submit (no submit event), as the real button does with data-turbo=false
     page.execute_script("document.querySelector(\"#{form}\").submit()")
-    expect(page).to have_text("All pending KPIs were successfully approved")
+    expect(page).to have_text("All pending KPIs approved")
   end
 end
 

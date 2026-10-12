@@ -23,17 +23,20 @@ Feature: 404-scanner blocking never locks out valid users
   # The protection itself still works
   # ──────────────────────────────────────────────────────────────────────────
 
+  @rack_test
   Scenario: An anonymous scanner is blocked after repeated 404s
     Given a visitor "scanner" browsing from IP "203.0.113.66"
     When "scanner" requests 12 different missing pages
     Then "scanner" is blocked with "403" when visiting "/entities/dashboard"
 
+  @rack_test
   Scenario: A scanner faking a session cookie is still blocked
     Given a visitor "scanner" browsing from IP "203.0.113.67"
     And "scanner" carries a spoofed session cookie
     When "scanner" requests 12 different missing pages
     Then "scanner" is blocked with "403" when visiting "/entities/dashboard"
 
+  @rack_test
   Scenario: An anonymous scanner is rate-limited with 429 before the hard block
     Given the clock is frozen for predictable rate-limit windows
     And a visitor "scanner" browsing from IP "203.0.113.70"
@@ -44,6 +47,7 @@ Feature: 404-scanner blocking never locks out valid users
   # Valid users are never caught
   # ──────────────────────────────────────────────────────────────────────────
 
+  @rack_test
   Scenario: A signed-in user is never throttled or blocked, however many 404s they hit
     Given a visitor "admin" browsing from IP "203.0.113.68"
     And "admin" signs in with valid credentials

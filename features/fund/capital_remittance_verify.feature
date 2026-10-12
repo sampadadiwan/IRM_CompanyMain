@@ -101,6 +101,7 @@ Feature: Capital Remittance Verify Confirmation Popup
   # it. Now the remittance is left unverified — the recoverable direction, since verifying emails
   # investors and releases unit allocation — and both the row and the import say why.
   # See ImportCapitalRemittancePayment#record_verified_request.
+  @rack_test
   Scenario: Payment rows that disagree about Verified leave the remittance unverified
     Given there is a capital call "percentage_called=20"
     Then the corresponding remittances should be created
@@ -115,6 +116,7 @@ Feature: Capital Remittance Verify Confirmation Popup
 
   # Control for the rule above: the same sheet with both rows agreeing still verifies, so the
   # conflict check is not just refusing everything.
+  @rack_test
   Scenario: Payment rows that agree on Verified = Yes verify the remittance
     Given there is a capital call "percentage_called=20"
     Then the corresponding remittances should be created

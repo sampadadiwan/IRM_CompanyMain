@@ -1,3 +1,4 @@
+@rack_test
 Feature: Investment Instrument Portfolio Company Field
   The investment instrument form lets you pick which portfolio company an instrument belongs
   to when opened generically (e.g. from the main Investment Instruments list), and locks that

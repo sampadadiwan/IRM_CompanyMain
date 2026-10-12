@@ -12,7 +12,7 @@ Feature: Investor KYC Send Workflow
   # ─────────────────────────────────────────────────────────────────────────────
   # 1. New KYC shows not_sent status
   # ─────────────────────────────────────────────────────────────────────────────
-  @kyc_workflow @kyc_status
+  @kyc_workflow @kyc_status @rack_test
   Scenario: Newly created KYC has not_sent submission status
     Given there is a KYC for the investor with submission_status "not_sent"
     Then the investor kyc submission_status should be "not_sent"
@@ -20,7 +20,7 @@ Feature: Investor KYC Send Workflow
   # ─────────────────────────────────────────────────────────────────────────────
   # 2. Send KYC link → link_sent + email
   # ─────────────────────────────────────────────────────────────────────────────
-  @kyc_workflow @kyc_notification @notification
+  @kyc_workflow @kyc_notification @notification @rack_test
   Scenario: Sending the KYC form link advances status to link_sent and emails the investor
     Given there is a KYC for the investor with submission_status "not_sent"
     When the fund admin sends the KYC form to the investor
@@ -72,7 +72,7 @@ Feature: Investor KYC Send Workflow
   # ─────────────────────────────────────────────────────────────────────────────
   # 6. Locked state — investor is redirected to show page, not the edit form
   # ─────────────────────────────────────────────────────────────────────────────
-  @kyc_workflow @kyc_magic_link
+  @kyc_workflow @kyc_magic_link @rack_test
   Scenario: Completed KYC redirects investor to the show page when edit link is opened
     Given there is a KYC for the investor with submission_status "completed"
     When I open the KYC edit page as the investor via a valid signed link
@@ -83,7 +83,7 @@ Feature: Investor KYC Send Workflow
   # ─────────────────────────────────────────────────────────────────────────────
   # 6b. Show page via magic link — no fund-admin buttons visible
   # ─────────────────────────────────────────────────────────────────────────────
-  @kyc_workflow @kyc_magic_link
+  @kyc_workflow @kyc_magic_link @rack_test
   Scenario: Investor viewing show page via magic link sees no fund-admin action buttons
     Given there is a KYC for the investor with submission_status "completed"
     When I open the KYC show page as the investor via a valid signed link
@@ -93,7 +93,7 @@ Feature: Investor KYC Send Workflow
   # ─────────────────────────────────────────────────────────────────────────────
   # 7. Expired magic link → friendly error
   # ─────────────────────────────────────────────────────────────────────────────
-  @kyc_workflow @kyc_magic_link
+  @kyc_workflow @kyc_magic_link @rack_test
   Scenario: Investor visits an expired magic link and sees a friendly error
     Given there is a KYC for the investor with submission_status "link_sent"
     When I visit the KYC edit page with an expired signed link
@@ -102,7 +102,7 @@ Feature: Investor KYC Send Workflow
   # ─────────────────────────────────────────────────────────────────────────────
   # 8. Tampered magic link → friendly error
   # ─────────────────────────────────────────────────────────────────────────────
-  @kyc_workflow @kyc_magic_link
+  @kyc_workflow @kyc_magic_link @rack_test
   Scenario: Investor visits a tampered magic link and sees a friendly error
     Given there is a KYC for the investor with submission_status "link_sent"
     When I visit the KYC edit page with a tampered signed link
@@ -111,7 +111,7 @@ Feature: Investor KYC Send Workflow
   # ─────────────────────────────────────────────────────────────────────────────
   # 9. Request Updates — resets to link_sent, emails investor with custom message
   # ─────────────────────────────────────────────────────────────────────────────
-  @kyc_workflow @kyc_request_updates @notification
+  @kyc_workflow @kyc_request_updates @notification @rack_test
   Scenario: Fund admin requests updates — KYC reverts to link_sent and investor is emailed
     Given there is a KYC for the investor with submission_status "completed"
     And the email queue is cleared
@@ -124,7 +124,7 @@ Feature: Investor KYC Send Workflow
   # ─────────────────────────────────────────────────────────────────────────────
   # 10. Request Updates without message — uses default message
   # ─────────────────────────────────────────────────────────────────────────────
-  @kyc_workflow @kyc_request_updates @notification
+  @kyc_workflow @kyc_request_updates @notification @rack_test
   Scenario: Fund admin requests updates without a custom message — default text is sent
     Given there is a KYC for the investor with submission_status "completed"
     And the email queue is cleared
@@ -148,7 +148,7 @@ Feature: Investor KYC Send Workflow
     When the KYC reminder job runs for the entity
     Then the investor user receives no email
 
-  @kyc_workflow @kyc_reminder @notification
+  @kyc_workflow @kyc_reminder @notification @rack_test
   Scenario: KycReminderJob does email investors whose KYC is still pending
     Given there is a KYC for the investor with submission_status "link_sent"
     And the email queue is cleared
@@ -158,7 +158,7 @@ Feature: Investor KYC Send Workflow
   # ─────────────────────────────────────────────────────────────────────────────
   # 12. Investor pending dashboard
   # ─────────────────────────────────────────────────────────────────────────────
-  @kyc_workflow @kyc_dashboard
+  @kyc_workflow @kyc_dashboard @rack_test
   Scenario: Investor pending dashboard shows KYCs with link_sent or draft_saved status
     Given there is a KYC for the investor with submission_status "link_sent"
     And I am logged in as the investor user
@@ -176,7 +176,7 @@ Feature: Investor KYC Send Workflow
   # ─────────────────────────────────────────────────────────────────────────────
   # 13. Ransack filter by submission_status on index
   # ─────────────────────────────────────────────────────────────────────────────
-  @kyc_workflow @kyc_filter
+  @kyc_workflow @kyc_filter @rack_test
   Scenario: Fund admin can filter KYC index by submission_status
     Given there is a KYC for the investor with submission_status "link_sent"
     And I am logged in as the fund admin
@@ -187,7 +187,7 @@ Feature: Investor KYC Send Workflow
   # 14. KYC updated notification reaches both entity employees and investor-advisor
   #     employees, including an advisor currently switched into a different entity
   # ─────────────────────────────────────────────────────────────────────────────
-  @kyc_workflow @kyc_notification @notification
+  @kyc_workflow @kyc_notification @notification @rack_test
   Scenario: Investor editing the KYC notifies entity employees and investor-advisor employees, even one switched elsewhere
     Given there is a KYC for the investor with submission_status "link_sent"
     And there is a fund "name=KycFund" for the entity "name=KycTestFund"
@@ -217,7 +217,7 @@ Feature: Investor KYC Send Workflow
   # ─────────────────────────────────────────────────────────────────────────────
   # 15. Employees/investor-advisors without show? access to the KYC are not notified
   # ─────────────────────────────────────────────────────────────────────────────
-  @kyc_workflow @kyc_notification @notification
+  @kyc_workflow @kyc_notification @notification @rack_test
   Scenario: Employees and investor advisors without show access to the KYC are not notified
     Given there is a KYC for the investor with submission_status "link_sent"
     And there is a fund "name=KycFund2" for the entity "name=KycTestFund"
@@ -271,7 +271,7 @@ Feature: Investor KYC Send Workflow
   # 16. A corporate/fund-of-funds LP user can still view their own KYC, even though
   #     User#setup_defaults also gives them the :employee role
   # ─────────────────────────────────────────────────────────────────────────────
-  @kyc_workflow @kyc_notification
+  @kyc_workflow @kyc_notification @rack_test
   Scenario: Corporate LP investor can still view their own KYC despite also carrying the employee role
     Given there is an existing investor "investor_name=KycCorpInvestor" of entity_type "Company" with "1" users
     And there is a KYC for the investor with submission_status "link_sent"
@@ -282,7 +282,7 @@ Feature: Investor KYC Send Workflow
   #     exclusively deny show? - it should fall through to the investor-advisor role
   #     check (InvestorKyc.for_investor_advisor) instead
   # ─────────────────────────────────────────────────────────────────────────────
-  @kyc_workflow @kyc_notification
+  @kyc_workflow @kyc_notification @rack_test
   Scenario: A non-employee advisor grant falls through to the investor-advisor role check instead of being denied outright
     Given there is a KYC for the investor with submission_status "link_sent"
     And there is an entity "name=KycGrantAdvisorFirm;entity_type=Investor Advisor"
@@ -296,7 +296,7 @@ Feature: Investor KYC Send Workflow
   # 18. A grant privileged as company_admin (no "employee" role) is at least as
   #     capable as an employee grant, including while switched away
   # ─────────────────────────────────────────────────────────────────────────────
-  @kyc_workflow @kyc_notification
+  @kyc_workflow @kyc_notification @rack_test
   Scenario: A switched-away advisor granted only company_admin still has show access
     Given there is a KYC for the investor with submission_status "link_sent"
     And there is a fund "name=KycCompanyAdminFund" for the entity "name=KycTestFund"
@@ -312,7 +312,7 @@ Feature: Investor KYC Send Workflow
   # 19. A legacy symbol-serialized allowed_roles grant (still functional per
   #     InvestorAdvisor#setup_issues) still satisfies the employee-grant check
   # ─────────────────────────────────────────────────────────────────────────────
-  @kyc_workflow @kyc_notification
+  @kyc_workflow @kyc_notification @rack_test
   Scenario: A legacy symbol-serialized allowed_roles grant still satisfies the advisor-grant check
     Given there is a KYC for the investor with submission_status "link_sent"
     And there is a fund "name=KycSymbolRolesFund" for the entity "name=KycTestFund"
@@ -328,7 +328,7 @@ Feature: Investor KYC Send Workflow
   # 20. A KYC with no commitment yet is visible only to company admins and employees with
   #     Investor Kyc Read / Update (V5), so only they get its onboarding-window notifications
   # ─────────────────────────────────────────────────────────────────────────────
-  @kyc_workflow @kyc_notification @notification
+  @kyc_workflow @kyc_notification @notification @rack_test
   Scenario: KYC with no capital commitments notifies only employees with the KYC toggles
     Given there is a KYC for the investor with submission_status "link_sent"
     And there is a user "email=zero_commitment_employee@example.com" for the entity "name=KycTestFund"
@@ -344,7 +344,7 @@ Feature: Investor KYC Send Workflow
   # ─────────────────────────────────────────────────────────────────────────────
   # 21. notify_kyc's two loops are deduplicated by user id
   # ─────────────────────────────────────────────────────────────────────────────
-  @kyc_workflow @kyc_notification @notification
+  @kyc_workflow @kyc_notification @notification @rack_test
   Scenario: Advisor with a legacy nil advisor_entity_id receives exactly one notification, not two
     Given there is a KYC for the investor with submission_status "link_sent"
     And there is a fund "name=KycDedupFund" for the entity "name=KycTestFund"
@@ -380,7 +380,7 @@ Feature: Investor KYC Send Workflow
   #     access now receives the submitted notification too - the controller's own
   #     sender only ever addressed entity employees
   # ─────────────────────────────────────────────────────────────────────────────
-  @kyc_workflow @kyc_notification @notification
+  @kyc_workflow @kyc_notification @notification @rack_test
   Scenario: Final submit notifies an investor advisor with access, and only once
     Given there is a KYC for the investor with submission_status "link_sent"
     And there is a fund "name=KycSubmitFund" for the entity "name=KycTestFund"

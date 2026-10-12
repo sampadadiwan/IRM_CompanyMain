@@ -1,4 +1,4 @@
-@doc_checks
+@doc_checks @rack_test
 Feature: Document Checks — Doc Questions retired (deploy 2)
   After the retirement deploy only Document Checks remain: the Doc Questions screens, import type and KYC
   action are gone, its table and the dead documents.qna column are dropped, and earlier AI answers stay on

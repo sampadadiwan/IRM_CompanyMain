@@ -1,4 +1,4 @@
-@doc_checks @doc_checks_fake_ai
+@doc_checks @doc_checks_fake_ai @rack_test
 Feature: Document Checks — the KYC journey's "Validate documents"
   The journey task passes by itself when the KYC's documents have been checked and nothing needs attention;
   otherwise it says what's left. A replaced document moves it back. Earlier Doc Questions answers stay

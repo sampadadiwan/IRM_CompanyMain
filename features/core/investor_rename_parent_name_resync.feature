@@ -1,3 +1,4 @@
+@rack_test
 Feature: AccountEntry parent_name resync on investor rename
 
   AccountEntry#parent_name is a denormalized snapshot of parent.to_s, written once at

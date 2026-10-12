@@ -16,6 +16,7 @@ Scenario Outline: Create new investor
   	|  	        |entity_type=Company  |category=LP |Stakeholder was successfully created|
     |  	        |entity_type=Company  |category=LP |Stakeholder was successfully created|
 
+@rack_test
 Scenario Outline: Investor email validation error
   Given Im logged in as a user "<user>" for an entity "<entity>"
   Given the user has role "company_admin"
@@ -164,6 +165,7 @@ Scenario: Investor Entity Update
   |user	      |entity               |deal                             |msg	| investor1 |
   |  	        |entity_type=Company  |name=Series A;amount_cents=10000 |Deal was successfully created|Good Investor|
 
+@rack_test
 Scenario Outline: Email change creates new entity
   Given Im logged in as a user "<user>" for an entity "<entity>"
   Given the user has role "company_admin"
@@ -178,6 +180,7 @@ Scenario Outline: Email change creates new entity
     |user |entity               |investor    |
     |     |entity_type=Company  |category=LP |
 
+@rack_test
 Scenario Outline: Email change links to existing entity
   Given an entity exists with email "existing@example.com"
   Given Im logged in as a user "<user>" for an entity "<entity>"
@@ -192,6 +195,7 @@ Scenario Outline: Email change links to existing entity
     |user |entity               |investor    |
     |     |entity_type=Company  |category=LP |
 
+@rack_test
 Scenario Outline: Email update to same entity is a no-op
   Given Im logged in as a user "<user>" for an entity "<entity>"
   Given the user has role "company_admin"
@@ -205,6 +209,7 @@ Scenario Outline: Email update to same entity is a no-op
     |user |entity               |investor                                       |
     |     |entity_type=Company  |category=LP;primary_email=old@example.com      |
 
+@rack_test
 Scenario Outline: Email change blocked when stakeholder has users
   Given Im logged in as a user "<user>" for an entity "<entity>"
   Given the user has role "company_admin"
@@ -237,6 +242,7 @@ Scenario Outline: Edit Email button hidden when stakeholder has users
     |     |entity_type=Company  |category=LP;primary_email=old@example.com | locked@test.com |
 
 
+@rack_test
 Scenario: Check Account Entry parent name
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given there is another entity "name=Another Entity;entity_type=Investment Fund"

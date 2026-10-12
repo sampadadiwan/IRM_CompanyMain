@@ -1,3 +1,4 @@
+@rack_test
 Feature: Users Sync API (upsert/disable/digest)
 
   Background:

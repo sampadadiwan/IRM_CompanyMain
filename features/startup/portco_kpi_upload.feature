@@ -27,7 +27,7 @@ Feature: Portfolio Company KPI Self-Reporting
     Then I must see the message "Kpi report was successfully updated."
     And the KPI report should have notes "Submitted via magic link"
 
-  @kpi_magic_link_expired
+  @kpi_magic_link_expired @rack_test
   Scenario: Visiting an expired magic link shows a friendly error
     Given there is a user "first_name=PortCoUser" for an existing entity "name=MyStartup;category=Portfolio Company"
     When I visit the KPI report edit page via an expired signed link

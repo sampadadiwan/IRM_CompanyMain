@@ -1,0 +1,9 @@
+<%# What follows a custom (Evergreen) notification's own body, in every evergreen investor email.
+    Review fix 6b (10 Oct 2026):
+    - "Show details" adds the standard order summary (fund, folio, class, amount, date). Only order-level
+      emails carry an order; the two folio-level emails (NAV update, units free to redeem) have none.
+    - "Show details link" adds the "View your request" / "View your holding" link the standard email ends
+      with. The toggle was shown (on by default) but never rendered, so a custom template silently lost
+      the link. %>
+<%= render "evergreen_mailer/summary" if @custom_notification.show_details && @order %>
+<%= render "evergreen_mailer/request_link" if @custom_notification.show_details_link %>

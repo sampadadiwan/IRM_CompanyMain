@@ -14,6 +14,7 @@ Feature: Support Client Mapping Edge Cases
     When the mapping is disabled
     Then calling revert should raise an error "Cannot revert a disabled mapping"
 
+  @rack_test
   Scenario: Concurrent mappings for the same entity
     Given another user exists with role "support"
     And another support client mapping exists linking that user to the same entity
@@ -34,12 +35,14 @@ Feature: Support Client Mapping Edge Cases
     And the entity's support permission is manually disabled
     Then calling switch should raise an error "Cannot switch a disabled mapping"
 
+  @rack_test
   Scenario: Support role removed while switched
     Given the mapping is enabled
     And the user has switched
     When the user's support role is removed
     Then the user should still be able to revert via the mapping
 
+  @rack_test
   Scenario: Deleting the last mapping should disable entity support
     Given the mapping is enabled
     When I delete the mapping

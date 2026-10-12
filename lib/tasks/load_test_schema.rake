@@ -8,6 +8,14 @@ namespace :db do
         if File.exist?(schema_test_path)
           puts "Loading test schema from schema_test.rb"
           load schema_test_path
+          # Record what was loaded, as Rails' own DatabaseTasks.load_schema does: maintain_test_schema!
+          # (run at every test boot) treats the DB as current only while ar_internal_metadata's
+          # schema_sha1 matches this file (config/database.yml test: schema_dump). This plain `load`
+          # never set it, so every cucumber process rebuilt its DB from scratch on boot.
+          db_config = ActiveRecord::Base.connection_db_config
+          ActiveRecord::Base.connection_pool.internal_metadata.create_table_and_set_flags(
+            db_config.env_name, OpenSSL::Digest::SHA1.hexdigest(File.read(schema_test_path))
+          )
         else
           puts "schema_test.rb not found. Falling back to schema.rb"
           Rake::Task["db:schema:load"].invoke

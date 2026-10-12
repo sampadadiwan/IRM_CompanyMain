@@ -15,6 +15,7 @@ Feature: Capital call journey — rollout
     And the entity's capital call journeys are removed
 
   # H11 — Dry run writes nothing
+  @rack_test
   Scenario: The dry run reports the plan and changes nothing
     When I run the journey rollout for the entity
     Then the rollout output should mention "DRY RUN"
@@ -22,6 +23,7 @@ Feature: Capital call journey — rollout
     And the entity should have no capital call journeys
 
   # H1 — Seeding
+  @rack_test
   Scenario: Running the rollout seeds both journeys, the rules and the permission
     When I run the journey rollout for the entity with EXECUTE
     Then the entity should have the Full journey with 12 tasks and the Light journey with 4 tasks
@@ -29,6 +31,7 @@ Feature: Capital call journey — rollout
     And the entity should have workflow templates enabled
 
   # H10 — calls created after the rollout get a journey
+  @rack_test
   Scenario: A call created after the rollout gets the Full journey
     Given I run the journey rollout for the entity with EXECUTE
     When there is a capital call "percentage_called=10"
@@ -41,6 +44,7 @@ Feature: Capital call journey — rollout
     Then the call has no journey
 
   # E14 — re-running keeps an admin's changes
+  @rack_test
   Scenario: Re-running the rollout keeps an admin's added step and creates nothing twice
     Given I run the journey rollout for the entity with EXECUTE
     And the Full journey has a "CFO sign-off" approval step before "Approve call"

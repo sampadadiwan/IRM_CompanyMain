@@ -1,3 +1,4 @@
+@rack_test
 Feature: Investor notice item authorization
   As the platform
   I want InvestorNoticeItem actions gated by InvestorNoticeItemPolicy, and the

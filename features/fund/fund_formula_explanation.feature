@@ -1,3 +1,4 @@
+@rack_test
 Feature: FundFormula parse_statement explanation breakdown
   parse_statement evaluates a formula against a live binding and returns an ordered
   Hash of { expression => value } pairs. The breakdown is stored on AccountEntry and

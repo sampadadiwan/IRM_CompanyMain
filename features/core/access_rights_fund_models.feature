@@ -1,4 +1,4 @@
-@access_rights_fund_models
+@access_rights_fund_models @rack_test
 Feature: Fund child model access rights
 
   All fund-pack models delegate model_with_access_rights to their fund.

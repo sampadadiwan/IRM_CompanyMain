@@ -42,6 +42,7 @@ Scenario Outline: View fund with employee access
   	|entity_type=Investment Fund;enable_funds=true;enable_units=true  |name=Test fund      |Fund was successfully created|
     |entity_type=Investment Fund;enable_funds=true;enable_units=true  |name=Merger Fund    |Fund was successfully created|
 
+@rack_test
 Scenario Outline: View fund - without employee access
   Given Im logged in as a user "<user>" for an entity "<entity>"
   Given there is a fund "<fund>" for the entity

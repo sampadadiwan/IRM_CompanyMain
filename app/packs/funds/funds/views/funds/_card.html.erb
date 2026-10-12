@@ -7,7 +7,7 @@
     <!-- Header -->
     <div class="card-header-custom">
       <h3 class="fund-title">
-        <%= link_to fund.name, fund %>
+        <%= link_to fund.name, fund %><span class="ms-2"><%= fund_type_badge(fund, @evergreen_fund_ids) %></span>
       </h3>
       <div class="btn-group">
         <%# Actions dropdown shared with the card2..card5 variants %>

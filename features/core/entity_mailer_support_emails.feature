@@ -1,4 +1,4 @@
-@notification
+@notification @rack_test
 Feature: Entity Mailer Support Emails
   In order to ensure support emails go to the right people
   As a system

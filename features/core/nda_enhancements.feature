@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+@rack_test
 Feature: NDA Enhancements (Module 9)
   As a GP I want default signatories auto-tagged on NDA creation, non-signatory
   LPs blocked from the acceptance screen, and a version history audit trail.

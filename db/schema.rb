@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_11_100700) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_12_090000) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -1556,6 +1556,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_11_100700) do
     t.bigint "fund_id", null: false
     t.bigint "import_upload_id"
     t.bigint "investor_id", null: false
+    t.bigint "investor_kyc_id"
     t.string "kind", limit: 12, null: false
     t.decimal "locked_units", precision: 26, scale: 8, default: "0.0", null: false
     t.text "note"
@@ -1581,6 +1582,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_11_100700) do
     t.index ["fund_id", "kind", "status", "received_at"], name: "idx_on_fund_id_kind_status_received_at_91694c0c2a"
     t.index ["import_upload_id"], name: "index_dealing_orders_on_import_upload_id"
     t.index ["investor_id"], name: "index_dealing_orders_on_investor_id"
+    t.index ["investor_kyc_id"], name: "index_dealing_orders_on_investor_kyc_id"
     t.index ["signatory_verified_by_id"], name: "index_dealing_orders_on_signatory_verified_by_id"
   end
 
@@ -1993,6 +1995,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_11_100700) do
     t.string "entity_bcc"
     t.bigint "entity_id", null: false
     t.string "esign_provider", limit: 15, default: "Digio"
+    t.json "evergreen_labels"
     t.string "fi_code"
     t.string "formula_tag_list"
     t.string "from_email", limit: 100
@@ -2070,6 +2073,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_11_100700) do
   end
 
   create_table "evergreen_class_terms", force: :cascade do |t|
+    t.string "class_expense_entry_name", limit: 125
+    t.string "class_expense_paid_entry_name", limit: 125
     t.datetime "created_at", null: false
     t.string "crystallisation", limit: 15, default: "annual", null: false
     t.json "early_redemption_fee"
@@ -2136,6 +2141,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_11_100700) do
     t.integer "subscription_cutoff_days", default: 5, null: false
     t.json "subscription_dates"
     t.bigint "subscription_journey_template_id"
+    t.string "unit_term", limit: 10
     t.string "unready_handling", limit: 10, default: "roll", null: false
     t.datetime "updated_at", null: false
     t.index ["contract_note_template_id"], name: "index_evergreen_fund_settings_on_contract_note_template_id"
@@ -2563,6 +2569,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_11_100700) do
     t.bigint "approved_by_id"
     t.json "breakdown"
     t.decimal "cash_cents", precision: 20, scale: 2, default: "0.0", null: false
+    t.decimal "class_expenses_payable_cents", precision: 20, scale: 2, default: "0.0", null: false
     t.decimal "class_share", precision: 12, scale: 10, default: "1.0", null: false
     t.datetime "created_at", null: false
     t.boolean "crystallised", default: false, null: false
@@ -2575,13 +2582,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_11_100700) do
     t.string "inputs_fingerprint", limit: 64
     t.decimal "investments_fmv_cents", precision: 20, scale: 2, default: "0.0", null: false
     t.date "mgmt_fee_accrued_to"
+    t.decimal "mgmt_fee_accounted_cents", precision: 20, scale: 2, default: "0.0", null: false
     t.decimal "mgmt_fee_payable_cents", precision: 20, scale: 2, default: "0.0", null: false
+    t.decimal "mgmt_fee_paid_accounted_cents", precision: 20, scale: 2, default: "0.0", null: false
     t.decimal "nav_cents", precision: 20, scale: 2, default: "0.0", null: false
     t.date "nav_date", null: false
     t.decimal "nav_per_unit_before_perf_cents", precision: 24, scale: 4
     t.decimal "nav_per_unit_cents", precision: 24, scale: 4
     t.decimal "other_assets_cents", precision: 20, scale: 2, default: "0.0", null: false
     t.decimal "other_liabilities_cents", precision: 20, scale: 2, default: "0.0", null: false
+    t.json "late_fee_decisions"
     t.json "overrides"
     t.decimal "perf_fee_accrued_cents", precision: 20, scale: 2, default: "0.0", null: false
     t.decimal "perf_fee_payable_cents", precision: 20, scale: 2, default: "0.0", null: false
@@ -4535,6 +4545,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_11_100700) do
     t.datetime "created_at", null: false
     t.datetime "deleted_at"
     t.bigint "entity_id", null: false
+    t.decimal "fully_diluted_percentage", precision: 10, scale: 4
     t.bigint "fund_id"
     t.bigint "import_upload_id"
     t.string "instrument"
@@ -5473,6 +5484,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_11_100700) do
   add_foreign_key "dealing_orders", "entities"
   add_foreign_key "dealing_orders", "funds"
   add_foreign_key "dealing_orders", "investors"
+  add_foreign_key "dealing_orders", "investor_kycs"
   add_foreign_key "dealing_orders", "users", column: "accepted_by_id"
   add_foreign_key "dealing_orders", "users", column: "amount_reduced_by_id"
   add_foreign_key "dealing_orders", "users", column: "cancelled_by_id"

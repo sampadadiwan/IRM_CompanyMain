@@ -1,0 +1,14 @@
+<%# List header used by the evergreen tab pages — same markup as the closed-ended tab contents
+    (e.g. capital_calls/_index): title on the left, actions right-aligned. Buttons go in the block. %>
+<% subtitle ||= nil %>
+<div class="d-sm-flex align-items-start justify-content-between gap-3 mb-4">
+  <div class="flex-grow-1">
+    <h1 class="h3 mb-0 text-gray-800"><%= title %></h1>
+    <% if subtitle %><small class="text-muted"><%= subtitle %></small><% end %>
+  </div>
+  <%# Buttons stay on one line (they don't shrink); the title/subtitle column wraps instead %>
+  <div class="d-flex flex-nowrap align-items-center gap-2 flex-shrink-0">
+    <%= user_guide_icon_for("evergreen_funds", tooltip: "Evergreen funds user guide") %>
+    <%= yield %>
+  </div>
+</div>

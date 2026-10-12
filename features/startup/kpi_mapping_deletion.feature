@@ -55,6 +55,7 @@ Feature: Deleting a KPI mapping
       | Approve or reject KPIs | current | 2 KPIs across 2 periods await a decision |
 
   # E16 — Last mapping deleted
+  @rack_test
   Scenario: Deleting the portfolio company's last mapping sends its journeys back to the first task
     Given "Acme Pvt Ltd" only has the KPI mapping "Revenue"
     When the KPI mapping "Revenue" of "Acme Pvt Ltd" is deleted by the fund admin
@@ -69,6 +70,7 @@ Feature: Deleting a KPI mapping
     And the KPI mapping "Revenue" of "Acme Pvt Ltd" still exists with 2 KPIs
 
   # X5 — Parent mapping
+  @rack_test
   Scenario: A parent mapping cannot be deleted
     Given the KPI mapping "Headcount" of "Acme Pvt Ltd" is a child of "EBITDA"
     When I open the KPI mapping "EBITDA" of "Acme Pvt Ltd"

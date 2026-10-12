@@ -10,6 +10,7 @@ Feature: Incoming Email
 
   # ─── Routing by structured To address ───────────────────────────────────────
 
+  @rack_test
   Scenario: Email addressed to owner system address is linked to that owner
     Given there is an incoming email addressed to this investor from "test@example.com" with subject "Pitch Deck"
     Then the email should be linked to the investor
@@ -33,6 +34,7 @@ Feature: Incoming Email
 
   # ─── Attachments ─────────────────────────────────────────────────────────────
 
+  @rack_test
   Scenario: Email with attachment saves the document against the email
     Given there is an incoming email addressed to this investor from "test@example.com" with subject "Pitch Deck" and attachment "investors.xlsx"
     Then the email should be linked to the investor
@@ -40,6 +42,7 @@ Feature: Incoming Email
 
   # ─── Idempotency ─────────────────────────────────────────────────────────────
 
+  @rack_test
   Scenario: Sending the same email twice via SendGrid does not create duplicates
     Given there is an incoming email addressed to this investor from "test@example.com" with subject "Duplicate Test" and message id "<msg-001@example.com>"
     And the same SendGrid payload is submitted again

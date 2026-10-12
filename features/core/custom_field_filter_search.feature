@@ -3,6 +3,7 @@ Feature: Custom Field Filter Search
   Entity admins can mark FormCustomFields as "Show in Filter" so users can
   search records by their custom field values directly in the filter panel.
 
+@rack_test
 Scenario: Admin enables a text custom field for filtering and user sees the row
   Given Im logged in as a user "" for an entity "name=TestFund;entity_type=Investment Fund;enable_funds=true"
   Given the user has role "company_admin"
@@ -15,6 +16,7 @@ Scenario: Admin enables a text custom field for filtering and user sees the row
   When I visit the capital commitments index with filter open
   Then I should see a filter row labelled "Source of Funds"
 
+@rack_test
 Scenario: User filters capital commitments by a text custom field
   Given Im logged in as a user "" for an entity "name=TestFund;entity_type=Investment Fund;enable_funds=true"
   Given the user has role "company_admin"
@@ -29,6 +31,7 @@ Scenario: User filters capital commitments by a text custom field
   And the result should contain committed amount "100,000"
   And the result should not contain committed amount "200,000"
 
+@rack_test
 Scenario: User filters capital commitments by a select custom field
   Given Im logged in as a user "" for an entity "name=TestFund;entity_type=Investment Fund;enable_funds=true"
   Given the user has role "company_admin"
@@ -42,6 +45,7 @@ Scenario: User filters capital commitments by a select custom field
   Then I should see "1" capital commitment in the results
   And the result should contain committed amount "100,000"
 
+@rack_test
 Scenario: Filterable fields from multiple form types appear together
   Given Im logged in as a user "" for an entity "name=TestFund;entity_type=Investment Fund;enable_funds=true"
   Given the user has role "company_admin"
@@ -53,6 +57,7 @@ Scenario: Filterable fields from multiple form types appear together
   Then I should see a filter row labelled "Source of Funds"
   And I should see a filter row labelled "Risk Profile"
 
+@rack_test
 Scenario: Duplicate field name across form types shows only one filter row
   Given Im logged in as a user "" for an entity "name=TestFund;entity_type=Investment Fund;enable_funds=true"
   Given the user has role "company_admin"
@@ -73,6 +78,7 @@ Scenario: File and Calculation fields do not appear in filter even if filter_in_
   Then I should not see a filter row labelled "Attachment"
   And I should not see a filter row labelled "Calc Result"
 
+@rack_test
 Scenario: Partial date range fill applies only the provided bound
   Given Im logged in as a user "" for an entity "name=TestFund;entity_type=Investment Fund;enable_funds=true"
   Given the user has role "company_admin"
@@ -89,6 +95,7 @@ Scenario: Partial date range fill applies only the provided bound
 # fix-custom-field-filter-scoping — worked examples in openspec/changes/fix-custom-field-filter-scoping/report.md
 
 # H1 — a number custom field filters as a number, not as text ("9" > "10")
+@rack_test
 Scenario: A number custom field filters numerically
   Given Im logged in as a user "" for an entity "name=TestFund;entity_type=Investment Fund;enable_funds=true"
   Given the user has role "company_admin"
@@ -106,6 +113,7 @@ Scenario: A number custom field filters numerically
   And the result should not contain committed amount "111,111"
 
 # E1 — another company's filterable fields never appear in my filter dropdown
+@rack_test
 Scenario: Another company's custom fields are not offered in my filter
   Given Im logged in as a user "" for an entity "name=TestFund;entity_type=Investment Fund;enable_funds=true"
   Given the user has role "company_admin"
@@ -117,6 +125,7 @@ Scenario: Another company's custom fields are not offered in my filter
   And I should not see a filter row labelled "A Only Field"
 
 # E2 — the same field name is text for another company and a number for mine: mine still compares numbers
+@rack_test
 Scenario: A field name another company uses as text still filters numerically for me
   Given Im logged in as a user "" for an entity "name=TestFund;entity_type=Investment Fund;enable_funds=true"
   Given the user has role "company_admin"
@@ -132,6 +141,7 @@ Scenario: A field name another company uses as text still filters numerically fo
   And the result should contain committed amount "333,333"
 
 # E3 — un-ticking Show in Filter takes the field out of the filter without a restart
+@rack_test
 Scenario: A field no longer shown in filters disappears from the filter
   Given Im logged in as a user "" for an entity "name=TestFund;entity_type=Investment Fund;enable_funds=true"
   Given the user has role "company_admin"

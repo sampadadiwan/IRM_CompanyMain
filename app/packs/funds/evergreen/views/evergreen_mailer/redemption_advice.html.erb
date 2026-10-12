@@ -1,0 +1,23 @@
+<%# Worked example E32 %>
+<% if @custom_notification %>
+  <%= render "/custom_notifications/mail" do %>
+    <%= render "evergreen_mailer/custom_extras" %>
+  <% end %>
+<% else %>
+  <p>Dear <%= @user&.first_name %>,</p>
+  <p>Your redemption has been paid.<%= " Your #{EvergreenLabels.lower(eg_t(:redemption_advice))} is attached." if @fill.document&.approved %></p>
+  <table style="border-collapse:collapse" cellpadding="4">
+    <tr><td><strong><%= eg_t(:capital_commitment) %></strong></td><td><%= @order.capital_commitment&.folio_id %></td></tr>
+    <tr><td><strong>Class</strong></td><td><%= @fill.unit_type %></td></tr>
+    <tr><td><strong><%= eg_t(:redemption_date) %></strong></td><td><%= l(@fill.dealing_date.date) %></td></tr>
+    <% if @fill.fund_nav %><tr><td><strong>NAV date</strong></td><td><%= l(@fill.fund_nav.nav_date) %></td></tr><% end %>
+    <tr><td><strong><%= eg_t(:Units) %> cancelled</strong></td><td><%= number_with_precision(@fill.units, precision: 4, delimiter: ",") %></td></tr>
+    <tr><td><strong><%= eg_t(:nav_per_unit) %></strong></td><td><%= evergreen_money(@fill.nav_per_unit_cents, @fund) %></td></tr>
+    <tr><td><strong>Gross amount</strong></td><td><%= evergreen_money(@fill.amount_cents, @fund) %></td></tr>
+    <tr><td><strong><%= eg_t(:early_fee) %></strong></td><td><%= evergreen_money(@fill.early_fee_cents, @fund) %></td></tr>
+    <tr><td><strong>Net paid</strong></td><td><%= evergreen_money(@fill.net_payment_cents, @fund) %></td></tr>
+    <%# No recorded payment date → no line (never today's date standing in for it) %>
+    <% if (paid_on = @fill.capital_distribution_payment&.payment_date) %><tr><td><strong>Payment date</strong></td><td><%= l(paid_on) %></td></tr><% end %>
+  </table>
+  <%= render "evergreen_mailer/request_link" %>
+<% end %>

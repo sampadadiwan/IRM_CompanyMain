@@ -64,7 +64,7 @@ Scenario Outline: Import Kpis - as fund
     And I approve all staged KPIs
     Then all pending KPIs for the portfolio company should be approved without error
 
-  @rag_status
+  @rag_status @rack_test
   Scenario: Calculate KPI RAG Status based on ratio and InvestorKpiMapping rules
     Given Im logged in as a user "first_name=Test;email=test@example.com" for an entity "name=Test Company;entity_type=Company"
     And the user has role "company_admin"

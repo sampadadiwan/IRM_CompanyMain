@@ -1,3 +1,4 @@
+@rack_test
 Feature: Allocation scratch database cleanup
   The run-id cleanup of the scratch SQLite copy runs when the copy is reused, or when the run is a
   re-run into an existing AllocationRun (rows with that run id are already in the primary DB).

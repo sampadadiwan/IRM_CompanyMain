@@ -1,6 +1,7 @@
 Feature: Secondary Sale
   Can view a sale as a Investor
 
+@rack_test
 Scenario Outline: View sale - not externally visible
   Given there is a user "<user>" for an entity "<entity>"
   Given there is a sale "<sale>"
@@ -16,6 +17,7 @@ Scenario Outline: View sale - not externally visible
 
 
 
+@rack_test
 Scenario Outline: View sale - externally visible, but no access
   Given there is a user "<user>" for an entity "<entity>"
   Given there is a sale "<sale>"

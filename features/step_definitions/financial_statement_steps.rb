@@ -199,8 +199,7 @@ end
 Given('I am logged in as Meera') do
   @user = @meera
   steps %(
-    And I am at the login page
-    When I fill and submit the login page
+    And I am signed in as the current user
   )
 end
 
@@ -503,8 +502,7 @@ end
 Given('I am logged in as Priya') do
   @user = @priya
   steps %(
-    And I am at the login page
-    When I fill and submit the login page
+    And I am signed in as the current user
   )
 end
 

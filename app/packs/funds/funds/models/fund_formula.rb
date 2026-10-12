@@ -384,8 +384,10 @@ class FundFormula < ApplicationRecord
         begin
           val = eval(ApplicationRecord.safe_eval!(exp, context: "FundFormula##{id}"), binding)
           record_explained_value(expression_map, exp, val)
-        rescue
-          logger.error "Error evaluating expression '#{exp}'" if kind == :log
+        rescue => e
+          # Name the exception: this rescue also covers summarising the value for display, so a bare
+          # "Error evaluating expression" could mean the expression was fine and only rendering it failed
+          logger.error "Error evaluating expression '#{exp}': #{e.class}: #{e.message}" if kind == :log
         end
       end
     end

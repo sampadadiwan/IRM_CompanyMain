@@ -8,6 +8,7 @@ Feature: Medium security fixes (M2, M3, M5)
   # M2: document share tokens must expire
   # ──────────────────────────────────────────────────────────────────────────
 
+  @rack_test
   Scenario: A fresh document share token resolves
     Given a document share for a security test exists
     When a share token is generated with the default expiry
@@ -22,6 +23,7 @@ Feature: Medium security fixes (M2, M3, M5)
   # M3: a company admin only sees doc shares from their own entity
   # ──────────────────────────────────────────────────────────────────────────
 
+  @rack_test
   Scenario: The doc-share index scope is bounded to the admin's entity
     Given a company admin in a security test entity with a shared document
     And a different security test entity with its own shared document
@@ -31,6 +33,7 @@ Feature: Medium security fixes (M2, M3, M5)
   # M5: only company admins may grant investor access
   # ──────────────────────────────────────────────────────────────────────────
 
+  @rack_test
   Scenario: A company admin may grant and approve investor access
     Given an investor access record in a managing entity
     And a company admin of that managing entity
@@ -45,6 +48,7 @@ Feature: Medium security fixes (M2, M3, M5)
   # M10: document-template filters cannot inject SQL via the field name
   # ──────────────────────────────────────────────────────────────────────────
 
+  @rack_test
   Scenario: A template filter on a real column is applied
     Given a decorated entity collection for a security test
     Then filtering by the column "name" is allowed

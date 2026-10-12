@@ -205,7 +205,7 @@ Given('Given I upload {string} file for portfolio companies of the fund') do |fi
   visit(new_import_upload_path("import_upload[entity_id]": @fund.entity_id, "import_upload[owner_id]": @fund.id, "import_upload[owner_type]": "Fund", "import_upload[import_type]": "Valuation"))
   fill_in('import_upload_name', with: "Test Upload")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
-  sleep(4)  # JS direct-upload to /upload endpoint; increased for parallel load
+  wait_for_upload("./public/sample_uploads/#{@import_file}") # JS direct-upload to /upload; returns once it lands (was sleep 4)
   click_on("Save")
   expect(page).to have_content("Import Upload:", wait: 15)  # wait for save redirect
   ImportUploadJob.perform_now(ImportUpload.last.id)
@@ -317,7 +317,7 @@ Given('Given I upload the portfolio companies') do
   expect(page).to have_field('import_upload_name', wait: 10)  # wait for upload form
   fill_in('import_upload_name', with: "Test Investor Upload")
   attach_file('files[]', File.absolute_path('./public/sample_uploads/portfolio_companies.xlsx'), make_visible: true)
-  sleep(6)  # JS direct-upload to /upload endpoint; increased for parallel load
+  wait_for_upload('./public/sample_uploads/portfolio_companies.xlsx') # JS direct-upload to /upload; returns once it lands (was sleep 6)
   click_on("Save")
   expect(page).to have_content("Import Upload:", wait: 15)  # wait for save redirect
   ImportUploadJob.perform_now(ImportUpload.last.id)
@@ -468,7 +468,7 @@ Given('I add widgets for the aggregate portfolio investment') do
   details_element = find("trix-editor[input='ci_widget_details_trix_input_ci_widget']", visible: :all, wait: 10)
   details_element.click.send_keys("Left Widget Details")
   attach_file('files[]', File.absolute_path("./public/img/logo_big.png"), make_visible: true)
-  sleep(0.5)
+  wait_for_upload("./public/img/logo_big.png") # JS direct-upload to /upload; returns once it lands (was sleep 0.5)
   click_on("Save")
   expect(page).to have_content("successfull")
 
@@ -482,7 +482,7 @@ Given('I add widgets for the aggregate portfolio investment') do
   details_element = find("trix-editor[input='ci_widget_details_trix_input_ci_widget']", visible: :all, wait: 10)
   details_element.click.send_keys("Center Widget Details")
   attach_file('files[]', File.absolute_path("./public/img/logo_big.png"), make_visible: true)
-  sleep(0.5)
+  wait_for_upload("./public/img/logo_big.png") # JS direct-upload to /upload; returns once it lands (was sleep 0.5)
   click_on("Save")
   expect(page).to have_content("successfull")
 
@@ -496,7 +496,7 @@ Given('I add widgets for the aggregate portfolio investment') do
   details_element = find("trix-editor[input='ci_widget_details_trix_input_ci_widget']", visible: :all, wait: 10)
   details_element.click.send_keys("Right Widget Details")
   attach_file('files[]', File.absolute_path("./public/img/logo_big.png"), make_visible: true)
-  sleep(0.5)
+  wait_for_upload("./public/img/logo_big.png") # JS direct-upload to /upload; returns once it lands (was sleep 0.5)
   click_on("Save")
   expect(page).to have_content("successfull")
 end
@@ -529,7 +529,7 @@ Given('I add preview documents for the aggregate portfolio investment') do
   fill_in('document_name', with: "Test Document")
   fill_in('document_tag_list', with: "test, preview")
   attach_file('files[]', File.absolute_path("./public/img/logo_big.png"), make_visible: true)
-  sleep(0.5)
+  wait_for_upload("./public/img/logo_big.png") # JS direct-upload to /upload; returns once it lands (was sleep 0.5)
 
   click_on("Save")
 

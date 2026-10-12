@@ -1,0 +1,151 @@
+<%# Late management fees on this NAV (R9.12–R9.17): fee entries dated in an already-approved period that no
+    NAV has taken in. The approver includes or excludes them before approving; late payments are always
+    included. Read-only once approved. Locals: nav, nav_policy.
+    Worked examples H105–H107, E334–E341, X204, X207 —
+    openspec/changes/archive/2026-10-11-evergreen-late-management-fees/design.md#⑦-screens-and-alert %>
+<% return if nav.uploaded? %>
+<% late = EvergreenLateFees.call(nav.fund, nav.unit_type, nav.nav_date, draft: nav) %>
+<% decisions = nav.late_fee_decisions_list %>
+<% late_paid = nav.breakdown.to_h["late_mgmt_fee_paid_cents"].to_d %>
+<% return unless late.late_cents.positive? || decisions.any? || late_paid.positive? %>
+<% fund = nav.fund %>
+<% outstanding = late.outstanding_cents %>
+<% deciding = nav.draft? && outstanding.positive? %>
+<% dealing_word = EvergreenLabels.lower(eg_t(:transaction_date)) %>
+<div class="card shadow-sm border-0 mb-4" id="late_fees_<%= nav.unit_type.parameterize %>">
+  <div class="card-header border-bottom py-3 d-flex align-items-center gap-2">
+    <h6 class="mb-0 fw-bold d-flex align-items-center"><i class="ti ti-clock-exclamation me-2 text-secondary"></i>Late management fees · Class <%= nav.unit_type %></h6>
+    <% if deciding %>
+      <%= eg_badge(:amber, "alert-triangle", "Decide before approving", "This draft can't be approved until the late fee below is included or excluded.") %>
+    <% elsif nav.approved? %>
+      <%= eg_badge(:grey, "lock", "Decided", "Recorded when this NAV was approved.") %>
+    <% elsif decisions.any? %>
+      <%= eg_badge(:green, "circle-check", "Decided", "Nothing left to decide — this draft can be approved as far as late fees go.") %>
+    <% end %>
+  </div>
+  <div class="card-body">
+    <% if outstanding.positive? %>
+      <%# The facts the approver needs, in plain words: what, from when, how big, who would escape it %>
+      <% periods = late.periods.map { |p| l(p.nav_date) }.to_sentence %>
+      <p class="mb-2" id="late_fee_summary">
+        <strong><%= evergreen_money(outstanding, fund) %></strong> of management fee is dated in <%= late.periods.one? ? "the period" : "the periods" %> of the
+        <%= periods.presence || "earlier" %> NAV<%= "s" if late.periods.many? %> — booked after <%= late.periods.many? ? "they were" : "it was" %> approved, so no NAV has counted it.
+      </p>
+      <div class="action-summary__list" id="late_fee_facts">
+        <div class="action-summary__item action-summary__item--blue">
+          <span class="action-summary__icon"><i class="ti ti-percentage"></i></span>
+          <div>
+            <div class="action-summary__title"><%= late.pct_of_nav ? "#{late.pct_of_nav}% of this NAV" : "Size against this NAV not known" %></div>
+            <div class="action-summary__desc"><%= evergreen_money(outstanding, fund) %> ÷ <%= evergreen_money(nav.nav_cents, fund) %></div>
+          </div>
+        </div>
+        <div class="action-summary__item action-summary__item--<%= late.redeemed_investors.positive? ? 'amber' : 'grey' %>">
+          <span class="action-summary__icon"><i class="ti ti-user-minus"></i></span>
+          <div>
+            <div class="action-summary__title" id="late_fee_redeemed"><%= pluralize(late.redeemed_investors, "investor") %> redeemed since <%= l(late.periods.first.nav_date) if late.periods.any? %></div>
+            <div class="action-summary__desc">If included, the fee is borne by today's holders; <%= late.redeemed_investors.positive? ? "those who left don't bear their share" : "nobody who held units then has left" %>.</div>
+          </div>
+        </div>
+        <%# R9.16 (E339, E340): the right-month route, where it still exists %>
+        <% late.periods.each do |period| %>
+          <% open = late.reopenable.include?(period) %>
+          <div class="action-summary__item action-summary__item--<%= open ? 'green' : 'grey' %>" id="late_fee_period_<%= period.id %>">
+            <span class="action-summary__icon"><i class="ti <%= open ? 'ti-lock-open' : 'ti-lock' %>"></i></span>
+            <div>
+              <% if open %>
+                <div class="action-summary__title">The <%= l(period.nav_date) %> NAV can be reopened</div>
+                <div class="action-summary__desc">No <%= dealing_word %> was priced at it — reopen and recalculate it to put the fee in its own month instead (<%= link_to "open that NAV", evergreen_nav_path(fund, period), data: { turbo_frame: "_top" } %>).</div>
+              <% else %>
+                <% used = period.used_by_dealing_date %>
+                <div class="action-summary__title">The <%= l(period.nav_date) %> NAV priced <%= dealing_word %> <%= used ? l(used.date) : "" %> — it can't be reopened</div>
+                <div class="action-summary__desc">Investors have dealt at that price, so the fee can only be included here or excluded.</div>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+
+    <%# R9.17 (E336): late payments need no choice — the cash already left the fund %>
+    <% if late_paid.positive? %>
+      <p class="small mb-2" id="late_fee_payment"><i class="ti ti-cash-banknote me-1 text-secondary"></i>Late fee payment <strong><%= evergreen_money(late_paid, fund) %></strong> (fund-wide, split by what each class owed) — always included: the cash line already shows it paid.</p>
+    <% end %>
+
+    <%# R9.15: what was decided, by whom and why — and, first, what it did to the payable %>
+    <% if decisions.any? %>
+      <p class="mb-2" id="late_fee_effect">
+        <% if nav.late_included_cents.positive? %>
+          The management fee payable includes <strong><%= evergreen_money(nav.late_included_cents, fund) %></strong> of late fee.
+        <% end %>
+        <% if nav.late_excluded_cents.positive? %>
+          <strong><%= evergreen_money(nav.late_excluded_cents, fund) %></strong> was excluded and will not be taken through any NAV.
+        <% end %>
+      </p>
+      <table class="table table-bordered dataTable hover mb-2" id="late_fee_decisions">
+        <thead><tr><th class="text-end">Amount</th><th>Decision</th><th>Reason</th><th>By</th><th>When</th></tr></thead>
+        <tbody>
+          <% users = User.where(id: decisions.map { |d| d["user_id"] }).index_by(&:id) %>
+          <% decisions.each do |d| %>
+            <tr><td class="text-end"><%= evergreen_money(d["amount_cents"].to_d, fund) %></td>
+              <td><%= d["choice"] == "include" ? eg_badge(:blue, "plus", "Included in this NAV") : eg_badge(:grey, "x", "Excluded") %></td>
+              <td><%= d["reason"].presence || "—" %></td><td><%= users[d["user_id"]]&.full_name %></td><td><%= l(Time.zone.parse(d["decided_at"]).to_date) if d["decided_at"] %></td></tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% end %>
+
+    <% if nav.draft? && nav_policy.decide_late_fee? %>
+      <div class="d-flex flex-wrap gap-2 mt-2">
+        <% if deciding %>
+          <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#late_fee_modal_<%= nav.id %>" id="late_fee_decide"><i class="ti ti-scale"></i> Decide</button>
+        <% end %>
+        <% if decisions.any? %>
+          <%
+            msg = evergreen_action_summary([
+              ["amber", "ti-arrow-back-up", "Decisions removed", "#{evergreen_money(nav.late_decided_cents, fund)} becomes undecided again"],
+              ["blue", "ti-calculator", "Draft recalculated", "The payable goes back to without any late fee"]
+            ], action: "Change decision")
+          %>
+          <%= button_to decide_late_fee_evergreen_nav_path(fund, nav), method: :patch, params: { late_fee: { choice: "clear", reason: "" } }, class: "btn btn-outline-secondary", id: "late_fee_clear", form: { class: "d-inline", data: { turbo_frame: "_top" } },
+                data: { action: "click->confirm#popup", method: "patch", title: "Change the late fee decision", msg: } do %><i class="ti ti-arrow-back-up"></i> Change decision<% end %>
+        <% end %>
+      </div>
+    <% elsif deciding %>
+      <p class="small text-muted mb-0">An approver decides this late fee.</p>
+    <% end %>
+  </div>
+</div>
+
+<% if deciding && nav_policy.decide_late_fee? %>
+  <%# The decision: a small Bootstrap modal whose Save is the confirmation. Neither option is pre-selected (R9.14) %>
+  <div class="modal fade" id="late_fee_modal_<%= nav.id %>" tabindex="-1" aria-labelledby="late_fee_label_<%= nav.id %>" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <%= form_with url: decide_late_fee_evergreen_nav_path(fund, nav), method: :patch, id: "late_fee_form", data: { turbo_frame: "_top" } do |f| %>
+          <div class="modal-header">
+            <h5 class="modal-title" id="late_fee_label_<%= nav.id %>">Late fee <%= evergreen_money(outstanding, fund) %> · Class <%= nav.unit_type %> · <%= l(nav.nav_date) %></h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <% payable = nav.mgmt_fee_payable_cents.to_d %>
+            <div class="form-check mb-2">
+              <%= radio_button_tag "late_fee[choice]", "include", false, class: "form-check-input", id: "late_fee_include" %>
+              <label class="form-check-label" for="late_fee_include"><strong>Include in this NAV</strong> — the payable becomes
+                <%= evergreen_money(payable, fund) %> + <%= evergreen_money(outstanding, fund) %> = <%= evergreen_money(payable + outstanding, fund) %>; today's holders bear it.</label>
+            </div>
+            <div class="form-check mb-3">
+              <%= radio_button_tag "late_fee[choice]", "exclude", false, class: "form-check-input", id: "late_fee_exclude" %>
+              <label class="form-check-label" for="late_fee_exclude"><strong>Exclude — settled outside the NAV</strong> — the payable stays <%= evergreen_money(payable, fund) %>; the fee is never taken through a NAV.</label>
+            </div>
+            <div class="mb-1"><%= f.label :reason, "Reason (required to exclude)", class: "form-label", for: "late_fee_reason" %>
+              <%= text_field_tag "late_fee[reason]", nil, class: "form-control", maxlength: FundNavLateFeeDecision::REASON_MAX, id: "late_fee_reason", placeholder: "e.g. waived by side letter, or charged to the manager directly" %></div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal"><%= t_common(:cancel) %></button>
+            <%= f.submit "Save decision", class: "btn btn-outline-success", id: "late_fee_submit" %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+<% end %>

@@ -5,6 +5,7 @@ Feature: Workflow step kinds
   Worked examples E1, X1, X2 in openspec/changes/archive/2026-10-02-capital-call-journey/design.md#worked-examples
 
   # E1 — Existing steps are human
+  @rack_test
   Scenario Outline: Steps created without a kind are human and keep human states
     Given Im logged in as a user "<user>" for an entity "<entity>"
     And the user has role "company_admin"
@@ -31,6 +32,7 @@ Feature: Workflow step kinds
       |      | entity_type=Company |
 
   # X2 — Check list scoped to the record type
+  @rack_test
   Scenario Outline: Only checks for the template's record type can be chosen
     Given Im logged in as a user "<user>" for an entity "<entity>"
     And the user has role "company_admin"
@@ -47,6 +49,7 @@ Feature: Workflow step kinds
       |      | entity_type=Company |
 
   # X1 / X2 through the step editor screen
+  @rack_test
   Scenario Outline: The step editor offers kinds and only matching checks
     Given Im logged in as a user "<user>" for an entity "<entity>"
     And the user has role "company_admin"

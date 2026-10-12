@@ -4,6 +4,10 @@
 <div class="d-flex align-items-center justify-content-between mb-4">
   <h4 class="fw-bold mb-0">
     <i class="ti ti-workflow me-2 text-primary"></i>Workflow Instances
+    <%# Filtered to one record (Workflow History): name it, with a way back to its page %>
+    <% if @workflowable %>
+      &middot; <%= link_to @workflowable.workflow_display_name, @workflowable.workflow_url, data: { turbo_frame: "_top" } %>
+    <% end %>
   </h4>
   <%= user_guide_info_icon %>
 </div>

@@ -15,6 +15,7 @@ Feature: Capturing demo requests from the public website
 
   # ── The lead arrives ──────────────────────────────────────────────────────
 
+  @rack_test
   Scenario: A valid multipart submission is stored and announced
     When the website submits a demo request from "https://caphive.com" with:
       | name    | Nadia Okonkwo                                      |
@@ -27,6 +28,7 @@ Feature: Capturing demo requests from the public website
     And a website lead should exist for "nadia@meridiancapital.example"
     And a lead notification email should have been delivered
 
+  @rack_test
   Scenario: The notification reaches the commercial mailbox and replies to the prospect
     When the website submits a demo request from "https://caphive.com" with:
       | name    | Nadia Okonkwo                                      |
@@ -42,6 +44,7 @@ Feature: Capturing demo requests from the public website
     And the notification should contain "CFO or Finance"
     And the notification should show the submission date as Mon dd, yyyy
 
+  @rack_test
   Scenario: The prospect's own words reach the notification in full
     When the website submits a demo request from "https://caphive.com" with:
       | name    | Nadia Okonkwo                                      |
@@ -50,6 +53,7 @@ Feature: Capturing demo requests from the public website
       | message | Four currencies and a close that takes three weeks. |
     Then the notification should contain "Four currencies and a close that takes three weeks."
 
+  @rack_test
   Scenario: Campaign attribution is persisted
     When the website submits a demo request from "https://caphive.com" with:
       | name         | Nadia Okonkwo                 |
@@ -63,6 +67,7 @@ Feature: Capturing demo requests from the public website
     And the stored lead should have "utm_medium" set to "social"
     And the stored lead should have "utm_campaign" set to "us-launch"
 
+  @rack_test
   Scenario: The page that produced the lead is recorded
     When the website submits a demo request from "https://caphive.com" with:
       | name         | Nadia Okonkwo                 |
@@ -71,6 +76,7 @@ Feature: Capturing demo requests from the public website
       | _source_page | portfolio-kpis-at-scale.html  |
     Then the stored lead should have "landing_page" set to "portfolio-kpis-at-scale.html"
 
+  @rack_test
   Scenario: The submitting IP is recorded for abuse control
     When the website submits a demo request from "https://caphive.com" with:
       | name  | Nadia Okonkwo                 |
@@ -80,6 +86,7 @@ Feature: Capturing demo requests from the public website
 
   # ── Validation ────────────────────────────────────────────────────────────
 
+  @rack_test
   Scenario: A malformed email is rejected without creating a row
     When the website submits a demo request from "https://caphive.com" with:
       | name  | Nadia Okonkwo    |
@@ -89,6 +96,7 @@ Feature: Capturing demo requests from the public website
     And 0 website leads should exist
     And no lead notification email should have been delivered
 
+  @rack_test
   Scenario: A missing name is rejected
     When the website submits a demo request from "https://caphive.com" with:
       | name  |                               |
@@ -98,6 +106,7 @@ Feature: Capturing demo requests from the public website
 
   # An oversized message must come back as a clean 422, never a 500 — the field is
   # free text from strangers and is the obvious thing to throw junk at.
+  @rack_test
   Scenario: An oversized message is rejected cleanly
     When the website submits a demo request from "https://caphive.com" with a 6000-character message
     Then the lead response status should be 422
@@ -107,6 +116,7 @@ Feature: Capturing demo requests from the public website
 
   # A filled honeypot returns 200 and stores nothing. Answering with an error would
   # tell the bot exactly which field to leave alone next time.
+  @rack_test
   Scenario: A filled honeypot is silently discarded
     When the website submits a demo request from "https://caphive.com" with:
       | name  | Nadia Okonkwo                 |
@@ -117,6 +127,7 @@ Feature: Capturing demo requests from the public website
     And 0 website leads should exist
     And no lead notification email should have been delivered
 
+  @rack_test
   Scenario: A form returned faster than a human could read it is silently discarded
     Given the form was rendered 0 seconds ago
     When the website submits a demo request from "https://caphive.com" with:
@@ -128,6 +139,7 @@ Feature: Capturing demo requests from the public website
 
   # A cached page or partially-blocked JS sends no stamp at all. That must be
   # accepted: silently dropping a real lead is the failure this feature exists to end.
+  @rack_test
   Scenario: A submission with no render stamp is accepted
     When the website submits a demo request from "https://caphive.com" with:
       | name  | Nadia Okonkwo                 |
@@ -137,7 +149,7 @@ Feature: Capturing demo requests from the public website
     Then the lead response status should be 200
     And 1 website lead should exist
 
-  @rack_attack
+  @rack_attack @rack_test
   Scenario: A sixth submission within the hour from one IP is throttled
     When the website submits 6 demo requests from IP "203.0.113.7" with:
       | name  | Nadia Okonkwo                 |
@@ -147,6 +159,7 @@ Feature: Capturing demo requests from the public website
 
   # ── CORS ──────────────────────────────────────────────────────────────────
 
+  @rack_test
   Scenario: An allowed origin gets its own origin echoed back, and never credentials
     When the website submits a demo request from "https://caphive.com" with:
       | name  | Nadia Okonkwo                 |
@@ -177,6 +190,7 @@ Feature: Capturing demo requests from the public website
   # Development serves the site at caphive.localhost:3001 and the app at
   # localhost:3001, so the Origin carries a port. Matching whole origin strings
   # would work in production and fail the first time anyone tested locally.
+  @rack_test
   Scenario: An allowed host is still allowed when the origin carries a port
     Given the website hosts are "caphive.localhost,www.caphive.localhost"
     When the website submits a demo request from "http://caphive.localhost:3001" with:
@@ -185,6 +199,7 @@ Feature: Capturing demo requests from the public website
       | email | nadia@meridiancapital.example |
     Then the lead response should allow the origin "http://caphive.localhost:3001"
 
+  @rack_test
   Scenario: A malformed origin header is refused, not crashed on
     When the website submits a demo request from "http://[not a url" with:
       | name  | Nadia Okonkwo                 |
@@ -201,6 +216,7 @@ Feature: Capturing demo requests from the public website
       | email | nadia@meridiancapital.example |
     Then the lead response should not allow any origin
 
+  @rack_test
   Scenario: The preflight answers an allowed origin
     When the website preflights the demo request from "https://www.caphive.com"
     Then the lead response status should be 204
@@ -208,6 +224,7 @@ Feature: Capturing demo requests from the public website
 
   # ── Who can read the leads ────────────────────────────────────────────────
 
+  @rack_test
   Scenario: A support user can read the leads
     Given there is a user "first_name=Lead;last_name=Staff;email=lead.staff@caphive.com" for an entity "name=Website Leads Test Co;entity_type=Investment Fund"
     And the user has the role "support"
@@ -216,6 +233,7 @@ Feature: Capturing demo requests from the public website
     Then the leads screen should be visible
     And the leads screen should show "Meridian Capital"
 
+  @rack_test
   Scenario: A support user can read one lead in full
     Given there is a user "first_name=Lead;last_name=Staff;email=lead.staff@caphive.com" for an entity "name=Website Leads Test Co;entity_type=Investment Fund"
     And the user has the role "support"
@@ -226,12 +244,14 @@ Feature: Capturing demo requests from the public website
 
   # These records have no entity, so tenancy cannot gate them and role is the only
   # boundary. An ordinary customer reaching this screen would be reading our pipeline.
+  @rack_test
   Scenario: An ordinary user with no staff role is denied
     Given there is a user "first_name=Ordinary;last_name=Customer;email=ordinary.customer@example.com" for an entity "name=Website Leads Customer Co;entity_type=Investment Fund"
     And a website lead exists from "Nadia Okonkwo" at "Meridian Capital"
     When the signed-in user requests the website leads index
     Then the leads screen should be denied
 
+  @rack_test
   Scenario: An anonymous visitor cannot read the leads
     Given a website lead exists from "Nadia Okonkwo" at "Meridian Capital"
     When an anonymous visitor requests the website leads index

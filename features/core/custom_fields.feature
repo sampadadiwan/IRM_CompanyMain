@@ -132,6 +132,7 @@ Scenario: Select custom field without options fails model validation
 # space was then saved into json_fields and every exact-match consumer (the ransack custom
 # field filters, search_custom_fields, satisfies_condition? and its JS twin) stopped matching
 # that row. See FormCustomField#options / #normalize_option_meta_data.
+@rack_test
 Scenario Outline: Whitespace around the options of an option field is ignored
   Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
   Given the user has role "company_admin"
@@ -149,6 +150,7 @@ Scenario Outline: Whitespace around the options of an option field is ignored
 # The leading "," or " ," in a choice list is the idiom for "start this dropdown empty".
 # Trimming must keep that empty choice: dropping it would promote the first real choice to the
 # default and silently record an answer nobody gave.
+@rack_test
 Scenario Outline: The blank first option of a dropdown is preserved when whitespace is trimmed
   Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
   Given the user has role "company_admin"
@@ -166,6 +168,7 @@ Scenario Outline: The blank first option of a dropdown is preserved when whitesp
 # survive exactly as typed - Ruby for Calculation, "precision,separator" for NumberField, an
 # ISO currency for Money, and "skill: true, sector: X" tags for File (SupportAgent#skill_for_sector
 # matches on those spaces).
+@rack_test
 Scenario Outline: Non-option field types keep their meta_data exactly as typed
   Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
   Given the user has role "company_admin"
@@ -182,6 +185,7 @@ Scenario Outline: Non-option field types keep their meta_data exactly as typed
 # both sides of a conditional comparison are trimmed. Without that, the dependent field stays
 # hidden on screen while the server can still insist it is required - a mandatory field the
 # user cannot see, blocking the save.
+@rack_test
 Scenario: A conditional field still matches a value saved before the option list was cleaned
   Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
   Given the user has role "company_admin"

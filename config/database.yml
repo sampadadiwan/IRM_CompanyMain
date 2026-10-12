@@ -65,6 +65,11 @@ test: &test
   # database: tmp/test_<%= ENV['TEST_ENV_NUMBER'] %>.sqlite3
   # RAM speed, but behaves exactly like a standard file. No issues with schema loading or multi-connection sharing.
   database: /dev/shm/test_<%= ENV['TEST_ENV_NUMBER'] %>.sqlite3
+  # The test DB is built from db/schema_test.rb (lib/tasks/load_test_schema.rake), so that is the file
+  # maintain_test_schema! must compare against at every test boot. Without this it hashed db/schema.rb,
+  # never matched, and re-ran `bin/rails db:test:prepare` - a second Rails boot plus a full schema
+  # reload - in every cucumber process.
+  schema_dump: schema_test.rb
   # database: ":memory:" # Use an in-memory database
 
 test2: &test

@@ -39,8 +39,6 @@
       <%= t('investor_details_nav.users') %>
     </a>
 
-    <%= render "investors/workflow_nav_link", investor: investor %>
-
   </nav>
 
   <div class="tab-content" data-controller="datatable">
@@ -145,8 +143,6 @@
             investor: investor, label: t('investor_details_nav.users') %>
       </div>
     </div>
-
-    <%= render "investors/workflow_tab_pane", investor: investor %>
 
   </div>
 </div>

@@ -94,6 +94,9 @@ module AccountEntryShared
   end
 
   def to_s
-    "#{name} #{I18n.l(reporting_date)}"
+    # reporting_date is nil on the unsaved zero placeholder get_account_entry_or_zero returns when no entry
+    # exists; I18n.l(nil) raised, which FundFormula#parse_statement logged as a failed expression.
+    # With a date the string is unchanged.
+    reporting_date ? "#{name} #{I18n.l(reporting_date)}" : name.to_s
   end
 end

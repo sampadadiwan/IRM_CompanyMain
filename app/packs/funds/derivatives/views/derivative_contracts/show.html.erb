@@ -1,64 +1,266 @@
-<%# Derivative contract page — terms, current value, events and the event form (card ⑥) %>
-<% current = @contract.derivative_events.where(event_type: "valuation").reorder(event_date: :desc, id: :desc).first %>
-<%= render ReportingComponent.new do %>
-  <div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0"><%= @contract.name %> <span class="badge bg-<%= @contract.status == 'open' ? 'success' : 'secondary' %>-subtle text-<%= @contract.status == 'open' ? 'success' : 'secondary' %>"><%= @contract.status.capitalize %></span></h1>
-    <% if policy(@contract).update? %><%= link_to "Edit", edit_derivative_contract_path(@contract), class: "btn btn-outline-primary" %><% end %>
+<%# Derivative contract page — terms, current value, actions, then events and ledger entries in tabs (card ⑥).
+    Layout copied from portfolio_investments/show; the Add event popup from Evergreen's Record payment. %>
+<%
+  # The latest valuation is the contract's current value
+  current = @contract.derivative_events.where(event_type: "valuation").reorder(event_date: :desc, id: :desc).first
+  status_colour = @contract.status == "open" ? "success" : "secondary"
+  can_record = @contract.status == "open" && policy(@contract).record_event?
+  # Ledger rows this contract posted (parent = one of its events); only the columns the table shows
+  # A small (i) icon whose tooltip explains the field next to it
+  tip = ->(text) { tag.i(class: "ti ti-info-circle text-muted ms-1", data: { bs_toggle: "tooltip" }, title: text) }
+  # Where this contract's value comes from — CapHive never prices a derivative itself
+  value_origin = if @contract.listed && @contract.feed_symbol.present?
+                   "Valued every weekday from the #{@contract.exchange} F&O settlement price for #{@contract.feed_symbol} (price × open lots × lot size)."
+                 elsif @contract.listed
+                   # No exchange symbol: the F&O feed can't match it, so values come only from recorded events
+                   "Listed on #{@contract.exchange}, but without an exchange symbol the daily F&O feed can't value it — values come from the Valuation events below (or add the symbol under Edit)."
+                 else
+                   "Valued from the counterparty's or administrator's statement — add a Valuation event or upload valuations each time one arrives."
+                 end
+  ledger_entries = AccountEntry.where(parent_type: "DerivativeEvent", parent_id: @contract.derivative_events.select(:id))
+                               .select(:id, :reporting_date, :name, :amount_cents, :notes, :parent_id)
+                               .order(:reporting_date, :id)
+%>
+<div class="container-fluid p-3">
+  <%= render ToggleCard.new(title: @contract.name, css_class: "show_derivative_contract_#{@contract.id}", state: "show") do %>
+  <%# What this page is, in one line, with the user guide beside it %>
+  <div class="d-flex align-items-center justify-content-between gap-2 mb-3">
+    <div class="text-muted small" id="contract_intro">
+      <i class="ti ti-info-circle me-1"></i>A derivative held by <%= @contract.fund.name %>. <%= value_origin %>
+      Every event you record posts its accounting to the fund ledger automatically — see the Ledger entries tab below.
+    </div>
+    <%= user_guide_info_icon %>
   </div>
   <div class="row">
-    <div class="col-md-6">
-      <ul class="list-group mb-4" id="contract_terms">
-        <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Type</span><span><%= @contract.type_label %> · <%= @contract.side.capitalize %><%= " · #{@contract.option_type.capitalize}" if @contract.option_type %></span></li>
-        <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Underlying</span><span><%= @contract.underlying_instrument&.name || @contract.underlying_name %></span></li>
-        <% if @contract.strike %><li class="list-group-item d-flex justify-content-between"><span class="text-muted">Strike</span><span><%= @contract.strike.to_d.round(4) %></span></li><% end %>
-        <% if @contract.lots %><li class="list-group-item d-flex justify-content-between"><span class="text-muted">Open lots</span><span><%= @contract.open_lots.to_d.round(4) %> of <%= @contract.lots.to_d.round(4) %> × <%= @contract.lot_size.to_d.round(4) %></span></li><% end %>
-        <% if @contract.notional_cents %><li class="list-group-item d-flex justify-content-between"><span class="text-muted">Notional</span><span><%= money_to_currency Money.new(@contract.notional_cents, @contract.currency), params %><%= " @ #{@contract.forward_rate.to_d.round(4)}" if @contract.forward_rate %></span></li><% end %>
-        <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Trade / expiry</span><span><%= l @contract.trade_date %> → <%= l @contract.expiry_date %></span></li>
-        <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Premium</span><span><%= money_to_currency Money.new(@contract.premium_cents.abs, @contract.currency), params %> <%= @contract.premium_cents.to_d.negative? ? "received" : "paid" %></span></li>
-        <li class="list-group-item d-flex justify-content-between"><span class="text-muted"><%= @contract.listed ? "Exchange" : "Counterparty" %></span><span><%= @contract.listed ? @contract.exchange : @contract.counterparty_name %></span></li>
-        <% if @contract.hedge_of || @contract.hedge_unit_type.present? %>
-          <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Hedges</span><span><%= @contract.hedge_of&.investment_instrument&.name || @contract.hedge_unit_type %></span></li>
-        <% end %>
-        <li class="list-group-item d-flex justify-content-between" id="contract_value"><span class="text-muted">Value</span>
-          <span><%= current ? "#{money_to_currency(Money.new(current.value_cents, @contract.currency), params)} (#{[current.source.capitalize, current.provider].compact_blank.join(' · ')}, #{l current.event_date})" : "Not valued yet" %>
-            <%= " — liability" if current && current.value_cents.to_d.negative? %></span></li>
-      </ul>
+    <!-- Left column: contract terms -->
+    <div class="col-lg-8">
+      <div class="card shadow-sm border-0 mb-4" id="contract_terms">
+        <div class="card-header border-bottom py-3">
+          <h5 class="mb-0 fw-bold"><i class="ti ti-info-circle me-2 text-primary"></i>Contract
+            <span class="badge bg-<%= status_colour %>-subtle text-<%= status_colour %> ms-2"><%= @contract.status.capitalize %></span></h5>
+        </div>
+        <div class="card-body">
+          <div class="row g-4">
+            <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Fund<%= tip.call('The fund that holds this contract. Its ledger receives the entries; its FX rate choices convert them.') %></label>
+              <div class="fs-4"><%= link_to @contract.fund, class: "text-decoration-none fw-bold text-primary" %></div>
+            </div>
+            <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Type<%= tip.call('Contract type · Long (you bought it) or Short (you sold it) · Call/Put for options.') %></label>
+              <div class="fs-4 fw-medium"><%= @contract.type_label %> · <%= @contract.side.capitalize %><%= " · #{@contract.option_type.capitalize}" if @contract.option_type %></div>
+            </div>
+            <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Underlying<%= tip.call('What the contract is on — an index, a share the fund holds, a currency pair or a rate.') %></label>
+              <div class="fs-4 fw-medium"><%= @contract.underlying_instrument&.name || @contract.underlying_name %></div>
+            </div>
+            <% if @contract.strike %>
+              <div class="col-md-6">
+                <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Strike<%= tip.call('The price at which the option can be exercised.') %></label>
+                <div class="fs-4 fw-medium"><%= @contract.strike.to_d.round(4) %></div>
+              </div>
+            <% end %>
+            <% if @contract.lots %>
+              <div class="col-md-6">
+                <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Lots<%= tip.call('Number of lots traded × units in one lot (the exchange lot size).') %></label>
+                <div class="fs-4 fw-medium"><%= @contract.lots.to_d.round(4) %> × <%= @contract.lot_size.to_d.round(4) %></div>
+              </div>
+            <% end %>
+            <% if @contract.notional_cents %>
+              <div class="col-md-6">
+                <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Notional<%= tip.call('The face amount the contract is written on; @ shows the agreed forward rate.') %></label>
+                <div class="fs-4 fw-medium"><%= money_to_currency Money.new(@contract.notional_cents, @contract.currency), params %><%= " @ #{@contract.forward_rate.to_d.round(4)}" if @contract.forward_rate %></div>
+              </div>
+            <% end %>
+            <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Trade / expiry<%= tip.call('Trade date → the date the contract ends. FundAccounting users are emailed 5 business days before expiry.') %></label>
+              <div class="fs-4 fw-medium"><%= l @contract.trade_date %> → <%= l @contract.expiry_date %></div>
+            </div>
+            <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1"><%= @contract.listed ? "Exchange" : "Counterparty" %><%= tip.call(@contract.listed ? 'Listed contract — traded and settled on this exchange.' : 'OTC contract — the bank or broker on the other side, who sends the valuation statements.') %></label>
+              <div class="fs-4 fw-medium"><%= @contract.listed ? @contract.exchange : @contract.counterparty_name %></div>
+            </div>
+            <% if @contract.hedge_of || @contract.hedge_unit_type.present? %>
+              <div class="col-md-6">
+                <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Hedges<%= tip.call('The holding or share class this contract protects. The holding page shows this hedge next to it.') %></label>
+                <div class="fs-4 fw-medium"><%= @contract.hedge_of&.investment_instrument&.name || @contract.hedge_unit_type %></div>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="col-md-6">
-      <% if @contract.status == "open" && policy(@contract).record_event? %>
-        <%= render FormCard.new(title: "Add event") do %>
-          <%= form_with(url: record_event_derivative_contract_path(@contract), scope: :derivative_event, method: :post) do |f| %>
-            <%= hidden_field_tag :idempotency_key, SecureRandom.uuid %>
-            <div class="form-group"><%= f.label :event_type, "Event" %>
-              <%= f.select :event_type, (DerivativeEvent::TYPE_LABELS.except("trade")).map { |k, v| [v, k] }, {}, class: "form-select" %></div>
-            <div class="form-group"><%= f.label :event_date, "Date" %><%= f.date_field :event_date, value: Time.zone.today, class: "form-control" %></div>
-            <div class="form-group"><%= f.label :value, "Value (valuation; negative = liability)" %><%= f.number_field :value, step: "any", class: "form-control" %></div>
-            <div class="form-group"><%= f.label :amount, "Cash (received +, paid −)" %><%= f.number_field :amount, step: "any", class: "form-control" %></div>
-            <div class="form-group"><%= f.label :lots, "Lots (exercise / close-out; blank = all open)" %><%= f.number_field :lots, step: "any", class: "form-control" %></div>
-            <div class="form-group"><%= f.label :provider, "Valued by (counterparty / administrator)" %><%= f.text_field :provider, class: "form-control", maxlength: 40 %></div>
-            <div class="form-group"><%= f.label :delta, "Delta (optional, from the statement)" %><%= f.number_field :delta, step: "any", class: "form-control" %></div>
-            <div class="form-group"><%= f.label :notes %><%= f.text_field :notes, class: "form-control" %></div>
-            <%= f.submit "Record event", class: "btn btn-outline-primary" %>
+
+    <!-- Right column: value and actions -->
+    <div class="col-lg-4">
+      <div class="card shadow-sm border-0 mb-4" id="contract_value">
+        <div class="card-header border-bottom py-3">
+          <h6 class="mb-0 fw-bold d-flex align-items-center"><i class="ti ti-chart-pie me-2 text-success"></i>Value</h6>
+        </div>
+        <ul class="list-group list-group-flush">
+          <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+            <span class="text-muted">Current value<%= tip.call("The latest Valuation event. Below zero means the fund owes on the contract (a liability).") %></span>
+            <span class="fw-bold">
+              <% if current %>
+                <%= money_to_currency Money.new(current.value_cents, @contract.currency), params %><%= " (liability)" if current.value_cents.to_d.negative? %>
+              <% else %>
+                Not valued yet
+              <% end %>
+            </span>
+          </li>
+          <% if current %>
+            <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+              <span class="text-muted">Source<%= tip.call("Market = the exchange file; Manual = typed in or uploaded from a statement.") %></span>
+              <span class="fw-bold"><%= [current.source.capitalize, current.provider].compact_blank.join(" · ") %></span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+              <span class="text-muted">As of<%= tip.call("The date of that valuation. A newer one replaces it as the current value.") %></span>
+              <span class="fw-bold"><%= l current.event_date %></span>
+            </li>
           <% end %>
-        <% end %>
+          <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+            <span class="text-muted">Premium<%= tip.call("Paid when you buy an option, received when you sell one. Posted to the ledger on the trade date.") %></span>
+            <span class="fw-bold"><%= money_to_currency Money.new(@contract.premium_cents.abs, @contract.currency), params %> <%= @contract.premium_cents.to_d.negative? ? "received" : "paid" %></span>
+          </li>
+          <% if @contract.lots %>
+            <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+              <span class="text-muted">Open lots<%= tip.call("Lots still held — exercise and close-out events reduce it; at zero the contract closes.") %></span>
+              <span class="fw-bold"><%= @contract.open_lots.to_d.round(4) %> of <%= @contract.lots.to_d.round(4) %></span>
+            </li>
+          <% end %>
+        </ul>
+      </div>
+
+      <% if can_record || policy(@contract).update? %>
+        <div class="card shadow-sm border-0 mb-4">
+          <div class="card-header border-bottom py-3">
+            <h6 class="mb-0 fw-bold d-flex align-items-center"><i class="ti ti-settings me-2 text-secondary"></i>Actions</h6>
+          </div>
+          <div class="card-body">
+            <div class="d-grid gap-2">
+              <%# Add event opens the event form in a popup; recording is only possible while the contract is open %>
+              <% if can_record %>
+                <%# The tooltip sits on a wrapper — the button's own data-bs-toggle opens the popup %>
+                <span class="d-grid" data-bs-toggle="tooltip" title="Record a valuation, settlement, margin call, exercise, expiry or close-out">
+                  <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#derivative_event_modal" id="add_derivative_event">
+                    <i class="ti ti-plus"></i> Add event
+                  </button>
+                </span>
+              <% end %>
+              <% if policy(@contract).update? %>
+                <%= link_to edit_derivative_contract_path(@contract), class: "btn btn-outline-primary", data: { bs_toggle: "tooltip", bs_title: "Change the contract's terms — events already recorded are not changed" } do %>
+                  <i class="ti ti-edit"></i> <%= t_common(:edit) %>
+                <% end %>
+              <% end %>
+            </div>
+            <% unless @contract.status == "open" %>
+              <div class="text-muted small mt-2"><i class="ti ti-lock me-1"></i>The contract is <%= @contract.status %> — no more events can be added.</div>
+            <% end %>
+          </div>
+        </div>
       <% end %>
     </div>
   </div>
-  <h5>Events</h5>
-  <table class="table table-bordered" id="derivative_events">
-    <thead><tr><th class="date-col">Date</th><th class="text-col">Event</th><th class="num-col">Lots</th><th class="num-col">Cash</th><th class="num-col">Value</th><th class="text-col">Source</th><th class="text-col">Notes</th></tr></thead>
-    <tbody>
-      <% @contract.derivative_events.select(&:persisted?).each do |e| %>
-        <tr id="<%= dom_id e %>">
-          <td class="date-col"><%= l e.event_date %></td>
-          <td class="text-col"><%= e.type_label %></td>
-          <td class="num-col"><%= e.lots&.to_d&.round(4) %></td>
-          <td class="num-col"><%= e.amount_cents ? money_to_currency(Money.new(e.amount_cents, @contract.currency), params) : "" %></td>
-          <td class="num-col"><%= e.value_cents ? money_to_currency(Money.new(e.value_cents, @contract.currency), params) : "" %></td>
-          <td class="text-col"><%= [e.source.capitalize, e.provider].compact_blank.join(" · ") %></td>
-          <td class="text-col"><%= e.notes %><%= link_to " (holding)", portfolio_investment_path(e.portfolio_investment) if e.portfolio_investment %></td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
+  <% end %>
+</div>
+
+<% if can_record %>
+  <div class="modal fade" id="derivative_event_modal" tabindex="-1" aria-labelledby="derivative_event_label" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <%= form_with(url: record_event_derivative_contract_path(@contract), scope: :derivative_event, method: :post) do |f| %>
+          <%= hidden_field_tag :idempotency_key, SecureRandom.uuid %>
+          <div class="modal-header">
+            <h5 class="modal-title" id="derivative_event_label">Add event · <%= @contract.name %></h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <%# What each event needs, so the right fields get filled %>
+            <div class="text-muted small mb-3" id="derivative_event_help">
+              <div><strong>Valuation</strong> — Value only (negative = liability); add Valued by for a statement.</div>
+              <div><strong>Settlement / Close-out</strong> — Cash received (+) or paid (−); Lots blank closes all.</div>
+              <div><strong>Margin</strong> — Cash: posted (−) or returned (+).</div>
+              <div><strong>Exercise</strong> — Lots; a physical exercise also creates the share purchase or sale.</div>
+              <div><strong>Expiry</strong> — nothing else needed; any cash is the final settlement.</div>
+            </div>
+            <div class="mb-3"><%= f.label :event_type, "Event", class: "form-label" %>
+              <%= f.select :event_type, DerivativeEvent::TYPE_LABELS.except("trade").map { |k, v| [v, k] }, {}, class: "form-select" %></div>
+            <div class="mb-3"><%= f.label :event_date, "Date", class: "form-label" %><%= f.date_field :event_date, value: Time.zone.today, class: "form-control" %></div>
+            <div class="mb-3"><%= f.label :value, "Value (valuation; negative = liability)", class: "form-label" %><%= f.number_field :value, step: "any", class: "form-control" %></div>
+            <div class="mb-3"><%= f.label :amount, "Cash (received +, paid −)", class: "form-label" %><%= f.number_field :amount, step: "any", class: "form-control" %></div>
+            <div class="mb-3"><%= f.label :lots, "Lots (exercise / close-out; blank = all open)", class: "form-label" %><%= f.number_field :lots, step: "any", class: "form-control" %></div>
+            <div class="mb-3"><%= f.label :provider, "Valued by (counterparty / administrator)", class: "form-label" %><%= f.text_field :provider, class: "form-control", maxlength: 40 %></div>
+            <div class="mb-3"><%= f.label :delta, "Delta (optional, from the statement)", class: "form-label" %><%= f.number_field :delta, step: "any", class: "form-control" %></div>
+            <div class="mb-1"><%= f.label :notes, class: "form-label" %><%= f.text_field :notes, class: "form-control" %></div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal"><%= t_common(:cancel) %></button>
+            <%= f.submit "Record event", class: "btn btn-outline-success" %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
 <% end %>
+
+<%# Events and the ledger rows they posted — same tab bar as the fund and portfolio company pages %>
+<div class="associated_entity" data-controller="tabs tabdetails">
+  <nav id="derivative_contract_tabs" class="nav nav-pills nav-justified p-3 mb-3 rounded card flex-row" role="tablist">
+    <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#events-tab"><i class="ti ti-history me-1"></i>Events</a>
+    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#ledger-entries-tab"><i class="ti ti-book me-1"></i>Ledger entries</a>
+  </nav>
+
+  <div class="tab-content">
+    <div id="events-tab" class="tab-pane fade in show active">
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+          <div class="text-muted small mb-3"><i class="ti ti-info-circle me-1"></i>Everything that has happened to the contract, oldest first. Cash is in the contract's currency (<%= @contract.currency %>): + received, − paid. Market rows come from the exchange file; Manual rows were typed in or uploaded.</div>
+          <div class="table-responsive">
+            <table class="table table-bordered" id="derivative_events">
+              <thead><tr><th class="date-col">Date</th><th class="text-col">Event</th><th class="num-col">Lots</th><th class="num-col">Cash</th><th class="num-col">Value</th><th class="text-col">Source</th><th class="text-col">Notes</th></tr></thead>
+              <tbody>
+                <% @contract.derivative_events.select(&:persisted?).each do |e| %>
+                  <tr id="<%= dom_id e %>">
+                    <td class="date-col"><%= l e.event_date %></td>
+                    <td class="text-col"><%= e.type_label %></td>
+                    <td class="num-col"><%= e.lots&.to_d&.round(4) %></td>
+                    <td class="num-col"><%= e.amount_cents ? money_to_currency(Money.new(e.amount_cents, @contract.currency), params) : "" %></td>
+                    <td class="num-col"><%= e.value_cents ? money_to_currency(Money.new(e.value_cents, @contract.currency), params) : "" %></td>
+                    <td class="text-col"><%= [e.source.capitalize, e.provider].compact_blank.join(" · ") %></td>
+                    <td class="text-col"><%= e.notes %><%= link_to " (holding)", portfolio_investment_path(e.portfolio_investment) if e.portfolio_investment %></td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%# Amounts are in the fund's currency — the poster converts them at the rate the fund accepts on the event date %>
+    <div id="ledger-entries-tab" class="tab-pane fade">
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+          <div class="text-muted small mb-3"><i class="ti ti-info-circle me-1"></i>The accounting each event posted to <%= @contract.fund.name %>'s ledger, in the fund's currency (<%= @contract.fund.currency %>): the premium on the trade date, the change in value on each valuation, and the realised result and settlement cash when lots close. Nothing here is entered by hand.</div>
+          <div class="table-responsive">
+            <table class="table table-bordered" id="derivative_ledger_entries">
+              <thead><tr><th class="date-col">Date</th><th class="text-col">Entry</th><th class="num-col">Amount (<%= @contract.fund.currency %>)</th><th class="text-col">Notes</th></tr></thead>
+              <tbody>
+                <% ledger_entries.each do |ae| %>
+                  <tr id="<%= dom_id ae %>">
+                    <td class="date-col"><%= l ae.reporting_date %></td>
+                    <td class="text-col"><%= ae.name %></td>
+                    <td class="num-col"><%= money_to_currency Money.new(ae.amount_cents, @contract.fund.currency), params %></td>
+                    <td class="text-col"><%= ae.notes %></td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+          <% if ledger_entries.none? %>
+            <p class="text-muted mb-0">No ledger entries posted yet.</p>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

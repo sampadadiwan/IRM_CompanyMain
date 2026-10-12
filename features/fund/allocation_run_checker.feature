@@ -177,8 +177,7 @@ Feature: Allocation Run Checker
 
   @javascript
   Scenario: The allocation screen offers the check and shows the result once it exists
-    Given I am at the login page
-    When I fill and submit the login page
+    Given I am signed in as the current user
     And there is a finished allocation run "start_date=2024-01-01;end_date=2024-03-31"
     And the run produced "Setup Fee" of "100" for folio "101" and "300" for folio "102"
     When I visit the allocation screen of the fund
@@ -190,8 +189,7 @@ Feature: Allocation Run Checker
 
   @javascript
   Scenario: The report page shows each check under the question it answers
-    Given I am at the login page
-    When I fill and submit the login page
+    Given I am signed in as the current user
     And there is a finished allocation run "start_date=2024-01-01;end_date=2024-03-31"
     And the run produced "Setup Fee" of "100" for folio "101" and "300" for folio "102"
     And the run produced a fund total of "999" for "Setup Fee"

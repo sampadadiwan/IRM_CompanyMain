@@ -53,6 +53,7 @@ Feature: Capital distribution fixes — approval, completion, wording and backgr
     Then every payment of the distribution should be completed
 
   # E23 — the Send Notification hint describes what actually happens
+  @rack_test
   Scenario: The Send Notification hint says where emails are sent from
     When I open the new capital distribution form
     Then I should see "Allow emailing investors about this distribution. Emails are sent from Actions → Send Payment Notifications." on the page
@@ -65,6 +66,7 @@ Feature: Capital distribution fixes — approval, completion, wording and backgr
     Then the payment generation job should finish without raising
 
   # X5 — Recompute Fees' first progress message names the distribution
+  @rack_test
   Scenario: Recompute Fees names the distribution in its first message
     Given there is a capital distribution "title=Q3 2026 Exit Proceeds;income_cents=300000000;approved=true"
     When the distribution's fees are recomputed by me

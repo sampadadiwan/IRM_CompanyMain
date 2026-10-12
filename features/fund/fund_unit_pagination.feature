@@ -10,6 +10,7 @@ Background:
   Given the investors are added to the fund
   Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
 
+@rack_test
 Scenario: H1 First page shows 25 units with a pager
   Given the fund has 30 fund units of type "A"
   Given the fund has 32 fund units of type "B"
@@ -19,6 +20,7 @@ Scenario: H1 First page shows 25 units with a pager
   And I should see the fund units pager text "62"
   And I should see exactly one fund units pager
 
+@rack_test
 Scenario: H2 Page links move between pages
   Given the fund has 30 fund units of type "A"
   Given the fund has 32 fund units of type "B"
@@ -27,6 +29,7 @@ Scenario: H2 Page links move between pages
   Then I should see 25 fund unit rows
   And I should see the fund units pager text "26-50"
 
+@rack_test
 Scenario: H3 Filters apply before paging
   Given the fund has 30 fund units of type "A"
   Given the fund has 32 fund units of type "B"
@@ -48,12 +51,14 @@ Scenario: H5 Embedded fund units list pages in place
   Then I should see 5 fund unit rows
   And I should still be on the investor page
 
+@rack_test
 Scenario: H6 Units are listed by latest issue date first
   Given the fund has 3 fund units of type "A"
   When I open the fund units list
   Then I should see 3 fund unit rows
   And the fund units should be listed by latest issue date first
 
+@rack_test
 Scenario: E1 25 or fewer units show the count but no page links
   Given the fund has 10 fund units of type "A"
   When I open the fund units list
@@ -61,11 +66,13 @@ Scenario: E1 25 or fewer units show the count but no page links
   And I should see the fund units pager text "Showing 10 of 10"
   And I should not see fund units page links
 
+@rack_test
 Scenario: E2 No units shows no pager
   When I open the fund units list
   Then I should see 0 fund unit rows
   And I should not see a fund units pager
 
+@rack_test
 Scenario: E3 Changing a filter returns to page 1
   Given the fund has 30 fund units of type "A"
   Given the fund has 32 fund units of type "B"
@@ -73,6 +80,7 @@ Scenario: E3 Changing a filter returns to page 1
   And I open the fund units list with "q[unit_type_eq]=A"
   Then I should see the fund units pager text "1-25"
 
+@rack_test
 Scenario: E4 Page links keep the filter
   Given the fund has 30 fund units of type "A"
   Given the fund has 32 fund units of type "B"
@@ -81,6 +89,7 @@ Scenario: E4 Page links keep the filter
   Then I should see 5 fund unit rows
   And I should see the fund units pager text "26-30"
 
+@rack_test
 Scenario: X1 A page beyond the end shows the last page
   Given the fund has 30 fund units of type "A"
   When I open the fund units list with "page=9"
@@ -95,6 +104,7 @@ Scenario: H7 Search finds units on any page
   Then I should see 1 fund unit rows
   And I should see only fund units with reason "Needle in haystack"
 
+@rack_test
 Scenario: H8 Sorting covers every page
   Given the fund has 62 fund units of type "A"
   Given the fund units have increasing quantities

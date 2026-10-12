@@ -5,6 +5,7 @@ Feature: Workflow Email Notifications and Magic Links
 
   # ── Token generation ──────────────────────────────────────────────────────────
 
+  @rack_test
   Scenario Outline: Magic link token round-trips correctly
     Given Im logged in as a user "<user>" for an entity "<entity>"
     And there is an actor user "alice@example.com" in the entity
@@ -16,6 +17,7 @@ Feature: Workflow Email Notifications and Magic Links
       | user | entity              |
       |      | entity_type=Company |
 
+  @rack_test
   Scenario Outline: Tampered magic link token is rejected
     Given Im logged in as a user "<user>" for an entity "<entity>"
     When I verify a tampered magic link token
@@ -27,6 +29,7 @@ Feature: Workflow Email Notifications and Magic Links
 
   # ── Email delivery ────────────────────────────────────────────────────────────
 
+  @rack_test
   Scenario Outline: Launching a workflow enqueues step-activation emails to first-step actors
     Given Im logged in as a user "<user>" for an entity "<entity>"
     And the user has role "company_admin"
@@ -61,6 +64,7 @@ Feature: Workflow Email Notifications and Magic Links
 
   # ── Magic link show page ──────────────────────────────────────────────────────
 
+  @rack_test
   Scenario Outline: Valid magic link renders the response form
     Given Im logged in as a user "<user>" for an entity "<entity>"
     And the user has role "company_admin"
@@ -96,6 +100,7 @@ Feature: Workflow Email Notifications and Magic Links
       | user | entity              |
       |      | entity_type=Company |
 
+  @rack_test
   Scenario Outline: Visiting a magic link after workflow rejection shows moved-on (not invalid)
     Given Im logged in as a user "<user>" for an entity "<entity>"
     And the user has role "company_admin"
@@ -113,6 +118,7 @@ Feature: Workflow Email Notifications and Magic Links
       | user | entity              |
       |      | entity_type=Company |
 
+  @rack_test
   Scenario Outline: Actor who did not vote sees moved-on but no previous response after workflow rejection
     Given Im logged in as a user "<user>" for an entity "<entity>"
     And the user has role "company_admin"
@@ -131,6 +137,7 @@ Feature: Workflow Email Notifications and Magic Links
       | user | entity              |
       |      | entity_type=Company |
 
+  @rack_test
   Scenario Outline: An invalid or tampered token shows the invalid page
     Given Im logged in as a user "<user>" for an entity "<entity>"
     When I visit the magic link page with token "this_is_not_a_valid_token"
@@ -142,6 +149,7 @@ Feature: Workflow Email Notifications and Magic Links
 
   # ── Magic link submit ─────────────────────────────────────────────────────────
 
+  @rack_test
   Scenario Outline: Actor submits response via magic link and it is recorded
     Given Im logged in as a user "<user>" for an entity "<entity>"
     And the user has role "company_admin"
@@ -158,6 +166,7 @@ Feature: Workflow Email Notifications and Magic Links
       | user | entity              |
       |      | entity_type=Company |
 
+  @rack_test
   Scenario Outline: Submitting twice via magic link is blocked
     Given Im logged in as a user "<user>" for an entity "<entity>"
     And the user has role "company_admin"

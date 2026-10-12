@@ -112,6 +112,16 @@
 
               <% end %>
             </div>
+            <%# Derivatives under the portfolio — only when the fund has any. A feeder shows its master's, like the
+                dashboard above; the first contract is added from Actions → Derivatives (fund-market-data, card ⑥) %>
+            <% portfolio_fund = fund.master_fund || fund %>
+            <% if portfolio_fund.feature_enabled?(:enable_derivatives) && DerivativeContract.where(fund_id: portfolio_fund.id).exists? %>
+              <div class="associated_entity">
+                <%= turbo_frame_tag "fund_derivatives_frame", target: "_top", loading: :lazy, src: fund_derivative_contracts_path(portfolio_fund, status: "open", embedded: 1) do %>
+                  <%= render "/layouts/loading" %>
+                <% end %>
+              </div>
+            <% end %>
           </div>
         <% end %>
 

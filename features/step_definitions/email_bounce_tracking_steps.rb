@@ -65,8 +65,7 @@ Given('I am logged in as an internal admin') do
   @user = FactoryBot.create(:user, entity: @entity)
   @user.add_role(:support)
   steps %(
-    And I am at the login page
-    When I fill and submit the login page
+    And I am signed in as the current user
   )
 end
 

@@ -1,0 +1,85 @@
+<%# One class card on the evergreen Classes step. Rendered per class, and once into a <template>
+    (unit type UNITTOKEN, index IDXTOKEN) that evergreen-settings#syncClasses clones on New Fund.
+    Worked examples H1, E2, E3 — openspec/changes/evergreen-fund-on-create/design.md#worked-examples %>
+            <% prefix = "evergreen_fund_setting[class_terms][#{i}]" %>
+            <%# One compact row per class: name, starting price (required) with its currency, Customise %>
+            <div class="card border mb-2" id="class_term_<%= term.unit_type.parameterize %>">
+              <div class="card-body py-3">
+                <%= hidden_field_tag "#{prefix}[unit_type]", term.unit_type %><%= hidden_field_tag "#{prefix}[id]", term.id if term.persisted? %>
+                <div class="row align-items-center g-2">
+                  <div class="col-md-3">
+                    <span class="fw-semibold"><i class="ti ti-stack-2 me-1 text-info"></i>Class <%= term.unit_type %></span>
+                  </div>
+                  <div class="col-md-5">
+                    <div class="input-group" title="Starting price — required">
+                      <span class="input-group-text"><%= currency %></span>
+                      <%= number_field_tag "#{prefix}[initial_price]", term.initial_price, class: "form-control", step: :any, placeholder: "Starting price", data: { eg_required: true },
+                                           'aria-label': "Starting price (#{currency})" %>
+                    </div>
+                    <div class="small text-muted mt-1">Starting price<span class="text-danger ms-1">*</span><%= eg_tip("Price per #{eg_t(:unit, fund:)} until the class has an approved NAV. For example #{eg_currency_symbol(fund)}10,000: a #{eg_currency_symbol(fund)}10 million first subscription gets 1,000 #{eg_t(:units, fund:)}.") %></div>
+                  </div>
+                  <div class="col-md-4 text-md-end">
+                    <a class="small text-decoration-none" data-bs-toggle="collapse" href="#class_more_<%= i %>" role="button"><i class="ti ti-adjustments me-1"></i>Customise this class</a>
+                  </div>
+                </div>
+                <div class="collapse" id="class_more_<%= i %>">
+                  <div class="row mt-2">
+                    <div class="col-md-3 form-group">
+                      <label class="form-label">Performance fee<%= eg_tip("Class high-water mark: a fee on gains above the highest #{eg_t(:nav_per_unit, fund:)} a fee was already charged on.") %></label>
+                      <%= select_tag "#{prefix}[perf_fee_model]", options_for_select([["None", "none"], ["Above high-water mark", "class_hwm"]], term.perf_fee_model), class: "form-select" %>
+                    </div>
+                    <div class="col-md-2 form-group">
+                      <label class="form-label">Fee %</label>
+                      <%= number_field_tag "#{prefix}[perf_fee_pct]", term.perf_fee_pct, class: "form-control", step: :any %>
+                    </div>
+                    <div class="col-md-2 form-group">
+                      <label class="form-label">Hurdle %<%= eg_tip("Annual return the class must beat before a performance fee is charged.") %></label>
+                      <%= number_field_tag "#{prefix}[hurdle_pct]", term.hurdle_pct, class: "form-control", step: :any %>
+                    </div>
+                    <div class="col-md-2 form-group">
+                      <label class="form-label">Hurdle type<%= eg_tip("Hard: fee only on the gain above the hurdle. Soft: once the hurdle is beaten, fee on the whole gain.") %></label>
+                      <%= select_tag "#{prefix}[hurdle_type]", options_for_select([["Hard", "hard"], ["Soft", "soft"]], term.hurdle_type), class: "form-select" %>
+                    </div>
+                    <div class="col-md-3 form-group">
+                      <label class="form-label">Crystallises<%= eg_tip("When the accrued fee becomes payable and the high-water mark moves up, on approving the NAV for that date.") %></label>
+                      <%= select_tag "#{prefix}[crystallisation]", options_for_select([["Annually", "annual"], ["Half-yearly", "semi_annual"], ["Quarterly", "quarterly"]], term.crystallisation), class: "form-select" %>
+                    </div>
+                    <div class="col-md-2 form-group">
+                      <label class="form-label">Notice (days)</label>
+                      <%= number_field_tag "#{prefix}[notice_days]", term.notice_days, class: "form-control" %>
+                    </div>
+                    <div class="col-md-2 form-group">
+                      <label class="form-label">Lock-up (months)</label>
+                      <%= number_field_tag "#{prefix}[lock_up_months]", term.lock_up_months, class: "form-control" %>
+                    </div>
+                    <div class="col-md-2 form-group">
+                      <label class="form-label">Lock-up type</label>
+                      <%= select_tag "#{prefix}[lock_up_type]", options_for_select([["As fund", ""], ["Hard", "hard"], ["Soft", "soft"]], term.lock_up_type), class: "form-select" %>
+                    </div>
+                    <div class="col-md-3 form-group">
+                      <label class="form-label"><%= eg_t(:early_fee, fund:) %> %</label>
+                      <%= number_field_tag "#{prefix}[early_fee_pct]", term.early_redemption_fee.to_h["pct"], class: "form-control", step: :any %>
+                    </div>
+                    <div class="col-md-3 form-group">
+                      <label class="form-label">Minimum holding</label>
+                      <%# Same currency add-on as the starting price %>
+                      <div class="input-group">
+                        <span class="input-group-text"><%= currency %></span>
+                        <%= number_field_tag "#{prefix}[min_holding]", term.min_holding, class: "form-control", step: :any, 'aria-label': "Minimum holding (#{currency})" %>
+                      </div>
+                    </div>
+                  </div>
+                  <%# Class-only expenses: two ledger entries charged to this class alone (evergreen-share-classes H6, X1–X5, X7) %>
+                  <div class="row mt-2">
+                    <div class="col-md-6 form-group">
+                      <label class="form-label">Class expenses entry<%= eg_tip("Ledger entry holding expenses that belong to this class only, such as a servicing fee. Its amounts come off this class's NAV, never the other classes'. Leave blank if the class has none.") %></label>
+                      <%= text_field_tag "#{prefix}[class_expense_entry_name]", term.class_expense_entry_name, class: "form-control", maxlength: 125, placeholder: "e.g. Class #{term.unit_type} Servicing Fee" %>
+                    </div>
+                    <div class="col-md-6 form-group">
+                      <label class="form-label">Class expenses paid entry<%= eg_tip("Ledger entry recording payments of those expenses. A payment reduces this class's NAV share by the amount paid, so the other classes are unaffected.") %></label>
+                      <%= text_field_tag "#{prefix}[class_expense_paid_entry_name]", term.class_expense_paid_entry_name, class: "form-control", maxlength: 125, placeholder: "e.g. Class #{term.unit_type} Servicing Fee Paid" %>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>

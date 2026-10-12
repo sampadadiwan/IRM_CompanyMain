@@ -1,3 +1,4 @@
+@rack_test
 Feature: Stored region list housekeeping
   users.regions is free text on the Administrate dashboard and is written in a different shape
   by the multi-region sync, so production holds "IN,US", " in ,US, us" and '["US","IN"]' side

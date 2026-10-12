@@ -44,6 +44,40 @@
     </td>
   </tr>
 
+  <%# Market data identifiers — they decide whether the price feed can price this instrument (fund-market-data, card ②) %>
+  <tr>
+    <td>
+      ISIN
+    </td>
+    <td>
+      <%= @investment_instrument.isin %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Ticker
+    </td>
+    <td>
+      <%= @investment_instrument.ticker %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Exchange
+    </td>
+    <td>
+      <%= @investment_instrument.exchange %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Pricing Method
+    </td>
+    <td>
+      <%= @investment_instrument.pricing_method&.capitalize %>
+    </td>
+  </tr>
+
 <%= display_custom_fields(@investment_instrument) if current_user %>
 </table>
 
@@ -64,21 +98,65 @@
 </div>
 
 
-<div class="associated_entity">
-  <%= render "/portfolio_cashflows/index", portfolio_cashflows: @investment_instrument.portfolio_cashflows %>
+<%# The instrument's data, one tab each — same tab bar as the portfolio company page (investors/_portfolio_company_details) %>
+<%
+  # Corporate actions come from the NSE feed, so the tab only makes sense for an instrument it can match
+  show_corporate_actions = (@investment_instrument.ticker.present? || @investment_instrument.isin.present?) &&
+                           policy(CorporateActionSuggestion).index?
+%>
+<div class="associated_entity" data-controller="tabs tabdetails">
+  <nav id="investment_instrument_tabs" class="nav nav-pills nav-justified p-3 mb-3 rounded card flex-row" role="tablist">
+    <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#valuations-tab">
+      <%= t('investor_details_nav.valuations') %>
+    </a>
+    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#portfolio-investments-tab">
+      <%= t('investor_details_nav.portfolio_investments') %>
+    </a>
+    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#cashflows-tab">
+      <%= t('investor_details_nav.portfolio_income') %>
+    </a>
+    <% if show_corporate_actions %>
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#corporate-actions-tab">
+        <%= t('investor_details_nav.corporate_actions') %>
+      </a>
+    <% end %>
+  </nav>
+
+  <div class="tab-content" data-controller="datatable">
+    <%# Valuations first: market, manual and cost prices all land here %>
+    <div id="valuations-tab" class="tab-pane fade in show active">
+      <div class="associated_entity">
+        <%= render "/valuations/index",
+                   valuations: @investment_instrument.valuations.with_synthetic.order(valuation_date: :desc),
+                   owner_type: "Investor",
+                   owner_id: @investment_instrument.portfolio_company_id %>
+      </div>
+    </div>
+
+    <%# Buys and sells across funds, loaded when the tab is first opened %>
+    <div id="portfolio-investments-tab" class="tab-pane fade">
+      <div class="associated_entity">
+        <%= turbo_frame_tag "portfolio_investments_frame", target: "_top", src: portfolio_investments_path(investment_instrument_id: @investment_instrument.id), loading: :lazy do %>
+          <%= render "/layouts/loading" %>
+        <% end %>
+      </div>
+    </div>
+
+    <div id="cashflows-tab" class="tab-pane fade">
+      <div class="associated_entity">
+        <%= render "/portfolio_cashflows/index", portfolio_cashflows: @investment_instrument.portfolio_cashflows %>
+      </div>
+    </div>
+
+    <% if show_corporate_actions %>
+      <%# Every suggestion for this instrument, newest first; Confirm/Dismiss come back to this page %>
+      <div id="corporate-actions-tab" class="tab-pane fade">
+        <div class="associated_entity">
+          <%= render "corporate_action_suggestions/table",
+                     suggestions: policy_scope(CorporateActionSuggestion).where(investment_instrument_id: @investment_instrument.id).includes(:investment_instrument).order(ex_date: :desc),
+                     empty_text: "No corporate actions reported for this instrument." %>
+        </div>
+      </div>
+    <% end %>
+  </div>
 </div>
-
-<div class="associated_entity">
-  <%= turbo_frame_tag "portfolio_investments_frame", target: "_top", src: portfolio_investments_path(investment_instrument_id: @investment_instrument.id) do %>
-    <span>Loading...</span>
-  <% end %>
-</div>
-
-
-<div class="associated_entity">
-  <%= render "/valuations/index",
-             valuations: @investment_instrument.valuations.with_synthetic.order(valuation_date: :desc),
-             owner_type: "Investor",
-             owner_id: @investment_instrument.portfolio_company_id %>
-</div>
-

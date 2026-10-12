@@ -1,3 +1,4 @@
+@rack_test
 Feature: Sidekiq has one launcher and a processing canary
 
   Sidekiq used to be started by monit, an @reboot cron entry, a daily

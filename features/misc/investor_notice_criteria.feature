@@ -18,6 +18,7 @@ Feature: Investor notices can be further narrowed by a criteria expression
     Given there is an investor "Category Match LP" with an approved login
     Given there is an investor "Category Mismatch LP" with an approved login
 
+  @rack_test
   Scenario: A notice with no criteria still reaches everyone in its audience
     Given there is an entity-wide investor notice titled "General Notice" with generate enabled
     When the investor notice job runs for "General Notice"
@@ -25,6 +26,7 @@ Feature: Investor notices can be further narrowed by a criteria expression
     And I visit the investor dashboard
     Then I should see the investor notice "General Notice"
 
+  @rack_test
   Scenario: A criteria expression narrows an entity-wide notice to matching investors only
     Given there is an entity-wide investor notice titled "Lead Investor Notice" with generate enabled
     And the investor "Category Match LP" has category "Lead Investor"
@@ -47,6 +49,7 @@ Feature: Investor notices can be further narrowed by a criteria expression
     And I visit the investor dashboard
     Then I should not see the investor notice "Broken Criteria Notice"
 
+  @rack_test
   Scenario: A malformed criteria expression is rejected when saving the notice
     Given there is an entity-wide investor notice titled "Draft Notice" with generate enabled
     Then setting the investor notice "Draft Notice" criteria to "[investor.category] ===" should be rejected
@@ -55,6 +58,7 @@ Feature: Investor notices can be further narrowed by a criteria expression
   # CapHive support, same gate as the other Dentaku formula fields in this
   # app (FundFormula#formula, CallFee#formula) — a GP company_admin shouldn't
   # see or set it.
+  @rack_test
   Scenario: Only support can edit the criteria field
     Given there is a user "email=admin@supportgategp.example.com" for the entity "name=Criteria GP"
     Given the user "admin@supportgategp.example.com" has role "company_admin"

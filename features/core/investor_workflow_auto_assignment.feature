@@ -12,6 +12,7 @@ Feature: Investor Workflow Auto-Assignment
 
   # ── Investor Onboarding — fires on create for non-portfolio-company investors ─
 
+  @rack_test
   Scenario: Investor Onboarding is assigned and launched the moment a regular investor is created
     Given there is a workflow template "name=Investor Onboarding" with 1 step "name=Welcome & Data Room Access;states=Access Granted,Pending,Declined;quorum_rule=any_one;on_reject_rule=stop;actors=admin"
     And the workflow template "Investor Onboarding" has workflowable_type "Investor"
@@ -35,6 +36,7 @@ Feature: Investor Workflow Auto-Assignment
 
   # ── Portfolio Company template — assigned on create, never launched by KPI imports ──
 
+  @rack_test
   Scenario: Portfolio Company KPI Report Review is assigned but NOT launched when the portfolio company is created
     Given there is a workflow template "name=Portfolio Company KPI Report Review" with 1 step "name=Data Accuracy Check;states=Accurate,Needs Correction,Rejected;quorum_rule=any_one;on_reject_rule=stop;actors=admin"
     And the workflow template "Portfolio Company KPI Report Review" has workflowable_type "Investor"

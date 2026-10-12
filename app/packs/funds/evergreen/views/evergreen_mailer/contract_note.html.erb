@@ -1,0 +1,19 @@
+<%# Worked example H25 %>
+<% if @custom_notification %>
+  <%= render "/custom_notifications/mail" do %>
+    <%= render "evergreen_mailer/custom_extras" %>
+  <% end %>
+<% else %>
+  <p>Dear <%= @user&.first_name %>,</p>
+  <p><%= eg_t(:Units) %> have been allotted to your <%= EvergreenLabels.lower(eg_t(:capital_commitment)) %>.<%= " Your #{EvergreenLabels.lower(eg_t(:contract_note))} is attached." if @fill.document&.approved %></p>
+  <table style="border-collapse:collapse" cellpadding="4">
+    <tr><td><strong><%= eg_t(:capital_commitment) %></strong></td><td><%= @order.capital_commitment&.folio_id %></td></tr>
+    <tr><td><strong>Class</strong></td><td><%= @fill.unit_type %></td></tr>
+    <tr><td><strong>NAV date</strong></td><td><%= l(@fill.fund_nav.nav_date) %></td></tr>
+    <tr><td><strong><%= eg_t(:subscription_date) %></strong></td><td><%= l(@fill.dealing_date.date) %></td></tr>
+    <tr><td><strong><%= eg_t(:nav_per_unit) %></strong></td><td><%= evergreen_money(@fill.nav_per_unit_cents, @fund) %></td></tr>
+    <tr><td><strong><%= eg_t(:Units) %> allotted</strong></td><td><%= number_with_precision(@fill.units, precision: 4, delimiter: ",") %></td></tr>
+    <tr><td><strong>Amount</strong></td><td><%= evergreen_money(@fill.amount_cents, @fund) %></td></tr>
+  </table>
+  <%= render "evergreen_mailer/request_link" %>
+<% end %>

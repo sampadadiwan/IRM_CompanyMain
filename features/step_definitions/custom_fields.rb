@@ -68,8 +68,9 @@ Given('I fill InvestorKyc details with regulatory fields {string} with files {st
         click_on 'Choose file'
       end
     end
+    # Settle time for the PAN upload only - it used to run (4 s) even when nothing was uploaded
+    sleep(4)
   end
-  sleep(4)
 
   fill_in("#{class_name}_full_name", with: @investor_kyc.full_name)
   fill_in("#{class_name}_PAN", with: @investor_kyc.PAN)

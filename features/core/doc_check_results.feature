@@ -73,6 +73,7 @@ Feature: Document Checks — the KYC tab, resolving items and the attention list
     And the KYC's documents should not be all valid
 
   # H12 — progress, document by document
+  @rack_test
   Scenario: Progress is shown document by document
     Given there is an individual KYC for the investor "full_name=Asha Rao;PAN=ABCPK1234F"
     And the KYC has the documents "CML, PAN Card, Passport"
@@ -93,6 +94,7 @@ Feature: Document Checks — the KYC tab, resolving items and the attention list
     Then a document check should have started for the KYC
 
   # H8 — bulk Check documents: every KYC but the verified one
+  @rack_test
   Scenario: Checking documents in bulk skips verified KYCs
     Given there is an individual KYC for the investor "full_name=Asha Rao;PAN=ABCPK1234F"
     And the KYC has the documents "CML, PAN Card, Passport"

@@ -1,3 +1,4 @@
+@rack_test
 Feature: Sidekiq fetch-loop Redis errors do not raise a production alert
   As the person reading the production error mailbox
   I do not want an email for a Redis blip Sidekiq has already recovered from

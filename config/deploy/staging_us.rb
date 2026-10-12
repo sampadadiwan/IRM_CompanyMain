@@ -10,12 +10,17 @@ set :rails_env, "staging"
 set :stage, :staging
 set :env_variant, "us"
 
-set :ssh_options, keys: "~/.ssh/altx.us.pem", compression: false, keepalive: true
-
+# One ssh_options hash: a second `set :ssh_options` replaces the first rather
+# than merging, which silently dropped keepalive. Without it, the ~5 min of
+# silence during assets:precompile lets mobile/NAT links drop the connection,
+# so cap hangs on a command that already finished on the box.
 set :ssh_options, {
   user: 'ubuntu',
   keys: ['~/.ssh/altx.us.pem'],
   forward_agent: true,
   auth_methods: %w[publickey],
-  verify_host_key: :never
+  verify_host_key: :never,
+  compression: false,
+  keepalive: true,
+  keepalive_interval: 30 # seconds between keepalives during silent steps
 }

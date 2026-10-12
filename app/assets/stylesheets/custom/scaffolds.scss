@@ -1460,6 +1460,12 @@ h6 {
     h1 {
       margin-left: 10px;
     }
+    // A subtitle under the page title (evergreen list headers) starts where the title does — as a block, so a
+    // wrapped one keeps every line aligned (only inside a title column; closed-ended headers are untouched)
+    .flex-grow-1 > h1 + small {
+      display: block;
+      margin-left: 10px;
+    }
   }
 }
 

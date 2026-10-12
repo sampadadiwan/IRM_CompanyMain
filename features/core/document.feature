@@ -267,7 +267,7 @@ Scenario: Send a document as Custom Notification with placeholders
   Then user sends a single document using that Custom Notification
   Then the document notification placeholders are resolved correctly
 
-@notification
+@notification @rack_test
 Scenario: Send a document owned by a capital commitment with placeholders resolved via the commitment
   Given there is a user "" for an entity "entity_type=Investment Fund"
   Given the user has role "company_admin"
@@ -281,7 +281,7 @@ Scenario: Send a document owned by a capital commitment with placeholders resolv
   When the commitment document is sent using that Custom Notification
   Then the document notification commitment placeholders are resolved correctly
 
-@notification
+@notification @rack_test
 Scenario: Send a document owned by a capital commitment is cc'd to the commitment's cc address
   Given there is a user "" for an entity "entity_type=Investment Fund"
   Given the user has role "company_admin"
@@ -301,7 +301,7 @@ Scenario: Send a document owned by a capital commitment is cc'd to the commitmen
 # InvestorAccess#cc lookup in ApplicationMailer#setup_cc) and additional_ccs: nil (gated on
 # owner_type == "CapitalCommitment"). Only entity_setting.cc survived, silently.
 # See docs/modules/notifications/document_notification_cc_resolution.md.
-@notification
+@notification @rack_test
 Scenario: A document in a fund data room is cc'd to both the stakeholder and commitment cc addresses
   Given there is a user "" for an entity "entity_type=Investment Fund"
   Given the user has role "company_admin"
@@ -319,7 +319,7 @@ Scenario: A document in a fund data room is cc'd to both the stakeholder and com
 # [user, investor] pairs so each email can carry its own cc list; the set of PEOPLE notified must
 # not change. A stakeholder reachable through both the document's own access right and the fund's
 # must still collapse to one email.
-@notification
+@notification @rack_test
 Scenario: Resolving data room recipients per access right does not change who is notified
   Given there is a user "" for an entity "entity_type=Investment Fund"
   Given the user has role "company_admin"
@@ -351,7 +351,7 @@ Scenario: A committed stakeholder with no access right to a data room document i
 # deleted, and ApplicationPolicy#initialize raises "Must be logged in" - so ONE dead login stopped
 # the document notifying anyone, healthy contacts included. Found on the production dump: 3 such
 # rows, and 2 documents that consequently notified nobody at all.
-@notification
+@notification @rack_test
 Scenario: A stakeholder contact whose login was deleted does not block the other contacts
   Given there is a user "" for an entity "entity_type=Investment Fund"
   Given the user has role "company_admin"
@@ -366,7 +366,7 @@ Scenario: A stakeholder contact whose login was deleted does not block the other
 # setup_cc concatenates entity_setting.cc, the contact's InvestorAccess#cc and additional_ccs, and
 # those overlap routinely - a stakeholder's advisor is frequently also named on the commitment cc.
 # Without a dedupe the same address appeared twice on one email (seen on document 73989 in the dump).
-@notification
+@notification @rack_test
 Scenario: An address named on both the commitment and the contact is cc'd once
   Given there is a user "" for an entity "entity_type=Investment Fund"
   Given the user has role "company_admin"

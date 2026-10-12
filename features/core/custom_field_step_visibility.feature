@@ -1,4 +1,4 @@
-@form_custom_fields
+@form_custom_fields @rack_test
 Feature: Custom field visibility by step on single-page vs multi-step forms
   Single-page forms (e.g. CapitalCommitment) render all their custom fields on one
   page, regardless of which wizard "Step" is configured on each field in the form

@@ -1,0 +1,32 @@
+#!/usr/bin/env zsh
+# cuc - plain (single-process) cucumber, with the same progress line as pcuc.
+#   cuc features/core/document.feature
+#   TEST_ENV_NUMBER=$RANDOM cuc --tags @notification
+# A script rather than a shell function so every terminal runs the current version: a function
+# is frozen into each shell when it starts, and a stale copy once ran a whole suite without the
+# progress feed. The progress helpers live in pcuc-lib.zsh beside this file.
+source "${0:A:h}/pcuc-lib.zsh"
+
+function cuc {
+  local -a dryargs
+  local seen_path=0
+  # The progress dry run must select the same scenarios: copy over the selection options -
+  # tags, names and paths - and nothing else (a --format/--out/-p would clash with its own).
+  local -a args=("$@")
+  local i=1
+  while (( i <= ${#args} )); do
+    case "${args[i]}" in
+      --tags|-t|--name|-n) dryargs+=("${args[i]}" "${args[i+1]}"); (( i += 2 )); continue ;;
+      --tags=*|--name=*)   dryargs+=("${args[i]}") ;;
+      # A path (feature, feature:line, directory) - anything that exists on disk.
+      *) [[ -e "${args[i]%%:*}" ]] && { dryargs+=("${args[i]}"); seen_path=1; } ;;
+    esac
+    (( i++ ))
+  done
+  # No path named: the default profile runs `features`, so count that.
+  (( seen_path )) || dryargs+=(features)
+
+  _cuc_with_progress cuc "${dryargs[@]}" -- env RUBYOPT="-W0" bundle exec cucumber "$@"
+}
+
+cuc "$@"

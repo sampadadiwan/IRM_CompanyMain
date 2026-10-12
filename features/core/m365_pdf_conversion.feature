@@ -7,7 +7,7 @@
 # Exists to catch a broken app secret, a lapsed/removed M365 license, or a Graph API
 # regression before it silently blocks document generation for M365-routed templates --
 # see docs/modules/documents/m365_graph_pdf_conversion.md.
-@m365 @m365_live
+@m365 @m365_live @rack_test
 Feature: M365 Graph PDF conversion stays healthy
 
   Scenario: Converting a docx via Microsoft Graph produces a valid PDF

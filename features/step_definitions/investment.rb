@@ -340,7 +340,7 @@ Given('I upload investments file {string}') do |string|
   first(:link_or_button, "Upload").click
   fill_in('import_upload_name', with: "Test Upload #{@import_file}")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
-  sleep(2)
+  wait_for_upload("./public/sample_uploads/#{@import_file}") # JS direct-upload to /upload; returns once it lands (was sleep 2)
   click_on("Save")
   # sleep(2)
   expect(page).to have_content("Import Upload:")

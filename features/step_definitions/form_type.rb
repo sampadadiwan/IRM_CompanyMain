@@ -27,7 +27,7 @@ Given('Given I upload {string} file for {string} of the entity') do |file_name, 
   click_on 'Upload Custom Fields'
   fill_in('import_upload_name', with: "FCF Upload")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{file_name}"), make_visible: true)
-  sleep 2
+  wait_for_upload("./public/sample_uploads/#{file_name}") # JS direct-upload to /upload; returns once it lands (was sleep 2)
   click_on 'Save'
 
   expect(page).to have_content("Import Upload:")

@@ -8,6 +8,7 @@ Feature: Entity Deactivation
     And the entity has an active employee "staff@acme.com"
     And the entity has an approved investor access for "lp@acme.com"
 
+  @rack_test
   Scenario: Support sees the deactivate button and the popup explaining every effect
     Given Im logged in as a user "first_name=Support" for an entity "name=CapHive Ops;entity_type=Company"
     And the user has role "support"
@@ -19,6 +20,7 @@ Feature: Entity Deactivation
     And I should see "No data is deleted"
     And I should see "Re-activating does not restore access"
 
+  @rack_test
   Scenario: Deactivating an entity revokes employee logins and investor access
     Given Im logged in as a user "first_name=Support" for an entity "name=CapHive Ops;entity_type=Company"
     And the user has role "support"
@@ -30,16 +32,19 @@ Feature: Entity Deactivation
     And the investor access for "lp@acme.com" should not be approved
     And the employee "staff@acme.com" should be inactive
 
+  @rack_test
   Scenario: Deactivating from outside the UI still revokes investor access
     When the entity "Acme Fund" is deactivated directly
     Then the investor access for "lp@acme.com" should not be approved
     And the employee "staff@acme.com" should be inactive
 
+  @rack_test
   Scenario: The cascade runs inside a Chewy index strategy when executed by a worker
     When the deactivation job for "Acme Fund" runs the way Sidekiq runs it
     Then the investor access for "lp@acme.com" should not be approved
     And the employee "staff@acme.com" should be inactive
 
+  @rack_test
   Scenario: Re-activating the entity does not restore access
     When the entity "Acme Fund" is deactivated directly
     And the entity "Acme Fund" is activated directly

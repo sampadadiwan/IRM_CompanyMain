@@ -27,11 +27,13 @@ Feature: Access Rights - Policy and Scope Enforcement
   # Employee Policy
   # ---------------------------------------------------------------------------
 
+  @rack_test
   Scenario: Employee without an access right cannot see the fund
     Given there is a user "email=emp@example.com" for the entity "name=Fund Entity"
     And the user "emp@example.com" has role "employee"
     Then the user "emp@example.com" should be denied "show,update,destroy" on the fund
 
+  @rack_test
   Scenario: Employee with read-only access right can show but not mutate
     Given there is a user "email=emp@example.com" for the entity "name=Fund Entity"
     And the user "emp@example.com" has role "employee"
@@ -39,12 +41,14 @@ Feature: Access Rights - Policy and Scope Enforcement
     Then the user "emp@example.com" should be allowed "show" on the fund
     And the user "emp@example.com" should be denied "update,destroy" on the fund
 
+  @rack_test
   Scenario: Employee with full CRUD access right can show and mutate
     Given there is a user "email=emp@example.com" for the entity "name=Fund Entity"
     And the user "emp@example.com" has role "employee"
     When I grant "create,read,update,destroy" access to the fund for user "emp@example.com"
     Then the user "emp@example.com" should be allowed "show,update,destroy" on the fund
 
+  @rack_test
   Scenario: Company admin sees the fund without any access right
     Given there is a user "email=admin@example.com" for the entity "name=Fund Entity"
     And the user "admin@example.com" has role "company_admin"
@@ -54,6 +58,7 @@ Feature: Access Rights - Policy and Scope Enforcement
   # Employee Scope (for_employee)
   # ---------------------------------------------------------------------------
 
+  @rack_test
   Scenario: Employee scope returns only explicitly granted funds, not all entity funds
     Given there is a user "email=emp@example.com" for the entity "name=Fund Entity"
     And the user "emp@example.com" has role "employee"
@@ -62,6 +67,7 @@ Feature: Access Rights - Policy and Scope Enforcement
     Then the fund scope for user "emp@example.com" should include "Main Fund"
     And the fund scope for user "emp@example.com" should not include "Second Fund"
 
+  @rack_test
   Scenario: Company admin scope returns all entity funds without access rights
     Given there is a user "email=admin@example.com" for the entity "name=Fund Entity"
     And the user "admin@example.com" has role "company_admin"
@@ -73,12 +79,14 @@ Feature: Access Rights - Policy and Scope Enforcement
   # Investor Policy - two-gate check (AccessRight AND approved InvestorAccess)
   # ---------------------------------------------------------------------------
 
+  @rack_test
   Scenario: Investor with access right but no InvestorAccess cannot access fund
     Given there is a user "email=lp@example.com" for the entity "name=Investor Firm"
     And the user "lp@example.com" has role "investor"
     And I grant "read" access to the fund for investor "Big LP"
     Then the user "lp@example.com" should be denied "show" on the fund
 
+  @rack_test
   Scenario: Investor with unapproved InvestorAccess and access right cannot access fund
     Given there is a user "email=lp@example.com" for the entity "name=Investor Firm"
     And the user "lp@example.com" has role "investor"
@@ -86,6 +94,7 @@ Feature: Access Rights - Policy and Scope Enforcement
     And there is an unapproved investor access for "lp@example.com" and investor "Big LP"
     Then the user "lp@example.com" should be denied "show" on the fund
 
+  @rack_test
   Scenario: Investor with approved InvestorAccess and access right can access fund
     Given there is a user "email=lp@example.com" for the entity "name=Investor Firm"
     And the user "lp@example.com" has role "investor"
@@ -94,12 +103,14 @@ Feature: Access Rights - Policy and Scope Enforcement
     Then the user "lp@example.com" should be allowed "show" on the fund
     And the user "lp@example.com" should be denied "update,destroy" on the fund
 
+  @rack_test
   Scenario: Investor with approved InvestorAccess but no access right cannot access fund
     Given there is a user "email=lp@example.com" for the entity "name=Investor Firm"
     And the user "lp@example.com" has role "investor"
     And there is an approved investor access for "lp@example.com" and investor "Big LP"
     Then the user "lp@example.com" should be denied "show" on the fund
 
+  @rack_test
   Scenario: Investor loses access when InvestorAccess is unapproved
     Given there is a user "email=lp@example.com" for the entity "name=Investor Firm"
     And the user "lp@example.com" has role "investor"
@@ -113,6 +124,7 @@ Feature: Access Rights - Policy and Scope Enforcement
   # Category-based access rights (access_to_category)
   # ---------------------------------------------------------------------------
 
+  @rack_test
   Scenario: Investor gains access via category-based access right
     Given there is a user "email=lp@example.com" for the entity "name=Investor Firm"
     And the user "lp@example.com" has role "investor"
@@ -121,6 +133,7 @@ Feature: Access Rights - Policy and Scope Enforcement
     And there is an approved investor access for "lp@example.com" and investor "Big LP"
     Then the user "lp@example.com" should be allowed "show" on the fund
 
+  @rack_test
   Scenario: Investor in a different category does not get category-based access
     Given there is a user "email=lp@example.com" for the entity "name=Investor Firm"
     And the user "lp@example.com" has role "investor"
@@ -129,6 +142,7 @@ Feature: Access Rights - Policy and Scope Enforcement
     And there is an approved investor access for "lp@example.com" and investor "Big LP"
     Then the user "lp@example.com" should be denied "show" on the fund
 
+  @rack_test
   Scenario: Category access right covers all investors in that category
     Given there is an entity "name=Investor Firm 2;entity_type=Investor"
     And there is an investor "investor_name=Small LP" for the entity "name=Fund Entity" with investor_entity "name=Investor Firm 2"
@@ -148,6 +162,7 @@ Feature: Access Rights - Policy and Scope Enforcement
   # Investor Scope (for_investor)
   # ---------------------------------------------------------------------------
 
+  @rack_test
   Scenario: Investor scope includes fund when both gates pass
     Given there is a user "email=lp@example.com" for the entity "name=Investor Firm"
     And the user "lp@example.com" has role "investor"
@@ -172,12 +187,14 @@ Feature: Access Rights - Policy and Scope Enforcement
   # Cross-entity isolation
   # ---------------------------------------------------------------------------
 
+  @rack_test
   Scenario: User from a different entity cannot access the fund
     Given there is an entity "name=Other Entity;entity_type=Investment Fund"
     And there is a user "email=outsider@example.com" for the entity "name=Other Entity"
     And the user "outsider@example.com" has role "employee"
     Then the user "outsider@example.com" should be denied "show,update,destroy" on the fund
 
+  @rack_test
   Scenario: Investor from a different fund entity cannot access another fund entity's fund
     Given there is an entity "name=Other Fund Entity;entity_type=Investment Fund"
     And there is a fund "name=Other Fund" for the entity "name=Other Fund Entity"
@@ -192,6 +209,7 @@ Feature: Access Rights - Policy and Scope Enforcement
   # Metadata restrictions
   # ---------------------------------------------------------------------------
 
+  @rack_test
   Scenario: Investor access right with ReadOnly metadata blocks update
     Given there is a user "email=lp@example.com" for the entity "name=Investor Firm"
     And the user "lp@example.com" has role "investor"
@@ -225,6 +243,7 @@ Feature: Access Rights - Policy and Scope Enforcement
   #      access right is looked at. The switch step sets these; see access_rights_cache_steps.rb.
   # ---------------------------------------------------------------------------
 
+  @rack_test
   Scenario: Advisor switched into entity with AR and approved InvestorAccess can access fund
     Given there is a user "email=advisor@example.com" for the entity "name=Advisor Firm"
     And the user "advisor@example.com" has role "investor_advisor"
@@ -233,6 +252,7 @@ Feature: Access Rights - Policy and Scope Enforcement
     And there is an approved investor access for "advisor@example.com" and investor "Big LP"
     Then the user "advisor@example.com" should be allowed "show" on the fund
 
+  @rack_test
   Scenario: Advisor switched into entity but no AR cannot access fund
     Given there is a user "email=advisor@example.com" for the entity "name=Advisor Firm"
     And the user "advisor@example.com" has role "investor_advisor"
@@ -240,6 +260,7 @@ Feature: Access Rights - Policy and Scope Enforcement
     And there is an approved investor access for "advisor@example.com" and investor "Big LP"
     Then the user "advisor@example.com" should be denied "show" on the fund
 
+  @rack_test
   Scenario: Advisor switched into entity cannot access a fund they have no access right for
     # permissioned_investor_advisor? is a single gate: requires only a user_id AR, NOT InvestorAccess.
     # Denial is caused by the missing AR, not by InvestorAccess absence.
@@ -249,6 +270,7 @@ Feature: Access Rights - Policy and Scope Enforcement
     # No AR exists for this advisor on Main Fund
     Then the user "advisor@example.com" should be denied "show" on the fund
 
+  @rack_test
   Scenario: Advisor with AR on one fund is denied on another fund in the same entity without AR
     # AR is scoped to a specific fund; switching into an entity grants NO blanket access to all its funds.
     Given there is a user "email=advisor@example.com" for the entity "name=Advisor Firm"
@@ -258,6 +280,7 @@ Feature: Access Rights - Policy and Scope Enforcement
     And there is a fund "name=Second Fund" for the entity "name=Fund Entity"
     Then the user "advisor@example.com" should be denied "show" on the fund
 
+  @rack_test
   Scenario: Advisor with full CRUD AR can show and mutate fund
     Given there is a user "email=advisor@example.com" for the entity "name=Advisor Firm"
     And the user "advisor@example.com" has role "investor_advisor"
@@ -266,6 +289,7 @@ Feature: Access Rights - Policy and Scope Enforcement
     And there is an approved investor access for "advisor@example.com" and investor "Big LP"
     Then the user "advisor@example.com" should be allowed "show,update,destroy" on the fund
 
+  @rack_test
   Scenario: Advisor with read-only AR cannot mutate fund
     Given there is a user "email=advisor@example.com" for the entity "name=Advisor Firm"
     And the user "advisor@example.com" has role "investor_advisor"
@@ -275,6 +299,7 @@ Feature: Access Rights - Policy and Scope Enforcement
     Then the user "advisor@example.com" should be allowed "show" on the fund
     And the user "advisor@example.com" should be denied "update,destroy" on the fund
 
+  @rack_test
   Scenario: Advisor not switched (home entity) cannot access advised entity's fund
     Given there is a user "email=advisor@example.com" for the entity "name=Advisor Firm"
     And the user "advisor@example.com" has role "investor_advisor"
@@ -284,6 +309,7 @@ Feature: Access Rights - Policy and Scope Enforcement
     # User has NOT switched — their entity_id is still Investor Firm
     Then the user "advisor@example.com" should be denied "show" on the fund
 
+  @rack_test
   Scenario: Advisor scope includes fund after switch
     Given there is a user "email=advisor@example.com" for the entity "name=Advisor Firm"
     And the user "advisor@example.com" has role "investor_advisor"
@@ -304,6 +330,7 @@ Feature: Access Rights - Policy and Scope Enforcement
   # Denied access: employee trying to access as investor and vice versa
   # ---------------------------------------------------------------------------
 
+  @rack_test
   Scenario: Employee with AR cannot access another entity's fund as if they were an investor
     Given there is an entity "name=Other Fund Entity;entity_type=Investment Fund"
     And there is a fund "name=Other Fund" for the entity "name=Other Fund Entity"
@@ -312,6 +339,7 @@ Feature: Access Rights - Policy and Scope Enforcement
     When I grant "read" access to the fund for user "emp@example.com"
     Then the user "emp@example.com" should be denied "show" on "Other Fund"
 
+  @rack_test
   Scenario: Investor with AR on their fund cannot access an unrelated fund
     Given there is an entity "name=Other Fund Entity;entity_type=Investment Fund"
     And there is a fund "name=Other Fund" for the entity "name=Other Fund Entity"
@@ -326,6 +354,7 @@ Feature: Access Rights - Policy and Scope Enforcement
   # Access right on capital commitment (child record inherits fund AR)
   # ---------------------------------------------------------------------------
 
+  @rack_test
   Scenario: Employee with fund access right can access capital commitments
     Given there is a user "email=emp@example.com" for the entity "name=Fund Entity"
     And the user "emp@example.com" has role "employee"
@@ -333,6 +362,7 @@ Feature: Access Rights - Policy and Scope Enforcement
     When I grant "read" access to the fund for user "emp@example.com"
     Then the user "emp@example.com" should be allowed "show" on the capital commitment
 
+  @rack_test
   Scenario: Investor with fund access and approved InvestorAccess can access their commitment
     Given there is a user "email=lp@example.com" for the entity "name=Investor Firm"
     And the user "lp@example.com" has role "investor"
@@ -341,6 +371,7 @@ Feature: Access Rights - Policy and Scope Enforcement
     And there is an approved investor access for "lp@example.com" and investor "Big LP"
     Then the user "lp@example.com" should be allowed "show" on the capital commitment
 
+  @rack_test
   Scenario: Investor cannot access another investor's capital commitment
     Given there is an entity "name=Other Investor Firm;entity_type=Investor"
     And there is an investor "investor_name=Other LP" for the entity "name=Fund Entity" with investor_entity "name=Other Investor Firm"

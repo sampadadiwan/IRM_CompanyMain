@@ -1,0 +1,11 @@
+// Icons inside form labels (the ⓘ tooltip icon, field icons) sat a couple of pixels low against the
+// label text across the app's forms: the Tabler webfont centres its glyph lower than the label font's
+// cap height. Lift them 0.2em (measured: 0 and 0.1em sit low, 0.3em sits high). Position-only — no layout change.
+// Button-style labels (.btn toggles) centre their own icons, and a whole card used as a label (a
+// selectable card, e.g. New Fund's type cards) lays out its own icons, so both are left alone.
+label:not(.btn, .card) .ti,
+.form-label .ti {
+  position: relative;
+  top: -0.2em;
+  line-height: 1;
+}

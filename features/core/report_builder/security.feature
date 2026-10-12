@@ -1,3 +1,4 @@
+@rack_test
 Feature: Report Builder security — injection prevention and allow-listing
 
   Background:

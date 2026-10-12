@@ -57,6 +57,7 @@ Feature: AI-drafted mapping from a fund's existing statements
     And the "profit_and_loss" statement is named "Statement of Operations"
 
   # E18 — Edge case: an entry the AI left unused is listed as a mapping gap; placing it from the review fixes the gap
+  @rack_test
   Scenario: Unused entry placed from the review
     When Meera asks for a draft from it as at "2026-09-30" with the P&L from "2026-01-01"
     Then the draft lists "Tax" "TDS" as not used
@@ -70,6 +71,7 @@ Feature: AI-drafted mapping from a fund's existing statements
     Then the draft dropped "Non Deal Expense" "Audit Fee" because "not an entry of this fund"
 
   # E19 — Edge case: discarding a ready draft leaves the mapping untouched
+  @rack_test
   Scenario: Discard draft
     When Meera asks for a draft from it as at "2026-09-30" with the P&L from "2026-01-01"
     And Meera discards the draft
@@ -77,6 +79,7 @@ Feature: AI-drafted mapping from a fund's existing statements
     And the fund has 0 statement accounts
 
   # E20 — Edge case: against an existing mapping, lines are tagged Same / New and approval updates by name
+  @rack_test
   Scenario: Draft against an existing mapping
     Given FinancialStatementSetup has run for the fund
     And the fund has statement accounts:
@@ -89,30 +92,35 @@ Feature: AI-drafted mapping from a fund's existing statements
     Then the fund has 2 statement accounts
 
   # X7 — Error case: a Word file is refused
+  @rack_test
   Scenario: Unsupported file
     Given a Word file "statements.docx"
     When Meera asks for a draft from it as at "2026-09-30" with the P&L from "2026-01-01"
     Then the upload is refused with "Upload a PDF or Excel file"
 
   # X12 — Error case: the AI call fails; the draft says why and offers Retry
+  @rack_test
   Scenario: AI failure
     Given the AI is unavailable
     When Meera asks for a draft from it as at "2026-09-30" with the P&L from "2026-01-01"
     Then the draft fails with "LLM unavailable"
 
   # X18 — Error case: a scanned PDF with no text fails with a clear message
+  @rack_test
   Scenario: Scanned PDF
     Given a scanned PDF "scan.pdf" with no text
     When Meera asks for a draft from it as at "2026-09-30" with the P&L from "2026-01-01"
     Then the draft fails with "couldn't read any text from this file"
 
   # E32 — Edge case: a statement from another period still maps every entry it names (the entry list covers everything up to today)
+  @rack_test
   Scenario: Statement from another period
     When Meera asks for a draft from it as at "2026-09-30" with the P&L from "2026-01-01"
     Then the draft line "Professional fees" is fed by "Non Deal Expense · Audit Fees" and "Non Deal Expense · Legal Fees"
     And the draft did not drop "Non Deal Expense" "Legal Fees"
 
   # E33 — Edge case: an "Accumulated net result" line nothing feeds becomes the calculated net result row
+  @rack_test
   Scenario: Accumulated net result becomes the net result row
     When Meera asks for a draft from it as at "2026-09-30" with the P&L from "2026-01-01"
     Then the draft line "Accumulated net result" is a "net_result" row

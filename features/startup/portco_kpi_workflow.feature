@@ -22,7 +22,7 @@ Feature: Portco KPI Self-Reporting Workflow
   # ─────────────────────────────────────────────────────────
   # 2. Send notification → link_sent + email with expiry date
   # ─────────────────────────────────────────────────────────
-  @kpi_workflow @kpi_notification
+  @kpi_workflow @kpi_notification @rack_test
   Scenario: Sending a notification advances status to link_sent and email shows expiry date
     Given I am logged in as the fund admin
     And a KPI report shell exists for "TestStartup" as of "2025-03-31"
@@ -49,7 +49,7 @@ Feature: Portco KPI Self-Reporting Workflow
   # ─────────────────────────────────────────────────────────
   # 4. Portco pending dashboard
   # ─────────────────────────────────────────────────────────
-  @kpi_workflow @kpi_dashboard
+  @kpi_workflow @kpi_dashboard @rack_test
   Scenario: Portco pending dashboard shows outstanding reports
     Given a KPI report shell exists for "TestStartup" as of "2025-03-31" with status "link_sent"
     And I am logged in as the portco user
@@ -98,7 +98,7 @@ Feature: Portco KPI Self-Reporting Workflow
   # ─────────────────────────────────────────────────────────
   # 7. Submitted report is locked for portco
   # ─────────────────────────────────────────────────────────
-  @kpi_workflow @kpi_locked
+  @kpi_workflow @kpi_locked @rack_test
   Scenario: Submitted report shows locked UI for portco user
     Given a KPI report shell exists for "TestStartup" as of "2025-03-31" with status "submitted"
     And I am logged in as the portco user
@@ -108,7 +108,7 @@ Feature: Portco KPI Self-Reporting Workflow
   # ─────────────────────────────────────────────────────────
   # 8. Bulk send skips already-submitted portcos
   # ─────────────────────────────────────────────────────────
-  @kpi_workflow @kpi_bulk_send
+  @kpi_workflow @kpi_bulk_send @rack_test
   Scenario: Bulk send notification skips already-submitted portcos
     Given a KPI report shell exists for "TestStartup" as of "2025-03-31" with status "submitted"
     And there is an existing portfolio company "name=OtherStartup;category=Portfolio Company"
@@ -131,7 +131,7 @@ Feature: Portco KPI Self-Reporting Workflow
   # ─────────────────────────────────────────────────────────
   # 10. Fund admin approves all KPIs and marks report as reviewed from show page
   # ─────────────────────────────────────────────────────────
-  @kpi_workflow @kpi_reviewed
+  @kpi_workflow @kpi_reviewed @rack_test
   Scenario: Fund admin sees a "View Including Staged" link on a submitted report show page
     Given a KPI report shell exists for "TestStartup" as of "2025-03-31" with status "submitted"
     And I am logged in as the fund admin
@@ -141,7 +141,7 @@ Feature: Portco KPI Self-Reporting Workflow
   # ─────────────────────────────────────────────────────────
   # 11. Designated KPI contact via user tag_list
   # ─────────────────────────────────────────────────────────
-  @kpi_workflow @kpi_contact
+  @kpi_workflow @kpi_contact @rack_test
   Scenario: Only users tagged "Kpi" receive the reminder email when the tag is set
     Given a KPI report shell exists for "TestStartup" as of "2025-03-31"
     And the portfolio company has a second approved portco user "first_name=OtherContact"
@@ -154,7 +154,7 @@ Feature: Portco KPI Self-Reporting Workflow
   # ─────────────────────────────────────────────────────────
   # 12. Expired magic link → friendly redirect
   # ─────────────────────────────────────────────────────────
-  @kpi_workflow @kpi_expired_link
+  @kpi_workflow @kpi_expired_link @rack_test
   Scenario: Visiting an expired magic link shows a friendly error instead of crashing
     Given a KPI report shell exists for "TestStartup" as of "2025-03-31"
     When I visit the KPI report edit page with an expired signed link
@@ -220,7 +220,7 @@ Feature: Portco KPI Self-Reporting Workflow
   # ─────────────────────────────────────────────────────────
   # 16. Re-send notification — idempotency (Manual QA 1.6)
   # ─────────────────────────────────────────────────────────
-  @kpi_workflow @kpi_notification
+  @kpi_workflow @kpi_notification @rack_test
   Scenario: Re-sending a notification does not create a duplicate shell or regress the status
     Given I am logged in as the fund admin
     And a KPI report shell exists for "TestStartup" as of "2025-03-31" with status "link_sent"
@@ -290,7 +290,7 @@ Feature: Portco KPI Self-Reporting Workflow
   # ─────────────────────────────────────────────────────────
   # 21. Double-submit guard — magic link shows locked state (Manual QA 6.1)
   # ─────────────────────────────────────────────────────────
-  @kpi_workflow @kpi_locked @kpi_magic_link
+  @kpi_workflow @kpi_locked @kpi_magic_link @rack_test
   Scenario: Opening a submitted report via magic link shows the locked state
     Given a KPI report shell exists for "TestStartup" as of "2025-03-31" with status "submitted"
     When I open the KPI report edit page as the portco user via a valid signed link
@@ -299,7 +299,7 @@ Feature: Portco KPI Self-Reporting Workflow
   # ─────────────────────────────────────────────────────────
   # 22. Double-submit guard — no second fund notification (Manual QA 6.2)
   # ─────────────────────────────────────────────────────────
-  @kpi_workflow @kpi_submit
+  @kpi_workflow @kpi_submit @rack_test
   Scenario: A second submission attempt does not re-notify the fund admin
     Given a KPI report shell exists for "TestStartup" as of "2025-03-31" with status "submitted"
     And I am logged in as the portco user
@@ -330,7 +330,7 @@ Feature: Portco KPI Self-Reporting Workflow
   # ─────────────────────────────────────────────────────────
   # 26. Tampered (non-expired) magic link → friendly error (Manual QA 8.1)
   # ─────────────────────────────────────────────────────────
-  @kpi_workflow @kpi_expired_link
+  @kpi_workflow @kpi_expired_link @rack_test
   Scenario: Visiting a tampered magic link shows a friendly error instead of crashing
     Given a KPI report shell exists for "TestStartup" as of "2025-03-31"
     When I visit the KPI report edit page with a tampered signed link
@@ -350,7 +350,7 @@ Feature: Portco KPI Self-Reporting Workflow
   # ─────────────────────────────────────────────────────────
   # 28. Portco pending dashboard — company isolation (Manual QA 11.4)
   # ─────────────────────────────────────────────────────────
-  @kpi_workflow @kpi_dashboard
+  @kpi_workflow @kpi_dashboard @rack_test
   Scenario: Portco pending dashboard shows only the logged-in user's own company reports
     Given a KPI report shell exists for "TestStartup" as of "2025-03-31" with status "link_sent"
     And there is an existing portfolio company "name=OtherStartup;category=Portfolio Company"
@@ -364,7 +364,7 @@ Feature: Portco KPI Self-Reporting Workflow
   # ─────────────────────────────────────────────────────────
   # 29. Non-KPI notifications unaffected by Kpi tag (Manual QA 12)
   # ─────────────────────────────────────────────────────────
-  @kpi_workflow @kpi_contact
+  @kpi_workflow @kpi_contact @rack_test
   Scenario: Non-KPI notifications reach all approved users regardless of the Kpi tag
     Given the portfolio company has a second approved portco user "first_name=OtherContact"
     And the user "PortCoUser" has the tag "Kpi"
@@ -373,7 +373,7 @@ Feature: Portco KPI Self-Reporting Workflow
   # ─────────────────────────────────────────────────────────
   # 30. link_sent_at timestamp is set when notification is sent (Manual QA 1.4)
   # ─────────────────────────────────────────────────────────
-  @kpi_workflow @kpi_notification
+  @kpi_workflow @kpi_notification @rack_test
   Scenario: Sending a notification sets the link_sent_at timestamp on the report
     Given I am logged in as the fund admin
     And a KPI report shell exists for "TestStartup" as of "2025-03-31"
@@ -448,7 +448,7 @@ Feature: Portco KPI Self-Reporting Workflow
   # ─────────────────────────────────────────────────────────
   # 36. Clicking View Including Staged navigates to filtered grid view (Manual QA 7.4)
   # ─────────────────────────────────────────────────────────
-  @kpi_workflow @kpi_reviewed
+  @kpi_workflow @kpi_reviewed @rack_test
   Scenario: Clicking View Including Staged navigates to the grid view filtered to the portco with staged data visible
     Given a KPI report shell exists for "TestStartup" as of "2025-03-31" with status "submitted"
     And I am logged in as the fund admin
@@ -459,7 +459,7 @@ Feature: Portco KPI Self-Reporting Workflow
   # ─────────────────────────────────────────────────────────
   # 37. Fund admin approves all staged KPIs via Approve All (Manual QA 7.5)
   # ─────────────────────────────────────────────────────────
-  @kpi_workflow @kpi_reviewed
+  @kpi_workflow @kpi_reviewed @rack_test
   Scenario: Fund admin can approve all staged KPIs and the data is promoted to approved
     Given a KPI report shell exists for "TestStartup" as of "2025-03-31" with status "submitted"
     And the KPI report has an unapproved KPI
@@ -470,7 +470,7 @@ Feature: Portco KPI Self-Reporting Workflow
   # ─────────────────────────────────────────────────────────
   # 38. Periodic reminder sends for link_sent and draft_saved (Manual QA 8, row 7.3)
   # ─────────────────────────────────────────────────────────
-  @kpi_workflow @kpi_periodic
+  @kpi_workflow @kpi_periodic @rack_test
   Scenario Outline: Periodic reminder job sends a reminder to portcos that have not yet submitted
     Given a KPI report shell exists for "TestStartup" as of "2025-03-31" with status "<status>"
     When the periodic KPI reminder job runs
@@ -503,7 +503,7 @@ Feature: Portco KPI Self-Reporting Workflow
   # ─────────────────────────────────────────────────────────
   # 39. Removing the Kpi tag means all approved users receive the next reminder (Manual QA 9.3)
   # ─────────────────────────────────────────────────────────
-  @kpi_workflow @kpi_contact
+  @kpi_workflow @kpi_contact @rack_test
   Scenario: Removing the Kpi tag from all users means all approved users receive the next reminder
     Given a KPI report shell exists for "TestStartup" as of "2025-03-31"
     And the portfolio company has a second approved portco user "first_name=OtherContact"
@@ -584,7 +584,7 @@ Feature: Portco KPI Self-Reporting Workflow
     And the fund admin receives a submission notification email
     And the KPI report has an unapproved KPI "Revenue" as of "2025-03-31" with value 600
 
-  @kpi_workflow @kpi_import_lifecycle
+  @kpi_workflow @kpi_import_lifecycle @rack_test
   Scenario: A submission whose import fails after the gate is reopened for the portco and the fund is told why
     Given a KPI report shell exists for "TestStartup" as of "2025-03-31" with status "link_sent"
     And the KPI report has a KPIs workbook attached that is missing the requested period
@@ -622,7 +622,7 @@ Feature: Portco KPI Self-Reporting Workflow
   # ─────────────────────────────────────────────────────────
   # 46. Template download (§3.4 P)
   # ─────────────────────────────────────────────────────────
-  @kpi_workflow @kpi_template @kpi_magic_link
+  @kpi_workflow @kpi_template @kpi_magic_link @rack_test
   Scenario: The portco can download a pre-filled template that the importer reads back exactly
     Given a KPI report shell exists for "TestStartup" as of "2025-03-31" with status "link_sent"
     And the target KPIs are "Revenue, EBITDA"
@@ -655,7 +655,7 @@ Feature: Portco KPI Self-Reporting Workflow
   # ─────────────────────────────────────────────────────────
   # 51. The staged review has no empty KPIs chart (the chart plots approved values only)
   # ─────────────────────────────────────────────────────────
-  @kpi_workflow @kpi_reviewed
+  @kpi_workflow @kpi_reviewed @rack_test
   Scenario: The grid's KPIs chart is hidden while reviewing staged values and shown otherwise
     Given a KPI report shell exists for "TestStartup" as of "2025-03-31" with status "submitted"
     And the KPI report has an unapproved KPI

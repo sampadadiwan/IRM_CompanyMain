@@ -93,7 +93,7 @@ Scenario: Reminder and payment notifications are blocked before the capital call
   Then the capital call reminder should be blocked because the call is not approved
   Then the capital call payment notification should be blocked because the call is not approved
 
-@import
+@import @rack_test
 Scenario Outline: Send Call Notification access on a remittance depends only on employee permission, not the call's approval
   Given there is a user "" for an entity "entity_type=Investment Fund"
   Given the user has role "<role>"

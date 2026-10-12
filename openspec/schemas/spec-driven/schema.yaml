@@ -266,13 +266,31 @@ artifacts:
           for EVERY new or changed column and index), and changes to existing models as bullets.
         - **Component contracts** (CORE): From → To | Contract | Direction rule, one row per arrow
           in the Part 2 picture.
+        - **Notifications** (CORE, never skipped): every email, in-app alert or WhatsApp message the
+          change sends, adds, changes or suppresses, for BOTH audiences — investors and internal
+          users. One table: Notification | Trigger | Recipients | Channel | Customisable | Default |
+          Sent once?. Recipients are named roles (approver role, the investor's "Managed by" RM,
+          User::NOTIFICATION_TAGS tags), never "everyone with access"; investor advisors receive a
+          notification only when they are approved to see that record (Investor#notification_users(record)).
+          Customisable = can a fund/entity override it with a CustomNotification (investor emails
+          normally yes, internal alerts no). Default = on/off, and where it is switched. Sent once =
+          how re-runs and retries are kept from re-sending. If the change truly sends nothing, keep
+          the heading and say why after considering both audiences — a bare "N/A" is not enough.
         - **Cross-cutting concerns**: Transactions and queries (CONDITIONAL); Exception handling
           and monitoring (CONDITIONAL, tied to `Noticed`); Performance and security (CORE).
         - **Worked examples** (CORE): Happy Path (H1..), Edge Cases (E1..), Error Cases (X1..)
           tables with columns # | Scenario | Given | When | Then | Spec scenario | Feature, using
           real-ish data from a shared-setup table. Every spec scenario must appear in the Spec
           scenario column of at least one row. Each row becomes exactly one Cucumber scenario.
+          **No H/E/X row without a Cucumber scenario, and no scenario without an H/E/X row.**
+          The Edge Cases and Error Cases tables are EXHAUSTIVE, not illustrative: for every box,
+          walk boundaries and exact-equal thresholds, zero / blank / negative values, several
+          lots / classes / folios / records, rounding, dates on and either side of a cut-off or
+          month/year end, out-of-order state transitions, re-runs and double clicks, permissions and
+          direct requests that bypass the UI, and the closed/legacy path that must stay unchanged.
         - **Testing** (CORE, 2-4 lines): Cucumber only. Shared setup and reused vs new step files.
+          State the traceability rule: every scenario carries a comment naming its ID and path, and
+          code comments name the IDs of the paths they implement (see the tasks rules).
         - **Risks and open questions** (CORE): risk → mitigation bullets; open questions only if
           genuinely deferrable, otherwise resolve them with the user now.
         - **FAQ**.
@@ -411,6 +429,22 @@ artifacts:
       on a deployed build and record the sign-off (that task is for QA, not for the apply agent).
       Each phase's closing feature task names the worked-example IDs it covers (H = happy path, E = edge case,
       X = error case), taken from the Feature column of design.md's Worked examples tables (Part 4).
+
+      **Traceability - required for every change (feature files AND code):**
+      - Every H/E/X worked example has exactly one Cucumber scenario, with a comment line directly above
+        it naming the ID and the path it covers, in plain words:
+          `# H7 — Happy path: a ₹5 Cr subscription at ₹9,980.69 allots 5,009.6736 units`
+          `# E16 — Edge case: units in a soft lock-up are redeemed, with the 2% fee on the locked units only`
+          `# X14 — Error case: units still in a hard lock-up on the dealing date are refused; the message names the unlock date`
+        The feature file header links to design.md#worked-examples.
+      - Code carries the same IDs: each service, job, check and each significant branch (guard,
+        refusal, skip, rounding, fallback) has a comment naming the IDs whose path runs through it,
+        e.g. `# X14 hard lock-up refuses; E16 soft lock-up records the fee`, so a reader can go
+        code → ID → scenario and back.
+      - The last phase includes a coverage task: list every H/E/X ID in design.md and every ID
+        comment in features/ and confirm the two sets are equal (no ID without a scenario, no
+        scenario without an ID); an edge case found during apply gets a new ID row in design.md
+        AND a scenario, never a scenario alone.
     requires:
       - specs
       - design

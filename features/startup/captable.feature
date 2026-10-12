@@ -1,3 +1,4 @@
+@rack_test
 Feature: Cap Table Generation
   As a startup owner
   I want to see my cap table and ownership trends

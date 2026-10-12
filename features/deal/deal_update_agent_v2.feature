@@ -15,6 +15,7 @@ Background:
 
   # --- Happy Paths ---
 
+  @rack_test
   Scenario: Authorized user creates a meeting note via email
     Given the v2 LLM will parse the email as a meeting note for "Sequoia Capital"
     When a v2 SendGrid webhook arrives with:
@@ -30,6 +31,7 @@ Background:
     And the v2 AgentIngestedEmail status should be "filed"
     And a v2 confirmation email should be sent to the user
 
+  @rack_test
   Scenario: Authorized user creates a task via email
     Given the v2 LLM will parse the email as a task for "Sequoia Capital" due "2026-09-01"
     When a v2 SendGrid webhook arrives with:
@@ -43,6 +45,7 @@ Background:
     And the v2 AgentIngestedEmail status should be "filed"
     And a v2 confirmation email should be sent to the user
 
+  @rack_test
   Scenario: Second authorized user sends email to same deal address
     Given a v2 user "fm2" exists with role "employee" in the entity
     And the second user has deal access to the deal
@@ -107,6 +110,7 @@ Background:
 
   # --- Warehouse Scenarios ---
 
+  @rack_test
   Scenario: Unknown stakeholder is warehoused with notification email
     Given the v2 LLM will parse the email as a meeting note for "Goldman Sachs"
     When a v2 SendGrid webhook arrives with:
@@ -119,6 +123,7 @@ Background:
     And the v2 AgentIngestedEmail status should be "warehoused"
     And a v2 warehoused email should be sent with reason "unmatched_stakeholder"
 
+  @rack_test
   Scenario: Unknown intent is warehoused with notification email
     Given the v2 LLM will parse the email with intent "unknown"
     When a v2 SendGrid webhook arrives with:
@@ -133,6 +138,7 @@ Background:
 
   # --- Warehouse Resolution ---
 
+  @rack_test
   Scenario: Manually file a warehoused item as a meeting note
     Given a v2 warehoused item exists for the deal with intent "meeting_note"
     When I v2 resolve the warehouse item as "filed" for investor "Sequoia Capital"
@@ -140,6 +146,7 @@ Background:
     And the v2 WarehouseItem should be resolved as "filed"
     And the v2 AgentIngestedEmail status should be "filed"
 
+  @rack_test
   Scenario: Discard a warehoused item
     Given a v2 warehoused item exists for the deal with intent "meeting_note"
     When I v2 resolve the warehouse item as "discarded"
@@ -148,9 +155,11 @@ Background:
 
   # --- Address Management ---
 
+  @rack_test
   Scenario: Deal address defaults to deal ID
     Then the deal ingest address should be the deal ID
 
+  @rack_test
   Scenario: Address is the same for all users on the deal
     Given a v2 user "fm2" exists with role "employee" in the entity
     And the second user has deal access to the deal
@@ -188,6 +197,7 @@ Background:
 
   # --- Signature/Reply Stripping (P2-2) ---
 
+  @rack_test
   Scenario: Email signature is stripped before parsing
     Given the v2 LLM will parse the email as a meeting note for "Sequoia Capital"
     When a v2 SendGrid webhook arrives with:
@@ -198,6 +208,7 @@ Background:
     And the v2 job is performed
     Then the v2 LLM should have received body "Great call today"
 
+  @rack_test
   Scenario: Quoted reply chain is stripped before parsing
     Given the v2 LLM will parse the email as a meeting note for "Sequoia Capital"
     When a v2 SendGrid webhook arrives with:
@@ -210,6 +221,7 @@ Background:
 
   # --- Attachments (P2-3) ---
 
+  @rack_test
   Scenario: Task email with attachment creates Task with Document
     Given the v2 LLM will parse the email as a task for "Sequoia Capital" due "2026-09-01"
     When a v2 SendGrid webhook arrives with attachment "investors.xlsx":
@@ -221,6 +233,7 @@ Background:
     Then a v2 Task should exist on "Sequoia Capital" with due date "2026-09-01"
     And the v2 Task should have 1 attached document named "investors.xlsx"
 
+  @rack_test
   Scenario: Task email with no attachment creates Task without Documents
     Given the v2 LLM will parse the email as a task for "Sequoia Capital" due "2026-09-01"
     When a v2 SendGrid webhook arrives with:
@@ -232,6 +245,7 @@ Background:
     Then a v2 Task should exist on "Sequoia Capital" with due date "2026-09-01"
     And the v2 Task should have 0 attached documents
 
+  @rack_test
   Scenario: Meeting note email with attachment ignores attachment
     Given the v2 LLM will parse the email as a meeting note for "Sequoia Capital"
     When a v2 SendGrid webhook arrives with attachment "investors.xlsx":
@@ -245,6 +259,7 @@ Background:
 
       # --- Assignee Parsing (P2-5) ---
 
+  @rack_test
   Scenario: Task with @name assigns to matching team member
     Given a v2 user "neil" exists with role "employee" in the entity
     And the "neil" user has first name "Neil"
@@ -258,6 +273,7 @@ Background:
     And the v2 job is performed
     Then a v2 Task should exist on "Sequoia Capital" assigned to "neil"
 
+  @rack_test
   Scenario: Task with natural language assigns to matching team member
     Given a v2 user "priya" exists with role "employee" in the entity
     And the "priya" user has first name "Priya"
@@ -271,6 +287,7 @@ Background:
     And the v2 job is performed
     Then a v2 Task should exist on "Sequoia Capital" assigned to "priya"
 
+  @rack_test
   Scenario: Task with unmatched assignee falls back to sender
     And the v2 LLM will parse the email as a task for "Sequoia Capital" due "2026-09-01" assigned to "Unknown Person"
     When a v2 SendGrid webhook arrives with:

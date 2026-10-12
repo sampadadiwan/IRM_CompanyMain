@@ -163,6 +163,9 @@ class SoaGenerator
     }
 
     add_fund_ratios_context(@context, capital_commitment, start_date, end_date)
+    # Evergreen funds: units, NAV and order activity for the period (open-ended-funds B8)
+    # Decorated, so templates can format them: format_4_closing_units, money_closing_value (evergreen-folio-soa ⑤)
+    @context[:evergreen] = EvergreenStatement.new(capital_commitment, start_date, end_date).template_context if capital_commitment.fund.evergreen?
 
     # This is only for dumping keys for debugging inside the template
     @context.store :context, DocGenContext.new(@context)

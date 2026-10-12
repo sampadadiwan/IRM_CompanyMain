@@ -12,6 +12,7 @@ Feature: Master Fund Portfolio Access
   # ---------------------------------------------------------------------------
   # SCENARIO 1: Investor sees master fund PIs via feeder fund access
   # ---------------------------------------------------------------------------
+  @rack_test
   Scenario: Investor with feeder fund access sees master fund PIs when show_portfolios is true
     Given there is a fund "name=Master Growth Fund;show_portfolios=true" for the entity
     And the current fund is the master fund
@@ -24,8 +25,7 @@ Feature: Master Fund Portfolio Access
     And another user is "yes" investor access to the fund
     And the user has curr role "investor"
     And I log out
-    And I am at the login page
-    When I fill and submit the login page
+    And I am signed in as the current user
 
     When I view the master fund's portfolio investments
     Then I should see "AcmeCorp"
@@ -45,8 +45,7 @@ Feature: Master Fund Portfolio Access
     And another user is "yes" investor access to the fund
     And the user has curr role "investor"
     And I log out
-    And I am at the login page
-    When I fill and submit the login page
+    And I am signed in as the current user
 
     When I view the master fund's portfolio investments
     Then I should not see "AcmeCorp"
@@ -54,6 +53,7 @@ Feature: Master Fund Portfolio Access
   # ---------------------------------------------------------------------------
   # SCENARIO 3: Employee always sees master fund PIs (baseline)
   # ---------------------------------------------------------------------------
+  @rack_test
   Scenario: Employee sees master fund PIs directly (existing behavior unchanged)
     Given there is a fund "name=Master Growth Fund;show_portfolios=true" for the entity
     And the current fund is the master fund
@@ -80,8 +80,7 @@ Feature: Master Fund Portfolio Access
     And another user is "no" investor access to the fund
     And the user has curr role "investor"
     And I log out
-    And I am at the login page
-    When I fill and submit the login page
+    And I am signed in as the current user
 
     When I view the master fund's portfolio investments
     Then I should not see "AcmeCorp"

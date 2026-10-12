@@ -1,0 +1,6 @@
+<%# Order journey (US-14): the shared journey card. Rendered by Evergreen::OrdersController#show and by
+    WorkflowInstancesController / DealingOrdersController#journey by convention ("dealing_orders/journey").
+    Worked examples H12–H15 — openspec/changes/open-ended-funds/design.md#worked-examples %>
+<%= render "workflow_instances/journey_panel",
+           record:, journey:, instance: local_assigns[:instance], frame_id: "dealing_order_journey", noun: "order",
+           warnings: -> { [] }, warning_tip: nil %>

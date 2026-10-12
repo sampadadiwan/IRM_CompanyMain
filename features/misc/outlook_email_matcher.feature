@@ -11,11 +11,13 @@ Feature: Mail add-in matching and filing
 
   # ---------------------------------------------------------------- matching
 
+  @rack_test
   Scenario: Matching a single investor by from_email
     When I match an email from "john@example.com"
     Then the match result should be "single"
     And the matched investor should be that investor
 
+  @rack_test
   Scenario: No match found
     When I match an email from "unknown@example.org"
     Then the match result should be "none"
@@ -27,6 +29,7 @@ Feature: Mail add-in matching and filing
   # Driven through the API because the matcher has no to_emails/cc_emails parameters at
   # all now; the clients still send them (they are stored on the filed record), so what is
   # worth asserting is that the endpoint accepts them and they change nothing.
+  @rack_test
   Scenario: An investor in CC is not matched
     Given another investor exists in that fund
     And that other investor has primary_email "contact@jane.com"
@@ -37,6 +40,7 @@ Feature: Mail add-in matching and filing
 
   # Outbound mail: the fund manager is the sender and the investor only appears in To.
   # Deliberately unmatched — the user selects the record instead.
+  @rack_test
   Scenario: An investor addressed in To on outbound mail is not matched
     Given I have a mail add-in token
     When I call the mail API match endpoint for "manager@fund.com" with to "john@example.com"
@@ -46,6 +50,7 @@ Feature: Mail add-in matching and filing
   # An advisor or family-office contact can hold approved access to several records. The
   # sender is unambiguous but the target is not, so every record they act for is offered
   # and the user picks — never a silent guess at one of them.
+  @rack_test
   Scenario: A sender with access to several investors returns all of them
     Given another investor exists in that fund
     And an approved investor access exists for "john@example.com" for that other investor
@@ -57,6 +62,7 @@ Feature: Mail add-in matching and filing
   # Found on the first real mailbox test: an investor was registered against the tester's
   # own Gmail address. The matcher dropped only user.email (the CapHive login), which is a
   # different string from the mail account, so the user's own address still matched.
+  @rack_test
   Scenario: An investor registered against the user's own mailbox address is not matched
     Given another investor exists in that fund
     And that other investor has primary_email "me@personal.example"
@@ -64,6 +70,7 @@ Feature: Mail add-in matching and filing
     Then the match result should be "none"
 
   # The same address must still match when somebody else's mailbox is being read.
+  @rack_test
   Scenario: That address still matches when it is not the reader's own
     Given another investor exists in that fund
     And that other investor has primary_email "me@personal.example"
@@ -72,6 +79,7 @@ Feature: Mail add-in matching and filing
     And the matched investor should be that other investor
 
   # A shared generic mail host says nothing about who the counterparty is.
+  @rack_test
   Scenario: Generic sender domains do not match on domain alone
     Given another investor exists in that fund
     And that other investor has primary_email "someone@gmail.com"
@@ -80,15 +88,18 @@ Feature: Mail add-in matching and filing
 
   # ---------------------------------------------------------------- API
 
+  @rack_test
   Scenario: API rejects a request with no bearer token
     When I call the mail API match endpoint without a token
     Then the mail API response status should be 401
 
+  @rack_test
   Scenario: API rejects a request with an invalid bearer token
     Given I have an invalid mail add-in token
     When I call the mail API match endpoint for "john@example.com"
     Then the mail API response status should be 401
 
+  @rack_test
   Scenario: API returns the matched investor and why it matched
     Given I have a mail add-in token
     When I call the mail API match endpoint for "john@example.com"
@@ -97,6 +108,7 @@ Feature: Mail add-in matching and filing
     And the mail API candidates should include that investor
     And the mail API candidate reason should be "contact"
 
+  @rack_test
   Scenario: API files an email against the investor
     Given I have a mail add-in token
     When I file an email with subject "Capital call question" and message id "<abc-1@example.com>"
@@ -105,6 +117,7 @@ Feature: Mail add-in matching and filing
     And the filed email should record who filed it
 
   # Double click, network retry, or a second colleague filing the same thread.
+  @rack_test
   Scenario: Re-filing the same email does not create a duplicate
     Given I have a mail add-in token
     And I file an email with subject "Capital call question" and message id "<abc-2@example.com>"
@@ -113,6 +126,7 @@ Feature: Mail add-in matching and filing
     And the mail API response should report the email was already filed
     And only 1 incoming email should exist with message id "<abc-2@example.com>"
 
+  @rack_test
   Scenario: Matching reports an email that has already been filed
     Given I have a mail add-in token
     And I file an email with subject "Already here" and message id "<abc-3@example.com>"
@@ -120,6 +134,7 @@ Feature: Mail add-in matching and filing
     Then the mail API response should say the email is already filed
     And the already filed response should name that investor
 
+  @rack_test
   Scenario: Undoing a filing removes it
     Given I have a mail add-in token
     And I file an email with subject "Filed by mistake" and message id "<abc-4@example.com>"
@@ -129,6 +144,7 @@ Feature: Mail add-in matching and filing
 
   # Emails from one sender to one investor share a document folder, and that folder
   # cascades to every document inside it.
+  @rack_test
   Scenario: Undoing a filing leaves other emails' documents intact
     Given I have a mail add-in token
     And I file an email with subject "First" and message id "<share-1@example.com>"
@@ -140,6 +156,7 @@ Feature: Mail add-in matching and filing
     And the first filing should still have its document
 
   # Two emails with no Message-ID must not collide in the unique dedup index.
+  @rack_test
   Scenario: Filing two emails without a message id does not report a false duplicate
     Given I have a mail add-in token
     And I file an email with subject "No id one" and no message id
@@ -148,12 +165,14 @@ Feature: Mail add-in matching and filing
     And the mail API response should not report the email was already filed
     And an incoming email should be created for that investor with subject "No id two"
 
+  @rack_test
   Scenario: A token issued for another OAuth client is rejected
     Given I have a token issued to a different OAuth application
     When I call the mail API match endpoint for "john@example.com"
     Then the mail API response status should be 403
 
   # The old endpoint returned every investor in the entity with no search or limit.
+  @rack_test
   Scenario: Owner search is scoped to the query
     Given I have a mail add-in token
     And another investor exists in that fund

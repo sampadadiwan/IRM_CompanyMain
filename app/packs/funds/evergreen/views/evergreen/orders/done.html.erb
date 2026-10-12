@@ -1,0 +1,55 @@
+<%# Wizard step ③ (proposal LP-3 / LP-4). Worked examples H7, H8, H9
+    Same centred FormCard as the wizard (orders/new), so the request reads as the wizard's last step %>
+<% order = @order %>
+<% setting = @fund.evergreen_fund_setting %>
+<%# Where "Back" goes: the fund page's Subscriptions / Redemptions pill for the fund team, the investor's
+    Requests section (?requests=) on the portal %>
+<% back_label, back_path = if gp_user?
+                             [order.subscription? ? "Subscriptions" : "Redemptions", fund_path(@fund, tab: "evergreen-#{order.subscription? ? 'subscriptions' : 'redemptions'}-tab")]
+                           else
+                             ["Requests", fund_path(@fund, requests: 1)]
+                           end %>
+<% amount_cell, units_cell = eg_order_amount_units(order, FundNav.latest_approved(@fund, order.unit_type, Time.zone.today)) %>
+<div class="row justify-content-md-center" id="order_done">
+  <div class="col-md-8">
+    <%= render FormCard.new(title: "#{ERB::Util.h(eg_t(order.kind.to_sym))} · #{ERB::Util.h(@fund.name)}") do %>
+      <% EvergreenOrderMessages.notes(order).each do |note| %><div class="alert alert-info order-note"><%= note %></div><% end %>
+      <% if order.subscription? %>
+        <h5><i class="ti ti-circle-check text-success me-1"></i>Subscription request received</h5>
+      <% else %>
+        <h5><i class="ti ti-circle-check text-success me-1"></i>Redemption request received<%= " for #{eg_units(order.units, strip_insignificant_zeros: true)}" if order.units.present? %></h5>
+      <% end %>
+
+      <%# What was asked, split as on the order book: the side not asked in is an estimate (≈) %>
+      <div class="row g-4 mb-3">
+        <div class="col-md-6">
+          <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Amount</label>
+          <div class="fs-4 fw-medium" id="order_done_amount"><%= amount_cell %></div>
+        </div>
+        <div class="col-md-6">
+          <label class="text-muted text-uppercase fw-bold fs-1 mb-1"><%= eg_t(:Units) %></label>
+          <div class="fs-4 fw-medium" id="order_done_units"><%= units_cell %></div>
+        </div>
+      </div>
+
+      <% if order.subscription? %>
+        <% if setting.pre_funded? %>
+          <p>Pay <strong><%= evergreen_money(order.amount_cents, @fund) %></strong> by <%= l(order.dealing_date.cutoff_at.to_date) %> to be <%= EvergreenLabels.lower(eg_t(:dealt)) %> on <%= l(order.dealing_date.date) %></p>
+          <div><%= simple_format(setting.payment_instructions) %></div>
+          <%# Payment reference: SUB-<folio>-<id>, or SUB-<id> while the order has no folio yet %>
+          <p>Reference <strong><%= EvergreenOrderMessages.payment_reference(order) %></strong></p>
+          <p class="text-muted">We've emailed you these instructions.</p>
+        <% else %>
+          <p>You'll receive payment instructions after the <%= l(order.dealing_date.date) %> <%= EvergreenLabels.lower(eg_t(:subscription_date)) %>, with the exact <%= eg_t(:units) %>.</p>
+        <% end %>
+      <% else %>
+        <p>Earliest <%= EvergreenLabels.lower(eg_t(:redemption_date)) %> <%= l(order.dealing_date.date) %> <%= eg_queue_badge(order) %></p>
+      <% end %>
+
+      <div class="d-flex flex-wrap gap-2">
+        <%= link_to evergreen_order_path(@fund, order), class: "btn btn-outline-primary", id: "view_request" do %><i class="ti ti-eye"></i> View request<% end %>
+        <%= link_to back_path, class: "btn btn-outline-primary", id: "back_to_orders", data: { turbo: false } do %><i class="ti ti-arrow-left"></i> Back to <%= back_label %><% end %>
+      </div>
+    <% end %>
+  </div>
+</div>

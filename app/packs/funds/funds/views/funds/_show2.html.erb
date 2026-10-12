@@ -86,7 +86,9 @@
 
       <!-- Right Column: Settings & Meta -->
       <div class="col-lg-4">
-        <% if fund.has_tracking_currency? && policy(fund).update? %>
+        <%# Evergreen funds: dealing / gate summary instead of committed and called figures (open-ended-funds B2) %>
+        <%= render "evergreen/funds/details_card", fund: fund if fund.evergreen? %>
+        <% if fund.has_tracking_currency? && policy(fund).update? && !fund.evergreen? %>
           <div class="card shadow-sm border-0 mb-4">
             <div class="card-header border-bottom py-3">
               <h6 class="mb-0 fw-bold d-flex align-items-center"><i class="ti ti-chart-line me-2 text-info"></i>Tracking Currency (<%= fund.tracking_currency %>)</h6>

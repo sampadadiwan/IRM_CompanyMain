@@ -1,7 +1,7 @@
 <%
     entity_id ||= current_user.entity_id
 
-    capital_commitments = policy_scope(CapitalCommitment).includes(:entity, :investor, :investor_kyc, :fund_ratios, fund: :data_room_folder)
+    capital_commitments = policy_scope(CapitalCommitment).includes(:entity, :investor, :investor_kyc, :fund_ratios, fund: [:data_room_folder, :entity, :evergreen_fund_setting])
     if entity_id != current_user.entity_id
         capital_commitments = capital_commitments.where(entity_id: entity_id)
     end
@@ -15,7 +15,8 @@
             funds enabled, regardless of whether they have any capital commitments yet. %>
         <%= render "entities/vc_dashboard_menus" %>
         <% capital_commitments.each do |cc| %>
-            <%= render "/capital_commitments/#{card_type}", capital_commitment: cc %>
+            <%# Evergreen folios get the evergreen landing card (open-ended-funds B2) %>
+            <%= render cc.fund.evergreen? ? "evergreen/funds/lp_card" : "/capital_commitments/#{card_type}", capital_commitment: cc %>
         <% end %>
     <% end %>
 <% end %>

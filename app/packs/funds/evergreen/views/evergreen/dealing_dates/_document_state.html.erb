@@ -1,0 +1,17 @@
+<%# A settled fill's document (§ Dealing-date documents): to generate → awaiting approval → sent — the badge only;
+    View document and Regenerate are buttons in the row's Actions column (_fill_actions).
+    Nothing shows when the email has gone out (no template, or approved and sent). %>
+<% f = fill %>
+<% unless f.document_sent_at %>
+  <% if f.document && !f.document.approved %>
+    <%= eg_badge(:amber, "file-time", "Awaiting approval", "Generated from the fund's template; hidden from the investor until Approve & send.", id: "document_state_#{f.id}") %>
+  <% elsif EvergreenDealingDocuments.template_for(f) %>
+    <% label = EvergreenDealingDocuments.kind(f) == :contract_note ? eg_t(:contract_note, fund: f.fund) : eg_t(:redemption_advice, fund: f.fund) %>
+    <%# Generation already ran for this date but this fill has no document → it failed (X30) %>
+    <% if f.dealing_date.dealing_fills.where.not(document_id: nil).exists? %>
+      <%= eg_badge(:red, "file-x", "Not generated", "Generating this #{label.downcase} failed — check the template, then Regenerate.", id: "document_state_#{f.id}") %>
+    <% else %>
+      <%= eg_badge(:grey, "file-text", "#{label} to generate", "Click Generate documents on the #{EvergreenLabels.lower(eg_t(:transaction_date, fund: f.fund))}.", id: "document_state_#{f.id}") %>
+    <% end %>
+  <% end %>
+<% end %>

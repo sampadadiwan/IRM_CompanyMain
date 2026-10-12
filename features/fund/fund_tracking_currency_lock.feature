@@ -11,6 +11,7 @@ Feature: Fund tracking currency is locked on the edit form after creation
     Given the user has role "company_admin"
     Given there is a fund "name=Test Fund;currency=USD" for the entity
 
+  @rack_test
   Scenario: A regular company admin sees the tracking currency field disabled on edit
     When I visit the edit page for the fund
     Then the tracking currency field should be disabled
@@ -20,6 +21,7 @@ Feature: Fund tracking currency is locked on the edit form after creation
     Then the tracking currency update should be refused
     And the fund's tracking currency should still be blank
 
+  @rack_test
   Scenario: A regular company admin cannot open the Change Tracking Currency screen
     When I visit the change tracking currency page for the fund
     Then the tracking currency update should be denied

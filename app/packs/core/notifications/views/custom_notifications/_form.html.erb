@@ -1,5 +1,9 @@
 <% adhoc_to_available = custom_notification.owner.respond_to?(:adhoc_notifications_to) %>
-<% show_breakdown_field = %w[CapitalCall CapitalDistribution].include?(custom_notification.owner_type) || %w[CapitalCall CapitalDistribution].include?(custom_notification.for_type) %>
+<%# Evergreen templates also get "Show details" (review fix 6b, 10 Oct 2026): every order-level evergreen email
+    appends the order summary when it is on, but the toggle used to be shown only for calls and distributions,
+    so it could never be switched on for an evergreen fund %>
+<% evergreen_template = custom_notification.for_type == "Evergreen" %>
+<% show_breakdown_field = evergreen_template || %w[CapitalCall CapitalDistribution].include?(custom_notification.owner_type) || %w[CapitalCall CapitalDistribution].include?(custom_notification.for_type) %>
 
 <div class="wizard_container" data-controller="wizard form-mode">
 
@@ -271,7 +275,11 @@
             <div class="toggle-row">
               <div>
                 <%= form.label :show_details, raw('<i class="ti ti-table me-1"></i>Show details'), class: "toggle-row-label" %>
-                <small class="form-text text-muted d-block">Adds a table at the end of the email listing the full breakdown of this capital call/remittance or distribution (amount, fees, due date, etc).</small>
+                <% if evergreen_template %>
+                  <small class="form-text text-muted d-block">Adds the request summary (fund, folio, class, amount, date) after your text. Not used by the NAV update and units-free-to-redeem emails, which are about a holding, not a request.</small>
+                <% else %>
+                  <small class="form-text text-muted d-block">Adds a table at the end of the email listing the full breakdown of this capital call/remittance or distribution (amount, fees, due date, etc).</small>
+                <% end %>
               </div>
               <label class="ios-toggle">
                 <%= form.check_box :show_details, class: "ios-toggle-input" %>

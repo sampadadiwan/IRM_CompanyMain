@@ -291,3 +291,78 @@ end
 # Allocation run checker — see docs/modules/allocation/allocation_run_checker_requirements.md.
 # create takes an allocation_run_id and queues the checks; show renders the report.
 resources :allocation_run_reports, only: %i[show create]
+
+# A typical setup's values (JSON) for the evergreen wizard — also used before the fund exists
+get "evergreen_presets/:name", to: "evergreen/presets#show", as: :evergreen_preset
+
+# Evergreen (open-ended) funds — every evergreen screen lives under the fund.
+# Worked examples H1–H39 — openspec/changes/open-ended-funds/design.md#worked-examples
+scope "funds/:fund_id/evergreen", module: :evergreen, as: :evergreen do
+  # Copy investor-email templates from another evergreen fund (§ Notifications)
+  resource :notification_copy, only: %i[new create]
+  # A fund's type is chosen on New Fund and can't be changed: no create (make evergreen) or destroy
+  # (switch back) here (evergreen-fund-on-create ⑤)
+  resource :settings, only: %i[show update]
+  resource :overview, only: :show, controller: :overview
+  resources :navs, only: %i[index show create destroy] do
+    post :import, on: :collection
+    member do
+      patch :override
+      patch :approve
+      patch :reopen
+      patch :recalculate
+      # Include / exclude a late management fee on a draft (evergreen-late-management-fees ⑤)
+      patch :decide_late_fee
+    end
+  end
+  resources :orders, only: %i[index show new create] do
+    post :preview, on: :collection
+    post :import, on: :collection
+    member do
+      patch :cancel
+      patch :accept
+      patch :reject
+      patch :verify_signatory
+      post :upload_form
+      post :record_payment
+      post :accept_received
+    end
+  end
+  resources :dealing_dates, only: %i[index show], path: "dealing" do
+    member do
+      post :confirm
+      post :undo
+      post :close
+      post :generate_documents
+      post :approve_documents
+    end
+    resources :fills, only: [], controller: :dealing_fills do
+      member do
+        post :record_payment
+        post :verify
+        post :mark_paid
+        post :resend
+        post :regenerate
+      end
+    end
+  end
+  resources :investors, only: :index
+  resource :fees, only: :show do
+    post :seed_formula
+  end
+  resources :settlements, only: :show
+  # Link an approved KYC to a folio that has none (evergreen-folio-soa ③)
+  resources :folios, only: :show do
+    patch :link_kyc, on: :member
+  end
+  # Generate statements for one folio or every folio of the fund (evergreen-folio-soa ④)
+  resources :statements, only: :create
+end
+
+# Journey panel frames for evergreen records (real-time refresh convention: /<plural>/:id/journey)
+resources :dealing_orders, only: [] do
+  get :journey, on: :member
+end
+resources :dealing_dates, only: [] do
+  get :journey, on: :member
+end

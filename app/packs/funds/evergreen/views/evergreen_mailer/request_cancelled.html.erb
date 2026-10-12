@@ -1,0 +1,11 @@
+<% if @custom_notification %>
+  <%= render "/custom_notifications/mail" do %>
+    <%= render "evergreen_mailer/custom_extras" %>
+  <% end %>
+<% else %>
+  <p>Dear <%= @user&.first_name %>,</p>
+  <p>The following request has been cancelled<%= " by #{@order.cancelled_by.full_name}" if @order.cancelled_by %>.</p>
+  <%= render "evergreen_mailer/summary" %>
+  <% if @order.rejected_reason.present? %><p>Reason: <%= @order.rejected_reason %></p><% end %>
+  <%= render "evergreen_mailer/request_link" %>
+<% end %>

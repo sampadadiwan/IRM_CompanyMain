@@ -1,4 +1,4 @@
-@critical_error_whatsapp
+@critical_error_whatsapp @rack_test
 Feature: Critical production errors page on WhatsApp and do not flood email
   As the person on call for production
   I want a WhatsApp message when the database, Redis or a disk fails

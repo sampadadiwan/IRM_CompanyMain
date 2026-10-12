@@ -1,0 +1,108 @@
+<%# Order book and redemption queue (proposal GP-4): one table — each redemption's row also shows what the
+    gate does to it, so there is no second queue table. Worked examples H10, H34, E46 %>
+<div class="p-3" data-controller="tooltip">
+  <%
+    # The fund page shows Subscriptions and Redemptions as separate tabs (?kind=); without a kind
+    # (old links) both are listed together
+    kind = params[:kind] if DealingOrder::KINDS.include?(params[:kind])
+    title, subtitle = case kind
+                      when "subscription" then ["Subscriptions", "Money in for new #{eg_t(:units)}, each allotted at the #{eg_t(:nav_per_unit_short)} of its #{eg_t(:transaction_date, lower: true)}"]
+                      when "redemption" then ["Redemptions", "Open requests are listed in the order they will be dealt, with what the gate pays each one; finished ones are under the filter"]
+                      else ["Subscriptions and redemptions", "Each #{eg_t(:dealt, lower: true)} on its #{eg_t(:transaction_date, lower: true)}; redemptions are paid in queue order up to the gate"]
+                      end
+    # Gate columns only where every row is still waiting: the Open view of redemptions (or of both kinds)
+    gate = @gate if @filter == "open" && kind != "subscription"
+    filters = { "open" => "Open", "dealt" => "Dealt", "closed" => "Cancelled / rejected", "all" => "All" }
+  %>
+  <%= render layout: "evergreen/shared/list_header", locals: { title:, subtitle: } do %>
+    <%# Filter: Open by default; finished orders only when asked for. Stays inside the fund-page tab %>
+    <div class="dropdown">
+      <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" id="orders_filter">
+        <i class="ti ti-filter"></i><%= filters[@filter] %>
+      </button>
+      <div class="dropdown-menu">
+        <% filters.each do |key, label| %>
+          <%= link_to label, evergreen_orders_path(@fund, kind:, filter: key), class: "dropdown-item #{'active' if key == @filter}", id: "orders_filter_#{key}",
+                                                                              data: { turbo_frame: turbo_frame_request_id || "_top" } %>
+        <% end %>
+      </div>
+    </div>
+    <%# Review fix 9: New subscription / New redemption / Upload only for users who can place orders %>
+    <% can_order = policy(DealingOrder.new(entity_id: @fund.entity_id, fund: @fund)).create? %>
+    <% if can_order && kind != "redemption" %>
+      <%= link_to new_evergreen_order_path(@fund, kind: "subscription"), class: "btn btn-outline-primary d-inline-flex align-items-center", id: "new_subscription", data: { turbo: false } do %><i class="ti ti-plus"></i> New subscription<% end %>
+    <% end %>
+    <% if can_order && kind != "subscription" %>
+      <%= link_to new_evergreen_order_path(@fund, kind: "redemption"), class: "btn btn-outline-primary d-inline-flex align-items-center", id: "new_redemption", data: { turbo: false } do %><i class="ti ti-minus"></i> New redemption<% end %>
+    <% end %>
+    <% if gp_user? && policy(DealingOrder.new(entity_id: @fund.entity_id, fund: @fund)).import? %>
+      <%# One upload file can hold both kinds, so Upload is on both tabs %>
+      <%= link_to new_import_upload_path("import_upload[owner_id]": @fund.id, "import_upload[owner_type]": "Fund", "import_upload[import_type]": "DealingOrder"), class: "btn btn-outline-primary d-inline-flex align-items-center", id: "upload_orders", data: { turbo: false } do %><i class="ti ti-upload"></i> <%= t_common(:upload) %><% end %>
+    <% end %>
+  <% end %>
+  <%# The gate at a glance: the same stats cards as the dealing date's Redemptions tab %>
+  <%= render "evergreen/orders/gate_summary", fund: @fund, gate: gate if gate %>
+  <div class="table-responsive">
+    <table class="table table-bordered dataTable action_table hover" id="orders">
+      <thead>
+        <tr>
+          <th>Received</th><th>Investor</th><th>Type</th><th>Class</th>
+          <th class="text-end">Amount</th><th class="text-end"><%= eg_t(:Units) %></th><th><%= eg_t(:transaction_date) %></th><th>Status</th>
+          <% if gate %>
+            <%= eg_gate_headers(@fund) %>
+          <% end %>
+          <th class="action-col" aria-label="Actions">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if @orders.empty? %>
+          <tr><td colspan="<%= gate ? 13 : 9 %>" class="text-muted"><i class="ti ti-inbox me-1"></i>
+            <% if @filter == "open" %>
+              Nothing waiting to be dealt — investors place <%= kind ? title.downcase : "orders" %> on the portal, or add one with <%= kind ? "New #{kind}" : "New subscription / New redemption" %>. Finished ones are under the filter.
+            <% else %>
+              No <%= filters[@filter].downcase %> <%= kind ? title.downcase : "subscriptions or redemptions" %>.
+            <% end %>
+          </td></tr>
+        <% end %>
+        <% @orders.each do |o| %>
+          <% unpaid = o.subscription? && o.pending? && o.fund.evergreen_fund_setting.pre_funded? && !o.fully_paid? %>
+          <%# E46 — unpaid within two days of the cut-off: flagged with a "Cut-off" badge next to Awaiting money
+              (a badge, not a row tint, so the list keeps the soft theme colours) %>
+          <% near_cutoff = unpaid && o.dealing_date.cutoff_at.to_date - 2.days <= Time.zone.today %>
+          <% amount_cell, units_cell = eg_order_amount_units(o, @navs[o.unit_type]) %>
+          <tr id="order_<%= o.id %>">
+            <td><%= eg_order_source_icon(o) %><%= link_to l(o.received_at), evergreen_order_path(@fund, o) %></td>
+            <td><%= o.investor.investor_name %></td>
+            <td><%= eg_order_kind_badge(o) %></td>
+            <td><%= o.unit_type %></td>
+            <td class="text-end"><%= amount_cell %></td>
+            <td class="text-end"><%= units_cell %> <%= eg_order_terms_badges(o) %></td>
+            <td><%= l(o.dealing_date.date) %></td>
+            <td>
+              <%= eg_order_status_badge(o) %> <%= eg_queue_badge(o) %>
+              <%= eg_badge(:amber, "alarm", "Cut-off #{l(o.dealing_date.cutoff_at.to_date)}", "Unpaid with the cut-off close: chase the money, or the order is cancelled or rolled at confirmation.", id: "near_cutoff_#{o.id}") if near_cutoff %>
+            </td>
+            <% if gate %>
+              <% if (row = o.redemption? && gate.row_for(o)) %>
+                <% gate_cells = eg_gate_cells(row, gate, @fund) %>
+                <td class="text-end"><%= gate_cells[0] %></td>
+                <td class="text-end"><%= gate_cells[1] %></td>
+                <td class="text-end"><%= gate_cells[2] %></td>
+                <td><%= gate_cells[3] %></td>
+              <% else %>
+                <%# A subscription, or a redemption due on a later dealing date: the gate forecast is for the next date only %>
+                <td class="text-end text-muted">—</td><td class="text-end text-muted">—</td><td class="text-end text-muted">—</td>
+                <td><%= o.redemption? ? eg_badge(:grey, "calendar", "Queued for #{l(o.dealing_date.date)}", "Gated on its own dealing date, after #{l(gate.dealing_date.date)}.") : "" %></td>
+              <% end %>
+            <% end %>
+            <td class="action-col"><%= link_to t_common(:view), evergreen_order_path(@fund, o), class: "btn btn-outline-primary ti ti-eye", data: { turbo_frame: "_top", bs_toggle: "tooltip", bs_title: "Open order of #{o.investor.investor_name}" }, aria: { label: "Open order of #{o.investor.investor_name}" } %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+  <%== pagy_bootstrap_nav(@pagy) if @pagy && @pagy.pages > 1 %>
+  <% if gate %>
+    <small class="text-muted d-block mt-2"><i class="ti ti-info-circle me-1"></i>Gate figures are estimated at the latest approved NAV. Confirming the dealing date re-prices every order at that date's NAV.</small>
+  <% end %>
+</div>

@@ -1,3 +1,4 @@
+@rack_test
 Feature: Clock synchronisation and cross-region alerting are provisioned
   Clock drift between the regions is the one cause of a failed region switch that leaves no
   trace at all: the hand-off credential carries an absolute expiry stamped by the issuing

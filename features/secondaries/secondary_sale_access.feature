@@ -1,3 +1,4 @@
+@rack_test
 Feature: Sale Access
   Can access sale as a company
 

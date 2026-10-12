@@ -2,7 +2,7 @@ Feature: Account Entries
   Can run allocation
 
 
-@import
+@import @rack_test
 Scenario Outline: Allocate account entries
   Given there is a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund;currency=INR"
   Given the user has role "company_admin"
@@ -27,6 +27,7 @@ Scenario Outline: Allocate account entries
     | allocation_run |
     | start_date=01/04/2023;end_date=30/06/2024, |
 
+@rack_test
 Scenario Outline: Allocate Account Entries
   Given Im logged in as a user "<user>" for an entity "<entity>"
   Given the user has role "company_admin"
@@ -44,6 +45,7 @@ Scenario Outline: Allocate Account Entries
       |user     |entity                                 |fund                 |
       |           |entity_type=Investment Fund;enable_funds=true  |name=Test  |
 
+@rack_test
 Scenario Outline: Formula reads a computed field without the cache flag set
   Given Im logged in as a user "<user>" for an entity "<entity>"
   Given the user has role "company_admin"

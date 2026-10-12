@@ -166,6 +166,7 @@ Scenario Outline: Investor Access form blocks a user who holds the Investor Advi
   	|entity_type=Company |investor_name=Accelo4;primary_email=a@b4.c   |Stakeholder was successfully created|
 
 
+@rack_test
 Scenario: Edit from the show page returns to the show page
   Given Im logged in as a user "" for an entity "entity_type=Company"
   Given the user has role "company_admin"
@@ -183,6 +184,7 @@ Scenario: Edit from the show page returns to the show page
 # save, so a phone number refused here would produce an access row pointing at nobody —
 # no exception, no error message, and a 500 on the index page afterwards.
 # See User#skip_phone_validation.
+@rack_test
 Scenario: An access row with a phone number the form would reject still gets its portal user
   Given Im logged in as a user "" for an entity "entity_type=Company"
   And the user has role "company_admin"

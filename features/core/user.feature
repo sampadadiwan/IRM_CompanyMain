@@ -1,6 +1,7 @@
 Feature: User
   Can create and view a user as a company
 
+@rack_test
 Scenario Outline: Create new user
   Given Im logged in as a user "" for an entity "<entity>"
   And the user has role "company_admin"
@@ -25,6 +26,7 @@ Scenario Outline: Create new user
 #   And update my password having phone "7721046692"
 #   Then a whatsapp notification is sent indicating account update
 
+@rack_test
 Scenario: Updating a user's call_code, phone or email syncs to their investor access
   Given Im logged in as a user "" for an entity "entity_type=Company"
   And the user has role "company_admin"
@@ -85,6 +87,7 @@ Scenario: A non company admin cannot grant themselves the company admin role
 
 # The phone number is validated only when it changes — see User#phone_must_be_dialable.
 # Existing rows hold numbers that cannot be parsed, and those users must stay editable.
+@rack_test
 Scenario: A phone number that cannot be dialled is rejected when it is edited
   Given Im logged in as a user "" for an entity "entity_type=Company"
   And the user has role "company_admin"
@@ -94,6 +97,7 @@ Scenario: A phone number that cannot be dialled is rejected when it is edited
   And the phone error should mention the country code "91"
   And that user's phone should still be "9449025878"
 
+@rack_test
 Scenario: A dialable phone number is accepted when it is edited
   Given Im logged in as a user "" for an entity "entity_type=Company"
   And the user has role "company_admin"
@@ -102,6 +106,7 @@ Scenario: A dialable phone number is accepted when it is edited
   Then the user should be saved
   And that user's phone should still be "9920184805"
 
+@rack_test
 Scenario: An existing unparseable number does not block edits to other fields
   Given Im logged in as a user "" for an entity "entity_type=Company"
   And the user has role "company_admin"

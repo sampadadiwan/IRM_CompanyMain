@@ -1,0 +1,23 @@
+<%# Derivatives card in the fund's Portfolio tab — open contracts only, loaded lazily into fund_derivatives_frame.
+    The full list (filters, upload, closed contracts) stays at Fund › Derivatives. fund-market-data, card ⑥ %>
+<%= turbo_frame_tag "fund_derivatives_frame", target: "_top" do %>
+  <div class="card shadow-sm border-0 mb-4" id="fund_derivatives">
+    <div class="card-header border-bottom py-3 d-flex align-items-center justify-content-between">
+      <h6 class="mb-0 fw-bold d-flex align-items-center"><i class="ti ti-chart-arrows me-2 text-primary"></i>Derivatives</h6>
+      <div class="d-flex gap-2">
+        <%= link_to fund_derivative_contracts_path(@fund, status: "all"), class: "btn btn-sm btn-outline-primary",
+                    data: { bs_toggle: "tooltip", bs_title: "Every contract, open and closed, with upload of counterparty valuations" } do %>
+          <i class="ti ti-list"></i> View all
+        <% end %>
+        <% if policy(DerivativeContract.new(fund: @fund, entity_id: @fund.entity_id)).create? %>
+          <%= link_to new_fund_derivative_contract_path(@fund), class: "btn btn-sm btn-outline-primary" do %>
+            <i class="ti ti-plus"></i> New contract
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+    <div class="card-body">
+      <%= render "derivative_contracts/table", contracts: @contracts, empty_text: "No open contracts — closed ones are under View all." %>
+    </div>
+  </div>
+<% end %>

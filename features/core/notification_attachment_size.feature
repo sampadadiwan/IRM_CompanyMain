@@ -1,4 +1,4 @@
-@notification @attachment
+@notification @attachment @rack_test
 Feature: Email attachment size limit
   As the team running CapHive
   I want every notification that can carry an attachment to be size-checked

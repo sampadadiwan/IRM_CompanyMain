@@ -40,6 +40,7 @@ Feature: Document Checks — export to xlsx and import with ImportUpload
     And the import's upload page should open and link to Document Checks
 
   # The sample upload file linked from the import page
+  @rack_test
   Scenario: The sample upload file creates its checks
     When I import the document checks sample file
     Then the document check import should have 5 saved and 0 failed rows
@@ -48,6 +49,7 @@ Feature: Document Checks — export to xlsx and import with ImportUpload
 
   # E24 duplicate without an Id, E25 document not on the list, X11 another entity's Id, X12 unknown field;
   # a lower-case document and a field given by name still import
+  @rack_test
   Scenario: Rows that can't be saved are reported and the rest are saved
     Given the entity has the sample document checks
     And another entity has a document check

@@ -18,6 +18,7 @@ Scenario Outline: Create new portfolio investment
     |entity_type=Investment Fund;       |name=Merger Fund;currency=INR  | name=XYZ;currency=USD |
 
 
+@rack_test
 Scenario Outline: Create new PI and aggregate PI
   Given Im logged in as a user "" for an entity "<entity>"
   Given the user has role "company_admin"
@@ -39,6 +40,7 @@ Scenario Outline: Create new PI and aggregate PI
     |entity_type=Investment Fund;       |name=Merger Fund;unit_types=Series A,Series B    |
 
 
+@rack_test
 Scenario Outline: Proforma PI should not be rolled up to Aggregate PI
   Given Im logged in as a user "" for an entity "<entity>"
   Given the user has role "company_admin"
@@ -57,6 +59,7 @@ Scenario Outline: Proforma PI should not be rolled up to Aggregate PI
     |entity_type=Investment Fund;       |name=Merger Fund;unit_types=Series A,Series B    |
 
 
+@rack_test
 Scenario Outline: Create valuation and FMV
   Given there is a user "" for an entity "<entity>"
   # Given the user has role "company_admin"
@@ -150,6 +153,7 @@ Scenario Outline: Import portfolio valuations
   Then There should be "4" valuations created
   And the valuations must have the data in the sheet
 
+@rack_test
 Scenario Outline: FIFO
   Given there is a user "" for an entity "entity_type=Investment Fund;"
   Given there is an existing portfolio company "name=MyFavStartup;category=Portfolio Company"
@@ -168,6 +172,7 @@ Scenario Outline: FIFO
     |quantity=-500       |3       |
     |quantity=-600       |3       |
 
+@rack_test
 Scenario Outline: WTD AVG
   Given there is a user "" for an entity "entity_type=Investment Fund;"
   Given there is an existing portfolio company "name=MyFavStartup;category=Portfolio Company"
@@ -187,7 +192,7 @@ Scenario Outline: WTD AVG
     |quantity=-600       |3       |
 
 
-@import
+@import @rack_test
 Scenario Outline: Compute Gains
   Given there is a user "" for an entity "entity_type=Investment Fund;currency=INR"
   Given there is an existing portfolio company "name=MyFavStartup;category=Portfolio Company"

@@ -50,7 +50,8 @@ class CustomNotification < ApplicationRecord
     "CapitalDistribution" => "Distribution Notification",
     "Send Document" => "Document Notification",
     "InvestorKyc" => "KYC Notification",
-    "InvestmentOpportunity" => "Investment Opportunity Notification"
+    "InvestmentOpportunity" => "Investment Opportunity Notification",
+    "Evergreen" => "Evergreen Notification"
   }.freeze
 
   # Drives the form's title - prefers for_type (what this notification is for) over owner_type
@@ -102,6 +103,9 @@ class CustomNotification < ApplicationRecord
       [DocumentMailer]
     elsif for_type == "InvestmentOpportunity"
       [InvestmentOpportunityMailer]
+    elsif for_type == "Evergreen"
+      # Fund-level templates for the evergreen investor emails (open-ended-funds)
+      [EvergreenMailer]
     elsif owner_type == "CapitalCall" || for_type == "CapitalCall"
       [CapitalRemittanceMailer, CapitalRemittancePaymentMailer]
     elsif owner_type == "CapitalDistribution" || for_type == "CapitalDistribution"
@@ -129,6 +133,8 @@ class CustomNotification < ApplicationRecord
                        %w[send_document send_portfolio_investment_report]
                      elsif for_type == "InvestmentOpportunity"
                        InvestmentOpportunity::NOTIFICATION_METHODS
+                     elsif for_type == "Evergreen"
+                       EvergreenMailer::SUBJECTS.keys
                      elsif owner_type == "CapitalCall" || for_type == "CapitalCall"
                        mailer_classes.flat_map { |klass| klass.instance_methods(false).map(&:to_s) }
                      elsif owner_type == "CapitalDistribution" || for_type == "CapitalDistribution"
@@ -167,7 +173,7 @@ class CustomNotification < ApplicationRecord
   def first_preview_target
     if for_type == "InvestorKyc"
       [owner.try(:investor_kycs)&.first, :preview_investor_kyc_path, {}]
-    elsif for_type == "Send Document" || for_type == "InvestmentOpportunity"
+    elsif for_type == "Send Document" || for_type == "InvestmentOpportunity" || for_type == "Evergreen"
       # No preview route wired up yet for these — checked ahead of the owner_type
       # branches below (mirroring mailer_classes' order) so a Fund/Entity-owned
       # notification of one of these for_types doesn't fall through and wrongly

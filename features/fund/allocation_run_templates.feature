@@ -198,8 +198,7 @@ Feature: Allocation Run Templates and Groups
 
   @javascript
   Scenario: The templates page lists groups in run order and the run modal leads to the pre-flight page
-    Given I am at the login page
-    When I fill and submit the login page
+    Given I am signed in as the current user
     And there is an allocation run template "name=Master — quarterly" on the first fund
     And there is an allocation run template "name=Feeder — quarterly" on the second fund
     And there is an allocation run group "Quarterly close" with templates "Master — quarterly,Feeder — quarterly"
@@ -213,8 +212,7 @@ Feature: Allocation Run Templates and Groups
 
   @javascript
   Scenario: Save as template from the allocation screen asks only for a name
-    Given I am at the login page
-    When I fill and submit the login page
+    Given I am signed in as the current user
     And there is a past allocation run "start_date=2024-01-01;end_date=2024-03-31;rule_for=Reporting" on the first fund
     When I visit the allocation screen of the first fund
     And I save the first past run as a template named "Master — from screen"

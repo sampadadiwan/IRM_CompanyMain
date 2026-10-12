@@ -29,6 +29,7 @@ Feature: Financial statement generation — the statements run
       | Cash               | Bank Balance | 2026-09-30 | -107,600 |
 
   # H12 — Happy path: Generate writes fund-level "Financial Statement" lines dated the end date and records the source run
+  @rack_test
   Scenario: Generate statements
     Given a locked successful accounting run from "2026-07-01" to "2026-09-30"
     When statements are generated for "2026-07-01" to "2026-09-30"
@@ -64,6 +65,7 @@ Feature: Financial statement generation — the statements run
     And the Statements tab lists the set as "Draft"
 
   # H13 — Happy path: a statements run leaves every accounting entry exactly as it was
+  @rack_test
   Scenario: Accounting entries untouched by a statements run
     Given a locked successful accounting run from "2026-07-01" to "2026-09-30"
     And I remember the fund's accounting entries
@@ -72,6 +74,7 @@ Feature: Financial statement generation — the statements run
 
   # E16 — Edge case: Regenerate deletes the old lines and writes new ones (3 per account)
   # E1 — Edge case: generating the same period again reuses the Draft; one record
+  @rack_test
   Scenario: Regenerate replaces the lines
     Given a successful accounting run from "2026-07-01" to "2026-09-30"
     When statements are generated for "2026-07-01" to "2026-09-30"
@@ -82,6 +85,7 @@ Feature: Financial statement generation — the statements run
     And there is one statement set for "2026-07-01" to "2026-09-30"
 
   # E12 — Edge case: an ordinary (untagged) allocation run neither creates nor deletes statement lines
+  @rack_test
   Scenario: Ordinary run skips the statement formula
     Given a successful accounting run from "2026-07-01" to "2026-09-30"
     When statements are generated for "2026-07-01" to "2026-09-30"
@@ -90,6 +94,7 @@ Feature: Financial statement generation — the statements run
     Then the statement lines are unchanged
 
   # E31 — Edge case: an allocate-by-name formula named like a statement account never allocates the statement line
+  @rack_test
   Scenario: Statement lines are not allocated by an ordinary run
     Given the fund has folios "101,102"
     And the fund has an "AllocateAccountEntry-Name" formula "Professional fees" with formula:
@@ -103,6 +108,7 @@ Feature: Financial statement generation — the statements run
     Then no folio entry "Professional fees" was allocated
 
   # H24 — Happy path: an account placed on two statements shows the same figure on both
+  @rack_test
   Scenario: Account on two statements
     Given "Professional fees" is also placed on "Schedule of Fund Expenses"
     And a successful accounting run from "2026-07-01" to "2026-09-30"
@@ -111,11 +117,13 @@ Feature: Financial statement generation — the statements run
     And the "Schedule of Fund Expenses" statement shows "Professional fees" of "-45,200" for "period"
 
   # X1 — Error case: no successful accounting run covers the period
+  @rack_test
   Scenario: No accounting run
     When statements are generated for "2026-10-01" to "2026-12-31"
     Then generation is refused with "Run and complete the fund's allocations for this period first."
 
   # X2 — Error case: an allocation run is in progress on the fund
+  @rack_test
   Scenario: Run in progress
     Given a successful accounting run from "2026-07-01" to "2026-09-30"
     And an allocation run is in progress on the fund
@@ -123,6 +131,7 @@ Feature: Financial statement generation — the statements run
     Then generation is refused with "An allocation run is in progress for this fund"
 
   # E25 — Edge case: a second click while the first statements run is still running is refused; one run
+  @rack_test
   Scenario: Double-click Generate
     Given a successful accounting run from "2026-07-01" to "2026-09-30"
     When statements are generated for "2026-07-01" to "2026-09-30"
@@ -132,6 +141,7 @@ Feature: Financial statement generation — the statements run
     And there is one statement set for "2026-07-01" to "2026-09-30"
 
   # E28 — Edge case: another set already ends on the same date
+  @rack_test
   Scenario: Same end date, different period
     Given a successful accounting run from "2026-01-01" to "2026-09-30"
     When statements are generated for "2026-07-01" to "2026-09-30"
@@ -139,6 +149,7 @@ Feature: Financial statement generation — the statements run
     Then generation is refused with "already exist (01/07/2026 – 30/09/2026)"
 
   # X3 — Error case: locked statements can't be regenerated
+  @rack_test
   Scenario: Regenerate locked statements
     Given a successful accounting run from "2026-07-01" to "2026-09-30"
     When statements are generated for "2026-07-01" to "2026-09-30"
@@ -147,6 +158,7 @@ Feature: Financial statement generation — the statements run
     Then generation is refused with "These statements are locked."
 
   # X15 — Error case: the statement formula is disabled
+  @rack_test
   Scenario: Formula disabled
     Given a successful accounting run from "2026-07-01" to "2026-09-30"
     And the statement formula is disabled
@@ -154,6 +166,7 @@ Feature: Financial statement generation — the statements run
     Then generation is refused with "Enable the fund's financial statement formula first."
 
   # X16 — Error case: a locked statements run on the end date blocks regeneration of a Draft
+  @rack_test
   Scenario: Locked statements run overlaps
     Given a successful accounting run from "2026-07-01" to "2026-09-30"
     When statements are generated for "2026-07-01" to "2026-09-30"
@@ -162,12 +175,14 @@ Feature: Financial statement generation — the statements run
     Then generation is refused with "Unlock the statements run for this period first."
 
   # X4 — Error case: the allocate screen's lock check is unchanged, so an ordinary run on a locked period is still blocked
+  @rack_test
   Scenario: Ordinary run still blocked
     Given a locked successful accounting run from "2026-07-01" to "2026-09-30"
     When statements are generated for "2026-07-01" to "2026-09-30"
     Then an ordinary run for "2026-07-01" to "2026-09-30" is still blocked by the locked accounting run
 
   # X11 — Error case: the statements run fails; the set shows Failed with the run's error
+  @rack_test
   Scenario: Run fails
     Given a successful accounting run from "2026-07-01" to "2026-09-30"
     When statements are generated for "2026-07-01" to "2026-09-30" and the run fails

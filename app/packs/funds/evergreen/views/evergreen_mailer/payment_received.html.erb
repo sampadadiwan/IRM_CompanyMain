@@ -1,0 +1,12 @@
+<%# open-ended-funds § Notifications: subscription payment recorded and verified %>
+<% if @custom_notification %>
+  <%= render "/custom_notifications/mail" do %>
+    <%= render "evergreen_mailer/custom_extras" %>
+  <% end %>
+<% else %>
+  <p>Dear <%= @user&.first_name %>,</p>
+  <p>We have received your payment of <strong><%= evergreen_money(@order.capital_remittance&.collected_amount_cents, @fund) %></strong>.
+    <% if @order.pending? %><%= eg_t(:Units) %> will be allotted at the <%= eg_t(:nav_per_unit) %> for the <%= EvergreenLabels.lower(eg_t(:subscription_date)) %> <%= l(@order.dealing_date.date) %>, and your <%= EvergreenLabels.lower(eg_t(:contract_note)) %> will follow.<% end %></p>
+  <%= render "evergreen_mailer/summary" %>
+  <%= render "evergreen_mailer/request_link" %>
+<% end %>

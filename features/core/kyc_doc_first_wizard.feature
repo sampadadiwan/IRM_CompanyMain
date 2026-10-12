@@ -14,7 +14,7 @@ Feature: Doc-First KYC Wizard
   # 1. Doc-first upload form is shown (not the regular KYC form)
   # ─────────────────────────────────────────────────────────────────────────────
 
-  @doc_wizard
+  @doc_wizard @rack_test
   Scenario: Company admin sees the document upload form instead of the regular KYC form
     When I visit the new investor KYC page
     Then I should see "Upload KYC Documents"
@@ -50,7 +50,7 @@ Feature: Doc-First KYC Wizard
   # 4. Investor magic link: doc-first wizard shows before the KYC form
   # ─────────────────────────────────────────────────────────────────────────────
 
-  @doc_wizard_magic_link
+  @doc_wizard_magic_link @rack_test
   Scenario: Investor opens magic link and sees the doc-first upload form first
     Given there is a KYC for the investor with submission_status "link_sent"
     When I open the KYC edit page as the investor via a valid signed link
@@ -83,7 +83,7 @@ Feature: Doc-First KYC Wizard
   #    (it used to bounce processing → edit → upload form forever)
   # ─────────────────────────────────────────────────────────────────────────────
 
-  @doc_wizard
+  @doc_wizard @rack_test
   Scenario: Company admin submits the doc-first form without files and is sent back to upload
     When I visit the new investor KYC page
     And I select "DocWizardInvestor" as the investor for the KYC
@@ -92,7 +92,7 @@ Feature: Doc-First KYC Wizard
     And I should see "Upload KYC Documents"
     And no KYC document extraction should have been started
 
-  @doc_wizard_magic_link
+  @doc_wizard_magic_link @rack_test
   Scenario: Investor submits the doc-first form without files via magic link and is sent back to upload
     Given there is a KYC for the investor with submission_status "link_sent"
     When I open the KYC edit page as the investor via a valid signed link

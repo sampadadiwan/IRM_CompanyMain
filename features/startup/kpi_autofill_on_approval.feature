@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 # Feature: KPI autofill recomputation triggered by approval
 
-@kpi_autofill_on_approval
+@kpi_autofill_on_approval @rack_test
 Feature: KPI autofill on approval
   As a fund manager
   I want cumulative KPI values (Quarter, YTD, Year) to auto-populate when I approve KPIs

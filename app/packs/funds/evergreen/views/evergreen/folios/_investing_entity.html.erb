@@ -1,0 +1,19 @@
+<%# Investing entity of the folio (evergreen-folio-soa ③). Linked → the KYC's name, read-only (a folio
+    belongs to one legal entity). Not linked → a picker of the investor's approved KYCs for users who can
+    edit the folio (H8, E6), a pointer to KYC when the investor has none, and nothing to pick for others (X14). %>
+<div class="col-md-6" id="folio_investing_entity">
+  <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Investing entity</label>
+  <% if folio.investor_kyc %>
+    <div class="fs-4 fw-medium"><%= folio.investor_kyc.full_name %></div>
+  <% elsif !policy(folio).update? %>
+    <div class="fs-4 fw-medium text-muted">—</div>
+  <% elsif approved_kycs.none? %>
+    <div class="text-muted"><i class="ti ti-info-circle me-1"></i><%= folio.investor.investor_name %> has no approved KYC — approve one in KYC first.</div>
+  <% else %>
+    <%= form_with url: link_kyc_evergreen_folio_path(fund, folio), method: :patch, class: "d-flex flex-wrap gap-2 align-items-center", id: "link_kyc_form" do |f| %>
+      <%= f.select :investor_kyc_id, approved_kycs.pluck(:full_name, :id), { include_blank: true }, class: "form-select w-auto", id: "folio_investor_kyc", aria: { label: "Investing entity" } %>
+      <%= f.button class: "btn btn-outline-primary", id: "link_kyc" do %><i class="ti ti-link"></i> Link<% end %>
+    <% end %>
+    <div class="text-muted small mt-1">Orders and statements need the legal entity this <%= EvergreenLabels.lower(eg_t(:capital_commitment)) %> is for. Once linked it can't be changed.</div>
+  <% end %>
+</div>

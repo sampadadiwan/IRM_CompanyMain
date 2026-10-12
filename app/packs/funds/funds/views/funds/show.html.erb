@@ -1,5 +1,12 @@
+<%# Evergreen funds use the same page structure; each switch below renders the evergreen version
+    only for evergreen funds, so closed-ended funds render exactly as before (open-ended-funds B2) %>
 <%
-commands = [
+commands = @fund.evergreen? ? [
+    ["New Order", new_evergreen_order_path(@fund, kind: "subscription")],
+    ["Draft / Upload NAV", evergreen_navs_path(@fund)],
+    # Review fix 9: the fund's wording ("Transaction Dates" in US English), as the Actions menu and tab say
+    [EvergreenLabels.t(:transaction_date, fund: @fund).titleize.pluralize, evergreen_dealing_dates_path(@fund)]
+] : [
     ["New Commitment", new_capital_commitment_path("capital_commitment[fund_id]": @fund.id)],
     ["Upload Commitments", new_import_upload_path("import_upload[owner_id]": @fund.id, "import_upload[owner_type]": "Fund", "import_upload[import_type]": "CapitalCommitment")],
     ["Download Commitments", capital_commitments_path(all: true, fund_id: @fund.id, format: :xlsx)]
@@ -8,9 +15,9 @@ commands = [
 %>
 <%= render "funds/hotkeys", commands:, model: @fund %>
 <% if current_user.entity_id == @fund.entity_id || current_user.curr_role == "advisor" %>
-  <%= render "/funds/fund_stats", fund: @fund %>
+  <%= render(@fund.evergreen? ? "evergreen/funds/stats" : "/funds/fund_stats", fund: @fund) %>
 <% else %>
-  <%= render "/funds/fund_investor_stats", fund: @fund %>
+  <%= render(@fund.evergreen? ? "evergreen/funds/investor_stats" : "/funds/fund_investor_stats", fund: @fund) %>
 <% end %>
 <% if current_user.entity_id == @fund.entity_id || current_user.entity.child_ids.include?(@fund.entity_id) %>
   <div class="container-fluid p-3">
@@ -19,7 +26,9 @@ commands = [
       <%= render "funds/tracking_currency_change_banner", fund: @fund %>
     <% end %>
     <!-- Snapshot cannot have details -->
-    <% unless @fund.snapshot %>
+    <% if @fund.evergreen? %>
+      <%= render "evergreen/funds/actions", fund: @fund %>
+    <% elsif !@fund.snapshot %>
       <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
         <% if policy(@fund).update? %>
           <div class="btn-group">
@@ -348,6 +357,13 @@ commands = [
                   <%= link_to fund_units_path(fund_id: @fund.id, cols: :all), class: "dropdown-item", data: {bs_toggle: "tooltip", bs_title: "View, download or upload fund units allocated to investors of the fund"} do %>
                     <i class="ti ti-building-community"></i>Fund Units
                   <% end %>
+                  <%# Evergreen Settings only for an open-ended fund: a fund's type is chosen on New Fund and
+                      can't be changed, so a closed-ended fund has no make-evergreen item (evergreen-fund-on-create X4) %>
+                  <% if @fund.evergreen? && policy(@fund).update? %>
+                    <%= link_to evergreen_settings_path(@fund), class: "dropdown-item", data: {bs_toggle: "tooltip", bs_title: "Edit this open-ended fund's terms: dealing calendar, gates, classes, notifications"} do %>
+                      <i class="ti ti-infinity"></i>Evergreen Settings
+                    <% end %>
+                  <% end %>
                   <% if current_user.enable_investors %>
                     <%= link_to investors_path(owner_id: @fund.id, owner_type: "Fund"), class: "dropdown-item", data: {bs_toggle: "tooltip", bs_title: "View list of investors of the fund"} do %>
                       <i class="ti ti-users-group"></i>View Stakeholders
@@ -408,5 +424,5 @@ commands = [
 <div id="progress_panel_new" class="container-fluid px-3 pb-3"></div>
 
 <% unless @fund.snapshot %>
-  <%= render "/funds/fund_details", fund: @fund %>
+  <%= render(@fund.evergreen? ? "evergreen/funds/fund_details" : "/funds/fund_details", fund: @fund) %>
 <% end %>

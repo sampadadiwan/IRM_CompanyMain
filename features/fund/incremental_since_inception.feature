@@ -16,6 +16,7 @@ Feature: Incremental since_inception allocation
     Given the investors are added to the fund
     Given there are capital commitments of "committed_amount_cents=100000000;commitment_date=2023-01-01" from each investor
 
+  @rack_test
   Scenario: The stored total is carried forward instead of re-summing history
     # The stored total is deliberately NOT the sum of the fees before it (10000 + 20000), which
     # proves the helper reads it rather than recomputing.
@@ -34,6 +35,7 @@ Feature: Incremental since_inception allocation
     Then the AllocationRun status is set to "Success"
     And each commitment should have a generated account entry "Since Inception Management Fees" with amount cents "104000"
 
+  @rack_test
   Scenario: A fund without the flag still re-sums all history
     Given the fund has an April financial year
     And the commitments have the following seed account entries:
@@ -50,6 +52,7 @@ Feature: Incremental since_inception allocation
     Then the AllocationRun status is set to "Success"
     And each commitment should have a generated account entry "Since Inception Management Fees" with amount cents "35000"
 
+  @rack_test
   Scenario: Days between the stored total and the window are added
     # Stored total at 31 Aug; the 15 Sep fee falls in neither the stored total nor the window.
     Given the fund allocates incrementally
@@ -80,6 +83,7 @@ Feature: Incremental since_inception allocation
       """
     Then running the Allocation Run "start_date=01/10/2024;end_date=31/10/2024" for the "Incremental Fund" should fail with "No 'Since Inception Management Fees' entry before 2024-10-01"
 
+  @rack_test
   Scenario: A commitment with no earlier entries needs no stored total
     Given the fund allocates incrementally
     And the commitments have the following seed account entries:
@@ -93,6 +97,7 @@ Feature: Incremental since_inception allocation
     Then the AllocationRun status is set to "Success"
     And each commitment should have a generated account entry "Since Inception Management Fees" with amount cents "5000"
 
+  @rack_test
   Scenario: A formula totalling several names carries forward its own stored total
     Given the fund allocates incrementally
     And the commitments have the following seed account entries:

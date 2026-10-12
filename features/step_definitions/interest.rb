@@ -158,7 +158,7 @@ Given('given I upload an interests file {string}') do |file_name|
   end
   fill_in('import_upload_name', with: "Test Upload")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{file_name}"), make_visible: true)
-  sleep(8)  # JS direct-upload to /upload endpoint; larger window for parallel load
+  wait_for_upload("./public/sample_uploads/#{file_name}") # JS direct-upload to /upload; returns once it lands (was sleep 8)
   click_on("Save")
   expect(page).to have_content("Import Upload:", wait: 15)
   # sleep(4)

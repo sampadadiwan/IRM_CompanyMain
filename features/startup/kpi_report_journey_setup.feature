@@ -11,6 +11,7 @@ Feature: KPI report journey setup
     And there is an existing portfolio company "name=Acme Pvt Ltd;category=Portfolio Company"
 
   # H1 — Setup seeds the template and rule
+  @rack_test
   Scenario: Setup seeds the KPI Report Review template and its rule
     When the KPI report journey rollout runs for the entity
     Then the entity has the "KPI Report Review" template with the tasks:
@@ -24,6 +25,7 @@ Feature: KPI report journey setup
     And the entity has workflow templates enabled
 
   # E1 — Setup is idempotent and keeps edits
+  @rack_test
   Scenario: Running setup again keeps an admin's edits and adds nothing
     Given the KPI report journey rollout runs for the entity
     And the admin renames the KPI journey task "Close report" to "Close the period"

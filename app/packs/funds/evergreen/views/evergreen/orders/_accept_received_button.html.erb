@@ -1,0 +1,16 @@
+<%# "Accept received amount" with the action-summary confirm popup (§ Accept received amount) %>
+<% rem = order.capital_remittance %>
+<% received = rem.collected_amount_cents %>
+<% fill = order.dealing_fills.where(kind: "subscription").order(:id).last %>
+<%
+  cards = [
+    ["amber", "ti-arrow-down", "Reduce the subscription", "From #{evergreen_money(rem.call_amount_cents, order.fund)} to the #{evergreen_money(received, order.fund)} received"],
+    (["green", "ti-coins", eg_t(:allocate_units, fund: order.fund), "#{eg_units(received.to_d / fill.nav_per_unit_cents.to_d, fund: order.fund)} at #{evergreen_nav_per_unit(fill.nav_per_unit_cents)}"] if fill),
+    ["grey", "ti-lock", "Final", "Money arriving later is an excess to refund"]
+  ].compact
+  # Reduces the subscription to what arrived; the popup title names the amount
+  msg = evergreen_action_summary(cards)
+%>
+<%= button_to accept_received_evergreen_order_path(order.fund_id, order), method: :post, class: css, form: { class: "d-inline" },
+      id: "accept_received_#{order.id}",
+      data: { action: "click->confirm#popup", method: "post", title: "Accept #{evergreen_money(received, order.fund)} as the subscription", msg: } do %><i class="ti ti-cash"></i> Accept received amount<% end %>

@@ -57,6 +57,7 @@ Feature: Investment subgroups and per-instrument cap table rows
     Then I should see "too long"
     And no investment should exist for "Long Subgroup Fund"
 
+  @rack_test
   Scenario: An Equity investment never keeps an instrument name or instrument quantity
     Given there are the following investments for "Startup Inc":
       | investor_name | category | investment_type | funding_round | quantity | price | investment_date | instrument_name | instrument_quantity |
@@ -65,6 +66,7 @@ Feature: Investment subgroups and per-instrument cap table rows
       | instrument_name     |  |
       | instrument_quantity |  |
 
+  @rack_test
   Scenario: Investments can be filtered by subgroup
     Given there are the following investments for "Startup Inc":
       | investor_name     | category | investment_type | funding_round | quantity | price | investment_date | subgroup      |
@@ -74,6 +76,7 @@ Feature: Investment subgroups and per-instrument cap table rows
     Then I should see "NorthInc Ventures"
     And I should not see "John Doe"
 
+  @rack_test
   Scenario: The horizontal cap table nests investors with a subgroup under that subgroup
     Given there are the following investments for "Startup Inc":
       | investor_name     | category | investment_type | funding_round | quantity | price | investment_date | subgroup      | instrument_name | instrument_quantity |
@@ -87,6 +90,7 @@ Feature: Investment subgroups and per-instrument cap table rows
       | Others   | Angel         | Angel One         | Equity        |
       | Others   | Institutional | NorthInc Ventures | CCPS Series A |
 
+  @rack_test
   Scenario: An investor tagged with a subgroup in only one round still gets a single row under that subgroup
     Given there are the following investments for "Startup Inc":
       | investor_name     | category | investment_type | funding_round | quantity | price | investment_date | subgroup      |
@@ -97,6 +101,7 @@ Feature: Investment subgroups and per-instrument cap table rows
       | category | subgroup      | investor          | instrument |
       | Others   | Institutional | NorthInc Ventures | Equity     |
 
+  @rack_test
   Scenario: An investor holding Equity and a Convertible gets a separate row per instrument
     Given there are the following investments for "Startup Inc":
       | investor_name | category | investment_type | funding_round | quantity | price | investment_date | instrument_name | instrument_quantity |
@@ -113,6 +118,7 @@ Feature: Investment subgroups and per-instrument cap table rows
       | John Doe | CCPS       | 10       | 0.99%      | 1000          | 50.0%           |
       | Total    | -          | 1010     | 100.0%     | 2000          | 100.0%          |
 
+  @rack_test
   Scenario: An investor with investments under two categories keeps one row per category
     Given there are the following investments for "Startup Inc":
       | investor_name | category | investment_type | funding_round | quantity | price | investment_date | instrument_name | instrument_quantity |
@@ -124,6 +130,7 @@ Feature: Investment subgroups and per-instrument cap table rows
       | Founders |          | John Doe | Equity     |
       | Others   |          | John Doe | CCPS       |
 
+  @rack_test
   Scenario: Merging several investors into the horizontal cap table's Self row does not compound rounding error
     # Self holds 3 of 7 equal shares (3/7 = 42.857142...%, which rounds to 42.86%). Three separate
     # Investment records merge into the single Self row - if the merge re-parses the previous
@@ -138,6 +145,7 @@ Feature: Investment subgroups and per-instrument cap table rows
     When I go to the captable of the portfolio company
     Then the horizontal cap table should show "42.86%" as the "Seed" percentage for "Self"
 
+  @rack_test
   Scenario: A Convertible counts its instrument quantity as held and the rest of its quantity as dilution
     Given there are the following investments for "Startup Inc":
       | investor_name     | category | investment_type | funding_round | quantity | price | investment_date | instrument_name | instrument_quantity |

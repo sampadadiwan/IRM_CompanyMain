@@ -1,21 +1,111 @@
-<div class="wizard_container" data-controller="wizard">
+<%# evergreen-fund-on-create ①: New Fund asks Closed-ended or Open-ended first; an open-ended fund carries
+    on into the evergreen steps (shared with Evergreen Settings) and is created with its terms in one go.
+    Worked examples H1–H5, E1–E5, X1–X3 — openspec/changes/evergreen-fund-on-create/design.md#worked-examples %>
+<% open_ended_choice = fund.new_record? && @evergreen_setting.present? %>
+<%# Editing an open-ended fund shows the same open-ended steps, with its current terms (type fixed) %>
+<% evergreen_edit = fund.persisted? && @evergreen_setting.present? %>
+<% evergreen_steps = open_ended_choice || evergreen_edit %>
+<%# New Fund with the choice: nothing preselected — the type page asks first (H5). After a failed
+    create the type is already chosen, so the form reopens at the fund details. %>
+<% fund_type = evergreen_edit ? "open_ended" : (@fund_type || params[:fund_type].presence || (open_ended_choice ? nil : "closed_end")) %>
+<div class="wizard_container" id="fund_wizard" data-controller="wizard<%= ' fund-type evergreen-settings' if evergreen_steps %>"
+     <% if evergreen_edit %>data-fund-type-fixed-value="open_ended"<% end %>
+     <% if open_ended_choice && fund_type.present? %>data-fund-type-chosen-value="true"<% end %>
+     <% if evergreen_steps %>data-evergreen-settings-preset-url-value="<%= evergreen_preset_path(name: "__NAME__") %>" data-evergreen-settings-fee-label-value="<%= EvergreenLabels.t(:early_fee, fund:, lower: true) %>"
+     data-evergreen-settings-currency-value="<%= fund.currency %>"<% end %>>
+  <%# The step bar spans exactly the card under it, its steps evenly spaced: the shared wizard CSS
+      makes the bar a full-width table with 200px minimum cells, which drifts off the card here (2 steps
+      for closed-ended, 11 for open-ended). Long titles are cut with an ellipsis. %>
+  <style>
+    #fund_wizard .stepwizard { display: block; }
+    @media (min-width: 768px) {
+      #fund_wizard .stepwizard.col-md-6 { width: 50%; }
+      #fund_wizard .stepwizard.col-md-8 { width: 66.666667%; }
+    }
+    #fund_wizard .stepwizard-row { display: flex; }
+    #fund_wizard .stepwizard-step { display: block; flex: 1 1 0; min-width: 0 !important; }
+    /* New Fund only: no step bar at the top (business request) — its links still drive Next/Back, so it
+       is hidden, not removed; each step shows "Step n of N" in its own heading instead */
+    #fund_wizard .stepwizard { display: none !important; }
+    /* The "Open-ended terms" frame shows only while one of its steps is the current one (the wizard
+       hides the others with display: none) — no empty frame under the fund's own steps */
+    #evergreen_steps:not(:has(.setup-content:not([style*="display: none"]))) { display: none; }
+    /* H5: type cards — a soft lift on hover; once picked, the card takes its own colour (border,
+       light tint, ring). Bootstrap's subtle vars only. */
+    #fund_type_choice .fund-type-card {
+      position: relative; overflow: hidden;
+      transition: border-color .15s ease, box-shadow .2s ease, background-color .15s ease, transform .2s ease;
+    }
+    #fund_type_choice .fund-type-card:hover { transform: translateY(-3px); box-shadow: 0 .5rem 1.25rem rgba(0, 0, 0, .08); }
+    /* A thin accent strip in the card's colour along the top */
+    #fund_type_choice .fund-type-card::before {
+      content: ""; position: absolute; inset: 0 0 auto 0; height: 4px; background: var(--tone);
+    }
+    #fund_type_choice .fund-type-card[data-tone="info"] { --tone: var(--bs-info); }
+    #fund_type_choice .fund-type-card[data-tone="success"] { --tone: var(--bs-success); }
+    #fund_type_choice .fund-type-card[data-tone="info"]:is(:hover, :has(input:checked)) { border-color: var(--bs-info-border-subtle) !important; }
+    #fund_type_choice .fund-type-card[data-tone="success"]:is(:hover, :has(input:checked)) { border-color: var(--bs-success-border-subtle) !important; }
+    #fund_type_choice .fund-type-card[data-tone="info"]:has(input:checked) { background: var(--bs-info-bg-subtle); box-shadow: 0 0 0 .2rem var(--bs-info-bg-subtle); }
+    #fund_type_choice .fund-type-card[data-tone="success"]:has(input:checked) { background: var(--bs-success-bg-subtle); box-shadow: 0 0 0 .2rem var(--bs-success-bg-subtle); }
+    /* The radio, larger than the default; no focus ring on the card — the wizard focuses the first
+       radio when the page opens, which must not look like a choice */
+    #fund_type_choice .fund-type-radio {
+      width: 1.6rem !important; height: 1.6rem !important; min-width: 1.6rem; min-height: 1.6rem; flex: 0 0 1.6rem;
+      aspect-ratio: 1; padding: 0; border-radius: 50% !important; background-size: 60%; cursor: pointer;
+    }
+    /* Icons sit dead-centre in their circles and on their text lines */
+    #fund_type_choice .type-icon .ti { line-height: 1; display: block; }
+    #fund_type_choice .fund-type-card li .ti { line-height: 1.5; }
+    /* On the picked card's tint, the icon circle and the steps badge (same tint) get a white ground */
+    #fund_type_choice .fund-type-card:has(input:checked) :is(.type-icon, .type-steps) { background-color: var(--bs-body-bg) !important; }
+    #fund_type_choice .fund-type-radio:focus { box-shadow: none; }
+  </style>
+  <%= render "evergreen/settings/stepper_style" %>
   <div class="row justify-content-md-center">
-    <div class="stepwizard hidden col-md-6">
+    <%# The bar is as wide as the card under it: the fund card (closed-ended) or the wider evergreen card
+        (open-ended) — fund-type#toggle swaps the width %>
+    <div class="stepwizard hidden <%= evergreen_steps && fund_type == 'open_ended' ? 'col-md-8' : 'col-md-6' %>"<% if evergreen_steps %> data-fund-type-target="bar"<% end %>>
         <div class="stepwizard-row setup-panel">
+            <% if open_ended_choice %>
+              <div class="stepwizard-step">
+                  <a href="#step-0" type="button" id="wizard_step_0" title="Fund type" class="btn btn-outline-primary btn-outline-circle">0</a>
+                  <p>Fund type</p>
+              </div>
+            <% end %>
             <div class="stepwizard-step">
-                <a href="#step-1" type="button" class="btn btn-outline-primary btn-outline-primary btn-outline-circle">1</a>
-                <p>Step 1</p>
+                <a href="#step-1" type="button" id="wizard_step_1" title="Fund details" class="btn btn-outline-primary btn-outline-primary btn-outline-circle">1</a>
+                <p><%= evergreen_steps ? "Fund details" : "Step 1" %></p>
             </div>
             <div class="stepwizard-step">
-                <a href="#step-2" type="button" class="btn disabled btn-outline-primary btn-outline-circle">2</a>
-                <p>Step 2</p>
+                <a href="#step-2" type="button" id="wizard_step_2" title="Other details" class="btn disabled btn-outline-primary btn-outline-circle">2</a>
+                <p><%= evergreen_steps ? "Other details" : "Step 2" %></p>
             </div>
+            <% if evergreen_steps %>
+              <% eg_wizard_steps.each_with_index do |(_icon, title), i| %>
+                <div class="stepwizard-step" data-fund-type-target="evergreenStep">
+                  <a href="#step-<%= i + 3 %>" type="button" id="wizard_step_<%= i + 3 %>" title="<%= title %>" class="btn disabled btn-outline-primary btn-outline-circle"><%= i + 3 %></a>
+                  <p><%= title %></p>
+                </div>
+              <% end %>
+            <% end %>
         </div>
     </div>
   </div>
 
+  <% if evergreen_steps %>
+    <%# Evergreen step links wait here while the fund is closed-ended, so the wizard never treats them as
+        the step after step 2 (its Save would otherwise move on instead of saving) — fund-type#toggle %>
+    <div class="d-none" data-fund-type-target="parking"></div>
+  <% end %>
   <%= form_with(model: fund, validate: true, class: "wizard_form row justify-content-md-center") do |form| %>
-    <% if fund.errors.any? %>
+    <% if @evergreen_errors.present? %>
+      <%# X1–X3: nothing was saved; every value below is kept %>
+      <div class="alert alert-danger" id="evergreen_create_errors">
+        <ul class="mb-0">
+          <% @evergreen_errors.each do |msg| %><li><%= msg %></li><% end %>
+        </ul>
+      </div>
+    <% elsif fund.errors.any? %>
       <div class="alert alert-danger">
         <h2><%= pluralize(fund.errors.count, "error") %> prohibited this fund from being saved:</h2>
 
@@ -29,11 +119,32 @@
 
     <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
 
-    <div class="col-md-6 setup-content" id="step-1">
+    <% if open_ended_choice %>
+      <%# H5: New Fund starts by choosing the fund's type from two described cards; Edit never shows this %>
+      <%= render "funds/fund_type_choice", fund_type: %>
+    <% end %>
+
+    <div class="<%= evergreen_steps && fund_type == 'open_ended' ? 'col-md-8' : 'col-md-6' %> setup-content" id="step-1"<% if evergreen_steps %> data-fund-type-target="bar"<% end %>>
         <div class="">
             <div class="card">
                 <div class="card-header"> 1. Fund Details </div>
                 <div class="card-body">
+
+                  <% if open_ended_choice %>
+                    <%# The type chosen on the type page; Change (or Back) returns there %>
+                    <div class="d-flex align-items-center gap-2 mb-3" id="fund_type_chosen">
+                      <span class="text-muted small">Fund type</span>
+                      <span data-fund-type-target="openOnly" class="d-none"><%= fund_type_pill(true) %></span>
+                      <span data-fund-type-target="closedOnly"><%= fund_type_pill(false) %></span>
+                      <a href="#" class="small" id="change_fund_type" data-action="fund-type#change">Change</a>
+                    </div>
+                  <% elsif fund.persisted? && fund.entity.permissions.enable_evergreen_funds? %>
+                    <%# E5: the type is fixed once the fund exists %>
+                    <div class="form-group" id="fund_type_readonly">
+                      <label class="form-label fw-semibold">Fund type</label>
+                      <div class="form-control-plaintext"><%= fund.evergreen? ? "Open-ended (evergreen)" : "Closed-ended" %></div>
+                    </div>
+                  <% end %>
 
                   <div class="form-group">
                     <%= form.label :name %>
@@ -77,7 +188,8 @@
                     <div class="form-group">
                       <%= form.label :unit_types %>
                       <%= form.text_field :unit_types, class: "form-control" %>
-                      <small>Comma separated list unit types issued by the fund. Ex Series A,Series B </small>
+                      <small>Comma separated list unit types issued by the fund. Ex Series A,Series B </small><% if open_ended_choice %><small class="d-block text-muted" data-fund-type-target="openOnly">Required for an open-ended fund: one class card per unit type on the Classes step.</small>
+                      <small class="d-block text-danger d-none" id="unit_types_needed">Add at least one unit type for an open-ended fund, for example "A, B".</small><% end %>
                     </div>
                   <% end %>
 
@@ -100,14 +212,21 @@
 
                   <%= custom_form_fields(fund, form, step: :one) %>
 
-                  <button class="btn btn-outline-primary nextBtn btn-lg pull-right" type="button"><%= t_common(:next) %></button>
+                  <% if open_ended_choice %>
+                    <div class="d-flex justify-content-between">
+                      <button class="btn btn-outline-secondary btn-lg prevBtn" type="button" id="fund_back_to_type"><i class="ti ti-arrow-left"></i> Back</button>
+                      <button class="btn btn-outline-primary nextBtn btn-lg" type="button"><%= t_common(:next) %></button>
+                    </div>
+                  <% else %>
+                    <button class="btn btn-outline-primary nextBtn btn-lg pull-right" type="button"><%= t_common(:next) %></button>
+                  <% end %>
 
                 </div>
             </div>
         </div>
     </div>
 <!-- End step-1 -->
-    <div class="col-md-6 setup-content" id="step-2">
+    <div class="<%= evergreen_steps && fund_type == 'open_ended' ? 'col-md-8' : 'col-md-6' %> setup-content" id="step-2"<% if evergreen_steps %> data-fund-type-target="bar"<% end %>>
         <div class="">
             <div class="card">
                 <div class="card-header"> 2. Signatures, Ratios & Other Details </div>
@@ -144,14 +263,39 @@
 
                   <%= custom_form_fields(fund, form, step: :end) %>
 
-                  <div class="form-group">
-                    <%= form.submit t_common(:save), {class: "btn btn-outline-primary btn-lg pull-right"}%>
+                  <div class="form-group d-flex justify-content-between">
+                    <%# H3: Back to the fund details (the wizard controller's prevBtn) %>
+                    <button class="btn btn-outline-secondary btn-lg prevBtn" type="button" id="fund_back_to_step_1"><i class="ti ti-arrow-left"></i> Back</button>
+                    <span data-fund-type-target="closedOnly"><%= form.submit t_common(:save), {class: "btn btn-outline-primary btn-lg", id: "save_fund"} %></span>
+                    <% if evergreen_steps %>
+                      <%# Into the open-ended terms: needs unit types first (fund-type#toEvergreen) %>
+                      <button class="btn btn-primary btn-lg d-none" type="button" data-fund-type-target="openOnly" id="fund_next_to_evergreen"
+                              data-action="fund-type#toEvergreen">Next <i class="ti ti-arrow-right"></i></button>
+                    <% end %>
                   </div>
                 </div>
             </div>
         </div>
     </div>
 <!-- End step-2 -->
+    <% if evergreen_steps %>
+      <%# ②: the evergreen steps (3–11), only reached for an open-ended fund; their fields post as
+          evergreen_fund_setting[...] and are ignored for a closed-ended fund (E4) %>
+      <%# Same card frame as the fund's own steps, a little wider for the evergreen tables %>
+      <div class="col-md-8" id="evergreen_steps">
+        <div class="card">
+          <div class="card-header"><i class="ti ti-infinity me-1"></i> Open-ended terms</div>
+          <div class="card-body">
+            <%= fields(:evergreen_fund_setting, model: @evergreen_setting) do |eg_form| %>
+              <%= eg_form.hidden_field :preset %>
+              <%= render "evergreen/settings/steps", form: eg_form, setting: @evergreen_setting, fund:, offset: 2,
+                         submit_label: (evergreen_edit ? "Save fund" : "Create fund"), submit_id: (evergreen_edit ? "save_open_ended_fund" : "create_fund"),
+                         submit_icon: (evergreen_edit ? "device-floppy" : "infinity") %>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    <% end %>
     <% end %>
 
 </div>

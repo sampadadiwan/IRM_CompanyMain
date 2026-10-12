@@ -48,6 +48,7 @@ Feature: Workflow Instance Reset
 
   # ── Audit entry ─────────────────────────────────────────────────────────────────
 
+  @rack_test
   Scenario Outline: Reset records a "reset" state-change audit entry
     Given there is a workflow template "name=Single Audit" with 1 step "name=Review;states=Approved,Rejected;quorum_rule=any_one;on_reject_rule=stop;actors=admin"
     And the entity has a folder "name=Audit Folder"
@@ -96,6 +97,7 @@ Feature: Workflow Instance Reset
 
   # ── Cannot reset a non-active instance ────────────────────────────────────────
 
+  @rack_test
   Scenario Outline: Cannot reset an archived workflow instance
     Given there is a workflow template "name=Blocked Reset" with 1 step "name=Review;states=Approved,Rejected;quorum_rule=any_one;on_reject_rule=stop;actors=admin"
     And the entity has a folder "name=Archived Folder"

@@ -1,3 +1,4 @@
+@rack_test
 Feature: Investor KYC visibility rule
   One rule decides who can see a KYC - the KYC list, the KYC page and the three KYC
   notification emails (submitted, updated, updates requested) all follow it:

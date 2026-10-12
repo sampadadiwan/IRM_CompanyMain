@@ -1,3 +1,4 @@
+@rack_test
 Feature: Support Client Mappings
   As an admin or support user
   I want to manage support client mappings

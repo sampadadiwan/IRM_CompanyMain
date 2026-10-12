@@ -1,0 +1,99 @@
+<%# A confirmed dealing date (proposal GP-3): the same Subscriptions / Redemptions tabs and columns as the
+    preview, filled from the stored fills (what was actually priced, paid and carried) in the past tense,
+    plus a Settlement column with each row's status (badges) and the row's actions as buttons in Actions. The settlement-records links and the
+    Undo / Close buttons live on the dealing-date page itself (details card and actions row).
+    Locals: dealing_date, sub_fills, red_fills (queue order not needed — from_fills sorts), first_tab.
+    Worked examples H21, H24, E33, X18 %>
+<% dd = dealing_date %>
+<% fund = dd.fund %>
+<%# Investor and folio cells come from eg_investor_cell / eg_folio_cell — the same as the preview rows %>
+<%# The panes are direct children of the page's .tab-content — Bootstrap only hides an inactive pane
+    that is (.tab-content > .tab-pane), so no wrapper div here or the hidden tab still takes up its height %>
+  <div id="subscriptions-tab" class="tab-pane fade <%= 'show active' if first_tab == 'subscriptions' %>">
+    <div class="card shadow-sm border-0 mb-4">
+      <div class="card-header border-bottom py-3">
+        <h6 class="mb-0 fw-bold d-flex align-items-center"><i class="ti ti-circle-plus me-2 text-success"></i>Subscriptions</h6>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-bordered hover mb-0" id="tracker_subscriptions">
+            <thead><tr><th>Received</th><th>Investor</th><th><%= eg_t(:capital_commitment) %></th><th>Class</th><th class="text-end">Amount</th><th class="text-end"><%= eg_t(:nav_per_unit_short) %></th><th class="text-end">Allotted</th><th>Settlement</th><th class="action-col" aria-label="Actions">Actions</th></tr></thead>
+            <tbody>
+              <% if sub_fills.empty? %><tr><td colspan="9" class="text-muted"><i class="ti ti-inbox me-1"></i>No subscriptions were dealt on this <%= EvergreenLabels.lower(eg_t(:subscription_date)) %>.</td></tr><% end %>
+              <% sub_fills.each do |f| %>
+                <% o = f.dealing_order %>
+                <tr id="fill_<%= f.id %>"><td><%= l(o.received_at) %></td><td><%= eg_investor_cell(o) %></td><td><%= eg_folio_cell(o, fund) %></td><td><%= f.unit_type %></td>
+                  <td class="text-end"><%= evergreen_money(f.amount_cents, fund) %></td><td class="text-end"><%= evergreen_nav_per_unit(f.nav_per_unit_cents) %></td>
+                  <td class="text-end"><%= number_with_precision(f.units, precision: 4, delimiter: ",") %> <%= eg_order_terms_badges(o) %></td>
+                  <td><%= render "evergreen/dealing_dates/fill_status", fill: f %></td>
+                  <td class="action-col"><%= render "evergreen/dealing_dates/fill_actions", fill: f %></td></tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="redemptions-tab" class="tab-pane fade <%= 'show active' if first_tab == 'redemptions' %>">
+    <div class="card shadow-sm border-0 mb-4">
+      <div class="card-header border-bottom py-3">
+        <h6 class="mb-0 fw-bold d-flex align-items-center"><i class="ti ti-circle-minus me-2 text-danger"></i>Redemptions</h6>
+      </div>
+      <div class="card-body">
+        <%# The same rows as the preview and the fund's Redemptions list, from what was stored at confirmation %>
+        <% gate_rows = EvergreenGateForecast.from_fills(dd, red_fills) %>
+        <% snapshot = dd.gate_snapshot.to_h %>
+        <% if red_fills.any? %>
+          <%
+            # The preview's cards, in the past tense: the gate, what was asked, filled, and carried
+            pct = snapshot["pct"].to_d
+            requested = gate_rows.queued_cents
+            paid = gate_rows.rows.sum { |r| r.paid_cents.to_d }
+            paid_pct = requested.positive? ? " · #{((paid / requested) * 100).round(1)}%" : ""
+            carried_row = gate_rows.rows.find { |r| r.carried_units.to_d.positive? }
+            gate_card = if pct.positive? && gate_rows.gate_cents
+                          # The pool the confirm allocated (gate left after earlier dates in the period); review fix 8 adds what was used
+                          { stat: evergreen_money(gate_rows.gate_cents, fund), subtitle: "Gate · #{pct.round(2).to_s.sub(/\.0+$/, '')}% of NAV · #{gate_rows.gate_method == 'fifo' ? 'FIFO' : 'Pro-rata'}#{eg_gate_used_note(gate_rows.gate_used_cents, fund)}" }
+                        else
+                          { stat: "No gate", subtitle: "All redemptions filled" }
+                        end
+            carried_subtitle = if carried_row.nil? then "Nothing #{EvergreenLabels.lower(eg_t(:carried))}"
+                               elsif carried_row.order.dealing_date_id != dd.id then "#{eg_t(:carried)} to #{l(carried_row.order.dealing_date.date)}"
+                               else "Not #{eg_t(:carried, lower: true)} — no later #{eg_t(:redemption_date, lower: true)} in the calendar"
+                               end
+            cards = [gate_card.merge(color: "secondary"),
+                     { stat: evergreen_money(requested, fund), subtitle: "Requested", color: "info" },
+                     # "Filled", not "Paid": the value dealt at the NAV — the payout itself is the row's Settlement badge
+                     { stat: evergreen_money(paid, fund), subtitle: "Filled#{paid_pct}", color: "success" },
+                     { stat: evergreen_money(gate_rows.carried_cents, fund), subtitle: carried_subtitle, color: "danger" }]
+          %>
+          <div class="row mb-3" id="gate_summary">
+            <% cards.each do |card| %>
+              <%= render(NumberStatsComponent.new(path: nil, amount: card[:stat], subtitle: card[:subtitle], progress_bar_color: card[:color])) %>
+            <% end %>
+          </div>
+        <% end %>
+        <div class="table-responsive">
+          <table class="table table-bordered hover mb-0" id="tracker_redemptions">
+            <thead><tr><th>Received</th><th>Investor</th><th><%= eg_t(:capital_commitment) %></th><th class="text-end">Amount</th><th class="text-end"><%= eg_t(:Units) %></th><%= eg_gate_headers(fund, done: true) %><th>Settlement</th><th class="action-col" aria-label="Actions">Actions</th></tr></thead>
+            <tbody>
+              <% if red_fills.empty? %><tr><td colspan="11" class="text-muted"><i class="ti ti-inbox me-1"></i>No redemptions were dealt on this <%= EvergreenLabels.lower(eg_t(:redemption_date)) %>.</td></tr><% end %>
+              <% fills_by_order = red_fills.index_by(&:dealing_order_id) %>
+              <% gate_rows.rows.each do |row| %>
+                <% o = row.order %>
+                <% f = fills_by_order[o.id] %>
+                <% gate_cells = eg_gate_cells(row, gate_rows, fund, done: true) %>
+                <%# Both sides were priced at the dealing date's NAV, so neither is an estimate %>
+                <tr id="fill_<%= f.id %>"><td><%= l(o.received_at) %></td><td><%= eg_investor_cell(o) %></td><td><%= eg_folio_cell(o, fund) %></td>
+                  <td class="text-end"><%= evergreen_money(row.value_cents, fund) %></td><td class="text-end"><%= number_with_precision(row.units, precision: 4, delimiter: ",") %> <%= eg_order_terms_badges(o) %></td>
+                  <td class="text-end"><%= gate_cells[0] %></td><td class="text-end"><%= gate_cells[1] %></td><td class="text-end"><%= gate_cells[2] %></td><td><%= gate_cells[3] %></td>
+                  <td><%= render "evergreen/dealing_dates/fill_status", fill: f %></td>
+                  <td class="action-col"><%= render "evergreen/dealing_dates/fill_actions", fill: f %></td></tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>

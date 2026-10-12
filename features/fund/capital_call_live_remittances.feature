@@ -33,6 +33,7 @@ Feature: Capital call page refreshes itself when remittances are generated
     And the progress line should be empty
     And without reloading, the call page should show each of the call's remittances
 
+  @rack_test
   Scenario: A page opened while the job is running shows how far it has got
     Given remittance generation for the call is 1 of 2 done
     When I open the call page
@@ -57,6 +58,7 @@ Feature: Capital call page refreshes itself when remittances are generated
     Then without reloading, the call page should show each of the call's remittances
     And the remittances list should still be filtered by payment status "Pending"
 
+  @rack_test
   Scenario: A user without access cannot load the call's stats cards
     Given the capital call belongs to another company
     When I load the call's stats cards directly

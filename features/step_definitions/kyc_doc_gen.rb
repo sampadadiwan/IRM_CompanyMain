@@ -17,7 +17,7 @@ Given('there is a template {string} in folder {string}') do |template_name, fold
 
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{template_name}.docx"), make_visible: true)
   page.execute_script('window.scrollTo(0, document.body.scrollHeight);')
-  sleep(5)
+  wait_for_upload("./public/sample_uploads/#{template_name}.docx") # JS direct-upload to /upload; returns once it lands (was sleep 5)
   check("document_template")
   click_on("Save")
   expect(page).to have_content("successfully")

@@ -11,6 +11,7 @@ Feature: Cap table page actions
     And there is an existing portfolio company "investor_name=Startup Inc;category=Portfolio Company"
     And there is an investor named "John Doe"
 
+  @rack_test
   Scenario: A company with no data offers both entry points and no downloads
     When I go to the captable of the portfolio company
     Then I should see these cap table actions:
@@ -23,6 +24,7 @@ Feature: Cap table page actions
       | Download Investments           |
       | Download Shareholding Patterns |
 
+  @rack_test
   Scenario: A company with investments offers only the investment actions, including the download
     Given there are the following investments for "Startup Inc":
       | investor_name | category | investment_type | funding_round | quantity | price | investment_date |
@@ -65,6 +67,7 @@ Feature: Cap table page actions
       | Download Investments           |
       | Download Shareholding Patterns |
 
+  @rack_test
   Scenario: The investments list outside a portfolio company offers every action
     Given I am at the investments page
     Then I should see these cap table actions:

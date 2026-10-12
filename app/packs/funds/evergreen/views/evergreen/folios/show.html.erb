@@ -1,0 +1,220 @@
+<%# Evergreen folio page. Worked examples H35, H67, H68, E48, E206, E207
+    Same layout as a closed-ended detail page: holding stats cards and the details card, then tab pills %>
+<div class="container-fluid p-3" id="evergreen_folio" data-controller="tooltip">
+  <%= render ToggleCard.new(title: "#{eg_t(:capital_commitment)}: #{@folio.folio_id}", css_class: "show_folio") do %>
+    <%# Holding at a glance — the same NumberStatsComponent cards as the order book's gate summary.
+        Theme colours: info (units), success (value), secondary (cost), success / danger (gain or loss) %>
+    <% if @row %>
+      <%
+        gain_color = @row.gain_pct.nil? ? "secondary" : (@row.gain_pct.negative? ? "danger" : "success")
+        holding_cards = [
+          { stat: number_with_precision(@row.units, precision: 4, delimiter: ","), subtitle: "#{eg_t(:Units)} held", color: "info" },
+          { stat: @row.nav ? evergreen_money(@row.value_cents, @fund) : "—", subtitle: @row.nav ? "Value at the NAV of #{l(@row.nav.nav_date)}" : "Value · no approved NAV yet", color: "success" },
+          { stat: evergreen_money(@row.cost_cents, @fund), subtitle: "Cost · average cost of the #{eg_t(:units)} held", color: "secondary" },
+          { stat: @row.gain_pct.nil? ? "—" : "#{@row.gain_pct}%", subtitle: "Gain · value against cost", color: gain_color }
+        ]
+      %>
+      <div class="row mb-3" id="folio_holding">
+        <% holding_cards.each do |card| %>
+          <%= render(NumberStatsComponent.new(path: nil, amount: card[:stat], subtitle: card[:subtitle], progress_bar_color: card[:color])) %>
+        <% end %>
+      </div>
+    <% end %>
+
+    <div class="card shadow-sm border-0 mb-4">
+      <div class="card-header border-bottom py-3">
+        <h5 class="mb-0 fw-bold"><i class="ti ti-file-text me-2 text-info"></i><%= eg_t(:capital_commitment) %> <%= @folio.folio_id %> · <%= @folio.investor.investor_name %> · Class <%= @folio.unit_type %>
+          <%# evergreen-folio-soa ③ / X4 / X10: a folio without a KYC can't trade or get a statement %>
+          <% unless @folio.investor_kyc_id %><%= eg_badge(:red, "alert-triangle", "No KYC linked", "Orders and statements are refused until an approved KYC is linked below.", id: "folio_no_kyc") %><% end %>
+        </h5>
+      </div>
+      <div class="card-body">
+        <div class="row g-4">
+          <div class="col-md-6">
+            <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Investor</label>
+            <div class="fs-4 fw-medium"><%= eg_gp_link(@folio.investor.investor_name, investor_path(@folio.investor)) %></div>
+          </div>
+          <div class="col-md-6">
+            <label class="text-muted text-uppercase fw-bold fs-1 mb-1"><%= eg_t(:capital_commitment) %></label>
+            <div class="fs-4 fw-medium"><%= @folio.folio_id %></div>
+          </div>
+          <div class="col-md-6">
+            <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Class</label>
+            <div class="fs-4 fw-medium"><%= @folio.unit_type %></div>
+          </div>
+          <div class="col-md-6">
+            <label class="text-muted text-uppercase fw-bold fs-1 mb-1"><%= eg_t(:committed_amount) %></label>
+            <div class="fs-4 fw-medium"><%= evergreen_money(@folio.committed_amount_cents, @fund) %></div>
+          </div>
+          <%= render "evergreen/folios/investing_entity", folio: @folio, fund: @fund, approved_kycs: @approved_kycs %>
+        </div>
+      </div>
+    </div>
+
+    <%# New subscription / Redeem into this folio: the wizard opens with the folio and its class picked
+        (OrdersController#build_order reads dealing_order[capital_commitment_id] / [unit_type]) %>
+    <% new_order = DealingOrder.new(fund: @fund, entity_id: @fund.entity_id, investor_id: @folio.investor_id, capital_commitment: @folio) %>
+    <% if policy(new_order).create? %>
+      <div class="d-flex flex-wrap align-items-center gap-2 mb-3" id="folio_actions">
+        <% folio_params = { capital_commitment_id: @folio.id, unit_type: @folio.unit_type } %>
+        <%= link_to new_evergreen_order_path(@fund, kind: "subscription", dealing_order: folio_params), class: "btn btn-outline-primary", id: "folio_new_subscription", data: { turbo: false } do %><i class="ti ti-plus"></i> New subscription<% end %>
+        <%= link_to new_evergreen_order_path(@fund, kind: "redemption", dealing_order: folio_params), class: "btn btn-outline-primary", id: "folio_new_redemption", data: { turbo: false } do %><i class="ti ti-minus"></i> Redeem<% end %>
+      </div>
+    <% end %>
+    <%# Generate statement (evergreen-folio-soa ④): for users who can edit the folio; disabled with the reason
+        while the folio has no approved KYC, which the SOA job needs (X10) %>
+    <% if policy(@folio).update? %>
+      <div class="d-flex flex-wrap align-items-center gap-2 mb-3" id="folio_statement_actions">
+        <% if policy(@folio).generate_soa? %>
+          <button type="button" class="btn btn-outline-primary d-inline-flex align-items-center" data-bs-toggle="modal" data-bs-target="#generate_statements_modal" id="generate_statement_open"><i class="ti ti-file-text"></i> Generate statement</button>
+        <% else %>
+          <span data-bs-toggle="tooltip" title="Link an approved KYC to this <%= EvergreenLabels.lower(eg_t(:capital_commitment)) %> first"><button type="button" class="btn btn-outline-primary d-inline-flex align-items-center" disabled id="generate_statement_open"><i class="ti ti-file-text"></i> Generate statement</button></span>
+        <% end %>
+      </div>
+      <%= render "evergreen/statements/generate_modal", fund: @fund, folio: @folio if policy(@folio).generate_soa? %>
+    <% end %>
+  <% end %>
+</div>
+
+<%# Bottom tabs — same pills markup as the closed-ended call/fund pages, and like the fund page rendered
+    outside the top container so they span the full width %>
+<div class="associated_entity" data-controller="tabs tabdetails tooltip" id="evergreen_folio_tabs">
+  <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row" role="tablist">
+    <a class="nav-link active" data-bs-toggle="pill" href="#requests-tab">Requests</a>
+    <a class="nav-link" data-bs-toggle="pill" href="#unit-history-tab"><%= eg_t(:Unit) %> History</a>
+    <a class="nav-link" data-bs-toggle="pill" href="#folio-documents-tab">Documents</a>
+  </nav>
+
+  <div class="tab-content">
+    <%# Requests: this folio's subscriptions and redemptions with what each got on its dealing date (H67, E206) %>
+    <div id="requests-tab" class="tab-pane fade show active">
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-bordered dataTable action_table hover" id="folio_orders">
+              <thead>
+                <tr>
+                  <th>Received</th><th>Type</th><th><%= eg_t(:transaction_date) %></th>
+                  <th class="text-end">Amount</th><th class="text-end"><%= eg_t(:Units) %></th>
+                  <th class="text-end"><%= eg_t(:nav_per_unit_short) %></th><th class="text-end"><%= eg_t(:Units) %> dealt</th>
+                  <th class="text-end"><%= eg_t(:carried) %></th><th class="text-end"><%= eg_t(:early_fee) %></th>
+                  <th>Status</th><th class="action-col" aria-label="Actions">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% if @orders.empty? %><tr><td colspan="11" class="text-muted"><i class="ti ti-inbox me-1"></i>No requests yet — subscriptions and redemptions on this <%= EvergreenLabels.lower(eg_t(:capital_commitment)) %> appear here.</td></tr><% end %>
+                <% @orders.each do |o| %>
+                  <%
+                    # What was asked (Amount / Units, the other side ≈ at the latest approved NAV), then what dealing
+                    # did, from the order's fills: the latest fill's NAV, units summed across fills
+                    amount_cell, units_cell = eg_order_amount_units(o, @navs[o.unit_type])
+                    fills = o.dealing_fills.sort_by(&:dealing_date_id) # preloaded with the orders (one query for all)
+                    last_fill = fills.last
+                    filled_units = fills.sum { |f| f.units.to_d }
+                    early_fee = fills.sum { |f| f.early_fee_cents.to_d }
+                    sign = o.subscription? ? "+" : "−"
+                    # "To allot / to cancel" until the units have actually moved — that waits for the money
+                    # (subscription) or the payout (redemption), as on the order page
+                    priced = fills.select { |f| f.units.to_d.positive? }
+                    moved = priced.any? && priced.all?(&:fund_unit_id)
+                    moved_word = o.subscription? ? (moved ? "allotted" : "to allot") : (moved ? "cancelled" : "to cancel")
+                    not_priced = "Priced on the #{EvergreenLabels.lower(eg_t(o.subscription? ? :subscription_date : :redemption_date))}"
+                  %>
+                  <tr id="folio_order_<%= o.id %>">
+                    <td><%= eg_order_source_icon(o) %><%= link_to l(o.received_at), evergreen_order_path(@fund, o), data: { turbo_frame: "_top" } %></td>
+                    <td><%= eg_order_kind_badge(o) %></td>
+                    <td><%= eg_gp_link(l(o.dealing_date.date), evergreen_dealing_date_path(@fund, o.dealing_date)) %></td>
+                    <td class="text-end"><%= amount_cell %></td>
+                    <td class="text-end"><%= units_cell %> <%= eg_order_terms_badges(o) %></td>
+                    <% if last_fill %>
+                      <%# H67 — priced: the NAV used and the units moved %>
+                      <td class="text-end"><%= evergreen_nav_per_unit(last_fill.nav_per_unit_cents) %></td>
+                      <td class="text-end"><%= sign %><%= number_with_precision(filled_units, precision: 4, delimiter: ",") %> <span class="text-muted small"><%= moved_word if priced.any? %></span></td>
+                      <td class="text-end"><%= last_fill.carried_units.to_d.positive? ? number_with_precision(last_fill.carried_units, precision: 4, delimiter: ",") : "—" %></td>
+                      <td class="text-end"><%= early_fee.positive? ? evergreen_money(early_fee, @fund) : "—" %></td>
+                    <% else %>
+                      <%# E206 — not priced yet: nothing to show until its dealing date is confirmed %>
+                      <%# One cell per line: cells glued with no whitespace between them read as one "————" word in the row's text %>
+                      <% 4.times do %>
+                        <td class="text-end text-muted" title="<%= not_priced %>" data-bs-toggle="tooltip">—</td>
+                      <% end %>
+                    <% end %>
+                    <td><%= eg_order_status_badge(o) %> <%= eg_queue_badge(o) %></td>
+                    <td class="action-col"><%= link_to t_common(:view), evergreen_order_path(@fund, o), class: "btn btn-outline-primary ti ti-eye", data: { turbo_frame: "_top", bs_toggle: "tooltip", bs_title: "Open #{o.kind} order" }, aria: { label: "Open #{o.kind} order" } %></td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%# Unit History: every unit movement, oldest first, with a running balance (H68, E207) %>
+    <div id="unit-history-tab" class="tab-pane fade">
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-bordered dataTable action_table hover" id="folio_unit_history">
+              <thead><tr><th>Issue date</th><th>Source</th><th class="text-end"><%= eg_t(:Units) %></th><th class="text-end">Price / <%= eg_t(:unit) %></th><th class="text-end">Amount</th><th class="text-end">Balance</th></tr></thead>
+              <tbody>
+                <% if @unit_history.empty? %><tr><td colspan="6" class="text-muted"><i class="ti ti-coins me-1"></i>No <%= eg_t(:units) %> yet — <%= eg_t(:units) %> appear once a subscription is <%= EvergreenLabels.lower(eg_t(:dealt)) %> on a <%= EvergreenLabels.lower(eg_t(:subscription_date)) %>.</td></tr><% end %>
+                <% @unit_history.each do |h| %>
+                  <% u = h[:unit]; fill = h[:fill] %>
+                  <tr id="unit_movement_<%= u.id %>">
+                    <td>
+                      <%= l(u.issue_date) %>
+                      <%# E207 — issued after today: in the balance here, not yet in Holding %>
+                      <% if u.issue_date > Time.zone.today %><%= eg_badge(:grey, "calendar-time", "Not yet issued", "Issues on #{l(u.issue_date)}; the #{eg_t(:Units)} held card counts #{eg_t(:units)} issued up to today.") %><% end %>
+                    </td>
+                    <td>
+                      <% if fill %>
+                        <%# Made by a dealing fill: link to the order it settled %>
+                        <%= link_to "#{eg_t(fill.kind.to_sym)} · #{l(fill.dealing_date.date)}", evergreen_order_path(@fund, fill.dealing_order) %>
+                      <% else %>
+                        <%# Not from dealing (opening units, transfers): the unit row's own reason %>
+                        <%= u.reason.presence || "—" %>
+                      <% end %>
+                    </td>
+                    <td class="text-end"><%= u.quantity.to_d.positive? ? "+" : "−" %><%= number_with_precision(u.quantity.to_d.abs, precision: 4, delimiter: ",") %></td>
+                    <td class="text-end"><%= evergreen_money(h[:price_cents], @fund) %></td>
+                    <td class="text-end"><%= evergreen_money((u.quantity.to_d.abs * h[:price_cents]).round(2), @fund) %></td>
+                    <td class="text-end fw-medium"><%= number_with_precision(h[:balance], precision: 4, delimiter: ",") %></td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+          <% if @unit_history.any? %>
+            <div class="text-muted small mt-2"><i class="ti ti-info-circle me-1"></i>The last balance is the <%= EvergreenLabels.lower(eg_t(:capital_commitment)) %>'s <%= eg_t(:units) %> after every movement; the <%= eg_t(:Units) %> held card counts movements issued up to today. Price / <%= eg_t(:unit) %> is the issue price plus any premium.</div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <div id="folio-documents-tab" class="tab-pane fade">
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+          <%# Same table + empty-state row as the other tabs %>
+          <div class="table-responsive">
+            <table class="table table-bordered dataTable action_table hover" id="folio_documents">
+              <thead><tr><th>Name</th><th>Added</th><th class="action-col" aria-label="Actions">Actions</th></tr></thead>
+              <tbody>
+                <% if @documents.empty? %><tr><td colspan="3" class="text-muted"><i class="ti ti-files me-1"></i>No documents yet — <%= EvergreenLabels.lower(eg_t(:contract_note)) %>s and <%= EvergreenLabels.lower(eg_t(:redemption_advice)) %>s for this <%= EvergreenLabels.lower(eg_t(:capital_commitment)) %> appear here once sent.</td></tr><% end %>
+                <% @documents.each do |d| %>
+                  <tr id="folio_document_<%= d.id %>">
+                    <td><%= link_to d.name, document_path(d), data: { turbo_frame: "_top" } %>
+                      <%# ⑥ H5: generated, not yet approved — only users who can edit the folio get these rows %>
+                      <% if d.owner_tag == "Generated" && !d.approved %><%= eg_badge(:blue, "clock", "Generated · awaiting approval", "Approve under Documents › Approve; investors see it after that.", extra: "ms-1") %><% end %></td>
+                    <td><%= l(d.created_at.to_date) %></td>
+                    <td class="action-col"><%= link_to t_common(:view), document_path(d), class: "btn btn-outline-primary ti ti-eye", data: { turbo_frame: "_top" }, aria: { label: "Open #{d.name}" } %></td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

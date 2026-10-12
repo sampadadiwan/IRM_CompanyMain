@@ -9,6 +9,7 @@ Feature: ReportBuilderChildAggregator — all aggregate types
 
   # ── COUNT ────────────────────────────────────────────────────────────────
 
+  @rack_test
   Scenario: count returns the number of child records
     Given that investor has 3 capital commitments of 500000 paise each
     When I aggregate "id" on capital commitments for that investor using "count"
@@ -22,11 +23,13 @@ Feature: ReportBuilderChildAggregator — all aggregate types
 
   # ── SUM ─────────────────────────────────────────────────────────────────
 
+  @rack_test
   Scenario: sum adds up monetized commitment amounts (paise → rupees)
     Given that investor has 2 capital commitments of 1000000 paise each
     When I aggregate "folio_committed_amount" on capital commitments for that investor using "sum"
     Then the aggregation result for the investor and column "folio_committed_amount" should be "20000.0"
 
+  @rack_test
   Scenario: sum of a single commitment equals that commitment's amount
     Given that investor has a capital commitment of 3000000 paise
     When I aggregate "folio_committed_amount" on capital commitments for that investor using "sum"
@@ -34,6 +37,7 @@ Feature: ReportBuilderChildAggregator — all aggregate types
 
   # ── AVG ─────────────────────────────────────────────────────────────────
 
+  @rack_test
   Scenario: avg returns the arithmetic mean of monetized amounts
     Given that investor has 2 capital commitments of 1000000 paise each
     When I aggregate "folio_committed_amount" on capital commitments for that investor using "avg"
@@ -41,6 +45,7 @@ Feature: ReportBuilderChildAggregator — all aggregate types
 
   # ── MIN ─────────────────────────────────────────────────────────────────
 
+  @rack_test
   Scenario: min returns the smallest monetized amount
     Given that investor has 1 capital commitments of 500000 paise each
     And that investor has a capital commitment of 2000000 paise
@@ -49,6 +54,7 @@ Feature: ReportBuilderChildAggregator — all aggregate types
 
   # ── MAX ─────────────────────────────────────────────────────────────────
 
+  @rack_test
   Scenario: max returns the largest monetized amount
     Given that investor has 1 capital commitments of 500000 paise each
     And that investor has a capital commitment of 2000000 paise
@@ -57,6 +63,7 @@ Feature: ReportBuilderChildAggregator — all aggregate types
 
   # ── LIST ────────────────────────────────────────────────────────────────
 
+  @rack_test
   Scenario: list concatenates distinct fund_close values
     Given that investor has 2 capital commitments of 500000 paise each
     When I aggregate "fund_close" on capital commitments for that investor using "list"
@@ -64,6 +71,7 @@ Feature: ReportBuilderChildAggregator — all aggregate types
 
   # ── LATEST ──────────────────────────────────────────────────────────────
 
+  @rack_test
   Scenario: latest returns a value from the most recent KYC record
     Given that investor has a KYC record
     When I aggregate "residency" on investor KYCs for that investor using "latest"
@@ -71,6 +79,7 @@ Feature: ReportBuilderChildAggregator — all aggregate types
 
   # ── EMPTY result ─────────────────────────────────────────────────────────
 
+  @rack_test
   Scenario: aggregator returns empty hash when root_ids is empty
     When I aggregate "id" on capital commitments with empty root ids
     Then the aggregation result should be empty

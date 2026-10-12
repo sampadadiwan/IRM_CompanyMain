@@ -13,6 +13,8 @@
     <%= fund.category %>
   </td>
   <td class="text-col">
+    <%# Closed-ended / Open-ended first, then the fund's own tags (evergreen-fund-on-create) %>
+    <%= fund_type_badge(fund, @evergreen_fund_ids) %>
     <% if fund.tag_list.present? %>
       <% fund.tag_list.split(",").each do |tag| %>
         <span class="mb-1 badge rounded-pill font-medium bg-primary text-primary"><%= link_to tag, funds_path(tag:) %></span>

@@ -1,3 +1,4 @@
+@rack_test
 Feature: FundFormula syntax validation
   Before a formula is persisted it must parse as valid Ruby. Parser::CurrentRuby.parse
   builds an AST without executing the formula — no eval, no subprocess fork — so a

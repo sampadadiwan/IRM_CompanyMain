@@ -1,0 +1,22 @@
+<%# Worked example H21: a redemption partly filled because of the gate %>
+<% if @custom_notification %>
+  <%= render "/custom_notifications/mail" do %>
+    <%= render "evergreen_mailer/custom_extras" %>
+  <% end %>
+<% else %>
+  <p>Dear <%= @user&.first_name %>,</p>
+  <p>Redemptions on <%= l(@fill.dealing_date.date) %> exceeded the fund's gate, so your request was partly filled.</p>
+  <%= render "evergreen_mailer/summary" %>
+  <table style="border-collapse:collapse" cellpadding="4">
+    <tr><td><strong>Filled</strong></td><td><%= eg_units(@fill.units) %> (<%= evergreen_money(@fill.amount_cents, @fund) %>) at <%= evergreen_money(@fill.nav_per_unit_cents, @fund) %> per <%= eg_t(:unit) %></td></tr>
+    <%# E109: with no later redemption date the rest is not carried — say so instead of naming the same date %>
+    <%# @order is read fresh by EvergreenMailer#set_order, so its dealing date is the carried-to one %>
+    <% if @order.dealing_date_id == @fill.dealing_date_id %>
+      <tr><td><strong>Not <%= eg_t(:carried, lower: true) %></strong></td><td><%= eg_units(@fill.carried_units) %> — there is no later redemption date in the fund's calendar, so this part of your request has closed. You can place a new request when a date is added.</td></tr>
+    <% else %>
+      <tr><td><strong><%= eg_t(:carried) %></strong></td><td><%= eg_units(@fill.carried_units) %></td></tr>
+      <tr><td><strong>Next <%= EvergreenLabels.lower(eg_t(:redemption_date)) %></strong></td><td><%= l(@order.dealing_date.date) %></td></tr>
+    <% end %>
+  </table>
+  <%= render "evergreen_mailer/request_link" %>
+<% end %>

@@ -96,6 +96,18 @@ module Workflowable
     self.class.base_class.name
   end
 
+  # The templates an admin may launch on this record: enabled, scoped to its type (or unscoped), in its
+  # entity, and eligible_for? this exact record — one workflowable_type can cover more than one
+  # sub-audience (Investor: regular investors vs. portfolio companies). Shared by the Workflow tab and
+  # the investor page's launch modal so the two pickers can't offer different lists.
+  def launchable_workflow_templates
+    WorkflowTemplate.enabled
+                    .for_workflowable_type(workflowable_type_name)
+                    .where(entity_id:)
+                    .order(:name)
+                    .select { |t| t.eligible_for?(self) }
+  end
+
   # Human-readable name shown in emails and the instance page.
   # Defaults to to_s — override only if the model's to_s is not user-friendly.
   def workflow_display_name
@@ -285,6 +297,9 @@ module Workflowable
   # does not respond to `entity` (e.g. test stubs without an association).
   def apply_workflow_auto_assignment
     return unless respond_to?(:entity) && entity.present?
+    # Evergreen settlement records and opted-out orders get no journey (open-ended-funds B4)
+    return if respond_to?(:skip_journey?) && skip_journey?
+
     WorkflowAutoAssignmentService.call(workflowable: self)
   rescue StandardError => e
     Rails.logger.warn("[Workflowable#apply_workflow_auto_assignment] #{self.class.name}##{id}: #{e.message}")
@@ -297,6 +312,9 @@ module Workflowable
     return unless respond_to?(:entity) && entity.present?
     return if workflow_assignment.present?
     return unless WorkflowAutoAssignmentRule.where(entity: entity, workflowable_type: workflowable_type_name).exists?
+    # Evergreen settlement records and opted-out orders get no journey (open-ended-funds B4)
+    return if respond_to?(:skip_journey?) && skip_journey?
+
     WorkflowAutoAssignmentService.call(workflowable: self)
   rescue StandardError => e
     Rails.logger.warn("[Workflowable#apply_workflow_auto_assignment_on_update] #{self.class.name}##{id}: #{e.message}")

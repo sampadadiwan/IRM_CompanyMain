@@ -8,6 +8,7 @@ Feature: Financial statement calculator — figures, checks and completeness war
     Given Alpha Fund I is set up for financial statements
 
   # H9 — Happy path: a cumulative entry's movement is its latest value minus its value before the period
+  @rack_test
   Scenario: Movement from cumulative entries
     Given the fund has statement accounts:
       | name            | type   |
@@ -24,6 +25,7 @@ Feature: Financial statement calculator — figures, checks and completeness war
     And the preview of "Interest income" for "balance" is "11,900"
 
   # H10 — Happy path: a periodic entry's balance is its sum since inception
+  @rack_test
   Scenario: Balance from periodic entries
     Given the fund has statement accounts:
       | name | type  |
@@ -42,6 +44,7 @@ Feature: Financial statement calculator — figures, checks and completeness war
     And the preview of "Cash" for "opening" is "80,000"
 
   # E14 — Edge case: the first and last day of the period are inside it, the day before is not
+  @rack_test
   Scenario: Dates on the period boundaries
     Given the fund has statement accounts:
       | name              | type    |
@@ -59,6 +62,7 @@ Feature: Financial statement calculator — figures, checks and completeness war
     And the preview of "Professional fees" for "balance" is "1,230"
 
   # E13 — Edge case: a pair stored both as a running total and as movements uses the running total and warns
+  @rack_test
   Scenario: Mixed cumulative and periodic entries
     Given the fund has statement accounts:
       | name            | type   |
@@ -76,6 +80,7 @@ Feature: Financial statement calculator — figures, checks and completeness war
     And there is a "Mixed running total / movements" warning mentioning "Income · Interest"
 
   # E21 — Edge case: with an April financial year, year to date starts on 1 April
+  @rack_test
   Scenario: April financial year
     Given the financial year starts in month 4
     And the fund has statement accounts:
@@ -94,6 +99,7 @@ Feature: Financial statement calculator — figures, checks and completeness war
     And the preview of "Interest income" for "ytd" is "500"
 
   # E4 — Edge case: a Balance difference under 1.00 passes
+  @rack_test
   Scenario: Rounding difference passes
     Given the fund has statement accounts:
       | name          | type    |
@@ -111,6 +117,7 @@ Feature: Financial statement calculator — figures, checks and completeness war
     Then the check "Balance" is "passed"
 
   # E5 — Edge case: a Balance difference of exactly 1.00 fails
+  @rack_test
   Scenario: Difference of exactly one unit fails
     Given the fund has statement accounts:
       | name          | type    |
@@ -128,6 +135,7 @@ Feature: Financial statement calculator — figures, checks and completeness war
     Then the check "Balance" fails by "1.00"
 
   # X10 — Error case: assets 10,000,000, liabilities 200,000 and capital 9,798,800 fail Balance by 1,200
+  @rack_test
   Scenario: Balance check fails
     Given the fund has statement accounts:
       | name          | type      |
@@ -148,6 +156,7 @@ Feature: Financial statement calculator — figures, checks and completeness war
     Then the check "Balance" fails by "1,200"
 
   # E6 — Edge case: the NAV tie-out (set on the Settings tab) is skipped, not failed, when there is no NAV entry yet
+  @rack_test
   Scenario: No NAV entry on or before the end date
     Given I am logged in as Meera
     When I set the NAV entry to "NAV" "NAV Post Carry" on the Settings tab
@@ -162,6 +171,7 @@ Feature: Financial statement calculator — figures, checks and completeness war
     And the check "NAV tie-out" is skipped with "not configured"
 
   # E24 — Edge case: distributions stored positive with flip sign become negative capital; roll-forward passes
+  @rack_test
   Scenario: Flip sign on distributions
     Given the fund has statement accounts:
       | name          | type    | flip |
@@ -186,6 +196,7 @@ Feature: Financial statement calculator — figures, checks and completeness war
     And the previewed "Statement of Changes in Partners' Capital" shows "Distributions" of "-400" for "period"
 
   # E29 — Edge case: a running total with nothing dated in the period uses its last value and warns
+  @rack_test
   Scenario: Stale balance
     Given the fund has statement accounts:
       | name | type  |
@@ -201,6 +212,7 @@ Feature: Financial statement calculator — figures, checks and completeness war
     And there is a "Stale balance" warning mentioning "Cash · Bank Balance last value"
 
   # E30 — Edge case: an account on a statement that nothing feeds shows 0 and warns
+  @rack_test
   Scenario: Account with no entries
     Given the fund has statement accounts:
       | name             | type      |

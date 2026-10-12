@@ -4,6 +4,7 @@ Feature: Canonical fingerprinting for multi-site user sync
     Given a baseline user "a@x.com" with primary region "IN" and regions "IN,US"
     And the user has roles "employee"
 
+  @rack_test
   Scenario: CCF changes when canonical user fields change
     When I capture the user's CCF
     And I update the user field "first_name" to "JaneX"
@@ -14,6 +15,7 @@ Feature: Canonical fingerprinting for multi-site user sync
     And I update the telemetry field "last_sign_in_at" to now
     Then the user's CCF should not change
 
+  @rack_test
   Scenario: CCF changes when roles set changes; order-insensitive & unique
     When I capture the user's CCF
     And I set the user roles to "viewer,admin,viewer"
@@ -22,6 +24,7 @@ Feature: Canonical fingerprinting for multi-site user sync
     And I set the user roles to "admin,viewer"
     Then the user's CCF should not change
 
+  @rack_test
   Scenario: CCF changes when the linked entity changes (full entity sync)
     When I capture the user's CCF
     And I update the entity field "name" to "Acme Holdings"
@@ -33,6 +36,7 @@ Feature: Canonical fingerprinting for multi-site user sync
     And I update the user field "phone" to "4155551212"
     Then the user's CCF should not change
 
+  @rack_test
   Scenario: needs_sync? requires non-primary targets and changed CCF
     Given the user is already marked synced
     When I set user regions to "IN"

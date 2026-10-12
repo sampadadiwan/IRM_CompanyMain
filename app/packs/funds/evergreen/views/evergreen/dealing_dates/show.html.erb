@@ -1,0 +1,419 @@
+<%# Dealing-date workspace (proposal GP-3): step bar, pricing before confirmation, settlement tracker after.
+    Worked examples H17–H21, H24, E23–E26, E33, E196, E208, E209, E210, X17, X18
+    Same layout as a closed-ended capital call page: journey panel, details card, actions row, tab pills %>
+<% dd = @dealing_date %>
+<% dd_policy = policy(dd) %>
+<% pricing = @pricing if dd.open? %>
+<%# Approved NAVs only: a newer draft blocks confirmation (X17), so it is never quoted as the pricing NAV %>
+<% approved_navs = pricing ? pricing.navs.select { |_, nav| nav&.approved? } : {} %>
+<% progress = DealingProgress.new(dd) unless dd.open? %>
+<div class="container-fluid p-3" data-controller="tooltip">
+  <%# Dealing-date journey (step bar + what's needed now) %>
+  <% if @journey.present? %>
+    <%= render "dealing_dates/journey", record: dd, journey: @journey, instance: nil %>
+  <% end %>
+
+  <%# The date is the card title, so the details card has no heading of its own; the step badge sits in Status %>
+  <% settlement_links = [] %>
+  <% settlement_links << [eg_t(:capital_call), evergreen_settlement_path(@fund, dd.subscription_call_id, kind: "subscription"), "ti-circle-plus", "settlement_record_subscription"] if !dd.open? && dd.subscription_call_id %>
+  <% settlement_links << [eg_t(:distribution), evergreen_settlement_path(@fund, dd.redemption_distribution_id, kind: "redemption"), "ti-circle-minus", "settlement_record_redemption"] if !dd.open? && dd.redemption_distribution_id %>
+  <%= render ToggleCard.new(title: "#{eg_t(:transaction_date)}: #{l(dd.date)}", css_class: "show_dealing_date") do %>
+    <div class="row">
+      <!-- Left Column: Main Info (full width when there are no settlement records to link) -->
+      <div class="<%= settlement_links.any? ? 'col-lg-8' : 'col-lg-12' %>">
+        <div class="card shadow-sm border-0 mb-4" id="dealing_date_title">
+          <div class="card-body">
+            <div class="row g-4">
+              <div class="col-md-6">
+                <label class="text-muted text-uppercase fw-bold fs-1 mb-1"><%= eg_t(:transaction_date).titleize %></label>
+                <div class="fs-4 fw-medium"><%= l(dd.date) %></div>
+              </div>
+              <div class="col-md-6">
+                <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Cut-off</label>
+                <div class="fs-4 fw-medium"><%= dd.cutoff_at ? l(dd.cutoff_at) : "—" %></div>
+              </div>
+              <div class="col-md-6">
+                <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Status</label>
+                <%# The journey step says more than open / confirmed / closed, so it is the status shown %>
+                <div class="fs-4 fw-medium" id="dealing_date_status"><%= eg_dealing_step_badge(dd) %></div>
+              </div>
+              <div class="col-md-6">
+                <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Payment Timing</label>
+                <div class="fs-4 fw-medium"><%= dd.pre_funded? ? "Pre-funded (paid by cut-off)" : "After dealing" %></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <%# Right Column: the settlement records (audit) behind a confirmed date — only when there is one to open %>
+      <% if settlement_links.any? %>
+        <div class="col-lg-4">
+          <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header border-bottom py-3 px-4">
+              <h6 class="mb-0 fw-bold d-flex align-items-center"><i class="ti ti-file-certificate me-2 text-info"></i>Settlement records</h6>
+            </div>
+            <div class="card-body d-flex flex-wrap gap-2" id="settlement_records">
+              <% settlement_links.each do |label, path, icon, id| %>
+                <%= link_to path, class: "btn btn-outline-primary", id: do %><i class="ti <%= icon %>"></i> <%= label %><% end %>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+
+  <%# Actions row — outline buttons, as on the capital call page. Same controls, ids and confirm popup as before %>
+  <div class="d-flex flex-wrap align-items-center gap-2 mb-3" id="dealing_date_actions">
+    <% date_word = EvergreenLabels.lower(eg_t(:transaction_date)) %>
+    <% if dd.open? %>
+      <%# Decision 3: Confirm waits for the last deadline (cut-off / every class's notice); the reason shows beside it %>
+      <% deadline_block = dd.deadline_block_message %>
+      <% if dd_policy.confirm? && pricing.confirmable? && deadline_block.nil? %>
+        <%= button_to confirm_evergreen_dealing_date_path(@fund, dd, preview_hash: pricing.hash_key), method: :post,
+              class: "btn btn-outline-primary", id: "confirm_dealing",
+              data: { action: "click->confirm#popup", method: "post", title: "Confirm #{date_word} #{l(dd.date)}", msg: evergreen_confirm_summary(pricing, @fund) } do %><i class="ti ti-check"></i> Confirm <%= date_word %><% end %>
+      <% else %>
+        <button class="btn btn-outline-primary" disabled id="confirm_dealing_disabled"><i class="ti ti-check"></i> Confirm <%= date_word %></button>
+        <% if deadline_block %><span class="small text-muted" id="confirm_blocked_deadline"><%= deadline_block %></span><% end %>
+      <% end %>
+    <% else %>
+      <% if dd_policy.undo? %>
+        <% if dd.settlement_started? %>
+          <button class="btn btn-outline-secondary" disabled id="undo_dealing_disabled"><i class="ti ti-arrow-back-up"></i> Undo confirmation</button>
+          <span class="small text-muted" id="undo_blocked"><%= eg_t(:Units) %> allotted or payments recorded — reverse them first</span>
+        <% else %>
+          <%
+            # Undo reverses DealingConfirm: the fills go, the orders wait again, carried rests come back
+            undo_msg = evergreen_action_summary([
+              ["red", "ti-trash", "Priced rows deleted", "Every fill on #{l(dd.date)} is removed"],
+              ["blue", "ti-arrow-back-up", "Orders back to pending", "They wait in the queue to be confirmed again"],
+              ["amber", "ti-arrow-forward", "#{eg_t(:carried)} redemptions return", "Rests moved to a later #{EvergreenLabels.lower(eg_t(:redemption_date))} come back here"]
+            ])
+          %>
+          <%= button_to undo_evergreen_dealing_date_path(@fund, dd), method: :post, class: "btn btn-outline-danger", id: "undo_dealing",
+                data: { action: "click->confirm#popup", method: "post", title: "Undo the confirmation of #{l(dd.date)}", msg: undo_msg } do %><i class="ti ti-arrow-back-up"></i> Undo confirmation<% end %>
+        <% end %>
+      <% end %>
+      <%# § Dealing-date documents: only when the fund has a Contract Note / Redemption Advice template %>
+      <%# X95: settled fills whose template was removed still need their plain email, so this shows
+          whenever anything is outstanding, not only while the fund has templates %>
+      <% orphaned = dd.confirmed? ? EvergreenDealingDocuments.orphaned(dd).size : 0 %>
+      <% if EvergreenDealingDocuments.templates?(@fund) || orphaned.positive? %>
+        <% to_generate = EvergreenDealingDocuments.to_generate(dd).size %>
+        <% awaiting = EvergreenDealingDocuments.awaiting_approval(dd) %>
+        <% docs_word = "#{EvergreenLabels.lower(eg_t(:contract_note)).pluralize} and #{EvergreenLabels.lower(eg_t(:redemption_advice)).pluralize}" %>
+        <% if dd_policy.generate_documents? && to_generate.positive? %>
+          <%
+            generate_msg = evergreen_action_summary([
+              ["blue", "ti-file-text", "Build #{pluralize(to_generate, 'document')}", "#{docs_word.upcase_first} from the fund's templates"],
+              ["amber", "ti-file-time", "Awaiting approval", "Hidden from investors until Approve & send"],
+              ["grey", "ti-mail-off", "Nothing emailed yet", "Investors hear nothing until the documents are approved"]
+            ])
+          %>
+          <%= button_to generate_documents_evergreen_dealing_date_path(@fund, dd), method: :post, class: "btn btn-outline-primary", id: "generate_documents",
+                data: { action: "click->confirm#popup", method: "post", title: "Generate documents", msg: generate_msg,
+                        bs_toggle: "tooltip", bs_title: "Build #{docs_word} from the fund's templates. They stay hidden from investors until approved." } do %><i class="ti ti-file-text"></i> Generate documents (<%= to_generate %>)<% end %>
+        <% elsif dd_policy.generate_documents? && orphaned.positive? %>
+          <%
+            # X95: the template was removed after settlement, so these go out now as a plain email
+            email_msg = evergreen_action_summary([
+              ["blue", "ti-mail", "Email #{pluralize(orphaned, 'investor')} now", "A plain email, no document — the template was removed"],
+              ["grey", "ti-lock", "Nothing else changes", "#{eg_t(:Units)} and money stay as they are"]
+            ])
+          %>
+          <%= button_to generate_documents_evergreen_dealing_date_path(@fund, dd), method: :post, class: "btn btn-outline-primary", id: "generate_documents",
+                data: { action: "click->confirm#popup", method: "post", title: "Send emails", msg: email_msg,
+                        bs_toggle: "tooltip", bs_title: "These orders settled while a template existed, but it has since been removed — send the plain email instead." } do %><i class="ti ti-mail"></i> Send emails (<%= orphaned %>)<% end %>
+        <% end %>
+        <% if awaiting.any? %>
+          <% if dd_policy.approve_documents? %>
+            <% notes = awaiting.count(&:subscription?) %>
+            <%= button_to approve_documents_evergreen_dealing_date_path(@fund, dd), method: :post, class: "btn btn-outline-success", id: "approve_documents",
+                  data: { action: "click->confirm#popup", method: "post", title: "Approve & send documents",
+                          msg: evergreen_documents_summary(notes, awaiting.size - notes) } do %><i class="ti ti-file-check"></i> Approve &amp; send (<%= awaiting.size %>)<% end %>
+          <% else %>
+            <button class="btn btn-outline-success" disabled id="approve_documents_disabled" title="Only approvers can approve documents"><i class="ti ti-file-check"></i> Approve &amp; send (<%= awaiting.size %>)</button>
+          <% end %>
+        <% end %>
+      <% end %>
+      <% if dd_policy.close? && progress.closable? %>
+        <%
+          close_msg = evergreen_action_summary([
+            ["grey", "ti-lock", "#{eg_t(:transaction_date)} locked", "#{l(dd.date)} is marked closed"],
+            ["red", "ti-ban", "No more settlement actions", "Payments and documents can no longer change here"]
+          ])
+        %>
+        <%= button_to close_evergreen_dealing_date_path(@fund, dd), method: :post, class: "btn btn-outline-success", id: "close_dealing",
+              data: { action: "click->confirm#popup", method: "post", title: "Close #{date_word} #{l(dd.date)}", msg: close_msg } do %><i class="ti ti-lock"></i> Close <%= date_word %><% end %>
+      <% elsif dd_policy.close? %>
+        <%# Shown disabled, with the reason: unsent documents (X28), otherwise rows still to settle %>
+        <span class="btn btn-outline-success disabled" id="close_dealing_disabled"><i class="ti ti-lock"></i> Close <%= date_word %></span>
+        <% if progress.waiting_for_documents? %>
+          <span class="text-muted small">Send every <%= EvergreenLabels.lower(eg_t(:contract_note)) %> and <%= EvergreenLabels.lower(eg_t(:redemption_advice)) %> first</span>
+        <% else %>
+          <span class="text-muted small" id="close_blocked">Settle every row first</span>
+        <% end %>
+      <% end %>
+    <% end %>
+  </div>
+
+</div>
+
+<%# Bottom tabs — same pills markup as the closed-ended call/fund pages, rendered outside the top container
+    so they span the full width (like the fund page). One tab per order type, each with its count, before
+    and after confirmation: the same columns, a preview before and the stored fills with settlement after %>
+<%
+  if dd.open?
+    gate = pricing.gate
+    # Not-ready orders go to the tab of their own type
+    unready_subs, unready_reds = pricing.unready.partition { |u| u.order.subscription? }
+    # E322: ready orders whose class has no usable NAV — counted and listed, so the tabs match the list's counts
+    awaiting_subs, awaiting_reds = pricing.awaiting_nav.partition { |a| a.order.subscription? }
+    sub_count = pricing.subscriptions.size + unready_subs.size + awaiting_subs.size
+    red_count = pricing.redemptions.size + unready_reds.size + awaiting_reds.size
+  else
+    # Confirmed: the stored fills, one row each
+    fill_includes = [:fund_nav, { fund: :evergreen_fund_setting, dealing_order: [:investor, :capital_commitment, :dealing_date] }]
+    sub_fills = dd.subscription_fills.includes(*fill_includes, :capital_remittance).to_a
+    red_fills = dd.redemption_fills.includes(*fill_includes, :capital_distribution_payment).to_a
+    sub_count = sub_fills.size
+    red_count = red_fills.size
+  end
+  # Open on Subscriptions (E208), unless there are none and there are redemptions (E209)
+  first_tab = sub_count.zero? && red_count.positive? ? "redemptions" : "subscriptions"
+%>
+<div class="associated_entity" data-controller="tabs tabdetails tooltip" id="dealing_date_tabs">
+  <% if dd.open? %>
+    <%# Page-wide alerts apply to both tabs, so they sit above them %>
+    <div class="px-3">
+      <%# F3: before the last deadline a missing NAV is expected, not a problem — the period's NAV can't exist
+          yet. It becomes the red blocker only once the date is ready to confirm %>
+      <% deadlines_passed = dd.deadlines_passed? %>
+      <% if pricing.missing_navs.any? && deadlines_passed %>
+        <% ut, nav = pricing.missing_navs.first %>
+        <div class="alert alert-danger" id="nav_missing"><%= DealingConfirm.missing_nav_message(ut, nav, dd) %></div>
+      <% end %>
+      <% if pricing.empty? && pricing.unready.empty? && pricing.awaiting_nav.empty? %>
+        <div class="alert alert-light" id="nothing_to_deal">No orders on <%= l(dd.date, format: :day_month_year) %> — nothing to confirm</div>
+      <% elsif pricing.roll_only? %>
+        <%# E181: only not-ready orders — confirming rolls / cancels them, nothing is priced %>
+        <div class="alert alert-info" id="roll_only">Nothing to price on <%= l(dd.date, format: :day_month_year) %>. Confirming rolls or cancels the <%= pluralize(pricing.unready.size, "order") %> that are not ready, as shown below.</div>
+      <% else %>
+        <%# Everything below is a preview until the date is confirmed — say so where the figures are, with the
+            NAV they use, so "will be paid / will carry" is never read as already done %>
+        <%# Only NAVs it will really price at — not one a previous date already used (E322) %>
+        <% priced_at = approved_navs.except(*pricing.missing_navs.map(&:first)).map { |ut, nav| "#{"Class #{ut} " if approved_navs.size > 1}#{l(nav.nav_date)} NAV (#{evergreen_money(nav.nav_per_unit_cents, @fund)} per #{eg_t(:unit)})" } %>
+        <% waiting_classes = pricing.missing_navs.map { |c, _| "Class #{c}" } %>
+        <%# Text only — the Confirm button is in the actions row above, once %>
+        <div class="alert alert-info" id="dealing_preview">
+          <%# Say when Confirm can actually be used — "until you click Confirm" beside a disabled button misleads %>
+          <% date_word = EvergreenLabels.lower(eg_t(:transaction_date)) %>
+          <i class="ti ti-info-circle me-1"></i><strong>Preview</strong> — nothing is allotted, paid, <%= EvergreenLabels.lower(eg_t(:carried)) %> or cancelled until
+          <% if !deadlines_passed %>
+            this <%= date_word %> is confirmed. <%= dd.deadline_block_message %>.
+          <% elsif pricing.missing_navs.any? %>
+            this <%= date_word %> is confirmed, which can be done once <%= pricing.missing_navs.map { |c, _| "Class #{c}'s" }.to_sentence %> NAV is approved.
+          <% else %>
+            you click <strong>Confirm <%= date_word %></strong>.
+          <% end %>
+          <% if deadlines_passed %>
+            <%= " Priced at the #{priced_at.to_sentence}." if priced_at.any? %>
+          <% else %>
+            <%# F4: before the deadlines a newer NAV may still be approved, so today's figures are an estimate %>
+            <%= " Estimated at the #{priced_at.to_sentence}, the latest approved today." if priced_at.any? %>
+            Confirming prices each class at its latest approved NAV on or before <%= l(dd.date) %><%= "; #{waiting_classes.to_sentence} will be priced once that NAV is approved" if waiting_classes.any? %>.
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  <% else %>
+    <%# Confirmed: the figures below are final — say so in the place the preview line was, with the NAV used %>
+    <% priced_navs = (sub_fills + red_fills).filter_map(&:fund_nav).uniq %>
+    <% priced_at = priced_navs.map { |nav| "#{"Class #{nav.unit_type} " if priced_navs.size > 1}#{l(nav.nav_date)} NAV (#{evergreen_money(nav.nav_per_unit_cents, @fund)} per #{eg_t(:unit)})" } %>
+    <div class="px-3">
+      <div class="alert alert-success" id="dealing_confirmed">
+        <i class="ti ti-circle-check me-1"></i><strong><%= dd.status == "closed" ? "Closed" : "Confirmed" %></strong><%= " on #{l(dd.confirmed_at.to_date)}" if dd.confirmed_at %><%= " at the #{priced_at.to_sentence}" if priced_at.any? %> —
+        <%= dd.status == "closed" ? "every row is settled." : "these figures are final; settle each row in its Settlement column." %>
+      </div>
+    </div>
+  <% end %>
+
+  <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row" role="tablist">
+    <a class="nav-link <%= 'active' if first_tab == 'subscriptions' %>" data-bs-toggle="pill" href="#subscriptions-tab" id="dealing_tab_subscriptions">Subscriptions (<%= sub_count %>)</a>
+    <a class="nav-link <%= 'active' if first_tab == 'redemptions' %>" data-bs-toggle="pill" href="#redemptions-tab" id="dealing_tab_redemptions">Redemptions (<%= red_count %>)</a>
+  </nav>
+
+  <div class="tab-content">
+    <% if dd.open? %>
+      <div id="subscriptions-tab" class="tab-pane fade <%= 'show active' if first_tab == 'subscriptions' %>">
+        <div class="card shadow-sm border-0 mb-4">
+          <div class="card-header border-bottom py-3">
+            <h6 class="mb-0 fw-bold d-flex align-items-center"><i class="ti ti-circle-plus me-2 text-success"></i>Subscriptions<%= " (paid by cut-off)" if dd.pre_funded? %></h6>
+          </div>
+          <div class="card-body">
+            <%
+              # Subscriptions at a glance, the same NumberStatsComponent cards as the Redemptions tab's gate row:
+              # what was asked (every order on the tab, ready or not), what confirming allots, and how many investors
+              if sub_count.positive?
+                sub_requested = pricing.subscriptions.sum { |r| r.amount_cents.to_d } + unready_subs.sum { |u| u.order.amount_cents.to_d }
+                sub_cards = [
+                  { stat: evergreen_money(sub_requested, @fund), subtitle: "Requested", color: "info" },
+                  { stat: eg_units(pricing.subscriptions.sum { |r| r.units.to_d }), subtitle: "Will be allotted", color: "success" },
+                  { stat: (pricing.subscriptions.map { |r| r.order.investor_id } + unready_subs.map { |u| u.order.investor_id }).uniq.size, subtitle: "Investors", color: "secondary" }
+                ]
+              end
+            %>
+            <% if sub_cards %>
+              <div class="row mb-3" id="subscription_summary">
+                <% sub_cards.each do |card| %>
+                  <%= render(NumberStatsComponent.new(path: nil, amount: card[:stat], subtitle: card[:subtitle], progress_bar_color: card[:color])) %>
+                <% end %>
+              </div>
+            <% end %>
+            <div class="table-responsive">
+              <table class="table table-bordered hover" id="pricing_subscriptions">
+                <thead><tr><th>Received</th><th>Investor</th><th><%= eg_t(:capital_commitment) %></th><th>Class</th><th class="text-end">Amount</th><th class="text-end"><%= eg_t(:nav_per_unit_short) %></th><th class="text-end">Will be allotted</th><th class="action-col" aria-label="Actions">Actions</th></tr></thead>
+                <tbody>
+                  <% if pricing.subscriptions.empty? && unready_subs.empty? && awaiting_subs.empty? %><tr><td colspan="8" class="text-muted"><i class="ti ti-inbox me-1"></i>No subscriptions to price for this <%= EvergreenLabels.lower(eg_t(:subscription_date)) %>.</td></tr><% end %>
+                  <% pricing.subscriptions.each do |r| %>
+                    <% o = r.order %>
+                    <tr id="pricing_order_<%= o.id %>"><td><%= l(o.received_at) %></td><td><%= eg_investor_cell(o) %></td><td><%= eg_folio_cell(o, @fund) %></td><td><%= o.unit_type %></td>
+                      <td class="text-end"><%= evergreen_money(r.amount_cents, @fund) %></td><td class="text-end"><%= evergreen_nav_per_unit(r.nav.nav_per_unit_cents) %></td>
+                      <td class="text-end"><%= number_with_precision(r.units, precision: 4, delimiter: ",") %> <%= eg_order_terms_badges(o) %></td>
+                      <td class="action-col"><%= link_to t_common(:view), evergreen_order_path(@fund, o), class: "btn btn-outline-primary ti ti-eye", data: { turbo_frame: "_top", bs_toggle: "tooltip", bs_title: "Open order of #{o.investor.investor_name}" }, aria: { label: "Open order of #{o.investor.investor_name}" } %></td></tr>
+                  <% end %>
+                  <%# Not ready (unpaid / journey pending): listed with what confirming will do to them, so the tab count matches its rows.
+                      The request reads as on the Redemptions tab; NAV and allotment give way to the reason and fate, since nothing is allotted %>
+                  <% unready_subs.each do |u| %>
+                    <% o = u.order %>
+                    <% amount_cell, _units_cell = eg_order_amount_units(o, approved_navs[o.unit_type]) %>
+                    <tr id="unready_order_<%= o.id %>" class="text-muted"><td><%= l(o.received_at) %></td><td><%= eg_investor_cell(o) %></td><td><%= eg_folio_cell(o, @fund) %></td><td><%= o.unit_type %></td>
+                      <td class="text-end"><%= amount_cell %></td>
+                      <td colspan="2"><%= eg_badge(:amber, "alert-triangle", "Not ready") %> <%= u.reason %> — <%= u.fate %></td>
+                      <td class="action-col"><%= link_to t_common(:view), evergreen_order_path(@fund, o), class: "btn btn-outline-primary ti ti-eye", data: { turbo_frame: "_top", bs_toggle: "tooltip", bs_title: "Open order of #{o.investor.investor_name}" }, aria: { label: "Open order of #{o.investor.investor_name}" } %></td></tr>
+                  <% end %>
+                  <%# E322: ready, but the class has no usable NAV yet — priced once one is approved %>
+                  <% awaiting_subs.each do |a| %>
+                    <% o = a.order %>
+                    <% amount_cell, _units_cell = eg_order_amount_units(o, approved_navs[o.unit_type]) %>
+                    <tr id="awaiting_nav_order_<%= o.id %>" class="text-muted"><td><%= l(o.received_at) %></td><td><%= eg_investor_cell(o) %></td><td><%= eg_folio_cell(o, @fund) %></td><td><%= o.unit_type %></td>
+                      <td class="text-end"><%= amount_cell %></td>
+                      <td colspan="2"><%= eg_badge(:amber, "hourglass", "Waiting for NAV") %> <%= deadlines_passed ? a.reason : "Priced once Class #{a.order.unit_type}'s NAV for this #{EvergreenLabels.lower(eg_t(:transaction_date))} is approved" %></td>
+                      <td class="action-col"><%= link_to t_common(:view), evergreen_order_path(@fund, o), class: "btn btn-outline-primary ti ti-eye", data: { turbo_frame: "_top", bs_toggle: "tooltip", bs_title: "Open order of #{o.investor.investor_name}" }, aria: { label: "Open order of #{o.investor.investor_name}" } %></td></tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="redemptions-tab" class="tab-pane fade <%= 'show active' if first_tab == 'redemptions' %>">
+        <div class="card shadow-sm border-0 mb-4">
+          <div class="card-header border-bottom py-3">
+            <h6 class="mb-0 fw-bold d-flex align-items-center"><i class="ti ti-circle-minus me-2 text-danger"></i>Redemptions</h6>
+          </div>
+          <div class="card-body">
+            <%
+              # The same redemption rows as the fund's Redemptions list (EvergreenOrdersHelper), here with the
+              # figures Confirm dealing will apply rather than an estimate.
+              # F11: while redemptions wait for a NAV they still stand in the gate queue — leaving them out made a
+              # later order look fully paid. So the whole queue is then estimated the way the Redemptions list
+              # does (EvergreenGateForecast: each class at its latest approved NAV), and the page says so
+              gate_estimated = awaiting_reds.any?
+              gate_rows = if gate_estimated
+                            queue = DealingOrder.where(id: pricing.redemptions.map { |r| r.order.id } + awaiting_reds.map { |a| a.order.id })
+                                                .includes(:investor, :dealing_date, :dealing_fills).in_queue_order
+                            EvergreenGateForecast.call(@fund, queue)
+                          else
+                            EvergreenGateForecast.from_pricing(pricing)
+                          end
+              awaiting_ids = awaiting_reds.map { |a| a.order.id }
+              # Gate at a glance (E196, E210): what the gate allows, what was asked, what will be paid and
+              # carried — the same NumberStatsComponent cards as the fund page's stats row. Worded as what
+              # will happen: nothing moves until the date is confirmed
+              approx = gate_estimated ? "≈ " : ""
+              pct_label = "#{gate[:pct].round(2).to_s.sub(/\.0+$/, '')}%"
+              method_label = gate[:method] == "fifo" ? "FIFO" : "Pro-rata"
+              requested = gate_rows.queued_cents.to_d
+              filled = gate_rows.rows.sum { |r| r.paid_cents.to_d }
+              gate_card = if gate[:pct].positive? && gate[:level] == "fund"
+                            # Review fix 8: the gate LEFT (the pool the allocation uses), not the full % of NAV
+                            { stat: "#{approx}#{evergreen_money([(gate_estimated ? gate_rows.gate_cents : gate[:pools]['fund']).to_d, 0].max, @fund)}",
+                              subtitle: "Gate · #{pct_label} of NAV · #{method_label}#{eg_gate_used_note(gate[:used].to_h['fund'], @fund)}" }
+                          elsif gate[:pct].positive?
+                            # Class-level gate: one pool per class, so no single fund-wide amount
+                            { stat: pct_label, subtitle: "Gate · of each class's NAV · #{method_label}" }
+                          else
+                            { stat: "No gate", subtitle: "All redemptions filled" }
+                          end
+              filled_pct = requested.positive? ? " · #{((filled / requested) * 100).round(1)}%" : ""
+              # The gate always shows (E196: a date with only subscriptions still states it); the
+              # requested / filled / carried cards only when there are redemptions
+              cards = [gate_card.merge(color: "secondary")]
+              if gate_rows.rows.any?
+                cards += [
+                  { stat: "#{approx}#{evergreen_money(requested, @fund)}", subtitle: "Requested", color: "info" },
+                  { stat: "#{approx}#{evergreen_money(filled, @fund)}", subtitle: "Will be paid#{filled_pct}", color: "success" },
+                  # Same test as the confirm (DealingConfirm#carry_forward): with no later redemption date the rest is not carried
+                  (if (next_date = DealingRoll.next_date(gate_rows.rows.first.order, dd))
+                     { stat: "#{approx}#{evergreen_money(requested - filled, @fund)}", subtitle: "Will be #{eg_t(:carried, lower: true)} to #{l(next_date)}", color: "danger" }
+                   else
+                     { stat: "#{approx}#{evergreen_money(requested - filled, @fund)}", subtitle: "Will not be #{eg_t(:carried, lower: true)} — no later #{eg_t(:redemption_date, lower: true)} in the calendar", color: "danger" }
+                   end)
+                ]
+              end
+            %>
+            <% if gate_estimated %>
+              <%# F11: say plainly that every gate figure on this tab is an estimate, why, and when it becomes final %>
+              <% waiting_by_class = awaiting_reds.group_by { |a| a.order.unit_type } %>
+              <% basis = waiting_by_class.keys.map { |ut| (n = FundNav.latest_approved(@fund, ut, Time.zone.today)) ? "Class #{ut} at its #{l(n.nav_date)} NAV (#{evergreen_money(n.nav_per_unit_cents, @fund)} per #{eg_t(:unit)})" : "Class #{ut} (no approved NAV yet)" } %>
+              <div class="alert alert-info" id="gate_estimate">
+                <i class="ti ti-info-circle me-1"></i><strong>Estimate.</strong>
+                <%= pluralize(awaiting_reds.size, "redemption") %> on this date <%= awaiting_reds.size == 1 ? "is" : "are" %> waiting for <%= waiting_by_class.keys.map { |ut| "Class #{ut}'s" }.to_sentence %> NAV, but <%= awaiting_reds.size == 1 ? "it still takes its" : "they still take their" %> place in the gate queue.
+                So that every row shows where it stands, the whole queue is valued at the latest approved NAVs — <%= basis.to_sentence %>.
+                These figures will change once that NAV is approved; nothing is paid or <%= EvergreenLabels.lower(eg_t(:carried)) %> until this <%= EvergreenLabels.lower(eg_t(:transaction_date)) %> is confirmed.
+              </div>
+            <% end %>
+            <div class="row mb-3" id="gate_summary">
+              <% cards.each do |card| %>
+                <%= render(NumberStatsComponent.new(path: nil, amount: card[:stat], subtitle: card[:subtitle], progress_bar_color: card[:color])) %>
+              <% end %>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-bordered hover" id="pricing_redemptions">
+                <thead><tr><th>Received</th><th>Investor</th><th><%= eg_t(:capital_commitment) %></th><th class="text-end">Amount</th><th class="text-end"><%= eg_t(:Units) %></th><%= eg_gate_headers(@fund) %><th class="action-col" aria-label="Actions">Actions</th></tr></thead>
+                <tbody>
+                  <% if pricing.redemptions.empty? && unready_reds.empty? && awaiting_reds.empty? %><tr><td colspan="10" class="text-muted"><i class="ti ti-inbox me-1"></i>No redemptions to price for this <%= EvergreenLabels.lower(eg_t(:redemption_date)) %>.</td></tr><% end %>
+                  <% gate_rows.rows.each do |row| %>
+                    <% o = row.order %>
+                    <% amount_cell, units_cell = eg_order_amount_units(o, approved_navs[o.unit_type]) %>
+                    <% gate_cells = eg_gate_cells(row, gate_rows, @fund) %>
+                    <%# F11: a row waiting for its class's NAV is in the queue, estimated, and says why %>
+                    <% waiting = awaiting_ids.include?(o.id) %>
+                    <tr id="<%= waiting ? "awaiting_nav_order_#{o.id}" : "pricing_order_#{o.id}" %>"><td><%= l(o.received_at) %> <%= eg_queue_badge(o) %><% if waiting %><% why = deadlines_passed ? awaiting_reds.find { |a| a.order.id == o.id }.reason : "Estimated until Class #{o.unit_type}'s NAV is approved" %><div class="mt-1"><%= eg_badge(:amber, "hourglass", "Waiting for NAV") %></div><div class="small text-muted"><%= why %></div><% end %></td><td><%= eg_investor_cell(o) %></td><td><%= eg_folio_cell(o, @fund) %></td>
+                      <td class="text-end"><%= amount_cell %></td><td class="text-end"><%= units_cell %> <%= eg_order_terms_badges(o) %></td>
+                      <td class="text-end"><%= gate_cells[0] %></td><td class="text-end"><%= gate_cells[1] %></td><td class="text-end"><%= gate_cells[2] %></td><td><%= gate_cells[3] %></td>
+                      <td class="action-col"><%= link_to t_common(:view), evergreen_order_path(@fund, o), class: "btn btn-outline-primary ti ti-eye", data: { turbo_frame: "_top", bs_toggle: "tooltip", bs_title: "Open order of #{o.investor.investor_name}" }, aria: { label: "Open order of #{o.investor.investor_name}" } %></td></tr>
+                  <% end %>
+                  <%# Not ready: outside the queue, greyed, with what confirming will do to them %>
+                  <% unready_reds.each do |u| %>
+                    <% amount_cell, units_cell = eg_order_amount_units(u.order, approved_navs[u.order.unit_type]) %>
+                    <tr id="unready_order_<%= u.order.id %>" class="text-muted"><td><%= l(u.order.received_at) %></td><td><%= eg_investor_cell(u.order) %></td><td><%= eg_folio_cell(u.order, @fund) %></td>
+                      <td class="text-end"><%= amount_cell %></td><td class="text-end"><%= units_cell %> <%= eg_order_terms_badges(u.order) %></td>
+                      <td colspan="4"><%= eg_badge(:amber, "alert-triangle", "Not ready") %> <%= u.reason %> — <%= u.fate %></td>
+                      <td class="action-col"><%= link_to t_common(:view), evergreen_order_path(@fund, u.order), class: "btn btn-outline-primary ti ti-eye", data: { turbo_frame: "_top", bs_toggle: "tooltip", bs_title: "Open order of #{u.order.investor.investor_name}" }, aria: { label: "Open order of #{u.order.investor.investor_name}" } %></td></tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% else %>
+      <%= render "evergreen/dealing_dates/tracker", dealing_date: dd, sub_fills:, red_fills:, first_tab: %>
+    <% end %>
+  </div>
+</div>

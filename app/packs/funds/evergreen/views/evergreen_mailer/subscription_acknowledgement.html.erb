@@ -1,0 +1,19 @@
+<%# Worked example H7: acknowledgement, with payment instructions when the fund is paid before dealing %>
+<% if @custom_notification %>
+  <%= render "/custom_notifications/mail" do %>
+    <%= render "evergreen_mailer/custom_extras" %>
+  <% end %>
+<% else %>
+  <p>Dear <%= @user&.first_name %>,</p>
+  <p>We have received your subscription request.</p>
+  <%= render "evergreen_mailer/summary" %>
+  <% if @setting.pre_funded? %>
+    <p><strong>Pay <%= evergreen_money(@order.amount_cents, @fund) %> by <%= l(@order.dealing_date.cutoff_at.to_date) %></strong> to be dealt on <%= l(@order.dealing_date.date) %>.</p>
+    <div><%= simple_format(@setting.payment_instructions) %></div>
+    <%# A first subscription has no folio yet: SUB-<order id>, not "SUB--<id>" %>
+    <p>Reference: <strong><%= EvergreenOrderMessages.payment_reference(@order) %></strong></p>
+  <% else %>
+    <p>You'll receive payment instructions after the <%= l(@order.dealing_date.date) %> <%= EvergreenLabels.lower(eg_t(:subscription_date)) %>, with the exact <%= eg_t(:units) %>.</p>
+  <% end %>
+  <%= render "evergreen_mailer/request_link" %>
+<% end %>

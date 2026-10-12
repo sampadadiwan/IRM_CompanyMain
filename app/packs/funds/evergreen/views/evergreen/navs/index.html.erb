@@ -1,0 +1,79 @@
+<%# NAV history per class (proposal GP-5). Worked examples H3, H5 %>
+<% filters = Evergreen::NavsController::FILTERS %>
+<% can_create = policy(FundNav.new(fund: @fund, entity_id: @fund.entity_id)).create? %>
+<div class="p-3" data-controller="tooltip">
+  <%= render layout: "evergreen/shared/list_header", locals: { title: "NAV", subtitle: "#{eg_t(:nav_per_unit)} by class — drafted from the ledger or uploaded, then approved by a user with the approver role before it is used for dealing or shown to investors" } do %>
+    <%# Filter, as on the order book; stays inside the fund-page tab %>
+    <div class="dropdown">
+      <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" id="navs_filter">
+        <i class="ti ti-filter"></i><%= filters[@filter] %>
+      </button>
+      <div class="dropdown-menu">
+        <% filters.each do |key, label| %>
+          <%= link_to label, evergreen_navs_path(@fund, filter: key), class: "dropdown-item #{'active' if key == @filter}", id: "navs_filter_#{key}",
+                                                                      data: { turbo_frame: turbo_frame_request_id || "_top" } %>
+        <% end %>
+      </div>
+    </div>
+    <% if can_create %>
+      <button type="button" class="btn btn-outline-primary d-inline-flex align-items-center text-nowrap" data-bs-toggle="modal" data-bs-target="#new_nav_modal" id="new_nav_open"><i class="ti ti-plus"></i> New NAV</button>
+      <%= link_to new_import_upload_path("import_upload[owner_id]": @fund.id, "import_upload[owner_type]": "Fund", "import_upload[import_type]": "FundNav"), class: "btn btn-outline-primary d-inline-flex align-items-center", id: "upload_nav", data: { turbo: false } do %><i class="ti ti-upload"></i> <%= t_common(:upload) %><% end %>
+    <% end %>
+  <% end %>
+
+  <%# New NAV: pick the date in a small form (same modal markup as the dealing date's Record payment) %>
+  <% if can_create %>
+    <div class="modal fade" id="new_nav_modal" tabindex="-1" aria-labelledby="new_nav_label" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <%= form_with url: evergreen_navs_path(@fund), method: :post, id: "new_nav_form", data: { turbo_frame: "_top" } do |f| %>
+            <div class="modal-header">
+              <h5 class="modal-title" id="new_nav_label">New NAV</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <div class="text-muted small mb-3">Drafts every class for the date from the ledger and valuations. It stays a draft until a user with the approver role approves it.</div>
+              <div class="mb-1"><%= f.label :nav_date, "NAV date", class: "form-label", for: "nav_date" %><%= f.date_field :nav_date, class: "form-control", required: true, id: "nav_date" %></div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal"><%= t_common(:cancel) %></button>
+              <%= button_tag type: "submit", class: "btn btn-outline-success", id: "new_nav" do %><i class="ti ti-calculator"></i> Draft NAV<% end %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <div class="table-responsive">
+    <table class="table table-bordered dataTable action_table hover" id="fund_navs">
+      <thead><tr><th>NAV date</th><th>Class</th><th class="text-end"><%= eg_t(:nav_per_unit_short) %></th><th class="text-end">Change</th><th class="text-end"><%= eg_t(:Units) %></th><th class="text-end">NAV</th><th>Status</th><th>Source</th><th class="action-col" aria-label="Actions">Actions</th></tr></thead>
+      <tbody>
+        <% if @fund_navs.empty? %>
+          <tr><td colspan="9" class="text-muted"><i class="ti ti-chart-line me-1"></i>
+            <% if @filter == "all" %>
+              No NAVs yet — click New NAV and pick a date to draft one from the ledger, or upload your administrator's NAV.
+            <% else %>
+              No <%= filters[@filter].downcase %> NAVs.
+            <% end %>
+          </td></tr>
+        <% end %>
+        <%# Drafts are listed first (they need approving), then newest first %>
+        <% @fund_navs.each do |nav| %>
+          <tr id="fund_nav_<%= nav.id %>">
+            <td><%= link_to l(nav.nav_date), evergreen_nav_path(@fund, nav), data: { turbo_frame: "_top" } %></td>
+            <td><%= nav.unit_type %></td>
+            <td class="text-end"><%= evergreen_nav_per_unit(nav.nav_per_unit_cents) %></td>
+            <%# Change against the class's previous NAV by date (blank for the first one) %>
+            <td class="text-end"><%= eg_nav_change(nav, @previous[nav.id]) || "—" %></td>
+            <td class="text-end"><%= number_with_precision(nav.units_outstanding, precision: 4, delimiter: ",") %></td>
+            <td class="text-end"><%= evergreen_money(nav.nav_cents, @fund) %></td>
+            <td><%= eg_nav_status_badge(nav) %></td>
+            <td><%= eg_nav_source_badge(nav) %></td>
+            <td class="action-col"><%= link_to t_common(:view), evergreen_nav_path(@fund, nav), class: "btn btn-outline-primary ti ti-eye", data: { turbo_frame: "_top", bs_toggle: "tooltip", bs_title: "Open NAV #{l(nav.nav_date)} class #{nav.unit_type}" }, aria: { label: "Open NAV #{l(nav.nav_date)} class #{nav.unit_type}" } %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>

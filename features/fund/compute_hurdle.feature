@@ -1,3 +1,4 @@
+@rack_test
 Feature: Compute Hurdle
   Capital commitment preferred return (hurdle) is calculated from
   remittance payments and optionally reduced by distributions.

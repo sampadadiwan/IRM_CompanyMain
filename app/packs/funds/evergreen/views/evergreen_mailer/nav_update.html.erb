@@ -1,0 +1,15 @@
+<%# open-ended-funds § Notifications: an approved NAV and the investor's holding value %>
+<% if @custom_notification %>
+  <%= render "/custom_notifications/mail" do %><%= render "evergreen_mailer/custom_extras" %><% end %>
+<% else %>
+  <p>Dear <%= @user&.first_name %>,</p>
+  <p>The NAV of <%= @fund.name %> for <%= l(@fund_nav.nav_date) %> has been published.</p>
+  <table style="border-collapse:collapse" cellpadding="4">
+    <tr><td><strong>Class</strong></td><td><%= @fund_nav.unit_type %></td></tr>
+    <tr><td><strong><%= eg_t(:nav_per_unit) %></strong></td><td><%= evergreen_money(@fund_nav.nav_per_unit_cents, @fund) %></td></tr>
+    <tr><td><strong><%= eg_t(:capital_commitment) %></strong></td><td><%= @folio.folio_id %></td></tr>
+    <tr><td><strong><%= eg_t(:Units) %> held</strong></td><td><%= number_with_precision(@holding_units, precision: 4, delimiter: ",") %></td></tr>
+    <tr><td><strong>Holding value</strong></td><td><%= evergreen_money(@holding_value_cents, @fund) %></td></tr>
+  </table>
+  <%= render "evergreen_mailer/request_link" %>
+<% end %>

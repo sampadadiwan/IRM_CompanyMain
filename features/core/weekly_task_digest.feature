@@ -1,3 +1,4 @@
+@rack_test
 Feature: Weekly task digest email
   Every Friday, employees of an Investment Fund entity who are tagged "Tasks" receive
   one email summarising the week: tasks completed this week, tasks due next week and

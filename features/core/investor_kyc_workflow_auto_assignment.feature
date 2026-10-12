@@ -13,6 +13,7 @@ Feature: InvestorKyc Workflow Auto-Assignment
 
   # ── KYC Onboarding Kick-off — fires on create ─────────────────────────────────
 
+  @rack_test
   Scenario: KYC Onboarding Kick-off is assigned and launched the moment a KYC is created
     Given there is a workflow template "name=KYC Onboarding Kick-off" with 1 step "name=Investor Outreach;states=Link Sent,No Response,Declined;quorum_rule=any_one;on_reject_rule=stop;actors=admin"
     And the workflow template "KYC Onboarding Kick-off" has workflowable_type "InvestorKyc"
@@ -36,6 +37,7 @@ Feature: InvestorKyc Workflow Auto-Assignment
     When the entity has an investor_kyc "name=Priya Patel"
     Then the investor_kyc "Priya Patel" should not have a workflow template
 
+  @rack_test
   Scenario: KYC Submission Review fires when the investor marks the form as complete
     Given there is a workflow template "name=KYC Submission Review" with 1 step "name=Document Verification;states=Verified,Incomplete,Rejected;quorum_rule=any_one;on_reject_rule=stop;actors=admin"
     And the workflow template "KYC Submission Review" has workflowable_type "InvestorKyc"
@@ -63,6 +65,7 @@ Feature: InvestorKyc Workflow Auto-Assignment
     When I update the investor_kyc "Suresh Nair" attribute "completed_by_investor" to "true"
     Then the investor_kyc "Suresh Nair" should not have a workflow template
 
+  @rack_test
   Scenario: Post-Verification KYC Audit fires when the KYC is marked as verified
     Given there is a workflow template "name=Post-Verification KYC Audit" with 1 step "name=Compliance File Audit;states=Audit Passed,Exceptions Found,Audit Failed;quorum_rule=any_one;on_reject_rule=stop;actors=admin"
     And the workflow template "Post-Verification KYC Audit" has workflowable_type "InvestorKyc"
@@ -74,6 +77,7 @@ Feature: InvestorKyc Workflow Auto-Assignment
 
   # ── Idempotency — first assignment blocks later triggers ─────────────────────
 
+  @rack_test
   Scenario: Kick-off template assigned on create blocks Submission Review from re-assigning when investor completes
     Given there is a workflow template "name=KYC Onboarding Kick-off" with 1 step "name=Investor Outreach;states=Link Sent,No Response,Declined;quorum_rule=any_one;on_reject_rule=stop;actors=admin"
     And the workflow template "KYC Onboarding Kick-off" has workflowable_type "InvestorKyc"
@@ -87,6 +91,7 @@ Feature: InvestorKyc Workflow Auto-Assignment
     Then the investor_kyc "Dev Kapoor" should still have workflow template "KYC Onboarding Kick-off"
     And the investor_kyc "Dev Kapoor" should have exactly 1 workflow assignment
 
+  @rack_test
   Scenario: Submission Review assigned on investor completion blocks Post-Verification Audit from re-assigning
     Given there is a workflow template "name=KYC Submission Review" with 1 step "name=Document Verification;states=Verified,Incomplete,Rejected;quorum_rule=any_one;on_reject_rule=stop;actors=admin"
     And the workflow template "KYC Submission Review" has workflowable_type "InvestorKyc"

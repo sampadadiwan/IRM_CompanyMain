@@ -1,0 +1,67 @@
+# Typical starting points for an evergreen fund's settings (proposal → Fund Setups).
+# Presets only fill the settings form; nothing is saved until the admin clicks Save, and every
+# value stays editable. Worked example H2 — openspec/changes/open-ended-funds/design.md#worked-examples
+cat_iii_aif:
+  label: "Indian Cat III AIF (open-ended)"
+  values:
+    subscription_calendar: monthly
+    redemption_calendar: monthly
+    payment_timing: before
+    notice_days: 30
+    lock_up_months: 12
+    lock_up_type: soft
+    early_redemption_fee: { pct: 1 }
+    gate_pct: 0
+    gate_level: fund
+    gate_period: dealing_date
+    gate_method: pro_rata
+    investor_gate_pct: 0
+    order_journeys: subscriptions
+us_tender_offer:
+  label: "US evergreen / tender-offer fund"
+  values:
+    subscription_calendar: monthly
+    redemption_calendar: quarterly
+    payment_timing: before
+    notice_days: 30
+    lock_up_months: 12
+    lock_up_type: soft
+    early_redemption_fee: { pct: 2 }
+    gate_pct: 5
+    gate_level: fund
+    gate_period: quarter
+    gate_method: pro_rata
+    investor_gate_pct: 0
+    order_journeys: subscriptions
+us_interval_fund:
+  label: "US interval fund"
+  values:
+    subscription_calendar: monthly
+    redemption_calendar: quarterly
+    payment_timing: before
+    notice_days: 21
+    lock_up_months: 0
+    lock_up_type: hard
+    early_redemption_fee: { pct: 0 }
+    gate_pct: 5
+    gate_level: fund
+    gate_period: dealing_date
+    gate_method: pro_rata
+    investor_gate_pct: 0
+    order_journeys: subscriptions
+hedge_fund_style:
+  label: "Hedge-fund style"
+  values:
+    subscription_calendar: monthly
+    redemption_calendar: quarterly
+    payment_timing: before
+    notice_days: 45
+    lock_up_months: 12
+    lock_up_type: hard
+    early_redemption_fee: { pct: 0 }
+    gate_pct: 0
+    gate_level: fund
+    gate_period: quarter
+    gate_method: fifo
+    investor_gate_pct: 25
+    order_journeys: both

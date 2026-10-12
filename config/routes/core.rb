@@ -124,7 +124,8 @@ end
 # Entity Market Data settings and feed runs — openspec/changes/fund-market-data (card ①, ②)
 namespace :market_data do
   resource :settings, only: %i[show update] do
-    post :test_feed
+    # GET too: a browser reload of the results page re-runs the dry run (it stores nothing, E45)
+    match :test_feed, via: %i[get post]
   end
   resources :runs, only: %i[index]
 end

@@ -1,0 +1,9 @@
+<%# An evergreen page loaded into a fund-page tab: answer inside the frame that asked, without the app chrome.
+    Turbo copies only the frame's children into the page, so the full-width class sits on a wrapper div:
+    the page's own (width-capped) container goes full width, like the closed-ended tab contents. %>
+<%= turbo_frame_tag turbo_frame_request_id, target: "_top" do %>
+  <div class="evergreen-frame" data-controller="tooltip">
+    <style>.evergreen-frame .container-fluid { max-width: none !important; width: 100%; padding-left: 0; padding-right: 0; }</style>
+    <%= yield %>
+  </div>
+<% end %>

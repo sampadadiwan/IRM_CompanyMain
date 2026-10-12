@@ -6,7 +6,8 @@ class WorkflowInstancesController < ApplicationController
   # this list is deliberately separate (not a reference to the constant) so a
   # security review of this controller doesn't need to trust another file's contents.
   # CapitalDistribution: capital-distribution-journey (Worked examples H2 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples)
-  ALLOWED_WORKFLOWABLE_TYPES = %w[Folder InvestorKyc CapitalCommitment CapitalCall CapitalDistribution Approval Investor KpiReport].freeze
+  # DealingOrder / DealingDate: open-ended-funds order and dealing-date journeys
+  ALLOWED_WORKFLOWABLE_TYPES = %w[Folder InvestorKyc CapitalCommitment CapitalCall CapitalDistribution Approval Investor KpiReport DealingOrder DealingDate].freeze
 
   before_action :set_instance, only: %i[show advance reset archive send_reminder export_audit_trail acknowledge step_info]
 
@@ -17,6 +18,12 @@ class WorkflowInstancesController < ApplicationController
     @instances = policy_scope(WorkflowInstance).includes(:workflow_template, :workflowable)
                                                .order(created_at: :desc)
     @instances = @instances.where(workflow_template_id: params[:workflow_template_id]) if params[:workflow_template_id].present?
+    # One record's runs (the investor page's Misc > Workflow History). Only allowed types; the rows
+    # are already limited by policy_scope, so another entity's id simply matches nothing.
+    if params[:workflowable_id].present? && ALLOWED_WORKFLOWABLE_TYPES.include?(params[:workflowable_type].to_s)
+      @instances = @instances.where(workflowable_type: params[:workflowable_type], workflowable_id: params[:workflowable_id])
+      @workflowable = @instances.first&.workflowable
+    end
     authorize WorkflowInstance
   end
 

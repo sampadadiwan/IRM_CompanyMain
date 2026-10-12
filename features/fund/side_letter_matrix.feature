@@ -9,6 +9,7 @@ Feature: LP Obligation Matrix UI
     And a fund with a capital commitment exists
     And there is a side letter obligation support agent
 
+  @rack_test
   Scenario: Counsel approves a pending obligation from the matrix
     Given a pending "one_time" obligation owned by team "finance" due in 30 days
     When I visit the obligation matrix
@@ -17,6 +18,7 @@ Feature: LP Obligation Matrix UI
     Then the obligation should be approved
     And I should see the obligation row "Test obligation" with status "Active"
 
+  @rack_test
   Scenario: Filter the matrix by review status
     Given a pending "one_time" obligation owned by team "finance" due in 30 days
     And an approved armed obligation owned by team "legal" titled "Co-invest right"

@@ -1,4 +1,4 @@
-@notification
+@notification @rack_test
 Feature: ReportMailer — scheduled report email delivery
 
   Background:

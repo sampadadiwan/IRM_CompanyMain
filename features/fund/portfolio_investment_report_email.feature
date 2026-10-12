@@ -1,3 +1,4 @@
+@rack_test
 Feature: Portfolio Investment Report Email Isolation
   PortfolioInvestmentsXlReportJob sends the generated report via its own
   "send_portfolio_investment_report" email_method (DocumentMailer), distinct from the generic
