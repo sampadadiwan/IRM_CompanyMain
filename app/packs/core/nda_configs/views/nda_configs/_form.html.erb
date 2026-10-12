@@ -113,7 +113,9 @@
         <% end %>
         <% if nda_config.persisted? %>
           <div class="form-check mt-2">
-            <%= check_box_tag "nda_config[resign_required]", "1", true,
+            <%# Changed: Default resign_required to unchecked. %>
+            <%# Why: Most NDA PDF updates are minor — GP should opt in explicitly when re-sign is needed. %>
+            <%= check_box_tag "nda_config[resign_required]", "1", false,
                 class: "form-check-input", id: "resign_required" %>
             <label class="form-check-label" for="resign_required">
               Require existing signatories to re-sign this version

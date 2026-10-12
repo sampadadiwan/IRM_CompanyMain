@@ -108,7 +108,9 @@ class NdaConfigsController < ApplicationController
           resign_required = ActiveModel::Type::Boolean.new.cast(
             params.dig(:nda_config, :resign_required)
           )
-          resign_required = true if resign_required.nil?
+          # Changed: Default to false when checkbox is unchecked (param not sent).
+          # Why: Unchecked checkbox means GP does not want existing signatories to re-sign.
+          resign_required = false if resign_required.nil?
           create_version_record(@nda_config, resign_required: resign_required)
           notify_version_change if resign_required
         end
@@ -203,17 +205,24 @@ class NdaConfigsController < ApplicationController
     nil
   end
 
-  # Changed: Module 9 — auto-tags the oldest approved user per investor as default NDA signatory.
-  # Why: On first NDA creation, every investor needs at least one signatory so LPs are not
-  #   blocked with zero signatories. Selecting the oldest approved InvestorAccess (by created_at)
-  #   picks the user who has had access longest — a reasonable default. Rescue RecordNotUnique
-  #   silently for idempotency if a signatory already exists (e.g. race condition on double-submit).
+  # Changed: Module 10 — folder-scoped auto-tag instead of entity-wide.
+  # Why: The previous entity-wide query (InvestorAccess.where(entity_id:)) tagged signatories
+  #   for ALL entity investors, including those without access to the specific folder. Now scoped
+  #   via Investor.owner_access_rights to only tag investors with folder-level AccessRight records.
+  #   Selecting the oldest approved InvestorAccess (by created_at) picks the user who has had
+  #   access longest — a reasonable default. Rescue RecordNotUnique silently for idempotency.
   #
   # @param nda_config [NdaConfig] The newly created NDA config
   # @return [void]
   def auto_tag_default_signatories(nda_config)
+    # Changed: Scope investors to folder-level access rights, not entity-wide.
+    # Why: Only investors with an AccessRight on this folder should get NDA signatories.
+    #   Uses the same Investor.owner_access_rights pattern as NdaStatusResolver#resolve_investors.
+    folder_investor_ids = Investor.owner_access_rights(@folder, nil).pluck(:id)
+    return if folder_investor_ids.empty?
+
     InvestorAccess
-      .where(entity_id: nda_config.entity_id, approved: true)
+      .where(entity_id: nda_config.entity_id, investor_id: folder_investor_ids, approved: true)
       .order(:created_at)
       .group_by(&:investor_id)
       .each_value do |accesses|

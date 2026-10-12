@@ -230,6 +230,13 @@ class AccessRight < ApplicationRecord
     end
   end
 
+  # Changed: Module 10 — auto-tag NDA signatory when folder AccessRight is granted.
+  # Why: When a GP grants folder access to an investor AFTER the NDA is already configured,
+  #   the investor's existing approved users have zero signatories. This callback checks if
+  #   the folder has an enabled NDA and auto-tags the oldest approved user as signatory.
+  #   Complements the InvestorAccess callback which covers the other path (access created after NDA).
+  after_commit :auto_tag_nda_signatory_for_folder, on: %i[create update], if: :folder_with_investor?
+
   after_commit :update_owner
   # This is to bust any cached dashboards showing the commitments
   def update_owner
@@ -281,6 +288,75 @@ class AccessRight < ApplicationRecord
     users.map do |contact|
       investor_ids = by_email[contact.email.to_s.downcase].to_a.map(&:last).uniq
       [contact, investor_ids.one? ? category_investors[investor_ids.first] : nil]
+    end
+  end
+
+  # Changed: Module 10 — guard for NDA signatory auto-tag callback.
+  # Why: Only folder-level AccessRights targeting an investor (direct or category) should
+  #   trigger NDA signatory auto-tagging. Non-folder owners (Fund, Deal) and user-level
+  #   AccessRights have no NDA relevance.
+  #
+  # @return [Boolean] true when owner is a Folder and the right targets an investor
+  def folder_with_investor?
+    owner_type == "Folder" && (access_to_investor_id.present? || access_to_category.present?)
+  end
+
+  # Changed: Module 10 — auto-tag NDA signatory when folder AccessRight is granted.
+  # Why: Covers the common GP workflow where NDA is set up first, then folder access is granted
+  #   to an investor who already has approved InvestorAccess. The InvestorAccess callback misses
+  #   this path because InvestorAccess wasn't touched. This callback completes the pair.
+  #
+  # N+1 analysis:
+  #   Query 1: NdaConfig.find_by(owner_type:, owner_id:, enabled:) — indexed, 0-1 rows
+  #   Query 2: Investor lookup (direct or category) — 1 query, indexed
+  #   Query 3 (per investor): InvestorAccess.where(...).order(:created_at) — indexed
+  #   Query 4 (per investor): NdaSignatory.exists?(...) — unique index check
+  #   Query 5 (per investor, conditional): NdaSignatory.create! — single insert
+  #   Total: 2 + (2-3 per matched investor). Direct AccessRight = 1 investor = 4-5 queries.
+  #   Category AccessRight with N investors = 2 + 3N queries. All indexed.
+  #
+  # @return [void]
+  def auto_tag_nda_signatory_for_folder
+    # Changed: Look up the NDA config on this specific folder.
+    # Why: Only folders with an enabled NDA need signatory auto-tagging.
+    nda_config = NdaConfig.find_by(owner_type: "Folder", owner_id: owner_id, enabled: true)
+    return unless nda_config
+
+    # Changed: Resolve matched investors — direct or category-based.
+    # Why: AccessRight can target a specific investor (access_to_investor_id) or all investors
+    #   of a category (access_to_category). Both paths need auto-tag coverage.
+    matched_investor_ids = if access_to_investor_id.present?
+                             [access_to_investor_id]
+                           elsif access_to_category.present?
+                             entity.investors.where(category: access_to_category).pluck(:id)
+                           else
+                             []
+                           end
+    return if matched_investor_ids.empty?
+
+    matched_investor_ids.each do |inv_id|
+      # Changed: Find the oldest approved InvestorAccess user for this investor.
+      # Why: Mirrors the controller auto-tag logic — oldest approved user is the default signatory.
+      oldest_access = InvestorAccess
+                      .where(investor_id: inv_id, entity_id: entity_id, approved: true)
+                      .order(:created_at)
+                      .first
+      next unless oldest_access
+
+      # Changed: Skip if any user of this investor already has a signatory for this NDA.
+      # Why: One signatory per investor is sufficient — avoids duplicate rows.
+      investor_user_ids = InvestorAccess.where(investor_id: inv_id, entity_id: entity_id, approved: true).select(:user_id)
+      next if NdaSignatory.exists?(nda_config_id: nda_config.id, user_id: investor_user_ids)
+
+      # Changed: Tag the oldest approved user. Rescue for race condition idempotency.
+      # Why: Two AccessRights created simultaneously could both pass the exists? check.
+      NdaSignatory.create!(
+        nda_config: nda_config,
+        user_id: oldest_access.user_id,
+        tagged_by_id: granted_by_id || oldest_access.user_id
+      )
+    rescue ActiveRecord::RecordNotUnique, ActiveRecord::RecordInvalid
+      next
     end
   end
 
