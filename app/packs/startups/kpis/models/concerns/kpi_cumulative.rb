@@ -339,6 +339,11 @@ module KpiCumulative
 
   # Creates a YTD record for each month in the fiscal year, carrying that month's value forward.
   # Mirrors process_yearly_cumulatives but uses last-value semantics instead of progressive sum.
+  # Also creates a 'Year' record when all 12 months are present, using the last month's
+  # snapshot value (not a sum) — e.g. Cash at year-end = March balance for Indian FY.
+  #
+  # @param related_kpis [Array<Kpi>] monthly KPIs sorted chronologically
+  # @param force [Boolean] when true, overwrites existing values
   def process_yearly_forward_fill(related_kpis, force: false)
     kpis_by_year = related_kpis.group_by { |kpi| fiscal_year_key(kpi.kpi_report.as_of, style: :start_year) }
 
@@ -347,6 +352,14 @@ module KpiCumulative
         as_of = kpi.kpi_report.as_of
         last_val = kpi.value.to_f
         process_cumulative_kpi(nil, last_val, 'YTD', nil, as_of, note: "Auto-generated Forward Fill", force: force)
+      end
+
+      # Year = last month's snapshot value when all 12 months of the fiscal year are present
+      if kpis_in_year.size == 12
+        last_kpi = kpis_in_year.last
+        as_of = last_kpi.kpi_report.as_of
+        last_val = last_kpi.value.to_f
+        process_cumulative_kpi(nil, last_val, 'Year', nil, as_of, note: "Auto-generated Forward Fill", force: force)
       end
     end
   end
