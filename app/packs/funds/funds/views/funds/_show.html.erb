@@ -240,7 +240,7 @@
             Show Valuations to LPs
           </td>
           <td>
-            <%= display_boolean fund.show_valuations %>
+            <%= display_boolean fund.features.show_valuations? %>
           </td>
         </tr>
         <tr>
@@ -248,7 +248,7 @@
             Show Fund Ratios to LPs
           </td>
           <td>
-            <%= display_boolean fund.show_fund_ratios %>
+            <%= display_boolean fund.features.show_fund_ratios? %>
           </td>
         </tr>
         <tr>
@@ -256,7 +256,7 @@
             Show Fund Portfolios to LPs
           </td>
           <td>
-            <%= display_boolean fund.show_portfolios %>
+            <%= display_boolean fund.features.show_portfolios? %>
           </td>
         </tr>
         <tr>
@@ -264,7 +264,7 @@
             Show Fund Units to LPs
           </td>
           <td>
-            <%= display_boolean fund.show_fund_units %>
+            <%= display_boolean fund.features.show_fund_units? %>
           </td>
         </tr>
       <% end %>

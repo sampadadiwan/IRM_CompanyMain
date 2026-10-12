@@ -36,6 +36,20 @@
     </div>
 
     <div class="form-group">
+      <%= form.label :rate_type %>
+      <%= form.select :rate_type, ExchangeRate::RATE_TYPES.map { |t| [t.capitalize, t] }, {}, class: "form-select" %>
+    </div>
+
+    <%# Fund-specific rate: only funds with "Use fund-specific FX rates" (H21) %>
+    <% own_rate_funds = Fund.where(entity_id: exchange_rate.entity_id).where_features(:use_own_fx_rates).order(:name) %>
+    <% if own_rate_funds.exists? %>
+      <div class="form-group">
+        <%= form.label :owner_id, "Fund (leave blank for all funds)" %>
+        <%= form.select :owner_id, own_rate_funds.map { |f| [f.name, f.id] }, { include_blank: "All funds" }, class: "form-select" %>
+      </div>
+    <% end %>
+
+    <div class="form-group">
       <%= form.label :notes %>
       <%= form.text_area :notes, class: "form-control"  %>
     </div>

@@ -1,0 +1,17 @@
+<p>Dear <%= @user.name %>,</p>
+
+<p>The <strong><%= @run.provider.upcase %></strong> price feed could not load every price for <strong><%= l @run.run_date %></strong>.</p>
+
+<ul>
+  <% @run.missing_items.each do |item| %>
+    <li><%= item["name"] || item["key"] %> — <%= item["reason"] %></li>
+  <% end %>
+</ul>
+
+<% if @run.error_message.present? %>
+  <p>Provider message: <%= @run.error_message %></p>
+<% end %>
+
+<p>Check the instrument's ticker or ISIN, or enter the price by hand as a Manual valuation (Manual prices win over feed prices on the same date).</p>
+
+<p>Thank you,<br><%= @entity.name %> System</p>

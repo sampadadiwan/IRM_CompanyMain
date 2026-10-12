@@ -163,15 +163,15 @@
             <ul class="list-group list-group-flush">
               <li class="list-group-item d-flex justify-content-between align-items-center py-3">
                 <span class="text-muted">Show Fund Ratios</span>
-                <%= display_boolean fund.show_fund_ratios %>
+                <%= display_boolean fund.features.show_fund_ratios? %>
               </li>
               <li class="list-group-item d-flex justify-content-between align-items-center py-3">
                 <span class="text-muted">Show Portfolios</span>
-                <%= display_boolean fund.show_portfolios %>
+                <%= display_boolean fund.features.show_portfolios? %>
               </li>
               <li class="list-group-item d-flex justify-content-between align-items-center py-3">
                 <span class="text-muted">Show Fund Units</span>
-                <%= display_boolean fund.show_fund_units %>
+                <%= display_boolean fund.features.show_fund_units? %>
               </li>
             </ul>
           </div>

@@ -1,5 +1,6 @@
 import BaseAgGrid from "controllers/base_ag_grid"
 import { localeDateGridOptions } from "custom/ag_locale_date_filter"
+import { whenControllerConnected } from "custom/controller_ready"
 import * as bootstrap from "bootstrap"
 
 // Row-menu actions that open the offcanvas on a specific tab with that tab's
@@ -1111,9 +1112,14 @@ export default class extends BaseAgGrid {
 
   // Matched on href, not position, so the tabs can be reordered freely.
   // The pane is a lazy turbo-frame: revealing it triggers the load.
-  openPanelTab(paneId) {
+  async openPanelTab(paneId) {
     const tab = this.sidepanelElement?.querySelector(`a[href="#${paneId}"]`);
-    if (tab) tab.click();
+    if (!tab) return;
+    // The tab strip's offcanvastabs controller arrived with the panel HTML moments ago and is
+    // lazy-loaded, so it may not be connected yet - a click before then does nothing.
+    const tabStrip = tab.closest('[data-controller~="offcanvastabs"]');
+    if (tabStrip) await whenControllerConnected(this.application, tabStrip, "offcanvastabs");
+    tab.click();
   }
 
   // Absent when the user may not create this record for the owner — nothing to open.

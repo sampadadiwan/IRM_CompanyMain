@@ -1,0 +1,95 @@
+<%#
+  Fund › Edit › Features — every fund switch in one place (FundEnabled), like the entity's features.
+  Market-data rows appear only for entity features that are on; Manual is always accepted.
+  openspec/changes/fund-market-data — design card ① (H3, E2, E8).
+%>
+<% entity = fund.entity %>
+<% current = fund.features.to_a %>
+<% feature_box = lambda do |flag, label, help = nil| %>
+  <div class="form-check">
+    <%= check_box_tag "fund[features][]", flag, current.include?(flag), id: "fund_features_#{flag}", class: "form-check-input" %>
+    <%= label_tag "fund_features_#{flag}", label, class: "form-check-label" %>
+    <% if help %><small class="text-muted d-block"><%= help %></small><% end %>
+  </div>
+<% end %>
+
+<div class="card mb-3" id="fund_features">
+  <div class="card-header"><h5 class="card-title mb-0">Features</h5></div>
+  <div class="card-body">
+    <%# Hidden blank so unticking every box still submits the list %>
+    <%= hidden_field_tag "fund[features][]", "", id: nil %>
+
+    <h6>Investor visibility</h6>
+    <% feature_box.call(:show_fund_ratios, "Show fund ratios to LPs") %>
+    <% feature_box.call(:show_fund_units, "Show fund units to LPs") %>
+    <% feature_box.call(:show_portfolios, "Show fund portfolios to LPs") %>
+    <% feature_box.call(:show_valuations, "Show valuations to LPs") %>
+
+    <h6 class="mt-3">Reporting</h6>
+    <% feature_box.call(:enable_ai_commentary, "Enable AI commentary on Account Entries Reports",
+                        "When off, AI commentary won't auto-generate on the Account Entries Period Report; individual sections can still be generated on demand.") %>
+
+    <h6 class="mt-3">Market data</h6>
+    <div class="mb-2">
+      <span class="me-2">FX rates</span>
+      <div class="form-check form-check-inline">
+        <%= check_box_tag "manual_rates_always", 1, true, disabled: true, id: "fund_features_manual_rates", class: "form-check-input",
+                          title: "Hand-entered values are always accepted so a wrong feed value can be corrected" %>
+        <%= label_tag "fund_features_manual_rates", "Manual (always)", class: "form-check-label" %>
+      </div>
+      <% if entity.permissions.enable_market_rates? %>
+        <div class="form-check form-check-inline">
+          <%= check_box_tag "fund[features][]", :accept_market_rates, current.include?(:accept_market_rates), id: "fund_features_accept_market_rates", class: "form-check-input" %>
+          <%= label_tag "fund_features_accept_market_rates", "Market", class: "form-check-label" %>
+        </div>
+      <% end %>
+      <div class="form-check form-check-inline">
+        <%= check_box_tag "fund[features][]", :accept_derived_rates, current.include?(:accept_derived_rates), id: "fund_features_accept_derived_rates", class: "form-check-input" %>
+        <%= label_tag "fund_features_accept_derived_rates", "Derived", class: "form-check-label" %>
+      </div>
+    </div>
+
+    <div class="mb-2">
+      <span class="me-2">Prices</span>
+      <div class="form-check form-check-inline">
+        <%= check_box_tag "manual_prices_always", 1, true, disabled: true, id: "fund_features_manual_prices", class: "form-check-input",
+                          title: "Hand-entered values are always accepted so a wrong feed value can be corrected" %>
+        <%= label_tag "fund_features_manual_prices", "Manual (always)", class: "form-check-label" %>
+      </div>
+      <% if entity.permissions.enable_market_prices? %>
+        <div class="form-check form-check-inline">
+          <%= check_box_tag "fund[features][]", :accept_market_prices, current.include?(:accept_market_prices), id: "fund_features_accept_market_prices", class: "form-check-input" %>
+          <%= label_tag "fund_features_accept_market_prices", "Market", class: "form-check-label" %>
+        </div>
+      <% end %>
+    </div>
+
+    <% if entity.permissions.enable_derivatives? %>
+      <% feature_box.call(:enable_derivatives, "Derivatives") %>
+    <% end %>
+    <% feature_box.call(:use_own_fx_rates, "Use fund-specific FX rates",
+                        "Lets this fund hold its own manual FX rates, used only by this fund.") %>
+
+    <% if fund.respond_to?(:evergreen_fund_setting) && fund.evergreen_fund_setting.present? %>
+      <%# Limits apply to open-ended funds only (E8); blank = entity default %>
+      <% entity_limits = MarketDataSetting.for_entity(entity) %>
+      <h6 class="mt-3">Limits (open-ended)</h6>
+      <%= form.fields_for :market_data_setting, (fund.market_data_setting || fund.build_market_data_setting) do |ms| %>
+        <div class="row">
+          <div class="col-md-4 form-group">
+            <%= ms.label :max_rate_age_days, "Max rate age (business days)" %>
+            <%= ms.number_field :max_rate_age_days, class: "form-control", placeholder: entity_limits.max_rate_age_days %>
+          </div>
+          <div class="col-md-4 form-group">
+            <%= ms.label :max_price_age_days, "Max price age (business days)" %>
+            <%= ms.number_field :max_price_age_days, class: "form-control", placeholder: entity_limits.max_price_age_days %>
+          </div>
+          <div class="col-md-4 form-group">
+            <%= ms.label :price_move_threshold_pct, "Price move threshold (%)" %>
+            <%= ms.number_field :price_move_threshold_pct, class: "form-control", step: "0.01", placeholder: entity_limits.price_move_threshold_pct %>
+          </div>
+        </div>
+      <% end %>
+    <% end %>
+  </div>
+</div>

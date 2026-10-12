@@ -100,7 +100,7 @@
       <% end %>
     <% end %>
     <!-- Show Master Fund Portfolio link if fund is a sub-fund and master fund has portfolios and  master_fund.show_portfolios-->
-    <% if fund && fund.master_fund_id.present? && fund.master_fund.show_portfolios %>
+    <% if fund && fund.master_fund_id.present? && fund.master_fund.features.show_portfolios? %>
       <%= link_to "Master Fund Portfolio", aggregate_portfolio_investments_path(fund_id: fund.master_fund_id), class: "btn btn-outline-secondary ti ti-home" %>
     <% end %>
   </div>

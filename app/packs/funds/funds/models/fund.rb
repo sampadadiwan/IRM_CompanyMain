@@ -11,6 +11,7 @@ class Fund < ApplicationRecord
   include FundShared
   include FundNotifiers
 
+  include FundEnabled
   include ForInvestor
   include WithCustomField
   include WithCustomNotifications
@@ -67,6 +68,9 @@ class Fund < ApplicationRecord
   has_many :investor_accesses, through: :committed_investors
 
   has_many :fund_formulas, dependent: :destroy
+  # Per-fund overrides of the entity's Market Data settings (limits) — openspec fund-market-data, card ①
+  has_one :market_data_setting, dependent: :destroy
+  accepts_nested_attributes_for :market_data_setting, update_only: true
   # Fund financial statements (app/packs/funds/financial_statements): mapping, layout and statement sets
   has_one :financial_statement_setting, dependent: :destroy
   has_many :financial_statements, dependent: :destroy

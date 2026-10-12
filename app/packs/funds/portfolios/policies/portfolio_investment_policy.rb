@@ -8,7 +8,7 @@ class PortfolioInvestmentPolicy < FundBasePolicy
         # PortfolioInvestment rows usually belong to the master fund.
         scope.joins(:fund)
              .where(fund_id: FeederMasterFundAccess.eligible_ids_for_investor(user))
-             .where("funds.show_portfolios = true")
+             .where("funds.features & ? > 0", Fund.features.maps[:show_portfolios])
       else
         super
       end
@@ -21,7 +21,7 @@ class PortfolioInvestmentPolicy < FundBasePolicy
 
   def show?
     (user.enable_funds && permissioned_employee?) ||
-      (record.fund.show_portfolios &&
+      (record.fund.features.show_portfolios? &&
         (
           # Direct case: investor has an AccessRight on this exact fund.
           FundPolicy.new(user, record.fund).permissioned_investor? ||

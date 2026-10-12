@@ -29,7 +29,8 @@ class FundDashboard < Administrate::BaseDashboard
     properties: Field::Text,
     distribution_amount_cents: Field::String.with_options(searchable: false),
     audits: Field::HasMany,
-    editable_formulas: Field::BooleanEmoji
+    # All fund switches (incl. editable_formulas) live in the features bitflag — FundEnabled
+    features: ActiveFlagField
   }.freeze
 
   # COLLECTION_ATTRIBUTES
@@ -40,7 +41,6 @@ class FundDashboard < Administrate::BaseDashboard
   COLLECTION_ATTRIBUTES = %i[
     entity
     name
-    editable_formulas
     tag_list
   ].freeze
 
@@ -50,7 +50,7 @@ class FundDashboard < Administrate::BaseDashboard
     entity
     id
     name
-    editable_formulas
+    features
     portfolio_cost_type
     committed_amount_cents
     details
@@ -79,7 +79,7 @@ class FundDashboard < Administrate::BaseDashboard
 
     name
     portfolio_cost_type
-    editable_formulas
+    features
     committed_amount_cents
     details
     collected_amount_cents
@@ -105,5 +105,10 @@ class FundDashboard < Administrate::BaseDashboard
   #
   def display_resource(fund)
     fund.name
+  end
+
+  def permitted_attributes(action = nil)
+    # The features flag field submits an array of flag names
+    super + [{ features: [] }]
   end
 end

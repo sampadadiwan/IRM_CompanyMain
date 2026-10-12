@@ -2,7 +2,7 @@ class FundUnitPolicy < FundBasePolicy
   class Scope < FundBasePolicy::Scope
     def resolve
       if user.curr_role == "investor"
-        super.joins(:fund).where("funds.show_fund_units = true")
+        super.joins(:fund).where("funds.features & ? > 0", Fund.features.maps[:show_fund_units])
       else
         super
       end
@@ -19,7 +19,7 @@ class FundUnitPolicy < FundBasePolicy
 
   def show?
     permissioned_employee? ||
-      (record.fund.show_fund_units && permissioned_investor?)
+      (record.fund.features.show_fund_units? && permissioned_investor?)
   end
 
   def create?

@@ -10,7 +10,10 @@ class Valuation < ApplicationRecord
     "Name; text-col" => "name; text-col",
     "Valuation Date; date-col" => "valuation_date; date-col",
     "Per Share Value; num-col" => "per_share_value; num-col",
-    "Currency; text-col" => "currency; text-col"
+    "Currency; text-col" => "currency; text-col",
+    # Where the price came from — fund-market-data, card ④
+    "Source; text-col" => "source; text-col",
+    "Price Type; text-col" => "price_type; text-col"
   }.freeze
 
   ADDITIONAL_COLUMNS_FROM = ["investment_instrument"].freeze
@@ -72,13 +75,25 @@ class Valuation < ApplicationRecord
   # Validations
   validates :per_share_value, numericality: { greater_than_or_equal_to: 0 }
   validates :valuation_date, presence: true
-  validates :valuation_date, uniqueness: { scope: %i[investment_instrument_id entity_id owner_id owner_type] }
+  # One valuation per instrument, owner, date and source (X14). Sources: manual (typed/uploaded),
+  # market (price feed), cost (recorded by a purchase). openspec fund-market-data — card ④.
+  SOURCES = %w[manual market cost].freeze
+  PRICE_TYPES = %w[close bid mid].freeze
+  validates :valuation_date, uniqueness: { scope: %i[investment_instrument_id entity_id owner_id owner_type source] }
+  validates :source, inclusion: { in: SOURCES }
+  validates :price_type, inclusion: { in: PRICE_TYPES }
+
+  # The price feed saves many valuations, then recomputes each holding once (E43)
+  attr_accessor :skip_owner_update
+
   validates :name, length: { maximum: 255 }, allow_blank: true
 
   # Ensure callback to the owner
   after_save :update_owner
 
   def update_owner
+    return if skip_owner_update
+
     if ((!synthetic && saved_change_to_valuation_cents?) ||
        saved_change_to_per_share_value_cents? ||
        saved_change_to_valuation_date?) && owner.respond_to?(:valuation_updated) && latest?
@@ -97,14 +112,21 @@ class Valuation < ApplicationRecord
 
   # Check if this is the latest valuation
   # TODO - move to an attribute
+  # Latest for its own source: a new Market price recomputes holdings even when a newer Manual or
+  # Cost row exists, because funds choose which sources they use (PriceResolver).
   def latest?
     if synthetic
       false
     elsif owner.present?
-      investment_instrument.valuations.where(owner: owner).where("valuation_date > ?", valuation_date).empty?
+      investment_instrument.valuations.where(owner: owner, source:).exists?(["valuation_date > ?", valuation_date]) == false
     else
-      investment_instrument.valuations.where("valuation_date > ?", valuation_date).empty?
+      investment_instrument.valuations.where(source:).exists?(["valuation_date > ?", valuation_date]) == false
     end
+  end
+
+  # "Manual · User", "Market · NSE", "Cost · Purchase"
+  def source_label
+    [source&.capitalize, provider].compact_blank.join(" · ")
   end
 
   def to_s
@@ -129,8 +151,10 @@ class Valuation < ApplicationRecord
     end
   end
 
-  def per_share_value_in(to_currency, as_of)
-    convert_currency(currency, to_currency, per_share_value_cents, as_of)
+  # Converted with the rate the given fund accepts (a valuation has no fund of its own).
+  # Without a fund, the entity's default sources apply. H5 — openspec fund-market-data.
+  def per_share_value_in(to_currency, as_of, fund: nil)
+    convert_currency(currency, to_currency, per_share_value_cents, as_of, policy: fund && SourcePolicy.for(fund))
   end
 
   # This method is used to add custom fields to the Valuation form, to enable value bridge
@@ -156,7 +180,7 @@ class Valuation < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[portfolio_company_name per_share_value owner_id owner_type synthetic valuation_date].sort
+    %w[portfolio_company_name per_share_value owner_id owner_type price_type provider source synthetic valuation_date].sort
   end
 
   def self.ransackable_associations(_auth_object = nil)

@@ -535,12 +535,14 @@ INDEX_investors="
   CREATE INDEX index_investors_on_category ON investors(category);
 "
 
+# source/provider/rate_type/owner/legs: fund-market-data (FxRateResolver filters on them)
 COLS_exchange_rates=(
   id as_of created_at decimal document_folder_id entity_id "from"
   import_upload_id latest notes rate "to" updated_at
+  source provider rate_type owner_type owner_id leg1_id leg2_id
 )
 
-TEXT_COLS_exchange_rates=("from" "to" notes)
+TEXT_COLS_exchange_rates=("from" "to" notes source provider rate_type owner_type)
 
 SCHEMA_exchange_rates="
   id BIGINT PRIMARY KEY,
@@ -555,7 +557,14 @@ SCHEMA_exchange_rates="
   notes TEXT,
   rate DECIMAL(20,8) DEFAULT 0.0,
   \`to\` VARCHAR(5),
-  updated_at DATETIME NOT NULL
+  updated_at DATETIME NOT NULL,
+  source VARCHAR(10) NOT NULL DEFAULT 'manual',
+  provider VARCHAR(40),
+  rate_type VARCHAR(10) NOT NULL DEFAULT 'reference',
+  owner_type VARCHAR(20),
+  owner_id BIGINT,
+  leg1_id BIGINT,
+  leg2_id BIGINT
 "
 
 INDEX_exchange_rates="
@@ -563,6 +572,7 @@ INDEX_exchange_rates="
   CREATE INDEX index_exchange_rates_on_document_folder_id ON exchange_rates(document_folder_id);
   CREATE INDEX index_exchange_rates_on_import_upload_id ON exchange_rates(import_upload_id);
   CREATE INDEX idx_exchange_rates_entity_from_to_as_of ON exchange_rates(entity_id, \`from\`, \`to\`, as_of);
+  CREATE INDEX idx_exchange_rates_source ON exchange_rates(entity_id, owner_type, owner_id, \`from\`, \`to\`, as_of, source);
 "
 
 COLS_investor_kycs=(
@@ -719,7 +729,7 @@ TEXT_COLS_portfolio_investments=(portfolio_company_name notes folio_id category 
 TEXT_COLS_aggregate_portfolio_investments=(portfolio_company_name investment_type investment_domicile)
 TEXT_COLS_investor_kycs=(PAN address agreement_unit_type aml_status bank_account_number bank_account_type bank_branch bank_name bank_verification_response bank_verification_status birth_date comments completed_by_investor compliant corr_address doc_question_answers esign_emails full_name ifsc_code investor_name json_fields kyc_type notification_msg pan_card_data pan_verification_response pan_verification_status residency signature_data slug type)
 TEXT_COLS_investors=(investor_name category city primary_email pan tag_list)
-TEXT_COLS_exchange_rates=("from" "to" notes)
+TEXT_COLS_exchange_rates=("from" "to" notes source provider rate_type owner_type)
 TEXT_COLS_capital_remittances=(status notes payment_proof_data folio_id investor_name created_by json_fields)
 TEXT_COLS_capital_distributions=(title unit_prices json_fields notes)
 TEXT_COLS_capital_distribution_payments=(folio_id investor_name json_fields)

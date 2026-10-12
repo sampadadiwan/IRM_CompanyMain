@@ -62,6 +62,33 @@ class InvestmentInstrument < ApplicationRecord
   validates :investment_domicile, length: { maximum: 15 }, allow_blank: true
   validate :prevent_currency_change, on: :update
 
+  # Market pricing — openspec fund-market-data, design card ④ (H6, E34, E35, X11–X13, X35)
+  PRICING_METHODS = %w[manual market model cost].freeze
+  # Exchanges each price provider covers; AMFI prices mutual funds by ISIN (no exchange)
+  PROVIDER_EXCHANGES = { "nse" => "NSE", "bse" => "BSE" }.freeze
+
+  before_validation :normalize_identifiers
+  validates :pricing_method, inclusion: { in: PRICING_METHODS }
+  validates :isin, length: { is: 12 }, allow_blank: true
+  validates :ticker, length: { maximum: 30 }, allow_blank: true
+  validates :exchange, length: { maximum: 10 }, allow_blank: true
+  validate :isin_check_digit
+  validate :ticker_unique_on_exchange
+  validate :market_pricing_identifiable
+
+  def market_priced?
+    pricing_method == "market"
+  end
+
+  # E34 — copies an ISIN held in the SEBI custom field into the isin column (same rule as the
+  # AddMarketPricingToInstrumentsAndValuations migration)
+  def self.copy_sebi_isins!
+    where(isin: nil).where.not(json_fields: nil).find_each do |instrument|
+      isin = instrument.json_fields.to_h["sebi_isin"].to_s.strip.upcase
+      instrument.update_columns(isin:) if isin.length == 12
+    end
+  end
+
   # validate reporting fields
   validate :reporting_fields_kosher
 
@@ -103,5 +130,55 @@ class InvestmentInstrument < ApplicationRecord
 
   def self.ransackable_associations(_auth_object = nil)
     %w[aggregate_portfolio_investment portfolio_company portfolio_investments]
+  end
+
+  private
+
+  def normalize_identifiers
+    self.isin = isin.to_s.strip.upcase.presence
+    self.ticker = ticker.to_s.strip.upcase.presence
+    self.exchange = exchange.to_s.strip.upcase.presence
+    self.pricing_method = pricing_method.presence || "manual"
+  end
+
+  # X11 — Error case: ISO 6166 check digit (letters → numbers, Luhn over the digits)
+  def isin_check_digit
+    return if isin.blank?
+
+    valid = isin.match?(/\A[A-Z]{2}[A-Z0-9]{9}[0-9]\z/) && begin
+      digits = isin[0..10].chars.map { |c| c.match?(/\d/) ? c : (c.ord - 55).to_s }.join
+      sum = digits.reverse.chars.each_with_index.sum do |d, i|
+        n = d.to_i
+        n *= 2 if i.even?
+        n > 9 ? n - 9 : n
+      end
+      (10 - (sum % 10)) % 10 == isin[11].to_i
+    end
+    errors.add(:isin, "ISIN is not valid") unless valid
+  end
+
+  # X13 — Error case: one ticker per exchange within the entity
+  def ticker_unique_on_exchange
+    return if ticker.blank? || exchange.blank?
+
+    other = InvestmentInstrument.where(entity_id:, exchange:, ticker:).where.not(id:).first
+    errors.add(:ticker, "Ticker already used by #{other.name}") if other
+  end
+
+  # X12, X35 — Market pricing needs identifiers and an exchange a selected price feed covers
+  def market_pricing_identifiable
+    return unless market_priced?
+
+    if (ticker.blank? || exchange.blank?) && isin.blank?
+      errors.add(:base, "Market pricing needs a ticker and exchange, or an ISIN")
+      return
+    end
+
+    providers = entity ? Array(MarketDataSetting.for_entity(entity).price_providers) : []
+    covered = providers.filter_map { |p| PROVIDER_EXCHANGES[p] }
+    covered_by_isin = exchange.blank? && isin.present? && providers.include?("amfi")
+    return if covered_by_isin || (exchange.present? && covered.include?(exchange))
+
+    errors.add(:base, "No price feed covers #{exchange.presence || 'this holding'}; keep this holding Manual")
   end
 end

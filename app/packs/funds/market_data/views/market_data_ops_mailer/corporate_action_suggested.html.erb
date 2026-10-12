@@ -1,0 +1,9 @@
+<p>Dear <%= @user.name %>,</p>
+
+<p>NSE reported a corporate action for <strong><%= @suggestion.investment_instrument.name %></strong>:</p>
+
+<p><strong><%= @suggestion.subject %></strong> — ex-date <%= l @suggestion.ex_date %></p>
+
+<p>Nothing has changed yet. Open Portfolio › Corporate actions to confirm it (this creates the stock adjustment or dividend income as if entered by hand) or dismiss it.</p>
+
+<p>Thank you,<br><%= @entity.name %> System</p>

@@ -13,8 +13,13 @@ class ExchangeRatePolicy < ApplicationPolicy
     belongs_to_entity?(user, record)
   end
 
+  # A fund-specific rate also needs update access on that fund (H21)
   def create?
-    belongs_to_entity?(user, record)
+    return false unless belongs_to_entity?(user, record)
+    return true if record.owner_id.blank?
+
+    fund = Fund.find_by(id: record.owner_id, entity_id: record.entity_id)
+    fund.present? && FundPolicy.new(user, fund).update?
   end
 
   def new?

@@ -5,7 +5,7 @@
   )
 %>
 <div class="mt-2 mb-3 ai-commentary small border-start border-3 ps-2">
-  <% if !fund.enable_ai_commentary && insight.nil? %>
+  <% if !fund.features.enable_ai_commentary? && insight.nil? %>
     <p class="text-muted mb-1">AI commentary is disabled for this report.</p>
   <% elsif insight.nil? %>
     <p class="text-muted mb-1">No AI commentary yet.</p>

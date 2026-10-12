@@ -1,0 +1,64 @@
+<%# Derivative contract page — terms, current value, events and the event form (card ⑥) %>
+<% current = @contract.derivative_events.where(event_type: "valuation").reorder(event_date: :desc, id: :desc).first %>
+<%= render ReportingComponent.new do %>
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0"><%= @contract.name %> <span class="badge bg-<%= @contract.status == 'open' ? 'success' : 'secondary' %>-subtle text-<%= @contract.status == 'open' ? 'success' : 'secondary' %>"><%= @contract.status.capitalize %></span></h1>
+    <% if policy(@contract).update? %><%= link_to "Edit", edit_derivative_contract_path(@contract), class: "btn btn-outline-primary" %><% end %>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <ul class="list-group mb-4" id="contract_terms">
+        <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Type</span><span><%= @contract.type_label %> · <%= @contract.side.capitalize %><%= " · #{@contract.option_type.capitalize}" if @contract.option_type %></span></li>
+        <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Underlying</span><span><%= @contract.underlying_instrument&.name || @contract.underlying_name %></span></li>
+        <% if @contract.strike %><li class="list-group-item d-flex justify-content-between"><span class="text-muted">Strike</span><span><%= @contract.strike.to_d.round(4) %></span></li><% end %>
+        <% if @contract.lots %><li class="list-group-item d-flex justify-content-between"><span class="text-muted">Open lots</span><span><%= @contract.open_lots.to_d.round(4) %> of <%= @contract.lots.to_d.round(4) %> × <%= @contract.lot_size.to_d.round(4) %></span></li><% end %>
+        <% if @contract.notional_cents %><li class="list-group-item d-flex justify-content-between"><span class="text-muted">Notional</span><span><%= money_to_currency Money.new(@contract.notional_cents, @contract.currency), params %><%= " @ #{@contract.forward_rate.to_d.round(4)}" if @contract.forward_rate %></span></li><% end %>
+        <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Trade / expiry</span><span><%= l @contract.trade_date %> → <%= l @contract.expiry_date %></span></li>
+        <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Premium</span><span><%= money_to_currency Money.new(@contract.premium_cents.abs, @contract.currency), params %> <%= @contract.premium_cents.to_d.negative? ? "received" : "paid" %></span></li>
+        <li class="list-group-item d-flex justify-content-between"><span class="text-muted"><%= @contract.listed ? "Exchange" : "Counterparty" %></span><span><%= @contract.listed ? @contract.exchange : @contract.counterparty_name %></span></li>
+        <% if @contract.hedge_of || @contract.hedge_unit_type.present? %>
+          <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Hedges</span><span><%= @contract.hedge_of&.investment_instrument&.name || @contract.hedge_unit_type %></span></li>
+        <% end %>
+        <li class="list-group-item d-flex justify-content-between" id="contract_value"><span class="text-muted">Value</span>
+          <span><%= current ? "#{money_to_currency(Money.new(current.value_cents, @contract.currency), params)} (#{[current.source.capitalize, current.provider].compact_blank.join(' · ')}, #{l current.event_date})" : "Not valued yet" %>
+            <%= " — liability" if current && current.value_cents.to_d.negative? %></span></li>
+      </ul>
+    </div>
+    <div class="col-md-6">
+      <% if @contract.status == "open" && policy(@contract).record_event? %>
+        <%= render FormCard.new(title: "Add event") do %>
+          <%= form_with(url: record_event_derivative_contract_path(@contract), scope: :derivative_event, method: :post) do |f| %>
+            <%= hidden_field_tag :idempotency_key, SecureRandom.uuid %>
+            <div class="form-group"><%= f.label :event_type, "Event" %>
+              <%= f.select :event_type, (DerivativeEvent::TYPE_LABELS.except("trade")).map { |k, v| [v, k] }, {}, class: "form-select" %></div>
+            <div class="form-group"><%= f.label :event_date, "Date" %><%= f.date_field :event_date, value: Time.zone.today, class: "form-control" %></div>
+            <div class="form-group"><%= f.label :value, "Value (valuation; negative = liability)" %><%= f.number_field :value, step: "any", class: "form-control" %></div>
+            <div class="form-group"><%= f.label :amount, "Cash (received +, paid −)" %><%= f.number_field :amount, step: "any", class: "form-control" %></div>
+            <div class="form-group"><%= f.label :lots, "Lots (exercise / close-out; blank = all open)" %><%= f.number_field :lots, step: "any", class: "form-control" %></div>
+            <div class="form-group"><%= f.label :provider, "Valued by (counterparty / administrator)" %><%= f.text_field :provider, class: "form-control", maxlength: 40 %></div>
+            <div class="form-group"><%= f.label :delta, "Delta (optional, from the statement)" %><%= f.number_field :delta, step: "any", class: "form-control" %></div>
+            <div class="form-group"><%= f.label :notes %><%= f.text_field :notes, class: "form-control" %></div>
+            <%= f.submit "Record event", class: "btn btn-outline-primary" %>
+          <% end %>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+  <h5>Events</h5>
+  <table class="table table-bordered" id="derivative_events">
+    <thead><tr><th class="date-col">Date</th><th class="text-col">Event</th><th class="num-col">Lots</th><th class="num-col">Cash</th><th class="num-col">Value</th><th class="text-col">Source</th><th class="text-col">Notes</th></tr></thead>
+    <tbody>
+      <% @contract.derivative_events.select(&:persisted?).each do |e| %>
+        <tr id="<%= dom_id e %>">
+          <td class="date-col"><%= l e.event_date %></td>
+          <td class="text-col"><%= e.type_label %></td>
+          <td class="num-col"><%= e.lots&.to_d&.round(4) %></td>
+          <td class="num-col"><%= e.amount_cents ? money_to_currency(Money.new(e.amount_cents, @contract.currency), params) : "" %></td>
+          <td class="num-col"><%= e.value_cents ? money_to_currency(Money.new(e.value_cents, @contract.currency), params) : "" %></td>
+          <td class="text-col"><%= [e.source.capitalize, e.provider].compact_blank.join(" · ") %></td>
+          <td class="text-col"><%= e.notes %><%= link_to " (holding)", portfolio_investment_path(e.portfolio_investment) if e.portfolio_investment %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>

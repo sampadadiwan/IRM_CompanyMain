@@ -10,9 +10,9 @@ tables:
   - fund_ratios
 ---
 
-# Portfolio Companies (fund-level, LP-visible via `show_portfolios`)
+# Portfolio Companies (fund-level, LP-visible via the *Show portfolio to LPs* feature)
 
-The fund's portfolio — companies it has invested in. This data is **fund-level** (LPs in the same fund see the same portfolio), gated by `funds.show_portfolios = true`. No per-LP (`investor_id`) scoping applies here.
+The fund's portfolio — companies it has invested in. This data is **fund-level** (LPs in the same fund see the same portfolio), gated by the fund's *Show portfolio to LPs* feature (`(funds.features & 4) > 0` — bit 2 of `funds.features`). No per-LP (`investor_id`) scoping applies here.
 
 ## Data model — critical gotcha
 
@@ -108,9 +108,9 @@ For current holdings, filter `api.snapshot = false` (or omit snapshot rows).
 
 2. **LP visibility gate** — always require:
    ```
-   AND f.show_portfolios = true
+   AND (f.features & 4) > 0
    ```
-   Funds where `show_portfolios = false` hide the portfolio from LPs; the query must respect this.
+   Funds without that feature bit hide the portfolio from LPs; the query must respect this.
 
 3. **Proforma filter** — always on `portfolio_investments`:
    ```
@@ -140,7 +140,7 @@ JOIN funds     f ON f.id = pi.fund_id
 JOIN investors i ON i.id = pi.portfolio_company_id
 WHERE pi.entity_id IN ({ENTITY_ID})
   AND pi.fund_id IN ({FUND_IDS})
-  AND f.show_portfolios = true
+  AND (f.features & 4) > 0
   AND pi.proforma = false
   AND pi.deleted_at IS NULL
   AND f.deleted_at IS NULL
@@ -164,7 +164,7 @@ JOIN funds     f ON f.id = api.fund_id
 JOIN investors i ON i.id = api.portfolio_company_id
 WHERE api.entity_id IN ({ENTITY_ID})
   AND api.fund_id IN ({FUND_IDS})
-  AND f.show_portfolios = true
+  AND (f.features & 4) > 0
   AND api.snapshot = false
   AND api.deleted_at IS NULL
   AND f.deleted_at IS NULL
@@ -187,7 +187,7 @@ JOIN investors i ON i.id = pi.portfolio_company_id
 WHERE pi.entity_id IN ({ENTITY_ID})
   AND pi.fund_id IN ({FUND_IDS})
   AND i.investor_name LIKE '%Acme%'
-  AND f.show_portfolios = true
+  AND (f.features & 4) > 0
   AND pi.proforma = false
   AND pi.deleted_at IS NULL
   AND f.deleted_at IS NULL
@@ -212,7 +212,7 @@ WHERE fr.entity_id IN ({ENTITY_ID})
   AND fr.latest = true
   AND fr.scenario = 'Default'
   AND f.name LIKE '%Growth%'
-  AND f.show_portfolios = true
+  AND (f.features & 4) > 0
   AND pi.proforma = false
   AND fr.deleted_at IS NULL
   AND pi.deleted_at IS NULL
@@ -237,7 +237,7 @@ JOIN funds f                  ON f.id = pi.fund_id
 WHERE v.entity_id IN ({ENTITY_ID})
   AND pi.fund_id IN ({FUND_IDS})
   AND v.owner_type = 'PortfolioCompany'
-  AND f.show_portfolios = true
+  AND (f.features & 4) > 0
   AND pi.proforma = false
   AND v.deleted_at IS NULL
   AND pi.deleted_at IS NULL
@@ -268,7 +268,7 @@ JOIN funds     f ON f.id = api.fund_id
 JOIN investors i ON i.id = api.portfolio_company_id
 WHERE api.entity_id IN ({ENTITY_ID})
   AND api.fund_id IN ({FUND_IDS})
-  AND f.show_portfolios = true
+  AND (f.features & 4) > 0
   AND api.snapshot = false
   AND api.deleted_at IS NULL
   AND f.deleted_at IS NULL
@@ -290,7 +290,7 @@ JOIN funds     f ON f.id = api.fund_id
 JOIN investors i ON i.id = api.portfolio_company_id
 WHERE api.entity_id IN ({ENTITY_ID})
   AND api.fund_id IN ({FUND_IDS})
-  AND f.show_portfolios = true
+  AND (f.features & 4) > 0
   AND api.snapshot = false
   AND api.deleted_at IS NULL
   AND f.deleted_at IS NULL
@@ -305,7 +305,7 @@ LIMIT 5
 |-----|-----|-----|
 | `SELECT * FROM portfolio_companies` | That table doesn't exist | Portcos are `investors` rows; join `investors` on `pi.portfolio_company_id` |
 | Listing portcos without `DISTINCT` | `pi` is a tx log — one portco appears once per round | Use `SELECT DISTINCT` or `GROUP BY portfolio_company_id` |
-| Forgetting `f.show_portfolios = true` | LPs shouldn't see portfolios of funds where the FM hid them | Always include the filter |
+| Forgetting `(f.features & 4) > 0` | LPs shouldn't see portfolios of funds where the FM hid them | Always include the filter |
 | Forgetting `pi.proforma = false` | Returns what-if / scenario rows alongside actuals | Always filter |
 | Using `pi.portfolio_company_name` for display | Denormalized and may be stale | Read `i.investor_name` from the joined `investors` |
 | Summing amounts across `pi` rows for current holdings | PI is a tx log including buys & sells — double-counts | Use `aggregate_portfolio_investments` for current position |

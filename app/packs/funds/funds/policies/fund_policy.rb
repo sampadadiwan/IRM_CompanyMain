@@ -69,7 +69,7 @@ class FundPolicy < FundBasePolicy
       true
     else
       # He is an investor, so can see the portfolio only if show_portfolios is true
-      (record.show_portfolios && permissioned_investor?) ||
+      (record.features.show_portfolios? && permissioned_investor?) ||
         # He can see the feeder fund
         if record.feeder_funds.present?
           allowed = false

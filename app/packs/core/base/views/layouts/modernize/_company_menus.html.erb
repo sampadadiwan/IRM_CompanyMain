@@ -123,6 +123,19 @@
                 </div>
             </a>
 
+            <%# Market Data settings — only for entities with a market-data feature (fund-market-data, card ①) %>
+            <% if current_user.entity.permissions.enable_market_rates? || current_user.entity.permissions.enable_market_prices? || current_user.entity.permissions.enable_derivatives? %>
+            <a href="<%= market_data_settings_path %>" class="py-8 px-7 d-flex align-items-center">
+                <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6 text-primary">
+                <i class="ti ti-chart-line"></i>
+                </span>
+                <div class="w-75 d-inline-block v-middle ps-3">
+                <h6 class="mb-1 fs-3 fw-semibold lh-base"><%= t('top_menus.market_data', default: "Market Data") %></h6>
+                <span class="fs-2 d-block text-body-secondary"><%= t('top_menus.manage_market_data', default: "Rate and price feeds, fund defaults") %></span>
+                </div>
+            </a>
+            <% end %>
+
             <a href="<%= audits_path(filter: true) %>" class="py-8 px-7 d-flex align-items-center">
                 <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6 text-primary">
                 <i class="ti ti-route"></i>

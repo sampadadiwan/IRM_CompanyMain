@@ -42,6 +42,15 @@
               val: val, id: "customization_flags_#{val}", class: "form-check-input"}, val %>
         </div>
     <% end %>
+  <% elsif f.object.class.name == "Fund" && field.attribute == :features %>
+    <%# Fund feature switches (FundEnabled) — openspec fund-market-data, card ① %>
+    <% Fund.features.pairs.each do |key, val| %>
+        <div class="form-group col">
+          <%= f.label :features, key.titleize, class: "no-wrap" %>
+          <%= f.check_box :features, {name: "fund[features][]",
+              val: val, id: "features_#{val}", class: "form-check-input"}, val %>
+        </div>
+    <% end %>
   <% else %>
     Edit ActiveFlagField _form partial to add custom fields
     <%= f.text_field field.attribute, disabled: true %>

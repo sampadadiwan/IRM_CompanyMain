@@ -11,14 +11,14 @@
     <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#distributions-tab">Distributions</a>
 
 
-    <% if capital_commitment.fund.show_fund_units %>
+    <% if capital_commitment.fund.features.show_fund_units? %>
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#fund-units-tab">
         Units
       </a>
     <% end %>
 
 
-    <% if capital_commitment.fund.show_fund_ratios %>
+    <% if capital_commitment.fund.features.show_fund_ratios? %>
           <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#fund-ratios-tab">Ratios</a>
     <% end %>
 
@@ -81,7 +81,7 @@
     </div>
 
 
-    <% if capital_commitment.fund.show_fund_units %>
+    <% if capital_commitment.fund.features.show_fund_units? %>
     <div id="fund-units-tab" class="tab-pane fade">
       <div id="fund_units" class="associated_entity">
         <%= turbo_frame_tag "fund_units_frame", target: "_top", src: fund_units_path(capital_commitment_id: capital_commitment.id), loading: :lazy do %>

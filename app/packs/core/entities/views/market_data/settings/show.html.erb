@@ -1,0 +1,123 @@
+<%# Entity › Settings › Market Data — openspec/changes/fund-market-data, design card ① %>
+<% perms = @setting.entity.permissions %>
+<% if @test_results %>
+  <%# Test feed results — nothing was stored (E45) %>
+  <% found = @test_results.sum { |r| r.found.size } %>
+  <% total = @test_results.sum { |r| r.found.size + r.missing.size } %>
+  <div class="card mb-3" id="test_feed_results">
+    <div class="card-body">
+      <h5 class="card-title"><%= found %> of <%= total %> found</h5>
+      <ul class="mb-0">
+        <% @test_results.each do |r| %>
+          <% r.found.each do |key| %><li><span class="badge bg-success-subtle text-success">Found</span> <%= r.run.provider.upcase %> · <%= key.to_s.sub("/", "→") %></li><% end %>
+          <% r.missing.each do |m| %><li><span class="badge bg-danger-subtle text-danger">Missing</span> <%= r.run.provider.upcase %> · <%= m["name"] || m["key"].to_s.sub("/", "→") %> — <%= m["reason"] %></li><% end %>
+        <% end %>
+      </ul>
+    </div>
+  </div>
+<% end %>
+<% can_edit = policy(@setting).update? %>
+<%= render FormCard.new(title: "Market Data") do %>
+  <%= form_with(model: @setting, url: market_data_settings_path, method: :patch) do |form| %>
+    <% if @setting.errors.any? %>
+      <div class="alert alert-danger">
+        <ul class="mb-0">
+          <% @setting.errors.each do |error| %>
+            <li><%= error.full_message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <fieldset <%= "disabled" unless can_edit %>>
+      <% if perms.enable_market_rates? %>
+        <div class="form-group">
+          <div class="form-check">
+            <%= form.check_box :fx_feed_enabled, class: "form-check-input" %>
+            <%= form.label :fx_feed_enabled, "FX rate feed", class: "form-check-label" %>
+          </div>
+          <% MarketDataSetting::FX_PROVIDERS.each do |p| %>
+            <div class="form-check form-check-inline">
+              <%= check_box_tag "market_data_setting[fx_providers][]", p, Array(@setting.fx_providers).include?(p), id: "fx_provider_#{p}", class: "form-check-input" %>
+              <%= label_tag "fx_provider_#{p}", t("market_data.providers.#{p}", default: p.upcase), class: "form-check-label" %>
+            </div>
+          <% end %>
+          <%= hidden_field_tag "market_data_setting[fx_providers][]", "", id: nil %>
+        </div>
+      <% end %>
+
+      <% if perms.enable_market_prices? %>
+        <div class="form-group">
+          <div class="form-check">
+            <%= form.check_box :price_feed_enabled, class: "form-check-input" %>
+            <%= form.label :price_feed_enabled, "Price feed", class: "form-check-label" %>
+          </div>
+          <% MarketDataSetting::PRICE_PROVIDERS.each do |p| %>
+            <div class="form-check form-check-inline">
+              <%= check_box_tag "market_data_setting[price_providers][]", p, Array(@setting.price_providers).include?(p), id: "price_provider_#{p}", class: "form-check-input" %>
+              <%= label_tag "price_provider_#{p}", t("market_data.providers.#{p}", default: p.upcase.tr("_", " ")), class: "form-check-label" %>
+            </div>
+          <% end %>
+          <%= hidden_field_tag "market_data_setting[price_providers][]", "", id: nil %>
+        </div>
+      <% end %>
+
+      <div class="form-group">
+        <%= form.label :pivot_currency, "Cross-rate pivot currency" %>
+        <%= form.text_field :pivot_currency, class: "form-control", maxlength: 5 %>
+      </div>
+
+      <h6 class="mt-3">New fund defaults</h6>
+      <% defaults = (@setting.fund_defaults || {}).transform_keys(&:to_s) %>
+      <% [[:accept_market_rates, "Accept market FX rates", perms.enable_market_rates?],
+          [:accept_derived_rates, "Accept derived FX rates", true],
+          [:accept_market_prices, "Accept market prices", perms.enable_market_prices?]].each do |flag, label, shown| %>
+        <% next unless shown %>
+        <div class="form-check">
+          <%= hidden_field_tag "market_data_setting[fund_defaults][#{flag}]", "0", id: nil %>
+          <%= check_box_tag "market_data_setting[fund_defaults][#{flag}]", "1", ActiveModel::Type::Boolean.new.cast(defaults[flag.to_s]), id: "fund_default_#{flag}", class: "form-check-input" %>
+          <%= label_tag "fund_default_#{flag}", label, class: "form-check-label" %>
+        </div>
+      <% end %>
+
+      <h6 class="mt-3">Open-ended fund limits</h6>
+      <div class="row">
+        <div class="col-md-4 form-group">
+          <%= form.label :max_rate_age_days, "Max rate age (business days)" %>
+          <%= form.number_field :max_rate_age_days, class: "form-control" %>
+        </div>
+        <div class="col-md-4 form-group">
+          <%= form.label :max_price_age_days, "Max price age (business days)" %>
+          <%= form.number_field :max_price_age_days, class: "form-control" %>
+        </div>
+        <div class="col-md-4 form-group">
+          <%= form.label :price_move_threshold_pct, "Price move threshold (%)" %>
+          <%= form.number_field :price_move_threshold_pct, class: "form-control", step: "0.01" %>
+        </div>
+      </div>
+
+      <%# Pairs the FX feed fetches and the latest run (E12, E11) %>
+      <% if perms.enable_market_rates? %>
+        <div class="mt-3" id="market_data_status">
+          <div><span class="text-muted">Pairs tracked:</span> <%= MarketDataPairsInUse.for(@setting.entity).map { |p| p.sub("/", "→") }.join(", ").presence || "—" %></div>
+          <% last_run = MarketDataRun.where(entity_id: @setting.entity_id).recent_first.first %>
+          <div><span class="text-muted">Last run:</span>
+            <%= last_run ? "#{l last_run.run_date} — #{last_run.loaded_count} loaded, #{last_run.status}" : "Not run yet" %>
+            · <%= link_to "Run history", market_data_runs_path %>
+            <% if perms.enable_market_prices? %> · <%= link_to "Corporate actions", corporate_action_suggestions_path %><% end %>
+          </div>
+        </div>
+      <% end %>
+
+      <% if can_edit %>
+        <div class="form-group mt-3">
+          <%= form.submit t_common(:save), class: "btn btn-outline-primary" %>
+        </div>
+      <% end %>
+    </fieldset>
+  <% end %>
+  <% if can_edit && (@setting.fx_feed_enabled || @setting.price_feed_enabled) %>
+    <%# Plain form post: the results render on this page (Turbo would ignore a non-redirect response) %>
+    <%= button_to "Test feed", test_feed_market_data_settings_path, method: :post, class: "btn btn-outline-secondary mt-2", form: { data: { turbo: false } } %>
+  <% end %>
+<% end %>

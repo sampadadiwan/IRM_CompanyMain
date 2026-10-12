@@ -91,6 +91,6 @@ class InvestmentInstrumentsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def investment_instrument_params
-    params.require(:investment_instrument).permit(:name, :category, :sub_category, :sector, :entity_id, :portfolio_company_id, :investment_domicile, :deleted_at, :form_type_id, :currency, properties: {})
+    params.require(:investment_instrument).permit(:name, :category, :sub_category, :sector, :entity_id, :portfolio_company_id, :investment_domicile, :deleted_at, :form_type_id, :currency, :isin, :ticker, :exchange, :pricing_method, properties: {})
   end
 end

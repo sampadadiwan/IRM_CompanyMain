@@ -97,8 +97,8 @@ class FundsController < ApplicationController
   # GET /funds/new
   def new
     @bread_crumbs = { Funds: funds_path, New: nil }
-    @fund = Fund.new
-    @fund.entity_id = current_user.entity_id
+    # Entity first, so the new fund starts with the entity's feature defaults (E3)
+    @fund = Fund.new(entity_id: current_user.entity_id)
     @fund.currency = @fund.entity.currency
     setup_custom_fields(@fund)
     authorize(@fund)
@@ -122,14 +122,15 @@ class FundsController < ApplicationController
 
   # POST /funds or /funds.json
   def create
-    @fund = Fund.new(fund_params)
     # SECURITY (finding H6): pin the tenant key to the acting user's entity — never trust a
     # client-supplied entity_id (it is not permitted in fund_params). Support users create for a
     # client entity by first switching into it (SupportClientMapping#switch sets their entity_id).
-    @fund.entity_id = current_user.entity_id
+    # Set before the other attributes so the new fund starts with the entity's feature defaults (E3).
+    @fund = Fund.new(entity_id: current_user.entity_id)
+    @fund.assign_attributes(fund_params)
     authorize(@fund)
     respond_to do |format|
-      if @fund.save
+      if assign_feature_params && @fund.save
         format.html { redirect_to fund_url(@fund), notice: "Fund was successfully created." }
         format.json { render :show, status: :created, location: @fund }
       else
@@ -156,7 +157,8 @@ class FundsController < ApplicationController
     end
 
     respond_to do |format|
-      if @fund.update(fund_params)
+      @fund.assign_attributes(fund_params)
+      if assign_feature_params && @fund.save
         format.html { redirect_to fund_url(@fund), notice: "Fund was successfully updated." }
         format.json { render :show, status: :ok, location: @fund }
       else
@@ -470,8 +472,29 @@ class FundsController < ApplicationController
     # cannot be created in — or relocated to — another entity via mass assignment.
     params.require(:fund).permit(:name, :category, :committed_amount, :details, :lp_commentary,
                                  :collected_amount, :commitment_doc_list, :master_fund_id,
-                                 :tag_list, :show_valuations, :show_fund_ratios,
-                                 :currency, :unit_types, :units_allocation_engine, :form_type_id, :first_close_date, :show_portfolios, :show_fund_units, :last_close_date, :tracking_currency,
-                                 :esign_emails, :enable_ai_commentary, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
+                                 :tag_list,
+                                 :currency, :unit_types, :units_allocation_engine, :form_type_id, :first_close_date, :last_close_date, :tracking_currency,
+                                 :esign_emails,
+                                 # Legacy switch names still accepted from JSON clients; they write the fund features
+                                 *FundEnabled::LEGACY_FLAGS.excluding(:editable_formulas),
+                                 documents_attributes: Document::NESTED_ATTRIBUTES, properties: {},
+                                 market_data_setting_attributes: %i[id max_rate_age_days max_price_age_days price_move_threshold_pct])
+  end
+
+  # Fund feature switches (FundEnabled) from the Features section. FundFeatureGuard keeps flags the
+  # form doesn't manage and refuses a market-data flag whose entity feature is off.
+  # Worked examples H3, X3 — openspec/changes/fund-market-data/business-rules.md
+  def assign_feature_params
+    return true unless params[:fund]&.key?(:features)
+
+    result = FundFeatureGuard.call(@fund, params[:fund][:features])
+    if result.refused.any?
+      # X3 — Error case: direct submission of an unavailable switch
+      @fund.errors.add(:features, "#{result.refused.map { |f| FundFeatureGuard.label(f) }.to_sentence} is not available for this fund")
+      return false
+    end
+
+    @fund.features = result.features
+    true
   end
 end

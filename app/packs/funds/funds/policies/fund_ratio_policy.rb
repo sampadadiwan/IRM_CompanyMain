@@ -2,7 +2,7 @@ class FundRatioPolicy < FundBasePolicy
   class Scope < FundBasePolicy::Scope
     def resolve
       if user.curr_role == "investor"
-        super.joins(:fund).where("funds.show_fund_ratios = true")
+        super.joins(:fund).where("funds.features & ? > 0", Fund.features.maps[:show_fund_ratios])
       else
         super
       end
@@ -20,7 +20,7 @@ class FundRatioPolicy < FundBasePolicy
   def show?
     permissioned_employee? ||
       # fund_id is nil for cross-fund/cross-portfolio rows — skip investor check.
-      (record.fund.present? && record.fund.show_fund_ratios && FundPolicy.new(user, record.fund).permissioned_investor?)
+      (record.fund.present? && record.fund.features.show_fund_ratios? && FundPolicy.new(user, record.fund).permissioned_investor?)
   end
 
   def create?

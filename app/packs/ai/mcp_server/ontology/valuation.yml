@@ -39,6 +39,22 @@ fields:
       valuations are EXCLUDED by default — a synthetic_true filter alone returns nothing;
       you also need scope 'with_synthetic'.
     sortable: false
+  source:
+    type: string
+    description: >-
+      Where the price came from: manual (typed or uploaded), market (price feed) or cost
+      (recorded by a purchase). Several sources can exist for the same date; when asking for
+      "the current valuation" filter to one source, or sort by valuation_date desc and prefer
+      manual, then market, then cost.
+    sortable: true
+  provider:
+    type: string
+    description: Provider of the price, e.g. User, Upload, NSE, AMFI, Purchase.
+    sortable: true
+  price_type:
+    type: string
+    description: close, bid or mid.
+    sortable: true
   portfolio_company_name:
     type: string
     description: Company name, computed in SQL from the owner association.

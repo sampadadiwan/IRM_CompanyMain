@@ -1,7 +1,10 @@
 # Pin npm packages by running ./bin/importmap
 
 pin "application", preload: true
-pin_all_from "app/javascript/controllers", under: "controllers"
+# preload: false because controllers are lazy-loaded (controllers/index.js): each page imports only
+# the controllers its HTML names. Preloading would put a <link rel="modulepreload"> for all ~200
+# controllers on every page and the browser would download them all anyway.
+pin_all_from "app/javascript/controllers", under: "controllers", preload: false
 pin "trix"
 pin "@rails/actiontext", to: "@rails--actiontext.js" # @8.1.300
 pin "chartkick", to: "chartkick.js"

@@ -136,6 +136,25 @@
                 <span class="text-muted">Unrealized Gain</span>
                 <span class="fw-bold "><%= money_to_currency aggregate_portfolio_investment.unrealized_gain, params %></span>
             </li>
+            <% if aggregate_portfolio_investment.investment_instrument.currency != aggregate_portfolio_investment.fund.currency %>
+              <%# Unrealized gain split into price and currency effect (H9 — fund-market-data) %>
+              <li class="list-group-item d-flex justify-content-between align-items-center py-3" id="api_price_effect">
+                  <span class="text-muted">Unrealized price effect</span>
+                  <span class="fw-bold "><%= money_to_currency Money.new(aggregate_portfolio_investment.unrealized_price_effect_cents, aggregate_portfolio_investment.fund.currency), params %></span>
+              </li>
+              <li class="list-group-item d-flex justify-content-between align-items-center py-3" id="api_currency_effect">
+                  <span class="text-muted">Unrealized currency effect</span>
+                  <span class="fw-bold "><%= money_to_currency Money.new(aggregate_portfolio_investment.unrealized_gain_cents.to_d - aggregate_portfolio_investment.unrealized_price_effect_cents.to_d, aggregate_portfolio_investment.fund.currency), params %></span>
+              </li>
+            <% end %>
+            <%# Contracts hedging this holding (H16 — fund-market-data) %>
+            <% DerivativeContract.where(hedge_of: aggregate_portfolio_investment, status: "open").each do |hedge| %>
+              <% hedge_value = hedge.value_on(Time.zone.today) %>
+              <li class="list-group-item d-flex justify-content-between align-items-center py-3 hedged-by">
+                  <span class="text-muted">Hedged by</span>
+                  <span class="fw-bold"><%= link_to hedge.summary, derivative_contract_path(hedge) %><%= " (#{money_to_currency(Money.new(hedge_value, hedge.currency), params)})" if hedge_value %></span>
+              </li>
+            <% end %>
             <li class="list-group-item d-flex justify-content-between align-items-center py-3">
                 <span class="text-muted">Cost of Remaining</span>
                 <span class="fw-bold "><%= money_to_currency aggregate_portfolio_investment.cost_of_remaining, params %></span>

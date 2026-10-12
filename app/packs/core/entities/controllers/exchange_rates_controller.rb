@@ -4,8 +4,11 @@ class ExchangeRatesController < ApplicationController
   # GET /exchange_rates or /exchange_rates.json
   def index
     @bread_crumbs = { 'Exchange Rates': exchange_rates_path }
-    @exchange_rates = policy_scope(ExchangeRate)
+    @exchange_rates = policy_scope(ExchangeRate).includes(:owner)
     @exchange_rates = @exchange_rates.latest if params[:all].blank?
+    # Filter by source (Manual / Market / Derived) and by fund-specific owner
+    @exchange_rates = @exchange_rates.where(source: params[:source]) if ExchangeRate::SOURCES.include?(params[:source])
+    @exchange_rates = @exchange_rates.where(owner_type: "Fund", owner_id: params[:owner_id]) if params[:owner_id].present?
   end
 
   def generate_tracking_numbers
@@ -99,6 +102,11 @@ class ExchangeRatesController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def exchange_rate_params
-    params.require(:exchange_rate).permit(:entity_id, :from, :to, :rate, :as_of, :notes)
+    permitted = params.require(:exchange_rate).permit(:entity_id, :from, :to, :rate, :as_of, :notes, :rate_type, :owner_id)
+    # Rates entered here are Manual; a Fund makes the rate fund-specific (H21). Source and owner type
+    # are never taken from the request.
+    permitted[:owner_type] = permitted[:owner_id].present? ? "Fund" : nil
+    permitted[:owner_id] = permitted[:owner_id].presence
+    permitted.merge(source: "manual", provider: "User")
   end
 end
