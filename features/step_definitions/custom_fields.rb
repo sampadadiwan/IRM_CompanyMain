@@ -198,7 +198,8 @@ Then('I should see the Instrument details on the details page and regulatory fie
     expect(page).not_to have_content("Type of Investee Company")
     expect(page).not_to have_content("Type of Security")
     expect(page).not_to have_content("Details of Security (if Type of Security chosen is Others)")
-    expect(page).not_to have_content("ISIN")
+    # No "ISIN" check here: the instrument's own market-data ISIN row (show.html.erb) is
+    # always rendered, so the label is on the page whether or not the SEBI field exists.
     expect(page).not_to have_content("SEBI Registration Number")
     expect(page).not_to have_content("Is Associate")
     expect(page).not_to have_content("Is Managed Or Sponsored by AIF")
