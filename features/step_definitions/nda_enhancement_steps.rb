@@ -206,6 +206,13 @@ Then("the LP user should be identified as a non-signatory for the NDA") do
   expect(is_signatory).to be false
 end
 
+# Verifies the second LP user is NOT a signatory — auto-tag only picks the oldest
+# approved user, so the second user under the same investor is not tagged.
+Then("the second LP user should be identified as a non-signatory for the NDA") do
+  is_signatory = NdaSignatory.exists?(nda_config_id: @nda_config.id, user_id: @lp_user_2.id)
+  expect(is_signatory).to be false
+end
+
 # Verifies the LP user IS a signatory.
 Then("the LP user should be identified as a signatory for the NDA") do
   is_signatory = NdaSignatory.exists?(nda_config_id: @nda_config.id, user_id: @lp_user.id)
@@ -224,6 +231,33 @@ Then("the gate target for the LP user should be {string}") do |expected|
 
   investor_ids = InvestorAccess
                  .where(user_id: @lp_user.id, entity_id: nda_config.entity_id, approved: true)
+                 .pluck(:investor_id)
+
+  latest = NdaAcceptance
+           .where(nda_config_id: nda_config.id, investor_id: investor_ids)
+           .order(created_at: :desc)
+           .first
+
+  target = if latest&.accepted? && latest.nda_version == nda_config.version
+             "pass"
+           elsif is_signatory
+             "acceptance"
+           else
+             "blocked"
+           end
+
+  expect(target).to eq(expected)
+end
+
+# Gate target check for the second LP user (non-signatory scenarios).
+Then("the gate target for the second LP user should be {string}") do |expected|
+  nda_config = @data_room_folder.effective_nda_config
+  expect(nda_config).to be_present
+
+  is_signatory = NdaSignatory.exists?(nda_config_id: nda_config.id, user_id: @lp_user_2.id)
+
+  investor_ids = InvestorAccess
+                 .where(user_id: @lp_user_2.id, entity_id: nda_config.entity_id, approved: true)
                  .pluck(:investor_id)
 
   latest = NdaAcceptance

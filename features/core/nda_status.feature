@@ -146,8 +146,10 @@ Feature: NDA Status Dashboard (Module 3)
     When the resolver resolves NDA status for the folder
     Then the LP user should be marked as nda_tagged in the resolver result
 
-  # Resolver shows nda_tagged false for a non-signatory user.
+  # Resolver shows nda_tagged false for a non-signatory user. Auto-tag picks the
+  # oldest approved user, so a second user under the same investor is not tagged.
   Scenario: Resolver shows non-signatory user as not nda_tagged
     Given there is an LP investor "Acme Capital" with approved access to the GP entity
+    And there is a second LP user for "Acme Capital"
     When the resolver resolves NDA status for the folder
-    Then the LP user should not be marked as nda_tagged in the resolver result
+    Then the second LP user should not be marked as nda_tagged in the resolver result
