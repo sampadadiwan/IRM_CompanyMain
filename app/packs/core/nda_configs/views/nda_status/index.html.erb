@@ -164,9 +164,12 @@
     </div>
   </div>
 
-  <%# Standard HTML table matching Ransack table CSS classes %>
-  <div class="table-responsive">
-    <table class="table table-bordered dataTable action_table hover">
+  <%# Standard HTML table matching Ransack table CSS classes.
+      @note overflow:visible overrides table-responsive (overflow-x:auto) and
+        dataTable (overflow:hidden) so the Actions kebab dropdown is not clipped
+        when only a few rows are present. %>
+  <div class="table-responsive" style="overflow: visible;">
+    <table class="table table-bordered dataTable action_table hover" style="overflow: visible;">
       <thead>
         <tr>
           <th>Investor Name</th>
@@ -235,9 +238,11 @@
                      dropdown. Keeps the table clean and scalable for future actions.
                      Replaces the inline Revoke button and moves NDA exemption control
                      from the investor show page to here (where the GP manages NDA). %>
+              <%# @note data-bs-display="static" prevents Bootstrap dropdown from being clipped
+                  by overflow:hidden on table.dataTable and overflow-x:auto on .table-responsive %>
               <div class="dropdown d-inline-block ms-1">
                 <button class="btn btn-outline-secondary btn-sm" type="button"
-                        data-bs-toggle="dropdown" aria-expanded="false">
+                        data-bs-toggle="dropdown" data-bs-display="static" aria-expanded="false">
                   <i class="ti ti-dots-vertical"></i>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end">
