@@ -18,6 +18,12 @@ class NdaConfigsController < ApplicationController
   # Why: Module 5 introduces three NDA modes (inherit/own/opt_out). The same "new" action must
   # show different content: an info panel for inherited/opted-out folders, or the full form
   # when the folder has its own config or the GP clicks "Set Own NDA" (override param).
+  #
+  # Changed: Detect inherited acceptances when overriding.
+  # Why: When GP clicks "Set Own NDA" on a folder that had a signed inherited NDA,
+  #   the form needs to show a resign checkbox. We resolve the effective NDA *before*
+  #   the mode switches to "own" and count accepted investors scoped to this folder.
+  #
   # @return [void] Renders the NDA settings modal with context-appropriate content.
   def new
     @nda_config = @owner.nda_config || @owner.build_nda_config
@@ -28,11 +34,36 @@ class NdaConfigsController < ApplicationController
                          else
                            @folder.nda_inheritance_mode
                          end
+
+    # Detect inherited acceptances when GP is overriding an inherited NDA.
+    # Why: effective_nda_config walks the ancestry tree — must be called before
+    #   the folder's mode changes to "own", otherwise it returns the new (empty) config.
+    if params[:override].present? && @folder
+      effective_nda = @folder.effective_nda_config
+      if effective_nda&.enabled?
+        folder_investor_ids = Investor.owner_access_rights(@folder, nil).pluck(:id)
+        @inherited_accepted_count = effective_nda.nda_acceptances
+                                                 .where(investor_id: folder_investor_ids, status: "accepted")
+                                                 .select(:investor_id).distinct.count
+      end
+    end
+    @inherited_accepted_count ||= 0
   end
 
   # POST /folders/:folder_id/nda_config
+  # Changed: Captures the effective NDA before switching mode to "own" so acceptance
+  #   migration can reference the inherited config's acceptances.
+  # Why: Once mode switches to "own", effective_nda_config resolves to the new (empty)
+  #   config — the inherited reference is lost. Capturing it first enables the resign
+  #   choice: migrate acceptances (resign=false) or start fresh (resign=true).
+  #
   # @return [void] Creates the NDA config and responds with turbo_stream to update modal and tree.
   def create
+    # Capture the inherited NDA before mode switches to "own".
+    # Why: effective_nda_config walks ancestry — after mode change it returns the new config.
+    effective_nda_before_override = @folder&.effective_nda_config
+    Rails.logger.info("[NDA_DEBUG] effective_nda_before_override=#{effective_nda_before_override&.id}, enabled=#{effective_nda_before_override&.enabled?}, folder_mode=#{@folder&.nda_inheritance_mode}")
+
     @nda_config = @owner.build_nda_config(nda_config_params)
     @nda_config.created_by = current_user
     @nda_config.updated_by = current_user
@@ -52,10 +83,26 @@ class NdaConfigsController < ApplicationController
         #   adjust from the NDA Status Dashboard afterward.
         auto_tag_default_signatories(@nda_config)
 
-        # Changed: Create version 1 history record on first NDA creation.
-        # Why: Seeds the version history audit trail. resign_required is false
-        #   because the first version has no prior acceptances to invalidate.
-        create_version_record(@nda_config, resign_required: false)
+        # Read the GP's resign choice from the override resign checkbox.
+        # Why: When overriding an inherited NDA with existing acceptances, GP chooses
+        #   whether to require re-sign (true = fresh start) or carry forward (false = migrate).
+        resign_required = ActiveModel::Type::Boolean.new.cast(
+          params.dig(:nda_config, :resign_required)
+        )
+        resign_required = false if resign_required.nil?
+
+        create_version_record(@nda_config, resign_required: resign_required)
+
+        # Migrate inherited acceptances when GP chose not to require re-sign.
+        # Why: LPs who signed the inherited NDA should retain access to this folder
+        #   without being blocked again. Copies acceptance records scoped to this folder's investors.
+        Rails.logger.info("[NDA_DEBUG] resign_required=#{resign_required}, effective_nda_id=#{effective_nda_before_override&.id}, enabled=#{effective_nda_before_override&.enabled?}")
+        if !resign_required && effective_nda_before_override&.enabled?
+          Rails.logger.info("[NDA_DEBUG] Running migrate_inherited_acceptances")
+          migrate_inherited_acceptances(effective_nda_before_override, @nda_config)
+        else
+          Rails.logger.info("[NDA_DEBUG] Skipping migration — resign=#{resign_required}, nda=#{effective_nda_before_override&.id}")
+        end
 
         flash.now[:notice] = "NDA settings saved successfully."
         format.turbo_stream
@@ -235,6 +282,36 @@ class NdaConfigsController < ApplicationController
       rescue ActiveRecord::RecordNotUnique, ActiveRecord::RecordInvalid
         next
       end
+  end
+
+  # Copies accepted NdaAcceptance records from the inherited NDA to the new child NDA.
+  # Why: When GP overrides an inherited NDA and chooses not to require re-sign, LPs who
+  #   already signed the inherited NDA should retain access. Copies are scoped to investors
+  #   with folder-level AccessRight on this folder. Original records on the parent NDA are
+  #   untouched — LP retains access to other folders inheriting from the parent.
+  #
+  # @param source_nda [NdaConfig] The inherited NDA config being overridden
+  # @param target_nda [NdaConfig] The newly created NDA config on this folder
+  # @return [void]
+  def migrate_inherited_acceptances(source_nda, target_nda)
+    folder_investor_ids = Investor.owner_access_rights(@folder, nil).pluck(:id)
+    return if folder_investor_ids.empty?
+
+    source_nda.nda_acceptances
+              .where(investor_id: folder_investor_ids, status: "accepted")
+              .find_each do |acceptance|
+      NdaAcceptance.create!(
+        nda_config: target_nda,
+        investor_id: acceptance.investor_id,
+        user_id: acceptance.user_id,
+        entity_id: acceptance.entity_id,
+        nda_version: 1,
+        status: "accepted",
+        accepted_at: acceptance.accepted_at
+      )
+    rescue ActiveRecord::RecordNotUnique, ActiveRecord::RecordInvalid
+      next
+    end
   end
 
   # @return [void] Resolves the polymorphic owner from route params and verifies entity scoping.
