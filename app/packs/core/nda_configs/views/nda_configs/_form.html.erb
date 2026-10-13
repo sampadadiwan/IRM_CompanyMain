@@ -79,6 +79,27 @@
            Why: GP needs to verify which PDF is currently set (download link), and see
              the new filename immediately after uploading (before saving). Stimulus targets
              let the nda-settings controller update the filename on upload:complete. %>
+      <%# Override resign choice — shown when GP clicks "Set Own NDA" on a folder
+           that had an effective NDA with accepted investors. Visible immediately (not
+           behind PDF upload trigger) because the resign decision applies to the new NDA
+           being created, not a version bump on an existing one.
+           @inherited_accepted_count is set in NdaConfigsController#new. %>
+      <% inherited_accepted_count = defined?(@inherited_accepted_count) ? @inherited_accepted_count : 0 %>
+      <% if !nda_config.persisted? && inherited_accepted_count > 0 %>
+        <div class="alert alert-info small mt-2">
+          <i class="ti ti-info-circle me-1"></i>
+          <strong><%= inherited_accepted_count %></strong> <%= "investor".pluralize(inherited_accepted_count) %>
+          <%= inherited_accepted_count == 1 ? "has" : "have" %> already signed the inherited NDA for this folder.
+          <div class="form-check mt-2">
+            <%= check_box_tag "nda_config[resign_required]", "1", false,
+                class: "form-check-input", id: "override_resign_required" %>
+            <label class="form-check-label" for="override_resign_required">
+              Require them to re-sign the new NDA
+            </label>
+          </div>
+        </div>
+      <% end %>
+
       <div class="text-muted small mt-1 <%= 'd-none' unless nda_config.nda_document.present? %>"
            data-nda-settings-target="currentFile">
         <i class="ti ti-file-text me-1"></i>
@@ -125,47 +146,86 @@
       </div>
     </div>
 
-    <%# Validity type %>
+    <%# Validity type.
+         When accepted_count > 0, radio buttons are disabled to prevent GP from switching
+         validity types — switching can retroactively block LPs whose acceptances were
+         computed under the original type. GP can still extend within the same type
+         (longer period, later date). To change type, upload a new PDF with resign required. %>
+    <% validity_locked = nda_config.persisted? && (defined?(@accepted_count) ? @accepted_count : 0) > 0 %>
     <div class="mb-3">
       <label class="form-label fw-semibold">Validity</label>
+      <% if validity_locked %>
+        <div class="text-muted small mb-2">
+          <i class="ti ti-lock me-1"></i>
+          Validity type is locked because investors have already accepted. To change type, upload a new NDA version with re-sign required.
+        </div>
+      <% end %>
 
       <div class="form-check">
         <%= form.radio_button :validity_type, "until_revoked", class: "form-check-input",
+            disabled: validity_locked,
             data: { action: "change->nda-settings#toggleValidity" } %>
         <%= form.label :validity_type_until_revoked, "Until revoked", class: "form-check-label" %>
       </div>
 
       <div class="form-check">
         <%= form.radio_button :validity_type, "fixed_period", class: "form-check-input",
+            disabled: validity_locked,
             data: { action: "change->nda-settings#toggleValidity" } %>
         <%= form.label :validity_type_fixed_period, "Fixed period", class: "form-check-label" %>
       </div>
 
-      <%# Fixed period sub-field %>
+      <%# Fixed period sub-field.
+           When locked, only shows options >= current validity_days so GP can only extend. %>
+      <% all_period_options = [["30 days", 30], ["90 days", 90], ["6 months", 180], ["12 months", 365]] %>
+      <% current_days = nda_config.validity_days.to_i %>
+      <% period_options = validity_locked ? all_period_options.select { |_, v| v >= current_days } : all_period_options %>
       <div data-nda-settings-target="fixedPeriod"
            class="ms-4 mt-1 mb-2 <%= 'd-none' unless nda_config.validity_type == 'fixed_period' %>">
         <%= form.select :validity_days,
-            options_for_select(
-              [["30 days", 30], ["90 days", 90], ["6 months", 180], ["12 months", 365]],
-              nda_config.validity_days
-            ),
-            { include_blank: "Select period..." },
+            options_for_select(period_options, nda_config.validity_days),
+            { include_blank: validity_locked ? nil : "Select period..." },
             class: "form-select form-select-sm", style: "max-width: 200px;" %>
       </div>
 
       <div class="form-check">
         <%= form.radio_button :validity_type, "specific_date", class: "form-check-input",
+            disabled: validity_locked,
             data: { action: "change->nda-settings#toggleValidity" } %>
         <%= form.label :validity_type_specific_date, "Specific expiry date", class: "form-check-label" %>
       </div>
 
-      <%# Specific date sub-field %>
+      <%# Specific date sub-field.
+           When locked, min is set to current validity_date so GP can only extend forward. %>
+      <% date_min = if validity_locked && nda_config.validity_date.present?
+                       [nda_config.validity_date, Date.tomorrow].max.to_s
+                     else
+                       Date.tomorrow.to_s
+                     end %>
       <div data-nda-settings-target="specificDate"
            class="ms-4 mt-1 mb-2 <%= 'd-none' unless nda_config.validity_type == 'specific_date' %>">
         <%= form.date_field :validity_date, class: "form-control form-control-sm",
-            min: Date.tomorrow.to_s, style: "max-width: 200px;",
+            min: date_min, style: "max-width: 200px;",
             value: nda_config.validity_date&.to_s %>
       </div>
+
+      <%# Expiry summary — shown when editing an NDA with fixed_period or specific_date validity.
+           Why: GP sees "Fixed period — 90 days" but has no context on when existing acceptances
+             actually expire. This one-liner gives the range so GP can decide whether to revise. %>
+      <% if nda_config.persisted? %>
+        <% if nda_config.validity_type == "fixed_period" && defined?(@earliest_expiry) && @earliest_expiry %>
+          <div class="text-muted small mt-2 ms-1">
+            <i class="ti ti-clock me-1"></i>
+            Earliest expiry: <strong><%= @earliest_expiry.strftime("%b %d, %Y") %></strong>
+            · Latest expiry: <strong><%= @latest_expiry.strftime("%b %d, %Y") %></strong>
+          </div>
+        <% elsif nda_config.validity_type == "specific_date" && nda_config.validity_date.present? %>
+          <div class="text-muted small mt-2 ms-1">
+            <i class="ti ti-clock me-1"></i>
+            All NDAs expire on: <strong><%= nda_config.validity_date.strftime("%b %d, %Y") %></strong>
+          </div>
+        <% end %>
+      <% end %>
     </div>
 
     <%# Acceptance method %>
