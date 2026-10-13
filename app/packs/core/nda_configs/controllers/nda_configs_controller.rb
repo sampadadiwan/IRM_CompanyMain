@@ -62,7 +62,6 @@ class NdaConfigsController < ApplicationController
     # Capture the inherited NDA before mode switches to "own".
     # Why: effective_nda_config walks ancestry — after mode change it returns the new config.
     effective_nda_before_override = @folder&.effective_nda_config
-    Rails.logger.info("[NDA_DEBUG] effective_nda_before_override=#{effective_nda_before_override&.id}, enabled=#{effective_nda_before_override&.enabled?}, folder_mode=#{@folder&.nda_inheritance_mode}")
 
     @nda_config = @owner.build_nda_config(nda_config_params)
     @nda_config.created_by = current_user
@@ -96,12 +95,8 @@ class NdaConfigsController < ApplicationController
         # Migrate inherited acceptances when GP chose not to require re-sign.
         # Why: LPs who signed the inherited NDA should retain access to this folder
         #   without being blocked again. Copies acceptance records scoped to this folder's investors.
-        Rails.logger.info("[NDA_DEBUG] resign_required=#{resign_required}, effective_nda_id=#{effective_nda_before_override&.id}, enabled=#{effective_nda_before_override&.enabled?}")
         if !resign_required && effective_nda_before_override&.enabled?
-          Rails.logger.info("[NDA_DEBUG] Running migrate_inherited_acceptances")
           migrate_inherited_acceptances(effective_nda_before_override, @nda_config)
-        else
-          Rails.logger.info("[NDA_DEBUG] Skipping migration — resign=#{resign_required}, nda=#{effective_nda_before_override&.id}")
         end
 
         flash.now[:notice] = "NDA settings saved successfully."
