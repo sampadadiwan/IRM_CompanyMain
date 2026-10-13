@@ -124,6 +124,12 @@ class NdaConfigsController < ApplicationController
   # Why: Module 4 — when a GP selects a new PDF, the form shows a warning banner
   #   with the count of currently accepted investors who will need to re-accept.
   # @return [void] Renders the NDA settings modal with pre-filled config values.
+  # Changed: Added expiry summary for fixed_period validity.
+  # Why: GP sees "Fixed period — 90 days" but has no idea when existing acceptances
+  #   actually expire. Showing earliest/latest expiry dates gives context for deciding
+  #   whether to revise the NDA or adjust validity settings.
+  #
+  # @return [void] Renders the NDA settings modal with pre-filled config values.
   def edit
     authorize @nda_config
     @accepted_count = @nda_config.nda_acceptances
@@ -131,6 +137,20 @@ class NdaConfigsController < ApplicationController
                                  .select(:investor_id)
                                  .distinct
                                  .count
+
+    # Compute expiry date range for fixed_period validity type.
+    # Why: Each investor's expiry is accepted_at + validity_days — varies per investor.
+    #   GP needs the earliest and latest to understand when acceptances start lapsing.
+    if @nda_config.validity_type == "fixed_period" && @nda_config.validity_days.present?
+      accepted_dates = @nda_config.nda_acceptances
+                                  .where(status: "accepted")
+                                  .pluck(:accepted_at)
+                                  .compact
+      if accepted_dates.any?
+        @earliest_expiry = accepted_dates.min + @nda_config.validity_days.days
+        @latest_expiry = accepted_dates.max + @nda_config.validity_days.days
+      end
+    end
   end
 
   # PATCH /folders/:folder_id/nda_config
