@@ -15,10 +15,12 @@ Feature: Portfolio Investment Tasks
     And there are "1" portfolio investments "quantity=200"
     And I have a portfolio investment
 
+  @rack_test
   Scenario: The portfolio investment page offers a Tasks tab
     When I go to the portfolio investment page
     Then the portfolio investment page should offer a Tasks tab
 
+  @rack_test
   Scenario: The tasks tab lists only this investment's tasks
     Given the portfolio investment has the following tasks:
       | details                     | status |
@@ -42,6 +44,7 @@ Feature: Portfolio Investment Tasks
 
   # Same regression as deal investor tasks: opening the task on its own page must
   # not re-own it to whoever edited it.
+  @rack_test
   Scenario: Editing the task from its own page keeps the investment as its owner
     Given the portfolio investment has the following tasks:
       | details                      | status |
@@ -49,6 +52,7 @@ Feature: Portfolio Investment Tasks
     When I edit the task "Collect the audited accounts" from its own page and save
     Then the task "Collect the audited accounts" should be owned by the portfolio investment
 
+  @rack_test
   Scenario: The tasks tab links to a board scoped to the investment
     Given the portfolio investment has the following tasks:
       | details                      | status      |
@@ -64,6 +68,7 @@ Feature: Portfolio Investment Tasks
   # The global list's "For" column: a PI owner's to_s packs in instrument,
   # buy/sell and date — the cell shows just the company name, still linked to
   # the full investment record.
+  @rack_test
   Scenario: The tasks list shows only the company name for the investment's task
     Given the portfolio investment has the following tasks:
       | details                      | status |

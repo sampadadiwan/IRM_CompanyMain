@@ -1,3 +1,4 @@
+@rack_test
 Feature: Support Client Mapping Access Control (Policy)
   As an admin or support user
   I want to ensure support client mappings are only accessible to authorized users

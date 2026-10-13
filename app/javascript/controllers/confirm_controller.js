@@ -42,6 +42,24 @@ export default class extends Controller {
         let msg = event.currentTarget.dataset.msg || "This will permanently delete this item. Proceed?" ;
         let submitForm = event.currentTarget.dataset.submitForm;
 
+        // A button inside a form with visible fields (a select, text or date the user filled in) must submit
+        // that real form on Proceed — the modal's own form below only replays the hidden inputs, so the
+        // user's choices would be lost. Point submitForm at it (giving it an id if it has none).
+        const ownForm = event.currentTarget.closest("form");
+        if (!submitForm && ownForm &&
+            ownForm.querySelector('input:not([type="hidden"]):not([type="submit"]):not([type="button"]), select, textarea')) {
+            if (!ownForm.id) ownForm.id = `confirm_form_${Date.now()}`;
+            submitForm = `#${ownForm.id}`;
+        }
+
+        // A popup that submits a whole form would skip the browser's own checks (required fields,
+        // patterns) — run them first and only ask once the form is valid
+        const formToSubmit = submitForm && document.querySelector(submitForm);
+        if (formToSubmit && !formToSubmit.reportValidity()) {
+            event.preventDefault();
+            return;
+        }
+
         // Extract optional additional details
         let notification = event.currentTarget.dataset.notification;
         let reversible = event.currentTarget.dataset.reversible;

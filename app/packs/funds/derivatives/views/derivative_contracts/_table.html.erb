@@ -1,0 +1,34 @@
+<%# Derivative contracts table — shared by Fund › Derivatives and the fund's Portfolio tab.
+    Locals: contracts (relation), empty_text. fund-market-data, card ⑥ %>
+<div class="table-responsive">
+  <table class="table table-bordered" id="derivative_contracts">
+    <thead>
+      <tr>
+        <th class="text-col">Contract</th>
+        <th class="text-col">Type</th>
+        <th class="text-col">Side</th>
+        <th class="text-col">Notional / lots</th>
+        <th class="date-col">Expiry</th>
+        <th class="num-col">Value</th>
+        <th class="text-col">Source</th>
+        <th class="action-col"></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% contracts.each do |c| %>
+        <% last_val = c.derivative_events.where(event_type: "valuation").reorder(event_date: :desc, id: :desc).first %>
+        <tr id="<%= dom_id c %>">
+          <td class="text-col"><%= link_to c.name, derivative_contract_path(c) %><%= " · Hedges: #{c.hedge_of&.investment_instrument&.name || c.hedge_unit_type}" if c.hedge_of || c.hedge_unit_type.present? %></td>
+          <td class="text-col"><%= c.type_label %></td>
+          <td class="text-col"><%= c.side.capitalize %></td>
+          <td class="text-col"><%= c.notional_cents ? "#{c.underlying_name.to_s.split('/').first} #{number_with_delimiter((c.notional_cents.to_d / 100).round(2))}" : "#{c.open_lots.to_d.to_i} × #{c.lot_size.to_d.to_i}" %></td>
+          <td class="date-col"><%= l c.expiry_date %></td>
+          <td class="num-col"><%= last_val ? money_to_currency(Money.new(last_val.value_cents, c.currency), params) : "—" %></td>
+          <td class="text-col"><%= last_val ? [last_val.source.capitalize, last_val.provider].compact_blank.join(" · ") : "—" %></td>
+          <td class="action-col"><%= link_to t_common(:show), derivative_contract_path(c), class: "btn btn-sm btn-outline-primary" %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <% if contracts.none? %><p class="text-muted"><%= empty_text %></p><% end %>
+</div>

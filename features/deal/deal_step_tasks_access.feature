@@ -12,8 +12,7 @@ Feature: Deal step activity access
     And user "readonly.employee@example.com" has deals enabled
     And I am "yes" employee access to the deal
     And the current activity for investor "the other entity" is "Financial DD"
-    And I am at the login page
-    When I fill and submit the login page
+    And I am signed in as the current user
     And I am on the grid view of the deal "ReadOnly Deal"
     And I try to change the activity "Financial DD" for investor "the other entity" from the grid
     Then I should see the "Access denied: you do not have permission to update this deal investor."

@@ -9,6 +9,7 @@ Feature: KPI hard delete without audits
     Given there is an existing portfolio company "name=MyFavStartup;category=Portfolio Company"
     And a KpiReport "as_of=2026-03-31;period=Quarter" exists for the entity
 
+  @rack_test
   Scenario: H1 - Delete a KPI, then its mapping
     Given a KPI "name=Revenue;value=100" exists for the kpi report
     When the KPI is deleted
@@ -27,6 +28,7 @@ Feature: KPI hard delete without audits
     When the KPI value is changed to "250"
     Then there should be no audit entries for KPIs or KPI reports
 
+  @rack_test
   Scenario: E1 - A deleted report's period can be uploaded again
     Given a KPI "name=Revenue;value=100" exists for the kpi report
     When the KPI report is deleted
@@ -37,11 +39,13 @@ Feature: KPI hard delete without audits
     When the KPI report is deleted
     Then there should be no audit entries for KPIs or KPI reports
 
+  @rack_test
   Scenario: X1 - A mapping still used by a live KPI is not deleted
     Given a KPI "name=Revenue;value=100" exists for the kpi report
     When the KPI mapping "Revenue" is deleted
     Then the KPI mapping "Revenue" should still exist
 
+  @rack_test
   Scenario: E2 - The release purge removes soft-deleted rows and unblocks their mapping
     Given a KPI "name=Revenue;value=100" exists for the kpi report
     And the kpis and kpi_reports tables still have the legacy deleted_at column
@@ -54,6 +58,7 @@ Feature: KPI hard delete without audits
     When the KPI mapping "Legacy" is deleted
     Then the KPI mapping "Legacy" should no longer exist
 
+  @rack_test
   Scenario: E4 - After the migration there is no deleted_at and name uniqueness still holds
     Given a KPI "name=Revenue;value=100" exists for the kpi report
     And the kpis and kpi_reports tables still have the legacy deleted_at column

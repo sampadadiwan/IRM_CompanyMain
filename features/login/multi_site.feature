@@ -1,6 +1,6 @@
 Feature: Multi-site user sync fanout
 
-  @sync-http
+  @sync-http @rack_test
   Scenario: Fan out UPSERT to US and SG when CCF changed
     Given a user "a@x.com" exists in region "IN" with regions "IN,US,SG"
     And the user has roles "company_admin,employee"
@@ -18,7 +18,7 @@ Feature: Multi-site user sync fanout
     When I enqueue an upsert job to "IN"
     Then no UPSERT should be sent to "IN"
 
-  @sync-http
+  @sync-http @rack_test
   Scenario: Send DISABLE when a region is removed
     Given a user "a@x.com" exists in region "IN" with regions "IN,SG"
     And the user is already synced
@@ -35,7 +35,7 @@ Feature: Multi-site user sync fanout
     When I trigger the orchestrator for that user with force "false"
     Then no UPSERT should be sent to "US"
 
-  @sync-http
+  @sync-http @rack_test
   Scenario: Entity change causes UPSERT
     Given a user "a@x.com" exists in region "IN" with regions "IN,US"
     And the user is already synced
@@ -44,7 +44,7 @@ Feature: Multi-site user sync fanout
     And I trigger the orchestrator for that user with force "false"
     Then a signed UPSERT should be sent to "US"
 
-  @sync-http
+  @sync-http @rack_test
   Scenario: Roles are sent as unique names
     Given a user "a@x.com" exists in region "IN" with regions "IN,US"
     And the user has roles "company_admin,employee"
@@ -52,14 +52,14 @@ Feature: Multi-site user sync fanout
     When I enqueue an upsert job to "US"
     Then the UPSERT roles should be "company_admin,employee"
 
-  @sync-http
+  @sync-http @rack_test
   Scenario: Retryable on 500
     Given a user "a@x.com" exists in region "IN" with regions "IN,US"
     And the UPSERT endpoint for "US" responds 500
     When I perform an upsert to "US" capturing errors
     Then a retryable sync error should occur
 
-  @cross-site-redirect
+  @cross-site-redirect @rack_test
   Scenario: redirect_to_subdomain uses the user's entity sub_domain
     Given a user "alice@example.com" exists in region "IN" with regions "IN,US"
     And the user's entity has sub_domain "svr"
@@ -67,7 +67,7 @@ Feature: Multi-site user sync fanout
     When I request redirect_to_subdomain on host "app.example.com"
     Then I should be redirected to "svr.example.com" for cross-site login
 
-  @cross-site-redirect
+  @cross-site-redirect @rack_test
   Scenario: redirect_to_subdomain falls back to "app" when entity has no sub_domain
     Given a user "bob@example.com" exists in region "IN" with regions "IN,US"
     And the user's entity has no sub_domain
@@ -77,7 +77,7 @@ Feature: Multi-site user sync fanout
 
   # Was a 401 rendering the bare string "Invalid or expired link". A failed hand-off now lands
   # on this region's own sign-in screen with a banner saying what went wrong.
-  @cross-site-redirect
+  @cross-site-redirect @rack_test
   Scenario: redirect_to_subdomain sends an invalid token to the sign-in screen
     When I request redirect_to_subdomain with invalid token on host "app.example.com"
     Then I should land on the sign-in screen with a cross-region banner
@@ -87,7 +87,7 @@ Feature: Multi-site user sync fanout
   # correct end-to-end, but it does NOT prove two real separately-deployed instances with
   # separate databases agree on the user's identity - that part is emulated by reusing the
   # same @user/@entity row and just swapping ENV["CURRENT_SITE"] between hops.
-  @cross-site-login-flow
+  @cross-site-login-flow @rack_test
   Scenario: A US-side user crosses to the IN site and lands signed in on the correct subdomain
     Given a user "neha@siliconroad.com" exists in region "US" with regions "IN,US"
     And the user's entity has sub_domain "srv"

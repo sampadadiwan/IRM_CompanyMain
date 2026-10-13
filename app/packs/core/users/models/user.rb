@@ -27,7 +27,8 @@ class User < ApplicationRecord
   # (WeeklyTaskDigestJob::RECIPIENT_TAG). Suggested (not enforced) on the user form's tag input —
   # other tags remain valid, e.g. per-entity Support Agent "notify_tag" config values.
   # "FundAccounting" gates recipients of FinancialStatementNotifier (FinancialStatementUnlockGuard::RECIPIENT_TAG).
-  NOTIFICATION_TAGS = %w[Kpi Tasks db_dump_notification FundAccounting].freeze
+  # "FundOps", "FundAccounting" and "Compliance" pick recipients for evergreen fund alerts (EvergreenRecipients).
+  NOTIFICATION_TAGS = %w[Kpi Tasks db_dump_notification FundOps FundAccounting Compliance].freeze
 
   attr_accessor :role_name
   # This is set from session[:support_user_id] in the ApplicationController.

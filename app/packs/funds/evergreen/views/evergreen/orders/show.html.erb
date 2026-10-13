@@ -1,0 +1,275 @@
+<%# One order: details, status, queue, what it got on each dealing date (with settlement actions), journey
+    actions, cancel. Worked examples H11, H13–H15, E17, E20, E225
+    Same layout as a closed-ended capital call page (capital_calls/show): journey panel, details card, actions row %>
+<% order = @order %>
+<% setting = order.fund.evergreen_fund_setting %>
+<%# The forms in the right column; computed once so the column only renders when one applies %>
+<% show_upload_form = order.subscription? && order.pending? && setting.journeys_for?(:subscription) && order.subscription_form.nil? && policy(order).upload_form? %>
+<% show_payment_form = gp_user? && order.subscription? && order.pending? && order.capital_remittance && !order.fully_paid? && policy(order).record_payment? %>
+<%# Amount and Units as on the order book: the side not asked in is an estimate (≈) at the latest approved NAV %>
+<% amount_cell, units_cell = eg_order_amount_units(order, FundNav.latest_approved(@fund, order.unit_type, Time.zone.today)) %>
+<% kind_label = eg_t(order.kind.to_sym) %>
+<div class="container-fluid p-3" data-controller="tooltip">
+  <%# Order journey (step bar + what's needed now) %>
+  <% if @journey.present? %>
+    <%= render "evergreen/orders/journey", order: order %>
+  <% end %>
+
+  <div id="order_card">
+    <%= render ToggleCard.new(title: "#{kind_label}: #{order.investor.investor_name}", css_class: "show_order") do %>
+      <div class="row">
+        <!-- Left Column: Main Info -->
+        <div class="<%= show_upload_form || show_payment_form ? 'col-lg-8' : 'col-12' %>">
+          <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header border-bottom py-3">
+              <h5 class="mb-0 fw-bold"><i class="ti ti-<%= order.subscription? ? 'circle-plus' : 'circle-minus' %> me-2 text-info"></i><%= kind_label %> · <%= order.investor.investor_name %> · Class <%= order.unit_type %></h5>
+            </div>
+            <div class="card-body">
+              <div class="row g-4">
+                <div class="col-md-6">
+                  <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Investor</label>
+                  <div class="fs-4 fw-medium"><%= eg_gp_link(order.investor.investor_name, investor_path(order.investor)) %></div>
+                </div>
+                <div class="col-md-6">
+                  <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Class</label>
+                  <div class="fs-4 fw-medium"><%= order.unit_type %></div>
+                </div>
+                <div class="col-md-6">
+                  <label class="text-muted text-uppercase fw-bold fs-1 mb-1"><%= eg_t(:capital_commitment) %></label>
+                  <div class="fs-4 fw-medium"><%= order.capital_commitment ? eg_gp_link(order.capital_commitment.folio_id, evergreen_folio_path(@fund, order.capital_commitment)) : "—" %></div>
+                </div>
+                <div class="col-md-6">
+                  <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Status</label>
+                  <div class="fs-4 fw-medium"><span id="order_status"><%= eg_order_status_badge(order) %></span> <%= eg_queue_badge(order) %> <%= eg_order_terms_badges(order) %></div>
+                </div>
+                <div class="col-md-6">
+                  <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Received</label>
+                  <div class="fs-4 fw-medium"><%= l(order.received_at) %><%= " · Entered by #{order.entered_by.full_name}" if order.entered_by %></div>
+                </div>
+                <div class="col-md-6">
+                  <label class="text-muted text-uppercase fw-bold fs-1 mb-1"><%= eg_t(order.subscription? ? :subscription_date : :redemption_date) %></label>
+                  <div class="fs-4 fw-medium"><%= eg_gp_link(l(order.dealing_date.date), evergreen_dealing_date_path(@fund, order.dealing_date)) %><%= " (rolled #{order.rolled_count}×)" if order.rolled_count.positive? %></div>
+                </div>
+                <%# The queue place is the badge under Status (eg_queue_badge), so it has no field of its own %>
+                <div class="col-md-6">
+                  <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Amount</label>
+                  <div class="fs-4 fw-medium" id="order_requested_amount"><%= amount_cell %></div>
+                </div>
+                <div class="col-md-6">
+                  <label class="text-muted text-uppercase fw-bold fs-1 mb-1"><%= eg_t(:Units) %></label>
+                  <div class="fs-4 fw-medium" id="order_requested_units"><%= units_cell %></div>
+                </div>
+                <%# What dealing did to the folio, next to what was asked: units allotted / cancelled, at which NAV and
+                    date (or how many dates, for a redemption the gate carried). "To allot / to cancel" until the units
+                    have actually moved — that waits for the money (subscription) or the payout (redemption) %>
+                <% dealt = order.dealing_fills.select { |f| f.units.to_d.positive? }.sort_by { |f| f.dealing_date.date } %>
+                <% if dealt.any? %>
+                  <% moved = dealt.all?(&:fund_unit_id) %>
+                  <% label = order.subscription? ? (moved ? "allotted" : "to allot") : (moved ? "cancelled" : "to cancel") %>
+                  <div class="col-md-6" id="order_units_dealt">
+                    <label class="text-muted text-uppercase fw-bold fs-1 mb-1"><%= eg_t(:Units) %> <%= label %></label>
+                    <div class="fs-4 fw-medium">
+                      <%# One date: that fund unit record; several (a carried redemption): the folio's units list %>
+                      <% units_path = dealt.one? ? (dealt.first.fund_unit && fund_unit_path(dealt.first.fund_unit)) : fund_units_path(fund_id: @fund.id, capital_commitment_id: order.capital_commitment_id) %>
+                      <%= eg_gp_link(number_with_precision(dealt.sum { |f| f.units.to_d }, precision: 4, delimiter: ","), units_path) %>
+                      <span class="text-muted">
+                        <% if dealt.one? %>
+                          at <%= evergreen_nav_per_unit(dealt.first.nav_per_unit_cents) %> on <%= l(dealt.first.dealing_date.date) %>
+                        <% else %>
+                          over <%= dealt.size %> <%= EvergreenLabels.lower(eg_t(:transaction_date)).pluralize %> — see <%= eg_t(:dealing_tab) %> below
+                        <% end %>
+                      </span>
+                    </div>
+                  </div>
+                <% end %>
+                <% if order.rejected_reason.present? %>
+                  <div class="col-12">
+                    <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Reason</label>
+                    <div class="fs-4 fw-medium"><%= order.rejected_reason %></div>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <% if show_upload_form || show_payment_form %>
+          <!-- Right Column: signed form / payment -->
+          <div class="col-lg-4">
+            <% if show_upload_form %>
+              <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header border-bottom py-3 px-4">
+                  <h6 class="mb-0 fw-bold d-flex align-items-center"><i class="ti ti-file-upload me-2 text-info"></i>Signed form</h6>
+                </div>
+                <div class="card-body">
+                  <%# The upload is the step's only input, so it stays inline: pick the file, then Upload %>
+                  <%= form_with url: upload_form_evergreen_order_path(@fund, order), method: :post, multipart: true, class: "d-flex flex-column gap-2", id: "upload_form_form" do |f| %>
+                    <span class="text-muted">Upload the signed subscription form — a PDF, image or Word copy.</span>
+                    <%= f.file_field :file, class: "form-control", id: "subscription_form_file" %>
+                    <%= f.button type: "submit", class: "btn btn-outline-primary align-self-start", id: "upload_subscription_form" do %><i class="ti ti-upload"></i> Upload<% end %>
+                  <% end %>
+                </div>
+              </div>
+            <% end %>
+
+            <% if show_payment_form %>
+              <div class="card shadow-sm border-0 mb-4">
+                <% rem = order.capital_remittance %>
+                <% owed = rem.call_amount_cents.to_d - rem.collected_amount_cents.to_d %>
+                <div class="card-header border-bottom py-3 px-4">
+                  <h6 class="mb-0 fw-bold d-flex align-items-center"><i class="ti ti-cash me-2 text-info"></i>Payment</h6>
+                </div>
+                <div class="card-body d-flex flex-column gap-2">
+                  <span class="text-muted"><%= evergreen_money(owed, @fund) %> still owed of <%= evergreen_money(rem.call_amount_cents, @fund) %>.</span>
+                  <%# Record payment opens a small form (amount, date, reference) whose Save is the confirmation —
+                      the same modal as the dealing date's Record payment (_fill_actions) %>
+                  <button type="button" class="btn btn-outline-primary align-self-start" data-bs-toggle="modal" data-bs-target="#order_record_payment_modal" id="order_record_payment_open"><i class="ti ti-cash"></i> Record payment</button>
+                </div>
+                <div class="modal fade" id="order_record_payment_modal" tabindex="-1" aria-labelledby="order_record_payment_label" aria-hidden="true">
+                  <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                      <%= form_with url: record_payment_evergreen_order_path(@fund, order), method: :post, id: "order_record_payment_form" do |f| %>
+                        <div class="modal-header">
+                          <h5 class="modal-title" id="order_record_payment_label">Record payment · <%= order.investor.investor_name %></h5>
+                          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                          <div class="text-muted small mb-3"><%= evergreen_money(owed, @fund) %> still owed of <%= evergreen_money(rem.call_amount_cents, @fund) %>.</div>
+                          <div class="mb-3"><%= f.label :amount, "Amount", class: "form-label", for: "order_payment_amount" %><%= f.text_field :amount, class: "form-control", placeholder: "Blank = the full amount owed", id: "order_payment_amount" %></div>
+                          <div class="mb-3"><%= f.label :payment_date, "Payment date", class: "form-label", for: "order_payment_date" %><%= f.date_field :payment_date, class: "form-control", id: "order_payment_date" %></div>
+                          <div class="mb-1"><%= f.label :reference, "Reference", class: "form-label", for: "order_payment_reference" %><%= f.text_field :reference, class: "form-control", placeholder: "Bank reference", id: "order_payment_reference" %></div>
+                        </div>
+                        <div class="modal-footer">
+                          <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal"><%= t_common(:cancel) %></button>
+                          <%= f.submit "Record payment", class: "btn btn-outline-success", id: "order_record_payment" %>
+                        </div>
+                      <% end %>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+
+  <%# Dealing: what the order got on each dealing date (a carried redemption has one row per date), with the
+      same status badges as the dealing date's tabs (_fill_status). The fund team also gets the row actions
+      (_fill_actions) and links, so a contract note can be resent or a payout marked paid from here; the
+      investor gets the same card read-only, plus the issued document once approved.
+      Worked examples H21, H24, E225 %>
+  <% fills = order.dealing_fills.includes(:dealing_date, :fund_nav, :fund_unit, :capital_remittance, :capital_distribution_payment, :document, fund: :evergreen_fund_setting).sort_by { |f| f.dealing_date.date } %>
+  <%# Separate ids: #order_dealing is the fund team's card (with actions), #order_dealing_summary the investor's %>
+  <div class="card shadow-sm border-0 mb-4" id="<%= gp_user? ? 'order_dealing' : 'order_dealing_summary' %>">
+    <div class="card-header border-bottom py-3">
+      <h6 class="mb-0 fw-bold d-flex align-items-center"><i class="ti ti-calendar-event me-2 text-info"></i><%= eg_t(:dealing_tab) %></h6>
+    </div>
+    <div class="card-body">
+      <% if fills.empty? %>
+        <div class="text-muted" id="order_not_dealt"><i class="ti ti-clock me-1"></i>
+          <%= order.open? ? "Not #{eg_t(:dealt, lower: true)} yet — will be priced on #{l(order.dealing_date.date)}." : "Not #{eg_t(:dealt, lower: true)} — the order was #{order.status.humanize.downcase}." %>
+        </div>
+      <% else %>
+        <div class="table-responsive">
+          <table class="table table-bordered hover mb-0" id="order_fills">
+            <thead>
+              <tr>
+                <th><%= eg_t(:transaction_date) %></th><th class="text-end"><%= eg_t(:nav_per_unit_short) %></th><th class="text-end">Amount</th>
+                <th class="text-end"><%= eg_t(:Units) %></th><th class="text-end"><%= eg_t(:carried) %></th><th>Settlement</th>
+                <% if gp_user? %>
+                  <th class="action-col" aria-label="Actions">Actions</th>
+                <% else %>
+                  <th>Document</th>
+                <% end %>
+              </tr>
+            </thead>
+            <tbody>
+              <% fills.each do |f| %>
+                <tr id="fill_<%= f.id %>">
+                  <td><%= eg_gp_link(l(f.dealing_date.date), evergreen_dealing_date_path(@fund, f.dealing_date)) %></td>
+                  <td class="text-end"><%= evergreen_nav_per_unit(f.nav_per_unit_cents) %></td>
+                  <%# Amount opens the settlement record (remittance / distribution payment), units the fund unit — fund team only %>
+                  <% settlement_path = if f.capital_remittance then capital_remittance_path(f.capital_remittance)
+                                       elsif f.capital_distribution_payment then capital_distribution_payment_path(f.capital_distribution_payment)
+                                       end %>
+                  <td class="text-end"><%= eg_gp_link(evergreen_money(f.amount_cents, @fund), settlement_path) %></td>
+                  <td class="text-end"><%= eg_gp_link(number_with_precision(f.units, precision: 4, delimiter: ","), f.fund_unit && fund_unit_path(f.fund_unit)) %></td>
+                  <td class="text-end"><%= f.carried_units.to_d.positive? ? eg_units(f.carried_units) : "—" %></td>
+                  <%# Investors get the plain outcome; the staff status carries GP instructions %>
+                  <td><%= gp_user? ? render("evergreen/dealing_dates/fill_status", fill: f) : eg_lp_fill_status(f) %></td>
+                  <% if gp_user? %>
+                    <td class="action-col"><%= render "evergreen/dealing_dates/fill_actions", fill: f, show_view: false, accept_received: false %></td>
+                  <% else %>
+                    <%# The investor sees the contract note / redemption advice only once it is approved %>
+                    <% doc_label = f.subscription? ? eg_t(:contract_note) : eg_t(:redemption_advice) %>
+                    <td><%= f.document&.approved ? link_to(safe_join([tag.i(class: "ti ti-file-text me-1"), doc_label]), document_path(f.document), target: "_blank", id: "fill_document_#{f.id}") : "—" %></td>
+                  <% end %>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <%# Actions row — outline buttons, as on the capital call page %>
+  <div class="d-flex flex-wrap align-items-center gap-2 mb-3" id="order_actions">
+    <%# § Accept received amount: a part-paid subscription becomes the amount received %>
+    <% if policy(order).accept_received? %>
+      <%= render "evergreen/orders/accept_received_button", order:, css: "btn btn-outline-primary" %>
+    <% end %>
+    <% investor = order.investor.investor_name %>
+    <% date_word = eg_t(order.subscription? ? :subscription_date : :redemption_date, lower: true) %>
+    <% if policy(order).cancel? %>
+      <%
+        # Cancel: what DealingOrderCancel does — off the dealing date, unpaid payment row removed, investor emailed
+        cards = [["red", "ti-x", "Request cancelled", "It will not be #{eg_t(:dealt, lower: true)} on the #{l(order.dealing_date.date)} #{date_word}"],
+                 (["grey", "ti-list-numbers", "Queue moves up", "Later redemption requests move up one place"] if order.redemption?),
+                 ["blue", "ti-mail", "#{investor} emailed", "Request cancelled confirmation"]].compact
+      %>
+      <%= button_to cancel_evergreen_order_path(@fund, order), method: :patch, class: "btn btn-outline-danger", id: "cancel_order",
+            data: { action: "click->confirm#popup", method: "patch", title: "Cancel this #{kind_label.downcase} request", msg: evergreen_action_summary(cards) } do %><i class="ti ti-x"></i> Cancel<% end %>
+    <% end %>
+    <% if policy(order).verify_signatory? && order.redemption? && order.signatory_verified_at.nil? && setting.journeys_for?(:redemption) %>
+      <%
+        cards = [["green", "ti-signature", "Signatory verified", "Recorded against your name, with the time"],
+                 ["blue", "ti-route", "Journey moves on", "To the next step of this request"]]
+      %>
+      <%= button_to verify_signatory_evergreen_order_path(@fund, order), method: :patch, class: "btn btn-outline-primary", id: "verify_signatory",
+            data: { action: "click->confirm#popup", method: "patch", title: "Verify the signatory of #{investor}", msg: evergreen_action_summary(cards) } do %><i class="ti ti-signature"></i> Verify signatory<% end %>
+    <% end %>
+    <% if policy(order).accept? && order.accepted_at.nil? && setting.journeys_for?(order.kind) %>
+      <%
+        cards = [["green", "ti-check", "Request accepted", "Recorded against your name, with the time"],
+                 ["blue", "ti-calendar", "Stays on its #{date_word}", "#{eg_t(:dealt)} on #{l(order.dealing_date.date)} once every step is done"]]
+      %>
+      <%= button_to accept_evergreen_order_path(@fund, order), method: :patch, class: "btn btn-outline-success", id: "accept_order",
+            data: { action: "click->confirm#popup", method: "patch", title: "Accept the #{kind_label.downcase} of #{investor}", msg: evergreen_action_summary(cards) } do %><i class="ti ti-check"></i> Accept<% end %>
+      <%# Reject needs a reason, so it opens a small form; its Reject button is the confirmation %>
+      <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#reject_order_modal" id="reject_order_open"><i class="ti ti-ban"></i> Reject</button>
+      <div class="modal fade" id="reject_order_modal" tabindex="-1" aria-labelledby="reject_order_label" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <%= form_with url: reject_evergreen_order_path(@fund, order), method: :patch, id: "reject_form" do |f| %>
+              <div class="modal-header">
+                <h5 class="modal-title" id="reject_order_label">Reject · <%= investor %></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <div class="text-muted small mb-3">The request is closed and will not be <%= eg_t(:dealt, lower: true) %>; <%= investor %> is emailed with the reason.</div>
+                <div class="mb-1"><%= f.label :reason, "Reason", class: "form-label", for: "reject_reason" %><%= f.text_field :reason, class: "form-control", placeholder: "Reason", id: "reject_reason" %></div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><%= t_common(:cancel) %></button>
+                <%= f.button type: "submit", class: "btn btn-outline-danger", id: "reject_order" do %><i class="ti ti-ban"></i> Reject<% end %>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>

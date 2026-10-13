@@ -15,6 +15,7 @@ Scenario: H1 Delete with confirmation removes the investor and its fund ratios
   Then I should see the "Stakeholder was successfully deleted."
   And the investor now has 0 fund ratios
 
+@rack_test
 Scenario: H2 Fund ratios are soft deleted
   Given the investor has 4 fund ratios
   When the investor is deleted
@@ -35,12 +36,14 @@ Scenario: E2 Investor without ratios
   When I confirm the popup
   Then I should see the "Stakeholder was successfully deleted."
 
+@rack_test
 Scenario: E3 Another investor's ratios are untouched
   Given the investor has 4 fund ratios
   And there is another investor "Other Co" with 2 fund ratios
   When the investor is deleted
   Then the other investor still has 2 fund ratios
 
+@rack_test
 Scenario: E4 Fund owned ratios are untouched
   Given the investor has 4 fund ratios
   And the fund has 1 fund ratio owned by the fund
@@ -54,6 +57,7 @@ Scenario: E5 Fund dashboard IRR widget skips an orphaned ratio
   When I open the fund dashboard "Portfolio Dashboard"
   Then I should see the "No data available."
 
+@rack_test
 Scenario: E7 Clean-up query finds only orphaned ratios
   Given the investor has 4 fund ratios
   And there is another investor "Other Co" with 2 fund ratios

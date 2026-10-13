@@ -1,0 +1,90 @@
+<%# Test feed results — a dry run per provider; nothing was stored (E45).
+    One table per source with a per-row why / what to do. results: MarketDataFeedRunner::Result list %>
+<% run_date = results.first&.run&.run_date %>
+<% found = results.sum { |r| r.found.size } %>
+<% missing = results.sum { |r| r.missing.size } %>
+<%# What the user can do about each reason MarketDataFeedRunner reports %>
+<% what_to_do = lambda do |reason|
+     case reason.to_s
+     when "not published"
+       "ECB had no rate for #{run_date ? l(run_date) : 'this date'}. It publishes around 16:00 CET on business days, so try again later. If one pair stays missing, ECB doesn't quote that currency."
+     when /\Aticker not found/ then "Check the ticker on the holding's instrument."
+     when /\AISIN not found/ then "Check the ISIN on the holding's instrument."
+     when "provider unavailable" then "The source didn't respond. Try again later."
+     when "invalid value" then "The source returned zero or a negative value, so it would be skipped."
+     else "—"
+     end
+   end %>
+
+<div class="card mb-3" id="test_feed_results">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <strong><i class="ti ti-plug-connected me-1"></i>Test feed results</strong>
+    <% if run_date %><span class="text-muted small">Run date <%= l run_date %></span><% end %>
+  </div>
+  <div class="card-body">
+    <div class="d-flex align-items-start gap-2 small text-muted mb-3 p-2 px-3 rounded bg-light border">
+      <i class="ti ti-info-circle text-info mt-1"></i>
+      <div>A dry run: nothing was stored. It shows what the daily feed would load for your funds' currency pairs and listed holdings.</div>
+    </div>
+
+    <%# Summary: dashboard stats cards (financial_statement_mapping_suggestions/show pattern) %>
+    <div class="row row-cols-1 row-cols-md-2 g-2 mb-3" id="test_feed_summary">
+      <% [["success", "ti-circle-check", "#{found} of #{found + missing}", "found"],
+          [missing.positive? ? "danger" : "success", missing.positive? ? "ti-alert-triangle" : "ti-circle-check", missing, "missing"]].each do |color, icon, value, label| %>
+        <div class="col">
+          <div class="card overflow-hidden h-100 shadow-none border mb-0">
+            <div class="d-flex flex-row h-100">
+              <div class="p-2 bg-<%= color %>-subtle d-flex align-items-center"><h3 class="text-<%= color %> mb-0 fs-6"><i class="ti <%= icon %>"></i></h3></div>
+              <div class="p-2 text-truncate">
+                <h3 class="text-<%= color %> mb-0 fs-4"><%= value %></h3>
+                <span class="text-muted small d-block"><%= label %></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <%# One table per source; providers with nothing to fetch are left out %>
+    <% results.reject { |r| r.found.empty? && r.missing.empty? }.each do |r| %>
+      <% provider = r.run.provider %>
+      <% fx = r.run.kind == "fx" %>
+      <% total = r.found.size + r.missing.size %>
+      <h6 class="mt-3 mb-2">
+        <%= t("market_data.providers.#{provider}", default: provider.upcase.tr("_", " ")) %> · <%= fx ? "FX rates" : "Prices" %>
+        <span class="text-muted fw-normal small ms-1"><%= r.found.size %> of <%= total %> found</span>
+      </h6>
+      <div class="table-responsive">
+        <table class="table table-sm table-bordered align-middle mb-0" id="test_feed_<%= provider %>">
+          <thead class="table-light">
+            <tr><th><%= fx ? "Pair" : "Holding" %></th><th>Result</th><th>Why</th><th>What to do</th></tr>
+          </thead>
+          <tbody>
+            <% r.missing.each do |m| %>
+              <tr>
+                <td>
+                  <% if fx %><%= m["key"].to_s.sub("/", "→") %><% else %><%= m["name"] || m["key"] %> <span class="text-muted small"><%= m["key"] if m["name"] %></span><% end %>
+                </td>
+                <td><span class="badge bg-danger-subtle text-danger"><i class="ti ti-x"></i> Missing</span></td>
+                <td><%= m["reason"].to_s.upcase_first %></td>
+                <td class="small text-muted"><%= what_to_do.call(m["reason"]) %></td>
+              </tr>
+            <% end %>
+            <% r.found.each do |key| %>
+              <tr>
+                <td><%= fx ? key.to_s.sub("/", "→") : key %></td>
+                <td><span class="badge bg-success-subtle text-success"><i class="ti ti-check"></i> Found</span></td>
+                <td>—</td>
+                <td class="small text-muted">Nothing — it will load with the daily feed.</td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% end %>
+
+    <div class="d-flex justify-content-end mt-3">
+      <%= link_to market_data_settings_path, class: "btn btn-outline-secondary" do %><i class="ti ti-arrow-left me-1"></i>Back to settings<% end %>
+    </div>
+  </div>
+</div>

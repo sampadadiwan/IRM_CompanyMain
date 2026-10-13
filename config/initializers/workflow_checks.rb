@@ -7,6 +7,8 @@
 # (Worked examples H2 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples).
 # Investor KYC checks: app/packs/core/investor_kycs/workflow_checks/investor_kyc/
 # (Worked examples H2 — openspec/changes/investor-kyc-journey/design.md#worked-examples).
+# Evergreen order checks: app/packs/funds/evergreen/workflow_checks/dealing_order/
+# (Worked examples H12–H15 — openspec/changes/open-ended-funds/design.md#worked-examples).
 # KPI report checks: app/packs/startups/kpis/workflow_checks/kpi_report/
 # (Worked examples H1 — openspec/changes/kpi-report-journey/design.md#worked-examples).
 Rails.application.config.to_prepare do
@@ -66,6 +68,34 @@ Rails.application.config.to_prepare do
     WorkflowChecks::KpiReport::Close
     WorkflowChecks::KpiReport::SendCompletionEmail
     WorkflowChecks::KpiReport::FundUploaded
+    WorkflowChecks::DealingOrder::CheckInvestorKyc
+    WorkflowChecks::DealingOrder::CollectSignedForm
+    WorkflowChecks::DealingOrder::VerifyRequest
+    WorkflowChecks::DealingOrder::AcceptOrder
+    WorkflowChecks::DealingOrder::CollectMoney
+    WorkflowChecks::DealingOrder::ReadyToDeal
+    WorkflowChecks::DealingOrder::Allotted
+    WorkflowChecks::DealingOrder::Paid
+    WorkflowChecks::DealingOrder::Cancelled
+    WorkflowChecks::DealingOrder::NotSubscription
+    WorkflowChecks::DealingOrder::NotRedemption
+    WorkflowChecks::DealingOrder::MoneyNotNeeded
+    WorkflowChecks::DealingDate::CollectMoney
+    WorkflowChecks::DealingDate::ApproveNav
+    WorkflowChecks::DealingDate::Confirm
+    WorkflowChecks::DealingDate::InstructionsSent
+    WorkflowChecks::DealingDate::CollectMoneyAfter
+    WorkflowChecks::DealingDate::Allotted
+    WorkflowChecks::DealingDate::RedemptionsPaid
+    WorkflowChecks::DealingDate::UnitsCancelled
+    WorkflowChecks::DealingDate::DocumentsGenerated
+    WorkflowChecks::DealingDate::DocumentsSent
+    WorkflowChecks::DealingDate::Closed
+    WorkflowChecks::DealingDate::NotPreFunded
+    WorkflowChecks::DealingDate::NotPayAfter
+    WorkflowChecks::DealingDate::NoSubscriptions
+    WorkflowChecks::DealingDate::NoRedemptions
+    WorkflowChecks::DealingDate::NoDocumentTemplates
   ]
   check_classes.each { |name| WorkflowChecks::Registry.register(name.constantize) }
 end

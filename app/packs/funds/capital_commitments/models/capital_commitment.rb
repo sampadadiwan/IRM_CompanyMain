@@ -55,6 +55,27 @@ class CapitalCommitment < ApplicationRecord
 
   INVESTOR_STANDARD_COLUMNS = STANDARD_COLUMNS.except("Stakeholder; text-col", "Fund Close; text-col").freeze
 
+  # Columns a list must show whatever columns the entity has saved, by page:
+  # the investor's Commitments tab is one stakeholder across funds (fund needed, stakeholder redundant);
+  # the cross-fund index needs both to tell rows apart. A single fund's list needs neither forced.
+  FUND_NAME_COLUMN = { "Fund Name; text-col" => "fund_name; text-col" }.freeze
+  STAKEHOLDER_COLUMN = STANDARD_COLUMNS.slice("Stakeholder; text-col").freeze
+
+  # required_columns / excluded_columns for RansackTable(Header) on a commitments list
+  def self.list_column_rules(investor_id:, fund_id:, investor_user:)
+    if fund_id.present? && investor_id.blank?
+      # One fund's commitments: the fund is the page, keep the saved columns as they are
+      { required_columns: nil, excluded_columns: nil }
+    elsif investor_id.present? || investor_user
+      # Investor page → Commitments tab, or an investor's own cross-fund list: every row is
+      # the same stakeholder, so drop that column and show the fund instead
+      { required_columns: FUND_NAME_COLUMN, excluded_columns: ["investor_name"] }
+    else
+      # Cross-fund index for the fund's team: both fund and stakeholder are needed
+      { required_columns: FUND_NAME_COLUMN.merge(STAKEHOLDER_COLUMN), excluded_columns: nil }
+    end
+  end
+
   update_index('capital_commitment') { self if index_record? }
 
   belongs_to :entity

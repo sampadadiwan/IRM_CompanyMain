@@ -15,7 +15,7 @@ Feature: Server-side validation of portco KPI workbooks
   # ─────────────────────────────────────────────────────────
   # §2.4 Number normalisation — interpret formatting, store the intended number
   # ─────────────────────────────────────────────────────────
-  @kpi_validation
+  @kpi_validation @rack_test
   Scenario: Formatted numbers are interpreted and stored as the intended values
     Given the target KPIs are "Revenue, EBITDA, Headcount, Cash"
     And a KPI workbook with sheet "MIS":
@@ -36,7 +36,7 @@ Feature: Server-side validation of portco KPI workbooks
     And the cell "MIS!C5" is stored as "-500"
     And the requested period is present with "4" KPIs filled
 
-  @kpi_validation
+  @kpi_validation @rack_test
   Scenario: Percent signs on a percentage KPI become fractions; an explicit unit overrides the mapping denomination
     Given the following KPI mappings with denominations exist for the portfolio company:
       | reported_kpi_name | denomination |
@@ -54,7 +54,7 @@ Feature: Server-side validation of portco KPI workbooks
     And the cell "MIS!B3" is stored as "0.42"
     And the cell "MIS!C3" is stored as "0.41"
 
-  @kpi_validation
+  @kpi_validation @rack_test
   Scenario: Excel error cells, ambiguous text and non-numbers are errors, placeholders are skipped with a warning
     Given the target KPIs are "Revenue, EBITDA, Headcount, Cash"
     And a KPI workbook with sheet "MIS":
@@ -75,7 +75,7 @@ Feature: Server-side validation of portco KPI workbooks
   # ─────────────────────────────────────────────────────────
   # §2.5 The file must contain the period the fund asked for
   # ─────────────────────────────────────────────────────────
-  @kpi_validation
+  @kpi_validation @rack_test
   Scenario: Requested period missing from the file is a blocking error
     Given the target KPIs are "Revenue"
     And a KPI workbook with sheet "MIS":
@@ -85,7 +85,7 @@ Feature: Server-side validation of portco KPI workbooks
     Then the validation has error "requested_period_missing"
     And the validation error "requested_period_missing" mentions "Jun 2026 (Month)"
 
-  @kpi_validation
+  @kpi_validation @rack_test
   Scenario: Requested period present but blank is a blocking error; partially blank is a warning
     Given the target KPIs are "Revenue, EBITDA"
     And a KPI workbook with sheet "MIS":
@@ -103,7 +103,7 @@ Feature: Server-side validation of portco KPI workbooks
     And the validation has warning "requested_period_partial"
     And the validation warning "requested_period_partial" mentions "EBITDA"
 
-  @kpi_validation
+  @kpi_validation @rack_test
   Scenario: A Quarter request answered with monthly columns is accepted with a warning about derivation
     Given the target KPIs are "Revenue"
     And a KPI report shell exists for "TestStartup" as of "2026-06-30" with status "link_sent" and period "Quarter"
@@ -115,14 +115,14 @@ Feature: Server-side validation of portco KPI workbooks
     And the validation has warning "requested_period_derived"
     And the validation warning "requested_period_derived" mentions "Revenue"
 
-  @kpi_validation
+  @kpi_validation @rack_test
   Scenario: A file reference that names a storage other than the upload cache is refused
     Given the target KPIs are "Revenue"
     When a workbook reference with storage "store" is validated for the KPI report
     Then the validation has error "no_file"
     And the validation error "no_file" mentions "not valid"
 
-  @kpi_validation
+  @kpi_validation @rack_test
   Scenario: Other periods in the file are always imported and reported; changed approved values are flagged old → new
     Given the target KPIs are "Revenue"
     And an approved KPI "Revenue" of 100 exists for "TestStartup" as of "2026-05-31" period "Month"
@@ -139,7 +139,7 @@ Feature: Server-side validation of portco KPI workbooks
     And an unapproved KPI "Revenue" as of "2026-05-31" exists with value 105
     And an unapproved KPI "Revenue" as of "2026-04-30" exists with value 90
 
-  @kpi_validation
+  @kpi_validation @rack_test
   Scenario: Future Actual columns are ignored with a visible warning
     Given the target KPIs are "Revenue"
     And a KPI workbook with sheet "MIS":
@@ -175,7 +175,7 @@ Feature: Server-side validation of portco KPI workbooks
     And an unapproved KPI "Revenue" as of "2022-09-30" period "Half Year" exists with value 200
     And an unapproved KPI "Revenue" as of "2021-03-31" period "Year" exists with value 300
 
-  @kpi_validation
+  @kpi_validation @rack_test
   Scenario: With no explicit fiscal-year setting, the US deployment defaults to a January fiscal year
     Given the target KPIs are "Revenue"
     And a KPI report shell exists for "TestStartup" as of "2025-12-31" with status "link_sent" and period "Year"
@@ -187,7 +187,7 @@ Feature: Server-side validation of portco KPI workbooks
     Then the validation has no errors
     And the requested period is present with "1" KPIs filled
 
-  @kpi_validation
+  @kpi_validation @rack_test
   Scenario: With no explicit fiscal-year setting, the India deployment defaults to an April fiscal year
     Given the target KPIs are "Revenue"
     And a KPI report shell exists for "TestStartup" as of "2025-12-31" with status "link_sent" and period "Year"
@@ -201,7 +201,7 @@ Feature: Server-side validation of portco KPI workbooks
   # ─────────────────────────────────────────────────────────
   # §2.6 Duplicates and hidden sheets
   # ─────────────────────────────────────────────────────────
-  @kpi_validation
+  @kpi_validation @rack_test
   Scenario: Same KPI on two rows with different values is an error; identical values are a warning
     Given the target KPIs are "Revenue"
     And a KPI workbook with sheet "MIS":
@@ -219,7 +219,7 @@ Feature: Server-side validation of portco KPI workbooks
     Then the validation has no errors
     And the validation has warning "duplicate_kpi_row_identical"
 
-  @kpi_validation
+  @kpi_validation @rack_test
   Scenario: Hidden sheets are skipped with a warning
     Given the target KPIs are "Revenue"
     And a KPI workbook with sheet "MIS":
@@ -237,7 +237,7 @@ Feature: Server-side validation of portco KPI workbooks
   # ─────────────────────────────────────────────────────────
   # §2.7 No mappings, §2.3 header handling
   # ─────────────────────────────────────────────────────────
-  @kpi_validation
+  @kpi_validation @rack_test
   Scenario: A portco with no KPI mappings gets a blocking error, not a green tick
     Given a KPI workbook with sheet "MIS":
       | KPI     | May 2026 | Jun 2026 |
@@ -245,7 +245,7 @@ Feature: Server-side validation of portco KPI workbooks
     When the workbook is validated for the KPI report
     Then the validation has error "no_mappings"
 
-  @kpi_validation
+  @kpi_validation @rack_test
   Scenario: Title rows above the header are fine; a file with no period header anywhere is an error
     Given the target KPIs are "Revenue"
     And a KPI workbook with sheet "MIS":
@@ -262,7 +262,7 @@ Feature: Server-side validation of portco KPI workbooks
     When the workbook is validated for the KPI report
     Then the validation has error "no_header"
 
-  @kpi_validation
+  @kpi_validation @rack_test
   Scenario: A single-period sheet is accepted when the KPI names below the header match
     Given the target KPIs are "Revenue"
     And a KPI workbook with sheet "MIS":
@@ -276,7 +276,7 @@ Feature: Server-side validation of portco KPI workbooks
   # ─────────────────────────────────────────────────────────
   # §2.9 Plausibility — warnings only
   # ─────────────────────────────────────────────────────────
-  @kpi_validation
+  @kpi_validation @rack_test
   Scenario: A value three orders of magnitude off the last approved figure warns about denomination but does not block
     Given the following KPI mappings with denominations exist for the portfolio company:
       | reported_kpi_name | denomination |

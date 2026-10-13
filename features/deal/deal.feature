@@ -1,6 +1,7 @@
 Feature: Deal
   Can create and view a deal as a company
 
+@rack_test
 Scenario Outline: Create new deal
   Given Im logged in as a user "<user>" for an entity "<entity>"
   Given the user has role "company_admin"
@@ -17,6 +18,7 @@ Scenario Outline: Create new deal
   	|  	        |entity_type=Company;enable_deals=true  |name=Series A;amount_cents=10000 |Deal was successfully created|
     |  	        |entity_type=Company;enable_deals=true  |name=Series B;amount_cents=12000 |Deal was successfully created|
 
+@rack_test
 Scenario Outline: Edit deal
   Given Im logged in as a user "<user>" for an entity "<entity>"
   Given the user has role "company_admin"
@@ -47,6 +49,7 @@ Scenario Outline: Currency Units
     |user	      |entity                                 |deal                                                   |msg	|
     |  	        |entity_type=Company;enable_deals=true  |name=Series R;amount_cents=100000000 |Deal was successfully created|
 
+@rack_test
 Scenario: Deal notifications can be toggled from the form
   Given Im logged in as a user "" for an entity "entity_type=Company"
   Given the user has role "company_admin"

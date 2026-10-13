@@ -326,7 +326,7 @@ When('I upload a stakeholder users file with CRM columns for {string}') do |emai
   find('#upload_stakeholder_users').click
   fill_in('import_upload_name', with: 'LP CRM Contacts Upload')
   attach_file('files[]', path, make_visible: true)
-  sleep(8) # JS direct-upload to /upload endpoint; same window as the standard upload step
+  wait_for_upload(path) # JS direct-upload to /upload; returns once it lands (was sleep 8)
   click_on('Save')
   expect(page).to have_content('Import Upload:', wait: 15)
   # Run the import inline so the assertions below see the result

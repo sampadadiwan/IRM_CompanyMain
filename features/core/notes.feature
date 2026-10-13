@@ -17,6 +17,7 @@ Scenario Outline: Create new note
   	|  	        |entity_type=Company   |Note was successfully created|
     |  	        |entity_type=Company   |Note was successfully created|
 
+@rack_test
 Scenario: List note with nil owner
   Given Im logged in as a user "" for an entity "entity_type=Company"
   Given the user has role "company_admin"

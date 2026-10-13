@@ -1,6 +1,7 @@
 Feature: Two-Factor Authentication Enrollment
   Users with 2FA enabled choose a mode (Authenticator or WhatsApp) before first use.
 
+  @rack_test
   Scenario Outline: User sees mode selection on first login with 2FA enabled
     Given there is a user "<user>" for an entity "<entity>"
     And the user has two-factor authentication enabled but not configured
@@ -12,6 +13,7 @@ Feature: Two-Factor Authentication Enrollment
       | user | entity              |
       |      | entity_type=Company |
 
+  @rack_test
   Scenario Outline: User enrolls via Authenticator mode
     Given there is a user "<user>" for an entity "<entity>"
     And the user has two-factor authentication enabled but not configured
@@ -32,6 +34,7 @@ Feature: Two-Factor Authentication Enrollment
   # The mode is committed only when the confirming code verifies. A user who picks
   # Authenticator, leaves to install an app, and comes back later must land on mode
   # selection again — not on a code screen for an app entry they never created.
+  @rack_test
   Scenario Outline: Abandoning Authenticator setup before confirming does not lock the user out
     Given there is a user "<user>" for an entity "<entity>"
     And the user has two-factor authentication enabled but not configured
@@ -52,6 +55,7 @@ Feature: Two-Factor Authentication Enrollment
   # Switching two-factor off forgets the method. Otherwise a user who disabled it, deleted
   # the app entry, and switched it back on later was sent to a code screen for a method
   # they no longer had.
+  @rack_test
   Scenario Outline: Switching two-factor off and on again starts from mode selection
     Given there is a user "<user>" for an entity "<entity>"
     And the user has two-factor authentication enabled and configured
@@ -66,6 +70,7 @@ Feature: Two-Factor Authentication Enrollment
       | user | entity              |
       |      | entity_type=Company |
 
+  @rack_test
   Scenario Outline: User enters invalid code during Authenticator enrollment
     Given there is a user "<user>" for an entity "<entity>"
     And the user has two-factor authentication enabled but not configured
@@ -102,7 +107,7 @@ Feature: Two-Factor Authentication Enrollment
       | user | entity              |
       |      | entity_type=Company |
 
-  @stub-whatsapp
+  @stub-whatsapp @rack_test
   Scenario Outline: User enrolls via WhatsApp mode
     Given there is a user "<user>" for an entity "<entity>"
     And the user has two-factor authentication enabled but not configured
@@ -121,6 +126,7 @@ Feature: Two-Factor Authentication Enrollment
       | user | entity              |
       |      | entity_type=Company |
 
+  @rack_test
   Scenario Outline: WhatsApp mode option is not shown when WhatsApp is not enabled
     Given there is a user "<user>" for an entity "<entity>"
     And the user has two-factor authentication enabled but not configured

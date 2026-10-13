@@ -6,10 +6,9 @@ Given("a Bulk Upload is performed for FundRatios with file {string}") do |file_n
   sleep(2)
   fill_in('import_upload_name', with: "Test Upload")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{file_name}"), make_visible: true)
-  sleep(2)
+  wait_for_upload("./public/sample_uploads/#{file_name}") # JS direct-upload to /upload; returns once it lands (was sleep 2)
   click_on("Save")
-  sleep(10)
-  expect(page).to have_content("Import Upload:")
+  expect(page).to have_content("Import Upload:", wait: 15)
   ImportUploadJob.perform_now(ImportUpload.last.id)
   ImportUpload.last.failed_row_count.should
   ImportUpload.last.status.should == "Completed"
@@ -187,8 +186,7 @@ end
 Given('I log in as user {string}') do |first_name|
   @user = User.find_by_first_name(first_name)
   steps %(
-    And I am at the login page
-    When I fill and submit the login page
+    And I am signed in as the current user
   )
 end
 

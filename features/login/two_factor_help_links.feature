@@ -3,6 +3,7 @@ Feature: Authenticator help and download links on the two-factor screens
   bounce them to the login page. The authenticator setup guide is therefore published
   at /help/<guide_id>, and the setup screens link to it alongside app store downloads.
 
+  @rack_test
   Scenario: The authenticator setup guide is readable without signing in
     When I visit the public authenticator setup guide
     Then I should see "What Is an Authenticator App?"
@@ -10,31 +11,37 @@ Feature: Authenticator help and download links on the two-factor screens
     And I should see a download link for "Microsoft Authenticator"
     And I should not be asked to sign in
 
+  @rack_test
   Scenario: The two-factor overview guide is readable without signing in
     When I visit the public two factor guide
     Then I should see "Two-Factor Authentication"
     And I should not be asked to sign in
 
+  @rack_test
   Scenario: Guides outside the published allowlist are not exposed
     When I visit the public guide "capital_calls_user_guide"
     Then I should be redirected to the login page
 
+  @rack_test
   Scenario: An arbitrary file name is refused
     # The allowlist is checked before the file is ever resolved, so a real file
     # outside docs/user_guides is refused for the same reason an unpublished guide is.
     When I visit the public guide "Gemfile"
     Then I should be redirected to the login page
 
+  @rack_test
   Scenario: Path traversal out of the guides directory is refused
     # Percent-encoded so the browser does not normalise the ".." away before the
     # request is sent — the segments have to actually reach the controller.
     When I visit the public guide "..%2F..%2FGemfile"
     Then I should be redirected to the login page
 
+  @rack_test
   Scenario: A .md suffix on a published guide still resolves
     When I visit the public guide "authenticator_app_setup_user_guide.md"
     Then I should see "What Is an Authenticator App?"
 
+  @rack_test
   Scenario Outline: Mode selection offers the guide and reveals downloads for Authenticator
     Given there is a user "<user>" for an entity "<entity>"
     And the user has two-factor authentication enabled but not configured
@@ -65,6 +72,7 @@ Feature: Authenticator help and download links on the two-factor screens
       | user | entity              |
       |      | entity_type=Company |
 
+  @rack_test
   Scenario Outline: Enrollment page carries the downloads and the guide
     Given there is a user "<user>" for an entity "<entity>"
     And the user has two-factor authentication enabled but not configured

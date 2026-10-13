@@ -20,6 +20,7 @@ Feature: Capital call journey — the call page
     And there is a capital call "percentage_called=10"
 
   # H3 — Panel while notices are partly approved
+  @rack_test
   Scenario: The panel shows how many notices await approval and links to them
     Given the call's notices are generated and 1 of them is approved
     When I open the capital call page
@@ -33,6 +34,7 @@ Feature: Capital call journey — the call page
     And the panel action "View notices to approve" should click "capital_call_view_notices_to_approve_btn"
 
   # Mark reviewed through the page (J2.4)
+  @rack_test
   Scenario: Mark reviewed on the page moves the journey on
     Given the call's notices are generated and approved
     When I open the capital call page
@@ -41,6 +43,7 @@ Feature: Capital call journey — the call page
 
   # Review custom notification names the call email that will go out and links to it (new tab), or
   # offers the call's New Call Notification form when there is none; Mark reviewed stays beside it
+  @rack_test
   Scenario: Review custom notification with no custom notification offers to create one
     Given the call's notices are generated and approved
     When I open the capital call page
@@ -48,6 +51,7 @@ Feature: Capital call journey — the call page
     And the panel review action "New Call Notification" should go to "/custom_notifications/new" in this tab
     And I should see the Mark reviewed button in the journey panel
 
+  @rack_test
   Scenario: Review custom notification shows the call's own notification in a new tab
     Given the call's notices are generated and approved
     And there is a custom notification for the capital call with subject "Your capital call" with email_method "notify_capital_remittance"
@@ -56,6 +60,7 @@ Feature: Capital call journey — the call page
     And the panel review action "View notification" should go to the custom notification in a new tab
 
   # Check preview says where the per-remittance preview is and opens the Remittances tab
+  @rack_test
   Scenario: Check preview points at each remittance's Preview Notification
     Given the call's notices are generated and approved
     When I open the capital call page
@@ -97,6 +102,7 @@ Feature: Capital call journey — the call page
     And the call page should still be open in the original window
 
   # E6, E27 — Readiness warnings until notices are sent
+  @rack_test
   Scenario: Readiness warnings show before sending and disappear after
     Given 1 commitment on the call is set to skip doc gen
     And 1 investor on the call has nobody subscribed to Capital Call emails

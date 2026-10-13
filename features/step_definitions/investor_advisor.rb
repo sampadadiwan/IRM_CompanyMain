@@ -16,7 +16,7 @@
     #sleep(2)
     fill_in('import_upload_name', with: "Test Upload")
     attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
-    sleep(2)
+    wait_for_upload("./public/sample_uploads/#{@import_file}") # JS direct-upload to /upload; returns once it lands (was sleep 2)
     click_on("Save")
     expect(page).to have_content("Import Upload:")
     ImportUploadJob.perform_now(ImportUpload.last.id)
@@ -149,13 +149,15 @@ Given('I delete the InvestorAccess of this User on the investors page') do
 
   row = find("#investor_access_#{investor_access.id}")
   # If Actions is not visible, it might be folded by DataTables Responsive
-  unless row.has_link?("Actions", visible: true) || row.has_button?("Actions", visible: true)
+  # :link_or_button checks both in one wait; `has_link? || has_button?` spent the full default wait on
+  # the link before even looking for a button.
+  unless row.has_selector?(:link_or_button, "Actions", visible: true)
     # Click the first cell to expand the row
     row.first('td').click
   end
 
   # Now look for Actions. It might be in the row or in the child row created by DataTables
-  if row.has_link?("Actions", visible: true) || row.has_button?("Actions", visible: true)
+  if row.has_selector?(:link_or_button, "Actions", visible: true)
     within(row) { click_on("Actions") }
   else
     # Look in the next sibling which should be the child row

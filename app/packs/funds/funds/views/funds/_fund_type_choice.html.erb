@@ -1,0 +1,52 @@
+<%# H5 — New Fund's first page: what a closed-ended and an open-ended fund are, one card each. Picking a
+    card selects it (the card's own large radio; the tint and border follow it via CSS :has);
+    Continue starts the form. Only on New Fund for a company with open-ended funds on; Edit Fund never
+    shows it. Each card has its own Bootstrap subtle colour (tone): info for closed-ended, success for open-ended.
+    Worked examples H5, E4 — openspec/changes/evergreen-fund-on-create/design.md#worked-examples %>
+<div class="col-md-8 setup-content" id="step-0">
+  <div class="card">
+    <div class="card-body p-4">
+      <%# Same intro as the evergreen steps (soft icon circle, title, one line), instead of a blue header bar %>
+      <%= eg_step_intro("building-bank", "What kind of fund is this?",
+                        "Choose how investors put money in and take it out. The rest of the form follows from it.") %>
+      <div class="row g-3" id="fund_type_choice">
+        <% fund_type_cards.each do |card| %>
+          <% tone = card[:tone] %>
+          <div class="col-md-6">
+            <label class="card h-100 mb-0 border fund-type-card" data-tone="<%= tone %>" for="fund_type_<%= card[:value] %>" role="button" id="fund_type_card_<%= card[:value] %>">
+              <div class="card-body p-4 d-flex flex-column">
+                <%# Icon circle, title and the ✓ shown once picked %>
+                <div class="d-flex align-items-center gap-3 mb-3">
+                  <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-<%= tone %>-subtle type-icon"
+                        style="width: 3rem; height: 3rem; flex: 0 0 3rem;"><i class="ti ti-<%= card[:icon] %> fs-4 text-<%= tone %>"></i></span>
+                  <div class="flex-grow-1">
+                    <h5 class="mb-0"><%= card[:title] %></h5>
+                    <small class="text-<%= tone %>-emphasis"><%= card[:tagline] %></small>
+                  </div>
+                  <%# The card's own radio, large, top right: empty until picked %>
+                  <%= radio_button_tag :fund_type, card[:value], fund_type == card[:value], class: "form-check-input m-0 align-self-start fund-type-radio", id: "fund_type_#{card[:value]}",
+                                       data: { action: "change->fund-type#toggle", fund_type_target: "radio" } %>
+                </div>
+                <p class="small text-muted mb-3"><%= card[:summary] %></p>
+                <ul class="list-unstyled small mb-3">
+                  <% card[:points].each do |point| %>
+                    <li class="d-flex align-items-start gap-2 mb-2"><i class="ti ti-check text-<%= tone %>"></i><span><%= point %></span></li>
+                  <% end %>
+                </ul>
+                <%# Footer: who typically uses it, and how long setup is %>
+                <div class="mt-auto pt-3 border-top">
+                  <div class="small text-muted mb-2"><i class="ti ti-users me-1"></i><%= card[:typical] %></div>
+                  <span class="badge bg-<%= tone %>-subtle text-<%= tone %>-emphasis fw-normal type-steps"><i class="ti ti-list-numbers me-1"></i><%= card[:steps] %></span>
+                </div>
+              </div>
+            </label>
+          </div>
+        <% end %>
+      </div>
+      <div class="d-flex justify-content-between align-items-center mt-4">
+        <small class="text-muted"><i class="ti ti-info-circle me-1"></i>Chosen once: a fund's type can't be changed after it is created.</small>
+        <button class="btn btn-primary btn-lg nextBtn" type="button" id="fund_type_continue" data-fund-type-target="continue" <%= "disabled" if fund_type.blank? %>>Continue <i class="ti ti-arrow-right"></i></button>
+      </div>
+    </div>
+  </div>
+</div>

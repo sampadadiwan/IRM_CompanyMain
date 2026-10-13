@@ -1,0 +1,20 @@
+<%# Funds-list card for an evergreen fund (spec GP › Card). Worked example H32 %>
+<% figures = EvergreenFundFigures.new(fund) %>
+<% nxt = figures.next_dealing_date %>
+<div class="col-md-4 mb-3" id="fund_card_<%= fund.id %>">
+  <div class="card h-100">
+    <div class="card-body">
+      <div class="d-flex justify-content-between">
+        <h6><%= link_to fund.name, fund_path(fund) %></h6>
+        <span class="badge bg-success-subtle text-success"><%= eg_t(:evergreen, fund:) %></span>
+      </div>
+      <div>NAV <strong><%= evergreen_money(figures.total_nav_cents, fund) %></strong></div>
+      <% figures.navs.each do |ut, nav| %>
+        <div class="small text-muted">Class <%= ut %>: <%= eg_t(:nav_per_unit_short, fund:) %> <%= nav ? evergreen_nav_per_unit(nav.nav_per_unit_cents) : "—" %></div>
+      <% end %>
+      <%# F10: dealt this quarter, counted at Confirm (same figure as the fund page's card) %>
+      <div class="small" title="Subscriptions − redemptions dealt this quarter" data-bs-toggle="tooltip">Net flows QTD <%= evergreen_money(figures.flows_qtd[:net], fund) %></div>
+      <div class="small">Next <%= EvergreenLabels.lower(eg_t(:transaction_date, fund:)) %> <%= nxt ? l(nxt.date) : "—" %></div>
+    </div>
+  </div>
+</div>

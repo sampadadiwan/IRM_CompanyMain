@@ -26,6 +26,7 @@ Feature: Workflow Step Notifications
 
   # ── Default behaviour is unchanged ────────────────────────────────────────────
 
+  @rack_test
   Scenario Outline: A normal step still emails actors when it becomes the active step
     Given there is a workflow template "name=Normal Launch" with 1 step "name=Review;states=Approved,Rejected;quorum_rule=any_one;on_reject_rule=stop;actors=admin"
     And the entity has a folder "name=Normal Folder"

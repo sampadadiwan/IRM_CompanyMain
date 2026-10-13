@@ -11,6 +11,7 @@ Feature: Journey ticks and reminders
     And the entity has an investor_kyc "name=Asha"
 
   # H9 — Owner reminder
+  @rack_test
   Scenario: The owner of a stalled system step is reminded
     Given there is a journey template "KYC Journey" with steps:
       | name      | kind   | check       | owner | reminder_days |
@@ -26,6 +27,7 @@ Feature: Journey ticks and reminders
     Then no owner reminder should have been sent
 
   # H15 — Late detection still timed from the data
+  @rack_test
   Scenario: A step completed while nobody looked is stamped with the real time
     Given there is a journey template "KYC Journey" with steps:
       | name      | kind   | check       | owner | reminder_days |
@@ -42,6 +44,7 @@ Feature: Journey ticks and reminders
     Then the user should receive an owner reminder for "Final"
 
   # H16 — The tick tells an approver without anyone viewing
+  @rack_test
   Scenario: A human step reached by the tick emails its approvers
     Given there is a journey template "KYC Journey" with steps:
       | name         | kind   | check       | actors |
@@ -56,6 +59,7 @@ Feature: Journey ticks and reminders
     And a step-activation email should have been sent
 
   # H17 — The tick leaves approval workflows alone
+  @rack_test
   Scenario: The tick never touches a human-only workflow
     Given there is a workflow template "name=KYC Review" with 1 step "name=Review;states=Approved,Rejected;quorum_rule=any_one;on_reject_rule=stop;actors=admin"
     And the investor_kyc "Asha" has workflow template "KYC Review"
@@ -89,6 +93,7 @@ Feature: Journey ticks and reminders
     Then no owner reminder should have been sent
 
   # E8 at engine level — the reset email reaches the approver (WorkflowMailer#sign_off_reset)
+  @rack_test
   Scenario: An approver whose sign-off is reset by an undo is emailed
     Given there is a journey template "KYC Journey" with steps:
       | name         | kind   | check       | actors |
@@ -109,6 +114,7 @@ Feature: Journey ticks and reminders
 
   # The person whose own click moved the journey on is already on the page, so the next step's
   # review / sign-off email skips them (WorkflowEvaluator#notify passes the actor through)
+  @rack_test
   Scenario: The owner is emailed as soon as an acknowledge step needs review, unless they moved it there
     Given there is a journey template "KYC Journey" with steps:
       | name          | kind        | check       | owner | actors |
@@ -131,6 +137,7 @@ Feature: Journey ticks and reminders
     Then the journey current step should be "CFO sign-off"
     And no workflow email starting "Action Required" should have been sent
 
+  @rack_test
   Scenario: A review step set not to notify on activation sends no review email
     Given there is a journey template "KYC Journey" with steps:
       | name      | kind        | check       | owner | notify |
@@ -144,6 +151,7 @@ Feature: Journey ticks and reminders
     Then the journey current step should be "Review"
     And no workflow email starting "Needs your review" should have been sent
 
+  @rack_test
   Scenario: A journey that lands on a review step at launch emails nobody
     Given there is a journey template "KYC Journey" with steps:
       | name      | kind        | check       | owner |
@@ -156,6 +164,7 @@ Feature: Journey ticks and reminders
     Then the journey current step should be "Review"
     And no workflow email starting "Needs your review" should have been sent
 
+  @rack_test
   Scenario: The owner of the last step is told when the journey completes
     Given there is a journey template "KYC Journey" with steps:
       | name      | kind   | check       | owner |
@@ -169,6 +178,7 @@ Feature: Journey ticks and reminders
     And the user should receive a workflow email starting "Complete: KYC Journey"
     And the user should have a workflow notification for "journey_complete"
 
+  @rack_test
   Scenario: A journey already finished when it is launched sends no completion email
     Given there is a journey template "KYC Journey" with steps:
       | name      | kind   | check       | owner |
@@ -180,6 +190,7 @@ Feature: Journey ticks and reminders
     Then the journey should be complete
     And no workflow email starting "Complete:" should have been sent
 
+  @rack_test
   Scenario: With Send email off, an approver reached by the tick is not emailed
     Given there is a journey template "KYC Journey" with steps:
       | name         | kind   | check       | actors |
@@ -209,6 +220,7 @@ Feature: Journey ticks and reminders
 
   # The WhatsApp send is hard-off in test (a real WATI call), so these run the employee WhatsApp
   # delivery directly with the sender captured — they prove who would be messaged, not WATI itself
+  @rack_test
   Scenario: With Send WhatsApp on, the owner also gets the review on WhatsApp
     Given there is a journey template "KYC Journey" with steps:
       | name      | kind        | check       | owner |

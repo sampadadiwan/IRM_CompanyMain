@@ -1,3 +1,4 @@
+@rack_test
 Feature: Investor notices scoped to the selected GP
   As an LP investor with approved access to multiple GP entities
   I want the dashboard notices carousel to only show notices from the GP

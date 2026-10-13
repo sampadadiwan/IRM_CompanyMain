@@ -1,0 +1,8 @@
+wb = xlsx_package.workbook
+wb.add_worksheet(name: "#{eg_t(:Unit)} register") do |sheet|
+  sheet.add_row ["Investor", eg_t(:capital_commitment), "Class", eg_t(:Units), "Value", "Cost", "Gain %", "Locked until", "Queued #{eg_t(:units)}"]
+  @register.each do |r|
+    sheet.add_row [r.folio.investor.investor_name, r.folio.folio_id, r.unit_type, r.units.to_f, r.value_cents && (r.value_cents / 100).to_f,
+                   (r.cost_cents / 100).to_f, r.gain_pct&.to_f, r.locked_until, r.queued_units.to_f]
+  end
+end

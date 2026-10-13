@@ -8,6 +8,8 @@ class CapitalRemittance < ApplicationRecord
   end
   include Trackable.new
   include ForInvestor
+  # Evergreen dealing dates: allot / cancel units after commit (guarded; open-ended-funds B5)
+  include EvergreenSettlementHooks
   include WithFolder
   include WithCustomField
   include WithExchangeRate

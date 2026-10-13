@@ -18,7 +18,9 @@ When('I create a new investor {string}') do |arg1|
 
   if Entity.vcs.any?
     fill_in('investor_investor_name', with: @investor_entity.name)
-    find('ui-menu-item-wrapper', text: @investor_entity.name).click if page.has_css?(".ui-menu-item-wrapper")
+    # No autocomplete pick here: @investor_entity is new (FactoryBot.build), so there is no existing
+    # entity to choose. The old `find('ui-menu-item-wrapper', ...) if has_css?` (selector missing its
+    # dot) never clicked - it only spent the full default wait for a menu that doesn't appear.
   end
   fill_in('investor_investor_name', with: @investor_entity.name)
   fill_in('investor_primary_email', with: @investor_entity.primary_email)
@@ -208,7 +210,7 @@ Given('Given I upload an investor access file for employees') do
 
   fill_in('import_upload_name', with: "Test Investor Access Upload")
   attach_file('files[]', File.absolute_path('./public/sample_uploads/investor_access.xlsx'), make_visible: true)
-  sleep(8) # JS direct-upload to /upload endpoint; larger window for parallel load
+  wait_for_upload('./public/sample_uploads/investor_access.xlsx') # JS direct-upload to /upload; returns once it lands (was sleep 8)
   click_on("Save")
   expect(page).to have_content("Import Upload:", wait: 15)
   ImportUploadJob.perform_now(ImportUpload.last.id)
@@ -272,7 +274,7 @@ Given('Given I upload an investors file large for the fund') do
   # sleep(3)
   fill_in('import_upload_name', with: "Test Investor Upload")
   attach_file('files[]', File.absolute_path('./public/sample_uploads/investors-large.xlsx'), make_visible: true)
-  sleep(2)
+  wait_for_upload('./public/sample_uploads/investors-large.xlsx') # JS direct-upload to /upload; returns once it lands (was sleep 2)
   click_on("Save")
   # sleep(5)
   expect(page).to have_content("Import Upload:")
@@ -288,7 +290,7 @@ Given('Given I upload an investors file for the company') do
   # sleep(1)
   fill_in('import_upload_name', with: "Test Investor Upload")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
-  sleep(2)
+  wait_for_upload("./public/sample_uploads/#{@import_file}") # JS direct-upload to /upload; returns once it lands (was sleep 2)
   click_on("Save")
   expect(page).to have_content("Import Upload:")
   # sleep(2)
@@ -366,7 +368,7 @@ Given('Given I upload investors file {string} for the fund') do |file_name|
   # sleep(1)
   fill_in('import_upload_name', with: "Investor Upload")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{file_name}"), make_visible: true)
-  sleep(2)
+  wait_for_upload("./public/sample_uploads/#{file_name}") # JS direct-upload to /upload; returns once it lands (was sleep 2)
   click_on("Save")
   expect(page).to have_content("Import Upload:")
   # sleep(2)
@@ -790,7 +792,7 @@ Given('the fund has a template {string} of type {string}') do |name, owner_tag|
   select(owner_tag, from: "document_owner_tag")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{name}.docx"), make_visible: true)
   page.execute_script('window.scrollTo(0, document.body.scrollHeight);')
-  sleep(10) # JS direct-upload to /upload endpoint; larger window for parallel load
+  wait_for_upload("./public/sample_uploads/#{name}.docx") # JS direct-upload to /upload; returns once it lands (was sleep 10)
   check("document_template")
   click_on("Save")
   expect(page).to have_content("successfully")
@@ -947,26 +949,33 @@ Given('we Generate All Documents for the first capital commitment') do
 end
 
 Then('we get the email with error {string}') do |error|
-  sleep(1)
   @user = User.first
-  current_email = nil
-  emails_sent_to(@user.email).each do |email|
-    puts "#{email.subject} #{email.to} #{email.cc} #{email.bcc}"
-    current_email = email if email.subject.downcase.include?("errors")
+  # The error email is sent by the generation job, which can still be running when this step
+  # starts: retry until it arrives (was a fixed sleep(1), which lost the race once the steps
+  # before it stopped sleeping).
+  eventually(timeout: 20) do
+    current_email = nil
+    emails_sent_to(@user.email).each do |email|
+      puts "#{email.subject} #{email.to} #{email.cc} #{email.bcc}"
+      current_email = email if email.subject.downcase.include?("errors")
+    end
+    expect(current_email).not_to be_nil, "No email found for #{@user.email} with subject 'Errors'"
+    expect(current_email.body).to include error
   end
-  puts "No email found for #{@user.email} with subject 'Errors'" if current_email.nil?
-  expect(current_email.body).to include error
 end
 
 Then('we get the email with error {string} and subject {string}') do |error, subject|
-  sleep(1)
   @user = User.first
-  current_email = nil
-  emails_sent_to(@user.email).each do |email|
-    puts "#{email.subject} #{email.to} #{email.cc} #{email.bcc}"
-    current_email = email if email.subject.include?(subject)
+  # Retry until the generation job has sent it (same race as the step above).
+  eventually(timeout: 20) do
+    current_email = nil
+    emails_sent_to(@user.email).each do |email|
+      puts "#{email.subject} #{email.to} #{email.cc} #{email.bcc}"
+      current_email = email if email.subject.include?(subject)
+    end
+    expect(current_email).not_to be_nil, "No email found for #{@user.email} with subject '#{subject}'"
+    expect(current_email.body).to include error
   end
-  expect(current_email.body).to include error
 end
 
 Then('we get the email with approved document exists error') do

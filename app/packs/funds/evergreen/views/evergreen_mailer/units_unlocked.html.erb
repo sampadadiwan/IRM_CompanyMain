@@ -1,0 +1,9 @@
+<%# open-ended-funds § Notifications: a lock-up ended today %>
+<% if @custom_notification %>
+  <%= render "/custom_notifications/mail" do %><%= render "evergreen_mailer/custom_extras" %><% end %>
+<% else %>
+  <p>Dear <%= @user&.first_name %>,</p>
+  <p>The lock-up has ended for <strong><%= number_with_precision(@unlocked_units, precision: 4, delimiter: ",") %> <%= eg_t(:units) %></strong> in <%= EvergreenLabels.lower(eg_t(:capital_commitment)) %> <%= @folio.folio_id %> of <%= @fund.name %>.
+    They can now be redeemed on the fund's <%= EvergreenLabels.lower(eg_t(:redemption_date)).pluralize %> without <%= eg_t(:early_fee, lower: true, article: true) %>.</p>
+  <%= render "evergreen_mailer/request_link" %>
+<% end %>

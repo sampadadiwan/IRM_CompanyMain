@@ -168,6 +168,19 @@ Feature: Validation Rule Engine
     When the validation rules are evaluated for an AllocationRun with "end_date=2026-06-30;start_date=2026-04-01"
     Then the rule "allocation_run_fx_rates_exist" does not fire
 
+  # A param left blank on an entity's override means "use the rule's default" (n_days 5 here), not a
+  # 0-day window that demands a rate on the end date itself
+  Scenario: A blank day count on an entity override falls back to the rule's default window
+    Given there is an existing portfolio company ""
+    And there is a fund "name=RuleTestFund;currency=INR" for the entity
+    And there is an investment instrument for the portfolio company "name=USStock;category=Unlisted;sub_category=Equity;sector=Tech;currency=USD"
+    And there is a portfolio investment for the fund
+    And there is an exchange rate "from=USD;to=INR;as_of=2026-06-28" for the entity
+    And the entity has opted in to all validation rules
+    And there is a validation rule override for "allocation_run_fx_rates_exist" with "severity_override=blocker;param_overrides=n_days:"
+    When the validation rules are evaluated for an AllocationRun with "end_date=2026-06-30;start_date=2026-04-01"
+    Then the rule "allocation_run_fx_rates_exist" does not fire
+
   Scenario: FX rates rule warns when tracking currency rate is missing
     Given there is a fund "name=RuleTestFund;currency=INR;tracking_currency=USD" for the entity
     And the entity has opted in to all validation rules

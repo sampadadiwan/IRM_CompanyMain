@@ -29,6 +29,9 @@ class CapitalDistributionsController < ApplicationController
   # Worked examples H3 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples
   # UI journey J2.1 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#what-users-see
   def show
+    # Evergreen settlement records open on the evergreen settlement page (open-ended-funds B3)
+    return redirect_to(evergreen_settlement_path(@capital_distribution.fund_id, @capital_distribution.id, kind: "redemption")) if request.format.html? && @capital_distribution.fund.evergreen? && DealingDate.exists?(redemption_distribution_id: @capital_distribution.id)
+
     @journey = evaluate_journey(@capital_distribution)
   end
 

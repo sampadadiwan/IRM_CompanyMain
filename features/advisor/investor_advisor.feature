@@ -141,7 +141,7 @@ Scenario Outline: Create new investor advisor for capital commitment
 # ── Security Scenarios ────────────────────────────────────────────────────────
 # These scenarios directly test that each security fix is effective.
 
-@security
+@security @rack_test
 Scenario: SEC-1 Allowed roles whitelist — model rejects platform-level role at save
   # Finding 2: allowed_roles must block system-wide roles that no entity admin
   # has authority to bestow. :super is the key example — it transcends entities.
@@ -152,7 +152,7 @@ Scenario: SEC-1 Allowed roles whitelist — model rejects platform-level role at
   When I try to build an investor advisor with allowed_roles including "super"
   Then the investor advisor should fail validation with "contains invalid role"
 
-@security @import
+@security @import @rack_test
 Scenario: SEC-2 Allowed roles whitelist — import raises error for platform-level role in spreadsheet
   # Finding 2 (import path): the import service must reject rows whose
   # Allowed Roles column contains roles outside ALLOWED_ADVISOR_ROLES.
@@ -167,7 +167,7 @@ Scenario: SEC-2 Allowed roles whitelist — import raises error for platform-lev
   When I process an investor advisor import row with allowed_roles "super"
   Then the import row should raise an invalid roles error
 
-@security
+@security @rack_test
 Scenario: SEC-3 Allowed roles whitelist — all entity-level roles are accepted
   # Finding 2 (positive case): employee, investor, company_admin, rm, and
   # approver must all pass validation because entity admins legitimately grant these.
@@ -186,7 +186,7 @@ Scenario: SEC-3 Allowed roles whitelist — all entity-level roles are accepted
   When I try to build an investor advisor with allowed_roles including "rm"
   Then the investor advisor should pass allowed_roles validation
 
-@security
+@security @rack_test
 Scenario: SEC-4 IDOR blocked — user from unrelated entity cannot create advisor for another entity's investor
   # Finding 1: create_for_investor? must check user entity, not just ID equality.
   # A user from RogueCo should never pass the policy for ManagingCo's investor.
@@ -197,7 +197,7 @@ Scenario: SEC-4 IDOR blocked — user from unrelated entity cannot create adviso
   When I check create_for_investor policy against the other entity's investor
   Then the policy should deny create_for_investor access
 
-@security
+@security @rack_test
 Scenario: SEC-5 IDOR blocked — user from the owning entity is allowed through create_for_investor
   # Finding 1 (positive case): an admin of the managing entity must still be
   # able to add advisors through this path.
@@ -208,7 +208,7 @@ Scenario: SEC-5 IDOR blocked — user from the owning entity is allowed through 
   When I check create_for_investor policy for this entity's own investor
   Then the policy should allow create_for_investor access
 
-@security
+@security @rack_test
 Scenario: SEC-6 Feature flag enforced — entity without enable_investor_advisors cannot create advisors
   # Finding 4: create? must check enable_investor_advisors, not just entity membership.
   # Disabling the flag must block writes, not just hide the index page.
@@ -219,7 +219,7 @@ Scenario: SEC-6 Feature flag enforced — entity without enable_investor_advisor
   When I check the create investor advisor policy
   Then the policy should deny create access
 
-@security
+@security @rack_test
 Scenario: SEC-7 Feature flag enforced — entity with enable_investor_advisors can create advisors
   # Finding 4 (positive case): the flag being on must still allow the existing flow.
   Given Im logged in as a user "first_name=Fund Manager" for an entity "name=EnabledFund;entity_type=Investment Fund"
@@ -229,7 +229,7 @@ Scenario: SEC-7 Feature flag enforced — entity with enable_investor_advisors c
   When I check the create investor advisor policy
   Then the policy should allow create access
 
-@security
+@security @rack_test
 Scenario: SEC-8 Revert endpoint — non-advisor user is denied
   # Finding 3: the revert path of switch must check investor_advisor? before running.
   # A regular investor user must receive Pundit::NotAuthorizedError.
@@ -238,7 +238,7 @@ Scenario: SEC-8 Revert endpoint — non-advisor user is denied
   Then the user is not in advisor context
   And attempting the advisor revert switch should be denied
 
-@security
+@security @rack_test
 Scenario: SEC-9 Revert endpoint — switched advisor can revert normally
   # Finding 3 (positive case): a user who is genuinely in advisor context must
   # be able to revert without error.
@@ -259,7 +259,7 @@ Scenario: SEC-10 GET request does not trigger entity switch
   When I visit a page with the investor_advisor_id parameter as a GET request
   Then my active entity should not have changed
 
-@security
+@security @rack_test
 Scenario: SEC-11 Invalid fund_id in new_for_investor redirects gracefully without 500
   # Finding 7: a missing @fund must redirect, not crash with NoMethodError.
   # The response must be a redirect, not an error, regardless of fund_id value.
@@ -302,7 +302,7 @@ Scenario: SEC-13 Mass assignment blocked — user_id is ignored in strong params
   And there is an existing investor advisor user
   Then user_id is not accepted as a permitted parameter for investor advisor creation
 
-@security
+@security @rack_test
 Scenario: SEC-14 Permissions and extended_permissions are accepted from the UI
   # User requirement: entity admins must be able to set permissions and
   # extended_permissions from the form. These are intentionally permitted.
@@ -311,7 +311,7 @@ Scenario: SEC-14 Permissions and extended_permissions are accepted from the UI
   And the entity has the investor advisors feature enabled
   Then permissions and extended_permissions are accepted as permitted parameters
 
-@security
+@security @rack_test
 Scenario: SEC-15 Only company admins can create or update investor advisors
   # Policy change: create? now requires company_admin. A regular employee of
   # the same entity must be denied even with the feature flag on.
@@ -334,7 +334,7 @@ Scenario: SEC-16 company_admin role in allowed_roles — blocked for non-company
   When a non-company-admin tries to build an investor advisor with allowed_roles "company_admin"
   Then the investor advisor should fail validation with "cannot include 'company_admin'"
 
-@security
+@security @rack_test
 Scenario: SEC-17 company_admin role in allowed_roles — allowed for company_admin granter
   # Positive case: a company admin may legitimately grant company_admin to an
   # advisor so they have full admin access when operating in that entity.

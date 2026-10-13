@@ -11,10 +11,12 @@ Feature: User guide drift guard
     When the user guides are linted
     Then no user guide should show a raw app path in backticks
 
+  @rack_test
   Scenario: Every guide-to-guide link points at an existing guide
     When the user guides are linted
     Then every relative link in the user guides should point to an existing guide
 
+  @rack_test
   Scenario: Every FAQ question is directly followed by its answer so it renders as an accordion entry
     When the user guides are linted
     Then every FAQ question in the user guides should be directly followed by its answer
@@ -23,6 +25,7 @@ Feature: User guide drift guard
     When the user guides are linted
     Then no FAQ answer in the user guides should exceed 5 lines
 
+  @rack_test
   Scenario: Every FAQ entry renders as an accordion item on the in-app guide page
     When the user guides are linted
     Then every FAQ entry in the user guides should render as an accordion item

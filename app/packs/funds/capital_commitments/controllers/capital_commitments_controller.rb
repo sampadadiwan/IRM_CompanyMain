@@ -99,6 +99,9 @@ class CapitalCommitmentsController < ApplicationController
 
   # GET /capital_commitments/1 or /capital_commitments/1.json
   def show
+    # Evergreen folios open on the evergreen folio page (open-ended-funds B2)
+    return redirect_to(evergreen_folio_path(@capital_commitment.fund_id, @capital_commitment)) if request.format.html? && @capital_commitment.fund.evergreen?
+
     respond_to do |format|
       format.html
       format.json

@@ -1,3 +1,4 @@
+@rack_test
 Feature: NDA Configuration (Module 1)
   As a GP I want to configure NDA settings on Data Room folders so that LPs
   must accept an NDA before they can view the folder's contents.

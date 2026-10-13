@@ -198,13 +198,17 @@ if ENV['TEST_ENV_NUMBER'].present?
   log_path = Rails.root.join("log/test_#{ENV['TEST_ENV_NUMBER']}.log")
   Rails.logger = ActiveSupport::Logger.new(log_path)
   Rails.logger.formatter = config.log_formatter if defined?(config) && config.respond_to?(:log_formatter)
+  # A new Logger starts at DEBUG, which silently discarded config.log_level (config/environments/test.rb:
+  # warn unless LOG_LEVEL/LOGS say otherwise) - every pcuc worker logged every SQL statement and asset
+  # request, ~300-400 MB per worker per full run. Re-apply the configured level to the new logger.
+  Rails.logger.level = Rails.application.config.log_level
   ActiveRecord::Base.logger = Rails.logger
 end
 
 # LOGS=<level> (debug/info/warn/error/fatal) overrides the log level for this run, e.g.
-# `LOGS=info` to cut the per-statement SQL debug output on full-suite runs. Unset keeps the
-# current behavior. Applied after the per-worker logger swap above, because that swap builds a
-# fresh logger at DEBUG and would otherwise discard any level set in config/environments/test.rb.
+# `LOGS=debug` to get per-statement SQL output back for one run. Unset, the level is
+# config.log_level (warn by default - see config/environments/test.rb), which the swap above now
+# re-applies. Kept after the swap so it also covers a run without TEST_ENV_NUMBER.
 if ENV['LOGS'].present?
   # Fail loudly on a typo (e.g. LOGS=inf) rather than silently logging at the old level
   logs_level = ENV['LOGS'].downcase
@@ -241,8 +245,14 @@ Capybara.register_driver(:playwright) do |app|
                                    default_navigation_timeout: 60)
 end
 
-Capybara.default_max_wait_time = 15
-Capybara.default_driver = :playwright
+# CAPYBARA_WAIT shortens this for a whole run - useful with CAPYBARA_DRIVER=rack_test, where a page
+# is complete the moment it is returned, so waiting only delays a failure.
+Capybara.default_max_wait_time = ENV.fetch("CAPYBARA_WAIT", "15").to_f
+# Every scenario drives Playwright unless it says otherwise: a feature or scenario tagged
+# @rack_test runs in-process with no browser (capybara/cucumber switches driver by tag name), and
+# @javascript always gets Playwright. CAPYBARA_DRIVER=rack_test flips the default for one run -
+# the way to find which untagged features pass without a browser before tagging them @rack_test.
+Capybara.default_driver = ENV.fetch("CAPYBARA_DRIVER", "playwright").to_sym
 Capybara.javascript_driver = :playwright
 Capybara.save_path = 'tmp/capybara'
 

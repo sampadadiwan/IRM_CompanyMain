@@ -1,3 +1,4 @@
+@rack_test
 Feature: KPI Cumulate Multi-Year Functionality
 
   Scenario: Correctly cumulates monthly KPIs into Quarterly, YTD, and Year reports across multiple years

@@ -19,7 +19,8 @@ module ValidationRuleOverridesHelper
 
     parts = []
     parts << content_tag(:div, safe_join(["Severity: ", render_severity_badge(override.severity_override)]), class: "mb-1") if override.severity_override.present?
-    override.param_overrides&.each do |k, v|
+    # Blank values aren't overrides — they fall back to the rule's default
+    override.effective_param_overrides.each do |k, v|
       parts << content_tag(:div, safe_join([content_tag(:code, k), ": ", content_tag(:strong, v.to_s)]))
     end
     parts << content_tag(:div, "Custom message set", class: "text-muted", style: "font-size:0.8rem") if override.message_override.present?

@@ -1,3 +1,4 @@
+@rack_test
 Feature: Secondary Sale
   Can view a sale as an Advisor
 

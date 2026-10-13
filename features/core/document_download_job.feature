@@ -1,3 +1,4 @@
+@rack_test
 Feature: Document Download Job
   As a user
   I want to download a folder with nested structure as a ZIP file

@@ -1,0 +1,395 @@
+<%# The evergreen wizard steps (preset … review), shared by Evergreen Settings (offset 0) and by
+    New Fund for an open-ended fund (offset 2, after the fund's own two steps).
+    Locals: form (builder for evergreen_fund_setting), setting, fund, offset, submit_label, submit_id, submit_icon,
+    and optional read_only (no save button — review fix 9).
+    Worked examples H1, E2, E6 — openspec/changes/evergreen-fund-on-create/design.md#worked-examples %>
+          <%# ---- 1. Preset ---- %>
+          <div class="setup-content" id="step-<%= 1 + offset %>">
+            <%= eg_step_intro("building-bank", "Preset", "Start from a typical setup for your kind of fund. It only fills in the next steps — nothing is saved until you click #{submit_label} on the last step, and every value stays editable.", step: 1 + offset, total: 9 + offset) %>
+            <%# Typical setups as selectable cards: choosing one fills the next steps in place (nothing is
+                saved), and the chosen card is highlighted — evergreen-settings#applyPreset (H1; open-ended-funds H2) %>
+            <div class="row g-3" id="evergreen_presets">
+              <% EvergreenPresets.options.each do |label, key| %>
+                <% chosen = setting.preset == key %>
+                <div class="col-md-6">
+                  <label class="card h-100 mb-0 border <%= chosen ? 'border-info' : '' %>" id="preset_summary_<%= key %>" role="button" for="evergreen_preset_<%= key %>">
+                    <div class="card-body">
+                      <div class="d-flex align-items-start gap-2 mb-2">
+                        <%= radio_button_tag "evergreen_preset", key, chosen, id: "evergreen_preset_#{key}", class: "form-check-input mt-1",
+                                             data: { action: "change->evergreen-settings#applyPreset" } %>
+                        <div>
+                          <div class="fw-semibold"><i class="ti ti-<%= eg_preset_icon(key) %> me-1 text-info"></i><%= label %><span class="preset-mark text-info"><%= " ✓" if chosen %></span></div>
+                        </div>
+                      </div>
+                      <ul class="small text-muted mb-0 ps-4">
+                        <% eg_preset_points(EvergreenPresets.values(key)).each do |point| %>
+                          <li><%= point %></li>
+                        <% end %>
+                      </ul>
+                    </div>
+                  </label>
+                </div>
+              <% end %>
+            </div>
+            <%# What choosing a setup does, step by step — so people know before they pick %>
+            <div class="card border mt-3" id="preset_effects">
+              <div class="px-3 py-2 border-bottom">
+                <h6 class="mb-0 fw-semibold"><i class="ti ti-wand me-2 text-info"></i>What choosing a setup does</h6>
+              </div>
+              <div class="table-responsive">
+                <table class="table table-sm small align-middle mb-0">
+                  <thead>
+                    <tr class="text-muted">
+                      <th class="fw-semibold ps-3" style="width: 22%;">Step</th>
+                      <th class="fw-semibold"><i class="ti ti-wand text-info me-1"></i>Set by the setup</th>
+                      <th class="fw-semibold"><i class="ti ti-lock text-secondary me-1"></i>Kept as you set it</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% eg_preset_effects(fund).each do |icon, step_title, sets, keeps| %>
+                      <tr>
+                        <td class="ps-3 text-nowrap"><i class="ti ti-<%= icon %> me-1 text-info"></i><%= step_title %></td>
+                        <td><%= sets || tag.span("—", class: "text-muted") %></td>
+                        <td class="text-muted"><%= keeps || "—" %></td>
+                      </tr>
+                    <% end %>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="d-flex align-items-start gap-2 small text-muted mt-3 p-2 px-3 rounded bg-light border" id="preset_notes">
+              <i class="ti ti-info-circle text-info mt-1"></i>
+              <div>
+                Every value stays editable, and skipping this keeps the current values. Each field a setup fills shows
+                <span class="text-info"><i class="ti ti-wand"></i> Filled from the preset</span> under it.
+                Fields marked <span class="text-danger">*</span> are required — most come filled in; <strong>each class's starting price</strong> is entered on the Classes step.
+              </div>
+            </div>
+            <div class="mt-4 d-flex <%= offset.positive? ? 'justify-content-between' : 'justify-content-end' %>">
+              <% if offset.positive? %><button class="btn btn-outline-secondary prevBtn" type="button"><i class="ti ti-arrow-left"></i> Back</button><% end %>
+              <button class="btn btn-primary nextBtn" type="button">Next <i class="ti ti-arrow-right"></i></button>
+            </div>
+          </div>
+
+          <%# ---- 2. Dealing calendar ---- %>
+          <div class="setup-content" id="step-<%= 2 + offset %>">
+            <%= eg_step_intro("calendar", eg_calendar_title(fund), "When investors can come in and go out. On each #{EvergreenLabels.lower(eg_t(:transaction_date, fund:))}, orders are priced at the approved #{eg_t(:nav_per_unit, fund:)} and #{eg_t(:units, fund:)} are issued or cancelled.", step: 2 + offset, total: 9 + offset) %>
+            <div class="row">
+              <div class="col-md-4 form-group">
+                <%= eg_label(form, :subscription_calendar, "Subscriptions", "How often investors can subscribe. #{eg_t(:transaction_date, fund:).pluralize} are generated from this calendar.", icon: "login", required: true) %>
+                <%= form.select :subscription_calendar, EvergreenFundSetting::CALENDARS.map { |c| [c.humanize, c] }, {}, class: "form-select" %>
+              </div>
+              <div class="col-md-4 form-group">
+                <%= eg_label(form, :redemption_calendar, "Redemptions", "How often investors can redeem. Often less frequent than subscriptions, e.g. monthly in, quarterly out.", icon: "logout", required: true) %>
+                <%= form.select :redemption_calendar, EvergreenFundSetting::CALENDARS.map { |c| [c.humanize, c] }, {}, class: "form-select" %>
+              </div>
+              <div class="col-md-4 form-group">
+                <%= eg_label(form, :dealing_day, eg_dealing_day_label(fund), "Where in each period the #{EvergreenLabels.lower(eg_t(:transaction_date, fund:))} falls. A date on a weekend moves to the next business day, or to the previous one for Last business day. Public holidays are not skipped; use custom dates to avoid them.", icon: "calendar-event", required: true) %>
+                <%= form.select :dealing_day, [["First business day", "first"], ["Last business day", "last"], ["A set day of the month", "day_n"]], {}, class: "form-select" %>
+              </div>
+              <div class="col-md-4 form-group" data-evergreen-settings-target="conditional" data-show-field="dealing_day" data-show-values="day_n">
+                <%= eg_label(form, :dealing_day_n, "Day of the month", "For example 15 deals on the 15th of each dealing month.", required: true) %>
+                <%= eg_number(form, :dealing_day_n, "1–28", data: { eg_required: true }) %>
+              </div>
+              <div class="col-md-6 form-group" data-evergreen-settings-target="conditional" data-show-field="subscription_calendar" data-show-values="custom">
+                <%= eg_label(form, :subscription_dates_text, "Subscription dates", "Comma-separated dates (YYYY-MM-DD) used when the calendar is Custom.", required: true) %>
+                <%= form.text_area :subscription_dates_text, value: Array(setting.subscription_dates).join(", "), class: "form-control", rows: 1, placeholder: "2027-03-31, 2027-09-30", data: { eg_required: true } %>
+              </div>
+              <div class="col-md-6 form-group" data-evergreen-settings-target="conditional" data-show-field="redemption_calendar" data-show-values="custom">
+                <%= eg_label(form, :redemption_dates_text, "Redemption dates", "Comma-separated dates (YYYY-MM-DD) used when the calendar is Custom.", required: true) %>
+                <%= form.text_area :redemption_dates_text, value: Array(setting.redemption_dates).join(", "), class: "form-control", rows: 1, placeholder: "2027-03-31, 2027-09-30", data: { eg_required: true } %>
+              </div>
+            </div>
+            <div class="mt-4 d-flex justify-content-between">
+              <button class="btn btn-outline-secondary prevBtn" type="button"><i class="ti ti-arrow-left"></i> Back</button>
+              <button class="btn btn-primary nextBtn" type="button">Next <i class="ti ti-arrow-right"></i></button>
+            </div>
+          </div>
+
+          <%# ---- 3. Subscriptions ---- %>
+          <div class="setup-content" id="step-<%= 3 + offset %>">
+            <%= eg_step_intro("cash", "Subscriptions", "When subscribers pay, the smallest amounts accepted, and what happens to orders that are not paid or not ready in time.", step: 3 + offset, total: 9 + offset) %>
+            <div class="row">
+              <div class="col-md-4 form-group">
+                <%= eg_label(form, :payment_timing, "Payment timing", "Before dealing: money must arrive by the cut-off and #{eg_t(:units, fund:)} are allotted when the #{EvergreenLabels.lower(eg_t(:subscription_date, fund:))} is confirmed. After dealing: #{eg_t(:units, fund:)} are priced on the #{EvergreenLabels.lower(eg_t(:subscription_date, fund:))} and allotted once the money is recorded.", icon: "clock-dollar", required: true) %>
+                <%= form.select :payment_timing, [["Before dealing (by the cut-off)", "before"], ["After dealing", "after"]], {}, class: "form-select" %>
+              </div>
+              <div class="col-md-4 form-group">
+                <%= eg_label(form, :subscription_cutoff_days, "Cut-off", "The last day to place a subscription for a #{EvergreenLabels.lower(eg_t(:subscription_date, fund:))}. With 5 days, the cut-off for 1 Jan is 27 Dec; later orders go to the following #{EvergreenLabels.lower(eg_t(:subscription_date, fund:))}.", icon: "hourglass", required: true) %>
+                <%= eg_number(form, :subscription_cutoff_days, "days before", data: { eg_required: true }) %>
+              </div>
+              <div class="col-md-4 form-group" data-evergreen-settings-target="conditional" data-show-field="payment_timing" data-show-values="after">
+                <%= eg_label(form, :pay_after_days, "Days to pay", "Calendar days after the #{EvergreenLabels.lower(eg_t(:subscription_date, fund:))} by which the subscriber must pay. The payment instructions email gives this date.", icon: "calendar-due", required: true) %>
+                <%= eg_number(form, :pay_after_days, "days", data: { eg_required: true }) %>
+              </div>
+              <div class="col-md-4 form-group">
+                <%= eg_label(form, :unready_handling, "Not paid or not ready by the cut-off", "Roll moves the order to the next #{EvergreenLabels.lower(eg_t(:transaction_date, fund:))} (it keeps its queue place); Cancel cancels it and tells the investor.", icon: "arrow-forward", required: true) %>
+                <%= form.select :unready_handling, [["Roll to the next #{EvergreenLabels.lower(eg_t(:transaction_date, fund:))}", "roll"], ["Cancel the order", "cancel"]], {}, class: "form-select" %>
+              </div>
+              <div class="col-md-4 form-group">
+                <%= eg_label(form, :min_initial_subscription, "Minimum first subscription", "Smallest amount for an investor's first subscription in a class. 0 means no minimum.") %>
+                <%= eg_number(form, :min_initial_subscription, fund.currency, prefix: true, step: :any) %>
+              </div>
+              <div class="col-md-4 form-group">
+                <%= eg_label(form, :min_additional_subscription, "Minimum top-up", "Smallest amount when an investor already holds the class. 0 means no minimum.") %>
+                <%= eg_number(form, :min_additional_subscription, fund.currency, prefix: true, step: :any) %>
+              </div>
+              <div class="col-md-12 form-group">
+                <%= eg_label(form, :payment_instructions, "Payment instructions", "Bank details and reference shown to subscribers in their acknowledgement and payment emails.", icon: "building-bank") %>
+                <%= form.text_area :payment_instructions, class: "form-control", rows: 2 %>
+              </div>
+            </div>
+            <div class="mt-4 d-flex justify-content-between">
+              <button class="btn btn-outline-secondary prevBtn" type="button"><i class="ti ti-arrow-left"></i> Back</button>
+              <button class="btn btn-primary nextBtn" type="button">Next <i class="ti ti-arrow-right"></i></button>
+            </div>
+          </div>
+
+          <%# ---- 4. Redemptions ---- %>
+          <div class="setup-content" id="step-<%= 4 + offset %>">
+            <%= eg_step_intro("door-exit", "Redemptions", "How investors redeem, how much notice they give, lock-ups and how soon they are paid.", step: 4 + offset, total: 9 + offset) %>
+            <%# Three short groups: how and when investors redeem; the lock-up (fee fields only for a soft
+                lock-up); and the minimum that must stay invested %>
+            <%= eg_section("forms", "How investors redeem", "the ways allowed, the notice they give and when they are paid") %>
+            <div class="row">
+              <div class="col-md-4 form-group">
+                <label class="form-label fw-semibold">Ways to redeem<%= eg_required %><%= eg_tip("Choose at least one. #{eg_t(:Units, fund:)}: a number of #{eg_t(:units, fund:)}. Amount: a cash amount, converted to #{eg_t(:units, fund:)} at the dealing NAV. All #{eg_t(:units, fund:)}: the whole holding, counted at confirmation.") %></label>
+                <%# Form-checks in equal-width columns: box and text on one line, level with the boxes beside %>
+                <div data-eg-required-group="true" class="row row-cols-<%= EvergreenFundSetting::REDEMPTION_FORMS.size %> g-0 align-items-center" style="min-height: 2.625rem;">
+                  <% EvergreenFundSetting::REDEMPTION_FORMS.each do |f| %>
+                    <div class="col form-check mb-0">
+                      <%= check_box_tag "evergreen_fund_setting[redemption_forms][]", f, Array(setting.redemption_forms).include?(f), id: "redemption_form_#{f}", class: "form-check-input" %>
+                      <label class="form-check-label" for="redemption_form_<%= f %>"><%= { "units" => eg_t(:Units, fund:), "amount" => "Amount", "all" => "All #{eg_t(:units, fund:)}" }[f] %></label>
+                    </div>
+                  <% end %>
+                  <%= hidden_field_tag "evergreen_fund_setting[redemption_forms][]", "" %>
+                </div>
+              </div>
+              <div class="col-md-4 form-group">
+                <%= eg_label(form, :notice_days, "Notice", "Redemptions must arrive this many days before a #{EvergreenLabels.lower(eg_t(:redemption_date, fund:))}. With 30 days and monthly dealing, a request on 10 Nov goes to 1 Jan, not 1 Dec. Classes can override this.", icon: "bell", required: true) %>
+                <%= eg_number(form, :notice_days, "days", data: { eg_required: true }) %>
+              </div>
+              <div class="col-md-4 form-group">
+                <%= eg_label(form, :redemption_settlement_days, "Paid within", "Redemption cash is due this many business days after the #{EvergreenLabels.lower(eg_t(:redemption_date, fund:))}. With 10, a 2 Nov #{EvergreenLabels.lower(eg_t(:redemption_date, fund:))} pays by 16 Nov.", icon: "calendar-dollar", required: true) %>
+                <%= eg_number(form, :redemption_settlement_days, "business days", data: { eg_required: true }) %>
+              </div>
+            </div>
+
+            <%= eg_section("lock", "Lock-up", "how long new #{eg_t(:units, fund:)} are held before they can be redeemed") %>
+            <div class="row">
+              <div class="col-md-3 form-group">
+                <%= eg_label(form, :lock_up_months, "Length", "#{eg_t(:Units, fund:)} are locked for this many months from the date they were issued. 0 means no lock-up.", required: true) %>
+                <%= eg_number(form, :lock_up_months, "months", data: { eg_required: true }) %>
+              </div>
+              <div class="col-md-3 form-group">
+                <%= eg_label(form, :lock_up_type, "Type", "Hard: locked #{eg_t(:units, fund:)} cannot be redeemed. Soft: they can, with the #{EvergreenLabels.lower(eg_t(:early_fee, fund:))}.", required: true) %>
+                <%= form.select :lock_up_type, [["Hard — cannot redeem", "hard"], ["Soft — redeem with a fee", "soft"]], {}, class: "form-select" %>
+              </div>
+              <div class="col-md-3 form-group" data-evergreen-settings-target="conditional" data-show-field="lock_up_type" data-show-values="soft">
+                <%= eg_label(form, :early_fee_pct, eg_t(:early_fee, fund:), "Charged on the value of locked #{eg_t(:units, fund:)} redeemed under a soft lock-up, and shown on the #{EvergreenLabels.lower(eg_t(:redemption_advice, fund:))}.") %>
+                <%= eg_number(form, :early_fee_pct, "%", value: setting.early_redemption_fee.to_h["pct"], step: :any) %>
+              </div>
+              <div class="col-md-3 form-group" data-evergreen-settings-target="conditional" data-show-field="lock_up_type" data-show-values="soft">
+                <%= eg_label(form, :early_fee_schedule, "Fee by #{eg_t(:unit, fund:)} age", "Optional: a sliding fee instead of one rate, as pct:from-to months. 3:0-12, 2:12-24 charges 3% in the first year and 2% in the second.") %>
+                <%= form.text_field :early_fee_schedule, value: Array(setting.early_redemption_fee.to_h["schedule"]).map { |b| "#{b['pct']}:#{b['from']}-#{b['to']}" }.join(", "), class: "form-control", placeholder: "Optional — 3:0-12, 2:12-24" %>
+              </div>
+            </div>
+
+            <%= eg_section("shield-check", "Limits", "what must stay invested after a part redemption") %>
+            <div class="row">
+              <div class="col-md-4 form-group">
+                <%= eg_label(form, :min_holding, "Minimum holding", "A part redemption that would leave less than this is refused; the investor must redeem all #{eg_t(:units, fund:)} instead. 0 means no minimum.") %>
+                <%= eg_number(form, :min_holding, fund.currency, prefix: true, step: :any) %>
+              </div>
+            </div>
+            <div class="mt-4 d-flex justify-content-between">
+              <button class="btn btn-outline-secondary prevBtn" type="button"><i class="ti ti-arrow-left"></i> Back</button>
+              <button class="btn btn-primary nextBtn" type="button">Next <i class="ti ti-arrow-right"></i></button>
+            </div>
+          </div>
+
+          <%# ---- 5. Gates ---- %>
+          <div class="setup-content" id="step-<%= 5 + offset %>">
+            <%= eg_step_intro("filter", "Gates", "A cap on how much can be redeemed, so the fund is never forced to sell in a rush. The part above the gate is #{EvergreenLabels.lower(eg_t(:carried, fund:))} to the next #{EvergreenLabels.lower(eg_t(:redemption_date, fund:))}, first in the queue.", step: 5 + offset, total: 9 + offset) %>
+            <div class="row">
+              <div class="col-md-4 form-group">
+                <%= eg_label(form, :gate_pct, "Gate (share of NAV)", "The most that can be redeemed per gate period, as a share of NAV. With 5% and a #{eg_currency_symbol(fund)}100 million NAV, at most #{eg_currency_symbol(fund)}5 million is paid; the rest is #{EvergreenLabels.lower(eg_t(:carried, fund:))}. 0 means no gate.", icon: "filter", required: true) %>
+                <%= eg_number(form, :gate_pct, "%", step: :any, data: { eg_required: true }) %>
+              </div>
+              <div class="col-md-4 form-group" data-evergreen-settings-target="conditional" data-show-field="gate_pct" data-show-values=">0">
+                <%= eg_label(form, :gate_method, "Who is paid first", "FIFO fills orders in the order they were received until the gate is used up. Pro-rata fills every order by the same percentage.") %>
+                <%= form.select :gate_method, [["FIFO — first received, first paid", "fifo"], ["Pro-rata — everyone the same %", "pro_rata"]], {}, class: "form-select" %>
+              </div>
+              <div class="col-md-4 form-group" data-evergreen-settings-target="conditional" data-show-field="gate_pct" data-show-values=">0">
+                <%= eg_label(form, :gate_period, "Gate period", "How long one gate has to last. Each #{EvergreenLabels.lower(eg_t(:redemption_date, fund:))}: every date may pay out up to the gate on its own, so with monthly dates and a 5% gate up to 15% can leave in a quarter. Each quarter or Each year: every date in that calendar quarter or year shares one gate, and what earlier dates paid out is taken off; a new quarter or year starts with the full gate.") %>
+                <%= form.select :gate_period, [["Each #{EvergreenLabels.lower(eg_t(:redemption_date, fund:))}", "dealing_date"], ["Each quarter", "quarter"], ["Each year", "year"]], {}, class: "form-select" %>
+              </div>
+              <div class="col-md-4 form-group" data-evergreen-settings-target="conditional" data-show-field="gate_pct" data-show-values=">0">
+                <%= eg_label(form, :gate_level, "Gate applies to", "The whole fund's NAV, or each class's NAV on its own.") %>
+                <%= form.select :gate_level, [["The whole fund", "fund"], ["Each class separately", "class"]], {}, class: "form-select" %>
+              </div>
+              <div class="col-md-4 form-group">
+                <%= eg_label(form, :investor_gate_pct, "Per-investor cap (share of holding)", "The most any one investor can redeem in a gate period, as a share of what they held at its start. 0 means no per-investor cap.", icon: "user-minus", required: true) %>
+                <%= eg_number(form, :investor_gate_pct, "%", step: :any, data: { eg_required: true }) %>
+              </div>
+            </div>
+            <div class="mt-4 d-flex justify-content-between">
+              <button class="btn btn-outline-secondary prevBtn" type="button"><i class="ti ti-arrow-left"></i> Back</button>
+              <button class="btn btn-primary nextBtn" type="button">Next <i class="ti ti-arrow-right"></i></button>
+            </div>
+          </div>
+
+          <%# ---- 6. Classes ---- %>
+          <div class="setup-content" id="step-<%= 6 + offset %>">
+            <%= eg_step_intro("layers-subtract", "Classes", "The starting price of each #{eg_t(:unit, fund:)} class, and any terms that differ from the fund's. Leave an override blank to use the fund value.", step: 6 + offset, total: 9 + offset) %>
+            <div class="alert alert-danger d-none" id="starting_prices_missing" data-evergreen-settings-target="pricesMissing"></div>
+            <%# New Fund: no unit types typed yet — say where classes come from instead of a blank step %>
+            <div class="alert alert-info d-flex justify-content-between align-items-center <%= 'd-none' if setting.evergreen_class_terms.any? || !fund.new_record? %>"
+                 id="no_classes_yet" data-evergreen-settings-target="noClasses">
+              <span><i class="ti ti-info-circle me-1"></i>No unit classes yet. Add <strong>Unit Types</strong> on step 1 (for example "A, B") — each becomes a class here.</span>
+              <a href="#" class="alert-link" data-action="evergreen-settings#goto" data-step="1"><i class="ti ti-arrow-left"></i> Go to step 1</a>
+            </div>
+            <%# The fund's own word for what investors hold (EvergreenLabels: fund unit_term, then the entity, then the locale) %>
+            <div class="row">
+              <div class="col-md-4 form-group">
+                <%= eg_label(form, :unit_term, "What investors hold", "Changes the wording only — never any figure. The firm's wording is set on the Company Profile (Units unless changed there).", icon: "coins") %>
+                <%= form.select :unit_term, [["Firm's wording (#{EvergreenLabels.t(:Units, entity_id: fund&.entity_id)})", ""], ["Units", "unit"], ["Shares", "share"]], {}, class: "form-select" %>
+              </div>
+            </div>
+            <div id="class_terms" data-evergreen-settings-target="classes">
+              <% setting.evergreen_class_terms.sort_by(&:unit_type).each_with_index do |term, i| %>
+                <%= render "evergreen/settings/class_term_card", term:, i:, currency: fund.currency, fund: %>
+              <% end %>
+            </div>
+            <% if offset > 0 %>
+              <%# Inside the fund form (New Fund and Edit Fund): cards follow the Unit Types typed on step 1
+                  (evergreen-settings#syncClasses); on edit, saved classes stay and new unit types add a card %>
+              <template id="eg_class_card_template" data-evergreen-settings-target="classTemplate">
+                <%= render "evergreen/settings/class_term_card", term: EvergreenClassTerm.new(unit_type: "UNITTOKEN"), i: "IDXTOKEN", currency: fund.currency, fund: %>
+              </template>
+            <% end %>
+            <div class="mt-4 d-flex justify-content-between">
+              <button class="btn btn-outline-secondary prevBtn" type="button"><i class="ti ti-arrow-left"></i> Back</button>
+              <button class="btn btn-primary nextBtn" type="button">Next <i class="ti ti-arrow-right"></i></button>
+            </div>
+          </div>
+
+          <%# ---- 7. Journeys & NAV ---- %>
+          <div class="setup-content" id="step-<%= 7 + offset %>">
+            <%= eg_step_intro("route", "Journeys & NAV", "Whether each order runs its own approval journey, and which ledger entries feed the NAV.", step: 7 + offset, total: 9 + offset) %>
+            <div class="row">
+              <div class="col-md-6 form-group">
+                <%= eg_label(form, :order_journeys, "Per-order journeys", "Each order must pass its journey (KYC, signed form, signatory check, GP acceptance) before it is #{EvergreenLabels.lower(eg_t(:dealt, fund:))}. Orders not through by the cut-off roll or are cancelled, as set on Subscriptions.", icon: "route", required: true) %>
+                <%= form.select :order_journeys, [["Off", "off"], ["Subscriptions only", "subscriptions"], ["Subscriptions and redemptions", "both"]], {}, class: "form-select" %>
+              </div>
+              <%# No "fund close" here: closes are a closed-ended idea. Folios of an open-ended fund are stored as
+                  commitments, which need a close, so they all get the fixed "Evergreen" (the column default). %>
+            </div>
+            <h6 class="mt-3"><i class="ti ti-book me-1 text-info"></i>NAV sources<%= eg_tip("Ledger entry names whose balances feed the NAV draft. They must match the names used in your account entries.") %></h6>
+            <div class="row">
+              <% { cash_entry_name: ["Cash", "Latest balance of this entry is the cash line of the NAV."],
+                   other_assets_entry_name: ["Other assets", "Latest balance of this entry is added to the NAV."],
+                   other_liabilities_entry_name: ["Other liabilities", "Latest balance of this entry is deducted from the NAV."],
+                   mgmt_fee_paid_entry_name: ["Management fee paid", "Entries with this name between two NAVs reduce the management fee payable."],
+                   perf_fee_paid_entry_name: ["Performance fee paid", "Entries with this name between two NAVs reduce the performance fee payable."] }.each do |f, (text, tip)| %>
+                <div class="col-md-4 form-group">
+                  <%= eg_label(form, f, text, tip, required: true) %>
+                  <%= form.text_field f, class: "form-control", data: { eg_required: true } %>
+                </div>
+              <% end %>
+            </div>
+            <div class="mt-4 d-flex justify-content-between">
+              <button class="btn btn-outline-secondary prevBtn" type="button"><i class="ti ti-arrow-left"></i> Back</button>
+              <button class="btn btn-primary nextBtn" type="button">Next <i class="ti ti-arrow-right"></i></button>
+            </div>
+          </div>
+
+          <%# ---- 8. Notifications (open-ended-funds § Notifications) ---- %>
+          <div class="setup-content" id="step-<%= 8 + offset %>">
+            <%= eg_step_intro("bell", "Notifications", "Which emails investors get and which alerts your team gets. The everyday investor emails (acknowledgements, #{EvergreenLabels.lower(eg_t(:contract_note, fund:)).pluralize}, #{EvergreenLabels.lower(eg_t(:redemption_advice, fund:)).pluralize}…) are always sent; switch the optional ones here. Investor emails can be reworded from the fund's Notifications tab.", step: 8 + offset, total: 9 + offset) %>
+            <% labels = EvergreenFundSetting::NOTIFICATIONS %>
+            <div class="row">
+              <% [[:investor, "Investor emails", "mail"], [:internal, "Team alerts", "bell-ringing"]].each do |audience, heading, icon| %>
+                <div class="col-lg-6">
+                  <div class="card border mb-4" id="notifications_<%= audience %>">
+                    <%# Plain heading row: inside the wizard a .card-header would be painted blue %>
+                    <div class="px-3 py-2 border-bottom">
+                      <h6 class="mb-0 fw-semibold d-flex align-items-center"><i class="ti ti-<%= icon %> me-2 text-info"></i><%= heading %></h6>
+                    </div>
+                    <ul class="list-group list-group-flush">
+                      <% labels.select { |_, v| v[0] == audience }.each do |key, (_, _, label, recipients, description)| %>
+                        <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                          <span>
+                            <%= label %><%= eg_tip(description) %>
+                            <small class="d-block text-muted"><i class="ti ti-users me-1"></i><%= recipients %></small>
+                          </span>
+                          <%# Same toggle as the user form (ios-toggle) %>
+                          <%= hidden_field_tag "evergreen_fund_setting[notifications][#{key}]", "0", id: nil %>
+                          <label class="ios-toggle mb-0">
+                            <%= check_box_tag "evergreen_fund_setting[notifications][#{key}]", "1", setting.notify?(key), class: "ios-toggle-input", id: "notification_#{key}" %>
+                            <span class="ios-toggle-slider"></span>
+                          </label>
+                        </li>
+                      <% end %>
+                    </ul>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+            <div class="row">
+              <div class="col-md-4 form-group">
+                <label class="form-label fw-semibold" for="notification_reminder_days"><i class="ti ti-clock me-1 text-info"></i>Remind investors (days before cut-off)<%= eg_tip("Payment reminders and action-needed emails go out this many days before the cut-off.") %></label>
+                <%= number_field_tag "evergreen_fund_setting[notifications][reminder_days]", setting.notification_number("reminder_days").to_i, class: "form-control", id: "notification_reminder_days" %>
+              </div>
+              <div class="col-md-4 form-group">
+                <label class="form-label fw-semibold" for="notification_large_redemption_pct"><i class="ti ti-alert-triangle me-1 text-info"></i>Large redemption (% of class NAV)<%= eg_tip("A redemption at or above this share of its class NAV alerts Compliance and the relationship manager.") %></label>
+                <%= number_field_tag "evergreen_fund_setting[notifications][large_redemption_pct]", setting.notification_number("large_redemption_pct").to_s("F").sub(/\.0\z/, ""), class: "form-control", step: :any, id: "notification_large_redemption_pct" %>
+              </div>
+            </div>
+            <div class="mt-4 d-flex justify-content-between">
+              <button class="btn btn-outline-secondary prevBtn" type="button"><i class="ti ti-arrow-left"></i> Back</button>
+              <button class="btn btn-primary nextBtn" type="button">Next <i class="ti ti-arrow-right"></i></button>
+            </div>
+          </div>
+
+          <%# ---- 9. Review ---- %>
+          <div class="setup-content" id="step-<%= 9 + offset %>">
+            <%= eg_step_intro("checklist", "Review", "Everything you chose, step by step. Use Edit on a card to go back and change it; nothing is saved until you click #{submit_label}.", step: 9 + offset, total: 9 + offset) %>
+            <%# Review: one card per step, its terms as a list (written live by evergreen-settings#summary),
+                with Edit jumping back to the step. Same card style as the Notifications step. %>
+            <div class="row g-3" id="evergreen_review">
+              <% sections = [[2, "calendar", eg_calendar_title(fund), "calendar"], [3, "cash", "Subscriptions", "subscriptions"],
+                             [4, "door-exit", "Redemptions", "redemptions"], [5, "filter", "Gates", "gates"],
+                             [6, "layers-subtract", "Classes", "classes"], [7, "route", "Journeys & NAV", "journeys"],
+                             [8, "bell", "Notifications", "notifications"]].map { |n, icon, title, key| [n + offset, icon, title, key] }
+                 sections.unshift([1, "building-bank", "Fund", "fund"]) if offset.positive? %>
+              <% sections.each do |step, icon, title, key| %>
+                <div class="<%= %w[notifications].include?(key) ? 'col-12' : 'col-md-6' %>">
+                  <div class="card border h-100" id="review_<%= key %>">
+                    <%# A plain heading row, not .card-header: the wizard paints every card-header blue %>
+                    <div class="px-3 py-2 border-bottom d-flex justify-content-between align-items-center">
+                      <h6 class="mb-0 fw-semibold d-flex align-items-center"><i class="ti ti-<%= icon %> me-2 text-info"></i><%= title %></h6>
+                      <a href="#" class="small text-nowrap" data-action="evergreen-settings#goto" data-step="<%= step %>"><i class="ti ti-pencil"></i> Edit</a>
+                    </div>
+                    <div class="card-body py-3">
+                      <ul class="small text-muted mb-0 ps-3" data-evergreen-settings-target="summary" data-section="<%= key %>"></ul>
+                    </div>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+            <div class="mt-4 d-flex justify-content-between">
+              <button class="btn btn-outline-secondary prevBtn" type="button"><i class="ti ti-arrow-left"></i> Back</button>
+              <%# Review fix 9: read-only users (fund read access, no update) see the terms but no save button —
+                  saving would only be refused (local read_only, passed by evergreen/settings/show) %>
+              <% if local_assigns[:read_only] %>
+                <span class="text-muted small align-self-center" id="settings_read_only_note"><i class="ti ti-eye me-1"></i>View only — you need update access on the fund to change these settings</span>
+              <% else %>
+                <%# New Fund: every class needs a starting price before Create fund (X2) — checked here first %>
+                <%= button_tag type: "submit", class: "btn btn-primary", id: submit_id,
+                               data: (offset > 0 ? { action: "click->evergreen-settings#checkStartingPrices", classes_step: 6 + offset } : {}) do %>
+                  <i class="ti ti-<%= submit_icon %>"></i> <%= submit_label %>
+                <% end %>
+              <% end %>
+            </div>
+          </div>

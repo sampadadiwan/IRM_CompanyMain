@@ -87,7 +87,7 @@ When('I upload a document for the investment_opportunity') do
   fill_in('document_name', with: "Test IO Doc")
   # select("Document", from: "document_tag_list")
   attach_file('files[]', File.absolute_path('./public/sample_uploads/investor_access.xlsx'), make_visible: true)
-  sleep(2)
+  wait_for_upload('./public/sample_uploads/investor_access.xlsx') # JS direct-upload to /upload; returns once it lands (was sleep 2)
   check('Send email', allow_label_click: true)
   click_on("Save")
   expect(page).to have_content("successfull")
@@ -183,7 +183,7 @@ When('I add widgets for the investment_opportunity') do
   details_element = find("trix-editor[input='ci_widget_details_trix_input_ci_widget']", visible: :all, wait: 10)
   details_element.click.send_keys("Left Widget Details")
   attach_file('files[]', File.absolute_path("./public/img/logo_big.png"), make_visible: true)
-  sleep(2)
+  wait_for_upload("./public/img/logo_big.png") # JS direct-upload to /upload; returns once it lands (was sleep 2)
   click_on("Save")
   expect(page).to have_content("successfull")
 
@@ -197,7 +197,7 @@ When('I add widgets for the investment_opportunity') do
   details_element = find("trix-editor[input='ci_widget_details_trix_input_ci_widget']", visible: :all, wait: 10)
   details_element.click.send_keys("Center Widget Details")
   attach_file('files[]', File.absolute_path("./public/img/logo_big.png"), make_visible: true)
-  sleep(2)
+  wait_for_upload("./public/img/logo_big.png") # JS direct-upload to /upload; returns once it lands (was sleep 2)
   click_on("Save")
   expect(page).to have_content("successfull")
 
@@ -211,7 +211,7 @@ When('I add widgets for the investment_opportunity') do
   details_element = find("trix-editor[input='ci_widget_details_trix_input_ci_widget']", visible: :all, wait: 10)
   details_element.click.send_keys("Right Widget Details")
   attach_file('files[]', File.absolute_path("./public/img/logo_big.png"), make_visible: true)
-  sleep(2)
+  wait_for_upload("./public/img/logo_big.png") # JS direct-upload to /upload; returns once it lands (was sleep 2)
   click_on("Save")
   expect(page).to have_content("successfull")
 end

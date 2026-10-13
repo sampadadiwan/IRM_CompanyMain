@@ -174,8 +174,7 @@ Given('another company has a filterable {string} field {string} labelled {string
   @user.add_role(:company_admin)
   Capybara.using_session(:other_company) do
     steps %(
-      Given I am at the login page
-      When I fill and submit the login page
+      And I am signed in as the current user
     )
     visit capital_commitments_path(filter: true)
     expect(page).to have_css("select[name*='a][0][name]'] option[value='#{FormCustomField.to_name(name)}']", visible: false)

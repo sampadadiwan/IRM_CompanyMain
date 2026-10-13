@@ -10,6 +10,8 @@ class DerivativeContractsController < ApplicationController
     @contracts = policy_scope(DerivativeContract).where(fund_id: @fund.id).order(:expiry_date)
     @contracts = @contracts.where(status: @status) unless @status == "all"
     @bread_crumbs = { Funds: funds_path, @fund.name => fund_path(@fund), Derivatives: nil }
+    # The fund's Portfolio tab loads open contracts into a frame of its own
+    render :portfolio_section if params[:embedded].present?
   end
 
   def show

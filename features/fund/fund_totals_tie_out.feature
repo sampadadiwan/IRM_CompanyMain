@@ -20,6 +20,7 @@ Feature: Tie a run's fund totals out to the fund's own figures
 
   # ── The sheet itself ──────────────────────────────────────────────────────────
 
+  @rack_test
   Scenario: The sheet totals each entry name across the run's folios
     Given the run produced "Setup Fee" of "10000" for folio "101" and "30000" for folio "102"
     When I open the tie-out sheet for that run
@@ -29,11 +30,13 @@ Feature: Tie a run's fund totals out to the fund's own figures
   # A result the engine writes only at fund level (the fund's portfolio numbers, say) is a
   # non-cumulative fund-level entry. A cumulative fund entry is a roll-up of folio entries and
   # cannot exist without them, so it is not the case to test here.
+  @rack_test
   Scenario: An entry produced only at fund level still gets a row
     Given the run produced a fund-level "Audit Fee" entry of "50000"
     When I open the tie-out sheet for that run
     Then the tie-out sheet should have a row for "Audit Fee"
 
+  @rack_test
   Scenario: Rows follow the fund's own formula order, not the alphabet
     Given there is an enabled fund formula "Zeta Fee" at sequence "1"
     And there is an enabled fund formula "Alpha Fee" at sequence "2"
@@ -42,6 +45,7 @@ Feature: Tie a run's fund totals out to the fund's own figures
     When I open the tie-out sheet for that run
     Then the tie-out rows should be in the order "Zeta Fee,Alpha Fee"
 
+  @rack_test
   Scenario: An entry name whose formula is gone sorts last
     Given there is an enabled fund formula "Known Fee" at sequence "3"
     And the run produced "Known Fee" of "100" for folio "101"
@@ -51,33 +55,39 @@ Feature: Tie a run's fund totals out to the fund's own figures
 
   # ── Comparing with the fund's figures ─────────────────────────────────────────
 
+  @rack_test
   Scenario: A figure equal to our total marks the row as matching
     Given the run produced "Setup Fee" of "10000" for folio "101" and "30000" for folio "102"
     When I enter "400" as the fund's figure for "Setup Fee" on that run
     Then the tie-out row "Setup Fee" should be "match"
     And the tie-out row "Setup Fee" should show a difference of "0.00"
 
+  @rack_test
   Scenario: A different figure shows the signed difference
     Given the run produced "Setup Fee" of "10000" for folio "101" and "30000" for folio "102"
     When I enter "450" as the fund's figure for "Setup Fee" on that run
     Then the tie-out row "Setup Fee" should be "differs"
     And the tie-out row "Setup Fee" should show a difference of "50.00"
 
+  @rack_test
   Scenario: A figure below ours shows a negative difference
     Given the run produced "Setup Fee" of "10000" for folio "101" and "30000" for folio "102"
     When I enter "350" as the fund's figure for "Setup Fee" on that run
     Then the tie-out row "Setup Fee" should show a difference of "-50.00"
 
+  @rack_test
   Scenario: Figures that differ only beyond two decimal places count as matching
     Given the run produced "Setup Fee" of "10000" for folio "101" and "30000" for folio "102"
     When I enter "400.001" as the fund's figure for "Setup Fee" on that run
     Then the tie-out row "Setup Fee" should be "match"
 
+  @rack_test
   Scenario: A figure of zero is a real figure, not an empty box
     Given the run produced "Setup Fee" of "0" for folio "101"
     When I enter "0" as the fund's figure for "Setup Fee" on that run
     Then the tie-out row "Setup Fee" should be "match"
 
+  @rack_test
   Scenario Outline: Amounts are read the way a spreadsheet writes them
     When the fund's figure "<typed>" is read
     Then it should be understood as "<cents>"
@@ -98,6 +108,7 @@ Feature: Tie a run's fund totals out to the fund's own figures
     Then the tie-out row "Setup Fee" should be "not entered"
     And there should be no stored figure for "Setup Fee"
 
+  @rack_test
   Scenario: The sheet counts how many rows are entered, match and differ
     Given the run produced "Setup Fee" of "40000" for folio "101"
     And the run produced "Audit Fee" of "10000" for folio "101"
@@ -108,6 +119,7 @@ Feature: Tie a run's fund totals out to the fund's own figures
 
   # ── Surviving a re-run ────────────────────────────────────────────────────────
 
+  @rack_test
   Scenario: Figures entered against one run are still there after the period is re-run
     Given the run produced "Setup Fee" of "40000" for folio "101"
     And I enter "400" as the fund's figure for "Setup Fee" on that run
@@ -118,6 +130,7 @@ Feature: Tie a run's fund totals out to the fund's own figures
 
   # ── Folios behind a row ───────────────────────────────────────────────────────
 
+  @rack_test
   Scenario: Opening a row lists its folios, largest first
     Given the run produced "Setup Fee" of "10000" for folio "101" and "30000" for folio "102"
     When I open the folios behind "Setup Fee" for that run
@@ -128,6 +141,7 @@ Feature: Tie a run's fund totals out to the fund's own figures
   # The Dependencies tab: every dependency is another row of the same sheet, resolved from the
   # fund's own formulas, so a difference at one total can be traced to the total carrying it.
 
+  @rack_test
   Scenario: A row lists the other totals its formula is built from
     Given there is a fund formula "NAV" at sequence "3" computing "@capital_collected - @fees_charged"
     And the run produced "Capital Collected" of "100000" for folio "101"
@@ -136,6 +150,7 @@ Feature: Tie a run's fund totals out to the fund's own figures
     When I open the tie-out sheet for that run
     Then the row "NAV" should be built from "Capital Collected,Fees Charged"
 
+  @rack_test
   Scenario: A dependency named as a string in a helper call is followed too
     Given there is a fund formula "Since Inception Fees" at sequence "3" computing "capital_commitment.since_inception('Fees Charged', nil, @start_date, @end_date)"
     And the run produced "Fees Charged" of "20000" for folio "101"
@@ -143,6 +158,7 @@ Feature: Tie a run's fund totals out to the fund's own figures
     When I open the tie-out sheet for that run
     Then the row "Since Inception Fees" should be built from "Fees Charged"
 
+  @rack_test
   Scenario: A formula naming something this run did not produce lists no dependency
     Given there is a fund formula "NAV" at sequence "3" computing "@capital_collected - @missing_thing"
     And the run produced "Capital Collected" of "100000" for folio "101"
@@ -150,6 +166,7 @@ Feature: Tie a run's fund totals out to the fund's own figures
     When I open the tie-out sheet for that run
     Then the row "NAV" should be built from "Capital Collected"
 
+  @rack_test
   Scenario: A total read only by next period's formula is still top-level in this run
     Given there is a fund formula "Ending Balance" at sequence "1" computing "@opening_cash + @inflow"
     And there is a fund formula "Beginning Balance" at sequence "2" computing "capital_commitment.get_account_entry_or_zero('Ending Balance', @start_date).amount_cents"
@@ -173,11 +190,13 @@ Feature: Tie a run's fund totals out to the fund's own figures
 
   # ── Permissions ───────────────────────────────────────────────────────────────
 
+  @rack_test
   Scenario: An investor may not record the fund's figures
     Given there is an investor user on the entity
     When that investor tries to record a figure
     Then recording the figure should be refused
 
+  @rack_test
   Scenario: A company admin may record the fund's figures
     When the company admin tries to record a figure
     Then recording the figure should be allowed

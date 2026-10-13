@@ -40,8 +40,7 @@ end
 Given('Im logged in as user {string}') do |first_name|
   @user ||= User.find_by(first_name: first_name)
   steps %(
-    And I am at the login page
-    When I fill and submit the login page
+    And I am signed in as the current user
   )
 end
 

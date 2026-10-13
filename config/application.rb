@@ -54,7 +54,7 @@ module CapHive
 
     config.paths['app/views'].unshift("#{Rails.root}/app/packs/misc/views")
 
-    funds_view_paths = %w[funds capital_calls capital_commitments capital_distributions portfolios capital_distribution_payments capital_remittances investment_opportunities fund_reports side_letters financial_statements market_data derivatives]
+    funds_view_paths = %w[funds evergreen capital_calls capital_commitments capital_distributions portfolios capital_distribution_payments capital_remittances investment_opportunities fund_reports side_letters financial_statements market_data derivatives]
 
     funds_view_paths.each do |view_path|
       config.paths['app/views'].unshift("#{Rails.root}/app/packs/funds/#{view_path}/views")

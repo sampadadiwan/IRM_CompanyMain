@@ -1,3 +1,4 @@
+@rack_test
 Feature: KPI Currency Conversion
   Converts KPI values from a portfolio company's reporting currency to the fund's
   base currency during upload, using configurable FX methods per KPI mapping.

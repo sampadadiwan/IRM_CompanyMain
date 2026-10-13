@@ -14,6 +14,7 @@ Feature: Allocation run pre-run and post-run checks
 
   # ── Check formulas ───────────────────────────────────────────────────────────
 
+  @rack_test
   Scenario Outline: A check formula needs no entry type
     Given a "<rule_type>" fund formula "Units configured" without an entry type
     Then the check formula should be valid
@@ -23,15 +24,18 @@ Feature: Allocation run pre-run and post-run checks
       | PreRunCheck  |
       | PostRunCheck |
 
+  @rack_test
   Scenario: A check formula cannot generate YTD numbers or roll up
     Given a "PreRunCheck" fund formula "Units configured" without an entry type
     And the check formula has generate_ytd_qtly and roll_up enabled
     Then the check formula should be invalid on "generate_ytd_qtly" and "roll_up"
 
+  @rack_test
   Scenario: A formula that writes entries still needs an entry type
     Given a "GenerateAccountEntry" fund formula "Management Fees" without an entry type
     Then the check formula should be invalid on "entry_type"
 
+  @rack_test
   Scenario: Check formulas are left out of the dependency graph and the allocation run's formulas
     Given the fund has a "GenerateAccountEntry" formula "Management Fees"
     And the fund has a "PreRunCheck" check "Units configured" with formula:
@@ -43,6 +47,7 @@ Feature: Allocation run pre-run and post-run checks
 
   # ── How a check's outcome is decided ─────────────────────────────────────────
 
+  @rack_test
   Scenario Outline: A check's outcome
     Given the fund has folios "101"
     And there is a finished allocation run "start_date=2024-01-01;end_date=2024-03-31"
@@ -64,6 +69,7 @@ Feature: Allocation run pre-run and post-run checks
       | raise SkipRule, "Not applicable to this fund"                         | skipped | Not applicable to this fund        |
       | @fund.no_such_method                                                  | fail    | NoMethodError                      |
 
+  @rack_test
   Scenario: Every check runs even after one fails
     Given the fund has folios "101"
     And there is a finished allocation run "start_date=2024-01-01;end_date=2024-03-31"
@@ -86,6 +92,7 @@ Feature: Allocation run pre-run and post-run checks
 
   # ── Pre-run check helpers ────────────────────────────────────────────────────
 
+  @rack_test
   Scenario: allowed_entry_names flags names outside the list, matching exactly
     Given the fund has folios "101"
     And there is a finished allocation run "start_date=2024-01-01;end_date=2024-03-31"
@@ -108,6 +115,7 @@ Feature: Allocation run pre-run and post-run checks
     And check "Expense heads" should not mention "Old Head"
     And check "Expense heads" should not mention "Generated"
 
+  @rack_test
   Scenario: allowed_entry_names can warn instead of fail
     Given the fund has folios "101"
     And there is a finished allocation run "start_date=2024-01-01;end_date=2024-03-31"
@@ -121,6 +129,7 @@ Feature: Allocation run pre-run and post-run checks
     When the "pre" checks are run for that allocation run
     Then check "Income heads" should have result "warn" mentioning "Travel"
 
+  @rack_test
   Scenario: required_custom_fields lists each uploaded entry missing a custom field
     Given the fund has folios "101"
     And there is a finished allocation run "start_date=2024-01-01;end_date=2024-03-31"
@@ -137,6 +146,7 @@ Feature: Allocation run pre-run and post-run checks
     And check "UDR codes" should mention "Fund Level UDR Code"
     And check "UDR codes" should not mention "Audit Fees"
 
+  @rack_test
   Scenario: required_custom_fields can be limited to fund-level uploads or to entry types
     Given the fund has folios "101"
     And there is a finished allocation run "start_date=2024-01-01;end_date=2024-03-31"
@@ -163,6 +173,7 @@ Feature: Allocation run pre-run and post-run checks
     And check "Expenses only" should not mention "Taxes Paid"
     And check "Options on investments" should have result "fail" mentioning "only apply to :account_entries"
 
+  @rack_test
   Scenario: entries_mapped_to_portfolio_investment requires this fund's portfolio investment as parent
     Given there is an existing portfolio company ""
     And there is an investment instrument for the portfolio company "name=Stock;category=Unlisted;sub_category=Equity;sector=Tech"
@@ -186,6 +197,7 @@ Feature: Allocation run pre-run and post-run checks
     And check "Deals mapped" should not mention "Deal Mapped"
     And check "Deals mapped" should not mention "Other Case"
 
+  @rack_test
   Scenario: fx_rates_present fails for a currency pair with no recent rate
     Given there is an existing portfolio company ""
     And there is an investment instrument for the portfolio company "name=USStock;category=Unlisted;sub_category=Equity;sector=Tech;currency=USD"
@@ -199,6 +211,7 @@ Feature: Allocation run pre-run and post-run checks
     When the "pre" checks are run for that allocation run
     Then check "FX rates" should have result "fail" mentioning "USD"
 
+  @rack_test
   Scenario: fx_rates_present passes once the rate is loaded
     Given there is an existing portfolio company ""
     And there is an investment instrument for the portfolio company "name=USStock;category=Unlisted;sub_category=Equity;sector=Tech;currency=USD"
@@ -213,6 +226,7 @@ Feature: Allocation run pre-run and post-run checks
     When the "pre" checks are run for that allocation run
     Then check "FX rates" should have result "pass" mentioning "within 5 days"
 
+  @rack_test
   Scenario: fx_rates_present accepts a window in calendar months
     Given there is an existing portfolio company ""
     And there is an investment instrument for the portfolio company "name=USStock;category=Unlisted;sub_category=Equity;sector=Tech;currency=USD"
@@ -245,6 +259,7 @@ Feature: Allocation run pre-run and post-run checks
     When the "pre" checks are run for that allocation run
     Then check "Valuations" should have result "warn" mentioning "no valuation dated within 30 days"
 
+  @rack_test
   Scenario: folio_shares_total fails a code whose folio percentages do not add up to 100
     Given the fund has folios "101,102"
     And there is a finished allocation run "start_date=2024-01-01;end_date=2024-03-31"
@@ -264,6 +279,7 @@ Feature: Allocation run pre-run and post-run checks
     And check "Shares" should mention "70.0"
     And check "Shares" should not mention "UDR - 1"
 
+  @rack_test
   Scenario: folio_shares_total passes when every code is shared out 100%
     Given the fund has folios "101,102"
     And there is a finished allocation run "start_date=2024-01-01;end_date=2024-03-31"
@@ -279,6 +295,7 @@ Feature: Allocation run pre-run and post-run checks
     When the "pre" checks are run for that allocation run
     Then check "Shares" should have result "pass" mentioning "shared out 100%"
 
+  @rack_test
   Scenario: unit_settings_present lists unit types missing a setting or a key
     Given the fund has folios "101"
     And there is a finished allocation run "start_date=2024-01-01;end_date=2024-03-31"
@@ -295,6 +312,7 @@ Feature: Allocation run pre-run and post-run checks
     Then check "Catch up only" should have result "pass" mentioning "catch_up"
     And check "Catch up and hurdle" should have result "fail" mentioning "hurdle_rate"
 
+  @rack_test
   Scenario: since_inception_matches_history compares each folio's stored total with its history
     Given the fund has folios "101,102"
     And there is a finished allocation run "start_date=2024-01-01;end_date=2024-03-31"
@@ -313,6 +331,7 @@ Feature: Allocation run pre-run and post-run checks
     And check "History" should mention "102"
     And check "History" should not mention "101"
 
+  @rack_test
   Scenario: since_inception_matches_history passes when every stored total equals its history
     Given the fund has folios "101,102"
     And there is a finished allocation run "start_date=2024-01-01;end_date=2024-03-31"
@@ -332,6 +351,7 @@ Feature: Allocation run pre-run and post-run checks
 
   # ── Post-run check helpers ───────────────────────────────────────────────────
 
+  @rack_test
   Scenario: fund_entries_allocated and fund_entries_tie_to_folios
     Given the fund has folios "101,102"
     And there is a finished allocation run "start_date=2024-01-01;end_date=2024-03-31"
@@ -369,6 +389,7 @@ Feature: Allocation run pre-run and post-run checks
     And check "Ties out" should have result "pass" mentioning "every one matches"
     And check "Ties out loosely" should have result "pass" mentioning "within 1,000.00"
 
+  @rack_test
   Scenario: fund_entries_tie_to_folios fails an under-allocated entry
     Given the fund has folios "101,102"
     And there is a finished allocation run "start_date=2024-01-01;end_date=2024-03-31"
@@ -385,6 +406,7 @@ Feature: Allocation run pre-run and post-run checks
     Then check "Ties out" should have result "fail" mentioning "Travel"
     And check "Ties out" should mention "10.00"
 
+  @rack_test
   Scenario: portfolio_allocations_tie compares each investment with what its formula allocated
     Given there is an existing portfolio company ""
     And there is an investment instrument for the portfolio company "name=Stock;category=Unlisted;sub_category=Equity;sector=Tech"
@@ -412,6 +434,7 @@ Feature: Allocation run pre-run and post-run checks
     And check "Portfolio short" should have result "fail" mentioning "does not match"
     And check "Portfolio unknown" should have result "fail" mentioning "No portfolio investment allocation formula named"
 
+  @rack_test
   Scenario: A post-run helper cannot be used as a pre-run check
     Given the fund has folios "101"
     And the fund has a "PreRunCheck" check "Too early" with formula:
@@ -423,6 +446,7 @@ Feature: Allocation run pre-run and post-run checks
 
   # ── The allocation run report ────────────────────────────────────────────────
 
+  @rack_test
   Scenario: Stored check results become one finding per check and survive a re-check
     Given the fund has folios "101,102"
     And there is a finished allocation run "start_date=2024-01-01;end_date=2024-03-31;status=Pre-run checks failed (1): Expense heads: 1 name is not allowed"
@@ -440,6 +464,7 @@ Feature: Allocation run pre-run and post-run checks
     When I check that allocation run
     Then check "1.5.1" should be "fail" mentioning "1 name is not allowed"
 
+  @rack_test
   Scenario: A successful run with checks but nothing stored reports them as passed
     Given the fund has folios "101,102"
     And the fund has a "PreRunCheck" check "Units present" with formula:
@@ -464,6 +489,7 @@ Feature: Allocation run pre-run and post-run checks
 
   # ── End to end: the allocation engine ────────────────────────────────────────
 
+  @rack_test
   Scenario: A failed pre-run check stops the run before anything is deleted
     Given there is an existing investor "" with "1" users
     Given there is an existing investor "" with "1" users
@@ -498,6 +524,7 @@ Feature: Allocation run pre-run and post-run checks
     And check "1.5.3" should be "pass"
     And check "1.2" should be "skipped" mentioning "stopped by a failed pre-run check"
 
+  @rack_test
   Scenario: A failed post-run check fails the run but keeps its entries
     Given there is an existing investor "" with "1" users
     Given there is an existing investor "" with "1" users
@@ -533,6 +560,7 @@ Feature: Allocation run pre-run and post-run checks
     And check "1.6.2" should be "fail" mentioning "Travel"
     And check "1.6.2" should not mention "Audit Fees"
 
+  @rack_test
   Scenario: A warning check lets the run finish and still builds the report
     Given there is an existing investor "" with "1" users
     Given the investors are added to the fund
@@ -551,6 +579,7 @@ Feature: Allocation run pre-run and post-run checks
     And the latest allocation run should have a report
     And check "1.5.1" should be "warn" mentioning "stale valuations"
 
+  @rack_test
   Scenario: A run whose checks all pass stores nothing and builds no report
     Given there is an existing investor "" with "1" users
     Given the investors are added to the fund

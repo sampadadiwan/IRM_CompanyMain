@@ -16,6 +16,7 @@ Feature: Capital distribution journey — rollout
     And the entity's capital distribution journeys are removed
 
   # H1 — the dry run reports the plan and writes nothing
+  @rack_test
   Scenario: The dry run reports the plan and changes nothing
     When I run the distribution journey rollout for the entity
     Then the rollout output should mention "DRY RUN"
@@ -23,6 +24,7 @@ Feature: Capital distribution journey — rollout
     And the entity should have no capital distribution journeys
 
   # H1 — seeding through the rake task
+  @rack_test
   Scenario: Running the rollout seeds both journeys, the rules and the permission
     When I run the distribution journey rollout for the entity with EXECUTE
     Then the entity should have the Full distribution journey with 10 tasks and the Light one with 3 tasks
@@ -30,6 +32,7 @@ Feature: Capital distribution journey — rollout
     And the entity should have workflow templates enabled
 
   # H1 — a new fund company gets the distribution journeys too (SetupCompany)
+  @rack_test
   Scenario: A new fund company is set up with the distribution journeys
     When a new fund company is created
     Then the new company should have the Full distribution journey with 10 tasks and the Light one with 3 tasks
@@ -41,6 +44,7 @@ Feature: Capital distribution journey — rollout
     Then the distribution has no journey
 
   # E20 — re-running keeps an admin's changes and creates nothing twice
+  @rack_test
   Scenario: Re-running the rollout keeps an admin's added step and creates nothing twice
     Given I run the distribution journey rollout for the entity with EXECUTE
     And the Full distribution journey has a "CFO sign-off" approval step before "Approve distribution"
@@ -50,6 +54,7 @@ Feature: Capital distribution journey — rollout
     And the entity should have exactly 2 capital distribution auto-assignment rules
 
   # E25 — a Full journey set up before the CFO sign-off existed gets it on the next setup, with no approver
+  @rack_test
   Scenario: Re-running the rollout adds the CFO sign-off to an older Full journey
     Given I run the distribution journey rollout for the entity with EXECUTE
     And the Full distribution journey has no "CFO sign-off" step

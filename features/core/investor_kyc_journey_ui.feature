@@ -19,6 +19,7 @@ Feature: Investor KYC journey — the KYC page
 
   # H1, H4, J1.1–J1.5 (investor-kyc-email-review-steps) — the email gate: each task's own second
   # button beside Mark reviewed, then the hand-over to "Send KYC form"
+  @rack_test
   Scenario: The panel walks through the two email tasks
     Given the entity has a KYC email "Complete your KYC for Urban Fund"
     When I open the KYC page
@@ -39,6 +40,7 @@ Feature: Investor KYC journey — the KYC page
       | Send KYC form     | ●    |
 
   # H2 — no company email: the panel offers the form that creates one
+  @rack_test
   Scenario: The panel offers to create a KYC email when the company has none
     When I open the KYC page
     Then the panel should say "No KYC email is set up — CapHive's default text will be sent. Set one up, or mark reviewed to use the default"
@@ -132,6 +134,7 @@ Feature: Investor KYC journey — the KYC page
       | Verify KYC | ✓    |
 
   # E22, J2.6 — warnings until verified
+  @rack_test
   Scenario: A failed bank verification is shown as a warning
     Given the KYC's bank verification failed
     When I open the KYC page
@@ -143,6 +146,7 @@ Feature: Investor KYC journey — the KYC page
     Then the KYC journey panel should not be shown
 
   # X2 — without permission to verify, the panel's Verify is a plain link
+  @rack_test
   Scenario: The panel's Verify falls back to a link when the user may not verify
     Given I may not verify KYCs
     And the KYC's form link was sent
@@ -157,12 +161,14 @@ Feature: Investor KYC journey — the KYC page
     And the panel action should be a plain link to the KYC
 
   # X5 — another entity's user cannot load the panel
+  @rack_test
   Scenario: A user of another entity cannot load the journey panel
     When a user of another entity requests the KYC's journey panel
     Then the journey panel request should be refused
 
   # The run page's flow diagram: journey steps say what completes them and who owns them instead of
   # the approver panel (quorum, actors, "If rejected"), which only applies to sign-off steps
+  @rack_test
   Scenario: The run diagram shows what completes each step and who owns it
     Given I own the "Send KYC form" step of the KYC journey
     When I open the KYC's journey run page

@@ -181,6 +181,7 @@ en:
     update: Investor access was updated
   investor_details_nav:
     access_rights: Access Rights
+    corporate_actions: Corporate Actions
     commitments: Commitments
     emails: Emails
     employee_access: Employee Access
@@ -197,7 +198,6 @@ en:
     units: Units
     users: Users
     valuations: Valuations
-    workflow: Workflow
   note:
     create: Note was created
     destroy: Note was deleted

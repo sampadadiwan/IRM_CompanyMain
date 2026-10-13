@@ -147,7 +147,7 @@ Given('Given I upload {string} file for {string} of the fund') do |file, tab|
 
   fill_in('import_upload_name', with: "Test Upload")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
-  sleep(8) # JS direct-upload to /upload endpoint; larger window for parallel load
+  wait_for_upload(@import_file) # JS direct-upload to /upload; returns as soon as it lands (was sleep 8)
   click_on("Save")
   expect(page).to have_content("Import Upload:", wait: 15)
   ImportUploadJob.perform_now(ImportUpload.last.id)
@@ -483,8 +483,7 @@ end
 Given('I log in as the first user') do
   @user = User.first
   steps %(
-    And I am at the login page
-    When I fill and submit the login page
+    And I am signed in as the current user
   )
 end
 Given('the dashboard widgets must have the data in the sheet') do

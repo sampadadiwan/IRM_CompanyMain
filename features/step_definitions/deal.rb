@@ -20,7 +20,6 @@ When('I create a new deal {string}') do |arg1|
   find('#deal_deal_investor_status').set(Array(@deal.deal_investor_status).join(', '))
   fill_in('deal_status', with: @deal.status)
   click_on("Save")
-  sleep(3)
 
   expect(page).to have_content("Deal was successfully created")
   expect(page).to have_content(@deal.name)
@@ -676,7 +675,8 @@ Given('I click on the Add Item and create a new Stakeholder {string} and save') 
   select("LP", from: "investor_category")
   fill_in('investor_primary_email', with: @inv.primary_email)
   click_on("Save")
-  sleep(3)
+  # Later steps read this stakeholder from the DB - wait for it to exist (was sleep 3)
+  eventually { expect(Investor.exists?(investor_name: @inv.investor_name)).to be true }
 end
 
 Given('I click on the Add Item and select {string} Investor and save') do |investor_name|
@@ -872,7 +872,9 @@ end
 # Adds a single grid column row without saving (used when building multiple rows).
 When('I add grid column with field {string} label {string} and position {string}') do |field, label, position|
   # Open edit page only on the first call (row may already be on page)
-  visit(edit_deal_path(@deal)) unless page.has_css?("[data-deal-grid-columns-target='rows']", wait: 2)
+  # Already on the edit page from an earlier call? Checked by path, with no wait - the old
+  # has_css?(rows, wait: 2) spent 2 s on every first call.
+  visit(edit_deal_path(@deal)) unless page.has_current_path?(edit_deal_path(@deal), wait: 0)
   _add_grid_column_row(field, label, position)
 end
 
@@ -886,8 +888,8 @@ end
 Given('I visit the deal list view') do
   @deal.reload
   visit(deal_path(@deal))
-  # Wait for AG Grid to initialize
-  sleep(2)
+  # Wait for AG Grid to initialize: its header row only renders once the grid is built
+  expect(page).to have_css('.deals-list-view .ag-header-cell', wait: 15)
 end
 
 # Verifies a column header exists in the AG Grid column definitions (visible or scrolled off-screen).

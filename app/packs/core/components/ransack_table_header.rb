@@ -4,7 +4,11 @@ class RansackTableHeader < ViewComponent::Base
 
   # sortable: false renders plain header labels (no Ransack sort links/arrows),
   # for tables where sorting is handled client-side by jQuery DataTables.
-  def initialize(model, q:, turbo_frame:, default_columns_map: nil, entity: nil, current_user: nil, records: nil, report_id: nil, id: "", css_class: "", referrer: nil, snapshot: nil, actions_column: true, sortable: true)
+  # required_columns / excluded_columns adjust whatever column set is resolved (report,
+  # entity's saved columns or default) for the page it is shown on: required_columns
+  # ({"Label; css" => "key; css"}) are put at the front when their key is missing,
+  # excluded_columns (plain keys, e.g. "investor_name") are dropped.
+  def initialize(model, q:, turbo_frame:, default_columns_map: nil, entity: nil, current_user: nil, records: nil, report_id: nil, id: "", css_class: "", referrer: nil, snapshot: nil, actions_column: true, sortable: true, required_columns: nil, excluded_columns: nil)
     super()
     @model = model
     @q = q.presence || @model.ransack
@@ -18,6 +22,8 @@ class RansackTableHeader < ViewComponent::Base
     @snapshot = snapshot
     @default_columns_map = default_columns_map
     @sortable = sortable
+    @required_columns = required_columns.presence || {}
+    @excluded_columns = Array(excluded_columns)
     # fetch columns uses @referrer in the cache key, it should have a value assigned before use
     @columns = fetch_columns(@entity, default_columns_map)
     @actions_column = actions_column
@@ -58,6 +64,7 @@ class RansackTableHeader < ViewComponent::Base
     end
 
     columns = @model.ag_grids_default_columns if columns.blank?
+    columns = adjust_ag_columns(columns)
     # Makes ag grid col link works correctly
     # enforce data types from default columns
     # this is to ensure that even if the user has saved the column as a string,
@@ -86,7 +93,8 @@ class RansackTableHeader < ViewComponent::Base
     # default_columns_map must be part of the key: callers like fund_formulas pick a
     # different map per-request (e.g. params[:debug]), and without this the cached
     # result from one variant gets served to the other until the 5-day expiry.
-    ["#{@model}Header", current_user, entity, @referrer, @report_id, default_columns_map]
+    # required/excluded columns too: the same entity's columns are adjusted differently per page.
+    ["#{@model}Header", current_user, entity, @referrer, @report_id, default_columns_map, @required_columns, @excluded_columns]
   end
 
   def fetch_columns(entity, default_columns_map)
@@ -104,7 +112,42 @@ class RansackTableHeader < ViewComponent::Base
     columns = form_type&.selected_columns if columns.blank?
     columns = default_columns_map if columns.blank?
     columns = @model::STANDARD_COLUMNS if columns.blank?
-    columns
+    adjust_columns(columns)
+  end
+
+  # The plain attribute key of a "key; css-class" column value
+  def bare_key(value)
+    value.to_s.split(";").first.strip
+  end
+
+  # Applies required/excluded columns to a {"Label; css" => "key; css"} column map
+  def adjust_columns(columns)
+    return columns if @required_columns.empty? && @excluded_columns.empty?
+
+    # Drop the columns this page has no use for
+    kept = columns.reject { |_label, key| @excluded_columns.include?(bare_key(key)) }
+    # Prepend the required columns the resolved set does not already have, in the given order
+    present_keys = kept.values.map { |key| bare_key(key) }
+    missing = @required_columns.reject { |_label, key| present_keys.include?(bare_key(key)) }
+    missing.merge(kept)
+  end
+
+  # Same adjustment for AG Grid's [{label:, key:, data_type:}] column list
+  def adjust_ag_columns(columns)
+    return columns if @required_columns.empty? && @excluded_columns.empty?
+
+    # Drop the excluded keys
+    kept = columns.reject { |col| @excluded_columns.include?(col.with_indifferent_access[:key].to_s) }
+    present_keys = kept.map { |col| col.with_indifferent_access[:key].to_s }
+    # Build AG Grid entries for the missing required columns, typed from the model's AG defaults
+    ag_defaults = @model.respond_to?(:ag_grids_default_columns) ? @model.ag_grids_default_columns.index_by { |col| col[:key] } : {}
+    missing = @required_columns.filter_map do |label, key|
+      clean_key = bare_key(key)
+      next if present_keys.include?(clean_key)
+
+      { label: bare_key(label), key: clean_key, data_type: ag_defaults.dig(clean_key, :data_type) || ApplicationRecord::DEFAULT_DATA_TYPE }
+    end
+    missing + kept
   end
 
   def get_owner_entity(records)

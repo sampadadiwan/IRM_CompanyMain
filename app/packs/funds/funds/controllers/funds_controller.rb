@@ -1,4 +1,8 @@
 class FundsController < ApplicationController
+  include EvergreenSettingParams
+
+  # evergreen-fund-on-create ②: the open-ended steps of New Fund use the evergreen settings helpers
+  helper EvergreenSettingsHelper
   helper CapitalCommitmentDashboardHelper
   helper CapitalCallDashboardHelper
   helper CapitalDistributionDashboardHelper
@@ -42,6 +46,10 @@ class FundsController < ApplicationController
     @funds = @funds.where("funds.tag_list LIKE ?", "%#{params[:tag]}%") if params[:tag].present?
     @funds = @funds.includes(:fund_ratios) if params[:card].present?
     @pagy, @funds = pagy(@funds) if params[:card].present? || params[:all].present?
+    # Closed-ended / Open-ended badge per fund, without a query per row (evergreen-fund-on-create)
+    # (a snapshot row has its own id; its live fund is orignal_id — WithSnapshot)
+    @evergreen_fund_ids = EvergreenFundSetting.where(fund_id: @funds.map { |f| f.orignal_id || f.id })
+                                              .distinct.pluck(:fund_id).to_set
   end
 
   def export
@@ -102,12 +110,16 @@ class FundsController < ApplicationController
     @fund.currency = @fund.entity.currency
     setup_custom_fields(@fund)
     authorize(@fund)
+    # evergreen-fund-on-create ①: blank evergreen terms for the open-ended steps of the wizard
+    @evergreen_setting = new_evergreen_setting if open_ended_available?
   end
 
   # GET /funds/1/edit
   def edit
     @bread_crumbs[:Edit] = nil
     setup_custom_fields(@fund)
+    # evergreen-fund-on-create: an open-ended fund's edit carries on into its open-ended terms, as on create
+    @evergreen_setting = @fund.evergreen_fund_setting if @fund.evergreen?
   end
 
   def last
@@ -129,6 +141,9 @@ class FundsController < ApplicationController
     @fund = Fund.new(entity_id: current_user.entity_id)
     @fund.assign_attributes(fund_params)
     authorize(@fund)
+    # evergreen-fund-on-create H1: an open-ended fund is created with its evergreen terms, or not at all
+    return create_open_ended if open_ended_requested?
+
     respond_to do |format|
       if assign_feature_params && @fund.save
         format.html { redirect_to fund_url(@fund), notice: "Fund was successfully created." }
@@ -155,6 +170,9 @@ class FundsController < ApplicationController
       end
       return
     end
+
+    # An open-ended fund's edit also saves its open-ended terms — fund and terms together, or neither
+    return update_open_ended if @fund.evergreen? && params[:evergreen_fund_setting].present?
 
     respond_to do |format|
       @fund.assign_attributes(fund_params)
@@ -435,6 +453,78 @@ class FundsController < ApplicationController
   end
 
   private
+
+  # ---- evergreen-fund-on-create: choose closed-ended or open-ended on New Fund ----
+
+  # The Fund type choice is offered only to companies with evergreen funds and units switched on (E1)
+  def open_ended_available?
+    perms = current_user.entity.permissions
+    perms.enable_evergreen_funds? && perms.enable_units?
+  end
+
+  # E1, E4: a sent value is ignored unless the company has evergreen; Closed-ended is the default
+  def open_ended_requested?
+    params[:fund_type] == "open_ended" && open_ended_available?
+  end
+
+  def new_evergreen_setting(attrs = {})
+    setting = EvergreenFundSetting.new(entity_id: current_user.entity_id)
+    setting.assign_attributes(attrs.except(:class_terms))
+    # Re-show the class cards typed before a failed create (X2), in the order of the fund's unit types
+    Array(attrs[:class_terms]).each { |c| setting.evergreen_class_terms.build(c.except(:id, :early_redemption_fee)) }
+    setting
+  end
+
+  # Edit of an open-ended fund: the fund's fields and its open-ended terms in one transaction. Terms change
+  # forward only, as on Evergreen Settings: open dealing dates follow a changed payment timing.
+  def update_open_ended
+    setting = @fund.evergreen_fund_setting
+    authorize setting, :update?
+    attrs = evergreen_setting_attributes_for_update
+    saved = false
+    ActiveRecord::Base.transaction do
+      saved = @fund.update(fund_params) && setting.update(attrs)
+      raise ActiveRecord::Rollback unless saved
+    end
+    if saved
+      @fund.dealing_dates.where(status: "open").where.not(payment_timing: setting.payment_timing)
+           .update_all(payment_timing: setting.payment_timing, updated_at: Time.current)
+      redirect_to fund_url(@fund), notice: "Fund was successfully updated."
+    else
+      render_open_ended_edit(setting, @fund.errors.full_messages + setting.errors.full_messages)
+    end
+  rescue EvergreenFormParsing::BadDates => e
+    render_open_ended_edit(@fund.evergreen_fund_setting, [e.message])
+  end
+
+  def render_open_ended_edit(setting, errors)
+    @evergreen_setting = setting
+    @evergreen_errors = errors
+    setup_custom_fields(@fund)
+    render :edit, status: :unprocessable_entity, formats: [:html]
+  end
+
+  # H1, X1–X3: fund and terms together; any error shows the wizard again with every value kept
+  def create_open_ended
+    setting_params = evergreen_setting_attributes
+    result = EvergreenFundCreate.call(fund: @fund, setting_params:, current_user:)
+    if result.success?
+      redirect_to fund_url(@fund), notice: "#{@fund.name} created as an open-ended fund"
+    else
+      @evergreen_setting = new_evergreen_setting(setting_params)
+      @evergreen_errors = Array(result[:errors])
+      @fund_type = "open_ended"
+      setup_custom_fields(@fund)
+      # The form posts as a Turbo request: answer with HTML, or Turbo ignores the page and no error shows
+      render :new, status: :unprocessable_entity, formats: [:html]
+    end
+  rescue EvergreenFormParsing::BadDates => e
+    @evergreen_setting = new_evergreen_setting
+    @evergreen_errors = [e.message]
+    @fund_type = "open_ended"
+    setup_custom_fields(@fund)
+    render :new, status: :unprocessable_entity, formats: [:html]
+  end
 
   # Use callbacks to share common setup or constraints between actions.
   def set_fund

@@ -1,0 +1,14 @@
+<%# Order summary shared by every evergreen email. l(date) renders "Mon dd, yyyy" in emails. %>
+<% if @order %>
+<table style="border-collapse:collapse" cellpadding="4">
+  <tr><td><strong>Fund</strong></td><td><%= @fund.name %></td></tr>
+  <tr><td><strong><%= eg_t(:capital_commitment) %></strong></td><td><%= @order.capital_commitment&.folio_id || "Assigned when dealt" %></td></tr>
+  <tr><td><strong>Class</strong></td><td><%= @order.unit_type %></td></tr>
+  <% if @order.subscription? %>
+    <tr><td><strong>Amount</strong></td><td><%= evergreen_money(@order.amount_cents, @fund) %></td></tr>
+  <% else %>
+    <tr><td><strong><%= eg_t(:redemption) %></strong></td><td><%= @order.all_units ? "All #{eg_t(:units)}" : (@order.units.present? ? eg_units(@order.units) : evergreen_money(@order.amount_cents, @fund)) %></td></tr>
+  <% end %>
+  <tr><td><strong><%= eg_t(@order.subscription? ? :subscription_date : :redemption_date) %></strong></td><td><%= l(@order.dealing_date.date) %></td></tr>
+</table>
+<% end %>

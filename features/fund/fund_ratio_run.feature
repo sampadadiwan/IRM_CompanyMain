@@ -1,4 +1,4 @@
-@import
+@import @rack_test
 Feature: Fund Ratio Run — Cross-Fund and Cross-Portfolio Computations
   FundRatiosScenarioJob creates a FundRatioRun that records the exact
   parameters used in the calculation. FundRatio rows produced by the

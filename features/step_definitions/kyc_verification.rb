@@ -56,9 +56,8 @@ end
 Then('Kyc Pan Verification is triggered') do
   allow_any_instance_of(KycVerify).to receive(:verify_pan_card).and_return(pan_response)
   @kyc = InvestorKyc.last
-  sleep(5)
-  @kyc.reload
-  @kyc.pan_verification_response.should_not == @og_pan_verification_response
+  # Retry until the verification has run (was a fixed 5 s)
+  eventually { expect(@kyc.reload.pan_verification_response).not_to eq(@og_pan_verification_response) }
 end
 
 Then('when the Kyc name is updated') do
@@ -115,9 +114,8 @@ end
 Then('Kyc Bank Verification is triggered') do
   allow_any_instance_of(KycVerify).to receive(:verify_bank).and_return(bank_response)
   @kyc = InvestorKyc.last
-  sleep(5)
-  @kyc.reload
-  @kyc.bank_verification_response.should_not == @og_bank_verification_response
+  # Retry until the verification has run (was a fixed 5 s)
+  eventually { expect(@kyc.reload.bank_verification_response).not_to eq(@og_bank_verification_response) }
 end
 
 Then('when the Kyc Bank Account number is updated') do

@@ -46,7 +46,7 @@ class SidekiqJobMemoryMetrics
       # class (DocGenJob), matching the job_name label on the built-in job metrics.
       labels = {
         job_name: PrometheusExporter::Instrumentation::Sidekiq.get_name(worker.class.to_s, msg),
-        queue: queue
+        queue:    queue,
       }
       rss_delta = current_rss_bytes - rss_before
       self.class.rss_growth_counter.observe(rss_delta, labels) if rss_delta.positive?
@@ -140,6 +140,18 @@ Sidekiq.configure_server do |config|
     # capital-call-journey: re-checks every journey every 15 minutes so progress is picked up and
     # approvers are told promptly even when nobody opens the record (WorkflowEvaluateJob)
     Sidekiq::Cron::Job.create(name: 'WorkflowEvaluateJob', cron: '*/15 * * * *', class: 'WorkflowEvaluateJob')
+    # Evergreen jobs follow the same per-region LOCAL anchors as the jobs above (review fix 10, 10 Oct
+    # 2026). They used flat UTC times, which in the US region put the investor reminders and team
+    # alerts at ~11:30pm Eastern the evening before.
+    # Evergreen funds: generate upcoming dealing dates (and their journeys) daily (open-ended-funds H16).
+    # 01:45 LOCAL, right after the maintenance block ends at 01:30: in -> 20:15 UTC (day before);
+    # us -> 06:15 UTC.
+    dealing_date_generate_cron = in_region ? '15 20 * * *' : '15 6 * * *'
+    Sidekiq::Cron::Job.create(name: 'DealingDateGenerateJob', cron: dealing_date_generate_cron, class: 'DealingDateGenerateJob')
+    # Evergreen funds: daily reminders, cut-off summaries and overdue checks (open-ended-funds § Notifications).
+    # 08:00 LOCAL, before the working day: in -> 02:30 UTC; us -> 12:30 UTC (splits EDT/EST, as above).
+    evergreen_notifications_cron = in_region ? '30 2 * * *' : '30 12 * * *'
+    Sidekiq::Cron::Job.create(name: 'EvergreenNotificationsJob', cron: evergreen_notifications_cron, class: 'EvergreenNotificationsJob')
     # Drives ALL support agent schedules (AgentSchedule → AgentRunnerJob): scans
     # due schedules and enqueues runs. Was never cron-registered before, so no
     # scheduled agent (incl. the SideLetterObligationAgent daily enforcement
@@ -215,7 +227,7 @@ Sidekiq.configure_server do |config|
       Sidekiq::Cron::Job.create(name: 'ReplicationHealthJob', cron: 'every 5 minutes', class: 'ReplicationHealthJob')
     end
 
-    Sidekiq::Cron::Job.create(name: 'DbRestoreJob', cron: 'every 4 hours', class: 'DbRestoreJob') if Rails.env.production? # Rails.env.staging? works
+    Sidekiq::Cron::Job.create(name: 'DbRestoreJob', cron: 'every 4 hours', class: 'DbRestoreJob') if Rails.env.production? # Rails.env.staging? works # rubocop:disable Rails/UnknownEnv
 
     # Sidekiq::Cron::Job.create(name: 'Weekly Compliance Checks', cron: '59 23 * * 0', class: 'Com')
   end
@@ -236,7 +248,7 @@ Sidekiq.configure_server do |config|
   PrometheusExporter::Instrumentation::Sidekiq.class_eval do
     ACTIVEJOB_WRAPPER_NAMES = [
       "ActiveJob::QueueAdapters::SidekiqAdapter::JobWrapper", # Rails <7 / old Sidekiq adapter
-      "Sidekiq::ActiveJob::Wrapper" # Sidekiq 7+ native ActiveJob wrapper
+      "Sidekiq::ActiveJob::Wrapper",                          # Sidekiq 7+ native ActiveJob wrapper
     ].freeze
 
     DELAYED_WRAPPER_NAMES = %w[

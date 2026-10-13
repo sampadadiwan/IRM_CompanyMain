@@ -1,0 +1,35 @@
+<%# Generate statement(s) form (evergreen-folio-soa ④): template + period, for one folio (folio given) or
+    every folio of the fund. Same modal markup as the NAV page's New NAV. Posts to StatementsController#create,
+    which queues the existing SOA job. Worked examples H4, H5, E10, E11, X6, X7 %>
+<% quarter_end = (Time.zone.today.beginning_of_quarter - 1.day) %>
+<% templates = Array(Evergreen::StatementsController.templates_for(fund, folio)) %>
+<div class="modal fade" id="generate_statements_modal" tabindex="-1" aria-labelledby="generate_statements_label" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <%= form_with url: evergreen_statements_path(fund), method: :post, id: "generate_statements_form", data: { turbo_frame: "_top" } do |f| %>
+        <%= hidden_field_tag :capital_commitment_id, folio&.id %>
+        <div class="modal-header">
+          <h5 class="modal-title" id="generate_statements_label"><%= folio ? "Generate statement — #{folio.folio_id} · #{folio.investor.investor_name}" : "Generate statements — #{fund.name}" %></h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <% if templates.empty? %>
+            <%# X7: nothing to generate from — point to the sample %>
+            <div class="text-muted" id="no_statement_template"><i class="ti ti-info-circle me-1"></i>Upload a template tagged SOA Template to the fund's documents first.
+              <%= link_to "Download the sample evergreen statement", "/sample_uploads/Evergreen Statement Template.docx", id: "sample_statement_template" %></div>
+          <% else %>
+            <div class="text-muted small mb-3">Generated statements wait for approval under Documents › Approve before investors see them.</div>
+            <div class="mb-3"><%= f.label :template_id, "Template", class: "form-label", for: "statement_template" %>
+              <%= f.select :template_id, templates.map { |t| [t.name, t.id] }, {}, class: "form-select", id: "statement_template" %></div>
+            <div class="mb-3"><%= f.label :start_date, "Start date", class: "form-label", for: "statement_start_date" %><%= f.date_field :start_date, value: quarter_end.beginning_of_quarter, class: "form-control", required: true, id: "statement_start_date" %></div>
+            <div class="mb-1"><%= f.label :end_date, "End date", class: "form-label", for: "statement_end_date" %><%= f.date_field :end_date, value: quarter_end, class: "form-control", required: true, id: "statement_end_date" %></div>
+          <% end %>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal"><%= t_common(:cancel) %></button>
+          <%= button_tag type: "submit", class: "btn btn-outline-success", id: "generate_statements", disabled: templates.empty? do %><i class="ti ti-file-text"></i> Generate<% end %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

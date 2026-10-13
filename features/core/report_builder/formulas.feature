@@ -1,3 +1,4 @@
+@rack_test
 Feature: ReportBuilderFormulaService — derived columns via safe expression evaluation
 
   Scenario: Basic arithmetic formula produces correct result

@@ -148,24 +148,21 @@ end
 Given("I am logged in as the super user") do
   @user = @super_user || FactoryBot.create(:user).tap { |u| u.add_role(:super) }
   steps %(
-    And I am at the login page
-    When I fill and submit the login page
+    And I am signed in as the current user
   )
 end
 
 Given("I am logged in as the support user") do
   @user = @support_user || FactoryBot.create(:user).tap { |u| u.add_role(:support) }
   steps %(
-    And I am at the login page
-    When I fill and submit the login page
+    And I am signed in as the current user
   )
 end
 
 Given("I am logged in as the employee user") do
   @user = FactoryBot.create(:user).tap { |u| u.add_role(:employee) }
   steps %(
-    And I am at the login page
-    When I fill and submit the login page
+    And I am signed in as the current user
   )
 end
 

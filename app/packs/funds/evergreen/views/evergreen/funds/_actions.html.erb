@@ -1,0 +1,35 @@
+<%# Actions row for an evergreen fund (same place and style as the closed-ended actions dropdown) %>
+<div class="d-flex flex-wrap align-items-center gap-2 mb-3" id="evergreen_actions">
+  <%# Review fix 9: only for users who can place an order (it showed for read-only users, then refused) %>
+  <% if policy(DealingOrder.new(entity_id: fund.entity_id, fund:)).create? %>
+    <%= link_to new_evergreen_order_path(fund, kind: "subscription"), class: "btn btn-outline-primary" do %><i class="ti ti-plus"></i>New Order<% end %>
+  <% end %>
+  <% if policy(fund).update? %>
+    <div class="btn-group">
+      <div class="dropdown">
+        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" id="evergreen_actions_menu">
+          <i class="ti ti-settings"></i>Actions
+        </button>
+        <div class="dropdown-menu">
+          <%# The fund's own details (name, unit types, signatories…); its type is shown read-only there %>
+          <%= link_to edit_fund_path(fund), class: "dropdown-item", id: "edit_fund_link" do %><i class="ti ti-edit"></i>Edit Fund<% end %>
+          <div class="dropdown-divider"></div>
+          <%= link_to evergreen_navs_path(fund), class: "dropdown-item" do %><i class="ti ti-chart-line"></i>Draft / Upload NAV<% end %>
+          <%= link_to evergreen_dealing_dates_path(fund), class: "dropdown-item" do %><i class="ti ti-calendar"></i><%= eg_t(:transaction_date, fund:).titleize.pluralize %><% end %>
+          <%= link_to evergreen_settings_path(fund), class: "dropdown-item", id: "evergreen_settings_link" do %><i class="ti ti-infinity"></i>Evergreen Settings<% end %>
+          <div class="dropdown-divider"></div>
+          <%= link_to fund_unit_settings_path(fund_id: fund.id), class: "dropdown-item" do %><i class="ti ti-settings"></i><%= eg_t(:Unit, fund:) %> Settings<% end %>
+          <%= link_to fund_units_path(fund_id: fund.id, cols: :all), class: "dropdown-item" do %><i class="ti ti-building-community"></i><%= eg_t(:Units, fund:) %><% end %>
+          <%= link_to account_entries_path(fund_id: fund.id), class: "dropdown-item" do %><i class="ti ti-book"></i>Ledger<% end %>
+          <%# Derivatives — only when the entity and the fund have the feature (fund-market-data, card ⑥) %>
+          <% if fund.feature_enabled?(:enable_derivatives) %>
+            <%= link_to fund_derivative_contracts_path(fund), class: "dropdown-item" do %><i class="ti ti-chart-arrows"></i>Derivatives<% end %>
+          <% end %>
+          <% if current_user.enable_investors %>
+            <%= link_to investors_path(owner_id: fund.id, owner_type: "Fund"), class: "dropdown-item" do %><i class="ti ti-users-group"></i>View Stakeholders<% end %>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  <% end %>
+</div>

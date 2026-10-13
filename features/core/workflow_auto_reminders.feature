@@ -6,6 +6,7 @@ Feature: Workflow Auto-Reminders and Audit Trail Export
 
   # ── Auto-reminder job ────────────────────────────────────────────────────────
 
+  @rack_test
   Scenario Outline: Auto-reminder job sends emails to pending actors after interval
     Given Im logged in as a user "<user>" for an entity "<entity>"
     And the user has role "company_admin"
@@ -55,6 +56,7 @@ Feature: Workflow Auto-Reminders and Audit Trail Export
       | user | entity              |
       |      | entity_type=Company |
 
+  @rack_test
   Scenario Outline: Step-level reminder_interval_days overrides the template default
     Given Im logged in as a user "<user>" for an entity "<entity>"
     And the user has role "company_admin"
@@ -90,6 +92,7 @@ Feature: Workflow Auto-Reminders and Audit Trail Export
 
   # ── Manual reminder ───────────────────────────────────────────────────────────
 
+  @rack_test
   Scenario Outline: Admin manually triggers a reminder and it is logged
     Given Im logged in as a user "<user>" for an entity "<entity>"
     And the user has role "company_admin"
@@ -108,6 +111,7 @@ Feature: Workflow Auto-Reminders and Audit Trail Export
 
   # ── Audit trail CSV export ────────────────────────────────────────────────────
 
+  @rack_test
   Scenario Outline: Exporting the audit trail produces a CSV with all state changes
     Given Im logged in as a user "<user>" for an entity "<entity>"
     And the user has role "company_admin"

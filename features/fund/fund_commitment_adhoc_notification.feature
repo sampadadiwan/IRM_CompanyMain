@@ -3,6 +3,7 @@ Feature: Fund Commitment Adhoc Notification
   As a GP admin I want to send a custom adhoc notification
   to all or a selected subset of fund commitment holders
 
+  @rack_test
   Scenario: Send notification to all commitments when no selection is made
     Given there is a user "" for an entity "entity_type=Investment Fund"
     Given the user has role "company_admin"
@@ -15,6 +16,7 @@ Feature: Fund Commitment Adhoc Notification
     When the adhoc notification is triggered for all commitments
     Then all commitment investors receive the notification email
 
+  @rack_test
   Scenario: Notification is cc'd to the commitment's cc address
     Given there is a user "" for an entity "entity_type=Investment Fund"
     Given the user has role "company_admin"
@@ -27,6 +29,7 @@ Feature: Fund Commitment Adhoc Notification
     When the adhoc notification is triggered for all commitments
     Then all commitment investors receive the notification email cc'd to "advisor@gmail.com"
 
+  @rack_test
   Scenario: Send notification to a selected commitment only
     Given there is a user "" for an entity "entity_type=Investment Fund"
     Given the user has role "company_admin"
@@ -40,7 +43,7 @@ Feature: Fund Commitment Adhoc Notification
     Then only the first commitment investor receives the notification email
     And the second commitment investor does not receive a notification email
 
-  @attachment
+  @attachment @rack_test
   Scenario: Notification attaches commitment document matching attachment_names
     Given there is a user "" for an entity "entity_type=Investment Fund"
     Given the user has role "company_admin"
@@ -54,7 +57,7 @@ Feature: Fund Commitment Adhoc Notification
     Then all commitment investors receive the notification email
     And the notification email has the document "Statement of Account" attached
 
-  @attachment
+  @attachment @rack_test
   Scenario: Notification attachment is password protected when password_protect_attachment is enabled
     Given there is a user "" for an entity "entity_type=Investment Fund"
     Given the user has role "company_admin"
@@ -70,7 +73,7 @@ Feature: Fund Commitment Adhoc Notification
     And the notification email has the document "Statement of Account" attached
     And the notification email attachment "Statement of Account" is password protected with password "ABCDE1234F"
 
-  @attachment
+  @attachment @rack_test
   Scenario: Notification attachment is not password protected when password_protect_attachment is disabled
     Given there is a user "" for an entity "entity_type=Investment Fund"
     Given the user has role "company_admin"
@@ -85,7 +88,7 @@ Feature: Fund Commitment Adhoc Notification
     And the notification email has the document "Statement of Account" attached
     And the notification email attachment "Statement of Account" is not password protected
 
-  @attachment
+  @attachment @rack_test
   Scenario: A document linked directly to the custom notification is also password protected
     Given there is a user "" for an entity "entity_type=Investment Fund"
     Given the user has role "company_admin"
@@ -100,7 +103,7 @@ Feature: Fund Commitment Adhoc Notification
     And the notification email has the document "Company Letter" attached
     And the notification email attachment "Company Letter" is password protected with password "adhoc_fund_notification"
 
-  @attachment
+  @attachment @rack_test
   Scenario: Notification attaches documents matching a wildcard attachment_names pattern
     Given there is a user "" for an entity "entity_type=Investment Fund"
     Given the user has role "company_admin"
@@ -114,7 +117,7 @@ Feature: Fund Commitment Adhoc Notification
     Then all commitment investors receive the notification email
     And the notification email has the document "SOA_FundA_03_2026" attached
 
-  @attachment
+  @attachment @rack_test
   Scenario: Notification attaches every matching document when latest_doc_only is unchecked
     Given there is a user "" for an entity "entity_type=Investment Fund"
     Given the user has role "company_admin"
@@ -129,7 +132,7 @@ Feature: Fund Commitment Adhoc Notification
     Then all commitment investors receive the notification email
     And the notification email has 2 documents attached
 
-  @attachment
+  @attachment @rack_test
   Scenario: Notification attaches only the newest wildcard match when latest_doc_only is checked
     Given there is a user "" for an entity "entity_type=Investment Fund"
     Given the user has role "company_admin"
@@ -146,7 +149,7 @@ Feature: Fund Commitment Adhoc Notification
     And the notification email has the document "SOA_FundB_03_2026" attached
     And the notification email does not have the document "SOA_FundA_03_2026" attached
 
-  @attachment
+  @attachment @rack_test
   Scenario: Notification attaches every copy of an exact-name match when latest_doc_only is unchecked
     Given there is a user "" for an entity "entity_type=Investment Fund"
     Given the user has role "company_admin"
@@ -161,7 +164,7 @@ Feature: Fund Commitment Adhoc Notification
     Then all commitment investors receive the notification email
     And the notification email has 2 documents attached
 
-  @attachment
+  @attachment @rack_test
   Scenario: Notification reproduces old close-match behavior via a *text* wildcard pattern
     Given there is a user "" for an entity "entity_type=Investment Fund"
     Given the user has role "company_admin"
@@ -176,7 +179,7 @@ Feature: Fund Commitment Adhoc Notification
     And the notification email has 1 documents attached
     And the notification email has the document "Statement of Account v2 FINAL" attached
 
-  @attachment
+  @attachment @rack_test
   Scenario: Notification attaches a document whose name contains a comma when the pattern is quoted
     Given there is a user "" for an entity "entity_type=Investment Fund"
     Given the user has role "company_admin"
@@ -191,7 +194,7 @@ Feature: Fund Commitment Adhoc Notification
     And the notification email has 1 documents attached
     And the notification email has the document "SOA UNit 01 July,2025 to 31 December,2025 - AA Holdings LLP - ESF-AA" attached
 
-  @attachment
+  @attachment @rack_test
   Scenario: Notification attaches documents for a comma-separated list mixing a quoted comma-containing name with a plain name
     Given there is a user "" for an entity "entity_type=Investment Fund"
     Given the user has role "company_admin"
@@ -208,7 +211,7 @@ Feature: Fund Commitment Adhoc Notification
     And the notification email has the document "SOA UNit 01 July,2025 to 31 December,2025 - AA Holdings LLP - ESF-AA" attached
     And the notification email has the document "KYC Certificate" attached
 
-  @attachment
+  @attachment @rack_test
   Scenario: Notification sends successfully with zero attachments when attachment_names matches nothing
     Given there is a user "" for an entity "entity_type=Investment Fund"
     Given the user has role "company_admin"
@@ -226,7 +229,7 @@ Feature: Fund Commitment Adhoc Notification
   # name — is stored squished by Document's `normalizes :name`. So a single-spaced attachment_names
   # entry finds it. HTML collapses the run, so before this the document looked like an exact match
   # in the UI while a literal LIKE missed it entirely.
-  @attachment
+  @attachment @rack_test
   Scenario: A document saved with a doubled space is stored squished and still attaches
     Given there is a user "" for an entity "entity_type=Investment Fund"
     Given the user has role "company_admin"
@@ -245,7 +248,7 @@ Feature: Fund Commitment Adhoc Notification
   # WILDCARD entry: the exact-match branch goes through where(name:), which Rails' `normalizes`
   # already squishes, so only the raw-SQL "name like ?" branch actually exercises the squish in
   # documents_matching_attachment_name.
-  @attachment
+  @attachment @rack_test
   Scenario: A wildcard attachment_names entry typed with extra spaces still matches
     Given there is a user "" for an entity "entity_type=Investment Fund"
     Given the user has role "company_admin"
@@ -261,7 +264,7 @@ Feature: Fund Commitment Adhoc Notification
 
   # Same on the attachment_mandatory path, where a miss is far more costly: it suppresses the
   # whole email rather than just dropping the attachment.
-  @attachment
+  @attachment @rack_test
   Scenario: Attachment Mandatory sends when the entry differs only by extra whitespace
     Given there is a user "" for an entity "entity_type=Investment Fund"
     Given the user has role "company_admin"
@@ -277,7 +280,7 @@ Feature: Fund Commitment Adhoc Notification
 
   # Squishing collapses whitespace RUNS; it must not drop words. Without a '*' the entry is still
   # an exact match, so a missing word means no attachment rather than a loose partial match.
-  @attachment
+  @attachment @rack_test
   Scenario: An exact attachment name does not match a document with extra words in it
     Given there is a user "" for an entity "entity_type=Investment Fund"
     Given the user has role "company_admin"
@@ -291,7 +294,7 @@ Feature: Fund Commitment Adhoc Notification
     Then all commitment investors receive the notification email
     And the notification email has 0 documents attached
 
-  @attachment
+  @attachment @rack_test
   Scenario: Preview shows the document that would be attached via attachment_names
     Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
     Given the user has role "company_admin"
@@ -311,7 +314,7 @@ Feature: Fund Commitment Adhoc Notification
   # document is silently refused at attach time - so without an explicit warning the preview
   # shows an empty attachment list, identical to a pattern that matched nothing. The admin
   # would go looking for a naming problem that does not exist.
-  @attachment
+  @attachment @rack_test
   Scenario: Preview reports a document that is too large to attach
     Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
     Given the user has role "company_admin"
@@ -331,7 +334,7 @@ Feature: Fund Commitment Adhoc Notification
   # per-document check reports nothing at all here - the preview would show two attachments, a
   # third silently missing, and no explanation. This is the case the first version of the
   # preview warning got wrong.
-  @attachment
+  @attachment @rack_test
   Scenario: Preview reports documents that together exceed the size limit
     Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
     Given the user has role "company_admin"
@@ -348,6 +351,7 @@ Feature: Fund Commitment Adhoc Notification
     # Two of the three fit and must still be listed - the guard drops only what tips the total.
     And I see 2 attachments listed in the preview
 
+  @rack_test
   Scenario: Notification in Investor KYC mode sends one combined email when commitments share a KYC
     Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
     Given the user has role "company_admin"
@@ -363,6 +367,7 @@ Feature: Fund Commitment Adhoc Notification
     Then exactly one notification email is sent for the shared investor kyc
     And the investor kyc notification email has the document "PAN Card" attached
 
+  @rack_test
   Scenario: Investor KYC mode notification is cc'd to every shared commitment's cc address
     Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
     Given the user has role "company_admin"
@@ -378,6 +383,7 @@ Feature: Fund Commitment Adhoc Notification
     Then the investor kyc notification email is cc'd to "advisor1@gmail.com"
     And the investor kyc notification email is cc'd to "advisor2@gmail.com"
 
+  @rack_test
   Scenario: Investor KYC mode honors the specific-KYC selection
     Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
     Given the user has role "company_admin"
@@ -391,6 +397,7 @@ Feature: Fund Commitment Adhoc Notification
     When the adhoc notification is triggered for the shared investor kyc only
     Then exactly one notification email is sent for the shared investor kyc
 
+  @rack_test
   Scenario: KYC notification placeholders are resolved correctly
     Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
     Given the user has role "company_admin"
@@ -405,6 +412,7 @@ Feature: Fund Commitment Adhoc Notification
     When the adhoc notification is triggered for all investor kycs
     Then the investor kyc notification placeholders are resolved correctly
 
+  @rack_test
   Scenario: GP admin can preview the fund's adhoc notification from a capital commitment
     Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
     Given the user has role "company_admin"
@@ -418,6 +426,7 @@ Feature: Fund Commitment Adhoc Notification
     When I click the preview adhoc notification button for "Q4 Update"
     Then I see the adhoc notification preview with subject "Q4 Update"
 
+  @rack_test
   Scenario: GP admin can preview each adhoc notification when the fund has more than one defined
     Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
     Given the user has role "company_admin"
@@ -442,6 +451,7 @@ Feature: Fund Commitment Adhoc Notification
     When I open the actions menu on the first capital commitment
     Then I do not see a preview adhoc notification button
 
+  @rack_test
   Scenario: Placeholders are resolved in adhoc notification body
     Given there is a user "" for an entity "entity_type=Investment Fund"
     Given the user has role "company_admin"
@@ -453,6 +463,7 @@ Feature: Fund Commitment Adhoc Notification
     When the adhoc notification is triggered for all commitments
     Then the adhoc notification placeholders are resolved correctly
 
+  @rack_test
   Scenario: Notification shows a View Commitment link when show_details_link is enabled
     Given there is a user "" for an entity "entity_type=Investment Fund"
     Given the user has role "company_admin"
@@ -475,6 +486,7 @@ Feature: Fund Commitment Adhoc Notification
     When the adhoc notification is triggered for all commitments
     Then the notification email does not contain a link to view the commitment
 
+  @rack_test
   Scenario: Investor KYC mode notification shows a View KYC link when show_details_link is enabled
     Given there is a user "" for an entity "entity_type=Investment Fund"
     Given the user has role "company_admin"
@@ -488,7 +500,7 @@ Feature: Fund Commitment Adhoc Notification
     When the adhoc notification is triggered for all investor kycs
     Then the investor kyc notification email contains a link to view the kyc
 
-  @attachment
+  @attachment @rack_test
   Scenario: Attachment Mandatory sends normally when the required document exists for every recipient
     Given there is a user "" for an entity "entity_type=Investment Fund"
     Given the user has role "company_admin"
@@ -502,7 +514,7 @@ Feature: Fund Commitment Adhoc Notification
     Then all commitment investors receive the notification email
     And the notification email has the document "Statement of Account" attached
 
-  @attachment
+  @attachment @rack_test
   Scenario: Attachment Mandatory skips only the recipient missing the required document
     Given there is a user "" for an entity "entity_type=Investment Fund"
     Given the user has role "company_admin"
@@ -518,7 +530,7 @@ Feature: Fund Commitment Adhoc Notification
     And the second commitment investor does not receive a notification email
     And the second commitment investor's notification is recorded as skipped with a reason mentioning "Statement of Account"
 
-  @attachment
+  @attachment @rack_test
   Scenario: Attachment Mandatory flag off keeps today's behavior of sending with zero attachments
     Given there is a user "" for an entity "entity_type=Investment Fund"
     Given the user has role "company_admin"
@@ -531,7 +543,7 @@ Feature: Fund Commitment Adhoc Notification
     Then all commitment investors receive the notification email
     And the notification email has 0 documents attached
 
-  @attachment
+  @attachment @rack_test
   Scenario: Attachment Mandatory sends normally when the matching document is generated and approved
     Given there is a user "" for an entity "entity_type=Investment Fund"
     Given the user has role "company_admin"
@@ -545,7 +557,7 @@ Feature: Fund Commitment Adhoc Notification
     Then all commitment investors receive the notification email
     And the notification email has the document "Statement of Account" attached
 
-  @attachment
+  @attachment @rack_test
   Scenario: Attachment Mandatory treats an unapproved generated document as missing
     Given there is a user "" for an entity "entity_type=Investment Fund"
     Given the user has role "company_admin"
@@ -562,7 +574,7 @@ Feature: Fund Commitment Adhoc Notification
     And the second commitment investor does not receive a notification email
     And the second commitment investor's notification is recorded as skipped with a reason mentioning "Statement of Account"
 
-  @attachment
+  @attachment @rack_test
   Scenario: Skipped notification report emails the admin who triggered the send
     Given there is a user "" for an entity "entity_type=Investment Fund"
     Given the user has role "company_admin"
@@ -575,7 +587,7 @@ Feature: Fund Commitment Adhoc Notification
     And the skipped notification report runs
     Then the triggering admin receives a skipped notification report mentioning "Statement of Account"
 
-  @attachment
+  @attachment @rack_test
   Scenario: Skipped notification report falls back to the entity's company admins when no admin triggered the send
     Given there is a user "" for an entity "entity_type=Investment Fund"
     Given the user has role "company_admin"
@@ -609,7 +621,7 @@ Feature: Fund Commitment Adhoc Notification
   # still receives nothing. That is the whole point of preflighting the batch — one investor's
   # oversized document stops the run for everyone, rather than half the list receiving the
   # notification and the rest silently not.
-  @attachment
+  @attachment @rack_test
   Scenario: One oversized document stops the send for every recipient, not just that one
     Given there is a user "" for an entity "entity_type=Investment Fund"
     Given the user has role "company_admin"
@@ -657,7 +669,7 @@ Feature: Fund Commitment Adhoc Notification
   # document sitting on a commitment with no recipients does NOT stop the send, and the
   # investors who do have recipients are emailed normally. That is correct, and it needs to
   # stay correct - the alternative is a single dead commitment silencing a whole fund.
-  @attachment
+  @attachment @rack_test
   Scenario: A commitment nobody would be emailed for does not block the send for everyone else
     Given there is a user "" for an entity "entity_type=Investment Fund"
     Given the user has role "company_admin"
@@ -676,7 +688,7 @@ Feature: Fund Commitment Adhoc Notification
 
   # The counterpart, so the two cannot be confused: the SAME oversized document on a
   # commitment that does have recipients stops the run for everyone.
-  @attachment
+  @attachment @rack_test
   Scenario: An oversized document on a commitment with recipients blocks the whole send
     Given there is a user "" for an entity "entity_type=Investment Fund"
     Given the user has role "company_admin"
@@ -717,7 +729,7 @@ Feature: Fund Commitment Adhoc Notification
 
   # The running-total half of the guard: no single document breaches the limit, but the
   # message they would produce together does. A per-document check alone would send this.
-  @attachment
+  @attachment @rack_test
   Scenario: Several documents that individually fit but together exceed the limit are not emailed
     Given there is a user "" for an entity "entity_type=Investment Fund"
     Given the user has role "company_admin"
@@ -740,7 +752,7 @@ Feature: Fund Commitment Adhoc Notification
 
   # Regression guard on the size check itself — documents under the limit must be
   # completely unaffected. This is the common path for every client.
-  @attachment
+  @attachment @rack_test
   Scenario: A document under the size limit attaches and sends exactly as before
     Given there is a user "" for an entity "entity_type=Investment Fund"
     Given the user has role "company_admin"

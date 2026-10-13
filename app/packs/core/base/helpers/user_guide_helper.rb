@@ -56,6 +56,8 @@ module UserGuideHelper
 
     # Fund Management
     'capital_calls' => 'capital_calls_user_guide.md',
+    # Evergreen (open-ended) funds: keyed explicitly — evergreen controller names (orders, investors…) collide
+    'evergreen_funds' => 'evergreen_funds_user_guide.md',
     'capital_remittances' => 'capital_calls_user_guide.md',
     'capital_remittance_payments' => 'capital_calls_user_guide.md',
     'capital_distributions' => 'capital_distributions_user_guide.md',

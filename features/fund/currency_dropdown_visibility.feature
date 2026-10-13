@@ -26,6 +26,7 @@ Feature: Currency Dropdown Visibility
     When I visit the portfolio company dashboard
     Then I should not see a currency dropdown for fund ratios
 
+  @rack_test
   Scenario: Portfolio Stats - Currency dropdown shown when show_currency_filter is true
     Given there is an existing portfolio company "name=TestCo;category=Portfolio Company"
     Given there is an investment instrument for the portfolio company "name=Stock;currency=USD"

@@ -5,7 +5,7 @@ Given('Given I upload a kpis file for the company') do
   fill_in('import_upload_name', with: "Test Upload")
   @import_file = "kpis.xlsx"
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
-  sleep(2)
+  wait_for_upload("./public/sample_uploads/#{@import_file}") # JS direct-upload to /upload; returns once it lands (was sleep 2)
   click_on("Save")
   sleep(2)
   ImportUploadJob.perform_now(ImportUpload.last.id)
@@ -24,12 +24,14 @@ Given('Given I upload a kpis file for the portfolio company') do
   fill_in('import_upload_name', with: "Test Upload")
   @import_file = "kpis.xlsx"
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
-  sleep(5)
+  wait_for_upload("./public/sample_uploads/#{@import_file}") # JS direct-upload to /upload; returns once it lands (was sleep 5)
+  uploads_before = ImportUpload.count
   click_on("Save")
-  sleep(7)
+  # Wait for Save to create the ImportUpload row (was sleep 7)
+  eventually { expect(ImportUpload.count).to be > uploads_before }
   @iu = ImportUpload.last
+  # perform_now runs the job synchronously, so the result is ready on return (a sleep(4) followed it)
   ImportUploadJob.perform_now(@iu.id)
-  sleep(4)
   expect(@iu.reload.failed_row_count == 0).to be true
 end
 
@@ -47,7 +49,7 @@ Given('Given I upload a kpi mappings file {string} for the portfolio company') d
   fill_in('import_upload_name', with: "Mapping Upload")
   @import_file = file
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
-  sleep(2)
+  wait_for_upload("./public/sample_uploads/#{@import_file}") # JS direct-upload to /upload; returns once it lands (was sleep 2)
   click_on("Save")
   sleep(2)
   @iu = ImportUpload.last
@@ -104,7 +106,7 @@ When('I click Actions then {string} on the Kpis page') do |link_text|
 end
 
 Then('all pending KPIs for the portfolio company should be approved without error') do
-  expect(page).to have_content("All pending KPIs were successfully approved.")
+  expect(page).to have_content("All pending KPIs approved.")
   expect(Kpi.where(portfolio_company: @portfolio_company).unapproved.count).to eq(0)
   # Approve All runs KpiApproveService synchronously, which cumulates and recomputes percentage
   # change for every affected report inline - the same call chain that raised "Out of sort memory"
@@ -131,7 +133,7 @@ And('Given I upload a kpi mappings file for the company') do
   fill_in('import_upload_name', with: "Mapping Upload")
   @import_file = "investor_kpi_mappings_test_1.xlsx"
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
-  sleep(2)
+  wait_for_upload("./public/sample_uploads/#{@import_file}") # JS direct-upload to /upload; returns once it lands (was sleep 2)
   click_on("Save")
   sleep(2)
   @iu = ImportUpload.last
@@ -339,7 +341,7 @@ Given('I upload an investor kpis mappings file for the company') do
   # select("InvestorKpiMapping", from: "import_upload_import_type")
   @import_file = "investor_kpi_mappings_test.xlsx"
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
-  sleep(2)
+  wait_for_upload("./public/sample_uploads/#{@import_file}") # JS direct-upload to /upload; returns once it lands (was sleep 2)
   click_on("Save")
   sleep(2)
   ImportUploadJob.perform_now(ImportUpload.last.id)
@@ -352,7 +354,7 @@ Given('I upload an investor kpis mappings file {string} for the company') do |fi
   fill_in('import_upload_name', with: "Test Upload")
   @import_file = file
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
-  sleep(2)
+  wait_for_upload("./public/sample_uploads/#{@import_file}") # JS direct-upload to /upload; returns once it lands (was sleep 2)
   click_on("Save")
   sleep(2)
   ImportUploadJob.perform_now(ImportUpload.last.id)

@@ -125,6 +125,7 @@ Scenario Outline: Import Fund Ratio sets latest flag correctly
       |user     |entity                                                        |fund            |
       |           |entity_type=Investment Fund;enable_funds=true  |name=Demo Fund  |
 
+@rack_test
 Scenario: Calculate XIRR from XLS sheets
   Given I have an Excel file "public/sample_uploads/xirr/xirr_scenarios.xlsx"
   When I read all sheets and compute XIRR
@@ -202,6 +203,7 @@ Scenario Outline: Import Fund Ratio with Scenario
       |user     |entity                                 |fund                 |
       |           |entity_type=Investment Fund;enable_funds=true  |name=Demo Fund  |
 
+@rack_test
 Scenario: Fund Ratio changes are recorded in the audit trail
   Given there is a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund;currency=INR"
   Given the user has role "company_admin"

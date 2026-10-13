@@ -45,6 +45,7 @@ Feature: KPI report journey moves back
       | Approve or reject KPIs | current | 1 KPI across 1 period awaits a decision |
 
   # X4 — Import fails
+  @rack_test
   Scenario: A failed import sends the journey back to Submit KPIs
     Given the portco has submitted the workbook but the import has not run
     When the import fails

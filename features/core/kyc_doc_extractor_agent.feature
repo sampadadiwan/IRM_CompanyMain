@@ -14,11 +14,11 @@ Feature: KYC Document Extractor Agent
   # 1. SupportAgent setup
   # ─────────────────────────────────────────────────────────────────────────────
 
-  @kyc_doc_extractor @agent_setup
+  @kyc_doc_extractor @agent_setup @rack_test
   Scenario: KycDocExtractorAgent appears in the supported agent types list
     Then "KycDocExtractorAgent" is a recognised support agent type
 
-  @kyc_doc_extractor @agent_setup
+  @kyc_doc_extractor @agent_setup @rack_test
   Scenario: Fund admin can save extraction rules for a form type
     Given there is a KYC form type "IndividualKyc" for the entity
     When the fund admin saves extraction rules for the form type:
@@ -31,7 +31,7 @@ Feature: KYC Document Extractor Agent
   # 2. Extract button appears on form when enabled
   # ─────────────────────────────────────────────────────────────────────────────
 
-  @kyc_doc_extractor @form_ui
+  @kyc_doc_extractor @form_ui @rack_test
   Scenario: Doc-first upload screen is shown when wizard is enabled and no documents uploaded
     Given there is a KYC for the investor with submission_status "link_sent"
     When I visit the KYC edit page as the fund admin
@@ -56,7 +56,7 @@ Feature: KYC Document Extractor Agent
   # 3. Agent extraction — blank_only mode
   # ─────────────────────────────────────────────────────────────────────────────
 
-  @kyc_doc_extractor @extraction
+  @kyc_doc_extractor @extraction @rack_test
   Scenario: Extraction fills blank fields from matching documents
     Given there is a KYC for the investor with submission_status "link_sent"
     And the KYC field "PAN" is blank
@@ -67,7 +67,7 @@ Feature: KYC Document Extractor Agent
     Then the KYC field "PAN" is set to "ABCDE1234F"
     And the extraction result includes 1 extracted field
 
-  @kyc_doc_extractor @extraction
+  @kyc_doc_extractor @extraction @rack_test
   Scenario: Extraction skips fields that already have a value in blank_only mode
     Given there is a KYC for the investor with submission_status "link_sent"
     And the KYC has an uploaded document "PAN Card"
@@ -78,7 +78,7 @@ Feature: KYC Document Extractor Agent
     Then the KYC field "PAN" remains "ZZZZZ9999Z"
     And the extraction result includes 0 extracted fields
 
-  @kyc_doc_extractor @extraction
+  @kyc_doc_extractor @extraction @rack_test
   Scenario: Extraction overwrites existing values when overwrite_mode is always
     Given there is a KYC for the investor with submission_status "link_sent"
     And the KYC has an uploaded document "PAN Card"
@@ -89,7 +89,7 @@ Feature: KYC Document Extractor Agent
     When the fund admin triggers document extraction for the KYC
     Then the KYC field "PAN" is set to "ABCDE1234F"
 
-  @kyc_doc_extractor @extraction
+  @kyc_doc_extractor @extraction @rack_test
   Scenario: Extraction skips rules where the document has not been uploaded
     Given there is a KYC for the investor with submission_status "link_sent"
     And the KycDocExtractorAgent has a rule: doc_label "Passport", prompt "Extract passport number", target_field "passport_number"
@@ -101,14 +101,14 @@ Feature: KYC Document Extractor Agent
   # 4. Policy — only authorised users can trigger extraction
   # ─────────────────────────────────────────────────────────────────────────────
 
-  @kyc_doc_extractor @policy
+  @kyc_doc_extractor @policy @rack_test
   Scenario: An investor via magic link sees the doc-first upload screen
     Given there is a KYC for the investor with submission_status "link_sent"
     When I open the KYC edit page as the investor via a valid signed link for doc extraction
     Then I should see "Upload KYC Documents"
     And I should see an "Continue to Fill Form →" button
 
-  @kyc_doc_extractor @policy
+  @kyc_doc_extractor @policy @rack_test
   Scenario: Agent not configured returns a redirect with an alert
     Given there is a KYC for the investor with submission_status "link_sent"
     And the entity has NO KycDocExtractorAgent configured

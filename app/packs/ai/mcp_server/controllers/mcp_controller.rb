@@ -15,6 +15,12 @@ class McpController < ActionController::API
 
   # POST /mcp — JSON-RPC messages; GET /mcp — SSE for server-initiated messages (MCP Streamable HTTP)
   def create
+    # MCP 2026-07-28 clients (e.g. Claude Code 2.1.296+) open a `subscriptions/listen` stream for
+    # list-changed notifications. This server is stateless and never pushes notifications, and the
+    # transport would answer with a long-lived SSE body holding a Puma thread per client — so decline
+    # it as an unsupported method; clients carry on with plain request/response calls.
+    return render_rpc_error(-32_601, "Method not found: subscriptions/listen is not supported (stateless server)") if params[:method] == "subscriptions/listen"
+
     server = MCP::Server.new(
       name: "caphive-mcp",
       version: "1.0.0",
@@ -31,6 +37,13 @@ class McpController < ActionController::API
       dns_rebinding_protection: false
     )
     status, headers, body = transport.handle_request(request)
+    # Every response this stateless server supports is a single JSON body. Anything else is a
+    # streaming (SSE) body for a feature we don't offer: release it and say so, rather than a 500.
+    unless body.is_a?(Array)
+      body.close if body.respond_to?(:close)
+      return render_rpc_error(-32_601, "Method not found: streaming responses are not supported (stateless server)")
+    end
+
     render json: body.first, status: status, headers: headers
   end
 
@@ -40,6 +53,11 @@ class McpController < ActionController::API
   end
 
   private
+
+  # A JSON-RPC error reply to the current request (HTTP 200, as JSON-RPC errors travel in the body)
+  def render_rpc_error(code, message)
+    render json: { jsonrpc: "2.0", id: params[:id], error: { code:, message: } }
+  end
 
   # Adds CORS headers so browser-based MCP clients (Claude.ai) can read the WWW-Authenticate
   # header and response body across origins. WWW-Authenticate must be explicitly exposed.

@@ -35,8 +35,7 @@ end
 
 Given('I am logged in as the owner user') do
   steps %(
-    And I am at the login page
-    When I fill and submit the login page
+    And I am signed in as the current user
   )
 end
 

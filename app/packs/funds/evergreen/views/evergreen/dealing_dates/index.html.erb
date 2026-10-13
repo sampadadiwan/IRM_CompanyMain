@@ -1,0 +1,45 @@
+<%# Dealing list (proposal GP-2). Worked example H16 %>
+<div class="p-3" data-controller="tooltip">
+  <%= render layout: "evergreen/shared/list_header", locals: { title: eg_t(:transaction_date).titleize.pluralize, subtitle: "When orders are priced at the approved #{eg_t(:nav_per_unit)} · payment #{@fund.evergreen_fund_setting.pre_funded? ? 'before dealing (pre-funded)' : 'after dealing'}" } do %>
+    <%# Filter: dates with something on them by default; every generated date when asked. Stays inside the fund-page tab %>
+    <% filters = { "active" => "With orders", "all" => "All dates" } %>
+    <div class="dropdown">
+      <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" id="dealing_dates_filter">
+        <i class="ti ti-filter"></i><%= filters[@filter] %>
+      </button>
+      <div class="dropdown-menu">
+        <% filters.each do |key, label| %>
+          <%= link_to label, evergreen_dealing_dates_path(@fund, filter: key), class: "dropdown-item #{'active' if key == @filter}", id: "dealing_dates_filter_#{key}",
+                                                                              data: { turbo_frame: turbo_frame_request_id || "_top" } %>
+        <% end %>
+      </div>
+    </div>
+    <%# Review fix 9: only for users who can change the settings (it was shown to every reader) %>
+    <% if policy(@fund.evergreen_fund_setting).update? %>
+      <%= link_to evergreen_settings_path(@fund), class: "btn btn-outline-primary d-inline-flex align-items-center" do %><i class="ti ti-calendar-cog"></i> Calendar settings<% end %>
+    <% end %>
+  <% end %>
+  <div class="table-responsive">
+    <table class="table table-bordered dataTable action_table hover" id="dealing_dates">
+      <%# Counts only in the order columns; the subscribed money gets its own column (redemptions are often
+          placed in units, so they have no single amount to show) %>
+      <thead><tr><th><%= eg_t(:transaction_date) %></th><th>Cut-off</th><th class="text-end">Subscriptions</th><th class="text-end"><%= eg_t(:committed_amount) %></th><th class="text-end">Redemptions</th><th>Step</th><th class="action-col" aria-label="Actions">Actions</th></tr></thead>
+      <tbody>
+        <% if @dealing_dates.empty? %><tr><td colspan="7" class="text-muted"><i class="ti ti-calendar-off me-1"></i>No <%= EvergreenLabels.lower(eg_t(:transaction_date)).pluralize %><%= @filter == "active" ? " with orders — choose All dates in the filter to see the whole calendar" : " yet — they are generated each night from the dealing calendar in Evergreen Settings" %>.</td></tr><% end %>
+        <% @dealing_dates.each do |dd| %>
+          <%# F2: the same rows the date's page shows — orders while open, fills once confirmed %>
+          <% src = dd.open? ? :open : :dealt %>
+          <tr id="dealing_date_<%= dd.date.iso8601 %>">
+            <td><%= link_to l(dd.date), evergreen_dealing_date_path(@fund, dd) %></td>
+            <td><%= l(dd.cutoff_at) %> <%= eg_cutoff_badge(dd) %></td>
+            <td class="text-end"><i class="ti ti-login text-success me-1"></i><%= @order_counts[src][[dd.id, "subscription"]].to_i %></td>
+            <td class="text-end"><%= @counts[src][[dd.id, "subscription"]].to_d.positive? ? evergreen_money(@counts[src][[dd.id, "subscription"]], @fund) : "—" %></td>
+            <td class="text-end"><i class="ti ti-logout text-danger me-1"></i><%= @order_counts[src][[dd.id, "redemption"]].to_i %></td>
+            <td><%= eg_dealing_step_badge(dd) %></td>
+            <td class="action-col"><%= link_to t_common(:view), evergreen_dealing_date_path(@fund, dd), class: "btn btn-outline-primary ti ti-eye", data: { turbo_frame: "_top", bs_toggle: "tooltip", bs_title: "Open #{EvergreenLabels.lower(eg_t(:transaction_date))} #{l(dd.date)}" }, aria: { label: "Open #{EvergreenLabels.lower(eg_t(:transaction_date))} #{l(dd.date)}" } %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>

@@ -1,3 +1,4 @@
+@rack_test
 Feature: ReportBuilderModelDiscovery — finding eligible root models and associations
 
   Scenario: roots returns only whitelisted models that have entity_id

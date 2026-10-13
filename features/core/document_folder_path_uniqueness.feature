@@ -1,3 +1,4 @@
+@rack_test
 Feature: Document folder path uniqueness
 
   Every WithFolder record keeps its documents in one folder, named after the record and

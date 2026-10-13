@@ -1,3 +1,4 @@
+@rack_test
 Feature: Developer error emails carry a "who / what / where" report
   Every error email sent to the developer inbox (ExceptionNotifier) carries one readable block
   under data[:report], built by ErrorReportContext: web request errors (for_request), Sidekiq job

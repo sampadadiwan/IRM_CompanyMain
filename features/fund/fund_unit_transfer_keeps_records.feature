@@ -1,3 +1,4 @@
+@rack_test
 Feature: A fund unit transfer never deletes the source commitment's records
   FundUnitTransferService copies a share of the source commitment's remittances, payments and
   distribution payments to the destination and reduces the originals; it never deletes them.

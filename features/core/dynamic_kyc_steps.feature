@@ -11,7 +11,7 @@ Feature: Dynamic KYC wizard steps
   # ─────────────────────────────────────────────────────────────────────────────
   # 1. Wizard nav reflects the configured step count
   # ─────────────────────────────────────────────────────────────────────────────
-  @kyc_dynamic_steps @form_custom_fields
+  @kyc_dynamic_steps @form_custom_fields @rack_test
   Scenario: Step wizard renders 9 navigation circles when all 9 steps are configured
     Given there is a KYC for the investor using the dynamic form type
     When I visit the investor kyc edit form

@@ -1,3 +1,4 @@
+@rack_test
 Feature: Capital call journey — undoing actions
   Actions that undo progress re-check the call's journey at once, move it back, and reset sign-offs
   on later tasks that were given before the undo started. Figure, date and email edits mark tasks

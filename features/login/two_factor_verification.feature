@@ -1,3 +1,4 @@
+@rack_test
 Feature: Two-Factor Authentication Verification
   Users with 2FA enabled must enter a TOTP code after password authentication.
 

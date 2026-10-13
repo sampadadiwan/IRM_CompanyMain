@@ -1,0 +1,300 @@
+#!/usr/bin/env bash
+# pcuc-status - progress + ETA of the parallel_cucumber run currently going on this machine.
+#
+# Usable from any terminal while the run prints to another one. Sources, best first:
+#   1. pcuc's own progress feed: $PCUC_PROGRESS_DIR (read from the run's environment), which
+#      has one line per finished scenario per worker plus a dry-run `total`. Exact, and counts
+#      failures.
+#   1b. The run feed: tmp/pcuc_progress/<parallel_cucumber pid>, which
+#      features/support/pcuc_progress.rb writes for any parallel_tests run started without
+#      pcuc. Same exact counts; the total is worked out here, once, by the same dry run.
+#   2. Fallback for runs started before the run feed existed: count the SqliteSnapshotStrategy
+#      "restored from snapshot" lines in log/test_N.log (two per scenario, before + after) since
+#      the worker's last "snapshot taken" line (logged once per worker boot = this run), and
+#      count scenarios in the feature paths on the command line. Approximate: --tags filtering
+#      is ignored and failures are unknown.
+#
+# Usage: pcuc-status [PID]          one report (PID: which run, when several are going)
+#        pcuc-status -w [N] [PID]   redraw every N seconds (default 15) until the run ends
+set -uo pipefail
+
+# Watch mode: re-run ourselves on a timer, clearing the screen each time, and stop once no run
+# is left (the one-shot exits 1 when it finds none).
+if [[ "${1:-}" == "-w" ]]; then
+  interval=15
+  [[ "${2:-}" =~ ^[0-9]+$ ]] && interval=$2
+  want=${3:-}
+  while true; do
+    # COLUMNS: our output is captured, so the child cannot ask the terminal its width itself.
+    out=$(COLUMNS=$(tput cols 2>/dev/null || echo 100) PCUC_STATUS_BAR=1 "$0" $want)
+    status=$?
+    clear
+    printf '%s\n' "$out"
+    (( status != 0 )) && exit 0
+    printf '(every %ss · Ctrl-C to stop)\n' "$interval"
+    sleep "$interval"
+  done
+fi
+
+# Find the run. If there are several, report on the oldest and list the others.
+# Anchored to the start of the command line, so a shell whose command merely mentions
+# parallel_cucumber (e.g. a `pgrep` typed by hand) is not taken for a run.
+mapfile -t pids < <(pgrep -f '^[^ ]*/bin/parallel_cucumber ' | sort -n)
+if (( ${#pids[@]} == 0 )); then
+  echo "pcuc-status: no parallel_cucumber run in progress"
+  exit 1
+fi
+pid=${pids[0]}
+if [[ "${1:-}" =~ ^[0-9]+$ ]]; then
+  # A pid asked for by name must be one of the runs found, or there is nothing to report on.
+  [[ " ${pids[*]} " == *" $1 "* ]] || { echo "pcuc-status: $1 is not a parallel_cucumber run (runs: ${pids[*]})"; exit 1; }
+  pid=$1
+elif (( ${#pids[@]} > 1 )); then
+  echo "note: ${#pids[@]} runs going (pids ${pids[*]}); reporting on $pid - pass a pid for another"
+fi
+
+# Run facts: working dir, elapsed seconds, argv. Ruby rewrites its process title, so
+# /proc/<pid>/cmdline comes back as one space-joined string: split it on spaces (feature
+# paths never contain one).
+dir=$(readlink "/proc/$pid/cwd")
+elapsed=$(ps -o etimes= -p "$pid" | tr -d ' ')
+read -r -a argv < <(tr '\0' ' ' < "/proc/$pid/cmdline")
+
+# Worker count from -n (parallel_tests defaults to the CPU count).
+workers=$(nproc)
+for (( i = 0; i < ${#argv[@]}; i++ )); do
+  [[ "${argv[i]}" == "-n" ]] && workers=${argv[i+1]}
+done
+
+# Feature paths = argv entries that exist under the run's dir; none means the whole suite.
+paths=()
+for a in "${argv[@]:1}"; do
+  [[ "$a" != -* && -e "$dir/${a%%:*}" ]] && paths+=("$dir/${a%%:*}")
+done
+(( ${#paths[@]} )) || paths=("$dir/features")
+
+# Scenario count straight from the feature files: each Scenario/Example is 1; each outline adds
+# its Examples rows minus each table's header row. Ignores --tags, so it is only the fallback.
+count_feature_scenarios() {
+  find "${paths[@]}" -name '*.feature' -print0 | xargs -0 awk '
+    /^[ \t]*(Scenario|Example):/            { n++; mode = 0; next }
+    /^[ \t]*Scenario (Outline|Template):/   { mode = 1; next }
+    /^[ \t]*(Examples|Scenarios):/          { if (mode) { mode = 2; hdr = 1 }; next }
+    /^[ \t]*\|/                             { if (mode == 2) { if (hdr) hdr = 0; else n++ }; next }
+    /^[ \t]*(Feature|Background|Rule):/     { mode = 0 }
+    END { print n + 0 }' | paste -sd+ | bc  # xargs may split into several awk runs: sum them
+}
+
+# The progress dir, if any, from the environment of the first worker (or the parent): set by
+# pcuc, which also writes its `total`.
+progress_dir=""
+for p in $(pgrep -P "$pid") "$pid"; do
+  progress_dir=$(tr '\0' '\n' < "/proc/$p/environ" 2>/dev/null | sed -n 's/^PCUC_PROGRESS_DIR=//p')
+  [[ -n "$progress_dir" ]] && break
+done
+source="progress feed"
+
+# Otherwise the per-run feed features/support/pcuc_progress.rb falls back to for any
+# parallel_tests run started without pcuc: tmp/pcuc_progress/<parallel_cucumber pid>.
+feed_root="$dir/tmp/pcuc_progress"
+# Housekeeping first: a dir whose run has ended is never read again.
+for d in "$feed_root"/*/; do
+  p=$(basename "$d")
+  [[ "$p" =~ ^[0-9]+$ ]] && ! kill -0 "$p" 2>/dev/null && rm -rf -- "$feed_root/$p"
+done
+if [[ -z "$progress_dir" && -d "$feed_root/$pid" ]]; then
+  progress_dir="$feed_root/$pid"
+  source="run feed"
+  # Nobody wrote a `total` for this run, so count it once, in the background, the way pcuc does:
+  # a dry run that loads no support code (never boots Rails, ~4 s) with the run's own --tags.
+  # mkdir is the lock - only the first pcuc-status call starts it. If the dry run yields nothing,
+  # fall back to the plain feature-file count. temp + mv so a half-written number is never read.
+  if [[ ! -e "$progress_dir/total" ]] && mkdir "$progress_dir/counting" 2>/dev/null; then
+    # The run's --tags live inside its -o string, still shell-quoted by pcuc: split them out.
+    mapfile -d '' -t tagargs < <(printf '%s' "${argv[*]}" | ruby -rshellwords -e '
+      opts = STDIN.read.split(" -o ", 2)[1].to_s
+      words = (Shellwords.split(opts) rescue [])
+      words.each_cons(2) { |a, b| print a, "\0", b, "\0" if %w[--tags -t].include?(a) }')
+    (
+      cd "$dir" || exit
+      n=$(RUBYOPT="-W0" bundle exec cucumber -P --publish-quiet --dry-run -r "$progress_dir/counting" \
+            --format summary "${tagargs[@]}" "${paths[@]}" 2>/dev/null | sed -nE 's/^([0-9]+) scenarios? .*/\1/p')
+      [[ -n "$n" ]] || n=$(count_feature_scenarios)
+      echo "$n" > "$progress_dir/total.tmp" && mv "$progress_dir/total.tmp" "$progress_dir/total"
+    ) </dev/null >/dev/null 2>&1 &
+    disown
+  fi
+fi
+
+# Only worker_<N> files hold finished scenarios (current_<N> is the running one).
+shopt -s nullglob
+failed="?"
+feed=0
+if [[ -n "$progress_dir" && -d "$progress_dir" ]]; then
+  # Source 1: exact counts from the feed.
+  feed=1
+  wfiles=("$progress_dir"/worker_[0-9]*)
+  done_n=0; failed=0
+  if (( ${#wfiles[@]} )); then
+    done_n=$(cat "${wfiles[@]}" | wc -l)
+    failed=$(cat "${wfiles[@]}" | grep -c '^failed')
+  fi
+  total=$(cat "$progress_dir/total" 2>/dev/null)
+else
+  # Source 2: snapshot restores in the worker logs (2 per scenario).
+  source="test logs (approx.)"
+  done_n=0
+  per_worker=""
+  # The logs are appended to across runs, never truncated, so only count restores after this
+  # run's start marker: each worker logs "snapshot taken" once, at boot, before its first scenario.
+  run_start=$(( $(date +%s) - elapsed ))
+  for (( n = 1; n <= workers; n++ )); do
+    log="$dir/log/test_$n.log"
+    c=0
+    # Not written since the run started = this worker hasn't booted yet; its last marker would
+    # be an earlier run's, so count nothing rather than that run's tail.
+    if [[ -f "$log" ]] && (( $(stat -c %Y "$log") >= run_start )); then
+      c=$(awk '/snapshot taken/ { c = 0; next } /restored from snapshot/ { c++ } END { print int(c / 2) }' "$log")
+    fi
+    done_n=$(( done_n + c ))
+    per_worker+="w$n=$c "
+  done
+  total=$(count_feature_scenarios)
+fi
+
+# Percent and a straight-line ETA from the rate so far (one slow worker at the end skews it).
+pct="?"; eta="?"; finish="?"
+if [[ -n "${total:-}" ]] && (( total > 0 )); then
+  pct=$(( done_n * 100 / total ))
+  if (( done_n > 0 && done_n < total )); then
+    left=$(( elapsed * (total - done_n) / done_n ))
+    eta="~$(( (left + 59) / 60 ))m"
+    finish=$(date -d "+${left} seconds" +%H:%M)
+  fi
+fi
+
+# Terminal width for truncating long names. Watch mode passes COLUMNS in, because there our
+# output is captured by $(...) and tput would see no terminal.
+cols=${COLUMNS:-$(tput cols 2>/dev/null || echo 100)}
+(( cols < 40 )) && cols=40
+# Cut a string to $2 characters, marking the cut with an ellipsis.
+fit() { local s=$1 w=$2; (( ${#s} > w )) && s="${s:0:w-1}…"; printf '%s' "$s"; }
+# m:ss from seconds.
+mmss() { printf '%d:%02d' $(( $1 / 60 )) $(( $1 % 60 )); }
+
+# What is being run, relative to the run's dir: the paths given, or "features" for the suite.
+selection=""
+for p in "${paths[@]}"; do selection+="${p#"$dir"/} "; done
+selection=${selection% }
+(( ${#paths[@]} > 2 )) && selection="${paths[0]#"$dir"/} +$(( ${#paths[@]} - 1 )) more"
+grep -qE '(^| )(--tags|-t) ' <<< "${argv[*]}" && tagged=1 || tagged=0
+(( tagged )) && selection+=" (tag-filtered)"
+
+printf 'pcuc run %s · %s · %s workers · started %s · %d:%02d elapsed\n' \
+  "$pid" "$(fit "$selection" $(( cols - 50 )))" "$workers" "$(ps -o lstart= -p "$pid" | awk '{print $4}')" \
+  $(( elapsed / 3600 )) $(( elapsed % 3600 / 60 ))
+printf '%s/%s scenarios (%s%%) · %s failed · ETA %s (≈%s)\n' "$done_n" "${total:-?}" "$pct" "$failed" "$eta" "$finish"
+
+# Progress bar (watch mode asks for it), as wide as the terminal allows, at most 60.
+if [[ -n "${PCUC_STATUS_BAR:-}" && -n "${total:-}" ]] && (( total > 0 )); then
+  d=$(( done_n > total ? total : done_n ))
+  width=$(( cols - 8 )); (( width > 60 )) && width=60
+  filled=$(( d * width / total ))
+  bar=$(printf '%*s' "$filled" '' | sed 's/ /█/g')$(printf '%*s' $(( width - filled )) '' | sed 's/ /░/g')
+  printf '%s %3d%%\n' "$bar" $(( d * 100 / total ))
+fi
+
+if (( ! feed )); then
+  # The logs only say a scenario ran, not which one or how it ended.
+  printf 'per worker: %s· source: %s\n' "$per_worker" "$source"
+  exit 0
+fi
+
+# ---- Detail, from the feed (lines: status \t location \t name \t epoch) --------------------
+
+# Which workers still have a cucumber process: parallel_tests starts one child per worker
+# with TEST_ENV_NUMBER set; once it exits that worker has finished its share.
+declare -A alive=()
+for c in $(pgrep -P "$pid"); do
+  n=$(tr '\0' '\n' < "/proc/$c/environ" 2>/dev/null | sed -n 's/^TEST_ENV_NUMBER=//p')
+  [[ -n "$n" ]] && alive[$n]=1
+done
+
+# One line per worker: finished count, then what it is doing now. A scenario past 3 minutes is
+# flagged "slow" - usually a browser step waiting on something that will never appear.
+echo
+now=$(date +%s)
+for (( n = 1; n <= workers; n++ )); do
+  c=0; [[ -f "$progress_dir/worker_$n" ]] && c=$(wc -l < "$progress_dir/worker_$n")
+  if [[ -s "$progress_dir/current_$n" ]]; then
+    IFS=$'\t' read -r loc name started < "$progress_dir/current_$n"
+    took=$(( now - started ))
+    flag=""; (( took > 180 )) && flag=" slow"
+    head=$(printf 'w%-2s %4s done · now %s' "$n" "$c" "${loc#features/}")
+    tailp="  $(mmss "$took")$flag"
+    printf '%s  %s%s\n' "$head" "$(fit "$name" $(( cols - ${#head} - ${#tailp} - 2 )))" "$tailp"
+  elif [[ -n "${alive[$n]:-}" ]]; then
+    printf 'w%-2s %4s done · starting\n' "$n" "$c"
+  elif (( c > 0 )); then
+    printf 'w%-2s %4s done · finished\n' "$n" "$c"
+  else
+    printf 'w%-2s %4s done · not started\n' "$n" "$c"
+  fi
+done
+
+# By folder: finished per folder (from the feed) out of that folder's scenarios (from the
+# feature files - which ignores --tags, hence "≈" on a tagged run). Only worth a line when the
+# run spans more than one folder; past 8 folders they are rolled up to top-level ones.
+folders=$(
+  {
+    # Totals: per-file scenario counts, same rules as count_feature_scenarios.
+    find "${paths[@]}" -name '*.feature' -print0 | xargs -0 awk '
+      /^[ \t]*(Scenario|Example):/            { n[FILENAME]++; mode = 0; next }
+      /^[ \t]*Scenario (Outline|Template):/   { mode = 1; next }
+      /^[ \t]*(Examples|Scenarios):/          { if (mode) { mode = 2; hdr = 1 }; next }
+      /^[ \t]*\|/                             { if (mode == 2) { if (hdr) hdr = 0; else n[FILENAME]++ }; next }
+      /^[ \t]*(Feature|Background|Rule):/     { mode = 0 }
+      END { for (f in n) print "T\t" f "\t" n[f] }'
+    # Finished: one "D <location>" per feed line.
+    (( ${#wfiles[@]} )) && cut -s -f2 "${wfiles[@]}" | sed 's/^/D\t/'
+  } | awk -F'\t' -v root="$dir/" -v approx="$tagged" '
+    # Folder of a path, relative to the run dir, without the leading features/.
+    function folder(p) { sub("^" root, "", p); sub(":[0-9]+$", "", p); sub("/[^/]*$", "", p); sub("^features/?", "", p); return p == "" ? "features" : p }
+    $1 == "T" { t[folder($2)] += $3; next }
+    $1 == "D" { d[folder($2)]++ }
+    END {
+      for (f in t) { k++ }
+      if (k < 2) exit
+      # More than 8 folders (a whole-suite run lists ~27) would bury the rest of the report:
+      # roll them up to their top-level folder (ai/assistants -> ai).
+      if (k > 8) {
+        for (f in t) { top = f; sub("/.*", "", top); tt[top] += t[f]; dd[top] += d[f] }
+        for (f in tt) printf "%s %d/%s%d\n", f, dd[f], (approx ? "≈" : ""), tt[f]
+        exit
+      }
+      for (f in t) printf "%s %d/%s%d\n", f, d[f], (approx ? "≈" : ""), t[f]
+    }' | sort
+)
+if [[ -n "$folders" ]]; then
+  echo
+  # Wrapped to the terminal: "by folder:" then "a 1/2 · b 3/4 · ...".
+  line="by folder:"
+  while IFS= read -r f; do
+    if (( ${#line} + ${#f} + 3 > cols )); then echo "$line"; line="          "; fi
+    [[ "$line" =~ :$|^\ +$ ]] && line+=" $f" || line+=" · $f"
+  done <<< "$folders"
+  echo "$line"
+fi
+
+# Failed so far, oldest first (by the epoch each line ends with), so a re-run can start before
+# the run ends. Capped at 10 lines; the full list is the feed itself.
+if (( failed > 0 )); then
+  echo
+  echo "failed so far:"
+  grep -h $'^failed\t' "${wfiles[@]}" | sort -t$'\t' -k4,4n | head -10 | while IFS=$'\t' read -r _ loc name _; do
+    printf '  %-50s %s\n' "$loc" "$(fit "$name" $(( cols - 55 )))"
+  done
+  (( failed > 10 )) && echo "  … +$(( failed - 10 )) more: grep -h ^failed $progress_dir/worker_*"
+fi
+echo
+echo "source: $source"

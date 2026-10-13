@@ -1,0 +1,41 @@
+<%# The gate at a glance above the Redemptions list — the same NumberStatsComponent cards, wording and theme
+    colours as the dealing date's Redemptions tab (gate, requested, will be paid, will be carried), here for the
+    next dealing date and estimated at the latest approved NAV. Each request's own outcome is on its row.
+    Worked example H34 %>
+<% setting = fund.evergreen_fund_setting %>
+<%
+  pct_label = "#{setting.gate_pct.to_d.round(2).to_s.sub(/\.0+$/, '')}%"
+  method_label = gate.gate_method == "fifo" ? "FIFO" : "Pro-rata"
+  paid = gate.rows.sum { |r| r.paid_cents.to_d }
+  paid_pct = gate.queued_cents.positive? ? " · #{((paid / gate.queued_cents) * 100).round(1)}%" : ""
+  gate_card = if gate.gated? && setting.gate_level == "class"
+                # Class-level gate: one pool per class, so no single fund-wide amount (as on the dealing date)
+                { stat: pct_label, subtitle: "Gate · of each class's NAV · #{method_label}" }
+              elsif gate.gated?
+                # Review fix 8: gate_cents is what is LEFT after earlier dates in the gate period
+                { stat: evergreen_money([gate.gate_cents.to_d, 0].max, fund), subtitle: "Gate · #{pct_label} of NAV · #{method_label}#{eg_gate_used_note(gate.gate_used_cents, fund)}" }
+              else
+                { stat: "No gate", subtitle: "All redemptions will be paid" }
+              end
+  # Where the carried rest goes — the same test as the confirm (DealingConfirm#carry_forward)
+  carried_word = EvergreenLabels.lower(eg_word(:carried, fund))
+  carried_row = gate.rows.find { |r| r.carried_units.to_d.positive? }
+  next_date = carried_row && DealingRoll.next_date(carried_row.order, gate.dealing_date)
+  carried_subtitle = if carried_row.nil?
+                       "Nothing will be #{carried_word}"
+                     elsif next_date
+                       "Will be #{carried_word} to #{l(next_date)}"
+                     else
+                       "Will not be #{carried_word} — no later #{eg_t(:redemption_date, lower: true)} in the calendar"
+                     end
+  # Theme colours only: secondary (the limit), info (asked), success (paid), danger (held back)
+  cards = [gate_card.merge(color: "secondary"),
+           { stat: evergreen_money(gate.queued_cents, fund), subtitle: "Requested for #{l(gate.dealing_date.date)}", color: "info" },
+           { stat: evergreen_money(paid, fund), subtitle: "Will be paid#{paid_pct}", color: "success" },
+           { stat: evergreen_money(gate.carried_cents, fund), subtitle: carried_subtitle, color: "danger" }]
+%>
+<div class="row mb-3" id="redemption_gate_summary">
+  <% cards.each do |card| %>
+    <%= render(NumberStatsComponent.new(path: nil, amount: card[:stat], subtitle: card[:subtitle], progress_bar_color: card[:color])) %>
+  <% end %>
+</div>

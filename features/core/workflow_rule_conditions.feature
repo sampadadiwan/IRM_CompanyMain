@@ -1,3 +1,4 @@
+@rack_test
 Feature: Auto-assignment rule conditions — matching
   A rule's conditions may use the record type's search fields, a few rule-only fields (Form type on
   KYCs, Imported on calls) and the company's custom fields. A rule matches a new record when a search

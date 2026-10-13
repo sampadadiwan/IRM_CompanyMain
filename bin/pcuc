@@ -1,0 +1,216 @@
+#!/usr/bin/env zsh
+# pcuc - parallel cucumber. Takes plain cucumber options:
+#   pcuc --tags @notification
+#   pcuc --tags @notification -n 8
+#   pcuc --tags '@notification and not @javascript'     # the fast, browser-free subset
+#   pcuc features/core/document.feature
+#   pcuc                                                # whole suite
+#
+# Run from the repo root. To call it as plain `pcuc` / `cuc` / `pcuc-status` from anywhere:
+#   ln -s "$PWD"/bin/{pcuc,cuc,pcuc-status} ~/.local/bin/
+#
+# A script rather than an alias because --tags has to reach cucumber (through -o), not
+# parallel_cucumber, and the feature list has to be narrowed to the files holding the tag so
+# workers don't pay Rails boot for files with nothing to run. A script rather than a shell
+# function so every terminal runs the current version: a function is frozen into each shell
+# when it starts, and a stale copy once ran without the progress feed (no live failure count).
+#
+# Progress: see pcuc-lib.zsh beside this file. `pcuc-status -w` watches a run from another terminal.
+source "${0:A:h}/pcuc-lib.zsh"
+
+# ── Timings for balancing workers ───────────────────────────────────────────────────────────
+# parallel_tests splits files across workers up front, by tmp/parallel_runtime_cucumber.log, and
+# never rebalances: a worker whose list runs out sits idle. That log is a poor source on its own -
+# parallel_tests empties it at the start of every run and each worker refills it only as it EXITS,
+# so a run stopped part-way leaves it empty or partial, and the next run splits blind (every file
+# gets the same average). Seen 2026-10-10: one worker finished at 84% with ~500 scenarios queued
+# on the other three.
+#
+# So pcuc keeps its own per-SCENARIO record, tmp/pcuc_scenario_times.tsv ("location<TAB>seconds"),
+# fed from the progress feed after every run - including one stopped with Ctrl-C, and runs of a
+# subset (--tags, single files), which then update just the scenarios they ran. Before each run the
+# per-file totals are written out as the runtime log parallel_tests reads.
+PCUC_TIMES=tmp/pcuc_scenario_times.tsv
+PCUC_RUNTIME_LOG=tmp/parallel_runtime_cucumber.log
+
+# Writes per-file totals (sum of each file's latest scenario times) as parallel_tests' runtime log.
+# With no record yet, the existing log is left as it is.
+_pcuc_seed_runtimes() {
+  [[ -s $PCUC_TIMES ]] || return 0
+  # "features/x.feature:12" and outline rows "features/x.feature:30:21" -> "features/x.feature".
+  # A file the record has never seen keeps whatever time the existing log has for it.
+  awk -F'\t' 'FNR == NR { f = $1; sub(/\.feature:.*/, ".feature", f); t[f] += $2; next }
+              { split($0, a, ":"); if (!(a[1] in t)) old[a[1]] = a[2] }
+              END { for (f in t) printf "%s:%.1f\n", f, t[f]; for (f in old) print f ":" old[f] }' \
+    $PCUC_TIMES $PCUC_RUNTIME_LOG(N) > $PCUC_RUNTIME_LOG.tmp \
+    && mv $PCUC_RUNTIME_LOG.tmp $PCUC_RUNTIME_LOG
+}
+
+# Called by pcuc-lib once the run ends: derives each finished scenario's duration from the feed
+# and merges it into $PCUC_TIMES (newest wins).
+_pcuc_after_run() {
+  local dir=$1
+  local -a feeds
+  feeds=($dir/worker_*(N))
+  (( ${#feeds} )) || return 0
+  # Feed line: "status<TAB>location<TAB>name<TAB>epoch", appended as each scenario ends, one file per
+  # worker, so a scenario's duration is the gap since the previous line in the same file. The
+  # first line of each file has no predecessor (its time includes Rails boot) and is skipped.
+  awk -F'\t' 'FNR == 1 { prev = "" }
+              NF >= 4 { if (prev != "" && $4 >= prev) print $2 "\t" ($4 - prev); prev = $4 }' $feeds > $PCUC_TIMES.new
+  # Old record first, then this run's times on top: later lines overwrite earlier ones per location
+  awk -F'\t' '{ t[$1] = $2 } END { for (k in t) print k "\t" t[k] }' $PCUC_TIMES(N) $PCUC_TIMES.new > $PCUC_TIMES.tmp \
+    && mv $PCUC_TIMES.tmp $PCUC_TIMES
+  rm -f $PCUC_TIMES.new
+}
+
+pcuc() {
+  local workers="" tags="" profile=parallel_rerun
+  local -a cuke files tagargs
+
+  while (( $# )); do
+    case "$1" in
+      -n)                    workers="$2"; shift 2 ;;
+      # tagargs repeats the tags for the progress dry run, which must select the same scenarios.
+      --tags|-t)             tags="$tags $2"; cuke+=(--tags "$2"); tagargs+=(--tags "$2"); shift 2 ;;
+      *.feature|*.feature:<->) files+=("$1"); shift ;;
+      # Anything that exists on disk is a path to run - a directory like features/fund included.
+      # Without this a directory fell through to cucumber's options, left `files` empty, and the
+      # `parallel` profile's trailing `features` then ran the entire suite.
+      *) if [[ -e "$1" ]]; then files+=("$1"); else cuke+=("$1"); fi; shift ;;
+    esac
+  done
+
+  # Narrow to the features carrying any requested tag. Deliberately over-inclusive - every tag
+  # in the expression is OR-ed - because cucumber's own --tags does the real filtering: a
+  # superset only costs a little boot time, while a subset would silently skip scenarios.
+  # No `--` before the pattern: it would end option parsing and turn --include into a path,
+  # which silently pulled in .rb and .md files.
+  # A tag introduced by `not` (or `~`) is an exclusion - OR-ing it in would select exactly the
+  # files the caller asked to avoid, e.g. `not @javascript` pulling in every browser feature.
+  local excludes_js=0
+  [[ "$tags" == *"not @javascript"* || "$tags" == *"~@javascript"* ]] && excludes_js=1
+
+  if [[ -n "$tags" ]]; then
+    local pattern
+    local -a roots
+    # Narrow inside the paths given, so `pcuc features/fund --tags @notification` stays in that
+    # directory; fall back to the whole features tree when no path was named.
+    roots=(${files:-features})
+    pattern=$(print -- $tags | sed -E 's/(\bnot[[:space:]]+|~)@[A-Za-z0-9_]+//g' \
+              | tr ' ,()' '\n' | grep '^@' | sort -u | paste -sd'|' -)
+    [[ -n "$pattern" ]] && files=(${(f)"$(grep -rlE --include='*.feature' -e "$pattern" ${roots})"})
+    # No file carries the tag (a typo, or a tag only in a step file): an empty list would fall
+    # through to the `parallel` profile below and run the WHOLE suite. Stop instead.
+    if [[ -n "$pattern" ]] && (( ${#files} == 0 )); then
+      print -u2 -- "pcuc: no feature file under ${roots[*]} has ${pattern//|/ or } - nothing to run"
+      return 1
+    fi
+  fi
+
+  # The `parallel` profile ends in `features`, and parallel_cucumber appends the profile AFTER
+  # our file list - which would run the whole suite instead. parallel_rerun is that profile
+  # without the trailing argument (see config/cucumber.yml). With no file list we want it back.
+  (( ${#files} == 0 )) && profile=parallel
+
+  # Each worker running a @javascript scenario boots its own headless Chromium, and more than
+  # ~3 concurrently risks OOM (see CHROMIUM_LOW_MEMORY_ARGS in features/support/env.rb).
+  # A browser scenario can land on any worker, so the cap depends on whether ANY selected feature
+  # drives a browser, not on how many do.
+  local capped=""
+  if [[ -z "$workers" ]]; then
+    workers=$(nproc); (( workers > 8 )) && workers=8
+    # -r: an entry can be a directory (pcuc features/fund); plain grep -l errors on it, which
+    # read as "no browser features" and let a browser-heavy directory run uncapped.
+    if (( ${#files} && ! excludes_js )) && grep -rl --include='*.feature' -- "@javascript" ${files} >/dev/null 2>&1; then
+      workers=3
+      capped=" (capped: selection includes @javascript; pass -n to override)"
+    fi
+  fi
+
+  # One schema-loaded sqlite DB per worker, building only the missing ones. A worker whose DB
+  # is absent fails at boot without saying why.
+  local -a missing
+  local i
+  for i in {1..$workers}; do
+    [[ -f /dev/shm/test_$i.sqlite3 ]] || missing+=($i)
+  done
+  if (( ${#missing} )); then
+    print -- "pcuc: preparing test DBs for worker(s) ${missing[*]}"
+    print -l -- ${missing} | xargs -P${#missing} -I{} env TEST_ENV_NUMBER={} RAILS_ENV=test bin/rails db:test:prepare >/dev/null
+  fi
+
+  # Split work by the most recent time of every scenario, not just what the last run recorded
+  _pcuc_seed_runtimes
+
+  if (( ${#files} )); then
+    print -- "pcuc: ${#files} feature file(s), ${workers} worker(s)${capped}"
+  else
+    print -- "pcuc: whole suite, ${workers} worker(s)${capped}"
+  fi
+
+  # --first-is-1 keeps worker 1 off the shared /dev/shm/test_.sqlite3 that an unprefixed `cuc`
+  # run also uses. Each cuke element is shell-quoted so a tag expression containing spaces
+  # survives parallel_tests' Shellwords.shellsplit of -o.
+  # Quote each option SEPARATELY, via a temp array. ${(j: :)${(qq)cuke}} looks equivalent but the
+  # nested expansion flattens the array to a scalar first and quotes the whole thing, so cucumber
+  # received "--tags @notification" as one argument and rejected it as an invalid option.
+  # ${(@qq)cuke} keeps the array, so a value containing spaces stays one token and nothing else
+  # gets glued together - parallel_tests Shellwords.shellsplit's this string back apart.
+  local opts="-p $profile"
+  if (( ${#cuke} )); then
+    local -a qcuke
+    qcuke=("${(@qq)cuke}")
+    opts="$opts ${qcuke[*]}"
+  fi
+
+  # --group-by runtime. Both `steps` and `scenarios` parse Gherkin and so require cuke_modeler,
+  # which is deliberately not in the Gemfile (see the comment beside parallel_tests there: the
+  # `scenarios` mode silently runs fewer scenarios than it should). That leaves the modes that
+  # never parse a feature file - found, filesize, runtime, default - and those distribute WHOLE
+  # files, so no scenario can go missing: cucumber applies --tags itself inside each worker.
+  #
+  # Was filesize, which weighs each file by File.stat().size and packs equal BYTES per worker.
+  # Bytes barely track work here - measured over features/fund the spread was 12.8 to 6066
+  # bytes/sec, ~470x: fund_commitment_adhoc_notification.feature is the biggest file in the
+  # suite (52KB) but runs in 267s, portfolio.feature is half its size and takes 1297s, and
+  # fund_formula_explanation.feature is 11KB of table-driven Gherkin that finishes in 1.9s.
+  # Simulated over features/fund with -n 5, filesize gave worker wall-clocks of
+  # 22/30/30/44/45 min (three cores idle for the last 15 min) against 34.5-34.7 min for
+  # runtime - same work, ~11 min faster, and it matches the real 45:36 tail that prompted this.
+  #
+  # The log it reads, tmp/parallel_runtime_cucumber.log, has been filling in all along:
+  # parallel_tests appends `--format ParallelTests::Gherkin::RuntimeLogger --out <log>` to
+  # every worker whenever tmp/ exists (gherkin/runner.rb:43), regardless of profile.
+  # Dropping --group-by entirely is NOT equivalent - the default branch only uses the log when
+  # logged * 1.5 > total (40 * 1.5 = 60, not > 68 files), so it silently falls back to filesize.
+  # --allowed-missing 100 is REQUIRED, not optional. parallel_tests wipes the runtime log at the
+  # start of every run (Gherkin::Io#prepare_io does File.open(log, 'w').close), so it only ever
+  # holds the files the LAST run selected - after `pcuc features/fund` it has 40 lines, all
+  # features/fund, and nothing else. Grouping then budgets `files * allowed_missing_percent/100`
+  # unlogged files and raises RuntimeLogTooSmallError past that (test/runner.rb:229-234), so at
+  # the 50 default `pcuc features/core` (75 files, 0 logged) and a whole-suite run (289 files,
+  # 40 logged) both die before a single scenario boots. At 100 the budget can never be exceeded:
+  # files with a recorded time use it, the rest get the average of the known ones
+  # (set_unknown_runtime, test/runner.rb:308), which is no worse than the filesize guess.
+  local group=runtime
+  local allowed_missing=100
+
+  # Count the same tags over the same files (the whole tree when none were named).
+  # PCUC_QUIET: step-definition puts/ap/pp/print go nowhere (features/support/quiet_step_output.rb);
+  # VERBOSE=1 pcuc ... keeps them.
+  # --serialize-stdout holds each worker's output and prints it in one block when that worker
+  # ends. It replaces --prefix-output-with-test-env-number: parallel_tests prefixes every chunk
+  # it reads from a worker (test/runner.rb capture_output), and the progress formatter flushes
+  # each step's dot on its own, so the screen filled with "[TEST GROUP 2] ." once per step.
+  # Live status comes from the 30 s progress line (pcuc-lib.zsh) and `pcuc-status -w` instead.
+  _cuc_with_progress pcuc ${tagargs} ${files:-features} -- \
+    env RUBYOPT="-W0" PCUC_QUIET=1 bundle exec parallel_cucumber \
+      -n "$workers" --first-is-1 \
+      --group-by "$group" --allowed-missing "$allowed_missing" \
+      --serialize-stdout \
+      -o "$opts" \
+      ${files}
+}
+
+pcuc "$@"

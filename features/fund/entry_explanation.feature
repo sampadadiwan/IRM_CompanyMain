@@ -19,6 +19,7 @@ Feature: How an entry's number was worked out
 
   # ── Sums ──────────────────────────────────────────────────────────────────────
 
+  @rack_test
   Scenario: A sum breaks into its terms, with deductions marked, and says it adds up
     Given the run produced "Capital Collected" of "100000" for folio "101"
     And the run produced "Fees Charged" of "20000" for folio "101"
@@ -38,6 +39,7 @@ Feature: How an entry's number was worked out
 
   # ── Products ──────────────────────────────────────────────────────────────────
 
+  @rack_test
   Scenario: A product breaks into factors, and claims no total
     Given the run produced "Base" of "100000" for folio "101"
     And the run produced "Fee" of "2360" for folio "101" computed by "@base * 2 / 100 * 1.18" recording:
@@ -52,6 +54,7 @@ Feature: How an entry's number was worked out
 
   # ── Named steps and branches ──────────────────────────────────────────────────
 
+  @rack_test
   Scenario: A named step opens into its own expression
     Given the run produced "Base" of "100000" for folio "101"
     And the run produced "Fee" of "22000" for folio "101" computed by "months = 12 - 1; @base * months / 50" recording:
@@ -61,6 +64,7 @@ Feature: How an entry's number was worked out
     Then term "Months" should show "11"
     And term "Months" should open into "12,1"
 
+  @rack_test
   Scenario: A rule that returns from inside an if is broken down from the branch it took
     Given the run produced "Base" of "100000" for folio "101"
     And the run produced "Fee" of "2000" for folio "101" computed by "if @base > 0; @base * 2 / 100; else; 0; end" recording:
@@ -76,6 +80,7 @@ Feature: How an entry's number was worked out
   # AccountEntryExplanation#collect_locals and #chosen_branch.
 
   # ES1 — Edge case: a step set to zero, then reassigned inside an if, opens into the reassignment
+  @rack_test
   Scenario: A step reassigned inside an if opens into the assignment that ran, not its starting zero
     Given the run produced "Base" of "100000" for folio "101"
     And the run produced "Fee" of "2000" for folio "101" computed by "result = 0; if @base > 0; result = @base * 2 / 100; end; result" recording:
@@ -87,6 +92,7 @@ Feature: How an entry's number was worked out
     And term "Result" should open into "Base,2,100"
 
   # ES2 — Edge case: nested ifs — the branch is picked by the recorded false, not by being first
+  @rack_test
   Scenario: A nested if takes the branch its recorded condition chose
     Given the run produced "Base" of "100000" for folio "101"
     And the run produced "Fee" of "2000" for folio "101" computed by "result = 0; if @base > 0; if @base > 500000; result = @base * 3 / 100; else; result = @base * 2 / 100; end; end; result" recording:
@@ -98,6 +104,7 @@ Feature: How an entry's number was worked out
     Then term "Result" should open into "Base,2,100"
 
   # ES3 — Edge case: a false condition with no else ran nothing, so the starting zero stands
+  @rack_test
   Scenario: A step whose if did not run keeps its starting value and has nothing to open
     Given the run produced "Base" of "100000" for folio "101"
     And the run produced "Fee" of "0" for folio "101" computed by "result = 0; if @base > 500000; result = @base * 2 / 100; end; result" recording:
@@ -114,6 +121,7 @@ Feature: How an entry's number was worked out
   # named in AccountEntryExplanation#steps and _explanation_steps.html.erb.
 
   # ES4 — Happy path: named steps first, in the order the rule sets them, then the parts inside them; the run's dates are left out
+  @rack_test
   Scenario: The calculation steps list the rule's named steps in order, then the parts inside them
     Given the run produced "Base" of "100000" for folio "101"
     And the run produced "Fee" of "22000" for folio "101" computed by "rate = 2; months = 12 - 1; @base * months * rate / 100" recording:
@@ -126,6 +134,7 @@ Feature: How an entry's number was worked out
     Then the calculation steps should be "rate=2,months=11,12 - 1=11"
 
   # ES5 — Happy path: the steps table renders each step with its value formatted for reading
+  @rack_test
   Scenario: The calculation steps table shows each step and its value
     Given the run produced "Base" of "100000" for folio "101"
     And the run produced "Fee" of "2000" for folio "101" computed by "fx_rate = 96.3234; total = @base * 2; total / 100" recording:
@@ -140,6 +149,7 @@ Feature: How an entry's number was worked out
     And the steps table should show "first_dist" as "Distribution 1"
 
   # ES6 — Edge case: a run made without "Explain Formulas" recorded nothing, so there is no steps table
+  @rack_test
   Scenario: A run that recorded no values has no calculation steps
     Given the run produced "Base" of "100000" for folio "101"
     And the run produced "Fee" of "2000" for folio "101" computed by "@base * 2 / 100" with no breakdown
@@ -150,29 +160,34 @@ Feature: How an entry's number was worked out
 
   # ── Reading other entries ─────────────────────────────────────────────────────
 
+  @rack_test
   Scenario: A same-period read by name is another entry
     Given the run produced "Opening Fee" of "5000" for folio "101"
     And the run produced "Fee" of "5000" for folio "101" computed by "capital_commitment.get_account_entry_or_zero('Opening Fee', @end_date).amount_cents"
     When I open the explanation of "Fee" for folio "101"
     Then term "Opening Fee" should be another entry
 
+  @rack_test
   Scenario: A read from an earlier period is named as such and not opened
     Given the run produced "Fee" of "5000" for folio "101" computed by "capital_commitment.get_account_entry_or_zero('Closing Fee', @start_date).amount_cents"
     When I open the explanation of "Fee" for folio "101"
     Then term "Closing Fee" should be from an earlier period
     And term "Closing Fee" should say "at the start of this period"
 
+  @rack_test
   Scenario: Summing this folio's entries of a name is a total that can be opened
     Given the run produced "Fee" of "5000" for folio "101" computed by "capital_commitment.account_entries.where(name: 'Audit Fees', reporting_date: ..@end_date).sum(:amount_cents)"
     When I open the explanation of "Fee" for folio "101"
     Then term "Audit Fees — up to this date" should be a total over time
 
+  @rack_test
   Scenario: A fallback to zero is the term, noted
     Given the run produced "Fee" of "5000" for folio "101" computed by "@base + (capital_commitment.get_account_entry_or_zero('Carry', @end_date).amount_cents || 0)"
     And the run produced "Base" of "5000" for folio "101"
     When I open the explanation of "Fee" for folio "101"
     Then term "Carry" should say "zero when there is none"
 
+  @rack_test
   Scenario: A name held by several entries on the date is not pinned to one of them
     Given the run produced "Portfolio FMV" of "30000" for folio "101"
     And the run produced "Portfolio FMV" of "70000" for folio "101"
@@ -197,6 +212,7 @@ Feature: How an entry's number was worked out
 
   # ── Allocated shares ──────────────────────────────────────────────────────────
 
+  @rack_test
   Scenario: An allocated entry shows the fund-level entry it is a share of
     Given the run produced a fund-level "Operating Cost" entry of "40000"
     And the run produced "Operating Cost" of "10000" for folio "101" allocated from the fund level computed by "fund_account_entry.amount_cents * 0.25"
@@ -205,6 +221,7 @@ Feature: How an entry's number was worked out
 
   # The leak the first review caught: the fund-level entry a share came from has references of
   # its own, and the folio's references must resolve against the folio, not the fund.
+  @rack_test
   Scenario: An allocated entry reads its references from its own folio, not from the fund
     Given the run produced a fund-level "Base" entry of "500000"
     And the run produced a fund-level "Operating Cost" entry of "40000" computed by "@base"
@@ -233,6 +250,7 @@ Feature: How an entry's number was worked out
     And there is an investor user on the entity
     Then that investor should not be able to open the explanation's lines
 
+  @rack_test
   Scenario: The fund's staff may open the lines of the explanation
     Given the run produced "NAV" of "80000" for folio "101"
     Then the company admin should be able to open the explanation's lines

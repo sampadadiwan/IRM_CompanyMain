@@ -23,6 +23,7 @@ Feature: Suggesting a fund's run checks
 
   # ── Rules ────────────────────────────────────────────────────────────────────
 
+  @rack_test
   Scenario: Rules suggest checks from the fund's formulas and uploads, with evidence
     When support generates run check suggestions
     Then a suggestion should call 'allowed_entry_names("Non Deal Expense", ["Audit Fees"])'
@@ -33,6 +34,7 @@ Feature: Suggesting a fund's run checks
     And a suggestion should call "fund_entries_allocated"
     And a suggestion should call "fund_entries_tie_to_folios(tolerance: 1.0)"
 
+  @rack_test
   Scenario: The same data gives the same suggestions
     When support generates run check suggestions
     Then generating the suggestions again should give the same formulas
@@ -42,6 +44,7 @@ Feature: Suggesting a fund's run checks
     Then no suggestion should call "fx_rates_present"
     And no suggestion should call "valuations_present"
 
+  @rack_test
   Scenario: A fund holding a foreign currency instrument gets an FX rate check
     Given there is an existing portfolio company ""
     And there is an investment instrument for the portfolio company "name=USStock;category=Unlisted;sub_category=Equity;sector=Tech;currency=USD"
@@ -50,6 +53,7 @@ Feature: Suggesting a fund's run checks
     Then a suggestion should call "fx_rates_present(within_days: 5)"
     And a suggestion should call "valuations_present(within_months: 3, severity: :warning)"
 
+  @rack_test
   Scenario: The fund's since-inception totals get a history check
     Given the fund stores the since-inception total of "Audit Fees"
     When support generates run check suggestions
@@ -63,6 +67,7 @@ Feature: Suggesting a fund's run checks
     And no suggestion should call "folio_shares_total"
     And no suggestion should call "fund_entries_allocated"
 
+  @rack_test
   Scenario: Unit setting keys the formulas read get a unit settings check, with evidence
     Given the fund has a formula "Hurdle" reading the unit setting "hurdle_rate"
     When support generates run check suggestions
@@ -70,6 +75,7 @@ Feature: Suggesting a fund's run checks
     And the suggestion calling "unit_settings_present" should cite formula "Hurdle"
     And the suggestion calling "unit_settings_present" should note "Unit types in use: A1 (2)"
 
+  @rack_test
   Scenario: A check the fund already has is marked, in any list order
     Given the fund has a "PreRunCheck" check "Expense heads" with formula:
       """
@@ -80,6 +86,7 @@ Feature: Suggesting a fund's run checks
 
   # ── Test runs ────────────────────────────────────────────────────────────────
 
+  @rack_test
   Scenario: Suggestions are tested against the last successful run
     Given there is a finished allocation run "start_date=2024-01-01;end_date=2024-03-31"
     And these account entries were uploaded:
@@ -89,12 +96,14 @@ Feature: Suggesting a fund's run checks
     Then the suggestion calling "allowed_entry_names" should have test result "fail" mentioning "Travel"
     And the suggestion calling "folio_shares_total" should have test result "pass"
 
+  @rack_test
   Scenario: A fund with no successful run gets untested suggestions
     When support generates run check suggestions
     Then the suggestion calling "allowed_entry_names" should have test result "not_tested"
 
   # ── Adding and exporting ─────────────────────────────────────────────────────
 
+  @rack_test
   Scenario: Add a check as a warning
     Given there is a finished allocation run "start_date=2024-01-01;end_date=2024-03-31"
     When support generates run check suggestions
@@ -102,6 +111,7 @@ Feature: Suggesting a fund's run checks
     Then the added count should be 1
     And the fund should have a "PreRunCheck" check formula 'allowed_entry_names("Non Deal Expense", ["Audit Fees"], severity: :warning)'
 
+  @rack_test
   Scenario: Several checks are added at once, and adding one again is refused
     Given there is a finished allocation run "start_date=2024-01-01;end_date=2024-03-31"
     When support generates run check suggestions
@@ -111,6 +121,7 @@ Feature: Suggesting a fund's run checks
     Then the added count should be 0
     And the add should be refused for "Pre-run check: Non Deal Expense names" with "already present"
 
+  @rack_test
   Scenario: A downloaded file imports as the same formulas
     When support generates run check suggestions
     And support downloads the suggestions calling "allowed_entry_names" and "fund_entries_allocated" and imports the file into the fund
@@ -118,6 +129,7 @@ Feature: Suggesting a fund's run checks
 
   # ── AI ───────────────────────────────────────────────────────────────────────
 
+  @rack_test
   Scenario: AI suggestions are validated like rule suggestions, and only plain helper calls are test-run
     Given there is a finished allocation run "start_date=2024-01-01;end_date=2024-03-31"
     And the AI suggests these checks:
@@ -134,6 +146,7 @@ Feature: Suggesting a fund's run checks
     And the AI suggestion "Not a check" should be rejected with "Not a PreRunCheck or PostRunCheck"
     And a suggestion should call "fund_entries_allocated"
 
+  @rack_test
   Scenario: The rule suggestions survive an AI failure
     Given the AI service is unavailable
     When support generates run check suggestions with AI
@@ -141,6 +154,7 @@ Feature: Suggesting a fund's run checks
 
   # ── Pages ────────────────────────────────────────────────────────────────────
 
+  @rack_test
   Scenario: Support returns to the latest suggestion set
     When support generates run check suggestions
     And the user opens Suggest run checks

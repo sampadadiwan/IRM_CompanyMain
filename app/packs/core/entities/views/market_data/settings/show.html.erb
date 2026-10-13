@@ -1,21 +1,9 @@
 <%# Entity › Settings › Market Data — openspec/changes/fund-market-data, design card ① %>
 <% perms = @setting.entity.permissions %>
-<% if @test_results %>
-  <%# Test feed results — nothing was stored (E45) %>
-  <% found = @test_results.sum { |r| r.found.size } %>
-  <% total = @test_results.sum { |r| r.found.size + r.missing.size } %>
-  <div class="card mb-3" id="test_feed_results">
-    <div class="card-body">
-      <h5 class="card-title"><%= found %> of <%= total %> found</h5>
-      <ul class="mb-0">
-        <% @test_results.each do |r| %>
-          <% r.found.each do |key| %><li><span class="badge bg-success-subtle text-success">Found</span> <%= r.run.provider.upcase %> · <%= key.to_s.sub("/", "→") %></li><% end %>
-          <% r.missing.each do |m| %><li><span class="badge bg-danger-subtle text-danger">Missing</span> <%= r.run.provider.upcase %> · <%= m["name"] || m["key"].to_s.sub("/", "→") %> — <%= m["reason"] %></li><% end %>
-        <% end %>
-      </ul>
-    </div>
-  </div>
-<% end %>
+<%# Narrow centred column so the settings read as one short form %>
+<div class="row justify-content-center">
+<div class="col-xl-8 col-lg-10">
+<%= render "market_data/settings/test_feed_results", results: @test_results if @test_results %>
 <% can_edit = policy(@setting).update? %>
 <%= render FormCard.new(title: "Market Data") do %>
   <%= form_with(model: @setting, url: market_data_settings_path, method: :patch) do |form| %>
@@ -30,94 +18,182 @@
     <% end %>
 
     <fieldset <%= "disabled" unless can_edit %>>
-      <% if perms.enable_market_rates? %>
-        <div class="form-group">
-          <div class="form-check">
-            <%= form.check_box :fx_feed_enabled, class: "form-check-input" %>
-            <%= form.label :fx_feed_enabled, "FX rate feed", class: "form-check-label" %>
-          </div>
-          <% MarketDataSetting::FX_PROVIDERS.each do |p| %>
-            <div class="form-check form-check-inline">
-              <%= check_box_tag "market_data_setting[fx_providers][]", p, Array(@setting.fx_providers).include?(p), id: "fx_provider_#{p}", class: "form-check-input" %>
-              <%= label_tag "fx_provider_#{p}", t("market_data.providers.#{p}", default: p.upcase), class: "form-check-label" %>
-            </div>
-          <% end %>
-          <%= hidden_field_tag "market_data_setting[fx_providers][]", "", id: nil %>
+      <%# Card header with a section icon %>
+      <% section_header = lambda do |icon, title| %>
+        <div class="card-header"><strong><i class="ti ti-<%= icon %> me-1"></i><%= title %></strong></div>
+      <% end %>
+      <%# Notice at the top of a card saying what the section does (evergreen settings preset-notes style) %>
+      <% notice = lambda do |text| %>
+        <div class="d-flex align-items-start gap-2 small text-muted mb-3 p-2 px-3 rounded bg-light border">
+          <i class="ti ti-info-circle text-info mt-1"></i>
+          <div><%= text %></div>
         </div>
       <% end %>
+      <%# One iOS-style toggle row (users/_form pattern): label + help on the left, switch on the right %>
+      <% toggle_row = lambda do |id, label, help, &input| %>
+        <div class="toggle-row">
+          <div>
+            <%= label_tag id, label, class: "toggle-row-label" %>
+            <small class="form-text text-muted d-block"><%= help %></small>
+          </div>
+          <label class="ios-toggle">
+            <%= capture(&input) %>
+            <span class="ios-toggle-slider"></span>
+          </label>
+        </div>
+      <% end %>
+      <%# Provider checkboxes (theme-coloured, 1.5em via scaffolds.scss), name + help under it — a hidden blank keeps "none ticked" submittable %>
+      <% provider_checks = lambda do |kind, providers| %>
+        <div class="row g-3">
+          <% providers.each do |p, help| %>
+            <div class="col-md-6 col-xl-3">
+              <div class="d-flex align-items-start gap-2">
+                <%= check_box_tag "market_data_setting[#{kind}_providers][]", p, Array(@setting.public_send(:"#{kind}_providers")).include?(p), id: "#{kind}_provider_#{p}", class: "form-check-input mt-0 flex-shrink-0" %>
+                <div>
+                  <%= label_tag "#{kind}_provider_#{p}", t("market_data.providers.#{p}", default: p.upcase.tr("_", " ")), class: "form-check-label fw-semibold" %>
+                  <small class="form-text text-muted d-block mt-0"><%= help %></small>
+                </div>
+              </div>
+            </div>
+          <% end %>
+        </div>
+        <%= hidden_field_tag "market_data_setting[#{kind}_providers][]", "", id: nil %>
+      <% end %>
 
+      <%# ── FX RATES ── %>
+      <div class="card mb-3" id="market_data_fx">
+        <% section_header.call("arrows-exchange", "FX rates") %>
+        <div class="card-body">
+          <% notice.call("Daily exchange rates that funds can use to convert values. A fund only uses them if it accepts Market or Derived rates.") %>
+          <% if perms.enable_market_rates? %>
+            <% toggle_row.call("market_data_setting_fx_feed_enabled", "FX rate feed", "Fetch exchange rates every day from the sources selected below.") do %>
+              <%= form.check_box :fx_feed_enabled, class: "ios-toggle-input" %>
+            <% end %>
+          <% end %>
+          <div class="row g-3">
+            <% if perms.enable_market_rates? %>
+              <div class="col-12">
+                <label class="form-label">Sources <small class="text-muted">(pick at least one while the feed is on)</small></label>
+                <% provider_checks.call("fx", [["ecb", "European Central Bank reference rates, a free public source."]]) %>
+              </div>
+            <% end %>
+            <div class="col-md-6">
+              <%= form.label :pivot_currency, "Cross-rate pivot currency", class: "form-label" %>
+              <%= form.text_field :pivot_currency, class: "form-control", maxlength: 5 %>
+              <div class="form-text">Used to build a rate the feed doesn't provide by chaining two rates through this currency, e.g. EUR→INR = EUR→USD × USD→INR.</div>
+            </div>
+            <%# Pairs the FX feed fetches (E12) %>
+            <% if perms.enable_market_rates? %>
+              <div class="col-12" id="market_data_pairs">
+                <label class="form-label">Pairs tracked</label>
+                <div><%= MarketDataPairsInUse.for(@setting.entity).map { |p| p.sub("/", "→") }.join(" · ").presence || "—" %></div>
+                <div class="form-text">The currency pairs your funds need, worked out from their holdings.</div>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+
+      <%# ── PRICES ── %>
       <% if perms.enable_market_prices? %>
-        <div class="form-group">
-          <div class="form-check">
-            <%= form.check_box :price_feed_enabled, class: "form-check-input" %>
-            <%= form.label :price_feed_enabled, "Price feed", class: "form-check-label" %>
+        <div class="card mb-3" id="market_data_prices">
+          <% section_header.call("chart-line", "Prices") %>
+          <div class="card-body">
+            <% notice.call("Daily closing prices for listed holdings, used for current fair values. Booked amounts never change.") %>
+            <% toggle_row.call("market_data_setting_price_feed_enabled", "Price feed", "Fetch closing prices every day from the exchanges selected below.") do %>
+              <%= form.check_box :price_feed_enabled, class: "ios-toggle-input" %>
+            <% end %>
+            <label class="form-label">Sources <small class="text-muted">(pick at least one while the feed is on)</small></label>
+            <% provider_checks.call("price", [["nse", "NSE equity closing prices."],
+                                               ["bse", "BSE equity closing prices."],
+                                               ["amfi", "AMFI mutual fund NAVs."],
+                                               ["nse_fo", "NSE futures and options settlement prices, used to value derivative contracts."]]) %>
           </div>
-          <% MarketDataSetting::PRICE_PROVIDERS.each do |p| %>
-            <div class="form-check form-check-inline">
-              <%= check_box_tag "market_data_setting[price_providers][]", p, Array(@setting.price_providers).include?(p), id: "price_provider_#{p}", class: "form-check-input" %>
-              <%= label_tag "price_provider_#{p}", t("market_data.providers.#{p}", default: p.upcase.tr("_", " ")), class: "form-check-label" %>
-            </div>
-          <% end %>
-          <%= hidden_field_tag "market_data_setting[price_providers][]", "", id: nil %>
         </div>
       <% end %>
 
-      <div class="form-group">
-        <%= form.label :pivot_currency, "Cross-rate pivot currency" %>
-        <%= form.text_field :pivot_currency, class: "form-control", maxlength: 5 %>
-      </div>
-
-      <h6 class="mt-3">New fund defaults</h6>
-      <% defaults = (@setting.fund_defaults || {}).transform_keys(&:to_s) %>
-      <% [[:accept_market_rates, "Accept market FX rates", perms.enable_market_rates?],
-          [:accept_derived_rates, "Accept derived FX rates", true],
-          [:accept_market_prices, "Accept market prices", perms.enable_market_prices?]].each do |flag, label, shown| %>
-        <% next unless shown %>
-        <div class="form-check">
-          <%= hidden_field_tag "market_data_setting[fund_defaults][#{flag}]", "0", id: nil %>
-          <%= check_box_tag "market_data_setting[fund_defaults][#{flag}]", "1", ActiveModel::Type::Boolean.new.cast(defaults[flag.to_s]), id: "fund_default_#{flag}", class: "form-check-input" %>
-          <%= label_tag "fund_default_#{flag}", label, class: "form-check-label" %>
-        </div>
-      <% end %>
-
-      <h6 class="mt-3">Open-ended fund limits</h6>
       <div class="row">
-        <div class="col-md-4 form-group">
-          <%= form.label :max_rate_age_days, "Max rate age (business days)" %>
-          <%= form.number_field :max_rate_age_days, class: "form-control" %>
+        <%# ── NEW FUND DEFAULTS ── %>
+        <div class="col-xl-6">
+          <div class="card mb-3" id="market_data_fund_defaults">
+            <% section_header.call("adjustments", "New fund defaults") %>
+            <div class="card-body">
+              <% notice.call("What a newly created fund starts with. Existing funds don't change, and each fund can change these on its own settings.") %>
+              <% defaults = (@setting.fund_defaults || {}).transform_keys(&:to_s) %>
+              <% [[:accept_market_rates, "Accept market FX rates", "New funds use the daily FX feed as well as rates entered by hand.", perms.enable_market_rates?],
+                  [:accept_derived_rates, "Accept derived FX rates", "New funds may work out a missing rate by flipping one (INR→USD from USD→INR) or chaining two through the pivot currency. The most recent rate wins.", true],
+                  [:accept_market_prices, "Accept market prices", "New funds value listed holdings at the daily feed price.", perms.enable_market_prices?]].each do |flag, label, help, shown| %>
+                <% next unless shown %>
+                <%= hidden_field_tag "market_data_setting[fund_defaults][#{flag}]", "0", id: nil %>
+                <% toggle_row.call("fund_default_#{flag}", label, help) do %>
+                  <%= check_box_tag "market_data_setting[fund_defaults][#{flag}]", "1", ActiveModel::Type::Boolean.new.cast(defaults[flag.to_s]), id: "fund_default_#{flag}", class: "ios-toggle-input" %>
+                <% end %>
+              <% end %>
+            </div>
+          </div>
         </div>
-        <div class="col-md-4 form-group">
-          <%= form.label :max_price_age_days, "Max price age (business days)" %>
-          <%= form.number_field :max_price_age_days, class: "form-control" %>
-        </div>
-        <div class="col-md-4 form-group">
-          <%= form.label :price_move_threshold_pct, "Price move threshold (%)" %>
-          <%= form.number_field :price_move_threshold_pct, class: "form-control", step: "0.01" %>
+
+        <%# ── OPEN-ENDED FUND LIMITS ── %>
+        <div class="col-xl-6">
+          <div class="card mb-3" id="market_data_limits">
+            <% section_header.call("shield-check", "Open-ended fund limits") %>
+            <div class="card-body">
+              <% notice.call("Checks run on an open-ended fund's NAV draft. Anything outside a limit is listed as an exception to accept or fix before approving. A fund can set its own limits; a blank one uses these.") %>
+              <% [[:max_rate_age_days, "Max rate age", "business days", "1", "A rate dated more than this many business days (Mon–Fri) before the NAV date is flagged. Limit 3, NAV Fri 30 Oct: a Tue 27 Oct rate is fine, Mon 26 Oct is flagged."],
+                  [:max_price_age_days, "Max price age", "business days", "1", "The same check for market prices. Manual marks on private holdings show their age but are never flagged."],
+                  [:price_move_threshold_pct, "Price move threshold", "%", "0.01", "A price that moves more than this since the last NAV is flagged. Exactly the threshold passes: at 10%, 1,000 → 1,100 is fine."]].each do |field, label, unit, step, help| %>
+                <div class="mb-3">
+                  <%= form.label field, label, class: "form-label" %>
+                  <div class="input-group">
+                    <%= form.number_field field, class: "form-control", step: %>
+                    <span class="input-group-text"><%= unit %></span>
+                  </div>
+                  <div class="form-text"><%= help %></div>
+                </div>
+              <% end %>
+            </div>
+          </div>
         </div>
       </div>
 
-      <%# Pairs the FX feed fetches and the latest run (E12, E11) %>
+      <%# ── LAST RUN (E11) ── %>
       <% if perms.enable_market_rates? %>
-        <div class="mt-3" id="market_data_status">
-          <div><span class="text-muted">Pairs tracked:</span> <%= MarketDataPairsInUse.for(@setting.entity).map { |p| p.sub("/", "→") }.join(", ").presence || "—" %></div>
-          <% last_run = MarketDataRun.where(entity_id: @setting.entity_id).recent_first.first %>
-          <div><span class="text-muted">Last run:</span>
-            <%= last_run ? "#{l last_run.run_date} — #{last_run.loaded_count} loaded, #{last_run.status}" : "Not run yet" %>
-            · <%= link_to "Run history", market_data_runs_path %>
-            <% if perms.enable_market_prices? %> · <%= link_to "Corporate actions", corporate_action_suggestions_path %><% end %>
+        <div class="card mb-3" id="market_data_status">
+          <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <% last_run = MarketDataRun.where(entity_id: @setting.entity_id).recent_first.first %>
+            <div>
+              <strong><i class="ti ti-clock-check me-1"></i>Last run:</strong>
+              <% if last_run %>
+                <%= l last_run.run_date %>
+                <% tone = { "ok" => "success", "running" => "info", "partial" => "warning", "empty" => "warning", "failed" => "danger" }.fetch(last_run.status, "secondary") %>
+                <span class="badge bg-<%= tone %>-subtle text-<%= tone %>"><%= last_run.status %></span>
+                · <%= last_run.loaded_count %> loaded
+              <% else %>
+                Not run yet
+              <% end %>
+            </div>
+            <div class="d-flex gap-2">
+              <%= link_to market_data_runs_path, class: "btn btn-outline-secondary btn-sm" do %><i class="ti ti-history me-1"></i>Run history<% end %>
+              <% if perms.enable_market_prices? %><%= link_to corporate_action_suggestions_path, class: "btn btn-outline-secondary btn-sm" do %><i class="ti ti-arrows-split-2 me-1"></i>Corporate actions<% end %><% end %>
+            </div>
           </div>
-        </div>
-      <% end %>
-
-      <% if can_edit %>
-        <div class="form-group mt-3">
-          <%= form.submit t_common(:save), class: "btn btn-outline-primary" %>
         </div>
       <% end %>
     </fieldset>
+
+    <% if can_edit %>
+      <div class="d-flex justify-content-end gap-2">
+        <% if @setting.fx_feed_enabled || @setting.price_feed_enabled %>
+          <%# Plain form post via form= so Test feed sits next to Save without nesting forms; results render on this page (Turbo would ignore a non-redirect response) %>
+          <button type="submit" form="market_data_test_feed" class="btn btn-outline-secondary"><i class="ti ti-plug-connected me-1"></i>Test feed</button>
+        <% end %>
+        <%= form.button type: "submit", class: "btn btn-outline-primary" do %><i class="ti ti-device-floppy me-1"></i><%= t_common(:save) %><% end %>
+      </div>
+    <% end %>
   <% end %>
   <% if can_edit && (@setting.fx_feed_enabled || @setting.price_feed_enabled) %>
-    <%# Plain form post: the results render on this page (Turbo would ignore a non-redirect response) %>
-    <%= button_to "Test feed", test_feed_market_data_settings_path, method: :post, class: "btn btn-outline-secondary mt-2", form: { data: { turbo: false } } %>
+    <%= form_with url: test_feed_market_data_settings_path, method: :post, id: "market_data_test_feed", data: { turbo: false } do %><% end %>
   <% end %>
 <% end %>
+</div>
+</div>

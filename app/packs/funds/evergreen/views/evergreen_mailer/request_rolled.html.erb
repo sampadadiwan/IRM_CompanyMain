@@ -1,0 +1,11 @@
+<%# Worked examples E21, E24: an order not ready (or not paid) by the cut-off moves to the next dealing date %>
+<% if @custom_notification %>
+  <%= render "/custom_notifications/mail" do %>
+    <%= render "evergreen_mailer/custom_extras" %>
+  <% end %>
+<% else %>
+  <p>Dear <%= @user&.first_name %>,</p>
+  <p>Your request wasn't ready by the cut-off, so it has moved to the next <%= EvergreenLabels.lower(eg_t(@order.subscription? ? :subscription_date : :redemption_date)) %>.</p>
+  <%= render "evergreen_mailer/summary" %>
+  <%= render "evergreen_mailer/request_link" %>
+<% end %>

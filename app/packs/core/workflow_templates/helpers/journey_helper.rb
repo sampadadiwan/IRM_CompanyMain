@@ -74,7 +74,8 @@ module JourneyHelper
   def journey_step_tooltip(step)
     [
       journey_step_state_line(step),
-      JOURNEY_KIND_LABELS[step[:kind].to_s]
+      # A skipped step isn't checked or signed off, so its kind label would only mislead
+      (JOURNEY_KIND_LABELS[step[:kind].to_s] unless step[:status].to_s == "na")
     ].compact_blank.join("<br>")
   end
 

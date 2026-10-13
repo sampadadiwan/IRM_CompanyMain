@@ -14,27 +14,32 @@ Feature: Internal docs viewer access control
 
   # ── Staff can read ────────────────────────────────────────────────────────
 
+  @rack_test
   Scenario: A support user sees the go-to-market section on the index
     Given the user has the role "support"
     When the user requests "/internal_docs"
     Then the docs response should be successful
     And the docs response body should contain "Go-To-Market"
 
+  @rack_test
   Scenario: A support user can read a marketing document
     Given the user has the role "support"
     When the user requests "/internal_docs/gtm/us_gtm_zero_budget_notes"
     Then the docs response should be successful
 
+  @rack_test
   Scenario: A super user can read a marketing document
     Given the user has the super role granted directly in the database
     When the user requests "/internal_docs/gtm/us_gtm_zero_budget_notes"
     Then the docs response should be successful
 
+  @rack_test
   Scenario: A support user can read the parent strategy document the marketing docs link to
     Given the user has the role "support"
     When the user requests "/internal_docs/gtm/us_gtm"
     Then the docs response should be successful
 
+  @rack_test
   Scenario: A support user can read a US feature spec indexed by the strategy document
     Given the user has the role "support"
     When the user requests "/internal_docs/gtm/us_gtm/side_letter_obligations"
@@ -42,15 +47,18 @@ Feature: Internal docs viewer access control
 
   # ── Customers cannot ──────────────────────────────────────────────────────
 
+  @rack_test
   Scenario: An ordinary user with no staff role is denied
     When the user requests "/internal_docs"
     Then the docs response should redirect to "/"
 
+  @rack_test
   Scenario: An investor-role user is denied
     Given the user has the role "investor"
     When the user requests "/internal_docs"
     Then the docs response should redirect to "/"
 
+  @rack_test
   Scenario: An anonymous visitor is sent to the login page
     When an anonymous visitor requests "/internal_docs"
     Then the docs response should redirect to "/users/sign_in"
@@ -59,6 +67,7 @@ Feature: Internal docs viewer access control
   # user recorded in the session — the customer never holds the support role
   # themselves. User#support? is true in this state, so a policy written against
   # it would leak CapHive's commercial docs into a customer-facing view.
+  @rack_test
   Scenario: A session impersonated by support is denied
     When a support user impersonates the user and requests "/internal_docs"
     Then the impersonation should be active in the session
@@ -66,6 +75,7 @@ Feature: Internal docs viewer access control
 
   # ── The whitelist is a security boundary, not just navigation ─────────────
 
+  @rack_test
   Scenario Outline: A non-whitelisted tree is unreachable even to staff
     Given the user has the role "support"
     When the user requests "<path>"
@@ -79,16 +89,19 @@ Feature: Internal docs viewer access control
       | /internal_docs/operations/dr/dr_drills                       |
       | /internal_docs/user_guides/ai_features_user_guide            |
 
+  @rack_test
   Scenario: A traversal out of a whitelisted section into a protected one is rejected
     Given the user has the role "support"
     When the user requests "/internal_docs/gtm/../engineering/internal_docs_viewer"
     Then the docs response should redirect to "/internal_docs"
 
+  @rack_test
   Scenario: A traversal out of the docs root entirely is rejected
     Given the user has the role "support"
     When the user requests "/internal_docs/gtm/../../config/database"
     Then the docs response should redirect to "/internal_docs"
 
+  @rack_test
   Scenario: A missing document inside a whitelisted section is a redirect, not an error
     Given the user has the role "support"
     When the user requests "/internal_docs/gtm/no_such_document"
@@ -96,27 +109,33 @@ Feature: Internal docs viewer access control
 
   # ── Regressions from sharing WithGuideRendering and retiring /features ─────
 
+  @rack_test
   Scenario: The signed-in user guides index still renders
     When the user requests "/user_guides"
     Then the docs response should be successful
 
+  @rack_test
   Scenario: A signed-in user guide still renders
     When the user requests "/user_guides/ai_features_user_guide"
     Then the docs response should be successful
 
+  @rack_test
   Scenario: A public guide is still readable without a login
     When an anonymous visitor requests "/help/two_factor_authentication_user_guide"
     Then the docs response should be successful
 
+  @rack_test
   Scenario: A public guide still refuses an id outside its allowlist
     When an anonymous visitor requests "/help/ai_features_user_guide"
     Then the docs response should redirect to "/users/sign_in"
 
+  @rack_test
   Scenario: The retired features index redirects into the internal docs viewer
     Given the user has the role "support"
     When the user requests "/features"
     Then the docs response should redirect to "/internal_docs"
 
+  @rack_test
   Scenario: A retired feature document URL redirects to its internal docs equivalent
     Given the user has the role "support"
     When the user requests "/features/us_gtm"
@@ -131,6 +150,7 @@ Feature: Internal docs viewer access control
 
   # A "." segment survives the whitelist (it cleans away) but used to leave the
   # breadcrumb reading its section label off the raw id, producing a blank crumb.
+  @rack_test
   Scenario: A dot segment in the id still resolves and labels its section
     Given the user has the role "support"
     When the user requests "/internal_docs/./gtm/us_gtm_zero_budget_notes"

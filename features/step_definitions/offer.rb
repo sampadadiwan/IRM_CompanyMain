@@ -2,8 +2,7 @@
 
     @user = @investor_user
     steps %(
-        And I am at the login page
-        When I fill and submit the login page
+        And I am signed in as the current user
     )
 
   end
@@ -63,10 +62,10 @@
 
 
   Then('I should see the offer details') do
-    if page.has_css?("#display_status_ok")
-      #sleep(1)
-      find("#display_status_ok").click
-    end
+    # The status modal is rendered only when the controller redirected here with display_status
+    # (layouts/_alerts) - i.e. right after a create/update, not on a plain visit. Decide from the URL
+    # instead of a default-wait has_css?, which spent 15 s on every plain visit.
+    find("#display_status_ok").click if URI(page.current_url).query.to_s.include?("display_status")
 
     expect(page).to have_content(@user.full_name)
     expect(page).to have_content(@entity.name)
@@ -179,7 +178,7 @@ Given('Given I upload a offer file {string}') do |file_name|
     click_on("Upload Offers")
     fill_in('import_upload_name', with: "Test Upload")
     attach_file('files[]', File.absolute_path("./public/sample_uploads/#{file_name}"), make_visible: true)
-    sleep(8)  # JS direct-upload to /upload endpoint; larger window for parallel load
+    wait_for_upload("./public/sample_uploads/#{file_name}") # JS direct-upload to /upload; returns once it lands (was sleep 8)
     click_on("Save")
     expect(page).to have_content("Import Upload:", wait: 15)
     #sleep(4)
@@ -257,7 +256,7 @@ Given('I add pan details to the offer') do
   click_on("Next")
   fill_in("offer_PAN", with: Faker::Alphanumeric.alphanumeric(number: 10).upcase)
   attach_file("files[]", File.absolute_path("./public/sample_uploads/example_pan.jpeg"), make_visible: true)
-  sleep(1)
+  wait_for_upload("./public/sample_uploads/example_pan.jpeg") # JS direct-upload to /upload; returns once it lands (was sleep 1)
   click_on("Next")
   click_on("Save")
   expect(page).to have_content("successfull")
@@ -265,8 +264,7 @@ end
 
 Then('Pan Verification is triggered') do
   allow_any_instance_of(KycVerify).to receive(:verify_pan_card).and_return(pan_response)
-  sleep(5)
-  @offer.reload.pan_verification_response.should_not == @og_pan_verification_response
+  eventually { expect(@offer.reload.pan_verification_response).not_to eq(@og_pan_verification_response) }
 end
 
 Then('when the offer name is updated') do
@@ -316,9 +314,7 @@ end
 
 Then('Bank Verification is triggered') do
   allow_any_instance_of(KycVerify).to receive(:verify_bank).and_return(bank_response)
-  sleep(5)
-  @offer.reload
-  @offer.bank_verification_response.should_not == @og_bank_verification_response
+  eventually { expect(@offer.reload.bank_verification_response).not_to eq(@og_bank_verification_response) }
 end
 
 Then('when the offer Bank Account number is updated') do

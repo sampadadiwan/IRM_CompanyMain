@@ -1,0 +1,7 @@
+<%# Internal evergreen alert (open-ended-funds § Notifications). l(date) → "Mon dd, yyyy" in emails. %>
+<p>Dear <%= @user&.first_name %>,</p>
+<p><strong><%= @title %></strong></p>
+<ul>
+  <% @lines.each do |line| %><li><%= line %></li><% end %>
+</ul>
+<p><%= link_to "Open in CapHive", @link %></p>

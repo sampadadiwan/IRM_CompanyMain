@@ -1,4 +1,4 @@
-@import
+@import @rack_test
 Feature: Import custom field headers
   Spreadsheet imports that use a Form Tag match each custom column to a form custom field.
   A column must match the label shown on screen (and in the upload template) even when the

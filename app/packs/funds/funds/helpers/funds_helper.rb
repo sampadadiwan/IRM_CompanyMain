@@ -348,4 +348,42 @@ module FundsHelper
 
     ratios_by_name
   end
+
+  # Closed-ended / Open-ended badge for the Funds list, in the same pill style as the fund's tags.
+  # Shown only to companies with evergreen funds on, so other companies' lists are unchanged; the type
+  # is fixed at creation, so it can't go stale.
+  # evergreen_ids: fund ids that have evergreen settings (loaded once by FundsController#index), or nil
+  def fund_type_badge(fund, evergreen_ids)
+    return unless fund.entity&.permissions&.enable_evergreen_funds?
+
+    # Outside the Funds list (no preloaded ids) ask the fund itself
+    open_ended = evergreen_ids ? evergreen_ids.include?(fund.orignal_id || fund.id) : fund.try(:evergreen?)
+    fund_type_pill(open_ended)
+  end
+
+  # The type pill itself — the Funds list badge and the chosen type on New Fund's step 1 (H5)
+  def fund_type_pill(open_ended)
+    if open_ended
+      tag.span(safe_join([tag.i("", class: "ti ti-infinity me-1"), "Open-ended"]), class: "mb-1 me-1 badge rounded-pill font-medium bg-primary-subtle text-primary")
+    else
+      tag.span(safe_join([tag.i("", class: "ti ti-lock me-1"), "Closed-ended"]), class: "mb-1 me-1 badge rounded-pill font-medium bg-secondary-subtle text-secondary")
+    end
+  end
+
+  # H5: the two cards on New Fund's type page — what each type is, in plain words; tone is the card's
+  # Bootstrap subtle colour
+  def fund_type_cards
+    [
+      { value: "closed_end", icon: "lock", title: "Closed-ended", tone: "info", tagline: "Commit, call, distribute",
+        summary: "Investors commit an amount up front. You draw it with capital calls and return money with distributions over the fund's life.",
+        points: ["Commitments, capital calls and distributions", "Investors join at the fund's closes", "A fixed life, then the fund winds down"],
+        typical: "Typical: Category I and II AIFs, private equity and venture capital funds",
+        steps: "2 steps to set up" },
+      { value: "open_ended", icon: "infinity", title: "Open-ended (evergreen)", tone: "success", tagline: "Subscribe and redeem at NAV",
+        summary: "Investors subscribe and redeem on dealing dates at the latest NAV. The fund has no end date.",
+        points: ["Subscriptions and redemptions on a dealing calendar", "A NAV per unit for each unit class", "Notice periods, lock-ups and redemption gates"],
+        typical: "Typical: Category III AIFs, hedge-fund style, tender-offer and interval funds",
+        steps: "11 steps to set up · needs a unit type" }
+    ]
+  end
 end

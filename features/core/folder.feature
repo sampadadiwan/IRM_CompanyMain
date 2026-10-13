@@ -1,3 +1,4 @@
+@rack_test
 Feature: Folder
   Can create and view a folder as a company
 

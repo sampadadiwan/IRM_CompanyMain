@@ -48,6 +48,9 @@ export default class extends Controller {
         });
 
         // Back navigation is not validated — the step being left already passed validation to get here.
+        // Keep focus in the field on mousedown: blurring it would run its blur validation, and the error
+        // message that inserts can shift Back out from under the pointer before the click lands.
+        allPrevBtn.off("mousedown").on("mousedown", (e) => e.preventDefault());
         allPrevBtn.off("click").on("click", function () {
             console.log("WizardController: prevBtn clicked");
             var curStep = $(this).closest(".setup-content"),

@@ -83,7 +83,11 @@ class ValidationRuleOverridesController < ApplicationController
     # param_overrides is a free-form hash — permit! is safe here since it's only applied
     # to threshold values and the record is scoped to the current entity
     raw_param_overrides = params.dig(:validation_rule_override, :param_overrides)
-    permitted[:param_overrides] = raw_param_overrides.present? ? raw_param_overrides.permit!.to_h : {}
+    param_overrides = raw_param_overrides.present? ? raw_param_overrides.permit!.to_h : {}
+    # A field left blank keeps the rule's default — don't store it as an override.
+    # Built in a local: reading permitted[:param_overrides] back would re-wrap the hash
+    # as an *unpermitted* Parameters and blow up mass assignment (UnfilteredParameters).
+    permitted[:param_overrides] = param_overrides.reject { |_, v| v.to_s.strip.empty? }
 
     permitted
   end

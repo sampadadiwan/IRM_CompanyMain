@@ -6,6 +6,7 @@ Feature: Data Rooms
   # Verifies the model-level setup: entity.data_room_folder returns the "Data Room"
   # child folder once it is created, and enable_data_rooms is set on permissions.
   # These are the two conditions that gate the Data Rooms card on the LP dashboard.
+  @rack_test
   Scenario: Data room folder and enable_data_rooms flag are set up correctly
     Given there is a user "" for an entity "entity_type=Investment Fund;enable_funds=true"
     Given the entity has "enable_data_rooms" permission
@@ -18,6 +19,7 @@ Feature: Data Rooms
   # enable_data_rooms AND a data_room_folder.
   # @current_entity is resolved from request.domain; in tests we set entity.domain =
   # "localhost" so Capybara requests to localhost pick up that entity as @current_entity.
+  @rack_test
   Scenario: Data Rooms card appears on LP dashboard when GP entity has enable_data_rooms
     Given there is a user "" for an entity "entity_type=Investment Fund;enable_funds=true"
     Given the entity has "enable_data_rooms" permission
@@ -44,6 +46,7 @@ Feature: Data Rooms
   # Verifies the data rooms listing page (/folders/data_rooms) shows only the GP entities
   # where the LP has an investor relationship (investee_entities scope).
   # A second GP entity with enable_data_rooms but NO investor relationship must not appear.
+  @rack_test
   Scenario: LP sees only their GP entities on the data rooms listing page
     Given there is a user "" for an entity "entity_type=Investment Fund;enable_funds=true"
     Given the entity has "enable_data_rooms" permission
@@ -61,6 +64,7 @@ Feature: Data Rooms
   # (in addition to the investor relationship and approved InvestorAccess).
   # Folder A has an explicit AccessRight for the LP investor; Folder B does not.
   # The LP must be able to access Folder A but NOT Folder B.
+  @rack_test
   Scenario: LP can access only sub-folders with explicit access rights in the data room
     Given there is a user "" for an entity "entity_type=Investment Fund;enable_funds=true"
     Given the entity has "enable_data_rooms" permission

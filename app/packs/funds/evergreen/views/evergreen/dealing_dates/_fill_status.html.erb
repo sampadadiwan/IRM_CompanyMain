@@ -1,0 +1,31 @@
+<%# One fill's settlement status (proposal GP-3) — status badges only; the row's actions (Resend, Verify,
+    Record payment, Mark paid, Regenerate…) are buttons in the Actions column (_fill_actions).
+    Worked examples H21, H24, E141 %>
+<% f = fill %>
+<% fund = f.fund %>
+<% if f.subscription? %>
+  <% if f.fund_unit_id %>
+    <%= eg_badge(:green, "check", "Allotted", "#{eg_t(:Units, fund:)} issued at the #{EvergreenLabels.lower(eg_t(:transaction_date, fund:))}'s NAV per unit.") %>
+    <%= eg_badge(:green, "mail-check", "#{eg_t(:contract_note, fund:)} sent", "Emailed to the investor#{" on #{l(f.document_sent_at.to_date)}" if f.document_sent_at}.") if f.document_sent_at %>
+    <%= render "evergreen/dealing_dates/document_state", fill: f %>
+  <%# E141: a part payment is verified too, so "received" must mean paid in full %>
+  <% elsif f.dealing_order.fully_paid? %>
+    <%= eg_badge(:blue, "cash", "Money received · allotting…", "Paid in full and verified; #{eg_t(:units, fund:)} are being issued.") %>
+  <% elsif f.dealing_order.part_paid? %>
+    <%= eg_badge(:amber, "cash", "Part paid: #{evergreen_money(f.capital_remittance.collected_amount_cents, fund)} of #{evergreen_money(f.capital_remittance.call_amount_cents, fund)}", "#{eg_t(:Units, fund:)} are allotted once it is paid in full — or accept the amount received as the subscription.", id: "part_paid_#{f.id}") %>
+  <% else %>
+    <%= eg_badge(:amber, "cash-off", "Awaiting money", "Record the payment when it arrives.") %>
+  <% end %>
+<% elsif f.units.zero? %>
+  <%# Label is the fund's word alone ("Carried" / "Deferred") — "Deferred forward" read wrong %>
+  <%= eg_badge(:grey, "arrow-forward", eg_t(:carried, fund:), "Nothing was paid on this date; the whole request moved to the next #{EvergreenLabels.lower(eg_t(:redemption_date, fund:))}.") %>
+<% elsif f.fund_unit_id %>
+  <%= eg_badge(:green, "check", "Paid", "Marked paid with its reference.") %>
+  <%= eg_badge(:green, "check", "#{eg_t(:Units, fund:)} cancelled", "Removed from the #{EvergreenLabels.lower(eg_t(:capital_commitment, fund:))} at the #{EvergreenLabels.lower(eg_t(:transaction_date, fund:))}'s NAV per unit.") %>
+  <%= eg_badge(:green, "mail-check", "#{eg_t(:redemption_advice, fund:)} sent", "Emailed to the investor on #{l(f.document_sent_at.to_date)}.") if f.document_sent_at %>
+  <%= render "evergreen/dealing_dates/document_state", fill: f %>
+<% elsif f.capital_distribution_payment&.completed %>
+  <%= eg_badge(:blue, "cash", "Paid · cancelling…", "Paid; the #{eg_t(:units, fund:)} are being cancelled.") %>
+<% else %>
+  <%= eg_badge(:amber, "clock", "Awaiting payment", "Mark it paid, with the payment reference, once the money has gone out.") %>
+<% end %>

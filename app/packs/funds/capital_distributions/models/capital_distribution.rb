@@ -19,6 +19,15 @@ class CapitalDistribution < ApplicationRecord
   include CapitalDistributionShared
   include BlocksDestroyWithFundUnits
 
+  # Evergreen settlement records (created by a dealing date) get no journey of their own — the dealing
+  # date's journey replaces it. The flag covers the create callback, before the dealing date links it.
+  # Backward compatibility B4 — openspec/changes/open-ended-funds/design.md#backward-compatibility
+  attr_accessor :evergreen_settlement_flag
+
+  def skip_journey?
+    evergreen_settlement_flag || (persisted? && DealingDate.exists?(redemption_distribution_id: id))
+  end
+
   FEE_TYPES = ["Fees Part Of Capital", "Other Fees"].freeze
 
   belongs_to :fund, touch: true

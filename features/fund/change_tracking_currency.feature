@@ -41,6 +41,7 @@ Feature: Support changes a fund's tracking currency
     And no tracking currency change should be pending on the fund
     And the tracking currency change should be audited against the user
 
+  @rack_test
   Scenario: A missing exchange rate aborts the change before anything is written
     Given the user has role "support"
     And there is an exchange rate from "INR" to "GBP" of "0.0095" as of "2099-01-01"
@@ -50,6 +51,7 @@ Feature: Support changes a fund's tracking currency
     And no tracking amount of the fund should have changed
     And no tracking currency change should be pending on the fund
 
+  @rack_test
   Scenario: Removing the tracking currency zeroes every tracking figure
     Given the user has role "support"
     When I visit the change tracking currency page for the fund
@@ -59,6 +61,7 @@ Feature: Support changes a fund's tracking currency
     And every tracking amount of the fund should be zero
     And the fund ratios should not be labelled "(USD)"
 
+  @rack_test
   Scenario: A change is refused without the typed confirmation
     Given the user has role "support"
     And there is an exchange rate from "INR" to "EUR" of "0.0107" as of "2000-01-01"
@@ -68,6 +71,7 @@ Feature: Support changes a fund's tracking currency
     And the fund's tracking currency should be "USD"
     And no tracking currency change should be pending on the fund
 
+  @rack_test
   Scenario: While a change is pending the nightly job and allocation runs leave the fund alone
     Given the user has role "support"
     And I know every tracking amount of the fund
@@ -78,6 +82,7 @@ Feature: Support changes a fund's tracking currency
     When I visit the fund details page
     Then I should see "Tracking currency change to EUR in progress."
 
+  @rack_test
   Scenario: A change that fails partway can be retried from the fund page
     Given the user has role "support"
     And there is an exchange rate from "INR" to "EUR" of "0.0107" as of "2000-01-01"
@@ -91,6 +96,7 @@ Feature: Support changes a fund's tracking currency
     And every tracking amount of the fund should be its fund amount at a rate of "0.0107"
     And no tracking currency change should be pending on the fund
 
+  @rack_test
   Scenario: A retry that finds a rate missing after the currency was saved stays failed
     Given the user has role "support"
     And there is an exchange rate from "INR" to "EUR" of "0.0107" as of "2000-01-01"
@@ -106,6 +112,7 @@ Feature: Support changes a fund's tracking currency
     When I visit the fund details page
     Then I should see "Tracking currency change to EUR failed."
 
+  @rack_test
   Scenario: A change whose job died can be retried once it is stale
     Given the user has role "support"
     And there is an exchange rate from "INR" to "EUR" of "0.0107" as of "2000-01-01"

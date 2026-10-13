@@ -230,12 +230,15 @@ end
 
 # Tags the LP user as a signatory — used by resolver scenarios where the investor
 # setup step already created the LP user and investor access.
+# @note Uses find_or_create_by! because the auto-tag callback on InvestorAccess
+#   approval may have already created this signatory record.
 Given("the LP user is tagged as a signatory for the NDA") do
-  NdaSignatory.create!(
+  NdaSignatory.find_or_create_by!(
     nda_config: @nda_config,
-    user: @lp_user,
-    tagged_by: @user
-  )
+    user: @lp_user
+  ) do |s|
+    s.tagged_by = @user
+  end
 end
 
 # ── Assertion steps — NdaSignatory ──────────────────────────────────────────
@@ -283,6 +286,36 @@ Then("the LP user should not be marked as nda_tagged in the resolver result") do
     .flat_map { |r| r[:users] }
     .find { |u| u[:user].id == @lp_user.id }
   expect(user_row).to be_present, "LP user not found in resolver result"
+  expect(user_row[:nda_tagged]).to be false
+end
+
+# Creates a second LP user under the same investor. Auto-tag only picks the
+# oldest approved user, so this user will not be a signatory.
+Given("there is a second LP user for {string}") do |_investor_name|
+  @lp_user_2 = User.create!(
+    email: "lp_test2_#{SecureRandom.hex(4)}@example.com",
+    password: "password",
+    entity: @lp_entity,
+    first_name: "LP2",
+    last_name: "User"
+  )
+  InvestorAccess.create!(
+    entity: @gp_entity,
+    investor: @lp_investor,
+    user: @lp_user_2,
+    email: @lp_user_2.email,
+    first_name: @lp_user_2.first_name,
+    last_name: @lp_user_2.last_name,
+    approved: true
+  )
+end
+
+# Verifies the second LP user is NOT marked as nda_tagged in the resolver result.
+Then("the second LP user should not be marked as nda_tagged in the resolver result") do
+  user_row = @resolver_result[:investor_rows]
+    .flat_map { |r| r[:users] }
+    .find { |u| u[:user].id == @lp_user_2.id }
+  expect(user_row).to be_present, "Second LP user not found in resolver result"
   expect(user_row[:nda_tagged]).to be false
 end
 

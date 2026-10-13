@@ -1,0 +1,50 @@
+<%# Evergreen settings: edit the terms of an open-ended fund (forward only), fill from a preset.
+    A fund's type is chosen when it is created and can't be changed, so there is no make-evergreen or
+    switch-back here (evergreen-fund-on-create ⑤). Same step-bar wizard as other CapHive forms; the
+    steps are shared with New Fund (evergreen/settings/_steps).
+    Worked examples E6, X5 — openspec/changes/evergreen-fund-on-create/design.md#worked-examples %>
+<% setting = @setting %>
+<div class="container-fluid p-3" id="evergreen_settings" data-controller="tooltip">
+  <%# FormCard renders its title as HTML, so the fund name is escaped here %>
+  <%= render FormCard.new(title: "Evergreen settings : #{ERB::Util.h(@fund.name)}") do %>
+    <div class="wizard_container" data-controller="wizard evergreen-settings"
+         data-evergreen-settings-preset-url-value="<%= evergreen_preset_path(name: "__NAME__") %>"
+         data-evergreen-settings-currency-value="<%= @fund.currency %>"
+         data-evergreen-settings-fee-label-value="<%= EvergreenLabels.lower(eg_t(:early_fee)) %>">
+
+      <%# Step bar (same numbered circles as the other CapHive wizards). Nine steps: the shared
+          200px minimum step width would overflow the card, so it is relaxed for this page only. %>
+      <style>#evergreen_settings .stepwizard { table-layout: fixed; } #evergreen_settings .stepwizard-step { min-width: 0 !important; width: 11.11%; }</style>
+      <%= render "evergreen/settings/stepper_style" %>
+      <div class="row justify-content-md-center mb-3">
+        <div class="stepwizard col-12">
+          <div class="stepwizard-row setup-panel">
+            <% eg_wizard_steps.each_with_index do |(icon, title), i| %>
+              <div class="stepwizard-step">
+                <a href="#step-<%= i + 1 %>" type="button" id="wizard_step_<%= i + 1 %>" class="btn btn-outline-primary btn-outline-circle"><%= i + 1 %></a>
+                <p class="small text-muted mb-0"><i class="ti ti-<%= icon %> me-1"></i><%= title %></p>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+
+      <%= form_with(model: setting, url: evergreen_settings_path(@fund), method: :patch, scope: :evergreen_fund_setting,
+                    id: "evergreen_settings_form", class: "wizard_form") do |form| %>
+        <% if setting.errors.any? %>
+          <div class="alert alert-danger" id="error_explanation">
+            <ul class="mb-0">
+              <% setting.errors.full_messages.each do |msg| %><li><%= msg %></li><% end %>
+            </ul>
+          </div>
+        <% end %>
+        <%= form.hidden_field :preset %>
+
+        <%# Review fix 9: users with read access only open the page view-only (no Save settings) %>
+        <%= render "evergreen/settings/steps", form:, setting:, fund: @fund, offset: 0,
+                   submit_label: "Save settings", submit_id: "save_evergreen_settings", submit_icon: "device-floppy",
+                   read_only: !policy(setting).update? %>
+      <% end %>
+    </div>
+  <% end %>
+</div>

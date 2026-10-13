@@ -16,7 +16,7 @@ Feature: Investor Advisor notification recipients
     And the investor has a KYC with an approved document that grants access to the investor
     And the advisor has switched into an unrelated host entity that granted him roles "company_admin,approver"
 
-  @security
+  @security @rack_test
   Scenario: NOTIF-1 A switched-away advisor still receives documents for his own investor record
     # The reported bug: "No users to send the document" because the recipient check was judged
     # against the entity the advisor was switched into rather than the one owning his record.
@@ -24,7 +24,7 @@ Feature: Investor Advisor notification recipients
     And sending the KYC document succeeds and is delivered to the advisor
     And the advisor's persisted entity and roles are unchanged by the recipient check
 
-  @security
+  @security @rack_test
   Scenario: NOTIF-2 Recipients while switched away are exactly the recipients after a real revert
     # The privilege bound: the fix may only reproduce what InvestorAdvisor.revert would yield.
     When I record the notification recipients for the KYC document while switched
@@ -33,13 +33,13 @@ Feature: Investor Advisor notification recipients
     And the notification recipients for the KYC document after reverting are the same set
     And a user who is not switched away has no home persona
 
-  @security
+  @security @rack_test
   Scenario: NOTIF-3 Roles borrowed from the host entity do not leak into the home persona
     Then my roles should include "company_admin"
     And my roles should include "approver"
     And the home persona of the advisor carries only his home entity and home roles
 
-  @security
+  @security @rack_test
   Scenario: NOTIF-4 A document visible only through borrowed roles is not sent
     # Hybrid state (home entity_id + host roles) would pass DocumentPolicy#show? via
     # company_admin. The recipient check must not take that path.
@@ -47,7 +47,7 @@ Feature: Investor Advisor notification recipients
     Then the switched-in roles combined with the home entity would expose that document
     But the advisor is not a notification recipient for that document
 
-  @security
+  @security @rack_test
   Scenario: NOTIF-6 The KYC form and reminder recipient path is bounded the same way
     # InvestorKyc#notification_users applies its own across_all_entities filter, which has the
     # same blind spot for the advisor's own record; it now shares the home-persona rule.
@@ -56,7 +56,7 @@ Feature: Investor Advisor notification recipients
     And I revert to my home entity
     Then the KYC form recipients after reverting are the same set
 
-  @security
+  @security @rack_test
   Scenario: NOTIF-7 Following a notification link while switched away says how to get access
     # Authorization for show is unchanged: the switched-in persona is still denied. The denial
     # explains the persona switch only when the home persona could see the record.
@@ -66,7 +66,7 @@ Feature: Investor Advisor notification recipients
     When I visit that hidden document
     Then I am simply denied access
 
-  @security
+  @security @rack_test
   Scenario: NOTIF-8 The persona hint escapes the host entity name
     # layouts/_alerts renders flashes html_safe and the entity name is admin-editable.
     Given the host entity is renamed to "Client <b>Bold</b> & Co"
@@ -74,7 +74,7 @@ Feature: Investor Advisor notification recipients
     Then I am told to switch my persona back to view it
     And the host entity name is shown escaped, not rendered as markup
 
-  @security
+  @security @rack_test
   Scenario: NOTIF-9 The home persona holds investor_advisor exactly when a real revert would
     # An admin can store advisor_entity_roles without investor_advisor; revert's setup_defaults
     # forces it back for an "Investor Advisor" home entity, so the persona must match that.

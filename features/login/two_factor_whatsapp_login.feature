@@ -2,6 +2,7 @@
 Feature: Two-Factor Authentication via WhatsApp at Login
   Users enrolled in WhatsApp mode receive an OTP automatically on login.
 
+  @rack_test
   Scenario Outline: User with WhatsApp 2FA logs in and verifies via WhatsApp code
     Given there is a user "<user>" for an entity "<entity>"
     And the user has two-factor authentication enabled in whatsapp mode
@@ -16,6 +17,7 @@ Feature: Two-Factor Authentication via WhatsApp at Login
       | user | entity              |
       |      | entity_type=Company |
 
+  @rack_test
   Scenario Outline: User with WhatsApp 2FA enters wrong code
     Given there is a user "<user>" for an entity "<entity>"
     And the user has two-factor authentication enabled in whatsapp mode
@@ -45,6 +47,7 @@ Feature: Two-Factor Authentication via WhatsApp at Login
       | user | entity              |
       |      | entity_type=Company |
 
+  @rack_test
   Scenario Outline: Authenticator-mode user never sees the WhatsApp fallback button, even with WhatsApp enabled
     # Once a user has chosen the authenticator app, WhatsApp/SMS fallback buttons are not
     # offered on the login screen — app-only is the deliberate policy, not just the
@@ -61,6 +64,7 @@ Feature: Two-Factor Authentication via WhatsApp at Login
       | user | entity              |
       |      | entity_type=Company |
 
+  @rack_test
   Scenario Outline: Authenticator-mode user without WhatsApp does not see WhatsApp button
     Given there is a user "<user>" for an entity "<entity>"
     And the user has two-factor authentication enabled and configured

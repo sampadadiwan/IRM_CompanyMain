@@ -1,4 +1,4 @@
-@access_rights_core_models
+@access_rights_core_models @rack_test
 Feature: Core model access rights
 
   Covers the six core-pack models: Investor, InvestorKyc, Document, Folder,

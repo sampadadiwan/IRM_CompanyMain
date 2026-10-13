@@ -1,0 +1,14 @@
+<%# open-ended-funds § Notifications: pre-funded subscription unpaid a few days before the cut-off %>
+<% if @custom_notification %>
+  <%= render "/custom_notifications/mail" do %>
+    <%= render "evergreen_mailer/custom_extras" %>
+  <% end %>
+<% else %>
+  <p>Dear <%= @user&.first_name %>,</p>
+  <p>We have not yet received the payment for your subscription. Please pay <strong><%= evergreen_money(@order.capital_remittance&.call_amount_cents || @order.amount_cents, @fund) %></strong>
+    by <strong><%= l(@order.dealing_date.cutoff_at.to_date) %></strong> so it is dealt on <%= l(@order.dealing_date.date) %>.
+    Otherwise the request <%= @setting.unready_handling == "cancel" ? "will be cancelled" : "will move to the next #{EvergreenLabels.lower(eg_t(:subscription_date))}" %>.</p>
+  <% if @setting.payment_instructions.present? %><div><%= simple_format(@setting.payment_instructions) %></div><% end %>
+  <%= render "evergreen_mailer/summary" %>
+  <%= render "evergreen_mailer/request_link" %>
+<% end %>

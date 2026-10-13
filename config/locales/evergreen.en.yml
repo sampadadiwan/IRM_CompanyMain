@@ -1,0 +1,37 @@
+# Evergreen (open-ended) fund labels, read only through EvergreenLabels.t (which applies the fund's
+# unit name and the entity's own overrides first). Closed-ended screens never read these keys.
+# %{unit} %{units} %{Unit} %{Units} are filled with the resolved unit name ("unit" unless overridden).
+# Worked examples C7, E212–E214 — openspec/changes/open-ended-funds/design.md#worked-examples
+en:
+  evergreen:
+    labels:
+      unit: "unit"
+      capital_commitment: "Folio"
+      capital_commitments: "Folios"
+      committed_amount: "Subscribed amount"
+      capital_call: "Subscription settlement"
+      remittance: "Subscription payment"
+      remittances: "Subscription payments"
+      collected: "Money received"
+      distribution: "Redemption settlement"
+      distribution_payment: "Redemption payment"
+      distribution_payments: "Redemption payments"
+      allocate_units: "Allot %{units}"
+      redeem_units: "Cancel %{units}"
+      commitments_tab: "Investors"
+      subscription: "Subscription"
+      redemption: "Redemption"
+      dealing_date: "Dealing date"
+      transaction_date: "Dealing date"
+      dealing_tab: "Dealing"
+      subscription_date: "Subscription date"
+      redemption_date: "Redemption date"
+      nav_per_unit: "NAV per %{unit}"
+      nav_per_unit_short: "NAV / %{unit}"
+      contract_note: "Contract note"
+      redemption_advice: "Redemption advice"
+      carried: "Carried"
+      top_up: "Top up"
+      dealt: "Dealt"
+      evergreen: "Evergreen"
+      early_fee: "Exit load"

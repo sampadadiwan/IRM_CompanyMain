@@ -1,3 +1,4 @@
+@rack_test
 Feature: Commitment Adjustments
   Adjustments to capital commitments
 

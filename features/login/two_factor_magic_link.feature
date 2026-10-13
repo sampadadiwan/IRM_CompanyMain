@@ -1,3 +1,4 @@
+@rack_test
 Feature: Two-Factor Authentication with Magic Link
   Users with 2FA enabled must complete 2FA after clicking a magic link.
 

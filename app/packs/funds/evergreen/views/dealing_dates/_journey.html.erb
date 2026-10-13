@@ -1,0 +1,6 @@
+<%# Dealing-date journey (US-6): the shared journey card. Rendered by Evergreen::DealingDatesController#show and
+    by the live-refresh endpoint by convention ("dealing_dates/journey").
+    Worked examples H17 — openspec/changes/open-ended-funds/design.md#worked-examples %>
+<%= render "workflow_instances/journey_panel",
+           record:, journey:, instance: local_assigns[:instance], frame_id: "dealing_date_journey", noun: EvergreenLabels.lower(eg_t(:transaction_date, fund: record.fund)),
+           warnings: -> { [] }, warning_tip: nil %>

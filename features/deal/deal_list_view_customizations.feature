@@ -31,6 +31,7 @@ Scenario: Deal analytics card descriptions remain visible
   And I visit the deal list view
   Then the deal analytics description should include "The deal's total fundraising target"
 
+@rack_test
 Scenario: List view sidepanel and documents navigation are configured for top-level navigation
   Given Im logged in as a user "" for an entity "entity_type=Company"
   Given the user has role "company_admin"

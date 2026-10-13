@@ -8,7 +8,7 @@
                           are emailed
       Why it matters    — the check's `why`
       Team reminders    — who on the team is emailed and when (journey_step_notify_lines); not once done
-    A step that doesn't apply shows only its reason.
+    A step that doesn't apply shows its reason first, then what the step does (no actions or reminders).
     Locals: instance, record, step (snapshot step data). Content from JourneyHelper#journey_step_info. %>
 <% info = journey_step_info(instance, step) %>
 <% result = info[:result] %>
@@ -24,16 +24,16 @@
       </div>
 
       <div class="modal-body">
+        <%# Doesn't apply to this record: say why first, then still explain what the step is for %>
         <% if status == "na" %>
-          <%# Doesn't apply to this record: the reason is the whole story %>
-          <div class="action-summary__item action-summary__item--grey mb-0">
+          <div class="action-summary__item action-summary__item--grey mb-2">
             <span class="action-summary__icon"><i class="ti ti-circle-minus"></i></span>
             <div>
               <div class="action-summary__title">Not applicable</div>
               <div class="action-summary__desc small"><%= result[:message].presence || "This step doesn't apply here." %></div>
             </div>
           </div>
-        <% else %>
+        <% end %>
           <div class="action-summary__list mb-0">
             <%# What to do — or, once passed, when it was done %>
             <% if status == "passed" %>
@@ -52,8 +52,8 @@
                 <span class="action-summary__icon"><i class="ti ti-hand-finger"></i></span>
                 <div class="flex-grow-1">
                   <%# Where it stands now (the step's live message), then how to finish it %>
-                  <div class="action-summary__title">What to do</div>
-                  <% if result[:message].present? && status != "not_yet" %>
+                  <div class="action-summary__title"><%= status == "na" ? "What it does" : "What to do" %></div>
+                  <% if result[:message].present? && !status.in?(%w[not_yet na]) %>
                     <div class="small fw-semibold text-dark mt-1"><%= result[:message] %></div>
                   <% end %>
                   <div class="action-summary__desc small"><%= info[:how] %></div>
@@ -115,8 +115,8 @@
               </div>
             <% end %>
 
-            <%# Team reminders — irrelevant once the step is done %>
-            <% if status != "passed" && info[:notify].any? %>
+            <%# Team reminders — irrelevant once the step is done or when it doesn't apply %>
+            <% if !status.in?(%w[passed na]) && info[:notify].any? %>
               <div class="action-summary__item action-summary__item--grey">
                 <span class="action-summary__icon"><i class="ti ti-bell"></i></span>
                 <div>
@@ -128,7 +128,6 @@
               </div>
             <% end %>
           </div>
-        <% end %>
       </div>
     </div>
   </div>

@@ -31,8 +31,11 @@
                   CapitalCommitment::STANDARD_COLUMNS
                 end
               end
+
+              # Fund / stakeholder columns this page must (or must not) show, on top of the saved columns
+              column_rules = CapitalCommitment.list_column_rules(investor_id: params[:investor_id], fund_id:, investor_user: current_user.curr_role == "investor")
             %>
     <%=render SearchComponent.new(data_source: capital_commitments_path( params: params.to_unsafe_h, fund_id:, import_upload_id:), turbo_frame: capital_commitments_frame) %>
-    <%= render RansackTable.new(CapitalCommitment, q: @q, default_columns_map:, current_user: current_user, records: capital_commitments, report_id: params["report_id"], turbo_frame: capital_commitments_frame, referrer: request.referrer, pagy: @pagy) %>
+    <%= render RansackTable.new(CapitalCommitment, q: @q, default_columns_map:, current_user: current_user, records: capital_commitments, report_id: params["report_id"], turbo_frame: capital_commitments_frame, referrer: request.referrer, pagy: @pagy, **column_rules) %>
   </div>
 <% end %>

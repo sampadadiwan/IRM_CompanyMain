@@ -1,0 +1,7 @@
+<%# "View your request" in every investor email: the order page, or the fund page for folio-level emails
+    (NAV update, units unlocked). Absolute URL from ActionMailer's default_url_options, as EvergreenOpsMailer#record_url %>
+<% if @order %>
+  <p><%= link_to "View your request", evergreen_order_url(@order.fund_id, @order.id) %></p>
+<% elsif @fund %>
+  <p><%= link_to "View your holding", fund_url(@fund) %></p>
+<% end %>

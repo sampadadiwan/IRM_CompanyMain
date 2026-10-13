@@ -1,0 +1,48 @@
+<%# A cleaner step bar for New Fund (#fund_wizard) and Evergreen Settings (#evergreen_settings): round
+    steps on a thin line; the current step solid with a soft ring, steps already reached soft-blue, steps
+    ahead grey; small labels, the current one bold. The shared wizard controller sets btn-primary on the
+    current step and .disabled on steps not reached yet — only the look changes here. %>
+<style>
+  :is(#fund_wizard, #evergreen_settings) .stepwizard-row { position: relative; }
+  :is(#fund_wizard, #evergreen_settings) .stepwizard-row::before {
+    content: ""; position: absolute; top: 1.125rem; left: 4%; right: 4%; height: 2px;
+    background: var(--bs-border-color); z-index: 0;
+  }
+  :is(#fund_wizard, #evergreen_settings) .stepwizard-step { position: relative; z-index: 1; }
+  :is(#fund_wizard, #evergreen_settings) .setup-panel a.btn {
+    width: 2.25rem; height: 2.25rem; padding: 0; border-radius: 50% !important;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: .85rem; font-weight: 600; opacity: 1;
+    background: var(--bs-primary-bg-subtle); color: var(--bs-primary); border: 2px solid var(--bs-primary-bg-subtle);
+    transition: box-shadow .15s ease, background-color .15s ease;
+  }
+  :is(#fund_wizard, #evergreen_settings) .setup-panel a.btn.disabled {
+    background: var(--bs-body-bg); color: var(--bs-secondary-color); border-color: var(--bs-border-color);
+  }
+  :is(#fund_wizard, #evergreen_settings) .setup-panel a.btn.btn-primary {
+    background: var(--bs-primary); color: #fff; border-color: var(--bs-primary);
+    box-shadow: 0 0 0 .3rem var(--bs-primary-bg-subtle);
+  }
+  :is(#fund_wizard, #evergreen_settings) .stepwizard-step p {
+    margin-top: .5rem; font-size: .78rem; color: var(--bs-secondary-color);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  :is(#fund_wizard, #evergreen_settings) .stepwizard-step:has(a.btn-primary) p { color: var(--bs-primary); font-weight: 600; }
+  /* Fields: labels share one height so the boxes in a row line up; unit add-ons match their boxes */
+  :is(#fund_wizard, #evergreen_settings) .setup-content .form-group > .form-label {
+    display: flex; align-items: center; flex-wrap: nowrap; min-height: 1.6rem; margin-bottom: .4rem; white-space: nowrap;
+  }
+  :is(#fund_wizard, #evergreen_settings) .setup-content .input-group { flex-wrap: nowrap; align-items: stretch; }
+  /* One height for every box on a step — inputs, dropdowns and unit add-ons — so a row lines up */
+  :is(#fund_wizard, #evergreen_settings) .setup-content :is(input.form-control, .form-select, .input-group-text) {
+    height: 2.625rem; margin-top: 0 !important; margin-bottom: 0 !important;
+  }
+  :is(#fund_wizard, #evergreen_settings) .setup-content .input-group > .input-group-text {
+    display: flex; align-items: center; padding-top: 0; padding-bottom: 0;
+    font-size: .8rem; color: var(--bs-secondary-color); background: var(--bs-tertiary-bg); white-space: nowrap;
+  }
+  :is(#fund_wizard, #evergreen_settings) .setup-content .form-group { margin-bottom: 1.25rem; }
+  /* Info and other icons inside a label sit centred on the text line, with a little space */
+  :is(#fund_wizard, #evergreen_settings) .form-label { display: inline-flex; align-items: center; }
+  :is(#fund_wizard, #evergreen_settings) .form-label .ti { line-height: 1; vertical-align: middle; }
+</style>

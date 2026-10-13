@@ -1,0 +1,133 @@
+<%# Subscribe / Redeem form (proposal LP-3, LP-4): amount or what, Check (indicative preview), review, submit.
+    Worked examples H7, H8, H9, X10–X15
+    Same markup as the closed-ended forms (capital_distributions/new + _form): centred col-md-8, FormCard,
+    form-group fields, outline-primary submit %>
+<% order = @order %>
+<% folios = gp_user? ? @fund.capital_commitments.includes(:investor).order(:folio_id) : @fund.capital_commitments.where(investor_id: order.investor_id) %>
+<div class="row justify-content-md-center">
+  <div class="col-md-8">
+    <%= render FormCard.new(title: %(<span id="wizard_title">#{ERB::Util.h(order.subscription? ? "Subscribe" : "Redeem")} · #{ERB::Util.h(@fund.name)}</span>)) do %>
+      <% if @error %><div class="alert alert-danger" id="order_error"><%= @error %></div><% end %>
+      <%= form_with url: evergreen_orders_path(@fund), scope: :dealing_order, id: "order_form" do |f| %>
+        <%= f.hidden_field :kind, value: order.kind %>
+
+        <% if gp_user? %>
+          <div class="row">
+            <div class="form-group col-md-6">
+              <%= f.label :investor_id, "Investor" %>
+              <%= f.select :investor_id, Investor.where(entity_id: @fund.entity_id).order(:investor_name).pluck(:investor_name, :id), { include_blank: true, selected: order.investor_id }, class: "form-select", id: "order_investor" %>
+            </div>
+            <div class="form-group col-md-6">
+              <%= f.label :received_at, "Received at" %>
+              <%# No locale-aware datetime builder exists (LocaleDateFormBuilder covers dates only), so the
+                  native datetime-local input stays — Cucumber sets it as %Y-%m-%dT%H:%M %>
+              <%= f.datetime_field :received_at, class: "form-control", id: "order_received_at" %>
+            </div>
+          </div>
+        <% end %>
+
+        <div class="row">
+          <div class="form-group col-md-6">
+            <%= f.label :unit_type, "Class" %>
+            <%= f.select :unit_type, @fund.unit_types_list, { selected: order.unit_type }, class: "form-select", id: "order_unit_type" %>
+          </div>
+          <% if order.redemption? || folios.any? %>
+            <div class="form-group col-md-6">
+              <%= f.label :capital_commitment_id, eg_t(:capital_commitment) %>
+              <%= f.select :capital_commitment_id, folios.map { |c| ["#{c.folio_id} · #{c.unit_type}#{" · #{c.investor.investor_name}" if gp_user?}", c.id] }, { include_blank: order.subscription?, selected: order.capital_commitment_id }, class: "form-select", id: "order_folio" %>
+            </div>
+          <% end %>
+        </div>
+
+        <%# Investing entity (evergreen-folio-soa ①, H2 / E2): asked only when a subscription may open a new folio
+            and the investor has several approved KYCs; with one it is used silently, and a folio's own KYC wins
+            for top-ups. A GP picks the investor first: OrderEligibility's "Choose the investing entity" (X2)
+            re-renders this form with the investor known, so the list appears then. %>
+        <% kycs = order.subscription? && order.investor_id ? InvestorKyc.where(entity_id: @fund.entity_id, investor_id: order.investor_id, verified: true).order(:full_name) : InvestorKyc.none %>
+        <% if order.capital_commitment_id.blank? && kycs.many? %>
+          <div class="form-group">
+            <%= f.label :investor_kyc_id, "Investing entity" %>
+            <%= f.select :investor_kyc_id, kycs.pluck(:full_name, :id), { include_blank: true, selected: order.investor_kyc_id }, class: "form-select", id: "order_investor_kyc" %>
+            <small class="text-muted">The legal entity a new <%= EvergreenLabels.lower(eg_t(:capital_commitment)) %> is opened for. Not used when you pick an existing <%= EvergreenLabels.lower(eg_t(:capital_commitment)) %>.</small>
+          </div>
+        <% end %>
+
+        <% if order.subscription? %>
+          <div class="form-group">
+            <%= f.label :amount %>
+            <%= f.text_field :amount, class: "form-control", id: "order_amount" %>
+            <%# Review fix 9: the hint showed only the first-subscription minimum, but a top-up of a folio that
+                already holds units is checked against the top-up minimum (OrderEligibility). Both are shown
+                when they differ, so the hint never contradicts the refusal. %>
+            <% min_terms = @fund.evergreen_fund_setting.terms_for(order.unit_type) %>
+            <% min_first = min_terms.min_initial_subscription_cents.to_d %>
+            <% min_top_up = min_terms.min_additional_subscription_cents.to_d %>
+            <small class="text-muted" id="subscription_minimum_hint">
+              <% if min_top_up == min_first %>
+                Minimum <%= evergreen_money(min_first, @fund) %>
+              <% else %>
+                Minimum <%= evergreen_money(min_first, @fund) %> first subscription · <%= evergreen_money(min_top_up, @fund) %> top-up
+              <% end %>
+            </small>
+          </div>
+        <% else %>
+          <% forms = @fund.evergreen_fund_setting.redemption_forms %>
+          <div class="row">
+            <% if forms.include?("units") %><div class="form-group col-md-6"><%= f.label :units, eg_t(:Units) %><%= f.text_field :units, class: "form-control", id: "order_units" %></div><% end %>
+            <% if forms.include?("amount") %><div class="form-group col-md-6"><%= f.label :amount %><%= f.text_field :amount, class: "form-control", id: "order_amount" %></div><% end %>
+          </div>
+          <% if forms.include?("all") %>
+            <div class="form-group">
+              <%= f.label :all_units, "All #{eg_t(:units)}", for: "order_all_units" %>
+              <%= f.check_box :all_units, class: "form-check-input", id: "order_all_units" %>
+            </div>
+          <% end %>
+        <% end %>
+
+        <div class="form-group">
+          <%# formnovalidate: the acknowledgement box is required for Submit, not for the indicative Check %>
+          <%= f.submit "Check", formaction: preview_evergreen_orders_path(@fund), formnovalidate: true, class: "btn btn-outline-primary", id: "order_check" %>
+        </div>
+
+        <%= turbo_frame_tag "order_preview" do %><% end %>
+
+        <% if order.subscription? %>
+          <div class="form-group">
+            <label for="order_acknowledge">I have read the fund's offering documents</label>
+            <input type="checkbox" class="form-check-input" id="order_acknowledge" required>
+          </div>
+        <% end %>
+
+        <div class="form-group">
+          <%= f.label :note, "Note (optional)" %>
+          <%= f.text_area :note, class: "form-control", rows: 1, placeholder: "Note (optional)" %>
+        </div>
+
+        <%
+          # The "Immediate Actions" popup before Submit: what gets emailed and the queue. No date here — the
+          # popup is built when the page opens, but the date depends on the class and received time chosen in
+          # the form (notice periods differ per class); Check previews it and the next page states it
+          setting = @fund.evergreen_fund_setting
+          date_word = eg_t(order.subscription? ? :subscription_date : :redemption_date, lower: true)
+          when_line = "For the next #{date_word} it qualifies for — Check shows it, and the next page confirms it"
+          cards = if order.subscription?
+                    [["blue", "ti-calendar", "Request recorded", when_line],
+                     ["green", "ti-mail", setting.pre_funded? ? "Payment instructions emailed" : "Acknowledgement emailed",
+                      setting.pre_funded? ? "Pay by the cut-off to be #{eg_t(:dealt, lower: true)} on that date" : "Payment instructions follow the #{date_word}"]]
+                  else
+                    [["blue", "ti-calendar", "Request recorded", when_line],
+                     ["purple", "ti-list-numbers", "Place in the queue", "Paid in the order received, up to the gate"],
+                     ["green", "ti-mail", "Acknowledgement emailed", "With the #{date_word} and queue place"]]
+                  end
+        %>
+        <div class="form-group">
+          <%# submit_form: Proceed submits #order_form itself (the popup's own form would drop the visible fields) %>
+          <%= f.submit order.subscription? ? "Submit subscription" : "Submit request", class: "btn btn-outline-primary", id: "order_submit",
+                       data: { turbo: false, action: "click->confirm#popup", submit_form: "#order_form", method: "post",
+                               title: order.subscription? ? "Submit the subscription" : "Submit the redemption request",
+                               msg: evergreen_action_summary(cards, action: "Proceed") } %>
+        </div>
+      <% end %>
+    <% end %>
+  </div>
+</div>

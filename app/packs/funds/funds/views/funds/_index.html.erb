@@ -4,8 +4,9 @@
   <% card_type = params[:card].to_s.presence_in(%w[card card2 card3 card4 card5]) || "card" %>
   <%= render ToggleCard.new(title:, css_class: "show_funds") do %>
     <%= render "entities/vc_dashboard_menus" if current_user.curr_role_investor? %>
-    <% funds.includes([:capital_commitments]).each do |fund| %>
-      <%= render "/funds/#{card_type}", fund: fund %>
+    <% funds.includes([:capital_commitments, :entity, :evergreen_fund_setting]).each do |fund| %>
+      <%# Evergreen funds show NAV figures on their card (open-ended-funds B2) %>
+      <%= render fund.evergreen? ? "evergreen/funds/card" : "/funds/#{card_type}", fund: fund %>
     <% end %>
     <div class="d-flex justify-content-between align-items-center">
       <%= raw pagy_info(@pagy) %>

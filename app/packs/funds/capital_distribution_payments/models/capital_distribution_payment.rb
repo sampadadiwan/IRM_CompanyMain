@@ -30,6 +30,8 @@ class CapitalDistributionPayment < ApplicationRecord
                                 "Completed; text-col" => "completed; text-col" }.freeze
 
   include ForInvestor
+  # Evergreen dealing dates: allot / cancel units after commit (guarded; open-ended-funds B5)
+  include EvergreenSettlementHooks
   include CapitalDistributionPaymentShared
   include BlocksDestroyWithFundUnits
 

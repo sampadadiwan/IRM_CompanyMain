@@ -18,7 +18,11 @@
     <%# workflowable_type — locked once saved so the template is only offered for the matching object type %>
     <div class="form-group">
       <%= form.label :workflowable_type, "Applies to" %>
-      <% type_options = WorkflowTemplate::WORKFLOWABLE_TYPE_OPTIONS.map { |t| [t.underscore.humanize, t] } %>
+      <%# Dealing order / dealing date journeys only for entities with evergreen funds (open-ended-funds B2) %>
+      <% evergreen_types = %w[DealingOrder DealingDate] %>
+      <% type_options = WorkflowTemplate::WORKFLOWABLE_TYPE_OPTIONS
+                          .reject { |t| evergreen_types.include?(t) && !(workflow_template.entity || current_user.entity)&.permissions&.enable_evergreen_funds? && workflow_template.workflowable_type != t }
+                          .map { |t| [t.underscore.humanize, t] } %>
       <%= form.select :workflowable_type,
             type_options,
             { include_blank: "— Any object type —" },

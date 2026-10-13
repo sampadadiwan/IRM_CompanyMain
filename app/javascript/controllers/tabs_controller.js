@@ -22,6 +22,11 @@ export default class extends Controller {
 
     let tabLink = $(`a[href="#${tab}"]`);
     if (tabLink.length > 0) {
+      // A tab nested inside another tab's pane (e.g. the evergreen fund page's Dealing → Redemptions):
+      // show the outer tab first, or the inner one is switched on inside a hidden pane
+      const outerPane = tabLink[0].closest('.tab-pane');
+      const outerLink = outerPane && document.querySelector(`a[href="#${outerPane.id}"]`);
+      if (outerLink) bootstrap.Tab.getOrCreateInstance(outerLink).show()
       bootstrap.Tab.getOrCreateInstance(tabLink[0]).show()
     } else {
       let element = document.getElementById(tab);

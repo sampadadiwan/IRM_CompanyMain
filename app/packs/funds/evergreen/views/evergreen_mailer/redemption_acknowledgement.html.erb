@@ -1,0 +1,13 @@
+<% if @custom_notification %>
+  <%= render "/custom_notifications/mail" do %>
+    <%= render "evergreen_mailer/custom_extras" %>
+  <% end %>
+<% else %>
+  <p>Dear <%= @user&.first_name %>,</p>
+  <p>We have received your redemption request.</p>
+  <%= render "evergreen_mailer/summary" %>
+  <% if (pos = @order.queue_position) %><p>Your place in the redemption queue: <strong>#<%= pos %></strong></p><% end %>
+  <%# The same notes the order form showed (missed cut-off, early fee with its per-lot split) %>
+  <% EvergreenOrderMessages.notes(@order, email: true).each do |note| %><p><%= note %></p><% end %>
+  <%= render "evergreen_mailer/request_link" %>
+<% end %>

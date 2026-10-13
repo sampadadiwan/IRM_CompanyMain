@@ -1,3 +1,4 @@
+@rack_test
 Feature: NDA Inheritance (Module 5)
   As a GP I want NDA settings on a parent folder to automatically cascade to child
   folders so that I don't have to configure each folder individually. Child folders

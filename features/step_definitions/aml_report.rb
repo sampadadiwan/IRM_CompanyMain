@@ -217,7 +217,6 @@ Given('I log in as the investor entity employee with aml enabled') do
   steps %(Given I log out)
   @user = @employee_investor
   steps %(
-    And I am at the login page
-    When I fill and submit the login page
+    And I am signed in as the current user
   )
 end

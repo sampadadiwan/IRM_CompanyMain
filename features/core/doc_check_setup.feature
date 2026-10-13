@@ -15,6 +15,7 @@ Feature: Document Checks — the settings page
     And the KYC form has the custom fields "dp=DP ID; client=Client ID"
 
   # E1 — a tile per document on either list, PAN Card once
+  @rack_test
   Scenario: Every KYC document has a tile
     When I open the Document Checks settings
     Then I should see the documents "CML, PAN Card, Passport, Board Resolution"
@@ -22,6 +23,7 @@ Feature: Document Checks — the settings page
     And the Document Checks page should say "4 documents · 0 checks · 4 without checks"
 
   # E2 — nothing on the lists yet
+  @rack_test
   Scenario: With no KYC documents the page says where to add them
     Given the entity requires no KYC documents
     When I open the Document Checks settings
@@ -60,6 +62,7 @@ Feature: Document Checks — the settings page
     And the "CML" tile should say "Asks: Is it signed by the holder?"
 
   # H1 (one document) — an empty tile previews its suggestions and adds just those
+  @rack_test
   Scenario: Adding one document's suggestions from its tile
     When I open the Document Checks settings
     Then the "Passport" tile should say "Compares Full name"
@@ -144,12 +147,14 @@ Feature: Document Checks — the settings page
       | CML      | DP ID | field_missing |
 
   # X4 — a field that isn't on the list can't be saved, even by a crafted request
+  @rack_test
   Scenario: A field outside the allowed list is refused
     When a request saves a Fill in check on "CML" for the field "verified"
     Then the save should be refused with "Pick a KYC field"
     And the entity should have 0 document checks on "CML"
 
   # Editing one part of a saved check keeps the rest (the swap-safe save writes both parked columns back)
+  @rack_test
   Scenario: Editing only a check's look for keeps its field
     Given the entity has the document checks:
       | document | action  | field     | look for          |

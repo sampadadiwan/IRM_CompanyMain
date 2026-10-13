@@ -1,0 +1,48 @@
+<%# Investors tab: the unit register (proposal GP-6). Worked example H35 %>
+<div class="p-3" data-controller="tooltip">
+  <%= render layout: "evergreen/shared/list_header", locals: { title: "Investors", subtitle: "#{eg_t(:Unit)} register — #{eg_t(:units)} held per #{EvergreenLabels.lower(eg_t(:capital_commitment))}, valued at each class's latest approved NAV; cost is average cost of the #{eg_t(:units)} still held" } do %>
+    <%= link_to evergreen_investors_path(@fund, format: :xlsx), class: "btn btn-outline-success d-inline-flex align-items-center", id: "download_register", data: { turbo: false } do %><i class="ti ti-download"></i> <%= t_common(:download) %><% end %>
+    <%# Generate statements for every folio (evergreen-folio-soa ④, H5): same right as the allocation screen %>
+    <% if policy(@fund).allocate? %>
+      <button type="button" class="btn btn-outline-primary d-inline-flex align-items-center" data-bs-toggle="modal" data-bs-target="#generate_statements_modal" id="generate_statements_open"><i class="ti ti-file-text"></i> Generate statements</button>
+    <% end %>
+  <% end %>
+  <%= render "evergreen/statements/generate_modal", fund: @fund, folio: nil if policy(@fund).allocate? %>
+  <div class="table-responsive">
+    <table class="table table-bordered dataTable action_table hover" id="unit_register">
+      <thead><tr><th>Investor</th><th><%= eg_t(:capital_commitment) %></th><th>Class</th><th class="text-end"><%= eg_t(:Units) %></th><th class="text-end">Value<%= eg_tip("Today's #{eg_t(:units)} × each class's latest approved #{eg_t(:nav_per_unit)}. Includes #{eg_t(:units)} dealt since that NAV, so the total can differ from the fund's NAV card, which is as at the NAV date.") %></th><th class="text-end">Cost</th><th class="text-end">Gain</th><th>Locked until</th><th class="text-end">Queued (<%= eg_t(:units) %>)</th><th class="action-col" aria-label="Actions">Actions</th></tr></thead>
+      <tbody>
+        <% if @register.empty? %><tr><td colspan="10" class="text-muted"><i class="ti ti-users me-1"></i>No <%= eg_t(:units) %> yet — <%= eg_t(:units) %> appear once a subscription is <%= EvergreenLabels.lower(eg_t(:dealt)) %> on a <%= EvergreenLabels.lower(eg_t(:subscription_date)) %>.</td></tr><% end %>
+        <% @register.each do |r| %>
+          <tr id="register_<%= r.folio.folio_id.parameterize %>">
+            <%# Fund users get a link to the investor page; investors see their own name as plain text %>
+            <td><%= gp_user? ? link_to(r.folio.investor.investor_name, investor_path(r.folio.investor), data: { turbo_frame: "_top" }) : r.folio.investor.investor_name %></td><td><%= link_to r.folio.folio_id, evergreen_folio_path(@fund, r.folio) %></td><td><%= r.unit_type %></td>
+            <td class="text-end"><%= number_with_precision(r.units, precision: 4, delimiter: ",") %></td>
+            <td class="text-end"><%= r.value_cents ? evergreen_money(r.value_cents, @fund) : "—" %></td>
+            <td class="text-end"><%= evergreen_money(r.cost_cents, @fund) %></td>
+            <td class="text-end"><%= eg_gain_badge(r.gain_pct) %></td>
+            <td><%= eg_lock_badge(r, @fund.evergreen_fund_setting) %></td>
+            <td class="text-end"><%= eg_queued_badge(r) %></td>
+            <td class="action-col"><%= link_to t_common(:view), evergreen_folio_path(@fund, r.folio), class: "btn btn-outline-primary ti ti-eye", data: { turbo_frame: "_top", bs_toggle: "tooltip", bs_title: "Open #{EvergreenLabels.lower(eg_t(:capital_commitment))} #{r.folio.folio_id}" }, aria: { label: "Open #{EvergreenLabels.lower(eg_t(:capital_commitment))} #{r.folio.folio_id}" } %></td>
+          </tr>
+        <% end %>
+        <%# Total row as the last body row (not a tfoot), so its cells get the same padding as the rows above.
+            Units of different classes are not comparable, so their sum shows only for a single class %>
+        <% one_class = @register.map(&:unit_type).uniq.size <= 1 %>
+        <tr class="fw-bold" id="register_total"><td>Total (<%= pluralize(@register.size, EvergreenLabels.lower(eg_t(:capital_commitment))) %>)</td><td></td><td></td>
+          <td class="text-end"><%= one_class ? number_with_precision(@register.sum(&:units), precision: 4, delimiter: ",") : "—" %></td>
+          <td class="text-end"><%= evergreen_money(@register.filter_map(&:value_cents).sum, @fund) %></td>
+          <td class="text-end"><%= evergreen_money(@register.sum { |r| r.cost_cents.to_d }, @fund) %></td><td colspan="4"></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <%# F9: when units were dealt after a class's latest NAV, say why the total differs from the NAV card %>
+  <% since = @register.group_by(&:unit_type).filter_map do |ut, rows|
+       nav = rows.first.nav
+       moved = nav && (rows.sum(&:units) - nav.units_outstanding.to_d)
+       "Class #{ut}: #{moved.positive? ? '+' : ''}#{number_with_precision(moved, precision: 4, delimiter: ',')} #{eg_t(:units)} since the #{l(nav.nav_date)} NAV" if moved && moved.abs > 0.0001
+     end %>
+  <% if since.any? %>
+    <p class="small text-muted mt-2 mb-0" id="register_since_nav"><i class="ti ti-info-circle me-1"></i>Values use today's <%= eg_t(:units) %>, so they include <%= EvergreenLabels.lower(eg_t(:dealt)) %> <%= eg_t(:units) %> not yet in a NAV — <%= since.join("; ") %>.</p>
+  <% end %>
+</div>

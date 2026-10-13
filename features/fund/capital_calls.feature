@@ -191,6 +191,7 @@ Examples:
     |user     |entity                                 |fund                 | call |
     |           |entity_type=Investment Fund;enable_funds=true  |name=Test  | percentage_called=20 |
 
+@rack_test
 Scenario Outline: Generate fund units from capital call with phased remittance payments
   Given there is a user "" for an entity "entity_type=Investment Fund"
   Given the user has role "company_admin"
@@ -274,6 +275,7 @@ Scenario Outline: Capital call on a fund with no commitments creates zero remitt
 
 
 # State machine: approve? requires !record.approved; cannot approve a call twice
+@rack_test
 Scenario Outline: Approved capital call cannot be approved again
   Given there is a user "" for an entity "<entity>"
   Given the user has role "company_admin"
@@ -290,6 +292,7 @@ Scenario Outline: Approved capital call cannot be approved again
 
 # State machine: unapprove? requires record.approved, the inverse of approve? — the two
 # buttons are mutually exclusive by construction, never shown at the same time.
+@rack_test
 Scenario Outline: Unapproved capital call cannot be unapproved, but an approved one can be
   Given there is a user "" for an entity "<entity>"
   Given the user has role "company_admin"
@@ -307,6 +310,7 @@ Scenario Outline: Unapproved capital call cannot be unapproved, but an approved 
 
 
 # Access control: only permissioned employees can create capital calls
+@rack_test
 Scenario Outline: Capital call creation is restricted to permissioned employees
   Given there is a user "" for an entity "<entity>"
   Given the user has role "<role>"

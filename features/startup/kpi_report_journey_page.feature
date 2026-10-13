@@ -67,6 +67,7 @@ Feature: KPI report journey on the report page
     Then I should not see the Close report button
 
   # E10 — Double click
+  @rack_test
   Scenario: Sending the completion email twice sends it once
     Given there is a second fund employee "first_name=Priya;last_name=Sharma"
     And "Acme Pvt Ltd" is managed by "Priya"
@@ -78,6 +79,7 @@ Feature: KPI report journey on the report page
     Then "Priya" receives 1 completion email
 
   # E11 — Not added
+  @rack_test
   Scenario: Without a completion task the journey completes at Close report
     Given the portco submits the workbook for the KPI report
     And the KPI report is closed
@@ -106,6 +108,7 @@ Feature: KPI report journey on the report page
       | ●    | Submit KPIs         |
 
   # E19 — No portal user
+  @rack_test
   Scenario: Send upload request is disabled when the company has no approved portal user
     Given the fund creates a KPI report for "Acme Pvt Ltd" as of "2026-09-30" period "Quarter" for the portco to upload
     And I am logged in as the fund admin

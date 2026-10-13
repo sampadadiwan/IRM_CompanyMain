@@ -1,3 +1,4 @@
+@rack_test
 Feature: Site registry configuration guard
   SITES and CURRENT_SITE are only read on the cross-region hand-off path, so a bad value used
   to surface days later as "Invalid or expired link" or a 500, with nothing naming the setting.

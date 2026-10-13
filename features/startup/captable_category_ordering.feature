@@ -1,3 +1,4 @@
+@rack_test
 Feature: Cap Table Category Ordering
   As a startup owner or dashboard user
   I want to control the order of categories in the cap table

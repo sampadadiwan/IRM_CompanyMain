@@ -10,6 +10,7 @@ Feature: ReportBuilderController — HTTP API endpoints
 
   # ── Model discovery ───────────────────────────────────────────────────────
 
+  @rack_test
   Scenario: GET /report_builder/models returns available root models as JSON
     When I request the models endpoint
     Then the report builder API response should be successful
@@ -17,6 +18,7 @@ Feature: ReportBuilderController — HTTP API endpoints
 
   # ── Association discovery ─────────────────────────────────────────────────
 
+  @rack_test
   Scenario: GET /report_builder/associations returns associations for a known model
     When I request the associations endpoint for "Investor"
     Then the report builder API response should be successful
@@ -24,17 +26,20 @@ Feature: ReportBuilderController — HTTP API endpoints
 
   # ── Create ────────────────────────────────────────────────────────────────
 
+  @rack_test
   Scenario: POST /report_builder creates a new report with the given root model
     When I create a new report for root model "Investor"
     Then a report should be created with root model "Investor"
 
   # ── Column management ─────────────────────────────────────────────────────
 
+  @rack_test
   Scenario: POST columns adds a GridViewPreference to the report
     When I create a new report for root model "Investor"
     And I add the column "investor_name" to the report
     Then the report should have column "investor_name"
 
+  @rack_test
   Scenario: DELETE columns removes a GridViewPreference from the report
     When I create a new report for root model "Investor"
     And I add the column "investor_name" to the report
@@ -44,6 +49,7 @@ Feature: ReportBuilderController — HTTP API endpoints
 
   # ── Join management ───────────────────────────────────────────────────────
 
+  @rack_test
   Scenario: POST join adds a join entry to the report template
     When I create a new report for root model "Investor"
     And I add the join "capital_commitments" with model "CapitalCommitment" to the report
@@ -59,6 +65,7 @@ Feature: ReportBuilderController — HTTP API endpoints
 
   # ── Aggregate update ──────────────────────────────────────────────────────
 
+  @rack_test
   Scenario: PATCH aggregate stores the chosen aggregate type in the template
     When I create a new report for root model "Investor"
     And I add the join "capital_commitments" with model "CapitalCommitment" to the report
@@ -70,6 +77,7 @@ Feature: ReportBuilderController — HTTP API endpoints
 
   # ── Name update ───────────────────────────────────────────────────────────
 
+  @rack_test
   Scenario: PATCH name renames the report
     When I create a new report for root model "Investor"
     And I update the report name to "Monthly LP Summary"
@@ -78,6 +86,7 @@ Feature: ReportBuilderController — HTTP API endpoints
 
   # ── Schedule ──────────────────────────────────────────────────────────────
 
+  @rack_test
   Scenario: PATCH schedule creates a ReportSchedule record
     When I create a new report for root model "Investor"
     And I configure the schedule with frequency "weekly" and recipient "lp@example.com"
@@ -87,6 +96,7 @@ Feature: ReportBuilderController — HTTP API endpoints
 
   # ── Preview ───────────────────────────────────────────────────────────────
 
+  @rack_test
   Scenario: GET preview returns a successful response
     When I create a new report for root model "Investor"
     And I add the column "investor_name" to the report

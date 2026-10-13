@@ -1,0 +1,12 @@
+<% if @custom_notification %>
+  <%= render "/custom_notifications/mail" do %>
+    <%= render "evergreen_mailer/custom_extras" %>
+  <% end %>
+<% else %>
+  <p>Dear <%= @user&.first_name %>,</p>
+  <p>Your subscription has been priced on <%= l(@fill.dealing_date.date) %>.</p>
+  <%= render "evergreen_mailer/summary" %>
+  <p><strong>Pay <%= evergreen_money(@fill.amount_cents, @fund) %> by <%= l(@fill.dealing_date.date + @setting.pay_after_days.days) %></strong> for <%= eg_units(@fill.units) %> at <%= evergreen_money(@fill.nav_per_unit_cents, @fund) %> per <%= eg_t(:unit) %>.</p>
+  <div><%= simple_format(@setting.payment_instructions) %></div>
+  <%= render "evergreen_mailer/request_link" %>
+<% end %>

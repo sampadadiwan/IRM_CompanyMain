@@ -4,7 +4,7 @@ Feature: Inter-region trust verification
   Each region publishes a non-reversible fingerprint so the divergence can be seen, and the
   hourly check turns it into an alert instead of a wall of identical failures.
 
-  @cross-region-trust
+  @cross-region-trust @rack_test
   Scenario: H4 Two regions configured with the same secret produce the same fingerprint
     Given region "IN" is configured with inter-region secret "shared-secret-value"
     And I capture the trust fingerprint as "in"
@@ -20,7 +20,7 @@ Feature: Inter-region trust verification
     And I capture the trust fingerprint as "us"
     Then the captured fingerprints "in" and "us" should not match
 
-  @cross-region-trust
+  @cross-region-trust @rack_test
   Scenario: E10 The trust endpoint discloses a fingerprint and nothing else
     Given region "IN" is configured with inter-region secret "a-very-distinctive-secret"
     When I request the cross-site trust endpoint
@@ -29,14 +29,14 @@ Feature: Inter-region trust verification
     And the trust response fingerprint should be 64 hex characters
     And the trust response should not contain "a-very-distinctive-secret"
 
-  @cross-region-trust
+  @cross-region-trust @rack_test
   Scenario: E9 A region with no shared secret reports it rather than returning a fingerprint
     Given region "IN" is configured with no inter-region secret
     When I request the cross-site trust endpoint
     Then the trust response should report the secret as not configured
     And the trust response fingerprint should be empty
 
-  @cross-region-trust @sync-http @cross-region-cache
+  @cross-region-trust @sync-http @cross-region-cache @rack_test
   Scenario: The hourly check flags a divergent peer and leaves an alertable gauge
     Given region "IN" is configured with inter-region secret "india-secret"
     And peer region "US" reports fingerprint for secret "us-secret-diverged"
@@ -50,7 +50,7 @@ Feature: Inter-region trust verification
     When the cross-site trust check runs
     Then no peer secret mismatch should be recorded
 
-  @cross-region-trust @sync-http @cross-region-cache
+  @cross-region-trust @sync-http @cross-region-cache @rack_test
   Scenario: A peer that reports no secret at all counts as a divergence
     Given region "IN" is configured with inter-region secret "india-secret"
     And peer region "US" reports that it has no secret configured

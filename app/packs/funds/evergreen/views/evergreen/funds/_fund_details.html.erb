@@ -1,0 +1,86 @@
+<%# Tabs below the details card for an evergreen fund — same pills + lazy turbo frames as
+    funds/_owner_fund_details; each frame loads the existing evergreen page (no header inside a frame).
+    Investors get their own tabs (LP-2). Worked example H31 %>
+<% if current_user.entity_id == fund.entity_id || current_user.entity.child_ids.include?(fund.entity_id) %>
+  <%
+    # Open orders per kind, for the inner tab labels — one grouped count
+    open_counts = DealingOrder.where(fund_id: fund.id, status: DealingOrder::OPEN_STATUSES).group(:kind).count
+    tabs = [
+      # [label, pane key, frame id, src] — the evergreen pages answer in whatever frame asks
+      # (layouts/evergreen_frame); the shared pages answer in their own fixed frame ids.
+      # A group is [label, pane key, [inner tabs…]]: related pages sit as pills inside one tab, so the
+      # top row stays short. Dealing holds the dealing cycle (dates, and the orders they price);
+      # NAV holds the fees that are lines in it.
+      [eg_t(:dealing_tab, fund:), "dealing-group", [
+        [eg_t(:transaction_date, fund:).titleize.pluralize, "dealing", "evergreen_dealing_frame", evergreen_dealing_dates_path(fund)],
+        # Subscriptions and redemptions get a pill each (the order book filtered by kind), in the words a
+        # fund manager uses rather than "orders"; the count is what is still open
+        ["Subscriptions (#{open_counts.fetch('subscription', 0)})", "subscriptions", "evergreen_subscriptions_frame", evergreen_orders_path(fund, kind: "subscription")],
+        ["Redemptions (#{open_counts.fetch('redemption', 0)})", "redemptions", "evergreen_redemptions_frame", evergreen_orders_path(fund, kind: "redemption")]
+      ]],
+      ["NAV", "nav-group", [
+        ["NAV", "nav", "evergreen_nav_frame", evergreen_navs_path(fund)],
+        ["Fees", "fees", "evergreen_fees_frame", evergreen_fees_path(fund)]
+      ]],
+      ["Investors", "investors", "evergreen_investors_frame", evergreen_investors_path(fund)]
+    ]
+    if fund.entity.permissions.enable_fund_portfolios?
+      # Derivatives sit under the portfolio, as on a closed-ended fund (funds/_owner_fund_details) — only
+      # when the fund has any; the first contract is added from Actions → Derivatives (fund-market-data, card ⑥)
+      below = if fund.feature_enabled?(:enable_derivatives) && DerivativeContract.where(fund_id: fund.id).exists?
+                ["fund_derivatives_frame", fund_derivative_contracts_path(fund, status: "open", embedded: 1)]
+              end
+      tabs << ["Portfolio", "portfolio", "portfolio_dashboard_frame", dashboard_fund_path(fund, dashboard_name: "Portfolio Dashboard"), below]
+    end
+    tabs << ["Documents", "docs", "documents_tree_frame", folder_documents_path(entity_id: fund.entity_id, folder_id: fund.document_folder.id, show_root_docs: true)] if fund.document_folder
+    tabs << ["Notifications", "notifications", "custom_notifications_frame", custom_notifications_path(q: { owner_id_eq: fund.id, owner_type_eq: "Fund" })]
+    tabs << ["Access", "access-rights", "access_rights_frame", access_rights_path(owner_id: fund.id, owner_type: "Fund", entity_id: current_user.entity_id, form_type: nil)]
+  %>
+  <div id="fund_associated_details" class="associated_entity">
+  <div class="associated_entity" data-controller="tabs tabdetails" id="evergreen_fund_details">
+    <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row" role="tablist" id="evergreen_tabs">
+      <% tabs.each_with_index do |(label, key, _), i| %>
+        <a class="nav-link <%= 'active' if i.zero? %>" data-bs-toggle="pill" href="#evergreen-<%= key %>-tab" id="evergreen_tab_<%= key %>"><%= label %></a>
+      <% end %>
+    </nav>
+    <div class="tab-content">
+      <% tabs.each_with_index do |(_, key, frame_id_or_inner, src, below), i| %>
+        <div id="evergreen-<%= key %>-tab" class="tab-pane fade <%= 'show active' if i.zero? %>">
+          <% if frame_id_or_inner.is_a?(Array) %>
+            <%# A group: inner pills (same markup as the dealing date page's Subscriptions / Redemptions pills),
+                each pane a lazy frame that loads only when its pill is first shown %>
+            <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row" role="tablist" id="evergreen_<%= key.delete_suffix('-group') %>_tabs">
+              <% frame_id_or_inner.each_with_index do |(inner_label, inner_key, _, _), j| %>
+                <a class="nav-link <%= 'active' if j.zero? %>" data-bs-toggle="pill" href="#evergreen-<%= inner_key %>-tab" id="evergreen_tab_<%= inner_key %>"><%= inner_label %></a>
+              <% end %>
+            </nav>
+            <div class="tab-content">
+              <% frame_id_or_inner.each_with_index do |(_, inner_key, inner_frame, inner_src), j| %>
+                <div id="evergreen-<%= inner_key %>-tab" class="tab-pane fade <%= 'show active' if j.zero? %>">
+                  <%= turbo_frame_tag inner_frame, target: "_top", loading: :lazy, src: inner_src do %>
+                    <%= render "/layouts/loading" %>
+                  <% end %>
+                </div>
+              <% end %>
+            </div>
+          <% else %>
+            <%= turbo_frame_tag frame_id_or_inner, target: "_top", loading: :lazy, src: do %>
+              <%= render "/layouts/loading" %>
+            <% end %>
+            <%# An optional second frame under the first (the Portfolio tab's Derivatives card) %>
+            <% if below %>
+              <div class="associated_entity">
+                <%= turbo_frame_tag below[0], target: "_top", loading: :lazy, src: below[1] do %>
+                  <%= render "/layouts/loading" %>
+                <% end %>
+              </div>
+            <% end %>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+  </div>
+<% else %>
+  <%= render "evergreen/funds/investor_show", fund: fund %>
+<% end %>

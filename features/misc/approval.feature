@@ -99,6 +99,7 @@ Scenario Outline: Grant Access Rights to approval after approved
 
 
 
+@rack_test
 Scenario Outline: Provide approval response
   Given there is a user "<user>" for an entity "<entity>"
   Given there is an existing investor "" with "2" users
@@ -123,6 +124,7 @@ Scenario Outline: Provide approval response
 
 
 
+@rack_test
 Scenario Outline: Provide approval response
   Given there is a user "<user>" for an entity "entity_type=Company;sub_domain=test"
   Given there is an existing investor "" with "1" users
@@ -140,6 +142,7 @@ Scenario Outline: Provide approval response
 
 
 # Edge case: partial approval — one investor approves, another rejects, counts must both be nonzero
+@rack_test
 Scenario Outline: Partial approval with mixed investor responses
   Given there is a user "<user>" for an entity "<entity>"
   Given the user has role "company_admin"
@@ -159,6 +162,7 @@ Scenario Outline: Partial approval with mixed investor responses
 
 
 # State machine: update? requires !record.locked — a locked approval cannot be edited or destroyed
+@rack_test
 Scenario Outline: Locked approval cannot be edited or destroyed
   Given there is a user "" for an entity "<entity>"
   Given the user has role "company_admin"
@@ -171,6 +175,7 @@ Scenario Outline: Locked approval cannot be edited or destroyed
 
 
 # State machine: approve? requires !record.approved — already-approved approval cannot be approved again
+@rack_test
 Scenario Outline: Already-approved approval cannot be approved again
   Given there is a user "" for an entity "<entity>"
   Given the user has role "company_admin"
@@ -185,6 +190,7 @@ Scenario Outline: Already-approved approval cannot be approved again
 
 
 # Access control: employee without :approver role cannot approve
+@rack_test
 Scenario Outline: Employee without approver role cannot approve an approval
   Given there is a user "" for an entity "<entity>"
   Given the user has role "employee"

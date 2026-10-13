@@ -25,6 +25,7 @@ Scenario Outline: View deal without access
     |name=Series A;amount_cents=10000     |
 
 
+@rack_test
 Scenario Outline: View deal with access
   Given Im logged in as a user "first_name=Emp1" for an entity "entity_type=Investor"
   Given there are "1" exisiting deals "<deal>" with my firm in the startups

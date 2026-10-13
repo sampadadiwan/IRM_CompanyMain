@@ -1,0 +1,22 @@
+<%# Stats row for an investor in an evergreen fund: their value, units, NAV per unit and gain —
+    never committed or called amounts. Worked examples H37, E49 %>
+<%
+  own_ids = InvestorAccess.approved_for_user(current_user).where(entity_id: fund.entity_id).pluck(:investor_id)
+  rows = EvergreenUnitRegister.new(fund, investor_ids: own_ids).rows
+  priced = rows.select(&:value_cents)
+  value = priced.sum(&:value_cents)
+  cost = priced.sum(&:cost_cents)
+  navs = rows.filter_map(&:nav).uniq
+  cards_data = [
+    { stat: priced.any? ? evergreen_money(value, fund) : "—", subtitle: "Value", color: "success" },
+    { stat: number_with_precision(rows.sum(&:units), precision: 4, delimiter: ","), subtitle: eg_t(:Units, fund:), color: "info" },
+    { stat: navs.one? ? eg_nav_money(navs.first.nav_per_unit_cents, fund) : (navs.any? ? "#{navs.size} classes" : "NAV not yet published"),
+      subtitle: navs.one? ? "#{eg_t(:nav_per_unit_short, fund:)} · #{l(navs.first.nav_date)}" : eg_t(:nav_per_unit_short, fund:), color: "info" },
+    { stat: cost.positive? ? "#{evergreen_money(value - cost, fund)} (#{((value / cost - 1) * 100).round(1)}%)" : "—", subtitle: "Gain", color: "secondary" }
+  ]
+%>
+<div class="row" id="evergreen_investor_stats">
+  <% cards_data.each do |card| %>
+    <%= render(NumberStatsComponent.new(path: nil, amount: card[:stat], subtitle: card[:subtitle], progress_bar_color: card[:color])) %>
+  <% end %>
+</div>

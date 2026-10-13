@@ -5,6 +5,7 @@ Feature: Financial statement mapping — accounts, rules, layout and the Unmappe
   Worked examples: openspec/changes/fund-financial-statements/design.md#worked-examples
 
   # H21 — Happy path: a fund's first account creates the three core statements and the statement formula
+  @rack_test
   Scenario: First account sets the fund up
     Given Alpha Fund I is not set up for financial statements
     And I am logged in as Meera
@@ -13,6 +14,7 @@ Feature: Financial statement mapping — accounts, rules, layout and the Unmappe
     And the fund has the core statements "Balance Sheet | Profit & Loss | Statement of Changes in Partners' Capital"
 
   # H1 — Happy path: an expense account defaults to Movement, is placed under Expenses on the P&L, and the formula exists
+  @rack_test
   Scenario: Create an expense account
     Given Alpha Fund I is set up for financial statements
     And I am logged in as Meera
@@ -22,6 +24,7 @@ Feature: Financial statement mapping — accounts, rules, layout and the Unmappe
     And the fund has its statement formula
 
   # X5 — Error case: a second account with the same name is refused
+  @rack_test
   Scenario: Duplicate account name rejected
     Given Alpha Fund I is set up for financial statements
     And the fund has statement accounts:
@@ -33,6 +36,7 @@ Feature: Financial statement mapping — accounts, rules, layout and the Unmappe
 
   # H6 — Happy path: an entry with amounts and no rule is listed as Unmapped with its total
   # H7 — Happy path: Map pre-fills the rule; once saved the entry leaves Unmapped and the account preview includes it
+  @rack_test
   Scenario: Map an unmapped entry from the list
     Given Alpha Fund I is set up for financial statements
     And the fund has statement accounts:
@@ -57,6 +61,7 @@ Feature: Financial statement mapping — accounts, rules, layout and the Unmappe
     And the Mapping preview of "Professional fees" this period is "38,000"
 
   # H8 — Happy path: changing a rule from Excluded to an account updates the preview without creating any entry
+  @rack_test
   Scenario: Preview updates on rule change
     Given Alpha Fund I is set up for financial statements
     And the fund has statement accounts:
@@ -96,6 +101,7 @@ Feature: Financial statement mapping — accounts, rules, layout and the Unmappe
     Then I see "can't start with \"FS ·\""
 
   # H22 — Happy path: a core statement can be renamed
+  @rack_test
   Scenario: Core statement renamed
     Given Alpha Fund I is set up for financial statements
     And I am logged in as Meera
@@ -113,6 +119,7 @@ Feature: Financial statement mapping — accounts, rules, layout and the Unmappe
     And destroying the core statement "Balance Sheet" is refused with "Core statements can be renamed but not deleted"
 
   # H23 — Happy path: a schedule is added as a period statement over the same accounts
+  @rack_test
   Scenario: Add a schedule
     Given Alpha Fund I is set up for financial statements
     And I am logged in as Meera
@@ -120,6 +127,7 @@ Feature: Financial statement mapping — accounts, rules, layout and the Unmappe
     Then I see "Schedule of Fund Expenses added."
 
   # H3 — Happy path: moving a row up changes its order in the statement
+  @rack_test
   Scenario: Reorder rows
     Given Alpha Fund I is set up for financial statements
     And the fund has statement accounts:
@@ -156,6 +164,7 @@ Feature: Financial statement mapping — accounts, rules, layout and the Unmappe
     And the preview tab does not list the account "Cash"
 
   # H4 — Happy path: an any-name rule catches a name uploaded later
+  @rack_test
   Scenario: Entry-type rule catches new names
     Given Alpha Fund I is set up for financial statements
     And the fund has statement accounts:
@@ -172,6 +181,7 @@ Feature: Financial statement mapping — accounts, rules, layout and the Unmappe
     And nothing is unmapped
 
   # H5 — Happy path: an exact-name rule wins over the entry type's any-name rule
+  @rack_test
   Scenario: Exact rule wins
     Given Alpha Fund I is set up for financial statements
     And the fund has statement accounts:
@@ -191,6 +201,7 @@ Feature: Financial statement mapping — accounts, rules, layout and the Unmappe
     And the preview of "Other expenses" for "period" is "500"
 
   # E2 — Edge case: excluded entries are on no line and not Unmapped
+  @rack_test
   Scenario: Excluded entries
     Given Alpha Fund I is set up for financial statements
     And the fund has statement accounts:
@@ -207,6 +218,7 @@ Feature: Financial statement mapping — accounts, rules, layout and the Unmappe
     And the preview of "Professional fees" for "period" is "0"
 
   # E3 — Edge case: folio-level entries never reach the statements
+  @rack_test
   Scenario: Folio-level entries ignored
     Given Alpha Fund I is set up for financial statements
     And the fund has folios "F-102"
@@ -226,6 +238,7 @@ Feature: Financial statement mapping — accounts, rules, layout and the Unmappe
     Then the preview of "Professional fees" for "period" is "30,000"
 
   # E17 — Edge case: the statements' own "Financial Statement" entries are never Unmapped
+  @rack_test
   Scenario: Statement lines are never mapped
     Given Alpha Fund I is set up for financial statements
     And the fund has statement accounts:
@@ -237,6 +250,7 @@ Feature: Financial statement mapping — accounts, rules, layout and the Unmappe
     And the preview of "Professional fees" for "period" is "0"
 
   # E22 — Edge case: an unmapped pair that nets to zero is not listed
+  @rack_test
   Scenario: Zero total is not unmapped
     Given Alpha Fund I is set up for financial statements
     And fund-level entries:

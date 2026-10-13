@@ -124,6 +124,7 @@ Examples:
   | capital distribution         | Capital distribution was successfully destroyed.         |
   | capital distribution payment | Capital distribution payment was successfully destroyed. |
 
+@rack_test
 Scenario: Delete All keeps the records with fund units and reports them
   Given Im logged in as a user "" for an entity "entity_type=Investment Fund;enable_funds=true"
   Given the user has role "company_admin"

@@ -1,3 +1,4 @@
+@rack_test
 Feature: Import Ratio Formula
   Can bulk import ratio formulas for a fund
 

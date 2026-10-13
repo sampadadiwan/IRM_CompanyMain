@@ -1,3 +1,4 @@
+@rack_test
 Feature: InvestorKyc notification email delivery gate
   Covers NotificationExtensions#email_enabled (config/initializers/noticed.rb) directly.
   BaseNotifier bypasses email_enabled entirely in Rails.env.test? (its deliver_by :email

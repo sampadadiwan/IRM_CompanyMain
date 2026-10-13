@@ -14,6 +14,7 @@ Feature: Incremental allocation from the fund formulas page
 
   # ── Access ───────────────────────────────────────────────────────────────────
 
+  @rack_test
   Scenario: Support sees the new actions in the Actions menu
     Given the user has role "support"
     When the user opens the fund formulas page
@@ -21,33 +22,39 @@ Feature: Incremental allocation from the fund formulas page
     And the Actions menu should list "Incremental allocation"
     And the Actions menu should list "Suggest run checks"
 
+  @rack_test
   Scenario: Other users see only the existing actions
     When the user opens the fund formulas page
     Then the Actions menu should list "Enable All"
     And the Actions menu should not list "Incremental allocation"
     And the Actions menu should not list "Suggest run checks"
 
+  @rack_test
   Scenario: A non-support user cannot start a preview directly
     When the user posts a preview of "enable_incremental"
     Then the request should be refused as unauthorized
     And no fund formula operation should exist for the fund
 
+  @rack_test
   Scenario: A non-support user cannot open or act on an operation directly
     Given a suggestion set exists for the fund
     When the user requests every operation page and action directly
     Then every request should be refused as unauthorized
     And the fund should have no check formulas
 
+  @rack_test
   Scenario: Enable All still enables every formula from the Actions menu
     Given the fund has a disabled formula "Quarterly Fees"
     When the user chooses Enable All from the Actions menu
     Then formula "Quarterly Fees" should be enabled
 
+  @rack_test
   Scenario: Support opens the incremental allocation page
     Given the user has role "support"
     When the user requests the incremental allocation page
     Then the incremental allocation page should show the recommended steps
 
+  @rack_test
   Scenario: Steps the fund's data shows done are marked, and the switch is next
     Given the user has role "support"
     And the fund has a post-run check that Since Inception totals match history
@@ -57,6 +64,7 @@ Feature: Incremental allocation from the fund formulas page
     And the next recommended step should be "switch"
     And the incremental allocation page should mark 2 steps done
 
+  @rack_test
   Scenario: A fund switched on with the rake task still shows when it was switched
     Given the user has role "support"
     And the fund has a formula "Since Inception Apportioned" adding up the since-inception totals of "Apportioned Fees, Apportioned Others"
@@ -64,6 +72,7 @@ Feature: Incremental allocation from the fund formulas page
     When the user requests the incremental allocation page
     Then the recommended steps should show when the fund was switched on
 
+  @rack_test
   Scenario: A fund already on incremental allocation is offered switching off and recomputing
     Given the user has role "support"
     And the fund has a formula "Since Inception Apportioned" adding up the since-inception totals of "Apportioned Fees, Apportioned Others"
@@ -77,6 +86,7 @@ Feature: Incremental allocation from the fund formulas page
 
   # ── Switching on ─────────────────────────────────────────────────────────────
 
+  @rack_test
   Scenario: Preview leaves the fund unchanged, and apply switches it on
     Given the user has role "support"
     And the fund has a formula "Since Inception Apportioned" adding up the since-inception totals of "Apportioned Fees, Apportioned Others"
@@ -90,6 +100,7 @@ Feature: Incremental allocation from the fund formulas page
     And the fund should be on incremental allocation
     And formula "Since Inception Apportioned" should carry forward its own total with a description
 
+  @rack_test
   Scenario: A blocked fund cannot be applied
     Given the user has role "support"
     And the fund has a formula "Open History" summing "Audit Fees" from inception
@@ -100,6 +111,7 @@ Feature: Incremental allocation from the fund formulas page
     Then the operation should be refused with "cannot be applied"
     And the fund should not be on incremental allocation
 
+  @rack_test
   Scenario: A preview is refused when the fund changed after it was made
     Given the user has role "support"
     And the fund has a formula "Since Inception Apportioned" adding up the since-inception totals of "Apportioned Fees, Apportioned Others"
@@ -110,6 +122,7 @@ Feature: Incremental allocation from the fund formulas page
     And the operation should be refused with "changed since this preview"
     And the fund should not be on incremental allocation
 
+  @rack_test
   Scenario: Apply is refused while an allocation run is in progress
     Given the user has role "support"
     And the fund has a formula "Since Inception Apportioned" adding up the since-inception totals of "Apportioned Fees, Apportioned Others"
@@ -120,6 +133,7 @@ Feature: Incremental allocation from the fund formulas page
     And the operation should be "previewed"
     And the fund should not be on incremental allocation
 
+  @rack_test
   Scenario: An apply that fails part-way writes nothing
     Given the user has role "support"
     And the fund has a formula "Since Inception Apportioned" adding up the since-inception totals of "Apportioned Fees, Apportioned Others"
@@ -131,6 +145,7 @@ Feature: Incremental allocation from the fund formulas page
     And formula "Since Inception Apportioned" should be unchanged since the preview
     And the fund should not be on incremental allocation
 
+  @rack_test
   Scenario: Apply is refused while the preview is already being applied
     Given the user has role "support"
     And the fund has a formula "Since Inception Apportioned" adding up the since-inception totals of "Apportioned Fees, Apportioned Others"
@@ -140,6 +155,7 @@ Feature: Incremental allocation from the fund formulas page
     Then the operation should be refused with "cannot be applied"
     And the operation should be "applying"
 
+  @rack_test
   Scenario: A second apply job cannot overwrite an applied operation
     Given the user has role "support"
     And the fund has a formula "Since Inception Apportioned" adding up the since-inception totals of "Apportioned Fees, Apportioned Others"
@@ -154,6 +170,7 @@ Feature: Incremental allocation from the fund formulas page
     When support previews "enable_incremental" while another preview is still running
     Then no new preview should start
 
+  @rack_test
   Scenario: A preview that never finished stops blocking the fund
     Given the user has role "support"
     And a preview for the fund has been in progress for 13 hours
@@ -161,6 +178,7 @@ Feature: Incremental allocation from the fund formulas page
     Then the operation should be "previewed"
     And the stale preview should be marked failed
 
+  @rack_test
   Scenario: An allocation run is refused while a switch is being applied
     Given the user has role "support"
     And the fund has a formula "Since Inception Apportioned" adding up the since-inception totals of "Apportioned Fees, Apportioned Others"
@@ -171,6 +189,7 @@ Feature: Incremental allocation from the fund formulas page
 
   # ── Switching off ────────────────────────────────────────────────────────────
 
+  @rack_test
   Scenario: Switching off restores the formulas and their descriptions
     Given the user has role "support"
     And the fund has a formula "Since Inception Apportioned" adding up the since-inception totals of "Apportioned Fees, Apportioned Others"
@@ -187,6 +206,7 @@ Feature: Incremental allocation from the fund formulas page
       | enable_incremental  | applied |
       | disable_incremental | applied |
 
+  @rack_test
   Scenario: A description edited by hand after the switch is kept on switch-off
     Given the user has role "support"
     And the fund has a formula "Since Inception Apportioned" adding up the since-inception totals of "Apportioned Fees, Apportioned Others"
@@ -200,6 +220,7 @@ Feature: Incremental allocation from the fund formulas page
     And formula "Since Inception Apportioned" should add up the since-inception totals of "Apportioned Fees, Apportioned Others"
     And formula "Since Inception Apportioned" should have description "Reviewed by finance"
 
+  @rack_test
   Scenario: Switching off a second time restores the formula as edited between the switches
     Given the user has role "support"
     And the fund has a formula "Since Inception Apportioned" adding up the since-inception totals of "Apportioned Fees, Apportioned Others"
@@ -218,6 +239,7 @@ Feature: Incremental allocation from the fund formulas page
 
   # ── Starting values ──────────────────────────────────────────────────────────
 
+  @rack_test
   Scenario: A tracking formula that never stored a value has nothing to recompute
     Given the user has role "support"
     And the fund has a tracking formula "Audit Fees tracking" totalling "Audit Fees"
@@ -227,6 +249,7 @@ Feature: Incremental allocation from the fund formulas page
     When support applies the preview
     Then the operation should be refused with "cannot be applied"
 
+  @rack_test
   Scenario: Recomputing a tracking formula's starting value from full history
     Given the user has role "support"
     And the fund has a tracking formula "Audit Fees tracking" totalling "Audit Fees"
@@ -241,6 +264,7 @@ Feature: Incremental allocation from the fund formulas page
 
   # ── Rake ─────────────────────────────────────────────────────────────────────
 
+  @rack_test
   Scenario: The rake dry run prints the plan the page previews
     Given the user has role "support"
     And the fund has a formula "Since Inception Apportioned" adding up the since-inception totals of "Apportioned Fees, Apportioned Others"

@@ -15,11 +15,13 @@ Feature: NDA Expiry & Versioning (Module 4)
   # ── Version Bump ────────────────────────────────────────────────────────────
 
   # When GP uploads a new PDF, the NDA config version increments from 1 to 2.
+  @rack_test
   Scenario: Version increments when NDA document changes
     When the GP uploads a new NDA PDF on the config
     Then the NDA config version should be 2
 
   # NdaConfigVersion record is created on version bump.
+  @rack_test
   Scenario: Version history record is created on bump
     When the GP uploads a new NDA PDF on the config
     Then there should be 1 NDA config version record
@@ -27,6 +29,7 @@ Feature: NDA Expiry & Versioning (Module 4)
     And the latest version record uploaded_by should be the GP user
 
   # Version 1 record is created when NDA config is first created with a version record.
+  @rack_test
   Scenario: First version record stores resign_required false
     When a version 1 record is created for the NDA config
     Then the version 1 record resign_required should be false
@@ -40,6 +43,7 @@ Feature: NDA Expiry & Versioning (Module 4)
     Then the acceptance should not be version-current for the NDA config
 
   # LP accepted version 2, config is version 2 — acceptance is current.
+  @rack_test
   Scenario: Acceptance is current when version matches
     Given the NDA config version is bumped to 2
     And the investor "Acme Capital" has accepted the NDA at version 2
@@ -48,6 +52,7 @@ Feature: NDA Expiry & Versioning (Module 4)
   # ── resign_required flag ────────────────────────────────────────────────────
 
   # When resign_required is false between acceptance version and current, acceptance stays valid.
+  @rack_test
   Scenario: Version gap with resign_required false keeps acceptance valid
     Given the investor "Acme Capital" has accepted the NDA at version 1
     And a version 2 record exists with resign_required false
@@ -72,6 +77,7 @@ Feature: NDA Expiry & Versioning (Module 4)
   # ── Time-based Expiry: fixed_period ─────────────────────────────────────────
 
   # LP accepted 91 days ago with 90-day validity — expired.
+  @rack_test
   Scenario: Fixed period acceptance is expired after validity_days
     Given the NDA config has fixed_period validity of 90 days
     And the investor "Acme Capital" accepted the NDA 91 days ago
@@ -86,6 +92,7 @@ Feature: NDA Expiry & Versioning (Module 4)
   # ── Time-based Expiry: specific_date ────────────────────────────────────────
 
   # NDA config validity_date is in the past — expired.
+  @rack_test
   Scenario: Specific date acceptance is expired when validity_date is past
     Given the NDA config has specific_date validity set to 30 days ago
     And the investor "Acme Capital" has accepted the NDA
@@ -107,6 +114,7 @@ Feature: NDA Expiry & Versioning (Module 4)
   # ── Resolver: Expired Status ────────────────────────────────────────────────
 
   # Accepted investor with version mismatch shows as "Expired" with reason "version".
+  @rack_test
   Scenario: Resolver shows Expired status for version mismatch
     Given the investor "Acme Capital" has accepted the NDA at version 1
     And the NDA config version is bumped to 2
@@ -115,6 +123,7 @@ Feature: NDA Expiry & Versioning (Module 4)
     And the investor "Acme Capital" expiry_reason should be "version"
 
   # Accepted investor with time-expired acceptance shows as "Expired" with reason "period".
+  @rack_test
   Scenario: Resolver shows Expired status for time expiry
     Given the NDA config has fixed_period validity of 90 days
     And the investor "Acme Capital" accepted the NDA 91 days ago
@@ -123,6 +132,7 @@ Feature: NDA Expiry & Versioning (Module 4)
     And the investor "Acme Capital" expiry_reason should be "period"
 
   # Accepted investor with valid version and time shows as "Accepted".
+  @rack_test
   Scenario: Resolver shows Accepted for valid acceptance
     Given the investor "Acme Capital" has accepted the NDA
     When the resolver resolves NDA status for the folder
@@ -130,6 +140,7 @@ Feature: NDA Expiry & Versioning (Module 4)
     And the resolver counters should show accepted 1
 
   # Resolver expired counter increments for expired investors.
+  @rack_test
   Scenario: Resolver counters include expired count
     Given the investor "Acme Capital" has accepted the NDA at version 1
     And the NDA config version is bumped to 2
@@ -139,6 +150,7 @@ Feature: NDA Expiry & Versioning (Module 4)
   # ── NdaConfigVersion Cascade ────────────────────────────────────────────────
 
   # Destroying the NDA config cascades to version records.
+  @rack_test
   Scenario: NdaConfigVersion records are destroyed with NdaConfig
     When a version 1 record is created for the NDA config
     And the NDA config is destroyed
@@ -148,6 +160,7 @@ Feature: NDA Expiry & Versioning (Module 4)
 
   # When specific_date is past, re-acceptance would create an immediately-expired
   # record. The gate should identify this as a lapsed state.
+  @rack_test
   Scenario: Specific date NDA is lapsed when validity_date is past
     Given the NDA config has specific_date validity set to 30 days ago
     Then the NDA config should be identified as lapsed
@@ -160,6 +173,7 @@ Feature: NDA Expiry & Versioning (Module 4)
   # ── Validation: Past validity_date on existing config ───────────────────────
 
   # GP can update other fields on a config whose specific_date has passed.
+  @rack_test
   Scenario: GP can update non-date fields on a config with past validity_date
     Given the NDA config has specific_date validity set to 30 days ago
     When the GP updates the NDA config contact_email to "legal@firm.com"

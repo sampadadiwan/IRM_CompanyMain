@@ -1,3 +1,4 @@
+@rack_test
 Feature: Call fee formula errors name the fee and the folio
   CallFee#calculate_formula evals the fee formula held in notes once per remittance. When
   the formula raises (e.g. capital_commitment.fund_unit_setting.setup_fee for a commitment

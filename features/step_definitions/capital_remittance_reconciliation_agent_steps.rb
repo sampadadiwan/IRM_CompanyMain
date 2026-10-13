@@ -447,8 +447,7 @@ end
 
 When('I visit the capital call page as the fund admin') do
   steps %(
-    Given I am at the login page
-    When I fill and submit the login page
+    And I am signed in as the current user
   )
   visit capital_call_path(@capital_call)
 end

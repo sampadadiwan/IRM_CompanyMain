@@ -5,7 +5,9 @@
 <% lazy_load_data ||= false %>
 
 <%
-  ransack_table_header = RansackTableHeader.new(CapitalCommitment, q: @q, current_user: current_user, records: capital_commitments, report_id: params["report_id"], turbo_frame: cc_turbo_frame, referrer: request.referrer, snapshot: params[:snapshot])
+  # Fund / stakeholder columns this page must (or must not) show, on top of the saved columns
+  column_rules = CapitalCommitment.list_column_rules(investor_id: params[:investor_id], fund_id: fund&.id || params[:fund_id], investor_user: current_user.curr_role == "investor")
+  ransack_table_header = RansackTableHeader.new(CapitalCommitment, q: @q, current_user: current_user, records: capital_commitments, report_id: params["report_id"], turbo_frame: cc_turbo_frame, referrer: request.referrer, snapshot: params[:snapshot], **column_rules)
   custom_grid_columns = ransack_table_header.ag_selected_columns
   group_by_column = params[:group_by_column]
 %>

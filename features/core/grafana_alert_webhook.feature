@@ -1,3 +1,4 @@
+@rack_test
 Feature: Grafana alert webhook forwards critical alerts to WhatsApp
   As the person on call for production
   I want Grafana's critical alerts to reach my phone

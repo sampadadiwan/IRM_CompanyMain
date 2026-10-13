@@ -1,0 +1,219 @@
+<%# Investor's evergreen fund page — the closed-ended investor layout (funds/_investor_fund_details:
+    ultra-cool-accordion, one section per area, table-bordered lists) with evergreen sections:
+    Holding · Transactions · Requests · NAV history · Documents.
+    Worked examples H37, H38, E12, E48, E49, E50, E171–E175, E211 — openspec/changes/open-ended-funds/design.md#worked-examples %>
+<% own_ids = InvestorAccess.approved_for_user(current_user).where(entity_id: fund.entity_id).pluck(:investor_id) %>
+<% register = EvergreenUnitRegister.new(fund, investor_ids: own_ids).rows %>
+<%# Fills preloaded for the request timeline and the in-progress test (one investor's orders — small) %>
+<% orders = DealingOrder.where(fund_id: fund.id, investor_id: own_ids).includes(:dealing_date, :capital_commitment, :capital_remittance, :fund, dealing_fills: %i[dealing_date fund_nav capital_distribution_payment]).order(received_at: :desc).to_a %>
+<%# Requests: in-progress ones by default; ?requests=all lists settled and cancelled ones too %>
+<% show_all_requests = params[:requests] == "all" %>
+<% listed_orders = show_all_requests ? orders : orders.select { |o| eg_lp_order_in_progress?(o) } %>
+<%# Newest dealing date first; id breaks ties within a date %>
+<% fills = DealingFill.joins(:dealing_order, :dealing_date).where(fund_id: fund.id, dealing_orders: { investor_id: own_ids }).where.not(fund_unit_id: nil).includes(:dealing_date, :document, :dealing_order).order("dealing_dates.date DESC, dealing_fills.id DESC") %>
+<%# Generated documents only exist when the fund has templates; without them the cell stays "—" %>
+<% doc_templates = EvergreenDealingDocuments.templates?(fund) %>
+<% setting = fund.evergreen_fund_setting %>
+<%
+  # The fund's evergreen wording (EvergreenLabels): "units" / "shares", "Folio" / "Account", ...
+  lbl = ->(key) { eg_t(key, fund:) }
+  # [key, title, open on load] — keys keep the lp_tab_* / lp_* ids the tests and links use
+  # A ?requests= link (the portal card's "Requests in progress", the Show all toggle) opens Requests instead of Holding
+  requests_first = params[:requests].present?
+  sections = [["holding", "Holding", !requests_first], ["transactions", "Transactions", false], ["requests", "Requests", requests_first],
+              ["nav-history", "NAV history", false], ["documents", "Documents", false]]
+  # The open section's accordion button is hidden (lp_layout.scss), so each body carries its own header,
+  # as the closed-ended sections do through their list pages (E211)
+  subtitles = {
+    "holding" => "Your #{lbl.call(:units)} per #{EvergreenLabels.lower(lbl.call(:capital_commitment))}, valued at the latest approved NAV; " \
+                 "cost is the average cost of the #{lbl.call(:units)} you still hold",
+    "transactions" => "#{lbl.call(:Units)} allotted and redeemed on each #{EvergreenLabels.lower(lbl.call(:transaction_date))}, " \
+                      "with the #{EvergreenLabels.lower(lbl.call(:contract_note))} or #{EvergreenLabels.lower(lbl.call(:redemption_advice))} once issued",
+    "requests" => "Your subscription and redemption requests and where each one is",
+    "nav-history" => "The last 12 approved NAVs per #{lbl.call(:unit)} of each class you hold",
+    "documents" => "Documents for your #{EvergreenLabels.lower(lbl.call(:capital_commitments))}"
+  }
+%>
+<div class="container-fluid p-3" id="evergreen_investor_page">
+  <div class="accordion ultra-cool-accordion" id="lp_accordion">
+    <% sections.each do |key, title, open| %>
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="lp_heading_<%= key %>">
+          <button class="accordion-button <%= 'collapsed' unless open %>" type="button" data-bs-toggle="collapse" data-bs-target="#lp_<%= key %>"
+                  aria-expanded="<%= open %>" aria-controls="lp_<%= key %>" id="lp_tab_<%= key %>"><%= title %></button>
+        </h2>
+        <div id="lp_<%= key %>" class="accordion-collapse collapse <%= 'show' if open %>" aria-labelledby="lp_heading_<%= key %>" data-bs-parent="#lp_accordion">
+          <div class="accordion-body">
+            <%# Section header — same markup as the closed-ended list headers (title + muted subtitle) %>
+            <div class="mb-4" id="lp_header_<%= key %>">
+              <h1 class="h3 mb-0 text-gray-800"><%= title %></h1>
+              <small class="text-muted"><%= subtitles[key] %></small>
+            </div>
+            <% case key %>
+            <% when "holding" %>
+              <%# One row per folio and class; lock-up and free units judged as the order form does (E48, E172–E174) %>
+              <% if register.empty? %>
+                <p class="text-muted">You hold no <%= lbl.call(:units) %> yet.</p>
+                <%= link_to new_evergreen_order_path(fund, kind: "subscription"), class: "btn btn-outline-primary", id: "lp_subscribe" do %><i class="ti ti-circle-plus me-1"></i>Subscribe<% end %>
+              <% else %>
+                <div class="table-responsive">
+                  <table class="table table-bordered dataTable" id="lp_holding_table">
+                    <thead><tr><th><%= lbl.call(:capital_commitment) %></th><th>Class</th><th class="text-end"><%= lbl.call(:Units) %></th><th class="text-end"><%= lbl.call(:nav_per_unit_short) %></th><th class="text-end">Value</th>
+                      <th class="text-end">Cost</th><th class="text-end">Gain</th><th class="text-end">Gain %</th><th>Lock-up</th><th>Actions</th></tr></thead>
+                    <tbody>
+                      <% register.each do |r| %>
+                        <% terms = setting.terms_for(r.unit_type) %>
+                        <% free = eg_free_units(r, terms) %>
+                        <% blocked = eg_redeem_blocked_reason(r, terms, fund) %>
+                        <tr id="holding_<%= r.folio.folio_id.parameterize %>">
+                          <td><%= r.folio.folio_id %></td>
+                          <td><%= r.unit_type %></td>
+                          <td class="text-end"><%= number_with_precision(r.units, precision: 4, delimiter: ",") %></td>
+                          <td class="text-end"><%= r.nav ? eg_nav_money(r.nav.nav_per_unit_cents, fund) : "NAV not yet published" %><% if r.nav %><div class="small text-muted"><%= l(r.nav.nav_date) %></div><% end %></td>
+                          <td class="text-end"><%= r.nav ? evergreen_money(r.value_cents, fund) : "—" %></td>
+                          <td class="text-end"><%= evergreen_money(r.cost_cents, fund) %></td>
+                          <%# Gain in money and, in its own column, the % badge (green up / red down) %>
+                          <td class="text-end"><%= r.nav ? evergreen_money(r.value_cents - r.cost_cents, fund) : "—" %></td>
+                          <td class="text-end"><%= r.nav ? eg_gain_badge(r.gain_pct) : "—" %></td>
+                          <td class="small">
+                            <% if r.locked_units.positive? %>
+                              <div>Locked: <%= eg_units(r.locked_units, fund:) %> until <%= l(r.locked_until, format: :day_month_year) %> (<%= terms.lock_up_type %> lock-up)</div>
+                            <% end %>
+                            <div>Free to redeem: <%= eg_units(free, fund:, strip_insignificant_zeros: true) %></div>
+                          </td>
+                          <td>
+                            <div class="d-flex flex-nowrap gap-1">
+                              <%# The order form opens on this row's folio and class (OrdersController#build_order) %>
+                              <% row_order = { capital_commitment_id: r.folio.id, unit_type: r.unit_type } %>
+                              <%= link_to new_evergreen_order_path(fund, kind: "subscription", dealing_order: row_order), class: "btn btn-sm btn-outline-primary text-nowrap" do %><i class="ti ti-circle-plus me-1"></i>Subscribe more<% end %>
+                              <% if free.positive? %>
+                                <%= link_to new_evergreen_order_path(fund, kind: "redemption", dealing_order: row_order), class: "btn btn-sm btn-outline-primary text-nowrap", id: "redeem_#{r.folio.folio_id.parameterize}" do %><i class="ti ti-circle-minus me-1"></i>Redeem<% end %>
+                              <% elsif blocked %>
+                                <%# Nothing free: hard-locked (E48) and/or already queued (E173) — disabled, with the reason below %>
+                                <span class="btn btn-sm btn-outline-primary text-nowrap disabled"><i class="ti ti-circle-minus me-1"></i>Redeem</span>
+                              <% end %>
+                            </div>
+                            <% if blocked %>
+                              <div class="small text-muted mt-1"><%= blocked %></div>
+                            <% end %>
+                          </td>
+                        </tr>
+                      <% end %>
+                    </tbody>
+                  </table>
+                </div>
+              <% end %>
+            <% when "transactions" %>
+              <%# Allotments and redemptions; the document links only once approved (E69) %>
+              <div class="table-responsive">
+                <table class="table table-bordered dataTable" id="lp_transactions_table">
+                  <thead><tr><th>Date</th><th>Type</th><th class="text-end"><%= lbl.call(:Units) %></th><th class="text-end"><%= lbl.call(:nav_per_unit_short) %></th><th class="text-end">Amount</th><th>Document</th></tr></thead>
+                  <tbody>
+                    <% fills.each do |f| %>
+                      <%# Each row links to the request it settled %>
+                      <tr><td><%= l(f.dealing_date.date) %></td><td><%= link_to lbl.call(f.subscription? ? :subscription : :redemption), evergreen_order_path(fund, f.dealing_order_id) %></td>
+                        <td class="text-end"><%= number_with_precision(f.units, precision: 4, delimiter: ",") %></td>
+                        <td class="text-end"><%= eg_nav_money(f.nav_per_unit_cents, fund) %></td>
+                        <td class="text-end"><%= evergreen_money(f.amount_cents, fund) %></td>
+                        <td>
+                          <% if f.document&.approved %>
+                            <%= link_to(lbl.call(f.subscription? ? :contract_note : :redemption_advice), document_path(f.document)) %>
+                          <% elsif doc_templates %>
+                            <%# E69: generated documents reach the investor only once the fund approves them %>
+                            <span class="text-muted small">Issued once approved</span>
+                          <% else %>
+                            —
+                          <% end %>
+                        </td></tr>
+                    <% end %>
+                    <% if fills.empty? %><tr><td colspan="6" class="text-muted">No transactions yet.</td></tr><% end %>
+                  </tbody>
+                </table>
+              </div>
+            <% when "requests" %>
+              <%# Each order with its status and step-by-step progress (H38, E12) %>
+              <% if orders.empty? %>
+                <p class="text-muted">No requests yet.</p>
+              <% else %>
+                <%# Open / in-progress requests by default; the toggle lists every request %>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <small class="text-muted" id="lp_requests_filter"><%= show_all_requests ? "All requests" : "Requests in progress" %> (<%= listed_orders.size %>)</small>
+                  <% if show_all_requests %>
+                    <%= link_to fund_path(fund, requests: "open"), class: "btn btn-sm btn-outline-secondary", id: "lp_requests_toggle" do %><i class="ti ti-filter me-1"></i>Show in progress<% end %>
+                  <% else %>
+                    <%= link_to fund_path(fund, requests: "all"), class: "btn btn-sm btn-outline-secondary", id: "lp_requests_toggle" do %><i class="ti ti-list me-1"></i>Show all (<%= orders.size %>)<% end %>
+                  <% end %>
+                </div>
+                <% if listed_orders.empty? %>
+                  <p class="text-muted">No requests in progress.</p>
+                <% else %>
+                <%# NAV each class's estimate is read at (the order book's eg_order_amount_units) — one lookup per class %>
+                <% navs = listed_orders.map(&:unit_type).uniq.index_with { |ut| FundNav.latest_approved(fund, ut, Time.zone.today) } %>
+                <div class="table-responsive">
+                  <table class="table table-bordered dataTable action_table" id="lp_requests_table">
+                    <thead><tr><th>Received</th><th>Request</th><th class="text-end">Amount</th><th class="text-end"><%= lbl.call(:Units) %></th><th>Class</th><th><%= lbl.call(:transaction_date) %></th><th>Status</th><th>Progress</th><th>Actions</th></tr></thead>
+                    <tbody>
+                      <% listed_orders.each do |o| %>
+                        <% amount_html, units_html = eg_order_amount_units(o, navs[o.unit_type]) %>
+                        <tr id="lp_request_<%= o.id %>">
+                          <td><%= l(o.received_at.to_date) %></td>
+                          <td><%= eg_order_kind_badge(o) %></td>
+                          <td class="text-end"><%= amount_html %></td>
+                          <td class="text-end"><%= units_html %></td>
+                          <td><%= o.unit_type %></td>
+                          <td><%= l(o.dealing_date.date) %></td>
+                          <td><%= eg_order_status_badge(o) %></td>
+                          <td class="small"><%= evergreen_request_timeline(o) %></td>
+                          <td><%= link_to "View", evergreen_order_path(fund, o), class: "btn btn-sm btn-outline-primary" %></td>
+                        </tr>
+                      <% end %>
+                    </tbody>
+                  </table>
+                </div>
+                <% end %>
+              <% end %>
+            <% when "nav-history" %>
+              <%# The last 12 approved NAVs of each class held, newest first, with the change on the one before %>
+              <% if register.empty? %>
+                <p class="text-muted">NAV history appears here once you hold <%= lbl.call(:units) %>.</p>
+              <% end %>
+              <% register.map(&:unit_type).uniq.each do |ut| %>
+                <% navs = FundNav.approved.where(fund_id: fund.id, unit_type: ut).order(nav_date: :desc).limit(13).to_a %>
+                <h6 class="fw-semibold mt-2">Class <%= ut %></h6>
+                <div class="table-responsive">
+                  <table class="table table-bordered dataTable" id="lp_nav_history_<%= ut.parameterize %>">
+                    <thead><tr><th>NAV date</th><th class="text-end"><%= lbl.call(:nav_per_unit_short) %></th><th class="text-end">Change</th></tr></thead>
+                    <tbody>
+                      <% navs.first(12).each_with_index do |n, i| %>
+                        <% prev = navs[i + 1] %>
+                        <tr><td><%= l(n.nav_date) %></td><td class="text-end"><%= eg_nav_money(n.nav_per_unit_cents, fund) %></td>
+                          <td class="text-end"><%= eg_nav_change(n, prev) || "—" %></td></tr>
+                      <% end %>
+                      <% if navs.empty? %><tr><td colspan="3" class="text-muted">NAV not yet published</td></tr><% end %>
+                    </tbody>
+                  </table>
+                </div>
+              <% end %>
+            <% when "documents" %>
+              <%# Folio documents; generated ones only once approved (E50, E175). Review fix 6c: never templates —
+                  a folio-level Contract Note / Redemption Advice Template is the GP's working file, not the
+                  investor's document (the portal card's docs_for_investor already excluded them) %>
+              <% docs = Document.where(owner: register.map(&:folio)).not_template.exclude_generated_unapproved.order(created_at: :desc).limit(50) %>
+              <div class="table-responsive">
+                <table class="table table-bordered dataTable" id="lp_documents_table">
+                  <thead><tr><th>Document</th><th>Date</th></tr></thead>
+                  <tbody>
+                    <% docs.each do |d| %>
+                      <tr><td><%= link_to d.name, document_path(d) %></td><td><%= l(d.created_at.to_date) %></td></tr>
+                    <% end %>
+                    <% if docs.empty? %><tr><td colspan="2" class="text-muted">No documents yet.</td></tr><% end %>
+                  </tbody>
+                </table>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>

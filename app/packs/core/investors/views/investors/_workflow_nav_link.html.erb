@@ -1,8 +1,0 @@
-<%# Workflow tab nav-link — company_admin only, same gating as InvestorKyc's workflow tab.
-    Shared by _portfolio_company_details.html.erb and _stakeholder_details.html.erb so the
-    gating/markup can't drift between the two. Requires an `investor:` local. %>
-<% if policy(investor).assign_workflow? %>
-  <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#workflow-tab">
-    <%= t('investor_details_nav.workflow') %>
-  </a>
-<% end %>

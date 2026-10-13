@@ -10,6 +10,7 @@ class Fund < ApplicationRecord
   include WithIncomingEmail
   include FundShared
   include FundNotifiers
+  include EvergreenFund
 
   include FundEnabled
   include ForInvestor

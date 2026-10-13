@@ -1,0 +1,32 @@
+<%# Copy investor-email templates from another evergreen fund (open-ended-funds § Notifications).
+    Same markup as the closed-ended forms: centred col-md-8, FormCard. %>
+<div class="row justify-content-md-center">
+  <div class="col-md-8">
+    <%= render FormCard.new(title: "Copy notifications to #{ERB::Util.h(@fund.name)}") do %>
+      <% if @sources.empty? %>
+        <p class="text-muted" id="no_copy_sources"><i class="ti ti-info-circle me-1"></i>No other evergreen fund of this entity has notification templates yet.</p>
+        <%= link_to fund_path(@fund), class: "btn btn-outline-secondary" do %><i class="ti ti-arrow-left"></i> Back<% end %>
+      <% else %>
+        <%= form_with url: evergreen_notification_copy_path(@fund), method: :post, id: "copy_notifications_form" do |f| %>
+          <div class="form-group">
+            <%= f.label :from_fund_id, "Copy from" %>
+            <%= f.select :from_fund_id, @sources.map { |s| [s.name, s.id] }, {}, class: "form-select", id: "from_fund_id" %>
+            <small class="text-muted">Every enabled investor-email template is copied. Emails this fund already customises are skipped — nothing is overwritten. Attached files are not copied.</small>
+          </div>
+          <div class="form-group mt-3">
+            <%# Confirm first: copying adds templates to this fund (never overwrites) %>
+            <%
+              msg = evergreen_action_summary([
+                ["blue", "ti-copy", "Copy enabled investor emails", "From the chosen fund into #{@fund.name}"],
+                ["grey", "ti-lock", "Nothing overwritten", "Emails this fund already customises are skipped"],
+                ["amber", "ti-paperclip-off", "Attachments not copied", "Add files to the copied templates if they need them"]
+              ])
+            %>
+            <%= button_tag type: "submit", class: "btn btn-outline-primary", id: "copy_notifications",
+                  data: { action: "click->confirm#popup", method: "post", title: "Copy notification templates", msg: } do %><i class="ti ti-copy"></i> Copy templates<% end %>
+          </div>
+        <% end %>
+      <% end %>
+    <% end %>
+  </div>
+</div>

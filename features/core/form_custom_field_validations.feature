@@ -29,7 +29,7 @@ Feature: FormCustomField Validations
     Then the number-range inputs should not be visible within that panel
     And the text-length inputs should be visible within that panel
 
-  @ui
+  @ui @rack_test
   Scenario: Admin saves min/max value rules for a NumberField via the UI
     Given the entity has a persisted NumberField FCF named "Score" for "Investor"
     When I visit the form type edit page for "Investor"
@@ -40,7 +40,7 @@ Feature: FormCustomField Validations
     Then the "Score" FCF should have validation rule "min_value" equal to "0"
     And the "Score" FCF should have validation rule "max_value" equal to "100"
 
-  @ui
+  @ui @rack_test
   Scenario: Admin saves max_length rule for a TextField via the UI
     Given the entity has a persisted TextField FCF named "Code" for "Investor"
     When I visit the form type edit page for "Investor"

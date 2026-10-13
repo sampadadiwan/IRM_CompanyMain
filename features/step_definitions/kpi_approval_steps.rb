@@ -83,40 +83,25 @@ end
 
 When('I approve the KPI {string}') do |kpi_name|
   kpi = Kpi.unapproved.find_by(name: kpi_name)
-  within(".value_#{kpi.id}") do
-    click_on "Approve"
-  end
-  # Handle the custom popup
-  if page.has_css?("#confirmModal", wait: 5)
-    within("#confirmModal") do
-      click_on I18n.t("common.proceed")
-    end
-  end
+  # Confirms in #confirmModal only if the button asks (features/support/confirm_modal_helpers.rb)
+  click_and_confirm_if_asked(find(".value_#{kpi.id}").find(:link_or_button, "Approve"))
   sleep 1
 end
 
 When('I reject the KPI {string}') do |kpi_name|
   kpi = Kpi.unapproved.find_by(name: kpi_name)
-  within(".value_#{kpi.id}") do
-    click_on "Reject"
-  end
-  # Handle the custom popup
-  if page.has_css?("#confirmModal", wait: 5)
-    within("#confirmModal") do
-      click_on I18n.t("common.proceed")
-    end
-  end
+  # Confirms in #confirmModal only if the button asks (features/support/confirm_modal_helpers.rb)
+  click_and_confirm_if_asked(find(".value_#{kpi.id}").find(:link_or_button, "Reject"))
   sleep 1
 end
 
 When('I approve all staged KPIs') do
   find(".ti-settings").click # Open Actions dropdown
-  click_on "Approve All Staged"
-  if page.has_css?("#confirmModal", wait: 5)
-    within("#confirmModal") do
-      click_on I18n.t("common.proceed")
-    end
-  end
+  # Proceed submits the approve_all POST, and Playwright's click waits for that navigation for
+  # Capybara.default_max_wait_time * 1.1 (16.5 s). Jobs run inline in test, so the request also
+  # runs KpiCumulateJob over every approved KPI — ~600 in the large-workbook scenario — which can
+  # outlast 16.5 s. Give this one click the 60 s navigation budget instead.
+  click_and_confirm_if_asked(find(:link_or_button, "Approve All Staged"), proceed_wait: 60)
   sleep 1
 end
 
@@ -165,12 +150,7 @@ end
 # Shared by every button_to on this codebase's show pages that wires up data-controller="confirm"
 # (Approve/Reject/Unapprove on the KPI show page, Recompute RAG Status on the mapping show page).
 When('I click {string} and confirm') do |button_label|
-  click_on button_label
-  if page.has_css?("#confirmModal", wait: 5)
-    within("#confirmModal") do
-      click_on I18n.t("common.proceed")
-    end
-  end
+  click_and_confirm_if_asked(find(:link_or_button, button_label))
   sleep 1
 end
 

@@ -1,3 +1,4 @@
+@rack_test
 Feature: Support Client Mapping Impersonation (Switch/Revert)
   As a support user
   I want to switch into a client entity context

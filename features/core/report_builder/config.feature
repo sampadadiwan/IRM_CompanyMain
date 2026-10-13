@@ -2,6 +2,7 @@ Feature: ReportBuilderConfig — template parsing and validation
 
   Scenarios exercise the Config value object in isolation (no DB needed).
 
+  @rack_test
   Scenario: Valid root model produces a valid config
     Given a report builder config with root model "Investor"
     When I check if the config is valid
@@ -18,6 +19,7 @@ Feature: ReportBuilderConfig — template parsing and validation
     When I check if the config is valid
     Then the config should not be valid
 
+  @rack_test
   Scenario: Config parses joins from template JSON
     Given a report builder config with template:
       """
@@ -36,6 +38,7 @@ Feature: ReportBuilderConfig — template parsing and validation
     And join_for "capital_commitments" should not be nil
     And join_for "investor_kycs" should not be nil
 
+  @rack_test
   Scenario: aggregate_for resolves with and without col-type suffix
     Given a report builder config with template:
       """
@@ -53,6 +56,7 @@ Feature: ReportBuilderConfig — template parsing and validation
     And the aggregate for "capital_commitments.folio_committed_amount; num-col" should be "sum"
     And the aggregate for "capital_commitments.other_column" should be nil
 
+  @rack_test
   Scenario: Config handles empty/nil template gracefully
     Given a report builder config with template:
       """
@@ -65,6 +69,7 @@ Feature: ReportBuilderConfig — template parsing and validation
   # monetized? walks real AR associations from the root model — it doesn't
   # require the relation to be declared in config.joins (there's no injection
   # surface here; it only drives display formatting, not SQL).
+  @rack_test
   Scenario: monetized? is true for a Money attribute reached via a real association
     Given a report builder config with root model "Investor"
     Then column "capital_commitments.folio_committed_amount" should be monetized
@@ -77,6 +82,7 @@ Feature: ReportBuilderConfig — template parsing and validation
     Given a report builder config with root model "Investor"
     Then column "not_a_real_relation.amount" should not be monetized
 
+  @rack_test
   Scenario: currency_symbol returns the configured currency's symbol
     Given a report builder config with template:
       """
@@ -91,10 +97,12 @@ Feature: ReportBuilderConfig — template parsing and validation
       """
     Then the currency symbol should be "$"
 
+  @rack_test
   Scenario: currency_symbol is nil when no currency is configured
     Given a report builder config with root model "Investor"
     Then the currency symbol should be nil
 
+  @rack_test
   Scenario: currency_symbol is nil for an invalid currency code
     Given a report builder config with template:
       """

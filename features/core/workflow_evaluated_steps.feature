@@ -12,6 +12,7 @@ Feature: Evaluated workflow steps (journeys)
     And the entity has an investor_kyc "name=Asha"
 
   # H4 — Acknowledge a step
+  @rack_test
   Scenario: Mark reviewed passes an acknowledge step and the journey moves on
     Given there is a journey template "KYC Journey" with steps:
       | name        | kind        | check       |
@@ -35,6 +36,7 @@ Feature: Evaluated workflow steps (journeys)
     And the history should show "passed" for step "Review"
 
   # H8 — Human step after system steps
+  @rack_test
   Scenario: Approving a human step moves past system steps that already pass
     Given there is a journey template "KYC Journey" with steps:
       | name        | kind   | check       | actors |
@@ -77,6 +79,7 @@ Feature: Evaluated workflow steps (journeys)
       | true | kept     |
 
   # E10c — a passive evaluation during a long undo does not use up the reset
+  @rack_test
   Scenario: The undo's own evaluation still resets sign-offs a page view saw first
     Given there is a journey template "KYC Journey" with steps:
       | name         | kind   | check       | actors |
@@ -92,6 +95,7 @@ Feature: Evaluated workflow steps (journeys)
     Then the CFO vote on step "CFO sign-off" should be archived
 
   # E11 — Passive move back does not clear sign-offs
+  @rack_test
   Scenario: A move back found by a page view is recorded but resets nothing
     Given there is a journey template "KYC Journey" with steps:
       | name         | kind   | check       | actors |
@@ -110,6 +114,7 @@ Feature: Evaluated workflow steps (journeys)
     And the CFO vote on step "CFO sign-off" should be kept
 
   # E26 — Rejecting a journey step means "vote again"
+  @rack_test
   Scenario: A rejected journey step stays current with the note and the journey stays active
     Given there is a journey template "KYC Journey" with steps:
       | name         | kind   | check       | actors |
@@ -127,6 +132,7 @@ Feature: Evaluated workflow steps (journeys)
     Then the journey should be complete
 
   # X3 — A user without update rights cannot confirm
+  @rack_test
   Scenario: Mark reviewed is refused for a user without update rights on the record
     Given there is a journey template "KYC Journey" with steps:
       | name   | kind        | check |
@@ -139,6 +145,7 @@ Feature: Evaluated workflow steps (journeys)
     And no confirmation should be recorded for step "Review"
 
   # X6 — A check that raises
+  @rack_test
   Scenario: A failing check shows an error on its step and stops the walk there
     Given there is a journey template "KYC Journey" with steps:
       | name      | kind   | check        |

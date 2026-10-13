@@ -12,6 +12,7 @@ Feature: KPI report journey owners
     And there is a second fund employee "first_name=Priya;last_name=Sharma"
 
   # H6 — Pick a manager
+  @rack_test
   Scenario: A fund admin sets Managed by on a portfolio company
     Given the fund admin can manage stakeholders
     And I am logged in as the fund admin
@@ -25,6 +26,7 @@ Feature: KPI report journey owners
     Then the portfolio company is not saved with "Managed by must be an employee of this organisation"
 
   # H7 — Manager wins over template (also: Record override wins)
+  @rack_test
   Scenario: The portfolio company's manager is reminded, not the template's owner
     Given "Acme Pvt Ltd" is managed by "Priya"
     And there is a second fund employee "first_name=Rahul;last_name=Mehta"
@@ -35,6 +37,7 @@ Feature: KPI report journey owners
     Then only "Priya" is reminded about "Approve or reject KPIs"
 
   # E7 — Template owner when no manager
+  @rack_test
   Scenario: Without a manager the template's owner is reminded
     Given there is a second fund employee "first_name=Rahul;last_name=Mehta"
     And KPI report journeys are set up for the entity
@@ -44,6 +47,7 @@ Feature: KPI report journey owners
     Then only "Rahul" is reminded about "Approve or reject KPIs"
 
   # E8 — Kpi-tagged fallback (also: Several default owners)
+  @rack_test
   Scenario: Without a manager or owner every employee tagged Kpi is reminded once
     Given there is a second fund employee "first_name=Anita;last_name=Rao"
     And there is a second fund employee "first_name=Vikram;last_name=Kumar"
@@ -55,6 +59,7 @@ Feature: KPI report journey owners
     Then "Anita" and "Vikram" are each reminded once about "Approve or reject KPIs"
 
   # E9 — Nobody resolves
+  @rack_test
   Scenario: Nobody to remind shows Owner unavailable
     Given the fund admin can manage stakeholders
     And KPI report journeys are set up for the entity
@@ -66,6 +71,7 @@ Feature: KPI report journey owners
     And the journey panel shows "Owner unavailable"
 
   # X3 — Manager left (also: Owner left the company)
+  @rack_test
   Scenario: An inactive manager falls through to the template's owner
     Given "Acme Pvt Ltd" is managed by "Priya"
     And the user "Priya" is deactivated

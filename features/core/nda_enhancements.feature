@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+@rack_test
 Feature: NDA Enhancements (Module 9)
   As a GP I want default signatories auto-tagged on NDA creation, non-signatory
   LPs blocked from the acceptance screen, and a version history audit trail.
@@ -37,10 +38,12 @@ Feature: NDA Enhancements (Module 9)
   # ── Non-signatory Blocked Page ──────────────────────────────────────────────
 
   # A non-signatory LP user is identified as blocked by the signatory check.
+  # Auto-tag picks the oldest approved user, so a second user is not tagged.
   Scenario: Non-signatory user is identified as blocked
     Given the data room folder has an enabled NDA config
     And there is an LP investor "Acme Capital" with approved access to the GP entity
-    Then the LP user should be identified as a non-signatory for the NDA
+    And there is a second LP user for "Acme Capital"
+    Then the second LP user should be identified as a non-signatory for the NDA
 
   # A signatory LP user passes the signatory check.
   Scenario: Signatory user passes the signatory check
@@ -52,10 +55,12 @@ Feature: NDA Enhancements (Module 9)
   # ── Gate: Signatory vs Non-signatory Redirect ──────────────────────────────
 
   # Non-signatory with no acceptance → gate would redirect to blocked page.
+  # Auto-tag picks the oldest approved user, so a second user is not tagged.
   Scenario: Gate directs non-signatory to blocked page (no acceptance)
     Given the data room folder has an enabled NDA config
     And there is an LP investor "Acme Capital" with approved access to the GP entity
-    Then the gate target for the LP user should be "blocked"
+    And there is a second LP user for "Acme Capital"
+    Then the gate target for the second LP user should be "blocked"
 
   # Signatory with no acceptance → gate would redirect to acceptance screen.
   Scenario: Gate directs signatory to acceptance screen (no acceptance)
@@ -65,12 +70,14 @@ Feature: NDA Enhancements (Module 9)
     Then the gate target for the LP user should be "acceptance"
 
   # Non-signatory with stale version acceptance → gate would redirect to blocked page.
+  # Auto-tag picks the oldest approved user, so a second user is not tagged.
   Scenario: Gate directs non-signatory to blocked page (stale version)
     Given the data room folder has an enabled NDA config
     And there is an LP investor "Acme Capital" with approved access to the GP entity
+    And there is a second LP user for "Acme Capital"
     And the investor "Acme Capital" has accepted the NDA at version 1
     And the NDA config version is bumped to 2
-    Then the gate target for the LP user should be "blocked"
+    Then the gate target for the second LP user should be "blocked"
 
   # Signatory with stale version acceptance → gate would redirect to acceptance screen.
   Scenario: Gate directs signatory to acceptance screen (stale version)

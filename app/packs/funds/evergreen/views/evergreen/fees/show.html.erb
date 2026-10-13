@@ -1,0 +1,212 @@
+<%# Fees tab (proposal GP-7). Worked examples H27, H28, E35, E36, E38, X9
+    Explains itself: the three steps a management fee goes through, then per class the working of each
+    NAV's payable (previous payable + accrued − paid) and, per row, what is wrong and what to do. %>
+<% setting = @fund.evergreen_fund_setting %>
+<% formula_added = @fund.fund_formulas.exists?(name: EvergreenFeeFormulaSeed::NAME) %>
+<% pct = ->(v) { v.to_d.round(2).to_s.sub(/\.0+$/, "") } %>
+<% dealing_word = EvergreenLabels.lower(eg_t(:transaction_date)) %>
+<%# NAVs only ever uploaded: the administrator's figure already has the fee in it, so the formula isn't needed %>
+<% shown_navs = @rows.flat_map(&:navs) %>
+<% uploads_only = !formula_added && shown_navs.any? && shown_navs.all?(&:uploaded?) %>
+<div class="p-3" data-controller="tooltip">
+  <%= render layout: "evergreen/shared/list_header", locals: { title: "Fees", subtitle: "Management fee per class, from the last #{EvergreenFeeSummary::SHOWN} approved NAVs" } do %><% end %>
+
+  <%# How a management fee reaches the NAV, in three steps; step 1 says whether the formula is set up %>
+  <div class="row g-3 mb-4" id="fee_steps">
+    <div class="col-md-4">
+      <div class="action-summary__item action-summary__item--<%= formula_added ? 'green' : (uploads_only ? 'grey' : 'amber') %> h-100" id="fee_step_formula">
+        <span class="action-summary__icon"><i class="ti <%= formula_added ? 'ti-circle-check' : (uploads_only ? 'ti-upload' : 'ti-alert-triangle') %>"></i></span>
+        <div>
+          <% if uploads_only %>
+            <div class="action-summary__title">1. Fee accrues — in the administrator's NAV</div>
+            <div class="action-summary__desc">Your NAVs are uploaded, and the administrator's figure already has the fee deducted. Add the "<%= EvergreenFeeFormulaSeed::NAME %>" formula only if you will draft NAVs from the ledger.</div>
+          <% else %>
+            <div class="action-summary__title">1. Fee accrues — <%= formula_added ? "set up" : "not set up" %></div>
+            <div class="action-summary__desc">The "<%= EvergreenFeeFormulaSeed::NAME %>" formula books each folio's fee (<%= eg_t(:nav_per_unit) %> × <%= eg_t(:units) %> held × class fee % × days ÷ 365) when an allocation run includes it.</div>
+          <% end %>
+          <% unless formula_added %>
+            <%
+              msg = evergreen_action_summary([
+                ["green", "ti-plus", "Add the \"#{EvergreenFeeFormulaSeed::NAME}\" formula", "Each class's fee % × #{eg_t(:nav_per_unit)} × #{eg_t(:units)} held × days ÷ 365"],
+                ["blue", "ti-calculator", "Charged in allocation runs", "Nothing is accrued until an allocation run includes it"]
+              ])
+            %>
+            <%= button_to seed_formula_evergreen_fees_path(@fund), method: :post, class: "btn btn-outline-primary btn-sm mt-2", id: "seed_fee_formula", form: { data: { turbo_frame: "_top" } },
+                  data: { action: "click->confirm#popup", method: "post", title: "Add the management fee formula", msg: } do %><i class="ti ti-plus"></i> Add formula<% end %>
+          <% end %>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="action-summary__item action-summary__item--blue h-100">
+        <span class="action-summary__icon"><i class="ti ti-chart-line"></i></span>
+        <div>
+          <div class="action-summary__title">2. Each NAV deducts it</div>
+          <div class="action-summary__desc">Fee accrued and not yet paid is owed to the manager — the Payable column. It lowers the NAV, and so the <%= eg_t(:nav_per_unit) %> investors deal at.</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="action-summary__item action-summary__item--grey h-100">
+        <span class="action-summary__icon"><i class="ti ti-cash-banknote"></i></span>
+        <div>
+          <div class="action-summary__title">3. Fee is paid out</div>
+          <div class="action-summary__desc">Book a "<%= setting.mgmt_fee_paid_entry_name %>" entry: the next NAV lowers Payable by it. Paying doesn't change the <%= eg_t(:nav_per_unit) %> — it already had the fee deducted.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <% @rows.each do |row| %>
+    <% slug = row.unit_type.parameterize %>
+    <%# Every NAV shown is an upload: there is no working to show, so the payable columns are left out %>
+    <% working = !(row.navs.any? && row.navs.all?(&:uploaded?)) %>
+    <div class="card shadow-sm border-0 mb-4" id="fees_class_<%= slug %>">
+      <div class="card-header border-bottom py-3">
+        <h6 class="mb-0 fw-bold d-flex align-items-center"><i class="ti ti-stack-2 me-2 text-secondary"></i>Class <%= row.unit_type %></h6>
+      </div>
+      <div class="card-body">
+        <h6 class="fw-bold"><i class="ti ti-receipt me-1 text-secondary"></i>Management fee</h6>
+        <%# No approved NAV yet: nothing to work out — one line instead of empty cards and an empty table %>
+        <% if row.navs.empty? %>
+          <p class="text-muted mb-0" id="mgmt_fee_empty_<%= slug %>"><i class="ti ti-chart-line me-1"></i><%= row.fee_pct.positive? ? "#{pct.call(row.fee_pct)}% a year on NAV. " : "" %>No approved NAV for class <%= row.unit_type %> yet — fees show here once one is approved.</p>
+        <% else %>
+        <%
+          # Where the class stands at its latest approved NAV
+          latest_row = row.nav_rows.first
+          accrued_card = case latest_row&.state
+                         when :accrued then { stat: l(latest_row.nav.mgmt_fee_accrued_to), color: "success" }
+                         when :partial then { stat: l(latest_row.nav.mgmt_fee_accrued_to), color: "danger" }
+                         when :missing then { stat: "Not accrued", color: "danger" }
+                         when :uploaded then { stat: "Set by the administrator", color: "secondary" }
+                         else { stat: "—", color: "secondary" }
+                         end
+          cards = [
+            { stat: row.fee_pct.positive? ? "#{pct.call(row.fee_pct)}% a year" : "None", subtitle: "Management fee on NAV", color: "info" },
+            { stat: row.latest_nav&.uploaded? ? "Not in the upload" : evergreen_money(row.latest_nav&.mgmt_fee_payable_cents, @fund), subtitle: row.latest_nav ? "Payable at #{l(row.latest_nav.nav_date)}" : "Payable", color: "info" },
+            { stat: accrued_card[:stat], subtitle: "Fee accrued to", color: accrued_card[:color] }
+          ]
+        %>
+        <div class="row mb-3" id="mgmt_fee_cards_<%= slug %>">
+          <% cards.each do |card| %>
+            <%= render(NumberStatsComponent.new(path: nil, amount: card[:stat], subtitle: card[:subtitle], progress_bar_color: card[:color])) %>
+          <% end %>
+        </div>
+
+        <%# Newest first, like the NAV list. Each row's working: previous payable + accrued − paid = payable %>
+        <table class="table table-bordered dataTable hover" id="mgmt_fee_table_<%= slug %>">
+          <thead>
+            <tr>
+              <th>NAV date</th>
+              <th class="text-end">NAV</th>
+              <% if working %>
+              <th class="text-end">Payable at previous NAV<%= eg_tip("What the class still owed the manager at its previous approved NAV.") %></th>
+              <th class="text-end">+ Accrued this period<%= eg_tip("\"#{NavInputs::MGMT_FEE_ENTRY_TYPE}\" entries of this class's folios dated after the previous NAV, up to this NAV's date — booked by the \"#{EvergreenFeeFormulaSeed::NAME}\" formula.") %></th>
+              <th class="text-end">− Paid this period<%= eg_tip("This class's part of the \"#{setting.mgmt_fee_paid_entry_name}\" entries dated after the previous NAV, split by what each class owed.") %></th>
+              <th class="text-end">= Payable<%= eg_tip("Owed to the manager at this NAV, and deducted from it.") %></th>
+              <% end %>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% row.nav_rows.each do |nr| %>
+              <% nav = nr.nav %>
+              <%# A NAV drafted before the builder saved the split shows — rather than a split re-read from today's ledger %>
+              <% split_tip = "Recalculate a draft NAV to see the split — this one was drafted before it was saved." %>
+              <tr id="mgmt_fee_row_<%= nav.id %>">
+                <td><%= link_to l(nav.nav_date), evergreen_nav_path(@fund, nav), data: { turbo_frame: "_top" } %></td>
+                <td class="text-end"><%= evergreen_money(nav.nav_cents, @fund) %></td>
+                <% if !working %>
+                <% elsif nav.uploaded? %>
+                  <td class="text-end text-muted">—</td><td class="text-end text-muted">—</td><td class="text-end text-muted">—</td>
+                <% else %>
+                  <td class="text-end"><%= evergreen_money(nr.opening_cents, @fund) %></td>
+                  <td class="text-end"><%= nr.accrued_cents ? evergreen_money(nr.accrued_cents, @fund) : safe_join(["—", eg_tip(split_tip)]) %></td>
+                  <td class="text-end"><%= nr.paid_cents ? evergreen_money(nr.paid_cents, @fund) : safe_join(["—", eg_tip(split_tip)]) %></td>
+                <% end %>
+                <%# An upload carries only NAV, units and NAV per unit — no fee lines, so no payable to show %>
+                <% if working %><td class="text-end fw-semibold"><%= nav.uploaded? ? safe_join(["—", eg_tip("The upload gives the NAV only; the administrator's figure already has the fee deducted.")]) : evergreen_money(nav.mgmt_fee_payable_cents, @fund) %></td><% end %>
+                <td>
+                  <%# Late fees (R9.12–R9.16): what was decided on this NAV, or booked into its period after approval %>
+                  <% if nr.late_included_cents.positive? %>
+                    <div class="small mb-1" id="late_included_<%= nav.id %>"><%= eg_badge(:blue, "plus", "Includes #{evergreen_money(nr.late_included_cents, @fund)} late fee", "Booked into an earlier, already-approved period; the approver chose to include it in this NAV.") %></div>
+                  <% end %>
+                  <% if nr.late_excluded_cents.positive? %>
+                    <div class="small mb-1" id="late_excluded_<%= nav.id %>"><%= eg_badge(:grey, "x", "#{evergreen_money(nr.late_excluded_cents, @fund)} late fee excluded", nav.late_fee_decisions_list.select { |d| d["choice"] == "exclude" }.map { |d| d["reason"] }.compact.join("; ")) %></div>
+                  <% end %>
+                  <% if nr.late_booked %>
+                    <div class="small mb-1" id="late_booked_<%= nav.id %>">
+                      <%= eg_badge(:amber, "clock-exclamation", "Late fee booked", "Management fee dated in this period was booked after this NAV was approved.") %>
+                      <span class="text-muted"><%= nr.reopen_ok ? "Reopen this NAV to put it in its own month, or decide it on the next draft." : "Decide it on the next draft (include or exclude)." %></span>
+                    </div>
+                  <% end %>
+                  <% case nr.state %>
+                  <% when :accrued %>
+                    <%= eg_badge(:green, "circle-check", "Accrued to #{l(nav.mgmt_fee_accrued_to)}", "The fee is accrued up to this NAV's date, so the NAV includes it in full.") %>
+                  <% when :uploaded %>
+                    <%= eg_badge(:grey, "upload", "Fee included by the administrator", "An uploaded NAV is the administrator's final figure, fee included.") %>
+                  <% when :no_units %>
+                    <%= eg_badge(:grey, "minus", "No #{eg_t(:units)} yet", "No #{eg_t(:units)} were outstanding at this NAV, so there was nothing to charge a fee on.") %>
+                  <% when :no_fee %>
+                    <%= eg_badge(:grey, "minus", "No management fee", "Class #{row.unit_type} charges no management fee.") %>
+                  <% else %>
+                    <%# Missing or partial accrual (E35): say what is wrong, then the way to fix it — reopen if no dealing date was priced at it (X9) %>
+                    <% label = nr.state == :partial ? "Accrued only to #{l(nav.mgmt_fee_accrued_to)}" : "No fee in this NAV" %>
+                    <%= eg_badge(:red, "alert-triangle", label, "This NAV was approved without the full management fee for its period, so its #{eg_t(:nav_per_unit)} is too high.") %>
+                    <div class="small text-muted mt-1" id="mgmt_fee_todo_<%= nav.id %>">
+                      <% if nr.locked_by %>
+                        Locked: the <%= dealing_word %> <%= link_to l(nr.locked_by.date), evergreen_dealing_date_path(@fund, nr.locked_by), data: { turbo_frame: "_top" } %> was priced at it, so it can't be reopened to add the fee.
+                      <% elsif policy(nav).reopen? %>
+                        <div class="mb-1"><%= render "evergreen/navs/reopen_button", nav:, id: "reopen_nav_#{nav.id}" %></div>
+                        Then <%= formula_added ? "run" : "add and run" %> the fee formula to <%= l(nav.nav_date) %>, recalculate and approve again.
+                      <% else %>
+                        An approver can reopen it, run the fee formula to <%= l(nav.nav_date) %>, recalculate and approve again.
+                      <% end %>
+                    </div>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+        <% end %>
+
+        <% if row.perf_fee_pct %>
+          <h6 class="fw-bold mt-4"><i class="ti ti-trending-up me-1 text-secondary"></i>Performance fee — <%= pct.call(row.perf_fee_pct) %>% over the high-water mark</h6>
+          <p class="text-muted small mb-2">Charged only on growth above the highest <%= eg_t(:nav_per_unit) %> a fee was already charged on (the high-water mark), so the manager is never paid twice for the same gain.</p>
+          <% if row.hwm_cents && row.latest_nav %>
+            <%
+              # Where the latest NAV per unit stands against the mark: below means no fee accrues
+              diff = row.latest_nav.nav_per_unit_cents.to_d - row.hwm_cents.to_d
+              perf_cards = [
+                { stat: evergreen_nav_per_unit(row.hwm_cents), subtitle: "High-water mark", color: "secondary" },
+                { stat: evergreen_nav_per_unit(row.latest_nav.nav_per_unit_cents), subtitle: "#{eg_t(:nav_per_unit_short)} · #{l(row.latest_nav.nav_date)}", color: "info" },
+                { stat: diff.negative? ? "#{evergreen_nav_per_unit(-diff)} below" : "#{evergreen_nav_per_unit(diff)} above",
+                  subtitle: diff.negative? ? "Below the mark — no fee accrues" : "Above the mark — fee accrues on the gain", color: diff.negative? ? "danger" : "success" },
+                { stat: evergreen_money(row.latest_nav.perf_fee_accrued_cents, @fund), subtitle: "Accrued fee", color: "info" }
+              ]
+            %>
+            <div class="row mb-3" id="hwm_<%= slug %>">
+              <% perf_cards.each do |card| %>
+                <%= render(NumberStatsComponent.new(path: nil, amount: card[:stat], subtitle: card[:subtitle], progress_bar_color: card[:color])) %>
+              <% end %>
+            </div>
+          <% end %>
+          <% if row.crystallisations.any? %>
+            <div class="small fw-bold mb-1">Crystallisation history</div>
+            <table class="table table-bordered dataTable hover" id="crystallisations_<%= slug %>">
+              <thead><tr><th>NAV date</th><th class="text-end">Mark after</th><th class="text-end">Crystallised</th></tr></thead>
+              <tbody>
+                <% row.crystallisations.each do |nav| %>
+                  <tr><td><%= link_to l(nav.nav_date), evergreen_nav_path(@fund, nav), data: { turbo_frame: "_top" } %></td>
+                    <td class="text-end"><%= evergreen_nav_per_unit(nav.hwm_after_cents) %></td>
+                    <td class="text-end"><%= evergreen_money(nav.perf_fee_accrued_cents, @fund) %></td></tr>
+                <% end %>
+              </tbody>
+            </table>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+</div>

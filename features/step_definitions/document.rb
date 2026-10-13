@@ -67,15 +67,14 @@ When('I fill and submit the new document page') do
   find("#doc_actions").click
   click_on("New Document")
   #sleep(4)
-  if page.has_css?("#document_name")
-    fill_in("document_name", with: @document.name)
-  elsif page.has_css?("#other_name")
-    fill_in("other_name", with: @document.name)
-  end
+  # The form renders exactly one of the two (documents/_form). Waiting for either at once - the old
+  # if/elsif spent the full default wait on #document_name whenever the form had #other_name.
+  name_field_id = first("#document_name, #other_name")[:id]
+  fill_in(name_field_id, with: @document.name)
 
   fill_in("document_tag_list", with: @document.tag_list.join(",")) if @document.tag_list.present?
   attach_file('files[]', File.absolute_path('./public/sample_uploads/investor_access.xlsx'), make_visible: true)
-  sleep(3)
+  wait_for_upload('./public/sample_uploads/investor_access.xlsx') # JS direct-upload to /upload; returns once it lands (was sleep 3)
   check('document_download') if @document.download
   check('document_printing') if @document.printing
   check('Send email', allow_label_click: true) if @document.send_email
@@ -259,7 +258,7 @@ Given('user goes to add a new template {string} for the fund') do |doc_name|
   #sleep(2)
   fill_in("document_name", with: doc_name)
   attach_file('files[]', File.absolute_path('./public/sample_uploads/Investor Statement Template.docx'), make_visible: true)
-  sleep(2)
+  wait_for_upload('./public/sample_uploads/Investor Statement Template.docx') # JS direct-upload to /upload; returns once it lands (was sleep 2)
   # check checkbox id id="document_template"
   check('document_template')
 end
@@ -315,7 +314,7 @@ Given('user goes to add a new document {string} for the fund') do |doc_name|
   click_on("New Document")
   fill_in("document_name", with: doc_name)
   attach_file('files[]', File.absolute_path('./public/sample_uploads/Investor Statement Template.docx'), make_visible: true)
-  sleep(2)
+  wait_for_upload('./public/sample_uploads/Investor Statement Template.docx') # JS direct-upload to /upload; returns once it lands (was sleep 2)
   # check checkbox id id="document_template"
   check('document_template')
 end
@@ -550,11 +549,10 @@ When('I create a new document {string} with no file') do |args|
 
   find("#doc_actions").click
   click_on("New Document")
-  if page.has_css?("#document_name")
-    fill_in("document_name", with: @temp_document.name)
-  elsif page.has_css?("#other_name")
-    fill_in("other_name", with: @temp_document.name)
-  end
+  # The form renders exactly one of the two (documents/_form). Waiting for either at once - the old
+  # if/elsif spent the full default wait on #document_name whenever the form had #other_name.
+  name_field_id = first("#document_name, #other_name")[:id]
+  fill_in(name_field_id, with: @temp_document.name)
 
   fill_in("document_tag_list", with: @temp_document.tag_list.join(",")) if @temp_document.tag_list.present?
   # attach_file('files[]', File.absolute_path('./public/sample_uploads/investor_access.xlsx'), make_visible: true)
@@ -657,14 +655,13 @@ When('I create a new document {string} with as_of {string}') do |args, as_of_dat
 
   find("#doc_actions").click
   click_on("New Document")
-  if page.has_css?("#document_name")
-    fill_in("document_name", with: @document.name)
-  elsif page.has_css?("#other_name")
-    fill_in("other_name", with: @document.name)
-  end
+  # The form renders exactly one of the two (documents/_form). Waiting for either at once - the old
+  # if/elsif spent the full default wait on #document_name whenever the form had #other_name.
+  name_field_id = first("#document_name, #other_name")[:id]
+  fill_in(name_field_id, with: @document.name)
   fill_in("document_as_of", with: as_of_date)
   attach_file('files[]', File.absolute_path('./public/sample_uploads/investor_access.xlsx'), make_visible: true)
-  sleep(3)
+  wait_for_upload('./public/sample_uploads/investor_access.xlsx') # JS direct-upload to /upload; returns once it lands (was sleep 3)
   check('document_download') if @document.download
   check('document_printing') if @document.printing
   click_on("Save")

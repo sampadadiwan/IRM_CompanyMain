@@ -14,6 +14,7 @@ Feature: Investor KYC journey — rollout
     And the entity's investor KYC journeys are removed
 
   # H1 — the dry run reports the plan and writes nothing
+  @rack_test
   Scenario: The dry run reports the plan and changes nothing
     When I run the KYC journey rollout for the entity
     Then the rollout output should mention "DRY RUN"
@@ -22,6 +23,7 @@ Feature: Investor KYC journey — rollout
     And the entity should have no investor KYC journey
 
   # H1 — seeding through the rake task
+  @rack_test
   Scenario: Running the rollout seeds the journey, the rule and the permission
     When I run the KYC journey rollout for the entity with EXECUTE
     Then the entity should have the investor KYC journey with 11 tasks
@@ -29,6 +31,7 @@ Feature: Investor KYC journey — rollout
     And the entity should have workflow templates enabled
 
   # H1 — new fund and angel fund companies get it (SetupCompany)
+  @rack_test
   Scenario: New fund and angel fund companies are set up with the KYC journey
     When a new fund company is created
     Then the new company should have the investor KYC journey with 11 tasks
@@ -42,6 +45,7 @@ Feature: Investor KYC journey — rollout
     Then the KYC has no journey
 
   # E19 — re-running keeps an admin's changes and creates nothing twice
+  @rack_test
   Scenario: Re-running the rollout keeps an admin's edits and creates nothing twice
     Given I run the KYC journey rollout for the entity with EXECUTE
     And I am the approver on the Compliance sign-off
@@ -52,6 +56,7 @@ Feature: Investor KYC journey — rollout
     And the Compliance sign-off should still have me as approver
 
   # H8 (investor-kyc-email-review-steps) — the dry run names the tasks it would add to an existing template
+  @rack_test
   Scenario: The dry run reports the email tasks a company's existing journey is missing
     Given I run the KYC journey rollout for the entity with EXECUTE
     And the investor KYC journey template predates the email tasks
@@ -60,6 +65,7 @@ Feature: Investor KYC journey — rollout
     And the entity should have the investor KYC journey with 9 tasks
 
   # H7 — the backfill inserts both tasks before "Send KYC form" and leaves everything else alone
+  @rack_test
   Scenario: The rollout adds the email tasks to a journey that predates them
     Given I run the KYC journey rollout for the entity with EXECUTE
     And I am the approver on the Compliance sign-off
@@ -83,6 +89,7 @@ Feature: Investor KYC journey — rollout
     And the Compliance sign-off should still have me as approver
 
   # E9 — running it again adds nothing
+  @rack_test
   Scenario: Re-running the rollout does not add the email tasks twice
     Given I run the KYC journey rollout for the entity with EXECUTE
     And the investor KYC journey template predates the email tasks
@@ -92,6 +99,7 @@ Feature: Investor KYC journey — rollout
     And the entity should have the investor KYC journey with 11 tasks
 
   # E10 — a template whose admin removed "Send KYC form" emails nobody, so it gets neither task
+  @rack_test
   Scenario: A journey without the send task gets no email tasks
     Given I run the KYC journey rollout for the entity with EXECUTE
     And the investor KYC journey template predates the email tasks
@@ -102,6 +110,7 @@ Feature: Investor KYC journey — rollout
     And the entity should have the investor KYC journey with 8 tasks
 
   # E20 — an entity with its own KYC rule keeps it; the journey template is added without a rule
+  @rack_test
   Scenario: An entity that already routes KYCs gets the template but no rule
     Given the entity has its own human approval workflow for KYCs
     When I run the KYC journey rollout for the entity
@@ -160,6 +169,7 @@ Feature: Investor KYC journey — rollout
       | Non Individual — Default  | Investor KYC           |
 
   # E26 — Duplicate copies every task; setup does not touch the copy
+  @rack_test
   Scenario: Duplicating the KYC journey copies its tasks and setup leaves the copy alone
     Given the entity's investor KYC journeys are seeded
     When I open the "Investor KYC" workflow template and click Duplicate
@@ -176,6 +186,7 @@ Feature: Investor KYC journey — rollout
     Then the KYC form type list on a new rule for "Investor KYC" should be exactly "Any type — Default, Individual — Default, Individual — Fund IV, Non Individual — Default, Non Individual — Fund IV"
 
   # Review fix — conditions typed as JSON (View as JSON in the condition builder) save as typed
+  @rack_test
   Scenario: A KYC rule with JSON conditions including a form type saves them
     Given the entity's investor KYC journeys are seeded
     And the entity has the KYC form types "Individual — Fund IV"

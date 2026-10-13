@@ -1,3 +1,4 @@
+@rack_test
 Feature: Tracking Currency Job
   As a fund manager
   I want to calculate tracking currency amounts for my fund

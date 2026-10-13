@@ -1,0 +1,106 @@
+<%# Evergreen settlement record (audit): evergreen labels, link back to the dealing date, no unit buttons.
+    Worked example H36
+    Same layout as a closed-ended detail page: details card, then the payment rows %>
+<% redemption = params[:kind] == "redemption" %>
+<div class="container-fluid p-3" id="evergreen_settlement" data-controller="tooltip">
+  <%= render ToggleCard.new(title: "Settlement: #{l(@dealing_date.date)}", css_class: "show_settlement") do %>
+    <div class="row">
+      <!-- Left Column: Main Info -->
+      <div class="col-lg-8">
+        <div class="card shadow-sm border-0 mb-4">
+          <div class="card-header border-bottom py-3">
+            <h5 class="mb-0 fw-bold"><i class="ti ti-<%= redemption ? 'cash' : 'bell-ringing' %> me-2 text-info"></i><span id="settlement_title"><%= redemption ? @record.title : @record.name %></span></h5>
+          </div>
+          <div class="card-body">
+            <div class="row g-4">
+              <div class="col-md-6">
+                <label class="text-muted text-uppercase fw-bold fs-1 mb-1"><%= eg_t(:transaction_date) %></label>
+                <div class="fs-4 fw-medium"><%= link_to l(@dealing_date.date), evergreen_dealing_date_path(@fund, @dealing_date), id: "back_to_dealing_date" %></div>
+              </div>
+              <div class="col-md-6">
+                <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Type</label>
+                <div class="fs-4 fw-medium"><%= eg_t(redemption ? :redemption : :subscription) %></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column -->
+      <div class="col-lg-4">
+        <div class="card shadow-sm border-0 mb-4">
+          <div class="card-header border-bottom py-3 px-4">
+            <h6 class="mb-0 fw-bold d-flex align-items-center"><i class="ti ti-info-circle me-2 text-info"></i><%= eg_t(:Units) %></h6>
+          </div>
+          <div class="card-body">
+            <p class="text-muted small mb-0"><%= eg_t(:Units) %> are allotted and cancelled automatically on evergreen funds.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <%
+    # One pass over the rows (a dealing date's payments): what is due, what has come in / gone out, the rest.
+    # Redemptions: the net payable is due and counts as paid once the payment is marked completed
+    rows = @rows.to_a
+    due = ->(r) { redemption ? r.net_payable_cents.to_d : r.call_amount_cents.to_d }
+    done = ->(r) { redemption ? (r.completed ? r.net_payable_cents.to_d : 0.to_d) : r.collected_amount_cents.to_d }
+    total_due = rows.sum { |r| due.call(r) }
+    total_done = rows.sum { |r| done.call(r) }
+    done_word = redemption ? "Paid" : eg_t(:collected)
+  %>
+  <%# Totals — NumberStatsComponent cards as on the order book: info (due), success (in / out), danger (outstanding) %>
+  <div class="row mb-3" id="settlement_summary">
+    <%= render(NumberStatsComponent.new(path: nil, amount: evergreen_money(total_due, @fund), subtitle: redemption ? "Net payable" : "Due", progress_bar_color: "info")) %>
+    <%= render(NumberStatsComponent.new(path: nil, amount: evergreen_money(total_done, @fund), subtitle: done_word, progress_bar_color: "success")) %>
+    <%= render(NumberStatsComponent.new(path: nil, amount: evergreen_money(total_due - total_done, @fund), subtitle: "Outstanding", progress_bar_color: "danger")) %>
+  </div>
+
+  <%# The payment rows: one per folio, same card + table + empty-state row as the other evergreen lists %>
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-header border-bottom py-3">
+      <h6 class="mb-0 fw-bold d-flex align-items-center"><i class="ti ti-list-details me-2 text-info"></i><%= eg_t(redemption ? :distribution_payments : :remittances) %></h6>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-bordered hover mb-0" id="settlement_rows">
+          <thead>
+            <tr>
+              <th><%= eg_t(:capital_commitment) %></th><th>Investor</th>
+              <th class="text-end"><%= redemption ? "Net payable" : "Amount" %></th><th class="text-end"><%= done_word %></th>
+              <th>Status</th><th>Payment date</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if rows.empty? %>
+              <tr><td colspan="6" class="text-muted"><i class="ti ti-inbox me-1"></i>No <%= EvergreenLabels.lower(eg_t(redemption ? :distribution_payments : :remittances)) %> on this <%= eg_t(:transaction_date, lower: true) %>.</td></tr>
+            <% end %>
+            <% rows.each do |r| %>
+              <%# The amount opens the payment record itself (fund team only, like the folio and investor links) %>
+              <% record_path = redemption ? capital_distribution_payment_path(r) : capital_remittance_path(r) %>
+              <tr id="settlement_row_<%= r.id %>">
+                <td><%= r.capital_commitment ? eg_gp_link(r.capital_commitment.folio_id, evergreen_folio_path(@fund, r.capital_commitment)) : "—" %></td>
+                <td><%= eg_gp_link(r.investor.investor_name, investor_path(r.investor)) %></td>
+                <td class="text-end"><%= eg_gp_link(evergreen_money(due.call(r), @fund), record_path) %></td>
+                <td class="text-end"><%= evergreen_money(done.call(r), @fund) %></td>
+                <td>
+                  <% if redemption %>
+                    <%= r.completed ? eg_badge(:green, "check", "Paid", "Marked paid with its reference.") : eg_badge(:amber, "clock", "Awaiting payment", "Mark it paid on the #{eg_t(:transaction_date, lower: true)} once the money has gone out.") %>
+                  <% elsif done.call(r) >= due.call(r) %>
+                    <%= eg_badge(:green, "check", "Received", "Paid in full.") %>
+                  <% elsif done.call(r).positive? %>
+                    <%= eg_badge(:amber, "cash", "Part paid", "#{evergreen_money(due.call(r) - done.call(r), @fund)} still owed.") %>
+                  <% else %>
+                    <%= eg_badge(:amber, "cash-off", "Awaiting money", "Record the payment on the #{eg_t(:transaction_date, lower: true)} when it arrives.") %>
+                  <% end %>
+                </td>
+                <td><%= r.payment_date ? l(r.payment_date) : "—" %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

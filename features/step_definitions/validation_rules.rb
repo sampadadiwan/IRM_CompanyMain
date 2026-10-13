@@ -143,7 +143,8 @@ Given('there is a validation rule override for {string} with {string}') do |rule
   if attrs["param_overrides"]
     attrs["param_overrides"].split(",").each do |pair|
       k, v = pair.split(":")
-      param_overrides[k.strip] = v.strip
+      # "n_days:" — a field left blank on the override form
+      param_overrides[k.strip] = v.to_s.strip
     end
   end
 

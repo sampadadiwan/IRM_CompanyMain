@@ -1,3 +1,4 @@
+@rack_test
 Feature: Report Builder guided wizard — HTTP-level smoke tests
 
   The wizard is a friendlier, step-by-step front door onto the exact same

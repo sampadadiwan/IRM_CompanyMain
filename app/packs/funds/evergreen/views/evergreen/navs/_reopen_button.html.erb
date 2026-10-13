@@ -1,0 +1,14 @@
+<%# Reopen an approved NAV, with the Immediate Actions popup — shared by the NAV page and the Fees tab (X9).
+    The caller checks the reopen policy and that no dealing date was priced at the NAV. %>
+<% id ||= "reopen_nav" %>
+<% dealing_word = EvergreenLabels.lower(eg_t(:transaction_date)) %>
+<%
+  msg = evergreen_action_summary([
+    ["amber", "ti-lock-open", "Back to draft", "Recalculate, override or approve it again"],
+    ["red", "ti-calendar-off", "Not usable for #{dealing_word.pluralize}", "Until it is approved again"],
+    (["grey", "ti-diamond", "Crystallisation reversed", "Its performance-fee entries are deleted and the high-water mark restored"] if nav.crystallised)
+  ].compact)
+%>
+<%# _top: on the Fees tab the button sits inside the tab's frame, and Reopen lands on the NAV page %>
+<%= button_to reopen_evergreen_nav_path(nav.fund, nav), method: :patch, class: "btn btn-outline-primary", id:, form: { class: "d-inline", data: { turbo_frame: "_top" } },
+      data: { action: "click->confirm#popup", method: "patch", title: "Reopen this NAV", msg: } do %><i class="ti ti-lock-open"></i> Reopen<% end %>

@@ -3,6 +3,7 @@ Feature: KPI Workbook Reading
   I want to read KPI data from Excel workbooks
   So that I can analyze startup performance metrics accurately
 
+  @rack_test
   Scenario Outline: Extracting specific KPIs from various workbooks
     Given there is a user "" for an entity "entity_type=Investment Fund"
     Given there is an existing portfolio company "name=MyFavStartup;category=Portfolio Company"
@@ -74,6 +75,7 @@ Feature: KPI Workbook Reading
     When the KpiWorkbookReader processes the file
     Then no KPI should be imported for future dates
 
+  @rack_test
   Scenario: Future 'Budget' KPIs should be imported
     Given there is a user "" for an entity "entity_type=Investment Fund"
     Given there is an existing portfolio company "name=MyFavStartup;category=Portfolio Company"
@@ -82,6 +84,7 @@ Feature: KPI Workbook Reading
     When the KpiWorkbookReader processes the file
     Then KPIs should be imported for future dates
 
+  @rack_test
   Scenario: KPI import with denominations
     Given there is a user "" for an entity "entity_type=Investment Fund"
     And there is an existing portfolio company "name=MyFavStartup;category=Portfolio Company"
@@ -131,6 +134,7 @@ Feature: KPI Workbook Reading
   # After Fix 12, the parser preserves original Excel text — so "ACT" stays "ACT", not "Actual".
   # The "Actual" tag in the expected list comes from the report-level fallback tag (set in test setup).
   # Expected tags updated from "Actual, Budget, IC" to "ACT, Actual, BUDGET, IC" to match new behavior.
+  @rack_test
   Scenario: ACT/BUDGET/IC tag row creates separate KpiReports per tag
     Given there is a user "" for an entity "entity_type=Investment Fund"
     And there is an existing portfolio company "name=MyFavStartup;category=Portfolio Company"
@@ -140,6 +144,7 @@ Feature: KPI Workbook Reading
     Then KPI reports should exist with tags "ACT, Actual, BUDGET, IC"
     And each tag should have KPI reports for the same periods
 
+  @rack_test
   Scenario: Pre-configured parent-child mappings import values from indented Excel
     Given there is a user "" for an entity "entity_type=Investment Fund"
     And there is an existing portfolio company "name=MyFavStartup;category=Portfolio Company"
@@ -162,6 +167,7 @@ Feature: KPI Workbook Reading
     And the KPI for mapping "Net Sales - Enterprise" should have value 500.0
     And the KPI for mapping "Operating Cost - Enterprise" should have value 400.0
 
+  @rack_test
   Scenario: Pre-configured parent-child mappings import values from column-based Excel
     Given there is a user "" for an entity "entity_type=Investment Fund"
     And there is an existing portfolio company "name=MyFavStartup;category=Portfolio Company"
@@ -182,6 +188,7 @@ Feature: KPI Workbook Reading
     And KPI values should be imported for mapping "Operating Cost - Enterprise"
     And KPI values should be imported for mapping "Operating Cost - Mid-Market"
 
+  @rack_test
   Scenario: Apostrophe date format parsing
     Given there is a user "" for an entity "entity_type=Investment Fund"
     And there is an existing portfolio company "name=MyFavStartup;category=Portfolio Company"

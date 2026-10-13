@@ -68,8 +68,9 @@ Given('I fill InvestorKyc details with regulatory fields {string} with files {st
         click_on 'Choose file'
       end
     end
+    # Settle time for the PAN upload only - it used to run (4 s) even when nothing was uploaded
+    sleep(4)
   end
-  sleep(4)
 
   fill_in("#{class_name}_full_name", with: @investor_kyc.full_name)
   fill_in("#{class_name}_PAN", with: @investor_kyc.PAN)
@@ -197,7 +198,8 @@ Then('I should see the Instrument details on the details page and regulatory fie
     expect(page).not_to have_content("Type of Investee Company")
     expect(page).not_to have_content("Type of Security")
     expect(page).not_to have_content("Details of Security (if Type of Security chosen is Others)")
-    expect(page).not_to have_content("ISIN")
+    # No "ISIN" check here: the instrument's own market-data ISIN row (show.html.erb) is
+    # always rendered, so the label is on the page whether or not the SEBI field exists.
     expect(page).not_to have_content("SEBI Registration Number")
     expect(page).not_to have_content("Is Associate")
     expect(page).not_to have_content("Is Managed Or Sponsored by AIF")

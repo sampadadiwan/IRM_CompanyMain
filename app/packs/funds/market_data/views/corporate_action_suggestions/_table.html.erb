@@ -1,0 +1,36 @@
+<%# Corporate action suggestions table — shared by Portfolio › Corporate actions and the instrument page's tab.
+    Locals: suggestions (relation), empty_text. fund-market-data, card ② (H10, E46) %>
+<div class="table-responsive">
+  <table class="table table-bordered" id="corporate_action_suggestions">
+    <thead>
+      <tr>
+        <th class="text-col">Instrument</th>
+        <th class="text-col">Action</th>
+        <th class="date-col">Ex-date</th>
+        <th class="text-col">Reported</th>
+        <th class="action-col"></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% suggestions.each do |s| %>
+        <tr id="<%= dom_id s %>">
+          <td class="text-col"><%= s.investment_instrument.name %></td>
+          <td class="text-col"><%= s.kind.capitalize %><%= " #{s.ratio.to_d.round(4)}×" if s.ratio %></td>
+          <td class="date-col"><%= l s.ex_date %></td>
+          <td class="text-col"><%= s.subject %></td>
+          <td class="action-col">
+            <% if s.status == "pending" && policy(s).confirm? %>
+              <%= button_to "Confirm", confirm_corporate_action_suggestion_path(s), method: :patch, class: "btn btn-sm btn-outline-success", form_class: "d-inline" %>
+              <%= button_to "Dismiss", dismiss_corporate_action_suggestion_path(s), method: :patch, class: "btn btn-sm btn-outline-secondary", form_class: "d-inline" %>
+            <% else %>
+              <%= s.status.capitalize %>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <% if suggestions.none? %>
+    <p class="text-muted"><%= empty_text %></p>
+  <% end %>
+</div>

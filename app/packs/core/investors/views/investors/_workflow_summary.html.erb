@@ -1,0 +1,18 @@
+<%# The investor's workflow at the top of its page, in place of the old Workflow tab (like the capital
+    call journey above its details). Shows the running workflow when there is one and nothing
+    otherwise; launching and past runs are reached from the Misc menu (show.html.erb).
+    company_admin only (assign_workflow?), the same gating the tab had.
+    Locals: investor, active_instance (or nil), available_templates. %>
+<% if policy(investor).assign_workflow? %>
+  <%# Running workflow: template, current step, Reset / Archive, timeline link %>
+  <% if active_instance %>
+    <div id="investor_active_workflow" class="mb-3">
+      <%= render "workflow_templates/active_workflow_card", workflowable: investor, active_instance: %>
+    </div>
+  <% end %>
+
+  <%# The modal behind Misc > Launch Workflow — only when something can be launched and nothing is running %>
+  <% if available_templates.any? && active_instance.nil? %>
+    <%= render "workflow_templates/launch_workflow_modal", workflowable: investor, available_templates: %>
+  <% end %>
+<% end %>

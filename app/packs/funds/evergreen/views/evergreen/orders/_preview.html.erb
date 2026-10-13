@@ -1,0 +1,22 @@
+<%# Indicative figures before submitting (no save). Worked examples H7, H9 %>
+<%= turbo_frame_tag "order_preview" do %>
+  <div class="alert <%= preview.errors.any? ? 'alert-danger' : 'alert-light' %>" id="order_preview_box">
+    <% if preview.errors.any? %>
+      <%= preview.errors.first %>
+    <% else %>
+      <%# Nothing is saved by Check — say so before the figures, which are estimates (≈) until the dealing date is priced %>
+      <div class="fw-bold mb-1" id="order_preview_heading"><i class="ti ti-info-circle text-info me-1"></i>Estimate — nothing is saved until you submit</div>
+      <% preview.notes.each do |note| %><div class="order-note"><%= note %></div><% end %>
+      <div>Will be <%= eg_t(:dealt, fund: order.fund, lower: true) %> on <strong><%= l(preview.dealing_date) %></strong><%= " · pay by #{l(preview.cutoff_date)} (cut-off)" if order.subscription? && order.fund.evergreen_fund_setting.pre_funded? %></div>
+      <% if order.subscription? && preview.indicative_units %>
+        <div>Indicative <%= eg_t(:units, fund: order.fund) %> ≈ <strong id="indicative_units"><%= number_with_precision(preview.indicative_units, precision: 4, delimiter: ",") %></strong> at <%= evergreen_nav_per_unit(preview.nav.nav_per_unit_cents) %></div>
+        <div class="text-muted small">Indicative — final price is the NAV for <%= l(preview.nav.nav_date) %></div>
+      <% end %>
+      <% if order.redemption? %>
+        <% if preview.indicative_value_cents %><div>Indicative value ≈ <strong id="indicative_value"><%= evergreen_money(preview.indicative_value_cents, order.fund) %></strong></div><% end %>
+        <% unless order.early_fee_pct.to_d.positive? %><div><%= eg_t(:early_fee, fund: order.fund) %>: none</div><% end %>
+        <div>You would be <strong id="queue_if_submitted">#<%= preview.queue_position_if_submitted %></strong> in the queue</div>
+      <% end %>
+    <% end %>
+  </div>
+<% end %>

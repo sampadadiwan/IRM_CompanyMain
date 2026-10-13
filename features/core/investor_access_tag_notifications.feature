@@ -1,4 +1,4 @@
-@notification
+@notification @rack_test
 Feature: InvestorAccess tag_list — subscription-based notification filtering
   Investor contacts can be tagged with notification topics (e.g. "CapitalCall", "KYC").
   A contact with no tags receives all notifications.

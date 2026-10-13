@@ -34,7 +34,6 @@ end
 Given('I login as investor {string}') do |investor_name|
   @user = @carousel_investors[investor_name][:user]
   steps %(
-    And I am at the login page
-    When I fill and submit the login page
+    And I am signed in as the current user
   )
 end

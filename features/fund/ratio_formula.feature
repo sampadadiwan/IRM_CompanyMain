@@ -227,6 +227,7 @@ Scenario Outline: Compute KYC Fund Ratios with skip_portfolio_fmv ratio formulas
   And the same owner should not have multiple ratios with same label
   And the cashflow CSV documents should be created for the fund ratios
 
+  @rack_test
   Scenario: Access Ratio Formulas page
     Given Im logged in as user "Test"
     And I go to the fund show page for "Demo Fund 2"

@@ -121,6 +121,7 @@ Each entity has one **Settings** record. Company admins change the everyday opti
 | **Sandbox / Sandbox Emails / cc / Sandbox Numbers** | When on, redirects email and WhatsApp notifications to the sandbox addresses and numbers (for testing). |
 | **Document Colors** | Brand colours for generated documents. |
 | **Send weekly task digest** | The weekly tasks summary email. |
+| **Open-ended fund wording** | Investment Fund entities only: whether investors hold **Units** or **Shares**, and your own word for terms such as Folio, Dealing date, Contract note or Exit load, used on your open-ended funds' screens, emails and confirmations. A blank field keeps the default shown in it. See the [Evergreen Funds guide](evergreen_funds_user_guide). |
 | **AI client integration** | Settings for connecting AI clients, where offered. |
 
 Features, entity type, parent entity, financial-year offset, e-sign provider and WhatsApp credentials are not on this page; CapHive support changes them in the Admin panel.
@@ -314,6 +315,9 @@ In the background, every active user of the entity is made inactive (they can no
 
 **What happens when a deactivated entity is re-activated?**
 Only the entity is switched back on. Users stay inactive and investor accesses stay un-approved; each must be re-enabled or re-approved by hand.
+
+**What happens when I change the open-ended fund wording?**
+Every open-ended fund of the entity uses the new words from the next page or email — for your team and your investors — unless a fund has chosen its own unit word in its settings. Figures do not change, and documents already generated keep the words they were made with.
 
 **What happens when a feature is switched off?**
 Its menus and screens are hidden for the entity, but no records are deleted. Switching it back on brings the same data back.

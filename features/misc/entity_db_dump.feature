@@ -24,6 +24,7 @@ Feature: Entity Database Dump
     And the email body should contain "The daily database dump for Test Entity is ready for download"
 
 
+  @rack_test
   Scenario: Job cleans up old dumps
     Given a database dump document exists for "Test Entity" created 10 days ago
     And the entity retention period is set to 7 days

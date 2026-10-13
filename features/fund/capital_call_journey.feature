@@ -16,6 +16,7 @@ Feature: Capital call journey — checks, seeded journeys and launch
     And each investor has a "verified" kyc linked to the commitment
 
   # H2 — New call launches Full; system steps pass as their data appears
+  @rack_test
   Scenario: A new call gets the Full journey and moves through its first tasks
     Given the entity's capital call journeys are seeded
     When there is a capital call "percentage_called=10"
@@ -34,6 +35,7 @@ Feature: Capital call journey — checks, seeded journeys and launch
       | Generate notices         | current | 0 of 3 notices generated |
 
   # E20 — Unverified KYC blocks a notice; H2 continued
+  @rack_test
   Scenario: Generated, then approved notices move the journey on, and unverified KYC is called out
     Given the entity's capital call journeys are seeded
     And the fund has capital call template
@@ -55,6 +57,7 @@ Feature: Capital call journey — checks, seeded journeys and launch
     Then the call's journey current task should be "Review custom notification"
 
   # H5, E28 — approval and sending are picked up without hooks (page view / tick)
+  @rack_test
   Scenario: Approving and sending the call are picked up by the next evaluation
     Given the entity's capital call journeys are seeded
     And the fund has capital call template
@@ -72,6 +75,7 @@ Feature: Capital call journey — checks, seeded journeys and launch
       | Collect payments | current |
 
   # E29 — a confirmed review stays done after sending, and its history names who confirmed it
+  @rack_test
   Scenario: Confirmed reviews stay done after the notices are sent
     Given the entity's capital call journeys are seeded
     And the fund has capital call template
@@ -92,6 +96,7 @@ Feature: Capital call journey — checks, seeded journeys and launch
     And the "Review custom notification" history should have no "skipped" event
 
   # H6, H7, E4 — payments, verification, completion without unit prices
+  @rack_test
   Scenario: Paying and verifying the call completes the journey when there are no unit prices
     Given the entity's capital call journeys are seeded
     And the fund has capital call template
@@ -113,11 +118,13 @@ Feature: Capital call journey — checks, seeded journeys and launch
     And the call's journey should be complete
 
   # E3, E25 — imported calls get Light; on Full their notice tasks are n/a
+  @rack_test
   Scenario: An imported call gets the Light journey
     Given the entity's capital call journeys are seeded
     When an imported capital call "percentage_called=10" is created
     Then the call has the "Capital Call — Light: Record Only" journey
 
+  @rack_test
   Scenario: An imported call on the Full journey shows its notice tasks as not applicable
     Given the entity's capital call journeys are seeded
     And every capital call in the entity gets the Full journey
@@ -130,6 +137,7 @@ Feature: Capital call journey — checks, seeded journeys and launch
       | Send notices             | na     | Notices are not sent for imported calls |
 
   # E22 — Light journey completes
+  @rack_test
   Scenario: A Light journey shows only its four tasks
     Given the entity's capital call journeys are seeded
     When an imported capital call "percentage_called=10" is created
@@ -137,6 +145,7 @@ Feature: Capital call journey — checks, seeded journeys and launch
     Then the call's journey should have the tasks "Create remittances, Collect payments, Verify remittances, Allocate units"
 
   # E23 — Call set not to notify
+  @rack_test
   Scenario: A call set not to notify shows its notice and email tasks as not applicable
     Given the entity's capital call journeys are seeded
     When there is a capital call "percentage_called=10;send_call_notice_flag=false"
@@ -148,6 +157,7 @@ Feature: Capital call journey — checks, seeded journeys and launch
       | Send notices     | na     | This call is set to not notify investors |
 
   # E5 — Missing template
+  @rack_test
   Scenario: A fund without a call notice template stops at the template task
     Given the entity's capital call journeys are seeded
     When there is a capital call "percentage_called=10"
@@ -155,6 +165,7 @@ Feature: Capital call journey — checks, seeded journeys and launch
     Then the call's journey current task should be "Add call notice template"
 
   # E21 — Uploaded remittances
+  @rack_test
   Scenario: An upload-basis call passes Create remittances once its remittances exist and imports are done
     Given the entity's capital call journeys are seeded
     When there is a capital call "call_basis=Upload;percentage_called=0"
@@ -192,6 +203,7 @@ Feature: Capital call journey — checks, seeded journeys and launch
 
   # J2.2 — work that moves a call forward re-checks its journey at once, so open pages update
   # without waiting for the 15-minute tick
+  @rack_test
   Scenario Outline: Notice generation and approval update open call pages at once
     Given the entity's capital call journeys are seeded
     And the user has role "approver"
@@ -208,6 +220,7 @@ Feature: Capital call journey — checks, seeded journeys and launch
       | the call's notices are generated and approved in bulk       |
       | the call's notices are generated and approved by date range |
 
+  @rack_test
   Scenario: Recording payments after the notices are sent updates open call pages at once
     Given the entity's capital call journeys are seeded
     And the user has role "approver"
@@ -223,6 +236,7 @@ Feature: Capital call journey — checks, seeded journeys and launch
     And open pages for the call should have been told about the change
 
   # A re-check that finds nothing new tells nobody (no page reloads for nothing)
+  @rack_test
   Scenario: Re-running remittance generation re-checks the journey but changes nothing on open pages
     Given the entity's capital call journeys are seeded
     And there is a capital call "percentage_called=10"
@@ -233,6 +247,7 @@ Feature: Capital call journey — checks, seeded journeys and launch
     And open pages for the call should not have been told about any change
 
   # J2.2 — the hooks are no-ops on calls without a journey (every call created before the rollout)
+  @rack_test
   Scenario: Forward-moving actions on a call without a journey behave as before
     Given the entity's capital call journeys are removed
     And the user has role "approver"
@@ -246,6 +261,7 @@ Feature: Capital call journey — checks, seeded journeys and launch
     And open pages for the call should not have been told about any change
 
   # E17 — a journey never stops a call being deleted (the record's assignment and journey go with it)
+  @rack_test
   Scenario: A call with a journey can be deleted
     Given the entity's capital call journeys are seeded
     And there is a capital call "percentage_called=10"

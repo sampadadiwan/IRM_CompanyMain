@@ -1,3 +1,4 @@
+@rack_test
 Feature: Login
   Login should be allowed only if there are valid credentials
 

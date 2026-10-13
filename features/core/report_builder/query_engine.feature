@@ -1,3 +1,4 @@
+@rack_test
 Feature: ReportBuilderQueryEngine — two-pass query orchestration
 
   Background:

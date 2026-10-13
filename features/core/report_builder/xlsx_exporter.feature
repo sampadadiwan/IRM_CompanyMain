@@ -1,3 +1,4 @@
+@rack_test
 Feature: ReportBuilderXlsxExporter — Data/Totals sheet generation
 
   Scenarios build a report + hand-supplied rows/columns, run the exporter

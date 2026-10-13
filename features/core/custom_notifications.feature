@@ -3,6 +3,7 @@ Feature: CustomNotifications
   Test behavior of the Custom Notifications
 
 
+@rack_test
 Scenario Outline: Approval Notifications
   Given there is a user "<user>" for an entity "<entity>"
   Given the user has role "company_admin"
@@ -25,6 +26,7 @@ Scenario Outline: Approval Notifications
     |  	        |entity_type=Company  |title=Merger Approval;enable_approval_show_kycs=false;response_enabled_email=false    |Approval was successfully created| Approval from XYZ| Reminder 2 |
 
 
+@rack_test
 Scenario: Custom notification body placeholders are substituted safely, without ERB
   Given there is a user "" for an entity "entity_type=Company"
   Given the user has role "company_admin"
@@ -38,6 +40,7 @@ Scenario: Custom notification body placeholders are substituted safely, without 
   Then the investor gets the approval custom notification with placeholders substituted
 
 
+@rack_test
 Scenario Outline: KYC Notifications - not investor_user
   Given there is a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"
@@ -57,6 +60,7 @@ Scenario Outline: KYC Notifications - not investor_user
     |true         | PAN=ABCD9876;send_kyc_form_to_user=true| false          |  subject=KYC New 2;email_method=notify_kyc_required | subject=KYC Updated 2;email_method=notify_kyc_updated | subject=KYC Reminder 1;email_method=kyc_required_reminder |
 
 
+@rack_test
 Scenario Outline: KYC Notifications - investor_user
   Given there is a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"
@@ -72,6 +76,7 @@ Scenario Outline: KYC Notifications - investor_user
     |true         | PAN=ABCD9870;send_kyc_form_to_user=true | true         | subject=KYC New 1;email_method=notify_kyc_required | subject=KYC Updated 1;email_method=notify_kyc_updated | subject=KYC Reminder 1;email_method=kyc_required_reminder |
     |true         | PAN=ABCD9876;send_kyc_form_to_user=true| true          | subject=KYC New 2;email_method=notify_kyc_required | subject=KYC Updated 2;email_method=notify_kyc_updated | subject=KYC Reminder 1;email_method=kyc_required_reminder |
 
+@rack_test
 Scenario Outline: KYC notification placeholder substitution
   Given there is a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"
@@ -84,6 +89,7 @@ Scenario Outline: KYC notification placeholder substitution
     | subject |
     | KYC Placeholder Test |
 
+@rack_test
 Scenario Outline: Custom Notifications - update latest
   Given there is a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"
@@ -349,7 +355,7 @@ Scenario Outline: Creating a distribution-specific notification warns when the f
   	|  	        |entity_type=Investment Fund;enable_funds=true  |name=Test fund       |subject=Fund default distribution notice;email_method=send_notification  |
 
 
-@notification
+@notification @rack_test
 Scenario: Preview button on a custom notification shows the rendered email for the first available record
   Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
   Given the user has role "company_admin"
@@ -383,7 +389,7 @@ Scenario: Preview button is hidden for a Send Document notification, which has n
   Then I do not see a Preview button on the custom notification page
 
 
-@notification
+@notification @rack_test
 Scenario: Preview button resolves a KYC notification to the investor's own InvestorKyc record
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"
@@ -399,7 +405,7 @@ Scenario: Preview button resolves a KYC notification to the investor's own Inves
 # Regression: InvestorKycMailer had no custom_notification_documents_owner override, so the
 # preview (which builds no Noticed::Notification) resolved a nil owner and listed zero
 # attachments even though the real send would attach the attachment_names match.
-@notification
+@notification @rack_test
 Scenario: KYC notification preview lists the document that attachment_names would attach
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"
@@ -440,6 +446,7 @@ Scenario Outline: Capital distribution specific notification overrides the fund-
   	|  	        |entity_type=Investment Fund;enable_funds=true  |name=Test fund       |subject=Fund default distribution notice;email_method=send_notification  |Distribution specific notice  |
 
 
+@rack_test
 Scenario Outline: Incoming Email for a capital commitment
   Given Im logged in as a user "" for an entity "entity_type=Investment Fund" 
   Given there is an existing investor "" with "1" users

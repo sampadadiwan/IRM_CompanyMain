@@ -4,6 +4,7 @@ Feature: Report Builder filters — root and child scope filtering
     Given a report builder entity and user
     And that entity has an investor "Filter Test Investor"
 
+  @rack_test
   Scenario: Root filter excludes non-matching investors from the engine result
     Given another investor "Should Be Excluded" with no commitments
     And a report on "Investor" selecting column "investor_name"
@@ -12,6 +13,7 @@ Feature: Report Builder filters — root and child scope filtering
     Then the engine should return 1 row
     And the first row's "investor_name" should equal "Filter Test Investor"
 
+  @rack_test
   Scenario: Root filter with _cont (contains) matches partial names
     Given another investor "Alpha Fund" with no commitments
     And a report on "Investor" selecting column "investor_name"
@@ -20,6 +22,7 @@ Feature: Report Builder filters — root and child scope filtering
     Then the engine should return 1 row
     And the first row's "investor_name" should equal "Filter Test Investor"
 
+  @rack_test
   Scenario: Root filter matching no records returns an empty result
     Given a report on "Investor" selecting column "investor_name"
     And the report has root filter "investor_name_eq" = "Ghost Investor That Does Not Exist"
@@ -31,6 +34,7 @@ Feature: Report Builder filters — root and child scope filtering
     When I aggregate capital commitments with child filter "fund_close" = "Second Close" using "count"
     Then the investor with no commitments should not appear in the aggregation result
 
+  @rack_test
   Scenario: Child filter does not eliminate the root row — it just reduces the aggregate
     Given that investor has 2 capital commitments of 1000000 paise each
     And a report on "Investor" selecting column "investor_name"
@@ -39,6 +43,7 @@ Feature: Report Builder filters — root and child scope filtering
     When I run the report engine
     Then the engine should return 1 row
 
+  @rack_test
   Scenario: count respects root filters
     Given another investor "Extra Investor" with no commitments
     And a report on "Investor" selecting column "investor_name"

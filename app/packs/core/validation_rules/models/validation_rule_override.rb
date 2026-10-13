@@ -19,10 +19,16 @@ class ValidationRuleOverride < ApplicationRecord
 
   # ── Helpers ──────────────────────────────────────────────────────────────────
 
+  # The overrides that actually override: a param left blank on the override form means "use the
+  # rule's default", not "use blank" — a blank n_days would otherwise become a 0-day window
+  def effective_param_overrides
+    (param_overrides || {}).reject { |_, v| v.nil? || v.to_s.strip.empty? }
+  end
+
   # Merge this entity's param overrides on top of the rule's global defaults.
   # The result is what gets passed to the condition evaluator.
   def resolved_params
-    validation_rule.params.merge(param_overrides || {})
+    validation_rule.params.merge(effective_param_overrides)
   end
 
   # The message to display: entity override takes priority over the rule default

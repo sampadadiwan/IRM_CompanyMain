@@ -143,7 +143,8 @@ class ValidationRuleEvaluator
   # Merge the entity's param overrides on top of the rule's default params.
   # Result is what ConditionTreeEvaluator receives as its `params` argument.
   def resolve_params(rule, override)
-    rule.params.merge(override&.param_overrides || {})
+    # Blank override values fall back to the rule's default (ValidationRuleOverride#effective_param_overrides)
+    rule.params.merge(override&.effective_param_overrides || {})
   end
 
   # ── Message interpolation ─────────────────────────────────────────────────────

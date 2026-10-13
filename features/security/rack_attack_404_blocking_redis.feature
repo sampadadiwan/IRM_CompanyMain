@@ -16,7 +16,7 @@
 #
 # @allow-rescue: as in the sibling feature, missing routes must produce real
 # 404 RESPONSES rather than re-raised exceptions, so Log404s can count them.
-@rack_attack_redis @allow-rescue
+@rack_attack_redis @allow-rescue @rack_test
 Feature: 404-scanner blocking works against the real Redis store
 
   Background:

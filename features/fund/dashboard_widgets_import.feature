@@ -1,3 +1,4 @@
+@rack_test
 Feature: Dashboard Widgets Import
   Verify import and validation of Dashboard Widgets functionality
 

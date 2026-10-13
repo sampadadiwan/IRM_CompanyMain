@@ -6,6 +6,7 @@ Feature: Workflow Instance Lifecycle
 
   # ── Launch (Folder) ────────────────────────────────────────────────────────────
 
+  @rack_test
   Scenario Outline: Admin launches a workflow for a folder
     Given Im logged in as a user "<user>" for an entity "<entity>"
     And the user has role "company_admin"
@@ -20,6 +21,7 @@ Feature: Workflow Instance Lifecycle
       | user | entity              |
       |      | entity_type=Company |
 
+  @rack_test
   Scenario Outline: Cannot launch a second workflow while one is active
     Given Im logged in as a user "<user>" for an entity "<entity>"
     And the user has role "company_admin"
@@ -36,6 +38,7 @@ Feature: Workflow Instance Lifecycle
 
   # ── Launch on InvestorKyc ───────────────────────────────────────────────────
 
+  @rack_test
   Scenario Outline: Admin launches a workflow for an investor KYC
     Given Im logged in as a user "<user>" for an entity "<entity>"
     And the user has role "company_admin"
@@ -52,6 +55,7 @@ Feature: Workflow Instance Lifecycle
 
   # ── Launch on CapitalCommitment ─────────────────────────────────────────────
 
+  @rack_test
   Scenario Outline: Admin launches a workflow for a capital commitment
     Given Im logged in as a user "<user>" for an entity "<entity>"
     And the user has role "company_admin"
@@ -68,6 +72,7 @@ Feature: Workflow Instance Lifecycle
 
   # ── Launch on Approval ──────────────────────────────────────────────────────
 
+  @rack_test
   Scenario Outline: Admin launches a workflow for an approval
     Given Im logged in as a user "<user>" for an entity "<entity>"
     And the user has role "company_admin"
@@ -103,6 +108,7 @@ Feature: Workflow Instance Lifecycle
 
   # ── Final step completion ─────────────────────────────────────────────────────
 
+  @rack_test
   Scenario Outline: Final step approved completes the workflow
     Given Im logged in as a user "<user>" for an entity "<entity>"
     And the user has role "company_admin"
@@ -119,6 +125,7 @@ Feature: Workflow Instance Lifecycle
 
   # ── Rejection rules ───────────────────────────────────────────────────────────
 
+  @rack_test
   Scenario Outline: on_reject_rule stop halts the workflow
     Given Im logged in as a user "<user>" for an entity "<entity>"
     And the user has role "company_admin"
@@ -170,6 +177,7 @@ Feature: Workflow Instance Lifecycle
 
   # ── all quorum + tiebreaker ───────────────────────────────────────────────────
 
+  @rack_test
   Scenario Outline: all quorum with conflicting responses enters tiebreaker mode
     Given Im logged in as a user "<user>" for an entity "<entity>"
     And the user has role "company_admin"
@@ -188,6 +196,7 @@ Feature: Workflow Instance Lifecycle
 
   # ── Admin archive ─────────────────────────────────────────────────────────────
 
+  @rack_test
   Scenario Outline: Admin archives an active instance to allow template removal
     Given Im logged in as a user "<user>" for an entity "<entity>"
     And the user has role "company_admin"
@@ -204,6 +213,7 @@ Feature: Workflow Instance Lifecycle
 
   # ── Cannot remove template while instance active ───────────────────────────────
 
+  @rack_test
   Scenario Outline: Cannot remove template while workflow is in progress
     Given Im logged in as a user "<user>" for an entity "<entity>"
     And the user has role "company_admin"
@@ -223,6 +233,7 @@ Feature: Workflow Instance Lifecycle
   # When an active workflow instance exists the breadcrumb bar shows a kanban icon
   # linking to /workflow_instances/:id. When no instance is active, the icon is absent.
 
+  @rack_test
   Scenario Outline: Breadcrumb shows workflow link when active instance exists
     Given Im logged in as a user "<user>" for an entity "<entity>"
     And the user has role "company_admin"
@@ -250,6 +261,7 @@ Feature: Workflow Instance Lifecycle
 
   # ── Polymorphic: any workflowable type can have template blocked from removal ──
 
+  @rack_test
   Scenario Outline: Cannot remove template from investor_kyc while workflow is active
     Given Im logged in as a user "<user>" for an entity "<entity>"
     And the user has role "company_admin"
@@ -282,6 +294,7 @@ Feature: Workflow Instance Lifecycle
       | user | entity              |
       |      | entity_type=Company |
 
+  @rack_test
   Scenario Outline: A matching auto-assignment rule assigns the template to a new folder
     Given Im logged in as a user "<user>" for an entity "<entity>"
     And the user has role "company_admin"
@@ -308,6 +321,7 @@ Feature: Workflow Instance Lifecycle
       | user | entity              |
       |      | entity_type=Company |
 
+  @rack_test
   Scenario Outline: Auto-assignment rule with auto_launch launches a workflow instance immediately
     Given Im logged in as a user "<user>" for an entity "<entity>"
     And the user has role "company_admin"
@@ -349,6 +363,7 @@ Feature: Workflow Instance Lifecycle
   # would, so a Turbo Frame regression (nested link never breaking out of the index's
   # own turbo_frame_tag) actually gets caught instead of silently passing.
 
+  @rack_test
   Scenario Outline: Viewing an instance from the workflow instances index opens the full page
     Given Im logged in as a user "<user>" for an entity "<entity>"
     And the user has role "company_admin"

@@ -11,6 +11,7 @@ Feature: LP CRM
     And the LP CRM custom fields are seeded
     And there is an existing investor ""
 
+  @rack_test
   Scenario: Seeding the CRM custom fields is idempotent
     Then the entity should have the LP CRM custom fields configured
     When the LP CRM custom fields are seeded
@@ -56,6 +57,7 @@ Feature: LP CRM
     Then the contact Notes tab should show the deal note "Term sheet walkthrough"
     And the contact Tasks tab should show the deal task "Send the revised term sheet"
 
+  @rack_test
   Scenario: A contact of another stakeholder cannot be a deal touch point
     Given there is a contact "cfo@lp.com" named "Jane Cfo" for the investor
     And the investor is in an open deal
@@ -73,6 +75,7 @@ Feature: LP CRM
     Then the contact tabs should not show the note "General fund update"
     And the note "General fund update" should have no touch point
 
+  @rack_test
   Scenario: Set the engagement status on a stakeholder
     When I set the stakeholder engagement status to "Due Diligence"
     Then the investor engagement status should be "Due Diligence"
