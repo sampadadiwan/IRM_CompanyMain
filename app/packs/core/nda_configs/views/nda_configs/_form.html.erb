@@ -198,7 +198,7 @@
       <%# Specific date sub-field.
            When locked, min is set to current validity_date so GP can only extend forward. %>
       <% date_min = if validity_locked && nda_config.validity_date.present?
-                       nda_config.validity_date.to_s
+                       [nda_config.validity_date, Date.tomorrow].max.to_s
                      else
                        Date.tomorrow.to_s
                      end %>
