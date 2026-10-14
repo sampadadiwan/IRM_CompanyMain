@@ -19,6 +19,8 @@ class FundUnitsController < ApplicationController
     service = FundUnitList.call(current_user, params) { |relation| policy_scope(relation) }
     @q = service.q
     @fund_units = service.fund_units
+    # Totals for the stats cards above the list (nil where the list has none)
+    @stats_scope, @stats_fund = stats_scope_and_fund(@fund_units)
     paginate_fund_units if paginate?
 
     @fund_units
@@ -76,6 +78,23 @@ class FundUnitsController < ApplicationController
   end
 
   private
+
+  # The units the stats cards above the list total, and the fund (for its currency) - or nil where the
+  # list has no cards. `list` is the list's own filtered relation before pagination, so the cards cover
+  # exactly the rows the grid shows and follow its search. Cards are shown on the LP fund page (an
+  # investor-role user, fund_id of a fund their entity doesn't own) and the commitment page's Units tab
+  # (capital_commitment_id) - one LP's or one folio's units, so totalling them stays small.
+  def stats_scope_and_fund(list)
+    fund = if params[:capital_commitment_id].present?
+             CapitalCommitment.find_by(id: params[:capital_commitment_id])&.fund
+           elsif current_user.curr_role == "investor" && params[:fund_id].present?
+             Fund.find_by(id: params[:fund_id])&.then { |f| f if f.entity_id != current_user.entity_id }
+           end
+    return unless fund
+
+    # The investor scope joins access rights, so a row can repeat - dedup by id before summing
+    [FundUnit.where(id: list.select(:id)), fund]
+  end
 
   # The xlsx download and json keep returning every matching unit
   def paginate?

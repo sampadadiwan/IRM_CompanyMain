@@ -36,6 +36,16 @@ class FundUnit < ApplicationRecord
   scope :for_remittances, -> { where(owner_type: 'CapitalRemittance') }
   scope :for_distributions, -> { where(owner_type: 'CapitalDistribution') }
 
+  # Stats cards above the Fund Units list, over `scope` (one LP's or one folio's units). Each card is the
+  # total of a grid column as displayed: units held per unit type (Quantity - never added across unit
+  # types, which are different instruments) and Amount. Amount cells show whole paise/cents cut from
+  # fractional cents, so each row is truncated the same way before adding.
+  def self.grid_totals(scope)
+    rows = scope.pluck(:unit_type, :quantity, :amount_cents)
+    units_by_type = rows.group_by(&:first).transform_values { |r| r.sum { |_, quantity, _| quantity } }
+    { units_by_type: units_by_type.sort_by { |type, _| type.to_s }.to_h, amount: rows.sum { |_, _, amount| amount.truncate } }
+  end
+
   def to_s
     unit_type
   end

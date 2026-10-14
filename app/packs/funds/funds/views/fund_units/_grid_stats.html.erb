@@ -1,0 +1,26 @@
+<%# Stats cards above the Fund Units list - the LP fund page's Units section and the commitment page's
+    Units tab. scope: the rows the list covers (FundUnitsController#stats_scope_and_fund). Each card
+    totals a grid column: Quantity per unit type, and Amount (FundUnit.grid_totals). %>
+<%
+  totals = FundUnit.grid_totals(scope)
+  cards_data = totals[:units_by_type].map do |unit_type, quantity|
+    { stat: number_with_delimiter(quantity), subtitle: "#{unit_type.presence || 'Units'} held", progress_bar_color: "primary", text_info: "chart-pie",
+      tooltip: "Total of the Quantity column for #{unit_type.presence || 'these'} units. Units of different types are not added together" }
+  end
+  cards_data << { stat: money_to_currency(Money.new(totals[:amount], fund.currency), params), subtitle: "Amount", progress_bar_color: "success",
+                  text_info: "coins", tooltip: "Total of the Amount column: quantity x (price + premium)" }
+%>
+
+<div class="row mb-3" id="fund_unit_stats">
+  <% cards_data.each do |card_data| %>
+    <%= render(NumberStatsComponent.new(
+      path: nil,
+      amount: card_data[:stat],
+      subtitle: card_data[:subtitle],
+      progress_bar_color: card_data[:progress_bar_color],
+      text_info: card_data[:text_info],
+      tooltip: card_data[:tooltip],
+      fs_size: 4
+    )) %>
+  <% end %>
+</div>

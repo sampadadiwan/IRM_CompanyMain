@@ -29,6 +29,9 @@
     <% end %>
   </div>
 </div>
+<%# Stats cards under the heading, above the table: the LP fund page and the commitment page
+    (@stats_scope / @stats_fund from FundUnitsController#stats_scope_and_fund; nil elsewhere) %>
+<%= render "/fund_units/grid_stats", scope: @stats_scope, fund: @stats_fund if @stats_scope %>
 <% frame = with_frame("fund_units_frame") %>
 <% sort = ->(attribute, label) { sort_link(@q, attribute, label, { page: nil }, { data: { turbo_frame: frame } }) } %>
 <%# Column help: an info icon with what the column means %>
