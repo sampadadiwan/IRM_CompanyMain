@@ -11,10 +11,6 @@
 #     NdaMailer.method(params).deliver_later. params[:direct_to] is set, so @to is
 #     overridden to the external address. No Noticed::Notification exists.
 #
-# Changed: Module 8 — new mailer for NDA lifecycle notifications.
-# Why: All NDA modules deferred email delivery to Module 8. This mailer centralizes
-#   the 8 email types with consistent subject lines and template placeholders.
-#
 # @see NdaEventNotifier — Noticed notifier for LP event emails
 # @see NdaReminderNotifier — Noticed notifier for LP reminder emails
 # @see NdaNotificationRecipients — resolves who gets which email
@@ -22,18 +18,18 @@ class NdaMailer < ApplicationMailer
   helper ApplicationHelper
   helper EmailDateLocalization
 
-  # Changed: Override setup_defaults to support direct GP delivery.
+  # Changed: Sets entity, sender, and direct-to overrides for GP delivery.
   # Why: GP notification_emails are external addresses (not system Users). When
   #   params[:direct_to] is set, we bypass user lookup and set @to directly.
-  #   Sandbox setting is still honored via entity_setting.
+  #   @entity_name is derived here so all 8 email methods can use it in subjects
+  #   and template bodies without repeating the lookup.
   before_action :setup_nda_defaults
   def setup_nda_defaults
     @entity = Entity.find(params[:entity_id]) if params[:entity_id]
+    @entity_name = @entity&.name
     @from = from_email(@entity) if @entity
 
     if params[:direct_to].present?
-      # Changed: Direct GP delivery — set @to to external email, skip User lookup.
-      # Why: notification_emails are free-text external addresses, not system Users.
       @to = @entity&.entity_setting&.sandbox ? @entity.entity_setting.sandbox_emails : params[:direct_to]
       @cc = nil
     end
@@ -41,7 +37,7 @@ class NdaMailer < ApplicationMailer
 
   # @description GP notification: an LP investor accepted the NDA.
   # @param params [Hash] :entity_id, :investor_name, :folder_name, :nda_version,
-  #   :signed_by, :signed_at. Plus :direct_to for GP or :notification_id/:user_id for LP.
+  #   :signed_by, :signed_at. Plus :direct_to for GP.
   def nda_accepted
     @investor_name = params[:investor_name]
     @folder_name = params[:folder_name]
@@ -53,16 +49,18 @@ class NdaMailer < ApplicationMailer
     mail(from: @from, to: @to, cc: @cc, subject: subject)
   end
 
-  # @description LP notification: NDA accepted by a colleague — you now have folder access.
-  # @param params [Hash] :entity_id, :folder_name, :signed_by, :signed_at, :folder_link,
-  #   :notification_id, :user_id
+  # @description LP notification: NDA accepted — investor now has folder access.
+  # @param params [Hash] :entity_id, :investor_name, :folder_name, :signed_by,
+  #   :signed_at, :folder_link, :contact_email, :notification_id, :user_id
   def nda_acceptance_confirm
+    @investor_name = params[:investor_name]
     @folder_name = params[:folder_name]
     @signed_by = params[:signed_by]
     @signed_at = params[:signed_at]
     @folder_link = params[:folder_link]
+    @contact_email = params[:contact_email]
 
-    subject = "NDA Access Granted — #{@folder_name}"
+    subject = "Non-Disclosure Agreement Accepted | #{@entity_name}"
     mail(from: @from, to: @to, cc: @cc, subject: subject)
   end
 
@@ -81,66 +79,77 @@ class NdaMailer < ApplicationMailer
   end
 
   # @description LP notification: GP revoked the investor's NDA acceptance.
-  # @param params [Hash] :entity_id, :folder_name, :contact_email, :reason,
-  #   :notification_id, :user_id
+  # @param params [Hash] :entity_id, :investor_name, :folder_name, :contact_email,
+  #   :reason, :revoked_at, :folder_link, :notification_id, :user_id
   def nda_revoked
+    @investor_name = params[:investor_name]
     @folder_name = params[:folder_name]
     @contact_email = params[:contact_email]
     @reason = params[:reason]
+    @revoked_at = params[:revoked_at]
+    @folder_link = params[:folder_link]
 
-    subject = "NDA Access Revoked — #{@folder_name}"
+    subject = "Non-Disclosure Agreement Access Revoked | #{@entity_name}"
     mail(from: @from, to: @to, cc: @cc, subject: subject)
   end
 
   # @description LP notification: NDA has a new version, re-acceptance required.
-  # @param params [Hash] :entity_id, :folder_name, :old_version, :new_version,
-  #   :folder_link, :notification_id, :user_id
+  # @param params [Hash] :entity_id, :investor_name, :folder_name, :old_version,
+  #   :new_version, :folder_link, :contact_email, :updated_at, :notification_id, :user_id
   def nda_new_version
+    @investor_name = params[:investor_name]
     @folder_name = params[:folder_name]
     @old_version = params[:old_version]
     @new_version = params[:new_version]
     @folder_link = params[:folder_link]
+    @contact_email = params[:contact_email]
+    @updated_at = params[:updated_at]
 
-    subject = "NDA Updated — #{@folder_name}"
+    subject = "Action Required: Accept Updated Non-Disclosure Agreement | #{@entity_name}"
     mail(from: @from, to: @to, cc: @cc, subject: subject)
   end
 
-  # @description GP + LP notification: NDA acceptance expiring in 7 days.
+  # @description GP + LP notification: NDA acceptance expiring within 7 days.
   # @param params [Hash] :entity_id, :investor_name, :folder_name, :expiry_date,
-  #   :days_until_expiry, :folder_link. Plus :direct_to for GP or :notification_id/:user_id for LP.
+  #   :days_until_expiry, :folder_link, :contact_email. Plus :direct_to for GP or
+  #   :notification_id/:user_id for LP.
   def nda_expiry_approaching
     @investor_name = params[:investor_name]
     @folder_name = params[:folder_name]
     @expiry_date = params[:expiry_date]
     @days_until_expiry = params[:days_until_expiry]
     @folder_link = params[:folder_link]
+    @contact_email = params[:contact_email]
 
-    subject = "NDA Expiring Soon — #{@investor_name} on #{@folder_name}"
+    subject = "Non-Disclosure Agreement Expiring in 7 Days | #{@entity_name}"
     mail(from: @from, to: @to, cc: @cc, subject: subject)
   end
 
   # @description GP + LP notification: NDA acceptance has expired.
   # @param params [Hash] :entity_id, :investor_name, :folder_name, :expiry_date,
-  #   :folder_link. Plus :direct_to for GP or :notification_id/:user_id for LP.
+  #   :folder_link, :contact_email. Plus :direct_to for GP or :notification_id/:user_id for LP.
   def nda_expired
     @investor_name = params[:investor_name]
     @folder_name = params[:folder_name]
     @expiry_date = params[:expiry_date]
     @folder_link = params[:folder_link]
+    @contact_email = params[:contact_email]
 
-    subject = "NDA Expired — #{@investor_name} on #{@folder_name}"
+    subject = "Non-Disclosure Agreement Expired | #{@entity_name}"
     mail(from: @from, to: @to, cc: @cc, subject: subject)
   end
 
   # @description LP notification: reminder to accept a pending NDA.
-  # @param params [Hash] :entity_id, :folder_name, :folder_link, :contact_email,
-  #   :notification_id, :user_id
+  # @param params [Hash] :entity_id, :investor_name, :folder_name, :folder_link,
+  #   :contact_email, :invitation_date, :notification_id, :user_id
   def nda_reminder
+    @investor_name = params[:investor_name]
     @folder_name = params[:folder_name]
     @folder_link = params[:folder_link]
     @contact_email = params[:contact_email]
+    @invitation_date = params[:invitation_date]
 
-    subject = "NDA Reminder — #{@folder_name}"
+    subject = "Reminder: Non-Disclosure Agreement Pending Acceptance | #{@entity_name}"
     mail(from: @from, to: @to, cc: @cc, subject: subject)
   end
 end

@@ -1,23 +1,29 @@
 <%# LP notification: GP revoked the investor's NDA acceptance. %>
 <%# Sent to all InvestorAccess users of the revoked investor. %>
 
-<p>Your NDA access to a Data Room folder has been revoked.</p>
+<p>Dear <%= @investor_name %>,</p>
+
+<p>This is to notify you that your previously accepted Non-Disclosure Agreement with <%= @entity_name %> has been revoked.</p>
 
 <table style="border-collapse:collapse;width:100%">
+  <% if @revoked_at.present? %>
+  <tr>
+    <td style="padding:6px 12px;font-weight:bold">Revoked On</td>
+    <td style="padding:6px 12px"><%= l(@revoked_at) %></td>
+  </tr>
+  <% end %>
   <tr>
     <td style="padding:6px 12px;font-weight:bold">Folder</td>
     <td style="padding:6px 12px"><%= @folder_name %></td>
   </tr>
-  <% if @reason.present? %>
-  <tr>
-    <td style="padding:6px 12px;font-weight:bold">Reason</td>
-    <td style="padding:6px 12px"><%= @reason %></td>
-  </tr>
-  <% end %>
 </table>
 
-<p style="margin-top:16px">You will need to re-accept the NDA to regain access to this folder.</p>
+<p style="margin-top:16px">You are required to re-accept the Non-Disclosure Agreement to access the documents within this folder.</p>
 
 <% if @contact_email.present? %>
-  <p>If you have questions, please contact <a href="mailto:<%= @contact_email %>" style="color:#1a73e8;text-decoration:none"><%= @contact_email %></a>.</p>
+  <p>For any queries or clarifications, please contact <a href="mailto:<%= @contact_email %>" style="color:#1a73e8;text-decoration:none"><%= @contact_email %></a>.</p>
+<% end %>
+
+<% if @folder_link.present? %>
+  <p class="btn btn-outline-warning"><%= link_to "Re-Accept Non Disclosure Agreement", @folder_link %></p>
 <% end %>

@@ -1,23 +1,29 @@
 <%# LP notification: reminder to accept a pending NDA on a folder. %>
 <%# Sent to NDA signatories of pending investors via NdaReminderNotifier. %>
 
-<p>You have a pending NDA that requires your attention.</p>
+<p>Dear <%= @investor_name %>,</p>
+
+<p>This is a reminder that your acceptance of the Non-Disclosure Agreement with <%= @entity_name %> is still pending.</p>
 
 <table style="border-collapse:collapse;width:100%">
   <tr>
     <td style="padding:6px 12px;font-weight:bold">Folder</td>
     <td style="padding:6px 12px"><%= @folder_name %></td>
   </tr>
+  <% if @invitation_date.present? %>
+  <tr>
+    <td style="padding:6px 12px;font-weight:bold">Invitation Date</td>
+    <td style="padding:6px 12px"><%= l(@invitation_date) %></td>
+  </tr>
+  <% end %>
 </table>
 
-<p style="margin-top:16px">Please review and accept the NDA to access the Data Room folder.</p>
-
-<% if @folder_link.present? %>
-  <p>
-    <a href="<%= @folder_link %>" style="color:#1a73e8;text-decoration:none">Review NDA →</a>
-  </p>
-<% end %>
+<p style="margin-top:16px">Please review and accept the agreement to access the documents within the folder.</p>
 
 <% if @contact_email.present? %>
-  <p>If you have questions, please contact <a href="mailto:<%= @contact_email %>" style="color:#1a73e8;text-decoration:none"><%= @contact_email %></a>.</p>
+  <p>For any queries or clarifications, please contact <a href="mailto:<%= @contact_email %>" style="color:#1a73e8;text-decoration:none"><%= @contact_email %></a>.</p>
+<% end %>
+
+<% if @folder_link.present? %>
+  <p class="btn btn-outline-warning"><%= link_to "Review & Accept NDA", @folder_link %></p>
 <% end %>

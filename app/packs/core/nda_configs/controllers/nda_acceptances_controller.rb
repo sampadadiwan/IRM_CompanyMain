@@ -215,15 +215,20 @@ class NdaAcceptancesController < ApplicationController
     confirm_recipients = NdaNotificationRecipients.resolve(
       :acceptance_confirm, acceptance.nda_config, acceptance.investor
     )
+    # Changed: Added investor_name and contact_email to LP acceptance confirmation params.
+    # Why: Updated email template includes greeting "Dear [Investor Name]," and a
+    #   contact email line at the bottom for LP queries.
     confirm_recipients[:lp_users].each do |user|
       NdaEventNotifier.with(
         entity_id: acceptance.entity_id,
         email_method: :nda_acceptance_confirm,
         record: acceptance,
+        investor_name: acceptance.investor.name,
         folder_name: folder_name,
         signed_by: acceptance.user.full_name,
         signed_at: acceptance.accepted_at,
-        folder_link: folder_link_for(acceptance.nda_config)
+        folder_link: folder_link_for(acceptance.nda_config),
+        contact_email: acceptance.nda_config.contact_email
       ).deliver_later(user)
     end
   rescue StandardError => e

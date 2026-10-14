@@ -29,6 +29,24 @@ class NdaNotificationRecipients
     new(nda_config).resolve(event_type, investor, options)
   end
 
+  # @description Returns stale-acceptance LP users grouped by investor. Each investor's
+  #   users are resolved via InvestorAccess for the entity. Used by notify_version_change
+  #   to include investor_name in per-user notifications.
+  # @param nda_config [NdaConfig] the NDA configuration
+  # @return [Hash{Investor => Array<User>}] investors with stale acceptances mapped to their users
+  def self.stale_acceptance_users_by_investor(nda_config)
+    new(nda_config).stale_acceptance_users_by_investor
+  end
+
+  # @description Returns pending-signatory LP users grouped by investor. Each investor's
+  #   signatory users are resolved via NdaSignatory + InvestorAccess intersection. Used by
+  #   NdaReminderJob to include investor_name in per-user notifications.
+  # @param nda_config [NdaConfig] the NDA configuration
+  # @return [Hash{Investor => Array<User>}] pending investors mapped to their signatory users
+  def self.pending_signatory_users_by_investor(nda_config)
+    new(nda_config).pending_signatory_users_by_investor
+  end
+
   # @param nda_config [NdaConfig] the NDA configuration
   def initialize(nda_config)
     @nda_config = nda_config
@@ -57,6 +75,86 @@ class NdaNotificationRecipients
     else
       { gp_emails: [], lp_users: [] }
     end
+  end
+
+  # @description Groups stale-acceptance LP users by their investor. Returns a hash where
+  #   each key is an Investor record and each value is an array of User records belonging
+  #   to that investor. Excludes exempt investors.
+  # @return [Hash{Investor => Array<User>}] investors mapped to their LP users
+  def stale_acceptance_users_by_investor
+    folder_investor_ids = folder_scoped_investor_ids
+    return {} if folder_investor_ids.empty?
+
+    stale_investor_ids = NdaAcceptance
+                         .where(nda_config_id: @nda_config.id, investor_id: folder_investor_ids, status: "accepted")
+                         .where.not(nda_version: @nda_config.version)
+                         .distinct
+                         .pluck(:investor_id)
+
+    return {} if stale_investor_ids.empty?
+
+    exempt_ids = InvestorAccess
+                 .where(entity_id: @nda_config.entity_id, investor_id: stale_investor_ids, exempt_from_nda: true)
+                 .distinct
+                 .pluck(:investor_id)
+
+    notifiable_ids = stale_investor_ids - exempt_ids
+    return {} if notifiable_ids.empty?
+
+    investors = Investor.where(id: notifiable_ids).index_by(&:id)
+    accesses = InvestorAccess
+               .where(entity_id: @nda_config.entity_id, investor_id: notifiable_ids, approved: true)
+               .includes(:user)
+
+    result = {}
+    accesses.each do |access|
+      next unless access.user && investors[access.investor_id]
+
+      investor = investors[access.investor_id]
+      result[investor] ||= []
+      result[investor] << access.user
+    end
+    result
+  end
+
+  # @description Groups pending-signatory LP users by their investor. Returns a hash where
+  #   each key is an Investor record and each value is an array of signatory User records.
+  #   Only includes investors who have not accepted the current NDA version.
+  # @return [Hash{Investor => Array<User>}] pending investors mapped to their signatory users
+  def pending_signatory_users_by_investor
+    folder_investor_ids = folder_scoped_investor_ids
+    return {} if folder_investor_ids.empty?
+
+    non_exempt_ids = folder_investor_ids - exempt_investor_ids_from(folder_investor_ids)
+    return {} if non_exempt_ids.empty?
+
+    accepted_investor_ids = NdaAcceptance
+                            .where(nda_config_id: @nda_config.id, investor_id: non_exempt_ids, status: "accepted")
+                            .where(nda_version: @nda_config.version)
+                            .distinct
+                            .pluck(:investor_id)
+
+    pending_investor_ids = non_exempt_ids - accepted_investor_ids
+    return {} if pending_investor_ids.empty?
+
+    signatory_user_ids = NdaSignatory.where(nda_config_id: @nda_config.id).pluck(:user_id)
+    return {} if signatory_user_ids.empty?
+
+    investors = Investor.where(id: pending_investor_ids).index_by(&:id)
+    accesses = InvestorAccess
+               .where(entity_id: @nda_config.entity_id, investor_id: pending_investor_ids, approved: true)
+               .where(user_id: signatory_user_ids)
+               .includes(:user)
+
+    result = {}
+    accesses.each do |access|
+      next unless access.user && investors[access.investor_id]
+
+      investor = investors[access.investor_id]
+      result[investor] ||= []
+      result[investor] << access.user
+    end
+    result
   end
 
   private
