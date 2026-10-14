@@ -1,2 +1,6 @@
-<%# LPs are redirected to the company's LP page before this renders (H16); this is the fund team's holding page %>
-<%= render "/aggregate_portfolio_investments/show", aggregate_portfolio_investment: @aggregate_portfolio_investment %>
+
+<% if params[:preview].present? || @aggregate_portfolio_investment.show_portfolio && current_user.curr_role.casecmp?("investor") %>
+    <%= render "/aggregate_portfolio_investments/preview", aggregate_portfolio_investment: @aggregate_portfolio_investment %>
+<% elsif !current_user.curr_role.casecmp?("investor") %>
+    <%= render "/aggregate_portfolio_investments/show", aggregate_portfolio_investment: @aggregate_portfolio_investment %>
+<% end %>

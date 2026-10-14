@@ -24,8 +24,7 @@ This guide covers how a fund's **direct investments in portfolio companies** are
 14. [Modelling: Proforma Investments and Scenarios](#modelling-proforma-investments-and-scenarios)
 15. [Working Across Currencies](#working-across-currencies)
 16. [Importing Data](#importing-data)
-17. [What LPs See of the Portfolio](#what-lps-see-of-the-portfolio)
-18. [Frequently Asked Questions](#frequently-asked-questions)
+17. [Frequently Asked Questions](#frequently-asked-questions)
 
 ---
 
@@ -313,35 +312,6 @@ You can bulk-load from spreadsheets.
 
 ---
 
-## What LPs See of the Portfolio
-
-Each fund decides what its investors (LPs) see of the portfolio with one setting, **LP portfolio view**, under [**Funds → Funds**](/funds) → open the fund → **Edit** → **Features**.
-
-| Option | What an LP sees |
-|---|---|
-| **Hidden from LPs** | No portfolio section. The default for new funds. |
-| **Whole fund portfolio** | Every holding, with the fund's figures. |
-| **Allocated to their folio** | Only the holdings where the LP's folio has a non-zero amount under the fund's **allocation formula**, dated on or before today. |
-| **Allocated, with their own share** | The same holdings, plus **Your Cost** (the allocation formula's entries) and **Your FMV** (a second formula you pick). |
-
-```mermaid
-flowchart LR
-    A["Fund › Edit › LP portfolio view"] --> B{"Allocated?"}
-    B -- "no" --> C["Whole fund or Hidden"]
-    B -- "yes" --> D["Pick the allocation formula"]
-    D --> E["LP sees holdings with a<br/>non-zero folio entry"]
-    E --> F["Company shown to LPs?"]
-    F -- "yes" --> G["LP opens the company page<br/>(LP layout of the dashboard)"]
-```
-
-- **Which formulas can be picked:** only this fund's holding-level allocation formulas (allocate portfolio investment, master-fund portfolio investment, or aggregate portfolios). Proforma and company-level formulas are refused.
-- **Figures come from the ledger:** Your Cost and Your FMV are the LP's own folio entries (the latest on or before today, purchases added up), never recalculated on screen, so they match the statement of account when it uses the same formulas.
-- **Under an Allocated view** the LP's totals cover only their holdings, and fund-wide charts (FMV %, IRR and similar) are hidden from LPs.
-- **Company pages:** a portfolio company's page opens for LPs only when the company is switched on with **LPs → Show to LPs** on its Stakeholder page (the **LPs** button shows *Visible to LPs* or *Not shared with LPs*). LPs then see a holdings card and the widgets of the company's **LP layout** (see [Dashboard Widgets](dashboard_widgets_user_guide)). **LPs → Preview as LP…** shows the page exactly as a chosen LP would.
-- **Modules:** the LP portfolio view, Portfolio valuations and all LP sharing need your firm's **Fund Portfolios** module; KPI widgets on LP pages also need the **KPIs** module.
-
----
-
 ## Frequently Asked Questions
 
 ### Navigation and getting there
@@ -405,7 +375,7 @@ You need the **Funds** feature on your user and **update** rights on the specifi
 Every buy, sell, valuation, conversion and income entry feeds one ledger, so cost of remaining, FMV, realised and unrealised gain, Portfolio IRR and MOIC are always consistent, historic snapshots are preserved, and the same data drives fund ratios, LP dashboards, the portfolio report generator and regulatory reports (SEBI / CRISIL) without re-keying.
 
 **What can I do once the portfolio is set up?**
-See the position and gain per company and instrument at any past date, allocate realised gains fairly across investors (respecting excused investors), run exit scenarios, show LPs a read-only portfolio view (fund setting **LP portfolio view**, optionally narrowed to each LP's folio with their own cost and FMV), build portfolio reports and dashboards, and generate reports and ratios that depend on portfolio data.
+See the position and gain per company and instrument at any past date, allocate realised gains fairly across investors (respecting excused investors), run exit scenarios, show LPs a read-only portfolio view (fund setting **Show fund portfolios to LPs**), build portfolio reports and dashboards, and generate reports and ratios that depend on portfolio data.
 
 **What happens if I do not keep the portfolio up to date?**
 Missing valuations leave FMV at zero or stale, gains and IRR will be wrong, and any downstream fund ratios, LP-facing dashboards and portfolio reports will show incorrect numbers. Missing exchange rates block cross-currency transactions altogether.
@@ -455,7 +425,7 @@ The save fails with "Exchange rate X->Y not found" and nothing is recorded. Add 
 FMV stays at the purchase price forever, so unrealised gain reads zero, Portfolio IRR and MOIC are understated or overstated, and LP dashboards and portfolio reports show stale values. Add a valuation each reporting period.
 
 **Who can see the portfolio data?**
-Employees with the **Funds** feature and access rights on the fund see everything. Investors (LPs) see the read-only aggregate view only when the fund's **LP portfolio view** is not *Hidden from LPs*; under an *Allocated* view they see only the holdings allocated to their folio. Investors in a feeder fund see the master fund's holdings. Nothing is emailed to investors when the portfolio changes.
+Employees with the **Funds** feature and access rights on the fund see everything. Investors (LPs) see the read-only aggregate view only when the fund has **Show fund portfolios to LPs** ticked; investors in a feeder fund see the master fund's holdings. Nothing is emailed to investors when the portfolio changes.
 
 ### Calculations and edge cases
 
@@ -487,7 +457,7 @@ Yes. Each fund-company-instrument combination has its own aggregate view, and tr
 A modelling-only record that doesn't affect live figures, used to test proposed deals or hypothetical exits. Tick **Proforma** on the investment form.
 
 **Why can't I see the Portfolio tab at all?**
-The **Fund Portfolios** feature is switched off for your firm, or you are logged in as an investor and the fund's **LP portfolio view** is *Hidden from LPs* (fund edit form). Ask your company admin or CapHive support.
+The **Fund Portfolios** feature is switched off for your firm, or you are logged in as an investor and the fund does not have **Show fund portfolios to LPs** ticked (fund edit form). Ask your company admin or CapHive support.
 
 **Why is the New Investment button missing?**
 You do not have update rights on this fund. View-only fund access shows the data but hides the create, upload, scenarios and conversions buttons.
@@ -513,29 +483,6 @@ The tab is a lazy-loaded frame that opens the fund's Portfolio Dashboard. Wait a
 **Can I see who changed a transaction?**
 Yes. Buys, sells, conversions and valuations are audit-tracked. Use Company menu (house icon, top right) → [**Audit Trail**](/audits?filter=true) and filter by the record type and date.
 
-### LP portfolio view and company pages
-
-**Why would I show LPs only the holdings allocated to their folio?**
-So an LP excused from a deal, or who never took part in it, doesn't see it as theirs. Choose *Allocated to their folio* (or *with their own share*) under Fund → Edit → Features → LP portfolio view and pick the allocation formula.
-
-**What happens when I switch a fund to an Allocated view?**
-Each LP's portfolio list, totals and company pages narrow to holdings with a non-zero entry for their folio under the allocation formula. Nothing is recalculated or emailed. If that formula has no folio entries yet, the fund saves with a warning that LPs will see an empty portfolio.
-
-**Why does an LP's portfolio say "No investments have been allocated to your folio yet."?**
-No allocation run has written entries for their folio under the fund's allocation formula, or the formula was deleted. Run allocations with that formula, or pick a new one under Fund → Edit → Features.
-
-**Why does Your FMV show "—" for one holding?**
-The LP's folio has no entry for that holding under the Your FMV formula yet. It is left out of the FMV total, with a note counting such holdings, and fills in after the next allocation run.
-
-**How do LPs open a portfolio company's page?**
-Open the company's Stakeholder page and choose **LPs → Show to LPs**. Its name then becomes a link in the LP's portfolio list. The page shows the LP's holdings card and the widgets of the company's LP layout. Use **LPs → Preview as LP…** to check it first.
-
-**What happened to the Show Portfolio button on holdings?**
-It is retired. Sharing is now per company (Show to LPs) and laid out in the LP layouts of the Portfolio Company Dashboard. Companies whose holdings had Show Portfolio on were switched on automatically, and old holding links take LPs to the company page.
-
-**Why don't I see the LP portfolio view or the LPs button?**
-Both need your firm's **Fund Portfolios** module. Without it, the fund's Features step hides the LP portfolio view and Portfolio valuations, and company pages have no LPs button. Whatever was set before is kept: LPs keep seeing what they saw, and the settings come back unchanged if the module is switched on again. Ask CapHive support to enable the module.
-
 ## Related Guides
 
 - [Valuations](valuations_user_guide) — how per-share valuations are recorded and how they drive FMV.
@@ -543,6 +490,5 @@ Both need your firm's **Fund Portfolios** module. Without it, the fund's Feature
 - [Portfolio Report Drafts](portfolio_report_drafts_user_guide) — building portfolio reports from the holdings recorded here.
 - [Capital Distributions](capital_distributions_user_guide) — distributing exit proceeds from a sale to investors.
 - [Investors (Stakeholders)](investors_user_guide) — portfolio companies are Stakeholders with the Portfolio Company category.
-- [Dashboard Widgets](dashboard_widgets_user_guide) — LP layouts: what LPs see on a shared company's page.
 - [Tracking Currency](tracking_currency_guide) — how tracking-currency amounts are maintained for cross-fund dashboards.
 - [Custom Fields](custom_fields_user_guide) — adding your own fields to the investment and instrument forms.

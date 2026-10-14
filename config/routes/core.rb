@@ -338,8 +338,6 @@ resources :investors do
   get 'multi_portfolio_stat_currency', on: :collection
   # NDA Module 3 — investor-level exemption toggle (bulk-updates InvestorAccess records)
   patch 'toggle_nda_exemption', on: :member
-  # LP folio portfolio — company-level Show / Hide from LPs
-  patch 'lp_sharing', on: :member
 end
 
 resources :investor_notice_entries
@@ -404,9 +402,6 @@ resources :viewed_bies do
 end
 
 resources :dashboard_widgets do
-  # LP folio portfolio — LP layouts of the Portfolio Company Dashboard
-  post 'setup_lp_layout', on: :collection
-  post 'new_lp_layout', on: :collection
   get 'dashboard', on: :collection
   get 'metadata_help', on: :collection
 end

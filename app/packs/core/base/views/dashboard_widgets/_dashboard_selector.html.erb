@@ -6,16 +6,10 @@
     <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="dashboardSelectorDropdown">
       <% dashboard_names.each do |n| %>
         <li>
-          <%# E76 — LP layouts say who sees them %>
-          <% lp_tags = DashboardWidget.lp_layout_name?(n) ? DashboardWidget.lp_layout_tags(n) : nil %>
-          <%= link_to request.params.merge(name: n),
+          <%= link_to n,
+                      request.params.merge(name: n),
                       class: "dropdown-item #{'active' if n == current_name}",
-                      data: { turbo: false, bs_toggle: ("tooltip" if lp_tags), bs_title: ("Layouts whose name includes LP are shown to LPs. Other layouts are internal." if lp_tags) } do %>
-            <%= n %>
-            <% if lp_tags %>
-              <small class="text-muted">(LPs, <%= lp_tags.any? ? "tag #{lp_tags.map(&:titleize).join(', ')}" : "all" %>)</small>
-            <% end %>
-          <% end %>
+                      data: { turbo: false } %>
         </li>
       <% end %>
     </ul>

@@ -60,12 +60,6 @@ class AggregatePortfolioInvestment < ApplicationRecord
   STANDARD_COLUMNS_WITH_FUND = { "Fund Name; text-col" => "fund_name; text-col" }.merge(STANDARD_COLUMNS).freeze
   INVESTOR_TAB_STANDARD_COLUMNS = STANDARD_COLUMNS_WITH_FUND.except("Portfolio Company; text-col").freeze
 
-  # An LP's own share for this holding, set per request by LpOwnShareSummary for the holdings grid (not stored)
-  # openspec/changes/lp-folio-portfolio-dashboard — H3
-  attr_accessor :lp_your_cost, :lp_your_fmv, :lp_your_multiple
-  # The company cell in an LP's list: a link to its LP page when openable, else plain text (E44)
-  attr_accessor :lp_company_cell
-
   # Callbacks
   before_create :update_name
   before_save :compute_avg_cost, if: -> { bought_quantity.positive? }

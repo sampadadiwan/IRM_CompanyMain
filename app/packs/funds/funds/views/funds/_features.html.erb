@@ -1,80 +1,79 @@
 <%#
-  Fund › Edit › Features step — every fund switch in one place (FundEnabled), as iOS toggles in toggle rows (the
-  users form's pattern), grouped with an icon, a tooltip and plain help text per switch. Field names and ids are
-  unchanged (fund[features][] / fund_features_<flag>). Market-data rows appear only for entity features that are
-  on; Manual is always accepted.
-  openspec/changes/fund-market-data — design card ① (H3, E2, E8); lp-folio-portfolio-dashboard (H4, H5, E8, E79).
+  Fund › Edit › Features — every fund switch in one place (FundEnabled), like the entity's features.
+  Market-data rows appear only for entity features that are on; Manual is always accepted.
+  openspec/changes/fund-market-data — design card ① (H3, E2, E8).
 %>
 <% entity = fund.entity %>
 <% current = fund.features.to_a %>
-<% section = lambda do |icon, title, help| %>
-  <div class="d-flex align-items-start gap-2 mt-4 mb-2">
-    <i class="ti ti-<%= icon %> fs-5 text-primary"></i>
-    <div>
-      <h6 class="mb-0"><%= title %></h6>
-      <small class="text-muted"><%= help %></small>
-    </div>
+<% feature_box = lambda do |flag, label, help = nil| %>
+  <div class="form-check">
+    <%= check_box_tag "fund[features][]", flag, current.include?(flag), id: "fund_features_#{flag}", class: "form-check-input" %>
+    <%= label_tag "fund_features_#{flag}", label, class: "form-check-label" %>
+    <% if help %><small class="text-muted d-block"><%= help %></small><% end %>
   </div>
 <% end %>
-<% toggle = lambda do |flag, label, help, icon, tooltip: nil, name: "fund[features][]", id: "fund_features_#{flag}", checked: current.include?(flag), disabled: false| %>
-  <div class="toggle-row">
-    <div class="d-flex align-items-start gap-2">
-      <i class="ti ti-<%= icon %> text-muted mt-1"></i>
-      <div>
-        <label class="toggle-row-label" for="<%= id %>"><%= label %></label>
-        <% if tooltip %><i class="ti ti-info-circle text-muted ms-1" data-bs-toggle="tooltip" data-bs-title="<%= tooltip %>"></i><% end %>
-        <small class="form-text text-muted d-block mt-0"><%= help %></small>
+
+<div class="card mb-3" id="fund_features">
+  <div class="card-header"><h5 class="card-title mb-0">Features</h5></div>
+  <div class="card-body">
+    <%# Hidden blank so unticking every box still submits the list %>
+    <%= hidden_field_tag "fund[features][]", "", id: nil %>
+
+    <h6>Investor visibility</h6>
+    <% feature_box.call(:show_fund_ratios, "Show fund ratios to LPs") %>
+    <% feature_box.call(:show_fund_units, "Show fund units to LPs") %>
+    <% feature_box.call(:show_portfolios, "Show fund portfolios to LPs") %>
+    <% feature_box.call(:show_valuations, "Show valuations to LPs") %>
+
+    <h6 class="mt-3">Reporting</h6>
+    <% feature_box.call(:enable_ai_commentary, "Enable AI commentary on Account Entries Reports",
+                        "When off, AI commentary won't auto-generate on the Account Entries Period Report; individual sections can still be generated on demand.") %>
+
+    <h6 class="mt-3">Market data</h6>
+    <div class="mb-2">
+      <span class="me-2">FX rates</span>
+      <div class="form-check form-check-inline">
+        <%= check_box_tag "manual_rates_always", 1, true, disabled: true, id: "fund_features_manual_rates", class: "form-check-input",
+                          title: "Hand-entered values are always accepted so a wrong feed value can be corrected" %>
+        <%= label_tag "fund_features_manual_rates", "Manual (always)", class: "form-check-label" %>
+      </div>
+      <% if entity.permissions.enable_market_rates? %>
+        <div class="form-check form-check-inline">
+          <%= check_box_tag "fund[features][]", :accept_market_rates, current.include?(:accept_market_rates), id: "fund_features_accept_market_rates", class: "form-check-input" %>
+          <%= label_tag "fund_features_accept_market_rates", "Market", class: "form-check-label" %>
+        </div>
+      <% end %>
+      <div class="form-check form-check-inline">
+        <%= check_box_tag "fund[features][]", :accept_derived_rates, current.include?(:accept_derived_rates), id: "fund_features_accept_derived_rates", class: "form-check-input" %>
+        <%= label_tag "fund_features_accept_derived_rates", "Derived", class: "form-check-label" %>
       </div>
     </div>
-    <label class="ios-toggle">
-      <%= check_box_tag name, flag, checked, id:, class: "ios-toggle-input", disabled: %>
-      <span class="ios-toggle-slider"></span>
-    </label>
-  </div>
-<% end %>
 
-<div id="fund_features" data-controller="tooltip">
-  <%# Hidden blank so switching every toggle off still submits the list %>
-  <%= hidden_field_tag "fund[features][]", "", id: nil %>
+    <div class="mb-2">
+      <span class="me-2">Prices</span>
+      <div class="form-check form-check-inline">
+        <%= check_box_tag "manual_prices_always", 1, true, disabled: true, id: "fund_features_manual_prices", class: "form-check-input",
+                          title: "Hand-entered values are always accepted so a wrong feed value can be corrected" %>
+        <%= label_tag "fund_features_manual_prices", "Manual (always)", class: "form-check-label" %>
+      </div>
+      <% if entity.permissions.enable_market_prices? %>
+        <div class="form-check form-check-inline">
+          <%= check_box_tag "fund[features][]", :accept_market_prices, current.include?(:accept_market_prices), id: "fund_features_accept_market_prices", class: "form-check-input" %>
+          <%= label_tag "fund_features_accept_market_prices", "Market", class: "form-check-label" %>
+        </div>
+      <% end %>
+    </div>
 
-  <% section.call("eye", "What LPs see", "Each switch adds a section to the fund page your LPs see. Nothing is emailed when you change them.") %>
-  <% toggle.call(:show_fund_ratios, "Fund ratios", "IRR, TVPI, DPI and the other ratios computed for the fund.", "chart-line",
-                 tooltip: "Shown on the LP's fund page once fund ratios have been generated.") %>
-  <% toggle.call(:show_fund_units, "Fund units", "The units allotted to each LP's folio.", "stack-2",
-                 tooltip: "LPs see only their own folio's units.") %>
-  <%# E95 — the portfolio switches need the fund-portfolios module; without it they are hidden and kept (FundFeatureGuard) %>
-  <% if entity.permissions.enable_fund_portfolios? %>
-    <% toggle.call(:show_valuations, "Portfolio valuations", "Valuation history of the companies the fund holds.", "chart-dots",
-                   tooltip: "Shown with the portfolio when the LP portfolio view below is not Hidden.") %>
-    <%= render "funds/lp_portfolio_view", form:, fund: %>
-  <% end %>
-
-  <% section.call("report-analytics", "Reporting", "How reports are prepared for this fund.") %>
-  <% toggle.call(:enable_ai_commentary, "AI commentary on Account Entries Reports",
-                 "When off, commentary isn't generated automatically on the Account Entries Period Report; you can still generate each section on demand.",
-                 "sparkles") %>
-
-  <% section.call("world-dollar", "Market data", "Which FX rates and prices this fund accepts. Hand-entered values are always accepted, so a wrong feed value can be corrected.") %>
-  <% toggle.call(:manual_rates, "FX rates: Manual", "Always accepted.", "pencil", name: "manual_rates_always", id: "fund_features_manual_rates",
-                 checked: true, disabled: true, tooltip: "Hand-entered values are always accepted so a wrong feed value can be corrected") %>
-  <% if entity.permissions.enable_market_rates? %>
-    <% toggle.call(:accept_market_rates, "FX rates: Market", "Daily rates from the FX feeds set up for your firm.", "antenna-bars-5") %>
-  <% end %>
-  <% toggle.call(:accept_derived_rates, "FX rates: Derived", "Rates worked out through a pivot currency when no direct rate exists.", "arrows-exchange") %>
-  <% toggle.call(:manual_prices, "Prices: Manual", "Always accepted.", "pencil", name: "manual_prices_always", id: "fund_features_manual_prices",
-                 checked: true, disabled: true, tooltip: "Hand-entered values are always accepted so a wrong feed value can be corrected") %>
-  <% if entity.permissions.enable_market_prices? %>
-    <% toggle.call(:accept_market_prices, "Prices: Market", "Daily prices for listed securities from the price feeds.", "chart-candle") %>
-  <% end %>
-  <% if entity.permissions.enable_derivatives? %>
-    <% toggle.call(:enable_derivatives, "Derivatives", "Hold and value derivative positions in this fund.", "chart-arrows") %>
-  <% end %>
-  <% toggle.call(:use_own_fx_rates, "Fund-specific FX rates", "Lets this fund hold its own manual FX rates, used only by this fund.", "lock-dollar") %>
+    <% if entity.permissions.enable_derivatives? %>
+      <% feature_box.call(:enable_derivatives, "Derivatives") %>
+    <% end %>
+    <% feature_box.call(:use_own_fx_rates, "Use fund-specific FX rates",
+                        "Lets this fund hold its own manual FX rates, used only by this fund.") %>
 
     <% if fund.respond_to?(:evergreen_fund_setting) && fund.evergreen_fund_setting.present? %>
       <%# Limits apply to open-ended funds only (E8); blank = entity default %>
       <% entity_limits = MarketDataSetting.for_entity(entity) %>
-      <% section.call("adjustments", "Limits (open-ended)", "Leave blank to use your firm default.") %>
+      <h6 class="mt-3">Limits (open-ended)</h6>
       <%= form.fields_for :market_data_setting, (fund.market_data_setting || fund.build_market_data_setting) do |ms| %>
         <div class="row">
           <div class="col-md-4 form-group">
@@ -92,4 +91,5 @@
         </div>
       <% end %>
     <% end %>
+  </div>
 </div>

@@ -50,16 +50,12 @@ When('I go to step 2 of the fund') do
 end
 
 When('I continue to the evergreen steps') do
-  # Through the Features step, which now sits between Other details and the open-ended terms
-  find("#fund_next_to_features").click
   find("#fund_next_to_evergreen").click
   expect(page).to have_css("#evergreen_presets", visible: true)
 end
 
 # X1: with no unit types the form goes back to step 1 instead of opening the open-ended terms
 When('I try to continue to the evergreen steps') do
-  # Through the Features step, which now sits between Other details and the open-ended terms
-  find("#fund_next_to_features").click
   find("#fund_next_to_evergreen").click
   expect(page).to have_css("#fund_name", visible: true)
 end

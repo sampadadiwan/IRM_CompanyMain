@@ -370,8 +370,6 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
-
-  @media (max-width: 575px) { padding: 16px; }
 }
 
 .fc5-header {
@@ -407,8 +405,7 @@
     .fc5-ratios { grid-column: 1 / -1; }
   }
 
-  // minmax(0, …) so the single phone column can't grow past the card to fit its content
-  @media (max-width: 575px) { grid-template-columns: minmax(0, 1fr); }
+  @media (max-width: 575px) { grid-template-columns: 1fr; }
 }
 
 // Pure-CSS donut. --fc5-called and --fc5-distributed are set inline (0..100).
@@ -463,9 +460,6 @@
   justify-content: space-between;
   align-items: baseline;
   gap: 96px; // fixed breathing room between name and value (column is content-sized)
-
-  // On phones the column is card-width, so space-between alone separates label and value
-  @media (max-width: 575px) { gap: 16px; }
   padding-bottom: 8px;
   border-bottom: 1px dashed var(--fcv-line-2);
 
@@ -498,8 +492,7 @@
 
 .fc5-ratios {
   display: grid;
-  // minmax(0, …) lets the tiles shrink to share a phone-width row evenly
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr 1fr;
   gap: 12px;
 
   // scaffolds.scss forces `.card .card-title { font-weight: 700 !important }` and is

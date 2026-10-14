@@ -9,9 +9,6 @@ class PortfolioInvestmentPolicy < FundBasePolicy
         scope.joins(:fund)
              .where(fund_id: FeederMasterFundAccess.eligible_ids_for_investor(user))
              .where("funds.features & ? > 0", Fund.features.maps[:show_portfolios])
-             # Funds on an Allocated LP portfolio view show only the holdings allocated to this LP's folio
-             # (H2, X17 — openspec/changes/lp-folio-portfolio-dashboard/business-rules.md)
-             .then { |relation| LpPortfolioVisibility.for_user(user).restrict(relation) }
       else
         super
       end
@@ -31,9 +28,7 @@ class PortfolioInvestmentPolicy < FundBasePolicy
           # Bridge case: this is a master fund and the investor has an
           # AccessRight on one of its feeder funds instead.
           (user.curr_role == "investor" && FeederMasterFundAccess.accessible_to_investor?(user, record.fund))
-        ) &&
-        # X17 — a holding outside the LP's folio allocation is refused on a direct request too
-        (user.curr_role != "investor" || LpPortfolioVisibility.for_user(user).pi_visible?(record)))
+        ))
   end
 
   def create?

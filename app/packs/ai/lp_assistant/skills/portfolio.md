@@ -1,6 +1,6 @@
 ---
 name: portfolio
-description: Fund's portfolio companies — which companies the fund invested in, when, how much, current valuation, gain/loss, and portco-level performance (MOIC/IRR). Fund-level data visible to LPs when the fund shows its portfolio; under an Allocated LP portfolio view only the holdings allocated to the LP's folio ({VISIBLE_API_IDS} / {VISIBLE_PI_IDS}).
+description: Fund's portfolio companies — which companies the fund invested in, when, how much, current valuation, gain/loss, and portco-level performance (MOIC/IRR). Fund-level data visible to LPs when the fund has `show_portfolios = true`.
 tables:
   - portfolio_investments
   - aggregate_portfolio_investments
@@ -63,7 +63,7 @@ The fund's portfolio — companies it has invested in. This data is **fund-level
 | quantity | decimal | Current units held |
 | portfolio_income_cents | decimal | Income received |
 | investment_type | varchar | e.g. 'Equity', 'Debt' |
-| show_portfolio | boolean | Retired — no longer used (sharing is the company's `investors.show_to_lps`) |
+| show_portfolio | boolean | Per-holding visibility flag |
 | snapshot | boolean | True for historical snapshots |
 | snapshot_date | date | Snapshot date (NULL for current) |
 | deleted_at | datetime | Soft delete |
@@ -103,7 +103,6 @@ For current holdings, filter `api.snapshot = false` (or omit snapshot rows).
    ```
    WHERE pi.entity_id IN ({ENTITY_ID})
      AND pi.fund_id IN ({FUND_IDS})
-     AND pi.id IN ({VISIBLE_PI_IDS})
    ```
    Note: `{INVESTOR_IDS}` is NOT used in this skill — portfolio is fund-level.
 
@@ -113,26 +112,18 @@ For current holdings, filter `api.snapshot = false` (or omit snapshot rows).
    ```
    Funds without that feature bit hide the portfolio from LPs; the query must respect this.
 
-3. **Visible holdings** — always (queries without them are rejected):
-   ```
-   AND api.id IN ({VISIBLE_API_IDS})   -- on aggregate_portfolio_investments
-   AND pi.id  IN ({VISIBLE_PI_IDS})    -- on portfolio_investments
-   ```
-   They hold only the holdings this LP may see: the whole fund, or — when the fund narrows its portfolio to each
-   LP's folio — just the holdings allocated to this LP. Never answer about a holding outside them.
-
-4. **Proforma filter** — always on `portfolio_investments`:
+3. **Proforma filter** — always on `portfolio_investments`:
    ```
    AND pi.proforma = false
    ```
 
-5. **Soft deletes** — `deleted_at IS NULL` on every joined table (`pi`, `api`, `f`, `i`, `v`, `fr`).
+4. **Soft deletes** — `deleted_at IS NULL` on every joined table (`pi`, `api`, `f`, `i`, `v`, `fr`).
 
-6. **Use DISTINCT or GROUP BY when listing portcos** — `pi` is a transaction log; without DISTINCT the same portco appears once per round.
+5. **Use DISTINCT or GROUP BY when listing portcos** — `pi` is a transaction log; without DISTINCT the same portco appears once per round.
 
-7. **Join `investors` for the display name** — don't trust `pi.portfolio_company_name` (denormalized and may be stale).
+6. **Join `investors` for the display name** — don't trust `pi.portfolio_company_name` (denormalized and may be stale).
 
-8. **Divide `*_cents` by 100** for display. Currency from `f.currency`.
+7. **Divide `*_cents` by 100** for display. Currency from `f.currency`.
 
 ## Example Queries
 
@@ -149,7 +140,6 @@ JOIN funds     f ON f.id = pi.fund_id
 JOIN investors i ON i.id = pi.portfolio_company_id
 WHERE pi.entity_id IN ({ENTITY_ID})
   AND pi.fund_id IN ({FUND_IDS})
-  AND pi.id IN ({VISIBLE_PI_IDS})
   AND (f.features & 4) > 0
   AND pi.proforma = false
   AND pi.deleted_at IS NULL
@@ -174,7 +164,6 @@ JOIN funds     f ON f.id = api.fund_id
 JOIN investors i ON i.id = api.portfolio_company_id
 WHERE api.entity_id IN ({ENTITY_ID})
   AND api.fund_id IN ({FUND_IDS})
-  AND api.id IN ({VISIBLE_API_IDS})
   AND (f.features & 4) > 0
   AND api.snapshot = false
   AND api.deleted_at IS NULL
@@ -197,7 +186,6 @@ JOIN funds     f ON f.id = pi.fund_id
 JOIN investors i ON i.id = pi.portfolio_company_id
 WHERE pi.entity_id IN ({ENTITY_ID})
   AND pi.fund_id IN ({FUND_IDS})
-  AND pi.id IN ({VISIBLE_PI_IDS})
   AND i.investor_name LIKE '%Acme%'
   AND (f.features & 4) > 0
   AND pi.proforma = false
@@ -225,7 +213,6 @@ WHERE fr.entity_id IN ({ENTITY_ID})
   AND fr.scenario = 'Default'
   AND f.name LIKE '%Growth%'
   AND (f.features & 4) > 0
-  AND pi.id IN ({VISIBLE_PI_IDS})
   AND pi.proforma = false
   AND fr.deleted_at IS NULL
   AND pi.deleted_at IS NULL
@@ -249,7 +236,6 @@ JOIN portfolio_investments pi ON pi.portfolio_company_id = i.id
 JOIN funds f                  ON f.id = pi.fund_id
 WHERE v.entity_id IN ({ENTITY_ID})
   AND pi.fund_id IN ({FUND_IDS})
-  AND pi.id IN ({VISIBLE_PI_IDS})
   AND v.owner_type = 'PortfolioCompany'
   AND (f.features & 4) > 0
   AND pi.proforma = false
@@ -282,7 +268,6 @@ JOIN funds     f ON f.id = api.fund_id
 JOIN investors i ON i.id = api.portfolio_company_id
 WHERE api.entity_id IN ({ENTITY_ID})
   AND api.fund_id IN ({FUND_IDS})
-  AND api.id IN ({VISIBLE_API_IDS})
   AND (f.features & 4) > 0
   AND api.snapshot = false
   AND api.deleted_at IS NULL
@@ -305,7 +290,6 @@ JOIN funds     f ON f.id = api.fund_id
 JOIN investors i ON i.id = api.portfolio_company_id
 WHERE api.entity_id IN ({ENTITY_ID})
   AND api.fund_id IN ({FUND_IDS})
-  AND api.id IN ({VISIBLE_API_IDS})
   AND (f.features & 4) > 0
   AND api.snapshot = false
   AND api.deleted_at IS NULL

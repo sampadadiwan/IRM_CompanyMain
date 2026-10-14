@@ -12,9 +12,6 @@
     title ||= nil
     header_label ||= nil
     header_value ||= nil
-    # LP Company Dashboard: the chosen LP layout, LP widget versions, no Reports menu or layout selector (E54a)
-    lp_context ||= nil
-    lp = lp_context.present?
 %>
 
 <% unless !show_nav || dashboard_name == "Portfolio Dashboard" %>
@@ -50,7 +47,7 @@
     <ul class="nav nav-pills flex-nowrap align-items-center <%= theme %> mb-4" data-controller="nav-overflow" data-nav-overflow-target="nav">
         <!-- Add a link to the dashboard widgets -->
         <%
-            all_widgets = dashboard_widgets(dashboard_name, entity_id, name:, owner:, show_menu: true, lp:).to_a
+            all_widgets = dashboard_widgets(dashboard_name, entity_id, name:, owner:, show_menu: true).to_a
         %>
 
         <% all_widgets.each_with_index do |(name, dashboard_widget), index| %>
@@ -77,7 +74,7 @@
                 <% end %>
 
                 <!-- Move Reports dropdown items here if overflow exists -->
-                <% reports = lp ? Report.none : Report.where("tag_list LIKE ?", "%#{dashboard_name}%") %>
+                <% reports = Report.where("tag_list LIKE ?", "%#{dashboard_name}%") %>
                 <% if reports.any? %>
                     <li class="d-none" data-nav-overflow-target="moreReportsDivider"><hr class="dropdown-divider"></li>
                     <li class="dropdown-header d-none" data-nav-overflow-target="moreReportsHeader">Reports</li>
@@ -89,7 +86,7 @@
         </li>
 
         <!-- Standalone dropdown for reports if no overflow exists -->
-        <% reports = lp ? Report.none : Report.where("tag_list LIKE ?", "%#{dashboard_name}%") %>
+        <% reports = Report.where("tag_list LIKE ?", "%#{dashboard_name}%") %>
         <% if reports.any? %>
             <li class="nav-item dropdown" data-nav-overflow-target="reportsDropdown">
                 <a class="nav-link px-3 py-2  dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -103,23 +100,20 @@
             </li>
         <% end %>
 
-        <%# E54a — LPs never get the layout selector %>
-        <% unless lp %>
         <%= render "/dashboard_widgets/dashboard_selector",
               dashboard_names: dashboard_names,
               current_name: name,
               dashboard_name: dashboard_name,
               frame_id: "#{dashboard_name.parameterize(separator: '_')}_frame" %>
-        <% end %>
     </ul>
 </nav>
 <% end %>
 
 <div class="row mt-4">
 
-    <% dashboard_widgets(dashboard_name, entity_id, name:, owner:, lp:).each do |name, dashboard_widget| %>
+    <% dashboard_widgets(dashboard_name, entity_id, name:, owner:).each do |name, dashboard_widget| %>
         <div id="<%= "#{dashboard_widget.widget_name.parameterize.underscore}_#{dashboard_widget.position}" %>" class="dashboard-widget-container <%= dashboard_widget.widget_size %>">
-            <%= render (lp ? lp_widget_partial(dashboard_widget) : dashboard_widget.path), widget: dashboard_widget, name: dashboard_widget.widget_name, dashboard_widget:, widget_size: dashboard_widget.widget_size, args: dashboard_widget.metadata_args, uri_params:, owner:, entity_id:, lp_context:  %>
+            <%= render dashboard_widget.path, widget: dashboard_widget, name: dashboard_widget.widget_name, dashboard_widget:, widget_size: dashboard_widget.widget_size, args: dashboard_widget.metadata_args, uri_params:, owner:, entity_id:  %>
         </div>
     <% end %>
 

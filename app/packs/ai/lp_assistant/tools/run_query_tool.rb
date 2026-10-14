@@ -20,9 +20,6 @@
 #      when owner_type IN ('Investor','CapitalCommitment')).
 #   5. Placeholder substitution with integer-cast, trusted values
 #   6. Hard LIMIT 100
-#   7. Portfolio tables need the LP's visible holdings: {VISIBLE_API_IDS} for
-#      aggregate_portfolio_investments, {VISIBLE_PI_IDS} for portfolio_investments
-#      (lp-folio-portfolio-dashboard H19, E69–E71, X18)
 #
 # @see LpChatProvider
 class RunQueryTool < RubyLLM::Tool
@@ -62,12 +59,8 @@ class RunQueryTool < RubyLLM::Tool
   # @param entity_ids [Array<Integer>] single-element list with the scoped FM entity_id.
   # @param accessible_fund_ids [Array<Integer>] — substitutes {FUND_IDS}
   # @param accessible_investor_ids [Array<Integer>] — substitutes {INVESTOR_IDS}; defaults to []
-  # @param visible_api_ids / visible_pi_ids [Array<Integer>] — the LP's visible holdings and their purchases
-  #   (LpPortfolioVisibility); substitute {VISIBLE_API_IDS} / {VISIBLE_PI_IDS}
-  def initialize(entity_ids:, accessible_fund_ids:, accessible_investor_ids: [], visible_api_ids: [], visible_pi_ids: [])
+  def initialize(entity_ids:, accessible_fund_ids:, accessible_investor_ids: [])
     super()
-    @visible_api_ids = visible_api_ids.map(&:to_i).uniq
-    @visible_pi_ids = visible_pi_ids.map(&:to_i).uniq
     @entity_ids = Array(entity_ids).map(&:to_i).uniq
     @accessible_fund_ids = accessible_fund_ids.map(&:to_i).uniq
     @accessible_investor_ids = accessible_investor_ids.map(&:to_i).uniq
@@ -131,9 +124,6 @@ class RunQueryTool < RubyLLM::Tool
 
     return 'missing {ENTITY_ID} placeholder — scope required.' unless sql.include?('{ENTITY_ID}')
     return 'missing {FUND_IDS} placeholder — scope required.'  unless sql.include?('{FUND_IDS}')
-    # X18 — portfolio tables are limited to the LP's visible holdings, never the whole fund
-    return 'missing {VISIBLE_API_IDS} placeholder — scope required.' if tables.include?('aggregate_portfolio_investments') && sql.exclude?('{VISIBLE_API_IDS}')
-    return 'missing {VISIBLE_PI_IDS} placeholder — scope required.' if tables.include?('portfolio_investments') && sql.exclude?('{VISIBLE_PI_IDS}')
 
     nil
   end
@@ -147,8 +137,6 @@ class RunQueryTool < RubyLLM::Tool
     substituted = sql.gsub('{ENTITY_ID}',    @entity_ids.join(','))
                      .gsub('{FUND_IDS}',     @accessible_fund_ids.join(','))
                      .gsub('{INVESTOR_IDS}', investor_ids_sql)
-                     .gsub('{VISIBLE_API_IDS}', @visible_api_ids.join(',').presence || 'NULL')
-                     .gsub('{VISIBLE_PI_IDS}', @visible_pi_ids.join(',').presence || 'NULL')
                      .sub(/;\s*\z/, '')
 
     substituted.match?(/\blimit\s+\d/i) ? substituted : "#{substituted} LIMIT #{MAX_ROWS}"

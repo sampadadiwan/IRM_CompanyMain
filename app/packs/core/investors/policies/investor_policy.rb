@@ -116,13 +116,6 @@ class InvestorPolicy < ApplicationPolicy
     update?
   end
 
-  # Show / Hide a portfolio company to LPs: fund team who may update the company (X7, X8)
-  # openspec/changes/lp-folio-portfolio-dashboard/business-rules.md
-  # E96 — only for fund managers with the fund-portfolios module (LPs reach a company through a holding)
-  def lp_sharing?
-    record.category == "Portfolio Company" && record.entity.permissions.enable_fund_portfolios? && update?
-  end
-
   # @return [Boolean] whether the user can toggle NDA exemption for this investor.
   #   Same permission as update — GP employees with :investor_update.
   def toggle_nda_exemption?

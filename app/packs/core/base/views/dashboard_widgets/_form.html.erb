@@ -22,11 +22,6 @@
         <div class="form-group mb-3">
           <%= form.label :name, "Instance Name", class: "form-label fw-bold" %>
           <%= form.text_field :name, class: "form-control", placeholder: "e.g. Q3 Performance Summary"  %>
-          <%# E52 — Portfolio Company Dashboard layouts whose name includes the tag LP are shown to LPs %>
-          <small class="form-text text-muted">On the Portfolio Company Dashboard, a layout whose name includes the tag "LP" (e.g. "LP" or "LP, FinTech") is what LPs see on shared company pages.</small>
-          <% if dashboard_widget.lp_layout? %>
-            <small class="form-text text-info d-block" id="lp_layout_type_help">LP layout: only widgets that are safe to show LPs are listed.</small>
-          <% end %>
         </div>
 
         <div class="form-group mb-3"
@@ -35,10 +30,6 @@
               data-dashboard-widgets-param-value="widget_name">
           <%= form.label :widget_name, "Widget Type", class: "form-label fw-bold" %>
           <%= form.select :widget_name, {}, {prompt: 'Select Widget Type'}, class: "form-select", id: :widget_name  %>
-          <% if dashboard_widget.lp_layout? %>
-            <%# E77 — how Embed Document picks the company's document on LP pages %>
-            <small class="form-text text-muted d-block" id="lp_embed_document_help">Embed Document: shows the company's latest document with this exact name, e.g. "Founder Video". Upload it to each company you share.</small>
-          <% end %>
         </div>
       </div>
 
@@ -56,12 +47,7 @@
         <div class="form-group mb-3">
           <%= form.label :tag_list, "Tag List", class: "form-label fw-bold" %>
           <%= form.text_field :tag_list, class: "form-control", placeholder: "Comma separated..."  %>
-          <% if dashboard_widget.lp_layout? %>
-            <%# E94 — in an LP layout the tags narrow a widget to companies with those tags %>
-            <small class="form-text text-muted" id="lp_layout_tags_help">Optional. Show this widget only for companies with one of these tags. Leave empty for every company using this layout.</small>
-          <% else %>
-            <small class="form-text text-muted">Comma-separated tags to filter this widget. If set, the widget only appears if the dashboard owner (e.g. Fund, Investor) has matching tags. Leave blank to always show.</small>
-          <% end %>
+          <small class="form-text text-muted">Comma-separated tags to filter this widget. If set, the widget only appears if the dashboard owner (e.g. Fund, Investor) has matching tags. Leave blank to always show.</small>
         </div>
 
         <div class="form-group mb-3">
@@ -77,8 +63,7 @@
     <%= form.hidden_field :owner_type %>
 
     <!-- This is a hidden field to store the widget options in JSON format -->
-    <%# E52 — an LP layout offers only the LP-safe widget types %>
-    <%= hidden_field_tag "widget_options_json", DashboardWidget.widget_select_for(dashboard_widget.name, current_user.entity).to_json, id: "widget_options_json" %>
+    <%= hidden_field_tag "widget_options_json", DashboardWidget.widget_select.to_json, id: "widget_options_json" %>
     <!-- This is a hidden field to store the selected widget name, used in dashboard_widgets_controller.js -->
     <%= hidden_field_tag "selected_widget_name", dashboard_widget.widget_name, id: "selected_widget_name" %>
 

@@ -7,7 +7,7 @@
         <i class="ti ti-settings me-2"></i> Actions
       </button>
       <ul class="dropdown-menu">
-        <% if belongs_to_entity_id?(current_user, aggregate_portfolio_investment.entity_id) %>
+        <% if belongs_to_entity_id?(current_user, aggregate_portfolio_investment.entity_id) || aggregate_portfolio_investment.show_portfolio %>
           <li>
             <%= link_to t_common(:show), aggregate_portfolio_investment, class: "dropdown-item d-flex align-items-center ti ti-eye" %>
           </li>

@@ -6,9 +6,6 @@
   if @investor
     # If this is part of the Investor Dashboard, we will get an investor object
     portfolio_company_id ||= @investor.id 
-    # On the LP Company Dashboard, only the selected fund's holdings (E57 — lp-folio-portfolio-dashboard); the
-    # policy scopes narrow them further to the LP's visible holdings
-    fund_id = local_assigns[:lp_context][:fund].id if local_assigns[:lp_context].present?
   else
     fund ||= uri_params[:fund]
     fund_id ||= uri_params[:owner_id].presence || fund&.id

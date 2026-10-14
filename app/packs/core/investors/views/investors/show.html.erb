@@ -19,30 +19,19 @@
       <% end %>
     <% end %>
 
-    <%# LP folio portfolio — one LPs menu: state, Show / Hide from LPs (H9, H18), Preview as LP (H13) %>
-    <%= render "investors/lp_sharing_button", investor: @investor if policy(@investor).lp_sharing? %>
+    <%= link_to notes_path(owner_id: @investor.id, owner_type: "Investor"),
+                class: "btn btn-outline-success d-inline-flex align-items-center",
+                data: { turbo: false } do %>
+      <i class="ti ti-notes"></i> View Notes
+    <% end %>
 
-    <%# Notes: view and add in one menu, in the bar's dropdown style (as Misc) %>
-    <div class="btn-group">
-      <div class="dropdown">
-        <button class="btn btn-outline-success dropdown-toggle d-inline-flex align-items-center" type="button" id="notes_menu"
-                data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-          <i class="ti ti-notes"></i> Notes
-        </button>
-        <div class="dropdown-menu" aria-labelledby="notes_menu">
-          <%= link_to notes_path(owner_id: @investor.id, owner_type: "Investor"),
-                      class: "dropdown-item d-flex align-items-center", data: { turbo: false } do %>
-            <i class="ti ti-notes"></i> View Notes
-          <% end %>
-          <% if policy(@investor).update? %>
-            <%= link_to new_note_path("note[owner_id]": @investor.id, "note[owner_type]": "Investor"),
-                        class: "dropdown-item d-flex align-items-center", data: { turbo: false } do %>
-              <i class="ti ti-message-plus"></i> Add Note
-            <% end %>
-          <% end %>
-        </div>
-      </div>
-    </div>
+    <% if policy(@investor).update? %>
+      <%= link_to new_note_path("note[owner_id]": @investor.id, "note[owner_type]": "Investor"),
+                  class: "btn btn-outline-success d-inline-flex align-items-center",
+                  data: { turbo: false } do %>
+        <i class="ti ti-message-plus"></i> Add Note
+      <% end %>
+    <% end %>
 
     <% if policy(@investor).destroy? %>
       <%
@@ -250,9 +239,6 @@
     <% end %>
 
   </div>
-  <%# Which LP layout this company's LPs see, or what stops them (E73, E74, E91, E92) %>
-  <%= render "investors/lp_sharing_notice", investor: @investor if policy(@investor).lp_sharing? %>
-  <%= render "investors/lp_preview_modal", investor: @investor if policy(@investor).lp_sharing? %>
 </div>
 
 <div id="progress_panel_new" class="container-fluid px-3 pb-3"></div>

@@ -1,8 +1,5 @@
 <%
-        # On the LP Company Dashboard only Actual KPI reports are shown (E55 — openspec/changes/lp-folio-portfolio-dashboard)
-        lp_view = local_assigns[:lp_context].present?
-        kpi_reports = lp_view ? @investor.portfolio_kpi_reports.where(tag_list: LpWidgetData::ACTUAL) : @investor.portfolio_kpi_reports
-        latest_kpi_report = kpi_reports.order(as_of: :desc).first
+        latest_kpi_report = @investor.portfolio_kpi_reports.order(as_of: :desc).first
         # Get the kpi_names from custom fields or args
         kpi_names = @investor.investor_kpi_mappings.show_in_report.pluck(:standard_kpi_name)
         # Fetch the KPIs from the latest report
@@ -20,7 +17,7 @@
       ) do
   %>
 
-      <% cache_if(current_user != nil, cache_key(["investor_datshboard_kpis", @investor, lp_view]), expires_in: 5.day) do %>
+      <% cache_if(current_user != nil, cache_key(["investor_datshboard_kpis", @investor]), expires_in: 5.day) do %>
         <% colors = ["success", "warning", "danger", "primary", "secondary", "info"].freeze %>
 
         <%

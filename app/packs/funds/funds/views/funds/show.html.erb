@@ -25,7 +25,6 @@ commands = @fund.evergreen? ? [
     <% if @fund.tracking_currency_change_pending? && !@fund.snapshot %>
       <%= render "funds/tracking_currency_change_banner", fund: @fund %>
     <% end %>
-    <%= render "funds/lp_portfolio_picks_notice", fund: @fund %>
     <!-- Snapshot cannot have details -->
     <% if @fund.evergreen? %>
       <%= render "evergreen/funds/actions", fund: @fund %>

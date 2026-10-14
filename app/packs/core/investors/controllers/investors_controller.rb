@@ -4,7 +4,7 @@ class InvestorsController < ApplicationController
   include HasWorkflowable
 
   helper InvestorAnalyticsHelper
-  before_action :set_investor, only: %w[show update destroy edit dashboard generate_reports kpi_data_preview portfolio_investments_report generate_agent_charts portfolio_analytics toggle_nda_exemption lp_sharing]
+  before_action :set_investor, only: %w[show update destroy edit dashboard generate_reports kpi_data_preview portfolio_investments_report generate_agent_charts portfolio_analytics toggle_nda_exemption]
   before_action :set_workflowable, only: [:show]
   after_action :verify_authorized, except: %i[merge portfolio_investments_report_all]
 
@@ -447,14 +447,6 @@ class InvestorsController < ApplicationController
   #   investor under the current user's entity. Exemption is an investor-level decision,
   #   not per-user — toggling it here sets all records uniformly.
   # @see InvestorAccess#exempt_from_nda
-  # Show / Hide this portfolio company to LPs. Sets the posted value rather than flipping it, so a double click
-  # is harmless (E45). Worked examples H9, H18, E45, X7, X8 — openspec/changes/lp-folio-portfolio-dashboard/business-rules.md
-  def lp_sharing
-    show = ActiveModel::Type::Boolean.new.cast(params[:show_to_lps])
-    @investor.update!(show_to_lps: show)
-    redirect_to investor_path(@investor), notice: show ? "Shared with LPs." : "Hidden from LPs."
-  end
-
   def toggle_nda_exemption
     exempt = ActiveModel::Type::Boolean.new.cast(params[:exempt_from_nda])
     @investor.investor_accesses

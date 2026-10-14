@@ -16,26 +16,24 @@ export default class extends Controller {
       ? source.checked
       : source.value.trim().length > 0
 
-    // A target may instead list the source values it shows for (data-show-when="a b"), e.g. the
-    // LP portfolio view's formula pickers (lp-folio-portfolio-dashboard E8)
-    this.conditionalTargets.forEach(target => {
-      const showWhen = target.dataset.showWhen
-      const visible = showWhen ? showWhen.split(/\s+/).includes(source.value) : isActive
-      this.setVisible(target, visible)
-    })
+    if (isActive) {
+      this.show()
+    } else {
+      this.hide()
+    }
   }
 
   show() {
-    this.conditionalTargets.forEach(target => this.setVisible(target, true))
+    this.conditionalTargets.forEach(target => {
+      target.hidden = false
+      target.disabled = false
+    })
   }
 
   hide() {
-    this.conditionalTargets.forEach(target => this.setVisible(target, false))
-  }
-
-  // Hidden targets are also disabled so their fields are not submitted
-  setVisible(target, visible) {
-    target.hidden = !visible
-    target.disabled = !visible
+    this.conditionalTargets.forEach(target => {
+      target.hidden = true
+      target.disabled = true
+    })
   }
 }

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_14_090300) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_12_090000) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -1348,7 +1348,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_14_090300) do
     t.bigint "entity_id", null: false
     t.integer "import_upload_id"
     t.text "metadata"
-    t.string "name", limit: 100, default: "Default"
+    t.string "name", limit: 20, default: "Default"
     t.bigint "owner_id"
     t.string "owner_type"
     t.integer "position"
@@ -2827,9 +2827,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_14_090300) do
     t.bigint "import_upload_id"
     t.json "json_fields"
     t.date "last_close_date"
-    t.bigint "lp_allocation_fund_formula_id"
     t.text "lp_commentary"
-    t.bigint "lp_fmv_fund_formula_id"
     t.bigint "master_fund_id"
     t.string "name"
     t.bigint "orignal_id"
@@ -2866,8 +2864,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_14_090300) do
     t.index ["fund_signatory_id"], name: "index_funds_on_fund_signatory_id"
     t.index ["funding_round_id"], name: "index_funds_on_funding_round_id"
     t.index ["import_upload_id"], name: "index_funds_on_import_upload_id"
-    t.index ["lp_allocation_fund_formula_id"], name: "index_funds_on_lp_allocation_fund_formula_id"
-    t.index ["lp_fmv_fund_formula_id"], name: "index_funds_on_lp_fmv_fund_formula_id"
     t.index ["master_fund_id"], name: "index_funds_on_master_fund_id"
     t.index ["snapshot_date"], name: "index_funds_on_snapshot_date"
     t.index ["trustee_signatory_id"], name: "index_funds_on_trustee_signatory_id"
@@ -3344,7 +3340,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_14_090300) do
     t.string "primary_email"
     t.string "primary_email_domain", limit: 191
     t.string "sector"
-    t.boolean "show_to_lps", default: false, null: false
     t.string "slug"
     t.string "tag_list", limit: 120
     t.integer "unapproved_investor_access_count", default: 0
@@ -5588,8 +5583,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_14_090300) do
   add_foreign_key "funds", "entities"
   add_foreign_key "funds", "folders", column: "data_room_folder_id"
   add_foreign_key "funds", "folders", column: "document_folder_id"
-  add_foreign_key "funds", "fund_formulas", column: "lp_allocation_fund_formula_id", on_delete: :nullify
-  add_foreign_key "funds", "fund_formulas", column: "lp_fmv_fund_formula_id", on_delete: :nullify
   add_foreign_key "funds", "funds", column: "master_fund_id"
   add_foreign_key "funds", "import_uploads"
   add_foreign_key "funds", "users", column: "fund_signatory_id"

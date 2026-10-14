@@ -70,18 +70,15 @@ Then('the entity Market Data settings should have {string}') do |kv|
   end
 end
 
-# The fund form is a wizard; Features is the step after Other details
+# The fund form is a two-step wizard; Features is on step 2
 def open_fund_form_features(fund)
   visit(edit_fund_path(fund))
   click_on("Next")
-  # Features have their own wizard step after Other details (lp-folio-portfolio-dashboard)
-  find("#fund_next_to_features").click
 end
 
 When('I tick the fund features {string} on the fund form and save') do |flags|
   open_fund_form_features(@fund)
-  # The switches are ios-toggle checkboxes: the input is CSS-invisible (1px, opacity 0), so tick through its label
-  flags.split(",").each { |f| check("fund_features_#{f.strip}", allow_label_click: true) }
+  flags.split(",").each { |f| check("fund_features_#{f.strip}") }
   click_on("Save")
   # Wait for the update to finish before anything reads the database
   expect(page).to have_content("Fund was successfully updated.")
@@ -103,16 +100,14 @@ end
 
 Then('the fund form should show Manual as always accepted') do
   open_fund_form_features(@fund)
-  # visible: :all — ios-toggle inputs are CSS-invisible; the slider beside them is what renders
-  expect(page).to have_css("#fund_features_manual_rates[disabled][checked]", visible: :all)
-  expect(page).to have_css("#fund_features_manual_prices[disabled][checked]", visible: :all)
+  expect(page).to have_css("#fund_features_manual_rates[disabled][checked]")
+  expect(page).to have_css("#fund_features_manual_prices[disabled][checked]")
 end
 
 Then('the fund form should {string} the switch {string}') do |show, flag|
   open_fund_form_features(@fund)
   if show == "show"
-    # The input is CSS-invisible, so check its row is on the page rather than the input's visibility
-    expect(page).to have_css(".toggle-row label[for='fund_features_#{flag}']")
+    expect(page).to have_css("#fund_features_#{flag}")
   else
     expect(page).to have_no_css("#fund_features_#{flag}", visible: :all)
   end

@@ -22,11 +22,6 @@
       </div>
     </div>
 
-  <% elsif document.video? %>
-
-    <%# A video plays inline, as on the document page (founder videos on dashboards — lp-folio-portfolio-dashboard H12, E64) %>
-    <%= render "layouts/video", url: document.file_url %>
-
   <% elsif document.pdf? %>
 
     <%= render "documents/pdf", document: document %>

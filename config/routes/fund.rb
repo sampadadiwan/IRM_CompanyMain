@@ -55,11 +55,8 @@ resources :investor_advisors do
   post 'create_for_investor', on: :collection
 end
 
-# LP Company Dashboard — one page per portfolio company for LPs, and the fund team's preview (lp-folio-portfolio-dashboard)
-get 'lp/portfolio_companies/:id', to: 'lp_company_dashboards#show', as: :lp_company_dashboard
-get 'lp/portfolio_companies/:id/preview', to: 'lp_company_dashboards#preview', as: :preview_lp_company_dashboard
-
 resources :aggregate_portfolio_investments do
+  patch 'toggle_show_portfolio', on: :member
   put :restore_deleted, on: :member
   get :show_deleted, on: :collection
 end
