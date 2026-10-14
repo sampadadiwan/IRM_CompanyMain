@@ -1,25 +1,31 @@
-<%# LP notification: a colleague accepted the NDA — you now have folder access. %>
-<%# Sent to all InvestorAccess users of the investor, excluding the signer. %>
+<%# LP notification: NDA accepted — investor now has folder access. %>
+<%# Sent to all InvestorAccess users of the investor. %>
 
-<p>The NDA for your Data Room folder has been accepted. You now have access.</p>
+<p>Dear <%= @investor_name %>,</p>
+
+<p>This is to notify you that the Non-Disclosure Agreement with <%= @entity_name %> has been accepted.</p>
 
 <table style="border-collapse:collapse;width:100%">
   <tr>
-    <td style="padding:6px 12px;font-weight:bold">Folder</td>
-    <td style="padding:6px 12px"><%= @folder_name %></td>
-  </tr>
-  <tr>
-    <td style="padding:6px 12px;font-weight:bold">Signed By</td>
+    <td style="padding:6px 12px;font-weight:bold">Accepted By</td>
     <td style="padding:6px 12px"><%= @signed_by %></td>
   </tr>
   <tr>
     <td style="padding:6px 12px;font-weight:bold">Date</td>
     <td style="padding:6px 12px"><%= l(@signed_at) %></td>
   </tr>
+  <tr>
+    <td style="padding:6px 12px;font-weight:bold">Folder</td>
+    <td style="padding:6px 12px"><%= @folder_name %></td>
+  </tr>
 </table>
 
+<p style="margin-top:16px">You can now access all the documents within the folder.</p>
+
+<% if @contact_email.present? %>
+  <p>For any queries or clarifications, please contact <a href="mailto:<%= @contact_email %>" style="color:#1a73e8;text-decoration:none"><%= @contact_email %></a>.</p>
+<% end %>
+
 <% if @folder_link.present? %>
-  <p style="margin-top:16px">
-    <a href="<%= @folder_link %>" style="color:#1a73e8;text-decoration:none">Open Data Room Folder →</a>
-  </p>
+  <p class="btn btn-outline-warning"><%= link_to "Access Documents", @folder_link %></p>
 <% end %>

@@ -1,31 +1,27 @@
 <%# GP + LP notification: NDA acceptance expiring within 7 days. %>
 <%# Sent to notification_emails (GP, direct) and NDA signatories (LP, via Noticed). %>
 
-<p>An NDA acceptance on your Data Room folder is expiring soon.</p>
+<p>Dear <%= @investor_name %>,</p>
+
+<p>This is a reminder that your accepted Non-Disclosure Agreement with <%= @entity_name %> will expire in 7 days.</p>
 
 <table style="border-collapse:collapse;width:100%">
-  <tr>
-    <td style="padding:6px 12px;font-weight:bold">Investor</td>
-    <td style="padding:6px 12px"><%= @investor_name %></td>
-  </tr>
-  <tr>
-    <td style="padding:6px 12px;font-weight:bold">Folder</td>
-    <td style="padding:6px 12px"><%= @folder_name %></td>
-  </tr>
   <tr>
     <td style="padding:6px 12px;font-weight:bold">Expiry Date</td>
     <td style="padding:6px 12px"><%= l(@expiry_date) %></td>
   </tr>
   <tr>
-    <td style="padding:6px 12px;font-weight:bold">Days Remaining</td>
-    <td style="padding:6px 12px"><%= @days_until_expiry %></td>
+    <td style="padding:6px 12px;font-weight:bold">Folder</td>
+    <td style="padding:6px 12px"><%= @folder_name %></td>
   </tr>
 </table>
 
-<p style="margin-top:16px">Please re-accept the NDA before it expires to maintain folder access.</p>
+<p style="margin-top:16px">Please review the relevant documents and contact the <%= @entity_name %> team to extend the validity period.</p>
+
+<% if @contact_email.present? %>
+  <p>For any queries or clarifications, please contact <a href="mailto:<%= @contact_email %>" style="color:#1a73e8;text-decoration:none"><%= @contact_email %></a>.</p>
+<% end %>
 
 <% if @folder_link.present? %>
-  <p>
-    <a href="<%= @folder_link %>" style="color:#1a73e8;text-decoration:none">Re-accept NDA →</a>
-  </p>
+  <p class="btn btn-outline-warning"><%= link_to "Access Documents", @folder_link %></p>
 <% end %>

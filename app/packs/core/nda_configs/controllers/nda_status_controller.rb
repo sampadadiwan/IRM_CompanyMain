@@ -191,14 +191,20 @@ class NdaStatusController < ApplicationController
     recipients = NdaNotificationRecipients.resolve(:revoked, @nda_config, investor)
     folder_name = @nda_config.owner&.name
 
+    # Changed: Added investor_name, revoked_at, and folder_link to revocation params.
+    # Why: Updated email template includes greeting "Dear [Investor Name],", a
+    #   "Revoked On" date field, and a CTA link to re-accept the NDA.
     recipients[:lp_users].each do |user|
       NdaEventNotifier.with(
         entity_id: @nda_config.entity_id,
         email_method: :nda_revoked,
         record: revocation,
+        investor_name: investor.name,
         folder_name: folder_name,
         contact_email: @nda_config.contact_email,
-        reason: revocation.reason
+        reason: revocation.reason,
+        revoked_at: revocation.updated_at,
+        folder_link: folder_link_for(@nda_config)
       ).deliver_later(user)
     end
   rescue StandardError => e
@@ -213,5 +219,13 @@ class NdaStatusController < ApplicationController
   # @return [void] Loads the folder from params.
   def set_folder
     @folder = Folder.find(params[:folder_id])
+  end
+
+  # @param nda_config [NdaConfig] the NDA config
+  # @return [String, nil] the absolute folder URL for email CTA links
+  def folder_link_for(nda_config)
+    return nil unless nda_config.owner.is_a?(Folder)
+
+    folder_documents_url(entity_id: nda_config.entity_id, folder_id: nda_config.owner_id)
   end
 end

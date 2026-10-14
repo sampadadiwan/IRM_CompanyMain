@@ -1,7 +1,9 @@
 <%# GP notification: an LP investor accepted the NDA on a folder. %>
 <%# Sent to each address in NdaConfig.notification_emails via direct delivery. %>
 
-<p>An investor has accepted the NDA on your Data Room folder.</p>
+<p>Dear Team,</p>
+
+<p>This is to notify you that an investor has accepted the Non-Disclosure Agreement for the Data Room folder below.</p>
 
 <table style="border-collapse:collapse;width:100%">
   <tr>
@@ -9,15 +11,15 @@
     <td style="padding:6px 12px"><%= @investor_name %></td>
   </tr>
   <tr>
-    <td style="padding:6px 12px;font-weight:bold">Folder</td>
-    <td style="padding:6px 12px"><%= @folder_name %></td>
-  </tr>
-  <tr>
-    <td style="padding:6px 12px;font-weight:bold">Signed By</td>
+    <td style="padding:6px 12px;font-weight:bold">Accepted By</td>
     <td style="padding:6px 12px"><%= @signed_by %></td>
   </tr>
   <tr>
     <td style="padding:6px 12px;font-weight:bold">Date</td>
     <td style="padding:6px 12px"><%= l(@signed_at) %></td>
+  </tr>
+  <tr>
+    <td style="padding:6px 12px;font-weight:bold">Folder</td>
+    <td style="padding:6px 12px"><%= @folder_name %></td>
   </tr>
 </table>

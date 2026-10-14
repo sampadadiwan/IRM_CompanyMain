@@ -1,16 +1,14 @@
 <%# GP notification: an LP investor declined the NDA on a folder. %>
 <%# Sent to each address in NdaConfig.notification_emails via direct delivery. %>
 
-<p>An investor has declined the NDA on your Data Room folder.</p>
+<p>Dear Team,</p>
+
+<p>This is to notify you that an investor has declined the Non-Disclosure Agreement for the Data Room folder below.</p>
 
 <table style="border-collapse:collapse;width:100%">
   <tr>
     <td style="padding:6px 12px;font-weight:bold">Investor</td>
     <td style="padding:6px 12px"><%= @investor_name %></td>
-  </tr>
-  <tr>
-    <td style="padding:6px 12px;font-weight:bold">Folder</td>
-    <td style="padding:6px 12px"><%= @folder_name %></td>
   </tr>
   <tr>
     <td style="padding:6px 12px;font-weight:bold">Declined By</td>
@@ -19,5 +17,9 @@
   <tr>
     <td style="padding:6px 12px;font-weight:bold">Date</td>
     <td style="padding:6px 12px"><%= l(@declined_at) %></td>
+  </tr>
+  <tr>
+    <td style="padding:6px 12px;font-weight:bold">Folder</td>
+    <td style="padding:6px 12px"><%= @folder_name %></td>
   </tr>
 </table>

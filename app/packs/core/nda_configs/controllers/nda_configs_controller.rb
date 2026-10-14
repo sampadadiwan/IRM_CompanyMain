@@ -195,17 +195,8 @@ class NdaConfigsController < ApplicationController
   #
   # @return [void]
   def notify_version_change
-    recipients = NdaNotificationRecipients.resolve(:new_version, @nda_config)
     folder_name = @nda_config.owner&.name
-
-    # Changed: Compute previous version directly instead of dirty tracking.
-    # Why: Version is now bumped via update_column (bypasses ActiveModel dirty tracking),
-    #   so saved_change_to_version is nil. The old version is always current minus one.
     old_version = @nda_config.version - 1
-
-    # Changed: Added folder_link for email CTA.
-    # Why: LP needs a clickable link in the "NDA Updated" email to re-accept.
-    #   Uses _url helper for absolute URL (emails can't use relative paths).
     folder_link = if @nda_config.owner.is_a?(Folder)
                     folder_documents_url(entity_id: @nda_config.entity_id, folder_id: @nda_config.owner_id)
                   end
@@ -219,26 +210,32 @@ class NdaConfigsController < ApplicationController
       folder_link: folder_link
     }
 
-    # Changed: Send directly to each GP notification email (not through Noticed).
-    # Why: notification_emails are external addresses, not system Users.
-    recipients[:gp_emails].each do |email|
+    # Changed: GP emails still use the flat resolve — they don't need investor_name in greeting.
+    gp_recipients = NdaNotificationRecipients.resolve(:new_version, @nda_config)
+    gp_recipients[:gp_emails].each do |email|
       NdaMailer.with(gp_params.merge(direct_to: email)).nda_new_version.deliver_later
     end
 
-    # Changed: Send LP new-version notification via Noticed.
-    # Why: LP users are system Users — they get the standard Noticed pipeline with
-    #   email_delay and sandbox handling.
-    recipients[:lp_users].each do |user|
-      NdaEventNotifier.with(
-        entity_id: @nda_config.entity_id,
-        email_method: :nda_new_version,
-        record: @nda_config,
-        folder_name: folder_name,
-        old_version: old_version,
-        new_version: @nda_config.version,
-        contact_email: @nda_config.contact_email,
-        folder_link: folder_link
-      ).deliver_later(user)
+    # Changed: LP notifications now loop per-investor instead of a flat user list.
+    # Why: Updated email template includes "Dear [Investor Name]," greeting and needs
+    #   the investor company name per recipient. stale_acceptance_users_by_investor returns
+    #   { Investor => [User] } so each user gets the correct investor_name.
+    lp_by_investor = NdaNotificationRecipients.stale_acceptance_users_by_investor(@nda_config)
+    lp_by_investor.each do |investor, users|
+      users.each do |user|
+        NdaEventNotifier.with(
+          entity_id: @nda_config.entity_id,
+          email_method: :nda_new_version,
+          record: @nda_config,
+          investor_name: investor.name,
+          folder_name: folder_name,
+          old_version: old_version,
+          new_version: @nda_config.version,
+          contact_email: @nda_config.contact_email,
+          folder_link: folder_link,
+          updated_at: Time.current
+        ).deliver_later(user)
+      end
     end
   rescue StandardError => e
     # Changed: Rescue notification errors to never block the update flow.
