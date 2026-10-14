@@ -33,10 +33,27 @@ class Fund < ApplicationRecord
   # If this is a master fund, it may have many feeder funds
   has_many :feeder_funds, class_name: "Fund", foreign_key: :master_fund_id
 
-  # The fund whose portfolio and ratios an LP sees for this fund: a feeder fund shows its master
-  # fund's (LP fund page Ratios / Portfolio sections and the LP commitment card)
-  def lp_ratios_fund_id
-    master_fund_id.presence || id
+  # The fund whose ratios an LP sees for this fund (LP fund page Ratios section, LP commitment card):
+  # its own fund-level ratios; a feeder fund with none of its own yet falls back to its master fund's,
+  # and those screens say so (#lp_ratios_from_master?)
+  def lp_ratios_fund
+    lp_ratios_from_master? ? master_fund : self
+  end
+
+  delegate :id, to: :lp_ratios_fund, prefix: true # lp_ratios_fund_id
+
+  # A feeder fund that has no fund-level ratios of its own yet while its master fund has some - its LPs
+  # are shown the master's. (If neither has any, the feeder's own empty list shows, with no caveat.)
+  def lp_ratios_from_master?
+    # Memoised: each LP screen asks more than once (which fund to list, and whether to show the caveat)
+    return @lp_ratios_from_master if defined?(@lp_ratios_from_master)
+
+    @lp_ratios_from_master = master_fund_id.present? && !Fund.fund_level_ratios?(id) && Fund.fund_level_ratios?(master_fund_id)
+  end
+
+  # Whether the fund has any fund-level ratios (not per-commitment ones)
+  def self.fund_level_ratios?(fund_id)
+    FundRatio.exists?(fund_id:, owner_type: "Fund", capital_commitment_id: nil)
   end
 
   has_many :fund_ratios, dependent: :destroy

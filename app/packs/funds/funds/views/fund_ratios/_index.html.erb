@@ -10,6 +10,13 @@
   headline_dates = headline&.map(&:end_date)&.uniq
   shared_date = headline_dates.first if headline_dates&.size == 1
   header_subtitle = "Latest ratios for #{headline.first.fund&.name}, as of #{l(shared_date)}" if shared_date
+  # A feeder fund with no ratios of its own: the LP is looking at its master fund's (funds/_investor_fund_details).
+  # Only trusted when that fund really is this list's fund's feeder.
+  feeder = Fund.find_by(id: params[:ratios_from_master_of]) if params[:ratios_from_master_of].present?
+  if feeder && fund && feeder.master_fund_id == fund.id
+    caveat = "#{feeder.name} has no ratios of its own yet. These are its master fund #{fund.name}'s ratios."
+    header_subtitle = [caveat, header_subtitle].compact.join(" ")
+  end
 %>
 <%= render "fund_ratios/index_header", fund: , valuation: , data_source:, subtitle: header_subtitle %>
 <%= render "fund_ratios/headline_cards", fund_ratios: headline, shared_date: shared_date if headline %>

@@ -134,6 +134,12 @@
                                     the LP's ratios fund (a feeder shows its master's - Fund#lp_ratios_fund_id), fund-level,
                                     Default scenario, each ratio's latest row (FundRatio.headline_ratios); the first three here %>
                                 <% card_ratios = policy_scope(FundRatio).where(fund_id: capital_commitment.fund.lp_ratios_fund_id, capital_commitment_id: nil, scenario: "Default") %>
+                                <%# A feeder with no ratios of its own shows its master's - say so %>
+                                <% if capital_commitment.fund.lp_ratios_from_master? %>
+                                    <caption class="caption-top small text-muted" id="fund_ratios_from_master_<%= capital_commitment.id %>">
+                                        <%= capital_commitment.fund.name %> has no ratios of its own yet. These are its master fund <%= capital_commitment.fund.master_fund.name %>'s ratios.
+                                    </caption>
+                                <% end %>
                                 <% FundRatio.headline_ratios(card_ratios).first(3).each do |fund_ratio| %>
                                     <tr>
                                         <td>

@@ -122,12 +122,13 @@
           <div id="collapseRatios" class="accordion-collapse collapse" aria-labelledby="ratios-tab" data-bs-parent="#investorFundDetailsAccordion">
             <div class="accordion-body">
               <%
-                # For the portfolio and fund ratios, use the master_fund if its present as in the feeder fund we want to see the master_fund portfolio and ratios
-                # (Fund#lp_ratios_fund_id - the LP commitment card's Fund Ratios use the same fund)
+                # The fund's own ratios; a feeder with none of its own yet shows its master fund's, and the
+                # list says so (ratios_from_master_of). Fund#lp_ratios_fund - the LP commitment card uses the same.
                 fund_id = fund.lp_ratios_fund_id
+                from_master_of = fund.id if fund.lp_ratios_from_master?
               %>
               <div id="fund-ratios" class="">
-                <%= turbo_frame_tag "fund_ratios_frame", target: "_top", loading: :lazy, src: fund_ratios_path(fund_id: fund_id, fund_ratios_only: true, owner_type: "Fund", scenario: "Default") do %>
+                <%= turbo_frame_tag "fund_ratios_frame", target: "_top", loading: :lazy, src: fund_ratios_path(fund_id: fund_id, fund_ratios_only: true, owner_type: "Fund", scenario: "Default", ratios_from_master_of: from_master_of) do %>
                     <%= render "/layouts/loading" %>
                   <% end %>
               </div>
