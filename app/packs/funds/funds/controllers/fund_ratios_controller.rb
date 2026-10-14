@@ -6,6 +6,8 @@ class FundRatiosController < ApplicationController
   # GET /fund_ratios or /fund_ratios.json
   def index
     fetch_rows
+    # Headline ratio cards above the fund team's Ratios tab (nil elsewhere)
+    @headline_ratios = headline_ratios
 
     # Step 5: Pivot grouping (if requested)
     @pagy, @fund_ratios = pagy(@fund_ratios, limit: params[:per_page]) if params[:pivot].blank? && params[:all].blank? && params[:condensed].blank? && params[:scenarios].blank? && params[:timeseries].blank?
@@ -84,6 +86,16 @@ class FundRatiosController < ApplicationController
   end
 
   private
+
+  # The fund team's Ratios tab only (fund_ratios_only for a fund their entity owns, not the investor
+  # role): the fund's latest headline ratios, taken from the list's own filtered rows before
+  # pagination, so each card is a row the grid shows and follows its search / filters.
+  def headline_ratios
+    return unless params[:fund_ratios_only].present? && @fund && @fund.entity_id == current_user.entity_id
+    return if current_user.curr_role == "investor"
+
+    FundRatio.headline_ratios(@fund_ratios)
+  end
 
   # Use callbacks to share common setup or constraints between actions.
   def set_fund_ratio

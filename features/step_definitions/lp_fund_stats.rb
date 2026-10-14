@@ -382,3 +382,74 @@ end
 Then('the stats cards in {string} should be:') do |container, table|
   expect_stat_cards(container, table.hashes)
 end
+
+# S26/S27 - fund unit stats cards (FundUnit.grid_totals)
+Given("the LP's commitment has these fund units:") do |table|
+  commitment = lp_commitment
+  table.hashes.each do |row|
+    unit = FactoryBot.create(:fund_unit, fund: @fund, entity: @fund.entity, capital_commitment: commitment, investor: @investor,
+                                         unit_type: row["unit_type"], quantity: BigDecimal(row["quantity"]),
+                                         price_cents: stat_cents(row["price"]), premium_cents: stat_cents(row["premium"]))
+    # Amount is derived on save (quantity x (price + premium)); check the row is as the grid will show it
+    expect(unit.reload.amount_cents).to eq(BigDecimal(row["quantity"]) * (stat_cents(row["price"]) + stat_cents(row["premium"])))
+  end
+end
+
+Then("the fund unit totals for the LP's commitment should be:") do |table|
+  expected = table.rows_hash
+  totals = FundUnit.grid_totals(FundUnit.where(capital_commitment_id: lp_commitment.id))
+  expect(totals[:units_by_type].transform_values(&:to_d)).to eq(expected.except("amount").transform_values { |v| BigDecimal(v) })
+  expect(totals[:amount].to_d).to eq(stat_cents(expected["amount"]))
+end
+
+When("I open the Units tab of the LP's commitment page") do
+  visit(capital_commitment_path(lp_commitment))
+  find("a[href='#fund-units-tab']").click
+  expect(page).to have_css("#fund-units-tab #fund_unit_stats", wait: 15)
+end
+
+Then('the fund unit stats cards should be:') do |table|
+  within("#fund_unit_stats") do
+    table.hashes.each do |row|
+      card = find(".card-subtitle", exact_text: row["subtitle"]).ancestor(".card")
+      expect(card).to have_css("h2", exact_text: ActiveSupport::NumberHelper.number_to_delimited(BigDecimal(row["value"])))
+    end
+  end
+end
+
+Then('the fund unit Amount card should be {string}') do |amount|
+  within("#fund_unit_stats") do
+    card = find(".card-subtitle", exact_text: "Amount").ancestor(".card")
+    expect(card).to have_css("h2", exact_text: stat_card_text(amount))
+  end
+end
+
+# S28/S29 - headline ratio cards on the fund team's Ratios tab (FundRatio.headline_ratios)
+Given('the fund has these ratios:') do |table|
+  table.hashes.each do |row|
+    FactoryBot.create(:fund_ratio, entity: @fund.entity, fund: @fund, owner: @fund, name: row["name"], display_value: row["display_value"],
+                                   end_date: Date.parse(row["end_date"]), scenario: row["scenario"])
+  end
+end
+
+Then('the headline ratio cards should be {string}') do |expected|
+  cards = FundRatio.headline_ratios(FundRatio.where(fund_id: @fund.id)).map { |r| "#{r.name}=#{r.display_value}" }
+  expect(cards).to eq(expected.split(",").map(&:strip))
+end
+
+When("I open the fund team's Ratios tab") do
+  visit(fund_path(@fund))
+  find("a[href='#fund-ratios-tab']").click
+  expect(page).to have_css("#fund-ratios-tab #fund_ratio_headline_stats", wait: 15)
+end
+
+Then('I should see the headline ratio cards {string}') do |expected|
+  within("#fund_ratio_headline_stats") do
+    expected.split(",").map(&:strip).each do |pair|
+      name, value = pair.split("=", 2)
+      card = find(".card-subtitle", exact_text: name).ancestor(".card")
+      expect(card).to have_css("h2", exact_text: value)
+    end
+    expect(page).to have_css(".card", count: expected.split(",").size)
+  end
+end

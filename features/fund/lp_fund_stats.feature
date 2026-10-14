@@ -272,3 +272,56 @@ Feature: LP fund page stats cards for calls and distributions
       | Total Distributions | 90000  |            |
       | Received            | 90000  |            |
       | Last Distribution   | 90000  | 2026-01-20 |
+
+  # S26 — Edge case: units are totalled per unit type, never across types (Series A and Series C are different
+  #       instruments); a transfer out (negative quantity) reduces its type's total, as the grid row shows
+  @rack_test
+  Scenario: Fund unit totals per unit type and Amount
+    Given the LP's commitment has these fund units:
+      | unit_type | quantity | price | premium |
+      | Series A  | 2600     | 10    | 1       |
+      | Series A  | -2       | 10    | 1       |
+      | Series C  | 5200     | 5     | 0       |
+    Then the fund unit totals for the LP's commitment should be:
+      | Series A | 2598   |
+      | Series C | 5200   |
+      | amount   | 54578  |
+
+  # S27 — Edge case: the fund team sees the per-type units and Amount cards on the commitment page's Units tab
+  Scenario: Fund team sees fund unit stats cards on the commitment page
+    Given the LP's commitment has these fund units:
+      | unit_type | quantity | price | premium |
+      | Series A  | 100      | 10    | 0       |
+      | Series C  | 50       | 2     | 0       |
+    And I am signed in as the current user
+    When I open the Units tab of the LP's commitment page
+    Then the fund unit stats cards should be:
+      | subtitle      | value  |
+      | Series A held | 100.0  |
+      | Series C held | 50.0   |
+    And the fund unit Amount card should be "1100"
+
+  # S28 — Edge case: a headline card is the fund-level row with the latest On date for that ratio (an older TVPI is
+  #       skipped), Default scenario first on a tie; currency variants ("TVPI (USD)") and non-headline ratios get no card;
+  #       ratios the fund doesn't have get no card
+  @rack_test
+  Scenario: Headline ratio cards pick each ratio's latest fund-level row
+    Given the fund has these ratios:
+      | name       | display_value | end_date   | scenario |
+      | TVPI       | 1.2x          | 2025-03-31 | Default  |
+      | TVPI       | 1.5x          | 2025-12-31 | Default  |
+      | TVPI       | 1.9x          | 2025-12-31 | Upside   |
+      | TVPI (USD) | 1.4x          | 2025-12-31 | Default  |
+      | XIRR       | 16.2 %        | 2025-12-31 | Default  |
+      | Fund Utilization | 80 %    | 2025-12-31 | Default  |
+    Then the headline ratio cards should be "XIRR=16.2 %, TVPI=1.5x"
+
+  # S29 — Edge case: the fund team sees the headline cards on its Ratios tab, under one shared "as of" line
+  Scenario: Fund team sees headline ratio cards on the fund's Ratios tab
+    Given the fund has these ratios:
+      | name | display_value | end_date   | scenario |
+      | TVPI | 1.5x          | 2025-12-31 | Default  |
+      | DPI  | 0.4x          | 2025-12-31 | Default  |
+    And I am signed in as the current user
+    When I open the fund team's Ratios tab
+    Then I should see the headline ratio cards "TVPI=1.5x, DPI=0.4x"

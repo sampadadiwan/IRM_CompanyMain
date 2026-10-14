@@ -66,6 +66,19 @@ class FundRatio < ApplicationRecord
     "Fund Utilization" => "How much of the fund's capital has been put to work"
   }.freeze
 
+  # The ratios shown as cards above the fund team's Ratios tab, in this order
+  HEADLINE_RATIOS = ["XIRR", "TVPI", "DPI", "RVPI", "MOIC", "Gross Portfolio IRR"].freeze
+
+  # For each headline ratio the fund has in `scope` (the Ratios grid's rows): its fund-level row with the
+  # latest On date - Default scenario first when several share that date. Base names only ("TVPI", not
+  # "TVPI (USD)"): the fund's own currency. One small query per ratio name.
+  def self.headline_ratios(scope)
+    fund_rows = scope.where(owner_type: "Fund")
+    HEADLINE_RATIOS.filter_map do |name|
+      fund_rows.where(name:).reorder(end_date: :desc).order(Arel.sql("CASE WHEN fund_ratios.scenario = 'Default' THEN 0 ELSE 1 END"), id: :desc).first
+    end
+  end
+
   # Tooltip text for a ratio name, or nil when it is not a standard ratio
   def self.help_for(name)
     # "TVPI (USD)" -> base "TVPI" + a currency note

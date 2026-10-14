@@ -1,0 +1,24 @@
+<%# Headline ratio cards above the fund team's Ratios tab (FundRatiosController#headline_ratios).
+    Each card is one row of the grid below - the fund's latest value for that ratio - and links to it. %>
+<%
+  colors = %w[primary success info warning danger secondary]
+  # One shared date goes in a single line above the cards; otherwise each card says its own date
+  dates = fund_ratios.map(&:end_date).uniq
+  shared_date = dates.first if dates.size == 1 && dates.first
+%>
+<% if shared_date %>
+  <small class="text-muted d-block mb-1">Latest fund ratios, as of <%= l(shared_date) %></small>
+<% end %>
+<div class="row mb-3" id="fund_ratio_headline_stats">
+  <% fund_ratios.each_with_index do |fund_ratio, i| %>
+    <%= render(NumberStatsComponent.new(
+      path: fund_ratio_path(fund_ratio),
+      amount: fund_ratio.display_value,
+      subtitle: shared_date || fund_ratio.end_date.nil? ? fund_ratio.name : "#{fund_ratio.name} · as of #{l(fund_ratio.end_date)}",
+      progress_bar_color: colors[i % colors.size],
+      text_info: "chart-line",
+      tooltip: FundRatio.help_for(fund_ratio.name),
+      fs_size: 4
+    )) %>
+  <% end %>
+</div>

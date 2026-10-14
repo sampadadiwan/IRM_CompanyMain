@@ -3,6 +3,8 @@
 <% import_upload_id ||= nil %>
 <% data_source ||= fund_ratios_path(params: params.to_unsafe_h, import_upload_id: import_upload_id) %>
 <%= render "fund_ratios/index_header", fund: , valuation: , data_source: %>
+<%# Fund team's Ratios tab: the fund's latest headline ratios as cards, under the heading %>
+<%= render "fund_ratios/headline_cards", fund_ratios: @headline_ratios if @headline_ratios.present? %>
 <%= render "fund_ratios/analytics", fund: %>
 <% fund_ratios_frame = with_frame("fund_ratios_frame") %>
 <% q ||=nil %>
