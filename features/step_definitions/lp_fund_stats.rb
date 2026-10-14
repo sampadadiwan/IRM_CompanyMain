@@ -3,6 +3,10 @@
 # both controllers, the _lp_stats partials and NumberStatsComponent#short_units).
 # Amounts in the feature tables are major units of the fund currency; the models work in cents.
 
+# An info-icon tooltip in the browser. Bootstrap 5.3 moves `title` to `data-bs-original-title` when it
+# initialises the tooltip, so accept either (server-rendered HTML still has `title`).
+TOOLTIP_ICON = ".ti-info-circle[data-bs-toggle='tooltip']:is([title], [data-bs-original-title])".freeze
+
 module LpFundStatsHelpers
   # Major units in a feature table -> cents
   # Major units -> cents, keeping fractional paise (amount columns are decimal(20,2) cents)
@@ -251,20 +255,20 @@ Then('every LP remittance stats card should have a help tooltip') do
   within("#lp_remittance_stats") do
     cards = all(".card")
     expect(cards).not_to be_empty
-    cards.each { |card| expect(card).to have_css(".ti-info-circle[data-bs-toggle='tooltip'][title]") }
+    cards.each { |card| expect(card).to have_css(TOOLTIP_ICON) }
   end
 end
 
 Then('the LP grid headers {string} should have help tooltips') do |labels|
   labels.split(",").map(&:strip).each do |label|
     header = find("#collapseCalls th", text: label, match: :first)
-    expect(header).to have_css(".ti-info-circle[data-bs-toggle='tooltip'][title]")
+    expect(header).to have_css(TOOLTIP_ICON)
   end
 end
 
 Then('the remittance grid headers {string} should have help tooltips') do |labels|
   labels.split(",").map(&:strip).each do |label|
-    expect(find("th", text: label, match: :first)).to have_css(".ti-info-circle[data-bs-toggle='tooltip'][title]")
+    expect(find("th", text: label, match: :first)).to have_css(TOOLTIP_ICON)
   end
 end
 
@@ -334,7 +338,7 @@ end
 
 Then('the {string} section grid headers should have help tooltips') do |section|
   # Unit Type, Issue Date, Quantity, Price, Premium, Amount, Reason
-  expect(page).to have_css("#collapse#{section.capitalize} th .ti-info-circle[data-bs-toggle='tooltip'][title]", minimum: 7)
+  expect(page).to have_css("#collapse#{section.capitalize} th #{TOOLTIP_ICON}", minimum: 7)
 end
 
 When('I visit the fund page with tab {string}') do |tab|
