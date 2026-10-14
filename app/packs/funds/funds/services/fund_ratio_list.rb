@@ -54,7 +54,9 @@ class FundRatioList < BaseList
     @fund_ratios = @fund_ratios.where(capital_commitment_id: nil) if @params[:fund_ratios_only].present?
     @fund_ratios = @fund_ratios.where(latest: true) if @params[:latest].to_s == "true"
 
-    @fund_ratios = @fund_ratios.order(end_date: :desc) unless ransack_has_attr?(params[:q], 's')
+    # Default order: newest date first, then by name so rows sharing a date read in a stable,
+    # alphabetical order (a column sort the user picks replaces this)
+    @fund_ratios = @fund_ratios.order(end_date: :desc, name: :asc, id: :desc) unless ransack_has_attr?(params[:q], 's')
 
     result_attrs = { q: @q, fund_ratios: @fund_ratios, fund: @fund }
 
