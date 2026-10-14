@@ -16,6 +16,9 @@
         <% else %>
           <%= column_name %>
         <% end %>
+        <% if (help = @column_help[attribute]).present? %>
+          <i class="ti ti-info-circle ms-1" data-bs-toggle="tooltip" title="<%= help %>" aria-label="<%= help %>"></i>
+        <% end %>
       </th>
     <% end %>
     <% if @actions_column %>

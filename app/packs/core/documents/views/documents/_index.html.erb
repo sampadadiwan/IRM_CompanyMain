@@ -34,9 +34,17 @@
       <%= title %>: <%= link %>
     </h4>
   <% else %>
-    <h4 class="mb-0 text-gray-800  d-none d-sm-block">
-      <%= title %>
-    </h4>
+    <div class="d-none d-sm-block">
+      <h4 class="mb-0 text-gray-800">
+        <%= title %>
+      </h4>
+      <%# Say what a tree-wide list holds, so an LP knows they are not looking at one folder %>
+      <% if params[:search].present? %>
+        <small class="text-muted">Matches across all of this fund's folders. Clear the search to see the latest documents.</small>
+      <% elsif params[:latest_first].present? %>
+        <small class="text-muted">Everything shared with you, newest first. Pick a folder on the left to browse it.</small>
+      <% end %>
+    </div>
   <% end %>
 
   <% if show_action_buttons %>

@@ -1,4 +1,9 @@
-<div class="container-fluid p-3" data-controller="tabs" style="max-width: 1400px;">
+<%# Each section header: icon + title + one-line muted subtitle saying what it holds (en.yml
+    funds.fund_details.subtitles), as the evergreen LP page does. %>
+<%# Full width: the LP grids (remittances, distribution payments) have many money columns and
+    scrolled sideways. The theme caps .container-fluid at 1200px; mw-100 lifts it, as the layout's
+    <main> does %>
+<div class="container-fluid mw-100 p-3" data-controller="tabs">
 
     <div class="accordion ultra-cool-accordion" id="investorFundDetailsAccordion" data-controller="accordion-scroll">
 
@@ -6,7 +11,13 @@
       <div class="accordion-item">
         <h2 class="accordion-header" id="commitments-tab">
           <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCommitments" aria-expanded="true" aria-controls="collapseCommitments" aria-label="Expand commitments section">
-            <%= t('funds.fund_details.commitments') %>
+            <span class="d-flex align-items-center gap-3">
+              <i class="ti ti-file-certificate fs-5 text-primary" aria-hidden="true"></i>
+              <span>
+                <%= t('funds.fund_details.commitments') %>
+                <small class="d-block text-muted"><%= t('funds.fund_details.subtitles.commitments') %></small>
+              </span>
+            </span>
           </button>
         </h2>
         <div id="collapseCommitments" class="accordion-collapse collapse show" aria-labelledby="commitments-tab" data-bs-parent="#investorFundDetailsAccordion">
@@ -24,7 +35,13 @@
       <div class="accordion-item">
         <h2 class="accordion-header" id="calls-tab">
           <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCalls" aria-expanded="false" aria-controls="collapseCalls" aria-label="Expand calls section">
-            <%= t('funds.fund_details.calls') %>
+            <span class="d-flex align-items-center gap-3">
+              <i class="ti ti-cash fs-5 text-primary" aria-hidden="true"></i>
+              <span>
+                <%= t('funds.fund_details.calls') %>
+                <small class="d-block text-muted"><%= t('funds.fund_details.subtitles.calls') %></small>
+              </span>
+            </span>
           </button>
         </h2>
         <div id="collapseCalls" class="accordion-collapse collapse" aria-labelledby="calls-tab" data-bs-parent="#investorFundDetailsAccordion">
@@ -42,7 +59,13 @@
       <div class="accordion-item">
         <h2 class="accordion-header" id="distributions-tab">
           <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDistributions" aria-expanded="false" aria-controls="collapseDistributions" aria-label="Expand distributions section">
-            <%= t('funds.fund_details.distributions') %>
+            <span class="d-flex align-items-center gap-3">
+              <i class="ti ti-coins fs-5 text-primary" aria-hidden="true"></i>
+              <span>
+                <%= t('funds.fund_details.distributions') %>
+                <small class="d-block text-muted"><%= t('funds.fund_details.subtitles.distributions') %></small>
+              </span>
+            </span>
           </button>
         </h2>
         <div id="collapseDistributions" class="accordion-collapse collapse" aria-labelledby="distributions-tab" data-bs-parent="#investorFundDetailsAccordion">
@@ -61,7 +84,13 @@
         <div class="accordion-item">
           <h2 class="accordion-header" id="units-tab">
             <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseUnits" aria-expanded="false" aria-controls="collapseUnits" aria-label="Expand units section">
-              <%= t('funds.fund_details.units') %>
+              <span class="d-flex align-items-center gap-3">
+                <i class="ti ti-chart-pie fs-5 text-primary" aria-hidden="true"></i>
+                <span>
+                  <%= t('funds.fund_details.units') %>
+                  <small class="d-block text-muted"><%= t('funds.fund_details.subtitles.units') %></small>
+                </span>
+              </span>
             </button>
           </h2>
           <div id="collapseUnits" class="accordion-collapse collapse" aria-labelledby="units-tab" data-bs-parent="#investorFundDetailsAccordion">
@@ -81,7 +110,13 @@
         <div class="accordion-item">
           <h2 class="accordion-header" id="ratios-tab">
             <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseRatios" aria-expanded="false" aria-controls="collapseRatios" aria-label="Expand ratios section">
-              <%= t('funds.fund_details.ratios') %>
+              <span class="d-flex align-items-center gap-3">
+                <i class="ti ti-chart-line fs-5 text-primary" aria-hidden="true"></i>
+                <span>
+                  <%= t('funds.fund_details.ratios') %>
+                  <small class="d-block text-muted"><%= t('funds.fund_details.subtitles.ratios') %></small>
+                </span>
+              </span>
             </button>
           </h2>
           <div id="collapseRatios" class="accordion-collapse collapse" aria-labelledby="ratios-tab" data-bs-parent="#investorFundDetailsAccordion">
@@ -105,7 +140,13 @@
         <div class="accordion-item">
           <h2 class="accordion-header" id="portfolio-tab">
             <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePortfolio" aria-expanded="false" aria-controls="collapsePortfolio" aria-label="Expand portfolio section">
-              <%= t('funds.fund_details.portfolio') %>
+              <span class="d-flex align-items-center gap-3">
+                <i class="ti ti-briefcase fs-5 text-primary" aria-hidden="true"></i>
+                <span>
+                  <%= t('funds.fund_details.portfolio') %>
+                  <small class="d-block text-muted"><%= t('funds.fund_details.subtitles.portfolio') %></small>
+                </span>
+              </span>
             </button>
           </h2>
           <div id="collapsePortfolio" class="accordion-collapse collapse" aria-labelledby="portfolio-tab" data-bs-parent="#investorFundDetailsAccordion">
@@ -124,7 +165,13 @@
       <div class="accordion-item">
         <h2 class="accordion-header" id="docs-tab">
           <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDocuments" aria-expanded="false" aria-controls="collapseDocuments" aria-label="Expand documents section">
-            <%= t('funds.fund_details.documents') %>
+            <span class="d-flex align-items-center gap-3">
+              <i class="ti ti-folder fs-5 text-primary" aria-hidden="true"></i>
+              <span>
+                <%= t('funds.fund_details.documents') %>
+                <small class="d-block text-muted"><%= t('funds.fund_details.subtitles.documents') %></small>
+              </span>
+            </span>
           </button>
         </h2>
         <div id="collapseDocuments" class="accordion-collapse collapse" aria-labelledby="docs-tab" data-bs-parent="#investorFundDetailsAccordion">

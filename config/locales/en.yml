@@ -163,6 +163,15 @@ en:
       ratios: Ratios
       tasks: Tasks
       units: Units
+      # One-line help under each LP fund page section title (funds/_investor_fund_details)
+      subtitles:
+        commitments: Your commitment to this fund per folio - committed, called, collected and distributed
+        calls: Each capital call on your folios - what was asked, what the fund has verified, and what is still due
+        distributions: Payouts from the fund to you, and whether each one has been paid
+        units: Fund units allotted to your folios
+        ratios: Performance ratios the fund reports, such as TVPI and XIRR
+        portfolio: The companies the fund has invested in, at cost and current value
+        documents: Statements, notices and reports shared with you - newest first, searchable
   hello: Hello
   investment:
     create: Investment was created

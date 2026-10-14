@@ -28,6 +28,7 @@
                     <span class="fs3 mb-1">
                         <%= capital_commitment.investor_kyc&.full_name if capital_commitment.investor_kyc %>
                         Folio: <%= capital_commitment.folio_id %>
+                        <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip" title="Your account number with this fund. Calls, distributions and documents are issued per folio"></i>
                     </span>
 
                 </div>
@@ -50,35 +51,37 @@
                     },
                     **chart_theme_color
                  } %>
+                <%# Say what the bars compare - Collected is verified payments only, like Due Amount %>
+                <small class="text-muted d-block text-center">Committed vs called vs collected (verified payments) vs distributed on this folio</small>
             </div>
             <div class="col-md-5">
                 <div class="hstack mb-4 pb-1">
                     <div class="p-8 bg-primary-subtle rounded-1 me-3 d-flex align-items-center justify-content-center">
-                        <i class="ti ti-grid-dots text-primary fs-6"></i>
+                        <i class="ti ti-file-certificate text-primary fs-6"></i>
                         </div>
                         <div>
                         <span class="mb-0 fs-7"><%= money_to_currency(capital_commitment.committed_amount, params) %></span>
-                        <p class="fs-3 mb-0">Committed</p>
+                        <p class="fs-3 mb-0">Committed <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip" title="What you agreed to invest in this fund on this folio"></i></p>
                     </div>
                 </div>
 
                 <div class="hstack mb-4 pb-1">
                     <div class="p-8 bg-primary-subtle rounded-1 me-3 d-flex align-items-center justify-content-center">
-                        <i class="ti ti-grid-dots text-primary fs-6"></i>
+                        <i class="ti ti-file-invoice text-primary fs-6"></i>
                         </div>
                         <div>
                         <span class="mb-0 fs-7"><%= money_to_currency(capital_commitment.call_amount, params) %></span>
-                        <p class="fs-3 mb-0">Called</p>
+                        <p class="fs-3 mb-0">Called <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip" title="How much of your commitment the fund has asked for so far, in capital calls"></i></p>
                     </div>
                 </div>
 
                 <div class="hstack mb-4 pb-1">
                     <div class="p-8 bg-primary-subtle rounded-1 me-3 d-flex align-items-center justify-content-center">
-                        <i class="ti ti-grid-dots text-primary fs-6"></i>
+                        <i class="ti ti-coins text-primary fs-6"></i>
                         </div>
                         <div>
                         <span class="mb-0 fs-7"><%= money_to_currency(capital_commitment.distribution_amount, params) %></span>
-                        <p class="fs-3 mb-0">Distributed</p>
+                        <p class="fs-3 mb-0">Distributed <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip" title="What the fund has distributed to you on this folio (gross, before deductions)"></i></p>
                     </div>
                 </div>
 
@@ -89,14 +92,14 @@
 
                             <div class="col-6">
                                 <a href="<%= fund_path(capital_commitment.fund, tab: "commitments-tab") %>" class="btn btn-outline-primary w-100">
-                                    Fund Details
+                                    <i class="ti ti-building-bank me-1"></i>Fund Details
                                 </a>
 
                             </div>
                             <div class="col-6">
 
                                 <a href="<%= fund_path(capital_commitment.fund, tab: "docs-tab") %>" class="btn btn-outline-primary w-100">
-                                    Fund Documents
+                                    <i class="ti ti-folder me-1"></i>Fund Documents
                                 </a>
                             </div>
                         </div>
@@ -119,15 +122,22 @@
                             <div class="d-flex justify-content-between align-items-center mb-9">
                                 <h5 class="card-title mb-0 fw-semibold">
                                     Fund Ratios
+                                    <i class="ti ti-info-circle text-muted fs-4" data-bs-toggle="tooltip" title="The fund's latest reported performance ratios. Hover a ratio for what it measures"></i>
                                 </h5>
                                 <%= link_to fund_path(capital_commitment.fund, tab: "ratios-tab"), class: "small text-decoration-none", id: "fund_ratios_see_all_#{capital_commitment.id}" do %>
                                     See all &rarr;
                                 <% end %>
                             </div>
                             <table class="table">
+                                <%# Plain-language meaning of each ratio (FundRatio.help_for), as a tooltip on its name %>
                                 <% capital_commitment.fund.fund_ratios.where(owner: capital_commitment.fund, name: ["XIRR", "TVPI", "Portfolio Value to Cost"]).order(id: :desc).limit(3).each do |fund_ratio| %>
                                     <tr>
-                                        <td><%= link_to fund_ratio.name, fund_ratio %></td>
+                                        <td>
+                                            <%= link_to fund_ratio.name, fund_ratio %>
+                                            <% if (ratio_help = FundRatio.help_for(fund_ratio.name)) %>
+                                                <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip" title="<%= ratio_help %>"></i>
+                                            <% end %>
+                                        </td>
                                         <td><%= fund_ratio.display_value %></td>
                                     </tr>
                                 <% end %>
@@ -145,6 +155,7 @@
                             <div class="d-flex justify-content-between align-items-center mb-9">
                                 <h5 class="card-title mb-0 fw-semibold">
                                     Recent Documents
+                                    <i class="ti ti-info-circle text-muted fs-4" data-bs-toggle="tooltip" title="The latest documents shared with you for this folio, and from the fund's data room"></i>
                                 </h5>
                                 <%= link_to fund_path(capital_commitment.fund, tab: "docs-tab"), class: "small text-decoration-none", id: "recent_documents_see_all_#{capital_commitment.id}" do %>
                                     See all &rarr;
@@ -197,13 +208,17 @@
                     <div class="d-flex justify-content-between align-items-center mb-9">
                         <h5 class="card-title mb-0 fw-semibold">
                             Due Amount
+                            <i class="ti ti-info-circle text-muted fs-4" data-bs-toggle="tooltip" title="What you still owe on this folio: called + fees - payments the fund has verified. Payments still being verified count as due"></i>
                         </h5>
                         <%= link_to fund_path(capital_commitment.fund, tab: "calls-tab"), class: "small text-decoration-none", id: "due_amount_see_all_#{capital_commitment.id}" do %>
                             See all &rarr;
                         <% end %>
                     </div>
                     <span class="fs-5 mb-0">
-                        <%= money_to_currency(capital_commitment.due_amount, {}) %>
+                        <%# Same verified-basis total as the Calls section's Due card and grid (CapitalRemittance.lp_totals),
+                            over the remittances of this folio the user can see %>
+                        <% folio_remittances = CapitalRemittance.where(id: policy_scope(CapitalRemittance).where(capital_commitment_id: capital_commitment.id).select(:id)) %>
+                        <%= money_to_currency(Money.new(CapitalRemittance.lp_totals(folio_remittances)[:due], capital_commitment.fund.currency), {}) %>
                     </span>
                 </div>
             </div>

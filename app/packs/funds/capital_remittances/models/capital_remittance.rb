@@ -34,13 +34,30 @@ class CapitalRemittance < ApplicationRecord
     "Tracking Called; num-col" => "tracking_call_amount; num-col"
   }.freeze
 
+  # LPs see collections on the verified basis (as the commitment counters do): a payment counts as
+  # collected once the fund has verified it, and until then shows under "Under Verification".
   INVESTOR_STANDARD_COLUMNS = {
     "Capital Call; text-col" => "capital_call_name; text-col",
     "Folio Id; text-col" => "folio_id; text-col",
-    "Status; text-col" => "status; text-col",
-    "Due Amount; num-col" => "due_amount; num-col",
-    "Collected Amount; num-col" => "collected_amount; num-col",
+    "Status; text-col" => "lp_status; text-col",
+    "Due Amount; num-col" => "lp_due_amount; num-col",
+    "Collected Amount; num-col" => "verified_collected_amount; num-col",
+    "Under Verification; num-col" => "under_verification_amount; num-col",
     "Payment Date; date-col" => "payment_date; date-col"
+  }.freeze
+
+  # Column header help (RansackTableHeader). The lp_* / verified_* / under_verification_* columns are
+  # the LP grid's (verified basis); status / verified / due_amount / collected_amount the fund team's.
+  COLUMN_HELP = {
+    "lp_status" => "Where this call stands. 'Payment under verification' means the fund has recorded your payment and is confirming it",
+    "lp_due_amount" => "What is still owed on this call: call amount + fees - payments the fund has verified",
+    "verified_collected_amount" => "Payments the fund has received and verified for this call",
+    "under_verification_amount" => "Payments the fund has recorded but not yet verified - still counted as due until verified",
+    "status" => "Paid once the full amount is recorded (it may still await verification); otherwise Pending or Overdue by the call's due date, or Overpaid",
+    "verified" => "Whether the fund has confirmed the recorded payment against its bank records",
+    "due_amount" => "Call amount + fees - every recorded payment, verified or not (LPs see due on the verified basis)",
+    "collected_amount" => "Every payment recorded for this call, verified or not",
+    "payment_date" => "When the payment was received"
   }.freeze
 
   FOR_COMMITMENT_COLUMNS = {
@@ -259,33 +276,67 @@ class CapitalRemittance < ApplicationRecord
     call_amount + other_fee - collected_amount
   end
 
-  # Stats cards on the LP fund page's Calls section, over `scope` (all the LP's remittances in one fund).
-  # Every card is the total of a column the LP sees in the grid below it (INVESTOR_STANDARD_COLUMNS),
-  # so the two can never disagree:
-  #   Collected = total of "Collected Amount"
-  #   Due       = total of "Due Amount" (#due_amount = call + other fee - collected, per row)
-  #   Called    = Due + Collected
-  #   Overdue   = total of "Due Amount" over the rows whose Status is Overdue, and how many there are
-  # Amounts carry fractional paise and the grid shows each row cut to whole paise (Money formatter
-  # trims the decimals), so each row is truncated the same way before adding - summing first could
-  # show a paisa more than the rows on screen. Plucks only 4 numeric columns of one LP's rows in one
-  # fund, so it stays small.
-  def self.lp_totals(scope)
-    rows = scope.pluck(:call_amount_cents, :other_fee_cents, :collected_amount_cents, :status)
-    collected = due = overdue = 0
-    overdue_count = 0
-    rows.each do |call, fee, got, status|
-      # Exactly what the row's Due Amount / Collected Amount cells display
-      row_due = (call + fee - got).truncate
-      collected += got.truncate
-      due += row_due
+  # --- LP view: verified basis (investor grid columns + stats cards) ---
+  # Collected only once the fund has verified the payment - the same basis as the commitment and
+  # fund counters (CapitalRemittanceCounters), so the LP's Due matches their commitment card.
+  def verified_collected_amount
+    verified ? collected_amount : Money.new(0, collected_amount.currency)
+  end
+
+  # Recorded by the fund but not yet verified - shown to the LP so a paid call isn't silently "due"
+  def under_verification_amount
+    verified ? Money.new(0, collected_amount.currency) : collected_amount
+  end
+
+  # Status as the LP reads it: flag a recorded payment the fund hasn't verified yet, so a paid call
+  # doesn't look like a plain "Overdue"/"Pending" default. The stored status is unchanged.
+  def lp_status
+    return status if verified || collected_amount_cents.to_d.zero?
+
+    "#{status} · Payment under verification"
+  end
+
+  # What the LP still owes once only verified payments count (#due_amount counts every recorded payment)
+  def lp_due_amount
+    call_amount + other_fee - verified_collected_amount
+  end
+
+  # Stats cards above a remittance list (LP fund page Calls section, commitment page Remittances tab)
+  # and the commitment card's Due Amount, over `scope`. Every card is the total of a column of the
+  # grid the user sees, so they can never disagree:
+  #   verified_basis: true  - the LP grid (INVESTOR_STANDARD_COLUMNS):
+  #     Collected = "Collected Amount" (#verified_collected_amount),
+  #     Under Verification = "Under Verification", Due = "Due Amount" (#lp_due_amount)
+  #   verified_basis: false - the fund team's grid (STANDARD_COLUMNS / FOR_COMMITMENT_COLUMNS):
+  #     Collected = "Collected Amount" (every recorded payment), Due = "Due Amount" (#due_amount),
+  #     Unverified = Collected Amount of rows with Verified = No
+  #   Called = Due + Collected; Overdue = Due Amount of the rows whose Status is Overdue, and how many
+  # Amounts carry fractional paise and the grid shows each cell cut to whole paise (Money formatter
+  # trims the decimals), so each cell is truncated the same way before adding - summing first could
+  # show a paisa more. Plucks 5 columns of one LP's / one folio's rows, so it stays small.
+  def self.grid_totals(scope, verified_basis:)
+    rows = scope.pluck(:call_amount_cents, :other_fee_cents, :collected_amount_cents, :verified, :status)
+    totals = { collected: 0, under_verification: 0, due: 0, overdue: 0, overdue_count: 0 }
+    rows.each do |call, fee, got, verified, status|
+      # Exactly what the row's cells display on this grid
+      counted = verified_basis && !verified ? 0 : got
+      row_due = (call + fee - counted).truncate
+      totals[:collected] += counted.truncate
+      # LP grid: its Under Verification column; fund team grid: Collected Amount of unverified rows
+      totals[:under_verification] += got.truncate unless verified
+      totals[:due] += row_due
       next unless status == "Overdue"
 
-      overdue += row_due
-      overdue_count += 1
+      totals[:overdue] += row_due
+      totals[:overdue_count] += 1
     end
 
-    { called: due + collected, collected:, due:, overdue:, overdue_count: }
+    totals.merge(called: totals[:due] + totals[:collected])
+  end
+
+  # The LP's view (verified basis) - LP fund page and the commitment card's Due Amount
+  def self.lp_totals(scope)
+    grid_totals(scope, verified_basis: true)
   end
 
   # Whether the interactive Verify action should be disabled because nothing has been

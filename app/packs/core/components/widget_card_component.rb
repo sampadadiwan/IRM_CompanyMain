@@ -12,5 +12,7 @@ class WidgetCardComponent < ViewComponent::Base
     @collapsible = args[:collapsible] || false
     @maximizable = args[:maximizable] || false
     @preview = args[:preview] || false
+    # Info icon on the title saying what the widget shows
+    @help = DashboardWidget::WIDGET_HELP[widget.widget_name]
   end
 end

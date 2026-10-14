@@ -1,0 +1,38 @@
+<%# Stats cards above a distribution payments list - the LP fund page's Distributions section and the
+    commitment page's Distributions tab. scope: the rows the list covers (controller
+    #stats_scope_and_fund). The LP and fund team grids share Net Payable / Completed / Payment Date. %>
+<%
+  totals = CapitalDistributionPayment.lp_totals(scope)
+  # Amounts are stored in the fund currency
+  money = ->(cents) { money_to_currency(Money.new(cents, fund.currency), params) }
+  # Every card is a total of the grid's Net Payable / Completed / Payment Date columns
+  cards_data = [
+    { stat: money.call(totals[:total]), subtitle: "Total Distributions", progress_bar_color: "primary", text_info: "coins",
+      tooltip: "Total of the Net Payable column: everything distributed, paid or pending (Received + Pending)" },
+    { stat: money.call(totals[:received]), subtitle: "Received", progress_bar_color: "success", text_info: "circle-check",
+      tooltip: "Net Payable of distributions marked Completed - paid out" }
+  ]
+  # Pending only when there is something to say - a zero card is noise
+  if totals[:pending].to_d.positive?
+    cards_data << { stat: money.call(totals[:pending]), subtitle: "Pending Payout", progress_bar_color: "warning", text_info: "hourglass",
+                    tooltip: "Net Payable of distributions announced but not yet paid out" }
+  end
+  if totals[:last_date]
+    cards_data << { stat: money.call(totals[:last_amount]), subtitle: "Last Distribution (#{l(totals[:last_date])})", progress_bar_color: "info",
+                    text_info: "calendar-event", tooltip: "The most recent completed distribution, by payment date" }
+  end
+%>
+
+<div class="row mb-3" id="lp_distribution_stats">
+  <% cards_data.each do |card_data| %>
+    <%= render(NumberStatsComponent.new(
+      path: nil,
+      amount: card_data[:stat],
+      subtitle: card_data[:subtitle],
+      progress_bar_color: card_data[:progress_bar_color],
+      text_info: card_data[:text_info],
+      tooltip: card_data[:tooltip],
+      fs_size: 4
+    )) %>
+  <% end %>
+</div>

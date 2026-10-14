@@ -1,0 +1,50 @@
+<%# Stats cards above a Capital Remittances list - the LP fund page's Calls section and the commitment
+    page's Remittances tab. scope: the rows the list covers (controller #stats_scope_and_fund).
+    Investor-role users see the verified-basis LP grid, the fund team the recorded-basis grid; the
+    cards total whichever grid this user sees (CapitalRemittance.grid_totals). %>
+<%
+  verified_basis = current_user.curr_role == "investor"
+  totals = CapitalRemittance.grid_totals(scope, verified_basis:)
+  # Amounts are stored in the fund currency
+  money = ->(cents) { money_to_currency(Money.new(cents, fund.currency), params) }
+  cards_data = [
+    { stat: money.call(totals[:called]), subtitle: "Called", progress_bar_color: "primary", text_info: "file-invoice",
+      tooltip: "Everything called so far: call amounts plus fees (Due + Collected)" }
+  ]
+  if verified_basis
+    cards_data << { stat: money.call(totals[:collected]), subtitle: "Collected", progress_bar_color: "success", text_info: "circle-check",
+                    tooltip: "Total of the Collected Amount column: payments the fund has received and verified" }
+    # Only when the LP has a payment awaiting the fund's check - tells them it was received
+    if totals[:under_verification].positive?
+      cards_data << { stat: money.call(totals[:under_verification]), subtitle: "Under Verification", progress_bar_color: "info", text_info: "clock",
+                      tooltip: "Payments the fund has recorded but not yet verified. They still count as due until verified" }
+    end
+    due_help = "Total of the Due Amount column: called + fees - verified payments"
+  else
+    cards_data << { stat: money.call(totals[:collected]), subtitle: "Collected", progress_bar_color: "success", text_info: "circle-check",
+                    tooltip: "Total of the Collected Amount column: every payment recorded, verified or not" }
+    # The fund team's to-do: recorded payments still to be checked against the bank
+    if totals[:under_verification].positive?
+      cards_data << { stat: money.call(totals[:under_verification]), subtitle: "Unverified", progress_bar_color: "info", text_info: "clock",
+                      tooltip: "Collected Amount of the rows with Verified = No: recorded but not yet confirmed against the bank" }
+    end
+    due_help = "Total of the Due Amount column: called + fees - every recorded payment"
+  end
+  cards_data << { stat: money.call(totals[:due]), subtitle: "Due", progress_bar_color: "warning", text_info: "alert-circle", tooltip: due_help }
+  cards_data << { stat: money.call(totals[:overdue]), subtitle: "Overdue (#{pluralize(totals[:overdue_count], 'call')})", progress_bar_color: "danger", text_info: "alarm",
+                  tooltip: "The part of Due on calls whose due date has passed" }
+%>
+
+<div class="row mb-3" id="lp_remittance_stats">
+  <% cards_data.each do |card_data| %>
+    <%= render(NumberStatsComponent.new(
+      path: nil,
+      amount: card_data[:stat],
+      subtitle: card_data[:subtitle],
+      progress_bar_color: card_data[:progress_bar_color],
+      text_info: card_data[:text_info],
+      tooltip: card_data[:tooltip],
+      fs_size: 4
+    )) %>
+  <% end %>
+</div>

@@ -19,6 +19,9 @@
               <h2 class="fs-<%=@fs_size%>"><%= @amount %></h2>
             <% end %>
             <span class="card-subtitle mb-1 text-muted"><%= @subtitle %></span>
+            <% if @tooltip.present? %>
+              <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip" title="<%= @tooltip %>" aria-label="<%= @tooltip %>"></i>
+            <% end %>
           </div>
           <% if @text_info.present? %>
             <div class="ms-auto">

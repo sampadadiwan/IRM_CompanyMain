@@ -4,8 +4,8 @@ class CapitalRemittancesController < ApplicationController
   # GET /capital_remittances or /capital_remittances.json
   def index
     fetch_rows
-    # Totals for the LP stats cards (nil outside the LP fund page)
-    @lp_stats_scope = lp_fund_stats_scope(CapitalRemittance)
+    # Totals for the stats cards above the list (nil where the list has none)
+    @stats_scope, @stats_fund = stats_scope_and_fund(CapitalRemittance, @capital_remittances)
     @pagy, @capital_remittances = pagy(@capital_remittances, limit: params[:per_page]) if params[:all].blank?
 
     respond_to do |format|
@@ -167,18 +167,29 @@ class CapitalRemittancesController < ApplicationController
 
   private
 
-  # LP fund page only (an investor-role user, fund_id of a fund they don't own): every row of this
-  # model the LP can see in that fund, for the stats cards above the list. Unpaginated, unaffected by
-  # the list search. The cards total the investor grid's columns (INVESTOR_STANDARD_COLUMNS), which
-  # are only shown in the investor role.
-  def lp_fund_stats_scope(klass)
-    return unless current_user.curr_role == "investor"
+  # The rows the stats cards above the list total, and the fund (for its currency) - or nil where the
+  # list has no cards. `list` is the list's own filtered relation before pagination, so the cards cover
+  # exactly the rows the grid shows across all its pages, and follow its search and filters.
+  # Cards are shown on:
+  #   - LP fund page: an investor-role user, fund_id of a fund their entity doesn't own
+  #   - Commitment page / LP statement: capital_commitment_id (fund team or LP)
+  # Both keep the rows to one LP or one folio, so totalling them stays small.
+  # The cards total the columns this user's grid shows: the investor grid's verified-basis columns for
+  # the investor role, the fund team's recorded-basis columns otherwise (see the _grid_stats partial).
+  def stats_scope_and_fund(klass, list)
+    fund = if params[:capital_commitment_id].present?
+             CapitalCommitment.find_by(id: params[:capital_commitment_id])&.fund
+           elsif current_user.curr_role == "investor" && params[:fund_id].present?
+             Fund.find_by(id: params[:fund_id])&.then { |f| f if f.entity_id != current_user.entity_id }
+           end
+    return unless fund
 
-    fund = params[:fund_id].present? && Fund.find_by(id: params[:fund_id])
-    return unless fund && fund.entity_id != current_user.entity_id
+    [deduped(klass, list), fund]
+  end
 
-    # The investor scope joins access rights, so a row can repeat - dedup by id before summing
-    klass.where(id: policy_scope(klass).where(fund_id: fund.id).select(:id))
+  # The investor scope joins access rights, so a row can repeat - dedup by id before summing
+  def deduped(klass, scope)
+    klass.where(id: scope.select(:id))
   end
 
   # Use callbacks to share common setup or constraints between actions.

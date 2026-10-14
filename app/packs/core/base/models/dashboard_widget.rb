@@ -134,6 +134,17 @@ class DashboardWidget < ApplicationRecord
 
   ].freeze
 
+  # Help shown as an info icon on these widgets' titles (WidgetCardComponent)
+  WIDGET_HELP = {
+    "Portfolio Stats" => "Totals across the fund's portfolio investments",
+    "Portfolio Investments" => "Each holding of the fund: what it cost, what was sold and what it is worth now",
+    "FMV %" => "Share of the portfolio's current value held in each company",
+    "Holding Cost %" => "Share of the cost of current holdings in each company",
+    "Bought %" => "Share of the total amount invested that went into each company",
+    "Sold %" => "Share of sale proceeds that came from each company",
+    "Portfolio IRR" => "Annualised return (IRR) and multiple (MOIC) on each portfolio company"
+  }.freeze
+
   PORTFOLIO_WIDGETS = [
     DashboardWidget.new(dashboard_name: PORTFOLIO_DASHBOARD, widget_name: "Portfolio Stats", path: "aggregate_portfolio_investments/widgets/stats", size: "XL", metadata_help: "{fields: 'Bought Amount,Sold Amount,...', field_names: 'Bought, Sold,...', force_units: 'Lakhs/Crores/Millions', tracking_currency: true, decimals: 2, currency: 'USD', per_row: 4, show_currency_filter: true}"),
     DashboardWidget.new(dashboard_name: PORTFOLIO_DASHBOARD, widget_name: "Portfolio Investments", path: "aggregate_portfolio_investments/widgets/portfolio_investments", size: "XL", metadata_help: "{ag: true, group_by_column: 'investment_instrument_name', show_fund_name: true/false}"),

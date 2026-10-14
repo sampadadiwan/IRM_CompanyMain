@@ -1,5 +1,6 @@
 Feature: LP fund page stats cards for calls and distributions
-  On the LP fund page, the Calls section shows Called / Collected / Due / Overdue cards and the
+  On the LP fund page, the Calls section shows Called / Collected / Under Verification / Due / Overdue
+  cards (verified basis: a payment is collected once the fund verifies it) and the
   Distributions section shows Total / Received / Pending / Last distribution cards, over every row
   the LP can see in the fund (CapitalRemittance.lp_totals, CapitalDistributionPayment.lp_totals).
   Every card is the total of a grid column the LP sees below it - as displayed, to the paisa - so the
@@ -14,8 +15,10 @@ Feature: LP fund page stats cards for calls and distributions
     And the investors are added to the fund
     And there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
 
-  # S1 — Edge case: Collected is the grid's "Collected Amount" total, verified or not - Call 3's unverified 150,000 counts
-  # S2 — Edge case: Due is the grid's "Due Amount" total (call + fee - collected per row), so Call 4's 30,000 overpayment offsets the others
+  # S1 — Edge case: Collected is verified payments only - Call 3's 150,000 is recorded but unverified, so it shows under
+  #      Under Verification and stays due (the LP grid's Collected Amount / Under Verification columns)
+  # S2 — Edge case: Due is the grid's "Due Amount" total (call + fee - verified collected per row), so Call 4's verified 30,000
+  #      overpayment offsets the others; it equals the commitment's Due Amount (counters are verified-only too)
   # S3 — Edge case: Overdue is the "Due Amount" total of the Overdue rows only (Call 2: 210,000 - 50,000; Call 5: 40,000), with their count
   @rack_test
   Scenario: Remittance totals - each card is the total of the grid column the LP sees
@@ -27,12 +30,21 @@ Feature: LP fund page stats cards for calls and distributions
       | Call 4 | 50000       | 0         | 80000     | true     | Paid    |
       | Call 5 | 40000       | 0         | 0         | false    | Overdue |
     Then the LP remittance totals should be:
-      | called        | 550000 |
-      | collected     | 380000 |
-      | due           | 170000 |
-      | overdue       | 200000 |
-      | overdue_count | 2      |
+      | called             | 550000 |
+      | collected          | 230000 |
+      | under_verification | 150000 |
+      | due                | 320000 |
+      | overdue            | 200000 |
+      | overdue_count      | 2      |
     And the LP remittance totals should equal the totals of the LP grid columns
+    And the commitment card's due amount should equal the LP remittance due
+    # S16 — Edge case: the LP grid's Status flags a recorded-but-unverified payment so a paid call doesn't read as a plain default;
+    #       a call with nothing recorded (Call 5) or a verified one (Call 2) keeps its plain status
+    And the LP grid status of "Call 3" should be "Pending · Payment under verification"
+    And the LP grid status of "Call 5" should be "Overdue"
+    And the LP grid status of "Call 2" should be "Overdue"
+    And the LP grid status badges of "Call 3" should be "Pending:bg-warning, Payment under verification:bg-info"
+    And the LP grid status badges of "Call 2" should be "Overdue:bg-danger"
 
   # S4 — Edge case: Total is the grid's "Net Payable" total (= Received + Pending); Gross Payable is not a card, since the legacy
   #      March row stores gross 0 and a gross total would understate what was paid
@@ -96,7 +108,8 @@ Feature: LP fund page stats cards for calls and distributions
     Then the LP remittance totals should equal the totals of the LP grid columns
     And the LP distribution totals should equal the totals of the LP grid columns
 
-  # S8 — Edge case: the LP sees the four remittance cards above their list in the lazily loaded Calls section
+  # S8 — Edge case: the LP sees the remittance cards above their list in the lazily loaded Calls section, including
+  #      Under Verification for Call 3's recorded-but-unverified payment (which stays in Due)
   Scenario: LP sees the remittance stats cards in the Calls section
     Given the LP has these remittances in the fund:
       | call   | call_amount | other_fee | collected | verified | status  |
@@ -107,10 +120,23 @@ Feature: LP fund page stats cards for calls and distributions
     When I open the Calls section of the fund page as the investor
     Then the LP remittance stats cards should be:
       | subtitle          | amount |
-      | Called            | 460000 |
-      | Collected         | 300000 |
-      | Due               | 160000 |
-      | Overdue (1 call)  | 160000 |
+      | Called             | 460000 |
+      | Collected          | 150000 |
+      | Under Verification | 150000 |
+      | Due                | 310000 |
+      | Overdue (1 call)   | 160000 |
+
+  # S17 — Edge case: the LP fund page explains itself - each section header carries a one-line subtitle, every stats card an
+  #       info tooltip saying how it is worked out, and the LP grid's money/status columns a header tooltip
+  Scenario: LP sees section subtitles, card tooltips and column help in the Calls section
+    Given the LP has these remittances in the fund:
+      | call   | call_amount | other_fee | collected | verified | status  |
+      | Call 1 | 100000      | 0         | 0         | false    | Overdue |
+    And I login as the investor user
+    When I open the Calls section of the fund page as the investor
+    Then the fund page sections should show their subtitles
+    And every LP remittance stats card should have a help tooltip
+    And the LP grid headers "Status, Due Amount, Collected Amount, Under Verification, Payment Date" should have help tooltips
 
   # S9 — Edge case: with a pending payout, all four distribution cards show, the last one dated
   Scenario: LP sees the distribution stats cards in the Distributions section
@@ -149,6 +175,9 @@ Feature: LP fund page stats cards for calls and distributions
     And I am signed in as the current user
     When I visit the fund's capital remittances list
     Then I should not see the LP remittance stats
+    # S18 — Edge case: the fund team's grid explains its own columns too - its Due/Collected count every recorded
+    #       payment, verified or not, and the help says so (LPs see the verified basis)
+    And the remittance grid headers "Status, Verified, Due Amount, Collected Amount, Payment Date" should have help tooltips
 
   # S12 — Edge case: long unit words are shortened so the value fits a narrow card (Crores -> Cr, Million -> M, Lakhs -> L)
   # S13 — Edge case: a value without a trailing unit word (a date) is left as it is
@@ -160,3 +189,86 @@ Feature: LP fund page stats cards for calls and distributions
     And the stats card amount "₹12.5 Lakhs" should render as "₹12.5 L"
     And the stats card amount "Aug 19, 2026" should render as "Aug 19, 2026"
     And the html-safe stats card amount "<b>7</b> Crores" should render bold "7" followed by " Cr"
+
+  # S19 — Edge case: ratio names get a plain-language meaning; a currency variant ("TVPI (USD)") reuses the base text with a
+  #       currency note; a custom variant the app can't know ("MOIC no fmv") gets none rather than a wrong one
+  @rack_test
+  Scenario: Ratio glossary covers standard ratios and their currency variants only
+    Then the ratio help for "TVPI" should mention "paid-in"
+    And the ratio help for "TVPI (USD)" should mention "Computed in USD"
+    And the ratio help for "Gross Portfolio IRR (EUR)" should mention "Computed in EUR"
+    And there should be no ratio help for "MOIC no fmv"
+
+  # S20 — Edge case: the Ratios grid name tooltip and the column help show to LPs and the fund team alike
+  @rack_test
+  Scenario: Ratio name and column help render for investors and the fund team
+    Given the fund has a ratio "TVPI" with value "1.5x"
+    Then the ratio grid should show help for "TVPI" to an investor and to the fund team
+    And the ratio grid header should show column help to an investor and to the fund team
+
+  # S21 — Edge case: portfolio dashboard widgets explain themselves on their title
+  @rack_test
+  Scenario: Portfolio widget titles carry help
+    Then the "FMV %" widget title should carry help
+    And a widget without help such as "Agent Chart" should carry none
+
+  # S22 — Edge case: an LP with no units sees why the Units grid is empty, and each column explains itself
+  Scenario: LP Units section explains an empty grid and its columns
+    Given I login as the investor user
+    When I open the "units" section of the fund page as the investor
+    Then I should see "No units have been allotted to your folios yet."
+    And the "units" section grid headers should have help tooltips
+
+  # S23 — Edge case: ?tab=commitments-tab (the commitment card's Fund Details button) keeps the already-open
+  #       Commitments section open instead of toggling it shut
+  Scenario: Linking to the open Commitments section keeps it open
+    Given I login as the investor user
+    When I visit the fund page with tab "commitments-tab"
+    Then the "Commitments" section should be open
+
+  # S24 — Edge case: on the fund team's grid Collected counts every recorded payment (Call 3's unverified 150,000 included),
+  #       Unverified is the Collected Amount of Verified = No rows, Due is the raw Due Amount total - each a column the fund
+  #       team sees (FOR_COMMITMENT_COLUMNS), so the cards still equal the grid
+  @rack_test
+  Scenario: Fund team remittance totals - recorded basis with Unverified
+    Given the LP has these remittances in the fund:
+      | call   | call_amount | other_fee | collected | verified | status  |
+      | Call 1 | 100000      | 0         | 100000    | true     | Paid    |
+      | Call 2 | 200000      | 10000     | 50000     | true     | Overdue |
+      | Call 3 | 150000      | 0         | 150000    | false    | Paid    |
+      | Call 4 | 50000       | 0         | 80000     | true     | Paid    |
+      | Call 5 | 40000       | 0         | 0         | false    | Overdue |
+    Then the fund team remittance totals for the LP's commitment should be:
+      | called             | 550000 |
+      | collected          | 380000 |
+      | under_verification | 150000 |
+      | due                | 170000 |
+      | overdue            | 200000 |
+      | overdue_count      | 2      |
+    And the fund team remittance totals should equal the totals of the fund team grid columns
+
+  # S25 — Edge case: the fund team sees the cards on the commitment page's Remittances and Distributions tabs, covering the
+  #       folio's rows; the remittance cards are on the recorded basis, so an unverified payment shows under Unverified
+  Scenario: Fund team sees stats cards on the commitment page tabs
+    Given the LP has these remittances in the fund:
+      | call   | call_amount | other_fee | collected | verified | status  |
+      | Call 1 | 100000      | 0         | 100000    | true     | Paid    |
+      | Call 2 | 200000      | 10000     | 50000     | false    | Overdue |
+    And the LP has these distribution payments in the fund:
+      | title    | distribution_date | payment_date | gross  | net   | tax   | completed |
+      | Dist Jan | 2026-01-15        | 2026-01-20   | 100000 | 90000 | 10000 | true      |
+    And I am signed in as the current user
+    When I open the "remittances" tab of the LP's commitment page
+    Then the stats cards in "#lp_remittance_stats" should be:
+      | subtitle         | amount |
+      | Called           | 310000 |
+      | Collected        | 150000 |
+      | Unverified       | 50000  |
+      | Due              | 160000 |
+      | Overdue (1 call) | 160000 |
+    When I open the "distributions" tab of the LP's commitment page
+    Then the stats cards in "#lp_distribution_stats" should be:
+      | subtitle            | amount | date       |
+      | Total Distributions | 90000  |            |
+      | Received            | 90000  |            |
+      | Last Distribution   | 90000  | 2026-01-20 |

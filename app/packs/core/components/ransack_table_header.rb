@@ -27,6 +27,9 @@ class RansackTableHeader < ViewComponent::Base
     # fetch columns uses @referrer in the cache key, it should have a value assigned before use
     @columns = fetch_columns(@entity, default_columns_map)
     @actions_column = actions_column
+    # Column help: a model can define COLUMN_HELP { "attribute" => "what it means" }; those column
+    # headers get an info icon with that text (LP and fund team grids alike)
+    @column_help = @model.const_defined?(:COLUMN_HELP) ? @model::COLUMN_HELP : {}
     if @snapshot
       # We need to add the snapshot_date to the columns in 2nd last position
       @columns["Snapshot Date"] = "snapshot_date"

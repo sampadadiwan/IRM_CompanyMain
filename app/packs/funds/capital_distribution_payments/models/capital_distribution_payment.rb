@@ -29,6 +29,14 @@ class CapitalDistributionPayment < ApplicationRecord
                                 "Payment Date; date-col" => "payment_date; date-col",
                                 "Completed; text-col" => "completed; text-col" }.freeze
 
+  # Column header help (RansackTableHeader), on the LP and fund team grids alike
+  COLUMN_HELP = {
+    "gross_payable" => "The investor's share of the distribution before tax and other deductions",
+    "net_payable" => "What is paid to the investor after tax and deductions",
+    "payment_date" => "When the fund paid this distribution",
+    "completed" => "Yes once the fund has paid it out; No while it is announced but not yet paid"
+  }.freeze
+
   include ForInvestor
   # Evergreen dealing dates: allot / cancel units after commit (guarded; open-ended-funds B5)
   include EvergreenSettlementHooks

@@ -112,26 +112,53 @@ end
 Then('the LP remittance totals should be:') do |table|
   expected = table.rows_hash
   totals = CapitalRemittance.lp_totals(lp_stats_scope(CapitalRemittance))
-  %w[called collected due overdue].each do |key|
+  %w[called collected under_verification due overdue].each do |key|
     expect(totals[key.to_sym].to_i).to eq(stat_cents(expected[key])), "#{key}: got #{totals[key.to_sym]}"
   end
   expect(totals[:overdue_count]).to eq(expected["overdue_count"].to_i)
 end
 
 # Each card, as displayed, must equal the total of the grid cells as displayed
-# (CapitalRemittance::INVESTOR_STANDARD_COLUMNS: Due Amount, Collected Amount, Status)
+# (CapitalRemittance::INVESTOR_STANDARD_COLUMNS: Due Amount, Collected Amount, Under Verification, Status)
 Then("the LP remittance totals should equal the totals of the LP grid columns") do
   scope = lp_stats_scope(CapitalRemittance)
   totals = CapitalRemittance.lp_totals(scope)
   rows = scope.to_a
-  due_cells = rows.sum { |r| shown_amount(r.due_amount) }
-  collected_cells = rows.sum { |r| shown_amount(r.collected_amount) }
+  due_cells = rows.sum { |r| shown_amount(r.lp_due_amount) }
+  collected_cells = rows.sum { |r| shown_amount(r.verified_collected_amount) }
   overdue_rows = rows.select { |r| r.status == "Overdue" }
   expect(shown_card(totals[:collected])).to eq(collected_cells)
+  expect(shown_card(totals[:under_verification])).to eq(rows.sum { |r| shown_amount(r.under_verification_amount) })
   expect(shown_card(totals[:due])).to eq(due_cells)
   expect(shown_card(totals[:called])).to eq(due_cells + collected_cells)
-  expect(shown_card(totals[:overdue])).to eq(overdue_rows.sum { |r| shown_amount(r.due_amount) })
+  expect(shown_card(totals[:overdue])).to eq(overdue_rows.sum { |r| shown_amount(r.lp_due_amount) })
   expect(totals[:overdue_count]).to eq(overdue_rows.size)
+end
+
+# The Status cell of the LP grid (INVESTOR_STANDARD_COLUMNS "Status" => #lp_status) for one call
+Then('the LP grid status of {string} should be {string}') do |call_name, expected|
+  remittance = lp_stats_scope(CapitalRemittance).joins(:capital_call).find_by!(capital_calls: { name: call_name })
+  expect(remittance.lp_status).to eq(expected)
+end
+
+# The badges the decorated Status cell renders in the LP grid ("Label:bg-class, ...")
+Then('the LP grid status badges of {string} should be {string}') do |call_name, expected|
+  remittance = lp_stats_scope(CapitalRemittance).joins(:capital_call).find_by!(capital_calls: { name: call_name })
+  Draper::ViewContext.current = ApplicationController.new.view_context
+  badges = Capybara.string(remittance.decorate.lp_status.to_s).all("span.badge").map do |badge|
+    "#{badge.text.strip}:#{(badge[:class].split & %w[bg-success bg-info bg-warning bg-danger bg-secondary]).first}"
+  end
+  expect(badges).to eq(expected.split(",").map(&:strip))
+end
+
+# The commitment card's Due Amount (folio remittances, as _card.html.erb computes it) must equal the
+# Calls section's Due for a one-folio LP, and the commitment's own verified-basis counters
+Then("the commitment card's due amount should equal the LP remittance due") do
+  commitment = lp_commitment.reload
+  folio = CapitalRemittance.where(id: CapitalRemittance.for_investor(@investor_user).where(capital_commitment_id: commitment.id).select(:id))
+  card_due = CapitalRemittance.lp_totals(folio)[:due]
+  expect(card_due).to eq(CapitalRemittance.lp_totals(lp_stats_scope(CapitalRemittance))[:due])
+  expect(card_due).to eq(commitment.due_amount.cents.truncate)
 end
 
 # (CapitalDistributionPayment::INVESTOR_STANDARD_COLUMNS: Net Payable, Payment Date, Completed)
@@ -211,4 +238,147 @@ Then('the html-safe stats card amount {string} should render bold {string} follo
   # The <b> survived as markup (not escaped text), and the unit after it was shortened
   expect(heading).to have_css("b", exact_text: bold)
   expect(heading.text.strip).to eq("#{bold}#{rest}")
+end
+
+# S17/S18 - the LP fund page's help texts (section subtitles, stats card and grid header tooltips)
+Then('the fund page sections should show their subtitles') do
+  I18n.t("funds.fund_details.subtitles").each_value do |subtitle|
+    expect(page).to have_css("#investorFundDetailsAccordion .accordion-header small.text-muted", text: subtitle, visible: :all)
+  end
+end
+
+Then('every LP remittance stats card should have a help tooltip') do
+  within("#lp_remittance_stats") do
+    cards = all(".card")
+    expect(cards).not_to be_empty
+    cards.each { |card| expect(card).to have_css(".ti-info-circle[data-bs-toggle='tooltip'][title]") }
+  end
+end
+
+Then('the LP grid headers {string} should have help tooltips') do |labels|
+  labels.split(",").map(&:strip).each do |label|
+    header = find("#collapseCalls th", text: label, match: :first)
+    expect(header).to have_css(".ti-info-circle[data-bs-toggle='tooltip'][title]")
+  end
+end
+
+Then('the remittance grid headers {string} should have help tooltips') do |labels|
+  labels.split(",").map(&:strip).each do |label|
+    expect(find("th", text: label, match: :first)).to have_css(".ti-info-circle[data-bs-toggle='tooltip'][title]")
+  end
+end
+
+# S19-S23 - help across the rest of the LP fund page (ratios, portfolio widgets, units, ?tab=)
+module LpFundPageHelpHelpers
+  # A view context (with a request, for the header's sort links) that answers current_user with
+  # the given user, for decorators and components
+  def view_context_as(user)
+    controller = ApplicationController.new
+    controller.request = ActionDispatch::TestRequest.create
+    view = controller.view_context
+    view.define_singleton_method(:current_user) { user }
+    Draper::ViewContext.current = view
+    view
+  end
+
+  def as_role(user, role)
+    user.tap { |u| u.curr_role = role }
+  end
+end
+World(LpFundPageHelpHelpers)
+
+Then('the ratio help for {string} should mention {string}') do |name, text|
+  expect(FundRatio.help_for(name)).to include(text)
+end
+
+Then('there should be no ratio help for {string}') do |name|
+  expect(FundRatio.help_for(name)).to be_nil
+end
+
+Given('the fund has a ratio {string} with value {string}') do |name, value|
+  @fund_ratio = FactoryBot.create(:fund_ratio, entity: @fund.entity, fund: @fund, owner: @fund, name:, display_value: value,
+                                               end_date: Time.zone.today)
+end
+
+Then('the ratio grid should show help for {string} to an investor and to the fund team') do |name|
+  ratio = FundRatio.find_by!(fund_id: @fund.id, name:)
+  [as_role(@investor_user, "investor"), as_role(@user, "employee")].each do |user|
+    view_context_as(user)
+    expect(Capybara.string(ratio.decorate.name.to_s)).to have_css(".ti-info-circle[title*='paid-in']")
+  end
+end
+
+Then('the ratio grid header should show column help to an investor and to the fund team') do
+  [as_role(@investor_user, "investor"), as_role(@user, "employee")].each do |user|
+    html = view_context_as(user).render(RansackTableHeader.new(FundRatio, q: nil, turbo_frame: nil, current_user: user, sortable: false,
+                                                                          records: [@fund_ratio], entity: @fund.entity))
+    expect(Capybara.string(html)).to have_css("th .ti-info-circle", count: FundRatio::COLUMN_HELP.size)
+  end
+end
+
+Then('the {string} widget title should carry help') do |widget_name|
+  component = WidgetCardComponent.new(widget: DashboardWidget.new(widget_name:), args: {})
+  expect(component.instance_variable_get(:@help)).to eq(DashboardWidget::WIDGET_HELP.fetch(widget_name))
+end
+
+Then('a widget without help such as {string} should carry none') do |widget_name|
+  component = WidgetCardComponent.new(widget: DashboardWidget.new(widget_name:), args: {})
+  expect(component.instance_variable_get(:@help)).to be_nil
+end
+
+When('I open the {string} section of the fund page as the investor') do |section|
+  visit(fund_path(@fund))
+  find("##{section}-tab button.accordion-button").click
+  expect(page).to have_css("#collapse#{section.capitalize} table", wait: 15)
+end
+
+Then('the {string} section grid headers should have help tooltips') do |section|
+  # Unit Type, Issue Date, Quantity, Price, Premium, Amount, Reason
+  expect(page).to have_css("#collapse#{section.capitalize} th .ti-info-circle[data-bs-toggle='tooltip'][title]", minimum: 7)
+end
+
+When('I visit the fund page with tab {string}') do |tab|
+  visit(fund_path(@fund, tab:))
+end
+
+Then('the {string} section should be open') do |section|
+  expect(page).to have_css("#collapse#{section}.show", wait: 10)
+  # Still open once the tabs controller has run (it used to toggle an already-open section shut)
+  sleep(1)
+  expect(page).to have_css("#collapse#{section}.show")
+end
+
+# S24/S25 - the fund team's cards (recorded basis) on the commitment page tabs
+Then("the fund team remittance totals for the LP's commitment should be:") do |table|
+  expected = table.rows_hash
+  totals = CapitalRemittance.grid_totals(lp_commitment.capital_remittances, verified_basis: false)
+  %w[called collected under_verification due overdue].each do |key|
+    expect(totals[key.to_sym].to_i).to eq(stat_cents(expected[key])), "#{key}: got #{totals[key.to_sym]}"
+  end
+  expect(totals[:overdue_count]).to eq(expected["overdue_count"].to_i)
+end
+
+# Each card, as displayed, equals the total of the fund team grid's cells as displayed
+# (CapitalRemittance::FOR_COMMITMENT_COLUMNS: Due Amount, Collected Amount, Verified, Status)
+Then('the fund team remittance totals should equal the totals of the fund team grid columns') do
+  rows = lp_commitment.capital_remittances.to_a
+  totals = CapitalRemittance.grid_totals(lp_commitment.capital_remittances, verified_basis: false)
+  due_cells = rows.sum { |r| shown_amount(r.due_amount) }
+  collected_cells = rows.sum { |r| shown_amount(r.collected_amount) }
+  expect(shown_card(totals[:due])).to eq(due_cells)
+  expect(shown_card(totals[:collected])).to eq(collected_cells)
+  expect(shown_card(totals[:called])).to eq(due_cells + collected_cells)
+  expect(shown_card(totals[:under_verification])).to eq(rows.reject(&:verified).sum { |r| shown_amount(r.collected_amount) })
+  expect(shown_card(totals[:overdue])).to eq(rows.select { |r| r.status == "Overdue" }.sum { |r| shown_amount(r.due_amount) })
+end
+
+When("I open the {string} tab of the LP's commitment page") do |tab|
+  visit(capital_commitment_path(lp_commitment)) unless page.current_path == capital_commitment_path(lp_commitment)
+  find("a[href='##{tab}-tab']").click
+  stats = tab == "remittances" ? "#lp_remittance_stats" : "#lp_distribution_stats"
+  expect(page).to have_css("##{tab}-tab #{stats}", wait: 15)
+end
+
+Then('the stats cards in {string} should be:') do |container, table|
+  expect_stat_cards(container, table.hashes)
 end

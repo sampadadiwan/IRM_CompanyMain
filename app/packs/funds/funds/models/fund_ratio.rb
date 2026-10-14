@@ -42,6 +42,40 @@ class FundRatio < ApplicationRecord
 
   ADDITIONAL_COLUMNS_FROM = ["fund"].freeze
 
+  # Column header help (RansackTableHeader)
+  COLUMN_HELP = {
+    "name" => "The ratio. Hover the icon next to each name for what it measures",
+    "display_value" => "The ratio's value as of the On date",
+    "end_date" => "The date the ratio was computed as of",
+    "scenario" => "The set of assumptions it was computed under. Default is the fund's reported figure"
+  }.freeze
+
+  # Plain-language meaning of the standard ratios, for tooltips (Ratios grid, commitment card).
+  # Keyed by base name; "TVPI (USD)" etc. reuse the base text (see .help_for).
+  RATIO_HELP = {
+    "TVPI" => "Total value to paid-in: (distributions + current value) / capital paid in. Above 1x means value has grown",
+    "DPI" => "Distributions to paid-in: cash returned so far per unit of capital paid in",
+    "RVPI" => "Residual value to paid-in: what is still invested, at current value, per unit of capital paid in",
+    "MOIC" => "Multiple on invested capital: total value of the investments / what was invested in them",
+    "XIRR" => "Annualised return on the fund's cash flows, taking the timing of each call and distribution into account",
+    "IRR" => "Annualised return on the fund's cash flows",
+    "Gross Portfolio IRR" => "Annualised return on the portfolio investments themselves, before fund fees and expenses",
+    "Post Carry IRR" => "Annualised return after the manager's carried interest",
+    "Portfolio Value to Cost" => "Current value of the fund's investments / what it paid for them",
+    "Paid In to Committed Capital" => "How much of the committed capital has been paid in so far",
+    "Fund Utilization" => "How much of the fund's capital has been put to work"
+  }.freeze
+
+  # Tooltip text for a ratio name, or nil when it is not a standard ratio
+  def self.help_for(name)
+    # "TVPI (USD)" -> base "TVPI" + a currency note
+    base, currency = name.to_s.match(/\A(.+?)(?:\s*\(([A-Z]{3})\))?\z/)&.captures
+    text = RATIO_HELP[base]
+    return unless text
+
+    currency ? "#{text}. Computed in #{currency}" : text
+  end
+
   CONDENSED_COLUMNS = {
     "Name; text-col" => "name; text-col",
     "Display Value; num-col" => "display_value; num-col",

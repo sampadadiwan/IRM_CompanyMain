@@ -43,9 +43,9 @@
 
 </div>
 
-<%# LP fund page only (@lp_stats_scope is set by CapitalDistributionPaymentsController#index for an LP):
-    totals across all their payments in the fund, under the heading and above the table %>
-<%= render "/capital_distribution_payments/lp_stats", scope: @lp_stats_scope, fund: Fund.find(params[:fund_id]) if @lp_stats_scope %>
+<%# Stats cards under the heading, above the table: the LP fund page and the commitment page
+    (@stats_scope / @stats_fund from the controller's stats_scope_and_fund; nil elsewhere) %>
+<%= render "/capital_distribution_payments/grid_stats", scope: @stats_scope, fund: @stats_fund if @stats_scope %>
 
 <% if params[:card] == "true" %>
   <% capital_distribution_payments.each do |capital_distribution_payment| %>

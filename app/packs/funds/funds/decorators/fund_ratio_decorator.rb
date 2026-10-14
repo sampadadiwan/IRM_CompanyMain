@@ -8,7 +8,12 @@ class FundRatioDecorator < ApplicationDecorator
   end
 
   def name
-    h.link_to object.name, h.fund_ratio_path(object)
+    link = h.link_to object.name, h.fund_ratio_path(object)
+    # What the ratio measures, next to its name
+    help = FundRatio.help_for(object.name)
+    return link unless help
+
+    h.safe_join([link, " ", h.tag.i(class: "ti ti-info-circle text-muted", data: { bs_toggle: "tooltip" }, title: help, aria: { label: help })])
   end
 
   def scenario

@@ -35,7 +35,10 @@ export default class extends Controller {
           bootstrap.Collapse.getOrCreateInstance(element).show();
         } else {
           let trigger = element.querySelector('[data-bs-toggle="collapse"]');
-          if (trigger) {
+          // The trigger toggles: clicking an already-open section (e.g. Commitments, open by
+          // default) would close it, so only click when its target is closed
+          const target = trigger && document.querySelector(trigger.getAttribute('data-bs-target'));
+          if (trigger && !target?.classList.contains('show')) {
             trigger.click();
           }
         }

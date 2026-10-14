@@ -31,6 +31,22 @@ class CapitalRemittanceDecorator < ApplicationDecorator
     h.display_boolean object.verified
   end
 
+  # Status badge colours for the LP grid - the same solid bg-* badges as the Completed column
+  # (DisplayBooleanComponent); an unknown status falls back to a neutral badge
+  LP_STATUS_BADGES = { "Paid" => "bg-success", "Overpaid" => "bg-info", "Pending" => "bg-warning", "Overdue" => "bg-danger" }.freeze
+
+  # LP grid Status (INVESTOR_STANDARD_COLUMNS => lp_status): the status badge, plus a second badge when a
+  # payment is recorded but not yet verified (model #lp_status has the same wording as plain text)
+  def lp_status
+    badges = [h.content_tag(:span, object.status, class: "badge #{LP_STATUS_BADGES.fetch(object.status, 'bg-secondary')}")]
+    if !object.verified && object.collected_amount_cents.to_d.nonzero?
+      badges << h.content_tag(:span, class: "badge bg-info ms-1", title: "Recorded by the fund, awaiting verification") do
+        h.safe_join([h.content_tag(:i, nil, class: "ti ti-clock"), " Payment under verification"])
+      end
+    end
+    h.safe_join(badges)
+  end
+
   def payment_date
     h.l object.payment_date if object.payment_date
   end

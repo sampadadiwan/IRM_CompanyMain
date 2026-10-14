@@ -33,7 +33,9 @@
               <%= @widget.widget_name if @widget.display_name %> <%= @widget.tags if @widget.display_tag %>
             </h4>
           <% else %>
-            <h5 class="card-title mb-0"><%= @widget.widget_name if @widget.display_name %> <%= @widget.tags if @widget.display_tag %></h5>
+            <h5 class="card-title mb-0"><%= @widget.widget_name if @widget.display_name %> <%= @widget.tags if @widget.display_tag %>
+              <% if @help && @widget.display_name %><i class="ti ti-info-circle text-muted fs-4" data-bs-toggle="tooltip" title="<%= @help %>" aria-label="<%= @help %>"></i><% end %>
+            </h5>
           <% end %>
           <% if @collapsible || @maximizable %>
             <div class="card-actions cursor-pointer ms-auto d-flex button-group">

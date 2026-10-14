@@ -57,6 +57,17 @@ class AggregatePortfolioInvestment < ApplicationRecord
 
   ADDITIONAL_COLUMNS_FROM = %w[portfolio_company investment_instrument].freeze
 
+  # Column header help (RansackTableHeader)
+  COLUMN_HELP = {
+    "quantity" => "Shares or units the fund holds today",
+    "bought_amount" => "What the fund has paid for this holding, net of shares sold",
+    "sold_amount" => "What the fund has received from selling this holding",
+    "fmv" => "Fair market value: what the holding is worth now, per the latest valuation",
+    "unrealized_gain" => "Gain not yet cashed in: FMV - cost of the shares still held",
+    "gain" => "Gain already cashed in on shares sold",
+    "avg_cost" => "Average price the fund paid per share"
+  }.freeze
+
   STANDARD_COLUMNS_WITH_FUND = { "Fund Name; text-col" => "fund_name; text-col" }.merge(STANDARD_COLUMNS).freeze
   INVESTOR_TAB_STANDARD_COLUMNS = STANDARD_COLUMNS_WITH_FUND.except("Portfolio Company; text-col").freeze
 

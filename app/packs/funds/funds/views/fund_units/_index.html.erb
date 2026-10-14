@@ -31,6 +31,8 @@
 </div>
 <% frame = with_frame("fund_units_frame") %>
 <% sort = ->(attribute, label) { sort_link(@q, attribute, label, { page: nil }, { data: { turbo_frame: frame } }) } %>
+<%# Column help: an info icon with what the column means %>
+<% col_help = ->(text) { tag.i(class: "ti ti-info-circle ms-1", data: { bs_toggle: "tooltip" }, title: text, aria: { label: text }) } %>
 <%= form_with url: fund_units_path, method: :get, data: { turbo_frame: frame }, class: "d-flex justify-content-end mb-2" do %>
   <% flatten_params(request.query_parameters.except("page", "search")).each do |name, value| %>
     <%= hidden_field_tag name, value, id: nil %>
@@ -49,28 +51,28 @@
           <th class="text-col"><%= sort.call(:capital_commitment_investor_kyc_full_name, "Investing Entity") %></th>
         <% end %>
         <th class="text-col">
-          <%= sort.call(:unit_type, "Unit Type") %>
+          <%= sort.call(:unit_type, "Unit Type") %> <%= col_help.call("The class of units, as set out in the fund documents") %>
         </th>
         <th class="text-col">
           <%= sort.call(:capital_commitment_folio_id, "Folio Id") %>
         </th>
         <th class="date-col">
-          <%= sort.call(:issue_date, "Issue Date") %>
+          <%= sort.call(:issue_date, "Issue Date") %> <%= col_help.call("When these units were issued") %>
         </th>
         <th class="num-col">
-          <%= sort.call(:quantity, "Quantity") %>
+          <%= sort.call(:quantity, "Quantity") %> <%= col_help.call("Number of units. Negative when units leave the folio, e.g. a transfer out") %>
         </th>
         <th class="num-col">
-          Price
+          Price <%= col_help.call("Issue price per unit") %>
         </th>
         <th class="num-col">
-          Premium
+          Premium <%= col_help.call("Premium paid per unit over the issue price") %>
         </th>
         <th class="num-col">
-          Amount
+          Amount <%= col_help.call("Quantity x (Price + Premium)") %>
         </th>
         <th class="text-col">
-          <%= sort.call(:reason, "Reason") %>
+          <%= sort.call(:reason, "Reason") %> <%= col_help.call("Why the units were issued - usually the capital call or event that created them") %>
         </th>
         <th class="action-col">
         </th>
@@ -82,6 +84,10 @@
       <% end %>
     </tbody>
   </table>
+  <%# An LP with no units yet would otherwise see a bare header row %>
+  <% if @pagy.count.zero? && current_user.curr_role == "investor" %>
+    <p class="text-muted text-center mb-0" id="fund_units_empty">No units have been allotted to your folios yet.</p>
+  <% end %>
 
   <% if @pagy.count.positive? %>
     <div class="d-flex justify-content-between align-items-center">
