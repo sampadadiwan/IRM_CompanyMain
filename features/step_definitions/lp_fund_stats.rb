@@ -452,4 +452,6 @@ Then('I should see the headline ratio cards {string}') do |expected|
     end
     expect(page).to have_css(".card", count: expected.split(",").size)
   end
+  # One shared date: a single line above the cards names the fund and the date
+  expect(page).to have_css("#fund-ratios-tab small.text-muted", text: "Latest ratios for #{@fund.name}")
 end
