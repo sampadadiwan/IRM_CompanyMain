@@ -1,11 +1,19 @@
 <% valuation ||= nil %>
 <% show_currency_filter ||= nil %>
+<%# Optional muted line under the title (e.g. the headline ratio cards' "as of" date). The title column is
+    .flex-grow-1 with the small right after the h1, so scaffolds.scss indents it to start where the title does %>
+<% subtitle ||= nil %>
 
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
-  <h1 class="h3 mb-0 text-gray-800">
-    <%= params[:title].presence || "Fund Ratios" %>
-    <%= link_to l(valuation.valuation_date), valuation if valuation %>
-  </h1>
+  <div class="flex-grow-1">
+    <h1 class="h3 mb-0 text-gray-800">
+      <%= params[:title].presence || "Fund Ratios" %>
+      <%= link_to l(valuation.valuation_date), valuation if valuation %>
+    </h1>
+    <% if subtitle.present? %>
+      <small class="text-muted" id="fund_ratios_subtitle"><%= subtitle %></small>
+    <% end %>
+  </div>
   <div class="d-flex flex-wrap align-items-center gap-2">
     <% if show_currency_filter %>
     <div class="d-flex justify-content-end">

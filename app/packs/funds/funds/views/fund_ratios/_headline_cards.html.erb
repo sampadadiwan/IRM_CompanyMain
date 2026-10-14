@@ -3,14 +3,9 @@
     Each card is one row of the grid below - the fund's latest value for that ratio - and links to it. %>
 <%
   colors = %w[primary success info warning danger secondary]
-  # One shared date goes in a single line above the cards; otherwise each card says its own date
-  dates = fund_ratios.map(&:end_date).uniq
-  shared_date = dates.first if dates.size == 1 && dates.first
+  # Set when all cards share one date - the title's subtitle then says it (fund_ratios/_index)
+  shared_date ||= nil
 %>
-<% if shared_date %>
-  <%# Name the fund: a feeder's LP page shows its master fund's ratios (funds/_investor_fund_details) %>
-  <small class="text-muted d-block mb-1">Latest ratios for <%= fund_ratios.first.fund&.name %>, as of <%= l(shared_date) %></small>
-<% end %>
 <div class="row mb-3" id="fund_ratio_headline_stats">
   <% fund_ratios.each_with_index do |fund_ratio, i| %>
     <%= render(NumberStatsComponent.new(

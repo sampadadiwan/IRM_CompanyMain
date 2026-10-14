@@ -2,9 +2,17 @@
 <% valuation ||= nil %>
 <% import_upload_id ||= nil %>
 <% data_source ||= fund_ratios_path(params: params.to_unsafe_h, import_upload_id: import_upload_id) %>
-<%= render "fund_ratios/index_header", fund: , valuation: , data_source: %>
-<%# A fund's Ratios list (fund team and LP): the fund's latest headline ratios as cards, under the heading %>
-<%= render "fund_ratios/headline_cards", fund_ratios: @headline_ratios if @headline_ratios.present? %>
+<%
+  # A fund's Ratios list (fund team and LP): the fund's latest headline ratios as cards, under the
+  # heading. When they share one date, the title's subtitle carries it (naming the fund: a feeder's LP
+  # page shows its master fund's ratios) and the cards show plain names.
+  headline = @headline_ratios.presence
+  headline_dates = headline&.map(&:end_date)&.uniq
+  shared_date = headline_dates.first if headline_dates&.size == 1
+  header_subtitle = "Latest ratios for #{headline.first.fund&.name}, as of #{l(shared_date)}" if shared_date
+%>
+<%= render "fund_ratios/index_header", fund: , valuation: , data_source:, subtitle: header_subtitle %>
+<%= render "fund_ratios/headline_cards", fund_ratios: headline, shared_date: shared_date if headline %>
 <%= render "fund_ratios/analytics", fund: %>
 <% fund_ratios_frame = with_frame("fund_ratios_frame") %>
 <% q ||=nil %>
