@@ -11,11 +11,10 @@ Scenario Outline: Create new PI and aggregate PI
   Given there are "3" portfolio investments "quantity=-100"
   Then an aggregate portfolio investment should be created
   Then I should see the aggregate portfolio investment details on the details page
-  Given I add widgets for the aggregate portfolio investment
-  And I add track record for the aggregate portfolio investment
-  And I add preview documents for the aggregate portfolio investment
-  When I go to aggregate portfolio investment preview
-  Then I can see all the preview details
+  # The per-holding preview page is retired (lp-folio-portfolio-dashboard E66, E80): no Preview or Show Portfolio
+  # buttons; sharing with LPs is per company and laid out in LP layouts
+  Then I should not see "Hide Portfolio"
+  And I should see "Sharing with LPs has moved to the company"
 
   Examples:
     |entity                             |fund                |

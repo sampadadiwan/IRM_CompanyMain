@@ -3,6 +3,10 @@ module CurrencyHelper
 
   INDIA_FORMAT = /(\d+?)(?=(\d\d)+(\d)(?!\d))/
 
+  # Compact unit labels for space-constrained displays (cards, phone views) — opt in
+  # via money_to_currency(..., short_units: true). Everywhere else keeps the full word.
+  SHORT_UNITS = { "crores" => "Cr", "lakhs" => "L", "million" => "M" }.freeze
+
   def custom_format_number(number, params = {}, force_units: true)
     cookies ||= nil
     raw_units = params[:force_units].presence || params[:units].presence || (cookies && cookies[:currency_units]) || force_units
@@ -23,7 +27,7 @@ module CurrencyHelper
     end
   end
 
-  def money_to_currency(money, params = {}, ignore_units = false, view_cookies: nil, decimals: nil, negative_in_parentheses: false)
+  def money_to_currency(money, params = {}, ignore_units = false, view_cookies: nil, decimals: nil, negative_in_parentheses: false, short_units: false)
     decimals ||= params[:decimals]&.to_i || 2
 
     sanf = true
@@ -49,7 +53,9 @@ module CurrencyHelper
                 "Million"
               end
 
+      # The cookie keeps the full unit name; only the rendered label is shortened
       cookies[:currency_units] = units if cookies
+      units = SHORT_UNITS.fetch(units.to_s.downcase, units) if short_units
     end
     if money.is_a?(Money)
       display(money, sanf, units, decimals:, negative_in_parentheses:)

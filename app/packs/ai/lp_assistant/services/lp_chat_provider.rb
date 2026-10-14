@@ -36,6 +36,10 @@ class LpChatProvider < BaseChatProvider
                           owner_type = 'Investor' / 'CapitalCommitment'). Do NOT use it on
                           fund-level tables (portfolio_investments, funds,
                           fund_ratios owner_type='Fund').
+        - {VISIBLE_API_IDS} / {VISIBLE_PI_IDS} — the portfolio holdings this investor may see
+                          (aggregate_portfolio_investments.id / portfolio_investments.id). Always
+                          required when querying those tables (e.g. `api.id IN ({VISIBLE_API_IDS})`);
+                          never answer about other holdings.
       Example: WHERE cc.entity_id IN ({ENTITY_ID})
                 AND cc.fund_id IN ({FUND_IDS})
                 AND cc.investor_id IN ({INVESTOR_IDS})
@@ -129,10 +133,13 @@ class LpChatProvider < BaseChatProvider
     [
       ListSkillsTool.new,
       LoadSkillTool.new,
+      # Portfolio rows are limited to the holdings this LP may see (LpPortfolioVisibility — H19, E69–E71)
       RunQueryTool.new(
         entity_ids: entity_ids,
         accessible_fund_ids: fund_ids,
-        accessible_investor_ids: investor_ids
+        accessible_investor_ids: investor_ids,
+        visible_api_ids: portfolio_visibility.assistant_api_ids(support_agent.entity_id),
+        visible_pi_ids: portfolio_visibility.assistant_pi_ids(support_agent.entity_id)
       ),
       DocumentUrlTool.new(
         entity_ids: entity_ids,
@@ -160,6 +167,11 @@ class LpChatProvider < BaseChatProvider
   # Single FM entity_id this chat is scoped to. Kept as an array so
   # RunQueryTool's IN ({ENTITY_ID}) substitution stays uniform.
   # @return [Array<Integer>] one-element list containing support_agent.entity_id
+  # The LP's visible portfolio holdings (the same rule as every LP portfolio screen)
+  def portfolio_visibility
+    @portfolio_visibility ||= LpPortfolioVisibility.for_user(analyst)
+  end
+
   def accessible_entity_ids
     @accessible_entity_ids ||= [support_agent.entity_id]
   end

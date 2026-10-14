@@ -31,9 +31,35 @@ class DashboardWidgetsController < ApplicationController
   # GET /dashboard_widgets/new
   def new
     @bread_crumbs = { Widgets: dashboard_widgets_path, New: nil }
-    @dashboard_widget = DashboardWidget.new
+    @dashboard_widget = DashboardWidget.new(params.fetch(:dashboard_widget, {}).permit(:dashboard_name, :name))
     @dashboard_widget.entity_id = current_user.entity_id
     authorize @dashboard_widget
+  end
+
+  # POST /dashboard_widgets/setup_lp_layout — creates the plain "LP" layout with the starter widgets; does nothing
+  # if it already exists (E52a). Worked examples H8, E52a — openspec/changes/lp-folio-portfolio-dashboard/business-rules.md
+  def setup_lp_layout
+    authorize DashboardWidget.new(entity_id: current_user.entity_id), :manage_lp_layouts?
+    DashboardWidget.transaction do
+      copy_lp_widgets("LP", starter_lp_widgets) unless lp_layout_exists?("LP")
+    end
+    redirect_to dashboard_widgets_path(q: DashboardWidget.layout_filter("LP")), notice: "LP layout ready."
+  end
+
+  # POST /dashboard_widgets/new_lp_layout — "LP, <tag>" for companies with that tag, starting as a copy of "LP"
+  # (E88). Refused if a layout for that tag exists. Worked example E88.
+  def new_lp_layout
+    authorize DashboardWidget.new(entity_id: current_user.entity_id), :manage_lp_layouts?
+    tag = params[:tag].to_s.strip.first(90)
+    name = "LP, #{tag}"
+    return redirect_back_or_to(dashboard_widgets_path, alert: "Enter a tag for the new LP layout.") if tag.blank?
+    return redirect_back_or_to(dashboard_widgets_path, alert: "An LP layout for this tag already exists.") if lp_layout_exists?(name)
+
+    DashboardWidget.transaction do
+      plain = DashboardWidget.where(entity_id: current_user.entity_id, dashboard_name: DashboardWidget::PORTFOLIO_COMPANY_DASHBOARD, name: "LP").order(:position)
+      copy_lp_widgets(name, plain.exists? ? plain.to_a : starter_lp_widgets)
+    end
+    redirect_to dashboard_widgets_path(q: DashboardWidget.layout_filter(name)), notice: "LP layout \"#{name}\" created."
   end
 
   # GET /dashboard_widgets/1/edit
@@ -69,6 +95,29 @@ class DashboardWidgetsController < ApplicationController
   end
 
   private
+
+  # Is there already an LP layout with these tokens (ignoring case and spaces)?
+  def lp_layout_exists?(name)
+    tokens = DashboardWidget.layout_tokens(name).sort
+    DashboardWidget.lp_layout_names_for(current_user.entity_id).any? { |existing| DashboardWidget.layout_tokens(existing).sort == tokens }
+  end
+
+  # Catalogue entries for the starter widgets (Data Card, Key KPIs, Valuations) — Key KPIs only with the KPI module (E97)
+  def starter_lp_widgets
+    catalogue = DashboardWidget::PORTFOLIO_COMPANY_WIDGETS.index_by(&:widget_name)
+    (DashboardWidget::LP_STARTER_WIDGETS & DashboardWidget.lp_safe_widget_names(current_user.entity)).map { |name| catalogue.fetch(name) }
+  end
+
+  # Saves copies of the given widgets into an LP layout (widget, size, position, labels, metadata)
+  def copy_lp_widgets(name, widgets)
+    widgets.each_with_index do |widget, index|
+      DashboardWidget.create!(entity_id: current_user.entity_id, dashboard_name: DashboardWidget::PORTFOLIO_COMPANY_DASHBOARD, name:,
+                              widget_name: widget.widget_name, size: widget.size, position: widget.position || (index + 1),
+                              tags: widget.tags.presence || widget.widget_name, enabled: true,
+                              metadata: widget.metadata.presence || DashboardWidget::LP_STARTER_METADATA[widget.widget_name],
+                              display_name: true, tag_list: widget.tag_list)
+    end
+  end
 
   # Use callbacks to share common setup or constraints between actions.
   def set_dashboard_widget

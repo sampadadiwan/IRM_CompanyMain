@@ -1,6 +1,8 @@
 When('I create a new note {string}') do |arg1|
   @note_details = arg1
   click_on("Show", match: :first)
+  # View Notes / Add Note sit in the investor page's Notes menu
+  find("#notes_menu").click
   click_on("Add Note", match: :first)
   find('#note_details').set(arg1)
   click_on("Save")

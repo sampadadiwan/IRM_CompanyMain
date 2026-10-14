@@ -80,6 +80,11 @@
                 <a href="#step-2" type="button" id="wizard_step_2" title="Other details" class="btn disabled btn-outline-primary btn-outline-circle">2</a>
                 <p><%= evergreen_steps ? "Other details" : "Step 2" %></p>
             </div>
+            <%# The fund's switches on a step of their own, after Other details (lp-folio-portfolio-dashboard) %>
+            <div class="stepwizard-step">
+                <a href="#step-features" type="button" id="wizard_step_features" title="Features" class="btn disabled btn-outline-primary btn-outline-circle">F</a>
+                <p>Features</p>
+            </div>
             <% if evergreen_steps %>
               <% eg_wizard_steps.each_with_index do |(_icon, title), i| %>
                 <div class="stepwizard-step" data-fund-type-target="evergreenStep">
@@ -259,25 +264,45 @@
                     <small class="text-muted">Brief commentary shown to LPs on their landing page (e.g. "Fund performing strongly – Q1 exits completed"). Leave blank for auto-generated text.</small>
                   </div>
 
-                  <%= render "funds/features", fund: fund, form: form %>
-
                   <%= custom_form_fields(fund, form, step: :end) %>
 
                   <div class="form-group d-flex justify-content-between">
                     <%# H3: Back to the fund details (the wizard controller's prevBtn) %>
                     <button class="btn btn-outline-secondary btn-lg prevBtn" type="button" id="fund_back_to_step_1"><i class="ti ti-arrow-left"></i> Back</button>
-                    <span data-fund-type-target="closedOnly"><%= form.submit t_common(:save), {class: "btn btn-outline-primary btn-lg", id: "save_fund"} %></span>
-                    <% if evergreen_steps %>
-                      <%# Into the open-ended terms: needs unit types first (fund-type#toEvergreen) %>
-                      <button class="btn btn-primary btn-lg d-none" type="button" data-fund-type-target="openOnly" id="fund_next_to_evergreen"
-                              data-action="fund-type#toEvergreen">Next <i class="ti ti-arrow-right"></i></button>
-                    <% end %>
+                    <span class="d-flex gap-2">
+                      <%# A closed-ended fund can be saved here; the switches have sensible defaults. data-wizard-submit-here
+                          makes it submit rather than move on to the Features step (wizard_controller) %>
+                      <span data-fund-type-target="closedOnly"><%= form.submit t_common(:save), {class: "btn btn-outline-primary btn-lg", id: "save_fund", data: { wizard_submit_here: true }} %></span>
+                      <button class="btn btn-primary btn-lg nextBtn" type="button" id="fund_next_to_features">Next: Features <i class="ti ti-arrow-right"></i></button>
+                    </span>
                   </div>
                 </div>
             </div>
         </div>
     </div>
 <!-- End step-2 -->
+    <%# Features step: what LPs see, reporting and market data — iOS toggles with help, icons and tooltips %>
+    <div class="<%= evergreen_steps && fund_type == 'open_ended' ? 'col-md-8' : 'col-md-6' %> setup-content" id="step-features"<% if evergreen_steps %> data-fund-type-target="bar"<% end %>>
+        <div class="card">
+            <div class="card-header"><i class="ti ti-adjustments-horizontal me-1"></i> Features</div>
+            <div class="card-body">
+              <p class="text-muted mb-0">Choose what your LPs see of this fund, how reports are prepared and which market data it accepts. You can change any of these later.</p>
+
+              <%= render "funds/features", fund: fund, form: form %>
+
+              <div class="form-group d-flex justify-content-between mt-4">
+                <button class="btn btn-outline-secondary btn-lg prevBtn" type="button" id="fund_back_to_step_2"><i class="ti ti-arrow-left"></i> Back</button>
+                <span data-fund-type-target="closedOnly"><%= form.submit t_common(:save), {class: "btn btn-primary btn-lg", id: "save_fund_features"} %></span>
+                <% if evergreen_steps %>
+                  <%# Into the open-ended terms: needs unit types first (fund-type#toEvergreen) %>
+                  <button class="btn btn-primary btn-lg d-none" type="button" data-fund-type-target="openOnly" id="fund_next_to_evergreen"
+                          data-action="fund-type#toEvergreen">Next <i class="ti ti-arrow-right"></i></button>
+                <% end %>
+              </div>
+            </div>
+        </div>
+    </div>
+<!-- End step-features -->
     <% if evergreen_steps %>
       <%# ②: the evergreen steps (3–11), only reached for an open-ended fund; their fields post as
           evergreen_fund_setting[...] and are ignored for a closed-ended fund (E4) %>

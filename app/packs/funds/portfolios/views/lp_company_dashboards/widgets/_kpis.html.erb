@@ -1,0 +1,33 @@
+<%#
+  LP version of the KPIs and KPI Performance Table widgets: the company's Actual KPIs for the latest periods, in
+  the app's table style. Budget and IC figures never reach LPs.
+  Worked examples E55, E56 — openspec/changes/lp-folio-portfolio-dashboard/business-rules.md
+%>
+<% reports, rows = LpWidgetData.new(**lp_context).kpi_table %>
+<%= render(WidgetCardComponent.new(widget:, args:, widget_size: widget.widget_size)) do %>
+  <% if rows.empty? %>
+    <%# E56 — only Budget (or no) KPIs loaded %>
+    <div class="text-muted p-3 lp-kpis-empty">No KPIs reported yet.</div>
+  <% else %>
+    <div class="table-responsive">
+      <table class="table table-bordered mb-0 lp-kpis">
+        <thead>
+          <tr>
+            <th class="text-col">KPI (Actual)</th>
+            <% reports.each do |report| %><th class="num-col"><%= l(report.as_of) %></th><% end %>
+          </tr>
+        </thead>
+        <tbody>
+          <% rows.each do |kpi_name, values| %>
+            <tr>
+              <td class="text-col"><%= kpi_name %></td>
+              <% reports.each do |report| %>
+                <td class="num-col"><%= number_with_precision(values[report.id], precision: 2, delimiter: ",") %></td>
+              <% end %>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% end %>
+<% end %>

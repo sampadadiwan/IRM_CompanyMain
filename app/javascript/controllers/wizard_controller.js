@@ -15,6 +15,12 @@ export default class extends Controller {
         let submitBtn = $(".wizard_form").find("input[type='submit'], button[type='submit']");
         submitBtn.off("click").on("click", (e) => {
             console.log("WizardController: submitBtn clicked");
+            // A Save on a middle step (data-wizard-submit-here) submits once its own step is valid,
+            // instead of moving on to the next step like every other wizard submit does
+            if (e.currentTarget.hasAttribute("data-wizard-submit-here")) {
+                if (!validateSection(e.currentTarget, validateFields, false)) e.preventDefault();
+                return;
+            }
             if (validateSection(e.currentTarget, validateFields)) {
                 e.preventDefault();
             }
@@ -65,7 +71,9 @@ export default class extends Controller {
         $('div.setup-panel div a.btn-outline-primary').first().trigger('click');
     }
 
-    validateSection(elem, validateFields) {
+    // Returns true when the click should not submit (moved to the next step, or invalid).
+    // advance = false (a data-wizard-submit-here Save) returns whether the step is valid instead.
+    validateSection(elem, validateFields, advance = true) {
         console.log("WizardController: validateSection called", elem);
         $(".wizard_form").enableClientSideValidations();
 
@@ -104,6 +112,11 @@ export default class extends Controller {
         }
 
         console.log("WizardController: isValid =", isValid);
+        if (!advance) {
+            // Stay on this step: the submit goes ahead when valid, or the errors show here
+            if (!isValid) this.showErrorModal("Please correct the errors on the form before proceeding.");
+            return isValid;
+        }
         if (isValid) {
             if (nextStepWizard.length) {
                 nextStepWizard.removeClass('disabled').trigger('click');

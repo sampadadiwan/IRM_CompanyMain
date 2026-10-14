@@ -35,11 +35,16 @@ module FundEnabled
     use_own_fx_rates: nil
   }.freeze
 
+  # The LP portfolio view's two extra switches, appended after the market-data flags (bits 11, 12). They only
+  # matter while show_portfolios is on; LpPortfolioView maps the four-option dropdown onto them.
+  # Worked examples H5, E3 — openspec/changes/lp-folio-portfolio-dashboard/business-rules.md
+  LP_PORTFOLIO_FLAGS = %i[lp_folio_portfolio lp_own_share].freeze
+
   # Switches a new fund starts with, matching the old column defaults (show_fund_units, enable_ai_commentary)
   NEW_FUND_DEFAULTS = %i[show_fund_units enable_ai_commentary].freeze
 
   included do
-    flag :features, LEGACY_FLAGS + %i[accept_market_rates accept_derived_rates accept_market_prices enable_derivatives use_own_fx_rates]
+    flag :features, LEGACY_FLAGS + %i[accept_market_rates accept_derived_rates accept_market_prices enable_derivatives use_own_fx_rates] + LP_PORTFOLIO_FLAGS
 
     after_initialize :apply_default_features, if: :new_record?
     after_commit :recompute_fair_values_on_source_change, on: :update

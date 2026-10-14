@@ -33,6 +33,12 @@ class Fund < ApplicationRecord
   # If this is a master fund, it may have many feeder funds
   has_many :feeder_funds, class_name: "Fund", foreign_key: :master_fund_id
 
+  # LP portfolio view picks (LpPortfolioView): the allocation formula decides which holdings an LP sees and is
+  # "Your cost"; the FMV formula is "Your FMV". FundFormula is soft-deleted, so a deleted pick simply reads
+  # back as nil here (E6, E6a) — openspec/changes/lp-folio-portfolio-dashboard/business-rules.md
+  belongs_to :lp_allocation_fund_formula, class_name: "FundFormula", optional: true
+  belongs_to :lp_fmv_fund_formula, class_name: "FundFormula", optional: true
+
   has_many :fund_ratios, dependent: :destroy
   has_many :ratio_formulas, dependent: :destroy
   has_many :valuations, as: :owner, dependent: :destroy
@@ -98,6 +104,8 @@ class Fund < ApplicationRecord
   validates :category, length: { maximum: 15 }
   validates :portfolio_cost_type, length: { maximum: 10 }, allow_blank: true
   validates :units_allocation_engine, length: { maximum: 50 }, allow_blank: true
+  # X1–X5 — the LP portfolio view's formula picks
+  validate { LpPortfolioView.validate(self) }
 
   scope :ordered, lambda {
     order(Arel.sql("
@@ -124,6 +132,33 @@ class Fund < ApplicationRecord
   monetize :call_amount_cents, :committed_amount_cents, :target_committed_amount_cents,
            :collected_amount_cents, :distribution_amount_cents, :total_units_premium_cents,
            with_currency: ->(f) { f.currency }
+
+  # The fund's LP portfolio view (:hidden, :whole_fund, :allocated, :allocated_with_share) — LpPortfolioView
+  def lp_portfolio_view
+    LpPortfolioView.from_flags(features)
+  end
+
+  def lp_portfolio_view=(option)
+    LpPortfolioView.apply(self, option)
+  end
+
+  # Either allocated view: LPs see only holdings allocated to their folio (H2)
+  def lp_folio_portfolio?
+    %i[allocated allocated_with_share].include?(lp_portfolio_view)
+  end
+
+  # Own share can be shown only when the view asks for it and both picks still exist (E6 — a deleted
+  # FMV formula hides the Your columns)
+  def lp_own_share_ready?
+    lp_portfolio_view == :allocated_with_share && lp_allocation_fund_formula.present? && lp_fmv_fund_formula.present?
+  end
+
+  # E1 — warn (never refuse) when the allocation formula has written no folio entries yet. One SELECT 1.
+  def lp_folio_allocation_warning?
+    return false unless lp_folio_portfolio? && lp_allocation_fund_formula_id.present?
+
+    AccountEntry.where(fund_formula_id: lp_allocation_fund_formula_id).where.not(capital_commitment_id: nil).none?
+  end
 
   def private_folder_names
     ["Reports", "Private Documents"]

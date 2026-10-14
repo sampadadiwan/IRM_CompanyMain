@@ -1,0 +1,65 @@
+<%#
+  LP Company Dashboard: a way back to the fund portfolio, the company and fund (selector when held through several
+  funds), then — in one turbo frame, so switching fund reloads only this part — the holdings card and the LP
+  layout chosen for the company. Reuses the dashboard frame (nav pills, WidgetCardComponent) in LP mode.
+  Worked examples H10–H14, E54, E54a, E59, E78, E93 — openspec/changes/lp-folio-portfolio-dashboard/business-rules.md
+%>
+<div class="container-fluid p-3" data-controller="tooltip" id="lp_company_dashboard">
+  <% if @page.preview? %>
+    <%# H13, E93, E78 — the fund team's preview names the LP and the layout in use %>
+    <div class="alert alert-info d-flex align-items-start gap-2" id="lp_preview_banner">
+      <i class="ti ti-eye"></i>
+      <div>
+        Preview — viewing as <%= @page.preview_investor.investor_name %> (<%= @page.visibility.folio_labels(@fund).join(", ") %>).
+        <% if @layout %>
+          Layout: "<%= @layout.name %>" (<%= @layout.fallback? ? "no tag-specific layout matches" : "company tag #{@layout.matched_tags.map(&:titleize).join(', ')}" %>).
+        <% else %>
+          This LP sees only the holdings card. Add widgets to an LP layout
+          → <%= link_to "Open LP layout", dashboard_widgets_path(q: DashboardWidget.layout_filter("LP")) %>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+    <div>
+      <%# A way back to where the LP came from %>
+      <% if @page.preview? %>
+        <%= link_to investor_path(@company), class: "text-muted small" do %><i class="ti ti-arrow-left"></i> <%= @company.investor_name %><% end %>
+      <% else %>
+        <%= link_to fund_path(@fund), class: "text-muted small" do %><i class="ti ti-arrow-left"></i> <%= @fund.name %> portfolio<% end %>
+      <% end %>
+      <h3 class="mb-0"><%= @company.investor_name %></h3>
+    </div>
+    <% if @funds.size > 1 %>
+      <%# H14, E59 — only the funds through which this LP may open the company %>
+      <div class="dropdown" id="lp_fund_selector">
+        <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"><%= @fund.name %></button>
+        <ul class="dropdown-menu dropdown-menu-end shadow">
+          <% @funds.each do |fund| %>
+            <% path = @page.preview? ? preview_lp_company_dashboard_path(@company, investor_id: @page.preview_investor.id, fund_id: fund.id) : lp_company_dashboard_path(@company, fund_id: fund.id) %>
+            <li><%= link_to fund.name, path, class: "dropdown-item #{'active' if fund == @fund}", data: { turbo_frame: "lp_company_dashboard_frame", turbo_action: "advance" } %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% else %>
+      <span class="badge bg-secondary-subtle text-secondary"><%= @fund.name %></span>
+    <% end %>
+  </div>
+
+  <%= turbo_frame_tag "lp_company_dashboard_frame", data: { turbo_action: "advance" } do %>
+    <%= render "lp_company_dashboards/holdings_card", holdings: @holdings, fund: @fund, own_share: @own_share %>
+
+    <% if @layout %>
+      <%= render "/dashboard_widgets/dashboard",
+                 dashboard_name: DashboardWidget::PORTFOLIO_COMPANY_DASHBOARD, name: @layout.name, entity_id: @company.entity_id,
+                 uri_params: { owner_id: @company.id, owner_type: "Investor" },
+                 lp_context: { company: @company, fund: @fund, visibility: @page.visibility } %>
+    <% else %>
+      <%# E54 — never the internal widget set %>
+      <div class="alert alert-info d-flex align-items-start gap-2" id="lp_no_widgets">
+        <i class="ti ti-info-circle"></i> No further company information has been shared.
+      </div>
+    <% end %>
+  <% end %>
+</div>
