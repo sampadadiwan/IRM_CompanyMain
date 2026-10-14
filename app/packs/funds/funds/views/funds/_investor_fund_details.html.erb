@@ -123,7 +123,8 @@
             <div class="accordion-body">
               <%
                 # For the portfolio and fund ratios, use the master_fund if its present as in the feeder fund we want to see the master_fund portfolio and ratios
-                fund_id = fund.master_fund.present? ?  fund.master_fund_id : fund.id
+                # (Fund#lp_ratios_fund_id - the LP commitment card's Fund Ratios use the same fund)
+                fund_id = fund.lp_ratios_fund_id
               %>
               <div id="fund-ratios" class="">
                 <%= turbo_frame_tag "fund_ratios_frame", target: "_top", loading: :lazy, src: fund_ratios_path(fund_id: fund_id, fund_ratios_only: true, owner_type: "Fund", scenario: "Default") do %>

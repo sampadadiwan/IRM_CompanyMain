@@ -130,7 +130,11 @@
                             </div>
                             <table class="table">
                                 <%# Plain-language meaning of each ratio (FundRatio.help_for), as a tooltip on its name %>
-                                <% capital_commitment.fund.fund_ratios.where(owner: capital_commitment.fund, name: ["XIRR", "TVPI", "Portfolio Value to Cost"]).order(id: :desc).limit(3).each do |fund_ratio| %>
+                                <%# The same ratios as the fund page's Ratios section headline cards, so the two never differ:
+                                    the LP's ratios fund (a feeder shows its master's - Fund#lp_ratios_fund_id), fund-level,
+                                    Default scenario, each ratio's latest row (FundRatio.headline_ratios); the first three here %>
+                                <% card_ratios = policy_scope(FundRatio).where(fund_id: capital_commitment.fund.lp_ratios_fund_id, capital_commitment_id: nil, scenario: "Default") %>
+                                <% FundRatio.headline_ratios(card_ratios).first(3).each do |fund_ratio| %>
                                     <tr>
                                         <td>
                                             <%= link_to fund_ratio.name, fund_ratio %>

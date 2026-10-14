@@ -33,6 +33,12 @@ class Fund < ApplicationRecord
   # If this is a master fund, it may have many feeder funds
   has_many :feeder_funds, class_name: "Fund", foreign_key: :master_fund_id
 
+  # The fund whose portfolio and ratios an LP sees for this fund: a feeder fund shows its master
+  # fund's (LP fund page Ratios / Portfolio sections and the LP commitment card)
+  def lp_ratios_fund_id
+    master_fund_id.presence || id
+  end
+
   has_many :fund_ratios, dependent: :destroy
   has_many :ratio_formulas, dependent: :destroy
   has_many :valuations, as: :owner, dependent: :destroy
