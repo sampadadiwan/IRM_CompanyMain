@@ -203,7 +203,7 @@ class NdaStatusController < ApplicationController
         folder_name: folder_name,
         contact_email: @nda_config.contact_email,
         reason: revocation.reason,
-        revoked_at: revocation.updated_at,
+        revoked_at: revocation.created_at,
         folder_link: folder_link_for(@nda_config)
       ).deliver_later(user)
     end
