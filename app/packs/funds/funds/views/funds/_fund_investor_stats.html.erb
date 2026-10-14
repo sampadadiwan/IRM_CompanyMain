@@ -16,17 +16,25 @@
     collected_amount =  capital_commitments.inject(0){|sum, cc| sum + cc.collected_amount }
     collected_amount = Money.new(collected_amount, fund.currency) if collected_amount == 0
     
-    distribution_amount =  capital_commitments.inject(0){|sum, cc| sum + cc.distribution_amount }
-    distribution_amount = Money.new(distribution_amount, fund.currency) if distribution_amount == 0
+    # Distributed = what has actually been paid out, net (completed payments' Net Payable) - the same
+    # figure as the Distributions section's Received card, over the same payments the LP can see.
+    # (The commitment counter sums gross payable, which counts unpaid distributions and is 0 on older
+    # payments.)
+    payments = CapitalDistributionPayment.where(id: policy_scope(CapitalDistributionPayment).where(fund_id: fund.id).select(:id))
+    distribution_amount = Money.new(CapitalDistributionPayment.lp_totals(payments)[:received], fund.currency)
     
 %>
 
 <%
 cards_data = [  
-  { path: nil, stat: money_to_currency(committed_amount, params), subtitle: "Committed", progress_bar_color: "warning" },
-  { path: nil, stat: money_to_currency(call_amount, params), subtitle: "Called", progress_bar_color: "primary" },
-  { path: nil, stat: money_to_currency(collected_amount, params), subtitle: "Collected", progress_bar_color: "danger" },
-  { path: nil, stat: money_to_currency(distribution_amount, params), subtitle: "Distributed", progress_bar_color: "info" }
+  { path: nil, stat: money_to_currency(committed_amount, params), subtitle: "Committed", progress_bar_color: "warning",
+    tooltip: "What you have committed to this fund, across all your folios" },
+  { path: nil, stat: money_to_currency(call_amount, params), subtitle: "Called", progress_bar_color: "primary",
+    tooltip: "What the capital calls have asked for, before fees - the same figure as the Called card in the Calls section" },
+  { path: nil, stat: money_to_currency(collected_amount, params), subtitle: "Collected", progress_bar_color: "danger",
+    tooltip: "Payments the fund has received and verified. Payments still being verified are not included - the same figure as the Collected card in the Calls section" },
+  { path: nil, stat: money_to_currency(distribution_amount, params), subtitle: "Distributed", progress_bar_color: "info",
+    tooltip: "What has actually been paid out to you, net of tax and deductions. Unpaid distributions are not included - the same figure as the Received card in the Distributions section" }
 ]
 
 cards_data.insert(0, { path: nil, stat: fund.name, subtitle: "Name", progress_bar_color: "success" }) if fund 
@@ -39,7 +47,8 @@ cards_data.insert(0, { path: nil, stat: fund.name, subtitle: "Name", progress_ba
             path: card_data[:path],
             amount: card_data[:stat],
             subtitle: card_data[:subtitle],
-            progress_bar_color: card_data[:progress_bar_color]
+            progress_bar_color: card_data[:progress_bar_color],
+            tooltip: card_data[:tooltip]
         )) %>
 
     <% end %>

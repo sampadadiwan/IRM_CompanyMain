@@ -116,7 +116,8 @@ end
 Then('the LP remittance totals should be:') do |table|
   expected = table.rows_hash
   totals = CapitalRemittance.lp_totals(lp_stats_scope(CapitalRemittance))
-  %w[called collected under_verification due overdue].each do |key|
+  # Only the figures the table lists (fees is left out where no fees are charged)
+  (expected.keys - ["overdue_count"]).each do |key|
     expect(totals[key.to_sym].to_i).to eq(stat_cents(expected[key])), "#{key}: got #{totals[key.to_sym]}"
   end
   expect(totals[:overdue_count]).to eq(expected["overdue_count"].to_i)
@@ -134,7 +135,9 @@ Then("the LP remittance totals should equal the totals of the LP grid columns") 
   expect(shown_card(totals[:collected])).to eq(collected_cells)
   expect(shown_card(totals[:under_verification])).to eq(rows.sum { |r| shown_amount(r.under_verification_amount) })
   expect(shown_card(totals[:due])).to eq(due_cells)
-  expect(shown_card(totals[:called])).to eq(due_cells + collected_cells)
+  # Called = the Call Amount column, Fees = the Fees column
+  expect(shown_card(totals[:called])).to eq(rows.sum { |r| shown_amount(r.call_amount) })
+  expect(shown_card(totals[:fees])).to eq(rows.sum { |r| shown_amount(r.other_fee) })
   expect(shown_card(totals[:overdue])).to eq(overdue_rows.sum { |r| shown_amount(r.lp_due_amount) })
   expect(totals[:overdue_count]).to eq(overdue_rows.size)
 end
@@ -356,7 +359,8 @@ end
 Then("the fund team remittance totals for the LP's commitment should be:") do |table|
   expected = table.rows_hash
   totals = CapitalRemittance.grid_totals(lp_commitment.capital_remittances, verified_basis: false)
-  %w[called collected under_verification due overdue].each do |key|
+  # Only the figures the table lists (fees is left out where no fees are charged)
+  (expected.keys - ["overdue_count"]).each do |key|
     expect(totals[key.to_sym].to_i).to eq(stat_cents(expected[key])), "#{key}: got #{totals[key.to_sym]}"
   end
   expect(totals[:overdue_count]).to eq(expected["overdue_count"].to_i)
@@ -371,7 +375,9 @@ Then('the fund team remittance totals should equal the totals of the fund team g
   collected_cells = rows.sum { |r| shown_amount(r.collected_amount) }
   expect(shown_card(totals[:due])).to eq(due_cells)
   expect(shown_card(totals[:collected])).to eq(collected_cells)
-  expect(shown_card(totals[:called])).to eq(due_cells + collected_cells)
+  # Called = the Call Amount column, Fees = the Fees column
+  expect(shown_card(totals[:called])).to eq(rows.sum { |r| shown_amount(r.call_amount) })
+  expect(shown_card(totals[:fees])).to eq(rows.sum { |r| shown_amount(r.other_fee) })
   expect(shown_card(totals[:under_verification])).to eq(rows.reject(&:verified).sum { |r| shown_amount(r.collected_amount) })
   expect(shown_card(totals[:overdue])).to eq(rows.select { |r| r.status == "Overdue" }.sum { |r| shown_amount(r.due_amount) })
 end

@@ -9,8 +9,13 @@
   money = ->(cents) { money_to_currency(Money.new(cents, fund.currency), params) }
   cards_data = [
     { stat: money.call(totals[:called]), subtitle: "Called", progress_bar_color: "primary", text_info: "file-invoice",
-      tooltip: "Everything called so far: call amounts plus fees (Due + Collected)" }
+      tooltip: "Total of the Call Amount column: what the capital calls asked for, before fees" }
   ]
+  # Fees only when charged - Called + Fees - Collected = Due
+  if totals[:fees].nonzero?
+    cards_data << { stat: money.call(totals[:fees]), subtitle: "Fees", progress_bar_color: "secondary", text_info: "receipt",
+                    tooltip: "Total of the Fees column: fees charged with the calls, on top of the call amounts" }
+  end
   if verified_basis
     cards_data << { stat: money.call(totals[:collected]), subtitle: "Collected", progress_bar_color: "success", text_info: "circle-check",
                     tooltip: "Total of the Collected Amount column: payments the fund has received and verified" }
@@ -19,7 +24,7 @@
       cards_data << { stat: money.call(totals[:under_verification]), subtitle: "Under Verification", progress_bar_color: "info", text_info: "clock",
                       tooltip: "Payments the fund has recorded but not yet verified. They still count as due until verified" }
     end
-    due_help = "Total of the Due Amount column: called + fees - verified payments"
+    due_help = "Total of the Due Amount column: Called + Fees - verified payments"
   else
     cards_data << { stat: money.call(totals[:collected]), subtitle: "Collected", progress_bar_color: "success", text_info: "circle-check",
                     tooltip: "Total of the Collected Amount column: every payment recorded, verified or not" }
@@ -28,7 +33,7 @@
       cards_data << { stat: money.call(totals[:under_verification]), subtitle: "Unverified", progress_bar_color: "info", text_info: "clock",
                       tooltip: "Collected Amount of the rows with Verified = No: recorded but not yet confirmed against the bank" }
     end
-    due_help = "Total of the Due Amount column: called + fees - every recorded payment"
+    due_help = "Total of the Due Amount column: Called + Fees - every recorded payment"
   end
   cards_data << { stat: money.call(totals[:due]), subtitle: "Due", progress_bar_color: "warning", text_info: "alert-circle", tooltip: due_help }
   cards_data << { stat: money.call(totals[:overdue]), subtitle: "Overdue (#{pluralize(totals[:overdue_count], 'call')})", progress_bar_color: "danger", text_info: "alarm",

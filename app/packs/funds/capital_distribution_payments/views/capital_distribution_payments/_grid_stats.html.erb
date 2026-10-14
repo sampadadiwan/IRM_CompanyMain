@@ -10,7 +10,7 @@
     { stat: money.call(totals[:total]), subtitle: "Total Distributions", progress_bar_color: "primary", text_info: "coins",
       tooltip: "Total of the Net Payable column: everything distributed, paid or pending (Received + Pending)" },
     { stat: money.call(totals[:received]), subtitle: "Received", progress_bar_color: "success", text_info: "circle-check",
-      tooltip: "Net Payable of distributions marked Completed - paid out" }
+      tooltip: "Net Payable of the distributions marked Completed: what has actually been paid out, net of tax. Shown as Distributed on the fund page and commitment card" }
   ]
   # Pending only when there is something to say - a zero card is noise
   if totals[:pending].to_d.positive?

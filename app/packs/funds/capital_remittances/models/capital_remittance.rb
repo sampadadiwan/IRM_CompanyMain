@@ -40,6 +40,8 @@ class CapitalRemittance < ApplicationRecord
     "Capital Call; text-col" => "capital_call_name; text-col",
     "Folio Id; text-col" => "folio_id; text-col",
     "Status; text-col" => "lp_status; text-col",
+    "Call Amount; num-col" => "call_amount; num-col",
+    "Fees; num-col" => "other_fee; num-col",
     "Due Amount; num-col" => "lp_due_amount; num-col",
     "Collected Amount; num-col" => "verified_collected_amount; num-col",
     "Under Verification; num-col" => "under_verification_amount; num-col",
@@ -57,13 +59,17 @@ class CapitalRemittance < ApplicationRecord
     "verified" => "Whether the fund has confirmed the recorded payment against its bank records",
     "due_amount" => "Call amount + fees - every recorded payment, verified or not (LPs see due on the verified basis)",
     "collected_amount" => "Every payment recorded for this call, verified or not",
-    "payment_date" => "When the payment was received"
+    "payment_date" => "When the payment was received",
+    "call_amount" => "The amount this capital call asks for, before fees",
+    "other_fee" => "Fees charged with this call, on top of the call amount"
   }.freeze
 
   FOR_COMMITMENT_COLUMNS = {
     "Capital Call; text-col" => "capital_call_name; text-col",
     "Status; text-col" => "status; text-col",
     "Verified; text-col" => "verified; text-col",
+    "Call Amount; num-col" => "call_amount; num-col",
+    "Fees; num-col" => "other_fee; num-col",
     "Due Amount; num-col" => "due_amount; num-col",
     "Collected Amount; num-col" => "collected_amount; num-col",
     "Payment Date; date-col" => "payment_date; date-col"
@@ -310,14 +316,18 @@ class CapitalRemittance < ApplicationRecord
   #   verified_basis: false - the fund team's grid (STANDARD_COLUMNS / FOR_COMMITMENT_COLUMNS):
   #     Collected = "Collected Amount" (every recorded payment), Due = "Due Amount" (#due_amount),
   #     Unverified = Collected Amount of rows with Verified = No
-  #   Called = Due + Collected; Overdue = Due Amount of the rows whose Status is Overdue, and how many
+  #   Called = "Call Amount" (call amounts only, as the commitment counters and the fund's top stats
+  #   report it); Fees = "Fees"; so Called + Fees - Collected = Due
+  #   Overdue = Due Amount of the rows whose Status is Overdue, and how many
   # Amounts carry fractional paise and the grid shows each cell cut to whole paise (Money formatter
   # trims the decimals), so each cell is truncated the same way before adding - summing first could
   # show a paisa more. Plucks 5 columns of one LP's / one folio's rows, so it stays small.
   def self.grid_totals(scope, verified_basis:)
     rows = scope.pluck(:call_amount_cents, :other_fee_cents, :collected_amount_cents, :verified, :status)
-    totals = { collected: 0, under_verification: 0, due: 0, overdue: 0, overdue_count: 0 }
+    totals = { called: 0, fees: 0, collected: 0, under_verification: 0, due: 0, overdue: 0, overdue_count: 0 }
     rows.each do |call, fee, got, verified, status|
+      totals[:called] += call.truncate
+      totals[:fees] += fee.truncate
       # Exactly what the row's cells display on this grid
       counted = verified_basis && !verified ? 0 : got
       row_due = (call + fee - counted).truncate
@@ -331,7 +341,7 @@ class CapitalRemittance < ApplicationRecord
       totals[:overdue_count] += 1
     end
 
-    totals.merge(called: totals[:due] + totals[:collected])
+    totals
   end
 
   # The LP's view (verified basis) - LP fund page and the commitment card's Due Amount

@@ -5,6 +5,13 @@
         params[:force_units] = "Lakhs"
     end
 %>
+<%
+    # Distributed = what has actually been paid out on this folio, net (completed payments' Net Payable) -
+    # the same figure as the fund page's top Distributed and the Distributions section's Received card.
+    # (The commitment counter sums gross payable, which counts unpaid distributions and is 0 on older ones.)
+    folio_payments = CapitalDistributionPayment.where(id: policy_scope(CapitalDistributionPayment).where(capital_commitment_id: capital_commitment.id).select(:id))
+    distributed = Money.new(CapitalDistributionPayment.lp_totals(folio_payments)[:received], capital_commitment.fund.currency)
+%>
 <div class="row">
     <div class="col-lg-8 d-flex align-items-strech">
     <div class="card w-100">
@@ -28,7 +35,7 @@
                     <span class="fs3 mb-1">
                         <%= capital_commitment.investor_kyc&.full_name if capital_commitment.investor_kyc %>
                         Folio: <%= capital_commitment.folio_id %>
-                        <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip" title="Your account number with this fund. Calls, distributions and documents are issued per folio"></i>
+                        <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip" title="The folio (account) number of this commitment. Calls, distributions and documents are issued per folio"></i>
                     </span>
 
                 </div>
@@ -38,7 +45,7 @@
         </div>
         <div class="row align-items-center">
             <div class="col-md-7">
-                <%= column_chart [["Committed", capital_commitment.committed_amount.to_f], ["Called", capital_commitment.call_amount.to_f], ["Collected", capital_commitment.collected_amount.to_f], ["Distributed", capital_commitment.distribution_amount.to_f] ], id: "capital_commitment_#{capital_commitment.id}",
+                <%= column_chart [["Committed", capital_commitment.committed_amount.to_f], ["Called", capital_commitment.call_amount.to_f], ["Collected", capital_commitment.collected_amount.to_f], ["Distributed", distributed.to_f] ], id: "capital_commitment_#{capital_commitment.id}",
                  library: {
                    plotOptions: {
                         column: {
@@ -52,7 +59,7 @@
                     **chart_theme_color
                  } %>
                 <%# Say what the bars compare - Collected is verified payments only, like Due Amount %>
-                <small class="text-muted d-block text-center">Committed vs called vs collected (verified payments) vs distributed on this folio</small>
+                <small class="text-muted d-block text-center">On this folio: committed, called (before fees), collected (verified payments) and distributed (paid out, net)</small>
             </div>
             <div class="col-md-5">
                 <div class="hstack mb-4 pb-1">
@@ -61,7 +68,7 @@
                         </div>
                         <div>
                         <span class="mb-0 fs-7"><%= money_to_currency(capital_commitment.committed_amount, params) %></span>
-                        <p class="fs-3 mb-0">Committed <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip" title="What you agreed to invest in this fund on this folio"></i></p>
+                        <p class="fs-3 mb-0">Committed <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip" title="The amount committed to this fund on this folio"></i></p>
                     </div>
                 </div>
 
@@ -71,7 +78,7 @@
                         </div>
                         <div>
                         <span class="mb-0 fs-7"><%= money_to_currency(capital_commitment.call_amount, params) %></span>
-                        <p class="fs-3 mb-0">Called <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip" title="How much of your commitment the fund has asked for so far, in capital calls"></i></p>
+                        <p class="fs-3 mb-0">Called <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip" title="What the capital calls on this folio have asked for so far, before fees. Fees are listed separately in the Calls section"></i></p>
                     </div>
                 </div>
 
@@ -80,8 +87,8 @@
                         <i class="ti ti-coins text-primary fs-6"></i>
                         </div>
                         <div>
-                        <span class="mb-0 fs-7"><%= money_to_currency(capital_commitment.distribution_amount, params) %></span>
-                        <p class="fs-3 mb-0">Distributed <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip" title="What the fund has distributed to you on this folio (gross, before deductions)"></i></p>
+                        <span class="mb-0 fs-7"><%= money_to_currency(distributed, params) %></span>
+                        <p class="fs-3 mb-0">Distributed <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip" title="What has actually been paid out on this folio, net of tax and deductions. Announced but unpaid distributions are not included - they show as Pending Payout in the Distributions section"></i></p>
                     </div>
                 </div>
 
@@ -165,7 +172,7 @@
                             <div class="d-flex justify-content-between align-items-center mb-9">
                                 <h5 class="card-title mb-0 fw-semibold">
                                     Recent Documents
-                                    <i class="ti ti-info-circle text-muted fs-4" data-bs-toggle="tooltip" title="The latest documents shared with you for this folio, and from the fund's data room"></i>
+                                    <i class="ti ti-info-circle text-muted fs-4" data-bs-toggle="tooltip" title="The latest documents for this folio, and from the fund's data room"></i>
                                 </h5>
                                 <%= link_to fund_path(capital_commitment.fund, tab: "docs-tab"), class: "small text-decoration-none", id: "recent_documents_see_all_#{capital_commitment.id}" do %>
                                     See all &rarr;
@@ -218,7 +225,7 @@
                     <div class="d-flex justify-content-between align-items-center mb-9">
                         <h5 class="card-title mb-0 fw-semibold">
                             Due Amount
-                            <i class="ti ti-info-circle text-muted fs-4" data-bs-toggle="tooltip" title="What you still owe on this folio: called + fees - payments the fund has verified. Payments still being verified count as due"></i>
+                            <i class="ti ti-info-circle text-muted fs-4" data-bs-toggle="tooltip" title="Still owed on this folio: Called + Fees - payments the fund has verified. A payment recorded but not yet verified still counts as due. Matches the Due card in the Calls section"></i>
                         </h5>
                         <%= link_to fund_path(capital_commitment.fund, tab: "calls-tab"), class: "small text-decoration-none", id: "due_amount_see_all_#{capital_commitment.id}" do %>
                             See all &rarr;

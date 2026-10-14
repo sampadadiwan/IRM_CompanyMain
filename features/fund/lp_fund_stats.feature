@@ -1,5 +1,5 @@
 Feature: LP fund page stats cards for calls and distributions
-  On the LP fund page, the Calls section shows Called / Collected / Under Verification / Due / Overdue
+  On the LP fund page, the Calls section shows Called (before fees) / Fees / Collected / Under Verification / Due / Overdue
   cards (verified basis: a payment is collected once the fund verifies it) and the
   Distributions section shows Total / Received / Pending / Last distribution cards, over every row
   the LP can see in the fund (CapitalRemittance.lp_totals, CapitalDistributionPayment.lp_totals).
@@ -30,7 +30,8 @@ Feature: LP fund page stats cards for calls and distributions
       | Call 4 | 50000       | 0         | 80000     | true     | Paid    |
       | Call 5 | 40000       | 0         | 0         | false    | Overdue |
     Then the LP remittance totals should be:
-      | called             | 550000 |
+      | called             | 540000 |
+      | fees               | 10000  |
       | collected          | 230000 |
       | under_verification | 150000 |
       | due                | 320000 |
@@ -120,7 +121,8 @@ Feature: LP fund page stats cards for calls and distributions
     When I open the Calls section of the fund page as the investor
     Then the LP remittance stats cards should be:
       | subtitle          | amount |
-      | Called             | 460000 |
+      | Called             | 450000 |
+      | Fees               | 10000  |
       | Collected          | 150000 |
       | Under Verification | 150000 |
       | Due                | 310000 |
@@ -239,7 +241,8 @@ Feature: LP fund page stats cards for calls and distributions
       | Call 4 | 50000       | 0         | 80000     | true     | Paid    |
       | Call 5 | 40000       | 0         | 0         | false    | Overdue |
     Then the fund team remittance totals for the LP's commitment should be:
-      | called             | 550000 |
+      | called             | 540000 |
+      | fees               | 10000  |
       | collected          | 380000 |
       | under_verification | 150000 |
       | due                | 170000 |
@@ -261,7 +264,8 @@ Feature: LP fund page stats cards for calls and distributions
     When I open the "remittances" tab of the LP's commitment page
     Then the stats cards in "#lp_remittance_stats" should be:
       | subtitle         | amount |
-      | Called           | 310000 |
+      | Called           | 300000 |
+      | Fees             | 10000  |
       | Collected        | 150000 |
       | Unverified       | 50000  |
       | Due              | 160000 |
