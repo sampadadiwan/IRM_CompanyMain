@@ -43,6 +43,10 @@
 
 </div>
 
+<%# LP fund page only (@lp_stats_scope is set by CapitalDistributionPaymentsController#index for an LP):
+    totals across all their payments in the fund, under the heading and above the table %>
+<%= render "/capital_distribution_payments/lp_stats", scope: @lp_stats_scope, fund: Fund.find(params[:fund_id]) if @lp_stats_scope %>
+
 <% if params[:card] == "true" %>
   <% capital_distribution_payments.each do |capital_distribution_payment| %>
     <%= render "capital_distribution_payments/show", capital_distribution_payment: capital_distribution_payment %>

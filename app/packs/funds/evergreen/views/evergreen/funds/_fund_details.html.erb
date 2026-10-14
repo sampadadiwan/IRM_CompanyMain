@@ -32,7 +32,7 @@
               end
       tabs << ["Portfolio", "portfolio", "portfolio_dashboard_frame", dashboard_fund_path(fund, dashboard_name: "Portfolio Dashboard"), below]
     end
-    tabs << ["Documents", "docs", "documents_tree_frame", folder_documents_path(entity_id: fund.entity_id, folder_id: fund.document_folder.id, show_root_docs: true)] if fund.document_folder
+    tabs << ["Documents", "docs", "documents_tree_frame", folder_documents_path(entity_id: fund.entity_id, folder_id: fund.document_folder.id, show_root_docs: true, doc_search: true)] if fund.document_folder
     tabs << ["Notifications", "notifications", "custom_notifications_frame", custom_notifications_path(q: { owner_id_eq: fund.id, owner_type_eq: "Fund" })]
     tabs << ["Access", "access-rights", "access_rights_frame", access_rights_path(owner_id: fund.id, owner_type: "Fund", entity_id: current_user.entity_id, form_type: nil)]
   %>

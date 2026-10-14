@@ -49,7 +49,12 @@ class DocumentsController < ApplicationController
                      Document.none
                    end
 
-      @documents = if params[:no_folders].present? || (params[:show_root_docs].presence && current_user.has_cached_role?(:company_admin) && current_user.entity_id == @entity.id)
+      # Search box and the LP "latest documents" list both cover the whole folder tree, not one folder
+      search_tree = params[:search].present? || params[:latest_first].present?
+
+      @documents = if search_tree
+                     folder_tree_documents(@documents)
+                   elsif params[:no_folders].present? || (params[:show_root_docs].presence && current_user.has_cached_role?(:company_admin) && current_user.entity_id == @entity.id)
                      # if the user is company admin and viewing his own company data then the tree view wil render fullt and we fetch only the root docs
                      @documents.where(folder_id: params[:folder_id])
                    elsif params[:show_root_docs].presence
@@ -67,6 +72,14 @@ class DocumentsController < ApplicationController
                    else
                      @documents.order(id: :desc)
                    end
+
+      # Tree-wide lists span many folders: retitle the panel and show each doc's folder
+      @docs_title = if params[:search].present?
+                      "Search results"
+                    elsif params[:latest_first].present?
+                      "Latest Documents"
+                    end
+      @show_doc_folder = search_tree
 
     else
       # Newest docs first
@@ -392,6 +405,19 @@ class DocumentsController < ApplicationController
   end
 
   private
+
+  # Documents anywhere in params[:folder_id]'s tree (e.g. the whole fund folder) that the user may
+  # see, narrowed by the search box text if any. Used by the panel search and the LP latest list.
+  def folder_tree_documents(accessible)
+    # The folder and every folder below it - search never leaves this tree
+    folder_ids = Folder.descendants_of(params[:folder_id]).pluck(:id) + [params[:folder_id].to_i]
+    in_tree = accessible.where(folder_id: folder_ids)
+    in_tree = in_tree.name_or_tags_matching(params[:search]) if params[:search].present?
+
+    # for_investor joins access rights, so a doc granted twice would repeat; dedup by id in SQL
+    # (an IN subquery, not DISTINCT over the wide documents row)
+    Document.where(id: in_tree.select(:id))
+  end
 
   # Use callbacks to share common setup or constraints between actions.
   def set_document

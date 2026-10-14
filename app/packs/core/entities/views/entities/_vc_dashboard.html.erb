@@ -10,11 +10,19 @@
   #      An empty value means "no selection", so fall back to the LP's own entity.
   #   2. Subdomain-based resolution — @current_entity is set by set_current_entity when
   #      the LP visits a GP's branded subdomain (e.g. acme.caphive.com).
-  #   3. Default on first load — use the first GP entity or the LP's own entity.
+  #   3. The LP's last pick, remembered in the session — so the sidebar Dashboard link, the home
+  #      icon or a fresh tab don't jump back to the first GP. Only while they still have access.
+  #   4. Default on first load — use the first GP entity or the LP's own entity.
+  remembered_entity_id = session[:lp_gp_entity_id].to_s
   if params.key?(:gp_entity_id)
     selected_entity_id = params[:gp_entity_id].presence || current_user.entity_id
+    # Remember the explicit pick for later loads that carry no gp_entity_id
+    session[:lp_gp_entity_id] = selected_entity_id.to_s
   elsif defined?(@current_entity) && @current_entity.present?
     selected_entity_id = @current_entity.id
+  elsif remembered_entity_id.present? &&
+        (remembered_entity_id == current_user.entity_id.to_s || gp_entities.any? { |e| e.id.to_s == remembered_entity_id })
+    selected_entity_id = remembered_entity_id
   else
     selected_entity_id = gp_entities.first&.id || current_user.entity_id
   end
@@ -41,8 +49,10 @@
        data-gp-switcher-protocol-value="<%= request.protocol %>">
     <div class="topbar-divider d-none d-lg-block"></div>
     <%# form_with targets vc_dashboard_frame so that fallback (no-subdomain) GP
-        changes reload only the dashboard turbo frame, not the full page. %>
-    <%= form_with url: dashboard_entities_path, method: :get, data: { turbo_frame: "vc_dashboard_frame" }, class: "d-inline-block px-2" do |f| %>
+        changes reload only the dashboard turbo frame, not the full page.
+        turbo_action "advance" also puts ?gp_entity_id= in the address bar, so Back from a
+        fund page returns to the picked GP instead of the default first one. %>
+    <%= form_with url: dashboard_entities_path, method: :get, data: { turbo_frame: "vc_dashboard_frame", turbo_action: "advance" }, class: "d-inline-block px-2" do |f| %>
       <div class="d-flex align-items-center gap-2">
         <%= f.label :gp_entity_id, "GP:", class: "fw-bold mb-0 text-nowrap text-muted d-none" %>
         <%= f.select :gp_entity_id,

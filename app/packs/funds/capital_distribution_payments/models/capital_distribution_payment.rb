@@ -111,6 +111,26 @@ class CapitalDistributionPayment < ApplicationRecord
   scope :notification_sent, -> { where(notification_sent: true) }
   scope :notification_not_sent, -> { where(notification_sent: false) }
 
+  # Stats cards on the LP fund page's Distributions section, over `scope` (all the LP's payments in
+  # one fund). Every card is built only from columns the LP sees in the grid below it
+  # (INVESTOR_STANDARD_COLUMNS), so the two can never disagree:
+  #   Total Distributions = total of "Net Payable" (= Received + Pending)
+  #   Received / Pending  = total of "Net Payable" where Completed is Yes / No
+  #   Last Distribution   = the completed row with the latest "Payment Date", and its Net Payable
+  # Gross Payable is deliberately not a card: older payments store it as 0, so its total would
+  # understate what was paid. Amounts carry fractional paise and the grid shows each row cut to whole
+  # paise (Money formatter trims the decimals), so each row is truncated the same way before adding.
+  # Plucks 4 columns of one LP's rows in one fund, so it stays small.
+  def self.lp_totals(scope)
+    rows = scope.pluck(:id, :net_payable_cents, :completed, :payment_date)
+    received = rows.select { |_, _, completed, _| completed }.sum { |_, net, _, _| net.truncate }
+    pending = rows.reject { |_, _, completed, _| completed }.sum { |_, net, _, _| net.truncate }
+    # Only completed rows with a Payment Date - the grid shows no date for the others
+    _, last_net, _, last_date = rows.select { |_, _, completed, date| completed && date }.max_by { |id, _, _, date| [date, id] }
+
+    { total: received + pending, received:, pending:, last_date:, last_amount: last_net&.truncate }
+  end
+
   before_validation :ensure_commitment
   def ensure_commitment
     self.capital_commitment = fund.capital_commitments.where(investor_id:, folio_id:).first

@@ -1,6 +1,6 @@
 <div class="container-fluid p-3" data-controller="tabs" style="max-width: 1400px;">
 
-    <div class="accordion ultra-cool-accordion" id="investorFundDetailsAccordion">
+    <div class="accordion ultra-cool-accordion" id="investorFundDetailsAccordion" data-controller="accordion-scroll">
 
       <!-- Commitments -->
       <div class="accordion-item">
@@ -130,7 +130,7 @@
         <div id="collapseDocuments" class="accordion-collapse collapse" aria-labelledby="docs-tab" data-bs-parent="#investorFundDetailsAccordion">
           <div class="accordion-body">
             <div id="docs" class="">
-                <%= turbo_frame_tag "documents_tree_frame", src: folder_documents_path(entity_id: fund.entity_id, folder_id: fund.document_folder.id, show_root_docs: true, show_action_buttons: false), loading: :lazy, target: "_top" do %>
+                <%= turbo_frame_tag "documents_tree_frame", src: folder_documents_path(entity_id: fund.entity_id, folder_id: fund.document_folder.id, show_root_docs: true, show_action_buttons: false, latest_first: true, doc_search: true), loading: :lazy, target: "_top" do %>
                   <div class="text-center">
                       <div class="spinner-border" role="status">
                         <span class="visually-hidden">Loading...</span>

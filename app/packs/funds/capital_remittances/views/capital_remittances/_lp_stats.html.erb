@@ -1,0 +1,25 @@
+<%# Stats cards above the LP fund page's Capital Remittances list (Calls section).
+    scope: every remittance the LP can see in this fund (CapitalRemittancesController#lp_fund_stats_scope). %>
+<%
+  totals = CapitalRemittance.lp_totals(scope)
+  # Amounts are stored in the fund currency
+  money = ->(cents) { money_to_currency(Money.new(cents, fund.currency), params) }
+  cards_data = [
+    { stat: money.call(totals[:called]), subtitle: "Called", progress_bar_color: "primary" },
+    { stat: money.call(totals[:collected]), subtitle: "Collected", progress_bar_color: "success" },
+    { stat: money.call(totals[:due]), subtitle: "Due", progress_bar_color: "warning" },
+    { stat: money.call(totals[:overdue]), subtitle: "Overdue (#{pluralize(totals[:overdue_count], 'call')})", progress_bar_color: "danger" }
+  ]
+%>
+
+<div class="row mb-3" id="lp_remittance_stats">
+  <% cards_data.each do |card_data| %>
+    <%= render(NumberStatsComponent.new(
+      path: nil,
+      amount: card_data[:stat],
+      subtitle: card_data[:subtitle],
+      progress_bar_color: card_data[:progress_bar_color],
+      fs_size: 4
+    )) %>
+  <% end %>
+</div>

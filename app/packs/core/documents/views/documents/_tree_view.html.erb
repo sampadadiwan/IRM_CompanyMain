@@ -60,9 +60,33 @@
 
             <%# add some space if buttons are not shown to keep view proper %>
             <div class="card-body">
+                <% if params[:doc_search].present? %>
+                    <%# Search the whole tree (folder_id is its root) as the user types; results replace the panel below.
+                        Outside the frame so the box survives each reload of the results. %>
+                    <%= form_with url: folder_documents_path, method: :get, id: "documents_search",
+                                  class: "mb-3", data: { turbo_frame: documents_frame_id, controller: "documents-search" } do |f| %>
+                        <%= hidden_field_tag :folder_id, params[:folder_id] %>
+                        <%= hidden_field_tag :entity_id, params[:entity_id] %>
+                        <%= hidden_field_tag :no_folders, true %>
+                        <%= hidden_field_tag :show_action_buttons, params[:show_action_buttons] if params[:show_action_buttons].present? %>
+                        <%= hidden_field_tag :widget_id, widget_id if widget_id.present? %>
+                        <%# LP: clearing the box goes back to the latest documents %>
+                        <%= hidden_field_tag :latest_first, true if params[:latest_first].present? %>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="ti ti-search"></i></span>
+                            <%# Plain text input, not type=search: Chrome would add its own second clear (x) next to ours %>
+                            <%= text_field_tag :search, nil, class: "form-control", placeholder: "Search documents by name or tag",
+                                                 autocomplete: "off", "aria-label": "Search documents",
+                                                 data: { documents_search_target: "input", action: "input->documents-search#queue" } %>
+                            <button type="button" class="btn btn-outline-secondary" aria-label="Clear search"
+                                    data-action="documents-search#clear"><i class="ti ti-x"></i></button>
+                        </div>
+                    <% end %>
+                <% end %>
                 <%= turbo_frame_tag documents_frame_id, target: "_top" do %>
                     <%
-                        documents = documents.where(folder_id: params[:folder_id]) if params[:folder_id].present?
+                        # LP latest list already spans the whole tree; otherwise show the selected folder's own docs
+                        documents = documents.where(folder_id: params[:folder_id]) if params[:folder_id].present? && params[:latest_first].blank?
                         @pagy, documents = pagy(documents) if params[:all].blank?
                     %>
 

@@ -26,6 +26,21 @@ module DocumentScope
       where(owner_id: owner.id, owner_type: owner.class.name)
     }
 
+    # Forgiving search for the documents panel search box (LPs are not expected to know any syntax):
+    # every word typed must appear somewhere in the name or the tags, in any order, ignoring case.
+    # "q2 statement" matches "Statement - Q2 2026"; a typed * or % is matched literally.
+    scope :name_or_tags_matching, lambda { |term|
+      # Cap the word count so a pasted paragraph can't build a huge query
+      words = term.to_s.split.first(10)
+      words.reduce(all) do |relation, word|
+        pattern = "%#{sanitize_sql_like(word)}%"
+        # Explicit ESCAPE, bound as a param: SQLite (test DB) has no default LIKE escape, and a
+        # literal '\\' is quoted differently by MySQL and SQLite
+        relation.where("documents.name LIKE :pattern ESCAPE :esc OR documents.tag_list LIKE :pattern ESCAPE :esc",
+                       pattern:, esc: "\\")
+      end
+    }
+
     scope :templates, -> { where(template: true) }
     scope :not_templates, -> { where(template: false) }
   end

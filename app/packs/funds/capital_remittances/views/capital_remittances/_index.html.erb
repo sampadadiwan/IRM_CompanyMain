@@ -86,6 +86,9 @@
       <% end %>
     </div>
   </div>
+  <%# LP fund page only (@lp_stats_scope is set by CapitalRemittancesController#index for an LP):
+      totals across all their remittances in the fund, under the heading and above the table %>
+  <%= render "/capital_remittances/lp_stats", scope: @lp_stats_scope, fund: Fund.find(params[:fund_id]) if @lp_stats_scope %>
   <%= render "/capital_remittances/analytics", fund:, capital_call: %>
   <% if params[:card] == "true" %>
     <% capital_remittances.each do |capital_remittance| %>

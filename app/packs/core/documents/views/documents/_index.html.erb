@@ -1,6 +1,7 @@
 <%
   @entity ||= nil
-  title ||= "Documents"
+  # Tree-wide lists (search / LP latest) set their own title and show no single folder in it
+  title ||= @docs_title || "Documents"
 
   # sometimes we render the partial directly instead of going through the controller
   # the controller does sorting but when the partial is rendered we sort the documents here
@@ -22,7 +23,7 @@
 %>
 
 <div class="d-sm-flex align-items-center justify-content-between mb-4" id="docs_index">
-  <% if folder_id.present? %>
+  <% if folder_id.present? && @docs_title.blank? %>
     <%
         # Get the folder
         @folder = Folder.find(folder_id)
@@ -211,11 +212,21 @@
       </thead>
       <tbody>
         <% documents.each do |document| %>
-          <%= render partial: "documents/document", locals: {document: document, lp_view: lp_view} %>
+          <%= render partial: "documents/document", locals: {document: document, lp_view: lp_view, show_folder: @show_doc_folder} %>
         <% end %>
       </tbody>
     </table>
   </div>
+  <%# Say why the list is empty, so an LP doesn't read an empty search as "this fund has no documents" %>
+  <% if documents.respond_to?(:none?) && documents.none? %>
+    <% if params[:search].present? %>
+      <p class="text-muted text-center mb-0" id="documents_empty">
+        No documents match "<%= params[:search] %>". Try fewer or shorter words, or clear the search.
+      </p>
+    <% elsif params[:latest_first].present? %>
+      <p class="text-muted text-center mb-0" id="documents_empty">No documents have been shared with you yet.</p>
+    <% end %>
+  <% end %>
 <% end %>
 <%
 msg ||= nil

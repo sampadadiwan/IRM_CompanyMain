@@ -60,15 +60,15 @@
       <div class="fc5-figures">
         <div class="fc5-kv">
           <span class="fc5-kv-lbl"><i class="fc5-key fc5-key--committed"></i>Committed</span>
-          <span class="fc5-num"><%= money_to_currency(fund.committed_amount, params) %></span>
+          <span class="fc5-num"><%= money_to_currency(fund.committed_amount, params, short_units: true) %></span>
         </div>
         <div class="fc5-kv">
           <span class="fc5-kv-lbl"><i class="fc5-key fc5-key--called"></i>Called</span>
-          <span class="fc5-num"><%= money_to_currency(fund.call_amount, params) %></span>
+          <span class="fc5-num"><%= money_to_currency(fund.call_amount, params, short_units: true) %></span>
         </div>
         <div class="fc5-kv">
           <span class="fc5-kv-lbl"><i class="fc5-key fc5-key--distributed"></i>Distributed</span>
-          <span class="fc5-num"><%= money_to_currency(fund.distribution_amount.abs, params) %></span>
+          <span class="fc5-num"><%= money_to_currency(fund.distribution_amount.abs, params, short_units: true) %></span>
         </div>
         <div class="fc5-kv">
           <span class="fc5-kv-lbl"><i class="fc5-key"></i>Folios</span>

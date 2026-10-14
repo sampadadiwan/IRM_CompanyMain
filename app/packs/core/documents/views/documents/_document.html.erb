@@ -1,8 +1,13 @@
 <% lp_view ||= false %>
+<% show_folder ||= false %>
 <% display_date = document.as_of.presence || document.created_at %>
 <tr id="document_<%= document.id %>">
   <td class="text-col">
     <%= link_to document.name, document_path(document.id) %>
+    <%# Tree-wide lists (search / latest) mix folders, so say where each doc lives %>
+    <% if show_folder && document.folder %>
+      <small class="text-muted d-block"><i class="ti ti-folder"></i> <%= document.folder.name %></small>
+    <% end %>
     <% if !lp_view && document.orignal && policy(document).not_generated_or_approved %>
       <%= link_to document.file_url(response_content_disposition: "inline; filename=#{document.name_with_extension}"), class: "document_download_icon", target: "_blank" do %>
         <i class="fas fa-download"></i>

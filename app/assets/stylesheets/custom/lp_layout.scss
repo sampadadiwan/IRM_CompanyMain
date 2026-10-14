@@ -7,6 +7,8 @@
   border: none !important;
   background: transparent !important;
   margin-bottom: 1.25rem;
+  // Clear the sticky top bar when accordion_scroll_controller brings a section to the top
+  scroll-margin-top: calc(70px + 1rem);
 }
 .ultra-cool-accordion .accordion-button {
   border-radius: 16px !important;

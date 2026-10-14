@@ -4,6 +4,8 @@ class CapitalRemittancesController < ApplicationController
   # GET /capital_remittances or /capital_remittances.json
   def index
     fetch_rows
+    # Totals for the LP stats cards (nil outside the LP fund page)
+    @lp_stats_scope = lp_fund_stats_scope(CapitalRemittance)
     @pagy, @capital_remittances = pagy(@capital_remittances, limit: params[:per_page]) if params[:all].blank?
 
     respond_to do |format|
@@ -164,6 +166,20 @@ class CapitalRemittancesController < ApplicationController
   end
 
   private
+
+  # LP fund page only (an investor-role user, fund_id of a fund they don't own): every row of this
+  # model the LP can see in that fund, for the stats cards above the list. Unpaginated, unaffected by
+  # the list search. The cards total the investor grid's columns (INVESTOR_STANDARD_COLUMNS), which
+  # are only shown in the investor role.
+  def lp_fund_stats_scope(klass)
+    return unless current_user.curr_role == "investor"
+
+    fund = params[:fund_id].present? && Fund.find_by(id: params[:fund_id])
+    return unless fund && fund.entity_id != current_user.entity_id
+
+    # The investor scope joins access rights, so a row can repeat - dedup by id before summing
+    klass.where(id: policy_scope(klass).where(fund_id: fund.id).select(:id))
+  end
 
   # Use callbacks to share common setup or constraints between actions.
   def set_capital_remittance

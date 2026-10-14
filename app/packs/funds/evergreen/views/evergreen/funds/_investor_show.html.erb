@@ -35,7 +35,7 @@
   }
 %>
 <div class="container-fluid p-3" id="evergreen_investor_page">
-  <div class="accordion ultra-cool-accordion" id="lp_accordion">
+  <div class="accordion ultra-cool-accordion" id="lp_accordion" data-controller="accordion-scroll">
     <% sections.each do |key, title, open| %>
       <div class="accordion-item">
         <h2 class="accordion-header" id="lp_heading_<%= key %>">

@@ -259,6 +259,35 @@ class CapitalRemittance < ApplicationRecord
     call_amount + other_fee - collected_amount
   end
 
+  # Stats cards on the LP fund page's Calls section, over `scope` (all the LP's remittances in one fund).
+  # Every card is the total of a column the LP sees in the grid below it (INVESTOR_STANDARD_COLUMNS),
+  # so the two can never disagree:
+  #   Collected = total of "Collected Amount"
+  #   Due       = total of "Due Amount" (#due_amount = call + other fee - collected, per row)
+  #   Called    = Due + Collected
+  #   Overdue   = total of "Due Amount" over the rows whose Status is Overdue, and how many there are
+  # Amounts carry fractional paise and the grid shows each row cut to whole paise (Money formatter
+  # trims the decimals), so each row is truncated the same way before adding - summing first could
+  # show a paisa more than the rows on screen. Plucks only 4 numeric columns of one LP's rows in one
+  # fund, so it stays small.
+  def self.lp_totals(scope)
+    rows = scope.pluck(:call_amount_cents, :other_fee_cents, :collected_amount_cents, :status)
+    collected = due = overdue = 0
+    overdue_count = 0
+    rows.each do |call, fee, got, status|
+      # Exactly what the row's Due Amount / Collected Amount cells display
+      row_due = (call + fee - got).truncate
+      collected += got.truncate
+      due += row_due
+      next unless status == "Overdue"
+
+      overdue += row_due
+      overdue_count += 1
+    end
+
+    { called: due + collected, collected:, due:, overdue:, overdue_count: }
+  end
+
   # Whether the interactive Verify action should be disabled because nothing has been
   # collected yet while money is actually owed. A remittance with a legitimately zero
   # call_amount (e.g. call_basis_account_entry uploads) still has due_amount <= 0 and is

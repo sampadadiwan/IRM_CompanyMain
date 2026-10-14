@@ -115,9 +115,15 @@
                     <div class="card-body">
                     <div class="row align-items-center">
                         <div class="col">
-                            <h5 class="card-title mb-9 fw-semibold">
-                                Fund Ratios
-                            </h5>
+                            <%# "See all" opens the fund page's Ratios section (same show_fund_ratios? gate as this card) %>
+                            <div class="d-flex justify-content-between align-items-center mb-9">
+                                <h5 class="card-title mb-0 fw-semibold">
+                                    Fund Ratios
+                                </h5>
+                                <%= link_to fund_path(capital_commitment.fund, tab: "ratios-tab"), class: "small text-decoration-none", id: "fund_ratios_see_all_#{capital_commitment.id}" do %>
+                                    See all &rarr;
+                                <% end %>
+                            </div>
                             <table class="table">
                                 <% capital_commitment.fund.fund_ratios.where(owner: capital_commitment.fund, name: ["XIRR", "TVPI", "Portfolio Value to Cost"]).order(id: :desc).limit(3).each do |fund_ratio| %>
                                     <tr>
@@ -135,9 +141,15 @@
                     <div class="card-body">
                     <div class="row align-items-center">
                         <div class="col">
-                            <h5 class="card-title mb-9 fw-semibold">
-                                Recent Documents
-                            </h5>
+                            <%# "See all" opens the fund page's Documents section (latest docs + search) %>
+                            <div class="d-flex justify-content-between align-items-center mb-9">
+                                <h5 class="card-title mb-0 fw-semibold">
+                                    Recent Documents
+                                </h5>
+                                <%= link_to fund_path(capital_commitment.fund, tab: "docs-tab"), class: "small text-decoration-none", id: "recent_documents_see_all_#{capital_commitment.id}" do %>
+                                    See all &rarr;
+                                <% end %>
+                            </div>
                             <table class="table">
                                 <% capital_commitment.docs_for_investor.limit(2).order(id: :desc).each do |doc| %>
                                     <tr role="presentation">
@@ -181,9 +193,15 @@
             <div class="card-body">
             <div class="row align-items-start">
                 <div class="col">
-                    <h5 class="card-title mb-9 fw-semibold">
-                        Due Amount
-                    </h5>
+                    <%# "See all" opens the fund page's Calls section, which lists the LP's remittances (what is due) %>
+                    <div class="d-flex justify-content-between align-items-center mb-9">
+                        <h5 class="card-title mb-0 fw-semibold">
+                            Due Amount
+                        </h5>
+                        <%= link_to fund_path(capital_commitment.fund, tab: "calls-tab"), class: "small text-decoration-none", id: "due_amount_see_all_#{capital_commitment.id}" do %>
+                            See all &rarr;
+                        <% end %>
+                    </div>
                     <span class="fs-5 mb-0">
                         <%= money_to_currency(capital_commitment.due_amount, {}) %>
                     </span>
