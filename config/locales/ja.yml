@@ -150,14 +150,11 @@ ja:
       cash_flows: キャッシュフロー
       manage: 管理
       notifications: 通知
-      performance: パフォーマンス
       hints:
         access: このファンドを閲覧できるユーザー
         calls: キャピタルコールと回収額
         distributions: 投資家への分配
         notifications: カスタムメール通知
-        portfolio: 投資先企業（取得原価と評価額）
-        ratios: TVPI、XIRRなどの比率
         tasks: このファンドのタスク
       access: アクセス
       calls: コール
@@ -185,6 +182,7 @@ ja:
     destroy: 投資家アクセス権が削除されました
     update: 投資家アクセス権が更新されました
   investor_details_nav_hints:
+    kyc: このステークホルダーのKYC記録
     commitments: 各ファンドへのコミットメント
     units: 割り当てられたファンドユニット
     investments: 行った投資
@@ -199,6 +197,7 @@ ja:
     stock_adjustments: 保有数を調整する株式分割
     users: ログインするユーザー
   investor_details_nav:
+    investment_details: 投資詳細
     manage: 管理
     access: アクセス
     access_rights: アクセス権

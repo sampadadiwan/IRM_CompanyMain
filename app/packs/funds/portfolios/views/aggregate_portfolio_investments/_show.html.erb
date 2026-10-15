@@ -1,3 +1,8 @@
+<%
+  # A muted ⓘ after a label whose tooltip says what the figure is and how it is worked out
+  tip = ->(text) { tag.i(class: "ti ti-info-circle text-muted", data: { bs_toggle: "tooltip" }, title: text) }
+  tracking_tip = "The same figure in the fund's tracking currency"
+%>
 <div class="container-fluid p-3">
   <%= render ToggleCard.new(title: "#{aggregate_portfolio_investment}", css_class: "show_kyc_#{aggregate_portfolio_investment.id}", state: "show") do %>
   <div class="row">
@@ -10,27 +15,27 @@
         <div class="card-body">
           <div class="row g-4">
             <div class="col-md-6">
-              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Entity</label>
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1"><i class="ti ti-building me-1"></i>Entity</label>
               <div class="fs-4 fw-medium "><%= aggregate_portfolio_investment.entity.name %></div>
             </div>
 
             <div class="col-md-6">
-              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Fund</label>
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1"><i class="ti ti-building-bank me-1"></i>Fund</label>
               <div class="fs-4"><%= link_to aggregate_portfolio_investment.fund, aggregate_portfolio_investment.fund, class: "text-decoration-none fw-medium text-dark link-primary" %></div>
             </div>
 
             <div class="col-md-6">
-              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Portfolio Company</label>
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1"><i class="ti ti-briefcase me-1"></i>Portfolio Company</label>
               <div class="fs-4"><%= link_to aggregate_portfolio_investment.portfolio_company, aggregate_portfolio_investment.portfolio_company, class: "text-decoration-none fw-medium text-dark link-primary" %></div>
             </div>
 
             <div class="col-md-6">
-              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Instrument</label>
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1"><i class="ti ti-certificate me-1"></i>Instrument</label>
               <div class="fs-4"><%= link_to aggregate_portfolio_investment.investment_instrument, aggregate_portfolio_investment.investment_instrument, class: "text-decoration-none fw-medium text-dark link-primary" %></div>
             </div>
 
             <div class="col-md-6">
-              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Investment Domicile</label>
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1"><i class="ti ti-world me-1"></i>Investment Domicile</label>
               <div class="fs-4 fw-medium "><%= aggregate_portfolio_investment.investment_domicile %></div>
             </div>
           </div>
@@ -66,84 +71,84 @@
         </div>
         <ul class="list-group list-group-flush">
             <li class="list-group-item d-flex justify-content-between align-items-center py-3">
-                <span class="text-muted">Current Quantity</span>
+                <span class="text-muted">Current Quantity <%= tip.("Shares the fund holds today: bought - sold - moved out by stock conversions") %></span>
                 <span class="fw-bold "><%= aggregate_portfolio_investment.quantity %></span>
             </li>
             <li class="list-group-item d-flex justify-content-between align-items-center py-3">
-                <span class="text-muted">Avg Cost Per Share</span>
+                <span class="text-muted">Avg Cost Per Share <%= tip.("Bought Amount ÷ Bought Quantity") %></span>
                 <span class="fw-bold "><%= money_to_currency aggregate_portfolio_investment.avg_cost, params %></span>
             </li>
             <li class="list-group-item d-flex justify-content-between align-items-center py-3">
-                <span class="text-muted">Bought Quantity</span>
+                <span class="text-muted">Bought Quantity <%= tip.("Total shares bought across all buys") %></span>
                 <span class="fw-bold "><%= aggregate_portfolio_investment.bought_quantity %></span>
             </li>
             <li class="list-group-item d-flex justify-content-between align-items-center py-3">
-                <span class="text-muted">Bought Amount</span>
+                <span class="text-muted">Bought Amount <%= tip.("Total paid across all buys, before any sales") %></span>
                 <span class="fw-bold "><%= money_to_currency aggregate_portfolio_investment.bought_amount, params %></span>
             </li>
             <% if aggregate_portfolio_investment.fund.tracking_currency.present? %>
                 <li class="list-group-item d-flex justify-content-between align-items-center py-3">
-                    <span class="text-muted">Bought Amount (<%= aggregate_portfolio_investment.fund.tracking_currency %>)</span>
+                    <span class="text-muted">Bought Amount (<%= aggregate_portfolio_investment.fund.tracking_currency %>) <%= tip.(tracking_tip) %></span>
                     <span class="fw-bold "><%= money_to_currency aggregate_portfolio_investment.tracking_bought_amount %></span>
                 </li>
             <% end %>
 
             <li class="list-group-item d-flex justify-content-between align-items-center py-3">
-                <span class="text-muted">Transfer Quantity</span>
+                <span class="text-muted">Transfer Quantity <%= tip.("Shares moved out of this holding by stock conversions") %></span>
                 <span class="fw-bold "><%= aggregate_portfolio_investment.transfer_quantity %></span>
             </li>
             <li class="list-group-item d-flex justify-content-between align-items-center py-3">
-                <span class="text-muted">Transfer Amount</span>
+                <span class="text-muted">Transfer Amount <%= tip.("The cost that moved with the shares converted out") %></span>
                 <span class="fw-bold "><%= money_to_currency aggregate_portfolio_investment.transfer_amount %></span>
             </li>
 
             <li class="list-group-item d-flex justify-content-between align-items-center py-3">
-                <span class="text-muted">Sold Quantity</span>
+                <span class="text-muted">Sold Quantity <%= tip.("Total shares sold") %></span>
                 <span class="fw-bold "><%= aggregate_portfolio_investment.sold_quantity %></span>
             </li>
             <li class="list-group-item d-flex justify-content-between align-items-center py-3">
-                <span class="text-muted">Sold Amount</span>
+                <span class="text-muted">Sold Amount <%= tip.("What the fund received from all sales") %></span>
                 <span class="fw-bold "><%= money_to_currency aggregate_portfolio_investment.sold_amount, params %></span>
             </li>
             <% if aggregate_portfolio_investment.fund.tracking_currency.present? %>
                 <li class="list-group-item d-flex justify-content-between align-items-center py-3">
-                    <span class="text-muted">Sold Amount (<%= aggregate_portfolio_investment.fund.tracking_currency %>)</span>
+                    <span class="text-muted">Sold Amount (<%= aggregate_portfolio_investment.fund.tracking_currency %>) <%= tip.(tracking_tip) %></span>
                     <span class="fw-bold "><%= money_to_currency aggregate_portfolio_investment.tracking_sold_amount %></span>
                 </li>
             <% end %>
 
             <li class="list-group-item d-flex justify-content-between align-items-center py-3">
-                <span class="text-muted">Cost Of Sold (FIFO)</span>
+                <span class="text-muted">Cost Of Sold (FIFO) <%= tip.("What the sold shares cost, matched to the earliest buys first (FIFO). Shown as a negative amount") %></span>
                 <span class="fw-bold "><%= money_to_currency aggregate_portfolio_investment.cost_of_sold, params %></span>
             </li>
 
             <li class="list-group-item d-flex justify-content-between align-items-center py-3">
-                <span class="text-muted">FMV</span>
+                <span class="text-muted">FMV <%= tip.("Fair market value: what the holding is worth now, per the latest valuation") %></span>
                 <span class="fw-bold "><%= money_to_currency aggregate_portfolio_investment.fmv, params %></span>
             </li>
             <% if aggregate_portfolio_investment.fund.tracking_currency.present? %>
                 <li class="list-group-item d-flex justify-content-between align-items-center py-3">
-                    <span class="text-muted">FMV (<%= aggregate_portfolio_investment.fund.tracking_currency %>)</span>
+                    <span class="text-muted">FMV (<%= aggregate_portfolio_investment.fund.tracking_currency %>) <%= tip.(tracking_tip) %></span>
                     <span class="fw-bold "><%= money_to_currency aggregate_portfolio_investment.tracking_fmv %></span>
                 </li>
             <% end %>
 
             <li class="list-group-item d-flex justify-content-between align-items-center py-3">
-                <span class="text-muted">Realized Gain</span>
+                <span class="text-muted">Realized Gain <%= tip.("Sold Amount + Cost of Sold (a negative amount): gain already cashed in") %></span>
                 <span class="fw-bold "><%= money_to_currency aggregate_portfolio_investment.gain, params %></span>
             </li>
             <li class="list-group-item d-flex justify-content-between align-items-center py-3">
-                <span class="text-muted">Unrealized Gain</span>
+                <span class="text-muted">Unrealized Gain <%= tip.("FMV - Cost of Remaining: gain on shares still held, not yet cashed in") %></span>
                 <span class="fw-bold "><%= money_to_currency aggregate_portfolio_investment.unrealized_gain, params %></span>
             </li>
             <% if aggregate_portfolio_investment.investment_instrument.currency != aggregate_portfolio_investment.fund.currency %>
               <%# Unrealized gain split into price and currency effect (H9 — fund-market-data) %>
               <li class="list-group-item d-flex justify-content-between align-items-center py-3" id="api_price_effect">
-                  <span class="text-muted">Unrealized price effect</span>
+                  <span class="text-muted">Unrealized price effect <%= tip.("The part of the unrealized gain that comes from the instrument's price moving") %></span>
                   <span class="fw-bold "><%= money_to_currency Money.new(aggregate_portfolio_investment.unrealized_price_effect_cents, aggregate_portfolio_investment.fund.currency), params %></span>
               </li>
               <li class="list-group-item d-flex justify-content-between align-items-center py-3" id="api_currency_effect">
-                  <span class="text-muted">Unrealized currency effect</span>
+                  <span class="text-muted">Unrealized currency effect <%= tip.("The part of the unrealized gain that comes from the exchange rate between the instrument's and the fund's currency") %></span>
                   <span class="fw-bold "><%= money_to_currency Money.new(aggregate_portfolio_investment.unrealized_gain_cents.to_d - aggregate_portfolio_investment.unrealized_price_effect_cents.to_d, aggregate_portfolio_investment.fund.currency), params %></span>
               </li>
             <% end %>
@@ -151,12 +156,12 @@
             <% DerivativeContract.where(hedge_of: aggregate_portfolio_investment, status: "open").each do |hedge| %>
               <% hedge_value = hedge.value_on(Time.zone.today) %>
               <li class="list-group-item d-flex justify-content-between align-items-center py-3 hedged-by">
-                  <span class="text-muted">Hedged by</span>
+                  <span class="text-muted">Hedged by <%= tip.("An open derivative contract hedging this holding, with its value today") %></span>
                   <span class="fw-bold"><%= link_to hedge.summary, derivative_contract_path(hedge) %><%= " (#{money_to_currency(Money.new(hedge_value, hedge.currency), params)})" if hedge_value %></span>
               </li>
             <% end %>
             <li class="list-group-item d-flex justify-content-between align-items-center py-3">
-                <span class="text-muted">Cost of Remaining</span>
+                <span class="text-muted">Cost of Remaining <%= tip.("What the shares still held cost: Bought Amount + Cost of Sold (a negative amount) + Transfer Amount") %></span>
                 <span class="fw-bold "><%= money_to_currency aggregate_portfolio_investment.cost_of_remaining, params %></span>
             </li>
         </ul>
@@ -169,7 +174,7 @@
         </div>
         <ul class="list-group list-group-flush">
           <li class="list-group-item d-flex justify-content-between align-items-center py-3">
-            <span class="text-muted">Show Portfolio</span>
+            <span class="text-muted">Show Portfolio <%= tip.("Yes: investors can open this holding's page") %></span>
             <% if aggregate_portfolio_investment.show_portfolio %>
                 <span class="badge bg-success">Yes</span>
             <% else %>
@@ -188,7 +193,7 @@
           <div class="card-body">
              <div class="d-grid gap-2">
                 <%= link_to aggregate_portfolio_investment_path(aggregate_portfolio_investment, preview: 'true'),
-                            class: "btn btn-outline-info" do %>
+                            class: "btn btn-outline-info", data: { bs_toggle: "tooltip" }, title: "See this page as investors see it" do %>
                     <i class="ti ti-eye"></i>Preview
                 <% end %>
 
@@ -196,27 +201,30 @@
                                 "valuation[owner_id]": aggregate_portfolio_investment.portfolio_company_id,
                                 "valuation[owner_type]": "Investor",
                                 "valuation[investment_instrument_id]": aggregate_portfolio_investment.investment_instrument_id),
-                            class: "btn btn-outline-success" do %>
+                            class: "btn btn-outline-success", data: { bs_toggle: "tooltip" }, title: "Record a new valuation; it updates FMV" do %>
                     <i class="ti ti-currency-dollar"></i>Add Valuation
                 <% end %>
 
                 <%
                     toggle_show_portfolio_text = "Show Portfolio"
                     toggle_icon = "ti ti-eye"
+                    toggle_tip = "Let investors see this holding"
                     if aggregate_portfolio_investment.show_portfolio
+                    toggle_tip = "Stop investors seeing this holding"
                     toggle_show_portfolio_text = "Hide Portfolio"
                     toggle_icon = "ti ti-eye-off"
                     end
                 %>
                 <%= button_to toggle_show_portfolio_aggregate_portfolio_investment_path(aggregate_portfolio_investment, format: :html),
-                                method: :patch, class: "btn btn-outline-info w-100" do %>
+                                method: :patch, class: "btn btn-outline-info w-100", data: { bs_toggle: "tooltip" }, title: toggle_tip do %>
                     <i class="<%= toggle_icon %>"></i><%= toggle_show_portfolio_text %>
                 <% end %>
 
                 <% if policy(aggregate_portfolio_investment).destroy? %>
                     <%= button_to aggregate_portfolio_investment, method: :delete,
                                 class: "btn btn-outline-danger w-100", form_class: "deleteButton",
-                                data: { action: "click->confirm#popup", turbo: false,
+                                title: "Deletes every buy and sell transaction in this holding",
+                                data: { bs_toggle: "tooltip", action: "click->confirm#popup", turbo: false,
                                         msg: "Delete all buy and sell transactions associated with this aggregate portfolio entry?" } do %>
                     <i class="ti ti-trash"></i> <%= t_common(:delete) %>
                     <% end %>

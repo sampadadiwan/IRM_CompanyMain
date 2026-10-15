@@ -26,9 +26,6 @@
     <%= render "layouts/dropdown_tab", icon: "ti-book", label: "Accounting", items: accounting_tabs %>
     <%= render "layouts/dropdown_tab", icon: "ti-list-check", label: "Tasks", items: task_tabs %>
 
-    <% if permissions.enable_kycs? %>
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#kycs-tab"><i class="ti ti-id me-1"></i>All KYCs</a>
-    <% end %>
   </nav>
 
   <div class="tab-content" data-controller="datatable">
@@ -55,15 +52,6 @@
               <%= render "/layouts/loading" %>
             <% end %>
           </div>
-    </div>
-
-
-    <div id="kycs-tab" class="tab-pane fade">
-      <div id="kycs" class="associated_entity">
-        <%= turbo_frame_tag "investor_kycs_frame", loading: :lazy, src: investor_kycs_path(investor_id: capital_commitment.investor_id), target: "_top" do %>
-          <%= render "/layouts/loading" %>
-        <% end %>
-      </div>
     </div>
 
 

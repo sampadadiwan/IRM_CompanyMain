@@ -157,14 +157,11 @@ en:
       cash_flows: Cash Flows
       manage: Manage
       notifications: Notifications
-      performance: Performance
       hints:
         access: Who can see this fund
         calls: Capital calls and amounts collected
         distributions: Payouts made to investors
         notifications: Custom email notifications
-        portfolio: Companies invested in, at cost and value
-        ratios: TVPI, XIRR and other ratios
         tasks: Tasks raised on this fund
       access: Access
       calls: Calls
@@ -201,6 +198,7 @@ en:
     destroy: Investor access was removed
     update: Investor access was updated
   investor_details_nav_hints:
+    kyc: KYC records for this stakeholder
     commitments: Commitments across your funds
     units: Fund units allotted
     investments: Investments made
@@ -215,6 +213,7 @@ en:
     stock_adjustments: Splits that rescale holdings
     users: People who log in for them
   investor_details_nav:
+    investment_details: Investment Details
     manage: Manage
     access: Access
     access_rights: Access Rights

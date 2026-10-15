@@ -12,7 +12,10 @@
     employee_access_pane_id = "access-rights-tab"
     investor_access_pane_id = show_employee_access ? "access_rights_for_investors_tab" : "access-rights-tab"
 
-    # Screens grouped under each dropdown tab (layouts/_dropdown_tab), filtered to what this user can see
+    # Screens grouped under each dropdown tab (layouts/_dropdown_tab), filtered to what this user can see.
+    # Investment Details holds the KYC (first, as it comes before investing) and what the stakeholder
+    # holds: commitments and units for a fund, investments otherwise
+    kyc_tab = ({ pane: "kycs-tab", icon: "ti-id", label: t('investor_details_nav.kyc'), hint: t('investor_details_nav_hints.kyc') } if investor.entity.permissions.enable_kycs?)
     holding_tabs = if current_user.entity.is_fund?
                      [{ pane: "commitments-tab", icon: "ti-file-certificate", label: t('investor_details_nav.commitments'), hint: t('investor_details_nav_hints.commitments') },
                       { pane: "fund-units-tab", icon: "ti-stack-2", label: t('investor_details_nav.units'), hint: t('investor_details_nav_hints.units') }]
@@ -21,6 +24,7 @@
                    else
                      []
                    end
+    investment_detail_tabs = [kyc_tab, *holding_tabs].compact
     manage_tabs = [
       { pane: "tasks-tab", icon: "ti-list-check", label: t('investor_details_nav.tasks'), hint: t('investor_details_nav_hints.tasks') },
       ({ pane: employee_access_pane_id, icon: "ti-building", label: t('investor_details_nav.employee_access'), hint: t('investor_details_nav_hints.employee_access') } if show_employee_access),
@@ -28,7 +32,7 @@
       ({ pane: "emails-tab", icon: "ti-mail", label: t('investor_details_nav.emails'), hint: t('investor_details_nav_hints.emails') } if current_user.has_cached_role?(:company_admin))
     ].compact
   %>
-  <%# Commitments and Manage are dropdown tabs; every screen is a pane in the one tab-content below,
+  <%# Investment Details and Manage are dropdown tabs; every screen is a pane in the one tab-content below,
       so ?tab=<pane id> deep links open it directly %>
   <nav id="investor_tabs" class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  role="tablist">
 
@@ -36,13 +40,7 @@
         <i class="ti ti-users me-1"></i><%= label %>
       </a>
 
-      <% if investor.entity.permissions.enable_kycs? %>
-        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#kycs-tab">
-            <i class="ti ti-id me-1"></i><%= t('investor_details_nav.kyc') %>
-        </a>
-      <% end %>
-
-      <%= render "layouts/dropdown_tab", icon: "ti-file-certificate", label: t('investor_details_nav.commitments'), items: holding_tabs %>
+      <%= render "layouts/dropdown_tab", icon: "ti-briefcase", label: t('investor_details_nav.investment_details'), items: investment_detail_tabs %>
       <%= render "layouts/dropdown_tab", icon: "ti-settings", label: t('investor_details_nav.manage'), items: manage_tabs %>
 
   </nav>

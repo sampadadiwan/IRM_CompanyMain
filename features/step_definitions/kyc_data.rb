@@ -23,7 +23,7 @@ end
 
 When('I navigate to the new individual KYC page') do
   visit(investor_path(@investor))
-  click_on("KYC")
+  click_tab("KYC") # under the stakeholder page's Investment Details dropdown
   click_on("New KYC")
   click_on("Individual")
 end
@@ -235,7 +235,7 @@ end
 
 Given('I send a KYC request to the investor') do
   visit(investor_path(@investor))
-  click_on("KYC")
+  click_tab("KYC") # under the stakeholder page's Investment Details dropdown
   click_on("New KYC")
   expect(page).to have_text("Send KYC to Stakeholder")
   expect(page).to have_button("Send KYC to Stakeholder", wait: 5)

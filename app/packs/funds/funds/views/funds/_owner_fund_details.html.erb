@@ -8,10 +8,6 @@
         { pane: "capital-calls-tab", icon: "ti-arrow-down-left", label: fd.(:calls), hint: hint.(:calls), id: "capital_calls_tab" },
         { pane: "capital-distributions-tab", icon: "ti-arrow-up-right", label: fd.(:distributions), hint: hint.(:distributions) }
       ]
-      performance_tabs = [
-        { pane: "fund-ratios-tab", icon: "ti-percentage", label: fd.(:ratios), hint: hint.(:ratios) },
-        ({ pane: "portfolio-investments-tab", icon: "ti-briefcase", label: fd.(:portfolio), hint: hint.(:portfolio) } if fund.entity.permissions.enable_fund_portfolios?)
-      ].compact
       manage_tabs = [
         { pane: "tasks-tab", icon: "ti-list-check", label: fd.(:tasks), hint: hint.(:tasks) },
         { pane: "access-rights-tab", icon: "ti-lock", label: fd.(:access), hint: hint.(:access) },
@@ -25,7 +21,17 @@
       </a>
 
       <%= render "layouts/dropdown_tab", icon: "ti-cash", label: fd.(:cash_flows), items: cash_flow_tabs %>
-      <%= render "layouts/dropdown_tab", icon: "ti-chart-line", label: fd.(:performance), items: performance_tabs %>
+
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#fund-ratios-tab">
+        <i class="ti ti-percentage me-1"></i><%= fd.(:ratios) %>
+      </a>
+
+      <%# Portfolio is a tab of its own (not grouped), shown when fund portfolios are enabled %>
+      <% if fund.entity.permissions.enable_fund_portfolios? %>
+        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#portfolio-investments-tab">
+          <i class="ti ti-briefcase me-1"></i><%= fd.(:portfolio) %>
+        </a>
+      <% end %>
 
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" id="documents_tab" href="#docs-tab">
         <i class="ti ti-file-text me-1"></i><%= fd.(:documents) %>
