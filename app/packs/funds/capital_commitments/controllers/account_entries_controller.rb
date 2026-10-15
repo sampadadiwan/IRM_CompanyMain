@@ -58,6 +58,7 @@ class AccountEntriesController < ApplicationController
 
     @q = result.q
     @fund = result.fund
+    @fund_defaulted = result.fund_defaulted
     @account_entries = result.account_entries
     @data_frame = result.data_frame
     @adhoc_json = result.adhoc_json
@@ -131,7 +132,8 @@ class AccountEntriesController < ApplicationController
     @account_entry.destroy
 
     respond_to do |format|
-      format.html { redirect_to account_entries_url, notice: "Account entry was successfully destroyed." }
+      # Back to the list of the fund the entry was in, not to whichever fund is the default.
+      format.html { redirect_to account_entries_url(fund_id: @account_entry.fund_id), notice: "Account entry was successfully destroyed." }
       format.json { head :no_content }
     end
   end

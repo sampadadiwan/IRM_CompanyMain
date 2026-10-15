@@ -56,6 +56,8 @@ Given('I download all the AEs') do
   expect(page).to have_content('Download', wait: 5)
   ActiveJob::Base.queue_adapter = :test
   click_on 'Download'
+  # With a fund selected the Download button is a dropdown, otherwise a plain link
+  click_on 'Export All' if page.has_link?('Export All', wait: 1)
   run_enqueued_download_jobs
   ActiveJob::Base.queue_adapter = :inline
 end

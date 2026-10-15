@@ -32,7 +32,7 @@
 
     <div id="account-entries-tab" class="tab-pane fade">
       <div id="account_entries" class="associated_entity">
-        <%= turbo_frame_tag "account_entries_frame", loading: :lazy, target: "_top", src: account_entries_path(parent_type: "PortfolioInvestment", parent_id: portfolio_investment.id) do %>
+        <%= turbo_frame_tag "account_entries_frame", loading: :lazy, target: "_top", src: account_entries_path(fund_id: portfolio_investment.fund_id, parent_type: "PortfolioInvestment", parent_id: portfolio_investment.id) do %>
           <%= render "/layouts/loading" %>
         <% end %>
       </div>

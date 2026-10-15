@@ -2,6 +2,12 @@
 
 <%= render "/layouts/filter", associations: [:capital_commitment, :allocation_run, :fund_formula], include_template: "/account_entries/group_filter", hidden_fields: {time_series: params[:time_series],  parent_in_key: params[:parent_in_key]} %>
 
+<% if @fund_defaulted && @fund %>
+  <div class="alert alert-info py-2 mx-3 mb-2" role="status">
+    Showing account entries of fund <strong><%= @fund.name %></strong>.
+  </div>
+<% end %>
+
 <%= render ReportingComponent.new do %>
   <%= turbo_frame_tag with_frame("account_entries_frame"), target: "_top" do %>
     <% if params[:ag].present? %>

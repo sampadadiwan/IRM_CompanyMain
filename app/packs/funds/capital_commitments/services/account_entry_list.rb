@@ -8,7 +8,11 @@
 # 1. If a block is given, it yields the relation to the block (allowing controllers to use `policy_scope` helper).
 # 2. If no block is given, it uses `Pundit.policy_scope!` directly.
 class AccountEntryList < BaseList
-  Result = Struct.new(:q, :account_entries, :fund, :data_frame, :adhoc_json, :template, :time_series, :pivot, :row_limit_exceeded, :error, :redirect_url, keyword_init: true)
+  Result = Struct.new(:q, :account_entries, :fund, :fund_defaulted, :data_frame, :adhoc_json, :template, :time_series, :pivot, :row_limit_exceeded, :error, :redirect_url, keyword_init: true)
+
+  # A request narrowed by one of these already returns a small slice of the ledger, whichever
+  # fund it is in, so it is not given a default fund (e.g. an import's entries, one folio).
+  NARROWING_ATTRIBUTES = %w[capital_commitment_id investor_id import_upload_id folio_id parent_id].freeze
 
   REPORTING_DATE_LOWER_BOUND_PREDICATES = %w[gt gteq].freeze
   REPORTING_DATE_UPPER_BOUND_PREDICATES = %w[lt lteq].freeze
@@ -28,10 +32,12 @@ class AccountEntryList < BaseList
 
   def call(&)
     ensure_default_filters
+    @fund_defaulted = false
+    ensure_default_fund
     @q = AccountEntry.ransack(@params[:q])
 
     @account_entries = apply_policy_scope(@q.result, &)
-    @account_entries = @account_entries.includes(:fund, :investor, capital_commitment: :investor_kyc)
+    @account_entries = @account_entries.preload(:fund, :investor, :investor_kyc, capital_commitment: :investor_kyc)
 
     sort_by_id_then_existing
     filter_index
@@ -42,6 +48,39 @@ class AccountEntryList < BaseList
   end
 
   private
+
+  # Open on the user's first fund (the entity's own fund ordering) instead of every fund of the
+  # entity: with all funds the database sorts and de-duplicates the whole ledger. Only applies
+  # when the request names no fund and is not already narrowed by another filter (see
+  # NARROWING_ATTRIBUTES); any fund (or funds) the user picks is left exactly as given.
+  #
+  # "All Funds" in the top filter submits fund_id= (key present, blank), so a present key means
+  # the user chose that on purpose. A fresh page load has no fund_id key at all.
+  #
+  # Written into params[:fund_id], exactly as if the user had picked the fund in the top
+  # "Fund Name" filter, so that filter shows the fund's name and the links built from the
+  # params ("Delete Results", paging, New Account Entry) carry it. The page tells the user
+  # which fund is shown (fund_defaulted).
+  def ensure_default_fund
+    # fund_id is in the URL: a fund was picked, or "All Funds" (fund_id=) was chosen on purpose.
+    return if @params.key?(:fund_id)
+    return if NARROWING_ATTRIBUTES.any? { |name| @params[name].present? }
+
+    # No fund_id in the URL (menu link, bookmark, fresh load), but a fund or narrowing
+    # condition in q.
+    wanted = ['fund_id'] + NARROWING_ATTRIBUTES
+    condition_given = AccountEntry.ransack(@params[:q]).conditions.any? do |condition|
+      condition.attributes.map(&:name).intersect?(wanted)
+    end
+    return if condition_given
+
+    # Nothing narrows the request: open on the first fund the user can access.
+    default_fund = Pundit.policy_scope!(@current_user, Fund).ordered.order("funds.id").first
+    return unless default_fund
+
+    @params[:fund_id] = default_fund.id
+    @fund_defaulted = true
+  end
 
   # Force a reporting_date lower bound for perf, unless the user already gave one.
   #
@@ -81,7 +120,7 @@ class AccountEntryList < BaseList
   end
 
   def build_result_attributes
-    result_attrs = { q: @q, fund: @fund, account_entries: @account_entries }
+    result_attrs = { q: @q, fund: @fund, fund_defaulted: @fund_defaulted, account_entries: @account_entries }
 
     if @params[:group_fields].present?
       build_data_frame_result(result_attrs)
@@ -119,7 +158,7 @@ class AccountEntryList < BaseList
     group_by_param = @params[:group_by] || 'entry_type'
     show_breakdown = @params[:show_breakdown] == "true"
     AccountEntryPivot.new(
-      @account_entries.includes(:fund),
+      @account_entries,
       group_by: group_by_param,
       show_breakdown: show_breakdown,
       page: @params[:page],
