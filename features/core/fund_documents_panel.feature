@@ -95,3 +95,34 @@ Feature: Fund documents panel - LP latest documents and search
     And searching the entity's documents for "2026 statement" should return exactly "Statement - Q2 2026, Statement - Q2 2026 Beta, Statement - Q2 2026 Draft"
     And searching the entity's documents for "statement annual" should return exactly ""
     And searching the entity's documents for "CAPITAL-CALL" should return exactly "Capital Call Notice 3"
+
+  # D14 — Edge case: a stray bulk-import zip (shrine<date>-<pid>-<rand>.zip) shared with the LP is left out of the LP's latest documents
+  Scenario: LP does not see a stray import zip in the latest documents
+    Given the fund has a stray import zip "shrine20230326-445415-k8nnda.zip" shared with the investor
+    And I login as the investor user
+    When I open the Documents section of the fund page as the investor
+    Then the documents panel title should be "Latest Documents"
+    And the documents panel should list exactly "Board Minutes, Capital Call Notice 3, Statement - Q2 2026, Annual Report 2025" in that order
+
+  # D15 — Edge case: the fund owner still finds the stray import zip - it is kept as the fund's audit trail, not deleted
+  Scenario: Fund owner still sees the stray import zip
+    Given the fund has a stray import zip "shrine20230326-445415-k8nnda.zip" shared with the investor
+    And I am signed in as the current user
+    When I visit the fund details page
+    And I click on fund documents tab
+    And I search the documents panel for "shrine"
+    Then the documents panel should list exactly "shrine20230326-445415-k8nnda.zip"
+
+  # D16 — Edge case: the LP cannot open the stray import zip by direct link either; the fund owner can
+  @rack_test
+  Scenario: Only the fund side may open a stray import zip
+    Given the fund has a stray import zip "shrine20230326-445415-k8nnda.zip" shared with the investor
+    Then the investor user may not open the document "shrine20230326-445415-k8nnda.zip"
+    And the fund owner may open the document "shrine20230326-445415-k8nnda.zip"
+
+  # D17 — Edge case: a Documents import creates a document for each file inside the zip, never for the uploaded zip itself
+  @rack_test
+  Scenario: Importing a documents zip does not import the zip itself
+    When a documents zip "documents_upload.zip" is imported into the fund's document folder
+    Then the import should create "8" documents
+    And no document named like "shrine%.zip" should exist for the entity

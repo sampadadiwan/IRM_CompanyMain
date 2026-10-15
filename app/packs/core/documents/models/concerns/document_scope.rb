@@ -1,7 +1,16 @@
 module DocumentScope
   extend ActiveSupport::Concern
 
+  # Name pattern (SQL LIKE) of the stray "import archive" documents: older bulk document imports
+  # moved Shrine's downloaded copy of the uploaded zip (shrine<yyyymmdd>-<pid>-<rand>.zip) into the
+  # folder they then scanned, so the zip itself was saved as a Document. Kept as an audit trail for
+  # the fund, but hidden from LPs, who have no use for it.
+  IMPORT_ARCHIVE_NAME_LIKE = "shrine%.zip".freeze
+
   included do
+    # Excludes the stray import zips. NULL names are kept explicitly - NOT LIKE alone would drop them.
+    scope :not_import_archive, -> { where("documents.name IS NULL OR documents.name NOT LIKE ?", IMPORT_ARCHIVE_NAME_LIKE) }
+
     scope :for_investor, lambda { |user, entity_id|
       joins(:access_rights)
         .merge(AccessRight.access_filter(user))
@@ -12,6 +21,8 @@ module DocumentScope
         # Ensure this user has investor access
         .joins(entity: :investor_accesses)
         .merge(InvestorAccess.approved_for_user(user))
+        # LPs never see the stray import zips (fund users still do, via their own entity scope)
+        .not_import_archive
     }
 
     scope :entity_documents, lambda { |user, entity_id|

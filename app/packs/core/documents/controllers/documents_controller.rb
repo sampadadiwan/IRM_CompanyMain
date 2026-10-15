@@ -448,6 +448,9 @@ class DocumentsController < ApplicationController
                    else
                      Document.none
                    end
+      # An LP viewing a commitment/investor etc. does not see the stray import zips; the fund does
+      fund_side = current_user.entity_id == @entity.id || (current_user.entity_type == "Group Company" && current_user.entity.child_ids.include?(@entity.id))
+      @documents = @documents.not_import_archive unless fund_side || current_user.support?
     end
     @show_steps = false
   end

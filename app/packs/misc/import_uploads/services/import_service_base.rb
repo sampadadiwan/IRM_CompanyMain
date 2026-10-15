@@ -45,13 +45,15 @@ class ImportServiceBase < Trailblazer::Operation
 
   def unzip(file, unzip_dir, _import_upload)
     FileUtils.mkdir_p unzip_dir
-    dest_file = "#{unzip_dir}/#{File.basename(file.path)}"
-    FileUtils.mv(file.path, dest_file)
 
+    # Unzip straight from the downloaded temp file. It must NOT be moved into unzip_dir: the doc
+    # imports turn every file in unzip_dir into a Document, so the zip itself (shrine<...>.zip)
+    # used to be imported too and showed up in LP document lists. The original zip is already
+    # kept on the ImportUpload (import_file) as the audit trail.
     # Some files were not getting uzipped by ruby zip, so we use the system unzip
     # Array form bypasses the shell so paths cannot be interpreted as shell syntax.
     # nil means the binary is missing - fail loudly (into the rescue below) like the old backticks did
-    raise Errno::ENOENT, "unzip" if system("unzip", "-o", dest_file, "-d", unzip_dir).nil?
+    raise Errno::ENOENT, "unzip" if system("unzip", "-o", file.path, "-d", unzip_dir).nil?
   rescue StandardError => e
     Rails.logger.debug e.message
     raise e

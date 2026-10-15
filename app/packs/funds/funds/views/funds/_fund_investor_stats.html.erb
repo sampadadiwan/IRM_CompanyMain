@@ -16,8 +16,8 @@
     collected_amount =  capital_commitments.inject(0){|sum, cc| sum + cc.collected_amount }
     collected_amount = Money.new(collected_amount, fund.currency) if collected_amount == 0
     
-    # Distributed = what has actually been paid out, net (completed payments' Net Payable) - the same
-    # figure as the Distributions section's Received card, over the same payments the LP can see.
+    # Received = what the LP has actually received, net (completed payments' Net Payable) - the same
+    # figure, and name, as the Distributions section's Received card, over the same payments the LP can see.
     # (The commitment counter sums gross payable, which counts unpaid distributions and is 0 on older
     # payments.)
     payments = CapitalDistributionPayment.where(id: policy_scope(CapitalDistributionPayment).where(fund_id: fund.id).select(:id))
@@ -33,14 +33,14 @@ cards_data = [
     tooltip: "What the capital calls have asked for, before fees - the same figure as the Called card in the Calls section" },
   { path: nil, stat: money_to_currency(collected_amount, params), subtitle: "Collected", progress_bar_color: "danger",
     tooltip: "Payments the fund has received and verified. Payments still being verified are not included - the same figure as the Collected card in the Calls section" },
-  { path: nil, stat: money_to_currency(distribution_amount, params), subtitle: "Distributed", progress_bar_color: "info",
-    tooltip: "What has actually been paid out to you, net of tax and deductions. Unpaid distributions are not included - the same figure as the Received card in the Distributions section" }
+  { path: nil, stat: money_to_currency(distribution_amount, params), subtitle: "Received", progress_bar_color: "info",
+    tooltip: "What you have actually received, net of tax and deductions. Unpaid distributions are not included" }
 ]
 
 cards_data.insert(0, { path: nil, stat: fund.name, subtitle: "Name", progress_bar_color: "success" }) if fund 
 %>
 
-<div class="row">
+<div class="row" id="lp_fund_stats">
     <% cards_data.each do |card_data| %>
     
         <%= render(NumberStatsComponent.new(

@@ -524,6 +524,13 @@ class Document < ApplicationRecord
     owner_tag == "Signed"
   end
 
+  # True for a stray copy of a bulk-import zip (see DocumentScope::IMPORT_ARCHIVE_NAME_LIKE).
+  # Mirrors the SQL LIKE, which is case-insensitive in MySQL.
+  def import_archive?
+    lname = name.to_s.downcase
+    lname.start_with?("shrine") && lname.end_with?(".zip")
+  end
+
   def subject_to_approval?
     # It was generated from some template, but is not a signed doc.
     # Use != instead of safe-navigation exclude? to avoid nil returning falsy when owner_tag is nil.

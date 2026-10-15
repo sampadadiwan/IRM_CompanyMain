@@ -205,6 +205,23 @@ When('I open the Distributions section of the fund page as the investor') do
   expect(page).to have_css("#collapseDistributions #lp_distribution_stats", wait: 15)
 end
 
+# S31 - the LP fund page's top cards (_fund_investor_stats)
+When('I visit the fund page as the investor') do
+  visit(fund_path(@fund))
+  expect(page).to have_css("#lp_fund_stats", wait: 15)
+end
+
+Then('the LP fund page top card {string} should show {string}') do |subtitle, amount|
+  within("#lp_fund_stats") do
+    card = find(".card-subtitle", exact_text: subtitle).ancestor(".card")
+    expect(card).to have_css("h2", exact_text: stat_card_text(amount))
+  end
+end
+
+Then('the LP fund page top cards should not include {string}') do |subtitle|
+  within("#lp_fund_stats") { expect(page).to have_no_css(".card-subtitle", exact_text: subtitle) }
+end
+
 Then('the LP remittance stats cards should be:') do |table|
   expect_stat_cards("#lp_remittance_stats", table.hashes)
 end
@@ -245,6 +262,11 @@ Then('the html-safe stats card amount {string} should render bold {string} follo
   # The <b> survived as markup (not escaped text), and the unit after it was shortened
   expect(heading).to have_css("b", exact_text: bold)
   expect(heading.text.strip).to eq("#{bold}#{rest}")
+end
+
+# S17 - Ratios and Portfolio sections render only when the fund switches them on (off for a new fund)
+Given('the fund shows its ratios and portfolio to investors') do
+  @fund.update!(show_fund_ratios: true, show_portfolios: true)
 end
 
 # S17/S18 - the LP fund page's help texts (section subtitles, stats card and grid header tooltips)

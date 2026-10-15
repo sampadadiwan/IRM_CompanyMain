@@ -18,22 +18,71 @@ module NotificationExtensions
     Rails.env.development? ? 0 : delay_seconds
   end
 
+  # The folio (Investor) this notification is about, or nil when none can be found. A person can
+  # hold one InvestorAccess per folio in the same fund, each with its own email/WhatsApp switches,
+  # so the channel gates must read the access of THIS folio - never "the recipient's first access
+  # in the fund", which silently applied another folio's switches.
+  # Report: openspec/changes/fix-notification-investor-access-resolution/report.md
+  def notification_investor
+    # H1 / X1 - the sender names the folio it fanned out for (DocumentSender passes investor_id).
+    # Scoped to the record's fund so a stray id can never pull in another fund's investor.
+    # X2 - an id that no longer resolves falls through to the record instead of raising.
+    if params[:investor_id].present?
+      investor = Investor.find_by(id: params[:investor_id], entity_id: model.entity_id)
+      return investor if investor
+    end
+
+    # H2 - records that name their own investor (commitments, remittances, KYCs, ...)
+    return model.investor if model.respond_to?(:investor) && model.investor.present?
+
+    # E1 / E4 - a Document names no investor itself, but its owner usually does: a commitment
+    # (statements, CAS, Form 16A), a remittance, a KYC... or the owner IS the Investor.
+    return unless model.respond_to?(:owner)
+
+    owner = model.owner
+    return owner if owner.is_a?(Investor)
+
+    owner.investor if owner.respond_to?(:investor)
+  end
+
+  # The recipient's access on this notification's folio; nil when the folio is unknown (E2) or the
+  # recipient has no access on it (X1). Deliberately no fallback to another folio's access.
   def investor_access
-    if model.respond_to?(:investor) && model.investor.present?
-      model.investor.investor_accesses.where(user_id: recipient.id).first
+    notification_investor&.investor_accesses&.find_by(user_id: recipient.id)
+  end
+
+  # Whether the given channel switch (:email_enabled / :whatsapp_enabled) is on for this recipient.
+  # Folio known -> that folio's access decides (H1, H3, E3, X1).
+  # Folio unknown (fund-level document, User/Task/... records) -> on if ANY of the recipient's
+  # accesses in this fund has it on (E2): they are a chosen recipient and have opted in to this
+  # fund on at least one folio. exists?, not a load - see CLAUDE.md large-table hygiene.
+  def folio_channel_enabled?(switch)
+    if notification_investor
+      investor_access&.public_send(switch)
     else
-      model.entity.investor_accesses.where(user_id: recipient.id).first
+      model.entity.investor_accesses.where(user_id: recipient.id).exists?(switch => true)
     end
   end
 
   def email_enabled
-    # Either the recipient belongs to the model entity, the investor_access email_enabled is true,
-    # or the recipient is an investor advisor authorized by the model's own show? policy - this
+    # Either the recipient belongs to the model entity, the folio's investor_access email_enabled is
+    # true, or the recipient is an investor advisor authorized by the model's own show? policy - this
     # last check does not require the recipient to currently be switched into the model's entity,
     # since an investor advisor's access does not depend on which persona they're switched into.
-    model.entity_id == recipient.entity_id ||
-      investor_access&.email_enabled ||
-      investor_advisor_show_enabled
+    enabled = model.entity_id == recipient.entity_id ||
+              folio_channel_enabled?(:email_enabled) ||
+              investor_advisor_show_enabled
+
+    # X3 - the skip happens in deliver_by's config.if, before any mailer runs, so no skip_reason is
+    # ever written. Log which folio and access decided it, so "Email sent: No" can be traced.
+    unless enabled
+      Rails.logger.info do
+        "email_enabled false: notification #{id}, recipient #{recipient.id}, " \
+          "investor #{notification_investor&.id.inspect}, access #{investor_access&.id.inspect}"
+      end
+    end
+
+    enabled
   end
 
   # Deferring to Pundit.policy(...).show? generically (rather than a KYC-specific check) means this
@@ -116,7 +165,7 @@ module NotificationExtensions
     model.entity.permissions.enable_whatsapp? && # Is WA enabled for the entity
       (
         model.entity_id == recipient.entity_id ||
-        (investor_access&.whatsapp_enabled && # Is WA enabled for the investor access specified by the entity
+        (folio_channel_enabled?(:whatsapp_enabled) && # Is WA enabled on this folio's investor access (E3)
         recipient.whatsapp_enabled && # Is WA enabled for the recipient
         recipient.phone.present?) # Does the recipient have a phone number
       )

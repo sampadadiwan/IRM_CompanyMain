@@ -6,8 +6,8 @@
     end
 %>
 <%
-    # Distributed = what has actually been paid out on this folio, net (completed payments' Net Payable) -
-    # the same figure as the fund page's top Distributed and the Distributions section's Received card.
+    # Received (LP) / Paid (fund team) = completed payments' Net Payable on this folio - the same figure, and
+    # name, as the fund page's top card and the Distributions section's card (distribution_paid_label).
     # (The commitment counter sums gross payable, which counts unpaid distributions and is 0 on older ones.)
     folio_payments = CapitalDistributionPayment.where(id: policy_scope(CapitalDistributionPayment).where(capital_commitment_id: capital_commitment.id).select(:id))
     distributed = Money.new(CapitalDistributionPayment.lp_totals(folio_payments)[:received], capital_commitment.fund.currency)
@@ -45,7 +45,7 @@
         </div>
         <div class="row align-items-center">
             <div class="col-md-7">
-                <%= column_chart [["Committed", capital_commitment.committed_amount.to_f], ["Called", capital_commitment.call_amount.to_f], ["Collected", capital_commitment.collected_amount.to_f], ["Distributed", distributed.to_f] ], id: "capital_commitment_#{capital_commitment.id}",
+                <%= column_chart [["Committed", capital_commitment.committed_amount.to_f], ["Called", capital_commitment.call_amount.to_f], ["Collected", capital_commitment.collected_amount.to_f], [distribution_paid_label, distributed.to_f] ], id: "capital_commitment_#{capital_commitment.id}",
                  library: {
                    plotOptions: {
                         column: {
@@ -88,7 +88,7 @@
                         </div>
                         <div>
                         <span class="mb-0 fs-7"><%= money_to_currency(distributed, params) %></span>
-                        <p class="fs-3 mb-0">Distributed <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip" title="What has actually been paid out on this folio, net of tax and deductions. Announced but unpaid distributions are not included - they show as Pending Payout in the Distributions section"></i></p>
+                        <p class="fs-3 mb-0"><%= distribution_paid_label %> <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip" title="<%= distribution_paid_phrase.upcase_first %> on this folio, net of tax and deductions. Announced but unpaid distributions are not included - they show as Pending Payout in the Distributions section"></i></p>
                     </div>
                 </div>
 

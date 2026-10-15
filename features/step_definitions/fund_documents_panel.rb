@@ -124,3 +124,40 @@ Then("searching the entity's documents for {string} should return exactly {strin
   actual = Document.where(entity_id: @fund.entity_id).name_or_tags_matching(term).pluck(:name)
   expect(actual.sort).to eq(split_names(names).sort)
 end
+
+Given('the fund has a stray import zip {string} shared with the investor') do |name|
+  # Same as a shared doc, but named the way old bulk imports saved their own downloaded zip
+  doc = create_fund_document(@fund, name:, folder_path: "")
+  share_document_with_investor(doc, @investor)
+  expect(doc.import_archive?).to be(true)
+  # Guard: the LP has an access right on it, so leaving it out can only be the import-zip filter
+  expect(doc.access_rights.exists?(access_to_investor_id: @investor.id)).to be(true)
+end
+
+Then('the investor user may not open the document {string}') do |name|
+  doc = Document.find_by!(name:, entity_id: @fund.entity_id)
+  expect(DocumentPolicy.new(@investor_user, doc).show?).to be(false)
+end
+
+Then('the fund owner may open the document {string}') do |name|
+  doc = Document.find_by!(name:, entity_id: @fund.entity_id)
+  expect(DocumentPolicy.new(@fund.entity.employees.first, doc).show?).to be(true)
+end
+
+When('a documents zip {string} is imported into the fund\'s document folder') do |file|
+  # The same ImportUpload the "Import Documents" button on a folder creates, run inline
+  @import_upload = ImportUpload.create!(entity: @fund.entity, owner: @fund.document_folder, import_type: "Documents",
+                                        name: "Import Documents", user_id: @fund.entity.employees.first.id,
+                                        import_file: File.open(File.absolute_path("./public/sample_uploads/#{file}")))
+  ImportUploadJob.perform_now(@import_upload.id)
+  @import_upload.reload
+  expect(@import_upload.failed_row_count).to eq(0)
+end
+
+Then('the import should create {string} documents') do |count|
+  expect(Document.where(import_upload_id: @import_upload.id).count).to eq(count.to_i)
+end
+
+Then('no document named like {string} should exist for the entity') do |pattern|
+  expect(Document.where(entity_id: @fund.entity_id).where("name LIKE ?", pattern).pluck(:name)).to eq([])
+end

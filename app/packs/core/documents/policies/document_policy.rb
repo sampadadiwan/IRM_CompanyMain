@@ -8,6 +8,9 @@ class DocumentPolicy < ApplicationPolicy
   end
 
   def show?
+    # Stray import zips are for the fund's audit trail only - never shown outside the owning entity
+    return false if record.import_archive? && !belongs_to_entity?(user, record) && !user.support?
+
     record.public_visibility ||
       (
         user.enable_documents && belongs_to_entity?(user, record) &&

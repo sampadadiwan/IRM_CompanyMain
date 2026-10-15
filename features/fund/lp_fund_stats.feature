@@ -129,11 +129,13 @@ Feature: LP fund page stats cards for calls and distributions
       | Overdue (1 call)   | 160000 |
 
   # S17 — Edge case: the LP fund page explains itself - each section header carries a one-line subtitle, every stats card an
-  #       info tooltip saying how it is worked out, and the LP grid's money/status columns a header tooltip
+  #       info tooltip saying how it is worked out, and the LP grid's money/status columns a header tooltip.
+  #       Ratios and Portfolio are off for a new fund (FundEnabled::NEW_FUND_DEFAULTS), so they are switched on to show every section
   Scenario: LP sees section subtitles, card tooltips and column help in the Calls section
     Given the LP has these remittances in the fund:
       | call   | call_amount | other_fee | collected | verified | status  |
       | Call 1 | 100000      | 0         | 0         | false    | Overdue |
+    And the fund shows its ratios and portfolio to investors
     And I login as the investor user
     When I open the Calls section of the fund page as the investor
     Then the fund page sections should show their subtitles
@@ -252,6 +254,8 @@ Feature: LP fund page stats cards for calls and distributions
 
   # S25 — Edge case: the fund team sees the cards on the commitment page's Remittances and Distributions tabs, covering the
   #       folio's rows; the remittance cards are on the recorded basis, so an unverified payment shows under Unverified
+  # S30 — Edge case: the completed-payments card is worded from the viewer's side - the fund team sees "Paid" for the
+  #       figure an LP sees as "Received"
   Scenario: Fund team sees stats cards on the commitment page tabs
     Given the LP has these remittances in the fund:
       | call   | call_amount | other_fee | collected | verified | status  |
@@ -274,7 +278,7 @@ Feature: LP fund page stats cards for calls and distributions
     Then the stats cards in "#lp_distribution_stats" should be:
       | subtitle            | amount | date       |
       | Total Distributions | 90000  |            |
-      | Received            | 90000  |            |
+      | Paid                | 90000  |            |
       | Last Distribution   | 90000  | 2026-01-20 |
 
   # S26 — Edge case: units are totalled per unit type, never across types (Series A and Series C are different
@@ -329,3 +333,15 @@ Feature: LP fund page stats cards for calls and distributions
     And I am signed in as the current user
     When I open the fund team's Ratios tab
     Then I should see the headline ratio cards "TVPI=1.5x, DPI=0.4x"
+
+  # S31 — Edge case: the LP fund page's top card names the completed-payments figure "Received", the same name as the
+  #       Distributions section's card, so the two never read as different numbers
+  Scenario: LP fund page top card names distributions Received
+    Given the LP has these distribution payments in the fund:
+      | title    | distribution_date | payment_date | gross  | net   | tax   | completed |
+      | Dist Jan | 2026-01-15        | 2026-01-20   | 100000 | 90000 | 10000 | true      |
+      | Dist Jun | 2026-06-01        | 2026-06-01   | 40000  | 36000 | 4000  | false     |
+    And I login as the investor user
+    When I visit the fund page as the investor
+    Then the LP fund page top card "Received" should show "90000"
+    And the LP fund page top cards should not include "Distributed"
