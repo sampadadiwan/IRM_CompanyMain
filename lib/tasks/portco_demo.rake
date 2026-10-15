@@ -15,7 +15,14 @@
 # of 250,000 Aster Labs shares at $2.50 carrying US_Stock_Purchase_Agreement_CP_CS.docx (tagged "SPA"); a blank
 # CP/CS extraction agent investment_doc_tag is set to "SPA" so the agent finds it.
 # Note links use BASE_URL (default http://localhost:3000).
-# Idempotent: every record is looked up before it is created. Helpers: lib/tasks/support/portco_demo.rb
+# Each company gets a sector (SaaS, Retail, Hospitality, Consumer, Financial Services, ...), which the Portfolio
+# Scoring Agent matches a skill on. Ember Grill (slow growth, compressing margin) and Threadline (stagnant, losses,
+# flat valuation) are deliberately weak so the scoring dashboard shows a spread of grades.
+#
+# Re-runnable: companies that already exist are brought in line with their profiles — sector, KPI values and
+# valuations are updated in place, and a generated PDF is deleted and re-created when its figures or wording
+# changed (fingerprint in the document's json_fields). Buys, commitments, KYCs and the US documents are only ever
+# created, never changed. Helpers: lib/tasks/support/portco_demo.rb
 require_relative "support/portco_demo"
 
 namespace :portco_demo do

@@ -37,9 +37,11 @@ module PortcoDemo
   # One profile per sector. Money is USD millions a quarter; ops are [label, base, quarterly growth, :stock|:flow].
   # cost: the sector's cost-of-sales label (standard KPI "COGS"); var: other variable costs (% of revenue);
   # fixed: quarterly fixed opex; raise: [quarter index, amount]; basis: :revenue (EV/TTM revenue) or :book (P/B);
-  # markdown: [valuation index, factor] for a company that takes a down-round.
+  # markdown: [valuation index, factor] for a company that takes a down-round; valuation: :flat keeps the per-share
+  # value within 2% of the first mark; tail: [quarter index, change per quarter] bends revenue down from that quarter.
+  # industry: the portfolio company's sector (investor and instrument) — what the scoring agent matches a skill on.
   PROFILES = [
-    { name: { inr: SPA[:company], usd: SPA[:company] }, sector: "B2B SaaS", cost: "Cost of Revenue",
+    { name: { inr: SPA[:company], usd: SPA[:company] }, sector: "B2B SaaS", industry: "SaaS", cost: "Cost of Revenue",
       rev: 0.55, growth: 0.07, seasonality: {}, cogs: [0.24, 0.20], var: [0.18, 0.14], fixed: 0.45, fixed_growth: 0.03, da: 0.03,
       equity: 6.0, liabilities: 1.2, liab_growth: 0.03, raise: nil, shares: SPA[:issued_shares], basis: :revenue, multiple: 7.0,
       ops: [["Paying Customers", 140, 0.06, :stock], ["Employees", 48, 0.03, :stock]],
@@ -47,7 +49,7 @@ module PortcoDemo
                "Path to EBITDA breakeven within eight quarters without further dilution"],
       risks: [["Enterprise sales cycles lengthen", "Self-serve tier and partner channel"],
               ["Key engineering attrition", "ESOP refresh and senior hiring plan"]] },
-    { name: { inr: "Kirana Fresh Retail Pvt Ltd", usd: "FreshCart Markets Inc." }, sector: "Grocery Retail", cost: "COGS",
+    { name: { inr: "Kirana Fresh Retail Pvt Ltd", usd: "FreshCart Markets Inc." }, sector: "Grocery Retail", industry: "Retail", cost: "COGS",
       rev: 7.0, growth: 0.045, seasonality: { 12 => 1.12, 3 => 0.97, 6 => 0.95, 9 => 0.98 }, cogs: [0.78, 0.76], var: [0.085, 0.08],
       fixed: 0.95, fixed_growth: 0.02, da: 0.02, equity: 9.0, liabilities: 6.0, liab_growth: 0.03, raise: [5, 6.0],
       shares: 12_000_000, basis: :revenue, multiple: 1.6, ops: [["Store Count", 120, 0.05, :stock], ["Orders", 1_450_000, 0, :flow]],
@@ -55,24 +57,30 @@ module PortcoDemo
                "Store-level payback under 24 months"],
       risks: [["Quick-commerce price competition", "Private label margins and loyalty programme"],
               ["Store rollout execution", "Cluster-based expansion and standard store format"]] },
+    # Underperformer (dashboard C+/C): growth stalled at ~1-6% YoY and softening further in the last two quarters
+    # (tail), food inflation compressing EBITDA margin from ~8% to breakeven, a mild markdown and no new money
     { name: { inr: "Tandoor Express Foods Pvt Ltd", usd: "Ember Grill Restaurants Inc." }, sector: "QSR / Restaurants",
-      cost: "Food & Packaging Cost", rev: 3.2, growth: 0.05, seasonality: { 12 => 1.08, 3 => 0.95, 6 => 0.97, 9 => 1.0 },
-      cogs: [0.32, 0.30], var: [0.34, 0.34], fixed: 0.95, fixed_growth: 0.025, da: 0.04, equity: 7.0, liabilities: 3.0,
-      liab_growth: 0.02, raise: [7, 5.0], shares: 15_000_000, basis: :revenue, multiple: 2.8,
-      ops: [["Outlet Count", 85, 0.05, :stock], ["Orders", 2_100_000, 0, :flow]],
+      industry: "Hospitality", cost: "Food & Packaging Cost", rev: 3.2, growth: 0.01, tail: [10, -0.02],
+      seasonality: { 12 => 1.08, 3 => 0.95, 6 => 0.97, 9 => 1.0 }, cogs: [0.30, 0.34], var: [0.34, 0.35], fixed: 0.95,
+      fixed_growth: 0.01, da: 0.04, equity: 7.0, liabilities: 3.0, liab_growth: 0.02, raise: nil, shares: 15_000_000,
+      basis: :revenue, multiple: 2.8, markdown: [3, 0.85],
+      ops: [["Outlet Count", 85, 0.01, :stock], ["Orders", 2_100_000, 0, :flow]],
       thesis: ["Profitable unit economics at outlet level from month six", "Delivery share balanced with dine-in footfall",
                "Central kitchens support expansion into new cities"],
-      risks: [["Food inflation", "Menu engineering and annual supplier contracts"],
-              ["Aggregator commission increases", "Own app ordering and loyalty"]] },
-    { name: { inr: "Urban Loom D2C Pvt Ltd", usd: "Threadline Apparel Inc." }, sector: "D2C Consumer Brand", cost: "COGS",
-      rev: 2.4, growth: 0.06, seasonality: { 12 => 1.2, 3 => 0.9, 6 => 0.92, 9 => 1.05 }, cogs: [0.42, 0.39], var: [0.40, 0.34],
-      fixed: 0.42, fixed_growth: 0.02, da: 0.015, equity: 5.0, liabilities: 1.5, liab_growth: 0.02, raise: [4, 4.0],
-      shares: 20_000_000, basis: :revenue, multiple: 2.2, ops: [["Orders", 210_000, 0, :flow], ["Employees", 160, 0.02, :stock]],
+      risks: [["Same-outlet sales declining", "Menu refresh and local marketing in the weakest outlets"],
+              ["Food inflation squeezing margins", "Renegotiate supplier contracts and take selective price increases"]] },
+    # Stagnant (dashboard C/D): revenue edging down, rising COGS and acquisition costs turning EBITDA negative,
+    # a flat valuation and no new money
+    { name: { inr: "Urban Loom D2C Pvt Ltd", usd: "Threadline Apparel Inc." }, sector: "D2C Consumer Brand", industry: "Consumer",
+      cost: "COGS", rev: 2.4, growth: -0.005, seasonality: { 12 => 1.2, 3 => 0.9, 6 => 0.92, 9 => 1.05 }, cogs: [0.42, 0.44],
+      var: [0.40, 0.42], fixed: 0.42, fixed_growth: 0.02, da: 0.015, equity: 5.0, liabilities: 1.5, liab_growth: 0.02, raise: nil,
+      shares: 20_000_000, basis: :revenue, multiple: 2.2, valuation: :flat,
+      ops: [["Orders", 210_000, 0, :flow], ["Employees", 160, 0.0, :stock]],
       thesis: ["Repeat purchase rate above 40% within 12 months", "Marketing spend falling as a share of revenue",
                "Offline shop-in-shops extend reach at low capex"],
-      risks: [["Rising customer acquisition costs", "CRM-led retention and referral programme"],
-              ["Inventory build-up", "Weekly sell-through reviews and drop-based launches"]] },
-    { name: { inr: "Sahaay Finserv Ltd", usd: "Keystone Credit Corp." }, sector: "Lending / NBFC", cost: "Interest Expense",
+      risks: [["Customer acquisition costs rising faster than revenue", "Cut paid marketing and shift spend to retention"],
+              ["Revenue stagnating and losses widening", "Cost reduction plan and SKU rationalisation"]] },
+    { name: { inr: "Sahaay Finserv Ltd", usd: "Keystone Credit Corp." }, sector: "Lending / NBFC", industry: "Financial Services", cost: "Interest Expense",
       rev: 2.0, growth: 0.06, seasonality: {}, cogs: [0.45, 0.42], var: [0.12, 0.12], fixed: 0.48, fixed_growth: 0.03, da: 0.01,
       equity: 12.0, liabilities: 40.0, liab_growth: 0.06, raise: [8, 10.0], shares: 25_000_000, basis: :book, multiple: 2.4,
       ops: [["Active Borrowers", 38_000, 0.06, :stock], ["Employees", 420, 0.03, :stock]],
@@ -80,7 +88,7 @@ module PortcoDemo
                "Branch-light origination keeps opex-to-AUM falling"],
       risks: [["Asset quality in a downturn", "Collateral cover and early-warning collections"],
               ["Cost of funds rising", "Longer-tenor borrowing and rating upgrade"]] },
-    { name: { inr: "SwiftRoute Logistics Pvt Ltd", usd: "Relay Freight Inc." }, sector: "Logistics", cost: "Line-haul Cost",
+    { name: { inr: "SwiftRoute Logistics Pvt Ltd", usd: "Relay Freight Inc." }, sector: "Logistics", industry: "Logistics", cost: "Line-haul Cost",
       rev: 4.5, growth: 0.05, seasonality: { 12 => 1.1, 3 => 0.96, 6 => 0.95, 9 => 1.0 }, cogs: [0.62, 0.60], var: [0.14, 0.14],
       fixed: 0.85, fixed_growth: 0.02, da: 0.03, equity: 8.0, liabilities: 5.0, liab_growth: 0.03, raise: [6, 6.0],
       shares: 18_000_000, basis: :revenue, multiple: 1.5, ops: [["Shipments", 3_200_000, 0, :flow], ["Hubs", 42, 0.04, :stock]],
@@ -88,7 +96,7 @@ module PortcoDemo
                "Cross-sell of warehousing to existing shippers"],
       risks: [["Fuel price swings", "Fuel surcharge clauses in customer contracts"],
               ["Customer concentration", "Mid-market sales team and SME self-serve"]] },
-    { name: { inr: "CareFirst Clinics Pvt Ltd", usd: "Northside Health Clinics Inc." }, sector: "Healthcare Clinics",
+    { name: { inr: "CareFirst Clinics Pvt Ltd", usd: "Northside Health Clinics Inc." }, sector: "Healthcare Clinics", industry: "Healthcare",
       cost: "Consumables & Doctor Fees", rev: 1.8, growth: 0.055, seasonality: {}, cogs: [0.36, 0.34], var: [0.22, 0.22],
       fixed: 0.45, fixed_growth: 0.03, da: 0.05, equity: 6.0, liabilities: 2.5, liab_growth: 0.02, raise: [5, 4.0],
       shares: 10_000_000, basis: :revenue, multiple: 3.0, ops: [["Clinics", 28, 0.045, :stock], ["Patient Visits", 95_000, 0, :flow]],
@@ -96,7 +104,7 @@ module PortcoDemo
                "Corporate health contracts add predictable volume"],
       risks: [["Doctor retention", "Revenue-share model and academic tie-ups"],
               ["Regulatory changes on pricing", "Diversified service mix"]] },
-    { name: { inr: "SkillSprout EdTech Pvt Ltd", usd: "BrightPath Learning Inc." }, sector: "EdTech",
+    { name: { inr: "SkillSprout EdTech Pvt Ltd", usd: "BrightPath Learning Inc." }, sector: "EdTech", industry: "Education",
       cost: "Content & Delivery Cost", rev: 1.6, growth: 0.03, seasonality: { 6 => 1.15, 3 => 1.05, 9 => 0.92, 12 => 0.88 },
       cogs: [0.28, 0.28], var: [0.45, 0.38], fixed: 0.40, fixed_growth: 0.01, da: 0.02, equity: 9.0, liabilities: 1.5,
       liab_growth: 0.0, raise: nil, shares: 14_000_000, basis: :revenue, multiple: 4.0, markdown: [2, 0.6],
@@ -106,6 +114,11 @@ module PortcoDemo
       risks: [["Post-pandemic demand slowdown", "Shift to B2B and placement-linked pricing"],
               ["High marketing spend", "Performance-marketing caps and alumni referrals"]] }
   ].freeze
+
+  # Bump when the PDF layout or wording changes, so a re-run regenerates every document
+  PDF_VERSION = 2
+  # Document json_fields key holding a generated document's fingerprint (Seeder#replace_stale)
+  DIGEST_KEY = "portco_demo_digest".freeze
 
   BOARD_POOL = ["Ananya Rao", "Vikram Mehta", "Sarah Collins", "David Chen", "Priya Nair", "Michael Torres", "Rohan Kapoor",
                 "Emily Watson", "Arjun Sethi", "Laura Bennett", "Karan Malhotra", "James Whitaker"].freeze
@@ -256,13 +269,90 @@ module PortcoDemo
        ["Investor Presentation - #{label}", dated.call(quarter[:as_of] + 25.days), :presentation, slide]]
     end
 
-    # One line for the business note: scale, trajectory and valuation story
+    # The portfolio company's sector (investor and instrument), matched by the scoring agent to a skill
+    def industry = profile[:industry]
+
+    # Revenue growth against the same quarter a year earlier, nil before the history has one
+    def yoy(quarter)
+      idx = quarters.index(quarter)
+      return nil if idx < 4
+
+      (quarter["Revenue"] - quarters[idx - 4]["Revenue"]) / quarters[idx - 4]["Revenue"].to_f
+    end
+
+    def ebitda_margin(quarter) = quarter["EBITDA"] * 100.0 / quarter["Revenue"]
+
+    # Growth under 5% a year (or falling) reads as stalled in the documents
+    def stalled?(quarter) = (g = yoy(quarter)) && g < 0.05
+
+    # "Revenue up 21% year on year" / "revenue growth has stalled at 2% year on year" / "revenue down 3% ..."
+    def growth_phrase(quarter)
+      g = yoy(quarter)
+      return "revenue growth not yet comparable year on year" unless g
+
+      pct = format("%.0f", g.abs * 100)
+      if g.negative? then "revenue down #{pct}% year on year"
+      elsif g < 0.05 then "revenue growth has stalled at #{pct}% year on year"
+      else "revenue up #{pct}% year on year"
+      end
+    end
+
+    # The same, as a clause for "the Board noted that ...": "revenue fell 3% year on year"
+    def growth_clause(quarter)
+      g = yoy(quarter)
+      return "revenue is not yet comparable year on year" unless g
+
+      pct = format("%.0f", g.abs * 100)
+      if g.negative? then "revenue fell #{pct}% year on year"
+      elsif g < 0.05 then "revenue growth has stalled at #{pct}% year on year"
+      else "revenue grew #{pct}% year on year"
+      end
+    end
+
+    # EBITDA margin against a year earlier: contracted / expanded / held
+    def margin_phrase(quarter)
+      idx = quarters.index(quarter)
+      now = ebitda_margin(quarter)
+      return "EBITDA margin of #{format('%.1f', now)}%" if idx < 4
+
+      before = ebitda_margin(quarters[idx - 4])
+      word = if now < before - 1 then "contracted"
+             elsif now > before + 1 then "expanded"
+             end
+      word ? "EBITDA margin #{word} from #{format('%.1f', before)}% to #{format('%.1f', now)}%" : "EBITDA margin steady at #{format('%.1f', now)}%"
+    end
+
+    # How the per-share value moved over the 6 marks
+    def valuation_story
+      first, last = valuations.values_at(0, -1)
+      change = (last[:per_share] / first[:per_share]) - 1
+      if profile[:markdown]
+        marked = valuations[profile[:markdown][0]]
+        "marked down in #{marked[:date].year}#{' and recovering' if last[:per_share] > marked[:per_share] * 1.05}"
+      elsif change.abs <= 0.05 then "flat over three years"
+      elsif change.positive? then "up #{format('%.0f', change * 100)}% over three years"
+      else "down #{format('%.0f', change.abs * 100)}% over three years"
+      end
+    end
+
+    # One line for the business note, worked out from the data: sector, growth, margin and valuation story
     def summary
       first, last = quarters.values_at(0, -1)
-      turn = first["EBITDA"].negative? && last["EBITDA"].positive? ? "turned EBITDA-positive" : "EBITDA #{units.money(first['EBITDA'])} -> #{units.money(last['EBITDA'])}"
-      story = profile[:markdown] ? "marked down in #{valuations[profile[:markdown][0]][:date].year} and recovering" : "rising"
-      "#{sector}. Quarterly revenue #{units.money(first['Revenue'])} -> #{units.money(last['Revenue'])}, #{turn}; " \
-        "valuation #{story}, latest #{units.per_share(valuations.last[:per_share])} a share (#{valuations.last[:date]})."
+      ebitda = if first["EBITDA"].negative? && last["EBITDA"].positive? then "turned EBITDA-positive"
+               elsif first["EBITDA"].positive? && last["EBITDA"].negative? then "EBITDA turned negative"
+               else margin_phrase(last)
+               end
+      "#{industry} (#{sector}). Quarterly revenue #{units.money(first['Revenue'])} -> #{units.money(last['Revenue'])}, " \
+        "#{growth_phrase(last)}; #{ebitda}; valuation #{valuation_story}, latest #{units.per_share(last_valuation[:per_share])} a share " \
+        "(#{last_valuation[:date]})."
+    end
+
+    def last_valuation = valuations.last
+
+    # A digest of everything a generated document is built from. A re-run replaces a document only when this
+    # (or its name/date) changes, so unchanged PDFs aren't deleted and re-created every time.
+    def fingerprint
+      @fingerprint ||= Digest::SHA256.hexdigest([PDF_VERSION, name, units.currency, profile, quarters, valuations, investment_date].to_json)
     end
 
     # Board meets on the first weekday 35 days after the quarter-end
@@ -287,6 +377,8 @@ module PortcoDemo
         noise = 1 + @rng.rand(-0.03..0.03)
         # Revenue: compounding growth × seasonality × noise
         revenue = profile[:rev] * units.scale * ((1 + profile[:growth])**i) * profile[:seasonality].fetch(as_of.month, 1.0) * noise
+        # A tail bends revenue from that quarter on (e.g. a decline in the last two quarters)
+        revenue *= 1 + (profile[:tail][1] * (i - profile[:tail][0] + 1)) if profile[:tail] && i >= profile[:tail][0]
         # Cost of sales and variable costs as a % of revenue that improves linearly over the 12 quarters
         cogs = revenue * lerp(profile[:cogs], progress)
         variable = revenue * lerp(profile[:var], progress)
@@ -328,6 +420,11 @@ module PortcoDemo
         # A down-round from the markdown valuation onwards
         multiple *= profile[:markdown][1] if profile[:markdown] && idx >= profile[:markdown][0]
         [date, base * multiple]
+      end
+      # A stagnant company: every mark within 2% of the first, whatever the fundamentals did
+      if profile[:valuation] == :flat
+        first = raw.first[1]
+        raw = raw.map { |date, _value| [date, first * (1 + @rng.rand(-0.02..0.02))] }
       end
       # Aster Labs: scale so the latest price is the SPA's $2.50 a share (in INR at the rough rate)
       if @calibrate_to_spa
@@ -406,6 +503,17 @@ module PortcoDemo
             keys.map { |k| [label(k), *quarters.map { |q| fmt(k, q[k]) }] }, [2, *([1] * quarters.size)])
     end
 
+    # ", flat on the previous mark" / ", up 8% on the previous mark" / ", down 15% on ..." — blank for the first mark
+    def mark_change(valuation)
+      idx = @c.valuations.index(valuation)
+      return "" if idx.nil? || idx.zero?
+
+      change = (valuation[:per_share] / @c.valuations[idx - 1][:per_share]) - 1
+      return ", flat on the previous mark" if change.abs < 0.03
+
+      ", #{change.positive? ? 'up' : 'down'} #{format('%.0f', change.abs * 100)}% on the previous mark"
+    end
+
     # The quarter `back` quarters before this one, nil when the history doesn't reach that far
     def prior(quarter, back)
       idx = @c.quarters.index(quarter)
@@ -453,6 +561,13 @@ module PortcoDemo
       text("The CFO presented the quarter's results. Revenue was #{@u.money(quarter['Revenue'])}" +
            (growth.any? ? " (#{growth.join(', ')})" : "") +
            ". EBITDA was #{@u.money(quarter['EBITDA'])} and PAT #{@u.money(quarter['PAT'])}.")
+      # The Board's reading of the trend, from the numbers
+      if @c.stalled?(quarter)
+        text("The Board noted with concern that #{@c.growth_clause(quarter)} and #{@c.margin_phrase(quarter).sub('EBITDA', 'the EBITDA')}. " \
+             "Management was asked to present a recovery plan with monthly milestones at the next meeting.")
+      else
+        text("The Board noted that #{@c.growth_clause(quarter)}, with #{@c.margin_phrase(quarter).sub('EBITDA', 'the EBITDA')}.")
+      end
       rows = %w[Revenue COGS Contribution EBITDA PAT].map do |k|
         [label(k), fmt(k, quarter[k]), before ? fmt(k, before[k]) : "-", before ? change(quarter[k], before[k]) : "-"]
       end
@@ -482,19 +597,30 @@ module PortcoDemo
       text("Investor Presentation | #{@u.quarter_label(latest[:as_of])} | #{date.strftime('%B %Y')}", :muted)
       text("Highlights", :h2)
       # The valuation line only once the company has a valuation by this quarter
-      bullets(["TTM revenue of #{@u.money(quarters.sum { |q| q['Revenue'] })}",
-               "Latest quarter EBITDA margin of #{pct(latest['EBITDA'], latest['Revenue'])}",
+      bullets(["TTM revenue of #{@u.money(quarters.sum { |q| q['Revenue'] })}; #{@c.growth_phrase(latest)}",
+               "#{@c.margin_phrase(latest)} in the latest quarter",
                *@c.profile[:ops].map { |l, *| "#{l} at #{latest[l].to_fs(:delimited)}" },
-               *(valuation && ["Valuation of #{@u.per_share(valuation[:per_share])} a share (equity value #{@u.money(valuation[:equity_value])})"])])
-      text("Strategy", :h2)
-      bullets(@c.profile[:thesis])
+               *(valuation && ["Valuation of #{@u.per_share(valuation[:per_share])} a share (equity value #{@u.money(valuation[:equity_value])})" \
+                               "#{mark_change(valuation)}"])])
+      # A stalled company leads with its recovery actions rather than the original investment thesis
+      if @c.stalled?(latest)
+        text("Turnaround priorities", :h2)
+        bullets(@c.profile[:risks].map { |risk, plan| "#{plan} - to address #{risk.downcase}" })
+      else
+        text("Strategy", :h2)
+        bullets(@c.profile[:thesis])
+      end
       @pdf.new_page
       text("Financial and operating performance - last four quarters", :title)
       kpi_table(quarters)
       @pdf.new_page
       text("Outlook and priorities", :title)
-      bullets(@c.profile[:risks].map { |risk, plan| "#{risk}: #{plan}" } +
-              ["Continue margin expansion while compounding #{@c.profile[:ops].first.first.downcase}"])
+      closing = if @c.stalled?(latest)
+                  "Return to growth and restore EBITDA margin before seeking new capital"
+                else
+                  "Continue margin expansion while compounding #{@c.profile[:ops].first.first.downcase}"
+                end
+      bullets(@c.profile[:risks].map { |risk, plan| "#{risk}: #{plan}" } + [closing])
       text("This presentation is confidential and intended solely for the company's shareholders.", :muted)
     end
 
@@ -506,9 +632,11 @@ module PortcoDemo
       text("Quarterly Update - #{@u.quarter_label(quarter[:as_of])}", :title)
       text("#{@c.name} | to our shareholders | #{date.strftime('%d %b %Y')}", :muted)
       text("Dear shareholders,")
-      text("Revenue for the quarter was #{@u.money(quarter['Revenue'])} with a contribution margin of " \
-           "#{pct(quarter['Contribution'], quarter['Revenue'])} and EBITDA of #{@u.money(quarter['EBITDA'])}. " \
+      # Growth and margin phrased from the numbers, so a weak quarter reads as one
+      text("Revenue for the quarter was #{@u.money(quarter['Revenue'])} (#{@c.growth_phrase(quarter)}), with a contribution margin of " \
+           "#{pct(quarter['Contribution'], quarter['Revenue'])} and EBITDA of #{@u.money(quarter['EBITDA'])}; #{@c.margin_phrase(quarter)}. " \
            "We closed the quarter with net worth of #{@u.money(quarter['Total Equity'])}.")
+      text("This was a difficult quarter. We are not satisfied with the trend and have started the recovery actions set out below.") if @c.stalled?(quarter)
       text("Key numbers", :h2)
       # This quarter against the prior quarter and the same quarter last year, where the history has them
       rows = @c.kpi_definitions.map(&:first).map do |k|
@@ -556,7 +684,7 @@ module PortcoDemo
     def say(msg) = @out.puts(msg)
 
     def seed_company(company)
-      say("\n#{company.name} (#{company.sector})")
+      say("\n#{company.name} (sector #{company.industry}; #{company.sector})")
       say("  KPIs: #{company.kpi_definitions.map { |std, reported, *| std == reported ? std : "#{reported} (#{std})" }.join(', ')}")
       first, last = company.quarters.values_at(0, -1)
       say("  Quarters: #{first[:as_of]} .. #{last[:as_of]} | revenue #{company.units.money(first['Revenue'])} -> " \
@@ -572,8 +700,10 @@ module PortcoDemo
           "on each of the #{company.quarters.size} quarterly reports")
       return unless @execute
 
+      @updated = Hash.new(0)
       ActiveRecord::Base.transaction do
         pc, instrument = company_and_instrument(company)
+        remove_legacy_documents(pc)
         mappings = kpi_mappings(pc, company)
         reports = company.quarters.map do |q|
           report = kpi_report(pc, company, q, mappings)
@@ -585,6 +715,9 @@ module PortcoDemo
         investment = @fund&.portfolio_investments&.where(portfolio_company_id: pc.id)&.order(:id)&.last
         @note[:companies] << { company:, pc:, latest_report: reports.last, investment: }
       end
+      # What changed on a company that already existed
+      updates = @updated.filter_map { |what, n| "#{n} #{what}" if n.positive? }
+      say("  [updated] #{updates.join(', ')}") if updates.any?
     end
 
     # Points the CP/CS extraction agent at the SPA's tag, so it finds the Aster Labs agreement. Only a blank
@@ -621,10 +754,10 @@ module PortcoDemo
         lines << "   #{company.summary}"
         lines << "   Company:           #{link.call(urls.investor_path(entry[:pc]))}"
         lines << "   Latest KPI report: #{link.call(urls.kpi_report_path(entry[:latest_report]))}"
-        if entry[:investment]
-          purchase = company.fund_purchase
+        if (pi = entry[:investment])
+          # The buy as recorded (buys are never updated, so a later profile change doesn't reprice it)
           what = company.spa_company? ? "Fund's purchase, Stock Purchase Agreement attached" : "Fund's purchase"
-          lines << "   #{what} (#{purchase[:shares].to_fs(:delimited)} shares at #{units.per_share(purchase[:per_share])}): " \
+          lines << "   #{what} (#{pi.quantity.to_i.to_fs(:delimited)} shares at #{units.per_share(pi.amount.to_f / pi.quantity)}): " \
                    "#{link.call(urls.portfolio_investment_path(entry[:investment]))}"
         end
         lines << ""
@@ -678,11 +811,19 @@ module PortcoDemo
     def company_and_instrument(company)
       instrument_name = "#{company.name} Equity"
       pc = EvergreenDemoPortfolio.portfolio_company(@entity, company.name)
+      # The sector the scoring agent matches a skill on — set at creation and corrected on later runs
+      if pc.sector != company.industry
+        # Callbacks run but validations are skipped: an entity's required investor custom fields (e.g. domicile)
+        # are not something a demo company fills in, and must not block setting its sector
+        pc.sector = company.industry
+        pc.save!(validate: false)
+        say("  [updated] sector #{company.industry}")
+      end
       if @fund && !@fund.portfolio_investments.exists?(portfolio_company_id: pc.id)
         purchase = company.fund_purchase
         EvergreenDemoPortfolio.buy(@fund, name: company.name, shares: purchase[:shares], bought_on: company.investment_date,
                                           cost_cents: (purchase[:shares] * purchase[:per_share] * 100).round,
-                                          sector: company.sector, instrument_name:, notes: "Demo holding (portco_demo:seed)")
+                                          sector: company.industry, instrument_name:, notes: "Demo holding (portco_demo:seed)")
         say("  [created] buy of #{purchase[:shares]} shares")
       end
       # The Aster Labs buy carries the stock purchase agreement (tagged for the CP/CS extraction agent).
@@ -694,9 +835,9 @@ module PortcoDemo
       instrument = InvestmentInstrument.find_or_create_by!(entity: @entity, portfolio_company: pc, name: instrument_name) do |i|
         i.category = "Unlisted"
         i.sub_category = "Equity"
-        i.sector = company.sector
         i.currency = company.units.currency
       end
+      instrument.update!(sector: company.industry) if instrument.sector != company.industry
       [pc, instrument]
     end
 
@@ -721,45 +862,84 @@ module PortcoDemo
         r.status = "reviewed"
       end
       company.kpi_definitions.map(&:first).each do |standard|
-        next if Kpi.exists?(kpi_report: report, name: standard)
-
-        Kpi.create!(kpi_report: report, entity_id: @entity.id, portfolio_company: pc, investor_kpi_mapping: mappings[standard],
-                    name: standard, value: quarter[standard])
+        kpi = Kpi.find_by(kpi_report: report, name: standard)
+        if kpi.nil?
+          Kpi.create!(kpi_report: report, entity_id: @entity.id, portfolio_company: pc, investor_kpi_mapping: mappings[standard],
+                      name: standard, value: quarter[standard])
+        elsif kpi.value.to_d != quarter[standard].to_d
+          # An existing company brought in line with its profile
+          kpi.update!(value: quarter[standard])
+          @updated[:kpis] += 1
+        end
       end
       report
     end
 
-    # A manual valuation of the company's equity on the date; an existing one for the date is kept
+    # A manual valuation of the company's equity on the date; an existing one is updated to the profile's figures
     def valuation(pc, instrument, val)
-      Valuation.find_or_create_by!(entity: @entity, owner: pc, investment_instrument: instrument, valuation_date: val[:date], source: "manual") do |v|
-        v.category = "Unlisted"
-        v.sub_category = "Equity"
-        v.per_share_value_cents = (val[:per_share] * 100).round
-        v.valuation_cents = val[:equity_value] * 100
-      end
+      v = Valuation.find_or_initialize_by(entity: @entity, owner: pc, investment_instrument: instrument, valuation_date: val[:date], source: "manual")
+      v.category = "Unlisted"
+      v.sub_category = "Equity"
+      v.per_share_value_cents = (val[:per_share] * 100).round
+      v.valuation_cents = val[:equity_value] * 100
+      return unless v.changed?
+
+      @updated[:valuations] += 1 if v.persisted?
+      v.save!
     end
 
     # Renders the PDF into a sub-folder of the company's document folder
     def document(pc, company, folder_name, name, date, kind, payload)
-      return if pc.documents.exists?(name:)
+      digest = doc_digest(company, name, date)
+      return unless replace_stale(pc, name, digest)
 
       folder = pc.document_folder.children.find_or_create_by!(name: folder_name, entity_id: @entity.id) { |f| f.owner = pc }
+      render_document(company, kind, payload, date, owner: pc, folder:, name:, tags: folder_name, digest:)
+    end
+
+    # Fingerprint of one generated document: the company's data plus the document's own name and date
+    def doc_digest(company, name, date) = Digest::SHA256.hexdigest("#{company.fingerprint}|#{name}|#{date}")
+
+    # True when the document must be (re)generated. A document from an earlier run whose fingerprint no longer
+    # matches is deleted here, so the caller inserts a fresh one with the current figures.
+    def replace_stale(owner, name, digest)
+      existing = owner.documents.find_by(name:)
+      return true unless existing
+      return false if (existing.json_fields || {})[DIGEST_KEY] == digest
+
+      existing.destroy!
+      @updated[:documents] += 1
+      true
+    end
+
+    # Writes the PDF to a temp file and attaches it, stamping the fingerprint
+    def render_document(company, kind, payload, date, owner:, name:, tags:, digest:, folder: nil)
       Dir.mktmpdir do |dir|
         path = File.join(dir, "#{name.parameterize}.pdf")
         Pdf.new(company).render(kind, payload, date, path)
-        Document.create!(entity: @entity, owner: pc, folder:, user: @user, name:, file: File.open(path), tag_list: folder_name)
+        Document.create!(entity: @entity, owner:, folder:, user: @user, name:, file: File.open(path), tag_list: tags,
+                         json_fields: { DIGEST_KEY => digest })
       end
+    end
+
+    # Board minutes and half-yearly presentations the first version filed on the company itself; they now live
+    # on the KPI reports, so the leftovers are removed when a company is brought up to date
+    def remove_legacy_documents(pc)
+      legacy = pc.documents.joins(:folder).where(folders: { name: ["Board Minutes", "Investor Presentations"] })
+                 .where("documents.name LIKE 'Board Minutes - %' OR documents.name LIKE 'Investor Presentation - H%'")
+      count = legacy.count
+      return if count.zero?
+
+      legacy.find_each(&:destroy!)
+      say("  [removed] #{count} superseded company-level board minutes / presentations")
     end
 
     # Renders a period PDF onto a KPI report; the report files it in its own folder (WithFolder)
     def report_document(report, company, name, date, kind, payload)
-      return if report.documents.exists?(name:)
+      digest = doc_digest(company, name, date)
+      return unless replace_stale(report, name, digest)
 
-      Dir.mktmpdir do |dir|
-        path = File.join(dir, "#{name.parameterize}.pdf")
-        Pdf.new(company).render(kind, payload, date, path)
-        Document.create!(entity: @entity, owner: report, user: @user, name:, file: File.open(path), tag_list: name.sub(/ - .*/, ""))
-      end
+      render_document(company, kind, payload, date, owner: report, name:, tags: name.sub(/ - .*/, ""), digest:)
     end
 
     def attach(owner, name, file, tags:)
