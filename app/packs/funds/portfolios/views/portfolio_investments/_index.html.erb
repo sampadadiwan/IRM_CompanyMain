@@ -62,6 +62,13 @@
               <i class="ti ti-table-export"></i> <%= t_common(:export_visible) %>
             </button>
           </li>
+          <% if fund && policy(fund).update? %>
+            <li>
+              <%= link_to portfolio_investments_report_all_investors_path(fund_id: fund.id), class: "dropdown-item", data: { turbo: false } do %>
+                <i class="ti ti-report"></i> Portfolio Investment Report
+              <% end %>
+            </li>
+          <% end %>
           <% if params[:report_id].present? && params[:custom_xls_report].present? %>
             <li>
               <%= link_to xl_link + "&custom_xls_report=true", class: "dropdown-item", data: { turbo: false } do %>
