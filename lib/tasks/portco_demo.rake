@@ -13,7 +13,9 @@
 # With a USD FUND_ID the task also creates the records the two US sample documents describe: Harborview's
 # US$1M commitment carrying US_Growth_Fund_LP_Side_Letter.docx (tagged "Side Letter"), and the fund's purchase
 # of 250,000 Aster Labs shares at $2.50 carrying US_Stock_Purchase_Agreement_CP_CS.docx (tagged "SPA"); a blank
-# CP/CS extraction agent investment_doc_tag is set to "SPA" so the agent finds it.
+# CP/CS extraction agent investment_doc_tag is set to "SPA" so the agent finds it; a configured tag (e.g. "SHA")
+# is added to the agreement's tags instead. Copies of the two left in another fund by an earlier run are deleted
+# (with anything extracted from them); nothing the task didn't create is touched.
 # Note links use BASE_URL (default http://localhost:3000).
 # Each company gets a sector (SaaS, Retail, Hospitality, Consumer, Financial Services, ...), which the Portfolio
 # Scoring Agent matches a skill on. Ember Grill (slow growth, compressing margin) and Threadline (stagnant, losses,
@@ -68,6 +70,8 @@ namespace :portco_demo do
     # The fund's LPs (commitment + verified KYC each), commitments starting with the KPI history
     seeder.seed_commitments(units:, start_date: PortcoDemo.quarter_ends(Time.zone.today).first) if fund
     seeder.configure_cp_cs_agent if us_docs
+    # The task's agreement and side letter exist once: copies left in other funds by earlier runs are deleted
+    seeder.remove_duplicate_demo_agreements if us_docs
     # The note for the business, only once the records exist
     seeder.print_note(units) if execute
   end

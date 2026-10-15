@@ -732,6 +732,48 @@ module PortcoDemo
       end
     end
 
+    # The task's own agreement and side letter exist once: on this fund's Aster Labs buy and Harborview commitment.
+    # Copies an earlier run left in another fund are deleted, with any side letter record and obligations (and
+    # their tasks and reminders) extracted from them. Only this task's records are touched — matched by the
+    # documents' names on Aster Labs investments and HARBORVIEW-01 commitments; other agreements and side
+    # letters in the entity are left alone. USD funds only (the run that creates the two).
+    def remove_duplicate_demo_agreements
+      keep_pi = @fund.portfolio_investments.joins(:portfolio_company).where(investors: { investor_name: SPA[:company] }).order(:id).last
+      keep_cc = @fund.capital_commitments.find_by(folio_id: SIDE_LETTER[:folio_id])
+
+      # The Aster Labs agreement on the entity's other Aster Labs investments, and obligations extracted from it
+      other_pis = PortfolioInvestment.where(entity_id: @entity.id).joins(:portfolio_company)
+                                     .where(investors: { investor_name: SPA[:company] }).where.not(id: keep_pi&.id)
+      agreements = Document.where(owner_type: "PortfolioInvestment", owner_id: other_pis.select(:id), name: "Stock Purchase Agreement - #{SPA[:company]}")
+      cp_obligations = SideLetterObligation.where(entity_id: @entity.id, sourceable_type: "PortfolioInvestment", sourceable_id: agreements.select(:owner_id))
+
+      # Harborview's side letter on the entity's other HARBORVIEW-01 commitments, and the side letter records on it
+      other_ccs = CapitalCommitment.where(entity_id: @entity.id, folio_id: SIDE_LETTER[:folio_id]).where.not(id: keep_cc&.id)
+      letters = Document.where(owner_type: "CapitalCommitment", owner_id: other_ccs.select(:id), name: "Side Letter - #{SIDE_LETTER[:investor]}")
+      side_letters = SideLetter.where(document_id: letters.select(:id))
+
+      say("\nThis task's agreement and side letter copies in other funds (deleted, so each exists once):")
+      say("  #{agreements.count} Aster Labs agreement(s) and #{cp_obligations.count} CP/CS obligation(s) extracted from them")
+      say("  #{letters.count} Harborview side letter(s), #{side_letters.count} side letter record(s) " \
+          "and #{SideLetterObligation.where(side_letter_id: side_letters.select(:id)).count} obligation(s) extracted from them")
+      return unless @execute
+
+      ActiveRecord::Base.transaction do
+        # Obligations first (destroy runs their callbacks: tasks, fulfilments, reminders), then side letter records,
+        # which reference their documents, then the documents themselves
+        cp_obligations.find_each(&:destroy!)
+        side_letters.find_each(&:destroy!)
+        agreements.find_each(&:destroy!)
+        letters.find_each(&:destroy!)
+      end
+    end
+
+    # Tags the entity's CP/CS extraction agents look for on investment agreements (e.g. "SHA")
+    def cp_cs_tags
+      SupportAgent.where(entity_id: @entity.id, agent_type: "CpCsExtractionAgent")
+                  .filter_map { |agent| (agent.json_fields || {})["investment_doc_tag"].to_s.strip.presence }.uniq(&:downcase)
+    end
+
     # Plain-text note for the business: what was seeded, with a link to each record
     def print_note(units)
       urls = Rails.application.routes.url_helpers
@@ -772,9 +814,10 @@ module PortcoDemo
         lines << ""
       end
       if @note[:commitments].any? { |c| c[:side_letter] }
-        lines << "Documents for the AI agents: the side letter is tagged \"Side Letter\" (Side Letter Obligation agent), the stock purchase " \
-                 "agreement \"SPA\" (CP/CS Extraction agent), and each KPI report's Investor Presentation and Quarterly Update are named for the " \
-                 "presentation analysis agent."
+        tags = (["SPA"] + cp_cs_tags).uniq(&:downcase).join(", ")
+        lines << "Documents for the AI agents: Harborview's side letter (Side Letter Obligation agent) and the Aster Labs stock purchase " \
+                 "agreement, tagged #{tags} (CP/CS Extraction agent). Each KPI report's Investor Presentation and Quarterly Update are named " \
+                 "for the presentation analysis agent."
       end
       lines << "All figures are generated demo data."
       lines << ("=" * 100)
@@ -830,7 +873,11 @@ module PortcoDemo
       # Outside the buy branch so a re-run still attaches it if an earlier run stopped after the buy.
       if @fund && company.spa_company?
         investment = @fund.portfolio_investments.where(portfolio_company_id: pc.id).order(:id).last
-        attach(investment, "Stock Purchase Agreement - #{company.name}", SPA[:file], tags: "SPA")
+        # "SPA" plus whatever tag the entity's CP/CS agent looks for (e.g. "SHA"), so the agent picks it up
+        tags = (["SPA"] + cp_cs_tags).uniq(&:downcase).join(", ")
+        attach(investment, "Stock Purchase Agreement - #{company.name}", SPA[:file], tags:)
+        agreement = investment.documents.find_by(name: "Stock Purchase Agreement - #{company.name}")
+        agreement.update!(tag_list: tags) if agreement && agreement.tag_list != tags
       end
       instrument = InvestmentInstrument.find_or_create_by!(entity: @entity, portfolio_company: pc, name: instrument_name) do |i|
         i.category = "Unlisted"
