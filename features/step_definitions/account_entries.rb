@@ -314,12 +314,17 @@ end
 
 Then('Given I upload {string} file for Account Entries') do |file|
   @import_file = file
-  # Account Entries sits under the commitment page's Accounting dropdown tab; ?tab= opens it directly
+  # Account Entries sits under the commitment page's Accounting dropdown tab; ?tab= opens it directly.
+  # The deep link must leave the Accounting menu closed (tabs_controller#closeDropdownMenu) - an open
+  # menu's rows sat over the pane and intercepted the click on Upload
   visit(capital_commitment_path(@fund.capital_commitments.first, tab: "account-entries-tab"))
-  #sleep((1)
-  page.execute_script('window.scrollTo(0, document.body.scrollHeight);')
-  expect(page).to have_content("Upload", wait:5)
-  click_on("Upload")
+  expect(page).to have_css("#account-entries-tab.active")
+  expect(page).to have_no_css(".dropdown-menu.show")
+  # Inside the pane only: the Documents pane also has a "Bulk Upload" button that matches "Upload"
+  within("#account-entries-tab") do
+    expect(page).to have_link("Upload", exact: true, wait: 5)
+    click_link("Upload", exact: true)
+  end
   fill_in('import_upload_name', with: "Test Upload")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
   #sleep((1)

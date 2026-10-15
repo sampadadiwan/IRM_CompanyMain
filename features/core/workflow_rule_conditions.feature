@@ -106,6 +106,9 @@ Feature: Auto-assignment rule conditions — matching
   # H4 — the seeded "Imported" rule still sends imported calls to the Light journey
   Scenario: The seeded imported rule still routes imported calls
     Given there is a fund "name=Acme Fund IV" for the entity
+    # A call needs a commitment it applies to (CapitalCallCreate refuses one on a fund with none)
+    And the investors are added to the fund
+    And there are capital commitments of "orig_folio_committed_amount_cents=100000000;fund_close=First Close" from each investor
     And the entity's capital call journeys are seeded
     When an imported capital call "percentage_called=10" is created
     Then the call has the "Capital Call — Light: Record Only" journey

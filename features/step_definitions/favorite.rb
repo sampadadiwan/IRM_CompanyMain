@@ -82,8 +82,10 @@ end
 Then('I should be on the investors details page') do
   expect(page).to have_content("Stakeholder: #{@investor.investor_name}")
   expect(page).to have_content("Users")
-  expect(page).to have_content("KYC")
-  expect(page).to have_content("Commitments")
+  # KYC and Commitments sit under the Investment Details dropdown tab, hidden until it is opened
+  expect(page).to have_content("Investment Details")
+  expect(page).to have_css("a[href='#kycs-tab']", visible: :all)
+  expect(page).to have_css("a[href='#commitments-tab']", visible: :all)
 end
 
 Then('I should not see the investors in the favorites list page') do

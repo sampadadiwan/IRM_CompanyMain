@@ -595,6 +595,10 @@ Given('I fill the document form') do
 end
 
 Given('I remove the file from the document') do
+  # Leave the document's page first: it fetches the file in the background, and if that request lands
+  # after the file is deleted below, the server raises ENOENT and the next step fails on it
+  visit(documents_path)
+  expect(page).to have_content(@document.name)
   @document.file = nil
   @document.save(validate: false)
 end

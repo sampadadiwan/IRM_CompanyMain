@@ -135,7 +135,7 @@ Given('I go to PortfolioCompany show page') do
 end
 
 Given('I go to the Instruments tab') do
-  click_on"Instruments"
+  open_tab_pane("instruments-tab") # under the portfolio company page's Instruments dropdown
   page.execute_script('window.scrollTo(0, document.body.scrollHeight);')
   sleep(1)
 end

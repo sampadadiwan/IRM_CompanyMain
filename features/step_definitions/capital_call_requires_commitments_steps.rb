@@ -39,7 +39,7 @@ end
 When('I submit the new capital call form named {string}') do |name|
   @calls_before = CapitalCall.where(fund: @fund).count
   visit(fund_url(@fund))
-  click_on "Calls"
+  open_tab_pane('capital-calls-tab') # under the fund page's Cash Flows dropdown
   click_on "New Call"
   click_on "Classic Form"
   fill_in('capital_call_name', with: name)

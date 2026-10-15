@@ -13,6 +13,10 @@ class CapitalCallCreate < CapitalCallAction
   # would read as "none". A missing fund is left to the belongs_to validation in save.
   def check_applicable_commitments(ctx, capital_call:, **)
     return true if capital_call.fund.nil?
+    # An evergreen subscription settlement (DealingSettlement.subscription_call) is created before the
+    # dealing date's pay-after folios are opened, so a fund's first dealing date has no commitments yet.
+    # Its rows are added per order, not generated from commitments, so it is left exactly as before.
+    return true if capital_call.evergreen_settlement_flag
 
     commitments = capital_call.fund_closes.blank? ? capital_call.fund.capital_commitments : capital_call.applicable_to
     return true if commitments.exists?
