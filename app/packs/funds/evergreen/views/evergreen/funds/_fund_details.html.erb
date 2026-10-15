@@ -47,7 +47,7 @@
               "fees" => "Fee lines in the NAV" }
   %>
   <div id="fund_associated_details" class="associated_entity">
-  <div class="associated_entity" data-controller="tabs tabdetails" id="evergreen_fund_details">
+  <div class="associated_entity" data-controller="tabs" id="evergreen_fund_details">
     <%
       # Flatten groups into one list of panes: [key, frame id, src, below]
       panes = tabs.flat_map do |_, key, frame_id_or_inner, src, below|

@@ -24,7 +24,7 @@
     { pane: "investors-tab", icon: "ti-users", label: t('investor_details_nav.users'), hint: t('investor_details_nav_hints.users'), id: "stakeholder_users_tab" }
   ].compact
 %>
-<div class="associated_entity" data-controller="tabs tabdetails">
+<div class="associated_entity" data-controller="tabs">
   <%# Top-level tabs. Instruments, Kpis and Access are dropdown tabs (layouts/_dropdown_tab) that each
       open a menu of their screens. Every screen is a pane in the one tab-content below, so
       ?tab=<pane id> deep links open it directly %>

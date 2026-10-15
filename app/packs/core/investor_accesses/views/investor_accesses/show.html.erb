@@ -74,7 +74,7 @@
     and the frame ids (notes_frame / task_list) match what the notes/tasks index
     pages render into, so search/pagination stay inside the tab. %>
 <% if @investor_access.persisted? %>
-  <div class="associated_entity" data-controller="tabs tabdetails">
+  <div class="associated_entity" data-controller="tabs">
     <nav id="investor_access_tabs" class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row" role="tablist">
       <a id="contact_notes_tab" class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#notes-tab">
         Notes

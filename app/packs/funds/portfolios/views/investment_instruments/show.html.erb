@@ -104,7 +104,7 @@
   show_corporate_actions = (@investment_instrument.ticker.present? || @investment_instrument.isin.present?) &&
                            policy(CorporateActionSuggestion).index?
 %>
-<div class="associated_entity" data-controller="tabs tabdetails">
+<div class="associated_entity" data-controller="tabs">
   <nav id="investment_instrument_tabs" class="nav nav-pills nav-justified p-3 mb-3 rounded card flex-row" role="tablist">
     <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#valuations-tab">
       <%= t('investor_details_nav.valuations') %>

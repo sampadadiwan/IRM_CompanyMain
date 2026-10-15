@@ -1,4 +1,4 @@
-<div class="associated_entity" data-controller="tabs tabdetails">
+<div class="associated_entity" data-controller="tabs">
 
   <%
     offers_active = false
@@ -10,7 +10,6 @@
   <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  role="tablist">
     <% if policy(secondary_sale).owner? %>
       <% interests_active = true %>
-      <input hidden=true value="#access-rights-tab" id="clickOnLoad" />
 
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#offerings-tab"><%= t('secondaries_tabs.offers') %></a>
 
@@ -29,11 +28,9 @@
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#interests-tab"><%= t('secondaries_tabs.interests') %></a>
     <% elsif policy(secondary_sale).seller? %>
       <% offers_active = true; document_tag="Seller" %>
-      <input hidden=true value="#offerings-tab" id="clickOnLoad" />
       <a class="nav-link <%= offers_active ? 'active' : '' %>" data-bs-toggle="pill" data-bs-toggle="tab" href="#offerings-tab"><%= t('secondaries_tabs.my_offers') %></a>
     <% elsif policy(secondary_sale).buyer? %>
       <% interests_active = true; document_tag="Buyer" %>
-      <input hidden=true value="#interests-tab" id="clickOnLoad" />
       <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#interests-tab"><%= t('secondaries_tabs.interests') %></a>
     <% end %>
 

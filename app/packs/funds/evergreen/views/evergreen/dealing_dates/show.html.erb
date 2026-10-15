@@ -184,7 +184,7 @@
   # Open on Subscriptions (E208), unless there are none and there are redemptions (E209)
   first_tab = sub_count.zero? && red_count.positive? ? "redemptions" : "subscriptions"
 %>
-<div class="associated_entity" data-controller="tabs tabdetails tooltip" id="dealing_date_tabs">
+<div class="associated_entity" data-controller="tabs tooltip" id="dealing_date_tabs">
   <% if dd.open? %>
     <%# Page-wide alerts apply to both tabs, so they sit above them %>
     <div class="px-3">
