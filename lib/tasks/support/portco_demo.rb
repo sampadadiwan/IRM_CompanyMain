@@ -110,6 +110,19 @@ module PortcoDemo
   BOARD_POOL = ["Ananya Rao", "Vikram Mehta", "Sarah Collins", "David Chen", "Priya Nair", "Michael Torres", "Rohan Kapoor",
                 "Emily Watson", "Arjun Sethi", "Laura Bennett", "Karan Malhotra", "James Whitaker"].freeze
 
+  # CREATE_FUND: the entity's demo fund in this currency, named to match the US side letter ("Growth Fund I,
+  # L.P."). Reused when it exists; a dry run gets an unsaved fund so the plan prints without creating it.
+  def self.demo_fund(entity, currency, start_date, execute:)
+    name = currency == "USD" ? "Growth Fund I, L.P." : "Growth Fund I"
+    fund = entity.funds.find_by(name:)
+    return fund if fund
+
+    fund = Fund.new(entity:, name:, currency:, unit_types: "Class A", category: currency == "INR" ? "Category II" : nil,
+                    start_date:, first_close_date: start_date, details: "Demo fund (portco_demo:seed)")
+    fund.save! if execute
+    fund
+  end
+
   # The last N completed calendar quarter-ends before today (oldest first)
   def self.quarter_ends(today, count = 12)
     last = (today.beginning_of_quarter - 1.day)

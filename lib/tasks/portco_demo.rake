@@ -7,7 +7,9 @@
 #   bin/rails portco_demo:seed ENTITY_ID=157 N=5                         # dry run: print the plan
 #   bin/rails portco_demo:seed ENTITY_ID=157 N=5 EXECUTE=1               # create it
 #   bin/rails portco_demo:seed ENTITY_ID=157 N=5 FUND_ID=343 EXECUTE=1   # also record the fund's buy of each company
+#   bin/rails portco_demo:seed ENTITY_ID=157 N=5 CREATE_FUND=USD EXECUTE=1   # same, into a demo fund it creates (USD or INR)
 #
+# CREATE_FUND creates "Growth Fund I, L.P." (USD) or "Growth Fund I" (INR) in the entity, reusing it on re-runs.
 # With a USD FUND_ID the task also creates the records the two US sample documents describe: Harborview's
 # US$1M commitment carrying US_Growth_Fund_LP_Side_Letter.docx (tagged "Side Letter"), and the fund's purchase
 # of 250,000 Aster Labs shares at $2.50 carrying US_Stock_Purchase_Agreement_CP_CS.docx (tagged "SPA"); a blank
@@ -17,26 +19,37 @@
 require_relative "support/portco_demo"
 
 namespace :portco_demo do
-  desc "Seed N demo portfolio companies with KPIs, valuations, documents and (with FUND_ID) LP commitments + KYCs (ENTITY_ID=, N=, FUND_ID=; dry run unless EXECUTE=1)"
+  desc "Seed N demo portfolio companies with KPIs, valuations, documents and (with FUND_ID) LP commitments + KYCs (ENTITY_ID=, N=, FUND_ID= or CREATE_FUND=USD|INR; dry run unless EXECUTE=1)"
   task seed: :environment do
     raise "Demo data - never in production" if Rails.env.production?
 
-    # Inputs: the entity is required; N defaults to 5; the fund is optional and must belong to the entity
+    # Inputs: the entity is required; N defaults to 5; the fund is optional — an existing one of the entity
+    # (FUND_ID) or a demo fund the task creates (CREATE_FUND=USD|INR), not both
     entity = Entity.find(ENV.fetch("ENTITY_ID") { abort "ENTITY_ID is required" })
     count = Integer(ENV.fetch("N", "5"))
     abort "N must be at least 1" unless count.positive?
-    fund = ENV["FUND_ID"].present? ? entity.funds.find(ENV["FUND_ID"]) : nil
+    execute = ENV["EXECUTE"] == "1"
+    # Checked before CREATE_FUND, so a run that can't proceed never leaves a fund behind
     user = User.where(entity_id: entity.id).order(:id).first
     abort "Entity #{entity.id} has no users - KPI reports and documents need one" unless user
+    create_fund = ENV["CREATE_FUND"].to_s.upcase.presence
+    abort "Set FUND_ID or CREATE_FUND, not both" if create_fund && ENV["FUND_ID"].present?
+    abort "CREATE_FUND must be USD or INR" if create_fund && %w[USD INR].exclude?(create_fund)
+    fund = if create_fund
+             # The fund starts with the KPI history, so every buy and commitment date falls inside it
+             PortcoDemo.demo_fund(entity, create_fund, PortcoDemo.quarter_ends(Time.zone.today).first, execute:)
+           elsif ENV["FUND_ID"].present?
+             entity.funds.find(ENV["FUND_ID"])
+           end
+    puts "  [created] fund #{fund.id} #{fund.name}" if create_fund && fund.previously_new_record?
 
     # Figures follow the fund's currency, else the entity's; the US sample documents need a USD fund
     units = PortcoDemo::Units.new(fund&.currency.presence || entity.currency.presence || "INR")
     us_docs = fund.present? && units.currency == "USD"
-    execute = ENV["EXECUTE"] == "1"
     puts(execute ? "EXECUTE: seeding" : "DRY RUN - set EXECUTE=1 to create")
-    puts "Entity #{entity.id} (#{entity.name}), #{count} companies in #{units.currency}" + (fund ? ", fund #{fund.id} (#{fund.name})" : "")
-    puts "  US side letter and SPA skipped - they need a USD FUND_ID" if fund && !us_docs
-    puts "  Commitments and KYCs skipped - they need a FUND_ID" unless fund
+    puts "Entity #{entity.id} (#{entity.name}), #{count} companies in #{units.currency}" + (fund ? ", fund #{fund.id || '(new)'} (#{fund.name})" : "")
+    puts "  US side letter and SPA skipped - they need a USD fund" if fund && !us_docs
+    puts "  Commitments and KYCs skipped - they need FUND_ID or CREATE_FUND" unless fund
 
     seeder = PortcoDemo::Seeder.new(entity:, user:, fund:, execute:)
     count.times do |i|
