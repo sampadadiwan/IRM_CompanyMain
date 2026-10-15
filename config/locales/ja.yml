@@ -182,6 +182,7 @@ ja:
     destroy: 投資家アクセス権が削除されました
     update: 投資家アクセス権が更新されました
   investor_details_nav_hints:
+    notes: このステークホルダーのノート
     kyc: このステークホルダーのKYC記録
     commitments: 各ファンドへのコミットメント
     units: 割り当てられたファンドユニット
@@ -197,6 +198,8 @@ ja:
     stock_adjustments: 保有数を調整する株式分割
     users: ログインするユーザー
   investor_details_nav:
+    activity: アクティビティ
+    notes: ノート
     investment_details: 投資詳細
     manage: 管理
     access: アクセス

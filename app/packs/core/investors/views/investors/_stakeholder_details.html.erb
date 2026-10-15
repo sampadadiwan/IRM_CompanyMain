@@ -25,14 +25,20 @@
                      []
                    end
     investment_detail_tabs = [kyc_tab, *holding_tabs].compact
-    manage_tabs = [
+    # Activity holds what's been logged against the stakeholder: notes, tasks and (admins) filed emails
+    # (panes in investors/_activity_panes, shared with the portfolio company page)
+    show_emails = current_user.has_cached_role?(:company_admin) && policy(IncomingEmail.new).index?
+    activity_tabs = [
+      { pane: "notes-tab", icon: "ti-notes", label: t('investor_details_nav.notes'), hint: t('investor_details_nav_hints.notes') },
       { pane: "tasks-tab", icon: "ti-list-check", label: t('investor_details_nav.tasks'), hint: t('investor_details_nav_hints.tasks') },
+      ({ pane: "emails-tab", icon: "ti-mail", label: t('investor_details_nav.emails'), hint: t('investor_details_nav_hints.emails') } if show_emails)
+    ].compact
+    manage_tabs = [
       ({ pane: employee_access_pane_id, icon: "ti-building", label: t('investor_details_nav.employee_access'), hint: t('investor_details_nav_hints.employee_access') } if show_employee_access),
-      ({ pane: investor_access_pane_id, icon: "ti-shield-lock", label: t('investor_details_nav.investor_access'), hint: t('investor_details_nav_hints.investor_access') } if can_update),
-      ({ pane: "emails-tab", icon: "ti-mail", label: t('investor_details_nav.emails'), hint: t('investor_details_nav_hints.emails') } if current_user.has_cached_role?(:company_admin))
+      ({ pane: investor_access_pane_id, icon: "ti-shield-lock", label: t('investor_details_nav.investor_access'), hint: t('investor_details_nav_hints.investor_access') } if can_update)
     ].compact
   %>
-  <%# Investment Details and Manage are dropdown tabs; every screen is a pane in the one tab-content below,
+  <%# Investment Details, Activity and Manage are dropdown tabs; every screen is a pane in the one tab-content below,
       so ?tab=<pane id> deep links open it directly %>
   <nav id="investor_tabs" class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  role="tablist">
 
@@ -41,6 +47,7 @@
       </a>
 
       <%= render "layouts/dropdown_tab", icon: "ti-briefcase", label: t('investor_details_nav.investment_details'), items: investment_detail_tabs %>
+      <%= render "layouts/dropdown_tab", icon: "ti-activity", label: t('investor_details_nav.activity'), items: activity_tabs %>
       <%= render "layouts/dropdown_tab", icon: "ti-settings", label: t('investor_details_nav.manage'), items: manage_tabs %>
 
   </nav>
@@ -63,21 +70,8 @@
           </div>
         </div>
 
-        <div id="notes-tab" class="tab-pane fade">
-          <div id="notes" class="associated_entity">
-            <%= turbo_frame_tag "notes_frame", target: "_top", src: notes_path(owner_id: investor.id, owner_type: "Investor"), loading: :lazy do %>
-              <%= render "/layouts/loading" %>
-            <% end %>
-          </div>
-        </div>
-
-        <div id="tasks-tab" class="tab-pane fade">
-          <div id="tasks" class="associated_entity">
-            <%= turbo_frame_tag "task_list", target: "_top", src: tasks_path(owner_id: investor.id, owner_type: "Investor"), loading: :lazy do %>
-              <%= render "/layouts/loading" %>
-            <% end %>
-          </div>
-        </div>
+        <%# Activity menu: notes, tasks, emails %>
+        <%= render "investors/activity_panes", investor: investor, show_emails: show_emails %>
 
         <div id="reminders-tab" class="tab-pane fade">
           <div id="reminders" class="associated_entity">
@@ -126,16 +120,6 @@
         <div id="<%= investor_access_pane_id %>" class="tab-pane fade">
           <%= turbo_frame_tag "access_rights_frame", target: "_top", loading: :lazy,  src: access_rights_path(investor_id: investor.id , entity_id: current_user.entity_id, form_type: "none", owner_id: investor.id, owner_type: "Investor", with_deleted: true)  do %>
           <% end %>
-        </div>
-      <% end %>
-
-      <% if policy(IncomingEmail.new).index? %>
-        <div id="emails-tab" class="tab-pane fade">
-          <div id="emails" class="associated_entity">
-            <%= turbo_frame_tag "incoming_emails_list", target: "_top", src: incoming_emails_path(owner_id: investor.id, owner_type: "Investor"), loading: :lazy do %>
-              <%= render "/layouts/loading" %>
-            <% end %>
-          </div>
         </div>
       <% end %>
 

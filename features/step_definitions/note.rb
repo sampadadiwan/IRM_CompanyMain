@@ -1,7 +1,12 @@
 When('I create a new note {string}') do |arg1|
   @note_details = arg1
   click_on("Show", match: :first)
-  click_on("Add Note", match: :first)
+  # Notes live under the Activity tab; its list's New Note opens the form inline
+  within('#investor_tabs') do
+    click_on(I18n.t('investor_details_nav.activity'))
+    find("a[href='#notes-tab']").click
+  end
+  within('#notes-tab') { click_on("New Note") }
   find('#note_details').set(arg1)
   click_on("Save")
 end

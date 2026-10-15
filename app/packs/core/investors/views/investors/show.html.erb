@@ -19,19 +19,7 @@
       <% end %>
     <% end %>
 
-    <%= link_to notes_path(owner_id: @investor.id, owner_type: "Investor"),
-                class: "btn btn-outline-success d-inline-flex align-items-center",
-                data: { turbo: false } do %>
-      <i class="ti ti-notes"></i> View Notes
-    <% end %>
-
-    <% if policy(@investor).update? %>
-      <%= link_to new_note_path("note[owner_id]": @investor.id, "note[owner_type]": "Investor"),
-                  class: "btn btn-outline-success d-inline-flex align-items-center",
-                  data: { turbo: false } do %>
-        <i class="ti ti-message-plus"></i> Add Note
-      <% end %>
-    <% end %>
+    <%# Notes, Tasks and Emails live in the Activity tab below (each list has its own New button) %>
 
     <% if policy(@investor).destroy? %>
       <%
@@ -193,12 +181,6 @@
                         data: { turbo: false, bs_toggle: "tooltip", bs_title: "Every workflow run on this investor" } do %>
               <i class="ti ti-history"></i> Workflow History
             <% end %>
-          <% end %>
-
-          <%= link_to incoming_emails_path(owner_id: @investor.id, owner_type: "Investor"),
-                      class: "dropdown-item d-flex align-items-center",
-                      data: { turbo: false, bs_toggle: "tooltip", bs_title: "View all emails associated with this investor" } do %>
-            <i class="ti ti-mail"></i> Emails
           <% end %>
 
         </div>

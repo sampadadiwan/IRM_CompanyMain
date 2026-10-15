@@ -23,9 +23,17 @@
     ({ pane: investor_access_pane_id, icon: "ti-shield-lock", label: t('investor_details_nav.investor_access'), hint: t('investor_details_nav_hints.investor_access') } if can_update),
     { pane: "investors-tab", icon: "ti-users", label: t('investor_details_nav.users'), hint: t('investor_details_nav_hints.users'), id: "stakeholder_users_tab" }
   ].compact
+  # Activity holds what's been logged against the company: notes, tasks and (admins) filed emails
+  # (panes in investors/_activity_panes, shared with the stakeholder page)
+  show_emails = current_user.has_cached_role?(:company_admin) && policy(IncomingEmail.new).index?
+  activity_tabs = [
+    { pane: "notes-tab", icon: "ti-notes", label: t('investor_details_nav.notes'), hint: t('investor_details_nav_hints.notes') },
+    { pane: "tasks-tab", icon: "ti-list-check", label: t('investor_details_nav.tasks'), hint: t('investor_details_nav_hints.tasks') },
+    ({ pane: "emails-tab", icon: "ti-mail", label: t('investor_details_nav.emails'), hint: t('investor_details_nav_hints.emails') } if show_emails)
+  ].compact
 %>
 <div class="associated_entity" data-controller="tabs">
-  <%# Top-level tabs. Instruments, Kpis and Access are dropdown tabs (layouts/_dropdown_tab) that each
+  <%# Top-level tabs. Instruments, Kpis, Activity and Access are dropdown tabs (layouts/_dropdown_tab) that each
       open a menu of their screens. Every screen is a pane in the one tab-content below, so
       ?tab=<pane id> deep links open it directly %>
   <nav id="investor_tabs" class="nav nav-pills nav-justified p-3 mb-3 rounded card flex-row"  role="tablist">
@@ -39,6 +47,7 @@
 
     <%= render "layouts/dropdown_tab", icon: "ti-certificate", label: t('investor_details_nav.instruments'), items: instrument_tabs %>
     <%= render "layouts/dropdown_tab", icon: "ti-chart-bar", label: t('investor_details_nav.kpis'), items: kpi_tabs %>
+    <%= render "layouts/dropdown_tab", icon: "ti-activity", label: t('investor_details_nav.activity'), items: activity_tabs %>
     <%= render "layouts/dropdown_tab", icon: "ti-lock", label: t('investor_details_nav.access'), items: access_tabs %>
 
   </nav>
@@ -102,6 +111,9 @@
         </div>
       </div>
     <% end %>
+
+    <%# Activity menu: notes, tasks, emails %>
+    <%= render "investors/activity_panes", investor: investor, show_emails: show_emails %>
 
     <%# Access menu %>
     <% if show_employee_access %>

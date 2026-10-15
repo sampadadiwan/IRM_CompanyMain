@@ -1,0 +1,31 @@
+<%#
+  The Activity dropdown's panes (Notes, Tasks, Emails), shared by the stakeholder and portfolio company tab bars.
+  locals:
+    investor:    the stakeholder whose notes, tasks and emails are listed
+    show_emails: whether the Emails pane is rendered (company admins who may list incoming emails)
+%>
+<div id="notes-tab" class="tab-pane fade">
+  <div id="notes" class="associated_entity">
+    <%= turbo_frame_tag "notes_frame", target: "_top", src: notes_path(owner_id: investor.id, owner_type: "Investor"), loading: :lazy do %>
+      <%= render "/layouts/loading" %>
+    <% end %>
+  </div>
+</div>
+
+<div id="tasks-tab" class="tab-pane fade">
+  <div id="tasks" class="associated_entity">
+    <%= turbo_frame_tag "task_list", target: "_top", src: tasks_path(owner_id: investor.id, owner_type: "Investor"), loading: :lazy do %>
+      <%= render "/layouts/loading" %>
+    <% end %>
+  </div>
+</div>
+
+<% if show_emails %>
+  <div id="emails-tab" class="tab-pane fade">
+    <div id="emails" class="associated_entity">
+      <%= turbo_frame_tag "incoming_emails_list", target: "_top", src: incoming_emails_path(owner_id: investor.id, owner_type: "Investor"), loading: :lazy do %>
+        <%= render "/layouts/loading" %>
+      <% end %>
+    </div>
+  </div>
+<% end %>

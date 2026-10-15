@@ -198,6 +198,7 @@ en:
     destroy: Investor access was removed
     update: Investor access was updated
   investor_details_nav_hints:
+    notes: Notes logged on this stakeholder
     kyc: KYC records for this stakeholder
     commitments: Commitments across your funds
     units: Fund units allotted
@@ -213,6 +214,8 @@ en:
     stock_adjustments: Splits that rescale holdings
     users: People who log in for them
   investor_details_nav:
+    activity: Activity
+    notes: Notes
     investment_details: Investment Details
     manage: Manage
     access: Access
