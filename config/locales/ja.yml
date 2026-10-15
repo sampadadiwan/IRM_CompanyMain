@@ -147,6 +147,18 @@ ja:
     update: 資金調達ラウンドが更新されました
   funds:
     fund_details:
+      cash_flows: キャッシュフロー
+      manage: 管理
+      notifications: 通知
+      performance: パフォーマンス
+      hints:
+        access: このファンドを閲覧できるユーザー
+        calls: キャピタルコールと回収額
+        distributions: 投資家への分配
+        notifications: カスタムメール通知
+        portfolio: 投資先企業（取得原価と評価額）
+        ratios: TVPI、XIRRなどの比率
+        tasks: このファンドのタスク
       access: アクセス
       calls: コール
       commitments: コミットメント
@@ -172,7 +184,23 @@ ja:
     create: 投資家アクセス権が付与されました
     destroy: 投資家アクセス権が削除されました
     update: 投資家アクセス権が更新されました
+  investor_details_nav_hints:
+    commitments: 各ファンドへのコミットメント
+    units: 割り当てられたファンドユニット
+    investments: 行った投資
+    tasks: このステークホルダーのタスク
+    emails: このステークホルダーのメール
+    employee_access: アクセス権のあるチームメンバー
+    instruments: 保有している金融商品
+    investor_access: 付与されたアクセス
+    kpi_mapping: 報告名と自社KPIの対応
+    kpis: 受け取ったKPIレポート
+    portfolio_income: 受け取った収益
+    stock_adjustments: 保有数を調整する株式分割
+    users: ログインするユーザー
   investor_details_nav:
+    manage: 管理
+    access: アクセス
     access_rights: アクセス権
     corporate_actions: コーポレートアクション
     commitments: コミットメント

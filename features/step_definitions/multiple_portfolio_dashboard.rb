@@ -333,7 +333,7 @@ Given("portfolio investments are created") do
 end
 Then("All calculations should be correct") do
   expect(page).to have_content(
-    money_to_currency(Money.new(@total_bought_cents,"INR"), {force_units: 'crores'}, decimals:2)
+    money_to_currency(Money.new(@total_bought_cents,"INR"), {force_units: 'crores'}, decimals: 2, short_units: true)
   )
 end
 Given("portfolio company is added to list of companies") do
@@ -392,6 +392,6 @@ end
 Then('the Bought Amount stat should be correct') do
 
   expect(page).to have_content(
-    money_to_currency(Money.new(@expected_bought_cents,"INR"),{force_units: 'crores' }, decimals:2)
+    money_to_currency(Money.new(@expected_bought_cents,"INR"),{force_units: 'crores' }, decimals: 2, short_units: true)
   )
 end

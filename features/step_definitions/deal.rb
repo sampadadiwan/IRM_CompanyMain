@@ -534,7 +534,7 @@ Then('deal and cards should be updated') do
   element = all('.show_details_link').last
   element.click
   #sleep(0.5)
-  click_on("Deal")
+  click_tab("Deal")
   #sleep(0.5)
   expect(page).to have_content("Deal Tag")
   expect(page).to have_content(@deal.reload.card_view_attrs&.map(&:titleize)&.join(", "))
@@ -545,7 +545,7 @@ When('i click on deal details i should see the tabs "{string}"') do |string|
     tab = tab.strip
     p "clicking on tab #{tab}"
     expect(page).to have_content(tab)
-    click_on(tab)
+    click_tab(tab)
     #sleep(0.5)
     if tab == "Access Rights"
       expect(page).to have_content("Grant Access")
@@ -559,7 +559,7 @@ When('i click on deal details i should see the tabs "{string}"') do |string|
 end
 
 When('i should see be able to edit the deal from deal tab') do
-  click_on("Deal")
+  click_tab("Deal")
   #sleep(0.5)
   element = find("#deal_show")
   within(element) do
@@ -575,7 +575,7 @@ When('i should see be able to edit the deal from deal tab') do
   element = all('.show_details_link').last
   element.click
   #sleep(0.5)
-  click_on("Deal")
+  click_tab("Deal")
   #sleep(0.5)
   expect(page).to have_content("New Deal Name")
   expect(page).to have_content("New Status")
@@ -593,7 +593,7 @@ end
 
 Given('I view the deal details') do
   visit(deal_path(@deal))
-  find("#deal_tab").click
+  open_tab_pane('deal-tab') # under the deal page's Deal dropdown
 end
 
 Given('I add widgets for the deal') do
@@ -629,7 +629,7 @@ Given('I add track record for the deal') do
   visit(deal_path(@deal))
   element = all('.show_details_link').last
   element.click
-  click_on("Track Record")
+  click_tab("Track Record")
   click_on("New Track Record")
   fill_in('ci_track_record_name', with: "Test Track Record")
   fill_in('ci_track_record_prefix', with: "good")
@@ -698,7 +698,7 @@ end
 
 Given('I give deal access to {string}') do |investor_name|
   visit(deal_path(@deal))
-  find("a.nav-link[href='#access-tab']", wait: 10).click
+  open_tab_pane('access-tab') # under the deal page's Manage dropdown
   page.execute_script('window.scrollTo(0, document.body.scrollHeight);')
   puts "\n####Granting Deal Access to #{investor_name}####\n"
   if page.has_selector?("#access_rights_frame", wait: 20) && page.has_content?("Grant Access", wait: 20)

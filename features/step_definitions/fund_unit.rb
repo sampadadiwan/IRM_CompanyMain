@@ -575,7 +575,7 @@ end
 When('I open the investor page with the fund units section') do
   @fund_units_investor = @fund.capital_commitments.first.investor
   visit(investor_url(@fund_units_investor))
-  find("a[href='#fund-units-tab']").click
+  open_tab_pane('fund-units-tab') # under the stakeholder page's Commitments dropdown
 end
 
 Then('I should still be on the investor page') do

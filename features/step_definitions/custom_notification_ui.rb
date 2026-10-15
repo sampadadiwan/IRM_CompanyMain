@@ -1,6 +1,6 @@
 Given('I open the fund notifications tab') do
   visit(fund_path(@fund))
-  find('a.nav-link[href="#notifications-tab"]').click
+  open_tab_pane('notifications-tab') # under the fund page's Manage dropdown
   expect(page).to have_content("Custom Notifications")
 end
 

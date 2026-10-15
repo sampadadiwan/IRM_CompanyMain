@@ -76,6 +76,24 @@ module ApplicationHelper
     end
   end
 
+  # How many of the filter panel's conditions actually narrow the result set, so the
+  # panel header can show a count badge (see custom/filter_panel.scss).
+  #
+  # Ransack itself discards any condition that would produce no SQL while parsing the
+  # q params, so `conditions` is normally already the live set. The attribute/value
+  # check guards the one case it is not: the empty scaffold row _filter.html.erb
+  # builds so the panel always renders at least one condition.
+  def ransack_active_condition_count(search)
+    return 0 if search.nil?
+
+    search.conditions.count do |condition|
+      # These are Ransack nodes, not AR relations — `present?` here is a plain object
+      # check, not a query.
+      condition.attributes.any? { |attribute| attribute.name.present? } &&
+        condition.values.any? { |value| value.value.to_s.present? }
+    end
+  end
+
   # Maps every ransackable attribute name, exactly as Ransack's own attribute_select
   # names it (base columns as-is, association columns as "#{association}_#{column}" —
   # see Ransack::Helpers::FormBuilder#attr_from_base_and_column), to its Rails column

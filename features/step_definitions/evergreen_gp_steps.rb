@@ -7,7 +7,9 @@ Then('I should see the evergreen tabs') do
   expect(page).to have_css("#evergreen_details_card", visible: :all) # inside the collapsed fund card
   within("#evergreen_tabs") do
     %w[Dealing NAV Investors Documents Access].each { |t| expect(page).to have_link(t) }
-    %w[Subscriptions Redemptions Fees].each { |t| expect(page).to have_no_link(t, exact: false) }
+    # Not top-level tabs: they sit inside the Dealing / NAV dropdown menus (checked below). Only the
+    # bar's own links count - under @rack_test there is no CSS, so a closed menu's items look visible
+    %w[Subscriptions Redemptions Fees].each { |t| expect(page).to have_no_css("#evergreen_tabs > a.nav-link", text: t) }
   end
   # Grouped tabs: the orders sit inside Dealing, the fees inside NAV (counts are the open orders)
   within("#evergreen_dealing_tabs", visible: :all) do
@@ -87,7 +89,7 @@ Then('the subscription row of the unit history should link to its order') do
   expect(page).to have_css("#folio_unit_history a[href='#{evergreen_order_path(@fund, order)}']", visible: :all)
 end
 
-# Grouped fund-page tabs: Dealing holds Dealing Dates / Subscriptions / Redemptions, NAV holds NAV / Fees (H31, E219, E220)
+# Grouped fund-page tabs (dropdown tabs; the ids are on their menus): Dealing holds Dealing Dates / Subscriptions / Redemptions, NAV holds NAV / Fees (H31, E219, E220)
 EVERGREEN_TAB_GROUPS = { "Dealing" => "#evergreen_dealing_tabs", "NAV" => "#evergreen_nav_tabs" }.freeze
 
 When('I open the fund page on the tab {string}') do |tab|
@@ -103,8 +105,8 @@ Then('the fund tab {string} should be active') do |label|
 end
 
 Then('the inner fund tab {string} should be active') do |label|
-  # The inner pill is switched on and its pane is the one shown
-  expect(page).to have_css("#{EVERGREEN_TAB_GROUPS.values.join(' .nav-link.active, ')} .nav-link.active", text: label)
+  # The screen's row in its group's dropdown menu is switched on and its pane is the one shown
+  expect(page).to have_css("#{EVERGREEN_TAB_GROUPS.values.join(' .dropdown-item.active, ')} .dropdown-item.active", text: label, visible: :all)
   expect(page).to have_css("#evergreen-#{label.downcase}-tab.show.active", visible: :all)
 end
 

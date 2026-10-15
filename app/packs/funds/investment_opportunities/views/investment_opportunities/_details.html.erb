@@ -1,22 +1,23 @@
 <div class="associated_entity" data-controller="tabs tabdetails">
 
 
+    <%
+      # Screens grouped under each dropdown tab (layouts/_dropdown_tab), filtered to what this user can see
+      overview_tabs = [
+        { pane: "widgets-tab", icon: "ti-layout-dashboard", label: "Widgets", hint: "Content blocks on this opportunity" },
+        { pane: "track-records-tab", icon: "ti-trending-up", label: "Track Record", hint: "Past performance figures" }
+      ]
+      manage_tabs = [
+        ({ pane: "tasks-tab", icon: "ti-list-check", label: "Tasks", hint: "Tasks on this opportunity" } if policy(investment_opportunity).update?),
+        { pane: "access-rights-tab", icon: "ti-lock", label: "Access Rights", hint: "Who can see this opportunity" },
+        { pane: "custom-notifications-tab", icon: "ti-bell", label: "Notifications", hint: "Custom email notifications" }
+      ].compact
+    %>
     <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  role="tablist">
-      <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab">Documents</a>
-
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#widgets-tab">Widgets</a>
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#track-records-tab">Track Record</a>
-
-
-      <% if policy(investment_opportunity).update? %>
-          <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#tasks-tab">Tasks</a>
-      <% end %>
-
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#eoi-tab">Interests</a>
-
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#access-rights-tab">Access Rights</a>
-
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#custom-notifications-tab">Notifications</a>
+      <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab"><i class="ti ti-file-text me-1"></i>Documents</a>
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#eoi-tab"><i class="ti ti-hand-finger me-1"></i>Interests</a>
+      <%= render "layouts/dropdown_tab", icon: "ti-layout-dashboard", label: "Overview", items: overview_tabs %>
+      <%= render "layouts/dropdown_tab", icon: "ti-settings", label: "Manage", items: manage_tabs %>
     </nav>
 
     <div class="tab-content" data-controller="datatable">

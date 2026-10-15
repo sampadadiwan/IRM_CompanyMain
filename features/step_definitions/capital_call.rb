@@ -1,7 +1,7 @@
 When('I create a Capital Call with percentage of commitment') do
   visit("/funds/1")
   # sleep(0.5)
-  find('a.nav-link[href="#capital-calls-tab"]').click
+  open_tab_pane('capital-calls-tab') # under the fund page's Cash Flows dropdown
   # sleep(0.2)
   click_on("New Call")
   click_on("Classic Form")
@@ -21,7 +21,7 @@ When("I create a Capital Call with upload call basis") do
   allow(UpdateDocumentFolderPathJob).to receive(:perform_later).and_return(nil)
   visit("/funds/1")
   # sleep(0.5)
-  find('a.nav-link[href="#capital-calls-tab"]').click
+  open_tab_pane('capital-calls-tab') # under the fund page's Cash Flows dropdown
   # sleep(0.2)
   click_on("New Call")
   click_on("Classic Form")
@@ -37,7 +37,7 @@ end
 When("I create a Capital Call with investable call basis") do
   visit("/funds/1")
   # sleep(0.5)
-  find('a.nav-link[href="#capital-calls-tab"]').click
+  open_tab_pane('capital-calls-tab') # under the fund page's Cash Flows dropdown
   # sleep(0.2)
   click_on("New Call")
   click_on("Classic Form")
@@ -172,7 +172,7 @@ When('I create a new capital call {string}') do |args|
 
   visit(fund_url(@fund))
 
-  click_on "Calls"
+  click_tab("Calls")
   click_on "New Call"
   click_on "Classic Form"
 
@@ -229,7 +229,7 @@ When('I create a new capital call {string} with fees') do |args|
 
   visit(fund_url(@fund))
 
-  click_on "Calls"
+  click_tab("Calls")
   click_on "New Call"
   click_on "Classic Form"
 
@@ -406,7 +406,7 @@ When('I mark the remittances as verified') do
   @capital_call.capital_remittances.each do |remittance|
     visit(capital_call_url(@capital_call))
     # sleep((1)
-    click_on "Remittances"
+    click_tab("Remittances")
     # sleep((1)
     within("#capital_remittance_#{remittance.id}") do
       click_on "Actions"
@@ -733,7 +733,7 @@ end
 
 Then('Given I upload {string} file for Call remittances of the fund') do |file|
   visit(capital_call_path(@capital_call))
-  click_on("Remittances")
+  click_tab("Remittances")
   # sleep((2)
   click_on("Upload / Download")
   # The menu item, not the journey card's "Upload Remittances" button (shown while an Upload call has none)
@@ -753,7 +753,7 @@ end
 Then('Given I upload {string} file for {string} of the fund with errors') do |file, tab|
   @import_file = file
   visit(fund_path(@fund))
-  click_on(tab)
+  click_tab(tab)
   click_on("Upload / Download") if page.has_button?("Upload / Download")
   click_on("Upload")
   fill_in('import_upload_name', with: "Test Upload")
@@ -877,7 +877,7 @@ end
 Then('Given I upload {string} file for the remittances of the capital call') do |file|
   @import_file = file
   visit(capital_call_path(@fund.capital_calls.first))
-  click_on("Remittances")
+  click_tab("Remittances")
   # sleep((2)
   click_on("Upload / Download")
   click_on("Upload Payments")
@@ -1050,7 +1050,7 @@ end
 Then('Given I upload {string} file for the remittances of the capital call with errors') do |file|
   @import_file = file
   visit(capital_call_path(@fund.capital_calls.first))
-  click_on("Remittances")
+  click_tab("Remittances")
   # sleep((2)
   click_on("Upload / Download")
   click_on("Upload Payments")
@@ -1420,7 +1420,7 @@ Then('I should see the remittances') do
 
   visit(capital_call_url(@capital_call))
   # sleep((2)
-  click_on "Remittances"
+  click_tab("Remittances")
 
   @capital_call.capital_remittances.each do |remittance|
     within("#capital_remittance_#{remittance.id}") do

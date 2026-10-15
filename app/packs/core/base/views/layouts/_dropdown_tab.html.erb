@@ -1,0 +1,53 @@
+<%#
+  A top-level tab that groups several screens under one dropdown, for a `nav nav-pills` tab bar.
+  locals:
+    icon:  Tabler icon class for the tab, e.g. "ti-cash"
+    label: the tab's own (group) label, e.g. "Cash Flows"
+    items: [{ pane: "remittances-tab", icon: "ti-arrow-down-left", label: "Remittances",
+              hint: "one-line description shown under the label", id: optional link id }, ...]
+           - pass only the screens the user may see; each pane must sit in the page's tab-content
+           - disabled: true lists the screen greyed out and unclickable (its hint says why)
+    toggle_id / menu_id: optional ids for the dropdown's tab and its menu (e.g. for tests)
+    active: optional pane id that is shown on page load, when it is one of this dropdown's screens
+  Picking an item shows its pane, and the tab keeps its group label with the screen appended
+  ("Cash Flows · Remittances") - see tabs_controller#syncDropdownLabel.
+  With a single item there is nothing to choose, so it renders as a plain tab instead.
+%>
+<% if items.size == 1 %>
+  <% item = items.first %>
+  <a <%= "id=#{item[:id]}" if item[:id] %> class="nav-link" data-bs-toggle="pill" href="#<%= item[:pane] %>">
+    <i class="ti <%= item[:icon] %> me-1"></i><%= item[:label] %>
+  </a>
+<% elsif items.any? %>
+  <%# The screen shown on load (if it is one of ours): the tab, the menu row and the label all reflect it %>
+  <% selected = items.find { |item| item[:pane] == local_assigns[:active] } %>
+  <div class="nav-item dropdown">
+    <%# data-bs-offset: the menu floats 8px below the tab rather than touching it %>
+    <a <%= "id=#{local_assigns[:toggle_id]}" if local_assigns[:toggle_id] %> class="nav-link dropdown-toggle <%= 'active' if selected %>" data-bs-toggle="dropdown" data-bs-offset="0,8" href="#" role="button" aria-expanded="false">
+      <i class="ti <%= icon %> me-1"></i><%= label %><span data-tab-dropdown-current><%= " · #{selected[:label]}" if selected %></span>
+    </a>
+    <%# The theme's own dropdown look (rounded, soft shadow, light hover / selected rows). At least as wide
+        as the tab, growing rather than wrapping if a row is longer, so every row stays on one line %>
+    <ul <%= "id=#{local_assigns[:menu_id]}" if local_assigns[:menu_id] %> class="dropdown-menu" style="min-width: 100%">
+      <% items.each do |item| %>
+        <li>
+          <%# Icon in a fixed slot, then the label with a muted one-line description under it.
+              A disabled screen keeps the same layout but is not a link %>
+          <% if item[:disabled] %>
+          <span class="dropdown-item d-flex align-items-start gap-2 disabled" aria-disabled="true">
+          <% else %>
+          <a <%= "id=#{item[:id]}" if item[:id] %> class="dropdown-item d-flex align-items-start gap-2 <%= 'active' if item.equal?(selected) %>"
+             data-bs-toggle="tab" data-tab-label="<%= item[:label] %>" href="#<%= item[:pane] %>">
+          <% end %>
+            <%# fixed-width, centred icon slot: Tabler glyphs differ in width, which pushed some labels left %>
+            <i class="ti <%= item[:icon] %> mt-1 text-center" style="width: 1.25rem"></i>
+            <span>
+              <span class="d-block"><%= item[:label] %></span>
+              <% if item[:hint] %><small class="d-block text-muted"><%= item[:hint] %></small><% end %>
+            </span>
+          <%= item[:disabled] ? raw("</span>") : raw("</a>") %>
+        </li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>

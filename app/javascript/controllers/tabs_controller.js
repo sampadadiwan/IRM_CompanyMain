@@ -2,6 +2,9 @@ import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
   connect() {
+    // Dropdown tabs: show the picked screen's name on the dropdown's own label
+    this.element.addEventListener('shown.bs.tab', this.syncDropdownLabel)
+
     var urlParams = new URLSearchParams(window.location.search);
     let tab = urlParams.get('tab');
 
@@ -14,6 +17,23 @@ export default class extends Controller {
         this.clickTab(tab);
       }
     }
+  }
+
+  disconnect() {
+    this.element.removeEventListener('shown.bs.tab', this.syncDropdownLabel)
+  }
+
+  // A tab picked from a dropdown menu (e.g. the commitment page's Cash Flows ▾ → Remittances) appends
+  // its name to the dropdown's group label ("Cash Flows · Remittances"), so the bar shows which
+  // screen is open without losing the group
+  syncDropdownLabel = (event) => {
+    const item = event.target
+    // Only this tab bar's own dropdowns, not those of a nested tab bar inside one of its panes
+    const nav = item.closest('.nav')
+    const current = item.closest('.dropdown')?.querySelector('[data-tab-dropdown-current]')
+    // Any other dropdown in the bar is no longer selected, so it drops its "· screen" suffix
+    nav?.querySelectorAll('[data-tab-dropdown-current]').forEach(el => { if (el !== current) el.textContent = '' })
+    if (current && item.closest('.dropdown-menu')) current.textContent = ` · ${item.dataset.tabLabel}`
   }
 
   clickTab(tab) {

@@ -36,45 +36,58 @@
     tabs << ["Notifications", "notifications", "custom_notifications_frame", custom_notifications_path(q: { owner_id_eq: fund.id, owner_type_eq: "Fund" })]
     tabs << ["Access", "access-rights", "access_rights_frame", access_rights_path(owner_id: fund.id, owner_type: "Fund", entity_id: current_user.entity_id, form_type: nil)]
   %>
+  <%
+    # Icon per tab / screen, and a one-line description for the screens inside a dropdown tab
+    icons = { "dealing-group" => "ti-calendar", "dealing" => "ti-calendar-event", "subscriptions" => "ti-login",
+              "redemptions" => "ti-logout", "nav-group" => "ti-chart-line", "nav" => "ti-chart-line", "fees" => "ti-receipt",
+              "investors" => "ti-users", "portfolio" => "ti-briefcase", "docs" => "ti-file-text",
+              "notifications" => "ti-bell", "access-rights" => "ti-lock" }
+    hints = { "dealing" => "When orders are priced", "subscriptions" => "Open and past subscription orders",
+              "redemptions" => "Open and past redemption orders", "nav" => "NAV per unit by date",
+              "fees" => "Fee lines in the NAV" }
+  %>
   <div id="fund_associated_details" class="associated_entity">
   <div class="associated_entity" data-controller="tabs tabdetails" id="evergreen_fund_details">
+    <%
+      # Flatten groups into one list of panes: [key, frame id, src, below]
+      panes = tabs.flat_map do |_, key, frame_id_or_inner, src, below|
+        if frame_id_or_inner.is_a?(Array)
+          frame_id_or_inner.map { |_, inner_key, inner_frame, inner_src| [inner_key, inner_frame, inner_src, nil] }
+        else
+          [[key, frame_id_or_inner, src, below]]
+        end
+      end
+      # The first top-level tab is selected on load; when it is a group, its first screen is shown
+      first_pane = panes.first[0]
+    %>
+    <%# A group (Dealing, NAV) is a dropdown tab (layouts/_dropdown_tab) listing its screens; every screen
+        is a pane in the one tab-content below, so ?tab=evergreen-<key>-tab opens it directly %>
     <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row" role="tablist" id="evergreen_tabs">
-      <% tabs.each_with_index do |(label, key, _), i| %>
-        <a class="nav-link <%= 'active' if i.zero? %>" data-bs-toggle="pill" href="#evergreen-<%= key %>-tab" id="evergreen_tab_<%= key %>"><%= label %></a>
+      <% tabs.each_with_index do |(label, key, frame_id_or_inner), i| %>
+        <% if frame_id_or_inner.is_a?(Array) %>
+          <%= render "layouts/dropdown_tab", icon: icons[key], label:, toggle_id: "evergreen_tab_#{key}",
+                     menu_id: "evergreen_#{key.delete_suffix('-group')}_tabs", active: "evergreen-#{first_pane}-tab",
+                     items: frame_id_or_inner.map { |inner_label, inner_key, _, _|
+                       { pane: "evergreen-#{inner_key}-tab", icon: icons[inner_key], label: inner_label,
+                         hint: hints[inner_key], id: "evergreen_tab_#{inner_key}" } } %>
+        <% else %>
+          <a class="nav-link <%= 'active' if i.zero? %>" data-bs-toggle="pill" href="#evergreen-<%= key %>-tab" id="evergreen_tab_<%= key %>"><i class="ti <%= icons[key] %> me-1"></i><%= label %></a>
+        <% end %>
       <% end %>
     </nav>
     <div class="tab-content">
-      <% tabs.each_with_index do |(_, key, frame_id_or_inner, src, below), i| %>
-        <div id="evergreen-<%= key %>-tab" class="tab-pane fade <%= 'show active' if i.zero? %>">
-          <% if frame_id_or_inner.is_a?(Array) %>
-            <%# A group: inner pills (same markup as the dealing date page's Subscriptions / Redemptions pills),
-                each pane a lazy frame that loads only when its pill is first shown %>
-            <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row" role="tablist" id="evergreen_<%= key.delete_suffix('-group') %>_tabs">
-              <% frame_id_or_inner.each_with_index do |(inner_label, inner_key, _, _), j| %>
-                <a class="nav-link <%= 'active' if j.zero? %>" data-bs-toggle="pill" href="#evergreen-<%= inner_key %>-tab" id="evergreen_tab_<%= inner_key %>"><%= inner_label %></a>
-              <% end %>
-            </nav>
-            <div class="tab-content">
-              <% frame_id_or_inner.each_with_index do |(_, inner_key, inner_frame, inner_src), j| %>
-                <div id="evergreen-<%= inner_key %>-tab" class="tab-pane fade <%= 'show active' if j.zero? %>">
-                  <%= turbo_frame_tag inner_frame, target: "_top", loading: :lazy, src: inner_src do %>
-                    <%= render "/layouts/loading" %>
-                  <% end %>
-                </div>
+      <% panes.each do |key, frame_id, src, below| %>
+        <div id="evergreen-<%= key %>-tab" class="tab-pane fade <%= 'show active' if key == first_pane %>">
+          <%= turbo_frame_tag frame_id, target: "_top", loading: :lazy, src: do %>
+            <%= render "/layouts/loading" %>
+          <% end %>
+          <%# An optional second frame under the first (the Portfolio tab's Derivatives card) %>
+          <% if below %>
+            <div class="associated_entity">
+              <%= turbo_frame_tag below[0], target: "_top", loading: :lazy, src: below[1] do %>
+                <%= render "/layouts/loading" %>
               <% end %>
             </div>
-          <% else %>
-            <%= turbo_frame_tag frame_id_or_inner, target: "_top", loading: :lazy, src: do %>
-              <%= render "/layouts/loading" %>
-            <% end %>
-            <%# An optional second frame under the first (the Portfolio tab's Derivatives card) %>
-            <% if below %>
-              <div class="associated_entity">
-                <%= turbo_frame_tag below[0], target: "_top", loading: :lazy, src: below[1] do %>
-                  <%= render "/layouts/loading" %>
-                <% end %>
-              </div>
-            <% end %>
           <% end %>
         </div>
       <% end %>

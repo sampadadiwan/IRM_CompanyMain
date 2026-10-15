@@ -537,7 +537,7 @@ end
 # ── Full-stack UI: Launch Workflow modal on the folder page ───────────────────
 
 When("I open the Workflow tab") do
-  find("a[href='#workflow-tab']").click
+  open_tab_pane('workflow-tab') # under the commitment page's Tasks dropdown; a plain tab elsewhere
 end
 
 # Opens the Bootstrap modal, picks the template (option text includes the step

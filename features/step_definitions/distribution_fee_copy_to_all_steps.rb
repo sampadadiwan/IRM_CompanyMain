@@ -28,7 +28,7 @@ end
 When('I open the new Capital Distribution form for {string}') do |fund_name|
   fund = Fund.find_by!(name: fund_name)
   visit(fund_path(fund))
-  click_on("Distributions")
+  click_tab("Distributions") # under the fund page's Cash Flows dropdown
   click_on("New Distribution")
   expect(page).to have_field("capital_distribution_title", wait: 15)
 end

@@ -376,7 +376,7 @@ end
 
 Then('user should see the access rights of the fund {string}') do |crud|
   visit("funds/#{@fund.id}")
-  click_on("Access")
+  click_tab("Access") # under the fund page's Manage dropdown
   expect(page).to have_content(@investor.investor_name)
   crud.split(",").each do |access|
     expect(page).to have_content(access)

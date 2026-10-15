@@ -2,7 +2,7 @@
 
 When('I visit the capital call remittances tab') do
   visit(capital_call_url(@capital_call))
-  click_on "Remittances"
+  click_tab("Remittances")
 end
 
 When('I open the bulk verify remittances modal for the capital call') do
@@ -52,7 +52,7 @@ Then('all remittances for the capital call should be verified') do
   remittance_ids = @capital_call.capital_remittances.pluck(:id)
   eventually do
     visit(capital_call_url(@capital_call))
-    click_on "Remittances"
+    click_tab("Remittances")
     remittance_ids.each do |id|
       within("#capital_remittance_#{id}") do
         expect(page).to have_content("Yes", wait: 0)
@@ -97,7 +97,7 @@ Then('the first remittance should be verified') do
   remittance_id = @capital_call.capital_remittances.first.id
   eventually do
     visit(capital_call_url(@capital_call))
-    click_on "Remittances"
+    click_tab("Remittances")
     within("#capital_remittance_#{remittance_id}") do
       expect(page).to have_content("Yes", wait: 0)
     end
@@ -118,7 +118,7 @@ Then('the second remittance should still be unverified') do
   remittance_id = @capital_call.capital_remittances.second.id
   eventually do
     visit(capital_call_url(@capital_call))
-    click_on "Remittances"
+    click_tab("Remittances")
     within("#capital_remittance_#{remittance_id}") do
       expect(page).to have_content("No", wait: 0)
     end

@@ -314,8 +314,8 @@ end
 
 Then('Given I upload {string} file for Account Entries') do |file|
   @import_file = file
-  visit(capital_commitment_path(@fund.capital_commitments.first))
-  click_on("Account Entries")
+  # Account Entries sits under the commitment page's Accounting dropdown tab; ?tab= opens it directly
+  visit(capital_commitment_path(@fund.capital_commitments.first, tab: "account-entries-tab"))
   #sleep((1)
   page.execute_script('window.scrollTo(0, document.body.scrollHeight);')
   expect(page).to have_content("Upload", wait:5)
@@ -402,7 +402,7 @@ end
 Then('the account_entries must visible for each commitment') do
   @fund.account_entries.each do |ae|
     visit(capital_commitment_path(ae.capital_commitment))
-    click_on "Account Entries"
+    click_tab("Account Entries")
     expect(page).to have_content(ae.name)
     expect(page).to have_content(ae.entry_type)
     if ae.name.include?("Percentage")

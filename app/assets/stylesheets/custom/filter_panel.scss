@@ -1,0 +1,355 @@
+// ── Ransack filter panel ─────────────────────────────────────────────────────
+//
+// The generic search filter (layouts/_filter.html.erb, 47 index pages) was three
+// bare `form-control`s floating on white with a red-outlined bin and a green
+// -outlined plus beside them — every control shouting at the same volume, and
+// nothing saying which one you fill in first or which one runs the search.
+//
+// This gives the panel a reading order in colour:
+//   • the header carries a funnel mark, plus an accent badge when filters are on
+//   • each condition is a white card on grey: field (accented) → predicate
+//     (quiet) → value
+//   • rows are joined by an AND chip, because that is how Ransack combines them
+//   • only Search is filled — the row/value adders and the bin are ghosts that
+//     take their colour on hover
+//
+// Scoped by `[data-controller~="filter"]` so it lands on the ToggleCards that
+// actually hold a filter form (layouts/_filter.html.erb and
+// layouts/_multi_portfolio_dashboard_filter.html.erb) and nothing else.
+// Colours are the --fcv-* / --card-primary tokens used by the breadcrumb strip
+// and record show page, so the panel follows the active colour theme.
+
+.card.toggle-card[data-controller~="filter"] {
+  // ── Header ─────────────────────────────────────────────────────────────────
+  //
+  // A funnel before the title, drawn from the tabler icon font already loaded by
+  // the layout (public/modernize/fonts/tabler-icons), so the card is
+  // recognisable as the filter at a glance even when collapsed.
+  .toggle-card-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+
+    &::before {
+      content: "\eaa5"; // ti-filter
+      font-family: "tabler-icons";
+      font-weight: normal;
+      color: var(--card-primary, var(--bs-primary));
+      line-height: 1;
+    }
+  }
+
+  // White strip over the grey body, so the header reads as the card's edge rather
+  // than as part of the filter surface. Bootstrap's card-header bottom border
+  // draws the line between the two. The hover affordance from toggle_card.scss
+  // was --fcv-surface-2, which is now the body's own colour — a faint primary
+  // tint keeps "this toggles" legible against it.
+  .card-header.toggle-card-header {
+    background: var(--fcv-surface, #fff);
+
+    &:hover {
+      background: rgba(var(--card-primary-rgb, var(--bs-primary-rgb)), 0.04);
+    }
+  }
+
+  // The body is the ground the condition cards sit on, so it takes the grey and
+  // the rows take the white. It is the card's last child, hence the inherited
+  // bottom corners (same trick as toggle_card.scss).
+  .card-body {
+    padding-top: 18px;
+    background: var(--fcv-surface-2, #f6f8fc);
+    border-bottom-left-radius: inherit;
+    border-bottom-right-radius: inherit;
+  }
+}
+
+// ── "N filters applied" badge ────────────────────────────────────────────────
+//
+// Rendered into the ToggleCard header slot, so a collapsed panel still says the
+// list below it is filtered. Font size is inherited on purpose — it has to read
+// as a header element, not as fine print.
+.filter-active-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 10px;
+  padding: 3px 11px;
+  border-radius: 999px;
+  border: 1px solid rgba(var(--card-primary-rgb, var(--bs-primary-rgb)), 0.22);
+  background: rgba(var(--card-primary-rgb, var(--bs-primary-rgb)), 0.09);
+  color: var(--card-primary, var(--bs-primary));
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+
+  .ti { line-height: 1; }
+}
+
+// ── Condition rows ───────────────────────────────────────────────────────────
+//
+// Each condition becomes a white card with a primary left edge, sitting on the
+// body's grey, so a stack of them reads as a list of rules rather than a grid of
+// loose inputs. `.row`'s negative margins go first — with a background and a
+// border on the row they would bleed past the card body's padding.
+.card.toggle-card[data-controller~="filter"] .row.form-group {
+  position: relative;
+  align-items: center;
+  margin: 0 0 20px;
+  // Bootstrap spaces columns with a half-gutter of padding on every column,
+  // cancelled by the row's own negative margins. That works for a bare grid row,
+  // but here the row has a border drawn round it: the first column's 12px sits
+  // inside the left edge, the action column's 12px inside the right edge, and the
+  // controls end up looking off-centre. Zero the gutter, space the columns with
+  // `gap`, and let the padding below be the only inset.
+  --bs-gutter-x: 0;
+  gap: 8px;
+  // 11px on the left because the accent edge is 2px and the other borders are 1px,
+  // so both sides come to the same 12px from the outside of the card
+  padding: 10px 12px 10px 11px;
+  background: var(--fcv-surface, #fff);
+  border: 1px solid var(--fcv-line, #e4e8f1);
+  border-left: 2px solid var(--fcv-line, #e4e8f1);
+  border-radius: 10px;
+  // Just enough lift to separate the white row from the grey body
+  box-shadow: 0 1px 2px rgba(27, 36, 55, 0.04);
+  transition: border-color 0.14s ease, box-shadow 0.14s ease;
+
+  &:hover {
+    border-left-color: rgba(var(--card-primary-rgb, var(--bs-primary-rgb)), 0.5);
+  }
+
+  // The row you are typing in lifts out of the stack
+  &:focus-within {
+    border-color: rgba(var(--card-primary-rgb, var(--bs-primary-rgb)), 0.35);
+    border-left-color: var(--card-primary, var(--bs-primary));
+    box-shadow: 0 0 0 3px rgba(var(--card-primary-rgb, var(--bs-primary-rgb)), 0.08);
+  }
+
+  // A row with a field chosen is a rule that will actually run, so it keeps the
+  // solid accent edge even unfocused. :has() is a progressive enhancement — where
+  // it is unsupported the rule is dropped and the hover/focus states still carry
+  // the accent. input.attribute-fixed covers _filter_ext's fixed rows, whose field
+  // is pre-set and cannot be changed — they carry their own hook class because a
+  // feature step scopes to .attribute-select expecting only condition rows to have it.
+  &:has(select.attribute-select option:checked:not([value=""])),
+  &:has(input.attribute-fixed) {
+    border-left-color: var(--card-primary, var(--bs-primary));
+  }
+
+  // ── AND connector ────────────────────────────────────────────────────────
+  //
+  // Conditions are ANDed (Ransack's default combinator, and nothing here sets
+  // q[m]), which the old stack of rows left the user to guess.
+  + .row.form-group::before {
+    content: "AND";
+    position: absolute;
+    top: -14px;
+    left: 16px;
+    padding: 1px 10px;
+    border-radius: 999px;
+    // Success green: the chip says the rows combine, so it reads as a join rather
+    // than as another neutral bit of chrome. Opaque background, not a tint — it
+    // straddles the row's top border and has to cut it.
+    border: 1px solid rgba(14, 168, 139, 0.35);
+    background: var(--filter-and-bg, #e7f7f3);
+    color: var(--fcv-good, #0ea88b);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    line-height: 1.4;
+  }
+
+  // ── The three controls ───────────────────────────────────────────────────
+  //
+  // Field is the subject of the rule: white, weighted, primary-tinted border.
+  select.attribute-select,
+  input.attribute-fixed {
+    background-color: var(--fcv-surface, #fff);
+    border-color: rgba(var(--card-primary-rgb, var(--bs-primary-rgb)), 0.3);
+    color: var(--fcv-ink, #1b2437);
+    font-weight: 600;
+  }
+
+  // Predicate is the connector word between field and value — it should not
+  // compete with either, so it stays flat and un-bordered.
+  select.predicate-select {
+    // `.col` gave the predicate an equal third of the row to hold one word, while
+    // the field name and the value — the two parts that carry information — were
+    // squeezed. It only needs room for its longest option.
+    flex: 0 1 190px;
+    background-color: transparent;
+    border-color: transparent;
+    color: var(--fcv-ink-2, #4a5670);
+
+    &:focus {
+      background-color: var(--fcv-surface, #fff);
+      border-color: rgba(var(--card-primary-rgb, var(--bs-primary-rgb)), 0.35);
+    }
+
+    // The fixed rows in _filter_ext render an inert, disabled "equals" — it is a
+    // label, not a control, and Bootstrap's disabled grey says so a bit too loudly
+    &:disabled {
+      opacity: 1;
+      background-color: transparent;
+      color: var(--fcv-ink-3, #8590a6);
+    }
+  }
+
+  // Value is what you type: white ground, primary focus ring
+  .value-field-text .form-control,
+  .value-field-date .form-control,
+  select:not(.attribute-select):not(.predicate-select) {
+    background-color: var(--fcv-surface, #fff);
+
+    &:focus {
+      border-color: rgba(var(--card-primary-rgb, var(--bs-primary-rgb)), 0.5);
+      box-shadow: 0 0 0 3px rgba(var(--card-primary-rgb, var(--bs-primary-rgb)), 0.1);
+    }
+  }
+
+  // The calendar affordance on a date condition, matched to the value input
+  .value-field-date .input-group {
+    flex-wrap: nowrap;
+  }
+
+  .value-field-date .input-group-text {
+    background-color: var(--fcv-surface, #fff);
+    color: var(--fcv-ink-3, #8590a6);
+  }
+
+  // Flex items default to min-width:auto, so a long option label would push the
+  // row wider than the card rather than letting the select shrink
+  > * {
+    min-width: 0;
+  }
+}
+
+// ── Narrow screens ───────────────────────────────────────────────────────────
+//
+// `.col` keeps every control on one line at any width, which at phone widths
+// squeezed three inputs into a few characters each and spilled the row buttons
+// onto a line of their own. Below md each part of the condition takes a line —
+// field, predicate, value — with the row actions right-aligned under them.
+@media (max-width: 767.98px) {
+  .card.toggle-card[data-controller~="filter"] .row.form-group {
+    gap: 10px;
+
+    // select.predicate-select is repeated because its desktop flex-basis above wins
+    // on specificity over a bare `> *`
+    > *,
+    select.predicate-select {
+      flex: 0 0 100%;
+      width: 100%;
+      max-width: 100%;
+    }
+
+    .condition-actions {
+      justify-content: flex-end;
+      // Sits against the value input above it, so it needs a little air
+      margin-top: 2px;
+    }
+  }
+}
+
+// ── Per-row actions (delete condition / add value) ───────────────────────────
+//
+// Were a permanently red-outlined bin and a permanently green-outlined plus in a
+// col-2 that reserved a sixth of the row for two icons. Now ghost squares that
+// only take their colour on hover, in a shrink-to-fit col-auto.
+.condition-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  .btn {
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--fcv-ink-3, #8590a6);
+    line-height: 1;
+    transition: background 0.14s ease, color 0.14s ease, border-color 0.14s ease;
+  }
+
+  .remove_fields:hover,
+  .remove_fields:focus-visible {
+    background: rgba(220, 38, 38, 0.1);
+    border-color: rgba(220, 38, 38, 0.25);
+    color: var(--fcv-poor, #dc2626);
+  }
+
+  .add_fields:hover,
+  .add_fields:focus-visible {
+    background: rgba(14, 168, 139, 0.12);
+    border-color: rgba(14, 168, 139, 0.3);
+    color: var(--fcv-good, #0ea88b);
+  }
+
+  .ti { margin: 0; }
+}
+
+// ── Panel action bar ─────────────────────────────────────────────────────────
+//
+// float-end left the form's height to collapse around a floated child; a flex row
+// aligned right does the same job without the float. Search is the only filled
+// button — it is the one that runs the query.
+.card.toggle-card[data-controller~="filter"] .action.float-end {
+  float: none !important;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+
+  .btn {
+    min-width: 38px;
+    height: 38px;
+    padding: 0 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border-radius: 8px;
+  }
+
+  // Adding a condition is the panel's growth action, so it keeps a live outline;
+  // Save Report and Clear stay quiet until hovered.
+  .filter-clear,
+  .btn-outline-info {
+    border-color: var(--fcv-line, #e4e8f1);
+    color: var(--fcv-ink-3, #8590a6);
+
+    &:hover,
+    &:focus-visible {
+      border-color: rgba(var(--card-primary-rgb, var(--bs-primary-rgb)), 0.3);
+      background: rgba(var(--card-primary-rgb, var(--bs-primary-rgb)), 0.08);
+      color: var(--card-primary, var(--bs-primary));
+    }
+  }
+
+  // The page-size select sits in the same bar; mt-2 was compensating for the float
+  select.form-control {
+    height: 38px;
+    margin-top: 0 !important;
+    border-radius: 8px;
+  }
+
+  .form-check {
+    margin-right: 4px;
+    margin-bottom: 0;
+  }
+}
+
+// ── Dark mode ────────────────────────────────────────────────────────────────
+//
+// Only the AND chip needs an override: everything else in this file is built from
+// --fcv-* / --card-primary, which already flip. The chip cannot be a translucent
+// tint (it has to cut the row's top border), so its opaque ground is set here.
+[data-bs-theme="dark"] {
+  --filter-and-bg: #1c3a35;
+}

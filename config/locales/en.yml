@@ -154,6 +154,18 @@ en:
     update: Funding round was updated
   funds:
     fund_details:
+      cash_flows: Cash Flows
+      manage: Manage
+      notifications: Notifications
+      performance: Performance
+      hints:
+        access: Who can see this fund
+        calls: Capital calls and amounts collected
+        distributions: Payouts made to investors
+        notifications: Custom email notifications
+        portfolio: Companies invested in, at cost and value
+        ratios: TVPI, XIRR and other ratios
+        tasks: Tasks raised on this fund
       access: Access
       calls: Calls
       commitments: Commitments
@@ -188,7 +200,23 @@ en:
     create: Investor access was given
     destroy: Investor access was removed
     update: Investor access was updated
+  investor_details_nav_hints:
+    commitments: Commitments across your funds
+    units: Fund units allotted
+    investments: Investments made
+    tasks: Tasks on this stakeholder
+    emails: Emails filed against them
+    employee_access: Team members with access
+    instruments: Securities held
+    investor_access: Access granted to them
+    kpi_mapping: Reported names to your KPIs
+    kpis: KPI reports received
+    portfolio_income: Income received
+    stock_adjustments: Splits that rescale holdings
+    users: People who log in for them
   investor_details_nav:
+    manage: Manage
+    access: Access
     access_rights: Access Rights
     corporate_actions: Corporate Actions
     commitments: Commitments

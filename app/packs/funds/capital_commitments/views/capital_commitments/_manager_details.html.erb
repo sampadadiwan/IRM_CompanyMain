@@ -1,38 +1,33 @@
 <div class="associated_entity" data-controller="tabs tabdetails">
+  <%
+    # Screens grouped under each dropdown tab, filtered to what this entity/user can see
+    permissions = capital_commitment.entity.permissions
+    cash_flow_tabs = [
+      { pane: "remittances-tab", icon: "ti-arrow-down-left", label: "Remittances", hint: "Calls made and collected" },
+      { pane: "distributions-tab", icon: "ti-arrow-up-right", label: "Distributions", hint: "Payouts to this investor" },
+      ({ pane: "adjustments-tab", icon: "ti-adjustments", label: "Adjustments", hint: "Top-ups, arrears, FX, transfers" } if permissions.enable_account_entries?)
+    ].compact
+    accounting_tabs = [
+      ({ pane: "fund-units-tab", icon: "ti-stack-2", label: "Units", hint: "Units allotted" } if permissions.enable_units?),
+      ({ pane: "account-entries-tab", icon: "ti-receipt", label: "Account Entries", hint: "Ledger entries posted" } if permissions.enable_account_entries?),
+      { pane: "fund-ratios-tab", icon: "ti-percentage", label: "Ratios", hint: "Computed performance ratios" }
+    ].compact
+    task_tabs = [
+      { pane: "tasks-tab", icon: "ti-list-check", label: "Tasks", hint: "Tasks on this commitment" },
+      ({ pane: "workflow-tab", icon: "ti-route", label: "Workflow", hint: "Assigned workflow steps" } if policy(capital_commitment).assign_workflow?)
+    ].compact
+  %>
   <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  role="tablist">
     <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab">
-      Documents
+      <i class="ti ti-file-text me-1"></i>Documents
     </a>
 
-    <% unless false && capital_commitment.fund.cat3? %>
-    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#remittances-tab">Remittances</a>
-    <% end %>
+    <%= render "layouts/dropdown_tab", icon: "ti-cash", label: "Cash Flows", items: cash_flow_tabs %>
+    <%= render "layouts/dropdown_tab", icon: "ti-book", label: "Accounting", items: accounting_tabs %>
+    <%= render "layouts/dropdown_tab", icon: "ti-list-check", label: "Tasks", items: task_tabs %>
 
-    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#distributions-tab">Distributions</a>
-
-    <% if capital_commitment.entity.permissions.enable_units? %>
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#fund-units-tab">Units</a>
-    <% end %>
-
-    <% if capital_commitment.entity.permissions.enable_account_entries? %>
-    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#account-entries-tab">Account Entries</a>
-
-    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#adjustments-tab">Adjustments</a>
-
-    <% end %>
-
-    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#fund-ratios-tab">Ratios</a>
-
-
-    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#tasks-tab">
-      Tasks
-    </a>
-    <% if capital_commitment.entity.permissions.enable_kycs? %>
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#kycs-tab">All KYCs</a>
-    <% end %>
-
-    <% if policy(capital_commitment).assign_workflow? %>
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#workflow-tab">Workflow</a>
+    <% if permissions.enable_kycs? %>
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#kycs-tab"><i class="ti ti-id me-1"></i>All KYCs</a>
     <% end %>
   </nav>
 
@@ -46,7 +41,6 @@
     </div>
 
 
-    <% unless false && capital_commitment.fund.cat3? %>
     <div id="remittances-tab" class="tab-pane fade">
           <div id="remittances" class="associated_entity">
             <%= turbo_frame_tag "capital_remittances_frame", target: "_top", loading: :lazy, src: capital_remittances_path(capital_commitment_id: capital_commitment.id, status: "", verified: "", for_commitment: true) do %>
@@ -54,7 +48,6 @@
             <% end %>
           </div>
     </div>
-    <% end %>
 
     <div id="distributions-tab" class="tab-pane fade">
           <div id="distributions" class="associated_entity">

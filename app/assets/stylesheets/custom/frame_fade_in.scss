@@ -1,0 +1,32 @@
+// ── Turbo frame fade-in ──────────────────────────────────────────────────────
+// Ported from the subtle_ui branch.
+//
+// Lazy-loaded turbo-frames (loading: :lazy) swap their loading placeholder for real content the
+// instant the fetch resolves - a hard cut every time a detail tab is opened for the first time.
+// The fade frames (custom/frame_fade_in.js FADE_FRAME_SELECTOR: `.frame-fade-in`, and every
+// turbo-frame inside a tab pane), together with the listeners in controllers/index.js, soften that
+// into a short slide-down-and-fade instead of a snap.
+//
+// <turbo-frame> has no default `display`, so it is inline, and CSS transforms don't apply to
+// inline boxes - block is required for the slide to render at all.
+//
+// This is a `transition` between two states, not a restarted @keyframes animation. The JS pushes
+// the frame into `--entering` (hidden, offset up) *before* Turbo swaps in the new content, then
+// drops it back to this default (visible) state right after, so the transition plays from hidden
+// to visible. Hiding only after the swap let the browser paint the new content at full visibility
+// for a moment first, which looked like a flicker.
+.frame-fade-in,
+.tab-pane turbo-frame {
+  display: block;
+  transition: opacity 0.6s ease-in-out, transform 0.6s ease-in-out;
+}
+
+.frame-fade-in--entering {
+  opacity: 0;
+  transform: translateY(-16px);
+  // The hide must be a jump, not a transition: a frame navigated directly gets --entering only
+  // milliseconds before Turbo swaps in the response, and a transitioned hide then played over the
+  // freshly painted content. Only the reveal animates (the base rule's transition takes over once
+  // this class is removed).
+  transition: none;
+}

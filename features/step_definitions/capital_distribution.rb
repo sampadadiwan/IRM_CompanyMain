@@ -2,7 +2,7 @@ When("I create a Capital Distribution {string}") do |args|
   visit(fund_path(@fund))
   @capital_distribution = FactoryBot.build(:capital_distribution, fund: @fund)
   key_values(@capital_distribution, args)
-  click_on("Distributions")
+  click_tab("Distributions") # under the fund page's Cash Flows dropdown
   click_on("New Distribution")
 
   fill_in 'capital_distribution_title', with: @capital_distribution.title
@@ -330,7 +330,7 @@ When('I create a new capital distribution {string}') do |args|
 
   visit(fund_url(@fund))
 
-  click_on "Distributions"
+  click_tab("Distributions")
   # sleep((1)
   click_on "New Distribution"
 
@@ -421,7 +421,7 @@ Given('there is a capital distribution {string}') do |args|
 end
 
 Then('I should be able to see my capital distributions') do
-  click_on("Distributions")
+  click_tab("Distributions") # under the fund page's Cash Flows dropdown
   CapitalDistributionPayment.find_each do |cc|
     puts "checking capital distrbution payment for #{cc.investor.investor_name} against #{@investor.investor_name} "
     if cc.investor_id == @investor.id

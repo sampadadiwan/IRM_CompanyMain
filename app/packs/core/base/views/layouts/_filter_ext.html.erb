@@ -13,12 +13,12 @@
 <% if fund_related_conts.include?(params[:controller]) %>
 
 <div class="row form-group">
-    <input class="form-control col" type="text" value="Fund Name" disabled>
-    <select class="form-control col"><option>equals</option></select>
+    <input class="form-control col attribute-fixed" type="text" value="Fund Name" disabled>
+    <select class="form-control col predicate-select" disabled><option>equals</option></select>
     <%= select_tag :fund_id, options_from_collection_for_select(current_user.entity.funds, :id, :name, params[:fund_id]), prompt: "All Funds", class: "form-control col", value: "" %>
-    <span class="col-2 pt-2">
-        <%= link_to "#", class: "remove_fields btn btn-outline-danger", "data-bs-toggle": "tooltip", "data-bs-placement": "top", title: "Delete Condition" do %>
-            <i class="ti ti-trash fs-4"></i>
+    <span class="col-auto condition-actions">
+        <%= link_to "#", class: "remove_fields btn btn-outline-danger", "aria-label": "Delete Condition", "data-bs-toggle": "tooltip", "data-bs-placement": "top", title: "Delete Condition" do %>
+            <i class="ti ti-trash"></i>
         <% end %>
     </span>
 </div>
@@ -27,13 +27,13 @@
 
 <% if  params[:action] == "index" && params[:controller] == "investors" && params[:multi_portfolio_dashboard].present? %>
 <div class="row form-group">
-    <input class="form-control col" type="text" value="Category" disabled>
-    <select class="form-control col"><option>equals</option></select>
+    <input class="form-control col attribute-fixed" type="text" value="Category" disabled>
+    <select class="form-control col predicate-select" disabled><option>equals</option></select>
     <%= select_tag :category, "Portfolio Company" , prompt: "Portfolio Company", class: "form-control col", value: "Portfolio Company" %>
 
-    <span class="col-2 pt-2">
-        <%= link_to "#", class: "remove_fields btn btn-outline-danger", "data-bs-toggle": "tooltip", "data-bs-placement": "top", title: "Delete Condition" do %>
-            <i class="ti ti-trash fs-4"></i>
+    <span class="col-auto condition-actions">
+        <%= link_to "#", class: "remove_fields btn btn-outline-danger", "aria-label": "Delete Condition", "data-bs-toggle": "tooltip", "data-bs-placement": "top", title: "Delete Condition" do %>
+            <i class="ti ti-trash"></i>
         <% end %>
     </span>
 </div>
@@ -44,12 +44,12 @@
 <% if secondary_related_conts.include?(params[:controller]) %>
 
 <div class="row form-group">
-    <input class="form-control col" type="text" value="Sale Name" disabled>
-    <select class="form-control col"><option>equals</option></select>
+    <input class="form-control col attribute-fixed" type="text" value="Sale Name" disabled>
+    <select class="form-control col predicate-select" disabled><option>equals</option></select>
     <%= select_tag :secondary_sale_id, options_from_collection_for_select(current_user.entity.secondary_sales, :id, :name, params[:secondary_sale_id]), prompt: "All Sales", class: "form-control col", value: "" %>
-    <span class="col-2 pt-2">
-        <%= link_to "#", class: "remove_fields btn btn-outline-danger", "data-bs-toggle": "tooltip", "data-bs-placement": "top", title: "Delete Condition" do %>
-            <i class="ti ti-trash fs-4"></i>
+    <span class="col-auto condition-actions">
+        <%= link_to "#", class: "remove_fields btn btn-outline-danger", "aria-label": "Delete Condition", "data-bs-toggle": "tooltip", "data-bs-placement": "top", title: "Delete Condition" do %>
+            <i class="ti ti-trash"></i>
         <% end %>
     </span>
 </div>

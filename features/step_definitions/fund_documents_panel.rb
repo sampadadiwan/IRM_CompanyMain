@@ -109,8 +109,9 @@ end
 
 Then('the document {string} should show the folder {string}') do |doc_name, folder_name|
   doc = Document.find_by!(name: doc_name, entity_id: @fund.entity_id)
-  # Tree-wide lists print the doc's folder under its name
-  within("#documents_frame #document_#{doc.id} td.text-col") do
+  # Tree-wide lists print the doc's folder under its name, in the name cell (the first one; the
+  # fund team's rows have a second text-col cell for tags)
+  within("#documents_frame #document_#{doc.id} td.text-col:first-child") do
     expect(page).to have_css("small.text-muted", text: folder_name)
   end
 end

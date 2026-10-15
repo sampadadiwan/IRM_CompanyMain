@@ -174,7 +174,7 @@ end
 
 When('I add widgets for the investment_opportunity') do
   visit(investment_opportunity_path(@investment_opportunity))
-  click_on("Widgets")
+  click_tab("Widgets") # under the opportunity page's Overview dropdown
   click_on("New Widget")
   fill_in('ci_widget_title', with: "Left Widget")
   select("Left", from: "ci_widget_image_placement")
@@ -188,7 +188,7 @@ When('I add widgets for the investment_opportunity') do
   expect(page).to have_content("successfull")
 
   visit(investment_opportunity_path(@investment_opportunity))
-  click_on("Widgets")
+  click_tab("Widgets") # under the opportunity page's Overview dropdown
   click_on("New Widget")
   fill_in('ci_widget_title', with: "Center Widget")
   select("Center", from: "ci_widget_image_placement")
@@ -202,7 +202,7 @@ When('I add widgets for the investment_opportunity') do
   expect(page).to have_content("successfull")
 
   visit(investment_opportunity_path(@investment_opportunity))
-  click_on("Widgets")
+  click_tab("Widgets") # under the opportunity page's Overview dropdown
   click_on("New Widget")
   fill_in('ci_widget_title', with: "Right Widget")
   select("Right", from: "ci_widget_image_placement")
@@ -218,7 +218,7 @@ end
 
 When('I add track record for the investment_opportunity') do
   visit(investment_opportunity_path(@investment_opportunity))
-  click_on("Track Record")
+  click_tab("Track Record") # under the opportunity page's Overview dropdown
   click_on("New Track Record")
   fill_in('ci_track_record_name', with: "Test Track Record")
   fill_in('ci_track_record_prefix', with: "good")

@@ -230,7 +230,9 @@ When('I click the tab {string}') do |args|
   # Change this to the last .nav
   tab = all(".nav-tabs").last || all(".nav-pills").last
   within(tab) do
-    click_on(args)
+    # click_tab: the screen may sit inside one of the bar's dropdown tabs (e.g. the fund page's
+    # Portfolio under Performance); a plain tab is just clicked
+    click_tab(args)
   end
 end
 

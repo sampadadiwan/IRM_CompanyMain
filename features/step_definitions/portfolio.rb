@@ -16,7 +16,7 @@ include CurrencyHelper
 
     visit(fund_path(@fund))
     #sleep(1)
-    click_on "Portfolio"
+    click_tab("Portfolio")
     click_on "New Investment"
 
 
@@ -459,7 +459,7 @@ end
 
 Given('I add widgets for the aggregate portfolio investment') do
   visit(aggregate_portfolio_investment_path(@api))
-  click_on("Widgets")
+  click_tab("Widgets")
   click_on("New Widget")
   fill_in('ci_widget_title', with: "Left Widget")
   select("Left", from: "ci_widget_image_placement")
@@ -473,7 +473,7 @@ Given('I add widgets for the aggregate portfolio investment') do
   expect(page).to have_content("successfull")
 
   visit(aggregate_portfolio_investment_path(@api))
-  click_on("Widgets")
+  click_tab("Widgets")
   click_on("New Widget")
   fill_in('ci_widget_title', with: "Center Widget")
   select("Center", from: "ci_widget_image_placement")
@@ -487,7 +487,7 @@ Given('I add widgets for the aggregate portfolio investment') do
   expect(page).to have_content("successfull")
 
   visit(aggregate_portfolio_investment_path(@api))
-  click_on("Widgets")
+  click_tab("Widgets")
   click_on("New Widget")
   fill_in('ci_widget_title', with: "Right Widget")
   select("Right", from: "ci_widget_image_placement")
@@ -503,7 +503,7 @@ end
 
 Given('I add track record for the aggregate portfolio investment') do
   visit(aggregate_portfolio_investment_path(@api))
-  click_on("Track Record")
+  click_tab("Track Record")
   click_on("New Track Record")
   fill_in('ci_track_record_name', with: "Test Track Record")
   fill_in('ci_track_record_prefix', with: "good")

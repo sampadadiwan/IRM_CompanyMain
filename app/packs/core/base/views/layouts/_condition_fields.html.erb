@@ -9,10 +9,14 @@
     current_attribute_is_date = %i[date datetime timestamp].include?(current_attribute_type)
   %>
   <div class="row form-group">
+    <%# include_blank carries the prompt: an empty select otherwise gives no hint of
+        what the row wants first %>
     <%= f.attribute_fields do |a| %>
-      <%= a.attribute_select({associations: associations}, {class: "form-control col attribute-select"}) %>
+      <%= a.attribute_select({associations: associations, include_blank: "Select a field…"}, {class: "form-control col attribute-select"}) %>
     <% end %>
-    <%= f.predicate_select({only: [:cont, :not_cont, :eq, :not_eq, :gt, :gteq, :lt, :lteq, :blank, :null, :not_null], default: :eq}, {class: "form-control col"}) %>
+    <%# predicate-select is a styling hook (custom/filter_panel.scss) — the predicate is
+        the quiet connector between field and value, not a field in its own right %>
+    <%= f.predicate_select({only: [:cont, :not_cont, :eq, :not_eq, :gt, :gteq, :lt, :lteq, :blank, :null, :not_null], default: :eq}, {class: "form-control col predicate-select"}) %>
 
     <%
       # Invariant: exactly one of the text/date value inputs below must be enabled —
@@ -24,14 +28,14 @@
     %>
     <%= f.value_fields do |v| %>
       <div class="value-field-text col <%= "d-none" if current_attribute_is_date %>">
-        <%= v.text_field :value, class: "form-control", disabled: current_attribute_is_date %>
+        <%= v.text_field :value, class: "form-control", placeholder: "Value", disabled: current_attribute_is_date %>
       </div>
       <%= ransack_date_value_field(v, active: current_attribute_is_date) %>
     <% end %>
 
-    <span class="col-2 pt-2">
-      <%= link_to "#", class: "remove_fields btn btn-outline-danger", "data-bs-toggle": "tooltip", "data-bs-placement": "top", title: "Delete Condition" do %>
-        <i class="ti ti-trash fs-4"></i>
+    <span class="col-auto condition-actions">
+      <%= link_to "#", class: "remove_fields btn btn-outline-danger", "aria-label": "Delete Condition", "data-bs-toggle": "tooltip", "data-bs-placement": "top", title: "Delete Condition" do %>
+        <i class="ti ti-trash"></i>
       <% end %>
 
       <%= link_to_add_fields '<i class="ti ti-plus"></i>'.html_safe, f, :value, {} %>

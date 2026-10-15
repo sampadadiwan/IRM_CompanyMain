@@ -16,11 +16,24 @@
     # Attribute name -> Rails column type, so the filter's Stimulus controller can
     # swap in a locale-date input when a date/datetime attribute is selected
     filter_attribute_types = ransack_filter_attribute_types(@q.klass, associations)
+    # How many conditions actually narrow the result set — drives the header badge
+    # and whether the "Clear" action is worth showing
+    active_condition_count = ransack_active_condition_count(@q)
   %>
 
   <%# Render a ToggleCard component for the filter form %>
   <%= render ToggleCard.new(title: "Filter", css_class: css_class, controller: "filter", state: state,
-    data: { "filter-attribute-types-value": filter_attribute_types.to_json }) do %>
+    data: { "filter-attribute-types-value": filter_attribute_types.to_json }) do |card| %>
+
+    <%# Badge in the card header, so a collapsed panel still shows that filters are on %>
+    <% if active_condition_count.positive? %>
+      <% card.with_header do %>
+        <span class="filter-active-badge">
+          <i class="ti ti-filter-check"></i>
+          <%= pluralize(active_condition_count, "filter") %> applied
+        </span>
+      <% end %>
+    <% end %>
 
     <%# Optional LLM chat form (currently disabled with `false &&`) %>
     <% if false && current_user.enable_user_llm_chat %>
@@ -91,17 +104,27 @@
             <%= select_tag :page_size, options_for_select(page_size_options, selected: params[:page_size]), class: "form-control mt-2", style: "width:unset;display:unset;" %>
             <% end %>
 
-            <%# Search button %>
-            <%= f.button "", class: "btn btn-outline-primary search-button", "data-bs-toggle": "tooltip", "data-bs-placement": "top", title: "Search" do %>
-              <i class="ti ti-search"></i>
+            <%# Clear: a plain GET back to the same index, which drops the q params %>
+            <% if active_condition_count.positive? %>
+              <%= link_to url.include?("?") ? "#{url}&filter=true" : "#{url}?filter=true",
+                class: "btn btn-outline-secondary filter-clear", "aria-label": "Clear filters",
+                "data-bs-toggle": "tooltip", "data-bs-placement": "top", title: "Clear filters" do %>
+                <i class="ti ti-filter-off"></i>
+              <% end %>
             <% end %>
 
             <%# Button to add new condition fields dynamically %>
             <%= link_to_add_fields '<i class="ti ti-plus"></i>'.html_safe, f, :condition, associations %>
 
             <%# Link to create a new report %>
-            <%= link_to new_report_path, class: "btn btn-outline-info", "data-bs-toggle": "tooltip", "data-bs-placement": "top", title: "Save Report" do %>
+            <%= link_to new_report_path, class: "btn btn-outline-info", "aria-label": "Save Report", "data-bs-toggle": "tooltip", "data-bs-placement": "top", title: "Save Report" do %>
               <i class="ti ti-database"></i>
+            <% end %>
+
+            <%# Search — the panel's primary action, so it is the one filled button, and
+                it sits last so the row reads left-to-right into the action that runs %>
+            <%= f.button "", class: "btn btn-primary search-button", "aria-label": "Search", "data-bs-toggle": "tooltip", "data-bs-placement": "top", title: "Search" do %>
+              <i class="ti ti-search"></i>
             <% end %>
           </div>
 

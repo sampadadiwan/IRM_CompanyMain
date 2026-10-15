@@ -1,6 +1,6 @@
 Given("a Bulk Upload is performed for FundRatios with file {string}") do |file_name|
   visit(fund_path(@fund))
-  click_on("Ratios")
+  click_tab("Ratios") # under the fund page's Performance dropdown
   find("#fund_ratios_actions").click
   click_on("Upload")
   sleep(2)
@@ -25,7 +25,7 @@ end
 
 And("I should find Fund Ratios created with correct data for Fund") do
   visit(fund_path(@fund))
-  click_on("Ratios")
+  click_tab("Ratios") # under the fund page's Performance dropdown
   sleep(2)
   expect(page).to have_content("XIRR")
   expect(page).to have_content("27.95 %")

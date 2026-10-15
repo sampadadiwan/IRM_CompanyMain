@@ -384,7 +384,8 @@ end
 
 When("I open the {string} tab of the LP's commitment page") do |tab|
   visit(capital_commitment_path(lp_commitment)) unless page.current_path == capital_commitment_path(lp_commitment)
-  find("a[href='##{tab}-tab']").click
+  # The fund team's page has Remittances / Distributions under its Cash Flows dropdown
+  open_tab_pane("#{tab}-tab")
   # The tab's list is a lazy turbo frame: it only loads once scrolled into the viewport, as when a
   # user scrolls down to it
   scroll_to(find("##{tab}-tab"))
@@ -417,7 +418,7 @@ end
 
 When("I open the Units tab of the LP's commitment page") do
   visit(capital_commitment_path(lp_commitment))
-  find("a[href='#fund-units-tab']").click
+  open_tab_pane('fund-units-tab')
   # Lazy turbo frame: loads once scrolled into the viewport
   scroll_to(find("#fund-units-tab"))
   expect(page).to have_css("#fund-units-tab #fund_unit_stats", wait: 15)
@@ -454,7 +455,7 @@ end
 
 When("I open the fund team's Ratios tab") do
   visit(fund_path(@fund))
-  find("a[href='#fund-ratios-tab']").click
+  open_tab_pane('fund-ratios-tab') # under the fund page's Performance dropdown
   expect(page).to have_css("#fund-ratios-tab #fund_ratio_headline_stats", wait: 15)
 end
 

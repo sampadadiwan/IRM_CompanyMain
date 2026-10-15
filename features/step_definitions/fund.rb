@@ -140,7 +140,7 @@ end
 Given('Given I upload {string} file for {string} of the fund') do |file, tab|
   @import_file = file
   visit(fund_path(@fund))
-  click_on(tab)
+  click_tab(tab)
   # sleep((0.5)
   click_on("Upload / Download") if page.has_button?("Upload / Download")
   click_on("Upload")

@@ -321,8 +321,8 @@ When('I upload a stakeholder users file with CRM columns for {string}') do |emai
   end
   package.serialize(path)
 
-  visit(investor_path(@investor))
-  find('#stakeholder_users_tab').click
+  # Users sits under the Access dropdown tab; ?tab= opens it directly
+  visit(investor_path(@investor, tab: 'investors-tab'))
   find('#upload_stakeholder_users').click
   fill_in('import_upload_name', with: 'LP CRM Contacts Upload')
   attach_file('files[]', path, make_visible: true)

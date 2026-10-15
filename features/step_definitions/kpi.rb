@@ -14,9 +14,9 @@ end
 
 Given('Given I upload a kpis file for the portfolio company') do
   @portfolio_company ||= Investor.portfolio_companies.last
-  visit(investor_path(@portfolio_company))
+  # Kpis is a dropdown tab on the stakeholder page; ?tab= opens the screen directly
+  visit(investor_path(@portfolio_company, tab: "kpis-tab"))
   page.execute_script("document.body.style.zoom = '80%'")
-  click_on("Kpis")
   sleep(2)
   click_on("Actions")
   click_on("Upload")
@@ -40,9 +40,9 @@ end
 # reproduced a bug) rather than the shared investor_kpi_mappings_test_1.xlsx fixture. `file` is
 # relative to public/sample_uploads/, same as every other file-path step in this codebase.
 Given('Given I upload a kpi mappings file {string} for the portfolio company') do |file|
-  visit(investor_path(@portfolio_company))
+  # Kpis is a dropdown tab on the stakeholder page; ?tab= opens the screen directly
+  visit(investor_path(@portfolio_company, tab: "kpi-mappings-tab"))
   page.execute_script("document.body.style.zoom = '80%'")
-  click_on("Kpi Mapping")
   sleep(2)
   click_on("Upload")
   sleep(2)
@@ -88,9 +88,9 @@ When('I go to the Kpis tab on the investor show page for the portfolio company')
   # Cleared here (rather than at scenario start) so setup emails - e.g. from creating the
   # investor/entity - don't get swept into the "no error email" check below.
   ActionMailer::Base.deliveries.clear
-  visit(investor_path(@portfolio_company))
+  # Kpis is a dropdown tab on the stakeholder page; ?tab= opens the screen directly
+  visit(investor_path(@portfolio_company, tab: "kpis-tab"))
   page.execute_script("document.body.style.zoom = '80%'")
-  click_on("Kpis")
   sleep(2)
 end
 
@@ -124,9 +124,9 @@ end
 # And Given I upload a kpi mappings file for the company
 And('Given I upload a kpi mappings file for the company') do
   @portfolio_company ||= Investor.portfolio_companies.last
-  visit(investor_path(@portfolio_company))
+  # Kpis is a dropdown tab on the stakeholder page; ?tab= opens the screen directly
+  visit(investor_path(@portfolio_company, tab: "kpi-mappings-tab"))
   page.execute_script("document.body.style.zoom = '80%'")
-  click_on("Kpi Mapping")
   sleep(2)
   click_on("Upload")
   sleep(2)
@@ -172,8 +172,8 @@ Then('the KPIs must have the data in the sheet') do
 end
 
 Then('when I setup the KPI mappings for the portfolio company') do
-  visit(investor_path(@portfolio_company))
-  click_on("Kpi Mapping")
+  # Kpis is a dropdown tab on the stakeholder page; ?tab= opens the screen directly
+  visit(investor_path(@portfolio_company, tab: "kpi-mappings-tab"))
   page.execute_script('window.scrollTo(0, document.body.scrollHeight);')
   sleep(2)
   click_on("Generate From Last Report")
@@ -407,11 +407,9 @@ Given('the following KPI mappings exist for the portfolio company:') do |table|
 end
 
 Given('I am on the KPI upload page for the portfolio company') do
-  visit(investor_path(@portfolio_company))
-  within("#investor_tabs") do
-    click_on("Kpis")
-    sleep(1)
-  end
+  # Kpis is a dropdown tab on the stakeholder page; ?tab= opens the screen directly
+  visit(investor_path(@portfolio_company, tab: "kpis-tab"))
+  sleep(1)
 
   click_on("Actions")
   click_on("New")

@@ -1,46 +1,37 @@
 <div class="associated_entity" data-controller="tabs tabdetails">
 
+    <%
+      # Screens grouped under each dropdown tab (layouts/_dropdown_tab), filtered to what this entity can see
+      fd = ->(key) { t("funds.fund_details.#{key}") }
+      hint = ->(key) { t("funds.fund_details.hints.#{key}") }
+      cash_flow_tabs = [
+        { pane: "capital-calls-tab", icon: "ti-arrow-down-left", label: fd.(:calls), hint: hint.(:calls), id: "capital_calls_tab" },
+        { pane: "capital-distributions-tab", icon: "ti-arrow-up-right", label: fd.(:distributions), hint: hint.(:distributions) }
+      ]
+      performance_tabs = [
+        { pane: "fund-ratios-tab", icon: "ti-percentage", label: fd.(:ratios), hint: hint.(:ratios) },
+        ({ pane: "portfolio-investments-tab", icon: "ti-briefcase", label: fd.(:portfolio), hint: hint.(:portfolio) } if fund.entity.permissions.enable_fund_portfolios?)
+      ].compact
+      manage_tabs = [
+        { pane: "tasks-tab", icon: "ti-list-check", label: fd.(:tasks), hint: hint.(:tasks) },
+        { pane: "access-rights-tab", icon: "ti-lock", label: fd.(:access), hint: hint.(:access) },
+        { pane: "notifications-tab", icon: "ti-bell", label: fd.(:notifications), hint: hint.(:notifications) }
+      ]
+    %>
     <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row" role="tablist">
 
       <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#commitments-tab">
-        <%= t('funds.fund_details.commitments') %>
+        <i class="ti ti-file-certificate me-1"></i><%= fd.(:commitments) %>
       </a>
 
-      <% unless false && fund.cat3? %>
-        <a id="capital_calls_tab" class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#capital-calls-tab">
-          <%= t('funds.fund_details.calls') %>
-        </a>
-      <% end %>
-
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#capital-distributions-tab">
-        <%= t('funds.fund_details.distributions') %>
-      </a>
-
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#fund-ratios-tab">
-        <%= t('funds.fund_details.ratios') %>
-      </a>
-
-      <% if fund.entity.permissions.enable_fund_portfolios? %>
-        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#portfolio-investments-tab">
-          <%= t('funds.fund_details.portfolio') %>
-        </a>
-      <% end %>
+      <%= render "layouts/dropdown_tab", icon: "ti-cash", label: fd.(:cash_flows), items: cash_flow_tabs %>
+      <%= render "layouts/dropdown_tab", icon: "ti-chart-line", label: fd.(:performance), items: performance_tabs %>
 
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" id="documents_tab" href="#docs-tab">
-        <%= t('funds.fund_details.documents') %>
+        <i class="ti ti-file-text me-1"></i><%= fd.(:documents) %>
       </a>
 
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#tasks-tab">
-        <%= t('funds.fund_details.tasks') %>
-      </a>
-
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#access-rights-tab">
-        <%= t('funds.fund_details.access') %>
-      </a>
-
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#notifications-tab">
-        Notifications
-      </a>
+      <%= render "layouts/dropdown_tab", icon: "ti-settings", label: fd.(:manage), items: manage_tabs %>
 
     </nav>
 

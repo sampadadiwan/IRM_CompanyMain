@@ -1,43 +1,45 @@
+<%
+  # Access permissions decide which Access screens are listed
+  can_update = policy(investor).update?
+  show_employee_access = can_update && current_user.has_cached_role?(:company_admin)
+  # ?tab=access-rights-tab links (e.g. from access-right rows) land on the first access-rights screen shown
+  employee_access_pane_id = "access-rights-tab"
+  investor_access_pane_id = show_employee_access ? "access_rights_for_investors_tab" : "access-rights-tab"
+
+  # Screens grouped under each dropdown tab (layouts/_dropdown_tab), filtered to what this user can see
+  instrument_tabs = [
+    { pane: "instruments-tab", icon: "ti-certificate", label: t('investor_details_nav.instruments'), hint: t('investor_details_nav_hints.instruments') },
+    { pane: "cashflows-tab", icon: "ti-coins", label: t('investor_details_nav.portfolio_income'), hint: t('investor_details_nav_hints.portfolio_income') },
+    { pane: "stock-adjustments-tab", icon: "ti-adjustments", label: t('investor_details_nav.stock_adjustments'), hint: t('investor_details_nav_hints.stock_adjustments') }
+  ]
+  kpi_tabs = if current_user.enable_kpis
+               [{ pane: "kpis-tab", icon: "ti-chart-bar", label: t('investor_details_nav.kpis'), hint: t('investor_details_nav_hints.kpis') },
+                { pane: "kpi-mappings-tab", icon: "ti-arrows-shuffle", label: t('investor_details_nav.kpi_mapping'), hint: t('investor_details_nav_hints.kpi_mapping') }]
+             else
+               []
+             end
+  access_tabs = [
+    ({ pane: employee_access_pane_id, icon: "ti-building", label: t('investor_details_nav.employee_access'), hint: t('investor_details_nav_hints.employee_access') } if show_employee_access),
+    ({ pane: investor_access_pane_id, icon: "ti-shield-lock", label: t('investor_details_nav.investor_access'), hint: t('investor_details_nav_hints.investor_access') } if can_update),
+    { pane: "investors-tab", icon: "ti-users", label: t('investor_details_nav.users'), hint: t('investor_details_nav_hints.users'), id: "stakeholder_users_tab" }
+  ].compact
+%>
 <div class="associated_entity" data-controller="tabs tabdetails">
+  <%# Top-level tabs. Instruments, Kpis and Access are dropdown tabs (layouts/_dropdown_tab) that each
+      open a menu of their screens. Every screen is a pane in the one tab-content below, so
+      ?tab=<pane id> deep links open it directly %>
   <nav id="investor_tabs" class="nav nav-pills nav-justified p-3 mb-3 rounded card flex-row"  role="tablist">
 
     <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#valuations-tab">
-      <%= t('investor_details_nav.valuations') %>
+      <i class="ti ti-trending-up me-1"></i><%= t('investor_details_nav.valuations') %>
     </a>
     <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#portfolio-investments-tab">
-      <%= t('investor_details_nav.portfolio_investments') %>
+      <i class="ti ti-briefcase me-1"></i><%= t('investor_details_nav.portfolio_investments') %>
     </a>
 
-    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#instruments-tab">
-      <%= t('investor_details_nav.instruments') %>
-    </a>
-
-    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#cashflows-tab">
-      <%= t('investor_details_nav.portfolio_income') %>
-    </a>
-
-    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#stock-adjustments-tab">
-      <%= t('investor_details_nav.stock_adjustments') %>
-    </a>
-
-    <% if current_user.enable_kpis #&& current_user.curr_role_investor? %>
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#kpis-tab">
-        <%= t('investor_details_nav.kpis') %>
-      </a>
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#kpi-mappings-tab">
-        <%= t('investor_details_nav.kpi_mapping') %>
-      </a>
-    <% end %>
-
-    <% if policy(investor).update? %>
-        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#access-rights-tab">
-          <%= t('investor_details_nav.access_rights') %>
-        </a>
-    <% end %>
-
-    <a id="stakeholder_users_tab" class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#investors-tab">
-      <%= t('investor_details_nav.users') %>
-    </a>
+    <%= render "layouts/dropdown_tab", icon: "ti-certificate", label: t('investor_details_nav.instruments'), items: instrument_tabs %>
+    <%= render "layouts/dropdown_tab", icon: "ti-chart-bar", label: t('investor_details_nav.kpis'), items: kpi_tabs %>
+    <%= render "layouts/dropdown_tab", icon: "ti-lock", label: t('investor_details_nav.access'), items: access_tabs %>
 
   </nav>
 
@@ -59,6 +61,7 @@
       </div>
     </div>
 
+    <%# Instruments menu %>
     <div id="instruments-tab" class="tab-pane fade">
       <div id="investment_instruments" class="associated_entity">
         <%= turbo_frame_tag "investment_instruments_list", target: "_top", src: investment_instruments_path(portfolio_company_id: investor.id), loading: :lazy do %>
@@ -75,68 +78,47 @@
       </div>
     </div>
 
-    <div id="kpis-tab" class="tab-pane fade">
-      <div id="kpis" class="associated_entity">
-        <%= turbo_frame_tag "kpi_reports_list", target: "_top", src: kpi_reports_path(portfolio_company_id: investor.id, entity_id: current_user.entity_id, grid_view: true), loading: :lazy do %>
-          <%= render "/layouts/loading" %>
-        <% end %>
-      </div>
-    </div>
-
-    <div id="kpi-mappings-tab" class="tab-pane fade">
-      <div id="investor_kpi_mappings" class="associated_entity">
-        <%= turbo_frame_tag "investor_kpi_mappings_frame", target: "_top", src: investor_kpi_mappings_path(investor_id: investor.id), loading: :lazy do %>
-          <%= render "/layouts/loading" %>
-        <% end %>
-      </div>
-    </div>
-
     <div id="stock-adjustments-tab" class="tab-pane fade">
       <%= turbo_frame_tag "stock_adjustments_frame", target: "_top", src: stock_adjustments_path(portfolio_company_id: investor.id), loading: :lazy do %>
         <%= render "/layouts/loading" %>
       <% end %>
     </div>
 
-    <div id="access-rights-tab" class="tab-pane fade in">
-        <div id="access_rights" class="associated_entity">
-
-          <% if current_user.has_cached_role?(:company_admin) %>
-            <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  role="tablist">
-
-
-              <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#access_rights_to_investors_tab">
-                <%= t('investor_details_nav.employee_access') %>
-              </a>
-
-
-              <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#access_rights_for_investors_tab">
-                <%= t('investor_details_nav.investor_access') %>
-              </a>
-
-            </nav>
+    <%# Kpis menu %>
+    <% if current_user.enable_kpis %>
+      <div id="kpis-tab" class="tab-pane fade">
+        <div id="kpis" class="associated_entity">
+          <%= turbo_frame_tag "kpi_reports_list", target: "_top", src: kpi_reports_path(portfolio_company_id: investor.id, entity_id: current_user.entity_id, grid_view: true), loading: :lazy do %>
+            <%= render "/layouts/loading" %>
           <% end %>
-          <div class="tab-content">
-
-            <% if current_user.has_cached_role?(:company_admin) %>
-              <div id="access_rights_to_investors_tab" class="tab-pane show active">
-                <%= turbo_frame_tag "investor_access_rights_frame", target: "_top", loading: :lazy,  src: access_rights_path(owner_id: investor.id, owner_type: "Investor", entity_id: investor.entity_id, form_type: "investor_form", frame: "investor_access_rights_frame") do %>
-
-                <% end %>
-              </div>
-            <% end %>
-
-            <div id="access_rights_for_investors_tab" class="tab-pane <%= current_user.has_cached_role?(:company_admin) ? 'fade' : 'show active' %>">
-              <%= turbo_frame_tag "access_rights_frame", target: "_top", loading: :lazy,  src: access_rights_path(investor_id: investor.id , entity_id: current_user.entity_id, form_type: "none", owner_id: investor.id, owner_type: "Investor", with_deleted: true)  do %>
-
-              <% end %>
-            </div>
-
-          </div>
-
         </div>
-    </div>
+      </div>
 
-    <div id="investors-tab" class="tab-pane fade in">
+      <div id="kpi-mappings-tab" class="tab-pane fade">
+        <div id="investor_kpi_mappings" class="associated_entity">
+          <%= turbo_frame_tag "investor_kpi_mappings_frame", target: "_top", src: investor_kpi_mappings_path(investor_id: investor.id), loading: :lazy do %>
+            <%= render "/layouts/loading" %>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+
+    <%# Access menu %>
+    <% if show_employee_access %>
+      <div id="<%= employee_access_pane_id %>" class="tab-pane fade">
+        <%= turbo_frame_tag "investor_access_rights_frame", target: "_top", loading: :lazy,  src: access_rights_path(owner_id: investor.id, owner_type: "Investor", entity_id: investor.entity_id, form_type: "investor_form", frame: "investor_access_rights_frame") do %>
+        <% end %>
+      </div>
+    <% end %>
+
+    <% if can_update %>
+      <div id="<%= investor_access_pane_id %>" class="tab-pane fade">
+        <%= turbo_frame_tag "access_rights_frame", target: "_top", loading: :lazy,  src: access_rights_path(investor_id: investor.id , entity_id: current_user.entity_id, form_type: "none", owner_id: investor.id, owner_type: "Investor", with_deleted: true)  do %>
+        <% end %>
+      </div>
+    <% end %>
+
+    <div id="investors-tab" class="tab-pane fade">
       <div id="investor_accesses" class="associated_entity">
         <% params[:investor_id] = investor.id %>
         <%= render "/investor_accesses/index", investor_accesses: investor.investor_accesses.includes(:user, :granter),

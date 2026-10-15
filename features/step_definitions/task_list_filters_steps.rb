@@ -33,7 +33,7 @@ end
 # (here "task_list", lazily, once the tab is shown).
 When("I open the investor's Tasks tab") do
   visit investor_path(@investor)
-  within('#investor_tabs') { click_on('Tasks') }
+  within('#investor_tabs') { click_tab('Tasks') } # under the stakeholder page's Manage dropdown
   expect(page).to have_css('turbo-frame#task_list table#tasks', wait: 10)
 end
 

@@ -3,44 +3,47 @@
 %>
 
 <div class="associated_entity" data-controller="tabs tabdetails">
+  <%
+    # Access permissions decide which Access screens are listed (same rules as before: Investor Access
+    # for anyone who can update the stakeholder, Employee Access also needs company admin)
+    can_update = policy(investor).update?
+    show_employee_access = can_update && current_user.has_cached_role?(:company_admin)
+    # ?tab=access-rights-tab links (e.g. from access-right rows) land on the first access-rights screen shown
+    employee_access_pane_id = "access-rights-tab"
+    investor_access_pane_id = show_employee_access ? "access_rights_for_investors_tab" : "access-rights-tab"
+
+    # Screens grouped under each dropdown tab (layouts/_dropdown_tab), filtered to what this user can see
+    holding_tabs = if current_user.entity.is_fund?
+                     [{ pane: "commitments-tab", icon: "ti-file-certificate", label: t('investor_details_nav.commitments'), hint: t('investor_details_nav_hints.commitments') },
+                      { pane: "fund-units-tab", icon: "ti-stack-2", label: t('investor_details_nav.units'), hint: t('investor_details_nav_hints.units') }]
+                   elsif investor.entity.permissions.enable_investments?
+                     [{ pane: "investments-tab", icon: "ti-briefcase", label: t('investor_details_nav.investments'), hint: t('investor_details_nav_hints.investments') }]
+                   else
+                     []
+                   end
+    manage_tabs = [
+      { pane: "tasks-tab", icon: "ti-list-check", label: t('investor_details_nav.tasks'), hint: t('investor_details_nav_hints.tasks') },
+      ({ pane: employee_access_pane_id, icon: "ti-building", label: t('investor_details_nav.employee_access'), hint: t('investor_details_nav_hints.employee_access') } if show_employee_access),
+      ({ pane: investor_access_pane_id, icon: "ti-shield-lock", label: t('investor_details_nav.investor_access'), hint: t('investor_details_nav_hints.investor_access') } if can_update),
+      ({ pane: "emails-tab", icon: "ti-mail", label: t('investor_details_nav.emails'), hint: t('investor_details_nav_hints.emails') } if current_user.has_cached_role?(:company_admin))
+    ].compact
+  %>
+  <%# Commitments and Manage are dropdown tabs; every screen is a pane in the one tab-content below,
+      so ?tab=<pane id> deep links open it directly %>
   <nav id="investor_tabs" class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  role="tablist">
 
       <a id="stakeholder_users_tab" class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#investors-tab">
-        <%= label %>
+        <i class="ti ti-users me-1"></i><%= label %>
       </a>
 
       <% if investor.entity.permissions.enable_kycs? %>
         <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#kycs-tab">
-            <%= t('investor_details_nav.kyc') %>
+            <i class="ti ti-id me-1"></i><%= t('investor_details_nav.kyc') %>
         </a>
       <% end %>
 
-      <% if current_user.entity.is_fund? %>
-        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#commitments-tab"><%= t('investor_details_nav.commitments') %></a>
-        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#fund-units-tab"><%= t('investor_details_nav.units') %></a>
-      <% else %>
-        <% if investor.entity.permissions.enable_investments? %>
-        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#investments-tab">
-            <%= t('investor_details_nav.investments') %>
-        </a>
-        <% end %>
-      <% end %>
-
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#tasks-tab">
-          <%= t('investor_details_nav.tasks') %>
-      </a>
-
-    <% if policy(investor).update? %>
-        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#access-rights-tab">
-          <%= t('investor_details_nav.access_rights') %>
-        </a>
-    <% end %>
-
-    <% if current_user.has_cached_role?(:company_admin) %>
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#emails-tab">
-          <%= t('investor_details_nav.emails') %>
-      </a>
-    <% end %>
+      <%= render "layouts/dropdown_tab", icon: "ti-file-certificate", label: t('investor_details_nav.commitments'), items: holding_tabs %>
+      <%= render "layouts/dropdown_tab", icon: "ti-settings", label: t('investor_details_nav.manage'), items: manage_tabs %>
 
   </nav>
 
@@ -113,44 +116,20 @@
         </div>
 
 
-      <div id="access-rights-tab" class="tab-pane fade in">
-          <div id="access_rights" class="associated_entity">
+      <%# Access screens (Manage menu) %>
+      <% if show_employee_access %>
+        <div id="<%= employee_access_pane_id %>" class="tab-pane fade">
+          <%= turbo_frame_tag "investor_access_rights_frame", target: "_top", loading: :lazy,  src: access_rights_path(owner_id: investor.id, owner_type: "Investor", entity_id: investor.entity_id, form_type: "investor_form", frame: "investor_access_rights_frame") do %>
+          <% end %>
+        </div>
+      <% end %>
 
-            <% if current_user.has_cached_role?(:company_admin) %>
-              <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  role="tablist">
-
-                  <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#access_rights_to_investors_tab">
-                    <%= t('investor_details_nav.employee_access') %>
-                  </a>
-
-
-                  <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#access_rights_for_investors_tab">
-                    <%= t('investor_details_nav.investor_access') %>
-                  </a>
-
-              </nav>
-            <% end %>
-
-            <div class="tab-content">
-
-              <% if current_user.has_cached_role?(:company_admin) %>
-                <div id="access_rights_to_investors_tab" class="tab-pane show active">
-                  <%= turbo_frame_tag "investor_access_rights_frame", target: "_top", loading: :lazy,  src: access_rights_path(owner_id: investor.id, owner_type: "Investor", entity_id: investor.entity_id, form_type: "investor_form", frame: "investor_access_rights_frame") do %>
-
-                  <% end %>
-                </div>
-              <% end %>
-
-              <div id="access_rights_for_investors_tab" class="tab-pane <%= current_user.has_cached_role?(:company_admin) ? 'fade' : 'show active' %>">
-                <%= turbo_frame_tag "access_rights_frame", target: "_top", loading: :lazy,  src: access_rights_path(investor_id: investor.id , entity_id: current_user.entity_id, form_type: "none", owner_id: investor.id, owner_type: "Investor", with_deleted: true)  do %>
-
-                <% end %>
-              </div>
-
-            </div>
-
-          </div>
-      </div>
+      <% if can_update %>
+        <div id="<%= investor_access_pane_id %>" class="tab-pane fade">
+          <%= turbo_frame_tag "access_rights_frame", target: "_top", loading: :lazy,  src: access_rights_path(investor_id: investor.id , entity_id: current_user.entity_id, form_type: "none", owner_id: investor.id, owner_type: "Investor", with_deleted: true)  do %>
+          <% end %>
+        </div>
+      <% end %>
 
       <% if policy(IncomingEmail.new).index? %>
         <div id="emails-tab" class="tab-pane fade">

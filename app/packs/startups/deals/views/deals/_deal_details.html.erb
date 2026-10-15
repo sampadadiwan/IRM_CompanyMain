@@ -8,34 +8,38 @@
   show_investors ||= "Yes"
 %>
 <div class="associated_entity" data-controller="tabs tabdetails">
+  <%
+    # Screens grouped under each dropdown tab (layouts/_dropdown_tab), filtered to what this deal shows
+    deal_tabs = [
+      ({ pane: "deal-tab", icon: "ti-briefcase", label: "Deal", hint: "Deal details", id: "deal_tab" } if show_deal == "Yes"),
+      ({ pane: "investors-tab", icon: "ti-users", label: "Deal Investors", hint: "Investors in this deal", id: "deal_investments" } if show_investors == "Yes"),
+      { pane: "activities-tab", icon: "ti-route", label: "Deal Steps", hint: "Steps each deal investor goes through" }
+    ].compact
+    agent_enabled = deal.entity.support_agents.set?(:deals_report_agent)
+    manage_tabs = [
+      { pane: "tasks-tab", icon: "ti-list-check", label: "Tasks", hint: "Tasks on this deal and its investors" },
+      { pane: "reminders-tab", icon: "ti-alarm", label: "Reminders", hint: "Scheduled reminders" },
+      { pane: "notifications-tab", icon: "ti-bell", label: "Custom Notifications", hint: "Custom email notifications" },
+      { pane: "access-tab", icon: "ti-lock", label: "Access Rights", hint: "Who can see this deal" },
+      # Shown greyed out (not hidden) when the agent is off, so users know the setting exists
+      { pane: "agent-settings-tab", icon: "ti-robot", label: "Agent Settings",
+        hint: agent_enabled ? "Deals Report Agent settings" : "Agent disabled - contact support", disabled: !agent_enabled }
+    ]
+    # Pending emails the Deal Update Agent couldn't auto-file, shown as a badge on the Warehouse tab
+    warehouse_count = deal.warehouse_items.pending.count
+  %>
   <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  role="tablist">
-    <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#charts-tab">Charts</a>
-    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#access-tab">Access Rights</a>
-    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab">Documents</a>
-    <% if show_deal == "Yes" %>
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#deal-tab" id="deal_tab">Deal</a>
-    <% end %>
-    <% if show_investors == "Yes" %>
-      <a  class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#investors-tab" id="deal_investments">Deal Investors</a>
-    <% end %>
-    <a  class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#activities-tab">Deal Steps</a>
-    <a  class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#tasks-tab">Tasks</a>
-    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#reminders-tab">Reminders</a>
-    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#notifications-tab">Custom Notifications</a>
-        <%# Warehouse tab — pending emails the Deal Update Agent couldn't auto-file %>
+    <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#charts-tab"><i class="ti ti-chart-bar me-1"></i>Charts</a>
+    <%= render "layouts/dropdown_tab", icon: "ti-briefcase", label: "Deal", items: deal_tabs %>
+    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab"><i class="ti ti-file-text me-1"></i>Documents</a>
+    <%# Warehouse stays a tab of its own so its pending-count badge is always visible %>
     <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#warehouse-tab">
-      Warehouse
-      <% warehouse_count = deal.warehouse_items.pending.count %>
+      <i class="ti ti-inbox me-1"></i>Warehouse
       <% if warehouse_count > 0 %>
         <span class="badge bg-warning"><%= warehouse_count %></span>
       <% end %>
     </a>
-
-    <% if deal.entity.support_agents.set?(:deals_report_agent) %>
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#agent-settings-tab">Agent Settings</a>
-    <% else %>
-      <span class="nav-link disabled text-muted" style="opacity:0.65; cursor:default;" data-bs-toggle="tooltip" data-bs-title="Deals Report Agent is disabled. Contact support to enable it">Agent Settings <i class="ti ti-lock ms-1" style="font-size:0.7rem"></i></span>
-    <% end %>
+    <%= render "layouts/dropdown_tab", icon: "ti-settings", label: "Manage", items: manage_tabs %>
   </nav>
   <div class="tab-content">
     <div id="charts-tab" class="tab-pane fade in show active">
