@@ -110,18 +110,8 @@
     // stat cards too and, loading after this stylesheet, would otherwise cancel the
     // equal-height fix — causing mismatched card sizes and stray gaps on kedaara pages.
     height: 100% !important;
-
-    // Card body isn't a flex column by default, so the progress-bar "underline"
-    // sits right after the (variably-wrapping) subtitle text instead of aligning
-    // across cards. Push it to the bottom of the now-equal-height card.
-    .card-body {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .progress-bar {
-      margin-top: auto;
-    }
+    // (The card body used to be a flex column to push the bottom progress bar down; the
+    // border-top card style dropped that bar, and the column stacked the icon under the text.)
   }
 }
 

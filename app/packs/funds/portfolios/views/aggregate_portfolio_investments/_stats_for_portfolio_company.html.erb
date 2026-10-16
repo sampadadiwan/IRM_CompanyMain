@@ -1,8 +1,17 @@
+<%# Cards come from NumberStatsComponent. Cache digests track partials, not component templates — reword this note when the card markup changes so the cached fragment below is rebuilt (last: border-top card style, 2026-10-15). %>
 
 <% field_names ||= []%>
+<%# Optional, used by the investor show page: card_paths links a card (by subtitle) to the tab it
+    summarises, extra_cards are appended to the same row. Both default to the dashboard widget's
+    unlinked cards %>
+<% card_paths ||= {} %>
+<% extra_cards ||= [] %>
+<% fields ||= [] %>
 <% if portfolio_company %>
 
-  <% cache_if(current_user != nil, cache_key(["api_stats", portfolio_company, params[:display_currency], show_currency_filter]), expires_in: 5.day) do %>
+  <%# fields, force_units, card_paths and extra_cards change the rendered cards, so they are part of the key —
+      otherwise the dashboard widget and the show page would serve each other's fragment %>
+  <% cache_if(current_user != nil, cache_key(["api_stats", portfolio_company, params[:display_currency], show_currency_filter, fields, force_units, card_paths.to_a, extra_cards.map { |c| [c[:subtitle], c[:stat].to_s, c[:path]] }]), expires_in: 5.day) do %>
     <%
       error = nil
       begin
@@ -28,44 +37,27 @@
         debug_mode = params[:debug] == 'true'
         debug_rates = [] if debug_mode
 
-        bought_amount_cents = portfolio_company.portfolio_investments.buys.sum do |pi|
-          converted = ExchangeRate.convert(pi.fund.currency, target_currency, pi.amount_cents, pi.investment_date, entity_id) || 0
-          debug_rates << { field: "Bought Amount", pi_id: pi.id, from: pi.fund.currency, to: target_currency, date: pi.investment_date, rate: ExchangeRate.get_rate(pi.fund.currency, target_currency, pi.investment_date, entity_id), original_cents: pi.amount_cents, converted_cents: converted } if debug_mode
-          converted
+        # Summed in SQL per (currency, date) and converted once per group; only the requested fields are worked out
+        stats = PortfolioCompanyStats.new(portfolio_company, target_currency, debug: debug_mode)
+        totals = stats.cents(fields)
+        debug_rates = stats.debug_rates if debug_mode
+        # Money card for a field, with "how it is worked out" as its tooltip
+        money_card = lambda do |subtitle, color, icon, tooltip|
+          { path: nil, stat: money_to_currency(Money.new(totals[subtitle], target_currency), params, decimals: decimals),
+            subtitle: subtitle, progress_bar_color: color, text_info: icon, tooltip: tooltip }
         end
-        sold_amount_cents = portfolio_company.portfolio_investments.sells.sum do |pi|
-          converted = ExchangeRate.convert(pi.fund.currency, target_currency, pi.amount_cents, pi.investment_date, entity_id) || 0
-          debug_rates << { field: "Sold Amount", pi_id: pi.id, from: pi.fund.currency, to: target_currency, date: pi.investment_date, rate: ExchangeRate.get_rate(pi.fund.currency, target_currency, pi.investment_date, entity_id), original_cents: pi.amount_cents, converted_cents: converted } if debug_mode
-          converted
-        end
-        fmv_cents = portfolio_company.portfolio_investments.includes(:valuation).sum do |pi|
-          conversion_date = pi.valuation.present? ? pi.valuation.valuation_date : pi.investment_date # need this as valuation is optional in PI
-          converted = ExchangeRate.convert(pi.fund.currency, target_currency, pi.fmv_cents, conversion_date, entity_id) || 0
-          debug_rates << { field: "FMV", pi_id: pi.id, from: pi.fund.currency, to: target_currency, date: conversion_date, rate: ExchangeRate.get_rate(pi.fund.currency, target_currency, conversion_date, entity_id), original_cents: pi.fmv_cents, converted_cents: converted } if debug_mode
-          converted
-        end
-        cost_of_remaining_cents = portfolio_company.portfolio_investments.sum do |pi|
-          converted = ExchangeRate.convert(pi.fund.currency, target_currency, pi.cost_of_remaining_cents, pi.investment_date, entity_id) || 0
-          debug_rates << { field: "Cost of Remaining", pi_id: pi.id, from: pi.fund.currency, to: target_currency, date: pi.investment_date, rate: ExchangeRate.get_rate(pi.fund.currency, target_currency, pi.investment_date, entity_id), original_cents: pi.cost_of_remaining_cents, converted_cents: converted } if debug_mode
-          converted
-        end
-        income_cents = portfolio_company.portfolio_cashflows.sum do |pc|
-          converted = ExchangeRate.convert(pc.investment_instrument.currency, target_currency, pc.amount_cents, pc.payment_date, entity_id) || 0
-          debug_rates << { field: "Income", pi_id: pc.id, from: pc.investment_instrument.currency, to: target_currency, date: pc.payment_date, rate: ExchangeRate.get_rate(pc.investment_instrument.currency, target_currency, pc.payment_date, entity_id), original_cents: pc.amount_cents, converted_cents: converted } if debug_mode
-          converted
-        end
-        sold_plus_fmv_cents = sold_amount_cents + fmv_cents
-
 
         all_cards_data = [
-          { path: nil, stat: money_to_currency(Money.new(bought_amount_cents, target_currency), params, decimals: decimals), subtitle: "Bought Amount", progress_bar_color: "success", text_info: "plus" },
-          { path: nil, stat: money_to_currency(Money.new(sold_amount_cents, target_currency), params, decimals: decimals), subtitle: "Sold Amount", progress_bar_color: "danger", text_info: "minus" },
-          { path: nil, stat: money_to_currency(Money.new(fmv_cents, target_currency), params, decimals: decimals), subtitle: "FMV", progress_bar_color: "info", text_info: "graph" },
-          { path: nil, stat: money_to_currency(Money.new(cost_of_remaining_cents, target_currency), params, decimals: decimals), subtitle: "Cost Of Remaining", progress_bar_color: "danger", text_info: "currency-dollar" },
-          { path: nil, stat: money_to_currency(Money.new(income_cents, target_currency), params, decimals: decimals), subtitle: "Income", progress_bar_color: "success", text_info: "cash" },
-          { path: nil, stat: money_to_currency(Money.new(sold_plus_fmv_cents, target_currency), params, decimals: decimals), subtitle: "Sold + FMV", progress_bar_color: "warning", text_info: "coins" }
-        ]
+          ["Bought Amount", "success", "plus", "Sum of every buy of this company across all funds, converted from the fund's currency to #{target_currency} at the rate on the investment date."],
+          ["Sold Amount", "danger", "minus", "Sum of every sell of this company across all funds, converted from the fund's currency to #{target_currency} at the rate on the investment date."],
+          ["FMV", "info", "graph", "Fair market value of every holding, converted to #{target_currency} at the rate on its valuation date (the investment date if it has no valuation)."],
+          ["Cost Of Remaining", "danger", "currency-dollar", "Cost of the shares still held, converted to #{target_currency} at the rate on the investment date."],
+          ["Income", "success", "cash", "Sum of all portfolio income cashflows, converted from the instrument's currency to #{target_currency} at the rate on the payment date."],
+          ["Sold + FMV", "warning", "coins", "Sold Amount plus FMV: what has been realised plus the value still held, in #{target_currency}."]
+        ].select { |subtitle, *| totals.key?(subtitle) }.map { |args| money_card.call(*args) }
         cards_data = fields.blank? ? all_cards_data : fields.map { |f| all_cards_data.find { |card| card[:subtitle] == f } }.compact
+        # Link cards to their tabs (show page only) and append the caller's extra cards to the same row
+        cards_data = cards_data.map { |card| card.merge(path: card_paths[card[:subtitle]]) } + extra_cards
 
       rescue => e
         error = "Error fetching portfolio company stats: #{e.message}"
@@ -148,6 +140,7 @@
                         fs_size: "5 font-weight-bold",
                         progress_bar_color: card_data[:progress_bar_color],
                         text_info: card_data[:text_info],
+                        tooltip: card_data[:tooltip],
                         css_class: card_row_classes[index],
                         css_style: card_row_styles[index]
             )) %>
@@ -161,7 +154,7 @@
               <thead class="table-light">
                 <tr>
                   <th>Field</th>
-                  <th>ID</th>
+                  <th>Rows</th>
                   <th>From</th>
                   <th>To</th>
                   <th>Date Used</th>
@@ -174,7 +167,7 @@
                 <% debug_rates.each do |r| %>
                   <tr class="<%= 'table-warning' if r[:rate].nil? %>">
                     <td><%= r[:field] %></td>
-                    <td><%= r[:pi_id] %></td>
+                    <td><%= r[:rows] %></td>
                     <td><%= r[:from] %></td>
                     <td><%= r[:to] %></td>
                     <td><%= r[:date] %></td>

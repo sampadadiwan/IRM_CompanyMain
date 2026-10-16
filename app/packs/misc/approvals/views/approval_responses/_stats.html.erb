@@ -11,19 +11,18 @@
     %>
     <div class="col">
         <a href="<%= approval_responses_path(approval_id: approval&.id, status:) %>" data-turbo-frame="approval_responses">
-            <div class="card">
+            <div class="card border-top stat-card-accent border-<%=color%> shadow-sm">
             <div class="card-body">
-                <div class="d-flex align-items-center mb-3">
+                <div class="d-flex align-items-center">
                 <div>
                     <h3 class="fs-8"><%= count %></h3>
-                    <h6 class="card-subtitle mb-1 text-muted"><%= status %></h6>
+                    <h6 class="card-subtitle mb-1 text-<%=color%>"><%= status %></h6>
                 </div>
                 <div class="ms-auto">
-                    <span class="text-<%=color%> display-6"><i class="ti ti-clipboard-text"></i></span>
+                    <span class="text-<%=color%> display-6 number-stats-icon"><i class="ti ti-clipboard-text"></i></span>
                 </div>
                 </div>
 
-                <div class="progress-bar text-bg-<%=color%>" role="progressbar" style="width: 100%; height: 6px;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
 
             </div>
             </div>
@@ -34,19 +33,18 @@
     <% color = "success" %>
     <div class="col">
         <a href="<%= approval_responses_path(approval_id: approval&.id, status: nil) %>" data-turbo-frame="approval_responses">
-            <div class="card">
+            <div class="card border-top stat-card-accent border-<%=color%> shadow-sm">
             <div class="card-body">
-                <div class="d-flex align-items-center mb-3">
+                <div class="d-flex align-items-center">
                 <div>
                     <h3 class="fs-8"><%= approval_responses.count %></h3>
-                    <h6 class="card-subtitle mb-1 text-muted">All</h6>
+                    <h6 class="card-subtitle mb-1 text-<%=color%>">All</h6>
                 </div>
                 <div class="ms-auto">
-                    <span class="text-<%=color%> display-6"><i class="ti ti-clipboard-text"></i></span>
+                    <span class="text-<%=color%> display-6 number-stats-icon"><i class="ti ti-clipboard-text"></i></span>
                 </div>
                 </div>
 
-                <div class="progress-bar text-bg-<%=color%>" role="progressbar" style="width: 100%; height: 6px;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
 
             </div>
             </div>

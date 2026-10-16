@@ -1,3 +1,4 @@
+<%# Cards come from NumberStatsComponent. Cache digests track partials, not component templates — reword this note when the card markup changes so the cached fragment below is rebuilt (last: border-top card style, 2026-10-15). %>
 <% if fund %>
   <% cache_if(current_user != nil, cache_key(["api_stats", fund]), expires_in: 5.day) do %>
     <% params[:force_units] = fund.default_currency_units %>

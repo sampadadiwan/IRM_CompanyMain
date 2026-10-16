@@ -1,6 +1,6 @@
 # app/components/fund_card_component.rb
 class NumberStatsComponent < ViewComponent::Base
-  def initialize(path:, amount:, subtitle:, progress_bar_color:, fs_size: 5, text_info: nil, css_class: "", css_style: "", raw_amount: nil, tooltip: nil)
+  def initialize(path:, amount:, subtitle:, progress_bar_color:, fs_size: 5, text_info: nil, css_class: "", css_style: "", raw_amount: nil, tooltip: nil, footnote: nil)
     super()
     @path = path
     # Stat cards are narrow: "Crores" / "Lakhs" / "Million" wrap onto a second line, so show Cr / L / M
@@ -14,6 +14,8 @@ class NumberStatsComponent < ViewComponent::Base
     @css_style = css_style
     # Optional help text: an info icon after the subtitle explains how the figure is worked out
     @tooltip = tooltip
+    # Optional muted context line under the label (e.g. "76% of committed"); nil renders nothing, as before
+    @footnote = footnote
   end
 
   # "₹383.02 Crores" -> "₹383.02 Cr" (same short forms as money_to_currency(short_units: true))
@@ -25,5 +27,5 @@ class NumberStatsComponent < ViewComponent::Base
     amount.html_safe? ? short.html_safe : short # rubocop:disable Rails/OutputSafety
   end
 
-  attr_reader :path, :amount, :raw_amount, :subtitle, :progress_bar_color, :text_info, :fs_size, :css_class, :css_style, :tooltip
+  attr_reader :path, :amount, :raw_amount, :subtitle, :progress_bar_color, :text_info, :fs_size, :css_class, :css_style, :tooltip, :footnote
 end

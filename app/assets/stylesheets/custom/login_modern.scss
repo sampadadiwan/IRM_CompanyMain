@@ -121,31 +121,6 @@
   }
 }
 
-// Entrance used by the login section that is being revealed, and by the
-// "use the other method" switch when it first appears.
-@keyframes login-section-rise {
-  from {
-    opacity: 0;
-    transform: translateY(14px);
-    filter: blur(3px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-    filter: none;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .login-section,
-  .login-section.is-revealing > * > *,
-  .login-section.is-revealing > .divider,
-  .login-mode-switch {
-    transition-duration: 0.01ms;
-    animation: none;
-  }
-}
-
 #login_page_x, #two_factor_page, #two_factor_enroll_page, #two_factor_backup_page,
 #two_factor_select_mode_page, #two_factor_enroll_whatsapp_page, #two_factor_enroll_sms_page {
   .login-container {
@@ -235,12 +210,15 @@
     font-size: 1rem;
     color: #2d3748;
     background-color: #f7fafc;
-    border: 2px solid transparent;
+    // A visible resting border, so an empty (non-autofilled) field still reads
+    // as a text box rather than a label on the white card.
+    border: 2px solid #e2e8f0;
     border-radius: 12px;
     transition: all 0.2s ease;
 
     [data-bs-theme=dark] & {
       background-color: #0f172a;
+      border-color: #334155;
       color: #f8fafc;
     }
 
@@ -367,77 +345,6 @@
     }
   }
 
-  // Each login method lives in its own section so it can fold away when the
-  // visitor picks the other one. max-height is the animatable stand-in for
-  // height:auto - 620px comfortably clears the tallest section.
-  .login-section {
-    overflow: hidden;
-    max-height: 620px;
-    // Horizontal breathing room so overflow:hidden never clips an input's
-    // focus ring, pulled back out again with the negative margin.
-    padding: 5px 8px;
-    margin: 0 -8px;
-    opacity: 1;
-    transform: none;
-    filter: none;
-    transition:
-      max-height 0.45s cubic-bezier(0.4, 0, 0.2, 1),
-      padding 0.45s cubic-bezier(0.4, 0, 0.2, 1),
-      transform 0.45s cubic-bezier(0.4, 0, 0.2, 1),
-      filter 0.35s ease,
-      opacity 0.28s ease;
-
-    &.is-collapsed {
-      max-height: 0;
-      padding-top: 0;
-      padding-bottom: 0;
-      opacity: 0;
-      transform: translateY(-12px) scale(0.96);
-      filter: blur(6px);
-      pointer-events: none;
-    }
-
-    // Staggered entrance for the section being revealed.
-    &.is-revealing > * > *,
-    &.is-revealing > .divider {
-      animation: login-section-rise 0.45s cubic-bezier(0.2, 0.7, 0.3, 1) backwards;
-    }
-
-    @for $i from 1 through 5 {
-      &.is-revealing > * > *:nth-child(#{$i}) {
-        animation-delay: 0.04s * $i + 0.06s;
-      }
-    }
-  }
-
-  .login-mode-switch {
-    display: block;
-    width: 100%;
-    margin-top: 20px;
-    padding: 10px 0;
-    background: none;
-    border: none;
-    border-radius: 12px;
-    font-size: 0.95rem;
-    font-weight: 600;
-    color: #4299e1;
-    cursor: pointer;
-    transition: color 0.2s ease, background-color 0.2s ease;
-    animation: login-section-rise 0.4s cubic-bezier(0.2, 0.7, 0.3, 1) backwards;
-
-    &:hover {
-      color: #2b6cb0;
-      background-color: rgba(66, 153, 225, 0.08);
-    }
-
-    [data-bs-theme=dark] & {
-      color: #63b3ed;
-
-      &:hover {
-        background-color: rgba(99, 179, 237, 0.12);
-      }
-    }
-  }
 
   .login-footer {
     margin-top: 24px;

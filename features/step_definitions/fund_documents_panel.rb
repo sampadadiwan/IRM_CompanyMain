@@ -75,6 +75,13 @@ When('I open the Documents section of the fund page as the investor') do
   expect(page).to have_css("#documents_frame #docs_index", wait: 15)
 end
 
+When('I open the company Documents page') do
+  # The fund side's own Documents page (DocumentsController#index), all folders in the tree view
+  visit(documents_path)
+  expect(page).to have_css("#documents_search", wait: 15)
+  expect(page).to have_css("#documents_frame #docs_index", wait: 15)
+end
+
 When('I search the documents panel for {string}') do |term|
   # Typing submits the form after a short pause (documents_search_controller), no button needed
   within("#documents_search") { fill_in("search", with: term) }
@@ -95,6 +102,16 @@ Then('the documents panel should list exactly {string}') do |names|
   page.document.synchronize(15) do
     actual = documents_panel_names
     raise Capybara::ExpectationNotMet, "Expected #{expected.inspect}, got #{actual.inspect}" unless actual.sort == expected.sort
+  end
+end
+
+Then('the documents panel should include {string}') do |names|
+  expected = split_names(names)
+  expect(page).to have_css("#documents_frame #docs_index", wait: 15)
+  # Retry until the frame has swapped in the new list; other docs may be listed too
+  page.document.synchronize(15) do
+    missing = expected - documents_panel_names
+    raise Capybara::ExpectationNotMet, "Missing #{missing.inspect} from #{documents_panel_names.inspect}" if missing.any?
   end
 end
 

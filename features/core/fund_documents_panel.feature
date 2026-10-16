@@ -126,3 +126,22 @@ Feature: Fund documents panel - LP latest documents and search
     When a documents zip "documents_upload.zip" is imported into the fund's document folder
     Then the import should create "8" documents
     And no document named like "shrine%.zip" should exist for the entity
+
+  # D18 — Edge case: on the company Documents page the fund side searches every folder - other funds' docs and docs not shared with any LP included
+  Scenario: Fund owner searches the company Documents page across all folders
+    Given I am signed in as the current user
+    When I open the company Documents page
+    And I search the documents panel for "q2 statement"
+    Then the documents panel title should be "Search results"
+    And the documents panel should list exactly "Statement - Q2 2026, Statement - Q2 2026 Draft, Statement - Q2 2026 Beta"
+    And the document "Statement - Q2 2026 Beta" should show the folder "Beta Fund"
+
+  # D19 — Edge case: clearing the search on the company Documents page brings back the full list, not one folder's docs
+  Scenario: Fund owner clears the company Documents page search
+    Given I am signed in as the current user
+    When I open the company Documents page
+    And I search the documents panel for "governance"
+    Then the documents panel should list exactly "Board Minutes"
+    When I clear the documents panel search
+    Then the documents panel title should be "Documents"
+    And the documents panel should include "Annual Report 2025, Board Minutes, Statement - Q2 2026 Beta"

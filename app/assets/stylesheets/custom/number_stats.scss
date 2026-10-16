@@ -1,0 +1,27 @@
+// ── NumberStatsComponent icon: lighter stroke ────────────────────────────────
+// The default tabler-icons face draws every icon with a 2px stroke, which looks
+// heavy at display-6 on the stat cards. The bundle in public/modernize ships the
+// same glyphs at lighter weights (-300 = 1.5px stroke), so swap the face for these
+// icons only — same size, same colour, thinner lines.
+@font-face {
+  font-family: "tabler-icons-300";
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url("/modernize/fonts/tabler-icons/fonts/tabler-icons-300.woff2") format("woff2"),
+       url("/modernize/fonts/tabler-icons/fonts/tabler-icons-300.woff") format("woff");
+}
+
+// tabler-icons.css sets `.ti::before { font-family: "tabler-icons" !important }`,
+// so this needs !important plus the extra class to win
+.number-stats-icon .ti::before {
+  font-family: "tabler-icons-300" !important;
+}
+
+// ── Stat card top accent: 2px instead of .border-top's 1px ───────────────────
+// .border-top sets the whole top border (1px) with !important, so the width needs
+// !important too; .card.stat-card-accent out-specifies the single-class utility
+// regardless of stylesheet order. Only the top edge — cards have no side borders.
+.card.stat-card-accent {
+  border-top-width: 2px !important;
+}

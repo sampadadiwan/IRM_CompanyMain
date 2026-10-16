@@ -60,21 +60,18 @@
   <% stats_types.each do |_type, data| %>
     <div class="col">
       <a href="<%= kpis_path(clean_link_params.merge(q: ransack_query_params_multiple(data[:filters]).to_json)) %>" class="text-decoration-none">
-        <div class="card h-100">
+        <div class="card h-100 border-top stat-card-accent border-<%= data[:color] %> shadow-sm">
           <div class="card-body">
-            <div class="d-flex align-items-center mb-3">
+            <div class="d-flex align-items-center">
               <div>
                 <div data-controller="counters" data-counters-value-value="<%= data[:count] %>">
                   <h3 class="fs-7" data-counters-target="output">0</h3>
                 </div>
-                <h6 class="card-subtitle mb-1 text-muted"><%= data[:subtitle] %></h6>
+                <h6 class="card-subtitle mb-1 text-<%= data[:color] %>"><%= data[:subtitle] %></h6>
               </div>
               <div class="ms-auto">
-                <span class="text-<%= data[:color] %> display-6"><i class="<%= data[:icon] %>"></i></span>
+                <span class="text-<%= data[:color] %> display-6 number-stats-icon"><i class="<%= data[:icon] %>"></i></span>
               </div>
-            </div>
-            <div class="progress" style="height: 6px;">
-              <div class="progress-bar bg-<%= data[:color] %>" role="progressbar" style="width: 100%;" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
             </div>
           </div>
         </div>

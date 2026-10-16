@@ -34,7 +34,8 @@
     "documents" => "Documents for your #{EvergreenLabels.lower(lbl.call(:capital_commitments))}"
   }
 %>
-<div class="container-fluid p-3" id="evergreen_investor_page">
+<%# tabs: a ?tab=lp_<key> link (the portal stats card's "See all") opens that section, as on the closed-ended LP page %>
+<div class="container-fluid p-3" id="evergreen_investor_page" data-controller="tabs">
   <div class="accordion ultra-cool-accordion" id="lp_accordion" data-controller="accordion-scroll">
     <% sections.each do |key, title, open| %>
       <div class="accordion-item">

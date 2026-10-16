@@ -483,6 +483,14 @@ class DocumentsController < ApplicationController
     # This is specifically for non company_admins
     @documents = @documents.where(user_id: current_user.id) unless current_user.has_cached_role?(:company_admin)
 
+    # Documents page search box: narrow this same list by name/tag, so it spans every folder
+    if params[:search].present?
+      @documents = @documents.name_or_tags_matching(params[:search])
+      # Results mix folders: retitle the panel and show each doc's folder
+      @docs_title = "Search results"
+      @show_doc_folder = true
+    end
+
     # Newest docs first
     @documents = @documents.includes(:folder).order(id: :desc)
     @documents

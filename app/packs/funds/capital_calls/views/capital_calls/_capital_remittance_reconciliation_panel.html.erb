@@ -88,8 +88,8 @@
     </div>
   </div>
 
-  <%# Same stat-card shape as investor_kycs/_stats: a row of cards, count + icon + colored
-      progress bar, one per outcome tier. Unlike that partial these don't navigate — there's
+  <%# Same stat-card shape as investor_kycs/_stats: a row of cards, count + icon, coloured
+      top border + label, one per outcome tier. Unlike that partial these don't navigate — there's
       no separate index for a single call's deposits — they filter the table below in place
       via the reconciliation-filter Stimulus controller. %>
   <% stat_cards = [
@@ -103,23 +103,22 @@
   <div class="row mb-3">
     <% stat_cards.each do |card| %>
       <div class="col">
-        <div class="card reconciliation-stat-card" role="button" tabindex="0"
+        <div class="card reconciliation-stat-card border-top stat-card-accent border-<%= card[:color] %> shadow-sm" role="button" tabindex="0"
              data-reconciliation-filter-target="card" data-filter="<%= card[:filter] %>"
              data-action="click->reconciliation-filter#toggle keydown.enter->reconciliation-filter#toggle"
              data-bs-toggle="tooltip" data-bs-title="<%= (tier_tags[card[:filter]] || funds_tags[card[:filter]])&.last %>">
           <div class="card-body">
-            <div class="d-flex align-items-center mb-3">
+            <div class="d-flex align-items-center">
               <div>
                 <div data-controller="counters" data-counters-value-value="<%= card[:count] %>">
                   <h3 class="fs-7" data-counters-target="output">0</h3>
                 </div>
-                <h6 class="card-subtitle mb-1 text-muted"><%= card[:label] %></h6>
+                <h6 class="card-subtitle mb-1 text-<%= card[:color] %>"><%= card[:label] %></h6>
               </div>
               <div class="ms-auto">
-                <span class="text-<%= card[:color] %> display-6"><i class="<%= card[:icon] %>"></i></span>
+                <span class="text-<%= card[:color] %> display-6 number-stats-icon"><i class="<%= card[:icon] %>"></i></span>
               </div>
             </div>
-            <div class="progress-bar text-bg-<%= card[:color] %>" role="progressbar" style="width: 100%; height: 6px;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
           </div>
         </div>
       </div>

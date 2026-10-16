@@ -1,0 +1,218 @@
+<%# One folio as its own card: a header (fund, KYC, folio, class, commitment date), a row of border-top stat cards
+    each with a context line, and Fund Ratios / Recent Documents panels - the same look as the LP fund page's
+    Calls and Distributions sections. Used on the LP fund page's Commitments section, and on the LP landing
+    page's Funds widget with metadata {card_type: "stats_card"} (entities/widgets/_lp_funds).
+    show_fund_name: false on the fund page, where the page already names the fund. %>
+<%
+  show_fund_name = true if local_assigns[:show_fund_name].nil?
+  fund = capital_commitment.fund
+  folio = capital_commitment.folio_id
+
+  # Crores funds show a folio under a crore in Lakhs, so small commitments don't read as 0.xx Cr
+  units = { force_units: fund.default_currency_units }
+  units[:force_units] = "Lakhs" if units[:force_units] == "Crores" && capital_commitment.committed_amount.to_d < 100_00000
+  # Short form (Cr / L / M) for the context lines and tooltips, same units as the figures
+  fmt = ->(money) { money_to_currency(money, units, short_units: true) }
+  # Whole-number share, nil when there is nothing to divide by (no "NaN%" / "0% of ₹0")
+  pct = ->(part, whole) { whole.to_d.positive? ? "#{(part.to_d * 100 / whole.to_d).round}%" : nil }
+
+  committed = capital_commitment.committed_amount
+  called = capital_commitment.call_amount
+  collected = capital_commitment.collected_amount
+  # Uncalled = Committed - Called (commitment_pending is Committed - Collected, a different figure).
+  # Calls can exceed the commitment (e.g. after a recall), so never show a negative uncalled
+  uncalled = [committed - called, Money.new(0, committed.currency)].max
+
+  # Received (LP) / Paid (fund team) = completed payments' Net Payable on this folio - the same figure, and
+  # name, as the fund page's top card and the Distributions section's card (distribution_paid_label).
+  # (The commitment counter sums gross payable, which counts unpaid distributions and is 0 on older ones.)
+  folio_payments = CapitalDistributionPayment.where(id: policy_scope(CapitalDistributionPayment).where(capital_commitment_id: capital_commitment.id).select(:id))
+  payment_totals = CapitalDistributionPayment.lp_totals(folio_payments)
+  distributed = Money.new(payment_totals[:received], fund.currency)
+
+  # Due: same verified-basis total as the Calls section's Due card and grid (CapitalRemittance.lp_totals),
+  # over the remittances of this folio the user can see
+  folio_remittances = CapitalRemittance.where(id: policy_scope(CapitalRemittance).where(capital_commitment_id: capital_commitment.id).select(:id))
+  due = Money.new(CapitalRemittance.lp_totals(folio_remittances)[:due], fund.currency)
+  # Earliest due date among the calls still owing on that same verified basis (an unverified payment still counts as due)
+  next_due_date = if due.positive?
+                    folio_remittances.joins(:capital_call)
+                                     .where("capital_remittances.call_amount_cents + capital_remittances.other_fee_cents - " \
+                                            "CASE WHEN capital_remittances.verified THEN capital_remittances.collected_amount_cents ELSE 0 END > 0")
+                                     .minimum("capital_calls.due_date")
+                  end
+  overdue = next_due_date.present? && next_due_date < Date.current
+
+  # Context line under each figure
+  committed_note = uncalled.positive? ? "#{fmt.call(uncalled)} uncalled" : "Fully called"
+  called_note = (share = pct.call(called, committed)) && "#{share} of committed"
+  collected_note = (share = pct.call(collected, called)) && "#{share} of called"
+  received_note = payment_totals[:last_date] && "Last: #{fmt.call(Money.new(payment_totals[:last_amount], fund.currency))} on #{l(payment_totals[:last_date])}"
+  due_note = if !due.positive? then "Nothing due"
+             elsif next_due_date then "#{overdue ? 'Was due by' : 'By'} #{l(next_due_date)}"
+             end
+
+  # One stat card per figure; each tooltip names the folio and shows the working
+  cards_data = [
+    { stat: committed, subtitle: "Committed", color: "primary", icon: "writing-sign", footnote: committed_note,
+      tooltip: "What you agreed to invest in #{fund.name} on folio #{folio}. The fund draws it down through capital calls; " \
+               "#{uncalled.positive? ? "#{fmt.call(uncalled)} of it has not been called yet" : 'all of it has been called'}" },
+    { stat: called, subtitle: "Called", color: "info", icon: "receipt-2", footnote: called_note,
+      tooltip: "Capital calls on folio #{folio} have asked for #{fmt.call(called)} so far, before fees" \
+               "#{" - #{called_note} #{fmt.call(committed)}" if called_note}. Fees are listed separately in the Calls section" },
+    { stat: collected, subtitle: "Collected", color: "secondary", icon: "building-bank", footnote: collected_note,
+      tooltip: "Your payments against the calls on folio #{folio} that the fund has verified" \
+               "#{" - #{collected_note} #{fmt.call(called)}" if collected_note}. A payment you have made but the fund has not yet verified is not counted here" },
+    { stat: distributed, subtitle: distribution_paid_label, color: "success", icon: "cash-move-back", footnote: received_note,
+      tooltip: "#{distribution_paid_phrase.upcase_first} on folio #{folio}, net of tax and deductions. " \
+               "Announced but unpaid distributions are not included - they show as Pending Payout in the Distributions section" },
+    { stat: due, subtitle: "Due", color: due.positive? ? (overdue ? "danger" : "warning") : "success",
+      icon: due.positive? ? "clock-dollar" : "circle-check", footnote: due_note,
+      tooltip: "Still owed on folio #{folio}: Called + Fees - payments the fund has verified. " \
+               "A payment recorded but not yet verified still counts as due. Matches the Due card in the Calls section" }
+  ]
+%>
+
+<div class="card shadow-sm mb-4" id="capital_commitment_stats_card_<%= capital_commitment.id %>">
+  <div class="card-body p-3">
+    <%# Header: which fund (dashboard only), whose KYC, when committed; folio and class as badges on the right %>
+    <div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mx-2 mb-2">
+      <div>
+        <% if show_fund_name %>
+          <h5 class="card-title fw-semibold mb-1"><%= link_to fund.name, fund %></h5>
+        <% end %>
+        <span class="text-muted">
+          <%= capital_commitment.investor_kyc&.full_name %>
+          <% if capital_commitment.commitment_date %>
+            &middot; Committed on <%= l(capital_commitment.commitment_date) %>
+          <% end %>
+        </span>
+      </div>
+      <div class="d-flex flex-wrap gap-2">
+        <span class="badge bg-primary-subtle text-primary" data-bs-toggle="tooltip" title="The folio (account) number of this commitment. Calls, distributions and documents are issued per folio">
+          <i class="ti ti-id"></i> Folio <%= folio %>
+        </span>
+        <% if capital_commitment.unit_type.present? %>
+          <span class="badge bg-secondary-subtle text-secondary" data-bs-toggle="tooltip" title="The unit class this commitment is issued in">
+            <i class="ti ti-category"></i> <%= capital_commitment.unit_type %>
+          </span>
+        <% end %>
+      </div>
+    </div>
+
+    <%# The folio's figures as stat cards - same component as the Calls / Distributions sections %>
+    <div class="row g-0">
+      <% cards_data.each do |card_data| %>
+        <%= render(NumberStatsComponent.new(
+          path: nil,
+          amount: money_to_currency(card_data[:stat], units),
+          subtitle: card_data[:subtitle],
+          progress_bar_color: card_data[:color],
+          text_info: card_data[:icon],
+          tooltip: card_data[:tooltip],
+          footnote: card_data[:footnote],
+          fs_size: 4
+        )) %>
+      <% end %>
+    </div>
+
+    <%# Ratios and latest documents side by side, equal height %>
+    <div class="row g-0">
+      <% if fund.features.show_fund_ratios? %>
+        <div class="col-md-6 d-flex">
+          <div class="card m-2 shadow-sm flex-fill">
+            <div class="card-body">
+              <%# The same ratios as the fund page's Ratios section headline cards, so the two never differ:
+                  the LP's ratios fund (a feeder shows its master's - Fund#lp_ratios_fund_id), fund-level,
+                  Default scenario, each ratio's latest row (FundRatio.headline_ratios); the first three here %>
+              <% card_ratios = policy_scope(FundRatio).where(fund_id: fund.lp_ratios_fund_id, capital_commitment_id: nil, scenario: "Default") %>
+              <% headline_ratios = FundRatio.headline_ratios(card_ratios).first(3) %>
+              <% ratios_as_of = headline_ratios.filter_map(&:end_date).max %>
+              <%# "See all" opens the fund page's Ratios section (same show_fund_ratios? gate as this panel) %>
+              <div class="d-flex justify-content-between align-items-start mb-3">
+                <div>
+                  <h5 class="card-title mb-0 fw-semibold">
+                    Fund Ratios
+                    <i class="ti ti-info-circle text-muted fs-4" data-bs-toggle="tooltip" title="The fund's latest reported performance ratios. Hover a ratio for what it measures"></i>
+                  </h5>
+                  <%# The date the latest of these ratios was worked out to, so a stale figure is obvious %>
+                  <% if ratios_as_of %>
+                    <small class="text-muted">As of <%= l(ratios_as_of) %></small>
+                  <% end %>
+                </div>
+                <%= link_to fund_path(fund, tab: "ratios-tab"), class: "small text-decoration-none", id: "fund_ratios_see_all_#{capital_commitment.id}" do %>
+                  See all &rarr;
+                <% end %>
+              </div>
+              <table class="table mb-0">
+                <%# A feeder with no ratios of its own shows its master's - say so %>
+                <% if fund.lp_ratios_from_master? %>
+                  <caption class="caption-top small text-muted" id="fund_ratios_from_master_<%= capital_commitment.id %>">
+                    <%= fund.name %> has no ratios of its own yet. These are its master fund <%= fund.master_fund.name %>'s ratios.
+                  </caption>
+                <% end %>
+                <% headline_ratios.each do |fund_ratio| %>
+                  <tr>
+                    <td>
+                      <%= link_to fund_ratio.name, fund_ratio %>
+                      <%# Plain-language meaning of each ratio (FundRatio.help_for), as a tooltip on its name %>
+                      <% if (ratio_help = FundRatio.help_for(fund_ratio.name)) %>
+                        <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip" title="<%= ratio_help %>"></i>
+                      <% end %>
+                    </td>
+                    <td class="text-end"><%= fund_ratio.display_value %></td>
+                  </tr>
+                <% end %>
+              </table>
+              <% if headline_ratios.empty? %>
+                <p class="text-muted mb-0">No ratios reported yet.</p>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      <% end %>
+
+      <div class="<%= fund.features.show_fund_ratios? ? 'col-md-6' : 'col-12' %> d-flex">
+        <div class="card m-2 shadow-sm flex-fill">
+          <div class="card-body">
+            <%# "See all" opens the fund page's Documents section (latest docs + search) %>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h5 class="card-title mb-0 fw-semibold">
+                Recent Documents
+                <i class="ti ti-info-circle text-muted fs-4" data-bs-toggle="tooltip" title="The latest documents issued to this folio, and the latest from the fund's data room"></i>
+              </h5>
+              <%= link_to fund_path(fund, tab: "docs-tab"), class: "small text-decoration-none", id: "recent_documents_see_all_#{capital_commitment.id}" do %>
+                See all &rarr;
+              <% end %>
+            </div>
+            <%# Latest 2 folio documents + latest 2 data room documents, each tagged with where it came from %>
+            <% recent_docs = capital_commitment.docs_for_investor.order(id: :desc).limit(2).map { |doc| [doc, :folio] } +
+                             fund.data_room_folder.documents.order(id: :desc).limit(2).map { |doc| [doc, :fund] } %>
+            <% if recent_docs.empty? %>
+              <p class="text-muted mb-0">No documents yet.</p>
+            <% else %>
+              <table class="table mb-0" style="table-layout: fixed;">
+                <% recent_docs.each do |doc, source| %>
+                  <tr role="presentation">
+                    <%# Long names are cut short on one line; the full name is in the tooltip %>
+                    <td class="text-truncate" data-bs-toggle="tooltip" title="<%= doc.name %>">
+                      <%= link_to doc.name, doc %>
+                    </td>
+                    <td class="text-end" style="width: 9rem;">
+                      <% if source == :folio %>
+                        <span class="badge bg-primary-subtle text-primary" data-bs-toggle="tooltip" title="Issued to folio <%= folio %>">Your folio</span>
+                      <% else %>
+                        <span class="badge bg-secondary-subtle text-secondary" data-bs-toggle="tooltip" title="From the fund's data room, shared with all its investors">Fund</span>
+                      <% end %>
+                    </td>
+                    <td class="text-end" style="width: 7rem;"><%= l doc.created_at.to_date %></td>
+                  </tr>
+                <% end %>
+              </table>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

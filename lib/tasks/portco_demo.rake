@@ -2,12 +2,16 @@
 # documents: an IC note and annual summaries on each company, and a Quarterly Update, Board Meeting Notes and
 # Investor Presentation on every quarterly KPI report. With FUND_ID it also records the fund's buy of each company
 # and 4 LP commitments, each with a verified KYC. Ends with a note (links + descriptions) to send to the business.
-# Development / staging data only.
+# Demo data: development / staging, or a demo entity in production (needs CONFIRM_ENTITY to execute there).
 #
 #   bin/rails portco_demo:seed ENTITY_ID=157 N=5                         # dry run: print the plan
 #   bin/rails portco_demo:seed ENTITY_ID=157 N=5 EXECUTE=1               # create it
 #   bin/rails portco_demo:seed ENTITY_ID=157 N=5 FUND_ID=343 EXECUTE=1   # also record the fund's buy of each company
 #   bin/rails portco_demo:seed ENTITY_ID=157 N=5 CREATE_FUND=USD EXECUTE=1   # same, into a demo fund it creates (USD or INR)
+#   RAILS_ENV=production bin/rails portco_demo:seed ENTITY_ID=2 N=5 CREATE_FUND=USD CONFIRM_ENTITY="<entity name>" EXECUTE=1
+#
+# In production an EXECUTE=1 run must name the entity in CONFIRM_ENTITY, so a mistyped ENTITY_ID can't seed (and
+# re-generate, overwrite or de-duplicate) demo data in a real client's entity. Dry runs need no confirmation.
 #
 # CREATE_FUND creates "Growth Fund I, L.P." (USD) or "Growth Fund I" (INR) in the entity, reusing it on re-runs.
 # With a USD FUND_ID the task also creates the records the two US sample documents describe: Harborview's
@@ -28,16 +32,16 @@
 require_relative "support/portco_demo"
 
 namespace :portco_demo do
-  desc "Seed N demo portfolio companies with KPIs, valuations, documents and (with FUND_ID) LP commitments + KYCs (ENTITY_ID=, N=, FUND_ID= or CREATE_FUND=USD|INR; dry run unless EXECUTE=1)"
+  desc "Seed N demo portfolio companies with KPIs, valuations, documents and (with FUND_ID) LP commitments + KYCs (ENTITY_ID=, N=, FUND_ID= or CREATE_FUND=USD|INR; dry run unless EXECUTE=1; production also needs CONFIRM_ENTITY=<entity name>)"
   task seed: :environment do
-    raise "Demo data - never in production" if Rails.env.production?
-
     # Inputs: the entity is required; N defaults to 5; the fund is optional — an existing one of the entity
     # (FUND_ID) or a demo fund the task creates (CREATE_FUND=USD|INR), not both
     entity = Entity.find(ENV.fetch("ENTITY_ID") { abort "ENTITY_ID is required" })
     count = Integer(ENV.fetch("N", "5"))
     abort "N must be at least 1" unless count.positive?
     execute = ENV["EXECUTE"] == "1"
+    # Production: only a demo entity, confirmed by name before anything is written (a dry run writes nothing)
+    abort "Production: set CONFIRM_ENTITY=\"#{entity.name}\" to seed demo data into entity #{entity.id}" if Rails.env.production? && execute && ENV["CONFIRM_ENTITY"] != entity.name
     # Checked before CREATE_FUND, so a run that can't proceed never leaves a fund behind
     user = User.where(entity_id: entity.id).order(:id).first
     abort "Entity #{entity.id} has no users - KPI reports and documents need one" unless user

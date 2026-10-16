@@ -7,6 +7,11 @@
     folder_url_method ||= :folder_documents_path
     use_entity_name_for_root ||= false
     virtual_root ||= nil
+    # Fund/deal pages ask for the search box via ?doc_search; the Documents page passes it as a local
+    doc_search ||= params[:doc_search].present?
+    # Documents page: search the same list the page shows (DocumentsController#index), so clearing
+    # the box brings that list back. Fund/deal pages: search their folder tree (#folder).
+    search_all_docs = action_name == "index"
 %>
 
 <%= render "/layouts/steps", steps: ["Create Folders", "Upload Docs", "Setup Access Rights"].freeze if show_steps %>
@@ -60,10 +65,10 @@
 
             <%# add some space if buttons are not shown to keep view proper %>
             <div class="card-body">
-                <% if params[:doc_search].present? %>
+                <% if doc_search %>
                     <%# Search the whole tree (folder_id is its root) as the user types; results replace the panel below.
                         Outside the frame so the box survives each reload of the results. %>
-                    <%= form_with url: folder_documents_path, method: :get, id: "documents_search",
+                    <%= form_with url: (search_all_docs ? documents_path : folder_documents_path), method: :get, id: "documents_search",
                                   class: "mb-3", data: { turbo_frame: documents_frame_id, controller: "documents-search" } do |f| %>
                         <%= hidden_field_tag :folder_id, params[:folder_id] %>
                         <%= hidden_field_tag :entity_id, params[:entity_id] %>
@@ -81,7 +86,9 @@
                             <button type="button" class="btn btn-outline-secondary" aria-label="Clear search"
                                     data-action="documents-search#clear"><i class="ti ti-x"></i></button>
                         </div>
-                        <div class="form-text">Searches document names and tags across all of this fund's folders. Words can be in any order.</div>
+                        <div class="form-text">
+                            Searches document names and tags across <%= search_all_docs ? "all your folders" : "all of this fund's folders" %>. Words can be in any order.
+                        </div>
                     <% end %>
                 <% end %>
                 <%= turbo_frame_tag documents_frame_id, target: "_top" do %>

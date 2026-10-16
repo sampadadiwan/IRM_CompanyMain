@@ -8,15 +8,17 @@
 
   xl_link = download_xl_link(data_source)
 %>
-<%= render "/capital_commitments/index_header", fund:, xl_link:, title: %>
-<%= render "/capital_commitments/analytics", fund: %>
 <% if params[:card] == "true" %>
+  <%# LP fund page's Commitments section: the accordion header already names it, so no title/toolbar here,
+      and the page already names the fund, so the folio cards leave it out %>
   <div id="capital_commitments">
     <% capital_commitments.each do |capital_commitment| %>
-      <%= render "/capital_commitments/card", fund:, capital_commitment:, lazy_load_data: false %>
+      <%= render "/capital_commitments/stats_card", capital_commitment:, show_fund_name: false %>
     <% end %>
   </div>
 <% else %>
+  <%= render "/capital_commitments/index_header", fund:, xl_link:, title: %>
+  <%= render "/capital_commitments/analytics", fund: %>
   <div class="">
     <%
 

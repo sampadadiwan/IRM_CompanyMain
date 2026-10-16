@@ -1,0 +1,87 @@
+<%# Summary cards above the investor's tabs, so the page says something about the stakeholder before
+    any tab is opened. Each card links to the tab it summarises (?tab=<pane id>, opened by the tabs
+    controller). Portfolio companies get their holding figures; other stakeholders get commitments,
+    KYC, users and tasks. %>
+<%
+  tab_path = ->(pane) { investor_path(investor, tab: pane) }
+  # Open tasks: same owner filter as the Activity › Tasks tab
+  open_tasks = policy_scope(Task).where(owner: investor, completed: false).count
+  open_tasks_card = { path: tab_path.call("tasks-tab"), stat: open_tasks, subtitle: "Open Tasks", progress_bar_color: "secondary", text_info: "list-check",
+                      tooltip: "Tasks on this stakeholder not yet marked complete." }
+%>
+
+<% if investor.category == "Portfolio Company" %>
+  <%
+    # Last valued: valuations are per instrument, so the card shows the latest date rather than one value
+    last_valued_on = investor.valuations.maximum(:valuation_date)
+    extra_cards = [
+      { path: tab_path.call("valuations-tab"), stat: last_valued_on ? l(last_valued_on) : "-", subtitle: "Last Valued", progress_bar_color: "primary", text_info: "calendar",
+        tooltip: "Date of the latest valuation of any of this company's instruments." },
+      open_tasks_card
+    ]
+  %>
+  <%# Bought / FMV / Income come from the dashboard widget's partial, so the figures match the dashboard;
+      in Cr (INR) or M like the stakeholder cards %>
+  <%= render "aggregate_portfolio_investments/stats_for_portfolio_company",
+             portfolio_company: investor,
+             fields: ["Bought Amount", "FMV", "Income"],
+             force_units: investor.entity.currency == "INR" ? "crores" : "million", tracking_currency: nil, show_currency_filter: false,
+             card_paths: { "Bought Amount" => tab_path.call("portfolio-investments-tab"),
+                           "FMV" => tab_path.call("valuations-tab"),
+                           "Income" => tab_path.call("cashflows-tab") },
+             extra_cards: extra_cards %>
+<% else %>
+  <%
+    cards = []
+
+    # Commitments (fund entities only, like the Commitments tab). Amounts are in each fund's currency,
+    # summed per currency in SQL and never converted: "₹10 Cr · $2 M"
+    if current_user.entity.is_fund?
+      totals = policy_scope(CapitalCommitment).where(investor_id: investor.id).joins(:fund)
+                                              .group("funds.currency")
+                                              .pluck("funds.currency",
+                                                     Arel.sql("SUM(capital_commitments.committed_amount_cents)"),
+                                                     Arel.sql("SUM(capital_commitments.call_amount_cents)"),
+                                                     Arel.sql("SUM(capital_commitments.collected_amount_cents)"),
+                                                     Arel.sql("SUM(capital_commitments.distribution_amount_cents)"))
+      # Cards are narrow, so amounts are always in Cr (INR) or M (other currencies): "₹26.00 Cr"
+      short_money = ->(cents, currency) { money_to_currency(Money.new(cents, currency), { force_units: currency == "INR" ? "crores" : "million" }, short_units: true) }
+      # One formatted amount per currency for the given column of the pluck above, "-" when nothing is committed
+      per_currency = lambda do |column|
+        amounts = totals.map { |row| short_money.call(row[column], row[0]) }
+        amounts.empty? ? "-" : amounts.join(" · ")
+      end
+      called_collected = totals.empty? ? "-" : totals.map { |row| "#{short_money.call(row[2], row[0])} / #{short_money.call(row[3], row[0])}" }.join(" · ")
+      commitments_path = tab_path.call("commitments-tab")
+
+      cards << { path: commitments_path, stat: per_currency.call(1), subtitle: "Committed", progress_bar_color: "success", text_info: "file-certificate",
+                 tooltip: "Total committed across all funds, in each fund's currency (not converted). Cr for INR, M otherwise." }
+      cards << { path: commitments_path, stat: called_collected, subtitle: "Called / Collected", progress_bar_color: "warning", text_info: "coins",
+                 tooltip: "Amount called by capital calls / amount received against them, per fund currency." }
+      cards << { path: commitments_path, stat: per_currency.call(4), subtitle: "Distributed", progress_bar_color: "info", text_info: "cash-banknote",
+                 tooltip: "Total distributed to this stakeholder, per fund currency." }
+    end
+
+    # KYC: verified out of all this stakeholder's KYCs (only where the KYC tab is shown)
+    if investor.entity.permissions.enable_kycs?
+      kycs = policy_scope(InvestorKyc).where(investor_id: investor.id)
+      cards << { path: tab_path.call("kycs-tab"), stat: "#{kycs.where(verified: true).count} / #{kycs.count}", subtitle: "KYC Verified", progress_bar_color: "primary", text_info: "id",
+                 tooltip: "KYCs marked verified / all KYCs for this stakeholder." }
+    end
+
+    # Users: approved out of all users with access, the same list as the Users tab
+    accesses = investor.investor_accesses
+    cards << { path: tab_path.call("investors-tab"), stat: "#{accesses.where(approved: true).count} / #{accesses.count}", subtitle: "Users Approved", progress_bar_color: "danger", text_info: "users",
+                 tooltip: "Users approved for access / all users added to this stakeholder." }
+
+    cards << open_tasks_card
+  %>
+  <%# One row: equal "col" cards that never wrap on large screens (they wrap below lg, where six won't fit) %>
+  <div id="investor_show_stats" class="row flex-lg-nowrap">
+    <% cards.each do |card| %>
+      <%= render(NumberStatsComponent.new(path: card[:path], amount: card[:stat], subtitle: card[:subtitle],
+                                          progress_bar_color: card[:progress_bar_color], text_info: card[:text_info], tooltip: card[:tooltip],
+                                          css_class: "col")) %>
+    <% end %>
+  </div>
+<% end %>

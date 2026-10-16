@@ -7,7 +7,8 @@
 
             <%= render "documents/approval_hint" %>
 
-            <%= render "layouts/filter", associations: [:folder], hidden_fields: {no_folders: true, folder_id: params[:folder_id], widget_id: params[:widget_id]} %>
+            <%# The search box (tree view) submits here with ?search; it is the filter, so don't stack a second one under it %>
+            <%= render "layouts/filter", associations: [:folder], hidden_fields: {no_folders: true, folder_id: params[:folder_id], widget_id: params[:widget_id]} unless params.key?(:search) %>
 
             <%= render "/documents/index", documents: @documents, entity: @entity, owner: @owner %>
 
@@ -25,9 +26,11 @@
     <% else %>
         <% cache_if((current_user.entity_id == @entity&.id && params.blank?), [@entity, current_user]) do %>
             <%= turbo_frame_tag frame_id, target: "_top" do %>
+                <%# doc_search: the Documents page offers the name/tag search (not for an owner's docs or a dashboard widget) %>
                 <%= render "/documents/tree_view", documents: @documents, entity: @entity,
                     folders: @folders, show_steps: @show_steps, owner: @owner, no_folders: @no_folders,
-                    widget_id: params[:widget_id] %>
+                    widget_id: params[:widget_id],
+                    doc_search: action_name == "index" && @owner.blank? && params[:widget_id].blank? %>
             <% end %>
         <% end %>
     <% end %>

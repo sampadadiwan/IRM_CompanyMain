@@ -191,7 +191,7 @@ class DashboardWidget < ApplicationRecord
   ].freeze
 
   LP_LANDING_PAGE_WIDGETS = [
-    DashboardWidget.new(dashboard_name: LP_LANDING_PAGE, widget_name: "Funds", path: "entities/widgets/lp_funds", size: "XL", metadata_help: "{card_type: card/card2}"),
+    DashboardWidget.new(dashboard_name: LP_LANDING_PAGE, widget_name: "Funds", path: "entities/widgets/lp_funds", size: "XL", metadata_help: "{card_type: card/card2/stats_card}"),
     DashboardWidget.new(dashboard_name: LP_LANDING_PAGE, widget_name: "Offers", path: "entities/widgets/lp_offers", size: "XL"),
     DashboardWidget.new(dashboard_name: LP_LANDING_PAGE, widget_name: "Interests", path: "entities/widgets/lp_interests", size: "XL"),
     DashboardWidget.new(dashboard_name: LP_LANDING_PAGE, widget_name: "Deals", path: "entities/widgets/lp_deals", size: "XL"),

@@ -1,35 +1,41 @@
 <!-- app/components/fund_card_component/fund_card_component.html.erb -->
-<%# d-flex + flex-fill: every card in a row stretches to the tallest one, so a value that wraps
-    doesn't leave its neighbours shorter; the colour bar is pushed to the bottom (mt-auto) %>
+<%# Border-top stat card (same look as the FM dashboard's card5 counters). The caller's
+    progress_bar_color drives the top border, the label and the optional icon, so each
+    card keeps its own colour. d-flex + flex-fill: every card in a row stretches to the
+    tallest one, so a value that wraps doesn't leave its neighbours shorter %>
 <div class="<%= @css_class.present? ? @css_class : 'col-sm col-md' %> d-flex" <%= "style=\"#{@css_style}\"".html_safe if @css_style.present? %>>
   <% if @path %>
-    <a href="<%= @path %>" class="d-flex flex-fill">
+    <a href="<%= @path %>" class="d-flex flex-fill text-decoration-none">
   <% end %>
-    <div class="card p-2 m-2 border shadow-sm rounded-3 flex-fill">
-      <div class="card-body p-3 d-flex flex-column">
-        <div class="d-flex align-items-center mb-3">
-          <div>
-            <% if @raw_amount %>
-              <div data-controller="counters"
-                   data-counters-value-value="<%= @raw_amount %>"
-                   data-counters-formatted-value-value="<%= @amount %>">
-                <h3 class="fs-<%=@fs_size%>" data-counters-target="output">0</h3>
-              </div>
-            <% else %>
-              <h2 class="fs-<%=@fs_size%>"><%= @amount %></h2>
-            <% end %>
-            <span class="card-subtitle mb-1 text-muted"><%= @subtitle %></span>
-            <% if @tooltip.present? %>
-              <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip" title="<%= @tooltip %>" aria-label="<%= @tooltip %>"></i>
-            <% end %>
-          </div>
-          <% if @text_info.present? %>
-            <div class="ms-auto">
-              <span class="text-<%= @progress_bar_color %> display-6"><i class="ti ti-<%= @text_info %>"></i></span>
+    <div class="card m-2 border-top stat-card-accent border-<%= @progress_bar_color %> shadow-sm flex-fill">
+      <div class="card-body d-flex align-items-center">
+        <div>
+          <%# Figure: light weight like the dashboard; size stays with the caller (fs_size) so long money values don't wrap %>
+          <% if @raw_amount %>
+            <div data-controller="counters"
+                 data-counters-value-value="<%= @raw_amount %>"
+                 data-counters-formatted-value-value="<%= @amount %>">
+              <h3 class="fs-<%=@fs_size%> fw-normal" data-counters-target="output">0</h3>
             </div>
+          <% else %>
+            <h2 class="fs-<%=@fs_size%> fw-normal"><%= @amount %></h2>
+          <% end %>
+          <%# Label carries the card's colour (replaces the old bottom colour bar) %>
+          <span class="card-subtitle mb-0 text-<%= @progress_bar_color %>"><%= @subtitle %></span>
+          <% if @tooltip.present? %>
+            <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip" title="<%= @tooltip %>" aria-label="<%= @tooltip %>"></i>
+          <% end %>
+          <%# Context line under the label, only when the caller passes one %>
+          <% if @footnote.present? %>
+            <div class="small text-muted mt-1"><%= @footnote %></div>
           <% end %>
         </div>
-        <div class="progress-bar text-bg-<%= @progress_bar_color %> mt-auto" role="progressbar" style="width: 100%; height: 6px;"></div>
+        <%# Icon only when the caller names one (text_info); number-stats-icon draws it with the lighter 1.5px-stroke Tabler face (custom/number_stats.scss) %>
+        <% if @text_info.present? %>
+          <div class="ms-auto ps-2">
+            <span class="text-<%= @progress_bar_color %> display-6 number-stats-icon"><i class="ti ti-<%= @text_info %>"></i></span>
+          </div>
+        <% end %>
       </div>
     </div>
   <% if @path %>

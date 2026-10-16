@@ -225,6 +225,12 @@
 
 <div id="progress_panel_new" class="container-fluid px-3 pb-3"></div>
 
+<%# Summary cards for the tabs below, each linking to its tab. Full width like the tabs (outside the
+    narrow container above); the existing compact density (custom/layout.scss) keeps the cards short %>
+<div id="investor_show_stats_wrapper" data-density="compact" data-controller="tooltip">
+  <%= render "investors/show_stats", investor: @investor %>
+</div>
+
 <div id="investor_associated_details" class="associated_entity">
   <%= render "investors/investor_details" , investor: @investor %>
 </div>

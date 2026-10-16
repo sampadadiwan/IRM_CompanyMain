@@ -15,8 +15,10 @@
             funds enabled, regardless of whether they have any capital commitments yet. %>
         <%= render "entities/vc_dashboard_menus" %>
         <% capital_commitments.each do |cc| %>
-            <%# Evergreen folios get the evergreen landing card (open-ended-funds B2) %>
-            <%= render cc.fund.evergreen? ? "evergreen/funds/lp_card" : "/capital_commitments/#{card_type}", capital_commitment: cc %>
+            <%# Evergreen folios get the evergreen landing card (open-ended-funds B2) - its stats-card twin when the
+                widget asks for stats_card, so both kinds of folio share one look %>
+            <% evergreen_card = card_type == "stats_card" ? "evergreen/funds/lp_stats_card" : "evergreen/funds/lp_card" %>
+            <%= render cc.fund.evergreen? ? evergreen_card : "/capital_commitments/#{card_type}", capital_commitment: cc %>
         <% end %>
     <% end %>
 <% end %>
