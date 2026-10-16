@@ -12,15 +12,17 @@ import { application } from "controllers/application"
 import { lazyLoadControllersFrom } from "@hotwired/stimulus-loading"
 lazyLoadControllersFrom("controllers", application)
 
-import { isFadeFrame, enterFadeFrames, settleFadeFrames, SETTLE_HOLD_MS } from "custom/frame_fade_in"
+import { isFadeFrame, enterFadeFrames, settleFadeFrames, FADED_IN_ATTR } from "custom/frame_fade_in"
 
 // ── Tab frames fade in (ported from the subtle_ui branch) ─────────────────────
 // Fade frames (custom/frame_fade_in.js: `.frame-fade-in`, and every turbo-frame inside a tab pane)
 // get pushed into their hidden `--entering` state here, *before* Turbo swaps in the new content -
 // not after. Hiding it after turbo:frame-load let the browser paint the fully-visible new content
 // for a frame first, which read as a flicker (appear, disappear, then slide in).
+// Only a frame's first load fades: a frame already showing content (FADED_IN_ATTR) is re-rendered in
+// place, so search/pagination and broadcast reloads don't blink the whole frame out and back in.
 document.documentElement.addEventListener('turbo:before-frame-render', function (e) {
-    if (isFadeFrame(e.target)) {
+    if (isFadeFrame(e.target) && !e.target.hasAttribute(FADED_IN_ATTR)) {
         e.target.classList.add('frame-fade-in--entering');
     }
 });
@@ -33,11 +35,17 @@ document.documentElement.addEventListener('turbo:frame-load', function (e) {
     }
 
     // Now that the new content is in and still hidden, drop back to the default (visible) state so
-    // the CSS transition animates it in, after a deliberate hold (SETTLE_HOLD_MS)
+    // the CSS transition animates it in - straight away, not after a hold: the frame was showing its
+    // loading spinner until before-frame-render hid it, so a hold only added a blank beat between
+    // spinner and content. Turbo already repaints between before-frame-render and frame-load, so the
+    // hidden state is on screen; reading offsetWidth just guarantees it is applied before the class
+    // comes off, so the transition always starts from opacity 0.
     if (isFadeFrame(e.target)) {
-        setTimeout(function () {
+        e.target.setAttribute(FADED_IN_ATTR, '');
+        if (e.target.classList.contains('frame-fade-in--entering')) {
+            void e.target.offsetWidth;
             e.target.classList.remove('frame-fade-in--entering');
-        }, SETTLE_HOLD_MS);
+        }
     }
 });
 
@@ -68,17 +76,23 @@ document.documentElement.addEventListener('shown.bs.tab', function (e) {
 //
 // Most panes hold a lazy turbo-frame still fetching when 'shown.bs.tab' fires, so the pane is just
 // a spinner, the document is temporarily short, and the scroll clamps above the target. So the
-// scroll runs at 'shown' for immediate feedback, and again on each 'turbo:frame-load' once real
-// content has given the page its full height - until the user scrolls themselves or 8s pass.
-var pendingTabScroll = null; // { nav: Element, deadline: epoch ms }
+// scroll runs at 'shown' for immediate feedback, and again on each 'turbo:frame-load' in that pane
+// once real content has given the page its full height - until the user takes over or 8s pass.
+// The re-alignment uses behavior 'auto', which follows the CSS scroll-behavior - smooth under the
+// modernize theme (:root, unless the user prefers reduced motion), instant elsewhere. It starts in
+// the same frame the new content starts fading in from opacity 0, and only when the tab bar has
+// drifted, so it is one short correction rather than a lurch per frame load.
+var pendingTabScroll = null; // { nav: Element, pane: Element|null, deadline: epoch ms }
 
-function scrollTabBarToTop(nav) {
+function scrollTabBarToTop(nav, behavior) {
     // The theme's header.topbar is position:fixed, so "top of the window" means just below it -
     // measured live rather than hard-coding its height, plus 8px breathing room
     var topbar = document.querySelector('header.topbar');
     var offset = (topbar ? topbar.offsetHeight : 0) + 8;
-    var top = nav.getBoundingClientRect().top + window.scrollY - offset;
-    window.scrollTo({ top: Math.max(top, 0), behavior: 'smooth' });
+    var top = Math.max(nav.getBoundingClientRect().top + window.scrollY - offset, 0);
+    // Already in place (within a few px) - don't nudge the page for nothing
+    if (Math.abs(top - window.scrollY) <= 4) return;
+    window.scrollTo({ top: top, behavior: behavior || 'smooth' });
 }
 
 document.documentElement.addEventListener('shown.bs.tab', function (e) {
@@ -87,21 +101,24 @@ document.documentElement.addEventListener('shown.bs.tab', function (e) {
     var nav = e.target.closest('.nav, [role="tablist"]');
     if (!nav) return;
     scrollTabBarToTop(nav);
-    pendingTabScroll = { nav: nav, deadline: Date.now() + 8000 };
+    pendingTabScroll = { nav: nav, pane: resolveTabPane(e), deadline: Date.now() + 8000 };
 });
 
-// A wheel/touch scroll from the user means they've taken over - stop re-aligning under them
-['wheel', 'touchmove'].forEach(function (evt) {
+// Any scroll input from the user (wheel, touch, keys, scrollbar drag or a click) means they've
+// taken over - stop re-aligning under them
+['wheel', 'touchmove', 'keydown', 'mousedown'].forEach(function (evt) {
     window.addEventListener(evt, function () { pendingTabScroll = null; }, { passive: true });
 });
 
-function realignPendingTabScroll() {
+function realignPendingTabScroll(e) {
     if (!pendingTabScroll) return;
+    // Frames loading elsewhere on the page (another pane, the header) don't move the page
+    if (pendingTabScroll.pane && !pendingTabScroll.pane.contains(e.target)) return;
     if (Date.now() > pendingTabScroll.deadline || !document.contains(pendingTabScroll.nav)) {
         pendingTabScroll = null;
         return;
     }
-    scrollTabBarToTop(pendingTabScroll.nav);
+    scrollTabBarToTop(pendingTabScroll.nav, 'auto');
 }
 
 document.documentElement.addEventListener('turbo:frame-load', realignPendingTabScroll);

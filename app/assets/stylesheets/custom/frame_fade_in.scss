@@ -5,13 +5,17 @@
 // instant the fetch resolves - a hard cut every time a detail tab is opened for the first time.
 // The fade frames (custom/frame_fade_in.js FADE_FRAME_SELECTOR: `.frame-fade-in`, and every
 // turbo-frame inside a tab pane), together with the listeners in controllers/index.js, soften that
-// into a short slide-down-and-fade instead of a snap.
+// into a short slide-up-and-fade instead of a snap.
+//
+// The slide rises from below (+16px), not down from above: the tab bar re-scroll in
+// controllers/index.js moves the page up as the reveal starts, so content rising with it reads as
+// one motion, while content dropping down read as a bounce (up with the scroll, then back down).
 //
 // <turbo-frame> has no default `display`, so it is inline, and CSS transforms don't apply to
 // inline boxes - block is required for the slide to render at all.
 //
 // This is a `transition` between two states, not a restarted @keyframes animation. The JS pushes
-// the frame into `--entering` (hidden, offset up) *before* Turbo swaps in the new content, then
+// the frame into `--entering` (hidden, offset down) *before* Turbo swaps in the new content, then
 // drops it back to this default (visible) state right after, so the transition plays from hidden
 // to visible. Hiding only after the swap let the browser paint the new content at full visibility
 // for a moment first, which looked like a flicker.
@@ -21,9 +25,14 @@
   transition: opacity 0.6s ease-in-out, transform 0.6s ease-in-out;
 }
 
-.frame-fade-in--entering {
+// The `.tab-pane turbo-frame` selector repeats the base rule's so this one outranks it: bare
+// `.frame-fade-in--entering` (0,1,0) lost to `.tab-pane turbo-frame` (0,1,1), so tab-pane frames
+// kept the 0.6s transition and the hide faded out instead of jumping - content showed, faded out,
+// then faded back in (the flicker), or barely dimmed before the reveal (looked abrupt).
+.frame-fade-in--entering,
+.tab-pane turbo-frame.frame-fade-in--entering {
   opacity: 0;
-  transform: translateY(-16px);
+  transform: translateY(16px);
   // The hide must be a jump, not a transition: a frame navigated directly gets --entering only
   // milliseconds before Turbo swaps in the response, and a transitioned hide then played over the
   // freshly painted content. Only the reveal animates (the base rule's transition takes over once

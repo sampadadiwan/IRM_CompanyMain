@@ -11,10 +11,21 @@ export function isFadeFrame(el) {
   return !!(el && el.matches && el.matches(FADE_FRAME_SELECTOR));
 }
 
-// Push a pane's fade frames into their hidden, offset `--entering` state
+// Set on a frame once its first load has faded in, so later reloads (search, pagination,
+// broadcast reloads) swap in place instead of blinking out and fading in again
+export const FADED_IN_ATTR = 'data-frame-faded-in';
+
+// A frame still waiting on its first response (lazy src, no Turbo `complete` yet) is left visible
+// so its loading spinner shows; turbo:before-frame-render hides it just before the content lands.
+// Hiding it here too gave it two reveals (spinner fades in, vanishes, content fades in).
+function hasContent(frame) {
+  return !frame.hasAttribute('src') || frame.hasAttribute('complete');
+}
+
+// Push a pane's loaded fade frames into their hidden, offset `--entering` state
 export function enterFadeFrames(root) {
   root.querySelectorAll(FADE_FRAME_SELECTOR).forEach(function (frame) {
-    frame.classList.add('frame-fade-in--entering');
+    if (hasContent(frame)) frame.classList.add('frame-fade-in--entering');
   });
 }
 
