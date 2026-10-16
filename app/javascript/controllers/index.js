@@ -84,16 +84,35 @@ document.documentElement.addEventListener('shown.bs.tab', function (e) {
 // drifted, so it is one short correction rather than a lurch per frame load.
 var pendingTabScroll = null; // { nav: Element, pane: Element|null, deadline: epoch ms }
 
-function scrollTabBarToTop(nav, behavior) {
-    // The theme's header.topbar is position:fixed, so "top of the window" means just below it -
-    // measured live rather than hard-coding its height, plus 8px breathing room
+// The theme's header.topbar is position:fixed, so "top of the window" means just below it -
+// measured live rather than hard-coding its height, plus 8px breathing room
+function topbarOffset() {
     var topbar = document.querySelector('header.topbar');
-    var offset = (topbar ? topbar.offsetHeight : 0) + 8;
-    var top = Math.max(nav.getBoundingClientRect().top + window.scrollY - offset, 0);
+    return (topbar ? topbar.offsetHeight : 0) + 8;
+}
+
+function scrollTabBarToTop(nav, behavior) {
+    var top = Math.max(nav.getBoundingClientRect().top + window.scrollY - topbarOffset(), 0);
     // Already in place (within a few px) - don't nudge the page for nothing
     if (Math.abs(top - window.scrollY) <= 4) return;
     window.scrollTo({ top: top, behavior: behavior || 'smooth' });
 }
+
+// Keep the page tall enough for the tab bar to reach the top while the incoming pane is shown.
+// Without it, leaving a long pane for one still loading shrank the page to a spinner: the browser
+// clamped the scroll (one jump), the scroll below stopped short, and the rows arriving forced a
+// second scroll. With the pane at least this tall, the single scroll at 'shown' lands on target and
+// the re-align on frame-load finds nothing to correct. It stays while the pane is shown, so a short
+// pane (an empty grid) doesn't shrink the page after loading and clamp it again.
+document.documentElement.addEventListener('show.bs.tab', function (e) {
+    if (e.target.closest('.modal, .offcanvas')) return;
+    var nav = e.target.closest('.nav, [role="tablist"]');
+    var pane = resolveTabPane(e);
+    // The incoming pane is still display:none here, so measure where it will sit from its container
+    if (!nav || !pane || !pane.parentElement) return;
+    var gap = pane.parentElement.getBoundingClientRect().top - nav.getBoundingClientRect().top;
+    pane.style.minHeight = Math.max(window.innerHeight - topbarOffset() - gap, 0) + 'px';
+});
 
 document.documentElement.addEventListener('shown.bs.tab', function (e) {
     if (e.target.closest('.modal, .offcanvas')) return;
