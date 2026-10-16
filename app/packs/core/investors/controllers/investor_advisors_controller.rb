@@ -143,7 +143,15 @@ class InvestorAdvisorsController < ApplicationController
       @investor_advisor = InvestorAdvisor.find(params[:id])
       authorize(@investor_advisor)
       @investor_advisor.switch(current_user)
-      redirect_back_or_to(root_path, notice: "You have now been switched to the advisor role for #{@investor_advisor.entity.name}.")
+      notice = "You have now been switched to the advisor role for #{@investor_advisor.entity.name}."
+      # The Access Denied "Switch to ..." button sends the page it was denied on, so the advisor
+      # lands back there. Worked examples H8, X10 —
+      # openspec/changes/fix-advisor-own-investor-access/report.md#verification
+      if (return_to = local_return_path(params[:return_to]))
+        redirect_to(return_to, notice:)
+      else
+        redirect_back_or_to(root_path, notice:)
+      end
     else
       # Finding 3: The revert path must check that the user is actually an advisor
       # currently switched into another entity. This prevents account corruption
@@ -156,6 +164,18 @@ class InvestorAdvisorsController < ApplicationController
   end
 
   private
+
+  # A same-site path only ("/funds/1?tab=x"): anything with a scheme or host, protocol-relative
+  # ("//evil.com") or backslash tricks is dropped, so return_to can never become an open redirect.
+  def local_return_path(value)
+    path = value.to_s
+    return nil unless path.start_with?("/") && !path.start_with?("//") && path.exclude?("\\")
+
+    uri = URI.parse(path)
+    uri.scheme.nil? && uri.host.nil? ? path : nil
+  rescue URI::InvalidURIError
+    nil
+  end
 
   # Use callbacks to share common setup or constraints between actions.
   def set_investor_advisor

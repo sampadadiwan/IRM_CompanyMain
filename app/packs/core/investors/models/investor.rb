@@ -394,23 +394,63 @@ class Investor < ApplicationRecord
     end
 
     if model
-      users.select do |user|
+      allowed = users.select do |user|
         policy = Pundit.policy(user, model)
         if user.has_cached_role?(:investor_advisor)
           # Use the original user object directly. dup clears the primary key and association cache,
           # causing has_cached_role? to fail. permissioned_investor_advisor? does not use curr_role.
-          policy.permissioned_investor_advisor?(as_entity_id: investor_entity_id) ||
-            policy.show? ||
-            visible_from_home_entity?(user, model)
+          advisor_notifiable?(user, model, policy)
         else
           # For normal users, check show? first; fall back to overview? for models
           # (like Deal) where investors access via overview? rather than show?.
-          policy.show? || (policy.respond_to?(:overview?) && policy.overview?)
+          investor_can_view?(policy)
         end
       end
+
+      # An approved, subscribed contact dropped here gets no notification row and no skip reason,
+      # while the Users tab still shows them approved and email-enabled - which is how the
+      # advisor-at-home bug went unnoticed for months. Leave a trace naming the contact.
+      # Worked example X5 — openspec/changes/fix-advisor-own-investor-access/report.md#verification
+      # Ids only, no email address: this also fires for every correctly-excluded client contact.
+      (users - allowed).each do |user|
+        access = accesses.detect { |a| a.user_id == user.id }
+        Rails.logger.info(
+          "InvestorAccess #{access&.id} (user #{user.id}) on investor #{id} not notified: " \
+          "no access to #{model.class.name} #{model.id}"
+        )
+      end
+      allowed
     else
       users
     end
+  end
+
+  # Whether a contact holding the investor_advisor role should get THIS investor's notice about
+  # `model`. Shared by the send path (#notification_users) and the fund's recipient preview
+  # (FundsHelper#calculate_user_access_stats) so the two cannot drift.
+  #
+  # `policy.show?` answers "can this user see the model?", not "can they see it as a contact of
+  # this investor?". An advisor sees fund F through their own investor at home, or through the
+  # client they are switched into - so show? alone would hand them every OTHER investor's notices
+  # on F too (a client who never gave them a personal grant on F). Hence show? counts only when
+  # this investor IS the entity they are in right now.
+  # Worked examples X7, X8 — openspec/changes/fix-advisor-own-investor-access/report.md#verification
+  def advisor_notifiable?(user, model, policy = Pundit.policy(user, model))
+    # 1. A personal grant from this investor's entity (Investor Advisor grant): wherever they are.
+    policy.permissioned_investor_advisor?(as_entity_id: investor_entity_id) ||
+      # 2. They are in this investor's entity right now (own investor at home, or the client
+      #    they are switched into) and can see the model there.
+      (investor_entity_id == user.entity_id && investor_can_view?(policy)) ||
+      # 3. Their own investor while switched away: judged as after a revert.
+      visible_from_home_entity?(user, model)
+  end
+
+  # What a plain contact is judged by: show?, or overview? for models (like Deal) that investors
+  # reach through overview? rather than show?. The advisor branch used to check show? only, so an
+  # advisor never received a deal notice even for their own investor.
+  # Worked example E14 — openspec/changes/fix-advisor-own-investor-access/report.md#verification
+  def investor_can_view?(policy)
+    policy.show? || (policy.respond_to?(:overview?) && policy.overview?)
   end
 
   # An investor_advisor's entity_id is whichever host entity he last switched into — transient state
@@ -427,7 +467,7 @@ class Investor < ApplicationRecord
     return false unless investor_entity_id == user.advisor_entity_id
 
     persona = user.home_persona
-    persona.present? && Pundit.policy(persona, model).show?
+    persona.present? && investor_can_view?(Pundit.policy(persona, model))
   end
 
   # The one definition of "someone at this investor will actually receive Capital Call emails"

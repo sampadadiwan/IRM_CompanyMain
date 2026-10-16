@@ -78,7 +78,13 @@ class InvestorKycPolicy < ApplicationPolicy
 
     # 3. Pre-existing investor-side paths, unchanged.
     if user.has_cached_role?(:investor_advisor)
-      InvestorKyc.for_investor_advisor(user, across_all_entities:).exists?(id: record.id)
+      InvestorKyc.for_investor_advisor(user, across_all_entities:).exists?(id: record.id) ||
+        # At home an advisor is also a plain investor: their OWN investor's KYC opens exactly as it
+        # does for any other contact (the KYC list, Scope above, already shows it). for_investor_advisor
+        # only reaches a KYC through a commitment on a permissioned fund, so a KYC with no
+        # commitment yet was denied, and its KYC-form email skipped them.
+        # Worked example E15 — openspec/changes/fix-advisor-own-investor-access/report.md#verification
+        (advisor_at_home? && user.entity_id == record.investor&.investor_entity_id)
     else
       # Investor viewing their own KYC.
       user.entity_id == record.investor&.investor_entity_id

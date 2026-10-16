@@ -225,11 +225,13 @@ module FundsHelper
     approved_investor_access_ia = subscribed.investor_advisors.includes(:user, :granter).distinct
 
     # Filter Investor Advisors to ensure they have permission to the fund
+    # The same rule the send path applies (Investor#advisor_notifiable?), so the preview counts
+    # exactly who will be sent to. It used to carry its own copy, which looked for personal grants
+    # in the FUND's entity rather than the investor's and counted any show? - so it could disagree
+    # with the send in both directions.
+    # Worked example E8 — openspec/changes/fix-advisor-own-investor-access/report.md#verification
     approved_investor_access_ia = approved_investor_access_ia.filter do |ia|
-      policy = Pundit.policy(ia.user, model)
-      policy.permissioned_investor_advisor?(as_entity_id: model.entity_id) || policy.show? ||
-        # Keep this preview in step with the send-time rule in Investor#notification_users.
-        ia.investor.visible_from_home_entity?(ia.user, model)
+      ia.investor.advisor_notifiable?(ia.user, model)
     end
 
     # Tag-excluded contacts (both regular and IA) shown as a single "not subscribed" list

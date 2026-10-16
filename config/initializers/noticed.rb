@@ -71,7 +71,7 @@ module NotificationExtensions
     # since an investor advisor's access does not depend on which persona they're switched into.
     enabled = model.entity_id == recipient.entity_id ||
               folio_channel_enabled?(:email_enabled) ||
-              investor_advisor_show_enabled
+              (!named_contact_on_folio? && investor_advisor_show_enabled)
 
     # X3 - the skip happens in deliver_by's config.if, before any mailer runs, so no skip_reason is
     # ever written. Log which folio and access decided it, so "Email sent: No" can be traced.
@@ -104,6 +104,15 @@ module NotificationExtensions
   #     reported through ExceptionNotifier rather than only logged: rescuing it quietly would make
   #     it indistinguishable from an intentional denial, and the advisor would just stop getting
   #     emails with nobody the wiser.
+  # The recipient is a named contact on this notification's folio, so that contact row's own
+  # email switch (folio_channel_enabled?) is the answer and the advisor-grant override below must
+  # not reverse an explicit opt-out. Without this, a Fund Advisor of the fund manager who opted out
+  # on their OWN investor's row was emailed anyway once their own records became visible to them
+  # at home. Worked example E13 — openspec/changes/fix-advisor-own-investor-access/report.md#verification
+  def named_contact_on_folio?
+    notification_investor.present? && investor_access.present?
+  end
+
   def investor_advisor_show_enabled
     return false unless model.respond_to?(:entity) && model.entity.present?
     return false unless model.entity.investor_advisors.exists?(user_id: recipient.id)

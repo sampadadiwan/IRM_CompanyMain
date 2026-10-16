@@ -163,7 +163,10 @@ class ApplicationPolicy
     end
   end
 
-  def permissioned_investor_non_advisor?(metadata = "none", owner: nil)
+  # own_entity_only: count only contact rows on investors in the user's current entity. Used for an
+  # advisor at home, whose other approved contact rows are on their CLIENTS' investors (added by
+  # the advisor grants) and must never open anything in the home view.
+  def permissioned_investor_non_advisor?(metadata = "none", owner: nil, own_entity_only: false)
     # Is the user an investor
     if %w[investor].include?(user.curr_role) &&
        !belongs_to_entity?(user, record)
@@ -174,7 +177,11 @@ class ApplicationPolicy
       # Find ARs for this user via their approved investor accesses.
       # access_to_category is never stored in production (the UI always expands category → per-investor ARs),
       # so matching by access_to_investor_id is sufficient.
-      approved_investor_ids = InvestorAccess.approved.where(user_id: user.id).pluck(:investor_id)
+      approved_accesses = InvestorAccess.approved.where(user_id: user.id)
+      # Worked example E4 — openspec/changes/fix-advisor-own-investor-access/report.md#verification:
+      # without this, a fund granted only to a client's investor would open at home.
+      approved_accesses = approved_accesses.where(investor_entity_id: user.entity_id) if own_entity_only
+      approved_investor_ids = approved_accesses.pluck(:investor_id)
       return false if approved_investor_ids.empty?
 
       ar = AccessRight.where(
@@ -235,10 +242,35 @@ class ApplicationPolicy
 
   def permissioned_investor?(metadata = "none", owner: nil, as_entity_id: nil)
     if user.has_cached_role?(:investor_advisor)
-      permissioned_investor_advisor?(metadata, owner:, as_entity_id:)
+      # The investor_advisor role is global: holding it for ANY grant (an Investor Advisor grant on
+      # a client, or a Fund Advisor grant on a fund company) used to send every investor check down
+      # the advisor rule, which only accepts a personal (user-level) grant. An advisor who is also a
+      # plain approved contact of their OWN investor therefore lost that investor's fund-wide grant:
+      # no call notices, no fund screens (prod: user 2564 / investor 4800 / fund 159).
+      #
+      # At home (not switched into any grant), they are also judged as a plain investor, limited
+      # to contact rows in their home entity. While switched, only the advisor rule applies, so
+      # where they happen to be switched never widens what they see.
+      # Worked examples H1–H3, H5, H7, E3, E4, E7, E11, E12, X4, X6 —
+      # openspec/changes/fix-advisor-own-investor-access/report.md#verification
+      permissioned_investor_advisor?(metadata, owner:, as_entity_id:) ||
+        (advisor_at_home? && permissioned_investor_non_advisor?(metadata, owner:, own_entity_only: true))
     else
-      permissioned_investor_non_advisor?(metadata, owner:)
+      # An advisor account whose stored home roles leave investor_advisor out (prod: e.g.
+      # "employee,investor" on an Investor-type home) loses the role on revert, yet still holds
+      # approved contact rows on its CLIENTS' investors - so the same home-entity limit applies.
+      # Worked example E16 — openspec/changes/fix-advisor-own-investor-access/report.md#verification
+      permissioned_investor_non_advisor?(metadata, owner:, own_entity_only: user.advisor_entity_id.present?)
     end
+  end
+
+  # "Not switched into any grant", judged by BOTH switch markers, because neither is reliable on
+  # its own in prod data: User#investor_advisor? is false whenever advisor_entity_id is nil (legacy
+  # advisors, even while switched), and 3 switched advisors carry a nil investor_advisor_id.
+  # InvestorAdvisor#switch sets investor_advisor_id and moves entity_id away from
+  # advisor_entity_id; revert undoes both. Worked example X6 — the report above.
+  def advisor_at_home?
+    !user.investor_advisor? && user.investor_advisor_id.nil?
   end
 
   # Permissioned for Relationship Manager

@@ -480,19 +480,42 @@ class User < ApplicationRecord
   end
 
   def build_home_persona
+    # A deleted home entity: a real revert would raise in setup_defaults, so there is no home
+    # persona to judge by (and curr_role_after_setup_defaults must not guess one).
+    home = Entity.find_by(id: advisor_entity_id)
+    return nil if home.nil?
+
+    build_persona(home, investor_advisor_id: nil, role_names: home_role_names(home_entity_type: home.entity_type))
+  end
+  private :build_home_persona
+
+  # In-memory mirror of InvestorAdvisor#switch(self) for this grant - the user as they would be
+  # right after picking the grant in the persona dropdown: its entity, investor_advisor_id, the
+  # grant's allowed roles plus investor_advisor (exactly what switch re-adds), and the curr_role
+  # setup_defaults gives in that entity. Read-only and never saved, like #home_persona, so it can
+  # only confirm what a real switch would allow. Used by the Access Denied hint to name the
+  # client to switch into. Worked examples H8, E17, E18 —
+  # openspec/changes/fix-advisor-own-investor-access/report.md#verification
+  def switched_persona(grant)
+    return nil if grant.entity.nil?
+
+    build_persona(grant.entity, investor_advisor_id: grant.id,
+                                role_names: (Array(grant.allowed_roles).map(&:to_s) + ["investor_advisor"]).uniq)
+  end
+
+  # Shared by both personas so the two can never be assembled differently.
+  def build_persona(entity, investor_advisor_id:, role_names:)
     # A fresh instance rather than dup: dup clears the primary key and association cache, which
     # breaks has_cached_role? (see Investor#notification_users).
     persona = User.find(id)
-    persona.entity_id = advisor_entity_id
-    persona.entity_type = persona.entity&.entity_type
-    persona.investor_advisor_id = nil
+    persona.entity = entity
+    persona.entity_type = entity.entity_type
+    persona.investor_advisor_id = investor_advisor_id
+    persona.curr_role = curr_role_after_setup_defaults(entity)
 
-    role_names = home_role_names(home_entity_type: persona.entity_type)
-    persona.curr_role = role_names.first
-
-    # InvestorAdvisor.revert re-adds these with add_role (find-or-create), so a role name with no
-    # Role row yet must still count; an unsaved Role satisfies rolify's has_cached_role? lookup
-    # (it only compares name/resource) without writing anything.
+    # switch / revert re-add these with add_role (find-or-create), so a role name with no Role row
+    # yet must still count; an unsaved Role satisfies rolify's has_cached_role? lookup (it only
+    # compares name/resource) without writing anything.
     existing_roles = Role.where(name: role_names, resource_type: nil, resource_id: nil).to_a
     missing_roles = (role_names - existing_roles.map(&:name)).map { |name| Role.new(name:) }
     roles_association = persona.association(:roles)
@@ -502,7 +525,31 @@ class User < ApplicationRecord
     persona.readonly!
     persona
   end
-  private :build_home_persona
+  private :build_persona
+
+  # The curr_role that setup_defaults sets in `entity` - which is what both InvestorAdvisor#switch
+  # and InvestorAdvisor.revert leave behind (each runs setup_defaults, then only swaps roles).
+  # Taking the first home role instead was only right for an "Investor Advisor" firm: for an
+  # Investor-type home (prod user 2564) revert gives `investor` while the first home role is
+  # `investor_advisor`, so the home persona failed the investor rule's curr_role check and the
+  # advisor, switched into a client, missed notices for their own investment.
+  # Worked examples E1, E9 — openspec/changes/fix-advisor-own-investor-access/report.md#verification
+  # Keep the branches in step with setup_defaults; E9 compares the two.
+  def curr_role_after_setup_defaults(entity)
+    entity_type = entity.entity_type
+    if entity_type == "Company" || entity.is_fund?
+      "employee"
+    elsif entity_type == "Investor Advisor"
+      # setup_defaults: the first of advisor_entity_roles (defaulted, investor_advisor appended).
+      home_role_names(home_entity_type: entity_type).first
+    elsif ["Investor", "Investment Advisor", "Family Office"].include?(entity_type) || InvestorAccess.exists?(user_id: id)
+      "investor"
+    else
+      # setup_defaults leaves curr_role alone for any other entity type.
+      curr_role
+    end
+  end
+  private :curr_role_after_setup_defaults
 
   # The roles this advisor holds in his home entity — exactly what InvestorAdvisor.revert re-adds.
   # setup_defaults forces investor_advisor into advisor_entity_roles for an "Investor Advisor"
