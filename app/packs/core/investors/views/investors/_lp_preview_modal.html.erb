@@ -1,0 +1,34 @@
+<%#
+  Company page › Misc › Preview as LP…: pick an LP and a fund, then see the LP Company Dashboard exactly as that
+  LP would. Bootstrap modal, like the page's other modals.
+  Worked examples H13, E65, E93 — openspec/changes/lp-folio-portfolio-dashboard/business-rules.md
+%>
+<% fund_ids = AggregatePortfolioInvestment.where(portfolio_company_id: investor.id).distinct.pluck(:fund_id) %>
+<% funds = Fund.where(id: fund_ids).order(:name) %>
+<% lps = Investor.where(entity_id: investor.entity_id, id: CapitalCommitment.where(fund_id: fund_ids + Fund.where(master_fund_id: fund_ids).pluck(:id)).select(:investor_id)).order(:investor_name) %>
+<div class="modal fade" id="lpPreviewModal" tabindex="-1" aria-labelledby="lpPreviewModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <%= form_with url: preview_lp_company_dashboard_path(investor), method: :get, data: { turbo: false } do |f| %>
+        <div class="modal-header">
+          <h5 class="modal-title" id="lpPreviewModalLabel">Preview as LP</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <%= f.label :investor_id, "LP", class: "form-label" %>
+            <%= f.select :investor_id, lps.map { |lp| [lp.investor_name, lp.id] }, {}, class: "form-select" %>
+          </div>
+          <div class="mb-3">
+            <%= f.label :fund_id, "Fund", class: "form-label" %>
+            <%= f.select :fund_id, funds.map { |fund| [fund.name, fund.id] }, {}, class: "form-select" %>
+          </div>
+          <small class="text-muted">Shows exactly what this LP would see on this company's page.</small>
+        </div>
+        <div class="modal-footer">
+          <%= f.submit "Preview", class: "btn btn-primary" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

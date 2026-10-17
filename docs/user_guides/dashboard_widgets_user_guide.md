@@ -166,11 +166,29 @@ A **named dashboard** is a distinct set of widgets saved under a label for a das
 | Setting | Meaning |
 |---------|---------|
 | **Dashboard Name** | The dashboard type (e.g. Fund Dashboard). |
-| **Instance Name** | The configuration label (e.g. Default, Compliance, Budget View), max 20 characters. |
+| **Instance Name** | The configuration label (e.g. Default, Compliance, Budget View), max 100 characters. |
 
 Widgets sharing the same dashboard type + name + entity form one named dashboard. Those named **Default** are the fallback when no specific name is requested. The same widget can appear in several named dashboards with different options — for example a Fund Ratios widget set to "Actual" in Default and "Budget" in a Budget View.
 
 **To create one:** in **Dashboard Widgets**, create the widgets you want and give them all the same **Instance Name** (e.g. "Compliance").
+
+### LP layouts (what LPs see on a company page)
+
+On the **Portfolio Company Dashboard**, any named dashboard whose name includes the tag **LP** is an **LP layout**: "LP" for every shared company, and "LP, FinTech", "LP, D2C" and so on for companies carrying those tags. Your Default and other layouts stay internal.
+
+```mermaid
+flowchart LR
+    A["Shared company<br/>tagged Fintech"] --> B{"LP layout whose tags<br/>match most?"}
+    B -- "LP, FinTech" --> C["LPs see LP, FinTech"]
+    B -- "none" --> D{"plain LP layout?"}
+    D -- "yes" --> E["LPs see LP"]
+    D -- "no" --> F["Holdings card only"]
+```
+
+- **Set up LP layout** (on the Dashboard Widgets page when no LP layout exists) creates "LP" with Data Card, Key KPIs and Valuations (Key KPIs only if your firm has the KPIs module). LP layouts need the Fund Portfolios module. **New LP layout for a tag** creates "LP, <tag>" as a copy of "LP".
+- Only LP-safe widgets can be added: Data Card, Key Kpis, Kpis, Kpis Performance Table, Valuations, Portfolio Investments, Portfolio Stats and Embed Document. KPIs shown to LPs are Actual only.
+- A widget's **Tag List** inside an LP layout narrows it to companies with one of those tags; leave it empty for every company using the layout.
+- The company's Stakeholder page says which LP layout its LPs get and why, and warns when two layouts match equally (the first by name wins).
 
 ---
 
@@ -348,6 +366,26 @@ The menu only lists widgets with **Show Menu** ticked. Edit the widget and tick 
 
 **Why doesn't my widget show a heading?**
 Tick **Show Title** (shows the widget type) and/or **Show Tags** (shows the Tags label) on the widget. Both are off by default.
+
+### LP layouts
+
+**Why use an LP layout instead of my Default dashboard?**
+So LPs see a curated page — order, sizes and widgets chosen for them — while your internal dashboard stays as it is. Only layouts whose name includes the tag LP are ever shown to LPs.
+
+**How do I give fintech companies different widgets?**
+Tag those companies (e.g. Fintech) on their Stakeholder page and click **New LP layout for a tag** with "FinTech". Their LPs see "LP, FinTech" instead of "LP"; matching ignores case.
+
+**What happens if I add a Notes or Captable widget to an LP layout?**
+The save is refused: "This widget can't be added to an LP layout: it isn't safe to show LPs." Only the LP-safe widget types are offered when you add a widget from an LP layout.
+
+**How do I show a founder video to LPs?**
+Upload the video to each company's documents under one name (e.g. "Founder Video") and add an **Embed Document** widget with that name to the LP layout. It plays inline; a company without that document simply doesn't show the widget.
+
+**Why can't I add a KPI widget to an LP layout?**
+KPI widgets (Key Kpis, Kpis, Kpis Performance Table) read KPI data, which needs your firm's **KPIs** module. Without it, the widget form doesn't offer them on LP layouts, a KPI widget already in a layout is skipped on LP pages, and Set up LP layout starts with Data Card and Valuations only. For example, an "LP" layout holding Data Card, Key Kpis and Valuations shows LPs just Data Card and Valuations.
+
+**What does an LP see if no LP layout applies?**
+Only their holdings card and "No further company information has been shared." Internal widgets are never used as a fallback.
 
 ## Related Guides
 

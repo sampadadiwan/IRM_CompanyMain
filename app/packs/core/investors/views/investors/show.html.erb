@@ -21,6 +21,9 @@
 
     <%# Notes, Tasks and Emails live in the Activity tab below (each list has its own New button) %>
 
+    <%# LP folio portfolio — one LPs menu: state, Show / Hide from LPs (H9, H18), Preview as LP (H13) %>
+    <%= render "investors/lp_sharing_button", investor: @investor if policy(@investor).lp_sharing? %>
+
     <% if policy(@investor).destroy? %>
       <%
         delete_data = { action: "click->confirm#popup", turbo: false }
@@ -221,6 +224,9 @@
     <% end %>
 
   </div>
+  <%# Which LP layout this company's LPs see, or what stops them (E73, E74, E91, E92) %>
+  <%= render "investors/lp_sharing_notice", investor: @investor if policy(@investor).lp_sharing? %>
+  <%= render "investors/lp_preview_modal", investor: @investor if policy(@investor).lp_sharing? %>
 </div>
 
 <div id="progress_panel_new" class="container-fluid px-3 pb-3"></div>

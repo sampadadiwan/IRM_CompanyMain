@@ -1,0 +1,63 @@
+<%#
+  Features step › LP portfolio view — one dropdown replacing "Show fund portfolios to LPs", with help text for the
+  chosen option, plus the allocation formula (both Allocated options) and the Your FMV formula (own share only).
+  The help line and the pickers are revealed with the existing conditional-visibility controller (data-show-when).
+  Worked examples H4, H5, E8, E79 — openspec/changes/lp-folio-portfolio-dashboard/business-rules.md
+%>
+<% formulas = LpPortfolioView.formulas_for(fund) %>
+<% option_help = {
+     hidden: "LPs don't see the portfolio, or any company pages, for this fund.",
+     whole_fund: "LPs see every holding of the fund, with the fund's cost and FMV.",
+     allocated: "LPs see only the holdings their folio has a non-zero amount for under the allocation formula — deals they were excused from stay hidden.",
+     allocated_with_share: "As \"Allocated to their folio\", plus Your Cost and Your FMV columns read from each LP's own allocation entries."
+   } %>
+<div id="lp_portfolio_view" data-controller="conditional-visibility tooltip">
+  <div class="d-flex align-items-start gap-2 mt-4 mb-2">
+    <i class="ti ti-briefcase fs-5 text-primary"></i>
+    <div>
+      <h6 class="mb-0">
+        <%= form.label :lp_portfolio_view, "LP portfolio view", class: "mb-0" %>
+        <%# E79 — the tooltip points to the other two places that decide what LPs see %>
+        <i class="ti ti-info-circle text-muted ms-1" data-bs-toggle="tooltip"
+           data-bs-title="Decides which holdings LPs see. To let LPs open a company's page, also switch the company to Show to LPs and set up an LP layout."></i>
+      </h6>
+      <small class="text-muted">What your LPs see of the fund's portfolio and its companies.</small>
+    </div>
+  </div>
+
+  <div class="toggle-row flex-column align-items-stretch">
+    <%= form.select :lp_portfolio_view, LpPortfolioView::LABELS.map { |key, label| [label, key] },
+                    { selected: fund.lp_portfolio_view },
+                    class: "form-select", data: { conditional_visibility_target: "source", action: "change->conditional-visibility#toggle" } %>
+    <%# The help line for the chosen option %>
+    <% option_help.each do |option, help| %>
+      <%# A plain wrapper: Bootstrap's d-flex would override the hidden attribute the controller sets %>
+      <div data-conditional-visibility-target="conditional" data-show-when="<%= option %>">
+        <small class="text-muted d-flex align-items-start gap-1"><i class="ti ti-arrow-right mt-1"></i> <%= help %></small>
+      </div>
+    <% end %>
+
+    <%# The pickers list only this fund's holding-level allocation formulas (X4, X5 refuse anything else) %>
+    <div data-conditional-visibility-target="conditional" data-show-when="allocated allocated_with_share">
+      <%= form.label :lp_allocation_fund_formula_id, class: "toggle-row-label d-flex align-items-center gap-1" do %>
+        <i class="ti ti-filter text-muted"></i> Allocation formula
+        <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip"
+           data-bs-title="Pick the formula that allocates each holding's cost to folios, e.g. Allocated Portfolio Cost. Proforma and company-level formulas can't be used."></i>
+      <% end %>
+      <%= form.select :lp_allocation_fund_formula_id, formulas.map { |f| [f.name, f.id] }, { include_blank: "Choose a formula" }, class: "form-select" %>
+      <small class="text-muted d-block">A holding is shown when the LP's folio has a non-zero amount under this formula. Its entries are also Your Cost.</small>
+    </div>
+    <div data-conditional-visibility-target="conditional" data-show-when="allocated_with_share">
+      <%= form.label :lp_fmv_fund_formula_id, class: "toggle-row-label d-flex align-items-center gap-1" do %>
+        <i class="ti ti-chart-dots text-muted"></i> Your FMV formula
+        <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip"
+           data-bs-title="Pick the formula that allocates each holding's fair value to folios, e.g. Allocated Portfolio FMV. It must differ from the allocation formula."></i>
+      <% end %>
+      <%= form.select :lp_fmv_fund_formula_id, formulas.map { |f| [f.name, f.id] }, { include_blank: "Choose a formula" }, class: "form-select" %>
+      <small class="text-muted d-block">Each LP's Your FMV is the latest entry under this formula for their folio.</small>
+    </div>
+    <% if formulas.none? %>
+      <small class="text-muted d-block"><i class="ti ti-alert-circle"></i> This fund has no portfolio allocation formulas yet, so the Allocated options can't be saved until one is added.</small>
+    <% end %>
+  </div>
+</div>

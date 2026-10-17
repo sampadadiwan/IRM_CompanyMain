@@ -1,0 +1,17 @@
+<%#
+  Fund page (fund team): a picked LP portfolio formula was deleted, so LPs have lost that view — say which pick to
+  replace and link to the fund form. Existing alert-warning pattern.
+  Worked examples E6, E6a — openspec/changes/lp-folio-portfolio-dashboard/business-rules.md
+%>
+<% missing = [] %>
+<% missing << "Pick a new allocation formula" if fund.lp_folio_portfolio? && fund.lp_allocation_fund_formula.nil? %>
+<% missing << "Pick a new formula for Your FMV" if fund.lp_portfolio_view == :allocated_with_share && fund.lp_fmv_fund_formula.nil? %>
+<% if missing.any? %>
+  <div class="alert alert-warning d-flex align-items-start gap-2" id="lp_portfolio_picks_notice">
+    <i class="ti ti-alert-triangle"></i>
+    <div>
+      <% missing.each do |message| %><div><%= message %> for the LP portfolio view.</div><% end %>
+      <%= link_to "Open fund settings", edit_fund_path(fund) %>
+    </div>
+  </div>
+<% end %>

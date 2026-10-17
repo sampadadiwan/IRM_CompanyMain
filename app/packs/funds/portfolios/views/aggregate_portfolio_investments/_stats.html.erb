@@ -1,14 +1,30 @@
 <%# Cards come from NumberStatsComponent. Cache digests track partials, not component templates — reword this note when the card markup changes so the cached fragment below is rebuilt (last: border-top card style, 2026-10-15). %>
+<%
+  # Under an Allocated LP portfolio view an LP's totals cover only the holdings allocated to their folio, never
+  # the whole fund (H2: 25 + 15 = ₹40 Cr, not the fund's ₹60 Cr). Per-LP figures are not cached.
+  # Worked examples H2, E43 — openspec/changes/lp-folio-portfolio-dashboard/business-rules.md
+  lp_api_ids = (LpPortfolioVisibility.for_user(current_user).visible_api_ids(fund) if fund && current_user&.curr_role_investor?)
+%>
 <% if fund %>
-  <% cache_if(current_user != nil, cache_key(["api_stats", fund]), expires_in: 5.day) do %>
+  <% cache_if(current_user != nil && lp_api_ids.nil?, cache_key(["api_stats", fund]), expires_in: 5.day) do %>
     <% params[:force_units] = fund.default_currency_units %>
+    <%
+      apis = fund.aggregate_portfolio_investments
+      pis = fund.portfolio_investments
+      cashflows = fund.portfolio_cashflows
+      if lp_api_ids
+        apis = apis.where(id: lp_api_ids)
+        pis = pis.where(aggregate_portfolio_investment_id: lp_api_ids)
+        cashflows = cashflows.where(aggregate_portfolio_investment_id: lp_api_ids)
+      end
+    %>
 
     <% cards_data = [
-      { path: nil, stat: money_to_currency(Money.new(fund.portfolio_investments.sum(:net_bought_amount_cents), fund.currency), params), subtitle: "Bought Amount", progress_bar_color: "success", text_info: "currency-dollar", tooltip: "What the fund has paid for its portfolio investments, net of shares sold" },
-      { path: nil, stat: money_to_currency(Money.new(fund.aggregate_portfolio_investments.sum(:sold_amount_cents), fund.currency), params), subtitle: "Sold Amount", progress_bar_color: "danger", text_info: "cash", tooltip: "What the fund has received from selling investments" },
-      { path: nil, stat: money_to_currency(Money.new(fund.aggregate_portfolio_investments.sum(:fmv_cents), fund.currency), params), subtitle: "FMV", progress_bar_color: "info", text_info: "graph", tooltip: "Fair market value: what the holdings are worth now, per the latest valuations" },
-      { path: nil, stat: money_to_currency(Money.new(fund.aggregate_portfolio_investments.sum(:cost_of_remaining_cents), fund.currency), params), subtitle: "Cost Of Remaining", progress_bar_color: "warning", text_info: "currency-dollar", tooltip: "What the fund paid for the holdings it still owns" },
-      { path: nil, stat: money_to_currency(Money.new(fund.portfolio_cashflows.sum(:amount_cents), fund.currency), params), subtitle: "Income", progress_bar_color: "success", text_info: "currency-dollar", tooltip: "Dividends, interest and other income received from the portfolio" },
+      { path: nil, stat: money_to_currency(Money.new(pis.sum(:net_bought_amount_cents), fund.currency), params), subtitle: "Bought Amount", progress_bar_color: "success", text_info: "currency-dollar", tooltip: "What the fund has paid for its portfolio investments, net of shares sold" },
+      { path: nil, stat: money_to_currency(Money.new(apis.sum(:sold_amount_cents), fund.currency), params), subtitle: "Sold Amount", progress_bar_color: "danger", text_info: "cash", tooltip: "What the fund has received from selling investments" },
+      { path: nil, stat: money_to_currency(Money.new(apis.sum(:fmv_cents), fund.currency), params), subtitle: "FMV", progress_bar_color: "info", text_info: "graph", tooltip: "Fair market value: what the holdings are worth now, per the latest valuations" },
+      { path: nil, stat: money_to_currency(Money.new(apis.sum(:cost_of_remaining_cents), fund.currency), params), subtitle: "Cost Of Remaining", progress_bar_color: "warning", text_info: "currency-dollar", tooltip: "What the fund paid for the holdings it still owns" },
+      { path: nil, stat: money_to_currency(Money.new(cashflows.sum(:amount_cents), fund.currency), params), subtitle: "Income", progress_bar_color: "success", text_info: "currency-dollar", tooltip: "Dividends, interest and other income received from the portfolio" },
     ] %>
 
     <div class="row">

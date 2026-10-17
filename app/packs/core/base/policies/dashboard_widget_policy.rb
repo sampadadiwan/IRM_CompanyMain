@@ -25,6 +25,12 @@ class DashboardWidgetPolicy < ApplicationPolicy
     belongs_to_entity?(user, record)
   end
 
+  # Setting up LP layouts: only for fund managers with the fund-portfolios module (E96 —
+  # openspec/changes/lp-folio-portfolio-dashboard/business-rules.md)
+  def manage_lp_layouts?
+    create? && user.entity.permissions.enable_fund_portfolios?
+  end
+
   def new?
     create?
   end

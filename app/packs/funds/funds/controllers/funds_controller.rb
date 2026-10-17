@@ -146,7 +146,7 @@ class FundsController < ApplicationController
 
     respond_to do |format|
       if assign_feature_params && @fund.save
-        format.html { redirect_to fund_url(@fund), notice: "Fund was successfully created." }
+        format.html { redirect_to fund_url(@fund), notice: "Fund was successfully created.", alert: lp_portfolio_warning }
         format.json { render :show, status: :created, location: @fund }
       else
         format.html { render :new, status: :unprocessable_entity }
@@ -177,7 +177,7 @@ class FundsController < ApplicationController
     respond_to do |format|
       @fund.assign_attributes(fund_params)
       if assign_feature_params && @fund.save
-        format.html { redirect_to fund_url(@fund), notice: "Fund was successfully updated." }
+        format.html { redirect_to fund_url(@fund), notice: "Fund was successfully updated.", alert: lp_portfolio_warning }
         format.json { render :show, status: :ok, location: @fund }
       else
         format.html { render :edit, status: :unprocessable_entity }
@@ -482,6 +482,8 @@ class FundsController < ApplicationController
     authorize setting, :update?
     attrs = evergreen_setting_attributes_for_update
     saved = false
+    # The LP portfolio view is on this form too (H5) — applied before the fund saves
+    assign_lp_portfolio_view
     ActiveRecord::Base.transaction do
       saved = @fund.update(fund_params) && setting.update(attrs)
       raise ActiveRecord::Rollback unless saved
@@ -565,6 +567,8 @@ class FundsController < ApplicationController
                                  :tag_list,
                                  :currency, :unit_types, :units_allocation_engine, :form_type_id, :first_close_date, :last_close_date, :tracking_currency,
                                  :esign_emails,
+                                 # LP portfolio view picks (LpPortfolioView); the view itself is applied in assign_feature_params
+                                 :lp_allocation_fund_formula_id, :lp_fmv_fund_formula_id,
                                  # Legacy switch names still accepted from JSON clients; they write the fund features
                                  *FundEnabled::LEGACY_FLAGS.excluding(:editable_formulas),
                                  documents_attributes: Document::NESTED_ATTRIBUTES, properties: {},
@@ -575,16 +579,34 @@ class FundsController < ApplicationController
   # form doesn't manage and refuses a market-data flag whose entity feature is off.
   # Worked examples H3, X3 — openspec/changes/fund-market-data/business-rules.md
   def assign_feature_params
-    return true unless params[:fund]&.key?(:features)
+    if params[:fund]&.key?(:features)
+      result = FundFeatureGuard.call(@fund, params[:fund][:features])
+      if result.refused.any?
+        # X3 — Error case: direct submission of an unavailable switch
+        @fund.errors.add(:features, "#{result.refused.map { |f| FundFeatureGuard.label(f) }.to_sentence} is not available for this fund")
+        return false
+      end
 
-    result = FundFeatureGuard.call(@fund, params[:fund][:features])
-    if result.refused.any?
-      # X3 — Error case: direct submission of an unavailable switch
-      @fund.errors.add(:features, "#{result.refused.map { |f| FundFeatureGuard.label(f) }.to_sentence} is not available for this fund")
-      return false
+      @fund.features = result.features
     end
-
-    @fund.features = result.features
+    assign_lp_portfolio_view
     true
+  end
+
+  # The LP portfolio view dropdown replaces the "Show fund portfolios to LPs" checkbox, so it is applied after
+  # the feature list (which would otherwise clear show_portfolios). LpPortfolioView keeps the folio / own-share
+  # bits when the view is Hidden (E3).
+  # Worked examples H4, H5, E4 — openspec/changes/lp-folio-portfolio-dashboard/business-rules.md
+  def assign_lp_portfolio_view
+    # E95 — without the fund-portfolios module the setting is hidden and its stored value kept
+    return unless @fund.entity.permissions.enable_fund_portfolios?
+
+    view = params.dig(:fund, :lp_portfolio_view)
+    @fund.lp_portfolio_view = view if LpPortfolioView::OPTIONS.include?(view.to_s.to_sym)
+  end
+
+  # E1 — the fund is saved; the team is warned that LPs will see an empty portfolio until a run allocates
+  def lp_portfolio_warning
+    LpPortfolioView::NO_FOLIO_ALLOCATIONS if @fund.lp_folio_allocation_warning?
   end
 end

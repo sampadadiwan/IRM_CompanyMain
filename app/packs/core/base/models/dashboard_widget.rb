@@ -6,10 +6,27 @@ class DashboardWidget < ApplicationRecord
   validates :dashboard_name, :widget_name, :size, :tags, presence: true
   validates :dashboard_name, length: { maximum: 30 }
   validates :widget_name, length: { maximum: 30 }
-  validates :name, length: { maximum: 20 }, allow_blank: true
+  # Layout names carry company tags for LP layouts ("LP, FinTech") — E89
+  validates :name, length: { maximum: 100 }, allow_blank: true
+  # X6 — an LP layout only takes widgets that are safe to show LPs
+  validate :lp_safe_in_lp_layout
   validates :size, length: { maximum: 10 }
   validates :tag_list, length: { maximum: 20 }, allow_blank: true
   validates :tags, length: { maximum: 100 }
+
+  # LP layouts: Portfolio Company Dashboard layouts whose comma-separated name includes the tag "LP" ("LP",
+  # "LP, FinTech"). The company's tags pick one for each shared company (LpLayoutResolver); only these widget
+  # types can be placed in one. Worked examples X6, E52, E88–E90 — openspec/changes/lp-folio-portfolio-dashboard/business-rules.md
+  LP_LAYOUT_TOKEN = "lp".freeze
+  LP_SAFE_WIDGET_NAMES = ["Data Card", "Key Kpis", "Kpis", "Kpis Performance Table", "Valuations",
+                          "Portfolio Investments", "Portfolio Stats", "Embed Document"].freeze
+  # LP-safe widgets that read KPI data: offered and shown only when the fund manager has the KPI module (E97)
+  LP_KPI_WIDGET_NAMES = ["Key Kpis", "Kpis", "Kpis Performance Table"].freeze
+  # What "Set up LP layout" starts the "LP" layout with
+  LP_STARTER_WIDGETS = ["Data Card", "Key Kpis", "Valuations"].freeze
+  # Starter settings so a new LP layout is not blank: the Data Card shows a few company fields
+  LP_STARTER_METADATA = { "Data Card" => '{cols: 2, fields: "Category:category,Sector:sector,City:city", title: "Summary"}' }.freeze
+  LP_UNSAFE_MESSAGE = "This widget can't be added to an LP layout: it isn't safe to show LPs.".freeze
 
   scope :enabled, -> { where(enabled: true) }
   scope :disabled, -> { where(enabled: false) }
@@ -145,6 +162,10 @@ class DashboardWidget < ApplicationRecord
     "Portfolio IRR" => "Annualised return (IRR) and multiple (MOIC) on each portfolio company"
   }.freeze
 
+  # Portfolio Dashboard widgets an LP keeps under an Allocated LP portfolio view: the holdings list, which the
+  # policy scopes narrow to the LP's folio (E42 — openspec/changes/lp-folio-portfolio-dashboard/business-rules.md)
+  LP_ALLOCATED_PORTFOLIO_WIDGETS = ["Portfolio Investments"].freeze
+
   PORTFOLIO_WIDGETS = [
     DashboardWidget.new(dashboard_name: PORTFOLIO_DASHBOARD, widget_name: "Portfolio Stats", path: "aggregate_portfolio_investments/widgets/stats", size: "XL", metadata_help: "{fields: 'Bought Amount,Sold Amount,...', field_names: 'Bought, Sold,...', force_units: 'Lakhs/Crores/Millions', tracking_currency: true, decimals: 2, currency: 'USD', per_row: 4, show_currency_filter: true}"),
     DashboardWidget.new(dashboard_name: PORTFOLIO_DASHBOARD, widget_name: "Portfolio Investments", path: "aggregate_portfolio_investments/widgets/portfolio_investments", size: "XL", metadata_help: "{ag: true, group_by_column: 'investment_instrument_name', show_fund_name: true/false}"),
@@ -251,7 +272,8 @@ class DashboardWidget < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[enabled dashboard_name widget_name owner_type position tags tag_list]
+    # name: lets guidance links open one layout, e.g. the company's LP layout (E91)
+    %w[enabled dashboard_name name widget_name owner_type position tags tag_list]
   end
 
   def self.add_all(entity, owner: nil)
@@ -265,6 +287,47 @@ class DashboardWidget < ApplicationRecord
 
   def self.all_widgets
     WIDGETS.values.flatten
+  end
+
+  # Layout name tokens, compared ignoring case and spaces (E82)
+  def self.layout_tokens(name)
+    name.to_s.split(",").map { |token| token.strip.downcase }.compact_blank
+  end
+
+  # Only the exact token "LP" marks an LP layout — "LPX" or "Help" are internal (E90)
+  def self.lp_layout_name?(name)
+    layout_tokens(name).include?(LP_LAYOUT_TOKEN)
+  end
+
+  # The company tags an LP layout is for ("LP, FinTech" -> ["fintech"])
+  def self.lp_layout_tags(name)
+    layout_tokens(name) - [LP_LAYOUT_TOKEN]
+  end
+
+  # The fund manager's LP layout names (distinct names first, filtered in Ruby — a handful per entity)
+  def self.lp_layout_names_for(entity_id)
+    where(dashboard_name: PORTFOLIO_COMPANY_DASHBOARD, entity_id:).distinct.pluck(:name).select { |name| lp_layout_name?(name) }
+  end
+
+  def lp_layout?
+    dashboard_name == PORTFOLIO_COMPANY_DASHBOARD && self.class.lp_layout_name?(name)
+  end
+
+  # Query params that open one layout in the widget list (guidance links)
+  def self.layout_filter(name)
+    { dashboard_name_eq: PORTFOLIO_COMPANY_DASHBOARD, name_eq: name }
+  end
+
+  # The LP-safe widgets for a fund manager: the KPI widgets only with the KPI module (E97)
+  def self.lp_safe_widget_names(entity)
+    entity&.permissions&.enable_kpis? ? LP_SAFE_WIDGET_NAMES : LP_SAFE_WIDGET_NAMES - LP_KPI_WIDGET_NAMES
+  end
+
+  # Widget types offered on the form: an LP layout lists only the LP-safe ones (E52, E97)
+  def self.widget_select_for(name, entity)
+    return widget_select unless lp_layout_name?(name)
+
+    widget_select.merge(PORTFOLIO_COMPANY_DASHBOARD => widget_select[PORTFOLIO_COMPANY_DASHBOARD] & lp_safe_widget_names(entity))
   end
 
   def self.widget_select
@@ -317,6 +380,13 @@ class DashboardWidget < ApplicationRecord
   end
 
   private
+
+  # X6 — refused on create and on an edit that moves a widget into an LP layout
+  def lp_safe_in_lp_layout
+    return unless lp_layout? && (new_record? || will_save_change_to_name? || will_save_change_to_widget_name?)
+
+    errors.add(:base, LP_UNSAFE_MESSAGE) unless self.class.lp_safe_widget_names(entity).include?(widget_name)
+  end
 
   def extract_keys_from_help
     keys = {}.deep_symbolize_keys

@@ -15,7 +15,56 @@ module DashboardWidgetsHelper
   #      - Widgets with an empty tag_list are returned.
   #      - Widgets with a tag_list are NOT returned.
   # 6. If no custom widgets are found after filtering, all available widgets for the dashboard are returned.
-  def dashboard_widgets(dashboard_name, entity_id, name: "Default", owner: nil, show_menu: nil, tag_list: nil)
+  def dashboard_widgets(dashboard_name, entity_id, name: "Default", owner: nil, show_menu: nil, tag_list: nil, lp: false)
+    return lp_layout_widgets(dashboard_name, entity_id, name:, owner:, show_menu:) if lp
+
+    widgets = configured_dashboard_widgets(dashboard_name, entity_id, name:, owner:, show_menu:, tag_list:)
+    lp_allocated_portfolio?(dashboard_name, owner) ? widgets.slice(*lp_allocated_portfolio_keys(widgets)) : widgets
+  end
+
+  # The LP Company Dashboard's widgets: the chosen LP layout's enabled, LP-safe widgets, narrowed by the company's
+  # own tags only (E86 — never the viewing LP's tags, E87) and never the default catalogue (E54).
+  # Worked examples H11, E47, E54, E86, E87 — openspec/changes/lp-folio-portfolio-dashboard/business-rules.md
+  def lp_layout_widgets(dashboard_name, entity_id, name:, owner:, show_menu: nil)
+    available = DashboardWidget::WIDGETS[dashboard_name].index_by(&:widget_name)
+    # E97 — KPI widgets are skipped when the fund manager has no KPI module, even if a layout still holds them
+    widgets = DashboardWidget.enabled.where(dashboard_name:, name:, entity_id:, widget_name: DashboardWidget.lp_safe_widget_names(Entity.find_by(id: entity_id)))
+    widgets = widgets.where(show_menu:) if show_menu.present?
+    company_tags = owner.respond_to?(:tag_list) ? owner.tag_list.to_s.presence : nil
+    widgets.order(:position).filter_map do |widget|
+      next unless available[widget.widget_name] && include_widget_by_tag?(widget, company_tags)
+
+      widget.path = available[widget.widget_name].path
+      ["#{widget.widget_name} #{widget.tags}", widget]
+    end.to_h
+  end
+
+  # LP versions of the widgets whose internal data screens are for the fund team (KPI grids, valuations, stats):
+  # they read Actual-only data limited to the LP's fund. The other LP-safe widgets render their usual partial.
+  LP_WIDGET_PARTIALS = {
+    "Kpis" => "lp_company_dashboards/widgets/kpis",
+    "Kpis Performance Table" => "lp_company_dashboards/widgets/kpis",
+    "Valuations" => "lp_company_dashboards/widgets/valuations",
+    "Portfolio Stats" => "lp_company_dashboards/widgets/stats"
+  }.freeze
+
+  def lp_widget_partial(widget)
+    LP_WIDGET_PARTIALS.fetch(widget.widget_name, widget.path)
+  end
+
+  # E42 — under an Allocated LP portfolio view an LP's fund Portfolio Dashboard keeps only widgets that list
+  # the LP's own holdings; fund-wide charts (FMV %, IRR, fund stats…) would show the whole fund.
+  # openspec/changes/lp-folio-portfolio-dashboard/business-rules.md
+  def lp_allocated_portfolio?(dashboard_name, owner)
+    dashboard_name == DashboardWidget::PORTFOLIO_DASHBOARD && owner.is_a?(Fund) &&
+      try(:current_user)&.curr_role_investor? && owner.lp_folio_portfolio?
+  end
+
+  def lp_allocated_portfolio_keys(widgets)
+    widgets.select { |_key, widget| DashboardWidget::LP_ALLOCATED_PORTFOLIO_WIDGETS.include?(widget.widget_name) }.keys
+  end
+
+  def configured_dashboard_widgets(dashboard_name, entity_id, name: "Default", owner: nil, show_menu: nil, tag_list: nil)
     # These are the available widgets for the dashboard_name, defined in DashboardWidget::WIDGETS
     available_widgets = DashboardWidget::WIDGETS[dashboard_name].index_by(&:widget_name)
 

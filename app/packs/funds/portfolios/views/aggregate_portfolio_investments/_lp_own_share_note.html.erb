@@ -1,0 +1,20 @@
+<%#
+  Under the LP holdings grid on an own-share view: which formulas the Your figures come from, and the LP's totals
+  over every visible holding. Existing alert-info pattern.
+  Worked examples H3, E5, E38, E41 — openspec/changes/lp-folio-portfolio-dashboard/business-rules.md
+%>
+<% currency_params = { force_units: summary.share_fund.default_currency_units } %>
+<div class="alert alert-info d-flex align-items-start gap-2 mt-2" id="lp_own_share_note" data-controller="tooltip">
+  <i class="ti ti-info-circle"></i>
+  <div>
+    <div>Your cost = "<%= summary.cost_formula_name %>", Your FMV = "<%= summary.fmv_formula_name %>".</div>
+    <div>
+      Your totals: cost <%= money_to_currency(summary.total_cost, currency_params) %>,
+      FMV <%= money_to_currency(summary.total_fmv, currency_params) %><%= ", multiple #{summary.total_multiple}" if summary.total_multiple %>.
+    </div>
+    <%# E38 — holdings without an entry for a figure are left out of that total, and counted %>
+    <% if summary.missing_count.positive? %>
+      <div>Excludes <%= pluralize(summary.missing_count, "holding") %> not yet allocated.</div>
+    <% end %>
+  </div>
+</div>

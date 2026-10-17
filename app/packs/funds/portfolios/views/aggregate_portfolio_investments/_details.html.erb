@@ -4,8 +4,7 @@
     <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#portfolio-investments-tab" title="Buy and sell transactions that make up this holding"><i class="ti ti-arrows-exchange me-1"></i>Investments</a>
     <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#cashflows-tab" title="Dividends, interest and other income received from this holding"><i class="ti ti-coins me-1"></i>Income</a>
     <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab" title="Documents filed against this holding"><i class="ti ti-file-text me-1"></i>Documents</a>
-    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#widgets-tab" title="Content blocks shown on this holding"><i class="ti ti-layout-dashboard me-1"></i>Widgets</a>
-    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#track-records-tab" title="Past performance figures"><i class="ti ti-trending-up me-1"></i>Track Record</a>
+    <%# E67 — the retired preview page's Widgets and Track Record tabs are gone; their records stay stored (lp-folio-portfolio-dashboard) %>
   </nav>
 
   <div class="tab-content" data-controller="datatable">
@@ -35,19 +34,6 @@
           <%= render "/layouts/loading" %>
         <% end %>
 
-      </div>
-    </div>
-
-
-    <div id="widgets-tab" class="tab-pane fade">
-      <div id="widgets" class="associated_entity">
-        <%= render "/ci_widgets/index", ci_widgets: aggregate_portfolio_investment.ci_widgets, owner: aggregate_portfolio_investment %>
-      </div>
-    </div>
-
-    <div id="track-records-tab" class="tab-pane fade">
-      <div id="track_records" class="associated_entity">
-        <%= render "/ci_track_records/index", ci_track_records: aggregate_portfolio_investment.ci_track_records, owner: aggregate_portfolio_investment %>
       </div>
     </div>
   </div>

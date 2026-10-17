@@ -59,9 +59,10 @@ export default class extends Controller {
       el.classList.toggle("col-md-6", !open)
     })
     if (!this.hasParkingTarget) return
-    const stepTwo = this.element.querySelector('div.setup-panel a[href="#step-2"]')?.parentElement
+    // The open-ended steps follow the Features step (lp-folio-portfolio-dashboard)
+    const stepTwo = this.element.querySelector('div.setup-panel a[href="#step-features"]')?.parentElement
     if (open && stepTwo) {
-      // back into the step bar, in order, right after step 2
+      // back into the step bar, in order, right after the Features step
       let after = stepTwo
       this.evergreenStepTargets.forEach((el) => { after.after(el); after = el })
     } else {
