@@ -23,6 +23,9 @@ include CurrencyHelper
     puts @new_portfolio_investment.to_json
 
     select(portfolio_company.investor_name, from: "portfolio_investment_portfolio_company_id")
+    # Picking the company swaps the instrument select over XHR; wait for the new one, or `select`
+    # grabs the old empty select and waits on a detached node
+    expect(page).to have_select("portfolio_investment_investment_instrument_id", with_options: [investment_instrument.name])
     select(investment_instrument.name, from: "portfolio_investment_investment_instrument_id")
     fill_in('portfolio_investment_ex_expenses_base_amount', with: @new_portfolio_investment.ex_expenses_base_amount)
     fill_in('portfolio_investment_quantity', with: @new_portfolio_investment.quantity)

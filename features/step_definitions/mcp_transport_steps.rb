@@ -9,18 +9,21 @@ class McpHttpClient
 
   def initialize(token)
     @token = token
+    @next_id = 0
   end
 
   def app
     Rails.application
   end
 
-  # Posts one JSON-RPC request and returns the Rack response
+  # Posts one JSON-RPC request and returns the Rack response. Ids are integers: the mcp gem
+  # rejects string ids outside [a-zA-Z0-9_-] (e.g. "tools/list:1") with -32600 Invalid Request.
   def rpc(method, params: {})
+    @next_id += 1
     header "Authorization", "Bearer #{@token}"
     header "Content-Type", "application/json"
     header "Accept", "application/json, text/event-stream"
-    post "/mcp", { jsonrpc: "2.0", id: "#{method}:1", method:, params: }.to_json
+    post "/mcp", { jsonrpc: "2.0", id: @next_id, method:, params: }.to_json
     last_response
   end
 end
@@ -35,7 +38,7 @@ Given("the user's entity has MCP enabled") do
 end
 
 Given("the user has an MCP access token") do
-  app = Doorkeeper::Application.create!(name: "Cucumber MCP client", redirect_uri: "http://localhost/callback", scopes: "read")
+  app = Doorkeeper::Application.create!(name: "Cucumber MCP client", redirect_uri: "https://localhost/callback", scopes: "read")
   @mcp_token = Doorkeeper::AccessToken.create!(application: app, resource_owner_id: @user.id, entity_id: @entity.id,
                                                scopes: "read", expires_in: 1.hour.to_i).token
 end
@@ -57,5 +60,7 @@ end
 
 Then("the MCP reply should list the {string} tool") do |tool_name|
   reply = JSON.parse(@mcp_response.body)
-  expect(reply.dig("result", "tools").pluck("name")).to include(tool_name)
+  tools = reply.dig("result", "tools")
+  expect(tools).to be_an(Array), "no tools in the reply: #{@mcp_response.body.first(300)}"
+  expect(tools.pluck("name")).to include(tool_name)
 end

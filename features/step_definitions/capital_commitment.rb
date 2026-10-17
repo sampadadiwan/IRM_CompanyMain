@@ -202,7 +202,9 @@ Then('I should be able to see my capital commitments') do
         puts "Commitment Visible"
         expect(page).to have_content(@investor.investor_name) if @user.curr_role != "investor"
         # expect(page).to have_content(cc.fund.name)
-        expect(page).to have_content( money_to_currency(cc.committed_amount, {force_units: "Lakhs"}) )
+        # The LP folio stats card prints compact units ("₹18.00 L"); the grid keeps the full word
+        short_units = page.has_css?("#capital_commitment_stats_card_#{cc.id}", wait: 0)
+        expect(page).to have_content( money_to_currency(cc.committed_amount, {force_units: "Lakhs"}, short_units:) )
       else
         puts "Commitment Not Visible"
         expect(page).not_to have_content(cc.investor.investor_name)
