@@ -25,7 +25,7 @@
         <i class="ti ti-copy"></i>
       </button>
       <%# Only company admins (fund managers) can change the deal email address %>
-      <% if current_user.has_role?(:company_admin, deal.entity) %>
+      <% if (current_user.has_cached_role?(:company_admin) && policy(deal).belongs_to_entity?(current_user, deal)) %>
         <button type="button"
                 class="btn btn-link btn-sm p-0 text-muted"
                 data-action="click->inline-edit#show"
@@ -35,7 +35,7 @@
       <% end %>
     </span>
 
-    <% if current_user.has_role?(:company_admin, deal.entity) %>
+    <% if (current_user.has_cached_role?(:company_admin) && policy(deal).belongs_to_entity?(current_user, deal)) %>
       <%# Edit mode — input + save/cancel, only for company admins %>
       <span data-inline-edit-target="editor" class="d-none">
         <%= form_with url: update_ingest_address_deal_path(deal),

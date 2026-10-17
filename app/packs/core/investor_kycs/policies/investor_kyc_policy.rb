@@ -92,8 +92,24 @@ class InvestorKycPolicy < ApplicationPolicy
   end
 
   def create?(emp_perm = :investor_kyc_create)
-    permissioned_employee?(emp_perm) ||
-      user.entity_id == record.investor&.investor_entity_id
+    permissioned_employee?(emp_perm) || investor_owns_kyc?
+  end
+
+  # The investor-side "it's our own KYC" test behind create? / update? / edit? / extract_docs_data? /
+  # send_notification?. For an advisor switched into a client, a KYC already committed to funds
+  # follows the same rule as show? (InvestorKyc.for_investor_advisor: a commitment in a fund they
+  # were granted), so they can no longer edit a client KYC tied only to funds they were NOT given
+  # (B4-2). A KYC with no commitment yet is the client's onboarding, which the advisor may fill in
+  # (the doc-first wizard saves, then continues on edit) (B4-2-H). Plain investors, advisors at
+  # home and magic links (signed_id_access?) are unchanged.
+  # Worked examples B4-2, B4-2-H — openspec/changes/fix-tenant-isolation-batch2/report.md#verification
+  def investor_owns_kyc?
+    return false unless user.entity_id == record.investor&.investor_entity_id
+    return true unless user.has_cached_role?(:investor_advisor) && !advisor_at_home? && record.persisted?
+    # Onboarding: nothing committed yet, so no fund grant to judge it by.
+    return true if record.capital_commitments.none?
+
+    InvestorKyc.for_investor_advisor(user).exists?(id: record.id)
   end
 
   def generate_docs?
@@ -156,8 +172,7 @@ class InvestorKycPolicy < ApplicationPolicy
     # Investor filling their own KYC via magic link or logged-in investor, plus fund employees
     return true if signed_id_access?
 
-    create?(:investor_kyc_update) ||
-      user.entity_id == record.investor&.investor_entity_id
+    create?(:investor_kyc_update) || investor_owns_kyc?
   end
 
   def download_kra_data?
@@ -177,7 +192,7 @@ class InvestorKycPolicy < ApplicationPolicy
   # Used to send notification to fund that kyc needs updates
   def send_notification?
     # the user should see the updates requires button when the record is verified (synched with submission_verified) or submission completed
-    record.investor.investor_entity_id == user.entity_id && (record.verified || record.submission_completed?)
+    investor_owns_kyc? && (record.verified || record.submission_completed?)
   end
 
   def preview?

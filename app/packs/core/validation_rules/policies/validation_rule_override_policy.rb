@@ -31,6 +31,9 @@ class ValidationRuleOverridePolicy < ApplicationPolicy
     # Never fall through to :any — an override with no resolvable entity cannot be authorized
     return false unless entity
 
-    user.has_role?(:company_admin, entity)
+    # B4-6: the cached role plus membership of that entity (has_role? with a resource also matched
+    # a company admin of any entity).
+    user.has_cached_role?(:company_admin) &&
+      (user.entity_id == entity.id || (user.entity_type == "Group Company" && user.entity.child_ids.include?(entity.id)))
   end
 end

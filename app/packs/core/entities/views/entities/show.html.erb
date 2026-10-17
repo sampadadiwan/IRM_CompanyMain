@@ -14,6 +14,8 @@
           <% end %>
         </td>
       </tr>
+      <%# Tax id and primary email only for users related to this company (B1, EntityPolicy#full_details?) %>
+      <% if policy(@entity).full_details? %>
       <tr>
         <td>
           TaxId
@@ -30,6 +32,7 @@
           <%= @entity.primary_email %>
         </td>
       </tr>
+      <% end %>
       <tr>
         <td>
           Type

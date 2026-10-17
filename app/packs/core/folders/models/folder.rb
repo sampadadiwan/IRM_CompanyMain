@@ -169,16 +169,40 @@ class Folder < ApplicationRecord
   end
 
   scope :for_investor, lambda { |user, entity|
-    joins(:access_rights)
-      .merge(AccessRight.access_filter(user))
-      .joins(entity: :investors)
-      # Ensure that the user is an investor and tis investor has been given access rights
-      .where("entities.id=?", entity.id)
-      .where("investors.investor_entity_id=?", user.entity_id)
-      # Ensure this user has investor access
-      .joins(entity: :investor_accesses)
-      .merge(InvestorAccess.approved_for_user(user))
+    candidates = joins(:access_rights)
+                 .merge(AccessRight.access_filter(user))
+                 .joins(entity: :investors)
+                 # Ensure that the user is an investor and tis investor has been given access rights
+                 .where("entities.id=?", entity.id)
+                 .where("investors.investor_entity_id=?", user.entity_id)
+                 # Ensure this user has investor access
+                 .joins(entity: :investor_accesses)
+                 .merge(InvestorAccess.approved_for_user(user))
+
+    # B3 (b): for an advisor switched into a client, a folder follows what they can see - see
+    # Folder.ids_a_switched_advisor_can_see. Everyone else is unchanged.
+    user.investor_advisor? ? candidates.where(id: Folder.ids_a_switched_advisor_can_see(user, entity, candidates)) : candidates
   }
+
+  # Folders an advisor switched into a client may list: those holding a document they can open
+  # (plus the folders above them, so the tree stays navigable) and those whose owner (a fund, a
+  # commitment) they can see. A folder shared with the client that holds only documents the
+  # advisor cannot open - a data-room folder, another fund's - is no longer listed.
+  # Worked example B3-2 — openspec/changes/fix-tenant-isolation-batch2/report.md#verification
+  def self.ids_a_switched_advisor_can_see(user, entity, candidates)
+    entity_id = entity.respond_to?(:id) ? entity.id : entity
+    document_folder_ids = Document.for_investor(user, entity_id).distinct.pluck(:folder_id)
+    ids = Folder.where(id: document_folder_ids).flat_map { |folder| [folder.id, *folder.ancestor_ids] }
+    owner_visibility = {}
+    Folder.where(id: candidates.unscope(:order, :select).select("folders.id")).includes(:owner).find_each do |folder|
+      next if folder.owner.blank?
+
+      key = [folder.owner_type, folder.owner_id]
+      owner_visibility[key] = Pundit.policy(user, folder.owner).show? unless owner_visibility.key?(key)
+      ids << folder.id if owner_visibility[key]
+    end
+    ids.uniq
+  end
 
   def self.ransackable_attributes(_auth_object = nil)
     %w[full_path name owner_type].sort

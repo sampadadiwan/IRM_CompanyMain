@@ -11,6 +11,9 @@ class DealInvestorPolicy < DealBasePolicy
         scope.for_employee(user)
       elsif user.curr_role == "investor"
         scope.for_investor(user)
+      else
+        # Any other persona sees none (was nil, which broke callers chaining on the scope).
+        scope.none
       end
     end
   end
@@ -19,9 +22,17 @@ class DealInvestorPolicy < DealBasePolicy
     true
   end
 
+  # An advisor switched into a client needs a personal grant on the deal, as the deal investor list
+  # (for_investor) already requires (B4-3). Plain investors keep the entity match: some deal
+  # investors exist without a deal access right, and their own users must still open them.
+  # Worked example B4-3 — openspec/changes/fix-tenant-isolation-batch2/report.md#verification
   def show?
-    (user.entity_id == record.investor_entity_id) ||
-      permissioned_employee? || support?
+    investor_side = if user.has_cached_role?(:investor_advisor) && !advisor_at_home?
+                      permissioned_investor?
+                    else
+                      user.entity_id == record.investor_entity_id
+                    end
+    investor_side || permissioned_employee? || support?
   end
 
   def create?

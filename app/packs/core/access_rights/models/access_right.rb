@@ -76,6 +76,16 @@ class AccessRight < ApplicationRecord
     where("access_rights.access_to_category='RM' OR access_rights.access_to_investor_id=rm_mappings.rm_id OR access_rights.user_id=?", user.id)
   }
 
+  # The access filter for an investor-side list. An advisor switched into a client sees only what
+  # was granted to them personally for that client - the rule Fund.for_investor and every
+  # ForInvestor scope already use. access_filter also matched grants made to the client investor,
+  # so approvals, secondary sales and their children were listed for the client's advisors while
+  # their pages (personal grant) denied them.
+  # Worked example B3-3 — openspec/changes/fix-tenant-isolation-batch2/report.md#verification
+  scope :investor_list_filter, lambda { |user|
+    user.investor_advisor? ? investor_granted_access_filter(user) : access_filter(user)
+  }
+
   # This scope is used to filter access rights for investor advisors, who manage folios for investors.
   # Investors grant access_rights to the Fund or Sale or Deal, to the investor advisor.
   # Do not call this with a user who is not an investor_advisor

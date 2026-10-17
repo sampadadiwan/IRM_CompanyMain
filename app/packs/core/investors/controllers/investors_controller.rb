@@ -327,9 +327,11 @@ class InvestorsController < ApplicationController
       format.json { render json: typeahead_matches(query) }
       format.html do
         if query.present?
-          @investors = InvestorIndex.filter(term: { entity_id: current_user.entity_id })
-                                    .query(simple_query_string: { fields: InvestorIndex::SEARCH_FIELDS,
-                                                                  query:, default_operator: 'and' }).objects
+          hits = InvestorIndex.filter(term: { entity_id: current_user.entity_id })
+                              .query(simple_query_string: { fields: InvestorIndex::SEARCH_FIELDS,
+                                                            query:, default_operator: 'and' }).objects
+          # B4-4: only the hits this user's list would show (PolicyScopedSearch).
+          @investors = PolicyScopedSearch.restrict(current_user, Investor, hits)
 
           render "index"
         else
@@ -503,7 +505,8 @@ class InvestorsController < ApplicationController
   # needs nothing but a name and an id. Scoped exactly like the select it
   # replaced — this tenant's own investors, nothing else.
   def typeahead_matches(query)
-    scope = current_user.entity.investors
+    # B4-4: the investors this user's list shows, not every investor of the company.
+    scope = policy_scope(Investor)
     scope = scope.where("investor_name LIKE ?", "%#{Investor.sanitize_sql_like(query)}%") if query.present?
     scope.order(:investor_name).limit(TYPEAHEAD_LIMIT).pluck(:investor_name, :id)
          .map { |name, id| { label: name, value: id } }

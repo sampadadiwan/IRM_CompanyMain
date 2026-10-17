@@ -117,9 +117,11 @@ class SecondarySalesController < ApplicationController
 
     query = params[:query]
     if query.present?
-      @secondary_sales = SecondarySaleIndex.filter(term: { entity_id: @entity.id })
-                                           .query(simple_query_string: { fields: SecondarySaleIndex::SEARCH_FIELDS,
-                                                                         query:, default_operator: 'and' }).objects
+      hits = SecondarySaleIndex.filter(term: { entity_id: @entity.id })
+                               .query(simple_query_string: { fields: SecondarySaleIndex::SEARCH_FIELDS,
+                                                             query:, default_operator: 'and' }).objects
+      # B4-4: only the hits this user's list would show (PolicyScopedSearch).
+      @secondary_sales = PolicyScopedSearch.restrict(current_user, SecondarySale, hits)
 
       render "index"
     else

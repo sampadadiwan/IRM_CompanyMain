@@ -26,6 +26,8 @@ class KycDatasController < ApplicationController
                                    default_operator: 'and'
                                  })
       @pagy, @kyc_datas = pagy(@kyc_datas.page(params[:page]).objects)
+      # B4-4: only the hits this user's list would show (PolicyScopedSearch).
+      @kyc_datas = PolicyScopedSearch.restrict(current_user, KycData, @kyc_datas)
 
       render :index
     else

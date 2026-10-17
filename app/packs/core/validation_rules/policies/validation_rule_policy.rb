@@ -28,11 +28,14 @@ class ValidationRulePolicy < ApplicationPolicy
 
   # Global default rules (entity_id nil) are visible to any company_admin;
   # entity-specific rules are visible only to that entity's company_admin.
+  # B4-6: has_role?(:company_admin, entity) also matched the global role, i.e. an admin of any
+  # entity. A company admin manages their own entity's rules (and a group's children's); global
+  # rules (entity nil) stay visible to any company admin, as before.
+  # Worked example B4-6 — openspec/changes/fix-tenant-isolation-batch2/report.md#verification
   def company_admin_for_record?
-    if record.entity_id.nil?
-      user.has_role?(:company_admin, :any)
-    else
-      user.has_role?(:company_admin, record.entity)
-    end
+    return false unless user.has_cached_role?(:company_admin)
+    return true if record.entity_id.nil?
+
+    belongs_to_entity?(user, record)
   end
 end

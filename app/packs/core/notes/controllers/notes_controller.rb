@@ -67,6 +67,8 @@ class NotesController < ApplicationController
                                                       query:, default_operator: 'and' })
 
       @pagy, @notes = pagy(@notes.page(params[:page]))
+      # B4-4: only the hits this user's list would show (PolicyScopedSearch).
+      @notes = PolicyScopedSearch.restrict(current_user, Note, @notes)
       render "index"
     else
       redirect_to notes_path(request.parameters)

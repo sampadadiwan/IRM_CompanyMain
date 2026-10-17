@@ -33,9 +33,11 @@ class DealsController < ApplicationController
     @entity = current_user.entity
     query = params[:query]
     if query.present?
-      @deals = DealIndex.filter(term: { entity_id: @entity.id })
-                        .query(simple_query_string: { fields: DealIndex::SEARCH_FIELDS,
-                                                      query:, default_operator: 'and' }).objects
+      hits = DealIndex.filter(term: { entity_id: @entity.id })
+                      .query(simple_query_string: { fields: DealIndex::SEARCH_FIELDS,
+                                                    query:, default_operator: 'and' }).objects
+      # B4-4: only the hits this user's list would show (PolicyScopedSearch).
+      @deals = PolicyScopedSearch.restrict(current_user, Deal, hits)
     else
       redirect_to deals_path
     end
@@ -205,7 +207,9 @@ class DealsController < ApplicationController
     authorize(@deal, :update?)
 
     # Only company admins (fund managers) can change the deal email address
-    unless current_user.has_role?(:company_admin, @deal.entity)
+    # B4-6: rolify's has_role?(:company_admin, entity) also matches the global (resource-less) role,
+    # i.e. a company admin of ANY entity. Require the cached role AND membership of that entity.
+    unless current_user.has_cached_role?(:company_admin) && Pundit.policy(current_user, @deal).belongs_to_entity?(current_user, @deal)
       redirect_to deal_path(@deal), alert: "Only admins can change the deal email address"
       return
     end

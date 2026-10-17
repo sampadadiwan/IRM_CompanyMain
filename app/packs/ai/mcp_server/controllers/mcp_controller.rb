@@ -78,6 +78,13 @@ class McpController < ActionController::API
     @mcp_user = result.user
     @mcp_entity = result.entity
     @mcp_token = result.doorkeeper_token
+    # B4-5: a token issued for one entity is refused while its user is in another (an advisor who
+    # switched persona after authorising the client). Governance is judged on the token's entity
+    # but the tools read data as the user's current entity, so the two must agree. The client gets
+    # the usual 401 + WWW-Authenticate and re-authorises. Tokens with no entity follow the user, as
+    # before. The mail add-in API applies the same rule.
+    # Worked examples B4-5, B4-5-H — openspec/changes/fix-tenant-isolation-batch2/report.md#verification
+    raise McpAuthService::AuthenticationError, "This token was issued for another organisation. Re-authorise the client." if @mcp_token.entity_id.present? && @mcp_entity.id != @mcp_user.entity_id
   rescue McpAuthService::AuthenticationError => e
     # Include resource_metadata so MCP clients (Claude.ai etc.) can discover the OAuth server via RFC 9728
     resource_metadata_url = "#{request.base_url}/.well-known/oauth-protected-resource"

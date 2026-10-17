@@ -37,12 +37,27 @@ class EntityPolicy < ApplicationPolicy
     true
   end
 
+  # Any signed-in user may open a company's page (B1). Investors land on their GP's page after
+  # requesting access, and advisors and LPs open it from their portal. What they see there is
+  # decided by full_details?: an unrelated user gets only the public profile (name, logo, type,
+  # website). The old body read "own entity or not own entity", i.e. always true, and the page
+  # showed every visitor the company's tax id and primary email.
+  # Worked examples B1-X, B1-H — openspec/changes/fix-tenant-isolation-batch2/report.md#verification
   def show?
-    if user.entity_id == record.id || support?
-      true
-    else
-      user.entity_id != record.id
-    end
+    true
+  end
+
+  # Tax id, primary email and the other non-public fields: the company's own users (and a group
+  # parent), support, anyone who is a stakeholder user AT this company (its LPs' contacts), an
+  # advisor holding a grant on it, and staff of a company that has it as a stakeholder (a GP
+  # looking at its LP).
+  def full_details?
+    return true if user.entity_id == record.id || support?
+    return true if user.entity_type == "Group Company" && user.entity&.child_ids&.include?(record.id)
+    return true if InvestorAccess.exists?(user_id: user.id, entity_id: record.id)
+    return true if InvestorAdvisor.exists?(user_id: user.id, entity_id: record.id)
+
+    Investor.exists?(entity_id: user.entity_id, investor_entity_id: record.id)
   end
 
   def create?

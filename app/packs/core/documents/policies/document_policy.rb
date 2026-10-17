@@ -19,7 +19,50 @@ class DocumentPolicy < ApplicationPolicy
       # Cheap checks first: show_investor? runs a multi-join query that is discarded for a
       # switched-in advisor anyway.
       (user.enable_documents && !user.investor_advisor? && show_investor?) ||
-      (record.owner.present? && owner_policy.show? && !record.folder.private && not_generated_or_approved)
+      (owner_visible? && !record.folder.private && not_generated_or_approved)
+  end
+
+  # Optional per-request memo of "can this user see that owner?", keyed by [owner_type, owner_id].
+  # A list of a client's documents has many documents per owner (one commitment, one fund), so
+  # DocumentPolicy.ids_a_switched_advisor_can_open shares one memo across the whole list.
+  attr_writer :owner_visibility
+
+  def owner_visible?
+    return false if record.owner.blank?
+
+    key = [record.owner_type, record.owner_id]
+    return @owner_visibility[key] if @owner_visibility&.key?(key)
+
+    visible = owner_policy.show?
+    @owner_visibility[key] = visible if @owner_visibility
+    visible
+  end
+
+  # B3 (b), "documents follow funds": the ids, out of `relation`, that an advisor switched into a
+  # client can actually OPEN. Their list (Document.for_investor) used to show everything shared
+  # with the client investor - with a 7-day download link per row - while show? (above) only lets
+  # a switched advisor open a document whose owner they can see (e.g. a commitment in a fund they
+  # were given) or a public one. Filtering the list through show? makes the two the same rule, by
+  # construction. Runs only for switched advisors; the candidate set is one client's documents.
+  # Worked examples B3-1, B3-H — openspec/changes/fix-tenant-isolation-batch2/report.md#verification
+  def self.ids_a_switched_advisor_can_open(user, relation)
+    candidate_ids = relation.unscope(:order, :select).select("documents.id")
+    # Memoised on the user object (current_user lives for one request): a folder page builds this
+    # list more than once (the folder gate, then the documents).
+    cache = user.instance_variable_get(:@switched_advisor_document_ids) ||
+            user.instance_variable_set(:@switched_advisor_document_ids, {})
+    cache_key = [user.entity_id, candidate_ids.to_sql]
+    return cache[cache_key] if cache.key?(cache_key)
+
+    owner_visibility = {}
+    # Full rows: Document's after_initialize reads columns beyond what show? needs, so a narrowed
+    # select raises MissingAttributeError. The set is one client's shared documents, in batches.
+    cache[cache_key] = Document.where(id: candidate_ids)
+                               .includes(:folder, :owner).find_each.filter_map do |document|
+      policy = new(user, document)
+      policy.owner_visibility = owner_visibility
+      document.id if policy.show?
+    end
   end
 
   def not_generated_or_approved

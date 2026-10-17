@@ -157,8 +157,10 @@ class DealIngestAuthenticator
   #
   # @return [Result]
   def verify_deal_access
+    # B4-6: the cached role plus membership of the deal's entity (has_role? with a resource also
+    # matched a company admin of any entity).
     has_access = AccessRight.exists?(owner: @deal, user: @user) ||
-                 @user.has_role?(:company_admin, @deal.entity)
+                 (@user.has_cached_role?(:company_admin) && Pundit.policy(@user, @deal).belongs_to_entity?(@user, @deal))
 
     unless has_access
       Rails.logger.debug { "DealIngestAuthenticator: user ##{@user.id} has no access to deal ##{@deal.id}" }

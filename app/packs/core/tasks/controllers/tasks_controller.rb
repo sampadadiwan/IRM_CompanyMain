@@ -78,12 +78,17 @@ class TasksController < ApplicationController
     @search = true
     query = params[:query]
     if query.present?
-      @tasks = TaskIndex.filter(term: { entity_id: current_user.entity_id })
-                        .or(TaskIndex.filter(term: { for_entity_id: current_user.entity_id })
-                      .query(simple_query_string: { fields: TaskIndex::SEARCH_FIELDS,
-                                                    query:, default_operator: 'and' }))
+      # Tasks of the entity OR for the entity, AND matching the query. The old `.or` applied the
+      # query to the second branch only, so every task of the entity matched any search.
+      @tasks = TaskIndex.filter(bool: { should: [{ term: { entity_id: current_user.entity_id } },
+                                                 { term: { for_entity_id: current_user.entity_id } }],
+                                        minimum_should_match: 1 })
+                        .query(simple_query_string: { fields: TaskIndex::SEARCH_FIELDS,
+                                                      query:, default_operator: 'and' })
 
       @pagy, @tasks = pagy(@tasks.page(params[:page]).objects)
+      # B4-4: only the hits this user's list would show (PolicyScopedSearch).
+      @tasks = PolicyScopedSearch.restrict(current_user, Task, @tasks)
       render "index"
     else
       redirect_to tasks_path(request.parameters)

@@ -39,9 +39,11 @@ class DealInvestorsController < ApplicationController
 
     query = params[:query]
     if query.present?
-      @deal_investors = DealInvestorIndex.filter(term: { entity_id: @entity.id })
-                                         .query(simple_query_string: { fields: DealInvestorIndex::SEARCH_FIELDS,
-                                                                       query:, default_operator: 'and' }).objects
+      hits = DealInvestorIndex.filter(term: { entity_id: @entity.id })
+                              .query(simple_query_string: { fields: DealInvestorIndex::SEARCH_FIELDS,
+                                                            query:, default_operator: 'and' }).objects
+      # B4-4: only the hits this user's list would show (PolicyScopedSearch).
+      @deal_investors = PolicyScopedSearch.restrict(current_user, DealInvestor, hits)
 
       render "index"
     else
