@@ -46,6 +46,11 @@ module WithAuthentication
     end
   end
 
+  # A bearer-token request (the LP mobile app or another API client), as opposed to the website
+  def api_request?
+    request.headers['Authorization'].present?
+  end
+
   def switch_advisor
     if params[:investor_advisor_id].present?
       # Switch to the advisor for the given investor

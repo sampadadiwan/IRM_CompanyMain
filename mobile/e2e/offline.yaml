@@ -1,0 +1,10 @@
+# E30 — Edge case: offline — cached Home and the "offline" bar; Sign disabled
+appId: com.caphive.lp
+---
+- runFlow: first_run.yaml
+- setAirplaneMode: enabled
+- stopApp
+- launchApp
+- assertVisible: "offline"
+- assertVisible: "Arka Growth Fund I"
+- setAirplaneMode: disabled

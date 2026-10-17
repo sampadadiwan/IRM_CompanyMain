@@ -23,6 +23,7 @@ module UserGuideHelper
     'rm_mappings' => 'investors_user_guide.md',
     'investor_accesses' => 'investor_access_tutorial.md',
     'investor_advisors' => 'investor_advisor_user_guide.md',
+    'mobile_devices' => 'lp_mobile_app_user_guide.md',
     'investor_kycs' => 'investor_kyc_user_guide.md',
     'kyc_datas' => 'investor_kyc_user_guide.md',
     'aml_reports' => 'investor_kyc_user_guide.md',

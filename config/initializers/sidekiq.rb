@@ -158,6 +158,9 @@ Sidekiq.configure_server do |config|
     # pass) ever fired outside manual runs. NOTE: on first deploy this activates
     # any stored enabled schedules whose next_run_at has already passed.
     Sidekiq::Cron::Job.create(name: 'SchedulerPollingJob', cron: 'every 10 minutes', class: 'SchedulerPollingJob')
+    # LP mobile app: Expo push receipts (dead phones) and delivery-log retention (lp-mobile-app X10).
+    # Does nothing in a region without an Expo access token.
+    Sidekiq::Cron::Job.create(name: 'ExpoPushReceiptsJob', cron: '*/15 * * * *', class: 'ExpoPushReceiptsJob')
     # ReportSchedules can be due any hour of the day, so this stays on an
     # always-on hourly cadence rather than joining the off-peak block above.
     # Was `runner "ReportBuilderSchedulerJob.perform_later"` from

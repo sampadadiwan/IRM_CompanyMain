@@ -187,6 +187,34 @@ module NotificationExtensions
   # is configured (nil) - only an actually-resolved-but-blank body is skipped. A Trix rich-text
   # body can save as "<div><br></div>" and still be a non-empty string, so a plain #blank? check
   # on the raw HTML isn't enough.
+  # Gates the :push deliver_by (see BaseNotifier) — LP mobile app push, design card ⑤/⑥.
+  # Push goes only where the email would go, plus three push-only checks, cheapest first:
+  #   X20  push is configured for this region (an Expo access token exists)
+  #   E11  the recipient is not a member of the entity that sent it — internal alerts are never pushed
+  #   E10  the recipient has this notification's category switched on
+  #        the recipient has a live, push-enabled phone (SELECT 1 … LIMIT 1 — most LPs have none)
+  #   E9 / E13  the email for this notification would be sent (email_enabled + a body to send)
+  # Worth queuing a push job at all? Push configured in this region and the recipient has a live,
+  # push-enabled phone. Runs before enqueue (BaseNotifier), so it must stay cheap.
+  def push_candidate?
+    ExpoPushClient.configured? && recipient.respond_to?(:mobile_devices) && recipient.mobile_devices.pushable.exists?
+  rescue StandardError
+    false
+  end
+
+  def push_enabled
+    ExpoPushClient.configured? &&
+      model.entity_id != recipient.entity_id &&
+      MobilePushCategory.enabled_for?(recipient, event) &&
+      recipient.mobile_devices.pushable.exists? &&
+      email_enabled &&
+      custom_notification_body_present?
+  rescue StandardError => e
+    # A gate that raises would fail the whole delivery job; push is best-effort, so log and skip
+    Rails.logger.warn("[push_enabled] notification #{id}: #{e.class}: #{e.message}")
+    false
+  end
+
   def custom_notification_body_present?
     return true unless respond_to?(:custom_notification)
 

@@ -1,0 +1,17 @@
+# E31 — Edge case: three failed biometric attempts fall back to the password
+# E32 — Edge case: locked after more than 5 minutes in the background, not after 4
+appId: com.caphive.lp
+---
+- runFlow: first_run.yaml
+- tapOn: "Profile"
+- tapOn: "Unlock with Face ID or fingerprint"
+- pressKey: Home
+- waitForAnimationToEnd:
+    timeout: 240000
+- launchApp
+- assertNotVisible: "CapHive is locked"
+- pressKey: Home
+- waitForAnimationToEnd:
+    timeout: 360000
+- launchApp
+- assertVisible: "CapHive is locked"

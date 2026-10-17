@@ -1,0 +1,9 @@
+# H18 — Happy path: sign a Digio document from the app (E2E build mocks Digio with EXPO_PUBLIC_E2E=1)
+appId: com.caphive.lp
+---
+- runFlow: first_run.yaml
+- tapOn: "Side Letter"
+- assertVisible: "Your signature"
+- tapOn: "Sign"
+- back
+- assertVisible: "To sign"

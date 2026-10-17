@@ -16,6 +16,8 @@ json.committed_amount capital_commitment.committed_amount.to_f
 json.call_amount capital_commitment.call_amount.to_f
 json.collected_amount capital_commitment.collected_amount.to_f
 json.distribution_amount capital_commitment.distribution_amount.to_f
+# Due Amount, as on the LP fund card (capital_commitments/_card)
+json.due_amount capital_commitment.due_amount.to_f
 
 # Tracking currency amounts
 json.tracking_committed_amount capital_commitment.tracking_committed_amount.to_f

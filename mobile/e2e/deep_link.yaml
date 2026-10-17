@@ -1,0 +1,10 @@
+# H17 — Happy path: a push link opens the Capital call screen directly
+# X19 — Error case: a link to a record the investor can no longer see says so
+appId: com.caphive.lp
+---
+- runFlow: first_run.yaml
+- openLink: "caphive://capital-calls/3"
+- assertVisible: "Capital Call 3"
+- assertVisible: "View call notice"
+- openLink: "caphive://capital-calls/999999"
+- assertVisible: "You no longer have access to this item."

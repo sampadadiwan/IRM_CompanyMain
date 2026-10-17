@@ -226,6 +226,13 @@
       <div>
         <%= link_to  t_common(:edit) , edit_user_path(@user), {class: "btn btn-outline-primary ti ti-pencil" } if policy(@user).update? %>
 
+        <%# Phones signed in to the LP mobile app (lp-mobile-app design card ③) — own profile only %>
+        <% if @user == current_user && @user.mobile_devices.exists? %>
+          <%= link_to users_mobile_devices_path, class: "btn btn-outline-primary", id: "mobile_devices_link" do %>
+            <i class="ti ti-device-mobile"></i> Mobile Devices
+          <% end %>
+        <% end %>
+
         <%= link_to root_path, class: "btn btn-outline-secondary ti ti-arrow-left" do %>
           Back to Dashboard
         <% end %>

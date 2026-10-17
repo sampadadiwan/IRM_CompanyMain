@@ -1,0 +1,5 @@
+# X21 — Error case: the server requires a newer app (staging min_app_version above this build)
+appId: com.caphive.lp
+---
+- runFlow: first_run.yaml
+- assertVisible: "Please update CapHive to continue."

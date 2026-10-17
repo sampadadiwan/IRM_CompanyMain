@@ -13,6 +13,7 @@ json.investing_entity capital_remittance.investor_kyc&.full_name
 # Capital call details
 json.capital_call_name capital_remittance.capital_call.name
 json.percentage_called capital_remittance.capital_call.percentage_called
+json.due_date capital_remittance.capital_call.due_date
 
 # Amounts
 json.call_amount capital_remittance.call_amount.to_f

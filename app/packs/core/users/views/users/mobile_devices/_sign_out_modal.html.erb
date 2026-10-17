@@ -1,0 +1,57 @@
+<%#
+  Sign out a phone — same "Immediate Actions" layout as the Reset Two-Factor popup
+  (users/_reset_two_factor_modal). lp-mobile-app J3.2.
+%>
+<% name = device.name.presence || device.platform.titleize %>
+<div class="modal fade" id="signOutDeviceModal<%= device.id %>" tabindex="-1" aria-labelledby="signOutDeviceModalLabel<%= device.id %>" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="signOutDeviceModalLabel<%= device.id %>">
+          <i class="ti ti-logout me-1"></i> Sign out <%= name %>
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="action-summary__intro">
+          <div class="fw-bold text-dark">Immediate Actions</div>
+          <div class="text-muted">The following will happen immediately when you click <strong>Sign out</strong>:</div>
+        </div>
+
+        <div class="action-summary__list">
+          <div class="action-summary__item action-summary__item--red">
+            <span class="action-summary__icon"><i class="ti ti-lock"></i></span>
+            <div>
+              <div class="action-summary__title">The app on <%= name %> is signed out</div>
+              <div class="action-summary__desc">It stops showing your investments and documents the next time it is used.</div>
+            </div>
+          </div>
+
+          <div class="action-summary__item action-summary__item--blue">
+            <span class="action-summary__icon"><i class="ti ti-bell-off"></i></span>
+            <div>
+              <div class="action-summary__title">Notifications to this phone stop</div>
+              <div class="action-summary__desc">Emails and your other phones are not affected.</div>
+            </div>
+          </div>
+
+          <div class="action-summary__item action-summary__item--grey">
+            <span class="action-summary__icon"><i class="ti ti-info-circle"></i></span>
+            <div>
+              <div class="action-summary__title">You can sign in on it again later</div>
+              <div class="action-summary__desc">If you still have the phone, sign in from the app with your email, password and code.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><%= t_common(:cancel) %></button>
+        <%= button_to "Sign out", users_mobile_device_path(device), method: :delete,
+              class: "btn btn-outline-danger", id: "confirm_sign_out_device_#{device.id}",
+              form: { data: { turbo: false } } %>
+      </div>
+    </div>
+  </div>
+</div>

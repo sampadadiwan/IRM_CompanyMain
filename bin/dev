@@ -48,6 +48,7 @@ else
   Process.detach(spawn("bundle exec prometheus_exporter -b 0.0.0.0"))
 end
 
-puts "Starting Rails server on port 3001..."
-exec "./bin/rails", "server", "-p", "3001", *ARGV
+# Bind to all interfaces so the LP mobile app on a phone (same Wi-Fi) can reach it
+puts "Starting Rails server on 0.0.0.0:3001..."
+exec "./bin/rails", "server", "-b", "0.0.0.0", "-p", "3001", *ARGV
 

@@ -44,16 +44,16 @@ module Users
 
       # Short-circuit order is the ordering described above: Verify only when a Verify
       # code is outstanding, then the local TOTP check.
-      if (verify_code_pending? && TwilioSmsVerification.approved?(user: @user, code: submitted_code)) ||
-         @user.validate_and_consume_otp!(submitted_code)
+      # The Verify-vs-TOTP decision is TwoFactorVerifier's, shared with the LP mobile app sign-in
+      if TwoFactorVerifier.verify(@user, submitted_code, verify_code_sent: session[:otp_code_channel] == "verify")
         complete_login
       else
         increment_failed_attempts
-        if session[:otp_failed_attempts] >= 3
+        if session[:otp_failed_attempts] >= TwoFactorVerifier::MAX_ATTEMPTS
           reset_otp_session
           redirect_to new_session_path(User), alert: "Too many failed attempts. Please sign in again."
         else
-          flash.now[:alert] = "Invalid code. #{3 - session[:otp_failed_attempts]} attempt(s) remaining."
+          flash.now[:alert] = "Invalid code. #{TwoFactorVerifier::MAX_ATTEMPTS - session[:otp_failed_attempts]} attempt(s) remaining."
           render :new
         end
       end
@@ -291,49 +291,9 @@ module Users
 
     # Records that the code the user is about to receive came from Twilio Verify.
     #
-    # A hint, not the source of truth — see verify_code_pending? for why.
+    # A hint, not the source of truth — see TwoFactorVerifier.verify_code_pending? for why.
     def mark_verify_code_sent
       session[:otp_code_channel] = "verify"
-    end
-
-    # Should the typed code be checked against Twilio Verify?
-    #
-    # Answered from DURABLE state, not from the session alone. An earlier version relied
-    # only on session[:otp_code_channel], and that produced a real failure: a correct
-    # code was rejected as invalid because the flag was absent from the session while
-    # session[:otp_user_id] was present. Any path that writes one key but not the other —
-    # a partial reload, a session reset between the send and the check, a user who
-    # reaches this form from an older tab — silently sends a Verify code to the TOTP
-    # checker, which can only ever reject it.
-    #
-    # The three cases, in order of certainty:
-    #
-    #   1. sms_mode? — definitive. These users have never seen a QR code, so a TOTP value
-    #      is not something they can produce. Their code is always Twilio's.
-    #   2. A queued SMS delivery inside the Verify code's lifetime — durable evidence
-    #      that a Verify code is genuinely outstanding. This is what covers the
-    #      authenticator user who pressed "Text me a code".
-    #   3. The session hint, kept as a fast path.
-    #
-    # Still gated: an authenticator user who never requested a text matches none of
-    # these, so Verify is never probed speculatively and no verification attempt is burnt.
-    def verify_code_pending?
-      return true if @user.sms_mode?
-      return true if session[:otp_code_channel] == "verify"
-
-      recent_sms_delivery?
-    end
-
-    # Twilio Verify holds a verification for ~10 minutes by default. Outside that window
-    # there is nothing to check, so do not spend an API call finding out.
-    VERIFY_CODE_TTL = 10.minutes
-
-    def recent_sms_delivery?
-      OtpDelivery.where(user_id: @user.id,
-                        channel: "sms",
-                        status: OtpDelivery::STATUS_QUEUED)
-                 .where(created_at: VERIFY_CODE_TTL.ago..)
-                 .exists?
     end
 
     # True when a code was sent so recently that another would be refused downstream.
@@ -362,11 +322,9 @@ module Users
       end
     end
 
-    # What the user typed, minus whitespace. Codes copied out of a WhatsApp or SMS
-    # message routinely arrive as "123 456" or with a trailing space, and both the TOTP
-    # check and Twilio Verify compare the exact string.
+    # What the user typed, minus whitespace (see TwoFactorVerifier.normalize)
     def submitted_code
-      params[:otp_code].to_s.gsub(/\s+/, "")
+      TwoFactorVerifier.normalize(params[:otp_code])
     end
 
     # A user who already has a verified method belongs on the code screen, not in

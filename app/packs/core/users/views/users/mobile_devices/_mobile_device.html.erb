@@ -1,0 +1,46 @@
+<% device = mobile_device %>
+<tr id="<%= dom_id(device) %>">
+  <td>
+    <i class="ti <%= device.platform == 'ios' ? 'ti-brand-apple' : 'ti-brand-android' %> me-1"></i>
+    <%= device.name.presence || device.platform.titleize %>
+    <% if device.app_version.present? %>
+      <div class="text-muted small">App <%= device.app_version %></div>
+    <% end %>
+  </td>
+  <td><%= device.region_code %></td>
+  <td><%= l(device.last_used_at, format: :abbr_date_time) if device.last_used_at %></td>
+  <td>
+    <% if device.live? %>
+      <span class="badge bg-success-subtle text-success"><i class="ti ti-circle-check"></i> Signed in</span>
+    <% elsif device.revoked_at %>
+      <span class="badge bg-secondary-subtle text-secondary"><i class="ti ti-logout"></i> Signed out</span>
+    <% else %>
+      <span class="badge bg-secondary-subtle text-secondary"><i class="ti ti-clock"></i> Expired</span>
+    <% end %>
+  </td>
+  <td>
+    <% if device.live? && device.push_enabled && device.push_token.present? %>
+      <span class="badge bg-success-subtle text-success"><i class="ti ti-bell"></i> On</span>
+    <% else %>
+      <span class="badge bg-secondary-subtle text-secondary"><i class="ti ti-bell-off"></i> Off</span>
+    <% end %>
+  </td>
+  <td>
+    <% if device.push_status == "not_registered" %>
+      <%# X10 — Expo reported the address dead (app reinstalled / removed) %>
+      <span class="badge bg-danger-subtle text-danger"><i class="ti ti-alert-triangle"></i> Failed — device no longer registered</span>
+    <% elsif device.last_push_at %>
+      <%= l(device.last_push_at, format: :abbr_date_time) %>
+    <% else %>
+      <span class="text-muted">—</span>
+    <% end %>
+  </td>
+  <td>
+    <% if device.live? %>
+      <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal"
+              data-bs-target="#signOutDeviceModal<%= device.id %>" id="sign_out_device_<%= device.id %>">
+        <i class="ti ti-logout"></i> Sign out
+      </button>
+    <% end %>
+  </td>
+</tr>

@@ -7,3 +7,7 @@ Rails.application.config.filter_parameters += %i[
   passw email secret token _key crypt salt certificate otp ssn cvv cvc
   signed_id
 ]
+# LP mobile app sign-in: the one-time code and the signed 2FA challenge (token / *_token are
+# already covered by "token" above). Exact match for "code" — a partial match would also hide
+# call_code, country codes and every other *_code param in the logs.
+Rails.application.config.filter_parameters += [/\Acode\z/, :challenge]

@@ -257,6 +257,34 @@ module Rack
     # start_with? rather than ==: `post :send_sms` inside `resource :two_factor` generates
     # /two_factor/send_sms(.:format), so /two_factor/send_sms.json reaches the same action.
     # An exact match would compute no throttle key at all for that request.
+    # LP mobile app sign-in (lp-mobile-app, LLD "Security Review"). The phone API is JSON, so the
+    # email is a top-level param. verify/resend are covered by the per-IP rule; the code itself is
+    # capped at TwoFactorVerifier::MAX_ATTEMPTS per challenge.
+    MOBILE_SESSION_PATHS = ['/api/mobile/v1/session', '/api/mobile/v1/session/verify',
+                            '/api/mobile/v1/session/resend'].freeze
+
+    throttle('mobile/session/ip', limit: 10, period: 60.seconds) do |req|
+      client_ip(req) if req.post? && MOBILE_SESSION_PATHS.include?(req.path)
+    end
+
+    throttle('mobile/session/email', limit: 5, period: 60.seconds) do |req|
+      mobile_sign_in_email(req) if req.post? && req.path == '/api/mobile/v1/session'
+    end
+
+    # The app posts JSON, which Rack does not parse into req.params; read the body and rewind it
+    # so Rails can still parse it. Normalised the same way as the website login throttle.
+    def self.mobile_sign_in_email(req)
+      email = req.params['email'].presence
+      if email.nil?
+        body = req.body.read
+        req.body.rewind
+        email = JSON.parse(body)['email'] if body.present?
+      end
+      email.to_s.downcase.gsub(/\s+/, "").presence
+    rescue JSON::ParserError
+      nil
+    end
+
     throttle('otp_sms_send/ip', limit: 3, period: 60.seconds) do |req|
       client_ip(req) if req.post? && req.path.start_with?('/two_factor/send_sms')
     end

@@ -18,8 +18,12 @@ class NotificationsController < ApplicationController
 
     # Mark all as read
     if params[:mark_as_read].present? && params[:user_id].present?
-      @notifications.mark_as_read
-      current_user.touch # This is to bust the topbar cache which shows new notifications
+      # A GET, so the request runs on the read replica — the write must go to the primary
+      # (raised ActiveRecord::ReadOnlyError before; found by lp-mobile-app E25)
+      ActiveRecord::Base.connected_to(role: :writing) do
+        @notifications.mark_as_read
+        current_user.touch # This is to bust the topbar cache which shows new notifications
+      end
     end
 
     @pagy, @notifications = pagy(@notifications.includes(:event).order(id: :desc))

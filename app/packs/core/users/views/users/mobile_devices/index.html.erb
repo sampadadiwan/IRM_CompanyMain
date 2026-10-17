@@ -1,0 +1,49 @@
+<%# Profile › Devices — phones signed in to the CapHive LP mobile app (lp-mobile-app H14, J3.1–J3.3) %>
+<div class="card shadow mb-4">
+  <div class="card-header py-3">
+    <h1 class="user-show-heading m-0 font-weight-bold text-primary">
+      <i class="ti ti-device-mobile me-1"></i> Mobile Devices
+    </h1>
+  </div>
+
+  <div class="card-body">
+    <p class="text-muted">
+      Phones signed in to the CapHive app with your account. If a phone is lost or no longer yours,
+      sign it out here: it stops showing your data and receiving notifications straight away.
+    </p>
+
+    <% if @mobile_devices.empty? %>
+      <p class="mb-0" id="no_mobile_devices">No phones have signed in to the CapHive app with your account.</p>
+    <% else %>
+      <div class="table-responsive">
+        <table class="table table-bordered" id="mobile_devices">
+          <thead class="table-light">
+            <tr>
+              <th>Phone</th>
+              <th>Region</th>
+              <th>Last used</th>
+              <th>Status</th>
+              <th>Notifications</th>
+              <th>Last delivery</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <%= render partial: "users/mobile_devices/mobile_device", collection: @mobile_devices %>
+          </tbody>
+        </table>
+      </div>
+    <% end %>
+
+    <div>
+      <%= link_to user_path(current_user), class: "btn btn-outline-secondary ti ti-arrow-left" do %>
+        Back to Profile
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<%# Sign-out confirmations live outside the table (Bootstrap modal rule) %>
+<% @mobile_devices.select(&:live?).each do |device| %>
+  <%= render "users/mobile_devices/sign_out_modal", device: device %>
+<% end %>

@@ -3586,6 +3586,42 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_14_090300) do
     t.index ["tool_call_id"], name: "index_messages_on_tool_call_id"
   end
 
+  create_table "mobile_devices", force: :cascade do |t|
+    t.string "app_version", limit: 20
+    t.datetime "created_at", null: false
+    t.bigint "devise_api_token_id"
+    t.string "install_id", limit: 64, null: false
+    t.datetime "last_push_at"
+    t.datetime "last_used_at", null: false
+    t.string "name", limit: 100
+    t.string "platform", limit: 10, null: false
+    t.boolean "push_enabled", default: true, null: false
+    t.string "push_status", limit: 20, default: "none", null: false
+    t.string "push_token"
+    t.string "region_code", limit: 10, null: false
+    t.datetime "revoked_at"
+    t.string "revoked_reason", limit: 30
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["devise_api_token_id"], name: "index_mobile_devices_on_devise_api_token_id"
+    t.index ["push_token"], name: "index_mobile_devices_on_push_token", unique: true
+    t.index ["user_id", "install_id"], name: "index_mobile_devices_on_user_id_and_install_id", unique: true
+    t.index ["user_id", "revoked_at", "last_used_at"], name: "idx_mobile_devices_live"
+  end
+
+  create_table "mobile_push_deliveries", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "error"
+    t.bigint "mobile_device_id", null: false
+    t.bigint "noticed_notification_id", null: false
+    t.string "status", limit: 10, default: "pending", null: false
+    t.string "ticket_id", limit: 64
+    t.datetime "updated_at", null: false
+    t.index ["mobile_device_id", "created_at"], name: "idx_mobile_push_deliveries_device"
+    t.index ["noticed_notification_id", "mobile_device_id"], name: "idx_mobile_push_deliveries_unique", unique: true
+    t.index ["ticket_id"], name: "index_mobile_push_deliveries_on_ticket_id"
+  end
+
   create_table "models", force: :cascade do |t|
     t.json "capabilities"
     t.integer "context_window"
@@ -5671,6 +5707,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_14_090300) do
   add_foreign_key "messages", "chats"
   add_foreign_key "messages", "models"
   add_foreign_key "messages", "tool_calls"
+  add_foreign_key "mobile_devices", "devise_api_tokens", on_delete: :nullify
+  add_foreign_key "mobile_devices", "users"
+  add_foreign_key "mobile_push_deliveries", "mobile_devices", on_delete: :cascade
+  add_foreign_key "mobile_push_deliveries", "noticed_notifications", on_delete: :cascade
   add_foreign_key "nda_acceptances", "entities"
   add_foreign_key "nda_acceptances", "investors"
   add_foreign_key "nda_acceptances", "nda_configs"

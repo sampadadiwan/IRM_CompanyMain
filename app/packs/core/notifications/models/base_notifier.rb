@@ -42,6 +42,18 @@ class BaseNotifier < Noticed::Event
     end
   end
 
+  # LP mobile app push (lp-mobile-app design card ⑤), in every environment — features stub Expo
+  # with WebMock. Gated by NotificationExtensions#push_enabled: the email gate plus push-only checks.
+  # Not delayed: email_delay exists to spread SES load, which push does not share (decision 7).
+  deliver_by :push, class: "DeliveryMethods::ExpoPush" do |config|
+    # Checked BEFORE a job is queued: Noticed evaluates `if` inside the delivery job, so without
+    # this every notification would queue a push job even in a region without push or for the
+    # many recipients with no phone. Cheap checks only (two config reads, one SELECT 1).
+    config.before_enqueue = -> { throw(:abort) unless push_candidate? }
+    # The full gate (email rules, category) runs in the job
+    config.if = -> { push_enabled }
+  end
+
   required_param :entity_id
 
   def mailer_name(notification = nil)

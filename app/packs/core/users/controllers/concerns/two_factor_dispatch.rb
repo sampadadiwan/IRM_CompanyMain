@@ -48,59 +48,27 @@ module TwoFactorDispatch
     # Set before any sign_out, matching the ordering both call sites already relied on.
     session[:otp_user_id] = user.id
 
-    # blank?, not nil?, matching require_no_verified_method in the controller: an empty
-    # string (reachable through the cross-region sync, which assigns the raw column) is
-    # "no method" too, and must not fall through to the authenticator branch.
-    if user.two_factor_mode.blank?
+    # Which modes send a code, and when a mode is undeliverable, live in TwoFactorVerifier so
+    # the LP mobile app's sign-in applies exactly the same rules. This concern keeps only the
+    # session bookkeeping and the redirect for each outcome.
+    case TwoFactorVerifier.start(user)
+    when :choose_method
       # Enabled but no VERIFIED method — never configured, chosen but abandoned before the
       # confirming code was entered (the mode is only written by the verify_* actions), or
       # cleared by TwoFactorReset (self-service "Change 2FA Method" / admin "Reset 2FA
       # Method"). Either way: choose a mode before anything can be sent. This is why a
       # reset needs no login-flow changes, and why an abandoned enrollment is not a lockout.
       select_mode_two_factor_path
-    elsif user.whatsapp_mode?
-      # Same refusal as the SMS branch below. SendOtpToWhatsappJob aborts silently when
-      # the flag or the number is gone (an administrator unticked whatsapp_enabled, or
-      # cleared users.phone), and the screen would say "Code sent to +…" and wait for a
-      # code that never left. There are no backup codes, so say so and stop here.
-      unless user.whatsapp_otp_enabled?
-        Rails.logger.warn "[TwoFactorDispatch] whatsapp-mode user_id=#{user.id} cannot receive a " \
-                          "code (whatsapp_enabled=#{user.whatsapp_enabled?}, phone_present=#{user.phone.present?})"
-        session.delete(:otp_user_id)
-        return :undeliverable
-      end
-
-      # Out-of-band modes send the code up front so it is in flight while the
-      # verification screen renders.
-      ActiveRecord::Base.connected_to(role: :writing) do
-        user.send_otp_via_whatsapp
-      end
+    when :undeliverable
+      # A WhatsApp- or SMS-mode user whose code cannot be delivered must NOT be shown the
+      # verification screen — there are no backup codes, so they would sit entering nothing
+      # that could ever work. Recovery is an administrator reset.
+      session.delete(:otp_user_id)
+      :undeliverable
+    when :whatsapp_sent
       session[:otp_whatsapp_sent_at] = Time.current.to_s
       new_two_factor_path
-    elsif user.sms_mode?
-      # An sms-mode user whose code cannot be delivered must NOT be shown the
-      # verification screen. It would say "Code texted to …" and offer a code box for a
-      # message that was never sent, and there are no backup codes, so they would
-      # sit there entering nothing that could ever work.
-      #
-      # Two ways to arrive here, both real:
-      #   * the SMS_OTP_ENABLED kill switch was thrown (e.g. toll fraud detected) while
-      #     users were already enrolled in sms mode;
-      #   * their number stopped being textable — an admin edited users.phone to a
-      #     landline or to a number that no longer parses.
-      #
-      # Recovery is an administrator reset, so say that rather than pretending.
-      unless user.sms_otp_enabled?
-        Rails.logger.warn "[TwoFactorDispatch] sms-mode user_id=#{user.id} cannot receive a " \
-                          "code (feature_enabled=#{SmsDeliverable.feature_enabled?}, " \
-                          "number_usable=#{user.sms_available?})"
-        session.delete(:otp_user_id)
-        return :undeliverable
-      end
-
-      ActiveRecord::Base.connected_to(role: :writing) do
-        user.send_otp_via_sms(OtpDelivery::PURPOSE_LOGIN)
-      end
+    when :sms_sent
       # Seeds the resend cooldown so a user cannot immediately trigger a second paid
       # send by reloading the verification screen.
       session[:otp_sms_sent_at] = Time.current.to_s

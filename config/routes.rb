@@ -56,12 +56,15 @@ Rails.application.routes.draw do
   draw :misc
   draw :core
   draw :ai
+  draw :mobile
 
   devise_for :users, controllers: {
     # We no longer allow users to register on their own
     registrations: "users/registrations",
     passwords: "users/passwords",
-    sessions: 'users/sessions'
+    sessions: 'users/sessions',
+    # devise-api's /users/tokens/* — refuses two-factor users (lp-mobile-app X7)
+    tokens: 'users/tokens'
   }
 
   resources :users do

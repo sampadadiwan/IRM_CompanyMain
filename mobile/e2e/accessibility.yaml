@@ -1,0 +1,7 @@
+# E33 — Edge case: the largest text size keeps Home readable (set Accessibility › Larger Text first)
+appId: com.caphive.lp
+---
+- runFlow: first_run.yaml
+- assertVisible: "Called"
+- assertVisible: "Due"
+- assertVisible: "Arka Growth Fund I"

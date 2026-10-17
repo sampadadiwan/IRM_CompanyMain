@@ -1,0 +1,13 @@
+# X14 — Error case: a US account tried in India gets the wrong-password message plus the region hint
+appId: com.caphive.lp
+---
+- clearState
+- launchApp
+- tapOn: "India"
+- tapOn: "Email"
+- inputText: "jane@us-lp.example"
+- tapOn: "Password"
+- inputText: "password"
+- tapOn: "Sign in"
+- assertVisible: "Incorrect email or password."
+- assertVisible: "Switch region"

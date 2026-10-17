@@ -36,9 +36,16 @@ module CapHive
     config.autoload_paths += Rails.root.glob('app/packs/**/controllers/concerns/')
     config.autoload_paths << Rails.root.join('lib')
 
+    # LP mobile app web review build (Expo web) — CORS for one local origin, never in production.
+    # See lib/middleware/mobile_web_cors.rb.
+    if ENV["MOBILE_WEB_ORIGIN"].present? && !Rails.env.production?
+      require_relative "../lib/middleware/mobile_web_cors"
+      config.middleware.insert_before 0, MobileWebCors, ENV.fetch("MOBILE_WEB_ORIGIN", nil)
+    end
+
     # Changed: Added nda_configs to core view paths.
     # Why: New NdaConfig pack needs its views directory registered for template resolution.
-    core_view_paths = %w[access_rights documents entities folders notes permissions reminders tasks users investors investor_accesses valuations nudges base investor_kycs fees signature_workflows kyc_datas notifications core support_client_mappings validation_rules workflow_templates email_deliverability nda_configs]
+    core_view_paths = %w[access_rights documents entities folders notes permissions reminders tasks users investors investor_accesses valuations nudges base investor_kycs fees signature_workflows kyc_datas notifications core support_client_mappings validation_rules workflow_templates email_deliverability nda_configs mobile]
 
     core_view_paths.each do |view_path|
       config.paths['app/views'].unshift("#{Rails.root}/app/packs/core/#{view_path}/views")

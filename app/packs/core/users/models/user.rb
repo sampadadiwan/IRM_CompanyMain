@@ -158,6 +158,8 @@ class User < ApplicationRecord
   # Noticed gem
   has_many :notifications, as: :recipient, dependent: :destroy, class_name: "Noticed::Notification"
   has_many :favorites, dependent: :destroy
+  # Phones signed in to the LP mobile app (openspec/changes/lp-mobile-app, design card ③)
+  has_many :mobile_devices, dependent: :destroy
 
   include FileUploader::Attachment(:signature)
 
@@ -250,7 +252,33 @@ class User < ApplicationRecord
   before_create :setup_defaults
   after_create :update_investor_access
   after_update :sync_investor_access_contact_details, if: :sync_investor_access_contact_details?
+  # A new password or a deactivation signs every phone out (lp-mobile-app X5, X6)
+  after_update_commit :revoke_mobile_devices,
+                      if: -> { saved_change_to_encrypted_password? || (saved_change_to_active? && !active) }
   before_save :update_kanban_permissions
+
+  # LP mobile app push categories, kept under preferences["push"]. A missing key means on.
+  # See MobilePushCategory for which notifications fall in which category.
+  PUSH_CATEGORIES = %w[capital_calls distributions documents other].freeze
+
+  def push_preferences
+    stored = preferences.is_a?(Hash) ? preferences.fetch("push", {}) : {}
+    PUSH_CATEGORIES.index_with { |category| stored.fetch(category, true) != false }
+  end
+
+  # Merges the given categories into preferences["push"]; unknown keys are ignored
+  def update_push_preferences!(changes)
+    current = push_preferences
+    changes.to_h.each do |category, value|
+      current[category.to_s] = ActiveModel::Type::Boolean.new.cast(value) if PUSH_CATEGORIES.include?(category.to_s)
+    end
+    update!(preferences: (preferences || {}).merge("push" => current))
+  end
+
+  def revoke_mobile_devices
+    reason = saved_change_to_encrypted_password? ? "password_changed" : "deactivated"
+    MobileDevice.revoke_all_for!(self, reason:)
+  end
 
   def update_kanban_permissions
     permissions.set(:enable_kanban) if permissions.enable_deals?

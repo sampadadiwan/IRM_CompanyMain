@@ -1,0 +1,20 @@
+# H16 — Happy path: first run — region, sign in, notifications prompt, Home shows the demo funds
+# Data: RAILS_ENV=staging bin/rails mobile:seed_demo (openspec/changes/lp-mobile-app/design.md#worked-examples)
+appId: com.caphive.lp
+---
+- clearState
+- launchApp
+- tapOn: "India"
+- tapOn: "Email"
+- inputText: "rahul@sharmafo.example"
+- tapOn: "Password"
+- inputText: "password"
+- tapOn: "Sign in"
+- tapOn:
+    text: "Turn on"
+    optional: true
+- tapOn:
+    text: "Not now"
+    optional: true
+- assertVisible: "To do · 2"
+- assertVisible: "Arka Growth Fund I"

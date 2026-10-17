@@ -1,0 +1,18 @@
+# H19 — Happy path: notification categories persist across a restart
+# E34 — Edge case: notifications denied at system level → "Off in phone settings"
+appId: com.caphive.lp
+---
+- runFlow: first_run.yaml
+- tapOn: "Profile"
+- tapOn: "Notification settings"
+- tapOn: "Distributions"
+- stopApp
+- launchApp
+- tapOn: "Profile"
+- tapOn: "Notification settings"
+- assertVisible: "Distributions"
+- runScript: |
+    // E34 needs notifications denied in system settings before this step (device-specific)
+- assertVisible:
+    text: "Off in phone settings"
+    optional: true

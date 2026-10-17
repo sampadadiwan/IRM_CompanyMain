@@ -17,7 +17,15 @@ class CapitalDistributionPaymentsController < ApplicationController
     respond_to do |format|
       format.html
       format.xlsx
-      format.json { render json: CapitalDistributionPaymentDatatable.new(params, capital_distribution_payments: @capital_distribution_payments) }
+      # Bearer-token callers (the LP mobile app, API clients) get the jbuilder records; the
+      # website's DataTables grid keeps its own shape
+      format.json do
+        if api_request?
+          render :index
+        else
+          render json: CapitalDistributionPaymentDatatable.new(params, capital_distribution_payments: @capital_distribution_payments)
+        end
+      end
     end
   end
 
