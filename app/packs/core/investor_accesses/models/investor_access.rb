@@ -113,8 +113,21 @@ class InvestorAccess < ApplicationRecord
 
   # is_investor_advisor is set by update_user (before_validation) from the matched/created user's
   # rolify role, so it is already accurate by the time this validation runs.
+  #
+  # The block keeps CLIENT access on the Add Investor Advisor flow, which also creates the advisor's
+  # fund grants. An advisor's OWN firm can be an LP too, and on that record they are a plain contact
+  # like their colleagues, so it is allowed. "Own" means the advisor's recorded home
+  # (advisor_entity_id), else their entity for a legacy advisor with none - never the client entity
+  # they may be switched into right now.
+  # The is_investor_advisor flag is left as the role says, so deleting the row still runs
+  # remove_advisor_fund_access_rights.
+  # Worked examples H1, E1–E4, X1, X2 — openspec/changes/fix-advisor-add-own-lp-contact/report.md#verification
   def block_investor_advisor_from_ui
-    errors.add(:email, "belongs to a user with the Investor Advisor role and cannot be added as investor access from this page") if is_investor_advisor
+    return unless is_investor_advisor
+    # The advisor's own firm's LP record: allowed (matrix rows 3–5).
+    return if user && investor_entity_id == (user.advisor_entity_id || user.entity_id)
+
+    errors.add(:email, "belongs to a user with the Investor Advisor role and cannot be added as investor access from this page")
   end
 
   def full_name
