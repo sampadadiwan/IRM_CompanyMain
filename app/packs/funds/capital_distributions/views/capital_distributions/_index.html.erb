@@ -38,9 +38,11 @@
     <% end %>
   </div>
 </div>
+<%# Stats cards under the heading, above the table: the fund's Distributions tab (@stats_scope / @stats_fund from the controller) %>
+<%= render "/capital_distributions/grid_stats", scope: @stats_scope, fund: @stats_fund if @stats_scope %>
 <%= render "/capital_distributions/analytics", fund: (params[:fund_id].present? ? Fund.find(params[:fund_id]) : nil) %>
 <div class="table-responsive"
- data-controller="datatable tooltip" data-datatable-money-columns-value="2,3,5" data-datatable-responsive-details-value=true>
+ data-controller="datatable tooltip" data-datatable-money-columns-value="2,3,4" data-datatable-responsive-details-value=true>
   <table id="capital_distributions" class="table table-bordered  dataTable action_table jqDataTable">
     <thead>
       <tr>
@@ -52,6 +54,12 @@
         </th>
         <th class="num-col">
           Gross Payable
+        </th>
+        <th class="num-col">
+          Net Payable
+        </th>
+        <th class="num-col">
+          Distributed
         </th>
         <th class="text-col">
           Approved

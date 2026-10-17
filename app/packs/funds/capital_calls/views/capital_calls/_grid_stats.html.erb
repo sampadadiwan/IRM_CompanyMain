@@ -1,0 +1,35 @@
+<%# Stats cards above the fund's Calls grid. scope: every call the grid covers, across its pages
+    (CapitalCallsController#index @stats_scope). Each card totals a grid column (CapitalCall.grid_totals). %>
+<%
+  totals = CapitalCall.grid_totals(scope)
+  # Amounts are stored in the fund currency
+  money = ->(cents) { money_to_currency(Money.new(cents, fund.currency), params) }
+  cards_data = [
+    { stat: money.call(totals[:called]), subtitle: "Called", progress_bar_color: "primary", text_info: "file-invoice",
+      tooltip: "Total of the Call Amount column across all the fund's calls" },
+    { stat: money.call(totals[:collected]), subtitle: "Collected", progress_bar_color: "success", text_info: "circle-check",
+      tooltip: "Total of the Collected Amount column: payments recorded against these calls" },
+    { stat: money.call(totals[:due]), subtitle: "Due", progress_bar_color: "warning", text_info: "alert-circle",
+      tooltip: "Total of the Due Amount column: Call Amount + fees - Collected Amount" }
+  ]
+  # Only when some call still needs approving - a zero card is noise
+  if totals[:unapproved_count].positive?
+    cards_data << { stat: money.call(totals[:unapproved]), subtitle: "Not Approved (#{pluralize(totals[:unapproved_count], 'call')})",
+                    progress_bar_color: "secondary", text_info: "clock",
+                    tooltip: "Call Amount of the calls with Approved = No: still waiting for approval" }
+  end
+%>
+
+<div class="row mb-3" id="capital_call_grid_stats">
+  <% cards_data.each do |card_data| %>
+    <%= render(NumberStatsComponent.new(
+      path: nil,
+      amount: card_data[:stat],
+      subtitle: card_data[:subtitle],
+      progress_bar_color: card_data[:progress_bar_color],
+      text_info: card_data[:text_info],
+      tooltip: card_data[:tooltip],
+      fs_size: 4
+    )) %>
+  <% end %>
+</div>

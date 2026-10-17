@@ -8,6 +8,10 @@ class CapitalDistributionsController < ApplicationController
     service = CapitalDistributionList.call(current_user, params) { |relation| policy_scope(relation) }
     @q = service.q
     @capital_distributions = service.capital_distributions
+    # Stats cards on the fund's Distributions tab: every row the grid lists (it is not paginated).
+    # Dedup by id - the policy scope can join access rights and repeat a row
+    @stats_fund = Fund.find_by(id: params[:fund_id]) if params[:fund_id].present?
+    @stats_scope = CapitalDistribution.where(id: @capital_distributions.select(:id)) if @stats_fund
   end
 
   # This action is used only to update the form for CD with dynamic Income (Gain from PIs) and Face Value For Redemption (Cost of PIs), and is triggered when a user selected a PI to be included in the distribution

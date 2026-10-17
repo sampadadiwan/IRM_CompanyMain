@@ -21,6 +21,9 @@ class CapitalCallsController < ApplicationController
     )
     @capital_calls = @capital_calls.order(:call_date) if params[:order].blank?
     @fund = Fund.find(params[:fund_id]) if params[:fund_id].present?
+    # Stats cards on the fund's Calls tab: every row the grid covers, across its pages (before pagy).
+    # Dedup by id - the policy scope can join access rights and repeat a row
+    @stats_scope = CapitalCall.where(id: @capital_calls.select(:id)) if @fund && request.format.html?
 
     @pagy, @capital_calls = pagy(@capital_calls, limit: params[:per_page] || 10) if params[:all].blank?
 

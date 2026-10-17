@@ -33,6 +33,8 @@
     <% end %>
   </div>
 </div>
+<%# Stats cards under the heading, above the table: the fund's Calls tab (@stats_scope from the controller) %>
+<%= render "/capital_calls/grid_stats", scope: @stats_scope, fund: fund if @stats_scope && fund %>
 <%= render "/capital_calls/analytics", fund: %>
 <%
 

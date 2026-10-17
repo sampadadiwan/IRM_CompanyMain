@@ -8,6 +8,12 @@
   <td class="num-col">
     <%= money_to_currency capital_distribution.gross_amount, params %>
   </td>
+  <td class="num-col">
+    <%= money_to_currency capital_distribution.distribution_amount, params %>
+  </td>
+  <td class="num-col">
+    <%= money_to_currency capital_distribution.completed_distribution_amount, params %>
+  </td>
   <td class="text-col">
     <%= display_boolean capital_distribution.approved %>
   </td>

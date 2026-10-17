@@ -54,6 +54,25 @@ class CapitalDistribution < ApplicationRecord
   # income - This is the income from sale of portfolio that is to be distributed
   monetize :income_cents, :reinvestment_cents, :gross_amount_cents, :distribution_amount_cents, :completed_distribution_amount_cents, :cost_of_investment_cents, :fee_cents, with_currency: ->(i) { i.fund.currency }
 
+  # Totals of the fund Distributions grid's money columns, for the stats cards above it
+  # (capital_distributions/_grid_stats). Summed per row, truncated to whole cents as each cell displays.
+  # A fund has tens of distributions, so plucking the few columns is cheap.
+  def self.grid_totals(scope)
+    rows = scope.pluck(:distribution_amount_cents, :completed_distribution_amount_cents, :approved)
+    totals = { net: 0, distributed: 0, unapproved: 0, unapproved_count: 0 }
+    rows.each do |net, distributed, approved|
+      totals[:net] += net.truncate
+      totals[:distributed] += distributed.truncate
+      next if approved
+
+      # Distributions still waiting for approval, by their Net Payable (legacy rows store gross as 0)
+      totals[:unapproved] += net.truncate
+      totals[:unapproved_count] += 1
+    end
+
+    totals
+  end
+
   validates_uniqueness_of :title, scope: :fund_id
   validates :title, presence: true
   normalizes :title, with: ->(title) { title.strip.squeeze(" ") }

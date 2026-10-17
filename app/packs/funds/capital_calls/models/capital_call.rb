@@ -142,6 +142,27 @@ class CapitalCall < ApplicationRecord
     call_amount + other_fee - collected_amount
   end
 
+  # Totals of the fund Calls grid's money columns, for the stats cards above it (capital_calls/_grid_stats).
+  # Summed per row, truncated to whole cents as each cell displays, so a card equals its column's total.
+  # A fund has tens of calls, so plucking the few columns is cheap.
+  def self.grid_totals(scope)
+    rows = scope.pluck(:call_amount_cents, :other_fee_cents, :collected_amount_cents, :approved)
+    totals = { called: 0, collected: 0, due: 0, unapproved: 0, unapproved_count: 0 }
+    rows.each do |call, fee, got, approved|
+      totals[:called] += call.truncate
+      totals[:collected] += got.truncate
+      # Same formula as #due_amount - the Due Amount cell
+      totals[:due] += (call + fee - got).truncate
+      next if approved
+
+      # Calls still waiting for approval, by their Call Amount
+      totals[:unapproved] += call.truncate
+      totals[:unapproved_count] += 1
+    end
+
+    totals
+  end
+
   def percentage_raised
     call_amount_cents.positive? ? (collected_amount_cents * 100.0 / call_amount_cents).round(6) : 0
   end

@@ -1,0 +1,35 @@
+<%# Stats cards above the fund's Distributions grid. scope: every distribution the grid lists
+    (CapitalDistributionsController#index @stats_scope). Each card totals a grid column (CapitalDistribution.grid_totals). %>
+<%
+  totals = CapitalDistribution.grid_totals(scope)
+  # Amounts are stored in the fund currency
+  money = ->(cents) { money_to_currency(Money.new(cents, fund.currency), params) }
+  # No Gross Payable card: legacy distributions store gross as 0, so a gross total understates what was
+  # paid (same call as the LP distribution cards, lp_fund_stats.feature S4)
+  cards_data = [
+    { stat: money.call(totals[:net]), subtitle: "Net Payable", progress_bar_color: "primary", text_info: "coins",
+      tooltip: "Total of the Net Payable column: what the payments pay out after tax and fees" },
+    { stat: money.call(totals[:distributed]), subtitle: "Distributed", progress_bar_color: "success", text_info: "circle-check",
+      tooltip: "Total of the Distributed column: Net Payable of the payments marked Completed" }
+  ]
+  # Only when some distribution still needs approving - a zero card is noise
+  if totals[:unapproved_count].positive?
+    cards_data << { stat: money.call(totals[:unapproved]), subtitle: "Not Approved (#{pluralize(totals[:unapproved_count], 'distribution')})",
+                    progress_bar_color: "secondary", text_info: "clock",
+                    tooltip: "Net Payable of the distributions with Approved = No: still waiting for approval" }
+  end
+%>
+
+<div class="row mb-3" id="capital_distribution_grid_stats">
+  <% cards_data.each do |card_data| %>
+    <%= render(NumberStatsComponent.new(
+      path: nil,
+      amount: card_data[:stat],
+      subtitle: card_data[:subtitle],
+      progress_bar_color: card_data[:progress_bar_color],
+      text_info: card_data[:text_info],
+      tooltip: card_data[:tooltip],
+      fs_size: 4
+    )) %>
+  <% end %>
+</div>
