@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_14_090300) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_16_120000) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -4716,6 +4716,28 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_14_090300) do
     t.index ["user_id"], name: "index_support_client_mappings_on_user_id"
   end
 
+  create_table "support_console_queries", force: :cascade do |t|
+    t.bigint "agent_chat_message_id"
+    t.bigint "agent_chat_session_id"
+    t.string "code_rev", limit: 40, null: false
+    t.datetime "created_at", null: false
+    t.integer "duration_ms"
+    t.bigint "entity_id", null: false
+    t.integer "event_seq", null: false
+    t.boolean "flagged", default: false, null: false
+    t.integer "lag_seconds"
+    t.string "outcome", limit: 10, null: false
+    t.string "reason"
+    t.integer "row_count"
+    t.text "sql_text", null: false
+    t.bigint "user_id", null: false
+    t.index ["agent_chat_message_id", "event_seq"], name: "idx_on_agent_chat_message_id_event_seq_d01e8f181d", unique: true
+    t.index ["agent_chat_session_id"], name: "index_support_console_queries_on_agent_chat_session_id"
+    t.index ["entity_id", "created_at"], name: "index_support_console_queries_on_entity_id_and_created_at"
+    t.index ["flagged", "created_at"], name: "index_support_console_queries_on_flagged_and_created_at"
+    t.index ["user_id", "created_at"], name: "index_support_console_queries_on_user_id_and_created_at"
+  end
+
   create_table "sync_records", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "openwebui_id"
@@ -5838,6 +5860,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_14_090300) do
   add_foreign_key "support_agents", "form_types"
   add_foreign_key "support_client_mappings", "entities"
   add_foreign_key "support_client_mappings", "users"
+  add_foreign_key "support_console_queries", "agent_chat_messages", on_delete: :nullify
+  add_foreign_key "support_console_queries", "agent_chat_sessions", on_delete: :nullify
+  add_foreign_key "support_console_queries", "entities"
+  add_foreign_key "support_console_queries", "users"
   add_foreign_key "taggings", "tags"
   add_foreign_key "task_recurrence_rules", "entities"
   add_foreign_key "task_templates", "entities"
