@@ -39,8 +39,15 @@
                             <i class="ti ti-lock leading-icon"></i>
                             <input type="password" class="form-control-modern"
                             name="user[password]" required="required"
-                            id="user_password" placeholder="Password">
-                            <i class="far fa-eye toggle-password" id="togglePassword"></i>
+                            id="user_password" placeholder="Password"
+                            data-login-target="password">
+                            <%# Tabler icon, not Font Awesome: the devise layout's FA stylesheet
+                                (modernize fontawesome-all.css) is missing, so an fa-eye renders blank. %>
+                            <button type="button" class="toggle-password" id="togglePassword"
+                                aria-label="Show password" aria-pressed="false"
+                                data-action="login#togglePassword">
+                                <i class="ti ti-eye" data-login-target="toggleIcon"></i>
+                            </button>
                         </div>
                     </div>
 

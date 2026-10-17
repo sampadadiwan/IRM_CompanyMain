@@ -277,6 +277,12 @@
       right: 16px;
       top: 50%;
       transform: translateY(-50%);
+      // Rendered as a <button>; strip the browser's button chrome so only the icon shows.
+      background: none;
+      border: 0;
+      padding: 0;
+      line-height: 1;
+      font-size: 1.1rem;
       cursor: pointer;
       color: #a0aec0;
       transition: color 0.2s;
