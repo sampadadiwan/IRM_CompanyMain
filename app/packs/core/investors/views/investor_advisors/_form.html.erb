@@ -17,7 +17,8 @@
 
     <div class="form-group">
       <%= form.label :email %>
-      <%= form.text_field :email, class: "form-control"  %>
+      <%# Fixed once the grant exists (S1): it names the advisor's login, which update does not change. %>
+      <%= form.text_field :email, class: "form-control", readonly: investor_advisor.persisted? %>
     </div>
 
     <div class="associated_entity row">

@@ -39,8 +39,17 @@ class OfferInvestorPolicy < SaleBasePolicy
     create?
   end
 
+  # Only the seller's own offer, and only before it is verified (S5). create? is true for any
+  # investor (anyone may make an offer), so `create? && !verified` let any investor-persona user
+  # edit or delete someone else's unverified offer - PAN and bank details included. "Own" is the
+  # same test accept_spa? uses: the offer's user, or a user of the offering investor.
+  # Worked example S5 — openspec/changes/fix-tenant-isolation-batch1/report.md#verification
   def update?
-    create? && !record.verified
+    own_offer? && !record.verified
+  end
+
+  def own_offer?
+    record.user_id == user.id || (record.investor.present? && record.investor.investor_entity_id == user.entity_id)
   end
 
   def edit?

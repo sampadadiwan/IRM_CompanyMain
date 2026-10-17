@@ -1,6 +1,7 @@
 <tr id="user_<%= user.id %>">
   <td class="text-col">
-    <%= link_to user.first_name, user_path(user.id) %>
+    <%# An advisor switched in from another company is listed, but their page belongs to their own firm (R5). %>
+    <%= policy(user).show? ? link_to(user.first_name, user_path(user.id)) : user.first_name %>
   </td>
   <td class="text-col">
     <%= user.last_name %>

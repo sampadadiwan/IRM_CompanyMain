@@ -250,10 +250,15 @@ class InvestorAccess < ApplicationRecord
 
     fund_ids.each do |fund_id|
       # Check whether any other approved InvestorAccess still links this user to an investor
-      # in this fund.  If none remain, the user's AR on the fund should be revoked.
+      # in this fund ON THE SAME CLIENT ENTITY. The AccessRight revoked below is the one scoped to
+      # this investor's entity, so only rows of that entity can still justify it (R3). Counting any
+      # investor in the fund kept the removed client's grant alive whenever the advisor also
+      # advised another client in the fund, or was themselves an LP of it.
+      # Worked example R3 — openspec/changes/fix-tenant-isolation-batch1/report.md#verification
       still_has_access = InvestorAccess
                          .joins(investor: :capital_commitments)
                          .where(user_id: user_id, approved: true, is_investor_advisor: true)
+                         .where(investors: { investor_entity_id: investor.investor_entity_id })
                          .where(capital_commitments: { fund_id: fund_id })
                          .where.not(id: id)
                          .exists?

@@ -40,6 +40,11 @@ class ImportUploadsController < ApplicationController
   def create
     @import_upload = ImportUpload.new(import_upload_params)
     @import_upload.user_id = current_user.id
+    # R1: the import runs in its OWNER's entity - the same rule #new uses to fill the form. The policy
+    # authorizes the owner, but the importers read import_upload.entity_id, so a posted entity_id
+    # (a hidden form field) made an authorized owner run the import against another tenant.
+    # Worked example R1 — openspec/changes/fix-tenant-isolation-batch1/report.md#verification
+    @import_upload.entity_id = owner_entity_id(@import_upload) if @import_upload.owner
     authorize @import_upload
 
     respond_to do |format|
@@ -57,7 +62,8 @@ class ImportUploadsController < ApplicationController
   # PATCH/PUT /import_uploads/1 or /import_uploads/1.json
   def update
     respond_to do |format|
-      if @import_upload.update(import_upload_params)
+      # R1: an existing import keeps its owner's entity; entity_id from the request is ignored.
+      if @import_upload.update(import_upload_params.except(:entity_id))
         format.html { redirect_to import_upload_url(@import_upload), notice: "Import upload was successfully updated." }
         format.json { render :show, status: :ok, location: @import_upload }
       else
@@ -92,6 +98,11 @@ class ImportUploadsController < ApplicationController
   end
 
   # Only allow a list of trusted parameters through.
+  # Same rule as #new: an Entity owner is its own entity, anything else carries entity_id.
+  def owner_entity_id(import_upload)
+    import_upload.owner_type == "Entity" ? import_upload.owner.id : import_upload.owner.entity_id
+  end
+
   def import_upload_params
     params.require(:import_upload).permit(:name, :entity_id, :owner_id, :owner_type,
                                           :user_references, :import_type, :import_file,

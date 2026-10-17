@@ -26,7 +26,7 @@ class UserPolicy < ApplicationPolicy
   end
 
   def show?
-    user.id == record.id || (belongs_to_entity?(user, record) && user.has_cached_role?(:company_admin)) || support?
+    user.id == record.id || (admin_of_records_company? && user.has_cached_role?(:company_admin)) || support?
   end
 
   def create?
@@ -39,7 +39,21 @@ class UserPolicy < ApplicationPolicy
 
   def update?
     user.id == record.id ||
-      create? || support?
+      (admin_of_records_company? && user.has_cached_role?(:company_admin)) || support?
+  end
+
+  # Whether the acting user is in the company the target user belongs to. For an advisor that is
+  # their HOME (advisor_entity_id), not the client they happen to be switched into: judged by
+  # users.entity_id, a client's company admin could edit a switched-in advisor's email or 2FA and
+  # take over the account - and with it every other client of the advisor (R5). The advisor's own
+  # firm's admins keep editing them wherever they are switched.
+  # Worked example R5 — openspec/changes/fix-tenant-isolation-batch1/report.md#verification
+  def admin_of_records_company?
+    return belongs_to_entity?(user, record) unless record.is_a?(User) && record.advisor_entity_id.present? &&
+                                                   record.has_cached_role?(:investor_advisor)
+
+    user.entity_id == record.advisor_entity_id ||
+      (user.entity_type == "Group Company" && user.entity.child_ids.include?(record.advisor_entity_id))
   end
 
   def edit?
@@ -71,7 +85,7 @@ class UserPolicy < ApplicationPolicy
   # Who may see the two-factor row on the user page (status + method badge). Widened from
   # "self only" so an administrator can see WHICH method a user is on before resetting it.
   def view_two_factor?
-    user.id == record.id || (belongs_to_entity?(user, record) && user.has_cached_role?(:company_admin)) || support?
+    user.id == record.id || (admin_of_records_company? && user.has_cached_role?(:company_admin)) || support?
   end
 
   # Who may clear a user's two-factor METHOD back to "none" (TwoFactorReset). The user
@@ -81,7 +95,7 @@ class UserPolicy < ApplicationPolicy
   def reset_two_factor?
     return false unless record.two_factor_enabled? && record.two_factor_mode.present?
 
-    user.id == record.id || (belongs_to_entity?(user, record) && user.has_cached_role?(:company_admin)) || support?
+    user.id == record.id || (admin_of_records_company? && user.has_cached_role?(:company_admin)) || support?
   end
 
   # Authorizes admin/support impersonation ("login as"). The acting user (`user`) may impersonate
@@ -95,7 +109,10 @@ class UserPolicy < ApplicationPolicy
   def login_as?
     return false unless user.has_cached_role?(:support) || user.has_cached_role?(:super)
 
-    mapping = SupportClientMapping.find_by(user_id: user.id, entity_id: record.entity_id, enabled: true)
+    # R5: an advisor is mapped by their home company, not the client they are switched into, so
+    # support for one client cannot impersonate the advisor and reach their other clients.
+    mapped_entity_id = record.has_cached_role?(:investor_advisor) && record.advisor_entity_id.present? ? record.advisor_entity_id : record.entity_id
+    mapping = SupportClientMapping.find_by(user_id: user.id, entity_id: mapped_entity_id, enabled: true)
     mapping&.allow_login_as(user.email) || false
   end
 end

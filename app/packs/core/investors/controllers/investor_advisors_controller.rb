@@ -38,7 +38,8 @@ class InvestorAdvisorsController < ApplicationController
 
     @investor_advisor = InvestorAdvisor.new(entity_id: @investor.investor_entity_id)
     @entity = @investor_advisor.entity
-    authorize({ investor_advisor: @investor_advisor, investor: @investor }, policy_class: InvestorAdvisorPolicy)
+    # The fund is part of what is authorized (S2): it must belong to the investor's fund company.
+    authorize({ investor_advisor: @investor_advisor, investor: @investor, fund: @fund }, policy_class: InvestorAdvisorPolicy)
     @back_to = params[:back_to] || fund_path(@fund)
     @bread_crumbs = { Funds: funds_path,
                       "#{@fund.name}": fund_path(@fund),
@@ -54,7 +55,8 @@ class InvestorAdvisorsController < ApplicationController
     @investor = Investor.find(params[:investor_advisor][:investor_id])
     @fund = Fund.find(params[:investor_advisor][:fund_id])
     @entity = @investor.investor_entity
-    authorize({ investor_advisor: InvestorAdvisor.new, investor: @investor }, policy_class: InvestorAdvisorPolicy)
+    # The fund is part of what is authorized (S2): it must belong to the investor's fund company.
+    authorize({ investor_advisor: InvestorAdvisor.new, investor: @investor, fund: @fund }, policy_class: InvestorAdvisorPolicy)
 
     @investor_advisor = InvestorAdvisor.new(investor_advisor_params)
     # Finding 1: Force entity_id server-side to match the investor's entity.
@@ -118,7 +120,10 @@ class InvestorAdvisorsController < ApplicationController
   def update
     @investor_advisor.acting_user = current_user
     respond_to do |format|
-      if @investor_advisor.update(investor_advisor_params)
+      # S1: entity_id / email are NOT editable. `update?` authorized the grant as it was loaded
+      # (set_investor_advisor), so accepting a new entity_id here would let an admin of entity A
+      # re-point a grant at any other tenant and the advisor would switch in with its roles.
+      if @investor_advisor.update(investor_advisor_update_params)
         format.html { redirect_to investor_advisor_url(@investor_advisor), notice: "Investor advisor was successfully updated." }
         format.json { render :show, status: :ok, location: @investor_advisor }
       else
@@ -143,7 +148,8 @@ class InvestorAdvisorsController < ApplicationController
       @investor_advisor = InvestorAdvisor.find(params[:id])
       authorize(@investor_advisor)
       @investor_advisor.switch(current_user)
-      notice = "You have now been switched to the advisor role for #{@investor_advisor.entity.name}."
+      # S8: layouts/_alerts renders flashes html_safe and the entity name is admin-editable.
+      notice = "You have now been switched to the advisor role for #{ERB::Util.html_escape(@investor_advisor.entity.name)}."
       # The Access Denied "Switch to ..." button sends the page it was denied on, so the advisor
       # lands back there. Worked examples H8, X10 —
       # openspec/changes/fix-advisor-own-investor-access/report.md#verification
@@ -190,5 +196,12 @@ class InvestorAdvisorsController < ApplicationController
   # allowing entity admins to set them from the UI.
   def investor_advisor_params
     params.require(:investor_advisor).permit(:entity_id, :email, allowed_roles: [], permissions: [], extended_permissions: [])
+  end
+
+  # The edit form changes only what the advisor may do. Which tenant the grant belongs to and whose
+  # login it is are fixed at creation (create authorizes the new entity_id).
+  # Worked example S1 — openspec/changes/fix-tenant-isolation-batch1/report.md#verification
+  def investor_advisor_update_params
+    params.require(:investor_advisor).permit(allowed_roles: [], permissions: [], extended_permissions: [])
   end
 end

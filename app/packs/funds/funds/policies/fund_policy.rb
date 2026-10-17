@@ -3,8 +3,13 @@ class FundPolicy < FundBasePolicy
     user.enable_funds
   end
 
+  # The fund-wide report pages (advisor payouts, sign-in counts, onboarding, calls, remittances) and
+  # report generation are for the fund's own staff (S6). show? also admits permissioned LPs, and
+  # FundsController#report renders any funds/ template, so LPs could read every investor's data.
+  # Every link to these reports already sits in the staff-only part of the fund page.
+  # Worked example S6 — openspec/changes/fix-tenant-isolation-batch1/report.md#verification
   def report?
-    show?
+    show? && permissioned_employee?
   end
 
   # Cross-folio aggregate data (Account Entries Period Report, fund-level) - employees only,

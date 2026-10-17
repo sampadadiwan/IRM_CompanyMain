@@ -4,11 +4,27 @@ class ReportBuilderExportJob < ApplicationJob
   queue_as :default
 
   def perform(report_id, user_id, schedule_id = nil)
+    # Declared outside the block so the rescue below can name the report; it used to be local to the
+    # block, so any failure raised NameError and the "Failed to generate report" alert never showed.
+    report = nil
     Chewy.strategy(:sidekiq) do
       report = Report.find(report_id)
       user   = User.find(user_id)
-      entity = user.entity
       schedule = ReportSchedule.find_by(id: schedule_id) if schedule_id
+      # R4: a SCHEDULED run belongs to the report's entity. users.entity_id is wherever the owner is
+      # switched right now (advisors), so a schedule used to query - and email to the schedule's
+      # recipients - another tenant's data. On-demand exports keep using the requesting user's
+      # entity, as before (R4-H). A report with no entity falls back to the user's, as before.
+      # Worked examples R4, R4-H — openspec/changes/fix-tenant-isolation-batch1/report.md#verification
+      entity = schedule && report.entity ? report.entity : user.entity
+
+      # A scheduled run reads the report's entity with the owner's name on it, so the owner must still
+      # belong there: their company (home included), a group parent of it, or an advisor grant on it.
+      # A removed advisor's schedule would otherwise keep emailing that company's data (R4-X).
+      if schedule && report.entity && !owner_still_belongs?(user, report.entity)
+        Rails.logger.warn("[ReportBuilderExportJob] Skipping schedule #{schedule.id}: user #{user.id} no longer belongs to entity #{report.entity_id}")
+        return
+      end
 
       # 1. Generate data
       engine   = ReportBuilderQueryEngine.new(report: report, entity: entity)
@@ -66,5 +82,14 @@ class ReportBuilderExportJob < ApplicationJob
     Rails.logger.error "[ReportBuilderExportJob] Error: #{e.message}"
     error_user = User.find_by(id: user_id)
     UserAlert.new(user_id: error_user.id, entity_id: error_user.entity_id, message: "Failed to generate report <strong>#{report&.name || 'Unknown'}</strong>: #{e.message}", level: "danger").broadcast if error_user
+  end
+
+  private
+
+  # Worked examples R4, R4-X — openspec/changes/fix-tenant-isolation-batch1/report.md#verification
+  def owner_still_belongs?(user, entity)
+    [user.entity_id, user.advisor_entity_id].compact.include?(entity.id) ||
+      (user.entity_type == "Group Company" && user.entity&.child_ids&.include?(entity.id)) ||
+      InvestorAdvisor.exists?(user_id: user.id, entity_id: entity.id)
   end
 end

@@ -43,6 +43,12 @@ class InvestorAdvisor < ApplicationRecord
   serialize :allowed_roles, type: Array
 
   def ensure_user
+    # An existing grant keeps the user it was created for (S1 follow-up). Re-finding by email on
+    # every save broke editing a grant whose advisor later changed their login email: the grant's
+    # copy of the email is no longer updatable (S1), so the lookup could never succeed again.
+    # Worked example S1-E — openspec/changes/fix-tenant-isolation-batch1/report.md#verification
+    return if persisted? && user_id.present?
+
     self.user = User.find_by(email:)
     errors.add(:email, "No existing user found in the system. Advisor has not been setup.") unless user
     errors.add(:email, "User has not been setup as an investor advisor.") if user && !user.has_cached_role?(:investor_advisor)
@@ -110,15 +116,27 @@ class InvestorAdvisor < ApplicationRecord
   end
 
   def switch(user)
-    user.entity = entity
-    user.investor_advisor_id = id
-    user.setup_defaults
-    user.save
-
-    # Finding 8: Role assignment must be atomic. Wrapping in a transaction
-    # ensures that if any role addition fails, the user isn't left in a
-    # broken state with zero roles (lockout scenario).
+    # R7 / Finding 8: the entity move and the role swap are ONE transaction, under a row lock.
+    # The entity used to be saved before the role transaction, so a failed role add (or two switches
+    # racing from two tabs) left the user in one entity holding another grant's roles.
+    # Worked example R7 — openspec/changes/fix-tenant-isolation-batch1/report.md#verification
     ActiveRecord::Base.transaction do
+      # Serialise concurrent switches/reverts of the same user with a row lock taken by a separate
+      # query. Not user.lock!: it raises when the caller's object has unsaved changes and reloads it,
+      # and callers pass current_user straight from the request.
+      lock_user_row(user)
+      # A grant deleted while this switch waited for the lock must not be switched into: its access
+      # rights are already gone and R2 has just sent the user home.
+      raise ActiveRecord::RecordNotFound, "Investor advisor #{id} no longer exists" unless InvestorAdvisor.exists?(id)
+
+      user.entity = entity
+      user.investor_advisor_id = id
+      user.setup_defaults
+      # save! so a failed save rolls the role swap back too (R7). validate: false because the move is
+      # not a profile edit: an unrelated invalid field (e.g. a legacy phone without a call code)
+      # used to leave the entity unmoved while the roles were swapped anyway.
+      user.save!(validate: false)
+
       user.roles.delete_all
       allowed_roles.each { |role| user.add_role(role) }
       user.add_role(:investor_advisor)
@@ -126,13 +144,15 @@ class InvestorAdvisor < ApplicationRecord
   end
 
   def self.revert(user, persona)
-    user.entity_id = user.advisor_entity_id
-    user.investor_advisor_id = nil
-    user.setup_defaults
-    user.save
-
-    # Finding 8: Role assignment must be atomic during revert.
+    # R7 / Finding 8: same single locked transaction as #switch.
     ActiveRecord::Base.transaction do
+      lock_user_row(user)
+      user.entity_id = user.advisor_entity_id
+      user.investor_advisor_id = nil
+      user.setup_defaults
+      # Same as #switch: the entity move and the role swap succeed or fail together (R7).
+      user.save!(validate: false)
+
       user.roles.delete_all
       # setup_defaults above has already set entity_type to the home entity's type.
       user.home_role_names(home_entity_type: user.entity_type).each { |role| user.add_role(role) }
@@ -141,6 +161,14 @@ class InvestorAdvisor < ApplicationRecord
     # In case we also have a persona sent in
     user.set_persona(persona) if persona.present?
   end
+
+  # SELECT ... FOR UPDATE on the user's row, held until the surrounding transaction ends (R7). The
+  # loaded copy is discarded; the caller's object is left exactly as it was.
+  def self.lock_user_row(user)
+    User.lock.find(user.id)
+  end
+
+  delegate :lock_user_row, to: :class
 
   # Everything that must be true for THIS grant to appear in the topbar switcher and to work
   # once switched into. Returns an array of issue hashes - see User#investor_advisor_setup_issues
@@ -234,6 +262,20 @@ class InvestorAdvisor < ApplicationRecord
 
   after_destroy :remove_access_rights
   def remove_access_rights
+    # R2: an advisor switched into this grant when it is deleted would otherwise keep its entity and
+    # roles (company_admin included) until they chose to revert - and the persona dropdown no longer
+    # lists the grant, so they often could not. Send them home first.
+    # Worked example R2 — openspec/changes/fix-tenant-isolation-batch1/report.md#verification
+    if user && user.investor_advisor_id == id && user.advisor_entity_id.present?
+      begin
+        # Savepoint: this runs inside the delete's transaction, so a revert that fails half-way must
+        # roll back its own writes without aborting the delete.
+        ActiveRecord::Base.transaction(requires_new: true) { InvestorAdvisor.revert(user, nil) }
+      rescue StandardError => e
+        # The grant is still deleted and its rights removed below; the advisor then reverts themselves.
+        Rails.logger.error("InvestorAdvisor #{id}: revert of user #{user_id} on delete failed: #{e.class}: #{e.message}")
+      end
+    end
     AccessRight.where(entity_id:, user_id:).find_each(&:destroy)
     InvestorAccess.where(investor_entity_id: entity_id, email:).delete_all
   end

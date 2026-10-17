@@ -78,8 +78,11 @@ class DealPolicy < ApplicationPolicy
     update?
   end
 
+  # Opening the edit form needs the same right as saving it (S7a). create? is only the deals
+  # feature flag, which let any user with it open another tenant's deal form.
+  # Worked example S7a — openspec/changes/fix-tenant-isolation-batch1/report.md#verification
   def edit?
-    create?
+    update?
   end
 
   def destroy?

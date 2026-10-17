@@ -2,7 +2,7 @@
 
 An **Investor Advisor** is a trusted outside professional — from an advisory firm, family office, or wealth manager — who is given controlled access to part of your data so they can view or manage funds, deals, and KYC on behalf of their clients, without becoming a full member of your organisation.
 
-> **Where to find it:** Sidebar → [**Funds → Funds**](/funds) → open the fund → **Commitments** tab → open the investor's commitment → **Actions → Add Investor Advisor**. Bulk-load from the fund page with **Import → Import Investor Advisors**; advisor records in your own entity are under Company menu → [**Advisors**](/investor_advisors). Needs the company admin role and the *Investor Advisors* feature on your user.
+> **Where to find it:** Sidebar → [**Funds → Funds**](/funds) → open the fund → **Commitments** tab → open the investor's commitment → **Actions → Add Investor Advisor**. Bulk-load from the fund page with **Import → Import Investor Advisors**; advisor records in your own entity are under Company menu → [**Advisors**](/investor_advisors). Adding from a commitment needs the company admin role; the Advisors page also needs the *Investor Advisors* feature on your user.
 
 This guide explains what an advisor is, how to set one up, and exactly what they can and cannot do. It's written for the team granting the access.
 
@@ -14,10 +14,11 @@ This guide explains what an advisor is, how to set one up, and exactly what they
 2. [How Advisor Access Works](#how-advisor-access-works)
 3. [Setting Up an Advisor](#setting-up-an-advisor)
 4. [What an Advisor Can Do](#what-an-advisor-can-do)
-5. [KYCs and KYC Emails for Advisors](#kycs-and-kyc-emails-for-advisors)
-6. [What an Advisor Cannot Do](#what-an-advisor-cannot-do)
-7. [Frequently Asked Questions](#frequently-asked-questions)
-8. [Related Guides](#related-guides)
+5. [Notifications for Advisors](#notifications-for-advisors)
+6. [KYCs and KYC Emails for Advisors](#kycs-and-kyc-emails-for-advisors)
+7. [What an Advisor Cannot Do](#what-an-advisor-cannot-do)
+8. [Frequently Asked Questions](#frequently-asked-questions)
+9. [Related Guides](#related-guides)
 
 ---
 
@@ -26,6 +27,15 @@ This guide explains what an advisor is, how to set one up, and exactly what they
 When an investor uses an outside advisor to manage their relationship with your fund, you can grant that advisor permissioned access rather than sharing logins or sending data by email. The advisor keeps their own identity (tied to their advisory firm) but can **switch into the investor's (client's) view** to see only the funds you've shared with them for that investor.
 
 Think of it as handing a guest a key card that opens just a few named rooms — and only while they're switched into their client's persona.
+
+There are two kinds of advisor record, and one person can hold both:
+
+| Kind | Set up from | Belongs to | When switched in, the advisor… |
+|---|---|---|---|
+| **Advisor for an investor** | the investor's commitment → **Actions → Add Investor Advisor**, or the fund's advisor import | the investor's (client's) entity | acts as that investor, for the funds shared with them |
+| **Advisor for your organisation** | Company menu → **Advisors** → **New Investor Advisor** | your own entity | works as a member of your team, with the record's **Allowed Roles** and permissions |
+
+An advisor's own firm can also be one of your investors — a family office that invests, for example. For that investment they are simply one of the investor's users, like their colleagues; see [When the advisor's own firm is also your investor](#when-the-advisors-own-firm-is-also-your-investor).
 
 ---
 
@@ -42,9 +52,23 @@ flowchart LR
 
 - In their **home view**, they operate as a member of their own advisory firm.
 - When they pick a client from the persona dropdown in the top bar, their account temporarily moves into that **investor's entity** (the advisor record added from a commitment belongs to the investor's entity) and takes on that record's **Allowed Roles** (`investor` when added from a commitment). They can see only the funds you've explicitly granted.
-- When they choose **Self**, their normal identity and permissions return.
+- When they choose **Self**, their normal identity and permissions return. An advisor whose own firm is an entity of type **Investor Advisor** is switched into their first client automatically whenever a page loads, so they normally see a client view rather than **Self**.
 
 Access is always **explicit**: an advisor sees a fund or investor only if you've specifically shared that item with them. Nothing is visible by default.
+
+### When the advisor's own firm is also your investor
+
+If the advisor's firm is itself one of your stakeholders, the advisor can be one of that stakeholder's users, just like their colleagues — add them from the stakeholder's **Users** tab. In their own firm's view (**Self**) they then see that investment's funds, commitments, calls and documents, exactly as any other user of that stakeholder does. They never see a client's records in that view; those open only once they switch to the client.
+
+### When an advisor opens a page they can't see in their current persona
+
+A link in an email, or a page bookmarked in another persona, can belong to a different persona from the one the advisor is in. Instead of a plain "Access Denied", CapHive tells them which persona would show it:
+
+| Where the advisor is | What they open | Message |
+|---|---|---|
+| Switched into a client | their own firm's record | "Access Denied: you are currently switched into *client*. Switch your persona to Self to view this." |
+| Their own firm, or another client | a record of a client (or organisation) they advise | "Access Denied: You can view this as an advisor for *client*. Switch your persona to *client* to view it." with a **Switch to *client*** button that switches and reopens the page |
+| Anywhere | a record no persona of theirs can see | "Access Denied" |
 
 ---
 
@@ -52,7 +76,7 @@ Access is always **explicit**: an advisor sees a fund or investor only if you've
 
 ### Before you start
 
-- You need to be a **Company Admin** of the fund's entity **and** have the *Investor Advisors* feature enabled on your user.
+- You need to be a **Company Admin** of the fund's entity. The Company menu → **Advisors** page also needs the *Investor Advisors* feature on your user.
 - You'll need the advisor's email address.
 - The advisor's own firm must be an entity of type **Investor Advisor**. When the email is new to CapHive the steps below create that firm for you. If the person already has a login, they must already sit in such a firm — otherwise the save is refused, because an advisor set up outside one can never switch into your client.
 
@@ -84,6 +108,22 @@ Once switched into the client investor's persona, an advisor can — for the fun
 - **Manage KYC** — view, and where permitted, update KYC details for their clients.
 - **Track investments** — follow commitments, capital calls, and distributions for their clients.
 - **Receive notifications** — get alerts about fund activity relevant to their clients, and your KYC emails as described in [KYCs and KYC Emails for Advisors](#kycs-and-kyc-emails-for-advisors).
+
+---
+
+## Notifications for Advisors
+
+An advisor's notifications do not depend on which persona they are in when you press **Send**. They follow the access you have given them:
+
+| The notice is about | Advisor in their own firm | Advisor switched into a client | Advisor switched into your organisation |
+|---|---|---|---|
+| Their own firm's investment (they are one of its users) | ✅ | ✅ | ✅ |
+| A client's fund that was shared with them | ✅ | ✅ | ✅ |
+| A client's fund that was **not** shared with them | ❌ | ❌ | ❌ |
+
+- **Topics:** their **Notification Topics** on the stakeholder user row still apply. A row tagged only *KYC* does not get capital call notices.
+- **Email:** sent unless that row has **Email enabled** turned off. An opt-out on their own firm's row is respected, even when they also advise your organisation.
+- **Links:** a link in a notice opens the page in whatever persona they are in. If that persona can't see it, they get the message with a **Switch to …** button described in [How Advisor Access Works](#how-advisor-access-works).
 
 ---
 
@@ -155,16 +195,16 @@ Repeat **Actions → Add Investor Advisor** from that fund's commitment with the
 Company menu → [**Advisors**](/investor_advisors) → **New Investor Advisor**, enter the **Email** of a user who already has the Investor Advisor role, choose their **Permissions**, **Extended Permissions** and **Allowed Roles**, and **Save**. This form cannot create a new advisor login; use the commitment flow or the import for new people.
 
 **How do I change what an advisor can do?**
-For advisor records in your own entity: Company menu → **Advisors** → **Show** on the advisor → **Edit**. Adjust **Permissions**, **Extended Permissions** (for example *Investor Kyc Read*) and **Allowed Roles** (the roles they take on when switched in), then **Save**. Only company admins can grant the `company_admin` role to an advisor.
+For advisor records in your own entity: Company menu → **Advisors** → **Show** on the advisor → **Edit**. Adjust **Permissions**, **Extended Permissions** (for example *Investor Kyc Read*) and **Allowed Roles** (the roles they take on when switched in), then **Save**. The **Email** can't be changed on an existing record. Only company admins can grant the `company_admin` role to an advisor.
 
 **How do I remove an advisor?**
 As the fund manager, open the stakeholder → **Users** tab and use **Actions → Delete** on the row marked **Advisor**. If the advisor record belongs to your own entity (for example you are the investor firm), you can also delete it from Company menu → **Advisors** → **Show** → **Delete**.
 
 **What columns does the advisor import need?**
-**Email**, **Add To** (`Fund` or `Secondary Sale`), **Name** (the fund or sale name), **Stakeholder** and **Allowed Roles** (defaults to `employee,investor` if blank). For advisors who have no CapHive login yet, also fill **First Name**, **Last Name** and **Advisor Entity**.
+**Email**, **Add To** (`Fund` or `Secondary Sale`), **Name** (the fund or sale name), **Stakeholder** and **Allowed Roles**. For advisors who have no CapHive login yet, also fill **First Name**, **Last Name** and **Advisor Entity**. A blank **Allowed Roles** gives `employee,investor`, wider than the `investor` role the commitment flow gives, so fill in `investor` unless you mean more.
 
 **Which permission do I need?**
-Adding, editing or deleting advisors needs the company admin role and the *Investor Advisors* feature on your user. Users who are themselves switched in as an advisor cannot open the Advisors page.
+Adding an advisor from a commitment needs the company admin role of the fund's entity. The Company menu → **Advisors** page (list, add, edit, delete) also needs the *Investor Advisors* feature on your user. Users who are themselves switched in as an advisor cannot open the Advisors page.
 
 ### Why use investor advisors
 
@@ -178,7 +218,7 @@ A wealth manager, family office or consultant can follow the investor's commitme
 Fund operations or IR teams add advisors when an LP asks for their wealth manager or family office to be given access. The advisor then uses the persona dropdown to move between their clients.
 
 **What happens if I don't set up an advisor and just add the person as a Stakeholder User?**
-The **New Users** form on a stakeholder refuses anyone who already holds the Investor Advisor role, and a regular investor login can belong to only one investor firm. People acting for several investors must be set up as advisors to see more than one.
+The **New Users** form on a stakeholder refuses anyone who holds the Investor Advisor role, unless that stakeholder is the advisor's own firm, and a regular investor login can belong to only one investor firm. People acting for several investors must be set up as advisors from the commitment, which also shares the fund with them.
 
 ### What happens when I …
 
@@ -192,21 +232,45 @@ The advisor sees every KYC in your organisation and gets the KYC emails for all 
 If the email is new, CapHive creates an Investor Advisor entity for their firm and a user with the Investor Advisor role. It then creates the advisor record under the investor's entity (with investor-level role and *Investor Read* / *Investor Kyc Read*), a fund access right for that user, and an approved Stakeholder User on the investor with email enabled.
 
 **Who is notified when an advisor is added?**
-The active company admins of the investor's own entity get an in-app notification and email saying the investor advisor has been added. The advisor is not sent an invitation; they sign in from the login page with **Log in with an email link instead** or **Reset Password**.
+When a new advisor record is created, the active company admins currently working in the investor's entity get an in-app notification and email. Adding the same advisor to another fund for that investor reuses the record and sends nothing. The advisor is not sent an invitation; they sign in from the login page with **Log in with an email link instead** or **Reset Password**.
 
 **What does the advisor see after being added?**
 Once switched into the investor, they see that investor's commitments, calls, distributions, documents and KYC for the funds granted to them, and they receive the investor's notifications for those funds (filtered by their Notification Topics). They see nothing for funds they have not been granted.
 
 **What happens when an advisor switches persona?**
-Their account temporarily moves to the chosen client's entity and their roles are replaced by that advisor record's **Allowed Roles**. Choosing **Self** restores their own firm and the roles set on their advisor account.
+Their account temporarily moves to the chosen client's entity and their roles are replaced by that advisor record's **Allowed Roles**. Choosing **Self** restores their own firm and the roles set on their advisor account. They return to the page they were on, which the new persona may not be able to show.
 
 **What happens when an advisor record is deleted from the Advisors page?**
-Every access right the advisor user holds in that entity is removed and their Stakeholder User rows on that entity's investors are deleted, so they lose the client from their persona list and stop receiving its notifications. Their CapHive login and their own firm are untouched, and no one is notified.
+If the advisor is switched into that client at the time, they are moved back to their own firm first. Every access right they hold in that entity is then removed and their Stakeholder User rows on its investors are deleted, so they lose the client from their persona list and its notifications. Their login and own firm are untouched, and no one is notified.
 
 **What happens when I delete the advisor's row on the stakeholder's Users tab?**
 The row is soft-deleted and the advisor's fund access is revoked for any fund where no other approved advisor access still links them to an investor in that fund. The advisor record itself stays, so they can still be re-added to a fund later.
 
+**Does an advisor still get notices for their own firm's investment while switched into a client?**
+Yes. If their firm is one of your stakeholders and they are one of its users, they get its capital calls, reminders, payments, distributions and documents wherever they are switched, unless that user row has the topic excluded or email turned off. See [Notifications for Advisors](#notifications-for-advisors).
+
+**Does an advisor get a client's notices while working in their own firm?**
+Yes, for funds you have shared with them for that client. Notices follow what has been shared, not the persona they are in. Funds the client holds but you have not shared with the advisor send them nothing.
+
+**Can I add an advisor as a Stakeholder User of their own firm's stakeholder?**
+Yes. On the stakeholder that is the advisor's own firm, **Users** → **New** accepts them like any colleague, and the row is labelled **Advisor**. For any other stakeholder the form refuses them; use **Actions → Add Investor Advisor** on the commitment instead, which also shares the fund.
+
+**What happens when an advisor clicks Switch to … on the Access Denied message?**
+CapHive switches them into that persona and reopens the page they were trying to see, with the message "You have now been switched to the advisor role for …". The button appears only when that persona can actually show the page.
+
 ### Troubleshooting and edge cases
+
+**Why can't an advisor open a link from our email?**
+Links open in the persona the advisor is in. If it is the wrong one, they see Access Denied with the persona to use, and a **Switch to …** button when the page belongs to someone they advise. Clicking the link never switches persona by itself.
+
+**Why can't an advisor stay on Self?**
+Advisors whose own firm is an entity of type **Investor Advisor** are switched into their first client automatically whenever a page loads, so choosing **Self** lasts only until the next full page load. Report it to CapHive support if an advisor needs to work in their own firm's view.
+
+**Why can't a switched advisor open All Notifications?**
+The notifications page is not available to an advisor while they are switched into a client, even though the bell shows a count. They choose **Self** in the persona dropdown to open it.
+
+**Adding an advisor again says "Email has already been taken".**
+The advisor was set up for this investor before and that record was deleted; the old record still blocks a new one with the same email. Ask CapHive support to restore the advisor record rather than creating a new one.
 
 **Why does an advisor not get our KYC emails?**
 Open Company menu → **Advisors** → the advisor and check the grant: **Enable Kycs** must be on, **Allowed Roles** must include *employee* or *company_admin*, and the grant needs **Investor Kyc Read**, **Investor Kyc Update** or access on the KYC's fund (the fund's **Access** tab → **Select Advisor**). The advisor's own login settings and the company they are switched into make no difference.
@@ -239,7 +303,7 @@ That email belongs to a regular CapHive user (for example an investor or fund em
 Only company admins of the fund's entity can add advisors. Ask a company admin to add them, or to give you the role.
 
 **The advisor cannot find the client in their persona dropdown.**
-The dropdown lists only active entities with an advisor record for that user. Check the advisor's row is still on the stakeholder's **Users** tab and that the investor's entity has not been deactivated; if the advisor record was deleted, add them again from the commitment.
+The dropdown lists only active entities with an advisor record for that user, and it can take until their next sign-in or persona switch to show a newly added client. Check the advisor's row is still on the stakeholder's **Users** tab and that the investor's entity has not been deactivated; if the advisor record was deleted, add them again from the commitment.
 
 **The advisor has no persona dropdown in the top bar at all.**
 This is different from the dropdown being empty: the whole control is missing. It appears only once the advisor's own advisory firm is recorded on their account, which happens automatically when their login is created inside a firm whose entity type is **Investor Advisor**. If it never got recorded they will see no dropdown however many clients have added them. Ask CapHive support to check the advisor's user page, which shows exactly what is missing.

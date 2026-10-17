@@ -111,7 +111,11 @@ class DocumentsController < ApplicationController
   end
 
   def search
-    @entity = params[:entity_id].present? ? Entity.find(params[:entity_id]) : current_user.entity
+    # S4: search is excluded from verify_authorized, so entity_id from the request was trusted as-is
+    # and returned another tenant's documents. Only support may search another entity; everyone
+    # else searches their own (every in-app search link already omits entity_id).
+    # Worked example S4 — openspec/changes/fix-tenant-isolation-batch1/report.md#verification
+    @entity = params[:entity_id].present? && current_user.support? ? Entity.find(params[:entity_id]) : current_user.entity
     query = params[:query]
     if query.present?
       @documents = DocumentIndex.filter(term: { entity_id: @entity.id })

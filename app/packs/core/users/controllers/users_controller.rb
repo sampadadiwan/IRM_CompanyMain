@@ -456,11 +456,15 @@ class UsersController < ApplicationController
   end
 
   # Only allow a list of trusted parameters through.
+  # entity_id is deliberately NOT permitted (S3): create sets it server-side from the admin's own
+  # entity and the form only carries a hidden copy, so accepting it let a company admin move any user,
+  # themselves included, into another tenant while keeping their global company_admin role.
+  # Worked example S3 — openspec/changes/fix-tenant-isolation-batch1/report.md#verification
   def user_params
     permitted = if current_user.has_cached_role?(:company_admin)
                   params.require(:user).permit(:first_name, :last_name, :email,
                                                :phone, :whatsapp_enabled, :two_factor_enabled, :signature, :call_code,
-                                               :dept, :sale_notification, :enable_support, :tag_list, :entity_id,
+                                               :dept, :sale_notification, :enable_support, :tag_list,
                                                role_name: [], permissions: [], extended_permissions: [], properties: {}, preferences: {})
                 else
                   params.require(:user).permit(:first_name, :last_name, :email,

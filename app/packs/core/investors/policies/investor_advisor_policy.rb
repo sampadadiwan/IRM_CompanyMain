@@ -37,7 +37,8 @@ class InvestorAdvisorPolicy < ApplicationPolicy
     # Finding 1: Check that the current user belongs to the managing entity
     # of the investor. This prevents IDOR where a user from one entity
     # could add an advisor to an investor belonging to another entity.
-    belongs_to_entity?(user, investor) && user.has_cached_role?(:company_admin)
+    belongs_to_entity?(user, investor) && user.has_cached_role?(:company_admin) &&
+      fund_of_investors_company?(record[:fund], investor)
   end
 
   def create_for_investor?
@@ -45,7 +46,17 @@ class InvestorAdvisorPolicy < ApplicationPolicy
     return false if investor.nil?
 
     # Finding 1: Same IDOR protection as new_for_investor?.
-    belongs_to_entity?(user, investor) && user.has_cached_role?(:company_admin)
+    belongs_to_entity?(user, investor) && user.has_cached_role?(:company_admin) &&
+      fund_of_investors_company?(record[:fund], investor)
+  end
+
+  # The fund the advisor is granted must be one of the investor's fund company. fund_id comes from
+  # the request, and AddFolioInvestorAdvisor writes an AccessRight on whatever fund it is given, so
+  # without this an admin could grant an advisor any other tenant's fund.
+  # nil = a caller that names no fund (the not-found branches), which are judged as before.
+  # Worked examples S2, S2-H — openspec/changes/fix-tenant-isolation-batch1/report.md#verification
+  def fund_of_investors_company?(fund, investor)
+    fund.nil? || fund.entity_id == investor.entity_id
   end
 
   def update?

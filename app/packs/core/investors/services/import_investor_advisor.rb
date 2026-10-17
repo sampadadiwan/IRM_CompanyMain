@@ -16,9 +16,19 @@ class ImportInvestorAdvisor < ImportUtil
     raise "Invalid roles in 'Allowed Roles' column: #{invalid_roles.join(', ')}" if invalid_roles.any?
 
     # Finding 2: Ensure 'company_admin' can only be granted by a company admin during import.
+    # R1b: the importer must be a company admin OF THIS IMPORT'S ENTITY. Roles are global in rolify,
+    # so has_cached_role? alone was true for an admin of any tenant.
+    # Worked example R1b — openspec/changes/fix-tenant-isolation-batch1/report.md#verification
     if allowed_roles.include?('company_admin')
       importer = User.find(import_upload.user_id)
-      raise "Role 'company_admin' can only be granted by a company admin" unless importer.has_cached_role?(:company_admin)
+      admin_here = (importer.has_cached_role?(:company_admin) &&
+                    (importer.entity_id == import_upload.entity_id ||
+                     (importer.entity_type == "Group Company" && importer.entity.child_ids.include?(import_upload.entity_id)))) ||
+                   # The job runs later: a Fund Advisor who uploaded as company_admin may have switched
+                   # away by then, so their company_admin grant on this entity counts too.
+                   InvestorAdvisor.where(user_id: importer.id, entity_id: import_upload.entity_id)
+                                  .any? { |grant| Array(grant.allowed_roles).map(&:to_s).include?("company_admin") }
+      raise "Role 'company_admin' can only be granted by a company admin of #{import_upload.entity&.name}" unless admin_here
     end
 
     entity = import_upload.entity
