@@ -77,9 +77,31 @@ class ImportUpload < ApplicationRecord
     (processed_row_count.to_f / total_rows_count * 100).round(2)
   end
 
-  def success?
-    # nil status is for historical reasons, when status was not being set
-    (status.nil? || status == "Completed") && total_rows_count == processed_row_count
+  # Failure is decided by the rows, not the status text: importers also write
+  # "imported, but ..." warnings into status after every row has saved.
+  def failed?
+    # The job writes "Failed" when the import service itself returns failure
+    return true if status == "Failed" || failed_row_count.positive?
+    # A crash or a job killed mid-run leaves rows unprocessed
+    return true if processed_row_count < total_rows_count
+    # A crash after every row saved (eg in post_process): ImportUploadJob stores the backtrace
+    # in error_text, which importer warnings never contain
+    return true if error_text.to_s.match?(/\.rb:\d+:in /)
+
+    # A crash before the rows were counted (eg an unreadable file) leaves only its message
+    total_rows_count.zero? && status.present? && status != "Completed"
+  end
+
+  # Every row imported, but an importer left a message in status (eg remittances not verified)
+  def success_with_warnings?
+    !failed? && status.present? && status != "Completed"
+  end
+
+  # ImportUploadJob always sets a status when it finishes (Completed, Failed or the error),
+  # so a recent upload with no status is still queued or running. The 1 day window keeps
+  # historical nil-status uploads, and jobs killed mid-run, from showing as in progress forever.
+  def in_progress?
+    status.blank? && created_at > 1.day.ago
   end
 
   IMPORTED_DATA_INCLUDES = {

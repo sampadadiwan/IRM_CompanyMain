@@ -12,9 +12,17 @@
     <%= import_upload.import_type %>
   </td>
   <td>
-    <% status =  import_upload.success? ?  "Success" : "Failed" %>
-    <%= render DisplayBooleanComponent.new(bool: import_upload.success?).
-        with_content(status) %>
+    <%# A running import has partial counts, so it must not fall through to Failed %>
+    <% if import_upload.in_progress? %>
+      <span class="badge bg-info">In Progress</span>
+    <% elsif import_upload.failed? %>
+      <span class="badge bg-danger">Failed</span>
+    <%# The warning itself is shown in the Status row on the upload's page %>
+    <% elsif import_upload.success_with_warnings? %>
+      <span class="badge bg-warning" title="<%= import_upload.status %>">Success with warnings</span>
+    <% else %>
+      <span class="badge bg-success">Success</span>
+    <% end %>
 
   </td>
   <td>

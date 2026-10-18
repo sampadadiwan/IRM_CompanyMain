@@ -117,7 +117,7 @@
         Status
       </td>
       <td>
-        <%= import_upload.status %>
+        <%= import_upload.in_progress? ? "In Progress" : import_upload.status %>
       </td>
     </tr>
 
