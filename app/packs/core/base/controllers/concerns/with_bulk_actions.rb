@@ -15,7 +15,12 @@ module WithBulkActions
                         "#{controller_name}_bulk_action_job".classify.constantize
                       end
 
-    bulk_action_job.perform_later(rows.pluck(:id), current_user.id, params[:bulk_action], params: params.to_unsafe_h)
+    ids = rows.pluck(:id)
+    bulk_action_job.perform_later(ids, current_user.id, params[:bulk_action], params: params.to_unsafe_h)
+
+    # P9 (funds-json-api-hardening H30): a bearer-token caller gets a JSON 202 it can read, not a 302 to
+    # an HTML page; the website keeps its redirect
+    return render(json: { status: "queued", bulk_action: params[:bulk_action], count: ids.size }, status: :accepted) if api_request?
 
     # and redirect back to the page we came from
     redirect_path = request.referer || root_path

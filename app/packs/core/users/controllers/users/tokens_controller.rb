@@ -10,7 +10,7 @@ module Users
   #
   # openspec/changes/lp-mobile-app — design decision 3, worked example X7.
   class TokensController < Devise::Api::TokensController
-    before_action :refuse_phone_token_refresh, :refuse_unbound_two_factor_refresh, only: :refresh
+    before_action :refuse_phone_token_refresh, :refuse_api_token_refresh, :refuse_unbound_two_factor_refresh, only: :refresh
 
     def sign_in
       user = resource_class.find_for_authentication(email: sign_in_params[:email].to_s.strip.downcase)
@@ -32,6 +32,16 @@ module Users
       return if token.nil? || !MobileDevice.exists?(devise_api_token_id: token.id)
 
       render json: { error: "use_mobile_refresh", error_description: ["Refresh this token from the CapHive app."] },
+             status: :forbidden
+    end
+
+    # X21: a Profile › API tokens token lives its 90 days and is never refreshed — a new one is made
+    # from the website, which re-proves the user's sign-in (funds-json-api-hardening card ②)
+    def refuse_api_token_refresh
+      token = current_devise_api_refresh_token
+      return if token.nil? || !ApiToken.exists?(devise_api_token_id: token.id)
+
+      render json: { error: "use_website_token", error_description: ["Make a new token from Profile › API tokens on the CapHive website."] },
              status: :forbidden
     end
 

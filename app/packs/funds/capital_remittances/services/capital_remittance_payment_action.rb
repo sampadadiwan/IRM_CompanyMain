@@ -19,8 +19,10 @@ class CapitalRemittancePaymentAction < Trailblazer::Operation
   def destroy(_ctx, capital_remittance_payment:, **)
     begin
       capital_remittance_payment.destroy
-    rescue e
-      Rails.logger.error "Error destroying capital remittance payment: #{e.message}"
+    # `rescue e` here was a NameError (e is not a class), so any raise escaped as a 500
+    rescue StandardError => e
+      Rails.logger.error "Error destroying capital remittance payment #{capital_remittance_payment.id}: #{e.message}"
+      capital_remittance_payment.errors.add(:base, e.message)
     end
     capital_remittance_payment.errors.blank?
   end

@@ -12,7 +12,7 @@ class FundsController < ApplicationController
   helper PortfolioHelper
   helper FundStatisticsHelper
   helper LpFlowHelper
-  before_action :set_fund, only: %i[show dashboard edit update destroy last report generate_fund_ratios allocate_form allocate copy_formulas export generate_documentation check_access_rights delete_all generate_tracking_numbers change_tracking_currency retry_tracking_currency_change show_email_list trigger_adhoc_notification analytics]
+  before_action :set_fund, only: %i[show summary recompute_totals dashboard edit update destroy last report generate_fund_ratios allocate_form allocate copy_formulas export generate_documentation check_access_rights delete_all generate_tracking_numbers change_tracking_currency retry_tracking_currency_change show_email_list trigger_adhoc_notification analytics]
 
   # GET /funds/1/analytics
   def analytics
@@ -37,6 +37,22 @@ class FundsController < ApplicationController
     end
   end
 
+  # GET /funds/1/summary.json — the overview's figures (funds-json-api-hardening ⑦ H8; set_fund authorises summary?)
+  def summary
+    render :summary, formats: [:json]
+  end
+
+  # PATCH /funds/1/recompute_totals — re-sums the fund's, calls' and commitments' collected totals from
+  # their remittances on the serial queue (funds-json-api-hardening P6 H27; set_fund authorises
+  # recompute_totals?). The same job a payment import and a bulk verify run.
+  def recompute_totals
+    CapitalRemittancesCountersJob.perform_later([@fund.id], current_user.id)
+    respond_to do |format|
+      format.html { redirect_to fund_path(@fund), notice: "Recomputing totals for #{@fund.name}. This takes a few minutes." }
+      format.json { render json: { id: @fund.id, status: "recompute_queued" }, status: :accepted }
+    end
+  end
+
   # GET /funds or /funds.json
   def index
     @bread_crumbs = { Funds: funds_path }
@@ -46,6 +62,9 @@ class FundsController < ApplicationController
     @funds = @funds.where("funds.tag_list LIKE ?", "%#{params[:tag]}%") if params[:tag].present?
     @funds = @funds.includes(:fund_ratios) if params[:card].present?
     @pagy, @funds = pagy(@funds) if params[:card].present? || params[:all].present?
+    # funds-json-api-hardening ⑥ H6: an API caller's fund list is paged like every other list
+    # (the website's list keeps its own rule above); `all` returns every fund, as before
+    @pagy, @funds = pagy(@funds, limit: params[:per_page]) if api_request? && request.format.json? && @pagy.nil? && params[:all].blank?
     # Closed-ended / Open-ended badge per fund, without a query per row (evergreen-fund-on-create)
     # (a snapshot row has its own id; its live fund is orignal_id — WithSnapshot)
     @evergreen_fund_ids = EvergreenFundSetting.where(fund_id: @funds.map { |f| f.orignal_id || f.id })
@@ -491,6 +510,9 @@ class FundsController < ApplicationController
     if saved
       @fund.dealing_dates.where(status: "open").where.not(payment_timing: setting.payment_timing)
            .update_all(payment_timing: setting.payment_timing, updated_at: Time.current)
+      # E16: an API caller gets the fund as JSON, the website the redirect it always got
+      return render(:show, status: :ok, formats: [:json]) if api_request?
+
       redirect_to fund_url(@fund), notice: "Fund was successfully updated."
     else
       render_open_ended_edit(setting, @fund.errors.full_messages + setting.errors.full_messages)
@@ -500,6 +522,9 @@ class FundsController < ApplicationController
   end
 
   def render_open_ended_edit(setting, errors)
+    # X24: an API caller gets the errors as JSON, never the HTML form
+    return render(json: { base: errors }, status: :unprocessable_entity) if api_request?
+
     @evergreen_setting = setting
     @evergreen_errors = errors
     setup_custom_fields(@fund)
@@ -511,8 +536,14 @@ class FundsController < ApplicationController
     setting_params = evergreen_setting_attributes
     result = EvergreenFundCreate.call(fund: @fund, setting_params:, current_user:)
     if result.success?
+      # API callers get the new fund as JSON (201); the website keeps its redirect
+      return render(:show, status: :created, formats: [:json]) if api_request?
+
       redirect_to fund_url(@fund), notice: "#{@fund.name} created as an open-ended fund"
     else
+      # X24: an API caller gets the errors as JSON, never the HTML wizard
+      return render(json: { base: Array(result[:errors]) }, status: :unprocessable_entity) if api_request?
+
       @evergreen_setting = new_evergreen_setting(setting_params)
       @evergreen_errors = Array(result[:errors])
       @fund_type = "open_ended"
@@ -521,6 +552,8 @@ class FundsController < ApplicationController
       render :new, status: :unprocessable_entity, formats: [:html]
     end
   rescue EvergreenFormParsing::BadDates => e
+    return render(json: { base: [e.message] }, status: :unprocessable_entity) if api_request?
+
     @evergreen_setting = new_evergreen_setting
     @evergreen_errors = [e.message]
     @fund_type = "open_ended"

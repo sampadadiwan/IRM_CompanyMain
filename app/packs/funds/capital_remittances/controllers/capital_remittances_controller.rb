@@ -130,7 +130,15 @@ class CapitalRemittancesController < ApplicationController
         ActionController::Base.helpers.link_to(payment.to_s, capital_remittance_payment_path(payment), class: 'mb-1 badge  bg-primary-subtle text-primary', target: '_blank', rel: 'noopener')
       end.join(", ")
 
-      redirect_to capital_remittance_path(@capital_remittance), alert: "Cannot delete this remittance as units have already been allocated for payments #{links_html}.<br> Please adjust the units before deleting the remittance."
+      respond_to do |format|
+        format.html { redirect_to capital_remittance_path(@capital_remittance), alert: "Cannot delete this remittance as units have already been allocated for payments #{links_html}.<br> Please adjust the units before deleting the remittance." }
+        # X13: an API caller gets a 422 in the record-errors form, with plain payment names (no HTML links)
+        format.json do
+          names = units_allocated_remittances_payments.join(", ")
+          render json: { base: ["Cannot delete this remittance as units have already been allocated for payments #{names}. Please adjust the units before deleting the remittance."] },
+                 status: :unprocessable_entity
+        end
+      end
     else
       # BlocksDestroyWithFundUnits still refuses when units exist that the payment check above misses
       respond_to do |format|

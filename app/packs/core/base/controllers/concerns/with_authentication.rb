@@ -36,8 +36,8 @@ module WithAuthentication
       authenticate_devise_api_token!
       # set the current user to the user that is logged in
       @current_user = current_devise_api_user
-      # Ensure that we always use the jbuilder and not the DataTable json (thats for UI only)
-      params.merge(jbuilder: true)
+      # E11: a Profile › API tokens token records when it was last used (a phone's token has no row)
+      ApiToken.find_by(devise_api_token_id: current_devise_api_token.id)&.touch_last_used! if current_devise_api_token && !performed?
     else
       # Authenticate using normal devise authentication using UI
       super

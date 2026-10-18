@@ -23,6 +23,10 @@ class FundUnitsJob < ApplicationJob
     # Worked examples H8 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples
     owner.journey_progress!(actor: User.find_by(id: user_id))
 
+    # G18 (funds-json-api-hardening phase 10): when this run finished, for API clients reading the call /
+    # distribution back. A column write only — no callbacks, no counters
+    owner.update_column(:units_job_finished_at, Time.current)
+
     UserAlert.new(user_id:, message: "Units calculation is now complete.", level: "success").broadcast
   end
 end

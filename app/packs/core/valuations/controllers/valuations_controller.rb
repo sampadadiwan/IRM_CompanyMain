@@ -120,7 +120,8 @@ class ValuationsController < ApplicationController
 
   # PATCH/PUT /valuations/1 or /valuations/1.json
   def update
-    @valuation.per_share_value_cents = valuation_params[:per_share_value].to_d * 100
+    # E40: only when sent — a JSON PATCH without per_share_value used to set it to 0
+    @valuation.per_share_value_cents = valuation_params[:per_share_value].to_d * 100 if valuation_params.key?(:per_share_value)
     # We need to remove the per_share_value from the params hash, this is so the per_share_value_cents is used to update the DB till the last 8 decimal digits. Otherwise only 2 digits gets saved
     cleaned_params = valuation_params.except(:per_share_value)
 

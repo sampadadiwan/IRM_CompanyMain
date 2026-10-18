@@ -70,7 +70,9 @@ class CapitalRemittancePaymentsController < ApplicationController
         format.json { head :no_content }
       else
         format.html { redirect_to capital_remittance_payment_url(@capital_remittance_payment), alert: @capital_remittance_payment.errors.full_messages.join(", ") }
-        format.json { render json: result.error_message, status: :unprocessable_entity }
+        # X14: Result has no #error_message (that raised, so a refused delete was a 500); answer with the
+        # record's errors like every other 422
+        format.json { render json: @capital_remittance_payment.errors, status: :unprocessable_entity }
       end
     end
   end

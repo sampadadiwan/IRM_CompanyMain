@@ -5,7 +5,9 @@ class ImportFund < ImportUtil
     STANDARD_HEADERS
   end
 
-  def save_row(row_data, import_upload, _custom_field_headers)
+  # P3 (funds-json-api-hardening H23 E29): ImportUtil#process_row passes a fourth argument (ctx);
+  # with three parameters every fund row failed "wrong number of arguments (given 4, expected 3)"
+  def save_row(row_data, import_upload, _custom_field_headers, _ctx = nil)
     Rails.logger.debug row_data
     name = row_data["Name"]
     currency = row_data["Currency"]

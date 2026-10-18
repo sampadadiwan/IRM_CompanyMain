@@ -3,7 +3,7 @@ class CapitalCommitmentsController < ApplicationController
   include WithCustomFieldFilter
   include HasWorkflowable
 
-  before_action :set_capital_commitment, only: %i[show edit update destroy generate_documentation
+  before_action :set_capital_commitment, only: %i[show statement edit update destroy generate_documentation
                                                   report generate_soa generate_soa_form transfer_fund_units performance_chart preview]
   before_action :set_workflowable, only: [:show]  # runs after set_capital_commitment so @capital_commitment is available
 
@@ -153,6 +153,13 @@ class CapitalCommitmentsController < ApplicationController
     else
       redirect_to request.referer, alert: "Please provide valid start and end dates"
     end
+  end
+
+  # GET /capital_commitments/1/statement.json — one folio's calls, payments, distributions and ledger
+  # totals (funds-json-api-hardening ⑦ H9; set_capital_commitment authorises statement?)
+  def statement
+    @statement = CommitmentStatement.call(@capital_commitment)
+    render :statement, formats: [:json]
   end
 
   # GET /capital_commitments/new

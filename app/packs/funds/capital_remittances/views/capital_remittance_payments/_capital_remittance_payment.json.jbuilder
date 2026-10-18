@@ -3,6 +3,8 @@ json.url capital_remittance_payment_url(capital_remittance_payment, format: :jso
 
 # Fund details
 json.fund_name capital_remittance_payment.fund.name
+# The fund currency of `amount` (folio_amount is in folio_currency) (funds-json-api-hardening H13)
+json.currency capital_remittance_payment.fund.currency
 
 # Amounts
 json.amount capital_remittance_payment.amount.to_f

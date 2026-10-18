@@ -5,6 +5,11 @@ class ImportInvestor < ImportUtil
     STANDARD_HEADERS
   end
 
+  # P8: unstarred in the template (public/sample_uploads/investors.xlsx); save_row reads them nil-safe
+  def optional_standard_headers
+    %w[Tags City Sector]
+  end
+
   def post_process(ctx, import_upload:, **)
     super
     import_upload.entity.investor_notices.each do |notice|

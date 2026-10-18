@@ -13,6 +13,11 @@ class CapitalCommitmentPolicy < FundBasePolicy
     update?
   end
 
+  # funds-json-api-hardening ⑦ H9 X22: a folio's statement is the commitment page's own data — same access
+  def statement?
+    show?
+  end
+
   def show?
     permissioned_employee? ||
       permissioned_investor?

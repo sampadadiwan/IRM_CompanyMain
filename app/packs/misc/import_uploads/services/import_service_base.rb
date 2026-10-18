@@ -10,6 +10,8 @@ class ImportServiceBase < Trailblazer::Operation
     import_upload.error_text = nil
     import_upload.failed_row_count = 0
     import_upload.processed_row_count = 0
+    # A re-run starts with no remembered failures (row_errors, P1)
+    import_upload.row_errors = nil
     import_upload.total_rows_count = data.last_row - 1
     import_upload.save
 

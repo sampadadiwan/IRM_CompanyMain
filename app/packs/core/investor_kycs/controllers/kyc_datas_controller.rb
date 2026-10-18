@@ -78,6 +78,8 @@ class KycDatasController < ApplicationController
       if @kyc_data.kra?
         # If KRA, immediately fetch the KRA data
         kra_success, msg = CkycKraService.new.get_kra_data(@kyc_data)
+        return kyc_data_api_answer(kra_success ? :created : :unprocessable_entity, kra_success ? "kra_fetched" : "kra_failed", msg) if api_request?
+
         if kra_success
           redirect_to kyc_data_path(@kyc_data), notice: "KRA Data fetched successfully."
         else
@@ -86,9 +88,13 @@ class KycDatasController < ApplicationController
       else
         # If CKYC, start OTP process
         UserAlert.new(message: "Sending OTP", user_id: current_user.id, level: :info).broadcast
+        return kyc_data_api_answer(:accepted, "otp_required", nil) if api_request?
+
         redirect_to send_ckyc_otp_kyc_data_path(id: @kyc_data.id, back_to: kyc_data_path(@kyc_data))
       end
     else
+      return render(json: @kyc_data.errors, status: :unprocessable_entity) if api_request?
+
       # Show form again with validation errors
       render :new, status: :unprocessable_entity
     end
@@ -109,6 +115,8 @@ class KycDatasController < ApplicationController
     if @kyc_data.update(kyc_data_params)
       if @kyc_data.kra?
         kra_success, msg = CkycKraService.new.get_kra_data(@kyc_data)
+        return kyc_data_api_answer(kra_success ? :ok : :unprocessable_entity, kra_success ? "kra_fetched" : "kra_failed", msg) if api_request?
+
         if kra_success
           redirect_to kyc_data_url(@kyc_data), notice: "KRA Data was successfully fetched."
         else
@@ -118,9 +126,13 @@ class KycDatasController < ApplicationController
       elsif @kyc_data.ckyc?
         # If CKYC, re-trigger OTP flow (performs search if CKYC Number is not set)
         UserAlert.new(message: "Sending OTP", user_id: current_user.id, level: :info).broadcast
+        return kyc_data_api_answer(:accepted, "otp_required", nil) if api_request?
+
         redirect_to send_ckyc_otp_kyc_data_path(id: @kyc_data.id, back_to: kyc_data_path(@kyc_data))
       end
     else
+      return render(json: @kyc_data.errors, status: :unprocessable_entity) if api_request?
+
       render :edit, status: :unprocessable_entity
     end
   end
@@ -260,5 +272,13 @@ class KycDatasController < ApplicationController
 
   def kyc_data_params
     params.require(:kyc_data).permit(:investor_kyc_id, :entity_id, :source, :PAN, :birth_date, :phone)
+  end
+
+  # phase 9 (#22 H33): a bearer-token caller gets the outcome as JSON instead of a 302 to an HTML page;
+  # the website keeps its redirects. otp_required carries the OTP step's URL.
+  def kyc_data_api_answer(status, outcome, message)
+    body = { id: @kyc_data.id, status: outcome, message: }.compact
+    body[:next] = send_ckyc_otp_kyc_data_url(id: @kyc_data.id) if outcome == "otp_required"
+    render json: body, status:
   end
 end

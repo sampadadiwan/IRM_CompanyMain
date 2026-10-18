@@ -165,6 +165,8 @@ end
 
 resources :capital_distributions do
   post 'approve', on: :member
+  # P12 (phase 10): approve / redeem units for many distributions in one request
+  post 'bulk_actions', on: :collection
   # The journey panel alone, for real-time refreshes (capital-distribution-journey E16, E17)
   get 'journey', on: :member
   patch 'redeem_units', on: :member
@@ -190,6 +192,8 @@ resources :capital_remittances do
   get :show_deleted, on: :collection
 end
 resources :capital_calls do
+  # P12 (phase 10): approve / allocate units for many calls in one request
+  post 'bulk_actions', on: :collection
   get 'search', on: :collection
   post 'reminder', on: :member
   post 'approve', on: :member
@@ -222,6 +226,8 @@ resources :side_letter_obligations do
 end
 
 resources :capital_commitments do
+  # funds-json-api-hardening ⑦: one folio's calls, payments, distributions and ledger totals (H9)
+  get 'statement', on: :member
   patch 'generate_documentation', on: :member
   patch 'generate_soa', on: :member
   get 'generate_soa_form', on: :member
@@ -239,6 +245,10 @@ end
 
 resources :funds do
   resources :ratio_formulas
+  # funds-json-api-hardening ⑦: the fund overview's figures as JSON (H8)
+  get 'summary', on: :member
+  # P6: recompute the call / fund / commitment collected totals from the remittances (H27)
+  patch 'recompute_totals', on: :member
   get 'last', on: :member
 
   get 'report', on: :member

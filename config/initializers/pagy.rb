@@ -7,6 +7,7 @@ require 'pagy' # Ensure Pagy core is loaded first
 require 'pagy/extras/bootstrap' # Ensure Bootstrap extra is loaded
 require 'pagy/extras/countless'
 require 'pagy/extras/pagy' # ← adds pagy_prev_a / pagy_next_a / pagy_prev_link …
+require 'pagy/extras/headers' # Total-Count / Link headers for API callers (ApiPaging, funds-json-api-hardening)
 # require 'pagy/extras/keyset'
 
 # Pagy Variables

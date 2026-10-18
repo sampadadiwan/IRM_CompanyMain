@@ -69,7 +69,15 @@ class ApprovalResponsesController < ApplicationController
     @approval_response.status = params[:status]
     @approval_response.properties = params[:approval_response][:properties] if params[:approval_response] && params[:approval_response][:properties].present?
     @approval_response.response_user_id = current_user.id
-    if @approval_response.save
+    saved = @approval_response.save
+    # H34: a bearer-token caller gets JSON, not a 302; the website keeps its redirect
+    if api_request?
+      return render(:show, status: :ok) if saved
+
+      return render(json: @approval_response.errors, status: :unprocessable_entity)
+    end
+
+    if saved
       redirect_to approval_url(@approval_response.approval), notice: "Successfully #{params[:status]}."
     else
       redirect_to approval_url(@approval_response.approval), alert: "Failed to register response: #{@approval_response.errors.messages.values.flatten}"

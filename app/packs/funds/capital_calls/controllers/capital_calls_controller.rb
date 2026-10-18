@@ -10,15 +10,8 @@ class CapitalCallsController < ApplicationController
 
   # GET /capital_calls or /capital_calls.json
   def index
-    @q = CapitalCall.ransack(params[:q])
-    # Create the scope for the model
-    @capital_calls = policy_scope(@q.result).includes(:fund)
-    @capital_calls = CapitalCallSearch.perform(@capital_calls, current_user, params)
-    @capital_calls = filter_params(
-      @capital_calls,
-      :fund_id,
-      :import_upload_id
-    )
+    # The list's rows — the same rows a bulk action on this list acts on (fetch_rows, P12)
+    @capital_calls = fetch_rows.includes(:fund)
     @capital_calls = @capital_calls.order(:call_date) if params[:order].blank?
     @fund = Fund.find(params[:fund_id]) if params[:fund_id].present?
     # Stats cards on the fund's Calls tab: every row the grid covers, across its pages (before pagy).
@@ -69,6 +62,9 @@ class CapitalCallsController < ApplicationController
 
   def allocate_units
     FundUnitsJob.perform_later(@capital_call.id, "CapitalCall", @capital_call.name, current_user.id)
+    # G18: a bearer-token caller gets 202 JSON (read units_job_finished_at to see it finish); the website keeps its redirect
+    return render(json: { id: @capital_call.id, status: "queued" }, status: :accepted) if api_request?
+
     redirect_to capital_call_path(@capital_call), notice: "Allocation process started, please check back in a few mins."
   end
 
@@ -133,23 +129,15 @@ class CapitalCallsController < ApplicationController
   end
 
   def approve
-    # Evaluate rules against the current (pre-approval) record state.
-    # Blockers prevent approval entirely; warnings are surfaced in the success notice.
-    rule_results = ValidationRuleEvaluator.call(record: @capital_call, entity: current_user.entity)
-
-    blockers = rule_results.select(&:blocker?)
-    if blockers.any?
-      redirect_to capital_call_url(@capital_call), alert: blockers.map(&:message).join(" ")
+    # Rules, then CapitalCallApprove — the same service the bulk approve uses (P12). Blockers prevent
+    # approval entirely; warnings are surfaced in the success notice.
+    result = CapitalCallApproval.call(capital_call: @capital_call, user: current_user)
+    if result.blocked?
+      redirect_to capital_call_url(@capital_call), alert: result.errors
       return
     end
 
-    warnings = rule_results.select(&:warning?)
-
-    @capital_call.approved = true
-    @capital_call.approved_by_user = current_user
-
-    # Skip model-level re-evaluation — already evaluated above
-    result = WithValidationRules.skip { CapitalCallApprove.call(capital_call: @capital_call) }
+    warnings = result.warnings
     respond_to do |format|
       if result.success?
         notice = "Capital call was successfully approved."
@@ -393,11 +381,21 @@ class CapitalCallsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def capital_call_params
-    params["capital_call"]["fund_closes"] = params["capital_call"]["close_percentages"].select { |_, percentage| percentage.to_d.positive? }.keys if params["capital_call"]["close_percentages"].present? && params["capital_call"]["fund_closes"].blank?
+    # X8: with no "capital_call" object, fall through to require below (→ 400) rather than NoMethodError
+    params["capital_call"]["fund_closes"] = params["capital_call"]["close_percentages"].select { |_, percentage| percentage.to_d.positive? }.keys if params["capital_call"].present? && params["capital_call"]["close_percentages"].present? && params["capital_call"]["fund_closes"].blank?
     if current_user.support?
       params.require(:capital_call).permit(:entity_id, :fund_id, :form_type_id, :name, :percentage_called, :add_fees, :generate_remittances, :due_date, :call_date, :notes, :call_basis, :amount_to_be_called, :send_call_notice_flag, :send_payment_notification_flag, fund_closes: [], unit_prices: {}, properties: {}, close_percentages: {}, call_fees_attributes: CallFee::NESTED_ATTRIBUTES_WITH_FORMULA, documents_attributes: Document::NESTED_ATTRIBUTES, fee_formula_ids: [])
     else
       params.require(:capital_call).permit(:entity_id, :fund_id, :form_type_id, :name, :percentage_called, :add_fees, :generate_remittances, :due_date, :call_date, :notes, :call_basis, :amount_to_be_called, :send_call_notice_flag, :send_payment_notification_flag, fund_closes: [], unit_prices: {}, properties: {}, close_percentages: {}, call_fees_attributes: CallFee::NESTED_ATTRIBUTES, documents_attributes: Document::NESTED_ATTRIBUTES, fee_formula_ids: [])
     end
+  end
+
+  # The calls the list (and its bulk actions, WithBulkActions — P12) cover: policy scope, ransack, search,
+  # fund / import filters
+  def fetch_rows
+    @q = CapitalCall.ransack(params[:q])
+    rows = policy_scope(@q.result)
+    rows = CapitalCallSearch.perform(rows, current_user, params)
+    filter_params(rows, :fund_id, :import_upload_id)
   end
 end

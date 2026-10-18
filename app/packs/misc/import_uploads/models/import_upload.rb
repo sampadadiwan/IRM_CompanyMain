@@ -104,6 +104,25 @@ class ImportUpload < ApplicationRecord
     status.blank? && created_at > 1.day.ago
   end
 
+  # What happened, for API clients (H20 H21 E25 E33), from the same rules the import screens use
+  # (failed?, success_with_warnings?, in_progress?). `status` is left exactly as it was ("Completed" even
+  # when rows failed), because journeys and existing clients read it.
+  #   running          — still queued or running
+  #   succeeded        — every row imported (a status message is then a warning, see #warning)
+  #   partially_failed — some rows imported, some failed
+  #   failed           — nothing imported (every row failed, or the file was refused)
+  def outcome
+    return "running" if in_progress?
+    return "succeeded" unless failed?
+
+    processed_row_count.to_i.positive? ? "partially_failed" : "failed"
+  end
+
+  # The status message of an upload whose rows all imported — a warning, not a failure (E33)
+  def warning
+    status if success_with_warnings?
+  end
+
   IMPORTED_DATA_INCLUDES = {
     "InvestmentInstrument" => [:portfolio_company]
   }.freeze
@@ -148,6 +167,9 @@ class ImportUpload < ApplicationRecord
     return [] if import_type.blank?
 
     importer = "Import#{import_type}".safe_constantize&.new
+    # The columns a sheet must have — the browser preview checks the same set the server does (P8)
+    return importer.required_headers if importer.respond_to?(:required_headers) && importer.respond_to?(:standard_headers)
+
     importer.respond_to?(:standard_headers) ? importer.standard_headers : []
   end
 

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_16_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_18_120000) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -712,6 +712,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_16_120000) do
     t.index ["response_user_id"], name: "index_approval_responses_on_response_user_id"
   end
 
+  create_table "api_tokens", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "devise_api_token_id", null: false
+    t.datetime "last_used_at"
+    t.string "name", limit: 100, null: false
+    t.datetime "revoked_at"
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["devise_api_token_id"], name: "index_api_tokens_on_devise_api_token_id", unique: true
+    t.index ["user_id", "revoked_at"], name: "index_api_tokens_on_user_id_and_revoked_at"
+  end
+
   create_table "approvals", force: :cascade do |t|
     t.boolean "approved", default: false
     t.integer "approved_count", default: 0
@@ -886,6 +898,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_16_120000) do
     t.boolean "send_call_notice_flag", default: true
     t.boolean "send_payment_notification_flag", default: true
     t.text "unit_prices"
+    t.datetime "units_job_finished_at"
     t.datetime "updated_at", null: false
     t.index ["approved_by_user_id"], name: "index_capital_calls_on_approved_by_user_id"
     t.index ["deleted_at"], name: "index_capital_calls_on_deleted_at"
@@ -1055,6 +1068,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_16_120000) do
     t.boolean "send_notification_on_complete", default: true
     t.string "title"
     t.text "unit_prices"
+    t.datetime "units_job_finished_at"
     t.datetime "updated_at", null: false
     t.index ["approved_by_user_id"], name: "index_capital_distributions_on_approved_by_user_id"
     t.index ["capital_commitment_id"], name: "index_capital_distributions_on_capital_commitment_id"
@@ -2041,6 +2055,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_16_120000) do
     t.text "whatsapp_token"
     t.index ["deleted_at"], name: "index_entity_settings_on_deleted_at"
     t.index ["entity_id"], name: "index_entity_settings_on_entity_id"
+    t.index ["entity_id"], name: "index_entity_settings_on_entity_id_unique", unique: true
   end
 
   create_table "esign_logs", force: :cascade do |t|
@@ -2916,6 +2931,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_16_120000) do
     t.bigint "owner_id", null: false
     t.string "owner_type", null: false
     t.integer "processed_row_count", default: 0
+    t.json "row_errors"
     t.text "status"
     t.integer "total_rows_count", default: 0
     t.datetime "updated_at", null: false
@@ -5404,6 +5420,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_16_120000) do
   add_foreign_key "aml_reports", "folders", column: "document_folder_id"
   add_foreign_key "aml_reports", "investor_kycs"
   add_foreign_key "aml_reports", "investors"
+  add_foreign_key "api_tokens", "devise_api_tokens"
+  add_foreign_key "api_tokens", "users"
   add_foreign_key "approval_responses", "approvals"
   add_foreign_key "approval_responses", "entities"
   add_foreign_key "approval_responses", "entities", column: "response_entity_id"

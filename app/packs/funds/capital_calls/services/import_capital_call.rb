@@ -5,6 +5,13 @@ class ImportCapitalCall < ImportUtil
     STANDARD_HEADERS
   end
 
+  # P8: unstarred in the template and read nil-safe by save_row. "Call Basis" is unstarred too but
+  # save_row requires it, so it stays required.
+  def optional_standard_headers
+    ["Generate Remittances", "Remittances Verified", "Fund Closes", "Unit Price/Premium",
+     "Send Call Notice", "Send Payment Notification"]
+  end
+
   def pre_process(ctx, import_upload:, **)
     super
     @exchange_rates = get_exchange_rates(ctx[:import_file], import_upload)

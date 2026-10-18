@@ -80,7 +80,9 @@ class AccessRightsController < ApplicationController
     respond_to do |format|
       format.turbo_stream { render :create }
       format.html { redirect_to access_right_url(@access_right), notice: "Access right was successfully created." }
-      format.json { render :show, status: :created, location: @access_right }
+      # H32: one request can create several rights; @access_right was never set, so the
+      # JSON answer was a 500 after the rows were saved — answer with the rows created
+      format.json { render :index, status: :created }
     end
   end
 

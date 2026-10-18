@@ -60,6 +60,16 @@ class FundPolicy < FundBasePolicy
     update?
   end
 
+  # funds-json-api-hardening P6 H27 X30: recomputing totals changes stored figures — those who can edit the fund
+  def recompute_totals?
+    update?
+  end
+
+  # funds-json-api-hardening ⑦ H8 X23: the fund summary is the fund page's own figures — same access
+  def summary?
+    show?
+  end
+
   def show?
     user.enable_funds &&
       (

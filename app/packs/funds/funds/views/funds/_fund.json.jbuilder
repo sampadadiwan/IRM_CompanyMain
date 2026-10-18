@@ -8,8 +8,12 @@ json.target_committed_amount fund.target_committed_amount.to_f
 
 json.tracking_collected_amount fund.tracking_collected_amount.to_f
 json.tracking_call_amount fund.tracking_call_amount.to_f
-json.tracking_co_invest_call_amount fund.tracking_co_invest_call_amount.to_f
+# The column is not monetized on Fund, so read the cents (calling the bare getter raised and made
+# every fund JSON answer a 500); same major-unit value as the other amounts
+json.tracking_co_invest_call_amount fund.tracking_co_invest_call_amount_cents.to_f / 100
 json.tracking_distribution_amount fund.tracking_distribution_amount.to_f
 json.tracking_committed_amount fund.tracking_committed_amount.to_f
 
 json.url fund_url(fund, format: :json)
+# G16 (phase 10): the fund's dates, so a PATCH of them can be read back
+json.extract! fund, :start_date, :first_close_date, :last_close_date

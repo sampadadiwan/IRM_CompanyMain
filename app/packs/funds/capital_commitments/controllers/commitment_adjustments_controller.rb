@@ -16,6 +16,8 @@ class CommitmentAdjustmentsController < ApplicationController
     respond_to do |format|
       format.html
       format.xlsx
+      # H19: index.json.jbuilder existed but the action never answered JSON (an UnknownFormat error)
+      format.json
     end
   end
 

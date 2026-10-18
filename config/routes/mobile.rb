@@ -28,6 +28,8 @@ end
 # Website: Profile › Devices (design card ③)
 scope :users, module: :users, as: :users do
   resources :mobile_devices, only: %i[index destroy]
+  # Profile › API tokens (funds-json-api-hardening card ①)
+  resources :api_tokens, only: %i[index create destroy]
   # Where the app's one-time website link lands (design card ⑦)
   get :mobile_handoff, to: "mobile_handoffs#show"
 end

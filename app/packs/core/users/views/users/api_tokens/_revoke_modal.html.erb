@@ -1,0 +1,48 @@
+<%#
+  Revoke an API token — same "Immediate Actions" layout as Sign out a phone
+  (users/mobile_devices/_sign_out_modal). funds-json-api-hardening J2.
+%>
+<div class="modal fade" id="revokeApiTokenModal<%= api_token.id %>" tabindex="-1" aria-labelledby="revokeApiTokenModalLabel<%= api_token.id %>" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="revokeApiTokenModalLabel<%= api_token.id %>">
+          <i class="ti ti-ban me-1"></i> Revoke <%= api_token.name %>
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="action-summary__intro">
+          <div class="fw-bold text-dark">Immediate Actions</div>
+          <div class="text-muted">The following will happen immediately when you click <strong>Revoke</strong>:</div>
+        </div>
+
+        <div class="action-summary__list">
+          <div class="action-summary__item action-summary__item--red">
+            <span class="action-summary__icon"><i class="ti ti-lock"></i></span>
+            <div>
+              <div class="action-summary__title">The token stops working now</div>
+              <div class="action-summary__desc">Scripts using it get "401 Unauthorized" on their next call.</div>
+            </div>
+          </div>
+
+          <div class="action-summary__item action-summary__item--grey">
+            <span class="action-summary__icon"><i class="ti ti-info-circle"></i></span>
+            <div>
+              <div class="action-summary__title">Your other tokens and sign-ins are not affected</div>
+              <div class="action-summary__desc">Make a new token here if a script still needs one.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><%= t_common(:cancel) %></button>
+        <%= button_to "Revoke", users_api_token_path(api_token), method: :delete,
+              class: "btn btn-outline-danger", id: "confirm_revoke_api_token_#{api_token.id}",
+              form: { data: { turbo: false } } %>
+      </div>
+    </div>
+  </div>
+</div>

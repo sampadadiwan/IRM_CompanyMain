@@ -1,4 +1,9 @@
 class ImportUtil < Trailblazer::Operation
+  # Excel refuses longer cells (it then repairs the file by dropping rows)
+  EXCEL_CELL_LIMIT = 32_000
+  # Failed rows kept on the upload for its JSON (row_errors)
+  ROW_ERRORS_KEPT = 20
+
   step :validate_headers
   step :pre_process
   step :save_data
@@ -23,12 +28,23 @@ class ImportUtil < Trailblazer::Operation
     raise e
   end
 
+  # P8 (funds-json-api-hardening H29 X32): standard columns the importer's template does not star. A
+  # sheet without one of them is read as if the column were blank; every other standard column is
+  # still required. An importer lists only columns its save_row already treats as optional.
+  def optional_standard_headers
+    []
+  end
+
+  def required_headers
+    standard_headers - optional_standard_headers
+  end
+
   def validate_headers(_ctx, import_upload:, headers:, **)
     valid = true
     if respond_to?(:standard_headers)
-      # Check if all the standard headers are present
+      # Check that every required standard header is present (P8: optional ones may be missing)
       missing_headers = []
-      standard_headers.each do |header_name|
+      required_headers.each do |header_name|
         next if headers.include?(header_name.downcase.strip.squeeze(" ").titleize)
 
         missing_headers << header_name
@@ -183,6 +199,8 @@ class ImportUtil < Trailblazer::Operation
             next
           end
 
+          # The spreadsheet row number of this data row (header is row 1), for row_errors (P1)
+          @current_row_number = idx + 1
           # Ensure the Audit trail is created as the user who uploaded the file
           success = Audited.audit_class.as_user(import_upload.user) do
             process_row(headers, custom_field_headers, sanitized_row, import_upload, ctx)
@@ -239,6 +257,7 @@ class ImportUtil < Trailblazer::Operation
         # save_row returned falsy without raising, so there is no message to show.
         # Say that plainly rather than leaving a bare "Error" in the results sheet.
         row << "Error - the row could not be saved. Check that every record it refers to exists."
+        record_row_error(import_upload, row.last)
         false
       end
     rescue ActiveRecord::Deadlocked => e
@@ -250,12 +269,39 @@ class ImportUtil < Trailblazer::Operation
       Rails.logger.error e.message
       Rails.logger.error e.backtrace
       row << "Error #{e.message}"
-      row << e.backtrace
+      # P1.4: the backtrace stays in the results sheet, as text capped under Excel's 32,767-character
+      # cell limit — an over-long cell made Excel "repair" the file and drop every data row
+      row << Array(e.backtrace).join("\n").truncate(EXCEL_CELL_LIMIT)
+      record_row_error(import_upload, "Error #{e.message}")
       Rails.logger.debug user_data
       Rails.logger.debug row
       import_upload.failed_row_count += 1
       false
     end
+  end
+
+  # P7 (funds-json-api-hardening H28 X31): a row with no Form Tag. With exactly one form type of this
+  # kind there is nothing to choose — use it. Otherwise say how to fix it (the message still starts as
+  # it always did).
+  def form_type_without_tag(form_type_name)
+    candidates = @form_types.values.select { |ft| ft.name == form_type_name }
+    return candidates.first if candidates.one?
+
+    hint = if candidates.empty?
+             "Create a #{form_type_name} form type (Settings › Forms) and put its tag in the Form Tag column."
+           else
+             "Set Form Tag to one of: #{candidates.filter_map(&:tag).join(', ')}."
+           end
+    raise "Form Tag not specified. #{hint}"
+  end
+
+  # Keep the first ROW_ERRORS_KEPT failures (row number + message) on the upload, so its JSON can show
+  # why rows failed without the results file (P1 — funds-json-api-hardening H20 H21 E26)
+  def record_row_error(import_upload, message)
+    errors = import_upload.row_errors || []
+    return if errors.size >= ROW_ERRORS_KEPT
+
+    import_upload.row_errors = errors + [{ "row" => @current_row_number, "message" => message.to_s.truncate(500) }]
   end
 
   def setup_custom_fields(user_data, model, custom_field_headers, form_type: nil)
@@ -326,10 +372,22 @@ class ImportUtil < Trailblazer::Operation
     ExchangeRate.create(from: user_data["From Currency"], to: user_data["To Currency"], as_of:, rate: user_data["Exchange Rate"], entity_id: model.entity_id, notes: "Imported with #{model}")
   end
 
+  # P8 (funds-json-api-hardening E32): a single-currency workbook has no "Exchange Rates" sheet; read that
+  # as no rates — exactly what an empty sheet already meant — instead of failing the upload
+  def exchange_rates_sheet(file)
+    workbook = Roo::Spreadsheet.open(file.path)
+    workbook.sheets.include?("Exchange Rates") ? workbook.sheet("Exchange Rates") : nil
+  end
+
   def get_exchange_rates(file, _import_upload)
+    # open spreadsheet with the rates sheet (none: no rates, P8)
+    data = exchange_rates_sheet(file)
+    data.nil? ? [] : read_exchange_rate_rows(data)
+  end
+
+  # The rows of the Exchange Rates sheet, sorted by As Of
+  def read_exchange_rate_rows(data)
     exchange_rates = []
-    # open spreadsheet with the rates sheet
-    data = Roo::Spreadsheet.open(file.path).sheet("Exchange Rates")
     headers = get_headers(data.row(1))
     Rails.logger.debug { "## exchange rate headers = #{headers}" }
 
@@ -395,6 +453,9 @@ class ImportUtil < Trailblazer::Operation
     return raw.to_date if !raw.is_a?(String) && raw.respond_to?(:to_date)
 
     begin
+      # P2 (funds-json-api-hardening H22 E27): in the uploader's locale — ActiveJob runs the import in the
+      # locale of the request that queued it, so text dates read the way that user's screens show dates.
+      # Unchanged on purpose: an API client chooses with Accept-Language, or sends ISO yyyy-mm-dd.
       Date.local_parse(raw.strip)
     rescue StandardError
       raise "#{column} '#{raw}' is not a valid date. Use the format #{date_format_example}"
@@ -444,10 +505,12 @@ class ImportUtil < Trailblazer::Operation
     @form_types ||= import_upload.entity.form_types.where(name: name).index_by { |ft| "#{ft.name}-#{ft.tag}" }
     # Find the form type based on the form_type_name and form tag
     form_tag = user_data["Form Tag"]&.strip
-    raise "Form Tag not specified" if form_tag.blank?
 
     # If form_type_name is not specified, use the import_upload.import_type
     form_type_name ||= import_upload.import_type
+
+    return form_type_without_tag(form_type_name) if form_tag.blank?
+
     form_type = @form_types["#{form_type_name}-#{form_tag}"]
     raise "Form Type not found for #{form_type_name} with tag #{form_tag}" if form_type.nil?
 

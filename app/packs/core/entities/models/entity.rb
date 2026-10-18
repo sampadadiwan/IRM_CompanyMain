@@ -33,7 +33,10 @@ class Entity < ApplicationRecord
   has_many :dashboard_widgets, dependent: :destroy
   has_many :support_client_mappings, dependent: :destroy
   has_one :entity_setting, dependent: :destroy
-  accepts_nested_attributes_for :entity_setting, allow_destroy: true
+  # update_only (funds-json-api-hardening P5 — H24): a PATCH of entity_setting_attributes without an id
+  # updates the entity's settings row; it used to build a second row beside it, and has_one then read
+  # either one (sandbox on or off) at random
+  accepts_nested_attributes_for :entity_setting, allow_destroy: true, update_only: true
 
   has_many :agents, class_name: "SupportAgent", dependent: :destroy
   has_many :kpi_reports, dependent: :destroy

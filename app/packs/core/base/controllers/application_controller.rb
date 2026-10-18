@@ -10,6 +10,7 @@ class ApplicationController < ActionController::Base
   include WithLocale
   include WithSetupCustomFields
   include WithTurboFlash
+  include ApiPaging
   include UserGuideHelper
 
   # tasks/_filter_bar (and the list partial around it) renders from several

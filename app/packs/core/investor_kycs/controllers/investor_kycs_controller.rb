@@ -8,6 +8,11 @@ class InvestorKycsController < ApplicationController
 
   # Allow unauthenticated investors to access their KYC via a signed magic link.
   skip_before_action :authenticate_user!, only: %i[show edit update extract_docs_data doc_first_upload processing], if: -> { params[:signed_id].present? }
+  # H31: the skip above, combined with only:, skips authentication for these actions on
+  # every request (Rails folds only: into the skip's conditions), so a bearer-token caller never got a user.
+  # Authenticate API callers here; website sessions and signed magic links are untouched. A separate method
+  # name on purpose: re-declaring :authenticate_user! would replace the app-wide callback for every action.
+  before_action :authenticate_api_caller, only: %i[show edit update extract_docs_data doc_first_upload processing], if: :api_request?
 
   before_action :set_investor_kyc, only: %i[show journey edit update destroy toggle_verified generate_docs generate_new_aml_report override_aml_status send_kyc_reminder notify_kyc_required send_notification extract_docs_data preview download_kra_data fetch_ckyc_data assign_kyc_data edit_reporting_fields update_reporting_fields request_updates processing doc_first_upload]
   before_action :set_workflowable, only: [:show] # runs after set_investor_kyc so @investor_kyc is available
@@ -255,7 +260,7 @@ class InvestorKycsController < ApplicationController
         end
       else
         format.html { render :new, status: :unprocessable_entity }
-        format.json { render json: result[:errors], status: :unprocessable_entity }
+        format.json { render json: @investor_kyc.errors, status: :unprocessable_entity } # phase 9 (#19 X51): `result` was undefined here (NameError 500)
       end
     end
   end
@@ -590,7 +595,7 @@ class InvestorKycsController < ApplicationController
         format.json { render :show, status: :ok, location: @investor_kyc }
       else
         format.html { render :edit, status: :unprocessable_entity }
-        format.json { render json: result[:errors], status: :unprocessable_entity }
+        format.json { render json: @investor_kyc.errors, status: :unprocessable_entity }  # phase 9 (#19 X51): `result` was undefined here (NameError 500)
       end
     end
   end
@@ -612,7 +617,7 @@ class InvestorKycsController < ApplicationController
         format.json { render :show, status: :ok, location: @investor_kyc }
       else
         format.html { render :edit, status: :unprocessable_entity }
-        format.json { render json: result[:errors], status: :unprocessable_entity }
+        format.json { render json: @investor_kyc.errors, status: :unprocessable_entity }  # phase 9 (#19 X51): `result` was undefined here (NameError 500)
       end
     end
   end
@@ -807,5 +812,9 @@ class InvestorKycsController < ApplicationController
 
   def commit_param
     params.require(:commit)
+  end
+
+  def authenticate_api_caller
+    authenticate_user!
   end
 end

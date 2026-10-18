@@ -85,7 +85,11 @@ class ImportUploadsController < ApplicationController
 
   def delete_data
     ImportUploadDeleteAllJob.perform_later(@import_upload.id, current_user.id)
-    redirect_to import_upload_path(@import_upload), notice: "Imported data deletion started. It will take a few mins."
+    respond_to do |format|
+      format.html { redirect_to import_upload_path(@import_upload), notice: "Imported data deletion started. It will take a few mins." }
+      # funds-json-api-hardening phase 3, G10 (H18): a bearer-token caller gets a JSON 202, not a 302
+      format.json { render json: { id: @import_upload.id, status: "deletion_started" }, status: :accepted }
+    end
   end
 
   private

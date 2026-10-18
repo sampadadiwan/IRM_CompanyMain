@@ -1,0 +1,75 @@
+<%# Profile › API tokens — named tokens for scripts and integrations (funds-json-api-hardening card ①; J1, J2) %>
+<div class="card shadow mb-4">
+  <div class="card-header py-3">
+    <h1 class="user-show-heading m-0 font-weight-bold text-primary">
+      <i class="ti ti-key me-1"></i> API tokens
+    </h1>
+  </div>
+
+  <div class="card-body">
+    <p class="text-muted">
+      Tokens let scripts call CapHive as you. They see and change exactly what you can.
+      Each token works for <%= ApiToken::LIFETIME.inspect %>; revoke a token you no longer use.
+    </p>
+
+    <%# J1.3: the new token, shown once %>
+    <% if @access_token %>
+      <div class="alert alert-success" id="new_api_token" data-controller="clipboard">
+        <div class="fw-bold mb-1"><i class="ti ti-circle-check"></i> Token created: <%= @api_token.name %> — expires <%= l(@api_token.expires_at.to_date) %></div>
+        <div class="d-flex align-items-center gap-2 mb-1">
+          <%# clipboard#copy reads the target's text, so the token sits in a <code>, not an input %>
+          <code class="text-break" id="api_token_value" data-clipboard-target="source"><%= @access_token %></code>
+          <button type="button" class="btn btn-sm btn-outline-secondary" data-action="click->clipboard#copy" id="copy_api_token">
+            <i class="ti ti-copy"></i> Copy
+          </button>
+        </div>
+        <div class="small">Copy it now. It will not be shown again.</div>
+      </div>
+    <% end %>
+
+    <%# J1.2: name a new token %>
+    <%= form_with url: users_api_tokens_path, scope: :api_token, class: "row g-2 align-items-end mb-4", data: { turbo: false } do |f| %>
+      <div class="col-sm-6">
+        <%= f.label :name, "Name", class: "form-label" %>
+        <%= f.text_field :name, class: "form-control", maxlength: 100, required: true, placeholder: "e.g. Quarterly script", id: "api_token_name" %>
+      </div>
+      <div class="col-sm-auto">
+        <%= f.button class: "btn btn-outline-primary", id: "create_api_token" do %>
+          <i class="ti ti-plus"></i> New token
+        <% end %>
+      </div>
+    <% end %>
+
+    <% if @api_tokens.empty? %>
+      <p class="mb-0" id="no_api_tokens">No tokens yet.</p>
+    <% else %>
+      <div class="table-responsive">
+        <table class="table table-bordered" id="api_tokens">
+          <thead class="table-light">
+            <tr>
+              <th>Name</th>
+              <th>Created</th>
+              <th>Last used</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <%= render partial: "users/api_tokens/api_token", collection: @api_tokens %>
+          </tbody>
+        </table>
+      </div>
+    <% end %>
+
+    <div>
+      <%= link_to user_path(current_user), class: "btn btn-outline-secondary ti ti-arrow-left" do %>
+        Back to Profile
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<%# Revoke confirmations live outside the table (Bootstrap modal rule) %>
+<% @api_tokens.select(&:live?).each do |api_token| %>
+  <%= render "users/api_tokens/revoke_modal", api_token: api_token %>
+<% end %>

@@ -27,7 +27,8 @@ end
 
 Given("another entity exists with a customer support agent configured") do
   @other_entity = FactoryBot.create(:entity)
-  FactoryBot.create(:entity_setting, entity: @other_entity, cs_judge_enabled: true)
+  # One settings row per entity (unique index, funds-json-api-hardening P5): update the one the entity has
+  (@other_entity.entity_setting || @other_entity.build_entity_setting).update!(cs_judge_enabled: true)
   @other_support_agent = FactoryBot.create(:support_agent,
                                            entity: @other_entity,
                                            agent_type: "CustomerSupportAgent",
@@ -69,7 +70,8 @@ end
 
 Given("a second entity exists with a customer support agent configured") do
   @second_entity = FactoryBot.create(:entity)
-  FactoryBot.create(:entity_setting, entity: @second_entity, cs_judge_enabled: true)
+  # One settings row per entity (unique index, funds-json-api-hardening P5): update the one the entity has
+  (@second_entity.entity_setting || @second_entity.build_entity_setting).update!(cs_judge_enabled: true)
   @second_support_agent = FactoryBot.create(:support_agent,
                                             entity: @second_entity,
                                             agent_type: "CustomerSupportAgent")

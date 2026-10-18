@@ -12,6 +12,9 @@ class CapitalDistributionsController < ApplicationController
     # Dedup by id - the policy scope can join access rights and repeat a row
     @stats_fund = Fund.find_by(id: params[:fund_id]) if params[:fund_id].present?
     @stats_scope = CapitalDistribution.where(id: @capital_distributions.select(:id)) if @stats_fund
+    # funds-json-api-hardening ⑥ H7: API callers of the JSON list get pages and size headers; the website's
+    # Distributions tab, and any .xlsx export, still list every row (E8)
+    @pagy, @capital_distributions = pagy(@capital_distributions, limit: params[:per_page]) if api_request? && request.format.json? && params[:all].blank?
   end
 
   # This action is used only to update the form for CD with dynamic Income (Gain from PIs) and Face Value For Redemption (Cost of PIs), and is triggered when a user selected a PI to be included in the distribution
@@ -47,6 +50,9 @@ class CapitalDistributionsController < ApplicationController
 
   def redeem_units
     FundUnitsJob.perform_later(@capital_distribution.id, "CapitalDistribution", @capital_distribution.title, current_user.id)
+    # G18: a bearer-token caller gets 202 JSON (read units_job_finished_at to see it finish); the website keeps its redirect
+    return render(json: { id: @capital_distribution.id, status: "queued" }, status: :accepted) if api_request?
+
     redirect_to capital_distribution_path(@capital_distribution), notice: "Redemption process started, please check back in a few mins."
   end
 
@@ -202,5 +208,10 @@ class CapitalDistributionsController < ApplicationController
   # Only allow a list of trusted parameters through.
   def capital_distribution_params
     params.require(:capital_distribution).permit(:fund_id, :entity_id, :form_type_id, :cost_of_investment, :reinvestment, :income, :distribution_date, :title, :completed, :capital_commitment_id, :distribution_on, :generate_payments, :completed, :send_notification_on_complete, :notes, distribution_fees_attributes: %i[id name start_date end_date notes fee_type cumulative parent_type parent_ids entry_type audit_name _destroy], unit_prices: {}, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
+  end
+
+  # The distributions a bulk action covers (WithBulkActions — P12): the list's own scope and filters
+  def fetch_rows
+    CapitalDistributionList.call(current_user, params) { |relation| policy_scope(relation) }.capital_distributions
   end
 end

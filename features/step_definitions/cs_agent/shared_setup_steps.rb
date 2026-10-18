@@ -30,7 +30,9 @@ end
 
 Given("an entity exists with a customer support agent configured") do
   @entity = FactoryBot.create(:entity)
-  @entity_setting = FactoryBot.create(:entity_setting, entity: @entity, cs_judge_enabled: true)
+  # One settings row per entity (unique index, funds-json-api-hardening P5): update the one the entity has
+  @entity_setting = @entity.entity_setting || @entity.build_entity_setting
+  @entity_setting.update!(cs_judge_enabled: true)
   @support_agent = FactoryBot.create(:support_agent,
                                      entity: @entity,
                                      agent_type: "CustomerSupportAgent",

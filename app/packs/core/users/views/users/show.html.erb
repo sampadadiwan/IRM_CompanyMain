@@ -233,6 +233,13 @@
           <% end %>
         <% end %>
 
+        <%# Named tokens for scripts and integrations (funds-json-api-hardening card ①) — own profile only %>
+        <% if @user == current_user %>
+          <%= link_to users_api_tokens_path, class: "btn btn-outline-primary", id: "api_tokens_link" do %>
+            <i class="ti ti-key"></i> API tokens
+          <% end %>
+        <% end %>
+
         <%= link_to root_path, class: "btn btn-outline-secondary ti ti-arrow-left" do %>
           Back to Dashboard
         <% end %>
