@@ -45,9 +45,14 @@
 
       <div class="form-group">
         <%= f.label :fund_id, "Fund" %>
-        <%= f.select :fund_id, funds.map { |fd| [fd.name, fd.id] }, { include_blank: "— select a fund —" },
-                     class: "form-control select2", required: true,
-                     data: { allocation_run_template_form_target: "fund", action: "change->allocation-run-template-form#fundChanged" } %>
+        <% if template.new_record? %>
+          <%= f.select :fund_id, funds.map { |fd| [fd.name, fd.id] }, { include_blank: "— select a fund —" },
+                       class: "form-control select2", required: true,
+                       data: { allocation_run_template_form_target: "fund", action: "change->allocation-run-template-form#fundChanged" } %>
+        <% else %>
+          <%# A template never moves to another fund (fund_id is read-only): its documents and formulas belong to this fund %>
+          <%= text_field_tag :fund_name, template.fund&.name, class: "form-control", disabled: true %>
+        <% end %>
         <small class="text-muted">The fund whose allocation this template runs. One template covers one fund.</small>
       </div>
 

@@ -72,6 +72,24 @@ class EntityPolicy < ApplicationPolicy
     ((user.entity_id == record.id) && user.has_cached_role?(:company_admin) && !user.investor_advisor?) || support?
   end
 
+  ENTITY_SETTING_ATTRIBUTES = [:id, :mailbox, :individual_kyc_doc_list, :non_individual_kyc_doc_list, :sandbox, :sandbox_emails, :cc,
+                               :sandbox_numbers, :kyc_docs_note, :kyc_doc_first_wizard, :entity_bcc, :kyc_bank_account_types,
+                               :db_dumps_enable, :db_dumps_retention_period, :db_dumps_email_enabled, :db_dumps_frequency,
+                               :db_dumps_interval, :db_dumps_custom_days, :document_colors, :mcp_enabled, :mcp_allowed_roles,
+                               :mcp_allowed_clients, :cs_judge_enabled, :cs_judge_model, :weekly_task_digest_enabled,
+                               { evergreen_labels: ["unit", *EvergreenLabels::OVERRIDABLE] },
+                               { custom_flags: [], kpi_doc_list: [], mcp_allowed_roles_list: [], mcp_allowed_clients_list: [] }].freeze
+
+  # E: the fields this user may send. permissions switches a firm's product features on and off, so only
+  # support may set it (a company admin's edit form only shows them)
+  def permitted_attributes
+    fields = [:name, :url, :category, :founded, :entity_type, :pan, :custom_css, :funding_amount, :funding_unit, :details,
+              :logo_url, :primary_email, :investor_categories, :instrument_types, :sub_domain, :enable_support, :currency,
+              :units, :logo, { entity_setting_attributes: ENTITY_SETTING_ATTRIBUTES }]
+    fields << { permissions: [] } if user.support?
+    fields
+  end
+
   def edit?
     update?
   end

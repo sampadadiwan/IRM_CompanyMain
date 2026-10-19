@@ -16,6 +16,7 @@ class DerivativeContract < ApplicationRecord
 
   belongs_to :entity
   belongs_to :fund
+  attr_readonly :fund_id # never moves to another fund (funds_api_security_policy_plan.md, B)
   belongs_to :underlying_instrument, class_name: "InvestmentInstrument", optional: true
   belongs_to :agreement_document, class_name: "Document", optional: true
   belongs_to :hedge_of, polymorphic: true, optional: true

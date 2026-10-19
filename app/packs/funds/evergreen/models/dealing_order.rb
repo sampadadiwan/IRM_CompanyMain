@@ -20,6 +20,7 @@ class DealingOrder < ApplicationRecord
 
   belongs_to :entity
   belongs_to :fund
+  attr_readonly :fund_id # never moves to another fund (funds_api_security_policy_plan.md, B)
   belongs_to :investor
   belongs_to :capital_commitment, optional: true
   # The investing entity the order is for; a folio the order opens takes it (evergreen-folio-soa ①)

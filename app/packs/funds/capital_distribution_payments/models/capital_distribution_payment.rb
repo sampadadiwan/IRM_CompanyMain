@@ -46,6 +46,7 @@ class CapitalDistributionPayment < ApplicationRecord
   update_index('capital_distribution_payment') { self if index_record? }
 
   belongs_to :fund, touch: true
+  attr_readonly :fund_id # never moves to another fund (funds_api_security_policy_plan.md, B)
   belongs_to :entity
   belongs_to :capital_distribution, touch: true
   has_many :fund_units, as: :owner, dependent: :destroy

@@ -6,6 +6,7 @@ class ESignature < ApplicationRecord
   # self.ignored_columns = ["user_id"]
   # Is the offer, commitment etc whose document needs to be signed
   belongs_to :document
+  attr_readonly :document_id # never moves to another document (funds_api_security_policy_plan.md, B)
   acts_as_list scope: :document
 
   validates :label, length: { maximum: 50 }

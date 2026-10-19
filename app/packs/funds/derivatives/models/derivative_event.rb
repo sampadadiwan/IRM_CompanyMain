@@ -9,6 +9,7 @@ class DerivativeEvent < ApplicationRecord
   belongs_to :derivative_contract
   belongs_to :entity
   belongs_to :fund
+  attr_readonly :fund_id # never moves to another fund (funds_api_security_policy_plan.md, B)
   belongs_to :portfolio_investment, optional: true
   belongs_to :import_upload, optional: true
   has_many :account_entries, as: :parent, dependent: :destroy

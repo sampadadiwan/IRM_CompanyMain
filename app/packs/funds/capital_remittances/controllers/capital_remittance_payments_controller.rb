@@ -29,8 +29,9 @@ class CapitalRemittancePaymentsController < ApplicationController
   # POST /capital_remittance_payments or /capital_remittance_payments.json
   def create
     @capital_remittance_payment = CapitalRemittancePayment.new(capital_remittance_payment_params)
-    result = CapitalRemittancePaymentCreate.call(capital_remittance_payment: @capital_remittance_payment)
+    # F: ask permission before the operation saves the payment and raises the remittance / call / fund totals
     authorize(@capital_remittance_payment)
+    result = CapitalRemittancePaymentCreate.call(capital_remittance_payment: @capital_remittance_payment)
     respond_to do |format|
       if result.success?
         journey_progress

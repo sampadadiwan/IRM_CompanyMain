@@ -14,6 +14,7 @@
 class TieOutFigure < ApplicationRecord
   belongs_to :entity
   belongs_to :fund
+  attr_readonly :fund_id # never moves to another fund (funds_api_security_policy_plan.md, B)
   belongs_to :user
   # nil means the fund total for this name; set means one folio's figure.
   belongs_to :capital_commitment, optional: true

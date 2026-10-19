@@ -18,7 +18,8 @@ class ChatPolicy < ApplicationPolicy
   end
 
   def create?
-    belongs_to_entity?(user, record) && user.has_cached_role?(:company_admin)
+    # D: the parent is in one of the user's firms (funds_api_security_policy_plan.md)
+    belongs_to_entity?(user, record) && parent_in_users_firms?(record.owner) && user.has_cached_role?(:company_admin)
   end
 
   def new?

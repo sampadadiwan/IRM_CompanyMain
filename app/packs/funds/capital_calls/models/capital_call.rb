@@ -37,6 +37,7 @@ class CapitalCall < ApplicationRecord
                        "Approved; text-col" => "approved; text-col" }.freeze
   belongs_to :entity
   belongs_to :fund, touch: true
+  attr_readonly :fund_id # never moves to another fund (funds_api_security_policy_plan.md, B)
 
   belongs_to :approved_by_user, class_name: "User", optional: true
   # Stores the prices for unit types for this call

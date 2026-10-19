@@ -39,6 +39,7 @@ class FormCustomField < ApplicationRecord
   end
 
   belongs_to :form_type
+  attr_readonly :form_type_id # never moves to another form type (funds_api_security_policy_plan.md, B)
   acts_as_list scope: :form_type
 
   # Values 4–9 are extra dynamic steps used in multi-step forms (e.g. investor_kyc).

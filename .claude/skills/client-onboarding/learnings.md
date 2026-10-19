@@ -80,3 +80,21 @@ Source: one MIS sheet (128 folios, ₹300 Cr, 515 drawdowns, 774 redemption + 1,
 - Shell gotcha: zsh does not word-split `$ids` — loop over an explicit list.
 - Remaining API gaps: P12 (no bulk approve/allocate/redeem), G16 (fund dates not in JSON), G17 (no `approved` in
   call/distribution JSON), G18 (allocate/redeem answer 302; no completion signal).
+
+## 2026-10-18 — staging run (dev.altconnects.com, entity 1548, fund 361), resumed across sessions
+
+- **Resuming:** the earlier session's journal stopped at "sandbox on", but the API showed uploads 2823–2826 (fund, unit
+  settings, investors, commitments) already succeeded. Always read the uploads list before re-importing anything.
+- On this build `approve` (calls and distributions) answers **201**, `unit_prices` PATCH answers **200**, and
+  `allocate_units` / `redeem_units` answer **202 `{"status":"queued"}`**, so P11 and G18's reply look fixed. There is still no
+  completion signal: poll `units_quantity` on remittances / distribution payments until it stops changing (about 30 s for 515, about 90 s for 1,795).
+- Distribution payment form fields: `POST /form_types.json` with `form_custom_fields_attributes` works, but the form-type
+  JSON does not list its fields. Confirm them through the payment upload's empty `custom_fields_created`.
+- **Tick-and-tie reconciliation** (`scripts/recon_report.rb`): walk the raw client rows independently of the transform and
+  match each one to an app record by folio + date + amount, taking each match out of a pool. Then report the leftovers (app rows with no
+  client row), the client's own total rows, a 128 × 13 per-folio table, and per call / per distribution header = Σ rows. On Orios:
+  10,008 row checks, 15 totals, 1,664 folio figures, all tie.
+- **Investor access:** write only `ImportInvestorAccess::STANDARD_HEADERS`. The sample `investor_access.xlsx` has an extra
+  "Send Confirmation Email" column that is not standard and would become a custom field. Each access creates a real
+  user, even for placeholder emails, so placeholders must be swapped for real contacts before go-live. The access JSON has no
+  `email_enabled` (gap).

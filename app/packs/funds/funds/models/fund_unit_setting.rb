@@ -6,6 +6,7 @@ class FundUnitSetting < ApplicationRecord
 
   belongs_to :entity
   belongs_to :fund
+  attr_readonly :fund_id # never moves to another fund (funds_api_security_policy_plan.md, B)
 
   validates :name, length: { maximum: 40 }
   validates :isin, length: { maximum: 15 }, allow_blank: true

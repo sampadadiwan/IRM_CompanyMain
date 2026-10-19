@@ -28,7 +28,8 @@ class DealActivityPolicy < DealBasePolicy
     return permissioned_rm?(:create) if rm?
 
     if record.deal_investor.present?
-      DealInvestorPolicy.new(user, record.deal_investor).update?
+      # D: with a deal investor, the deal itself is checked too (it was not)
+      DealInvestorPolicy.new(user, record.deal_investor).update? && parent_in_users_firms?(record.deal)
     else
       deal_update_permission?
     end

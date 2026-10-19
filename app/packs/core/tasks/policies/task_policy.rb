@@ -38,6 +38,8 @@ class TaskPolicy < ApplicationPolicy
   def create?
     return true if support?
     return false unless belongs_to_entity?(user, record)
+    # D: the parent is in one of the user's firms (funds_api_security_policy_plan.md)
+    return false unless parent_in_users_firms?(record.owner)
     return true if user.has_cached_role?(:company_admin)
     return true if crud?(user, record, :create)
     return true if record.owner.blank? && user.has_cached_role?(:employee)

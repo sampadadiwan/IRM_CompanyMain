@@ -17,6 +17,7 @@ class FinancialStatementLayoutRow < ApplicationRecord
 
   belongs_to :entity
   belongs_to :fund
+  attr_readonly :fund_id # never moves to another fund (funds_api_security_policy_plan.md, B)
   belongs_to :definition, class_name: "FinancialStatementDefinition", foreign_key: :financial_statement_definition_id,
                           inverse_of: :layout_rows
   belongs_to :account, class_name: "FinancialStatementAccount", foreign_key: :financial_statement_account_id,

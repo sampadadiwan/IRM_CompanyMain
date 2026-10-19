@@ -10,7 +10,8 @@ class ExpressionOfInterestPolicy < IoBasePolicy
   end
 
   def create?
-    belongs_to_entity?(user, record) ||
+    # D: the parent is in one of the user's firms (funds_api_security_policy_plan.md)
+    (belongs_to_entity?(user, record) && parent_in_users_firms?(record.investment_opportunity)) ||
       permissioned_employee?(:create) ||
       permissioned_rm? || permissioned_investor?
   end

@@ -48,6 +48,7 @@ class KpiReport < ApplicationRecord
   belongs_to :entity
   # This is in case the fund is uploading the kpis
   belongs_to :portfolio_company, class_name: "Investor", optional: true
+  attr_readonly :portfolio_company_id # never moves to another portfolio company (funds_api_security_policy_plan.md, B)
   belongs_to :owner, class_name: "Entity", optional: true
   belongs_to :user
   has_many :kpis, dependent: :destroy

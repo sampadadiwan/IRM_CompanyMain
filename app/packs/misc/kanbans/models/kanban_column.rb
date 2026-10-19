@@ -3,6 +3,7 @@ class KanbanColumn < ApplicationRecord
 
   acts_as_list scope: %i[kanban_board_id], column: :sequence
   belongs_to :kanban_board
+  attr_readonly :kanban_board_id # never moves to another board (funds_api_security_policy_plan.md, B)
   belongs_to :entity
   has_many :kanban_cards, dependent: :destroy
   validates :name, presence: true

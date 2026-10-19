@@ -25,6 +25,7 @@ class Valuation < ApplicationRecord
 
   belongs_to :entity
   belongs_to :owner, polymorphic: true, optional: true, touch: true
+  attr_readonly :owner_id, :owner_type # never moves to another owner (funds_api_security_policy_plan.md, B)
 
   # A *typed* association for when the owner is specifically an Investor
   belongs_to :portfolio_company,
@@ -36,6 +37,7 @@ class Valuation < ApplicationRecord
   has_many :portfolio_kpis, through: :portfolio_company
 
   belongs_to :investment_instrument # , optional: true
+  attr_readonly :investment_instrument_id # never moves to another instrument (funds_api_security_policy_plan.md, B)
   include FileUploader::Attachment(:report)
 
   monetize :valuation_cents, :per_share_value_cents,

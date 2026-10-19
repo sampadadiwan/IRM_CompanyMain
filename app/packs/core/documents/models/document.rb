@@ -113,6 +113,8 @@ class Document < ApplicationRecord
 
   delegate :full_path, to: :folder, prefix: :folder
   before_validation :setup_folder, :setup_entity
+  # A document can move between its own firm's folders, never into another firm's (C)
+  validate { validate_parent_in_own_firm(:folder) }
   before_validation :validate_file_presence_on_update, on: :update
 
   def validate_file_presence_on_update

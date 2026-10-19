@@ -66,8 +66,18 @@ class ApplicationPolicy
   # If user is of entity "A" and record is of entity "B" and entity "B" is a child of entity "A", then user can perform actions
   # If user is of entity "A" and record is of entity "B" and entity "B" is not a child of entity "A", then user cannot perform actions
   def belongs_to_entity?(user, record)
-    user.entity_id == record.entity_id ||
-      (user.entity_type == "Group Company" && user.entity.child_ids.include?(record.entity_id))
+    users_firm?(user, record.entity_id)
+  end
+
+  # The parent a record hangs off (its fund, folder, owner, …) is in one of the user's firms. A record's
+  # own entity_id comes from the request, so it alone can't be trusted. No parent: nothing to check.
+  def parent_in_users_firms?(parent)
+    parent.nil? || users_firm?(user, parent.is_a?(Entity) ? parent.id : parent.entity_id)
+  end
+
+  # The user's own firm, or a child firm of their group company
+  def users_firm?(user, entity_id)
+    user.entity_id == entity_id || (user.entity_type == "Group Company" && user.entity.child_ids.include?(entity_id))
   end
 
   def belongs_to_investor_entity?(user, record)
@@ -121,14 +131,17 @@ class ApplicationPolicy
   end
 
   def permissioned_employee?(perm = nil, owner: nil)
-    # Does the user belong to the entity that owns the record?
-    if belongs_to_entity?(user, record)
+    # The record that governs access: a fund record's fund, an approval response's approval, …
+    model_with_access_rights = get_model_with_access_rights(owner:)
+    # Its parents: that record, and its fund (also for fund models outside ForInvestor) (D)
+    parents = [model_with_access_rights, record.try(:fund)]
+    # Does the user belong to the entity that owns the record, and to the ones that own its parents?
+    if belongs_to_entity?(user, record) && parents.all? { |parent| parent_in_users_firms?(parent) }
       # Is the user a company admin?
       if user.has_cached_role?(:company_admin)
         # Can see everything
         true
       else
-        model_with_access_rights = get_model_with_access_rights(owner:)
         return false if model_with_access_rights.blank?
 
         # Live DB lookup — indexed on (owner_type, owner_id, user_id)

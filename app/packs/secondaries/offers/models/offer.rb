@@ -38,6 +38,7 @@ class Offer < ApplicationRecord
   belongs_to :investor
   belongs_to :entity, touch: true
   belongs_to :secondary_sale, touch: true
+  attr_readonly :secondary_sale_id # never moves to another sale (funds_api_security_policy_plan.md, B)
   has_many :noticed_events, as: :record, dependent: :destroy, class_name: "Noticed::Event"
 
   has_many :access_rights, through: :secondary_sale

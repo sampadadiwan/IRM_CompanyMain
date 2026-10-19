@@ -4,6 +4,7 @@
 class EvergreenNotificationLog < ApplicationRecord
   belongs_to :entity
   belongs_to :fund
+  attr_readonly :fund_id # never moves to another fund (funds_api_security_policy_plan.md, B)
 
   # Runs the block only the first time this (key, record, day) is seen. The unique index settles races.
   def self.once(fund, key, record, on: Time.zone.today)

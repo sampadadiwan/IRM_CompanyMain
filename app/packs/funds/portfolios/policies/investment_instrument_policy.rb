@@ -13,8 +13,9 @@ class InvestmentInstrumentPolicy < ApplicationPolicy
   end
 
   def create?
+    # D: the parent is in one of the user's firms (funds_api_security_policy_plan.md)
     user.entity.permissions.enable_fund_portfolios? &&
-      belongs_to_entity?(user, record)
+      belongs_to_entity?(user, record) && parent_in_users_firms?(record.portfolio_company)
   end
 
   def new?

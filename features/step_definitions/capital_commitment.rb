@@ -448,8 +448,10 @@ Given('the fund has {string} capital commitments from each investor') do |string
       end
     end
   end
+  # Every entity already has its settings row (created with the entity), and entity_id is unique on
+  # entity_settings: update that row rather than adding a second one
   Entity.all.each do |e|
-    EntitySetting.create!(entity: e, from_email: "test@email.com")
+    (e.entity_setting || e.build_entity_setting).update!(from_email: "test@email.com")
   end
   @fund.reload
 end

@@ -9,7 +9,8 @@ class ValuationPolicy < ApplicationPolicy
   end
 
   def create?
-    belongs_to_entity?(user, record) && Pundit.policy(user, record.owner).update?
+    # D: the owner (through its policy) and the instrument are in one of the user's firms
+    belongs_to_entity?(user, record) && Pundit.policy(user, record.owner).update? && parent_in_users_firms?(record.investment_instrument)
   end
 
   def value_bridge?

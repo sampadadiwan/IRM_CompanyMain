@@ -13,6 +13,8 @@ class InvestorNotice < ApplicationRecord
   has_rich_text :details
 
   validates :title, :start_date, :end_date, presence: true
+  # A notice saved without an owner may be given one later, but only one of its own firm (C)
+  validate { validate_parent_in_own_firm(:owner) }
   validates :btn_label, length: { maximum: 40 }
   validates :category, length: { maximum: 30 }
   # Dry-run the expression at save time so a typo shows up to the GP admin

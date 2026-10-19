@@ -16,6 +16,7 @@ class AggregatePortfolioInvestment < ApplicationRecord
   # Associations
   belongs_to :entity, touch: true
   belongs_to :fund, -> { with_snapshots }
+  attr_readonly :fund_id # never moves to another fund (funds_api_security_policy_plan.md, B)
   belongs_to :portfolio_company, class_name: "Investor"
   belongs_to :investment_instrument
 

@@ -15,6 +15,7 @@ class AllocationRunTemplate < ApplicationRecord
   belongs_to :entity
   belongs_to :user
   belongs_to :fund
+  attr_readonly :fund_id # never moves to another fund (funds_api_security_policy_plan.md, B)
   # A reference to the document itself, not its name (decision 15). Document is soft-deleted,
   # so a deleted or renamed-away document simply reads back as nil and the pre-run check blocks.
   belongs_to :statement_document, class_name: "Document", optional: true

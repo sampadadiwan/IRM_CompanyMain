@@ -17,6 +17,7 @@
 class Permission < ApplicationRecord
   belongs_to :user, optional: true
   belongs_to :owner, polymorphic: true
+  attr_readonly :owner_id, :owner_type # never moves to another owner (funds_api_security_policy_plan.md, B)
   belongs_to :entity
   belongs_to :granted_by, class_name: "User"
 

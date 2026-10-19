@@ -4,6 +4,7 @@
 class FinancialStatementSetting < ApplicationRecord
   belongs_to :entity
   belongs_to :fund
+  attr_readonly :fund_id # never moves to another fund (funds_api_security_policy_plan.md, B)
 
   validates :fiscal_year_start_month, inclusion: { in: 1..12 }
   validates :nav_entry_type, :capital_entry_type, length: { maximum: 60 }

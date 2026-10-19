@@ -2,6 +2,7 @@ class FundReport < ApplicationRecord
   include ForInvestor
 
   belongs_to :fund
+  attr_readonly :fund_id # never moves to another fund (funds_api_security_policy_plan.md, B)
   belongs_to :entity
 
   validates :name, length: { maximum: 50 }, allow_blank: true

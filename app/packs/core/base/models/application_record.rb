@@ -51,6 +51,23 @@ class ApplicationRecord < ActiveRecord::Base
   primary_abstract_class
   include DatabaseRoleHelper
 
+  # A record never moves to another firm once created: entity_id is written on create and left out of
+  # every update. User opts out (advisor / support switches). To re-file records under another firm,
+  # use update_all, as entity merge does. docs/modules/funds/funds_api_security_policy_plan.md (A)
+  attr_readonly :entity_id
+
+  # For a parent that may move inside a firm (a document's folder, a folder's parent, …): the new parent
+  # must be in this record's own firm. The stored firm is the reference, since entity_id never changes
+  # (an in-memory change, like Document#setup_entity copying the folder's firm, is not saved).
+  # docs/modules/funds/funds_api_security_policy_plan.md (C)
+  def validate_parent_in_own_firm(association)
+    parent = public_send(association)
+    return if parent.nil?
+
+    parent_firm = parent.is_a?(Entity) ? parent.id : parent.entity_id
+    errors.add(association, "must be in this record's firm") unless parent_firm == (entity_id_in_database || entity_id)
+  end
+
   # Currently we write and read from the primary database
   connects_to database: { writing: :primary, reading: :primary }
 

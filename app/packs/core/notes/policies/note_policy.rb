@@ -19,7 +19,8 @@ class NotePolicy < ApplicationPolicy
   end
 
   def create?
-    belongs_to_entity?(user, record) && (user.has_cached_role?(:company_admin) || (record.owner && owner_policy.create?) || (user.id == record.user_id) || support?)
+    # D: the parent is in one of the user's firms (funds_api_security_policy_plan.md)
+    belongs_to_entity?(user, record) && parent_in_users_firms?(record.owner) && (user.has_cached_role?(:company_admin) || (record.owner && owner_policy.create?) || (user.id == record.user_id) || support?)
   end
 
   # Adding a new policy to check only for notes that are added via Deal Notes Tab

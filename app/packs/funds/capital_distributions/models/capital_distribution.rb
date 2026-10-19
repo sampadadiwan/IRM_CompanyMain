@@ -31,6 +31,7 @@ class CapitalDistribution < ApplicationRecord
   FEE_TYPES = ["Fees Part Of Capital", "Other Fees"].freeze
 
   belongs_to :fund, touch: true
+  attr_readonly :fund_id # never moves to another fund (funds_api_security_policy_plan.md, B)
   belongs_to :entity
   belongs_to :approved_by_user, class_name: "User", optional: true
 

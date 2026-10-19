@@ -1,4 +1,8 @@
 class User < ApplicationRecord
+  # The one exception to "a record never changes firm": an investor advisor's or a support user's firm
+  # changes when they switch firm (InvestorAdvisor#switch, SupportClientMapping#switch)
+  self._attr_readonly -= ["entity_id"]
+
   include UserEnabled
   include WithCustomField
   include Memoized

@@ -22,9 +22,12 @@ class AccountEntry < ApplicationRecord
   PARENT_TYPES = %w[PortfolioInvestment AggregatePortfolioInvestment Investor AccountEntry].freeze
 
   belongs_to :capital_commitment, optional: true
+  # never moves to another commitment, or from fund level to a folio (funds_api_security_policy_plan.md, B)
+  attr_readonly :capital_commitment_id
   has_one :investor_kyc, through: :capital_commitment
   belongs_to :entity, inverse_of: :account_entries
   belongs_to :fund, inverse_of: :account_entries
+  attr_readonly :fund_id # never moves to another fund (funds_api_security_policy_plan.md, B)
   belongs_to :allocation_run, optional: true
   belongs_to :fund_formula, optional: true
   belongs_to :investor, optional: true

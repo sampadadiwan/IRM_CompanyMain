@@ -18,7 +18,18 @@ class CustomNotificationPolicy < ApplicationPolicy
   end
 
   def create?
-    permissioned_employee?(:create)
+    # D: the parent is in one of the user's firms (funds_api_security_policy_plan.md)
+    permissioned_employee?(:create) && parent_in_users_firms?(record.owner)
+  end
+
+  # E: the fields this user may send. is_erb makes the body run as Ruby code when the email renders,
+  # so only support may set it (the form shows its toggle only to support; this makes the server agree)
+  def permitted_attributes
+    fields = %i[subject body whatsapp for_type show_details entity_id owner_id owner_type attachment_password
+                password_protect_attachment show_details_link email_method enabled to attachment_names tag
+                latest_doc_only attachment_mandatory]
+    fields << :is_erb if user.support?
+    fields
   end
 
   def new?

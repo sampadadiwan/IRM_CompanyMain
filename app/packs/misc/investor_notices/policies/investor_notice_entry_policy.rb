@@ -16,7 +16,8 @@ class InvestorNoticeEntryPolicy < ApplicationPolicy
   end
 
   def create?
-    belongs_to_entity?(user, record)
+    # D: the parent is in one of the user's firms (funds_api_security_policy_plan.md): the notice and the investor
+    belongs_to_entity?(user, record) && parent_in_users_firms?(record.investor_notice) && parent_in_users_firms?(record.investor)
   end
 
   def new?

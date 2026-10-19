@@ -36,7 +36,9 @@ class KpiReportPolicy < KpiPolicyBase
 
     # Original Fund entity user permission
     # Reference: kpi_portco_upload.md
-    user.enable_kpis && (belongs_to_entity?(user, record) || permissioned_employee? || portfolio_company_user?)
+    # D: for the fund's users, the portfolio company is one of their firm's; a portfolio company's own user
+    # files reports for their company by design
+    user.enable_kpis && (((belongs_to_entity?(user, record) || permissioned_employee?) && parent_in_users_firms?(record.portfolio_company)) || portfolio_company_user?)
   end
 
   def new?

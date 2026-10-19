@@ -62,6 +62,7 @@ class EvergreenFundSetting < ApplicationRecord
 
   belongs_to :entity
   belongs_to :fund
+  attr_readonly :fund_id # never moves to another fund (funds_api_security_policy_plan.md, B)
   belongs_to :enabled_by, class_name: "User", optional: true
   belongs_to :subscription_journey_template, class_name: "WorkflowTemplate", optional: true
   belongs_to :redemption_journey_template, class_name: "WorkflowTemplate", optional: true

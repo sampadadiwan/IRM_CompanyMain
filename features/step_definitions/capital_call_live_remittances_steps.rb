@@ -13,7 +13,9 @@ end
 
 Given("the capital call belongs to another company") do
   other = FactoryBot.create(:entity, entity_type: "Investment Fund")
-  @capital_call.update_columns(entity_id: other.id)
+  # entity_id is read-only (a record never changes firm), so the bad data is written directly
+  CapitalCall.where(id: @capital_call.id).update_all(entity_id: other.id)
+  @capital_call.reload
 end
 
 When("I load the call's stats cards directly") do

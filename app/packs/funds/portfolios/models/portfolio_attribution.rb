@@ -3,6 +3,7 @@ class PortfolioAttribution < ApplicationRecord
 
   belongs_to :entity
   belongs_to :fund
+  attr_readonly :fund_id # never moves to another fund (funds_api_security_policy_plan.md, B)
   belongs_to :sold_pi, -> { unscope(where: :snapshot_date) }, class_name: "PortfolioInvestment"
   belongs_to :bought_pi, -> { unscope(where: :snapshot_date) }, class_name: "PortfolioInvestment", touch: true
   before_save :compute_amounts

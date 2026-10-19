@@ -14,10 +14,15 @@
   <div class="row g-3">
     <div class="col-md-4">
       <%= f.label :capital_commitment_id, "Commitment", class: "form-label" %>
-      <%= f.collection_select :capital_commitment_id,
-                              CapitalCommitment.where(entity_id: current_user.entity_id).includes(:investor).order(:investor_name),
-                              :id, :investor_name, { include_blank: "Select commitment" },
-                              class: "form-select", required: true %>
+      <% if side_letter.new_record? %>
+        <%= f.collection_select :capital_commitment_id,
+                                CapitalCommitment.where(entity_id: current_user.entity_id).includes(:investor).order(:investor_name),
+                                :id, :investor_name, { include_blank: "Select commitment" },
+                                class: "form-select", required: true %>
+      <% else %>
+        <%# A side letter never moves to another commitment (read-only), so Edit shows it %>
+        <%= text_field_tag :capital_commitment_name, side_letter.capital_commitment&.investor_name, class: "form-control", disabled: true %>
+      <% end %>
     </div>
     <div class="col-md-4">
       <%= f.label :document_id, "Side letter document", class: "form-label" %>

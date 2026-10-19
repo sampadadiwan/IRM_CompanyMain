@@ -12,6 +12,7 @@ class ApprovalResponse < ApplicationRecord
   belongs_to :response_entity, class_name: "Entity"
   belongs_to :response_user, class_name: "User", optional: true
   belongs_to :approval, touch: true
+  attr_readonly :approval_id # never moves to another approval (funds_api_security_policy_plan.md, B)
   has_many :noticed_events, as: :record, dependent: :destroy, class_name: "Noticed::Event"
 
   has_rich_text :details

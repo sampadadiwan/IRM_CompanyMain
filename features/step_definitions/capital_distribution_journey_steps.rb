@@ -407,7 +407,9 @@ end
 # Moves the distribution (and its fund) to a different company, so the logged-in user is an outsider
 Given("the distribution belongs to another company") do
   other = FactoryBot.create(:entity, entity_type: "Investment Fund")
-  @capital_distribution.update_columns(entity_id: other.id)
+  # entity_id is read-only (a record never changes firm), so the bad data is written directly
+  CapitalDistribution.where(id: @capital_distribution.id).update_all(entity_id: other.id)
+  @capital_distribution.reload
 end
 
 When("I load the distribution's journey panel directly") do

@@ -18,6 +18,7 @@ class AllocationRunReport < ApplicationRecord
 
   belongs_to :entity
   belongs_to :fund
+  attr_readonly :fund_id # never moves to another fund (funds_api_security_policy_plan.md, B)
   belongs_to :user
   belongs_to :allocation_run
 

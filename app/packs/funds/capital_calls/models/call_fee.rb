@@ -1,7 +1,9 @@
 class CallFee < ApplicationRecord
   belongs_to :entity
   belongs_to :fund
+  attr_readonly :fund_id # never moves to another fund (funds_api_security_policy_plan.md, B)
   belongs_to :capital_call
+  attr_readonly :capital_call_id # never moves to another call (funds_api_security_policy_plan.md, B)
   validates :name, :start_date, :end_date, :fee_type, presence: true
   validates :name, length: { maximum: 50 }
   validates :fee_type, length: { maximum: 20 }

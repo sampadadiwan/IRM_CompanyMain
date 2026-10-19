@@ -23,7 +23,8 @@ class KpiPolicy < KpiPolicyBase
   end
 
   def create?
-    (belongs_to_entity?(user, record) || permissioned_employee?) && record.owner_id.nil?
+    # D: the parent is in one of the user's firms (funds_api_security_policy_plan.md)
+    ((belongs_to_entity?(user, record) && parent_in_users_firms?(record.kpi_report)) || permissioned_employee?) && record.owner_id.nil?
   end
 
   def new?

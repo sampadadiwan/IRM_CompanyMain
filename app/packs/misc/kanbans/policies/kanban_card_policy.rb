@@ -16,7 +16,8 @@ class KanbanCardPolicy < ApplicationPolicy
   end
 
   def create?
-    permissioned_employee? && user.enable_kanban
+    # D: the parent is in one of the user's firms (funds_api_security_policy_plan.md)
+    permissioned_employee? && user.enable_kanban && parent_in_users_firms?(record.kanban_board)
   end
 
   def new?

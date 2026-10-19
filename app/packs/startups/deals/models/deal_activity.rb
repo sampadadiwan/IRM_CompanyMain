@@ -12,6 +12,7 @@ class DealActivity < ApplicationRecord
   default_scope { order(sequence: :asc) }
 
   belongs_to :deal, touch: true
+  attr_readonly :deal_id # never moves to another deal (funds_api_security_policy_plan.md, B)
   belongs_to :deal_investor, optional: true
   belongs_to :entity
 

@@ -28,6 +28,7 @@ class FundFormulaOperation < ApplicationRecord
 
   belongs_to :entity
   belongs_to :fund
+  attr_readonly :fund_id # never moves to another fund (funds_api_security_policy_plan.md, B)
   belongs_to :requested_by, class_name: "User"
   belongs_to :applied_by, class_name: "User", optional: true
 

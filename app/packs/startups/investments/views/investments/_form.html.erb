@@ -13,8 +13,13 @@
 
     <div class="form-group">
       <%= form.label :portfolio_company_id, "Portfolio Company" %>
+      <% if investment.new_record? %>
         <%= form.select :portfolio_company_id,
             investment.entity.investors.portfolio_companies.order(investor_name: :asc).map{|i| [i.investor_name, i.id]}, {include_blank: true}, class: "form-control" %>
+      <% else %>
+        <%# An investment never moves to another portfolio company (read-only), so Edit shows it %>
+        <%= text_field_tag :portfolio_company_name, investment.portfolio_company&.investor_name, class: "form-control", disabled: true %>
+      <% end %>
     </div>
 
     <% currencies = investment.entity.exchange_rates.pluck(:from)  %>

@@ -10,6 +10,7 @@ class Note < ApplicationRecord
   belongs_to :entity
   belongs_to :user
   belongs_to :owner, polymorphic: true, optional: true
+  attr_readonly :owner_id, :owner_type # never moves to another owner (funds_api_security_policy_plan.md, B)
 
   # LP CRM: the person at the LP this note was with — the contact's InvestorAccess
   # record, plus the guard that keeps it a contact of the note's own stakeholder.

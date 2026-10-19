@@ -18,6 +18,7 @@ class AccessRight < ApplicationRecord
   flag :permissions, %i[create read update destroy]
 
   belongs_to :owner, polymorphic: true # , strict_loading: true
+  attr_readonly :owner_id, :owner_type # never moves to another owner (funds_api_security_policy_plan.md, B)
   belongs_to :entity
   # If this is a user access
   belongs_to :user, optional: true

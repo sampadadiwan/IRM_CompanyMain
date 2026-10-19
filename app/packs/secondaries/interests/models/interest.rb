@@ -24,6 +24,7 @@ class Interest < ApplicationRecord
   belongs_to :investor
   belongs_to :final_agreement_user, class_name: "User", optional: true
   belongs_to :secondary_sale, touch: true
+  attr_readonly :secondary_sale_id # never moves to another sale (funds_api_security_policy_plan.md, B)
   belongs_to :interest_entity, class_name: "Entity"
   belongs_to :entity, touch: true
 

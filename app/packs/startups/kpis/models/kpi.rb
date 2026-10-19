@@ -22,6 +22,7 @@ class Kpi < ApplicationRecord
   has_many :investees, through: :entity
 
   belongs_to :kpi_report
+  attr_readonly :kpi_report_id # never moves to another KPI report (funds_api_security_policy_plan.md, B)
   belongs_to :investor_kpi_mapping, optional: true
   belongs_to :approved_by, class_name: "User", foreign_key: :approved_by_user_id, optional: true
 

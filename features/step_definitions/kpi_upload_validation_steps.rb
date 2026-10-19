@@ -413,7 +413,9 @@ end
 
 # Makes the job blow up mid-way (portfolio_company is nil → NoMethodError) to exercise the rescue path.
 Given('the KPI report is detached from its portfolio company') do
-  @kpi_report.update_columns(portfolio_company_id: nil)
+  # portfolio_company_id is read-only (a KPI report never moves company), so the bad data is written directly
+  KpiReport.where(id: @kpi_report.id).update_all(portfolio_company_id: nil)
+  @kpi_report.reload
 end
 
 When('the KPI import job runs for the report and raises') do

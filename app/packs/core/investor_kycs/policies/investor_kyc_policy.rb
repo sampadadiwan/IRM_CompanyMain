@@ -91,6 +91,19 @@ class InvestorKycPolicy < ApplicationPolicy
     end
   end
 
+  # E: the fields this user may send. Verifying a KYC is the fund's job, so verified / pan_verified /
+  # bank_verified are accepted only from fund-side users (curr_role employee, which includes company admins)
+  # and support: not from investors, advisors or holding users, nor through a signed magic link
+  def permitted_attributes
+    fields = %i[id investor_id entity_id user_id kyc_data_id kyc_type full_name birth_date PAN pan_card signature
+                address corr_address bank_account_number ifsc_code bank_branch bank_account_type bank_name type
+                bank_verification_response expiry_date esign_emails bank_verification_status pan_verification_response
+                pan_verification_status comments completed_by_investor phone form_type_id send_kyc_form_to_user
+                agreement_unit_type agreement_committed_amount]
+    fields += %i[verified pan_verified bank_verified] if (user.curr_role == "employee" || support?) && !signed_id_access?
+    fields + [{ documents_attributes: Document::NESTED_ATTRIBUTES, properties: {} }]
+  end
+
   def create?(emp_perm = :investor_kyc_create)
     permissioned_employee?(emp_perm) || investor_owns_kyc?
   end

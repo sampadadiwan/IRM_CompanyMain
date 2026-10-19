@@ -162,6 +162,4 @@ Given('the clock is frozen for predictable rate-limit windows') do
   travel_to(Time.current.change(sec: 0, usec: 0))
 end
 
-When('{int} minutes pass') do |minutes|
-  travel(minutes.minutes)
-end
+# '{int} minutes pass' is defined once, in mobile_api_steps.rb (a second copy makes Cucumber stop as ambiguous)

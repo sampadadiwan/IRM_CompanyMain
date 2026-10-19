@@ -1,6 +1,7 @@
 class Reminder < ApplicationRecord
   belongs_to :entity
   belongs_to :owner, polymorphic: true
+  attr_readonly :owner_id, :owner_type # never moves to another owner (funds_api_security_policy_plan.md, B)
   has_many :noticed_events, as: :record, dependent: :destroy, class_name: "Noticed::Event"
 
   NESTED_ATTRIBUTES = %i[id note due_date email _destroy].freeze

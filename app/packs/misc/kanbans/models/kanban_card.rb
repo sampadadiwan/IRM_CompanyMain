@@ -4,8 +4,14 @@ class KanbanCard < ApplicationRecord
   acts_as_list scope: :kanban_column, column: :sequence
   update_index('kanban_card') { self if index_record? }
   belongs_to :kanban_board
+  attr_readonly :kanban_board_id # never moves to another board (funds_api_security_policy_plan.md, B)
   belongs_to :entity
   belongs_to :kanban_column, class_name: 'KanbanColumn'
+  # A card can be dragged to another column of its own board, never to another board's (C)
+  validate do
+    board_id = kanban_board_id_in_database || kanban_board_id
+    errors.add(:kanban_column, "must be on this card's board") if kanban_column && kanban_column.kanban_board_id != board_id
+  end
   belongs_to :data_source, polymorphic: true, optional: true
   has_many :documents, as: :documentable
 

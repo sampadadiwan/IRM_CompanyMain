@@ -18,7 +18,8 @@ class InvestmentPolicy < ApplicationPolicy
   end
 
   def create?
-    user.enable_investments
+    # D: the investment is the user's firm's, and so is its portfolio company (there was no firm check)
+    user.enable_investments && belongs_to_entity?(user, record) && parent_in_users_firms?(record.portfolio_company)
   end
 
   def new?

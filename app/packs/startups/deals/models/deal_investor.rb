@@ -17,6 +17,7 @@ class DealInvestor < ApplicationRecord
   # touch deal runs after save when any of the following fields change: status, primary_amount_cents, secondary_investment_cents, fee_cents, pre_money_valuation_cents, deal_activity_id
   # we dont want to touch the deal on every save, as deal_investor gets updated a lot with callbacks from notes/tasks
   belongs_to :deal
+  attr_readonly :deal_id # never moves to another deal (funds_api_security_policy_plan.md, B)
   belongs_to :investor
   belongs_to :entity
   # This is the currently active activity for the investor

@@ -24,10 +24,12 @@ class KanbanCardsController < ApplicationController
   end
 
   def create
-    @kanban_card = KanbanCard.create!(kanban_card_params)
+    # F: ask permission before the card is saved (it was inserted first, so a refused card stayed)
+    @kanban_card = KanbanCard.new(kanban_card_params)
     kanban_board = @kanban_card.kanban_board
     authorize @kanban_card
     authorize kanban_board
+    @kanban_card.save
 
     @frame = params[:turbo_frame] || params[:kanban_card][:turbo_frame] || "board#{@kanban_card.kanban_board_id}_new_kanban_card"
     respond_to do |format|

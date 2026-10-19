@@ -5,6 +5,7 @@
 class SideLetter < ApplicationRecord
   belongs_to :entity
   belongs_to :capital_commitment
+  attr_readonly :capital_commitment_id # never moves to another commitment (funds_api_security_policy_plan.md, B)
   belongs_to :document
 
   has_many :side_letter_obligations, dependent: :destroy

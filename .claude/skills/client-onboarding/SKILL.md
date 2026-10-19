@@ -17,6 +17,8 @@ description: "Onboard a new CapHive client end to end: configure a fresh entity,
 4. [importer-behaviour.md](importer-behaviour.md) — verified facts about the import pipeline.
 5. [api-gaps.md](api-gaps.md) — what the existing APIs cannot do yet (report, never patch).
 6. [learnings.md](learnings.md) — append-only log from real onboardings.
+7. [report-template.md](report-template.md) — **the report every onboarding produces** (checklist → how the source
+   was mapped → proof it reconciles → log). Create it at the start, update it after every step.
 
 ## Hard rules (never waive)
 
@@ -89,11 +91,12 @@ map columns ─▶ leftover columns? ─▶ propose typed custom fields ─▶ a
 
 ```
 onboarding/<client>/
-  checklist.md     state: done / blocked / next — any session resumes from here
+  report.md        THE run report, in report-template.md's shape: checklist (any session resumes from it),
+                   mapping (Part 1), reconciliation proof (Part 2), log. Ops may name another path.
   approvals.yml    waivers ops granted, per import type
   source/*.xlsx    client files, never edited
   mappings/*.yml   approved column/value maps (reusable for the next client on the same system)
   scripts/*        transform scripts Claude wrote
   out/*.xlsx       generated upload files
-  journal.md       every decision, approval and import result (upload ids)
+  out/recon_report.md  output of scripts/recon_report.rb, pasted into the report's Appendix B
 ```

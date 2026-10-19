@@ -72,10 +72,12 @@ class DocumentPolicy < ApplicationPolicy
   end
 
   def create?
-    (user.enable_documents && permissioned_employee?(:update)) ||
-      (record.owner && owner_policy.update?) ||
+    # D: a document lands in its folder's firm, so the folder must be the user's firm's (employees) or the
+    # owner's firm's (uploads through an owner, including an outside deal investor)
+    (user.enable_documents && permissioned_employee?(:update) && parent_in_users_firms?(record.folder)) ||
+      (record.owner && owner_policy.update? && folder_in_owners_firm?) ||
       # The DealInvestor/CapitalCommitment are cases where other users can attach documents to the document owner which is not created by them
-      (record.owner && record.owner_type == "DealInvestor" && owner_policy.show?)
+      (record.owner && record.owner_type == "DealInvestor" && owner_policy.show? && folder_in_owners_firm?)
     # || (record.owner && record.owner_type == "CapitalCommitment" && owner_policy.show?)
   end
 
@@ -178,5 +180,16 @@ class DocumentPolicy < ApplicationPolicy
   # set_document).
   def run_fix?
     update? && record.template? && user.has_cached_role?(:company_admin)
+  end
+
+  private
+
+  # A document uploaded through its owner lands in the owner's firm: a folder of any other firm is refused
+  def folder_in_owners_firm?
+    owner_firm = record.owner.is_a?(Entity) ? record.owner.id : record.owner.try(:entity_id)
+    # No folder named (it is set from the owner on save), or an owner with no firm: nothing to compare
+    return true if record.folder.nil? || owner_firm.nil?
+
+    record.folder.entity_id == owner_firm
   end
 end

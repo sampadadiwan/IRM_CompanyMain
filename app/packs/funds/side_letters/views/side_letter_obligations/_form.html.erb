@@ -51,16 +51,21 @@
       <div class="col-md-4" data-obligation-source-target="portfolioInvestment"
            <%= "hidden" unless is_cp_cs || is_portfolio %>>
         <%= f.label :sourceable_id, "Portfolio investment", class: "form-label" %>
-        <%= f.hidden_field :sourceable_type, value: "PortfolioInvestment" %>
-        <%= f.select :sourceable_id,
-                     options_from_collection_for_select(
-                       PortfolioInvestment.where(entity_id: current_user.entity_id)
-                                          .includes(:portfolio_company, :fund)
-                                          .order(:portfolio_company_name),
-                       :id, :to_s, obligation.sourceable_id),
-                     { include_blank: "Select portfolio investment" },
-                     class: "form-select",
-                     disabled: !(is_cp_cs || is_portfolio) %>
+        <% if obligation.new_record? %>
+          <%= f.hidden_field :sourceable_type, value: "PortfolioInvestment" %>
+          <%= f.select :sourceable_id,
+                       options_from_collection_for_select(
+                         PortfolioInvestment.where(entity_id: current_user.entity_id)
+                                            .includes(:portfolio_company, :fund)
+                                            .order(:portfolio_company_name),
+                         :id, :to_s, obligation.sourceable_id),
+                       { include_blank: "Select portfolio investment" },
+                       class: "form-select",
+                       disabled: !(is_cp_cs || is_portfolio) %>
+        <% else %>
+          <%# An obligation never moves to another source (read-only), so Edit shows it %>
+          <%= text_field_tag :sourceable_name, obligation.sourceable&.to_s, class: "form-control", disabled: true %>
+        <% end %>
       </div>
     <% end %>
 

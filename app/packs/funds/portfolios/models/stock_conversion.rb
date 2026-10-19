@@ -7,6 +7,7 @@ class StockConversion < ApplicationRecord
              -> { unscope(where: :snapshot_date) },
              class_name: "PortfolioInvestment"
   belongs_to :fund
+  attr_readonly :fund_id # never moves to another fund (funds_api_security_policy_plan.md, B)
   belongs_to :from_instrument, class_name: "InvestmentInstrument"
   belongs_to :to_instrument, class_name: "InvestmentInstrument"
   belongs_to :to_portfolio_investment,

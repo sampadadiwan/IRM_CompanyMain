@@ -34,6 +34,7 @@ class Task < ApplicationRecord
   belongs_to :user, optional: true
   belongs_to :assigned_to, class_name: "User", optional: true
   belongs_to :owner, polymorphic: true, optional: true
+  attr_readonly :owner_id, :owner_type # never moves to another owner (funds_api_security_policy_plan.md, B)
   # LP CRM: the person at the LP this task involves — the contact's InvestorAccess
   # record (assigned_to remains the internal GP user doing the work; touch_point
   # is their counterpart at the LP). Available on Investor-owned tasks and on

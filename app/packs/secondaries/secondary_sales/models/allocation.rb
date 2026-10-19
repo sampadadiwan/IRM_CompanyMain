@@ -8,10 +8,17 @@ class Allocation < ApplicationRecord
   belongs_to :offer
   belongs_to :interest
   belongs_to :secondary_sale
+  attr_readonly :secondary_sale_id # never moves to another sale (funds_api_security_policy_plan.md, B)
   belongs_to :entity
 
   validates :quantity, presence: true
   validate :valid_match?
+  # The offer and the interest it matches must both belong to this allocation's own sale (C)
+  validate do
+    sale_id = secondary_sale_id_in_database || secondary_sale_id
+    errors.add(:offer, "must be in this allocation's sale") if offer && offer.secondary_sale_id != sale_id
+    errors.add(:interest, "must be in this allocation's sale") if interest && interest.secondary_sale_id != sale_id
+  end
 
   monetize :amount_cents, with_currency: ->(s) { s.entity.currency }
 

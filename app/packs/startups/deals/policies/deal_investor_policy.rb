@@ -37,7 +37,8 @@ class DealInvestorPolicy < DealBasePolicy
 
   def create?
     deal_update_permission = if record.deal.present?
-                               DealPolicy.new(user, record.deal).update?
+                               # D: the investor is the deal firm's too
+                               DealPolicy.new(user, record.deal).update? && parent_in_users_firms?(record.investor)
                              else
                                false
                              end

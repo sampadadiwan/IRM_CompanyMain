@@ -5,6 +5,7 @@ class Investment < ApplicationRecord
   TYPES = %w[Equity Convertible].freeze
 
   belongs_to :portfolio_company, class_name: "Investor"
+  attr_readonly :portfolio_company_id # never moves to another portfolio company (funds_api_security_policy_plan.md, B)
   belongs_to :entity
 
   monetize :price_cents, :amount_cents, with_model_currency: :currency

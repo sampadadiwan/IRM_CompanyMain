@@ -30,6 +30,8 @@ class Folder < ApplicationRecord
   has_many :access_rights, as: :owner, dependent: :destroy
 
   validates :name, presence: true
+  # A folder can move under another of its own firm's folders, never into another firm's (C)
+  validate { validate_parent_in_own_firm(:parent) }
   validates :nda_inheritance_mode, inclusion: { in: NDA_INHERITANCE_MODES }
   normalizes :name, with: ->(name) { name.strip }
 

@@ -213,7 +213,12 @@
 
           <div class="form-group">
             <%= form.label :portfolio_company_id %>
-            <%= form.select :portfolio_company_id, kpi_report.entity.investors.portfolio_companies.map{|pc| [pc.investor_name, pc.id]}, {}, class: "form-control", disabled: is_readonly  %>
+            <% if kpi_report.new_record? %>
+              <%= form.select :portfolio_company_id, kpi_report.entity.investors.portfolio_companies.map{|pc| [pc.investor_name, pc.id]}, {}, class: "form-control", disabled: is_readonly  %>
+            <% else %>
+              <%# A KPI report never moves to another portfolio company (read-only), so Edit shows it %>
+              <%= text_field_tag :portfolio_company_name, kpi_report.portfolio_company&.investor_name, class: "form-control", disabled: true %>
+            <% end %>
           </div>
 
           <div class="form-group">

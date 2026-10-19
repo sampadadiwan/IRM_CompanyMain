@@ -20,6 +20,20 @@ class FundFormulaPolicy < FundBasePolicy
     permissioned_employee?(:update)
   end
 
+  # E: the fields this user may send. Only support may send the fields that run as code or decide how code
+  # runs: formula (eval-ed), meta_data (its scope key is called with .send, its where key goes into SQL),
+  # rule_type (how the formula is applied) and is_template. Everyone else may edit the rest.
+  def permitted_attributes
+    fields = %i[fund_id name description sequence entity_id enabled entry_type roll_up rule_for generate_ytd_qtly
+                add_to_commitment_cache explain]
+    fields += if user.support? || Rails.env.local?
+                %i[rule_type formula meta_data is_template]
+              else
+                %i[ai_generated]
+              end
+    fields + [{ tag_list: [] }]
+  end
+
   def enable_formulas?
     update?
   end

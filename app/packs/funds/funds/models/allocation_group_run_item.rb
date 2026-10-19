@@ -15,6 +15,7 @@ class AllocationGroupRunItem < ApplicationRecord
   belongs_to :allocation_group_run, inverse_of: :items
   belongs_to :allocation_run_template, optional: true
   belongs_to :fund
+  attr_readonly :fund_id # never moves to another fund (funds_api_security_policy_plan.md, B)
   belongs_to :allocation_run, optional: true
 
   validates :template_name, :position, presence: true

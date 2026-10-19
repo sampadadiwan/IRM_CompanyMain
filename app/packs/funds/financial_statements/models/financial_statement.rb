@@ -17,6 +17,7 @@ class FinancialStatement < ApplicationRecord
 
   belongs_to :entity
   belongs_to :fund
+  attr_readonly :fund_id # never moves to another fund (funds_api_security_policy_plan.md, B)
   belongs_to :accounting_allocation_run, class_name: "AllocationRun", optional: true
   belongs_to :statements_allocation_run, class_name: "AllocationRun", optional: true
   belongs_to :locked_by, class_name: "User", optional: true

@@ -2,6 +2,7 @@ class StampPaper < ApplicationRecord
   belongs_to :entity
   # Is the offer, commitment etc whose document needs to be signed
   belongs_to :owner, polymorphic: true
+  attr_readonly :owner_id, :owner_type # never moves to another owner (funds_api_security_policy_plan.md, B)
 
   before_validation :setup_entity
   def setup_entity

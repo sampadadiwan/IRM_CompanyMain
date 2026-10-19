@@ -3,6 +3,7 @@ class AllocationRun < ApplicationRecord
 
   belongs_to :entity
   belongs_to :fund
+  attr_readonly :fund_id # never moves to another fund (funds_api_security_policy_plan.md, B)
   belongs_to :user
   # Set when this run was produced by an allocation run group; nil for a manual run.
   has_one :allocation_group_run_item, dependent: :nullify

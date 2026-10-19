@@ -42,7 +42,8 @@ end
 
 # An LP investor and its folio in a fund. Investor.create! (not the :investor factory) avoids that factory's
 # Entity.startups.sample defaults, as elsewhere in this suite.
-def lp_commitment(fund, investor_name, folio_id)
+# Named lp_folio_commitment: lp_fund_stats.rb has its own no-argument lp_commitment, and step files share one namespace
+def lp_folio_commitment(fund, investor_name, folio_id)
   investor = Investor.find_or_create_by!(entity_id: fund.entity_id, investor_name:) do |inv|
     inv.primary_email = "#{investor_name.parameterize}@example.com"
     inv.category = "LP"
@@ -52,7 +53,7 @@ def lp_commitment(fund, investor_name, folio_id)
 end
 
 Given('the allocation formula {string} has a folio entry') do |name|
-  commitment = lp_commitment(@fund, "LP One", "F-001")
+  commitment = lp_folio_commitment(@fund, "LP One", "F-001")
   FactoryBot.create(:account_entry, fund: @fund, entity_id: @fund.entity_id, capital_commitment: commitment,
                                     investor: commitment.investor, folio_id: commitment.folio_id,
                                     fund_formula: lp_formula(name), amount_cents: 100)
@@ -319,9 +320,10 @@ Then('the LP folio banner should read {string}') do |text|
   expect(page).to have_css("#lp_folio_banner", text:)
 end
 
+# The stats cards print the short unit label ("₹58.00 Cr"), so the expected text is built the same way
 Then('the LP totals should show FMV {string} Cr for {string}') do |amount, fund_name|
   fund = lp_fund(fund_name)
-  expected = ApplicationController.helpers.money_to_currency(Money.new(amount.to_d * CRORE_CENTS, fund.currency), { force_units: fund.default_currency_units })
+  expected = ApplicationController.helpers.money_to_currency(Money.new(amount.to_d * CRORE_CENTS, fund.currency), { force_units: fund.default_currency_units }, short_units: true)
   expect(page).to have_content(expected)
 end
 
@@ -776,7 +778,7 @@ end
 
 Then('the LP totals should not show FMV {string} Cr for {string}') do |amount, fund_name|
   fund = lp_fund(fund_name)
-  unexpected = ApplicationController.helpers.money_to_currency(Money.new(amount.to_d * CRORE_CENTS, fund.currency), { force_units: fund.default_currency_units })
+  unexpected = ApplicationController.helpers.money_to_currency(Money.new(amount.to_d * CRORE_CENTS, fund.currency), { force_units: fund.default_currency_units }, short_units: true)
   expect(page).to have_no_content(unexpected)
 end
 

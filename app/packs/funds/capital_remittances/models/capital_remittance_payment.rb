@@ -7,6 +7,7 @@ class CapitalRemittancePayment < ApplicationRecord
   include RansackerAmounts.new(fields: %w[amount folio_amount tracking_amount])
 
   belongs_to :fund
+  attr_readonly :fund_id # never moves to another fund (funds_api_security_policy_plan.md, B)
   belongs_to :capital_remittance
   has_one :capital_call, through: :capital_remittance
   has_one :investor, through: :capital_remittance

@@ -30,6 +30,7 @@ class PortfolioInvestment < ApplicationRecord
   belongs_to :portfolio_company, class_name: "Investor"
   belongs_to :investment_instrument
   belongs_to :fund, -> { with_snapshots } # Loads fund snapshot if enabled
+  attr_readonly :fund_id # never moves to another fund (funds_api_security_policy_plan.md, B)
   belongs_to :aggregate_portfolio_investment, -> { with_snapshots }
   # This is the capital distribution that this PI is linked to, when sold, and proceeds are distributed
   belongs_to :capital_distribution, optional: true

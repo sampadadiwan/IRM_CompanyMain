@@ -84,6 +84,7 @@ class CapitalCommitment < ApplicationRecord
   acts_as_list scope: :fund, column: :ppm_number
 
   belongs_to :fund, touch: true
+  attr_readonly :fund_id # never moves to another fund (funds_api_security_policy_plan.md, B)
 
   # If this is the commitment of a feeder fund, it will have a ref to the feeder_fund
   belongs_to :feeder_fund, class_name: "Fund", optional: true

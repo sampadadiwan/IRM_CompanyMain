@@ -54,6 +54,8 @@ class AllocationRunTemplatePolicy < ApplicationPolicy
   def fund_permitted?
     return false unless index?
     return false unless belongs_to_entity?(user, record)
+    # D: the fund is in one of the user's firms, checked before the company-admin shortcut
+    return false unless parent_in_users_firms?(record.fund)
     return true if user.has_cached_role?(:company_admin)
 
     record.fund.present? && FundPolicy.new(user, record.fund).allocate?

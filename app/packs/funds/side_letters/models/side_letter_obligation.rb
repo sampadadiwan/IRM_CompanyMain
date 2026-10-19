@@ -22,6 +22,7 @@ class SideLetterObligation < ApplicationRecord
   #   Existing side letter obligations use side_letter_id; portfolio investment
   #   obligations use this polymorphic link instead.
   belongs_to :sourceable, polymorphic: true, optional: true
+  attr_readonly :sourceable_id, :sourceable_type # never moves to another source (funds_api_security_policy_plan.md, B)
 
   has_many :tasks, as: :owner, dependent: :destroy
   has_many :obligation_fulfillments, dependent: :destroy

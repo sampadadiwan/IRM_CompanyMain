@@ -20,6 +20,7 @@ class FinancialStatementAccount < ApplicationRecord
 
   belongs_to :entity
   belongs_to :fund
+  attr_readonly :fund_id # never moves to another fund (funds_api_security_policy_plan.md, B)
   has_many :mapping_rules, class_name: "FinancialStatementMappingRule", inverse_of: :account
   has_many :layout_rows, class_name: "FinancialStatementLayoutRow", inverse_of: :account
 

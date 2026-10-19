@@ -4,6 +4,7 @@ class CustomNotification < ApplicationRecord
 
   belongs_to :entity
   belongs_to :owner, polymorphic: true, touch: true
+  attr_readonly :owner_id, :owner_type # never moves to another owner (funds_api_security_policy_plan.md, B)
 
   scope :enabled, -> { where(enabled: true) }
   scope :not_enabled, -> { where(enabled: false) }

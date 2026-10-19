@@ -13,6 +13,7 @@ class ExpressionOfInterest < ApplicationRecord
   belongs_to :investor # Can be an end investor or RM
   belongs_to :eoi_entity, class_name: "Entity"
   belongs_to :investment_opportunity
+  attr_readonly :investment_opportunity_id # never moves to another opportunity (funds_api_security_policy_plan.md, B)
   belongs_to :investor_kyc, optional: true
   belongs_to :investor_signatory, class_name: "User", optional: true
 
