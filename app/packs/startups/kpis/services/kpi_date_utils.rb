@@ -63,6 +63,8 @@ class KpiDateUtils
   def self.parse_period(raw_period, fiscal_year_start_month: 4, raise_error: true)
     return nil if raw_period.blank? || !date_like?(raw_period)
 
+    # G25: "Q1 FY27 (Apr-Jun'26)" is the quarter, not the April the lenient fallback finds in the note
+    raw_period = strip_period_note(raw_period)
     str = normalize_input(raw_period)
 
     parse_month(str) ||
@@ -71,6 +73,29 @@ class KpiDateUtils
       parse_ytd(str) ||
       parse_half_year(str, fiscal_year_start_month) ||
       fallback_parse(raw_period, raise_error)
+  end
+
+  # G25 (client onboarding): a period heading with a note on a second line or in trailing brackets —
+  # Ayati's "Q1 FY27\n(Apr-Jun'26)". The note is dropped when what is left is still a period on its own;
+  # anything else ("Actual (Apr 2026)", a bare "(Apr-Jun'26)") is returned unchanged.
+  def self.strip_period_note(raw_period)
+    return raw_period unless raw_period.is_a?(String)
+
+    # First line only, then any bracketed note at its end
+    head = raw_period.split(/\r?\n/).first.to_s.sub(/\s*\([^()]*\)\s*\z/, '').strip
+    head.present? && head != raw_period.strip && date_like?(head) ? head : raw_period
+  end
+
+  # G25: a heading that starts with a quarter, half-year, YTD or fiscal-year token ("Q1 …", "H2 …", "Q5 …",
+  # "YTD …", "FY …"). If detect_period_type still calls such a heading a Month, no rule read it — the
+  # Month is only detect_period_type's fallback, and storing a quarter's total as one month is wrong.
+  def self.names_longer_period?(raw_period)
+    head = strip_period_note(raw_period.to_s).strip
+    return true if head.match?(/\A(?:Q\d|H\d|YTD|FY)/i)
+
+    # G35: a month range covering more than one month ("Apr - May'25")
+    range = month_range(head.upcase.gsub(/[\s']/, ''))
+    range.present? && range[:months] != 1
   end
 
   def self.normalize_input(raw_period)
@@ -130,15 +155,15 @@ class KpiDateUtils
       return end_of_quarter(current_year, calendar_quarter_start_month(quarter))
     end
 
-    # === Case 4: Jan-Mar 2021, Apr-Jun 2022, etc. The trailing year is the END month's year (that's
-    # what KpiTemplateGenerate#period_label writes it as), so for a wrapping range like "Dec-Feb 2026"
-    # this must NOT go through end_of_quarter's start-year convention — that adds a further +1 for the
-    # wrap and lands a year late (28-Feb-2027 instead of 28-Feb-2026).
-    if (match = str.match(/\A(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)-[A-Z]{3,4}(\d{2,4})\z/))
-      start_month = month_abbr_to_month(match[1])
-      end_year = normalize_year(match[2])
-      end_month = ((start_month + 2 - 1) % 12) + 1
-      return Date.new(end_year, end_month, -1)
+    # === Case 4: month ranges — Jan-Mar 2021, Apr-Sep 2025, Apr-Mar 25. The trailing year is the END
+    # month's year (what KpiTemplateGenerate#period_label writes), so a wrapping range like "Dec-Feb 2026"
+    # ends 28-Feb-2026. G35: the end month decides the date — it used to be start + 2 whatever the range
+    # said, so "Apr - Mar'25" (a full year) came out as 30-Jun-2025. Spans other than 1/3/6/12 months
+    # are not a period we store (nil).
+    if (range = month_range(str))
+      return range[:end_date] if RANGE_PERIOD_TYPES.key?(range[:months])
+
+      return nil
     end
 
     # === Case 5: JFM 2021, AMJ 2022, etc.
@@ -154,6 +179,22 @@ class KpiDateUtils
   end
 
   # === Helper Methods
+
+  # G35: the period type a month range stands for, by the number of months it covers
+  RANGE_PERIOD_TYPES = { 1 => "Month", 3 => "Quarter", 6 => "Half Year", 12 => "Year" }.freeze
+  MONTH_ABBR = "JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEPT?|OCT|NOV|DEC".freeze
+  MONTH_RANGE_REGEX = /\A(#{MONTH_ABBR})[-–](#{MONTH_ABBR})(\d{2,4})\z/
+
+  # G35: "APR-MAR25" (spaces and apostrophes already removed) → { months: 12, end_date: 31-Mar-2025 }.
+  # nil when the string is not a month range.
+  def self.month_range(str)
+    match = str.to_s.match(MONTH_RANGE_REGEX)
+    return nil unless match
+
+    start_month = month_abbr_to_month(match[1][0, 3])
+    end_month = month_abbr_to_month(match[2][0, 3])
+    { months: ((end_month - start_month) % 12) + 1, end_date: Date.new(normalize_year(match[3]), end_month, -1) }
+  end
 
   def self.calendar_quarter_start_month(quarter)
     case quarter
@@ -305,6 +346,9 @@ class KpiDateUtils
   def self.detect_period_type(raw_period)
     return nil if raw_period.blank?
 
+    # G25: judge the period, not its note — the same reading parse_period uses
+    raw_period = strip_period_note(raw_period)
+
     # === Normalize input ===
     # Strip ALL whitespace rather than just collapsing/trimming it around symbols, so arbitrary
     # spacing anywhere in the header — "Q1 FY 24", "Q1  FY24", "FY 20 - 21", "H1 FY 2023" — is
@@ -335,9 +379,13 @@ class KpiDateUtils
 
     # === Quarter Formats ===
     return "Quarter" if /\AQ([1-4])(FY|CY)?(\d{2,4})\z/.match?(str) # e.g. Q1FY24, Q1 FY24, Q1 FY 24, Q1 2024
-    # Any month range ("JAN-MAR 2024", "MAR-MAY 2026") is a quarter — parse_quarter case 4 handles the
-    # start month, so quarters not aligned to Jan/Apr/Jul/Oct (odd fiscal starts) round-trip too.
-    return "Quarter" if /\A(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)-[A-Z]{3,4}(\d{2,4})\z/.match?(str)
+
+    # A month range is the period it spans (G35): "JAN-MAR 2024" / "MAR-MAY 2026" a Quarter, "APR-SEP 25"
+    # a Half Year, "Apr - Mar'25" a Year. Quarters not aligned to Jan/Apr/Jul/Oct round-trip too. Any
+    # other span falls through to the Month fallback, which names_longer_period? then refuses.
+    range = month_range(str.delete("'"))
+    return RANGE_PERIOD_TYPES[range[:months]] if range && RANGE_PERIOD_TYPES.key?(range[:months])
+
     return "Quarter" if /\A(JFM|AMJ|JAS|OND)(\d{2,4})\z/.match?(str) # e.g. JFM 2024
 
     # === Fallback ===

@@ -140,6 +140,22 @@ module KpiCumulative
     end
   end
 
+  # G33: the portfolio company's KPI names (standard names, as stored on Kpi#name) that the formula uses,
+  # matched as whole words like the replacement below. Memoized for the reports of one computation.
+  # G38: unscope(:order) — InvestorKpiMapping's default scope orders by position, and MySQL rejects
+  # DISTINCT with an ORDER BY on a column it does not select (SQLite, the test DB, accepts it)
+  def formula_components(formula)
+    @formula_components ||= {}
+    @formula_components[formula] ||= begin
+      names = InvestorKpiMapping.where(investor_id: investor_kpi_mapping&.investor_id)
+                                .unscope(:order).distinct.pluck(:standard_kpi_name) - [name]
+      # Longest first, blanking each match, so a name inside a longer one ("Cash" in "Operating Cash
+      # Flow", "Others" in "Others Mgt Opn Trainers") is not taken as a component of its own
+      remaining = formula.dup
+      names.sort_by { |n| -n.length }.select { |n| remaining.gsub!(/\b#{Regexp.escape(n)}\b/, ' ') }
+    end
+  end
+
   # Computes a value for a specific KpiReport using a formula string.
   # Replaces KPI names in the formula with their actual values from the report.
   #
@@ -153,6 +169,12 @@ module KpiCumulative
 
     clean_formula = formula.dup
     kpis_in_report = Kpi.approved.where(kpi_report: report).index_by(&:name)
+
+    # G33 (client onboarding): a report holding none of the formula's KPIs cannot hold this one either —
+    # a P&L sum on a balance-sheet-only report. Skip it; only a partial set is an error (below).
+    components = formula_components(formula)
+    missing = components - kpis_in_report.keys
+    return if components.any? && missing.size == components.size
 
     # Sort KPI names by length descending to avoid partial matches (e.g., 'Revenue' before 'Rev')
     kpi_names = kpis_in_report.keys.sort_by(&:length).reverse
@@ -173,6 +195,8 @@ module KpiCumulative
         process_cumulative_kpi(nil, computed_val, report.period, nil, report.as_of, note: "Auto-generated Computed", user_id: report.user_id, force: force, tag_list: report.tag_list)
       else
         error_msg = "Invalid formula after replacement for report #{report.id} (#{report.period} #{report.as_of}): #{clean_formula}"
+        # G33: say which KPIs the report is missing
+        error_msg += " — missing #{missing.join(', ')}" if missing.any?
         Rails.logger.error "--- [#{name}] #{error_msg}"
         @autofill_errors << { kpi: name, report: report.id, as_of: report.as_of, message: error_msg }
       end

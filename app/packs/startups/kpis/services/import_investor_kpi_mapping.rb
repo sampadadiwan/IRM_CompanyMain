@@ -6,7 +6,7 @@ class ImportInvestorKpiMapping < ImportUtil
     "Stakeholder", "Reported Kpi Name", "Standard Kpi Name", "Category",
     "Data Type", "Denomination", "Fx Conversion", "Parent Standard Kpi Name", "Position",
     "Show In Report", "Lower Threshold", "Upper Threshold", "Auto Fill", "Compute Formula",
-    "Update Only"
+    "Update Only", "Source Sheet"
   ].freeze
 
   # Common aliases for fx_conversion_method enum values accepted during import.
@@ -21,6 +21,12 @@ class ImportInvestorKpiMapping < ImportUtil
   # Returns the standard headers for the import file.
   def standard_headers
     STANDARD_HEADERS
+  end
+
+  # G27: files made before "Source Sheet" existed still import; a missing column reads as blank
+  # (every sheet)
+  def optional_standard_headers
+    ["Source Sheet"]
   end
 
   # Saves a row of user data to create or update an InvestorKpiMapping record.
@@ -163,6 +169,8 @@ class ImportInvestorKpiMapping < ImportUtil
       position: user_data["Position"].presence,
       autofill: autofill,
       compute_formula: user_data["Compute Formula"].presence,
+      # G27: read this mapping only from the named sheet; blank reads every sheet
+      source_sheet: user_data["Source Sheet"].to_s.squish.presence,
       import_upload_id: import_upload.id
     }
 

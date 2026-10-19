@@ -50,6 +50,15 @@ class InvestorKpiMapping < ApplicationRecord
   scope :compute, -> { where(autofill: 'compute') }
   scope :not_compute, -> { where(autofill: [nil, 'cumulate', 'forward_fill']) }
 
+  validates :source_sheet, length: { maximum: 100 }
+
+  # G27 (client onboarding): a mapping with a source sheet is read only from the sheet of that name
+  # (case and spacing ignored); a blank source sheet reads every sheet, as before. Lets one label
+  # mean different things in two statements, e.g. P&L "Rent" vs the cash-flow "Rent" row.
+  def reads_sheet?(sheet_name)
+    source_sheet.blank? || source_sheet.squish.casecmp?(sheet_name.to_s.squish)
+  end
+
   before_create :setup_standard_kpi_name
   def setup_standard_kpi_name
     self.reported_kpi_name = reported_kpi_name.strip

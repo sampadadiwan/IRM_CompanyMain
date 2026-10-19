@@ -37,6 +37,19 @@ Each fact names its source. Re-verify before relying on one if the code may have
   `sandbox_email`, `sandbox_whatsapp_numbers` (lines 151–156). About 20 other files reference
   sandbox individually — verify each notifier an import can trigger honours it.
 
+## KPI workbooks (`KpiWorkbookReader`, verified 2026-10-19)
+
+- **One workbook per report.** A KPI report (company + period + tag + as-of date) holds one "KPIs" document,
+  and the import reads only that file. The reader reads **every visible sheet** of it.
+- **A client that sends several files for one month** (Butterfly: P&L file + cash-flow file) → merge them into
+  one workbook, one sheet per statement, sheet names kept ("P&L", "Cash Flow"), and upload that to the month's
+  report. Never put a file on another period's report to get it in (gap G37 — decided not needed).
+- **Same label, different meaning on two sheets** (P&L `Rent` vs cash-flow `Rent`) → set the mapping's
+  **Source Sheet** (import column "Source Sheet", G27) to the sheet it belongs to; a mapping with a source sheet
+  is read only from that sheet and wins there over an unscoped one. A cash-flow line can be its own mapping.
+- Check the merged workbook with the dry run (`validate_upload`) before uploading; read the cell refs in the
+  verdict to confirm each value came from the intended sheet.
+
 ## Real-world failure rates (production copy, 2026-10-18)
 
 | Client | Type | Uploads | Rows | Failed |

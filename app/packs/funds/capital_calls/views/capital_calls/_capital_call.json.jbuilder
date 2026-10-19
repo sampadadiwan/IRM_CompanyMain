@@ -14,4 +14,7 @@ json.collected_amount capital_call.collected_amount.to_f
 json.due_amount capital_call.due_amount.to_f
 
 json.fund_closes capital_call.fund_closes&.join(',')
+# G21 (client onboarding): CapitalCall#setup_defaults zeroes percentage_called for every basis but
+# "Percentage of Commitment" (by design); the percentage per close the client sent is kept in close_percentages
+json.extract! capital_call, :call_basis, :close_percentages
 json.custom_fields capital_call.json_fields

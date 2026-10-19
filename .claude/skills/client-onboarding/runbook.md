@@ -57,3 +57,13 @@ KYC forms dominate. Several form types with the same name are normal for KYC/com
 
 - Document folders / templates, approvals, reports setup.
 - Whether DealInvestor / DealActivityTemplate imports belong to onboarding (Ambit did them).
+
+## Money semantics — model it the platform's way (from the fund-ops review, 2026-10-19)
+
+| Concept | Correct mechanism | Wrong (seen) |
+|---|---|---|
+| Capital call | one call per real fund drawdown event (common notice date, or the client's call id); call dates and due dates in sequence | grouping each investor's n-th drawdown into "Drawdown n" |
+| TDS on a distribution | TDS as **account entries** per folio → a **distribution fee of type "tax"** linking them → **recompute** the distribution, so `net_payable` = gross − TDS | TDS / net as custom fields (platform net payable stays = gross) |
+| Reference numbers, notes, optional fields | only what the client gave; otherwise blank | generated "MIS <folio> <call>" references |
+
+Before modelling any other money concept (fees, expenses, carry, equalisation), get its mechanism from fund ops and add a row.

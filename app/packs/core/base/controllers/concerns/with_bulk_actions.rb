@@ -15,7 +15,17 @@ module WithBulkActions
                         "#{controller_name}_bulk_action_job".classify.constantize
                       end
 
-    ids = rows.pluck(:id)
+    # G20 (client onboarding): a filter or include that joins a has_many (e.g. remittance payments)
+    # repeats a record's id once per joined row, so the API count and the job's "completed for N records"
+    # counted payments, not remittances. Dedup in SQL; the order is dropped because MySQL rejects
+    # DISTINCT with an ORDER BY on a column that is not selected.
+    # A paged list (fund units on the website) must keep its order, or the page would hold other
+    # rows: there the ids are bounded by the page size, so they are deduped after the pluck
+    ids = if rows.limit_value || rows.offset_value
+            rows.pluck(:id).uniq
+          else
+            rows.unscope(:order).distinct.pluck(:id)
+          end
     bulk_action_job.perform_later(ids, current_user.id, params[:bulk_action], params: params.to_unsafe_h)
 
     # P9 (funds-json-api-hardening H30): a bearer-token caller gets a JSON 202 it can read, not a 302 to

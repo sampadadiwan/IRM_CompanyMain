@@ -45,6 +45,8 @@ class KpisController < ApplicationController
 
     respond_to do |format|
       format.html
+      # G31 (client onboarding): extracted KPIs can be read back (and checked) before approval
+      format.json
     end
   end
 

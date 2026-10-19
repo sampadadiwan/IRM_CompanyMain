@@ -44,6 +44,46 @@ description: "Onboard a new CapHive client end to end: configure a fresh entity,
    Undo (delete an upload's data) is never waivable.
 7. **Claude transforms by writing a script, not by retyping values**, then reconciles source vs
    output mechanically (row counts, money totals, every source row and column accounted for).
+8. **Client questions are mandatory.** Create `<client>_client_questions.md` in the workspace from
+   [client-questions-template.md](client-questions-template.md) right after profiling the source, before the first
+   import, and update it after every step that makes an assumption. **Every assumption has a question id** — the same
+   id goes on the assumption in the mapping yml (`q:`), and the tools refuse a `q:` that is not in the file. Go-live
+   cannot be ticked while a question marked "(needed before go-live)" is unanswered.
+9. **The must-have gate.** Every fund needs answers M1–M13 (questions file, section M): fund terms (M1–M5), folios
+   and commitments (M6), drawdowns and payments (M7–M9, M11), distributions (M10–M11), investor contacts and KYC
+   (M12–M13). `tools/gate.rb` blocks each step until its M items are answered — the builder and `api.rb` call it.
+   **Check-data override:** `mode: check_data` in `onboarding.yml`, with `check_data_approved_by` and
+   `check_data_approved_on`, lets fund / commitments / drawdowns / distributions run on assumptions so the data can be
+   imported and checked. It never unlocks investor access or go-live, which also need **M14 — a fund-ops reviewer's
+   sign-off** (set only by the reviewer). **Go-live also needs a passing fund
+   reconciliation** (`tools/fund/fund_recon.rb` → `out/fund_recon.json` with `passed: true`).
+
+## Tools
+
+**Start with `tools/onboard.rb status`** — it reads where the onboarding stands and runs the next step (`next --run`),
+one at a time, in the order below, stopping at the first failure and never running investor access.
+Reusable, client-neutral tools live in [tools/](tools/README.md): `api.rb` (API client + CLI), `merge_mis.rb`, `kpi_dry_run.rb`,
+`check_dryrun_cells.rb`, `kpi_upload.rb`, `kpi_recon.rb`, `compare_xlsx.rb`, and for the fund side `fund/read_drawdowns.rb` +
+`fund/build_fund_uploads.rb` (driven by the workspace's `mappings/drawdowns.yml`; refuses assumptions without a client question),
+`fund/fund_recon.rb` (source vs app, tests ①–⑦ incl. distributions and units; go-live needs it to pass), `fund/apply_units.rb`
+(allocate / price / redeem units after import; dry run by default) and `gate.rb` (the must-have gate). They read settings from the client workspace (`onboarding.yml`,
+`state/token`), never from this repo. Transforms that read one client's sheet layout stay in that client's workspace `scripts/`.
+
+## How to report each step to ops (always)
+
+Ops asked for this on Inflexor (2026-10-19): every step is announced, then confirmed, and steps are visibly separated.
+
+1. **Before**: say what you are going to do — the call(s), the records it touches, what "done" will look like.
+2. **After**: confirm what was done — HTTP status, ids, counts, and what you read back to prove it.
+3. **Separate steps** with a section marker or a small graphic so each step stands out, e.g.
+
+```
+━━━━━━━━━━━━━━━━━━━━ STEP 2 / 4 · Upload merged workbook ━━━━━━━━━━━━━━━━━━━━
+▶ Plan:  POST /kpi_reports.json (Month 31-Aug-2026) with Butterfly_MIS_Aug26_merged.xlsx as "KPIs"
+✔ Done:  HTTP 201, report 2863; reader made 31 period reports, 626 KPIs (read back via /kpis.json)
+```
+
+Use ▶ for the plan, ✔ for confirmed results, ✖ for a failure (with what happens next).
 
 ## Import order
 
@@ -53,8 +93,14 @@ entity settings + sandbox ─▶ fund (POST /funds.json) ─▶ unit settings
   ─▶ calls ─▶ remittances ─▶ remittance payments ─▶ approve calls ─▶ (wait for recount) ─▶ bulk verify
   ─▶ allocate units ─▶ distributions ─▶ distribution payments ─▶ approve ─▶ unit prices ─▶ redeem units
   ─▶ account entries, documents ─▶ reconcile everything (rows, totals, units per folio)
+  ─▶ portfolio companies (+ logos) ─▶ portfolio investments ─▶ valuations
+  ─▶ KPI mappings ─▶ per MIS: dry run ─▶ check ok cells vs source ─▶ upload ─▶ tie stored KPIs ─▶ approve ─▶ check computed
   ─▶ INVESTOR ACCESS + advisors (last, always approved)
 ```
+
+**KPIs (proven on Inflexor, 2026-10-19):** every value goes through `KpiWorkbookReader` via the API (`validate_upload` dry run, then
+a KPI report with the MIS as its "KPIs" document) — never a scripted `Kpi` import. A dry run that says ok is not proof: check every
+ok cell against the source before loading, and tie the stored KPIs again before approving. Details in [learnings.md](learnings.md).
 
 Proven on the Orios trial (details and evidence in [learnings.md](learnings.md)):
 
@@ -91,6 +137,7 @@ map columns ─▶ leftover columns? ─▶ propose typed custom fields ─▶ a
 
 ```
 onboarding/<client>/
+  <client>_client_questions.md   MANDATORY — every assumption as a question for the client (client-questions-template.md)
   report.md        THE run report, in report-template.md's shape: checklist (any session resumes from it),
                    mapping (Part 1), reconciliation proof (Part 2), log. Ops may name another path.
   approvals.yml    waivers ops granted, per import type

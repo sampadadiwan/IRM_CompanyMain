@@ -1,6 +1,8 @@
 json.extract! valuation, :id, :entity_id, :owner_id, :owner_type, :investment_instrument_id, :valuation_date, :currency, :created_at, :updated_at
 json.url valuation_url(valuation, format: :json)
 json.per_share_value valuation.per_share_value.to_f.round(2)
+# G19 (client onboarding): the company valuation, so an uploaded "Valuation" column can be checked by a read
+json.valuation valuation.valuation.to_f
 
 # Portfolio company (owner when owner_type is Investor)
 json.portfolio_company_name valuation.owner_type == "Investor" ? valuation.owner&.investor_name : nil

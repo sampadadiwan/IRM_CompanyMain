@@ -1,7 +1,11 @@
 class KpiReportsController < ApplicationController
   include WithJourneyPanel # show's journey evaluation and the journey action (kpi-report-journey)
 
-  skip_before_action :authenticate_user!, only: %i[show edit update validate_upload template], if: -> { params[:signed_id].present? }
+  # G24 (client onboarding): skip only when BOTH hold. Written as only: + if:, Rails folded the two into
+  # the skip's conditions and skipped when EITHER held, so these actions never authenticated: the website
+  # still worked off the session, but a bearer-token caller got no user and a 500
+  SIGNED_ID_ACTIONS = %w[show edit update validate_upload template].freeze
+  skip_before_action :authenticate_user!, if: -> { action_name.in?(SIGNED_ID_ACTIONS) && params[:signed_id].present? }
   # validate_upload is called by JS after Uppy finishes; the magic link's signed_id keeps it usable
   # by unauthenticated portco users, and CSRF is enforced by the token the form page carries.
   before_action :set_kpi_report, only: %i[show edit update destroy recompute_percentage_change recompute_cumulative recompute_fx_conversion analyze refresh_import mark_reviewed reopen journey send_completion_email]
@@ -22,7 +26,8 @@ class KpiReportsController < ApplicationController
     respond_to do |format|
       format.html { render :index }
       format.xlsx { render :index }
-      format.json { render json: KpiReportDatatable.new(params, kpi_reports: @kpi_reports) }
+      # G23 (client onboarding): KpiReportDatatable was removed with the datatables; the jbuilder list
+      format.json { render :index }
       format.turbo_stream do
         if params[:flexible_chart] == "true"
           prepare_chart_configs
@@ -117,7 +122,7 @@ class KpiReportsController < ApplicationController
       setup_custom_fields(@kpi_report)
       @kpi_mappings = @kpi_report.portfolio_company.investor_kpi_mappings.order(:reported_kpi_name) if @kpi_report.portfolio_company.present?
       flash.now[:alert] = blocked
-      render :new, status: :unprocessable_entity
+      render_blocked_workbook(blocked, :new)
       return
     end
 
@@ -158,7 +163,7 @@ class KpiReportsController < ApplicationController
       setup_custom_fields(@kpi_report)
       @kpi_mappings = @kpi_report.portfolio_company.investor_kpi_mappings.order(:reported_kpi_name) if @kpi_report.portfolio_company.present?
       flash.now[:alert] = blocked
-      render :edit, status: :unprocessable_entity
+      render_blocked_workbook(blocked, :edit)
       return
     end
 
@@ -500,30 +505,50 @@ class KpiReportsController < ApplicationController
   # submitting: a freshly uploaded file (Shrine cached JSON in documents_attributes) if present,
   # otherwise the KPIs document already attached to the report. Persists the verdict for display.
   def gate_verdict(acting_user)
+    KpiUploadValidate.call(kpi_report: @kpi_report, user: acting_user, **submitted_workbook_source)[:verdict] || { 'ok' => false, 'errors' => [] }
+  end
+
+  # G30 (client onboarding): the KPIs workbook this request submits, as KpiUploadValidate's source —
+  # the website sends Uppy's cached-file JSON (file_data:), an API client a multipart file (file:).
+  # Passing the multipart file as file_data called to_h on an UploadedFile → 500. {} when none.
+  def submitted_workbook_source
     docs = params.dig(:kpi_report, :documents_attributes)
-    file_data = nil
-    if docs.respond_to?(:values)
-      kpi_doc = docs.values.find { |d| d[:name].to_s == "KPIs" && d[:file].present? }
-      file_data = kpi_doc[:file] if kpi_doc
-    end
-    KpiUploadValidate.call(kpi_report: @kpi_report, user: acting_user, file_data: file_data)[:verdict] || { 'ok' => false, 'errors' => [] }
+    return {} unless docs.respond_to?(:values)
+
+    kpi_doc = docs.values.find { |d| d[:name].to_s == "KPIs" && d[:file].present? }
+    return {} unless kpi_doc
+
+    file = kpi_doc[:file]
+    return { file_data: file } unless file.respond_to?(:original_filename)
+
+    # A multipart file: once the document is built from documents_attributes (create), Shrine has
+    # cached it and closed the request's tempfile — read the cached copy, as for an Uppy upload.
+    # Not built yet (update checks before assigning): the tempfile is still open.
+    built = @kpi_report.documents.find { |d| d.new_record? && d.name.to_s == "KPIs" && d.file_data.present? }
+    built ? { file_data: built.file_data } : { file: file }
   end
 
   # When this request attaches a NEW KPIs workbook (Shrine cached JSON in documents_attributes), run the
   # workbook check on it. Returns an alert message when it has blocking errors, nil otherwise
   # (no new file → nothing to check here; the existing document was checked when it was attached).
   def uploaded_workbook_blocked?(acting_user)
-    docs = params.dig(:kpi_report, :documents_attributes)
-    return nil unless docs.respond_to?(:values)
+    source = submitted_workbook_source
+    return nil if source.empty?
 
-    kpi_doc = docs.values.find { |d| d[:name].to_s == "KPIs" && d[:file].present? }
-    return nil unless kpi_doc
-
-    verdict = KpiUploadValidate.call(kpi_report: @kpi_report, user: acting_user, file_data: kpi_doc[:file])[:verdict]
+    verdict = KpiUploadValidate.call(kpi_report: @kpi_report, user: acting_user, **source)[:verdict]
     return nil if verdict.blank? || verdict['ok']
 
     @verdict = verdict
     "Not saved — the KPI workbook has #{helpers.pluralize(Array(verdict['errors']).size, 'blocking error')}. Please fix the errors shown in the workbook check and try again."
+  end
+
+  # A workbook with blocking errors: the website re-renders the form; an API client gets a 422 with the
+  # check's errors (G30 — it used to get the HTML template)
+  def render_blocked_workbook(message, template)
+    respond_to do |format|
+      format.html { render template, status: :unprocessable_entity }
+      format.json { render json: { error: message, validation: @verdict }, status: :unprocessable_entity }
+    end
   end
 
   # For a fund user changing portfolio_company_id: the target must belong to their own entity.
@@ -665,7 +690,11 @@ class KpiReportsController < ApplicationController
 
     @kpi_reports = policy_scope(@q.result).includes(:entity, :portfolio_company, :kpis)
 
-    if params[:tag_list].blank?
+    # G36 (client onboarding): the website's lists and charts default to Actual reports; a JSON list
+    # returns every tag unless tag_list is sent — dropping Budget/IC silently made a reconcile miss rows
+    if params[:tag_list].blank? && request.format.json?
+      @tag_list = nil
+    elsif params[:tag_list].blank?
       @tag_list = ["Actual"]
       @kpi_reports = @kpi_reports.where(tag_list: @tag_list)
     elsif params[:tag_list].is_a?(String)
@@ -684,7 +713,8 @@ class KpiReportsController < ApplicationController
 
     @kpi_reports = sort_field == "entity_name" ? @kpi_reports.order("entities.name #{sort_direction}") : @kpi_reports
     @kpi_reports = filter_params(@kpi_reports, :period, :owner_type, :entity_id, :import_upload_id)
-    @kpi_reports = KpiReportSearch.perform(@kpi_reports, params)
+    # G36: the 12-period chart window applies to a JSON list only when no_of_periods is sent
+    @kpi_reports = KpiReportSearch.perform(@kpi_reports, params, window: !request.format.json? || params[:no_of_periods].present?)
 
     @investor = Investor.find_by(id: params[:portfolio_company_id])
 

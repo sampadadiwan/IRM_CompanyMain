@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_18_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_19_120000) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -685,6 +685,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_18_120000) do
     t.index ["investor_kyc_id"], name: "index_aml_reports_on_investor_kyc_id"
   end
 
+  create_table "api_tokens", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "devise_api_token_id", null: false
+    t.datetime "last_used_at"
+    t.string "name", limit: 100, null: false
+    t.datetime "revoked_at"
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["devise_api_token_id"], name: "index_api_tokens_on_devise_api_token_id", unique: true
+    t.index ["user_id", "revoked_at"], name: "index_api_tokens_on_user_id_and_revoked_at"
+  end
+
   create_table "approval_responses", force: :cascade do |t|
     t.bigint "approval_id", null: false
     t.datetime "created_at", null: false
@@ -710,18 +722,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_18_120000) do
     t.index ["owner_type", "owner_id"], name: "index_approval_responses_on_owner"
     t.index ["response_entity_id"], name: "index_approval_responses_on_response_entity_id"
     t.index ["response_user_id"], name: "index_approval_responses_on_response_user_id"
-  end
-
-  create_table "api_tokens", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.bigint "devise_api_token_id", null: false
-    t.datetime "last_used_at"
-    t.string "name", limit: 100, null: false
-    t.datetime "revoked_at"
-    t.datetime "updated_at", null: false
-    t.bigint "user_id", null: false
-    t.index ["devise_api_token_id"], name: "index_api_tokens_on_devise_api_token_id", unique: true
-    t.index ["user_id", "revoked_at"], name: "index_api_tokens_on_user_id_and_revoked_at"
   end
 
   create_table "approvals", force: :cascade do |t|
@@ -2055,7 +2055,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_18_120000) do
     t.text "whatsapp_token"
     t.index ["deleted_at"], name: "index_entity_settings_on_deleted_at"
     t.index ["entity_id"], name: "index_entity_settings_on_entity_id"
-    t.index ["entity_id"], name: "index_entity_settings_on_entity_id_unique", unique: true
   end
 
   create_table "esign_logs", force: :cascade do |t|
@@ -3205,6 +3204,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_18_120000) do
     t.decimal "rag_red_threshold", precision: 20, scale: 4
     t.string "reported_kpi_name", limit: 100
     t.boolean "show_in_report", default: false
+    t.string "source_sheet", limit: 100
     t.string "standard_kpi_name", limit: 100
     t.datetime "updated_at", null: false
     t.decimal "upper_threshold", precision: 20, scale: 2, default: "0.0"

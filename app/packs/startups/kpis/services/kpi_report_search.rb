@@ -1,5 +1,7 @@
 class KpiReportSearch
-  def self.perform(kpi_reports, params)
+  # window: limit to the last no_of_periods (default 12) before the latest report — the screens' chart
+  # window. G36: false for a JSON list that did not ask for it, which otherwise silently lost older reports.
+  def self.perform(kpi_reports, params, window: true)
     kpi_reports = kpi_reports.where(id: search_ids(kpi_reports, params)) if params[:search] && params[:search][:value].present?
 
     kpi_reports = filter_by_portfolio_company(kpi_reports, params)
@@ -12,7 +14,7 @@ class KpiReportSearch
       period = params[:period].presence || 'month'
     end
 
-    if no_of_periods.present? && !Rails.env.test?
+    if window && no_of_periods.present? && !Rails.env.test?
       case period.downcase
       when 'month'
         delta = no_of_periods.months

@@ -39,6 +39,9 @@ class KpiWorkbookReader
   # Some Excel files have Actual and Budget columns side by side in the same sheet —
   # this mapping normalizes the various labels (e.g., "ACT", "Actuals", "FC") to their
   # canonical form so each column's values are saved to the correct KpiReport.
+  # G28: the sub-header names (normalized: lowercase, no spaces) that close a segment block
+  TOTAL_COLUMN_NAMES = %w[total grandtotal].freeze
+
   TAG_SYNONYMS = {
     "act" => "Actual",
     "actual" => "Actual",
@@ -105,21 +108,13 @@ class KpiWorkbookReader
     @file_path = file_path
     @file_name = file_name || document&.file&.original_filename.presence || document&.name
 
-    # Index the @kpi_mappings by normalized reported_kpi_name for lookup.
-    # Uses group_by instead of index_by because the same reported_kpi_name can
-    # appear under different parents (e.g., "Enterprise" under both Net Sales and
-    # Operating Cost). group_by stores an Array of mappings per normalized name,
-    # and process_data_rows uses parent context to pick the correct one.
-    @kpi_name_to_kpi_mappings = @kpi_mappings.group_by do |mapping|
-      normalize_kpi_name(mapping.reported_kpi_name)
-    end
+    # Mappings by normalized reported_kpi_name (see index_mappings).
+    # G27: process_sheet narrows these to the mappings that read the sheet (index_mappings_for_sheet)
+    index_mappings(@kpi_mappings)
 
     Rails.logger.debug { "Document: #{@file_name}" }
-    # Normalize reported_kpi_name for consistent matching.
-    # Using .uniq because the same reported_kpi_name under different parents
-    # would otherwise appear multiple times (we only need it once for the
-    # inclusion check in process_data_rows).
-    @target_kpis = @kpi_mappings.map { |kpi_mapping| normalize_kpi_name(kpi_mapping.reported_kpi_name) }.uniq
+    # Every expected name across all sheets — for the "not found in any sheet" report at the end
+    @all_target_kpis = @target_kpis
     Rails.logger.debug { "Target KPIs: #{@target_kpis.inspect}" }
 
     @portfolio_company = portfolio_company
@@ -281,6 +276,11 @@ class KpiWorkbookReader
   def process_sheet(sheet)
     # Set the current sheet as the default sheet
     @workbook.default_sheet = sheet
+    # G29 (client onboarding): Roo's row() starts at the sheet's first used column, so a sheet whose
+    # column A is empty has index 0 = column B. col_letter adds this back so refs name the real cell.
+    @col_offset = [@workbook.first_column.to_i - 1, 0].max
+    # G27: only the mappings that read this sheet take part in header detection and row matching
+    index_mappings_for_sheet(sheet)
     # Detect the header row in the sheet
     header_row_index = detect_header_row
     @header_row_by_sheet[sheet] = header_row_index
@@ -329,6 +329,19 @@ class KpiWorkbookReader
     # are value columns. This replaces the old single-column majority vote.
     @first_date_col = detect_first_date_column(header)
 
+    # G26 (client onboarding): a period heading spread over several columns with segment names on the
+    # row below ("AUG'26" over Therapy … Total) — read the block's Total column, and start the data
+    # after the segment-name row. Not looked for under an Actual/Budget tag row, whose layout it is not.
+    @segment_total_cols = {}
+    @untotalled_blocks = {}
+    unless tag_detection
+      segment_cols = detect_segment_row(sheet, raw_header, data_start_row)
+      if segment_cols
+        @segment_total_cols = segment_cols
+        data_start_row += 1
+      end
+    end
+
     # Parse every date column ONCE per sheet (not once per KPI row as before) and remember it,
     # so the requested-period check and the summary know exactly which periods the file carries.
     @sheet_periods = index_sheet_periods(sheet, raw_header)
@@ -348,6 +361,14 @@ class KpiWorkbookReader
       next if col < @first_date_col
       next if raw.blank?
 
+      # G26: a segment block's values are read from its Total column; a block without one has already
+      # been reported as an error and contributes nothing
+      value_col = col
+      if @segment_total_cols.key?(col)
+        value_col = @segment_total_cols[col]
+        next if value_col.nil?
+      end
+
       if @ignored_tag_cols.include?(col)
         add_issue(:warning, :unrecognized_tag_column,
                   "Sheet '#{sheet}', column #{col_letter(col)} ('#{raw}'): its label in the Actual/Budget row is not one we recognise — column ignored.",
@@ -364,13 +385,86 @@ class KpiWorkbookReader
       end
 
       period_type = KpiDateUtils.detect_period_type(raw)
+      # G25 (client onboarding): a quarter / half-year / YTD / FY heading that only the Month fallback
+      # accepted would store the whole period's figure as one month and pass as ok — refuse the column
+      if period_type == "Month" && KpiDateUtils.names_longer_period?(raw)
+        add_issue(:warning, :unrecognized_period,
+                  "Sheet '#{sheet}', column #{col_letter(col)}: header '#{raw}' looks like a quarter, half year or year, but we could not read which one — values under it are ignored. Write it as e.g. Q1 FY27, H1 FY27 or FY27.",
+                  sheet: sheet, col: col, period: raw)
+        next
+      end
       # NOTE: @kpi_report.tag_list is a String (e.g., "Actual"), NOT an Array.
       tag = @column_tags[col] || @kpi_report.tag_list
       info = { raw: raw, parsed_period: parsed, period_type: period_type, tag: tag }
-      periods[col] = info
-      @periods_found << info.merge(sheet: sheet, col: col)
+      periods[value_col] = info
+      @periods_found << info.merge(sheet: sheet, col: value_col)
     end
     periods
+  end
+
+  # G26 (client onboarding): segment-style MIS, e.g. Butterfly's Summary — "AUG'26" merged across
+  # Therapy, Testing, BLISS, Theraplay, Benchmark, GSE, HO and Total, with those names on the row below.
+  # Excel keeps a merged heading in its first cell only, so the reader saw one AUG'26 column and stored
+  # Therapy as the month's figure, status ok.
+  #
+  # A block is a heading followed by blank heading cells. It is a segment block when the row below
+  # names at least two of its columns (text, not numbers) and that row names no KPI. Returns
+  # { heading_col => Total col } — nil for a block without a Total column, after recording an error —
+  # or nil when the sheet has no segment row (every existing layout: one column per period).
+  def detect_segment_row(sheet, raw_header, sub_row_index)
+    return nil if sub_row_index > @workbook.last_row.to_i
+
+    sub_row = clean_row(@workbook.row(sub_row_index))
+    # A row naming a KPI is the first data row, not segment names
+    return nil if sub_row[0...@first_date_col].any? { |cell| cell.present? && @target_kpis.include?(normalize_kpi_name(cell)) }
+
+    last_col = [raw_header.size, sub_row.size].max - 1
+    heading_cols = (@first_date_col..last_col).select { |c| raw_header[c].present? }
+    # Only a period heading starts a segment block — a merged "Notes" or "Comments" heading does not
+    period_cols = heading_cols.select { |c| KpiDateUtils.date_like?(raw_header[c]) }
+
+    # Each heading spans up to the column before the next heading (the last one, to the row's end)
+    blocks = {}
+    period_cols.each do |start|
+      next_heading = heading_cols.find { |c| c > start }
+      span = start..((next_heading || (last_col + 1)) - 1)
+      # One column wide: an ordinary period column
+      next if span.size < 2
+
+      names = span.select { |c| sub_row[c].present? && !sub_row[c].match?(/\A[\d\s.,()%₹$€£+-]+\z/) }
+      # Backward compatibility: Actual / Budget / Variance under a merged month is a tag layout, not
+      # segments — even when too few labels are known tags for detect_tag_row ("Actual | Budget |
+      # Variance | Var %" is 2 of 4). Such a block keeps the old reading (its first column).
+      next if names.any? { |c| TAG_SYNONYMS.key?(sub_row[c].to_s.strip.downcase.gsub(/\s+/, ' ').gsub(/\s*case\b/, '')) }
+
+      blocks[start] = span if names.size >= 2
+    end
+    return nil if blocks.empty?
+
+    blocks.to_h do |start, span|
+      # G28: "Grand Total" closes a block too (Butterfly's "Apr - Mar'25")
+      total_col = span.find { |c| TOTAL_COLUMN_NAMES.include?(normalize_kpi_name(sub_row[c])) }
+      unless total_col
+        # G28: a warning only — it blocks the workbook (process_kpi_row) only if a mapped KPI has a
+        # value inside the block, since only then is a figure actually lost
+        message = "Sheet '#{sheet}', columns #{col_letter(span.first)}–#{col_letter(span.last)} under '#{raw_header[start]}': the period is split into #{span.filter_map { |c| sub_row[c].presence }.join(', ')} with no Total column — nothing was read from this block. Add a Total column, or give each period one column."
+        @untotalled_blocks[start] = { span: span, message: message, heading: raw_header[start] }
+        add_issue(:warning, :segment_block_without_total, message, sheet: sheet, col: start, period: raw_header[start])
+      end
+      [start, total_col]
+    end
+  end
+
+  # G28: a mapped KPI row with a value inside an un-totalled segment block would lose that figure —
+  # that makes the block a blocking error (once per block)
+  def check_untotalled_blocks(sheet, raw_row, raw_kpi_name)
+    @untotalled_blocks.each do |start, block|
+      next unless block[:span].any? { |c| raw_row[c].present? }
+
+      add_issue_once([:untotalled_block, sheet, start], :error, :segment_block_without_total,
+                     "#{block[:message]} '#{raw_kpi_name}' has values there.",
+                     sheet: sheet, col: start, period: block[:heading], kpi: raw_kpi_name)
+    end
   end
 
   # Scans the value area of the sheet for strings and lets the normaliser decide the locale.
@@ -582,7 +676,7 @@ class KpiWorkbookReader
         # An unmapped label in the parent's column ("Customers", "Headcount") starts a section we know
         # nothing about — forget the previous parent so its children are not claimed by mistake.
         first_label = row[0...@first_date_col].find(&:present?)
-        @current_parent_mapping = nil if first_label.present? && @current_parent_mapping && @kpi_mappings.none? { |m| normalize_kpi_name(m.reported_kpi_name) == normalize_kpi_name(first_label) }
+        @current_parent_mapping = nil if first_label.present? && @current_parent_mapping && @kpi_name_to_kpi_mappings.exclude?(normalize_kpi_name(first_label))
         next
       end
 
@@ -621,6 +715,7 @@ class KpiWorkbookReader
   #   already disambiguated by parent context in process_data_rows
   def process_kpi_row(sheet, raw_row, row_index, _header, raw_kpi_name, investor_kpi_mapping)
     seen_periods = {}
+    check_untotalled_blocks(sheet, raw_row, raw_kpi_name)
     # Start value extraction from the first date column — all columns before
     # this are KPI name/label columns and should not be treated as values.
     value_start_col = @first_date_col
@@ -879,7 +974,8 @@ class KpiWorkbookReader
       original_value: original_value,
       fx_rate_used: fx_rate,
       investor_kpi_mapping_id: investor_kpi_mapping&.id,
-      notes: "Imported from Document #{@document&.id}, Sheet: #{sheet}, Period: #{period}, Date: #{parsed_period}, Row: #{row_index}, Col: #{col_index}"
+      # G29b: Col is 0-based from column A (Roo's index plus the sheet's offset); Cell is the verdict's ref
+      notes: "Imported from Document #{@document&.id}, Sheet: #{sheet}, Period: #{period}, Date: #{parsed_period}, Row: #{row_index}, Col: #{col_index + @col_offset.to_i}, Cell: #{col_letter(col_index)}#{row_index}"
     )
 
     kpi.save if kpi.changed?
@@ -1281,9 +1377,10 @@ class KpiWorkbookReader
   end
 
   # 0-based column index → Excel letter(s)
+  # G29: plus the current sheet's offset (@col_offset) — every caller runs while its sheet is processed
   def col_letter(idx)
     s = +''
-    n = idx.to_i + 1
+    n = idx.to_i + 1 + @col_offset.to_i
     while n.positive?
       n, r = (n - 1).divmod(26)
       s.prepend((65 + r).chr)
@@ -1315,6 +1412,28 @@ class KpiWorkbookReader
   def normalize_kpi_name(kpi)
     # Convert to lowercase and remove spaces
     kpi.to_s.downcase.gsub(/\s+/, '') # You can also .gsub('%', '') if needed
+  end
+
+  # Indexes mappings by normalized reported_kpi_name for lookup.
+  # Uses group_by instead of index_by because the same reported_kpi_name can
+  # appear under different parents (e.g., "Enterprise" under both Net Sales and
+  # Operating Cost). group_by stores an Array of mappings per normalized name,
+  # and process_data_rows uses parent context to pick the correct one.
+  # @target_kpis is the same names, once each, for the inclusion check in process_data_rows.
+  def index_mappings(mappings)
+    @kpi_name_to_kpi_mappings = mappings.group_by { |mapping| normalize_kpi_name(mapping.reported_kpi_name) }
+    @target_kpis = @kpi_name_to_kpi_mappings.keys
+  end
+
+  # G27 (client onboarding): the mappings that read this sheet — those with no source sheet, and those
+  # naming this one. When a label has a mapping named for this sheet, an unscoped mapping with the same
+  # label is dropped here: the sheet-specific one is what the portco meant (P&L "Rent" on the P&L sheet),
+  # and keeping both would make the row ambiguous.
+  def index_mappings_for_sheet(sheet)
+    reading = @kpi_mappings.select { |m| m.reads_sheet?(sheet) }
+    scoped_names = reading.select { |m| m.source_sheet.present? }.to_set { |m| normalize_kpi_name(m.reported_kpi_name) }
+    reading = reading.reject { |m| m.source_sheet.blank? && scoped_names.include?(normalize_kpi_name(m.reported_kpi_name)) }
+    index_mappings(reading)
   end
 
   # Finds the 0-based index of the first date column in the header row.
@@ -1459,7 +1578,7 @@ class KpiWorkbookReader
   # A missing KPI is a warning (not blocking) — the fund decides whether partial reports are acceptable.
   def log_missing_target_kpis
     # Determine which target KPIs were not found in the processed sheets (normalize both sides)
-    missing_kpis = @target_kpis.map { |k| normalize_kpi_name(k) } - @found_kpis.to_a.map { |k| normalize_kpi_name(k) }
+    missing_kpis = @all_target_kpis.map { |k| normalize_kpi_name(k) } - @found_kpis.to_a.map { |k| normalize_kpi_name(k) }
 
     return unless missing_kpis.any?
 

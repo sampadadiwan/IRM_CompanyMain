@@ -45,6 +45,8 @@ def kpi_test_cell(text)
   return nil if text.nil? || text.strip.empty?
   # A leading apostrophe forces text, as in Excel ("'1.000" stays the string "1.000")
   return text[1..] if text.start_with?("'")
+  # A literal \n is a line break inside the cell (a heading with a note on its second line)
+  return text.gsub('\\n', "\n") if text.include?('\\n')
   return text.include?('.') ? text.to_f : text.to_i if text.strip.match?(/\A-?\d+(\.\d+)?\z/)
 
   text
@@ -511,4 +513,63 @@ end
 Then('no KPI report exists for {string} other than the shell') do |portco_name|
   portco = Investor.find_by!(investor_name: portco_name)
   expect(KpiReport.where(portfolio_company: portco).count).to eq(1)
+end
+
+# ── Onboarding gaps G25–G27 (kpi_workbook_onboarding_gaps.feature) ──────────
+
+# G27: a mapping read only from one sheet
+Given('the KPI mapping {string} reported as {string} reads only sheet {string}') do |standard_name, reported_name, sheet|
+  @portfolio_company.investor_kpi_mappings.create!(
+    entity_id: @portfolio_company.entity_id, reported_kpi_name: reported_name, standard_kpi_name: standard_name, source_sheet: sheet
+  )
+  @portfolio_company.reload
+end
+
+Then('the cell {string} is read as a {string} ending {string}') do |ref, period_type, as_of|
+  cell = verdict_cell(ref)
+  expect(cell['period_type']).to eq(period_type)
+  expect(cell['parsed_period']).to eq(as_of)
+end
+
+Then('the cell {string} is stored as {string} for KPI {string}') do |ref, expected, standard_name|
+  cell = verdict_cell(ref)
+  expect(cell['status']).to eq('ok'), "cell #{ref} status #{cell['status']} (#{cell['code']})"
+  expect(cell['standard_kpi']).to eq(standard_name)
+  expect(BigDecimal(cell['stored'])).to eq(BigDecimal(expected))
+end
+
+Then('there is no validated cell {string}') do |ref|
+  expect(Array(@verdict['cells']).pluck('ref')).not_to include(ref)
+end
+
+# ── G29b, G33 (kpi_workbook_onboarding_gaps.feature) ─────────────────────────
+
+Then('the imported KPI {string} as of {string} has a note mentioning {string}') do |name, as_of, text|
+  kpi = Kpi.joins(:kpi_report).where(name: name, portfolio_company_id: @portfolio_company.id, kpi_reports: { as_of: Date.parse(as_of) }).first
+  expect(kpi).to be_present, "no KPI #{name} as of #{as_of}"
+  expect(kpi.notes).to include(text)
+end
+
+# Runs the computation the way KpiCumulateJob does, keeping the errors it would email
+When('the computed KPI {string} is computed') do |name|
+  mapping = @portfolio_company.investor_kpi_mappings.find_by!(standard_kpi_name: name)
+  kpi = Kpi.new(portfolio_company_id: @portfolio_company.id, entity_id: mapping.entity_id, name: name, investor_kpi_mapping: mapping)
+  kpi.autofill
+  @autofill_errors = kpi.autofill_errors
+end
+
+Then('the computation reports no errors') do
+  expect(@autofill_errors).to be_empty, "errors: #{@autofill_errors.inspect}"
+end
+
+Then('the computation reports one error mentioning {string}') do |text|
+  expect(@autofill_errors.size).to eq(1), "errors: #{@autofill_errors.inspect}"
+  expect(@autofill_errors.first[:message]).to include(text)
+end
+
+Then('the KPI {string} as of {string} period {string} has value {float}') do |name, as_of, period, value|
+  kpi = Kpi.joins(:kpi_report).where(name: name, portfolio_company_id: @portfolio_company.id,
+                                     kpi_reports: { as_of: Date.parse(as_of), period: period }).first
+  expect(kpi).to be_present, "no #{name} as of #{as_of} (#{period})"
+  expect(kpi.value.to_f).to eq(value)
 end

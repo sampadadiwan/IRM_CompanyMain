@@ -28,7 +28,9 @@ Create the file at the start of the run, update it after **every** step, and nev
 
 ## The reconciliation behind Part 2 (contract for the script)
 
-Write `scripts/recon_report.rb`. Start from the last client's script and adapt the source column positions (Orios:
+Run `tools/fund/fund_recon.rb` (fund side, driven by `mappings/drawdowns.yml`; its `out/fund_recon.md` is Appendix B and its
+`out/fund_recon.json` is what the go-live gate checks). For anything it does not cover yet (distributions, units), write
+`scripts/recon_report.rb`. Start from the last client's script and adapt the source column positions (Orios:
 `~/work/onboarding/orios-staging/scripts/recon_report.rb`, which reads the raw MIS by column index). It must be **independent of the transform**:
 it walks the raw source rows itself, sharing only the folio-id normalisation, and reads the app through the JSON API only.
 It runs five tests and prints markdown (saved as `out/recon_report.md`, pasted into Appendix B):
@@ -75,6 +77,8 @@ and the result (✅ everything ties / ❌ N differences, see 2.x). Link Part 1, 
 | # | Step | Status | Evidence (from the API) |
 |---|------|--------|-------------------------|
 | 0 | Token / entity / roles checks | | |
+| 0a | Client questions file created (`<client>_client_questions.md`) | | |
+| 0b | Client questions sent to the client; every "(needed before go-live)" answered | | |
 | 1 | Sandbox on | | |
 | 2 | Fund | | |
 | 3 | Unit settings | | |

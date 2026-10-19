@@ -13,7 +13,10 @@ class KpiList < BaseList
     @q = Kpi.ransack(@params[:q])
     @kpis = apply_policy_scope(@q.result, &)
     @kpis = @kpis.includes(kpi_report: :portfolio_company)
-    @kpis = filter_params(@kpis, :import_upload_id)
+    # G31: ?kpi_report_id= — kpi_report_id is not ransackable, and Ransack drops an unknown
+    # q[kpi_report_id_eq] silently (every KPI in scope would come back)
+    # G34: ?portfolio_company_id= — the plain param was ignored (only q[portfolio_company_id_eq] worked)
+    @kpis = filter_params(@kpis, :import_upload_id, :kpi_report_id, :portfolio_company_id)
 
     # kpi_series is a relation of distinct rows matching the exact grouping the grid
     # view uses: [name, portfolio_company_id, entity_id, owner_id, tag_list].

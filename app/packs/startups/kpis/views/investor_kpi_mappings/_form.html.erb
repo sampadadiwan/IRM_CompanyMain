@@ -43,6 +43,12 @@
     <small class="form-text text-muted">Select the denomination for this KPI. This is used in importing the data from the input kpi sheets.</small>
   </div>
 
+  <div class="form-group">
+    <%= form.label :source_sheet %>
+    <%= form.text_field :source_sheet, class: "form-control" %>
+    <small class="form-text text-muted">Leave blank to read this KPI from every sheet. Enter a sheet name to read it only from that sheet — use this when the same label means something else on another sheet (e.g. "Rent" in the P&L and in the cash flow).</small>
+  </div>
+
     <%# FX Conversion dropdown — determines how KPI values are converted from the portco's
       reporting currency to the fund's base currency during upload.
       Placed below Denomination because both relate to value transformation at import time. %>
