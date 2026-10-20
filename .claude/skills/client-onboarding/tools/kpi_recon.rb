@@ -6,19 +6,25 @@
 #   ④ every computed KPI (compute mapping) equals the sum of its approved components in the same report
 # A company can hold KPIs from several workbooks; only those whose notes name this workbook's document are checked
 # (the document most KPIs pointing at this workbook's sheets came from).
+# --phase computed (after approving): only ④, and every KPI from this workbook must be approved.
+# Writes out/kpi_recon/<file>.<phase>.json (passed, checks, failed, generated_at) for onboard.rb.
 #
-# Usage: ruby kpi_recon.rb [--workspace DIR] --company ID --file X.xlsx --verdict out/kpi_dryrun/X.json
+# Usage: ruby kpi_recon.rb [--workspace DIR] --company ID --file X.xlsx --verdict out/kpi_dryrun/X.json [--phase staged|computed]
 require "optparse"
+require "fileutils"
+require "time"
 require "roo"
 require_relative "api"
 
 api = Onboarding::Api.new(Onboarding::Api.workspace_from!(ARGV))
-opts = {}
+opts = { phase: "staged" }
 OptionParser.new do |o|
   o.on("--company ID", Integer) { opts[:company] = _1 }
   o.on("--file PATH") { opts[:file] = _1 }
   o.on("--verdict PATH") { opts[:verdict] = _1 }
+  o.on("--phase PHASE", %w[staged computed]) { opts[:phase] = _1 }
 end.parse!(ARGV)
+staged = opts[:phase] == "staged"
 abort File.read(__FILE__).lines.grep(/^# Usage/).join unless opts[:company] && opts[:file] && opts[:verdict]
 company = opts[:company]
 book = Roo::Spreadsheet.open(opts[:file])
@@ -42,7 +48,7 @@ checks = Hash.new(0)
 check = ->(name, ok, msg) { checks[name] += 1; issues << [name, msg] unless ok }
 
 # ── ① value = the source cell the KPI's notes name ───────────────────────────────────────────────────────────────────
-extracted.each do |k|
+(staged ? extracted : []).each do |k|
   m = k["notes"].match(/Sheet: (.+?), Period: .*Row: (\d+), Col: (\d+)/m)
   check.("① notes name a cell", !m.nil?, "kpi #{k['id']} notes #{k['notes'].inspect}")
   next unless m
@@ -54,7 +60,7 @@ end
 
 # ── ②③ one-to-one with the dry run (mapping + period type + as_of), values equal ────────────────────────────────────
 pool = extracted.map { |k| r = reports[k["kpi_report_id"]] || {}; [k["investor_kpi_mapping_id"], r["period"], r["as_of"], k] }
-dry.each do |c|
+(staged ? dry : []).each do |c|
   i = pool.index { |mid, period, as_of, _| mid == c["mapping_id"] && period == c["period_type"] && as_of == c["parsed_period"] }
   check.("② dry-run cell stored (mapping, period, date)", !i.nil?, "#{c['standard_kpi']} #{c['period_type']} #{c['parsed_period']} (#{c['ref']}) not stored")
   next unless i
@@ -62,7 +68,11 @@ dry.each do |c|
   k = pool.delete_at(i).last
   check.("② stored value = dry-run value", (k["value"].to_f - c["stored"].to_f).abs < TOL, "#{c['standard_kpi']} #{c['parsed_period']}: dry #{c['stored']} vs #{k['value']}")
 end
-check.("③ nothing stored without a dry-run cell", pool.empty?, "#{pool.size} extra: #{pool.first(5).map { _1.last.slice('id', 'name') }}")
+check.("③ nothing stored without a dry-run cell", pool.empty?, "#{pool.size} extra: #{pool.first(5).map { _1.last.slice('id', 'name') }}") if staged
+unless staged
+  unapproved = extracted.reject { _1["status"] == "approved" }
+  check.("all KPIs from this workbook approved", unapproved.empty?, "#{unapproved.size} not approved, e.g. #{unapproved.first&.slice('id', 'name', 'status')}")
+end
 
 # ── ④ computed KPIs = Σ approved components in the same report (present only after approval) ────────────────────────
 mappings.values.select { _1["autofill"] == "compute" }.each do |cm|
@@ -86,4 +96,7 @@ checks.each do |name, n|
   puts format("  %-48s %5d checked  %s", name, n, failed.zero? ? "✅" : "❌ #{failed}")
 end
 issues.first(15).each { |name, msg| puts "    ✖ #{name}: #{msg}" }
+FileUtils.mkdir_p(File.join(api.workspace, "out", "kpi_recon"))
+File.write(File.join(api.workspace, "out", "kpi_recon", "#{File.basename(opts[:file], '.*')}.#{opts[:phase]}.json"),
+           JSON.pretty_generate(passed: issues.empty?, checks: checks.values.sum, failed: issues.size, document: this_doc, generated_at: Time.now.iso8601))
 exit(issues.empty? ? 0 : 1)

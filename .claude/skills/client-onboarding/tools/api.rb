@@ -10,7 +10,7 @@
 #   ruby api.rb [--workspace DIR] sign_in                       dev only; password from $OPS_PASSWORD
 #   ruby api.rb [--workspace DIR] get <path>
 #   ruby api.rb [--workspace DIR] post|patch|delete <path> [json]
-#   ruby api.rb [--workspace DIR] upload <ImportType> <file>   POST /import_uploads.json, then polls until processed
+#   ruby api.rb [--workspace DIR] upload <ImportType> <file> [gate step]   POST /import_uploads.json, then polls until processed
 #   ruby api.rb [--workspace DIR] attach <OwnerType> <id> <name> <file>   POST /documents.json (e.g. a company "Logo")
 #   ruby api.rb [--workspace DIR] sandbox_on                    first write of every onboarding
 require "net/http"
@@ -134,9 +134,10 @@ if $PROGRAM_NAME == __FILE__
                                                                         body: { entity: { entity_setting_attributes: { sandbox: true, sandbox_emails: api.ops_email } } })
     puts "HTTP #{status} #{body.is_a?(Hash) ? body.slice('id', 'name') : body}"
   when "upload"
-    type, file = ARGV[1], ARGV[2]
-    # Must-have gate by import type (Investor/CapitalCommitment → commitments, calls/remittances/payments → drawdowns, …)
-    (step = Onboarding::Gate::IMPORT_STEP[type]) && Onboarding::Gate.check!(api.workspace, step)
+    type, file, step = ARGV[1], ARGV[2], ARGV[3]
+    # Must-have gate by import type (Investor/CapitalCommitment → commitments, calls/remittances/payments → drawdowns, …);
+    # an explicit step wins where one type serves two steps (portfolio companies are an Investor import → portfolio)
+    (step ||= Onboarding::Gate::IMPORT_STEP[type]) && Onboarding::Gate.check!(api.workspace, step.to_sym)
     status, body = api.call("post", "/import_uploads.json", multipart: {
       "import_upload[name]" => "#{type} #{File.basename(file)}", "import_upload[owner_type]" => "Entity",
       "import_upload[owner_id]" => api.entity_id, "import_upload[entity_id]" => api.entity_id,

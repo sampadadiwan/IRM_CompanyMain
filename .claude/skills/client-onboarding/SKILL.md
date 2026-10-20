@@ -51,22 +51,28 @@ description: "Onboard a new CapHive client end to end: configure a fresh entity,
    cannot be ticked while a question marked "(needed before go-live)" is unanswered.
 9. **The must-have gate.** Every fund needs answers M1–M13 (questions file, section M): fund terms (M1–M5), folios
    and commitments (M6), drawdowns and payments (M7–M9, M11), distributions (M10–M11), investor contacts and KYC
-   (M12–M13). `tools/gate.rb` blocks each step until its M items are answered — the builder and `api.rb` call it.
+   (M12–M13), and with a portfolio in scope (`mappings/portfolio.yml`) holdings (M15), KPI → MIS lines and reporting
+   convention (M16–M17). `tools/gate.rb` blocks each step until its M items are answered — the builders and `api.rb` call it.
    **Check-data override:** `mode: check_data` in `onboarding.yml`, with `check_data_approved_by` and
-   `check_data_approved_on`, lets fund / commitments / drawdowns / distributions run on assumptions so the data can be
+   `check_data_approved_on`, lets fund / commitments / drawdowns / distributions / portfolio / kpis run on assumptions so the data can be
    imported and checked. It never unlocks investor access or go-live, which also need **M14 — a fund-ops reviewer's
    sign-off** (set only by the reviewer). **Go-live also needs a passing fund
-   reconciliation** (`tools/fund/fund_recon.rb` → `out/fund_recon.json` with `passed: true`).
+   reconciliation** (`tools/fund/fund_recon.rb` → `out/fund_recon.json` with `passed: true`), and with a portfolio a passing
+   portfolio reconciliation (`tools/portfolio/portfolio_recon.rb` → `out/portfolio_recon.json`).
 
 ## Tools
 
 **Start with `tools/onboard.rb status`** — it reads where the onboarding stands and runs the next step (`next --run`),
-one at a time, in the order below, stopping at the first failure and never running investor access.
+one at a time, in the order below, stopping at the first failure and never running investor access. It covers the fund
+(steps 1–19) and, with `mappings/portfolio.yml`, the portfolio and KPIs (steps 20–31); `--portfolio` follows only the
+portfolio track, so a fund waiting on client answers does not hold the portfolio back.
 Reusable, client-neutral tools live in [tools/](tools/README.md): `api.rb` (API client + CLI), `merge_mis.rb`, `kpi_dry_run.rb`,
 `check_dryrun_cells.rb`, `kpi_upload.rb`, `kpi_recon.rb`, `compare_xlsx.rb`, and for the fund side `fund/read_drawdowns.rb` +
 `fund/build_fund_uploads.rb` (driven by the workspace's `mappings/drawdowns.yml`; refuses assumptions without a client question),
 `fund/fund_recon.rb` (source vs app, tests ①–⑦ incl. distributions and units; go-live needs it to pass), `fund/apply_units.rb`
-(allocate / price / redeem units after import; dry run by default) and `gate.rb` (the must-have gate). They read settings from the client workspace (`onboarding.yml`,
+(allocate / price / redeem units after import; dry run by default), for the portfolio `portfolio/build_portfolio_uploads.rb`,
+`portfolio/build_kpi_mappings.rb` (label check against the MIS; stops on a KPI line with no MIS row) and
+`portfolio/portfolio_recon.rb`, and `gate.rb` (the must-have gate). They read settings from the client workspace (`onboarding.yml`,
 `state/token`), never from this repo. Transforms that read one client's sheet layout stay in that client's workspace `scripts/`.
 
 ## How to report each step to ops (always)

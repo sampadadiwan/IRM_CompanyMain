@@ -215,3 +215,25 @@ each and in date order (17/17, 16/16), platform net payable = client net and gro
   The partial upload was undone with the app's per-upload undo (ops approved), then re-uploaded.
 - Step times: remittances 75 s, payments 144 s, approve + verify 97 s, distribution payments 156 s, TDS entries 67 s,
   TDS fees + recompute 205 s, units 535 s, recon 8 s.
+
+## 2026-10-20 — Portfolio + KPI steps in `onboard.rb`, validated on Inflexor (dev, entity 1631)
+
+Generalised the Inflexor-only scripts into `tools/portfolio/` driven by `mappings/portfolio.yml`, and added steps 20–31 to
+`onboard.rb` (`--portfolio` follows only that track). Validation: rebuilt companies / investments / valuations / 142 mappings equal
+the files imported on 19 Oct; steps 20–26 read ✔ from the app alone; portfolio recon 259/259; then the 41 KPI reports were deleted
+through the API (ops-approved) and steps 27–31 re-ran them end to end: dry runs 90 / 626 / 56 ok cells, 0 mismatches → 772 stored,
+all tied to source cells → approved → **908 KPIs** (99 / 753 / 56, the same as before), 136 computed = Σ components.
+
+- **Check labels against the MIS before building mappings — mechanically.** The generic label check found a mapping that had been
+  silently blank since 19 Oct: Revspot "Invoiced Revenue" was scoped to "FY27 YTD P&L", whose rows say "Invoiced Revenue (Overall)"
+  and "True Invoiced Revenue (Excludes reraised)". A dry run cannot show this (an unmatched label is just "kpi_missing"). The builder
+  now stops on any label not on its source sheet; `pending_labels:` (with a question) keeps it while the client decides.
+- **The importer squeezes double spaces in labels** ("Gross Profit / (Loss)  [Revenue …]" is stored with one space). Compare mapping
+  names with whitespace collapsed — the reader ignores whitespace anyway.
+- **A KPI Info sheet may start at column B.** Roo's `row()` counts from the first used column; name columns as Excel shows them
+  and read with `cell(r, c)`.
+- **Steps that wait on client answers must not block independent work.** The fund recon fails by design (C9, references), so the
+  portfolio steps got their own track instead of waiting behind it.
+- **Editing a payment un-verifies its remittance (G44)** — even a reference-only PATCH. The fund's collected amount drops to 0 until
+  the call is bulk-verified again. After any payment edit: bulk Verify, wait for the count to settle, compare the fund summary
+  with its value before the edit. (Inflexor C7: 68 references cleared → 54 remittances unverified → re-verified, totals restored.)

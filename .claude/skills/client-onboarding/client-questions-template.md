@@ -17,7 +17,8 @@ is the file ops sends them.
    than answering from scratch.
 4. **Mark blockers**: `(needed before go-live)` on anything that blocks investor access or a figure investors will see.
    Go-live cannot be ticked while one is unanswered.
-4a. **The M section is fixed** (M1–M14, never renumbered, never removed): what every fund must have. Each item ends with
+4a. **The M section is fixed** (M1–M17, never renumbered, never removed): what every fund must have. M15–M17 are the
+   portfolio items — keep them only when the portfolio (companies, investments, valuations, KPIs) is in scope. Each item ends with
    `*Status:* open | assumed | answered <date>`. Set `answered` only when the client has answered (and record the answer
    in the item); set `assumed` when we went ahead on an assumption. The tools read these lines (tools/gate.rb): a step
    runs only when its M items are answered, or in check-data mode for the data steps.
@@ -91,6 +92,19 @@ if units are issued. *What we did for now:* <…>
 
 **M14. Fund-ops review signed off** (internal — a fund-ops reviewer checked the loaded fund: calls, distributions, TDS,
 units, statements). Set only by the reviewer: `answered <date> by <reviewer>`.
+*Status:* open
+
+**M15. Every portfolio holding: company legal name, each investment (date, instrument, quantity, amount paid) and the
+latest valuation (date, per-share value, company valuation) — with your own total shares and stake value per company.**
+*What we did for now:* <…>
+*Status:* open
+
+**M16. For every company: the KPIs you track and the exact line in its MIS each one comes from** (a KPI made of several
+lines lists each line). *What we did for now:* <…>
+*Status:* open
+
+**M17. How each company reports: monthly or quarterly, the financial-year start, and the MIS files for each period.**
+*What we did for now:* <…>
 *Status:* open
 
 ## A. Fund set-up

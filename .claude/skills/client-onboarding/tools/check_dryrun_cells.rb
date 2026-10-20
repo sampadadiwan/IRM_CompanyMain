@@ -1,16 +1,19 @@
 # Checks a dry-run verdict's ok cells against the source workbook (read-only, no API): the value the reader would store
 # must equal the source cell at its ref, and each column header is listed with the period the reader made of it — read
 # that list; a verdict can say ok and still be wrong (a quarter read as a month, a year range read as a month).
+# Writes the outcome next to the verdict (<verdict>.check.json: passed, ok_cells, mismatches, generated_at) for onboard.rb.
 #
 # Usage: ruby check_dryrun_cells.rb --verdict V.json --file X.xlsx
 require "json"
 require "roo"
 require "optparse"
+require "time"
 
 opts = {}
 OptionParser.new do |o|
   o.on("--verdict PATH") { opts[:verdict] = _1 }
   o.on("--file PATH") { opts[:file] = _1 }
+  o.on("--workspace DIR") { nil } # accepted like every tool's; this one reads only the two files
 end.parse!(ARGV)
 abort File.read(__FILE__).lines.grep(/^# Usage/).join unless opts[:verdict] && opts[:file]
 
@@ -33,4 +36,6 @@ puts "  KPIs: #{ok.map { _1['standard_kpi'] }.uniq.size} — #{ok.group_by { _1[
 puts "  headers → periods:"
 ok.map { [_1["sheet"], _1["period"].to_s.gsub(/\s+/, " "), _1["period_type"], _1["parsed_period"]] }.uniq
   .each { |s, h, t, p| puts "    #{s} | #{h[0, 40].ljust(40)} → #{t} #{p}" }
+File.write(opts[:verdict].sub(/\.json\z/, ".check.json"),
+           JSON.pretty_generate(passed: bad.empty? && ok.any?, ok_cells: ok.size, mismatches: bad.size, generated_at: Time.now.iso8601))
 exit(bad.empty? ? 0 : 1)

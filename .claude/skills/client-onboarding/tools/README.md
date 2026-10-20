@@ -19,6 +19,7 @@ T=~/work/IRM/.claude/skills/client-onboarding/tools
 ruby $T/onboard.rb status         # where the onboarding stands; ▶ marks the next step (read-only)
 ruby $T/onboard.rb next           # the next step's plan — writes nothing
 ruby $T/onboard.rb next --run     # run that ONE step, then confirm it from read-backs (✔ / ✖)
+ruby $T/onboard.rb status --portfolio   # only the portfolio track: workspace, sandbox, fund, then steps 20–31
 ```
 
 | # | Step | Done when (read back) |
@@ -31,14 +32,27 @@ ruby $T/onboard.rb next --run     # run that ONE step, then confirm it from read
 | 6 | Form types | every `out/fund/02_form_types/*.json` form type exists |
 | 7–11 | Investors, commitments, calls, remittances, payments | the app holds what was built |
 | 12 | Approve calls + verify | every call approved; every remittance with money collected verified |
-| 13–15 | Distributions, payments, approve | (only with `distributions:`) built = held, all approved |
-| 16 | Units | (only with `units:`) `apply_units.rb` has nothing left to do |
-| 17 | Fund recon | `out/fund_recon.json` passed and is newer than the last fund import |
-| 18 | Investor access | **never run by the tool** — shows the gate; needs explicit approval |
+| 13–17 | Distributions, payments, TDS entries, TDS fees, approve | (only with `distributions:`) built = held; net payable = the client's net; all approved |
+| 18 | Units | (only with `units:`) `apply_units.rb` has nothing left to do |
+| 19 | Fund recon | `out/fund_recon.json` passed and is newer than the last fund import |
+| 20 | Build portfolio files | (only with `mappings/portfolio.yml`) `out/portfolio/` is newer than the yml, the sources and the questions file |
+| 21 | Portfolio companies | the form types hold every field (name + type); every built company exists as a Portfolio Company |
+| 22 | Logos | every company in `logos.json` has a "Logo" document |
+| 23 | Portfolio investments | the fund holds as many investments as were built |
+| 24 | Valuations | every built (company, date, instrument) valuation exists |
+| 25 | Portfolio recon | `out/portfolio_recon.json` passed and is newer than the last investment / valuation import |
+| 26 | KPI mappings | every built mapping exists with the same category, type, compute formula and source sheet |
+| 27 | KPI dry runs | each workbook's verdict is newer than the workbook and the mappings, and its cell check passed |
+| 28 | KPI uploads | each workbook has KPIs stored from it (notes name its sheets) |
+| 29 | KPI recon (stored) | each workbook's ①②③ recon passed after its KPIs were stored |
+| 30 | Approve KPIs | every KPI of the loaded companies is approved |
+| 31 | KPI recon (computed) | each workbook's ④ recon passed after the stored one |
+| 32 | Investor access | **never run by the tool** — shows the gate; needs explicit approval |
 
 "Done" is always read from the app and the workspace, so re-running after a crash or a fix picks up where it is and never
 uploads twice. It stops at the first failure (an upload that did not fully succeed, a count that does not match). The
-single tools below remain for diagnosis and for steps it does not cover (KPIs, logos, portfolio).
+single tools below remain for diagnosis. With `--portfolio`, `status` / `next` follow only steps 1, 2, 4 and 20–32, so a fund
+whose data steps wait on client answers does not hold back the portfolio.
 
 ## Set up a client workspace
 
@@ -69,9 +83,12 @@ Every write re-checks that the entity is in sandbox and stops if it is not.
 | `api.rb` | API client (library + CLI): `sign_in`, `get`, `post`/`patch`/`delete`, `upload <ImportType> <file>` (polls to done), `attach <OwnerType> <id> <name> <file>`, `sandbox_on` | yes (each command) |
 | `merge_mis.rb` | merge a month's MIS files into one workbook, one sheet per statement, and prove every cell equals its source | no |
 | `kpi_dry_run.rb` | `validate_upload` on one workbook → `out/kpi_dryrun/<file>.json`; flags cells read from the wrong sheet | no |
-| `check_dryrun_cells.rb` | every ok cell vs the source cell at its ref; lists each header → period | no (no API) |
+| `check_dryrun_cells.rb` | every ok cell vs the source cell at its ref; lists each header → period; writes `<verdict>.check.json` | no (no API) |
 | `kpi_upload.rb` | upload one workbook to its month's KPI report; waits for the reader job | yes (unapproved KPIs) |
-| `kpi_recon.rb` | stored KPIs vs source cells and the dry run; computed = Σ components | no |
+| `kpi_recon.rb` | stored KPIs vs source cells and the dry run (`--phase staged`); computed = Σ components, all approved (`--phase computed`); writes `out/kpi_recon/<file>.<phase>.json` | no |
+| `portfolio/build_portfolio_uploads.rb` | portfolio sheets → `out/portfolio/` form types, companies, investments, valuations, `logos.json` | no |
+| `portfolio/build_kpi_mappings.rb` | KPI Info → label check against the MIS, `09_kpi_mappings.xlsx`, merged workbooks, `kpi_workbooks.json` | no |
+| `portfolio/portfolio_recon.rb` | companies, investments, valuations and the client's per-company figures vs the app → `out/portfolio_recon.md` / `.json` | no |
 
 ## The KPI pipeline (one company, one month)
 
@@ -122,7 +139,7 @@ ruby $T/fund/read_drawdowns.rb && ruby $T/fund/build_fund_uploads.rb      # then
 ## The must-have gate (`gate.rb`)
 
 Every fund needs certain answers from the client before each step (SKILL.md hard rule 9). They are the **M section** of
-`<client>_client_questions.md` (M1–M13), each with `*Status:* open | assumed | answered <date>`.
+`<client>_client_questions.md` (M1–M17; M15–M17 only when `mappings/portfolio.yml` exists), each with `*Status:* open | assumed | answered <date>`.
 
 | Step | Needs answered | Check-data override? |
 |---|---|---|
@@ -130,8 +147,10 @@ Every fund needs certain answers from the client before each step (SKILL.md hard
 | commitments | M6 (folios, legal names, amounts, dates) | yes |
 | drawdowns | M6–M9, M11 (drawdowns, payments, fees in calls, client totals) | yes |
 | distributions | M10–M11 | yes |
-| investor_access | all of M1–M13 | **never** |
-| go_live | all of M1–M13 **and** a passing fund reconciliation (`out/fund_recon.json`) | **never** |
+| portfolio | M15 (holdings, investments, valuations) | yes |
+| kpis | M16–M17 (KPI → MIS line, reporting convention) | yes |
+| investor_access | all of M1–M14 (M15–M17 too with a portfolio) | **never** |
+| go_live | the same **and** a passing fund reconciliation (`out/fund_recon.json`) — and portfolio reconciliation (`out/portfolio_recon.json`) with a portfolio | **never** |
 
 The builder and `api.rb` (on `upload` by import type, `POST /funds.json`, anything on investor access) call it and stop
 with the list of unanswered items. **Check-data override** — to import and check the client's data on assumptions:
@@ -200,3 +219,61 @@ units:
 ruby $T/fund/apply_units.rb              # dry run: lists allocate / price / redeem actions still to do
 ruby $T/fund/apply_units.rb --execute    # after approving calls and distributions
 ```
+
+## Portfolio and KPIs (`portfolio/`)
+
+Driven by `mappings/portfolio.yml` (worked example: the Inflexor workspace). Without that file the portfolio steps show ✔ and
+M15–M17 are not needed.
+
+```mermaid
+flowchart LR
+  Y["mappings/portfolio.yml"] --> B["build_portfolio_uploads.rb"] --> U["out/portfolio/<br/>02 form types · 06 companies · 07 investments<br/>08 valuations · logos.json"]
+  Y --> K["build_kpi_mappings.rb<br/>(label check, merge_mis)"] --> M["09_kpi_mappings.xlsx<br/>kpi_workbooks.json · out/kpi/*.xlsx"]
+  U --> R["portfolio_recon.rb"]
+  M --> D["dry run → check cells → upload → recon ①②③ → approve → recon ④"]
+```
+
+```yaml
+client: <client>
+fund: "<fund name>"                         # the fund the investments belong to
+blank_values: { value: [NA], q: E1 }        # read as blank in number fields
+companies:                                  # likewise investments:, valuations:
+  source: { file: "<file under source/>", sheet: 0 }
+  columns:                                  # template column: source header, or { from, type: date|number, emails: first|all, value }
+    Name: Name
+    Primary Email: { from: Primary Email, emails: first, q: D3 }
+  extras:                                   # typed custom fields, created before the import; label → field name = to_name(label)
+    Initial Ownership (%): { from: Initial Ownership (%), type: NumberField }
+  logos: { q: D4, files: { "<company>": <image under source/> } }
+valuations:
+  per_instrument_held: { value: true, q: E3 }          # one valuation row per instrument the fund holds
+  client_totals: { shares: <header>, stake_value: <header> }   # recon ④
+kpis:
+  info_columns: { kpi: B, mis: D }          # KPI Info sheet columns, as Excel shows them
+  categories: [Income Statement, Balance Sheet, Cashflow Statement, Operational Metrics]   # blocks between blank rows
+  not_in_mis: "\\A(not in mis|don'?t have)"
+  data_types: { percentage: "\\(%\\)|churn", numeric: "employee|customers" }
+  skip_without_mis_line: { value: true, q: F3 }   # no mapping for a KPI with no MIS line (default: set up, left blank)
+  whole_labels: [<labels containing commas or "and">]
+  companies:
+    "<company>":
+      info: { file: <KPI Info file>, sheet: <name or index> }
+      overrides: { q: F7, map: { "<KPI>": ["<MIS label>", …] } }        # [] = no line yet
+      pending_labels: { q: F15, labels: ["<label>"] }                   # warned, not stopped on, until the client answers
+      source_sheet: { q: F6, by_category: { Income Statement: "<sheet>" }, by_label: { "<label>": "<sheet>" } }
+      label_files: [<extra files read for labels only>]
+      workbooks:                                                        # one per KPI report (company + period + date)
+        - { file: <MIS>, as_of: 2026-08-31, period: Month, q: M17 }
+        - { name: <merged>, merge: { "P&L": [<file>, <sheet>], Cash Flow: [<file>, <sheet>] }, as_of: …, period: Month }
+        - { file: <MIS>, as_of: …, period: Month, hold: F9 }             # not loaded until F9 is answered
+```
+
+- **`build_kpi_mappings.rb` stops** on any KPI Info line whose label is not a row label in the company's MIS (matched the
+  reader's way: lowercase, no whitespace, exact) and on any source sheet that does not hold its label, listing near matches.
+  Fix it with an `overrides:` entry (with a client question), or `pending_labels:` while the client decides.
+- **Step 26** also lists app mappings the build no longer has (e.g. after `skip_without_mis_line`) and stays open until they are
+  gone — it never deletes them itself (an undo: ops approves, then `api.rb delete /investor_kpi_mappings/<id>.json`).
+- **Steps 26–31** read "done" from the app (mappings, KPIs and their notes, statuses) and from the result files the KPI tools
+  write, so a re-run never uploads a workbook twice.
+- Proven on Inflexor (2026-10-20): the rebuilt companies, investments, valuations and 142 mappings equal the files imported on
+  2026-10-19; the label check found the one mapping that could never fill (Revspot "Invoiced Revenue" → question F15).

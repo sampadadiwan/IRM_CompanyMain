@@ -2,6 +2,8 @@
 #   ruby onboard.rb status       where the onboarding stands and what is next (read-only)
 #   ruby onboard.rb next         the next step's plan (▶) — writes nothing
 #   ruby onboard.rb next --run   run that ONE step, then confirm it (✔ / ✖) from read-backs
+#   add --portfolio to follow only the portfolio track (workspace, sandbox, fund, then the portfolio + KPI steps) — it does
+#   not wait on the fund data steps, so a fund held back by client questions does not hold back the portfolio
 # Each step's "done" is read from the app (JSON API) and the workspace — never remembered — so re-running after a crash or
 # a fix picks up where it is and never uploads twice. It stops on any failure (an upload that did not fully succeed, a count
 # that does not match) and never runs investor access: that step only shows the gate.
@@ -13,13 +15,15 @@ require "json"
 require "time"
 require_relative "api"
 require_relative "gate"
+require_relative "portfolio/common"
 
 TOOLS = __dir__
 api = Onboarding::Api.new(Onboarding::Api.workspace_from!(ARGV))
 WS = api.workspace
 cmd = ARGV.shift || "status"
 run = ARGV.delete("--run")
-abort "usage: ruby onboard.rb status | next [--run]" unless %w[status next].include?(cmd)
+portfolio_track = ARGV.delete("--portfolio")
+abort "usage: ruby onboard.rb status | next [--run] [--portfolio]" unless %w[status next].include?(cmd)
 
 yml_path = File.join(WS, "mappings", "drawdowns.yml")
 config = File.exist?(yml_path) ? YAML.safe_load_file(yml_path, permitted_classes: [Date]) : {}
@@ -65,9 +69,10 @@ tool = lambda do |*args|
   (stdout + stderr).each_line { |l| puts "    #{l}" unless l.include?("CHECK-DATA MODE") }
   status.success?
 end
-# Upload through api.rb and insist on a full success (status "Completed" alone is not success)
-upload = lambda do |type, file|
-  stdout, stderr, = Open3.capture3("ruby", File.join(TOOLS, "api.rb"), "--workspace", WS, "upload", type, built.(file))
+# Upload through api.rb and insist on a full success (status "Completed" alone is not success); a bare file name is in out/fund
+upload = lambda do |type, file, step = nil|
+  path = file.include?("/") ? file : built.(file)
+  stdout, stderr, = Open3.capture3("ruby", File.join(TOOLS, "api.rb"), "--workspace", WS, "upload", type, path, *step)
   (stdout + stderr).each_line { |l| puts "    #{l}" unless l.include?("CHECK-DATA MODE") }
   stdout.match?(/outcome="succeeded".*failed=0/)
 end
@@ -76,9 +81,86 @@ dists_on = !config["distributions"].nil?
 units_on = !config["units"].nil?
 recon_path = File.join(WS, "out", "fund_recon.json")
 newest_fund_upload = lambda do
-  types = Onboarding::Gate::IMPORT_STEP.keys
-  types.flat_map { uploads_of.(_1) }.map { Time.parse(_1["created_at"]) }.max
+  # Fund imports only: not the portfolio's (its companies are an Investor import too — told apart by the file name)
+  types = Onboarding::Gate::IMPORT_STEP.reject { |_, step| %i[portfolio kpis].include?(step) }.keys
+  types.flat_map { uploads_of.(_1) }.reject { _1["name"].to_s.include?("portfolio_companies") }.map { Time.parse(_1["created_at"]) }.max
 end
+
+# ── Portfolio + KPIs (only with mappings/portfolio.yml) ─────────────────────────────────────────────────────────────
+P = Onboarding::Portfolio
+port_on = File.exist?(P.yml_path(WS))
+pcfg = port_on ? YAML.safe_load_file(P.yml_path(WS), permitted_classes: [Date]) : {}
+pout = P.out_dir(WS)
+pbuilt = ->(file) { File.join(pout, file) }
+sheet_rows = lambda do |path|
+  return [] unless File.exist?(path)
+
+  s = Roo::Spreadsheet.open(path).sheet(0)
+  heads = s.row(1)
+  (2..s.last_row.to_i).map { |r| heads.zip(s.row(r)).to_h }
+end
+companies_in_app = -> { fetch.(:pcos) { api.list("/investors.json?all=true").select { _1["category"] == "Portfolio Company" }.to_h { [P.clean(_1["investor_name"]), _1] } } }
+pis_in_app = -> { fetch.(:pis) { in_fund.(api.list("/portfolio_investments.json?fund_id=#{fid.()}&all=true")) } }
+kpi_books = -> { File.exist?(pbuilt.("kpi_workbooks.json")) ? JSON.parse(File.read(pbuilt.("kpi_workbooks.json"))) : [] }
+live_books = -> { kpi_books.().reject { _1["hold"] } }
+company_id = ->(name) { companies_in_app.().dig(name, "id") or raise "no portfolio company #{name}" }
+kpis_of = ->(cid) { fetch.(:"kpis_#{cid}") { api.list("/kpis.json?q[portfolio_company_id_eq]=#{cid}&all=true").select { _1["portfolio_company_id"] == cid } } }
+mappings_of = ->(cid) { fetch.(:"maps_#{cid}") { api.list("/investor_kpi_mappings.json?investor_id=#{cid}").select { _1["investor_id"] == cid } } }
+verdict_path = ->(b) { File.join(WS, "out", "kpi_dryrun", "#{b['name']}.json") }
+recon_file = ->(b, phase) { File.join(WS, "out", "kpi_recon", "#{b['name']}.#{phase}.json") }
+read_json = ->(path) { File.exist?(path) ? JSON.parse(File.read(path)) : {} }
+# KPIs stored from this workbook: their notes name one of its sheets (KpiWorkbookReader writes "Sheet: …, Period: …")
+from_book = lambda do |b|
+  sheets = Roo::Spreadsheet.open(b["path"]).sheets
+  kpis_of.(company_id.(b["company"])).select { |k| (sh = k["notes"].to_s[/Sheet: (.+?), Period:/m, 1]) && sheets.include?(sh) }
+end
+kpi_tool = ->(script, b, *extra) { tool.(File.join(TOOLS, script), "--company", company_id.(b["company"]), "--file", b["path"], *extra) }
+
+# Form types: each built one exists and holds every field (name + type); creates missing types, adds missing fields
+form_fields = ->(ft_id) { api.list("/form_custom_fields.json?form_type_id=#{ft_id}") }
+form_types_ok = lambda do |fix|
+  Dir[pbuilt.("02_form_types/*.json")].all? do |f|
+    payload = JSON.parse(File.read(f))
+    want = payload.dig("form_type", "form_custom_fields_attributes")
+    ft = api.list("/form_types.json").find { _1["name"] == payload.dig("form_type", "name") }
+    if ft.nil?
+      next false unless fix
+
+      st, body = api.call("post", "/form_types.json", body: payload)
+      puts "    form type #{payload.dig('form_type', 'name')}: HTTP #{st} #{body.is_a?(Hash) ? body.slice('id') : body.to_s[0, 120]}"
+      next st == 201
+    end
+    have = form_fields.(ft["id"]).to_h { [_1["name"], _1["field_type"]] }
+    wrong = want.select { have.key?(_1["name"]) && have[_1["name"]] != _1["field_type"] }
+    wrong.each { puts "    ✖ #{ft['name']}.#{_1['name']} is #{have[_1['name']]}, expected #{_1['field_type']} — fix it in the UI (PATCH /form_custom_fields/:id.json)" } if fix
+    add = want.reject { have.key?(_1["name"]) }
+    if fix && add.any?
+      st, = api.call("patch", "/form_types/#{ft['id']}.json", body: { form_type: { form_custom_fields_attributes: add } })
+      puts "    form type #{ft['name']}: +#{add.size} fields (#{add.map { _1['name'] }.join(', ')}) HTTP #{st}"
+      next false unless st.between?(200, 299)
+    end
+    wrong.empty? && (fix || add.empty?)
+  end
+end
+built_mappings = -> { sheet_rows.(pbuilt.("09_kpi_mappings.xlsx")) }
+# A built mapping's app twin (same company, reported and standard name) and whether it agrees
+# (names compared with blanks collapsed: the import squeezes a label's double spaces, and the reader ignores whitespace)
+squash = ->(v) { v.to_s.gsub(/[[:space:]]+/, " ").strip }
+mapping_twin = lambda do |m|
+  mappings_of.(company_id.(m["Stakeholder"])).find { squash.(_1["reported_kpi_name"]) == squash.(m["Reported Kpi Name"]) && squash.(_1["standard_kpi_name"]) == squash.(m["Standard Kpi Name"]) }
+end
+mapping_ok = lambda do |m, a|
+  a && a["source_sheet"].to_s == m["Source Sheet"].to_s && a["compute_formula"].to_s == m["Compute Formula"].to_s &&
+    (a["autofill"] == "compute") == (m["Auto Fill"] == "compute") && a["category"] == m["Category"] && a["data_type"] == m["Data Type"]
+end
+# App mappings of the KPI companies that no built mapping matches (e.g. the client asked for fewer)
+extra_mappings = lambda do
+  ms = built_mappings.()
+  ms.map { _1["Stakeholder"] }.uniq.flat_map do |co|
+    mappings_of.(company_id.(co)).reject { |a| ms.any? { |m| m["Stakeholder"] == co && squash.(m["Reported Kpi Name"]) == squash.(a["reported_kpi_name"]) && squash.(m["Standard Kpi Name"]) == squash.(a["standard_kpi_name"]) } }
+  end
+end
+newest_upload_of = ->(*types) { types.flat_map { uploads_of.(_1) }.map { Time.parse(_1["created_at"]) }.max }
 
 # ── The steps: [name, done?, plan, run] ─────────────────────────────────────────────────────────────────────────────
 steps = [
@@ -239,6 +321,173 @@ steps = [
    },
    -> { "fund_recon.rb → out/fund_recon.md / .json (must pass, and be newer than the last fund import)" },
    -> { tool.(File.join(TOOLS, "fund", "fund_recon.rb")) }],
+  ["Build portfolio files",
+   lambda {
+     next true unless port_on
+
+     marker = pbuilt.("09_kpi_mappings.xlsx")
+     srcs = [P.yml_path(WS), File.join(WS, "#{pcfg['client']}_client_questions.md")] +
+            %w[companies investments valuations].map { File.join(WS, "source", pcfg.dig(_1, "source", "file").to_s) }
+     File.exist?(marker) && File.exist?(pbuilt.("06_portfolio_companies.xlsx")) && srcs.all? { File.exist?(_1) && File.mtime(_1) <= File.mtime(marker) }
+   },
+   -> { "build_portfolio_uploads.rb → out/portfolio/ (form types, companies, investments, valuations, logos), then build_kpi_mappings.rb (label check, merges, mappings, workbook list)" },
+   -> { tool.(File.join(TOOLS, "portfolio", "build_portfolio_uploads.rb")) && tool.(File.join(TOOLS, "portfolio", "build_kpi_mappings.rb")) }],
+  ["Portfolio companies",
+   lambda {
+     next true unless port_on
+
+     form_types_ok.(false) && (sheet_rows.(pbuilt.("06_portfolio_companies.xlsx")).map { P.clean(_1["Name"]) } - companies_in_app.().keys).empty?
+   },
+   -> { "form types out/portfolio/02_form_types (create / add missing fields), then upload Investor out/portfolio/06_portfolio_companies.xlsx (#{sheet_rows.(pbuilt.('06_portfolio_companies.xlsx')).size}) if any company is missing" },
+   lambda {
+     form_types_ok.(true) &&
+       ((sheet_rows.(pbuilt.("06_portfolio_companies.xlsx")).map { P.clean(_1["Name"]) } - companies_in_app.().keys).empty? ||
+        upload.("Investor", pbuilt.("06_portfolio_companies.xlsx"), "portfolio"))
+   }],
+  ["Logos",
+   lambda {
+     next true unless port_on
+
+     read_json.(pbuilt.("logos.json")).keys.all? { |co| api.list("/documents.json?owner_type=Investor&owner_id=#{company_id.(co)}").any? { _1["name"] == "Logo" } }
+   },
+   -> { "attach each company's logo as its \"Logo\" document (#{read_json.(pbuilt.('logos.json')).size}, missing ones only)" },
+   lambda {
+     read_json.(pbuilt.("logos.json")).all? do |co, file|
+       id = company_id.(co)
+       next true if api.list("/documents.json?owner_type=Investor&owner_id=#{id}").any? { _1["name"] == "Logo" }
+
+       tool.(File.join(TOOLS, "api.rb"), "attach", "Investor", id, "Logo", file)
+     end
+   }],
+  ["Portfolio investments",
+   -> { !port_on || pis_in_app.().size >= sheet_rows.(pbuilt.("07_portfolio_investments.xlsx")).size },
+   -> { "upload PortfolioInvestment out/portfolio/07_portfolio_investments.xlsx (#{sheet_rows.(pbuilt.('07_portfolio_investments.xlsx')).size})" },
+   -> { upload.("PortfolioInvestment", pbuilt.("07_portfolio_investments.xlsx")) }],
+  ["Valuations",
+   lambda {
+     next true unless port_on
+
+     app_vals = api.list("/valuations.json?all=true").map { [P.clean(_1["portfolio_company_name"]), _1["valuation_date"], _1["investment_instrument_name"]] }
+     sheet_rows.(pbuilt.("08_valuations.xlsx")).all? do |v|
+       d = v["Valuation Date"]
+       app_vals.include?([P.clean(v["Portfolio Company"]), d.is_a?(Date) ? d.iso8601 : d.to_s, v["Instrument"]])
+     end
+   },
+   -> { "upload Valuation out/portfolio/08_valuations.xlsx (#{sheet_rows.(pbuilt.('08_valuations.xlsx')).size})" },
+   -> { upload.("Valuation", pbuilt.("08_valuations.xlsx")) }],
+  ["Portfolio recon",
+   lambda {
+     next true unless port_on
+
+     r = read_json.(File.join(WS, "out", "portfolio_recon.json"))
+     last = newest_upload_of.("PortfolioInvestment", "Valuation")
+     r["passed"] == true && (last.nil? || Time.parse(r["generated_at"]) > last)
+   },
+   -> { "portfolio_recon.rb → out/portfolio_recon.md / .json (must pass, and be newer than the last portfolio import)" },
+   -> { tool.(File.join(TOOLS, "portfolio", "portfolio_recon.rb")) }],
+  ["KPI mappings",
+   -> { !port_on || (built_mappings.().all? { mapping_ok.(_1, mapping_twin.(_1)) } && extra_mappings.().empty?) },
+   lambda {
+     ms = built_mappings.()
+     "#{ms.size} mappings: upload InvestorKpiMapping with the missing ones, PATCH source sheets that differ; anything else that differs is reported"
+   },
+   lambda {
+     ms = built_mappings.()
+     missing = ms.reject { mapping_twin.(_1) }
+     if missing.any?
+       path = pbuilt.("09_kpi_mappings_missing.xlsx")
+       heads = Roo::Spreadsheet.open(pbuilt.("09_kpi_mappings.xlsx")).sheet(0).row(1)
+       P.write_xlsx(path, "Mappings", heads, missing.map { |m| heads.map { m[_1] } })
+       next false unless upload.("InvestorKpiMapping", path)
+
+       memo.clear
+     end
+     # Mappings the build no longer has are never deleted here (an undo — needs ops' approval each time); list them
+     extra_mappings.().each { puts "    ✖ in the app, not in the build: mapping #{_1['id']} #{_1['investor_name'].to_s[0, 20]} · #{_1['standard_kpi_name']} ← #{_1['reported_kpi_name']} — delete with approval: api.rb delete /investor_kpi_mappings/#{_1['id']}.json" }
+     same = ms.all? do |m|
+       a = mapping_twin.(m)
+       next true if mapping_ok.(m, a)
+
+       if a && a["source_sheet"].to_s != m["Source Sheet"].to_s
+         st, = api.call("patch", "/investor_kpi_mappings/#{a['id']}.json", body: { investor_kpi_mapping: { source_sheet: m["Source Sheet"] } })
+         puts "    #{m['Stakeholder'][0, 20]} · #{m['Standard Kpi Name']}: source sheet #{a['source_sheet'].inspect} → #{m['Source Sheet'].inspect} HTTP #{st}"
+         next st.between?(200, 299) && mapping_ok.(m, a.merge("source_sheet" => m["Source Sheet"]))
+       end
+       puts "    ✖ #{m['Stakeholder'][0, 20]} · #{m['Standard Kpi Name']} differs in the app (#{a&.slice('category', 'data_type', 'autofill', 'compute_formula')}) — fix by hand"
+       false
+     end
+     same && extra_mappings.().empty?
+   }],
+  ["KPI dry runs",
+   lambda {
+     next true unless port_on
+
+     newest_map = live_books.().map { |b| mappings_of.(company_id.(b["company"])).map { Time.parse(_1["updated_at"]) }.max }.compact.max
+     live_books.().all? do |b|
+       v, c = verdict_path.(b), read_json.(verdict_path.(b).sub(/\.json\z/, ".check.json"))
+       File.exist?(v) && c["passed"] == true && File.mtime(v) >= File.mtime(b["path"]) && (newest_map.nil? || File.mtime(v) > newest_map)
+     end
+   },
+   -> { "for each workbook (#{live_books.().map { _1['name'] }.join(', ')}): kpi_dry_run.rb (validate_upload, no writes), then check_dryrun_cells.rb (every ok cell = its source cell)" },
+   lambda {
+     live_books.().all? do |b|
+       puts "    ── #{b['name']}"
+       kpi_tool.("kpi_dry_run.rb", b, "--as-of", b["as_of"], "--period", b["period"]) &&
+         tool.(File.join(TOOLS, "check_dryrun_cells.rb"), "--verdict", verdict_path.(b), "--file", b["path"])
+     end
+   }],
+  ["KPI uploads",
+   -> { !port_on || live_books.().all? { from_book.(_1).any? } },
+   -> { "for each workbook with no KPIs stored yet: kpi_upload.rb (KPI report #{live_books.().map { "#{_1['period']} #{_1['as_of']}" }.uniq.join(', ')}, workbook as its \"KPIs\" document; waits for the reader job)" },
+   lambda {
+     live_books.().all? do |b|
+       next true if from_book.(b).any?
+
+       puts "    ── #{b['name']}"
+       ok = kpi_tool.("kpi_upload.rb", b, "--as-of", b["as_of"], "--period", b["period"])
+       memo.clear
+       ok
+     end
+   }],
+  ["KPI recon (stored)",
+   lambda {
+     next true unless port_on
+
+     live_books.().all? do |b|
+       r = read_json.(recon_file.(b, "staged"))
+       newest = from_book.(b).map { Time.parse(_1["created_at"]) }.max
+       r["passed"] == true && newest && Time.parse(r["generated_at"]) > newest
+     end
+   },
+   -> { "for each workbook: kpi_recon.rb ①②③ — every stored KPI = its source cell, on the dry run's period, one-to-one" },
+   -> { live_books.().all? { |b| puts "    ── #{b['name']}"; kpi_tool.("kpi_recon.rb", b, "--verdict", verdict_path.(b), "--phase", "staged") } }],
+  ["Approve KPIs",
+   -> { !port_on || live_books.().map { _1["company"] }.uniq.all? { |co| kpis_of.(company_id.(co)).all? { _1["status"] == "approved" } } },
+   -> { "PATCH /kpis/approve_all.json for #{live_books.().map { _1['company'] }.uniq.join(', ')}; wait until the computed KPIs settle" },
+   lambda {
+     live_books.().map { _1["company"] }.uniq.all? do |co|
+       cid = company_id.(co)
+       st, = api.call("patch", "/kpis/approve_all.json?portfolio_company_id=#{cid}", body: {})
+       puts "    approve_all #{co}: HTTP #{st}"
+       next false unless st.between?(200, 299)
+
+       # Computed KPIs are created by a job after approval: wait until the company's KPI count settles
+       n = api.wait_until_stable { api.list("/kpis.json?q[portfolio_company_id_eq]=#{cid}&all=true").size }
+       puts "    #{co}: #{n} KPIs"
+       true
+     end
+   }],
+  ["KPI recon (computed)",
+   lambda {
+     next true unless port_on
+
+     live_books.().all? do |b|
+       r, staged = read_json.(recon_file.(b, "computed")), read_json.(recon_file.(b, "staged"))
+       r["passed"] == true && staged["generated_at"] && Time.parse(r["generated_at"]) > Time.parse(staged["generated_at"])
+     end
+   },
+   -> { "for each workbook: kpi_recon.rb --phase computed — all approved, every computed KPI = Σ its approved components" },
+   -> { live_books.().all? { |b| puts "    ── #{b['name']}"; kpi_tool.("kpi_recon.rb", b, "--verdict", verdict_path.(b), "--phase", "computed") } }],
   ["Investor access",
    -> { false },
    -> { "never run by this tool — explicit approval + every M item answered. Gate now: #{Onboarding::Gate.evaluate(WS, :investor_access).then { |ok, need, _| ok ? 'open' : "blocked (#{need.join(' ')})" }}" },
@@ -253,7 +502,11 @@ abort "✖ the API token in state/token is not accepted (HTTP #{token_status}) �
 mode = Onboarding::Gate.config(WS)["mode"] || "production"
 puts "#{fund_name} — entity #{api.entity_id}#{fid.() ? ", fund #{fid.()}" : ''} · mode #{mode}"
 first_open = nil
+# The portfolio track: workspace, sandbox, fund, then the portfolio + KPI steps (and investor access, which only shows the gate)
+track = portfolio_track ? [0, 1, 3] + steps.each_index.select { |i| i >= steps.index { _1.first == "Build portfolio files" } } : steps.each_index.to_a
 steps.each_with_index do |(name, done, plan, _), i|
+  next unless track.include?(i)
+
   ok = begin
     done.()
   rescue StandardError => e

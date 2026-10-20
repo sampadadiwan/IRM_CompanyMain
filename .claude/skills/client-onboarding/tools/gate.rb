@@ -1,13 +1,16 @@
 # The must-have gate: a fund needs certain answers from the client before each step may run. They are the "M" questions
-# in <client>_client_questions.md (section "M. Must-have before we go on", ids M1–M14), each with a status line:
+# in <client>_client_questions.md (section "M. Must-have before we go on", ids M1–M17), each with a status line:
 #   *Status:* open | assumed | answered 2026-10-20
 # M14 is the fund-ops review sign-off — set only by the reviewer ("answered <date> by <reviewer>"), never by the agent.
+# M15–M17 are the portfolio items; they apply only when the workspace has mappings/portfolio.yml (a fund without a
+# portfolio in scope is not held back by them).
 # A step runs only when every M item it needs is "answered".
 #
 # Override (onboarding.yml):  mode: check_data, check_data_approved_by: <name>, check_data_approved_on: <date>
-#   lets the DATA steps run on assumptions — fund, commitments, drawdowns, distributions — so the client's data can be
-#   imported and checked. It NEVER unlocks investor_access or go_live: those need every M item answered, and go_live
-#   also needs a passing fund reconciliation (out/fund_recon.json from tools/fund/fund_recon.rb).
+#   lets the DATA steps run on assumptions — fund, commitments, drawdowns, distributions, portfolio, kpis — so the
+#   client's data can be imported and checked. It NEVER unlocks investor_access or go_live: those need every M item
+#   answered, and go_live also needs a passing fund reconciliation (out/fund_recon.json from tools/fund/fund_recon.rb)
+#   and, with a portfolio in scope, a passing portfolio reconciliation (out/portfolio_recon.json).
 #
 # Library: Onboarding::Gate.check!(workspace, :drawdowns)   (aborts with the list of unanswered items)
 # CLI:     ruby gate.rb [--workspace DIR] [step …]           (no step: print every step's status)
@@ -23,16 +26,21 @@ module Onboarding
       commitments: %w[M6],
       drawdowns: %w[M6 M7 M8 M9 M11],
       distributions: %w[M10 M11],
-      investor_access: %w[M1 M2 M3 M4 M5 M6 M7 M8 M9 M10 M11 M12 M13 M14],
-      go_live: %w[M1 M2 M3 M4 M5 M6 M7 M8 M9 M10 M11 M12 M13 M14]
+      portfolio: %w[M15],
+      kpis: %w[M16 M17],
+      investor_access: %w[M1 M2 M3 M4 M5 M6 M7 M8 M9 M10 M11 M12 M13 M14 M15 M16 M17],
+      go_live: %w[M1 M2 M3 M4 M5 M6 M7 M8 M9 M10 M11 M12 M13 M14 M15 M16 M17]
     }.freeze
+    # The portfolio items, needed only when the workspace has mappings/portfolio.yml
+    PORTFOLIO_ITEMS = %w[M15 M16 M17].freeze
     # Steps the check-data override may unlock (importing and checking data only)
-    OVERRIDABLE = %i[fund commitments drawdowns distributions].freeze
+    OVERRIDABLE = %i[fund commitments drawdowns distributions portfolio kpis].freeze
     # Import types → the step they belong to (api.rb upload)
     IMPORT_STEP = {
       "Fund" => :fund, "FundUnitSetting" => :fund, "Investor" => :commitments, "CapitalCommitment" => :commitments,
       "CapitalCall" => :drawdowns, "CapitalRemittance" => :drawdowns, "CapitalRemittancePayment" => :drawdowns,
       "CapitalDistribution" => :distributions, "CapitalDistributionPayment" => :distributions,
+      "PortfolioInvestment" => :portfolio, "Valuation" => :portfolio, "InvestorKpiMapping" => :kpis,
       "InvestorAccess" => :investor_access, "InvestorAdvisor" => :investor_access
     }.freeze
 
@@ -54,20 +62,29 @@ module Onboarding
       end
     end
 
-    # Go-live also needs proof the data ties: out/fund_recon.json (tools/fund/fund_recon.rb) with passed: true
-    # → nil when it does, else the reason it does not
-    def recon_blocker(workspace)
-      path = File.join(workspace, "out", "fund_recon.json")
-      return "no fund reconciliation yet (run tools/fund/fund_recon.rb)" unless File.exist?(path)
+    def portfolio?(workspace) = File.exist?(File.join(workspace, "mappings", "portfolio.yml"))
 
-      r = JSON.parse(File.read(path))
-      r["passed"] == true ? nil : "fund reconciliation failed (#{r['ok']}/#{r['checks']} on #{r['generated_at']})"
+    # Go-live also needs proof the data ties: out/fund_recon.json (tools/fund/fund_recon.rb) with passed: true, and with a
+    # portfolio in scope out/portfolio_recon.json (tools/portfolio/portfolio_recon.rb) → nil when it does, else the reason
+    def recon_blocker(workspace)
+      recons = [["fund", "tools/fund/fund_recon.rb"]]
+      recons << ["portfolio", "tools/portfolio/portfolio_recon.rb"] if portfolio?(workspace)
+      recons.each do |name, tool|
+        path = File.join(workspace, "out", "#{name}_recon.json")
+        return "no #{name} reconciliation yet (run #{tool})" unless File.exist?(path)
+
+        r = JSON.parse(File.read(path))
+        return "#{name} reconciliation failed (#{r['ok']}/#{r['checks']} on #{r['generated_at']})" unless r["passed"] == true
+      end
+      nil
     end
 
     # → [allowed?, unanswered ids (plus any recon blocker), override_used?]
     def evaluate(workspace, step)
       needed = STEPS.fetch(step.to_sym) { abort "unknown step #{step} (#{STEPS.keys.join(', ')})" }
       st = statuses(workspace)
+      # Without a portfolio in scope, its items are not needed by investor access or go-live
+      needed -= PORTFOLIO_ITEMS unless portfolio?(workspace) || %i[portfolio kpis].include?(step.to_sym)
       unanswered = needed.reject { st[_1].to_s.start_with?("answered") }
       unanswered << recon_blocker(workspace) if step.to_sym == :go_live && recon_blocker(workspace)
       return [true, [], false] if unanswered.empty?
@@ -103,10 +120,12 @@ if $PROGRAM_NAME == __FILE__
   workspace = File.expand_path(i ? ARGV.slice!(i, 2).last : ENV.fetch("ONBOARDING_WORKSPACE", Dir.pwd))
   steps = ARGV.empty? ? Onboarding::Gate::STEPS.keys : ARGV.map(&:to_sym)
   st = Onboarding::Gate.statuses(workspace)
-  puts "M items: " + Onboarding::Gate::STEPS[:go_live].map { "#{_1}=#{st[_1] || 'missing'}" }.join("  ")
+  items = Onboarding::Gate::STEPS[:go_live] - (Onboarding::Gate.portfolio?(workspace) ? [] : Onboarding::Gate::PORTFOLIO_ITEMS)
+  steps -= %i[portfolio kpis] if ARGV.empty? && !Onboarding::Gate.portfolio?(workspace)
+  puts "M items: " + items.map { "#{_1}=#{st[_1] || 'missing'}" }.join("  ")
   mode = Onboarding::Gate.config(workspace)["mode"] || "production"
   puts "mode: #{mode}"
-  puts "fund recon: #{Onboarding::Gate.recon_blocker(workspace) || 'passed (' + JSON.parse(File.read(File.join(workspace, 'out', 'fund_recon.json'))).values_at('ok', 'checks', 'generated_at').then { |o, c, g| "#{o}/#{c}, #{g}" } + ')'}"
+  puts "recons: #{Onboarding::Gate.recon_blocker(workspace) || 'passed'}"
   failed = false
   steps.each do |s|
     allowed, unanswered, override = Onboarding::Gate.evaluate(workspace, s)
