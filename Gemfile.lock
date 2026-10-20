@@ -160,6 +160,9 @@ GEM
     awesome_print (1.9.2)
     aws-eventstream (1.4.0)
     aws-partitions (1.1281.0)
+    aws-sdk-budgets (1.111.0)
+      aws-sdk-core (~> 3, >= 3.254.0)
+      aws-sigv4 (~> 1.5)
     aws-sdk-cloudwatch (1.146.0)
       aws-sdk-core (~> 3, >= 3.254.0)
       aws-sigv4 (~> 1.5)
@@ -197,6 +200,9 @@ GEM
       aws-sdk-core (~> 3, >= 3.254.0)
       aws-sigv4 (~> 1.5)
     aws-sdk-sns (1.118.0)
+      aws-sdk-core (~> 3, >= 3.254.0)
+      aws-sigv4 (~> 1.5)
+    aws-sdk-ssm (1.220.0)
       aws-sdk-core (~> 3, >= 3.254.0)
       aws-sigv4 (~> 1.5)
     aws-sdk-wafv2 (1.137.0)
@@ -1183,6 +1189,7 @@ DEPENDENCIES
   annotate
   audited
   awesome_print
+  aws-sdk-budgets
   aws-sdk-cloudwatch
   aws-sdk-cloudwatchlogs
   aws-sdk-costexplorer
@@ -1192,6 +1199,7 @@ DEPENDENCIES
   aws-sdk-s3
   aws-sdk-sesv2
   aws-sdk-sns
+  aws-sdk-ssm
   aws-sdk-wafv2
   better_errors
   binding_of_caller

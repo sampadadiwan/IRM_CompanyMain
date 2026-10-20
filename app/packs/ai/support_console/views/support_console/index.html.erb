@@ -1,0 +1,15 @@
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <h1 class="h3 mb-0 text-gray-800">Support Console</h1>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <% if @entities.empty? %>
+      <%# E1 — no qualifying mapping: explain, and show no picker. %>
+      <p class="mb-0" id="support-console-empty">You are not mapped to any client with support access. Ask a super user to add a support mapping.</p>
+    <% else %>
+      <p class="text-muted">Pick a client to see its conversations and ask a question. Answers come from the code CapHive is running and that client's data, read-only.</p>
+      <%= render "support_console/picker", entities: @entities %>
+    <% end %>
+  </div>
+</div>

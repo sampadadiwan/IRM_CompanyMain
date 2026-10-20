@@ -142,3 +142,9 @@ resources :assistant_tasks
 post    '/mcp', to: 'mcp#create'
 get     '/mcp', to: 'mcp#create'    # SSE endpoint for server-initiated messages (MCP Streamable HTTP)
 options '/mcp', to: 'mcp#preflight' # CORS preflight
+
+# Support Console — :support users ask Claude Code about one mapped client (support-console change)
+get 'support_console', to: 'support_console#index', as: :support_console
+get 'support_console/:entity_id', to: 'support_console#show', as: :support_console_entity
+post 'support_console/:entity_id/turns', to: 'support_console#create_turn', as: :support_console_turns
+delete 'support_console/:entity_id/turns/current', to: 'support_console#stop_turn', as: :support_console_stop_turn

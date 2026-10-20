@@ -81,6 +81,11 @@ gem 'sassc-rails'
 
 gem "aws-sdk-ec2", require: false
 gem 'aws-sdk-iam'
+# Support Console infrastructure (lib/tasks/support_console/*.rake): Parameter Store for the replica
+# login and relay secret, and the per-environment Bedrock budget alarm. The app servers have no AWS
+# CLI, so these tasks use the SDK like the other infra tasks.
+gem "aws-sdk-ssm", require: false
+gem "aws-sdk-budgets", require: false
 gem "aws-sdk-s3", require: false
 gem "aws-sdk-sns"
 # Cost-audit rake task (lib/tasks/aws_cost_audit.rake) — all share aws-sdk-core

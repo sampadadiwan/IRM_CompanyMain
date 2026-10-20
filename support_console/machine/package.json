@@ -1,0 +1,20 @@
+{
+  "name": "support-console-machine",
+  "private": true,
+  "type": "module",
+  "description": "Support Console support machine: relay, Claude Code hook and the read-only db MCP server (openspec/changes/support-console)",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node relay/server.js",
+    "dev": "node --env-file=../../tmp/support_console/machine.env relay/server.js",
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.17.4",
+    "mysql2": "3.14.3",
+    "node-sql-parser": "5.4.0",
+    "zod": "3.25.76"
+  }
+}

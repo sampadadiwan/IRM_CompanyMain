@@ -1,6 +1,7 @@
 namespace :admin do
   resources :validation_rules
   resources :validation_rule_overrides
+  resources :support_console_queries, only: %i[index show]
 
   namespace :paper_trail do
     resources :versions, except: :index

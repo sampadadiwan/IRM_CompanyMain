@@ -95,6 +95,14 @@ Sidekiq.configure_server do |config|
     cap.queues = %w[canary]
   end
 
+  # Support Console turns: each job holds an HTTP stream to the support machine for up to
+  # 15 minutes, so they get their own threads instead of starving the default capsule. Three
+  # keeps Bedrock spend bounded and stays under support_ro's 4 replica connections.
+  config.capsule("support_console") do |cap|
+    cap.concurrency = 3
+    cap.queues = %w[support_console]
+  end
+
   # Per-region LOCAL time anchors for the fixed-time cron strings below.
   # config/schedule.rb gets env_variant at DEPLOY time via Capistrano/whenever
   # (see maintenance_bake_at there); this file is a plain initializer loaded
@@ -190,6 +198,9 @@ Sidekiq.configure_server do |config|
     Sidekiq::Cron::Job.create(name: 'PriceFeedJob', cron: '0 16 * * 1-5', class: 'PriceFeedJob')
     # fund-market-data: one reminder 5 business days before an open derivative contract expires
     Sidekiq::Cron::Job.create(name: 'DerivativeExpiryJob', cron: '30 3 * * *', class: 'DerivativeExpiryJob')
+    # support-console: purge conversations 90 days after their last message (and their machine
+    # transcripts), and close turns left running by a restart.
+    Sidekiq::Cron::Job.create(name: 'SupportConsoleRetentionJob', cron: '0 21 * * *', class: 'SupportConsoleRetentionJob')
 
     # Used to cleanup various models in the DB
     Sidekiq::Cron::Job.create(name: 'DailyMorningJob', cron: daily_morning_cron, class: 'DailyMorningJob')

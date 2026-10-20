@@ -16,7 +16,9 @@ class SupportAgentPolicy < ApplicationPolicy
   class Scope < BaseScope
     def resolve
       if user.has_cached_role?(:company_admin)
-        scope.where(entity_id: user.entity_id)
+        # The Support Console's record lives on the CapHive entity but is driven only from
+        # /support_console, so it is kept out of that entity's AI Agents list.
+        scope.where(entity_id: user.entity_id).where("support_agents.agent_type IS NULL OR support_agents.agent_type <> ?", "SupportConsoleAgent")
       else
         scope.none
       end
@@ -28,6 +30,11 @@ class SupportAgentPolicy < ApplicationPolicy
   end
 
   def show?
+    # X30, X31 — the Support Console's agent sits on the CapHive entity, so every CapHive user would
+    # pass belongs_to_entity?. It is driven only from /support_console under SupportConsolePolicy;
+    # the generic chat routes (and everything else gated on show?) must not reach it.
+    return false if record.agent_type == SupportConsoleAgent::AGENT_TYPE
+
     belongs_to_entity?(user, record) || lp_assistant_access?
   end
 

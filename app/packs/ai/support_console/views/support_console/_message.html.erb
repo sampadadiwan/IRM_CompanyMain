@@ -1,0 +1,80 @@
+<%
+  # SupportConsoleTurnJob passes the in-flight text and progress as locals while a turn streams.
+  content = local_assigns.fetch(:content, message.content)
+  metadata = local_assigns.fetch(:metadata, message.metadata) || {}
+  turn_status = metadata["turn_status"]
+  running = %w[queued running].include?(turn_status)
+  steps = Array(metadata["progress"])
+  # Ended turns other than a normal answer get a status badge (theme colours only).
+  badge = {
+    "stopped" => ["secondary", "ti-player-stop", "Stopped"],
+    "failed" => ["danger", "ti-alert-circle", "Not answered"],
+    "refused" => ["danger", "ti-lock", "Access ended"]
+  }[turn_status]
+  # The placeholder text the controller stores before the first streamed chunk.
+  answer_text = content unless content.blank? || content == "Working…" || content == "…"
+  # X23 — a follow-up may come from another support user than the conversation's starter.
+  asker = (User.find_by(id: metadata["asked_by_id"]) if metadata["asked_by_id"]) || message.agent_chat_session.analyst
+%>
+<% if message.role == "user" %>
+  <%# Questions: a soft grey bubble on the right, with a copy button on hover. %>
+  <div id="<%= dom_id(message) %>" class="sc-message d-flex justify-content-end align-items-center gap-1 mb-4">
+    <div class="sc-actions">
+      <button type="button" class="btn btn-sm sc-icon-btn" title="Copy" data-copy-text="<%= message.content %>"
+              data-action="support-console-thread#copy"><i class="ti ti-copy"></i></button>
+    </div>
+    <div class="sc-question rounded-4 px-3 py-2"
+         title="<%= asker.full_name %> · <%= l(message.created_at) %>"><%= message.content %></div>
+  </div>
+<% else %>
+  <%# Answers: plain text across the column, no bubble. %>
+  <div id="<%= dom_id(message) %>" class="sc-message sc-answer mb-4" data-turn-status="<%= turn_status %>">
+    <% if running %>
+      <%# H1 — what the assistant is doing right now. %>
+      <div class="d-flex align-items-center gap-2 text-muted mb-2">
+        <span class="spinner-grow spinner-grow-sm text-primary" role="status"></span>
+        <span class="text-truncate"><%= steps.last.presence || "Thinking…" %></span>
+      </div>
+    <% elsif badge %>
+      <span class="badge bg-<%= badge[0] %>-subtle text-<%= badge[0] %> mb-2"><i class="ti <%= badge[1] %> me-1"></i><%= badge[2] %></span>
+    <% end %>
+
+    <% if answer_text %>
+      <%# While streaming, a blinking cursor follows the text (CSS, on .sc-streaming). %>
+      <div class="sc-answer-body <%= 'sc-streaming' if running %>"><%= support_console_answer_html(answer_text) %></div>
+    <% end %>
+
+    <% if steps.any? %>
+      <%# Every step the assistant took, kept after the answer so the working can be checked. %>
+      <details class="sc-steps mt-2">
+        <summary>
+          <i class="ti ti-list-search me-1"></i><%= running ? "#{pluralize(steps.size, 'step')} so far" : "How this was worked out · #{pluralize(steps.size, 'step')}" %>
+        </summary>
+        <ol class="sc-sources-body list-unstyled text-muted mb-0">
+          <% steps.each do |step| %>
+            <% icon = case step
+                      when /\AReading/ then "ti-file-code"
+                      when /\AChecking columns/ then "ti-table"
+                      when /\ALooking up/ then "ti-database"
+                      else "ti-point"
+                      end %>
+            <li class="d-flex gap-2 mb-1"><i class="ti <%= icon %> mt-1"></i><span class="text-break"><%= step %></span></li>
+          <% end %>
+        </ol>
+      </details>
+    <% end %>
+
+    <% if answer_text && !running %>
+      <%# Copy the answer's markdown, and when it was answered — shown on hover. %>
+      <div class="sc-actions d-flex align-items-center gap-1 mt-2">
+        <button type="button" class="btn btn-sm sc-icon-btn" title="Copy answer" data-copy-text="<%= answer_text %>"
+                data-action="support-console-thread#copy"><i class="ti ti-copy"></i></button>
+        <span class="small text-muted"><%= l(message.updated_at) %></span>
+        <% if (model_name = metadata["model"]).present? %>
+          <%# E29 — which model answered. %>
+          <span class="small text-muted" data-role="model">· <%= model_name.capitalize %></span>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+<% end %>

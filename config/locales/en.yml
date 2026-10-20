@@ -468,6 +468,8 @@ en:
     view_bounce_report: View bounce & complaint report
     settings: Settings
     settings_with_caphive: Layouts & Colors
+    support_console: Support Console
+    support_console_hint: Ask Claude about a client
   user:
     create: User was created
     destroy: User was deleted

@@ -1,0 +1,70 @@
+<%
+  # Sidebar groups, ChatGPT-style: by when each conversation last changed (the list's sort order).
+  today = Time.zone.today
+  groups = @conversations.group_by do |conversation|
+    day = conversation.updated_at.to_date
+    if day == today then "Today"
+    elsif day == today - 1 then "Yesterday"
+    elsif day > today - 7 then "Previous 7 days"
+    else "Older"
+    end
+  end
+%>
+<%# One window: the page title lives in the chat header (with the client switcher), not a row above it. %>
+<div class="support-console">
+  <div class="sc-panes d-flex flex-column flex-lg-row rounded-4 border bg-white overflow-hidden"
+       data-controller="support-console-fit support-console-sidebar">
+    <aside class="sc-sidebar d-flex flex-column bg-light border-end">
+      <div class="d-flex align-items-center gap-1 p-2">
+        <%= link_to support_console_entity_path(@entity), class: "sc-new flex-grow-1 d-flex align-items-center gap-2 px-3 py-2 rounded-3",
+                    id: "support-console-new", title: "New chat (Ctrl+K)",
+                    data: { support_console_sidebar_target: "newChat", turbo_frame: "support-console-thread" } do %>
+          <i class="ti ti-edit"></i><span>New chat</span>
+        <% end %>
+        <button type="button" class="btn btn-sm sc-icon-btn d-none d-lg-inline-flex" title="Hide sidebar"
+                data-action="support-console-sidebar#toggle">
+          <i class="ti ti-layout-sidebar-left-collapse"></i>
+        </button>
+      </div>
+      <% if @conversations.size > 5 %>
+        <%# Filters the list in the browser; the list is capped at CONVERSATION_LIST_LIMIT. %>
+        <div class="px-2 pb-1">
+          <div class="sc-search d-flex align-items-center gap-2 px-3 py-1 rounded-3">
+            <i class="ti ti-search text-muted"></i>
+            <input type="search" class="form-control form-control-sm border-0 shadow-none bg-transparent px-0"
+                   placeholder="Search chats" aria-label="Search chats"
+                   data-action="input->support-console-sidebar#filter">
+          </div>
+        </div>
+      <% end %>
+      <nav class="flex-grow-1 overflow-auto px-2 pb-2" id="support-console-conversations" data-support-console-sidebar-target="list">
+        <% if @conversations.empty? %>
+          <p class="text-muted small px-3 mb-0" data-support-console-sidebar-target="empty">No conversations yet.</p>
+        <% else %>
+          <%# E21 — newest first; who started it and when are in the tooltip. %>
+          <% groups.each do |label, conversations| %>
+            <div class="text-muted small px-3 pt-3 pb-1" data-support-console-sidebar-target="group" data-group="<%= label %>"><%= label %></div>
+            <% conversations.each do |conversation| %>
+              <%= link_to support_console_entity_path(@entity, session_id: conversation.id),
+                          class: "sc-conversation d-block px-3 py-2 rounded-3 text-truncate #{'active' if conversation == @session}",
+                          data: { support_console_sidebar_target: "conversation", turbo_frame: "support-console-thread",
+                                  session_id: conversation.id },
+                          title: "#{conversation.analyst.full_name} · #{l(conversation.created_at.to_date)}",
+                          aria: { current: (conversation == @session ? "page" : nil) } do %>
+                <span data-role="first-question"><%= @first_questions[conversation.id].to_s %></span>
+              <% end %>
+            <% end %>
+          <% end %>
+        <% end %>
+      </nav>
+    </aside>
+
+    <section class="flex-grow-1 d-flex flex-column" style="min-width: 0; min-height: 0;">
+      <%# Opening a conversation, New chat and asking all reload only this frame, not the page.
+          advance: the URL follows, so a reload or a shared link opens the same conversation. %>
+      <%= turbo_frame_tag "support-console-thread", class: "d-flex flex-column h-100", style: "min-height: 0;", data: { turbo_action: "advance" } do %>
+        <%= render "support_console/chat", entity: @entity, session: @session, entities: @entities %>
+      <% end %>
+    </section>
+  </div>
+</div>

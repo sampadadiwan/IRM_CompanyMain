@@ -1,0 +1,21 @@
+<%# Client picker: only the clients SupportConsolePolicy#pickable_entities allows (H2, E1, E7).
+    compact: a borderless switcher for the chat header; otherwise the index page's outline button. %>
+<% compact = local_assigns[:compact] %>
+<div class="dropdown">
+  <button class="btn <%= compact ? 'btn-sm sc-switcher px-2' : 'btn-outline-primary' %> dropdown-toggle" type="button"
+          id="support-console-picker" data-bs-toggle="dropdown" aria-expanded="false">
+    <% unless compact %><i class="ti ti-building me-1"></i><% end %>
+    <%= local_assigns[:entity]&.name || "Pick a client…" %>
+  </button>
+  <ul class="dropdown-menu shadow-sm" aria-labelledby="support-console-picker">
+    <% entities.each do |entity| %>
+      <li>
+        <%= link_to support_console_entity_path(entity), class: "dropdown-item d-flex align-items-center justify-content-between gap-3",
+                    data: { turbo_frame: "_top" } do %>
+          <span><%= entity.name %></span>
+          <% if entity == local_assigns[:entity] %><i class="ti ti-check text-primary"></i><% end %>
+        <% end %>
+      </li>
+    <% end %>
+  </ul>
+</div>

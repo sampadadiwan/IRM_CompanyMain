@@ -1,0 +1,209 @@
+// Support Console (app/packs/ai/support_console/views), laid out like a ChatGPT window:
+// a light sidebar of conversations, and a thread whose questions are soft bubbles and whose
+// answers are plain text in a centred reading column, with a rounded composer at the bottom.
+// Theme colours only — Bootstrap variables, no hand-picked hex.
+.support-console {
+  // support_console_fit_controller sets the exact height to the window's remaining space;
+  // this is the fallback before it connects.
+  .sc-panes { height: calc(100vh - 120px); min-height: 480px; }
+
+  // Small square icon buttons (sidebar toggle, copy).
+  .sc-icon-btn {
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--bs-secondary-color);
+    border: 0;
+    border-radius: 0.5rem;
+    &:hover { background: var(--bs-secondary-bg); color: var(--bs-body-color); }
+  }
+
+  // ── Sidebar ────────────────────────────────────────────────────────────────
+  .sc-sidebar { width: 280px; flex: 0 0 280px; }
+
+  .sc-new, .sc-conversation {
+    color: var(--bs-body-color);
+    text-decoration: none;
+    &:hover { background: var(--bs-secondary-bg); color: var(--bs-body-color); }
+  }
+  .sc-conversation.active { background: var(--bs-secondary-bg); }
+
+  .sc-search {
+    background: var(--bs-body-bg);
+    border: 1px solid var(--bs-border-color);
+    input::placeholder { color: var(--bs-secondary-color); }
+  }
+
+  // Hidden sidebar (support_console_sidebar_controller): the thread takes the full width and
+  // the header shows a button to bring it back.
+  .sc-show-sidebar { display: none; }
+  @media (min-width: 992px) {
+    .sc-collapsed .sc-sidebar { display: none !important; }
+    .sc-collapsed .sc-show-sidebar { display: inline-flex; }
+  }
+
+  // ── Header ─────────────────────────────────────────────────────────────────
+  // Flat until the thread scrolls under it, then a hairline shadow.
+  .sc-header {
+    position: relative;
+    z-index: 3;
+    min-height: 3.25rem;
+    transition: box-shadow 0.15s;
+    &.sc-scrolled { box-shadow: 0 1px 0 var(--bs-border-color), 0 4px 12px rgba(var(--bs-body-color-rgb), 0.05); }
+  }
+  .sc-switcher {
+    font-size: inherit;
+    color: var(--bs-emphasis-color);
+    border: 0;
+    border-radius: 0.5rem;
+    &:hover, &.show { background: var(--bs-secondary-bg); }
+  }
+
+  // ── Thread ─────────────────────────────────────────────────────────────────
+  // One centred column shared by the messages and the composer, so they line up.
+  .sc-column { max-width: 960px; margin: 0 auto; }
+
+  // Message actions (copy, time) appear on hover, and stay reachable by keyboard.
+  .sc-actions { opacity: 0; transition: opacity 0.15s; }
+  .sc-message:hover .sc-actions, .sc-actions:focus-within { opacity: 1; }
+  @media (hover: none) { .sc-actions { opacity: 1; } }
+
+  // Blinking cursor after the text while an answer streams in.
+  .sc-streaming > :last-child:not(details):not(.chat-table-wrap):not(table)::after {
+    content: "";
+    display: inline-block;
+    width: 0.5em;
+    height: 1em;
+    margin-left: 0.15em;
+    vertical-align: -0.1em;
+    background: currentColor;
+    border-radius: 1px;
+    animation: sc-blink 1s steps(1) infinite;
+  }
+
+  .sc-question {
+    max-width: 75%;
+    background: var(--bs-tertiary-bg);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  // Answers: no bubble, roomy typography.
+  .sc-answer {
+    font-size: 0.95rem;
+    line-height: 1.7;
+
+    .sc-answer-body > :first-child { margin-top: 0; }
+    .sc-answer-body > :last-child { margin-bottom: 0; }
+    p, ul, ol { margin-bottom: 1rem; }
+    li { margin-bottom: 0.4rem; }
+    h1, h2, h3, h4, h5, h6 { margin: 1.6rem 0 0.6rem; }
+    pre { margin: 0.75rem 0; }
+
+    // Tables: thin lines, neutral header. !important beats the app-wide blue thead styles
+    // (another stylesheet loaded after this one paints th blue with its own colours).
+    .chat-table-wrap {
+      margin: 1rem 0 1.25rem;
+      border: 1px solid var(--bs-border-color);
+      border-radius: 0.75rem;
+    }
+    .chat-table-wrap table { width: 100%; }
+    table th, table td {
+      border: 0 !important;
+      border-bottom: 1px solid var(--bs-border-color) !important;
+      padding: 0.55rem 0.9rem;
+    }
+    table tr:last-child td { border-bottom: 0 !important; }
+    table thead th {
+      background: var(--bs-tertiary-bg) !important;
+      color: var(--bs-emphasis-color) !important;
+    }
+  }
+
+  // The collapsed pills at the end of an answer: "Where this comes from"
+  // (SupportConsoleHelper#support_console_answer_html) and "How this was worked out" (the steps).
+  .sc-sources, .sc-steps {
+    > summary {
+      display: inline-flex;
+      align-items: center;
+      cursor: pointer;
+      list-style: none;
+      font-size: 0.85rem;
+      color: var(--bs-secondary-color);
+      background: var(--bs-tertiary-bg);
+      border-radius: 50rem;
+      padding: 0.25rem 0.85rem;
+      &::-webkit-details-marker { display: none; }
+      &::after { content: "\203A"; display: inline-block; margin-left: 0.5rem; transition: transform 0.15s; }
+      &:hover { color: var(--bs-body-color); }
+    }
+    &[open] > summary::after { transform: rotate(90deg); }
+    .sc-sources-body {
+      font-size: 0.85rem;
+      margin-top: 0.75rem;
+      padding-left: 1rem;
+      border-left: 2px solid var(--bs-border-color);
+      p, ul, ol { margin-bottom: 0.5rem; }
+      li { margin-bottom: 0.2rem; }
+    }
+  }
+
+
+  .sc-jump {
+    position: absolute;
+    left: 50%;
+    bottom: 0.75rem;
+    transform: translateX(-50%);
+    z-index: 2;
+  }
+
+  // ── Composer ───────────────────────────────────────────────────────────────
+  // Text fades out above the composer instead of being cut at a hard line.
+  .sc-composer { position: relative; }
+  .sc-composer::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: -2.5rem;
+    height: 2.5rem;
+    pointer-events: none;
+    background: linear-gradient(to bottom, rgba(var(--bs-white-rgb), 0), var(--bs-white));
+  }
+  .sc-input:focus-within { border-color: var(--bs-primary) !important; }
+  .sc-input textarea { resize: none; min-height: 2.25rem; max-height: 12rem; font-size: 0.95rem; }
+  .sc-send {
+    width: 2.25rem;
+    height: 2.25rem;
+    flex: 0 0 2.25rem;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    i { font-size: 1.1rem; }
+  }
+
+  // The theme gives every icon in a .btn a right margin (for "icon + label" buttons); these
+  // buttons are icon-only, so that margin would push the icon off centre.
+  .sc-send i, .sc-icon-btn i { margin: 0 !important; line-height: 1; }
+
+  // Stacked (below lg): the sidebar becomes a short list above the thread.
+  @media (max-width: 991.98px) {
+    .sc-panes { height: auto !important; }
+    .sc-sidebar {
+      width: 100%;
+      flex: 0 0 auto;
+      max-height: 200px;
+      border-right: 0 !important;
+      border-bottom: 1px solid var(--bs-border-color);
+    }
+    .sc-panes > section { height: 80vh; }
+  }
+}
+
+@keyframes sc-blink {
+  50% { opacity: 0; }
+}

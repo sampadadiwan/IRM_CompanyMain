@@ -1,0 +1,57 @@
+<%# H4 — the header names the client. The switcher opens another client's console page; it never moves
+    this conversation to another client. %>
+<% messages = session ? session.agent_chat_messages.order(:id).to_a : [] %>
+<div class="d-flex flex-column h-100" id="support-console-chat" data-controller="support-console-thread"
+     data-session-id="<%= session&.id %>"
+     data-session-url="<%= session && support_console_entity_path(entity, session_id: session.id) %>"
+     data-first-question="<%= messages.find { |m| m.role == 'user' }&.content %>"
+     data-session-title="<%= session && "#{session.analyst.full_name} · #{l(session.created_at.to_date)}" %>">
+  <div class="sc-header d-flex align-items-center gap-2 px-3 py-2" data-support-console-thread-target="header">
+    <%# Shown only while the sidebar is hidden (support_console_sidebar_controller). %>
+    <button type="button" class="btn btn-sm sc-icon-btn sc-show-sidebar" title="Show sidebar"
+            data-action="support-console-sidebar#toggle">
+      <i class="ti ti-layout-sidebar-left-expand"></i>
+    </button>
+    <span class="text-muted">Support Console</span>
+    <i class="ti ti-chevron-right text-muted small"></i>
+    <%= render "support_console/picker", entities: local_assigns.fetch(:entities, [entity]), entity: entity, compact: true %>
+    <span class="badge bg-secondary-subtle text-secondary"><i class="ti ti-lock me-1"></i>Read-only</span>
+  </div>
+  <% if session %>
+    <%# Live updates from SupportConsoleTurnJob for this conversation. %>
+    <%= turbo_stream_from session, :support_console %>
+  <% end %>
+
+  <div class="position-relative flex-grow-1" style="min-height: 0;">
+    <div class="h-100 overflow-auto chat-markdown" id="support-console-messages"
+         data-support-console-thread-target="scroller" data-action="scroll->support-console-thread#onScroll">
+      <div class="sc-column h-100 px-4 pt-4">
+        <% if messages.empty? %>
+          <%# Empty conversation: say what the console can answer. %>
+          <div class="h-100 d-flex flex-column align-items-center justify-content-center text-center">
+            <h2 class="h4 mb-2">What do you want to know about <%= entity.name %>?</h2>
+            <p class="text-muted mb-0">The assistant reads the code CapHive is running and this client's data. It cannot change anything.</p>
+          </div>
+        <% else %>
+          <% messages.each do |message| %>
+            <%= render "support_console/message", message: message %>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+    <button type="button" class="btn btn-sm btn-light border shadow-sm rounded-circle sc-jump d-none" title="Jump to latest"
+            data-support-console-thread-target="jump" data-action="support-console-thread#jumpToLatest">
+      <i class="ti ti-arrow-down"></i>
+    </button>
+  </div>
+
+  <% if request.headers["Turbo-Frame"].present? && flash[:alert].present? %>
+    <%# E2, E3, E4, X — refusals from create_turn, shown where the user is looking. %>
+    <div class="sc-column w-100 px-4">
+      <div class="alert alert-danger d-flex align-items-center gap-2 py-2 mb-2" role="alert">
+        <i class="ti ti-alert-circle"></i><span><%= flash[:alert] %></span>
+      </div>
+    </div>
+  <% end %>
+  <%= render "support_console/composer", entity: entity, session: session, messages: messages %>
+</div>

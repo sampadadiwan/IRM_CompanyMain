@@ -1,0 +1,63 @@
+<%
+  # The newest assistant message decides what the composer allows (E4) and what the footer shows.
+  last_answer = messages.reverse.find { |m| m.role == "assistant" }
+  status = last_answer&.metadata&.dig("turn_status")
+  running = %w[queued running].include?(status)
+  # X4 — when the machine could not be reached, the question goes back into the box.
+  failed_question = (messages.reverse.find { |m| m.role == "user" }&.content if status == "failed")
+  lag = last_answer&.metadata&.dig("lag_seconds")
+  code_rev = last_answer&.metadata&.dig("code_rev")
+  # E29 — a new conversation starts on Sonnet; inside one, the last choice is kept.
+  model = last_answer&.metadata&.dig("model")
+  model = SupportConsoleTurnJob::DEFAULT_MODEL unless SupportConsoleTurnJob::MODELS.include?(model)
+%>
+<div class="sc-composer px-4 pb-3 pt-2" id="support-console-composer"
+     data-controller="support-console" data-support-console-running-value="<%= running %>">
+  <div class="sc-column">
+    <% if running %>
+      <%# Stop lives in its own form (forms cannot nest); its button below points at it with form=. %>
+      <%= form_with url: support_console_stop_turn_path(entity), method: :delete, id: "support-console-stop-form",
+                    data: { turbo: true }, class: "d-none" do %>
+        <%= hidden_field_tag :session_id, session.id %>
+      <% end %>
+    <% end %>
+
+    <%= form_with url: support_console_turns_path(entity), method: :post, data: { turbo: true, action: "submit->support-console#ask" } do |f| %>
+      <%= hidden_field_tag :session_id, session&.id %>
+      <div class="sc-input d-flex align-items-end gap-2 border rounded-4 shadow-sm bg-white ps-3 pe-2 py-2">
+        <%= text_area_tag :question, failed_question, rows: 1, maxlength: 4000, class: "form-control border-0 shadow-none bg-transparent px-0",
+                          placeholder: (session ? "Ask a follow-up" : "Ask anything about #{entity.name}"),
+                          id: "support-console-question",
+                          data: { support_console_target: "question", action: "keydown->support-console#keydown input->support-console#resize" } %>
+        <%# E29 — Sonnet (faster, cheaper; the default) or Opus (deeper) for this question. %>
+        <%= select_tag :model, options_for_select([["Sonnet", "sonnet"], ["Opus", "opus"]], model),
+                       class: "form-select form-select-sm border-0 bg-transparent shadow-none w-auto text-muted sc-model",
+                       id: "support-console-model", title: "Sonnet: faster and cheaper. Opus: deeper, for hard investigations.",
+                       aria: { label: "Model" } %>
+        <% if running %>
+          <%# E9 — while a turn runs, the send button becomes Stop. %>
+          <button type="submit" form="support-console-stop-form" class="btn btn-secondary rounded-circle sc-send" id="support-console-stop" title="Stop">
+            <i class="ti ti-player-stop-filled"></i><span class="visually-hidden">Stop</span>
+          </button>
+        <% else %>
+          <button type="submit" class="btn btn-primary rounded-circle sc-send" id="support-console-ask" title="Ask (Enter)"
+                  data-support-console-target="ask">
+            <i class="ti ti-arrow-up"></i><span class="visually-hidden">Ask</span>
+          </button>
+        <% end %>
+      </div>
+    <% end %>
+
+    <div class="text-center small text-muted mt-2">
+      <% if failed_question %>
+        <i class="ti ti-arrow-back-up me-1"></i>Your question is back in the box — press Enter to try again.
+      <% else %>
+        Answers cite the code and the rows behind them
+      <% end %>
+      <% if last_answer && !running && (lag || code_rev) %>
+        <%# E18 — lag above 60 s is highlighted. Lag is unknown without replica status (local mode, or no REPLICATION CLIENT grant). %>
+        · <span class="<%= lag.to_i > SupportConsoleTurnJob::LAG_WARNING_SECONDS ? 'text-danger fw-semibold' : 'text-muted' %>" id="support-console-footer"><% unless lag.nil? %>Data as of <%= lag.to_i %> seconds ago · <% end %>Code version <%= code_rev.to_s.first(7) %></span>
+      <% end %>
+    </div>
+  </div>
+</div>
