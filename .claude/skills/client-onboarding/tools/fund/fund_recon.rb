@@ -65,22 +65,39 @@ ex_cols = extras.transform_values { col_of.(_1) }
 first_row = src.fetch("first_row", header_row + 1)
 last_row = src.fetch("last_row", sheet.last_row)
 
-# Distribution column groups and the balance-units column (own reading of the yml, like the columns above)
-dgroups = Array(config.dig("distributions", "groups")).map do |g|
-  { as: g.fetch("as"), skip_zero: g["skip_when_zero"], replace: g.dig("title", "replace"), title: col_of.(g["title"]), date: col_of.(g["date"]),
-    amount: col_of.(g["amount"]), tds: g["tds"] && col_of.(g["tds"]), net: g["net"] && col_of.(g["net"]), type: g["payment_type"] && col_of.(g["payment_type"]) }
+# Distribution column groups and the balance-units column (own reading of the yml, like the columns above).
+# A group value is a column spec, a constant ({value: …}) or a sum of columns ({sum: [...]}, blank = 0).
+side = config.dig("distributions", "source") # distributions (and balance units) on a second sheet, joined by folio
+side_sheet = side && Roo::Spreadsheet.open(File.join(api.workspace, side.fetch("file"))).sheet(side.fetch("sheet"))
+side_headers = side ? side_sheet.row(side.fetch("header_row", 1)).map { clean.(_1.to_s) } : nil
+with_headers = ->(hs, &blk) { saved = headers; headers = hs || headers; blk.call.tap { headers = saved } }
+val_of = lambda do |spec|
+  if spec.is_a?(Hash) && spec.key?("value") then ->(_r) { spec["value"] }
+  elsif spec.is_a?(Hash) && spec.key?("sum")
+    parts = spec["sum"].map { col_of.(_1) }
+    ->(r) { vs = parts.map { num.(cell.(r, _1)) }; vs.all?(&:nil?) ? nil : vs.sum(&:to_f) }
+  else cs = col_of.(spec); ->(r) { cell.(r, cs) }
+  end
+end
+dgroups = with_headers.(side_headers) do
+  Array(config.dig("distributions", "groups")).map do |g|
+    { as: g.fetch("as"), skip_zero: g["skip_when_zero"], replace: g.dig("title", "replace"), title: val_of.(g["title"]), date: val_of.(g["date"]),
+      amount: val_of.(g["amount"]), tds: g["tds"] && val_of.(g["tds"]), net: g["net"] && val_of.(g["net"]), type: g["payment_type"] && val_of.(g["payment_type"]) }
+  end
 end
 dist_entries = lambda do |r|
   dgroups.filter_map do |g|
-    amt = num.(cell.(r, g[:amount]))
+    amt = num.(g[:amount].(r))
     next if amt.nil? || (g[:skip_zero] && amt.zero?)
 
-    t = clean.(cell.(r, g[:title]).to_s)
-    { as: g[:as], title: g[:replace] ? t.sub(*g[:replace]) : t, date: cell.(r, g[:date]), amount: amt,
-      tds: g[:tds] ? num.(cell.(r, g[:tds])).to_f : 0.0, net: g[:net] && num.(cell.(r, g[:net])), type: g[:type] && clean.(cell.(r, g[:type])) }
+    t = clean.(g[:title].(r).to_s)
+    { as: g[:as], title: g[:replace] ? t.sub(*g[:replace]) : t, date: g[:date].(r), amount: amt,
+      tds: g[:tds] ? num.(g[:tds].(r)).to_f : 0.0, net: g[:net] && num.(g[:net].(r)), type: g[:type] && clean.(g[:type].(r)) }
   end
 end
-bal_col = config.dig("units", "balance_units") && col_of.(config.dig("units", "balance_units"))
+bal_spec = config.dig("units", "balance_units")
+bal_on_side = bal_spec.is_a?(Hash) && bal_spec["source"] == "distributions"
+bal_col = bal_spec && with_headers.(bal_on_side ? side_headers : nil) { col_of.(bal_spec.reject { |k, _| k == "source" }) }
 
 source = {} # folio → {row, committed, unit_class, extras, totals, draws: [{called, notice, due, payments, row}], dists, balance, undated}
 case src.fetch("layout")
@@ -120,6 +137,57 @@ when "folio_blocks"
                          payments: [{ date:, amount: amt }] } if amt && date.is_a?(Date)
     current[:undated] = true if cols["undated_marker"] && clean.(date.to_s) == cols["undated_marker"]
     current[:dists].concat(dist_entries.(r))
+  end
+when "call_columns"
+  # One amount column per call (same order as calls.schedule); the folio's total received spread by the yml rule
+  sched_rows = Array(config.dig("calls", "schedule"))
+  call_cs = Array(cols["call_columns"]).map { col_of.(_1) }
+  abort "✖ recon: #{call_cs.size} call columns vs #{sched_rows.size} scheduled calls" unless call_cs.size == sched_rows.size
+  alloc = assume.fetch("payment_allocation")
+  totals = (cols["client_totals"] || {}).transform_values { col_of.(_1) }
+  (first_row..last_row).each do |n|
+    r = sheet.row(n)
+    raw = cell.(r, c.("folio"))
+    next if raw.nil?
+
+    t = totals.transform_values { num.(cell.(r, _1)).to_f }
+    draws = call_cs.each_with_index.filter_map do |cs, i|
+      amt = num.(cell.(r, cs))&.round(2)
+      next unless amt&.positive?
+
+      sc = sched_rows[i]
+      { row: n, called: amt, notice: Date.parse(sc["notice_date"].to_s), due: sc["due_date"] && Date.parse(sc["due_date"].to_s),
+        call_id: sc["name"], payments: [] }
+    end
+    left = t.fetch("received")
+    draws.each do |d|
+      pay = [left, d[:called]].min.round(2)
+      next unless pay.positive?
+
+      d[:payments] << { date: alloc["date"] == "due_date" ? d[:due] : d[:notice], amount: pay }
+      left = (left - pay).round(2)
+    end
+    if left.abs >= 0.005 && alloc["excess"] == "last_call" && draws.any?
+      draws.last[:payments] << { date: draws.last[:due], amount: 0 } if draws.last[:payments].empty?
+      draws.last[:payments].last[:amount] = (draws.last[:payments].last[:amount] + left).round(2)
+    end
+    source[folio_id.(raw)] = { row: n, committed: num.(cell.(r, c.("committed"))), unit_class: clean.(cell.(r, c.("unit_class"))),
+                               extras: ex_cols.transform_values { clean.(cell.(r, _1)) }, totals: t, draws:, undated: false,
+                               dists: [], balance: bal_col && !bal_on_side ? num.(cell.(r, bal_col)) : nil }
+  end
+end
+
+# Distributions (and balance units) from the second sheet, joined by folio
+if side
+  folio_c = with_headers.(side_headers) { col_of.(side.fetch("folio")) }
+  (side.fetch("first_row", 2)..side.fetch("last_row", side_sheet.last_row)).each do |n|
+    r = side_sheet.row(n)
+    raw = cell.(r, folio_c)
+    next if raw.nil?
+
+    f = source[folio_id.(raw)] or abort("✖ recon: #{side['sheet']} r#{n} folio #{raw} is not on the main sheet")
+    f[:dists] = dist_entries.(r)
+    f[:balance] = num.(cell.(r, bal_col)) if bal_on_side
   end
 end
 
@@ -316,9 +384,10 @@ if prices
     rs = remittances.select { _1["folio_id"] == folio }
     ps = dpays.select { _1["folio_id"] == folio }
     issued, redeemed = rs.sum { _1["units_quantity"].to_f }, -ps.sum { _1["units_quantity"].to_f }
-    want_issued = f[:draws].sum { _1[:called].to_f } / price
+    # The platform issues units on min(called, collected) per remittance (CapitalRemittance#pending_amount_for_units_allocation)
+    want_issued = f[:draws].sum { |d| [d[:called].to_f, d[:payments].sum { _1[:amount] }].min } / price
     want_redeemed = f[:dists].select { _1[:as] == "face_value" }.sum { _1[:amount] } / price
-    check.("⑦", "Units issued = called ÷ price", (issued - want_issued).abs < 0.0001, folio, "#{want_issued.round(4)} vs #{issued.round(4)}")
+    check.("⑦", "Units issued = min(called, received) ÷ price", (issued - want_issued).abs < 0.0001, folio, "#{want_issued.round(4)} vs #{issued.round(4)}")
     check.("⑦", "Units redeemed = face value ÷ price", (redeemed - want_redeemed).abs < 0.0001, folio, "#{want_redeemed.round(4)} vs #{redeemed.round(4)}")
     check.("⑦", "Balance units = client balance units", (issued - redeemed - f[:balance].to_f).abs < 0.0001, folio, "#{f[:balance].inspect} vs #{(issued - redeemed).round(4)}") if bal_col
   end

@@ -15,6 +15,7 @@ require "json"
 require "time"
 require_relative "api"
 require_relative "gate"
+require_relative "review"
 require_relative "portfolio/common"
 
 TOOLS = __dir__
@@ -77,6 +78,12 @@ upload = lambda do |type, file, step = nil|
   stdout.match?(/outcome="succeeded".*failed=0/)
 end
 
+# Paid remittances not yet verified, counted on the server. Filters proven on Demo Fund 2 (2026-10-20) against the full list:
+# Ransack silently ignores an unknown q[...] (it returns every row), so add a filter here only after checking it the same way
+# Rows of the fund in a list, from its total-count header; 0 until the fund exists (a blank fund_id= would count the entity)
+fund_count = ->(list) { fid.() ? api.count("/#{list}.json?fund_id=#{fid.()}") : 0 }
+unverified_paid = -> { in_fund.(api.list("/capital_remittances.json?fund_id=#{fid.()}&all=true&q%5Bverified_eq%5D=false&q%5Bcollected_amount_gt%5D=0")).size }
+
 dists_on = !config["distributions"].nil?
 units_on = !config["units"].nil?
 recon_path = File.join(WS, "out", "fund_recon.json")
@@ -126,6 +133,7 @@ form_types_ok = lambda do |fix|
     if ft.nil?
       next false unless fix
 
+      Onboarding::Review.check!(WS, f) # hard rule 10: ops reviewed this exact file
       st, body = api.call("post", "/form_types.json", body: payload)
       puts "    form type #{payload.dig('form_type', 'name')}: HTTP #{st} #{body.is_a?(Hash) ? body.slice('id') : body.to_s[0, 120]}"
       next st == 201
@@ -135,6 +143,7 @@ form_types_ok = lambda do |fix|
     wrong.each { puts "    ✖ #{ft['name']}.#{_1['name']} is #{have[_1['name']]}, expected #{_1['field_type']} — fix it in the UI (PATCH /form_custom_fields/:id.json)" } if fix
     add = want.reject { have.key?(_1["name"]) }
     if fix && add.any?
+      Onboarding::Review.check!(WS, f)
       st, = api.call("patch", "/form_types/#{ft['id']}.json", body: { form_type: { form_custom_fields_attributes: add } })
       puts "    form type #{ft['name']}: +#{add.size} fields (#{add.map { _1['name'] }.join(', ')}) HTTP #{st}"
       next false unless st.between?(200, 299)
@@ -179,11 +188,13 @@ steps = [
      File.exist?(calls) && sources.all? { File.exist?(_1) && File.mtime(_1) <= File.mtime(calls) }
    },
    -> { "read_drawdowns.rb → out/folios.json, then build_fund_uploads.rb → out/fund/ (question ids, gate, money checks)" },
-   -> { tool.(File.join(TOOLS, "fund", "read_drawdowns.rb")) && tool.(File.join(TOOLS, "fund", "build_fund_uploads.rb")) }],
+   # …then copy every built file into review/ for ops' manual check (hard rule 10) before anything is uploaded
+   -> { tool.(File.join(TOOLS, "fund", "read_drawdowns.rb")) && tool.(File.join(TOOLS, "fund", "build_fund_uploads.rb")) && tool.(File.join(TOOLS, "review.rb"), "dump") }],
   ["Fund",
    -> { !fund.().nil? },
    -> { "POST /funds.json with out/fund/01_fund.json (#{fund_name})" },
    lambda {
+     Onboarding::Review.check!(WS, built.("01_fund.json")) # hard rule 10: ops reviewed this exact file
      status, body = api.call("post", "/funds.json", body: JSON.parse(File.read(built.("01_fund.json"))))
      puts "    HTTP #{status} #{body.is_a?(Hash) ? body.slice('id', 'name') : body.to_s[0, 200]}"
      status == 201
@@ -204,6 +215,7 @@ steps = [
        payload = JSON.parse(File.read(f))
        next true if names.include?(payload.dig("form_type", "name"))
 
+       Onboarding::Review.check!(WS, f) # hard rule 10: ops reviewed this exact file
        status, body = api.call("post", "/form_types.json", body: payload)
        puts "    #{File.basename(f)}: HTTP #{status} #{body.is_a?(Hash) ? body.slice('id', 'name') : body.to_s[0, 120]}"
        status == 201
@@ -214,7 +226,7 @@ steps = [
    -> { "upload Investor out/fund/03_investors.xlsx (#{rows_in.('03_investors.xlsx')})" },
    -> { upload.("Investor", "03_investors.xlsx") }],
   ["Commitments",
-   -> { app.(:commitments).size >= rows_in.("04_commitments.xlsx") },
+   -> { fund_count.("capital_commitments") >= rows_in.("04_commitments.xlsx") },
    -> { "upload CapitalCommitment out/fund/04_commitments.xlsx (#{rows_in.('04_commitments.xlsx')})" },
    -> { upload.("CapitalCommitment", "04_commitments.xlsx") }],
   ["Calls",
@@ -222,15 +234,16 @@ steps = [
    -> { "upload CapitalCall out/fund/05a_calls.xlsx (#{rows_in.('05a_calls.xlsx')})" },
    -> { upload.("CapitalCall", "05a_calls.xlsx") }],
   ["Remittances",
-   -> { app.(:remittances).size >= rows_in.("05b_remittances.xlsx") },
+   -> { fund_count.("capital_remittances") >= rows_in.("05b_remittances.xlsx") },
    -> { "upload CapitalRemittance out/fund/05b_remittances.xlsx (#{rows_in.('05b_remittances.xlsx')})" },
    -> { upload.("CapitalRemittance", "05b_remittances.xlsx") }],
   ["Payments",
-   -> { app.(:payments).size >= rows_in.("05c_payments.xlsx") },
+   # Counted from the total-count header: the full payments list took 25 s for 4,109 rows only to be counted
+   -> { fund_count.("capital_remittance_payments") >= rows_in.("05c_payments.xlsx") },
    -> { "upload CapitalRemittancePayment out/fund/05c_payments.xlsx (#{rows_in.('05c_payments.xlsx')})" },
    -> { upload.("CapitalRemittancePayment", "05c_payments.xlsx") }],
   ["Approve calls + verify",
-   -> { app.(:calls).all? { _1["approved"] } && app.(:remittances).reject { _1["collected_amount"].to_f.zero? }.all? { _1["verified"] } },
+   -> { app.(:calls).all? { _1["approved"] } && unverified_paid.().zero? },
    -> { "approve every unapproved call, then bulk Verify each call's paid remittances; wait until verified counts settle" },
    lambda {
      app.(:calls).each do |c|
@@ -241,16 +254,16 @@ steps = [
        s, b = api.call("post", "/capital_remittances/bulk_actions.json?bulk_action=Verify&capital_call_id=#{c['id']}&verified=false&collected_amount_positive=true")
        puts "    verify #{c['name']}: HTTP #{s} #{b.is_a?(Hash) ? b.slice('count') : ''}"
      end
-     paid = -> { in_fund.(api.list("/capital_remittances.json?fund_id=#{fid.()}&all=true")).reject { _1["collected_amount"].to_f.zero? } }
-     api.wait_until_stable { paid.().count { _1["verified"] } }
-     paid.().all? { _1["verified"] }
+     # Poll only the rows still to do (server-side filter, ~0.1 s) instead of the whole list (~2 s for 4,118)
+     api.wait_until_stable { unverified_paid.() }
+     unverified_paid.().zero?
    }],
   ["Distributions",
    -> { !dists_on || app.(:distributions).size >= rows_in.("06a_distributions.xlsx") },
    -> { "upload CapitalDistribution out/fund/06a_distributions.xlsx (#{rows_in.('06a_distributions.xlsx')})" },
    -> { upload.("CapitalDistribution", "06a_distributions.xlsx") }],
   ["Distribution payments",
-   -> { !dists_on || app.(:dist_payments).size >= rows_in.("06b_dist_payments.xlsx") },
+   -> { !dists_on || fund_count.("capital_distribution_payments") >= rows_in.("06b_dist_payments.xlsx") },
    -> { "upload CapitalDistributionPayment out/fund/06b_dist_payments.xlsx (#{rows_in.('06b_dist_payments.xlsx')})" },
    -> { upload.("CapitalDistributionPayment", "06b_dist_payments.xlsx") }],
   ["TDS account entries",
@@ -270,6 +283,7 @@ steps = [
    },
    -> { "PATCH each distribution with its \"Tax\" fee (out/fund/07b_distribution_fees.json), then recompute_fees; wait until net payable = the client's net" },
    lambda {
+     Onboarding::Review.check!(WS, built.("07b_distribution_fees.json")) # hard rule 10: ops reviewed this exact file
      fees = JSON.parse(File.read(built.("07b_distribution_fees.json")))
      by_title = app.(:distributions).to_h { [_1["title"], _1] }
      pays = -> { in_fund.(api.list("/capital_distribution_payments.json?fund_id=#{fid.()}&all=true")) }
@@ -280,7 +294,8 @@ steps = [
          puts "    ✖ no distribution #{f['title']}"
          next false
        end
-       ps = pays.().select { _1["capital_distribution_id"] == d["id"] }
+       # This distribution's payments only (capital_distribution_id= is applied by the server; q[capital_distribution_id_eq] is not)
+       ps = in_fund.(api.list("/capital_distribution_payments.json?fund_id=#{fid.()}&all=true&capital_distribution_id=#{d['id']}"))
        # The fee cannot be read back (no fees in the distribution JSON), so add it only while NO tax is applied yet;
        # a partly-taxed distribution is ambiguous — stop rather than risk a second fee
        if taxed.(ps).zero?
@@ -331,7 +346,7 @@ steps = [
      File.exist?(marker) && File.exist?(pbuilt.("06_portfolio_companies.xlsx")) && srcs.all? { File.exist?(_1) && File.mtime(_1) <= File.mtime(marker) }
    },
    -> { "build_portfolio_uploads.rb → out/portfolio/ (form types, companies, investments, valuations, logos), then build_kpi_mappings.rb (label check, merges, mappings, workbook list)" },
-   -> { tool.(File.join(TOOLS, "portfolio", "build_portfolio_uploads.rb")) && tool.(File.join(TOOLS, "portfolio", "build_kpi_mappings.rb")) }],
+   -> { tool.(File.join(TOOLS, "portfolio", "build_portfolio_uploads.rb")) && tool.(File.join(TOOLS, "portfolio", "build_kpi_mappings.rb")) && tool.(File.join(TOOLS, "review.rb"), "dump") }],
   ["Portfolio companies",
    lambda {
      next true unless port_on

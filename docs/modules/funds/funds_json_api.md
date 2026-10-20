@@ -79,7 +79,8 @@ All are the website's routes with `.json`. Lists take the website's filters (`fu
 | Remittance payments | `GET /capital_remittance_payments.json` | `GET …/:id.json` | `POST` | `PATCH` | `DELETE` |
 | Capital distributions | `GET /capital_distributions.json` | `GET …/:id.json` | `POST` | `PATCH` | `DELETE` |
 | Distribution payments | `GET /capital_distribution_payments.json` | `GET …/:id.json` | `POST` | `PATCH` | `DELETE` |
-| Account entries | `GET /account_entries.json` | `GET /account_entries/:id.json` | `POST` | `PATCH` | `DELETE` |
+| Account entries (list: pass `q[reporting_date_gt]` — without a lower bound only the current year is returned) | `GET /account_entries.json` | `GET /account_entries/:id.json` | `POST` | `PATCH` | `DELETE` |
+| **Fund unit settings** (fees per class) | `GET /fund_unit_settings.json` (`fund_id`, `import_upload_id`) | `GET /fund_unit_settings/:id.json` | `POST` | `PATCH` | `DELETE` |
 | Fund units | `GET /fund_units.json` | `GET /fund_units/:id.json` | — | — | — |
 | Fund ratios | `GET /fund_ratios.json` | `GET /fund_ratios/:id.json` | — | — | — |
 | Valuations | `GET /valuations.json` | `GET /valuations/:id.json` | `POST` | `PATCH` | `DELETE` |

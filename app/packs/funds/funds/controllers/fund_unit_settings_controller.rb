@@ -15,6 +15,9 @@ class FundUnitSettingsController < ApplicationController
       format.html
       format.turbo_stream { render partial: 'fund_unit_settings/index', locals: { fund_unit_settings: @fund_unit_settings } }
       format.xlsx
+      # G45 (client onboarding): index.json.jbuilder existed but had no branch here, so API callers got 406
+      # and could not read back the per-class fees a FundUnitSetting import wrote
+      format.json
     end
     fund_bread_crumbs("Unit Settings")
   end

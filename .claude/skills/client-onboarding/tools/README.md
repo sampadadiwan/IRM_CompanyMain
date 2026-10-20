@@ -49,6 +49,9 @@ ruby $T/onboard.rb status --portfolio   # only the portfolio track: workspace, s
 | 31 | KPI recon (computed) | each workbook's ④ recon passed after the stored one |
 | 32 | Investor access | **never run by the tool** — shows the gate; needs explicit approval |
 
+**Manual review (hard rule 10):** steps 3 and 20 end with `review.rb dump`; every later upload or JSON post stops with
+"awaiting manual review" until ops runs `ruby $T/review.rb approve <file> --by <name>` for that exact file.
+
 "Done" is always read from the app and the workspace, so re-running after a crash or a fix picks up where it is and never
 uploads twice. It stops at the first failure (an upload that did not fully succeed, a count that does not match). The
 single tools below remain for diagnosis. With `--portfolio`, `status` / `next` follow only steps 1, 2, 4 and 20–32, so a fund
@@ -80,6 +83,7 @@ Every write re-checks that the entity is in sandbox and stops if it is not.
 
 | Tool | What it does | Writes to the app? |
 |---|---|---|
+| `review.rb` | manual review gate: `dump` (copy every built upload file to `review/` + `REVIEW.md`), `status`, `approve <file> --by <name>` (**ops only**); `api.rb` and `onboard.rb` refuse files whose hash ops has not approved | no |
 | `api.rb` | API client (library + CLI): `sign_in`, `get`, `post`/`patch`/`delete`, `upload <ImportType> <file>` (polls to done), `attach <OwnerType> <id> <name> <file>`, `sandbox_on` | yes (each command) |
 | `merge_mis.rb` | merge a month's MIS files into one workbook, one sheet per statement, and prove every cell equals its source | no |
 | `kpi_dry_run.rb` | `validate_upload` on one workbook → `out/kpi_dryrun/<file>.json`; flags cells read from the wrong sheet | no |

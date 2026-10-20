@@ -59,6 +59,12 @@ description: "Onboard a new CapHive client end to end: configure a fresh entity,
    sign-off** (set only by the reviewer). **Go-live also needs a passing fund
    reconciliation** (`tools/fund/fund_recon.rb` → `out/fund_recon.json` with `passed: true`), and with a portfolio a passing
    portfolio reconciliation (`tools/portfolio/portfolio_recon.rb` → `out/portfolio_recon.json`).
+10. **Ops reviews every upload file by hand before it goes in** (ops, 2026-10-20). Build the upload files from the raw data,
+   dump them with `tools/review.rb dump` into `<workspace>/review/` (copies + `REVIEW.md`: rows, columns, money totals, dates,
+   SHA-256 per file), tell ops where they are, and **stop**. Ops checks them against the source and approves each file with
+   `! ruby $T/review.rb approve <file> --by <name>` — **never approve a file yourself**. `api.rb upload` and every JSON post in
+   `onboard.rb` refuse a file whose current hash is not approved, so a rebuild needs a fresh review. Only on ops' explicit word
+   for one client: `review: {waived_by, waived_on, reason}` in `onboarding.yml` (files are still dumped; writes print ⚠).
 
 ## Tools
 
@@ -126,7 +132,8 @@ Proven on the Orios trial (details and evidence in [learnings.md](learnings.md))
 
 ```
 map columns ─▶ leftover columns? ─▶ propose typed custom fields ─▶ approve ─▶ create (FormCustomField import)
-  ─▶ transform script ─▶ check against template ─▶ approve ─▶ import (ImportUpload) ─▶ reconcile
+  ─▶ transform script ─▶ check against template ─▶ review.rb dump ─▶ OPS REVIEWS + APPROVES THE FILE ─▶ import (ImportUpload)
+  ─▶ reconcile
   ─▶ errors? stop, show each failed row with a suggested fix; ops chooses fix+re-import or undo
 ```
 
@@ -152,4 +159,5 @@ onboarding/<client>/
   scripts/*        transform scripts Claude wrote
   out/*.xlsx       generated upload files
   out/recon_report.md  output of scripts/recon_report.rb, pasted into the report's Appendix B
+  review/          copies of every upload file + REVIEW.md for ops' manual check; approved.yml = file hashes ops approved
 ```

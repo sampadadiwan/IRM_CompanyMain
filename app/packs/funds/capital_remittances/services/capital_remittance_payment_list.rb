@@ -13,7 +13,10 @@ class CapitalRemittancePaymentList < BaseList
     @q = CapitalRemittancePayment.ransack(@params[:q])
     @capital_remittance_payments = apply_policy_scope(@q.result, &)
 
-    @capital_remittance_payments = @capital_remittance_payments.includes(:fund, :investor, capital_remittance: { capital_commitment: :investor_kyc })
+    # The JSON partial reads the payment's OWN has_one-through associations (capital_commitment, investor_kyc); preloading
+    # them only via capital_remittance does not fill those, so each row ran 2 queries (4,109 payments: ~8,200 queries, 25 s)
+    @capital_remittance_payments = @capital_remittance_payments.includes(:fund, :investor, :capital_commitment, :investor_kyc,
+                                                                         capital_remittance: { capital_commitment: :investor_kyc })
 
     @capital_remittance_payments = filter_params(@capital_remittance_payments, :fund_id, :import_upload_id)
 

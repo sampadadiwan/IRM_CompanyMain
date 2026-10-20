@@ -211,10 +211,12 @@ File.write(File.join(OUT, "01_fund.json"), JSON.pretty_generate(fund: {
 }.compact))
 puts "  01_fund.json               #{fund_name}, classes #{classes.join(', ')}, first close #{first_close}"
 fees = fund.fetch("fees", {})
+# Fee rates per class (fees.per_class: {A1: {management: 2, setup: 2}}) fall back to the fund-wide rate
+fee = ->(klass, kind) { fees.dig("per_class", klass, kind) || fees.fetch(kind, 0) }
 gp = Array(value_of.(fund["gp_unit_classes"]))
 write_xlsx(File.join(OUT, "01b_unit_settings.xlsx"), "Unit Settings",
            ["Fund", "Class/Series", "Management Fee %", "Setup Fee %", "Carry %", "Gp Units", "Update Only", "Isin"],
-           classes.map { |c| [fund_name, c, fees.fetch("management", 0), fees.fetch("setup", 0), fees.fetch("carry", 0), yes_no.(gp.include?(c)), "No", nil] })
+           classes.map { |c| [fund_name, c, fee.(c, "management"), fee.(c, "setup"), fee.(c, "carry"), yes_no.(gp.include?(c)), "No", nil] })
 
 # ── 02 Form types: typed custom fields before the imports ───────────────────────────────────────────────────────────
 form_type(OUT, "capital_commitment.json", "CapitalCommitment",
@@ -287,7 +289,9 @@ write_xlsx(File.join(OUT, "05b_remittances.xlsx"), "Remittances",
              (date_fields ? ["Notice Date", "Due Date"] : []) + extras_on.("remittance").map { _2["label"] },
            lines.map do |l|
              called = l[:d]["called"]
-             [fund_name, l[:call], l[:f]["folio"], called, 0, 0, called, 0, 0, nil, l[:remit_date], verified] +
+             # Verified only when money came in: a wholly unpaid remittance (arrears) stays unverified (recon ① "verified iff paid")
+             paid = l[:d]["payments"].sum { _1["amount"].to_f }.positive?
+             [fund_name, l[:call], l[:f]["folio"], called, 0, 0, called, 0, 0, nil, l[:remit_date], paid ? verified : "No"] +
                (date_fields ? [l[:d]["notice_date"], l[:due]] : []) + extras_on.("remittance").keys.map { l[:f]["extras"][_1] }
            end)
 

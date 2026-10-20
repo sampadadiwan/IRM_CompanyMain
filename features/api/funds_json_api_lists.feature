@@ -97,3 +97,20 @@ Feature: Fund JSON API — lists page and say how big they are
     And I am signed in as the current user
     When the website reads "/capital_distributions.json?fund_id={fund}"
     Then the website gets a list of 1 row
+
+  # H16 — Happy path: each payment in the list names its folio (read through the payment's own commitment association)
+  Scenario: H16 Payments list their folio
+    Given the remittances are paid
+    When "me" sends GET "/capital_remittance_payments.json?fund_id={fund}&all=true"
+    Then the API status is 200
+    And the API answer is a list of 2 rows
+    And every payment in the API answer names a folio of my fund
+
+  # E9 — Edge case: more payments must not mean more queries (Demo Fund 2: 4,109 payments ran ~8,200 queries, 23 s → 2 s)
+  Scenario: E9 The payments list does not query once per row
+    Given the remittances are paid
+    When I count the SQL queries for "/capital_remittance_payments.json?fund_id={fund}&all=true"
+    And every remittance of my fund is paid
+    And I count the SQL queries again for "/capital_remittance_payments.json?fund_id={fund}&all=true"
+    Then the API answer is a list of 12 rows
+    And the second query count is the same as the first

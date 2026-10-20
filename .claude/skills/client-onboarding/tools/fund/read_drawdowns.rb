@@ -1,8 +1,13 @@
 # Reads a client's drawdown sheet into one canonical record per folio (out/folios.json), as the workspace's
-# mappings/drawdowns.yml describes. Read-only. Two layouts:
+# mappings/drawdowns.yml describes. Read-only. Three layouts:
 #   row_per_folio  one row per folio; payments are repeated (date, amount) column pairs           (e.g. Inflexor)
 #   folio_blocks   a row whose `opens_when` column is numeric opens a folio; the rows under it continue it, and any
 #                  row can carry one drawdown (date + amount, paid in full on that date)          (e.g. Orios)
+#   call_columns   one row per folio; one amount column per capital call (columns.call_columns, in the same order as
+#                  calls.schedule, which gives each call's dates); the folio's total received is spread over its calls
+#                  by assumptions.payment_allocation                                              (e.g. Demo Fund 2)
+# Distributions may come from a second sheet keyed by folio (distributions.source), and a group's title / date may be a
+# constant ({value: …}) and its amount a sum of columns ({sum: [{col: K}, {col: L}]}) when the client gives net + TDS only.
 # Columns are named by header text (header_row) or by letter ({col: E}); a list means "first non-blank of these".
 # Names are cleaned (newlines, NBSP, BOM collapsed) because the importer matches funds/investors by exact name.
 #
@@ -63,23 +68,58 @@ module Onboarding
     # net, payment_type); a group yields an entry when its amount is numeric (and non-zero if skip_when_zero).
     def distribution_entries(row, groups)
       groups.filter_map do |g|
-        amount = number(pick(row, g[:amount]))
+        amount = number(g[:amount].(row))
         next if amount.nil? || (g[:skip_when_zero] && amount.zero?)
 
-        raw_title = clean(pick(row, g[:title]).to_s)
+        raw_title = clean(g[:title].(row).to_s)
         title = g[:replace] ? raw_title.sub(*g[:replace]) : raw_title
-        { kind: g[:kind], as: g[:as], title:, date: pick(row, g[:date]), amount:,
-          tds: g[:tds] ? number(pick(row, g[:tds])).to_f : 0.0, net: g[:net] ? number(pick(row, g[:net])).to_f : nil,
-          payment_type: g[:payment_type] && clean(pick(row, g[:payment_type])) }
+        { kind: g[:kind], as: g[:as], title:, date: g[:date].(row), amount:,
+          tds: g[:tds] ? number(g[:tds].(row)).to_f : 0.0, net: g[:net] ? number(g[:net].(row)).to_f : nil,
+          payment_type: g[:payment_type] && clean(g[:payment_type].(row)) }
+      end
+    end
+
+    # A value spec → a lambda(row): {value: X} is a constant, {sum: [specs]} adds the numbers in those columns (blank = 0),
+    # anything else is a column spec (first non-blank of the resolved columns)
+    def value_spec(spec, headers)
+      if spec.is_a?(Hash) && spec.key?("value")
+        ->(_row) { spec["value"] }
+      elsif spec.is_a?(Hash) && spec.key?("sum")
+        parts = spec["sum"].map { resolve(_1, headers) }
+        ->(row) { vals = parts.map { number(pick(row, _1)) }; vals.all?(&:nil?) ? nil : vals.sum(&:to_f) }
+      else
+        cols = resolve(spec, headers)
+        ->(row) { pick(row, cols) }
       end
     end
 
     def distribution_groups(config, headers)
       Array(config.dig("distributions", "groups")).map do |g|
         { kind: g["kind"], as: g.fetch("as"), skip_when_zero: g["skip_when_zero"], replace: g.dig("title", "replace"),
-          title: resolve(g.fetch("title"), headers), date: resolve(g.fetch("date"), headers), amount: resolve(g.fetch("amount"), headers),
-          tds: g["tds"] && resolve(g["tds"], headers), net: g["net"] && resolve(g["net"], headers),
-          payment_type: g["payment_type"] && resolve(g["payment_type"], headers) }
+          title: value_spec(g.fetch("title"), headers), date: value_spec(g.fetch("date"), headers), amount: value_spec(g.fetch("amount"), headers),
+          tds: g["tds"] && value_spec(g["tds"], headers), net: g["net"] && value_spec(g["net"], headers),
+          payment_type: g["payment_type"] && value_spec(g["payment_type"], headers) }
+      end
+    end
+
+    # A second sheet keyed by folio (distributions.source: {file, sheet, header_row, first_row, last_row, folio}) →
+    # {folio id => [distribution entries]}. Every folio on it must be on the main sheet (checked by the caller).
+    def side_distributions(config, workspace)
+      side = config.dig("distributions", "source")
+      sheet = Roo::Spreadsheet.open(File.join(workspace, side.fetch("file"))).sheet(side.fetch("sheet"))
+      header_row = side.fetch("header_row", 1)
+      headers = header_row.positive? ? sheet.row(header_row) : []
+      groups = distribution_groups(config, headers)
+      folio_c = resolve(side.fetch("folio"), headers)
+      (side.fetch("first_row", header_row + 1)..side.fetch("last_row", sheet.last_row)).each_with_object({}) do |n, acc|
+        r = sheet.row(n)
+        raw = pick(r, folio_c)
+        next if blank?(raw)
+
+        id = folio_id(raw, config["folio_format"])
+        raise "distributions.source row #{n}: folio #{id} appears twice" if acc.key?(id)
+
+        acc[id] = distribution_entries(r, groups)
       end
     end
 
@@ -95,11 +135,74 @@ module Onboarding
       extras = (config["extras"] || {}).transform_values { |e| resolve(e, headers) }
       totals = (cols["client_totals"] || {}).transform_values { resolve(_1, headers) }
 
-      groups = distribution_groups(config, headers)
-      case src.fetch("layout")
-      when "row_per_folio" then read_rows(sheet, first, last, col, extras, totals, config, groups)
-      when "folio_blocks" then read_blocks(sheet, first, last, col, extras, config, groups)
-      else raise "unknown layout #{src['layout'].inspect}"
+      # Distributions on the main sheet, or (distributions.source) on a second sheet joined by folio
+      side = config.dig("distributions", "source")
+      groups = side ? [] : distribution_groups(config, headers)
+      folios = case src.fetch("layout")
+               when "row_per_folio" then read_rows(sheet, first, last, col, extras, totals, config, groups)
+               when "folio_blocks" then read_blocks(sheet, first, last, col, extras, config, groups)
+               when "call_columns" then read_call_columns(sheet, first, last, col, extras, totals, config, headers)
+               else raise "unknown layout #{src['layout'].inspect}"
+               end
+      return folios unless side
+
+      by_folio = side_distributions(config, workspace)
+      unknown = by_folio.keys - folios.map { _1[:folio] }
+      raise "distributions.source has folios not on the main sheet: #{unknown.first(10)}" if unknown.any?
+
+      folios.each { |f| f[:distributions] = by_folio.fetch(f[:folio], []) }
+    end
+
+    # One row per folio, one amount column per call (columns.call_columns ↔ calls.schedule, same order). The client gives
+    # only the folio's total received (client_totals.received), so assumptions.payment_allocation spreads it:
+    #   value: oldest_first   received pays the earliest calls first; a call left short stays partly due
+    #   date: due_date        each payment is dated with its call's due date (the client gave no payment dates)
+    #   excess: last_call     money received beyond everything called is added to the folio's last call's payment
+    def read_call_columns(sheet, first, last, col, extras, totals, config, headers)
+      folio_c, inv_c, class_c, comm_c = col.("folio"), col.("investor"), col.("unit_class"), col.("committed")
+      call_cols = Array(config.dig("columns", "call_columns")).map { resolve(_1, headers) }
+      schedule = Array(config.dig("calls", "schedule"))
+      raise "call_columns: #{call_cols.size} call columns but #{schedule.size} calls in calls.schedule" unless call_cols.size == schedule.size
+
+      alloc = config.dig("assumptions", "payment_allocation") || raise("call_columns: assumptions.payment_allocation is needed")
+      raise "payment_allocation: only value oldest_first is supported" unless alloc["value"] == "oldest_first"
+
+      to_date = ->(v) { v && Date.parse(v.to_s) }
+      (first..last).filter_map do |n|
+        r = sheet.row(n)
+        raw = pick(r, folio_c)
+        next if blank?(raw)
+
+        client_totals = totals.transform_values { number(pick(r, _1)).to_f }
+        # One drawdown per call the folio was called in, dated by the schedule
+        drawdowns = call_cols.each_with_index.filter_map do |cols, i|
+          # Paise: the client's call amounts carry long fractions (formula results); the app stores cents
+          called = number(pick(r, cols))&.round(2)
+          next unless called&.positive?
+
+          c = schedule[i]
+          { seq: i + 1, called:, notice_date: to_date.(c.fetch("notice_date")), due_date: to_date.(c["due_date"]),
+            call_id: c.fetch("name"), payments: [] }
+        end
+        # Spread the folio's total received over its calls, oldest first
+        left = client_totals.fetch("received") { raise "call_columns: columns.client_totals.received is needed" }
+        drawdowns.each do |d|
+          pay = [left, d[:called]].min.round(2)
+          next unless pay.positive?
+
+          d[:payments] << { date: alloc["date"] == "due_date" ? d[:due_date] : d[:notice_date], amount: pay }
+          left = (left - pay).round(2)
+        end
+        if left.abs >= 0.005
+          raise "#{raw}: #{left} received beyond the calls and no payment_allocation.excess rule" unless alloc["excess"] == "last_call" && drawdowns.any?
+
+          last_d = drawdowns.last
+          last_d[:payments] << { date: last_d[:due_date], amount: 0 } if last_d[:payments].empty?
+          last_d[:payments].last[:amount] = (last_d[:payments].last[:amount] + left).round(2)
+        end
+        { folio: folio_id(raw, config["folio_format"]), row: n, investor: inv_c && clean(pick(r, inv_c)),
+          unit_class: class_c && clean(pick(r, class_c)), committed: number(pick(r, comm_c)),
+          extras: extras.transform_values { clean(pick(r, _1)) }, undated: false, client_totals:, drawdowns:, distributions: [] }
       end
     end
 

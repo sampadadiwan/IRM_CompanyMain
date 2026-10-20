@@ -237,3 +237,42 @@ all tied to source cells → approved → **908 KPIs** (99 / 753 / 56, the same 
 - **Editing a payment un-verifies its remittance (G44)** — even a reference-only PATCH. The fund's collected amount drops to 0 until
   the call is bulk-verified again. After any payment edit: bulk Verify, wait for the count to settle, compare the fund summary
   with its value before the edit. (Inflexor C7: 68 references cleared → 54 remittances unverified → re-verified, totals restored.)
+
+## 2026-10-20 — Demo Fund 2 (dev, entity 1695 / fund 381): quarterly capital-account pack, no dates
+
+Source: a QR workbook ("9.Comvsrecd": 275 folios × 15 drawdown columns, total received, arrears) and a Master sheet
+(Circulation: distributions net + TDS per FY, units, capital-account heads). No drawdown, payment or distribution dates at all.
+
+- **New layout `call_columns`** (read_drawdowns.rb + fund_recon.rb): one amount column per call, dates from `calls.schedule`,
+  the folio's total received spread oldest-first (`assumptions.payment_allocation`, excess on the last call). Distributions can
+  come from a second sheet keyed by folio (`distributions.source`); a group value may be `{value: …}` or `{sum: [cols]}`.
+- **Place undated calls with the client's own cumulative figures.** The "check sheet" (received at Mar-24/Jun-25/Sep-25/Dec-25)
+  put calls 1–10 before Mar-24 and 11–15 in FY 25-26: calls 11–15 − arrears + arrears open at Mar-25 = the YTD Paid column to
+  the rupee. Still placeholders (client question), but the order is proven.
+- **Roo's `sheet(name)` returns the same object** (it switches the default sheet). `a = book.sheet("X"); b = book.sheet("Y")`
+  makes `a` read Y. Open one workbook object per sheet. A cross-check against the client's own columns caught it at once.
+- **Units are issued on min(called, collected)** per verified remittance (`CapitalRemittance#pending_amount_for_units_allocation`);
+  over-paid folios get fewer units than a client that issues on money received. fund_recon ⑦ now expects min(called, received).
+- **`onboard.rb` step 15 is "done" after ANY AccountEntry upload** (`uploaded_ok.("AccountEntry")`). Upload other account
+  entries (capital-account heads) only after step 15, or it skips the TDS entries.
+- **Capital-account heads (ops):** set-up fee, management fee, operating expenses, other income as account entries in two parts —
+  since inception till the previous quarter-end (since inception − quarter) and the latest quarter — so they add up to the
+  client's since-inception figure. Entry types follow `public/sample_uploads/account_entries.xlsx` (Fees / Setup Fees,
+  Expense / Management Fees …). Realised / unrealised gains: not loaded that way (ops).
+- **Manual review of every upload file (hard rule 10)**, asked by ops mid-run: `tools/review.rb`. Waived for Demo Fund 2 only.
+- `GET /fund_unit_settings.json` answers 406 — fee rates per class cannot be read back (G45).
+- Timings (dev): investors 275 in 279 s, commitments 260 s, remittances 4,118 in 871 s, payments 4,109 in 1,027 s.
+- **Bulk verify can stop partway with no error the API shows.** 15 calls × 275 remittances queued (HTTP 202 each); the jobs
+  stopped at the same folio in every call (~20:58: folios in order verified up to IN301, 2,009 / 4,109 verified), the verified
+  count stayed flat, and `onboard.rb` printed no ✔. Per-record failures go only to an error email (sandbox inbox), not the API.
+  Diagnose from the data (whole folios in order = interrupted job; scattered = per-record refusals), then re-run step 12 — Verify
+  only picks unverified remittances, so the retry is safe (it verified the 2,109 left in 190 s).
+- **Poll with server-side filters, proven first.** Waiting loops re-read whole lists (4,118 remittances, ~2 s each); a filtered
+  poll is ~0.1 s. Proven against the full list: remittances `q[verified_eq]`, `q[collected_amount_gt]`, `capital_call_id=`;
+  distribution payments `capital_distribution_id=` — but **`q[capital_distribution_id_eq]` is silently ignored** (all 808 rows
+  came back). Before adding any filter, compare its count with a count from the unfiltered list (and try a bogus `q[...]`).
+- **The builder verified unpaid remittances** (`verified_on_import` wrote Yes on every row; earlier clients had no unpaid
+  drawdowns). Fixed: Verified = Yes only with a payment. The 9 on fund 381 were toggled off with `PATCH /capital_remittances/:id/verify.json`.
+- **Count, don't list, for "done" checks.** Fund lists send `total-count` to API callers; `api.count(path)` reads it with
+  `per_page=1`. `onboard.rb status` went 28.7 s → 2.0 s (the payments list alone was 24.9 s, only to be counted). The sandbox
+  guard now re-reads the entity at most once a minute (it was one GET per write), and upload polling backs off 5 → 30 s.

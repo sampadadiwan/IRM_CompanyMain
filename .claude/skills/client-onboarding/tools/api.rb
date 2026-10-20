@@ -19,6 +19,7 @@ require "yaml"
 require "date"
 require "securerandom"
 require_relative "gate"
+require_relative "review"
 
 module Onboarding
   # Content types for multipart uploads, by file extension
@@ -26,7 +27,10 @@ module Onboarding
            ".jpg" => "image/jpeg", ".jpeg" => "image/jpeg", ".pdf" => "application/pdf" }.freeze
 
   class Api
-    attr_reader :workspace, :base_url, :entity_id, :ops_email
+    attr_reader :workspace, :base_url, :entity_id, :ops_email, :last_headers
+
+    # The sandbox guard re-reads the entity at most this often per process (it used to GET it before every write)
+    SANDBOX_RECHECK_SECONDS = 60
 
     # Pulls "--workspace DIR" out of argv (if present) so every tool accepts it the same way
     def self.workspace_from!(argv)
@@ -55,8 +59,11 @@ module Onboarding
         # Must-have gate (hard rule 9): creating the fund and anything on investor access need the client's answers
         Onboarding::Gate.check!(workspace, :fund) if method == "post" && path.start_with?("/funds.json")
         Onboarding::Gate.check!(workspace, :investor_access) if path.include?("investor_access")
-        _, ent = call("get", "/entities/#{entity_id}.json", guard: false)
-        abort "refusing #{method.upcase} #{path}: sandbox is not on for entity #{entity_id}" unless ent.is_a?(Hash) && ent.dig("entity_setting", "sandbox") == true
+        unless @sandbox_ok_at && Time.now - @sandbox_ok_at < SANDBOX_RECHECK_SECONDS
+          _, ent = call("get", "/entities/#{entity_id}.json", guard: false)
+          abort "refusing #{method.upcase} #{path}: sandbox is not on for entity #{entity_id}" unless ent.is_a?(Hash) && ent.dig("entity_setting", "sandbox") == true
+          @sandbox_ok_at = Time.now
+        end
       end
       uri = URI("#{base_url}#{path}")
       req = Net::HTTP.const_get(method.capitalize).new(uri)
@@ -78,6 +85,7 @@ module Onboarding
         req.body = body.to_json
       end
       res = Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == "https", read_timeout: 300) { |h| h.request(req) }
+      @last_headers = res.to_hash # e.g. total-count on paged fund lists (see #count)
       parsed = begin
         JSON.parse(res.body.to_s)
       rescue JSON::ParserError
@@ -92,6 +100,16 @@ module Onboarding
       raise "#{path} → HTTP #{status}" unless status == 200 && body.is_a?(Array)
 
       body
+    end
+
+    # Row count of a paged list without reading it: one row (per_page=1) and the list's total-count header.
+    # Fund lists send it to API callers (remittances, payments, commitments, calls, distribution payments); a list
+    # without it (investors, account entries) raises — read those with #list
+    def count(path)
+      status, = call("get", "#{path}#{path.include?('?') ? '&' : '?'}per_page=1")
+      raise "#{path} → HTTP #{status}" unless status == 200
+
+      Integer(last_headers&.dig("total-count", 0) || raise("#{path} sends no total-count header — use list"))
     end
 
     # Polls a block until it returns the same truthy value twice in a row (a background job has settled)
@@ -138,6 +156,8 @@ if $PROGRAM_NAME == __FILE__
     # Must-have gate by import type (Investor/CapitalCommitment → commitments, calls/remittances/payments → drawdowns, …);
     # an explicit step wins where one type serves two steps (portfolio companies are an Investor import → portfolio)
     (step ||= Onboarding::Gate::IMPORT_STEP[type]) && Onboarding::Gate.check!(api.workspace, step.to_sym)
+    # Manual review gate (hard rule 10): ops approved this exact file (review.rb), or review is waived for the client
+    Onboarding::Review.check!(api.workspace, file)
     status, body = api.call("post", "/import_uploads.json", multipart: {
       "import_upload[name]" => "#{type} #{File.basename(file)}", "import_upload[owner_type]" => "Entity",
       "import_upload[owner_id]" => api.entity_id, "import_upload[entity_id]" => api.entity_id,
@@ -147,8 +167,14 @@ if $PROGRAM_NAME == __FILE__
     id = body["id"]
     puts "upload #{id} created; waiting for ImportUploadJob…"
     # Verification from the API only: outcome, counts and the first failed rows ("Completed" alone is not success)
-    240.times do
-      sleep 5
+    # Backoff: 5 s, 10 s, 20 s, then every 30 s (a 15-minute import was ~174 polls at a flat 5 s, now ~35); 20 min in all
+    waited = 0
+    (0..).each do |i|
+      break if waited >= 1200
+
+      pause = [5 * (2**i), 30].min
+      sleep pause
+      waited += pause
       _, up = api.call("get", "/import_uploads/#{id}.json")
       next if up["status"].to_s.empty? || up["outcome"] == "running"
 
