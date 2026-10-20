@@ -7,6 +7,8 @@ require "fileutils"
 # INCLUDED at one revision, minus EXCLUDED inside them, plus
 #   REVISION                    — the sha, shown in the console footer
 #   tables_with_entity_id.json  — tables the scope rules require an entity_id filter on (card ⑥)
+#   join_map.json               — the real links a table without entity_id may be joined by
+#                                 (support-console-tenant-scope, card ② Link list)
 # Used by support_console:local_setup (into tmp/) and support_console:publish_code (to S3).
 class SupportConsoleCodeArchive
   # X27 — an allow-list, not a deny-list: a new secret file anywhere else is left out by default
@@ -34,8 +36,46 @@ class SupportConsoleCodeArchive
 
     EXCLUDED.each { |pattern| Dir.glob(File.join(dest, pattern), File::FNM_DOTMATCH).each { |path| FileUtils.rm_rf(path) } }
     File.write(File.join(dest, "REVISION"), "#{sha}\n")
-    File.write(File.join(dest, "tables_with_entity_id.json"), JSON.pretty_generate(tables_with_entity_id(File.join(dest, "db/schema.rb"))))
+    schema = File.join(dest, "db/schema.rb")
+    File.write(File.join(dest, "tables_with_entity_id.json"), JSON.pretty_generate(tables_with_entity_id(schema)))
+    File.write(File.join(dest, "join_map.json"), JSON.pretty_generate(join_map(schema)))
     sha
+  end
+
+  # H7, E6 — every real link in the schema, so the scope rules can tell a join along a foreign key
+  # from a join on two unrelated numbers:
+  #   add_foreign_key "<from>", "<to>"[, column: "<col>"]   → <from>.<col> → <to>.id
+  #   a <name>_id column whose plural is a table             → <table>.<name>_id → <names>.id
+  #   a <name>_type + <name>_id pair (polymorphic)           → <table>.<name>_id → whichever table
+  #                                                            <name>_type names
+  # classes gives each table's model class, which a polymorphic <name>_type must name.
+  #
+  # @param schema_path [String] a db/schema.rb
+  # @return [Hash] { "links" => { table => [{ "column", "to" } | { "column", "polymorphic" }] },
+  #   "classes" => { table => class name } }
+  def self.join_map(schema_path)
+    schema = File.read(schema_path)
+    columns = schema.scan(/^\s*create_table "([^"]+)".*?\n(.*?)^\s*end$/m).to_h { |table, body| [table, body.scan(/^\s*t\.\w+ "([^"]+)"/).flatten] }
+    links = Hash.new { |hash, table| hash[table] = [] }
+    # Declared foreign keys first: they are the most reliable
+    schema.scan(/^\s*add_foreign_key "([^"]+)", "([^"]+)"(?:, column: "([^"]+)")?/) do |from, to, column|
+      links[from] << { "column" => column || "#{to.singularize}_id", "to" => to }
+    end
+    columns.each do |table, cols|
+      cols.each do |column|
+        next unless column.end_with?("_id")
+        next if links[table].any? { |link| link["column"] == column }
+
+        name = column.delete_suffix("_id")
+        if cols.include?("#{name}_type")
+          links[table] << { "column" => column, "polymorphic" => "#{name}_type" }
+        elsif columns.key?(name.pluralize)
+          links[table] << { "column" => column, "to" => name.pluralize }
+        end
+      end
+    end
+    { "links" => links.reject { |_table, list| list.empty? }.sort.to_h,
+      "classes" => columns.keys.sort.index_with(&:classify) }
   end
 
   # @param schema_path [String] a db/schema.rb

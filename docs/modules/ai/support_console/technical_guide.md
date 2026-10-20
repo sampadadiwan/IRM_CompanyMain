@@ -258,7 +258,7 @@ flowchart TB
     C --> D["3 · MySQL account support_ro<br/>SELECT, SHOW VIEW only · per machine IP"]
     D --> E["4 · Connect-time checks<br/>replica flags · write probe refused · SHOW GRANTS read-only"]
     E --> F[("Read replica")]
-    C --> G["rows checked: any other entity_id → flagged<br/>+ SupportConsoleQuery row"]
+    C --> G["rows checked by hidden __scope_* columns:<br/>another client → held back, blocked + flagged"]
 ```
 
 1. **SQL rules** — `support_console/machine/lib/sql_rules.js` (shared by the hook and the MCP server).
@@ -266,10 +266,16 @@ flowchart TB
    subquery, derived table, CTE):
    - a table with `entity_id` must be filtered `entity_id = <client>`;
    - `entities` must be `id = <client>` or joined through an `*entity_id` column;
-   - any other table must be joined to an anchored table, or `IN (<anchored subquery>)`;
+   - any other table must be joined along a **real link** to an anchored table: its foreign key to the
+     other table's id, or the other way round, from `join_map.json` (built from `db/schema.rb` at every
+     `publish_code`). A type-and-id pair (`record_type` / `record_id`) must also pin the type to the other
+     table's class, and `IN (SELECT …)` must return the column at the other end of the link. A table with
+     no link to client data is "table not allowed"; one joined on the wrong column is refused naming the
+     links it could use (`support-console-tenant-scope`);
    - `DENIED_TABLES` (`lib/tables.js`: API/OAuth tokens, OTPs, admin users, audits, versions, website
-     leads, …) are refused outright; so are other schemas, RIGHT/FULL joins and functions like
-     `sleep` / `load_file`.
+     leads, the AI chat logs, …) are refused outright; so are other schemas, RIGHT/FULL joins, INTERSECT /
+     EXCEPT and functions like `sleep` / `load_file`. `investor_entity_id` and other `*_entity_id` columns
+     are ordinary data: never filtered, dropped or checked.
    The SQL that actually runs is **rebuilt from the checked tree** and checked again, so quoting tricks
    cannot show the checker one statement and MySQL another (X16). Anything the parser can't read is
    refused. Results are capped at 200 rows.
@@ -278,8 +284,12 @@ flowchart TB
 3. **Connect checks** — `support_console/machine/lib/db.js`: on production the server must have
    `read_only` and `super_read_only` on; a `CREATE TEMPORARY TABLE` probe must be refused; `SHOW GRANTS`
    must hold only USAGE / SELECT / SHOW VIEW / REPLICATION CLIENT (X21). Otherwise: `not_a_replica`.
-4. **After the fact** — returned rows carrying another client's `entity_id` are flagged, recorded, and
-   super users are alerted (§3.10).
+4. **Row check** — before running, the data tool adds a hidden `__scope_<alias>` column (the table's
+   own `entity_id`; `MIN`/`MAX` when the query groups; positional `__scope_1…` across UNION arms) for each
+   table with `entity_id` in the outer SELECT. If any returned row's hidden value is another client's,
+   nothing goes back to Claude: the lookup is recorded as `blocked` and flagged, and super users are
+   alerted (§3.10). Otherwise the hidden columns are removed and Claude gets exactly what it asked for.
+   `support_console/probes/` holds the attack list, the two-firm canary and the replay that test all this.
 
 ### 3.7 The code archive
 
@@ -308,7 +318,7 @@ stateDiagram-v2
     [*] --> stopped
     stopped --> starting: Start button · a question arrives
     starting --> running: relay answers /health
-    running --> stopping: Stop button · idle 60 min
+    running --> stopping: Stop button · idle 15 min
     stopping --> stopped
     running --> starting: relay restarting (new code)
 ```
@@ -319,7 +329,7 @@ stateDiagram-v2
 | Header badge | Running / Starting… / Stopping… / Stopped / Unavailable, loaded lazily (`GET /support_console/machine`) and updated live on stream `:support_console_machine`; Start / Stop buttons with confirm popups — Stop says how many answers in progress would be cut off | `views/support_console/_machine.html.erb` |
 | `SupportConsoleMachineJob` | runs the button's start or stop, waits (up to 5 min for health, 3 min for stopped) and refreshes the badge; no retries | `jobs/support_console_machine_job.rb` |
 | Start on demand | a question that finds the relay down and the machine stopped starts it and waits | `SupportConsoleTurnJob#wake_machine` |
-| `SupportConsoleIdleStopJob` | every 10 minutes (sidekiq-cron): if running, no turn in progress, and no question since the later of the last question and the last start for `SUPPORT_CONSOLE_IDLE_STOP_MINUTES` (default **60**; `0` = off) → stop | `jobs/support_console_idle_stop_job.rb` |
+| `SupportConsoleIdleStopJob` | every 10 minutes (sidekiq-cron): if running, no turn in progress, and no question since the later of the last question and the last start for `SUPPORT_CONSOLE_IDLE_STOP_MINUTES` (default **15**; `0` = off) → stop | `jobs/support_console_idle_stop_job.rb` |
 
 **Stop keeps the IP.** EC2 keeps a stopped instance's private IP, so `SUPPORT_CONSOLE_RELAY_URL` and
 the `support_ro`@IP account stay valid. Only **terminating** releases it — which is why

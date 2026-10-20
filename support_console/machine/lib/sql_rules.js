@@ -10,12 +10,17 @@
 // own (X17). In each one, every table must be tied to this client by a top-level AND condition:
 //   - a table with entity_id:  <alias>.entity_id = <client>
 //   - entities:                <alias>.id = <client>, or equal to an anchored table's *entity_id column
-//   - any other table:         a column equal to a column of an anchored table (a join), or
-//                              <alias>.<col> IN (<a SELECT that is itself anchored>)
-// Secret and cross-client tables (DENIED_TABLES) are refused whatever the conditions.
-// Known gap: a join on the wrong column (`child.x_id = parent.id` with the wrong x) still passes;
-// flagRows and the query record catch rows that come back from another client, and v2 tenant views
-// close it.
+//   - any other table:         a REAL LINK to an anchored table, from join_map.json (tenant-scope ③):
+//                              <alias>.<fk> = <parent>.id, or <alias>.id = <child>.<fk>, a polymorphic
+//                              <alias>.<name>_id = <parent>.id with <alias>.<name>_type = '<Class>', or
+//                              <alias>.<fk> IN (SELECT <parent>.id …) along the same link
+// A table without entity_id that has no link at all is "table not allowed"; one that has links but
+// is not tied by one is refused naming the links it could use. Secret and cross-client tables
+// (DENIED_TABLES) are refused whatever the conditions.
+//
+// After the checks, addScopeColumns adds a hidden __scope_<alias> column per scoped table of the outer
+// SELECT (tenant-scope ⑤), and heldBack lets the data tool refuse a result that holds another
+// client's row (⑦) — a net under the SQL checks, in case they ever miss a trick.
 import pkg from "node-sql-parser/build/mysql.js"
 import { DENIED_TABLES } from "./tables.js"
 
@@ -33,16 +38,25 @@ const DENIED_FUNCTIONS = new Set([
 class Refusal extends Error {}
 const refuse = (reason) => { throw new Refusal(reason) }
 
-// @returns {{sql: string}} the statement to execute, or {{reason: string}} why it is refused
-export function prepareStatement(sql, entityId, tablesWithEntityId, database = null) {
+const NO_LINKS = { links: {}, classes: {} }
+const SCOPE_PREFIX = "__scope_"
+
+// @param joinMap {{links, classes}} from join_map.json (tables.loadJoinMap); without it no table
+//   lacking entity_id can be tied (X8, fail closed)
+// @returns {{sql: string, scopeColumns: string[]}} the statement to execute and the hidden columns it
+//   carries, or {{reason: string}} why it is refused
+export function prepareStatement(sql, entityId, tablesWithEntityId, database = null, joinMap = NO_LINKS) {
   try {
     // Check the statement Claude sent, rebuild it, then check the rebuilt text too: a rebuild that
     // dropped a condition would be refused rather than run unscoped.
     const ast = parse(sql)
-    checkTree(ast, String(entityId), tablesWithEntityId, database)
+    checkTree(ast, String(entityId), tablesWithEntityId, database, joinMap)
     const rebuilt = parser.sqlify(ast, OPTIONS)
-    checkTree(parse(rebuilt), String(entityId), tablesWithEntityId, database)
-    return { sql: rebuilt }
+    const checked = parse(rebuilt)
+    checkTree(checked, String(entityId), tablesWithEntityId, database, joinMap)
+    // ⑤ — the hidden scope columns go on the checked tree, after both checks (they use the reserved prefix)
+    const scopeColumns = addScopeColumns(checked, tablesWithEntityId)
+    return { sql: scopeColumns.length ? parser.sqlify(checked, OPTIONS) : rebuilt, scopeColumns }
   } catch (error) {
     if (error instanceof Refusal) return { reason: error.message }
     throw error
@@ -50,13 +64,99 @@ export function prepareStatement(sql, entityId, tablesWithEntityId, database = n
 }
 
 // @returns {string|null} why the statement is refused, or null when it may run
-export function checkStatement(sql, entityId, tablesWithEntityId, database = null) {
-  return prepareStatement(sql, entityId, tablesWithEntityId, database).reason ?? null
+export function checkStatement(sql, entityId, tablesWithEntityId, database = null, joinMap = NO_LINKS) {
+  return prepareStatement(sql, entityId, tablesWithEntityId, database, joinMap).reason ?? null
 }
 
-// E15, X10 — rows carrying an entity_id other than this client's mean the filter was bypassed.
-export function flagRows(rows, entityId) {
-  return rows.some((row) => row.entity_id !== undefined && row.entity_id !== null && String(row.entity_id) !== String(entityId))
+// ⑦ X11 — a row whose hidden scope column names another client means the checks were bypassed.
+// NULL is skipped: a LEFT JOIN miss, a padded UNION arm, or MIN/MAX over no rows (E4, E12, E13).
+export function heldBack(rows, entityId) {
+  return rows.some((row) => Object.entries(row).some(([key, value]) =>
+    key.startsWith(SCOPE_PREFIX) && value !== null && value !== undefined && String(value) !== String(entityId)))
+}
+
+// The rows and column names as Claude asked for them: the hidden scope columns removed (H1).
+export function withoutScope(rows, columns) {
+  const visible = columns.filter((name) => !name.startsWith(SCOPE_PREFIX))
+  return {
+    columns: visible,
+    rows: rows.map((row) => Object.fromEntries(Object.entries(row).filter(([key]) => !key.startsWith(SCOPE_PREFIX)))),
+  }
+}
+
+// E7, X1 — the links a table without entity_id can be tied by, for the refusal Claude reads: its own
+// foreign keys first, then the tables that point at it. At most 3, in schema order.
+export function linksFor(table, joinMap = NO_LINKS) {
+  const usable = []
+  for (const link of joinMap.links[table] || []) {
+    usable.push(link.to
+      ? `${table}.${link.column} = ${link.to}.id`
+      : `${table}.${link.polymorphic} = '<Class>' AND ${table}.${link.column} = <that table>.id`)
+  }
+  for (const [child, list] of Object.entries(joinMap.links)) {
+    for (const link of list) if (link.to === table) usable.push(`${table}.id = ${child}.${link.column}`)
+  }
+  return usable.slice(0, 3)
+}
+
+// ⑤ — adds the outer SELECT's hidden scope columns: per table with entity_id, its own entity_id
+// (never an *_entity_id column, §4), as __scope_<alias>, or __scope_<alias>_min/_max when the SELECT
+// groups or aggregates (valid under ONLY_FULL_GROUP_BY). UNION arms share positional columns (below).
+// CTEs and derived tables add none: they were checked on their own.
+//
+// @returns {string[]} the hidden column names added
+// @throws Refusal("unreadable") for a shape the rewrite cannot extend safely (X10)
+export function addScopeColumns(ast, scoped) {
+  const arms = []
+  for (let arm = ast; arm; arm = arm._next) {
+    // X10 — INTERSECT / EXCEPT compare whole rows; extra columns would change what they compare.
+    // set_op on an arm names how it joins the next one.
+    if (arm._next && !/^union/i.test(String(arm.set_op || ""))) refuse("unreadable")
+    if (!Array.isArray(arm.columns)) refuse("unreadable")
+    arms.push(arm)
+  }
+  const cteNames = new Set((ast.with || []).map((cte) => ident(cte.name)))
+
+  const perArm = arms.map((arm) => {
+    const aliases = (arm.from || [])
+      .filter((item) => item.table && !item.expr && scoped.has(ident(item.table)) && (item.db || !cteNames.has(ident(item.table))))
+      .map((item) => ident(item.as || item.table))
+    const grouped = Boolean(arm.groupby) || arm.columns.some((column) => aggregates(column.expr))
+    const column = (alias) => ({ type: "column_ref", table: alias, column: "entity_id" })
+    return grouped
+      ? aliases.flatMap((alias) => [
+        [`${alias}_min`, { type: "aggr_func", name: "MIN", args: { expr: column(alias) }, over: null }],
+        [`${alias}_max`, { type: "aggr_func", name: "MAX", args: { expr: column(alias) }, over: null }],
+      ])
+      : aliases.map((alias) => [alias, column(alias)])
+  })
+
+  // One SELECT: __scope_<alias>. A UNION: positional __scope_1.._n, each arm padded with its own
+  // first scope value, so rows the UNION would merge still merge (E4); NULL only for an arm with no
+  // table that has entity_id.
+  if (arms.length === 1) {
+    for (const [name, expr] of perArm[0]) arms[0].columns.push({ expr, as: `${SCOPE_PREFIX}${name}` })
+    return perArm[0].map(([name]) => `${SCOPE_PREFIX}${name}`)
+  }
+  const width = Math.max(...perArm.map((list) => list.length))
+  const names = Array.from({ length: width }, (_, index) => `${SCOPE_PREFIX}${index + 1}`)
+  arms.forEach((arm, index) => {
+    const list = perArm[index]
+    names.forEach((name, position) => {
+      const expr = list[position]?.[1] ?? list[0]?.[1] ?? { type: "null", value: null }
+      arm.columns.push({ expr: structuredClone(expr), as: name })
+    })
+  })
+  return names
+}
+
+// Does this select-list expression aggregate (outside window functions and subqueries)?
+function aggregates(node) {
+  if (!node || typeof node !== "object") return false
+  if (Array.isArray(node)) return node.some(aggregates)
+  if (node.ast || node.type === "select") return false
+  if (node.type === "aggr_func" && !node.over) return true
+  return Object.values(node).some(aggregates)
 }
 
 function parse(sql) {
@@ -76,25 +176,28 @@ function parse(sql) {
   return ast
 }
 
-function checkTree(ast, entityId, scoped, database) {
-  const ctx = { entityId, scoped, database }
+function checkTree(ast, entityId, scoped, database, joinMap) {
+  const ctx = { entityId, scoped, database, joinMap: joinMap || NO_LINKS }
   // E16 — no variables anywhere (v2 tenant views will depend on a session variable).
   walk(ast, (node) => {
     if (node.type === "var") refuse("SELECT only")
     if (node.type === "function" && DENIED_FUNCTIONS.has(functionName(node))) refuse("SELECT only")
+    // tenant-scope X9 — the hidden scope columns' prefix is reserved, so Claude cannot fake one
+    if (ident(node.as).startsWith(SCOPE_PREFIX) || (node.type === "column_ref" && ident(node.column).startsWith(SCOPE_PREFIX))) refuse("unreadable")
   })
-  checkSelect(ast, ctx, [], new Set())
+  checkSelect(ast, ctx, new Map(), new Set())
 }
 
 // Checks one SELECT (and the UNION arms chained after it through _next).
 //
-// @param outer   anchored aliases of the enclosing SELECTs, for correlated subqueries
+// @param outer   anchored aliases of the enclosing SELECTs → their table (null for a CTE or derived
+//                table), for correlated subqueries
 // @param ctes    names of CTEs already checked, which count as anchored tables
 function checkSelect(select, ctx, outer, ctes) {
   if (select?.type !== "select") refuse("SELECT only")
   const cteNames = new Set(ctes)
   for (const cte of select.with || []) {
-    checkSelect(unwrap(cte.stmt), ctx, [], cteNames)
+    checkSelect(unwrap(cte.stmt), ctx, new Map(), cteNames)
     cteNames.add(ident(cte.name))
   }
 
@@ -130,7 +233,7 @@ function checkArm(arm, ctx, outer, ctes) {
   })
 
   // Anchor tables until nothing changes: a link only counts once its target is anchored.
-  const anchored = new Set(outer)
+  const anchored = new Set(outer.keys())
   for (const item of items) if (item.kind === "trusted") anchored.add(item.alias)
   let changed = true
   while (changed) {
@@ -138,18 +241,30 @@ function checkArm(arm, ctx, outer, ctes) {
     for (const item of items) {
       if (anchored.has(item.alias)) continue
       const own = item.join && item.join.startsWith("LEFT") ? [...shared, ...conjuncts(item.on)] : shared
-      if (own.some((c) => anchors(c, item, items, aliases, anchored, ctx, outer))) {
+      if (own.some((c) => anchors(c, item, items, aliases, anchored, ctx, outer, own))) {
         anchored.add(item.alias)
         changed = true
       }
     }
   }
-  // E13, X18 — every table in this SELECT must be tied to the client.
-  if (items.some((item) => !anchored.has(item.alias))) refuse("add filter")
+  // E13, X18 — every table in this SELECT must be tied to the client. A table with entity_id (or
+  // entities) that is not is the usual mistake, so it is reported first.
+  const loose = items.filter((item) => !anchored.has(item.alias))
+  if (loose.some((item) => item.kind !== "other")) refuse("add filter")
+  if (loose.length) {
+    // tenant-scope X4 / E7, X1 — no link at all, or links that were not used (named for Claude)
+    const usable = linksFor(loose[0].table, ctx.joinMap)
+    if (usable.length === 0) refuse("table not allowed")
+    refuse(`join on a real relationship: ${loose[0].table} can be joined by ${usable.join(", ")}`)
+  }
 
   // Subqueries in the select list, WHERE, HAVING, ON, GROUP BY and ORDER BY are checked as SELECTs of
-  // their own, seeing this SELECT's anchored tables (correlated subqueries).
-  const visible = [...anchored].filter((alias) => aliases.has(alias) || outer.includes(alias))
+  // their own, seeing this SELECT's anchored tables (correlated subqueries) and what each one is.
+  const visible = new Map()
+  for (const alias of anchored) {
+    if (aliases.has(alias)) visible.set(alias, aliases.get(alias).table ?? null)
+    else if (outer.has(alias)) visible.set(alias, outer.get(alias))
+  }
   const expressions = [arm.columns, arm.where, arm.having, arm.groupby, arm.orderby, ...items.map((i) => i.on)]
   for (const expression of expressions) forEachSubquery(expression, (sub) => checkSelect(sub, ctx, visible, ctes))
 }
@@ -158,7 +273,7 @@ function checkArm(arm, ctx, outer, ctes) {
 function describeItem(item, ctx, outer, ctes) {
   // A derived table: checked on its own, then trusted like a CTE.
   if (item.expr?.ast || item.expr?.type === "select") {
-    checkSelect(unwrap(item.expr), ctx, [], ctes)
+    checkSelect(unwrap(item.expr), ctx, new Map(), ctes)
     if (!item.as) refuse("unreadable")
     return { alias: ident(item.as), kind: "trusted", join: item.join, on: item.on }
   }
@@ -177,7 +292,9 @@ function describeItem(item, ctx, outer, ctes) {
 }
 
 // Does one top-level condition tie `item` to the client?
-function anchors(condition, item, items, aliases, anchored, ctx, outer) {
+//
+// @param siblings the other top-level conditions on the same rows, where a polymorphic type is pinned
+function anchors(condition, item, items, aliases, anchored, ctx, outer, siblings) {
   if (condition.type !== "binary_expr") return false
   const { operator, left, right } = condition
   const mine = (ref) => ref?.type === "column_ref" && refersTo(ref, item, items)
@@ -196,13 +313,15 @@ function anchors(condition, item, items, aliases, anchored, ctx, outer) {
       if (b?.type === "column_ref" && b.table) {
         const target = ident(b.table)
         if (target === item.alias || !anchored.has(target)) continue
-        if (!aliases.has(target) && !outer.includes(target)) continue
+        if (!aliases.has(target) && !outer.has(target)) continue
         // entities may only be reached through an *entity_id column (investor_entity_id, …).
         if (item.kind === "entities") {
           if (column === "id" && ident(b.column).endsWith("entity_id")) return true
           continue
         }
-        if (item.kind === "other") return true
+        // tenant-scope ③ — a table without entity_id only along a real link (H1, H2, E1, X1).
+        const targetTable = aliases.has(target) ? aliases.get(target).table : outer.get(target)
+        if (item.kind === "other" && realLink(item, column, target, targetTable, ident(b.column), siblings, items, ctx)) return true
       }
     }
   }
@@ -215,12 +334,58 @@ function anchors(condition, item, items, aliases, anchored, ctx, outer) {
       if (item.kind === "entities" && column === "id") return true
     }
   }
-  // <alias>.<col> IN (SELECT …): the subquery is checked separately; it must read an anchored table.
+  // <alias>.<fk> IN (SELECT <t>.<col> FROM <t> …): the subquery is checked separately (it must be tied
+  // to the client); the column it returns must be the other end of a real link (E2, X2).
   if (operator === "IN" && item.kind === "other" && mine(left)) {
     const sub = right?.type === "expr_list" && right.value?.length === 1 ? unwrap(right.value[0]) : null
-    if (sub?.type === "select" && (sub.from || []).length > 0) return true
+    const returned = sub?.type === "select" && !sub._next && sub.columns?.length === 1 ? sub.columns[0].expr : null
+    if (returned?.type === "column_ref") {
+      const from = (sub.from || []).filter((entry) => entry.table && !entry.expr)
+      const source = returned.table
+        ? from.find((entry) => ident(entry.as || entry.table) === ident(returned.table))
+        : (from.length === 1 && (sub.from || []).length === 1 ? from[0] : null)
+      if (source && realLink(item, ident(left.column), ident(source.as || source.table), ident(source.table), ident(returned.column), siblings, items, ctx)) return true
+    }
   }
   return false
+}
+
+// tenant-scope ③ — is `item.column = target.targetColumn` a real link from join_map.json? Either way
+// round: the item's foreign key to the target's id, or the item's id from the target's foreign key.
+// A polymorphic link also needs its type pinned, in the same conditions, to the other table's class
+// (H3, E8, X3). A CTE or derived table (targetTable null) has no known links.
+function realLink(item, column, target, targetTable, targetColumn, siblings, items, ctx) {
+  if (!targetTable || !item.table) return false
+  const { links, classes } = ctx.joinMap
+  if (targetColumn === "id") {
+    for (const link of links[item.table] || []) {
+      if (link.column !== column) continue
+      if (link.to === targetTable) return true
+      if (link.polymorphic && pinned(item.alias, link.polymorphic, classes[targetTable], siblings, items)) return true
+    }
+  }
+  if (column === "id") {
+    for (const link of links[targetTable] || []) {
+      if (link.column !== targetColumn) continue
+      if (link.to === item.table) return true
+      if (link.polymorphic && pinned(target, link.polymorphic, classes[item.table], siblings, items)) return true
+    }
+  }
+  return false
+}
+
+// Is `<alias>.<typeColumn> = '<className>'` one of the conditions? Case-sensitive, as Rails stores it.
+function pinned(alias, typeColumn, className, siblings, items) {
+  if (!className) return false
+  return siblings.some((condition) => {
+    if (condition.type !== "binary_expr" || condition.operator !== "=") return false
+    return [[condition.left, condition.right], [condition.right, condition.left]].some(([a, b]) => {
+      if (a?.type !== "column_ref" || ident(a.column) !== typeColumn) return false
+      if (a.table ? ident(a.table) !== alias : items.length !== 1) return false
+      const values = literals(b)
+      return values?.length === 1 && values[0] === className
+    })
+  })
 }
 
 // A column belongs to `item` when qualified with its alias, or unqualified and it is the only table.

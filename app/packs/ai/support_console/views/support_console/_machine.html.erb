@@ -10,14 +10,20 @@
   }.fetch(status, ["danger", "ti-help-circle", "Machine unavailable"])
   idle_minutes = ENV.fetch("SUPPORT_CONSOLE_IDLE_STOP_MINUTES", SupportConsoleIdleStopJob::DEFAULT_IDLE_MINUTES).to_i
 %>
-<turbo-frame id="support-console-machine" class="d-flex align-items-center gap-2 ms-auto">
+<%# The popups are opened from <body> by support_console_machine_controller — inside .sc-header they sit under the backdrop. %>
+<%# data-controller sits on a div inside the frame: a lazy frame load swaps only the frame's children, so an
+    attribute on the <turbo-frame> itself never reaches the page and the buttons stayed dead. %>
+<turbo-frame id="support-console-machine" class="ms-auto">
+<div class="d-flex align-items-center gap-2" data-controller="support-console-machine">
   <span class="badge bg-<%= badge[0] %>-subtle text-<%= badge[0] %>" id="support-console-machine-status" data-status="<%= status %>">
     <i class="ti <%= badge[1] %> me-1"></i><%= badge[2] %>
   </span>
   <% if status == "stopped" %>
-    <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#support-console-start-modal">Start</button>
+    <button type="button" class="btn btn-sm btn-outline-primary" data-action="support-console-machine#open"
+            data-support-console-machine-modal-param="support-console-start-modal">Start</button>
   <% elsif status == "running" %>
-    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#support-console-stop-modal">Stop</button>
+    <button type="button" class="btn btn-sm btn-outline-secondary" data-action="support-console-machine#open"
+            data-support-console-machine-modal-param="support-console-stop-modal">Stop</button>
   <% end %>
 
   <% if status == "stopped" %>
@@ -101,4 +107,5 @@
       </div>
     </div>
   <% end %>
+</div>
 </turbo-frame>

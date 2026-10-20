@@ -69,7 +69,7 @@ Feature: Support Console machine
     And I ask "Second?"
     Then I should see "Conversation: 3.5k tokens · ≈ $0.35"
 
-  # H11 — Happy path: after an hour with no questions the idle check stops the machine
+  # H11 — Happy path: after 15 minutes with no questions the idle check stops the machine
   Scenario: Idle machine is stopped
     Given the support machine is "running", started 2 hours ago
     When the idle check runs
@@ -82,9 +82,9 @@ Feature: Support Console machine
     When the idle check runs
     Then the support machine was not sent anything
 
-  # E35 — Edge case: idle time counts from the last start, so a machine started 30 minutes ago keeps running
+  # E35 — Edge case: idle time counts from the last start, so a machine started 10 minutes ago keeps running
   Scenario: Recently started machine is not idle
-    Given the support machine is "running", started 30 minutes ago
+    Given the support machine is "running", started 10 minutes ago
     When the idle check runs
     Then the support machine was not sent anything
 

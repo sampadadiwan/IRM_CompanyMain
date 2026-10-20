@@ -55,12 +55,13 @@ test("E17 — a large result is capped at 200 rows with the full total", { skip 
   await db.close()
 })
 
-test("E15 — rows of another client are flagged", { skip }, async () => {
+// tenant-scope E9 (replaces E15) — a column Claude names entity_id is data, not the row's owner: the row
+// check reads only its own hidden __scope_* columns, which never reach Claude
+test("tenant-scope E9 — an aliased entity_id column is not flagged, and no __scope_ column comes back", { skip }, async () => {
   const { db, events } = await loadDb({ SUPPORT_CONSOLE_LOCAL: "1" })
-  // Alias a row's id as entity_id to stand in for foreign rows the scope check could not see.
   const result = await db.runLookup("SELECT id AS entity_id FROM folders WHERE entity_id = 18 ORDER BY id LIMIT 3", 18)
-  assert.equal(result.flagged, result.rows.length > 0)
-  assert.equal(events().at(-1).flagged, result.flagged)
+  assert.ok(!result.columns.some((name) => name.startsWith("__scope_")))
+  assert.equal(events().at(-1).flagged, false)
   await db.close()
 })
 

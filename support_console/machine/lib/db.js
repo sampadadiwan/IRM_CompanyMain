@@ -2,9 +2,9 @@
 // support_ro, with the replica proven at connect time, a 30 s statement limit and a row cap.
 import fs from "node:fs"
 import mysql from "mysql2/promise"
-import { prepareStatement, flagRows } from "./sql_rules.js"
+import { prepareStatement, heldBack, withoutScope } from "./sql_rules.js"
 import { appendEvent } from "./events.js"
-import { tablesWithEntityId } from "./tables.js"
+import { tablesWithEntityId, loadJoinMap } from "./tables.js"
 
 export const ROW_CAP = 200
 const STATEMENT_TIMEOUT_MS = 30_000
@@ -109,12 +109,12 @@ export async function replicaLag(conn) {
 
 // Runs one lookup for the conversation's client and records it.
 //
-// @returns {{columns, rows, total_rows, truncated, lag_seconds, duration_ms, flagged}}
+// @returns {{columns, rows, total_rows, truncated, lag_seconds, duration_ms}}
 // @throws Error with a reason the caller shows to Claude
 export async function runLookup(sql, entityId) {
   // The same rules as the hook: the hook may be bypassed by a misconfiguration, this may not.
   // X16 — what runs is the statement rebuilt from the checked parse, never the text as sent.
-  const prepared = prepareStatement(sql, entityId, tablesWithEntityId(), process.env.SUPPORT_DB_NAME)
+  const prepared = prepareStatement(sql, entityId, tablesWithEntityId(), process.env.SUPPORT_DB_NAME, loadJoinMap())
   if (prepared.reason) {
     appendEvent({ sql: sql || "(no statement)", outcome: "blocked", reason: prepared.reason })
     throw new Error(`Lookup refused (${prepared.reason}).`)
@@ -150,9 +150,16 @@ export async function runLookup(sql, entityId) {
     rows = rows.slice(0, ROW_CAP)
   }
 
-  const flagged = flagRows(rows, entityId)
-  appendEvent({ sql, outcome: "ran", row_count: total, duration_ms: duration, lag_seconds: lag, flagged })
-  return { columns: (fields || []).map((f) => f.name), rows, total_rows: total, truncated, lag_seconds: lag, duration_ms: duration, flagged }
+  // tenant-scope ⑦ X11 — any row whose hidden scope column names another client: nothing goes back
+  // to Claude, the lookup is recorded as blocked and flagged (super users get the bell alert).
+  if (heldBack(rows, entityId)) {
+    appendEvent({ sql, outcome: "blocked", reason: "rows from another client", flagged: true, row_count: total, duration_ms: duration, lag_seconds: lag })
+    throw new Error("Lookup blocked: rows from another client.")
+  }
+  // H1 — Claude sees exactly the columns it asked for
+  const visible = withoutScope(rows, (fields || []).map((f) => f.name))
+  appendEvent({ sql, outcome: "ran", row_count: total, duration_ms: duration, lag_seconds: lag, flagged: false })
+  return { columns: visible.columns, rows: visible.rows, total_rows: total, truncated, lag_seconds: lag, duration_ms: duration }
 }
 
 // @returns column descriptions for the named tables

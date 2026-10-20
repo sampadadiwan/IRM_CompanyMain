@@ -202,7 +202,7 @@ Worked examples H7–H11, E33–E35, X34 in [design.md](design.md).
 - [x] 9.2 Header badge (lazy frame, live via `:support_console_machine`) with Start / Stop popups for `:support`
       users (`SupportConsolePolicy#machine?`); `SupportConsoleMachineJob` follows the machine up or down.
 - [x] 9.3 A question while the machine is stopped starts it and waits (turn job `wake_machine`, once).
-- [x] 9.4 `SupportConsoleIdleStopJob` every 10 minutes (sidekiq-cron); `SUPPORT_CONSOLE_IDLE_STOP_MINUTES`, default 60.
+- [x] 9.4 `SupportConsoleIdleStopJob` every 10 minutes (sidekiq-cron); `SUPPORT_CONSOLE_IDLE_STOP_MINUTES`, default 15 (was 60 until 2026-10-20).
 - [x] 9.5 Relay sends token `usage`; the composer footer totals the conversation's tokens and approximate cost.
 - [x] 9.6 `support_console:app_machine_check[env]` — EC2 DryRun with the app's keys; staging.in ✓.
 - [ ] 9.7 Run `app_machine_check` for production.in and production.us before deploying there.

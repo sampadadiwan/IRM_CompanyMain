@@ -4,7 +4,7 @@
 // shows the stderr text to Claude, which then retries with the filter (design walkthrough row 5).
 import { checkStatement } from "../lib/sql_rules.js"
 import { appendEvent } from "../lib/events.js"
-import { tablesWithEntityId } from "../lib/tables.js"
+import { tablesWithEntityId, loadJoinMap } from "../lib/tables.js"
 
 let input = ""
 process.stdin.on("data", (chunk) => { input += chunk })
@@ -21,7 +21,7 @@ process.stdin.on("end", () => {
   const sql = payload?.tool_input?.sql ?? ""
   const entityId = process.env.SUPPORT_ENTITY_ID
   // E13, E14, E16 — the rules shared with the db MCP server.
-  const reason = checkStatement(sql, entityId, tablesWithEntityId())
+  const reason = checkStatement(sql, entityId, tablesWithEntityId(), null, loadJoinMap())
   if (!reason) process.exit(0)
 
   appendEvent({ sql: sql || "(no statement)", outcome: "blocked", reason })
@@ -29,7 +29,9 @@ process.stdin.on("end", () => {
     "add filter": `Every table with an entity_id column must be filtered with entity_id = ${entityId}.`,
     "other client": `This conversation is only about entity_id ${entityId}.`,
     "SELECT only": "Only a single read-only SELECT (or WITH … SELECT) is allowed.",
-  }[reason]
+    "table not allowed": "That table is not readable from the Support Console.",
+    "unreadable": "The statement could not be checked; write it as a plain SELECT.",
+  }[reason] ?? (reason.startsWith("join on a real relationship") ? "Join it along that foreign key, from a table filtered on the client." : "")
   process.stderr.write(`Lookup refused (${reason}). ${help}`)
   process.exit(2)
 })

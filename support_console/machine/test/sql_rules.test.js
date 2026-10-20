@@ -1,10 +1,12 @@
 // The scope rules shared by the hook and the db MCP server (design card ⑥).
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { checkStatement, prepareStatement, flagRows } from "../lib/sql_rules.js"
+import { checkStatement, prepareStatement, heldBack } from "../lib/sql_rules.js"
 
 const tables = new Set(["capital_calls", "account_entries", "investors", "funds", "users", "form_types"])
-const check = (sql) => checkStatement(sql, 18, tables, "IRM_production")
+// tenant-scope ③ — a table without entity_id is tied only along a link from join_map.json
+const links = { links: { form_custom_fields: [{ column: "form_type_id", to: "form_types" }] }, classes: {} }
+const check = (sql) => checkStatement(sql, 18, tables, "IRM_production", links)
 
 test("allows a scoped SELECT", () => {
   assert.equal(check("SELECT * FROM capital_calls WHERE entity_id = 18 LIMIT 5"), null)
@@ -64,11 +66,12 @@ test("X20 — locking reads, file and wait functions, WITH … DELETE", () => {
 })
 
 // X10 — Error case: an OR at the top of the WHERE anchors nothing, so `OR 1=1` is refused
-test("X10 — OR 1=1 is refused; flagRows still catches foreign rows", () => {
+test("X10 — OR 1=1 is refused; the row check still catches foreign rows", () => {
   assert.equal(check("SELECT * FROM capital_calls WHERE entity_id = 18 OR 1=1"), "add filter")
   assert.equal(check("SELECT * FROM capital_calls WHERE (entity_id = 18 OR id > 0) AND id < 10"), "add filter")
-  assert.equal(flagRows([{ entity_id: 18 }, { entity_id: 25 }], 18), true)
-  assert.equal(flagRows([{ entity_id: 18 }, { id: 1 }], 18), false)
+  // tenant-scope ⑦ — judged by the hidden scope columns, not by any column named entity_id
+  assert.equal(heldBack([{ __scope_c: 18 }, { __scope_c: 25 }], 18), true)
+  assert.equal(heldBack([{ entity_id: 25, __scope_c: 18 }], 18), false)
 })
 
 // X15 — Error case: a comment marker inside a string cannot hide the rest of the statement from the checks
@@ -107,7 +110,7 @@ test("X18 — comma joins, loose joins and RIGHT JOIN", () => {
   assert.equal(check("SELECT * FROM funds f LEFT JOIN capital_calls c ON c.fund_id = f.id WHERE f.entity_id = 18"), "add filter")
   assert.equal(check("SELECT * FROM funds f LEFT JOIN capital_calls c ON c.fund_id = f.id AND c.entity_id = 18 WHERE f.entity_id = 18"), null)
   assert.equal(check("SELECT * FROM funds f RIGHT JOIN capital_calls c ON c.fund_id = f.id AND f.entity_id = 18 WHERE c.entity_id = 18"), "add filter")
-  assert.equal(check("SELECT * FROM form_custom_fields"), "add filter")
+  assert.equal(check("SELECT * FROM form_custom_fields"), "join on a real relationship: form_custom_fields can be joined by form_custom_fields.form_type_id = form_types.id")
 })
 
 // X19 — Error case: secret and cross-client tables, and other schemas, are refused outright

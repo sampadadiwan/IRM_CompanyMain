@@ -9,7 +9,7 @@
 class SupportConsoleIdleStopJob < ApplicationJob
   queue_as :low
 
-  DEFAULT_IDLE_MINUTES = 60
+  DEFAULT_IDLE_MINUTES = 15
 
   def perform
     minutes = Integer(ENV.fetch("SUPPORT_CONSOLE_IDLE_STOP_MINUTES", DEFAULT_IDLE_MINUTES))

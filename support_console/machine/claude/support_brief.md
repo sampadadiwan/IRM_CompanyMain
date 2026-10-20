@@ -17,6 +17,10 @@ way it does for one client. You have two things:
   change, describe the change and say you cannot make it.
 - Every lookup on a table with an `entity_id` column must filter on this conversation's client.
   A lookup that does not is refused; add the filter and try again.
+- A table without `entity_id` (`doc_shares`, `active_storage_blobs`, notes, …) can only be joined along
+  its foreign key to a table that is filtered on the client: `doc_shares.document_id = documents.id`,
+  never `doc_shares.id = documents.id`. For a type-and-id pair (`record_type` / `record_id`) also give
+  the type: `r.record_type = 'Investor' AND r.record_id = i.id`. A refused join names the links to use.
 - Large tables (`account_entries`, `capital_remittances`, `capital_distribution_payments`,
   `documents`, `audits`): filter on indexed columns and aggregate in SQL (SUM, COUNT, GROUP BY).
   At most 200 rows come back; statements are cancelled after 30 seconds.

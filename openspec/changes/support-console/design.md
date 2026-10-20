@@ -862,7 +862,7 @@ users are not notified of anything beyond the live chat.
 | H8 | Stop the machine | machine running | Meera presses Stop and confirms | EC2 `StopInstances`; badge Machine stopping…, then Machine stopped; the private IP is kept | Machine control | `support_console/machine.feature` |
 | H9 | A question starts a stopped machine | machine stopped | Meera asks a question | the relay is unreachable, so the turn job starts the machine, shows "Starting the support machine (about 2 minutes)", waits for `/health`, retries the question once and answers it | Machine control | `support_console/machine.feature` |
 | H10 | Conversation usage | two answers: 1,000 tokens / $0.10 and 2,500 tokens / $0.25 | the conversation is open | footer: "Conversation: 3.5k tokens · ≈ $0.35" (API prices; the subscription is a flat fee) | Usage | `support_console/machine.feature` |
-| H11 | Idle stop | machine started 2 h ago, no questions | the idle check runs (every 10 min) | the machine is stopped (`SUPPORT_CONSOLE_IDLE_STOP_MINUTES`, default 60; 0 turns it off) | Machine control | `support_console/machine.feature` |
+| H11 | Idle stop | machine started 2 h ago, no questions | the idle check runs (every 10 min) | the machine is stopped (`SUPPORT_CONSOLE_IDLE_STOP_MINUTES`, default 15; 0 turns it off) | Machine control | `support_console/machine.feature` |
 
 #### Edge Cases
 
@@ -901,7 +901,7 @@ users are not notified of anything beyond the live chat.
 | E32 | Signed in with a subscription token | `SUPPORT_CONSOLE_AUTH=subscription`, token in Parameter Store | a turn runs | Claude Code gets `CLAUDE_CODE_OAUTH_TOKEN`, never `CLAUDE_CODE_USE_BEDROCK`; `--model` is `sonnet` / `opus`; the role has no Bedrock access | Model chosen per question | `support_console/relay.feature` |
 | E33 | Stop with answers in progress | machine running; 1 turn running | Meera opens Stop | the popup says "1 answer in progress will be cut off" — the machine is shared by every support user | Machine control | `support_console/machine.feature` |
 | E34 | Idle check, answer in progress | machine started 2 h ago; a turn running | the idle check runs | nothing is stopped | Machine control | `support_console/machine.feature` |
-| E35 | Idle check, recently started | machine started 30 min ago, no questions | the idle check runs | nothing is stopped: idle counts from the later of the last question and the last start | Machine control | `support_console/machine.feature` |
+| E35 | Idle check, recently started | machine started 10 min ago, no questions | the idle check runs | nothing is stopped: idle counts from the later of the last question and the last start | Machine control | `support_console/machine.feature` |
 | E36 | Server error from a running machine | machine running, relay answers `/health`; `/turns` answers 500 | Meera asks | "unavailable" as in X5; the question is sent once and the machine is not started | Machine control | `support_console/machine.feature` |
 | E21 | Conversation list order | 3 conversations | Meera picks Golden Angels | newest first, with date, starter and first question | Continue a conversation | `support_console/ask.feature` |
 
@@ -918,7 +918,7 @@ users are not notified of anything beyond the live chat.
 | X7 | Stream stalls | stub sends nothing for 121 s | job waits | turn failed, "took too long", abort called | Machine unreachable | `support_console/ask.feature` |
 | X8 | Stale timestamp | timestamp 61 s old | sent to relay | 401 | Machine unreachable | `support_console/relay.feature` |
 | X9 | Bash attempted | stub emits a denied Bash tool event | turn completes | answer arrives; no command ran | Asked to fix data | `support_console/ask.feature` |
-| X10 | Another client's rows get past the check (`OR 1=1` is now refused — X16; a join on the wrong column still passes) | stream: `query` ran, flagged | turn completes | flagged row; `:super` notified | Other client's rows returned | `support_console/query_record.feature` |
+| X10 | Another client's rows get past the check (`OR 1=1` is now refused — X16; a join on the wrong column is refused since support-console-tenant-scope, which also holds such rows back instead of only flagging them) | stream: `query` ran, flagged | turn completes | flagged row; `:super` notified | Other client's rows returned | `support_console/query_record.feature` |
 | X11 | Not a replica | stream: `error` `not_a_replica` | turn | unavailable message; `ErrorReport` | Not connected to a replica | `support_console/ask.feature` |
 | X12 | Replica unreachable | stream: `error` db connect | turn | unavailable message | Machine unreachable | `support_console/ask.feature` |
 | X13 | Other environment | IN console | turn | relay URL and secret from IN credentials only | India and US separate | `support_console/ask.feature` |

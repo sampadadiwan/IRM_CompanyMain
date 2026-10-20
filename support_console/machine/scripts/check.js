@@ -6,7 +6,7 @@ import path from "node:path"
 import { spawnSync } from "node:child_process"
 import { connect, replicaLag, close } from "../lib/db.js"
 import { codeRevision } from "../relay/claude_command.js"
-import { tablesWithEntityId } from "../lib/tables.js"
+import { tablesWithEntityId, loadJoinMap } from "../lib/tables.js"
 import { classifyClaudeError } from "../lib/claude_errors.js"
 
 const local = process.env.SUPPORT_CONSOLE_LOCAL === "1"
@@ -20,6 +20,9 @@ try {
   const codeDir = fs.realpathSync(process.env.SUPPORT_CONSOLE_CODE_DIR)
   line(true, `Code: ${codeRevision(codeDir).slice(0, 12)} at ${codeDir}`)
   line(tablesWithEntityId(codeDir).size > 0, `Scope rules: ${tablesWithEntityId(codeDir).size} tables with entity_id`)
+  // tenant-scope X8 — without the link list every table lacking entity_id is refused (fail closed)
+  const linked = Object.keys(loadJoinMap(codeDir).links).length
+  line(linked > 0, linked ? `Link list: ${linked} tables with links` : "Link list: join_map.json missing — tables without entity_id are refused")
   line(!fs.existsSync(path.join(codeDir, "config", "credentials")), "Code archive holds no credentials")
   // X27 — the archive is an allow-list; a key file here means it was built some other way.
   const keys = ["config/deploy_id_rsa", "config/deploy_id_rsa_enc", "config/master.key"].filter((f) => fs.existsSync(path.join(codeDir, f)))

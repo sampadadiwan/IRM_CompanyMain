@@ -99,7 +99,7 @@ Use the badge at the top right of a conversation. It shows **Machine running**, 
 The question starts the machine. The answer shows "Starting the support machine (about 2 minutes)" as its first step, waits for the machine to be ready, and then carries on as normal. You do not need to press Start first.
 
 **Why did the support machine stop on its own?**
-It stops itself after 60 minutes with no questions, to avoid running all day for nothing. The time counts from the last question or the last start, whichever is later, and it never stops while an answer is in progress. The next question, or **Start**, turns it back on.
+It stops itself after 15 minutes with no questions, to avoid running all day for nothing. The time counts from the last question or the last start, whichever is later, and it never stops while an answer is in progress. The next question, or **Start**, turns it back on.
 
 **What is "Conversation: 64k tokens · ≈ $0.41" in the footer?**
 How much work Claude has done in this conversation so far: the tokens it read and wrote across every answer, and what that would cost at Claude's API prices. It is an estimate for comparison. On the subscription the console uses, the actual charge is a flat monthly plan, so a long conversation mainly uses up more of the plan's limits. Answers from before this was recorded are not counted.
