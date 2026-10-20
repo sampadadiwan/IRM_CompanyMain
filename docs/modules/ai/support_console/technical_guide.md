@@ -325,14 +325,14 @@ stateDiagram-v2
 
 | Piece | What it does | File |
 |---|---|---|
-| `SupportConsoleMachineControl` | finds the machine by the relay URL's IP + `Name=irm-support-console-*` tag, using the app's own AWS keys and `AWS_REGION` (same set-up as `DbRestoreService`); status = **EC2 state first**, then `/health` (a stopped machine's IP doesn't answer, so asking EC2 first avoids a timeout); `start!` / `stop!` / `wait_until_healthy` / `broadcast_status` | `services/support_console_machine_control.rb` |
+| `SupportConsoleMachineControl` | finds the machine by its name tag `irm-support-console-<Rails.env>-<site code>` (e.g. `irm-support-console-production-in`), using the app's own AWS keys and `AWS_REGION` (same set-up as `DbRestoreService`); gives the relay's address `http://<private IP>:4900` when `SUPPORT_CONSOLE_RELAY_URL` is not set, cached 10 minutes and dropped when the relay can't be reached; status = **EC2 state first**, then `/health` (a stopped machine's IP doesn't answer, so asking EC2 first avoids a timeout); `start!` / `stop!` / `wait_until_healthy` / `broadcast_status` | `services/support_console_machine_control.rb` |
 | Header badge | Running / Starting… / Stopping… / Stopped / Unavailable, loaded lazily (`GET /support_console/machine`) and updated live on stream `:support_console_machine`; Start / Stop buttons with confirm popups — Stop says how many answers in progress would be cut off | `views/support_console/_machine.html.erb` |
 | `SupportConsoleMachineJob` | runs the button's start or stop, waits (up to 5 min for health, 3 min for stopped) and refreshes the badge; no retries | `jobs/support_console_machine_job.rb` |
 | Start on demand | a question that finds the relay down and the machine stopped starts it and waits | `SupportConsoleTurnJob#wake_machine` |
 | `SupportConsoleIdleStopJob` | every 10 minutes (sidekiq-cron): if running, no turn in progress, and no question since the later of the last question and the last start for `SUPPORT_CONSOLE_IDLE_STOP_MINUTES` (default **15**; `0` = off) → stop | `jobs/support_console_idle_stop_job.rb` |
 
-**Stop keeps the IP.** EC2 keeps a stopped instance's private IP, so `SUPPORT_CONSOLE_RELAY_URL` and
-the `support_ro`@IP account stay valid. Only **terminating** releases it — which is why
+**Stop keeps the IP.** EC2 keeps a stopped instance's private IP, so the found relay address and the
+`support_ro`@IP account stay valid. Only **terminating** releases it — which is why
 `support_console:machine_down` needs `TERMINATE=1` as well as `EXECUTE=1`.
 
 Before production, run `support_console:app_machine_check[env]`: it confirms that environment's app
@@ -381,10 +381,11 @@ Every task is a **dry run** unless `EXECUTE=1`, asserts it is talking to the rig
 is all that separates them: a `REGION` override is refused on production (X32). Each environment has its
 own machine, bucket, parameters, token, relay URL and secret — never copy one to the other.
 
-**Bringing up a new machine** (what staging went through on 2026-10-20):
-`claude setup-token` → `claude_token` → `machine` → `provision_db_access` (DB account for the new IP)
-→ `publish_code` → set `SUPPORT_CONSOLE_RELAY_URL=http://<private IP>:4900` in the environment's
-credentials and deploy → `machine_check` all ✓.
+**Bringing up a new machine** — nobody needs to know its IP:
+`claude setup-token` → `claude_token` → `machine` → `provision_db_access` (finds the machine and creates
+the DB account for its IP) → add `SUPPORT_CONSOLE_RELAY_SECRET` to the environment's credentials → deploy
+(its `publish_code` uploads the code) → `machine_check` and `app_machine_check` all ✓. The app finds the
+relay by the machine's name tag; `SUPPORT_CONSOLE_RELAY_URL` is only for local mode or an override.
 
 ---
 

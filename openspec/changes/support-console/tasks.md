@@ -206,3 +206,18 @@ Worked examples H7–H11, E33–E35, X34 in [design.md](design.md).
 - [x] 9.5 Relay sends token `usage`; the composer footer totals the conversation's tokens and approximate cost.
 - [x] 9.6 `support_console:app_machine_check[env]` — EC2 DryRun with the app's keys; staging.in ✓.
 - [ ] 9.7 Run `app_machine_check` for production.in and production.us before deploying there.
+
+## 10. The app finds its relay (2026-10-20)
+
+Worked examples H12, E37–E39, X35 in [design.md](design.md).
+
+- [x] 10.1 `SupportConsoleMachineControl` looks the machine up by its name tag
+      `irm-support-console-<Rails.env>-<site code>` (the name `support_console:machine` gives it) in `AWS_REGION`,
+      instead of by the relay URL's IP.
+- [x] 10.2 `SupportConsoleRelayClient.url`: `SUPPORT_CONSOLE_RELAY_URL` when set, else `http://<machine private IP>:4900`,
+      cached 10 minutes and dropped when the relay cannot be reached.
+- [x] 10.3 `support_console:machine` no longer asks for the URL; `app_machine_check` reports how the app finds the relay
+      and that the relay secret is set.
+- [ ] 10.4 Production: set up each machine without a URL credential (token → `machine` → `provision_db_access` →
+      `SUPPORT_CONSOLE_RELAY_SECRET` → deploy → `machine_check` + `app_machine_check`).
+

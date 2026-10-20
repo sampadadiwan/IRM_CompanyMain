@@ -699,11 +699,10 @@ namespace :support_console do
     if SupportConsoleMachine.execute?
       puts "Next:"
       puts "  1. EXECUTE=1 bundle exec rake \"support_console:publish_code[#{env_name}]\"   # every deploy does this too"
-      puts "  2. SKIP_ACCOUNT=1 EXECUTE=1 bundle exec rake \"support_console:provision_db_access[#{env_name}]\"  # opens the replica to #{group}"
-      puts "  3. Add to config/credentials/#{env_name}.yml.enc:"
-      puts "       SUPPORT_CONSOLE_RELAY_URL: http://<the machine's private IP>:#{SupportConsoleMachine::RELAY_PORT}"
+      puts "  2. EXECUTE=1 bundle exec rake \"support_console:provision_db_access[#{env_name}]\"  # account for this machine's IP; opens the replica to #{group}"
+      puts "  3. Add to config/credentials/#{env_name}.yml.enc (the app finds the machine by its name tag, so no URL is needed):"
       puts "       SUPPORT_CONSOLE_RELAY_SECRET: <aws ssm get-parameter --name #{SupportConsoleMachine.secret_parameter(env_name)} --with-decryption>"
-      puts "  4. bundle exec rake \"support_console:machine_check[#{env_name}]\""
+      puts "  4. bundle exec rake \"support_console:machine_check[#{env_name}]\" and \"support_console:app_machine_check[#{env_name}]\""
     else
       puts "DRY RUN — nothing was changed. Re-run with EXECUTE=1 to apply."
     end
@@ -749,11 +748,20 @@ namespace :support_console do
     region = SupportConsoleMachine.region(config)
     puts "App keys: #{Aws::STS::Client.new(region: region, credentials: app_keys).get_caller_identity.arn}"
     puts "Machine:  #{instance.instance_id} (#{instance.private_ip_address}, #{instance.state.name})"
-    relay_host = URI(creds[:SUPPORT_CONSOLE_RELAY_URL].to_s).host
-    puts "  ✗ SUPPORT_CONSOLE_RELAY_URL points at #{relay_host.inspect}, so the app would not find this machine" if relay_host != instance.private_ip_address
+    # H12, E37 — the app uses SUPPORT_CONSOLE_RELAY_URL when set, otherwise finds this machine by its name tag
+    configured = creds[:SUPPORT_CONSOLE_RELAY_URL].presence
+    ok = if configured
+           relay_host = URI(configured).host
+           puts "Relay:    SUPPORT_CONSOLE_RELAY_URL #{configured}#{' — not this machine' if relay_host != instance.private_ip_address}"
+           relay_host == instance.private_ip_address
+         else
+           puts "Relay:    found by name tag #{SupportConsoleMachine.machine_name(env_name)} → http://#{instance.private_ip_address}:#{SupportConsoleMachine::RELAY_PORT}"
+           true
+         end
+    puts "  ✗ SUPPORT_CONSOLE_RELAY_SECRET is missing from config/credentials/#{env_name}.yml.enc" if creds[:SUPPORT_CONSOLE_RELAY_SECRET].blank?
+    ok &&= creds[:SUPPORT_CONSOLE_RELAY_SECRET].present?
 
     ec2 = Aws::EC2::Client.new(region: region, credentials: app_keys)
-    ok = relay_host == instance.private_ip_address
     # EC2 DryRun: answers DryRunOperation when allowed, UnauthorizedOperation when not — nothing changes
     %i[describe_instances start_instances stop_instances].each do |op|
       ec2.public_send(op, instance_ids: [instance.instance_id], dry_run: true)
@@ -832,11 +840,11 @@ namespace :support_console do
     env_name = args[:env_name].to_s
     config = SupportConsoleMachine.setup!(env_name)
     instance = SupportConsoleMachine.find_instance(env_name, config)
-    # Terminating releases the machine's private IP, which the app's SUPPORT_CONSOLE_RELAY_URL and the
-    # 'support_ro'@'<IP>' account are both tied to — so it takes a second, explicit flag. machine_stop keeps the IP.
+    # Terminating releases the machine's private IP, which the 'support_ro'@'<IP>' account (and any
+    # SUPPORT_CONSOLE_RELAY_URL set by hand) is tied to — so it takes a second, explicit flag. machine_stop keeps the IP.
     if instance && SupportConsoleMachine.execute? && ENV["TERMINATE"].blank?
       abort "❌ machine_down terminates #{instance.instance_id} and releases #{instance.private_ip_address}: " \
-            "SUPPORT_CONSOLE_RELAY_URL and 'support_ro'@'#{instance.private_ip_address}' would both need redoing for " \
+            "'support_ro'@'#{instance.private_ip_address}' (and any SUPPORT_CONSOLE_RELAY_URL set by hand) would need redoing for " \
             "the next machine. To pause it, use machine_stop (keeps the IP). To terminate anyway, add TERMINATE=1. " \
             "Nothing was changed."
     end

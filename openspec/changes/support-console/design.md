@@ -863,6 +863,7 @@ users are not notified of anything beyond the live chat.
 | H9 | A question starts a stopped machine | machine stopped | Meera asks a question | the relay is unreachable, so the turn job starts the machine, shows "Starting the support machine (about 2 minutes)", waits for `/health`, retries the question once and answers it | Machine control | `support_console/machine.feature` |
 | H10 | Conversation usage | two answers: 1,000 tokens / $0.10 and 2,500 tokens / $0.25 | the conversation is open | footer: "Conversation: 3.5k tokens · ≈ $0.35" (API prices; the subscription is a flat fee) | Usage | `support_console/machine.feature` |
 | H11 | Idle stop | machine started 2 h ago, no questions | the idle check runs (every 10 min) | the machine is stopped (`SUPPORT_CONSOLE_IDLE_STOP_MINUTES`, default 15; 0 turns it off) | Machine control | `support_console/machine.feature` |
+| H12 | Relay found from the machine | no `SUPPORT_CONSOLE_RELAY_URL`; machine `irm-support-console-test-in` running at 10.9.8.7 | Meera asks | the app looks the machine up by its name tag in `AWS_REGION` and talks to `http://10.9.8.7:4900`; the answer arrives | Machine control | `support_console/machine.feature` |
 
 #### Edge Cases
 
@@ -903,6 +904,9 @@ users are not notified of anything beyond the live chat.
 | E34 | Idle check, answer in progress | machine started 2 h ago; a turn running | the idle check runs | nothing is stopped | Machine control | `support_console/machine.feature` |
 | E35 | Idle check, recently started | machine started 10 min ago, no questions | the idle check runs | nothing is stopped: idle counts from the later of the last question and the last start | Machine control | `support_console/machine.feature` |
 | E36 | Server error from a running machine | machine running, relay answers `/health`; `/turns` answers 500 | Meera asks | "unavailable" as in X5; the question is sent once and the machine is not started | Machine control | `support_console/machine.feature` |
+| E37 | Relay URL set by hand | `SUPPORT_CONSOLE_RELAY_URL` set (local mode, or an override) | Meera asks | that URL is used; EC2 is not asked | Machine control | `support_console/machine.feature` |
+| E38 | Found address cached, then refreshed | address found and cached (10 min) | two questions, then the relay cannot be reached | one lookup serves both questions; the failure drops the cached address, so the machine is looked up again (a recreated machine is found at once) | Machine control | `support_console/machine.feature` |
+| E39 | Each site finds its own machine | the same AWS account for IN and US | the US deployment looks its machine up | the name asked for is `irm-support-console-<env>-us`, in its own region | Machine control | `support_console/machine.feature` |
 | E21 | Conversation list order | 3 conversations | Meera picks Golden Angels | newest first, with date, starter and first question | Continue a conversation | `support_console/ask.feature` |
 
 #### Error Cases
@@ -942,6 +946,7 @@ users are not notified of anything beyond the live chat.
 | X32 | `REGION` override on production | `REGION=us-east-1` | a task runs for `production.in` | refused: IN and US share an AWS account, so the region is all that keeps them apart; staging may override | India and US separate | `support_console/provisioning.feature` |
 | X33 | Final answer on an open page | a turn with progress steps and a short answer | the relay sends the result | the page gets the answer and its completed state without a reload; `finish` closed the turn itself, so the Stop guard (E9) does not hold back its broadcast | Streaming answer | `support_console/ask.feature` |
 | X34 | Machine control without `:support` | Asha, a CapHive employee | posts Start | "Not authorized."; EC2 is not called | Machine control | `support_console/machine.feature` |
+| X35 | No machine to find | no URL set, no machine with the name | Meera asks | "unavailable"; nothing is sent to any relay | Machine control | `support_console/machine.feature` |
 | X27 | Secret file in the code archive | `config/deploy_id_rsa` tracked in git | the archive is built | the archive is an allow-list (app, lib, config minus credentials/deploy/keys, schema, product docs): no key or deploy file | Asked to fix data | `support_console/relay.feature` |
 
 ### Local development

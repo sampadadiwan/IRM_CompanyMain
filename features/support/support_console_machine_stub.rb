@@ -8,12 +8,14 @@
 module SupportConsoleMachineStub
   module_function
 
-  def reset!(state: nil, launched: 2.hours.ago)
+  def reset!(state: nil, launched: 2.hours.ago, ip: "support-relay.test")
     @state = state
     @launched = launched
+    @ip = ip
     @calls = []
+    @lookups = []
     Aws.config[:ec2] = { stub_responses: {
-      describe_instances: ->(_context) { describe },
+      describe_instances: ->(context) { describe(context) },
       start_instances: ->(_context) { record(:start, "pending") },
       stop_instances: ->(_context) { record(:stop, "stopping") }
     } }
@@ -21,14 +23,18 @@ module SupportConsoleMachineStub
 
   def calls = @calls
   def state = @state
+  # The Name tag each lookup asked for (H12, E38, E39)
+  def lookups = @lookups
 
   # pending and stopping settle on the next look, as a real start or stop does
-  def describe
+  def describe(context)
+    name = context.params[:filters]&.find { |f| f[:name] == "tag:Name" }&.dig(:values, 0)
+    @lookups << name
     return { reservations: [] } if @state.nil?
 
     current = @state
     @state = { "pending" => "running", "stopping" => "stopped" }.fetch(@state, @state)
-    { reservations: [{ instances: [{ instance_id: "i-support", private_ip_address: "support-relay.test",
+    { reservations: [{ instances: [{ instance_id: "i-support", private_ip_address: @ip,
                                      launch_time: @launched, state: { name: current } }] }] }
   end
 

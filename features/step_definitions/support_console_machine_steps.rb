@@ -61,3 +61,65 @@ end
 Then('the support machine was not sent anything') do
   expect(SupportConsoleMachineStub.calls).to be_empty
 end
+
+# H12, E38, X35 — no SUPPORT_CONSOLE_RELAY_URL: the app has to find the relay itself.
+# The @support_console After hook restores the URL.
+Given('the relay URL is not set') do
+  ENV.delete("SUPPORT_CONSOLE_RELAY_URL")
+end
+
+Given('the support machine is {string} at {string}') do |state, ip|
+  SupportConsoleMachineStub.reset!(state: state, ip: ip)
+  WebMock::API.stub_request(:get, "http://#{ip}:4900/health").to_return(status: 200)
+end
+
+Given('the relay at {string} answers {string}') do |ip, text|
+  WebMock::API.stub_request(:post, "http://#{ip}:4900/turns").to_return(status: 200, body: SupportConsoleRelayStub.answer(text))
+end
+
+Given('the relay at {string} answers {string} and {string}, then cannot be reached') do |ip, first, second|
+  WebMock::API.stub_request(:post, "http://#{ip}:4900/turns")
+              .to_return({ status: 200, body: SupportConsoleRelayStub.answer(first) },
+                         { status: 200, body: SupportConsoleRelayStub.answer(second) }).then.to_raise(Errno::ECONNREFUSED)
+end
+
+# E38 — the test environment's cache is a null store; this scenario needs a real one
+Given('found relay addresses are cached') do
+  @previous_cache = Rails.cache
+  Rails.cache = ActiveSupport::Cache::MemoryStore.new
+end
+
+After('@support_console') do
+  Rails.cache = @previous_cache if @previous_cache
+end
+
+# E39 — another site's deployment (CURRENT_SITE), with SiteRegistry's memo cleared either side
+When('the relay address is looked up for site {string}') do |code|
+  previous = ENV.fetch("CURRENT_SITE", nil)
+  ENV["CURRENT_SITE"] = code
+  SiteRegistry.instance_variable_set(:@current_code, nil)
+  SupportConsoleMachineControl.instance
+ensure
+  ENV["CURRENT_SITE"] = previous
+  SiteRegistry.instance_variable_set(:@current_code, nil)
+end
+
+Then('the machine was looked up as {string}') do |name|
+  expect(SupportConsoleMachineStub.lookups).to include(name)
+  expect(SupportConsoleMachineStub.lookups.uniq).to eq([name])
+end
+
+Then('the machine was not looked up') do
+  expect(SupportConsoleMachineStub.lookups).to be_empty
+end
+
+# E38 — two questions, one lookup: the second reused the cached address
+Then('the machine was looked up {int} time(s)') do |count|
+  expect(SupportConsoleMachineStub.lookups.size).to eq(count)
+  @lookups_before = count
+end
+
+# E38 — the unreachable relay dropped the cached address, so EC2 was asked again
+Then('the machine was looked up again') do
+  expect(SupportConsoleMachineStub.lookups.size).to be > @lookups_before
+end

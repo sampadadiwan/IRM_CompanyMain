@@ -25,11 +25,17 @@ class SupportConsoleRelayClient
   TOTAL_TIMEOUT = 15 * 60
   MACHINE_ENV_FILE = "tmp/support_console/machine.env"
 
-  # @return [String, nil] the relay's base URL for this environment
+  # @return [String, nil] the relay's base URL for this environment: SUPPORT_CONSOLE_RELAY_URL when set
+  #   (local mode, or a manual override — E37), else found from the machine's private IP (H12)
   def self.url
+    configured_url || SupportConsoleMachineControl.relay_url
+  end
+
+  # @return [String, nil] a relay URL set by hand, rather than found
+  def self.configured_url
     ENV["SUPPORT_CONSOLE_RELAY_URL"].presence ||
       Rails.application.credentials[:SUPPORT_CONSOLE_RELAY_URL].presence ||
-      local_machine_env["SUPPORT_CONSOLE_RELAY_URL"]
+      local_machine_env["SUPPORT_CONSOLE_RELAY_URL"].presence
   end
 
   # @return [String, nil] the HMAC secret shared with this environment's relay
@@ -39,9 +45,10 @@ class SupportConsoleRelayClient
       local_machine_env["SUPPORT_CONSOLE_RELAY_SECRET"]
   end
 
-  # @return [Boolean] whether this environment has a relay at all
+  # @return [Boolean] whether this environment has a relay at all. The secret is checked first, so an
+  #   environment without one never asks EC2.
   def self.configured?
-    url.present? && secret.present?
+    secret.present? && url.present?
   end
 
   # Local mode only: `rake support_console:local_setup` writes the relay URL and secret to
@@ -127,7 +134,8 @@ class SupportConsoleRelayClient
     # X7 — the stream went quiet for IDLE_TIMEOUT.
     raise Timeout, "no events for #{IDLE_TIMEOUT} s"
   rescue Net::OpenTimeout, SocketError, SystemCallError, IOError, OpenSSL::SSL::SSLError => e
-    # X4 — the machine cannot be reached.
+    # X4 — the machine cannot be reached. E38 — a found address may be stale (machine recreated).
+    SupportConsoleMachineControl.forget_relay_url! unless self.class.configured_url
     raise Unavailable, "#{e.class}: #{e.message}"
   end
 

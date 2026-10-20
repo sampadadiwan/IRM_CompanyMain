@@ -96,3 +96,54 @@ Feature: Support Console machine
     When I post "start" to the machine
     Then I am sent home with "Not authorized."
     And the support machine was not sent anything
+
+  # H12 — Happy path: with no relay URL set, the app finds the relay from its machine's name tag and private IP
+  Scenario: Relay found from the machine
+    Given the relay URL is not set
+    And the support machine is "running" at "10.9.8.7"
+    And the relay at "10.9.8.7" answers "Found by its name tag"
+    And I am logged in as "Meera"
+    When I open the Support Console for "Golden Angels"
+    And I ask "Why?"
+    Then I see the answer "Found by its name tag"
+    And the machine was looked up as "irm-support-console-test-in"
+
+  # E37 — Edge case: a relay URL set by hand wins; EC2 is not asked for the address
+  Scenario: Relay URL set by hand
+    Given the support machine is "running" at "10.9.8.7"
+    And the relay answers "From the URL setting"
+    And I am logged in as "Meera"
+    When I open the Support Console for "Golden Angels"
+    And I ask "Why?"
+    Then I see the answer "From the URL setting"
+    And the machine was not looked up
+
+  # E38 — Edge case: a found address is reused; after the relay cannot be reached it is looked up again
+  Scenario: Found address cached, then refreshed
+    Given the relay URL is not set
+    And found relay addresses are cached
+    And the support machine is "running" at "10.9.8.7"
+    And the relay at "10.9.8.7" answers "First" and "Second", then cannot be reached
+    And I am logged in as "Meera"
+    When I open the Support Console for "Golden Angels"
+    And I ask "First?"
+    And I ask "Second?"
+    Then the machine was looked up 1 time
+    When I ask "Third?"
+    Then I see the answer "The Support Console is unavailable right now. Try again in a few minutes."
+    And the machine was looked up again
+
+  # E39 — Edge case: each deployment looks up only its own machine (site code in the name)
+  Scenario: Each site finds its own machine
+    Given the support machine is "running" at "10.9.8.7"
+    When the relay address is looked up for site "US"
+    Then the machine was looked up as "irm-support-console-test-us"
+
+  # X35 — Error case: no relay URL and no machine: the console says it is unavailable and nothing is sent
+  Scenario: No machine to find
+    Given the relay URL is not set
+    And I am logged in as "Meera"
+    When I open the Support Console for "Golden Angels"
+    And I ask "Why?"
+    Then I should see "The Support Console is unavailable right now. Try again in a few minutes."
+    And the relay was not called
