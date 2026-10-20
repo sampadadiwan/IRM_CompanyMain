@@ -191,3 +191,18 @@ Worked examples E32, X28, X29 in [design.md](design.md); open question 5.
 - [x] 8.2 `SupportConsoleDbAccess.region` refuses a `REGION` override on production unless it is the
       environment's own region; the account check prints the region on every run (X32).
 - [x] 8.3 Run `features/support_console/` until green.
+
+## 9. Machine control and conversation usage (2026-10-20)
+
+Worked examples H7–H11, E33–E35, X34 in [design.md](design.md).
+
+- [x] 9.1 `SupportConsoleMachineControl`: finds this environment's machine through `SUPPORT_CONSOLE_RELAY_URL`
+      (private IP + `irm-support-console-*` tag), the app's own AWS keys and `AWS_REGION` (as `DbRestoreService`);
+      status from EC2 first, then the relay's `/health`. Stop / start only — never terminate.
+- [x] 9.2 Header badge (lazy frame, live via `:support_console_machine`) with Start / Stop popups for `:support`
+      users (`SupportConsolePolicy#machine?`); `SupportConsoleMachineJob` follows the machine up or down.
+- [x] 9.3 A question while the machine is stopped starts it and waits (turn job `wake_machine`, once).
+- [x] 9.4 `SupportConsoleIdleStopJob` every 10 minutes (sidekiq-cron); `SUPPORT_CONSOLE_IDLE_STOP_MINUTES`, default 60.
+- [x] 9.5 Relay sends token `usage`; the composer footer totals the conversation's tokens and approximate cost.
+- [x] 9.6 `support_console:app_machine_check[env]` — EC2 DryRun with the app's keys; staging.in ✓.
+- [ ] 9.7 Run `app_machine_check` for production.in and production.us before deploying there.

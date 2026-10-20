@@ -16,7 +16,10 @@
     <i class="ti ti-chevron-right text-muted small"></i>
     <%= render "support_console/picker", entities: local_assigns.fetch(:entities, [entity]), entity: entity, compact: true %>
     <span class="badge bg-secondary-subtle text-secondary"><i class="ti ti-lock me-1"></i>Read-only</span>
+    <%# Card ⑨ — the machine badge, loaded after the page so AWS never slows it down. %>
+    <turbo-frame id="support-console-machine" src="<%= support_console_machine_status_path %>" class="ms-auto"></turbo-frame>
   </div>
+  <%= turbo_stream_from :support_console_machine %>
   <% if session %>
     <%# Live updates from SupportConsoleTurnJob for this conversation. %>
     <%= turbo_stream_from session, :support_console %>

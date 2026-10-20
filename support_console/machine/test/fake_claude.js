@@ -40,5 +40,6 @@ process.stdin.on("end", async () => {
   out({ type: "assistant", message: { content: [{ type: "tool_use", name: "mcp__db__query", input: { sql: "SELECT 1" } }] } })
   // What the db MCP server writes for a lookup that ran.
   fs.appendFileSync(process.env.SUPPORT_EVENTS_FILE, JSON.stringify({ type: "query", sql: "SELECT 1", outcome: "ran", row_count: 3, duration_ms: 41, lag_seconds: 4, flagged: false }) + "\n")
-  out({ type: "result", subtype: "success", is_error: false, result: `Answer to: ${question}`, session_id: "11111111-2222-3333-4444-555555555555", total_cost_usd: 0.12 })
+  out({ type: "result", subtype: "success", is_error: false, result: `Answer to: ${question}`, session_id: "11111111-2222-3333-4444-555555555555", total_cost_usd: 0.12,
+    usage: { input_tokens: 1200, output_tokens: 300, cache_read_input_tokens: 5000, cache_creation_input_tokens: 500 } })
 })

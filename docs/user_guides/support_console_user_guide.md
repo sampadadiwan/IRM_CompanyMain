@@ -92,6 +92,18 @@ Yes, once a client has more than five conversations a **Search chats** box appea
 **How long are Support Console conversations kept?**
 Ninety days after their last message. After that the conversation and its working notes are deleted; the record of lookups made in it is kept for audit.
 
+**How do I start or stop the support machine?**
+Use the badge at the top right of a conversation. It shows **Machine running**, **Machine stopped**, **Machine starting…** or **Machine stopping…**. When the machine is stopped, **Start** turns it on, and it is ready in about 2 minutes, once the badge shows **Machine running**. When it is running, **Stop** turns it off. The popup tells you how many answers are in progress: the machine is shared by every support user for every client, so stopping it cuts those answers off. Any user with the support role can start or stop it.
+
+**What happens when I ask a question while the machine is stopped?**
+The question starts the machine. The answer shows "Starting the support machine (about 2 minutes)" as its first step, waits for the machine to be ready, and then carries on as normal. You do not need to press Start first.
+
+**Why did the support machine stop on its own?**
+It stops itself after 60 minutes with no questions, to avoid running all day for nothing. The time counts from the last question or the last start, whichever is later, and it never stops while an answer is in progress. The next question, or **Start**, turns it back on.
+
+**What is "Conversation: 64k tokens · ≈ $0.41" in the footer?**
+How much work Claude has done in this conversation so far: the tokens it read and wrote across every answer, and what that would cost at Claude's API prices. It is an estimate for comparison. On the subscription the console uses, the actual charge is a flat monthly plan, so a long conversation mainly uses up more of the plan's limits. Answers from before this was recorded are not counted.
+
 ### Why use the Support Console
 
 **Why use the Support Console instead of asking an engineer?**

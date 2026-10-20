@@ -26,6 +26,13 @@ class SupportConsolePolicy < ApplicationPolicy
 
   alias show? ask?
 
+  # H7, H8, X34 — any :support user may start or stop the shared support machine.
+  #
+  # @return [Boolean]
+  def machine?
+    index?
+  end
+
   # The clients this user may pick.
   #
   # @return [ActiveRecord::Relation<Entity>]

@@ -858,6 +858,11 @@ users are not notified of anything beyond the live chat.
 | H4 | Header shows client | an existing conversation | Meera opens it | header shows Golden Angels, no switch control | Header shows the client | `support_console/ask.feature` |
 | H5 | Lookup recorded | stream has one `query` event (ran, 3 rows) | turn completes | one `SupportConsoleQuery` row with user, entity 18, sql, ran, 3, duration | Lookup recorded | `support_console/query_record.feature` |
 | H6 | Asked to fix data | Meera asks to correct a record | stub returns a describe-only answer | answer describes the fix and says it cannot make it | Asked to fix data | `support_console/ask.feature` |
+| H7 | Start the machine | machine stopped; Meera has `:support` | presses Start in the header and confirms | EC2 `StartInstances`; the badge shows Machine starting…, then Machine running once the relay's `/health` answers | Machine control | `support_console/machine.feature` |
+| H8 | Stop the machine | machine running | Meera presses Stop and confirms | EC2 `StopInstances`; badge Machine stopping…, then Machine stopped; the private IP is kept | Machine control | `support_console/machine.feature` |
+| H9 | A question starts a stopped machine | machine stopped | Meera asks a question | the relay is unreachable, so the turn job starts the machine, shows "Starting the support machine (about 2 minutes)", waits for `/health`, retries the question once and answers it | Machine control | `support_console/machine.feature` |
+| H10 | Conversation usage | two answers: 1,000 tokens / $0.10 and 2,500 tokens / $0.25 | the conversation is open | footer: "Conversation: 3.5k tokens · ≈ $0.35" (API prices; the subscription is a flat fee) | Usage | `support_console/machine.feature` |
+| H11 | Idle stop | machine started 2 h ago, no questions | the idle check runs (every 10 min) | the machine is stopped (`SUPPORT_CONSOLE_IDLE_STOP_MINUTES`, default 60; 0 turns it off) | Machine control | `support_console/machine.feature` |
 
 #### Edge Cases
 
@@ -894,6 +899,10 @@ users are not notified of anything beyond the live chat.
 | E30 | Model names map to ids | turns with `sonnet`, `opus`, a raw id, nothing | the relay builds `claude -p` | `--model` is the environment's Sonnet / Opus id; a raw id or nothing is Sonnet | Model chosen per question | `support_console/relay.feature` |
 | E31 | Forged model value | a POST with `model=anthropic.claude-fable-5-1` | the turn is created | it runs as `sonnet` | Model chosen per question | `support_console/ask.feature` |
 | E32 | Signed in with a subscription token | `SUPPORT_CONSOLE_AUTH=subscription`, token in Parameter Store | a turn runs | Claude Code gets `CLAUDE_CODE_OAUTH_TOKEN`, never `CLAUDE_CODE_USE_BEDROCK`; `--model` is `sonnet` / `opus`; the role has no Bedrock access | Model chosen per question | `support_console/relay.feature` |
+| E33 | Stop with answers in progress | machine running; 1 turn running | Meera opens Stop | the popup says "1 answer in progress will be cut off" — the machine is shared by every support user | Machine control | `support_console/machine.feature` |
+| E34 | Idle check, answer in progress | machine started 2 h ago; a turn running | the idle check runs | nothing is stopped | Machine control | `support_console/machine.feature` |
+| E35 | Idle check, recently started | machine started 30 min ago, no questions | the idle check runs | nothing is stopped: idle counts from the later of the last question and the last start | Machine control | `support_console/machine.feature` |
+| E36 | Server error from a running machine | machine running, relay answers `/health`; `/turns` answers 500 | Meera asks | "unavailable" as in X5; the question is sent once and the machine is not started | Machine control | `support_console/machine.feature` |
 | E21 | Conversation list order | 3 conversations | Meera picks Golden Angels | newest first, with date, starter and first question | Continue a conversation | `support_console/ask.feature` |
 
 #### Error Cases
@@ -931,6 +940,8 @@ users are not notified of anything beyond the live chat.
 | X30 | Old chat route to the console's agent | Asha, a CapHive employee without `:support` | posts to `/support_agents/<console agent>/chats` about Golden Angels | refused by `SupportAgentPolicy#show?`; no conversation created | Other users are refused | `support_console/access.feature` |
 | X31 | Old chat route deletes a console conversation | Ravi has a console conversation | sends `DELETE /support_agents/<console agent>/chats/<id>` | refused; the conversation stays until retention deletes it with its transcript | Old conversation removed | `support_console/access.feature` |
 | X32 | `REGION` override on production | `REGION=us-east-1` | a task runs for `production.in` | refused: IN and US share an AWS account, so the region is all that keeps them apart; staging may override | India and US separate | `support_console/provisioning.feature` |
+| X33 | Final answer on an open page | a turn with progress steps and a short answer | the relay sends the result | the page gets the answer and its completed state without a reload; `finish` closed the turn itself, so the Stop guard (E9) does not hold back its broadcast | Streaming answer | `support_console/ask.feature` |
+| X34 | Machine control without `:support` | Asha, a CapHive employee | posts Start | "Not authorized."; EC2 is not called | Machine control | `support_console/machine.feature` |
 | X27 | Secret file in the code archive | `config/deploy_id_rsa` tracked in git | the archive is built | the archive is an allow-list (app, lib, config minus credentials/deploy/keys, schema, product docs): no key or deploy file | Asked to fix data | `support_console/relay.feature` |
 
 ### Local development

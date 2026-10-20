@@ -1,0 +1,104 @@
+<%# Card ⑨ — the shared support machine's state, with Start / Stop for :support users. Loaded lazily
+    into the header and replaced live by SupportConsoleMachineControl.broadcast_status (stream :support_console_machine). %>
+<%
+  badge = {
+    "running" => ["success", "ti-circle-check", "Machine running"],
+    "starting" => ["info", "ti-loader-2", "Machine starting…"],
+    "stopping" => ["secondary", "ti-loader-2", "Machine stopping…"],
+    "stopped" => ["secondary", "ti-player-pause", "Machine stopped"],
+    "unknown" => ["danger", "ti-help-circle", "Machine unavailable"]
+  }.fetch(status, ["danger", "ti-help-circle", "Machine unavailable"])
+  idle_minutes = ENV.fetch("SUPPORT_CONSOLE_IDLE_STOP_MINUTES", SupportConsoleIdleStopJob::DEFAULT_IDLE_MINUTES).to_i
+%>
+<turbo-frame id="support-console-machine" class="d-flex align-items-center gap-2 ms-auto">
+  <span class="badge bg-<%= badge[0] %>-subtle text-<%= badge[0] %>" id="support-console-machine-status" data-status="<%= status %>">
+    <i class="ti <%= badge[1] %> me-1"></i><%= badge[2] %>
+  </span>
+  <% if status == "stopped" %>
+    <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#support-console-start-modal">Start</button>
+  <% elsif status == "running" %>
+    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#support-console-stop-modal">Stop</button>
+  <% end %>
+
+  <% if status == "stopped" %>
+    <div class="modal fade" id="support-console-start-modal" tabindex="-1" aria-labelledby="support-console-start-label" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="support-console-start-label"><i class="ti ti-player-play me-1"></i> Start the support machine</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="action-summary__intro">
+              <div class="fw-bold text-dark">Immediate Actions</div>
+              <div class="text-muted">The following will happen when you click <strong>Start</strong>:</div>
+            </div>
+            <div class="action-summary__list">
+              <div class="action-summary__item action-summary__item--blue">
+                <span class="action-summary__icon"><i class="ti ti-clock"></i></span>
+                <div>
+                  <div class="action-summary__title">Ready in about 2 minutes</div>
+                  <div class="action-summary__desc">The badge shows <strong>Machine running</strong> once questions can be answered.</div>
+                </div>
+              </div>
+              <div class="action-summary__item action-summary__item--grey">
+                <span class="action-summary__icon"><i class="ti ti-moon"></i></span>
+                <div>
+                  <div class="action-summary__title">Stops itself when idle</div>
+                  <div class="action-summary__desc">After <%= idle_minutes %> minutes with no questions. Asking a question also starts it.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+            <%= button_to "Start", support_console_machine_path("start"), method: :post, class: "btn btn-primary",
+                          form: { data: { turbo_frame: "_top" } }, id: "support-console-start" %>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% elsif status == "running" %>
+    <%# E33 — say how many answers a stop would cut off, across every client %>
+    <% running = SupportConsoleMachineControl.running_turns_count %>
+    <div class="modal fade" id="support-console-stop-modal" tabindex="-1" aria-labelledby="support-console-stop-label" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="support-console-stop-label"><i class="ti ti-player-pause me-1"></i> Stop the support machine</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="action-summary__intro">
+              <div class="fw-bold text-dark">Immediate Actions</div>
+              <div class="text-muted">The following will happen when you click <strong>Stop</strong>:</div>
+            </div>
+            <div class="action-summary__list">
+              <div class="action-summary__item action-summary__item--<%= running.positive? ? 'red' : 'grey' %>">
+                <span class="action-summary__icon"><i class="ti ti-users"></i></span>
+                <div>
+                  <div class="action-summary__title" id="support-console-running-turns">
+                    <%= running.positive? ? "#{pluralize(running, 'answer')} in progress will be cut off" : "No answers are in progress" %>
+                  </div>
+                  <div class="action-summary__desc">The machine is shared by every support user, for every client.</div>
+                </div>
+              </div>
+              <div class="action-summary__item action-summary__item--blue">
+                <span class="action-summary__icon"><i class="ti ti-player-play"></i></span>
+                <div>
+                  <div class="action-summary__title">The next question starts it again</div>
+                  <div class="action-summary__desc">That question waits about 2 minutes while it starts.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+            <%= button_to "Stop", support_console_machine_path("stop"), method: :post, class: "btn btn-danger",
+                          form: { data: { turbo_frame: "_top" } }, id: "support-console-stop-machine" %>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+</turbo-frame>

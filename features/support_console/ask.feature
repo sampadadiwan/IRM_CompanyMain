@@ -272,3 +272,11 @@ Feature: Support Console asking
     And I ask "Why?"
     Then I see the answer "The Support Console is unavailable right now. Try again in a few minutes."
     And an error report says "renew the Claude token"
+
+  # X33 — Edge case: the final answer and its completed state reach the open page without a reload
+  Scenario: Final answer reaches the open page
+    Given the relay answers "TSTF2 paid more than Call 2 asked for." after looking up data
+    And live updates are recorded
+    When I open the Support Console for "Golden Angels"
+    And I ask "Why is TSTF2 marked Overpaid?"
+    Then the last live update of the answer shows "TSTF2 paid more than Call 2 asked for." as completed

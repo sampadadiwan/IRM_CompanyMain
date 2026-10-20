@@ -96,6 +96,22 @@ class SupportConsoleController < ApplicationController
     redirect_to support_console_entity_path(@entity, session_id: session.id)
   end
 
+  # GET /support_console/machine — the header badge, loaded lazily so a slow AWS call never holds up the page.
+  def machine_status
+    authorize :support_console, :machine?
+    render partial: "support_console/machine", locals: { status: SupportConsoleMachineControl.status }
+  end
+
+  # POST /support_console/machine/start, /stop — the header's Start / Stop buttons (card ⑨).
+  def machine
+    authorize :support_console, :machine?
+    action = params[:machine_action].to_s
+    raise ActionController::BadRequest, "unknown machine action" unless %w[start stop].include?(action)
+
+    SupportConsoleMachineJob.perform_later(action, current_user.id)
+    redirect_back_or_to(support_console_path, notice: action == "start" ? "Starting the support machine — about 2 minutes." : "Stopping the support machine.")
+  end
+
   QUESTION_LIMIT = 4000
 
   private

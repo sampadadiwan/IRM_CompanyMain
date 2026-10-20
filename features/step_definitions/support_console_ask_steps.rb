@@ -239,6 +239,28 @@ Given('live updates fail to render') do
   allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to).and_raise(ActionView::MissingTemplate.new([], "x", [], false, "x"))
 end
 
+# X33 — the real case had progress steps and a short answer, so no text broadcast carried the answer
+Given('the relay answers {string} after looking up data') do |text|
+  stub_relay_turns(SupportConsoleRelayStub.answer(text, progress: ["Searching the code for Overpaid", "Looking up data"]))
+end
+
+# X33 — keeps every live update the job sends, as the open page would receive them
+Given('live updates are recorded') do
+  @live_updates = []
+  allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to).and_wrap_original do |original, *args, **kwargs|
+    @live_updates << kwargs
+    original.call(*args, **kwargs)
+  end
+end
+
+Then('the last live update of the answer shows {string} as completed') do |text|
+  message = AgentChatMessage.where(role: "assistant").order(:id).last
+  update = @live_updates.rfind { |u| u[:target] == ActionView::RecordIdentifier.dom_id(message) }
+  expect(update).to be_present
+  expect(update[:locals][:content]).to include(text)
+  expect(update[:locals][:metadata]["turn_status"]).to eq("completed")
+end
+
 When('I open the Support Console for {string} conversation again') do |entity_name|
   session = AgentChatSession.where(chattable: support_console_entity(entity_name)).order(:id).last
   visit support_console_entity_path(session.chattable, session_id: session.id)

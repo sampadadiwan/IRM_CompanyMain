@@ -201,6 +201,8 @@ Sidekiq.configure_server do |config|
     # support-console: purge conversations 90 days after their last message (and their machine
     # transcripts), and close turns left running by a restart.
     Sidekiq::Cron::Job.create(name: 'SupportConsoleRetentionJob', cron: '0 21 * * *', class: 'SupportConsoleRetentionJob')
+    # support-console: stop the support machine after an hour with no questions (the next one starts it)
+    Sidekiq::Cron::Job.create(name: 'SupportConsoleIdleStopJob', cron: 'every 10 minutes', class: 'SupportConsoleIdleStopJob')
 
     # Used to cleanup various models in the DB
     Sidekiq::Cron::Job.create(name: 'DailyMorningJob', cron: daily_morning_cron, class: 'DailyMorningJob')

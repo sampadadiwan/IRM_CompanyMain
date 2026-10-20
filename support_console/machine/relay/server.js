@@ -5,7 +5,7 @@
 //   query    — one per lookup (from the turn's events file, numbered here)
 //   text     — the final answer
 //   session  — claude_session_id, as soon as Claude Code starts (so a stopped turn's transcript is known)
-//   result   — claude_session_id, code_rev, lag_seconds, cost_usd
+//   result   — claude_session_id, code_rev, lag_seconds, cost_usd, usage (input/output/cache_read/cache_write tokens)
 //   error    — the machine could not answer (not_a_replica, db_unavailable, usage_limit, auth_failed, claude_failed)
 import http from "node:http"
 import crypto from "node:crypto"
@@ -35,6 +35,17 @@ export function verifySignature({ method, path: urlPath, body, timestamp, signat
   const a = Buffer.from(expected)
   const b = Buffer.from(String(signature))
   return a.length === b.length && crypto.timingSafeEqual(a, b)
+}
+
+// H10 — Claude Code's token counts for the turn, in the names Rails sums per conversation; null when absent.
+export function tokenUsage(usage) {
+  if (!usage) return null
+  return {
+    input: usage.input_tokens ?? 0,
+    output: usage.output_tokens ?? 0,
+    cache_read: usage.cache_read_input_tokens ?? 0,
+    cache_write: usage.cache_creation_input_tokens ?? 0
+  }
 }
 
 // Plain-words progress for a tool call, so the support user sees what Claude is doing.
@@ -185,7 +196,7 @@ async function postTurn(turn, res) {
   } else if (result && !result.is_error) {
     // The final answer, then the turn's result.
     send(res, { type: "text", delta: String(result.result || "") })
-    send(res, { type: "result", claude_session_id: result.session_id, code_rev: run.codeRev, lag_seconds: lastLag, cost_usd: result.total_cost_usd ?? null })
+    send(res, { type: "result", claude_session_id: result.session_id, code_rev: run.codeRev, lag_seconds: lastLag, cost_usd: result.total_cost_usd ?? null, usage: tokenUsage(result.usage) })
   } else if (child.signalCode) {
     // E9 — stopped on request: no result; Rails already closed the turn.
   } else {

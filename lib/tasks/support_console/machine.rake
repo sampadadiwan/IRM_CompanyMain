@@ -736,6 +736,38 @@ namespace :support_console do
     puts "#{instance.instance_id} #{instance.state.name} #{instance.private_ip_address} (SSM: #{ping || 'not registered'})"
   end
 
+  desc "Check the app's own AWS keys can start and stop the machine (Start/Stop buttons, idle stop), " \
+       "changing nothing: support_console:app_machine_check[staging.in]"
+  task :app_machine_check, [:env_name] => :environment do |_t, args|
+    env_name = args[:env_name].to_s
+    config = SupportConsoleMachine.setup!(env_name)
+    instance = SupportConsoleMachine.instance_or_abort(env_name, config)
+    # The keys the app itself runs with (SupportConsoleMachine in app/), not the operator's
+    creds = SupportConsoleDbAccess.credentials(env_name)
+    app_keys = Aws::Credentials.new(SupportConsoleDbAccess.credential!(env_name, :AWS_ACCESS_KEY_ID),
+                                    SupportConsoleDbAccess.credential!(env_name, :AWS_SECRET_ACCESS_KEY))
+    region = SupportConsoleMachine.region(config)
+    puts "App keys: #{Aws::STS::Client.new(region: region, credentials: app_keys).get_caller_identity.arn}"
+    puts "Machine:  #{instance.instance_id} (#{instance.private_ip_address}, #{instance.state.name})"
+    relay_host = URI(creds[:SUPPORT_CONSOLE_RELAY_URL].to_s).host
+    puts "  ✗ SUPPORT_CONSOLE_RELAY_URL points at #{relay_host.inspect}, so the app would not find this machine" if relay_host != instance.private_ip_address
+
+    ec2 = Aws::EC2::Client.new(region: region, credentials: app_keys)
+    ok = relay_host == instance.private_ip_address
+    # EC2 DryRun: answers DryRunOperation when allowed, UnauthorizedOperation when not — nothing changes
+    %i[describe_instances start_instances stop_instances].each do |op|
+      ec2.public_send(op, instance_ids: [instance.instance_id], dry_run: true)
+      puts "  ✓ #{op}"
+    rescue Aws::EC2::Errors::DryRunOperation
+      puts "  ✓ #{op}"
+    rescue Aws::EC2::Errors::ServiceError => e
+      ok = false
+      puts "  ✗ #{op}: #{e.message}"
+    end
+    abort "❌ the app cannot control this machine — grant its IAM user ec2:Describe/Start/StopInstances on it" unless ok
+    puts "\nThe app can start and stop #{instance.instance_id}."
+  end
+
   desc "Run the machine check on the Support Console machine: support_console:machine_check[staging.in]"
   task :machine_check, [:env_name] => :environment do |_t, args|
     env_name = args[:env_name].to_s

@@ -10,6 +10,10 @@
   # E29 — a new conversation starts on Sonnet; inside one, the last choice is kept.
   model = last_answer&.metadata&.dig("model")
   model = SupportConsoleTurnJob::DEFAULT_MODEL unless SupportConsoleTurnJob::MODELS.include?(model)
+  # H10 — the whole conversation's tokens and approximate cost; answers saved before usage was recorded add nothing.
+  answers = messages.select { |m| m.role == "assistant" }
+  tokens = answers.sum { |m| (m.metadata&.dig("usage") || {}).values_at("input", "output", "cache_read", "cache_write").sum(&:to_i) }
+  cost = answers.sum { |m| m.metadata&.dig("cost_usd").to_f }
 %>
 <div class="sc-composer px-4 pb-3 pt-2" id="support-console-composer"
      data-controller="support-console" data-support-console-running-value="<%= running %>">
@@ -57,6 +61,11 @@
       <% if last_answer && !running && (lag || code_rev) %>
         <%# E18 — lag above 60 s is highlighted. Lag is unknown without replica status (local mode, or no REPLICATION CLIENT grant). %>
         · <span class="<%= lag.to_i > SupportConsoleTurnJob::LAG_WARNING_SECONDS ? 'text-danger fw-semibold' : 'text-muted' %>" id="support-console-footer"><% unless lag.nil? %>Data as of <%= lag.to_i %> seconds ago · <% end %>Code version <%= code_rev.to_s.first(7) %></span>
+      <% end %>
+      <% usage = [(number_to_human(tokens, units: { unit: "", thousand: "k", million: "M", billion: "B" }, precision: 3, format: "%n%u") + " tokens" if tokens.positive?),
+                  ("≈ $#{number_with_precision(cost, precision: 2)}" if cost.positive?)].compact %>
+      <% if usage.any? %>
+        · <span id="support-console-usage" title="This conversation so far, at Claude API prices. On the subscription token the actual charge is the flat plan.">Conversation: <%= usage.join(" · ") %></span>
       <% end %>
     </div>
   </div>

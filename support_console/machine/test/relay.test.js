@@ -53,6 +53,8 @@ test("H1 — a turn streams progress, the lookup, the answer and the result", as
   const result = list.find((e) => e.type === "result")
   assert.equal(result.claude_session_id, "11111111-2222-3333-4444-555555555555")
   assert.equal(result.lag_seconds, 4)
+  // H10 — token counts for the conversation total
+  assert.deepEqual(result.usage, { input: 1200, output: 300, cache_read: 5000, cache_write: 500 })
 })
 
 test("H3 — a follow-up passes --resume and the tools are locked down", async () => {

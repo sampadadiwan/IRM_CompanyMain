@@ -26,6 +26,7 @@ class SupportConsoleTurnJob < ApplicationJob
   BUSY = "Already working on a question in this conversation."
   TOO_LONG = "That took too long. Try a narrower question."
   USAGE_LIMIT = "The Support Console has reached its usage limit. Try again later."
+  STARTING_MACHINE = "Starting the support machine (about 2 minutes)"
 
   # X28 — the Claude subscription's usage limit: expected, so the user is told and nobody is alerted.
   class UsageLimit < StandardError; end
@@ -98,13 +99,37 @@ class SupportConsoleTurnJob < ApplicationJob
     @chunks = 0
     @result = nil
 
-    SupportConsoleRelayClient.new.post_turn(request) { |event| handle(event) }
+    begin
+      SupportConsoleRelayClient.new.post_turn(request) { |event| handle(event) }
+    rescue SupportConsoleRelayClient::Unavailable
+      # H9 — a stopped machine is started by the question, once, and only before anything streamed
+      raise if @woken || @result || @progress.any? || @text.present? || !wake_machine
+
+      @woken = true
+      retry
+    end
 
     # H1 — a turn that ended with a result is complete. A stream that ends without one was
     # cut off (E9 Stop, which has already closed the message, or a machine failure).
     return finish("failed", UNAVAILABLE) unless @result
 
     finish("completed")
+  end
+
+  # H9 — starts a stopped machine (or waits for one already starting) and waits for its relay.
+  #
+  # @return [Boolean] whether the relay answers now
+  def wake_machine
+    state = SupportConsoleMachineControl.instance&.state&.name
+    return false unless %w[stopped pending running].include?(state)
+    # E36 — up and answering /health: the failure is something else (X5), so no wait and no second send
+    return false if state == "running" && SupportConsoleMachineControl.healthy?
+
+    SupportConsoleMachineControl.start!(user: @user, reason: "question") if state == "stopped"
+    @progress << STARTING_MACHINE
+    broadcast
+    SupportConsoleMachineControl.broadcast_status
+    SupportConsoleMachineControl.wait_until_healthy.tap { SupportConsoleMachineControl.broadcast_status }
   end
 
   # Applies one relay event.
@@ -181,6 +206,8 @@ class SupportConsoleTurnJob < ApplicationJob
         updates["code_rev"] = @result["code_rev"]
         updates["lag_seconds"] = @result["lag_seconds"]
         updates["cost_usd"] = @result["cost_usd"]
+        # H10 — summed per conversation in the composer footer
+        updates["usage"] = @result["usage"] if @result["usage"].is_a?(Hash)
       end
       @message.update!(content: content.presence || "…", metadata: (@message.metadata || {}).merge(updates))
     end
@@ -189,7 +216,8 @@ class SupportConsoleTurnJob < ApplicationJob
 
     # Retention runs on the session's updated_at.
     @session.touch
-    broadcast
+    # X33 — this job has just closed the turn itself, so the Stop guard in broadcast does not apply
+    broadcast(final: true)
     broadcast_composer
   end
 
@@ -210,9 +238,12 @@ class SupportConsoleTurnJob < ApplicationJob
   end
 
   # Re-renders the assistant message in the open page.
-  def broadcast
-    # E9 — once Stop has closed the turn, a late event must not bring the spinner back.
-    return if closed_elsewhere?
+  #
+  # @param final [Boolean] true only from finish, which has just closed the turn under the lock
+  def broadcast(final: false)
+    # E9 — once Stop has closed the turn, a late event must not bring the spinner back. X33 — finish's
+    # own update would read as "closed elsewhere" here, so it skips the check.
+    return if !final && closed_elsewhere?
 
     # The in-flight text and progress go in as locals: the stored row only changes in finish.
     metadata = (@message.metadata || {}).merge("progress" => @progress.to_a)
