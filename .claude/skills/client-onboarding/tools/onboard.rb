@@ -62,7 +62,15 @@ app = lambda do |what|
 end
 # The uploads index always paginates (no all=true, G41) — ask per import type, newest first, so older uploads are not missed
 uploads_of = ->(type) { fetch.(:"uploads_#{type}") { api.list("/import_uploads.json?q[import_type_eq]=#{type}") } }
-uploaded_ok = ->(type) { uploads_of.(type).any? { _1["import_type"] == type && _1["failed_row_count"].to_i.zero? && _1["processed_row_count"].to_i.positive? } }
+# Uploads are owned by the entity, not the fund (owner_type "Entity"), so in an entity that already holds another fund only
+# uploads made after THIS fund was created count — else another fund's upload marks the step done (staging, 2026-10-21)
+uploaded_ok = lambda do |type|
+  since = fund.()&.dig("created_at")&.then { Time.parse(_1) }
+  uploads_of.(type).any? do
+    _1["import_type"] == type && _1["failed_row_count"].to_i.zero? && _1["processed_row_count"].to_i.positive? &&
+      since && Time.parse(_1["created_at"]) >= since
+  end
+end
 
 # Runs a tool, echoes its output, returns success
 tool = lambda do |*args|

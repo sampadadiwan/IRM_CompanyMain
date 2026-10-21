@@ -276,3 +276,11 @@ Source: a QR workbook ("9.Comvsrecd": 275 folios × 15 drawdown columns, total r
 - **Count, don't list, for "done" checks.** Fund lists send `total-count` to API callers; `api.count(path)` reads it with
   `per_page=1`. `onboard.rb status` went 28.7 s → 2.0 s (the payments list alone was 24.9 s, only to be counted). The sandbox
   guard now re-reads the entity at most once a minute (it was one GET per write), and upload polling backs off 5 → 30 s.
+
+## 2026-10-21 — Demo Fund 2 on staging (entity 1548, fund 363): a second fund in an entity that already has one
+
+- **Upload done-checks must be fund-scoped.** Import uploads are owned by the entity (`owner_type "Entity"`), so
+  `onboard.rb`'s `uploaded_ok("FundUnitSetting")` saw the Orios fund's upload and skipped unit settings for the new fund.
+  It now counts only uploads created after the fund. Any new done-check on `/import_uploads.json` needs the same bound.
+- Reusing an existing `CapitalCommitment` form type works when its tag matches "Form Tag" — the form-type JSON does not show
+  the tag, so the commitment upload's 0 failed is the proof.
