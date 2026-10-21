@@ -288,11 +288,18 @@ class SupportAgentsController < ApplicationController
       format.html { redirect_to(request.referer || support_agents_path, notice: "Support agent job has been queued.") }
       format.turbo_stream do
         if target && @report
-          render turbo_stream: turbo_stream.replace(
-            "progress_panel_new",
-            partial: "support_agents/progress_panel",
-            locals: { report: @report, support_agent: @support_agent, target: target }
-          )
+          # Replace the report panel by its ID, and also the PI page's
+          # fixed wrapper (cp_cs_progress_wrapper) so the first run and
+          # re-runs both land in a single, predictable target.
+          panel_locals = { report: @report, support_agent: @support_agent, target: target }
+          render turbo_stream: [
+            turbo_stream.replace("progress_panel_#{@report.id}",
+                                 partial: "support_agents/progress_panel",
+                                 locals: panel_locals),
+            turbo_stream.replace("cp_cs_progress_wrapper",
+                                 partial: "support_agents/progress_panel",
+                                 locals: panel_locals)
+          ]
         else
           flash.now[:notice] = "Support agent job has been queued."
           render turbo_stream: turbo_stream.replace("page_alerts", partial: "layouts/alerts")

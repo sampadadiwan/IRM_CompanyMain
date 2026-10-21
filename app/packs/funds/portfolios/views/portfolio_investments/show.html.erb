@@ -293,5 +293,17 @@
              description:      CpCsExtractionAgent::DESCRIPTION,
              long_description: CpCsExtractionAgent::SINGLE_LONG_DESCRIPTION,
              show_closing_date: true %>
-  <div id="progress_panel_new" class="container-fluid px-3 pb-3"></div>
+  <%# Wrapper div with a fixed ID so the Turbo Stream response from the
+      run action always has a single, predictable target to replace —
+      preventing duplicate panels from Turbo page cache restoration. %>
+  <div id="cp_cs_progress_wrapper" class="container-fluid px-3 pb-3">
+    <% cp_cs_agent = SupportAgent.find_by(entity_id: current_user.entity_id, agent_type: "CpCsExtractionAgent") %>
+    <% existing_report = SupportAgentReport.find_by(owner: @portfolio_investment, support_agent: cp_cs_agent) if cp_cs_agent %>
+    <% if existing_report %>
+      <%= render "support_agents/progress_panel",
+                 report: existing_report,
+                 support_agent: cp_cs_agent,
+                 target: @portfolio_investment %>
+    <% end %>
+  </div>
 <% end %>

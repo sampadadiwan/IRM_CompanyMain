@@ -340,17 +340,18 @@ class SupportAgentJob < ApplicationJob
     targets
   end
 
-  # Resolves the target for step UI runs. When the agent expands an Entity
-  # into a single non-Entity sub-target (e.g. Deal), uses that directly
-  # so the step report owner matches the actual target model.
+  # Resolves the target for step-UI runs. Expands the entity into
+  # agent-specific sub-targets (e.g. CapitalCommitments for SLO,
+  # PortfolioInvestments for CP/CS). Falls back to the raw Entity
+  # only when the agent returns no sub-targets at all.
   #
-  # @param support_agent [SupportAgent]
-  # @param target_id [Integer, String] the entity ID
-  # @return [Array]
+  # @param support_agent [SupportAgent] the agent record
+  # @param target_id [Integer, String] entity ID to expand
+  # @return [Array] resolved target records for the extraction pipeline
   def resolve_step_ui_target(support_agent, target_id)
     expanded = support_agent.agent.new.targets(target_id)
     count = expanded.respond_to?(:count) ? expanded.count : expanded.size
-    return expanded.to_a if count == 1 && !expanded.first.is_a?(Entity)
+    return expanded.to_a if count >= 1 && !expanded.first.is_a?(Entity)
 
     [Entity.find(target_id)]
   end
