@@ -12,23 +12,23 @@
 
 ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   create_table "access_rights", force: :cascade do |t|
-    t.string "access_to_category", limit: 20
+    t.string "owner_type", null: false
+    t.bigint "owner_id", null: false
     t.string "access_to_email", limit: 30
     t.bigint "access_to_investor_id"
     t.string "access_type", limit: 25
-    t.boolean "cascade", default: false
-    t.datetime "created_at", null: false
-    t.datetime "deleted_at"
-    t.bigint "entity_id", null: false
-    t.bigint "granted_by_id"
     t.string "metadata"
-    t.boolean "notify", default: false
-    t.bigint "owner_id", null: false
-    t.string "owner_type", null: false
-    t.integer "parent_access_right_id"
-    t.bigint "permissions", default: 0, null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "entity_id", null: false
+    t.string "access_to_category", limit: 20
+    t.datetime "deleted_at"
+    t.boolean "cascade", default: false
     t.bigint "user_id"
+    t.bigint "permissions", default: 0, null: false
+    t.boolean "notify", default: false
+    t.bigint "granted_by_id"
+    t.integer "parent_access_right_id"
     t.index ["access_to_investor_id"], name: "index_access_rights_on_access_to_investor_id"
     t.index ["deleted_at"], name: "index_access_rights_on_deleted_at"
     t.index ["entity_id", "access_to_category"], name: "index_access_rights_on_entity_id_and_category"
@@ -42,40 +42,40 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "account_entries", primary_key: ["id", "reporting_date"], force: :cascade do |t|
-    t.bigint "allocation_run_id"
-    t.decimal "amount_cents", precision: 30, scale: 8, default: "0.0"
-    t.bigint "capital_commitment_id"
-    t.string "commitment_name"
-    t.datetime "created_at", precision: nil, null: false
-    t.boolean "cumulative", default: false
-    t.datetime "deleted_at", precision: nil
-    t.bigint "entity_id", null: false
-    t.string "entry_type", limit: 60
-    t.bigint "exchange_rate_id"
-    t.text "explanation"
-    t.decimal "folio_amount_cents", precision: 30, scale: 8, default: "0.0"
-    t.string "folio_id", limit: 40
-    t.bigint "form_type_id"
-    t.bigint "fund_formula_id"
-    t.bigint "fund_id", null: false
-    t.boolean "generated", default: false
-    t.virtual "generated_deleted", type: :datetime, precision: nil, null: false, as: "ifnull(`deleted_at`,'1900-01-01 00:00:00')"
     t.bigint "id", null: false
-    t.bigint "import_upload_id"
+    t.bigint "capital_commitment_id"
+    t.bigint "entity_id", null: false
+    t.bigint "fund_id", null: false
     t.bigint "investor_id"
-    t.json "json_fields"
-    t.string "name", limit: 125
-    t.text "notes"
-    t.bigint "parent_id"
-    t.string "parent_name"
-    t.string "parent_type"
-    t.string "period", limit: 25
-    t.integer "ref_id", default: 0, null: false
+    t.bigint "form_type_id"
+    t.string "folio_id", limit: 40
     t.date "reporting_date", null: false
-    t.string "rule_for", limit: 10, default: "Accounting"
-    t.bigint "temp_sqlite_id"
-    t.decimal "tracking_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.string "entry_type", limit: 60
+    t.string "name", limit: 125
+    t.decimal "amount_cents", precision: 30, scale: 8, default: "0.0"
+    t.text "notes"
+    t.datetime "created_at", precision: nil, null: false
     t.datetime "updated_at", precision: nil, null: false
+    t.text "explanation"
+    t.boolean "cumulative", default: false
+    t.string "period", limit: 25
+    t.string "parent_type"
+    t.bigint "parent_id"
+    t.boolean "generated", default: false
+    t.decimal "folio_amount_cents", precision: 30, scale: 8, default: "0.0"
+    t.bigint "exchange_rate_id"
+    t.bigint "fund_formula_id"
+    t.string "rule_for", limit: 10, default: "Accounting"
+    t.json "json_fields"
+    t.bigint "import_upload_id"
+    t.datetime "deleted_at", precision: nil
+    t.virtual "generated_deleted", type: :datetime, precision: nil, null: false, as: "ifnull(`deleted_at`,'1900-01-01 00:00:00')"
+    t.decimal "tracking_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.bigint "allocation_run_id"
+    t.string "parent_name"
+    t.string "commitment_name"
+    t.integer "ref_id", default: 0, null: false
+    t.bigint "temp_sqlite_id"
     t.index ["allocation_run_id"], name: "index_account_entries_on_allocation_run_id"
     t.index ["capital_commitment_id", "name", "reporting_date"], name: "idx_ae_cc_name_date"
     t.index ["capital_commitment_id"], name: "index_account_entries_on_capital_commitment_id"
@@ -97,18 +97,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "account_entry_report_insights", force: :cascade do |t|
-    t.bigint "capital_commitment_id"
-    t.json "content"
-    t.datetime "created_at", null: false
-    t.string "data_fingerprint"
-    t.date "end_date", null: false
     t.bigint "entity_id", null: false
     t.bigint "fund_id", null: false
+    t.bigint "capital_commitment_id"
+    t.date "start_date", null: false
+    t.date "end_date", null: false
+    t.string "section_key", null: false
+    t.string "status"
+    t.json "content"
+    t.string "data_fingerprint"
     t.datetime "generated_at"
     t.bigint "generated_by_id"
-    t.string "section_key", null: false
-    t.date "start_date", null: false
-    t.string "status"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["capital_commitment_id"], name: "index_account_entry_report_insights_on_capital_commitment_id"
     t.index ["entity_id"], name: "index_account_entry_report_insights_on_entity_id"
@@ -117,32 +117,32 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "action_mailbox_inbound_emails", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.string "message_checksum", null: false
-    t.string "message_id", null: false
     t.integer "status", default: 0, null: false
+    t.string "message_id", null: false
+    t.string "message_checksum", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["message_id", "message_checksum"], name: "index_action_mailbox_inbound_emails_uniqueness", unique: true
   end
 
   create_table "action_text_rich_texts", force: :cascade do |t|
-    t.text "body"
-    t.datetime "created_at", null: false
     t.string "name", null: false
-    t.bigint "record_id", null: false
+    t.text "body"
     t.string "record_type", null: false
+    t.bigint "record_id", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["record_type", "record_id", "name"], name: "index_action_text_rich_texts_uniqueness", unique: true
   end
 
   create_table "active_admin_comments", force: :cascade do |t|
-    t.bigint "author_id"
-    t.string "author_type"
-    t.text "body"
-    t.datetime "created_at", null: false
     t.string "namespace"
-    t.bigint "resource_id"
+    t.text "body"
     t.string "resource_type"
+    t.bigint "resource_id"
+    t.string "author_type"
+    t.bigint "author_id"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["author_type", "author_id"], name: "index_active_admin_comments_on_author"
     t.index ["namespace"], name: "index_active_admin_comments_on_namespace"
@@ -150,24 +150,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "active_storage_attachments", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "record_type", null: false
+    t.bigint "record_id", null: false
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
-    t.string "name", null: false
-    t.bigint "record_id", null: false
-    t.string "record_type", null: false
     t.index ["blob_id"], name: "index_active_storage_attachments_on_blob_id"
     t.index ["record_type", "record_id", "name", "blob_id"], name: "index_active_storage_attachments_uniqueness", unique: true
   end
 
   create_table "active_storage_blobs", force: :cascade do |t|
-    t.bigint "byte_size", null: false
-    t.string "checksum"
-    t.string "content_type"
-    t.datetime "created_at", null: false
-    t.string "filename", null: false
     t.string "key", null: false
+    t.string "filename", null: false
+    t.string "content_type"
     t.text "metadata"
     t.string "service_name", null: false
+    t.bigint "byte_size", null: false
+    t.string "checksum"
+    t.datetime "created_at", null: false
     t.index ["key"], name: "index_active_storage_blobs_on_key", unique: true
   end
 
@@ -178,60 +178,60 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "admin_users", force: :cascade do |t|
-    t.datetime "created_at", null: false
     t.string "email", default: "", null: false
     t.string "encrypted_password", default: "", null: false
-    t.datetime "remember_created_at"
-    t.datetime "reset_password_sent_at"
     t.string "reset_password_token"
+    t.datetime "reset_password_sent_at"
+    t.datetime "remember_created_at"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["email"], name: "index_admin_users_on_email", unique: true
     t.index ["reset_password_token"], name: "index_admin_users_on_reset_password_token", unique: true
   end
 
   create_table "agent_charts", force: :cascade do |t|
-    t.integer "chart_height"
-    t.datetime "created_at", null: false
-    t.string "document_names"
-    t.bigint "entity_id", null: false
-    t.text "error"
-    t.integer "import_upload_id"
-    t.integer "kpi_before", default: 12
-    t.string "kpi_before_period", limit: 10, default: "Month"
-    t.string "kpi_names"
-    t.string "llm_model", limit: 20
-    t.bigint "owner_id"
-    t.string "owner_type"
+    t.string "title"
     t.text "prompt"
     t.json "raw_data"
-    t.integer "report_id"
     t.json "spec"
+    t.string "llm_model", limit: 20
     t.string "status", limit: 10
-    t.string "tag_list"
-    t.string "title"
+    t.text "error"
+    t.bigint "entity_id", null: false
+    t.string "owner_type"
+    t.bigint "owner_id"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "document_names"
+    t.integer "report_id"
+    t.integer "import_upload_id"
+    t.string "kpi_names"
+    t.string "tag_list"
+    t.integer "kpi_before", default: 12
+    t.string "kpi_before_period", limit: 10, default: "Month"
+    t.integer "chart_height"
     t.index ["entity_id"], name: "index_agent_charts_on_entity_id"
     t.index ["owner_type", "owner_id"], name: "index_agent_charts_on_owner"
   end
 
   create_table "agent_chat_message_feedbacks", force: :cascade do |t|
     t.bigint "agent_chat_message_id", null: false
-    t.string "channel", limit: 20, default: "web", null: false
-    t.datetime "created_at", null: false
+    t.bigint "user_id"
     t.bigint "entity_id", null: false
-    t.json "guide_files_searched"
-    t.integer "judge_actionability"
+    t.string "channel", limit: 20, default: "web", null: false
+    t.string "rating", limit: 10
+    t.text "notes"
     t.integer "judge_completeness"
     t.integer "judge_grounding"
-    t.json "judge_issues"
+    t.integer "judge_actionability"
     t.integer "judge_total"
-    t.text "notes"
-    t.string "rating", limit: 10
+    t.json "judge_issues"
+    t.string "status", limit: 25, default: "open", null: false
+    t.json "guide_files_searched"
     t.text "resolution_notes"
     t.bigint "reviewed_by_id"
-    t.string "status", limit: 25, default: "open", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.bigint "user_id"
     t.index ["agent_chat_message_id"], name: "index_agent_chat_message_feedbacks_on_agent_chat_message_id", unique: true
     t.index ["entity_id", "status"], name: "idx_feedbacks_entity_status"
     t.index ["entity_id"], name: "index_agent_chat_message_feedbacks_on_entity_id"
@@ -243,30 +243,30 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
 
   create_table "agent_chat_messages", force: :cascade do |t|
     t.bigint "agent_chat_session_id", null: false
-    t.string "channel", limit: 20, default: "web", null: false
+    t.string "role", limit: 20, null: false
     t.text "content", null: false
+    t.json "metadata"
     t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "channel", limit: 20, default: "web", null: false
+    t.json "tool_calls_summary"
     t.boolean "guide_search_hit", default: false, null: false
     t.boolean "guide_search_strong_hit", default: false, null: false
     t.string "guide_search_terms"
-    t.json "metadata"
-    t.string "role", limit: 20, null: false
-    t.json "tool_calls_summary"
-    t.datetime "updated_at", null: false
     t.index ["agent_chat_session_id"], name: "index_agent_chat_messages_on_agent_chat_session_id"
   end
 
   create_table "agent_chat_sessions", force: :cascade do |t|
-    t.bigint "analyst_id", null: false
-    t.string "channel", limit: 20, default: "web", null: false
-    t.bigint "chattable_id"
-    t.string "chattable_type", limit: 50
-    t.datetime "created_at", null: false
-    t.string "status", limit: 20, default: "active", null: false
     t.bigint "support_agent_id", null: false
+    t.bigint "analyst_id", null: false
+    t.string "chattable_type", limit: 50
+    t.bigint "chattable_id"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.json "wa_metadata"
+    t.string "status", limit: 20, default: "active", null: false
+    t.string "channel", limit: 20, default: "web", null: false
     t.string "wa_state", limit: 30
+    t.json "wa_metadata"
     t.index ["analyst_id"], name: "index_agent_chat_sessions_on_analyst_id"
     t.index ["channel"], name: "index_agent_chat_sessions_on_channel"
     t.index ["chattable_type", "chattable_id"], name: "index_agent_chat_sessions_on_chattable"
@@ -277,17 +277,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
 
   create_table "agent_execution_logs", force: :cascade do |t|
     t.bigint "agent_schedule_id"
-    t.integer "attempt_number", default: 1, null: false
-    t.datetime "completed_at"
-    t.datetime "created_at", null: false
-    t.bigint "entity_id", null: false
-    t.text "error_message"
-    t.json "result_summary"
-    t.datetime "started_at"
-    t.string "status", limit: 20, default: "queued", null: false
     t.bigint "support_agent_id", null: false
+    t.bigint "entity_id", null: false
     t.string "trigger_type", limit: 20, null: false
     t.bigint "triggered_by_id"
+    t.string "status", limit: 20, default: "queued", null: false
+    t.integer "attempt_number", default: 1, null: false
+    t.datetime "started_at"
+    t.datetime "completed_at"
+    t.text "error_message"
+    t.json "result_summary"
+    t.datetime "created_at", null: false
     t.index ["agent_schedule_id", "created_at"], name: "idx_execution_logs_schedule", order: { created_at: :desc }
     t.index ["agent_schedule_id"], name: "index_agent_execution_logs_on_agent_schedule_id"
     t.index ["entity_id"], name: "index_agent_execution_logs_on_entity_id"
@@ -301,21 +301,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "agent_ingested_emails", force: :cascade do |t|
-    t.json "attachment_data"
-    t.decimal "confidence", precision: 5, scale: 2
-    t.datetime "created_at", null: false
     t.bigint "deal_id", null: false
-    t.bigint "filed_as_id"
-    t.string "filed_as_type"
-    t.string "match_tier", limit: 2
+    t.bigint "sender_user_id", null: false
     t.string "message_id", null: false
-    t.json "parse_json"
     t.text "raw_payload"
     t.datetime "received_at", null: false
-    t.bigint "sender_user_id", null: false
     t.string "status", limit: 20, default: "pending", null: false
-    t.string "subject"
+    t.json "parse_json"
+    t.decimal "confidence", precision: 5, scale: 2
+    t.string "match_tier", limit: 2
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "filed_as_type"
+    t.bigint "filed_as_id"
+    t.json "attachment_data"
+    t.string "subject"
     t.index ["deal_id"], name: "index_agent_ingested_emails_on_deal_id"
     t.index ["filed_as_type", "filed_as_id"], name: "index_agent_ingested_emails_on_filed_as"
     t.index ["message_id"], name: "index_agent_ingested_emails_on_message_id", unique: true
@@ -324,25 +324,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "agent_schedules", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.bigint "created_by_id"
-    t.boolean "enabled", default: false, null: false
+    t.bigint "support_agent_id", null: false
     t.bigint "entity_id", null: false
-    t.json "failure_notification_user_ids"
     t.string "frequency", limit: 20, null: false
-    t.datetime "last_run_at"
+    t.integer "run_on_day"
+    t.time "run_at_time", null: false
+    t.string "timezone", limit: 50, null: false
     t.datetime "next_run_at"
-    t.boolean "notify_caphive_on_error", default: true, null: false
-    t.boolean "notify_on_failure", default: true, null: false
-    t.boolean "notify_on_partial_success", default: true, null: false
-    t.boolean "notify_on_success", default: false, null: false
+    t.datetime "last_run_at"
+    t.boolean "enabled", default: false, null: false
     t.integer "retry_count", default: 0, null: false
     t.integer "retry_interval_minutes", default: 0, null: false
-    t.time "run_at_time", null: false
-    t.integer "run_on_day"
-    t.bigint "support_agent_id", null: false
-    t.string "timezone", limit: 50, null: false
+    t.boolean "notify_on_failure", default: true, null: false
+    t.json "failure_notification_user_ids"
+    t.bigint "created_by_id"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "notify_on_success", default: false, null: false
+    t.boolean "notify_on_partial_success", default: true, null: false
+    t.boolean "notify_caphive_on_error", default: true, null: false
     t.index ["created_by_id"], name: "index_agent_schedules_on_created_by_id"
     t.index ["entity_id"], name: "index_agent_schedules_on_entity_id"
     t.index ["next_run_at", "enabled"], name: "idx_agent_schedules_polling"
@@ -355,46 +355,46 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "aggregate_portfolio_investments", force: :cascade do |t|
-    t.decimal "avg_cost_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "bought_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "bought_quantity", precision: 20, scale: 2, default: "0.0"
-    t.decimal "cost_of_remaining_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "cost_of_sold_cents", precision: 20, scale: 2, default: "0.0"
-    t.datetime "created_at", null: false
-    t.datetime "deleted_at"
-    t.bigint "document_folder_id"
     t.bigint "entity_id", null: false
-    t.decimal "ex_expenses_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "fmv_cents", precision: 20, scale: 2, default: "0.0"
-    t.bigint "form_type_id"
     t.bigint "fund_id", null: false
-    t.decimal "gain_cents", precision: 20, scale: 2, default: "0.0", null: false
-    t.decimal "instrument_currency_cost_of_remaining_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "instrument_currency_fmv_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "instrument_currency_unrealized_gain_cents", precision: 20, scale: 2, default: "0.0"
-    t.string "investment_domicile", limit: 10
-    t.bigint "investment_instrument_id"
-    t.string "investment_type"
-    t.decimal "net_bought_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.bigint "orignal_id"
     t.bigint "portfolio_company_id", null: false
-    t.string "portfolio_company_name", limit: 100
-    t.decimal "portfolio_income_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "quantity", precision: 24, scale: 8, default: "0.0"
-    t.decimal "realized_price_effect_cents", precision: 20, scale: 2, default: "0.0", null: false
-    t.boolean "show_portfolio", default: false
-    t.boolean "snapshot", default: false
-    t.date "snapshot_date"
-    t.decimal "sold_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "sold_quantity", precision: 20, scale: 2, default: "0.0"
-    t.decimal "tracking_bought_amount_cents", precision: 20, scale: 2, default: "0.0", null: false
-    t.decimal "tracking_fmv_cents", precision: 20, scale: 2, default: "0.0", null: false
-    t.decimal "tracking_sold_amount_cents", precision: 20, scale: 2, default: "0.0", null: false
-    t.decimal "transfer_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "transfer_quantity", precision: 20, scale: 2, default: "0.0"
-    t.decimal "unrealized_gain_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "unrealized_price_effect_cents", precision: 20, scale: 2, default: "0.0", null: false
+    t.decimal "fmv_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "avg_cost_cents", precision: 20, scale: 2, default: "0.0"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "portfolio_company_name", limit: 100
+    t.decimal "bought_quantity", precision: 20, scale: 2, default: "0.0"
+    t.decimal "bought_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "sold_quantity", precision: 20, scale: 2, default: "0.0"
+    t.decimal "sold_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "cost_of_remaining_cents", precision: 20, scale: 2, default: "0.0"
+    t.string "investment_type"
+    t.decimal "cost_of_sold_cents", precision: 20, scale: 2, default: "0.0"
+    t.string "investment_domicile", limit: 10
+    t.datetime "deleted_at"
+    t.bigint "investment_instrument_id"
+    t.bigint "form_type_id"
+    t.decimal "transfer_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "unrealized_gain_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "transfer_quantity", precision: 20, scale: 2, default: "0.0"
+    t.decimal "net_bought_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.bigint "document_folder_id"
+    t.boolean "show_portfolio", default: false
+    t.decimal "portfolio_income_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "gain_cents", precision: 20, scale: 2, default: "0.0", null: false
+    t.date "snapshot_date"
+    t.boolean "snapshot", default: false
+    t.bigint "orignal_id"
+    t.decimal "instrument_currency_fmv_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "instrument_currency_cost_of_remaining_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "instrument_currency_unrealized_gain_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "ex_expenses_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "tracking_fmv_cents", precision: 20, scale: 2, default: "0.0", null: false
+    t.decimal "tracking_bought_amount_cents", precision: 20, scale: 2, default: "0.0", null: false
+    t.decimal "tracking_sold_amount_cents", precision: 20, scale: 2, default: "0.0", null: false
+    t.decimal "unrealized_price_effect_cents", precision: 20, scale: 2, default: "0.0", null: false
+    t.decimal "realized_price_effect_cents", precision: 20, scale: 2, default: "0.0", null: false
     t.index ["deleted_at"], name: "index_aggregate_portfolio_investments_on_deleted_at"
     t.index ["document_folder_id"], name: "index_aggregate_portfolio_investments_on_document_folder_id"
     t.index ["entity_id"], name: "index_aggregate_portfolio_investments_on_entity_id"
@@ -406,18 +406,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "ai_checks", force: :cascade do |t|
+    t.bigint "entity_id", null: false
     t.bigint "ai_rule_id"
+    t.string "parent_type", null: false
+    t.bigint "parent_id", null: false
+    t.string "owner_type", null: false
+    t.bigint "owner_id", null: false
+    t.string "status", limit: 5
+    t.text "explanation"
     t.json "audit_log"
     t.datetime "created_at", null: false
-    t.bigint "entity_id", null: false
-    t.text "explanation"
-    t.bigint "owner_id", null: false
-    t.string "owner_type", null: false
-    t.bigint "parent_id", null: false
-    t.string "parent_type", null: false
-    t.string "rule_type", limit: 15
-    t.string "status", limit: 5
     t.datetime "updated_at", null: false
+    t.string "rule_type", limit: 15
     t.index ["ai_rule_id"], name: "index_ai_checks_on_ai_rule_id"
     t.index ["entity_id"], name: "index_ai_checks_on_entity_id"
     t.index ["owner_type", "owner_id"], name: "index_compliance_checks_on_owner"
@@ -425,22 +425,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "ai_kpi_shadow_runs", force: :cascade do |t|
-    t.integer "ai_count", default: 0, null: false
-    t.integer "ai_only_count", default: 0, null: false
-    t.datetime "created_at", null: false
-    t.integer "det_count", default: 0, null: false
-    t.integer "det_only_count", default: 0, null: false
-    t.json "details"
-    t.bigint "document_id", null: false
     t.bigint "entity_id", null: false
-    t.integer "input_tokens", default: 0, null: false
-    t.bigint "kpi_report_id", null: false
-    t.integer "match_count", default: 0, null: false
-    t.float "match_rate", default: 0.0, null: false
-    t.integer "mismatch_count", default: 0, null: false
-    t.integer "output_tokens", default: 0, null: false
     t.bigint "portfolio_company_id", null: false
+    t.bigint "document_id", null: false
+    t.bigint "kpi_report_id", null: false
     t.datetime "run_at", null: false
+    t.integer "det_count", default: 0, null: false
+    t.integer "ai_count", default: 0, null: false
+    t.integer "match_count", default: 0, null: false
+    t.integer "det_only_count", default: 0, null: false
+    t.integer "ai_only_count", default: 0, null: false
+    t.integer "mismatch_count", default: 0, null: false
+    t.float "match_rate", default: 0.0, null: false
+    t.integer "input_tokens", default: 0, null: false
+    t.integer "output_tokens", default: 0, null: false
+    t.json "details"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["document_id"], name: "index_ai_kpi_shadow_runs_on_document_id"
     t.index ["entity_id"], name: "index_ai_kpi_shadow_runs_on_entity_id"
@@ -450,79 +450,79 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "ai_portfolio_reports", force: :cascade do |t|
+    t.integer "portfolio_company_id"
     t.integer "analyst_id"
-    t.text "collated_report_html"
+    t.string "status"
+    t.date "report_date"
     t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.text "collated_report_html"
+    t.boolean "web_search_enabled", default: false
     t.bigint "folder_id"
     t.bigint "investment_criteria_template_id"
-    t.integer "portfolio_company_id"
-    t.date "report_date"
-    t.string "status"
-    t.datetime "updated_at", null: false
-    t.boolean "web_search_enabled", default: false
     t.index ["folder_id"], name: "index_ai_portfolio_reports_on_folder_id"
     t.index ["investment_criteria_template_id"], name: "index_ai_portfolio_reports_on_investment_criteria_template_id"
   end
 
   create_table "ai_presentations", force: :cascade do |t|
-    t.text "blueprint"
     t.bigint "chat_id", null: false
-    t.text "content_html"
-    t.datetime "created_at", null: false
     t.bigint "entity_id", null: false
+    t.text "content_html"
+    t.text "blueprint"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["chat_id"], name: "index_ai_presentations_on_chat_id"
     t.index ["entity_id"], name: "index_ai_presentations_on_entity_id"
   end
 
   create_table "ai_report_sections", force: :cascade do |t|
-    t.json "agent_chart_ids"
-    t.text "ai_generated_summary"
     t.bigint "ai_portfolio_report_id", null: false
-    t.text "content_html"
-    t.text "content_html_with_web"
-    t.datetime "created_at", null: false
-    t.datetime "created_at_document_only"
-    t.datetime "created_at_web_included"
-    t.json "metadata"
-    t.integer "order_index"
-    t.json "refinement_history"
-    t.boolean "reviewed", default: false
     t.string "section_type"
+    t.integer "order_index"
+    t.text "ai_generated_summary"
     t.string "status"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.datetime "updated_at_document_only"
-    t.datetime "updated_at_web_included"
+    t.boolean "reviewed", default: false
+    t.text "content_html"
     t.boolean "web_search_enabled", default: false, null: false
+    t.json "agent_chart_ids"
+    t.text "content_html_with_web"
+    t.datetime "created_at_document_only"
+    t.datetime "updated_at_document_only"
+    t.datetime "created_at_web_included"
+    t.datetime "updated_at_web_included"
+    t.json "metadata"
+    t.json "refinement_history"
     t.index ["ai_portfolio_report_id"], name: "index_ai_report_sections_on_ai_portfolio_report_id"
   end
 
   create_table "ai_rules", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.boolean "enabled", default: true
     t.bigint "entity_id", null: false
     t.string "for_class", limit: 20
-    t.string "name"
     t.text "rule"
-    t.string "rule_type", limit: 15
-    t.string "schedule", limit: 40
     t.string "tags"
+    t.string "schedule", limit: 40
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "enabled", default: true
+    t.string "rule_type", limit: 15
+    t.string "name"
     t.index ["entity_id"], name: "index_ai_rules_on_entity_id"
   end
 
   create_table "allocation_group_run_items", force: :cascade do |t|
     t.bigint "allocation_group_run_id", null: false
-    t.bigint "allocation_run_id"
     t.bigint "allocation_run_template_id"
-    t.datetime "created_at", null: false
-    t.datetime "finished_at"
     t.bigint "fund_id", null: false
-    t.text "message"
-    t.integer "position", null: false
-    t.datetime "started_at"
-    t.string "status", limit: 20, default: "pending", null: false
+    t.bigint "allocation_run_id"
     t.string "template_name", limit: 100, null: false
+    t.integer "position", null: false
+    t.string "status", limit: 20, default: "pending", null: false
+    t.text "message"
+    t.datetime "started_at"
+    t.datetime "finished_at"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["allocation_group_run_id"], name: "idx_agr_items_on_run"
     t.index ["allocation_run_id"], name: "index_allocation_group_run_items_on_allocation_run_id"
@@ -531,19 +531,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "allocation_group_runs", force: :cascade do |t|
-    t.bigint "allocation_run_template_group_id"
-    t.datetime "created_at", null: false
-    t.date "end_date", null: false
     t.bigint "entity_id", null: false
-    t.datetime "finished_at"
+    t.bigint "user_id", null: false
+    t.bigint "allocation_run_template_group_id"
     t.string "group_name", limit: 100, null: false
+    t.date "start_date", null: false
+    t.date "end_date", null: false
+    t.string "status", limit: 20, default: "queued", null: false
     t.text "message"
     t.bigint "resumed_from_id"
-    t.date "start_date", null: false
     t.datetime "started_at"
-    t.string "status", limit: 20, default: "queued", null: false
+    t.datetime "finished_at"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.bigint "user_id", null: false
     t.index ["allocation_run_template_group_id"], name: "idx_agr_on_group"
     t.index ["entity_id", "status"], name: "index_allocation_group_runs_on_entity_id_and_status"
     t.index ["entity_id"], name: "index_allocation_group_runs_on_entity_id"
@@ -552,16 +552,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "allocation_run_reports", force: :cascade do |t|
-    t.bigint "allocation_run_id", null: false
-    t.datetime "checked_at"
-    t.datetime "created_at", null: false
     t.bigint "entity_id", null: false
     t.bigint "fund_id", null: false
+    t.bigint "user_id", null: false
+    t.bigint "allocation_run_id", null: false
+    t.string "status", limit: 10, default: "Pending", null: false
     t.json "json_fields"
     t.text "message"
-    t.string "status", limit: 10, default: "Pending", null: false
+    t.datetime "checked_at"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.bigint "user_id", null: false
     t.index ["allocation_run_id"], name: "idx_allocation_run_reports_unique_run", unique: true
     t.index ["entity_id"], name: "index_allocation_run_reports_on_entity_id"
     t.index ["fund_id"], name: "index_allocation_run_reports_on_fund_id"
@@ -571,8 +571,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   create_table "allocation_run_template_group_items", force: :cascade do |t|
     t.bigint "allocation_run_template_group_id", null: false
     t.bigint "allocation_run_template_id", null: false
-    t.datetime "created_at", null: false
     t.integer "position", default: 1, null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["allocation_run_template_group_id", "allocation_run_template_id"], name: "idx_atg_items_unique_template_per_group", unique: true
     t.index ["allocation_run_template_group_id"], name: "idx_atg_items_on_group"
@@ -580,34 +580,34 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "allocation_run_template_groups", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.text "description"
     t.bigint "entity_id", null: false
-    t.string "name", limit: 100, null: false
-    t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
+    t.string "name", limit: 100, null: false
+    t.text "description"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["entity_id", "name"], name: "index_allocation_run_template_groups_on_entity_id_and_name", unique: true
     t.index ["entity_id"], name: "index_allocation_run_template_groups_on_entity_id"
     t.index ["user_id"], name: "index_allocation_run_template_groups_on_user_id"
   end
 
   create_table "allocation_run_templates", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.text "description"
     t.bigint "entity_id", null: false
-    t.boolean "explain", default: false, null: false
-    t.bigint "fund_id", null: false
-    t.boolean "fund_ratios", default: false, null: false
-    t.boolean "generate_soa", default: false, null: false
-    t.string "name", limit: 100, null: false
-    t.string "rule_for", limit: 10
-    t.boolean "run_allocations", default: true, null: false
-    t.boolean "sample", default: false, null: false
-    t.bigint "statement_document_id"
-    t.string "statement_for", limit: 20
-    t.string "tag_list"
-    t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
+    t.bigint "fund_id", null: false
+    t.string "name", limit: 100, null: false
+    t.text "description"
+    t.string "rule_for", limit: 10
+    t.string "tag_list"
+    t.boolean "run_allocations", default: true, null: false
+    t.boolean "generate_soa", default: false, null: false
+    t.string "statement_for", limit: 20
+    t.bigint "statement_document_id"
+    t.boolean "fund_ratios", default: false, null: false
+    t.boolean "explain", default: false, null: false
+    t.boolean "sample", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["entity_id", "name"], name: "index_allocation_run_templates_on_entity_id_and_name", unique: true
     t.index ["entity_id"], name: "index_allocation_run_templates_on_entity_id"
     t.index ["fund_id"], name: "index_allocation_run_templates_on_fund_id"
@@ -616,46 +616,46 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "allocation_runs", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.date "end_date"
     t.bigint "entity_id", null: false
     t.bigint "fund_id", null: false
+    t.bigint "user_id", null: false
+    t.date "start_date"
+    t.date "end_date"
     t.boolean "fund_ratios"
     t.boolean "generate_soa"
-    t.boolean "locked", default: false
+    t.string "template_name", limit: 50
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.string "rule_for", limit: 10, default: "Accounting"
     t.boolean "run_allocations", default: true
-    t.date "start_date"
-    t.string "statement_for", limit: 20
     t.text "status"
     t.string "tag_list"
-    t.string "template_name", limit: 50
-    t.datetime "updated_at", null: false
-    t.bigint "user_id", null: false
+    t.boolean "locked", default: false
+    t.string "statement_for", limit: 20
     t.index ["entity_id"], name: "index_allocation_runs_on_entity_id"
     t.index ["fund_id"], name: "index_allocation_runs_on_fund_id"
     t.index ["user_id"], name: "index_allocation_runs_on_user_id"
   end
 
   create_table "allocations", force: :cascade do |t|
-    t.decimal "amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "avail_interest_quantity", precision: 10, scale: 2, default: "0.0"
-    t.decimal "avail_offer_quantity", precision: 10, scale: 2, default: "0.0"
-    t.datetime "created_at", null: false
-    t.timestamp "deleted_at"
-    t.bigint "document_folder_id"
-    t.bigint "entity_id", null: false
-    t.bigint "form_type_id"
-    t.bigint "import_upload_id"
-    t.bigint "interest_id", null: false
-    t.json "json_fields"
-    t.text "notes"
     t.bigint "offer_id", null: false
-    t.decimal "price", precision: 20, scale: 2, default: "0.0"
-    t.decimal "quantity", precision: 10, scale: 2, default: "0.0"
+    t.bigint "interest_id", null: false
     t.bigint "secondary_sale_id", null: false
-    t.datetime "updated_at", null: false
+    t.bigint "entity_id", null: false
+    t.decimal "quantity", precision: 10, scale: 2, default: "0.0"
+    t.decimal "avail_offer_quantity", precision: 10, scale: 2, default: "0.0"
+    t.decimal "avail_interest_quantity", precision: 10, scale: 2, default: "0.0"
+    t.decimal "amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.text "notes"
     t.boolean "verified", default: false
+    t.bigint "document_folder_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.json "json_fields"
+    t.decimal "price", precision: 20, scale: 2, default: "0.0"
+    t.timestamp "deleted_at"
+    t.bigint "import_upload_id"
+    t.bigint "form_type_id"
     t.index ["deleted_at"], name: "index_allocations_on_deleted_at"
     t.index ["document_folder_id"], name: "index_allocations_on_document_folder_id"
     t.index ["entity_id"], name: "index_allocations_on_entity_id"
@@ -666,19 +666,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "aml_reports", force: :cascade do |t|
-    t.string "PAN"
-    t.datetime "birth_date"
-    t.datetime "created_at", null: false
-    t.string "custom_name"
-    t.bigint "document_folder_id"
     t.bigint "entity_id", null: false
     t.bigint "investor_id", null: false
     t.bigint "investor_kyc_id", null: false
     t.string "match_status"
-    t.json "request_data"
-    t.string "request_id"
     t.json "response_data"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.json "request_data"
+    t.bigint "document_folder_id"
+    t.string "custom_name"
+    t.string "request_id"
+    t.datetime "birth_date"
+    t.string "PAN"
     t.index ["document_folder_id"], name: "index_aml_reports_on_document_folder_id"
     t.index ["entity_id"], name: "index_aml_reports_on_entity_id"
     t.index ["investor_id"], name: "index_aml_reports_on_investor_id"
@@ -686,33 +686,33 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "api_tokens", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.bigint "devise_api_token_id", null: false
-    t.datetime "last_used_at"
-    t.string "name", limit: 100, null: false
-    t.datetime "revoked_at"
-    t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
+    t.bigint "devise_api_token_id", null: false
+    t.string "name", limit: 100, null: false
+    t.datetime "last_used_at"
+    t.datetime "revoked_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["devise_api_token_id"], name: "index_api_tokens_on_devise_api_token_id", unique: true
     t.index ["user_id", "revoked_at"], name: "index_api_tokens_on_user_id_and_revoked_at"
   end
 
   create_table "approval_responses", force: :cascade do |t|
-    t.bigint "approval_id", null: false
-    t.datetime "created_at", null: false
-    t.timestamp "deleted_at"
-    t.bigint "document_folder_id"
     t.bigint "entity_id", null: false
-    t.bigint "form_type_id"
-    t.bigint "investor_id", null: false
-    t.json "json_fields"
-    t.boolean "notification_sent", default: false
-    t.bigint "owner_id"
-    t.string "owner_type"
     t.bigint "response_entity_id", null: false
     t.bigint "response_user_id"
+    t.bigint "approval_id", null: false
     t.string "status", limit: 50
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "investor_id", null: false
+    t.boolean "notification_sent", default: false
+    t.timestamp "deleted_at"
+    t.bigint "form_type_id"
+    t.json "json_fields"
+    t.string "owner_type"
+    t.bigint "owner_id"
+    t.bigint "document_folder_id"
     t.index ["approval_id"], name: "index_approval_responses_on_approval_id"
     t.index ["deleted_at"], name: "index_approval_responses_on_deleted_at"
     t.index ["document_folder_id"], name: "index_approval_responses_on_document_folder_id"
@@ -725,25 +725,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "approvals", force: :cascade do |t|
-    t.boolean "approved", default: false
-    t.integer "approved_count", default: 0
-    t.datetime "created_at", null: false
-    t.datetime "deleted_at"
-    t.bigint "document_folder_id"
-    t.date "due_date"
-    t.boolean "enable_approval_show_kycs", default: false
-    t.bigint "entity_id", null: false
-    t.bigint "form_type_id"
-    t.json "json_fields"
-    t.boolean "locked"
-    t.bigint "owner_id"
-    t.string "owner_type"
-    t.integer "pending_count", default: 0
-    t.integer "rejected_count", default: 0
-    t.boolean "response_enabled_email", default: false, null: false
-    t.string "response_status"
     t.string "title"
+    t.bigint "entity_id", null: false
+    t.integer "approved_count", default: 0
+    t.integer "rejected_count", default: 0
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "pending_count", default: 0
+    t.boolean "approved", default: false
+    t.bigint "form_type_id"
+    t.date "due_date"
+    t.bigint "document_folder_id"
+    t.string "response_status"
+    t.boolean "locked"
+    t.json "json_fields"
+    t.string "owner_type"
+    t.bigint "owner_id"
+    t.boolean "enable_approval_show_kycs", default: false
+    t.boolean "response_enabled_email", default: false, null: false
+    t.datetime "deleted_at"
     t.index ["deleted_at"], name: "index_approvals_on_deleted_at"
     t.index ["document_folder_id"], name: "index_approvals_on_document_folder_id"
     t.index ["entity_id"], name: "index_approvals_on_entity_id"
@@ -752,34 +752,34 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "assistant_tasks", force: :cascade do |t|
-    t.string "assistant_metadata"
-    t.string "assistant_type", limit: 50
-    t.datetime "created_at", null: false
+    t.bigint "user_id", null: false
     t.bigint "entity_id", null: false
-    t.text "instructions"
+    t.string "assistant_type", limit: 50
+    t.string "assistant_metadata"
     t.string "period", limit: 10
     t.string "tag_list"
+    t.text "instructions"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.bigint "user_id", null: false
     t.index ["entity_id"], name: "index_assistant_tasks_on_entity_id"
     t.index ["user_id"], name: "index_assistant_tasks_on_user_id"
   end
 
   create_table "audits", force: :cascade do |t|
-    t.string "action"
-    t.integer "associated_id"
-    t.string "associated_type"
     t.integer "auditable_id"
     t.string "auditable_type"
-    t.text "audited_changes"
-    t.string "comment"
-    t.datetime "created_at"
-    t.string "remote_address"
-    t.string "request_uuid"
+    t.integer "associated_id"
+    t.string "associated_type"
     t.integer "user_id"
     t.string "user_type"
     t.string "username"
+    t.string "action"
+    t.text "audited_changes"
     t.integer "version", default: 0
+    t.string "comment"
+    t.string "remote_address"
+    t.string "request_uuid"
+    t.datetime "created_at"
     t.index ["associated_type", "associated_id"], name: "associated_index"
     t.index ["auditable_type", "auditable_id", "version"], name: "auditable_index"
     t.index ["created_at"], name: "index_audits_on_created_at"
@@ -788,118 +788,118 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "blazer_audits", force: :cascade do |t|
-    t.datetime "created_at"
-    t.string "data_source"
+    t.bigint "user_id"
     t.bigint "query_id"
     t.text "statement"
-    t.bigint "user_id"
+    t.string "data_source"
+    t.datetime "created_at"
     t.index ["query_id"], name: "index_blazer_audits_on_query_id"
     t.index ["user_id"], name: "index_blazer_audits_on_user_id"
   end
 
   create_table "blazer_checks", force: :cascade do |t|
-    t.string "check_type"
-    t.datetime "created_at", null: false
     t.bigint "creator_id"
-    t.text "emails"
-    t.datetime "last_run_at"
-    t.text "message"
     t.bigint "query_id"
-    t.string "schedule"
-    t.text "slack_channels"
     t.string "state"
+    t.string "schedule"
+    t.text "emails"
+    t.text "slack_channels"
+    t.string "check_type"
+    t.text "message"
+    t.datetime "last_run_at"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["creator_id"], name: "index_blazer_checks_on_creator_id"
     t.index ["query_id"], name: "index_blazer_checks_on_query_id"
   end
 
   create_table "blazer_dashboard_queries", force: :cascade do |t|
-    t.datetime "created_at", null: false
     t.bigint "dashboard_id"
-    t.integer "position"
     t.bigint "query_id"
+    t.integer "position"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["dashboard_id"], name: "index_blazer_dashboard_queries_on_dashboard_id"
     t.index ["query_id"], name: "index_blazer_dashboard_queries_on_query_id"
   end
 
   create_table "blazer_dashboards", force: :cascade do |t|
-    t.datetime "created_at", null: false
     t.bigint "creator_id"
     t.string "name"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["creator_id"], name: "index_blazer_dashboards_on_creator_id"
   end
 
   create_table "blazer_queries", force: :cascade do |t|
-    t.datetime "created_at", null: false
     t.bigint "creator_id"
-    t.string "data_source"
-    t.text "description"
     t.string "name"
+    t.text "description"
     t.text "statement"
+    t.string "data_source"
     t.string "status"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["creator_id"], name: "index_blazer_queries_on_creator_id"
   end
 
   create_table "blogs", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.string "tag_list", limit: 100
     t.string "title"
+    t.string "tag_list", limit: 100
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end
 
   create_table "call_fees", force: :cascade do |t|
+    t.string "name", limit: 50
+    t.date "start_date"
+    t.date "end_date"
+    t.string "notes"
+    t.string "fee_type", limit: 20
+    t.bigint "entity_id", null: false
+    t.bigint "fund_id", null: false
     t.bigint "capital_call_id", null: false
     t.datetime "created_at", null: false
-    t.date "end_date"
-    t.bigint "entity_id", null: false
-    t.string "fee_type", limit: 20
-    t.boolean "formula", default: false
-    t.bigint "fund_id", null: false
-    t.string "name", limit: 50
-    t.string "notes"
-    t.date "start_date"
     t.datetime "updated_at", null: false
+    t.boolean "formula", default: false
     t.index ["capital_call_id"], name: "index_call_fees_on_capital_call_id"
     t.index ["entity_id"], name: "index_call_fees_on_entity_id"
     t.index ["fund_id"], name: "index_call_fees_on_fund_id"
   end
 
   create_table "capital_calls", force: :cascade do |t|
-    t.decimal "amount_to_be_called_cents", precision: 20, scale: 2, default: "0.0"
+    t.bigint "entity_id", null: false
+    t.bigint "fund_id", null: false
+    t.string "name"
+    t.decimal "percentage_called", precision: 11, scale: 8, default: "0.0"
+    t.decimal "collected_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "call_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.date "due_date"
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "form_type_id"
     t.boolean "approved", default: false
     t.bigint "approved_by_user_id"
-    t.decimal "call_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.string "call_basis", limit: 40
-    t.date "call_date"
-    t.decimal "capital_fee_cents", precision: 20, scale: 2, default: "0.0"
-    t.json "close_percentages"
-    t.decimal "collected_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.datetime "created_at", null: false
-    t.datetime "deleted_at"
-    t.bigint "document_folder_id"
-    t.date "due_date"
-    t.bigint "entity_id", null: false
-    t.string "fee_formula_ids"
-    t.bigint "form_type_id"
-    t.string "fund_closes"
-    t.bigint "fund_id", null: false
+    t.boolean "manual_generation", default: false
     t.boolean "generate_remittances", default: true
     t.boolean "generate_remittances_verified", default: false
-    t.bigint "import_upload_id"
-    t.json "json_fields"
-    t.boolean "manual_generation", default: false
-    t.string "name"
-    t.text "notes"
+    t.datetime "deleted_at"
+    t.date "call_date"
+    t.bigint "document_folder_id"
+    t.text "unit_prices"
+    t.string "fund_closes"
+    t.decimal "capital_fee_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "other_fee_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "percentage_called", precision: 11, scale: 8, default: "0.0"
+    t.string "call_basis", limit: 40
+    t.decimal "amount_to_be_called_cents", precision: 20, scale: 2, default: "0.0"
+    t.json "json_fields"
+    t.bigint "import_upload_id"
     t.boolean "send_call_notice_flag", default: true
     t.boolean "send_payment_notification_flag", default: true
-    t.text "unit_prices"
+    t.string "fee_formula_ids"
+    t.json "close_percentages"
     t.datetime "units_job_finished_at"
-    t.datetime "updated_at", null: false
     t.index ["approved_by_user_id"], name: "index_capital_calls_on_approved_by_user_id"
     t.index ["deleted_at"], name: "index_capital_calls_on_deleted_at"
     t.index ["document_folder_id"], name: "index_capital_calls_on_document_folder_id"
@@ -909,65 +909,65 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "capital_commitments", force: :cascade do |t|
-    t.decimal "adjustment_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "adjustment_folio_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "arrear_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "arrear_folio_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "call_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "collected_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.date "commitment_date"
-    t.decimal "committed_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.boolean "compliant", default: false
-    t.datetime "created_at", null: false
-    t.datetime "deleted_at"
-    t.decimal "distribution_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.bigint "document_folder_id"
     t.bigint "entity_id", null: false
-    t.boolean "esign_completed", default: false
-    t.string "esign_emails"
-    t.string "esign_link"
-    t.string "esign_provider", limit: 10
-    t.boolean "esign_required", default: false
-    t.bigint "exchange_rate_id"
-    t.bigint "feeder_fund_id"
-    t.decimal "folio_call_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "folio_collected_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "folio_committed_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.string "folio_currency", limit: 5
-    t.string "folio_id", limit: 40
-    t.bigint "form_type_id"
-    t.string "fund_close"
-    t.bigint "fund_id", null: false
-    t.virtual "generated_deleted", type: :datetime, null: false, as: "ifnull(`deleted_at`,'1900-01-01 00:00:00')"
-    t.bigint "import_upload_id"
     t.bigint "investor_id", null: false
-    t.bigint "investor_kyc_id"
-    t.string "investor_name"
-    t.bigint "investor_signatory_id"
-    t.boolean "is_feeder_fund", default: false
-    t.json "json_fields"
-    t.integer "lock_version", default: 0, null: false
+    t.bigint "fund_id", null: false
+    t.decimal "committed_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "collected_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.text "notes"
-    t.boolean "onboarding_completed", default: false
-    t.decimal "orig_committed_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "orig_folio_committed_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "other_fee_cents", precision: 20, scale: 2, default: "0.0"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "form_type_id"
     t.decimal "percentage", precision: 20, scale: 10, default: "0.0"
     t.bigint "ppm_number", default: 0
-    t.string "slug"
-    t.decimal "total_allocated_expense_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "total_allocated_income_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "total_fund_units_quantity", precision: 26, scale: 8, default: "0.0"
-    t.decimal "total_units_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "total_units_premium_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "tracking_adjustment_amount_cents", precision: 20, scale: 4, default: "0.0"
-    t.decimal "tracking_collected_amount_cents", precision: 20, scale: 4, default: "0.0"
-    t.decimal "tracking_committed_amount_cents", precision: 20, scale: 4, default: "0.0"
-    t.decimal "tracking_distribution_amount_cents", precision: 20, scale: 4, default: "0.0"
-    t.decimal "tracking_orig_committed_amount_cents", precision: 20, scale: 4, default: "0.0"
+    t.string "folio_id", limit: 40
+    t.bigint "investor_signatory_id"
+    t.boolean "esign_required", default: false
+    t.boolean "esign_completed", default: false
+    t.string "esign_provider", limit: 10
+    t.string "esign_link"
+    t.decimal "call_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "distribution_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.boolean "onboarding_completed", default: false
+    t.datetime "deleted_at"
+    t.bigint "investor_kyc_id"
+    t.string "investor_name"
+    t.bigint "document_folder_id"
     t.string "unit_type", limit: 40
-    t.datetime "updated_at", null: false
+    t.decimal "total_fund_units_quantity", precision: 26, scale: 8, default: "0.0"
+    t.decimal "total_allocated_income_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "total_allocated_expense_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "total_units_premium_cents", precision: 20, scale: 2, default: "0.0"
+    t.string "fund_close"
     t.string "virtual_bank_account", limit: 20
+    t.string "folio_currency", limit: 5
+    t.decimal "folio_committed_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "folio_collected_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "folio_call_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "adjustment_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "adjustment_folio_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "orig_committed_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "orig_folio_committed_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.bigint "exchange_rate_id"
+    t.boolean "is_feeder_fund", default: false
+    t.date "commitment_date"
+    t.virtual "generated_deleted", type: :datetime, null: false, as: "ifnull(`deleted_at`,'1900-01-01 00:00:00')"
+    t.json "json_fields"
+    t.string "esign_emails"
+    t.bigint "import_upload_id"
+    t.decimal "other_fee_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "arrear_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "arrear_folio_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.string "slug"
+    t.boolean "compliant", default: false
+    t.bigint "feeder_fund_id"
+    t.decimal "tracking_collected_amount_cents", precision: 20, scale: 4, default: "0.0"
+    t.decimal "tracking_distribution_amount_cents", precision: 20, scale: 4, default: "0.0"
+    t.decimal "tracking_committed_amount_cents", precision: 20, scale: 4, default: "0.0"
+    t.decimal "tracking_orig_committed_amount_cents", precision: 20, scale: 4, default: "0.0"
+    t.decimal "tracking_adjustment_amount_cents", precision: 20, scale: 4, default: "0.0"
+    t.decimal "total_units_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.integer "lock_version", default: 0, null: false
     t.index ["commitment_date"], name: "index_capital_commitments_on_commitment_date"
     t.index ["deleted_at"], name: "index_capital_commitments_on_deleted_at"
     t.index ["document_folder_id"], name: "index_capital_commitments_on_document_folder_id"
@@ -984,47 +984,47 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "capital_distribution_payments", force: :cascade do |t|
-    t.bigint "capital_commitment_id"
-    t.bigint "capital_distribution_id", null: false
-    t.boolean "completed", default: false
-    t.decimal "cost_of_investment_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "cost_of_investment_with_fees_cents", precision: 20, scale: 2, default: "0.0"
-    t.datetime "created_at", null: false
-    t.datetime "deleted_at"
-    t.decimal "display_only_with_fees_cents", precision: 20, scale: 2, default: "0.0"
-    t.bigint "document_folder_id"
-    t.bigint "entity_id", null: false
-    t.bigint "exchange_rate_id"
-    t.decimal "expense_with_fees_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "folio_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.string "folio_id", limit: 40
-    t.bigint "form_type_id"
     t.bigint "fund_id", null: false
-    t.decimal "gross_of_account_entries_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "gross_payable_cents", precision: 20, scale: 2, default: "0.0"
-    t.bigint "import_upload_id"
-    t.decimal "income_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "income_with_fees_cents", precision: 20, scale: 2, default: "0.0"
+    t.bigint "entity_id", null: false
+    t.bigint "capital_distribution_id", null: false
     t.bigint "investor_id", null: false
+    t.bigint "form_type_id"
+    t.decimal "income_cents", precision: 20, scale: 2, default: "0.0"
+    t.date "payment_date"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.boolean "completed", default: false
+    t.decimal "percentage", precision: 12, scale: 8, default: "0.0"
+    t.string "folio_id", limit: 40
+    t.bigint "capital_commitment_id"
+    t.datetime "deleted_at"
     t.string "investor_name"
+    t.decimal "units_quantity", precision: 26, scale: 8, default: "0.0"
+    t.bigint "document_folder_id"
+    t.decimal "cost_of_investment_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "folio_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.bigint "exchange_rate_id"
     t.json "json_fields"
+    t.bigint "import_upload_id"
     t.decimal "net_of_account_entries_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "net_payable_cents", precision: 20, scale: 2, default: "0.0"
-    t.boolean "notification_sent", default: false, null: false
-    t.date "payment_date"
-    t.decimal "percentage", precision: 12, scale: 8, default: "0.0"
+    t.decimal "income_with_fees_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "cost_of_investment_with_fees_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "reinvestment_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "reinvestment_with_fees_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "tax_with_fees_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "tracking_display_only_with_fees_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "tracking_expense_with_fees_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "tracking_gross_payable_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "tracking_income_with_fees_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "gross_payable_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "gross_of_account_entries_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "tracking_net_payable_cents", precision: 20, scale: 4, default: "0.0"
+    t.decimal "tracking_gross_payable_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "tracking_reinvestment_with_fees_cents", precision: 20, scale: 2, default: "0.0"
+    t.boolean "notification_sent", default: false, null: false
+    t.decimal "tax_with_fees_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "expense_with_fees_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "display_only_with_fees_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "tracking_income_with_fees_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "tracking_expense_with_fees_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "tracking_tax_with_fees_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "units_quantity", precision: 26, scale: 8, default: "0.0"
-    t.datetime "updated_at", null: false
+    t.decimal "tracking_display_only_with_fees_cents", precision: 20, scale: 2, default: "0.0"
     t.index ["capital_commitment_id"], name: "index_capital_distribution_payments_on_capital_commitment_id"
     t.index ["capital_distribution_id"], name: "index_capital_distribution_payments_on_capital_distribution_id"
     t.index ["deleted_at"], name: "index_capital_distribution_payments_on_deleted_at"
@@ -1037,39 +1037,39 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "capital_distributions", force: :cascade do |t|
+    t.bigint "fund_id", null: false
+    t.bigint "entity_id", null: false
+    t.bigint "form_type_id"
+    t.decimal "gross_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "carry_cents", precision: 20, scale: 2, default: "0.0"
+    t.date "distribution_date"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "title"
+    t.boolean "completed", default: false
+    t.decimal "distribution_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "net_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.boolean "approved", default: false
     t.bigint "approved_by_user_id"
-    t.bigint "capital_commitment_id"
-    t.decimal "carry_cents", precision: 20, scale: 2, default: "0.0"
-    t.boolean "completed", default: false
-    t.decimal "completed_distribution_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.boolean "compliant", default: false
-    t.decimal "cost_of_investment_cents", precision: 20, scale: 2, default: "0.0"
-    t.datetime "created_at", null: false
-    t.datetime "deleted_at"
-    t.decimal "distribution_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.date "distribution_date"
-    t.integer "distribution_on", default: 0
-    t.bigint "document_folder_id"
-    t.bigint "entity_id", null: false
-    t.decimal "fee_cents", precision: 20, scale: 2, default: "0.0"
-    t.bigint "form_type_id"
-    t.bigint "fund_id", null: false
+    t.boolean "manual_generation", default: false
     t.boolean "generate_payments", default: true
     t.boolean "generate_payments_paid", default: false
-    t.decimal "gross_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.bigint "import_upload_id"
-    t.decimal "income_cents", precision: 20, scale: 2, default: "0.0", null: false
-    t.json "json_fields"
-    t.boolean "manual_generation", default: false
-    t.decimal "net_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.text "notes"
-    t.decimal "reinvestment_cents", precision: 20, scale: 2, default: "0.0"
-    t.boolean "send_notification_on_complete", default: true
-    t.string "title"
+    t.datetime "deleted_at"
+    t.decimal "fee_cents", precision: 20, scale: 2, default: "0.0"
     t.text "unit_prices"
+    t.decimal "reinvestment_cents", precision: 20, scale: 2, default: "0.0"
+    t.bigint "document_folder_id"
+    t.decimal "cost_of_investment_cents", precision: 20, scale: 2, default: "0.0"
+    t.bigint "capital_commitment_id"
+    t.integer "distribution_on", default: 0
+    t.json "json_fields"
+    t.bigint "import_upload_id"
+    t.text "notes"
+    t.boolean "compliant", default: false
+    t.decimal "income_cents", precision: 20, scale: 2, default: "0.0", null: false
+    t.boolean "send_notification_on_complete", default: true
+    t.decimal "completed_distribution_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.datetime "units_job_finished_at"
-    t.datetime "updated_at", null: false
     t.index ["approved_by_user_id"], name: "index_capital_distributions_on_approved_by_user_id"
     t.index ["capital_commitment_id"], name: "index_capital_distributions_on_capital_commitment_id"
     t.index ["deleted_at"], name: "index_capital_distributions_on_deleted_at"
@@ -1080,26 +1080,26 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "capital_remittance_payments", force: :cascade do |t|
-    t.decimal "amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.bigint "capital_remittance_id", null: false
-    t.boolean "convert_to_fund_currency", default: true, null: false
-    t.datetime "created_at", null: false
-    t.datetime "deleted_at"
-    t.bigint "entity_id", null: false
-    t.bigint "exchange_rate_id"
-    t.decimal "folio_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.bigint "form_type_id"
     t.bigint "fund_id", null: false
-    t.bigint "import_upload_id"
-    t.bigint "investor_id"
-    t.json "json_fields"
-    t.text "notes"
+    t.bigint "capital_remittance_id", null: false
+    t.bigint "entity_id", null: false
+    t.decimal "amount_cents", precision: 20, scale: 2, default: "0.0"
     t.date "payment_date"
-    t.boolean "payment_notification_sent", default: false
     t.text "payment_proof_data"
-    t.string "reference_no", limit: 40
-    t.decimal "tracking_amount_cents", precision: 20, scale: 4, default: "0.0"
+    t.text "notes"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "reference_no", limit: 40
+    t.decimal "folio_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.bigint "exchange_rate_id"
+    t.json "json_fields"
+    t.bigint "import_upload_id"
+    t.datetime "deleted_at"
+    t.boolean "payment_notification_sent", default: false
+    t.bigint "investor_id"
+    t.decimal "tracking_amount_cents", precision: 20, scale: 4, default: "0.0"
+    t.bigint "form_type_id"
+    t.boolean "convert_to_fund_currency", default: true, null: false
     t.index ["capital_remittance_id"], name: "index_capital_remittance_payments_on_capital_remittance_id"
     t.index ["deleted_at"], name: "index_capital_remittance_payments_on_deleted_at"
     t.index ["entity_id"], name: "index_capital_remittance_payments_on_entity_id"
@@ -1110,50 +1110,50 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "capital_remittances", force: :cascade do |t|
-    t.decimal "arrear_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "arrear_folio_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "call_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.string "call_basis", limit: 40
-    t.bigint "capital_call_id", null: false
-    t.bigint "capital_commitment_id", null: false
-    t.decimal "capital_fee_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "collected_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "committed_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.boolean "compliant", default: false
-    t.decimal "computed_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.datetime "created_at", null: false
-    t.string "created_by", limit: 10
-    t.datetime "deleted_at"
-    t.bigint "document_folder_id"
     t.bigint "entity_id", null: false
-    t.bigint "exchange_rate_id"
+    t.bigint "fund_id", null: false
+    t.bigint "capital_call_id", null: false
+    t.bigint "investor_id", null: false
+    t.string "status", limit: 10
+    t.decimal "call_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "collected_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "capital_commitment_id", null: false
+    t.bigint "form_type_id"
+    t.boolean "verified", default: false
+    t.text "payment_proof_data"
+    t.string "folio_id", limit: 40
+    t.date "payment_date"
+    t.datetime "deleted_at"
+    t.string "investor_name"
+    t.bigint "document_folder_id"
+    t.decimal "units_quantity", precision: 26, scale: 8, default: "0.0"
+    t.boolean "notification_sent", default: false
+    t.decimal "committed_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "folio_call_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "folio_capital_fee_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "folio_collected_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "folio_committed_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.string "folio_id", limit: 40
-    t.decimal "folio_investment_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "folio_other_fee_cents", precision: 20, scale: 2, default: "0.0"
-    t.bigint "form_type_id"
-    t.bigint "fund_id", null: false
-    t.bigint "import_upload_id"
-    t.decimal "investment_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.bigint "investor_id", null: false
-    t.string "investor_name"
-    t.json "json_fields"
-    t.text "notes"
-    t.boolean "notification_sent", default: false
+    t.bigint "exchange_rate_id"
+    t.string "created_by", limit: 10
+    t.decimal "capital_fee_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "other_fee_cents", precision: 20, scale: 2, default: "0.0"
-    t.date "payment_date"
-    t.text "payment_proof_data"
+    t.decimal "folio_capital_fee_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "folio_other_fee_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "computed_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "percentage", precision: 12, scale: 8, default: "0.0"
     t.date "remittance_date"
-    t.string "status", limit: 10
-    t.decimal "tracking_call_amount_cents", precision: 20, scale: 4, default: "0.0"
+    t.json "json_fields"
+    t.bigint "import_upload_id"
+    t.decimal "arrear_folio_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "arrear_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.boolean "compliant", default: false
     t.decimal "tracking_collected_amount_cents", precision: 20, scale: 4, default: "0.0"
-    t.decimal "units_quantity", precision: 26, scale: 8, default: "0.0"
-    t.datetime "updated_at", null: false
-    t.boolean "verified", default: false
+    t.decimal "tracking_call_amount_cents", precision: 20, scale: 4, default: "0.0"
+    t.decimal "investment_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "folio_investment_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.string "call_basis", limit: 40
     t.index ["capital_call_id"], name: "index_capital_remittances_on_capital_call_id"
     t.index ["capital_commitment_id"], name: "index_capital_remittances_on_capital_commitment_id"
     t.index ["deleted_at"], name: "index_capital_remittances_on_deleted_at"
@@ -1167,16 +1167,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "chats", force: :cascade do |t|
-    t.string "assistant_type", limit: 50
     t.datetime "created_at", null: false
-    t.boolean "enable_broadcast", default: true, null: false
-    t.bigint "entity_id"
-    t.bigint "ruby_llm_model_id"
-    t.string "name"
-    t.bigint "owner_id"
-    t.string "owner_type"
     t.datetime "updated_at", null: false
+    t.bigint "ruby_llm_model_id"
+    t.bigint "entity_id"
     t.bigint "user_id"
+    t.string "owner_type"
+    t.bigint "owner_id"
+    t.string "name"
+    t.boolean "enable_broadcast", default: true, null: false
+    t.string "assistant_type", limit: 50
     t.boolean "cancelled", default: false, null: false
     t.index ["entity_id"], name: "index_chats_on_entity_id"
     t.index ["owner_type", "owner_id"], name: "index_chats_on_owner"
@@ -1185,23 +1185,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "ci_profiles", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.string "currency", limit: 3
-    t.datetime "deleted_at"
-    t.text "details"
-    t.bigint "document_folder_id"
     t.bigint "entity_id", null: false
-    t.bigint "form_type_id"
     t.bigint "fund_id"
-    t.decimal "fund_size_cents", precision: 20, scale: 2
-    t.string "geography", limit: 50
-    t.decimal "min_investment_cents", precision: 20, scale: 2
-    t.text "properties"
-    t.string "sector", limit: 50
-    t.string "stage", limit: 50
-    t.string "status"
     t.string "title"
+    t.string "geography", limit: 50
+    t.string "stage", limit: 50
+    t.string "sector", limit: 50
+    t.decimal "fund_size_cents", precision: 20, scale: 2
+    t.decimal "min_investment_cents", precision: 20, scale: 2
+    t.string "status"
+    t.string "currency", limit: 3
+    t.text "details"
+    t.bigint "form_type_id"
+    t.text "properties"
     t.text "track_record"
+    t.bigint "document_folder_id"
+    t.datetime "deleted_at"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["deleted_at"], name: "index_ci_profiles_on_deleted_at"
     t.index ["entity_id"], name: "index_ci_profiles_on_entity_id"
@@ -1209,60 +1209,60 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "ci_track_records", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.string "details"
     t.bigint "entity_id", null: false
-    t.bigint "investment_opportunity_id"
     t.string "name", limit: 50
-    t.bigint "owner_id"
-    t.string "owner_type"
+    t.decimal "value", precision: 20, scale: 4
     t.string "prefix", limit: 5
     t.string "suffix", limit: 5
+    t.string "details"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.decimal "value", precision: 20, scale: 4
+    t.bigint "investment_opportunity_id"
+    t.string "owner_type"
+    t.bigint "owner_id"
     t.index ["entity_id"], name: "index_ci_track_records_on_entity_id"
     t.index ["investment_opportunity_id"], name: "index_ci_track_records_on_investment_opportunity_id"
     t.index ["owner_type", "owner_id"], name: "index_ci_track_records_on_owner"
   end
 
   create_table "ci_widgets", force: :cascade do |t|
-    t.datetime "created_at", null: false
+    t.bigint "entity_id", null: false
+    t.string "title"
     t.text "details"
+    t.string "url"
+    t.string "image_placement", limit: 6, default: "Left"
+    t.text "image_data"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "investment_opportunity_id"
+    t.string "owner_type"
+    t.bigint "owner_id"
     t.text "details_top"
     t.text "embed_script"
-    t.bigint "entity_id", null: false
-    t.text "image_data"
-    t.string "image_placement", limit: 6, default: "Left"
-    t.bigint "investment_opportunity_id"
-    t.bigint "owner_id"
-    t.string "owner_type"
-    t.string "title"
-    t.datetime "updated_at", null: false
-    t.string "url"
     t.index ["entity_id"], name: "index_ci_widgets_on_entity_id"
     t.index ["investment_opportunity_id"], name: "index_ci_widgets_on_investment_opportunity_id"
     t.index ["owner_type", "owner_id"], name: "index_ci_widgets_on_owner"
   end
 
   create_table "commitment_adjustments", force: :cascade do |t|
-    t.string "adjustment_type", limit: 20, default: "Top Up", null: false
-    t.decimal "amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.date "as_of"
-    t.bigint "capital_commitment_id", null: false
-    t.datetime "created_at", null: false
-    t.datetime "deleted_at"
     t.bigint "entity_id", null: false
-    t.bigint "exchange_rate_id"
-    t.decimal "folio_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.bigint "fund_id", null: false
-    t.bigint "owner_id"
-    t.string "owner_type"
-    t.decimal "post_adjustment_cents", precision: 20, scale: 2, default: "0.0"
+    t.bigint "capital_commitment_id", null: false
     t.decimal "pre_adjustment_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "folio_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "post_adjustment_cents", precision: 20, scale: 2, default: "0.0"
     t.text "reason"
+    t.date "as_of"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "exchange_rate_id"
+    t.string "owner_type"
+    t.bigint "owner_id"
+    t.string "adjustment_type", limit: 20, default: "Top Up", null: false
+    t.datetime "deleted_at"
     t.decimal "tracking_amount_cents", precision: 20, scale: 4, default: "0.0"
     t.date "transfer_date"
-    t.datetime "updated_at", null: false
     t.index ["capital_commitment_id"], name: "index_commitment_adjustments_on_capital_commitment_id"
     t.index ["deleted_at"], name: "index_commitment_adjustments_on_deleted_at"
     t.index ["entity_id"], name: "index_commitment_adjustments_on_entity_id"
@@ -1272,21 +1272,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "corporate_action_suggestions", force: :cascade do |t|
-    t.decimal "amount_per_share_cents", precision: 20, scale: 2
-    t.datetime "created_at", null: false
-    t.string "currency", limit: 5
     t.bigint "entity_id", null: false
-    t.date "ex_date", null: false
     t.bigint "investment_instrument_id", null: false
     t.string "kind", limit: 10, null: false
+    t.date "ex_date", null: false
+    t.decimal "ratio", precision: 12, scale: 8
+    t.decimal "amount_per_share_cents", precision: 20, scale: 2
+    t.string "currency", limit: 5
     t.string "provider", limit: 20, null: false
     t.string "provider_ref", limit: 100, null: false
-    t.decimal "ratio", precision: 12, scale: 8
-    t.datetime "resolved_at"
-    t.bigint "resolved_by_id"
-    t.string "status", limit: 10, default: "pending", null: false
-    t.bigint "stock_adjustment_id"
     t.string "subject"
+    t.string "status", limit: 10, default: "pending", null: false
+    t.bigint "resolved_by_id"
+    t.datetime "resolved_at"
+    t.bigint "stock_adjustment_id"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["entity_id", "provider_ref"], name: "idx_corporate_action_suggestions_ref", unique: true
     t.index ["entity_id", "status"], name: "index_corporate_action_suggestions_on_entity_id_and_status"
@@ -1297,38 +1297,38 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "custom_grid_views", force: :cascade do |t|
-    t.datetime "created_at", null: false
     t.bigint "owner_id", null: false
     t.string "owner_type", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["owner_id", "owner_type"], name: "index_custom_grid_views_on_owner_id_and_owner_type"
   end
 
   create_table "custom_notifications", force: :cascade do |t|
-    t.boolean "attachment_mandatory", default: false, null: false
-    t.string "attachment_names"
-    t.string "attachment_password"
-    t.text "body"
-    t.datetime "created_at", null: false
-    t.datetime "deleted_at"
-    t.bigint "document_folder_id"
-    t.string "email_method", limit: 100
-    t.boolean "enabled", default: true
-    t.bigint "entity_id", null: false
-    t.string "for_type", limit: 100
-    t.boolean "is_erb", default: false
-    t.boolean "latest", default: true
-    t.boolean "latest_doc_only", default: true, null: false
-    t.bigint "owner_id", null: false
-    t.string "owner_type", null: false
-    t.boolean "password_protect_attachment", default: false
-    t.boolean "show_details", default: false
-    t.boolean "show_details_link", default: true
     t.string "subject"
-    t.string "tag", limit: 30
-    t.string "to", limit: 40
-    t.datetime "updated_at", null: false
+    t.text "body"
     t.string "whatsapp"
+    t.bigint "entity_id", null: false
+    t.string "owner_type", null: false
+    t.bigint "owner_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "for_type", limit: 100
+    t.boolean "show_details", default: false
+    t.boolean "password_protect_attachment", default: false
+    t.string "attachment_password"
+    t.boolean "show_details_link", default: true
+    t.string "email_method", limit: 100
+    t.datetime "deleted_at"
+    t.boolean "enabled", default: true
+    t.bigint "document_folder_id"
+    t.boolean "is_erb", default: false
+    t.string "to", limit: 40
+    t.string "attachment_names"
+    t.boolean "latest", default: true
+    t.string "tag", limit: 30
+    t.boolean "latest_doc_only", default: true, null: false
+    t.boolean "attachment_mandatory", default: false, null: false
     t.index ["deleted_at"], name: "index_custom_notifications_on_deleted_at"
     t.index ["document_folder_id"], name: "index_custom_notifications_on_document_folder_id"
     t.index ["entity_id"], name: "index_custom_notifications_on_entity_id"
@@ -1337,15 +1337,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
 
   create_table "customer_support_escalations", force: :cascade do |t|
     t.bigint "agent_chat_session_id", null: false
-    t.datetime "created_at", null: false
+    t.bigint "user_id", null: false
     t.bigint "entity_id", null: false
     t.string "reason", limit: 30, null: false
-    t.datetime "resolved_at"
-    t.bigint "resolved_by_id"
-    t.string "status", limit: 20, default: "open", null: false
     t.text "summary"
+    t.string "status", limit: 20, default: "open", null: false
+    t.bigint "resolved_by_id"
+    t.datetime "resolved_at"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.bigint "user_id", null: false
     t.index ["agent_chat_session_id"], name: "index_customer_support_escalations_on_agent_chat_session_id"
     t.index ["entity_id", "status"], name: "idx_escalations_entity_status"
     t.index ["entity_id"], name: "index_customer_support_escalations_on_entity_id"
@@ -1355,52 +1355,52 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "dashboard_widgets", force: :cascade do |t|
-    t.datetime "created_at", null: false
     t.string "dashboard_name", limit: 30
+    t.bigint "entity_id", null: false
+    t.string "owner_type"
+    t.bigint "owner_id"
+    t.string "widget_name", limit: 30
+    t.string "tags", limit: 100
+    t.integer "position"
+    t.text "metadata"
+    t.string "size", limit: 10
+    t.boolean "enabled", default: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.boolean "display_name", default: false
     t.boolean "display_tag", default: false
-    t.boolean "enabled", default: true
-    t.bigint "entity_id", null: false
-    t.integer "import_upload_id"
-    t.text "metadata"
     t.string "name", limit: 100, default: "Default"
-    t.bigint "owner_id"
-    t.string "owner_type"
-    t.integer "position"
     t.boolean "show_menu", default: true, null: false
-    t.string "size", limit: 10
+    t.integer "import_upload_id"
     t.string "tag_list", limit: 20
-    t.string "tags", limit: 100
-    t.datetime "updated_at", null: false
-    t.string "widget_name", limit: 30
     t.index ["entity_id"], name: "index_dashboard_widgets_on_entity_id"
     t.index ["import_upload_id"], name: "index_dashboard_widgets_on_import_upload_id"
     t.index ["owner_type", "owner_id"], name: "index_dashboard_widgets_on_owner"
   end
 
   create_table "deal_activities", force: :cascade do |t|
-    t.date "by_date"
-    t.string "completed", limit: 5, default: "No"
-    t.datetime "created_at", null: false
-    t.integer "days"
     t.bigint "deal_id", null: false
     t.bigint "deal_investor_id"
-    t.datetime "deleted_at"
-    t.text "details"
-    t.boolean "details_required_for_na", default: false
-    t.boolean "docs_required_for_completion", default: false
-    t.bigint "document_folder_id"
+    t.date "by_date"
+    t.string "status_temp", limit: 20
+    t.string "completed", limit: 5, default: "No"
     t.integer "entity_id"
-    t.bigint "import_upload_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "title"
+    t.text "details"
+    t.integer "sequence"
+    t.integer "days"
+    t.datetime "deleted_at"
+    t.integer "template_id"
+    t.boolean "docs_required_for_completion", default: false
+    t.boolean "details_required_for_na", default: false
+    t.bigint "document_folder_id"
+    t.string "status", default: "incomplete"
+    t.text "tasks_csv"
     t.boolean "notify_employees", default: false
     t.boolean "notify_investor", default: false
-    t.integer "sequence"
-    t.string "status", default: "incomplete"
-    t.string "status_temp", limit: 20
-    t.text "tasks_csv"
-    t.integer "template_id"
-    t.string "title"
-    t.datetime "updated_at", null: false
+    t.bigint "import_upload_id"
     t.index ["deal_id"], name: "index_deal_activities_on_deal_id"
     t.index ["deal_investor_id"], name: "index_deal_activities_on_deal_investor_id"
     t.index ["deleted_at"], name: "index_deal_activities_on_deleted_at"
@@ -1410,19 +1410,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "deal_docs", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.bigint "deal_activity_id"
+    t.string "name"
     t.bigint "deal_id", null: false
     t.bigint "deal_investor_id"
-    t.datetime "deleted_at"
-    t.string "file_content_type"
+    t.bigint "deal_activity_id"
+    t.bigint "user_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.string "file_file_name"
+    t.string "file_content_type"
     t.bigint "file_file_size"
     t.datetime "file_updated_at"
+    t.datetime "deleted_at"
     t.integer "impressions_count", default: 0
-    t.string "name"
-    t.datetime "updated_at", null: false
-    t.bigint "user_id", null: false
     t.index ["deal_activity_id"], name: "index_deal_docs_on_deal_activity_id"
     t.index ["deal_id"], name: "index_deal_docs_on_deal_id"
     t.index ["deal_investor_id"], name: "index_deal_docs_on_deal_investor_id"
@@ -1431,52 +1431,52 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "deal_ingest_addresses", force: :cascade do |t|
+    t.bigint "deal_id", null: false
     t.string "address", limit: 100, null: false
     t.datetime "created_at", null: false
-    t.bigint "deal_id", null: false
     t.datetime "updated_at", null: false
     t.index ["address"], name: "index_deal_ingest_addresses_on_address", unique: true
     t.index ["deal_id"], name: "index_deal_ingest_addresses_on_deal_id", unique: true
   end
 
   create_table "deal_investors", force: :cascade do |t|
-    t.string "ai_grade", limit: 10
-    t.integer "ai_score"
-    t.string "company_advisor", limit: 100
-    t.datetime "created_at", null: false
-    t.bigint "deal_activity_id"
     t.bigint "deal_id", null: false
-    t.string "deal_lead"
-    t.datetime "deleted_at"
-    t.bigint "document_folder_id"
-    t.bigint "entity_id", null: false
-    t.decimal "fee_cents", precision: 20, scale: 2, default: "0.0"
-    t.bigint "form_type_id"
-    t.virtual "generated_deleted", type: :datetime, null: false, as: "ifnull(`deleted_at`,'1900-01-01 00:00:00')"
-    t.bigint "import_upload_id"
-    t.integer "impressions_count"
-    t.string "investor_advisor", limit: 100
-    t.integer "investor_entity_id"
     t.bigint "investor_id", null: false
-    t.string "investor_name"
-    t.json "json_fields"
-    t.date "last_interaction_date"
-    t.text "notes"
-    t.decimal "pre_money_valuation_cents", precision: 20, scale: 2, default: "0.0"
+    t.string "status", limit: 20
     t.decimal "primary_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "secondary_investment_cents", precision: 20, scale: 2, default: "0.0"
-    t.string "slug"
-    t.string "source"
-    t.string "status", limit: 20
-    t.datetime "status_changed_at"
-    t.string "tags"
-    t.string "tier", limit: 20
-    t.integer "todays_messages_investee", default: 0
-    t.integer "todays_messages_investor", default: 0
-    t.decimal "total_amount_cents", precision: 20, scale: 2
-    t.integer "unread_messages_investee", default: 0
-    t.integer "unread_messages_investor", default: 0
+    t.bigint "entity_id", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "investor_entity_id"
+    t.datetime "deleted_at"
+    t.integer "impressions_count"
+    t.integer "unread_messages_investor", default: 0
+    t.integer "unread_messages_investee", default: 0
+    t.integer "todays_messages_investor", default: 0
+    t.integer "todays_messages_investee", default: 0
+    t.decimal "pre_money_valuation_cents", precision: 20, scale: 2, default: "0.0"
+    t.string "company_advisor", limit: 100
+    t.string "investor_advisor", limit: 100
+    t.string "investor_name"
+    t.string "tier", limit: 20
+    t.decimal "fee_cents", precision: 20, scale: 2, default: "0.0"
+    t.bigint "document_folder_id"
+    t.bigint "deal_activity_id"
+    t.decimal "total_amount_cents", precision: 20, scale: 2
+    t.string "tags"
+    t.string "deal_lead"
+    t.string "source"
+    t.text "notes"
+    t.json "json_fields"
+    t.bigint "form_type_id"
+    t.string "slug"
+    t.virtual "generated_deleted", type: :datetime, null: false, as: "ifnull(`deleted_at`,'1900-01-01 00:00:00')"
+    t.bigint "import_upload_id"
+    t.datetime "status_changed_at"
+    t.date "last_interaction_date"
+    t.integer "ai_score"
+    t.string "ai_grade", limit: 10
     t.index ["deal_activity_id"], name: "index_deal_investors_on_deal_activity_id"
     t.index ["deal_id", "last_interaction_date"], name: "index_deal_investors_on_deal_id_and_last_interaction_date"
     t.index ["deal_id"], name: "index_deal_investors_on_deal_id"
@@ -1492,23 +1492,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "dealing_dates", force: :cascade do |t|
-    t.datetime "closed_at"
-    t.bigint "closed_by_id"
-    t.datetime "confirmed_at"
-    t.bigint "confirmed_by_id"
-    t.datetime "created_at", null: false
-    t.datetime "cutoff_at", null: false
-    t.date "date", null: false
     t.bigint "entity_id", null: false
     t.bigint "fund_id", null: false
-    t.json "gate_snapshot"
-    t.boolean "has_redemptions", default: false, null: false
+    t.date "date", null: false
+    t.datetime "cutoff_at", null: false
     t.boolean "has_subscriptions", default: false, null: false
+    t.boolean "has_redemptions", default: false, null: false
     t.string "payment_timing", limit: 10, null: false
-    t.bigint "redemption_distribution_id"
-    t.json "settings_snapshot"
     t.string "status", limit: 10, default: "open", null: false
     t.bigint "subscription_call_id"
+    t.bigint "redemption_distribution_id"
+    t.json "settings_snapshot"
+    t.json "gate_snapshot"
+    t.bigint "confirmed_by_id"
+    t.datetime "confirmed_at"
+    t.bigint "closed_by_id"
+    t.datetime "closed_at"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["closed_by_id"], name: "index_dealing_dates_on_closed_by_id"
     t.index ["confirmed_by_id"], name: "index_dealing_dates_on_confirmed_by_id"
@@ -1520,26 +1520,26 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "dealing_fills", force: :cascade do |t|
-    t.decimal "amount_cents", precision: 20, scale: 2, default: "0.0", null: false
-    t.bigint "capital_distribution_payment_id"
-    t.bigint "capital_remittance_id"
-    t.decimal "carried_units", precision: 26, scale: 8, default: "0.0", null: false
-    t.datetime "created_at", null: false
-    t.bigint "dealing_date_id", null: false
-    t.bigint "dealing_order_id", null: false
-    t.bigint "document_id"
-    t.datetime "document_sent_at"
-    t.decimal "early_fee_cents", precision: 20, scale: 2, default: "0.0", null: false
     t.bigint "entity_id", null: false
     t.bigint "fund_id", null: false
+    t.bigint "dealing_date_id", null: false
+    t.bigint "dealing_order_id", null: false
     t.bigint "fund_nav_id"
-    t.bigint "fund_unit_id"
-    t.datetime "instructions_sent_at"
     t.string "kind", limit: 12, null: false
-    t.decimal "nav_per_unit_cents", precision: 24, scale: 4, null: false
-    t.decimal "requested_units", precision: 26, scale: 8, default: "0.0", null: false
     t.string "unit_type", limit: 40, null: false
+    t.decimal "requested_units", precision: 26, scale: 8, default: "0.0", null: false
     t.decimal "units", precision: 26, scale: 8, default: "0.0", null: false
+    t.decimal "carried_units", precision: 26, scale: 8, default: "0.0", null: false
+    t.decimal "amount_cents", precision: 20, scale: 2, default: "0.0", null: false
+    t.decimal "early_fee_cents", precision: 20, scale: 2, default: "0.0", null: false
+    t.decimal "nav_per_unit_cents", precision: 24, scale: 4, null: false
+    t.bigint "capital_remittance_id"
+    t.bigint "capital_distribution_payment_id"
+    t.bigint "fund_unit_id"
+    t.bigint "document_id"
+    t.datetime "instructions_sent_at"
+    t.datetime "document_sent_at"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["capital_distribution_payment_id"], name: "index_dealing_fills_on_capital_distribution_payment_id"
     t.index ["capital_remittance_id"], name: "index_dealing_fills_on_capital_remittance_id"
@@ -1553,39 +1553,39 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "dealing_orders", force: :cascade do |t|
-    t.datetime "accepted_at"
-    t.bigint "accepted_by_id"
-    t.boolean "all_units", default: false, null: false
-    t.decimal "amount_cents", precision: 20, scale: 2
-    t.datetime "amount_reduced_at"
-    t.bigint "amount_reduced_by_id"
-    t.datetime "cancelled_at"
-    t.bigint "cancelled_by_id"
-    t.bigint "capital_commitment_id"
-    t.bigint "capital_remittance_id"
-    t.datetime "created_at", null: false
-    t.bigint "dealing_date_id", null: false
-    t.decimal "early_fee_pct", precision: 7, scale: 4, default: "0.0", null: false
-    t.bigint "entered_by_id"
     t.bigint "entity_id", null: false
     t.bigint "fund_id", null: false
-    t.bigint "import_upload_id"
     t.bigint "investor_id", null: false
-    t.bigint "investor_kyc_id"
-    t.string "kind", limit: 12, null: false
-    t.decimal "locked_units", precision: 26, scale: 8, default: "0.0", null: false
-    t.text "note"
-    t.decimal "original_amount_cents", precision: 20, scale: 2
-    t.datetime "received_at", null: false
-    t.string "rejected_reason"
-    t.integer "rolled_count", default: 0, null: false
-    t.datetime "signatory_verified_at"
-    t.bigint "signatory_verified_by_id"
-    t.string "source", limit: 10, default: "portal", null: false
-    t.string "status", limit: 20, default: "pending", null: false
+    t.bigint "capital_commitment_id"
+    t.bigint "dealing_date_id", null: false
+    t.bigint "capital_remittance_id"
     t.string "unit_type", limit: 40, null: false
+    t.string "kind", limit: 12, null: false
+    t.string "status", limit: 20, default: "pending", null: false
+    t.decimal "amount_cents", precision: 20, scale: 2
     t.decimal "units", precision: 26, scale: 8
+    t.boolean "all_units", default: false, null: false
+    t.datetime "received_at", null: false
+    t.integer "rolled_count", default: 0, null: false
+    t.string "source", limit: 10, default: "portal", null: false
+    t.bigint "entered_by_id"
+    t.bigint "import_upload_id"
+    t.decimal "early_fee_pct", precision: 7, scale: 4, default: "0.0", null: false
+    t.decimal "locked_units", precision: 26, scale: 8, default: "0.0", null: false
+    t.bigint "accepted_by_id"
+    t.datetime "accepted_at"
+    t.string "rejected_reason"
+    t.bigint "signatory_verified_by_id"
+    t.datetime "signatory_verified_at"
+    t.bigint "cancelled_by_id"
+    t.datetime "cancelled_at"
+    t.text "note"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.decimal "original_amount_cents", precision: 20, scale: 2
+    t.bigint "amount_reduced_by_id"
+    t.datetime "amount_reduced_at"
+    t.bigint "investor_kyc_id"
     t.index ["accepted_by_id"], name: "index_dealing_orders_on_accepted_by_id"
     t.index ["amount_reduced_by_id"], name: "index_dealing_orders_on_amount_reduced_by_id"
     t.index ["cancelled_by_id"], name: "index_dealing_orders_on_cancelled_by_id"
@@ -1602,32 +1602,32 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "deals", force: :cascade do |t|
-    t.text "activity_list"
-    t.decimal "amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.boolean "archived", default: false
-    t.json "card_view_attrs"
-    t.bigint "clone_from_id"
-    t.datetime "created_at", null: false
-    t.string "currency", limit: 10
-    t.bigint "data_room_folder_id"
-    t.json "deal_investor_status"
-    t.datetime "deleted_at"
-    t.bigint "document_folder_id"
-    t.boolean "enable_notifications", default: true, null: false
-    t.date "end_date"
     t.bigint "entity_id", null: false
-    t.bigint "form_type_id"
-    t.json "grid_columns"
-    t.integer "impressions_count", default: 0
-    t.json "json_fields"
     t.string "name"
-    t.string "slug"
-    t.integer "stagnant_days", default: 7, null: false
-    t.date "start_date"
+    t.decimal "amount_cents", precision: 20, scale: 2, default: "0.0"
     t.string "status", limit: 20
-    t.string "tags", limit: 100
-    t.string "units", limit: 15
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "activity_list"
+    t.date "start_date"
+    t.date "end_date"
+    t.datetime "deleted_at"
+    t.integer "impressions_count", default: 0
+    t.boolean "archived", default: false
+    t.string "currency", limit: 10
+    t.string "units", limit: 15
+    t.bigint "form_type_id"
+    t.bigint "clone_from_id"
+    t.bigint "data_room_folder_id"
+    t.bigint "document_folder_id"
+    t.json "json_fields"
+    t.json "card_view_attrs"
+    t.string "tags", limit: 100
+    t.string "slug"
+    t.json "grid_columns"
+    t.integer "stagnant_days", default: 7, null: false
+    t.json "deal_investor_status"
+    t.boolean "enable_notifications", default: true, null: false
     t.index ["clone_from_id"], name: "index_deals_on_clone_from_id"
     t.index ["data_room_folder_id"], name: "index_deals_on_data_room_folder_id"
     t.index ["deleted_at"], name: "index_deals_on_deleted_at"
@@ -1638,39 +1638,39 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "derivative_contracts", force: :cascade do |t|
-    t.bigint "agreement_document_id"
-    t.string "contract_type", limit: 20, null: false
-    t.string "counterparty_name", limit: 100
-    t.datetime "created_at", null: false
-    t.string "currency", limit: 5, null: false
-    t.datetime "deleted_at"
     t.bigint "entity_id", null: false
-    t.string "exchange", limit: 10
-    t.date "expiry_date", null: false
-    t.datetime "expiry_reminded_at"
-    t.string "feed_symbol", limit: 60
-    t.decimal "forward_rate", precision: 20, scale: 8
     t.bigint "fund_id", null: false
-    t.bigint "hedge_of_id"
-    t.string "hedge_of_type", limit: 40
-    t.string "hedge_unit_type", limit: 40
-    t.json "json_fields"
-    t.boolean "listed", default: false, null: false
-    t.decimal "lot_size", precision: 24, scale: 8
-    t.decimal "lots", precision: 24, scale: 8
     t.string "name", limit: 100, null: false
-    t.decimal "notional_cents", precision: 20, scale: 2
-    t.decimal "open_lots", precision: 24, scale: 8
-    t.string "option_type", limit: 4
-    t.decimal "premium_cents", precision: 20, scale: 2, default: "0.0", null: false
-    t.string "settlement", limit: 10, default: "cash", null: false
-    t.string "side", limit: 5, null: false
-    t.string "status", limit: 10, default: "open", null: false
-    t.decimal "strike", precision: 20, scale: 8
-    t.date "trade_date", null: false
+    t.string "contract_type", limit: 20, null: false
+    t.boolean "listed", default: false, null: false
+    t.string "exchange", limit: 10
+    t.string "feed_symbol", limit: 60
+    t.string "counterparty_name", limit: 100
+    t.bigint "agreement_document_id"
+    t.string "underlying_type", limit: 15, null: false
     t.bigint "underlying_instrument_id"
     t.string "underlying_name", limit: 30
-    t.string "underlying_type", limit: 15, null: false
+    t.string "side", limit: 5, null: false
+    t.string "option_type", limit: 4
+    t.decimal "strike", precision: 20, scale: 8
+    t.decimal "forward_rate", precision: 20, scale: 8
+    t.decimal "lots", precision: 24, scale: 8
+    t.decimal "open_lots", precision: 24, scale: 8
+    t.decimal "lot_size", precision: 24, scale: 8
+    t.decimal "notional_cents", precision: 20, scale: 2
+    t.decimal "premium_cents", precision: 20, scale: 2, default: "0.0", null: false
+    t.string "currency", limit: 5, null: false
+    t.date "trade_date", null: false
+    t.date "expiry_date", null: false
+    t.string "settlement", limit: 10, default: "cash", null: false
+    t.string "status", limit: 10, default: "open", null: false
+    t.string "hedge_of_type", limit: 40
+    t.bigint "hedge_of_id"
+    t.string "hedge_unit_type", limit: 40
+    t.datetime "expiry_reminded_at"
+    t.json "json_fields"
+    t.datetime "deleted_at"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["agreement_document_id"], name: "index_derivative_contracts_on_agreement_document_id"
     t.index ["deleted_at"], name: "index_derivative_contracts_on_deleted_at"
@@ -1683,23 +1683,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "derivative_events", force: :cascade do |t|
-    t.decimal "amount_cents", precision: 20, scale: 2
-    t.datetime "created_at", null: false
-    t.decimal "delta", precision: 10, scale: 6
     t.bigint "derivative_contract_id", null: false
     t.bigint "entity_id", null: false
-    t.date "event_date", null: false
-    t.string "event_type", limit: 15, null: false
     t.bigint "fund_id", null: false
-    t.string "idempotency_key", limit: 64, null: false
-    t.bigint "import_upload_id"
+    t.string "event_type", limit: 15, null: false
+    t.date "event_date", null: false
     t.decimal "lots", precision: 24, scale: 8
-    t.text "notes"
-    t.bigint "portfolio_investment_id"
-    t.string "provider", limit: 40
-    t.string "source", limit: 10, default: "manual", null: false
-    t.datetime "updated_at", null: false
+    t.decimal "amount_cents", precision: 20, scale: 2
     t.decimal "value_cents", precision: 20, scale: 2
+    t.decimal "delta", precision: 10, scale: 6
+    t.string "source", limit: 10, default: "manual", null: false
+    t.string "provider", limit: 40
+    t.string "idempotency_key", limit: 64, null: false
+    t.bigint "portfolio_investment_id"
+    t.bigint "import_upload_id"
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["derivative_contract_id", "event_date"], name: "idx_on_derivative_contract_id_event_date_99971fe2a2"
     t.index ["derivative_contract_id"], name: "index_derivative_events_on_derivative_contract_id"
     t.index ["entity_id"], name: "index_derivative_events_on_entity_id"
@@ -1710,14 +1710,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "devise_api_tokens", force: :cascade do |t|
-    t.string "access_token", null: false
-    t.datetime "created_at", null: false
-    t.integer "expires_in", null: false
-    t.string "previous_refresh_token"
-    t.string "refresh_token"
-    t.bigint "resource_owner_id", null: false
     t.string "resource_owner_type", null: false
+    t.bigint "resource_owner_id", null: false
+    t.string "access_token", null: false
+    t.string "refresh_token"
+    t.integer "expires_in", null: false
     t.datetime "revoked_at"
+    t.string "previous_refresh_token"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["access_token"], name: "index_devise_api_tokens_on_access_token"
     t.index ["previous_refresh_token"], name: "index_devise_api_tokens_on_previous_refresh_token"
@@ -1726,47 +1726,47 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "distribution_fees", force: :cascade do |t|
-    t.string "audit_name", limit: 65
+    t.string "name", limit: 65
+    t.date "start_date"
+    t.date "end_date"
+    t.string "notes"
+    t.bigint "entity_id", null: false
+    t.bigint "fund_id", null: false
     t.bigint "capital_distribution_id", null: false
     t.datetime "created_at", null: false
-    t.boolean "cumulative", default: false, null: false
-    t.date "end_date"
-    t.bigint "entity_id", null: false
-    t.string "entry_type"
-    t.string "fee_type", limit: 20
-    t.boolean "formula", default: false
-    t.bigint "fund_id", null: false
-    t.string "name", limit: 65
-    t.string "notes"
-    t.string "parent_ids"
-    t.string "parent_type"
-    t.date "start_date"
     t.datetime "updated_at", null: false
+    t.boolean "formula", default: false
+    t.string "fee_type", limit: 20
+    t.boolean "cumulative", default: false, null: false
+    t.string "entry_type"
+    t.string "parent_type"
+    t.string "parent_ids"
+    t.string "audit_name", limit: 65
     t.index ["capital_distribution_id"], name: "index_distribution_fees_on_capital_distribution_id"
     t.index ["entity_id"], name: "index_distribution_fees_on_entity_id"
     t.index ["fund_id"], name: "index_distribution_fees_on_fund_id"
   end
 
   create_table "doc_check_results", force: :cascade do |t|
-    t.string "action", limit: 12, null: false
-    t.datetime "created_at", null: false
-    t.bigint "doc_check_id"
-    t.bigint "doc_check_run_id", null: false
-    t.text "doc_value"
-    t.string "document_file_id"
-    t.bigint "document_id"
-    t.string "document_name", limit: 100, null: false
     t.bigint "entity_id", null: false
-    t.text "explanation"
-    t.string "field_name", limit: 100
+    t.bigint "doc_check_run_id", null: false
+    t.bigint "doc_check_id"
+    t.string "document_name", limit: 100, null: false
     t.string "look_for", limit: 100, null: false
-    t.string "note"
+    t.string "action", limit: 12, null: false
+    t.string "field_name", limit: 100
+    t.bigint "document_id"
+    t.string "document_file_id"
     t.string "outcome", limit: 20, null: false, comment: "ok, or the reason it needs attention"
+    t.string "note"
+    t.text "doc_value"
     t.text "record_value"
+    t.text "explanation"
     t.string "resolution", limit: 20, comment: "marked_ok | used_document_value"
-    t.string "resolve_reason"
-    t.datetime "resolved_at"
     t.bigint "resolved_by_id"
+    t.datetime "resolved_at"
+    t.string "resolve_reason"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["doc_check_id"], name: "index_doc_check_results_on_doc_check_id"
     t.index ["doc_check_run_id"], name: "index_doc_check_results_on_doc_check_run_id"
@@ -1775,23 +1775,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "doc_check_runs", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.string "record_type", limit: 40, null: false
+    t.bigint "record_id", null: false
+    t.bigint "user_id"
+    t.string "trigger", limit: 10, default: "manual", null: false, comment: "manual | bulk | again | trial"
+    t.boolean "trial", default: false, null: false
+    t.boolean "current", default: false, null: false
+    t.string "status", limit: 15, default: "queued", null: false, comment: "queued | running | done | could_not_run"
+    t.integer "documents_total", default: 0, null: false
+    t.integer "documents_done", default: 0, null: false
+    t.string "current_document", limit: 100
+    t.datetime "started_at"
+    t.datetime "finished_at"
+    t.string "error_message"
     t.json "counts"
     t.datetime "created_at", null: false
-    t.boolean "current", default: false, null: false
-    t.string "current_document", limit: 100
-    t.integer "documents_done", default: 0, null: false
-    t.integer "documents_total", default: 0, null: false
-    t.bigint "entity_id", null: false
-    t.string "error_message"
-    t.datetime "finished_at"
-    t.bigint "record_id", null: false
-    t.string "record_type", limit: 40, null: false
-    t.datetime "started_at"
-    t.string "status", limit: 15, default: "queued", null: false, comment: "queued | running | done | could_not_run"
-    t.boolean "trial", default: false, null: false
-    t.string "trigger", limit: 10, default: "manual", null: false, comment: "manual | bulk | again | trial"
     t.datetime "updated_at", null: false
-    t.bigint "user_id"
     t.index ["entity_id", "current", "finished_at"], name: "index_doc_check_runs_on_entity_current"
     t.index ["record_type", "record_id", "current"], name: "index_doc_check_runs_on_record_current"
     t.index ["record_type", "record_id", "status"], name: "index_doc_check_runs_on_record_status"
@@ -1799,20 +1799,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "doc_checks", force: :cascade do |t|
-    t.string "action", limit: 12, default: "fill_in", null: false, comment: "fill_in | compare | question"
-    t.datetime "created_at", null: false
-    t.string "document_name", limit: 100, null: false
     t.bigint "entity_id", null: false
-    t.string "expected_answer", limit: 3, default: "yes", null: false
-    t.string "field_name", limit: 100
-    t.bigint "import_upload_id", comment: "The ImportUpload that created this check, if any"
-    t.bigint "legacy_doc_question_id"
-    t.string "look_for", limit: 100, null: false, comment: "What the AI looks for, or the question"
-    t.integer "position", default: 0, null: false
     t.string "record_type", limit: 40, default: "InvestorKyc", null: false
-    t.boolean "replace_existing", default: false, null: false, comment: "Fill in: overwrite a value already on the record"
+    t.string "document_name", limit: 100, null: false
+    t.string "action", limit: 12, default: "fill_in", null: false, comment: "fill_in | compare | question"
+    t.string "field_name", limit: 100
+    t.string "look_for", limit: 100, null: false, comment: "What the AI looks for, or the question"
     t.string "tip", comment: "Optional guidance for the AI"
+    t.boolean "replace_existing", default: false, null: false, comment: "Fill in: overwrite a value already on the record"
+    t.string "expected_answer", limit: 3, default: "yes", null: false
+    t.integer "position", default: 0, null: false
+    t.bigint "legacy_doc_question_id"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "import_upload_id", comment: "The ImportUpload that created this check, if any"
     t.index ["entity_id", "record_type", "document_name", "field_name"], name: "index_doc_checks_on_card_field", unique: true
     t.index ["entity_id", "record_type", "document_name", "look_for"], name: "index_doc_checks_on_card_look_for", unique: true
     t.index ["import_upload_id"], name: "index_doc_checks_on_import_upload_id"
@@ -1820,61 +1820,61 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "doc_shares", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.bigint "document_id", null: false
     t.string "email", null: false
     t.boolean "email_sent", default: false
-    t.datetime "updated_at", null: false
-    t.integer "view_count", default: 0
     t.datetime "viewed_at"
+    t.integer "view_count", default: 0
+    t.bigint "document_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["document_id"], name: "index_doc_shares_on_document_id"
   end
 
   create_table "documents", force: :cascade do |t|
-    t.boolean "approved", default: false, null: false
-    t.bigint "approved_by_id"
-    t.date "as_of"
-    t.datetime "created_at", null: false
-    t.datetime "deleted_at"
-    t.string "display_on_page", limit: 6
-    t.boolean "download"
-    t.boolean "embed", default: false
-    t.bigint "entity_id", null: false
-    t.boolean "esign_email_reminders", default: true, null: false
-    t.integer "esign_expiration_days"
-    t.datetime "esign_expires_at"
-    t.integer "esign_reminder_period"
-    t.string "esign_status", default: "", null: false
-    t.text "file_data"
-    t.bigint "folder_id", null: false
-    t.boolean "force_esign_order", default: false
-    t.bigint "form_type_id"
-    t.bigint "from_template_id"
-    t.bigint "import_upload_id"
-    t.integer "impressions_count", default: 0
-    t.json "json_fields"
-    t.datetime "last_status_updated_at"
-    t.boolean "locked", default: false, null: false
     t.string "name"
-    t.boolean "orignal"
+    t.string "visible_to", default: "--- []\n"
+    t.string "text", default: "--- []\n"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "entity_id", null: false
+    t.datetime "deleted_at"
+    t.bigint "folder_id", null: false
+    t.integer "impressions_count", default: 0
+    t.bigint "form_type_id"
+    t.boolean "download"
+    t.boolean "printing"
+    t.text "file_data"
+    t.string "owner_type"
     t.bigint "owner_id"
     t.string "owner_tag", limit: 40
-    t.string "owner_type"
-    t.string "pdf_conversion_engine", default: "libreoffice", null: false
-    t.boolean "printing"
-    t.string "provider_doc_id"
-    t.boolean "public_visibility", default: false
-    t.boolean "send_email", null: false
-    t.boolean "sent_for_esign", default: false, null: false
-    t.datetime "sent_for_esign_date"
+    t.boolean "orignal"
+    t.bigint "user_id", null: false
     t.boolean "signature_enabled", default: false, null: false
+    t.bigint "from_template_id"
+    t.boolean "locked", default: false, null: false
+    t.boolean "public_visibility", default: false
     t.string "tag_list", limit: 120
     t.boolean "template", default: false, null: false
+    t.boolean "send_email", null: false
+    t.boolean "sent_for_esign", default: false, null: false
+    t.string "provider_doc_id"
+    t.string "esign_status", default: "", null: false
+    t.string "display_on_page", limit: 6
+    t.bigint "approved_by_id"
+    t.boolean "approved", default: false, null: false
+    t.json "json_fields"
+    t.bigint "import_upload_id"
+    t.datetime "sent_for_esign_date"
+    t.datetime "last_status_updated_at"
+    t.boolean "force_esign_order", default: false
+    t.boolean "embed", default: false
     t.string "template_docs_to_append"
-    t.string "text", default: "--- []\n"
-    t.datetime "updated_at", null: false
-    t.bigint "user_id", null: false
-    t.string "visible_to", default: "--- []\n"
+    t.date "as_of"
+    t.string "pdf_conversion_engine", default: "libreoffice", null: false
+    t.integer "esign_expiration_days"
+    t.integer "esign_reminder_period"
+    t.datetime "esign_expires_at"
+    t.boolean "esign_email_reminders", default: true, null: false
     t.index ["approved_by_id"], name: "index_documents_on_approved_by_id"
     t.index ["deleted_at"], name: "index_documents_on_deleted_at"
     t.index ["entity_id"], name: "index_documents_on_entity_id"
@@ -1886,36 +1886,36 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "e_signatures", force: :cascade do |t|
-    t.text "api_updates"
-    t.datetime "created_at", null: false
-    t.bigint "document_id"
-    t.string "email", limit: 60
     t.bigint "entity_id", null: false
-    t.string "label", limit: 50
-    t.text "notes"
-    t.integer "position"
-    t.string "signature_type", limit: 10
-    t.string "status", default: ""
-    t.datetime "updated_at", null: false
     t.bigint "user_id"
+    t.string "label", limit: 50
+    t.string "signature_type", limit: 10
+    t.integer "position"
+    t.text "notes"
+    t.string "status", default: ""
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.text "api_updates"
+    t.string "email", limit: 60
+    t.bigint "document_id"
     t.index ["document_id"], name: "index_e_signatures_on_document_id"
     t.index ["entity_id"], name: "index_e_signatures_on_entity_id"
     t.index ["user_id"], name: "index_e_signatures_on_user_id"
   end
 
   create_table "email_bounce_events", force: :cascade do |t|
-    t.string "bounce_subtype"
-    t.string "bounce_type"
-    t.string "complaint_feedback_type"
-    t.datetime "created_at", null: false
-    t.text "diagnostic_code"
+    t.bigint "noticed_notification_id"
+    t.string "tracking_id"
     t.bigint "entity_id"
     t.string "event_type", null: false
-    t.bigint "noticed_notification_id"
-    t.datetime "occurred_at", null: false
-    t.json "raw_sns_message"
+    t.string "bounce_type"
+    t.string "bounce_subtype"
+    t.string "complaint_feedback_type"
+    t.text "diagnostic_code"
     t.string "recipient_email", null: false
-    t.string "tracking_id"
+    t.json "raw_sns_message"
+    t.datetime "occurred_at", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["entity_id"], name: "index_email_bounce_events_on_entity_id"
     t.index ["event_type"], name: "index_email_bounce_events_on_event_type"
@@ -1925,52 +1925,52 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "entities", force: :cascade do |t|
-    t.boolean "active", default: true
-    t.integer "active_deal_id"
-    t.boolean "activity_details_required_for_na", default: false
-    t.boolean "activity_docs_required_for_completion", default: false
-    t.string "category"
-    t.datetime "created_at", null: false
-    t.integer "created_by"
-    t.string "currency", limit: 10
-    t.string "custom_css", limit: 20
-    t.integer "customization_flags", default: 0
-    t.integer "deal_investors_count", default: 0, null: false
-    t.integer "deals_count", default: 0, null: false
-    t.datetime "deleted_at"
-    t.integer "documents_count", default: 0, null: false
-    t.string "domain"
-    t.string "entity_type", limit: 25
-    t.integer "equity", default: 0
-    t.date "founded"
-    t.string "instrument_types"
-    t.integer "investments_count", default: 0, null: false
-    t.string "investor_categories"
-    t.integer "investors_count", default: 0, null: false
-    t.boolean "is_holdings_entity", default: false
-    t.text "logo_data"
-    t.text "logo_url"
     t.string "name"
-    t.integer "options", default: 0
-    t.string "pan", limit: 40
-    t.integer "parent_entity_id"
-    t.integer "pending_accesses_count"
-    t.boolean "percentage_in_progress", default: false
-    t.bigint "permissions"
-    t.integer "preferred", default: 0
-    t.string "primary_email"
-    t.integer "primary_region_id"
-    t.bigint "root_folder_id"
-    t.string "s3_bucket"
-    t.string "sub_domain"
-    t.integer "support_agents", default: 0, null: false
-    t.integer "tasks_count"
-    t.decimal "total_investments", precision: 20, default: "0"
-    t.string "tracking_currency", limit: 4
-    t.integer "units", default: 0
-    t.datetime "updated_at", null: false
     t.string "url"
+    t.string "category"
+    t.date "founded"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.text "logo_url"
+    t.boolean "active", default: true
+    t.string "entity_type", limit: 25
+    t.integer "created_by"
+    t.string "investor_categories"
+    t.string "instrument_types"
+    t.string "s3_bucket"
+    t.datetime "deleted_at"
+    t.integer "investors_count", default: 0, null: false
+    t.integer "investments_count", default: 0, null: false
+    t.integer "deals_count", default: 0, null: false
+    t.integer "deal_investors_count", default: 0, null: false
+    t.integer "documents_count", default: 0, null: false
+    t.decimal "total_investments", precision: 20, default: "0"
+    t.boolean "is_holdings_entity", default: false
+    t.integer "parent_entity_id"
+    t.string "currency", limit: 10
+    t.integer "tasks_count"
+    t.integer "pending_accesses_count"
+    t.integer "active_deal_id"
+    t.integer "equity", default: 0
+    t.integer "preferred", default: 0
+    t.integer "options", default: 0
+    t.boolean "percentage_in_progress", default: false
+    t.integer "units", default: 0
+    t.string "sub_domain"
+    t.text "logo_data"
+    t.boolean "activity_docs_required_for_completion", default: false
+    t.boolean "activity_details_required_for_na", default: false
+    t.string "pan", limit: 40
+    t.bigint "permissions"
+    t.string "primary_email"
+    t.integer "customization_flags", default: 0
+    t.bigint "root_folder_id"
+    t.integer "primary_region_id"
+    t.string "tracking_currency", limit: 4
+    t.integer "support_agents", default: 0, null: false
+    t.string "domain"
     t.boolean "white_label", default: false
+    t.string "custom_css", limit: 20
     t.index ["deleted_at"], name: "index_entities_on_deleted_at"
     t.index ["name"], name: "index_entities_on_name"
     t.index ["pan"], name: "index_entities_on_pan"
@@ -1980,106 +1980,106 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "entity_settings", force: :cascade do |t|
-    t.boolean "ai_kpi_reader_shadow", default: false, null: false
-    t.boolean "aml_enabled", default: false
-    t.string "anthropic_api_key"
-    t.string "append_to_commitment_agreement"
+    t.boolean "pan_verification"
     t.boolean "bank_verification"
-    t.string "call_basis"
-    t.string "cc"
-    t.boolean "ckyc_kra_enabled"
+    t.boolean "trial"
+    t.date "trial_end_date"
+    t.string "valuation_math"
+    t.integer "snapshot_frequency_months"
+    t.date "last_snapshot_on"
+    t.bigint "entity_id", null: false
     t.datetime "created_at", null: false
-    t.boolean "cs_judge_enabled", default: true, null: false
-    t.string "cs_judge_model"
-    t.text "custom_dashboards"
+    t.datetime "updated_at", null: false
+    t.boolean "sandbox"
+    t.string "sandbox_emails"
+    t.string "from_email", limit: 100
+    t.string "entity_bcc"
+    t.string "reply_to"
+    t.string "cc"
+    t.string "individual_kyc_doc_list"
+    t.string "non_individual_kyc_doc_list"
+    t.boolean "aml_enabled", default: false
+    t.string "fi_code"
+    t.string "sandbox_numbers"
+    t.string "kpi_doc_list"
+    t.text "kyc_docs_note"
+    t.string "stamp_paper_tags"
+    t.string "call_basis"
     t.integer "custom_flags", default: 0
-    t.string "db_dumps_custom_days"
-    t.boolean "db_dumps_email_enabled", default: false
-    t.boolean "db_dumps_enable", default: false
-    t.string "db_dumps_frequency", default: "daily"
-    t.integer "db_dumps_interval", default: 1
-    t.integer "db_dumps_retention_period", default: 7
-    t.string "default_llm_model"
+    t.integer "email_delay_seconds", default: 0
+    t.boolean "ckyc_kra_enabled"
+    t.string "kpi_reminder_frequency", limit: 10
+    t.integer "kpi_reminder_before"
+    t.text "custom_dashboards"
+    t.text "whatsapp_token"
+    t.string "whatsapp_endpoint"
+    t.json "whatsapp_templates"
     t.datetime "deleted_at"
     t.string "digio_client_id"
     t.string "digio_client_secret"
     t.datetime "digio_cutover_date"
-    t.json "document_colors"
-    t.string "domain"
-    t.integer "email_delay_seconds", default: 0
-    t.string "entity_bcc"
-    t.bigint "entity_id", null: false
-    t.string "esign_provider", limit: 15, default: "Digio"
-    t.json "evergreen_labels"
-    t.string "fi_code"
-    t.string "formula_tag_list"
-    t.string "from_email", limit: 100
-    t.string "gemini_api_key"
-    t.string "individual_kyc_doc_list"
-    t.string "investor_presentations_email", limit: 50
-    t.json "kanban_steps"
-    t.string "kpi_doc_list"
-    t.integer "kpi_reminder_before"
-    t.string "kpi_reminder_frequency", limit: 10
-    t.string "kyc_bank_account_types"
-    t.boolean "kyc_doc_first_wizard", default: false, null: false
-    t.text "kyc_docs_note"
-    t.date "last_snapshot_on"
-    t.string "mailbox", limit: 30
-    t.string "mcp_allowed_clients", default: "[]"
-    t.string "mcp_allowed_roles", default: "[\"employee\"]"
-    t.boolean "mcp_enabled", default: false, null: false
-    t.integer "month_offset_for_fy"
-    t.string "non_individual_kyc_doc_list"
-    t.integer "notification_retention_months", default: 2
-    t.string "openai_api_key"
-    t.string "openrouter_api_key"
-    t.boolean "pan_verification"
-    t.string "portflio_expense_account_entry_filter"
+    t.string "append_to_commitment_agreement"
     t.string "regulatory_env", limit: 20, default: "SEBI"
-    t.string "reply_to"
-    t.boolean "sandbox"
-    t.string "sandbox_emails"
-    t.string "sandbox_numbers"
-    t.integer "snapshot_frequency_months"
-    t.string "stamp_paper_tags"
+    t.json "kanban_steps"
+    t.string "esign_provider", limit: 15, default: "Digio"
     t.boolean "test_account", default: false
-    t.boolean "trial"
-    t.date "trial_end_date"
-    t.datetime "updated_at", null: false
-    t.boolean "use_ai_kpi_reader", default: false, null: false
-    t.string "valuation_math"
+    t.string "formula_tag_list"
+    t.string "investor_presentations_email", limit: 50
+    t.string "domain"
+    t.string "mailbox", limit: 30
+    t.integer "notification_retention_months", default: 2
     t.string "value_bridge_cols"
+    t.string "portflio_expense_account_entry_filter"
+    t.string "kyc_bank_account_types"
+    t.integer "month_offset_for_fy"
+    t.string "openai_api_key"
+    t.string "gemini_api_key"
+    t.string "default_llm_model"
+    t.string "anthropic_api_key"
+    t.string "openrouter_api_key"
+    t.boolean "db_dumps_enable", default: false
+    t.integer "db_dumps_retention_period", default: 7
+    t.boolean "db_dumps_email_enabled", default: false
+    t.string "db_dumps_frequency", default: "daily"
+    t.integer "db_dumps_interval", default: 1
+    t.string "db_dumps_custom_days"
+    t.json "document_colors"
+    t.boolean "use_ai_kpi_reader", default: false, null: false
+    t.boolean "ai_kpi_reader_shadow", default: false, null: false
+    t.boolean "mcp_enabled", default: false, null: false
+    t.string "mcp_allowed_roles", default: "[\"employee\"]"
+    t.string "mcp_allowed_clients", default: "[]"
+    t.boolean "kyc_doc_first_wizard", default: false, null: false
+    t.boolean "cs_judge_enabled", default: true, null: false
+    t.string "cs_judge_model"
     t.boolean "weekly_task_digest_enabled", default: false, null: false
-    t.string "whatsapp_endpoint"
-    t.json "whatsapp_templates"
-    t.text "whatsapp_token"
+    t.json "evergreen_labels"
     t.index ["deleted_at"], name: "index_entity_settings_on_deleted_at"
     t.index ["entity_id"], name: "index_entity_settings_on_entity_id"
   end
 
   create_table "esign_logs", force: :cascade do |t|
-    t.datetime "created_at", null: false
     t.bigint "document_id"
     t.bigint "entity_id", null: false
-    t.json "manual_update_data"
     t.json "request_data"
     t.json "response_data"
-    t.datetime "updated_at", null: false
     t.json "webhook_data"
+    t.json "manual_update_data"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["document_id"], name: "index_esign_logs_on_document_id"
     t.index ["entity_id"], name: "index_esign_logs_on_entity_id"
   end
 
   create_table "events", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.text "description"
-    t.datetime "end_time", null: false
-    t.bigint "entity_id", null: false
-    t.bigint "owner_id", null: false
-    t.string "owner_type", null: false
-    t.datetime "start_time", null: false
     t.string "title", null: false
+    t.text "description"
+    t.datetime "start_time", null: false
+    t.datetime "end_time", null: false
+    t.string "owner_type", null: false
+    t.bigint "owner_id", null: false
+    t.bigint "entity_id", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
     t.index ["entity_id"], name: "index_events_on_entity_id"
@@ -2088,77 +2088,77 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "evergreen_class_terms", force: :cascade do |t|
-    t.string "class_expense_entry_name", limit: 125
-    t.string "class_expense_paid_entry_name", limit: 125
-    t.datetime "created_at", null: false
-    t.string "crystallisation", limit: 15, default: "annual", null: false
-    t.json "early_redemption_fee"
     t.bigint "entity_id", null: false
-    t.bigint "evergreen_fund_setting_id", null: false
     t.bigint "fund_id", null: false
-    t.decimal "hurdle_pct", precision: 7, scale: 4, default: "0.0", null: false
-    t.string "hurdle_type", limit: 5, default: "hard", null: false
+    t.bigint "evergreen_fund_setting_id", null: false
+    t.string "unit_type", limit: 40, null: false
     t.decimal "initial_price_cents", precision: 24, scale: 4
-    t.integer "lock_up_months"
-    t.string "lock_up_type", limit: 5
-    t.decimal "min_additional_subscription_cents", precision: 20, scale: 2
-    t.decimal "min_holding_cents", precision: 20, scale: 2
-    t.decimal "min_initial_subscription_cents", precision: 20, scale: 2
-    t.integer "notice_days"
     t.string "perf_fee_model", limit: 15, default: "none", null: false
     t.decimal "perf_fee_pct", precision: 7, scale: 4, default: "0.0", null: false
-    t.string "unit_type", limit: 40, null: false
+    t.decimal "hurdle_pct", precision: 7, scale: 4, default: "0.0", null: false
+    t.string "hurdle_type", limit: 5, default: "hard", null: false
+    t.string "crystallisation", limit: 15, default: "annual", null: false
+    t.integer "notice_days"
+    t.integer "lock_up_months"
+    t.string "lock_up_type", limit: 5
+    t.json "early_redemption_fee"
+    t.decimal "min_initial_subscription_cents", precision: 20, scale: 2
+    t.decimal "min_additional_subscription_cents", precision: 20, scale: 2
+    t.decimal "min_holding_cents", precision: 20, scale: 2
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "class_expense_entry_name", limit: 125
+    t.string "class_expense_paid_entry_name", limit: 125
     t.index ["entity_id"], name: "index_evergreen_class_terms_on_entity_id"
     t.index ["evergreen_fund_setting_id"], name: "index_evergreen_class_terms_on_evergreen_fund_setting_id"
     t.index ["fund_id", "unit_type"], name: "index_evergreen_class_terms_on_fund_id_and_unit_type", unique: true
   end
 
   create_table "evergreen_fund_settings", force: :cascade do |t|
-    t.string "cash_entry_name", limit: 125, default: "Cash In Hand", null: false
-    t.bigint "contract_note_template_id"
-    t.datetime "created_at", null: false
-    t.string "dealing_day", limit: 10, default: "first", null: false
-    t.integer "dealing_day_n"
-    t.json "early_redemption_fee"
-    t.bigint "enabled_by_id"
     t.bigint "entity_id", null: false
-    t.string "fund_close_name", default: "Evergreen", null: false
     t.bigint "fund_id", null: false
-    t.string "gate_level", limit: 5, default: "fund", null: false
-    t.string "gate_method", limit: 10, default: "pro_rata", null: false
-    t.decimal "gate_pct", precision: 7, scale: 4, default: "0.0", null: false
-    t.string "gate_period", limit: 15, default: "dealing_date", null: false
-    t.decimal "investor_gate_pct", precision: 7, scale: 4, default: "0.0", null: false
-    t.integer "lock_up_months", default: 0, null: false
-    t.string "lock_up_type", limit: 5, default: "hard", null: false
-    t.string "mgmt_fee_paid_entry_name", limit: 125, default: "Management Fee Paid", null: false
-    t.decimal "min_additional_subscription_cents", precision: 20, scale: 2, default: "0.0", null: false
-    t.decimal "min_holding_cents", precision: 20, scale: 2, default: "0.0", null: false
-    t.decimal "min_initial_subscription_cents", precision: 20, scale: 2, default: "0.0", null: false
-    t.integer "notice_days", default: 30, null: false
-    t.json "notifications"
-    t.string "order_journeys", limit: 15, default: "off", null: false
-    t.string "other_assets_entry_name", limit: 125, default: "Net Current Assets", null: false
-    t.string "other_liabilities_entry_name", limit: 125, default: "Other Liabilities", null: false
-    t.integer "pay_after_days", default: 7, null: false
-    t.text "payment_instructions"
-    t.string "payment_timing", limit: 10, default: "before", null: false
-    t.string "perf_fee_paid_entry_name", limit: 125, default: "Performance Fee Paid", null: false
-    t.string "preset", limit: 40
-    t.bigint "redemption_advice_template_id"
+    t.string "subscription_calendar", limit: 15, default: "monthly", null: false
+    t.json "subscription_dates"
     t.string "redemption_calendar", limit: 15, default: "quarterly", null: false
     t.json "redemption_dates"
-    t.json "redemption_forms"
-    t.bigint "redemption_journey_template_id"
-    t.integer "redemption_settlement_days", default: 10, null: false
-    t.string "subscription_calendar", limit: 15, default: "monthly", null: false
+    t.string "dealing_day", limit: 10, default: "first", null: false
+    t.integer "dealing_day_n"
+    t.string "payment_timing", limit: 10, default: "before", null: false
+    t.integer "pay_after_days", default: 7, null: false
     t.integer "subscription_cutoff_days", default: 5, null: false
-    t.json "subscription_dates"
-    t.bigint "subscription_journey_template_id"
-    t.string "unit_term", limit: 10
     t.string "unready_handling", limit: 10, default: "roll", null: false
+    t.string "order_journeys", limit: 15, default: "off", null: false
+    t.bigint "subscription_journey_template_id"
+    t.bigint "redemption_journey_template_id"
+    t.json "redemption_forms"
+    t.integer "redemption_settlement_days", default: 10, null: false
+    t.integer "notice_days", default: 30, null: false
+    t.integer "lock_up_months", default: 0, null: false
+    t.string "lock_up_type", limit: 5, default: "hard", null: false
+    t.json "early_redemption_fee"
+    t.decimal "min_initial_subscription_cents", precision: 20, scale: 2, default: "0.0", null: false
+    t.decimal "min_additional_subscription_cents", precision: 20, scale: 2, default: "0.0", null: false
+    t.decimal "min_holding_cents", precision: 20, scale: 2, default: "0.0", null: false
+    t.decimal "gate_pct", precision: 7, scale: 4, default: "0.0", null: false
+    t.string "gate_level", limit: 5, default: "fund", null: false
+    t.string "gate_period", limit: 15, default: "dealing_date", null: false
+    t.string "gate_method", limit: 10, default: "pro_rata", null: false
+    t.decimal "investor_gate_pct", precision: 7, scale: 4, default: "0.0", null: false
+    t.string "cash_entry_name", limit: 125, default: "Cash In Hand", null: false
+    t.string "other_assets_entry_name", limit: 125, default: "Net Current Assets", null: false
+    t.string "other_liabilities_entry_name", limit: 125, default: "Other Liabilities", null: false
+    t.string "mgmt_fee_paid_entry_name", limit: 125, default: "Management Fee Paid", null: false
+    t.string "perf_fee_paid_entry_name", limit: 125, default: "Performance Fee Paid", null: false
+    t.string "fund_close_name", default: "Evergreen", null: false
+    t.text "payment_instructions"
+    t.bigint "contract_note_template_id"
+    t.bigint "redemption_advice_template_id"
+    t.string "preset", limit: 40
+    t.bigint "enabled_by_id"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.json "notifications"
+    t.string "unit_term", limit: 10
     t.index ["contract_note_template_id"], name: "index_evergreen_fund_settings_on_contract_note_template_id"
     t.index ["enabled_by_id"], name: "index_evergreen_fund_settings_on_enabled_by_id"
     t.index ["entity_id"], name: "index_evergreen_fund_settings_on_entity_id"
@@ -2169,45 +2169,45 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "evergreen_notification_logs", force: :cascade do |t|
-    t.datetime "created_at", null: false
     t.bigint "entity_id", null: false
     t.bigint "fund_id", null: false
     t.string "key", limit: 50, null: false
-    t.bigint "record_id", null: false
     t.string "record_type", limit: 50, null: false
+    t.bigint "record_id", null: false
     t.date "sent_on", null: false
+    t.datetime "created_at", null: false
     t.index ["entity_id"], name: "index_evergreen_notification_logs_on_entity_id"
     t.index ["fund_id"], name: "index_evergreen_notification_logs_on_fund_id"
     t.index ["key", "record_type", "record_id", "sent_on"], name: "idx_evergreen_notification_logs_once", unique: true
   end
 
   create_table "exception_tracks", force: :cascade do |t|
+    t.string "title"
     t.text "body"
     t.datetime "created_at", precision: nil, null: false
-    t.string "title"
     t.datetime "updated_at", precision: nil, null: false
   end
 
   create_table "exchange_rates", force: :cascade do |t|
-    t.date "as_of"
-    t.datetime "created_at", null: false
-    t.decimal "decimal", precision: 20, scale: 8, default: "0.0"
-    t.bigint "document_folder_id"
     t.bigint "entity_id", null: false
     t.string "from", limit: 5
-    t.bigint "import_upload_id"
+    t.string "to", limit: 5
+    t.decimal "rate", precision: 20, scale: 8, default: "0.0"
+    t.decimal "decimal", precision: 20, scale: 8, default: "0.0"
     t.boolean "latest", default: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.date "as_of"
+    t.text "notes"
+    t.bigint "document_folder_id"
+    t.bigint "import_upload_id"
+    t.string "source", limit: 10, default: "manual", null: false
+    t.string "provider", limit: 40
+    t.string "rate_type", limit: 10, default: "reference", null: false
+    t.string "owner_type", limit: 20
+    t.bigint "owner_id"
     t.bigint "leg1_id"
     t.bigint "leg2_id"
-    t.text "notes"
-    t.bigint "owner_id"
-    t.string "owner_type", limit: 20
-    t.string "provider", limit: 40
-    t.decimal "rate", precision: 20, scale: 8, default: "0.0"
-    t.string "rate_type", limit: 10, default: "reference", null: false
-    t.string "source", limit: 10, default: "manual", null: false
-    t.string "to", limit: 5
-    t.datetime "updated_at", null: false
     t.index ["document_folder_id"], name: "index_exchange_rates_on_document_folder_id"
     t.index ["entity_id", "from", "to", "as_of"], name: "idx_exchange_rates_entity_from_to_as_of", order: { as_of: :desc }
     t.index ["entity_id", "owner_type", "owner_id", "from", "to", "as_of", "source"], name: "idx_exchange_rates_source"
@@ -2219,14 +2219,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "excused_investors", force: :cascade do |t|
-    t.bigint "aggregate_portfolio_investment_id"
-    t.bigint "capital_commitment_id", null: false
-    t.datetime "created_at", null: false
     t.bigint "entity_id", null: false
     t.bigint "fund_id", null: false
-    t.string "notes"
+    t.bigint "capital_commitment_id", null: false
     t.bigint "portfolio_company_id"
+    t.bigint "aggregate_portfolio_investment_id"
     t.bigint "portfolio_investment_id"
+    t.string "notes"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["aggregate_portfolio_investment_id"], name: "index_excused_investors_on_aggregate_portfolio_investment_id"
     t.index ["capital_commitment_id"], name: "index_excused_investors_on_capital_commitment_id"
@@ -2237,29 +2237,29 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "expression_of_interests", force: :cascade do |t|
-    t.decimal "allocation_amount_cents", precision: 15, scale: 2, default: "0.0"
-    t.decimal "allocation_percentage", precision: 5, scale: 2, default: "0.0"
+    t.bigint "entity_id", null: false
+    t.bigint "user_id", null: false
+    t.bigint "eoi_entity_id", null: false
+    t.bigint "investment_opportunity_id", null: false
     t.decimal "amount_cents", precision: 15, scale: 2, default: "0.0"
     t.boolean "approved", default: false
-    t.text "comment"
+    t.boolean "verified", default: false
+    t.decimal "allocation_percentage", precision: 5, scale: 2, default: "0.0"
+    t.decimal "allocation_amount_cents", precision: 15, scale: 2, default: "0.0"
     t.datetime "created_at", null: false
-    t.bigint "document_folder_id"
-    t.bigint "entity_id", null: false
-    t.bigint "eoi_entity_id", null: false
-    t.boolean "esign_completed", default: false
-    t.boolean "esign_required", default: false
-    t.bigint "form_type_id"
-    t.bigint "investment_opportunity_id", null: false
-    t.string "investor_email"
+    t.datetime "updated_at", null: false
+    t.text "comment"
     t.bigint "investor_id", null: false
+    t.boolean "esign_required", default: false
+    t.boolean "esign_completed", default: false
+    t.bigint "investor_signatory_id"
+    t.bigint "document_folder_id"
+    t.json "json_fields"
     t.bigint "investor_kyc_id"
     t.string "investor_name", limit: 100
-    t.bigint "investor_signatory_id"
-    t.json "json_fields"
+    t.string "investor_email"
     t.boolean "show_data_room", default: false, null: false
-    t.datetime "updated_at", null: false
-    t.bigint "user_id", null: false
-    t.boolean "verified", default: false
+    t.bigint "form_type_id"
     t.index ["document_folder_id"], name: "index_expression_of_interests_on_document_folder_id"
     t.index ["entity_id"], name: "index_expression_of_interests_on_entity_id"
     t.index ["eoi_entity_id"], name: "index_expression_of_interests_on_eoi_entity_id"
@@ -2272,23 +2272,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "faq_entries", force: :cascade do |t|
-    t.text "answer", null: false
-    t.string "audience", limit: 20, default: "signed_in", null: false
-    t.datetime "created_at", null: false
-    t.bigint "created_by_id"
-    t.string "faq_group", limit: 20, null: false
     t.string "guide_key", limit: 150, null: false
+    t.string "faq_group", limit: 20, null: false
+    t.integer "position"
+    t.string "question", limit: 300, null: false
+    t.text "answer", null: false
     t.string "keywords", limit: 500
+    t.string "audience", limit: 20, default: "signed_in", null: false
+    t.string "status", limit: 20, default: "draft", null: false
+    t.datetime "published_at"
     t.datetime "last_verified_at"
     t.boolean "needs_verification", default: false, null: false
-    t.integer "position"
-    t.datetime "published_at"
-    t.string "question", limit: 300, null: false
-    t.bigint "source_message_id"
-    t.string "status", limit: 20, default: "draft", null: false
-    t.datetime "updated_at", null: false
-    t.bigint "updated_by_id"
     t.json "verification_errors"
+    t.bigint "source_message_id"
+    t.bigint "created_by_id"
+    t.bigint "updated_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["guide_key", "faq_group", "position"], name: "index_faq_entries_on_guide_key_and_faq_group_and_position"
     t.index ["guide_key", "question"], name: "index_faq_entries_on_guide_key_and_question", unique: true
     t.index ["needs_verification"], name: "index_faq_entries_on_needs_verification"
@@ -2296,27 +2296,27 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "faq_threads", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.json "messages"
+    t.bigint "user_id", null: false
     t.string "openai_thread_id"
     t.string "title", default: "New Support Chat"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.bigint "user_id", null: false
+    t.json "messages"
     t.index ["user_id"], name: "index_faq_threads_on_user_id"
   end
 
   create_table "favorites", force: :cascade do |t|
-    t.boolean "blocked", default: false, null: false
     t.datetime "created_at", null: false
-    t.bigint "favoritable_id"
-    t.string "favoritable_type"
-    t.bigint "favoritor_id"
-    t.string "favoritor_type"
-    t.string "scope", default: "favorite", null: false
-    t.string "title", null: false
     t.datetime "updated_at", null: false
-    t.string "url", null: false
     t.bigint "user_id", null: false
+    t.string "title", null: false
+    t.string "url", null: false
+    t.string "favoritable_type"
+    t.bigint "favoritable_id"
+    t.string "favoritor_type"
+    t.bigint "favoritor_id"
+    t.string "scope", default: "favorite", null: false
+    t.boolean "blocked", default: false, null: false
     t.index ["user_id", "url"], name: "index_favorites_on_user_id_and_url", unique: true
     t.index ["user_id"], name: "index_favorites_on_user_id"
   end
@@ -2325,25 +2325,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
     t.string "advisor_name", limit: 30
     t.decimal "amount_cents", precision: 10, scale: 2, default: "0.0"
     t.string "amount_label", limit: 10
-    t.string "bank_account_number", limit: 40
-    t.datetime "created_at", null: false
-    t.bigint "entity_id", null: false
-    t.string "ifsc_code", limit: 20
-    t.bigint "owner_id", null: false
     t.string "owner_type", null: false
+    t.bigint "owner_id", null: false
+    t.bigint "entity_id", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "bank_account_number", limit: 40
+    t.string "ifsc_code", limit: 20
     t.index ["entity_id"], name: "index_fees_on_entity_id"
     t.index ["owner_type", "owner_id"], name: "index_fees_on_owner"
   end
 
   create_table "financial_statement_accounts", force: :cascade do |t|
-    t.string "account_type", limit: 12, null: false
-    t.string "behaviour", limit: 10, null: false
-    t.datetime "created_at", null: false
     t.bigint "entity_id", null: false
-    t.boolean "flip_sign", default: false, null: false
     t.bigint "fund_id", null: false
     t.string "name", limit: 100, null: false
+    t.string "account_type", limit: 12, null: false
+    t.string "behaviour", limit: 10, null: false
+    t.boolean "flip_sign", default: false, null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["entity_id"], name: "index_financial_statement_accounts_on_entity_id"
     t.index ["fund_id", "name"], name: "index_financial_statement_accounts_on_fund_id_and_name", unique: true
@@ -2351,13 +2351,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "financial_statement_definitions", force: :cascade do |t|
-    t.string "column_style", limit: 12, default: "for_period", null: false
-    t.datetime "created_at", null: false
     t.bigint "entity_id", null: false
     t.bigint "fund_id", null: false
-    t.string "kind", limit: 20, default: "schedule", null: false
     t.string "name", limit: 100, null: false
+    t.string "kind", limit: 20, default: "schedule", null: false
+    t.string "column_style", limit: 12, default: "for_period", null: false
     t.integer "position", default: 0, null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["entity_id"], name: "index_financial_statement_definitions_on_entity_id"
     t.index ["fund_id", "name"], name: "index_financial_statement_definitions_on_fund_id_and_name", unique: true
@@ -2365,15 +2365,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "financial_statement_layout_rows", force: :cascade do |t|
-    t.datetime "created_at", null: false
     t.bigint "entity_id", null: false
-    t.bigint "financial_statement_account_id"
-    t.bigint "financial_statement_definition_id", null: false
     t.bigint "fund_id", null: false
-    t.string "label", limit: 150
+    t.bigint "financial_statement_definition_id", null: false
     t.integer "position", default: 0, null: false
     t.string "row_type", limit: 10, null: false
+    t.string "label", limit: 150
+    t.bigint "financial_statement_account_id"
     t.json "subtotal_of"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["entity_id"], name: "index_financial_statement_layout_rows_on_entity_id"
     t.index ["financial_statement_account_id"], name: "idx_on_financial_statement_account_id_fs_layout_rows"
@@ -2382,13 +2382,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "financial_statement_mapping_rules", force: :cascade do |t|
-    t.datetime "created_at", null: false
     t.bigint "entity_id", null: false
-    t.string "entry_type", limit: 60, null: false
-    t.boolean "excluded", default: false, null: false
-    t.bigint "financial_statement_account_id"
     t.bigint "fund_id", null: false
+    t.string "entry_type", limit: 60, null: false
     t.string "name", limit: 125, default: "", null: false
+    t.bigint "financial_statement_account_id"
+    t.boolean "excluded", default: false, null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["entity_id"], name: "index_financial_statement_mapping_rules_on_entity_id"
     t.index ["financial_statement_account_id"], name: "idx_on_financial_statement_account_id_fs_mapping_rules"
@@ -2397,51 +2397,51 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "financial_statement_mapping_suggestions", force: :cascade do |t|
-    t.date "as_at_date", null: false
-    t.datetime "created_at", null: false
     t.bigint "entity_id", null: false
-    t.text "error"
-    t.text "file_data"
     t.bigint "fund_id", null: false
-    t.date "period_start"
-    t.json "proposal"
-    t.string "status", limit: 12, default: "processing", null: false
-    t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
+    t.date "as_at_date", null: false
+    t.date "period_start"
+    t.text "file_data"
+    t.string "status", limit: 12, default: "processing", null: false
+    t.json "proposal"
+    t.text "error"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["entity_id"], name: "index_financial_statement_mapping_suggestions_on_entity_id"
     t.index ["fund_id"], name: "index_financial_statement_mapping_suggestions_on_fund_id"
     t.index ["user_id"], name: "index_financial_statement_mapping_suggestions_on_user_id"
   end
 
   create_table "financial_statement_settings", force: :cascade do |t|
-    t.string "capital_entry_name", limit: 125
-    t.string "capital_entry_type", limit: 60
-    t.datetime "created_at", null: false
     t.bigint "entity_id", null: false
-    t.integer "fiscal_year_start_month", default: 1, null: false
     t.bigint "fund_id", null: false
-    t.string "nav_entry_name", limit: 125
+    t.integer "fiscal_year_start_month", default: 1, null: false
     t.string "nav_entry_type", limit: 60
+    t.string "nav_entry_name", limit: 125
+    t.string "capital_entry_type", limit: 60
+    t.string "capital_entry_name", limit: 125
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["entity_id"], name: "index_financial_statement_settings_on_entity_id"
     t.index ["fund_id"], name: "index_financial_statement_settings_on_fund_id", unique: true
   end
 
   create_table "financial_statements", force: :cascade do |t|
-    t.bigint "accounting_allocation_run_id"
-    t.json "checks"
-    t.datetime "created_at", null: false
-    t.date "end_date", null: false
     t.bigint "entity_id", null: false
-    t.json "frozen_data"
     t.bigint "fund_id", null: false
+    t.date "start_date", null: false
+    t.date "end_date", null: false
+    t.string "status", limit: 10, default: "draft", null: false
+    t.bigint "accounting_allocation_run_id"
+    t.bigint "statements_allocation_run_id"
+    t.json "checks"
+    t.integer "unmapped_count", default: 0, null: false
+    t.datetime "refreshed_at"
+    t.json "frozen_data"
     t.datetime "locked_at"
     t.bigint "locked_by_id"
-    t.datetime "refreshed_at"
-    t.date "start_date", null: false
-    t.bigint "statements_allocation_run_id"
-    t.string "status", limit: 10, default: "draft", null: false
-    t.integer "unmapped_count", default: 0, null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["accounting_allocation_run_id"], name: "index_financial_statements_on_accounting_allocation_run_id"
     t.index ["entity_id"], name: "index_financial_statements_on_entity_id"
@@ -2452,24 +2452,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "folders", force: :cascade do |t|
-    t.string "ancestry"
-    t.datetime "created_at", null: false
-    t.datetime "deleted_at"
-    t.integer "documents_count", default: 0, null: false
-    t.boolean "download", default: false
-    t.bigint "entity_id", null: false
-    t.integer "folder_type", default: 0
-    t.string "full_path"
-    t.boolean "knowledge_base", default: false
-    t.integer "level"
     t.string "name"
-    t.string "nda_inheritance_mode", limit: 10, default: "inherit", null: false
-    t.boolean "orignal", default: false
-    t.bigint "owner_id"
-    t.string "owner_type"
-    t.boolean "printing", default: false
-    t.boolean "private", default: false
+    t.string "full_path"
+    t.integer "level"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "entity_id", null: false
+    t.integer "documents_count", default: 0, null: false
+    t.integer "folder_type", default: 0
+    t.string "owner_type"
+    t.bigint "owner_id"
+    t.datetime "deleted_at"
+    t.string "ancestry"
+    t.boolean "download", default: false
+    t.boolean "printing", default: false
+    t.boolean "orignal", default: false
+    t.boolean "knowledge_base", default: false
+    t.boolean "private", default: false
+    t.string "nda_inheritance_mode", limit: 10, default: "inherit", null: false
     t.index ["ancestry"], name: "index_folders_on_ancestry"
     t.index ["deleted_at"], name: "index_folders_on_deleted_at"
     t.index ["entity_id"], name: "index_folders_on_entity_id"
@@ -2479,70 +2479,70 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "form_custom_fields", force: :cascade do |t|
-    t.string "condition_criteria", limit: 10, default: "eq"
-    t.string "condition_on"
-    t.string "condition_params"
-    t.string "condition_state", limit: 5, default: "show"
-    t.datetime "created_at", null: false
-    t.string "field_type", limit: 20
-    t.boolean "filter_in_search", default: false, null: false
-    t.bigint "form_type_id", null: false
-    t.boolean "has_attachment", default: false
-    t.text "help_text"
-    t.integer "import_upload_id", comment: "ID of the import upload that created or updated this form custom field"
-    t.boolean "internal", default: false
-    t.string "js_events"
-    t.string "label"
-    t.text "meta_data"
     t.string "name", limit: 100
-    t.integer "position"
-    t.boolean "read_only", default: false
-    t.string "reg_env", limit: 15
+    t.string "field_type", limit: 20
     t.boolean "required"
+    t.bigint "form_type_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.text "meta_data"
+    t.boolean "has_attachment", default: false
+    t.integer "position"
+    t.text "help_text"
+    t.boolean "read_only", default: false
     t.string "show_user_ids", limit: 50
     t.integer "step", default: 100
-    t.datetime "updated_at", null: false
+    t.string "label"
+    t.string "condition_on"
+    t.string "condition_criteria", limit: 10, default: "eq"
+    t.string "condition_params"
+    t.string "condition_state", limit: 5, default: "show"
+    t.boolean "internal", default: false
+    t.string "js_events"
+    t.string "reg_env", limit: 15
+    t.integer "import_upload_id", comment: "ID of the import upload that created or updated this form custom field"
     t.json "validation_rules"
+    t.boolean "filter_in_search", default: false, null: false
     t.index ["form_type_id"], name: "index_form_custom_fields_on_form_type_id"
     t.index ["import_upload_id"], name: "index_form_custom_fields_on_import_upload_id"
     t.index ["name", "form_type_id"], name: "index_form_custom_fields_on_name_and_form_type_id", unique: true
   end
 
   create_table "form_types", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.bigint "entity_id", null: false
     t.string "name"
-    t.json "step_labels"
-    t.string "tag", limit: 50, default: "Default", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "entity_id", null: false
+    t.string "tag", limit: 50, default: "Default", null: false
+    t.json "step_labels"
     t.index ["entity_id"], name: "index_form_types_on_entity_id"
   end
 
   create_table "friendly_id_slugs", force: :cascade do |t|
-    t.datetime "created_at"
-    t.string "scope"
     t.string "slug", null: false
     t.integer "sluggable_id", null: false
     t.string "sluggable_type", limit: 50
+    t.string "scope"
+    t.datetime "created_at"
     t.index ["slug", "sluggable_type", "scope"], name: "index_friendly_id_slugs_on_slug_and_sluggable_type_and_scope", unique: true, length: { slug: 70, scope: 70 }
     t.index ["slug", "sluggable_type"], name: "index_friendly_id_slugs_on_slug_and_sluggable_type", length: { slug: 140 }
     t.index ["sluggable_type", "sluggable_id"], name: "index_friendly_id_slugs_on_sluggable_type_and_sluggable_id"
   end
 
   create_table "fund_formula_operations", force: :cascade do |t|
-    t.datetime "applied_at"
-    t.bigint "applied_by_id"
-    t.datetime "created_at", null: false
     t.bigint "entity_id", null: false
-    t.text "error"
     t.bigint "fund_id", null: false
     t.string "operation", limit: 30, null: false
+    t.string "status", limit: 20, default: "previewing", null: false
+    t.bigint "requested_by_id", null: false
+    t.bigint "applied_by_id"
     t.json "params"
     t.json "plan"
-    t.datetime "previewed_at"
-    t.bigint "requested_by_id", null: false
     t.json "result"
-    t.string "status", limit: 20, default: "previewing", null: false
+    t.text "error"
+    t.datetime "previewed_at"
+    t.datetime "applied_at"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["entity_id"], name: "index_fund_formula_operations_on_entity_id"
     t.index ["fund_id", "created_at"], name: "index_fund_formula_operations_on_fund_id_and_created_at"
@@ -2550,72 +2550,72 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "fund_formulas", force: :cascade do |t|
-    t.boolean "add_to_commitment_cache", default: false, null: false
-    t.text "ai_description"
-    t.datetime "created_at", null: false
-    t.datetime "deleted_at"
-    t.text "description"
-    t.boolean "enabled", default: false
-    t.bigint "entity_id"
-    t.string "entry_type", limit: 60
-    t.integer "execution_time"
-    t.boolean "explain", default: true
-    t.text "formula"
     t.bigint "fund_id"
-    t.boolean "generate_ytd_qtly", default: false
-    t.integer "import_upload_id"
-    t.boolean "is_template", default: false
-    t.text "meta_data"
+    t.bigint "entity_id"
     t.string "name", limit: 125
+    t.text "description"
+    t.text "formula"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "sequence", default: 0
+    t.string "rule_type", limit: 50
+    t.boolean "enabled", default: false
+    t.string "entry_type", limit: 60
     t.boolean "roll_up", default: false
     t.string "rule_for", limit: 10, default: "Accounting"
-    t.string "rule_type", limit: 50
-    t.integer "sequence", default: 0
+    t.datetime "deleted_at"
+    t.integer "import_upload_id"
+    t.integer "execution_time"
+    t.boolean "explain", default: true
     t.string "tag_list"
+    t.boolean "is_template", default: false
+    t.boolean "generate_ytd_qtly", default: false
+    t.text "meta_data"
+    t.text "ai_description"
     t.json "timing"
-    t.datetime "updated_at", null: false
+    t.boolean "add_to_commitment_cache", default: false, null: false
     t.index ["deleted_at"], name: "index_fund_formulas_on_deleted_at"
     t.index ["entity_id"], name: "index_fund_formulas_on_entity_id"
     t.index ["fund_id"], name: "index_fund_formulas_on_fund_id"
   end
 
   create_table "fund_navs", force: :cascade do |t|
-    t.datetime "approved_at"
-    t.bigint "approved_by_id"
-    t.json "breakdown"
-    t.decimal "cash_cents", precision: 20, scale: 2, default: "0.0", null: false
-    t.decimal "class_expenses_payable_cents", precision: 20, scale: 2, default: "0.0", null: false
-    t.decimal "class_share", precision: 12, scale: 10, default: "1.0", null: false
-    t.datetime "created_at", null: false
-    t.boolean "crystallised", default: false, null: false
-    t.decimal "dealing_in_progress_cents", precision: 20, scale: 2, default: "0.0", null: false
     t.bigint "entity_id", null: false
     t.bigint "fund_id", null: false
-    t.decimal "hwm_after_cents", precision: 24, scale: 4
-    t.decimal "hwm_cents", precision: 24, scale: 4
-    t.bigint "import_upload_id"
-    t.string "inputs_fingerprint", limit: 64
-    t.decimal "investments_fmv_cents", precision: 20, scale: 2, default: "0.0", null: false
-    t.json "late_fee_decisions"
-    t.decimal "mgmt_fee_accounted_cents", precision: 20, scale: 2, default: "0.0", null: false
-    t.date "mgmt_fee_accrued_to"
-    t.decimal "mgmt_fee_paid_accounted_cents", precision: 20, scale: 2, default: "0.0", null: false
-    t.decimal "mgmt_fee_payable_cents", precision: 20, scale: 2, default: "0.0", null: false
-    t.decimal "nav_cents", precision: 20, scale: 2, default: "0.0", null: false
+    t.string "unit_type", limit: 40, null: false
     t.date "nav_date", null: false
+    t.string "status", limit: 10, default: "draft", null: false
+    t.string "source", limit: 10, default: "computed", null: false
+    t.decimal "investments_fmv_cents", precision: 20, scale: 2, default: "0.0", null: false
+    t.decimal "cash_cents", precision: 20, scale: 2, default: "0.0", null: false
+    t.decimal "other_assets_cents", precision: 20, scale: 2, default: "0.0", null: false
+    t.decimal "mgmt_fee_payable_cents", precision: 20, scale: 2, default: "0.0", null: false
+    t.decimal "perf_fee_payable_cents", precision: 20, scale: 2, default: "0.0", null: false
+    t.decimal "perf_fee_accrued_cents", precision: 20, scale: 2, default: "0.0", null: false
+    t.decimal "other_liabilities_cents", precision: 20, scale: 2, default: "0.0", null: false
+    t.decimal "nav_cents", precision: 20, scale: 2, default: "0.0", null: false
+    t.decimal "units_outstanding", precision: 26, scale: 8, default: "0.0", null: false
     t.decimal "nav_per_unit_before_perf_cents", precision: 24, scale: 4
     t.decimal "nav_per_unit_cents", precision: 24, scale: 4
-    t.decimal "other_assets_cents", precision: 20, scale: 2, default: "0.0", null: false
-    t.decimal "other_liabilities_cents", precision: 20, scale: 2, default: "0.0", null: false
+    t.decimal "class_share", precision: 12, scale: 10, default: "1.0", null: false
+    t.decimal "hwm_cents", precision: 24, scale: 4
+    t.decimal "hwm_after_cents", precision: 24, scale: 4
+    t.boolean "crystallised", default: false, null: false
+    t.date "mgmt_fee_accrued_to"
     t.json "overrides"
-    t.decimal "perf_fee_accrued_cents", precision: 20, scale: 2, default: "0.0", null: false
-    t.decimal "perf_fee_payable_cents", precision: 20, scale: 2, default: "0.0", null: false
+    t.json "breakdown"
+    t.string "inputs_fingerprint", limit: 64
     t.bigint "prepared_by_id"
-    t.string "source", limit: 10, default: "computed", null: false
-    t.string "status", limit: 10, default: "draft", null: false
-    t.string "unit_type", limit: 40, null: false
-    t.decimal "units_outstanding", precision: 26, scale: 8, default: "0.0", null: false
+    t.bigint "approved_by_id"
+    t.datetime "approved_at"
+    t.bigint "import_upload_id"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.decimal "dealing_in_progress_cents", precision: 20, scale: 2, default: "0.0", null: false
+    t.decimal "class_expenses_payable_cents", precision: 20, scale: 2, default: "0.0", null: false
+    t.decimal "mgmt_fee_accounted_cents", precision: 20, scale: 2, default: "0.0", null: false
+    t.decimal "mgmt_fee_paid_accounted_cents", precision: 20, scale: 2, default: "0.0", null: false
+    t.json "late_fee_decisions"
     t.index ["approved_by_id"], name: "index_fund_navs_on_approved_by_id"
     t.index ["entity_id"], name: "index_fund_navs_on_entity_id"
     t.index ["fund_id", "unit_type", "nav_date"], name: "index_fund_navs_on_fund_id_and_unit_type_and_nav_date", unique: true
@@ -2625,20 +2625,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "fund_ratio_run_templates", force: :cascade do |t|
-    t.bigint "anchor_fund_id"
-    t.datetime "created_at", null: false
-    t.string "currency"
     t.bigint "entity_id", null: false
-    t.json "fund_ids", null: false
-    t.string "name", null: false
-    t.string "portfolio_companies_tags"
-    t.json "portfolio_company_ids", null: false
-    t.integer "position"
-    t.string "run_type", null: false
-    t.json "sectors", null: false
-    t.json "tags", null: false
-    t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
+    t.bigint "anchor_fund_id"
+    t.string "name", null: false
+    t.string "run_type", null: false
+    t.json "fund_ids", null: false
+    t.json "portfolio_company_ids", null: false
+    t.string "portfolio_companies_tags"
+    t.json "sectors", null: false
+    t.string "currency"
+    t.integer "position"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.json "tags", null: false
     t.index ["anchor_fund_id"], name: "index_fund_ratio_run_templates_on_anchor_fund_id"
     t.index ["entity_id", "name"], name: "index_fund_ratio_run_templates_on_entity_id_and_name", unique: true
     t.index ["entity_id"], name: "index_fund_ratio_run_templates_on_entity_id"
@@ -2646,20 +2646,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "fund_ratio_runs", force: :cascade do |t|
-    t.bigint "anchor_fund_id"
-    t.datetime "created_at", null: false
-    t.string "currency"
-    t.date "end_date", null: false
     t.bigint "entity_id", null: false
-    t.json "fund_ids", null: false
-    t.bigint "fund_ratio_run_template_id"
-    t.string "name", null: false
-    t.string "portfolio_companies_tags"
-    t.json "portfolio_company_ids", null: false
-    t.string "run_type", null: false
-    t.json "sectors", null: false
-    t.datetime "updated_at", null: false
+    t.bigint "anchor_fund_id"
     t.bigint "user_id", null: false
+    t.string "run_type", null: false
+    t.string "name", null: false
+    t.date "end_date", null: false
+    t.string "currency"
+    t.json "fund_ids", null: false
+    t.json "portfolio_company_ids", null: false
+    t.json "sectors", null: false
+    t.string "portfolio_companies_tags"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "fund_ratio_run_template_id"
     t.index "(cast(`fund_ids` as unsigned array))", name: "idx_frr_fund_ids"
     t.index "(cast(`portfolio_company_ids` as unsigned array))", name: "idx_frr_portfolio_company_ids"
     t.index ["anchor_fund_id"], name: "index_fund_ratio_runs_on_anchor_fund_id"
@@ -2670,28 +2670,28 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "fund_ratios", force: :cascade do |t|
-    t.bigint "capital_commitment_id"
-    t.json "cash_flows"
-    t.bigint "computation_context_id"
-    t.string "computation_context_type"
-    t.datetime "created_at", null: false
-    t.datetime "deleted_at"
-    t.string "display_value", limit: 50
-    t.date "end_date"
     t.bigint "entity_id", null: false
-    t.bigint "form_type_id"
     t.bigint "fund_id"
-    t.bigint "import_upload_id"
-    t.string "label", limit: 50
-    t.boolean "latest", default: false
-    t.string "name"
-    t.text "notes"
-    t.bigint "owner_id"
-    t.string "owner_type"
-    t.string "scenario", limit: 40, default: "Default"
-    t.datetime "updated_at", null: false
     t.bigint "valuation_id"
+    t.string "name"
     t.decimal "value", precision: 20, scale: 8, default: "0.0"
+    t.string "display_value", limit: 50
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.datetime "deleted_at"
+    t.bigint "capital_commitment_id"
+    t.date "end_date"
+    t.string "owner_type"
+    t.bigint "owner_id"
+    t.json "cash_flows"
+    t.boolean "latest", default: false
+    t.bigint "import_upload_id"
+    t.string "scenario", limit: 40, default: "Default"
+    t.bigint "form_type_id"
+    t.string "label", limit: 50
+    t.string "computation_context_type"
+    t.bigint "computation_context_id"
     t.index ["capital_commitment_id"], name: "index_fund_ratios_on_capital_commitment_id"
     t.index ["computation_context_type", "computation_context_id"], name: "index_fund_ratios_on_computation_context"
     t.index ["deleted_at"], name: "index_fund_ratios_on_deleted_at"
@@ -2703,37 +2703,37 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "fund_reports", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.json "data"
-    t.date "end_date"
-    t.bigint "entity_id", null: false
-    t.bigint "form_type_id"
     t.bigint "fund_id", null: false
+    t.bigint "entity_id", null: false
     t.string "name", limit: 50
     t.string "name_of_scheme"
-    t.date "start_date"
+    t.json "data"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.date "start_date"
+    t.date "end_date"
+    t.bigint "form_type_id"
     t.index ["entity_id"], name: "index_fund_reports_on_entity_id"
     t.index ["form_type_id"], name: "index_fund_reports_on_form_type_id"
     t.index ["fund_id"], name: "index_fund_reports_on_fund_id"
   end
 
   create_table "fund_unit_settings", force: :cascade do |t|
-    t.decimal "carry", precision: 24, scale: 8, default: "0.0"
-    t.datetime "created_at", null: false
-    t.datetime "deleted_at"
     t.bigint "entity_id", null: false
-    t.bigint "form_type_id"
     t.bigint "fund_id", null: false
-    t.boolean "gp_units", default: false
+    t.string "name", limit: 40
+    t.decimal "management_fee", precision: 24, scale: 8, default: "0.0"
+    t.decimal "setup_fee", precision: 24, scale: 8, default: "0.0"
+    t.bigint "form_type_id"
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.decimal "carry", precision: 24, scale: 8, default: "0.0"
+    t.json "json_fields"
     t.bigint "import_upload_id"
     t.string "isin", limit: 15
-    t.json "json_fields"
-    t.decimal "management_fee", precision: 24, scale: 8, default: "0.0"
-    t.string "name", limit: 40
-    t.text "notes"
-    t.decimal "setup_fee", precision: 24, scale: 8, default: "0.0"
-    t.datetime "updated_at", null: false
+    t.boolean "gp_units", default: false
+    t.datetime "deleted_at"
     t.index ["deleted_at"], name: "index_fund_unit_settings_on_deleted_at"
     t.index ["entity_id"], name: "index_fund_unit_settings_on_entity_id"
     t.index ["form_type_id"], name: "index_fund_unit_settings_on_form_type_id"
@@ -2741,19 +2741,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "fund_unit_transfers", force: :cascade do |t|
-    t.string "account_entries_excluded"
-    t.datetime "created_at", null: false
     t.bigint "entity_id", null: false
-    t.bigint "from_commitment_id", null: false
     t.bigint "fund_id", null: false
-    t.decimal "premium", precision: 20, scale: 2
-    t.decimal "price", precision: 20, scale: 2
-    t.string "status"
+    t.bigint "from_commitment_id", null: false
     t.bigint "to_commitment_id", null: false
-    t.boolean "transfer_account_entries"
-    t.date "transfer_date"
     t.integer "transfer_ratio"
+    t.date "transfer_date"
+    t.decimal "price", precision: 20, scale: 2
+    t.decimal "premium", precision: 20, scale: 2
+    t.boolean "transfer_account_entries"
+    t.string "account_entries_excluded"
     t.string "transfer_token"
+    t.string "status"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["entity_id"], name: "index_fund_unit_transfers_on_entity_id"
     t.index ["from_commitment_id"], name: "index_fund_unit_transfers_on_from_commitment_id"
@@ -2762,27 +2762,27 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "fund_units", force: :cascade do |t|
-    t.decimal "amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.bigint "capital_commitment_id", null: false
-    t.datetime "created_at", null: false
-    t.datetime "deleted_at"
-    t.bigint "entity_id", null: false
     t.bigint "fund_id", null: false
-    t.bigint "import_upload_id"
+    t.bigint "capital_commitment_id", null: false
     t.bigint "investor_id", null: false
-    t.date "issue_date"
-    t.bigint "owner_id"
-    t.string "owner_type"
-    t.decimal "premium_cents", precision: 20, scale: 2, default: "0.0", null: false
-    t.decimal "premium_old", precision: 20, scale: 2, default: "0.0"
-    t.decimal "price_cents", precision: 20, scale: 2, default: "0.0", null: false
-    t.decimal "price_old", precision: 20, scale: 2, default: "0.0"
+    t.string "unit_type", limit: 40
     t.decimal "quantity", precision: 26, scale: 8, default: "0.0", null: false
     t.text "reason"
-    t.decimal "total_premium_cents", precision: 20, scale: 2, default: "0.0"
-    t.string "transfer", limit: 8
-    t.string "unit_type", limit: 40
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "entity_id", null: false
+    t.decimal "price_old", precision: 20, scale: 2, default: "0.0"
+    t.string "owner_type"
+    t.bigint "owner_id"
+    t.decimal "premium_old", precision: 20, scale: 2, default: "0.0"
+    t.decimal "total_premium_cents", precision: 20, scale: 2, default: "0.0"
+    t.date "issue_date"
+    t.bigint "import_upload_id"
+    t.string "transfer", limit: 8
+    t.decimal "price_cents", precision: 20, scale: 2, default: "0.0", null: false
+    t.decimal "premium_cents", precision: 20, scale: 2, default: "0.0", null: false
+    t.datetime "deleted_at"
+    t.decimal "amount_cents", precision: 20, scale: 2, default: "0.0"
     t.index ["capital_commitment_id"], name: "index_fund_units_on_capital_commitment_id"
     t.index ["deleted_at"], name: "index_fund_units_on_deleted_at"
     t.index ["entity_id"], name: "index_fund_units_on_entity_id"
@@ -2792,87 +2792,87 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "funding_rounds", force: :cascade do |t|
-    t.decimal "amount_raised_cents", precision: 20, scale: 2, default: "0.0"
-    t.string "anti_dilution", limit: 50
-    t.date "closed_on"
-    t.datetime "created_at", null: false
-    t.string "currency", limit: 5
-    t.datetime "deleted_at"
-    t.bigint "entity_id", null: false
-    t.integer "equity", default: 0
-    t.string "liq_pref_type", limit: 25
     t.string "name"
-    t.integer "options", default: 0
-    t.decimal "post_money_valuation_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "pre_money_valuation_cents", precision: 20, scale: 2, default: "0.0"
-    t.integer "preferred", default: 0
-    t.decimal "price_cents", precision: 20, scale: 2, default: "0.0"
-    t.string "status", default: "Open"
     t.decimal "total_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.integer "units", default: 0
+    t.string "currency", limit: 5
+    t.decimal "pre_money_valuation_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "post_money_valuation_cents", precision: 20, scale: 2, default: "0.0"
+    t.bigint "entity_id", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.decimal "amount_raised_cents", precision: 20, scale: 2, default: "0.0"
+    t.string "status", default: "Open"
+    t.date "closed_on"
+    t.datetime "deleted_at"
+    t.integer "equity", default: 0
+    t.integer "preferred", default: 0
+    t.integer "options", default: 0
+    t.string "liq_pref_type", limit: 25
+    t.string "anti_dilution", limit: 50
+    t.decimal "price_cents", precision: 20, scale: 2, default: "0.0"
+    t.integer "units", default: 0
     t.index ["deleted_at"], name: "index_funding_rounds_on_deleted_at"
     t.index ["entity_id"], name: "index_funding_rounds_on_entity_id"
   end
 
   create_table "funds", force: :cascade do |t|
-    t.decimal "call_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.integer "capital_commitments_count", default: 0, null: false
-    t.decimal "capital_fee_cents", precision: 20, scale: 2, default: "0.0"
-    t.string "category", limit: 15
-    t.decimal "collected_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.string "commitment_doc_list", limit: 100
-    t.decimal "committed_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.datetime "created_at", null: false
-    t.string "currency", limit: 5, null: false
-    t.bigint "data_room_folder_id"
-    t.datetime "deleted_at"
-    t.text "details"
-    t.decimal "distribution_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.bigint "document_folder_id"
-    t.boolean "editable_formulas", default: false
-    t.boolean "enable_ai_commentary", default: true, null: false
-    t.bigint "entity_id", null: false
-    t.string "esign_emails"
-    t.bigint "features", default: 0, null: false
-    t.date "first_close_date"
-    t.bigint "form_type_id"
-    t.bigint "fund_signatory_id"
-    t.bigint "funding_round_id"
-    t.bigint "import_upload_id"
-    t.json "json_fields"
-    t.date "last_close_date"
-    t.bigint "lp_allocation_fund_formula_id"
-    t.text "lp_commentary"
-    t.bigint "lp_fmv_fund_formula_id"
-    t.bigint "master_fund_id"
     t.string "name"
-    t.bigint "orignal_id"
-    t.decimal "other_fee_cents", precision: 20, scale: 2, default: "0.0"
-    t.string "portfolio_cost_type", limit: 10, default: "FIFO", null: false
-    t.boolean "show_fund_ratios", default: false
-    t.boolean "show_fund_units", default: true
-    t.boolean "show_portfolios", default: false
-    t.boolean "show_valuations", default: false
-    t.boolean "snapshot", default: false
-    t.date "snapshot_date"
-    t.date "start_date"
+    t.decimal "committed_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.text "details"
+    t.decimal "collected_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.bigint "entity_id", null: false
     t.string "tag_list"
-    t.decimal "target_committed_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "total_units_premium_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "tracking_call_amount_cents", precision: 20, scale: 4, default: "0.0"
-    t.decimal "tracking_co_invest_call_amount_cents", precision: 20, scale: 4, default: "0.0"
-    t.decimal "tracking_collected_amount_cents", precision: 20, scale: 4, default: "0.0"
-    t.decimal "tracking_committed_amount_cents", precision: 20, scale: 4, default: "0.0"
-    t.string "tracking_currency", limit: 3
-    t.datetime "tracking_currency_change_started_at"
-    t.string "tracking_currency_change_state", limit: 20
-    t.string "tracking_currency_changing_to", limit: 3
-    t.decimal "tracking_distribution_amount_cents", precision: 20, scale: 4, default: "0.0"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.decimal "call_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.bigint "form_type_id"
+    t.decimal "distribution_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.bigint "funding_round_id"
+    t.boolean "show_valuations", default: false
+    t.boolean "show_fund_ratios", default: false
+    t.bigint "fund_signatory_id"
     t.bigint "trustee_signatory_id"
+    t.string "currency", limit: 5, null: false
+    t.string "commitment_doc_list", limit: 100
+    t.datetime "deleted_at"
+    t.bigint "data_room_folder_id"
+    t.bigint "document_folder_id"
     t.string "unit_types"
     t.string "units_allocation_engine", limit: 50
-    t.datetime "updated_at", null: false
+    t.decimal "total_units_premium_cents", precision: 20, scale: 2, default: "0.0"
+    t.boolean "editable_formulas", default: false
+    t.string "category", limit: 15
+    t.date "start_date"
+    t.decimal "target_committed_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "capital_fee_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "other_fee_cents", precision: 20, scale: 2, default: "0.0"
+    t.json "json_fields"
+    t.string "esign_emails"
+    t.boolean "show_portfolios", default: false
+    t.integer "capital_commitments_count", default: 0, null: false
+    t.bigint "import_upload_id"
+    t.date "first_close_date"
+    t.date "last_close_date"
+    t.bigint "master_fund_id"
+    t.string "tracking_currency", limit: 3
+    t.decimal "tracking_collected_amount_cents", precision: 20, scale: 4, default: "0.0"
+    t.decimal "tracking_call_amount_cents", precision: 20, scale: 4, default: "0.0"
+    t.decimal "tracking_co_invest_call_amount_cents", precision: 20, scale: 4, default: "0.0"
+    t.decimal "tracking_distribution_amount_cents", precision: 20, scale: 4, default: "0.0"
+    t.decimal "tracking_committed_amount_cents", precision: 20, scale: 4, default: "0.0"
+    t.date "snapshot_date"
+    t.boolean "snapshot", default: false
+    t.bigint "orignal_id"
+    t.string "portfolio_cost_type", limit: 10, default: "FIFO", null: false
+    t.boolean "show_fund_units", default: true
+    t.text "lp_commentary"
+    t.boolean "enable_ai_commentary", default: true, null: false
+    t.string "tracking_currency_change_state", limit: 20
+    t.string "tracking_currency_changing_to", limit: 3
+    t.datetime "tracking_currency_change_started_at"
+    t.bigint "features", default: 0, null: false
+    t.bigint "lp_allocation_fund_formula_id"
+    t.bigint "lp_fmv_fund_formula_id"
     t.index ["data_room_folder_id"], name: "index_funds_on_data_room_folder_id"
     t.index ["deleted_at"], name: "index_funds_on_deleted_at"
     t.index ["document_folder_id"], name: "index_funds_on_document_folder_id"
@@ -2889,20 +2889,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "grid_view_preferences", force: :cascade do |t|
-    t.string "alignment", limit: 12
-    t.datetime "created_at", null: false
     t.bigint "custom_grid_view_id"
-    t.string "data_type"
-    t.boolean "derived_field"
-    t.bigint "entity_id", null: false
-    t.string "key"
-    t.string "label"
     t.string "name"
-    t.bigint "owner_id", null: false
-    t.string "owner_type", null: false
+    t.string "key"
     t.boolean "selected"
     t.integer "sequence"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "owner_type", null: false
+    t.bigint "owner_id", null: false
+    t.bigint "entity_id", null: false
+    t.string "data_type"
+    t.string "label"
+    t.boolean "derived_field"
+    t.string "alignment", limit: 12
     t.index ["custom_grid_view_id", "sequence"], name: "idx_on_custom_grid_view_id_sequence_ef881fc72b"
     t.index ["custom_grid_view_id"], name: "index_grid_view_preferences_on_custom_grid_view_id"
     t.index ["entity_id"], name: "index_grid_view_preferences_on_entity_id"
@@ -2910,53 +2910,53 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "guide_search_synonyms", force: :cascade do |t|
-    t.datetime "created_at", null: false
+    t.string "terms", limit: 500, null: false
     t.boolean "enabled", default: true, null: false
     t.string "note"
-    t.string "terms", limit: 500, null: false
-    t.datetime "updated_at", null: false
     t.bigint "updated_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "import_uploads", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.text "custom_fields_created"
+    t.string "name"
     t.bigint "entity_id", null: false
+    t.string "owner_type", null: false
+    t.bigint "owner_id", null: false
+    t.bigint "user_id", null: false
+    t.string "import_type", limit: 50
+    t.text "status"
     t.text "error_text"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "total_rows_count", default: 0
+    t.integer "processed_row_count", default: 0
     t.integer "failed_row_count", default: 0
     t.text "import_file_data"
     t.text "import_results_data"
-    t.string "import_type", limit: 50
-    t.string "name"
-    t.bigint "owner_id", null: false
-    t.string "owner_type", null: false
-    t.integer "processed_row_count", default: 0
+    t.text "custom_fields_created"
     t.json "row_errors"
-    t.text "status"
-    t.integer "total_rows_count", default: 0
-    t.datetime "updated_at", null: false
-    t.bigint "user_id", null: false
     t.index ["entity_id"], name: "index_import_uploads_on_entity_id"
     t.index ["owner_type", "owner_id"], name: "index_import_uploads_on_owner"
     t.index ["user_id"], name: "index_import_uploads_on_user_id"
   end
 
   create_table "incoming_emails", force: :cascade do |t|
-    t.text "body"
-    t.text "cc_emails"
-    t.datetime "created_at", null: false
-    t.bigint "document_folder_id"
-    t.bigint "entity_id"
-    t.bigint "filed_by_user_id"
     t.string "from"
-    t.string "internet_message_id"
-    t.text "message_id"
-    t.bigint "owner_id"
-    t.string "owner_type"
-    t.datetime "received_at"
-    t.string "subject"
     t.text "to"
+    t.string "subject"
+    t.text "body"
+    t.string "owner_type"
+    t.bigint "owner_id"
+    t.bigint "entity_id"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "document_folder_id"
+    t.text "cc_emails"
+    t.text "message_id"
+    t.string "internet_message_id"
+    t.datetime "received_at"
+    t.bigint "filed_by_user_id"
     t.index ["document_folder_id"], name: "index_incoming_emails_on_document_folder_id"
     t.index ["entity_id", "internet_message_id", "owner_type", "owner_id"], name: "idx_incoming_emails_dedup", unique: true, length: { owner_type: 40 }
     t.index ["entity_id"], name: "index_incoming_emails_on_entity_id"
@@ -2965,56 +2965,56 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "interests", force: :cascade do |t|
-    t.string "PAN", limit: 15
-    t.text "address"
+    t.integer "entity_id"
+    t.integer "quantity"
+    t.decimal "price", precision: 10
+    t.bigint "user_id"
+    t.integer "interest_entity_id"
+    t.bigint "secondary_sale_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.boolean "escrow_deposited", default: false
+    t.decimal "final_price", precision: 10, scale: 2, default: "0.0"
+    t.decimal "amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.bigint "allocation_quantity", default: 0
     t.decimal "allocation_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "allocation_percentage", precision: 5, scale: 2, default: "0.0"
-    t.bigint "allocation_quantity", default: 0
-    t.decimal "amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.string "bank_account_number", limit: 40
-    t.text "bank_verification_response"
-    t.string "bank_verification_status"
-    t.boolean "bank_verified"
+    t.boolean "finalized", default: false
     t.string "buyer_entity_name", limit: 100
-    t.string "buyer_signatory_emails"
-    t.string "city", limit: 20
-    t.text "comments"
-    t.boolean "completed", default: false
+    t.text "address"
     t.string "contact_name", limit: 50
-    t.datetime "created_at", null: false
+    t.string "email"
+    t.string "PAN", limit: 15
+    t.boolean "final_agreement", default: false
+    t.bigint "form_type_id"
+    t.integer "offer_quantity", default: 0
+    t.boolean "verified", default: false
+    t.text "comments"
+    t.text "spa_data"
+    t.bigint "funding_round_id"
+    t.text "signature_data"
+    t.string "demat", limit: 20
+    t.string "city", limit: 20
+    t.string "bank_account_number", limit: 40
+    t.string "ifsc_code", limit: 20
+    t.bigint "final_agreement_user_id"
     t.string "custom_matching_vals"
     t.datetime "deleted_at"
-    t.string "demat", limit: 20
     t.bigint "document_folder_id"
-    t.string "email"
-    t.integer "entity_id"
-    t.boolean "escrow_deposited", default: false
-    t.boolean "final_agreement", default: false
-    t.bigint "final_agreement_user_id"
-    t.decimal "final_price", precision: 10, scale: 2, default: "0.0"
-    t.boolean "finalized", default: false
-    t.bigint "form_type_id"
-    t.bigint "funding_round_id"
-    t.string "ifsc_code", limit: 20
-    t.bigint "import_upload_id"
-    t.integer "interest_entity_id"
     t.bigint "investor_id"
     t.json "json_fields"
-    t.integer "offer_quantity", default: 0
+    t.string "buyer_signatory_emails"
+    t.bigint "import_upload_id"
     t.text "pan_verification_response"
     t.string "pan_verification_status"
     t.boolean "pan_verified"
-    t.decimal "price", precision: 10
-    t.integer "quantity"
-    t.bigint "secondary_sale_id", null: false
+    t.text "bank_verification_response"
+    t.string "bank_verification_status"
+    t.boolean "bank_verified"
     t.string "short_listed_status", default: "pending", null: false
-    t.text "signature_data"
-    t.text "spa_data"
-    t.datetime "status_updated_at"
+    t.boolean "completed", default: false
     t.bigint "status_updated_by_id"
-    t.datetime "updated_at", null: false
-    t.bigint "user_id"
-    t.boolean "verified", default: false
+    t.datetime "status_updated_at"
     t.index ["custom_matching_vals"], name: "index_interests_on_custom_matching_vals"
     t.index ["deleted_at"], name: "index_interests_on_deleted_at"
     t.index ["document_folder_id"], name: "index_interests_on_document_folder_id"
@@ -3031,38 +3031,38 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "investment_criteria_templates", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.bigint "created_by_user_id", null: false
-    t.json "criteria", null: false
-    t.bigint "entity_id", null: false
     t.string "name", null: false
-    t.datetime "updated_at", null: false
+    t.json "criteria", null: false
+    t.bigint "created_by_user_id", null: false
     t.integer "usage_count", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "entity_id", null: false
     t.index ["created_by_user_id"], name: "index_investment_criteria_templates_on_created_by_user_id"
     t.index ["entity_id", "usage_count"], name: "index_investment_criteria_templates_on_entity_and_usage"
     t.index ["entity_id"], name: "index_investment_criteria_templates_on_entity_id"
   end
 
   create_table "investment_instruments", force: :cascade do |t|
-    t.string "category", limit: 15
-    t.datetime "created_at", null: false
-    t.string "currency", limit: 5
-    t.datetime "deleted_at"
-    t.bigint "entity_id", null: false
-    t.string "exchange", limit: 10
-    t.bigint "form_type_id"
-    t.bigint "import_upload_id"
-    t.string "investment_domicile", limit: 15
-    t.string "isin", limit: 12
-    t.json "json_fields"
     t.string "name"
-    t.bigint "portfolio_company_id", null: false
-    t.string "pricing_method", limit: 10, default: "manual", null: false
-    t.string "sector", limit: 100
-    t.boolean "startup", default: false
+    t.string "category", limit: 15
     t.string "sub_category", limit: 100
-    t.string "ticker", limit: 30
+    t.string "sector", limit: 100
+    t.bigint "entity_id", null: false
+    t.bigint "portfolio_company_id", null: false
+    t.datetime "deleted_at"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "investment_domicile", limit: 15
+    t.boolean "startup", default: false
+    t.json "json_fields"
+    t.bigint "form_type_id"
+    t.string "currency", limit: 5
+    t.bigint "import_upload_id"
+    t.string "isin", limit: 12
+    t.string "ticker", limit: 30
+    t.string "exchange", limit: 10
+    t.string "pricing_method", limit: 10, default: "manual", null: false
     t.index ["deleted_at"], name: "index_investment_instruments_on_deleted_at"
     t.index ["entity_id", "exchange", "ticker"], name: "idx_instruments_entity_exchange_ticker", unique: true
     t.index ["entity_id", "isin"], name: "idx_instruments_entity_isin"
@@ -3072,30 +3072,30 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "investment_opportunities", force: :cascade do |t|
-    t.text "buyer_docs_list"
-    t.string "company_name", limit: 100
-    t.datetime "created_at", null: false
-    t.string "currency", limit: 10
-    t.bigint "data_room_folder_id"
-    t.bigint "document_folder_id"
     t.bigint "entity_id", null: false
-    t.decimal "eoi_amount_cents", precision: 15, scale: 2, default: "0.0"
-    t.bigint "form_type_id"
+    t.string "company_name", limit: 100
     t.decimal "fund_raise_amount_cents", precision: 15, scale: 2, default: "0.0"
-    t.bigint "funding_round_id"
-    t.json "json_fields"
+    t.decimal "valuation_cents", precision: 15, scale: 2, default: "0.0"
+    t.decimal "min_ticket_size_cents", precision: 15, scale: 2, default: "0.0"
     t.date "last_date"
+    t.string "currency", limit: 10
+    t.text "logo_data"
+    t.text "video_data"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "form_type_id"
+    t.decimal "eoi_amount_cents", precision: 15, scale: 2, default: "0.0"
     t.boolean "lock_allocations", default: false
     t.boolean "lock_eoi", default: false
-    t.text "logo_data"
-    t.decimal "min_ticket_size_cents", precision: 15, scale: 2, default: "0.0"
-    t.boolean "shareable", default: false
-    t.boolean "show_express_interest", default: true, null: false
-    t.boolean "show_key_metrics", default: true, null: false
+    t.text "buyer_docs_list"
+    t.bigint "funding_round_id"
     t.string "tag_list", limit: 120
-    t.datetime "updated_at", null: false
-    t.decimal "valuation_cents", precision: 15, scale: 2, default: "0.0"
-    t.text "video_data"
+    t.bigint "document_folder_id"
+    t.json "json_fields"
+    t.boolean "shareable", default: false
+    t.bigint "data_room_folder_id"
+    t.boolean "show_key_metrics", default: true, null: false
+    t.boolean "show_express_interest", default: true, null: false
     t.index ["data_room_folder_id"], name: "index_investment_opportunities_on_data_room_folder_id"
     t.index ["document_folder_id"], name: "index_investment_opportunities_on_document_folder_id"
     t.index ["entity_id"], name: "index_investment_opportunities_on_entity_id"
@@ -3104,26 +3104,26 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "investments", force: :cascade do |t|
-    t.decimal "amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.string "category", limit: 10
-    t.datetime "created_at", null: false
-    t.string "currency", limit: 3
+    t.bigint "portfolio_company_id", null: false
     t.bigint "entity_id", null: false
-    t.bigint "form_type_id"
+    t.string "category", limit: 10
+    t.string "currency", limit: 3
+    t.string "investor_name"
+    t.string "investment_type", limit: 15
     t.string "funding_round", limit: 40
+    t.decimal "quantity", precision: 10
+    t.decimal "price_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.date "investment_date"
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.integer "import_upload_id"
+    t.json "json_fields"
+    t.bigint "form_type_id"
     t.string "instrument_name", limit: 50
     t.decimal "instrument_quantity", precision: 10, scale: 2
-    t.date "investment_date"
-    t.string "investment_type", limit: 15
-    t.string "investor_name"
-    t.json "json_fields"
-    t.text "notes"
-    t.bigint "portfolio_company_id", null: false
-    t.decimal "price_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "quantity", precision: 10
     t.string "subgroup", limit: 100
-    t.datetime "updated_at", null: false
     t.index ["entity_id"], name: "index_investments_on_entity_id"
     t.index ["form_type_id"], name: "index_investments_on_form_type_id"
     t.index ["portfolio_company_id"], name: "index_investments_on_portfolio_company_id"
@@ -3131,29 +3131,29 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "investor_accesses", force: :cascade do |t|
-    t.boolean "approved"
-    t.text "cc"
-    t.datetime "created_at", null: false
-    t.datetime "deleted_at"
-    t.string "email"
-    t.boolean "email_enabled", default: true
-    t.integer "entity_id"
-    t.boolean "exempt_from_nda", default: false, null: false
-    t.string "first_name"
-    t.bigint "form_type_id"
-    t.integer "granted_by"
-    t.bigint "import_upload_id"
-    t.bigint "investor_entity_id"
     t.integer "investor_id"
-    t.boolean "is_investor_advisor", default: false
-    t.json "json_fields"
-    t.string "last_name"
-    t.string "phone", limit: 15
-    t.boolean "send_confirmation", default: false
-    t.string "tag_list", limit: 120
-    t.datetime "updated_at", null: false
     t.integer "user_id"
+    t.string "email"
+    t.boolean "approved"
+    t.integer "granted_by"
+    t.integer "entity_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.datetime "deleted_at"
+    t.string "first_name"
+    t.string "last_name"
+    t.boolean "send_confirmation", default: false
+    t.bigint "investor_entity_id"
+    t.boolean "is_investor_advisor", default: false
+    t.string "phone", limit: 15
     t.boolean "whatsapp_enabled", default: false
+    t.text "cc"
+    t.bigint "import_upload_id"
+    t.boolean "email_enabled", default: true
+    t.string "tag_list", limit: 120
+    t.json "json_fields"
+    t.bigint "form_type_id"
+    t.boolean "exempt_from_nda", default: false, null: false
     t.index ["deleted_at"], name: "index_investor_accesses_on_deleted_at"
     t.index ["email"], name: "index_investor_accesses_on_email"
     t.index ["entity_id"], name: "index_investor_accesses_on_entity_id"
@@ -3164,17 +3164,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "investor_advisors", force: :cascade do |t|
-    t.string "allowed_roles", limit: 100
-    t.datetime "created_at", null: false
-    t.bigint "created_by_id"
-    t.datetime "deleted_at"
-    t.string "email"
     t.bigint "entity_id", null: false
+    t.bigint "user_id", null: false
+    t.string "email"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "permissions", default: 0, null: false
+    t.string "allowed_roles", limit: 100
     t.integer "extended_permissions"
     t.bigint "import_upload_id"
-    t.bigint "permissions", default: 0, null: false
-    t.datetime "updated_at", null: false
-    t.bigint "user_id", null: false
+    t.datetime "deleted_at"
+    t.bigint "created_by_id"
     t.index ["created_by_id"], name: "index_investor_advisors_on_created_by_id"
     t.index ["deleted_at"], name: "index_investor_advisors_on_deleted_at"
     t.index ["entity_id"], name: "index_investor_advisors_on_entity_id"
@@ -3182,33 +3182,33 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "investor_kpi_mappings", force: :cascade do |t|
-    t.string "ancestry"
-    t.string "autofill"
-    t.boolean "base_for_common_size", default: false, null: false
-    t.string "category", limit: 40
-    t.integer "child_count", default: 0
-    t.string "compute_formula"
-    t.datetime "created_at", null: false
-    t.string "data_type", limit: 10, default: "numeric"
-    t.string "denomination", limit: 20
     t.bigint "entity_id", null: false
-    t.bigint "form_type_id"
-    t.string "fx_conversion_method", limit: 20, default: "not_applicable", null: false
-    t.bigint "import_upload_id"
     t.bigint "investor_id", null: false
-    t.json "json_fields"
+    t.string "reported_kpi_name", limit: 100
+    t.string "standard_kpi_name", limit: 100
     t.decimal "lower_threshold", precision: 20, scale: 2, default: "0.0"
+    t.decimal "upper_threshold", precision: 20, scale: 2, default: "0.0"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.boolean "show_in_report", default: false
+    t.string "category", limit: 40
+    t.bigint "form_type_id"
+    t.json "json_fields"
+    t.string "data_type", limit: 10, default: "numeric"
     t.integer "position", default: 0
+    t.string "ancestry"
+    t.integer "child_count", default: 0
+    t.bigint "import_upload_id"
+    t.boolean "base_for_common_size", default: false, null: false
+    t.string "autofill"
+    t.string "compute_formula"
+    t.string "denomination", limit: 20
     t.string "rag_comparator_tag", limit: 50, default: "Budget"
     t.string "rag_direction", limit: 20
-    t.decimal "rag_green_threshold", precision: 20, scale: 4
     t.decimal "rag_red_threshold", precision: 20, scale: 4
-    t.string "reported_kpi_name", limit: 100
-    t.boolean "show_in_report", default: false
+    t.decimal "rag_green_threshold", precision: 20, scale: 4
+    t.string "fx_conversion_method", limit: 20, default: "not_applicable", null: false
     t.string "source_sheet", limit: 100
-    t.string "standard_kpi_name", limit: 100
-    t.datetime "updated_at", null: false
-    t.decimal "upper_threshold", precision: 20, scale: 2, default: "0.0"
     t.index ["ancestry"], name: "index_investor_kpi_mappings_on_ancestry"
     t.index ["entity_id"], name: "index_investor_kpi_mappings_on_entity_id"
     t.index ["form_type_id"], name: "index_investor_kpi_mappings_on_form_type_id"
@@ -3218,68 +3218,68 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "investor_kycs", force: :cascade do |t|
+    t.bigint "investor_id", null: false
+    t.bigint "entity_id", null: false
+    t.bigint "form_type_id"
     t.string "PAN", limit: 15
     t.text "address"
-    t.decimal "agreement_committed_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.string "agreement_unit_type", limit: 20
-    t.boolean "all_docs_valid", default: false
-    t.boolean "aml_manual_override", default: false, null: false
-    t.text "aml_override_reason"
-    t.string "aml_status"
     t.string "bank_account_number", limit: 40
-    t.string "bank_account_type", limit: 40
-    t.string "bank_branch"
-    t.string "bank_name", limit: 100
+    t.string "ifsc_code", limit: 20
+    t.boolean "bank_verified", default: false
     t.text "bank_verification_response"
     t.string "bank_verification_status"
-    t.boolean "bank_verified", default: false
-    t.datetime "birth_date"
-    t.decimal "call_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "collected_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.text "comments"
-    t.decimal "committed_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.boolean "completed_by_investor", default: false
-    t.boolean "compliant", default: false
-    t.text "corr_address"
-    t.datetime "created_at", null: false
-    t.datetime "deleted_at"
-    t.decimal "distribution_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.json "doc_question_answers"
-    t.boolean "docs_completed", default: false
-    t.bigint "document_folder_id"
-    t.decimal "due_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.bigint "entity_id", null: false
-    t.string "esign_emails"
-    t.date "expiry_date"
-    t.bigint "form_type_id"
-    t.string "full_name"
-    t.string "ifsc_code", limit: 20
-    t.bigint "import_upload_id"
-    t.bigint "investor_id", null: false
-    t.string "investor_name"
-    t.bigint "investor_user_id"
-    t.datetime "investor_user_updated_at"
-    t.json "json_fields"
-    t.string "kyc_type", limit: 15, default: "Individual"
-    t.datetime "link_sent_at"
-    t.text "notification_msg"
-    t.decimal "other_fee_cents", precision: 12, scale: 2, default: "0.0"
+    t.text "signature_data"
+    t.boolean "pan_verified", default: false
     t.text "pan_verification_response"
     t.string "pan_verification_status"
-    t.boolean "pan_verified", default: false
-    t.boolean "reminder_sent", default: false
-    t.datetime "reminder_sent_date"
-    t.string "residency", limit: 10
-    t.boolean "send_kyc_form_to_user", default: false
-    t.text "signature_data"
-    t.string "slug"
-    t.string "submission_status", default: "not_sent", null: false
-    t.datetime "submitted_at"
-    t.string "type", limit: 20
-    t.decimal "uncalled_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.text "comments"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.boolean "verified", default: false
+    t.string "full_name"
     t.bigint "verified_by_id"
+    t.datetime "deleted_at"
+    t.string "investor_name"
+    t.bigint "document_folder_id"
+    t.date "expiry_date"
+    t.string "kyc_type", limit: 15, default: "Individual"
+    t.string "residency", limit: 10
+    t.datetime "birth_date"
+    t.text "corr_address"
+    t.decimal "committed_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "call_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "collected_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "distribution_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.boolean "docs_completed", default: false
+    t.boolean "send_kyc_form_to_user", default: false
+    t.text "notification_msg"
+    t.string "bank_name", limit: 100
+    t.string "bank_branch"
+    t.string "bank_account_type", limit: 40
+    t.string "type", limit: 20
+    t.json "json_fields"
+    t.string "esign_emails"
+    t.decimal "due_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "uncalled_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "agreement_committed_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.bigint "import_upload_id"
+    t.bigint "investor_user_id"
+    t.datetime "investor_user_updated_at"
+    t.decimal "other_fee_cents", precision: 12, scale: 2, default: "0.0"
+    t.string "agreement_unit_type", limit: 20
+    t.string "slug"
+    t.json "doc_question_answers"
+    t.boolean "all_docs_valid", default: false
+    t.boolean "compliant", default: false
+    t.string "aml_status"
+    t.boolean "completed_by_investor", default: false
+    t.boolean "reminder_sent", default: false
+    t.datetime "reminder_sent_date"
+    t.string "submission_status", default: "not_sent", null: false
+    t.datetime "link_sent_at"
+    t.datetime "submitted_at"
+    t.boolean "aml_manual_override", default: false, null: false
+    t.text "aml_override_reason"
     t.index ["deleted_at"], name: "index_investor_kycs_on_deleted_at"
     t.index ["document_folder_id"], name: "index_investor_kycs_on_document_folder_id"
     t.index ["entity_id"], name: "index_investor_kycs_on_entity_id"
@@ -3292,12 +3292,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "investor_notice_entries", force: :cascade do |t|
+    t.bigint "investor_notice_id", null: false
+    t.bigint "entity_id", null: false
+    t.bigint "investor_id", null: false
+    t.bigint "investor_entity_id", null: false
     t.boolean "active", default: false
     t.datetime "created_at", null: false
-    t.bigint "entity_id", null: false
-    t.bigint "investor_entity_id", null: false
-    t.bigint "investor_id", null: false
-    t.bigint "investor_notice_id", null: false
     t.datetime "updated_at", null: false
     t.index ["entity_id"], name: "index_investor_notice_entries_on_entity_id"
     t.index ["investor_entity_id"], name: "index_investor_notice_entries_on_investor_entity_id"
@@ -3306,67 +3306,67 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "investor_notice_items", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.text "criteria"
-    t.text "details"
-    t.bigint "entity_id", null: false
     t.bigint "investor_notice_id", null: false
+    t.bigint "entity_id", null: false
+    t.string "title"
+    t.text "details"
     t.string "link"
     t.integer "position"
-    t.string "title"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "criteria"
     t.index ["entity_id"], name: "index_investor_notice_items_on_entity_id"
     t.index ["investor_notice_id"], name: "index_investor_notice_items_on_investor_notice_id"
   end
 
   create_table "investor_notices", force: :cascade do |t|
-    t.string "access_rights_metadata"
-    t.boolean "active", default: false
-    t.string "btn_label", limit: 40
-    t.string "category", limit: 30
-    t.datetime "created_at", null: false
-    t.text "criteria"
-    t.date "end_date"
     t.bigint "entity_id", null: false
-    t.boolean "generate", default: false
-    t.string "link"
-    t.bigint "owner_id"
     t.string "owner_type"
+    t.bigint "owner_id"
     t.date "start_date"
     t.text "title"
+    t.string "link"
+    t.string "access_rights_metadata"
+    t.date "end_date"
+    t.boolean "active", default: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "btn_label", limit: 40
+    t.boolean "generate", default: false
+    t.string "category", limit: 30
+    t.text "criteria"
     t.index ["entity_id"], name: "index_investor_notices_on_entity_id"
     t.index ["owner_type", "owner_id"], name: "index_investor_notices_on_owner"
   end
 
   create_table "investors", force: :cascade do |t|
-    t.string "category", limit: 100
-    t.string "city", limit: 50
-    t.datetime "created_at", null: false
-    t.datetime "deleted_at"
-    t.bigint "document_folder_id"
-    t.integer "entity_id", null: false
-    t.bigint "form_type_id"
-    t.bigint "import_upload_id"
-    t.boolean "imported", default: false
-    t.integer "investor_access_count", default: 0
     t.integer "investor_entity_id", null: false
+    t.integer "entity_id", null: false
+    t.string "category", limit: 100
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.string "investor_name"
+    t.datetime "deleted_at"
+    t.date "last_interaction_date"
+    t.integer "investor_access_count", default: 0
+    t.integer "unapproved_investor_access_count", default: 0
     t.boolean "is_holdings_entity", default: false
     t.boolean "is_trust", default: false
-    t.json "json_fields"
-    t.date "last_interaction_date"
-    t.bigint "managed_by_user_id"
-    t.string "pan", limit: 40
-    t.string "primary_email"
-    t.string "primary_email_domain", limit: 191
-    t.string "sector"
-    t.boolean "show_to_lps", default: false, null: false
-    t.string "slug"
+    t.string "city", limit: 50
+    t.bigint "form_type_id"
     t.string "tag_list", limit: 120
-    t.integer "unapproved_investor_access_count", default: 0
-    t.datetime "updated_at", null: false
+    t.boolean "imported", default: false
+    t.bigint "document_folder_id"
+    t.string "pan", limit: 40
+    t.json "json_fields"
+    t.string "primary_email"
+    t.bigint "import_upload_id"
+    t.string "slug"
     t.integer "will_receive_email", default: 0, null: false
+    t.string "sector"
+    t.string "primary_email_domain", limit: 191
+    t.bigint "managed_by_user_id"
+    t.boolean "show_to_lps", default: false, null: false
     t.index ["deleted_at"], name: "index_investors_on_deleted_at"
     t.index ["document_folder_id"], name: "index_investors_on_document_folder_id"
     t.index ["entity_id"], name: "index_investors_on_entity_id"
@@ -3382,31 +3382,31 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "kanban_boards", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.datetime "deleted_at"
-    t.bigint "entity_id", null: false
     t.string "name"
     t.integer "owner_id"
     t.string "owner_type"
+    t.datetime "deleted_at"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "entity_id", null: false
     t.index ["entity_id"], name: "index_kanban_boards_on_entity_id"
     t.index ["owner_id", "owner_type"], name: "index_kanban_boards_on_owner_id_and_owner_type"
   end
 
   create_table "kanban_cards", force: :cascade do |t|
-    t.datetime "created_at", null: false
     t.integer "data_source_id"
     t.string "data_source_type"
     t.datetime "deleted_at"
     t.bigint "entity_id", null: false
-    t.string "info_field"
     t.bigint "kanban_board_id", null: false
     t.bigint "kanban_column_id", null: false
-    t.text "notes"
-    t.integer "sequence"
-    t.string "tags"
-    t.string "title"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "title"
+    t.string "info_field"
+    t.text "notes"
+    t.string "tags"
+    t.integer "sequence"
     t.index ["entity_id"], name: "index_kanban_cards_on_entity_id"
     t.index ["kanban_board_id"], name: "index_kanban_cards_on_kanban_board_id"
     t.index ["kanban_column_id"], name: "index_kanban_cards_on_kanban_column_id"
@@ -3414,69 +3414,69 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "kanban_columns", force: :cascade do |t|
-    t.datetime "created_at", null: false
+    t.string "name"
+    t.integer "sequence"
     t.datetime "deleted_at"
     t.bigint "entity_id", null: false
     t.bigint "kanban_board_id", null: false
-    t.string "name"
-    t.integer "sequence"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["entity_id"], name: "index_kanban_columns_on_entity_id"
     t.index ["kanban_board_id"], name: "index_kanban_columns_on_kanban_board_id"
   end
 
   create_table "key_biz_metrics", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.string "display_value"
-    t.string "metric_type"
     t.string "name"
+    t.string "metric_type"
+    t.decimal "value", precision: 20, scale: 2, default: "0.0"
+    t.string "display_value"
     t.string "notes"
     t.text "query"
     t.datetime "run_date"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.decimal "value", precision: 20, scale: 2, default: "0.0"
   end
 
   create_table "kpi_chart_settings", force: :cascade do |t|
-    t.json "config", null: false
-    t.datetime "created_at", null: false
-    t.bigint "entity_id", null: false
-    t.boolean "is_default", default: false
     t.string "name", null: false
-    t.bigint "portfolio_company_id"
-    t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
+    t.bigint "entity_id", null: false
+    t.bigint "portfolio_company_id"
+    t.json "config", null: false
+    t.boolean "is_default", default: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["entity_id"], name: "index_kpi_chart_settings_on_entity_id"
     t.index ["portfolio_company_id"], name: "index_kpi_chart_settings_on_portfolio_company_id"
     t.index ["user_id"], name: "index_kpi_chart_settings_on_user_id"
   end
 
   create_table "kpi_reports", force: :cascade do |t|
-    t.text "analysis"
-    t.date "as_of"
-    t.boolean "autofill_completed", default: false, null: false
-    t.datetime "completion_notified_at"
-    t.datetime "created_at", null: false
-    t.bigint "document_folder_id"
-    t.boolean "enable_portco_upload", default: false, null: false
     t.bigint "entity_id", null: false
     t.bigint "form_type_id"
-    t.datetime "fund_notified_at"
-    t.string "import_status", limit: 20
-    t.bigint "import_upload_id"
-    t.json "json_fields"
-    t.datetime "link_sent_at"
+    t.date "as_of"
     t.text "notes"
+    t.bigint "user_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "document_folder_id"
+    t.json "json_fields"
+    t.bigint "import_upload_id"
+    t.bigint "portfolio_company_id"
+    t.string "tag_list", default: "Actual"
     t.bigint "owner_id"
     t.string "period", limit: 12, default: "Quarter"
-    t.bigint "portfolio_company_id"
+    t.text "analysis"
+    t.boolean "autofill_completed", default: false, null: false
+    t.boolean "enable_portco_upload", default: false, null: false
     t.string "status", default: "shell_created", null: false
     t.datetime "submitted_at"
-    t.string "tag_list", default: "Actual"
-    t.datetime "updated_at", null: false
-    t.bigint "user_id", null: false
-    t.datetime "validated_at"
+    t.datetime "link_sent_at"
     t.json "validation_result"
+    t.datetime "validated_at"
+    t.string "import_status", limit: 20
+    t.datetime "fund_notified_at"
+    t.datetime "completion_notified_at"
     t.index ["as_of"], name: "index_kpi_reports_on_as_of"
     t.index ["document_folder_id"], name: "index_kpi_reports_on_document_folder_id"
     t.index ["entity_id", "as_of"], name: "index_kpi_reports_on_entity_id_and_as_of"
@@ -3491,29 +3491,29 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "kpis", force: :cascade do |t|
-    t.datetime "approved_at"
-    t.bigint "approved_by_user_id"
-    t.decimal "common_size_value", precision: 6, scale: 2, default: "0.0"
-    t.datetime "created_at", null: false
-    t.string "display_value", limit: 30
     t.bigint "entity_id", null: false
     t.bigint "form_type_id"
-    t.decimal "fx_rate_used", precision: 20, scale: 8
-    t.bigint "import_upload_id"
-    t.bigint "investor_kpi_mapping_id"
-    t.json "json_fields"
-    t.bigint "kpi_report_id", null: false
     t.string "name", limit: 100
+    t.decimal "value", precision: 20, scale: 6
+    t.string "display_value", limit: 30
     t.string "notes"
-    t.decimal "original_value", precision: 20, scale: 6
-    t.bigint "owner_id"
+    t.bigint "kpi_report_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.json "json_fields"
+    t.bigint "import_upload_id"
     t.decimal "percentage_change", precision: 6, scale: 2, default: "0.0"
     t.bigint "portfolio_company_id"
-    t.json "rag_status"
+    t.bigint "owner_id"
     t.string "source", limit: 100
+    t.json "rag_status"
+    t.decimal "common_size_value", precision: 6, scale: 2, default: "0.0"
+    t.bigint "investor_kpi_mapping_id"
     t.string "status", default: "approved"
-    t.datetime "updated_at", null: false
-    t.decimal "value", precision: 20, scale: 6
+    t.bigint "approved_by_user_id"
+    t.datetime "approved_at"
+    t.decimal "original_value", precision: 20, scale: 6
+    t.decimal "fx_rate_used", precision: 20, scale: 8
     t.index ["entity_id", "portfolio_company_id", "status", "name"], name: "index_kpis_on_entity_pc_status_name"
     t.index ["entity_id"], name: "index_kpis_on_entity_id"
     t.index ["form_type_id"], name: "index_kpis_on_form_type_id"
@@ -3526,58 +3526,58 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "kyc_data", force: :cascade do |t|
-    t.string "PAN", limit: 10
-    t.datetime "birth_date"
-    t.datetime "created_at", null: false
     t.bigint "entity_id", null: false
-    t.string "external_identifier"
     t.bigint "investor_kyc_id"
+    t.string "source"
+    t.json "response"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.json "request_data"
+    t.json "response_data"
+    t.string "PAN", limit: 10
     t.string "name"
+    t.string "external_identifier"
+    t.datetime "birth_date"
+    t.string "status", limit: 20
+    t.string "phone", limit: 10
     t.integer "otp_resend_count", default: 0, null: false
     t.datetime "otp_sent_at"
-    t.string "phone", limit: 10
-    t.json "request_data"
-    t.json "response"
-    t.json "response_data"
-    t.string "source"
-    t.string "status", limit: 20
-    t.datetime "updated_at", null: false
     t.index ["entity_id"], name: "index_kyc_data_on_entity_id"
     t.index ["investor_kyc_id"], name: "index_kyc_data_on_investor_kyc_id"
   end
 
   create_table "market_data_runs", force: :cascade do |t|
-    t.datetime "created_at", null: false
     t.bigint "entity_id", null: false
-    t.text "error_message"
-    t.datetime "finished_at"
     t.string "kind", limit: 15, null: false
-    t.integer "loaded_count", default: 0, null: false
-    t.json "missing"
-    t.datetime "notified_at"
     t.string "provider", limit: 20, null: false
     t.date "run_date", null: false
-    t.datetime "started_at"
     t.string "status", limit: 10, default: "running", null: false
+    t.integer "loaded_count", default: 0, null: false
+    t.json "missing"
+    t.text "error_message"
+    t.datetime "notified_at"
+    t.datetime "started_at"
+    t.datetime "finished_at"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["entity_id", "kind", "provider", "run_date"], name: "idx_market_data_runs_unique", unique: true
     t.index ["entity_id"], name: "index_market_data_runs_on_entity_id"
   end
 
   create_table "market_data_settings", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.datetime "deleted_at"
     t.bigint "entity_id", null: false
-    t.json "fund_defaults"
     t.bigint "fund_id"
     t.boolean "fx_feed_enabled", default: false, null: false
     t.json "fx_providers"
-    t.integer "max_price_age_days"
-    t.integer "max_rate_age_days"
-    t.string "pivot_currency", limit: 5, default: "USD", null: false
     t.boolean "price_feed_enabled", default: false, null: false
-    t.decimal "price_move_threshold_pct", precision: 5, scale: 2
     t.json "price_providers"
+    t.string "pivot_currency", limit: 5, default: "USD", null: false
+    t.json "fund_defaults"
+    t.integer "max_rate_age_days"
+    t.integer "max_price_age_days"
+    t.decimal "price_move_threshold_pct", precision: 5, scale: 2
+    t.datetime "deleted_at"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["deleted_at"], name: "index_market_data_settings_on_deleted_at"
     t.index ["entity_id", "fund_id"], name: "index_market_data_settings_on_entity_id_and_fund_id", unique: true
@@ -3586,11 +3586,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "messages", force: :cascade do |t|
-    t.bigint "chat_id", null: false
+    t.string "role", null: false
     t.text "content"
     t.datetime "created_at", null: false
-    t.string "role", null: false
     t.datetime "updated_at", null: false
+    t.bigint "chat_id", null: false
     t.boolean "cache_until_here", default: false, null: false
     t.string "finish_reason"
     t.json "citations"
@@ -3602,22 +3602,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "mobile_devices", force: :cascade do |t|
-    t.string "app_version", limit: 20
-    t.datetime "created_at", null: false
+    t.bigint "user_id", null: false
     t.bigint "devise_api_token_id"
     t.string "install_id", limit: 64, null: false
-    t.datetime "last_push_at"
-    t.datetime "last_used_at", null: false
-    t.string "name", limit: 100
     t.string "platform", limit: 10, null: false
+    t.string "name", limit: 100
+    t.string "app_version", limit: 20
+    t.string "region_code", limit: 10, null: false
+    t.string "push_token"
     t.boolean "push_enabled", default: true, null: false
     t.string "push_status", limit: 20, default: "none", null: false
-    t.string "push_token"
-    t.string "region_code", limit: 10, null: false
+    t.datetime "last_used_at", null: false
+    t.datetime "last_push_at"
     t.datetime "revoked_at"
     t.string "revoked_reason", limit: 30
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.bigint "user_id", null: false
     t.index ["devise_api_token_id"], name: "index_mobile_devices_on_devise_api_token_id"
     t.index ["push_token"], name: "index_mobile_devices_on_push_token", unique: true
     t.index ["user_id", "install_id"], name: "index_mobile_devices_on_user_id_and_install_id", unique: true
@@ -3625,12 +3625,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "mobile_push_deliveries", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.string "error"
-    t.bigint "mobile_device_id", null: false
     t.bigint "noticed_notification_id", null: false
+    t.bigint "mobile_device_id", null: false
     t.string "status", limit: 10, default: "pending", null: false
     t.string "ticket_id", limit: 64
+    t.string "error"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["mobile_device_id", "created_at"], name: "idx_mobile_push_deliveries_device"
     t.index ["noticed_notification_id", "mobile_device_id"], name: "idx_mobile_push_deliveries_unique", unique: true
@@ -3638,18 +3638,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "nda_acceptances", force: :cascade do |t|
-    t.datetime "accepted_at"
-    t.datetime "created_at", null: false
-    t.datetime "declined_at"
-    t.bigint "entity_id", null: false
-    t.bigint "investor_id", null: false
-    t.string "ip_address", limit: 45
     t.bigint "nda_config_id", null: false
-    t.integer "nda_version", default: 1, null: false
-    t.text "reason"
-    t.string "status", limit: 20, null: false
-    t.string "user_agent", limit: 500
+    t.bigint "investor_id", null: false
     t.bigint "user_id", null: false
+    t.bigint "entity_id", null: false
+    t.string "status", limit: 20, null: false
+    t.integer "nda_version", default: 1, null: false
+    t.string "ip_address", limit: 45
+    t.string "user_agent", limit: 500
+    t.datetime "accepted_at"
+    t.datetime "declined_at"
+    t.datetime "created_at", null: false
+    t.text "reason"
     t.index ["entity_id"], name: "idx_nda_acceptances_entity"
     t.index ["investor_id"], name: "idx_nda_acceptances_investor"
     t.index ["nda_config_id", "investor_id", "created_at"], name: "idx_nda_acceptances_gate_lookup"
@@ -3657,13 +3657,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "nda_config_versions", force: :cascade do |t|
-    t.datetime "created_at", null: false
     t.bigint "nda_config_id", null: false
+    t.integer "version", null: false
     t.text "nda_document_data", null: false
     t.boolean "resign_required", default: true, null: false
-    t.datetime "updated_at", null: false
     t.bigint "uploaded_by_id", null: false
-    t.integer "version", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["nda_config_id", "resign_required", "version"], name: "idx_nda_config_versions_resign_lookup"
     t.index ["nda_config_id", "version"], name: "idx_nda_config_versions_config_version", unique: true
     t.index ["nda_config_id"], name: "index_nda_config_versions_on_nda_config_id"
@@ -3671,23 +3671,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "nda_configs", force: :cascade do |t|
-    t.string "acceptance_method", limit: 20, default: "click_through", null: false
-    t.string "contact_email"
-    t.datetime "created_at", null: false
-    t.bigint "created_by_id"
-    t.datetime "deleted_at"
-    t.boolean "enabled", default: true, null: false
-    t.bigint "entity_id", null: false
-    t.text "nda_document_data"
-    t.text "notification_emails"
-    t.bigint "owner_id", null: false
     t.string "owner_type", null: false
-    t.datetime "updated_at", null: false
-    t.bigint "updated_by_id"
-    t.date "validity_date"
-    t.integer "validity_days"
+    t.bigint "owner_id", null: false
+    t.bigint "entity_id", null: false
+    t.boolean "enabled", default: true, null: false
+    t.text "nda_document_data"
+    t.string "acceptance_method", limit: 20, default: "click_through", null: false
     t.string "validity_type", limit: 20, default: "until_revoked", null: false
+    t.integer "validity_days"
+    t.date "validity_date"
+    t.string "contact_email"
+    t.text "notification_emails"
     t.integer "version", default: 1, null: false
+    t.bigint "created_by_id"
+    t.bigint "updated_by_id"
+    t.datetime "deleted_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["created_by_id"], name: "index_nda_configs_on_created_by_id"
     t.index ["deleted_at"], name: "idx_nda_configs_deleted_at"
     t.index ["entity_id"], name: "index_nda_configs_on_entity_id"
@@ -3696,24 +3696,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "nda_exemptions", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.bigint "exempted_by_id", null: false
     t.bigint "nda_config_id", null: false
-    t.string "reason", limit: 500
-    t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
+    t.bigint "exempted_by_id", null: false
+    t.string "reason", limit: 500
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["exempted_by_id"], name: "fk_rails_5f97b1d2e6"
     t.index ["nda_config_id", "user_id"], name: "idx_nda_exemptions_config_user", unique: true
     t.index ["user_id"], name: "idx_nda_exemptions_user"
   end
 
   create_table "nda_expiry_reminders", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.date "expiry_date", null: false
-    t.bigint "investor_id", null: false
-    t.string "kind", limit: 20, null: false
     t.bigint "nda_config_id", null: false
+    t.bigint "investor_id", null: false
+    t.date "expiry_date", null: false
+    t.string "kind", limit: 20, null: false
     t.datetime "sent_at", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["investor_id"], name: "fk_nda_expiry_reminders_investor"
     t.index ["nda_config_id", "investor_id", "expiry_date", "kind"], name: "idx_nda_expiry_reminders_dedup", unique: true
@@ -3721,29 +3721,29 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "nda_signatories", force: :cascade do |t|
-    t.datetime "created_at", null: false
     t.bigint "nda_config_id", null: false
-    t.bigint "tagged_by_id", null: false
-    t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
+    t.bigint "tagged_by_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["nda_config_id", "user_id"], name: "idx_nda_signatories_config_user", unique: true
     t.index ["tagged_by_id"], name: "fk_rails_5f7e75e570"
     t.index ["user_id"], name: "idx_nda_signatories_user"
   end
 
   create_table "notes", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.datetime "deleted_at"
     t.text "details"
     t.integer "entity_id"
-    t.integer "investor_id"
-    t.date "on"
-    t.bigint "owner_id"
-    t.string "owner_type", default: "Investor"
-    t.string "tags", limit: 100
-    t.bigint "touch_point_id"
-    t.datetime "updated_at", null: false
     t.integer "user_id"
+    t.integer "investor_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.datetime "deleted_at"
+    t.date "on"
+    t.string "tags", limit: 100
+    t.string "owner_type", default: "Investor"
+    t.bigint "owner_id"
+    t.bigint "touch_point_id"
     t.index ["deleted_at"], name: "index_notes_on_deleted_at"
     t.index ["entity_id"], name: "index_notes_on_entity_id"
     t.index ["investor_id"], name: "index_notes_on_investor_id"
@@ -3753,41 +3753,41 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "noticed_events", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.virtual "entity_id", type: :bigint, as: "json_extract(`params`,'$.entity_id')"
-    t.integer "notifications_count"
-    t.json "params"
-    t.bigint "record_id"
-    t.string "record_type"
     t.string "type"
+    t.string "record_type"
+    t.bigint "record_id"
+    t.json "params"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "notifications_count"
+    t.virtual "entity_id", type: :bigint, as: "json_extract(`params`,'$.entity_id')"
     t.index ["entity_id"], name: "index_noticed_events_on_entity_id"
     t.index ["record_type", "record_id"], name: "index_noticed_events_on_record"
   end
 
   create_table "noticed_notifications", force: :cascade do |t|
-    t.string "bounce_subtype"
-    t.string "bounce_type"
-    t.datetime "bounced_at"
-    t.datetime "complained_at"
-    t.string "complaint_feedback_type"
-    t.datetime "created_at", null: false
-    t.json "email"
-    t.boolean "email_sent", default: false
-    t.bigint "entity_id"
+    t.string "type"
     t.bigint "event_id", null: false
-    t.datetime "read_at", precision: nil
-    t.bigint "recipient_id", null: false
     t.string "recipient_type", null: false
+    t.bigint "recipient_id", null: false
+    t.datetime "read_at", precision: nil
     t.datetime "seen_at", precision: nil
-    t.string "skip_reason"
-    t.datetime "skip_reported_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.boolean "email_sent", default: false
+    t.json "email"
+    t.boolean "whatsapp_sent", default: false
+    t.text "whatsapp"
     t.string "subject"
     t.string "tracking_id"
-    t.string "type"
-    t.datetime "updated_at", null: false
-    t.text "whatsapp"
-    t.boolean "whatsapp_sent", default: false
+    t.bigint "entity_id"
+    t.datetime "bounced_at"
+    t.string "bounce_type"
+    t.string "bounce_subtype"
+    t.datetime "complained_at"
+    t.string "complaint_feedback_type"
+    t.string "skip_reason"
+    t.datetime "skip_reported_at"
     t.index ["entity_id"], name: "index_noticed_notifications_on_entity_id"
     t.index ["event_id"], name: "index_noticed_notifications_on_event_id"
     t.index ["recipient_type", "recipient_id"], name: "index_noticed_notifications_on_recipient"
@@ -3796,65 +3796,65 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "notifications", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.text "email"
-    t.boolean "email_sent", default: false
-    t.bigint "entity_id", null: false
+    t.string "recipient_type", null: false
+    t.bigint "recipient_id", null: false
+    t.string "type", null: false
     t.json "params"
     t.datetime "read_at"
-    t.bigint "recipient_id", null: false
-    t.string "recipient_type", null: false
-    t.string "type", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.text "whatsapp"
+    t.bigint "entity_id", null: false
+    t.boolean "email_sent", default: false
+    t.text "email"
     t.boolean "whatsapp_sent", default: false
+    t.text "whatsapp"
     t.index ["entity_id"], name: "index_notifications_on_entity_id"
     t.index ["read_at"], name: "index_notifications_on_read_at"
     t.index ["recipient_type", "recipient_id"], name: "index_notifications_on_recipient"
   end
 
   create_table "nudges", force: :cascade do |t|
-    t.text "bcc"
-    t.text "cc"
-    t.datetime "created_at", null: false
-    t.bigint "entity_id", null: false
-    t.bigint "item_id"
-    t.string "item_type"
-    t.text "msg_body"
-    t.text "subject"
     t.text "to"
-    t.datetime "updated_at", null: false
+    t.text "subject"
+    t.text "msg_body"
     t.bigint "user_id", null: false
+    t.bigint "entity_id", null: false
+    t.string "item_type"
+    t.bigint "item_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.text "cc"
+    t.text "bcc"
     t.index ["entity_id"], name: "index_nudges_on_entity_id"
     t.index ["item_type", "item_id"], name: "index_nudges_on_item"
     t.index ["user_id"], name: "index_nudges_on_user_id"
   end
 
   create_table "oauth_access_grants", force: :cascade do |t|
+    t.bigint "resource_owner_id", null: false
     t.bigint "application_id", null: false
-    t.datetime "created_at", null: false
+    t.string "token", null: false
     t.integer "expires_in", null: false
     t.text "redirect_uri", null: false
-    t.bigint "resource_owner_id", null: false
-    t.datetime "revoked_at"
     t.string "scopes", default: "", null: false
-    t.string "token", null: false
+    t.datetime "created_at", null: false
+    t.datetime "revoked_at"
     t.index ["application_id"], name: "index_oauth_access_grants_on_application_id"
     t.index ["resource_owner_id"], name: "index_oauth_access_grants_on_resource_owner_id"
     t.index ["token"], name: "index_oauth_access_grants_on_token", unique: true
   end
 
   create_table "oauth_access_tokens", force: :cascade do |t|
-    t.bigint "application_id", null: false
-    t.datetime "created_at", null: false
-    t.bigint "entity_id"
-    t.integer "expires_in"
-    t.string "previous_refresh_token", default: "", null: false
-    t.string "refresh_token"
     t.bigint "resource_owner_id"
-    t.datetime "revoked_at"
-    t.string "scopes"
+    t.bigint "application_id", null: false
     t.string "token", null: false
+    t.string "refresh_token"
+    t.integer "expires_in"
+    t.string "scopes"
+    t.datetime "created_at", null: false
+    t.datetime "revoked_at"
+    t.string "previous_refresh_token", default: "", null: false
+    t.bigint "entity_id"
     t.index ["application_id"], name: "index_oauth_access_tokens_on_application_id"
     t.index ["entity_id"], name: "index_oauth_access_tokens_on_entity_id"
     t.index ["refresh_token"], name: "index_oauth_access_tokens_on_refresh_token", unique: true
@@ -3863,13 +3863,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "oauth_applications", force: :cascade do |t|
-    t.boolean "confidential", default: true, null: false
-    t.datetime "created_at", null: false
     t.string "name", null: false
+    t.string "uid", null: false
+    t.string "secret", null: false
     t.text "redirect_uri", null: false
     t.string "scopes", default: "", null: false
-    t.string "secret", null: false
-    t.string "uid", null: false
+    t.boolean "confidential", default: true, null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["uid"], name: "index_oauth_applications_on_uid", unique: true
   end
@@ -3881,15 +3881,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "obligation_fulfillments", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.bigint "document_id"
     t.bigint "entity_id", null: false
+    t.bigint "side_letter_obligation_id", null: false
     t.date "fulfilled_at", null: false
     t.bigint "fulfilled_by_id"
     t.text "fulfillment_method"
     t.string "period_covered", limit: 40
-    t.bigint "side_letter_obligation_id", null: false
+    t.bigint "document_id"
     t.bigint "task_id"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["entity_id"], name: "index_obligation_fulfillments_on_entity_id"
     t.index ["side_letter_obligation_id"], name: "index_obligation_fulfillments_on_side_letter_obligation_id"
@@ -3897,14 +3897,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "obligation_reminders", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.date "due_date"
     t.bigint "entity_id", null: false
+    t.bigint "side_letter_obligation_id", null: false
     t.string "kind", limit: 10, null: false
+    t.date "due_date"
+    t.bigint "task_id"
     t.bigint "recipient_user_id"
     t.datetime "sent_at"
-    t.bigint "side_letter_obligation_id", null: false
-    t.bigint "task_id"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["entity_id"], name: "index_obligation_reminders_on_entity_id"
     t.index ["side_letter_obligation_id", "kind", "due_date"], name: "idx_obligation_reminders_dedup"
@@ -3912,65 +3912,65 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "offers", force: :cascade do |t|
-    t.string "PAN", limit: 15
-    t.string "acquirer_name"
-    t.text "address"
-    t.text "address_proof_data"
-    t.decimal "allocation_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "allocation_percentage", precision: 5, scale: 2, default: "0.0"
-    t.bigint "allocation_quantity", default: 0
-    t.decimal "amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.bigint "user_id", null: false
+    t.bigint "entity_id", null: false
+    t.bigint "secondary_sale_id", null: false
+    t.integer "quantity", default: 0
+    t.decimal "percentage", precision: 10, default: "0"
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "holding_id"
     t.boolean "approved", default: false
-    t.boolean "auto_match", default: true
+    t.integer "granted_by_user_id"
+    t.bigint "investor_id", null: false
+    t.string "offer_type", limit: 15
+    t.string "PAN", limit: 15
+    t.text "address"
     t.string "bank_account_number", limit: 40
     t.string "bank_name", limit: 50
     t.text "bank_routing_info"
-    t.text "bank_verification_response"
-    t.string "bank_verification_status"
-    t.boolean "bank_verified", default: false
     t.string "buyer_confirmation", limit: 10
-    t.bigint "buyer_id"
     t.text "buyer_notes"
-    t.string "city", limit: 20
-    t.text "comments"
-    t.boolean "completed", default: false
-    t.datetime "created_at", null: false
-    t.string "custom_matching_vals"
-    t.datetime "deleted_at"
-    t.string "demat", limit: 20
-    t.text "docs_uploaded_check"
-    t.bigint "document_folder_id"
-    t.bigint "entity_id", null: false
-    t.boolean "esign_completed", default: false
-    t.boolean "final_agreement", default: false
-    t.bigint "final_agreement_user_id"
+    t.bigint "buyer_id"
     t.decimal "final_price", precision: 10, scale: 2, default: "0.0"
-    t.bigint "form_type_id"
-    t.string "full_name", limit: 100
-    t.integer "granted_by_user_id"
-    t.bigint "holding_id"
-    t.text "id_proof_data"
-    t.string "ifsc_code", limit: 20
-    t.bigint "import_upload_id"
+    t.decimal "amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.bigint "allocation_quantity", default: 0
+    t.decimal "allocation_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "allocation_percentage", precision: 5, scale: 2, default: "0.0"
+    t.string "acquirer_name"
+    t.boolean "verified", default: false
+    t.text "comments"
+    t.boolean "final_agreement", default: false
     t.bigint "interest_id"
-    t.bigint "investor_id", null: false
-    t.json "json_fields"
-    t.text "notes"
-    t.string "offer_type", limit: 15
-    t.text "pan_card_data"
-    t.text "pan_verification_response"
-    t.string "pan_verification_status"
-    t.boolean "pan_verified", default: false
-    t.decimal "percentage", precision: 10, default: "0"
-    t.decimal "price", precision: 20, scale: 2, default: "0.0"
-    t.integer "quantity", default: 0
-    t.bigint "secondary_sale_id", null: false
-    t.string "seller_signatory_emails"
+    t.bigint "form_type_id"
     t.text "signature_data"
     t.text "spa_data"
-    t.datetime "updated_at", null: false
-    t.bigint "user_id", null: false
-    t.boolean "verified", default: false
+    t.text "id_proof_data"
+    t.text "address_proof_data"
+    t.text "docs_uploaded_check"
+    t.boolean "auto_match", default: true
+    t.text "pan_card_data"
+    t.boolean "pan_verified", default: false
+    t.text "pan_verification_response"
+    t.string "pan_verification_status"
+    t.string "ifsc_code", limit: 20
+    t.boolean "bank_verified", default: false
+    t.text "bank_verification_response"
+    t.string "bank_verification_status"
+    t.string "full_name", limit: 100
+    t.string "demat", limit: 20
+    t.string "city", limit: 20
+    t.bigint "final_agreement_user_id"
+    t.string "custom_matching_vals"
+    t.boolean "esign_completed", default: false
+    t.datetime "deleted_at"
+    t.bigint "document_folder_id"
+    t.json "json_fields"
+    t.bigint "import_upload_id"
+    t.string "seller_signatory_emails"
+    t.decimal "price", precision: 20, scale: 2, default: "0.0"
+    t.boolean "completed", default: false
     t.index ["buyer_id"], name: "index_offers_on_buyer_id"
     t.index ["custom_matching_vals"], name: "index_offers_on_custom_matching_vals"
     t.index ["deleted_at"], name: "index_offers_on_deleted_at"
@@ -3985,17 +3985,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "otp_deliveries", force: :cascade do |t|
+    t.bigint "user_id", null: false
     t.string "channel", default: "sms", null: false
-    t.datetime "created_at", null: false
-    t.string "error_code"
-    t.string "provider_message_id"
-    t.string "purpose", null: false
-    t.integer "segments"
-    t.string "status", null: false
     t.string "to_number_digest", limit: 64, null: false
     t.string "to_number_last4", limit: 4
+    t.string "provider_message_id"
+    t.string "status", null: false
+    t.string "error_code"
+    t.integer "segments"
+    t.string "purpose", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.bigint "user_id", null: false
     t.index ["provider_message_id"], name: "index_otp_deliveries_on_provider_message_id"
     t.index ["to_number_digest", "created_at"], name: "index_otp_deliveries_on_to_number_digest_and_created_at"
     t.index ["user_id", "created_at"], name: "index_otp_deliveries_on_user_id_and_created_at"
@@ -4003,31 +4003,31 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "payments", force: :cascade do |t|
-    t.decimal "amount", precision: 10, scale: 2, default: "0.0", null: false
-    t.datetime "created_at", null: false
-    t.datetime "deleted_at"
-    t.decimal "discount", precision: 10, scale: 2, default: "0.0"
     t.bigint "entity_id", null: false
+    t.decimal "amount", precision: 10, scale: 2, default: "0.0", null: false
     t.string "plan", limit: 30
+    t.decimal "discount", precision: 10, scale: 2, default: "0.0"
     t.string "reference_number"
-    t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.datetime "deleted_at"
     t.index ["deleted_at"], name: "index_payments_on_deleted_at"
     t.index ["entity_id"], name: "index_payments_on_entity_id"
     t.index ["user_id"], name: "index_payments_on_user_id"
   end
 
   create_table "permissions", force: :cascade do |t|
-    t.datetime "created_at", null: false
+    t.bigint "user_id"
+    t.string "owner_type", null: false
+    t.bigint "owner_id", null: false
     t.string "email"
+    t.integer "permissions"
     t.bigint "entity_id", null: false
     t.bigint "granted_by_id", null: false
-    t.bigint "owner_id", null: false
-    t.string "owner_type", null: false
-    t.integer "permissions"
-    t.string "role", limit: 20
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.bigint "user_id"
+    t.string "role", limit: 20
     t.index ["entity_id"], name: "index_permissions_on_entity_id"
     t.index ["granted_by_id"], name: "index_permissions_on_granted_by_id"
     t.index ["owner_type", "owner_id"], name: "index_permissions_on_owner"
@@ -4035,35 +4035,35 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "phone_change_requests", force: :cascade do |t|
-    t.integer "attempts", default: 0, null: false
-    t.datetime "cancelled_at"
-    t.string "code_digest", limit: 64
-    t.datetime "created_at", null: false
-    t.datetime "expires_at", null: false
+    t.bigint "user_id", null: false
+    t.bigint "requested_by_id", null: false
     t.string "new_call_code", limit: 3, null: false
     t.string "new_phone", limit: 100, null: false
-    t.bigint "requested_by_id", null: false
-    t.datetime "updated_at", null: false
-    t.bigint "user_id", null: false
+    t.string "code_digest", limit: 64, null: false
+    t.datetime "expires_at", null: false
+    t.integer "attempts", default: 0, null: false
     t.datetime "verified_at"
+    t.datetime "cancelled_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["requested_by_id"], name: "index_phone_change_requests_on_requested_by_id"
     t.index ["user_id", "created_at"], name: "index_phone_change_requests_on_user_id_and_created_at"
     t.index ["user_id"], name: "index_phone_change_requests_on_user_id"
   end
 
   create_table "portfolio_attributions", force: :cascade do |t|
-    t.bigint "bought_pi_id", null: false
-    t.decimal "cost_of_sold_cents", precision: 20, scale: 2, default: "0.0"
-    t.datetime "created_at", null: false
-    t.datetime "deleted_at"
     t.bigint "entity_id", null: false
     t.bigint "fund_id", null: false
-    t.decimal "gain_cents", precision: 20, scale: 2, default: "0.0"
-    t.date "investment_date"
-    t.decimal "quantity", precision: 24, scale: 8, default: "0.0"
-    t.decimal "sale_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.bigint "sold_pi_id", null: false
+    t.bigint "bought_pi_id", null: false
+    t.decimal "quantity", precision: 24, scale: 8, default: "0.0"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.decimal "cost_of_sold_cents", precision: 20, scale: 2, default: "0.0"
+    t.datetime "deleted_at"
+    t.date "investment_date"
+    t.decimal "sale_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "gain_cents", precision: 20, scale: 2, default: "0.0"
     t.index ["bought_pi_id", "deleted_at", "sold_pi_id", "quantity"], name: "idx_pa_bought_deleted_sold_qty"
     t.index ["bought_pi_id", "deleted_at", "sold_pi_id"], name: "idx_portfolio_attributions_bought_sold_deleted"
     t.index ["bought_pi_id"], name: "index_portfolio_attributions_on_bought_pi_id"
@@ -4074,22 +4074,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "portfolio_cashflows", force: :cascade do |t|
-    t.bigint "aggregate_portfolio_investment_id", null: false
-    t.decimal "amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.datetime "created_at", null: false
-    t.bigint "document_folder_id"
     t.bigint "entity_id", null: false
-    t.bigint "form_type_id"
     t.bigint "fund_id", null: false
+    t.bigint "portfolio_company_id", null: false
+    t.bigint "aggregate_portfolio_investment_id", null: false
+    t.date "payment_date"
+    t.decimal "amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.bigint "import_upload_id"
+    t.string "tag", limit: 100, default: ""
     t.string "instrument"
     t.bigint "investment_instrument_id", null: false
+    t.bigint "form_type_id"
     t.json "json_fields"
-    t.text "notes"
-    t.date "payment_date"
-    t.bigint "portfolio_company_id", null: false
-    t.string "tag", limit: 100, default: ""
-    t.datetime "updated_at", null: false
+    t.bigint "document_folder_id"
     t.index ["aggregate_portfolio_investment_id"], name: "index_portfolio_cashflows_on_aggregate_portfolio_investment_id"
     t.index ["document_folder_id"], name: "index_portfolio_cashflows_on_document_folder_id"
     t.index ["entity_id"], name: "index_portfolio_cashflows_on_entity_id"
@@ -4101,66 +4101,66 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "portfolio_investments", force: :cascade do |t|
-    t.bigint "aggregate_portfolio_investment_id", null: false
-    t.decimal "amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "base_amount_cents", precision: 20, scale: 2
-    t.bigint "capital_commitment_id"
-    t.bigint "capital_distribution_id"
-    t.string "category", limit: 10
-    t.boolean "compliant", default: false
-    t.date "conversion_date"
-    t.decimal "cost_of_remaining_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "cost_of_sold_cents", precision: 20, scale: 2, default: "0.0"
-    t.datetime "created_at", null: false
-    t.datetime "deleted_at"
-    t.bigint "document_folder_id"
-    t.decimal "entity_currency_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "entity_currency_fmv_cents", precision: 20, scale: 2, default: "0.0"
     t.bigint "entity_id", null: false
-    t.decimal "ex_expenses_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "ex_expenses_base_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.bigint "exchange_rate_id"
-    t.json "excused_folio_ids", null: false
-    t.decimal "fmv_cents", precision: 20, scale: 2, default: "0.0"
-    t.string "folio_id", limit: 40
-    t.bigint "form_type_id"
     t.bigint "fund_id", null: false
-    t.decimal "gain_cents", precision: 20, scale: 2, default: "0.0"
-    t.bigint "import_upload_id"
-    t.decimal "instrument_currency_cost_of_remaining_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "instrument_currency_fmv_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "instrument_currency_unrealized_gain_cents", precision: 20, scale: 2, default: "0.0"
+    t.bigint "form_type_id"
+    t.bigint "portfolio_company_id", null: false
+    t.string "portfolio_company_name", limit: 100
     t.date "investment_date"
+    t.decimal "amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "quantity", precision: 24, scale: 8, default: "0.0"
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.decimal "fmv_cents", precision: 20, scale: 2, default: "0.0"
+    t.bigint "document_folder_id"
+    t.bigint "aggregate_portfolio_investment_id", null: false
+    t.decimal "sold_quantity", precision: 24, scale: 8, default: "0.0"
+    t.decimal "net_quantity", precision: 24, scale: 8, default: "0.0"
+    t.decimal "cost_of_sold_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "gain_cents", precision: 20, scale: 2, default: "0.0"
+    t.string "folio_id", limit: 40
+    t.bigint "capital_commitment_id"
+    t.string "category", limit: 10
+    t.string "sub_category", limit: 100
+    t.string "sector", limit: 100
+    t.boolean "startup", default: true
     t.string "investment_domicile", limit: 10, default: "Domestic"
-    t.bigint "investment_instrument_id"
+    t.datetime "deleted_at"
     t.json "json_fields"
+    t.bigint "import_upload_id"
+    t.bigint "investment_instrument_id"
+    t.decimal "quantity_as_of_date", precision: 10, default: "0"
+    t.decimal "base_amount_cents", precision: 20, scale: 2
+    t.bigint "exchange_rate_id"
+    t.decimal "transfer_quantity", precision: 20, scale: 2, default: "0.0"
+    t.decimal "transfer_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "net_amount_cents", precision: 20, scale: 2
     t.decimal "net_bought_amount_cents", precision: 20, scale: 2
     t.decimal "net_bought_quantity", precision: 20, scale: 2
-    t.decimal "net_quantity", precision: 24, scale: 8, default: "0.0"
-    t.text "notes"
-    t.bigint "orignal_id"
-    t.bigint "portfolio_company_id", null: false
-    t.string "portfolio_company_name", limit: 100
-    t.boolean "proforma", default: false, null: false
-    t.decimal "quantity", precision: 24, scale: 8, default: "0.0"
-    t.decimal "quantity_as_of_date", precision: 10, default: "0"
-    t.decimal "realized_price_effect_cents", precision: 20, scale: 2, default: "0.0", null: false
-    t.bigint "ref_id", default: 0, null: false
-    t.string "sector", limit: 100
-    t.boolean "snapshot", default: false
+    t.decimal "cost_of_remaining_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "unrealized_gain_cents", precision: 20, scale: 2, default: "0.0"
+    t.boolean "compliant", default: false
+    t.decimal "ex_expenses_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "ex_expenses_base_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.date "conversion_date"
     t.date "snapshot_date"
-    t.decimal "sold_quantity", precision: 24, scale: 8, default: "0.0"
-    t.boolean "startup", default: true
-    t.string "sub_category", limit: 100
+    t.boolean "snapshot", default: false
+    t.bigint "orignal_id"
+    t.decimal "instrument_currency_fmv_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "instrument_currency_cost_of_remaining_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "instrument_currency_unrealized_gain_cents", precision: 20, scale: 2, default: "0.0"
+    t.bigint "ref_id", default: 0, null: false
+    t.bigint "capital_distribution_id"
+    t.json "excused_folio_ids", null: false
+    t.boolean "proforma", default: false, null: false
     t.decimal "tracking_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "tracking_fmv_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "transfer_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "transfer_quantity", precision: 20, scale: 2, default: "0.0"
-    t.decimal "unrealized_gain_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "unrealized_price_effect_cents", precision: 20, scale: 2, default: "0.0", null: false
-    t.datetime "updated_at", null: false
     t.bigint "valuation_id"
+    t.decimal "entity_currency_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "entity_currency_fmv_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "unrealized_price_effect_cents", precision: 20, scale: 2, default: "0.0", null: false
+    t.decimal "realized_price_effect_cents", precision: 20, scale: 2, default: "0.0", null: false
     t.index ["aggregate_portfolio_investment_id"], name: "index_portfolio_investments_on_aggregate_portfolio_investment_id"
     t.index ["capital_commitment_id"], name: "index_portfolio_investments_on_capital_commitment_id"
     t.index ["capital_distribution_id"], name: "index_portfolio_investments_on_capital_distribution_id"
@@ -4181,22 +4181,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "portfolio_report_drafts", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.date "end_date", null: false
-    t.bigint "generated_document_id"
-    t.string "kpi_period_type", null: false
-    t.json "kpi_table_data"
-    t.string "kpi_tag", null: false
-    t.integer "n_periods", default: 6, null: false
     t.bigint "portfolio_company_id", null: false
     t.bigint "portfolio_report_id", null: false
     t.bigint "portfolio_report_template_id", null: false
-    t.json "section_data"
-    t.json "selected_kpi_mapping_ids"
-    t.date "start_date", null: false
-    t.string "status", default: "configuring", null: false
-    t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
+    t.date "start_date", null: false
+    t.date "end_date", null: false
+    t.string "kpi_period_type", null: false
+    t.string "kpi_tag", null: false
+    t.integer "n_periods", default: 6, null: false
+    t.json "selected_kpi_mapping_ids"
+    t.json "kpi_table_data"
+    t.json "section_data"
+    t.string "status", default: "configuring", null: false
+    t.bigint "generated_document_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["generated_document_id"], name: "index_portfolio_report_drafts_on_generated_document_id"
     t.index ["portfolio_company_id"], name: "index_portfolio_report_drafts_on_portfolio_company_id"
     t.index ["portfolio_report_id"], name: "index_portfolio_report_drafts_on_portfolio_report_id"
@@ -4206,17 +4206,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "portfolio_report_extracts", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.json "data"
-    t.datetime "deleted_at"
-    t.date "end_date"
     t.bigint "entity_id", null: false
-    t.bigint "portfolio_company_id", null: false
     t.bigint "portfolio_report_id", null: false
     t.bigint "portfolio_report_section_id"
-    t.json "source_document_ids"
+    t.bigint "portfolio_company_id", null: false
     t.date "start_date"
+    t.date "end_date"
+    t.json "data"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "deleted_at"
+    t.json "source_document_ids"
     t.index ["deleted_at"], name: "index_portfolio_report_extracts_on_deleted_at"
     t.index ["entity_id"], name: "index_portfolio_report_extracts_on_entity_id"
     t.index ["portfolio_company_id"], name: "index_portfolio_report_extracts_on_portfolio_company_id"
@@ -4225,99 +4225,99 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "portfolio_report_sections", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.text "data"
-    t.string "icon", limit: 50
-    t.string "name", limit: 50
     t.bigint "portfolio_report_id", null: false
-    t.string "tags", limit: 100
+    t.string "name", limit: 50
+    t.text "data"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "tags", limit: 100
+    t.string "icon", limit: 50
     t.index ["portfolio_report_id"], name: "index_portfolio_report_sections_on_portfolio_report_id"
   end
 
   create_table "portfolio_report_templates", force: :cascade do |t|
-    t.integer "auto_generate_day", default: 1
-    t.boolean "auto_generate_enabled", default: false, null: false
-    t.string "auto_generate_frequency"
-    t.datetime "auto_generate_last_run_at"
-    t.json "branding"
-    t.datetime "created_at", null: false
-    t.json "kpi_layout"
+    t.bigint "portfolio_report_id", null: false
     t.string "name", null: false
     t.string "output_format", null: false
-    t.bigint "portfolio_report_id", null: false
+    t.json "branding"
     t.json "section_order"
+    t.json "kpi_layout"
     t.bigint "style_document_id"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "auto_generate_enabled", default: false, null: false
+    t.string "auto_generate_frequency"
+    t.integer "auto_generate_day", default: 1
+    t.datetime "auto_generate_last_run_at"
     t.index ["portfolio_report_id"], name: "index_portfolio_report_templates_on_portfolio_report_id"
     t.index ["style_document_id"], name: "index_portfolio_report_templates_on_style_document_id"
   end
 
   create_table "portfolio_reports", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.bigint "document_folder_id"
     t.bigint "entity_id", null: false
+    t.string "name"
+    t.string "tags", limit: 100
     t.boolean "include_kpi", default: false
     t.boolean "include_portfolio_investments", default: false
-    t.string "name"
     t.json "sections"
-    t.string "tags", limit: 100
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "document_folder_id"
     t.index ["document_folder_id"], name: "index_portfolio_reports_on_document_folder_id"
     t.index ["entity_id"], name: "index_portfolio_reports_on_entity_id"
   end
 
   create_table "portfolio_scenarios", force: :cascade do |t|
-    t.text "calculations"
-    t.datetime "created_at", null: false
     t.bigint "entity_id", null: false
     t.bigint "fund_id", null: false
     t.string "name", limit: 100
-    t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
+    t.text "calculations"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["entity_id"], name: "index_portfolio_scenarios_on_entity_id"
     t.index ["fund_id"], name: "index_portfolio_scenarios_on_fund_id"
     t.index ["user_id"], name: "index_portfolio_scenarios_on_user_id"
   end
 
   create_table "quick_link_steps", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.text "description"
-    t.text "link"
     t.string "name"
-    t.integer "position"
+    t.text "link"
+    t.text "description"
     t.bigint "quick_link_id", null: false
+    t.integer "position"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["quick_link_id"], name: "index_quick_link_steps_on_quick_link_id"
   end
 
   create_table "quick_links", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.text "description"
-    t.bigint "entity_id"
     t.string "name"
+    t.text "description"
     t.string "tags"
+    t.bigint "entity_id"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["entity_id"], name: "index_quick_links_on_entity_id"
   end
 
   create_table "ratio_formulas", force: :cascade do |t|
-    t.json "account_entry_names"
-    t.string "action"
-    t.datetime "created_at", null: false
-    t.boolean "cumulative", default: false
-    t.datetime "deleted_at"
     t.bigint "entity_id", null: false
-    t.string "entry_type", limit: 60
     t.bigint "fund_id", null: false
-    t.bigint "import_upload_id"
-    t.string "label", limit: 30
     t.string "level"
-    t.string "parent_type"
+    t.string "action"
+    t.json "account_entry_names"
     t.string "period"
-    t.string "ratio"
-    t.boolean "skip_portfolio_fmv", default: false, null: false
+    t.datetime "deleted_at"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "import_upload_id"
+    t.string "ratio"
+    t.string "label", limit: 30
+    t.string "entry_type", limit: 60
+    t.boolean "cumulative", default: false
+    t.string "parent_type"
+    t.boolean "skip_portfolio_fmv", default: false, null: false
     t.index ["deleted_at"], name: "index_ratio_formulas_on_deleted_at"
     t.index ["entity_id"], name: "index_ratio_formulas_on_entity_id"
     t.index ["fund_id"], name: "index_ratio_formulas_on_fund_id"
@@ -4325,97 +4325,97 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "reminders", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.string "owner_type", null: false
+    t.bigint "owner_id", null: false
+    t.boolean "sent", default: false
     t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.text "note"
     t.date "due_date"
     t.string "email"
-    t.bigint "entity_id", null: false
-    t.text "note"
-    t.bigint "owner_id", null: false
-    t.string "owner_type", null: false
-    t.boolean "sent", default: false
-    t.datetime "updated_at", null: false
     t.index ["entity_id"], name: "index_reminders_on_entity_id"
     t.index ["owner_type", "owner_id"], name: "index_reminders_on_owner"
   end
 
   create_table "report_insights", force: :cascade do |t|
-    t.text "ai_response"
-    t.json "charts_spec"
-    t.datetime "created_at", null: false
-    t.bigint "entity_id", null: false
-    t.text "notes"
-    t.text "prompt_used"
-    t.integer "record_count"
     t.bigint "report_id", null: false
+    t.bigint "entity_id", null: false
     t.string "status"
+    t.text "ai_response"
     t.text "status_message"
-    t.text "summary"
-    t.string "trigger_type"
+    t.text "prompt_used"
+    t.text "notes"
+    t.json "charts_spec"
+    t.integer "record_count"
     t.datetime "triggered_at"
+    t.string "trigger_type"
     t.bigint "triggered_by_id"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "summary"
     t.index ["entity_id"], name: "index_report_insights_on_entity_id"
     t.index ["report_id"], name: "index_report_insights_on_report_id"
   end
 
   create_table "report_schedules", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.boolean "enabled", default: true, null: false
-    t.string "frequency", null: false
-    t.datetime "last_run_at"
-    t.datetime "next_run_at"
-    t.text "recipients", null: false
     t.bigint "report_id", null: false
-    t.time "run_at_time", default: "2000-01-01 09:00:00", null: false
-    t.integer "run_on_day"
-    t.string "timezone", limit: 50, default: "UTC", null: false
+    t.string "frequency", null: false
+    t.text "recipients", null: false
+    t.boolean "enabled", default: true, null: false
+    t.datetime "last_run_at"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "next_run_at"
+    t.integer "run_on_day"
+    t.time "run_at_time", default: "2000-01-01 09:00:00", null: false
+    t.string "timezone", limit: 50, default: "UTC", null: false
     t.index ["next_run_at", "enabled"], name: "idx_report_schedules_polling"
     t.index ["report_id"], name: "index_report_schedules_on_report_id"
   end
 
   create_table "reports", force: :cascade do |t|
-    t.text "ai_prompt"
-    t.string "category", limit: 30
-    t.datetime "created_at", null: false
-    t.string "curr_role", limit: 10, default: "employee"
-    t.text "description"
     t.bigint "entity_id"
-    t.boolean "is_view", default: false, null: false
-    t.datetime "last_run_at"
-    t.text "metadata"
-    t.string "model"
+    t.bigint "user_id", null: false
     t.string "name"
-    t.string "notification_ccs"
-    t.string "notification_recipients"
-    t.integer "notification_repeat_interval", default: 1
-    t.string "notification_repeat_unit", default: "days"
-    t.integer "notification_start_after", default: 0
-    t.string "notification_start_unit", default: "days"
-    t.datetime "notify_last_run_at"
-    t.datetime "notify_next_run_at"
-    t.boolean "report_builder", default: false, null: false
-    t.boolean "send_notification", default: false
-    t.boolean "shared", default: false, null: false
+    t.string "category", limit: 30
+    t.text "description"
+    t.text "url"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.string "tag_list"
+    t.string "curr_role", limit: 10, default: "employee"
+    t.string "model"
+    t.text "metadata"
     t.json "template"
     t.text "template_xls_data"
-    t.datetime "updated_at", null: false
-    t.text "url"
-    t.bigint "user_id", null: false
+    t.text "ai_prompt"
+    t.boolean "send_notification", default: false
+    t.string "notification_recipients"
+    t.string "notification_ccs"
+    t.integer "notification_start_after", default: 0
+    t.string "notification_start_unit", default: "days"
+    t.integer "notification_repeat_interval", default: 1
+    t.string "notification_repeat_unit", default: "days"
+    t.datetime "notify_next_run_at"
+    t.datetime "notify_last_run_at"
+    t.boolean "report_builder", default: false, null: false
+    t.boolean "is_view", default: false, null: false
     t.string "view_target"
+    t.boolean "shared", default: false, null: false
+    t.datetime "last_run_at"
     t.index ["entity_id"], name: "index_reports_on_entity_id"
     t.index ["user_id"], name: "index_reports_on_user_id"
   end
 
   create_table "rm_mappings", force: :cascade do |t|
+    t.bigint "rm_id", null: false
+    t.bigint "investor_id", null: false
+    t.bigint "entity_id", null: false
+    t.bigint "rm_entity_id", null: false
+    t.integer "permissions", default: 0
     t.boolean "approved", default: false
     t.datetime "created_at", null: false
-    t.bigint "entity_id", null: false
-    t.bigint "investor_id", null: false
-    t.integer "permissions", default: 0
-    t.bigint "rm_entity_id", null: false
-    t.bigint "rm_id", null: false
     t.datetime "updated_at", null: false
     t.index ["entity_id"], name: "index_rm_mappings_on_entity_id"
     t.index ["investor_id"], name: "index_rm_mappings_on_investor_id"
@@ -4424,12 +4424,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "roles", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.datetime "deleted_at"
     t.string "name"
-    t.bigint "resource_id"
     t.string "resource_type"
+    t.bigint "resource_id"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "deleted_at"
     t.index ["deleted_at"], name: "index_roles_on_deleted_at"
     t.index ["name", "resource_type", "resource_id"], name: "index_roles_on_name_and_resource_type_and_resource_id"
     t.index ["name"], name: "index_roles_on_name"
@@ -4465,19 +4465,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "ruby_llm_models", force: :cascade do |t|
-    t.json "capabilities"
-    t.integer "context_window"
-    t.datetime "created_at", null: false
-    t.string "family"
-    t.date "knowledge_cutoff"
-    t.integer "max_output_tokens"
-    t.json "metadata"
-    t.json "modalities"
-    t.datetime "model_created_at"
     t.string "model_id", null: false
     t.string "name", null: false
-    t.json "pricing"
     t.string "provider", null: false
+    t.string "family"
+    t.datetime "model_created_at"
+    t.integer "context_window"
+    t.integer "max_output_tokens"
+    t.date "knowledge_cutoff"
+    t.json "modalities"
+    t.json "capabilities"
+    t.json "pricing"
+    t.json "metadata"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.datetime "unlisted_at"
     t.index ["family"], name: "index_ruby_llm_models_on_family"
@@ -4497,13 +4497,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "ruby_llm_tool_calls", force: :cascade do |t|
+    t.string "tool_call_id", null: false
+    t.string "name", null: false
     t.json "arguments"
     t.datetime "created_at", null: false
-    t.bigint "message_id", null: false
-    t.string "name", null: false
-    t.text "thought_signature"
-    t.string "tool_call_id", null: false
     t.datetime "updated_at", null: false
+    t.bigint "message_id", null: false
+    t.text "thought_signature"
     t.string "message_type", null: false
     t.string "result_type"
     t.bigint "result_id"
@@ -4551,18 +4551,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "scenario_investments", force: :cascade do |t|
-    t.datetime "created_at", null: false
     t.bigint "entity_id", null: false
     t.bigint "fund_id", null: false
-    t.bigint "investment_instrument_id"
-    t.text "notes"
-    t.bigint "portfolio_company_id", null: false
     t.bigint "portfolio_scenario_id", null: false
+    t.bigint "user_id", null: false
+    t.date "transaction_date"
+    t.bigint "portfolio_company_id", null: false
     t.decimal "price_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "quantity", precision: 20, scale: 2, default: "0.0"
-    t.date "transaction_date"
+    t.text "notes"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.bigint "user_id", null: false
+    t.bigint "investment_instrument_id"
     t.index ["entity_id"], name: "index_scenario_investments_on_entity_id"
     t.index ["fund_id"], name: "index_scenario_investments_on_fund_id"
     t.index ["investment_instrument_id"], name: "index_scenario_investments_on_investment_instrument_id"
@@ -4572,58 +4572,58 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "secondary_sales", force: :cascade do |t|
-    t.boolean "active", default: true
-    t.decimal "allocation_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "allocation_percentage", precision: 7, scale: 4, default: "0.0"
-    t.decimal "allocation_quantity", precision: 10, scale: 2, default: "0.0"
-    t.string "allocation_status", limit: 10
-    t.text "buyer_doc_list"
-    t.text "cmf_allocation_percentage"
-    t.datetime "created_at", null: false
-    t.text "custom_matching_fields"
-    t.bigint "data_room_folder_id"
-    t.datetime "deleted_at"
-    t.boolean "disable_bank_kyc", default: false
-    t.boolean "disable_pan_kyc", default: false
-    t.bigint "document_folder_id"
-    t.date "end_date"
-    t.bigint "entity_id", null: false
-    t.decimal "final_price", precision: 10, scale: 2, default: "0.0"
-    t.boolean "finalized", default: false
-    t.bigint "form_type_id"
-    t.bigint "indicative_quantity", default: 0
-    t.bigint "interest_form_type_id"
-    t.text "interest_pivot_custom_fields"
-    t.json "json_fields"
-    t.boolean "lock_allocations", default: false
-    t.boolean "manage_interests", default: false
-    t.boolean "manage_offers", default: false
-    t.decimal "max_price", precision: 20, scale: 2
-    t.decimal "min_price", precision: 20, scale: 2
     t.string "name"
-    t.boolean "no_interest_emails", default: false
-    t.boolean "no_offer_emails", default: false
-    t.string "notification_employee_ids"
-    t.date "offer_end_date"
-    t.bigint "offer_form_type_id"
-    t.text "offer_pivot_custom_fields"
-    t.integer "percent_allowed", default: 0
-    t.string "price_type", limit: 15
-    t.string "sale_type", limit: 10, default: "Regular"
-    t.bigint "secondary_sale_form_type_id"
-    t.text "seller_doc_list"
-    t.decimal "seller_transaction_fees_pct", precision: 5, scale: 2
-    t.boolean "show_holdings", default: true
-    t.string "show_quantity", limit: 10
-    t.text "spa_data"
+    t.bigint "entity_id", null: false
     t.date "start_date"
-    t.string "support_email"
+    t.date "end_date"
+    t.integer "percent_allowed", default: 0
+    t.decimal "min_price", precision: 20, scale: 2
+    t.decimal "max_price", precision: 20, scale: 2
+    t.boolean "active", default: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "total_offered_quantity", default: 0
+    t.boolean "visible_externally", default: false
+    t.datetime "deleted_at"
+    t.decimal "final_price", precision: 10, scale: 2, default: "0.0"
+    t.decimal "total_offered_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "total_interest_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.integer "total_interest_quantity", default: 0
-    t.decimal "total_offered_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.integer "total_offered_quantity", default: 0
-    t.datetime "updated_at", null: false
-    t.boolean "visible_externally", default: false
+    t.decimal "allocation_percentage", precision: 7, scale: 4, default: "0.0"
+    t.string "allocation_status", limit: 10
+    t.string "price_type", limit: 15
+    t.boolean "finalized", default: false
+    t.text "seller_doc_list"
+    t.decimal "seller_transaction_fees_pct", precision: 5, scale: 2
+    t.bigint "form_type_id"
+    t.boolean "lock_allocations", default: false
+    t.date "offer_end_date"
+    t.string "support_email"
+    t.text "buyer_doc_list"
+    t.string "sale_type", limit: 10, default: "Regular"
+    t.bigint "indicative_quantity", default: 0
+    t.string "show_quantity", limit: 10
+    t.boolean "no_offer_emails", default: false
+    t.boolean "no_interest_emails", default: false
+    t.boolean "manage_offers", default: false
+    t.boolean "manage_interests", default: false
+    t.text "spa_data"
+    t.boolean "disable_pan_kyc", default: false
+    t.boolean "disable_bank_kyc", default: false
+    t.text "custom_matching_fields"
+    t.text "cmf_allocation_percentage"
+    t.bigint "document_folder_id"
+    t.json "json_fields"
+    t.boolean "show_holdings", default: true
+    t.bigint "data_room_folder_id"
+    t.bigint "secondary_sale_form_type_id"
+    t.bigint "offer_form_type_id"
+    t.bigint "interest_form_type_id"
+    t.decimal "allocation_quantity", precision: 10, scale: 2, default: "0.0"
+    t.decimal "allocation_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.string "notification_employee_ids"
+    t.text "interest_pivot_custom_fields"
+    t.text "offer_pivot_custom_fields"
     t.index ["data_room_folder_id"], name: "index_secondary_sales_on_data_room_folder_id"
     t.index ["deleted_at"], name: "index_secondary_sales_on_deleted_at"
     t.index ["document_folder_id"], name: "index_secondary_sales_on_document_folder_id"
@@ -4635,27 +4635,27 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "shareholder_positions", force: :cascade do |t|
-    t.datetime "approved_at"
-    t.bigint "approved_by_user_id"
-    t.string "category"
-    t.datetime "created_at", null: false
-    t.datetime "deleted_at"
     t.bigint "entity_id", null: false
-    t.decimal "fully_diluted_percentage", precision: 10, scale: 4
+    t.bigint "investor_id", null: false
     t.bigint "fund_id"
     t.bigint "import_upload_id"
-    t.string "instrument"
-    t.bigint "investor_id", null: false
-    t.string "investor_label"
-    t.bigint "portfolio_company_id"
+    t.string "position_type", limit: 50, null: false
     t.decimal "position_amount", precision: 20, scale: 2
     t.date "position_date"
-    t.string "position_type", limit: 50, null: false
-    t.decimal "quantity_actual", precision: 20, scale: 2
-    t.string "round_name"
-    t.string "status", default: "approved"
-    t.string "subgroup"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "deleted_at"
+    t.bigint "portfolio_company_id"
+    t.string "investor_label"
+    t.string "category"
+    t.string "instrument"
+    t.string "subgroup"
+    t.string "round_name"
+    t.decimal "quantity_actual", precision: 20, scale: 2
+    t.string "status", default: "approved"
+    t.bigint "approved_by_user_id"
+    t.datetime "approved_at"
+    t.decimal "fully_diluted_percentage", precision: 10, scale: 4
     t.index ["category"], name: "index_shareholder_positions_on_category"
     t.index ["deleted_at"], name: "index_shareholder_positions_on_deleted_at"
     t.index ["entity_id", "investor_id", "fund_id", "position_date"], name: "idx_shareholder_positions_entity_investor_fund_as_of"
@@ -4673,34 +4673,34 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "side_letter_obligations", force: :cascade do |t|
-    t.decimal "ai_confidence", precision: 5, scale: 4
-    t.datetime "created_at", null: false
-    t.boolean "delta", default: false, null: false
-    t.text "description"
     t.bigint "entity_id", null: false
-    t.string "extracted_by", limit: 10, default: "manual", null: false
-    t.string "frequency_rrule", limit: 100
-    t.integer "legal_category", default: 2, comment: "0=condition_precedent, 1=condition_subsequent, 2=side_letter_obligation"
-    t.boolean "mfn_relevant", default: false, null: false
-    t.string "mfn_review_status", limit: 25, default: "not_reviewed", null: false
-    t.date "next_due_date"
-    t.string "obligation_type", limit: 20, null: false
-    t.string "owner_team", limit: 20
-    t.bigint "owner_user_id"
-    t.integer "reminder_days_before", default: 7, null: false
-    t.string "review_status", limit: 20, default: "pending_review", null: false
-    t.datetime "reviewed_at"
-    t.bigint "reviewed_by_id"
     t.bigint "side_letter_id"
+    t.string "obligation_type", limit: 20, null: false
+    t.string "title", null: false
+    t.text "description"
     t.string "source_clause", limit: 100
-    t.bigint "sourceable_id"
-    t.string "sourceable_type", limit: 50
+    t.bigint "owner_user_id"
+    t.string "owner_team", limit: 20
+    t.string "trigger_type", limit: 20, null: false
+    t.text "trigger_description"
+    t.string "frequency_rrule", limit: 100
+    t.date "next_due_date"
+    t.string "review_status", limit: 20, default: "pending_review", null: false
+    t.bigint "reviewed_by_id"
+    t.datetime "reviewed_at"
     t.string "status", limit: 20
     t.bigint "task_recurrence_rule_id"
-    t.string "title", null: false
-    t.text "trigger_description"
-    t.string "trigger_type", limit: 20, null: false
+    t.integer "reminder_days_before", default: 7, null: false
+    t.boolean "mfn_relevant", default: false, null: false
+    t.string "mfn_review_status", limit: 25, default: "not_reviewed", null: false
+    t.string "extracted_by", limit: 10, default: "manual", null: false
+    t.decimal "ai_confidence", precision: 5, scale: 4
+    t.boolean "delta", default: false, null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "legal_category", default: 2, comment: "0=condition_precedent, 1=condition_subsequent, 2=side_letter_obligation"
+    t.string "sourceable_type", limit: 50
+    t.bigint "sourceable_id"
     t.index ["entity_id"], name: "index_side_letter_obligations_on_entity_id"
     t.index ["next_due_date"], name: "index_side_letter_obligations_on_next_due_date"
     t.index ["owner_user_id"], name: "index_side_letter_obligations_on_owner_user_id"
@@ -4711,13 +4711,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "side_letters", force: :cascade do |t|
-    t.bigint "capital_commitment_id", null: false
-    t.datetime "created_at", null: false
-    t.bigint "document_id", null: false
     t.bigint "entity_id", null: false
+    t.bigint "capital_commitment_id", null: false
+    t.bigint "document_id", null: false
     t.date "executed_at"
     t.string "extraction_status", limit: 20, default: "pending", null: false
     t.text "notes"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["capital_commitment_id"], name: "index_side_letters_on_capital_commitment_id"
     t.index ["document_id"], name: "index_side_letters_on_document_id"
@@ -4725,41 +4725,41 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "solid_cache_entries", force: :cascade do |t|
-    t.integer "byte_size", null: false
-    t.datetime "created_at", null: false
     t.binary "key", limit: 1024, null: false
-    t.bigint "key_hash", null: false
     t.binary "value", null: false
+    t.datetime "created_at", null: false
+    t.bigint "key_hash", null: false
+    t.integer "byte_size", null: false
     t.index ["byte_size"], name: "index_solid_cache_entries_on_byte_size"
     t.index ["key_hash", "byte_size"], name: "index_solid_cache_entries_on_key_hash_and_byte_size"
     t.index ["key_hash"], name: "index_solid_cache_entries_on_key_hash", unique: true
   end
 
   create_table "stamp_papers", force: :cascade do |t|
-    t.datetime "created_at", null: false
     t.bigint "entity_id", null: false
-    t.string "note_on_page", limit: 5
     t.text "notes"
-    t.bigint "owner_id", null: false
-    t.string "owner_type", null: false
-    t.string "sign_on_page", limit: 5
     t.string "tags"
+    t.string "sign_on_page", limit: 5
+    t.string "note_on_page", limit: 5
+    t.string "owner_type", null: false
+    t.bigint "owner_id", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["entity_id"], name: "index_stamp_papers_on_entity_id"
     t.index ["owner_type", "owner_id"], name: "index_stamp_papers_on_owner"
   end
 
   create_table "stock_adjustments", force: :cascade do |t|
-    t.decimal "adjustment", precision: 12, scale: 8, default: "0.0"
-    t.string "category", limit: 10
-    t.datetime "created_at", null: false
     t.bigint "entity_id", null: false
-    t.bigint "investment_instrument_id"
-    t.text "notes"
     t.bigint "portfolio_company_id", null: false
-    t.string "sub_category", limit: 100
-    t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
+    t.decimal "adjustment", precision: 12, scale: 8, default: "0.0"
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "category", limit: 10
+    t.string "sub_category", limit: 100
+    t.bigint "investment_instrument_id"
     t.index ["entity_id"], name: "index_stock_adjustments_on_entity_id"
     t.index ["investment_instrument_id"], name: "index_stock_adjustments_on_investment_instrument_id"
     t.index ["portfolio_company_id"], name: "index_stock_adjustments_on_portfolio_company_id"
@@ -4767,19 +4767,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "stock_conversions", force: :cascade do |t|
-    t.date "conversion_date"
-    t.datetime "created_at", null: false
-    t.datetime "deleted_at"
     t.bigint "entity_id", null: false
-    t.bigint "from_instrument_id", null: false
     t.bigint "from_portfolio_investment_id", null: false
-    t.decimal "from_quantity", precision: 20, scale: 2
     t.bigint "fund_id", null: false
-    t.text "notes"
+    t.bigint "from_instrument_id", null: false
+    t.decimal "from_quantity", precision: 20, scale: 2
     t.bigint "to_instrument_id", null: false
-    t.bigint "to_portfolio_investment_id"
     t.decimal "to_quantity", precision: 20, scale: 2
+    t.bigint "to_portfolio_investment_id"
+    t.text "notes"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.date "conversion_date"
+    t.datetime "deleted_at"
     t.index ["conversion_date"], name: "index_stock_conversions_on_conversion_date"
     t.index ["deleted_at"], name: "index_stock_conversions_on_deleted_at"
     t.index ["entity_id"], name: "index_stock_conversions_on_entity_id"
@@ -4792,70 +4792,70 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "support_agent_reports", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.json "json_fields"
-    t.boolean "latest", default: false, null: false
+    t.string "owner_type", null: false
     t.bigint "owner_id", null: false
     t.string "owner_name", limit: 50
-    t.string "owner_type", null: false
-    t.string "status", limit: 10
     t.bigint "support_agent_id", null: false
     t.string "support_agent_name", limit: 50
+    t.json "json_fields"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "status", limit: 10
+    t.boolean "latest", default: false, null: false
     t.index ["owner_type", "owner_id", "latest"], name: "idx_support_agent_reports_owner_latest"
     t.index ["owner_type", "owner_id"], name: "index_support_agent_reports_on_owner"
     t.index ["support_agent_id"], name: "index_support_agent_reports_on_support_agent_id"
   end
 
   create_table "support_agents", force: :cascade do |t|
-    t.string "agent_type", limit: 30
-    t.string "category"
-    t.datetime "created_at", null: false
+    t.string "name", limit: 30
     t.string "description"
-    t.bigint "document_folder_id"
-    t.boolean "enabled", default: true, null: false
     t.bigint "entity_id", null: false
     t.bigint "form_type_id"
+    t.string "agent_type", limit: 30
     t.json "json_fields"
-    t.string "llm_model"
-    t.string "name", limit: 30
+    t.bigint "document_folder_id"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "enabled", default: true, null: false
     t.boolean "with_steps", default: false
+    t.string "llm_model"
+    t.string "category"
     t.index ["document_folder_id"], name: "index_support_agents_on_document_folder_id"
     t.index ["entity_id"], name: "index_support_agents_on_entity_id"
     t.index ["form_type_id"], name: "index_support_agents_on_form_type_id"
   end
 
   create_table "support_client_mappings", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.datetime "deleted_at"
-    t.boolean "enable_user_login", default: false
-    t.boolean "enabled", default: true
-    t.date "end_date"
-    t.bigint "entity_id", null: false
-    t.datetime "updated_at", null: false
-    t.string "user_emails"
     t.bigint "user_id", null: false
+    t.bigint "entity_id", null: false
+    t.date "end_date"
+    t.boolean "enabled", default: true
+    t.datetime "deleted_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.boolean "enable_user_login", default: false
+    t.string "user_emails"
     t.index ["deleted_at"], name: "index_support_client_mappings_on_deleted_at"
     t.index ["entity_id"], name: "index_support_client_mappings_on_entity_id"
     t.index ["user_id"], name: "index_support_client_mappings_on_user_id"
   end
 
   create_table "support_console_queries", force: :cascade do |t|
-    t.bigint "agent_chat_message_id"
-    t.bigint "agent_chat_session_id"
-    t.string "code_rev", limit: 40, null: false
-    t.datetime "created_at", null: false
-    t.integer "duration_ms"
+    t.bigint "user_id", null: false
     t.bigint "entity_id", null: false
+    t.bigint "agent_chat_session_id"
+    t.bigint "agent_chat_message_id"
     t.integer "event_seq", null: false
-    t.boolean "flagged", default: false, null: false
-    t.integer "lag_seconds"
+    t.text "sql_text", null: false
     t.string "outcome", limit: 10, null: false
     t.string "reason"
+    t.boolean "flagged", default: false, null: false
     t.integer "row_count"
-    t.text "sql_text", null: false
-    t.bigint "user_id", null: false
+    t.integer "duration_ms"
+    t.integer "lag_seconds"
+    t.string "code_rev", limit: 40, null: false
+    t.datetime "created_at", null: false
     t.index ["agent_chat_message_id", "event_seq"], name: "idx_on_agent_chat_message_id_event_seq_d01e8f181d", unique: true
     t.index ["agent_chat_session_id"], name: "index_support_console_queries_on_agent_chat_session_id"
     t.index ["entity_id", "created_at"], name: "index_support_console_queries_on_entity_id_and_created_at"
@@ -4864,24 +4864,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "sync_records", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.string "openwebui_id"
-    t.bigint "syncable_id", null: false
     t.string "syncable_type", null: false
+    t.bigint "syncable_id", null: false
+    t.string "openwebui_id"
     t.datetime "synced_at"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["openwebui_id"], name: "index_sync_records_on_openwebui_id"
     t.index ["syncable_type", "syncable_id"], name: "index_sync_records_on_syncable"
   end
 
   create_table "taggings", force: :cascade do |t|
+    t.bigint "tag_id"
+    t.string "taggable_type"
+    t.bigint "taggable_id"
+    t.string "tagger_type"
+    t.bigint "tagger_id"
     t.string "context", limit: 128
     t.datetime "created_at"
-    t.bigint "tag_id"
-    t.bigint "taggable_id"
-    t.string "taggable_type"
-    t.bigint "tagger_id"
-    t.string "tagger_type"
     t.string "tenant", limit: 128
     t.index ["context"], name: "index_taggings_on_context"
     t.index ["tag_id", "taggable_id", "taggable_type", "context", "tagger_id", "tagger_type"], name: "taggings_idx", unique: true
@@ -4898,67 +4898,67 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "tags", force: :cascade do |t|
-    t.datetime "created_at", null: false
     t.string "name"
-    t.integer "taggings_count", default: 0
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "taggings_count", default: 0
     t.index ["name"], name: "index_tags_on_name", unique: true
   end
 
   create_table "task_recurrence_rules", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.datetime "end_date"
     t.bigint "entity_id", null: false
-    t.datetime "generated_until"
-    t.integer "max_occurrences"
+    t.json "task_template_payload"
     t.string "rrule"
     t.datetime "start_date"
-    t.json "task_template_payload"
+    t.datetime "end_date"
+    t.integer "max_occurrences"
+    t.datetime "generated_until"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["entity_id"], name: "index_task_recurrence_rules_on_entity_id"
   end
 
   create_table "task_templates", force: :cascade do |t|
-    t.string "action_link"
-    t.datetime "created_at", null: false
+    t.string "for_class", limit: 40, null: false
+    t.string "tag_list", limit: 100, null: false
     t.text "details"
     t.integer "due_in_days", default: 1
-    t.bigint "entity_id"
-    t.string "for_class", limit: 40, null: false
+    t.string "action_link"
     t.string "help_link"
     t.integer "position"
-    t.string "tag_list", limit: 100, null: false
+    t.bigint "entity_id"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["entity_id"], name: "index_task_templates_on_entity_id"
     t.index ["for_class"], name: "index_task_templates_on_for_class"
   end
 
   create_table "tasks", force: :cascade do |t|
-    t.integer "assigned_to_id"
-    t.string "category", limit: 40
-    t.boolean "completed", default: false
-    t.date "completed_on"
-    t.datetime "created_at", null: false
     t.text "details"
-    t.bigint "document_folder_id"
-    t.date "due_date"
     t.bigint "entity_id", null: false
     t.bigint "for_entity_id"
-    t.boolean "for_support", default: false
-    t.bigint "form_type_id"
-    t.integer "import_upload_id"
-    t.boolean "is_exception", default: false
-    t.datetime "original_start_date"
-    t.bigint "owner_id"
-    t.string "owner_type"
-    t.text "response"
-    t.string "status", limit: 20, default: "todo", null: false
-    t.string "tags", limit: 50
-    t.bigint "task_recurrence_rule_id"
-    t.bigint "task_template_id"
-    t.bigint "touch_point_id"
-    t.datetime "updated_at", null: false
+    t.boolean "completed", default: false
     t.bigint "user_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "owner_type"
+    t.bigint "owner_id"
+    t.bigint "form_type_id"
+    t.date "due_date"
+    t.integer "assigned_to_id"
+    t.string "tags", limit: 50
+    t.text "response"
+    t.boolean "for_support", default: false
+    t.bigint "task_template_id"
+    t.string "category", limit: 40
+    t.bigint "task_recurrence_rule_id"
+    t.datetime "original_start_date"
+    t.boolean "is_exception", default: false
+    t.bigint "document_folder_id"
+    t.integer "import_upload_id"
+    t.date "completed_on"
+    t.bigint "touch_point_id"
+    t.string "status", limit: 20, default: "todo", null: false
     t.index ["document_folder_id"], name: "fk_rails_62c414fe83"
     t.index ["entity_id", "completed", "due_date"], name: "index_tasks_on_entity_completed_due_date"
     t.index ["entity_id", "completed_on"], name: "index_tasks_on_entity_completed_on"
@@ -4975,36 +4975,36 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "tear_sheet_presentations", force: :cascade do |t|
+    t.bigint "portfolio_report_extract_id", null: false
+    t.bigint "entity_id", null: false
+    t.string "title"
     t.json "blueprint"
     t.text "content_html"
     t.datetime "created_at", null: false
-    t.bigint "entity_id", null: false
-    t.bigint "portfolio_report_extract_id", null: false
-    t.string "title"
     t.datetime "updated_at", null: false
     t.index ["entity_id"], name: "index_tear_sheet_presentations_on_entity_id"
     t.index ["portfolio_report_extract_id"], name: "index_tear_sheet_presentations_on_portfolio_report_extract_id", unique: true
   end
 
   create_table "template_authoring_runs", force: :cascade do |t|
-    t.datetime "created_at", null: false
     t.bigint "entity_id", null: false
-    t.text "error"
-    t.integer "max_rounds", default: 5, null: false
-    t.bigint "primary_proof_document_id"
-    t.bigint "primary_sample_id", null: false
-    t.string "primary_sample_type", null: false
-    t.bigint "requested_by_id", null: false
-    t.bigint "result_document_id"
-    t.integer "round", default: 0, null: false
-    t.bigint "second_proof_document_id"
-    t.bigint "second_sample_id"
-    t.string "second_sample_type"
-    t.string "source_checksum", limit: 64
-    t.bigint "source_document_id", null: false
-    t.string "state", limit: 20, default: "analysing", null: false
     t.bigint "support_agent_id", null: false
+    t.bigint "requested_by_id", null: false
+    t.bigint "source_document_id", null: false
+    t.string "source_checksum", limit: 64
     t.string "template_type", limit: 40, null: false
+    t.string "primary_sample_type", null: false
+    t.bigint "primary_sample_id", null: false
+    t.string "second_sample_type"
+    t.bigint "second_sample_id"
+    t.string "state", limit: 20, default: "analysing", null: false
+    t.integer "round", default: 0, null: false
+    t.integer "max_rounds", default: 5, null: false
+    t.bigint "result_document_id"
+    t.bigint "primary_proof_document_id"
+    t.bigint "second_proof_document_id"
+    t.text "error"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["entity_id", "state"], name: "index_template_authoring_runs_on_entity_id_and_state"
     t.index ["entity_id"], name: "index_template_authoring_runs_on_entity_id"
@@ -5019,29 +5019,29 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "template_brackets", force: :cascade do |t|
-    t.decimal "ai_confidence", precision: 5, scale: 4
-    t.datetime "answered_at"
-    t.bigint "answered_by_id"
-    t.string "consistency_verdict", limit: 20
-    t.text "context_sentence"
-    t.datetime "created_at", null: false
-    t.string "exercised_by", limit: 20
-    t.string "expected_meaning", limit: 500
-    t.string "expression"
-    t.string "kind", limit: 20
-    t.json "locations", null: false
-    t.string "normalised_text", null: false
-    t.integer "occurrence_count", default: 0, null: false
-    t.text "question"
-    t.string "raw_text", limit: 500, null: false
-    t.text "reason"
-    t.json "rejected_expressions"
-    t.text "rendered_value"
-    t.string "review_status", limit: 20, default: "proposed", null: false
-    t.text "second_rendered_value"
-    t.json "shown_values"
     t.bigint "template_authoring_run_id", null: false
+    t.string "normalised_text", null: false
+    t.string "raw_text", limit: 500, null: false
+    t.json "locations", null: false
+    t.integer "occurrence_count", default: 0, null: false
+    t.text "context_sentence"
+    t.string "kind", limit: 20
+    t.string "expression"
+    t.string "expected_meaning", limit: 500
+    t.text "rendered_value"
+    t.text "second_rendered_value"
+    t.string "consistency_verdict", limit: 20
+    t.string "exercised_by", limit: 20
+    t.decimal "ai_confidence", precision: 5, scale: 4
+    t.string "review_status", limit: 20, default: "proposed", null: false
+    t.text "question"
+    t.text "reason"
+    t.json "shown_values"
+    t.bigint "answered_by_id"
+    t.datetime "answered_at"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.json "rejected_expressions"
     t.index ["answered_by_id"], name: "idx_tb_on_answered_by"
     t.index ["template_authoring_run_id", "normalised_text"], name: "idx_tb_unique_text_per_run", unique: true
     t.index ["template_authoring_run_id", "review_status"], name: "idx_tb_on_run_and_review_status"
@@ -5049,30 +5049,30 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "ticker_feeds", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.string "currency", limit: 3
+    t.string "ticker", limit: 10
+    t.decimal "price_cents", precision: 20, scale: 2
+    t.string "name", limit: 100
+    t.string "source", limit: 10
     t.date "for_date"
     t.datetime "for_time"
-    t.string "name", limit: 100
-    t.decimal "price_cents", precision: 20, scale: 2
     t.string "price_type", limit: 3
-    t.string "source", limit: 10
-    t.string "ticker", limit: 10
+    t.string "currency", limit: 3
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end
 
   create_table "tie_out_figures", force: :cascade do |t|
-    t.decimal "amount_cents", precision: 30, scale: 8, default: "0.0", null: false
-    t.date "as_of_date", null: false
-    t.bigint "capital_commitment_id"
-    t.datetime "created_at", null: false
     t.bigint "entity_id", null: false
-    t.string "entry_type", limit: 60
     t.bigint "fund_id", null: false
+    t.bigint "capital_commitment_id"
+    t.date "as_of_date", null: false
     t.string "name", limit: 125, null: false
-    t.text "notes"
-    t.datetime "updated_at", null: false
+    t.string "entry_type", limit: 60
+    t.decimal "amount_cents", precision: 30, scale: 8, default: "0.0", null: false
     t.bigint "user_id", null: false
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["capital_commitment_id"], name: "index_tie_out_figures_on_capital_commitment_id"
     t.index ["entity_id"], name: "index_tie_out_figures_on_entity_id"
     t.index ["fund_id", "as_of_date", "capital_commitment_id", "name"], name: "idx_tie_out_figures_lookup"
@@ -5081,71 +5081,71 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "user_alerts", force: :cascade do |t|
-    t.datetime "created_at", null: false
+    t.bigint "user_id", null: false
+    t.string "message"
     t.bigint "entity_id", null: false
     t.string "level", limit: 8
-    t.string "message"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.bigint "user_id", null: false
     t.index ["entity_id"], name: "index_user_alerts_on_entity_id"
     t.index ["user_id"], name: "index_user_alerts_on_user_id"
   end
 
   create_table "users", force: :cascade do |t|
-    t.boolean "accept_terms", default: false
-    t.timestamp "accepted_terms_on"
-    t.boolean "active", default: true
-    t.bigint "advisor_entity_id"
-    t.string "advisor_entity_roles", limit: 100
-    t.string "call_code", limit: 3, default: "91"
-    t.integer "consumed_timestep"
-    t.datetime "created_at", null: false
-    t.string "curr_role", limit: 20
-    t.datetime "current_sign_in_at"
-    t.string "current_sign_in_ip"
-    t.datetime "deleted_at"
-    t.string "dept", limit: 20
-    t.string "email", default: "", null: false
-    t.boolean "enable_support"
-    t.string "encrypted_password", default: "", null: false
-    t.integer "entity_id"
-    t.string "entity_type", limit: 25
-    t.integer "extended_permissions", default: 0
-    t.integer "failed_attempts", default: 0
     t.string "first_name"
-    t.bigint "form_type_id"
-    t.bigint "investor_advisor_id"
-    t.json "json_fields"
     t.string "last_name"
-    t.datetime "last_sign_in_at"
-    t.string "last_sign_in_ip"
-    t.datetime "last_synced_at"
-    t.string "last_synced_ccf_hex", limit: 64
-    t.datetime "locked_at"
-    t.text "otp_backup_codes"
-    t.text "otp_secret"
-    t.bigint "permissions", default: 0, null: false
-    t.string "phone", limit: 100
-    t.json "preferences"
-    t.string "primary_region"
-    t.integer "primary_region_id"
-    t.string "regions"
-    t.datetime "remember_created_at"
-    t.datetime "reset_password_sent_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "email", default: "", null: false
+    t.string "encrypted_password", default: "", null: false
     t.string "reset_password_token"
-    t.boolean "sale_notification", default: false
-    t.string "session_token"
-    t.integer "sign_in_count", default: 0, null: false
-    t.text "signature_data"
+    t.datetime "reset_password_sent_at"
+    t.datetime "remember_created_at"
+    t.string "phone", limit: 100
+    t.boolean "active", default: true
+    t.integer "entity_id"
+    t.datetime "deleted_at"
     t.boolean "system_created", default: false
+    t.integer "sign_in_count", default: 0, null: false
+    t.datetime "current_sign_in_at"
+    t.datetime "last_sign_in_at"
+    t.string "current_sign_in_ip"
+    t.string "last_sign_in_ip"
+    t.boolean "accept_terms", default: false
+    t.boolean "whatsapp_enabled", default: false
+    t.boolean "sale_notification", default: false
+    t.string "curr_role", limit: 20
+    t.bigint "permissions", default: 0, null: false
+    t.string "dept", limit: 20
+    t.text "signature_data"
+    t.string "entity_type", limit: 25
+    t.timestamp "accepted_terms_on"
+    t.bigint "advisor_entity_id"
+    t.bigint "investor_advisor_id"
+    t.string "call_code", limit: 3, default: "91"
+    t.integer "extended_permissions", default: 0
+    t.boolean "enable_support"
+    t.string "advisor_entity_roles", limit: 100
+    t.integer "failed_attempts", default: 0
+    t.string "unlock_token"
+    t.datetime "locked_at"
+    t.json "json_fields"
+    t.bigint "form_type_id"
+    t.string "session_token"
+    t.string "regions"
+    t.string "primary_region"
+    t.string "last_synced_ccf_hex", limit: 64
+    t.datetime "last_synced_at"
+    t.integer "primary_region_id"
     t.string "tag_list"
+    t.json "preferences"
     t.boolean "two_factor_enabled", default: false, null: false
+    t.text "otp_secret"
+    t.integer "consumed_timestep"
+    t.text "otp_backup_codes"
     t.string "two_factor_mode"
     t.datetime "two_factor_reset_at"
     t.integer "two_factor_reset_by_id"
-    t.string "unlock_token"
-    t.datetime "updated_at", null: false
-    t.boolean "whatsapp_enabled", default: false
     t.index ["deleted_at"], name: "index_users_on_deleted_at"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["entity_id"], name: "index_users_on_entity_id"
@@ -5156,23 +5156,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "users_roles", id: false, force: :cascade do |t|
-    t.bigint "role_id"
     t.bigint "user_id"
+    t.bigint "role_id"
     t.index ["role_id"], name: "index_users_roles_on_role_id"
     t.index ["user_id", "role_id"], name: "index_users_roles_on_user_id_and_role_id"
     t.index ["user_id"], name: "index_users_roles_on_user_id"
   end
 
   create_table "validation_rule_overrides", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.bigint "created_by_id"
-    t.boolean "enabled", default: true, null: false
-    t.bigint "entity_id", null: false
-    t.string "message_override"
-    t.json "param_overrides", null: false
-    t.string "severity_override"
-    t.datetime "updated_at", null: false
     t.bigint "validation_rule_id", null: false
+    t.bigint "entity_id", null: false
+    t.boolean "enabled", default: true, null: false
+    t.json "param_overrides", null: false
+    t.string "message_override"
+    t.bigint "created_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "severity_override"
     t.index ["created_by_id"], name: "index_validation_rule_overrides_on_created_by_id"
     t.index ["entity_id"], name: "index_validation_rule_overrides_on_entity_id"
     t.index ["validation_rule_id", "entity_id"], name: "idx_validation_rule_overrides_unique", unique: true
@@ -5180,18 +5180,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "validation_rules", force: :cascade do |t|
-    t.json "condition_tree", null: false
-    t.datetime "created_at", null: false
-    t.bigint "created_by_id"
-    t.text "description"
-    t.boolean "enabled", default: false, null: false
     t.bigint "entity_id"
-    t.boolean "is_default", default: false, null: false
-    t.string "message_template", null: false
+    t.string "target_model", null: false
     t.string "name", null: false
+    t.text "description"
+    t.json "condition_tree", null: false
     t.json "params", null: false
     t.string "severity", default: "warning", null: false
-    t.string "target_model", null: false
+    t.string "message_template", null: false
+    t.boolean "enabled", default: false, null: false
+    t.boolean "is_default", default: false, null: false
+    t.bigint "created_by_id"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["created_by_id"], name: "index_validation_rules_on_created_by_id"
     t.index ["entity_id"], name: "index_validation_rules_on_entity_id"
@@ -5200,29 +5200,29 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "valuations", force: :cascade do |t|
-    t.decimal "base_amount_cents", precision: 20, scale: 2
-    t.string "category", limit: 10
-    t.datetime "created_at", null: false
-    t.datetime "deleted_at"
     t.bigint "entity_id", null: false
+    t.date "valuation_date"
+    t.decimal "valuation_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "per_share_value_cents", precision: 20, scale: 8, default: "0.0"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.bigint "form_type_id"
+    t.string "owner_type"
+    t.bigint "owner_id"
+    t.text "report_data"
+    t.decimal "net_valuation_cents", precision: 20, scale: 2, default: "0.0"
+    t.datetime "deleted_at"
+    t.string "category", limit: 10
+    t.string "sub_category", limit: 100
+    t.json "json_fields"
     t.bigint "import_upload_id"
     t.bigint "investment_instrument_id"
-    t.json "json_fields"
+    t.decimal "base_amount_cents", precision: 20, scale: 2
     t.string "name"
-    t.decimal "net_valuation_cents", precision: 20, scale: 2, default: "0.0"
-    t.bigint "owner_id"
-    t.string "owner_type"
-    t.decimal "per_share_value_cents", precision: 20, scale: 8, default: "0.0"
-    t.string "price_type", limit: 10, default: "close", null: false
-    t.string "provider", limit: 40
-    t.text "report_data"
-    t.string "source", limit: 10, default: "manual", null: false
-    t.string "sub_category", limit: 100
     t.boolean "synthetic", default: false, null: false
-    t.datetime "updated_at", null: false
-    t.decimal "valuation_cents", precision: 20, scale: 2, default: "0.0"
-    t.date "valuation_date"
+    t.string "source", limit: 10, default: "manual", null: false
+    t.string "provider", limit: 40
+    t.string "price_type", limit: 10, default: "close", null: false
     t.index ["deleted_at"], name: "index_valuations_on_deleted_at"
     t.index ["entity_id"], name: "index_valuations_on_entity_id"
     t.index ["form_type_id"], name: "index_valuations_on_form_type_id"
@@ -5234,36 +5234,36 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "versions", force: :cascade do |t|
-    t.datetime "created_at"
-    t.string "event", null: false
-    t.bigint "item_id", null: false
     t.string "item_type"
-    t.text "object"
-    t.text "object_changes"
-    t.string "whodunnit"
     t.string "{:null=>false, :limit=>191}"
+    t.bigint "item_id", null: false
+    t.string "event", null: false
+    t.string "whodunnit"
+    t.text "object"
+    t.datetime "created_at"
+    t.text "object_changes"
     t.index ["item_type", "item_id"], name: "index_versions_on_item_type_and_item_id"
   end
 
   create_table "video_kycs", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.bigint "entity_id", null: false
-    t.bigint "investor_kyc_id", null: false
-    t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
+    t.bigint "investor_kyc_id", null: false
+    t.bigint "entity_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["entity_id"], name: "index_video_kycs_on_entity_id"
     t.index ["investor_kyc_id"], name: "index_video_kycs_on_investor_kyc_id"
     t.index ["user_id"], name: "index_video_kycs_on_user_id"
   end
 
   create_table "viewed_bies", force: :cascade do |t|
+    t.string "owner_type", null: false
+    t.bigint "owner_id", null: false
+    t.bigint "user_id"
+    t.bigint "entity_id", null: false
     t.integer "count", default: 0
     t.datetime "created_at", null: false
-    t.bigint "entity_id", null: false
-    t.bigint "owner_id", null: false
-    t.string "owner_type", null: false
     t.datetime "updated_at", null: false
-    t.bigint "user_id"
     t.index ["entity_id"], name: "index_viewed_bies_on_entity_id"
     t.index ["owner_type", "owner_id"], name: "index_viewed_bies_on_owner"
     t.index ["user_id"], name: "index_viewed_bies_on_user_id"
@@ -5271,13 +5271,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
 
   create_table "warehouse_items", force: :cascade do |t|
     t.bigint "agent_ingested_email_id", null: false
-    t.json "candidate_stakeholder_ids"
-    t.datetime "created_at", null: false
     t.bigint "deal_id", null: false
     t.string "parsed_intent", limit: 20
-    t.string "resolution", limit: 20
+    t.json "candidate_stakeholder_ids"
     t.datetime "resolved_at"
     t.bigint "resolved_by_id"
+    t.string "resolution", limit: 20
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["agent_ingested_email_id"], name: "index_warehouse_items_on_agent_ingested_email_id"
     t.index ["deal_id", "resolved_at"], name: "index_warehouse_items_on_deal_id_and_resolved_at"
@@ -5286,24 +5286,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "website_leads", force: :cascade do |t|
-    t.datetime "created_at", null: false
+    t.string "name", null: false
     t.string "email", null: false
     t.string "firm"
-    t.string "landing_page"
-    t.text "message"
-    t.string "name", null: false
-    t.text "raw_payload"
-    t.string "referrer"
-    t.string "request_ip", limit: 45
     t.string "role"
-    t.datetime "submitted_at", null: false
-    t.datetime "updated_at", null: false
-    t.string "user_agent", limit: 512
+    t.text "message"
+    t.string "utm_source"
+    t.string "utm_medium"
     t.string "utm_campaign"
     t.string "utm_content"
-    t.string "utm_medium"
-    t.string "utm_source"
     t.string "utm_term"
+    t.string "landing_page"
+    t.string "referrer"
+    t.datetime "submitted_at", null: false
+    t.string "request_ip", limit: 45
+    t.string "user_agent", limit: 512
+    t.text "raw_payload"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["email"], name: "index_website_leads_on_email"
     t.index ["request_ip", "submitted_at"], name: "index_website_leads_on_request_ip_and_submitted_at"
     t.index ["submitted_at"], name: "index_website_leads_on_submitted_at"
@@ -5311,42 +5311,42 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "workflow_actor_responses", force: :cascade do |t|
-    t.bigint "actor_id", null: false
-    t.boolean "archived", default: false, null: false
-    t.integer "channel", default: 0, null: false
-    t.datetime "created_at", null: false
-    t.text "note"
-    t.datetime "responded_at", null: false
-    t.string "state", null: false
-    t.integer "step_position", null: false
-    t.datetime "updated_at", null: false
     t.bigint "workflow_instance_id", null: false
+    t.bigint "actor_id", null: false
+    t.integer "step_position", null: false
+    t.string "state", null: false
+    t.text "note"
+    t.integer "channel", default: 0, null: false
+    t.datetime "responded_at", null: false
+    t.boolean "archived", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["actor_id"], name: "index_workflow_actor_responses_on_actor_id"
     t.index ["workflow_instance_id", "step_position", "actor_id"], name: "index_wf_actor_responses_on_instance_step_actor"
     t.index ["workflow_instance_id"], name: "index_workflow_actor_responses_on_workflow_instance_id"
   end
 
   create_table "workflow_assignments", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.bigint "created_by_id"
-    t.datetime "updated_at", null: false
-    t.bigint "workflow_template_id", null: false
-    t.bigint "workflowable_id", null: false
     t.string "workflowable_type", null: false
+    t.bigint "workflowable_id", null: false
+    t.bigint "workflow_template_id", null: false
+    t.bigint "created_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["workflow_template_id"], name: "index_workflow_assignments_on_workflow_template_id"
     t.index ["workflowable_type", "workflowable_id"], name: "index_workflow_assignments_on_workflowable", unique: true
   end
 
   create_table "workflow_auto_assignment_rules", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.string "workflowable_type", null: false
+    t.bigint "workflow_template_id", null: false
+    t.bigint "created_by_id"
     t.boolean "auto_launch", default: false, null: false
+    t.integer "priority", default: 0, null: false
     t.text "conditions"
     t.datetime "created_at", null: false
-    t.bigint "created_by_id"
-    t.bigint "entity_id", null: false
-    t.integer "priority", default: 0, null: false
     t.datetime "updated_at", null: false
-    t.bigint "workflow_template_id", null: false
-    t.string "workflowable_type", null: false
     t.index ["created_by_id"], name: "index_workflow_auto_assignment_rules_on_created_by_id"
     t.index ["entity_id", "workflowable_type", "priority"], name: "idx_wf_auto_rules_entity_type_priority"
     t.index ["entity_id"], name: "index_workflow_auto_assignment_rules_on_entity_id"
@@ -5354,21 +5354,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "workflow_instances", force: :cascade do |t|
-    t.datetime "completed_at", comment: "When the instance last completed; it can reopen, and the tick stops 30 days after this"
-    t.datetime "created_at", null: false
+    t.bigint "workflow_template_id", null: false
+    t.bigint "launched_by_id"
+    t.json "template_snapshot", null: false
     t.integer "current_step_position", default: 1, null: false
-    t.datetime "current_step_since", comment: "When the current step became current, stamped from the data; reminder intervals run from here"
+    t.integer "status", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "workflowable_type", null: false
+    t.bigint "workflowable_id", null: false
+    t.bigint "workflow_assignment_id"
     t.bigint "entity_id", null: false
     t.boolean "evaluated", default: false, null: false, comment: "True when the snapshot has a non-human step; only these are evaluated from data and ticked"
-    t.bigint "launched_by_id"
-    t.integer "status", default: 0, null: false
     t.json "step_results", comment: "Cache of the last evaluation per step position (status, message, link, times); never the source of truth"
-    t.json "template_snapshot", null: false
-    t.datetime "updated_at", null: false
-    t.bigint "workflow_assignment_id"
-    t.bigint "workflow_template_id", null: false
-    t.bigint "workflowable_id", null: false
-    t.string "workflowable_type", null: false
+    t.datetime "current_step_since", comment: "When the current step became current, stamped from the data; reminder intervals run from here"
+    t.datetime "completed_at", comment: "When the instance last completed; it can reopen, and the tick stops 30 days after this"
     t.index ["entity_id"], name: "index_workflow_instances_on_entity_id"
     t.index ["evaluated", "status"], name: "index_workflow_instances_on_evaluated_and_status"
     t.index ["launched_by_id"], name: "index_workflow_instances_on_launched_by_id"
@@ -5378,15 +5378,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "workflow_state_changes", force: :cascade do |t|
+    t.bigint "workflow_instance_id", null: false
+    t.integer "step_position", null: false
     t.bigint "actor_id"
+    t.string "from_state"
+    t.string "to_state", null: false
+    t.text "note"
     t.integer "channel", default: 0, null: false
     t.datetime "created_at", null: false
-    t.string "from_state"
-    t.text "note"
-    t.integer "step_position", null: false
-    t.string "to_state", null: false
     t.datetime "updated_at", null: false
-    t.bigint "workflow_instance_id", null: false
     t.index ["actor_id"], name: "index_workflow_state_changes_on_actor_id"
     t.index ["workflow_instance_id", "step_position", "to_state", "created_at"], name: "index_workflow_state_changes_on_instance_position_state_time"
     t.index ["workflow_instance_id", "step_position"], name: "index_wf_state_changes_on_instance_and_step"
@@ -5394,53 +5394,53 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   end
 
   create_table "workflow_step_actors", force: :cascade do |t|
+    t.bigint "workflow_step_id", null: false
+    t.bigint "user_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.bigint "user_id", null: false
-    t.bigint "workflow_step_id", null: false
     t.index ["user_id"], name: "index_workflow_step_actors_on_user_id"
     t.index ["workflow_step_id", "user_id"], name: "index_workflow_step_actors_unique", unique: true
     t.index ["workflow_step_id"], name: "index_workflow_step_actors_on_workflow_step_id"
   end
 
   create_table "workflow_steps", force: :cascade do |t|
-    t.string "check_key", limit: 100, comment: "Registered check deciding a system/acknowledge step, e.g. capital_call.approve_notices"
-    t.datetime "created_at", null: false
-    t.text "description"
-    t.boolean "keep_on_regress", default: false, null: false, comment: "Keep this step's sign-offs when an undoing action moves the workflow back before it"
-    t.integer "kind", default: 0, null: false, comment: "How the step completes: 0=human (votes), 1=system (data check), 2=acknowledge (one confirmation)"
+    t.bigint "workflow_template_id", null: false
+    t.integer "position", null: false
     t.string "name", null: false
-    t.boolean "notify_on_activation", default: true, null: false
+    t.text "description"
+    t.string "states", default: "Approved,Rejected,Needs Info", null: false
+    t.integer "quorum_rule", default: 0, null: false
     t.integer "on_reject_rule", default: 0, null: false
     t.integer "on_reject_target_step"
-    t.bigint "owner_user_id", comment: "User reminded when a system/acknowledge step stalls; NULL = the record's default owner (e.g. the call's creator)"
-    t.integer "position", null: false
-    t.integer "quorum_rule", default: 0, null: false
     t.integer "reminder_interval_days"
-    t.string "skip_key", limit: 100, comment: "Registered check that makes the step not applicable when true"
-    t.string "states", default: "Approved,Rejected,Needs Info", null: false
-    t.string "unlocks", comment: "CSV of button labels this step unlocks once passed or not applicable"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.bigint "workflow_template_id", null: false
+    t.boolean "notify_on_activation", default: true, null: false
+    t.integer "kind", default: 0, null: false, comment: "How the step completes: 0=human (votes), 1=system (data check), 2=acknowledge (one confirmation)"
+    t.string "check_key", limit: 100, comment: "Registered check deciding a system/acknowledge step, e.g. capital_call.approve_notices"
+    t.string "skip_key", limit: 100, comment: "Registered check that makes the step not applicable when true"
+    t.bigint "owner_user_id", comment: "User reminded when a system/acknowledge step stalls; NULL = the record's default owner (e.g. the call's creator)"
+    t.string "unlocks", comment: "CSV of button labels this step unlocks once passed or not applicable"
+    t.boolean "keep_on_regress", default: false, null: false, comment: "Keep this step's sign-offs when an undoing action moves the workflow back before it"
     t.index ["owner_user_id"], name: "index_workflow_steps_on_owner_user_id"
     t.index ["workflow_template_id", "position"], name: "index_workflow_steps_on_template_and_position", unique: true
     t.index ["workflow_template_id"], name: "index_workflow_steps_on_workflow_template_id"
   end
 
   create_table "workflow_templates", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.string "name", null: false
+    t.text "description"
+    t.integer "reminder_interval_days"
     t.boolean "attach_document_in_email", default: false, null: false
     t.datetime "created_at", null: false
-    t.text "description"
-    t.boolean "enabled", default: true, null: false, comment: "False stops the template being assigned or launched on new records; workflows already running keep going"
-    t.bigint "entity_id", null: false
-    t.string "gated_button_labels"
-    t.string "name", null: false
-    t.boolean "notify_by_email", default: true, null: false, comment: "Send workflow emails (step activation, reminders, review needed, journey complete) for this template"
-    t.boolean "notify_by_whatsapp", default: false, null: false, comment: "Also send workflow messages on WhatsApp — only ever to employees of the entity"
-    t.integer "reminder_interval_days"
-    t.string "system_key", limit: 50, comment: "Identity of a seeded template (capital_call_full, capital_call_light) so re-seeding finds it after a rename"
     t.datetime "updated_at", null: false
     t.string "workflowable_type"
+    t.string "gated_button_labels"
+    t.string "system_key", limit: 50, comment: "Identity of a seeded template (capital_call_full, capital_call_light) so re-seeding finds it after a rename"
+    t.boolean "enabled", default: true, null: false, comment: "False stops the template being assigned or launched on new records; workflows already running keep going"
+    t.boolean "notify_by_email", default: true, null: false, comment: "Send workflow emails (step activation, reminders, review needed, journey complete) for this template"
+    t.boolean "notify_by_whatsapp", default: false, null: false, comment: "Also send workflow messages on WhatsApp — only ever to employees of the entity"
     t.index ["entity_id", "system_key"], name: "index_workflow_templates_on_entity_id_and_system_key", unique: true
     t.index ["entity_id"], name: "index_workflow_templates_on_entity_id"
   end
