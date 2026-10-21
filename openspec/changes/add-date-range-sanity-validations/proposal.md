@@ -251,7 +251,7 @@ flowchart LR
 
 **What users see now.**
 - Date out of window → the form comes back with *"Investment date 2000-10-06 must be within 20 years before and 20 years after today."*
-- Missing exchange rate → the form comes back with *"Investment instrument Exchange rate GBP->USD not found"*.
+- Missing exchange rate → the form comes back with the exchange-rate message, for example *"No GBP→USD rate on or before 21/10/2025 in this fund's accepted sources (Manual). Enter a manual rate, or accept derived rates for this fund."*
 
 The same fix also prevents this crash for a refused **sell** entry.
 

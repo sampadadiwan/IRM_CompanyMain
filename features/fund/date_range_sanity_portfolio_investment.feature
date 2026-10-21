@@ -33,6 +33,18 @@ Feature: Date range sanity rule for portfolio investments
     Then the portfolio investment is rejected with "Investment date <21 years from now> must be within 20 years before and 20 years after today."
     And no aggregate portfolio investment or valuation is created
 
+  Scenario: X13: Submitting the new portfolio investment form with an out-of-range date shows the form again
+    # Regression: the rejected create re-renders the form before the amounts are computed, and the
+    # form's client-side validations used to read base_cost_cents (nil / quantity), a 500 on staging.
+    When I submit the new portfolio investment form dated "<26 years ago>"
+    Then the new portfolio investment form is shown again with "Investment date <26 years ago> must be within 20 years before and 20 years after today."
+
+  Scenario: X14: Submitting the form for an instrument with no exchange rate shows the form again
+    # The same re-render path, reached through the pre-existing currency check (no EUR→INR rate exists)
+    Given there is an investment instrument for the portfolio company "name=EuroStock;category=Unlisted;sub_category=Equity;sector=Tech;currency=EUR"
+    When I submit the new portfolio investment form dated "<1 year ago>"
+    Then the new portfolio investment form is shown again with "No EUR→INR rate on or before"
+
   Scenario: X6: A portfolio investment import row with an out-of-range date fails
     # Portfolio investment imports stop at the first failed row (fail fast), so the valid row comes first
     When I import portfolio investments

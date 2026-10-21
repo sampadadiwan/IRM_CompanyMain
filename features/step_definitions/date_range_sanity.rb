@@ -249,6 +249,32 @@ When('I import portfolio investments') do |table|
   @import_upload = import_rows_for("PortfolioInvestment", rows)
 end
 
+# Posts the new portfolio investment form through the real controller (Warden test login on an
+# integration session; no browser), with the fields the form sends, for the instrument set up last.
+# A rejected create re-renders the form, so the response is kept for the assertions rather than
+# asserted < 400 as as_user_request does.
+When('I submit the new portfolio investment form dated {string}') do |date|
+  @portfolio_company ||= @entity.investors.portfolio_companies.last
+  @pi_count = PortfolioInvestment.where(fund_id: @fund.id).count
+  params = { portfolio_investment: { entity_id: @entity.id, fund_id: @fund.id, portfolio_company_id: @portfolio_company.id,
+                                     investment_instrument_id: @investment_instrument.id,
+                                     investment_date: expand_relative_dates(date), ex_expenses_base_amount: "10.00",
+                                     quantity: "10.0", proforma: "0", notes: "" } }
+  Warden.test_mode!
+  Object.new.extend(Warden::Test::Helpers).login_as(@user, scope: :user)
+  session = ActionDispatch::Integration::Session.new(Rails.application)
+  session.post(portfolio_investments_path, params:)
+  @pi_response = session.response
+ensure
+  Warden.test_reset!
+end
+
+Then('the new portfolio investment form is shown again with {string}') do |text|
+  expect(@pi_response.status).to eq(422), "Expected the form to re-render (422), got #{@pi_response.status}"
+  expect(CGI.unescapeHTML(@pi_response.body.to_s)).to include(expand_relative_dates(text))
+  expect(PortfolioInvestment.where(fund_id: @fund.id).count).to eq(@pi_count)
+end
+
 # For failures raised by a step other than the PI's own validation (e.g. the valuation it creates)
 Then('the portfolio investment create fails with {string}') do |text|
   expect(@pi_result).not_to be_success
