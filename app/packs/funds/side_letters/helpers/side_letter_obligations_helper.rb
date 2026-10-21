@@ -63,6 +63,13 @@ module SideLetterObligationsHelper
     SideLetterObligation.legal_categories.map { |k, v| [k.humanize, v] }
   end
 
+  # @return [Array<Array(String, String)>] Options for the legal_category form select.
+  #   Uses string enum keys (e.g. "condition_precedent") because Rails enum
+  #   setters reject stringified integers like "0".
+  def legal_category_form_options
+    SideLetterObligation.legal_categories.map { |k, _v| [k.humanize, k] }
+  end
+
   private
 
   # Active + dated: show urgency relative to the nearest open task.

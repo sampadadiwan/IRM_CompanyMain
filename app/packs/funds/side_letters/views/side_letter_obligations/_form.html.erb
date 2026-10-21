@@ -26,7 +26,7 @@
           CP/CS shows portfolio investments, SLO shows side letters %>
       <%= f.label :legal_category, "Legal category", class: "form-label" %>
       <%# CP/CS obligations only show CP and CS options (SLO excluded) %>
-    <% form_category_opts = is_cp_cs ? legal_category_options.reject { |_, v| v == 2 } : legal_category_options %>
+    <% form_category_opts = is_cp_cs ? legal_category_form_options.reject { |_, v| v == "side_letter_obligation" } : legal_category_form_options %>
     <%= f.select :legal_category, form_category_opts, {},
                    class: "form-select",
                    data: { obligation_source_target: "category",
