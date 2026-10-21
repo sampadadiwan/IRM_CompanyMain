@@ -27,18 +27,30 @@
     <div class="form-group">
       <%= form.label :email %>
       <%= form.text_field :email, class: "form-control", autocomplete: "nope", disabled:  %>
+      <% if disabled %>
+        <small class="form-text text-muted">Email can't be changed after the user is created.</small>
+      <% end %>
     </div>
 
+    <%# An existing number changes only via "Change phone" on the user page (code emailed to the
+        user — Users::PhoneChangesController); a first number is added here freely. %>
+    <% phone_locked = user.persisted? && user.phone_in_database.present? %>
     <div class="row">
       <div class="form-group col-5">
         <%= form.label "Country Code" %>
-        <%= form.number_field :call_code, class: "form-control", placeholder: "e.g. 1, 44, 91" %>
+        <%= form.number_field :call_code, class: "form-control", placeholder: "e.g. 1, 44, 91", disabled: phone_locked %>
         <small class="form-text text-muted">Numeric dialing code, no "+" (e.g. 1 for US, 91 for India).</small>
       </div>
       <div class="form-group col-7">
         <%= form.label :phone, "Mobile Phone" %>
-        <%= form.number_field :phone, class: "form-control"  %>
-        <small class="form-text text-muted">Mobile number without the country code. Used for WhatsApp and SMS sign-in codes.</small>
+        <%= form.number_field :phone, class: "form-control", disabled: phone_locked %>
+        <small class="form-text text-muted">
+          <% if phone_locked %>
+            To change this number use <strong>Change phone</strong> on the <%= link_to "user page", user_path(user) %> — a code is emailed to <%= user.email %> to confirm it.
+          <% else %>
+            Mobile number without the country code. Used for WhatsApp and SMS sign-in codes.
+          <% end %>
+        </small>
       </div>
     </div>
 

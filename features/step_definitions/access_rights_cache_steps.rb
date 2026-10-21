@@ -30,7 +30,9 @@ end
 
 Given('there is a user {string} for the entity {string}') do |user_kv, entity_kv|
   entity = Entity.find_by!(name: entity_kv.split('=').last)
-  user   = FactoryBot.create(:user, entity: entity, first_name: 'Test', last_name: 'User')
+  # build, not create: key_values may set email, which is fixed once the user is saved
+  # (User#email_cannot_change).
+  user   = FactoryBot.build(:user, entity: entity, first_name: 'Test', last_name: 'User')
   key_values(user, user_kv)
   user.save!
   @target_user = user

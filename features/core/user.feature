@@ -27,15 +27,15 @@ Scenario Outline: Create new user
 #   Then a whatsapp notification is sent indicating account update
 
 @rack_test
-Scenario: Updating a user's call_code, phone or email syncs to their investor access
+Scenario: Updating a user's call_code or phone syncs to their investor access
   Given Im logged in as a user "" for an entity "entity_type=Company"
   And the user has role "company_admin"
   And there is an existing investor "investor_name=SyncCo;primary_email=sync@b.c" with "1" users
   # 7400123456 rather than the Ofcom drama range 7700900123: that range is reserved as
   # deliberately unassignable, so libphonenumber rejects it and User#phone_must_be_dialable
   # now refuses the update. The scenario is about the investor_access sync, not the number.
-  When I update the investor user's call_code to "44", phone to "7400123456" and email to "synced@example.com"
-  Then the investor access for the investor user should have phone "7400123456" and email "synced@example.com"
+  When I update the investor user's call_code to "44" and phone to "7400123456"
+  Then the investor access for the investor user should have phone "7400123456"
 
 Scenario: Updating roles as company admin leaves other roles unaffected
   Given Im logged in as a user "" for an entity "entity_type=Company;name=Role Update Co"

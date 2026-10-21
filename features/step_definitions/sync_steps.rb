@@ -1,6 +1,8 @@
 Given(/^a user "([^"]+)" exists in region "([^"]+)" with regions "([^"]+)"$/) do |email, primary, regions|
   @entity = FactoryBot.create(:entity, first_name: "Acme", primary_region: primary, entity_type: "Investment Fund")
   @user = FactoryBot.create(:user, email:, primary_region: primary, regions: regions, entity: @entity)
+  # Fixture setup: skip the emailed-code check on changing an existing number.
+  @user.skip_phone_change_verification!
   @user.update!(first_name: "Jane", phone: "4155551212")
 
   puts @user.to_json
@@ -122,6 +124,8 @@ end
 Given(/^a baseline user "([^"]+)" with primary region "([^"]+)" and regions "([^"]+)"$/) do |email, primary, regions|
   @entity = FactoryBot.create(:entity, first_name: "Acme", primary_region: primary, entity_type: "Investment Fund")
   @user = FactoryBot.create(:user, email:, primary_region: primary, regions: regions, entity: @entity)
+  # Fixture setup: skip the emailed-code check on changing an existing number.
+  @user.skip_phone_change_verification!
   @user.update!(first_name: "Jane", phone: "4155551212")
 end
 

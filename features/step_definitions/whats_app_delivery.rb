@@ -8,6 +8,8 @@
 #      through Noticed's normal dispatch, so this is invoked directly rather than through a job.
 
 Given('the investor user has WhatsApp enabled') do
+  # Fixture setup: skip the emailed-code check on changing an existing number.
+  @investor_user.skip_phone_change_verification!
   @investor_user.update!(whatsapp_enabled: true, phone: "1234567890", call_code: "91")
   @investor_access.update!(whatsapp_enabled: true)
   @entity.permissions.set(:enable_whatsapp)

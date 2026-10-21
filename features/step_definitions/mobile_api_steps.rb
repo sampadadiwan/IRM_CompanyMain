@@ -114,9 +114,13 @@ Given("{string} has authenticator two-factor") do |email|
 end
 
 Given("{string} has sms two-factor") do |email|
-  mobile_user(email).update!(two_factor_enabled: true, otp_secret: User.generate_otp_secret,
-                             two_factor_mode: "sms", phone: "4155550134", call_code: "1",
-                             skip_phone_validation: true)
+  user = mobile_user(email)
+  # Fixture setup, not a user edit: skip the emailed-code check that guards changing an
+  # existing number (User#existing_phone_change_must_be_verified).
+  user.skip_phone_change_verification!
+  user.update!(two_factor_enabled: true, otp_secret: User.generate_otp_secret,
+               two_factor_mode: "sms", phone: "4155550134", call_code: "1",
+               skip_phone_validation: true)
 end
 
 Given("{string} has two-factor switched on but no method set up") do |email|

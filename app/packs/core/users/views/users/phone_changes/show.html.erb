@@ -1,0 +1,25 @@
+<%# Step 2 of a phone change: enter the code PhoneChangeStart emailed to the user. %>
+<%= render FormCard.new(title: "Confirm Mobile Number Change") do %>
+  <%= form_with url: user_phone_change_path(@user), method: :patch, data: { turbo: false } do |f| %>
+    <p>
+      A 6-digit code was emailed to <strong><%= @user.email %></strong>.
+      Enter it to change <%= @user == current_user ? "your" : "#{@user.full_name}'s" %> mobile number
+      from <strong><%= @user.masked_phone_with_call_code %></strong> to <strong><%= @request.masked_new_phone %></strong>.
+    </p>
+    <p class="text-muted">
+      The code expires at <%= l(@request.expires_at, format: :abbr_date_time) %>.
+      <%= @request.attempts_left %> <%= "attempt".pluralize(@request.attempts_left) %> left.
+    </p>
+
+    <div class="form-group col-md-4">
+      <%= f.label :code, "Code from the email" %>
+      <%= f.text_field :code, class: "form-control", required: true, autocomplete: "one-time-code",
+            inputmode: "numeric", maxlength: 7, id: "phone_change_code" %>
+    </div>
+
+    <div class="mt-3">
+      <%= link_to t_common(:cancel), user_path(@user), class: "btn btn-outline-danger" %>
+      <%= f.submit "Confirm Change", class: "btn btn-outline-success", id: "phone_change_confirm" %>
+    </div>
+  <% end %>
+<% end %>

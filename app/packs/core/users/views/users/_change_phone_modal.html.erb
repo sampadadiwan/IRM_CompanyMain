@@ -1,0 +1,89 @@
+<%#
+  "Change phone" — same layout as users/_reset_two_factor_modal: an "Immediate Actions"
+  callout, tinted cards spelling out what happens, then the inputs, then Cancel / Send code.
+
+  Locals:
+    user        – the User whose existing number is being changed
+    self_change – true when current_user IS that user
+
+  Posts to Users::PhoneChangesController#create (PhoneChangeStart), which emails the code.
+%>
+<div class="modal fade" id="changePhoneModal" tabindex="-1" aria-labelledby="changePhoneModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="changePhoneModalLabel">
+          <i class="ti ti-device-mobile me-1"></i>
+          Change Mobile Number<%= " for #{user.full_name}" unless self_change %>
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <%= form_with url: user_phone_change_path(user), method: :post, data: { turbo: false } do |f| %>
+        <div class="modal-body">
+          <div class="action-summary__intro">
+            <div class="fw-bold text-dark">Immediate Actions</div>
+            <div class="text-muted">The following will happen when you click <strong>Send Code</strong>:</div>
+          </div>
+
+          <div class="action-summary__list" id="change_phone_effects">
+            <div class="action-summary__item action-summary__item--purple">
+              <span class="action-summary__icon"><i class="ti ti-mail"></i></span>
+              <div>
+                <div class="action-summary__title">A 6-digit code is emailed to <%= user.email %></div>
+                <div class="action-summary__desc">
+                  <% if self_change %>
+                    Enter it on the next screen within <%= PhoneChangeRequest::CODE_TTL.in_minutes.to_i %> minutes.
+                  <% else %>
+                    Only <%= user.full_name %> receives it — ask them to read it to you, then enter it on the next screen within <%= PhoneChangeRequest::CODE_TTL.in_minutes.to_i %> minutes.
+                  <% end %>
+                </div>
+              </div>
+            </div>
+
+            <div class="action-summary__item action-summary__item--blue">
+              <span class="action-summary__icon"><i class="ti ti-phone"></i></span>
+              <div>
+                <div class="action-summary__title">The number changes only once the code is entered</div>
+                <div class="action-summary__desc">
+                  Until then <%= user.masked_phone_with_call_code %> stays in place<%= ", and keeps receiving sign-in codes" if user.whatsapp_mode? || user.two_factor_mode == "sms" %>.
+                </div>
+              </div>
+            </div>
+
+            <div class="action-summary__item action-summary__item--green">
+              <span class="action-summary__icon"><i class="ti ti-shield-check"></i></span>
+              <div>
+                <div class="action-summary__title">Confirmation email after the change</div>
+                <div class="action-summary__desc">
+                  <%= user.email %> is told the number changed and by whom. The change is recorded in the audit log.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <hr class="my-3">
+
+          <div class="row">
+            <div class="col-5 mb-3">
+              <%= f.label :call_code, "Country Code", class: "form-label fw-semibold" %>
+              <%= f.number_field :call_code, value: user.call_code, class: "form-control", required: true,
+                    id: "change_phone_call_code", placeholder: "e.g. 1, 44, 91" %>
+            </div>
+            <div class="col-7 mb-3">
+              <%= f.label :phone, "New Mobile Number", class: "form-label fw-semibold" %>
+              <%= f.number_field :phone, class: "form-control", required: true, id: "change_phone_phone" %>
+              <small class="text-muted">Without the country code.</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal"><%= t_common(:cancel) %></button>
+          <%= f.submit "Send Code", class: "btn btn-outline-success", id: "change_phone_submit",
+                data: { disable_with: "Sending..." } %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

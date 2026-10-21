@@ -460,16 +460,24 @@ class UsersController < ApplicationController
   # entity and the form only carries a hidden copy, so accepting it let a company admin move any user,
   # themselves included, into another tenant while keeping their global company_admin role.
   # Worked example S3 — openspec/changes/fix-tenant-isolation-batch1/report.md#verification
+  #
+  # email is only permitted on `new`, which prefills the form after a failed create. It is
+  # fixed once the user exists (User#email_cannot_change); dropping it here keeps an update
+  # from even attempting the change. phone / call_code are dropped likewise once a number exists.
   def user_params
+    scalar_fields = %i[first_name last_name phone whatsapp_enabled two_factor_enabled signature call_code
+                       dept sale_notification enable_support tag_list]
+    scalar_fields << :email if action_name == "new"
+    # An existing number only changes through Users::PhoneChangesController (emailed code);
+    # the model refuses it anyway (User#existing_phone_change_must_be_verified). A user with
+    # no number yet can still have one added here.
+    scalar_fields -= %i[phone call_code] if action_name == "update" && @user.phone_in_database.present?
+
     permitted = if current_user.has_cached_role?(:company_admin)
-                  params.require(:user).permit(:first_name, :last_name, :email,
-                                               :phone, :whatsapp_enabled, :two_factor_enabled, :signature, :call_code,
-                                               :dept, :sale_notification, :enable_support, :tag_list,
+                  params.require(:user).permit(*scalar_fields,
                                                role_name: [], permissions: [], extended_permissions: [], properties: {}, preferences: {})
                 else
-                  params.require(:user).permit(:first_name, :last_name, :email,
-                                               :phone, :whatsapp_enabled, :two_factor_enabled, :signature, :call_code,
-                                               :dept, :sale_notification, :enable_support, :tag_list, properties: {})
+                  params.require(:user).permit(*scalar_fields, properties: {})
                 end
 
     permitted[:preferences] = sanitized_preferences if current_user.has_cached_role?(:company_admin) && params.dig(:user, :preferences, :dashboard).present?

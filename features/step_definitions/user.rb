@@ -59,6 +59,7 @@
 
   Given('update my password having phone {string}') do |string|
     @user.update_columns(whatsapp_enabled: true)
+    @user.skip_phone_change_verification! # fixture setup
     @user.phone = string
     @user.call_code = "91"
     @user.password = "new_test_password"
@@ -66,14 +67,16 @@
   end
 
   # @investor_user / @investor_access are set by "there is an existing investor ... with ... users"
-  When('I update the investor user\'s call_code to {string}, phone to {string} and email to {string}') do |call_code, phone, email|
-    @investor_user.update!(call_code:, phone:, email:)
+  # Email is fixed once the user exists (User#email_cannot_change), and an existing number
+  # changes only through the emailed-code path, so this applies it the way
+  # PhoneChangeConfirm does.
+  When('I update the investor user\'s call_code to {string} and phone to {string}') do |call_code, phone|
+    @investor_user.apply_verified_phone_change!(call_code:, phone:, audit_comment: "test")
   end
 
-  Then('the investor access for the investor user should have phone {string} and email {string}') do |phone, email|
+  Then('the investor access for the investor user should have phone {string}') do |phone|
     @investor_access.reload
     expect(@investor_access.phone).to eq(phone)
-    expect(@investor_access.email).to eq(email)
   end
 
   # Submits the roles form for another user directly against the update endpoint (rather than
@@ -153,9 +156,14 @@
     expect(@phone_user.sms_available?).to be(false)
   end
 
+  # Through the emailed-code path (as PhoneChangeConfirm applies it), the one way an existing
+  # number changes — so this is where phone_must_be_dialable still guards an edit.
   When("I change that user's phone to {string}") do |phone|
-    @phone_user.phone = phone
-    @phone_save_result = @phone_user.save
+    @phone_save_result = begin
+      @phone_user.apply_verified_phone_change!(call_code: @phone_user.call_code, phone:, audit_comment: "test")
+    rescue ActiveRecord::RecordInvalid
+      false
+    end
   end
 
   When("I change that user's last name to {string}") do |last_name|

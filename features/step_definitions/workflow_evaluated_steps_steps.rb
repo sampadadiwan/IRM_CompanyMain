@@ -312,12 +312,15 @@ end
 Given("WhatsApp is enabled for the entity and the user") do
   @entity.permissions.set(:enable_whatsapp)
   @entity.save!
+  # Fixture setup: skip the emailed-code check on changing an existing number.
+  @user.skip_phone_change_verification!
   @user.update!(whatsapp_enabled: true, phone: "1234567890", call_code: "91")
 end
 
 # Someone outside the entity, with WhatsApp fully on, so only the employee check can stop them
 Given("a WhatsApp-enabled user of another organisation is sent the {string} workflow message for {word} {string}") do |email_method, type, obj_name|
   @outsider = FactoryBot.create(:user, entity: FactoryBot.create(:entity))
+  @outsider.skip_phone_change_verification! # fixture setup, see above
   @outsider.update!(whatsapp_enabled: true, phone: "1234567891", call_code: "91")
   instance = journey_instance(find_workflowable!(type, obj_name))
   WorkflowNotifier.with(record: instance, entity_id: instance.entity_id, email_method:,

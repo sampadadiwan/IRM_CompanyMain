@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_20_181806) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -4034,6 +4034,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_20_181806) do
     t.index ["user_id"], name: "index_permissions_on_user_id"
   end
 
+  create_table "phone_change_requests", force: :cascade do |t|
+    t.integer "attempts", default: 0, null: false
+    t.datetime "cancelled_at"
+    t.string "code_digest", limit: 64
+    t.datetime "created_at", null: false
+    t.datetime "expires_at", null: false
+    t.string "new_call_code", limit: 3, null: false
+    t.string "new_phone", limit: 100, null: false
+    t.bigint "requested_by_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.datetime "verified_at"
+    t.index ["requested_by_id"], name: "index_phone_change_requests_on_requested_by_id"
+    t.index ["user_id", "created_at"], name: "index_phone_change_requests_on_user_id_and_created_at"
+    t.index ["user_id"], name: "index_phone_change_requests_on_user_id"
+  end
+
   create_table "portfolio_attributions", force: :cascade do |t|
     t.bigint "bought_pi_id", null: false
     t.decimal "cost_of_sold_cents", precision: 20, scale: 2, default: "0.0"
@@ -5863,6 +5880,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_20_181806) do
   add_foreign_key "permissions", "entities"
   add_foreign_key "permissions", "users"
   add_foreign_key "permissions", "users", column: "granted_by_id"
+  add_foreign_key "phone_change_requests", "users"
+  add_foreign_key "phone_change_requests", "users", column: "requested_by_id"
   add_foreign_key "portfolio_attributions", "entities"
   add_foreign_key "portfolio_attributions", "funds"
   add_foreign_key "portfolio_attributions", "portfolio_investments", column: "bought_pi_id"

@@ -50,10 +50,16 @@ Given('the investor notice {string} has a line item titled {string} linking to t
   )
 end
 
+# Fixture setup, not a user edit: skip the emailed-code check that guards changing an
+# existing number (User#existing_phone_change_must_be_verified).
 Given('investor {string} has no phone number') do |investor_name|
-  @carousel_investors[investor_name][:user].update!(phone: nil)
+  user = @carousel_investors[investor_name][:user]
+  user.skip_phone_change_verification!
+  user.update!(phone: nil)
 end
 
 Given('investor {string} has phone number {string}') do |investor_name, phone|
-  @carousel_investors[investor_name][:user].update!(phone: phone)
+  user = @carousel_investors[investor_name][:user]
+  user.skip_phone_change_verification!
+  user.update!(phone: phone)
 end

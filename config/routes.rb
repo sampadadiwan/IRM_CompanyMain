@@ -86,6 +86,9 @@ Rails.application.routes.draw do
     get 'chat', on: :collection
     post 'chat', on: :collection
     get 'cross_site_link', on: :member
+    # Change an existing mobile number, confirmed by a code emailed to the user:
+    # create sends the code, show asks for it, update checks it (Users::PhoneChangesController).
+    resource :phone_change, only: %i[show create update], module: :users
 
     get 'cross_site_login', on: :collection
     get 'redirect_to_subdomain', on: :collection

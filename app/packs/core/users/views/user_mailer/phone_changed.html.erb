@@ -1,0 +1,22 @@
+<%# Sent by PhoneChangeConfirm once the number has changed. %>
+<h3>Dear <%= @user.full_name %></h3>
+
+<p>
+  Your mobile number was changed from <strong><%= @previous_masked_phone %></strong> to
+  <strong><%= @user.masked_phone_with_call_code %></strong>
+  <% if @self_change %>
+    by you
+  <% else %>
+    by <%= @actor&.full_name || "your administrator" %>
+  <% end %>
+  on <%= l(@user.updated_at) %>, confirmed with the code emailed to you.
+</p>
+
+<% if @user.whatsapp_mode? || @user.two_factor_mode == "sms" %>
+  <p>Sign-in verification codes now go to the new number.</p>
+<% end %>
+
+<p>
+  <strong>If you did not make or agree to this change</strong>, contact your administrator
+  straight away.
+</p>

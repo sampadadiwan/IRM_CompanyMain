@@ -68,4 +68,34 @@ class UserMailer < ApplicationMailer
 
     mail(from: @from, to: @to, subject: "Your two-factor authentication method was reset")
   end
+
+  # The code that confirms a change to the user's existing mobile number. Sent only by
+  # SendPhoneChangeCodeJob, with deliver_now inside the job, so the plain code never sits in a
+  # job queue. The code is in the body only, never the subject (subjects show in lock-screen
+  # previews and mail logs).
+  #
+  # @param entity_id [Integer] / user_id [Integer] — ApplicationMailer#setup_defaults keys on these
+  # @param actor_id [Integer] who started the change (same as user_id for self-service)
+  # @param code [String] the 6-digit code
+  # @param request_id [Integer] the PhoneChangeRequest, for the new number and expiry
+  def phone_change_code
+    @actor = User.find_by(id: params[:actor_id])
+    @self_change = @actor.present? && @actor.id == @user.id
+    @code = params[:code]
+    @request = PhoneChangeRequest.find(params[:request_id])
+
+    mail(from: @from, to: @to, subject: "Confirm your mobile number change")
+  end
+
+  # Security notification after the number changed (PhoneChangeConfirm). Confirms a change
+  # the user made, or warns them about one they never asked for.
+  #
+  # @param previous_masked_phone [String] the old number, masked
+  def phone_changed
+    @actor = User.find_by(id: params[:actor_id])
+    @self_change = @actor.present? && @actor.id == @user.id
+    @previous_masked_phone = params[:previous_masked_phone]
+
+    mail(from: @from, to: @to, subject: "Your mobile number was changed")
+  end
 end

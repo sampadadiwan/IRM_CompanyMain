@@ -198,6 +198,8 @@ class User < ApplicationRecord
   belongs_to :advisor_entity, class_name: "Entity", optional: true
   has_many :investor_advisors, dependent: :destroy
   has_many :investor_advisor_investors, class_name: "Investor", through: :investor_advisors, source: :investors
+  # Emailed-code confirmations of a change to an existing mobile number (PhoneChangeStart).
+  has_many :phone_change_requests, dependent: :destroy
 
   validates :first_name, :last_name, presence: true
 
@@ -239,6 +241,27 @@ class User < ApplicationRecord
              !skip_phone_validation && phone.present? && call_code.present? &&
                (phone_changed? || call_code_changed?)
            }
+
+  # The email is the user's identity — login, magic links, cross-region sync
+  # (UsersSyncController finds by email) and InvestorAccess linkage all key on it — so it
+  # is fixed once the user exists. A validation, not attr_readonly: attr_readonly drops the
+  # change silently and reports success, whereas this refuses the save with an error the
+  # caller sees. Covers every save path (users form, JSON API, Devise account edit, admin
+  # dashboard); update_all / update_column bypass it by design, which is the only way
+  # left to correct a mistyped address from the console.
+  validate :email_cannot_change, on: :update
+
+  # An EXISTING mobile number (or its country code) changes only through PhoneChangeConfirm,
+  # after the user types the code emailed to them — so a hijacked session or a crafted PATCH
+  # cannot re-point the number that receives SMS / WhatsApp sign-in codes. Adding a first
+  # number to a user who has none needs no code. Removing one does: clearing then re-adding
+  # would otherwise skip the check in two saves.
+  #
+  # The two ways past it are methods, not attributes, so no params hash can reach them:
+  # #apply_verified_phone_change! (PhoneChangeConfirm) and #skip_phone_change_verification!
+  # (UsersSyncController — the origin region already ran this check for its own users).
+  validate :existing_phone_change_must_be_verified, on: :update,
+                                                    unless: -> { @phone_change_verified || @skip_phone_change_verification }
 
   validates :curr_role, :dept, length: { maximum: 20 }
   validates :entity_type, length: { maximum: 25 }
@@ -305,6 +328,55 @@ class User < ApplicationRecord
 
   def phone_with_call_code
     "#{call_code}#{phone}"
+  end
+
+  def email_cannot_change
+    # Nothing to refuse unless the address is actually being changed.
+    return unless email_changed?
+
+    # Devise downcases and strips email before every validation (case_insensitive_keys /
+    # strip_whitespace_keys). A legacy row stored as " Jo@X.com" therefore shows as changed
+    # on any save; that is normalisation of the same address, not a new one, so let it
+    # through rather than block every unrelated edit on that user.
+    return if email_was.to_s.strip.casecmp?(email.to_s.strip)
+
+    errors.add(:email, "cannot be changed once the user is created")
+  end
+
+  # Saves a phone change the user confirmed with their emailed code. Only PhoneChangeConfirm
+  # calls this; it is the one in-app writer the validation above lets through.
+  #
+  # @param call_code [String]
+  # @param phone [String]
+  # @param audit_comment [String] recorded alongside the phone change in the audit log
+  def apply_verified_phone_change!(call_code:, phone:, audit_comment:)
+    @phone_change_verified = true
+    update!(call_code:, phone:, audit_comment:)
+  ensure
+    # Scoped to this one save, so a later save on the same object is checked again.
+    @phone_change_verified = false
+  end
+
+  # Machine writers that mirror an authoritative copy of the user (cross-region sync) are
+  # not a person at a form and cannot type an emailed code.
+  def skip_phone_change_verification!
+    @skip_phone_change_verification = true
+  end
+
+  # Whether this save changes a number the user already had — the case that needs a code.
+  def existing_phone_change_must_be_verified
+    # Nothing to check unless the number or its country code is being touched.
+    return unless phone_changed? || call_code_changed?
+    # Adding a first number is free.
+    return if phone_in_database.blank?
+
+    # Re-saving the same number in a different format (legacy rows stored with spaces or
+    # dashes, now stripped by `normalizes :phone`) is not a change of number.
+    same_number = phone_in_database.to_s.delete("^0-9") == phone.to_s &&
+                  call_code_in_database.to_s.strip == call_code.to_s.strip
+    return if same_number
+
+    errors.add(:phone, "can only be changed by confirming the code emailed to the user")
   end
 
   # Dialable, not textable — landlines pass deliberately.

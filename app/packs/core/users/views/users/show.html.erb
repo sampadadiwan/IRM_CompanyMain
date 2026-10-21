@@ -42,6 +42,14 @@
           </td>
           <td>
             <%= "(#{@user.call_code})#{@user.phone}"%>
+            <%# Trigger only; the modal is rendered after the table (Bootstrap modal rule). %>
+            <% if policy(@user).change_phone? %>
+              <button type="button" class="btn btn-sm btn-outline-primary ms-2"
+                      id="change_phone_button"
+                      data-bs-toggle="modal" data-bs-target="#changePhoneModal">
+                <i class="ti ti-device-mobile"></i> Change phone
+              </button>
+            <% end %>
           </td>
         </tr>
 
@@ -257,6 +265,9 @@
 
   <%# Reset-2FA confirmation popup (trigger button is in the Two-Factor row above). Rendered
       outside the card so the modal is not trapped in the card's stacking context. %>
+  <% if policy(@user).change_phone? %>
+    <%= render "users/change_phone_modal", user: @user, self_change: (@user == current_user) %>
+  <% end %>
   <% if policy(@user).reset_two_factor? %>
     <%= render "users/reset_two_factor_modal", user: @user, self_reset: (@user == current_user) %>
   <% end %>

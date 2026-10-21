@@ -154,6 +154,9 @@ class UsersSyncController < ActionController::API
     # answers 422, never stamps last_synced_ccf_hex, and the sender retries that payload
     # forever. See User#skip_phone_validation.
     user.skip_phone_validation = true
+    # Same reasoning for a changed number: the origin region already required the emailed
+    # code before its own user's phone changed. See User#existing_phone_change_must_be_verified.
+    user.skip_phone_change_verification!
     # Permissions need to set in a special way
     user.permissions = attrs["permissions"].map!(&:to_sym) if attrs["permissions"].is_a?(Array)
     user[:permissions] = attrs["permissions"] if attrs["permissions"].is_a?(Integer) # allow DB-level setting

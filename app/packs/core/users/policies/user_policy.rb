@@ -88,6 +88,13 @@ class UserPolicy < ApplicationPolicy
     user.id == record.id || (admin_of_records_company? && user.has_cached_role?(:company_admin)) || support?
   end
 
+  # Changing an EXISTING mobile number (PhoneChangeStart / PhoneChangeConfirm). Whoever may
+  # edit the user may start it; the emailed code to the user is what actually gates it.
+  # A user with no number adds one from the edit form instead.
+  def change_phone?
+    record.phone.present? && update?
+  end
+
   # Who may clear a user's two-factor METHOD back to "none" (TwoFactorReset). The user
   # themselves (they re-prove their password inside the operation), a company admin of the
   # same entity, or support. Only meaningful once a method has actually been chosen — before

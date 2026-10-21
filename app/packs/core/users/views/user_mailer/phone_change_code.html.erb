@@ -1,0 +1,27 @@
+<%# Sent by PhoneChangeStart. Wording switches on whether the user started this themselves. %>
+<h3>Dear <%= @user.full_name %></h3>
+
+<% if @self_change %>
+  <p>You asked to change your mobile number to <strong><%= @request.masked_new_phone %></strong>.</p>
+<% else %>
+  <p>
+    <%= @actor&.full_name || "Your administrator" %> asked to change your mobile number to
+    <strong><%= @request.masked_new_phone %></strong>.
+  </p>
+<% end %>
+
+<p>Your confirmation code is:</p>
+<p style="font-size:24px; font-weight:bold; letter-spacing:4px;"><%= @code %></p>
+
+<p>
+  It expires at <%= l(@request.expires_at) %>.
+  <% unless @self_change %>
+    If you agree to this change, give the code to <%= @actor&.full_name || "your administrator" %>.
+  <% end %>
+</p>
+
+<p>
+  <strong>If you did not ask for this, do not share the code.</strong> Your number stays as it is
+  until the code is entered. Please tell your administrator, as someone may be trying to take
+  over your account.
+</p>
