@@ -10,10 +10,12 @@
   <div class="card-body">
 
     <%
-      # Map tool_call_id (FK to tool_calls.id) -> tool result message, so we can show tokens per tool call.
-      tool_result_by_tool_call_id = @all_messages
-                                      .select { |m| m.role.to_s == 'tool' && m.tool_call_id.present? }
-                                      .index_by { |m| m.tool_call_id.to_i }
+      # Map tool call record id -> tool result message (ruby_llm_tool_calls.result_id), so we can show tokens per tool call.
+      messages_by_id = @all_messages.index_by(&:id)
+      tool_result_by_tool_call_id = @all_messages.flat_map(&:ruby_llm_tool_calls)
+                                                 .select(&:result_id)
+                                                 .to_h { |tc| [tc.id, messages_by_id[tc.result_id]] }
+                                                 .compact
 
       # Calculate total durations and latencies
       total_latency = 0
@@ -29,7 +31,7 @@
 
       # Context window stats (assuming a default if model context is missing)
       current_total_tokens = @stats[:total_input_tokens] + @stats[:total_output_tokens]
-      model_context = @all_messages.first&.model&.context_window || 128_000
+      model_context = @chat.model&.context_window || 128_000
       context_usage_pct = ([current_total_tokens.to_f / model_context * 100, 100].min).round(1)
 
       report_types = {
@@ -95,16 +97,16 @@
       # Tool Leaderboard Data
       tool_usage = {}
       @all_messages.each do |msg|
-        msg.tool_calls.each do |tc|
+        msg.ruby_llm_tool_calls.each do |tc|
           tool_usage[tc.name] ||= { count: 0, total_tokens: 0, total_latency: 0 }
           tool_usage[tc.name][:count] += 1
 
           # Try to find result message for tokens/latency
           result_msg = tool_result_by_tool_call_id[tc.id]
           if result_msg
-            tool_usage[tc.name][:total_tokens] += (result_msg.input_tokens.to_i + result_msg.output_tokens.to_i)
+            tool_usage[tc.name][:total_tokens] += (result_msg.tokens.input.to_i + result_msg.tokens.output.to_i)
             # Find the message that triggered this tool call to calculate latency
-            triggering_msg = @all_messages.find { |m| m.tool_calls.any? { |call| call.id == tc.id } }
+            triggering_msg = @all_messages.find { |m| m.ruby_llm_tool_calls.any? { |call| call.id == tc.id } }
             if triggering_msg
               tool_usage[tc.name][:total_latency] += (result_msg.created_at - triggering_msg.created_at)
             end
@@ -195,7 +197,7 @@
             </tr>
 
             <% if interaction[:user_msg] %>
-              <% user_total_tokens = interaction[:user_msg].input_tokens.to_i + interaction[:user_msg].output_tokens.to_i + interaction[:user_msg].cached_tokens.to_i + interaction[:user_msg].cache_creation_tokens.to_i %>
+              <% user_total_tokens = interaction[:user_msg].tokens.input.to_i + interaction[:user_msg].tokens.output.to_i + interaction[:user_msg].tokens.cache_read.to_i + interaction[:user_msg].tokens.cache_write.to_i %>
               <% user_is_very_expensive = user_total_tokens >= very_expensive_message_total_tokens %>
               <% user_is_expensive = !user_is_very_expensive && user_total_tokens >= expensive_message_total_tokens %>
               <tr class="bg-success-subtle <%= user_is_very_expensive ? 'border border-danger' : (user_is_expensive ? 'border border-warning' : '') %>">
@@ -205,12 +207,12 @@
                    <div class="text-dark"><%= interaction[:user_msg].content %></div>
                 </td>
                 <td class="text-right small text-muted">
-                   <div class="small font-weight-bold"><%= number_with_delimiter(interaction[:user_msg].input_tokens.to_i) %> / <%= number_with_delimiter(interaction[:user_msg].output_tokens.to_i) %></div>
-                   <div class="extra-small">Cost: $<%= number_with_precision(((interaction[:user_msg].input_tokens.to_i / 1_000_000.0) * @input_rate) + ((interaction[:user_msg].output_tokens.to_i / 1_000_000.0) * @output_rate), precision: 6) %></div>
-                   <% if interaction[:user_msg].cached_tokens.to_i > 0 || interaction[:user_msg].cache_creation_tokens.to_i > 0 %>
+                   <div class="small font-weight-bold"><%= number_with_delimiter(interaction[:user_msg].tokens.input.to_i) %> / <%= number_with_delimiter(interaction[:user_msg].tokens.output.to_i) %></div>
+                   <div class="extra-small">Cost: $<%= number_with_precision(((interaction[:user_msg].tokens.input.to_i / 1_000_000.0) * @input_rate) + ((interaction[:user_msg].tokens.output.to_i / 1_000_000.0) * @output_rate), precision: 6) %></div>
+                   <% if interaction[:user_msg].tokens.cache_read.to_i > 0 || interaction[:user_msg].tokens.cache_write.to_i > 0 %>
                      <div class="extra-small text-muted">
-                       cached: <%= number_with_delimiter(interaction[:user_msg].cached_tokens.to_i) %>,
-                       cache_create: <%= number_with_delimiter(interaction[:user_msg].cache_creation_tokens.to_i) %>
+                       cached: <%= number_with_delimiter(interaction[:user_msg].tokens.cache_read.to_i) %>,
+                       cache_create: <%= number_with_delimiter(interaction[:user_msg].tokens.cache_write.to_i) %>
                      </div>
                    <% end %>
                    <% if user_is_very_expensive %>
@@ -225,7 +227,7 @@
             <% interaction[:responses].each_with_index do |msg, r_idx| %>
               <% prev_msg = r_idx == 0 ? interaction[:user_msg] : interaction[:responses][r_idx-1] %>
               <% latency = prev_msg ? (msg.created_at - prev_msg.created_at).round(2) : nil %>
-              <% msg_total_tokens = msg.input_tokens.to_i + msg.output_tokens.to_i + msg.cached_tokens.to_i + msg.cache_creation_tokens.to_i %>
+              <% msg_total_tokens = msg.tokens.input.to_i + msg.tokens.output.to_i + msg.tokens.cache_read.to_i + msg.tokens.cache_write.to_i %>
               <% msg_is_very_expensive = msg_total_tokens >= very_expensive_message_total_tokens %>
               <% msg_is_expensive = !msg_is_very_expensive && msg_total_tokens >= expensive_message_total_tokens %>
               <% msg_role = msg.role.to_s %>
@@ -242,14 +244,14 @@
                     <div class="mb-2 text-dark"><%= msg.content.truncate(500) %></div>
                   <% end %>
 
-                  <% if msg.tool_calls.any? %>
+                  <% if msg.ruby_llm_tool_calls.any? %>
                     <div class="mt-2 border-left pl-3 py-1">
                       <div class="extra-small text-muted mb-2 text-uppercase font-weight-bold">Tool Calls Triggered:</div>
                       <%
                         # Check for duplicate tool calls in this message
                         seen_calls = {}
                       %>
-                      <% msg.tool_calls.each do |tc| %>
+                      <% msg.ruby_llm_tool_calls.each do |tc| %>
                         <%
                           call_key = "#{tc.name}-#{tc.arguments.to_json}"
                           is_duplicate = seen_calls[call_key]
@@ -257,8 +259,8 @@
 
                           tool_result_msg = tool_result_by_tool_call_id[tc.id]
                           tool_latency = tool_result_msg ? (tool_result_msg.created_at - msg.created_at).round(2) : nil
-                          tool_in_tokens = tool_result_msg&.input_tokens.to_i + tool_result_msg&.cached_tokens.to_i + tool_result_msg&.cache_creation_tokens.to_i
-                          tool_out_tokens = tool_result_msg&.output_tokens.to_i
+                          tool_in_tokens = tool_result_msg&.tokens&.input.to_i + tool_result_msg&.tokens&.cache_read.to_i + tool_result_msg&.tokens&.cache_write.to_i
+                          tool_out_tokens = tool_result_msg&.tokens&.output.to_i
                           tool_total_tokens = tool_in_tokens + tool_out_tokens
                           tool_is_very_expensive = tool_total_tokens >= very_expensive_tool_total_tokens
                           tool_is_expensive = !tool_is_very_expensive && tool_total_tokens >= expensive_tool_total_tokens
@@ -315,13 +317,13 @@
                   <% end %>
                 </td>
                 <td class="text-right">
-                  <% if msg.input_tokens.to_i > 0 || msg.output_tokens.to_i > 0 %>
-                    <div class="small font-weight-bold"><%= number_with_delimiter(msg.input_tokens.to_i) %> / <%= number_with_delimiter(msg.output_tokens.to_i) %></div>
-                    <div class="extra-small text-muted">Cost: $<%= number_with_precision(((msg.input_tokens.to_i / 1_000_000.0) * @input_rate) + ((msg.output_tokens.to_i / 1_000_000.0) * @output_rate), precision: 6) %></div>
-                    <% if msg.cached_tokens.to_i > 0 || msg.cache_creation_tokens.to_i > 0 %>
+                  <% if msg.tokens.input.to_i > 0 || msg.tokens.output.to_i > 0 %>
+                    <div class="small font-weight-bold"><%= number_with_delimiter(msg.tokens.input.to_i) %> / <%= number_with_delimiter(msg.tokens.output.to_i) %></div>
+                    <div class="extra-small text-muted">Cost: $<%= number_with_precision(((msg.tokens.input.to_i / 1_000_000.0) * @input_rate) + ((msg.tokens.output.to_i / 1_000_000.0) * @output_rate), precision: 6) %></div>
+                    <% if msg.tokens.cache_read.to_i > 0 || msg.tokens.cache_write.to_i > 0 %>
                       <div class="extra-small text-muted">
-                        cached: <%= number_with_delimiter(msg.cached_tokens.to_i) %>,
-                        cache_create: <%= number_with_delimiter(msg.cache_creation_tokens.to_i) %>
+                        cached: <%= number_with_delimiter(msg.tokens.cache_read.to_i) %>,
+                        cache_create: <%= number_with_delimiter(msg.tokens.cache_write.to_i) %>
                       </div>
                     <% end %>
                     <% if msg_is_very_expensive %>

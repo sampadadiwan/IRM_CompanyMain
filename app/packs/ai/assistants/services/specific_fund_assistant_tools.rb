@@ -27,12 +27,12 @@ class SpecificFundAssistantTools < FundAssistantTools
                 "There is no `scope` filter for capital calls (CapitalCall has no named scopes) -- use `query`, " \
                 "e.g. { approved_eq: true }, { status_eq: 'Overdue' }. " \
                 "Ordering & Limiting: ALWAYS pass `sort` and `limit` for efficiency. Example: sort: 'due_date desc', limit: 5."
-    param :aggregate_field, type: :string, desc: "Field to perform sum or group_by on (e.g., 'call_amount', 'collected_amount')", required: false
-    param :group_by_field, type: :string, desc: "Field to group results by (e.g., 'status')", required: false
-    param :query, type: :object, desc: "Ransack query hash.", required: false
-    param :sort, type: :string, desc: "Optional sort string, e.g. 'due_date desc'. (Maps to Ransack `s`)", required: false
-    param :limit, type: :integer, desc: "Optional limit on the number of records returned. Recommended for efficiency.", required: false
-    param :aggregate, type: :string, desc: "Perform an aggregation: 'count', 'sum', 'group_by'", required: false
+    parameter :aggregate_field, type: :string, description: "Field to perform sum or group_by on (e.g., 'call_amount', 'collected_amount')", required: false
+    parameter :group_by_field, type: :string, description: "Field to group results by (e.g., 'status')", required: false
+    parameter :query, type: :object, description: "Ransack query hash.", required: false
+    parameter :sort, type: :string, description: "Optional sort string, e.g. 'due_date desc'. (Maps to Ransack `s`)", required: false
+    parameter :limit, type: :integer, description: "Optional limit on the number of records returned. Recommended for efficiency.", required: false
+    parameter :aggregate, type: :string, description: "Perform an aggregation: 'count', 'sum', 'group_by'", required: false
 
     def initialize(data_manager)
       super()
@@ -58,14 +58,14 @@ class SpecificFundAssistantTools < FundAssistantTools
     description "List capital commitments for the current fund. " \
                 "Attributes for query: folio_id, commitment_date, fund_close, investor_name, onboarding_completed, unit_type, committed_amount, collected_amount, call_amount, distribution_amount. " \
                 "Ordering & Limiting: ALWAYS pass `sort` and `limit` for efficiency. Example: sort: 'committed_amount_cents desc, commitment_date desc'."
-    param :folio_ids, type: "array",  desc: "Filter by folio IDs", required: false
-    param :scope, type: :string, desc: "Filter by a predefined scope. Available scopes: 'lp_onboarding_complete', 'lp_onboarding_incomplete'", required: false
-    param :aggregate_field, type: :string, desc: "Field to perform sum or group_by on (e.g., 'committed_amount', 'collected_amount', 'call_amount', 'distribution_amount')", required: false
-    param :group_by_field, type: :string, desc: "Field to group results by (e.g., 'investor_name', 'unit_type')", required: false
-    param :query, type: :object, desc: "Ransack query hash.", required: false
-    param :sort, type: :string, desc: "Optional sort string, e.g. 'commitment_date desc'. (Maps to Ransack `s`) ", required: false
-    param :limit, type: :integer, desc: "Optional limit on the number of records returned. Recommended for efficiency.", required: false
-    param :aggregate, type: :string, desc: "Perform an aggregation: 'count', 'sum', 'group_by'", required: false
+    parameter :folio_ids, type: "array", description: "Filter by folio IDs", required: false
+    parameter :scope, type: :string, description: "Filter by a predefined scope. Available scopes: 'lp_onboarding_complete', 'lp_onboarding_incomplete'", required: false
+    parameter :aggregate_field, type: :string, description: "Field to perform sum or group_by on (e.g., 'committed_amount', 'collected_amount', 'call_amount', 'distribution_amount')", required: false
+    parameter :group_by_field, type: :string, description: "Field to group results by (e.g., 'investor_name', 'unit_type')", required: false
+    parameter :query, type: :object, description: "Ransack query hash.", required: false
+    parameter :sort, type: :string, description: "Optional sort string, e.g. 'commitment_date desc'. (Maps to Ransack `s`) ", required: false
+    parameter :limit, type: :integer, description: "Optional limit on the number of records returned. Recommended for efficiency.", required: false
+    parameter :aggregate, type: :string, description: "Perform an aggregation: 'count', 'sum', 'group_by'", required: false
 
     def initialize(data_manager)
       super()
@@ -87,14 +87,14 @@ class SpecificFundAssistantTools < FundAssistantTools
     description "List capital remittances for the current fund. " \
                 "Attributes for query: folio_id, investor_name, payment_date, remittance_date, call_amount, collected_amount." \
                 "Ordering & Limiting: ALWAYS pass `sort` and `limit` for efficiency. Example: sort: 'payment_date desc', limit: 10."
-    param :folio_ids, type: "array",  desc: "Filter by folio IDs", required: false
-    param :scope, type: :string, desc: "Filter by a predefined scope. Available scopes: 'paid', 'unpaid', 'pending', 'verified', 'unverified'", required: false
-    param :aggregate_field, type: :string, desc: "Field to perform sum or group_by on (e.g., 'call_amount', 'due_amount', 'collected_amount')", required: false
-    param :group_by_field, type: :string, desc: "Field to group results by (e.g., 'investor_name', 'status', 'folio_id')", required: false
-    param :query, type: :object, desc: "Ransack query hash.", required: false
-    param :sort, type: :string, desc: "Optional sort string, e.g. 'payment_date desc'. (Maps to Ransack `s`) ", required: false
-    param :limit, type: :integer, desc: "Optional limit on the number of records returned. Recommended for efficiency.", required: false
-    param :aggregate, type: :string, desc: "Perform an aggregation: 'count', 'sum', 'group_by'", required: false
+    parameter :folio_ids, type: "array", description: "Filter by folio IDs", required: false
+    parameter :scope, type: :string, description: "Filter by a predefined scope. Available scopes: 'paid', 'unpaid', 'pending', 'verified', 'unverified'", required: false
+    parameter :aggregate_field, type: :string, description: "Field to perform sum or group_by on (e.g., 'call_amount', 'due_amount', 'collected_amount')", required: false
+    parameter :group_by_field, type: :string, description: "Field to group results by (e.g., 'investor_name', 'status', 'folio_id')", required: false
+    parameter :query, type: :object, description: "Ransack query hash.", required: false
+    parameter :sort, type: :string, description: "Optional sort string, e.g. 'payment_date desc'. (Maps to Ransack `s`) ", required: false
+    parameter :limit, type: :integer, description: "Optional limit on the number of records returned. Recommended for efficiency.", required: false
+    parameter :aggregate, type: :string, description: "Perform an aggregation: 'count', 'sum', 'group_by'", required: false
 
     def initialize(data_manager)
       super()
@@ -120,12 +120,12 @@ class SpecificFundAssistantTools < FundAssistantTools
                 "There is no `scope` filter for capital distributions (CapitalDistribution has no named scopes) -- use `query`, " \
                 "e.g. { approved_eq: true }, { completed_eq: true }. " \
                 "Ordering & Limiting: ALWAYS pass `sort` and `limit` for efficiency. Example: sort: 'distribution_date desc', limit: 5."
-    param :aggregate_field, type: :string, desc: "Field to perform sum or group_by on (e.g., 'gross_amount', 'income', 'reinvestment')", required: false
-    param :group_by_field, type: :string, desc: "Field to group results by (e.g., 'title', 'approved')", required: false
-    param :query, type: :object, desc: "Ransack query hash.", required: false
-    param :sort, type: :string, desc: "Optional sort string, e.g. 'distribution_date desc'. (Maps to Ransack `s`) ", required: false
-    param :limit, type: :integer, desc: "Optional limit on the number of records returned. Recommended for efficiency.", required: false
-    param :aggregate, type: :string, desc: "Perform an aggregation: 'count', 'sum', 'group_by'", required: false
+    parameter :aggregate_field, type: :string, description: "Field to perform sum or group_by on (e.g., 'gross_amount', 'income', 'reinvestment')", required: false
+    parameter :group_by_field, type: :string, description: "Field to group results by (e.g., 'title', 'approved')", required: false
+    parameter :query, type: :object, description: "Ransack query hash.", required: false
+    parameter :sort, type: :string, description: "Optional sort string, e.g. 'distribution_date desc'. (Maps to Ransack `s`) ", required: false
+    parameter :limit, type: :integer, description: "Optional limit on the number of records returned. Recommended for efficiency.", required: false
+    parameter :aggregate, type: :string, description: "Perform an aggregation: 'count', 'sum', 'group_by'", required: false
 
     def initialize(data_manager)
       super()
@@ -149,13 +149,13 @@ class SpecificFundAssistantTools < FundAssistantTools
                 "Attributes for query: status payment_date, reference_no, amount, folio_amount, tracking_amount. " \
                 "There is no `scope` filter for remittance payments (CapitalRemittancePayment has no named scopes) -- use `query` instead. " \
                 "Ordering & Limiting: ALWAYS pass `sort` and `limit` for efficiency. Example: sort: 'payment_date desc', limit: 10."
-    param :folio_ids, type: "array",  desc: "Filter by folio IDs", required: false
-    param :aggregate_field, type: :string, desc: "Field to perform sum or group_by on (e.g., 'amount')", required: false
-    param :group_by_field, type: :string, desc: "Field to group results by (e.g., 'payment_date')", required: false
-    param :query, type: :object, desc: "Ransack query hash.", required: false
-    param :sort, type: :string, desc: "Optional sort string, e.g. 'payment_date desc'. (Maps to Ransack `s`) ", required: false
-    param :limit, type: :integer, desc: "Optional limit on the number of records returned. Recommended for efficiency.", required: false
-    param :aggregate, type: :string, desc: "Perform an aggregation: 'count', 'sum', 'group_by'", required: false
+    parameter :folio_ids, type: "array", description: "Filter by folio IDs", required: false
+    parameter :aggregate_field, type: :string, description: "Field to perform sum or group_by on (e.g., 'amount')", required: false
+    parameter :group_by_field, type: :string, description: "Field to group results by (e.g., 'payment_date')", required: false
+    parameter :query, type: :object, description: "Ransack query hash.", required: false
+    parameter :sort, type: :string, description: "Optional sort string, e.g. 'payment_date desc'. (Maps to Ransack `s`) ", required: false
+    parameter :limit, type: :integer, description: "Optional limit on the number of records returned. Recommended for efficiency.", required: false
+    parameter :aggregate, type: :string, description: "Perform an aggregation: 'count', 'sum', 'group_by'", required: false
 
     def initialize(data_manager)
       super()
@@ -177,14 +177,14 @@ class SpecificFundAssistantTools < FundAssistantTools
     def name = "list_capital_distribution_payments"
     description "List capital distribution payments for the current fund. " \
                 "Ordering & Limiting: ALWAYS pass `sort` and `limit` for efficiency. Example: sort: 'payment_date desc', limit: 10."
-    param :folio_ids, type: "array",  desc: "Filter by folio IDs", required: false
-    param :scope, type: :string, desc: "Filter by a predefined scope. Available scopes: 'completed', 'incomplete', 'notification_sent', 'notification_not_sent'", required: false
-    param :aggregate_field, type: :string, desc: "Field to perform sum or group_by on (e.g., 'net_payable', 'gross_payable')", required: false
-    param :group_by_field, type: :string, desc: "Field to group results by (e.g., 'payment_date', 'investor_name')", required: false
-    param :query, type: :object, desc: "Ransack query hash.", required: false
-    param :sort, type: :string, desc: "Optional sort string, e.g. 'payment_date desc'. (Maps to Ransack `s`) ", required: false
-    param :limit, type: :integer, desc: "Optional limit on the number of records returned. Recommended for efficiency.", required: false
-    param :aggregate, type: :string, desc: "Perform an aggregation: 'count', 'sum', 'group_by'", required: false
+    parameter :folio_ids, type: "array", description: "Filter by folio IDs", required: false
+    parameter :scope, type: :string, description: "Filter by a predefined scope. Available scopes: 'completed', 'incomplete', 'notification_sent', 'notification_not_sent'", required: false
+    parameter :aggregate_field, type: :string, description: "Field to perform sum or group_by on (e.g., 'net_payable', 'gross_payable')", required: false
+    parameter :group_by_field, type: :string, description: "Field to group results by (e.g., 'payment_date', 'investor_name')", required: false
+    parameter :query, type: :object, description: "Ransack query hash.", required: false
+    parameter :sort, type: :string, description: "Optional sort string, e.g. 'payment_date desc'. (Maps to Ransack `s`) ", required: false
+    parameter :limit, type: :integer, description: "Optional limit on the number of records returned. Recommended for efficiency.", required: false
+    parameter :aggregate, type: :string, description: "Perform an aggregation: 'count', 'sum', 'group_by'", required: false
 
     def initialize(data_manager)
       super()
@@ -210,13 +210,13 @@ class SpecificFundAssistantTools < FundAssistantTools
     description "List portfolio investments for the current fund. " \
                 "Attributes: portfolio_company_name, status, investment_date, amount, fmv, gain, sector. " \
                 "Ordering & Limiting: ALWAYS pass `sort` and `limit` for efficiency."
-    param :scope, type: :string, desc: "Filter by a predefined scope. Available scopes: 'buys', 'sells', 'conversions', 'distributed', 'not_distributed', 'proforma', 'non_proforma'", required: false
-    param :aggregate_field, type: :string, desc: "Field to perform sum or group_by on (e.g., 'amount', 'fmv', 'gain')", required: false
-    param :group_by_field, type: :string, desc: "Field to group results by (e.g., 'status', 'portfolio_company_name')", required: false
-    param :query, type: :object, desc: "Ransack query hash.", required: false
-    param :sort, type: :string, desc: "Optional sort string, e.g. 'investment_date desc'. (Maps to Ransack `s`) ", required: false
-    param :limit, type: :integer, desc: "Optional limit on the number of records returned. Recommended for efficiency.", required: false
-    param :aggregate, type: :string, desc: "Perform an aggregation: 'count', 'sum', 'group_by'", required: false
+    parameter :scope, type: :string, description: "Filter by a predefined scope. Available scopes: 'buys', 'sells', 'conversions', 'distributed', 'not_distributed', 'proforma', 'non_proforma'", required: false
+    parameter :aggregate_field, type: :string, description: "Field to perform sum or group_by on (e.g., 'amount', 'fmv', 'gain')", required: false
+    parameter :group_by_field, type: :string, description: "Field to group results by (e.g., 'status', 'portfolio_company_name')", required: false
+    parameter :query, type: :object, description: "Ransack query hash.", required: false
+    parameter :sort, type: :string, description: "Optional sort string, e.g. 'investment_date desc'. (Maps to Ransack `s`) ", required: false
+    parameter :limit, type: :integer, description: "Optional limit on the number of records returned. Recommended for efficiency.", required: false
+    parameter :aggregate, type: :string, description: "Perform an aggregation: 'count', 'sum', 'group_by'", required: false
 
     def initialize(data_manager)
       super()
@@ -237,13 +237,13 @@ class SpecificFundAssistantTools < FundAssistantTools
     def name = "list_fund_ratios"
     description "List performance metrics (ratios) for the current fund. " \
                 "Ordering & Limiting: ALWAYS pass `sort` and `limit` for efficiency."
-    param :scope, type: :string, desc: "Filter by a predefined scope. Available scopes: 'latest'", required: false
-    param :aggregate_field, type: :string, desc: "Field to perform sum or group_by on (e.g., 'value')", required: false
-    param :group_by_field, type: :string, desc: "Field to group results by (e.g., 'name')", required: false
-    param :query, type: :object, desc: "Ransack query hash.", required: false
-    param :sort, type: :string, desc: "Optional sort string, e.g. 'end_date desc'. (Maps to Ransack `s`) ", required: false
-    param :limit, type: :integer, desc: "Optional limit on the number of records returned. Recommended for efficiency.", required: false
-    param :aggregate, type: :string, desc: "Perform an aggregation: 'count', 'sum', 'group_by'", required: false
+    parameter :scope, type: :string, description: "Filter by a predefined scope. Available scopes: 'latest'", required: false
+    parameter :aggregate_field, type: :string, description: "Field to perform sum or group_by on (e.g., 'value')", required: false
+    parameter :group_by_field, type: :string, description: "Field to group results by (e.g., 'name')", required: false
+    parameter :query, type: :object, description: "Ransack query hash.", required: false
+    parameter :sort, type: :string, description: "Optional sort string, e.g. 'end_date desc'. (Maps to Ransack `s`) ", required: false
+    parameter :limit, type: :integer, description: "Optional limit on the number of records returned. Recommended for efficiency.", required: false
+    parameter :aggregate, type: :string, description: "Perform an aggregation: 'count', 'sum', 'group_by'", required: false
 
     def initialize(data_manager)
       super()
@@ -265,13 +265,13 @@ class SpecificFundAssistantTools < FundAssistantTools
     description "List account entries for the current fund (ALWAYS aggregated). This tool ONLY returns aggregated data (sum, count, group_by). Individual records are never returned. Aggregation is mandatory. " \
                 "Attributes for filtering/grouping: name, entry_type, reporting_date, period, folio_id, amount, cumulative, generated, rule_for. " \
                 "Ordering: Use `sort` for grouped results. Example: aggregate: 'group_by', group_by_field: 'entry_type', aggregate_field: 'amount', sort: 'total_cents desc'."
-    param :folio_ids, type: "array", desc: "Filter by folio IDs", required: false
-    param :scope, type: :string, desc: "Filter by a predefined scope. Available scopes: 'cumulative', 'not_cumulative', 'generated', 'fund_entries', 'reporting', 'accounting', 'for_folios', 'for_portfolio_investments', 'for_portfolio_companies'", required: false
-    param :aggregate_field, type: :string, desc: "Field to perform sum or group_by on. Defaults to 'amount'.", required: false
-    param :group_by_field, type: :string, desc: "Field to group results by", required: false
-    param :query, type: :object, desc: "Ransack query hash", required: false
-    param :sort, type: :string, desc: "Optional sort string for results.", required: false
-    param :aggregate, type: :string, desc: "Perform an aggregation: 'count', 'sum', 'group_by'. Defaults to 'sum'.", required: false
+    parameter :folio_ids, type: "array", description: "Filter by folio IDs", required: false
+    parameter :scope, type: :string, description: "Filter by a predefined scope. Available scopes: 'cumulative', 'not_cumulative', 'generated', 'fund_entries', 'reporting', 'accounting', 'for_folios', 'for_portfolio_investments', 'for_portfolio_companies'", required: false
+    parameter :aggregate_field, type: :string, description: "Field to perform sum or group_by on. Defaults to 'amount'.", required: false
+    parameter :group_by_field, type: :string, description: "Field to group results by", required: false
+    parameter :query, type: :object, description: "Ransack query hash", required: false
+    parameter :sort, type: :string, description: "Optional sort string for results.", required: false
+    parameter :aggregate, type: :string, description: "Perform an aggregation: 'count', 'sum', 'group_by'. Defaults to 'sum'.", required: false
 
     def initialize(data_manager)
       super()

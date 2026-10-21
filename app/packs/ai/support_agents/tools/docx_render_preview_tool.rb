@@ -17,10 +17,10 @@ class DocxRenderPreviewTool < RubyLLM::Tool
               "This can take up to a minute; don't call it after every single " \
               "small edit, batch related edits first."
 
-  param :page_query, type: :string,
-                     desc: "Optional text to search for in the rendered output, to avoid " \
-                           "returning the entire (possibly long) document text.",
-                     required: false
+  parameter :page_query, type: :string,
+                         description: "Optional text to search for in the rendered output, to avoid " \
+                                      "returning the entire (possibly long) document text.",
+                         required: false
 
   def initialize(workspace:)
     super()

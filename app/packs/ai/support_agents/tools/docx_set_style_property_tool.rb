@@ -15,9 +15,9 @@ class DocxSetStylePropertyTool < RubyLLM::Tool
               "carries keepNext get forced onto the same page as a block, stranding " \
               "earlier content with a large blank gap when they don't all fit."
 
-  param :style_id, type: :string, desc: "The w:styleId to modify, e.g. 'Heading4'.", required: true
-  param :property, type: :string, desc: "The property name, e.g. 'keepNext'.", required: true
-  param :enabled, type: :boolean, desc: "true to add the flag, false to remove it.", required: true
+  parameter :style_id, type: :string, description: "The w:styleId to modify, e.g. 'Heading4'.", required: true
+  parameter :property, type: :string, description: "The property name, e.g. 'keepNext'.", required: true
+  parameter :enabled, type: :boolean, description: "true to add the flag, false to remove it.", required: true
 
   def initialize(workspace:)
     super()

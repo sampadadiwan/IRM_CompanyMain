@@ -120,7 +120,7 @@ class SlideGeneratorService
 
   def extract_json(response)
     content = response.respond_to?(:content) ? response.content : response.to_s
-    # Handle RubyLLM::Content objects if necessary
+    # Handle content objects that wrap their text, if any
     content = content.text if content.respond_to?(:text)
 
     # Extract JSON from code blocks if present

@@ -14,7 +14,7 @@ module LlmResponseParser
       obj
     when RubyLLM::Message
       # Recursively call with the text content
-      parse_llm_json(obj.content.is_a?(RubyLLM::Content) ? obj.content.text : obj.content)
+      parse_llm_json(obj.content)
     when nil
       nil
     end

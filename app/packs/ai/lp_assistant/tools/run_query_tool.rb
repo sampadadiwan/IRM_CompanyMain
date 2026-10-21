@@ -34,10 +34,10 @@ class RunQueryTool < RubyLLM::Tool
               "values. Queries missing either placeholder are rejected. Returns " \
               "up to 100 rows formatted as a Markdown table."
 
-  param :sql,
-        type: :string,
-        desc: 'MySQL SELECT with {ENTITY_ID} and {FUND_IDS} placeholders (both used with IN).',
-        required: true
+  parameter :sql,
+            type: :string,
+            description: 'MySQL SELECT with {ENTITY_ID} and {FUND_IDS} placeholders (both used with IN).',
+            required: true
 
   ALLOWED_TABLES = %w[
     fund_ratios

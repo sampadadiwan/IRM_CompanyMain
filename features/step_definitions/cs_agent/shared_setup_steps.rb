@@ -9,7 +9,7 @@ Before('@cs_agent') do
                      with_instructions: nil,
                      with_tools: nil,
                      add_message: nil,
-                     on_new_message: nil,
+                     before_message: nil,
                      before_tool_call: nil,
                      messages: [])
   allow(fake_chat).to receive(:ask) do |message|

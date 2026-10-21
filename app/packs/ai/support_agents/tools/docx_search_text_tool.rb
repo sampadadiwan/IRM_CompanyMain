@@ -16,11 +16,11 @@ class DocxSearchTextTool < RubyLLM::Tool
               "and display names instead (e.g. 'Heading4' or 'heading 4') since " \
               "style definitions have no body paragraph text to search."
 
-  param :part, type: :string,
-               desc: "Which part to search, e.g. 'word/document.xml' or 'word/styles.xml'.",
-               required: true
-  param :query, type: :string, desc: "Text fragment to search for.", required: true
-  param :limit, type: :integer, desc: "Max matches to return (default 20).", required: false
+  parameter :part, type: :string,
+                   description: "Which part to search, e.g. 'word/document.xml' or 'word/styles.xml'.",
+                   required: true
+  parameter :query, type: :string, description: "Text fragment to search for.", required: true
+  parameter :limit, type: :integer, description: "Max matches to return (default 20).", required: false
 
   def initialize(workspace:)
     super()

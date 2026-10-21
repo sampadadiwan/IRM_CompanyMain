@@ -12,10 +12,10 @@ class DocxSetParagraphNumberingTool < RubyLLM::Tool
               "was silently inheriting numbering from its style's default numId " \
               "instead of the list it visually belongs to."
 
-  param :part, type: :string, desc: "Part containing the paragraph.", required: true
-  param :index, type: :integer, desc: "Paragraph index to modify.", required: true
-  param :ilvl, type: :integer, desc: "Numbering level (0-based).", required: true
-  param :num_id, type: :string, desc: "The numId to assign (see DocxListNumberingTool).", required: true
+  parameter :part, type: :string, description: "Part containing the paragraph.", required: true
+  parameter :index, type: :integer, description: "Paragraph index to modify.", required: true
+  parameter :ilvl, type: :integer, description: "Numbering level (0-based).", required: true
+  parameter :num_id, type: :string, description: "The numId to assign (see DocxListNumberingTool).", required: true
 
   def initialize(workspace:)
     super()

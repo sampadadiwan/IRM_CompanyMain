@@ -22,4 +22,9 @@ class Event < ApplicationRecord
   def to_s
     "#{title} (#{start_time})"
   end
+
+  def self.ransackable_associations(auth_object = nil)
+    ["owner", "tasks", "user"]
+  end
+
 end

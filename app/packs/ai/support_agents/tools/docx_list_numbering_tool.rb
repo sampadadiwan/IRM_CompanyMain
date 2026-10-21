@@ -13,9 +13,9 @@ class DocxListNumberingTool < RubyLLM::Tool
               "belong to the same list (same numId) or two independently-counting " \
               "lists that happen to collide (different numId, same abstractNumId)."
 
-  param :num_id, type: :string,
-                 desc: "Restrict to one numId. Omit to list all numbering definitions.",
-                 required: false
+  parameter :num_id, type: :string,
+                     description: "Restrict to one numId. Omit to list all numbering definitions.",
+                     required: false
 
   def initialize(workspace:)
     super()

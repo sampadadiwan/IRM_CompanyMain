@@ -11,10 +11,10 @@ class LoadSkillTool < RubyLLM::Tool
               "Returns table definitions, critical filtering rules, and " \
               "ready-to-adapt SQL examples. Use after list_skills."
 
-  param :skill_name,
-        type: :string,
-        desc: "Skill name from list_skills output, e.g. 'fund_ratios'.",
-        required: true
+  parameter :skill_name,
+            type: :string,
+            description: "Skill name from list_skills output, e.g. 'fund_ratios'.",
+            required: true
 
   SKILLS_DIR = Rails.root.join('app/packs/ai/lp_assistant/skills').freeze
 

@@ -24,16 +24,17 @@ class AssistantsController < ApplicationController
     authorize :assistant, :show?
 
     @chat = Chat.find_by(id: params[:chat_id], entity_id: current_user.entity_id)
-    @all_messages = @chat.messages.includes(:tool_calls).order(created_at: :asc)
-    @tool_calls = ToolCall.joins(message: :chat)
-                          .where(chats: { entity_id: current_user.entity_id, id: @chat.id })
+    # RubyLLM 2.x keeps tool calls in ruby_llm_tool_calls and token counts in ruby_llm_usages
+    # (one row per model request, linked to its assistant message), not on messages.
+    @all_messages = @chat.messages.includes(:ruby_llm_tool_calls, :ruby_llm_usages).order(created_at: :asc)
+    @tool_calls = RubyLLM::ActiveRecord::ToolCall.where(message_type: Message.name, message_id: @chat.messages.select(:id))
 
     # Calculate some stats for the report
     @stats = {
       total_calls: @tool_calls.length,
       missing_limit: @tool_calls.count { |tc| tc.name.start_with?('list_') && tc.arguments['limit'].blank? },
-      total_input_tokens: @all_messages.sum(:input_tokens),
-      total_output_tokens: @all_messages.sum(:output_tokens)
+      total_input_tokens: @chat.ruby_llm_usages.sum(:input_tokens),
+      total_output_tokens: @chat.ruby_llm_usages.sum(:output_tokens)
     }
 
     # Gemini Pricing (default as fallback)

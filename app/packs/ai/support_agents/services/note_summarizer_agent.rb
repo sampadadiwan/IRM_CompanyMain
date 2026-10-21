@@ -544,15 +544,13 @@ class NoteSummarizerAgent < SupportAgentService
   end
 
   # Extracts plain text from an LLM response object.
-  # Mirrors the same helper in PortfolioScoringAgent to handle both string
-  # responses and RubyLLM::Content objects consistently.
+  # Mirrors the same helper in PortfolioScoringAgent (RubyLLM 2.x content is a String).
   #
   # @param response [String, RubyLLM::Message] the raw LLM response
   # @return [String]
   def extract_text_content(response)
     return response.to_s unless response.respond_to?(:content)
 
-    content = response.content
-    content.is_a?(RubyLLM::Content) ? content.text : content.to_s
+    response.content.to_s
   end
 end

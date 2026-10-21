@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_19_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_20_181806) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -1170,15 +1170,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_19_120000) do
     t.datetime "created_at", null: false
     t.boolean "enable_broadcast", default: true, null: false
     t.bigint "entity_id"
-    t.bigint "model_id"
+    t.bigint "ruby_llm_model_id"
     t.string "name"
     t.bigint "owner_id"
     t.string "owner_type"
     t.datetime "updated_at", null: false
     t.bigint "user_id"
+    t.boolean "cancelled", default: false, null: false
     t.index ["entity_id"], name: "index_chats_on_entity_id"
-    t.index ["model_id"], name: "index_chats_on_model_id"
     t.index ["owner_type", "owner_id"], name: "index_chats_on_owner"
+    t.index ["ruby_llm_model_id"], name: "index_chats_on_ruby_llm_model_id"
     t.index ["user_id"], name: "index_chats_on_user_id"
   end
 
@@ -3584,22 +3585,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_19_120000) do
   end
 
   create_table "messages", force: :cascade do |t|
-    t.integer "cache_creation_tokens"
-    t.integer "cached_tokens"
     t.bigint "chat_id", null: false
     t.text "content"
-    t.json "content_raw"
     t.datetime "created_at", null: false
-    t.integer "input_tokens"
-    t.bigint "model_id"
-    t.integer "output_tokens"
     t.string "role", null: false
-    t.bigint "tool_call_id"
     t.datetime "updated_at", null: false
+    t.boolean "cache_until_here", default: false, null: false
+    t.string "finish_reason"
+    t.json "citations"
+    t.json "server_tool_calls"
+    t.json "raw_content"
+    t.json "raw_reasoning"
+    t.string "cache_ttl"
     t.index ["chat_id"], name: "index_messages_on_chat_id"
-    t.index ["model_id"], name: "index_messages_on_model_id"
-    t.index ["role"], name: "index_messages_on_role"
-    t.index ["tool_call_id"], name: "index_messages_on_tool_call_id"
   end
 
   create_table "mobile_devices", force: :cascade do |t|
@@ -3636,26 +3634,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_19_120000) do
     t.index ["mobile_device_id", "created_at"], name: "idx_mobile_push_deliveries_device"
     t.index ["noticed_notification_id", "mobile_device_id"], name: "idx_mobile_push_deliveries_unique", unique: true
     t.index ["ticket_id"], name: "index_mobile_push_deliveries_on_ticket_id"
-  end
-
-  create_table "models", force: :cascade do |t|
-    t.json "capabilities"
-    t.integer "context_window"
-    t.datetime "created_at", null: false
-    t.string "family"
-    t.date "knowledge_cutoff"
-    t.integer "max_output_tokens"
-    t.json "metadata"
-    t.json "modalities"
-    t.datetime "model_created_at"
-    t.string "model_id", null: false
-    t.string "name", null: false
-    t.json "pricing"
-    t.string "provider", null: false
-    t.datetime "updated_at", null: false
-    t.index ["family"], name: "index_models_on_family"
-    t.index ["provider", "model_id"], name: "index_models_on_provider_and_model_id", unique: true
-    t.index ["provider"], name: "index_models_on_provider"
   end
 
   create_table "nda_acceptances", force: :cascade do |t|
@@ -4440,6 +4418,120 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_19_120000) do
     t.index ["resource_type", "resource_id"], name: "index_roles_on_resource"
   end
 
+  create_table "ruby_llm_batches", force: :cascade do |t|
+    t.string "provider_batch_id", null: false
+    t.string "provider", null: false
+    t.string "status", null: false
+    t.string "raw_status"
+    t.boolean "completed", default: false, null: false
+    t.string "chat_type"
+    t.string "batch_protocol"
+    t.json "chat_ids"
+    t.json "request_counts"
+    t.json "reported_cost"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["provider", "provider_batch_id"], name: "index_ruby_llm_batches_on_provider_and_provider_batch_id", unique: true
+    t.index ["status"], name: "index_ruby_llm_batches_on_status"
+  end
+
+  create_table "ruby_llm_mcp_credentials", force: :cascade do |t|
+    t.string "owner_type"
+    t.bigint "owner_id"
+    t.string "key", null: false
+    t.text "data"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["key"], name: "index_ruby_llm_mcp_credentials_on_key", unique: true
+    t.index ["owner_type", "owner_id"], name: "index_ruby_llm_mcp_credentials_on_owner"
+  end
+
+  create_table "ruby_llm_models", force: :cascade do |t|
+    t.json "capabilities"
+    t.integer "context_window"
+    t.datetime "created_at", null: false
+    t.string "family"
+    t.date "knowledge_cutoff"
+    t.integer "max_output_tokens"
+    t.json "metadata"
+    t.json "modalities"
+    t.datetime "model_created_at"
+    t.string "model_id", null: false
+    t.string "name", null: false
+    t.json "pricing"
+    t.string "provider", null: false
+    t.datetime "updated_at", null: false
+    t.datetime "unlisted_at"
+    t.index ["family"], name: "index_ruby_llm_models_on_family"
+    t.index ["provider", "model_id"], name: "index_ruby_llm_models_on_provider_and_model_id", unique: true
+    t.index ["provider"], name: "index_ruby_llm_models_on_provider"
+  end
+
+  create_table "ruby_llm_provider_files", force: :cascade do |t|
+    t.string "blob_key", null: false
+    t.string "provider", null: false
+    t.string "account", null: false
+    t.text "file_id", null: false
+    t.datetime "expires_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["blob_key", "provider", "account"], name: "index_ruby_llm_provider_files_uniqueness", unique: true
+  end
+
+  create_table "ruby_llm_tool_calls", force: :cascade do |t|
+    t.json "arguments"
+    t.datetime "created_at", null: false
+    t.bigint "message_id", null: false
+    t.string "name", null: false
+    t.text "thought_signature"
+    t.string "tool_call_id", null: false
+    t.datetime "updated_at", null: false
+    t.string "message_type", null: false
+    t.string "result_type"
+    t.bigint "result_id"
+    t.string "approval"
+    t.boolean "remote", default: false, null: false
+    t.json "mcp_state"
+    t.json "mcp_result"
+    t.index ["message_type", "message_id"], name: "index_ruby_llm_tool_calls_on_message_type_and_message_id"
+    t.index ["name"], name: "index_ruby_llm_tool_calls_on_name"
+    t.index ["result_type", "result_id"], name: "index_ruby_llm_tool_calls_on_result_type_and_result_id"
+    t.index ["tool_call_id"], name: "index_ruby_llm_tool_calls_on_tool_call_id", unique: true
+  end
+
+  create_table "ruby_llm_usages", force: :cascade do |t|
+    t.string "chat_type"
+    t.bigint "chat_id"
+    t.string "message_type"
+    t.bigint "message_id"
+    t.string "operation", null: false
+    t.string "provider", null: false
+    t.string "model", null: false
+    t.string "status", null: false
+    t.integer "input_tokens"
+    t.integer "output_tokens"
+    t.integer "cache_read_tokens"
+    t.integer "cache_write_tokens"
+    t.integer "thinking_tokens"
+    t.decimal "input_cost", precision: 16, scale: 10
+    t.decimal "output_cost", precision: 16, scale: 10
+    t.decimal "cache_read_cost", precision: 16, scale: 10
+    t.decimal "cache_write_cost", precision: 16, scale: 10
+    t.decimal "thinking_cost", precision: 16, scale: 10
+    t.decimal "total_cost", precision: 16, scale: 10
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.json "server_tool_use"
+    t.string "owner_type"
+    t.bigint "owner_id"
+    t.index ["chat_type", "chat_id"], name: "index_ruby_llm_usages_on_chat_type_and_chat_id"
+    t.index ["message_type", "message_id"], name: "index_ruby_llm_usages_on_message_type_and_message_id"
+    t.index ["owner_type", "owner_id"], name: "index_ruby_llm_usages_on_owner"
+    t.index ["status"], name: "index_ruby_llm_usages_on_status"
+    t.check_constraint "operation in ('chat','embedding','moderation','image','speech','transcription','ocr','rerank','judgment','video','research')"
+    t.check_constraint "status in ('pending','succeeded','failed','cancelled')"
+  end
+
   create_table "scenario_investments", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.bigint "entity_id", null: false
@@ -4970,19 +5062,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_19_120000) do
     t.index ["user_id"], name: "index_tie_out_figures_on_user_id"
   end
 
-  create_table "tool_calls", force: :cascade do |t|
-    t.json "arguments"
-    t.datetime "created_at", null: false
-    t.bigint "message_id", null: false
-    t.string "name", null: false
-    t.text "thought_signature"
-    t.string "tool_call_id", null: false
-    t.datetime "updated_at", null: false
-    t.index ["message_id"], name: "index_tool_calls_on_message_id"
-    t.index ["name"], name: "index_tool_calls_on_name"
-    t.index ["tool_call_id"], name: "index_tool_calls_on_tool_call_id", unique: true
-  end
-
   create_table "user_alerts", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.bigint "entity_id", null: false
@@ -5473,7 +5552,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_19_120000) do
   add_foreign_key "capital_remittances", "folders", column: "document_folder_id"
   add_foreign_key "capital_remittances", "funds"
   add_foreign_key "capital_remittances", "investors"
-  add_foreign_key "chats", "models"
+  add_foreign_key "chats", "ruby_llm_models"
   add_foreign_key "ci_profiles", "entities"
   add_foreign_key "ci_profiles", "funds"
   add_foreign_key "ci_track_records", "entities"
@@ -5745,8 +5824,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_19_120000) do
   add_foreign_key "market_data_settings", "entities"
   add_foreign_key "market_data_settings", "funds"
   add_foreign_key "messages", "chats"
-  add_foreign_key "messages", "models"
-  add_foreign_key "messages", "tool_calls"
   add_foreign_key "mobile_devices", "devise_api_tokens", on_delete: :nullify
   add_foreign_key "mobile_devices", "users"
   add_foreign_key "mobile_push_deliveries", "mobile_devices", on_delete: :cascade
@@ -5905,7 +5982,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_19_120000) do
   add_foreign_key "tie_out_figures", "entities"
   add_foreign_key "tie_out_figures", "funds"
   add_foreign_key "tie_out_figures", "users"
-  add_foreign_key "tool_calls", "messages"
   add_foreign_key "user_alerts", "entities"
   add_foreign_key "user_alerts", "users"
   add_foreign_key "users", "form_types"

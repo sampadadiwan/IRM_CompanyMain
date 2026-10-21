@@ -9,10 +9,10 @@ class SearchPastMessagesTool < RubyLLM::Tool
               "Use when the user references a past question or when you need to check " \
               "if a similar issue was already resolved."
 
-  param :keywords,
-        type: :string,
-        desc: 'Space-separated search keywords (e.g. "capital call error")',
-        required: true
+  parameter :keywords,
+            type: :string,
+            description: 'Space-separated search keywords (e.g. "capital call error")',
+            required: true
 
   MAX_RESULTS = 10
 

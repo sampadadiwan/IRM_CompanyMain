@@ -140,7 +140,7 @@ class ChartAgentService
     when Hash
       obj
     when RubyLLM::Message
-      parse_json(obj.content.is_a?(RubyLLM::Content) ? obj.content.text : obj.content) # Recursively call with the text content
+      parse_json(obj.content) # Recursively call with the text content
     when nil
       nil
     end

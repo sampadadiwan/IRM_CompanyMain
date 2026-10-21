@@ -21,7 +21,7 @@ class DocxRunKnownFixerTool < RubyLLM::Tool
               "formatting complaint — but they only fix their specific known " \
               "pattern, not general issues like an un-converted conditional block."
 
-  param :fixer, type: :string, desc: "'numbering' or 'formatting'.", required: true
+  parameter :fixer, type: :string, description: "'numbering' or 'formatting'.", required: true
 
   def initialize(workspace:)
     super()

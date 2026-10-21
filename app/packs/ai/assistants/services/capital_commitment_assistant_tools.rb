@@ -31,13 +31,13 @@ class CapitalCommitmentAssistantTools < BaseAssistantTools
                 "NOTE: `capital_call_due_date` only works in `query`/`sort`, NOT as `group_by_field` -- grouping is a plain " \
                 "column GROUP BY and doesn't support nested associations. " \
                 "Ordering & Limiting: ALWAYS pass `sort` and `limit` for efficiency, especially for 'top', 'latest', or 'largest' requests. Example: sort: 'payment_date desc', limit: 10. (Maps to Ransack `s`)"
-    param :scope, type: :string, desc: "Filter by scope: 'paid', 'pending', 'verified', 'unverified'", required: false
-    param :aggregate_field, type: :string, desc: "Field to perform sum or group_by on", required: false
-    param :group_by_field, type: :string, desc: "Field to group results by", required: false
-    param :query, type: :object, desc: "Ransack query hash", required: false
-    param :sort, type: :string, desc: "Optional sort string, e.g. 'payment_date desc'. (Maps to Ransack `s`) ", required: false
-    param :limit, type: :integer, desc: "Optional limit on the number of records returned. Recommended for efficiency.", required: false
-    param :aggregate, type: :string, desc: "Perform an aggregation: 'count', 'sum', 'group_by'", required: false
+    parameter :scope, type: :string, description: "Filter by scope: 'paid', 'pending', 'verified', 'unverified'", required: false
+    parameter :aggregate_field, type: :string, description: "Field to perform sum or group_by on", required: false
+    parameter :group_by_field, type: :string, description: "Field to group results by", required: false
+    parameter :query, type: :object, description: "Ransack query hash", required: false
+    parameter :sort, type: :string, description: "Optional sort string, e.g. 'payment_date desc'. (Maps to Ransack `s`) ", required: false
+    parameter :limit, type: :integer, description: "Optional limit on the number of records returned. Recommended for efficiency.", required: false
+    parameter :aggregate, type: :string, description: "Perform an aggregation: 'count', 'sum', 'group_by'", required: false
 
     def initialize(data_manager)
       super()
@@ -59,12 +59,12 @@ class CapitalCommitmentAssistantTools < BaseAssistantTools
 
     description "List capital distribution payments for the current commitment. " \
                 "Ordering & Limiting: ALWAYS pass `sort` and `limit` for efficiency. Example: sort: 'payment_date desc', limit: 10. (Maps to Ransack `s`)"
-    param :scope, type: :string, desc: "Filter by scope: 'completed', 'incomplete', 'notification_sent', 'notification_not_sent'", required: false
-    param :aggregate_field, type: :string, desc: "Field to perform sum or group_by on (e.g., 'net_payable', 'gross_payable')", required: false
-    param :group_by_field, type: :string, desc: "Field to group results by", required: false
-    param :sort, type: :string, desc: "Optional sort string, e.g. 'payment_date desc'. (Maps to Ransack `s`) ", required: false
-    param :limit, type: :integer, desc: "Optional limit on the number of records returned. Recommended for efficiency.", required: false
-    param :aggregate, type: :string, desc: "Perform an aggregation: 'count', 'sum', 'group_by'", required: false
+    parameter :scope, type: :string, description: "Filter by scope: 'completed', 'incomplete', 'notification_sent', 'notification_not_sent'", required: false
+    parameter :aggregate_field, type: :string, description: "Field to perform sum or group_by on (e.g., 'net_payable', 'gross_payable')", required: false
+    parameter :group_by_field, type: :string, description: "Field to group results by", required: false
+    parameter :sort, type: :string, description: "Optional sort string, e.g. 'payment_date desc'. (Maps to Ransack `s`) ", required: false
+    parameter :limit, type: :integer, description: "Optional limit on the number of records returned. Recommended for efficiency.", required: false
+    parameter :aggregate, type: :string, description: "Perform an aggregation: 'count', 'sum', 'group_by'", required: false
 
     def initialize(data_manager)
       super()
@@ -84,10 +84,10 @@ class CapitalCommitmentAssistantTools < BaseAssistantTools
     description "List documents associated with the current capital commitment only if you need documents. " \
                 "Attributes for query: name, owner_tag, text, esign_status. " \
                 "Ordering & Limiting: ALWAYS pass `sort` and `limit` for efficiency, especially for 'latest' or 'top' requests. Example: sort: 'created_at desc', limit: 10. (Maps to Ransack `s`)"
-    param :scope, type: :string, desc: "Filter by scope: 'approved', 'signed', 'esign_status_completed', etc.", required: false
-    param :query, type: :object, desc: "Ransack query hash", required: false
-    param :sort, type: :string, desc: "Optional sort string, e.g. 'created_at desc'. (Maps to Ransack `s`) ", required: false
-    param :limit, type: :integer, desc: "Optional limit on the number of records returned. Recommended for efficiency.", required: false
+    parameter :scope, type: :string, description: "Filter by scope: 'approved', 'signed', 'esign_status_completed', etc.", required: false
+    parameter :query, type: :object, description: "Ransack query hash", required: false
+    parameter :sort, type: :string, description: "Optional sort string, e.g. 'created_at desc'. (Maps to Ransack `s`) ", required: false
+    parameter :limit, type: :integer, description: "Optional limit on the number of records returned. Recommended for efficiency.", required: false
 
     def initialize(data_manager)
       super()
@@ -104,8 +104,8 @@ class CapitalCommitmentAssistantTools < BaseAssistantTools
     def name = "get_document"
 
     description "Get detailed information and full text content for a specific document by ID or name."
-    param :document_id, type: "integer", desc: "The ID of the document", required: false
-    param :name, type: "string", desc: "The name of the document (can be partial)", required: false
+    parameter :document_id, type: "integer", description: "The ID of the document", required: false
+    parameter :name, type: "string", description: "The name of the document (can be partial)", required: false
 
     def initialize(data_manager)
       super()
@@ -122,9 +122,9 @@ class CapitalCommitmentAssistantTools < BaseAssistantTools
     def name = "analyze_document"
 
     description "Analyze one or more documents to answer specific questions or perform extraction. Requires document IDs or names and a natural language prompt."
-    param :document_ids, type: "array", desc: "List of document IDs to analyze", required: false
-    param :document_names, type: "array", desc: "List of document names (can be partial) to analyze", required: false
-    param :prompt, type: "string", desc: "Natural language instructions or question for the analysis", required: true
+    parameter :document_ids, type: "array", description: "List of document IDs to analyze", required: false
+    parameter :document_names, type: "array", description: "List of document names (can be partial) to analyze", required: false
+    parameter :prompt, type: "string", description: "Natural language instructions or question for the analysis", required: true
 
     def initialize(data_manager)
       super()
@@ -143,12 +143,12 @@ class CapitalCommitmentAssistantTools < BaseAssistantTools
     description "List fund units associated with the current capital commitment. " \
                 "Attributes: unit_type, quantity, price, amount, as_of_date. " \
                 "Ordering & Limiting: ALWAYS pass `sort` and `limit` for efficiency. Example: sort: 'as_of_date desc', limit: 10. (Maps to Ransack `s`)"
-    param :aggregate_field, type: :string, desc: "Field to perform sum or group_by on (e.g., 'amount', 'quantity')", required: false
-    param :group_by_field, type: :string, desc: "Field to group results by (e.g., 'unit_type')", required: false
-    param :query, type: :object, desc: "Ransack query hash", required: false
-    param :sort, type: :string, desc: "Optional sort string, e.g. 'as_of_date desc'. (Maps to Ransack `s`) ", required: false
-    param :limit, type: :integer, desc: "Optional limit on the number of records returned. Recommended for efficiency.", required: false
-    param :aggregate, type: :string, desc: "Perform an aggregation: 'count', 'sum', 'group_by'", required: false
+    parameter :aggregate_field, type: :string, description: "Field to perform sum or group_by on (e.g., 'amount', 'quantity')", required: false
+    parameter :group_by_field, type: :string, description: "Field to group results by (e.g., 'unit_type')", required: false
+    parameter :query, type: :object, description: "Ransack query hash", required: false
+    parameter :sort, type: :string, description: "Optional sort string, e.g. 'as_of_date desc'. (Maps to Ransack `s`) ", required: false
+    parameter :limit, type: :integer, description: "Optional limit on the number of records returned. Recommended for efficiency.", required: false
+    parameter :aggregate, type: :string, description: "Perform an aggregation: 'count', 'sum', 'group_by'", required: false
 
     def initialize(data_manager)
       super()

@@ -6,7 +6,7 @@ Feature: PortfolioAssistant output formatting fixes
   Background:
     Given there is a user "first_name=FM-Analyst" for an entity "entity_type=Investment Fund;name=Acme FM"
 
-  # Regression test for: BaseAssistant#clean_response! used to strip everything before the
+  # Regression test for: BaseAssistant#clean_response used to strip everything before the
   # LAST occurrence of the bare substring "thought" anywhere in the response, mangling any
   # legitimate answer that happened to contain that word.
   Scenario: A genuine leaked "Thought:" prefix is stripped

@@ -130,6 +130,8 @@ class CapitalCommitmentAssistant < BaseAssistant
       model: AI_MODEL,
       owner: @capital_commitment
     ).first_or_create!(
+      # RubyLLM 2.x: the where(model:) value is not carried into the new chat, so set it here.
+      model: AI_MODEL,
       enable_broadcast: false,
       name: "Capital Commitment Assistant Chat #{Time.zone.now.strftime('%Y-%m-%d %H:%M')}"
     )

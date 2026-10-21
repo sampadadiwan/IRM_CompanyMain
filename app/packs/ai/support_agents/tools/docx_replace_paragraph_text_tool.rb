@@ -15,9 +15,9 @@ class DocxReplaceParagraphTextTool < RubyLLM::Tool
               "clause looks like it should be removed, say so in your summary " \
               "instead so a human can decide."
 
-  param :part, type: :string, desc: "Part containing the paragraph.", required: true
-  param :index, type: :integer, desc: "Paragraph index to modify.", required: true
-  param :text, type: :string, desc: "New visible text for the paragraph.", required: true
+  parameter :part, type: :string, description: "Part containing the paragraph.", required: true
+  parameter :index, type: :integer, description: "Paragraph index to modify.", required: true
+  parameter :text, type: :string, description: "New visible text for the paragraph.", required: true
 
   def initialize(workspace:)
     super()

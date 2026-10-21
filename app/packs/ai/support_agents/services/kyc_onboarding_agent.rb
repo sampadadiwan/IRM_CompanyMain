@@ -268,7 +268,7 @@ class KycOnboardingAgent < SupportAgentService
         begin
           raw = llm.ask(prompt, with: [doc.file.url])
           content = if raw.is_a?(RubyLLM::Message)
-                      raw.content.is_a?(RubyLLM::Content) ? raw.content.text : raw.content
+                      raw.content
                     else
                       raw.to_s
                     end

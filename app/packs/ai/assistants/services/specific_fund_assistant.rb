@@ -120,7 +120,7 @@ class SpecificFundAssistant < BaseAssistant
 
     # If the response is empty but we have tool calls, it's likely a chart generation
     # where the LLM didn't provide a final summary. We'll try to find the last chart tool output.
-    if (response.content.blank? || (response.content.respond_to?(:text) && response.content.text.blank?)) && @chat.messages.last&.role == "tool"
+    if response.content.blank? && @chat.messages.last&.role == "tool"
       last_tool_msg = @chat.messages.where(role: "tool").order(created_at: :desc).first
       response.content = last_tool_msg.content if last_tool_msg&.content&.include?("chart-renderer")
     end

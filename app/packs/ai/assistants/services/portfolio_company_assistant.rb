@@ -110,6 +110,8 @@ class PortfolioCompanyAssistant < BaseAssistant
       model: AI_MODEL,
       owner: @portfolio_company
     ).first_or_create!(
+      # RubyLLM 2.x: the where(model:) value is not carried into the new chat, so set it here.
+      model: AI_MODEL,
       enable_broadcast: false,
       name: "Portfolio Company Assistant Chat (#{@portfolio_company.investor_name}) #{Time.zone.now.strftime('%Y-%m-%d %H:%M')}"
     )

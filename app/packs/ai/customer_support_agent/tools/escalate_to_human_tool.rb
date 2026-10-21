@@ -14,15 +14,15 @@ class EscalateToHumanTool < RubyLLM::Tool
               "(3) the issue requires manual intervention. " \
               "Provide a clear reason and a summary of the conversation so far."
 
-  param :reason,
-        type: :string,
-        desc: 'One of: customer_requested, low_confidence, complex_issue',
-        required: true
+  parameter :reason,
+            type: :string,
+            description: 'One of: customer_requested, low_confidence, complex_issue',
+            required: true
 
-  param :summary,
-        type: :string,
-        desc: 'Brief summary of the conversation and why escalation is needed',
-        required: true
+  parameter :summary,
+            type: :string,
+            description: 'Brief summary of the conversation and why escalation is needed',
+            required: true
 
   # @param session [AgentChatSession] the current chat session
   # @param user [User] the FM user chatting

@@ -68,7 +68,7 @@ Many assistants (e.g., `CapitalCommitmentAssistant`, `PortfolioCompanyAssistant`
 *   **Ephemeral Chats:** To prevent context window overflow and maintain performance, each query is run in a "fresh" ephemeral chat provided by `BaseAssistant#run_report`.
 *   **Reliability:** Implements automatic retries with exponential backoff and jitter to handle provider-side rate limits (e.g., `RubyLLM::RateLimitError`).
 *   **Token Tracking:** Monitors cumulative input and output tokens across the entire report generation process.
-*   **Clean Responses:** Automatically strips internal LLM "thought" blocks from the final output using `clean_response!`.
+*   **Clean Responses:** Automatically strips internal LLM "thought" blocks from the final output using `clean_response`.
 
 ### Hyperlinking
 All assistants follow strict hyperlinking rules defined in their system prompts. They use the `view_link` field returned by tools to generate HTML anchors with `target="_blank"`, ensuring the AI response remains integrated with the platform UI.

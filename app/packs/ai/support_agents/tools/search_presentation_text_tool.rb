@@ -15,13 +15,13 @@ class SearchPresentationTextTool < RubyLLM::Tool
               "exact wording or detail the user is asking about."
 
   # query: what to look for — matched case-insensitively across all period records
-  param :query, type: :string, desc: "Keyword, phrase, or topic to search for"
+  parameter :query, type: :string, description: "Keyword, phrase, or topic to search for"
 
   # period: optional — restrict the search to a single period label (e.g. "Q3-10-25-Actual")
-  param :period,
-        type: :string,
-        desc: "Optional period label to restrict the search (e.g. 'Q3-10-25-Actual'). Leave blank to search all periods.",
-        required: false
+  parameter :period,
+            type: :string,
+            description: "Optional period label to restrict the search (e.g. 'Q3-10-25-Actual'). Leave blank to search all periods.",
+            required: false
 
   def initialize(report:)
     # Hold a reference to the SupportAgentReport so execute() can access json_fields

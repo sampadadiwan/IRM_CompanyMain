@@ -81,6 +81,6 @@ class NarrationMissExplainer < Trailblazer::Operation
     return response.to_s unless response.respond_to?(:content)
 
     content = response.content
-    content.is_a?(RubyLLM::Content) ? content.text : content.to_s
+    content.to_s
   end
 end

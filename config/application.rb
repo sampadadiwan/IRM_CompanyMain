@@ -14,7 +14,10 @@ module CapHive
 
     config.active_support.key_generator_hash_digest_class = OpenSSL::Digest::SHA1
 
-    config.autoload_lib(ignore: %w[assets tasks])
+    # lib/middleware holds top-level Rack middleware loaded via require_relative from
+    # initializers, and lib/rubocop holds custom cops loaded only by RuboCop; neither
+    # follows Zeitwerk naming, so autoloading them breaks eager_load!.
+    config.autoload_lib(ignore: %w[assets middleware rubocop tasks])
 
     # Exclude subdirectories within controllers/, dashboards/, and policies/ from being Zeitwerk
     # roots — they are namespaces (e.g. Admin::, Audited::, Noticed::) resolved relative to
@@ -32,9 +35,11 @@ module CapHive
         # doc_checks/ folders are the DocChecks:: namespace (DocChecks::Registry, DocChecks::Kyc,
         # DocChecks::RunJob), spread across the documents and investor_kycs packs
         path_str.match?(%r{/doc_checks(/|$)})
-    end
-    config.autoload_paths += Rails.root.glob('app/packs/**/controllers/concerns/')
-    config.autoload_paths << Rails.root.join('lib')
+    end.map(&:to_s)
+    config.autoload_paths += Rails.root.glob('app/packs/**/controllers/concerns/').map(&:to_s)
+    # Strings, not Pathnames: view_component >= 4.17 hands autoload_paths to
+    # ActiveSupport::FileUpdateChecker, which calls String#gsub on each entry.
+    config.autoload_paths << Rails.root.join('lib').to_s
 
     # LP mobile app web review build (Expo web) — CORS for one local origin, never in production.
     # See lib/middleware/mobile_web_cors.rb.
@@ -128,11 +133,6 @@ module CapHive
       Devise::ConfirmationsController.layout "devise"
       Devise::UnlocksController.layout "devise"
       Devise::PasswordsController.layout "devise"
-
-      if RubyLLM.config.use_new_acts_as
-        require 'ruby_llm/active_record/acts_as'
-        ActiveSupport.on_load(:active_record) { include RubyLLM::ActiveRecord::ActsAs } unless ::ActiveRecord::Base.include?(RubyLLM::ActiveRecord::ActsAs)
-      end
     end
 
     # ExceptionNotification::Rack is added once, by the gem's Engine (required from

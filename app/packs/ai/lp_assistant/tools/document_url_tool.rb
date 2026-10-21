@@ -26,10 +26,10 @@ class DocumentUrlTool < RubyLLM::Tool
               "can open the PDF in one click. If the tool returns an error, do NOT " \
               "guess the URL — tell the LP the document is unavailable."
 
-  param :document_id,
-        type: :integer,
-        desc: 'The documents.id returned by run_query.',
-        required: true
+  parameter :document_id,
+            type: :integer,
+            description: 'The documents.id returned by run_query.',
+            required: true
 
   # @param entity_ids [Array<Integer>] FM entity_ids the LP can see documents under
   # @param accessible_fund_ids [Array<Integer>] fund_ids scoping Fund/Call/Distribution docs

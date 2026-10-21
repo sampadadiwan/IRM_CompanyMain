@@ -314,7 +314,7 @@ gem 'json_schemer'
 # which requires allowed_hosts configuration for non-localhost deployments.
 gem 'mcp', '~> 1.3'
 gem 'ruby_linear_regression'
-gem 'ruby_llm'
+gem 'ruby_llm', '~> 2.1.0'
 gem 'wicked_pdf'
 gem 'wkhtmltopdf-binary'
 gem 'email_reply_parser'

@@ -12,11 +12,11 @@ class WebSearchTool < RubyLLM::Tool
               "news, and recent developments. Use for any question requiring " \
               "up-to-date or external information."
 
-  param :query, type: :string, desc: "The search query"
-  param :search_type,
-        type: :string,
-        desc: "'web' (default) for general search, 'news' for recent news articles",
-        required: false
+  parameter :query, type: :string, description: "The search query"
+  parameter :search_type,
+            type: :string,
+            description: "'web' (default) for general search, 'news' for recent news articles",
+            required: false
 
   def execute(query:, search_type: "web")
     require Rails.root.join("lib/agent_tools/web_search_tool")

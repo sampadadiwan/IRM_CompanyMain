@@ -546,12 +546,10 @@ class PortfolioScoringAgent < SupportAgentService
   end
 
   # Unwraps RubyLLM's response object to a plain string.
-  # RubyLLM::Content wraps streamed/non-streamed responses differently.
   def extract_text_content(response)
     return response.to_s unless response.respond_to?(:content)
 
-    content = response.content
-    content.is_a?(RubyLLM::Content) ? content.text : content.to_s
+    response.content.to_s
   end
 
   def extract_score_json(raw)

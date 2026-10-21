@@ -2,7 +2,7 @@
 
 # Step definitions for portfolio_assistant_data_manager.feature and
 # portfolio_assistant_output_formatting.feature -- exercise
-# PortfolioAssistantDataManager, PortfolioAssistant, BaseAssistant#clean_response!, and
+# PortfolioAssistantDataManager, PortfolioAssistant, BaseAssistant#clean_response, and
 # MarkdownHelper#markdown_to_html directly (no LLM round-trip), mirroring the style of
 # portfolio_assistant_steps.rb.
 
@@ -141,15 +141,15 @@ Then('it should return more than one query') do
 end
 
 Given('there is a chat response with content {string}') do |content|
-  @response = OpenStruct.new(content: content)
+  @response = RubyLLM::Message.new(role: :assistant, content: content)
 end
 
 Given('there is a chat response with the following content:') do |content|
-  @response = OpenStruct.new(content: content)
+  @response = RubyLLM::Message.new(role: :assistant, content: content)
 end
 
 When('the assistant cleans the response') do
-  PortfolioAssistant.new(user: @user).send(:clean_response!, @response)
+  @response = PortfolioAssistant.new(user: @user).send(:clean_response, @response)
 end
 
 Then('the response content should equal {string}') do |expected|

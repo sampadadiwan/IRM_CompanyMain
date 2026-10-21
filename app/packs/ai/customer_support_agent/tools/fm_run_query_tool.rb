@@ -17,10 +17,10 @@ class FmRunQueryTool < RunQueryTool
               "Queries missing {ENTITY_ID} are rejected. Returns up to 100 rows " \
               "formatted as a Markdown table."
 
-  param :sql,
-        type: :string,
-        desc: 'MySQL SELECT with {ENTITY_ID} placeholder (required, used with IN). {FUND_IDS} optional.',
-        required: true
+  parameter :sql,
+            type: :string,
+            description: 'MySQL SELECT with {ENTITY_ID} placeholder (required, used with IN). {FUND_IDS} optional.',
+            required: true
 
   ALLOWED_TABLES = (RunQueryTool::ALLOWED_TABLES + %w[
     investor_kycs

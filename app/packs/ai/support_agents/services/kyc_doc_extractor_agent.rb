@@ -201,7 +201,7 @@ class KycDocExtractorAgent < SupportAgentService
   # Unwrap RubyLLM::Message or plain string response.
   def extract_plain_text(raw)
     text = if raw.is_a?(RubyLLM::Message)
-             raw.content.is_a?(RubyLLM::Content) ? raw.content.text : raw.content.to_s
+             raw.content.to_s
            else
              raw.to_s
            end

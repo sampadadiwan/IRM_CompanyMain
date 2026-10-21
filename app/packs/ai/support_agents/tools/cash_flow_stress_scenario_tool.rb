@@ -16,44 +16,44 @@ class CashFlowStressScenarioTool < RubyLLM::Tool
               "calls. Do NOT use for questions about actual/current data; " \
               "answer those from the provided context."
 
-  param :fund_name,
-        type: :string,
-        desc: "Name of the fund to simulate. Omit if agent has only one fund.",
-        required: false
-  param :extra_investment_cents,
-        type: :integer,
-        desc: "Additional unplanned investment in cents not yet in the system. " \
-              "E.g. 50Cr = 5000000000. For 'what if we deploy more' questions.",
-        required: false
-  param :delay_investment_name,
-        type: :string,
-        desc: "Partial or full name of an existing planned investment to delay. " \
-              "Use together with delay_days.",
-        required: false
-  param :delay_days,
-        type: :integer,
-        desc: "Number of days to delay the investment in delay_investment_name. " \
-              "If this pushes it beyond 90 days it exits the current window.",
-        required: false
-  param :remove_investment_name,
-        type: :string,
-        desc: "Partial or full name of a planned investment to cancel entirely. " \
-              "For 'what if deal falls through' questions.",
-        required: false
-  param :capital_call_inflow_cents,
-        type: :integer,
-        desc: "Cash inflow in cents from calling capital from investors. " \
-              "E.g. calling 100Cr = 10000000000.",
-        required: false
-  param :expense_multiplier,
-        type: :number,
-        desc: "Multiply estimated expenses by this factor. " \
-              "1.2 = 20% increase, 0.8 = 20% decrease. Default 1.0.",
-        required: false
-  param :extra_expense_cents,
-        type: :integer,
-        desc: "Additional one-off flat expense in cents on top of current estimate.",
-        required: false
+  parameter :fund_name,
+            type: :string,
+            description: "Name of the fund to simulate. Omit if agent has only one fund.",
+            required: false
+  parameter :extra_investment_cents,
+            type: :integer,
+            description: "Additional unplanned investment in cents not yet in the system. " \
+                         "E.g. 50Cr = 5000000000. For 'what if we deploy more' questions.",
+            required: false
+  parameter :delay_investment_name,
+            type: :string,
+            description: "Partial or full name of an existing planned investment to delay. " \
+                         "Use together with delay_days.",
+            required: false
+  parameter :delay_days,
+            type: :integer,
+            description: "Number of days to delay the investment in delay_investment_name. " \
+                         "If this pushes it beyond 90 days it exits the current window.",
+            required: false
+  parameter :remove_investment_name,
+            type: :string,
+            description: "Partial or full name of a planned investment to cancel entirely. " \
+                         "For 'what if deal falls through' questions.",
+            required: false
+  parameter :capital_call_inflow_cents,
+            type: :integer,
+            description: "Cash inflow in cents from calling capital from investors. " \
+                         "E.g. calling 100Cr = 10000000000.",
+            required: false
+  parameter :expense_multiplier,
+            type: :number,
+            description: "Multiply estimated expenses by this factor. " \
+                         "1.2 = 20% increase, 0.8 = 20% decrease. Default 1.0.",
+            required: false
+  parameter :extra_expense_cents,
+            type: :integer,
+            description: "Additional one-off flat expense in cents on top of current estimate.",
+            required: false
 
   def initialize(support_agent:)
     super()

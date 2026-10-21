@@ -22,7 +22,7 @@ class BaseAssistant
   AI_TIMEOUT = ENV.fetch('AI_ASSISTANT_TIMEOUT', '180').to_i.seconds
 
   # Some models (esp. via certain providers) can leak a "Thought: ..." internal-monologue
-  # line ahead of the real answer. clean_response! only strips this specific leading marker --
+  # line ahead of the real answer. clean_response only strips this specific leading marker --
   # a substring search for the bare word "thought" anywhere in the text (the old behavior)
   # would also truncate legitimate answers that happen to contain it, e.g. a KPI named
   # "Thought Leadership Score" or a sentence like "we thought the runway would extend to Q3".
@@ -65,7 +65,7 @@ class BaseAssistant
     end
 
     # Clean up internal monologue
-    clean_response!(response)
+    response = clean_response(response)
 
     Rails.logger.debug { "\n🤖 #{self.class.name}:" }
     Rails.logger.debug response.content
@@ -209,29 +209,29 @@ class BaseAssistant
       assistant_type: self.class.name,
       model: self.class::AI_MODEL
     ).first_or_create!(
+      # RubyLLM 2.x: the where(model:) value is not carried into the new chat, so set it here.
+      model: self.class::AI_MODEL,
       owner: @user,
       enable_broadcast: false,
       name: "#{self.class.name} Chat #{Time.zone.now.strftime('%Y-%m-%d %H:%M')}"
     )
   end
 
-  def clean_response!(response)
-    content = response.content
+  # RubyLLM 2.x messages are read-only (no content=) and keep token counts under #tokens.
+  # Callers only read content and the two token counts (and SpecificFundAssistant rewrites
+  # content), so hand them the same OpenStruct shape the timeout branch above returns.
+  def clean_response(response)
+    return response unless response.is_a?(RubyLLM::Message)
 
-    if content.is_a?(String)
-      response.content = content.sub(LEAKED_THOUGHT_PREFIX, "").strip
-    elsif content.respond_to?(:text)
-      content.text = content.text.to_s.sub(LEAKED_THOUGHT_PREFIX, "").strip
-    end
+    OpenStruct.new(
+      content: response.content.to_s.sub(LEAKED_THOUGHT_PREFIX, "").strip,
+      input_tokens: response.tokens&.input,
+      output_tokens: response.tokens&.output
+    )
   end
 
   def extract_content(response)
-    content = response.content
-    if content.respond_to?(:text)
-      content.text
-    else
-      content
-    end
+    response.content
   end
 
   def handle_bad_request(error)

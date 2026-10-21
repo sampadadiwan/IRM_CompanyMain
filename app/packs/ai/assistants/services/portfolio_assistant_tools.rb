@@ -12,13 +12,13 @@ module PortfolioAssistantTools
                 "Attributes: investor_name, city, tag_list. " \
                 "Predicates: _cont (contains), _eq (equals), _gt (greater than), _lt (less than), _gteq (>=), _lteq (<=). " \
                 "Ordering & Limiting: ALWAYS pass `sort` and `limit` for efficiency. Examples: sort: 'investor_name asc', limit: 10."
-    param :scope, type: :string, desc: "Filter by a predefined scope. Available scopes: 'portfolio_companies', 'not_portfolio_companies', 'advisors', 'rms', 'without_investor_accesses'", required: false
-    param :aggregate_field, type: :string, desc: "Field to perform sum or group_by on", required: false
-    param :group_by_field, type: :string, desc: "Field to group results by", required: false
-    param :query, type: :object, desc: "Ransack query hash, e.g. { investor_name_cont: 'Venture', tag_list_cont: 'Tech' }", required: false
-    param :sort, type: :string, desc: "Optional sort string, e.g. 'investor_name asc'. (Maps to Ransack `s`)", required: false
-    param :limit, type: :integer, desc: "Optional limit on the number of records returned. Recommended for efficiency.", required: false
-    param :aggregate, type: :string, desc: "Perform an aggregation: 'count', 'sum', 'group_by'", required: false
+    parameter :scope, type: :string, description: "Filter by a predefined scope. Available scopes: 'portfolio_companies', 'not_portfolio_companies', 'advisors', 'rms', 'without_investor_accesses'", required: false
+    parameter :aggregate_field, type: :string, description: "Field to perform sum or group_by on", required: false
+    parameter :group_by_field, type: :string, description: "Field to group results by", required: false
+    parameter :query, type: :object, description: "Ransack query hash, e.g. { investor_name_cont: 'Venture', tag_list_cont: 'Tech' }", required: false
+    parameter :sort, type: :string, description: "Optional sort string, e.g. 'investor_name asc'. (Maps to Ransack `s`)", required: false
+    parameter :limit, type: :integer, description: "Optional limit on the number of records returned. Recommended for efficiency.", required: false
+    parameter :aggregate, type: :string, description: "Perform an aggregation: 'count', 'sum', 'group_by'", required: false
 
     def initialize(assistant)
       super()
@@ -44,7 +44,7 @@ module PortfolioAssistantTools
     description "Get a high-level financial snapshot for a specific portfolio company in one call: " \
                 "total invested, current FMV, latest valuation, and TVPI/RVPI multiples. " \
                 "Prefer this over separate detail/valuation/fund-ratio calls for a general company overview."
-    param :portfolio_company_id, type: "integer", desc: "The ID of the portfolio company", required: true
+    parameter :portfolio_company_id, type: "integer", description: "The ID of the portfolio company", required: true
 
     def initialize(assistant)
       super()
@@ -61,7 +61,7 @@ module PortfolioAssistantTools
     def name = "get_portfolio_company_details"
 
     description "Get detailed information about a specific portfolio company."
-    param :portfolio_company_id, type: "integer", desc: "The ID of the portfolio company", required: true
+    parameter :portfolio_company_id, type: "integer", description: "The ID of the portfolio company", required: true
 
     def initialize(assistant)
       super()
@@ -82,14 +82,14 @@ module PortfolioAssistantTools
                 "Attributes: valuation_date, per_share_value_cents, currency, synthetic. " \
                 "Predicates: _cont (contains), _eq (equals), _gt (greater than), _lt (less than), _gteq (>=), _lteq (<=). " \
                 "Ordering & Limiting: ALWAYS pass `sort` and `limit` for efficiency, especially for 'top', 'latest', or 'largest' requests. Example: sort: 'valuation_date desc', limit: 10. (Maps to Ransack `s`)"
-    param :portfolio_company_id, type: "integer", desc: "The ID of the portfolio company", required: true
-    param :scope, type: :string, desc: "Filter by a predefined scope. Available scopes: 'with_synthetic'", required: false
-    param :aggregate_field, type: :string, desc: "Field to perform sum or group_by on", required: false
-    param :group_by_field, type: :string, desc: "Field to group results by", required: false
-    param :query, type: :object, desc: "Ransack query hash, e.g. { currency_eq: 'USD' }", required: false
-    param :sort, type: :string, desc: "Optional sort string, e.g. 'valuation_date desc'. (Maps to Ransack `s`) ", required: false
-    param :limit, type: :integer, desc: "Optional limit on the number of records returned. Recommended for efficiency.", required: false
-    param :aggregate, type: :string, desc: "Perform an aggregation: 'count', 'sum', 'group_by'", required: false
+    parameter :portfolio_company_id, type: "integer", description: "The ID of the portfolio company", required: true
+    parameter :scope, type: :string, description: "Filter by a predefined scope. Available scopes: 'with_synthetic'", required: false
+    parameter :aggregate_field, type: :string, description: "Field to perform sum or group_by on", required: false
+    parameter :group_by_field, type: :string, description: "Field to group results by", required: false
+    parameter :query, type: :object, description: "Ransack query hash, e.g. { currency_eq: 'USD' }", required: false
+    parameter :sort, type: :string, description: "Optional sort string, e.g. 'valuation_date desc'. (Maps to Ransack `s`) ", required: false
+    parameter :limit, type: :integer, description: "Optional limit on the number of records returned. Recommended for efficiency.", required: false
+    parameter :aggregate, type: :string, description: "Perform an aggregation: 'count', 'sum', 'group_by'", required: false
 
     def initialize(assistant)
       super()
@@ -114,14 +114,14 @@ module PortfolioAssistantTools
                 "Attributes: investment_date, amount_cents, fmv_cents, gain_cents, quantity, notes, startup, proforma. " \
                 "Predicates: _cont (contains), _eq (equals), _gt (greater than), _lt (less than), _gteq (>=), _lteq (<=). " \
                 "Ordering & Limiting: ALWAYS pass `sort` and `limit` for efficiency, especially for 'top', 'latest', or 'largest' requests. Example: sort: 'investment_date desc', limit: 10. (Maps to Ransack `s`)"
-    param :portfolio_company_id, type: "integer", desc: "The ID of the portfolio company", required: true
-    param :scope, type: :string, desc: "Filter by a predefined scope. Available scopes: 'buys', 'sells', 'conversions', 'distributed', 'not_distributed', 'proforma', 'non_proforma'", required: false
-    param :aggregate_field, type: :string, desc: "Field to perform sum or group_by on", required: false
-    param :group_by_field, type: :string, desc: "Field to group results by", required: false
-    param :query, type: :object, desc: "Ransack query hash, e.g. { notes_cont: 'initial' }", required: false
-    param :sort, type: :string, desc: "Optional sort string, e.g. 'investment_date desc'. (Maps to Ransack `s`) ", required: false
-    param :limit, type: :integer, desc: "Optional limit on the number of records returned. Recommended for efficiency.", required: false
-    param :aggregate, type: :string, desc: "Perform an aggregation: 'count', 'sum', 'group_by'", required: false
+    parameter :portfolio_company_id, type: "integer", description: "The ID of the portfolio company", required: true
+    parameter :scope, type: :string, description: "Filter by a predefined scope. Available scopes: 'buys', 'sells', 'conversions', 'distributed', 'not_distributed', 'proforma', 'non_proforma'", required: false
+    parameter :aggregate_field, type: :string, description: "Field to perform sum or group_by on", required: false
+    parameter :group_by_field, type: :string, description: "Field to group results by", required: false
+    parameter :query, type: :object, description: "Ransack query hash, e.g. { notes_cont: 'initial' }", required: false
+    parameter :sort, type: :string, description: "Optional sort string, e.g. 'investment_date desc'. (Maps to Ransack `s`) ", required: false
+    parameter :limit, type: :integer, description: "Optional limit on the number of records returned. Recommended for efficiency.", required: false
+    parameter :aggregate, type: :string, description: "Perform an aggregation: 'count', 'sum', 'group_by'", required: false
 
     def initialize(assistant)
       super()
@@ -150,14 +150,14 @@ module PortfolioAssistantTools
                 "Ordering & Limiting: ALWAYS pass `sort` and `limit` for efficiency. Example: sort: 'name asc', limit: 10. " \
                 "DEFAULTS TO THE LAST 12 MONTHS if no date filter is given. For multi-year/all-time requests, " \
                 "pass query: { all_time_eq: 'true' } or an explicit kpi_report_as_of_gteq."
-    param :portfolio_company_ids, type: "array", desc: "The IDs of the portfolio companies", required: true
-    param :scope, type: :string, desc: "Filter by a predefined scope. Available scopes: 'actuals', 'budgets', 'ics', 'monthly', 'quarterly', 'yearly', 'ytd'", required: false
-    param :aggregate_field, type: :string, desc: "Field to perform sum or group_by on", required: false
-    param :group_by_field, type: :string, desc: "Field to group results by", required: false
-    param :query, type: :object, desc: "Ransack query hash, e.g. { name_cont: 'Revenue', kpi_report_as_of_gteq: '2023-01-01' }", required: false
-    param :sort, type: :string, desc: "Optional sort string, e.g. 'name asc'. (Maps to Ransack `s`)", required: false
-    param :limit, type: :integer, desc: "Optional limit on the number of records returned. Recommended for efficiency.", required: false
-    param :aggregate, type: :string, desc: "Perform an aggregation: 'count', 'sum', 'group_by'", required: false
+    parameter :portfolio_company_ids, type: "array", description: "The IDs of the portfolio companies", required: true
+    parameter :scope, type: :string, description: "Filter by a predefined scope. Available scopes: 'actuals', 'budgets', 'ics', 'monthly', 'quarterly', 'yearly', 'ytd'", required: false
+    parameter :aggregate_field, type: :string, description: "Field to perform sum or group_by on", required: false
+    parameter :group_by_field, type: :string, description: "Field to group results by", required: false
+    parameter :query, type: :object, description: "Ransack query hash, e.g. { name_cont: 'Revenue', kpi_report_as_of_gteq: '2023-01-01' }", required: false
+    parameter :sort, type: :string, description: "Optional sort string, e.g. 'name asc'. (Maps to Ransack `s`)", required: false
+    parameter :limit, type: :integer, description: "Optional limit on the number of records returned. Recommended for efficiency.", required: false
+    parameter :aggregate, type: :string, description: "Perform an aggregation: 'count', 'sum', 'group_by'", required: false
 
     def initialize(assistant)
       super()
@@ -186,13 +186,13 @@ module PortfolioAssistantTools
                 "Attributes: name, value, owner_type, owner_id, end_date, latest. " \
                 "You can also filter by portfolio_company_id. " \
                 "Ordering & Limiting: ALWAYS pass `sort` and `limit` for efficiency. Example: sort: 'end_date desc', limit: 10. (Maps to Ransack `s`)"
-    param :portfolio_company_id, type: "integer", desc: "The ID of the portfolio company", required: false
-    param :aggregate_field, type: :string, desc: "Field to perform sum or group_by on", required: false
-    param :group_by_field, type: :string, desc: "Field to group results by", required: false
-    param :query, type: :object, desc: "Ransack query hash, e.g. { name_eq: 'TVPI', latest_eq: true }", required: false
-    param :sort, type: :string, desc: "Optional sort string, e.g. 'end_date desc'. (Maps to Ransack `s`) ", required: false
-    param :limit, type: :integer, desc: "Optional limit on the number of records returned. Recommended for efficiency.", required: false
-    param :aggregate, type: :string, desc: "Perform an aggregation: 'count', 'sum', 'group_by'", required: false
+    parameter :portfolio_company_id, type: "integer", description: "The ID of the portfolio company", required: false
+    parameter :aggregate_field, type: :string, description: "Field to perform sum or group_by on", required: false
+    parameter :group_by_field, type: :string, description: "Field to group results by", required: false
+    parameter :query, type: :object, description: "Ransack query hash, e.g. { name_eq: 'TVPI', latest_eq: true }", required: false
+    parameter :sort, type: :string, description: "Optional sort string, e.g. 'end_date desc'. (Maps to Ransack `s`) ", required: false
+    parameter :limit, type: :integer, description: "Optional limit on the number of records returned. Recommended for efficiency.", required: false
+    parameter :aggregate, type: :string, description: "Perform an aggregation: 'count', 'sum', 'group_by'", required: false
 
     def initialize(assistant)
       super()
@@ -219,11 +219,11 @@ module PortfolioAssistantTools
                 "Attributes: name, owner_tag, text, public_visibility, esign_status. " \
                 "Predicates: _cont (contains), _eq (equals), _gt (greater than), _lt (less than), _gteq (>=), _lteq (<=). " \
                 "Ordering & Limiting: ALWAYS pass `sort` and `limit` for efficiency, especially for 'top', 'latest', or 'largest' requests. Example: sort: 'created_at desc', limit: 10. (Maps to Ransack `s`)"
-    param :portfolio_company_id, type: "integer", desc: "The ID of the portfolio company", required: true
-    param :scope, type: :string, desc: "Filter by a predefined scope. Available scopes: 'approved', 'not_approved', 'template', 'not_template', 'sent_for_esign', 'not_sent_for_esign', 'signed', 'esign_status_completed', 'esign_status_failed', 'esign_status_requested'", required: false
-    param :query, type: :object, desc: "Ransack query hash, e.g. { name_cont: 'Agreement' }", required: false
-    param :sort, type: :string, desc: "Optional sort string, e.g. 'created_at desc'. (Maps to Ransack `s`) ", required: false
-    param :limit, type: :integer, desc: "Optional limit on the number of records returned. Recommended for efficiency.", required: false
+    parameter :portfolio_company_id, type: "integer", description: "The ID of the portfolio company", required: true
+    parameter :scope, type: :string, description: "Filter by a predefined scope. Available scopes: 'approved', 'not_approved', 'template', 'not_template', 'sent_for_esign', 'not_sent_for_esign', 'signed', 'esign_status_completed', 'esign_status_failed', 'esign_status_requested'", required: false
+    parameter :query, type: :object, description: "Ransack query hash, e.g. { name_cont: 'Agreement' }", required: false
+    parameter :sort, type: :string, description: "Optional sort string, e.g. 'created_at desc'. (Maps to Ransack `s`) ", required: false
+    parameter :limit, type: :integer, description: "Optional limit on the number of records returned. Recommended for efficiency.", required: false
 
     def initialize(assistant)
       super()
@@ -240,8 +240,8 @@ module PortfolioAssistantTools
     def name = "get_document"
 
     description "Get detailed information and full text content for a specific document by ID or name."
-    param :document_id, type: "integer", desc: "The ID of the document", required: false
-    param :name, type: "string", desc: "The name of the document (can be partial)", required: false
+    parameter :document_id, type: "integer", description: "The ID of the document", required: false
+    parameter :name, type: "string", description: "The name of the document (can be partial)", required: false
 
     def initialize(assistant)
       super()
@@ -258,9 +258,9 @@ module PortfolioAssistantTools
     def name = "analyze_document"
 
     description "Use this only to analyze documents and nothing else. Analyze one or more documents to answer specific questions or perform extraction. Requires document IDs or names and a natural language prompt."
-    param :document_ids, type: "array", desc: "List of document IDs to analyze", required: false
-    param :document_names, type: "array", desc: "List of document names (can be partial) to analyze", required: false
-    param :prompt, type: "string", desc: "Natural language instructions or question for the analysis", required: true
+    parameter :document_ids, type: "array", description: "List of document IDs to analyze", required: false
+    parameter :document_names, type: "array", description: "List of document names (can be partial) to analyze", required: false
+    parameter :prompt, type: "string", description: "Natural language instructions or question for the analysis", required: true
 
     def initialize(assistant)
       super()
@@ -278,9 +278,9 @@ module PortfolioAssistantTools
 
     description "Get the cap table for a specific portfolio company. " \
                 "Optionally filter by funding rounds and group by a specific field."
-    param :portfolio_company_id, type: "integer", desc: "The ID of the portfolio company", required: true
-    param :funding_rounds, type: "array", desc: "Optional list of funding rounds to filter by", required: false
-    param :group_by_field, type: "string", desc: "Field to group by (default: 'investor_name')", required: false
+    parameter :portfolio_company_id, type: "integer", description: "The ID of the portfolio company", required: true
+    parameter :funding_rounds, type: "array", description: "Optional list of funding rounds to filter by", required: false
+    parameter :group_by_field, type: "string", description: "Field to group by (default: 'investor_name')", required: false
 
     def initialize(assistant)
       super()
@@ -305,10 +305,10 @@ module PortfolioAssistantTools
                 "Attributes: investor_name, category, investment_type, funding_round, investment_date, quantity, amount_cents. " \
                 "Predicates: _cont (contains), _eq (equals), _gt (greater than), _lt (less than), _gteq (>=), _lteq (<=). " \
                 "Ordering & Limiting: ALWAYS pass `sort` and `limit` for efficiency. Examples: sort: 'investment_date desc', limit: 10."
-    param :portfolio_company_ids, type: "array", desc: "The IDs of the portfolio companies", required: true
-    param :query, type: :object, desc: "Ransack query hash", required: false
-    param :sort, type: :string, desc: "Optional sort string, e.g. 'investment_date desc'. (Maps to Ransack `s`)", required: false
-    param :limit, type: :integer, desc: "Optional limit on the number of records returned. Recommended for efficiency.", required: false
+    parameter :portfolio_company_ids, type: "array", description: "The IDs of the portfolio companies", required: true
+    parameter :query, type: :object, description: "Ransack query hash", required: false
+    parameter :sort, type: :string, description: "Optional sort string, e.g. 'investment_date desc'. (Maps to Ransack `s`)", required: false
+    parameter :limit, type: :integer, description: "Optional limit on the number of records returned. Recommended for efficiency.", required: false
 
     def initialize(assistant)
       super()
@@ -330,8 +330,8 @@ module PortfolioAssistantTools
     description "Generates an interactive Chart.js chart (HTML) from a dataset and a prompt describing the desired visualization. Use this when the user asks for a graph, plot, or chart."
     def name = "plot_chart"
 
-    param :data, type: :string, desc: "A JSON string of the data to be plotted.", required: true
-    param :prompt, type: :string, desc: "A natural language prompt describing what the chart should represent.", required: true
+    parameter :data, type: :string, description: "A JSON string of the data to be plotted.", required: true
+    parameter :prompt, type: :string, description: "A natural language prompt describing what the chart should represent.", required: true
   end
 
   class PlotChartFromQuery < BaseAssistantTools::PlotChartFromQuery
@@ -339,24 +339,24 @@ module PortfolioAssistantTools
 
     def name = "plot_chart_from_query"
 
-    param :resource, type: :string, desc: "The resource to fetch data from (e.g. 'portfolio_kpis', 'valuations', 'portfolio_investments').", required: true
-    param :portfolio_company_ids, type: :array, desc: "Required when resource is 'portfolio_kpis'. Array of portfolio company IDs.", required: false
-    param :prompt, type: :string, desc: "A natural language prompt describing what data to fetch and how to plot it.", required: true
+    parameter :resource, type: :string, description: "The resource to fetch data from (e.g. 'portfolio_kpis', 'valuations', 'portfolio_investments').", required: true
+    parameter :portfolio_company_ids, type: :array, description: "Required when resource is 'portfolio_kpis'. Array of portfolio company IDs.", required: false
+    parameter :prompt, type: :string, description: "A natural language prompt describing what data to fetch and how to plot it.", required: true
 
     def execute(resource: nil, portfolio_company_ids: nil, query: {}, scope: nil, sort: nil, limit: nil, prompt: nil, **args)
       if resource == "portfolio_kpis"
-        return RubyLLM::Content.new("Error: portfolio_company_ids is required when resource is 'portfolio_kpis'.") if portfolio_company_ids.blank?
+        return "Error: portfolio_company_ids is required when resource is 'portfolio_kpis'." if portfolio_company_ids.blank?
 
         data_results = @assistant.data_manager.list_portfolio_kpis(
           portfolio_company_ids: portfolio_company_ids,
           query: query, scope: scope, sort: sort, limit: limit
         )
 
-        return RubyLLM::Content.new("No KPI data found for the given query.") if data_results.blank?
+        return "No KPI data found for the given query." if data_results.blank?
 
         html = generate_chart_html(data_results.to_json, prompt)
         summary = "Successfully plotted KPI chart. Data points: #{data_results.size}. Sample: #{data_results.take(3).to_json}..."
-        return RubyLLM::Content.new("#{summary}\n\n#{html}")
+        return "#{summary}\n\n#{html}"
       end
 
       super(resource: resource, query: query, scope: scope, sort: sort, limit: limit, prompt: prompt, **args)

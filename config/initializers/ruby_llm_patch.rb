@@ -1,4 +1,7 @@
 # config/initializers/ruby_llm_patch.rb
+#
+# Written against ruby_llm 2.x, where Chat#complete is a loop of #step calls and every
+# model request goes through #generate (one call per tool round).
 
 module RubyLLM
   class Chat
@@ -11,58 +14,49 @@ module RubyLLM
       self
     end
 
-    # Reset tool iteration count on every new user ask
-    alias original_ask ask
-    def ask(message = nil, with: nil, &)
+    # Reset the tool iteration count once per completion loop. Both Chat#ask and the
+    # ActiveRecord chat's #ask reach this exactly once per user question.
+    alias original_complete complete
+    def complete(&)
       @tool_iteration_count = 0
-      original_ask(message, with: with, &)
+      original_complete(&)
     end
 
-    # Override complete to apply the message filter and tool loop protection
-    alias original_complete complete
-
-    def complete(&)
+    # Tool Loop Protection: count model requests within one completion loop and stop
+    # once the limit is passed. Default raised from 15 → 25 to accommodate the KPI batching
+    # flow in PortfolioAssistant (list_portfolio_companies → list_portfolio_kpis → plot_chart)
+    # which legitimately requires more turns than a simple single-tool query.
+    # Configurable via MAX_TOOL_ITERATIONS env var to allow per-environment tuning.
+    alias original_generate generate
+    def generate(&)
       @tool_iteration_count ||= 0
       @tool_iteration_count += 1
 
-      # Tool Loop Protection: Prevent infinite tool call loops.
-      # Default raised from 15 → 25 to accommodate the KPI batching flow in PortfolioAssistant
-      # (list_portfolio_companies → list_portfolio_kpis → plot_chart) which legitimately
-      # requires more turns than a simple single-tool query.
-      # Configurable via MAX_TOOL_ITERATIONS env var to allow per-environment tuning.
       limit = @max_tool_iterations || ENV.fetch('MAX_TOOL_ITERATIONS', '25').to_i
+      return original_generate(&) if @tool_iteration_count <= limit
 
-      if @tool_iteration_count > limit
-        error_msg = "Error: Maximum tool execution limit reached (#{limit} turns). " \
-                    "The assistant stopped to prevent an excessively long processing time or infinite loop. " \
-                    "Please try refining your request or asking for data in smaller batches."
+      error_msg = "Error: Maximum tool execution limit reached (#{limit} turns). " \
+                  "The assistant stopped to prevent an excessively long processing time or infinite loop. " \
+                  "Please try refining your request or asking for data in smaller batches."
 
-        # Create a message object that looks like a real response
-        response = RubyLLM::Message.new(role: :assistant, content: error_msg)
+      # A plain assistant reply (no tool calls) ends the #complete loop. Add it the way a
+      # generated reply is added so the ActiveRecord callbacks persist and broadcast it.
+      response = RubyLLM::Message.new(role: :assistant, content: error_msg)
+      run_callbacks(:before_message)
+      add_message(response)
+      run_callbacks(:after_message, response)
 
-        # We MUST add it to the chat so persistence and UI show it
-        add_message(response)
-        @on[:end_message]&.call(response)
+      response
+    end
 
-        return response
-      end
+    private
 
-      # with_messages Filter Logic
-      if @message_filter_block
-        filtered_messages = @message_filter_block.call(@messages)
-
-        # Temporarily swap @messages to ensure @provider.complete uses the filtered list
-        original_messages = @messages
-        begin
-          @messages = filtered_messages
-          original_complete(&)
-        ensure
-          # Restore original messages so persistence and future turn items are correct
-          @messages = original_messages
-        end
-      else
-        original_complete(&)
-      end
+    # with_messages Filter Logic: narrow the list sent to the provider only. The chat's own
+    # message history (and therefore persistence and later turns) is left untouched.
+    alias original_preprocessed_messages preprocessed_messages
+    def preprocessed_messages(list = messages)
+      list = @message_filter_block.call(list) if @message_filter_block
+      original_preprocessed_messages(list)
     end
   end
 

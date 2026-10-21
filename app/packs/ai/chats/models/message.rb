@@ -2,7 +2,7 @@ class Message < ApplicationRecord
   include ActionView::RecordIdentifier
 
   # Provides methods like tool_call?, tool_result?
-  acts_as_message # Assumes Chat and ToolCall model names
+  acts_as_message # Assumes the Chat model name; tool calls live in ruby_llm_tool_calls
   has_many_attached :attachments
 
   after_create_commit :broadcast_created, if: :should_broadcast?

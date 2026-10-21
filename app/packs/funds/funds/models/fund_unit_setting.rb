@@ -32,4 +32,9 @@ class FundUnitSetting < ApplicationRecord
   def self.ransackable_attributes(_auth_object = nil)
     %w[created_at management_fee setup_fee carry name isin].sort
   end
+
+  def self.ransackable_associations(auth_object = nil)
+    ["fund"]
+  end
+
 end

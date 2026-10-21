@@ -27,18 +27,18 @@ class DocxInsertMergeFieldTool < RubyLLM::Tool
               "'foo.non_individual?:if' ... ':endIf'), never invent an ':unless' " \
               "operation; this tool will reject it."
 
-  param :part, type: :string, desc: "Part to insert into.", required: true
-  param :anchor_index, type: :integer, desc: "Index of the existing paragraph to insert next to.", required: true
-  param :position, type: :string, desc: "'before' or 'after' the anchor paragraph.", required: true
-  param :expression, type: :string,
-                     desc: "Sablon expression, no leading '=' unless it's a value field. " \
-                           "Examples: 'investor_kyc.individual?:if', 'investor_kyc.individual?:endIf', " \
-                           "'=investor_kyc.full_name'. No ':unless' — see tool description.",
-                     required: true
-  param :clone_ppr_from, type: :integer,
-                         desc: "Optional paragraph index to copy indentation/style from " \
-                               "(numbering is always stripped). Defaults to the anchor's own formatting.",
-                         required: false
+  parameter :part, type: :string, description: "Part to insert into.", required: true
+  parameter :anchor_index, type: :integer, description: "Index of the existing paragraph to insert next to.", required: true
+  parameter :position, type: :string, description: "'before' or 'after' the anchor paragraph.", required: true
+  parameter :expression, type: :string,
+                         description: "Sablon expression, no leading '=' unless it's a value field. " \
+                                      "Examples: 'investor_kyc.individual?:if', 'investor_kyc.individual?:endIf', " \
+                                      "'=investor_kyc.full_name'. No ':unless' — see tool description.",
+                         required: true
+  parameter :clone_ppr_from, type: :integer,
+                             description: "Optional paragraph index to copy indentation/style from " \
+                                          "(numbering is always stripped). Defaults to the anchor's own formatting.",
+                             required: false
 
   def initialize(workspace:)
     super()

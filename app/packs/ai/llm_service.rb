@@ -50,7 +50,6 @@ class LlmService
         config.gemini_api_key = entity.entity_setting.gemini_api_key || Rails.application.credentials["GOOGLE_GEMINI_API_KEY"]
         config.anthropic_api_key = entity.entity_setting.anthropic_api_key || Rails.application.credentials["ANTHROPIC_API_KEY"]
         config.openrouter_api_key = entity.entity_setting.openrouter_api_key || Rails.application.credentials["OPENROUTER_API_KEY"]
-        config.use_new_acts_as = true
       end
 
       RubyLLM.chat(

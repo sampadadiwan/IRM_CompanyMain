@@ -32,7 +32,8 @@ class ChatStreamJob < ApplicationJob
 
       # Final render to ensure the last message is cleanly displayed
       final_message = @chat.messages.last
-      if final_message&.assistant? && final_message.content.blank?
+      # Message has no role predicates (assistant? etc.); role is stored as a string.
+      if final_message&.role == "assistant" && final_message.content.blank?
         fallback_content = "The assistant was unable to generate a response. This may be due to complex constraints or a temporary connection issue. Please try rephrasing your request."
         final_message.update!(content: fallback_content)
       end

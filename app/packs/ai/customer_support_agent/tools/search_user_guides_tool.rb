@@ -10,10 +10,10 @@ class SearchUserGuidesTool < RubyLLM::Tool
               "Pass one or more keywords. Returns matching passages from the guides with file names. " \
               "Use this tool FIRST before attempting a SQL query when the user asks a 'how to' question."
 
-  param :keywords,
-        type: :string,
-        desc: 'Space-separated search keywords (e.g. "capital call create")',
-        required: true
+  parameter :keywords,
+            type: :string,
+            description: 'Space-separated search keywords (e.g. "capital call create")',
+            required: true
 
   GUIDES_DIR = Rails.root.join("docs/user_guides").freeze
   MAX_RESULTS = 10

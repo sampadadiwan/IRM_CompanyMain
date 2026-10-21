@@ -9,11 +9,11 @@ class DocxSetParagraphIndentationTool < RubyLLM::Tool
               "720 dxa = 0.5 in, 1440 dxa = 1.0 in) on a paragraph's <w:ind> properties. " \
               "Use this to fix sub-clause indentation or hanging indents."
 
-  param :part, type: :string, desc: "Part containing the paragraph, e.g. 'word/document.xml'.", required: true
-  param :index, type: :integer, desc: "Paragraph index to modify.", required: true
-  param :left, type: :integer, desc: "Left indent in dxa (e.g. 720 or 1440).", required: false
-  param :hanging, type: :integer, desc: "Hanging indent in dxa (e.g. 720).", required: false
-  param :first_line, type: :integer, desc: "First line indent in dxa.", required: false
+  parameter :part, type: :string, description: "Part containing the paragraph, e.g. 'word/document.xml'.", required: true
+  parameter :index, type: :integer, description: "Paragraph index to modify.", required: true
+  parameter :left, type: :integer, description: "Left indent in dxa (e.g. 720 or 1440).", required: false
+  parameter :hanging, type: :integer, description: "Hanging indent in dxa (e.g. 720).", required: false
+  parameter :first_line, type: :integer, description: "First line indent in dxa.", required: false
 
   def initialize(workspace:)
     super()

@@ -12,18 +12,8 @@ class Chat < ApplicationRecord
   validates :name, presence: true
   validates :assistant_type, length: { maximum: 50 }, allow_blank: true
 
-  def model_id
-    super || @model_string
-  end
-
-  before_validation :set_model
-
-  def set_model
-    return if model_id.blank?
-    return if model.present? && !model_id_changed?
-
-    self.model = Model.where(model_id: model_id).last
-  end
+  # Model lookup is RubyLLM's job in 2.x: `chat.model = "gemini-..."` (or `model_id:`)
+  # is resolved to a RubyLLM::ActiveRecord::Model row by acts_as_chat's before_save.
 
   def should_broadcast?
     enable_broadcast

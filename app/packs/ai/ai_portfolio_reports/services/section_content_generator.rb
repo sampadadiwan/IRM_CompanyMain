@@ -122,7 +122,7 @@ class SectionContentGenerator
     when String
       response
     when RubyLLM::Message
-      response.content.is_a?(RubyLLM::Content) ? response.content.text : response.content
+      response.content
     else
       response.to_s
     end

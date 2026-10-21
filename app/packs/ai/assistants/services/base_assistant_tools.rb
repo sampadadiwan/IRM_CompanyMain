@@ -6,8 +6,8 @@ class BaseAssistantTools
   # Tool to generate chart visualizations from data.
   class PlotChart < RubyLLM::Tool
     description "Generates an interactive Chart.js chart (HTML) from a dataset and a prompt describing the desired visualization. Use this when the user asks for a graph, plot, or chart."
-    param :data, type: :string, desc: "A JSON string of the data to be plotted."
-    param :prompt, type: :string, desc: "A natural language prompt describing what the chart should represent."
+    parameter :data, type: :string, description: "A JSON string of the data to be plotted."
+    parameter :prompt, type: :string, description: "A natural language prompt describing what the chart should represent."
 
     def initialize(assistant)
       super()
@@ -25,8 +25,7 @@ class BaseAssistantTools
 
       raise ArgumentError, "PlotChart requires both :data and :prompt (received data: #{data.inspect}, prompt: #{prompt.inspect}, args: #{args.inspect})" if data.nil? || prompt.nil?
 
-      html = generate_chart_html(data, prompt)
-      RubyLLM::Content.new(html)
+      generate_chart_html(data, prompt)
     end
 
     private
@@ -104,12 +103,12 @@ class BaseAssistantTools
     description "Generates an interactive Chart.js chart by fetching data directly from the database using a query. " \
                 "Use this for large datasets instead of fetching data first. " \
                 "Supported resources: 'funds', 'capital_calls', 'capital_commitments', 'capital_remittances', 'capital_distributions', 'portfolio_investments', 'fund_ratios'."
-    param :resource, type: :string, desc: "The resource name to query (e.g., 'capital_remittances')."
-    param :query, type: :object, desc: "Ransack query hash.", required: false
-    param :scope, type: :string, desc: "Predefined scope name.", required: false
-    param :sort, type: :string, desc: "Optional sort string.", required: false
-    param :limit, type: :integer, desc: "Optional limit.", required: false
-    param :prompt, type: :string, desc: "A natural language prompt describing what the chart should represent."
+    parameter :resource, type: :string, description: "The resource name to query (e.g., 'capital_remittances')."
+    parameter :query, type: :object, description: "Ransack query hash.", required: false
+    parameter :scope, type: :string, description: "Predefined scope name.", required: false
+    parameter :sort, type: :string, description: "Optional sort string.", required: false
+    parameter :limit, type: :integer, description: "Optional limit.", required: false
+    parameter :prompt, type: :string, description: "A natural language prompt describing what the chart should represent."
 
     def execute(resource: nil, query: {}, scope: nil, sort: nil, limit: nil, prompt: nil, **args)
       resource ||= args[:resource]
@@ -127,7 +126,7 @@ class BaseAssistantTools
       method_name = "list_#{resource}"
       data_manager = @assistant.respond_to?(:data_manager) ? @assistant.data_manager : @assistant
 
-      return RubyLLM::Content.new("Error: Unsupported resource '#{resource}' for chart plotting.") unless data_manager.respond_to?(method_name)
+      return "Error: Unsupported resource '#{resource}' for chart plotting." unless data_manager.respond_to?(method_name)
 
       # Fetch data directly via data manager
       data_results = data_manager.public_send(method_name, query: query, scope: scope, sort: sort, limit: limit)
@@ -136,9 +135,9 @@ class BaseAssistantTools
       # `scope`) instead of raising -- that Hash is never `blank?`, so without this check it
       # would fall through into generate_chart_html as if it were real chart data, silently
       # rendering/summarizing a chart from an error payload instead of surfacing the error.
-      return RubyLLM::Content.new("Error: #{data_results[:error]}") if data_results.is_a?(Hash) && data_results[:error].present?
+      return "Error: #{data_results[:error]}" if data_results.is_a?(Hash) && data_results[:error].present?
 
-      return RubyLLM::Content.new("No data found for the given query to plot a chart.") if data_results.blank?
+      return "No data found for the given query to plot a chart." if data_results.blank?
 
       # Generate chart HTML
       html = generate_chart_html(data_results.to_json, prompt)
@@ -148,7 +147,7 @@ class BaseAssistantTools
       summary += "Data points: #{data_results.size}. "
       summary += "Summary of data: #{data_results.take(3).to_json}..." if data_results.is_a?(Array)
 
-      RubyLLM::Content.new("#{summary}\n\n#{html}")
+      "#{summary}\n\n#{html}"
     end
   end
 end

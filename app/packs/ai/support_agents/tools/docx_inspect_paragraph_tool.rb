@@ -11,8 +11,8 @@ class DocxInspectParagraphTool < RubyLLM::Tool
               "after DocxSearchTextTool to understand exactly why a paragraph is " \
               "numbered or paginated the way it is before deciding on a fix."
 
-  param :part, type: :string, desc: "Part containing the paragraph, e.g. 'word/document.xml'.", required: true
-  param :index, type: :integer, desc: "Paragraph index (from DocxSearchTextTool results).", required: true
+  parameter :part, type: :string, description: "Part containing the paragraph, e.g. 'word/document.xml'.", required: true
+  parameter :index, type: :integer, description: "Paragraph index (from DocxSearchTextTool results).", required: true
 
   def initialize(workspace:)
     super()
