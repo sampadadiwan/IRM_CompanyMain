@@ -43,6 +43,11 @@ class AllocationRun < ApplicationRecord
     %w[end_date fund_ratios generate_soa locked start_date status tag_list template_name user_id].sort
   end
 
+  # No association is searchable; Ransack 6 asks for this list on any non-column condition and raises without it
+  def self.ransackable_associations(_auth_object = nil)
+    []
+  end
+
   # Runs this allocation again into the same run record, with exactly the settings stored on it,
   # so the period's entries are replaced rather than duplicated under a new run.
   #

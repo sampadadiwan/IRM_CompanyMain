@@ -30,4 +30,9 @@ class PortfolioScenario < ApplicationRecord
   def self.ransackable_attributes(_auth_object = nil)
     %w[name updated_at]
   end
+
+  # No association is searchable; Ransack 6 asks for this list on any non-column condition and raises without it
+  def self.ransackable_associations(_auth_object = nil)
+    []
+  end
 end

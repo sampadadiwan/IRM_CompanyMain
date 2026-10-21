@@ -35,4 +35,9 @@ class AiRule < ApplicationRecord
   def self.ransackable_attributes(_auth_object = nil)
     %w[created_at enabled for_class rule rule_type schedule tags updated_at].sort
   end
+
+  # No association is searchable; Ransack 6 asks for this list on any non-column condition and raises without it
+  def self.ransackable_associations(_auth_object = nil)
+    []
+  end
 end

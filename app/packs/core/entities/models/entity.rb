@@ -273,6 +273,11 @@ class Entity < ApplicationRecord
     %w[category name]
   end
 
+  # No association is searchable; Ransack 6 asks for this list on any non-column condition and raises without it
+  def self.ransackable_associations(_auth_object = nil)
+    []
+  end
+
   def currency_list
     list = exchange_rates.pluck(:from) << currency
     list.uniq

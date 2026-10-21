@@ -823,6 +823,11 @@ class User < ApplicationRecord
     %w[first_name last_name email phone whatsapp_enabled two_factor_enabled advisor_entity_id].sort
   end
 
+  # No association is searchable; Ransack 6 asks for this list on any non-column condition and raises without it
+  def self.ransackable_associations(_auth_object = nil)
+    []
+  end
+
   def active_for_authentication?
     super && active
   end

@@ -168,6 +168,11 @@ class InvestorKpiMapping < ApplicationRecord
     %w[reported_kpi_name standard_kpi_name category]
   end
 
+  # No association is searchable; Ransack 6 asks for this list on any non-column condition and raises without it
+  def self.ransackable_associations(_auth_object = nil)
+    []
+  end
+
   def self.create_from(entity, kpi_report)
     investor = if kpi_report && kpi_report.portfolio_company_id.present?
                  kpi_report.portfolio_company

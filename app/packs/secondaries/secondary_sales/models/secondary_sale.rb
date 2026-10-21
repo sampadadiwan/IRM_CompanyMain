@@ -134,6 +134,11 @@ class SecondarySale < ApplicationRecord
     %w[active start_date]
   end
 
+  # No association is searchable; Ransack 6 asks for this list on any non-column condition and raises without it
+  def self.ransackable_associations(_auth_object = nil)
+    []
+  end
+
   def adhoc_notifications_to
     ["All Sellers", "All Buyers", "Approved Sellers", "Verified Sellers", "Shortlisted Buyers"].sort
   end

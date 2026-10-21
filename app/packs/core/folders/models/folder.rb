@@ -210,6 +210,11 @@ class Folder < ApplicationRecord
     %w[full_path name owner_type].sort
   end
 
+  # No association is searchable; Ransack 6 asks for this list on any non-column condition and raises without it
+  def self.ransackable_associations(_auth_object = nil)
+    []
+  end
+
   private
 
   # Changed: Added resolve_effective_nda private method shared by effective_nda_config and nda_source_folder.

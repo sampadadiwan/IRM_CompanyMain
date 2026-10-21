@@ -276,6 +276,11 @@ class DashboardWidget < ApplicationRecord
     %w[enabled dashboard_name name widget_name owner_type position tags tag_list]
   end
 
+  # No association is searchable; Ransack 6 asks for this list on any non-column condition and raises without it
+  def self.ransackable_associations(_auth_object = nil)
+    []
+  end
+
   def self.add_all(entity, owner: nil)
     FUND_WIDGETS.each do |widget|
       dashboard_widget = widget.dup

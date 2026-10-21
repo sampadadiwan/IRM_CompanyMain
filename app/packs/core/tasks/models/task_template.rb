@@ -23,4 +23,9 @@ class TaskTemplate < ApplicationRecord
   def self.ransackable_attributes(_auth_object = nil)
     %w[action_link details due_in_days for_class help_link tag_list].sort
   end
+
+  # No association is searchable; Ransack 6 asks for this list on any non-column condition and raises without it
+  def self.ransackable_associations(_auth_object = nil)
+    []
+  end
 end
