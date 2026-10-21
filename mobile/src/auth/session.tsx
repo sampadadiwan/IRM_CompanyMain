@@ -1,14 +1,23 @@
+import { useQueryClient } from '@tanstack/react-query';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { AppState, Platform } from 'react-native';
 
-import { api, ApiError, loadSession, onApiEvent, saveRegion, saveSession, type Session } from '@/api/client';
+import {
+  api, ApiError, currentSite, loadSession, onApiEvent, saveSession, saveSite, sessionFor, sessionSites, storeSession, type Session,
+} from '@/api/client';
 import { getItem, installId, KEYS, setItem } from '@/auth/storage';
-import { APP_VERSION } from '@/api/config';
+import { APP_VERSION, type Region, type Site } from '@/api/config';
 
 /**
  * Who is signed in, and the steps to get there (proposal Workflow Journey, Part A):
- *   region → email + password → (code, when two-factor is on) → signed in → (Face ID lock)
+ *   site (environment + region) → email + password → (code, when two-factor is on) → signed in
+ *   → (Face ID lock)
+ *
+ * The phone keeps one session per site (lp-mobile-multi-site design card ②). Switching region
+ * reuses that region's session when there is one, and otherwise asks the current region for a
+ * one-time link the other region turns into a session — the website's region switch, so no
+ * password or code is asked again. Sign out signs every site out.
  *
  * The server owns every rule (lockout, two-factor, investor-only); this only moves between the
  * screens and keeps the tokens in secure storage.
@@ -21,8 +30,10 @@ type AuthContextValue = {
   status: AuthStatus;
   challenge: Challenge | null;
   biometricEnabled: boolean;
-  chooseRegion: (code: string) => Promise<void>;
-  changeRegion: () => Promise<void>;
+  site: Site | null;
+  chooseSite: (site: Site) => Promise<void>;
+  openSitePicker: () => void;
+  switchRegion: (region: Region) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   verifyCode: (code: string) => Promise<void>;
   resendCode: () => Promise<void>;
@@ -49,16 +60,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>('loading');
   const [challenge, setChallenge] = useState<Challenge | null>(null);
   const [biometricEnabled, setBiometricEnabled] = useState(false);
+  const [site, setSite] = useState<Site | null>(null);
+  const queryClient = useQueryClient();
   const backgroundedAt = useRef<number | null>(null);
   const biometricFailures = useRef(0);
 
   // Restore on launch
   useEffect(() => {
     (async () => {
-      const { regionCode, session } = await loadSession();
+      const restored = await loadSession();
       const bio = (await getItem(KEYS.biometric)) === 'on';
       setBiometricEnabled(bio);
-      if (!regionCode) return setStatus('needsRegion');
+      setSite(restored.site);
+      if (!restored.site) return setStatus('needsRegion');
+      const session = restored.session;
       if (!session) return setStatus('signedOut');
       setStatus(bio ? 'locked' : 'signedIn');
     })();
@@ -90,27 +105,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setStatus('signedIn');
   }, []);
 
-  const chooseRegion = useCallback(async (code: string) => {
-    await saveRegion(code);
-    setStatus('signedOut');
-  }, []);
+  // MS-H4 — moving to a site the phone already holds a session for needs no sign-in
+  const chooseSite = useCallback(async (next: Site) => {
+    const session = await saveSite(next);
+    queryClient.clear();
+    setSite(next);
+    setStatus(session ? 'signedIn' : 'signedOut');
+  }, [queryClient]);
 
+  // The site screen, without signing anything out (the sessions stay for switching back)
+  const openSitePicker = useCallback(() => setStatus('needsRegion'), []);
+
+  // MS-H3 — the website's region switch: a one-time link from this region, redeemed by the other
+  const switchRegion = useCallback(async (region: Region) => {
+    const from = currentSite();
+    if (!from || region.url === from.url) return;
+    const target: Site = { ...region, env: from.env };
+
+    if (!(await sessionFor(target.url))) {
+      const link = await api<{ token: string }>('/api/mobile/v1/cross_site_links', { method: 'POST', body: { site: region.code } });
+      const tokens = await api<TokenResponse>('/api/mobile/v1/session/cross_site', {
+        method: 'POST', base: target.url, body: { token: link.token, device: await deviceAttrs() },
+      });
+      await storeSession(target.url, { accessToken: tokens.access_token, refreshToken: tokens.refresh_token, deviceId: tokens.device_id });
+    }
+    await chooseSite(target);
+  }, [chooseSite]);
+
+  // Signs every site on this phone out (a lost phone must not stay signed in to the other region)
   const signOut = useCallback(async () => {
-    // Ends this phone's session on the server and stops its pushes (proposal C4)
-    try {
-      await api('/api/mobile/v1/session', { method: 'DELETE', retry: false });
-    } catch {
-      // already signed out server-side — nothing more to do
+    for (const url of await sessionSites()) {
+      const session = await sessionFor(url);
+      try {
+        // Ends that site's phone session on its server and stops its pushes (proposal C4)
+        if (session) await api('/api/mobile/v1/session', { method: 'DELETE', retry: false, base: url, token: session.accessToken });
+      } catch {
+        // already signed out server-side — nothing more to do
+      }
+      await storeSession(url, null);
     }
     await saveSession(null);
     setStatus('signedOut');
   }, []);
-
-  const changeRegion = useCallback(async () => {
-    await signOut();
-    await saveRegion(null);
-    setStatus('needsRegion');
-  }, [signOut]);
 
   const signIn = useCallback(async (email: string, password: string) => {
     const response = await api<TokenResponse & { challenge?: string; method?: string; attempts_left?: number }>(
@@ -170,8 +206,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ status, challenge, biometricEnabled, chooseRegion, changeRegion, signIn, verifyCode, resendCode, signOut, unlock, setBiometric }),
-    [status, challenge, biometricEnabled, chooseRegion, changeRegion, signIn, verifyCode, resendCode, signOut, unlock, setBiometric],
+    () => ({ status, challenge, biometricEnabled, site, chooseSite, openSitePicker, switchRegion, signIn, verifyCode, resendCode, signOut, unlock, setBiometric }),
+    [status, challenge, biometricEnabled, site, chooseSite, openSitePicker, switchRegion, signIn, verifyCode, resendCode, signOut, unlock, setBiometric],
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

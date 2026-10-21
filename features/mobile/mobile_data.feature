@@ -55,6 +55,112 @@ Feature: LP mobile app data
     Then the JSON at "0.link" is "/distributions/{payment}"
     And the JSON at "0.category" is "distributions"
 
+  # ── The fund page's optional sections: Units, Ratios, Portfolio ─────────────
+
+  # Happy path: the Fund screen shows only the sections the GP switched on for the fund
+  Scenario: Fund page sections follow the GP's switches
+    Given Arka Growth Fund I shows LPs its "units, ratios"
+    When the phone "iPhone 15" opens the Arka commitment
+    Then the phone gets the status 200
+    And the fund page sections are "units: true, ratios: true, portfolio: false"
+
+  # Happy path: the Performance card's headline ratios; another investor's folio ratio never shows
+  Scenario: Headline ratios
+    Given Arka Growth Fund I shows LPs its "ratios"
+    And Arka Growth Fund I reports the ratio "TVPI" of "1.42x" on "2026-03-31"
+    And Kapoor Holdings has a capital call in Arka Growth Fund I
+    And Kapoor's folio has the ratio "XIRR" of "18%"
+    When the phone "iPhone 15" opens the Arka fund's headline ratios
+    Then the phone gets the status 200
+    And the phone sees the ratios "TVPI 1.42x 2026-03-31"
+
+  # Happy path: the Units screen lists only this LP's allotments
+  Scenario: Units are the LP's own
+    Given Arka Growth Fund I shows LPs its "units"
+    And Kapoor Holdings has a capital call in Arka Growth Fund I
+    And "Sharma Family Office" was allotted 1000 "Class A" units in Arka Growth Fund I
+    And "Kapoor Holdings" was allotted 500 "Class A" units in Arka Growth Fund I
+    When the phone "iPhone 15" opens the Arka units
+    Then the phone gets the status 200
+    And the phone sees the units "1000.0 Class A"
+
+  # Happy path: the Portfolio tab lists the fund's holdings on a Whole fund view
+  Scenario: Portfolio holdings
+    Given Arka Growth Fund I shows LPs its "portfolios"
+    And Arka Growth Fund I holds "Zeta Robotics"
+    When the phone "iPhone 15" opens the Arka portfolio
+    Then the phone gets the status 200
+    And the phone sees the holdings "Zeta Robotics"
+
+  # Edge case: a fund that does not show LPs its portfolio returns no holdings (the tab is hidden too)
+  Scenario: Portfolio hidden
+    Given Arka Growth Fund I holds "Zeta Robotics"
+    When the phone "iPhone 15" opens the Arka portfolio
+    Then the phone sees no holdings
+
+  # ── Approvals, folio ratios, call payments, KYC ─────────────────────────────
+
+  # Happy path: an unanswered approval is on Home's To do, linked to the app's Approval screen
+  Scenario: Approval on the To do list
+    Given Arka Capital asks Sharma Family Office to approve "Extension of fund term" by "2099-12-31"
+    When the phone "iPhone 15" requests "/api/mobile/v1/home"
+    Then the To do includes the approval "Extension of fund term"
+
+  # Happy path: the investor answers in the app through the website's own action
+  Scenario: Respond to an approval
+    Given Arka Capital asks Sharma Family Office to approve "Extension of fund term" by "2099-12-31"
+    When the phone "iPhone 15" opens the approval "Extension of fund term"
+    Then the approval offers the answers "Approved, Rejected"
+    And the JSON at "needs_form" is "false"
+    When the phone "iPhone 15" answers the approval "Extension of fund term" with "Approved"
+    Then the phone gets the status 200
+    And the approval "Extension of fund term" is answered "Approved"
+
+  # Error case: past the due date the website's policy refuses the answer
+  Scenario: Approval past its due date
+    Given Arka Capital asks Sharma Family Office to approve "Extension of fund term" by "2020-01-31"
+    When the phone "iPhone 15" answers the approval "Extension of fund term" with "Approved"
+    Then the phone gets the status 403
+    And the approval "Extension of fund term" is answered "Pending"
+
+  # Edge case: custom response fields send the investor to the website's form
+  Scenario: Approval with custom fields
+    Given Arka Capital asks Sharma Family Office to approve "Extension of fund term" by "2099-12-31"
+    And approval responses at Arka Capital have a custom field "Comments"
+    When the phone "iPhone 15" opens the approval "Extension of fund term"
+    Then the JSON at "needs_form" is "true"
+
+  # Happy path: the Ratios screen's "Your folio" — this LP's folio ratios, never another investor's
+  Scenario: Folio ratios are the LP's own
+    Given Arka Growth Fund I shows LPs its "ratios"
+    And Kapoor Holdings has a capital call in Arka Growth Fund I
+    And Sharma's folio has the ratio "XIRR" of "14%"
+    And Kapoor's folio has the ratio "XIRR" of "18%"
+    When the phone "iPhone 15" opens Kapoor's folio ratios
+    Then the phone sees the ratios ""
+    When the phone "iPhone 15" opens Sharma's folio ratios
+    Then the phone sees the ratios "XIRR 14% 2026-03-31"
+
+  # Happy path: the payments the fund recorded against a call
+  Scenario: Payments received against a call
+    Given the fund recorded a payment of 2500000 against Capital Call 2 on "2026-06-10" with reference "UTR123"
+    When the phone "iPhone 15" opens the payments for Capital Call 2
+    Then the phone gets the status 200
+    And the phone sees the payments "2500000.0 2026-06-10 UTR123"
+
+  # Happy path: the KYC list shows status only
+  Scenario: KYC status
+    Given Sharma Family Office has a KYC "Sharma Family Office" that is "completed"
+    When the phone "iPhone 15" requests "/investor_kycs.json?all=true"
+    Then the JSON at "0.submission_status" is "completed"
+    And the JSON at "0.can_request_updates" is "true"
+
+  # Error case: Updates required only once the KYC is submitted or verified
+  Scenario: Updates required refused for an open KYC
+    Given Sharma Family Office has a KYC "Sharma Family Office" that is "link_sent"
+    When the phone "iPhone 15" asks for updates to the KYC "Sharma Family Office"
+    Then the phone gets the status 403
+
   # H6 — Happy path: the Capital call screen, with its approved call notice
   Scenario: Capital call with its notice
     Given Call 3 has an approved call notice
@@ -191,11 +297,12 @@ Feature: LP mobile app data
     Then the phone's To do is empty
     And the phone sees 0 fund cards
 
-  # E29 — Edge case: funds of two fund managers
+  # E29 — Edge case: funds of two fund managers — Home shows one at a time, the first by name
+  # (lp-mobile-multi-site MF-H1; more in mobile_multi_site.feature)
   Scenario: Two fund managers
     Given Sharma Family Office has a commitment of 20000000 to "Beta Opportunities" managed by "Beta Partners"
     When the phone "iPhone 15" requests "/api/mobile/v1/home"
-    Then the phone sees fund cards from "Arka Capital, Beta Partners"
+    Then the phone sees fund cards from "Arka Capital"
 
   # X8 — Error case: another investor's capital call is refused
   Scenario: Another investor's capital call

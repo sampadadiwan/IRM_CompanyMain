@@ -1,10 +1,13 @@
 import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Linking, Platform } from 'react-native';
 
-import { updateDevice } from '@/api/queries';
+import { updateDevice, useMe } from '@/api/queries';
+import { useAuth } from '@/auth/session';
+import { fundManagerKey, setItem } from '@/auth/storage';
+import { useFundManager } from '@/lib/fund-manager';
 import { openLink } from '@/lib/links';
 
 /**
@@ -47,12 +50,41 @@ export function openPhoneSettings() {
   return Linking.openSettings();
 }
 
-/** Opens the linked screen when a notification is tapped — also for the one that launched the app */
+/**
+ * Opens the linked screen when a notification is tapped — also for the one that launched the app.
+ * A notification from the other region or another fund manager first moves the app there
+ * (lp-mobile-multi-site MS-H5, MF-H5), so the item opens in the right place.
+ */
 export function useNotificationTaps(enabled: boolean) {
+  const { site, switchRegion } = useAuth();
+  const { choose } = useFundManager();
+  const me = useMe();
+  // The handler is registered once; it reads the latest values through this ref
+  const latest = useRef({ site, switchRegion, choose, regions: me.data?.regions ?? [] });
+  useEffect(() => {
+    latest.current = { site, switchRegion, choose, regions: me.data?.regions ?? [] };
+  }, [site, switchRegion, choose, me.data]);
+
   useEffect(() => {
     if (!enabled || Platform.OS === 'web') return;
-    const open = (response: Notifications.NotificationResponse | null) => {
-      const link = response?.notification.request.content.data?.link;
+    const open = async (response: Notifications.NotificationResponse | null) => {
+      const data = response?.notification.request.content.data ?? {};
+      const { link, region, fund_manager_id: fundManagerId } = data as { link?: unknown; region?: unknown; fund_manager_id?: unknown };
+      const ctx = latest.current;
+      const target = typeof region === 'string' && ctx.site && region !== ctx.site.code
+        ? ctx.regions.find((r) => r.code === region) : undefined;
+
+      if (target) {
+        // Store the pick for the target site first: switching reloads the pick from there
+        if (typeof fundManagerId === 'number') await setItem(fundManagerKey(target.url), String(fundManagerId));
+        try {
+          await ctx.switchRegion(target);
+        } catch {
+          return; // the switch was refused; the user stays where they are
+        }
+      } else if (typeof fundManagerId === 'number') {
+        ctx.choose(fundManagerId);
+      }
       if (typeof link === 'string') openLink(link);
     };
     Notifications.getLastNotificationResponseAsync().then(open);

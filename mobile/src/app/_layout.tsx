@@ -56,9 +56,18 @@ function Navigator() {
         </Stack.Protected>
         <Stack.Protected guard={status === 'signedIn'}>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="funds/[id]" />
+          <Stack.Screen name="funds/[id]/index" />
+          <Stack.Screen name="funds/[id]/calls" />
+          <Stack.Screen name="funds/[id]/distributions" />
+          <Stack.Screen name="funds/[id]/portfolio" />
+          <Stack.Screen name="funds/[id]/documents" />
           <Stack.Screen name="capital-calls/[id]" />
           <Stack.Screen name="distributions/[id]" />
+          <Stack.Screen name="ratios/[fundId]" />
+          <Stack.Screen name="units/[commitmentId]" />
+          <Stack.Screen name="approvals/[id]" />
+          <Stack.Screen name="kyc/index" />
+          <Stack.Screen name="kyc/[id]" />
           <Stack.Screen name="documents/[id]" />
           <Stack.Screen name="profile/notifications" />
         </Stack.Protected>

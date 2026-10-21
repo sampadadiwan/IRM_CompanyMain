@@ -24,4 +24,7 @@ json.cost_of_remaining aggregate_portfolio_investment.cost_of_remaining.to_f
 json.fmv aggregate_portfolio_investment.fmv.to_f
 json.unrealized_gain aggregate_portfolio_investment.unrealized_gain.to_f
 
+# The LP company page, only for an LP who may open it (nil for everyone else)
+json.lp_company_path aggregate_portfolio_investment.lp_company_path
+
 json.custom_fields aggregate_portfolio_investment.json_fields

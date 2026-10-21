@@ -1,5 +1,6 @@
+import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { Fragment } from 'react';
+import { Fragment, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { useHome, useMe, useSwitchPersona } from '@/api/queries';
@@ -8,8 +9,10 @@ import { Spacing } from '@/constants/theme';
 import { formatDate } from '@/format/date';
 import { formatMoneyCompact, moneyNumber, moneyParts } from '@/format/money';
 import { useTheme } from '@/hooks/use-theme';
+import { useFundManager } from '@/lib/fund-manager';
 import { openLink } from '@/lib/links';
 import { BrandMark } from '@/ui/brand-mark';
+import { FundManagerPicker } from '@/ui/fund-manager-picker';
 import { Gauge } from '@/ui/gauge';
 import {
   AppText, Card, Divider, EmptyState, ErrorState, Icon, IconButton, ProgressBar, Pressy, SkeletonCard, StatTile, StatusPill,
@@ -27,18 +30,16 @@ function greeting() {
  * show called, due and distributed — all the website card's own figures, summed across funds in
  * the same currency. Then the To do list, then one card per fund. Exact amounts are one tap
  * deeper, on the Fund screen.
+ *
+ * Everything on Home is for ONE fund manager, picked at the top — never every fund manager mixed
+ * together (lp-mobile-multi-site design card ③).
  */
 export default function HomeScreen() {
   const me = useMe();
-  const home = useHome();
+  const { fundManagerId, ready } = useFundManager();
+  const home = useHome(fundManagerId, ready);
   const refresh = () => Promise.all([home.refetch(), me.refetch()]);
   const cards = home.data?.cards ?? [];
-
-  // E29 — several fund managers: cards grouped under each
-  const byManager = cards.reduce<Record<string, FundCard[]>>((acc, card) => {
-    (acc[card.entity_name] ??= []).push(card);
-    return acc;
-  }, {});
 
   return (
     <Screen tabs onRefresh={refresh} updatedAt={home.dataUpdatedAt}
@@ -47,6 +48,7 @@ export default function HomeScreen() {
         <AppText color="textSecondary">{greeting()}{me.data ? `, ${me.data.user.first_name}` : ''}</AppText>
         <AppText variant="title" accessibilityRole="header">{me.data?.investor_name ?? 'Your portfolio'}</AppText>
         {me.data?.advisor && me.data.personas.length > 1 ? <PersonaSwitcher /> : null}
+        <FundManagerPicker />
       </View>
 
       {home.isPending ? (
@@ -65,11 +67,9 @@ export default function HomeScreen() {
         <>
           <PortfolioHero cards={cards} />
           <TodoCard items={home.data.todo} />
-          {Object.keys(byManager).map((manager) => (
-            <Section key={manager} title={manager}>
-              {byManager[manager].map((card) => <FundCardView key={card.commitment_id} card={card} />)}
-            </Section>
-          ))}
+          <Section title="Funds">
+            {cards.map((card) => <FundCardView key={card.commitment_id} card={card} />)}
+          </Section>
         </>
       )}
     </Screen>
@@ -84,16 +84,38 @@ function TopBar({ initials: letters, unread }: { initials: string; unread: numbe
   const theme = useTheme();
   return (
     <View style={styles.topBar}>
-      <View style={styles.brand}>
-        <BrandMark />
-        <AppText variant="bodyStrong">CapHive</AppText>
-      </View>
+      <Brand />
       <View style={styles.topActions}>
         <IconButton name="bell" label={unread ? `Alerts, ${unread} unread` : 'Alerts'} badge={unread > 0} onPress={() => router.navigate('/alerts')} />
         <View style={[styles.avatar, { backgroundColor: theme.inverse }]} accessibilityLabel="Profile">
           <AppText variant="bodyStrong" color="onInverse" onPress={() => router.navigate('/profile')}>{letters}</AppText>
         </View>
       </View>
+    </View>
+  );
+}
+
+/**
+ * The top bar's branding: the picked fund manager's own logo when it has one, otherwise — or if
+ * the image fails to load — the CapHive mark and name.
+ */
+function Brand() {
+  const { fundManagers, fundManagerId } = useFundManager();
+  const current = fundManagers.find((f) => f.id === fundManagerId);
+  // Remember which logo failed, so switching to another fund manager tries its logo afresh
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  const logo = current?.logo_url && current.logo_url !== failedUrl ? current.logo_url : null;
+
+  if (logo) {
+    return (
+      <Image source={{ uri: logo }} style={styles.logo} contentFit="contain" contentPosition="left"
+        accessibilityLabel={current?.name} onError={() => setFailedUrl(logo)} />
+    );
+  }
+  return (
+    <View style={styles.brand}>
+      <BrandMark />
+      <AppText variant="bodyStrong">CapHive</AppText>
     </View>
   );
 }
@@ -137,6 +159,13 @@ function PortfolioHero({ cards }: { cards: FundCard[] }) {
   );
 }
 
+/** What a screen reader says for each To do item */
+function todoLabel(item: TodoItem): string {
+  if (item.type === 'capital_call') return `${item.title}, ${formatMoneyCompact(item.amount)} due ${formatDate(item.due_date)}`;
+  if (item.type === 'approval') return `Approve ${item.title}, due ${formatDate(item.due_date)}`;
+  return `Sign ${item.title}`;
+}
+
 function TodoCard({ items }: { items: TodoItem[] }) {
   const theme = useTheme();
   if (items.length === 0) {
@@ -156,18 +185,19 @@ function TodoCard({ items }: { items: TodoItem[] }) {
         <Fragment key={`${item.type}-${item.id}`}>
           {i > 0 ? <Divider /> : null}
           <Pressy onPress={() => openLink(item.link)} accessibilityRole="button"
-            accessibilityLabel={item.type === 'capital_call' ? `${item.title}, ${formatMoneyCompact(item.amount)} due ${formatDate(item.due_date)}` : `Sign ${item.title}`}>
+            accessibilityLabel={todoLabel(item)}>
             <View style={styles.todo}>
               <View style={[styles.round, { backgroundColor: theme.accentSoft }]}>
-                <Icon name={item.type === 'capital_call' ? 'wallet' : 'signature'} color="accent" />
+                <Icon name={item.type === 'capital_call' ? 'wallet' : item.type === 'approval' ? 'checkmark.circle.fill' : 'signature'} color="accent" />
               </View>
               <View style={styles.grow}>
                 <AppText variant="bodyStrong">{item.title}</AppText>
                 <AppText variant="caption" color="textSecondary">
-                  {item.type === 'capital_call' ? `${formatMoneyCompact(item.amount)} · due ${formatDate(item.due_date)}` : 'Waiting for your signature'}
+                  {item.type === 'capital_call' ? `${formatMoneyCompact(item.amount)} · due ${formatDate(item.due_date)}`
+                    : item.type === 'approval' ? `Your approval is needed · due ${formatDate(item.due_date)}` : 'Waiting for your signature'}
                 </AppText>
               </View>
-              <StatusPill status={item.type === 'capital_call' ? item.status : 'To sign'} />
+              <StatusPill status={item.type === 'capital_call' ? item.status : item.type === 'approval' ? 'To approve' : 'To sign'} />
             </View>
           </Pressy>
         </Fragment>
@@ -249,6 +279,7 @@ function PersonaSwitcher() {
 const styles = StyleSheet.create({
   topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   brand: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
+  logo: { height: 28, width: 140 },
   mark: { width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
   topActions: { flexDirection: 'row', gap: Spacing.two, alignItems: 'center' },
   avatar: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },

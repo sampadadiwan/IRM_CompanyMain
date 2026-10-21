@@ -28,9 +28,12 @@ class MobileDocuments
           .order(id: :desc).pick(:id)
   end
 
-  def initialize(user:, scope:)
+  # @param fund_manager_id [Integer, nil] narrows the list to one GP entity's records
+  #   (lp-mobile-multi-site design card ③)
+  def initialize(user:, scope:, fund_manager_id: nil)
     @user = user
     @scope = scope
+    @fund_manager_id = fund_manager_id
   end
 
   # Newest first; narrowed by commitment, search text or "to sign" when given
@@ -57,10 +60,14 @@ class MobileDocuments
 
   private
 
-  attr_reader :user, :scope
+  attr_reader :user, :scope, :fund_manager_id
 
   def commitment_ids
-    @commitment_ids ||= scope.call(CapitalCommitment).pluck(:id)
+    @commitment_ids ||= begin
+      commitments = scope.call(CapitalCommitment)
+      commitments = commitments.where(entity_id: fund_manager_id) if fund_manager_id
+      commitments.pluck(:id)
+    end
   end
 
   # owner in (my commitments) OR (my remittances) OR (my distribution payments)

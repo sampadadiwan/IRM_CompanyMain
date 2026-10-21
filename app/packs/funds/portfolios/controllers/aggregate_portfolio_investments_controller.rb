@@ -95,8 +95,10 @@ class AggregatePortfolioInvestmentsController < ApplicationController
     ActiveRecord::Associations::Preloader.new(records: rows, associations: :portfolio_company).call
     rows.each do |api|
       company = api.portfolio_company
-      api.lp_company_cell = if company.show_to_lps && visibility.openable?(company, fund)
-                              helpers.link_to(api.portfolio_company_name, lp_company_dashboard_path(company, fund_id: fund.id), data: { turbo: false })
+      # The page path alone too, for JSON callers (the LP mobile app opens it in its in-app browser)
+      api.lp_company_path = lp_company_dashboard_path(company, fund_id: fund.id) if company.show_to_lps && visibility.openable?(company, fund)
+      api.lp_company_cell = if api.lp_company_path
+                              helpers.link_to(api.portfolio_company_name, api.lp_company_path, data: { turbo: false })
                             else
                               api.portfolio_company_name
                             end

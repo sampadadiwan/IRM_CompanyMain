@@ -25,7 +25,7 @@ flowchart LR
 | What | Where | Notes |
 |---|---|---|
 | Expo account + project | Done: `@caphive/caphive-lp` (project id in `app.json`) | `npx eas-cli@latest login` with an account in the **caphive** organisation |
-| Apple Developer account | developer.apple.com | Needed for any iPhone build, including dev builds. Bundle ids: `com.caphive.lp` (prod), `com.caphive.lp.staging`, `com.caphive.lp.development` |
+| Apple Developer account | developer.apple.com | Needed for any iPhone build, including dev builds. Bundle ids: `com.caphive.lp` (staging AND production — one app, see below), `com.caphive.lp.development` (dev client) |
 | Google Play Console | play.google.com/console | Package names as above |
 | iOS push key (APNs) | `npx eas-cli credentials` → iOS → Push Notifications | EAS creates/uploads it; Expo's push service then reaches iPhones |
 | Android push (FCM v1) | Firebase project → service-account key → `eas credentials` → Android → FCM V1 | Without it Android phones get no push |
@@ -68,10 +68,23 @@ On a Mac with Xcode / a PC with Android Studio you can instead build locally:
 
 Quick look without a phone: the web review build (see `README.md`) — no push, Face ID or secure storage.
 
+## One app, every environment
+
+Since `lp-mobile-multi-site`, no build has server addresses baked in. Every build lists the
+environments in `src/api/config.ts` — **CapHive** (production) and **Staging** — plus a typed-in
+**Custom** address, and asks the chosen environment for its regions (`GET /api/mobile/v1/sites`,
+the server's `SITES`). Investors see only CapHive; a long press on the CapHive name on the site
+screen reveals Staging and Custom.
+
+The `staging` and `production` profiles therefore build the SAME app (`com.caphive.lp`, "CapHive");
+the only difference is that a staging build opens on Staging with the test environments revealed.
+Installing a staging APK replaces a production install of the app and vice versa. The
+`development` profile stays a separate app (a dev client loading JavaScript from a laptop).
+
 ## Internal testers (staging)
 
 ```bash
-npx eas-cli@latest build --profile staging --platform all            # APP_ENV=staging → dev.altconnects.com/.us
+npx eas-cli@latest build --profile staging --platform all            # opens on Staging (dev.altconnects.com/.us)
 npx eas-cli@latest submit --profile production --platform ios        # → TestFlight (internal group)
 npx eas-cli@latest submit --profile production --platform android    # → Play internal testing track
 ```
@@ -82,7 +95,7 @@ Run the Maestro flows against this build: `maestro test e2e/`, then the QA check
 ## Production
 
 ```bash
-npx eas-cli@latest build --profile production --platform all         # APP_ENV=production → app.caphive.com/.us
+npx eas-cli@latest build --profile production --platform all         # opens on CapHive (app.caphive.com/.us)
 npx eas-cli@latest submit --profile production --platform all
 ```
 

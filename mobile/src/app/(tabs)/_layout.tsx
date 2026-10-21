@@ -5,6 +5,7 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import { useAuth } from '@/auth/session';
 import { getItem, setItem } from '@/auth/storage';
 import AppTabs from '@/components/app-tabs';
+import { FundManagerProvider } from '@/lib/fund-manager';
 import { registerForPush, useNotificationTaps } from '@/lib/push';
 
 const ONBOARDED = 'caphive.onboarded';
@@ -12,10 +13,19 @@ const ONBOARDED = 'caphive.onboarded';
 /**
  * The signed-in app. On the first sign-in on a phone it asks — with a reason — for notification
  * permission and offers Face ID / fingerprint (proposal A5, A6; principle 12). Every later launch
- * re-registers the push address, which may have changed.
+ * re-registers the push address, which may have changed — and does so again on every site the app
+ * switches to, so each region can push to this phone (lp-mobile-multi-site design card ②).
  */
 export default function TabsLayout() {
-  const { setBiometric } = useAuth();
+  return (
+    <FundManagerProvider>
+      <SignedInApp />
+    </FundManagerProvider>
+  );
+}
+
+function SignedInApp() {
+  const { setBiometric, site } = useAuth();
   useNotificationTaps(true);
 
   useEffect(() => {
@@ -39,7 +49,7 @@ export default function TabsLayout() {
         { text: 'Use Face ID', onPress: () => setBiometric(true) },
       ]);
     }
-  }, [setBiometric]);
+  }, [setBiometric, site]);
 
   return <AppTabs />;
 }

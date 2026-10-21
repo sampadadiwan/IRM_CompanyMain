@@ -2,13 +2,13 @@
 # send that alone — not the Rails app. When this file exists EAS ignores .gitignore, so the
 # app's own ignores are repeated below. See mobile/DEPLOYMENT.md.
 /*
-!/mobile/
-mobile/node_modules/
-mobile/.expo/
-mobile/dist/
-mobile/web-build/
-mobile/ios/
-mobile/android/
+!/mobile
+mobile/node_modules
+mobile/.expo
+mobile/dist
+mobile/web-build
+mobile/ios
+mobile/android
 mobile/.env*.local
-mobile/.claude/
-mobile/.vscode/
+mobile/.claude
+mobile/.vscode

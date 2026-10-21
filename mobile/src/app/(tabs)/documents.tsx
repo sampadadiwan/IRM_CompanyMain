@@ -3,10 +3,12 @@ import { Fragment, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { useDocuments } from '@/api/queries';
+import { useFundManager } from '@/lib/fund-manager';
 import { Radius, Spacing, TouchTarget } from '@/constants/theme';
 import { formatDate } from '@/format/date';
 import { useTheme } from '@/hooks/use-theme';
 import { AppText, Button, Card, Divider, EmptyState, ErrorState, Icon, Pressy, SkeletonCard } from '@/ui/primitives';
+import { FundManagerPicker } from '@/ui/fund-manager-picker';
 import { Screen } from '@/ui/screen';
 
 /**
@@ -18,7 +20,9 @@ export default function DocumentsScreen() {
   const [text, setText] = useState('');
   const [q, setQ] = useState('');
   const [toSign, setToSign] = useState(false);
-  const docs = useDocuments({ q, toSign });
+  // Only the selected fund manager's documents (lp-mobile-multi-site MF-H4)
+  const { fundManagerId, ready } = useFundManager();
+  const docs = useDocuments({ q, toSign, fundManagerId }, ready);
 
   // Search as you type, without a request per keystroke
   useEffect(() => {
@@ -29,6 +33,7 @@ export default function DocumentsScreen() {
   const rows = docs.data?.pages.flatMap((p) => p.items) ?? [];
   return (
     <Screen title="Documents" tabs onRefresh={() => docs.refetch()} updatedAt={docs.dataUpdatedAt}>
+      <FundManagerPicker />
       <View style={[styles.search, { backgroundColor: theme.surface, borderColor: theme.border }]}>
         <Icon name="magnifyingglass" />
         <TextInput value={text} onChangeText={setText} placeholder="Search documents" placeholderTextColor={theme.textSecondary}

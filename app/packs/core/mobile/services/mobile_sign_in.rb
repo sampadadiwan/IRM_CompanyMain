@@ -102,6 +102,38 @@ class MobileSignIn
       TwoFactorVerifier.start(user) == :undeliverable ? :undeliverable : :sent
     end
 
+    # The app's region switch, step 2: redeems a CrossSiteLink minted by the other region's
+    # POST /api/mobile/v1/cross_site_links (lp-mobile-multi-site design card ②). The website's
+    # cross_site_login checks, in the same order, ending in a phone session instead of a cookie.
+    #
+    # No password and no two-factor code: the user proved both on the region they came from,
+    # exactly as on the website (MS-H3).
+    #
+    # @return [Result] kind ∈ :session, :handoff_invalid, :invalid, :not_investor, :spent
+    def cross_site(token:, device:)
+      return Result.new(kind: :handoff_invalid) unless CrossSiteTrust.configured?
+
+      # Pinned to the primary: the nonce claim must not read a lagging replica (as on the website)
+      ActiveRecord::Base.connected_to(role: :writing) do
+        # Signature, expiry, purpose ("mobile_cross_site" only — MS-X2), destination region (MS-X4)
+        link = CrossSiteLink.new.verify(token, purpose: Api::Mobile::V1::CrossSiteLinksController::PURPOSE,
+                                               site: SiteRegistry.current_code)
+        next Result.new(kind: :handoff_invalid) unless link.ok?
+
+        # The account must exist and be usable HERE: a user deactivated or locked in this region
+        # is not signed in just because the other region vouched for them (MS-E4)
+        user = User.find_by(email: link.email)
+        next Result.new(kind: :invalid) if user.nil? || !user.active_for_authentication?
+        next Result.new(kind: :not_investor) unless investor_persona?(user)
+
+        # Claimed last, after every other check, so a link refused for another reason is not also
+        # burned — and before the session, so a replay gets nothing (MS-X5)
+        next Result.new(kind: :spent) unless CrossSiteLink::Nonce.claim(token)
+
+        session_for(user, device)
+      end
+    end
+
     # Investors, investor advisors and family-office users (who carry :investor) may use the app
     def investor_persona?(user)
       user.has_cached_role?(:investor) || user.has_cached_role?(:investor_advisor)

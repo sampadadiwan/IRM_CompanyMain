@@ -19,4 +19,8 @@ json.folio_currency capital_remittance_payment.capital_commitment&.folio_currenc
 # Tracking currency
 json.tracking_amount capital_remittance_payment.tracking_amount.to_f
 
+# The payment proof the GP attached, as a short-lived signed link (nil without one) — the LP mobile app's
+# Capital call screen, "Payments received"
+json.payment_proof_url capital_remittance_payment.payment_proof&.url(expires_in: 1.hour.to_i)
+
 json.custom_fields capital_remittance_payment.json_fields

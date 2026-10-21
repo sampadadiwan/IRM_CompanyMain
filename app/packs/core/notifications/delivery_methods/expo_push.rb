@@ -37,7 +37,10 @@ module DeliveryMethods
       {
         title: notification.event.entity&.name.to_s,
         body: ActionView::Base.full_sanitizer.sanitize(notification.message.to_s).squish.truncate(MAX_BODY),
-        data: { link: MobileDeepLink.for(notification), notification_id: notification.id },
+        # region + fund_manager_id: a tap first switches the app to the region and fund manager the
+        # notification is about, then opens it (lp-mobile-multi-site MF-H5, MS-H5)
+        data: { link: MobileDeepLink.for(notification), notification_id: notification.id,
+                region: SiteRegistry.current_code_or_nil, fund_manager_id: notification.event.entity_id },
         badge: notification.recipient.notifications.unread.count,
         sound: "default"
       }

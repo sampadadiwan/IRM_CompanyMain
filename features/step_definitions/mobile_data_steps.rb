@@ -165,6 +165,84 @@ Given("Kapoor Holdings has a capital call in Arka Growth Fund I") do
   arka[:kapoor_doc] = mobile_document!(kapoor_cc, name: "Kapoor Statement", entity: arka[:fm])
 end
 
+# The fund page's optional sections ("units, ratios, portfolios") — Fund#features show_fund_* flags
+Given("Arka Growth Fund I shows LPs its {string}") do |sections|
+  sections.split(",").map(&:strip).each { |section| arka[:fund].update!("show_fund_#{section}": true) unless section == "portfolios" }
+  arka[:fund].update!(show_portfolios: true) if sections.include?("portfolios")
+end
+
+Given("Arka Growth Fund I reports the ratio {string} of {string} on {string}") do |name, display, date|
+  FundRatio.create!(entity: arka[:fm], fund: arka[:fund], owner: arka[:fund], name:, display_value: display, value: display.to_f,
+                    end_date: Date.parse(date), scenario: "Default", latest: true)
+end
+
+Given("Kapoor's folio has the ratio {string} of {string}") do |name, display|
+  kapoor_cc = CapitalCommitment.find_by!(fund: arka[:fund], investor: mobile_investor("Kapoor Holdings", arka[:fm]))
+  FundRatio.create!(entity: arka[:fm], fund: arka[:fund], owner: kapoor_cc, capital_commitment: kapoor_cc, name:, display_value: display,
+                    value: display.to_f, end_date: Date.new(2026, 3, 31), scenario: "Default", latest: true)
+end
+
+Given("{string} was allotted {int} {string} units in Arka Growth Fund I") do |investor_name, quantity, unit_type|
+  investor = mobile_investor(investor_name, arka[:fm])
+  cc = CapitalCommitment.find_by!(fund: arka[:fund], investor:)
+  FundUnit.create!(entity: arka[:fm], fund: arka[:fund], capital_commitment: cc, investor:, unit_type:, quantity:,
+                   reason: "Allotment", issue_date: Date.new(2026, 4, 1))
+end
+
+# One holding of the fund in a new portfolio company, created the way the app's own steps do (PortfolioInvestmentCreate)
+Given("Arka Growth Fund I holds {string}") do |company_name|
+  fm = arka[:fm]
+  # The factory would pick a random startup entity for the company; this world has none, so give it its own
+  company_entity = FactoryBot.create(:entity, name: company_name, entity_type: "Company")
+  company = FactoryBot.create(:investor, entity: fm, investor_entity: company_entity, investor_name: company_name,
+                                         primary_email: company_entity.primary_email, category: "Portfolio Company")
+  instrument = FactoryBot.create(:investment_instrument, entity: fm, portfolio_company: company)
+  pi = FactoryBot.build(:portfolio_investment, entity: fm, fund: arka[:fund], portfolio_company: company,
+                                               investment_instrument: instrument, investment_date: Date.new(2026, 1, 15), quantity: 100)
+  expect(PortfolioInvestmentCreate.wtf?(portfolio_investment: pi)).to be_success
+end
+
+# A published approval Arka Capital sent Sharma Family Office, awaiting its answer. Granting the
+# investor access to the approval creates its response (Approval#access_rights_changed ->
+# generate_responses), as in production; the step only makes sure it exists and is Pending.
+Given("Arka Capital asks Sharma Family Office to approve {string} by {string}") do |title, due|
+  investor = arka[:investor]
+  [mobile_user("rahul@sharmafo.in"), arka[:fm], investor.investor_entity].each do |holder|
+    holder.permissions.set(:enable_approvals)
+    holder.save!(validate: false)
+  end
+  approval = Approval.create!(entity: arka[:fm], title:, due_date: Date.parse(due), agreements_reference: "Extend the term by one year",
+                              response_status: "Approved,Pending,Rejected")
+  AccessRight.find_or_create_by!(entity: arka[:fm], owner: approval, access_to_investor_id: investor.id) { |ar| ar.notify = false }
+  response = ApprovalResponse.find_or_create_by!(entity: arka[:fm], approval:, investor:, owner: nil) do |r|
+    r.response_entity_id = investor.investor_entity_id
+  end
+  response.update_columns(status: "Pending")
+  approval.update_columns(approved: true)
+end
+
+Given("approval responses at Arka Capital have a custom field {string}") do |label|
+  form_type = FormType.create!(entity: arka[:fm], name: "ApprovalResponse", tag: "Default")
+  FormCustomField.create!(form_type:, name: FormCustomField.to_name(label), label:, field_type: "TextField", position: 1)
+  ApprovalResponse.where(entity: arka[:fm]).update_all(form_type_id: form_type.id)
+end
+
+Given("Sharma's folio has the ratio {string} of {string}") do |name, display|
+  FundRatio.create!(entity: arka[:fm], fund: arka[:fund], owner: arka[:cc], capital_commitment: arka[:cc], name:, display_value: display,
+                    value: display.to_f, end_date: Date.new(2026, 3, 31), scenario: "Default", latest: true)
+end
+
+Given("the fund recorded a payment of {int} against Capital Call 2 on {string} with reference {string}") do |rupees, date, reference|
+  FactoryBot.create(:capital_remittance_payment, fund: arka[:fund], entity: arka[:fm], capital_remittance: arka[:call2],
+                                                 amount_cents: rupees_cents(rupees), payment_date: Date.parse(date), reference_no: reference)
+end
+
+Given("Sharma Family Office has a KYC {string} that is {string}") do |full_name, status|
+  kyc = FactoryBot.create(:investor_kyc, entity: arka[:fm], investor: arka[:investor], full_name:)
+  kyc.update_columns(submission_status: status, verified: status == "verified")
+  arka[:kyc] = kyc
+end
+
 Given("{string} has an unread notification for Capital Call 3") do |email|
   user = mobile_user(email)
   event = CapitalRemittanceNotifier.create!(record: arka[:call3], params: { entity_id: arka[:fm].id, email_method: "notify_capital_remittance" })
@@ -193,6 +271,44 @@ end
 
 When("the phone {string} opens Distribution 1") do |phone_name|
   mobile_request(phone_name, :get, "/capital_distribution_payments/#{arka[:payment].id}.json")
+end
+
+When("the phone {string} opens the Arka fund's headline ratios") do |phone_name|
+  mobile_request(phone_name, :get, "/fund_ratios.json?fund_id=#{arka[:fund].id}&fund_ratios_only=true&owner_type=Fund&scenario=Default&latest=true&all=true&headline=true")
+end
+
+When("the phone {string} opens the Arka units") do |phone_name|
+  mobile_request(phone_name, :get, "/fund_units.json?q[capital_commitment_id_eq]=#{arka[:cc].id}&all=true")
+end
+
+When("the phone {string} opens the Arka portfolio") do |phone_name|
+  mobile_request(phone_name, :get, "/aggregate_portfolio_investments.json?fund_id=#{arka[:fund].id}&all=true")
+end
+
+When("the phone {string} opens the approval {string}") do |phone_name, title|
+  mobile_request(phone_name, :get, "/approval_responses/#{ApprovalResponse.joins(:approval).find_by!(approvals: { title: }).id}.json")
+end
+
+When("the phone {string} answers the approval {string} with {string}") do |phone_name, title, status|
+  response = ApprovalResponse.joins(:approval).find_by!(approvals: { title: })
+  mobile_request(phone_name, :patch, "/approval_responses/#{response.id}/approve.json?status=#{status}")
+end
+
+When("the phone {string} opens Kapoor's folio ratios") do |phone_name|
+  kapoor_cc = CapitalCommitment.find_by!(fund: arka[:fund], investor: mobile_investor("Kapoor Holdings", arka[:fm]))
+  mobile_request(phone_name, :get, "/fund_ratios.json?capital_commitment_id=#{kapoor_cc.id}&scenario=Default&latest=true&all=true")
+end
+
+When("the phone {string} opens Sharma's folio ratios") do |phone_name|
+  mobile_request(phone_name, :get, "/fund_ratios.json?capital_commitment_id=#{arka[:cc].id}&scenario=Default&latest=true&all=true")
+end
+
+When("the phone {string} opens the payments for Capital Call 2") do |phone_name|
+  mobile_request(phone_name, :get, "/capital_remittance_payments.json?q[capital_remittance_id_eq]=#{arka[:call2].id}&all=true")
+end
+
+When("the phone {string} asks for updates to the KYC {string}") do |phone_name, _full_name|
+  mobile_request(phone_name, :patch, "/investor_kycs/#{arka[:kyc].id}/send_notification.json", { message: "New address" })
 end
 
 When("the phone {string} opens the Arka commitment") do |phone_name|
@@ -279,6 +395,48 @@ end
 Then("the distribution has no notice") do
   expect(last_phone.json).to have_key("notice_document_id")
   expect(last_phone.json["notice_document_id"]).to be_nil
+end
+
+Then("the fund page sections are {string}") do |expected|
+  got = last_phone.json["lp_sections"].map { |key, value| "#{key}: #{value}" }.join(", ")
+  expect(got).to eq(expected)
+end
+
+Then("the phone sees the ratios {string}") do |expected|
+  got = last_phone.json.map { |r| "#{r['name']} #{r['display_value']} #{r['end_date']}" }.join("; ")
+  expect(got).to eq(expected)
+end
+
+Then("the phone sees the units {string}") do |expected|
+  expect(last_phone.json.map { |u| "#{u['quantity'].to_f} #{u['unit_type']}" }.join("; ")).to eq(expected)
+end
+
+Then("the phone sees the holdings {string}") do |expected|
+  expect(last_phone.json.pluck("portfolio_company_name").join(", ")).to eq(expected)
+end
+
+Then("the phone sees no holdings") do
+  expect(last_phone.json).to eq([])
+end
+
+Then("the To do includes the approval {string}") do |title|
+  item = last_phone.json["todo"].find { |t| t["type"] == "approval" && t["title"] == title }
+  expect(item).to be_present, "got #{last_phone.json['todo']}"
+  expect(item["link"]).to eq("/approvals/#{item['id']}")
+end
+
+# The answers the Approval screen offers (Pending is never one)
+Then("the approval offers the answers {string}") do |answers|
+  expect(last_phone.json.dig("approval", "response_options")).to eq(answers.split(", "))
+end
+
+Then("the approval {string} is answered {string}") do |title, status|
+  expect(ApprovalResponse.joins(:approval).find_by!(approvals: { title: }).reload.status).to eq(status)
+end
+
+Then("the phone sees the payments {string}") do |expected|
+  got = last_phone.json.map { |p| "#{p['amount']} #{p['payment_date']} #{p['reference_no']}" }.join("; ")
+  expect(got).to eq(expected)
 end
 
 Then("the capital call has no notice") do
@@ -465,6 +623,9 @@ Then("each push is titled {string} and opens Capital Call 3") do |title|
   @expo.messages.each do |m|
     expect(m["title"]).to eq(title)
     expect(m.dig("data", "link")).to eq("/capital-calls/#{arka[:call3].id}")
+    # A tap first switches the app to this fund manager and region (lp-mobile-multi-site MF-H5)
+    expect(m.dig("data", "fund_manager_id")).to eq(arka[:fm].id)
+    expect(m.dig("data", "region")).to eq(SiteRegistry.current_code)
   end
 end
 

@@ -34,6 +34,11 @@ module Api
           end
         end
 
+        # POST /api/mobile/v1/session/cross_site — region switch, step 2 (lp-mobile-multi-site MS-H3)
+        def cross_site
+          render_result(MobileSignIn.cross_site(token: params.require(:token), device: device_params))
+        end
+
         # POST /api/mobile/v1/session/refresh — H3: rotates the token pair of a live device
         def refresh
           device = MobileDevice.for_refresh_token(params.require(:refresh_token))
@@ -71,6 +76,7 @@ module Api
             render_error("invalid_code", status: :unprocessable_content, attempts_left: result.attempts_left)
           when :too_many_attempts then render_error("too_many_attempts", status: :unauthorized)
           when :spent then render_error("challenge_spent", status: :unauthorized)
+          when :handoff_invalid then render_error("region_switch_failed", status: :unauthorized)
           else render_error("challenge_expired", status: :unauthorized)
           end
         end

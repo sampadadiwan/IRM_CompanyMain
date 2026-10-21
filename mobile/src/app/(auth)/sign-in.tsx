@@ -2,8 +2,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
-import { ApiError, currentRegion } from '@/api/client';
-import { REGIONS } from '@/api/config';
+import { ApiError } from '@/api/client';
 import { useAuth } from '@/auth/session';
 import { Radius, Spacing, TouchTarget } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -12,10 +11,8 @@ import { Screen } from '@/ui/screen';
 
 /** A3 — email and password; the server answers with a session or a code challenge */
 export default function SignInScreen() {
-  const { signIn, changeRegion } = useAuth();
+  const { signIn, openSitePicker, site: region } = useAuth();
   const theme = useTheme();
-  const region = currentRegion();
-  const otherRegion = REGIONS.find((r) => r.code !== region?.code);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -42,8 +39,12 @@ export default function SignInScreen() {
   return (
     <Screen title="Sign in" subtitle="Use the same email and password as the CapHive website.">
       <View style={styles.region}>
-        <AppText color="textSecondary">Region: <AppText variant="bodyStrong">{region?.label}</AppText></AppText>
-        <Pressable onPress={changeRegion} accessibilityRole="button" style={styles.link}>
+        <AppText color="textSecondary">
+          Region: <AppText variant="bodyStrong">{region?.label}</AppText>
+          {/* Test environments name themselves, so a tester never signs in to the wrong one */}
+          {region && region.env !== 'production' ? ` (${region.env}: ${region.url})` : ''}
+        </AppText>
+        <Pressable onPress={openSitePicker} accessibilityRole="button" style={styles.link}>
           <AppText color="accent" variant="bodyStrong">Change</AppText>
         </Pressable>
       </View>
@@ -56,9 +57,9 @@ export default function SignInScreen() {
       {error ? (
         <View style={[styles.error, { backgroundColor: theme.dangerSoft }]} accessibilityLiveRegion="polite">
           <AppText color="danger">{error}</AppText>
-          {showRegionHint && otherRegion ? (
-            <Pressable onPress={changeRegion} accessibilityRole="button">
-              <AppText color="danger">Is your account on the {otherRegion.label} site? <AppText color="danger" variant="bodyStrong">Switch region</AppText></AppText>
+          {showRegionHint ? (
+            <Pressable onPress={openSitePicker} accessibilityRole="button">
+              <AppText color="danger">Is your account on another region&apos;s site? <AppText color="danger" variant="bodyStrong">Switch region</AppText></AppText>
             </Pressable>
           ) : null}
         </View>

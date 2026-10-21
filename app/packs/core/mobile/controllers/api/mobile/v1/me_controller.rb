@@ -45,6 +45,13 @@ module Api
             # POST /investor_advisors/switch?id= (H8).
             personas: personas(user),
             current_persona_id: user.investor_advisor_id,
+            # The fund managers the app's picker offers, sorted by name — the website's LP
+            # dashboard dropdown (lp-mobile-multi-site design card ③)
+            fund_managers: MobileFundManagers.new(user).list,
+            # The regions this user can switch to — the website's region dropdown
+            # (User#switchable_region_codes); the app shows a switch only when there are two or more
+            # (lp-mobile-multi-site design card ②)
+            regions: SitesController.sites_json(user.switchable_region_codes),
             push_preferences: user.push_preferences,
             unread_notifications: user.notifications.unread.count,
             device: { id: current_device.id, push_enabled: current_device.push_enabled,

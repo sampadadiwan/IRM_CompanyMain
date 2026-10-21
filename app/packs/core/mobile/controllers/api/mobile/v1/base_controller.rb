@@ -50,7 +50,9 @@ module Api
           "challenge_spent" => "Please sign in again.",
           "rate_limited" => "Please wait a moment before requesting another code.",
           "invalid_path" => "This page can't be opened.",
-          "handoff_unavailable" => "This page can't be opened from the app right now. Please use the CapHive website."
+          "handoff_unavailable" => "This page can't be opened from the app right now. Please use the CapHive website.",
+          "region_unavailable" => "That region is not available right now.",
+          "region_switch_failed" => "We couldn't switch region. Please sign in to that region."
         }.freeze
 
         def self.min_app_version
@@ -93,6 +95,12 @@ module Api
 
         def page
           [params[:page].to_i, 1].max
+        end
+
+        # The one fund manager this request shows (lp-mobile-multi-site design card ③): the app's
+        # pick when the user still has access to it, otherwise the first — never all of them
+        def fund_manager_id
+          @fund_manager_id ||= MobileFundManagers.new(current_user).resolve(params[:fund_manager_id])
         end
 
         # Fetches one more row than a page holds, so next_page is known without a COUNT(*)

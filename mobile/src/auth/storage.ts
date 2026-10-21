@@ -28,11 +28,24 @@ export async function setItem(key: string, value: string | null): Promise<void> 
 }
 
 export const KEYS = {
-  region: 'caphive.region',
-  session: 'caphive.session',
+  // The site (environment + region) the app is on — JSON of config.Site
+  site: 'caphive.site',
+  // The sites this phone holds a session for — JSON array of base URLs (lp-mobile-multi-site ②)
+  sessionSites: 'caphive.session_sites',
   installId: 'caphive.install_id',
   biometric: 'caphive.biometric',
 } as const;
+
+/** Secure-store keys allow only letters, digits, ".", "-" and "_", so a URL is folded into that */
+function siteKey(prefix: string, url: string) {
+  return `${prefix}.${url.replace(/^https?:\/\//, '').replace(/[^A-Za-z0-9._-]/g, '_')}`;
+}
+
+/** One session per site: switching region keeps the other region signed in, as the website does */
+export const sessionKey = (url: string) => siteKey('caphive.session', url);
+
+/** The fund manager picked on a site (lp-mobile-multi-site design card ③) */
+export const fundManagerKey = (url: string) => siteKey('caphive.fund_manager', url);
 
 /** Generated once per install and kept in secure storage, so a re-sign-in reuses the device row */
 export async function installId(): Promise<string> {

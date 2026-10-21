@@ -11,7 +11,13 @@ namespace :api do
         post :verify
         post :resend
         post :refresh
+        # Region switch, step 2 — redeems the other region's cross_site_link (lp-mobile-multi-site)
+        post :cross_site
       end
+      # This environment's regions, asked before sign-in (lp-mobile-multi-site design card ①)
+      resources :sites, only: :index
+      # Region switch, step 1 — a one-time link for another region (lp-mobile-multi-site card ②)
+      resources :cross_site_links, only: :create
       resource :me, only: :show, controller: :me do
         patch :push_preferences
       end

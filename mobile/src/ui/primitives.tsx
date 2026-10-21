@@ -52,6 +52,8 @@ export function Card({ children, style, onPress, accessibilityLabel, tone = 'sur
 const ICONS = {
   'chevron.right': 'chevron-forward',
   'chevron.left': 'chevron-back',
+  'chevron.down': 'chevron-down',
+  business: 'business-outline',
   'arrow.right': 'arrow-forward',
   'checkmark.circle.fill': 'checkmark-circle',
   checkmark: 'checkmark',
@@ -127,7 +129,12 @@ const STATUS: Record<string, { color: ThemeColor; soft: ThemeColor; icon: IconNa
   Paid: { color: 'success', soft: 'successSoft', icon: 'checkmark.circle.fill' },
   Overpaid: { color: 'success', soft: 'successSoft', icon: 'checkmark.circle.fill' },
   Signed: { color: 'success', soft: 'successSoft', icon: 'checkmark.circle.fill' },
+  Verified: { color: 'success', soft: 'successSoft', icon: 'checkmark.circle.fill' },
+  Approved: { color: 'success', soft: 'successSoft', icon: 'checkmark.circle.fill' },
   Pending: { color: 'warning', soft: 'warningSoft', icon: 'clock' },
+  'To approve': { color: 'warning', soft: 'warningSoft', icon: 'clock' },
+  'To complete': { color: 'warning', soft: 'warningSoft', icon: 'clock' },
+  Rejected: { color: 'danger', soft: 'dangerSoft', icon: 'exclamationmark.triangle.fill' },
   'To sign': { color: 'warning', soft: 'warningSoft', icon: 'signature' },
   Overdue: { color: 'danger', soft: 'dangerSoft', icon: 'exclamationmark.triangle.fill' },
 };
@@ -226,7 +233,10 @@ export function Segmented<T extends string>({ options, value, onChange }: { opti
         return (
           <Pressable key={o.value} onPress={() => onChange(o.value)} accessibilityRole="tab" accessibilityState={{ selected: active }}
             style={[styles.segment, { backgroundColor: active ? theme.inverse : theme.surface }]}>
-            <AppText variant={active ? 'bodyStrong' : 'body'} color={active ? 'onInverse' : 'textSecondary'}>{o.label}</AppText>
+            {/* One line, never broken mid-word: a long label ("Distributions") on a narrow phone or
+                with a large system font shrinks to fit its pill instead of wrapping */}
+            <AppText variant={active ? 'bodyStrong' : 'body'} color={active ? 'onInverse' : 'textSecondary'}
+              numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} maxFontSizeMultiplier={1.2}>{o.label}</AppText>
           </Pressable>
         );
       })}

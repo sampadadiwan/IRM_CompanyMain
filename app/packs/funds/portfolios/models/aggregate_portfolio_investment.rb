@@ -76,7 +76,7 @@ class AggregatePortfolioInvestment < ApplicationRecord
   # openspec/changes/lp-folio-portfolio-dashboard — H3
   attr_accessor :lp_your_cost, :lp_your_fmv, :lp_your_multiple
   # The company cell in an LP's list: a link to its LP page when openable, else plain text (E44)
-  attr_accessor :lp_company_cell
+  attr_accessor :lp_company_cell, :lp_company_path
 
   # Callbacks
   before_create :update_name

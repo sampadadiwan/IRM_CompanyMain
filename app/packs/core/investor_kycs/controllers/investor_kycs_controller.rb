@@ -294,6 +294,9 @@ class InvestorKycsController < ApplicationController
   def send_notification
     authorize @investor_kyc
     @investor_kyc.updates_requested_notification(msg: params[:message])
+    # A bearer-token caller (the LP mobile app) gets JSON, not a redirect — as ApprovalResponsesController#approve (H34)
+    return render(json: { sent: true }, status: :ok) if api_request?
+
     redirect_to investor_kyc_url(@investor_kyc), notice: "Notification sent successfully. Please wait for us to respond to your request."
   end
 

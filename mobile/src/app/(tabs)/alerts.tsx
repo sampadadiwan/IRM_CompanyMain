@@ -5,7 +5,9 @@ import { useMarkAllRead, useMarkRead, useMe, useNotifications } from '@/api/quer
 import { Spacing, TouchTarget } from '@/constants/theme';
 import { formatRelativeDay } from '@/format/date';
 import { useTheme } from '@/hooks/use-theme';
+import { useFundManager } from '@/lib/fund-manager';
 import { openLink } from '@/lib/links';
+import { FundManagerPicker } from '@/ui/fund-manager-picker';
 import { AppText, Card, Divider, EmptyState, ErrorState, Icon, Pressy, SkeletonCard } from '@/ui/primitives';
 import { Screen } from '@/ui/screen';
 
@@ -19,7 +21,10 @@ export default function AlertsScreen() {
   const alerts = useNotifications();
   const markRead = useMarkRead();
   const markAll = useMarkAllRead(me.data?.user.id);
-  const rows = alerts.data ?? [];
+  // Only the selected fund manager's alerts; one with no sender (a platform alert) shows for all
+  // (lp-mobile-multi-site MF-H5)
+  const { fundManagerId } = useFundManager();
+  const rows = (alerts.data ?? []).filter((n) => n.sender_id == null || n.sender_id === fundManagerId);
   const unread = rows.filter((n) => !n.read_at).length;
 
   return (
@@ -34,6 +39,7 @@ export default function AlertsScreen() {
           ) : null}
         </View>
       )}>
+      <FundManagerPicker />
       {alerts.isPending ? <SkeletonCard lines={5} /> : alerts.isError ? (
         <ErrorState message={alerts.error.message} onRetry={() => alerts.refetch()} />
       ) : rows.length === 0 ? (

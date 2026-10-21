@@ -40,7 +40,7 @@ flowchart LR
 
 ## Signing In
 
-1. Choose your region — **India** or **United States**. Each is a separate CapHive site with its own accounts, the same as on the web. You can change it later.
+1. Choose your region — **India** or **US**. Each is a separate CapHive site with its own accounts, the same as on the web. If your account is in both, you can switch later without signing in again (**Profile → Switch region**).
 2. Enter the email and password you use on the CapHive website.
 3. If you use two-factor authentication on the website, enter the same code (authenticator app, SMS or WhatsApp).
 4. Allow notifications when asked, and turn on Face ID / fingerprint unlock if you want it.
@@ -51,7 +51,8 @@ flowchart LR
 
 - **The dial** shows how much of your total commitment has been called so far (for example *46% of ₹7.00 Cr called*), with **Called**, **Due** and **Distributed to you** below it.
 - **To do** lists unpaid capital calls (earliest due date first) and documents waiting for your signature. When there is nothing, it says *You're all caught up*.
-- **One card per fund** (per folio), grouped by fund manager, with committed, called, due and distributed amounts — the same figures as the fund card on the website. Tap a card for the fund screen.
+- **One fund manager at a time.** If you invest with more than one fund manager, the name at the top (for example *Arka Capital ▾*) is a picker — the same list as the fund manager dropdown on the website dashboard. Home, Documents and Alerts show only the fund manager you pick; the app remembers your choice. With one fund manager, its name is shown without a picker.
+- **One card per fund** (per folio) of that fund manager, with committed, called, due and distributed amounts — the same figures as the fund card on the website. Tap a card for the fund screen.
 
 ---
 
@@ -81,7 +82,8 @@ A phone notification is sent for every notification that would also be emailed t
 
 ## Profile, Security and Lost Phones
 
-- **Sign out** ends the app's session on this phone and stops its notifications.
+- **Switch region** appears when your account is in both India and US. Tap the other region to move there — no password or code is asked, the same as the region dropdown on the website. Switching back is instant.
+- **Sign out** ends the app's session on this phone — in every region you are signed in to — and stops its notifications.
 - The app locks after more than 5 minutes in the background when Face ID / fingerprint is on.
 - A phone unused for 90 days must sign in again; changing your password signs every phone out.
 - On the website, the profile menu → **My Profile** → [**Mobile Devices**](/users/mobile_devices) lists your phones (the button shows once you have signed in on one). **Sign out** next to a phone ends its session at once — use it for a lost phone.
@@ -95,8 +97,14 @@ A phone notification is sent for every notification that would also be emailed t
 **Where do I get the CapHive mobile app?**
 Install **CapHive** from the App Store (iPhone) or Google Play (Android). It is the app for investors, investor advisors and family-office users; fund-manager teams keep using the website.
 
-**Which region do I choose when the app asks India or United States?**
-Choose the site you sign in to on the web — India accounts live on the India site and US accounts on the US site, and they are separate. If you pick the wrong one the app says *Incorrect email or password* and offers **Switch region**; you can also change it later under **Profile → Change region**.
+**Which region do I choose when the app asks India or US?**
+Choose the site you sign in to on the web — India accounts live on the India site and US accounts on the US site, and they are separate. If you pick the wrong one the app says *Incorrect email or password* and offers **Switch region**; you can also go back to the region list under **Profile → Change site**.
+
+**Why don't I see Switch region in Profile?**
+It appears only when your account belongs to more than one region — the same rule as the region dropdown on the website. The list comes from your account's regions on the CapHive server, so if you expect both and see one, ask your fund manager or CapHive support to add the other region to your account.
+
+**Why does Home show only one fund manager's funds?**
+The app always shows one fund manager at a time, like the fund manager dropdown on the website dashboard, so totals and To do items are never mixed across fund managers. Use the picker at the top of Home, Documents or Alerts to change it.
 
 **Where do I see the phones I have signed in on?**
 On the website, open the profile menu → **My Profile** and click [**Mobile Devices**](/users/mobile_devices). The button appears once you have signed in on at least one phone; the page lists each phone with its region, last use, notification setting and last delivery.
@@ -147,7 +155,10 @@ Yes. Phone notifications are sent in addition to emails and WhatsApp messages, n
 You get the usual email and, on each phone you are signed in on, a notification titled with the fund manager's name and the email's subject line. Tapping it opens the capital call screen, and the call appears in **To do** until it is paid.
 
 **What happens when I tap a notification?**
-The app unlocks and opens the item — a capital call, fund or document screen, or the matching website page for anything else — and marks the notification as read, on the website too.
+The app unlocks and opens the item — a capital call, fund or document screen, or the matching website page for anything else — and marks the notification as read, on the website too. If the notification is from another fund manager or the other region, the app first switches to that fund manager and region.
+
+**What happens when I switch region?**
+The region you are on creates a one-time sign-in link for the other region, valid for five minutes and usable once, and the other region signs this phone in with it — no password or code. Both regions stay signed in on the phone, so switching back is instant, and each region can send you notifications. Signing out signs you out of both.
 
 **What happens when I mark an alert as read in the app?**
 It is marked read everywhere: the bell on the website shows the same read state. **Mark all read** on the **Alerts** tab clears every unread alert at once.
