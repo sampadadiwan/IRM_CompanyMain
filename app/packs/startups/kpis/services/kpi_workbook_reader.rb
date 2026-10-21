@@ -51,6 +51,7 @@ class KpiWorkbookReader
     "budgeted" => "Budget",
     "forecast" => "Budget",
     "fc" => "Budget",
+    "aop" => "Budget",
     "ic" => "IC",
     "investment committee" => "IC"
   }.freeze
