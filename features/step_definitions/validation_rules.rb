@@ -219,7 +219,7 @@ end
 
 # Evaluates rules for a temporary (unsaved) Valuation built from key=value args.
 When('the validation rules are evaluated for a Valuation with {string}') do |args|
-  attrs = args.split(";").map { |p| p.split("=", 2) }.to_h
+  attrs = expand_relative_dates(args).split(";").map { |p| p.split("=", 2) }.to_h
 
   @portfolio_company    ||= @entity.investors.portfolio_companies.last
   @investment_instrument ||= @portfolio_company&.investment_instruments&.last ||
@@ -241,7 +241,7 @@ end
 
 # Evaluates rules for a temporary AllocationRun.
 When('the validation rules are evaluated for an AllocationRun with {string}') do |args|
-  attrs = args.split(";").map { |p| p.split("=", 2) }.to_h
+  attrs = expand_relative_dates(args).split(";").map { |p| p.split("=", 2) }.to_h
   @fund ||= @entity.funds.last
 
   record = AllocationRun.new(
@@ -260,7 +260,7 @@ end
 
 # Evaluates rules for a temporary FundRatio.
 When('the validation rules are evaluated for a FundRatio with {string}') do |args|
-  attrs = args.split(";").map { |p| p.split("=", 2) }.to_h
+  attrs = expand_relative_dates(args).split(";").map { |p| p.split("=", 2) }.to_h
   @fund ||= @entity.funds.last
 
   record = FundRatio.new(
@@ -488,7 +488,7 @@ When('I visit the generate fund ratios page for the fund') do
 end
 
 When('I fill the fund ratios end date with {string}') do |date|
-  fill_in "fund_end_date", with: date
+  fill_in "fund_end_date", with: expand_relative_dates(date)
 end
 
 When('I submit the fund ratios form') do

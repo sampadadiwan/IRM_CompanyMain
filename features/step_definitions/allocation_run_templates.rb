@@ -54,8 +54,9 @@ def art_group!(name)
   AllocationRunTemplateGroup.find_by!(entity: @entity, name:)
 end
 
+# Accepts relative dates such as <25 years from now> (date_range_sanity.rb)
 def art_date(str)
-  Date.parse(str)
+  Date.parse(expand_relative_dates(str))
 end
 
 # A past allocation run on a fund. Blocker rules are skipped exactly as the controller does

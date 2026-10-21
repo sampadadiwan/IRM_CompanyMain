@@ -15,6 +15,7 @@ class PortfolioInvestment < ApplicationRecord
   include WithNextSteps                # has_many :tasks (polymorphic owner) + task template generation
   include RansackerAmounts.new(fields: %w[amount cost_of_sold fmv gain])
   include PortfolioInvestmentShared
+  include WithValidationRules          # Blocker rules from the validation rule engine (e.g. date range)
 
   ##########################################################
   ####################### ATTRIBUTES #######################
@@ -79,13 +80,24 @@ class PortfolioInvestment < ApplicationRecord
   monetize :entity_currency_amount_cents, :entity_currency_fmv_cents,
            with_currency: ->(i) { i.fund.entity.currency }
 
-  monetize :ex_expenses_base_amount_cents, :base_amount_cents, :base_cost_cents, :instrument_currency_fmv_cents, :instrument_currency_cost_of_remaining_cents, :instrument_currency_unrealized_gain_cents,
+  monetize :ex_expenses_base_amount_cents, :base_amount_cents, :instrument_currency_fmv_cents, :instrument_currency_cost_of_remaining_cents, :instrument_currency_unrealized_gain_cents,
            with_currency: ->(i) { i.investment_instrument&.currency || i.fund.currency }
 
   monetize :net_bought_amount_cents, :net_amount_cents, :ex_expenses_amount_cents,
-           :amount_cents, :cost_cents, :sale_price_per_share_cents, :cost_of_sold_per_share_cents, :fmv_cents, :gain_cents,
+           :amount_cents, :cost_cents, :fmv_cents, :gain_cents,
            :unrealized_gain_cents, :cost_of_sold_cents, :cost_of_remaining_cents,
            :transfer_amount_cents,
+           with_currency: ->(i) { i.fund.currency }
+
+  # Per-share values computed from the amounts (not columns, never entered), so they carry no
+  # validators. With validators, the form's client-side validations computes them when a
+  # rejected create re-renders the form before the amounts exist, and divides nil by quantity.
+  monetize :base_cost_cents,
+           disable_validation: true,
+           with_currency: ->(i) { i.investment_instrument&.currency || i.fund.currency }
+
+  monetize :sale_price_per_share_cents, :cost_of_sold_per_share_cents,
+           disable_validation: true,
            with_currency: ->(i) { i.fund.currency }
 
   ##########################################################

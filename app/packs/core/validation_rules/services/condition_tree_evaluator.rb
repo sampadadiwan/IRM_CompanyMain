@@ -5,6 +5,8 @@
 #   Leaf node:      { "field": "valuation_date", "op": "not_quarter_end" }
 #                   { "field": "valuation_cents", "op": "pct_change_gt",
 #                     "param": "pct_threshold", "compare_to": "context.prev_valuation_cents" }
+#                   { "field": "valuation_date", "op": "date_out_of_range" }
+#                     (uses params past_years / future_years, each defaulting to 20)
 #
 # Fields prefixed with "context." are resolved from the ContextProvider hash.
 # All other field names are resolved directly from the record's attributes.
@@ -13,6 +15,9 @@
 class ConditionTreeEvaluator
   # Quarter-end months: last day of Mar / Jun / Sep / Dec
   QUARTER_END_MONTHS = [3, 6, 9, 12].freeze
+
+  # date_out_of_range: years either side of today when past_years / future_years are unusable
+  DEFAULT_WINDOW_YEARS = 20
 
   # ── Public interface ─────────────────────────────────────────────────────────
 
@@ -61,6 +66,7 @@ class ConditionTreeEvaluator
     when "eq"               then resolve_field(node["field"]).to_s == resolve_param_or_value(node).to_s
     when "blank"            then resolve_field(node["field"]).blank?
     when "not_blank"        then resolve_field(node["field"]).present?
+    when "date_out_of_range" then evaluate_date_out_of_range(node)
     else
       # Unknown operator — do not fire the rule to avoid false positives
       Rails.logger.warn("[ConditionTreeEvaluator] Unknown operator: #{op}")
@@ -79,6 +85,27 @@ class ConditionTreeEvaluator
       return false
     end
     !quarter_end?(date)
+  end
+
+  # Fires when the date is present but outside the window
+  # [today - past_years years, today + future_years years] (both bounds inclusive).
+  # On a saved record, an unchanged DB column is skipped so legacy rows stay editable;
+  # virtual attributes (e.g. FundRatioRunTemplate#trigger_end_date) are always checked.
+  def evaluate_date_out_of_range(node)
+    field = node["field"]
+    raw = resolve_field(field)
+    return false if raw.blank?
+
+    begin
+      date = raw.to_date
+    rescue ArgumentError, TypeError # Date::Error is an ArgumentError
+      return false
+    end
+    return false if unchanged_saved_column?(field)
+
+    past   = window_years(@params["past_years"])
+    future = window_years(@params["future_years"])
+    date < Date.current - past.years || date > Date.current + future.years
   end
 
   # Fires when |% change| from compare_to exceeds the threshold param.
@@ -139,6 +166,21 @@ class ConditionTreeEvaluator
   end
 
   # ── Date helpers ─────────────────────────────────────────────────────────────
+
+  # Blank, non-integer or negative configured values fall back to the default; 0 is honoured
+  def window_years(value)
+    years = Integer(value, exception: false)
+    years.nil? || years.negative? ? DEFAULT_WINDOW_YEARS : years
+  end
+
+  # True for a persisted record whose DB column is not being changed by this save.
+  # ActiveModel targets (no dirty tracking) and virtual attributes return false.
+  def unchanged_saved_column?(field)
+    @record.respond_to?(:persisted?) && @record.persisted? &&
+      @record.respond_to?(:has_attribute?) && @record.has_attribute?(field) &&
+      @record.respond_to?(:will_save_change_to_attribute?) &&
+      !@record.will_save_change_to_attribute?(field)
+  end
 
   def quarter_end?(date)
     QUARTER_END_MONTHS.include?(date.month) && date == date.end_of_month

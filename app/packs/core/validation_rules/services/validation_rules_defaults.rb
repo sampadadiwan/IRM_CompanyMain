@@ -59,6 +59,21 @@ module ValidationRulesDefaults
       severity: "warning",
       message_template: "Per-share value has decreased by more than %{pct_threshold}%% compared to the previous valuation for this instrument. Please confirm."
     },
+    {
+      name: "valuation_date_out_of_range",
+      target_model: "Valuation",
+      enabled: true,
+      description: "Blocks a new or changed valuation date that is more than past_years years before or future_years years after today.",
+      condition_tree: {
+        "op" => "AND",
+        "conditions" => [
+          { "field" => "valuation_date", "op" => "date_out_of_range" }
+        ]
+      },
+      params: { "past_years" => 20, "future_years" => 20 },
+      severity: "blocker",
+      message_template: "Valuation date %{valuation_date} must be within %{past_years} years before and %{future_years} years after today."
+    },
 
     # ── AllocationRun ──────────────────────────────────────────────────────────
     {
@@ -134,6 +149,39 @@ module ValidationRulesDefaults
       severity: "warning",
       message_template: "Required account entries (%{account_entry_names}) not found in the %{n_days} days before the run end date (%{end_date}). Please ensure all required entries are imported."
     },
+    {
+      name: "allocation_run_date_out_of_range",
+      target_model: "AllocationRun",
+      enabled: true,
+      description: "Blocks an allocation run whose start or end date is more than past_years years before or future_years years after today.",
+      condition_tree: {
+        "op" => "OR",
+        "conditions" => [
+          { "field" => "start_date", "op" => "date_out_of_range" },
+          { "field" => "end_date",   "op" => "date_out_of_range" }
+        ]
+      },
+      params: { "past_years" => 20, "future_years" => 20 },
+      severity: "blocker",
+      message_template: "Allocation run dates %{start_date} – %{end_date} must be within %{past_years} years before and %{future_years} years after today."
+    },
+
+    # ── PortfolioInvestment ───────────────────────────────────────────────────
+    {
+      name: "portfolio_investment_date_out_of_range",
+      target_model: "PortfolioInvestment",
+      enabled: true,
+      description: "Blocks a new or changed investment date that is more than past_years years before or future_years years after today.",
+      condition_tree: {
+        "op" => "AND",
+        "conditions" => [
+          { "field" => "investment_date", "op" => "date_out_of_range" }
+        ]
+      },
+      params: { "past_years" => 20, "future_years" => 20 },
+      severity: "blocker",
+      message_template: "Investment date %{investment_date} must be within %{past_years} years before and %{future_years} years after today."
+    },
 
     # ── CapitalCall ───────────────────────────────────────────────────────────
     {
@@ -205,6 +253,24 @@ module ValidationRulesDefaults
       message_template: "No investor contacts are subscribed to Capital Call notifications for %{investor_without_subscribers} — they will not receive call notices until a contact is subscribed."
     },
 
+    # ── InvestorStatementRequest ──────────────────────────────────────────────
+    {
+      name: "investor_statement_date_out_of_range",
+      target_model: "InvestorStatementRequest",
+      enabled: true,
+      description: "Blocks Investor Statement generation on a capital commitment when the start or end date is more than past_years years before or future_years years after today.",
+      condition_tree: {
+        "op" => "OR",
+        "conditions" => [
+          { "field" => "start_date", "op" => "date_out_of_range" },
+          { "field" => "end_date",   "op" => "date_out_of_range" }
+        ]
+      },
+      params: { "past_years" => 20, "future_years" => 20 },
+      severity: "blocker",
+      message_template: "Investor Statement dates %{start_date} – %{end_date} must be within %{past_years} years before and %{future_years} years after today."
+    },
+
     # ── CapitalRemittance ─────────────────────────────────────────────────────
     {
       name: "capital_remittance_notice_not_generated",
@@ -252,6 +318,23 @@ module ValidationRulesDefaults
       severity: "warning",
       message_template: "Run template trigger date %{trigger_end_date} is not a quarter-end date. Please confirm this is intentional."
     },
+    {
+      name: "fund_ratio_run_template_date_out_of_range",
+      target_model: "FundRatioRunTemplate",
+      enabled: true,
+      # trigger_end_date is an attr_accessor, not a column, so it is never bound for interpolation —
+      # the message must not reference it or the raw template (with the literal placeholder) is shown.
+      description: "Blocks triggering a run template with an end date more than past_years years before or future_years years after today.",
+      condition_tree: {
+        "op" => "AND",
+        "conditions" => [
+          { "field" => "trigger_end_date", "op" => "date_out_of_range" }
+        ]
+      },
+      params: { "past_years" => 20, "future_years" => 20 },
+      severity: "blocker",
+      message_template: "Run template end date must be within %{past_years} years before and %{future_years} years after today."
+    },
 
     # ── FundFormula ────────────────────────────────────────────────────────────
     {
@@ -287,6 +370,21 @@ module ValidationRulesDefaults
       params: {},
       severity: "warning",
       message_template: "Fund ratio end date %{end_date} is not a quarter-end date. Please confirm this is intentional."
+    },
+    {
+      name: "fund_ratio_date_out_of_range",
+      target_model: "FundRatio",
+      enabled: true,
+      description: "Blocks a fund ratio end date more than past_years years before or future_years years after today.",
+      condition_tree: {
+        "op" => "AND",
+        "conditions" => [
+          { "field" => "end_date", "op" => "date_out_of_range" }
+        ]
+      },
+      params: { "past_years" => 20, "future_years" => 20 },
+      severity: "blocker",
+      message_template: "Fund ratio end date %{end_date} must be within %{past_years} years before and %{future_years} years after today."
     }
   ].freeze
 end

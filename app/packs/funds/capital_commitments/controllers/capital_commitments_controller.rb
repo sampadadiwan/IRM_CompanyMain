@@ -140,6 +140,10 @@ class CapitalCommitmentsController < ApplicationController
        params[:end_date].present? &&
        Date.local_parse(params[:start_date]) <= Date.local_parse(params[:end_date])
 
+      # Blocker rules (e.g. investor_statement_date_out_of_range) stop both statement jobs below
+      blockers = investor_statement_blockers
+      return redirect_to(request.referer, alert: blockers.map(&:message).join(" ")) if blockers.any?
+
       if params[:for] == "Investing Entity"
         # Generate Investor Statement combining all the commitments of the investing entity
         KycDocGenJob.perform_later(@capital_commitment.investor_kyc_id, params[:template_id], params[:start_date], params[:end_date], current_user.id, entity_id: @capital_commitment.entity_id, options: { fund_id: @capital_commitment.fund_id, capital_commitment_id: @capital_commitment.id })
@@ -233,6 +237,14 @@ class CapitalCommitmentsController < ApplicationController
   end
 
   private
+
+  # The entity comes from the commitment, never from params
+  def investor_statement_blockers
+    statement_request = InvestorStatementRequest.new(entity_id: @capital_commitment.entity_id,
+                                                     start_date: Date.local_parse(params[:start_date]),
+                                                     end_date: Date.local_parse(params[:end_date]))
+    ValidationRuleEvaluator.call(record: statement_request, entity: statement_request.entity).select(&:blocker?)
+  end
 
   # Use callbacks to share common setup or constraints between actions.
   def set_capital_commitment

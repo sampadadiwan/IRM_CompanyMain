@@ -2,6 +2,8 @@ class PortfolioInvestmentCreate < PortfolioInvestmentAction
   step :set_valuation
   step :validate_currency
   left :handle_currency_errors, Output(:failure) => End(:failure)
+  step :check_date_rules
+  left :handle_date_rule_errors, Output(:failure) => End(:failure)
   step :compute_amount_cents
   step :setup_aggregate
   left :handle_setup_aggregate_errors, Output(:failure) => End(:failure)
@@ -41,6 +43,27 @@ class PortfolioInvestmentCreate < PortfolioInvestmentAction
   def handle_currency_errors(ctx, portfolio_investment:, **)
     Rails.logger.debug { "PortfolioInvestmentCreate Currency errors: #{portfolio_investment.errors.full_messages}" }
     ctx[:errors] = portfolio_investment.errors.full_messages
+    false
+  end
+
+  # Blocker validation rules (e.g. portfolio_investment_date_out_of_range) must fail the create
+  # before setup_aggregate / create_valuation write anything. Otherwise the model-level check in
+  # WithValidationRules would only fire at save, after those rows exist, and the user would see
+  # the valuation rule's message instead of the investment date one.
+  def check_date_rules(_ctx, portfolio_investment:, **)
+    # Honour WithValidationRules.skip, as the model-level check does
+    return true if Thread.current[:skip_validation_rules]
+
+    blockers = ValidationRuleEvaluator.call(record: portfolio_investment, entity: portfolio_investment.entity)
+                                      .select(&:blocker?)
+    blockers.each { |result| portfolio_investment.errors.add(:base, result.message) }
+    blockers.empty?
+  end
+
+  # A String, like handle_errors, because ImportPortfolioInvestment raises result[:errors]
+  def handle_date_rule_errors(ctx, portfolio_investment:, **)
+    Rails.logger.debug { "PortfolioInvestmentCreate date rule errors: #{portfolio_investment.errors.full_messages}" }
+    ctx[:errors] = portfolio_investment.errors.full_messages.join(", ")
     false
   end
 
