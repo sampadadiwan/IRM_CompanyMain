@@ -252,8 +252,8 @@ Then("the phone gets a session") do
 end
 
 Then("the JSON at {string} is {string}") do |path, value|
-  # {call3} stands for Capital Call 3's id in the shared setup
-  value = value.gsub("{call3}") { arka[:call3].id.to_s } if respond_to?(:arka)
+  # {call3} / {payment} stand for Capital Call 3's / Distribution 1's payment id in the shared setup
+  value = value.gsub("{call3}") { arka[:call3].id.to_s }.gsub("{payment}") { arka[:payment].id.to_s } if respond_to?(:arka)
   actual = path.split(".").reduce(last_phone.json) { |memo, key| memo.is_a?(Array) ? memo[key.to_i] : memo&.dig(key) }
   expect(actual.to_s).to eq(value)
 end

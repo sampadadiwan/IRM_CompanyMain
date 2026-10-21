@@ -18,6 +18,7 @@ export const keys = {
   calls: (id: number) => ['calls', id] as const,
   distributions: (id: number) => ['distributions', id] as const,
   remittance: (id: number) => ['remittance', id] as const,
+  distribution: (id: number) => ['distribution', id] as const,
   documents: (filters: object) => ['documents', filters] as const,
   document: (id: number) => ['document', id] as const,
   notifications: ['notifications'] as const,
@@ -64,6 +65,10 @@ export function useDistributions(commitmentId: number, enabled = true) {
 
 export function useRemittance(id: number) {
   return useQuery({ queryKey: keys.remittance(id), queryFn: () => api<Remittance>(`/capital_remittances/${id}.json`) });
+}
+
+export function useDistribution(id: number) {
+  return useQuery({ queryKey: keys.distribution(id), queryFn: () => api<DistributionPayment>(`/capital_distribution_payments/${id}.json`) });
 }
 
 export function useDocuments(filters: { q?: string; commitmentId?: number; toSign?: boolean }) {

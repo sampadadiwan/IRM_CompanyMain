@@ -19,12 +19,13 @@ class MobileDocuments
   # The same rule as DocumentPolicy#not_generated_or_approved, in SQL.
   APPROVED_SQL = "documents.from_template_id IS NULL OR documents.owner_tag = 'Signed' OR documents.approved = TRUE".freeze
 
-  # The newest call notice the investor may see on a remittance, or nil when none has been
-  # generated / approved yet (lp-mobile-app H6, E22). Used by capital_remittances/show.json.
-  def self.notice_for(remittance)
-    remittance.documents.not_template.where(APPROVED_SQL)
-              .joins(:folder).where(folders: { private: false })
-              .order(id: :desc).pick(:id)
+  # The newest notice the investor may see on a remittance (call notice) or distribution payment
+  # (distribution notice), or nil when none has been generated / approved yet (lp-mobile-app H6,
+  # E22). Used by capital_remittances/show.json and capital_distribution_payments/show.json.
+  def self.notice_for(record)
+    record.documents.not_template.where(APPROVED_SQL)
+          .joins(:folder).where(folders: { private: false })
+          .order(id: :desc).pick(:id)
   end
 
   def initialize(user:, scope:)

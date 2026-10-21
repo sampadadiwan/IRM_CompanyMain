@@ -58,6 +58,7 @@ function Navigator() {
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="funds/[id]" />
           <Stack.Screen name="capital-calls/[id]" />
+          <Stack.Screen name="distributions/[id]" />
           <Stack.Screen name="documents/[id]" />
           <Stack.Screen name="profile/notifications" />
         </Stack.Protected>

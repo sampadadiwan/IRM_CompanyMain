@@ -46,10 +46,11 @@ export type Remittance = {
   notice_document_id?: number | null;
 };
 
-/** The website's own GET /capital_distribution_payments.json rows */
+/** The website's own GET /capital_distribution_payments(.json) rows — the show adds the notice */
 export type DistributionPayment = {
   id: number; capital_distribution_title: string; fund_name: string; payment_date: string | null;
   completed: boolean; net_payable: number; gross_payable: number;
+  fund_currency?: string; notice_document_id?: number | null;
 };
 
 /** The website's own GET /capital_commitments/:id.json */

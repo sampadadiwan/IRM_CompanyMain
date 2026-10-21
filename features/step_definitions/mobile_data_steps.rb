@@ -101,6 +101,14 @@ Given("Call 3 has a generated call notice that is not approved yet") do
   arka[:notice] = mobile_document!(arka[:call3], name: "Capital Call 3 Notice", entity: arka[:fm], generated: true, approved: false)
 end
 
+Given("Distribution 1 has an approved distribution notice") do
+  arka[:dist_notice] = mobile_document!(arka[:payment], name: "Distribution 1 Notice", entity: arka[:fm], generated: true, approved: true)
+end
+
+Given("Distribution 1 has a generated distribution notice that is not approved yet") do
+  arka[:dist_notice] = mobile_document!(arka[:payment], name: "Distribution 1 Notice", entity: arka[:fm], generated: true, approved: false)
+end
+
 Given("the commitment has a document {string}") do |name|
   arka[:docs] ||= {}
   arka[:docs][name] = mobile_document!(arka[:cc], name:, entity: arka[:fm])
@@ -163,6 +171,12 @@ Given("{string} has an unread notification for Capital Call 3") do |email|
   arka[:notification] = Noticed::Notification.create!(event:, recipient: user, type: "CapitalRemittanceNotifier::Notification")
 end
 
+Given("{string} has an unread notification for Distribution 1") do |email|
+  user = mobile_user(email)
+  event = CapitalDistributionPaymentNotifier.create!(record: arka[:payment], params: { entity_id: arka[:fm].id, email_method: "send_notification" })
+  Noticed::Notification.create!(event:, recipient: user, type: "CapitalDistributionPaymentNotifier::Notification")
+end
+
 Given("{string} has received {int} notifications") do |email, count|
   count.times { step %("#{email}" has an unread notification for Capital Call 3) }
 end
@@ -175,6 +189,10 @@ end
 
 When("the phone {string} opens the Arka fund's distributions") do |phone_name|
   mobile_request(phone_name, :get, "/capital_distribution_payments.json?capital_commitment_id=#{arka[:cc].id}")
+end
+
+When("the phone {string} opens Distribution 1") do |phone_name|
+  mobile_request(phone_name, :get, "/capital_distribution_payments/#{arka[:payment].id}.json")
 end
 
 When("the phone {string} opens the Arka commitment") do |phone_name|
@@ -247,6 +265,20 @@ end
 
 Then("the capital call's notice is the approved call notice") do
   expect(last_phone.json["notice_document_id"]).to eq(arka[:notice].id)
+end
+
+Then("the phone sees the distribution payment {string} in {string} with net payable {string}") do |title, currency, net|
+  expect(last_phone.json).to include("capital_distribution_title" => title, "fund_currency" => currency, "completed" => true)
+  expect(format("%.2f", last_phone.json["net_payable"])).to eq(net)
+end
+
+Then("the distribution's notice is the approved distribution notice") do
+  expect(last_phone.json["notice_document_id"]).to eq(arka[:dist_notice].id)
+end
+
+Then("the distribution has no notice") do
+  expect(last_phone.json).to have_key("notice_document_id")
+  expect(last_phone.json["notice_document_id"]).to be_nil
 end
 
 Then("the capital call has no notice") do

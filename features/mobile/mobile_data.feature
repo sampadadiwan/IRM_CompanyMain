@@ -33,6 +33,28 @@ Feature: LP mobile app data
     Then the phone gets the status 200
     And the phone sees the distribution "Distribution 1" of "3000000.00"
 
+  # Happy path: the Distribution screen, with its approved distribution notice
+  Scenario: Distribution with its notice
+    Given Distribution 1 has an approved distribution notice
+    When the phone "iPhone 15" opens Distribution 1
+    Then the phone gets the status 200
+    And the phone sees the distribution payment "Distribution 1" in "INR" with net payable "3000000.00"
+    And the distribution's notice is the approved distribution notice
+
+  # Edge case: a generated distribution notice that is not approved yet is not offered
+  Scenario: Distribution notice not approved yet
+    Given Distribution 1 has a generated distribution notice that is not approved yet
+    When the phone "iPhone 15" opens Distribution 1
+    Then the phone gets the status 200
+    And the distribution has no notice
+
+  # Happy path: a distribution alert opens the Distribution screen
+  Scenario: Distribution alert opens the Distribution screen
+    Given "rahul@sharmafo.in" has an unread notification for Distribution 1
+    When the phone "iPhone 15" requests "/notifications.json?all=1"
+    Then the JSON at "0.link" is "/distributions/{payment}"
+    And the JSON at "0.category" is "distributions"
+
   # H6 — Happy path: the Capital call screen, with its approved call notice
   Scenario: Capital call with its notice
     Given Call 3 has an approved call notice

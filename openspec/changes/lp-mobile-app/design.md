@@ -666,7 +666,7 @@ checks Expo receipts later.
 |---|---|
 | `CapitalRemittance` | `/capital-calls/:id` |
 | `CapitalCommitment` | `/funds/:id` |
-| `CapitalDistributionPayment` | `/funds/:capital_commitment_id?segment=distributions` |
+| `CapitalDistributionPayment` | `/distributions/:id` |
 | `Document` | `/documents/:id` |
 | anything else | `web:` + the notifier's existing `url` path |
 

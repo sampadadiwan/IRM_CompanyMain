@@ -104,13 +104,17 @@ export default function FundScreen() {
           )} />
         ) : segment === 'distributions' ? (
           <ListCard query={distributions} empty="No distributions yet" render={(p) => (
-            <View style={styles.item}>
-              <View style={styles.grow}>
-                <AppText variant="bodyStrong">{p.capital_distribution_title}</AppText>
-                <AppText variant="caption" color="textSecondary">{p.payment_date ? `paid ${formatDate(p.payment_date)}` : 'scheduled'}</AppText>
+            <Pressy onPress={() => router.push({ pathname: '/distributions/[id]', params: { id: String(p.id) } })}
+              accessibilityRole="button" accessibilityLabel={p.capital_distribution_title}>
+              <View style={styles.item}>
+                <View style={styles.grow}>
+                  <AppText variant="bodyStrong">{p.capital_distribution_title}</AppText>
+                  <AppText variant="caption" color="textSecondary">{p.payment_date ? `paid ${formatDate(p.payment_date)}` : 'scheduled'}</AppText>
+                </View>
+                <AppText variant="bodyStrong" style={styles.tabular}>{formatMoney(p.net_payable, currency)}</AppText>
+                <Icon name="chevron.right" />
               </View>
-              <AppText variant="bodyStrong" style={styles.tabular}>{formatMoney(p.net_payable, currency)}</AppText>
-            </View>
+            </Pressy>
           )} />
         ) : (
           <ListCard query={{ ...docs, data: docs.data?.pages.flatMap((pg) => pg.items) }} empty="No documents yet for this fund" render={(d) => (

@@ -23,8 +23,7 @@ module MobileDeepLink
     case record
     when CapitalRemittance then "/capital-calls/#{record.id}"
     when CapitalCommitment then "/funds/#{record.id}"
-    when CapitalDistributionPayment
-      record.capital_commitment_id ? "/funds/#{record.capital_commitment_id}?segment=distributions" : web_link(notification)
+    when CapitalDistributionPayment then "/distributions/#{record.id}"
     when Document then "/documents/#{record.id}"
     else web_link(notification)
     end
