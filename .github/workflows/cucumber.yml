@@ -126,12 +126,47 @@ jobs:
             fi
           fi
 
+          # Start a background progress monitor that reads JSONL events
+          (
+            sleep 5
+            while true; do
+              sleep 10
+              # Read all worker JSONL files and print a live status line
+              python3 -c "
+import json, glob, sys
+workers = {}
+for f in sorted(glob.glob('/tmp/cucumber_progress/worker_*.jsonl')):
+    wid = f.split('worker_')[1].split('.')[0]
+    counts = {'passed':0,'failed':0,'skipped':0}
+    current = ''
+    for line in open(f):
+        try:
+            d = json.loads(line)
+            if d['type'] == 'scenario_end':
+                counts[d.get('status','skipped')] += 1
+            elif d['type'] == 'scenario_start':
+                current = d.get('scenario','')[:50]
+            elif d['type'] == 'feature_start':
+                current = d.get('feature_name','')[:50]
+        except: pass
+    total = sum(counts.values())
+    workers[wid] = f'W{wid}: {counts[\"passed\"]}✓ {counts[\"failed\"]}✗ ({total} done) [{current}]'
+if workers:
+    print('  '.join(workers[k] for k in sorted(workers)))
+" 2>/dev/null
+            done
+          ) &
+          MONITOR_PID=$!
+
           PCUC_QUIET=1 RUBYOPT="-W0" bundle exec parallel_cucumber \
             -n "$WORKERS" --first-is-1 \
             --group-by runtime --allowed-missing 100 \
-            --serialize-stdout \
             -o "$CUKE_OPTS" \
             $FEATURES
+
+          EXIT_CODE=$?
+          kill $MONITOR_PID 2>/dev/null || true
+          exit $EXIT_CODE
 
       - name: Combine failure summaries
         if: always()
