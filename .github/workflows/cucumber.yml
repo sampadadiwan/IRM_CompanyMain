@@ -90,11 +90,12 @@ jobs:
             "
           done
 
-      - name: Create results directories
+      - name: Create results directories and runtime log
         run: |
           mkdir -p tmp/capybara
           mkdir -p tmp/cucumber_results
           mkdir -p /tmp/cucumber_progress
+          touch tmp/parallel_runtime_cucumber.log
 
       - name: Run Cucumber
         run: |
@@ -115,7 +116,7 @@ jobs:
           if [ -z "$FEATURES" ]; then
             # When running all features, build the list excluding AI if requested
             if [ "${{ inputs.skip_ai }}" = "true" ]; then
-              FEATURES=$(find features -maxdepth 1 -mindepth 1 -not -name 'ai' | sort | tr '\n' ' ')
+              FEATURES=$(find features -maxdepth 1 -mindepth 1 -type d -not -name 'ai' -not -name 'step_definitions' -not -name 'support' | sort | tr '\n' ' ')
               echo "Skipping AI features. Running: $FEATURES"
             else
               FEATURES="features"
