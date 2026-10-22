@@ -1,0 +1,210 @@
+# On-demand Cucumber test runner on GitHub Actions.
+# Trigger from the Actions tab or CLI:
+#   gh workflow run cucumber.yml --ref your-branch
+#   gh workflow run cucumber.yml --ref main -f tags="@notification"
+#   gh workflow run cucumber.yml --ref main -f features="features/core/document.feature"
+name: Cucumber Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      tags:
+        description: 'Cucumber tags (e.g. @notification, @javascript)'
+        required: false
+        default: ''
+      features:
+        description: 'Feature path (e.g. features/core/document.feature)'
+        required: false
+        default: ''
+      workers:
+        description: 'Number of parallel workers (max 4)'
+        required: false
+        default: '3'
+
+jobs:
+  cucumber:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    services:
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      RAILS_ENV: test
+      RAILS_TEST_KEY: ${{ secrets.RAILS_TEST_KEY }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.4.4'
+          bundler-cache: true
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - run: npm install
+
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium --with-deps
+
+      - name: Write test credentials key
+        run: |
+          echo "$RAILS_TEST_KEY" > config/credentials/test.key
+
+      - name: Prepare test databases
+        run: |
+          WORKERS=${{ inputs.workers }}
+          for i in $(seq 1 "$WORKERS") ""; do
+            echo "Reloading test DB (worker: '${i:-default}')..."
+            TEST_ENV_NUMBER=$i RAILS_ENV=test bundle exec rails runner "
+              ActiveRecord::Base.connection.execute('PRAGMA foreign_keys = OFF')
+              load 'db/schema_test.rb'
+              ActiveRecord::Base.connection.execute('PRAGMA foreign_keys = ON')
+
+              file_versions = Dir.glob('db/migrate/*.rb').map { |f| File.basename(f).split('_').first }
+              db_versions = ActiveRecord::Base.connection.select_values('SELECT version FROM schema_migrations')
+              stale = db_versions - file_versions
+              if stale.any?
+                stale.each { |v| ActiveRecord::Base.connection.execute(\"DELETE FROM schema_migrations WHERE version = '#{v}'\") }
+                puts \"  Removed #{stale.size} stale migration entries\"
+              end
+            "
+          done
+
+      - name: Create results directories
+        run: |
+          mkdir -p tmp/capybara
+          mkdir -p tmp/cucumber_results
+          mkdir -p /tmp/cucumber_progress
+
+      - name: Run Cucumber
+        run: |
+          WORKERS=${{ inputs.workers }}
+          TAGS="${{ inputs.tags }}"
+          FEATURES="${{ inputs.features }}"
+
+          # Build cucumber options: per-worker HTML report + per-worker failure rerun file
+          CUKE_OPTS="-p parallel_rerun"
+          CUKE_OPTS="$CUKE_OPTS --format html --out tmp/cucumber_results/report_\$TEST_ENV_NUMBER.html"
+          CUKE_OPTS="$CUKE_OPTS --format rerun --out tmp/cucumber_results/rerun_\$TEST_ENV_NUMBER.txt"
+          CUKE_OPTS="$CUKE_OPTS --require cucumber_dashboard"
+
+          if [ -n "$TAGS" ]; then
+            CUKE_OPTS="$CUKE_OPTS --tags '$TAGS'"
+          fi
+
+          if [ -z "$FEATURES" ]; then
+            FEATURES="features"
+            # Switch to the profile that includes `features` argument
+            CUKE_OPTS=$(echo "$CUKE_OPTS" | sed 's/-p parallel_rerun/-p parallel/')
+          fi
+
+          PCUC_QUIET=1 RUBYOPT="-W0" bundle exec parallel_cucumber \
+            -n "$WORKERS" --first-is-1 \
+            --group-by runtime --allowed-missing 100 \
+            --serialize-stdout \
+            -o "$CUKE_OPTS" \
+            $FEATURES
+
+      - name: Combine failure summaries
+        if: always()
+        run: |
+          echo "=== Cucumber Run Summary ===" > tmp/cucumber_results/summary.txt
+          echo "Branch: ${{ github.ref_name }}" >> tmp/cucumber_results/summary.txt
+          echo "Tags: ${{ inputs.tags || 'none' }}" >> tmp/cucumber_results/summary.txt
+          echo "Features: ${{ inputs.features || 'all' }}" >> tmp/cucumber_results/summary.txt
+          echo "Workers: ${{ inputs.workers }}" >> tmp/cucumber_results/summary.txt
+          echo "Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" >> tmp/cucumber_results/summary.txt
+          echo "" >> tmp/cucumber_results/summary.txt
+
+          # Collect per-worker failures from the progress formatter
+          for f in /tmp/cucumber_progress/worker_*_failures.txt; do
+            if [ -f "$f" ]; then
+              WORKER=$(basename "$f" | grep -oP '\d+')
+              echo "--- Worker $WORKER failures ---" >> tmp/cucumber_results/summary.txt
+              cat "$f" >> tmp/cucumber_results/summary.txt
+              echo "" >> tmp/cucumber_results/summary.txt
+            fi
+          done
+
+          # Collect per-worker rerun files
+          for f in tmp/cucumber_results/rerun_*.txt; do
+            if [ -f "$f" ] && [ -s "$f" ]; then
+              WORKER=$(basename "$f" .txt | grep -oP '\d+')
+              echo "--- Worker $WORKER rerun scenarios ---" >> tmp/cucumber_results/summary.txt
+              cat "$f" >> tmp/cucumber_results/summary.txt
+              echo "" >> tmp/cucumber_results/summary.txt
+            fi
+          done
+
+          # Combined rerun file (all workers merged, for easy copy-paste)
+          cat tmp/cucumber_results/rerun_*.txt 2>/dev/null | sort -u > tmp/cucumber_results/all_failures_rerun.txt || true
+
+          # Print summary to the Actions log
+          echo ""
+          echo "========================================"
+          cat tmp/cucumber_results/summary.txt
+          echo "========================================"
+
+      - name: Upload per-worker failure files
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: worker-failures
+          path: /tmp/cucumber_progress/worker_*_failures.txt
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Upload per-worker JSONL progress logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: worker-progress-logs
+          path: /tmp/cucumber_progress/worker_*.jsonl
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Upload HTML reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cucumber-html-reports
+          path: tmp/cucumber_results/report_*.html
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Upload combined summary + rerun files
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cucumber-summary
+          path: |
+            tmp/cucumber_results/summary.txt
+            tmp/cucumber_results/all_failures_rerun.txt
+            tmp/cucumber_results/rerun_*.txt
+            tmp/cucumber_failures.log
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Upload failure screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: capybara-screenshots
+          path: tmp/capybara/
+          if-no-files-found: ignore
+          retention-days: 30
