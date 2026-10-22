@@ -105,6 +105,8 @@ module Workflowable
                     .for_workflowable_type(workflowable_type_name)
                     .where(entity_id:)
                     .order(:name)
+                    # eligible_for? reads each template's entity; all share this entity_id, so one query
+                    .includes(:entity)
                     .select { |t| t.eligible_for?(self) }
   end
 
@@ -178,7 +180,9 @@ module Workflowable
     return @workflow_default_owner if defined?(@workflow_default_owner)
     return @workflow_default_owner = nil unless journey_panel && respond_to?(:audits)
 
-    @workflow_default_owner = audits.where(action: "create").order(:created_at).first&.user
+    # Only the user columns: audits.* would also load audited_changes, which on a create audit holds every
+    # attribute of the record. username is needed too - Audited::Audit#user is `user_as_model || username`.
+    @workflow_default_owner = audits.where(action: "create").order(:created_at).select(:user_id, :user_type, :username).first&.user
   end
 
   # Owners that beat the step's named owner/actors for THIS record (e.g. a KPI report's portfolio

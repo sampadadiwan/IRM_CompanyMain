@@ -331,7 +331,8 @@ class Investor < ApplicationRecord
       pis = entity.portfolio_investments
                   .where(portfolio_company_id: id, investment_instrument: valuation.investment_instrument)
                   .includes(:fund, :investment_instrument, :aggregate_portfolio_investment, :documents, :form_type, :portfolio_company)
-      pis.each do |pi|
+      # Sold/transferred quantities for all of them in two grouped queries, not two SUMs per investment
+      PortfolioInvestment.with_buy_quantities(pis.to_a).each do |pi|
         PortfolioInvestmentUpdate.call(portfolio_investment: pi, valuation: valuation)
       end
     end

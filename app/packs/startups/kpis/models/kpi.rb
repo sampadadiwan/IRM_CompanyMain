@@ -274,6 +274,7 @@ class Kpi < ApplicationRecord
     Kpi.joins(:kpi_report)
        .where(name: name, portfolio_company_id: portfolio_company_id, 'kpi_reports.as_of': kpi_report.as_of)
        .where.not(id: id)
+       .preload(:investor_kpi_mapping, :kpi_report) # what each sibling's recompute_rag_status! reads first
        .find_each(&:recompute_rag_status!)
     find_next_period_kpi&.recompute_rag_status!
   end

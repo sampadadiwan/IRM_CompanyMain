@@ -37,6 +37,8 @@ class ImportFundFormula < ImportUtil
 
       attrs[:sequence] = sequence.to_i if sequence
       fund_formula.update!(**attrs, import_upload_id: import_upload.id)
+      # A moved formula can change the fund's highest sequence - read it again for the next row
+      @max_sequence = nil
 
     else
       # Find by a composite key of attributes to prevent duplicates.
@@ -45,9 +47,34 @@ class ImportFundFormula < ImportUtil
       raise "FundFormula #{fund_formula.id} already exists" if fund_formula.id.present?
 
       attrs[:sequence] = sequence.to_i if sequence
-      fund.fund_formulas.create!(**attrs, entity_id: fund.entity_id, fund_id: fund.id, import_upload_id: import_upload.id)
+      new_sequence = attrs[:sequence]
+
+      # H5: acts_as_list makes room for an explicit sequence k by running
+      # `UPDATE ... SET sequence = sequence + 1 WHERE fund_id = ? AND sequence >= k` on every insert. When k
+      # is above every formula of the fund that UPDATE moves nothing, so it is skipped. Anything else - a
+      # blank / 0 / negative sequence (E7), or one at or below an existing formula (E5, E6) - takes the
+      # normal acts_as_list path, which shifts exactly as before.
+      if new_sequence && new_sequence >= 1 && new_sequence > max_sequence(fund)
+        FundFormula.acts_as_list_no_update do
+          fund.fund_formulas.create!(**attrs, entity_id: fund.entity_id, fund_id: fund.id, import_upload_id: import_upload.id)
+        end
+        @max_sequence = new_sequence
+      else
+        fund.fund_formulas.create!(**attrs, entity_id: fund.entity_id, fund_id: fund.id, import_upload_id: import_upload.id)
+        # The insert appended or shifted the list - read the highest sequence again for the next row
+        @max_sequence = nil
+      end
     end
 
     true
+  end
+
+  private
+
+  # The fund's highest sequence over the same rows acts_as_list shifts: acts_as_list_list drops every
+  # where condition but the fund's (soft-deleted formulas included), so this reads them the same way.
+  # Held on this import's instance; reset whenever an insert or update may have moved it.
+  def max_sequence(fund)
+    @max_sequence ||= FundFormula.unscoped.where(fund_id: fund.id).maximum(:sequence).to_i
   end
 end

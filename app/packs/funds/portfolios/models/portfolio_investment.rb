@@ -1,4 +1,15 @@
 class PortfolioInvestment < ApplicationRecord
+  # Values every valuation / sale recompute overwrites (PortfolioComputations). Auditing them wrote a row
+  # per investment per recompute — over 95% of this model's update audits — and the valuation that drives
+  # them is already audited on Valuation. Edits a person makes are still audited.
+  AUDIT_EXCLUDED_COMPUTED_COLUMNS = %w[
+    fmv_cents instrument_currency_fmv_cents entity_currency_fmv_cents tracking_fmv_cents
+    net_quantity net_amount_cents quantity_as_of_date
+    cost_of_remaining_cents instrument_currency_cost_of_remaining_cents
+    unrealized_gain_cents instrument_currency_unrealized_gain_cents gain_cents
+    unrealized_price_effect_cents realized_price_effect_cents valuation_id
+  ].freeze
+
   ##########################################################
   ###################### INCLUDED MODULES ##################
   ##########################################################
@@ -6,7 +17,7 @@ class PortfolioInvestment < ApplicationRecord
   include WithFolder                   # Handles folder_path logic
   include WithSnapshot                 # Snapshot support (historical views)
   include WithExchangeRate             # Currency conversion and tracking
-  include Trackable.new                # Track changes to records
+  include Trackable.new(audit_except: AUDIT_EXCLUDED_COMPUTED_COLUMNS) # Track changes people make, not recomputes
   include PortfolioComputations        # Financial computations
   include Memoized                     # Caching of heavy methods
   include PortfolioInvestmentCounters  # Counter cache logic

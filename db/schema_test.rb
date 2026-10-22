@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_22_120000) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -1971,6 +1971,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_120000) do
     t.boolean "white_label", default: false
     t.string "custom_css", limit: 20
     t.index ["deleted_at"], name: "index_entities_on_deleted_at"
+    t.index ["domain"], name: "index_entities_on_domain"
     t.index ["name"], name: "index_entities_on_name"
     t.index ["pan"], name: "index_entities_on_pan"
     t.index ["parent_entity_id"], name: "index_entities_on_parent_entity_id"

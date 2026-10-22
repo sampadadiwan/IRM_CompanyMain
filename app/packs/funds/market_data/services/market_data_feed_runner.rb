@@ -125,7 +125,8 @@ class MarketDataFeedRunner
     return if instruments.empty?
 
     FxRateResolver.with_cache do
-      PortfolioInvestment.where(entity_id: @entity.id, investment_instrument_id: instruments.map(&:id)).find_each do |pi|
+      # Each batch's sold/transferred quantities in two grouped queries, not two SUMs per holding
+      PortfolioInvestment.find_each_with_buy_quantities(PortfolioInvestment.where(entity_id: @entity.id, investment_instrument_id: instruments.map(&:id))) do |pi|
         PortfolioInvestmentUpdate.call(portfolio_investment: pi)
       end
     end

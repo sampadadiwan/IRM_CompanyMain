@@ -50,8 +50,11 @@ module CapitalRemittanceFees
           fees_audit = [[call_fee.name, call_fee.start_date, fees_cents]]
         else
           # Sum the amount for the fee from the commitment account_entries
-          fees_cents = capital_commitment.account_entries.where("account_entries.reporting_date >=? and account_entries.reporting_date <=? and account_entries.name = ? and cumulative = ?", call_fee.start_date, call_fee.end_date, call_fee.name, false).sum(:amount_cents)
-          fees_audit = capital_commitment.account_entries.where("account_entries.reporting_date >=? and account_entries.reporting_date <=? and account_entries.name = ? and cumulative = ?", call_fee.start_date, call_fee.end_date, call_fee.name, false).map { |a| [a.name, a.reporting_date, a.amount_cents] }
+          fee_entries = capital_commitment.account_entries.where("account_entries.reporting_date >=? and account_entries.reporting_date <=? and account_entries.name = ? and cumulative = ?", call_fee.start_date, call_fee.end_date, call_fee.name, false)
+          fees_cents = fee_entries.sum(:amount_cents)
+          # pluck, not map over loaded rows: account_entries rows carry wide json_fields / notes / explanation
+          # columns (CLAUDE.md) and only these three are needed - same [name, date, amount] arrays as before
+          fees_audit = fee_entries.pluck(:name, :reporting_date, :amount_cents)
         end
         next if fees_audit.blank?
 

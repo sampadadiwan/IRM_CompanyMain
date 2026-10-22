@@ -42,12 +42,51 @@ class CapitalCallJob < ApplicationJob
     start_progress(capital_commitments.count)
     Rails.logger.debug { "######## applicable_to record count = #{@progress[:total]}" }
 
+    # Commitments that already have a remittance in this call, read once instead of one exists? per commitment.
+    # Safe to read up front: this job runs on the serial queue, so nothing else adds remittances meanwhile.
+    existing_commitment_ids = CapitalRemittance.where(capital_call_id: @capital_call.id).distinct.pluck(:capital_commitment_id).to_set
+
+    # Each remittance save touches the fund (belongs_to :fund, touch: true), which in turn touches the entity:
+    # the same rows updated once per remittance. Suspend the fund touch for the loops (creating remittances,
+    # then generating payments and re-saving the remittances) and touch it once after - only if one of them
+    # wrote something, as a belongs_to touch fires only on a save that changed something.
+    # Only Fund: CapitalRemittance#touch_investor's entity touches are a Trailblazer step whose return value
+    # decides success, and they also bust each LP's investor entity cache - both must keep running.
+    @fund_touch_due = false
+    begin
+      Fund.no_touching do
+        create_remittances(capital_commitments, existing_commitment_ids)
+
+        # Generate any payments for the imported remittances if required
+        generate_remittance_payments
+      end
+    ensure
+      # Even if a loop stopped partway, so the rows it did write still bust the fund / entity caches
+      @capital_call.fund.touch if @fund_touch_due
+    end
+
+    # Fix the counters. Passing the call id makes that job refresh this call's stats cards on any
+    # open page once the totals are right (they are stale until then — see CapitalCall#broadcast_stats_change)
+    CapitalRemittancesCountersJob.perform_later([@capital_call.fund_id], nil, @capital_call.id)
+    @progress[:completed] = true
+  ensure
+    # In ensure so a run that fails partway still clears the progress line, shows the rows it did
+    # create and tells the user it stopped. @capital_call is nil if the find failed.
+    finish_progress if @capital_call
+  end
+
+  # One remittance per applicable commitment that doesn't have one yet
+  def create_remittances(capital_commitments, existing_commitment_ids)
+    # The custom-fields form every new remittance gets: the same query WithCustomField#setup_form_type runs
+    # before each save, read once for the call (H9). With none (E12) setup_form_type still looks per record.
+    form_type = @capital_call.entity.form_types.where(name: "CapitalRemittance").last
+
     # find_each: a call over thousands of commitments is walked in batches instead of loaded whole
     capital_commitments.find_each do |capital_commitment|
       # Check if we alread have a CapitalRemittance for this commitment
       Rails.logger.debug { "CapitalCallJob: Creating CapitalRemittance for #{capital_commitment.investor_name} for #{@capital_call.name}" }
 
-      if CapitalRemittance.exists?(capital_call: @capital_call, capital_commitment:)
+      if existing_commitment_ids.include?(capital_commitment.id)
         Rails.logger.debug { "Skipping remittances for #{capital_commitment}, already present" }
         @progress[:present] += 1
       else
@@ -56,7 +95,7 @@ class CapitalCallJob < ApplicationJob
         status = @capital_call.generate_remittances_verified ? "Paid" : "Pending"
         cr = CapitalRemittance.new(capital_call: @capital_call, fund: @capital_call.fund,
                                    entity: @capital_call.entity, investor: capital_commitment.investor, capital_commitment:, folio_id: capital_commitment.folio_id,
-                                   created_by: "Call",
+                                   created_by: "Call", form_type:,
                                    status:, verified: @capital_call.generate_remittances_verified)
 
         cr.payment_date = @capital_call.due_date if cr.verified
@@ -68,6 +107,7 @@ class CapitalCallJob < ApplicationJob
             @progress[:failed] += 1
           else
             @progress[:created] += 1
+            @fund_touch_due = true
           end
         end
       end
@@ -75,18 +115,6 @@ class CapitalCallJob < ApplicationJob
       # Tell open call pages how far we are (throttled — see report_progress)
       report_progress
     end
-
-    # Generate any payments for the imported remittances if required
-    generate_remittance_payments
-
-    # Fix the counters. Passing the call id makes that job refresh this call's stats cards on any
-    # open page once the totals are right (they are stale until then — see CapitalCall#broadcast_stats_change)
-    CapitalRemittancesCountersJob.perform_later([@capital_call.fund_id], nil, @capital_call.id)
-    @progress[:completed] = true
-  ensure
-    # In ensure so a run that fails partway still clears the progress line, shows the rows it did
-    # create and tells the user it stopped. @capital_call is nil if the find failed.
-    finish_progress if @capital_call
   end
 
   def generate_remittance_payments
@@ -100,15 +128,20 @@ class CapitalCallJob < ApplicationJob
 
         result = CapitalRemittancePaymentCreate.call(capital_remittance_payment: crp)
         Rails.logger.error { "Error creating CapitalRemittancePayment for CapitalRemitttance - Investor #{cr.investor_name} - Commitment id #{cr.capital_commitment_id}, #{cr.errors.full_messages}" } if result.failure?
+        # A new payment un-verifies its remittance (CapitalRemittancePayment#unverify_remittance), a changed save
+        @fund_touch_due = true if result.success?
       end
     end
 
     # Fix the counters
     CapitalRemittancePayment.counter_culture_fix_counts where: { fund_id: @capital_call.fund_id }
 
-    # We also need to fix the status of the CapitalRemittances, as the payments will have been created
-    @capital_call.capital_remittances.each do |capital_remittance|
+    # We also need to fix the status of the CapitalRemittances, as the payments will have been created.
+    # H1/E8: in batches of 1,000 with what each update reads preloaded, instead of the whole call loaded
+    # unbatched and every remittance fetching its commitment, investor, fund and documents on its own
+    @capital_call.capital_remittances.includes(*CapitalRemittance::RESAVE_PRELOADS).find_each do |capital_remittance|
       CapitalRemittanceUpdate.call(capital_remittance:)
+      @fund_touch_due = true if capital_remittance.saved_changes?
     end
   end
 

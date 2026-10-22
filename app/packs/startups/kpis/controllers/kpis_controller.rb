@@ -178,6 +178,8 @@ class KpisController < ApplicationController
         kpi.destroy
       end
       notice = "All pending KPIs were successfully rejected."
+      # Reject all moves every KPI report journey of the portfolio company on, once (H10)
+      KpiReport.journey_progress_for_portco(entity_id, portfolio_company_id, actor: current_user)
     else
       kpi_ids = []
       unapproved_kpis.find_each do |kpi|
@@ -185,12 +187,18 @@ class KpisController < ApplicationController
         kpi_ids << kpi.id
       end
 
-      KpiApproveService.call(kpi_ids, current_user.id)
-      notice = "All pending KPIs approved. Cumulative values are being computed — refresh the page in a few seconds."
+      # Approving is ~10 queries per KPI plus save callbacks - hundreds of KPIs can outlast the request.
+      # The job approves, then moves the journeys on (H10) and notifies this user.
+      if kpi_ids.empty?
+        # E6: nothing pending - say so now rather than queue a job that would only report the same. The loop above
+        # authorised no KPI, so check the same approve? rule (the user's role) on an unsaved pending KPI
+        authorize Kpi.new(entity_id:, portfolio_company_id:, status: :unapproved), :approve?
+        notice = "There are no pending KPIs to approve."
+      else
+        KpiApproveAllJob.perform_later(kpi_ids, current_user.id, entity_id, portfolio_company_id)
+        notice = "Approving #{kpi_ids.size} pending KPIs in the background - you'll get a notification when it's done."
+      end
     end
-
-    # Approve all / Reject all move every KPI report journey of the portfolio company on, once (H10)
-    KpiReport.journey_progress_for_portco(entity_id, portfolio_company_id, actor: current_user)
 
     respond_to do |format|
       format.html { redirect_back_or_to(kpi_reports_path, notice: notice) }

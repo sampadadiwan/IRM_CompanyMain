@@ -204,14 +204,16 @@ module WithAuthentication
 
       if %w[app dev].exclude?(request.subdomain) && request.subdomain.present?
         # Check if subdomain is present in the request and is not app or dev the default ones
-        @current_entity = Entity.where(sub_domain: request.subdomain).load_async.first
+        # Plain .first (no load_async) so the query is ORDER BY name LIMIT 1 - same row, without loading every match
+        @current_entity = Entity.where(sub_domain: request.subdomain).first
       end
       # Check if subdomain parameter is present, sometimes this is sent from an email link
-      @current_entity = Entity.where(sub_domain: params[:sub_domain].strip).load_async.first if params[:sub_domain].present?
+      @current_entity = Entity.where(sub_domain: params[:sub_domain].strip).first if params[:sub_domain].present?
     else
       our_domain = false
       # This is the case where a tenant has mapped thier own domain to their microsite. Ex app.tenant1.com -> tenant1.caphive.com
-      @current_entity = Entity.where(domain: request.domain).load_async.first
+      # Runs on every custom-domain request; index_entities_on_domain keeps it off a full table scan
+      @current_entity = Entity.where(domain: request.domain).first
     end
 
     # Check if we are on our domain and  current entity exists and we have a valid tenant_sub_domain, the redirect to the microsite of the tenant accordingly

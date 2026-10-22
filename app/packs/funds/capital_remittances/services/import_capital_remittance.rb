@@ -22,7 +22,9 @@ class ImportCapitalRemittance < ImportUtil
 
       # Create a new CapitalRemittance object
       capital_remittance = CapitalRemittance.new(
-        entity_id: import_upload.entity_id,
+        # The entity object (loaded once per upload), not its id - the remittance's callbacks read it, and an
+        # id alone made every row fetch the entity again
+        entity: import_upload.entity,
         fund: fund,
         capital_call: capital_call,
         investor: investor,

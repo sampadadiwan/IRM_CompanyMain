@@ -108,7 +108,14 @@ class AggregatePortfolioInvestment < ApplicationRecord
     api = dup
 
     # Fetch PIs before the end_date and calculate their state as of that date
-    pis = portfolio_investments.before(end_date).includes(:fund).map { |pi| pi.as_of(end_date) }
+    records = portfolio_investments.before(end_date).includes(:fund).to_a
+    # Each buy's quantities as of end_date for all of them in grouped queries, not four SUMs per buy (H10):
+    # set_buy_quantities' sold/transferred, and net_quantity_on's (only asked for a past date - today uses
+    # net_quantity). Sells use neither.
+    bought = records.select(&:buy?)
+    PortfolioInvestment.with_buy_quantities(bought, date: end_date)
+    PortfolioInvestment.with_net_quantities_on(bought, end_date) unless end_date == Time.zone.today
+    pis = records.map { |pi| pi.as_of(end_date) }
     api.portfolio_investments = pis
 
     # Partition into buys and sells for financial calculation
@@ -120,7 +127,10 @@ class AggregatePortfolioInvestment < ApplicationRecord
     api.sold_amount_cents = sells.sum(&:amount_cents)
 
     api.avg_cost_cents = api.bought_amount_cents / api.bought_quantity if api.bought_quantity.positive?
-    api.fmv_cents = fmv_on_date(end_date)
+    # The bought / converted / sold quantities up to end_date, read once for fmv_on_date and the bought-only
+    # quantity below (each used to run the same three queries again)
+    quantity_parts = net_quantity_parts(end_date)
+    api.fmv_cents = fmv_on_date(end_date, parts: quantity_parts)
 
     # Compute quantity transfers through stock conversions
     api.transfer_quantity = fund.stock_conversions.where(from_portfolio_investment_id: pis.map(&:id), conversion_date: ..end_date).sum(:from_quantity)
@@ -134,7 +144,7 @@ class AggregatePortfolioInvestment < ApplicationRecord
     api.gain_cents = api.sold_amount_cents + api.cost_of_sold_cents
 
     # Calculate net bought amount
-    net_bought_quantity = net_quantity_on(end_date, only_buys: true)
+    net_bought_quantity = net_quantity_on(end_date, only_buys: true, parts: quantity_parts)
     api.net_bought_amount_cents = net_bought_quantity * api.avg_cost_cents
 
     # Base currency conversions
@@ -194,24 +204,34 @@ class AggregatePortfolioInvestment < ApplicationRecord
 
   # Calculates net quantity as of a given date
   # Optionally restricts to only buy transactions
-  def net_quantity_on(end_date, only_buys: false)
+  # parts: net_quantity_parts(end_date) when the caller needs this date more than once (as_of asks for the
+  # net and the bought-only quantity of the same date) - read once and handed to both
+  def net_quantity_on(end_date, only_buys: false, parts: nil)
+    parts ||= net_quantity_parts(end_date)
+    return 0 if parts[:buy_qty].zero?
+
+    only_buys ? parts[:buy_qty] - parts[:converted_qty] : parts[:buy_qty] + parts[:sells] - parts[:converted_qty]
+  end
+
+  # The bought, converted and sold quantities up to end_date that net_quantity_on combines
+  def net_quantity_parts(end_date)
     buys = portfolio_investments.buys.before(end_date)
     buy_qty = buys.sum(:quantity)
-    return 0 if buy_qty.zero?
+    return { buy_qty: buy_qty } if buy_qty.zero?
 
     # Adjust for stock conversions before the given date
     converted_qty = fund.stock_conversions.where(from_portfolio_investment_id: buys.pluck(:id), conversion_date: ..end_date).sum(:from_quantity)
 
     sells = portfolio_investments.sells.where(investment_date: ..end_date).sum(:quantity)
 
-    only_buys ? buy_qty - converted_qty : buy_qty + sells - converted_qty
+    { buy_qty: buy_qty, converted_qty: converted_qty, sells: sells }
   end
 
   # Calculates FMV as of a given date based on the latest valuation
   # FMV with the price and rate this fund accepts (PriceResolver + FxRateResolver). The open-ended
   # NAV reads this, so it is policy-aware with no NAV change (design › Bridge).
-  def fmv_on_date(end_date)
-    qty = net_quantity_on(end_date)
+  def fmv_on_date(end_date, parts: nil)
+    qty = net_quantity_on(end_date, parts:)
     return 0 if qty.zero?
 
     val = accepted_valuation_on(end_date)

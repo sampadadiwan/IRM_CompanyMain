@@ -202,7 +202,10 @@ Rails.application.configure do
     ["PortfolioInvestment",          :valuation],
     # NonIndividualKyc: document_folder included for all KYC bulk actions but only accessed
     # when the action involves document folder operations (not all paths use it).
-    ["NonIndividualKyc",             :document_folder]
+    ["NonIndividualKyc",             :document_folder],
+    # Folder: nda_config is preloaded for the tree's fallback lock icon (_tree_caret.html.erb), but the
+    # NdaInheritanceResolver path renders without touching it.
+    ["Folder",                       :nda_config]
   ].each do |klass, assoc|
     Bullet.add_safelist type: :unused_eager_loading, class_name: klass, association: assoc
   end

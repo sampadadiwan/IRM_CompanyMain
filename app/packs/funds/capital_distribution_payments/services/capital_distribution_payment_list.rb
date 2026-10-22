@@ -13,7 +13,8 @@ class CapitalDistributionPaymentList < BaseList
     @q = CapitalDistributionPayment.ransack(@params[:q])
     @capital_distribution_payments = apply_policy_scope(@q.result, &)
 
-    @capital_distribution_payments = @capital_distribution_payments.includes(:entity, :fund, :capital_distribution, :capital_commitment, :investor_kyc)
+    # :investor - the Investing Entity column links to it for rows without a KYC
+    @capital_distribution_payments = @capital_distribution_payments.includes(:entity, :fund, :capital_distribution, :capital_commitment, :investor_kyc, :investor)
 
     @capital_distribution_payments = filter_params(@capital_distribution_payments, :fund_id, :capital_distribution_id, :capital_commitment_id, :import_upload_id)
     refine_search

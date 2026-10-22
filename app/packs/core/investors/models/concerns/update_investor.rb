@@ -112,21 +112,23 @@ module UpdateInvestor
 
   # Some folder names have the investor name in it, so if that changes, we need to change folder names
   def update_folder_names
-    capital_commitments.each do |cc|
+    # find_each + includes (all three loops): batches of 1000 rather than every row at once, and one folder
+    # query per batch rather than one per row. Rows without a folder still get one (document_folder creates it).
+    capital_commitments.includes(:document_folder).find_each do |cc|
       next unless cc.document_folder
 
       cc.document_folder.name = cc.folder_path.split("/")[-1]
       cc.document_folder.set_defaults
       cc.document_folder.save
     end
-    capital_remittances.each do |cc|
+    capital_remittances.includes(:document_folder).find_each do |cc|
       next unless cc.document_folder
 
       cc.document_folder.name = cc.folder_path.split("/")[-1]
       cc.document_folder.set_defaults
       cc.document_folder.save
     end
-    capital_distribution_payments.each do |cc|
+    capital_distribution_payments.includes(:document_folder).find_each do |cc|
       next unless cc.document_folder
 
       cc.document_folder.name = cc.folder_path.split("/")[-1]

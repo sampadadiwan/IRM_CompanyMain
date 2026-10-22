@@ -29,7 +29,58 @@ module PortfolioComputations
     def self.total_investment_sold_cents(model, end_date)
       model.portfolio_investments.sells.where(investment_date: ..end_date).sum(:amount_cents)
     end
+
+    # For bulk re-value loops: works out every record's sold and transferred quantities up to `date` in two
+    # grouped queries, instead of two SUMs per record in set_buy_quantities. Each record keeps its own pair
+    # until set_buy_quantities consumes it (once, for that date only). Re-saving one investment doesn't add
+    # attributions or conversions to another, so the pair stays exact for the rest of the batch.
+    # Worked examples H6, E9 - openspec/changes/bulk-path-query-optimisation/business-rules.md
+    def self.with_buy_quantities(records, date: Time.zone.today)
+      ids = records.map(&:id)
+      # Same rows as the buys_portfolio_attributions / stock_conversions associations set_buy_quantities sums
+      sold = PortfolioAttribution.where(bought_pi_id: ids, investment_date: ..date).group(:bought_pi_id).sum(:quantity)
+      transferred = StockConversion.where(from_portfolio_investment_id: ids, conversion_date: ..date)
+                                   .group(:from_portfolio_investment_id).sum(:from_quantity)
+      # E9: a record with none of either gets 0, as an empty SUM does
+      records.each do |record|
+        record.preloaded_buy_quantities = { date: date, sold: sold.fetch(record.id, 0), transfer: transferred.fetch(record.id, 0) }
+      end
+      records
+    end
+
+    # For past-date valuations (AggregatePortfolioInvestment#as_of): works out every record's net_quantity_on(date)
+    # parts in two grouped queries, instead of two SUMs per record. These are not set_buy_quantities' figures:
+    # sales count by the SOLD investment's date (`before`) through the sold_pi join, which leaves proforma sales
+    # out (the join's ON clause keeps the default proforma = FALSE that the merged include_proforma can't
+    # remove - E13), and conversions are this fund's only - the same rows net_quantity_on sums. One-shot, consumed by net_quantity_on for this date only.
+    # Worked examples H10, E13 - openspec/changes/bulk-path-query-optimisation/business-rules.md
+    def self.with_net_quantities_on(records, date)
+      ids = records.map(&:id)
+      # Same rows as buys_portfolio_attributions.joins(:sold_pi).merge(include_proforma.before(date)), per bought PI
+      sold = PortfolioAttribution.where(bought_pi_id: ids).joins(:sold_pi)
+                                 .merge(PortfolioInvestment.include_proforma.before(date))
+                                 .group(:bought_pi_id).sum(:quantity)
+      # Same rows as fund.stock_conversions.where(from_portfolio_investment_id: id, ...): keyed by fund too
+      converted = StockConversion.where(from_portfolio_investment_id: ids, conversion_date: ..date)
+                                 .group(:from_portfolio_investment_id, :fund_id).sum(:from_quantity)
+      # A record with neither gets 0, as an empty SUM does
+      records.each do |record|
+        record.preloaded_net_quantity_on = { date: date, sold: sold.fetch(record.id, 0),
+                                             converted: converted.fetch([record.id, record.fund_id], 0) }
+      end
+      records
+    end
+
+    # The batch form for loops that walk a scope: like find_each, in batches of 1,000 ordered by id
+    def self.find_each_with_buy_quantities(scope, &)
+      scope.in_batches(of: 1000) { |batch| with_buy_quantities(batch.to_a).each(&) }
+    end
   end
+
+  # Set by with_buy_quantities; consumed by the next set_buy_quantities for the same date
+  attr_writer :preloaded_buy_quantities
+  # Set by with_net_quantities_on; consumed by the next net_quantity_on for the same date
+  attr_writer :preloaded_net_quantity_on
 
   # Run all investment-level computations for current date
   def compute_all_numbers
@@ -115,8 +166,17 @@ module PortfolioComputations
 
   # Sets sold and transferred quantities before a given date
   def set_buy_quantities(date)
-    self.sold_quantity = buys_portfolio_attributions.where(investment_date: ..date).sum(:quantity)
-    self.transfer_quantity = stock_conversions.where(conversion_date: ..date).sum(:from_quantity)
+    # Use the pair a bulk loop preloaded (with_buy_quantities) when it is for this date - a job running past
+    # midnight, or any other caller, sums live. Consumed once, so a later recompute of this object sums live.
+    preloaded = @preloaded_buy_quantities
+    @preloaded_buy_quantities = nil
+    if preloaded && preloaded[:date] == date
+      self.sold_quantity = preloaded[:sold]
+      self.transfer_quantity = preloaded[:transfer]
+    else
+      self.sold_quantity = buys_portfolio_attributions.where(investment_date: ..date).sum(:quantity)
+      self.transfer_quantity = stock_conversions.where(conversion_date: ..date).sum(:from_quantity)
+    end
 
     self.net_quantity = quantity + sold_quantity - transfer_quantity
     self.net_bought_quantity = quantity - transfer_quantity
@@ -156,6 +216,12 @@ module PortfolioComputations
 
   # Calculates net quantity as of a given date
   def net_quantity_on(date)
+    # Use the pair a past-date valuation preloaded (with_net_quantities_on) when it is for this date; anything
+    # else sums live. Consumed once, so a later call for this object sums live.
+    preloaded = @preloaded_net_quantity_on
+    @preloaded_net_quantity_on = nil
+    return quantity + preloaded[:sold] - preloaded[:converted] if preloaded && preloaded[:date] == date
+
     # Quantity of this investment that has been sold
     sold_quantity_on = buys_portfolio_attributions
                        .joins(:sold_pi)

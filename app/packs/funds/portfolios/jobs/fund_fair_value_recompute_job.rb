@@ -12,7 +12,8 @@ class FundFairValueRecomputeJob < ApplicationJob
     Chewy.strategy(:sidekiq) do
       # Batched: a fund can hold many portfolio investments
       FxRateResolver.with_cache do
-        fund.portfolio_investments.find_each do |portfolio_investment|
+        # H6: each batch's sold/transferred quantities in two grouped queries, not two SUMs per investment
+        PortfolioInvestment.find_each_with_buy_quantities(fund.portfolio_investments) do |portfolio_investment|
           PortfolioInvestmentUpdate.call(portfolio_investment:)
         end
       end

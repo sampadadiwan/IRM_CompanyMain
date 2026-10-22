@@ -85,7 +85,8 @@ class WorkflowInstanceLaunch < Trailblazer::Operation
       description:              template.description,
       reminder_interval_days:   template.reminder_interval_days,
       attach_document_in_email: template.attach_document_in_email,
-      steps: template.workflow_steps.order(:position).map { |step|
+      # includes: one query for every step's actors (actor_ids below) instead of one per step
+      steps: template.workflow_steps.order(:position).includes(:workflow_step_actors).map { |step|
         {
           position:               step.position,
           name:                   step.name,

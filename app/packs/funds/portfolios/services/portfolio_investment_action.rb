@@ -23,7 +23,16 @@ class PortfolioInvestmentAction < Trailblazer::Operation
     portfolio_investment.compute_all_numbers
   end
 
-  def compute_avg_cost(_ctx, portfolio_investment:, **)
+  # skip_aggregate_save: passed by ImportPortfolioInvestment, whose post_process re-saves every aggregate of the
+  # fund once the rows are in (and runs even when a fail-fast import stops early). Re-saving the aggregate
+  # after every imported investment only produced intermediate states (D4, approved 2026-10-22; E10).
+  # A Trailblazer step, so its result still decides the row: the skipped save could only fail on the aggregate's
+  # validations (no before_validation, and before_save can't halt it), so the same reload + valid? gives the same
+  # pass / fail - and leaves the aggregate reloaded for the next steps, as before - without the UPDATE and the
+  # before_save recomputation.
+  def compute_avg_cost(_ctx, portfolio_investment:, skip_aggregate_save: false, **)
+    return portfolio_investment.aggregate_portfolio_investment.reload.valid? if skip_aggregate_save
+
     portfolio_investment.compute_avg_cost
   end
 

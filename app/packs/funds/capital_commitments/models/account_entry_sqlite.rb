@@ -39,6 +39,13 @@ class AccountEntrySqlite < ApplicationRecordSqlite
               "#{kind} in '#{col}' (row #{idx}) — likely divide-by-zero in formula. #{context}"
       end
     end
+    # Every scratch database shares ApplicationRecordSqlite's one schema cache, and that pool sits on an empty
+    # in-memory database: a lookup of account_entries made while no scratch database was swapped in caches
+    # "no such table", after which Rails' insert_all finds no primary key and raises "No unique index found
+    # for id" for the rest of the process. Re-read this table's schema from the scratch database being written
+    # (one cheap read per batch of up to 10,000 rows).
+    # X1 - features/fund/allocation_scratch_schema_cache.feature
+    connection_pool.schema_cache.clear_data_source_cache!(table_name)
     super
   end
 

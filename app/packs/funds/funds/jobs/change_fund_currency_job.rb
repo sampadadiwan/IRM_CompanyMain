@@ -233,7 +233,8 @@ class ChangeFundCurrencyJob < ApplicationJob
   def reprocess_portfolio_investments(fund, user_id)
     scope = fund.portfolio_investments.include_proforma
     send_notification("#{fund.name}: reprocessing #{scope.count} portfolio investments (incl. proforma)", user_id)
-    scope.find_each do |pi|
+    # Each batch's sold/transferred quantities in two grouped queries, not two SUMs per investment
+    PortfolioInvestment.find_each_with_buy_quantities(scope) do |pi|
       result = PortfolioInvestmentUpdate.call(portfolio_investment: pi)
       Rails.logger.error "Failed to update PI #{pi.id}: #{result[:errors]}" unless result.success?
     end

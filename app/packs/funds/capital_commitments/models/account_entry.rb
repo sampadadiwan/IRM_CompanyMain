@@ -4,9 +4,16 @@ class AccountEntry < ApplicationRecord
 
   include WithCustomField
   include ForInvestor
-  include Trackable.new(on: [:update])
+  # Audited only when a person creates, edits or deletes an entry on the AccountEntry screen
+  # (AccountEntriesController sets manual_change). Allocation runs, imports and bulk jobs write
+  # thousands of entries and are traced by their run / import upload instead. Trackable still
+  # gives soft delete.
+  include Trackable.new(on: %i[create update destroy], audit_if: :manual_change)
   include RansackerAmounts.new(fields: %w[amount])
   include AccountEntryShared
+
+  # Set by AccountEntriesController#create/update/destroy: the change is a person's, so audit it
+  attr_accessor :manual_change
 
   STANDARD_COLUMNS = {
     "ID; num-col" => "id; num-col",

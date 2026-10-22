@@ -74,6 +74,10 @@ class CapitalRemittancePayment < ApplicationRecord
     # When the payment is deleted, we need to unverify the remittance, but sometimes the call itself is deleted, which delete the remittance, so we need to check for whether the remittance is deleted or not
     unless capital_remittance.deleted? || capital_remittance.destroyed?
       capital_remittance.reload
+      # H2/X1: reload drops every loaded association; load what the update reads (incl. each document's
+      # folder, form type and signatures for validates_associated :documents) in one pass, not one by one.
+      # The same documents are still validated, so an invalid one still blocks the save.
+      ActiveRecord::Associations::Preloader.new(records: [capital_remittance], associations: CapitalRemittance::RESAVE_PRELOADS).call
       capital_remittance.verified = false
       CapitalRemittanceUpdate.call(capital_remittance:)
     end

@@ -77,6 +77,14 @@ class CapitalRemittance < ApplicationRecord
 
   update_index('capital_remittance') { self if index_record? }
 
+  # What one CapitalRemittanceUpdate reads from a saved remittance: its callbacks (set_call_amount,
+  # set_investor_name, setup_form_type, touch_investor) and WithFolder's validates_associated :documents,
+  # which validates every document (setup_folder, user/entity presence, form_type, e_signatures, stamp_papers).
+  # Bulk re-saves preload this once per batch instead of once per remittance.
+  # Worked examples H1, H2, X1 - openspec/changes/bulk-path-query-optimisation/business-rules.md
+  RESAVE_PRELOADS = [:capital_commitment, :fund, :entity, { investor: :investor_entity },
+                     { documents: %i[folder form_type e_signatures stamp_papers user entity] }].freeze
+
   belongs_to :entity
   belongs_to :fund, touch: true
   attr_readonly :fund_id # never moves to another fund (funds_api_security_policy_plan.md, B)

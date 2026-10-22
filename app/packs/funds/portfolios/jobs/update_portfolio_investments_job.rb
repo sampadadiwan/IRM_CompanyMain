@@ -10,7 +10,8 @@ class UpdatePortfolioInvestmentsJob < ApplicationJob
       count = portfolio_investments.count
 
       # Update the portfolio_investments - this will recompute the numbers
-      portfolio_investments.each do |portfolio_investment|
+      # Sold/transferred quantities for all of them in two grouped queries, not two SUMs per investment
+      PortfolioInvestment.with_buy_quantities(portfolio_investments.to_a).each do |portfolio_investment|
         PortfolioInvestmentUpdate.call(portfolio_investment:)
       end
 

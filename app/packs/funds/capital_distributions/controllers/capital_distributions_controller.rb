@@ -150,7 +150,8 @@ class CapitalDistributionsController < ApplicationController
     payments = @capital_distribution.capital_distribution_payments
     count = 0
     # In batches: a distribution can have thousands of payments (CLAUDE.md large-table rules)
-    payments.find_each do |cdp|
+    # includes: the save callbacks read these per payment; preloaded once per batch instead
+    payments.includes(:investor, :fund, :form_type, :documents).find_each do |cdp|
       cdp.completed = true
       count += 1 if CapitalDistributionPaymentUpdate.call(capital_distribution_payment: cdp).success?
     end

@@ -102,6 +102,8 @@ class AccountEntriesController < ApplicationController
   def create
     @account_entry = AccountEntry.new(account_entry_params)
     authorize @account_entry
+    # A hand-made entry: the only kind of AccountEntry change that is audited
+    @account_entry.manual_change = true
 
     respond_to do |format|
       if @account_entry.save
@@ -116,6 +118,8 @@ class AccountEntriesController < ApplicationController
 
   # PATCH/PUT /account_entries/1 or /account_entries/1.json
   def update
+    # A hand edit: the only kind of AccountEntry change that is audited
+    @account_entry.manual_change = true
     respond_to do |format|
       if @account_entry.update(account_entry_params)
         format.html { redirect_to account_entry_url(@account_entry), notice: "Account entry was successfully updated." }
@@ -129,6 +133,8 @@ class AccountEntriesController < ApplicationController
 
   # DELETE /account_entries/1 or /account_entries/1.json
   def destroy
+    # A hand delete: the only kind of AccountEntry change that is audited
+    @account_entry.manual_change = true
     @account_entry.destroy
 
     respond_to do |format|

@@ -101,9 +101,11 @@ class Folder < ApplicationRecord
   end
 
   def set_defaults
-    if parent
-      self.level = parent.level + 1
-      self.full_path = level == 1 ? "#{parent.full_path}#{name}" : "#{parent.full_path}/#{name}"
+    # ancestry's #parent runs a query on every call - read it once
+    parent_folder = parent
+    if parent_folder
+      self.level = parent_folder.level + 1
+      self.full_path = level == 1 ? "#{parent_folder.full_path}#{name}" : "#{parent_folder.full_path}/#{name}"
       self.folder_type ||= :regular
     else
       self.level = 0
@@ -124,7 +126,9 @@ class Folder < ApplicationRecord
 
   # Inherits access rights from the parent folder upon creation.
   def set_parent_permissions
-    parent.access_rights.each do |parent_ar|
+    # ancestry's #parent runs a query on every call - read it once
+    parent_folder = parent
+    parent_folder.access_rights.each do |parent_ar|
       parent_ar.replicate_to(self)
 
       # Ensure any documents in this folder also get the same access rights
@@ -134,9 +138,9 @@ class Folder < ApplicationRecord
     end
 
     # If we have an owner for the parent and none for the child
-    if parent.owner && owner.nil?
-      self.owner = parent.owner
-      self.private = parent.private
+    if parent_folder.owner && owner.nil?
+      self.owner = parent_folder.owner
+      self.private = parent_folder.private
       save
     end
   end

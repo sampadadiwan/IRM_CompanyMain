@@ -106,9 +106,10 @@ When('I click Actions then {string} on the Kpis page') do |link_text|
 end
 
 Then('all pending KPIs for the portfolio company should be approved without error') do
-  expect(page).to have_content("All pending KPIs approved.")
+  # Approve all now runs in KpiApproveAllJob (inline in test, so the count below is already 0)
+  expect(page).to have_content("pending KPIs in the background")
   expect(Kpi.where(portfolio_company: @portfolio_company).unapproved.count).to eq(0)
-  # Approve All runs KpiApproveService synchronously, which cumulates and recomputes percentage
+  # Approve All runs KpiApproveService (in KpiApproveAllJob, inline in test), which cumulates and recomputes percentage
   # change for every affected report inline - the same call chain that raised "Out of sort memory"
   # in production. A failure there doesn't necessarily fail the request (KpiCumulateJob rescues and
   # emails on error rather than raising - see "a KPI cumulation error email should be sent" above),

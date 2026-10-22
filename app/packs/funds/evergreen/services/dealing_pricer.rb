@@ -46,7 +46,11 @@ class DealingPricer
 
   def preview
     orders = DealingOrder.where(dealing_date_id: @dd.id, status: DealingOrder::OPEN_STATUSES)
-                         .includes(:investor, :capital_commitment, :capital_remittance).in_queue_order.to_a
+                         # fund / dealing_date / dealing_fills are read per order; every order shares the same fund and date.
+                         # The fills carry what evergreen_dealing_helper reads from them: once fills are loaded it uses
+                         # them as they are instead of adding its own includes
+                         .includes(:investor, :capital_commitment, :capital_remittance, :fund, :dealing_date,
+                                   dealing_fills: %i[dealing_date fund_nav capital_distribution_payment]).in_queue_order.to_a
     ready, not_ready = orders.partition(&:ready_to_deal?)
     navs = ready.map(&:unit_type).uniq.index_with { |ut| pricing_nav(ut) }
     # A class can't be priced without an approved NAV — nor, by Decision 4, at a NAV its previous

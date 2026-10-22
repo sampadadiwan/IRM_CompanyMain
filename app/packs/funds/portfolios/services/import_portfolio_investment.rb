@@ -59,7 +59,8 @@ class ImportPortfolioInvestment < ImportUtil
                                                  []
                                                end
 
-      result = PortfolioInvestmentCreate.call(portfolio_investment:)
+      # skip_aggregate_save: post_process re-saves every aggregate once all rows are in (D4, E10)
+      result = PortfolioInvestmentCreate.call(portfolio_investment:, skip_aggregate_save: true)
 
       raise result[:errors] unless result.success?
 

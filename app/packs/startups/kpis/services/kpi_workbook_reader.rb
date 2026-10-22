@@ -923,12 +923,17 @@ class KpiWorkbookReader
     # Find or initialize an unapproved KPI for this report, standard name, AND mapping ID.
     # Scoping by investor_kpi_mapping_id is critical when the same reported_kpi_name appears
     # under different parents — without it, the second parent's value would overwrite the first's.
-    kpi = kpi_report.kpis.unapproved.where(
+    # H4: the report's KPIs are read once (kpi_maps_for) rather than queried for every cell
+    maps = kpi_maps_for(kpi_report)
+    map_key = kpi_map_key(standard_name, investor_kpi_mapping&.id)
+    kpi = maps[:unapproved][map_key] || kpi_report.kpis.unapproved.new(
       name: standard_name,
       portfolio_company_id: @portfolio_company_id,
       entity_id: @portfolio_company&.entity_id,
       investor_kpi_mapping_id: investor_kpi_mapping&.id
-    ).first_or_initialize
+    )
+    # The entity object (loaded once per import) for a new KPI, so its save doesn't fetch it again
+    kpi.entity = @portfolio_company.entity if kpi.new_record? && @portfolio_company
 
     kpi.investor_kpi_mapping = investor_kpi_mapping if investor_kpi_mapping.present?
 
@@ -955,11 +960,8 @@ class KpiWorkbookReader
     # Check if an approved KPI with the same value already exists.
     # If it does, we don't even need to create an unapproved one.
     # Also scoped by mapping ID to handle duplicate names under different parents.
-    existing_approved = kpi_report.kpis.approved.find_by(
-      name: standard_name,
-      portfolio_company_id: @portfolio_company_id,
-      investor_kpi_mapping_id: investor_kpi_mapping&.id
-    )
+    # Approved KPIs never change during an import (it only writes unapproved rows), so the map stays exact
+    existing_approved = maps[:approved][map_key]
 
     if existing_approved && existing_approved.value.to_d.round(6) == value.to_d.round(6)
       Rails.logger.debug { "Approved KPI value for #{standard_name} #{kpi_report.as_of} is same, skipping" }
@@ -981,7 +983,38 @@ class KpiWorkbookReader
       notes: "Imported from Document #{@document&.id}, Sheet: #{sheet}, Period: #{period}, Date: #{parsed_period}, Row: #{row_index}, Col: #{col_index + @col_offset.to_i}, Cell: #{col_letter(col_index)}#{row_index}"
     )
 
-    kpi.save if kpi.changed?
+    return unless kpi.changed?
+
+    new_kpi = kpi.new_record?
+    if kpi.save
+      # E2: the same KPI repeated later in the workbook must update this row, as first_or_initialize found it
+      maps[:unapproved][map_key] = kpi if new_kpi
+    elsif !new_kpi
+      # The map keeps this object: put back the stored values, as a fresh query would return them
+      kpi.restore_attributes
+    end
+  end
+
+  # The report's unapproved and approved KPIs keyed by [name, mapping id], read once per report for the
+  # whole import (the reader lives for one import). First by id per key: first_or_initialize orders by id.
+  # Worked examples H4, E2 - openspec/changes/bulk-path-query-optimisation/business-rules.md
+  def kpi_maps_for(kpi_report)
+    @kpi_maps ||= {}
+    @kpi_maps[kpi_report.id] ||= begin
+      unapproved = {}
+      kpi_report.kpis.unapproved.where(portfolio_company_id: @portfolio_company_id, entity_id: @portfolio_company&.entity_id)
+                .order(:id).each { |kpi| unapproved[kpi_map_key(kpi.name, kpi.investor_kpi_mapping_id)] ||= kpi }
+      # No entity filter, matching the approved find_by this replaces
+      approved = {}
+      kpi_report.kpis.approved.where(portfolio_company_id: @portfolio_company_id)
+                .order(:id).each { |kpi| approved[kpi_map_key(kpi.name, kpi.investor_kpi_mapping_id)] ||= kpi }
+      { unapproved: unapproved, approved: approved }
+    end
+  end
+
+  # Names are compared the way MySQL's case-insensitive collation compared them in the queries this replaces
+  def kpi_map_key(name, mapping_id)
+    [name.to_s.downcase, mapping_id]
   end
 
   # ---------------------------------------------------------------------------

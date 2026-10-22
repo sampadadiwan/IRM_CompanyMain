@@ -14,7 +14,8 @@ class ExchangeRatePortfolioInvestmentJob < ApplicationJob
 
       # Update the portfolio_investments - this will recompute the FMV based on latest exchange rate
       FxRateResolver.with_cache do
-        portfolio_investments.find_each do |portfolio_investment|
+        # Each batch's sold/transferred quantities in two grouped queries, not two SUMs per investment
+        PortfolioInvestment.find_each_with_buy_quantities(portfolio_investments) do |portfolio_investment|
           PortfolioInvestmentUpdate.call(portfolio_investment:)
         end
       end

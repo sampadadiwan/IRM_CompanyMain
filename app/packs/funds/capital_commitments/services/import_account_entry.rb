@@ -21,20 +21,23 @@ class ImportAccountEntry < ImportUtil
     Rails.logger.debug { "Processing account_entry #{user_data}" }
 
     # Get the Fund
-    folio_id, name, entry_type, reporting_date, period, investor_name, folio_amount_cents, fund_amount_cents, fund, capital_commitment, investor = get_fields(user_data, import_upload)
+    fields = get_fields(user_data, import_upload)
+    folio_id, name, entry_type, reporting_date, period, investor_name, folio_amount_cents, fund_amount_cents, fund, capital_commitment, investor = fields
 
     # The entry is commitment level if a folio is given, else fund level
     if fund && (folio_id.blank? || capital_commitment)
       # ret_val = prepare_record(user_data, import_upload, custom_field_headers)
-      save_account_entry(user_data, import_upload, custom_field_headers)
+      # Pass the fields along so the fund / commitment / investor lookups aren't run a second time for this row
+      save_account_entry(user_data, import_upload, custom_field_headers, fields)
     else
       raise "Fund not found: #{user_data['Fund']}" if fund.nil?
       raise "Capital Commitment not found in fund #{fund.name} for folio #{folio_id}" if capital_commitment.nil?
     end
   end
 
-  def save_account_entry(user_data, import_upload, custom_field_headers)
-    folio_id, name, entry_type, reporting_date, period, investor_name, folio_amount_cents, fund_amount_cents, fund, capital_commitment, investor, rule_for, parent_type, parent_id, ref_id, cumulative = get_fields(user_data, import_upload)
+  # fields: get_fields' result when the caller already has it; looked up here otherwise
+  def save_account_entry(user_data, import_upload, custom_field_headers, fields = get_fields(user_data, import_upload))
+    folio_id, name, entry_type, reporting_date, period, investor_name, folio_amount_cents, fund_amount_cents, fund, capital_commitment, investor, rule_for, parent_type, parent_id, ref_id, cumulative = fields
 
     if fund
 

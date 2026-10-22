@@ -81,19 +81,21 @@ module KpiCumulative
 
   # Performs cumulation by summing monthly 'Actual' KPI values into Quarterly and YTD reports.
   def perform_cumulation(force: false)
-    related_kpis = fetch_related_monthly_kpis
-    monthly_years = related_kpis.to_set { |kpi| fiscal_year_key(kpi.kpi_report.as_of, style: :start_year) }
+    with_cumulation_lookup do
+      related_kpis = fetch_related_monthly_kpis
+      monthly_years = related_kpis.to_set { |kpi| fiscal_year_key(kpi.kpi_report.as_of, style: :start_year) }
 
-    unless related_kpis.empty?
-      process_quarterly_cumulatives(related_kpis, force: force)
-      process_yearly_cumulatives(related_kpis, force: force)
+      unless related_kpis.empty?
+        process_quarterly_cumulatives(related_kpis, force: force)
+        process_yearly_cumulatives(related_kpis, force: force)
+      end
+
+      # Some entities report directly at Quarter granularity (no monthly 'Actual' data).
+      # Derive YTD (as quarters accumulate) and Year (once all 4 quarters are present) from
+      # their sum, but only for fiscal years that don't already have monthly Actual data,
+      # so we never compute the same period from both sources.
+      process_quarterly_derived_cumulatives(force: force, skip_years: monthly_years)
     end
-
-    # Some entities report directly at Quarter granularity (no monthly 'Actual' data).
-    # Derive YTD (as quarters accumulate) and Year (once all 4 quarters are present) from
-    # their sum, but only for fiscal years that don't already have monthly Actual data,
-    # so we never compute the same period from both sources.
-    process_quarterly_derived_cumulatives(force: force, skip_years: monthly_years)
   end
 
   # Performs forward fill by taking the latest monthly 'Actual' KPI value and applying it to
@@ -103,19 +105,54 @@ module KpiCumulative
   #
   # @param force [Boolean] when true, overwrites existing values
   def perform_forward_fill(force: false)
-    related_kpis = fetch_related_monthly_kpis
-    monthly_years = related_kpis.to_set { |kpi| fiscal_year_key(kpi.kpi_report.as_of, style: :start_year) }
+    with_cumulation_lookup do
+      related_kpis = fetch_related_monthly_kpis
+      monthly_years = related_kpis.to_set { |kpi| fiscal_year_key(kpi.kpi_report.as_of, style: :start_year) }
 
-    unless related_kpis.empty?
-      process_quarterly_forward_fill(related_kpis, force: force)
-      process_yearly_forward_fill(related_kpis, force: force)
+      unless related_kpis.empty?
+        process_quarterly_forward_fill(related_kpis, force: force)
+        process_yearly_forward_fill(related_kpis, force: force)
+      end
+
+      # Fallback: when data is reported at Quarter granularity (no monthly data),
+      # carry the latest quarter value into YTD and Year. Fiscal years already
+      # covered by monthly data are skipped via skip_years so values are never
+      # written from both sources.
+      process_quarterly_derived_forward_fill(force: force, skip_years: monthly_years)
     end
+  end
 
-    # Fallback: when data is reported at Quarter granularity (no monthly data),
-    # carry the latest quarter value into YTD and Year. Fiscal years already
-    # covered by monthly data are skipped via skip_years so values are never
-    # written from both sources.
-    process_quarterly_derived_forward_fill(force: force, skip_years: monthly_years)
+  # The target reports and KPIs process_cumulative_kpi writes into, read once for this KPI name instead of
+  # once per (period, as_of). Lives only for one perform_cumulation / perform_forward_fill call (cleared in
+  # ensure), so nothing outlives the autofill that read it.
+  # E4: without a tag the target lookup matches any tag, so a blank tag keeps the live queries (no lookup).
+  # Worked examples H3, E1, E4 - openspec/changes/bulk-path-query-optimisation/business-rules.md
+  def with_cumulation_lookup
+    tag = kpi_report&.tag_list
+    @cumulation_lookup = tag.present? ? build_cumulation_lookup(tag) : nil
+    yield
+  ensure
+    @cumulation_lookup = nil
+  end
+
+  def build_cumulation_lookup(tag)
+    # First by id per key, as KpiReport.find_by would pick among duplicates (the natural key isn't unique)
+    reports = {}
+    KpiReport.where(entity_id: entity_id, portfolio_company_id: portfolio_company_id, tag_list: tag, period: %w[Quarter YTD Year])
+             .order(:id).each { |report| reports[cumulation_lookup_key(report.period, report.as_of)] ||= report }
+
+    # Reports only, not their KPIs: saving one cumulative KPI runs the RAG cascade, which rewrites the next
+    # period's rag_status through a fresh copy (update_column). A KPI object held here would keep the old
+    # rag_status, and its own recompute_rag_status! compares against that - so it could skip a write it needs.
+    # The KPI is still looked up per target, fresh, as before.
+    { tag_list: tag, reports: reports }
+  end
+
+  # Periods compared the way MySQL's case-insensitive collation compared them in the find_by this replaces:
+  # stored periods are not all one case ('Quarter' vs 'quarter'), and an exact-case miss would send
+  # process_cumulative_kpi to find_or_create_by, which also filters on user_id and could create a second report
+  def cumulation_lookup_key(period, as_of)
+    [period.to_s.downcase, as_of&.to_date]
   end
 
   # Performs computation based on a custom formula defined in the KPI mapping.
@@ -447,10 +484,16 @@ module KpiCumulative
     tag_list ||= kpi_report&.tag_list
     Rails.logger.debug { "Kpi:  [#{name}] Processing #{period} KPI for #{end_date}, value: #{cumulative_sum}, tag: #{tag_list}" }
 
+    # The autofill's lookup (with_cumulation_lookup) answers the report find below when it was read for this
+    # tag; an explicit other tag (the compute path) or a blank tag (E4) asks the database as before
+    lookup = @cumulation_lookup if @cumulation_lookup && tag_list.present? && tag_list == @cumulation_lookup[:tag_list]
+    lookup_key = cumulation_lookup_key(period, end_date)
+
     find_conditions = { period: period, as_of: end_date, entity_id: entity_id, portfolio_company_id: portfolio_company_id }
     find_conditions[:tag_list] = tag_list if tag_list.present?
-    report_for_period = KpiReport.find_by(find_conditions)
+    report_for_period = lookup ? lookup[:reports][lookup_key] : KpiReport.find_by(find_conditions)
 
+    # Fresh every time (not from the lookup): see build_cumulation_lookup for why KPIs aren't held
     cumulative_kpi = report_for_period&.kpis&.approved&.find_by(
       entity_id: entity_id,
       name: name,
@@ -485,6 +528,9 @@ module KpiCumulative
     create_conditions = { period: period, as_of: end_date, entity_id: entity_id, portfolio_company_id: portfolio_company_id, user_id: user_id }
     create_conditions[:tag_list] = tag_list if tag_list.present?
     report_for_period ||= KpiReport.find_or_create_by(create_conditions)
+    # E1: a report created here is what a later step's find_by would now return - add it to the lookup
+    # (only once saved: a report that failed to save would not be found by find_by either)
+    lookup[:reports][lookup_key] ||= report_for_period if lookup && report_for_period.persisted?
 
     kpi = Kpi.approved.find_or_initialize_by(
       entity_id: entity_id,

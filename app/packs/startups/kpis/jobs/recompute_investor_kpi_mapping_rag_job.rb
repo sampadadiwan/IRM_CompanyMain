@@ -10,7 +10,8 @@ class RecomputeInvestorKpiMappingRagJob < ApplicationJob
     mapping = InvestorKpiMapping.find(investor_kpi_mapping_id)
 
     count = 0
-    Kpi.approved.where(investor_kpi_mapping_id: mapping.id).find_each do |kpi|
+    # includes: recompute_rag_status! reads each KPI's mapping (the same one for all) and report; preloaded per batch
+    Kpi.approved.where(investor_kpi_mapping_id: mapping.id).includes(:investor_kpi_mapping, :kpi_report).find_each do |kpi|
       kpi.recompute_rag_status!
       count += 1
     end

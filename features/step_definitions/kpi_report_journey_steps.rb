@@ -452,7 +452,8 @@ When('I approve all pending KPIs of {string} on the KPI grid') do |portco_name|
   expect(page).to have_css(form, visible: :all)
   # A native submit (no submit event), as the real button does with data-turbo=false
   page.execute_script("document.querySelector(\"#{form}\").submit()")
-  expect(page).to have_text("All pending KPIs approved")
+  # Approve all now runs in KpiApproveAllJob (inline in test, so the KPIs are approved by the time the page loads)
+  expect(page).to have_text("pending KPIs in the background")
 end
 
 Then('the journeys of {string} as of {string} and {string} are on {string}') do |portco_name, first, second, task|
@@ -630,7 +631,8 @@ When('I approve all staged KPIs in the new tab') do
     expect(page).to have_css(form, visible: :all)
     # A native submit (no submit event), as the real button does with data-turbo=false
     page.execute_script("document.querySelector(\"#{form}\").submit()")
-    expect(page).to have_text("All pending KPIs approved")
+    # Approve all now runs in KpiApproveAllJob (inline in test, so the KPIs are approved by the time the page loads)
+    expect(page).to have_text("pending KPIs in the background")
   end
 end
 

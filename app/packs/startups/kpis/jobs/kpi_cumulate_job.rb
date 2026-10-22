@@ -43,15 +43,26 @@ class KpiCumulateJob < ApplicationJob
 
     # 1. Aggregation Phase: Cumulate & Forward Fill
     # We iterate over the reports that need processing (mostly Monthly ones)
+    #
+    # A KPI name is cumulated from ALL its monthly / quarterly rows for the company and tag, so its
+    # autofill gives the same result whichever report it is reached from. It used to run again for every
+    # report holding that name (Quarter/YTD/Year reports included), re-reading the same inputs and writing
+    # nothing new. Each key is now cumulated once per run (D3, approved 2026-10-22; E3).
+    cumulated = Set.new
     kpi_reports.each do |kpi_report|
       Rails.logger.debug { "Cumulating KPIs for KpiReport ID: #{kpi_report.id}" }
       send_notification("Processing KPI cumulation for KpiReport ID: #{kpi_report.id} (As of: #{kpi_report.as_of})", user_id, :info)
 
       # Run Cumulate and Forward Fill
       # This might create new KPIs for Quarter/YTD reports or update existing ones
+      # preload: autofill reads each KPI's mapping (one query per KPI otherwise)
       kpi_report.kpis.joins(:investor_kpi_mapping)
                 .where(investor_kpi_mappings: { autofill: %w[cumulate forward_fill] })
+                .preload(:investor_kpi_mapping)
                 .find_each do |kpi|
+                  # E3: what autofill's result depends on - the name, the report tag it reads, its mapping, company and entity
+                  next unless cumulated.add?([kpi.name, kpi_report.tag_list, kpi.investor_kpi_mapping_id, kpi.portfolio_company_id, kpi.entity_id])
+
                   kpi.autofill(force: force)
                   @error_msgs.concat(kpi.autofill_errors) if kpi.respond_to?(:autofill_errors) && kpi.autofill_errors.present?
                 end

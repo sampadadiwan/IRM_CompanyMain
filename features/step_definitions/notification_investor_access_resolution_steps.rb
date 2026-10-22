@@ -63,6 +63,9 @@ Given('there is a folio {string} in the fund without the contact') do |name|
 end
 
 Given('the fund entity has WhatsApp enabled and the contact can receive WhatsApp') do
+  # Test setup, not a user changing their number: an existing phone may only change through the emailed
+  # code (User#existing_phone_change_must_be_verified), which this step isn't exercising
+  @contact.skip_phone_change_verification!
   @contact.update!(whatsapp_enabled: true, phone: "9876543210", call_code: "91")
   @entity.permissions.set(:enable_whatsapp)
   @entity.save!
