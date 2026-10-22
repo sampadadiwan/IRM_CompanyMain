@@ -97,6 +97,66 @@ jobs:
           mkdir -p /tmp/cucumber_progress
           touch tmp/parallel_runtime_cucumber.log
 
+      - name: Write helper Python scripts
+        run: |
+          cat > /tmp/monitor.py << 'PYEOF'
+          import json, glob, sys
+          workers = {}
+          for f in sorted(glob.glob('/tmp/cucumber_progress/worker_*.jsonl')):
+              wid = f.split('worker_')[1].split('.')[0]
+              counts = {'passed':0,'failed':0,'skipped':0}
+              current = ''
+              for line in open(f):
+                  try:
+                      d = json.loads(line)
+                      if d['type'] == 'scenario_end':
+                          counts[d.get('status','skipped')] += 1
+                      elif d['type'] == 'scenario_start':
+                          current = d.get('scenario','')[:50]
+                      elif d['type'] == 'feature_start':
+                          current = d.get('feature_name','')[:50]
+                  except: pass
+              total = sum(counts.values())
+              workers[wid] = f'W{wid}: {counts["passed"]}v {counts["failed"]}x ({total} done) [{current}]'
+          if workers:
+              print('  '.join(workers[k] for k in sorted(workers)))
+          PYEOF
+
+          cat > /tmp/parse_features.py << 'PYEOF'
+          import sys, json
+          for line in sys.stdin:
+              try:
+                  d = json.loads(line)
+                  print('    ' + d.get('feature','') + ' (' + d.get('feature_name','') + ')')
+              except: pass
+          PYEOF
+
+          cat > /tmp/parse_failures.py << 'PYEOF'
+          import sys, json
+          for line in sys.stdin:
+              try:
+                  d = json.loads(line)
+                  if d.get('status') == 'failed':
+                      loc = d.get('feature','') + ':' + str(d.get('line',''))
+                      name = d.get('scenario','')
+                      err = d.get('error','')
+                      print('    FAIL ' + loc + ' # ' + name)
+                      if err:
+                          print('         ' + err[:200])
+              except: pass
+          PYEOF
+
+          cat > /tmp/parse_json_field.py << 'PYEOF'
+          import sys, json
+          field = sys.argv[1]
+          d = json.load(sys.stdin)
+          keys = field.split('.')
+          val = d
+          for k in keys:
+              val = val.get(k, 0) if isinstance(val, dict) else 0
+          print(val)
+          PYEOF
+
       - name: Run Cucumber
         run: |
           WORKERS=${{ inputs.workers }}
@@ -131,29 +191,7 @@ jobs:
             sleep 5
             while true; do
               sleep 10
-              # Read all worker JSONL files and print a live status line
-              python3 -c "
-import json, glob, sys
-workers = {}
-for f in sorted(glob.glob('/tmp/cucumber_progress/worker_*.jsonl')):
-    wid = f.split('worker_')[1].split('.')[0]
-    counts = {'passed':0,'failed':0,'skipped':0}
-    current = ''
-    for line in open(f):
-        try:
-            d = json.loads(line)
-            if d['type'] == 'scenario_end':
-                counts[d.get('status','skipped')] += 1
-            elif d['type'] == 'scenario_start':
-                current = d.get('scenario','')[:50]
-            elif d['type'] == 'feature_start':
-                current = d.get('feature_name','')[:50]
-        except: pass
-    total = sum(counts.values())
-    workers[wid] = f'W{wid}: {counts[\"passed\"]}✓ {counts[\"failed\"]}✗ ({total} done) [{current}]'
-if workers:
-    print('  '.join(workers[k] for k in sorted(workers)))
-" 2>/dev/null
+              python3 /tmp/monitor.py 2>/dev/null
             done
           ) &
           MONITOR_PID=$!
@@ -192,45 +230,25 @@ if workers:
               # Extract worker_end event for counts
               END_EVENT=$(grep '"worker_end"' "$f" 2>/dev/null | tail -1)
               if [ -n "$END_EVENT" ]; then
-                TOTAL=$(echo "$END_EVENT" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('total_scenarios',0))" 2>/dev/null || echo "?")
-                PASSED=$(echo "$END_EVENT" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['counts'].get('passed',0))" 2>/dev/null || echo "?")
-                FAILED=$(echo "$END_EVENT" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['counts'].get('failed',0))" 2>/dev/null || echo "?")
-                SKIPPED=$(echo "$END_EVENT" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['counts'].get('skipped',0))" 2>/dev/null || echo "?")
-                FEATURES_RUN=$(echo "$END_EVENT" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('features_run',0))" 2>/dev/null || echo "?")
+                TOTAL=$(echo "$END_EVENT" | python3 /tmp/parse_json_field.py total_scenarios 2>/dev/null || echo "?")
+                PASSED=$(echo "$END_EVENT" | python3 /tmp/parse_json_field.py counts.passed 2>/dev/null || echo "?")
+                FAILED=$(echo "$END_EVENT" | python3 /tmp/parse_json_field.py counts.failed 2>/dev/null || echo "?")
+                SKIPPED=$(echo "$END_EVENT" | python3 /tmp/parse_json_field.py counts.skipped 2>/dev/null || echo "?")
+                FEATURES_RUN=$(echo "$END_EVENT" | python3 /tmp/parse_json_field.py features_run 2>/dev/null || echo "?")
                 echo "  Features: $FEATURES_RUN | Scenarios: $TOTAL | Passed: $PASSED | Failed: $FAILED | Skipped: $SKIPPED" >> $SUMMARY
               else
                 echo "  (no completion event — worker may have crashed or timed out)" >> $SUMMARY
               fi
 
               # List features this worker ran
-              FEATURE_LIST=$(grep '"feature_start"' "$f" 2>/dev/null | python3 -c "
-import sys, json
-for line in sys.stdin:
-    try:
-        d = json.loads(line)
-        print('    ' + d.get('feature','') + ' (' + d.get('feature_name','') + ')')
-    except: pass
-" 2>/dev/null)
+              FEATURE_LIST=$(grep '"feature_start"' "$f" 2>/dev/null | python3 /tmp/parse_features.py 2>/dev/null)
               if [ -n "$FEATURE_LIST" ]; then
                 echo "  Features run:" >> $SUMMARY
                 echo "$FEATURE_LIST" >> $SUMMARY
               fi
 
               # List failed scenarios with errors
-              FAILURES=$(grep '"scenario_end"' "$f" 2>/dev/null | python3 -c "
-import sys, json
-for line in sys.stdin:
-    try:
-        d = json.loads(line)
-        if d.get('status') == 'failed':
-            loc = d.get('feature','') + ':' + str(d.get('line',''))
-            name = d.get('scenario','')
-            err = d.get('error','')
-            print('    FAIL ' + loc + ' # ' + name)
-            if err:
-                print('         ' + err[:200])
-    except: pass
-" 2>/dev/null)
+              FAILURES=$(grep '"scenario_end"' "$f" 2>/dev/null | python3 /tmp/parse_failures.py 2>/dev/null)
               if [ -n "$FAILURES" ]; then
                 echo "  Failed scenarios:" >> $SUMMARY
                 echo "$FAILURES" >> $SUMMARY
