@@ -1,4 +1,4 @@
-# Publishes the deployed revision for the Support Console machine (openspec/changes/support-console,
+# Publishes the deployed revision for the Support Console machine (openspec/changes/archive/2026-10-22-support-console,
 # design card ⑤ "Code on the machine"): the code Claude reads and the relay/tools bundle, so the
 # machine runs what the environment runs. The machine's sync timer picks it up within 5 minutes.
 #

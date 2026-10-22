@@ -7,7 +7,7 @@
 #   2. turns left queued or running for more than 20 minutes (a Sidekiq restart mid-turn) are
 #      closed so their conversation can be used again.
 #
-# @see openspec/changes/support-console/design.md (card ⑧ Query record and alerts)
+# @see openspec/changes/archive/2026-10-22-support-console/design.md (card ⑧ Query record and alerts)
 class SupportConsoleRetentionJob < ApplicationJob
   queue_as :low
 

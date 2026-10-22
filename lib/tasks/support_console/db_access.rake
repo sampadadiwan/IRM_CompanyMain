@@ -1,7 +1,7 @@
 # lib/tasks/support_console/db_access.rake
 #
 # Provision the Support Console's access to an environment's replica
-# (openspec/changes/support-console/design.md (card ⑦)): a SELECT-only database account, an SSM parameter
+# (openspec/changes/archive/2026-10-22-support-console/design.md (card ⑦)): a SELECT-only database account, an SSM parameter
 # holding its details, the IAM permission to read that parameter, and the one
 # security-group rule from the support machine to the replica.
 #
@@ -351,7 +351,7 @@ module SupportConsoleDbAccess
       ssm(env_name, config).put_parameter(
         name: name, value: payload, type: "SecureString", overwrite: true,
         description: "Support Console read-only access to the #{env_name} replica " \
-                     "(openspec/changes/support-console/design.md (card ⑦))"
+                     "(openspec/changes/archive/2026-10-22-support-console/design.md (card ⑦))"
       )
     rescue Aws::SSM::Errors::ServiceError => e
       abort "❌ could not write #{name}: #{e.message}"
@@ -554,7 +554,7 @@ module SupportConsoleDbAccess
     puts "  EXECUTE=1 bundle exec rake \"support_console:machine[#{env_name}]\"         # if there is no machine yet"
     puts "  bundle exec rake \"support_console:machine_check[#{env_name}]\""
     puts
-    puts "  openspec/changes/support-console/design.md (card ⑦) has the rest of the design."
+    puts "  openspec/changes/archive/2026-10-22-support-console/design.md (card ⑦) has the rest of the design."
   end
 end
 

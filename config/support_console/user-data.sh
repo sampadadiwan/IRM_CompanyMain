@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# EC2 user-data for a Support Console machine (openspec/changes/support-console/design.md, card ⑤).
+# EC2 user-data for a Support Console machine (openspec/changes/archive/2026-10-22-support-console/design.md, card ⑤).
 # Ubuntu 24.04. `rake "support_console:machine[<env>]"` fills in the values below and launches
 # the machine with it; SupportConsoleMachine#instance_policy is the matching IAM policy.
 #

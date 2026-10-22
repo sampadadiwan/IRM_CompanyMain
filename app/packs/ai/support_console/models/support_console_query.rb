@@ -4,7 +4,7 @@
 # by SupportConsoleTurnJob. Append-only: the audit trail of who read what, about which client.
 # Holds the statement and counts, never the rows themselves.
 #
-# @see openspec/changes/support-console/design.md (card ⑧ Query record and alerts)
+# @see openspec/changes/archive/2026-10-22-support-console/design.md (card ⑧ Query record and alerts)
 class SupportConsoleQuery < ApplicationRecord
   OUTCOMES = %w[ran blocked failed].freeze
 

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# Steps for features/support_console/ — see openspec/changes/support-console/design.md#worked-examples
+# Steps for features/support_console/ — see openspec/changes/archive/2026-10-22-support-console/design.md#worked-examples
 # for the shared setup (Meera, Kiran, Priya, Asha; Golden Angels, Beta Capital, Gamma Ventures).
 
 # The console's SupportAgent lives on the CapHive entity; tests create one and point

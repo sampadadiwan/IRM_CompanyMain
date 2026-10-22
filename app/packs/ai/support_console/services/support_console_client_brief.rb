@@ -4,7 +4,7 @@
 # It is the first of the best-effort scoping layers (design card ⑥): Claude is told which
 # client this conversation is about and how every lookup must be filtered.
 #
-# @see openspec/changes/support-console/design.md (card ③ Turn job, card ⑥ Scope guard)
+# @see openspec/changes/archive/2026-10-22-support-console/design.md (card ③ Turn job, card ⑥ Scope guard)
 class SupportConsoleClientBrief
   MAX_FUNDS = 50
 

@@ -5,7 +5,7 @@
 #
 # Runs every 10 minutes from sidekiq-cron. SUPPORT_CONSOLE_IDLE_STOP_MINUTES=0 turns it off.
 #
-# @see openspec/changes/support-console/design.md (card ⑨ Machine control)
+# @see openspec/changes/archive/2026-10-22-support-console/design.md (card ⑨ Machine control)
 class SupportConsoleIdleStopJob < ApplicationJob
   queue_as :low
 

@@ -1,5 +1,5 @@
 # Support Console — the provisioning rake tasks (lib/tasks/support_console/*.rake), the parts that can
-# be checked without AWS. Worked examples: openspec/changes/support-console/design.md#worked-examples
+# be checked without AWS. Worked examples: openspec/changes/archive/2026-10-22-support-console/design.md#worked-examples
 @support_console
 Feature: Support Console provisioning
 

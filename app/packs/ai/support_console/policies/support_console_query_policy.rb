@@ -3,7 +3,7 @@
 # The Support Console's query record is reviewed by CapHive super users only; support users
 # never see it, and nobody edits it (rows are append-only).
 #
-# @see openspec/changes/support-console/design.md (card ⑧ Query record and alerts)
+# @see openspec/changes/archive/2026-10-22-support-console/design.md (card ⑧ Query record and alerts)
 class SupportConsoleQueryPolicy < ApplicationPolicy
   def index?
     super_user?

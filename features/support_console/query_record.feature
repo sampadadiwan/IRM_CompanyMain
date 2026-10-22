@@ -1,5 +1,5 @@
 # Support Console — every lookup is recorded; lookups that saw another client's rows alert super users.
-# Worked examples: openspec/changes/support-console/design.md#worked-examples
+# Worked examples: openspec/changes/archive/2026-10-22-support-console/design.md#worked-examples
 @rack_test @support_console @sync-http
 Feature: Support Console query record
 

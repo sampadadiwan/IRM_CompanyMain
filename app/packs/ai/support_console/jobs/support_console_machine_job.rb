@@ -6,7 +6,7 @@
 # Same shape as DbRestoreJob: one Sidekiq job per action, no retries — a failed start is shown on
 # the badge and the user presses Start again.
 #
-# @see openspec/changes/support-console/design.md (card ⑨ Machine control)
+# @see openspec/changes/archive/2026-10-22-support-console/design.md (card ⑨ Machine control)
 class SupportConsoleMachineJob < ApplicationJob
   # Not the support_console capsule: its 3 threads are for questions, and this waits up to 5 minutes
   queue_as :default

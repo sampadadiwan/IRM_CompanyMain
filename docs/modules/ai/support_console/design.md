@@ -1,6 +1,6 @@
 # Support Console — Claude Code for the support team
 
-**Status:** built (2026-10-16) as the OpenSpec change [`support-console`](../../../../openspec/changes/support-console/design.md), which supersedes this brainstorm where they differ (Claude Code CLI rather than an SDK, local mode, the staging writer rule). User guide: [Support Console](../../../user_guides/support_console_user_guide.md). This replaces the Troubleshooting Sandbox
+**Status:** built (2026-10-16) as the OpenSpec change [`support-console`](../../../../openspec/changes/archive/2026-10-22-support-console/design.md), which supersedes this brainstorm where they differ (Claude Code CLI rather than an SDK, local mode, the staging writer rule). User guide: [Support Console](../../../user_guides/support_console_user_guide.md). This replaces the Troubleshooting Sandbox
 design on the `troubleshooting-sandbox` branch (`docs/modules/ai/framework/troubleshooting_sandbox.md`
 there), keeping what it proved and dropping most of its machinery.
 

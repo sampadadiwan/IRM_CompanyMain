@@ -7,7 +7,7 @@
 # authorize each request from the URL alone. Conversations are AgentChatSessions owned by the
 # SupportConsoleAgent record, with the client as their chattable.
 #
-# @see openspec/changes/support-console/design.md (card ① Console page)
+# @see openspec/changes/archive/2026-10-22-support-console/design.md (card ① Console page)
 class SupportConsoleController < ApplicationController
   CONVERSATION_LIST_LIMIT = 50
 

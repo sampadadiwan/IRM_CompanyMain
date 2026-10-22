@@ -4,7 +4,7 @@
 # client other than the conversation's (E15, X10). Internal only: no email, no WhatsApp, not
 # customisable — the bell is the channel.
 #
-# @see openspec/changes/support-console/design.md#notifications
+# @see openspec/changes/archive/2026-10-22-support-console/design.md#notifications
 class SupportConsoleQueryFlaggedNotifier < BaseNotifier
   required_param :entity_id
 

@@ -1,6 +1,6 @@
 # Support Console — asking, streaming, stopping, and what the user sees when the machine fails.
 # The relay on the support machine is stubbed (features/support/support_console_relay_stub.rb).
-# Worked examples: openspec/changes/support-console/design.md#worked-examples
+# Worked examples: openspec/changes/archive/2026-10-22-support-console/design.md#worked-examples
 @rack_test @support_console @sync-http
 Feature: Support Console asking
 

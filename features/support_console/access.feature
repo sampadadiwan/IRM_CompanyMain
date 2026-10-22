@@ -1,5 +1,5 @@
 # Support Console — who may use it, and about which clients.
-# Worked examples: openspec/changes/support-console/design.md#worked-examples
+# Worked examples: openspec/changes/archive/2026-10-22-support-console/design.md#worked-examples
 @rack_test @support_console
 Feature: Support Console access
 

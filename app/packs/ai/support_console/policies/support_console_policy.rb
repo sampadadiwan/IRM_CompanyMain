@@ -8,7 +8,7 @@
 # the client's enable_support permission), narrowed by the mapping's end_date, because
 # SupportClientMapping.disable_expired only runs on a schedule.
 #
-# @see openspec/changes/support-console/design.md (card ② Access check)
+# @see openspec/changes/archive/2026-10-22-support-console/design.md (card ② Access check)
 class SupportConsolePolicy < ApplicationPolicy
   # H2, X1, X2 — only :support users see the console; :super alone is not enough.
   #

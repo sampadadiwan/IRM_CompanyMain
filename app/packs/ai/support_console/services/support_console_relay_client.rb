@@ -10,7 +10,7 @@ require "openssl"
 # with X-Timestamp = <ts> (unix seconds). The relay rejects bad signatures and timestamps more
 # than 60 s off (X6, X8). The response to a turn is NDJSON, one event object per line.
 #
-# @see openspec/changes/support-console/lld.md (External Integrations)
+# @see openspec/changes/archive/2026-10-22-support-console/lld.md (External Integrations)
 class SupportConsoleRelayClient
   class Error < StandardError; end
   # Connection refused, DNS failure, 401, 5xx — X4, X5.

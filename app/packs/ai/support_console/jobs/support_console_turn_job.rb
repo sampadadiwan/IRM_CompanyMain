@@ -8,7 +8,7 @@
 # metadata["turn_status"] = "queued"; this job moves it to running and then to exactly one of
 # completed / stopped / failed / refused (design Part 2 Lifecycles).
 #
-# @see openspec/changes/support-console/design.md (card ③ Turn job)
+# @see openspec/changes/archive/2026-10-22-support-console/design.md (card ③ Turn job)
 class SupportConsoleTurnJob < ApplicationJob
   queue_as :support_console
   # A retried turn would re-run the whole investigation; the user asks again instead.

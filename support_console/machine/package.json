@@ -2,7 +2,7 @@
   "name": "support-console-machine",
   "private": true,
   "type": "module",
-  "description": "Support Console support machine: relay, Claude Code hook and the read-only db MCP server (openspec/changes/support-console)",
+  "description": "Support Console support machine: relay, Claude Code hook and the read-only db MCP server (openspec/changes/archive/2026-10-22-support-console)",
   "engines": {
     "node": ">=22"
   },

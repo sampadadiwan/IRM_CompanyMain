@@ -1,7 +1,7 @@
 # Support Console — the relay on the support machine (design card ④) and the data tool's local mode
 # (card ⑦). These run the machine's own Node tests (support_console/machine/test/) against a fake
 # `claude` and, for E22, the local MySQL prepared by `rake support_console:local_setup`.
-# Worked examples: openspec/changes/support-console/design.md#worked-examples
+# Worked examples: openspec/changes/archive/2026-10-22-support-console/design.md#worked-examples
 Feature: Support Console relay
 
   # X6 — Error case: a request with a wrong HMAC signature is refused and no turn starts

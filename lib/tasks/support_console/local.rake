@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# Support Console local mode (openspec/changes/support-console/design.md#local-development):
+# Support Console local mode (openspec/changes/archive/2026-10-22-support-console/design.md#local-development):
 # the whole loop on a laptop — Rails, the relay on 127.0.0.1:4900 (SUPPORT_CONSOLE_LOCAL=1), your
 # own `claude` login, a code archive under tmp/support_console/ and a SELECT-only support_ro on
 # the local MySQL. Nothing here touches staging or production.

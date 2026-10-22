@@ -10,7 +10,7 @@
 # resolves, and to find or create that single record.
 #
 # @see SupportConsoleTurnJob
-# @see openspec/changes/support-console/design.md (Design decision 1)
+# @see openspec/changes/archive/2026-10-22-support-console/design.md (Design decision 1)
 class SupportConsoleAgent
   AGENT_TYPE = "SupportConsoleAgent"
   NAME = "Support Console"

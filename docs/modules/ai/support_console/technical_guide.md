@@ -1,7 +1,7 @@
 # Support Console — technical guide
 
 How the Support Console works, from the big picture down to the files. For the full design (every
-rule, worked example and test), see `openspec/changes/support-console/design.md`; this guide is the
+rule, worked example and test), see `openspec/changes/archive/2026-10-22-support-console/design.md`; this guide is the
 readable tour.
 
 ---

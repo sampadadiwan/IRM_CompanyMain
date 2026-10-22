@@ -1,6 +1,6 @@
 # lib/tasks/support_console/machine.rake
 #
-# The Support Console machine (openspec/changes/support-console/design.md, cards ④⑤⑦): one small box
+# The Support Console machine (openspec/changes/archive/2026-10-22-support-console/design.md, cards ④⑤⑦): one small box
 # per environment running the relay and the Claude Code CLI — signed in with a Claude subscription
 # token or on Bedrock (SUPPORT_CONSOLE_AUTH) — reading the deployed code and the replica. The database side is lib/tasks/support_console/db_access.rake; this is the machine.
 #

@@ -14,7 +14,7 @@ require "net/http"
 #
 # Same client set-up as DbRestoreService: the app's own AWS keys and AWS_REGION.
 #
-# @see openspec/changes/support-console/design.md (card ⑨ Machine control)
+# @see openspec/changes/archive/2026-10-22-support-console/design.md (card ⑨ Machine control)
 class SupportConsoleMachineControl
   NAME_PREFIX = "irm-support-console-"
   # How long a start may take before the machine is reported as not coming up
