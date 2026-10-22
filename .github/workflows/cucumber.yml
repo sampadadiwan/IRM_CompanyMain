@@ -107,7 +107,7 @@ jobs:
           # --require features MUST come first so step definitions and support files load
           CUKE_OPTS="-p parallel_rerun"
           CUKE_OPTS="$CUKE_OPTS --require features --require cucumber_dashboard"
-          CUKE_OPTS="$CUKE_OPTS --format html --out tmp/cucumber_results/report_\$TEST_ENV_NUMBER.html"
+          CUKE_OPTS="$CUKE_OPTS --format json --out tmp/cucumber_results/report_\$TEST_ENV_NUMBER.json"
           CUKE_OPTS="$CUKE_OPTS --format rerun --out tmp/cucumber_results/rerun_\$TEST_ENV_NUMBER.txt"
 
           if [ -n "$TAGS" ]; then
@@ -192,12 +192,12 @@ jobs:
           if-no-files-found: ignore
           retention-days: 30
 
-      - name: Upload HTML reports
+      - name: Upload JSON reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: cucumber-html-reports
-          path: tmp/cucumber_results/report_*.html
+          name: cucumber-json-reports
+          path: tmp/cucumber_results/report_*.json
           if-no-files-found: ignore
           retention-days: 30
 
