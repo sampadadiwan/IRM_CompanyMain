@@ -136,42 +136,87 @@ jobs:
       - name: Combine failure summaries
         if: always()
         run: |
-          echo "=== Cucumber Run Summary ===" > tmp/cucumber_results/summary.txt
-          echo "Branch: ${{ github.ref_name }}" >> tmp/cucumber_results/summary.txt
-          echo "Tags: ${{ inputs.tags || 'none' }}" >> tmp/cucumber_results/summary.txt
-          echo "Features: ${{ inputs.features || 'all' }}" >> tmp/cucumber_results/summary.txt
-          echo "Skip AI: ${{ inputs.skip_ai }}" >> tmp/cucumber_results/summary.txt
-          echo "Workers: ${{ inputs.workers }}" >> tmp/cucumber_results/summary.txt
-          echo "Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" >> tmp/cucumber_results/summary.txt
-          echo "" >> tmp/cucumber_results/summary.txt
+          SUMMARY=tmp/cucumber_results/summary.txt
+          echo "=== Cucumber Run Summary ===" > $SUMMARY
+          echo "Branch: ${{ github.ref_name }}" >> $SUMMARY
+          echo "Tags: ${{ inputs.tags || 'none' }}" >> $SUMMARY
+          echo "Features: ${{ inputs.features || 'all' }}" >> $SUMMARY
+          echo "Skip AI: ${{ inputs.skip_ai }}" >> $SUMMARY
+          echo "Workers: ${{ inputs.workers }}" >> $SUMMARY
+          echo "Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" >> $SUMMARY
+          echo "" >> $SUMMARY
 
-          # Collect per-worker failures from the progress formatter
-          for f in /tmp/cucumber_progress/worker_*_failures.txt; do
+          # Per-worker breakdown from JSONL progress logs
+          echo "=== Per-Worker Breakdown ===" >> $SUMMARY
+          for f in /tmp/cucumber_progress/worker_*.jsonl; do
             if [ -f "$f" ]; then
-              WORKER=$(basename "$f" | grep -oP '\d+')
-              echo "--- Worker $WORKER failures ---" >> tmp/cucumber_results/summary.txt
-              cat "$f" >> tmp/cucumber_results/summary.txt
-              echo "" >> tmp/cucumber_results/summary.txt
+              WORKER=$(basename "$f" .jsonl | sed 's/worker_//')
+              echo "" >> $SUMMARY
+              echo "--- Worker $WORKER ---" >> $SUMMARY
+
+              # Extract worker_end event for counts
+              END_EVENT=$(grep '"worker_end"' "$f" 2>/dev/null | tail -1)
+              if [ -n "$END_EVENT" ]; then
+                TOTAL=$(echo "$END_EVENT" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('total_scenarios',0))" 2>/dev/null || echo "?")
+                PASSED=$(echo "$END_EVENT" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['counts'].get('passed',0))" 2>/dev/null || echo "?")
+                FAILED=$(echo "$END_EVENT" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['counts'].get('failed',0))" 2>/dev/null || echo "?")
+                SKIPPED=$(echo "$END_EVENT" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['counts'].get('skipped',0))" 2>/dev/null || echo "?")
+                FEATURES_RUN=$(echo "$END_EVENT" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('features_run',0))" 2>/dev/null || echo "?")
+                echo "  Features: $FEATURES_RUN | Scenarios: $TOTAL | Passed: $PASSED | Failed: $FAILED | Skipped: $SKIPPED" >> $SUMMARY
+              else
+                echo "  (no completion event — worker may have crashed or timed out)" >> $SUMMARY
+              fi
+
+              # List features this worker ran
+              FEATURE_LIST=$(grep '"feature_start"' "$f" 2>/dev/null | python3 -c "
+import sys, json
+for line in sys.stdin:
+    try:
+        d = json.loads(line)
+        print('    ' + d.get('feature','') + ' (' + d.get('feature_name','') + ')')
+    except: pass
+" 2>/dev/null)
+              if [ -n "$FEATURE_LIST" ]; then
+                echo "  Features run:" >> $SUMMARY
+                echo "$FEATURE_LIST" >> $SUMMARY
+              fi
+
+              # List failed scenarios with errors
+              FAILURES=$(grep '"scenario_end"' "$f" 2>/dev/null | python3 -c "
+import sys, json
+for line in sys.stdin:
+    try:
+        d = json.loads(line)
+        if d.get('status') == 'failed':
+            loc = d.get('feature','') + ':' + str(d.get('line',''))
+            name = d.get('scenario','')
+            err = d.get('error','')
+            print('    FAIL ' + loc + ' # ' + name)
+            if err:
+                print('         ' + err[:200])
+    except: pass
+" 2>/dev/null)
+              if [ -n "$FAILURES" ]; then
+                echo "  Failed scenarios:" >> $SUMMARY
+                echo "$FAILURES" >> $SUMMARY
+              fi
             fi
           done
 
-          # Collect per-worker rerun files
-          for f in tmp/cucumber_results/rerun_*.txt; do
-            if [ -f "$f" ] && [ -s "$f" ]; then
-              WORKER=$(basename "$f" .txt | grep -oP '\d+')
-              echo "--- Worker $WORKER rerun scenarios ---" >> tmp/cucumber_results/summary.txt
-              cat "$f" >> tmp/cucumber_results/summary.txt
-              echo "" >> tmp/cucumber_results/summary.txt
-            fi
-          done
+          echo "" >> $SUMMARY
 
           # Combined rerun file (all workers merged, for easy copy-paste)
           cat tmp/cucumber_results/rerun_*.txt 2>/dev/null | sort -u > tmp/cucumber_results/all_failures_rerun.txt || true
 
+          if [ -s tmp/cucumber_results/all_failures_rerun.txt ]; then
+            echo "=== Rerun Command (copy-paste) ===" >> $SUMMARY
+            echo "bundle exec cucumber $(cat tmp/cucumber_results/all_failures_rerun.txt | tr '\n' ' ')" >> $SUMMARY
+          fi
+
           # Print summary to the Actions log
           echo ""
           echo "========================================"
-          cat tmp/cucumber_results/summary.txt
+          cat $SUMMARY
           echo "========================================"
 
       - name: Upload per-worker failure files
