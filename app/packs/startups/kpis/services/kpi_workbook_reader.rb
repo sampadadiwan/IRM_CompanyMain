@@ -51,6 +51,7 @@ class KpiWorkbookReader
     "budgeted" => "Budget",
     "forecast" => "Budget",
     "fc" => "Budget",
+    "aop" => "Budget",
     "ic" => "IC",
     "investment committee" => "IC"
   }.freeze
@@ -602,6 +603,8 @@ class KpiWorkbookReader
         # Only normalize "Actuals" → "Actual" (singular/plural, system default).
         tag_value = cell.to_s.strip
         tag_value = "Actual" if tag_value == "Actuals"
+        # AOP is stored as "Budget" so it can be filtered/compared alongside other Budget data
+        tag_value = TAG_SYNONYMS[normalized] if normalized == "aop"
         # +1 because value_cells starts from index 1 of the original row
         tag_matches[idx + 1] = tag_value
       end
