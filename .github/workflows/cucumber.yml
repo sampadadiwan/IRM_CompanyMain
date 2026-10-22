@@ -303,26 +303,3 @@ for line in sys.stdin:
           if-no-files-found: ignore
           retention-days: 30
 
-      - name: Email failure report
-        if: failure()
-        uses: dawidd6/action-send-mail@v3
-        with:
-          server_address: smtp.gmail.com
-          server_port: 587
-          username: ${{ secrets.GMAIL_USERNAME }}
-          password: ${{ secrets.GMAIL_APP_PASSWORD }}
-          subject: "❌ Cucumber Tests Failed — ${{ github.ref_name }}"
-          to: ${{ secrets.NOTIFY_EMAILS }}
-          from: Cucumber CI <${{ secrets.GMAIL_USERNAME }}>
-          body: |
-            Cucumber Tests FAILED on branch: ${{ github.ref_name }}
-
-            Tags: ${{ inputs.tags || 'none' }}
-            Features: ${{ inputs.features || 'all' }}
-            Workers: ${{ inputs.workers }}
-
-            View run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-
-            --- Failure Summary ---
-            See attached summary or download artifacts from the run link above.
-          attachments: tmp/cucumber_results/summary.txt
