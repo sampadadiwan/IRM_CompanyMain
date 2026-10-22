@@ -50,7 +50,8 @@ module Onboarding
     end
 
     def token_path = File.join(workspace, "state", "token")
-    def token = File.read(token_path).strip
+    # "bom|utf-8": Windows Notepad can save the pasted token with a byte-order mark, which strip does not remove
+    def token = File.read(token_path, encoding: "bom|utf-8").strip
 
     # One HTTP call; returns [status, parsed body or raw text]. Every write first re-checks that the entity is
     # still in sandbox (hard rule 4) and stops if it is not.

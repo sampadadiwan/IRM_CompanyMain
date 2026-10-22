@@ -31,7 +31,7 @@ Create the file at the start of the run, update it after **every** step, and nev
 Run `tools/fund/fund_recon.rb` (fund side, driven by `mappings/drawdowns.yml`; its `out/fund_recon.md` is Appendix B and its
 `out/fund_recon.json` is what the go-live gate checks). For anything it does not cover yet (distributions, units), write
 `scripts/recon_report.rb`. Start from the last client's script and adapt the source column positions (Orios:
-`~/work/onboarding/orios-staging/scripts/recon_report.rb`, which reads the raw MIS by column index). It must be **independent of the transform**:
+`<workspaces>/orios-staging/scripts/recon_report.rb`, which reads the raw MIS by column index). It must be **independent of the transform**:
 it walks the raw source rows itself, sharing only the folio-id normalisation, and reads the app through the JSON API only.
 It runs five tests and prints markdown (saved as `out/recon_report.md`, pasted into Appendix B):
 
@@ -64,7 +64,7 @@ Tolerances: ₹ ±0.01, units ±0.0001, dates exact. Use the pattern in [learnin
 
 Ops user roles: <roles>.
 
-**Workspace:** `~/work/onboarding/<client>/` · **Rules followed:** every write and every check goes through the app's JSON API
+**Workspace:** `<workspaces>/<client>/` · **Rules followed:** every write and every check goes through the app's JSON API
 with the bearer token, with no DB access, console, runner or log reading. Approvals: <waivers in approvals.yml>; undo and investor access are never waived.
 
 ## In short

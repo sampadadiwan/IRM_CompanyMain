@@ -6,7 +6,7 @@ workspace outside the repo.
 
 ```mermaid
 flowchart LR
-  W["Client workspace<br/>~/work/onboarding/&lt;client&gt;/<br/>onboarding.yml · state/token · source/ · out/"] --> T["tools/ (this folder)<br/>api.rb + KPI tools"]
+  W["Client workspace<br/>&lt;workspaces&gt;/&lt;client&gt;/<br/>onboarding.yml · state/token · source/ · out/"] --> T["tools/ (this folder)<br/>api.rb + KPI tools"]
   T -- "HTTPS + bearer token" --> A["CapHive JSON API"]
 ```
 
@@ -15,7 +15,9 @@ flowchart LR
 One command that knows the order. From the client workspace:
 
 ```sh
-T=~/work/IRM/.claude/skills/client-onboarding/tools
+# <repo> = where the IRM repo is cloned; run from the client workspace (paths: see "Machine setup" below)
+T=<repo>/.claude/skills/client-onboarding/tools
+ruby $T/doctor.rb                 # setup check first: Ruby, gems, workspace, token, entity (read-only)
 ruby $T/onboard.rb status         # where the onboarding stands; ▶ marks the next step (read-only)
 ruby $T/onboard.rb next           # the next step's plan — writes nothing
 ruby $T/onboard.rb next --run     # run that ONE step, then confirm it from read-backs (✔ / ✖)
@@ -50,17 +52,41 @@ ruby $T/onboard.rb status --portfolio   # only the portfolio track: workspace, s
 | 32 | Investor access | **never run by the tool** — shows the gate; needs explicit approval |
 
 **Manual review (hard rule 10):** steps 3 and 20 end with `review.rb dump`; every later upload or JSON post stops with
-"awaiting manual review" until ops runs `ruby $T/review.rb approve <file> --by <name>` for that exact file.
+"awaiting manual review" until ops runs `ruby $T/review.rb approve <file> --by <name>` for that exact file **in their own
+terminal** and types `yes` (it refuses without a terminal on stdin, so the agent cannot approve its own files).
 
 "Done" is always read from the app and the workspace, so re-running after a crash or a fix picks up where it is and never
 uploads twice. It stops at the first failure (an upload that did not fully succeed, a count that does not match). The
 single tools below remain for diagnosis. With `--portfolio`, `status` / `next` follow only steps 1, 2, 4 and 20–32, so a fund
 whose data steps wait on client answers does not hold back the portfolio.
 
+## Machine setup (Windows, Linux, macOS)
+
+The tools are plain Ruby talking to the app's JSON API — no Rails, database or running app needed on the machine.
+
+```mermaid
+flowchart LR
+  G["Git for Windows<br/>(Claude Code needs it)"] --> R["Ruby 3.3 x64 + Devkit<br/>gem install roo caxlsx"]
+  R --> C["Claude Code<br/>(desktop app › Code, or CLI)"] --> K["git clone the IRM repo<br/>(skill in .claude/skills/)"]
+  K --> D["ruby tools/doctor.rb<br/>--workspace &lt;client&gt;"]
+```
+
+| # | Install | Windows | Linux / macOS |
+|---|---|---|---|
+| 1 | Git | git-scm.com, default options | package manager |
+| 2 | Ruby 3.1+ and the two gems | rubyinstaller.org › **Ruby+Devkit 3.3 (x64)**; then in a new terminal `gem install roo caxlsx` | mise / rbenv / package manager; `gem install roo caxlsx` |
+| 3 | Claude Code | Claude desktop app › **Code** tab, or PowerShell `irm https://claude.ai/install.ps1 \| iex` | `curl -fsSL https://claude.ai/install.sh \| bash` |
+| 4 | The repo | `git clone https://github.com/ausangshukla/IRM.git C:\work\IRM` | `git clone … ~/work/IRM` |
+
+Open Claude Code on the repo folder (the skill loads from `.claude/skills/`) and keep client workspaces **outside** the repo,
+e.g. `C:\work\onboarding\<client>` or `~/work/onboarding/<client>`. `ruby $T/doctor.rb --workspace <workspace>` must show no ✖
+before the first step. On Windows, approve review files (hard rule 10) in PowerShell or Windows Terminal — Git Bash's mintty
+is not a console, so `approve` sees no terminal there.
+
 ## Set up a client workspace
 
 ```
-~/work/onboarding/<client>/
+<workspaces>/<client>/              e.g. C:\work\onboarding\<client> or ~/work/onboarding/<client>
   onboarding.yml     base_url, entity_id, ops_email   (see below)
   state/token        the ops user's API token (dev: `ruby api.rb sign_in`; otherwise Profile › API tokens)
   source/            the client's files, never edited
@@ -74,7 +100,11 @@ whose data steps wait on client answers does not hold back the portfolio.
 base_url: http://127.0.0.1:3001
 entity_id: 1234                  # the client entity ops created
 ops_email: ops+<client>@caphive.com
+client: <client>                 # names <client>_client_questions.md
 ```
+
+A script written for one client (`scripts/*.rb`) loads the tools with `require "api"` and runs as
+`ruby -I "$T" scripts/<name>.rb` — never `require_relative` with a machine's absolute path, so it runs on any OS.
 
 Every tool takes `--workspace DIR` (or `$ONBOARDING_WORKSPACE`, or runs from the workspace as the current directory).
 Every write re-checks that the entity is in sandbox and stops if it is not.
@@ -83,6 +113,7 @@ Every write re-checks that the entity is in sandbox and stops if it is not.
 
 | Tool | What it does | Writes to the app? |
 |---|---|---|
+| `doctor.rb` | setup check: Ruby + UTF-8, gems, workspace files, token owner, entity (sandbox, funds already there); a fix per ✖ | no |
 | `review.rb` | manual review gate: `dump` (copy every built upload file to `review/` + `REVIEW.md`), `status`, `approve <file> --by <name>` (**ops only**); `api.rb` and `onboard.rb` refuse files whose hash ops has not approved | no |
 | `api.rb` | API client (library + CLI): `sign_in`, `get`, `post`/`patch`/`delete`, `upload <ImportType> <file>` (polls to done), `attach <OwnerType> <id> <name> <file>`, `sandbox_on` | yes (each command) |
 | `merge_mis.rb` | merge a month's MIS files into one workbook, one sheet per statement, and prove every cell equals its source | no |
@@ -103,7 +134,7 @@ flowchart LR
 ```
 
 ```sh
-T=~/work/IRM/.claude/skills/client-onboarding/tools; cd ~/work/onboarding/<client>
+T=<repo>/.claude/skills/client-onboarding/tools; cd <workspaces>/<client>
 ruby $T/merge_mis.rb out/X_Aug26.xlsx "P&L=source/pl.xlsx|Summary" "Cash Flow=source/cf.xlsx|Cashflow FY25-26"   # only if several files
 ruby $T/kpi_dry_run.rb --company 2276 --file out/X_Aug26.xlsx --as-of 2026-08-31
 ruby $T/check_dryrun_cells.rb --verdict out/kpi_dryrun/X_Aug26.json --file out/X_Aug26.xlsx      # read the header → period list
@@ -136,7 +167,7 @@ examples: Inflexor (`row_per_folio`) and Orios (`folio_blocks`) workspaces, `map
 equal the files imported and reconciled on 2026-10-18/19.
 
 ```sh
-cd ~/work/onboarding/<client>
+cd <workspaces>/<client>
 ruby $T/fund/read_drawdowns.rb && ruby $T/fund/build_fund_uploads.rb      # then import out/fund/* with api.rb
 ```
 

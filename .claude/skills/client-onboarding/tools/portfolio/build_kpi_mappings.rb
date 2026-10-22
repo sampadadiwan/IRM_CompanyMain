@@ -70,7 +70,7 @@ kcfg.fetch("companies").each do |company, c|
     if w["merge"]
       path = File.join(workspace, "out", "kpi", "#{w.fetch('name')}.xlsx")
       specs = w["merge"].map { |sheet, (file, src_sheet)| "#{sheet}=#{File.join(workspace, 'source', file)}|#{src_sheet}" }
-      o, s = Open3.capture2e("ruby", File.join(__dir__, "..", "merge_mis.rb"), path, *specs)
+      o, s = Open3.capture2e(RbConfig.ruby, File.join(__dir__, "..", "merge_mis.rb"), path, *specs)
       o.each_line { puts "    #{_1}" }
       abort "✖ merging #{w['name']} failed" unless s.success?
     else

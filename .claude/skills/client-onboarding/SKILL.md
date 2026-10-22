@@ -1,5 +1,6 @@
 ---
 name: client-onboarding
+allowed-tools: Bash(ruby:*)
 description: "Onboard a new CapHive client end to end: configure a fresh entity, map and transform the client's own xlsx into CapHive import templates, and import it through the application's import pipeline (never by writing to the DB). Use when onboarding a client, designing or building the onboarding agent and its MCP tools, mapping a client workbook to an import template, or deciding import order, custom fields or approvals for an onboarding."
 ---
 
@@ -61,14 +62,26 @@ description: "Onboard a new CapHive client end to end: configure a fresh entity,
    portfolio reconciliation (`tools/portfolio/portfolio_recon.rb` → `out/portfolio_recon.json`).
 10. **Ops reviews every upload file by hand before it goes in** (ops, 2026-10-20). Build the upload files from the raw data,
    dump them with `tools/review.rb dump` into `<workspace>/review/` (copies + `REVIEW.md`: rows, columns, money totals, dates,
-   SHA-256 per file), tell ops where they are, and **stop**. Ops checks them against the source and approves each file with
-   `! ruby $T/review.rb approve <file> --by <name>` — **never approve a file yourself**. `api.rb upload` and every JSON post in
-   `onboard.rb` refuse a file whose current hash is not approved, so a rebuild needs a fresh review. Only on ops' explicit word
+   SHA-256 per file), tell ops where they are, and **stop**. Ops checks them against the source and approves each file in
+   **their own terminal** (PowerShell / Windows Terminal, or a Linux/macOS terminal — not Claude Code's `!` prompt):
+   `ruby <tools>/review.rb --workspace <workspace> approve <file> --by <name>`, then types `yes`. `approve` refuses without a
+   terminal on stdin — **never approve a file yourself, and never work around that check** (e.g. with `script` or a pty).
+   `api.rb upload` and every JSON post in `onboard.rb` refuse a file whose current hash is not approved, so a rebuild needs a
+   fresh review. Only on ops' explicit word
    for one client: `review: {waived_by, waived_on, reason}` in `onboarding.yml` (files are still dumped; writes print ⚠).
 
 ## Tools
 
-**Start with `tools/onboard.rb status`** — it reads where the onboarding stands and runs the next step (`next --run`),
+**First, on every machine and every onboarding: `ruby <tools>/doctor.rb --workspace <workspace>`** — read-only; checks Ruby,
+the gems (`roo`, `caxlsx`), the workspace files, the token and the entity, with a fix for each ✖. Fix every ✖ before anything
+else. Setup per OS (Windows included) is in [tools/README.md](tools/README.md#machine-setup-windows-linux-macos).
+
+**Paths work on every OS** (BU users run this on Windows): `<tools>` is this skill's `tools/` folder — use the skill's base
+directory you were given, never a path from another machine; quote paths (client file names have spaces). **A script you
+write in a client workspace's `scripts/` loads the tools with `require "api"` (not `require_relative` with an absolute path)
+and runs as `ruby -I "<tools>" scripts/<name>.rb`.**
+
+**Then `tools/onboard.rb status`** — it reads where the onboarding stands and runs the next step (`next --run`),
 one at a time, in the order below, stopping at the first failure and never running investor access. It covers the fund
 (steps 1–19) and, with `mappings/portfolio.yml`, the portfolio and KPIs (steps 20–31); `--portfolio` follows only the
 portfolio track, so a fund waiting on client answers does not hold the portfolio back.

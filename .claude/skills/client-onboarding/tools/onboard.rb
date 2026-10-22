@@ -74,14 +74,14 @@ end
 
 # Runs a tool, echoes its output, returns success
 tool = lambda do |*args|
-  stdout, stderr, status = Open3.capture3("ruby", *args.map(&:to_s), "--workspace", WS)
+  stdout, stderr, status = Open3.capture3(RbConfig.ruby, *args.map(&:to_s), "--workspace", WS)
   (stdout + stderr).each_line { |l| puts "    #{l}" unless l.include?("CHECK-DATA MODE") }
   status.success?
 end
 # Upload through api.rb and insist on a full success (status "Completed" alone is not success); a bare file name is in out/fund
 upload = lambda do |type, file, step = nil|
   path = file.include?("/") ? file : built.(file)
-  stdout, stderr, = Open3.capture3("ruby", File.join(TOOLS, "api.rb"), "--workspace", WS, "upload", type, path, *step)
+  stdout, stderr, = Open3.capture3(RbConfig.ruby, File.join(TOOLS, "api.rb"), "--workspace", WS, "upload", type, path, *step)
   (stdout + stderr).each_line { |l| puts "    #{l}" unless l.include?("CHECK-DATA MODE") }
   stdout.match?(/outcome="succeeded".*failed=0/)
 end
@@ -330,7 +330,7 @@ steps = [
    lambda {
      next true unless units_on
 
-     o, = Open3.capture3("ruby", File.join(TOOLS, "fund", "apply_units.rb"), "--workspace", WS)
+     o, = Open3.capture3(RbConfig.ruby, File.join(TOOLS, "fund", "apply_units.rb"), "--workspace", WS)
      o.include?("nothing to do")
    },
    -> { "apply_units.rb --execute: allocate on calls, price + redeem redemptions" },

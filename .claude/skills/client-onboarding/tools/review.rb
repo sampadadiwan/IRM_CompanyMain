@@ -2,8 +2,8 @@
 #   dump      copies every built upload file (out/fund, out/portfolio: *.xlsx, *.json) into <workspace>/review/ and writes
 #             review/REVIEW.md — per file: rows, columns, money totals, date range, SHA-256 and whether it is approved
 #   status    which files are approved, which wait for review, which changed since they were approved
-#   approve   records a file's SHA-256 + who approved it in review/approved.yml. OPS ONLY — typed by ops at the prompt
-#             (`! ruby review.rb approve …`); the agent never approves a file, as with the M14 sign-off
+#   approve   records a file's SHA-256 + who approved it in review/approved.yml. OPS ONLY — refuses unless stdin is a terminal
+#             and ops types "yes", so it runs only in ops' own terminal (not the agent's shell, not Claude Code's `!` prompt)
 # Library: Onboarding::Review.check!(workspace, path) — api.rb (every upload) and onboard.rb (every JSON post) call it and
 # stop unless the file's current hash is approved. A rebuild that changes a file changes its hash → it needs review again.
 # Waiver: onboarding.yml `review: {waived_by: <ops>, waived_on: <date>, reason: …}` — only on ops' explicit word for that
@@ -109,6 +109,15 @@ module Onboarding
     def approve(ws, path, by)
       abort "✖ approve needs --by <name>" if by.to_s.strip.empty?
       abort "✖ no such file #{path}" unless File.exist?(path)
+      # Only a person at a keyboard approves: an agent's shell (and Claude Code's `!` prompt) has no terminal on stdin, so
+      # the agent cannot approve its own files even where `ruby` commands run without a permission prompt
+      unless $stdin.tty?
+        abort "✖ approve must be typed by ops in their own terminal (PowerShell / Windows Terminal or a Linux/macOS terminal), " \
+              "not run by the agent or through Claude Code's ! prompt:\n    ruby #{File.expand_path(__FILE__)} --workspace #{ws} approve #{key(ws, path)} --by <name>"
+      end
+      # …and confirms this exact file, so a pasted command cannot approve by accident
+      print "Approve #{key(ws, path)} (SHA-256 #{sha(path)[0, 16]}…) as #{by}? Type yes: "
+      abort "✖ not approved" unless $stdin.gets.to_s.strip.casecmp?("yes")
       a = approvals(ws)
       a[key(ws, path)] = { "sha256" => sha(path), "approved_by" => by, "approved_at" => Time.now.iso8601 }
       FileUtils.mkdir_p(dir(ws))

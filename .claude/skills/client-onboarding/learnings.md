@@ -284,3 +284,11 @@ Source: a QR workbook ("9.Comvsrecd": 275 folios × 15 drawdown columns, total r
   It now counts only uploads created after the fund. Any new done-check on `/import_uploads.json` needs the same bound.
 - Reusing an existing `CapitalCommitment` form type works when its tag matches "Form Tag" — the form-type JSON does not show
   the tag, so the commitment upload's 0 failed is the proof.
+
+## 2026-10-22 — Windows setup for BU users
+
+- **Portable across OSes (for BU users on Windows):** client-workspace scripts used `require_relative` with an absolute Linux
+  path to the tools, which broke on any other machine. They now `require "api"` and run as `ruby -I "<tools>" scripts/x.rb`;
+  tools launch each other with `RbConfig.ruby`, and `doctor.rb` checks a machine's setup before the first step.
+- **`review.rb approve` needs a terminal** on stdin plus a typed `yes`, so `ruby` commands can run without a permission
+  prompt (`allowed-tools: Bash(ruby:*)` in SKILL.md) and the agent still cannot approve its own files.
