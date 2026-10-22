@@ -16,6 +16,11 @@ on:
         description: 'Feature path (e.g. features/core/document.feature)'
         required: false
         default: ''
+      skip_ai:
+        description: 'Skip AI features (features/ai/)'
+        required: false
+        type: boolean
+        default: true
       workers:
         description: 'Number of parallel workers (max 4)'
         required: false
@@ -108,9 +113,15 @@ jobs:
           fi
 
           if [ -z "$FEATURES" ]; then
-            FEATURES="features"
-            # Switch to the profile that includes `features` argument
-            CUKE_OPTS=$(echo "$CUKE_OPTS" | sed 's/-p parallel_rerun/-p parallel/')
+            # When running all features, build the list excluding AI if requested
+            if [ "${{ inputs.skip_ai }}" = "true" ]; then
+              FEATURES=$(find features -maxdepth 1 -mindepth 1 -not -name 'ai' | sort | tr '\n' ' ')
+              echo "Skipping AI features. Running: $FEATURES"
+            else
+              FEATURES="features"
+              # Switch to the profile that includes `features` argument
+              CUKE_OPTS=$(echo "$CUKE_OPTS" | sed 's/-p parallel_rerun/-p parallel/')
+            fi
           fi
 
           PCUC_QUIET=1 RUBYOPT="-W0" bundle exec parallel_cucumber \
@@ -127,6 +138,7 @@ jobs:
           echo "Branch: ${{ github.ref_name }}" >> tmp/cucumber_results/summary.txt
           echo "Tags: ${{ inputs.tags || 'none' }}" >> tmp/cucumber_results/summary.txt
           echo "Features: ${{ inputs.features || 'all' }}" >> tmp/cucumber_results/summary.txt
+          echo "Skip AI: ${{ inputs.skip_ai }}" >> tmp/cucumber_results/summary.txt
           echo "Workers: ${{ inputs.workers }}" >> tmp/cucumber_results/summary.txt
           echo "Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" >> tmp/cucumber_results/summary.txt
           echo "" >> tmp/cucumber_results/summary.txt
