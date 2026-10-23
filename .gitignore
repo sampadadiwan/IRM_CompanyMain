@@ -60,6 +60,9 @@ mcp.json
 # Ignore master key for decrypting credentials and more.
 /config/master.key
 
+# Old SSH deploy key pair — untracked; never commit SSH keys (see docs/operations/dr/review/point_03_committed_secrets.md).
+/config/deploy_id_rsa*
+
 /public/packs
 /public/packs-test
 /node_modules

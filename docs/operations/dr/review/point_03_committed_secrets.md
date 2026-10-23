@@ -1,7 +1,7 @@
 # DR Review — Point 3: Secrets committed to git
 
 **Status:** ⚠️ Partially applied per review decision:
-- Exposure A (SSH keys `config/deploy_id_rsa*`): **left as-is by request** — files remain tracked; rotation checklist in §3.1 still recommended.
+- Exposure A (SSH keys `config/deploy_id_rsa*`): ✅ untracked 2026-10-23 (§3.1 steps 1–2; files kept on disk, `.gitignore` covers `config/deploy_id_rsa*`). Verified unused: Capistrano deploys with the per-env `.pem` keys and clones via agent forwarding, the repo has no GitHub deploy keys, and no workflow references it. Still in git history, so on 2026-10-23 every place the public half could grant access was checked for fingerprint `SHA256:cbn5l6vLrDn7F8W1PzRRIzu5JIescDsOhKjIT1uLT4A` (ED25519): `authorized_keys*` for root and all users on the IN app boxes (ip-10-0-2-137, ip-10-0-1-56), the IN data box (ip-10-0-3-182) and the US app boxes (ip-10-0-1-26, ip-10-0-2-166), plus every IRM collaborator's public GitHub keys and the repo's deploy keys — **no match anywhere**, so the key grants no access and needs no rotation. Copies of the private key remain in deployed release dirs (`IRM/current/config/`) on the four app boxes; they age out as releases rotate and are inert. Not checked: the US data box.
 - Exposure B (MySQL root password): ✅ applied — both `packer.rake` literals replaced with credentials/ENV lookup that raises if unset (`ruby -c` passes). Rotation checklist in §3.2 pending (add MYSQL_ROOT_PASSWORD to credentials; rotate live DB root passwords).
 - Exposure C (IRM-Infra state artifacts): ✅ applied — `pulumi.prod.export`, `output.json`, `tmp/*.json` untracked (files kept on disk); `.gitignore` extended with commented `*.export` / `output.json` / `tmp/` entries.
 
