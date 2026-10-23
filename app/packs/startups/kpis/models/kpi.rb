@@ -54,6 +54,24 @@ class Kpi < ApplicationRecord
   scope :as_of,      ->(date) { joins(:kpi_report).where('kpi_reports.as_of': date) }
   scope :show_in_report, -> { joins(:investor_kpi_mapping).where(investor_kpi_mappings: { show_in_report: true }) }
 
+  # `source` says who wrote a row. Only the cumulation writes AUTO_CUMULATION_SOURCE; an import writes
+  # UPLOAD_SOURCE and the Kpi form writes MANUAL_SOURCE. Blank, upload and manual all mean a person wrote it,
+  # and cumulation never overwrites or removes such a Quarter, YTD or Year row.
+  AUTO_CUMULATION_SOURCE = "auto_cumulation".freeze
+  UPLOAD_SOURCE = "upload".freeze
+  MANUAL_SOURCE = "manual".freeze
+  # Rows written before `source` existed carry no marker, only this note prefix (see process_cumulative_kpi)
+  LEGACY_CALCULATED_NOTE_PREFIX = "Auto-generated".freeze
+  CUMULATIVE_PERIODS = %w[Quarter YTD Year].freeze
+
+  # Calculated Quarter, YTD and Year rows. Always combine with entity_id and portfolio_company_id.
+  scope :calculated_cumulative, lambda {
+    joins(:kpi_report)
+      .where(kpi_reports: { period: CUMULATIVE_PERIODS })
+      .where("kpis.source = :marker OR ((kpis.source IS NULL OR kpis.source = '') AND kpis.notes LIKE :legacy)",
+             marker: AUTO_CUMULATION_SOURCE, legacy: "#{LEGACY_CALCULATED_NOTE_PREFIX}%")
+  }
+
   scope :monthly, -> { joins(:kpi_report).where(kpi_reports: { period: 'month' }) }
   scope :quarterly, -> { joins(:kpi_report).where(kpi_reports: { period: 'quarter' }) }
   scope :yearly, -> { joins(:kpi_report).where(kpi_reports: { period: 'year' }) }
@@ -95,6 +113,13 @@ class Kpi < ApplicationRecord
     "#{name}: #{value}"
   end
 
+  # In-memory twin of the calculated_cumulative scope, for rows already loaded with their report.
+  def calculated_cumulative?
+    return false unless CUMULATIVE_PERIODS.any? { |period| period.casecmp?(kpi_report&.period.to_s) }
+
+    source == AUTO_CUMULATION_SOURCE || (source.blank? && notes.to_s.start_with?(LEGACY_CALCULATED_NOTE_PREFIX))
+  end
+
   # New records (created_at nil until saved) and anything created on/after the cutoff must have a
   # mapping id; legacy KPIs created before it are grandfathered in.
   def require_mapping_id?
@@ -113,21 +138,49 @@ class Kpi < ApplicationRecord
     entity.kpis.joins(:kpi_report).where(name:).where("kpi_reports.period=?", kpi_report.period).order("kpi_reports.as_of asc")
   end
 
-  def self.recompute_percentage_change(kpis, force: false)
-    # Group KPIs by period, name, and tag_list to ensure percentage is only computed between comparable KPIs
-    kpis.group_by { |kpi| [kpi.kpi_report.period, kpi.name, kpi.kpi_report.tag_list] }.each_value do |grouped_kpis|
-      grouped_kpis.sort_by { |kpi| kpi.kpi_report.as_of }.each_cons(2) do |current_kpi, next_kpi|
-        next unless force || next_kpi.percentage_change.nil? || next_kpi.percentage_change.zero?
+  # percentage_change is decimal(6,2), so a change beyond this cannot be stored
+  PERCENTAGE_CHANGE_LIMIT = BigDecimal("9999.99")
 
-        next_kpi.percentage_change = if current_kpi.value.zero?
-                                       # if the divisor (the current) is 0, the percentage is infinity but we cant store that so keeping it nil
-                                       nil
-                                     else
-                                       ((next_kpi.value - current_kpi.value) / current_kpi.value) * 100
-                                     end
-        next_kpi.save
+  # Month, Quarter and Year rows change against the previous row of their series. A YTD row is a running total, so
+  # against the previous YTD row it would only show the latest month's contribution; it changes against the YTD one
+  # year earlier instead (H9). Nothing a year earlier, or zero, gives nil - never an older row (E15, E17).
+  def self.recompute_percentage_change(kpis)
+    # Group KPIs by period, name, owner and tag_list so a change is only computed between comparable KPIs
+    kpis.group_by { |kpi| [kpi.kpi_report.period, kpi.name, kpi.owner_id, kpi.kpi_report.tag_list] }.each do |(period, *), grouped_kpis|
+      ordered = grouped_kpis.sort_by { |kpi| kpi.kpi_report.as_of }
+      pairs = if period.to_s.casecmp?("YTD")
+                by_date = ordered.index_by { |kpi| kpi.kpi_report.as_of }
+                ordered.map { |kpi| [by_date[year_earlier(kpi.kpi_report.as_of)], kpi] }
+              else
+                ordered.each_cons(2).to_a
+              end
+
+      pairs.each do |comparator, kpi|
+        kpi.percentage_change = period.to_s.casecmp?("YTD") ? year_over_year_change(comparator, kpi) : change_against(comparator, kpi)
+        kpi.save
       end
     end
+  end
+
+  # The date one year before as_of. A month end stays a month end, so 28 Feb 2025 matches 29 Feb 2024 (E18)
+  def self.year_earlier(as_of)
+    as_of.end_of_month == as_of ? as_of.prev_year.end_of_month : as_of.prev_year
+  end
+
+  def self.change_against(comparator, kpi)
+    # if the divisor (the comparator) is 0, the percentage is infinity but we cant store that so keeping it nil
+    return nil if comparator.value.zero?
+
+    ((kpi.value - comparator.value) / comparator.value) * 100
+  end
+
+  # Rounded to the stored 2 decimals first, then checked: 9,999.995 rounds to 10,000.00 and would overflow the
+  # column, so a change that cannot be stored is nil rather than an error that stops the rest of the group (E27)
+  def self.year_over_year_change(comparator, kpi)
+    return nil if comparator.nil?
+
+    change = change_against(comparator, kpi)&.round(2)
+    change unless change.nil? || change.abs > PERCENTAGE_CHANGE_LIMIT
   end
 
   # Method to find the tagged KPI (comparator KPI on the same date, e.g. Budget/PriorYear).

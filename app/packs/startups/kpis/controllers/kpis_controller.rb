@@ -96,6 +96,7 @@ class KpisController < ApplicationController
   # POST /kpis or /kpis.json
   def create
     @kpi = Kpi.new(kpi_params)
+    @kpi.source = Kpi::MANUAL_SOURCE
     authorize @kpi
     respond_to do |format|
       if @kpi.save
@@ -110,8 +111,11 @@ class KpisController < ApplicationController
 
   # PATCH/PUT /kpis/1 or /kpis/1.json
   def update
+    @kpi.assign_attributes(kpi_params)
+    # Only a changed value makes the row a person's; editing a note on a calculated row leaves it calculated
+    @kpi.source = Kpi::MANUAL_SOURCE if @kpi.value_changed?
     respond_to do |format|
-      if @kpi.update(kpi_params)
+      if @kpi.save
         format.html { redirect_to kpi_url(@kpi), notice: "Kpi was successfully updated." }
         format.json { render :show, status: :ok, location: @kpi }
       else

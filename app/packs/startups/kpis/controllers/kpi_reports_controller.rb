@@ -340,7 +340,8 @@ class KpiReportsController < ApplicationController
     # Force recomputation by resetting autofill_completed if necessary
     # and ensuring the job picks up all reports for this portfolio company
     KpiReport.where(portfolio_company_id: @kpi_report.portfolio_company_id).update_all(autofill_completed: false)
-    KpiCumulateJob.perform_later(@kpi_report.portfolio_company_id, user_id: current_user.id, force: true)
+    # compute_percentage_change: the cleanup can add or remove YTD rows, and a YTD change reads the row a year earlier (E32)
+    KpiCumulateJob.perform_later(@kpi_report.portfolio_company_id, user_id: current_user.id, force: true, compute_percentage_change: true)
     redirect_to request.referer || kpi_report_url(@kpi_report), notice: "Recompute cumulative and forward fill started."
   end
   # rubocop:enable Rails/SkipsModelValidations

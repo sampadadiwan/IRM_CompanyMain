@@ -17,7 +17,7 @@
     <%= kpi.display_value.present? ? kpi.display_value : kpi.value %>
   </td>
   <td>
-    <%= kpi.percentage_change %> %
+    <%= kpi_percentage_display(kpi) %>
   </td>
   <td>
     <%= kpi.notes %>

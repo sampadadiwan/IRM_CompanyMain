@@ -121,10 +121,13 @@ class PortfolioReportSablonWordService
                          .where(as_of: ..@end_date)
                          .order(:as_of)
 
+    # Approved KPIs only, indexed once per report, as in the generator (an unapproved KPI reads as missing)
+    kpis_by_report = kpi_reports.to_h { |kr| [kr.id, kr.report_kpis_by_name] }
+
     @portco.investor_kpi_mappings.where(show_in_report: true).map do |ikm|
       row = { "header" => ikm.standard_kpi_name }
       kpi_reports.each do |kr|
-        kpi = kr.kpis.show_in_report.find { |k| k.name.casecmp?(ikm.standard_kpi_name) }
+        kpi = kpis_by_report.dig(kr.id, ikm.standard_kpi_name.downcase)
         row[kr.label] = kpi ? number_with_delimiter(kpi.value.round(2)) : "N/A"
       end
       OpenStruct.new(row)

@@ -326,6 +326,17 @@ class KpiReport < ApplicationRecord
     end
   end
 
+  # The approved KPIs a portfolio report shows, keyed by lower-cased name; the first one wins. An unapproved KPI is
+  # treated as missing (E29). Reads the loaded kpis and their mappings, so a caller that preloads them
+  # (includes(kpis: :investor_kpi_mapping)) runs no query per report.
+  def report_kpis_by_name
+    kpis.each_with_object({}) do |kpi, index|
+      next unless kpi.approved? && kpi.investor_kpi_mapping&.show_in_report
+
+      index[kpi.name.downcase] ||= kpi
+    end
+  end
+
   # after_commit :compute_common_size_kpi, on: %i[create update]
 
   def compute_common_size_kpi

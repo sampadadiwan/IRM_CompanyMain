@@ -87,7 +87,8 @@ Given('{string} has an approved cumulated KPI with nil investor_kpi_mapping_id')
     kpi_report: quarter_report, name: 'Revenue',
     value: 300_000_000, entity: pc.entity,
     portfolio_company_id: pc.id, status: 'approved',
-    investor_kpi_mapping_id: nil
+    investor_kpi_mapping_id: nil,
+    notes: 'Auto-generated Quarter cumulative'
   )
   @cumulated_kpi.save!(validate: false)
 end

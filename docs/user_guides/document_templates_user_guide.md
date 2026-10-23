@@ -134,7 +134,7 @@ Templates use Word **merge fields**. In Word choose **Insert → Quick Parts →
 | Show a block only sometimes | `…:if` … `…:endIf` | `investor_kyc.custom_fields.compare_mode_of_holding_eq_Joint:if` … `investor_kyc.custom_fields.compare_mode_of_holding_eq_Joint:endIf` |
 | Insert an image | `@name:start` and `@name:end` around a placeholder picture | `@investor_signature:start` … `@investor_signature:end` |
 
-Other helpers work the same way: `sum_` / `sum_amt_` total a column over a list, `where_<field>_eq_<value>` filters a list, `list_` joins a list of values with semicolons, `boolean_custom_field_<name>` turns a Yes/No custom field into a condition, and `compare_<field>_eq_` / `_noteq_` / `_gt_` / `_lt_` build conditions.
+Other helpers work the same way: `sum_` / `sum_amt_` total a column over a list, `where_<field>_eq_<value>` filters a list, `list_` joins a list of values with semicolons, `div_N_` / `mult_N_` divide or multiply a number by 10^N (`=capital_commitment.div_7_committed_amount` shows crores; `=kpi.mult_2_q1_fy25` shows a stored 0.12 as 12), `boolean_custom_field_<name>` turns a Yes/No custom field into a condition, and `compare_<field>_eq_` / `_noteq_` / `_gt_` / `_lt_` build conditions.
 
 ### Which data each template can use
 

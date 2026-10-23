@@ -4,6 +4,10 @@ class PortfolioReportDocGenerator
 
   attr_accessor :working_dir
 
+  # Tags an Actual column is compared with. Each adds a "<label>_vs_<tag>_percent" field; adding "IC" here gives
+  # "<label>_vs_ic_percent" with no other change.
+  COMPARATOR_TAGS = ["Budget"].freeze
+
   def initialize(portfolio_company, template, start_date, end_date, user_id, options: nil)
     @portfolio_company = portfolio_company
     @template = template
@@ -65,8 +69,8 @@ class PortfolioReportDocGenerator
     report_data = OpenStruct.new(normalized_hash)
 
     context = {}
-    context.store  :portfolio_report_extract, portfolio_report_extract
-    context.store  :report_data, report_data
+    context.store :portfolio_report_extract, portfolio_report_extract
+    context.store :report_data, report_data
 
     # When the user opted in, expose the extract's source documents so the template can render them
     # as an audits section (loop `audits`; image-type docs embed via the same add_image path).
@@ -127,15 +131,22 @@ class PortfolioReportDocGenerator
                                    .includes(kpis: :investor_kpi_mapping)
                                    .where(as_of: ..end_date)
                                    .order(:as_of)
+                                   .to_a
 
     investor_kpi_mappings = portfolio_company.investor_kpi_mappings.where(show_in_report: true)
     investor_kpi_mappings = investor_kpi_mappings.where(category: category) if category.present?
 
+    # Built once, so no query runs per mapping per report. Approved KPIs only: an unapproved one reads as missing.
+    kpis_by_report = kpi_reports.to_h { |kr| [kr.id, kr.report_kpis_by_name] }
+    reports_by_key = kpi_reports.index_by { |kr| comparator_key(kr.period, kr.as_of, kr.tag_list) }
+
     rows = investor_kpi_mappings.map do |ikm|
-      row_data = { "header" => ikm.standard_kpi_name }
+      # data_type ("money", "numeric", "percentage") lets the template format the row; percentages are stored as fractions (0.12)
+      row_data = { "header" => ikm.standard_kpi_name, "data_type" => ikm.data_type.to_s.downcase }
+      name = ikm.standard_kpi_name.downcase
 
       kpi_reports.each do |kr|
-        kpi = kr.kpis.show_in_report.find { |k| k.name.casecmp?(ikm.standard_kpi_name) }
+        kpi = kpis_by_report.dig(kr.id, name)
         # Underscored labels so template merge fields are predictable ("q1_fy25", not "Q1 FY25"),
         # and the value is stored RAW (previously rounded + delimited here) so the template /
         # TemplateDecorator decides formatting — pre-formatting broke templates that needed the
@@ -145,6 +156,14 @@ class PortfolioReportDocGenerator
         percentage_label = "#{label}_percent"
         row_data[label] = kpi ? kpi.value : "N/A"
         row_data[percentage_label] = kpi ? kpi.percentage_change : "N/A"
+
+        # Computed here, not stored: a Budget approved after the Actual shows on the next generation (E22)
+        next unless kr.tag_list.to_s.casecmp?("Actual")
+
+        COMPARATOR_TAGS.each do |tag|
+          comparator_report = reports_by_key[comparator_key(kr.period, kr.as_of, tag)]
+          row_data["#{label}_vs_#{tag.downcase}_percent"] = percent_of(kpi, kpis_by_report.dig(comparator_report&.id, name))
+        end
       end
 
       OpenStruct.new(row_data)
@@ -154,10 +173,25 @@ class PortfolioReportDocGenerator
     rows
   end
 
+  # Period and tag are free text, so they are matched without regard to case, as the Actual check above is
+  def comparator_key(period, as_of, tag)
+    [period.to_s.downcase, as_of, tag.to_s.downcase]
+  end
+
+  # Actual as a percentage of the comparator (92 means 92%); "N/A" when either figure is missing or the comparator is zero
+  def percent_of(kpi, comparator)
+    return "N/A" if kpi.nil? || comparator.nil? || comparator.value.zero?
+
+    kpi.value / comparator.value * 100
+  end
+
   def add_fund_level_data(context, portfolio_company, _start_date, end_date)
     company_portfolio_investments = portfolio_company.portfolio_investments.where(investment_date: ..end_date).includes(:fund)
     fund_ids = company_portfolio_investments.pluck(:fund_id).uniq
     funds = Fund.where(id: fund_ids)
+    ratios = fund_ratio_values(portfolio_company, fund_ids, end_date)
+
+    add_investment_milestones(context, company_portfolio_investments)
 
     funds.each do |fund|
       # as_of recomputes and FREEZES each PI, returning a plain Array — so fmv/cost/latest below
@@ -169,7 +203,9 @@ class PortfolioReportDocGenerator
         currency: fund.currency,
         # with pis as_of, we can use sum &:
         fmv: Money.new(fund_pis.sum(&:fmv_cents), fund.currency),
-        cost_of_investment: Money.new(buys.sum(&:amount_cents), fund.currency)
+        cost_of_investment: Money.new(buys.sum(&:amount_cents), fund.currency),
+        irr: ratios.fetch([fund.id, "IRR"], "N/A"),
+        moic: ratios.fetch([fund.id, "MOIC"], "N/A")
       )
 
       context.store :"#{fund.name.parameterize.underscore}_data", TemplateDecorator.decorate(struct)
@@ -177,6 +213,30 @@ class PortfolioReportDocGenerator
       # add latest PI
       latest_pi = fund_pis.max_by(&:investment_date)
       context.store :"#{fund.name.parameterize.underscore}_latest_pi", TemplateDecorator.decorate(latest_pi)
+    end
+  end
+
+  # The company's IRR (XIRR) and MOIC in each fund, as the fund ratio runs stored them: the latest run on or before
+  # end_date, Default scenario, fund currency. Keyed [fund_id, "IRR" | "MOIC"]; a ratio that was never run is absent.
+  def fund_ratio_values(portfolio_company, fund_ids, end_date)
+    FundRatio.default
+             .where(owner_type: "Investor", owner_id: portfolio_company.id, fund_id: fund_ids, name: %w[IRR MOIC],
+                    computation_context_id: nil, end_date: ..end_date)
+             .order(end_date: :desc, id: :desc)
+             .pluck(:fund_id, :name, :value)
+             .each_with_object({}) { |(fund_id, name, value), latest| latest[[fund_id, name]] ||= value }
+  end
+
+  # Across all the company's funds: the template reads the stake custom field off the latest investment, buy or
+  # sale (latest_pi.custom_fields.stake), and the first investment date off the earliest buy
+  # (earliest_pi.investment_date). With no investment yet both are blank, so a template that reads
+  # them still renders.
+  def add_investment_milestones(context, portfolio_investments)
+    latest = portfolio_investments.reorder(investment_date: :desc, id: :desc).first
+    earliest = portfolio_investments.buys.reorder(investment_date: :asc, id: :asc).first
+
+    { latest_pi: latest, earliest_pi: earliest }.each do |key, pi|
+      context.store key, TemplateDecorator.decorate(pi || OpenStruct.new(investment_date: nil, custom_fields: OpenStruct.new))
     end
   end
 end

@@ -979,6 +979,8 @@ class KpiWorkbookReader
       original_value: original_value,
       fx_rate_used: fx_rate,
       investor_kpi_mapping_id: investor_kpi_mapping&.id,
+      # An uploaded figure is never overwritten or removed by cumulation, even once approved over a calculated row
+      source: Kpi::UPLOAD_SOURCE,
       # G29b: Col is 0-based from column A (Roo's index plus the sheet's offset); Cell is the verdict's ref
       notes: "Imported from Document #{@document&.id}, Sheet: #{sheet}, Period: #{period}, Date: #{parsed_period}, Row: #{row_index}, Col: #{col_index + @col_offset.to_i}, Cell: #{col_letter(col_index)}#{row_index}"
     )

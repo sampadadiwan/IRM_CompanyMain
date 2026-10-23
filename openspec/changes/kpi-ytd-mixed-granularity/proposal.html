@@ -1,0 +1,986 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>KPI YTD Proposal</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400&family=Public+Sans:wght@400;650;700&display=swap">
+<style>
+  /* Layout: one reading column, a contents row under the title, wide tables and diagrams scroll inside their own boxes */
+  :root {
+    --bg: #f6f8fa;
+    --surface: #ffffff;
+    --fg: #1a2330;
+    --muted: #566274;
+    --line: #dbe1e9;
+    --accent: #0a6c76;
+    --accent-soft: #e2f0f1;
+    --head-bg: #eaeff4;
+    --code-bg: #eef1f5;
+    --font-body: "Public Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #10151c; --surface: #171e28; --fg: #e5eaf1; --muted: #98a4b5; --line: #28323f;
+      --accent: #5dc1ca; --accent-soft: #15303a; --head-bg: #1d2632; --code-bg: #1c2431;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #10151c; --surface: #171e28; --fg: #e5eaf1; --muted: #98a4b5; --line: #28323f;
+    --accent: #5dc1ca; --accent-soft: #15303a; --head-bg: #1d2632; --code-bg: #1c2431;
+    color-scheme: dark;
+  }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.6;
+    padding-inline: max(16px, env(safe-area-inset-left, 0px)) max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 32px 64px;
+  }
+  .page { max-width: 880px; margin: 0 auto; min-width: 0; }
+  h1, h2, h3 { line-height: 1.25; text-wrap: balance; }
+  h1 { font-size: 1.9rem; font-weight: 700; margin: 0 0 16px; letter-spacing: -0.01em; }
+  h2 {
+    font-size: 1.4rem; font-weight: 700; margin: 48px 0 12px; padding-top: 24px;
+    border-top: 1px solid var(--line); scroll-margin-top: 16px;
+  }
+  h3 { font-size: 1.1rem; font-weight: 650; margin: 28px 0 8px; scroll-margin-top: 16px; }
+  p { margin: 0 0 12px; }
+  ul, ol { margin: 0 0 14px; padding-left: 1.3rem; }
+  li { margin: 4px 0; }
+  a { color: var(--accent); text-underline-offset: 2px; }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  hr { border: 0; border-top: 1px solid var(--line); margin: 28px 0; }
+  strong { font-weight: 650; }
+  code {
+    font-family: var(--font-mono); font-size: 0.88em; background: var(--code-bg);
+    padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere;
+  }
+  blockquote {
+    margin: 0 0 14px; padding: 10px 14px; background: var(--accent-soft);
+    border-radius: 6px; color: var(--fg);
+  }
+  blockquote p { margin: 0 0 6px; }
+  blockquote p:last-child { margin: 0; }
+  .toc {
+    display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline;
+    margin: 0 0 24px; padding: 12px 0; border-block: 1px solid var(--line); font-size: 0.88rem;
+  }
+  .toc-label {
+    font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-right: 4px;
+  }
+  .toc a { text-decoration: none; padding: 2px 8px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); color: var(--fg); }
+  .toc a:hover { border-color: var(--accent); color: var(--accent); }
+  .table-wrap, .diagram {
+    overflow-x: auto; margin: 0 0 18px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface);
+  }
+  table { border-collapse: collapse; width: 100%; font-size: 0.92rem; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; vertical-align: top; padding: 8px 12px; border-bottom: 1px solid var(--line); min-width: 90px; }
+  thead th { background: var(--head-bg); font-weight: 650; white-space: nowrap; }
+  tbody tr:last-child td { border-bottom: 0; }
+  .diagram { padding: 16px; text-align: center; }
+  .diagram pre.mermaid { margin: 0; font-family: var(--font-mono); font-size: 0.8rem; white-space: pre; text-align: left; color: var(--muted); }
+  .diagram pre.mermaid[data-processed] { text-align: center; color: inherit; font-family: inherit; }
+  .diagram svg { max-width: none; height: auto; }
+  pre.plain {
+    background: var(--code-bg); border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px;
+    overflow-x: auto; margin: 0 0 18px; font-size: 0.82rem; line-height: 1.45;
+  }
+  pre.plain code { background: none; padding: 0; font-size: inherit; overflow-wrap: normal; }
+  footer { margin-top: 56px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: 0.85rem; }
+  @media (max-width: 600px) {
+    h1 { font-size: 1.5rem; }
+    h2 { font-size: 1.2rem; }
+    body { font-size: 15px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+<main>
+<h1 id="kpi-ytd-quarter-and-year-from-mixed-monthly-and-quarterly-data--proposal">KPI YTD, Quarter and Year from Mixed Monthly and Quarterly Data — Proposal</h1>
+<nav class="toc" aria-label="On this page"><span class="toc-label">On this page</span><a href="#why">Why</a><a href="#what-changes">What Changes</a><a href="#workflow-journey">Workflow Journey</a><a href="#user-stories">User Stories</a><a href="#ui-behavior">UI Behavior</a><a href="#what-this-feature-does-not-cover">What This Feature Does NOT Cover</a><a href="#validation-rules">Validation Rules</a><a href="#behavior-rules">Behavior Rules</a><a href="#resolved-design-decisions">Resolved Design Decisions</a><a href="#capabilities">Capabilities</a><a href="#impact">Impact</a><a href="#benefits">Benefits</a><a href="#faq">FAQ</a><a href="#design-principle-for-the-next-phase">Design Principle for the Next Phase</a></nav>
+<blockquote>
+<p><strong>Audience:</strong> Business team, product, QA, support — non-technical.
+<strong>New to this? Start with the <a href="#workflow-journey">Workflow Journey</a></strong> — every action, in order, from start to the outcome.</p>
+</blockquote>
+<blockquote>
+<p><strong>Planning phase — no code changes.</strong> This document proposes and explains the change. Do not
+edit application code while writing it; implementation happens later, in the tasks phase.</p>
+</blockquote>
+<hr />
+<h2 id="why">Why</h2>
+<p>A portfolio company uploaded its Q1 as one quarterly figure and then July and August as monthly figures. The
+platform ignored the Q1 figure when building &quot;year to date&quot; (YTD), so July YTD showed July alone and August YTD showed
+July + August. It also produced a September quarter figure from only two months, treating the missing month as zero.
+Fund managers read these numbers as real, so they are wrong and misleading.</p>
+<p>Two things read these figures downstream and are wrong or missing today, so they are fixed in the same change:</p>
+<ul>
+<li>The change shown next to a YTD figure compares it with the <strong>previous month's YTD</strong> (June YTD against May YTD), not
+with the same point <strong>one year earlier</strong>. A YTD year-over-year change is meaningless when measured that way.</li>
+<li>The Word portfolio report has no way to show <strong>Actual against Budget</strong> (for a month, quarter, YTD or year), so
+authors compute it by hand.</li>
+</ul>
+<h2 id="what-changes">What Changes</h2>
+<ul>
+<li><strong>YTD uses whatever granularity exists.</strong> YTD at any month end is everything from the start of the fiscal year up to
+that date, built from quarter figures where a quarter was uploaded as a quarter and from monthly figures otherwise.
+June 2026 YTD equals Q1 2026 (India fiscal year, April to March).</li>
+<li><strong>A gap stops YTD.</strong> If a month is missing and no quarter figure covers it, no YTD is shown from that month to the end
+of that fiscal year. A missing month is never treated as zero. A later quarter figure that covers the gap lets YTD
+resume.</li>
+<li><strong>Quarter and Year are only calculated from complete data.</strong> A calculated Quarter needs all 3 months. A calculated
+Year needs all 4 quarters covered. With July and August but no September, no September quarter is produced.</li>
+<li><strong>Uploaded quarter figures are never overwritten.</strong> A quarter that someone uploaded stays as uploaded. Only figures
+the platform calculated are recalculated.</li>
+<li><strong>Stale calculated figures are removed.</strong> If a calculated Quarter/YTD/Year no longer qualifies (for example the
+September quarter above, or after a month is un-approved), the platform removes it. Figures a person entered are
+never removed.</li>
+<li><strong>Forward-fill KPIs (balances such as cash) carry the latest balance instead of adding.</strong> A balance is a snapshot,
+so adding months together would be meaningless (cash of 10 in June and 12 in July is not 22). Its YTD at a date is the
+balance at that date, which equals that month's own value; this is how forward fill already works. A KPI mapped to
+&quot;Cumulate&quot; (revenue) is different: its YTD is the running total and differs from the month. A balance's YTD does not
+need the earlier months to exist. A Quarter is shown only when all 3 months exist, and a
+Year only when all 4 quarters are covered.</li>
+<li><strong>One definition of the fiscal year</strong> is used everywhere: the portfolio company's own setting, then the fund's
+setting, then the regional default (April for India, January for US). Until now the calculation ignored the company
+and fund settings and always used the regional default, so a company with a different fiscal year start will see its
+YTD, Quarter and Year figures rebuilt on its own fiscal year.</li>
+<li><strong>One calculation at a time per company.</strong> If two approvals for the same company arrive together, the second waits
+for the first, so the final figures always reflect everything approved.</li>
+<li><strong>An uploaded figure replaces a calculated one for good.</strong> If a person uploads and approves a Quarter, YTD or Year
+figure where the system had calculated one, it is treated as uploaded from then on and is never recalculated or
+removed.</li>
+<li><strong>YTD change is year over year.</strong> The percentage change on a YTD figure compares it with the YTD figure of the same
+series dated exactly one year earlier (30 Jun 2026 against 30 Jun 2025). If there is no such figure, or it is zero,
+the change is empty (&quot;N/A&quot;); the system never falls back to an earlier month. Month, Quarter and Year figures keep
+comparing with the previous figure of their series (month on month, quarter on quarter). Existing data is corrected by
+the existing percentage-change recompute, which &quot;Recompute Cumulative&quot; now runs as well. A change too large to store
+(above 9,999.99%) is left empty. An empty change shows &quot;-&quot; in the grid and never breaks a colour threshold.</li>
+<li><strong>Actual against Budget in the portfolio report.</strong> For every Actual figure the report also offers
+&quot;Actual as a percentage of Budget&quot; for the same date and period (Actual ÷ Budget × 100, so 92 means 92%). On a YTD
+column this is YTD Actual against YTD Budget; on a Quarter column it is Quarter Actual against Quarter Budget. It is
+empty (&quot;N/A&quot;) when there is no approved Budget figure or Budget is zero. Only approved figures count, on both sides;
+an unapproved Actual or Budget is treated as missing. It is calculated when the report is generated and is
+not stored, so approving a Budget later never leaves it stale. Budget is the only comparator now; the comparator list
+is built so another tag (for example IC) can be added without reshaping the report.</li>
+<li><strong>The Word report uses approved KPIs only.</strong> The report's KPI rows (the main list and the per-category lists) take
+only approved figures; an unapproved figure shows &quot;N/A&quot; like a missing one. The same rule applies to the Word export
+of an AI-drafted report, which mirrors the generator. The KPI screens still show unapproved figures, because
+reviewers need to see them there.</li>
+<li><strong>BREAKING (behaviour):</strong> a Quarter figure built from only 1 or 2 months is no longer produced. Existing scenarios
+that relied on partial-quarter totals change.</li>
+<li><strong>BREAKING (behaviour):</strong> the percentage change on a YTD figure changes meaning (previous month becomes the same date
+one year earlier). Values already shown in the grid and used for the red/green thresholds change after the recompute.</li>
+</ul>
+<h3 id="flow-diagram">Flow Diagram</h3>
+<p>Before: YTD ignores the quarter figure, and a partial quarter is totalled.</p>
+<div class="diagram"><pre class="mermaid">flowchart LR
+    A["Q1 is uploaded as a quarter.&lt;br/&gt;Jul and Aug are uploaded as months."] --&gt; B["YTD adds up the months only&lt;br/&gt;and ignores the Q1 figure."]
+    B --&gt; C["Jul YTD shows Jul alone.&lt;br/&gt;Aug YTD shows Jul + Aug."]
+    A --&gt; D["A Sep quarter is built from&lt;br/&gt;Jul + Aug + zero."]
+    classDef bad fill:#fdecea,stroke:#c62828,color:#000
+    class C,D bad
+</pre></div>
+<p>After: YTD walks the fiscal year, and partial quarters are not built.</p>
+<div class="diagram"><pre class="mermaid">flowchart LR
+    A["Q1 is uploaded as a quarter.&lt;br/&gt;Jul and Aug are uploaded as months."] --&gt; B["The platform walks the fiscal year,&lt;br/&gt;quarter by quarter, then month by month."]
+    B --&gt; C["Jun YTD = Q1&lt;br/&gt;Jul YTD = Q1 + Jul&lt;br/&gt;Aug YTD = Q1 + Jul + Aug"]
+    B --&gt; D["No Sep quarter is built,&lt;br/&gt;because September is missing."]
+    classDef good fill:#d4edda,stroke:#2e7d32,color:#000
+    class C,D good
+</pre></div>
+<p>Before: the YTD change compares with last month, and the report has no Actual against Budget.</p>
+<div class="diagram"><pre class="mermaid">flowchart LR
+    A["Change next to&lt;br/&gt;the Jun-26 YTD figure"] -- "is measured against" --&gt; B["May-26 YTD&lt;br/&gt;(the previous month)"]
+    C["Word report"] -- "shows" --&gt; D["Actual and Budget side by side.&lt;br/&gt;The author divides them by hand."]
+    classDef bad fill:#fdecea,stroke:#c62828,color:#000
+    class B,D bad
+</pre></div>
+<p>After: the YTD change compares with a year earlier, and the report carries Actual against Budget.</p>
+<div class="diagram"><pre class="mermaid">flowchart LR
+    A["Change next to&lt;br/&gt;the Jun-26 YTD figure"] -- "is measured against" --&gt; B["Jun-25 YTD&lt;br/&gt;(one year earlier)"]
+    C["Word report"] -- "shows" --&gt; D["Jun-26 YTD Actual&lt;br/&gt;as a % of Jun-26 YTD Budget"]
+    classDef good fill:#d4edda,stroke:#2e7d32,color:#000
+    class B,D good
+</pre></div>
+<hr />
+<h2 id="workflow-journey">Workflow Journey</h2>
+<h3 id="who-is-involved">Who is involved</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Person</th>
+<th>Role</th>
+<th>What they do in the journey</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Meera</td>
+<td>Fund manager at the investor</td>
+<td>Uploads the company's KPIs, approves them, reads the KPI grid</td>
+</tr>
+<tr>
+<td>Ayati Devices (portfolio company)</td>
+<td>Reports Revenue</td>
+<td>Provided a Q1 total and then monthly figures</td>
+</tr>
+</tbody>
+</table>
+</div><h3 id="the-journey-on-one-page">The journey on one page</h3>
+<div class="diagram"><pre class="mermaid">flowchart TD
+    subgraph P0["Before you start"]
+        Z1["The Revenue KPI is set to Cumulate"]
+        Z2["The fiscal year start is known (April)"]
+    end
+    subgraph PA["Part A: upload and approve"]
+        A1["A1 Upload Q1 as a Quarter figure"] --&gt; A2["A2 Upload Jul and Aug as Month figures"]
+        A2 --&gt; A3["A3 Approve the figures"]
+    end
+    subgraph PB["Part B: the platform calculates"]
+        B1["B1 Settle the quarters&lt;br/&gt;(only complete quarters count)"] --&gt; B2["B2 Walk the fiscal year to work out YTD"]
+        B2 --&gt; B3{"B3 Is a month missing?"}
+        B3 -- "yes" --&gt; B4["B4 Stop the walk at the gap&lt;br/&gt;(figures before the gap still count)"]
+        B3 -- "no" --&gt; B5["B5 Save the figures: add missing,&lt;br/&gt;fix wrong, delete stale"]
+        B4 --&gt; B5
+    end
+    subgraph PC["Part C: if something changes later"]
+        C1["C1 Upload September"] --&gt; C2["C2 Approve it"] --&gt; B1
+    end
+    subgraph PD["Part D: read the comparisons"]
+        D1["D1 After saving, percentage changes are recomputed&lt;br/&gt;(YTD against the same date last year)"] --&gt; D2["D2 Generate the portfolio report"]
+        D2 --&gt; D3["D3 Actual as a % of Budget is&lt;br/&gt;calculated while the report is generated"]
+    end
+    P0 --&gt; A1
+    A3 --&gt; B1
+    B5 --&gt; D1
+    classDef once fill:#e3f2fd,stroke:#1565c0,color:#000
+    classDef every fill:#d4edda,stroke:#2e7d32,color:#000
+    class A1,A2,A3 once
+    class B1,B2,B3,B4,B5,D1,D2,D3 every
+</pre></div>
+<h3 id="before-you-start">Before you start</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Needed</th>
+<th>Why</th>
+<th>Where it comes from</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Revenue mapped with &quot;Cumulate&quot;</td>
+<td>Only cumulate and forward-fill KPIs are calculated</td>
+<td>KPI mapping for the company</td>
+</tr>
+<tr>
+<td>Fiscal year start</td>
+<td>Decides which months make a quarter</td>
+<td>Company setting, then fund setting, then regional default</td>
+</tr>
+<tr>
+<td>Budget figures approved for the same dates (only for Actual against Budget)</td>
+<td>The Budget side of the comparison</td>
+<td>KPI upload with the Budget tag</td>
+</tr>
+<tr>
+<td>A report template that uses the new &quot;against Budget&quot; fields (only for the report)</td>
+<td>Printing the values</td>
+<td>Template author, provided separately</td>
+</tr>
+</tbody>
+</table>
+</div><h3 id="part-a--upload-and-approve-every-reporting-period">Part A — upload and approve (every reporting period)</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Who</th>
+<th>Where</th>
+<th>Action</th>
+<th>What the system does</th>
+<th>What you see</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A1</td>
+<td>Meera</td>
+<td>KPIs › Upload</td>
+<td>Upload Q1 2026 as a Quarter figure (period ending 30 Jun 2026)</td>
+<td>Stores it as an uploaded figure</td>
+<td>Jun 2026 Quarter column filled</td>
+</tr>
+<tr>
+<td>A2</td>
+<td>Meera</td>
+<td>KPIs › Upload</td>
+<td>Upload Jul and Aug 2026 as Month figures</td>
+<td>Stores both</td>
+<td>Jul 2026 and Aug 2026 Month columns filled</td>
+</tr>
+<tr>
+<td>A3</td>
+<td>Meera</td>
+<td>KPIs › Approve</td>
+<td>Approve the figures</td>
+<td>Starts the cumulation</td>
+<td>Notice that cumulative values are being computed</td>
+</tr>
+</tbody>
+</table>
+</div><h3 id="part-b--the-platform-calculates">Part B — the platform calculates</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Who</th>
+<th>Where</th>
+<th>Action</th>
+<th>What the system does</th>
+<th>What you see</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>B1</td>
+<td>System</td>
+<td>background</td>
+<td>Settle quarters</td>
+<td>Q1 is uploaded, so it is left alone. Q2 has only 2 of 3 months, so it is not calculated</td>
+<td>No Sep 2026 Quarter figure</td>
+</tr>
+<tr>
+<td>B2</td>
+<td>System</td>
+<td>background</td>
+<td>Walk the fiscal year</td>
+<td>Works out Jun YTD = Q1, Jul YTD = Q1 + Jul, Aug YTD = Q1 + Jul + Aug</td>
+<td>Nothing yet: the figures are worked out, not saved</td>
+</tr>
+<tr>
+<td>B3</td>
+<td>System</td>
+<td>background</td>
+<td>Check for a missing month</td>
+<td>September is missing and no Q2 figure covers it</td>
+<td>Nothing yet</td>
+</tr>
+<tr>
+<td>B4</td>
+<td>System</td>
+<td>background</td>
+<td>Stop the walk</td>
+<td>No YTD is worked out after Aug for this fiscal year; the figures before the gap still count</td>
+<td>Nothing yet</td>
+</tr>
+<tr>
+<td>B5</td>
+<td>System</td>
+<td>background</td>
+<td>Save the figures (also when there was no gap)</td>
+<td>Adds or corrects Jun, Jul and Aug YTD and removes calculated figures that no longer qualify, such as an old September Quarter</td>
+<td>YTD columns filled for Jun, Jul, Aug; no Sep YTD</td>
+</tr>
+</tbody>
+</table>
+</div><h3 id="part-c--if-something-changes-later">Part C — if something changes later</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Who</th>
+<th>Where</th>
+<th>Action</th>
+<th>What the system does</th>
+<th>What you see</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>C1</td>
+<td>Meera</td>
+<td>KPIs › Upload</td>
+<td>Upload September 2026</td>
+<td>Stores it</td>
+<td>Sep 2026 Month column filled</td>
+</tr>
+<tr>
+<td>C2</td>
+<td>Meera</td>
+<td>KPIs › Approve</td>
+<td>Approve</td>
+<td>Q2 now has 3 months, so Q2 is calculated. Sep YTD written</td>
+<td>Sep 2026 Quarter and Sep YTD appear</td>
+</tr>
+</tbody>
+</table>
+</div><h3 id="part-d--read-the-comparisons">Part D — read the comparisons</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Who</th>
+<th>Where</th>
+<th>Action</th>
+<th>What the system does</th>
+<th>What you see</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>D1</td>
+<td>System</td>
+<td>background</td>
+<td>After B5 (whether or not the walk stopped), recompute percentage changes</td>
+<td>YTD figures are compared with the YTD figure dated one year earlier; other periods with the previous figure</td>
+<td>Change next to each YTD figure is year over year; &quot;-&quot; when there is no figure a year earlier</td>
+</tr>
+<tr>
+<td>D2</td>
+<td>Meera</td>
+<td>Portfolio reports › Generate</td>
+<td>Generate the report for the company and date range</td>
+<td>Reads the same figures the report already uses</td>
+<td>Report generated notice</td>
+</tr>
+<tr>
+<td>D3</td>
+<td>Meera</td>
+<td>Documents › Portfolio Reports</td>
+<td>Open the Word file</td>
+<td>Calculates Actual ÷ Budget × 100 for each Actual column that has a Budget figure for the same date and period</td>
+<td>The &quot;against Budget&quot; fields filled where the template uses them</td>
+</tr>
+</tbody>
+</table>
+</div><h3 id="what-you-see">What you see</h3>
+<p>Revenue for Ayati Devices (India fiscal year, figures in the example are the ones from the report that raised this):</p>
+<pre class="plain"><code>                 Jun-26     Jul-26    Jul-26    Aug-26    Aug-26     Sep-26
+                 Quarter    Month     YTD       Month     YTD        Quarter
+Total Revenue    8,588,636  4,682,643 13,271,278 3,021,952 16,293,230  N/A
+                 (Q1)       (month)   Q1+Jul    (month)   Q1+Jul+Aug  (no Sep data)
+
+Arithmetic:  Jul YTD = 8,588,635.53 + 4,682,642.64 = 13,271,278.17
+             Aug YTD = 13,271,278.17 + 3,021,951.86 = 16,293,230.03
+</code></pre>
+<p>Change shown next to the YTD figure (illustrative numbers, YTD Actual):</p>
+<pre class="plain"><code>                  Jun-25 YTD   Jun-26 YTD   Change shown
+Total Revenue     7,000,000    8,588,636    +22.7 %   (against Jun-25 YTD, not May-26 YTD)
+Total Revenue     (none)       13,271,278   -         (no Jul-25 YTD, so no change; never against Jun-26)
+</code></pre>
+<p>Actual against Budget in the Word report (illustrative numbers):</p>
+<pre class="plain"><code>                  Jun-26 YTD   Jun-26 YTD   Actual as % of Budget
+                  Actual       Budget
+Total Revenue     8,588,636    9,336,561    92        (8,588,636 / 9,336,561 x 100)
+Total Revenue     8,588,636    (none)       N/A
+Total Revenue     8,588,636    0            N/A
+</code></pre>
+<h3 id="what-goes-wrong">What goes wrong</h3>
+<p>Aug 2026 is missing but Sep 2026 is uploaded. Jul YTD is shown (Q1 + Jul). Aug YTD and Sep YTD are not shown, and the
+Sep quarter is not calculated. The fix is to upload Aug, or to upload the Q2 total as a quarter figure; after approval
+the missing figures appear.</p>
+<h3 id="summary-the-minimum-actions">Summary: the minimum actions</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Action</th>
+<th>Who</th>
+<th>How often</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Upload the period's figures (month or quarter)</td>
+<td>Meera</td>
+<td>Every reporting period</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Approve them</td>
+<td>Meera</td>
+<td>Every reporting period</td>
+</tr>
+</tbody>
+</table>
+</div><hr />
+<h2 id="user-stories">User Stories</h2>
+<h3 id="us-1-ytd-includes-an-uploaded-quarter">US-1: YTD includes an uploaded quarter</h3>
+<p><strong>As a</strong> fund manager, <strong>I want</strong> YTD to include a quarter that was uploaded as a quarter, <strong>So that</strong> July YTD is
+Q1 plus July.</p>
+<p><strong>Acceptance criteria:</strong></p>
+<ul>
+<li>With Q1 (Apr to Jun) uploaded and July uploaded, Jun YTD equals Q1 and Jul YTD equals Q1 plus July.</li>
+<li>Aug YTD equals Q1 plus July plus August.</li>
+</ul>
+<h3 id="us-2-no-guessing-for-missing-months">US-2: No guessing for missing months</h3>
+<p><strong>As a</strong> fund manager, <strong>I want</strong> missing periods never to be treated as zero, <strong>So that</strong> no quarter, YTD or year
+figure understates the truth.</p>
+<p><strong>Acceptance criteria:</strong></p>
+<ul>
+<li>July and August without September produces no September quarter.</li>
+<li>A missing month stops YTD for the rest of that fiscal year unless a quarter figure covers the gap.</li>
+</ul>
+<h3 id="us-3-uploaded-figures-win">US-3: Uploaded figures win</h3>
+<p><strong>As a</strong> fund manager, <strong>I want</strong> figures I or the company uploaded never to be replaced by calculated ones, <strong>So
+that</strong> the reported number is the one on record.</p>
+<p><strong>Acceptance criteria:</strong></p>
+<ul>
+<li>An uploaded Quarter figure keeps its value even when all 3 months exist.</li>
+<li>Only calculated figures are recalculated or removed.</li>
+</ul>
+<h3 id="us-4-wrong-figures-clean-themselves-up">US-4: Wrong figures clean themselves up</h3>
+<p><strong>As a</strong> fund manager, <strong>I want</strong> wrongly calculated figures to be removed when they no longer qualify, <strong>So that</strong>
+the grid does not keep showing the earlier mistake.</p>
+<p><strong>Acceptance criteria:</strong></p>
+<ul>
+<li>A calculated Quarter, YTD or Year that no longer qualifies disappears after the next approval or recompute.</li>
+</ul>
+<h3 id="us-5-balances-show-the-latest-value">US-5: Balances show the latest value</h3>
+<p><strong>As a</strong> fund manager, <strong>I want</strong> balance-type KPIs (forward fill) to show the latest balance, <strong>So that</strong>
+a quarter-end balance is only shown when the quarter is complete, and a missing month does not hide the others.</p>
+<p><strong>Acceptance criteria:</strong></p>
+<ul>
+<li>A Quarter balance is shown only when all 3 months exist, and equals the last month's value.</li>
+<li>YTD for a balance equals the balance at that date, even when an earlier month is missing.</li>
+</ul>
+<h3 id="us-6-ytd-change-is-year-over-year">US-6: YTD change is year over year</h3>
+<p><strong>As a</strong> fund manager, <strong>I want</strong> the change shown next to a YTD figure to compare it with the same date a year
+earlier, <strong>So that</strong> I read real growth and not just the month's addition to the running total.</p>
+<p><strong>Acceptance criteria:</strong></p>
+<ul>
+<li>Jun-26 YTD is compared with Jun-25 YTD of the same KPI and tag.</li>
+<li>With no figure a year earlier, or a year-earlier figure of zero, the change is empty; it is never taken against an
+earlier month.</li>
+<li>Month figures still compare with the previous month and Quarter figures with the previous quarter.</li>
+<li>Existing YTD changes are corrected by the percentage-change recompute.</li>
+</ul>
+<h3 id="us-7-actual-against-budget-in-the-report">US-7: Actual against Budget in the report</h3>
+<p><strong>As a</strong> fund manager, <strong>I want</strong> the portfolio report to give Actual as a percentage of Budget for the same date and
+period, <strong>So that</strong> I do not divide by hand.</p>
+<p><strong>Acceptance criteria:</strong></p>
+<ul>
+<li>For each Actual column the report offers Actual ÷ Budget × 100 against the Budget column of the same period and date
+(YTD against YTD, Quarter against Quarter).</li>
+<li>It is &quot;N/A&quot; when the Budget figure is missing, unapproved or zero, and when the Actual figure is unapproved.</li>
+<li>It always reflects the Budget approved at the time the report is generated.</li>
+<li>The report's KPI rows use approved figures only: an unapproved figure shows &quot;N/A&quot; in <code>&lt;label&gt;</code> and <code>&lt;label&gt;_percent</code>
+as well.</li>
+<li>Otherwise existing report fields are unchanged for approved figures.</li>
+</ul>
+<hr />
+<h2 id="ui-behavior">UI Behavior</h2>
+<h3 id="kpi-grid-quarter-month-ytd-columns">KPI grid (Quarter, Month, YTD columns)</h3>
+<pre class="plain"><code>Period       | Jun-26 Quarter | Jul-26 YTD  | Aug-26 YTD  | Sep-26 Quarter
+Revenue      | 8,588,636      | 13,271,278  | 16,293,230  | N/A
+</code></pre>
+<p><strong>Behavior notes:</strong></p>
+<ul>
+<li>No screen is added or changed. Values and N/A cells in the existing grid change.</li>
+<li>A column for a period that has no figures left shows N/A.</li>
+<li>The existing notice &quot;cumulative values are being computed&quot; after approval is unchanged.</li>
+<li>The small change figure next to each YTD value (and its red/green colour against the mapping thresholds) now reads
+year over year; it shows &quot;-&quot; when there is nothing a year earlier to compare with.</li>
+</ul>
+<h3 id="word-portfolio-report">Word portfolio report</h3>
+<p>No screen changes. Each column's existing fields (<code>&lt;label&gt;</code> and <code>&lt;label&gt;_percent</code>) are unchanged for approved figures
+and show &quot;N/A&quot; for an unapproved one. A new field
+<code>&lt;label&gt;_vs_budget_percent</code> (for example <code>ytd_06_26_actual_vs_budget_percent</code>) holds Actual ÷ Budget × 100 or &quot;N/A&quot;.
+Templates that do not use it render exactly as before.</p>
+<hr />
+<h2 id="what-this-feature-does-not-cover">What This Feature Does NOT Cover</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Excluded</th>
+<th>Covered In</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>KPIs set to &quot;Compute&quot; (formula) mode</td>
+<td>Unchanged; they still read the cumulated components</td>
+</tr>
+<tr>
+<td>Half-year periods</td>
+<td>Not produced today; unchanged</td>
+</tr>
+<tr>
+<td>Removing the empty period column left behind after a calculated figure is removed</td>
+<td>Not changed; the column shows N/A</td>
+</tr>
+<tr>
+<td>Changing the wording of the approval notice</td>
+<td>Unchanged</td>
+</tr>
+<tr>
+<td>Changing how Month, Quarter or Year percentage changes are calculated</td>
+<td>Unchanged (previous figure of the series)</td>
+</tr>
+<tr>
+<td>Dividing any KPI by any other KPI (ratios such as margins)</td>
+<td>Not covered; no ratio is requested now</td>
+</tr>
+<tr>
+<td>Comparators other than Budget (for example IC)</td>
+<td>Later; the comparator list is built to take another tag, with the template updated then</td>
+</tr>
+<tr>
+<td>Actual against Budget on screen</td>
+<td>Not changed here. The KPI Budget View already shows tag ÷ tag × 100 (its &quot;achievement&quot; column); this change only adds the Word report field</td>
+</tr>
+<tr>
+<td>Storing Actual against Budget</td>
+<td>Not stored; calculated while generating the report</td>
+</tr>
+</tbody>
+</table>
+</div><hr />
+<h2 id="validation-rules">Validation Rules</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Rule</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Fiscal year start</td>
+<td>Portfolio company setting, then fund setting, then regional default</td>
+<td>April (India), January (US)</td>
+</tr>
+<tr>
+<td>Calculated Quarter</td>
+<td>Needs all 3 months approved for that tag (Actual, Budget, IC)</td>
+<td>Not produced</td>
+</tr>
+<tr>
+<td>Calculated Year</td>
+<td>Needs all 4 quarters covered (uploaded or calculated)</td>
+<td>Not produced</td>
+</tr>
+<tr>
+<td>Calculated figure dated in the future (Actual only)</td>
+<td>Not produced</td>
+<td>Budget and IC may be future-dated</td>
+</tr>
+<tr>
+<td>YTD percentage change</td>
+<td>Against the YTD figure of the same KPI and tag dated one year earlier (month end to month end); empty when there is none or it is zero</td>
+<td>Empty</td>
+</tr>
+<tr>
+<td>Month, Quarter, Year percentage change</td>
+<td>Against the previous figure of the same KPI, period and tag</td>
+<td>Unchanged</td>
+</tr>
+<tr>
+<td>Actual as % of Budget</td>
+<td>Actual ÷ Budget × 100, same KPI, same period, same date; Actual tag only; approved figures only</td>
+<td>&quot;N/A&quot; when either figure is missing or unapproved, or Budget is zero</td>
+</tr>
+</tbody>
+</table>
+</div><hr />
+<h2 id="behavior-rules">Behavior Rules</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>What User Sees</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Q1 + Jul + Aug, no Sep</td>
+<td>Jun, Jul, Aug YTD filled; no Sep Quarter, no Sep YTD</td>
+</tr>
+<tr>
+<td>Q1 + Jul + Sep, Aug missing</td>
+<td>Jun, Jul YTD only; nothing from Aug on</td>
+</tr>
+<tr>
+<td>Q1 and Q2 uploaded as quarters, no months</td>
+<td>Jun YTD = Q1, Sep YTD = Q1 + Q2</td>
+</tr>
+<tr>
+<td>Q1, Q2 uploaded; Oct and Dec months; Nov missing; Q3 uploaded as a quarter</td>
+<td>Oct YTD = Q1 + Q2 + Oct; no Nov YTD; Dec YTD = Q1 + Q2 + Q3</td>
+</tr>
+<tr>
+<td>Month and uploaded quarter both present and disagree</td>
+<td>Month YTD follows the months; the Quarter column keeps the uploaded figure</td>
+</tr>
+<tr>
+<td>An approved month is un-approved</td>
+<td>Dependent calculated Quarter/YTD/Year disappear on next recompute</td>
+</tr>
+<tr>
+<td>Uploaded quarter figure present</td>
+<td>Never overwritten or removed</td>
+</tr>
+<tr>
+<td>Balance (forward-fill) KPI with 2 of 3 months</td>
+<td>No Quarter figure; YTD shows the latest month</td>
+</tr>
+<tr>
+<td>Balance (forward-fill) KPI with a month missing in the middle</td>
+<td>The months that exist keep their own balance as YTD; no Quarter for the incomplete quarter</td>
+</tr>
+<tr>
+<td>Balance (forward-fill) KPI with a quarter balance and no month at that quarter end</td>
+<td>YTD equals that quarter's balance (not added to earlier quarters)</td>
+</tr>
+<tr>
+<td>Jun-26 YTD with Jun-25 YTD present</td>
+<td>Change = Jun-26 YTD against Jun-25 YTD</td>
+</tr>
+<tr>
+<td>Jun-26 YTD but no Jun-25 YTD</td>
+<td>Change empty; not taken against May-26 or any other figure</td>
+</tr>
+<tr>
+<td>Jun-25 YTD is removed by the cleanup</td>
+<td>Jun-26 YTD change becomes empty on the next recompute</td>
+</tr>
+<tr>
+<td>Budget for the date is missing, unapproved or zero</td>
+<td>Actual as % of Budget is &quot;N/A&quot;</td>
+</tr>
+<tr>
+<td>Actual figure is unapproved</td>
+<td>Actual as % of Budget is &quot;N/A&quot;</td>
+</tr>
+<tr>
+<td>Any KPI figure is unapproved when the report is generated</td>
+<td>Its <code>&lt;label&gt;</code> and <code>&lt;label&gt;_percent</code> show &quot;N/A&quot;, as if missing</td>
+</tr>
+<tr>
+<td>Budget approved after the Actual</td>
+<td>The next generated report shows it; nothing needs recomputing</td>
+</tr>
+<tr>
+<td>Budget and IC columns</td>
+<td>No &quot;against Budget&quot; field of their own</td>
+</tr>
+</tbody>
+</table>
+</div><hr />
+<h2 id="resolved-design-decisions">Resolved Design Decisions</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Decision</th>
+<th>Resolution</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Existing wrongly calculated rows</td>
+<td>Removed automatically on the next cumulation (calculated rows only)</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Forward fill</td>
+<td>No Quarter unless all 3 months exist; YTD per month with no gap stop</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Order of work</td>
+<td>Quarters are settled first, then YTD and Year</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Months vs uploaded quarter for YTD</td>
+<td>Months are used first; uploaded quarters fill the gaps</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Which fiscal year definition</td>
+<td>Only the shared fiscal-year resolver (portfolio company, then fund, then region)</td>
+</tr>
+<tr>
+<td>6</td>
+<td>How calculated rows are told apart from uploaded ones</td>
+<td>An explicit marker on the figure, not the note text (see design)</td>
+</tr>
+<tr>
+<td>7</td>
+<td>YTD change comparator</td>
+<td>Same series one year earlier; empty if absent or zero; no fallback to an earlier month</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Where the YTD change is fixed</td>
+<td>At the source, in the stored percentage change, so the grid and thresholds are corrected too; existing data fixed by the recompute</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Where Actual against Budget lives</td>
+<td>Calculated in memory when the report is generated, not stored, so it cannot go stale</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Actual against Budget formula and scale</td>
+<td>Actual ÷ Budget × 100 (92 = 92%), not (Actual − Budget) ÷ Budget</td>
+</tr>
+<tr>
+<td>11</td>
+<td>Which periods get Actual against Budget</td>
+<td>Every Actual column; the period decides the meaning (YTD, Quarter, Month, Year)</td>
+</tr>
+<tr>
+<td>12</td>
+<td>Other comparators and KPI-by-KPI division</td>
+<td>Not now; the comparator tag list is a small constant, with no template parsing</td>
+</tr>
+<tr>
+<td>13</td>
+<td>How this is scoped</td>
+<td>Folded into this change as its own capability so it cannot block the YTD work</td>
+</tr>
+<tr>
+<td>14</td>
+<td>Unapproved figures in Actual against Budget</td>
+<td>Never counted: both Actual and Budget must be approved, as everywhere else</td>
+</tr>
+<tr>
+<td>15</td>
+<td>Unapproved figures in the report's KPI rows</td>
+<td>The report generator and its Word-export mirror use approved KPIs only; the KPI screens keep showing unapproved figures</td>
+</tr>
+</tbody>
+</table>
+</div><hr />
+<h2 id="capabilities">Capabilities</h2>
+<h3 id="new-capabilities">New Capabilities</h3>
+<ul>
+<li><code>startups/kpi-cumulation</code>: how Quarter, YTD and Year figures are calculated from monthly and quarterly KPI data, when they are skipped, and when calculated figures are removed; and how the percentage change on a YTD figure is measured (against the same date a year earlier).</li>
+<li><code>funds/portfolio-report-kpi-comparison</code>: the Actual-as-a-percentage-of-Budget field the Word portfolio report offers for each Actual KPI column.</li>
+</ul>
+<h3 id="modified-capabilities">Modified Capabilities</h3>
+<p>&lt;!-- None. Cumulation is not described by an existing main spec. --&gt;</p>
+<hr />
+<h2 id="impact">Impact</h2>
+<ul>
+<li>The KPI cumulation logic for cumulate and forward-fill KPIs (portfolio company KPI pack).</li>
+<li>The KPI grid: Quarter, YTD and Year cells change value or become N/A.</li>
+<li>Existing cumulation scenarios that assumed partial-quarter totals.</li>
+<li>Data: wrongly calculated rows in existing companies are removed on the next cumulation or recompute.</li>
+<li>Companies whose fiscal year start is set on the company or in the fund settings (and differs from the regional
+default) get their YTD and Year figures rebuilt on that fiscal year; the first run is the test investor.</li>
+<li>The stored percentage change of YTD figures changes meaning; existing values are corrected by the existing
+percentage-change recompute (no schema change).</li>
+<li>Other places that show the stored percentage change (KPI show page and export, tear sheet data, AI portfolio
+assistant data, and the change figure beside each KPI in the Word portfolio report) show the new YTD meaning too;
+none of their code changes. A YTD figure with no year-earlier figure has an empty change there.</li>
+<li>The Word portfolio report (and the Word export of an AI-drafted report) stops showing unapproved KPI figures; they
+show &quot;N/A&quot;.</li>
+<li>The Word portfolio report generator gains one field per Actual KPI column. Its KPI-row building also stops running a
+query per KPI mapping per report.</li>
+</ul>
+<hr />
+<h2 id="benefits">Benefits</h2>
+<ol>
+<li>YTD matches what the company actually reported, whether quarterly, monthly or mixed.</li>
+<li>No more silent zeros: a number is shown only when the data behind it is complete.</li>
+<li>Uploaded numbers are never replaced by calculated ones.</li>
+<li>Earlier wrong figures correct themselves.</li>
+<li>The change next to a YTD figure shows real year-over-year growth.</li>
+<li>Actual against Budget is in the report, always current, with no hand calculation.</li>
+</ol>
+<hr />
+<h2 id="faq">FAQ</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Question</th>
+<th>Answer</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Who sees this?</td>
+<td>Anyone who reads the KPI grid; no new screens.</td>
+</tr>
+<tr>
+<td>What happens to figures that are already wrong?</td>
+<td>Calculated ones are removed on the next approval or recompute, and rebuilt if they qualify.</td>
+</tr>
+<tr>
+<td>Will uploaded figures change?</td>
+<td>No. Uploaded Quarter, YTD and Year figures are never changed or removed.</td>
+</tr>
+<tr>
+<td>Why is September YTD missing when I uploaded September?</td>
+<td>A month before it is missing and nothing covers it. Upload the missing month or the quarter.</td>
+</tr>
+<tr>
+<td>Does this change notifications or billing?</td>
+<td>No.</td>
+</tr>
+<tr>
+<td>Does this affect Budget or IC figures?</td>
+<td>Yes, the same completeness rules apply to each tag, and each tag's YTD change is measured against its own tag a year earlier.</td>
+</tr>
+<tr>
+<td>Why is the change next to my YTD figure now &quot;-&quot;?</td>
+<td>There is no YTD figure of that KPI and tag dated one year earlier, or it is zero. It is not compared with an earlier month.</td>
+</tr>
+<tr>
+<td>Why did the YTD change values move?</td>
+<td>They used to compare with last month's YTD; they now compare with the same date last year.</td>
+</tr>
+<tr>
+<td>Is &quot;Actual against Budget&quot; a gap or a ratio?</td>
+<td>A ratio: Actual ÷ Budget × 100. 92 means Actual is 92% of Budget.</td>
+</tr>
+<tr>
+<td>What if I approve Budget after generating a report?</td>
+<td>Generate the report again; nothing is stored.</td>
+</tr>
+<tr>
+<td>Will IC work the same way?</td>
+<td>It is planned as an additional comparator with its own field, added when the template needs it.</td>
+</tr>
+<tr>
+<td>Where is the how?</td>
+<td>In the engineering design document.</td>
+</tr>
+</tbody>
+</table>
+</div><hr />
+<h2 id="design-principle-for-the-next-phase">Design Principle for the Next Phase</h2>
+<p>Keep the change inside the existing cumulation code: one pass that settles quarters and one pass that walks the fiscal
+year, replacing the separate monthly and quarterly paths and their &quot;skip years&quot; workaround. Reuse the existing figure
+writer, fiscal-year helper and approval trigger. The one risky area is telling calculated figures from uploaded ones
+reliably, because both removal and &quot;never overwrite&quot; depend on it.</p>
+<p>The two additions stay small. The YTD year-over-year fix is one comparator rule inside the existing percentage-change
+recompute, which already runs after cumulation. Actual against Budget is plain arithmetic on figures the report
+generator already loads, added to its existing row building (indexed once in memory). No new column, job, or template
+parsing.</p>
+
+</main>
+<footer>KPI YTD, Quarter and Year proposal &middot; 22 Oct 2026</footer>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js"></script>
+<script>
+  var dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: dark ? 'dark' : 'default', securityLevel: 'loose' }); }
+</script>
+</body>
+</html>

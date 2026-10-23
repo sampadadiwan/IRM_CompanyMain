@@ -8,6 +8,19 @@ class KpiDateUtils
     (offset.presence || EntitySetting.geo_default_month_offset_for_fy).to_i + 1
   end
 
+  # First day of the fiscal year that `date` falls in, for a 1-based fiscal-year-start month (the value
+  # resolve_fiscal_year_start_month returns). Pure: the cumulation planner calls it with no database.
+  def self.fiscal_year_start(date, start_month)
+    EntitySetting.compute_start_of_financial_year_date(date, start_month - 1)
+  end
+
+  # Fiscal quarter (1 to 4) of `date`, counted from the same fiscal-year start.
+  def self.fiscal_quarter(date, start_month)
+    fy_start = fiscal_year_start(date, start_month)
+    months_since_start = ((date.year - fy_start.year) * 12) + (date.month - fy_start.month)
+    (months_since_start / 3) + 1
+  end
+
   # Determines if a raw_period looks like a date or period label
   def self.date_like?(string)
     return false if string.blank?

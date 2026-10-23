@@ -1,6 +1,11 @@
 class KpiCumulateJob < ApplicationJob
   queue_as :default
 
+  # A run waits this long for the company's lock, then goes back in the queue and tries again (at most MAX_REQUEUES times)
+  LOCK_WAIT_SECONDS = 60
+  REQUEUE_DELAY = 1.minute
+  MAX_REQUEUES = 10
+
   # compute_percentage_change: true runs KpiPercentageChangeJob inline once cumulation finishes.
   # Callers (e.g. KpiApproveService) use this instead of queuing the percentage job themselves,
   # because two independently queued jobs have no ordering guarantee — the percentage job could
@@ -12,22 +17,89 @@ class KpiCumulateJob < ApplicationJob
   # @param report_ids [Array<Integer>, nil] when present, restricts processing to only these reports
   #   (with force behavior). Used by KpiApproveService to scope recomputation to affected reports.
   # @param compute_percentage_change [Boolean] when true, runs KpiPercentageChangeJob inline after cumulation
-  def perform(portfolio_company_id, user_id: nil, force: false, report_ids: nil, compute_percentage_change: false)
-    Chewy.strategy(:sidekiq) do
-      run_cumulation(portfolio_company_id, user_id, force, report_ids)
-    end
+  # @param attempt [Integer] how many times this run has already been put back in the queue because another run held the
+  #   company's lock (set by the job itself, callers leave it alone)
+  def perform(portfolio_company_id, user_id: nil, force: false, report_ids: nil, compute_percentage_change: false, attempt: 0)
+    # E34: one run per company at a time. A run that finds the company busy changes nothing and comes back later.
+    with_company_locks(portfolio_company_id) do |locked|
+      if locked
+        Chewy.strategy(:sidekiq) do
+          run_cumulation(portfolio_company_id, user_id, force, report_ids)
+        end
 
-    # Runs last and UNCONDITIONALLY: run_cumulation may bail out early when no report needs
-    # cumulating, but "nothing to cumulate" and "nothing to recompute percentages for" are
-    # different questions — an approval with no cumulation work still needs its MoM/YoY changes
-    # refreshed. Triggering the percentage job here (instead of the caller queuing it separately)
-    # is what guarantees it runs over the cumulative KPIs written above. Guarded on user_id
-    # because KpiPercentageChangeJob resolves companies via Pundit.policy_scope(User.find(user_id))
-    # and would crash on a nil user.
-    KpiPercentageChangeJob.perform_now(portfolio_company_id, user_id) if compute_percentage_change && user_id
+        # Runs last and UNCONDITIONALLY: run_cumulation may bail out early when no report needs
+        # cumulating, but "nothing to cumulate" and "nothing to recompute percentages for" are
+        # different questions — an approval with no cumulation work still needs its MoM/YoY changes
+        # refreshed. Triggering the percentage job here (instead of the caller queuing it separately)
+        # is what guarantees it runs over the cumulative KPIs written above. Guarded on user_id
+        # because KpiPercentageChangeJob resolves companies via Pundit.policy_scope(User.find(user_id))
+        # and would crash on a nil user.
+        KpiPercentageChangeJob.perform_now(portfolio_company_id, user_id) if compute_percentage_change && user_id
+      else
+        requeue_busy_run(portfolio_company_id, user_id: user_id, force: force, report_ids: report_ids,
+                                               compute_percentage_change: compute_percentage_change, attempt: attempt)
+      end
+    end
   end
 
   private
+
+  # Takes one MySQL lock per company id (in id order, so two runs for overlapping company lists cannot wait on each
+  # other), yields whether all were taken, and releases them in `ensure`. GET_LOCK belongs to a connection, so the locks
+  # are taken, and released, on the one connection checked out here.
+  def with_company_locks(portfolio_company_id)
+    names = Array(portfolio_company_id).map(&:to_i).uniq.sort.map { |id| "kpi_cumulate:#{id}" }
+    ActiveRecord::Base.with_connection do |connection|
+      taken = []
+      begin
+        names.each do |name|
+          break unless acquire_company_lock(connection, name)
+
+          taken << name
+        end
+        yield taken.size == names.size
+      ensure
+        taken.each { |name| release_company_lock(connection, name) }
+      end
+    end
+  end
+
+  # False when another run holds the lock for the whole wait. SQLite (the test database) has no GET_LOCK and nothing
+  # to contend, so it always succeeds; a scenario makes a company busy by stubbing this method (E34).
+  def acquire_company_lock(connection, name)
+    return true unless mysql_connection?(connection)
+
+    lock_statement(connection, ["SELECT GET_LOCK(?, ?)", name, LOCK_WAIT_SECONDS]).to_i == 1
+  end
+
+  def release_company_lock(connection, name)
+    return unless mysql_connection?(connection)
+
+    lock_statement(connection, ["SELECT RELEASE_LOCK(?)", name])
+  end
+
+  # uncached: a job runs inside the Rails executor, which turns the query cache on, and a SELECT served from the cache
+  # never reaches MySQL, so the lock would be neither taken nor released
+  def lock_statement(connection, sql_and_binds)
+    connection.uncached { connection.select_value(ActiveRecord::Base.sanitize_sql(sql_and_binds)) }
+  end
+
+  def mysql_connection?(connection)
+    connection.adapter_name.casecmp?("mysql2")
+  end
+
+  # The company stayed busy for the whole wait: run again later on the data as it then stands, so a later approval is
+  # never dropped. After MAX_REQUEUES tries, say so through the usual error notification.
+  def requeue_busy_run(portfolio_company_id, user_id:, force:, report_ids:, compute_percentage_change:, attempt:)
+    if attempt < MAX_REQUEUES
+      Rails.logger.info "KPI cumulation for PortfolioCompany ID: #{portfolio_company_id} is busy, trying again in #{REQUEUE_DELAY.inspect} (attempt #{attempt + 1})"
+      self.class.set(wait: REQUEUE_DELAY).perform_later(portfolio_company_id, user_id: user_id, force: force, report_ids: report_ids,
+                                                                              compute_percentage_change: compute_percentage_change, attempt: attempt + 1)
+    else
+      @error_msgs = [{ pc_id: portfolio_company_id, message: "KPI cumulation could not start: another cumulation for this company was still running after #{MAX_REQUEUES} tries. Use Recompute Cumulative to run it again." }]
+      report_errors(portfolio_company_id, user_id)
+    end
+  end
 
   # The cumulation body, split out of #perform so its early return (no reports to process)
   # cannot short-circuit the percentage-change trigger above — that's exactly the bug this
@@ -102,26 +174,31 @@ class KpiCumulateJob < ApplicationJob
     end
 
     if @error_msgs.present?
-      msg = "Errors in KPI cumulation/computation for PortfolioCompany ID: #{portfolio_company_id}."
-      send_notification("#{msg} Errors sent via email.", user_id, :error)
-
-      user = User.find_by(id: user_id)
-      if user
-        # Clean and prepare for JSON-safe mailer transfer
-        safe_report_data = @error_msgs.map do |err|
-          err.transform_values(&:to_s).merge('status' => 'error')
-        end
-
-        EntityMailer.with(
-          entity_id: user.entity_id,
-          user_id: user.id,
-          report_data: safe_report_data.to_json,
-          subject: msg
-        ).send_report.deliver_now
-      end
+      report_errors(portfolio_company_id, user_id)
     else
       send_notification("Successfully completed KPI cumulation for PortfolioCompany ID: #{portfolio_company_id}", user_id, :success)
     end
+  end
+
+  # Tells the user, by notification and email, about the errors collected in @error_msgs
+  def report_errors(portfolio_company_id, user_id)
+    msg = "Errors in KPI cumulation/computation for PortfolioCompany ID: #{portfolio_company_id}."
+    send_notification("#{msg} Errors sent via email.", user_id, :error)
+
+    user = User.find_by(id: user_id)
+    return unless user
+
+    # Clean and prepare for JSON-safe mailer transfer
+    safe_report_data = @error_msgs.map do |err|
+      err.transform_values(&:to_s).merge('status' => 'error')
+    end
+
+    EntityMailer.with(
+      entity_id: user.entity_id,
+      user_id: user.id,
+      report_data: safe_report_data.to_json,
+      subject: msg
+    ).send_report.deliver_now
   end
 
   # @param portfolio_company_id [Integer, Array<Integer>] portfolio company ID(s)

@@ -216,7 +216,15 @@ module KpisHelper
     end
   end
 
+  # "-" when there is no change to show (a YTD figure with nothing a year earlier, or a zero comparator)
+  def kpi_percentage_display(kpi)
+    kpi.percentage_change.nil? ? "-" : "#{kpi.percentage_change} %"
+  end
+
   def kpi_percentage_class(kpi, investor_kpi_mapping)
+    # An empty change has nothing to hold against the thresholds, so it gets no colour (E31)
+    return "<small class='fs-1'> #{kpi_percentage_display(kpi)}</small>" if kpi.percentage_change.nil?
+
     css_class = if  investor_kpi_mapping&.lower_threshold&.positive? &&
                     kpi.percentage_change < investor_kpi_mapping.lower_threshold
                   "text-danger"
@@ -224,9 +232,8 @@ module KpisHelper
                       kpi.percentage_change > investor_kpi_mapping.upper_threshold
                   "text-success"
                 end
-    percentage_change_display_val = kpi.percentage_change.nil? ? "-" : "#{kpi.percentage_change} %"
 
-    "<small class='fs-1 #{css_class}'> #{percentage_change_display_val}</small>"
+    "<small class='fs-1 #{css_class}'> #{kpi_percentage_display(kpi)}</small>"
   end
 
   def get_investor_kpi_mapping(investor_kpi_mappings, kpi)

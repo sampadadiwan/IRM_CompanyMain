@@ -29,7 +29,7 @@ class KpiPercentageChangeJob < ApplicationJob
         Rails.logger.debug msg
         send_notification(msg, user_id, :info)
         begin
-          Kpi.recompute_percentage_change(kpis, force: true)
+          Kpi.recompute_percentage_change(kpis)
         rescue StandardError => e
           Rails.logger.error "Error recomputing percentage change for #{key} for #{port_co.name}: #{e.message}"
           send_notification("Error recomputing percentage change for #{key} for #{port_co.name}: #{e.message}", user_id, :error)

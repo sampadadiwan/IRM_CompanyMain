@@ -481,7 +481,8 @@ Given('the following Monthly KPI Reports exist with KPIs:') do |table|
       r.user = @user
     end
     mapping = InvestorKpiMapping.find_by(standard_kpi_name: row['name'], entity: @entity, investor: @portfolio_company)
-    FactoryBot.create(:kpi, kpi_report:, entity: @entity, portfolio_company_id: @portfolio_company.id, name: row['name'], value: row['value'].to_f, investor_kpi_mapping: mapping, status: status.to_sym)
+    optional = { notes: row['notes'].presence, source: row['source'].presence }.compact
+    FactoryBot.create(:kpi, kpi_report:, entity: @entity, portfolio_company_id: @portfolio_company.id, name: row['name'], value: row['value'].to_f, investor_kpi_mapping: mapping, status: status.to_sym, **optional)
   end
 end
 
@@ -592,4 +593,77 @@ Then('YTD KPI should be cumulated correctly for {string}') do |kpi_name|
     kpi.value.should == expected_sum
     puts "Expected sum: #{expected_sum}, Actual sum: #{kpi.value}"
   end
+end
+
+Given("the portfolio company's financial year starts in January") do
+  @portfolio_company.update_column(:json_fields, @portfolio_company.json_fields.to_h.merge("month_offset_for_fy" => "0"))
+end
+
+def cumulation_kpi_at(period, name, as_of, tag = 'Actual')
+  Kpi.joins(:kpi_report).where(name: name, entity_id: @entity.id, portfolio_company_id: @portfolio_company.id,
+                               kpi_reports: { period: period, as_of: Date.parse(as_of), tag_list: tag }).last
+end
+
+# A staged figure, as an import leaves it: unapproved, source upload, in the report the figure belongs to
+Given('a staged uploaded {string} KPI {string} of {int} as of {string} exists') do |period, name, value, as_of|
+  report = KpiReport.find_by!(entity: @entity, portfolio_company_id: @portfolio_company.id, period: period, as_of: Date.parse(as_of), tag_list: 'Actual')
+  mapping = InvestorKpiMapping.find_by!(standard_kpi_name: name, entity: @entity, investor: @portfolio_company)
+  FactoryBot.create(:kpi, kpi_report: report, entity: @entity, portfolio_company_id: @portfolio_company.id, name: name, value: value,
+                          investor_kpi_mapping: mapping, status: :unapproved, source: Kpi::UPLOAD_SOURCE, notes: 'Imported from Document 1')
+end
+
+# The approval action: KpiApproveService approves, then queues the cumulation (inline in test)
+When('the staged KPI {string} as of {string} is approved with cumulation') do |name, as_of|
+  kpi = Kpi.unapproved.joins(:kpi_report).where(name: name, portfolio_company_id: @portfolio_company.id, kpi_reports: { as_of: Date.parse(as_of) }).first!
+  KpiApproveService.call([kpi.id], @user.id)
+end
+
+When('the {string} KPI {string} for {string} tagged {string} is unapproved') do |period, name, as_of, tag|
+  cumulation_kpi_at(period, name, as_of, tag).unapprove!
+end
+
+Then('there should be no {string} KPI {string} for {string} tagged {string}') do |period, name, as_of, tag|
+  expect(cumulation_kpi_at(period, name, as_of, tag)).to be_nil
+end
+
+Then('the {string} KPI {string} for {string} should have source {string}') do |period, name, as_of, source|
+  expect(cumulation_kpi_at(period, name, as_of).source).to eq(source)
+end
+
+Then('the {string} KPI {string} for {string} tagged {string} should have RAG status {string}') do |period, name, as_of, tag, colour|
+  expect(cumulation_kpi_at(period, name, as_of, tag).reload.rag_status).to eq(colour)
+end
+
+Then('the {string} KPI {string} for {string} tagged {string} should have no RAG status') do |period, name, as_of, tag|
+  expect(cumulation_kpi_at(period, name, as_of, tag).reload.rag_status).to be_nil
+end
+
+# Only the figures the cumulation calculates for this KPI fail to save; other KPIs and uploaded figures save as usual
+Given('saving the calculated {string} figures will fail') do |name|
+  ActionMailer::Base.deliveries.clear
+  allow_any_instance_of(Kpi).to receive(:save).and_wrap_original do |original, *args, **kwargs|
+    kpi = original.receiver
+    kpi.name == name && kpi.source == Kpi::AUTO_CUMULATION_SOURCE ? false : original.call(*args, **kwargs)
+  end
+end
+
+# Another run holds the company's lock. The :test adapter keeps the re-queued job from running at once.
+Given("another cumulation run holds the company's lock") do
+  ActiveJob::Base.queue_adapter = :test
+  allow_any_instance_of(KpiCumulateJob).to receive(:acquire_company_lock).and_return(false)
+end
+
+def queued_cumulation
+  ActiveJob::Base.queue_adapter.enqueued_jobs.find { |job| job['job_class'] == 'KpiCumulateJob' }
+end
+
+Then('the cumulation should be queued again as attempt {int}') do |attempt|
+  job = queued_cumulation
+  expect(job).to be_present
+  expect(job['arguments'].last['attempt']).to eq(attempt)
+end
+
+When("the company's lock is free and the queued cumulation runs") do
+  allow_any_instance_of(KpiCumulateJob).to receive(:acquire_company_lock).and_call_original
+  ActiveJob::Base.execute(queued_cumulation.except(:job, :args, :queue, :at).stringify_keys)
 end

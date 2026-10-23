@@ -217,6 +217,12 @@ class TemplateDecorator < ApplicationDecorator
       divisor = 10**match_data[1].to_i
       attr_name = match_data[2]
       return send(attr_name).to_d / divisor
+    elsif (match_data = method_name.to_s.match(/^mult_(\d+)_(.+)/))
+      # This is used in the template to multiply a number attribute by 10^N
+      # for example mult_2_irr multiplies irr by 100 (a fraction such as 0.12 shown as 12)
+      multiplier = 10**match_data[1].to_i
+      attr_name = match_data[2]
+      return send(attr_name).to_d * multiplier
     end
     super
   rescue StandardError => e

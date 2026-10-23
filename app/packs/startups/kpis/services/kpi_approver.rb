@@ -19,6 +19,8 @@ class KpiApprover
           display_value: kpi.display_value,
           notes: kpi.notes,
           investor_kpi_mapping_id: kpi.investor_kpi_mapping_id,
+          # Blank included: an upload over a calculated row must not keep the calculated marker (E30)
+          source: kpi.source,
           approved_by_user_id: user_id,
           approved_at: Time.zone.now
         )
