@@ -328,7 +328,8 @@ class PortfolioScoringAgent < SupportAgentService
     scope = investor.portfolio_kpi_reports
                     .where(tag_list: "Actual")
                     .order(as_of: :desc)
-                    .includes(:kpis)
+                    # R2: KPIs and their mappings preloaded - one query each for every report, not one per report and KPI
+                    .includes(kpis: :investor_kpi_mapping)
 
     # Apply period-type filter when configured and not "All"
     freq = @support_agent.json_fields["kpi_frequency"].to_s.strip
@@ -340,7 +341,8 @@ class PortfolioScoringAgent < SupportAgentService
     end
 
     results = scope.filter_map do |report|
-      approved_kpis = report.kpis.approved.map { |k| { name: k.name, value: k.value, denomination: k.investor_kpi_mapping&.denomination }.compact }
+      # select(&:approved?) reads the preloaded KPIs; .approved would re-query for every report
+      approved_kpis = report.kpis.select(&:approved?).map { |k| { name: k.name, value: k.value, denomination: k.investor_kpi_mapping&.denomination }.compact }
       next if approved_kpis.empty?
 
       { period: report.period, as_of: report.as_of, kpis: approved_kpis }

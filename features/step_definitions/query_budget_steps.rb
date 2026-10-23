@@ -28,10 +28,12 @@ module QueryBudget
       # Schema reflection and transaction bookkeeping are not queries the code under test chose to make
       next if payload[:name] == "SCHEMA" || payload[:name] == "TRANSACTION" || payload[:cached]
 
-      frame = caller_locations.find { |loc| loc.absolute_path.to_s.start_with?(APP_ROOT) }
+      # A compiled view template has no absolute_path, only its path - fall back to it so queries a view issues
+      # are counted against the template rather than skipped
+      frame = caller_locations.find { |loc| (loc.absolute_path || loc.path).to_s.start_with?(APP_ROOT) }
       next unless frame
 
-      site = "#{frame.absolute_path.delete_prefix(REPO_PREFIX)}:#{frame.lineno} in '#{frame.label}'"
+      site = "#{(frame.absolute_path || frame.path).delete_prefix(REPO_PREFIX)}:#{frame.lineno} in '#{frame.label}'"
       @queries_by_site[site] += 1
       @statements_by_site << [site, payload[:sql].to_s]
     end
@@ -95,6 +97,13 @@ end
 Then('at most {int} statement(s) containing {string} came from {string}') do |limit, sql_fragment, site|
   count = statements_from(site, sql_fragment)
   expect(count).to be <= limit, "expected at most #{limit} statements containing #{sql_fragment.inspect} from #{site}, got #{count}"
+end
+
+Then('at least {int} statement(s) containing {string} came from {string}') do |minimum, sql_fragment, site|
+  count = statements_from(site, sql_fragment)
+  issued_by = @statements_by_site.select { |_, sql| sql.include?(sql_fragment) }.map(&:first).tally
+  expect(count).to be >= minimum, "expected at least #{minimum} statements containing #{sql_fragment.inspect} from #{site}, got #{count}; " \
+                                  "those statements came from: #{issued_by.inspect}"
 end
 
 Then('exactly {int} quer(y)(ies) came from {string}') do |expected, site|

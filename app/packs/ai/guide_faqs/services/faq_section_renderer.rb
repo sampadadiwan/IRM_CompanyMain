@@ -13,13 +13,32 @@ class FaqSectionRenderer
   # @param audience [String] "signed_in" or "public"
   def initialize(guide_key, audience: "signed_in")
     @guide_key = guide_key
-    @audiences = audience.to_s == "public" ? %w[public] : FaqEntry::AUDIENCES
+    @audiences = self.class.audiences_for(audience)
   end
 
   # @return [Array<FaqEntry>] in display order (group order, then position)
   def entries
-    @entries ||= FaqEntry.published.where(guide_key: @guide_key, audience: @audiences)
-                         .order(Arel.sql(FaqEntry.group_order_sql), :position, :id).to_a
+    @entries ||= self.class.published_entries(@guide_key, @audiences).to_a
+  end
+
+  # Every listed guide's entries in one query, each guide's list in the same order #entries gives. For the
+  # all-FAQs page (FaqCatalog), which needs every guide at once - one query, not one per guide (R5).
+  # @param guide_keys [Array<String>]
+  # @param audience [String] "signed_in" or "public"
+  # @return [Hash{String => Array<FaqEntry>}] keyed by guide_key; a guide with no entries has no key
+  def self.entries_by_guide(guide_keys, audience: "signed_in")
+    published_entries(guide_keys, audiences_for(audience)).group_by(&:guide_key)
+  end
+
+  # A public reader sees only public entries; a signed-in one sees both
+  def self.audiences_for(audience)
+    audience.to_s == "public" ? %w[public] : FaqEntry::AUDIENCES
+  end
+
+  # Published entries for one guide key or several, in display order (group order, then position)
+  def self.published_entries(guide_keys, audiences)
+    FaqEntry.published.where(guide_key: guide_keys, audience: audiences)
+            .order(Arel.sql(FaqEntry.group_order_sql), :position, :id)
   end
 
   # @return [Boolean]

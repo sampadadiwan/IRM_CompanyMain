@@ -277,13 +277,21 @@ class RtaReconciliationAgent < SupportAgentService
       # Folio reconciliation
       rta_folio_numbers = Set.new
       folio_results     = []
+      # R1: this scheme's commitments and their investors in two queries, not two per folio. Keyed on the
+      # downcased folio id: MySQL compares folio_id case-insensitively, so the per-folio find_by this replaces
+      # matched "ab12" to "AB12" and the hash lookup must too. Where two commitments share a folio id the
+      # lowest id wins - find_by had no order, so it picked one arbitrarily.
+      commitments_by_folio = fund.capital_commitments.where(unit_type: fus.name).where.not(folio_id: nil)
+                                 .includes(:investor).order(:id)
+                                 .each_with_object({}) { |c, by_folio| by_folio[c.folio_id.downcase] ||= c }
 
       (scheme[:folios] || []).each do |folio|
         folio_number = folio[:folio_number].to_s.strip
         rta_folio_numbers << folio_number
 
         # Include unit_type so the same folio_id in two unit classes resolves to the correct commitment
-        cc = fund.capital_commitments.find_by(folio_id: folio_number, unit_type: fus.name)
+        # (the lookup above is already limited to this scheme's unit_type)
+        cc = commitments_by_folio[folio_number.downcase]
         unless cc
           folio_results << { folio_number: folio_number, investor_name: folio[:investor_name],
                              status: :unmatched, message: "Folio #{folio_number} not found in CapHive" }

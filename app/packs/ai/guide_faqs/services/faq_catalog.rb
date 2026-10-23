@@ -28,15 +28,18 @@ class FaqCatalog
   private
 
   def build
+    # Every guide's published entries in one query (R5); group_by keeps each guide's display order
+    entries_by_guide = FaqSectionRenderer.entries_by_guide(GuideCatalog.guide_keys, audience: @audience)
     GuideCatalog.guide_keys.filter_map do |key|
-      items = database_items(key).presence || markdown_items(key)
+      items = database_items(key, entries_by_guide.fetch(key, [])).presence || markdown_items(key)
       Guide.new(key: key, title: GuideCatalog.title(key), items: items) if items.any?
     end.sort_by(&:title)
   end
 
+  # @param entries [Array<FaqEntry>] the guide's published entries, in display order
   # @return [Array<Item>]
-  def database_items(key)
-    FaqSectionRenderer.new(key, audience: @audience).entries.map do |entry|
+  def database_items(key, entries)
+    entries.map do |entry|
       Item.new(group_label: entry.group_label, question: entry.question, answer_html: answer_html(entry.answer, key))
     end
   end

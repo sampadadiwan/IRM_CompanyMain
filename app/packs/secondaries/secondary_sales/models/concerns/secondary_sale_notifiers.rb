@@ -42,7 +42,8 @@ module SecondarySaleNotifiers
 
   # Notify only verified offers and shortlisted interests
   def notify_allocation
-    offers.verified.each do |offer|
+    # R3: users and investors preloaded, in batches like the interests loop below - not a user or investor lookup per offer
+    offers.verified.includes(:user, :investor).find_each do |offer|
       email_users = offer.offer_type == "Employee" ? [offer.user] : offer.investor.notification_users(with_tag: 'SecondarySale')
       email_users.each do |user|
         SecondarySaleNotifier.with(record: self, entity_id:, email_method: :notify_allocation_offers, msg: "Secondary Sale: #{name} allocation complete").deliver_later(user)
