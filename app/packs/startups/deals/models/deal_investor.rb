@@ -235,20 +235,44 @@ class DealInvestor < ApplicationRecord
     seq = 1
     days_to_completion = 0
 
+    # D1: this investor's steps read once (the acts_as_list scope: deal + investor), not one lookup per template.
+    # Per template the first step by sequence wins, as the .first lookup this replaces returned.
+    investor_steps = DealActivity.where(deal_id:, deal_investor_id: id).to_a
+    existing_by_template = investor_steps.select { |a| a.entity_id == entity_id }
+                                         .each_with_object({}) { |a, by_template| by_template[a.template_id] ||= a }
+    # The investor's highest step number. A new step numbered past it is an append - there is no later step for
+    # acts_as_list to shift - so it skips that UPDATE. nil once an update or a mid-list insert may have moved
+    # steps: read it again then.
+    last_sequence = investor_steps.filter_map(&:sequence).max.to_i
+
     DealActivity.templates(deal).each do |template|
       if start_date
         days_to_completion += template.days
         by_date = start_date + days_to_completion.days
       end
 
-      existing = DealActivity.where(deal_id:, deal_investor_id: id, entity_id:, template_id: template.id).first
+      existing = existing_by_template[template.id]
 
       # When creating or updating the activity for an investor, we copy the tasks_csv and notification flags from the template.
       # This allows the automation to know which tasks belong to this investor's current step and when to notify.
       if existing
+        # An earlier update or mid-list insert in this loop may have renumbered this step - read it fresh first,
+        # as the per-template lookup did, so acts_as_list moves it from where it really is
+        existing.reload if last_sequence.nil?
         existing.update(title: template.title, sequence: template.sequence, days: template.days, by_date:, template_id: template.id, docs_required_for_completion: entity.activity_docs_required_for_completion, details_required_for_na: entity.activity_details_required_for_na, tasks_csv: template.tasks_csv, notify_employees: template.notify_employees, notify_investor: template.notify_investor)
+        last_sequence = nil
       else
-        DealActivity.create(deal_id:, deal_investor_id: id, entity_id:, template_id: template.id, title: template.title, sequence: template.sequence, days: template.days, by_date:, docs_required_for_completion: entity.activity_docs_required_for_completion, details_required_for_na: entity.activity_details_required_for_na, tasks_csv: template.tasks_csv, notify_employees: template.notify_employees, notify_investor: template.notify_investor)
+        attrs = { deal_id:, deal_investor_id: id, entity_id:, template_id: template.id, title: template.title, sequence: template.sequence, days: template.days, by_date:, docs_required_for_completion: entity.activity_docs_required_for_completion, details_required_for_na: entity.activity_details_required_for_na, tasks_csv: template.tasks_csv, notify_employees: template.notify_employees, notify_investor: template.notify_investor }
+        last_sequence ||= DealActivity.where(deal_id:, deal_investor_id: id).maximum(:sequence).to_i
+        if template.sequence.to_i > last_sequence
+          # Appended after the investor's last step: nothing to shift
+          activity = DealActivity.acts_as_list_no_update { DealActivity.create(attrs) }
+          last_sequence = template.sequence if activity.persisted?
+        else
+          # Inserted among existing steps: acts_as_list shifts the later ones, as before
+          DealActivity.create(attrs)
+          last_sequence = nil
+        end
       end
 
       seq += 1

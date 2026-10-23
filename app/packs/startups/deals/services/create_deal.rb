@@ -59,6 +59,23 @@ class CreateDeal < DealActions
     # Skip entirely when the user checked "No Templates" at creation time.
     return if deal.skip_templates.present?
 
+    # D2: a new deal's steps are numbered 1, 2, 3... with no steps there yet, so each is an append and
+    # acts_as_list has no later step to shift - skip its shift UPDATE per step. A deal that already has template
+    # steps takes the normal path.
+    if DealActivity.templates(deal).none?
+      DealActivity.acts_as_list_no_update { create_template_steps(deal) }
+    else
+      create_template_steps(deal)
+    end
+  rescue StandardError => e
+    Rails.logger.error e.message
+    Rails.logger.error e.backtrace
+    ctx[:errors] = e.message
+    raise ActiveRecord::Rollback
+  end
+
+  # The deal's template steps, numbered from 1: copied from the deal it is cloned from, or the configured defaults
+  def create_template_steps(deal)
     seq = 1
     if deal.clone_from_id.present?
       clone_from = Deal.find(deal.clone_from_id)
@@ -75,11 +92,6 @@ class CreateDeal < DealActions
         seq += 1
       end
     end
-  rescue StandardError => e
-    Rails.logger.error e.message
-    Rails.logger.error e.backtrace
-    ctx[:errors] = e.message
-    raise ActiveRecord::Rollback
   end
 
   def sync_kanban_columns(_ctx, deal:, **)
