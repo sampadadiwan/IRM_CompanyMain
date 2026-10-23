@@ -4040,7 +4040,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_22_120000) do
     t.bigint "requested_by_id", null: false
     t.string "new_call_code", limit: 3, null: false
     t.string "new_phone", limit: 100, null: false
-    t.string "code_digest", limit: 64, null: false
+    t.string "code_digest", limit: 64
     t.datetime "expires_at", null: false
     t.integer "attempts", default: 0, null: false
     t.datetime "verified_at"
