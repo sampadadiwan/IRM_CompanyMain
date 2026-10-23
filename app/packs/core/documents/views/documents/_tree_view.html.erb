@@ -27,7 +27,8 @@
                 <span class="m-0 font-weight-bold text-primary">Folders</span>
             </div>
             <div class="card-body">
-                <div id="<%= tree_view_id %>" class="tree_view" data-controller="treeview" data-treeview-documents-frame-id-value="<%= documents_frame_id %>" data-treeview-selected-folder-id-value="<%= params[:folder_id].to_s if params[:folder_id].present? %>">
+                <%# selected_folder_id highlights + expands a folder in the tree without scoping the tree to it %>
+                <div id="<%= tree_view_id %>" class="tree_view" data-controller="treeview" data-treeview-documents-frame-id-value="<%= documents_frame_id %>" data-treeview-selected-folder-id-value="<%= (params[:selected_folder_id] || params[:folder_id]).to_s %>">
                     <% if params[:page].blank? %>
                         <% folders = get_tree_view_folders(params, current_user, @entity, @documents) %>
                         <%= render "folders/tree_view", folders: folders, widget_id: widget_id, documents_as_tags: params[:documents_as_tags], show_action_buttons: show_action_buttons, folder_url_method: folder_url_method, use_entity_name_for_root: use_entity_name_for_root, virtual_root: virtual_root %>
@@ -94,7 +95,8 @@
                 <%= turbo_frame_tag documents_frame_id, target: "_top" do %>
                     <%
                         # LP latest list already spans the whole tree; otherwise show the selected folder's own docs
-                        documents = documents.where(folder_id: params[:folder_id]) if params[:folder_id].present? && params[:latest_first].blank?
+                        # When selected_folder_id is used, the controller already scoped to the subtree — skip view-level filtering
+                        documents = documents.where(folder_id: params[:folder_id]) if params[:folder_id].present? && params[:selected_folder_id].blank? && params[:latest_first].blank?
                         @pagy, documents = pagy(documents) if params[:all].blank?
                     %>
 

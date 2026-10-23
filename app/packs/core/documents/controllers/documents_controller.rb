@@ -480,6 +480,10 @@ class DocumentsController < ApplicationController
                    else
                      @documents.joins(:folder).merge(Folder.subtree_of(params[:folder_id]))
                    end
+    elsif params[:selected_folder_id].present?
+      # selected_folder_id highlights the tree without scoping it; show only that folder's direct documents
+      @folder = Folder.find(params[:selected_folder_id])
+      @documents = @documents.where(folder_id: params[:selected_folder_id])
     end
 
     # Filter by owner_tag

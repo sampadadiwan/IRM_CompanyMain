@@ -1,6 +1,10 @@
 
+<!-- Back to Documents link — opens full tree with this folder highlighted and expanded -->
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
       <h1 class="h3 mb-0 text-gray-800">Viewing Folder: <%= @folder.name %></h1>
+      <%= link_to documents_path(selected_folder_id: @folder.id), class: "btn btn-outline-primary" do %>
+        <i class="ti ti-arrow-left"></i> View Documents
+      <% end %>
 </div>
 
   <table class="table table-bordered dataTable">
