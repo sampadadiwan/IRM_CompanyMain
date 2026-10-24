@@ -23,10 +23,12 @@ class DocLlmContext < DocLlmBase
     true
   end
 
-  def populate_context_with_data(ctx, documents:, notes:, **)
+  # kpis is optional text appended after the notes; callers that don't pass it get the context as before.
+  def populate_context_with_data(ctx, documents:, notes:, kpis: nil, **)
     ctx[:context] = ""
     ctx[:context] += process_documents(documents)
     ctx[:context] += process_notes(notes)
+    ctx[:context] += "<KPIs>#{sanitize_utf8(kpis)}</KPIs>" if kpis.present?
     true
   end
 

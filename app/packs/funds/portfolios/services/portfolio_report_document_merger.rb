@@ -1,18 +1,26 @@
 require "fileutils"
 
-# Merges the same-template documents generated for multiple portfolio companies (in one
-# PortfolioReportJob run) into a single .docx, stored under a shared
-# "/Investors/Generated Portfolio Reports" folder. Each company's own individually generated
-# document is left exactly where PortfolioReportDocGenerator already put it — this is purely
+# Joins the parts of one portfolio report run into a single .docx, stored under a shared
+# "/Portfolio Reports/Generated Portfolio Reports" folder. The sources are already in their final order
+# (the run decides it): a source is either a company's generated Document or the path of a
+# temporary .docx built for a consolidated report. Each company's own individually generated
+# document is left exactly where PortfolioReportDocGenerator already put it - this is purely
 # an additional artifact, not a replacement.
 class PortfolioReportDocumentMerger
-  def self.call(docs, portfolio_report:, start_date:, end_date:, user_id:)
-    new(docs, portfolio_report:, start_date:, end_date:, user_id:).call
+  # @param sources [Array<Document, String>] Documents or .docx paths, in the order they appear in the result.
+  # @param portfolio_report [PortfolioReport] The run's first report (gives the entity).
+  # @param template [Document, nil] The first row's template: names the file and gives its settings.
+  # @param company_count [Integer] How many companies the run was for (shown in the name).
+  # @return [Document] The saved combined document.
+  def self.call(sources, portfolio_report:, template:, company_count:, start_date:, end_date:, user_id:)
+    new(sources, portfolio_report:, template:, company_count:, start_date:, end_date:, user_id:).call
   end
 
-  def initialize(docs, portfolio_report:, start_date:, end_date:, user_id:)
-    @docs = docs
+  def initialize(sources, portfolio_report:, template:, company_count:, start_date:, end_date:, user_id:)
+    @sources = sources
     @portfolio_report = portfolio_report
+    @template = template
+    @company_count = company_count
     @start_date = start_date
     @end_date = end_date
     @user_id = user_id
@@ -20,20 +28,23 @@ class PortfolioReportDocumentMerger
 
   def call
     entity = @portfolio_report.entity
-    template = @docs.first.from_template
-
-    # Merge the companies' reports in a consistent alphabetical order (by company) so the combined
-    # document reads the same way every time, regardless of the order the batch generated them in.
-    ordered_docs = @docs.sort_by { |doc| doc.owner.to_s.downcase }
+    template = @template
 
     working_dir = Rails.root.join("tmp", "portfolio_report_merge", SecureRandom.hex(8)).to_s
     FileUtils.mkdir_p(working_dir)
 
-    downloaded_paths = ordered_docs.map { |doc| doc.file.download.path }
-    merged_path = File.join(working_dir, "merged.docx")
-    DocxMerger.merge(downloaded_paths, merged_path)
+    # Only the files downloaded here are deleted below; paths handed in belong to the caller
+    downloaded_paths = []
+    paths = @sources.map do |source|
+      next source if source.is_a?(String)
 
-    folder = find_or_create_folder(entity, %w[Investors], "Generated Portfolio Reports")
+      downloaded_paths << source.file.download.path
+      downloaded_paths.last
+    end
+    merged_path = File.join(working_dir, "merged.docx")
+    DocxMerger.merge(paths, merged_path)
+
+    folder = find_or_create_folder(entity, ["Portfolio Reports"], "Generated Portfolio Reports")
 
     # Carry the same document settings each individual company report gets from the template
     # (see DocumentGeneratorBase#upload): original/download/printing permissions, esign ordering,
@@ -46,7 +57,7 @@ class PortfolioReportDocumentMerger
       folder: folder,
       user_id: @user_id,
       # Same "<template> <start> to <end> - ..." shape as each individual company document.
-      name: "#{template&.name} #{@start_date} to #{@end_date} - #{@docs.size} companies",
+      name: "#{template&.name} #{@start_date} to #{@end_date} - #{@company_count} companies",
       from_template: template,
       owner_tag: "Generated",
       owner: nil,

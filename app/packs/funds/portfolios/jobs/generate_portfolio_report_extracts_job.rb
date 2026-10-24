@@ -18,6 +18,7 @@ class GeneratePortfolioReportExtractsJob < LlmReportJob
   # @return [Array<Hash>] The collected {msg:, model:} errors — empty when every company succeeded.
   def perform(portfolio_company_ids, portfolio_report_id, start_date, end_date, user_id)
     @errors = []
+    @warnings = []
     portfolio_report = PortfolioReport.find(portfolio_report_id)
     portfolio_companies = Investor.where(id: Array(portfolio_company_ids))
 
@@ -41,8 +42,9 @@ class GeneratePortfolioReportExtractsJob < LlmReportJob
   # Generates a report extract for a given portfolio company.
   # The documents are taken automatically from the company's latest KPI report that owns
   # documents (see #source_documents); their ids are persisted on the extract so they can be
-  # replayed as audits in the report. An extract is ALWAYS created — even when no documents
-  # exist — so the report is generated with a single "No data available" section the user edits.
+  # replayed as audits in the report. An extract is ALWAYS created. When no documents exist it is
+  # built from the company's notes and KPIs instead; with nothing at all it is left empty so the
+  # report shows "No data available" for the user to edit.
   #
   # @param portfolio_company [PortfolioCompany] The portfolio company for which to generate the extract.
   # @param portfolio_report [PortfolioReport] The portfolio report being generated.
@@ -50,7 +52,7 @@ class GeneratePortfolioReportExtractsJob < LlmReportJob
   # @param end_date [Date] The end date for the report.
   # @param user_id [Integer] The ID of the user initiating the report generation.
   # @return [Array(PortfolioReportExtract, String|nil)] A tuple of the created PortfolioReportExtract
-  #   and an explanatory message when no documents were found (nil otherwise).
+  #   and an explanatory message when there was nothing at all to build from (nil otherwise).
   def generate_extract(portfolio_company, portfolio_report, start_date, end_date, user_id, notify: true)
     # Notify the user that extract generation has started
     msg = "Generating extract for #{portfolio_company.name} for report #{portfolio_report}"
@@ -60,8 +62,8 @@ class GeneratePortfolioReportExtractsJob < LlmReportJob
     documents = source_documents(portfolio_company, start_date, end_date)
     notes = filtered_notes(portfolio_company, portfolio_report, start_date, end_date)
 
-    # Always create the extract, storing the documents it was built from. When there are no
-    # documents the extract is left with data: nil and the report shows "No data available".
+    # Always create the extract, storing the documents it was built from (none when it is built
+    # from notes and KPIs, or left empty with data: nil).
     portfolio_report_extract = PortfolioReportExtract.create!(
       entity_id: portfolio_report.entity_id,
       portfolio_company_id: portfolio_company.id,
@@ -70,11 +72,33 @@ class GeneratePortfolioReportExtractsJob < LlmReportJob
       source_document_ids: documents.map(&:id)
     )
 
+    # H17: a report without sections has nothing to extract, so no LLM call; the extract stays empty
+    return [portfolio_report_extract, nil] if portfolio_report.portfolio_report_sections.none?
+
+    # H11, E12, E14: with no documents the extract is built from the notes and the KPIs of the
+    # latest KPI report in the period. KPIs are only used in this case (E13: with documents the LLM input is unchanged).
+    kpis = nil
     if documents.blank?
-      msg = "No documents found for #{portfolio_company.name} for #{portfolio_report}"
-      Rails.logger.debug { msg }
-      send_notification(msg, user_id, "danger")
-      return [portfolio_report_extract, msg]
+      kpis = kpi_lines(portfolio_company, start_date, end_date)
+
+      # E14: nothing at all to build from, so no LLM call; the extract stays empty
+      if notes.none? && kpis.blank?
+        msg = "No documents found for #{portfolio_company.name} for #{portfolio_report}"
+        Rails.logger.debug { msg }
+        send_notification(msg, user_id, "danger")
+        return [portfolio_report_extract, msg]
+      end
+
+      # H11: not an error, so a warning toast and no entry in the run's error list
+      warning = "No documents found for #{ERB::Util.html_escape(portfolio_company.name)} for #{ERB::Util.html_escape(portfolio_report.to_s)}. " \
+                "Extract built from notes and KPIs."
+      Rails.logger.debug { warning }
+      # A bulk run (notify: false) collects the warnings and reports them once in notify_completion
+      if notify
+        send_notification(warning, user_id, "warning")
+      else
+        (@warnings ||= []) << warning
+      end
     end
 
     # Notify the user that information is being sent to the LLM
@@ -88,6 +112,7 @@ class GeneratePortfolioReportExtractsJob < LlmReportJob
     result = DocLlmContext.call(model: portfolio_report_extract,
                                 documents: documents,
                                 notes: notes,
+                                kpis: kpis,
                                 llm_instructions:)
 
     # Log the LLM result for debugging purposes
@@ -155,6 +180,11 @@ class GeneratePortfolioReportExtractsJob < LlmReportJob
     else
       send_notification("Extract generation completed for #{pluralize(count, 'portfolio company')}.", user_id, "success")
     end
+
+    # H11: extracts built from notes and KPIs are not errors; one amber toast lists them all
+    return if @warnings.blank?
+
+    send_notification("Extracts built from notes and KPIs, no documents found:<div>#{@warnings.join('<br>')}</div>", user_id, "warning")
   end
 
   # The source documents used to build the extract: every non-generated (source) document
@@ -192,6 +222,25 @@ class GeneratePortfolioReportExtractsJob < LlmReportJob
     latest.owner.documents.not_generated
   end
 
+  # The approved KPIs of the company's latest KPI report in the period (the one with KPIs and the
+  # newest as_of), as "name: value (as of date)" lines, where value is the KPI's display value (with its
+  # currency, unit or %) when it has one, else the number. Used only when there are no documents
+  # (H11, E12). Like #source_documents, the newest report decides, so the extract is based on one
+  # reporting period and the amount sent to the LLM stays small. Empty string when there are none.
+  #
+  # @return [String] One line per KPI.
+  def kpi_lines(portfolio_company, start_date, end_date)
+    kpis = Kpi.approved.joins(:kpi_report)
+              .where(kpi_reports: { entity_id: portfolio_company.entity_id, portfolio_company_id: portfolio_company.id, as_of: start_date..end_date })
+    latest_report_id = kpis.order("kpi_reports.as_of DESC", "kpi_reports.id DESC").pick(:kpi_report_id)
+    return "" if latest_report_id.nil?
+
+    kpis.where(kpi_report_id: latest_report_id).order(:name)
+        .pluck(:name, :value, :display_value, "kpi_reports.as_of")
+        .map { |name, value, display_value, as_of| "#{name}: #{display_value.presence || value.to_f} (as of #{as_of})" }
+        .join("\n")
+  end
+
   # Retrieves the company's notes within the date range, filtered by the report's tags.
   #
   # @param portfolio_company [Investor] The portfolio company to retrieve notes for.
@@ -214,7 +263,9 @@ class GeneratePortfolioReportExtractsJob < LlmReportJob
     return records if report_tags.blank?
 
     records.select do |record|
-      record.tag_list.present? && record.tag_list.split(',').map(&:strip).intersect?(report_tags)
+      # Notes keep their tags in a plain `tags` string; taggable records expose `tag_list`
+      tags = record.respond_to?(:tag_list) ? record.tag_list : record.tags
+      tags.present? && tags.split(',').map(&:strip).intersect?(report_tags)
     end
   end
 end

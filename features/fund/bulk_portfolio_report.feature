@@ -24,7 +24,7 @@ Scenario: Generate portfolio report for single portfolio company from show page
   Given I click on "Portfolio Report (Legacy)"
   Given I fill in the form with "start_date:01/01/2024;end_date:31/12/2025;generate_missing_extracts:true"
   Given I trigger report generation
-  # With no documents yet, the report is still generated against an empty extract.
+  # With no documents, notes or KPIs in the period (the Background's KPIs are dated 2023), the report is still generated against an empty extract.
   Then The portfolio report should be generated
   Then The portfolio extract should be generated with data "absent"
   Given I add relevant documents to the kpi report
@@ -64,6 +64,7 @@ Scenario: Only-missing option skips companies that already have an extract
   Then I should see the "Skipped extract generation"
   Then a new extract should only be generated for companies without one
 
+# H6 — Happy path: one normal report across companies, as before (openspec/changes/portfolio-report-combined-packet/design.md#worked-examples)
 Scenario: Generate a merged report for multiple portfolio companies
   Given there is another portfolio company "name=Delta Corp;category=Portfolio Company" with a documented kpi report
   Given I add relevant documents to the kpi report

@@ -1,0 +1,43 @@
+<%
+  # One row of the list: a report and a template. Also rendered, with index "__INDEX__", as the blueprint
+  # the "Add report" button clones. Each row is its own report-template-filter scope, so the template
+  # choices follow the row's report.
+  # locals: index, portfolio_reports, template_options
+%>
+<div class="report-part-row" data-report-parts-target="row" data-controller="report-template-filter">
+  <div class="row align-items-start">
+    <div class="col-md-5">
+      <div class="form-group">
+        <label for="parts_<%= index %>_portfolio_report_id">Report</label>
+        <select name="parts[<%= index %>][portfolio_report_id]" id="parts_<%= index %>_portfolio_report_id" class="form-control"
+                data-report-template-filter-target="report"
+                data-action="change->report-template-filter#filter change->report-parts#rowChanged">
+          <% portfolio_reports.each do |portfolio_report| %>
+            <option value="<%= portfolio_report.id %>" data-consolidated="<%= portfolio_report.consolidated? %>">
+              <%= portfolio_report.name %><%= " (Consolidated)" if portfolio_report.consolidated? %>
+            </option>
+          <% end %>
+        </select>
+      </div>
+    </div>
+    <div class="col-md-5">
+      <div class="form-group">
+        <label for="parts_<%= index %>_report_template_id">Template</label>
+        <select name="parts[<%= index %>][report_template_id]" id="parts_<%= index %>_report_template_id" class="form-control"
+                data-report-template-filter-target="template"
+                data-action="change->report-parts#rowChanged">
+          <%= options_for_select(template_options, nil) %>
+        </select>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <%# The blank label keeps the button level with the two selects %>
+      <div class="form-group">
+        <label class="d-block">&nbsp;</label>
+        <button type="button" class="btn btn-outline-danger" data-report-parts-target="remove" data-action="report-parts#remove">Remove</button>
+      </div>
+    </div>
+  </div>
+  <%# The inline message for this row (empty template, repeated template) %>
+  <div class="invalid-feedback" data-report-parts-target="message"></div>
+</div>

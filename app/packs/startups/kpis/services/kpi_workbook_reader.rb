@@ -124,7 +124,7 @@ class KpiWorkbookReader
     Rails.logger.debug { "Portfolio Company: #{@portfolio_company.name}" }
     # Fiscal-year start (1-based month) from the existing month_offset_for_fy setting — portco's own
     # json_fields first, then the fund's EntitySetting, then the April default. Same resolution order
-    # as KpiCumulative#fiscal_year_key so cumulation and import agree on what "FY26" means.
+    # as KpiCumulative (via KpiDateUtils) so cumulation and import agree on what "FY26" means.
     @fiscal_year_start_month = resolve_fiscal_year_start_month
     # Initialize results hash to store extracted KPI data
     @results = {}

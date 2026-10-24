@@ -31,8 +31,9 @@ class PortfolioReportExtractPolicy < FundBasePolicy
     create?
   end
 
+  # X15: deleting is stricter than editing: company admins only
   def destroy?
-    create?
+    create? && user.has_cached_role?(:company_admin)
   end
 
   def generate_tear_sheet?

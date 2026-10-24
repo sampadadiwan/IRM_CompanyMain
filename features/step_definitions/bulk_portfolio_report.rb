@@ -208,12 +208,12 @@ Then('a new extract should only be generated for companies without one') do
 end
 
 # When several companies are generated in one full-report run, their individual .docx files are
-# combined into a single merged document under "/Investors/Generated Portfolio Reports".
+# combined into a single merged document under "/Portfolio Reports/Generated Portfolio Reports".
 Then('a single merged report document should be generated') do
   merged = Document.where("name LIKE ?", "%companies%").order(created_at: :desc).first
   expect(merged).to be_present
   expect(merged.folder.name).to eq("Generated Portfolio Reports")
-  expect(merged.folder.parent.name).to eq("Investors")
+  expect(merged.folder.parent.name).to eq("Portfolio Reports")
 end
 
 # Each company still gets its own individual report document (the merge is additive, not a

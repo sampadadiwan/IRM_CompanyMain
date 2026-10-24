@@ -17,14 +17,13 @@
   </td>
   <td>
     <%
-      has_sections  = portfolio_report.portfolio_report_sections.any?
       has_templates = portfolio_report.portfolio_report_templates.any?
-      setup_done    = has_sections && has_templates
+      setup_done    = has_templates
     %>
     <% if setup_done %>
       <span class="badge bg-success"><i class="ti ti-circle-check me-1"></i>Ready</span>
     <% else %>
-      <span class="badge bg-warning text-dark" title="<%= [("Add sections" unless has_sections), ("Add a template" unless has_templates)].compact.join(", ") %>">
+      <span class="badge bg-warning text-dark" title="Add a template">
         <i class="ti ti-alert-circle me-1"></i>Incomplete
       </span>
     <% end %>

@@ -39,6 +39,13 @@
       <%= link_to edit_portfolio_report_extract_path(@portfolio_report_extract), class: "btn btn-outline-secondary btn-sm" do %>
         <i class="ti ti-edit"></i> Edit Data
       <% end %>
+
+      <%# H13, E18, X15: confirm popup; no button for users who may not delete %>
+      <% if policy(@portfolio_report_extract).destroy? %>
+        <%= button_to portfolio_report_extract_path(@portfolio_report_extract), method: :delete, class: "btn btn-outline-danger btn-sm", form: { class: "d-inline", data: { turbo_confirm: "Delete this extract? This cannot be undone." } } do %>
+          <i class="ti ti-trash"></i> Delete
+        <% end %>
+      <% end %>
     </div>
 
   </div>

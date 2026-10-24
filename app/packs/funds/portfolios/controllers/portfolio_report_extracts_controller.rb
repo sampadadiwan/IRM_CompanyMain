@@ -1,6 +1,6 @@
 # app/controllers/portfolio_report_extracts_controller.rb
 class PortfolioReportExtractsController < ApplicationController
-  before_action :set_portfolio_report_extract, only: %i[show edit update generate_tear_sheet update_slides_content]
+  before_action :set_portfolio_report_extract, only: %i[show edit update destroy generate_tear_sheet update_slides_content]
 
   def index
     # better filtering of extracts using ransack
@@ -77,10 +77,23 @@ class PortfolioReportExtractsController < ApplicationController
     end
   end
 
+  # DELETE /portfolio_report_extracts/:id
+  # H13: soft-deletes the extract (Trackable) and returns to the report's extract list.
+  # X15: authorize refuses users without permission. X16: the lookup below is entity scoped,
+  # so another entity's id is not found.
+  def destroy
+    portfolio_report_id = @portfolio_report_extract.portfolio_report_id
+    @portfolio_report_extract.destroy!
+    redirect_to portfolio_report_extracts_path(portfolio_report_id:),
+                notice: "Portfolio report extract deleted successfully."
+  end
+
   private
 
+  # X16: scoped to the user's entity before authorize, so show/edit/update/destroy cannot reach
+  # another entity's extract.
   def set_portfolio_report_extract
-    @portfolio_report_extract = PortfolioReportExtract.find(params[:id])
+    @portfolio_report_extract = policy_scope(PortfolioReportExtract).find(params[:id])
     authorize @portfolio_report_extract
   end
 

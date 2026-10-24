@@ -290,7 +290,7 @@ and "-" for a YTD change with nothing a year earlier to compare with. See the [p
 | One lock per company around the cumulation job | A lock per period; no lock | The plan reads the whole series and the reconciler can delete across fiscal years, so runs for different periods still overlap. One lock per company is the simplest rule that holds. A busy run waits instead of being skipped, so a later approval is never dropped and the last run always reads the final data |
 | Quarters settled before the walk | Walk months only and ignore quarters | The walk needs quarter totals to resume after a gap and to produce Year |
 | Months win over an uploaded quarter for YTD | Quarter wins | Agreed requirement; the discrepancy is a data issue, not hidden |
-| Single fiscal resolver from `KpiDateUtils` | Keep the three-way fallback in `fiscal_year_key` | One source of truth shared with the workbook reader and template generator |
+| Single fiscal resolver from `KpiDateUtils` | Keep the three-way fallback in `KpiCumulative#fiscal_year_key` (since removed) | One source of truth shared with the workbook reader and template generator |
 | Forward fill reuses the same planner in a `:last` mode | Separate forward-fill code | Quarter and Year follow the same completeness rules; YTD has no gap stop because a balance does not depend on earlier months (the old code also treated each balance on its own) |
 | YTD change compared with the row one year earlier, fixed in the stored value | Fix only in the report; add a second column | One stored meaning for the figure the grid, thresholds and report all read; existing recompute backfills it; no schema change |
 | No fallback when the year-earlier row is missing | Fall back to the previous row | A silent fallback is how the wrong change appeared; empty is honest, and agrees with "a gap stops YTD" |
@@ -334,10 +334,10 @@ three arrays.
 
 ### ② Fiscal calendar
 
-Owns the one definition of the fiscal year. `KpiCumulative#fiscal_year_key` is rewritten to call
+Owns the one definition of the fiscal year. `KpiCumulative` resolves the start month through
 `KpiDateUtils.resolve_fiscal_year_start_month` (portfolio company, then entity setting, then region) and
-`EntitySetting.compute_start_of_financial_year_date` (`#fiscal_quarter_number` had no caller left and was removed). The
-start month is resolved once per run and passed to the planner.
+`EntitySetting.compute_start_of_financial_year_date` (`#fiscal_year_key` and `#fiscal_quarter_number` had no caller left and
+were removed). The start month is resolved once per run and passed to the planner.
 
 **Owns:** fiscal start, quarter of a date | **Reads:** portfolio company, entity settings | **Produces:** start month,
 fiscal year key, quarter 1 to 4.

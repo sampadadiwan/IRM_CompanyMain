@@ -59,7 +59,7 @@
 |---|---|---|---|
 | ② | `app/packs/startups/kpis/services/kpi_date_utils.rb` | Modified | `fiscal_year_start(date, start_month)`, `fiscal_quarter(date, start_month)` |
 | ③ ④ | `app/packs/startups/kpis/services/kpi_cumulation_planner.rb` | New | Pure `plan`, `settle_quarters`, `walk` |
-| ① ⑤ | `app/packs/startups/kpis/models/concerns/kpi_cumulative.rb` | Modified | `perform_cumulation` and `perform_forward_fill` call planner and reconciler; `fiscal_year_key` uses `KpiDateUtils`; old `process_*` methods removed; the reconciler skips an expected row that exists and is not calculated, before it calls `process_cumulative_kpi` (which the compute path also uses) |
+| ① ⑤ | `app/packs/startups/kpis/models/concerns/kpi_cumulative.rb` | Modified | `perform_cumulation` and `perform_forward_fill` call planner and reconciler; the fiscal start month comes from `KpiDateUtils` and the unused `fiscal_year_key` is removed; old `process_*` methods removed; the reconciler skips an expected row that exists and is not calculated, before it calls `process_cumulative_kpi` (which the compute path also uses) |
 | ⑤ | `app/packs/startups/kpis/models/kpi.rb` | Modified | `calculated_cumulative` scope / predicate |
 | ⑦ | `app/packs/startups/kpis/models/kpi.rb` | Modified | `recompute_percentage_change`: groups by owner too; year-earlier comparator for `YTD` groups; nil when missing, zero or too large to store (checked after rounding); other periods unchanged |
 | ⑥ | `app/packs/startups/kpis/helpers/kpis_helper.rb` | Modified | `kpi_percentage_class`: no threshold comparison and no colour when `percentage_change` is nil; shows "-" |
@@ -276,8 +276,8 @@ All queries keep `entity_id` scoping. No new params. No user input reaches the p
   cleanup); PR 2 is the YTD year-over-year change and Actual against Budget (phases 6 and 7). Until PR 2 is deployed,
   YTD changes keep the old previous-month value.
 - Fiscal start: `KpiDateUtils.resolve_fiscal_year_start_month` only (portfolio company, then entity setting, then the
-  regional default). The offset is never on a Kpi. The old `fiscal_year_key` asked the Kpi first, which always returned
-  a date, so company and entity offsets were never read. Task 1.1 lists the companies and entities whose offset differs
+  regional default). The offset is never on a Kpi. The old `fiscal_year_key` (since removed, no caller) asked the Kpi first,
+  which always returned a date, so company and entity offsets were never read. Task 1.1 lists the companies and entities whose offset differs
   from the regional default; their fiscal years shift on the next recompute, their calculated YTD and Year rows are
   recalculated, and the old ones are removed by the cleanup.
 - No feature flag. Existing wrongly calculated rows are removed on the next approval or recompute per company; the agreed

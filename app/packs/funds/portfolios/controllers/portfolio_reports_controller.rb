@@ -1,4 +1,12 @@
 class PortfolioReportsController < ApplicationController
+  # Shown when a request reaches the server with rows the browser would have refused (see report_parts_controller.js)
+  PARTS_MESSAGES = {
+    template_missing: "Choose a template for every report in the list.",
+    template_repeated: "Each template can be used only once in a list. Remove the repeated template.",
+    template_foreign: "The selected template does not belong to the chosen report.",
+    extracts_only: "Consolidated reports don't use extracts, so there is nothing to generate."
+  }.freeze
+
   before_action :set_portfolio_report, only: %i[show edit update destroy clone suggest_sections]
 
   # GET /portfolio_reports
@@ -127,7 +135,7 @@ class PortfolioReportsController < ApplicationController
     else
       # Form setup: load all portfolio companies + ready report types for this entity
       @portfolio_reports = policy_scope(PortfolioReport).includes(:portfolio_report_templates, :portfolio_report_sections)
-      @ready_reports     = @portfolio_reports.select { |r| r.portfolio_report_sections.any? && r.portfolio_report_templates.any? }
+      @ready_reports     = @portfolio_reports.select { |r| r.portfolio_report_templates.any? }
       @portfolio_companies = Investor.where(entity_id: current_user.entity_id, category: "Portfolio Company").order(:investor_name)
     end
   end
@@ -161,8 +169,10 @@ class PortfolioReportsController < ApplicationController
   # the finalized portfolio_company_ids. Second hit (the options form's own submit, `mode` present):
   # actually enqueue extract-only or full-report generation for those companies.
   def legacy_bulk_generate_options
+    # X11: users without access to portfolio reports are refused
     authorize PortfolioReport.new(entity_id: current_user.entity_id), :bulk_generate?
 
+    # X10: only companies of the user's entity are used; a foreign id is dropped
     portfolio_company_ids = Array(params[:portfolio_company_ids]).map(&:to_i).reject(&:zero?)
     @portfolio_companies = Investor.where(id: portfolio_company_ids, entity_id: current_user.entity_id, category: "Portfolio Company")
 
@@ -178,47 +188,73 @@ class PortfolioReportsController < ApplicationController
       return
     end
 
-    portfolio_report = policy_scope(PortfolioReport).find(params[:portfolio_report_id])
     start_date = params[:start_date]
     end_date = params[:end_date]
     redirect_path = params[:back_to].presence || portfolio_reports_path
-    template_id = params[:report_template_id].presence
+    # The browser already checks the rows (see report_parts_controller.js), so a refusal below only
+    # happens for a tampered request. Nothing is preserved: the user starts again from the company step.
+    company_step = legacy_bulk_generate_portfolio_reports_path
 
-    # The chosen template must belong to the chosen report (the UI already scopes the dropdown,
-    # but the form can be tampered with). Reject a mismatch rather than generating with a template
-    # from a different report.
-    if template_id.present? && !portfolio_report.documents.exists?(id: template_id)
-      redirect_to redirect_path,
-                  alert: "The selected template does not belong to the chosen report." and return
-    end
+    # X4: each row's report is found inside the user's entity, else it is not found
+    parts = report_parts
 
     case params[:mode]
     # generate extracts only (no full report) for the selected companies
     when "extracts_only"
+      # X14: consolidated reports use no extracts, so a list of only those has nothing to generate
+      normal_reports = parts.map(&:first).reject(&:consolidated?).uniq
+      redirect_to company_step, alert: PARTS_MESSAGES[:extracts_only] and return if normal_reports.empty?
+
+      # H9: one bulk job per distinct normal report; consolidated reports are ignored and a repeated report runs once
+      queued = 0
       # generate extracts for companies that don't already have one for this report + date range, if the "only missing" checkbox is checked
       only_missing = params[:only_missing_extracts].present?
-      company_ids = @portfolio_companies.reject do |pc|
-        extract = PortfolioReportExtract.matching(portfolio_report.id, pc.id, start_date, end_date).order(created_at: :desc).first
-        only_missing &&
-          extract.present? && extract.data.present?
-      end.map(&:id)
+      normal_reports.each do |portfolio_report|
+        # one query per report: the companies whose latest matching extract already has data
+        done_ids = if only_missing
+                     PortfolioReportExtract.where(portfolio_report_id: portfolio_report.id, portfolio_company_id: @portfolio_companies.map(&:id), start_date:, end_date:)
+                                           .order(:created_at).to_a.group_by(&:portfolio_company_id)
+                                           .select { |_id, extracts| extracts.last.data.present? }.keys
+                   else
+                     []
+                   end
+        company_ids = @portfolio_companies.map(&:id) - done_ids
 
-      # One bulk job for the whole selection so the user gets a single completion message (and a
-      # single error email) instead of N independent jobs that each report only themselves.
-      if company_ids.present?
+        # One bulk job for the whole selection so the user gets a single completion message (and a
+        # single error email) instead of N independent jobs that each report only themselves.
+        next if company_ids.blank?
+
         GeneratePortfolioReportExtractsJob.perform_later(company_ids, portfolio_report.id, start_date, end_date, current_user.id)
-        redirect_to redirect_path,
-                    notice: "Queued extract generation for #{company_ids.size} #{'company'.pluralize(company_ids.size)}."
+        queued += company_ids.size
+      end
+
+      if queued.positive?
+        message = if normal_reports.one?
+                    "Queued extract generation for #{queued} #{'company'.pluralize(queued)}."
+                  else
+                    "Queued extract generation for #{queued} #{'extract'.pluralize(queued)} across #{normal_reports.size} reports."
+                  end
+        redirect_to redirect_path, notice: message
       else
         redirect_to redirect_path,
                     notice: "Skipped extract generation: all companies already have extracts for this report and date range."
       end
     # generate full report (with extracts if missing) for the selected companies
     when "full_report"
+      # X3, X12, X13: the same checks the browser makes; the first failure wins
+      if (refusal = parts_refusal(parts))
+        redirect_to company_step, alert: refusal and return
+      end
+
+      # The first row stays in the job's original arguments so jobs queued across a deploy still run (E9);
+      # the other rows follow in order.
+      first_report, first_template_id = parts.first
+      additional_parts = parts.drop(1).map { |report, template_id| { "portfolio_report_id" => report.id, "template_id" => template_id } }
       PortfolioReportJob.perform_later(
-        portfolio_report.id, template_id, start_date, end_date, current_user.id,
+        first_report.id, first_template_id, start_date, end_date, current_user.id,
         portfolio_company_ids: @portfolio_companies.pluck(:id),
-        generate_missing_extracts: params[:generate_missing_extracts].present?
+        generate_missing_extracts: params[:generate_missing_extracts].present?,
+        additional_parts:
       )
       redirect_to redirect_path,
                   notice: "Queued report generation for #{@portfolio_companies.size} #{'company'.pluralize(@portfolio_companies.size)}."
@@ -262,8 +298,36 @@ class PortfolioReportsController < ApplicationController
     @bread_crumbs = { "Portfolio Reports" => portfolio_reports_path, @portfolio_report.name => portfolio_report_path(@portfolio_report) }
   end
 
+  # The rows of the options page, in the order the user sees them, as [PortfolioReport, template_id] pairs.
+  # E6: rows are read in the order of their numbers, which may have gaps (a removed row leaves one).
+  # E8: a request with one report and one template in the earlier form is a list of one row.
+  def report_parts
+    rows = if params[:parts].respond_to?(:each_pair)
+             params[:parts].each_pair.sort_by { |index, _| index.to_i }.filter_map do |_, row|
+               row.permit(:portfolio_report_id, :report_template_id) if row.respond_to?(:permit)
+             end
+           else
+             [params.permit(:portfolio_report_id, :report_template_id)]
+           end
+    rows.map do |row|
+      [policy_scope(PortfolioReport).find(row[:portfolio_report_id]), row[:report_template_id].presence&.to_i]
+    end
+  end
+
+  # The first reason the list cannot be generated, or nil. Checked in this order: every row has a
+  # template (X12), no template is used twice (X13), every template belongs to its row's report (X3).
+  # A request with no rows at all is refused like a row without a template.
+  def parts_refusal(parts)
+    template_ids = parts.map(&:last)
+    return PARTS_MESSAGES[:template_missing] if parts.empty? || template_ids.any?(&:blank?)
+    return PARTS_MESSAGES[:template_repeated] if template_ids.uniq.size != template_ids.size
+    return PARTS_MESSAGES[:template_foreign] unless parts.all? { |report, template_id| report.documents.exists?(id: template_id) }
+
+    nil
+  end
+
   # Only allow a list of trusted parameters through.
   def portfolio_report_params
-    params.require(:portfolio_report).permit(:entity_id, :name, :tags, :include_kpi, :include_portfolio_investments, portfolio_report_sections_attributes: %i[id name data tags icon _destroy])
+    params.require(:portfolio_report).permit(:entity_id, :name, :tags, :include_kpi, :include_portfolio_investments, :consolidated, portfolio_report_sections_attributes: %i[id name data tags icon _destroy])
   end
 end

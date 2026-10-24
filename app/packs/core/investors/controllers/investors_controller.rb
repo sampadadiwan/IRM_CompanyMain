@@ -198,8 +198,8 @@ class InvestorsController < ApplicationController
       all_reports = @investor.entity.portfolio_reports
                              .includes(portfolio_report_templates: :style_document,
                                        portfolio_report_sections: [])
-      # Split into ready (sections + at least one template) vs incomplete (shown in setup roadmap only)
-      @ready_portfolio_reports, @incomplete_portfolio_reports = all_reports.partition { |r| r.portfolio_report_sections.any? && r.portfolio_report_templates.any? }
+      # Split into ready (at least one template; sections are optional) vs incomplete (shown in setup roadmap only)
+      @ready_portfolio_reports, @incomplete_portfolio_reports = all_reports.partition { |r| r.portfolio_report_templates.any? }
       @portfolio_reports          = @ready_portfolio_reports # used by the Stimulus template-dropdown script
       @kpi_mappings               = @investor.investor_kpi_mappings.show_in_report.group_by(&:category)
       # Pre-fill dates/settings from the most recent draft for this portco

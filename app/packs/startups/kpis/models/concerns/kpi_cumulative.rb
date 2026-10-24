@@ -20,31 +20,6 @@ module KpiCumulative
     attr_accessor :autofill_errors
   end
 
-  # Generates a key or label for grouping dates by their fiscal year.
-  #
-  # @param date [Date] The date to get the fiscal year key for.
-  # @param style [Symbol] The style of the key:
-  #   - :start_year: Returns the starting year of the FY (Integer).
-  #   - :label: Returns a string representation like "FY2024-25".
-  #   - :range: Returns a Date range for the entire fiscal year.
-  # @return [Integer, String, Range<Date>]
-  def fiscal_year_key(date, style: :start_year)
-    # One definition of the fiscal year: the portfolio company's own setting, then the entity setting, then the
-    # regional default (KpiDateUtils). The old lookup asked this Kpi first, which always answered with the
-    # regional default, so company and entity settings were never read.
-    fy_start = KpiDateUtils.fiscal_year_start(date, fiscal_start_month)
-    case style
-    when :start_year
-      fy_start.year # Returns integer, e.g., 2024 for FY 2024–25
-    when :label
-      y1 = fy_start.year
-      y2 = fy_start.year + 1
-      "FY#{y1}-#{(y2 % 100).zero? ? '00' : format('%02d', y2 % 100)}" # Returns string "FY2024-25"
-    when :range
-      (fy_start..(fy_start.next_year - 1)) # Returns a Date range
-    end
-  end
-
   # Entry point for the cumulation process. Determines the mode of operation from the
   # KPI's mapping and executes the appropriate logic to fill Quarterly and YTD reports.
   #

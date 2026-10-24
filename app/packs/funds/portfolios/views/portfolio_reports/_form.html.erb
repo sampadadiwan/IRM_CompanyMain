@@ -15,7 +15,7 @@
       </div>
     </div>
   <% end %>
-  <%= form_with(model: portfolio_report, validate: true) do |form| %>
+  <%= form_with(model: portfolio_report, validate: true, data: { controller: "consolidated-report-form" }) do |form| %>
     <% if portfolio_report.errors.any? %>
       <div class="alert alert-danger">
         <h2><%= pluralize(portfolio_report.errors.count, "error") %> prohibited this portfolio_report from being saved:</h2>
@@ -47,16 +47,26 @@
       <%= form.label :include_portfolio_investments %>
       <%= form.check_box :include_portfolio_investments, class: "form-check-input" %>
     </div>
+    <div class="form-group">
+      <%= form.label :consolidated %>
+      <%= form.check_box :consolidated, class: "form-check-input", data: { consolidated_report_form_target: "checkbox", action: "change->consolidated-report-form#toggle" } %>
+      <span class="form-text text-muted">Its template is built once for all selected companies, not once per company. No extracts are made, and sections are not used.</span>
+    </div>
 
-     <h5 class="h5 mb-0 text-gray-800">Sections</h5>
+    <div data-consolidated-report-form-target="sections">
+      <h5 class="h5 mb-0 text-gray-800">Sections</h5>
       <div id="sections">
         <%= form.fields_for :portfolio_report_sections do |section_form| %>
           <%= render 'portfolio_report_section_fields', f: section_form %>
         <% end %>
       </div>
 
+      <div class="form-group">
+        <%= link_to_add_association 'Add Section', form, :portfolio_report_sections, class: 'btn btn-primary' %>
+      </div>
+    </div>
+
     <div class="form-group">
-      <%= link_to_add_association 'Add Section', form, :portfolio_report_sections, class: 'btn btn-primary' %>
       <%= form.submit t_common(:save), {class: "btn btn-outline-primary"}%>
     </div>
   <% end %>

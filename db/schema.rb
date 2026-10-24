@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_22_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_23_120000) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -4264,6 +4264,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_22_120000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "document_folder_id"
+    t.boolean "consolidated", default: false, null: false
     t.index ["document_folder_id"], name: "index_portfolio_reports_on_document_folder_id"
     t.index ["entity_id"], name: "index_portfolio_reports_on_entity_id"
   end

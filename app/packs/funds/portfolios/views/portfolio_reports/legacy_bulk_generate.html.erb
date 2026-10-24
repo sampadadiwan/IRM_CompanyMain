@@ -1,4 +1,5 @@
 <%= render NewCard.new(col_md: "col-md-10") do %>
+  <div data-controller="legacy-company-picker">
   <%= render FormCard.new(header_css_class: "w-100", title: "<span class='d-flex align-items-center justify-content-between w-100 gap-2'>Bulk Generate Portfolio Reports (Legacy) #{user_guide_icon_for('portfolio_report_legacy', tooltip: 'Portfolio Report (Legacy) User Guide')}</span>") do %>
 
     <div class="alert alert-warning small mb-4">
@@ -53,6 +54,10 @@
 
       <div class="mb-4">
         <%= turbo_frame_tag "legacy_pc_select" do %>
+          <%# H14: a Preview that matches nobody says so instead of leaving an empty list %>
+          <% if params[:previewed].present? && @matching_ids.empty? %>
+            <div class="alert alert-warning small mb-2" role="alert">No portfolio companies match the selected filters.</div>
+          <% end %>
           <%= select_tag "portfolio_company_ids[]",
                 options_from_collection_for_select(@portfolio_companies, :id, :investor_name, @matching_ids),
                 class: "form-control select2", multiple: true %>
@@ -61,10 +66,12 @@
       </div>
 
       <div class="d-flex align-items-center gap-3">
-        <%= submit_tag "Next", class: "btn btn-primary" %>
+        <%# E19: Next needs at least one company in the list (see legacy-company-picker) %>
+        <%= submit_tag "Next", class: "btn btn-primary", disabled: true, data: { legacy_company_picker_target: "next" } %>
         <%= link_to "Cancel", portfolio_reports_path, class: "btn btn-outline-secondary" %>
       </div>
     <% end %>
 
   <% end %>
+  </div>
 <% end %>

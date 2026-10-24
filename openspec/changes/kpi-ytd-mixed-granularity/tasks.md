@@ -24,8 +24,8 @@ stop and agree the split before adding files.
 
 ## 1. Calculated-row marker and fiscal calendar (PR 1)
 
-- [x] 1.1 Make `fiscal_year_key` and `fiscal_quarter_number` in `kpi_cumulative.rb` use `KpiDateUtils` (add `fiscal_year_start`
-      and `fiscal_quarter` there). Verify by running `kpi_cumulate_mixed_granularity.feature` (E10, E35 fail on the old code).
+- [x] 1.1 Make the fiscal calendar in `kpi_cumulative.rb` use `KpiDateUtils` (add `fiscal_year_start` and `fiscal_quarter`
+      there); `fiscal_year_key` and `fiscal_quarter_number` have no caller and are removed. Verify by running `kpi_cumulate_mixed_granularity.feature` (E10, E35 fail on the old code).
       The list of portfolio companies and entity settings whose offset differs from the regional default needs production
       data, so it moved to task 8.5 (LLD: Method Contracts, Configuration)
 - [x] 1.2 Add the `Kpi.calculated_cumulative` scope (`source = 'auto_cumulation'`, or blank `source` with the legacy

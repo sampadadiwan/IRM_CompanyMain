@@ -15,10 +15,16 @@ require "fileutils"
 #   - A per-company embedded image (e.g. PortfolioReportDocGenerator's logo merge field) means
 #     word/media/*, word/_rels/document.xml.rels and [Content_Types].xml can genuinely differ.
 #
+# Files from DIFFERENT templates can be joined too (a cover page and the per-company reports, say):
+# the first file's styles, page setup and running header/footer win for the whole document, and
+# later files contribute their content only. Only the relationships a later file's content actually
+# uses (images, hyperlinks) are brought across; its styles, theme, settings, header and footer
+# relationships are left behind so no relationship ever points at a part that was not copied.
+#
 # What this does NOT attempt: independent sections with their own header/footer per merged file
 # (everything lands in one continuous section using the base file's sectPr/header/footer), or
-# reconciling differing base styles/numbering definitions between files generated from different
-# templates. Both are out of scope for the "merge N companies' copies of the same report" use case.
+# reconciling differing base styles/numbering definitions between files: a later file's styles that
+# the first file does not define fall back to the default style.
 class DocxMerger
   W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main".freeze
   R_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships".freeze
@@ -71,7 +77,11 @@ class DocxMerger
 
           rid_map = {}
           if other_rels && rels_xml
+            used_rids = content_rids(other_body, other_sect_pr)
             other_rels.xpath("//rel:Relationship", "rel" => RELS_NS).each do |rel|
+              # X9 sibling: skip relationships the copied content never refers to (styles, theme, header, footer ...)
+              next unless used_rids.include?(rel["Id"])
+
               new_id = "rId#{next_rid}"
               next_rid += 1
               rid_map[rel["Id"]] = new_id
@@ -169,14 +179,20 @@ class DocxMerger
   def remap_r_ids!(doc, rid_map)
     return if rid_map.empty?
 
-    doc.xpath("//*[@r:id]", NS).each do |node|
-      new_id = rid_map[node["r:id"]]
-      node["r:id"] = new_id if new_id
+    # Every attribute in the relationships namespace (r:id, r:embed, r:link ...) names a relationship
+    doc.xpath("//@*[namespace-uri()='#{R_NS}']").each do |attr|
+      new_id = rid_map[attr.value]
+      attr.value = new_id if new_id
     end
-    doc.xpath("//*[@r:embed]", NS).each do |node|
-      new_id = rid_map[node["r:embed"]]
-      node["r:embed"] = new_id if new_id
-    end
+  end
+
+  # The relationship ids used by the content that is copied (everything in the body except its sectPr).
+  def content_rids(body, sect_pr)
+    return [] unless body
+
+    body.children.reject { |child| child == sect_pr }.flat_map do |child|
+      child.xpath(".//@*[namespace-uri()='#{R_NS}']").map(&:value)
+    end.uniq
   end
 
   # Only numIds that are NOT already part of the base file's numbering.xml need remapping —

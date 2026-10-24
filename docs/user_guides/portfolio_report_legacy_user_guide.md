@@ -18,9 +18,10 @@ You pick one or many portfolio companies, a report template, and a date range. T
 6. [The Options Screen Explained](#the-options-screen-explained)
 7. [Extracts vs. Reports](#extracts-vs-reports)
 8. [Where Your Output Lands](#where-your-output-lands)
-9. [What the AI Reads](#what-the-ai-reads)
-10. [A Note on Privacy](#a-note-on-privacy)
-11. [Frequently Asked Questions](#frequently-asked-questions)
+9. [Deleting an extract](#deleting-an-extract)
+10. [What the AI Reads](#what-the-ai-reads)
+11. [A Note on Privacy](#a-note-on-privacy)
+12. [Frequently Asked Questions](#frequently-asked-questions)
 
 ---
 
@@ -30,7 +31,7 @@ For a company to produce a meaningful report, three things need to be in place:
 
 1. **The company is a Portfolio Company.** Only investors categorised as _Portfolio Company_ appear in the pickers.
 2. **It has a documented KPI report.** The system pulls the company's most recent KPI report that falls inside your date range, along with the documents attached to it (KPIs spreadsheet, investor presentation, etc.). Without these, the report still generates, but the narrative sections will be largely empty.
-3. **A report and a Word template exist.** At least one **Portfolio Report** with sections must be set up for your entity. Its sections define _which sections_ the report has (e.g. "Quarterly Update", "Financial Analysis", "Risk Factors") and _what the AI is told to write_ in each. For the legacy flow the "template" is a `.docx` document uploaded on that report's **Templates (Legacy)** tab — not an output template from the drafts flow.
+3. **A report and a Word template exist.** At least one **Portfolio Report** must be set up for your entity. Sections are optional; when it has them, they define _which sections_ the report has (e.g. "Quarterly Update", "Financial Analysis", "Risk Factors") and _what the AI is told to write_ in each. For the legacy flow the "template" is a `.docx` document uploaded on that report's **Templates (Legacy)** tab — not an output template from the drafts flow.
 
 If no portfolio report exists yet, the "Portfolio Report (Legacy)" option won't appear on the company page. It appears as soon as any Portfolio Report exists, even before a Word template is uploaded — without one, the Options screen's **Report template** list is empty.
 
@@ -67,7 +68,7 @@ Both routes end on the same Options screen where you choose the template, date r
 2. Click the **Misc** menu.
 3. Click **Portfolio Report (Legacy)**.
    - This jumps you straight to the **Options** screen with that company already selected — there's no company-picking step, since you're already on its page.
-4. On the Options screen, choose your **Report**, **Report template**, **Start date**, and **End date**.
+4. On the Options screen, choose the **Report** and **Template** in each row of the list (use **Add report** for more), then the **Start date** and **End date**.
 5. Click either **Generate Extracts Only** or **Generate Report** (see [The Options Screen Explained](#the-options-screen-explained)).
 6. You're returned to the company page with a confirmation notice (e.g. _"Queued report generation for 1 company."_). Generation runs in the background.
 
@@ -81,7 +82,7 @@ Both routes end on the same Options screen where you choose the template, date r
 2. **Filter portfolio companies** (optional). Choose any combination of **Funds**, **Tags**, and **Sectors**, then click **Preview**. Preview _selects_ the companies matching your filters in the list below. Despite the hint on the page, it replaces the current selection with the matches, so any company you picked by hand before clicking Preview is deselected; Preview with no filters selects every portfolio company.
 3. **Review & finalize.** Every portfolio company for your entity is listed in the multi-select. Add or remove any company by hand after the last Preview — the final selection is whatever is highlighted here, not the filter.
 4. Click **Next** to move to the **Options** screen.
-5. Choose your **Report**, **Report template**, **Start date**, and **End date**, then click **Generate Extracts Only** or **Generate Report**.
+5. Choose the **Report** and **Template** in each row of the list (use **Add report** for more), then the **Start date** and **End date**, then click **Generate Extracts Only** or **Generate Report**.
 6. You're returned to the Portfolio Reports index with a confirmation notice telling you how many companies were queued.
 
 ### Bulk Generate (Legacy) at a glance
@@ -95,13 +96,23 @@ The **Bulk Generate (Legacy)** button on the [Portfolio Reports list](/portfolio
 | **Generate Extracts Only** | Queues one background job that creates a new AI extract for each company (or only those without an extract holding data, when **Only generate for companies missing an extract** is ticked). | On the Options screen |
 | **Generate Report** | Queues one background job that fills the chosen Word template for each company from its latest extract (creating missing ones if **Generate missing report extracts** is ticked, otherwise an empty one) and merges two or more companies into one document. | On the Options screen |
 
-Both jobs run in the background on a low-priority queue and report only to you: progress alerts while it runs (one per company for extracts), then one completion alert (with a link to the merged or single document for **Generate Report**), plus an error email when anything failed. Nothing is emailed to investors. There is no undo: extracts cannot be deleted and generated documents stay until you delete them from the folder.
+Both jobs run in the background on a low-priority queue and report only to you: progress alerts while it runs (one per company for extracts), then one completion alert (with a link to the merged or single document for **Generate Report**), plus an error email when anything failed. Nothing is emailed to investors. There is no undo for a run: generated documents stay until you delete them from the folder. A Company Admin can delete an extract from its details page (see [Deleting an extract](#deleting-an-extract)).
 
 ---
 
 ## The Options Screen Explained
 
-The Options screen has two side-by-side actions. Both use the **Report**, **Report template**, **Start date**, and **End date** you set at the top. The **Report template** list shows only the Word documents uploaded on the selected report's **Templates (Legacy)** tab.
+The Options screen has two side-by-side actions. Both use the list of reports and the **Start date** and **End date** you set at the top. The **Template** list in each row shows only the Word documents uploaded on that row's report's **Templates (Legacy)** tab.
+
+### The list of reports
+
+The top of the screen is a list of rows, each with a **Report** and a **Template**. The screen starts with one row. Click **Add report** to add another row; click **Remove** to take a row away (the last row cannot be removed). **The order of the rows is the order of the parts in the final document.**
+
+- A report marked **(Consolidated)** is built **once for all the selected companies** from a single template (for example a cover and summary page that lists every company, or a legal disclaimer). It does not use extracts. You mark a report as consolidated with the **Consolidated** tick on the report's form; reports you already had stay unticked.
+- A consolidated template loops the companies (`portfolio_companies`). For each company it can use the company, its latest and earliest portfolio investment, the logo, and its funds; each fund has a name, currency, FMV, cost of investment, IRR and MOIC, plus a list of ratios so you can loop companies, then funds, then ratios. Companies are listed A–Z. A company with no investments is still listed, with no funds. IRR and MOIC are the latest stored values on or before the end date, or _N/A_ if they were never run. KPIs and the cap table are not available in a consolidated template. For a totals row under the company table, loop `fund_totals`: one entry per fund, with its name, currency, FMV and cost of investment added up over the selected companies, and `custom_fields`, the total of each number or money custom field of the companies (a blank counts as zero). Use the same fund-name check as on the fund rows to keep the row to one fund.
+- Any other report is built **once per company**, in alphabetical order, from that company's extract, as before.
+- **Each template can be used only once** in the list. The page checks this before anything is sent: a row with no template, or a template that already appears in another row, is marked with a message beside it and **Generate Report** does not submit until you fix it. The message goes away as soon as you change the row.
+- **Generate Extracts Only** ignores consolidated reports and runs once for each normal report in the list. If every row is a consolidated report, the page tells you there is nothing to generate.
 
 ### Generate Extracts Only
 
@@ -115,7 +126,7 @@ Produces the finished, formatted `.docx` report(s).
 
 - **Generate missing report extracts** — when ticked, any company that doesn't yet have an extract gets one generated automatically as part of the run, so its report isn't blank. When unticked, an empty extract record is created for each company without one and its report has empty narrative sections.
 
-When you generate a report for **more than one** company in a single run, each company gets its own report **and** a single **merged** document combining them all (see below).
+When you generate a report for **more than one** company in a single run, each company gets its own report **and** a single **merged** document combining them all (see below). With more than one row in the list, the merged document also holds the consolidated parts, in the order of the rows.
 
 ---
 
@@ -133,16 +144,27 @@ It helps to know why there are two separate buttons:
 ## Where Your Output Lands
 
 - **Each company's own report** is saved under that company's own **Portfolio Reports** folder, exactly as a single-company report would be. Its name follows the pattern _`<Template> <Company> <start> to <end>`_. Re-running adds a new document; earlier documents are not replaced or deleted.
-- **The merged report** (only when you generate for 2+ companies at once) is saved under a shared folder: **Investors → Generated Portfolio Reports**. Its name follows _`<Template> <start> to <end> - <N> companies`_, and the companies inside it are ordered alphabetically so the combined deck reads the same way every time.
+- **The combined document** is saved under a shared folder: **Portfolio Reports → Generated Portfolio Reports** (in the entity's Documents). It is made when the list has a consolidated report, more than one row, or more than one company. Its name follows _`<Template> <start> to <end> - <N> companies`_, where the template is the one in the **first row**. The parts follow the order of the rows, and within a normal report the companies are ordered alphabetically so the combined document reads the same way every time. Consolidated parts are not saved as separate files; they exist only inside the combined document.
+- **The look of the combined document comes from the first row's template**: its styles, page setup and running header and footer are used for the whole document, and later parts contribute their content only. Put the template whose look you want first.
 - **Extracts** don't produce a file — review them on the **Portfolio Report Extracts** page (Misc menu on a company, or the filtered link from the company page).
 
-Generating for exactly one company never creates a merged document — you just get that company's report in its own folder.
+Generating one normal report for exactly one company never creates a combined document — you just get that company's report in its own folder.
+
+---
+
+## Deleting an extract
+
+A Company Admin can delete an extract from the extract's details page: click **Delete** and confirm. You return to the list of extracts for that report with "Portfolio report extract deleted successfully." The extract is removed from the lists and from the company dashboard. The next report generated for that company and period creates a new extract if **Generate missing report extracts** is ticked, and otherwise shows "No data available" for that company.
+
+The portfolio report widget on a company's dashboard shows the **latest extract that has data** for the report it is set up for. An extract with no data is skipped in favour of the one before it.
 
 ---
 
 ## What the AI Reads
 
 For each company, the system automatically finds the **latest non-generated KPI report** whose date falls inside your chosen range, and reads the documents attached to it (typically the KPIs spreadsheet and the investor presentation). It also sends the company's notes dated within the range (filtered by the report's tags). You don't choose documents by hand — picking the right KPI report and its attachments is automatic based on the date range.
+
+If a company has **no documents** in the range, its extract is built from its **notes** for the period and the **KPIs of its latest KPI report** in the range instead (the KPIs are used only in this case), and you see an amber warning that no documents were found (for a bulk extract run, one amber alert at the end lists all such companies). If a company has no documents, no notes and no KPIs in the range, its extract is left empty.
 
 If a run has errors, the alert is red and the list of errors is also emailed to you.
 
@@ -176,7 +198,7 @@ From a company page, **Misc** → **Portfolio Report Extracts**, or open the Por
 Open the report on [**Portfolio Reports Setup**](/portfolio_reports) with **Show**, then the **Templates (Legacy)** tab, and add the `.docx` template document there. Only documents on that tab appear in the Options screen's **Report template** list.
 
 **Where do the finished documents go?**
-Each company's report goes into a **Portfolio Reports** folder inside that company's documents (company page → **Misc** → **Documents**). A multi-company run also saves a merged file under **Investors → Generated Portfolio Reports** in your [documents](/documents). See [Where Your Output Lands](#where-your-output-lands).
+Each company's report goes into a **Portfolio Reports** folder inside that company's documents (company page → **Misc** → **Documents**). A multi-company run also saves a merged file under **Portfolio Reports → Generated Portfolio Reports** (in the entity's Documents) in your [documents](/documents). See [Where Your Output Lands](#where-your-output-lands).
 
 ### Creating, updating and managing legacy reports
 
@@ -202,10 +224,10 @@ Open the extract (**View Details**) and click **Edit Data**, or **Edit** on the 
 Open the report on [**Portfolio Reports Setup**](/portfolio_reports) → **Edit** and change section names or instructions, add sections with **Add Section**, then save. New extracts follow the updated sections; existing extracts keep their old content until regenerated.
 
 **Can I delete an extract or a generated report?**
-There is no delete button for extracts. Generated documents can be removed from the documents folder like any other document, subject to your document permissions.
+A Company Admin can delete an extract from its details page (see [Deleting an extract](#deleting-an-extract)). Generated documents can be removed from the documents folder like any other document, subject to your document permissions.
 
 **Who can use the legacy flow, including Bulk Generate (Legacy)?**
-Your company needs the *Fund Portfolios* feature, and the bulk page and the Options screen (also used by the single-company **Misc** path) need the *Company Admin* role. Viewing and editing extracts needs access as an employee of the company.
+Your company needs the *Fund Portfolios* feature, and the bulk page and the Options screen (also used by the single-company **Misc** path) need the *Company Admin* role. Viewing and editing extracts needs access as an employee of the company; deleting one needs the *Company Admin* role.
 
 ### Why use the legacy flow
 
@@ -224,10 +246,10 @@ Use [Portfolio Report Drafts](portfolio_report_drafts_user_guide) when you want 
 ### What happens when I…
 
 **What happens when I use Bulk Generate (Legacy) → Generate Extracts Only?**
-One background job creates a new extract per selected company (skipping those that already have one with data if **Only generate for companies missing an extract** is ticked), finds the latest KPI report in the date range with a matching attachment, sends that report's documents and the company's notes in the range (filtered by the report's tags) to the external AI model, and stores the section content. You see a progress alert per company and one completion alert; failures and companies with no documents are listed in a red alert and emailed to you.
+One background job creates a new extract per selected company (skipping those that already have one with data if **Only generate for companies missing an extract** is ticked), finds the latest KPI report in the date range with a matching attachment, sends that report's documents and the company's notes in the range (filtered by the report's tags) to the external AI model, and stores the section content. You see a progress alert per company and one completion alert; failures, and companies with nothing at all to build from (no documents, notes or KPIs), are listed in a red alert and emailed to you. Companies built from notes and KPIs only are listed together in one amber alert at the end.
 
 **What happens if a company has no KPI documents in the range?**
-An extract is still created but left empty, and you get a red on-screen alert "No documents found". At the end of the run any errors are also emailed to you.
+If the company has notes or KPIs in the range, the extract is built from them and you see an amber warning "No documents found … Extract built from notes and KPIs." If it has none of those either, an extract is still created but left empty and you get a red on-screen alert "No documents found". At the end of the run any errors are also emailed to you.
 
 **What happens when I use Bulk Generate (Legacy) → Generate Report?**
 For each company the job uses the latest extract for that report and date range (or generates one if you ticked **Generate missing report extracts**), fills the chosen Word template and saves "<template> <company> <start> to <end>" in the company's **Portfolio Reports** folder. With two or more companies it then merges them alphabetically into one file.
@@ -250,7 +272,7 @@ From an extract's page, **Generate Tear Sheet** (or a **Palette** choice) starts
 The company has no extract for that report and date range, and you didn't tick "Generate missing report extracts". Either generate the extract first, or re-run the report with that box ticked.
 
 **Why does an extract say there's no data?**
-The company had no documented KPI report inside your date range, so the AI had nothing to read. Check that the company has a KPI report with attached documents whose date falls within Start–End.
+The company had no documents, notes or KPIs inside your date range, so the AI had nothing to read. Check that the company has a KPI report with attached documents (or notes, or KPIs) whose date falls within Start–End.
 
 **I ran "Generate Report" but nothing appeared immediately.**
 Generation runs in the background. You'll get a confirmation notice when it's queued; the finished document appears in the folder once the job completes. For large batches this can take a little while.
@@ -265,7 +287,7 @@ A company whose extract could not be created, or whose template fill failed, is 
 No. The legacy bulk run uses only the companies highlighted when you click **Next**, not the **Funds**, **Tags** or **Sectors** filters. Preview just highlights the matches, and you can add or remove companies before continuing; the Options screen lists the names it will generate for.
 
 **Can I undo a Bulk Generate (Legacy) run?**
-No. Extracts from a legacy bulk run cannot be deleted, and generated documents (each company's report and the merged file) stay until you delete them from their folders like any other document. Re-running creates new extracts and documents rather than replacing them.
+No. Generated documents (each company's report and the combined file) stay until you delete them from their folders like any other document. Re-running creates new extracts and documents rather than replacing them. A Company Admin can delete an extract from its details page (see [Deleting an extract](#deleting-an-extract)).
 
 **Can I regenerate just the companies I added to a batch?**
 Yes. Tick **Only generate for companies missing an extract** (for extracts) so companies that already have one are skipped, and only the new additions are processed.
@@ -283,7 +305,7 @@ It appears only when the Stakeholder's category is *Portfolio Company* and your 
 Only documents uploaded on a report's **Templates (Legacy)** tab are offered, filtered to the selected **Report**. Upload a Word template there and reload the Options screen.
 
 **Why did only one document appear for my batch?**
-A merged file is created only when two or more company reports were generated. If other companies failed, check the red alert or the error email for the reasons.
+A combined file is made when the run produces more than one part: two or more company reports, more than one row in the list, or a consolidated report. If other companies failed, check the red alert or the error email for the reasons.
 
 **Is my data sent outside CapHive?**
 Yes. The KPI report documents and filtered notes are sent to your company's external AI model, as the warning on the bulk page says. See [A Note on Privacy](#a-note-on-privacy).

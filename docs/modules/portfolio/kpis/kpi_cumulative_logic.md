@@ -14,13 +14,11 @@ Calculations are based on monthly "Actual" KPI data. The system fetches these re
 
 ## 2. Fiscal Year Grouping
 
-The logic uses the `fiscal_year_key` method to group monthly data into fiscal years.
+Monthly data is grouped into fiscal years by `KpiCumulationPlanner`, using `KpiDateUtils.fiscal_year_start`.
 
-- It determines the start of the financial year based on the entity's settings (`EntitySetting#start_of_financial_year_date`).
-- **Default Boundary**: If not explicitly set, the fiscal year starts on **April 1st** (offset of 3 months).
-- **Grouping Logic**:
-  - Dates are grouped into a starting year (e.g., 2024 for FY 2024-25).
-  - The system supports generating labels (e.g., "FY2024-25") and date ranges for these groupings.
+- The fiscal year start month comes from `KpiDateUtils.resolve_fiscal_year_start_month`: the portfolio company's setting first, then the entity setting, then the regional default.
+- **Default Boundary**: If not set anywhere, the fiscal year starts in **April** on the India server and **January** on the US server.
+- **Grouping Logic**: Dates are grouped by the start date of their fiscal year (e.g., 1 April 2024 for FY 2024-25).
 
 ## 3. Calculation Modes
 

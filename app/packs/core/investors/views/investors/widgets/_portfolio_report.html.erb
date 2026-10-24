@@ -7,16 +7,17 @@
 %>
 
 <%# Portfolio Report Widget %>
-<%# Displays the latest PortfolioReportExtract for the current investor. %>
+<%# Displays the latest PortfolioReportExtract that has data for the current investor. %>
 <%# Supports optional metadata args: %>
 <%#   - tabs: comma-separated section names to filter and order displayed tabs %>
 <%#   - portfolio_report_id: scopes the widget to show extracts from a specific report template %>
 
 
 
-<% scope = @investor.portfolio_report_extracts.order(end_date: :asc).order(id: :asc) %>
-<% scope = scope.where(portfolio_report_id: args[:portfolio_report_id]) if args&.dig(:portfolio_report_id).present? %>
-<% portfolio_report_extract = scope.last %>
+<%# H12, E15: the latest extract that has data (a blank latest extract is skipped, however many in a row). %>
+<% extracts = @investor.portfolio_report_extracts %>
+<% extracts = extracts.where(portfolio_report_id: args[:portfolio_report_id]) if args&.dig(:portfolio_report_id).present? %>
+<% portfolio_report_extract = extracts.latest_with_data %>
 
 
 <% if portfolio_report_extract.present? && portfolio_report_extract.data.present? %>
