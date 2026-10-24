@@ -7,16 +7,12 @@
 class SideLetterObligationsController < ApplicationController
   before_action :set_obligation, only: %i[show edit update destroy approve reject waive revert fire fulfill]
 
+  # @note The legal_category Ransack filter (`q[legal_category_eq]`) is the
+  #   primary scoping mechanism. Agents link here with the filter pre-selected
+  #   (e.g. `?q[legal_category_eq]=0` for CP). No `context` parameter.
   def index
     authorize SideLetterObligation
-    # Context param controls pre-filtering and column visibility:
-    #   "cp_cs"       → only CP/CS obligations, hides legal category column
-    #   "side_letter"  → only SLO obligations, hides legal category column
-    #   nil (default)  → all obligations, shows legal category column
-    @obligation_context = params[:context]
-    # Breadcrumb preserves context so clicking it doesn't lose the CP/CS or
-    # side_letter scope the user arrived with.
-    @bread_crumbs = { 'Obligation Matrix': side_letter_obligations_path(context: @obligation_context) }
+    @bread_crumbs = { 'Obligation Matrix': side_letter_obligations_path }
     # Eager-load tasks alongside obligations to avoid N+1 when rendering the
     # fired-task due date and count in the matrix's "Next Due" column.
     # Eager-load side_letter chain for commitment obligations; portfolio
@@ -40,29 +36,44 @@ class SideLetterObligationsController < ApplicationController
       scope = scope.where(id: commitment_ids)
                    .or(scope.where(sourceable_type: "PortfolioInvestment", sourceable_id: pi_ids))
     end
-    # Stakeholder filter: narrows to portfolio obligations linked to a specific
-    # portfolio company. Uses a subquery to avoid conflicting with the
-    # polymorphic :sourceable eager-load on the base scope.
+    # Stakeholder filter: narrows to obligations linked to a specific investor.
+    # CP/CS obligations link via sourceable (PortfolioInvestment → portfolio_company_id).
+    # SLO obligations link via side_letter → capital_commitment → investor_id.
+    # When no legal category is selected, both paths are OR-combined.
     if params[:stakeholder_id].present?
-      pi_ids = PortfolioInvestment.where(portfolio_company_id: params[:stakeholder_id]).select(:id)
-      scope = scope.where(sourceable_type: "PortfolioInvestment", sourceable_id: pi_ids)
-    end
-    # Context-based legal category scoping — pre-filters the matrix to the
-    # relevant obligation type when arriving from an agent tab.
-    if @obligation_context == "cp_cs"
-      scope = scope.where(legal_category: %i[condition_precedent condition_subsequent])
-    elsif @obligation_context == "side_letter"
-      scope = scope.where(legal_category: :side_letter_obligation)
+      legal_cat = params.dig(:q, :legal_category_eq).to_s
+      sid = params[:stakeholder_id]
+
+      case legal_cat
+      when "0", "1"
+        # CP/CS: stakeholder is a portfolio company
+        pi_ids = PortfolioInvestment.where(portfolio_company_id: sid).select(:id)
+        scope = scope.where(sourceable_type: "PortfolioInvestment", sourceable_id: pi_ids)
+      when "2"
+        # SLO: stakeholder is an LP — filter via side_letter → capital_commitment
+        sl_ids = SideLetter.where(
+          capital_commitment_id: CapitalCommitment.where(investor_id: sid).select(:id)
+        ).select(:id)
+        scope = scope.where(side_letter_id: sl_ids)
+      else
+        # No legal category: union of both paths
+        pi_ids = PortfolioInvestment.where(portfolio_company_id: sid).select(:id)
+        sl_ids = SideLetter.where(
+          capital_commitment_id: CapitalCommitment.where(investor_id: sid).select(:id)
+        ).select(:id)
+        scope = scope.where(sourceable_type: "PortfolioInvestment", sourceable_id: pi_ids)
+                     .or(scope.where(side_letter_id: sl_ids))
+      end
     end
     @q = scope.ransack(params[:q])
     @side_letter_obligations = @q.result.order(Arel.sql("next_due_date IS NULL, next_due_date ASC"))
     @funds = Fund.where(entity_id: current_user.entity_id).order(:name)
-    # Stakeholder options: portfolio companies that have at least one obligation
-    @stakeholders = Investor.where(
-      id: PortfolioInvestment.where(
-        id: SideLetterObligation.where(entity_id: current_user.entity_id, sourceable_type: "PortfolioInvestment").select(:sourceable_id)
-      ).select(:portfolio_company_id)
-    ).order(:investor_name)
+    # Stakeholder dropdown: scoped by the active legal_category filter so the
+    # options match the obligation type the user is viewing.
+    #   CP/CS (0, 1) → portfolio companies (via PortfolioInvestment sourceable)
+    #   SLO   (2)    → LPs / investors (via CapitalCommitment → SideLetter)
+    #   blank         → all stakeholders from both paths
+    @stakeholders = stakeholders_for_legal_category(params.dig(:q, :legal_category_eq))
   end
 
   # Displays the obligation detail page. Turbo Stream requests (e.g. the
@@ -346,5 +357,50 @@ class SideLetterObligationsController < ApplicationController
 
   def fulfillment_params
     params.require(:obligation_fulfillment).permit(:fulfilled_at, :fulfillment_method, :period_covered, :document_id)
+  end
+
+  # Builds the stakeholder dropdown options scoped by the active legal category
+  # filter so the dropdown shows relevant stakeholders for the obligation type.
+  #
+  # @param legal_category_eq [String, nil] the Ransack legal_category_eq value
+  #   from params — "0"/"1" for CP/CS, "2" for SLO, nil for all
+  # @return [ActiveRecord::Relation<Investor>] investors ordered by name, each
+  #   query entity-scoped via the obligation's entity_id
+  def stakeholders_for_legal_category(legal_category_eq)
+    entity_id = current_user.entity_id
+
+    case legal_category_eq.to_s
+    when "0", "1"
+      # CP/CS: portfolio companies that have at least one PI-sourced obligation
+      Investor.where(
+        id: PortfolioInvestment.where(
+          id: SideLetterObligation.where(entity_id: entity_id, sourceable_type: "PortfolioInvestment").select(:sourceable_id)
+        ).select(:portfolio_company_id)
+      ).order(:investor_name)
+    when "2"
+      # SLO: LPs/investors linked via capital_commitment → side_letter → obligation
+      Investor.where(
+        id: CapitalCommitment.where(
+          id: SideLetter.where(
+            id: SideLetterObligation.where(entity_id: entity_id, legal_category: :side_letter_obligation)
+                                    .where.not(side_letter_id: nil)
+                                    .select(:side_letter_id)
+          ).select(:capital_commitment_id)
+        ).select(:investor_id)
+      ).order(:investor_name)
+    else
+      # No filter: union of both sets — portfolio companies and LPs
+      pc_ids = PortfolioInvestment.where(
+        id: SideLetterObligation.where(entity_id: entity_id, sourceable_type: "PortfolioInvestment").select(:sourceable_id)
+      ).select(:portfolio_company_id)
+
+      lp_ids = CapitalCommitment.where(
+        id: SideLetter.where(
+          id: SideLetterObligation.where(entity_id: entity_id).where.not(side_letter_id: nil).select(:side_letter_id)
+        ).select(:capital_commitment_id)
+      ).select(:investor_id)
+
+      Investor.where(id: pc_ids).or(Investor.where(id: lp_ids)).order(:investor_name)
+    end
   end
 end

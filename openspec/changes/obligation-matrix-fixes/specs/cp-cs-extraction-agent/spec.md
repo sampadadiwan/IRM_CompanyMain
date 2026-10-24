@@ -63,7 +63,7 @@ The agent SHALL extract obligations from each matching document on a portfolio i
 - **THEN** it is discarded, consistent with the existing extraction engine behavior
 
 ### Requirement: Run CP/CS Agent button on portfolio investment page
-The system SHALL display a "Run CP/CS Agent" button on each portfolio investment's show page when the CP/CS agent is enabled for the entity. Clicking the button SHALL trigger extraction for that single portfolio investment and display a step-by-step progress panel.
+The system SHALL display a "Run CP/CS Agent" button on each portfolio investment's show page when the CP/CS agent is enabled for the entity. Clicking the button SHALL trigger extraction for that single portfolio investment and display a step-by-step progress panel. After completion, the report SHALL include an "Open Obligation Matrix" link that opens the matrix with `legal_category_eq` pre-selected to Condition Precedent.
 
 #### Scenario: Button visible when agent is enabled
 - **WHEN** the CP/CS agent is enabled for the entity and a user views a portfolio investment page
@@ -76,6 +76,10 @@ The system SHALL display a "Run CP/CS Agent" button on each portfolio investment
 #### Scenario: Running from PI page shows progress
 - **WHEN** a user clicks "Run CP/CS Agent" on a portfolio investment page
 - **THEN** a progress panel appears showing step indicators (Initialize, Locate Document, Extract Obligations, Save For Review, Generate Report)
+
+#### Scenario: Completion links to matrix with legal category pre-selected
+- **WHEN** the CP/CS agent completes extraction from a PI page
+- **THEN** the "Open Obligation Matrix" link opens the matrix with `legal_category_eq=0` (Condition Precedent) pre-selected
 
 ### Requirement: Progress panel does not duplicate on navigation
 The progress panel on the portfolio investment page SHALL be wrapped in a container with a fixed identifier so that navigating away and returning (via browser cache or Turbo page cache) always shows at most one progress panel.
@@ -109,3 +113,14 @@ When running the CP/CS agent for a single portfolio investment or from the agent
 #### Scenario: Closing date omitted
 - **WHEN** a user runs the agent without providing an estimated closing date
 - **THEN** extraction proceeds normally without date context
+
+### Requirement: CP/CS single-company redirect with stakeholder pre-filter
+When the CP/CS agent completes a run scoped to a single portfolio company (investor), the report's "Open Obligation Matrix" link SHALL open the matrix with both `legal_category_eq` (Condition Precedent) and `stakeholder_id` (that company's ID) pre-selected, so counsel lands directly on that company's CP/CS obligations.
+
+#### Scenario: Single-company run redirects with stakeholder pre-filter
+- **WHEN** the CP/CS agent completes a run for a single portfolio company "Acme Corp"
+- **THEN** the "Open Obligation Matrix" link opens the matrix with `legal_category_eq=0` and `stakeholder_id=<acme_id>` pre-selected
+
+#### Scenario: Batch run redirects without stakeholder pre-filter
+- **WHEN** the CP/CS agent completes a batch run for the entity
+- **THEN** the "Open Obligation Matrix" link opens the matrix with only `legal_category_eq=0` pre-selected (no stakeholder filter)

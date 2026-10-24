@@ -1,3 +1,6 @@
+<%# Capital commitment show page. Displays commitment stats, action buttons
+    (edit, delete, AI assistant, SLO agent), commitment details, and the
+    SLO agent run modal + progress wrapper when the agent is enabled. %>
 <div class="container-fluid p-3">
 
   <%= render "/capital_commitments/capital_commitment_stats", capital_commitment: @capital_commitment %>
@@ -32,6 +35,14 @@
           <i class="ti ti-brand-github-copilot"></i> AI Assistant <i class="ti ti-lock ms-1" style="font-size:0.7rem"></i>
         </button>
       </span>
+    <% end %>
+
+    <%# Run SLO Agent for this specific capital commitment %>
+    <% if current_user.entity&.support_agents&.set?(:side_letter_obligation_agent) %>
+      <button type="button" class="btn btn-outline-info"
+              data-bs-toggle="modal" data-bs-target="#run-slo-agent-commitment-modal">
+        <i class="ti ti-robot"></i> Run SLO Agent
+      </button>
     <% end %>
 
     <% if policy(@capital_commitment).update? %>
@@ -113,4 +124,31 @@
 
 </div>
 
+<%# SLO Agent progress panel — placed between buttons and details so the
+    user sees progress without scrolling after clicking "Run SLO Agent". %>
+<% if current_user.entity&.support_agents&.set?(:side_letter_obligation_agent) %>
+  <div id="slo_progress_wrapper" class="container-fluid px-3 pb-3">
+    <% slo_agent = SupportAgent.find_by(entity_id: current_user.entity_id, agent_type: "SideLetterObligationAgent") %>
+    <% existing_report = SupportAgentReport.find_by(owner: @capital_commitment, support_agent: slo_agent) if slo_agent %>
+    <% if existing_report %>
+      <%= render "support_agents/progress_panel",
+                 report: existing_report,
+                 support_agent: slo_agent,
+                 target: @capital_commitment %>
+    <% end %>
+  </div>
+<% end %>
+
 <%= render "capital_commitments/details", capital_commitment: @capital_commitment %>
+
+<%# SLO Agent run modal — rendered outside the container to avoid
+    container-type: inline-size breaking Bootstrap modal positioning. %>
+<% if current_user.entity&.support_agents&.set?(:side_letter_obligation_agent) %>
+  <%= render "support_agents/agent_run_modal",
+             modal_id:         "run-slo-agent-commitment-modal",
+             agent_type:       "SideLetterObligationAgent",
+             target_type:      "CapitalCommitment",
+             target_id:        @capital_commitment.id,
+             description:      SideLetterObligationAgent::DESCRIPTION,
+             long_description: SideLetterObligationAgent::SINGLE_LONG_DESCRIPTION %>
+<% end %>

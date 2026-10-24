@@ -232,6 +232,12 @@ class SupportAgentJob < ApplicationJob
           # Use the first target's class name as the batch target type for summary
           batch_target_type = targets.first.class.name
           send_batch_summary(support_agent, successes, errors, user_id, batch_target_type)
+
+          # Agent-specific post-batch redirect: delegates to the agent class's
+          # broadcast_batch_redirect which builds the correct URL (e.g. obligation
+          # matrix with legal_category pre-selected) and broadcasts a delayed
+          # Turbo visit so the user lands on results after the batch summary.
+          support_agent.agent.broadcast_batch_redirect(support_agent.id) if successes.any? && support_agent.agent.respond_to?(:broadcast_batch_redirect)
         end
 
         # Mark execution log as completed. build_summary is the shared canonical

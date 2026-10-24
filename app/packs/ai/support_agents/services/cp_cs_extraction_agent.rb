@@ -257,16 +257,53 @@ class CpCsExtractionAgent < SideLetterObligationAgent
   end
 
   # Restores the Investor as the model for report generation and delegates
-  # to the parent. The redirect targets the obligation matrix on the agent
-  # show page.
+  # to the parent. Single-company (Investor) runs redirect to the standalone
+  # matrix with legal_category and stakeholder pre-filtered; batch runs
+  # redirect to the agent show page.
   #
-  # @param ctx [Hash] step context
-  # @param model [Object] current target
+  # @param ctx [Hash] step context — :investor_target set for single-company runs
+  # @param model [Object] current target (PI or Investor)
   # @param support_agent [SupportAgent] agent record
   # @return [Object] result from super
   def generate_progress_reports(ctx, model:, support_agent:, **)
     ctx[:model] = ctx[:investor_target] || model
     super
+  end
+
+  # Overrides the parent's redirect to target the standalone obligation matrix
+  # with Ransack legal_category_eq pre-selected and stakeholder pre-filtered
+  # for single-target runs. Batch runs (Entity owner) fall back to the agent
+  # show page since no single stakeholder applies.
+  #
+  # @param report [SupportAgentReport] the completed report — owner is Investor
+  #   for company-scoped runs, PortfolioInvestment for single-PI runs, Entity
+  #   for batch runs
+  # @param support_agent [SupportAgent] the agent record for URL generation
+  # @return [void]
+  def broadcast_redirect_to_matrix(report, support_agent)
+    helpers = Rails.application.routes.url_helpers
+    # Investor (company-scoped) → stakeholder is the company itself.
+    # PortfolioInvestment (single PI) → stakeholder is the PI's portfolio company.
+    # Entity (batch) → no single stakeholder, fall back to agent show page.
+    url = case report.owner
+          when Investor
+            helpers.side_letter_obligations_path(
+              q: { legal_category_eq: 0 }, stakeholder_id: report.owner.id
+            )
+          when PortfolioInvestment
+            helpers.side_letter_obligations_path(
+              q: { legal_category_eq: 0 }, stakeholder_id: report.owner.portfolio_company_id
+            )
+          else
+            helpers.support_agent_path(support_agent, tab: "obligations")
+          end
+    Turbo::StreamsChannel.broadcast_append_to(
+      "support_agent_report_#{report.id}",
+      target: "progress_panel_#{report.id}",
+      html: "<script>setTimeout(function() { Turbo.visit('#{url}') }, 2000)</script>"
+    )
+  rescue StandardError, ScriptError => e
+    Rails.logger.warn { "[CpCsExtractionAgent] Redirect broadcast failed: #{e.message}" }
   end
 
   # @param support_agent [SupportAgent] agent config to validate
@@ -315,13 +352,37 @@ class CpCsExtractionAgent < SideLetterObligationAgent
         { successes: [], errors: [{ target_id: support_agent.entity_id, target_name: "Enforcement run", error: result[:error].to_s }] }
       end
     else
-      run_batch(
+      result = run_batch(
         support_agent_id: support_agent_id,
         targets: targets,
         user_id: user_id,
         entity_id: entity_id,
         execution_mode: execution_mode
       )
+      # After batch extraction, redirect to the standalone obligation matrix
+      # with CP pre-selected so counsel can review all extracted obligations.
+      broadcast_batch_redirect(support_agent_id) if result[:successes].present?
+      result
     end
+  end
+
+  # Broadcasts a Turbo Stream redirect to the agent's Obligations tab after
+  # a batch CP/CS extraction run completes. Uses a 3-second delay so the
+  # user sees the batch summary before the page navigates.
+  #
+  # @param support_agent_id [Integer] the agent's ID for stream targeting
+  # @return [void]
+  def self.broadcast_batch_redirect(support_agent_id)
+    support_agent = SupportAgent.find(support_agent_id)
+    url = Rails.application.routes.url_helpers.support_agent_path(
+      support_agent, tab: "obligations"
+    )
+    Turbo::StreamsChannel.broadcast_append_to(
+      "batch_progress_#{support_agent.id}",
+      target: "batch_progress_panel",
+      html: "<script>setTimeout(function() { Turbo.visit('#{url}') }, 3000)</script>"
+    )
+  rescue StandardError => e
+    Rails.logger.warn { "[CpCsExtractionAgent] Batch redirect broadcast failed: #{e.message}" }
   end
 end

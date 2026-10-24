@@ -1,12 +1,14 @@
 <%# Obligation matrix tab rendered on the SideLetterObligationAgent and
-    CpCsExtractionAgent show pages. The "Open Full Matrix" link passes a
-    context param so the standalone page pre-filters and adapts columns:
-    cp_cs hides the legal category column (always CP/CS), side_letter
-    hides it too (always SLO). Locals: support_agent, obligations %>
-<% matrix_context = support_agent.agent_type == "CpCsExtractionAgent" ? "cp_cs" : "side_letter" %>
+    CpCsExtractionAgent show pages. The "Open Obligation Matrix" link
+    pre-selects the legal_category Ransack filter via q[legal_category_eq]
+    so the standalone page is scoped to the relevant obligation type.
+    Locals: support_agent, obligations %>
+<%# legal_category_eq values: 0 = CP, 1 = CS, 2 = SLO.
+    CP/CS agent pre-selects CP (0); SLO agent pre-selects SLO (2). %>
+<% legal_category_value = support_agent.agent_type == "CpCsExtractionAgent" ? 0 : 2 %>
 <div class="d-flex justify-content-between align-items-center mb-2">
   <p class="text-muted mb-0">
-    <% if matrix_context == "cp_cs" %>
+    <% if support_agent.agent_type == "CpCsExtractionAgent" %>
       Conditions precedent and subsequent extracted from investment documents.
       Pending items need counsel review before tasks and alerts go live.
     <% else %>
@@ -14,9 +16,9 @@
       tasks and alerts go live.
     <% end %>
   </p>
-  <%= link_to side_letter_obligations_path(context: matrix_context),
+  <%= link_to side_letter_obligations_path(q: { legal_category_eq: legal_category_value }),
               class: "btn btn-outline-primary d-inline-flex align-items-center" do %>
-    <i class="ti ti-table"></i> Open Full Matrix
+    <i class="ti ti-table"></i> Open Obligation Matrix
   <% end %>
 </div>
 <%= render "side_letter_obligations/matrix", obligations: obligations %>

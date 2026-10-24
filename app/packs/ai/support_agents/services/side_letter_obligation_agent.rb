@@ -171,14 +171,38 @@ class SideLetterObligationAgent < SupportAgentService
         { successes: [], errors: [{ target_id: support_agent.entity_id, target_name: "Enforcement run", error: result[:error].to_s }] }
       end
     else
-      run_batch(
+      result = run_batch(
         support_agent_id: support_agent_id,
         targets: targets,
         user_id: user_id,
         entity_id: entity_id,
         execution_mode: execution_mode
       )
+      # After batch extraction, redirect to the standalone obligation matrix
+      # with SLO pre-selected so counsel can review all extracted obligations.
+      broadcast_batch_redirect(support_agent_id) if result[:successes].present?
+      result
     end
+  end
+
+  # Broadcasts a Turbo Stream redirect to the standalone obligation matrix
+  # after a batch SLO extraction run completes. Uses a 3-second delay so
+  # the user sees the batch summary before the page navigates.
+  #
+  # @param support_agent_id [Integer] the agent's ID for stream targeting
+  # @return [void]
+  def self.broadcast_batch_redirect(support_agent_id)
+    support_agent = SupportAgent.find(support_agent_id)
+    url = Rails.application.routes.url_helpers.support_agent_path(
+      support_agent, tab: "obligations"
+    )
+    Turbo::StreamsChannel.broadcast_append_to(
+      "batch_progress_#{support_agent.id}",
+      target: "batch_progress_panel",
+      html: "<script>setTimeout(function() { Turbo.visit('#{url}') }, 3000)</script>"
+    )
+  rescue StandardError => e
+    Rails.logger.warn { "[SideLetterObligationAgent] Batch redirect broadcast failed: #{e.message}" }
   end
 
   # Initializes the extraction context for the given target record.
@@ -590,15 +614,28 @@ class SideLetterObligationAgent < SupportAgentService
     result
   end
 
-  # Broadcasts a Turbo Stream that auto-redirects to the obligation matrix
-  # tab after a 2-second delay, so the user sees the completed steps before
-  # the page refreshes with the extracted obligations.
+  # Broadcasts a Turbo Stream that auto-redirects after a 2-second delay so
+  # the user sees completed steps before the page refreshes.
   #
-  # @param report [SupportAgentReport] the completed report
+  # Single-commitment runs (report.owner is CapitalCommitment) redirect to
+  # the standalone obligation matrix with legal_category_eq=2 and
+  # stakeholder_id pre-filtered to the LP, so counsel sees only that LP's
+  # SLO obligations. Batch runs (report.owner is Entity) redirect to the
+  # agent show page with the obligations tab.
+  #
+  # @param report [SupportAgentReport] the completed report — owner is
+  #   CapitalCommitment for single runs, Entity for batch runs
   # @param support_agent [SupportAgent] the agent record for URL generation
   # @return [void]
   def broadcast_redirect_to_matrix(report, support_agent)
-    url = Rails.application.routes.url_helpers.support_agent_path(support_agent, tab: "obligations")
+    helpers = Rails.application.routes.url_helpers
+    url = if report.owner.is_a?(CapitalCommitment)
+            helpers.side_letter_obligations_path(
+              q: { legal_category_eq: 2 }, stakeholder_id: report.owner.investor_id
+            )
+          else
+            helpers.support_agent_path(support_agent, tab: "obligations")
+          end
     Turbo::StreamsChannel.broadcast_append_to(
       "support_agent_report_#{report.id}",
       target: "progress_panel_#{report.id}",

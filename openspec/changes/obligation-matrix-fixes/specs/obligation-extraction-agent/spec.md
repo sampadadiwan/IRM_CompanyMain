@@ -22,7 +22,7 @@ The extraction run SHALL locate side letter documents on a commitment by exact n
 - **THEN** that portfolio investment is skipped with an informational note
 
 ### Requirement: Per-commitment agent reports
-Each extraction run SHALL produce a `SupportAgentReport` per target (commitment for SLO, portfolio investment for CP/CS) summarizing counts (extracted, pending review, approved), extraction failures as blocking issues, and unreviewed backlog as warnings, following the standard issue severity shape. For CP/CS runs from a portfolio company page, the report SHALL be owned by the portfolio company (investor) record so the step UI receives broadcasts on the company page.
+Each extraction run SHALL produce a `SupportAgentReport` per target (commitment for SLO, portfolio investment for CP/CS) summarizing counts (extracted, pending review, approved), extraction failures as blocking issues, and unreviewed backlog as warnings, following the standard issue severity shape. For CP/CS runs from a portfolio company page, the report SHALL be owned by the portfolio company (investor) record so the step UI receives broadcasts on the company page. Report redirect URLs SHALL use Ransack filter params (`legal_category_eq`) and optionally `stakeholder_id` instead of the removed `context` parameter.
 
 #### Scenario: Report generated on batch run
 - **WHEN** a batch extraction run processes 10 commitments
@@ -31,3 +31,7 @@ Each extraction run SHALL produce a `SupportAgentReport` per target (commitment 
 #### Scenario: Report owned by portfolio company for company-scoped runs
 - **WHEN** a CP/CS extraction run is triggered from a portfolio company page
 - **THEN** the `SupportAgentReport` is owned by the portfolio company (investor) record, not individual portfolio investments
+
+#### Scenario: Report redirect uses Ransack params
+- **WHEN** an extraction run completes and generates a report
+- **THEN** the report's "Open Obligation Matrix" link includes `q[legal_category_eq]` with the appropriate value (0 for CP/CS agent, 2 for SLO agent) instead of a `context` parameter

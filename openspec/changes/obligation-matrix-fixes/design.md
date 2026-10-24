@@ -31,9 +31,10 @@
   - [② Target resolver](#②-target-resolver)
   - [③ Dispatch router](#③-dispatch-router)
   - [④ Extraction pipeline](#④-extraction-pipeline)
-  - [⑤ Context-aware matrix](#⑤-context-aware-matrix)
+  - [⑤ Unified matrix with filter pre-selection](#⑤-unified-matrix-with-filter-pre-selection)
   - [⑥ Form helpers](#⑥-form-helpers)
   - [⑦ Progress panel](#⑦-progress-panel)
+  - [⑧ SLO agent on commitment page](#⑧-slo-agent-on-commitment-page)
 - [4. Reference](#4-reference)
   - [Class diagram](#class-diagram)
   - [Data model and schema changes](#data-model-and-schema-changes)
@@ -50,7 +51,7 @@
 
 ### What this adds
 
-This change fixes the CP/CS Extraction Agent and the Obligation Matrix so they work end-to-end on staging. It follows the existing SupportAgent pattern (Trailblazer pipeline with step broadcasting) and the existing Ransack + Pagy matrix pattern. The core fixes are: splitting comma-separated document tags for document lookup, fixing the dispatch router so it doesn't collapse multiple sub-targets into an Entity fallback, and splitting the matrix into context-aware scopes via a query parameter.
+This change fixes the CP/CS Extraction Agent and the Obligation Matrix so they work end-to-end on staging. It follows the existing SupportAgent pattern (Trailblazer pipeline with step broadcasting) and the existing Ransack + Pagy matrix pattern. The core fixes are: splitting comma-separated document tags for document lookup, fixing the dispatch router so it doesn't collapse multiple sub-targets into an Entity fallback, and making the legal category Ransack filter the primary scoping mechanism for the matrix (replacing the removed `context` parameter). New additions include stakeholder scoping by legal category, a "Run SLO Agent" button on capital commitment pages, and CP/CS single-company redirect with stakeholder pre-filter.
 
 ### The idea in one picture
 
@@ -60,15 +61,17 @@ flowchart LR
     B["② Target Resolver<br/>finds PIs with matching<br/>tagged documents"]
     C["③ Dispatch Router<br/>decides batch vs single<br/>vs entity fallback"]
     D["④ Extraction Pipeline<br/>LLM reads docs and<br/>upserts obligations"]
-    E["⑤ Context Matrix<br/>shows CP/CS or SLO<br/>or all obligations"]
+    E["⑤ Unified Matrix<br/>legal category filter<br/>as primary scope"]
     F["⑥ Form Helpers<br/>string keys for forms<br/>integers for filters"]
     G["⑦ Progress Panel<br/>fixed wrapper prevents<br/>duplicates"]
+    H["⑧ SLO on Commitment<br/>Run SLO Agent button<br/>on commitment page"]
     A -- "tag array" --> B
     B -- "PI list" --> C
     C -- "targets" --> D
     D -- "obligations" --> E
     E -- "edit" --> F
     D -- "step updates" --> G
+    H -- "obligations" --> E
 ```
 
 ### Walkthrough: one example, start to finish
@@ -85,9 +88,9 @@ flowchart LR
 | 4 | Locate step runs | Tag splitter (①) splits "SHA,SPA" into `["SHA", "SPA"]`. Target resolver (②) finds 2 documents on Acme Corp | Both documents collected into `pi_docs` | ✓ Initialize<br/>✓ Locate&nbsp;Document&nbsp;—&nbsp;SHA,&nbsp;SPA&nbsp;(1/1)<br/>● Extract&nbsp;Obligations<br/>○ Save&nbsp;For&nbsp;Review<br/>○ Generate&nbsp;Report |
 | 5 | Extract step runs | Extraction pipeline (④) sends SHA doc to LLM → 8 obligations. Sends SPA doc → 4 obligations. Total 12, all with source_clause | Dedup on source_clause ensures no duplicates across docs | ✓ Initialize<br/>✓ Locate&nbsp;Document<br/>✓ Extract&nbsp;Obligations&nbsp;—&nbsp;Extracted&nbsp;12&nbsp;(1/1)<br/>● Save&nbsp;For&nbsp;Review<br/>○ Generate&nbsp;Report |
 | 6 | Upsert step saves | 12 obligations created as `pending_review` with `extracted_by = ai`, `legal_category` set by LLM | `upsert_portfolio_obligations` matches on source_clause for idempotency | ✓ Initialize<br/>✓ Locate&nbsp;Document<br/>✓ Extract&nbsp;Obligations<br/>✓ Save&nbsp;For&nbsp;Review&nbsp;—&nbsp;Saved&nbsp;12&nbsp;(1/1)<br/>● Generate&nbsp;Report |
-| 7 | Report step | Report generated, progress panel shows "View results" link to CP/CS matrix | Redirect URL includes `context=cp_cs` | All steps ✓ |
+| 7 | Report step | Report generated, progress panel shows "Open Obligation Matrix" link | Redirect URL includes `q[legal_category_eq]=0` (Condition Precedent) | All steps ✓ |
 | 8 | Admin navigates away, then back | One progress panel visible (not two) | Turbo cache restores the wrapper div; the fixed ID `cp_cs_progress_wrapper` ensures only one target | Single panel |
-| 9 | Counsel opens CP/CS matrix | Sees "CP/CS Obligation Matrix" title, 12 new pending obligations | Controller pre-filters to `condition_precedent` and `condition_subsequent` | Filtered matrix |
+| 9 | Counsel opens obligation matrix | Sees "LP Obligation Matrix" title, legal category filter pre-selected to "Condition Precedent", 12 new pending obligations | Controller loads all obligations; Ransack filter narrows to CP only; stakeholder dropdown shows portfolio companies | Filtered matrix |
 | 10 | Counsel edits one obligation, changes category from CP to CS | Form submits `legal_category = "condition_subsequent"` (string key) | Form helper `legal_category_form_options` returns string keys; Rails enum setter accepts it | Obligation saved |
 
 **What a mistake looks like:** If the admin had configured the tag as just "SHA", the SPA documents would not be found. The progress panel would show "no document" for any PI with only SPA-tagged documents. The admin edits the agent config to "SHA,SPA" and re-runs.
@@ -95,7 +98,8 @@ flowchart LR
 **What to notice:**
 - The tag splitter (①) is the fix that unblocks document discovery on staging
 - The dispatch router (③) fix (`count >= 1` instead of `count == 1`) prevents the Entity fallback crash
-- The context parameter on the matrix (⑤) is preserved across filter submissions
+- The matrix (⑤) uses the legal category Ransack filter as primary scope — no `context` parameter
+- The stakeholder dropdown adapts based on the selected legal category
 - The form helper (⑥) dual-helper pattern prevents the legal_category ArgumentError
 - The fixed wrapper ID (⑦) prevents duplicate progress panels
 
@@ -105,16 +109,19 @@ flowchart LR
 |---|---|---|---|
 | 1 | Comma split on tags | Split once in the agent, reuse everywhere targets are resolved | [①](#①-tag-splitter) |
 | 2 | Sub-target expansion | Agent's `targets()` method returns domain-specific records; dispatch trusts the count | [②](#②-target-resolver) / [③](#③-dispatch-router) |
-| 3 | Context parameter | One controller, one view, three modes — driven by a query parameter | [⑤](#⑤-context-aware-matrix) |
-| 4 | Dual form helpers | String keys for form submission, integer values for Ransack filters | [⑥](#⑥-form-helpers) |
-| 5 | Fixed wrapper ID | Turbo Stream replaces a predictable target instead of appending | [⑦](#⑦-progress-panel) |
+| 3 | Legal category filter as primary scope | One page, one title; agents pre-select the Ransack filter value in their links | [⑤](#⑤-unified-matrix-with-filter-pre-selection) |
+| 4 | Stakeholder scoping by legal category | Stakeholder dropdown shows portfolio companies for CP/CS, LPs for SLO | [⑤](#⑤-unified-matrix-with-filter-pre-selection) |
+| 5 | Dual form helpers | String keys for form submission, integer values for Ransack filters | [⑥](#⑥-form-helpers) |
+| 6 | Fixed wrapper ID | Turbo Stream replaces a predictable target instead of appending | [⑦](#⑦-progress-panel) |
+| 7 | SLO agent on commitment page | Same pattern as CP/CS on PI page; "Open Obligation Matrix" pre-selects SLO | [⑧](#⑧-slo-agent-on-commitment-page) |
 
 **FAQ**
 
 | Question | Answer |
 |---|---|
-| Why fix all these together instead of separate PRs? | They share root causes (tag splitting affects both document lookup and target resolution; the matrix context affects both the controller scope and the form helpers) and are all needed for staging to work |
+| Why fix all these together instead of separate PRs? | They share root causes (tag splitting affects both document lookup and target resolution; the matrix filter affects both the controller scope and the form helpers) and are all needed for staging to work |
 | Could the tag splitting live in a shared utility? | It could, but it's only used in `SideLetterObligationAgent` and consumed by `CpCsExtractionAgent` via inheritance. No need for an abstraction yet |
+| Why remove the `context` parameter? | Product feedback: the context parameter created three virtual pages when the legal category filter already does the same thing. One filter, one page — simpler for users and fewer code paths to maintain |
 
 ---
 
@@ -131,22 +138,25 @@ flowchart LR
     B["② portfolio_investment_targets<br/><i>queries PIs with<br/>matching documents</i>"]:::mod
     C["③ resolve_step_ui_target<br/><i>expands entity to<br/>agent sub-targets</i>"]:::mod
     D["④ CpCsExtractionAgent<br/><i>Trailblazer pipeline:<br/>locate → extract → upsert</i>"]:::mod
-    E["⑤ SideLetterObligationsController#index<br/><i>context-aware scoping<br/>and Ransack filtering</i>"]:::mod
+    E["⑤ SideLetterObligationsController#index<br/><i>unified matrix with<br/>Ransack filter scoping</i>"]:::mod
     F["⑥ SideLetterObligationsHelper<br/><i>legal_category_form_options<br/>+ legal_category_options</i>"]:::mod
     G["⑦ portfolio_investments/show<br/><i>cp_cs_progress_wrapper<br/>fixed-ID div</i>"]:::mod
+    H["⑧ capital_commitments/show<br/><i>slo_progress_wrapper<br/>Run SLO Agent button</i>"]:::new
     A -- "String[]" --> B
     B -- "AR::Relation" --> C
     C -- "targets[]" --> D
     D -- "SideLetterObligation" --> E
     E -- "form submit" --> F
     D -- "Turbo Stream" --> G
+    H -- "SideLetterObligation" --> E
     click A "#①-tag-splitter"
     click B "#②-target-resolver"
     click C "#③-dispatch-router"
     click D "#④-extraction-pipeline"
-    click E "#⑤-context-aware-matrix"
+    click E "#⑤-unified-matrix-with-filter-pre-selection"
     click F "#⑥-form-helpers"
     click G "#⑦-progress-panel"
+    click H "#⑧-slo-agent-on-commitment-page"
 ```
 
 Colour = footprint: **green** new, **amber** modified, **grey** reused unchanged.
@@ -159,9 +169,10 @@ Colour = footprint: **green** new, **amber** modified, **grey** reused unchanged
 | ② | Target Resolver | `SideLetterObligationAgent#portfolio_investment_targets`, `#investment_tag_conditions` | Builds WHERE clause with OR conditions per tag, returns PIs with matching docs | During `targets()` call | Which PIs have at least one matching document | [card ②](#②-target-resolver) |
 | ③ | Dispatch Router | `SupportAgentJob#resolve_step_ui_target` | Expands entity_id to agent-specific sub-targets for step-UI runs | When SupportAgentJob dispatches a single-target run | Whether to use expanded targets or fall back to Entity | [card ③](#③-dispatch-router) |
 | ④ | Extraction Pipeline | `CpCsExtractionAgent` (initialize, locate, extract, upsert, report steps) | Multi-document extraction per PI with step broadcasting | On agent run (batch or single) | How many docs per PI, dedup by source_clause | [card ④](#④-extraction-pipeline) |
-| ⑤ | Context Matrix | `SideLetterObligationsController#index`, `index.html.erb`, `_matrix.html.erb` | Scopes query by context param, adapts title/banner/filters/columns | On page load | Which legal categories to include; which UI elements to show | [card ⑤](#⑤-context-aware-matrix) |
+| ⑤ | Unified Matrix | `SideLetterObligationsController#index`, `index.html.erb`, `_matrix.html.erb` | One page with Ransack `legal_category_eq` filter as primary scope; stakeholder dropdown scoped by legal category | On page load | Which legal categories to show (via filter); which stakeholders to offer | [card ⑤](#⑤-unified-matrix-with-filter-pre-selection) |
 | ⑥ | Form Helpers | `SideLetterObligationsHelper` | Provides form options (string keys) and filter options (integer values) | On form render and filter render | Which value type to use based on consumer | [card ⑥](#⑥-form-helpers) |
 | ⑦ | Progress Panel | `portfolio_investments/show.html.erb`, `_progress_panel.html.erb` | Fixed-ID wrapper div; dual Turbo Stream replace targets | On PI page render and agent run response | Nothing — structural fix | [card ⑦](#⑦-progress-panel) |
+| ⑧ | SLO on Commitment | `capital_commitments/show.html.erb` | "Run SLO Agent" button + progress wrapper on commitment page | On commitment page render and SLO agent run | Nothing — mirrors ⑦ for SLO | [card ⑧](#⑧-slo-agent-on-commitment-page) |
 
 ### One run, end to end
 
@@ -196,6 +207,7 @@ sequenceDiagram
     LLM-->>Agent: obligations[]
     Agent->>DB: Upsert obligations
     Agent->>View: Turbo Stream step updates
+    Note over Agent,View: Report link: /obligations?q[legal_category_eq]=0
 ```
 
 ### Lifecycles
@@ -209,40 +221,42 @@ N/A — no new stored or derived statuses introduced. The existing `review_statu
 | Where in CapHive | Today | After this change | Who sees it |
 |---|---|---|---|
 | PI show page | No agent button | "Run CP/CS Agent" button + progress panel | Fund managers, ops |
-| Obligation matrix | All obligations mixed, no context | Three modes: CP/CS, SLO, or All | Counsel, fund managers |
+| Commitment show page | No agent button | "Run SLO Agent" button + progress panel | Fund managers, ops |
+| Obligation matrix | All obligations mixed, three virtual pages via `context` param | One unified page; legal category filter as primary scope; stakeholder scoped by legal category | Counsel, fund managers |
 | Obligation edit form | ArgumentError on save | Saves correctly; CP/CS forms hide MFN and SLO option | Counsel |
-| Matrix breadcrumb | Shows "Side Letters" link for CP/CS | Context-preserving breadcrumb, no misleading links | All users |
+| Matrix breadcrumb | Shows "Side Letters" link for CP/CS | Clean breadcrumb, no misleading links | All users |
 | Matrix table | No client-side sorting | Column sorting via DataTables | All users |
+| Agent completion | "View results" link with `context` param | "Open Obligation Matrix" with legal category (and optional stakeholder) pre-selected | All users |
 
 **Main everyday journey:**
 
 ```
-PI Show Page                            Obligation Matrix (CP/CS)
+PI Show Page                            Obligation Matrix
 ┌─────────────────────────┐            ┌──────────────────────────────┐
-│ Acme Corp / Fund Alpha  │            │ CP/CS Obligation Matrix      │
+│ Acme Corp / Fund Alpha  │            │ LP Obligation Matrix         │
 │                         │     ①      │                              │
 │ [🤖 Run CP/CS Agent]───┼────────────┤  ② Legal Category: [CP ▾]   │
-│                         │            │                              │
-│ ┌─── Progress ────────┐ │            │  Investor │ Cat │ Title │ ⚙ │
-│ │ ✓ Initialize    ③   │ │            │  ─────────┼─────┼───────┼───│
-│ │ ✓ Locate Document   │ │            │  Acme     │ CP  │ Board │ ✎ │
-│ │ ✓ Extract           │ │            │           │     │       │   │
-│ │ ✓ Save For Review   │ │            │  ④ Click Edit → form with  │
-│ │ ✓ Generate Report   │ │            │     string keys, no MFN     │
-│ └─────────────────────┘ │            └──────────────────────────────┘
-└─────────────────────────┘
+│                         │            │     Stakeholder: [Acme ▾]   │
+│ ┌─── Progress ────────┐ │            │                              │
+│ │ ✓ Initialize    ③   │ │            │  Investor │ Cat │ Title │ ⚙ │
+│ │ ✓ Locate Document   │ │            │  ─────────┼─────┼───────┼───│
+│ │ ✓ Extract           │ │            │  Acme     │ CP  │ Board │ ✎ │
+│ │ ✓ Save For Review   │ │            │           │     │       │   │
+│ │ ✓ Generate Report   │ │            │  ④ Click Edit → form with  │
+│ └─────────────────────┘ │            │     string keys, no MFN     │
+└─────────────────────────┘            └──────────────────────────────┘
 ```
 
 | Step | The user... | They see |
 |---|---|---|
-| ① | Clicks "Run CP/CS Agent" on PI page | Progress panel with step indicators |
-| ② | Opens CP/CS matrix from agent results link | Filtered matrix with CP/CS title and adapted filters |
+| ① | Clicks "Open Obligation Matrix" on agent results | Matrix with legal category pre-selected to CP; stakeholder shows portfolio companies |
+| ② | Changes legal category filter to SLO | Matrix re-filters to SLO obligations; stakeholder dropdown now shows LPs |
 | ③ | Navigates away and returns to PI page | Same single progress panel (no duplicate) |
 | ④ | Clicks Edit on a CP obligation | Form with string-key legal category, no MFN checkbox |
 
 ### Design decisions
 
-1. **One controller with context param vs separate controllers** — One controller with a `context` query parameter. Alternative: separate `CpCsObligationsController`. Rejected because the query logic, views, and lifecycle actions are identical; a context param keeps it DRY.
+1. **One page with Ransack filter vs `context` parameter vs separate controllers** — One page with the Ransack `legal_category_eq` filter as primary scope. The `context` parameter is removed. Alternative A: separate controllers — rejected (query logic, views, and lifecycle actions are identical). Alternative B: `context` parameter creating three virtual pages — rejected per product feedback (the legal category filter already exists; `context` duplicated it and confused users who couldn't easily switch scopes).
 
 2. **String keys for forms, integer for Ransack vs one helper for both** — Two helpers. Alternative: one smart helper detecting usage. Rejected because the consumer context differs at render time (form vs filter) and a single smart helper would need the caller to signal intent, adding complexity.
 
@@ -252,12 +266,15 @@ PI Show Page                            Obligation Matrix (CP/CS)
 
 5. **OR matching for comma-separated tags vs AND** — OR matching (any tag matches). Alternative: AND (all tags must match one document). Rejected because documents are tagged with one type each; AND would match nothing.
 
+6. **Stakeholder scoping: page reload vs dynamic Stimulus refresh** — Page reload on filter submit. The stakeholder dropdown is populated server-side based on the current `legal_category_eq` filter value. Alternative: Stimulus controller fetching options via AJAX on legal category change. Deferred to Phase 2 — page reload is sufficient and simpler.
+
 **FAQ**
 
 | Question | Answer |
 |---|---|
-| Why not use a scope on the model for context filtering? | The context filtering is simple enough for the controller; a scope would just move the same two `where` clauses. Not worth the abstraction for three conditions |
-| Does the context param leak into other pages? | No — it's a query parameter, not a session variable. Each navigation resets it |
+| Why not use a scope on the model for legal category filtering? | It's standard Ransack `_eq` filtering — no custom scope needed. The filter value maps directly to the integer enum column |
+| Does the legal_category_eq param leak into other pages? | No — it's a Ransack query parameter, not a session variable. Each navigation resets it |
+| Why not redirect to separate pages per agent type? | One page is cleaner. Pre-selecting the filter achieves the same scoping without separate routes |
 
 ---
 
@@ -341,7 +358,14 @@ The CpCsExtractionAgent's Trailblazer pipeline — initialize, locate, extract, 
 
 The locate step iterates PIs and collects all matching documents (not just the first). The extract step iterates documents per PI, calling the LLM for each. The upsert step deduplicates by source_clause within each PI.
 
-**Worked examples:** H1, H2, H3, E4, E5, X2
+**Post-run redirect URLs** (via `broadcast_redirect_to_matrix` for single-target, `broadcast_batch_redirect` for batch):
+- Single PI run → standalone matrix with `?q[legal_category_eq]=0&stakeholder_id=<portfolio_company_id>`
+- Single company run → standalone matrix with `?q[legal_category_eq]=0&stakeholder_id=<company_id>`
+- Batch run → agent's own Obligations tab (`support_agent_path(agent, tab: "obligations")`)
+
+Batch redirect is triggered from `SupportAgentJob` after `broadcast_batch_complete` via `respond_to?(:broadcast_batch_redirect)` — only agents that define the class method are affected; others stay on the General tab.
+
+**Worked examples:** H1, H2, H3, E4, E5, H6, H7, X2
 
 **FAQ**
 
@@ -350,37 +374,45 @@ The locate step iterates PIs and collects all matching documents (not just the f
 | Why one LLM call per document instead of batching? | The LLM reads the document as a file attachment; each document is a separate file |
 | What if the LLM call fails for one document? | The error is caught, logged, and the step is marked failed. Other documents and PIs continue |
 
-### ⑤ Context-Aware Matrix
+### ⑤ Unified Matrix with Filter Pre-selection
 
-The obligation matrix controller and views, modified to support three context modes via a query parameter: `cp_cs` (conditions precedent/subsequent only), `side_letter` (side letter obligations only), and no context (all).
+The obligation matrix controller and views. One page ("LP Obligation Matrix") for all obligation types. The legal category Ransack filter is the primary scoping mechanism — agents link with `q[legal_category_eq]` pre-selected. The stakeholder dropdown adapts based on the selected legal category.
 
 | Owns | Reads / receives | Produces |
 |---|---|---|
-| `SideLetterObligationsController#index`, `index.html.erb`, `_matrix.html.erb` | `context` param, Ransack params, fund_id, stakeholder_id | Rendered matrix page with context-specific title, banner, filters, columns |
+| `SideLetterObligationsController#index`, `index.html.erb`, `_matrix.html.erb` | Ransack params (including `legal_category_eq`), fund_id, stakeholder_id | Rendered matrix page with filter-driven scoping |
 
-Context-driven behavior:
+**Filter-driven behavior:**
 
-| Aspect | `cp_cs` | `side_letter` | No context |
+| Aspect | `legal_category_eq` = CP or CS | `legal_category_eq` = SLO | No legal category filter |
 |---|---|---|---|
-| Title | "CP/CS Obligation Matrix" | "Side Letter Obligation Matrix" | "LP Obligation Matrix" |
-| Scope | `legal_category IN (cp, cs)` | `legal_category = slo` | All |
-| Legal category column | Visible | Hidden | Visible |
-| Legal category filter | CP and CS only | Hidden | All options |
-| Info banner | CP/CS explanation | SLO explanation | SLO explanation |
-| Context preserved | In hidden field + breadcrumb | In hidden field + breadcrumb | N/A |
+| Title | "LP Obligation Matrix" (always) | "LP Obligation Matrix" (always) | "LP Obligation Matrix" (always) |
+| Scope | Ransack filters to CP or CS | Ransack filters to SLO | All obligations |
+| Legal category column | Visible (always) | Visible (always) | Visible (always) |
+| Legal category filter | All options available | All options available | All options available |
+| Stakeholder dropdown | Portfolio companies with CP/CS obligations | LPs/investors with SLO obligations | All stakeholders |
+| Info banner | Unified explanation of all obligation types | Same | Same |
 
 The controller also supports fund_id and stakeholder_id filtering via subqueries (not joins) to avoid polymorphic association conflicts.
 
+**Stakeholder scoping logic:**
+- Read the current `legal_category_eq` value from `params[:q]`
+- If value is 0 (CP) or 1 (CS): stakeholder dropdown = portfolio companies linked to PI-sourced obligations
+- If value is 2 (SLO): stakeholder dropdown = investors linked via capital commitment → side letter → obligation
+- If blank: stakeholder dropdown = all stakeholders (both types)
+- Scoping happens server-side on page load; no AJAX call needed
+
 DataTables is wired via the existing Stimulus `datatable` controller for client-side sorting.
 
-**Worked examples:** H4, E6, E7
+**Worked examples:** H4, H6, H7, E6, E7, E9, E10
 
 **FAQ**
 
 | Question | Answer |
 |---|---|
 | Why subqueries for fund filtering instead of joins? | `sourceable` is polymorphic; Rails can't LEFT JOIN a polymorphic association. Subqueries avoid the issue |
-| Can the context be set from a bookmark? | Yes — it's a query parameter in the URL |
+| Can the matrix be bookmarked with filters? | Yes — all filters are standard Ransack query params in the URL |
+| Will the stakeholder dropdown update without a page reload? | Not in Phase 1 — the user clicks Filter to submit the form. Dynamic Stimulus refresh is Phase 2 |
 
 ### ⑥ Form Helpers
 
@@ -422,7 +454,30 @@ The controller's `run` action responds with two `turbo_stream.replace` calls: on
 | Question | Answer |
 |---|---|
 | Why two replace targets instead of one? | On first run, only `cp_cs_progress_wrapper` exists. On re-run, `progress_panel_#{id}` exists inside the wrapper. Dual targets cover both cases |
-| Does this affect SLO agent progress panels? | No — the SLO agent's progress panel is on the capital commitment page, which uses a different wrapper pattern |
+| Does this affect SLO agent progress panels? | No — the SLO agent's progress panel on the commitment page uses its own wrapper (`slo_progress_wrapper`) |
+
+### ⑧ SLO Agent on Commitment Page
+
+A "Run SLO Agent" button on each capital commitment's show page, mirroring the CP/CS agent button on the PI page. After completion, the "Open Obligation Matrix" link opens the matrix with `legal_category_eq=2` (SLO) pre-selected.
+
+| Owns | Reads / receives | Produces |
+|---|---|---|
+| `capital_commitments/show.html.erb` wrapper div, controller `run` Turbo Stream response | SupportAgentReport, SupportAgent (SLO type) | HTML with fixed wrapper ID (`slo_progress_wrapper`); Turbo Stream replace targets |
+
+The same pattern as ⑦:
+- Fixed-ID wrapper div (`slo_progress_wrapper`) on the commitment show page
+- "Run SLO Agent" button visible only when the SLO agent is enabled for the entity
+- Dual Turbo Stream replace targets: `progress_panel_#{report.id}` and `slo_progress_wrapper`
+- After completion, the report link goes to `side_letter_obligations_path(q: { legal_category_eq: 2 })`
+
+**Worked examples:** H6
+
+**FAQ**
+
+| Question | Answer |
+|---|---|
+| Is this a new agent? | No — it's the existing SideLetterObligationAgent. This just adds a run button on the commitment page, the same way CP/CS has one on the PI page |
+| Does the SLO agent already support single-commitment runs? | Yes — `targets(capital_commitment)` returns `[capital_commitment]`, and the pipeline processes it as a single target |
 
 ---
 
@@ -486,9 +541,11 @@ N/A — no new tables or columns. All changes are behavioral (code-level), not s
 | ② Target Resolver → ③ Dispatch Router | `ActiveRecord::Relation<PortfolioInvestment>` | ② produces, ③ consumes via `targets()` |
 | ③ Dispatch Router → ④ Pipeline | `Array<PortfolioInvestment>` (or `Array<Entity>` fallback) | ③ produces, ④ consumes |
 | ④ Pipeline → ⑤ Matrix | `SideLetterObligation` records in DB | ④ writes, ⑤ reads |
+| ④ Pipeline → ⑤ Matrix (redirect) | URL with `q[legal_category_eq]` and optional `stakeholder_id` | ④ produces, ⑤ receives as params |
 | ⑤ Matrix → ⑥ Form Helpers | Helper method call with enum hash | ⑤ renders, ⑥ provides options |
 | ④ Pipeline → ⑦ Progress Panel | Turbo Stream broadcasts via `SupportAgentReport` | ④ broadcasts, ⑦ receives |
 | Controller `run` → ⑦ Progress Panel | `turbo_stream.replace` with two target IDs | Controller produces, ⑦ DOM receives |
+| ⑧ SLO Commitment → ⑤ Matrix | URL with `q[legal_category_eq]=2` | ⑧ produces link, ⑤ receives as params |
 
 ### Notifications
 
@@ -500,6 +557,7 @@ This change sends no new notifications, does not modify any existing notificatio
 
 - **Tag matching query:** One query with OR-combined LIKE conditions per tag. No N+1 risk — returns a relation.
 - **Fund/stakeholder filtering:** Uses subqueries (`WHERE id IN (SELECT ...)`) to avoid polymorphic JOIN issues. Tested with up to 135 PIs on staging.
+- **Stakeholder scoping by legal category:** Controller reads `params[:q][:legal_category_eq]` to decide which stakeholders to load. CP/CS → portfolio companies via `PortfolioInvestment`. SLO → investors via `CapitalCommitment → SideLetter`. No additional join complexity.
 - **Obligation upsert:** Each PI's obligations are upserted in a single transaction (existing behavior, unchanged).
 
 #### Exception handling and monitoring
@@ -509,8 +567,8 @@ This change sends no new notifications, does not modify any existing notificatio
 
 #### Performance and security
 
-- **Performance:** Tag splitting is O(n) where n = number of comma-separated tags (typically 1-3). No additional queries introduced beyond what the single-tag version already ran.
-- **Security:** Entity scoping is enforced at every level — `policy_scope` on the controller, `entity_id` filtering in target resolution, and Pundit authorization on each action. The `context` parameter accepts only `cp_cs`, `side_letter`, or nil; no injection risk.
+- **Performance:** Tag splitting is O(n) where n = number of comma-separated tags (typically 1-3). No additional queries introduced beyond what the single-tag version already ran. Stakeholder scoping adds one subquery per page load (bounded by entity).
+- **Security:** Entity scoping is enforced at every level — `policy_scope` on the controller, `entity_id` filtering in target resolution, and Pundit authorization on each action. The `legal_category_eq` parameter is validated by Ransack (only accepts valid predicate values). No raw SQL interpolation — uses ActiveRecord parameterized queries and Arel.
 
 ### Worked examples
 
@@ -520,17 +578,20 @@ This change sends no new notifications, does not modify any existing notificatio
 
 | Record | Name | Key data |
 |---|---|---|
-| Entity | Entity 157 | Licensed for CP/CS agent |
-| SupportAgent | Agent 79 | `agent_type = CpCsExtractionAgent`, `investment_doc_tag = "SHA,SPA"`, entity 157 |
+| Entity | Entity 157 | Licensed for CP/CS and SLO agents |
+| SupportAgent | Agent 79 (CP/CS) | `agent_type = CpCsExtractionAgent`, `investment_doc_tag = "SHA,SPA"`, entity 157 |
+| SupportAgent | Agent 80 (SLO) | `agent_type = SideLetterObligationAgent`, entity 157 |
 | PortfolioInvestment | Acme Corp PI | Entity 157, has SHA doc + SPA doc |
 | PortfolioInvestment | Beta Ltd PI | Entity 157, has SHA doc only |
 | PortfolioInvestment | Gamma Inc PI | Entity 157, has no matching docs |
 | PortfolioInvestment | Delta Co PI | Entity 157, has SPA doc only |
+| CapitalCommitment | LP Alpha Commitment | Entity 157, has side letter |
 | Document | SHA Doc (Acme) | tag_list: "SHA", owner: Acme Corp PI |
 | Document | SPA Doc (Acme) | tag_list: "SPA", owner: Acme Corp PI |
 | Document | SHA Doc (Beta) | tag_list: "SHA", owner: Beta Ltd PI |
 | Document | SPA Doc (Delta) | tag_list: "SPA", owner: Delta Co PI |
 | SideLetterObligation | CP Obligation 1 | legal_category: condition_precedent, sourceable: Acme Corp PI |
+| SideLetterObligation | SLO Obligation 1 | legal_category: side_letter_obligation, side_letter: LP Alpha's |
 
 #### Happy Path
 
@@ -539,8 +600,11 @@ This change sends no new notifications, does not modify any existing notificatio
 | H1 | Single PI extraction with multi-tag | Agent 79 configured, Acme Corp PI has SHA+SPA docs | Admin runs CP/CS agent from Acme Corp PI page | Agent finds both docs, extracts obligations from each, saves as pending_review | Multiple tags find documents of different types | `cp_cs_extraction_agent.feature` |
 | H2 | Batch extraction with comma tags | Agent 79 configured with "SHA,SPA" | Admin runs batch for entity 157 | Agent processes Acme (2 docs), Beta (1 doc), Delta (1 doc); skips Gamma (0 docs) | Batch mode resolves all matching PIs | `cp_cs_extraction_agent.feature` |
 | H3 | Run from PI show page | Agent 79 enabled, Acme Corp PI exists | Admin clicks "Run CP/CS Agent" on PI page | Progress panel appears, steps complete, obligations created | Running from PI page shows progress | `cp_cs_extraction_agent.feature` |
-| H4 | View CP/CS matrix | CP obligations exist for Acme | Counsel opens matrix with context=cp_cs | Only CP and CS obligations shown, title is "CP/CS Obligation Matrix" | CP/CS context scopes to CP and CS only | `side_letter_matrix.feature` |
+| H4 | View matrix with legal category filter pre-selected | CP obligations exist for Acme | Counsel clicks "Open Obligation Matrix" from CP/CS agent results | Matrix opens with `legal_category_eq=0` pre-selected; only CP obligations shown; stakeholder shows portfolio companies | Filter by legal category — Condition Precedent | `side_letter_matrix.feature` |
 | H5 | Edit CP obligation legal category | CP Obligation 1 exists | Counsel changes legal_category to "condition_subsequent" | Form submits string key, saves successfully | Edit form saves legal category without error | `side_letter_obligation_e2e.feature` |
+| H6 | Run SLO agent from commitment page | Agent 80 enabled, LP Alpha Commitment exists | Admin clicks "Run SLO Agent" on commitment page | Progress panel appears, SLO extraction runs. After completion, auto-redirects to standalone matrix with `legal_category_eq=2` and `stakeholder_id=<alpha_id>` so counsel sees only that LP's SLO obligations | Running SLO agent from commitment page redirects with stakeholder pre-filter | `side_letter_obligation_agent.feature` |
+| H7 | CP/CS single-company redirect with stakeholder | Agent 79 enabled, Acme Corp has CP obligations | Admin runs CP/CS agent for Acme Corp (company-scoped) | Auto-redirects to standalone matrix with `legal_category_eq=0` and `stakeholder_id=<acme_id>` | Single-company run redirects with stakeholder pre-filter | `cp_cs_extraction_agent.feature` |
+| H8 | Batch run redirects to agent Obligations tab | Agent 79 enabled, entity has PIs | Admin clicks "Run Now" on agent General tab | Batch completes → 3s delay → auto-redirects to agent's Obligations tab. "Open Obligation Matrix" button on that tab links to standalone matrix with `legal_category_eq=0`, no stakeholder filter | Batch run lands on agent Obligations tab | `cp_cs_extraction_agent.feature` |
 
 #### Edge Cases
 
@@ -551,9 +615,11 @@ This change sends no new notifications, does not modify any existing notificatio
 | E3 | Zero targets (tag mismatch) | Agent configured with "XYZ", no documents match | Single PI run | Dispatch falls back to Entity, pipeline produces empty report | Agent returns zero sub-targets | `cp_cs_extraction_agent.feature` |
 | E4 | PI with no matching documents | Gamma Inc PI has no SHA/SPA docs | Batch run includes Gamma | Gamma skipped with "no document" in progress | No matching documents on a PI | `cp_cs_extraction_agent.feature` |
 | E5 | Dedup across docs on same PI | Acme has SHA and SPA docs, both mention same clause | Extraction from both docs | Obligation created once (dedup on source_clause) | Two documents on one PI yield deduplicated obligations | `cp_cs_extraction_agent.feature` |
-| E6 | Side letter context hides legal category column | SLO obligations exist | Counsel opens matrix with context=side_letter | Legal category column not visible, title is "Side Letter Obligation Matrix" | Side letter context scopes to SLO only | `side_letter_matrix.feature` |
-| E7 | Context preserved across filter | Viewing CP/CS matrix | Counsel applies a filter | Context=cp_cs preserved in form submission | Context preserved across filter submission | `side_letter_matrix.feature` |
+| E6 | Matrix with SLO filter shows LP stakeholders | SLO obligations exist | Counsel selects "Side Letter Obligation" in legal category filter | Stakeholder dropdown shows LPs/investors, not portfolio companies | SLO filter — stakeholder shows LPs | `side_letter_matrix.feature` |
+| E7 | Legal category filter preserved across filter submission | Viewing matrix with legal_category_eq=0 | Counsel applies an additional filter (e.g. Type) | legal_category_eq preserved in Ransack form | Standard Ransack form behavior | `side_letter_matrix.feature` |
 | E8 | Navigate away and return to PI | Agent was run, progress panel shown | Admin navigates away, returns via back button | One progress panel visible (Turbo cache) | Navigate away and return | `cp_cs_extraction_agent.feature` |
+| E9 | Stakeholder scoping — no legal category | No legal category filter set | User views matrix | Stakeholder dropdown shows all stakeholders (both portfolio companies and LPs) | No filter — stakeholder shows all | `side_letter_matrix.feature` |
+| E10 | Clear all filters | Matrix has legal_category_eq=0 and stakeholder pre-selected | User clicks "Clear" | All filters removed; title still "LP Obligation Matrix"; all obligations shown | No filter shows all obligations | `side_letter_matrix.feature` |
 
 #### Error Cases
 
@@ -565,19 +631,20 @@ This change sends no new notifications, does not modify any existing notificatio
 
 ### Testing
 
-Cucumber only. The `cp_cs_extraction_agent.feature` file (10 scenarios, already on the branch) covers the agent pipeline. `side_letter_matrix.feature` covers context-aware matrix. `side_letter_obligation_e2e.feature` covers the edit form fix. Shared step file: `cp_cs_extraction_agent_steps.rb`. Reused step files: existing `support_agent_steps.rb` for common agent setup.
+Cucumber only. The `cp_cs_extraction_agent.feature` file covers the agent pipeline including single-company redirect. `side_letter_matrix.feature` covers filter-driven matrix scoping and stakeholder scoping. `side_letter_obligation_e2e.feature` covers the edit form fix. `side_letter_obligation_agent.feature` covers the SLO agent including the commitment page button. Shared step file: `cp_cs_extraction_agent_steps.rb`. Reused step files: existing `support_agent_steps.rb` for common agent setup.
 
 ### Risks and open questions
 
 - **Stale Turbo cache on staging** → The dual replace targets mitigate this; a hard refresh clears any remaining stale state.
 - **LLM cost for multi-document PIs** → Each document triggers a separate LLM call. For a PI with many matching docs (unlikely — typically 1-2), costs scale linearly. Mitigated by the typical tag setup matching 1-2 docs per PI.
 - **LIKE query performance on large document tables** → The LIKE conditions on `tag_list` are not indexed. For entities with thousands of documents, this could be slow. Mitigated by entity_id scoping which limits the set.
+- **Stakeholder scoping requires page reload** → Changing the legal category filter doesn't dynamically update the stakeholder dropdown in Phase 1. Users must click "Filter" first. May feel sluggish — Phase 2 can add a Stimulus controller for AJAX refresh.
 
-No open questions — all design decisions resolved during the debugging session.
+No open questions — all design decisions resolved.
 
 **FAQ**
 
 | Question | Answer |
 |---|---|
-| Where do I start reviewing? | Start with the tag splitter (①) and target resolver (②) — they fix the root cause. Then the dispatch router (③) for the crash fix. The matrix (⑤) and form (⑥) fixes are independent |
-| Can I deploy these fixes independently? | The tag fix (①②) and dispatch fix (③) are independent. The matrix (⑤) and form (⑥) fixes are independent of the agent fixes but depend on each other for the full experience |
+| Where do I start reviewing? | Start with the tag splitter (①) and target resolver (②) — they fix the root cause. Then the dispatch router (③) for the crash fix. The matrix (⑤) changes are independent — focus on the stakeholder scoping logic. The SLO commitment button (⑧) is a small addition |
+| Can I deploy these fixes independently? | The tag fix (①②) and dispatch fix (③) are independent. The matrix (⑤) and form (⑥) fixes are independent of the agent fixes but depend on each other for the full experience. The SLO button (⑧) can be deployed independently |
