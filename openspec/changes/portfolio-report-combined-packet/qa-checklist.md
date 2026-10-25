@@ -89,6 +89,7 @@ step (J2.3 = journey 2, step 3) · **R** = Role sweep · **C** = Cross-cutting c
 | ☐ | E19 | Next needs a company | The company step | Look at **Next** with no company chosen; choose one; remove it | **Next** is disabled, then enabled, then disabled again | | |
 | ☐ | E20 | One total per fund | Ace and Beta in fund Alpha, Gamma only in fund Beta; template without the fund-name check | Generate and read the Grand Total rows | Alpha is Ace + Beta; Beta is Gamma alone | | |
 | ☐ | E21 | Blank custom field counts as zero | One company has no `investment_commitment` | Generate and read the Committed total | The total is the sum of the other companies' values; the blank company adds nothing | | |
+| ☐ | E22 | No blank page between parts | A company's one-pager that fills its page to the bottom | Generate H5 and open the combined file in Word | Every part starts on a new page and no page is blank | | |
 
 ## Error Cases
 

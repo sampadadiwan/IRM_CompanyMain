@@ -73,6 +73,11 @@ Scenario: Different templates join cleanly
   And the combined document "Cover and Summary" contains "QUERIES FOR MANAGEMENT"
   And the combined document "Cover and Summary" contains "Legal Disclaimer"
 
+# E22 — Edge: a part that fills its page leaves no blank page before the next part
+Scenario: No blank page between parts
+  When I run the portfolio report with rows "Portfolio Overview:Cover and Summary, Analyst Report:Company One-Pager, Disclaimer:Legal Disclaimer"
+  Then every part of the combined document "Cover and Summary" after the first starts a new page without a break paragraph of its own
+
 # X6 — Failure: a company's section fails, the rest is kept
 Scenario: A company section fails
   Given generating "Company One-Pager" for "Beta Corp" will fail

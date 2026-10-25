@@ -107,12 +107,10 @@ class DocxMerger
 
           next unless sect_pr && other_body
 
-          sect_pr.add_previous_sibling(page_break_fragment)
-          other_body.children.each do |child|
-            next if child == other_sect_pr
-
-            sect_pr.add_previous_sibling(child.dup(1))
-          end
+          children = other_body.children.reject { |child| child == other_sect_pr }
+          children = children.map { |child| child.dup(1) }
+          sect_pr.add_previous_sibling(page_break_fragment) unless break_before_first_paragraph!(children)
+          children.each { |child| sect_pr.add_previous_sibling(child) }
         end
       end
 
@@ -226,6 +224,28 @@ class DocxMerger
     end
 
     next_num_id
+  end
+
+  # A page break of its own sits on a new page when the previous file fills its page to the bottom,
+  # and then breaks again, leaving a blank page. Starting the next file's first paragraph on a new
+  # page adds no paragraph that can spill over. Returns false when the file does not start with a
+  # paragraph (a table, say), so the caller falls back to the separate break.
+  def break_before_first_paragraph!(children)
+    first = children.find(&:element?)
+    return false unless first&.name == "p" && first.namespace&.href == W_NS
+
+    p_pr = first.at_xpath("w:pPr", NS) || first.prepend_child(new_w_node(first, "pPr"))
+    return true if p_pr.at_xpath("w:pageBreakBefore", NS)
+
+    node = new_w_node(first, "pageBreakBefore")
+    # CT_PPr order: pStyle, keepNext and keepLines come before pageBreakBefore
+    preceding = p_pr.xpath("w:pStyle|w:keepNext|w:keepLines", NS).last
+    preceding ? preceding.add_next_sibling(node) : p_pr.prepend_child(node)
+    true
+  end
+
+  def new_w_node(sibling, name)
+    Nokogiri::XML::Node.new(name, sibling.document).tap { |node| node.namespace = sibling.namespace }
   end
 
   def page_break_fragment

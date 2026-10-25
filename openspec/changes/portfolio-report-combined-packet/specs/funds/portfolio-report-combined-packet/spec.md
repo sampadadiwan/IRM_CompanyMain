@@ -89,6 +89,10 @@ The final document SHALL contain the parts in row order, with a page break betwe
 - **WHEN** the rows are Cover and Summary (consolidated), Company One-Pager (normal) and Legal Disclaimer (consolidated), for Ace Limited, Beta Corp and Gamma Corp
 - **THEN** the final document holds the cover, then the one-pagers for Ace, Beta and Gamma, then the disclaimer
 
+#### Scenario: No blank page between parts
+- **WHEN** a part ends with its page filled to the bottom
+- **THEN** the next part starts on the next page with no blank page between them, because each part after the first starts a new page itself rather than through a break paragraph of its own
+
 #### Scenario: Companies alphabetical within a report
 - **WHEN** a normal report is generated for companies selected as Gamma Corp, Ace Limited, Beta Corp
 - **THEN** its pieces in the final document are in the order Ace, Beta, Gamma

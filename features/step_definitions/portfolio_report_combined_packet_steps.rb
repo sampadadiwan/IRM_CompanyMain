@@ -704,6 +704,17 @@ Then('{int} extracts exist for report {string}') do |count, report_name|
   expect(PortfolioReportExtract.where(portfolio_report_id: @reports[report_name].id).count).to eq(count)
 end
 
+Then('every part of the combined document {string} after the first starts a new page without a break paragraph of its own') do |name_prefix|
+  combined_documents(name_prefix).last.file.download do |file|
+    body = Zip::File.open(file.path) { |zip| Nokogiri::XML(zip.read("word/document.xml")).remove_namespaces! }
+    # the cover comes first; each company page and the disclaimer then start a page
+    expect(body.xpath("//pPr/pageBreakBefore").size).to eq(Investor.portfolio_companies.count + 1)
+    own = Zip::File.open(Rails.root.join(REPORT_FIXTURES, "cover_and_summary_template.docx").to_s) { |zip| zip.read("word/document.xml") }
+    break_paragraphs = "//p[r/br[@type='page']]"
+    expect(body.xpath(break_paragraphs).size).to eq(Nokogiri::XML(own).remove_namespaces!.xpath(break_paragraphs).size)
+  end
+end
+
 Then('the combined document {string} package is intact') do |name_prefix|
   document = combined_documents(name_prefix).last
   document.file.download do |file|
