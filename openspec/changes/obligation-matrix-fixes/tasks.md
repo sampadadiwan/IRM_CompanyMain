@@ -263,8 +263,8 @@
       (`_side_letter_obligation.html.erb`). In the Type column, after
       `obligation.obligation_type.humanize`, add a conditional icon:
       - `obligation.recurring?` → `<i class="ti ti-repeat text-info">` with tooltip "Recurring"
-      - `obligation.trigger_one_time?` → `<i class="ti ti-calendar-event text-muted">` with tooltip "One-time"
-      - `obligation.armed?` → `<i class="ti ti-bolt text-warning">` with tooltip "Event-driven"
+      - `obligation.trigger_one_time? || obligation.trigger_calendar_event?` → `<i class="ti ti-calendar-event text-muted">` with tooltip "One-time"
+      - `obligation.trigger_type.in?(%w[fund_event deal_event status_change ongoing])` → `<i class="ti ti-bolt text-warning">` with tooltip "Event-driven"
       Icons are mutually exclusive (if/elsif/elsif). Applies to all legal categories
       (CP, CS, SLO) since the partial is shared. No new queries — uses existing model methods.
       **Code traceability:** `# H9 trigger type icons on matrix rows`

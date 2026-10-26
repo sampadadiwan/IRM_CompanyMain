@@ -152,8 +152,8 @@ The `run` action's Turbo Stream response sends two `turbo_stream.replace` calls:
 **Trigger type icons in `_side_letter_obligation.html.erb`:**
 The Type column (`obligation.obligation_type.humanize`) is followed by a conditional icon indicating the obligation's trigger shape. Uses existing model methods — no new queries:
 - `obligation.recurring?` → `ti-repeat` (info) — calendar_event with frequency_rrule
-- `obligation.trigger_one_time?` → `ti-calendar-event` (muted) — one_time trigger
-- `obligation.armed?` → `ti-bolt` (warning) — fund_event/deal_event/status_change/ongoing
+- `obligation.trigger_one_time? || obligation.trigger_calendar_event?` → `ti-calendar-event` (muted) — one_time trigger, or calendar_event without frequency_rrule
+- `obligation.trigger_type.in?(%w[fund_event deal_event status_change ongoing])` → `ti-bolt` (warning) — event-driven triggers regardless of approval status
 Each icon has a Bootstrap tooltip via `data-bs-toggle="tooltip"`. Icons are mutually exclusive (if/elsif/elsif). Applies to all legal categories — the partial is shared by both CP/CS and SLO views.
 
 **Reviewer checks**

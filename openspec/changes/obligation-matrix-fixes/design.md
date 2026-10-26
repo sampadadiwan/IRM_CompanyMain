@@ -410,7 +410,7 @@ Each obligation row displays a small icon in the Type column indicating its trig
 | Trigger shape | Icon | Tooltip | When |
 |---|---|---|---|
 | Recurring | `ti-repeat` (info color) | "Recurring" | `calendar_event` trigger + `frequency_rrule` present |
-| One-time | `ti-calendar-event` (muted) | "One-time" | `one_time` trigger |
+| One-time | `ti-calendar-event` (muted) | "One-time" | `one_time` trigger, or `calendar_event` without `frequency_rrule` |
 | Event-driven / armed | `ti-bolt` (warning color) | "Event-driven" | `fund_event`, `deal_event`, `status_change`, or `ongoing` trigger |
 
 This applies to all obligations regardless of legal category (CP, CS, or SLO).
