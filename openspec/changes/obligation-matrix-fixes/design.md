@@ -404,7 +404,18 @@ The controller also supports fund_id and stakeholder_id filtering via subqueries
 
 DataTables is wired via the existing Stimulus `datatable` controller for client-side sorting.
 
-**Worked examples:** H4, H6, H7, E6, E7, E9, E10
+**Trigger type icons on matrix rows:**
+Each obligation row displays a small icon in the Type column indicating its trigger shape, so counsel can identify recurring vs one-time vs event-driven obligations at a glance without opening the edit form:
+
+| Trigger shape | Icon | Tooltip | When |
+|---|---|---|---|
+| Recurring | `ti-repeat` (info color) | "Recurring" | `calendar_event` trigger + `frequency_rrule` present |
+| One-time | `ti-calendar-event` (muted) | "One-time" | `one_time` trigger |
+| Event-driven / armed | `ti-bolt` (warning color) | "Event-driven" | `fund_event`, `deal_event`, `status_change`, or `ongoing` trigger |
+
+This applies to all obligations regardless of legal category (CP, CS, or SLO).
+
+**Worked examples:** H4, H6, H7, H9, E6, E7, E9, E10
 
 **FAQ**
 
@@ -605,6 +616,7 @@ This change sends no new notifications, does not modify any existing notificatio
 | H6 | Run SLO agent from commitment page | Agent 80 enabled, LP Alpha Commitment exists | Admin clicks "Run SLO Agent" on commitment page | Progress panel appears, SLO extraction runs. After completion, auto-redirects to standalone matrix with `legal_category_eq=2` and `stakeholder_id=<alpha_id>` so counsel sees only that LP's SLO obligations | Running SLO agent from commitment page redirects with stakeholder pre-filter | `side_letter_obligation_agent.feature` |
 | H7 | CP/CS single-company redirect with stakeholder | Agent 79 enabled, Acme Corp has CP obligations | Admin runs CP/CS agent for Acme Corp (company-scoped) | Auto-redirects to standalone matrix with `legal_category_eq=0` and `stakeholder_id=<acme_id>` | Single-company run redirects with stakeholder pre-filter | `cp_cs_extraction_agent.feature` |
 | H8 | Batch run redirects to agent Obligations tab | Agent 79 enabled, entity has PIs | Admin clicks "Run Now" on agent General tab | Batch completes → 3s delay → auto-redirects to agent's Obligations tab. "Open Obligation Matrix" button on that tab links to standalone matrix with `legal_category_eq=0`, no stakeholder filter | Batch run lands on agent Obligations tab | `cp_cs_extraction_agent.feature` |
+| H9 | Trigger type icons visible on matrix rows | Obligations exist: one recurring CP, one one-time CP, one armed SLO | Counsel views obligation matrix | Each row shows an icon next to the obligation type: repeat icon for recurring, calendar icon for one-time, bolt icon for event-driven. Tooltip on hover confirms the shape | Trigger type icons help counsel identify obligation shape before approving | `side_letter_matrix.feature` |
 
 #### Edge Cases
 

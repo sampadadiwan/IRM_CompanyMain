@@ -17,7 +17,19 @@
     <% end %>
     <div class="text-muted"><%= obligation.source_fund&.name %></div>
   </td>
-  <td><%= obligation.obligation_type.humanize %></td>
+  <%# H9: Trigger type icon — recurring (repeat), one-time (calendar), or
+      event-driven (bolt) — lets counsel identify the obligation shape at a
+      glance without opening the edit form. %>
+  <td>
+    <%= obligation.obligation_type.humanize %>
+    <% if obligation.recurring? %>
+      <i class="ti ti-repeat text-info" title="Recurring" data-bs-toggle="tooltip"></i>
+    <% elsif obligation.trigger_one_time? %>
+      <i class="ti ti-calendar-event text-muted" title="One-time" data-bs-toggle="tooltip"></i>
+    <% elsif obligation.armed? %>
+      <i class="ti ti-bolt text-warning" title="Event-driven" data-bs-toggle="tooltip"></i>
+    <% end %>
+  </td>
   <td>
     <%# All obligations link to the show page (full detail view with Tasks,
         Fulfillment History, and Alerts tabs). %>

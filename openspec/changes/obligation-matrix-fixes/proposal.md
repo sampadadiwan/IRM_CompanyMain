@@ -28,6 +28,7 @@ Additionally, product feedback identified that the matrix should be one unified 
 - **Run SLO Agent button on capital commitment page**: A "Run SLO Agent" button now appears on each capital commitment's show page, letting users trigger SLO extraction for a single commitment without navigating to the batch page.
 - **CP/CS single-company redirect with stakeholder pre-filter**: After running the CP/CS agent for a single portfolio company, the "View results" link redirects to the obligation matrix with both `legal_category_eq` (CP) and `stakeholder_id` (that company) pre-selected, so counsel sees only that company's CP/CS obligations.
 - **Progress panel duplication fix**: Navigating away from and back to a portfolio investment page no longer shows duplicate progress panels — the panel uses a fixed wrapper ID that Turbo replaces cleanly.
+- **Trigger type icons on matrix rows**: Each obligation row in the matrix now shows a small icon next to the obligation type indicating its trigger shape — recurring (repeat icon), one-time (calendar icon), or event-driven/armed (bolt icon). This lets counsel see at a glance whether an obligation is recurring before approving, without opening the edit form. Applies to both CP/CS and SLO obligations.
 - **DataTables sorting on the matrix**: The obligation matrix table now supports client-side column sorting via DataTables.
 - **Breadcrumb fix**: The matrix breadcrumb no longer shows a misleading "Side Letters" link for obligations sourced from portfolio investments.
 

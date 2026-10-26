@@ -55,7 +55,7 @@
 | ⑤ Matrix | `app/packs/funds/side_letters/controllers/side_letter_obligations_controller.rb` | Modified | Remove `context` param; stakeholder scoping by legal category; simplified breadcrumb |
 | ⑤ Matrix | `app/packs/funds/side_letters/views/side_letter_obligations/index.html.erb` | Modified | Remove context-driven title/banner/filters; unified info banner; always-visible legal category column |
 | ⑤ Matrix | `app/packs/funds/side_letters/views/side_letter_obligations/_matrix.html.erb` | Modified | Legal category column always visible; DataTables wiring |
-| ⑤ Matrix | `app/packs/funds/side_letters/views/side_letter_obligations/_side_letter_obligation.html.erb` | Modified | Row partial with consistent linking |
+| ⑤ Matrix | `app/packs/funds/side_letters/views/side_letter_obligations/_side_letter_obligation.html.erb` | Modified | Row partial with consistent linking; trigger type icons (recurring/one-time/armed) in Type column |
 | ⑤ Matrix | `app/packs/funds/side_letters/views/side_letter_obligations/show.html.erb` | Modified | Portfolio obligation show page linking |
 | ⑥ Form Helpers | `app/packs/funds/side_letters/helpers/side_letter_obligations_helper.rb` | Modified | `legal_category_form_options` method added |
 | ⑥ Forms | `app/packs/funds/side_letters/views/side_letter_obligations/_form.html.erb` | Modified | Uses `legal_category_form_options`, hides MFN for CP/CS |
@@ -148,6 +148,13 @@ The `run` action's Turbo Stream response sends two `turbo_stream.replace` calls:
 - Value 0 or 1 (CP/CS): `@stakeholders` = portfolio companies linked via PI-sourced obligations
 - Value 2 (SLO): `@stakeholders` = investors linked via commitment → side letter → obligation
 - Blank: `@stakeholders` = union of both sets
+
+**Trigger type icons in `_side_letter_obligation.html.erb`:**
+The Type column (`obligation.obligation_type.humanize`) is followed by a conditional icon indicating the obligation's trigger shape. Uses existing model methods — no new queries:
+- `obligation.recurring?` → `ti-repeat` (info) — calendar_event with frequency_rrule
+- `obligation.trigger_one_time?` → `ti-calendar-event` (muted) — one_time trigger
+- `obligation.armed?` → `ti-bolt` (warning) — fund_event/deal_event/status_change/ongoing
+Each icon has a Bootstrap tooltip via `data-bs-toggle="tooltip"`. Icons are mutually exclusive (if/elsif/elsif). Applies to all legal categories — the partial is shared by both CP/CS and SLO views.
 
 **Reviewer checks**
 - [ ] No action without `authorize` / `policy_scope`

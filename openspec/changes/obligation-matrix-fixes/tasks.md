@@ -259,7 +259,19 @@
       **Why:** "Run Now" on the agent General tab goes through `SupportAgentJob`'s
       inline loop, not `process_batch` — the redirect must be hooked in the job.
 
-- [ ] 8.7 Write/update Cucumber scenarios covering:
+- [ ] 8.7 Add trigger type icons to the obligation matrix row partial
+      (`_side_letter_obligation.html.erb`). In the Type column, after
+      `obligation.obligation_type.humanize`, add a conditional icon:
+      - `obligation.recurring?` → `<i class="ti ti-repeat text-info">` with tooltip "Recurring"
+      - `obligation.trigger_one_time?` → `<i class="ti ti-calendar-event text-muted">` with tooltip "One-time"
+      - `obligation.armed?` → `<i class="ti ti-bolt text-warning">` with tooltip "Event-driven"
+      Icons are mutually exclusive (if/elsif/elsif). Applies to all legal categories
+      (CP, CS, SLO) since the partial is shared. No new queries — uses existing model methods.
+      **Code traceability:** `# H9 trigger type icons on matrix rows`
+      **Why:** Product feedback — counsel needs to see if an obligation is recurring before
+      approving, without opening the edit form.
+
+- [ ] 8.8 Write/update Cucumber scenarios covering:
       H6 (SLO from commitment page), H7 (single-company CP/CS redirect with stakeholder).
       Run:
       ```
