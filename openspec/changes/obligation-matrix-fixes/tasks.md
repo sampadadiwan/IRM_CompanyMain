@@ -259,7 +259,7 @@
       **Why:** "Run Now" on the agent General tab goes through `SupportAgentJob`'s
       inline loop, not `process_batch` — the redirect must be hooked in the job.
 
-- [ ] 8.7 Add trigger type icons to the obligation matrix row partial
+- [x] 8.7 Add trigger type icons to the obligation matrix row partial
       (`_side_letter_obligation.html.erb`). In the Type column, after
       `obligation.obligation_type.humanize`, add a conditional icon:
       - `obligation.recurring?` → `<i class="ti ti-repeat text-info">` with tooltip "Recurring"
