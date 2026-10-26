@@ -22,13 +22,15 @@
       glance without opening the edit form. %>
   <td>
     <%= obligation.obligation_type.humanize %>
-    <% if obligation.recurring? %>
-      <i class="ti ti-repeat text-info" title="Recurring" data-bs-toggle="tooltip"></i>
-    <% elsif obligation.trigger_one_time? || obligation.trigger_calendar_event? %>
-      <i class="ti ti-calendar-event text-muted" title="One-time" data-bs-toggle="tooltip"></i>
-    <% elsif obligation.trigger_type.in?(%w[fund_event deal_event status_change ongoing]) %>
-      <i class="ti ti-bolt text-warning" title="Event-driven" data-bs-toggle="tooltip"></i>
-    <% end %>
+    <div>
+      <% if obligation.recurring? %>
+        <i class="ti ti-repeat text-info" title="Recurring" data-bs-toggle="tooltip"></i>
+      <% elsif obligation.trigger_one_time? || obligation.trigger_calendar_event? %>
+        <i class="ti ti-calendar-event text-muted" title="One-time" data-bs-toggle="tooltip"></i>
+      <% elsif obligation.trigger_type.in?(%w[fund_event deal_event status_change ongoing]) %>
+        <i class="ti ti-bolt text-warning" title="Event-driven" data-bs-toggle="tooltip"></i>
+      <% end %>
+    </div>
   </td>
   <td>
     <%# All obligations link to the show page (full detail view with Tasks,
