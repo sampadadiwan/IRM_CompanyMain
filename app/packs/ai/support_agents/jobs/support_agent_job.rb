@@ -58,8 +58,9 @@ class SupportAgentJob < ApplicationJob
   # @param batch_ids [Array<Integer>, nil] array of IDs for batch processing
   # @param batch_ids_type [String, nil] the type of IDs provided for batch processing (must match agent's target type)
   # @param execution_mode [Symbol, nil] mode of execution (:adhoc_batch, :single_company_with_steps, :scheduled)
+  # @param estimated_closing_date [String, nil] YYYY-MM-DD closing date for due-date calculation (CP/CS agent individual runs)
   # @return [void]
-  def perform(support_agent_id: nil, target_id: nil, target_type: nil, user_id: nil, with_steps: false, batch_ids: nil, batch_ids_type: nil, execution_mode: :adhoc_batch, rta_pdf_document_id: nil, bank_statement_document_id: nil)
+  def perform(support_agent_id: nil, target_id: nil, target_type: nil, user_id: nil, with_steps: false, batch_ids: nil, batch_ids_type: nil, execution_mode: :adhoc_batch, rta_pdf_document_id: nil, bank_statement_document_id: nil, estimated_closing_date: nil)
     if support_agent_id.nil?
       support_agents = SupportAgent.enabled
       support_agents.each do |agent|
@@ -167,9 +168,9 @@ class SupportAgentJob < ApplicationJob
             # Initialize report with steps and pass to agent
             agent_instance = support_agent.agent.new
             report = agent_instance.initialize_report_with_steps({}, model: target, support_agent: support_agent, user_id: user_id)
-            support_agent.agent.call(support_agent_id: support_agent_id, target: target, user_id: user_id, entity_id: support_agent.entity_id, support_agent_report: report, rta_pdf_document_id: rta_pdf_document_id, bank_statement_document_id: bank_statement_document_id)
+            support_agent.agent.call(support_agent_id: support_agent_id, target: target, user_id: user_id, entity_id: support_agent.entity_id, support_agent_report: report, rta_pdf_document_id: rta_pdf_document_id, bank_statement_document_id: bank_statement_document_id, estimated_closing_date: estimated_closing_date)
           else
-            support_agent.agent.wtf?(support_agent_id: support_agent_id, target: target, user_id: user_id, entity_id: support_agent.entity_id, rta_pdf_document_id: rta_pdf_document_id, bank_statement_document_id: bank_statement_document_id)
+            support_agent.agent.wtf?(support_agent_id: support_agent_id, target: target, user_id: user_id, entity_id: support_agent.entity_id, rta_pdf_document_id: rta_pdf_document_id, bank_statement_document_id: bank_statement_document_id, estimated_closing_date: estimated_closing_date)
           end
 
           # Track successes for the batch summary AND the execution log — single
@@ -231,6 +232,12 @@ class SupportAgentJob < ApplicationJob
           # Use the first target's class name as the batch target type for summary
           batch_target_type = targets.first.class.name
           send_batch_summary(support_agent, successes, errors, user_id, batch_target_type)
+
+          # Agent-specific post-batch redirect: delegates to the agent class's
+          # broadcast_batch_redirect which builds the correct URL (e.g. obligation
+          # matrix with legal_category pre-selected) and broadcasts a delayed
+          # Turbo visit so the user lands on results after the batch summary.
+          support_agent.agent.broadcast_batch_redirect(support_agent.id) if successes.any? && support_agent.agent.respond_to?(:broadcast_batch_redirect)
         end
 
         # Mark execution log as completed. build_summary is the shared canonical
@@ -339,17 +346,18 @@ class SupportAgentJob < ApplicationJob
     targets
   end
 
-  # Resolves the target for step UI runs. When the agent expands an Entity
-  # into a single non-Entity sub-target (e.g. Deal), uses that directly
-  # so the step report owner matches the actual target model.
+  # Resolves the target for step-UI runs. Expands the entity into
+  # agent-specific sub-targets (e.g. CapitalCommitments for SLO,
+  # PortfolioInvestments for CP/CS). Falls back to the raw Entity
+  # only when the agent returns no sub-targets at all.
   #
-  # @param support_agent [SupportAgent]
-  # @param target_id [Integer, String] the entity ID
-  # @return [Array]
+  # @param support_agent [SupportAgent] the agent record
+  # @param target_id [Integer, String] entity ID to expand
+  # @return [Array] resolved target records for the extraction pipeline
   def resolve_step_ui_target(support_agent, target_id)
     expanded = support_agent.agent.new.targets(target_id)
     count = expanded.respond_to?(:count) ? expanded.count : expanded.size
-    return expanded.to_a if count == 1 && !expanded.first.is_a?(Entity)
+    return expanded.to_a if count >= 1 && !expanded.first.is_a?(Entity)
 
     [Entity.find(target_id)]
   end

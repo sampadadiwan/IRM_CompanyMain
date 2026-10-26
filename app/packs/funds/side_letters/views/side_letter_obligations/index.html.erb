@@ -1,16 +1,20 @@
-<%# The standalone LP Obligation Matrix page: all obligations across LPs for
-    the entity, filterable per spec (type, owner team, due range, review
-    status, MFN relevance, fund). %>
+<%# The unified LP Obligation Matrix: all obligations (CP, CS, and SLO)
+    across LPs and portfolio investments for the entity. The legal category
+    Ransack filter is the primary scoping mechanism — agents link here with
+    q[legal_category_eq] pre-selected. Stakeholder dropdown adapts to the
+    selected legal category (portfolio companies for CP/CS, LPs for SLO). %>
 <%# Breadcrumbs come from the layout card (@bread_crumbs in the controller) %>
 <%= render FormCard.new(title: "LP Obligation Matrix") do %>
   <%# First-time orientation: this feature has a lifecycle users must understand %>
   <div class="alert alert-info d-flex align-items-start gap-2 mb-3">
     <i class="ti ti-info-circle fs-5 mt-1"></i>
     <div>
-      Every obligation your side letters create, across all LPs, in one place.
-      Extracted (or manually added) obligations wait as <strong>Pending review</strong> until counsel
-      approves them — only then do tasks and due-date alerts go live. <strong>Armed</strong> items are
-      event-driven and have no deadline until you <strong>Fire</strong> them.
+      All obligations — conditions precedent, conditions subsequent, and side letter obligations —
+      across your LPs and portfolio investments, in one place. Use the <strong>Legal category</strong>
+      filter to focus on one type. Extracted (or manually added) obligations wait as
+      <strong>Pending review</strong> until counsel approves them — only then do tasks and due-date
+      alerts go live. <strong>Armed</strong> items are event-driven and have no deadline until you
+      <strong>Fire</strong> them.
       <%= link_to "Read the guide", user_guide_path("agents/side_letter_obligation_agent_user_guide"), target: "_blank", rel: "noopener" %>.
     </div>
   </div>
@@ -34,6 +38,9 @@
       <%= f.select :review_status_eq, SideLetterObligation.review_statuses.keys.map { |k| [k.humanize, k] },
                    { include_blank: "All" }, class: "form-select" %>
     </div>
+    <%# Legal category filter: always visible. Agents pre-select the relevant
+        value via q[legal_category_eq] in the URL. All options always available
+        so the user can switch scope without clearing and re-filtering. %>
     <div class="col-md-2">
       <%= f.label :legal_category_eq, "Legal category", class: "form-label" %>
       <%= f.select :legal_category_eq, legal_category_options, { include_blank: "All" }, class: "form-select" %>
@@ -46,12 +53,13 @@
       <%= f.label :next_due_date_lteq, "Due until", class: "form-label" %>
       <%= f.date_field :next_due_date_lteq, class: "form-control" %>
     </div>
-    <%# Stakeholder filter: narrows to obligations from a specific portfolio company %>
+    <%# Stakeholder filter: options scoped by legal category in the controller
+        (portfolio companies for CP/CS, LPs for SLO, all when unfiltered). %>
     <div class="col-md-2">
       <%= label_tag :stakeholder_id, "Stakeholder", class: "form-label" %>
       <%= select_tag :stakeholder_id,
                      options_from_collection_for_select(@stakeholders, :id, :investor_name, params[:stakeholder_id]),
-                     include_blank: "All companies", class: "form-select" %>
+                     include_blank: "All", class: "form-select" %>
     </div>
     <div class="col-md-2">
       <%= f.submit "Filter", class: "btn btn-primary" %>
@@ -59,7 +67,11 @@
     </div>
   <% end %>
 
-  <%= render "side_letter_obligations/matrix", obligations: @side_letter_obligations %>
+  <%# Legal category column always visible — users need it to distinguish
+      CP vs CS vs SLO when viewing mixed or filtered results. %>
+  <%= render "side_letter_obligations/matrix",
+             obligations: @side_letter_obligations,
+             show_legal_category: true %>
 <% end %>
 
 <%# Outside the FormCard — see _action_modals for why %>

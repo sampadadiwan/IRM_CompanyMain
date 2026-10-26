@@ -9,6 +9,13 @@
 # differ: this agent always operates on PortfolioInvestment records and has
 # no side-letter-specific config fields.
 #
+# When run from a portfolio company page (target = Investor), the agent
+# resolves the company's portfolio investments and processes each one
+# sequentially through the extraction pipeline, broadcasting step progress
+# against the Investor's report so the step UI advances on the investor page.
+# Each step shows a counter (e.g. "Extracted 12 (2/5)") so the user sees
+# progress across all investments.
+#
 # @see SideLetterObligationAgent for the extraction pipeline internals
 class CpCsExtractionAgent < SideLetterObligationAgent
   DESCRIPTION = "Extracts CP/CS obligations from investment agreements for counsel review and alerts owners before due dates."
@@ -30,7 +37,7 @@ class CpCsExtractionAgent < SideLetterObligationAgent
   DESC
 
   SINGLE_LONG_DESCRIPTION = <<~DESC
-    Extracts obligations from this investment's agreement document into the review queue.
+    Extracts obligations from this company's investment agreement documents into the review queue.
     Approved obligations become tracked tasks with due-date alerts; nothing goes live
     without counsel review.
   DESC
@@ -43,13 +50,260 @@ class CpCsExtractionAgent < SideLetterObligationAgent
     generate_progress_reports: "Generate Report"
   }.freeze
 
-  # @param entity_id [Integer, ActiveRecord::Base] entity ID for batch, or a single record for adhoc
+  # Resolves extraction targets for this agent.
+  # Accepts an entity ID (batch — all portfolio investments), a single
+  # PortfolioInvestment (adhoc single run), or an Investor record
+  # (portfolio company — scoped to that company's investments only).
+  #
+  # @param entity_id [Integer, PortfolioInvestment, Investor] entity ID, single record, or portfolio company
   # @return [Array, ActiveRecord::Relation] portfolio investments with matching tagged documents
   def targets(entity_id)
-    return [entity_id] if entity_id.is_a?(ActiveRecord::Base)
+    return [entity_id] if entity_id.is_a?(PortfolioInvestment)
+
+    # Portfolio company (Investor) → expand to its portfolio investments
+    if entity_id.is_a?(Investor)
+      agent_record = SupportAgent.where(entity_id: entity_id.entity_id, agent_type: "CpCsExtractionAgent").last
+      investments = portfolio_investment_targets(entity_id.entity_id, agent_record)
+      return investments.where(portfolio_company_id: entity_id.id)
+    end
 
     agent_record = SupportAgent.where(entity_id: entity_id, agent_type: "CpCsExtractionAgent").last
     portfolio_investment_targets(entity_id, agent_record)
+  end
+
+  # Handles Investor (portfolio company) targets by expanding to portfolio
+  # investments internally. The report stays owned by the Investor so the
+  # step UI on the investor page receives broadcasts. For PortfolioInvestment
+  # targets, delegates to the parent class.
+  #
+  # @param ctx [Hash] Trailblazer step context
+  # @param target [Investor, PortfolioInvestment] the run target
+  # @return [Boolean] always true
+  def initialize_agent(ctx, target:, **)
+    return super unless target.is_a?(Investor)
+
+    report = ctx[:support_agent_report]
+    mark_step_running(report, :initialize_agent) if report
+
+    # Base class initialization (sets @support_agent and ctx[:llm])
+    @support_agent = SupportAgent.find(ctx[:support_agent_id])
+    ctx[:support_agent] = @support_agent
+    ctx[:llm] = LlmService.ruby_llm_chat(entity: @support_agent.entity, model: @support_agent.effective_model)
+
+    ctx[:model] = target
+    ctx[:issues] = { extraction_issues: [] }
+
+    # Resolve this company's portfolio investments with matching documents
+    ctx[:investor_target] = target
+    pi_targets = targets(target).to_a
+    ctx[:investor_pi_targets] = pi_targets
+    ctx[:source_mode] = :portfolio_investments
+
+    if pi_targets.empty?
+      if report
+        mark_step_success(report, :initialize_agent,
+                          message: "No portfolio investments found for #{target.investor_name}")
+      end
+      return true
+    end
+
+    if report
+      mark_step_success(report, :initialize_agent,
+                        message: "#{target.investor_name}: #{pi_targets.size} investment(s)")
+    end
+    true
+  end
+
+  # Locates documents across all portfolio investments for this company.
+  # Each PI is checked for matching tagged documents (supports comma-separated
+  # tags, e.g. "SHA,SSA" — all matching documents per PI are collected).
+  # The step UI shows a running counter as each PI is processed.
+  # Falls back to the parent's single-PI logic when no investor targets.
+  #
+  # @param ctx [Hash] step context — populates ctx[:pi_docs] with per-PI results,
+  #   each entry containing +{ pi:, docs: [Document] }+
+  # @return [Boolean] always true
+  def locate_side_letter(ctx, **)
+    pi_targets = ctx[:investor_pi_targets]
+    return super unless pi_targets
+
+    report = ctx[:support_agent_report]
+    total = pi_targets.size
+    ctx[:pi_docs] = []
+
+    pi_targets.each_with_index do |pi, idx|
+      mark_step_running(report, :locate_side_letter) if report
+      ctx[:portfolio_investment] = pi
+      ctx[:extraction_doc] = nil
+      ctx[:extraction_docs] = nil
+      locate_investment_document(ctx)
+
+      pi_name = pi.try(:name) || "Investment #{pi.id}"
+      docs = ctx[:extraction_docs] || [ctx[:extraction_doc]].compact
+      doc_names = docs.any? ? docs.map(&:name).join(", ") : "no document"
+      ctx[:pi_docs] << { pi: pi, docs: docs }
+
+      if report
+        mark_step_success(report, :locate_side_letter,
+                          message: "#{doc_names} — #{pi_name} (#{idx + 1}/#{total})")
+      end
+    end
+    true
+  end
+
+  # Extracts obligations from each located document via LLM. Supports multiple
+  # documents per PI (e.g. SHA + SSA), extracting from each separately. The step
+  # UI shows a counter as each investment is processed. Dedup across documents
+  # on the same PI is handled by +upsert_portfolio_row+ matching on source_clause.
+  #
+  # @param ctx [Hash] step context with ctx[:pi_docs] from locate step,
+  #   each entry containing +{ pi:, docs: [Document] }+
+  # @return [Boolean] always true
+  def extract_obligations(ctx, **)
+    pi_docs = ctx[:pi_docs]
+    return super unless pi_docs
+
+    report = ctx[:support_agent_report]
+    total = pi_docs.size
+    ctx[:all_extracted] = []
+
+    pi_docs.each_with_index do |entry, idx|
+      pi = entry[:pi]
+      docs = entry[:docs] || []
+      pi_name = pi.try(:name) || "Investment #{pi.id}"
+
+      mark_step_running(report, :extract_obligations) if report
+
+      if docs.empty?
+        ctx[:all_extracted] << { pi: pi, extracted: [] }
+        if report
+          mark_step_success(report, :extract_obligations,
+                            message: "Skipped — no document (#{idx + 1}/#{total})")
+        end
+        next
+      end
+
+      # Extract from each matching document on this PI (e.g. SHA doc + SSA doc)
+      pi_cited = []
+      docs.each do |doc|
+        raw = ctx[:llm].ask(
+          extraction_prompt(:portfolio_investments, estimated_closing_date: ctx[:estimated_closing_date]),
+          with: [doc.file.url]
+        )
+        rows = parse_response(raw)
+        cited, _uncited = rows.partition { |r| r["source_clause"].to_s.strip.present? }
+        pi_cited.concat(cited)
+      end
+
+      ctx[:all_extracted] << { pi: pi, extracted: pi_cited }
+
+      if report
+        mark_step_success(report, :extract_obligations,
+                          message: "Extracted #{pi_cited.size} from #{docs.size} doc(s) — #{pi_name} (#{idx + 1}/#{total})")
+      end
+    end
+    true
+  rescue StandardError => e
+    Rails.logger.error("[CpCsExtractionAgent] Extraction failed: #{e.message}")
+    mark_step_failed(report, :extract_obligations, message: e.message) if report
+    true
+  end
+
+  # Upserts extracted obligations for each portfolio investment. The step UI
+  # shows a counter as each batch is saved (e.g. "Saved 12 (3/5)").
+  # Also sets ctx[:extracted] with total count for the report step.
+  #
+  # @param ctx [Hash] step context with ctx[:all_extracted] from extract step
+  # @return [Boolean] always true
+  def upsert_obligations(ctx, **)
+    all_extracted = ctx[:all_extracted]
+    return super unless all_extracted
+
+    report = ctx[:support_agent_report]
+    total = all_extracted.size
+    total_saved = 0
+
+    all_extracted.each_with_index do |entry, idx|
+      pi = entry[:pi]
+      extracted = entry[:extracted]
+      pi_name = pi.try(:name) || "Investment #{pi.id}"
+
+      mark_step_running(report, :upsert_obligations) if report
+
+      if extracted.blank?
+        if report
+          mark_step_success(report, :upsert_obligations,
+                            message: "Nothing to save — #{pi_name} (#{idx + 1}/#{total})")
+        end
+        next
+      end
+
+      # Set up context for the parent's portfolio upsert method
+      ctx[:portfolio_investment] = pi
+      ctx[:extracted] = extracted
+      ctx[:issues] = { extraction_issues: [] }
+      upsert_portfolio_obligations(ctx)
+      total_saved += extracted.size
+
+      if report
+        mark_step_success(report, :upsert_obligations,
+                          message: "Saved #{extracted.size} — #{pi_name} (#{idx + 1}/#{total})")
+      end
+    end
+
+    # Set ctx[:extracted] for generate_progress_reports redirect logic
+    ctx[:extracted] = total_saved.positive? ? Array.new(total_saved) : []
+    true
+  end
+
+  # Restores the Investor as the model for report generation and delegates
+  # to the parent. Single-company (Investor) runs redirect to the standalone
+  # matrix with legal_category and stakeholder pre-filtered; batch runs
+  # redirect to the agent show page.
+  #
+  # @param ctx [Hash] step context — :investor_target set for single-company runs
+  # @param model [Object] current target (PI or Investor)
+  # @param support_agent [SupportAgent] agent record
+  # @return [Object] result from super
+  def generate_progress_reports(ctx, model:, support_agent:, **)
+    ctx[:model] = ctx[:investor_target] || model
+    super
+  end
+
+  # Overrides the parent's redirect to target the standalone obligation matrix
+  # with Ransack legal_category_eq pre-selected and stakeholder pre-filtered
+  # for single-target runs. Batch runs (Entity owner) fall back to the agent
+  # show page since no single stakeholder applies.
+  #
+  # @param report [SupportAgentReport] the completed report — owner is Investor
+  #   for company-scoped runs, PortfolioInvestment for single-PI runs, Entity
+  #   for batch runs
+  # @param support_agent [SupportAgent] the agent record for URL generation
+  # @return [void]
+  def broadcast_redirect_to_matrix(report, support_agent)
+    helpers = Rails.application.routes.url_helpers
+    # Investor (company-scoped) → stakeholder is the company itself.
+    # PortfolioInvestment (single PI) → stakeholder is the PI's portfolio company.
+    # Entity (batch) → no single stakeholder, fall back to agent show page.
+    url = case report.owner
+          when Investor
+            helpers.side_letter_obligations_path(
+              q: { legal_category_eq: 0 }, stakeholder_id: report.owner.id
+            )
+          when PortfolioInvestment
+            helpers.side_letter_obligations_path(
+              q: { legal_category_eq: 0 }, stakeholder_id: report.owner.portfolio_company_id
+            )
+          else
+            helpers.support_agent_path(support_agent, tab: "obligations")
+          end
+    Turbo::StreamsChannel.broadcast_append_to(
+      "support_agent_report_#{report.id}",
+      target: "progress_panel_#{report.id}",
+      html: "<script>setTimeout(function() { Turbo.visit('#{url}') }, 2000)</script>"
+    )
+  rescue StandardError, ScriptError => e
+    Rails.logger.warn { "[CpCsExtractionAgent] Redirect broadcast failed: #{e.message}" }
   end
 
   # @param support_agent [SupportAgent] agent config to validate
@@ -61,7 +315,7 @@ class CpCsExtractionAgent < SideLetterObligationAgent
     tag = fields["investment_doc_tag"].to_s.strip
     if tag.blank?
       issues << "'investment_doc_tag' is not set — the agent cannot identify which documents to extract from. " \
-                "Set it to the tag used on investment agreements (e.g. 'SHA')."
+                "Set it to the tag used on investment agreements (e.g. 'SHA' or 'SHA,SSA' for multiple)."
     end
 
     notify_tag = fields["notify_tag"].to_s.strip
@@ -98,13 +352,37 @@ class CpCsExtractionAgent < SideLetterObligationAgent
         { successes: [], errors: [{ target_id: support_agent.entity_id, target_name: "Enforcement run", error: result[:error].to_s }] }
       end
     else
-      run_batch(
+      result = run_batch(
         support_agent_id: support_agent_id,
         targets: targets,
         user_id: user_id,
         entity_id: entity_id,
         execution_mode: execution_mode
       )
+      # After batch extraction, redirect to the standalone obligation matrix
+      # with CP pre-selected so counsel can review all extracted obligations.
+      broadcast_batch_redirect(support_agent_id) if result[:successes].present?
+      result
     end
+  end
+
+  # Broadcasts a Turbo Stream redirect to the agent's Obligations tab after
+  # a batch CP/CS extraction run completes. Uses a 3-second delay so the
+  # user sees the batch summary before the page navigates.
+  #
+  # @param support_agent_id [Integer] the agent's ID for stream targeting
+  # @return [void]
+  def self.broadcast_batch_redirect(support_agent_id)
+    support_agent = SupportAgent.find(support_agent_id)
+    url = Rails.application.routes.url_helpers.support_agent_path(
+      support_agent, tab: "obligations"
+    )
+    Turbo::StreamsChannel.broadcast_append_to(
+      "batch_progress_#{support_agent.id}",
+      target: "batch_progress_panel",
+      html: "<script>setTimeout(function() { Turbo.visit('#{url}') }, 3000)</script>"
+    )
+  rescue StandardError => e
+    Rails.logger.warn { "[CpCsExtractionAgent] Batch redirect broadcast failed: #{e.message}" }
   end
 end

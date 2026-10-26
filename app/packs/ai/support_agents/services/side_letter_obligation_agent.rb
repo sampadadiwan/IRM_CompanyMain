@@ -100,12 +100,12 @@ class SideLetterObligationAgent < SupportAgentService
   # @param agent_record [SupportAgent] agent config record
   # @return [ActiveRecord::Relation<PortfolioInvestment>] investments with matching tagged documents
   def portfolio_investment_targets(entity_id, agent_record)
-    tag = (agent_record&.json_fields || {})["investment_doc_tag"].to_s.strip.downcase
+    tags = split_investment_doc_tags(agent_record)
     scope = PortfolioInvestment.where(entity_id: entity_id)
-    return scope.none if tag.blank?
+    return scope.none if tags.empty?
 
     tagged_docs = Document.where(entity_id: entity_id, owner_type: "PortfolioInvestment", template: [nil, false])
-                          .where("LOWER(COALESCE(documents.tag_list, '')) LIKE :tag", tag: "%#{tag}%")
+    tagged_docs = tagged_docs.where(*investment_tag_conditions(tags))
     scope.where(id: tagged_docs.select(:owner_id))
   end
 
@@ -171,14 +171,38 @@ class SideLetterObligationAgent < SupportAgentService
         { successes: [], errors: [{ target_id: support_agent.entity_id, target_name: "Enforcement run", error: result[:error].to_s }] }
       end
     else
-      run_batch(
+      result = run_batch(
         support_agent_id: support_agent_id,
         targets: targets,
         user_id: user_id,
         entity_id: entity_id,
         execution_mode: execution_mode
       )
+      # After batch extraction, redirect to the standalone obligation matrix
+      # with SLO pre-selected so counsel can review all extracted obligations.
+      broadcast_batch_redirect(support_agent_id) if result[:successes].present?
+      result
     end
+  end
+
+  # Broadcasts a Turbo Stream redirect to the standalone obligation matrix
+  # after a batch SLO extraction run completes. Uses a 3-second delay so
+  # the user sees the batch summary before the page navigates.
+  #
+  # @param support_agent_id [Integer] the agent's ID for stream targeting
+  # @return [void]
+  def self.broadcast_batch_redirect(support_agent_id)
+    support_agent = SupportAgent.find(support_agent_id)
+    url = Rails.application.routes.url_helpers.support_agent_path(
+      support_agent, tab: "obligations"
+    )
+    Turbo::StreamsChannel.broadcast_append_to(
+      "batch_progress_#{support_agent.id}",
+      target: "batch_progress_panel",
+      html: "<script>setTimeout(function() { Turbo.visit('#{url}') }, 3000)</script>"
+    )
+  rescue StandardError => e
+    Rails.logger.warn { "[SideLetterObligationAgent] Batch redirect broadcast failed: #{e.message}" }
   end
 
   # Initializes the extraction context for the given target record.
@@ -253,11 +277,17 @@ class SideLetterObligationAgent < SupportAgentService
     end
   end
 
+  # Locates all documents on the portfolio investment whose tag_list matches
+  # any of the comma-separated tags in +investment_doc_tag+ config. Stores all
+  # matches in +ctx[:extraction_docs]+ and the newest in +ctx[:extraction_doc]+
+  # for backward compatibility with the parent's single-doc extraction path.
+  #
   # @param ctx [Hash] step context with :portfolio_investment set
+  # @return [void]
   def locate_investment_document(ctx)
     investment = ctx[:portfolio_investment]
-    tag = (@support_agent.json_fields || {})["investment_doc_tag"].to_s.strip.downcase
-    if tag.blank?
+    tags = split_investment_doc_tags(@support_agent)
+    if tags.empty?
       ctx[:issues][:extraction_issues] << {
         type: :no_document,
         message: "No investment document tag configured — nothing to extract",
@@ -266,17 +296,20 @@ class SideLetterObligationAgent < SupportAgentService
       return
     end
 
-    # Newest document on this investment whose tag_list matches the configured tag
-    ctx[:extraction_doc] = investment
-                           .documents
-                           .where(template: [nil, false])
-                           .where("LOWER(COALESCE(documents.tag_list, '')) LIKE :tag", tag: "%#{tag}%")
-                           .order(:id).last
+    # All documents on this investment matching any configured tag (e.g. "SHA,SSA")
+    matching_docs = investment.documents
+                              .where(template: [nil, false])
+                              .where(*investment_tag_conditions(tags))
+                              .order(:id)
 
-    if ctx[:extraction_doc].nil?
+    ctx[:extraction_docs] = matching_docs.to_a
+    # Backward compat — parent's single-PI extract_obligations reads ctx[:extraction_doc]
+    ctx[:extraction_doc] = ctx[:extraction_docs].last
+
+    if ctx[:extraction_docs].blank?
       ctx[:issues][:extraction_issues] << {
         type: :no_document,
-        message: "No document tagged '#{tag}' on this investment — nothing to extract",
+        message: "No document tagged '#{tags.join(", ")}' on this investment — nothing to extract",
         severity: :info
       }
     end
@@ -298,7 +331,10 @@ class SideLetterObligationAgent < SupportAgentService
       return true
     end
 
-    raw = ctx[:llm].ask(extraction_prompt(ctx[:source_mode]), with: [doc.file.url])
+    raw = ctx[:llm].ask(
+      extraction_prompt(ctx[:source_mode], estimated_closing_date: ctx[:estimated_closing_date]),
+      with: [doc.file.url]
+    )
     rows = parse_response(raw)
 
     cited, uncited = rows.partition { |r| r["source_clause"].to_s.strip.present? }
@@ -492,6 +528,28 @@ class SideLetterObligationAgent < SupportAgentService
     }
   end
 
+  # Splits the +investment_doc_tag+ config value into an array of lowercase
+  # tag strings. Supports comma-separated tags (e.g. "SHA, SSA" → ["sha", "ssa"]).
+  #
+  # @param agent_or_record [SupportAgent, #json_fields] agent record or config source
+  # @return [Array<String>] lowercase tag strings, empty if none configured
+  def split_investment_doc_tags(agent_or_record)
+    raw = (agent_or_record&.json_fields || {})["investment_doc_tag"].to_s.strip.downcase
+    raw.split(",").map(&:strip).compact_blank
+  end
+
+  # Builds a SQL condition array for matching any of the given tags against
+  # +documents.tag_list+. Uses LOWER + COALESCE + LIKE OR chains, identical
+  # to the SLO path's +TAG_PATTERNS+ approach.
+  #
+  # @param tags [Array<String>] lowercase tag strings to match
+  # @return [Array] ActiveRecord-compatible condition: [sql_string, **binds]
+  def investment_tag_conditions(tags)
+    conditions = tags.each_with_index.map { |_t, i| "LOWER(COALESCE(documents.tag_list, '')) LIKE :tag_#{i}" }
+    binds = tags.each_with_index.to_h { |t, i| [:"tag_#{i}", "%#{t}%"] }
+    [conditions.join(" OR "), **binds]
+  end
+
   def default_reminder_days
     days = (@support_agent.json_fields || {})["default_reminder_days_before"].to_i
     days.positive? ? days : 7
@@ -556,15 +614,28 @@ class SideLetterObligationAgent < SupportAgentService
     result
   end
 
-  # Broadcasts a Turbo Stream that auto-redirects to the obligation matrix
-  # tab after a 2-second delay, so the user sees the completed steps before
-  # the page refreshes with the extracted obligations.
+  # Broadcasts a Turbo Stream that auto-redirects after a 2-second delay so
+  # the user sees completed steps before the page refreshes.
   #
-  # @param report [SupportAgentReport] the completed report
+  # Single-commitment runs (report.owner is CapitalCommitment) redirect to
+  # the standalone obligation matrix with legal_category_eq=2 and
+  # stakeholder_id pre-filtered to the LP, so counsel sees only that LP's
+  # SLO obligations. Batch runs (report.owner is Entity) redirect to the
+  # agent show page with the obligations tab.
+  #
+  # @param report [SupportAgentReport] the completed report — owner is
+  #   CapitalCommitment for single runs, Entity for batch runs
   # @param support_agent [SupportAgent] the agent record for URL generation
   # @return [void]
   def broadcast_redirect_to_matrix(report, support_agent)
-    url = Rails.application.routes.url_helpers.support_agent_path(support_agent, tab: "obligations")
+    helpers = Rails.application.routes.url_helpers
+    url = if report.owner.is_a?(CapitalCommitment)
+            helpers.side_letter_obligations_path(
+              q: { legal_category_eq: 2 }, stakeholder_id: report.owner.investor_id
+            )
+          else
+            helpers.support_agent_path(support_agent, tab: "obligations")
+          end
     Turbo::StreamsChannel.broadcast_append_to(
       "support_agent_report_#{report.id}",
       target: "progress_panel_#{report.id}",
@@ -576,9 +647,16 @@ class SideLetterObligationAgent < SupportAgentService
 
   # @param source_mode [Symbol] :capital_commitments or :portfolio_investments
   # @return [String] LLM prompt tailored to the document type being extracted
-  def extraction_prompt(source_mode = :capital_commitments)
+  # Returns the extraction prompt for the given source mode. When an estimated
+  # closing date is provided (individual PI runs), the prompt instructs the LLM
+  # to calculate concrete due dates relative to that date.
+  #
+  # @param source_mode [Symbol] :portfolio_investments or :capital_commitments
+  # @param estimated_closing_date [String, nil] YYYY-MM-DD closing date for due-date calculation
+  # @return [String] the full extraction prompt
+  def extraction_prompt(source_mode = :capital_commitments, estimated_closing_date: nil)
     if source_mode == :portfolio_investments
-      portfolio_extraction_prompt
+      portfolio_extraction_prompt(estimated_closing_date: estimated_closing_date)
     else
       commitment_extraction_prompt
     end
@@ -617,8 +695,13 @@ class SideLetterObligationAgent < SupportAgentService
   # are deliberately excluded so the output stays focused on trackable
   # pre-/post-closing conditions.
   #
+  # When +estimated_closing_date+ is provided, the "Dates and deadlines" section
+  # instructs the LLM to calculate concrete next_due_date values relative to that
+  # date (e.g. "30 days prior to Closing" → actual YYYY-MM-DD).
+  #
+  # @param estimated_closing_date [String, nil] YYYY-MM-DD closing date for due-date calculation
   # @return [String] LLM prompt scoped to CP/CS extraction only
-  def portfolio_extraction_prompt
+  def portfolio_extraction_prompt(estimated_closing_date: nil)
     <<~PROMPT
       You are a legal analyst reviewing transaction documents relating to an investment,
       acquisition, subscription, or transfer of securities — including Shareholders
@@ -729,8 +812,16 @@ class SideLetterObligationAgent < SupportAgentService
 
       ## Dates and deadlines
       Capture timing as stated ("prior to Closing", "within 15 days following Closing").
-      Set next_due_date only where a concrete YYYY-MM-DD can be calculated from dates
-      in the document. If Closing has not occurred, return null.
+      #{if estimated_closing_date.present?
+          "The estimated Closing date is #{estimated_closing_date}. Use this date to calculate " \
+          "concrete next_due_date values for all obligations with timing relative to Closing " \
+          "(e.g. \"30 days prior to Closing\" with closing date 2026-12-15 → next_due_date 2026-11-15). " \
+          "For obligations with no relationship to Closing, set next_due_date only if determinable from " \
+          "other dates in the document, else null."
+        else
+          "Set next_due_date only where a concrete YYYY-MM-DD can be calculated from dates " \
+          "in the document. If Closing has not occurred, return null."
+        end}
 
       ## Confidence scoring
       - 0.95-1.00: expressly labelled CP/CS with clear timing

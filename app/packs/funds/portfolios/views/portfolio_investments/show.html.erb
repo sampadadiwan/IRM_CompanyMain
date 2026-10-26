@@ -253,6 +253,14 @@
                     <% end %>
                   <% end %>
 
+                  <%# Run CP/CS Agent for this specific portfolio investment %>
+                  <% if current_user.entity&.support_agents&.set?(:cp_cs_extraction_agent) %>
+                    <button type="button" class="btn btn-outline-info"
+                            data-bs-toggle="modal" data-bs-target="#run-cp-cs-agent-pi-modal">
+                      <i class="ti ti-robot"></i> Run CP/CS Agent
+                    </button>
+                  <% end %>
+
                   <% if policy(@portfolio_investment).destroy? %>
                     <%= button_to @portfolio_investment, method: :delete,
                                 class: "btn btn-outline-danger w-100", form_class: "deleteButton",
@@ -270,7 +278,35 @@
   <% end %>
 </div>
 
+<%# CP/CS Agent progress panel — placed between buttons and details so the
+    user sees progress without scrolling after clicking "Run CP/CS Agent". %>
+<% if current_user.entity&.support_agents&.set?(:cp_cs_extraction_agent) %>
+  <div id="cp_cs_progress_wrapper" class="container-fluid px-3 pb-3">
+    <% cp_cs_agent = SupportAgent.find_by(entity_id: current_user.entity_id, agent_type: "CpCsExtractionAgent") %>
+    <% existing_report = SupportAgentReport.find_by(owner: @portfolio_investment, support_agent: cp_cs_agent) if cp_cs_agent %>
+    <% if existing_report %>
+      <%= render "support_agents/progress_panel",
+                 report: existing_report,
+                 support_agent: cp_cs_agent,
+                 target: @portfolio_investment %>
+    <% end %>
+  </div>
+<% end %>
+
 <!-- Details Partial -->
 <div>
     <%= render "portfolio_investments/details", portfolio_investment: @portfolio_investment %>
 </div>
+
+<%# CP/CS Agent run modal — rendered outside the container to avoid
+    container-type: inline-size breaking Bootstrap modal positioning. %>
+<% if current_user.entity&.support_agents&.set?(:cp_cs_extraction_agent) %>
+  <%= render "support_agents/agent_run_modal",
+             modal_id:         "run-cp-cs-agent-pi-modal",
+             agent_type:       "CpCsExtractionAgent",
+             target_type:      "PortfolioInvestment",
+             target_id:        @portfolio_investment.id,
+             description:      CpCsExtractionAgent::DESCRIPTION,
+             long_description: CpCsExtractionAgent::SINGLE_LONG_DESCRIPTION,
+             show_closing_date: true %>
+<% end %>

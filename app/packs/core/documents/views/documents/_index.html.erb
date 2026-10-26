@@ -105,6 +105,8 @@
                   </span>
                 <% end %>
               <% end %>
+              <%# CP/CS Agent per-document run buttons are on each document row instead
+                  of here — avoids the staleness issue of running all documents at once. %>
               <div class="dropdown-divider"></div>
               <% if params[:q].present? %>
                 <%= render "documents/bulk_actions", folder_id: folder_id %>
@@ -253,3 +255,21 @@ if false && msg.present?
     Why: The "NDA Settings" link above targets this frame — clicking it loads the modal
     content from NdaConfigsController#new/edit into this frame without full page reload. %>
 <%= turbo_frame_tag "nda_settings_modal" %>
+
+<%# CP/CS Agent run modal and progress panel — rendered outside the main content
+    so Bootstrap modal positioning is not affected by any parent container-type CSS.
+    Runs per PI — each document row's onclick sets target_id to its owner PI before
+    opening this shared modal. The default target_id is a placeholder overwritten
+    by the per-row button.
+    The progress_panel_new div is the Turbo Stream target for step-by-step progress. %>
+<% if current_user.entity&.support_agents&.set?(:cp_cs_extraction_agent) %>
+  <%= render "support_agents/agent_run_modal",
+             modal_id:         "run-cp-cs-agent-from-docs-modal",
+             agent_type:       "CpCsExtractionAgent",
+             target_type:      "PortfolioInvestment",
+             target_id:        0,
+             description:      CpCsExtractionAgent::DESCRIPTION,
+             long_description: CpCsExtractionAgent::SINGLE_LONG_DESCRIPTION,
+             show_closing_date: true %>
+  <div id="progress_panel_new" class="container-fluid px-3 pb-3"></div>
+<% end %>

@@ -270,6 +270,8 @@ class SupportAgentsController < ApplicationController
       @report.save!
     end
 
+    # Forward optional estimated_closing_date from the run modal — used by
+    # CP/CS agent to calculate obligation due dates relative to Closing.
     SupportAgentJob.perform_later(
       support_agent_id: @support_agent.id,
       target_id: params[:target_id],
@@ -278,18 +280,28 @@ class SupportAgentsController < ApplicationController
       with_steps: target.present?,
       execution_mode: target.present? ? :single_company_with_steps : :adhoc_batch,
       rta_pdf_document_id: rta_pdf_document_id,
-      bank_statement_document_id: bank_statement_document_id
+      bank_statement_document_id: bank_statement_document_id,
+      estimated_closing_date: params[:estimated_closing_date].presence
     )
 
     respond_to do |format|
       format.html { redirect_to(request.referer || support_agents_path, notice: "Support agent job has been queued.") }
       format.turbo_stream do
         if target && @report
-          render turbo_stream: turbo_stream.replace(
-            "progress_panel_new",
-            partial: "support_agents/progress_panel",
-            locals: { report: @report, support_agent: @support_agent, target: target }
-          )
+          # Replace the report panel by its ID, and also the host page's
+          # fixed wrapper so the first run and re-runs both land in a
+          # single, predictable target. CP/CS uses cp_cs_progress_wrapper
+          # (PI show page); SLO uses slo_progress_wrapper (commitment page).
+          panel_locals = { report: @report, support_agent: @support_agent, target: target }
+          wrapper_id = @support_agent.agent_type == "SideLetterObligationAgent" ? "slo_progress_wrapper" : "cp_cs_progress_wrapper"
+          render turbo_stream: [
+            turbo_stream.replace("progress_panel_#{@report.id}",
+                                 partial: "support_agents/progress_panel",
+                                 locals: panel_locals),
+            turbo_stream.replace(wrapper_id,
+                                 partial: "support_agents/progress_panel",
+                                 locals: panel_locals)
+          ]
         else
           flash.now[:notice] = "Support agent job has been queued."
           render turbo_stream: turbo_stream.replace("page_alerts", partial: "layouts/alerts")

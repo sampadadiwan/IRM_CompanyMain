@@ -159,6 +159,9 @@
                 <i class="ti ti-lock ms-1" style="font-size:0.7rem"></i>
               </span>
             <% end %>
+
+            <%# CP/CS Agent removed from company-level — runs per PI from
+                the PI show page or the documents navigation instead. %>
           <% end %>
 
           <% if @investor.category == "Portfolio Company" %>
@@ -221,6 +224,8 @@
                    description:      PresentationAnalystAgent::DESCRIPTION,
                    long_description: PresentationAnalystAgent::SINGLE_LONG_DESCRIPTION %>
       <% end %>
+
+      <%# CP/CS Agent modal removed — runs per PI from PI show page or docs page %>
     <% end %>
 
   </div>

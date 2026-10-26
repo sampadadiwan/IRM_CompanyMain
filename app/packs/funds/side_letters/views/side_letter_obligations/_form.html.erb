@@ -25,7 +25,9 @@
       <%# Legal classification drives which source picker appears below:
           CP/CS shows portfolio investments, SLO shows side letters %>
       <%= f.label :legal_category, "Legal category", class: "form-label" %>
-      <%= f.select :legal_category, legal_category_options, {},
+      <%# CP/CS obligations only show CP and CS options (SLO excluded) %>
+    <% form_category_opts = is_cp_cs ? legal_category_form_options.reject { |_, v| v == "side_letter_obligation" } : legal_category_form_options %>
+    <%= f.select :legal_category, form_category_opts, {},
                    class: "form-select",
                    data: { obligation_source_target: "category",
                            action: "change->obligation-source#toggle" } %>
@@ -123,10 +125,13 @@
       <%= f.label :reminder_days_before, "Reminder lead time (days)", class: "form-label" %>
       <%= f.number_field :reminder_days_before, class: "form-control", min: 0 %>
     </div>
-    <div class="col-md-2 form-check ms-2 align-self-end">
-      <%= f.check_box :mfn_relevant, class: "form-check-input" %>
-      <%= f.label :mfn_relevant, "MFN relevant", class: "form-check-label" %>
-    </div>
+    <%# MFN is only relevant for side letter obligations, not CP/CS %>
+    <% unless is_cp_cs %>
+      <div class="col-md-2 form-check ms-2 align-self-end">
+        <%= f.check_box :mfn_relevant, class: "form-check-input" %>
+        <%= f.label :mfn_relevant, "MFN relevant", class: "form-check-label" %>
+      </div>
+    <% end %>
   </div>
 
   <div class="mt-3">
