@@ -4,8 +4,9 @@ class PortfolioReportDocGenerator
 
   attr_accessor :working_dir
 
-  # Tags an Actual column is compared with. Each adds a "<label>_vs_<tag>_percent" field; adding "IC" here gives
-  # "<label>_vs_ic_percent" with no other change.
+  # Tags an Actual column is compared with. Each adds a "<label>_vs_<tag>_percent" field (Actual as a % of the tag) and a
+  # "<label>_vs_<tag>_compute_percent" field (Actual's % difference from the tag); adding "IC" here gives
+  # "<label>_vs_ic_percent" and "<label>_vs_ic_compute_percent" with no other change.
   COMPARATOR_TAGS = ["Budget"].freeze
 
   def initialize(portfolio_company, template, start_date, end_date, user_id, options: nil)
@@ -162,7 +163,9 @@ class PortfolioReportDocGenerator
 
         COMPARATOR_TAGS.each do |tag|
           comparator_report = reports_by_key[comparator_key(kr.period, kr.as_of, tag)]
-          row_data["#{label}_vs_#{tag.downcase}_percent"] = percent_of(kpi, kpis_by_report.dig(comparator_report&.id, name))
+          comparator_kpi = kpis_by_report.dig(comparator_report&.id, name)
+          row_data["#{label}_vs_#{tag.downcase}_percent"] = percent_of(kpi, comparator_kpi)
+          row_data["#{label}_vs_#{tag.downcase}_compute_percent"] = variance_of(kpi, comparator_kpi)
         end
       end
 
@@ -185,6 +188,14 @@ class PortfolioReportDocGenerator
     kpi.value / comparator.value * 100
   end
 
+  # How far Actual is from the comparator, as a percentage of the comparator (-8 means 8% below); "N/A" when either
+  # figure is missing or the comparator is zero. H16, H17, E25, E26
+  def variance_of(kpi, comparator)
+    return "N/A" if kpi.nil? || comparator.nil? || comparator.value.zero?
+
+    (kpi.value - comparator.value) / comparator.value * 100
+  end
+
   def add_fund_level_data(context, portfolio_company, _start_date, end_date)
     company_portfolio_investments = portfolio_company.portfolio_investments.where(investment_date: ..end_date).includes(:fund)
     fund_ids = company_portfolio_investments.pluck(:fund_id).uniq
@@ -196,14 +207,19 @@ class PortfolioReportDocGenerator
     funds.each do |fund|
       # as_of recomputes and FREEZES each PI, returning a plain Array — so fmv/cost/latest below
       # must use Enumerable methods, not AR relation methods (.buys/.order/SQL-string sum).
-      fund_pis = company_portfolio_investments.where(fund_id: fund.id).map { |pi| pi.as_of(end_date) }
+      fund_pis = PortfolioInvestmentsAsOf.call(company_portfolio_investments.where(fund_id: fund.id), end_date.to_date)
       buys = fund_pis.select { |pi| pi.quantity.to_f.positive? }
+      sells = fund_pis.select { |pi| pi.quantity.to_f.negative? }
       struct = OpenStruct.new(
         name: fund.name,
         currency: fund.currency,
         # with pis as_of, we can use sum &:
         fmv: Money.new(fund_pis.sum(&:fmv_cents), fund.currency),
         cost_of_investment: Money.new(buys.sum(&:amount_cents), fund.currency),
+        # the cost of what is still held at the end date, net of what was sold. H15
+        cost_of_remaining: Money.new(fund_pis.sum(&:cost_of_remaining_cents), fund.currency),
+        # what the fund received from the sales up to the end date: the sells' own amounts, positive. H14, E23
+        sold_amount: Money.new(sells.sum(&:amount_cents), fund.currency),
         irr: ratios.fetch([fund.id, "IRR"], "N/A"),
         moic: ratios.fetch([fund.id, "MOIC"], "N/A")
       )
