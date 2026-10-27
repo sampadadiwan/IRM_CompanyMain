@@ -6,7 +6,8 @@
 # purchases to the end date, prior to the start date, and between the dates), cost_of_remaining (cost of what is still held
 # at the end date and the day before the start), cost_of_sold_between (positive); fmv at the end date, the day before the
 # start (fmv_prior) and the day before the financial year (fmv_fy_start) with the % change from each; and the company's
-# own irr and moic. `fund_totals` has one entry per fund, summed over the companies in it.
+# own irr and moic. `fund_totals` has one entry per fund, summed over the companies in it; its returns (irr, gross_portfolio_irr,
+# moic, tvpi, dpi, rvpi) are the fund's own stored ratios, taken once.
 #
 # It makes no PortfolioReportExtract, never calls the language model and saves no Document: the caller
 # (PortfolioReportJob) joins the returned file into the combined document.
@@ -37,10 +38,12 @@ class PortfolioReportConsolidatedDocGenerator
     :cost_of_investment, :cost_of_investment_prior, :cost_of_investment_between,
     :cost_of_remaining, :cost_of_remaining_prior, :cost_of_sold_between,
     :fmv, :fmv_prior, :fmv_change_percent,
-    :irr, :moic, :tvpi, :dpi, :rvpi, :custom_fields
+    :irr, :gross_portfolio_irr, :moic, :tvpi, :dpi, :rvpi, :custom_fields
   )
-  # The fund's own ratio behind each return; the fund's IRR is stored as its XIRR
-  FUND_RETURN_RATIOS = { irr: "XIRR", moic: "MOIC", tvpi: "TVPI", dpi: "DPI", rvpi: "RVPI" }.freeze
+  # The fund's own ratio behind each return; the fund's IRR is stored as its XIRR. gross_portfolio_irr is the return on the
+  # portfolio investments before fund fees and expenses, read by its plain name only (not a label or the tracking currency one),
+  # and only here: it is the fund's, so a company's fund line does not repeat it. H4-H7, E3-E11 (gross_portfolio_irr)
+  FUND_RETURN_RATIOS = { irr: "XIRR", gross_portfolio_irr: "Gross Portfolio IRR", moic: "MOIC", tvpi: "TVPI", dpi: "DPI", rvpi: "RVPI" }.freeze
   FUND_LINE_MONEY = %i[committed_amount call_amount collected_amount distribution_amount target_committed_amount total_units_premium
                        tracking_committed_amount tracking_call_amount tracking_collected_amount tracking_distribution_amount].freeze
   FUND_LINE_SUMS = %i[cost_of_investment cost_of_investment_prior cost_of_investment_between cost_of_remaining

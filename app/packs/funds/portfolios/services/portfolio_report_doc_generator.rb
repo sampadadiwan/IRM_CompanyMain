@@ -143,7 +143,10 @@ class PortfolioReportDocGenerator
 
     rows = investor_kpi_mappings.map do |ikm|
       # data_type ("money", "numeric", "percentage") lets the template format the row; percentages are stored as fractions (0.12)
-      row_data = { "header" => ikm.standard_kpi_name, "data_type" => ikm.data_type.to_s.downcase }
+      # category lets the template group or label rows; kept as saved (a display name), blank when the mapping has none.
+      # H1, H2 the mapping's category on the row, in the all-KPIs list and in its own category's list; H3 other fields unchanged;
+      # E1 case kept; E2 no category gives ""
+      row_data = { "header" => ikm.standard_kpi_name, "data_type" => ikm.data_type.to_s.downcase, "category" => ikm.category.to_s }
       name = ikm.standard_kpi_name.downcase
 
       kpi_reports.each do |kr|
