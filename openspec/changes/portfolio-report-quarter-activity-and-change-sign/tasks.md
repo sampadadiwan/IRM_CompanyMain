@@ -10,7 +10,7 @@
 > the IDs of the paths they implement.
 
 > **Scope:** the quarter fields on each fund's data in the company report; the corrected direction of a change from a
-> negative figure and percentage points for percentage KPIs (stored KPI change, the report's budget difference); and the
+> negative figure, for percentage KPIs as for any other (stored KPI change, the report's budget difference); and the
 > per-unit basis for the consolidated fair market value change. More report changes may be added to this bundle before the
 > build; add each as its own phase.
 
@@ -25,7 +25,7 @@
 
 ## 2. Change direction for KPI changes
 
-- [x] 2.1 In `Kpi.change_against` divide by `comparator.value.abs`; for a percentage KPI (`kpi.investor_kpi_mapping&.percentage?`) return `(kpi.value - comparator.value) * 100` before the zero guard; update its comment; add `:investor_kpi_mapping` to the `preload` in `KpiPercentageChangeJob`; name H7–H14, E11–E16, E22–E24, E33 in a code comment (LLD Method Contracts); confirm `year_over_year_change` and `PERCENTAGE_CHANGE_LIMIT` need no edit
+- [x] 2.1 In `Kpi.change_against` divide by `comparator.value.abs`; update its comment; name H7–H14, E11–E16, E22–E24, E33 in a code comment (LLD Method Contracts); confirm `year_over_year_change` and `PERCENTAGE_CHANGE_LIMIT` need no edit
 - [x] 2.2 Write `features/startup/kpi_change_direction.feature` covering H7–H14, E11–E16, E22–E24 and E33 (reuse the KPI steps in LLD Test Plumbing; add the "shows in red in the grid" step; set `data type "percentage"` on the EBITDA % mapping with the existing step), and run
       `TEST_ENV_NUMBER=$RANDOM bundle exec cucumber features/startup/kpi_change_direction.feature`
       until green; also re-run `features/startup/kpi_ytd_yoy_percentage_change.feature`, `features/startup/kpi_cumulate.feature` and `features/startup/kpi_autofill_on_approval.feature` to confirm the positive-base changes are unchanged
@@ -53,5 +53,5 @@
       `TEST_ENV_NUMBER=$RANDOM bundle exec cucumber features/fund/portfolio_report_company_quarter_activity.feature features/startup/kpi_change_direction.feature features/fund/portfolio_report_change_direction.feature features/fund/portfolio_report_fmv_per_unit_change.feature features/fund/portfolio_report_company_fund_data.feature features/fund/portfolio_report_company_fund_lines.feature features/fund/portfolio_report_kpi_budget_variance.feature features/startup/kpi_ytd_yoy_percentage_change.feature features/startup/kpi_cumulate.feature features/fund/portfolio_report_fund_totals.feature features/fund/consolidated_portfolio_report.feature`
 - [x] 5.3 Coverage check: list every H/E/X ID in design.md and every ID comment in the four new features and confirm the two sets are equal; any edge case found during apply gets a design.md row and a scenario, never a scenario alone
 - [ ] 5.4 Tell the template authors the four new merge fields and how to use them: a condition on `buy_pis_present` and the field `cost_of_investment_between`, a condition on `sell_pis_present` and `cost_of_sold_between`, inside each fund's block of the company template; the sample templates in `public/final_portfolio_report_docs/` are not changed here
-- [ ] 5.5 Rollout (for the release owner, not the apply agent): after deploy, run "Recompute percentage change" for each company with negative KPI figures or percentage KPIs, tell KPI owners that thresholds on percentage KPIs are now held against points, then generate reports (LLD Configuration and Rollout)
+- [ ] 5.5 Rollout (for the release owner, not the apply agent): after deploy, run "Recompute percentage change" for each company with negative KPI figures, then generate reports (LLD Configuration and Rollout)
 - [ ] 5.6 Run qa-checklist.md on a deployed build and record the sign-off (for QA, not the apply agent)

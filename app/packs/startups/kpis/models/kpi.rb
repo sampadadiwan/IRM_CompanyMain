@@ -168,13 +168,10 @@ class Kpi < ApplicationRecord
   end
 
   # How far kpi is from the figure it is compared with (H7-H14, E11-E16, E22-E24, E33).
-  # A percentage KPI (EBITDA %) changes in percentage points: the difference of the two, times 100 (values are fractions), so
-  # a margin that goes from -63.2% to -55.7% is +7.5, and a comparison figure of zero still gives a change.
-  # Any other KPI changes relative to the size of the comparison figure, so a loss that shrinks is a rise and a loss that
-  # grows is a fall; dividing by the signed figure would flip both.
+  # The change is relative to the size of the comparison figure, so a loss that shrinks is a rise and a loss that grows is a
+  # fall; dividing by the signed figure would flip both. A percentage KPI (EBITDA %) follows the same rule: a margin that goes
+  # from -63.2% to -55.7% is up 11.87%.
   def self.change_against(comparator, kpi)
-    return (kpi.value - comparator.value) * 100 if kpi.investor_kpi_mapping&.percentage?
-
     # if the divisor (the comparator) is 0, the percentage is infinity but we cant store that so keeping it nil
     return nil if comparator.value.zero?
 

@@ -1,7 +1,7 @@
 @rack_test
 Feature: The report's difference from Budget and the fair market value change follow the direction of the movement
   The difference of an Actual from its Budget is a percentage of the size of the Budget, so a loss smaller than budgeted is
-  above it; for a percentage KPI it is in percentage points. The ratio "Actual as a percentage of Budget" is unchanged. The
+  above it, for a percentage KPI as for any other. The ratio "Actual as a percentage of Budget" is unchanged. The
   fair market value change is divided by the size of the value at the start.
   Worked examples: openspec/changes/portfolio-report-quarter-activity-and-change-sign/design.md#worked-examples
 
@@ -35,7 +35,7 @@ Feature: The report's difference from Budget and the fair market value change fo
     When the fair market value change is worked out from -100.0 to -60.0
     Then the fair market value change is 40.0
 
-  # H18 — Happy path: a percentage KPI of 15% against a budget of 20% is 5 points below
+  # H18 — Happy path: a percentage KPI of 15% against a budget of 20% is 25% below
   Scenario: H18 Percentage KPI against budget
     Given the following Monthly KPI Reports exist with KPIs:
       | as_of      | name     | value | period | tag_list |
@@ -44,7 +44,7 @@ Feature: The report's difference from Budget and the fair market value change fo
     And the "EBITDA %" KPI mapping is shown in the portfolio report
     And the "EBITDA %" KPI mapping has data type "percentage"
     When the portfolio report rows are built up to "2026-06-30"
-    Then the report row "EBITDA %" should have "ytd_06_26_actual_vs_budget_compute_percent" equal to "-5"
+    Then the report row "EBITDA %" should have "ytd_06_26_actual_vs_budget_compute_percent" equal to "-25"
 
   # E17 — Edge case: the ratio of -80 to -100 is 80% and is not changed
   Scenario: E17 Ratio unchanged

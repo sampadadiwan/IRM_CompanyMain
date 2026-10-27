@@ -7,7 +7,7 @@ Defines the direction of a percentage change when the figure being compared with
 ## ADDED Requirements
 
 ### Requirement: A change follows the direction of the movement
-The percentage change of a KPI figure that is not a percentage KPI (a KPI whose mapping has data type money or numeric) against its comparison figure (the previous figure for Month, Quarter and Year, the figure one year earlier for YTD) SHALL be the difference between the two divided by the size of the comparison figure, multiplied by 100. A change SHALL be positive when the figure rose and negative when it fell, whether the comparison figure is positive or negative. The change SHALL be empty when the comparison figure is zero. A comparison figure that is positive SHALL give the same change as before this requirement.
+The percentage change of a KPI figure (whatever the data type of its mapping, a percentage KPI such as EBITDA % included) against its comparison figure (the previous figure for Month, Quarter and Year, the figure one year earlier for YTD) SHALL be the difference between the two divided by the size of the comparison figure, multiplied by 100. A change SHALL be positive when the figure rose and negative when it fell, whether the comparison figure is positive or negative. The change SHALL be empty when the comparison figure is zero. A comparison figure that is positive SHALL give the same change as before this requirement.
 
 #### Scenario: Positive comparison figure
 - **WHEN** the comparison figure is 100 and the figure is 120
@@ -45,28 +45,25 @@ The percentage change of a KPI figure that is not a percentage KPI (a KPI whose 
 - **WHEN** the change, rounded to two decimals, is above 9,999.99 in absolute value
 - **THEN** the change is empty, as before
 
-### Requirement: A percentage KPI changes in percentage points
-The change of a percentage KPI (a KPI whose mapping has data type percentage, stored as a fraction such as 0.12 for 12%) against its comparison figure SHALL be the difference between the two, expressed in percentage points (the difference multiplied by 100), not a relative change. A percentage KPI that rose SHALL show a positive change and one that fell a negative change, whether its figures are positive or negative. A comparison figure of zero SHALL NOT make the change empty. The change SHALL be empty only when the comparison figure does not exist.
-
-#### Scenario: Margin improves
-- **WHEN** a percentage KPI is -0.557 and its comparison figure is -0.632
-- **THEN** the change is 7.5
+#### Scenario: Percentage KPI margin improves
+- **WHEN** a percentage KPI (stored as a fraction) is -0.557 and its comparison figure is -0.632
+- **THEN** the change is 11.87, the same as for a numeric KPI with the same figures
 
 #### Scenario: Percentage KPI falls
 - **WHEN** a percentage KPI is 0.15 and its comparison figure is 0.20
-- **THEN** the change is -5
+- **THEN** the change is -25
 
 #### Scenario: Percentage KPI against zero
 - **WHEN** a percentage KPI is 0.05 and its comparison figure is 0
-- **THEN** the change is 5
+- **THEN** the change is empty
 
 #### Scenario: Same figures on a numeric KPI
 - **WHEN** a numeric KPI is -0.557 and its comparison figure is -0.632
-- **THEN** the change is 11.87, the relative change
+- **THEN** the change is 11.87, as for the percentage KPI
 
 #### Scenario: Percentage KPI year over year
 - **WHEN** a percentage KPI's June 2026 YTD is -0.557 and its June 2025 YTD is -0.632
-- **THEN** the June 2026 YTD change is 7.5
+- **THEN** the June 2026 YTD change is 11.87
 
 ### Requirement: Stored changes are corrected by the recompute
 The existing percentage-change recompute SHALL store changes that follow the direction of the movement. A change SHALL NOT be altered until the recompute runs for its company.
@@ -80,14 +77,14 @@ The existing percentage-change recompute SHALL store changes that follow the dir
 - **THEN** the stored change is shown as it was stored
 
 ### Requirement: Thresholds use the corrected change
-The KPI grid, the KPI page and the KPI list SHALL colour a change against the KPI mapping's lower and upper thresholds using the change as stored, so a loss that grows (a negative change) is held against the lower threshold. For a percentage KPI the thresholds are held against the change in percentage points.
+The KPI grid, the KPI page and the KPI list SHALL colour a change against the KPI mapping's lower and upper thresholds using the change as stored, so a loss that grows (a negative change) is held against the lower threshold.
 
 #### Scenario: Growing loss below the lower threshold
 - **WHEN** a figure goes from -100 to -125, its stored change is -25 and the lower threshold is 10
 - **THEN** the change shows in red
 
 ### Requirement: The report's difference from budget follows the same rules
-The portfolio report's difference of an Actual figure from its comparator (`<label>_vs_<tag>_compute_percent`) SHALL follow the same rules as a stored change: for a KPI that is not a percentage KPI, the Actual minus the comparator, divided by the size of the comparator, multiplied by 100, and "N/A" when the comparator is zero; for a percentage KPI, the difference in percentage points. It SHALL be "N/A" when either figure is missing. "Actual as a percentage of the comparator" (`<label>_vs_<tag>_percent`) is a ratio and SHALL NOT change.
+The portfolio report's difference of an Actual figure from its comparator (`<label>_vs_<tag>_compute_percent`) SHALL follow the same rules as a stored change: the Actual minus the comparator, divided by the size of the comparator, multiplied by 100, and "N/A" when the comparator is zero, for a percentage KPI as for any other. It SHALL be "N/A" when either figure is missing. "Actual as a percentage of the comparator" (`<label>_vs_<tag>_percent`) is a ratio and SHALL NOT change.
 
 #### Scenario: Loss smaller than budgeted
 - **WHEN** the Actual is -80 and the Budget is -100
@@ -107,8 +104,8 @@ The portfolio report's difference of an Actual figure from its comparator (`<lab
 
 #### Scenario: Percentage KPI against budget
 - **WHEN** a percentage KPI's Actual is 0.15 and its Budget is 0.20
-- **THEN** the difference is -5 percentage points
+- **THEN** the difference is -25
 
 #### Scenario: Comparator missing or zero
-- **WHEN** the Actual has no comparator figure, or the comparator of a KPI that is not a percentage KPI is zero
+- **WHEN** the Actual has no comparator figure, or the comparator is zero
 - **THEN** the difference is "N/A"

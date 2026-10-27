@@ -192,8 +192,8 @@ class PortfolioReportDocGenerator
   end
 
   # How far Actual is from the comparator, by the same rule as a KPI's stored change (Kpi.change_against): a percentage of the
-  # size of the comparator (-8 means 8% below; a loss that shrinks is above), or percentage points for a percentage KPI.
-  # "N/A" when either figure is missing, or the comparator is zero for any other KPI. H15-H18, E18, E19
+  # size of the comparator (-8 means 8% below; a loss that shrinks is above), for a percentage KPI as for any other.
+  # "N/A" when either figure is missing, or the comparator is zero. H15-H18, E18, E19
   def variance_of(kpi, comparator)
     return "N/A" if kpi.nil? || comparator.nil?
 

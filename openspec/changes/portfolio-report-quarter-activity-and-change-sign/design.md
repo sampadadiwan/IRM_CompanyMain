@@ -59,7 +59,7 @@ flowchart LR
     Q["③ Quarter split<br/>buys and sales in the period"]
     D["④ Fund data<br/>fields for the template"]
     K["⑤ KPI figures<br/>this period and the one before"]
-    R["⑥ Change rule<br/>difference over the size of the prior,<br/>points for percentage KPIs"]
+    R["⑥ Change rule<br/>difference over the size of the prior"]
     U["⑦ Per-unit FMV change<br/>earlier holdings at the end price"]
     T["⑧ Word templates<br/>show the fields"]
     P -- "investments" --> V
@@ -87,7 +87,7 @@ Meera generates Company A's report for 1 Jul to 30 Sep 2026. Company A bought 4,
 | 7 | Stall | The KPI change still shows +20.5% | The stored change is read, and the recompute has not run | Old sign until Meera runs the recompute |
 | 8 | Fix | Meera runs the recompute | ⑥ rewrites the stored change | -20.5% |
 | 9 | Consolidated | Company A held 10 units at 100 on 30 Jun, bought 5 in the quarter, and the price is 110 on 30 Sep | ⑦ values the 10 earlier units at 110 and sets 1,100 against `fmv_prior` 1,000 | `fmv_change_percent` +10% (was +65%); `fmv` 1,650 and `fmv_prior` 1,000 as before |
-| 10 | Percentage KPI | EBITDA % was (63.2)% and is (55.7)% | ⑥ takes the difference in points for a percentage KPI | +7.5 |
+| 10 | Percentage KPI | EBITDA % was (63.2)% and is (55.7)% | ⑥ applies the same rule to a percentage KPI | +11.87 |
 
 ```
 Fund data of Company A (after step 3)
@@ -108,7 +108,7 @@ true             10.0 Cr                     true              5.0 Cr
 | 2 | Plain booleans and Money | The template tests the flag and merges the amount | [④](#④-fund-data) |
 | 3 | One change rule | Divide by the size of the prior figure | [⑥](#⑥-change-rule) |
 | 4 | The recompute is the migration | No data script; the existing job is run once | [⑤](#⑤-kpi-figures) |
-| 5 | Percentage KPIs change in points | The KPI's data type picks the arithmetic | [⑥](#⑥-change-rule) |
+| 5 | Percentage KPIs follow the same rule | The KPI's data type does not change the arithmetic | [⑥](#⑥-change-rule) |
 | 6 | FMV change is a weighted average of unit-value changes | The earlier holdings revalued at the end price, against the earlier value | [⑦](#⑦-per-unit-fair-market-value-change) |
 
 **FAQ**
@@ -165,7 +165,7 @@ Colour = footprint: **green** new, **amber** modified, **grey** reused unchanged
 | ③ | Quarter split | `add_fund_level_data` | Picks the buys and sales dated from the start date | Each fund of each company report | Which are in the quarter | [card](#③-quarter-split) |
 | ④ | Fund data | The struct decorated by `TemplateDecorator` | Carries the four new fields beside the existing ones | Each company report job | Flags are real booleans | [card](#④-fund-data) |
 | ⑤ | KPI figures | `Kpi`, `Kpi.recompute_percentage_change`, `KpiPercentageChangeJob` | Pairs each figure with its comparison figure and stores the change | Approval, cumulation, the recompute | Which figure to compare with (unchanged) | [card](#⑤-kpi-figures) |
-| ⑥ | Change rule | `Kpi.change_against`, `variance_of`, `change_percent` | Works out the change | Wherever a change is needed | Divide by the size of the prior figure; points for a percentage KPI | [card](#⑥-change-rule) |
+| ⑥ | Change rule | `Kpi.change_against`, `variance_of`, `change_percent` | Works out the change | Wherever a change is needed | Divide by the size of the prior figure, for every KPI | [card](#⑥-change-rule) |
 | ⑦ | Per-unit FMV change | `PortfolioReportConsolidatedDocGenerator#fund_line`, `#fund_total`, `FundLine`, `FundTotal`, `PriceResolver`, `Valuation#per_share_value_in` | Values the earlier holdings at the end date's value per unit and works the change from that | Each fund line and fund total of the consolidated report | Which units count (those held at the earlier date) | [card](#⑦-per-unit-fair-market-value-change) |
 | ⑧ | Word templates | Sablon templates | Show the fields | Document merge | Nothing | [card](#⑧-word-templates) |
 
@@ -222,7 +222,7 @@ N/A — no screen, email or alert changes. The generated document and the KPI sc
 5. **Divide by the absolute value, keep the rest** — Alternative: flip the sign only when the prior is negative. Equivalent but harder to read.
 6. **Ratio (`percent_of`) left alone** — Actual as a percentage of Budget is a ratio; -80 of -100 is 80%.
 7. **Recompute by hand** — Alternative: a data migration. Rejected: the existing recompute job already exists, is per company and notifies; running it once is the least risk.
-8. **Percentage points for percentage KPIs** — Alternative: relative change with the corrected sign (+11.9% for EBITDA %). Rejected: the difference of two ratios in points is what readers expect, and a prior figure of zero still gives a change. The KPI's data type decides, as it already does for formatting.
+8. **Percentage KPIs follow the same rule** — Alternative: the difference in percentage points (+7.5 for EBITDA %). Tried first and replaced: the report's other change cells (revenue, budget) are percent changes, and the stored field is named percent, so one rule reads the same in every cell. The sign fix alone stops a margin that improves from reading as a fall.
 9. **FMV change is "option A" of the fund-metrics design** — the earlier holdings revalued at the end date's value per unit, against the actual earlier value. This is the weighted average of per-unit changes, each weighted by its earlier value. Alternative, option B (restate the earlier amounts at today's units): rejected because `fmv_prior` would no longer match what last quarter's report showed.
 10. **Fund currency for the FMV change** — Alternative: the instrument's currency. Rejected so the percent matches the money shown.
 11. **Fund total from sums** — the fund total carries the two new sums and works its percent from them, as it does for the other percentages.
@@ -233,7 +233,7 @@ N/A — no screen, email or alert changes. The generated document and the KPI sc
 |---|---|
 | Why not read the quarter's buys straight from the database? | The report already values the list as of the end date; reusing it keeps one source of truth. |
 | Why are three places edited for one rule? | The three work on different inputs (KPI records, report rows, plain amounts); two call the shared rule and the amount one gets the same line. |
-| Why does the change of a percentage KPI not use the relative rule? | It would call a margin move from (63.2)% to (55.7)% "+11.9%". Points are the plain reading (+7.5). |
+| Why does the change of a percentage KPI use the relative rule? | One rule for every cell: a margin move from (63.2)% to (55.7)% is "+11.9%", measured against the size of the earlier margin, and never negative. |
 
 ---
 
@@ -317,8 +317,7 @@ Stored KPI changes are pairs of figures: Month, Quarter and Year against the pre
 
 - The recompute is `KpiPercentageChangeJob`, run per company from "Recompute percentage change", and after every approval or cumulation that asks for it.
 - Rollout: after deploy the recompute is run once for the companies with negative figures. Until then stored changes keep their old sign.
-- The threshold colours in `kpi_percentage_class` compare the stored change, so they follow the new sign with no code change. For a percentage KPI the stored change is now in points, so its thresholds are held against points; owners may want to review them.
-- `change_against` needs the KPI's data type: `kpi.investor_kpi_mapping` (an `enum`, `percentage?`). The recompute's query preloads it with the report, so there is no N+1.
+- The threshold colours in `kpi_percentage_class` compare the stored change, so they follow the new sign with no code change.
 
 **Worked examples:** H12, H14, E13, E15, E16
 
@@ -330,7 +329,7 @@ Stored KPI changes are pairs of figures: Month, Quarter and Year against the pre
 
 ### ⑥ Change rule
 
-One rule for money and numeric KPIs: (current − prior) ÷ |prior| × 100, empty when the prior is zero. For a percentage KPI (mapping data type percentage, values stored as fractions): (current − prior) × 100, in points, with no empty case for a zero prior.
+One rule for every KPI, a percentage KPI (such as EBITDA %, values stored as fractions) included: (current − prior) ÷ |prior| × 100, empty when the prior is zero.
 
 | Owns | Reads / receives | Produces |
 |---|---|---|
@@ -338,16 +337,14 @@ One rule for money and numeric KPIs: (current − prior) ÷ |prior| × 100, empt
 
 ```mermaid
 flowchart TD
-    A["comparison figure and figure"] --> P{"percentage KPI?"}
-    P -- "yes" --> Q["difference x 100, in points"]
-    P -- "no" --> B{"comparison figure zero?"}
+    A["comparison figure and figure"] --> B{"comparison figure zero?"}
     B -- "yes" --> N["empty / N/A"]
     B -- "no" --> C["difference over the size<br/>of the comparison figure"]
     C --> D["x 100"]
 ```
 
 - `Kpi.change_against` is edited; the YTD wrapper (`year_over_year_change`) and its 9,999.99 limit are unchanged because the absolute value does not alter the size of the result.
-- `variance_of` keeps its guard for a missing figure and returns `Kpi.change_against(comparator, kpi)`, or "N/A" when that is nil (the zero-comparator guard now lives in `change_against`, so a percentage KPI against a zero comparator still gives a difference).
+- `variance_of` keeps its guard for a missing figure and returns `Kpi.change_against(comparator, kpi)`, or "N/A" when that is nil (the zero-comparator guard now lives in `change_against`).
 - `percent_of` is untouched.
 - `change_percent` (consolidated fair market value) gets `base.abs` in its denominator and keeps "N/A" for a zero base; card ⑦ feeds it.
 
@@ -358,8 +355,7 @@ flowchart TD
 | Question | Answer |
 |---|---|
 | Does a positive prior change anything? | No: the size of a positive figure is the figure itself. |
-| What marks a percentage KPI? | The KPI mapping's data type `percentage`, the same field the report row already carries as `data_type`. |
-| What if the mapping is missing? | `investor_kpi_mapping` is optional on old KPIs; without one the KPI is treated as money or numeric (relative change). |
+| Does the data type matter? | No. A percentage KPI, a money KPI and a numeric KPI with the same figures give the same change. |
 
 ### ⑦ Per-unit fair market value change
 
@@ -527,12 +523,12 @@ N/A — nothing new can raise. A zero or missing comparison figure is nil or "N/
 | H10 | Negative to positive | Prior -50, now 25 | Recomputed | 150 | Negative to positive | kpi_change_direction |
 | H11 | Positive to negative | Prior 50, now -25 | Recomputed | -150 | Positive to negative | kpi_change_direction |
 | H12 | YTD against negative year earlier | Jun 2025 YTD -3.154, Jun 2026 YTD -3.8 | Recomputed | -20.48 | YTD against a negative year-earlier figure | kpi_change_direction |
-| H13 | Percentage KPI margin improves | EBITDA % prior -0.632, now -0.557 | Recomputed | 7.5 | Margin improves | kpi_change_direction |
+| H13 | Percentage KPI margin improves | EBITDA % prior -0.632, now -0.557 | Recomputed | 11.87 | Margin improves | kpi_change_direction |
 | H14 | Recompute corrects a stored change | A figure holds +20.48 stored under the old rule | Recompute runs | -20.48 | Recompute corrects a stored change | kpi_change_direction |
 | H15 | Budget difference, smaller loss | Actual -80, Budget -100 | Report rows built | `_compute_percent` 20 | Loss smaller than budgeted | portfolio_report_change_direction |
 | H16 | Budget difference, larger loss | Actual -125, Budget -100 | Built | -25 | Loss larger than budgeted | portfolio_report_change_direction |
 | H17 | FMV change, negative base | Base -100, current -60 | Change worked out | 40 | Negative base value | portfolio_report_change_direction |
-| H18 | Percentage KPI against budget | EBITDA % Actual 0.15, Budget 0.20 | Report rows built | `_compute_percent` -5 | Percentage KPI against budget | portfolio_report_change_direction |
+| H18 | Percentage KPI against budget | EBITDA % Actual 0.15, Budget 0.20 | Report rows built | `_compute_percent` -25 | Percentage KPI against budget | portfolio_report_change_direction |
 | H19 | Price rises and units are bought | 10 units at 100 on 30 Jun, 5 bought in the quarter, 110 on 30 Sep | Consolidated data built 1 Jul to 30 Sep | `fmv_change_percent` 10; `fmv_prior` 1,000; `fmv` 1,650 | Price rises and units are bought | portfolio_report_fmv_per_unit_change |
 | H20 | Price rises and units are sold | 10 units at 100, 4 sold in the quarter, 110 on 30 Sep | Built | 10 | Price rises and units are sold | portfolio_report_fmv_per_unit_change |
 | H21 | Several instruments weighted by prior value | Instrument A 10 units, 100 to 110 (1,000); instrument B 30 units, 100 to 80 (3,000) | Built | -12.5 | Several instruments are weighted by prior value | portfolio_report_fmv_per_unit_change |
@@ -565,8 +561,8 @@ N/A — nothing new can raise. A zero or missing comparison figure is nil or "N/
 | E19 | Comparator missing or zero | No Budget, or Budget 0 | Built | "N/A" | Comparator missing or zero | portfolio_report_change_direction |
 | E20 | FMV positive base | Base 100, current 120 | Worked out | 20 | Positive base value | portfolio_report_change_direction |
 | E21 | FMV base zero | Base 0 | Worked out | "N/A" | Base value zero | portfolio_report_change_direction |
-| E22 | Percentage KPI against zero | EBITDA % prior 0, now 0.05 | Recomputed | 5 | Percentage KPI against zero | kpi_change_direction |
-| E23 | Percentage KPI falls | EBITDA % prior 0.20, now 0.15 | Recomputed | -5 | Percentage KPI falls | kpi_change_direction |
+| E22 | Percentage KPI against zero | EBITDA % prior 0, now 0.05 | Recomputed | Empty | Percentage KPI against zero | kpi_change_direction |
+| E23 | Percentage KPI falls | EBITDA % prior 0.20, now 0.15 | Recomputed | -25 | Percentage KPI falls | kpi_change_direction |
 | E24 | Same figures on a numeric KPI | A numeric KPI -0.632 then -0.557 | Recomputed | 11.87 | Same figures on a numeric KPI | kpi_change_direction |
 | E25 | Price unchanged | 10 units at 100, still 100 | Built | 0 | Price unchanged or falling | portfolio_report_fmv_per_unit_change |
 | E26 | Price falls | 10 units at 100, now 90 | Built | -10 | Price unchanged or falling | portfolio_report_fmv_per_unit_change |
@@ -576,7 +572,7 @@ N/A — nothing new can raise. A zero or missing comparison figure is nil or "N/
 | E30 | Purchase price before any valuation | 10 units bought at 100 each before the start, no valuation until 110 at the end | Built | 10; `fmv_prior` 1,000 | Purchase price before any valuation | portfolio_report_fmv_per_unit_change |
 | E31 | Bought only in the period | The only buy is dated in the quarter | Built | "N/A" | Bought only in the period | portfolio_report_fmv_per_unit_change |
 | E32 | New instrument beside an old one | A held since before the start (+10%); B bought in the quarter | Built | 10: B has no weight | Price rises and units are bought | portfolio_report_fmv_per_unit_change |
-| E33 | Percentage KPI year over year | EBITDA % June 2025 YTD -0.632, June 2026 YTD -0.557 | Recomputed | 7.5 | Percentage KPI year over year | kpi_change_direction |
+| E33 | Percentage KPI year over year | EBITDA % June 2025 YTD -0.632, June 2026 YTD -0.557 | Recomputed | 11.87 | Percentage KPI year over year | kpi_change_direction |
 
 #### Error Cases
 
@@ -600,11 +596,11 @@ Cucumber only. Four new feature files: `portfolio_report_company_quarter_activit
 - The FMV percent no longer divides to the amounts shown (1,650 against 1,000 is not 10%) → intended, stated in the proposal FAQ; the amounts stay as the earlier reports showed them.
 - Price lookups: one `PriceResolver` call per instrument for the end date, where the amounts use one per investment → no more than today, usually fewer. Lookups for the two earlier dates are already made by the lists.
 - A frozen buy's `net_quantity` must be the quantity held at the list's date → confirmed in `compute_buy_metrics` (`set_buy_quantities(date)`); the first task of the FMV phase proves it with a scenario (H19, E27) before relying on it.
-- Thresholds on percentage KPIs change meaning after the recompute (points, not relative) → owners are told in the rollout step; QA checks the colours.
+- Thresholds keep their meaning (a percent change), but a change from a negative figure now has the other sign → QA checks the colours.
 
 | # | Open question | Current thinking | Status |
 |---|---|---|---|
-| 1 | Show percentage KPIs (EBITDA %) as a difference in percentage points instead of a relative change? | Points | Resolved |
+| 1 | Show percentage KPIs (EBITDA %) as a difference in percentage points instead of a relative change? | Relative change, like every other KPI (points were first chosen, then replaced) | Resolved |
 | 2 | Per-unit basis for the FMV change? | Option A: the earlier holdings revalued at the end date's value per unit; weighted by earlier value; fund currency | Resolved |
 | 3 | Add more report changes to this bundle? | Yes, more are planned | Open, before the build |
 

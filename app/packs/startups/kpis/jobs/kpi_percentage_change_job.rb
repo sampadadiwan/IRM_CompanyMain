@@ -24,8 +24,7 @@ class KpiPercentageChangeJob < ApplicationJob
       # .includes) then loads kpi_report via a separate narrow query, avoiding an N+1 on the
       # period/tag_list calls in the group_by key without turning the join into a wide
       # eager_load - same reasoning as KpiCumulative#fetch_related_monthly_kpis.
-      # investor_kpi_mapping is preloaded too: Kpi.change_against reads its data type (a percentage KPI changes in points).
-      Kpi.where(entity_id: port_co.entity_id, portfolio_company_id: port_co.id).approved.joins(:kpi_report).preload(:kpi_report, :investor_kpi_mapping).group_by { |x| [x.name, x.kpi_report.period, x.owner_id, x.kpi_report.tag_list] }.each do |key, kpis|
+      Kpi.where(entity_id: port_co.entity_id, portfolio_company_id: port_co.id).approved.joins(:kpi_report).preload(:kpi_report).group_by { |x| [x.name, x.kpi_report.period, x.owner_id, x.kpi_report.tag_list] }.each do |key, kpis|
         msg = "Recomputing percentage change for #{key} for #{port_co.name} : #{kpis.length} kpis"
         Rails.logger.debug msg
         send_notification(msg, user_id, :info)

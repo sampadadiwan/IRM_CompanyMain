@@ -57,12 +57,12 @@ step · **R** = Role sweep · **C** = Cross-cutting check
 | ☐ | H10 | Negative to positive | An EBITDA of -50 then 25 | 1. Read the change | +150 | | |
 | ☐ | H11 | Positive to negative | An EBITDA of 50 then -25 | 1. Read the change | -150 | | |
 | ☐ | H12 | YTD against a negative year earlier | YTD -3.154 (Jun 2025), -3.8 (Jun 2026) | 1. Read the Jun 2026 YTD change | -20.48 | | |
-| ☐ | H13 | Percentage KPI margin improves | EBITDA % -0.632 then -0.557 | 1. Read the change | +7.5 (points), never a negative number | | |
+| ☐ | H13 | Percentage KPI margin improves | EBITDA % -0.632 then -0.557 | 1. Read the change | +11.87, never a negative number | | |
 | ☐ | H14 | Recompute corrects | A figure with the old sign stored | 1. Run the recompute. 2. Read the change | The corrected sign | | |
 | ☐ | H15 | Budget difference, smaller loss | Actual -80, Budget -100, Run A with the Actual in the template | 1. Read the difference field | +20 | | |
 | ☐ | H16 | Budget difference, larger loss | Actual -125, Budget -100 | 1. Read it | -25 | | |
 | ☐ | H17 | Fair market value change, negative base | Needs a fund with a negative valuation; if not available, mark N/A and rely on the automated test | 1. Generate the consolidated report | Follows the movement | | |
-| ☐ | H18 | Percentage KPI against budget | EBITDA % Actual 0.15, Budget 0.20 | 1. Read the difference field | -5 | | |
+| ☐ | H18 | Percentage KPI against budget | EBITDA % Actual 0.15, Budget 0.20 | 1. Read the difference field | -25 | | |
 | ☐ | H19 | Price rises and units are bought | A fund with 10 units at 100 on 30-Jun, 5 bought in the quarter, 110 on 30-Sep. Run B (consolidated) | 1. Read the company's fund line | `fmv_change_percent` 10, `fmv_prior` 1,000, `fmv` 1,650 | | |
 | ☐ | H20 | Price rises and units are sold | 10 units, 4 sold in the quarter, 110 on 30-Sep | 1. Read the line | 10 | | |
 | ☐ | H21 | Several instruments weighted | A 10 units 100→110; B 30 units 100→80 | 1. Read the line | -12.5 | | |
@@ -95,8 +95,8 @@ step · **R** = Role sweep · **C** = Cross-cutting check
 | ☐ | E19 | Comparator missing or zero | No Budget, or Budget 0 | 1. Read the difference | "N/A" | | |
 | ☐ | E20 | FMV positive base | A normal fund | 1. Read the fair market value change | Same as before | | |
 | ☐ | E21 | FMV base zero | A fund with no value at the start | 1. Read it | "N/A" | | |
-| ☐ | E22 | Percentage KPI against zero | EBITDA % 0 then 0.05 | 1. Read the change | +5 | | |
-| ☐ | E23 | Percentage KPI falls | EBITDA % 0.20 then 0.15 | 1. Read the change | -5 | | |
+| ☐ | E22 | Percentage KPI against zero | EBITDA % 0 then 0.05 | 1. Read the change | Empty | | |
+| ☐ | E23 | Percentage KPI falls | EBITDA % 0.20 then 0.15 | 1. Read the change | -25 | | |
 | ☐ | E24 | Same figures on a numeric KPI | A numeric KPI -0.632 then -0.557 | 1. Read the change | +11.87 (relative) | | |
 | ☐ | E25 | Price unchanged | 10 units at 100, still 100 | 1. Read the line | 0 | | |
 | ☐ | E26 | Price falls | 10 units, 100 → 90 | 1. Read the line | -10 | | |
@@ -106,7 +106,7 @@ step · **R** = Role sweep · **C** = Cross-cutting check
 | ☐ | E30 | Purchase price before any valuation | 10 units bought at 100 each before the start, no valuation until 110 at the end | 1. Read the line | +10; `fmv_prior` 1,000 | | |
 | ☐ | E31 | Nothing held at the start | Only buy dated in the quarter | 1. Read the line | "N/A" | | |
 | ☐ | E32 | New instrument beside an old one | A held since before (+10%), B bought in the quarter | 1. Read the line | 10 | | |
-| ☐ | E33 | Percentage KPI year over year | EBITDA % YTD Jun 2025 -0.632, Jun 2026 -0.557 | 1. Read the Jun 2026 YTD change | +7.5 | | |
+| ☐ | E33 | Percentage KPI year over year | EBITDA % YTD Jun 2025 -0.632, Jun 2026 -0.557 | 1. Read the Jun 2026 YTD change | +11.87 | | |
 
 ## Error Cases
 
@@ -144,7 +144,7 @@ step · **R** = Role sweep · **C** = Cross-cutting check
 | ☐ | C5 | Regression: templates that do not use the new fields | The standard company and consolidated templates render as before, except corrected changes | | |
 | ☐ | C6 | Empty states | A company with no investment in a fund has no fund block; a KPI with no comparison figure shows "-" | | |
 | ☐ | C7 | AI portfolio assistant | After the recompute, the assistant quotes the corrected change | | |
-| ☐ | C8 | Thresholds on a percentage KPI | EBITDA % with an upper threshold of 5: a change of +7.5 points shows green | | |
+| ☐ | C8 | Thresholds on a percentage KPI | EBITDA % with an upper threshold of 5: a change of +11.87 shows green | | |
 | ☐ | C9 | Fair market value amounts roll forward | Cost, fmv_prior and fmv still foot with the previous report for the same dates | | |
 
 ---

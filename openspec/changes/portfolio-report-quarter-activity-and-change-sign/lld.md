@@ -36,7 +36,7 @@
 
 - `add_fund_level_data` stops ignoring its start date (`_start_date` becomes `start_date`) and adds four keys to the fund struct, from the frozen list it already builds. No new query. See [Method Contracts](#method-contracts).
 - The start date can reach the generator as text (the consolidated generator's X2 case), so it is converted with `to_date` before it is compared. A text date compared with a `Date` raises.
-- `Kpi.change_against` divides by `comparator.value.abs`, and for a percentage KPI (`kpi.investor_kpi_mapping&.percentage?`) returns the difference times 100 with no zero-comparator guard. `year_over_year_change`, with its 9,999.99 limit, needs no edit. `variance_of` calls `Kpi.change_against` instead of repeating the formula. `change_percent` in the consolidated generator gets the same `abs`.
+- `Kpi.change_against` divides by `comparator.value.abs`, for a percentage KPI as for any other (the KPI's data type is not read). `year_over_year_change`, with its 9,999.99 limit, needs no edit. `variance_of` calls `Kpi.change_against` instead of repeating the formula. `change_percent` in the consolidated generator gets the same `abs`.
 - `KpiPercentageChangeJob` preloads `:investor_kpi_mapping` beside `:kpi_report`, so reading the data type adds no query per KPI.
 - The consolidated `fund_line` values the earlier holdings at the end date's value per unit (one lookup per instrument) into two new fields, `fmv_at_prior_quantity` and `fmv_at_fy_start_quantity`, and `fmv_change_percent` and `fmv_fy_start_change_percent` are worked from them. `fmv`, `fmv_prior` and `fmv_fy_start` are untouched. `FundTotal` gets `fmv_at_prior_quantity` as a sum.
 - `percent_of` and `kpi_percentage_class` are not edited: the colours read the stored change and follow its sign.
@@ -49,7 +49,7 @@
 | Boundary | File | New / Modified | Responsibility |
 |---|---|---|---|
 | ③, ④ | `app/packs/funds/portfolios/services/portfolio_report_doc_generator.rb` | Modified | `add_fund_level_data`: take `start_date`, split period buys and sales, add `buy_pis_present`, `sell_pis_present`, `cost_of_investment_between`, `cost_of_sold_between` to the struct; `variance_of` calls `Kpi.change_against` |
-| ⑥ | `app/packs/startups/kpis/models/kpi.rb` | Modified | `change_against` divides by `comparator.value.abs`, and takes the difference in points for a percentage KPI; update its comment |
+| ⑥ | `app/packs/startups/kpis/models/kpi.rb` | Modified | `change_against` divides by `comparator.value.abs`; update its comment |
 | ⑤ | `app/packs/startups/kpis/jobs/kpi_percentage_change_job.rb` | Modified | Add `:investor_kpi_mapping` to the `preload` of the recompute's query |
 | ⑥, ⑦ | `app/packs/funds/portfolios/services/portfolio_report_consolidated_doc_generator.rb` | Modified | `change_percent` divides by `base.to_d.abs`; `FundLine` gains `fmv_at_prior_quantity`, `fmv_at_fy_start_quantity`; `FundTotal` and `FUND_LINE_SUMS` gain `fmv_at_prior_quantity`; `fund_line` fills them and works both percents from them; `fund_total` works its percent from the sums; two small private helpers (below) |
 | Tests | `features/fund/portfolio_report_company_quarter_activity.feature` | New | H1–H6, E1–E10, X1 |
@@ -87,7 +87,7 @@ N/A — no table, column or index changes. `percentage_change` stays decimal(6,2
 
 | Method | Arguments | Returns | Raises | Side effects | Idempotent? |
 |---|---|---|---|---|---|
-| `change_against` (class) | `comparator`, `kpi` | For a percentage KPI `(kpi.value - comparator.value) * 100` (points); otherwise `(kpi.value - comparator.value) / comparator.value.abs * 100`, nil when the comparator is zero | None new | None | Yes |
+| `change_against` (class) | `comparator`, `kpi` | `(kpi.value - comparator.value) / comparator.value.abs * 100` for every KPI, nil when the comparator is zero | None new | None | Yes |
 
 **`PortfolioReportConsolidatedDocGenerator`** (Service)
 
@@ -210,7 +210,7 @@ A zero or missing comparison figure is nil or "N/A" as before. A text start date
 | Credentials / env vars | None |
 | Feature flag | None; unused fields are ignored by templates |
 | Cron / schedules | None |
-| Deploy order | 1 Deploy the code. 2 Run "Recompute percentage change" for each company that has a negative KPI figure or a percentage KPI. 3 Tell KPI owners that thresholds on percentage KPIs are now held against points. 4 Generate reports. Template authors add the quarter fields at any time after step 1 |
+| Deploy order | 1 Deploy the code. 2 Run "Recompute percentage change" for each company that has a negative KPI figure. 3 Generate reports. Template authors add the quarter fields at any time after step 1 |
 | Rollback | Revert the code. Stored changes that were already recomputed keep the corrected sign until the recompute is run again on the old code; a template that uses a quarter field would fail to fill it, so revert templates first or accept that |
 
 **Reviewer checks**

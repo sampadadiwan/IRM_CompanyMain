@@ -1,8 +1,8 @@
 @rack_test
 Feature: A KPI's percentage change follows the direction of the movement
   A change from a negative figure reads the way the figure moved: a loss that shrinks is a rise and a loss that grows is a
-  fall. A percentage KPI (such as EBITDA %) changes in percentage points. A positive comparison figure gives the same change
-  as before.
+  fall. A percentage KPI (such as EBITDA %) follows the same rule as any other KPI. A positive comparison figure gives the
+  same change as before.
   Worked examples: openspec/changes/portfolio-report-quarter-activity-and-change-sign/design.md#worked-examples
 
   Background:
@@ -65,7 +65,7 @@ Feature: A KPI's percentage change follows the direction of the movement
     When the KPI percentage change job runs
     Then the "YTD" KPI "EBITDA" for "2026-06-30" should have a percentage change of -20.48
 
-  # H13 — Happy path: EBITDA % goes from -63.2% to -55.7%, a rise of 7.5 points
+  # H13 — Happy path: EBITDA % goes from -63.2% to -55.7%, a rise of 11.87 (0.075 over the size of 0.632)
   Scenario: H13 Percentage KPI margin improves
     Given the following Monthly KPI Reports exist with KPIs:
       | as_of      | name     | value  | period |
@@ -73,7 +73,7 @@ Feature: A KPI's percentage change follows the direction of the movement
       | 2026-06-30 | EBITDA % | -0.557 | Month  |
     And the "EBITDA %" KPI mapping has data type "percentage"
     When the KPI percentage change job runs
-    Then the "Month" KPI "EBITDA %" for "2026-06-30" should have a percentage change of 7.5
+    Then the "Month" KPI "EBITDA %" for "2026-06-30" should have a percentage change of 11.87
 
   # H14 — Happy path: a change stored under the old rule (+25 for a loss that grew) is corrected by the recompute
   Scenario: H14 Recompute corrects a stored change
@@ -141,7 +141,7 @@ Feature: A KPI's percentage change follows the direction of the movement
     And the "Month" KPI "EBITDA" for "2026-06-30" has a stored percentage change of -20.0
     Then the "Month" KPI "EBITDA" for "2026-06-30" should have a percentage change of -20.0
 
-  # E22 — Edge case: a percentage KPI against a prior figure of zero still has a change, 5 points
+  # E22 — Edge case: a percentage KPI against a prior figure of zero has nothing to divide by, so it is empty
   Scenario: E22 Percentage KPI against zero
     Given the following Monthly KPI Reports exist with KPIs:
       | as_of      | name     | value | period |
@@ -149,9 +149,9 @@ Feature: A KPI's percentage change follows the direction of the movement
       | 2026-06-30 | EBITDA % | 0.05  | Month  |
     And the "EBITDA %" KPI mapping has data type "percentage"
     When the KPI percentage change job runs
-    Then the "Month" KPI "EBITDA %" for "2026-06-30" should have a percentage change of 5.0
+    Then the "Month" KPI "EBITDA %" for "2026-06-30" should have an empty percentage change
 
-  # E23 — Edge case: a percentage KPI from 20% to 15% is -5 points
+  # E23 — Edge case: a percentage KPI from 20% to 15% is a fall of 25
   Scenario: E23 Percentage KPI falls
     Given the following Monthly KPI Reports exist with KPIs:
       | as_of      | name     | value | period |
@@ -159,9 +159,9 @@ Feature: A KPI's percentage change follows the direction of the movement
       | 2026-06-30 | EBITDA % | 0.15  | Month  |
     And the "EBITDA %" KPI mapping has data type "percentage"
     When the KPI percentage change job runs
-    Then the "Month" KPI "EBITDA %" for "2026-06-30" should have a percentage change of -5.0
+    Then the "Month" KPI "EBITDA %" for "2026-06-30" should have a percentage change of -25.0
 
-  # E24 — Edge case: the same figures on a numeric KPI are a relative change, 11.87
+  # E24 — Edge case: the same figures on a numeric KPI give the same change, 11.87; the data type makes no difference
   Scenario: E24 Same figures on a numeric KPI
     Given the following Monthly KPI Reports exist with KPIs:
       | as_of      | name   | value  | period |
@@ -171,7 +171,7 @@ Feature: A KPI's percentage change follows the direction of the movement
     When the KPI percentage change job runs
     Then the "Month" KPI "Ratio" for "2026-06-30" should have a percentage change of 11.87
 
-  # E33 — Edge case: a percentage KPI's YTD against the YTD a year earlier is also in points, 7.5
+  # E33 — Edge case: a percentage KPI's YTD against the YTD a year earlier follows the same rule, 11.87
   Scenario: E33 Percentage KPI year over year
     Given the following Monthly KPI Reports exist with KPIs:
       | as_of      | name     | value  | period |
@@ -179,4 +179,4 @@ Feature: A KPI's percentage change follows the direction of the movement
       | 2026-06-30 | EBITDA % | -0.557 | YTD    |
     And the "EBITDA %" KPI mapping has data type "percentage"
     When the KPI percentage change job runs
-    Then the "YTD" KPI "EBITDA %" for "2026-06-30" should have a percentage change of 7.5
+    Then the "YTD" KPI "EBITDA %" for "2026-06-30" should have a percentage change of 11.87

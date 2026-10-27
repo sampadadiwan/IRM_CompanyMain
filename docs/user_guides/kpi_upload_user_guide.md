@@ -353,7 +353,7 @@ Funds can map a KPI as a parent with children — *Revenue* with *North / South 
 
 ## ⚙️ Automated System Actions
 After approval, the system automatically triggers several high-impact tasks:
-1.  **Growth Metrics**: Recalculates Year-on-Year (YoY) and Month-on-Month (MoM) percentage changes. A change from a negative figure follows the direction of the movement: a loss that shrinks from (100) to (80) is +20%, and one that grows to (125) is -25%. A percentage KPI such as EBITDA % changes in percentage points (from (63.2)% to (55.7)% is +7.5). Figures already stored keep their old change until you run **Recompute percentage change** on the company's KPI report.
+1.  **Growth Metrics**: Recalculates Year-on-Year (YoY) and Month-on-Month (MoM) percentage changes. A change from a negative figure follows the direction of the movement: a loss that shrinks from (100) to (80) is +20%, and one that grows to (125) is -25%. A percentage KPI such as EBITDA % follows the same rule (from (63.2)% to (55.7)% is +11.9%). Figures already stored keep their old change until you run **Recompute percentage change** on the company's KPI report.
 2.  **Cumulative Totals**: Recomputes **Quarterly**, **YTD**, and **Annual** sums from monthly Actuals. If a company reports Actuals at Quarter level instead (no monthly data), **YTD** builds up as each quarter comes in and **Annual** is computed once all of Q1–Q4 are in — the system never double-counts a year that already has monthly data.
 3.  **Audit Trail**: Appends approval details (User, Timestamp) to the KPI notes.
 4.  **Search Indexing**: Updates the search engine so new data is immediately findable.
