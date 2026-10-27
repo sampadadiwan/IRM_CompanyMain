@@ -346,9 +346,10 @@ flowchart TD
 - `Kpi.change_against` is edited; the YTD wrapper (`year_over_year_change`) and its 9,999.99 limit are unchanged because the absolute value does not alter the size of the result.
 - `variance_of` keeps its guard for a missing figure and returns `Kpi.change_against(comparator, kpi)`, or "N/A" when that is nil (the zero-comparator guard now lives in `change_against`).
 - `percent_of` is untouched.
+- `PerformanceTableService#growth` (the performance table's own copy of the formula) gets the same rule, `(current - previous) / previous.abs * 100`; it works from sums on each page view, so nothing is stored and no recompute is needed.
 - `change_percent` (consolidated fair market value) gets `base.abs` in its denominator and keeps "N/A" for a zero base; card ⑦ feeds it.
 
-**Worked examples:** H7–H11, H13, H15–H18, E11, E12, E14, E17–E19, E22–E24
+**Worked examples:** H7–H11, H13, H15–H18, H25, H26, E11, E12, E14, E17–E19, E22–E24, E34–E36
 
 **FAQ**
 
@@ -535,6 +536,8 @@ N/A — nothing new can raise. A zero or missing comparison figure is nil or "N/
 | H22 | Fund total from the sums | Two companies in one fund, as in H21 (one instrument each) | Built | Lines show 10 and -20; the fund total shows -12.5, not -5 | Fund total from the companies' figures | portfolio_report_fmv_per_unit_change |
 | H23 | Financial year start | 8 units at 90 on the day before the financial year, 100 on 30 Jun, 108 on 30 Sep | Built | `fmv_fy_start_change_percent` 20; `fmv_change_percent` 8 | Financial year start | portfolio_report_fmv_per_unit_change |
 | H24 | Amounts unchanged | H19 and H20 setups | Built | `fmv`, `fmv_prior` and `fmv_fy_start` are the units held at each date at that date's value per unit | Amounts unchanged | portfolio_report_fmv_per_unit_change |
+| H25 | Performance table, loss grows | Prior month -100, month -125 | Table built | `growth_monthly` -25 | Loss grows | kpi_performance_table_change |
+| H26 | Performance table, loss shrinks | Prior month -100, month -80 | Built | 20 | Loss shrinks | kpi_performance_table_change |
 
 #### Edge Cases
 
@@ -573,6 +576,9 @@ N/A — nothing new can raise. A zero or missing comparison figure is nil or "N/
 | E31 | Bought only in the period | The only buy is dated in the quarter | Built | "N/A" | Bought only in the period | portfolio_report_fmv_per_unit_change |
 | E32 | New instrument beside an old one | A held since before the start (+10%); B bought in the quarter | Built | 10: B has no weight | Price rises and units are bought | portfolio_report_fmv_per_unit_change |
 | E33 | Percentage KPI year over year | EBITDA % June 2025 YTD -0.632, June 2026 YTD -0.557 | Recomputed | 11.87 | Percentage KPI year over year | kpi_change_direction |
+| E34 | Performance table, positive earlier figure | Prior month 100, month 120 | Built | 20 | Positive earlier figure | kpi_performance_table_change |
+| E35 | Performance table, earlier figure zero | Prior month 0, month -5 | Built | Empty | Earlier figure zero | kpi_performance_table_change |
+| E36 | Performance table, YTD against a negative year earlier | June 2025 -3.154, June 2026 -3.8 | Built | `growth_ytd_py` -20.48 | YTD against a negative year-earlier figure | kpi_performance_table_change |
 
 #### Error Cases
 
@@ -584,7 +590,7 @@ No permission or direct-request case: no entry point, screen or route is added.
 
 ### Testing
 
-Cucumber only. Four new feature files: `portfolio_report_company_quarter_activity`, `kpi_change_direction`, `portfolio_report_change_direction` and `portfolio_report_fmv_per_unit_change`. They reuse the Inflexor quarter data, the company report data builder step and the KPI recompute steps (`kpi_percentage_change_steps.rb`); the new steps are in [lld.md Test Plumbing](lld.md#test-plumbing). Every scenario carries a comment naming its H/E/X ID and path; code comments name the IDs of the paths they implement.
+Cucumber only. Five new feature files: `portfolio_report_company_quarter_activity`, `kpi_change_direction`, `portfolio_report_change_direction`, `portfolio_report_fmv_per_unit_change` and `kpi_performance_table_change`. They reuse the Inflexor quarter data, the company report data builder step and the KPI recompute steps (`kpi_percentage_change_steps.rb`); the new steps are in [lld.md Test Plumbing](lld.md#test-plumbing). Every scenario carries a comment naming its H/E/X ID and path; code comments name the IDs of the paths they implement.
 
 ### Risks and open questions
 

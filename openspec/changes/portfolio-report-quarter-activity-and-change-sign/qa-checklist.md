@@ -69,6 +69,8 @@ step · **R** = Role sweep · **C** = Cross-cutting check
 | ☐ | H22 | Fund total from the sums | Two companies as in H21 | 1. Read the lines and the fund total | Lines 10 and -20; total -12.5 | | |
 | ☐ | H23 | Financial year start | 8 units at 90 before the financial year, 100 on 30-Jun, 108 on 30-Sep | 1. Read the line | FY change 20; quarter change 8 | | |
 | ☐ | H24 | Amounts unchanged | H19 and H20 data | 1. Compare `fmv`, `fmv_prior`, `fmv_fy_start` with the report before the change | The same amounts | | |
+| ☐ | H25 | Performance table, loss grows | The test company's EBITDA -100 then -125 | 1. Open KPI report › Performance as of the later month. 2. Read the month's growth | -25%, red | | |
+| ☐ | H26 | Performance table, loss shrinks | EBITDA -100 then -80 | 1. Read the month's growth | +20%, green | | |
 
 ## Edge Cases
 
@@ -107,6 +109,9 @@ step · **R** = Role sweep · **C** = Cross-cutting check
 | ☐ | E31 | Nothing held at the start | Only buy dated in the quarter | 1. Read the line | "N/A" | | |
 | ☐ | E32 | New instrument beside an old one | A held since before (+10%), B bought in the quarter | 1. Read the line | 10 | | |
 | ☐ | E33 | Percentage KPI year over year | EBITDA % YTD Jun 2025 -0.632, Jun 2026 -0.557 | 1. Read the Jun 2026 YTD change | +11.87 | | |
+| ☐ | E34 | Performance table, positive earlier figure | Revenue 100 then 120 | 1. Read the month's growth | +20%, as before | | |
+| ☐ | E35 | Performance table, earlier figure zero | An EBITDA of 0 then -5 | 1. Read the month's growth | Blank | | |
+| ☐ | E36 | Performance table, YTD against a negative year earlier | June 2025 -3.154, June 2026 -3.8 | 1. Read the YTD growth against a year earlier | -20.48% | | |
 
 ## Error Cases
 

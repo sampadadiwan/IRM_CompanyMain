@@ -19,6 +19,7 @@ Two things in the company portfolio report are wrong or missing. First, the repo
 
 - **Company report, each fund's data:** adds whether the company was bought or sold in the quarter, and how much was bought and sold at cost in the quarter, so a template can write "The fund invested a further INR X Cr during the quarter" only when it did.
 - **KPI changes ("vs PQ", "vs PYTD", month-on-month and similar) and the "vs budget" difference:** when the figure being compared with is negative, the change now reads in the direction of the movement. A smaller loss is a rise; a bigger loss is a fall.
+- **Performance table (KPI report › Performance):** its growth columns follow the same rule, so a loss that shrinks shows green and a loss that grows shows red. Worked out when the table is shown, so no recompute is needed.
 - **Percentage KPIs (such as EBITDA %):** the same rule as any other KPI, so a margin that goes from (63.2)% to (55.7)% shows **+11.9%**, never a negative number.
 - **Fair market value change (consolidated report):** the change is the weighted average of the instruments' change in value per unit, weighted by each instrument's value at the earlier date. Buying or selling units no longer moves it. The amounts shown (`fmv`, prior and financial year start) do not change.
 - **BREAKING (visible):** stored KPI changes for negative figures change once they are recomputed, red/green threshold colours on the KPI screens follow, and the fair market value change reads differently whenever units were bought or sold in the period. Changes from a positive figure on a money or numeric KPI do not change.
@@ -350,6 +351,7 @@ None. The existing `startups/kpi-cumulation` requirements say what a change is m
 
 - The company portfolio report (Word) and the consolidated portfolio report's fair market value change, on each company's fund line and on the fund total.
 - KPI screens, which show the stored changes and colour them against the thresholds.
+- The performance table, whose growth columns are worked out each time it is shown.
 - The AI portfolio assistant, which quotes stored changes.
 - Stored KPI changes for figures with a negative prior value, corrected by the existing recompute.
 - No new screens, permissions or tables.

@@ -109,3 +109,26 @@ The portfolio report's difference of an Actual figure from its comparator (`<lab
 #### Scenario: Comparator missing or zero
 - **WHEN** the Actual has no comparator figure, or the comparator is zero
 - **THEN** the difference is "N/A"
+
+### Requirement: The performance table's growth follows the same rules
+The growth shown on a company's performance table (month, month against a year earlier, quarter, YTD against a year earlier, trailing twelve months) SHALL be the figure minus the earlier figure, divided by the size of the earlier figure, multiplied by 100. It SHALL be empty when the earlier figure is zero or the figure is missing. An earlier figure that is positive SHALL give the same growth as before this requirement. The table works the growth out each time it is shown, so no recompute is needed.
+
+#### Scenario: Loss grows
+- **WHEN** the earlier month is -100 and the month is -125
+- **THEN** the month's growth is -25
+
+#### Scenario: Loss shrinks
+- **WHEN** the earlier month is -100 and the month is -80
+- **THEN** the month's growth is 20
+
+#### Scenario: Positive earlier figure
+- **WHEN** the earlier month is 100 and the month is 120
+- **THEN** the month's growth is 20, as before
+
+#### Scenario: Earlier figure zero
+- **WHEN** the earlier month is 0
+- **THEN** the month's growth is empty
+
+#### Scenario: YTD against a negative year-earlier figure
+- **WHEN** the June 2026 YTD is -3.8 and the June 2025 YTD is -3.154
+- **THEN** the YTD growth against a year earlier is -20.48

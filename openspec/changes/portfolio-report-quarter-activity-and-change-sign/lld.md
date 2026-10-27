@@ -40,6 +40,7 @@
 - `KpiPercentageChangeJob` preloads `:investor_kpi_mapping` beside `:kpi_report`, so reading the data type adds no query per KPI.
 - The consolidated `fund_line` values the earlier holdings at the end date's value per unit (one lookup per instrument) into two new fields, `fmv_at_prior_quantity` and `fmv_at_fy_start_quantity`, and `fmv_change_percent` and `fmv_fy_start_change_percent` are worked from them. `fmv`, `fmv_prior` and `fmv_fy_start` are untouched. `FundTotal` gets `fmv_at_prior_quantity` as a sum.
 - `percent_of` and `kpi_percentage_class` are not edited: the colours read the stored change and follow its sign.
+- `PerformanceTableService#growth` gets the same rule (`(current - previous) / previous.abs * 100`). It is worked out on each page view from sums, so there is no stored value to correct.
 - Stored `percentage_change` values only change when `KpiPercentageChangeJob` runs; no migration. See [Configuration and Rollout](#configuration-and-rollout).
 
 ---
@@ -53,9 +54,12 @@
 | ⑤ | `app/packs/startups/kpis/jobs/kpi_percentage_change_job.rb` | Modified | Add `:investor_kpi_mapping` to the `preload` of the recompute's query |
 | ⑥, ⑦ | `app/packs/funds/portfolios/services/portfolio_report_consolidated_doc_generator.rb` | Modified | `change_percent` divides by `base.to_d.abs`; `FundLine` gains `fmv_at_prior_quantity`, `fmv_at_fy_start_quantity`; `FundTotal` and `FUND_LINE_SUMS` gain `fmv_at_prior_quantity`; `fund_line` fills them and works both percents from them; `fund_total` works its percent from the sums; two small private helpers (below) |
 | Tests | `features/fund/portfolio_report_company_quarter_activity.feature` | New | H1–H6, E1–E10, X1 |
+| ⑥ | `app/packs/startups/kpis/services/performance_table_service.rb` | Modified | `growth` divides by `previous.abs` instead of `current / previous - 1`; update its comment |
 | Tests | `features/startup/kpi_change_direction.feature` | New | H7–H14, E11–E16, E22–E24, E33 |
 | Tests | `features/fund/portfolio_report_change_direction.feature` | New | H15–H18, E17–E21 |
 | Tests | `features/fund/portfolio_report_fmv_per_unit_change.feature` | New | H19–H24, E25–E32 |
+| Tests | `features/startup/kpi_performance_table_change.feature` | New | H25, H26, E34–E36 |
+| Tests | `features/step_definitions/performance_table_steps.rb` | New | The three steps in Test Plumbing |
 | Tests | `features/step_definitions/portfolio_report_quarter_change_steps.rb` | New | The few steps in Test Plumbing |
 
 Not modified, on purpose: `percent_of`, `year_over_year_change`, `PERCENTAGE_CHANGE_LIMIT`, `kpis_helper.rb`, `fmv`, `fmv_prior` and `fmv_fy_start` and their formulas, `PortfolioInvestmentsAsOf`, `PriceResolver`, the Sablon word service, `public/final_portfolio_report_docs/*`.
@@ -88,6 +92,12 @@ N/A — no table, column or index changes. `percentage_change` stays decimal(6,2
 | Method | Arguments | Returns | Raises | Side effects | Idempotent? |
 |---|---|---|---|---|---|
 | `change_against` (class) | `comparator`, `kpi` | `(kpi.value - comparator.value) / comparator.value.abs * 100` for every KPI, nil when the comparator is zero | None new | None | Yes |
+
+**`PerformanceTableService`** (Service)
+
+| Method | Arguments | Returns | Raises | Side effects | Idempotent? |
+|---|---|---|---|---|---|
+| `growth` (private) | `current`, `previous` | `(current - previous) / previous.abs * 100` as a Float, nil when `previous` is zero or `current` is nil | None new | None | Yes |
 
 **`PortfolioReportConsolidatedDocGenerator`** (Service)
 
@@ -227,6 +237,7 @@ A zero or missing comparison figure is nil or "N/A" as before. A text start date
 | `features/startup/kpi_change_direction.feature` | Background as `kpi_ytd_yoy_percentage_change.feature` | `the following Monthly KPI Reports exist with KPIs:` | None for the KPI steps: `the KPI percentage change job runs`, `the {string} KPI {string} for {string} should have a percentage change of {float}`, `... should have an empty percentage change`, `the {string} KPI {string} for {string} has a stored percentage change of {float}` and `the {string} KPI mapping has a lower threshold of {int}` are reused; E15 reads the grid colour class with the existing "should show ... with no colour" helper, plus one step `Then the {string} KPI {string} for {string} should show in red in the grid` |
 | `features/fund/portfolio_report_change_direction.feature` | Background as `portfolio_report_kpi_budget_variance.feature` | Same KPI report table step; `the {string} KPI mapping has data type {string}` (existing) for the percentage KPI | `When the fair market value change is worked out from {float} to {float}` (calls the private `change_percent` on an allocated consolidated generator, as the existing steps do); `Then the fair market value change is {float}` / `... is {string}` |
 | `features/fund/portfolio_report_fmv_per_unit_change.feature` | Background as `portfolio_report_fund_totals.feature` (a logged-in user, a fund) with its own small data, not the Inflexor crore data | `:investment_instrument`, `:valuation` factories through `fund_metrics_investment` and `fund_metrics_valuation` (existing helpers) | `Given {string} holds {int} units in the fund on {string}` and `... buys {int} more units on {string}` / `... sells {int} units on {string}`; `Given {string} has a value per unit of {int} on {string}`; `Given {string} has a second instrument ...` for H21; `Given the fund and instrument currencies differ ...` for E29; `When the consolidated report data is built for {string} to {string}` (existing); `Then the line of {string} shows {word} {string}` and `Then the total of {string} shows {word} {string}` (existing, read the percent and amounts) |
+| `features/startup/kpi_performance_table_change.feature` | Background as `kpi_change_direction.feature` | `the following Monthly KPI Reports exist with KPIs:` with the period spelled `month` (the service's `monthly` scope compares with that spelling; MySQL ignores the case, the SQLite test database does not); `the {string} KPI mapping is shown in the portfolio report` (existing) | `When the performance table is built as of {string}`; `Then the performance table row {string} should have a {word} of {float}` (rounded to two decimals); `Then the performance table row {string} should have an empty {word}` |
 
 Reused as they are: `the portfolio report rows are built up to {string}`, `the report row {string} should have {string} equal to {string}`, `the company report data is built for {string} to {string}`.
 

@@ -167,13 +167,15 @@ class PerformanceTableService
 
   # Calculates the percentage growth between a current and previous value.
   # Returns nil if the previous value is zero or current is nil to avoid division by zero or invalid calculations.
+  # The change is relative to the size of the previous value, as in Kpi.change_against, so a loss that shrinks is a rise and a
+  # loss that grows is a fall (H25, H26, E34-E36).
   # @param current [Numeric] The current value.
   # @param previous [Numeric] The previous value.
   # @return [Float, nil] The growth percentage, or nil if calculation is not possible.
   def growth(current, previous)
     return nil unless previous.to_f.nonzero? && current
 
-    ((current.to_f / previous) - 1) * 100
+    ((current.to_f - previous) / previous.abs) * 100
   end
 
   # --------------------------- Period logic ------------------------- #

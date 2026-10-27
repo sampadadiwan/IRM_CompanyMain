@@ -11,7 +11,7 @@
 
 > **Scope:** the quarter fields on each fund's data in the company report; the corrected direction of a change from a
 > negative figure, for percentage KPIs as for any other (stored KPI change, the report's budget difference); and the
-> per-unit basis for the consolidated fair market value change. More report changes may be added to this bundle before the
+> per-unit basis for the consolidated fair market value change; and the same corrected direction in the performance table's growth columns. More report changes may be added to this bundle before the
 > build; add each as its own phase.
 
 ## 1. Quarter activity in the company report
@@ -46,12 +46,20 @@
       `TEST_ENV_NUMBER=$RANDOM bundle exec cucumber features/fund/portfolio_report_fmv_per_unit_change.feature`
       until green; also re-run `features/fund/portfolio_report_fund_totals.feature`, `features/fund/portfolio_report_company_fund_lines.feature`, `features/fund/portfolio_report_fund_metrics.feature` and `features/fund/consolidated_portfolio_report.feature`, and confirm their fair market value change cases keep their values (no units change in their data)
 
-## 5. Wrap-up
+## 5. Performance table growth
 
-- [x] 5.1 Run `bundle exec rubocop` on the modified files and the new steps file, and fix findings; `bundle exec brakeman` is not needed (no controller or data-handling change)
-- [x] 5.2 Run the related features together to confirm nothing regressed:
-      `TEST_ENV_NUMBER=$RANDOM bundle exec cucumber features/fund/portfolio_report_company_quarter_activity.feature features/startup/kpi_change_direction.feature features/fund/portfolio_report_change_direction.feature features/fund/portfolio_report_fmv_per_unit_change.feature features/fund/portfolio_report_company_fund_data.feature features/fund/portfolio_report_company_fund_lines.feature features/fund/portfolio_report_kpi_budget_variance.feature features/startup/kpi_ytd_yoy_percentage_change.feature features/startup/kpi_cumulate.feature features/fund/portfolio_report_fund_totals.feature features/fund/consolidated_portfolio_report.feature`
-- [x] 5.3 Coverage check: list every H/E/X ID in design.md and every ID comment in the four new features and confirm the two sets are equal; any edge case found during apply gets a design.md row and a scenario, never a scenario alone
-- [ ] 5.4 Tell the template authors the four new merge fields and how to use them: a condition on `buy_pis_present` and the field `cost_of_investment_between`, a condition on `sell_pis_present` and `cost_of_sold_between`, inside each fund's block of the company template; the sample templates in `public/final_portfolio_report_docs/` are not changed here
-- [ ] 5.5 Rollout (for the release owner, not the apply agent): after deploy, run "Recompute percentage change" for each company with negative KPI figures, then generate reports (LLD Configuration and Rollout)
-- [ ] 5.6 Run qa-checklist.md on a deployed build and record the sign-off (for QA, not the apply agent)
+- [x] 5.1 Confirm `features/startup/kpi_performance_table_change.feature` and `features/step_definitions/performance_table_steps.rb` do not exist yet; the Write tool replaces files silently
+- [x] 5.2 In `PerformanceTableService#growth` divide the difference by `previous.abs` (keep the guard for a zero previous figure and a missing current figure); update its comment and name H25, H26, E34–E36
+- [x] 5.3 Write `features/startup/kpi_performance_table_change.feature` covering H25, H26 and E34–E36, with the three steps in `features/step_definitions/performance_table_steps.rb` (LLD Test Plumbing), and run
+      `TEST_ENV_NUMBER=$RANDOM bundle exec cucumber features/startup/kpi_performance_table_change.feature`
+      until green; with the old formula put back the three negative-figure scenarios (H25, H26, E36) fail and the other two pass
+
+## 6. Wrap-up
+
+- [x] 6.1 Run `bundle exec rubocop` on the modified files and the new steps file, and fix findings; `bundle exec brakeman` is not needed (no controller or data-handling change)
+- [x] 6.2 Run the related features together to confirm nothing regressed:
+      `TEST_ENV_NUMBER=$RANDOM bundle exec cucumber features/fund/portfolio_report_company_quarter_activity.feature features/startup/kpi_change_direction.feature features/fund/portfolio_report_change_direction.feature features/fund/portfolio_report_fmv_per_unit_change.feature features/fund/portfolio_report_company_fund_data.feature features/fund/portfolio_report_company_fund_lines.feature features/fund/portfolio_report_kpi_budget_variance.feature features/startup/kpi_ytd_yoy_percentage_change.feature features/startup/kpi_cumulate.feature features/startup/kpi_performance_table_change.feature features/fund/portfolio_report_fund_totals.feature features/fund/consolidated_portfolio_report.feature`
+- [x] 6.3 Coverage check: list every H/E/X ID in design.md and every ID comment in the five new features and confirm the two sets are equal; any edge case found during apply gets a design.md row and a scenario, never a scenario alone
+- [ ] 6.4 Tell the template authors the four new merge fields and how to use them: a condition on `buy_pis_present` and the field `cost_of_investment_between`, a condition on `sell_pis_present` and `cost_of_sold_between`, inside each fund's block of the company template; the sample templates in `public/final_portfolio_report_docs/` are not changed here
+- [ ] 6.5 Rollout (for the release owner, not the apply agent): after deploy, run "Recompute percentage change" for each company with negative KPI figures, then generate reports (LLD Configuration and Rollout)
+- [ ] 6.6 Run qa-checklist.md on a deployed build and record the sign-off (for QA, not the apply agent)
