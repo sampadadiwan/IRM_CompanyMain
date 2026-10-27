@@ -383,7 +383,7 @@ flowchart TD
 - `fmv`, `fmv_prior` and `fmv_fy_start` are not touched, so the amounts footing to the roll-forward stay as before.
 - A fund total adds the lines' `fmv_at_prior_quantity` (one more entry in `FUND_LINE_SUMS`, and a new `FundTotal` member) and works its percent from the sums, not from the lines' percents. The fund total has no financial year start percent today, so `fmv_at_fy_start_quantity` is on the line only.
 - A buy made after the earlier date is not in the earlier list, so it has no weight; a sale after it leaves the earlier buy's `net_quantity` as it was, so the holding is not read as a loss.
-- With no valuation at the earlier date `fmv_prior` is 0 and the percent is "N/A", as today.
+- A purchase stores its price as the value per unit until a valuation exists (the resolver accepts the cost price), so a holding always has a value per unit; with nothing held at the earlier date `fmv_prior` is 0 and the percent is "N/A", as today.
 
 **Worked examples:** H19–H24, E25–E32
 
@@ -573,7 +573,7 @@ N/A — nothing new can raise. A zero or missing comparison figure is nil or "N/
 | E27 | Holding sold entirely in the period | 10 units at 100, all sold in the quarter, 110 on 30 Sep | Built | 10, not -100 | Holding sold entirely in the period | portfolio_report_fmv_per_unit_change |
 | E28 | Older valuation used | The only valuation before the start is dated 20 Jun (100) | Built for 1 Jul to 30 Sep | 100 is the value per unit at the earlier date | Older valuation is used | portfolio_report_fmv_per_unit_change |
 | E29 | Fund currency | USD instrument in an INR fund, USD value per unit flat, rate rises 5% | Built | 5 | Fund currency | portfolio_report_fmv_per_unit_change |
-| E30 | No value at the earlier date | No valuation before the start | Built | "N/A" | No value at the earlier date | portfolio_report_fmv_per_unit_change |
+| E30 | Purchase price before any valuation | 10 units bought at 100 each before the start, no valuation until 110 at the end | Built | 10; `fmv_prior` 1,000 | Purchase price before any valuation | portfolio_report_fmv_per_unit_change |
 | E31 | Bought only in the period | The only buy is dated in the quarter | Built | "N/A" | Bought only in the period | portfolio_report_fmv_per_unit_change |
 | E32 | New instrument beside an old one | A held since before the start (+10%); B bought in the quarter | Built | 10: B has no weight | Price rises and units are bought | portfolio_report_fmv_per_unit_change |
 | E33 | Percentage KPI year over year | EBITDA % June 2025 YTD -0.632, June 2026 YTD -0.557 | Recomputed | 7.5 | Percentage KPI year over year | kpi_change_direction |

@@ -38,7 +38,7 @@
 - `FundTotal` is a `Data.define`: the new member is required at construction, so a forgotten member fails loudly. See [Method Contracts](#method-contracts).
 - `fund_returns` loads every stored run (not only the latest) of each ratio name up to the end date, then keeps the newest per fund and name in Ruby. One more name means one more ratio's runs are loaded and discarded: 5 names today, 6 after, about 20% more rows. Existing behaviour, accepted. See [Queries and Indexes](#queries-and-indexes).
 - `category` is a fixed row key set from `ikm.category.to_s`, not lowercased. See [Method Contracts](#method-contracts).
-- `FundLine`, `add_fund_level_data` and the Sablon word service are deliberately untouched. See [File Map](#file-map).
+- `FundLine` and `add_fund_level_data` also carry `gross_portfolio_irr` (the fund's value). `fund_returns` loads once for all the companies' funds (memoised, no argument) so the lines add no query per company; the company report reads it with one query (`fund_gross_portfolio_irrs`). The Sablon word service is untouched. See [File Map](#file-map).
 
 ---
 
@@ -49,10 +49,10 @@
 | ②, `grid_view_array` | `app/packs/funds/portfolios/services/portfolio_report_doc_generator.rb` | Modified | Add `"category" => ikm.category.to_s` to `row_data`, beside `data_type`; extend its comment |
 | ④, ⑤ | `app/packs/funds/portfolios/services/portfolio_report_consolidated_doc_generator.rb` | Modified | Add `:gross_portfolio_irr` to `FundTotal` (beside `:irr`) and `gross_portfolio_irr: "Gross Portfolio IRR"` to `FUND_RETURN_RATIOS`; update the header comment's list of returns |
 | Tests | `features/fund/portfolio_report_kpi_category.feature` | New | H1–H3, E1, E2 |
-| Tests | `features/fund/portfolio_report_fund_total_gross_irr.feature` | New | H4–H7, E3–E11 |
+| Tests | `features/fund/portfolio_report_fund_total_gross_irr.feature` | New | H4–H8, E3–E15 |
 | Tests | `features/step_definitions/portfolio_report_category_gross_irr_steps.rb` | New | The few steps listed in Test Plumbing |
 
-Not modified, on purpose: `FundLine`, `add_fund_level_data`, `fund_ratio_values` (company-level), `portfolio_report_sablon_word_service.rb`, `public/final_portfolio_report_docs/*`.
+Not modified, on purpose: `fund_ratio_values` (company-level), `portfolio_report_sablon_word_service.rb`, `public/final_portfolio_report_docs/*`.
 
 **Reviewer checks**
 - [ ] Every class in the design's class diagram has a file here, and nothing here is missing from it

@@ -51,7 +51,10 @@ step · **R** = Role sweep · **C** = Cross-cutting check
 | ☐ | H4 | Latest Gross Portfolio IRR on or before the end date | Run B done | 1. Open the consolidated report. 2. Read the Inflexor fund total | Gross Portfolio IRR is 18.0 | | |
 | ☐ | H5 | Shown beside the fund's IRR | Run B done | 1. Read the Inflexor fund total | IRR 14.2 and Gross Portfolio IRR 18.0 | | |
 | ☐ | H6 | Each fund has its own value | Run B done, second fund present | 1. Read the second fund's total | Gross Portfolio IRR is 11.5, not 18.0 | | |
-| ☐ | H7 | Company fund line keeps the company's IRR | Template prints the company fund lines | 1. Read a company's line in the Inflexor fund | IRR is the company's own, and no Gross Portfolio IRR appears on the line | | |
+| ☐ | H7 | Company fund line shows both | Template prints the company fund lines with `=fund.irr` and `=fund.gross_portfolio_irr` | 1. Read a company's line in the Inflexor fund | IRR is the company's own, and Gross Portfolio IRR is the fund's 18.0 | | |
+| ☐ | H8 | Company report fund data | The company report template prints the fund's `irr` and `gross_portfolio_irr` | 1. Generate the company report | The company's IRR and the fund's 18.0 | | |
+| ☐ | E12 | Never run | No Gross Portfolio IRR run | 1. Read the line and the fund data | "N/A" in both | | |
+| ☐ | E13 | Same value on every line | Both companies in the Inflexor fund | 1. Read both lines | 18.0 on each; the fund total shows 18.0 once | | |
 
 ## Edge Cases
 

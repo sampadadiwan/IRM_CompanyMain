@@ -17,7 +17,7 @@ Two things in the company portfolio report are wrong or missing. First, the repo
 
 ## What Changes
 
-- **Company report, each fund's data:** adds whether the company was bought or sold in the quarter, and how much was bought and sold at cost in the quarter, so a template can write "The fund invested X in the quarter" only when it did.
+- **Company report, each fund's data:** adds whether the company was bought or sold in the quarter, and how much was bought and sold at cost in the quarter, so a template can write "The fund invested a further INR X Cr during the quarter" only when it did.
 - **KPI changes ("vs PQ", "vs PYTD", month-on-month and similar) and the "vs budget" difference:** when the figure being compared with is negative, the change now reads in the direction of the movement. A smaller loss is a rise; a bigger loss is a fall.
 - **Percentage KPIs (such as EBITDA %):** the change is shown as the difference in percentage points, so a margin that goes from (63.2)% to (55.7)% shows **+7.5**, never a negative number.
 - **Fair market value change (consolidated report):** the change is the weighted average of the instruments' change in value per unit, weighted by each instrument's value at the earlier date. Buying or selling units no longer moves it. The amounts shown (`fmv`, prior and financial year start) do not change.
@@ -40,7 +40,7 @@ flowchart LR
 flowchart LR
     A["Generate company report"] --> B["Fund data: cost up to end date,<br/>bought and sold in the quarter"]
     B --> C{"Bought in<br/>the quarter?"}
-    C -- "yes" --> D["Template writes<br/>The fund invested X"]
+    C -- "yes" --> D["Template writes<br/>The fund invested a further INR X Cr"]
     C -- "no" --> E["Sentence left out"]
     classDef new fill:#d4edda,stroke:#2e7d32,color:#000
     class B,C,D,E new
@@ -130,7 +130,7 @@ flowchart TD
 
 | Step | Who | Where | Action | What the system does | What you see |
 |---|---|---|---|---|---|
-| A1 | Meera | Word, company template | Inside each fund's block, add a condition on "bought in the quarter" around the sentence "The fund invested [amount] in the quarter", and the same for sales | Nothing yet | The template holds the fields |
+| A1 | Meera | Word, company template | Inside each fund's block, add a condition on "bought in the quarter" around the sentence "The fund invested a further [currency] [amount] Cr during the quarter", and the same for sales | Nothing yet | The template holds the fields |
 | A2 | Meera | KPI report › Recompute percentage change, for each company | Start the recompute | Recalculates every stored KPI change with the corrected rule | "Computation started", then the changes update |
 
 ### Part B — every quarter
@@ -147,8 +147,8 @@ Company A in Inflexor Fund 1, quarter 1 Jul – 30 Sep 2026 (the fund bought 500
 
 ```
 Company A
-  The fund invested ₹10.0 Cr in the quarter.
-  The fund sold investments at a cost of ₹5.0 Cr in the quarter.
+  The fund invested a further INR 10.0 Cr during the quarter.
+  The fund sold INR 5.0 Cr of investments (at cost) during the quarter.
 Company B
   (no sentence)
 ```
@@ -193,7 +193,7 @@ The quarter sentence for Company A is missing. The purchase was entered with a d
 
 **As a** fund admin,
 **I want** each fund's data in the company report to say whether the fund bought in the quarter and how much,
-**So that** the template can write "The fund invested X in the quarter" only when it did.
+**So that** the template can write "The fund invested a further INR X Cr during the quarter" only when it did.
 
 **Acceptance criteria:**
 - "Bought in the quarter" is true when the company has a purchase in that fund dated from the quarter start to the end date, both included.
@@ -205,7 +205,7 @@ The quarter sentence for Company A is missing. The purchase was entered with a d
 
 **As a** fund admin,
 **I want** the same for sales, with the cost of what was sold,
-**So that** the template can write "The fund sold investments at a cost of X in the quarter".
+**So that** the template can write "The fund sold INR X Cr of investments (at cost) during the quarter".
 
 **Acceptance criteria:**
 - "Sold in the quarter" is true when the company has a sale in that fund dated in the quarter.

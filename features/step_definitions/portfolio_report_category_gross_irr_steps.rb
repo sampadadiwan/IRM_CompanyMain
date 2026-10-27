@@ -40,6 +40,20 @@ Then('the total of {string} shows {word} {string} as a number') do |fund_name, f
   expect(value.to_d).to be_within(0.05).of(expected.to_d)
 end
 
-Then('the line of {string} has no {word} field') do |name, field|
-  expect(fund_metrics_line(name)).not_to respond_to(field)
+# The line is the company's line in the fund; the strict version tells a zero from a missing value
+Then('the line of {string} shows {word} {string} as a number') do |name, field, expected|
+  value = fund_metrics_line(name).public_send(field)
+  expect(value).to be_a(Numeric), "#{field} was #{value.inspect}"
+  expect(value.to_d).to be_within(0.05).of(expected.to_d)
+end
+
+# The company report's data of the fund (name_data); "N/A" is read as the text it is
+Then('the fund data of {string} shows {word} {string} as a number') do |name, field, expected|
+  value = company_fund_data(name).public_send(field)
+  expect(value).to be_a(Numeric), "#{field} was #{value.inspect}"
+  expect(value.to_d).to be_within(0.05).of(expected.to_d)
+end
+
+Then('the fund data of {string} shows {word} {string}') do |name, field, expected|
+  expect(company_fund_data(name).public_send(field).to_s).to eq(expected)
 end

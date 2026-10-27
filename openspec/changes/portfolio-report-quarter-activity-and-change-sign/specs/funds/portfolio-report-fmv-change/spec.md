@@ -45,9 +45,9 @@ The consolidated report's `fmv_change_percent` (against the day before the start
 - **WHEN** the instrument is valued in a currency other than the fund's
 - **THEN** the change is measured in the fund's currency, as the amounts shown are
 
-#### Scenario: No value at the earlier date
-- **WHEN** the company had no valuation, or held nothing, on the day before the start
-- **THEN** `fmv_change_percent` is "N/A"
+#### Scenario: Purchase price before any valuation
+- **WHEN** the company bought 10 units at 100 each before the start, no valuation is stored before the start, and the value per unit is 110 at the end date
+- **THEN** the purchase price is the value per unit at the earlier date and `fmv_change_percent` is 10
 
 #### Scenario: Bought only in the period
 - **WHEN** the company bought its only units in the period

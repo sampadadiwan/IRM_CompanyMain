@@ -89,7 +89,7 @@ Alpha Fund II   N/A    N/A
 
 **What to notice**
 - Nothing is computed: the report copies what the fund ratio run stored.
-- Gross Portfolio IRR is the fund's, so it sits on the fund total, not on each company's line.
+- Gross Portfolio IRR is the fund's, so a company's fund line and fund data show the same value as the fund total, beside the company's own `irr`.
 - The new value rides the existing query, so the report makes no extra database call for it.
 - Missing data reads as "N/A" or blank and never stops the report.
 
@@ -99,7 +99,7 @@ Alpha Fund II   N/A    N/A
 |---|---|---|---|
 | 1 | Category rides the KPI row | One more key on the row the template already reads | [① and ②](#①-and-②-kpi-row) |
 | 2 | Gross IRR rides the fund-returns query | One more name in the existing list of fund ratios | [③ and ④](#③-and-④-fund-returns-lookup) |
-| 3 | Fund-level only | The fund total gets it; company lines do not | [⑤](#⑤-fund-total) |
+| 3 | The fund's value, shown at three levels | The fund total, each company's fund line and each company report fund data get it | [⑤](#⑤-fund-total) |
 
 **FAQ**
 
@@ -179,7 +179,7 @@ N/A — no screen, email or alert changes. The generated document is the only ou
 
 ### Design decisions
 
-1. **Gross IRR on the fund total only** — Alternative: also on `FundLine` and the company page's fund data. Rejected because the ratio exists only for the fund, so every company line would repeat the fund's value beside the company's own `irr`. Confirmed with the requester.
+1. **Gross IRR on the fund total, the company fund line and the company report's fund data** — first built on the fund total only, then widened because the consolidated template's company row asks for `fund.gross_portfolio_irr` and failed on a missing field. Every company line repeats the fund's value beside the company's own `irr`; the template author decides whether to print it. The consolidated lines read the same returns hash as the totals, loaded once for all the companies' funds; the company report reads the fund's run in one query.
 2. **Ride the existing returns query** — Alternative: a second query for the new name. Rejected because `fund_returns` already filters by name list; one more entry in `FUND_RETURN_RATIOS` adds no query and reuses its Default-scenario, end-date and entity filters.
 3. **Plain name "Gross Portfolio IRR" only** — Alternative: also read labelled formulas and the tracking-currency variant. Rejected because XIRR, TVPI, DPI and RVPI read their plain names only; one rule for all returns.
 4. **Category kept as saved** — Alternative: lowercase it as `data_type` is. Rejected because `data_type` is lowercased for format switching while category is a label shown to readers.
@@ -256,7 +256,7 @@ flowchart TD
 | `FundTotal` fields | Returns hash from ④ | `gross_portfolio_irr` or "N/A" |
 
 - `FundTotal` is a fixed-shape `Data` class, so the field must be in the definition; a missing key fails when built rather than rendering blank.
-- `FundLine` and the company page's fund data are not changed (see [spec](specs/funds/portfolio-report-category-gross-irr/spec.md)).
+- `FundLine` and the company report's fund data also carry the value (see [spec](specs/funds/portfolio-report-category-gross-irr/spec.md)). `fund_returns` is now loaded once for the funds of all the companies and shared by the lines and the totals, so the lines add no query per company.
 - Two companies in one fund give one fund total with one value, not a sum.
 
 **Worked examples:** H4, H5, H6, E10, E11
@@ -390,7 +390,7 @@ N/A — the new fields cannot raise: an absent run is "N/A" and an absent catego
 | H4 | Latest run on or before the end date | Gross IRR 16.0 on 30 Jun and 18.0 on 30 Sep | Consolidated data built 1 Jul to 30 Sep | Fund total gross_portfolio_irr is 18.0 | Latest run on or before the end date | portfolio_report_fund_total_gross_irr |
 | H5 | Shown beside the fund's IRR | XIRR 14.2 and Gross IRR 18.0 on 30 Sep | Built | irr is 14.2 and gross_portfolio_irr is 18.0 | Shown beside the fund's IRR | portfolio_report_fund_total_gross_irr |
 | H6 | Each fund has its own value | Two funds with Gross IRR 18.0 and 11.5 | Built | Each total shows its own | Each fund has its own value | portfolio_report_fund_total_gross_irr |
-| H7 | Company fund line unchanged | Company IRR 22.0 in a fund with Gross IRR 18.0 | Built | The fund line shows irr 22.0 and no Gross IRR | Company fund line keeps the company's IRR | portfolio_report_fund_total_gross_irr |
+| H7 | Company fund line shows both | Company IRR 22.0 in a fund with Gross IRR 18.0 | Built | The fund line shows irr 22.0 and gross_portfolio_irr 18.0 | Company fund line shows both | portfolio_report_fund_total_gross_irr |
 
 #### Edge Cases
 
@@ -424,7 +424,7 @@ Cucumber only. Two new feature files, `portfolio_report_kpi_category` and `portf
 
 | # | Open question | Current thinking | Status |
 |---|---|---|---|
-| 1 | Gross Portfolio IRR on company fund lines? | No, fund total only | Resolved |
+| 1 | Gross Portfolio IRR on company fund lines? | Yes, on the fund lines and the company report's fund data as well as the totals | Resolved |
 
 **FAQ**
 

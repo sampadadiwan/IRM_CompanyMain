@@ -31,7 +31,7 @@ step · **R** = Role sweep · **C** = Cross-cutting check
 |---|---|
 | Environment | Staging, with a test company template uploaded (see below) |
 | Accounts | One fund admin (company admin) of the test entity; a user of a second entity for the isolation check |
-| Test company template | A copy of the company template where, inside each fund's block, the sentence "The fund invested [cost_of_investment_between] in the quarter" is shown only when `buy_pis_present` is true, and "The fund sold investments at a cost of [cost_of_sold_between] in the quarter" only when `sell_pis_present` is true |
+| Test company template | A copy of the company template where, inside each fund's block, the sentence "The fund invested a further [currency] [cost_of_investment_between] Cr during the quarter" is shown only when `buy_pis_present` is true, and "The fund sold [currency] [cost_of_sold_between] Cr of investments (at cost) during the quarter" only when `sell_pis_present` is true |
 | Seed data: investments | Fund "Inflexor Technology Discovery Fund 1" (INR). Company A: bought 4,000 shares for 40 Cr on 10-Feb-2026, 500 for 10 Cr on 15-Aug-2026, sold 500 for 7 Cr (cost 5 Cr) on 10-Sep-2026. Company B: bought 1,000 shares for 30 Cr on 20-Jan-2026 |
 | Seed data: consolidated | An INR fund with a company holding 10 units at 100 on 30-Jun-2026, 5 more bought in the quarter and 110 on 30-Sep-2026; a second instrument and a second company for H21 and H22; Run B: Portfolio reports › Bulk generate, consolidated, 1-Jul to 30-Sep-2026 |
 | Seed data: KPIs | A company with approved monthly KPI figures, Revenue 100 then 120 (positive); EBITDA -100 then -80 (loss shrinks) and -100 then -125 (loss grows); a percentage KPI "EBITDA %" -0.632 then -0.557; a Revenue Actual 92 against Budget 100; the KPI mapping of EBITDA has lower threshold 10 |
@@ -45,9 +45,9 @@ step · **R** = Role sweep · **C** = Cross-cutting check
 
 | ☐ | ID | What to check | Preconditions | Steps | Expected result | Pass / Fail | Notes |
 |---|---|---|---|---|---|---|---|
-| ☐ | H1 | Purchase in the quarter | Run A done | 1. Read Company A's fund block | "The fund invested 10.0 Cr in the quarter" | | |
+| ☐ | H1 | Purchase in the quarter | Run A done | 1. Read Company A's fund block | "The fund invested a further INR 10.0 Cr during the quarter" | | |
 | ☐ | H2 | Several purchases | Add a 4 Cr buy on 20-Sep-2026, Run A again | 1. Read Company A's block | 14.0 Cr | | |
-| ☐ | H3 | Sale in the quarter | Run A done | 1. Read Company A's block | "The fund sold investments at a cost of 5.0 Cr" (not 7.0) | | |
+| ☐ | H3 | Sale in the quarter | Run A done | 1. Read Company A's block | "The fund sold INR 5.0 Cr of investments (at cost) during the quarter" (not 7.0) | | |
 | ☐ | H4 | Buy and sale together | Run A done | 1. Read Company A's block | Both sentences | | |
 | ☐ | H5 | Each fund has its own | Company A also bought 3 Cr in a second fund on 1-Sep | 1. Read both fund blocks | Inflexor 10.0 Cr; second fund 3.0 Cr | | |
 | ☐ | H6 | Existing fund data unchanged | A report from before the change | 1. Compare cost of investment, cost of remaining, sold amount, IRR and MOIC | Same as before | | |
@@ -103,8 +103,8 @@ step · **R** = Role sweep · **C** = Cross-cutting check
 | ☐ | E27 | Holding sold entirely in the period | 10 units at 100, all sold, 110 | 1. Read the line | 10, not -100 | | |
 | ☐ | E28 | Older valuation used | Only valuation before the start dated 20-Jun | 1. Read the line | That valuation is the value per unit at the start | | |
 | ☐ | E29 | Fund currency | A USD instrument in an INR fund, flat USD value, rate up 5% | 1. Read the line | 5 | | |
-| ☐ | E30 | No value at the start | No valuation before the start | 1. Read the line | "N/A" | | |
-| ☐ | E31 | Bought only in the period | Only buy dated in the quarter | 1. Read the line | "N/A" | | |
+| ☐ | E30 | Purchase price before any valuation | 10 units bought at 100 each before the start, no valuation until 110 at the end | 1. Read the line | +10; `fmv_prior` 1,000 | | |
+| ☐ | E31 | Nothing held at the start | Only buy dated in the quarter | 1. Read the line | "N/A" | | |
 | ☐ | E32 | New instrument beside an old one | A held since before (+10%), B bought in the quarter | 1. Read the line | 10 | | |
 | ☐ | E33 | Percentage KPI year over year | EBITDA % YTD Jun 2025 -0.632, Jun 2026 -0.557 | 1. Read the Jun 2026 YTD change | +7.5 | | |
 

@@ -1,7 +1,8 @@
 @rack_test
-Feature: Consolidated report, the fund total shows the fund's Gross Portfolio IRR
+Feature: The reports show the fund's Gross Portfolio IRR
   Each fund's total holds the fund's own Gross Portfolio IRR beside its IRR: the latest stored run on or before the end date,
-  in the Default scenario, or "N/A" when there is none. It is the fund's, so a company's fund line does not repeat it.
+  in the Default scenario, or "N/A" when there is none. It is the fund's, so each company's fund line in the consolidated report
+  and each fund's data in the company report show the same value, beside the company's own IRR.
   Worked examples: openspec/changes/portfolio-report-category-gross-irr/design.md#worked-examples
 
 Background:
@@ -33,13 +34,52 @@ Scenario: H6 Each fund has its own value
   Then the total of "Inflexor Technology Discovery Fund 1" shows gross_portfolio_irr "18.0" as a number
   And the total of "Other Fund" shows gross_portfolio_irr "11.5" as a number
 
-# H7 — Happy path: Company A's own IRR in the fund is 22.0 and its fund line has no Gross Portfolio IRR
-Scenario: H7 Company fund line keeps the company's IRR
+# H7 — Happy path: Company A's own IRR in the fund is 22.0; its fund line also shows the fund's Gross Portfolio IRR, 18.0
+Scenario: H7 Company fund line shows the company's IRR and the fund's Gross Portfolio IRR
   Given "Company A" has an IRR of 22.0 in the Inflexor fund on "2026-09-30"
   And the fund has a "Gross Portfolio IRR" ratio of 18.0 on "2026-09-30"
   When the consolidated report data is built for "2026-07-01" to "2026-09-30"
   Then the line of "Company A" shows irr "22.0"
-  And the line of "Company A" has no gross_portfolio_irr field
+  And the line of "Company A" shows gross_portfolio_irr "18.0" as a number
+
+# H8 — Happy path: the company report's data of the fund shows the company's IRR 22.0 and the fund's Gross Portfolio IRR 18.0
+Scenario: H8 Company report fund data
+  Given "Company A" has an IRR of 22.0 in the Inflexor fund on "2026-09-30"
+  And the fund has a "Gross Portfolio IRR" ratio of 18.0 on "2026-09-30"
+  When the company report data is built for "2026-07-01" to "2026-09-30"
+  Then the fund data of "Company A" shows irr "22.0" as a number
+  And the fund data of "Company A" shows gross_portfolio_irr "18.0" as a number
+
+# E12 — Edge case: the ratio was never run, so every company's fund line and fund data show "N/A"
+Scenario: E12 No run on the fund lines and the fund data
+  When the consolidated report data is built for "2026-07-01" to "2026-09-30"
+  Then the line of "Company A" shows gross_portfolio_irr "N/A"
+  And the line of "Company B" shows gross_portfolio_irr "N/A"
+  When the company report data is built for "2026-07-01" to "2026-09-30"
+  Then the fund data of "Company A" shows gross_portfolio_irr "N/A"
+
+# E13 — Edge case: both companies in the fund show the fund's 18.0, and the fund total shows it once
+Scenario: E13 Same value on every company's line
+  Given the fund has a "Gross Portfolio IRR" ratio of 18.0 on "2026-09-30"
+  When the consolidated report data is built for "2026-07-01" to "2026-09-30"
+  Then the line of "Company A" shows gross_portfolio_irr "18.0" as a number
+  And the line of "Company B" shows gross_portfolio_irr "18.0" as a number
+  And the total of "Inflexor Technology Discovery Fund 1" shows gross_portfolio_irr "18.0" as a number
+
+# E14 — Edge case: a run of 19.5 dated 15 Oct is after the end date, the fund line and the fund data keep 18.0
+Scenario: E14 Run after the end date ignored on the lines and the fund data
+  Given the fund has a "Gross Portfolio IRR" ratio of 18.0 on "2026-09-30"
+  And the fund has a "Gross Portfolio IRR" ratio of 19.5 on "2026-10-15"
+  When the consolidated report data is built for "2026-07-01" to "2026-09-30"
+  Then the line of "Company A" shows gross_portfolio_irr "18.0" as a number
+  When the company report data is built for "2026-07-01" to "2026-09-30"
+  Then the fund data of "Company A" shows gross_portfolio_irr "18.0" as a number
+
+# E15 — Edge case: a run in the Stress scenario is not the Default one, so the fund data has none to show
+Scenario: E15 Other scenario ignored on the fund data
+  Given the fund has a "Gross Portfolio IRR" ratio of 18.0 on "2026-09-30" in the scenario "Stress"
+  When the company report data is built for "2026-07-01" to "2026-09-30"
+  Then the fund data of "Company A" shows gross_portfolio_irr "N/A"
 
 # E3 — Edge case: a run of 19.5 dated 15 Oct is after the end date, 18.0 is still shown
 Scenario: E3 Run after the end date ignored

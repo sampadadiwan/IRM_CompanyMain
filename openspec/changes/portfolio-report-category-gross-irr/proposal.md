@@ -18,7 +18,8 @@ Two figures a report template needs are not available to it. The per-company rep
 - **Per-company report:** every KPI row also carries its **category**, next to the data type it already carries. The row is the same in the all-KPIs list and in each category's own list.
 - **Consolidated report:** each fund's total gains a **Gross Portfolio IRR**, next to the fund's IRR. It is the latest stored run on or before the end date, or "N/A" when the ratio was never run.
 - Nothing changes for templates that do not use the new fields.
-- The per-company fund lines, the per-company fund data and the AI-drafted report's Word export do not get Gross Portfolio IRR or category (see *What This Feature Does NOT Cover*).
+- **Per-company fund lines and fund data:** the same Gross Portfolio IRR also appears on each company's fund line in the consolidated report and on each fund's data in the company report, beside the company's own IRR. It is the fund's figure, so it repeats for every company in the fund.
+- The AI-drafted report's Word export does not get Gross Portfolio IRR or category (see *What This Feature Does NOT Cover*).
 
 ### Flow Diagram
 
@@ -192,7 +193,6 @@ There is no screen change. The only visible change is in the generated Word docu
 
 | Excluded | Covered In |
 |---|---|
-| Gross Portfolio IRR on each company's fund line or the company page's fund data (the fund's value would repeat for every company) | Not planned |
 | Labelled Gross Portfolio IRR formulas and the tracking-currency version | Not planned; same as the fund's other returns |
 | Category and data type in the AI-drafted report's Word export | Not planned |
 | Valuing the change in fair market value on a per-share basis | Deferred; see the open decision in [portfolio-report-fund-metrics design](../archive/2026-10-27-portfolio-report-fund-metrics/design.md#open-decision-per-share-basis-for-fmv-change-percent) |
@@ -226,7 +226,7 @@ There is no screen change. The only visible change is in the generated Word docu
 
 | # | Decision | Resolution |
 |---|---|---|
-| 1 | Where does Gross Portfolio IRR go? | The consolidated fund totals only (confirmed). It is a fund-level ratio, so a per-company line would repeat the same value. |
+| 1 | Where does Gross Portfolio IRR go? | The consolidated fund totals, each company's fund line and each fund's data in the company report. First decided as fund totals only, then widened because the consolidated template's per-company row asks for it (the generation failed with an undefined field). It is the fund's value, so it repeats for every company in the fund. |
 | 2 | Which Gross Portfolio IRR? | The plain "Gross Portfolio IRR" run, as the fund's other returns read their plain names. |
 | 3 | Is category changed in case? | No. Data type is lowercased for formatting; category is a display name and is kept as saved. |
 | 4 | Does the FMV per-share work belong here? | No. It is deferred and noted in the fund-metrics design. |
@@ -266,7 +266,7 @@ None. This is a new capability that builds on the fund totals from `portfolio-re
 | Question | Answer |
 |---|---|
 | Do existing templates change? | No. They render as before until the new fields are added. |
-| Why not on each company's fund line? | Gross Portfolio IRR exists only for the fund; a company line would repeat the same number. |
+| Why does every company's line show the same Gross Portfolio IRR? | It is the fund's return, not the company's. The company's own return is the `irr` beside it. |
 | Why "N/A" for a fund? | The fund ratios were not run to the end date. Run them and generate again. |
 | Is any data migrated? | No. |
 | Does this change notifications or billing? | No. |

@@ -5,8 +5,8 @@
 # collected, distribution, target committed, units premium and the tracking-currency ones); cost_of_investment (all
 # purchases to the end date, prior to the start date, and between the dates), cost_of_remaining (cost of what is still held
 # at the end date and the day before the start), cost_of_sold_between (positive); fmv at the end date, the day before the
-# start (fmv_prior) and the day before the financial year (fmv_fy_start) with the % change from each; and the company's
-# own irr and moic. `fund_totals` has one entry per fund, summed over the companies in it; its returns (irr, gross_portfolio_irr,
+# start (fmv_prior) and the day before the financial year (fmv_fy_start) with the % change from each; the company's
+# own irr and moic; and the fund's own gross_portfolio_irr. `fund_totals` has one entry per fund, summed over the companies in it; its returns (irr, gross_portfolio_irr,
 # moic, tvpi, dpi, rvpi) are the fund's own stored ratios, taken once.
 #
 # It makes no PortfolioReportExtract, never calls the language model and saves no Document: the caller
@@ -25,7 +25,8 @@ class PortfolioReportConsolidatedDocGenerator
     :cost_of_investment, :cost_of_investment_prior, :cost_of_investment_between,
     :cost_of_remaining, :cost_of_remaining_prior, :cost_of_sold_between,
     :fmv, :fmv_prior, :fmv_change_percent, :fmv_fy_start, :fmv_fy_start_change_percent,
-    :irr, :moic, :ratios
+    :fmv_at_prior_quantity, :fmv_at_fy_start_quantity,
+    :irr, :gross_portfolio_irr, :moic, :ratios
   )
   # One per fund. Money is the fund's own (taken once, never added up over the companies); cost and fmv are added up
   # over the companies; the returns are the fund's own stored ratios, not the companies'. custom_fields stays an
@@ -37,17 +38,17 @@ class PortfolioReportConsolidatedDocGenerator
     :collected_percent, :uncollected_amount, :uncollected_percent, :company_count,
     :cost_of_investment, :cost_of_investment_prior, :cost_of_investment_between,
     :cost_of_remaining, :cost_of_remaining_prior, :cost_of_sold_between,
-    :fmv, :fmv_prior, :fmv_change_percent,
+    :fmv, :fmv_prior, :fmv_change_percent, :fmv_at_prior_quantity,
     :irr, :gross_portfolio_irr, :moic, :tvpi, :dpi, :rvpi, :custom_fields
   )
   # The fund's own ratio behind each return; the fund's IRR is stored as its XIRR. gross_portfolio_irr is the return on the
-  # portfolio investments before fund fees and expenses, read by its plain name only (not a label or the tracking currency one),
-  # and only here: it is the fund's, so a company's fund line does not repeat it. H4-H7, E3-E11 (gross_portfolio_irr)
+  # portfolio investments before fund fees and expenses, read by its plain name only (not a label or the tracking currency one).
+  # It is the fund's, so a company's fund line shows the same value as the fund total, beside the company's own irr. H4-H7, E3-E11
   FUND_RETURN_RATIOS = { irr: "XIRR", gross_portfolio_irr: "Gross Portfolio IRR", moic: "MOIC", tvpi: "TVPI", dpi: "DPI", rvpi: "RVPI" }.freeze
   FUND_LINE_MONEY = %i[committed_amount call_amount collected_amount distribution_amount target_committed_amount total_units_premium
                        tracking_committed_amount tracking_call_amount tracking_collected_amount tracking_distribution_amount].freeze
   FUND_LINE_SUMS = %i[cost_of_investment cost_of_investment_prior cost_of_investment_between cost_of_remaining
-                      cost_of_remaining_prior cost_of_sold_between fmv fmv_prior].freeze
+                      cost_of_remaining_prior cost_of_sold_between fmv fmv_prior fmv_at_prior_quantity].freeze
 
   # @param portfolio_companies [Enumerable<Investor>]
   # @param template [Document] The report template.
@@ -169,6 +170,11 @@ class PortfolioReportConsolidatedDocGenerator
     fmv = end_pis.sum(&:fmv_cents)
     fmv_prior = prior_pis.sum(&:fmv_cents)
     fmv_fy_start = fy_pis.sum(&:fmv_cents)
+    # the holdings at each earlier date, valued at the end date's value per unit: the change in value per unit, whatever was
+    # bought or sold since. H19-H24, E25-E32
+    unit_values = unit_values_at_end(prior_pis + fy_pis, fund)
+    fmv_at_prior_quantity = value_at_unit_values(prior_pis, unit_values)
+    fmv_at_fy_start_quantity = value_at_unit_values(fy_pis, unit_values)
     fund_as_of = (@fund_as_ofs[fund.id] ||= fund.as_of(@end_date))
     irr = ratios.fetch([fund.id, "IRR"], "N/A")
     moic = ratios.fetch([fund.id, "MOIC"], "N/A")
@@ -187,17 +193,35 @@ class PortfolioReportConsolidatedDocGenerator
       cost_of_remaining_prior: money.call(prior_pis.sum(&:cost_of_remaining_cents)),
       # stored negative on a sale; shown as a positive exit. H5
       cost_of_sold_between: money.call(period_sells.sum { |pi| pi.cost_of_sold_cents.abs }),
-      fmv: money.call(fmv), fmv_prior: money.call(fmv_prior), fmv_change_percent: change_percent(fmv, fmv_prior),
-      fmv_fy_start: money.call(fmv_fy_start), fmv_fy_start_change_percent: change_percent(fmv, fmv_fy_start),
-      irr:, moic:, ratios: [Ratio.new(name: "IRR", value: irr), Ratio.new(name: "MOIC", value: moic)]
+      fmv: money.call(fmv), fmv_prior: money.call(fmv_prior), fmv_change_percent: change_percent(fmv_at_prior_quantity, fmv_prior),
+      fmv_fy_start: money.call(fmv_fy_start), fmv_fy_start_change_percent: change_percent(fmv_at_fy_start_quantity, fmv_fy_start),
+      fmv_at_prior_quantity: money.call(fmv_at_prior_quantity), fmv_at_fy_start_quantity: money.call(fmv_at_fy_start_quantity),
+      irr:, moic:, ratios: [Ratio.new(name: "IRR", value: irr), Ratio.new(name: "MOIC", value: moic)],
+      # the fund's own, the same on every company's line in the fund. H7
+      gross_portfolio_irr: fund_returns.fetch([fund.id, FUND_RETURN_RATIOS[:gross_portfolio_irr]], "N/A")
     )
   end
 
-  # (current - base) / base * 100, or "N/A" when there is no base to compare with. E12, E13
+  # The value per unit of each instrument held in the list, at the end date, in the fund's currency: the latest valuation on or
+  # before it, looked up once per instrument and not once per investment. 0 when there is none. Keyed by instrument id.
+  def unit_values_at_end(pis, fund)
+    pis.select(&:buy?).uniq(&:investment_instrument_id).to_h do |pi|
+      [pi.investment_instrument_id, pi.latest_valuation_on(@end_date)&.per_share_value_in(fund.currency, @end_date, fund:) || 0]
+    end
+  end
+
+  # What the buys in the list were holding at the date the list was valued for (net_quantity), worth at the given value per
+  # unit, in cents. Sales carry no value of their own, so only buys count.
+  def value_at_unit_values(pis, unit_values)
+    pis.select(&:buy?).sum { |pi| pi.net_quantity * unit_values.fetch(pi.investment_instrument_id, 0) }.round
+  end
+
+  # (current - base) / the size of base * 100, so a negative base does not reverse the sign, or "N/A" when there is no base
+  # to compare with. E12, E13, H17, E20, E21
   def change_percent(current, base)
     return "N/A" if base.to_d.zero?
 
-    (current.to_d - base.to_d) / base.to_d * 100
+    (current.to_d - base.to_d) / base.to_d.abs * 100
   end
 
   # One entry per fund the companies invested in (a FundTotal): the fund's money, the cost and fmv figures added up over the
@@ -209,7 +233,7 @@ class PortfolioReportConsolidatedDocGenerator
       hash[:funds].map { |fund| [hash[:portfolio_company].object, fund.object] }
     end
     field_names = numeric_custom_field_names(company_hashes.map { |hash| hash[:portfolio_company].object })
-    returns = fund_returns(lines.map { |_, fund| fund.id }.uniq)
+    returns = fund_returns
 
     totals = lines.group_by { |_, fund| fund.id }.values.map do |fund_lines|
       funds = fund_lines.map(&:last)
@@ -232,7 +256,8 @@ class PortfolioReportConsolidatedDocGenerator
       uncollected_amount: uncollected,
       uncollected_percent: part_percent(uncollected, money[:committed_amount]),
       company_count: funds.size,
-      fmv_change_percent: change_percent(sums[:fmv].cents, sums[:fmv_prior].cents),
+      # worked from the sums, as the fund's value per unit changes by instrument, not by company. H22
+      fmv_change_percent: change_percent(sums[:fmv_at_prior_quantity].cents, sums[:fmv_prior].cents),
       **FUND_RETURN_RATIOS.keys.index_with { |key| returns.fetch([first.id, FUND_RETURN_RATIOS[key]], "N/A") },
       custom_fields:
     )
@@ -246,14 +271,20 @@ class PortfolioReportConsolidatedDocGenerator
   end
 
   # The funds' own returns as the fund ratio runs stored them: the latest Default-scenario run on or before the end date.
-  # Keyed [fund_id, ratio name]; a ratio that was never run is absent. One query for all the funds. H12, H13, E20-E22
-  def fund_returns(fund_ids)
-    FundRatio.default
-             .where(owner_type: "Fund", owner_id: fund_ids, name: FUND_RETURN_RATIOS.values, computation_context_id: nil,
-                    end_date: ..@end_date, entity_id: @portfolio_companies.map(&:entity_id).uniq)
-             .order(end_date: :desc, id: :desc)
-             .pluck(:owner_id, :name, :value)
-             .each_with_object({}) { |(fund_id, name, value), latest| latest[[fund_id, name]] ||= value }
+  # Keyed [fund_id, ratio name]; a ratio that was never run is absent. One query for the funds of all the companies,
+  # loaded on first use and shared by the fund lines and the fund totals. H12, H13, E20-E22
+  def fund_returns
+    @fund_returns ||= FundRatio.default
+                               .where(owner_type: "Fund", owner_id: report_fund_ids, name: FUND_RETURN_RATIOS.values, computation_context_id: nil,
+                                      end_date: ..@end_date, entity_id: @portfolio_companies.map(&:entity_id).uniq)
+                               .order(end_date: :desc, id: :desc)
+                               .pluck(:owner_id, :name, :value)
+                               .each_with_object({}) { |(fund_id, name, value), latest| latest[[fund_id, name]] ||= value }
+  end
+
+  # The funds any of the companies invested in on or before the end date: the funds that get a line and a total
+  def report_fund_ids
+    PortfolioInvestment.where(portfolio_company_id: @portfolio_companies.map(&:id), investment_date: ..@end_date).distinct.pluck(:fund_id)
   end
 
   # Names of the number and money custom fields in the companies' form types (normally a single form type).

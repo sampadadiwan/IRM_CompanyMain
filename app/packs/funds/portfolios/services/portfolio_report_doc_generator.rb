@@ -191,19 +191,27 @@ class PortfolioReportDocGenerator
     kpi.value / comparator.value * 100
   end
 
-  # How far Actual is from the comparator, as a percentage of the comparator (-8 means 8% below); "N/A" when either
-  # figure is missing or the comparator is zero. H16, H17, E25, E26
+  # How far Actual is from the comparator, by the same rule as a KPI's stored change (Kpi.change_against): a percentage of the
+  # size of the comparator (-8 means 8% below; a loss that shrinks is above), or percentage points for a percentage KPI.
+  # "N/A" when either figure is missing, or the comparator is zero for any other KPI. H15-H18, E18, E19
   def variance_of(kpi, comparator)
-    return "N/A" if kpi.nil? || comparator.nil? || comparator.value.zero?
+    return "N/A" if kpi.nil? || comparator.nil?
 
-    (kpi.value - comparator.value) / comparator.value * 100
+    Kpi.change_against(comparator, kpi) || "N/A"
   end
 
-  def add_fund_level_data(context, portfolio_company, _start_date, end_date)
+  # Besides the figures up to the end date, each fund's data has what the company bought and sold in the period, from the
+  # start date to the end date, both included: buy_pis_present and sell_pis_present (true or false) for a template condition,
+  # with cost_of_investment_between and cost_of_sold_between (positive, the cost of what was sold) as the merge fields.
+  # The dates arrive from the job as text, so the start date is converted before it is compared; with no start date there is no
+  # period, so nothing is in it. H1-H6, E1-E10, X1
+  def add_fund_level_data(context, portfolio_company, start_date, end_date)
+    start_day = start_date&.to_date
     company_portfolio_investments = portfolio_company.portfolio_investments.where(investment_date: ..end_date).includes(:fund)
     fund_ids = company_portfolio_investments.pluck(:fund_id).uniq
     funds = Fund.where(id: fund_ids)
     ratios = fund_ratio_values(portfolio_company, fund_ids, end_date)
+    gross_irrs = fund_gross_portfolio_irrs(portfolio_company, fund_ids, end_date)
 
     add_investment_milestones(context, company_portfolio_investments)
 
@@ -213,17 +221,25 @@ class PortfolioReportDocGenerator
       fund_pis = PortfolioInvestmentsAsOf.call(company_portfolio_investments.where(fund_id: fund.id), end_date.to_date)
       buys = fund_pis.select { |pi| pi.quantity.to_f.positive? }
       sells = fund_pis.select { |pi| pi.quantity.to_f.negative? }
+      period_buys = start_day ? buys.select { |pi| pi.investment_date >= start_day } : []
+      period_sells = start_day ? sells.select { |pi| pi.investment_date >= start_day } : []
       struct = OpenStruct.new(
         name: fund.name,
         currency: fund.currency,
         # with pis as_of, we can use sum &:
         fmv: Money.new(fund_pis.sum(&:fmv_cents), fund.currency),
         cost_of_investment: Money.new(buys.sum(&:amount_cents), fund.currency),
+        buy_pis_present: period_buys.any?,
+        cost_of_investment_between: Money.new(period_buys.sum(&:amount_cents), fund.currency),
+        sell_pis_present: period_sells.any?,
+        cost_of_sold_between: Money.new(period_sells.sum { |pi| pi.cost_of_sold_cents.abs }, fund.currency),
         # the cost of what is still held at the end date, net of what was sold. H15
         cost_of_remaining: Money.new(fund_pis.sum(&:cost_of_remaining_cents), fund.currency),
         # what the fund received from the sales up to the end date: the sells' own amounts, positive. H14, E23
         sold_amount: Money.new(sells.sum(&:amount_cents), fund.currency),
         irr: ratios.fetch([fund.id, "IRR"], "N/A"),
+        # the fund's own Gross Portfolio IRR, the same for every company in the fund, beside the company's irr. H7
+        gross_portfolio_irr: gross_irrs.fetch(fund.id, "N/A"),
         moic: ratios.fetch([fund.id, "MOIC"], "N/A")
       )
 
@@ -244,6 +260,17 @@ class PortfolioReportDocGenerator
              .order(end_date: :desc, id: :desc)
              .pluck(:fund_id, :name, :value)
              .each_with_object({}) { |(fund_id, name, value), latest| latest[[fund_id, name]] ||= value }
+  end
+
+  # The funds' own Gross Portfolio IRR (the return before fund fees and expenses), as the fund ratio run stored it: the latest
+  # run on or before end_date, Default scenario, plain name only. Keyed fund_id; a fund that was never run is absent.
+  def fund_gross_portfolio_irrs(portfolio_company, fund_ids, end_date)
+    FundRatio.default
+             .where(owner_type: "Fund", owner_id: fund_ids, name: PortfolioReportConsolidatedDocGenerator::FUND_RETURN_RATIOS[:gross_portfolio_irr],
+                    computation_context_id: nil, end_date: ..end_date, entity_id: portfolio_company.entity_id)
+             .order(end_date: :desc, id: :desc)
+             .pluck(:owner_id, :value)
+             .each_with_object({}) { |(fund_id, value), latest| latest[fund_id] ||= value }
   end
 
   # Across all the company's funds: the template reads the stake custom field off the latest investment, buy or

@@ -9,7 +9,7 @@
 > [lld.md](lld.md). Every scenario has a comment line naming its ID and path, and code comments name
 > the IDs of the paths they implement.
 
-> **Scope:** `category` on the KPI row and `gross_portfolio_irr` on the consolidated fund total only. The per-share FMV
+> **Scope:** `category` on the KPI row and `gross_portfolio_irr` on the consolidated fund total, each company's fund line and the company report's fund data. The per-share FMV
 > change percent is deferred (see the open decision in
 > [portfolio-report-fund-metrics design](../archive/2026-10-27-portfolio-report-fund-metrics/design.md#open-decision-per-share-basis-for-fmv-change-percent)) and is not a task here.
 

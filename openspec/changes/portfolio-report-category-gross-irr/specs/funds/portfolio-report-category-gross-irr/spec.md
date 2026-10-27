@@ -56,9 +56,25 @@ In the consolidated report, each fund total SHALL expose `gross_portfolio_irr`, 
 - **WHEN** two funds have Gross Portfolio IRRs of 18.0 and 11.5
 - **THEN** each fund total shows its own value
 
-### Requirement: Company fund lines are unchanged
-The consolidated report's per-company fund lines and the per-company report's fund data SHALL NOT expose a Gross Portfolio IRR, and their `irr` SHALL stay the company's own IRR in the fund.
+### Requirement: Company fund lines and fund data show the fund's Gross Portfolio IRR
+The consolidated report's per-company fund lines and the per-company report's fund data (`<fund>_data`) SHALL each carry `gross_portfolio_irr`: the fund's own Gross Portfolio IRR, worked out as for the fund total, and the same for every company in the fund. Their `irr` SHALL stay the company's own IRR in the fund.
 
-#### Scenario: Company fund line keeps the company's IRR
+#### Scenario: Company fund line shows both
 - **WHEN** a company has an IRR of 22.0 in a fund whose Gross Portfolio IRR is 18.0
-- **THEN** the company's fund line shows `irr` 22.0 and no Gross Portfolio IRR
+- **THEN** the company's fund line shows `irr` 22.0 and `gross_portfolio_irr` 18.0
+
+#### Scenario: Company report fund data shows both
+- **WHEN** the same company's report is generated
+- **THEN** the fund's data shows `irr` 22.0 and `gross_portfolio_irr` 18.0
+
+#### Scenario: Every company in the fund shows the fund's value
+- **WHEN** two companies invested in a fund whose Gross Portfolio IRR is 18.0
+- **THEN** both companies' fund lines show 18.0, and the fund total shows 18.0 once
+
+#### Scenario: No run on the lines and the fund data
+- **WHEN** the fund has no Gross Portfolio IRR run on or before the end date, or only one in another scenario
+- **THEN** the company's fund line and fund data show "N/A"
+
+#### Scenario: Run after the end date on the lines and the fund data
+- **WHEN** a Gross Portfolio IRR run is dated after the end date
+- **THEN** the fund line and the fund data use the latest run on or before it
