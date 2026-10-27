@@ -52,6 +52,7 @@
   - [Worked examples](#worked-examples)
   - [Testing](#testing)
   - [Risks and open questions](#risks-and-open-questions)
+    - [Open decision: per-share basis for FMV change percent](#open-decision-per-share-basis-for-fmv-change-percent)
 
 ---
 
@@ -616,6 +617,39 @@ Cucumber only. New feature files and step file are listed in [lld.md Test Plumbi
 | # | Open question | Current thinking | Status |
 |---|---|---|---|
 | 1 | Should the snapshot's "Invested in portfolio" be renamed or switched to net? | No change: stays gross (`cost_of_investment`) with its current label (business answer) | Resolved |
+| 2 | Should `fmv_change_percent` and `fmv_fy_start_change_percent` be a price move only, on a per-share basis? | Wanted. Option A (percent only) preferred; see [Open decision](#open-decision-per-share-basis-for-fmv-change-percent) | Open: confirm A or B with the client |
+
+#### Open decision: per-share basis for FMV change percent
+
+**Status: deferred. Not built in this change; to be implemented once the client confirms.**
+
+`fmv`, `fmv_prior` and `fmv_fy_start` are already quantity held at the date x the instrument's latest per-share valuation on or before that date, in fund currency. The weakness is the percent: it compares two totals whose quantities differ, so units bought or sold in the period move it as much as the price does.
+
+Example: 10 shares held at the day before the start, price 100 then 110 at the end, and 5 more shares bought in the quarter. `fmv_prior` = 1000, `fmv` = 15 x 110 = 1650, so today's `fmv_change_percent` is +65%. The price rose 10%. If 4 of the 10 shares were sold instead, today's figure is -34%.
+
+| | Option A: percent only (preferred) | Option B: constant quantity |
+|---|---|---|
+| Amounts shown | `fmv`, `fmv_prior`, `fmv_fy_start` unchanged (actual) | `fmv_prior` and `fmv_fy_start` redefined as end-date quantity x price at that date |
+| Percent | The holdings at the prior date valued at the end price, against the actual `fmv_prior`: (10 x 110 - 1000) / 1000 = +10% | Existing formula, unchanged: (1650 - 1500) / 1500 = +10% |
+| Fund totals | Sum the new helper values over the companies, derive the percent from the sums | No change |
+| Cost | The shown amounts do not divide to the shown percent (1650 / 1000 is not 10%) | `fmv_prior` no longer matches the figure last quarter's report showed whenever units changed |
+| Ignores | Units bought in the period (their gain is not in the percent) | None, but the prior figure is restated |
+
+`fmv_fy_start_change_percent` follows the same rule in both options, with the holdings at the day before the financial year start.
+
+**If confirmed, the build**
+
+1. Group the end-date PIs by `investment_instrument_id` and call `PriceResolver.lookup` once per instrument per date (end, prior, FY start), with the same owner and `SourcePolicy.for(fund)` as `latest_valuation_on`. Today it is one lookup per PI per date.
+2. Take the quantities at the prior and FY-start dates from `prior_pis` and `fy_pis`, which the helper already loads.
+3. Option A: add `fmv_at_prior_quantity` and `fmv_at_fy_start_quantity` to the company fund line (the prior-date holdings valued at the end price, in fund currency) and compute both percents from them. Add the same two fields to the fund total as sums. Option B: change only how `fmv_prior` and `fmv_fy_start` are valued.
+4. Update the affected rows (H7, H8, H10, E19) and add a scenario where units were bought in the period and one where units were sold.
+
+**Edge cases to settle at that point**
+
+- FX: a percent in fund currency includes exchange-rate moves (`per_share_value_in(fund.currency, date)`). A pure price move would use the instrument currency (`compute_instrument_currency_fmv_cents_on`). Preferred: fund currency, so the percent matches the money shown.
+- No valuation on the prior date: `fmv_prior` is 0 and the percent is "N/A", as today.
+- Several instruments in one fund: the helper sums over instruments, so each is weighted by its prior value.
+- Units sold in the period: option A still reprices the prior holdings, so a sale does not read as a loss; option B uses the end quantity, so a sold holding drops out of both figures.
 
 **FAQ**
 
