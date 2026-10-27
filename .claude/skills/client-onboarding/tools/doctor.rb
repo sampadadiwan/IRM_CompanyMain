@@ -33,6 +33,23 @@ else
        ver_ok ? "set RUBYOPT=-Eutf-8 (Windows: setx RUBYOPT -Eutf-8, then open a new terminal)" : "install Ruby 3.3 (Windows: rubyinstaller.org, Ruby+Devkit x64)")
 end
 
+# Display: emoji + progress bars, or plain symbols — and why, so ops knows how to get the full display
+require_relative "ui"
+if (reason = Onboarding::UI.plain_reason)
+  warn_.("display: plain symbols (#{reason})#{' — open the workspace in Windows Terminal for emoji and live progress bars' if Gem.win_platform?}")
+else
+  ok.("display: #{Onboarding::UI.icon(:ok)} emoji#{Onboarding::UI.color? ? ', colours' : ''} and live progress bars#{' (in a terminal)' unless Onboarding::UI.tty?}")
+end
+
+# Sound: which player the step chimes use (none is fine — a terminal bell, or silence)
+if ENV["ONBOARDING_SOUND"] == "0"
+  ok.("sound: off (ONBOARDING_SOUND=0)")
+elsif (player = Onboarding::UI.sound_player)
+  ok.("sound: 🔔 #{player} — a chime when a step is done, a doorbell when it needs you, a low alert when it fails")
+else
+  warn_.("sound: no player found (pw-play / paplay / aplay, afplay, or PowerShell) — steps will only ring the terminal bell")
+end
+
 # ② Gems: the only two outside the standard library
 missing = %w[roo caxlsx].reject do |g|
   require g
@@ -86,7 +103,7 @@ if cfg && File.exist?(token_path) && !failed
     else
       bad.("token not accepted (HTTP #{status})", "create a new API token in CapHive › Profile › API tokens and paste it into state/token")
     end
-    status, ent = api.call("get", "/entities/#{api.entity_id}.json", guard: false)
+    status, ent = api.call("get", "/entities/#{api.entity_id}.json")
     if status == 200 && ent.is_a?(Hash)
       sandbox = ent.dig("entity_setting", "sandbox") == true
       funds = api.list("/funds.json").select { _1["entity_id"] == api.entity_id }

@@ -1,0 +1,36 @@
+# What to do about errors seen in real onboardings. `match` is a case-insensitive regex tested against a tool's output,
+# an upload's row errors and its status; every matching hint is shown once (Onboarding::UI.hints_for).
+# The texts come from the app's importers and the onboarding tools — copy a new one exactly from the code or a real run,
+# and add the date it was seen.
+
+# Tools (api.rb, onboard.rb)
+- match: 'HTTP 401|token .* is not accepted'
+  hint: "The API token has expired (sign-in tokens last 1 hour). Dev: `OPS_PASSWORD=… ruby api.rb sign_in`; otherwise paste a new token from Profile › API tokens into state/token. Then rerun — finished steps are not redone."
+- match: 'awaiting manual review'
+  hint: "Ops reviews the file (copies in review/, detail in review/REVIEW.md) and approves it in the session — Claude shows `ruby review.rb summary` and asks; Claude never approves without ops' answer."
+- match: 'changed since it was approved'
+  hint: "The file was rebuilt after ops approved it. Run `ruby review.rb dump` and ask ops to review it again."
+- match: 'sandbox is not on'
+  hint: "Sandbox has been turned off — someone may have started go-live. Stop and ask ops; never turn it back on without them."
+- match: 'no import file attached'
+  hint: "An import upload needs its file. Use `ruby api.rb upload <ImportType> <file>`."
+
+# Importers (app/packs/*/services/import_*.rb), seen 2026-10-18 to 2026-10-21
+- match: 'Form Tag not specified'
+  hint: "Commitments need a CapitalCommitment form type with a tag, and that tag in the Form Tag column — check the \"Form types\" step finished (`ruby onboard.rb status`)."
+- match: 'Fund not found'
+  hint: "The Fund column doesn't match the fund's name in the app — compare `fund.name` in mappings/drawdowns.yml with `ruby api.rb get /funds.json`."
+- match: 'Capital Call not found'
+  hint: "That call isn't in the app, or its name differs — the Calls step (05a_calls.xlsx) must be done, and its names must match this file's Capital Call column."
+- match: 'Capital Remittance not found for folio|No remittance for folio'
+  hint: "That folio has no remittance in the call — check 05b_remittances.xlsx has a row for it in that call, and that the Remittances step finished."
+- match: '(Capital )?Commitment not found for folio'
+  hint: "That folio isn't in the commitments upload — check 04_commitments.xlsx and the folio number's spelling."
+- match: 'but folio .* is held in'
+  hint: "The amount's currency differs from the folio's — check the folio currency in 04_commitments.xlsx (client question M6)."
+- match: 'Skipping: a payment for folio .* already exists'
+  hint: "That payment is already in the app — usually the same file uploaded twice. Check the upload history before uploading again; undoing an upload needs ops' approval."
+
+# Builders (fund/*, portfolio/*), seen 2026-10-27
+- match: 'does not exist \(IOError\)'
+  hint: "A file named in mappings/*.yml isn't in the workspace — copy the client's files into source/ (`ruby doctor.rb` lists what is missing), or fix the file name in the mapping."

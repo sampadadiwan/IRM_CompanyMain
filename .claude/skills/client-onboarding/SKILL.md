@@ -62,13 +62,23 @@ description: "Onboard a new CapHive client end to end: configure a fresh entity,
    portfolio reconciliation (`tools/portfolio/portfolio_recon.rb` → `out/portfolio_recon.json`).
 10. **Ops reviews every upload file by hand before it goes in** (ops, 2026-10-20). Build the upload files from the raw data,
    dump them with `tools/review.rb dump` into `<workspace>/review/` (copies + `REVIEW.md`: rows, columns, money totals, dates,
-   SHA-256 per file), tell ops where they are, and **stop**. Ops checks them against the source and approves each file in
-   **their own terminal** (PowerShell / Windows Terminal, or a Linux/macOS terminal — not Claude Code's `!` prompt):
-   `ruby <tools>/review.rb --workspace <workspace> approve <file> --by <name>`, then types `yes`. `approve` refuses without a
-   terminal on stdin — **never approve a file yourself, and never work around that check** (e.g. with `script` or a pty).
-   `api.rb upload` and every JSON post in `onboard.rb` refuse a file whose current hash is not approved, so a rebuild needs a
-   fresh review. Only on ops' explicit word
+   SHA-256 per file) and **stop**. Ops approves **in the session** (ops, 2026-10-27: "approval should be from here"):
+   show `ruby <tools>/review.rb summary` (one line per waiting file: rows, money totals, then a **summary code**) and ask
+   ops with a question prompt — **Approve all** / **Not yet** / other (e.g. "all except 07"). Only on ops' answer, run
+   `review.rb approve --all --summary <that code>` (or `approve <file>` for the ones ops named) `--by <ops name> --via
+   "Claude Code session — answered '<ops' exact answer>'"`. The code pins the exact files and hashes ops was shown:
+   anything rebuilt or added in between is refused, and needs a new summary and a new question. **Never approve a file on your own** — not without asking, not from an earlier answer
+   for different files, not because a step is blocked; a rebuilt file (new hash) needs a new question.
+   `Api#call` refuses every `/import_uploads` post (from any tool or workspace script) and every JSON post in `onboard.rb`
+   checks its source file, so a file whose current hash is not approved never goes in and a rebuild needs a fresh review. Only on ops' explicit word
    for one client: `review: {waived_by, waived_on, reason}` in `onboarding.yml` (files are still dumped; writes print ⚠).
+11. **Every onboarding ends with its report, written up with the recon** (ops, 2026-10-27: "Always write the report up with
+   the recon"). After the last recon, write `report.md` in [report-template.md](report-template.md)'s shape — Part 2 tells
+   the recon's story with worked examples, Appendix B is `out/fund_recon.md` (and `out/portfolio_recon.md`), the Log comes
+   from `out/onboard_run.log` (every `next --run` appends to it). Put each recon's marker line in the report, exactly as
+   `onboard.rb status` prints it under **Run report** (e.g. `<!-- recon: fund_recon.json <generated_at> · 11497/11497 -->`).
+   The "Run report" step stays open until the report is newer than every recon and carries their markers, so a recon re-run
+   reopens it. Investor access and go-live come after it — never hand over an onboarding without its report.
 
 ## Tools
 
@@ -81,9 +91,13 @@ directory you were given, never a path from another machine; quote paths (client
 write in a client workspace's `scripts/` loads the tools with `require "api"` (not `require_relative` with an absolute path)
 and runs as `ruby -I "<tools>" scripts/<name>.rb`.**
 
+**Sounds:** every `next --run` ends with a sound on ops' machine — a chime when the step is done, a doorbell when it
+needs ops (files to review, the report, investor access), a low alert when it fails or stalls (`tools/sounds/`). `ONBOARDING_SOUND=0` turns
+them off; `doctor.rb` shows the player it found.
+
 **Then `tools/onboard.rb status`** — it reads where the onboarding stands and runs the next step (`next --run`),
 one at a time, in the order below, stopping at the first failure and never running investor access. It covers the fund
-(steps 1–19) and, with `mappings/portfolio.yml`, the portfolio and KPIs (steps 20–31); `--portfolio` follows only the
+(steps 1–19) and, with `mappings/portfolio.yml`, the portfolio and KPIs (steps 20–31), then the run report (step 32); `--portfolio` follows only the
 portfolio track, so a fund waiting on client answers does not hold the portfolio back.
 Reusable, client-neutral tools live in [tools/](tools/README.md): `api.rb` (API client + CLI), `merge_mis.rb`, `kpi_dry_run.rb`,
 `check_dryrun_cells.rb`, `kpi_upload.rb`, `kpi_recon.rb`, `compare_xlsx.rb`, and for the fund side `fund/read_drawdowns.rb` +
@@ -108,7 +122,15 @@ Ops asked for this on Inflexor (2026-10-19): every step is announced, then confi
 ✔ Done:  HTTP 201, report 2863; reader made 31 period reports, 626 KPIs (read back via /kpis.json)
 ```
 
-Use ▶ for the plan, ✔ for confirmed results, ✖ for a failure (with what happens next).
+Use the same icons the tools print (`tools/ui.rb`): 📋 plan, ✅ / 🎉 confirmed, 🛑 failure (with what happens next),
+💡 what to do, 🐢 stalled. When the tools print plain symbols (▶ ✔ ✖ — see `doctor.rb`'s display line), use those.
+
+4. **Long steps (imports, verify, units): keep ops posted.** Run `onboard.rb next --run` in the background and pass on
+   its ⏳ lines in one short line at about each quarter, on any 🐢 / ⚠️ line, and at the end — e.g.
+   "⏳ Payments 50% · 2,050 / 4,109 rows · 0 failed · ~8 min left". Never start the same step again while it runs; if the
+   watch stops (closed laptop, a stall), running the step again watches the same upload — `api.rb upload` never sends a
+   file twice while its first upload is still importing. A job that died still shows "running" for a day; resending
+   (`api.rb upload … --resend <id>`) is ops' call after they check the rows it already imported — never Claude's.
 
 ## Import order
 

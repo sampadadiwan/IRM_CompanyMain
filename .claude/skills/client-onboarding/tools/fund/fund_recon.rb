@@ -203,10 +203,14 @@ recon_call_of = lambda do |d|
   else calls_cfg["single_call"]
   end
 end
+# The client's own drawdown dates per call, taken before same-call drawdowns merge: what "one drawdown event" is judged
+# on. (The app cannot show it: the builder gives every remittance its call's date, so their spread is always 0.)
+src_notices = Hash.new { |h, k| h[k] = [] }
 source.each_value do |f|
   if f[:undated] && f[:draws].empty? && (u = assume["undated_drawdown"])
     d = Date.parse(u["date"].to_s)
-    f[:draws] << { row: f[:row], called: f[:committed], notice: d, due: nil, payments: [{ date: d, amount: f[:committed] }] }
+    # assumed: the date is the yml's placeholder, not the client's, so it says nothing about the call's spread
+    f[:draws] << { row: f[:row], called: f[:committed], notice: d, due: nil, payments: [{ date: d, amount: f[:committed] }], assumed: true }
   end
   f[:draws].sort_by! { _1[:notice] }
   f[:draws].each_with_index do |d, _i|
@@ -214,6 +218,7 @@ source.each_value do |f|
     bad = fb && d[:notice].is_a?(Date) && ((Array(fb["when"]).include?("blank") && !d[:due].is_a?(Date)) ||
                                            (Array(fb["when"]).include?("before_notice") && d[:due].is_a?(Date) && d[:due] < d[:notice]))
     d[:due] = d[:notice] + fb["days"] if bad
+    src_notices[d[:call]] << d[:notice] if d[:notice].is_a?(Date) && !d[:assumed]
   end
   suffix = value_of.(config.dig("distributions", "repeat_title_suffix"))
   seen = Hash.new(0)
@@ -324,10 +329,11 @@ window = settings.fetch("call_window_days", 31)
 seq_of = ->(name) { name[/\d+/].to_i }
 calls.each do |cl|
   check.("④", "Due date on or after call date", cl["due_date"].to_s >= cl["call_date"].to_s, cl["name"], "call #{cl['call_date']}, due #{cl['due_date']}")
-  notices = remittances.select { _1["capital_call_id"] == cl["id"] }.map { _1.dig("custom_fields", "notice_date") || _1["remittance_date"] }.compact.map { Date.parse(_1) }
+  # Judged on the client's drawdown dates in the source (src_notices), not the app's remittance dates
+  notices = src_notices[cl["name"]]
   span = notices.empty? ? 0 : (notices.max - notices.min).to_i
-  check.("④", "One drawdown event (notice dates within #{window} days)", span <= window, cl["name"],
-         "notice dates span #{span} days (#{notices.min} → #{notices.max}) — not one fund event; the source must say which drawdowns form a call")
+  check.("④", "One drawdown event (the client's drawdown dates within #{window} days)", span <= window, cl["name"],
+         "the client's drawdown dates span #{span} days (#{notices.min} → #{notices.max}, #{notices.uniq.size} dates, #{notices.size} drawdowns) — not one fund event; the source must say which drawdowns form a call")
 end
 calls.sort_by { seq_of.(_1["name"]) }.each_cons(2) do |a, b|
   check.("④", "Calls in date order (call and due dates rise with the sequence)", b["call_date"].to_s >= a["call_date"].to_s && b["due_date"].to_s >= a["due_date"].to_s,

@@ -6,7 +6,11 @@
 
 # Ignore bundler config.
 /.bundle
-.claude/
+# Local Claude Code state stays out of git — except the client-onboarding skill, whose tools anyone with the repo runs
+.claude/*
+!.claude/skills/
+.claude/skills/*
+!.claude/skills/client-onboarding/
 .gitnexus/
 app/.tmp
 app/.gitnexus

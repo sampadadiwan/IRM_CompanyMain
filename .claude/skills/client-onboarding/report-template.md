@@ -26,6 +26,18 @@ Create the file at the start of the run, update it after **every** step, and nev
 8. **Say what the check could not see** (redacted fields, fields the API does not return, assumed values).
 9. Mermaid diagrams in every part (see the memory "Docs include mermaid diagrams"). One type scale, no decoration.
 
+## The recon marker (required)
+
+The report is the last step of every onboarding (SKILL.md hard rule 11). `onboard.rb`'s **Run report** step is done only
+when `report.md` is newer than every recon and contains each one's marker line, exactly as `onboard.rb status` prints it —
+put it at the top of Part 2:
+
+```markdown
+<!-- recon: fund_recon.json 2026-10-27T09:21:16+05:30 · 11497/11497 -->
+```
+
+Re-running a recon changes its marker, so the report has to be brought up to date with the new result.
+
 ## The reconciliation behind Part 2 (contract for the script)
 
 Run `tools/fund/fund_recon.rb` (fund side, driven by `mappings/drawdowns.yml`; its `out/fund_recon.md` is Appendix B and its

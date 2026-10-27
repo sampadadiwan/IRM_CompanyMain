@@ -33,5 +33,5 @@ abort "POST /kpi_reports.json → HTTP #{status} #{body.to_s.gsub(/\s+/, ' ')[0,
 puts "report #{body['id']} (#{body['period']} #{body['as_of']}) created; waiting for the reader job…"
 
 # ② Wait for the job: the company's KPI count settles
-after = api.wait_until_stable { n = kpi_count.(); n > before ? n : nil }
+after = api.wait_until_stable(label: "Reading KPIs", unit: "KPIs") { n = kpi_count.(); n > before ? n : nil }
 puts "KPIs for company #{opts[:company]}: #{before} → #{after.inspect} (#{after.to_i - before} staged, unapproved)"

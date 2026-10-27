@@ -292,3 +292,84 @@ Source: a QR workbook ("9.Comvsrecd": 275 folios × 15 drawdown columns, total r
   tools launch each other with `RbConfig.ruby`, and `doctor.rb` checks a machine's setup before the first step.
 - **`review.rb approve` needs a terminal** on stdin plus a typed `yes`, so `ruby` commands can run without a permission
   prompt (`allowed-tools: Bash(ruby:*)` in SKILL.md) and the agent still cannot approve its own files.
+
+## 2026-10-27 — Review and sandbox checks moved into `Api#call`
+
+- **The review check lived only in the `api.rb upload` CLI**, so a workspace script calling
+  `api.call("post", "/import_uploads.json", multipart: …)` sent an unapproved file, and any caller could pass `guard: false`
+  to skip the sandbox check. Now `Api#call` runs the review check on every `/import_uploads` post (with or without `.json`;
+  no file attached → refused), and `guard:` is gone: the one write allowed before sandbox is on is `Api#sandbox_on!`, and
+  the raw request (`send_request`) is private. Logos (`/documents.json`) and KPI workbooks (`/kpi_reports.json`) are not
+  review-checked — they are not in the review dump and have their own checks.
+- Still open: a plain JSON write (`api.call("post", "/capital_remittances.json", body: …)`) cannot be traced to a reviewed
+  file, so only `onboard.rb`'s own JSON posts check their source file.
+
+## 2026-10-27 — Progress display, hints, and no second upload while one is importing
+
+- **`onboard.rb` held back every tool's output until the tool exited** (`Open3.capture3`), so a 17-minute payments import
+  showed nothing — not even "upload created" — until the end. Tools now stream (`popen2e`, `$stdout.sync` in `ui.rb`) and
+  `api.rb upload` prints the import's progress from `processed_row_count` / `failed_row_count` / `total_rows_count`. The
+  app saves those counts every 10 rows (`ImportUtil#process_rows`), and `total_rows_count` from the start
+  (`ImportServiceBase`), so the bar is live while the import runs.
+- **A rerun mid-import would have uploaded the file again.** A step's "done" (e.g. payments in app ≥ rows in file) is false
+  until the import ends, so running the step again during it sent a second upload. `api.rb upload` now looks for an
+  upload with the same name still `running` and watches it instead. Proven on the local app (2026-10-27, Demo Fund 2,
+  entity 1695): a second `upload` started 8 s after the first printed "👀 Watching upload 2733" and no second upload exists.
+- The watch now ends only when nothing has moved for 10 minutes (exit 2, with a Sidekiq / dead-job hint), not after a fixed
+  20 minutes, so a long import that keeps moving is followed to the end. `api.rb upload` reports through its exit code;
+  the old `outcome="…" failed=0` line is gone.
+- Known errors get a 💡 hint (`tools/hints.yml`). Re-uploading 1,200 existing payments failed every row with "Skipping: a
+  payment for folio … already exists" — the importer refuses existing payments, so nothing changed.
+- **Review fixes (same day).** A total of 0 crashed the progress line (verify with nothing left); an expired token while
+  watching looked like "queued" and blamed Sidekiq (now 🔑 and exit 1); a job that died showed "running" for a day and
+  blocked resending (now `--resend <id>`, ops' call); post-processing after the last row looked stalled (now "finishing up",
+  30 min); `"POST"`, `/import_uploads/` and `//import_uploads.json` slipped past the review check (now one normalised
+  route); hints printed twice. Upload names now end `· <fund or client>`, so two funds in one entity don't watch each
+  other's uploads — which exposed an older bug: the multipart body joined UTF-8 text with the binary file, so any non-ASCII
+  file name crashed the upload (now built as bytes). The results-file link is no longer printed (a pre-signed S3 URL with
+  an access key id). Tested on the local app: uploads 2734 (sent), 2734 again (watched, not resent), 2735 (`--resend 2734`),
+  2736 (token swapped mid-watch → 🔑) — all 1,200 rows refused as existing payments, no data changed.
+
+## 2026-10-27 — Review approval moved into the session
+
+- **The terminal-only approval was too much for ops** (Orios live run): a second terminal, a long path, 15 `yes` prompts —
+  and the first attempt left no `approved.yml` at all (run where stdin is not a terminal). Ops: "approval should be from
+  here". Now Claude shows `review.rb summary` and asks a question in the session; on ops' answer it runs
+  `review.rb approve --all --by <ops> --via "<ops' answer>"`. The guarantee moved from code (the TTY check) to the rule
+  (Claude records only ops' answer, rule 6-style); `via:` in `review/approved.yml` keeps each approval traceable.
+
+## 2026-10-27 — Orios live run (dev, entity 1971 / fund 382), ops watching in the session
+
+- From the bare entity to a passing fund recon in **28 minutes of run time** (08:52 sandbox → 09:21 recon), every step by
+  `onboard.rb next --run`, 0 failed rows anywhere: **11,497 / 11,497 recon checks ✅**. Step times: fund 1 s, unit
+  settings 16 s, form types 1 s, investors 36 s, commitments 36 s, calls 16 s, remittances 1 min 7 s, payments 1 min 37 s,
+  approve + verify 1 min 19 s, distributions 17 s, distribution payments 2 min 40 s, TDS entries 1 min 8 s, TDS fees +
+  recompute 2 min 22 s, approve distributions 6 s, units 8 min 36 s (17 allocations + 7 redemptions, ~24 s each to settle),
+  recon 7 s. Uploads 2737–2745.
+- Review approval in the session (one question, "Approve all 15") replaced the terminal approval mid-run — the first
+  terminal attempt had recorded nothing.
+- Watching the run through a Monitor: per-call `approve …` / `verify …` lines tripped the event-rate limit; filter to step
+  banners, ⏳ milestones and ✅ / 🎉 / 🛑 / 🐢 / ⚠️ lines only. Stopping the Monitor would stop the run (the run is its command).
+- **Report and sounds (same day, ops' ask).** The run report is now a step (32, "Run report") that only Claude can finish:
+  it stays open until `report.md` is newer than every recon and carries each recon's marker line, so a recon re-run
+  reopens it; every `next --run` appends to `out/onboard_run.log` (escape codes stripped) as the report's Log source.
+  Every step ends with a sound — chosen by ear with ops: the short freedesktop `message` / `dialog-error` were inaudible,
+  so "needs you" and "failed" play ~1 s sounds twice (`message-new-instant`, `suspend-error`); "done" is `complete` once.
+- **Sounds, final (same day).** The system sounds differed per OS and two were inaudible, so the tools ship their own
+  (`tools/sounds/*.wav`, generated by `make_sounds.rb`): a doorbell for "needs you" and a low falling pair for "failed".
+  Ops kept the freedesktop `complete` for "done" — played from the system theme where installed, never copied into the
+  repo (the theme mixes CC-BY, CC-BY-SA and GPL), with a generated chime as the fallback elsewhere.
+- **The "one drawdown event" recon check could not fail** (found writing the Orios live report). It measured the spread
+  of the app's remittance dates per call, but the builder gives every remittance its call's date, so the spread was
+  always 0 and the 09:21 recon showed 17 / 17 ✅ on a demo grouping. `fund_recon.rb` now measures the client's own
+  drawdown dates per call from the source (before same-call drawdowns merge; the "Various" folios' assumed date left
+  out). Re-run: 11,489 / 11,497 — 8 of 17 Orios demo calls span 35–356 days. *Rule:* a check that compares the app with
+  values the builder wrote is circular (same lesson as 2026-10-19 ④) — check against the source, then prove the check
+  can fail.
+- **Second review (before the PR).** Fixed: a network error while watching an upload crashed it instead of counting
+  toward the 10-minute stall; an `abort` inside a step (review, sandbox) skipped the "Not done" line, hints, sound and
+  log entry; `approve --all` re-listed the files at approve time, so a file rebuilt after ops' answer got approved —
+  now `summary` prints a code for the exact files and hashes, and `approve --all --summary <code>` refuses any change;
+  a job Sidekiq had not picked up yet looked "settled" after 10 s (verify and recompute now wait 2 minutes for the
+  first change); uploads sent under the pre-2026-10-27 name were not found by the never-twice check; the run log
+  wrote every one-second redraw as its own line; an empty sheet showed "-1 rows"; a `'` in a Windows path broke the sound.

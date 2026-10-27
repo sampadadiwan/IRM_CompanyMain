@@ -68,7 +68,7 @@ plan.each do |action, rec, _|
   when :allocate
     status, = api.call("patch", "/capital_calls/#{rec['id']}/allocate_units.json")
     # Poll this call's remittances only (capital_call_id= is applied by the server; checked 2026-10-20)
-    after = api.wait_until_stable { units_of.(in_fund.(api.list("/capital_remittances.json?fund_id=#{fund_id}&all=true&capital_call_id=#{rec['id']}"))).then { _1.nonzero? && _1 } }
+    after = api.wait_until_stable(label: "Allocating", unit: "units issued") { units_of.(in_fund.(api.list("/capital_remittances.json?fund_id=#{fund_id}&all=true&capital_call_id=#{rec['id']}"))).then { _1.nonzero? && _1 } }
     puts "✔ allocate #{rec['name']}: HTTP #{status}, #{after.inspect} units issued"
   when :price
     status, = api.call("patch", "/capital_distributions/#{rec['id']}.json", body: { capital_distribution: { unit_prices: prices.transform_values(&:to_s) } })
@@ -77,7 +77,7 @@ plan.each do |action, rec, _|
     status, = api.call("patch", "/capital_distributions/#{rec['id']}/redeem_units.json")
     # Poll this distribution's payments only: the plain capital_distribution_id= param — q[capital_distribution_id_eq] is
     # silently ignored by this endpoint (returns every payment; checked 2026-10-20)
-    after = api.wait_until_stable { units_of.(in_fund.(api.list("/capital_distribution_payments.json?fund_id=#{fund_id}&all=true&capital_distribution_id=#{rec['id']}"))).then { _1.nonzero? && _1 } }
+    after = api.wait_until_stable(label: "Redeeming", unit: "units") { units_of.(in_fund.(api.list("/capital_distribution_payments.json?fund_id=#{fund_id}&all=true&capital_distribution_id=#{rec['id']}"))).then { _1.nonzero? && _1 } }
     puts "✔ redeem #{rec['title']}: HTTP #{status}, #{after.inspect} units"
   when :blocked
     puts "✖ skipped #{rec['name'] || rec['title']} — not approved"

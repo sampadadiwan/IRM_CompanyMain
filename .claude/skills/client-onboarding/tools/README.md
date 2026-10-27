@@ -21,7 +21,7 @@ ruby $T/doctor.rb                 # setup check first: Ruby, gems, workspace, to
 ruby $T/onboard.rb status         # where the onboarding stands; ▶ marks the next step (read-only)
 ruby $T/onboard.rb next           # the next step's plan — writes nothing
 ruby $T/onboard.rb next --run     # run that ONE step, then confirm it from read-backs (✔ / ✖)
-ruby $T/onboard.rb status --portfolio   # only the portfolio track: workspace, sandbox, fund, then steps 20–31
+ruby $T/onboard.rb status --portfolio   # only the portfolio track: workspace, sandbox, fund, then steps 20–32
 ```
 
 | # | Step | Done when (read back) |
@@ -49,11 +49,14 @@ ruby $T/onboard.rb status --portfolio   # only the portfolio track: workspace, s
 | 29 | KPI recon (stored) | each workbook's ①②③ recon passed after its KPIs were stored |
 | 30 | Approve KPIs | every KPI of the loaded companies is approved |
 | 31 | KPI recon (computed) | each workbook's ④ recon passed after the stored one |
-| 32 | Investor access | **never run by the tool** — shows the gate; needs explicit approval |
+| 32 | Run report | `report.md` is newer than every recon and carries each recon's marker line (SKILL.md rule 11) — **written by Claude**, not the tool; `next --run` stops here with the doorbell |
+| 33 | Investor access | **never run by the tool** — shows the gate; needs explicit approval |
 
 **Manual review (hard rule 10):** steps 3 and 20 end with `review.rb dump`; every later upload or JSON post stops with
-"awaiting manual review" until ops runs `ruby $T/review.rb approve <file> --by <name>` for that exact file **in their own
-terminal** and types `yes` (it refuses without a terminal on stdin, so the agent cannot approve its own files).
+"awaiting manual review" until ops approves that exact file **in the session**: Claude shows `ruby $T/review.rb summary`,
+asks ops, and only on ops' answer records it with `review.rb approve --all --summary <code> --by <name> --via "<ops' answer>"` (the code from that
+summary — a file rebuilt or added since is refused) (`via` lands
+in `review/approved.yml`, so every approval traces back to what ops said).
 
 "Done" is always read from the app and the workspace, so re-running after a crash or a fix picks up where it is and never
 uploads twice. It stops at the first failure (an upload that did not fully succeed, a count that does not match). The
@@ -80,8 +83,7 @@ flowchart LR
 
 Open Claude Code on the repo folder (the skill loads from `.claude/skills/`) and keep client workspaces **outside** the repo,
 e.g. `C:\work\onboarding\<client>` or `~/work/onboarding/<client>`. `ruby $T/doctor.rb --workspace <workspace>` must show no ✖
-before the first step. On Windows, approve review files (hard rule 10) in PowerShell or Windows Terminal — Git Bash's mintty
-is not a console, so `approve` sees no terminal there.
+before the first step.
 
 ## Set up a client workspace
 
@@ -114,8 +116,10 @@ Every write re-checks that the entity is in sandbox and stops if it is not.
 | Tool | What it does | Writes to the app? |
 |---|---|---|
 | `doctor.rb` | setup check: Ruby + UTF-8, gems, workspace files, token owner, entity (sandbox, funds already there); a fix per ✖ | no |
-| `review.rb` | manual review gate: `dump` (copy every built upload file to `review/` + `REVIEW.md`), `status`, `approve <file> --by <name>` (**ops only**); `api.rb` and `onboard.rb` refuse files whose hash ops has not approved | no |
-| `api.rb` | API client (library + CLI): `sign_in`, `get`, `post`/`patch`/`delete`, `upload <ImportType> <file>` (polls to done), `attach <OwnerType> <id> <name> <file>`, `sandbox_on` | yes (each command) |
+| `review.rb` | manual review gate: `dump` (copy every built upload file to `review/` + `REVIEW.md`), `status`, `summary` (one line per waiting file, for the review question), `approve <file>|--all --by <name> --via "<ops' answer>"` (**only on ops' answer in the session**); `Api#call` refuses any `/import_uploads` post, and `onboard.rb` any JSON post, whose file hash ops has not approved | no |
+| `api.rb` | API client (library + CLI): `sign_in`, `get`, `post`/`patch`/`delete`, `upload <ImportType> <file>` (watches the import to the end with a progress line; exit 0 only when every row went in, 2 when nothing moved for 10 min; never sends a file twice while its upload is still importing — it watches that one; `--resend <id>` overrides that, only on ops' word that upload `<id>`'s job died), `attach <OwnerType> <id> <name> <file>`, `sandbox_on` | yes (each command) |
+| `ui.rb` | terminal output shared by the tools: icons, colours, progress lines (redrawn in place in ops' terminal, one line per 10% or minute when captured), known-error hints from `hints.yml`. Plain symbols, no colours and no redrawn line with `ONBOARDING_PLAIN=1`, `TERM=dumb`, a non-UTF-8 console or Windows outside Windows Terminal; `ONBOARDING_PLAIN=0` forces emoji (e.g. VS Code's terminal on Windows); `NO_COLOR` drops colours. `UI.chime(:done / :attention / :fail)` plays the step sounds from `sounds/*.wav` (built by `sounds/make_sounds.rb`; done uses the freedesktop "complete" where installed) with pw-play / paplay / aplay, afplay or PowerShell; `ONBOARDING_SOUND=0` off | no |
+| `hints.yml` | error text → what to do, for the 💡 lines under a failed upload or step; add a hint with the exact text from the code or a real run | — |
 | `merge_mis.rb` | merge a month's MIS files into one workbook, one sheet per statement, and prove every cell equals its source | no |
 | `kpi_dry_run.rb` | `validate_upload` on one workbook → `out/kpi_dryrun/<file>.json`; flags cells read from the wrong sheet | no |
 | `check_dryrun_cells.rb` | every ok cell vs the source cell at its ref; lists each header → period; writes `<verdict>.check.json` | no (no API) |

@@ -17,8 +17,10 @@ require_relative "api"
 require_relative "gate"
 require_relative "review"
 require_relative "portfolio/common"
+require_relative "ui"
 
 TOOLS = __dir__
+ui = Onboarding::UI
 api = Onboarding::Api.new(Onboarding::Api.workspace_from!(ARGV))
 WS = api.workspace
 cmd = ARGV.shift || "status"
@@ -72,18 +74,37 @@ uploaded_ok = lambda do |type|
   end
 end
 
-# Runs a tool, echoes its output, returns success
+# Everything the step's tools printed, so a failed step can show the hints for the errors in it. Raw bytes while
+# collecting (a 4 KB chunk can end inside a ₹ or an emoji); read as UTF-8 once the step is over (step_text)
+step_log = "".b
+step_text = -> { step_log.dup.force_encoding(Encoding::UTF_8).scrub }
+# Runs a tool and shows its output as it comes (indented under the step), returns success. The tool's progress lines
+# redraw in place when ops is watching a terminal (ONBOARDING_TTY tells it, as its own output is a pipe here)
 tool = lambda do |*args|
-  stdout, stderr, status = Open3.capture3(RbConfig.ruby, *args.map(&:to_s), "--workspace", WS)
-  (stdout + stderr).each_line { |l| puts "    #{l}" unless l.include?("CHECK-DATA MODE") }
+  at_line_start = true
+  status = Open3.popen2e({ "ONBOARDING_TTY" => ui.tty? ? "1" : "0", "ONBOARDING_CHILD" => "1" }, RbConfig.ruby, *args.map(&:to_s), "--workspace", WS) do |stdin, out, thread|
+    stdin.close
+    loop do
+      chunk = out.readpartial(4096)
+      step_log << chunk
+      chunk.split(/(?<=\n)/).each do |piece|
+        next if piece.include?("CHECK-DATA MODE") # the tools' check-data banner, already shown once at the top
+        # Indent each new line, and each redraw ("\r\e[2K" clears the line, so the indent goes after it)
+        print "    " if at_line_start && !piece.start_with?("\r")
+        print piece.gsub("\r\e[2K", "\r\e[2K    ")
+        at_line_start = piece.end_with?("\n")
+      end
+    rescue EOFError
+      break
+    end
+    thread.value
+  end
   status.success?
 end
-# Upload through api.rb and insist on a full success (status "Completed" alone is not success); a bare file name is in out/fund
+# Upload through api.rb, which watches the import to the end and exits 0 only when every row went in (status
+# "Completed" alone is not success); a bare file name is in out/fund
 upload = lambda do |type, file, step = nil|
-  path = file.include?("/") ? file : built.(file)
-  stdout, stderr, = Open3.capture3(RbConfig.ruby, File.join(TOOLS, "api.rb"), "--workspace", WS, "upload", type, path, *step)
-  (stdout + stderr).each_line { |l| puts "    #{l}" unless l.include?("CHECK-DATA MODE") }
-  stdout.match?(/outcome="succeeded".*failed=0/)
+  tool.(File.join(TOOLS, "api.rb"), "upload", type, file.include?("/") ? file : built.(file), *step)
 end
 
 # Paid remittances not yet verified, counted on the server. Filters proven on Demo Fund 2 (2026-10-20) against the full list:
@@ -95,6 +116,26 @@ unverified_paid = -> { in_fund.(api.list("/capital_remittances.json?fund_id=#{fi
 dists_on = !config["distributions"].nil?
 units_on = !config["units"].nil?
 recon_path = File.join(WS, "out", "fund_recon.json")
+# The run report (report.md) must carry every recon in the workspace: [recon file, the marker line the report must contain].
+# The marker names the recon run (its generated_at), so re-running a recon after a fix reopens the report step
+report_path = File.join(WS, "report.md")
+report_markers = lambda do
+  %w[fund_recon.json portfolio_recon.json].filter_map do |name|
+    path = File.join(WS, "out", name)
+    next unless File.exist?(path)
+
+    r = JSON.parse(File.read(path))
+    [path, "<!-- recon: #{name} #{r['generated_at']} · #{r['ok']}/#{r['checks']} -->"]
+  end
+end
+# Recons the report does not cover yet (all of them while there is no report; ["no recon yet"] before any recon ran)
+report_open = lambda do
+  markers = report_markers.()
+  next ["no recon yet"] if markers.empty?
+
+  text = File.exist?(report_path) ? File.read(report_path) : ""
+  markers.reject { |path, marker| text.include?(marker) && File.mtime(report_path) >= File.mtime(path) }.map(&:first)
+end
 newest_fund_upload = lambda do
   # Fund imports only: not the portfolio's (its companies are an Investor import too — told apart by the file name)
   types = Onboarding::Gate::IMPORT_STEP.reject { |_, step| %i[portfolio kpis].include?(step) }.keys
@@ -254,6 +295,7 @@ steps = [
    -> { app.(:calls).all? { _1["approved"] } && unverified_paid.().zero? },
    -> { "approve every unapproved call, then bulk Verify each call's paid remittances; wait until verified counts settle" },
    lambda {
+     to_verify = unverified_paid.()
      app.(:calls).each do |c|
        unless c["approved"]
          s, = api.call("post", "/capital_calls/#{c['id']}/approve.json")
@@ -263,7 +305,13 @@ steps = [
        puts "    verify #{c['name']}: HTTP #{s} #{b.is_a?(Hash) ? b.slice('count') : ''}"
      end
      # Poll only the rows still to do (server-side filter, ~0.1 s) instead of the whole list (~2 s for 4,118)
-     api.wait_until_stable { unverified_paid.() }
+     left = api.wait_until_stable(label: "Verifying", remaining_of: to_verify, unit: "remittances", grace: 120) { unverified_paid.() }
+     if left.to_i.positive?
+       # Seen 2026-10-20: the verify jobs stopped partway (2,009 of 4,109) with no error the API shows
+       ui.say(:stall, "Stopped", "verify settled with #{ui.num(left)} paid remittances still unverified", color: :yellow)
+       ui.hint("The verify job most likely stopped partway (seen on 2026-10-20). Run this step again — Verify only picks unverified rows, so it is safe.")
+       ui.hint("If the same remittances stay unverified, the job refused them: the reason is in the sandbox inbox's error email.")
+     end
      unverified_paid.().zero?
    }],
   ["Distributions",
@@ -314,7 +362,7 @@ steps = [
        s, = api.call("patch", "/capital_distributions/#{d['id']}/recompute_fees.json")
        puts "    recompute #{f['title']}: HTTP #{s}"
        true
-     end && (api.wait_until_stable { taxed.(pays.()) }; true)
+     end && (api.wait_until_stable(label: "Recomputing", unit: "payments taxed", grace: 120) { taxed.(pays.()) }; true)
    }],
   ["Approve distributions",
    -> { !dists_on || app.(:distributions).all? { _1["approved"] } },
@@ -495,7 +543,7 @@ steps = [
        next false unless st.between?(200, 299)
 
        # Computed KPIs are created by a job after approval: wait until the company's KPI count settles
-       n = api.wait_until_stable { api.list("/kpis.json?q[portfolio_company_id_eq]=#{cid}&all=true").size }
+       n = api.wait_until_stable(label: "Computing", unit: "KPIs") { api.list("/kpis.json?q[portfolio_company_id_eq]=#{cid}&all=true").size }
        puts "    #{co}: #{n} KPIs"
        true
      end
@@ -511,6 +559,10 @@ steps = [
    },
    -> { "for each workbook: kpi_recon.rb --phase computed — all approved, every computed KPI = Σ its approved components" },
    -> { live_books.().all? { |b| puts "    ── #{b['name']}"; kpi_tool.("kpi_recon.rb", b, "--verdict", verdict_path.(b), "--phase", "computed") } }],
+  ["Run report",
+   -> { report_open.().empty? },
+   -> { "Claude writes report.md from report-template.md, out/fund_recon.md#{' + out/portfolio_recon.md' if port_on} and out/onboard_run.log, with each recon's marker line: #{report_markers.().map(&:last).join(' ') }" },
+   -> { false }],
   ["Investor access",
    -> { false },
    -> { "never run by this tool — explicit approval + every M item answered. Gate now: #{Onboarding::Gate.evaluate(WS, :investor_access).then { |ok, need, _| ok ? 'open' : "blocked (#{need.join(' ')})" }}" },
@@ -520,10 +572,14 @@ steps = [
 # ── status / next ───────────────────────────────────────────────────────────────────────────────────────────────────
 # The token first: an expired one would otherwise surface as a 401 deep inside a tool (tokens from sign_in last an hour)
 token_status, = api.call("get", "/entities/#{api.entity_id}.json")
-abort "✖ the API token in state/token is not accepted (HTTP #{token_status}) — sign in again: dev `OPS_PASSWORD=… ruby api.rb sign_in`, " \
-      "otherwise paste a new token from Profile › API tokens into state/token; then rerun" unless token_status == 200
+unless token_status == 200
+  ui.say(:token, "Token", "the API token in state/token is not accepted (HTTP #{token_status})", color: :red)
+  ui.hints_for("HTTP #{token_status}").each { ui.hint(_1) }
+  ui.chime(:fail) if run
+  exit 1
+end
 mode = Onboarding::Gate.config(WS)["mode"] || "production"
-puts "#{fund_name} — entity #{api.entity_id}#{fid.() ? ", fund #{fid.()}" : ''} · mode #{mode}"
+puts "#{ui.icon(:fund)} #{fund_name} — entity #{api.entity_id}#{fid.() ? ", fund #{fid.()}" : ''} · mode #{mode}"
 first_open = nil
 # The portfolio track: workspace, sandbox, fund, then the portfolio + KPI steps (and investor access, which only shows the gate)
 track = portfolio_track ? [0, 1, 3] + steps.each_index.select { |i| i >= steps.index { _1.first == "Build portfolio files" } } : steps.each_index.to_a
@@ -537,25 +593,93 @@ steps.each_with_index do |(name, done, plan, _), i|
     false
   end
   first_open ||= i unless ok
-  puts format("  %s %2d %-24s%s", ok ? "✔" : (i == first_open ? "▶" : "·"), i + 1, name, i == first_open ? "  ← next: #{plan.()}" : "") if cmd == "status" || i == first_open
+  mark = ui.icon(ok ? :ok : (i == first_open ? :next : :todo))
+  puts format("  %s %2d %-24s%s", mark, i + 1, name, i == first_open ? "  ← next: #{plan.()}" : "") if cmd == "status" || i == first_open
   break if cmd == "next" && i == first_open
 end
-exit 0 if cmd == "status" || first_open.nil?
-
-name, done, plan, action = steps[first_open]
-unless run
-  puts "(plan only — `ruby onboard.rb next --run` to run step #{first_open + 1})"
+if first_open.nil?
+  ui.say(:done, "All steps done", color: :green) if cmd == "status"
   exit 0
 end
-abort "✖ #{name}: not something this tool runs — #{plan.()}" if [0, steps.size - 1].include?(first_open)
+exit 0 if cmd == "status"
 
-puts "━━━━━━━━━━ #{Time.now.strftime('%H:%M:%S')} · STEP #{first_open + 1} / #{steps.size} · #{name} ━━━━━━━━━━", "▶ Plan: #{plan.()}"
+name, done, plan, action = steps[first_open]
+next_cmd = "ruby onboard.rb next#{' --portfolio' if portfolio_track}"
+unless run
+  ui.say(:next, "Run", "`#{next_cmd} --run` to run step #{first_open + 1} (this was the plan only — nothing was written)")
+  exit 0
+end
+# Steps a person (or Claude, for the report) does, not this tool: say what is needed and ping ops
+if ["Workspace ready", "Run report", "Investor access"].include?(name)
+  ui.say(name == "Run report" ? :plan : :warn, "Not run here", "#{name}: #{plan.()}", color: :yellow)
+  ui.chime(:attention)
+  exit 1
+end
+
+# Every run's output also goes to out/onboard_run.log (escape codes and redraws stripped), the source for the report's Log
+class RunLog
+  def initialize(out, path) = (@out, @file, @line = out, File.open(path, "a"), +"")
+  # The screen gets everything; the file gets each finished line once: a "\r" redraw replaces the line being built, so a
+  # progress line that redrew every second for 20 minutes lands as its final state, not 1,200 copies
+  def write(*parts)
+    text = parts.join
+    @out.write(text)
+    log(text)
+  end
+
+  # Text for the file only (e.g. a stop message that already went to the screen on stderr)
+  def log(text)
+    text.gsub(/\e\[[0-9;]*[A-Za-z]/, "").scan(/[^\r\n]+|\r|\n/) do |piece|
+      case piece
+      when "\r" then @line = +""
+      when "\n" then @file.write("#{@line}\n") && (@line = +"")
+      else @line << piece
+      end
+    end
+    @file.flush
+  end
+  def tty? = @out.tty?
+  def sync = true
+  def sync=(_value); end
+  def flush = @out.flush
+  def respond_to_missing?(*) = true
+  def method_missing(name, ...) = @out.send(name, ...)
+end
+FileUtils.mkdir_p(File.join(WS, "out"))
+$stdout = RunLog.new($stdout, File.join(WS, "out", "onboard_run.log"))
+
+# The step banner: clock time (a gap between steps shows where it came from), where the step sits in the order, plan.
+# Position, not a count of finished steps — `next` stops reading at the first open step, so later ones are not checked
+position = track.index(first_open)
+puts "", ui.paint("━━━━━━━━━━━━━━ #{Time.now.strftime('%H:%M:%S')} · STEP #{first_open + 1} / #{steps.size} · #{name} ━━━━━━━━━━━━━━", nil)
+ui.say(:track, "Where", "#{ui.bar(position, track.size)}  step #{position + 1} of #{track.size} in the order#{' (portfolio track)' if portfolio_track}")
+ui.say(:plan, "Plan", plan.())
 started = Time.now
-ok = action.()
+# A check inside the step can stop it with abort (review, sandbox, gate) or an error (an API read that failed). Catch it
+# here so the step still ends with its "Not done" line, hints, sound and log entry
+ok = begin
+  action.()
+rescue SystemExit, StandardError => e
+  msg = e.is_a?(SystemExit) ? e.message : "✖ #{e.class}: #{e.message}"
+  # abort already printed its message on stderr; an error has not been printed yet
+  e.is_a?(SystemExit) ? $stdout.log("    #{msg}\n") : puts("    #{msg}")
+  step_log << msg.b
+  false
+end
 memo.clear
 confirmed = ok && done.()
+took = ui.duration(Time.now - started)
 if confirmed
-  puts "✔ Done #{Time.now.strftime('%H:%M:%S')}: #{name} (#{(Time.now - started).round}s) — confirmed from read-back. Next: `ruby onboard.rb next`"
+  ui.say(:done, "Done", "#{Time.now.strftime('%H:%M:%S')} · #{name} · #{took} · confirmed", color: :green)
+  ui.say(:next, "Next", "`#{next_cmd}` shows the next step")
+  ui.chime(:done)
 else
-  abort "✖ #{name} did not complete (#{(Time.now - started).round}s) — see the output above; fix, then run `ruby onboard.rb next` again"
+  ui.say(:fail, "Not done", "#{name} · #{took} — the step's output is above", color: :red)
+  # Hints a tool already printed under its own error (api.rb upload does) are not repeated
+  log = step_text.()
+  ui.hints_for(log).reject { log.include?(_1) }.each { ui.hint(_1) }
+  ui.hint("Fix it, then run `#{next_cmd} --run` again — steps already done are read from the app and skipped.")
+  # Waiting on ops' review is not a failure: ping rather than alert
+  ui.chime(log.include?("awaiting manual review") ? :attention : :fail)
+  exit 1
 end

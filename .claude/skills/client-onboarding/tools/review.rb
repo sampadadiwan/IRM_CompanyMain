@@ -2,14 +2,16 @@
 #   dump      copies every built upload file (out/fund, out/portfolio: *.xlsx, *.json) into <workspace>/review/ and writes
 #             review/REVIEW.md — per file: rows, columns, money totals, date range, SHA-256 and whether it is approved
 #   status    which files are approved, which wait for review, which changed since they were approved
-#   approve   records a file's SHA-256 + who approved it in review/approved.yml. OPS ONLY — refuses unless stdin is a terminal
-#             and ops types "yes", so it runs only in ops' own terminal (not the agent's shell, not Claude Code's `!` prompt)
+#   summary   one line per file waiting for review (rows, money totals) — what Claude shows ops in the review question
+#   approve   records a file's SHA-256 + who approved it + how (--via) in review/approved.yml; --all approves every file
+#             that is waiting or changed. Ops approves by answering Claude's review question in the session (2026-10-27:
+#             "approval should be from here"); Claude runs approve ONLY with ops' answer, quoted in --via, never on its own
 # Library: Onboarding::Review.check!(workspace, path) — api.rb (every upload) and onboard.rb (every JSON post) call it and
 # stop unless the file's current hash is approved. A rebuild that changes a file changes its hash → it needs review again.
 # Waiver: onboarding.yml `review: {waived_by: <ops>, waived_on: <date>, reason: …}` — only on ops' explicit word for that
 # client; files are still dumped, and every gated write prints a ⚠ REVIEW WAIVED banner.
 #
-# Usage: ruby review.rb [--workspace DIR] dump | status | approve <file> --by <name>
+# Usage: ruby review.rb [--workspace DIR] dump | status | summary | approve <file> | --all --summary <code> --by <name> --via "<how ops approved>"
 require "digest"
 require "fileutils"
 require "json"
@@ -53,7 +55,7 @@ module Onboarding
       case state(ws, path)
       when :approved then nil
       when :changed then abort "✖ #{key(ws, path)} changed since it was approved — dump it (ruby review.rb dump) and have ops review it again"
-      else abort "✖ awaiting manual review: #{key(ws, path)} — copy in review/; ops approves with: ruby review.rb approve #{key(ws, path)} --by <name>"
+      else abort "✖ awaiting manual review: #{key(ws, path)} — copy in review/; ops approves it in the session (review.rb summary → ops' answer → approve)"
       end
     end
 
@@ -89,7 +91,8 @@ module Onboarding
       md = ["# Upload files for manual review", "",
             "Generated #{Time.now.strftime('%Y-%m-%d %H:%M')}. Each file below is a copy of what will be sent to the app. Check rows, totals and",
             "dates against the client's source (the mapping is in `mappings/*.yml`), then approve each file:",
-            "`ruby <tools>/review.rb approve <file> --by <name>` — only ops approves. A file rebuilt after approval needs approving again.", ""]
+            "ops approves by answering Claude's review question in the session (recorded with `via:` in review/approved.yml). A file",
+            "rebuilt after approval needs approving again.", ""]
       w = waiver(ws)
       md += ["> ⚠ Review waived for this client by #{w['waived_by']} on #{w['waived_on']}#{" — #{w['reason']}" if w['reason']}. Files are dumped for inspection only.", ""] if w
       files.each do |f|
@@ -106,20 +109,42 @@ module Onboarding
       files
     end
 
-    def approve(ws, path, by)
-      abort "✖ approve needs --by <name>" if by.to_s.strip.empty?
-      abort "✖ no such file #{path}" unless File.exist?(path)
-      # Only a person at a keyboard approves: an agent's shell (and Claude Code's `!` prompt) has no terminal on stdin, so
-      # the agent cannot approve its own files even where `ruby` commands run without a permission prompt
-      unless $stdin.tty?
-        abort "✖ approve must be typed by ops in their own terminal (PowerShell / Windows Terminal or a Linux/macOS terminal), " \
-              "not run by the agent or through Claude Code's ! prompt:\n    ruby #{File.expand_path(__FILE__)} --workspace #{ws} approve #{key(ws, path)} --by <name>"
+    # Files still to review: never approved, or changed since (a rebuild changes the hash)
+    def pending(ws) = built_files(ws).reject { state(ws, _1) == :approved }
+
+    # A short code for exactly these files at their current hashes. `summary` prints it with the list ops is asked about;
+    # `approve --all --summary <code>` refuses if anything was rebuilt or added since, so ops' answer covers only what
+    # ops was shown
+    def set_code(ws, files) = Digest::SHA256.hexdigest(files.map { "#{key(ws, _1)}=#{sha(_1)}" }.sort.join("\n"))[0, 12]
+
+    # One short line per file for the review question: rows and the money columns' totals (sheet 1), or the JSON's shape
+    def summary_line(path)
+      if path.end_with?(".json")
+        data = JSON.parse(File.read(path))
+        return data.is_a?(Array) ? "#{data.size} items" : (data["name"] || data.dig("fund", "name") || data.dig("form_type", "name") || "#{data.size} keys").to_s
       end
-      # …and confirms this exact file, so a pasted command cannot approve by accident
-      print "Approve #{key(ws, path)} (SHA-256 #{sha(path)[0, 16]}…) as #{by}? Type yes: "
-      abort "✖ not approved" unless $stdin.gets.to_s.strip.casecmp?("yes")
+      s = Roo::Spreadsheet.open(path).sheet(0)
+      return "empty" unless s.last_row
+
+      headers = s.row(1)
+      rows = (2..s.last_row).map { s.row(_1) }
+      money = headers.each_with_index.filter_map do |h, i|
+        next unless h.to_s.match?(/amount|income|face value|committed/i) && !h.to_s.match?(/fund currency/i)
+
+        vals = rows.map { _1[i] }.grep(Numeric)
+        "#{h.to_s.sub(/ \(.*\)\z/, '')} Σ #{format('%.2f', vals.sum)}" if vals.any?
+      end
+      ["#{rows.size} rows", *money.first(2)].join(" · ")
+    end
+
+    # Records ops' approval of this exact file. `via` says how ops approved — for a session approval, ops' own answer — so
+    # an audit can tell who said what; there is no approval without it
+    def approve(ws, path, by, via)
+      abort "✖ approve needs --by <name>" if by.to_s.strip.empty?
+      abort "✖ approve needs --via \"<how ops approved, e.g. their answer in the session>\"" if via.to_s.strip.empty?
+      abort "✖ no such file #{path}" unless File.exist?(path)
       a = approvals(ws)
-      a[key(ws, path)] = { "sha256" => sha(path), "approved_by" => by, "approved_at" => Time.now.iso8601 }
+      a[key(ws, path)] = { "sha256" => sha(path), "approved_by" => by, "approved_at" => Time.now.iso8601, "via" => via }
       FileUtils.mkdir_p(dir(ws))
       File.write(approved_path(ws), a.to_yaml)
       puts "✔ approved #{key(ws, path)} (#{sha(path)[0, 16]}…) by #{by}"
@@ -141,11 +166,27 @@ if $PROGRAM_NAME == __FILE__ && !defined?(REVIEW_CLI_RAN)
       puts format("  %s %s", { approved: "✅", changed: "⚠ changed", waiting: "⏳" }[st], Onboarding::Review.key(ws, f))
     end
     (w = Onboarding::Review.waiver(ws)) && puts("  ⚠ review waived by #{w['waived_by']} on #{w['waived_on']}")
+  when "summary"
+    files = Onboarding::Review.pending(ws)
+    puts(files.empty? ? "nothing waiting for review" : "#{files.size} file(s) waiting for review — copies in review/, detail in review/REVIEW.md")
+    files.each { |f| puts format("  %-40s %s", Onboarding::Review.key(ws, f).delete_prefix("out/"), Onboarding::Review.summary_line(f)) }
+    puts "summary code: #{Onboarding::Review.set_code(ws, files)}  (approve --all needs it: --summary <code>)" if files.any?
   when "approve"
-    i = ARGV.index("--by")
-    by = i && ARGV.slice!(i, 2).last
-    path = File.expand_path(ARGV.shift.to_s, ws)
-    Onboarding::Review.approve(ws, path, by)
+    by = (i = ARGV.index("--by")) && ARGV.slice!(i, 2).last
+    via = (i = ARGV.index("--via")) && ARGV.slice!(i, 2).last
+    code = (i = ARGV.index("--summary")) && ARGV.slice!(i, 2).last
+    # --all: every file still waiting or changed — and only if that is still exactly the list `summary` showed ops
+    if ARGV.delete("--all")
+      paths = Onboarding::Review.pending(ws)
+      abort "nothing waiting for review" if paths.empty?
+      abort "✖ approve --all needs --summary <code> from the `summary` ops was shown" if code.to_s.empty?
+      if Onboarding::Review.set_code(ws, paths) != code
+        abort "✖ the files changed since ops was asked (rebuilt or added) — run `review.rb summary` again and ask ops about the new list"
+      end
+    else
+      paths = [File.expand_path(ARGV.shift.to_s, ws)]
+    end
+    paths.each { Onboarding::Review.approve(ws, _1, by, via) }
   else
     abort File.read(__FILE__).lines.grep(/^# Usage/).join
   end
