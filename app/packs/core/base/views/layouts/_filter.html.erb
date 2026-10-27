@@ -13,12 +13,18 @@
     url ||= polymorphic_path(@q.klass.new) # Default URL for the form
     page_size ||= false # Flag to enable page size selection
     page_size_options ||= [["", ""], 10, 20, 50, 100] # Options for page size dropdown
+    form_html ||= {} # Extra HTML attributes for the form and Clear link, e.g. a Turbo frame to target
+    fixed_rows_template ||= nil # Optional partial of locked (non-removable) condition rows, drawn after filter_ext
+    fixed_row_count ||= 0 # How many locked rows that partial draws, so the header badge counts them
     # Attribute name -> Rails column type, so the filter's Stimulus controller can
     # swap in a locale-date input when a date/datetime attribute is selected
     filter_attribute_types = ransack_filter_attribute_types(@q.klass, associations)
     # How many conditions actually narrow the result set — drives the header badge
     # and whether the "Clear" action is worth showing
     active_condition_count = ransack_active_condition_count(@q)
+    # The badge also counts locked rows; Clear still keys off active_condition_count,
+    # since locked rows are not in q and Clear cannot remove them
+    applied_filter_count = active_condition_count + fixed_row_count
   %>
 
   <%# Render a ToggleCard component for the filter form %>
@@ -26,11 +32,11 @@
     data: { "filter-attribute-types-value": filter_attribute_types.to_json }) do |card| %>
 
     <%# Badge in the card header, so a collapsed panel still shows that filters are on %>
-    <% if active_condition_count.positive? %>
+    <% if applied_filter_count.positive? %>
       <% card.with_header do %>
         <span class="filter-active-badge">
           <i class="ti ti-filter-check"></i>
-          <%= pluralize(active_condition_count, "filter") %> applied
+          <%= pluralize(applied_filter_count, "filter") %> applied
         </span>
       <% end %>
     <% end %>
@@ -72,10 +78,12 @@
         <% end %>
       </fieldset>
     <% else %>
-      <%# Render the active filter form %>
-      <%= search_form_for @q, method: :post, url: do |f| %>
+      <%# Render the active filter form (form_html is dup'd: Ransack writes its id/class/method into the hash) %>
+      <%= search_form_for @q, method: :post, url:, html: form_html.dup do |f| %>
           <%# Render additional filter extensions %>
           <%= render "/layouts/filter_ext" %>
+          <%# Render locked condition rows, if any %>
+          <%= render fixed_rows_template if fixed_rows_template.present? %>
           <%# Render condition fields for the filter form %>
           <%= f.condition_fields do |c| %>
             <%= render "/layouts/condition_fields", f: c, associations: associations %>
@@ -107,7 +115,7 @@
             <%# Clear: a plain GET back to the same index, which drops the q params %>
             <% if active_condition_count.positive? %>
               <%= link_to url.include?("?") ? "#{url}&filter=true" : "#{url}?filter=true",
-                class: "btn btn-outline-secondary filter-clear", "aria-label": "Clear filters",
+                **form_html, class: "btn btn-outline-secondary filter-clear", "aria-label": "Clear filters",
                 "data-bs-toggle": "tooltip", "data-bs-placement": "top", title: "Clear filters" do %>
                 <i class="ti ti-filter-off"></i>
               <% end %>

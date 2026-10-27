@@ -1,0 +1,14 @@
+<%# Locked condition for the filter panel in a commitment's Account Entries tab. The tab's
+    form submits a hidden capital_commitment_id, so the list can never widen past this
+    commitment — this row shows that limit. It copies the Fund Name row in
+    /layouts/filter_ext, minus the delete button: the condition cannot be removed here. %>
+<% capital_commitment = policy_scope(CapitalCommitment).find_by(id: params[:capital_commitment_id]) %>
+
+<% if capital_commitment %>
+<div class="row form-group">
+    <input class="form-control col attribute-fixed" type="text" value="Folio" disabled>
+    <select class="form-control col predicate-select" disabled><option>equals</option></select>
+    <input class="form-control col" type="text" value="<%= capital_commitment.folio_id %>" disabled>
+    <span class="col-auto condition-actions"></span>
+</div>
+<% end %>

@@ -73,7 +73,9 @@
 
         <%# pass import upload id to scope deletion properly %>
         <%# dont show delete button if we are on import details page %>
-        <%= button_to "Delete Results", delete_all_account_entries_path(fund_id: params[:fund_id], import_upload_id: import_upload_id, q: params[:q].to_unsafe_h), class: "btn btn-outline-danger ti ti-trash", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false, msg: "Delete all account entries in search results?", method: :post}  if params[:q].present? && import_upload_id.blank? %>
+        <%# nor when limited to a commitment: AccountEntryDeleteJob scopes by q and fund_id only,
+            so it would delete every folio's entries in the fund that match q %>
+        <%= button_to "Delete Results", delete_all_account_entries_path(fund_id: params[:fund_id], import_upload_id: import_upload_id, q: params[:q].to_unsafe_h), class: "btn btn-outline-danger ti ti-trash", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false, msg: "Delete all account entries in search results?", method: :post}  if params[:q].present? && import_upload_id.blank? && params[:capital_commitment_id].blank? %>
 
       <% else %>
         <%= link_to "Download", xl_link, class: "btn btn-outline-success" %>
@@ -83,7 +85,28 @@
       <% end %>
 
 
-      <%= link_to "Filter", account_entries_path(fund_id: params[:fund_id], q: ransack_query_params("capital_commitment_id", :eq, params[:capital_commitment_id])), {class: "btn btn-outline-success ti ti-filter" }  %>
+      <%
+        # Embedded in a commitment's Account Entries tab: open the filter panel inside the
+        # tab's frame, with the tab's reporting date bound preselected (the folio is shown
+        # as a locked row — see /account_entries/commitment_filter_row)
+        embedded_commitment = policy_scope(CapitalCommitment).find_by(id: params[:capital_commitment_id]) if turbo_frame_request? && params[:capital_commitment_id].present?
+      %>
+      <% if embedded_commitment %>
+        <%
+          # The reporting date lower bound the tab is showing (the tab's own, or the default
+          # AccountEntryList adds), so the panel opens on the same rows
+          date_condition = @q.conditions.find do |condition|
+            condition.attributes.map(&:name).include?("reporting_date") && %w[gt gteq eq].include?(condition.predicate_name)
+          end
+          filter_conditions = []
+          filter_conditions << ["reporting_date", date_condition.predicate_name, date_condition.values.first&.value] if date_condition
+        %>
+        <%= link_to "Filter", account_entries_path(capital_commitment_id: embedded_commitment.id, fund_id: embedded_commitment.fund_id, filter: true, q: ransack_query_params_multiple(filter_conditions)), {class: "btn btn-outline-success ti ti-filter", data: { turbo_frame: "account_entries_frame" } } %>
+        <%# The full Account Entries page for the commitment's fund, with that page's defaults %>
+        <%= link_to "Show All", account_entries_path(fund_id: embedded_commitment.fund_id), {class: "btn btn-outline-primary ti ti-list"} %>
+      <% else %>
+        <%= link_to "Filter", account_entries_path(fund_id: params[:fund_id], q: ransack_query_params("capital_commitment_id", :eq, params[:capital_commitment_id])), {class: "btn btn-outline-success ti ti-filter" }  %>
+      <% end %>
 
 
     </span>

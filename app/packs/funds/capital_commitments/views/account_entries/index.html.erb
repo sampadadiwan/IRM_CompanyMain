@@ -1,6 +1,13 @@
 
 
-<%= render "/layouts/filter", associations: [:capital_commitment, :allocation_run, :fund_formula], include_template: "/account_entries/group_filter", hidden_fields: {time_series: params[:time_series],  parent_in_key: params[:parent_in_key]} %>
+<%
+  # Filter clicked in a commitment's Account Entries tab: the panel is rendered inside the
+  # frame below instead. Render it only once — link_to_add_fields builds a blank value and
+  # condition onto @q, so a second render would show those as extra empty inputs.
+  filter_in_frame = turbo_frame_request? && params[:capital_commitment_id].present? && params[:filter].present?
+%>
+
+<%= render "/layouts/filter", associations: [:capital_commitment, :allocation_run, :fund_formula], include_template: "/account_entries/group_filter", hidden_fields: {time_series: params[:time_series],  parent_in_key: params[:parent_in_key]} unless filter_in_frame %>
 
 <% if @fund_defaulted && @fund %>
   <div class="alert alert-info py-2 mx-3 mb-2" role="status">
@@ -10,6 +17,17 @@
 
 <%= render ReportingComponent.new do %>
   <%= turbo_frame_tag with_frame("account_entries_frame"), target: "_top" do %>
+    <%# A panel outside this frame is dropped from a frame response, so the tab's panel is
+        rendered here. Its form and Clear link target the frame, and the hidden fields keep
+        the tab on this commitment with the panel open after each Search. %>
+    <% if filter_in_frame %>
+      <%= render "/layouts/filter", associations: [:capital_commitment, :allocation_run, :fund_formula],
+          url: account_entries_path(capital_commitment_id: params[:capital_commitment_id], fund_id: params[:fund_id]),
+          form_html: { data: { turbo_frame: "account_entries_frame" } },
+          fixed_rows_template: "/account_entries/commitment_filter_row", fixed_row_count: 1,
+          hidden_fields: { capital_commitment_id: params[:capital_commitment_id], filter: true } %>
+    <% end %>
+
     <% if params[:ag].present? %>
       <%= render "/account_entries/index_ag", account_entries: @account_entries,
           fund: nil, lazy_load_data: false, data_source: nil %>
