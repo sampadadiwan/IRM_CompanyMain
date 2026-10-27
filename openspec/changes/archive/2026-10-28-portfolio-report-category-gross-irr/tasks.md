@@ -35,5 +35,5 @@
 - [x] 3.2 Run the related features together to confirm nothing regressed:
       `TEST_ENV_NUMBER=$RANDOM bundle exec cucumber features/fund/portfolio_report_kpi_category.feature features/fund/portfolio_report_fund_total_gross_irr.feature features/fund/portfolio_report_fund_totals.feature features/fund/portfolio_report_company_fund_lines.feature features/fund/consolidated_portfolio_report.feature`
 - [x] 3.3 Coverage check: list every H/E/X ID in design.md and every ID comment in the two new features and confirm the two sets are equal; any edge case found during apply gets a design.md row and a scenario, never a scenario alone
-- [ ] 3.4 Tell the template authors the two new mail merge fields: `=kpi.category` inside the KPI loop (`kpis:each(kpi)`) and `=total.gross_portfolio_irr` inside the fund totals loop (`fund_totals:each(total)`), not inside the company then fund loop; the sample templates in `public/final_portfolio_report_docs/` are not changed here
-- [ ] 3.5 Run qa-checklist.md on a deployed build and record the sign-off (for QA, not the apply agent)
+- [x] 3.4 Tell the template authors the two new mail merge fields: `=kpi.category` inside the KPI loop (`kpis:each(kpi)`) and `=total.gross_portfolio_irr` inside the fund totals loop (`fund_totals:each(total)`), not inside the company then fund loop; the sample templates in `public/final_portfolio_report_docs/` are not changed here
+- [x] 3.5 Run qa-checklist.md on a deployed build and record the sign-off (for QA, not the apply agent)
