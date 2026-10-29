@@ -90,6 +90,7 @@ jobs:
           mkdir -p tmp/capybara
           mkdir -p tmp/cucumber_results
           mkdir -p /tmp/cucumber_progress
+          touch tmp/parallel_runtime_cucumber.log
 
       - name: Run Cucumber
         run: |
