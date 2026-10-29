@@ -102,7 +102,7 @@ jobs:
           CUKE_OPTS="-p parallel_rerun"
           CUKE_OPTS="$CUKE_OPTS --format html --out tmp/cucumber_results/report_\$TEST_ENV_NUMBER.html"
           CUKE_OPTS="$CUKE_OPTS --format rerun --out tmp/cucumber_results/rerun_\$TEST_ENV_NUMBER.txt"
-          CUKE_OPTS="$CUKE_OPTS --require cucumber_dashboard"
+          CUKE_OPTS="$CUKE_OPTS --require features --require cucumber_dashboard"
 
           if [ -n "$TAGS" ]; then
             CUKE_OPTS="$CUKE_OPTS --tags '$TAGS'"
