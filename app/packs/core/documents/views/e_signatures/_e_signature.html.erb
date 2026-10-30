@@ -25,5 +25,7 @@
   <td class="action-col">
     <%= link_to  t_common(:show), e_signature , {class: "btn btn-outline-primary"}%>
     <%= link_to  t_common(:edit), edit_e_signature_path(e_signature) , {class: "btn btn-outline-primary"} if policy(e_signature).edit?%>
+    <%# Embedded eSigning: only the viewer's own row, and only when it is their turn %>
+    <%= link_to "Sign now", sign_e_signature_path(e_signature), { class: "btn btn-primary", data: { turbo: false } } if policy(e_signature).sign? && e_signature.signing_state == :ready %>
   </td>
 </tr>

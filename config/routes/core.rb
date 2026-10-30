@@ -114,7 +114,11 @@ resources :form_types do
   patch 'update_step_labels', on: :member
 end
 
-resources :e_signatures
+resources :e_signatures do
+  # Embedded signing: the signing page and the result the page reports (openspec/changes/embedded-esign-digio)
+  get 'sign', on: :member
+  post 'sign_result', on: :member
+end
 resources :stamp_papers
 resources :investor_notice_items
 resources :exchange_rates do

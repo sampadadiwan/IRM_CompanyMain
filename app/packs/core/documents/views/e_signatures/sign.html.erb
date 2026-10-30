@@ -1,0 +1,56 @@
+<%# Embedded eSigning (openspec/changes/embedded-esign-digio): hosts Digio's signing panel for this signer.
+    Only the Digio document id and the signer's own email reach the page - no token. %>
+<div class="container-fluid">
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800"><%= @document.name %></h1>
+  </div>
+
+  <div class="card shadow mb-4">
+    <div class="card-body">
+      <table class="table table-bordered mb-4">
+        <tr>
+          <td>Signing as</td>
+          <td id="signing_as"><%= @e_signature.email %></td>
+        </tr>
+        <tr>
+          <td>Signer</td>
+          <td id="signer_place">Signer <%= @signer_place %> of <%= @signer_total %> - <%= @e_signature.label %></td>
+        </tr>
+        <tr>
+          <td>Method</td>
+          <td id="signature_method"><%= @e_signature.signature_method_label %></td>
+        </tr>
+      </table>
+
+      <% case @signing_state %>
+      <% when :ready %>
+        <div data-controller="digio-esign"
+             data-digio-esign-provider-doc-id-value="<%= @document.provider_doc_id %>"
+             data-digio-esign-signer-email-value="<%= @e_signature.email %>"
+             data-digio-esign-sdk-url-value="<%= DigioSdkConfig.script_url %>"
+             data-digio-esign-environment-value="<%= DigioSdkConfig.environment %>"
+             data-digio-esign-result-url-value="<%= sign_result_e_signature_path(@e_signature) %>"
+             data-digio-esign-fallback-message-value="<%= DigioSdkErrors::OURS_MESSAGE %>"
+             data-digio-esign-panel-unavailable-message-value="<%= DigioSdkErrors::PANEL_UNAVAILABLE_MESSAGE %>"
+             data-digio-esign-cancelled-message-value="<%= DigioSdkErrors::CANCELLED_MESSAGE %>"
+             data-digio-esign-completed-message-value="<%= DigioSdkErrors::COMPLETED_MESSAGE %>">
+          <p id="signing_message" class="alert alert-info" role="status" data-digio-esign-target="message" hidden></p>
+          <button type="button" id="start_signing" class="btn btn-primary"
+                  data-digio-esign-target="start" data-action="click->digio-esign#start">Start signing</button>
+          <button type="button" id="try_again" class="btn btn-outline-primary" hidden
+                  data-digio-esign-target="retry" data-action="click->digio-esign#start">Try again</button>
+          <%= link_to "Back to document", document_path(@document), class: "btn btn-link", data: { turbo: false } %>
+        </div>
+      <% when :signed %>
+        <p id="signing_message" class="alert alert-info" role="status"><%= DigioSdkErrors::ALREADY_SIGNED_MESSAGE %></p>
+        <%= link_to "Back to document", document_path(@document), class: "btn btn-link", data: { turbo: false } %>
+      <% when :waiting_turn %>
+        <p id="signing_message" class="alert alert-info" role="status"><%= DigioSdkErrors::NOT_YOUR_TURN_MESSAGE %></p>
+        <%= link_to "Back to document", document_path(@document), class: "btn btn-link", data: { turbo: false } %>
+      <% else %>
+        <p id="signing_message" class="alert alert-warning" role="status"><%= DigioSdkErrors::CLOSED_MESSAGE %></p>
+        <%= link_to "Back to document", document_path(@document), class: "btn btn-link", data: { turbo: false } %>
+      <% end %>
+    </div>
+  </div>
+</div>

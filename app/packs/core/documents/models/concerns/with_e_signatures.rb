@@ -102,6 +102,8 @@ module WithESignatures
       signed_doc.file = File.open(signed_doc_from_provider, "rb")
       signed_doc.from_template = self
       signed_doc.owner = owner
+      # A document with no owner has no owner folder for the copy to fall back on
+      signed_doc.folder = folder if owner.nil?
       signed_doc.owner_tag = "Signed"
       signed_doc.approved = true
       signed_doc.send_email = false
@@ -114,7 +116,7 @@ module WithESignatures
     end
   end
 
-  # Attaches a provider-supplied supplementary eSign file (e.g. Zoho's completion certificate)
+  # Attaches a provider-supplied supplementary eSign file (e.g. Zoho's completion certificate, Digio's audit trail)
   # as its own Document, alongside the signed copy. Deliberately not tagged "Signed" - that tag
   # drives Document.signed/.signed?/DocumentsBulkActionJob behavior, which should stay keyed to
   # the actual signed copy only.
@@ -124,6 +126,7 @@ module WithESignatures
     supplementary_doc.file = File.open(file_path, "rb")
     supplementary_doc.from_template = self
     supplementary_doc.owner = owner
+    supplementary_doc.folder = folder if owner.nil?
     supplementary_doc.owner_tag = owner_tag
     supplementary_doc.approved = true
     supplementary_doc.send_email = false

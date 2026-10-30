@@ -1119,6 +1119,7 @@ end
 
 Then('the document is signed by the signatories') do
   allow_any_instance_of(DigioEsignHelper).to receive(:download).and_return(download_response)
+  allow_any_instance_of(DigioEsignHelper).to receive(:download_audit_trail).and_return(download_response)
   allow_any_instance_of(DigioEsignHelper).to receive(:retrieve_signed).and_return(retrieve_signed_response_signed)
 
   sleep(3)
@@ -1207,6 +1208,7 @@ end
 
 Then('the document get digio callbacks') do
   allow_any_instance_of(DigioEsignHelper).to receive(:download).and_return(download_response)
+  allow_any_instance_of(DigioEsignHelper).to receive(:download_audit_trail).and_return(download_response)
 
   @doc = Document.last
   # @doc.update_column(:provider_doc_id, "DID2312191801389959UDGNBWGRGCSC1")

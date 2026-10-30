@@ -292,6 +292,27 @@ class Document < ApplicationRecord
     end
   end
 
+  # Tells each signer whose turn it is, once per signature request: a bell entry and an email, for signers who
+  # are platform users that may sign inside CapHive (ESignaturePolicy#sign?). Safe to call after every status
+  # change: a signer already notified is skipped by the atomic claim. Callers rescue and report, so a
+  # notification problem never fails a send or a webhook. Worked examples H9, H10, E29-E35, X12 —
+  # openspec/changes/embedded-esign-digio/design.md#worked-examples
+  # @return [Integer] how many signers were notified by this call
+  def notify_ready_signers
+    notified = 0
+    e_signatures.not_signed.in_sequence.each do |esign|
+      next unless esign.signing_state == :ready
+
+      user = User.find_by(email: esign.email.to_s.downcase)
+      next if user.blank? || !ESignaturePolicy.new(user, esign).sign?
+      next unless esign.claim_signing_notification!
+
+      EsignSigningNotifier.with(record: esign, entity_id:).deliver_later(user)
+      notified += 1
+    end
+    notified
+  end
+
   def eligible_for_esign_update?
     SKIP_ESIGN_UPDATE_STATUSES.exclude?(esign_status&.downcase)
   end

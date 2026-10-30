@@ -68,6 +68,7 @@ class EsignHelper
       e = StandardError.new("eSign webhook not supported - \n #{params}")
       Rails.logger.error(e.message)
       ErrorReport.notify(e, source: "EsignHelper webhook")
+      # Nothing to hand it to; the controller still answers 200 so the sender does not retry
       return
     end
     helper.update_signature_progress(params)

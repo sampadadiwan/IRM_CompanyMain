@@ -1,6 +1,8 @@
 
 <div class="container-fluid mb-0">
 
+   <%= render "documents/embedded_sign_banner", document: @document %>
+
    <div class="row">
       <% if @document.video? %>
       <%= render "layouts/video", url: @document.file_url %>

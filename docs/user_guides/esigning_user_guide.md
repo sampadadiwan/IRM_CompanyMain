@@ -17,12 +17,13 @@ This guide walks you through requesting, tracking, and completing electronic sig
 7. [Sending All Documents at Once](#sending-all-documents-at-once)
 8. [Tracking Signing Progress](#tracking-signing-progress)
 9. [What Signers Experience](#what-signers-experience)
-10. [When Signing is Complete](#when-signing-is-complete)
-11. [Cancelling a Signature Request](#cancelling-a-signature-request)
-12. [Resending After a Failure or Expiry](#resending-after-a-failure-or-expiry)
-13. [Status Meanings](#status-meanings)
-14. [Worked Example](#worked-example)
-15. [Frequently Asked Questions](#frequently-asked-questions)
+10. [Signing Inside CapHive](#signing-inside-caphive)
+11. [When Signing is Complete](#when-signing-is-complete)
+12. [Cancelling a Signature Request](#cancelling-a-signature-request)
+13. [Resending After a Failure or Expiry](#resending-after-a-failure-or-expiry)
+14. [Status Meanings](#status-meanings)
+15. [Worked Example](#worked-example)
+16. [Frequently Asked Questions](#frequently-asked-questions)
 
 ---
 
@@ -186,6 +187,27 @@ There is no separate "Send All" button:
 
 ---
 
+## Signing Inside CapHive
+
+A signer who is logged in to CapHive can sign without leaving it, for documents sent through **Digio**. The signing provider's email still goes out and still works; signing inside CapHive is an addition.
+
+**Switching it on:** a CapHive admin ticks **Enable Embedded Esign** for the entity that owns the document (off by default). Documents already sent can be signed this way as soon as it is on; they do not need to be resent.
+
+**Who sees it:** a logged-in user whose login email is the email the document was sent to, while the document is waiting for signatures and it is that signer's turn.
+
+1. The document page shows **Your signature is requested on this document.** with **Sign now**. Employees also see **Sign now** on their own row of the **Signatures** tab.
+2. **Sign now** opens the signing page: the document, who is signing, their place in the order and the signature method.
+3. **Start signing** opens the signing provider's panel on the same page. The provider verifies the signer, as it does for the emailed link.
+4. When it is done the page says the signature is being confirmed. CapHive confirms with the provider before the signer shows **Signed**.
+
+**Signing order:** when the document uses a signing order, only the signer whose turn it is gets **Sign now**; the others see that they can sign after the previous signer.
+
+**When something goes wrong:** the page explains what happened and what to do next, for example try again, wait your turn, or ask the sender to send the request again. If a signer rejects the document at the provider, their row shows **Rejected** (red) and the document stays as it is; use **Re-Send for eSignatures** to start again.
+
+**When it is your turn:** a signer who is a CapHive user is notified in CapHive and by email, with a link to the signing page, when the document is sent (if they can sign now) and again when the previous signer's signature is confirmed. Investors receive the email only if their access for the entity has email turned on. The email Digio sends keeps working too; either link signs the same request.
+
+---
+
 ## When Signing is Complete
 
 Once **all signatories** have signed:
@@ -194,6 +216,7 @@ Once **all signatories** have signed:
 2. A new document tagged **"Signed"** is created in the same folder — this is the final, legally binding copy.
 3. The signed document is **locked** (cannot be edited) and **approved**.
 4. The original document is marked as **Completed**.
+5. For documents signed through Digio, Digio's audit trail is saved next to it as **<Document> - Audit Trail**: who signed, when and how. It can take a few minutes to appear. Zoho's equivalent is the **Signature Certificate**.
 
 You do not need to do anything — this happens automatically. Look for the document with the **Signed** tag in the document list.
 

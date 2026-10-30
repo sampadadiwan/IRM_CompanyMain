@@ -1900,6 +1900,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_29_120000) do
     t.string "email", limit: 60
     t.bigint "document_id"
     t.string "provider_signer_id", limit: 40
+    t.datetime "signing_notified_at"
     t.index ["document_id"], name: "index_e_signatures_on_document_id"
     t.index ["entity_id"], name: "index_e_signatures_on_entity_id"
     t.index ["user_id"], name: "index_e_signatures_on_user_id"
@@ -2070,6 +2071,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_29_120000) do
     t.json "manual_update_data"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.json "sdk_events"
     t.index ["document_id"], name: "index_esign_logs_on_document_id"
     t.index ["entity_id"], name: "index_esign_logs_on_entity_id"
   end

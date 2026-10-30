@@ -1,0 +1,26 @@
+<%# Embedded eSigning (openspec/changes/embedded-esign-digio): tells a logged-in signer it is their turn.
+    Shown to anyone who can open the document and is a pending signer on it, investors included -
+    the Signatures tab is employee-only. Eligibility lives in ESignaturePolicy#sign? and
+    ESignature#signing_state; nothing is re-derived here. %>
+<% embedded_signature = ESignature.signer_row(document, current_user) %>
+<% if embedded_signature && policy(embedded_signature).sign? %>
+  <% case embedded_signature.signing_state %>
+  <% when :ready %>
+    <div class="row mb-3" id="embedded_sign_banner">
+      <div class="col-lg-12">
+        <div class="alert alert-info d-flex flex-wrap align-items-center justify-content-between mb-0">
+          <span>Your signature is requested on this document.</span>
+          <%= link_to "Sign now", sign_e_signature_path(embedded_signature), class: "btn btn-primary btn-sm", data: { turbo: false } %>
+        </div>
+      </div>
+    </div>
+  <% when :waiting_turn %>
+    <div class="row mb-3" id="embedded_sign_banner">
+      <div class="col-lg-12">
+        <div class="alert alert-info mb-0">
+          Your signature is requested on this document. You can sign after the previous signer has signed.
+        </div>
+      </div>
+    </div>
+  <% end %>
+<% end %>
