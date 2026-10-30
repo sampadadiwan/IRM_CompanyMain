@@ -109,7 +109,9 @@ flowchart TD
     U -- yes --> V[301 to https]
     U -- no --> E{GET or HEAD?}
     E -- no --> F[405 Allow: GET, HEAD]
-    E -- yes --> G{File in public/website?}
+    E -- yes --> O{"Old-site URL in redirects.yml?"}
+    O -- yes --> Q[301 to the new page — query preserved]
+    O -- no --> G{File in public/website?}
     G -- yes --> H[200 via ActionDispatch::FileHandler]
     G -- no --> I[404 — memoized 404.html body, empty for HEAD]
 ```
@@ -128,6 +130,15 @@ Implementation choices:
   with `?sub_domain=<tenant>`; the middleware forwards them to the tenant
   subdomain exactly as `WithAuthentication#set_current_entity` used to (value
   validated against `[a-z0-9-]+` before it is reflected into a redirect).
+- **Old-site URLs**: `website_src/redirects.yml` maps each URL of the retired
+  WordPress site (`/about-us/`, `/case-study/portfolio-reports/` …) to its new
+  page. `lib/middleware/website_redirects.rb` loads and validates it (both sides
+  must start with `/`; `/` itself cannot be redirected) and normalises paths —
+  lowercase, one trailing slash dropped — so `/About-Us`, `/about-us` and
+  `/about-us/` all match one line. The middleware loads the list once at boot
+  and 301s before the file handler, carrying the query string over. nginx
+  renders the **same file** into the apex vhost (below), so dev and production
+  cannot disagree. An unlisted path still gets the honest 404.
 - **force_ssl parity**: the middleware short-circuits before
   `ActionDispatch::SSL`, so it re-implements the two behaviors that matter for a
   public page — an http→https redirect and an HSTS header (deliberately *without*
@@ -176,11 +187,22 @@ without the variable render **byte-identical** to today:
    same legacy `?sub_domain=<tenant>` → tenant-subdomain 301 the middleware
    performs. `robots.txt` / `sitemap.xml` / `404.html` come out host-correct for
    free because the vhost root is the site directory.
-3. New **www vhost**: `return 301 https://caphive.com$request_uri;` — `https://`
+3. **Old-site redirects**: one `location ~* "^/about\-us/?$" { return 301
+   https://caphive.com/about.html$is_args$args; }` block per line of
+   `website_src/redirects.yml`, rendered by requiring
+   `lib/middleware/website_redirects.rb` from the template (it is plain Ruby, no
+   Rails, because the template renders on the deploying machine). `~*` and the
+   optional `/` mirror the middleware's case-insensitive, slash-agnostic match.
+   **A change to `redirects.yml` reaches production only through
+   `cap <stage> nginx:update`** — `website:deploy` uploads files and does not
+   re-render the nginx config.
+4. New **www vhost**: `return 301 https://caphive.com$request_uri;` — `https://`
    is explicit because the ALB terminates TLS and nginx only ever listens on `:80`.
 
-Rollout: `cap production_in IRM:setup` re-uploads the conf, then
-`sudo nginx -t && sudo nginx -s reload`.
+Rollout: `cap production_in nginx:update` renders and uploads only the nginx
+conf, runs `nginx -t` (a bad config aborts and the running server keeps the old
+one) and reloads. `cap production_in IRM:setup` does the same plus the
+puma/systemd configs.
 
 ## Content workflow (`rake website:build`)
 
@@ -195,8 +217,15 @@ bundle exec rake website:build           # renders website_src/ -> public/websit
 git add website_src public/website && git commit
 ```
 
+The build also **generates `public/website/sitemap.xml`** — every page except those
+whose front matter sets `robots` (today `404.html`, `thank-you.html`), each with a
+`<lastmod>` taken from the page source's last git commit (its file date while it
+has uncommitted edits) — and **aborts if a `redirects.yml` target page does not
+exist**, so nginx can never 301 an old link into a 404. `robots.txt` is still
+hand-written.
+
 Assets (`assets/css`, `assets/js`, `assets/img`) are not templated and live
-directly in `public/website`; the build only writes `*.html`, stamping each asset
+directly in `public/website`; the build only writes `*.html` and `sitemap.xml`, stamping each asset
 URL with a content hash. Editing one shared CSS file therefore rewrites every
 page — a 60-file diff for a one-line change is normal.
 

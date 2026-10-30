@@ -1,0 +1,35 @@
+<%# Organization structured data, on every page via _layout.html.erb. Search
+     engines and AI assistants build their picture of "CapHive the company"
+     from facts that agree across pages, so this lives in ONE place. The @id
+     lets other blocks (products.html's SoftwareApplication) point at it.
+     Only confirmed facts: add foundingDate and the company's own sameAs
+     profiles (LinkedIn, Crunchbase, G2 ...) once they are confirmed. -%>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "@id": "https://caphive.com/#organization",
+  "name": "CapHive",
+  "url": "https://caphive.com",
+  "logo": "https://caphive.com/assets/img/caphive-logo@3x.png",
+  "email": "hello@caphive.com",
+  "description": "Full-stack intelligent technology platform for powering private capital markets — funds, portfolios, deals & secondaries.",
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "801, One International Center, Tower 1, Senapati Bapat Marg, Lower Parel",
+    "addressLocality": "Mumbai",
+    "postalCode": "400013",
+    "addressCountry": "IN"
+  },
+  "areaServed": [
+    { "@type": "Country", "name": "India" },
+    { "@type": "Country", "name": "United States" }
+  ],
+  "founder": {
+    "@type": "Person",
+    "name": "Ausang Shukla",
+    "jobTitle": "Founder & CEO",
+    "sameAs": "https://in.linkedin.com/in/ausangshukla"
+  }
+}
+</script>
