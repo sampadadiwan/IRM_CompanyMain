@@ -98,6 +98,32 @@ Feature: Static company website on the apex domain
     When a visitor requests "/pricing.html" on host "www.caphive.test" over HTTPS
     Then the response redirects to "https://caphive.test/pricing.html"
 
+  # Retired WordPress-era URLs (website_src/redirects.yml) 301 to their new
+  # page, so old links and index entries keep working. A few representative
+  # rows: slashed and unslashed spellings, mixed case, a nested case-study
+  # path, and the query string carried over. nginx renders the same list in
+  # production (nginx_conf.erb).
+  @website
+  Scenario Outline: Old-site URLs redirect permanently to their new page
+    When a visitor requests "<old>" on host "caphive.test"
+    Then the response redirects to "<new>"
+
+    Examples:
+      | old                             | new                                               |
+      | /about-us/                      | http://caphive.test/about.html                    |
+      | /about-us                       | http://caphive.test/about.html                    |
+      | /Contact-Us/                    | http://caphive.test/contact.html                  |
+      | /case-study/portfolio-reports/  | http://caphive.test/case-portfolio-reports.html   |
+      | /fund-saas/?utm_source=linkedin | http://caphive.test/funds.html?utm_source=linkedin |
+
+  # Only listed paths redirect: anything else still gets the honest 404, not
+  # a guessed destination.
+  @website
+  Scenario: A path that is not in the redirect list still 404s
+    When a visitor requests "/some-other-old-page/" on host "caphive.test"
+    Then the response status is 404
+    And the response body contains "Page not found — CapHive"
+
   @website
   Scenario: The website only answers GET and HEAD
     When a visitor POSTs to "/contact.html" on host "caphive.test"
