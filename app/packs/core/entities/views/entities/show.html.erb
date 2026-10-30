@@ -303,6 +303,11 @@
   </div>
 </div>
 
+<%# Zoho eSign panel: Zoho companies only, for their company admins and support (H1, E1) %>
+<% if @entity.entity_setting&.esign_supports?(:connection) && policy(@entity).update? %>
+  <%= render "zoho_sign_connections/panel", entity: @entity, connection: ZohoSignConnection.find_by(entity_id: @entity.id) %>
+<% end %>
+
 <%# Kept outside the card and the button div: Bootstrap moves focus and adds a backdrop when the
     modal opens, and nesting it inside the button row makes the buttons flicker as it does so. %>
 <% if policy(@entity).deactivate? %>

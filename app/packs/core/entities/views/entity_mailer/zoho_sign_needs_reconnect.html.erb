@@ -1,0 +1,15 @@
+<%# Sent once when Zoho rejects a company's own Zoho Sign credentials (ZohoSignConnectionNotifier). %>
+Dear User,
+
+<p>
+  Zoho rejected <%= @entity.name %>'s Zoho Sign account credentials on <%= l(@connection.updated_at) %>.
+  Until the account is reconnected, documents cannot be sent for eSignature through it, and documents
+  already sent on it are not updated.
+</p>
+
+<p>
+  To reconnect: generate a new grant code for your Zoho Self Client (Zoho API console › Self Client ›
+  Generate Code), then open the company page on CapHive and use <strong>Zoho eSign › Reconnect</strong>.
+</p>
+
+Thank you.

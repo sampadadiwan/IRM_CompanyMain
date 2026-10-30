@@ -1,5 +1,6 @@
-# Applies a Zoho Sign webhook that the controller has already verified and acknowledged.
-# connection_id is nil for CapHive's shared address (DocumentsController#signature_progress).
+# Applies a Zoho Sign webhook that a controller has already verified and acknowledged.
+# connection_id is the company's ZohoSignConnection for its own address (ZohoSignWebhooksController),
+# nil for CapHive's shared address (DocumentsController#signature_progress).
 class ZohoWebhookJob < ApplicationJob
   queue_as :default
 
@@ -26,11 +27,18 @@ class ZohoWebhookJob < ApplicationJob
 
   private
 
-  # The shared address only touches documents sent on CapHive's platform account.
-  def find_document(_connection_id, request_id)
+  # A company's address only touches that company's documents sent on its own account (X20); the
+  # shared address only documents sent on CapHive's platform account.
+  def find_document(connection_id, request_id)
     return if request_id.blank?
 
-    doc = Document.find_by(provider_doc_id: request_id.to_s)
-    doc if doc && ZohoSignAccount.for_document(doc).platform?
+    if connection_id
+      connection = ZohoSignConnection.find(connection_id)
+      doc = Document.find_by(entity_id: connection.entity_id, provider_doc_id: request_id.to_s)
+      doc unless doc.nil? || ZohoSignAccount.for_document(doc).platform?
+    else
+      doc = Document.find_by(provider_doc_id: request_id.to_s)
+      doc if doc && ZohoSignAccount.for_document(doc).platform?
+    end
   end
 end

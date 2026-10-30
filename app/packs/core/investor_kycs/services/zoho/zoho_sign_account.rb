@@ -8,14 +8,20 @@ ZohoSignAccount = Data.define(:region, :client_id, :client_secret, :refresh_toke
         refresh_token: credentials[:ZOHO_REFRESH_TOKEN], webhook_secret: credentials[:ZOHO_WEBHOOK_SECRET], connection: nil)
   end
 
-  # The account every Zoho action on this document uses.
-  def self.for_document(_doc)
-    platform
+  # The account every Zoho action on this document uses (the cutover, like Digio's): the company's
+  # own account for documents sent at or after it connected (H5, E10), CapHive's for documents sent
+  # before (E9, E11) and for companies without a connection. An unsent document goes as if sent now.
+  def self.for_document(doc)
+    connection = ZohoSignConnection.find_by(entity_id: doc.entity_id)
+    return platform if connection.nil?
+    return connection.account if doc.sent_for_esign_date.nil?
+
+    doc.sent_for_esign_date >= connection.connected_at ? connection.account : platform
   end
 
   # The account a document of this entity would be sent on right now.
-  def self.for_entity(_entity)
-    platform
+  def self.for_entity(entity)
+    ZohoSignConnection.find_by(entity_id: entity.id)&.account || platform
   end
 
   def platform?

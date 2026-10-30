@@ -74,7 +74,8 @@ class ZohoEsignHelper
   # ZohoSignClient::Error or PDF::Reader::MalformedPDFError; ZohoEsigning turns those into a
   # Failed document.
   def send_document_for_esign(document)
-    client = client_for(document)
+    # A send (or resend) always goes on the account the company uses now, whatever an earlier send used
+    client = client_for(document, ZohoSignAccount.for_entity(document.entity))
     tmpfile = document.file.download
     page_count = PDF::Reader.new(tmpfile.path).page_count
     created = File.open(tmpfile.path) { |file| client.create_request(data: request_data(document), file:) }
@@ -101,6 +102,7 @@ class ZohoEsignHelper
     # rounding), but this gives the UI something to show immediately instead of nothing.
     doc.update(sent_for_esign: true, sent_for_esign_date: Time.zone.now, provider_doc_id: response[:request_id], esign_status: "requested",
                esign_expires_at: expiration_days_for(doc).days.from_now)
+    store_signer_ids(doc, response[:actions])
     EsignUpdateJob.perform_later(doc.id, user_id) if doc.eligible_for_esign_update?
     ZohoResult.new(true, nil, "Document - #{doc.name} sent for eSigning")
   end
@@ -194,6 +196,10 @@ class ZohoEsignHelper
       # X24: Zoho ends the request on a decline; Failed makes the document resendable
       update_esign_for_recipient(doc, payload, "failed")
       doc.update(esign_status: "failed")
+    when "RequestForwarded"
+      # E29: the slot stays with the original signer; the forward is recorded on it
+      esign = recipient_for(doc, payload)
+      esign&.update(api_updates: esign.add_api_update(payload))
     when "RequestRecalled"
       doc.update(esign_status: "cancelled")
       doc.e_signatures.update_all(status: "cancelled")
@@ -252,9 +258,27 @@ class ZohoEsignHelper
   private
 
   # One client per document's account for the life of this helper (a job or a request).
-  def client_for(doc)
+  def client_for(doc, account = nil)
     @clients ||= {}
-    @clients[doc.id] ||= ZohoSignClient.new(ZohoSignAccount.for_document(doc))
+    @clients[doc.id] ||= ZohoSignClient.new(account || ZohoSignAccount.for_document(doc))
+  end
+
+  # E29: Zoho's action_id stays with the signer slot when a signer forwards the request, so it is
+  # matched first; the email covers documents sent before action ids were stored.
+  def signer_for(doc, action_id, email)
+    signers = doc.e_signatures.to_a
+    signers.find { |esign| action_id.present? && esign.provider_signer_id == action_id.to_s } ||
+      signers.find { |esign| esign.email.to_s.casecmp?(email.to_s) }
+  end
+
+  # The action ids Zoho gave each signer when the request was created, matched by email (falling
+  # back to the signer order the request was built in).
+  def store_signer_ids(doc, actions)
+    signers = doc.e_signatures.order(:position).to_a
+    Array(actions).each_with_index do |action, idx|
+      esign = signers.find { |s| s.email.to_s.casecmp?(action["recipient_email"].to_s) } || signers[idx]
+      esign&.update_column(:provider_signer_id, action["action_id"].to_s)
+    end
   end
 
   # The extend dialog posts yyyy-mm-dd; anything else (tampered or blank) is not a date.
@@ -286,7 +310,7 @@ class ZohoEsignHelper
       signer_status = ACTION_STATUSES[action["action_status"].to_s.upcase]
       next log_unknown_status(doc, "action_status", action["action_status"]) if signer_status.nil?
 
-      doc.e_signatures.find_by(email: action["recipient_email"]&.downcase)&.update_esign_response(signer_status, json)
+      signer_for(doc, action["action_id"], action["recipient_email"])&.update_esign_response(signer_status, json)
     end
     check_and_update_document_status(doc)
   end
@@ -397,13 +421,16 @@ class ZohoEsignHelper
   end
 
   def update_esign_for_recipient(doc, payload, status)
-    email = payload.dig('notifications', 'performed_by_email')&.downcase
-    esign = doc.e_signatures.find_by(email:)
-    if esign.present?
-      esign.update_esign_response(status, payload)
-    else
-      Rails.logger.warn("Zoho Sign webhook: no signer #{email} on document #{doc.id}")
-    end
+    esign = recipient_for(doc, payload)
+    esign&.update_esign_response(status, payload)
+  end
+
+  def recipient_for(doc, payload)
+    action_id = payload.dig("notifications", "action_id")
+    email = payload.dig("notifications", "performed_by_email")
+    esign = signer_for(doc, action_id, email)
+    Rails.logger.warn("Zoho Sign webhook: no signer #{action_id} / #{email} on document #{doc.id}") if esign.nil?
+    esign
   end
 
   # Only a Zoho refusal of the request (not a timeout, rate limit or credential problem) fails it.

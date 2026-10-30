@@ -191,9 +191,14 @@ class ZohoSignClient
     credentials_rejected!(e)
   end
 
-  # Nobody can fix CapHive's own credentials from the app, so that case alerts developers.
+  # X8: a company's rejected credentials mark its connection Needs reconnect (its admins are emailed
+  # once). Nobody can fix CapHive's own credentials from the app, so that case alerts developers.
   def credentials_rejected!(error)
-    ErrorReport.notify(error, source: "ZohoSignClient platform") if account.platform?
+    if account.platform?
+      ErrorReport.notify(error, source: "ZohoSignClient platform")
+    else
+      account.connection.mark_needs_reauth!(error.message)
+    end
     raise error
   end
 

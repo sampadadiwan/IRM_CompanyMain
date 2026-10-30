@@ -44,6 +44,13 @@ class EntityMailer < ApplicationMailer
     send_mail(subject:)
   end
 
+  # Zoho rejected the company's own Zoho Sign credentials (ZohoSignConnectionNotifier)
+  def zoho_sign_needs_reconnect
+    setup_defaults
+    @connection = ZohoSignConnection.find(params[:zoho_sign_connection_id])
+    send_mail(subject: "Action required: reconnect #{@entity.name}'s Zoho eSign account")
+  end
+
   def add_support_to_cc
     support_email = ENV.fetch('SUPPORT_EMAIL_TO', nil)
     @cc.present? ? @cc += ",#{support_email}" : @cc = support_email

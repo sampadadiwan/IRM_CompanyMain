@@ -398,7 +398,16 @@ resources :entities do
   post 'db_dump', on: :member
   # Support-only off-boarding: revokes employee logins and investor access for the entity
   patch 'deactivate', on: :member
+  # The company's own Zoho Sign account (openspec/changes/zoho-esign-production-ready, card ①)
+  resource :zoho_sign_connection, only: %i[create update destroy] do
+    post :verify
+    post :reveal_webhook_secret
+    post :regenerate_webhook_secret
+  end
 end
+
+# Zoho Sign webhooks for a company's own account - authenticated by token + HMAC, not a session
+post 'zoho_sign/webhooks/:token', to: 'zoho_sign_webhooks#create', as: :zoho_sign_webhook
 
 resources :viewed_bies do
   put :restore_deleted, on: :member

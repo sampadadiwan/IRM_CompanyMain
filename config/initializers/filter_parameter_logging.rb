@@ -11,3 +11,6 @@ Rails.application.config.filter_parameters += %i[
 # already covered by "token" above). Exact match for "code" — a partial match would also hide
 # call_code, country codes and every other *_code param in the logs.
 Rails.application.config.filter_parameters += [/\Acode\z/, :challenge]
+# E8: the Zoho Self Client grant code redeemed on the company's Zoho eSign panel (client_secret is
+# already covered by "secret" above).
+Rails.application.config.filter_parameters += [:grant_code]

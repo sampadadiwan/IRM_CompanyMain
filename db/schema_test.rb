@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_23_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_29_120000) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -1881,6 +1881,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_23_120000) do
     t.index ["form_type_id"], name: "index_documents_on_form_type_id"
     t.index ["owner_tag", "created_at"], name: "index_documents_on_owner_tag_and_created_at"
     t.index ["owner_type", "owner_id"], name: "index_documents_on_owner"
+    t.index ["provider_doc_id"], name: "index_documents_on_provider_doc_id"
     t.index ["user_id"], name: "index_documents_on_user_id"
   end
 
@@ -1897,6 +1898,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_23_120000) do
     t.text "api_updates"
     t.string "email", limit: 60
     t.bigint "document_id"
+    t.string "provider_signer_id", limit: 40
     t.index ["document_id"], name: "index_e_signatures_on_document_id"
     t.index ["entity_id"], name: "index_e_signatures_on_entity_id"
     t.index ["user_id"], name: "index_e_signatures_on_user_id"
@@ -5446,6 +5448,28 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_23_120000) do
     t.index ["entity_id"], name: "index_workflow_templates_on_entity_id"
   end
 
+  create_table "zoho_sign_connections", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.string "region", limit: 10, null: false
+    t.string "client_id", limit: 100, null: false
+    t.text "client_secret", null: false
+    t.text "refresh_token", null: false
+    t.string "status", limit: 20, default: "connected", null: false
+    t.datetime "connected_at", null: false
+    t.datetime "last_verified_at"
+    t.datetime "last_webhook_at"
+    t.string "last_error"
+    t.string "webhook_token", limit: 40, null: false
+    t.text "webhook_secret", null: false
+    t.datetime "webhook_secret_revealed_at"
+    t.bigint "connected_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["connected_by_id"], name: "index_zoho_sign_connections_on_connected_by_id"
+    t.index ["entity_id"], name: "index_zoho_sign_connections_on_entity_id", unique: true
+    t.index ["webhook_token"], name: "index_zoho_sign_connections_on_webhook_token", unique: true
+  end
+
   add_foreign_key "access_rights", "entities"
   add_foreign_key "access_rights", "investors", column: "access_to_investor_id"
   add_foreign_key "access_rights", "users"
@@ -6036,4 +6060,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_23_120000) do
   add_foreign_key "workflow_steps", "users", column: "owner_user_id"
   add_foreign_key "workflow_steps", "workflow_templates"
   add_foreign_key "workflow_templates", "entities"
+  add_foreign_key "zoho_sign_connections", "entities"
+  add_foreign_key "zoho_sign_connections", "users", column: "connected_by_id"
 end
