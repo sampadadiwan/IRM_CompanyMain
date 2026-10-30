@@ -61,7 +61,7 @@ The system SHALL provide a signing page inside the platform's normal layout for 
 
 #### Scenario: Signing page shows the signer's context
 - **WHEN** an eligible signer opens the signing page
-- **THEN** it shows the document name, "Signing as: {email}", "Signer {n} of {total} - {label}", the signature method, a "Start signing" button and a "Back to document" link
+- **THEN** it shows the document name, "Signing as: {email}", "Signer {n} of {total} - {label}", the signature method, a "Start signing" button and a "Back to document" button
 
 #### Scenario: Start signing opens the panel
 - **WHEN** the signer clicks "Start signing"

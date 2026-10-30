@@ -349,6 +349,11 @@ Main everyday journey — connecting (proposal [Part A](proposal.md#part-a--once
     (existing `features/support/webmock_toggle.rb`).
 11. **Status badge stays on the model** — `Document#esign_status_badge` sits next to the existing
     `ESignature#status_badge`; there is no Draper decorator for either today.
+12. **Company credentials in their own table** — Choice: `zoho_sign_connections`, with the secrets under
+    `encrypts`. Alternative: columns on `entity_settings`, as Digio does with `digio_client_id`,
+    `digio_client_secret` and `digio_cutover_date`. Rejected: Zoho needs about a dozen fields most companies
+    never use, plus a connection status and a per-company webhook, and a refresh token should not be plain text or
+    shown on an admin form. The cutover idea and the default account from credentials still mirror Digio.
 
 **FAQ**
 
@@ -873,6 +878,17 @@ erDiagram
 | `connected_by_id` | Added: bigint, FK users | Audit of who connected |
 | `created_at`, `updated_at` | Added | Standard |
 
+**Where credentials live**
+
+| Provider | Default account | Company's own account | Encrypted | Managed from |
+|---|---|---|---|---|
+| Zoho | Rails credentials: `ZOHO_CLIENT_ID`, `ZOHO_CLIENT_SECRET`, `ZOHO_REFRESH_TOKEN`, `ZOHO_WEBHOOK_SECRET` | `zoho_sign_connections` | Yes: `client_secret`, `refresh_token`, `webhook_secret`. `client_id` and `webhook_token` are not secret | Zoho eSign panel on the company page, support only |
+| Digio | Rails credentials: `DIGIO_CLIENT_ID`, `DIGIO_SECRET` | `entity_settings`: `digio_client_id`, `digio_client_secret`, `digio_cutover_date` | No: `digio_client_secret` is plain text | `/admin/entities`, open the company |
+
+`entity_settings.esign_provider` chooses the provider for the whole company. A company with no row in
+`zoho_sign_connections` uses CapHive's default Zoho account, so changing the provider is the only required step.
+The encryption keys are in each environment's Rails credentials (`active_record_encryption`).
+
 **`e_signatures`** (changed): Zoho's per-signer id must survive forwarding.
 
 | Column / index | What changed | Why it's needed |
@@ -1093,6 +1109,10 @@ branches (`zohosign-1` → `zohosign-2`).
 - Canada addresses (`zohocloud.ca`) are unverified (Zoho's endpoint page gives only a template) → a
   token exchange against Canada is part of the pre-release sandbox check; the region table row is
   corrected if it fails.
+- **`esign_provider` applies to the whole company, not per document** → after a Digio company moves to Zoho, status
+  checks, reminders, extensions and cancels on its Digio documents still out for signature go to Zoho, and
+  `ZohoEsignHelper#signatures_failed` can mark them failed. Found by reading the code, not reproduced. Until a
+  document records its provider, clear those documents before changing the provider (business setup guide).
 - Active Record encryption keys must exist in every deployed environment → `config/application.rb`
   fetches them from credentials outside development/test; confirm `staging.in`, `staging.us`,
   `production.us` have `active_record_encryption` before PR 2 deploys (`production.in` has it).

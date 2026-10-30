@@ -35,21 +35,23 @@
              data-digio-esign-cancelled-message-value="<%= DigioSdkErrors::CANCELLED_MESSAGE %>"
              data-digio-esign-completed-message-value="<%= DigioSdkErrors::COMPLETED_MESSAGE %>">
           <p id="signing_message" class="alert alert-info" role="status" data-digio-esign-target="message" hidden></p>
-          <button type="button" id="start_signing" class="btn btn-primary"
-                  data-digio-esign-target="start" data-action="click->digio-esign#start">Start signing</button>
-          <button type="button" id="try_again" class="btn btn-outline-primary" hidden
-                  data-digio-esign-target="retry" data-action="click->digio-esign#start">Try again</button>
-          <%= link_to "Back to document", document_path(@document), class: "btn btn-link", data: { turbo: false } %>
+          <div class="d-flex gap-2">
+            <button type="button" id="start_signing" class="btn btn-primary"
+                    data-digio-esign-target="start" data-action="click->digio-esign#start">Start signing</button>
+            <button type="button" id="try_again" class="btn btn-outline-primary" hidden
+                    data-digio-esign-target="retry" data-action="click->digio-esign#start">Try again</button>
+            <%= link_to "Back to document", document_path(@document), class: "btn btn-outline-secondary", data: { turbo: false } %>
+          </div>
         </div>
       <% when :signed %>
         <p id="signing_message" class="alert alert-info" role="status"><%= DigioSdkErrors::ALREADY_SIGNED_MESSAGE %></p>
-        <%= link_to "Back to document", document_path(@document), class: "btn btn-link", data: { turbo: false } %>
+        <%= link_to "Back to document", document_path(@document), class: "btn btn-outline-secondary", data: { turbo: false } %>
       <% when :waiting_turn %>
         <p id="signing_message" class="alert alert-info" role="status"><%= DigioSdkErrors::NOT_YOUR_TURN_MESSAGE %></p>
-        <%= link_to "Back to document", document_path(@document), class: "btn btn-link", data: { turbo: false } %>
+        <%= link_to "Back to document", document_path(@document), class: "btn btn-outline-secondary", data: { turbo: false } %>
       <% else %>
         <p id="signing_message" class="alert alert-warning" role="status"><%= DigioSdkErrors::CLOSED_MESSAGE %></p>
-        <%= link_to "Back to document", document_path(@document), class: "btn btn-link", data: { turbo: false } %>
+        <%= link_to "Back to document", document_path(@document), class: "btn btn-outline-secondary", data: { turbo: false } %>
       <% end %>
     </div>
   </div>

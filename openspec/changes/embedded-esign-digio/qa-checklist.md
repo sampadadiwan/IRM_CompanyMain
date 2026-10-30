@@ -46,7 +46,7 @@ step (J2.3 = journey 2, step 3) · **R** = Role sweep · **C** = Cross-cutting c
 | ☐ | ID | What to check | Preconditions | Steps | Expected result | Pass / Fail | Notes |
 |---|---|---|---|---|---|---|---|
 | ☐ | H1 | A matching signer is offered **Sign now** | Document sent for eSignature; switch on; logged in as Priya | 1. Open the Subscription Agreement | A banner reads **Your signature is requested on this document.** with a **Sign now** button | | |
-| ☐ | H2 | Signing page shows the signer's context | H1 | 1. Click **Sign now** | Page shows the document name, **Signing as: priya@…**, **Signer 1 of 3 - Investor Signatory**, the signature method, a **Start signing** button and a **Back to document** link | | |
+| ☐ | H2 | Signing page shows the signer's context | H1 | 1. Click **Sign now** | Page shows the document name, **Signing as: priya@…**, **Signer 1 of 3 - Investor Signatory**, the signature method, a **Start signing** button and a **Back to document** button | | |
 | ☐ | H3 | **Start signing** opens Digio's panel on the same page | H2 | 1. Click **Start signing** | Digio's signing panel appears on the page (not a new window); it asks for verification | | |
 | ☐ | H4 | Completing the signature asks CapHive to confirm | H3 | 1. Verify with the one-time code Digio sends 2. Complete the signature | The page reads **Thank you. Your signature has been submitted and is being confirmed.** with **Back to document** | | |
 | ☐ | H5 | The signature is confirmed and the turn moves on | H4 | 1. Click **Back to document** 2. If still Requested, click **Get eSignatures' updates** (Signatures tab, as an employee) 3. Log in as Rahul and open the document | Priya shows **Signed**; Rahul sees **Sign now** | | |

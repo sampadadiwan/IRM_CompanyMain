@@ -516,6 +516,7 @@ None (no existing capability covers eSign).
 | Question | Answer |
 |---|---|
 | Who can connect a Zoho account? | CapHive support only |
+| Where are a company's own Zoho credentials kept? | In CapHive's database, one record per company, with the secrets encrypted. CapHive's default account stays in the application's credentials. Digio's company credentials are in the company's entity settings |
 | Does a company have to connect its own account? | No. Without one, CapHive's account is used, exactly as today |
 | What happens to documents already out for signature when we connect? | They finish on the account they were sent from; nothing to do |
 | Which Zoho plan does the client need? | One with API access and webhooks (Enterprise, API, Zoho One or People Plus). Without webhooks statuses still update via "Get eSignatures' updates" and the nightly check, just not live |

@@ -352,7 +352,7 @@ application logs; the body is already kept in `esign_logs`).
 
 | Item | Value / location |
 |---|---|
-| Credentials / env vars | `DIGIO_BASE_URL` already set per env (`ext.digio.in:444` staging/dev/test, `api.digio.in` production IN and US). Optional `DIGIO_SDK_BASE_URL` override; no new variable required |
+| Credentials / env vars | `DIGIO_BASE_URL` already set per env (`ext.digio.in:444` staging/dev/test, `api.digio.in` production IN and US). Optional `DIGIO_SDK_BASE_URL` override; no new variable required. Default account: Rails credentials `DIGIO_CLIENT_ID`, `DIGIO_SECRET`. A company's own account: `entity_settings.digio_client_id`, `digio_client_secret` (plain text) and `digio_cutover_date`, edited at `/admin/entities` |
 | Feature flag | `Entity.permissions` → `enable_embedded_esign`, appended to the end of the list in `EntityEnabled`; default off; toggled at `/admin/entities` (the tick-box renders from `Entity.permissions.pairs`, label "Enable Embedded Esign") |
 | Cron / schedules | None |
 | Deploy order | migrations (`esign_logs.sdk_events`, `e_signatures.signing_notified_at`) → code → CapHive admin ticks the flag per entity |

@@ -231,7 +231,7 @@ Signing page
 |  Signing as: priya@lpfund.com                                   |
 |  Signer 1 of 3 - Investor Signatory     Method: Aadhaar eSign   |
 |                                                                |
-|  [ Start signing ]                          Back to document    |
+|  [ Start signing ]                      [ Back to document ]    |
 +----------------------------------------------------------------+
 
 Document page (Rahul, before Priya has signed)
@@ -386,7 +386,7 @@ page shows **This signing request has expired. Please ask the sender to send it 
 |  Signing as: priya@lpfund.com                                   |
 |  Signer 1 of 3 - Investor Signatory     Method: Aadhaar eSign   |
 |                                                                |
-|  [ Start signing ]                          Back to document    |
+|  [ Start signing ]                      [ Back to document ]    |
 |                                                                |
 |  +----------------------------------------------------------+  |
 |  |  Digio signing panel appears here after Start signing     |  |
