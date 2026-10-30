@@ -10,6 +10,8 @@ class Document < ApplicationRecord
   SIGNATURE_TYPES = { image: "Signature Image", adhaar: "Adhaar eSign", dsc: "Digital Signing" }.freeze
   SKIP_ESIGN_UPDATE_STATUSES = %w[cancelled completed expired voided].freeze
   RESEND_FOR_ESIGN_STATUSES = %w[cancelled voided expired failed].freeze
+  ESIGN_ACTIVE_STATUSES = %w[requested sent inprogress].freeze
+  ESIGN_COMPLETED_STATUSES = %w[completed signed].freeze
 
   MODELS_WITH_DOCS = %w[Fund CapitalCommitment CapitalCall CapitalRemittance CapitalRemittancePayment CapitalDitribution CapitalDitributionPayment Deal DealInvestor InvestmentOpportunity ExpressionOfInterest].freeze
 
@@ -104,6 +106,11 @@ class Document < ApplicationRecord
                                           "(replace its file) or delete it before uploading another with the same name" },
                    if: :template_identity_changing?
   validates :owner_tag, length: { maximum: 40 }
+  # E14, E15, E16: blank means the provider default (90 / 4 days)
+  validates :esign_expiration_days, numericality: { only_integer: true, greater_than_or_equal_to: 1, less_than_or_equal_to: ZohoEsignHelper::MAX_EXPIRATION_DAYS,
+                                                    message: "must be between 1 and #{ZohoEsignHelper::MAX_EXPIRATION_DAYS}" }, allow_nil: true
+  validates :esign_reminder_period, numericality: { only_integer: true, greater_than_or_equal_to: 1, less_than_or_equal_to: ZohoEsignHelper::MAX_REMINDER_PERIOD_DAYS,
+                                                    message: "must be between 1 and #{ZohoEsignHelper::MAX_REMINDER_PERIOD_DAYS}" }, allow_nil: true
   validates :tag_list, length: { maximum: 120 }
   # The DB default only applies when the column is left unset; an explicit nil (e.g. from an
   # attributes hash written before this column existed) would otherwise fail the inclusion
@@ -146,6 +153,7 @@ class Document < ApplicationRecord
   scope :esign_status_completed, -> { where(esign_status: "completed") }
   scope :esign_status_failed, -> { where(esign_status: "failed") }
   scope :esign_status_requested, -> { where(esign_status: "requested") }
+  scope :esign_status_in_progress, -> { where(esign_status: "inprogress") }
   scope :esign_status_all, -> { where.not(esign_status: nil) }
 
   scope :signed, -> { where(owner_tag: "Signed") }
@@ -263,6 +271,25 @@ class Document < ApplicationRecord
 
   def esign_voided?
     esign_status&.casecmp?("voided")
+  end
+
+  # Same status -> color mapping as ESignature#status_badge, so the document-level badge (one
+  # eSign request) reads consistently with the per-signer badges shown alongside it.
+  # "inprogress" is Zoho's own status once a signer has actually started - distinct from
+  # "requested", which we set locally right after sending and before any signer has acted.
+  def esign_status_badge
+    case esign_status&.downcase
+    when "signed", "completed"
+      "success"
+    when "failed", "cancelled", "expired", "voided"
+      "danger"
+    when "requested"
+      "warning"
+    when "sent", "inprogress"
+      "info"
+    else
+      "secondary"
+    end
   end
 
   def eligible_for_esign_update?

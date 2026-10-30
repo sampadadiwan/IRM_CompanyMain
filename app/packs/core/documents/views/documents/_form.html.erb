@@ -177,6 +177,26 @@
             <small class="text-muted">Signers will be sent the Document in the order they are added</small>
               </div>
 
+              <% if document.entity.entity_setting.esign_supports?(:expiry_settings) %>
+                <div class="form-group col">
+                  <%= form.label :esign_expiration_days, "eSign Expires In (days)" %>
+                  <%= form.number_field :esign_expiration_days, in: 1..ZohoEsignHelper::MAX_EXPIRATION_DAYS, class: "form-control", placeholder: ZohoEsignHelper::DEFAULT_EXPIRATION_DAYS %>
+                  <small class="text-muted">Defaults to <%= ZohoEsignHelper::DEFAULT_EXPIRATION_DAYS %> days if left blank. Max <%= ZohoEsignHelper::MAX_EXPIRATION_DAYS %> days.</small>
+                </div>
+
+                <div class="form-group col">
+                  <%= form.label :esign_email_reminders, "Send Automatic Reminders" %>
+                  <%= form.check_box :esign_email_reminders, class: "form-check-input", "data-action": "click->docform#toggleReminderPeriod" %>
+                  <small class="text-muted">Periodically email signers who haven't signed yet, until the document expires or is signed</small>
+                </div>
+
+                <div class="form-group col" id="esign_reminder_period_div">
+                  <%= form.label :esign_reminder_period, "eSign Reminder Every (days)" %>
+                  <%= form.number_field :esign_reminder_period, in: 1..ZohoEsignHelper::MAX_REMINDER_PERIOD_DAYS, class: "form-control", placeholder: ZohoEsignHelper::DEFAULT_REMINDER_PERIOD_DAYS %>
+                  <small class="text-muted">Defaults to <%= ZohoEsignHelper::DEFAULT_REMINDER_PERIOD_DAYS %> days if left blank. Max <%= ZohoEsignHelper::MAX_REMINDER_PERIOD_DAYS %> days.</small>
+                </div>
+              <% end %>
+
             </div>
             <br>
           </div>

@@ -3,7 +3,7 @@ class DocumentsController < ApplicationController
   include DocumentHelper
 
   skip_before_action :verify_authenticity_token, :authenticate_user!, :set_current_entity, only: %i[signature_progress]
-  before_action :set_document, only: %w[show update destroy edit send_for_esign fetch_esign_updates force_send_for_esign cancel_esign send_document_notification resend_for_esign show_email_list verify_accessibility run_fix]
+  before_action :set_document, only: %w[show update destroy edit send_for_esign fetch_esign_updates force_send_for_esign cancel_esign extend_esign_expiry send_esign_reminder send_document_notification resend_for_esign show_email_list verify_accessibility run_fix]
   # Changed: Added NDA gate for LP folder access.
   # Why: Module 2 — LPs must accept an NDA before viewing NDA-protected folder contents.
   before_action :ensure_nda_accepted, only: [:folder]
@@ -11,9 +11,21 @@ class DocumentsController < ApplicationController
   after_action :verify_policy_scoped, only: []
 
   def signature_progress
-    # Check response  - if contains proper info then update doc esign status
-    # if not then just respond with 200 OK
-    EsignHelper.update_signature_progress(params)
+    if zoho_webhook?
+      # CapHive's platform Zoho account posts here; companies with their own account post to
+      # ZohoSignWebhooksController. Verified, then applied in the background so Zoho gets its 200
+      # within its 5 second limit (E33).
+      unless ZohoEsignHelper.verify_signature(request.raw_post, request.headers["X-ZS-WEBHOOK-SIGNATURE"], ZohoSignAccount.platform.webhook_secret)
+        Rails.logger.warn "Zoho Sign webhook signature verification failed"
+        return render json: "Invalid signature", status: :unauthorized
+      end
+
+      ZohoWebhookJob.perform_later(nil, request.raw_post)
+    else
+      # Check response  - if contains proper info then update doc esign status
+      # if not then just respond with 200 OK
+      EsignHelper.update_signature_progress(params)
+    end
     # Always respond with 200 OK - Expected from Digio
     render json: "Ok"
   end
@@ -186,7 +198,12 @@ class DocumentsController < ApplicationController
     eligible_for_update = @document.last_status_updated_at.nil? || @document.last_status_updated_at < 900.seconds.ago if @document.entity.entity_setting.esign_provider == "Docusign"
     # update the esign status of the document before cancelling
     if @document.eligible_for_esign_update? && eligible_for_update
-      EsignHelper.new(@document).update_esign_status
+      begin
+        EsignHelper.new(@document).update_esign_status
+      rescue ZohoSignClient::Error => e
+        # The recall below still runs; if Zoho is down it fails too and the user sees the error.
+        Rails.logger.warn("eSign status refresh before cancel failed for document #{@document.id} - #{e.message}")
+      end
       @document.reload
     end
     if @document.eligible_for_esign_update?
@@ -198,6 +215,25 @@ class DocumentsController < ApplicationController
       end
     else
       redirect_to [@document, { tab: "signatures-tab" }], alert: "Document's eSignature(s) cannot be cancelled - status is #{@document.esign_status}"
+    end
+  end
+
+  # allows a button to push out the expiry of an already-sent Zoho eSign request
+  def extend_esign_expiry
+    result = EsignHelper.new(@document).extend_expiry(params[:expire_by])
+    if result.success?
+      redirect_to [@document, { tab: "signatures-tab" }], notice: result.message
+    else
+      redirect_to [@document, { tab: "signatures-tab" }], alert: result.errors
+    end
+  end
+
+  # allows a button to trigger an immediate reminder email to whichever signer(s) are pending
+  def send_esign_reminder
+    if EsignHelper.new(@document).send_reminder
+      redirect_to [@document, { tab: "signatures-tab" }], notice: "Reminder was sent to pending signer(s)"
+    else
+      redirect_to [@document, { tab: "signatures-tab" }], alert: "Error sending reminder"
     end
   end
 
@@ -424,6 +460,12 @@ class DocumentsController < ApplicationController
   end
 
   # Use callbacks to share common setup or constraints between actions.
+  # Zoho signs its webhooks with this header; an unsigned Zoho update is recognised by its payload.
+  def zoho_webhook?
+    request.headers["X-ZS-WEBHOOK-SIGNATURE"].present? ||
+      (params.dig(:notifications, :operation_type).present? && params.dig(:requests, :request_id).present?)
+  end
+
   def set_document
     @document = Document.find(params[:id])
     authorize @document
@@ -548,7 +590,7 @@ class DocumentsController < ApplicationController
                                      :pdf_conversion_engine,
                                      :signature_enabled, :public_visibility, :send_email, :display_on_page, :embed,
                                      :download, :printing, :orignal, :owner_id, :owner_type, :owner_tag, :approved, :approved_by_id,
-                                     :tag_list, :folder_id, :file, :force_esign_order, :as_of, properties: {}, e_signatures_attributes: %i[id user_id label signature_type notes _destroy], stamp_papers_attributes: %i[id tags sign_on_page notes note_on_page _destroy], emails: [])
+                                     :tag_list, :folder_id, :file, :force_esign_order, :as_of, :esign_expiration_days, :esign_reminder_period, :esign_email_reminders, properties: {}, e_signatures_attributes: %i[id user_id label signature_type notes _destroy], stamp_papers_attributes: %i[id tags sign_on_page notes note_on_page _destroy], emails: [])
   end
 
   # @return [void] NDA gate — redirects LP to acceptance screen if folder has an active NDA

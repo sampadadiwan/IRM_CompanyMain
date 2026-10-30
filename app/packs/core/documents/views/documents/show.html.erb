@@ -175,7 +175,31 @@
                               eSignature Status
                            </td>
                            <td>
-                              <%= @document.esign_status&.titleize %>
+                              <span class="badge bg-<%= @document.esign_status_badge %>"><%= @document.esign_status&.titleize %></span>
+                           </td>
+                        </tr>
+                        <% end %>
+
+                        <% if @document.entity.entity_setting.esign_supports?(:expiry_settings) && @document.sent_for_esign %>
+                        <tr>
+                           <td>
+                              eSignature Expires On
+                           </td>
+                           <td>
+                              <%= l(@document.esign_expires_at.to_date) if @document.esign_expires_at %>
+                           </td>
+                        </tr>
+
+                        <tr>
+                           <td>
+                              eSignature Reminders
+                           </td>
+                           <td>
+                              <% if @document.esign_email_reminders %>
+                                Every <%= @document.esign_reminder_period.presence || ZohoEsignHelper::DEFAULT_REMINDER_PERIOD_DAYS %> day(s)
+                              <% else %>
+                                Disabled
+                              <% end %>
                            </td>
                         </tr>
                         <% end %>

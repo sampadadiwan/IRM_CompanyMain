@@ -6,7 +6,7 @@
       <td><%= link_to(document&.capital_commitment&.folio_id, document.capital_commitment) %></td>
       <td><%= link_to(document.name, document) %></td>
       <td><%= document.owner_tag %></td>
-      <td><%= document.esign_status&.titleize %></td>
+      <td><span class="badge bg-<%= document.esign_status_badge %>"><%= document.esign_status&.titleize %></span></td>
       <td>
         <% document.e_signatures.each do |esign| %>
         <span>

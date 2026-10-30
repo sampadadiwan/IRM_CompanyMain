@@ -75,6 +75,14 @@ class EntitySetting < ApplicationRecord
     end
   end
 
+  # Features an eSign provider offers beyond send / track / cancel. Policies and views ask
+  # esign_supports?(feature) instead of comparing provider names (E2, E26).
+  ESIGN_CAPABILITIES = { "Zoho" => %i[expiry_settings reminders extend_expiry connection] }.freeze
+
+  def esign_supports?(feature)
+    ESIGN_CAPABILITIES.fetch(esign_provider.to_s, []).include?(feature)
+  end
+
   def check_esign_provider
     self.esign_provider = "Digio" if esign_provider.blank?
     self.esign_provider = esign_provider.strip.capitalize

@@ -118,6 +118,14 @@ class DocumentPolicy < ApplicationPolicy
     update? && user.has_cached_role?(:company_admin) && record.sent_for_esign && !record.esign_expired? && !record.esign_failed? && !record.esign_voided?
   end
 
+  def extend_esign_expiry?
+    update? && record.entity.entity_setting.esign_supports?(:extend_expiry) && record.sent_for_esign && !record.esign_expired? && !record.esign_failed? && !record.esign_voided? && !record.esign_completed?
+  end
+
+  def send_esign_reminder?
+    update? && record.entity.entity_setting.esign_supports?(:reminders) && record.sent_for_esign && !record.esign_expired? && !record.esign_failed? && !record.esign_voided? && !record.esign_completed?
+  end
+
   def fetch_esign_updates?
     res = update? && record.sent_for_esign && !record.esign_expired? && !record.esign_failed? && !record.esign_voided?
     if record.entity.entity_setting.esign_provider == "Docusign" && !Rails.env.test?

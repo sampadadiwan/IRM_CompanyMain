@@ -22,9 +22,12 @@ class DocGenJob < ApplicationJob
   def validate(model); end
 
   def signed_document_already_exists?(model, doc_name)
-    signed_or_sent_for_esign = model.documents.signed.or(model.documents.sent_for_esign)
     # exists? issues SELECT 1 LIMIT 1; present? loaded every matching document row
-    signed_or_sent_for_esign.exists?(["name like ?", "%#{doc_name}%"])
+    model.documents.where(esign_status: Document::ESIGN_COMPLETED_STATUSES).exists?(["name like ?", "%#{doc_name}%"])
+  end
+
+  def sent_for_esign_document_already_exists?(model, doc_name)
+    model.documents.sent_for_esign.where("name like ?", "%#{doc_name}%").exists?(esign_status: Document::ESIGN_ACTIVE_STATUSES)
   end
 
   def approved_document_already_exists?(model, doc_name)
@@ -97,8 +100,9 @@ class DocGenJob < ApplicationJob
         doc_name = generate_doc_name(model, template, Time.zone.parse(start_date.to_s).strftime("%d %B,%Y"), Time.zone.parse(end_date.to_s).strftime("%d %B,%Y")).squish
         signed_document_already_exists = signed_document_already_exists?(model, doc_name)
         approved_document_already_exists = approved_document_already_exists?(model, doc_name)
+        sent_for_esign_already_exists = sent_for_esign_document_already_exists?(model, doc_name)
 
-        if valid && !signed_document_already_exists && !approved_document_already_exists
+        if valid && !signed_document_already_exists && !approved_document_already_exists && !sent_for_esign_already_exists
           # Cleanup previously generated documents if required
           cleanup_previous_docs(model, template)
           # Generate the document
@@ -111,6 +115,7 @@ class DocGenJob < ApplicationJob
         else
           msg = "Signed document already exists for #{model} with template #{template.name}" if signed_document_already_exists
           msg = "Approved document already exists for  #{model} with template #{template.name}" if approved_document_already_exists
+          msg = "Document already sent for Esign for  #{model} with template #{template.name}" if sent_for_esign_already_exists
           # Send notification if the model is not valid
           send_notification(msg, user_id, "danger")
           @error_msg << { msg:, model: }

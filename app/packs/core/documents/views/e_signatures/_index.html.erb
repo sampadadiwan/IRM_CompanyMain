@@ -11,7 +11,40 @@
   <% msg = "This option is to be used only when you want to change the type of signature for a signatory.  After this, the document will have to be signed by all signatories again (even if it was signed earlier)." %>
   <%= button_to "Re-Send for eSignatures" , resend_for_esign_document_path(owner), {class: "btn btn-outline-primary", method: :patch} if owner && policy(owner).resend_for_esign? %>
   <%= button_to "Cancel eSignatures" , cancel_esign_document_path(owner), {class: "btn btn-outline-danger", method: :patch} if owner && policy(owner).cancel_esign? %>
+  <%= button_to "Send Reminder" , send_esign_reminder_document_path(owner), {class: "btn btn-outline-primary ml-2", method: :patch} if owner && policy(owner).send_esign_reminder? %>
+  <% if owner && policy(owner).extend_esign_expiry? %>
+    <button type="button" class="btn btn-outline-primary ml-2" data-bs-toggle="modal" data-bs-target="#extendExpiryModal">
+      Extend Expiry
+    </button>
+  <% end %>
 </div>
+
+
+<% if owner && policy(owner).extend_esign_expiry? %>
+  <div class="modal fade" id="extendExpiryModal" tabindex="-1" aria-labelledby="extendExpiryModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <%= form_with url: extend_esign_expiry_document_path(owner), method: :patch do %>
+          <div class="modal-header">
+            <h5 class="modal-title" id="extendExpiryModalLabel">Extend eSign Expiry</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="form-group">
+              <%= label_tag :expire_by, "New Expiry Date" %>
+              <%= date_field_tag :expire_by, owner.esign_expires_at&.to_date, min: Date.tomorrow, class: "form-control", required: true %>
+              <small class="text-muted">Allowed: from <%= l(Date.tomorrow) %> onward</small>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">Cancel</button>
+            <%= submit_tag "Extend Expiry", class: "btn btn-outline-primary" %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+<% end %>
 <div class="table-responsive" data-controller="datatable">
   <table id="e_signatures" class="table table-bordered dataTable jqDataTable">
     <thead>
