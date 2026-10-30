@@ -139,7 +139,8 @@ Scenario: An unsigned update to a company's address is refused
 
 # E7 — zoho-sign-connections/Regenerated secret invalidates the old one
 Scenario: After regenerating the secret, updates signed with the old one are refused
-  Given the company had connected its Zoho account in "com" before the document was sent
+  Given the user has role "support"
+  And the company had connected its Zoho account in "com" before the document was sent
   When the admin regenerates the webhook secret and confirms
   And Zoho posts "RequestSigningSuccess" for "rohan@example.com" to the company's webhook address signed with "arka-secret"
   Then the webhook response is 401

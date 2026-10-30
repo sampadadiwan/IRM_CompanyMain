@@ -32,7 +32,7 @@ class ZohoSignConnectionsController < ApplicationController
   # E7
   def regenerate_webhook_secret
     secret = @connection.regenerate_webhook_secret!
-    render_panel(ZohoSignConnectionSetup::Result.new(true, nil, "New webhook secret created - paste it into your Zoho webhook.", @connection), secret:)
+    render_panel(ZohoSignConnectionSetup::Result.new(true, nil, "New webhook secret created - paste it into the company's Zoho webhook.", @connection), secret:)
   end
 
   private

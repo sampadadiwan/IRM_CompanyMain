@@ -23,8 +23,9 @@ Given('{int} documents are out for signature on the company\'s Zoho account') do
   end
 end
 
-Given('{string} is a user of the company without the company admin role') do |first_name|
+Given('{string} is a company admin of the company without the support role') do |first_name|
   @other_user = FactoryBot.create(:user, entity: @entity, first_name:)
+  @other_user.add_role(:company_admin)
 end
 
 Given('{string} is a company admin of another company') do |first_name|
@@ -202,6 +203,8 @@ end
 Then('the company admins are emailed once that the Zoho account needs reconnecting') do
   mails = ActionMailer::Base.deliveries.select { |mail| mail.subject.to_s.include?("reconnect") }
   expect(mails.size).to eq(@entity.employees.active.company_admins.count)
+  expect(mails.flat_map(&:cc).uniq).to eq([ENV.fetch("SUPPORT_EMAIL_TO")])
+  expect((mails.first.html_part || mails.first).decoded).to include("contact CapHive support")
 end
 
 Given('the company had connected its Zoho account in {string} before the document was sent') do |region|

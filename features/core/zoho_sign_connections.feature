@@ -1,18 +1,19 @@
 @zoho-http
 Feature: A company's own Zoho Sign account
 
-  Company admins (and CapHive support) of a company whose eSign provider is Zoho can connect the
-  company's own Zoho Sign account in any Zoho region from the company page. Zoho is a WebMock fake
+  CapHive support can connect the own Zoho Sign account of a company whose eSign provider is Zoho,
+  in any Zoho region, from the company page. Company admins cannot. Zoho is a WebMock fake
   (features/support/zoho_sign_stub.rb). Each scenario names its worked example in
   openspec/changes/zoho-esign-production-ready/design.md#worked-examples.
 
 Background:
   Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
   And the user has role "company_admin"
+  And the user has role "support"
   And the esign provider is "Zoho"
 
-# H1 — zoho-sign-connections/Panel shown to a company admin on a Zoho company
-Scenario: A company admin sees the Zoho eSign panel
+# H1 — zoho-sign-connections/Panel shown to support on a Zoho company
+Scenario: Support sees the Zoho eSign panel
   When the admin opens the company page
   Then the Zoho eSign panel shows "Using CapHive's"
 
@@ -134,13 +135,26 @@ Scenario: Disconnecting is refused while documents are out for signature
   Then the Zoho eSign panel shows "3 documents are still out for signature on this account. Wait for them to finish or cancel them first."
   And the company has exactly one Zoho connection
 
-# X1 — zoho-sign-connections/Non-admin cannot connect
-Scenario: A user who is not a company admin cannot connect
-  Given "Asha" is a user of the company without the company admin role
-  And "Asha" is logged in
+# X1 — zoho-sign-connections/Company admin has no access
+Scenario: A company admin without the support role cannot connect
+  Given "Meera" is a company admin of the company without the support role
+  And "Meera" is logged in
+  When the admin opens the company page
+  Then there is no Zoho eSign panel
   When a direct "post" request with region "com" is sent to the company's Zoho connection
   Then the request is refused
   And the company has no Zoho connection
+
+# X1 — zoho-sign-connections/Company admin has no access
+Scenario: A company admin without the support role cannot change or remove the connection
+  Given the company has connected its Zoho account in "com"
+  And "Meera" is a company admin of the company without the support role
+  And "Meera" is logged in
+  When the admin opens the company page
+  Then there is no Zoho eSign panel
+  When a direct "delete" request with region "com" is sent to the company's Zoho connection
+  Then the request is refused
+  And the company has exactly one Zoho connection
 
 # X2 — zoho-sign-connections/Admin of another company cannot touch the connection
 Scenario: A company admin of another company cannot change or remove the connection

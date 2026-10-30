@@ -9,22 +9,22 @@ decides which Zoho account (the company's own or CapHive's platform account) eac
 
 ### Requirement: Zoho eSign panel visibility and access
 The system SHALL show a Zoho eSign panel on the company page only when the company's eSign provider is
-Zoho. Only that company's company admins (who are not investor advisors) and CapHive support SHALL be
+Zoho. Only CapHive support (including while logged in as a client user) SHALL be
 able to view the panel or connect, verify, reconnect, regenerate the webhook secret or disconnect. Any
 other user SHALL be refused and nothing SHALL change. A connection SHALL belong to exactly one company,
 and a company SHALL have at most one connection.
 
-#### Scenario: Panel shown to a company admin on a Zoho company
-- **WHEN** a company admin of a company whose eSign provider is Zoho opens the company page
+#### Scenario: Panel shown to support on a Zoho company
+- **WHEN** support opens the company page of a company whose eSign provider is Zoho
 - **THEN** the Zoho eSign panel is shown
 
 #### Scenario: Panel hidden when the provider is not Zoho
-- **WHEN** a company admin of a company whose eSign provider is Digio opens the company page
+- **WHEN** support opens the company page of a company whose eSign provider is Digio
 - **THEN** no Zoho eSign panel is shown
 
-#### Scenario: Non-admin cannot connect
-- **WHEN** a user who is not a company admin of the company submits a connect request for it
-- **THEN** the request is refused and no connection is created
+#### Scenario: Company admin has no access
+- **WHEN** a company admin of the company without the support role opens the company page or submits a connect, reconnect or disconnect request for it
+- **THEN** no Zoho eSign panel is shown, the request is refused and nothing changes
 
 #### Scenario: Admin of another company cannot touch the connection
 - **WHEN** a company admin of company B tries to view, reconnect or disconnect company A's connection
@@ -54,7 +54,7 @@ nothing and SHALL show a message naming the likely cause: an expired or already 
 Client ID not known in that region, or a wrong Client Secret. The grant code SHALL NOT be stored.
 
 #### Scenario: Successful connection
-- **WHEN** a company admin submits region United States, a valid Client ID, Client Secret and an unused grant code
+- **WHEN** support submits region United States, a valid Client ID, Client Secret and an unused grant code
 - **THEN** the connection is Connected, "Connected on" shows the current date and time, and the panel says documents sent from now on use the company's Zoho account
 
 #### Scenario: Expired grant code
@@ -76,7 +76,7 @@ logs or to the eSign log. The webhook secret SHALL be displayable once after it 
 it SHALL only be replaceable.
 
 #### Scenario: Secret not shown again
-- **WHEN** a company admin opens the panel after connecting
+- **WHEN** support opens the panel after connecting
 - **THEN** the Client Secret is not shown and the webhook secret is masked unless it has not been revealed yet
 
 #### Scenario: Secrets kept out of logs
@@ -108,7 +108,7 @@ credentials and reports the result. A successful check SHALL leave or set the co
 credential rejection SHALL set it to Needs reconnect.
 
 #### Scenario: Verification succeeds
-- **WHEN** a company admin clicks Verify connection and Zoho accepts the credentials
+- **WHEN** support clicks Verify connection and Zoho accepts the credentials
 - **THEN** the panel shows "Connection verified" and the status Connected
 
 #### Scenario: Verification fails on credentials
@@ -117,28 +117,27 @@ credential rejection SHALL set it to Needs reconnect.
 
 ### Requirement: Connection health and Needs reconnect
 When Zoho rejects a connection's stored credentials during any call, the system SHALL set the connection
-to Needs reconnect and SHALL email the company's company admins once per transition, not once per
+to Needs reconnect and SHALL email the company's company admins, copying CapHive support, once per transition, not once per
 document or call. While a connection needs reconnecting, sending a document that would use it SHALL be
-refused with "<Company>'s Zoho account needs to be reconnected. Ask a company admin to reconnect it on
-the company page." Status checks for documents on that connection SHALL leave the documents unchanged
+refused with "<Company>'s Zoho account needs to be reconnected. Contact CapHive support to reconnect it." Status checks for documents on that connection SHALL leave the documents unchanged
 (they SHALL NOT be marked Failed).
 
 #### Scenario: Credentials revoked
 - **WHEN** Zoho rejects the company's credentials while a status check runs for three documents
-- **THEN** the connection becomes Needs reconnect, the company admins receive one email, and the three documents keep their statuses
+- **THEN** the connection becomes Needs reconnect, the company admins receive one email copied to support, and the three documents keep their statuses
 
 #### Scenario: Sending blocked while reconnect is needed
 - **WHEN** a user sends a document that would use a connection in Needs reconnect
 - **THEN** the send is refused with the reconnect message and nothing is sent to Zoho
 
 ### Requirement: Reconnect keeps the cutover
-The system SHALL let a company admin reconnect by submitting a new grant code (and optionally a new
+The system SHALL let support reconnect by submitting a new grant code (and optionally a new
 region, Client ID or Client Secret; a blank Client Secret keeps the stored one). On success the
 credentials SHALL be replaced, the status SHALL become Connected, and "connected on" SHALL stay
 unchanged. On failure the existing connection SHALL be left as it was.
 
 #### Scenario: Reconnect after revocation
-- **WHEN** a company admin reconnects a Needs reconnect connection with a fresh grant code
+- **WHEN** support reconnects a Needs reconnect connection with a fresh grant code
 - **THEN** the status is Connected, "connected on" is the original date, and documents already sent on the account update again
 
 #### Scenario: Failed reconnect changes nothing
@@ -146,18 +145,18 @@ unchanged. On failure the existing connection SHALL be left as it was.
 - **THEN** the stored credentials and status are unchanged and the expired-code message is shown
 
 ### Requirement: Disconnect
-The system SHALL let a company admin disconnect after confirming, only when no document is out for
+The system SHALL let support disconnect after confirming, only when no document is out for
 signature on that connection (sent at or after "connected on" and not Completed, Expired, Cancelled or
 Failed). Otherwise it SHALL refuse with "<N> documents are still out for signature on this account. Wait
 for them to finish or cancel them first." After disconnecting, new documents SHALL use CapHive's platform
 account.
 
 #### Scenario: Disconnect refused with documents out
-- **WHEN** a company admin disconnects while 3 documents sent on the company's account are In progress
+- **WHEN** support disconnects while 3 documents sent on the company's account are In progress
 - **THEN** the connection stays and the message says 3 documents are still out for signature
 
 #### Scenario: Disconnect allowed
-- **WHEN** a company admin disconnects and no documents are out for signature on the account
+- **WHEN** support disconnects and no documents are out for signature on the account
 - **THEN** the connection is removed and the next document is sent through CapHive's platform account
 
 ### Requirement: Company webhook address and secret
@@ -167,7 +166,7 @@ secret generated by the system. The panel SHALL show the address, reveal the sec
 with the old one are refused. The panel SHALL show when the last accepted update arrived.
 
 #### Scenario: Secret revealed once
-- **WHEN** a company admin clicks Show webhook secret for the first time
+- **WHEN** support clicks Show webhook secret for the first time
 - **THEN** the secret is shown, and on the next visit only Regenerate is offered
 
 #### Scenario: Regenerated secret invalidates the old one

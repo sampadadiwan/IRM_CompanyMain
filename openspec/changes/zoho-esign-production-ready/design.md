@@ -293,10 +293,10 @@ stateDiagram-v2
 
 | Where in CapHive | Today | After this change | Who sees it |
 |---|---|---|---|
-| Company page | Nothing about Zoho | Zoho eSign panel (connect / status / webhook) | Company admins, support — Zoho companies only |
+| Company page | Nothing about Zoho | Zoho eSign panel (connect / status / webhook) | CapHive support — Zoho companies only |
 | Document › Edit | Expiry/reminder fields for Zoho | Same fields, now validated server-side | Users who can edit the document |
 | Document › Signatures | Send Reminder, Extend Expiry for Zoho | Same, shown via capability; clearer refusal messages | Users who can edit the document |
-| Email | — | "Zoho account needs reconnecting" | Company admins |
+| Email | — | "Zoho account needs reconnecting" | Company admins, copied to support |
 
 Main everyday journey — connecting (proposal [Part A](proposal.md#part-a--once-connect-arkas-own-zoho)):
 
@@ -426,14 +426,13 @@ sequenceDiagram
 
 | Role | View panel | Connect / reconnect / verify / disconnect / secrets |
 |---|---|---|
-| Company admin of the entity (not an investor advisor) | Yes | Yes |
-| Support | Yes | Yes |
+| Support (including while logged in as a client user) | Yes | Yes |
+| Company admin of the entity | No | No (refused) |
 | Other users of the entity | No | No (refused) |
 | Company admin of another entity | No | No (refused) |
 
 Scoping: the controller loads the entity from `params[:entity_id]` and authorizes
-`ZohoSignConnectionPolicy`, which delegates to `EntityPolicy#update?` (own entity + company admin, or
-support). The connection is always `entity.zoho_sign_connection`; no connection id is taken from params.
+`ZohoSignConnectionPolicy`, which allows `support?` only. The connection is always `entity.zoho_sign_connection`; no connection id is taken from params.
 
 **Worked examples:** H1, H2, H3, H4, E1–E8, X1–X6
 
@@ -903,7 +902,7 @@ erDiagram
 
 | Notification | Trigger | Recipients | Channel | Customisable | Default | Sent once? |
 |---|---|---|---|---|---|---|
-| Zoho account needs reconnecting (`ZohoSignConnectionNotifier` → `EntityMailer#zoho_sign_needs_reconnect`) | Connection moves `connected` → `needs_reauth` | The company's active company admins (`entity.employees.active.company_admins`) | Email (and in-app notification record) | No (internal alert) | On | Yes — only the call whose conditional update changed the row notifies; repeated `AuthError`s while already `needs_reauth` send nothing |
+| Zoho account needs reconnecting (`ZohoSignConnectionNotifier` → `EntityMailer#zoho_sign_needs_reconnect`) | Connection moves `connected` → `needs_reauth` | The company's active company admins (`entity.employees.active.company_admins`), `SUPPORT_EMAIL_TO` copied | Email (and in-app notification record) | No (internal alert) | On | Yes — only the call whose conditional update changed the row notifies; repeated `AuthError`s while already `needs_reauth` send nothing |
 | Existing send result alert ("sent for eSigning" / "Error sending …") | Send finishes | The sender | In-app `UserAlert` (existing) | No | On | One per send |
 | Investor signing emails | Zoho request sent / reminders | Signers | Email **from Zoho**, not CapHive | In Zoho | Per document settings | Zoho's own schedule; "Send Reminder" sends one immediately |
 
@@ -927,7 +926,7 @@ Investors receive no new CapHive notification. Investor advisors receive nothing
 | Failure | Who is alerted | Channel | Detail |
 |---|---|---|---|
 | Send fails | Sender | `UserAlert` (danger) | Message with Zoho/exception reason; `ErrorReport.notify(source: "ZohoEsignHelper send")` |
-| Credentials rejected | Company admins | `ZohoSignConnectionNotifier` email | Once per transition; `last_error` on panel |
+| Credentials rejected | Company admins, support copied | `ZohoSignConnectionNotifier` email | Once per transition; `last_error` on panel |
 | Webhook refused (401) | — | Log only | Avoids alert floods from scanners |
 | Transient / rate limit in jobs | — | Job retries; `ErrorReport.notify` on final failure | |
 | Unknown status / event | — | `EsignLog` + log | No alert |
@@ -973,7 +972,7 @@ Spec names: **C:** `zoho-sign-connections`, **S:** `zoho-esign`. Feature files u
 
 | # | Scenario | Given | When | Then | Spec scenario | Feature |
 |---|---|---|---|---|---|---|
-| H1 | Admin sees panel | Arka not connected | Meera opens Arka's company page | Zoho eSign panel "Using CapHive's" | C: Panel shown to a company admin on a Zoho company | CN |
+| H1 | Support sees panel | Arka not connected | Ravi opens Arka's company page | Zoho eSign panel "Using CapHive's" | C: Panel shown to support on a Zoho company | CN |
 | H2 | Connect | Zoho US accepts the code | Meera connects with region United States | Connected, "Connected on 29/10/2026 12:00" | C: Successful connection | CN |
 | H3 | Reveal secret once | Arka connected, secret never shown | Meera clicks Show webhook secret, then reloads | Secret shown once; afterwards only Regenerate | C: Secret revealed once; C: Secret not shown again | CN |
 | H4 | Verify | Arka connected, Zoho accepts | Meera clicks Verify connection | "Connection verified", Connected | C: Verification succeeds | CN |
@@ -994,7 +993,7 @@ Spec names: **C:** `zoho-sign-connections`, **S:** `zoho-esign`. Feature files u
 
 | # | Scenario | Given | When | Then | Spec scenario | Feature |
 |---|---|---|---|---|---|---|
-| E1 | Digio company | Chola (Digio) | Its admin opens the company page | No Zoho panel | C: Panel hidden when the provider is not Zoho | CN |
+| E1 | Digio company | Chola (Digio) | Ravi opens the company page | No Zoho panel | C: Panel hidden when the provider is not Zoho | CN |
 | E2 | Digio document | Chola document sent | User opens it | No Extend Expiry, Send Reminder, expiry/reminder fields; direct PATCH extend refused | S: Hidden for Digio | ES |
 | E3 | Missing fields | — | Meera submits with blank grant code and secret | Both marked required; nothing saved | C: Missing fields | CN |
 | E4 | Region not in list | — | Direct POST with region `xx` | "Pick a Zoho region"; nothing saved | C: Region outside the list refused | CN |
@@ -1034,7 +1033,7 @@ Spec names: **C:** `zoho-sign-connections`, **S:** `zoho-esign`. Feature files u
 
 | # | Scenario | Given | When | Then (what the user sees, who is alerted) | Spec scenario | Feature |
 |---|---|---|---|---|---|---|
-| X1 | Non-admin connects | Asha (not admin) | Direct POST connect | Refused; no connection | C: Non-admin cannot connect | CN |
+| X1 | Company admin blocked | Meera (company admin, not support) | Opens the company page; direct POST connect, or DELETE when connected | No panel; refused; nothing changes | C: Company admin has no access | CN |
 | X2 | Other company's admin | Kabir (Bodhi) | Direct PATCH/DELETE on Arka's connection URL | Refused; Arka unchanged | C: Admin of another company cannot touch the connection | CN |
 | X3 | Expired grant code | Zoho answers `invalid_code` | Meera connects | Expired-code message; nothing saved | C: Expired grant code | CN |
 | X4 | Wrong region | Zoho India answers `invalid_client` | Meera connects with India | Wrong-region message; nothing saved | C: Wrong region | CN |
@@ -1060,6 +1059,8 @@ Spec names: **C:** `zoho-sign-connections`, **S:** `zoho-esign`. Feature files u
 | X24 | Signer declines | Q3 out | RequestRejected for Priya | Priya Failed; document Failed; Resend available | S: Signer declines | WH |
 | X25 | Recall refused | Zoho 400 on recall | Asha cancels | "Error cancelling eSignature(s)"; unchanged | S: Recall refused | ES |
 | X26 | Certificate unavailable | Zoho 500 on certificate | Completion | Completed with signed copy; no certificate; ErrorReport logged | S: Certificate unavailable | WH |
+| X27 | Aadhaar signer | Signer set to Aadhaar (company moved from Digio) | Asha sends | "<name> uses Aadhaar eSign, which Zoho does not support yet. Contact CapHive support."; nothing sent | S: Aadhaar signer refused | ES |
+| X28 | Stamp papers | Document has stamp papers (company moved from Digio) | Asha sends | "<name> uses e-stamping, which Zoho does not support yet. Contact CapHive support."; nothing sent | S: Stamp papers refused | ES |
 
 Every spec scenario appears at least once in the Spec scenario columns above.
 

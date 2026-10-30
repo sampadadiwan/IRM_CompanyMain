@@ -48,6 +48,8 @@ class EntityMailer < ApplicationMailer
   def zoho_sign_needs_reconnect
     setup_defaults
     @connection = ZohoSignConnection.find(params[:zoho_sign_connection_id])
+    # Only support can reconnect, so they hear about it alongside the company admins
+    add_support_to_cc
     send_mail(subject: "Action required: reconnect #{@entity.name}'s Zoho eSign account")
   end
 

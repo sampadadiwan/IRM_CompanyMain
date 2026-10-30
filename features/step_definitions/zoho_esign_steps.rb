@@ -18,6 +18,15 @@ Given('the document is to be signed by {string}') do |emails|
   end
 end
 
+Given('the signer {string} is set to sign with Aadhaar') do |email|
+  @doc.e_signatures.find_by!(email:).update!(signature_type: "Aadhaar")
+end
+
+Given('the document has a stamp paper') do
+  @doc.entity.entity_setting.update!(stamp_paper_tags: "GJ-100")
+  StampPaper.create!(owner: @doc, tags: "GJ-100:1", sign_on_page: "LAST", note_on_page: "LAST")
+end
+
 Given('the document has {int} Zoho signers') do |count|
   count.times { |idx| FactoryBot.create(:e_signature, document: @doc, entity: @doc.entity, email: "signer#{idx + 1}@example.com", position: idx + 1, signature_type: nil) }
 end
@@ -62,7 +71,7 @@ end
 Then('the document has {string} e_signatures by Zoho') do |_count|
   @doc ||= Document.order(:created_at).last
   SECOND_SIGNERS.each_with_index do |email, idx|
-    FactoryBot.create(:e_signature, document: @doc, entity: @doc.entity, email:, position: idx + 1) unless @doc.e_signatures.exists?(email:)
+    FactoryBot.create(:e_signature, document: @doc, entity: @doc.entity, email:, position: idx + 1, signature_type: nil) unless @doc.e_signatures.exists?(email:)
   end
   steps %(When the document is sent for Zoho eSign)
 end
@@ -71,7 +80,7 @@ When('the document is sent for Zoho eSign') do
   zoho_fake
   allow(UserAlert).to receive(:new).and_call_original
   @doc ||= Document.order(:created_at).last
-  SECOND_SIGNERS.each_with_index { |email, idx| FactoryBot.create(:e_signature, document: @doc, entity: @doc.entity, email:, position: idx + 1) } if @doc.e_signatures.reload.none?
+  SECOND_SIGNERS.each_with_index { |email, idx| FactoryBot.create(:e_signature, document: @doc, entity: @doc.entity, email:, position: idx + 1, signature_type: nil) } if @doc.e_signatures.reload.none?
   visit(document_path(@doc))
   click_on("Signatures")
   click_on("Send For eSignatures")

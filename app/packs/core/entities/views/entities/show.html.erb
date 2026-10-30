@@ -303,8 +303,8 @@
   </div>
 </div>
 
-<%# Zoho eSign panel: Zoho companies only, for their company admins and support (H1, E1) %>
-<% if @entity.entity_setting&.esign_supports?(:connection) && policy(@entity).update? %>
+<%# Zoho eSign panel: Zoho companies only, for CapHive support (H1, E1) %>
+<% if @entity.entity_setting&.esign_supports?(:connection) && policy(ZohoSignConnection.new(entity: @entity)).show? %>
   <%= render "zoho_sign_connections/panel", entity: @entity, connection: ZohoSignConnection.find_by(entity_id: @entity.id) %>
 <% end %>
 

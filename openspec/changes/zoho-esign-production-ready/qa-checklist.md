@@ -60,7 +60,7 @@ demand (a timeout, a forged update). The developer uses the commands in the oper
 
 | ☐ | ID | What to check | Preconditions | Steps | Expected result | Pass / Fail | Notes |
 |---|---|---|---|---|---|---|---|
-| ☐ | H1 | Admin sees the Zoho panel | Arka not connected | 1. Log in as Meera. 2. Open Arka Capital's company page | Panel "Zoho eSign" with badge "Using CapHive's" and the connect form | | |
+| ☐ | H1 | Support sees the Zoho panel | Arka not connected | 1. Log in as Ravi. 2. Open Arka Capital's company page | Panel "Zoho eSign" with badge "Using CapHive's" and the connect form | | |
 | ☐ | H2 | Connect own account | Self Client created in the US Zoho account; fresh grant code | 1. Region "United States". 2. Paste Client ID, Client Secret, grant code. 3. Click Connect | "Connected — documents sent from now on use Arka's Zoho account (United States)."; Connected on shows today's date and time | | |
 | ☐ | H3 | Webhook secret shown once | H2 done | 1. Click Show webhook secret. 2. Copy it. 3. Reload the page | Secret shown once; after reload it is masked and only "Regenerate webhook secret" is offered | | |
 | ☐ | H4 | Verify | H2 done | 1. Click Verify connection | "Connection verified"; badge Connected | | |
@@ -81,7 +81,7 @@ demand (a timeout, a forged update). The developer uses the commands in the oper
 
 | ☐ | ID | What to check | Preconditions | Steps | Expected result | Pass / Fail | Notes |
 |---|---|---|---|---|---|---|---|
-| ☐ | E1 | No panel for a Digio company | — | 1. Log in as Chola admin. 2. Open Chola's company page | No Zoho eSign panel | | |
+| ☐ | E1 | No panel for a Digio company | — | 1. Log in as Ravi. 2. Open Chola's company page | No Zoho eSign panel | | |
 | ☐ | E2 | Digio documents unchanged | A sent Chola document | 1. Open it › Signatures; open Edit | No Extend Expiry, no Send Reminder, no expiry/reminder fields; Digio send/cancel/updates work as before | | |
 | ☐ | E3 | Required fields | Arka not connected | 1. Leave Client Secret and grant code blank. 2. Connect | Both fields marked required; nothing saved | | |
 | ☐ | E4 | Region outside the list (dev-assisted) | — | 1. Developer submits a connect request with region "xx" | "Pick a Zoho region"; nothing saved | | |
@@ -131,7 +131,7 @@ demand (a timeout, a forged update). The developer uses the commands in the oper
 | ☐ | X8 | Revoked during the daily check | Self Client deleted; Arka documents out | 1. Ask a developer to run the daily eSign status check | Panel "Needs reconnect"; Meera (and other Arka company admins) get **one** email; documents keep their statuses | | |
 | ☐ | X9 | Zoho slow (dev-assisted) | — | 1. Developer simulates a timeout during the daily check | Status unchanged; check retried later | | |
 | ☐ | X10 | Rate limited (dev-assisted) | — | 1. Developer simulates a rate-limit answer | Not marked Failed; retried later | | |
-| ☐ | X11 | Sending blocked | Arka "Needs reconnect" | 1. As Asha send a document | "Arka Capital's Zoho account needs to be reconnected. Ask a company admin to reconnect it on the company page."; nothing sent | | |
+| ☐ | X11 | Sending blocked | Arka "Needs reconnect" | 1. As Asha send a document | "Arka Capital's Zoho account needs to be reconnected. Contact CapHive support to reconnect it."; nothing sent | | |
 | ☐ | X12 | 26 signers | Document with 26 signers | 1. Send | "Zoho allows at most 25 signers per document."; nothing sent | | |
 | ☐ | X13 | Zoho unreachable on send (dev-assisted) | — | 1. Developer simulates a timeout. 2. Asha sends | Document "Failed"; alert "Error sending Arka Fund I - Q3 Statement for eSigning - <reason>"; Resend works | | |
 | ☐ | X14 | Unreadable file | Document whose file is not a valid PDF | 1. Send | Document "Failed"; alert "Error sending <name> for eSigning - <reason>" | | |
@@ -147,6 +147,8 @@ demand (a timeout, a forged update). The developer uses the commands in the oper
 | ☐ | X24 | Signer declines | In progress | 1. Priya declines in Zoho | Priya "Failed"; document "Failed"; Resend available | | |
 | ☐ | X25 | Recall refused | Request already completed in Zoho | 1. Cancel eSignatures | "Error cancelling eSignature(s)"; statuses unchanged | | |
 | ☐ | X26 | Certificate unavailable (dev-assisted) | — | 1. Developer makes the certificate download fail at completion | Document "Completed" with the signed copy; no certificate; no error shown to users | | |
+| ☐ | X27 | Aadhaar signer (dev-assisted) | Developer sets one signer to Aadhaar | 1. Send | "<name> uses Aadhaar eSign, which Zoho does not support yet. Contact CapHive support."; nothing sent | | |
+| ☐ | X28 | Stamp papers (dev-assisted) | Developer adds a stamp paper to the document | 1. Send | "<name> uses e-stamping, which Zoho does not support yet. Contact CapHive support."; nothing sent | | |
 
 ---
 
@@ -181,7 +183,7 @@ demand (a timeout, a forged update). The developer uses the commands in the oper
 | R4 | Disconnect Arka | | | | | |
 | R5 | Send / remind / extend / cancel an Arka document | | | | | |
 
-Expected: R1–R4 ✓ for Meera and Ravi, ✗ for Asha, investors and Kabir. R5 follows existing document
+Expected: R1–R4 ✓ for Ravi only, ✗ for Meera, Asha, investors and Kabir. R5 follows existing document
 permissions (✓ Meera, Asha with edit access; ✗ investors, Kabir).
 
 ---
@@ -190,7 +192,7 @@ permissions (✓ Meera, Asha with edit access; ✗ investors, Kabir).
 
 | ☐ | ID | Check | Expected | Pass / Fail | Notes |
 |---|---|---|---|---|---|
-| ☐ | C1 | Reconnect email (X8) arrives | To Arka's company admins only; subject names Arka and Zoho; link opens the company page; dates shown as `Oct 29, 2026` | | |
+| ☐ | C1 | Reconnect email (X8) arrives | To Arka's company admins, copied to support; says to contact CapHive support; subject names Arka and Zoho; link opens the company page; dates shown as `Oct 29, 2026` | | |
 | ☐ | C2 | Dates on changed screens | Expires On, Connected on, Last update and the Extend dialog's allowed dates use the locale format (`29/10/2026` for English) | | |
 | ☐ | C3 | Narrow / mobile width | Company panel and Extend dialog usable at phone width; no horizontal scroll | | |
 | ☐ | C4 | Tenant isolation | Kabir (Bodhi) cannot see Arka's panel, webhook address or connection details, even with a direct URL; Bodhi's Zoho updates never change Arka documents (X20) | | |

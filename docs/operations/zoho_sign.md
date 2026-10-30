@@ -10,8 +10,8 @@ Design and decisions: `openspec/changes/zoho-esign-production-ready/` (proposal,
 
 - Every company whose eSign provider is **Zoho** signs through **CapHive's platform account** until
   it connects its own.
-- A company admin (or support) can connect the company's **own Zoho Sign account** on the company
-  page › **Zoho eSign** panel.
+- CapHive support can connect the company's **own Zoho Sign account** on the company page ›
+  **Zoho eSign** panel. Company admins do not see the panel.
 - **Cutover:** documents sent at or after the "Connected on" moment use the company's account.
   Documents sent before keep using CapHive's account for every later action (status check,
   reminder, extend, cancel, download). Reconnecting does not move the cutover.
@@ -37,8 +37,8 @@ Pick the region from the address of the client's Zoho account.
 
 ## Connecting a company's own account (Option A — Self Client)
 
-Done by the client's company admin, with support on the call if needed. The grant code lasts about
-ten minutes and works once, so do steps 3 and 4 back to back.
+The client does the Zoho steps (1–3 and 6–7) and CapHive support does the CapHive steps (4–5), on a
+call so the grant code can be used at once. It lasts about ten minutes and works once.
 
 1. **Find the region.** In Zoho Sign, note the address bar (`sign.zoho.com` = United States, etc.).
 2. **Create a Self Client.** Zoho API console (`https://api-console.zoho.<domain>`) › **Add Client**
@@ -57,7 +57,7 @@ ten minutes and works once, so do steps 3 and 4 back to back.
 7. **Test.** In Zoho, **Test Url** on the webhook. Zoho shows success and the CapHive panel's
    "Last update" changes to now.
 
-Messages the admin may see on Connect:
+Messages support may see on Connect:
 
 | Message starts with | Cause | Fix |
 |---|---|---|
@@ -110,6 +110,30 @@ Release 2 (company connections):
 
 Rollback: release 1 — revert code, no data. Release 2 — revert code; the new table can stay
 unused, companies fall back to CapHive's account.
+
+## Aadhaar and e-stamping
+
+Not supported through Zoho yet. A send with an Aadhaar signer or stamp papers is refused, because
+Zoho would otherwise collect a plain electronic signature with no stamp. The forms hide both options
+for Zoho companies, so this only reaches companies that moved from Digio with existing settings.
+
+Support clears them from the console, on the document and on its template so new documents stop
+copying them:
+
+```ruby
+doc = Document.find(<document or template id>)
+doc.e_signatures.where(signature_type: "Aadhaar").update_all(signature_type: "Electronic")
+doc.stamp_papers.destroy_all
+```
+
+Future improvement, once there is a working paid Zoho account (both need a paid plan and the India
+data centre; neither works on a trial):
+
+- **Aadhaar:** send `allowed_cloud_provider_ids: [25]` on each Aadhaar signer's action. An admin turns
+  Aadhaar eSign on in Zoho (Settings › Integrations), and each signing costs 2 credits.
+- **E-stamping:** send `estamping_request` on the request (`PUT /api/v1/requests/<id>`). It needs the
+  state, document category, both parties' details, consideration amount and duty payer, which our
+  stamp papers do not hold, plus credits per stamp. This is a feature of its own.
 
 ## Developer-assisted QA
 
@@ -194,7 +218,8 @@ EsignUpdateJob.perform_now(<document id>, nil)
 
 | Symptom | Likely cause | What to do |
 |---|---|---|
-| Panel shows **Needs reconnect**; admins got the reconnect email; sends refused with "…Zoho account needs to be reconnected…" | The client deleted or reset the Self Client, or revoked the refresh token | Company admin generates a new grant code and uses **Reconnect** (blank Client Secret keeps the stored one). The cutover date is kept |
+| Send refused with "…uses Aadhaar eSign…" or "…uses e-stamping…" | The company moved from Digio and the document or its template still has these settings | See [Aadhaar and e-stamping](#aadhaar-and-e-stamping) |
+| Panel shows **Needs reconnect**; company admins and support got the reconnect email; sends refused with "…Zoho account needs to be reconnected…" | The client deleted or reset the Self Client, or revoked the refresh token | The client generates a new grant code and support uses **Reconnect** (blank Client Secret keeps the stored one). The cutover date is kept |
 | Statuses only change after **Get eSignatures' updates** / the daily check | Webhook missing, wrong secret, or disabled by Zoho | Check "Last update" on the panel. Zoho **disables a webhook after 20 consecutive failures** — re-enable it in Zoho. If the secret is wrong: **Regenerate webhook secret**, paste the new one into the Zoho webhook, **Test Url** |
 | Every Zoho update to the shared address is refused (401) in staging/production | `ZOHO_WEBHOOK_SECRET` missing, or HMAC/secret on CapHive's Zoho webhook differs | Set the secret in credentials and the same one on the Zoho webhook |
 | Status checks retried, "rate limited" in logs | Zoho allows about 50 API calls per minute per account | Nothing to do; jobs retry with back-off (5 attempts, then an error report) |

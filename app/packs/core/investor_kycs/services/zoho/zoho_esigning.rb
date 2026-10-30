@@ -1,5 +1,6 @@
 class ZohoEsigning < Trailblazer::Operation
   step :check_account
+  step :check_signing_options
   step :validate_signer_count
   step :validate_doc_size
   step :send_document_for_esign
@@ -10,7 +11,19 @@ class ZohoEsigning < Trailblazer::Operation
   def check_account(ctx, doc:, **)
     return true unless ZohoSignAccount.for_entity(doc.entity).connection&.needs_reauth?
 
-    ctx[:errors] = "#{doc.entity.name}'s Zoho account needs to be reconnected. Ask a company admin to reconnect it on the company page."
+    ctx[:errors] = "#{doc.entity.name}'s Zoho account needs to be reconnected. Contact CapHive support to reconnect it."
+    false
+  end
+
+  # X27, X28: not supported on Zoho yet. Sending anyway would give a plain electronic signature and
+  # no stamp, and the document would still end up Completed. Support clears these from the console.
+  def check_signing_options(ctx, doc:, **)
+    aadhaar = doc.e_signatures.any? { |esign| esign.signature_type.to_s.casecmp?("aadhaar") }
+    stamped = doc.stamp_papers.exists?
+    return true unless aadhaar || stamped
+
+    options = [("Aadhaar eSign" if aadhaar), ("e-stamping" if stamped)].compact.join(" and ")
+    ctx[:errors] = "#{doc.name} uses #{options}, which Zoho does not support yet. Contact CapHive support."
     false
   end
 

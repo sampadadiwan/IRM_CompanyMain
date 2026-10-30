@@ -49,6 +49,22 @@ Scenario: A document with 26 signers is refused before anything reaches Zoho
   Then nothing was sent to Zoho
   And the sender is alerted with "Zoho allows at most 25 signers per document."
 
+# X27 — zoho-esign/Aadhaar signer refused
+Scenario: A document with an Aadhaar signer is refused before anything reaches Zoho
+  Given the document is to be signed by "rohan@example.com,priya@example.com"
+  And the signer "priya@example.com" is set to sign with Aadhaar
+  When the document is sent for Zoho eSign
+  Then nothing was sent to Zoho
+  And the sender is alerted with "Arka Fund I - Q3 Statement uses Aadhaar eSign, which Zoho does not support yet. Contact CapHive support."
+
+# X28 — zoho-esign/Stamp papers refused
+Scenario: A document with stamp papers is refused before anything reaches Zoho
+  Given the document is to be signed by "rohan@example.com,priya@example.com"
+  And the document has a stamp paper
+  When the document is sent for Zoho eSign
+  Then nothing was sent to Zoho
+  And the sender is alerted with "Arka Fund I - Q3 Statement uses e-stamping, which Zoho does not support yet. Contact CapHive support."
+
 # E18 — zoho-esign/Signature boxes on every page
 Scenario: Signature boxes on every page for every signer, without overlapping
   Given the document is to be signed by "rohan@example.com,priya@example.com"
@@ -370,4 +386,4 @@ Scenario: Sending is refused while the company's Zoho account needs reconnecting
   And the document is to be signed by "rohan@example.com,priya@example.com"
   When the document is sent for Zoho eSign
   Then nothing was sent to Zoho
-  And the sender is alerted with "Zoho account needs to be reconnected. Ask a company admin to reconnect it on the company page."
+  And the sender is alerted with "Zoho account needs to be reconnected. Contact CapHive support to reconnect it."

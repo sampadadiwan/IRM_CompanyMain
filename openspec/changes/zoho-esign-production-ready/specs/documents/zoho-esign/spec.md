@@ -48,7 +48,9 @@ document is saved.
 
 ### Requirement: Send limits and failures
 The system SHALL refuse to send a document with more than 25 signers with "Zoho allows at most 25
-signers per document." and SHALL refuse a file larger than 25 MB with the existing size message. When a
+signers per document." and SHALL refuse a file larger than 25 MB with the existing size message. It
+SHALL refuse a document with an Aadhaar signer or stamp papers with "<name> uses <options>, which Zoho
+does not support yet. Contact CapHive support.", and nothing SHALL be sent to Zoho. When a
 send fails for any other reason (the file cannot be read, Zoho cannot be reached or does not respond in
 time, or Zoho refuses the request) the system SHALL mark the document Failed, alert the sender with
 "Error sending <name> for eSigning - <reason>", record the response in the eSign log, and allow the
@@ -58,6 +60,14 @@ best-effort basis.
 #### Scenario: Too many signers
 - **WHEN** a user sends a document with 26 signers
 - **THEN** nothing is sent to Zoho and the sender sees "Zoho allows at most 25 signers per document."
+
+#### Scenario: Aadhaar signer refused
+- **WHEN** a user sends a document with a signer set to Aadhaar
+- **THEN** nothing is sent to Zoho and the sender sees "<name> uses Aadhaar eSign, which Zoho does not support yet. Contact CapHive support."
+
+#### Scenario: Stamp papers refused
+- **WHEN** a user sends a document with stamp papers
+- **THEN** nothing is sent to Zoho and the sender sees "<name> uses e-stamping, which Zoho does not support yet. Contact CapHive support."
 
 #### Scenario: Zoho unreachable
 - **WHEN** Zoho does not respond in time while a document is being sent

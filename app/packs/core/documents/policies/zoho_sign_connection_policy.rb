@@ -1,8 +1,8 @@
-# Exactly the people who may edit the company's settings: its company admins (not investor
-# advisors) and CapHive support (X1, X2). The record always carries the entity from the URL.
+# CapHive support only (X1, X2): company admins neither see the panel nor reach these actions.
+# support? also holds while support is logged in as a client user.
 class ZohoSignConnectionPolicy < ApplicationPolicy
   def show?
-    EntityPolicy.new(user, record.entity).update?
+    support?
   end
 
   def create?

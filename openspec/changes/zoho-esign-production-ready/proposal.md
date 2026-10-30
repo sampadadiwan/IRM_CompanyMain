@@ -97,8 +97,8 @@ flowchart LR
 
 | Person | Role | What they do in the journey |
 |---|---|---|
-| Ravi | CapHive support | Sets the company's eSign provider to Zoho (exists today) |
-| Meera | Company admin at Arka Capital | Connects Arka's own Zoho account (US region) and sets up live updates |
+| Ravi | CapHive support | Sets the company's eSign provider to Zoho (exists today). Connects, reconnects or disconnects Arka's own Zoho account in CapHive |
+| Meera | Company admin at Arka Capital | Creates the Self Client and webhook in Arka's Zoho account (US region) and gives Ravi the details |
 | Asha | Fund operations user at Arka | Sends documents for eSign, extends deadlines, sends reminders |
 | Rohan, Priya | Investors (signers) | Sign the document in Zoho's email link |
 
@@ -129,7 +129,7 @@ flowchart TD
     end
     subgraph PC["Part C — if something changes later"]
         C1["C1 Zoho rejects Arka's credentials"] --> C2["C2 Panel shows Needs reconnect, admins emailed"]
-        C2 --> C3["C3 Meera reconnects with a new grant code"]
+        C2 --> C3["C3 Ravi reconnects with a new grant code"]
     end
     Z1 --> A1
     A8 -- "yes" --> B1
@@ -148,7 +148,7 @@ flowchart TD
 |---|---|---|
 | Company's eSign provider is Zoho | Decides which provider sends documents | CapHive support sets it (admin dashboard), as today for Digio/Docusign |
 | A Zoho Sign account on an API-enabled plan | Own-account signing and webhooks need it | The client buys it from Zoho (Enterprise, API, Zoho One or People Plus plans have webhooks) |
-| Company admin access in CapHive | Only company admins (or support) can connect an account | Existing roles |
+| Support access in CapHive | Only CapHive support can connect an account | Existing roles |
 | Zoho admin access in the client's Zoho | To create the Self Client and webhook | The client's Zoho account |
 
 Without Part A, the company simply keeps signing through CapHive's own Zoho account — Part B works
@@ -161,9 +161,9 @@ the same either way.
 | A1 | Meera | Zoho, address bar | Notes the domain of her Zoho account (`sign.zoho.com` → US) | — | — |
 | A2 | Meera | Zoho API console › Self Client › Create | Creates a Self Client | — | Zoho shows a Client ID and Client Secret |
 | A3 | Meera | Self Client › Generate Code | Enters scopes `ZohoSign.documents.CREATE,ZohoSign.documents.READ,ZohoSign.documents.UPDATE`, duration 10 minutes | — | Zoho shows a grant code (single use, ~10 minutes) |
-| A4 | Meera | CapHive › Company page › Zoho eSign › Connect | Picks region "United States", pastes Client ID, Client Secret and grant code, clicks **Connect** | Exchanges the grant code with Zoho in the US region, stores the credentials encrypted, records "connected on" (the cutover) | — |
+| A4 | Ravi | CapHive › Company page › Zoho eSign › Connect | Picks region "United States", pastes Client ID, Client Secret and grant code, clicks **Connect** | Exchanges the grant code with Zoho in the US region, stores the credentials encrypted, records "connected on" (the cutover) | — |
 | A5 | — | — | — | If Zoho accepts: status Connected. If not: nothing is saved | "Connected — documents sent from now on use Arka's Zoho account (United States)." or the refusal message (see [What goes wrong](#what-goes-wrong)) |
-| A6 | Meera | Zoho eSign panel › Webhook | Clicks **Show webhook secret** (shown once) and copies address and secret | Generates the secret if none exists | Webhook address and secret with copy buttons |
+| A6 | Ravi | Zoho eSign panel › Webhook | Clicks **Show webhook secret** (shown once) and copies address and secret | Generates the secret if none exists | Webhook address and secret with copy buttons |
 | A7 | Meera | Zoho Sign › Settings › Developer settings › Webhooks › Create webhook | Pastes address, enables **HMAC signature**, pastes the secret, ticks events Signed by a recipient, Completed by all, Declined, Expires, Recalled, Sent; saves | — | Webhook listed in Zoho |
 | A8 | Meera | Zoho webhook › Test Url | Clicks **Test Url** | Checks the signature, replies OK at once | Zoho shows success; CapHive panel shows "Last update received: just now" |
 
@@ -184,10 +184,10 @@ the same either way.
 | Step | Who | Where | Action | What the system does | What you see |
 |---|---|---|---|---|---|
 | C1 | — | — | Zoho rejects Arka's credentials (client deleted the Self Client) | Marks the connection Needs reconnect, emails Arka's company admins once | — |
-| C2 | Asha | Document › Send For eSignatures | Tries to send | Refuses: own account is the one to use, and it needs reconnecting | "Arka's Zoho account needs to be reconnected. Ask a company admin to reconnect it on the company page." |
-| C3 | Meera | Zoho eSign panel › **Reconnect** | Generates a new grant code (A2–A3) and submits | Replaces the credentials; keeps the original "connected on" date | "Connected" again; sending works |
-| C4 | Meera | Zoho eSign panel › **Regenerate webhook secret** | Confirms | Replaces the secret; updates signed with the old secret are refused from now on | New secret shown once — paste it into the Zoho webhook (A7) |
-| C5 | Meera | Zoho eSign panel › **Disconnect** | Confirms | Refused while documents are still out for signature on Arka's account; otherwise removes the connection, new documents go back to CapHive's account | "3 documents are still out for signature on this account. Wait for them to finish or cancel them first." |
+| C2 | Asha | Document › Send For eSignatures | Tries to send | Refuses: own account is the one to use, and it needs reconnecting | "Arka's Zoho account needs to be reconnected. Contact CapHive support to reconnect it." |
+| C3 | Meera, Ravi | Zoho eSign panel › **Reconnect** | Meera generates a new grant code (A2–A3); Ravi submits it | Replaces the credentials; keeps the original "connected on" date | "Connected" again; sending works |
+| C4 | Ravi | Zoho eSign panel › **Regenerate webhook secret** | Confirms | Replaces the secret; updates signed with the old secret are refused from now on | New secret shown once — paste it into the Zoho webhook (A7) |
+| C5 | Ravi | Zoho eSign panel › **Disconnect** | Confirms | Refused while documents are still out for signature on Arka's account; otherwise removes the connection, new documents go back to CapHive's account | "3 documents are still out for signature on this account. Wait for them to finish or cancel them first." |
 
 ### What you see
 
@@ -243,17 +243,17 @@ Extend Expiry dialog on 29 Oct 2026 — any date from tomorrow onward, no upper 
 
 ### What goes wrong
 
-**The grant code expired before Meera clicked Connect (A4).** Zoho's grant codes last about ten
+**The grant code expired before Ravi clicked Connect (A4).** Zoho's grant codes last about ten
 minutes and work once. CapHive shows "Zoho did not accept the grant code — it may have expired or
-already been used. Generate a new code in Zoho's API console and try again." Nothing is saved. Meera
-repeats A3 and A4 within ten minutes.
+already been used. Generate a new code in Zoho's API console and try again." Nothing is saved. Meera and Ravi
+repeat A3 and A4 within ten minutes.
 
-**The region is wrong (A4).** Meera picks India but her account is in the US. Zoho's India region
-does not know her Self Client, so CapHive shows "Zoho did not recognise this Client ID in the India
+**The region is wrong (A4).** Ravi picks India but Arka's account is in the US. Zoho's India region
+does not know its Self Client, so CapHive shows "Zoho did not recognise this Client ID in the India
 region. Check the region matches the address of your Zoho account (sign.zoho.com = United States)."
 
 **The webhook secret was mistyped in Zoho (A8).** Zoho's Test Url fails because CapHive refuses the
-update. The panel's "Last update" does not change. Meera regenerates the secret (C4), pastes it into
+update. The panel's "Last update" does not change. Ravi regenerates the secret (C4), Meera pastes it into
 the Zoho webhook again and re-tests. Until it is fixed, statuses still update through
 **Get eSignatures' updates** and the daily check.
 
@@ -262,10 +262,10 @@ the Zoho webhook again and re-tests. Until it is fixed, statuses still update th
 | # | Action | Who | How often |
 |---|---|---|---|
 | 1 | Set eSign provider to Zoho | Ravi | Once per company |
-| 2 | Connect own Zoho account (A1–A5) | Meera | Once per company (optional — without it CapHive's account is used) |
-| 3 | Create the webhook in Zoho (A6–A8) | Meera | Once per company |
+| 2 | Connect own Zoho account (A1–A5) | Meera in Zoho, Ravi in CapHive | Once per company (optional — without it CapHive's account is used) |
+| 3 | Create the webhook in Zoho (A6–A8) | Ravi in CapHive, Meera in Zoho | Once per company |
 | 4 | Send a document for eSign | Asha | Every document |
-| 5 | Reconnect | Meera | Only if Zoho rejects the credentials |
+| 5 | Reconnect | Meera in Zoho, Ravi in CapHive | Only if Zoho rejects the credentials |
 
 ---
 
@@ -273,13 +273,13 @@ the Zoho webhook again and re-tests. Until it is fixed, statuses still update th
 
 ### US-1: Connect the company's own Zoho account
 
-**As a** company admin,
-**I want** to connect my company's own Zoho Sign account in its region,
-**So that** our documents and signer data stay in our account and region.
+**As** CapHive support,
+**I want** to connect a company's own Zoho Sign account in its region,
+**So that** its documents and signer data stay in its account and region.
 
 **Acceptance criteria:**
 - The Zoho eSign panel appears on the company page only when the company's eSign provider is Zoho,
-  and only to company admins of that company and to support.
+  and only to CapHive support.
 - Connect requires a region (one of the ten listed), Client ID, Client Secret and grant code.
 - On success the panel shows Connected, the region, and "Connected on" with date and time.
 - On failure nothing is saved and the message names the likely cause (expired code, wrong region,
@@ -342,8 +342,8 @@ the Zoho webhook again and re-tests. Until it is fixed, statuses still update th
 
 **Acceptance criteria:**
 - When Zoho rejects the stored credentials, the panel shows Needs reconnect and company admins get
-  one email (not one per document).
-- Sending is refused with a message pointing to the company page.
+  one email, copied to support (not one per document).
+- Sending is refused with a message pointing to CapHive support.
 - Reconnecting restores sending; documents already out for signature resume syncing.
 
 ---
@@ -372,7 +372,7 @@ the Zoho webhook again and re-tests. Until it is fixed, statuses still update th
 ```
 
 **Behavior notes:**
-- Shown only when the company's eSign provider is Zoho; visible to company admins and support.
+- Shown only when the company's eSign provider is Zoho; visible to CapHive support only.
 - Connect shows a spinner and stays on the page; success or the error replaces the panel without a
   full reload.
 - Connected state: see [What you see](#what-you-see). Status badge colours: Connected green,
@@ -401,6 +401,7 @@ Zoho. "Cancel eSignatures" works for Zoho documents (recalls the request in Zoho
 | Moving old proof-of-concept test requests between accounts | Not needed — they were tests |
 | Changing Digio or Docusign behaviour | Unchanged |
 | Choosing the account per document | Not planned — the cutover decides |
+| Aadhaar eSign and e-stamping through Zoho | Future change, once CapHive has a working paid Zoho account. Until then these documents are refused; the operations guide has what each needs |
 | Zoho templates, embedded signing, bulk send | Not planned |
 
 ---
@@ -429,7 +430,7 @@ Zoho. "Cancel eSignatures" works for Zoho documents (recalls the request in Zoho
 | Company not connected, sends a document | Sent through CapHive's account, as today |
 | Connected, sends a document | Sent through the company's account |
 | Document sent before connecting, then a status check / reminder / extend / cancel | Still uses CapHive's account; works normally |
-| Connection Needs reconnect, user sends | "<Company>'s Zoho account needs to be reconnected. Ask a company admin to reconnect it on the company page." Nothing sent |
+| Connection Needs reconnect, user sends | "<Company>'s Zoho account needs to be reconnected. Contact CapHive support to reconnect it." Nothing sent |
 | Connection Needs reconnect, a document on that account is checked | Status left unchanged (not marked Failed); panel shows Needs reconnect |
 | Zoho unreachable or file unreadable during send | Document Failed; sender alerted "Error sending <name> for eSigning - <reason>"; can be sent again |
 | Live update with no or wrong signature | Refused; document unchanged |
@@ -491,7 +492,7 @@ None (no existing capability covers eSign).
   Zoho account; each connected company gets its own Zoho address.
 - **Background jobs:** Zoho updates are processed in the background; the daily eSign status check is
   unchanged and also covers own-account documents.
-- **Emails:** one new email to company admins when their Zoho connection needs reconnecting.
+- **Emails:** one new email to company admins, copied to support, when their Zoho connection needs reconnecting.
 - **Configuration (ops):** CapHive's Zoho account credentials, region and webhook secret must be set in
   every environment where Zoho is offered (US staging, India and US production are not set yet).
 - **Zoho:** each connected company uses its own Zoho API limits (about 50 calls a minute).
@@ -514,7 +515,7 @@ None (no existing capability covers eSign).
 
 | Question | Answer |
 |---|---|
-| Who can connect a Zoho account? | Company admins of that company, and CapHive support |
+| Who can connect a Zoho account? | CapHive support only |
 | Does a company have to connect its own account? | No. Without one, CapHive's account is used, exactly as today |
 | What happens to documents already out for signature when we connect? | They finish on the account they were sent from; nothing to do |
 | Which Zoho plan does the client need? | One with API access and webhooks (Enterprise, API, Zoho One or People Plus). Without webhooks statuses still update via "Get eSignatures' updates" and the nightly check, just not live |
