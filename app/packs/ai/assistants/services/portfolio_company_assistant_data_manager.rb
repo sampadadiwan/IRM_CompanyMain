@@ -9,8 +9,10 @@ class PortfolioCompanyAssistantDataManager < PortfolioAssistantDataManager
     @portfolio_company = portfolio_company
   end
 
-  # Lists valuations for the mandatory portfolio company.
-  def list_valuations(scope: nil, query: {}, sort: nil, limit: nil, aggregate: nil)
+  # Lists valuations for the mandatory portfolio company. portfolio_company_id is accepted and ignored:
+  # the parent's own methods (get_portfolio_company_snapshot) call list_valuations(portfolio_company_id:),
+  # which reaches this override — rejecting it raised ArgumentError and broke every snapshot.
+  def list_valuations(scope: nil, query: {}, sort: nil, limit: nil, aggregate: nil, portfolio_company_id: nil)
     super(portfolio_company_id: @portfolio_company.id, scope: scope, query: query, sort: sort, limit: limit, aggregate: aggregate)
   end
 
@@ -24,8 +26,9 @@ class PortfolioCompanyAssistantDataManager < PortfolioAssistantDataManager
     super(portfolio_company_ids: [@portfolio_company.id], scope: scope, query: query, sort: sort, limit: limit, aggregate: aggregate)
   end
 
-  # Lists fund ratios for the mandatory portfolio company.
-  def list_fund_ratios(scope: nil, query: {}, sort: nil, limit: nil, aggregate: nil)
+  # Lists fund ratios for the mandatory portfolio company. portfolio_company_id is accepted and ignored,
+  # as for list_valuations (the parent's snapshot passes it); the company is always this assistant's.
+  def list_fund_ratios(scope: nil, query: {}, sort: nil, limit: nil, aggregate: nil, portfolio_company_id: nil)
     super(portfolio_company_id: @portfolio_company.id, scope: scope, query: query, sort: sort, limit: limit, aggregate: aggregate)
   end
 
