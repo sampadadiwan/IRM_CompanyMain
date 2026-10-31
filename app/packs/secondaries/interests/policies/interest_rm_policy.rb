@@ -51,10 +51,6 @@ class InterestRmPolicy < SaleBasePolicy
     false
   end
 
-  def allocation_form?
-    false
-  end
-
   def matched_offers?
     permissioned_rm?
   end

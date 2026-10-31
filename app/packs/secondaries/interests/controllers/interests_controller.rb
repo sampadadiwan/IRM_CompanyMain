@@ -1,6 +1,6 @@
 class InterestsController < ApplicationController
   before_action :set_interest, only: %i[show edit update destroy short_list allocate
-                                        allocation_form accept_spa generate_docs]
+                                        accept_spa generate_docs]
 
   # GET /interests or /interests.json
   def index
@@ -106,33 +106,28 @@ class InterestsController < ApplicationController
     end
   end
 
+  # PATCH /interests/1/allocate: the selling firm sets the allocation quantity / verified flag.
+  # HTML and JSON only. The turbo_stream responses and the allocation_form action went: they replaced
+  # an "interests/final_interest" row of the per-interest allocation table that "Secondary allocations"
+  # (#503) deleted along with that partial and the allocation_form view, so they raised MissingTemplate.
+  # Tests F6-2, F6-2a, F6-2H — features/security/security_review_2026_10_followups.feature
   def allocate
+    # Validate and save the allocation fields the policy lets this user send
     result = InterestAllocate.call(interest: @interest, interest_params:)
 
     respond_to do |format|
       if result.success?
-        format.turbo_stream do
-          render turbo_stream: [
-            turbo_stream.replace("tf_interest_#{@interest.id}", partial: "interests/final_interest", locals: { interest: @interest })
-          ]
-        end
         format.html { redirect_to interest_url(@interest), notice: "Interest was successfully updated." }
         format.json { render :show, status: :ok, location: @interest }
       else
+        # Drop the rejected values and show the operation's errors in the comments field of the edit form
         @interest.reload
         @interest.comments = result[:errors]
-        format.turbo_stream do
-          render turbo_stream: [
-            turbo_stream.replace("tf_interest_#{@interest.id}", partial: "interests/final_interest", locals: { interest: @interest })
-          ]
-        end
         format.html { render :edit, status: :unprocessable_entity }
         format.json { render json: @interest.errors, status: :unprocessable_entity }
       end
     end
   end
-
-  def allocation_form; end
 
   def short_list
     result = InterestShortList.call(

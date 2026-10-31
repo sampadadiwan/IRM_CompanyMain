@@ -48,10 +48,6 @@ class InterestEmployeePolicy < SaleBasePolicy
     permissioned_employee?(:update)
   end
 
-  def allocation_form?
-    allocate?
-  end
-
   def matched_offers?
     true
   end

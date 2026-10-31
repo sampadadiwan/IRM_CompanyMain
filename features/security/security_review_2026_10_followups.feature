@@ -12,6 +12,10 @@
 #        predicate (now firm-only), boards got their columns twice, dead routes, the LP assistant skills'
 #        'PortfolioCompany' owner_type, the LIMIT a trailing comment swallowed, the sample workbook's
 #        custom_fields.send and the unrouted /oauth/introspect throttle.
+#   F6 — leftovers after F5: the allocate_account_entries sample formulas workbook lacked the Cache column the
+#        import requires; interests#allocation_form and the turbo_stream branch of interests#allocate used
+#        views #503 deleted; interests#finalize / offers#generate_esign_link were routed to no action; and
+#        FundRatio.for_portfolio_companies filtered owner_type 'PortfolioCompany', which no row has.
 # Design: docs/security/security_review_2026_10.md (cards H5, L13, L14, C3)
 @security
 Feature: Security review 2026-10 follow-ups
@@ -326,3 +330,90 @@ Feature: Security review 2026-10 follow-ups
     Scenario: F5-8 The OAuth client throttle lists only routed endpoints
       Then Rack::Attack does not list "/oauth/introspect" as an OAuth client path
       And every OAuth client path Rack::Attack throttles is routed
+
+  # ---- F6 Leftovers after F5 (steps: security_followups_c_steps.rb) ------------------------------
+
+  Rule: F6 — sample files import, every interest / offer route has its action, and the portfolio company ratio scope finds rows
+
+    # F6-1 — Edge case: the allocate_account_entries sample formulas workbook had no Cache column, so the header check refused all 60 rows; it now passes and every row imports with its Cache value except sequence 51, whose rule type CumulateForPortfolioCompany "Formula refactor" (#861) retired — that row needs a new formula, not a column, and is left as it is
+    @import
+    Scenario: F6-1 The allocate_account_entries sample formulas workbook passes the header check and imports
+      Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund;currency=INR"
+      And the user has role "company_admin"
+      And there is a fund "name=Sample Formula Fund;currency=INR" for the entity
+      When Given import file "allocate_account_entries/fund_formulas.xlsx" for "FundFormula" expecting failures
+      Then the import upload status is "Completed"
+      And the only failed row is sheet row 52, "Unrealized Gain", with "Rule type is not included in the list"
+      And the fund has a formula for every other row of the sample workbook
+      And each imported formula's cache flag is the "Cache" cell of its sample workbook row
+      And 42 of the imported formulas are added to the commitment cache
+
+    # F6-1X — Edge case: a fund formulas sheet without the Cache column is refused as a whole, so every sample fund formulas workbook carries every required column
+    @import
+    Scenario: F6-1X A fund formulas sheet without the Cache column is refused
+      Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund;currency=INR"
+      And the user has role "company_admin"
+      And there is a fund "name=Sample Formula Fund;currency=INR" for the entity
+      When the sample workbook "allocate_account_entries/fund_formulas.xlsx" is imported for the fund without its "Cache" column
+      Then the import upload status is "Column(s) not found: Cache"
+      And the fund has no fund formulas
+      And every sample fund formulas workbook has every column the fund formula import requires
+
+  Rule: F6 — interests and offers route only to actions their controllers have
+
+    Background:
+      Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Company"
+      And the user has role "company_admin"
+      And there is a sale "name=Grand Sale"
+      And the sale has a seller with an approved offer and a buyer with a short-listed interest
+
+    # F6-2 — Edge case: interests#allocation_form rendered a view "Secondary allocations" (#503) deleted; its address is gone
+    @rack_test
+    Scenario: F6-2 The old interest allocation form address is not found
+      Given "Y" has an unverified interest on the sale
+      When the sale's company admin opens the old allocation form address of the interest of "Y"
+      Then the address is not found
+      And the "interests" routes have no "allocation_form" action
+
+    # F6-2a — Edge case: a Turbo form post to interests#allocate took the turbo_stream branch, which replaced a row with the deleted interests/final_interest partial and raised; it now gets the HTML response
+    @rack_test
+    Scenario: F6-2a A Turbo form post allocates the interest and shows it
+      Given "Y" has an unverified interest on the sale
+      When the sale's company admin allocates the interest of "Y" from a Turbo form with "allocation_quantity=7;verified=1"
+      Then the interest of "Y" has "verified=true;allocation_quantity=7"
+      And the company admin is on the page of the interest of "Y" with "Interest was successfully updated."
+
+    # F6-2H — Happy path: the plain HTML allocate post still saves and returns to the interest page
+    @rack_test
+    Scenario: F6-2H The HTML allocate post saves and returns to the interest
+      Given "Y" has an unverified interest on the sale
+      When the sale's company admin allocates the interest of "Y" with "allocation_quantity=5;verified=1"
+      Then the interest of "Y" has "verified=true;allocation_quantity=5"
+      And the company admin is on the page of the interest of "Y" with "Interest was successfully updated."
+
+    # F6-3 — Edge case: interests#finalize (gone since #435) and offers#generate_esign_link (gone with Aadhaar eSign, #57) were routed to no action; both addresses are gone
+    @rack_test
+    Scenario: F6-3 The old interest finalize and offer eSign link addresses are not found
+      Given "Y" has an unverified interest on the sale
+      When the sale's company admin patches the old finalize address of the interest of "Y"
+      Then the address is not found
+      When the sale's company admin patches the old eSign link address of the seller's offer
+      Then the address is not found
+      And the "interests" routes have no "finalize" action
+      And the "offers" routes have no "generate_esign_link" action
+      And every "interests" route points at an action of its controller
+      And every "offers" route points at an action of its controller
+
+  Rule: F6 — FundRatio.for_portfolio_companies returns the ratios of portfolio companies
+
+    # F6-4 — Edge case: the scope filtered owner_type 'PortfolioCompany', which no row has (a portco is an investors row), so it was always empty; it now returns the portcos' ratios and no fund-level ones
+    Scenario: F6-4 The portfolio company ratio scope returns the portcos' ratios only
+      Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund;currency=INR"
+      And the user has role "company_admin"
+      And there is a fund "name=Ratio Fund;currency=INR" for the entity
+      And the fund has ratios owned by:
+        | owner                            | name | display_value |
+        | the fund                         | XIRR | 14.2 %        |
+        | portfolio company Acme Robotics  | MOIC | 1.60 x        |
+        | portfolio company Bluefin Health | IRR  | 9.5 %         |
+      Then the fund's portfolio company ratios are "Acme Robotics MOIC, Bluefin Health IRR"

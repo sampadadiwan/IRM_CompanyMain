@@ -51,10 +51,6 @@ class InterestInvestorPolicy < SaleBasePolicy
     false
   end
 
-  def allocation_form?
-    false
-  end
-
   def matched_offers?
     true
   end

@@ -5,7 +5,8 @@ resources :offers do
   # their views in "Secondary allocations" #503) and nothing links to them (F5-1X —
   # features/security/security_review_2026_10_followups.feature). Allocations are made on AllocationsController.
   get 'search', on: :collection
-  patch 'generate_esign_link', on: :member
+  # No `generate_esign_link` member route: its action went with Aadhaar eSign ("Remove adhaar esign" #57)
+  # and nothing links to it (F6-3 — features/security/security_review_2026_10_followups.feature).
   post 'bulk_actions', on: :collection
   patch 'generate_docs', on: :member
   put :restore_deleted, on: :member
@@ -15,9 +16,12 @@ end
 resources :interests do
   patch 'accept_spa', on: :member
   patch 'short_list', on: :member
-  patch 'finalize', on: :member
+  # No `finalize` member route (its action went in "New policy framework" #435) and no `allocation_form`
+  # (its view and the _final_interest row it edited went in "Secondary allocations" #503, when the
+  # per-interest allocation table became AllocationsController). `allocate` stays: its HTML / JSON
+  # responses still set an interest's allocation quantity for the selling firm (F5-1H, F6-2, F6-3 —
+  # features/security/security_review_2026_10_followups.feature).
   patch 'allocate', on: :member
-  get   'allocation_form', on: :member
   patch 'generate_docs', on: :member
   put :restore_deleted, on: :member
   get :show_deleted, on: :collection
