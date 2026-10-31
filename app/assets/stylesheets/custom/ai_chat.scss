@@ -71,6 +71,10 @@
   // One column shared by the messages and the composer, so they line up. It spans the whole
   // panel: answers carry wide tables, which a narrow reading column squeezed.
   .aic-column { width: 100%; }
+  // Room below the last message, taller than the composer's fade (2.5rem), so the newest line — often
+  // "Thinking…" — scrolls clear of it instead of sitting under it.
+  .aic-items { padding-bottom: 3rem; }
+  .aic-pending { max-width: 100%; font-size: 0.9rem; }
 
   // Message actions (copy, time) appear on hover, and stay reachable by keyboard.
   .aic-actions { opacity: 0; transition: opacity 0.15s; }

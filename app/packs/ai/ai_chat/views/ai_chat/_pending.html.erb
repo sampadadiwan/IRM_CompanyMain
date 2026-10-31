@@ -1,5 +1,6 @@
-<%# H1 — what the assistant is doing right now: its latest step, or "Thinking…". Local: text. %>
-<div class="d-flex align-items-center gap-2 text-muted mb-2">
-  <span class="spinner-grow spinner-grow-sm text-primary" role="status"></span>
+<%# H1 — what the assistant is doing right now: its latest step, or "Thinking…" — a subtle pill, so it
+    reads as live status and not as faded text. Local: text. %>
+<div class="aic-pending d-inline-flex align-items-center gap-2 px-3 py-2 mb-2 rounded-pill bg-primary-subtle text-primary-emphasis">
+  <span class="spinner-border spinner-border-sm" role="status"></span>
   <span class="text-truncate"><%= local_assigns[:text].presence || "Thinking…" %></span>
 </div>

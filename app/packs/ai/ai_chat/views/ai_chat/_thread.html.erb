@@ -36,7 +36,7 @@
         <% if empty %>
           <div id="<%= id %>-empty" class="h-100"><%= empty_state %></div>
         <% end %>
-        <div id="<%= local_assigns[:items_id] || "#{id}-items" %>" <%= tag.attributes(data: local_assigns.fetch(:items_data, {})) %>><%= yield %></div>
+        <div id="<%= local_assigns[:items_id] || "#{id}-items" %>" class="aic-items" <%= tag.attributes(data: local_assigns.fetch(:items_data, {})) %>><%= yield %></div>
       </div>
     </div>
     <button type="button" class="btn btn-sm btn-light border shadow-sm rounded-circle aic-jump d-none" title="Jump to latest"
