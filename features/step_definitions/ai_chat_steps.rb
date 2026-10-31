@@ -464,6 +464,11 @@ Then('the window\'s answer has no rating buttons') do
   expect(@window_html.css("[data-ai-chat-feedback]")).to be_empty
 end
 
+Then('the window opens on a new conversation') do
+  expect(page).to have_css("##{window_frame_id}-thread-empty")
+  expect(find("##{window_frame_id}-composer input[name='new_session']", visible: :all).value).to eq("1")
+end
+
 Then('the window lists {string} with {string}') do |question, meta|
   row = find("##{window_frame_id}-conversations .aic-conversation", text: question)
   expect(row).to have_css("[data-role='meta']", text: meta)
@@ -581,4 +586,89 @@ end
 Then('{string} is in Kavya\'s own LP chat') do |question|
   sessions = AgentChatSession.where(analyst: @kavya, support_agent: @lp_agent)
   expect(AgentChatMessage.where(agent_chat_session: sessions, content: question)).to exist
+end
+
+# ---- Customer Support extras (features/ai_chat/customer_support.feature) ---------------------------------
+
+Given('Priya has a Customer Support conversation {string} answered {string}') do |question, answer|
+  agent = @agents["CustomerSupportAgent"]
+  @cs_session = AgentChatSession.create!(support_agent: agent, chattable: @user, analyst: @user, channel: "web", status: "active")
+  @cs_session.agent_chat_messages.create!(role: "user", content: question, channel: "web")
+  @cs_answer = @cs_session.agent_chat_messages.create!(role: "assistant", content: answer, channel: "web")
+end
+
+Given('that conversation was passed to a human') do
+  @cs_session.update!(status: "escalated")
+end
+
+Given('Priya has a {string} conversation on {string} answered {string}') do |agent_name, fund_name, answer|
+  agent = SupportAgent.find_by!(name: agent_name)
+  session = AgentChatSession.create!(support_agent: agent, chattable: Fund.find_by!(name: fund_name), analyst: @user,
+                                     channel: "web", status: "active")
+  session.agent_chat_messages.create!(role: "user", content: "How are valuations?", channel: "web")
+  session.agent_chat_messages.create!(role: "assistant", content: answer, channel: "web")
+end
+
+When('Priya opens the Customer Support window') do
+  visit window_path(@user, agent: @agents["CustomerSupportAgent"])
+end
+
+When('Priya opens a new conversation in the Customer Support window') do
+  visit window_path(@user, agent: @agents["CustomerSupportAgent"], new_session: 1)
+end
+
+When('Priya opens the {string} window on {string}') do |agent_name, fund_name|
+  visit window_path(Fund.find_by!(name: fund_name), agent: SupportAgent.find_by!(name: agent_name))
+end
+
+Then('the answer offers 👍 and 👎') do
+  within("##{ActionView::RecordIdentifier.dom_id(@cs_answer)} [data-ai-chat-feedback]") do
+    expect(page).to have_css("button[data-rating='positive'][data-action='ai-chat-feedback#rate']")
+    expect(page).to have_css("button[data-rating='negative'][data-action='ai-chat-feedback#rate']")
+  end
+end
+
+Then('the answer offers no rating') do
+  expect(page).to have_css("[data-ai-chat-answer]")
+  expect(page).to have_no_css("[data-ai-chat-feedback]")
+end
+
+# The PATCH the 👍/👎 buttons and the note's Send make (ai_chat_feedback_controller).
+def patch_feedback(message, body)
+  url = find("##{ActionView::RecordIdentifier.dom_id(message)} [data-ai-chat-feedback]")["data-ai-chat-feedback-url-value"]
+  page.driver.browser.patch(url, body.to_json, { "CONTENT_TYPE" => "application/json", "HTTP_ACCEPT" => "application/json" })
+  expect(page.driver.browser.last_response.status).to eq(200)
+end
+
+When('Priya rates the answer {string}') do |rating|
+  patch_feedback(@cs_answer, { rating: })
+end
+
+When('Priya sends the feedback note {string}') do |notes|
+  patch_feedback(@cs_answer, { notes: })
+end
+
+Then('the answer\'s feedback is {string} with the note {string}') do |rating, notes|
+  feedback = AgentChatMessageFeedback.find_by!(agent_chat_message: @cs_answer)
+  expect([feedback.rating, feedback.notes]).to eq([rating, notes])
+end
+
+Then('the answer shows its rating {string}') do |rating|
+  expect(page).to have_css("##{ActionView::RecordIdentifier.dom_id(@cs_answer)} [data-ai-chat-feedback-rating-value='#{rating}']")
+end
+
+Then('the conversation {string} shows {string}') do |question, badge|
+  row = find("#agent-chat-#{@agents['CustomerSupportAgent'].id}-conversations .aic-conversation", text: question)
+  expect(row).to have_css("[data-role='status']", text: badge)
+end
+
+When('Arjun rates Priya\'s answer {string}') do |rating|
+  url = feedback_support_agent_chat_path(@agents["CustomerSupportAgent"], @cs_answer)
+  page.driver.browser.patch(url, { rating: }.to_json, { "CONTENT_TYPE" => "application/json", "HTTP_ACCEPT" => "application/json" })
+  @feedback_status = page.driver.browser.last_response.status
+end
+
+Then('the rating is refused and nothing is saved') do
+  expect(@feedback_status).not_to eq(200)
+  expect(AgentChatMessageFeedback.where(agent_chat_message: @cs_answer)).not_to exist
 end

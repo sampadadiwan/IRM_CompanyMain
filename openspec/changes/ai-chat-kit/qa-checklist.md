@@ -75,6 +75,7 @@ step (J1.3 = journey 1, step 3) · **R** = Role sweep · **C** = Cross-cutting c
 | ☐ | E14 | Long history | A developer seeds 51 chats | 1. Open the assistant | 50 rows; footer "50+ conversations" | | |
 | ☐ | E15 | KPI blank answer | Ask a developer to simulate | 1. Ask | "The assistant was unable to generate a response…" shown in the answer | | |
 | ☐ | E16 | One icon set | — | 1. Inspect the three screens | Tabler icons only (no Font Awesome / Bootstrap Icons look) | | |
+| ☐ | E18 | Idle conversation | Window conversation last used over 30 minutes ago | 1. Open the window | A new, empty conversation; the older one under Conversations; opening it and asking continues it | | |
 | ☐ | E17 | Microphone | Browser with a mic | 1. Hold 🎤, say "Call 3 status", release | The question "Call 3 status" appears and is answered | | |
 
 ## Error Cases

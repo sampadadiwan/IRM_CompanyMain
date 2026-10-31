@@ -10,6 +10,8 @@
   messages = session ? session.agent_chat_messages.includes(:feedback).order(:created_at).to_a : []
   items = messages.map { |m| AiChatItem.from_agent_chat_message(m) }
   suggestions = support_agent.respond_to?(:sample_questions) ? Array(support_agent.sample_questions) : []
+  # H9, E12 — only the Customer Support agent's answers are rated (as before).
+  rated = support_agent.agent_type == "CustomerSupportAgent"
 %>
 <%= turbo_frame_tag frame_id, class: "d-flex flex-column h-100" do %>
   <% header = capture do %>
@@ -52,7 +54,11 @@
         <% if item.question? %>
           <%= render "ai_chat/question", item: item %>
         <% else %>
-          <%= render "ai_chat/answer", item: item, mode: :rich %>
+          <%= render "ai_chat/answer", item: item, mode: :rich,
+                                       feedback: (if rated && item.message_id
+                                                    render("ai_chat/feedback", rating: item.feedback_rating,
+                                                                               url: feedback_support_agent_chat_path(support_agent, item.message_id))
+                                                  end) %>
         <% end %>
       <% end %>
     <% end %>

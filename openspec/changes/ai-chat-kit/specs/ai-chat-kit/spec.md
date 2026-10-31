@@ -36,7 +36,10 @@ quote marks it was pasted with) and, beneath it, the starter's name and the time
 locale-formatted date (earlier). The list SHALL offer New chat and a search that filters the rows.
 Opening a row SHALL show that conversation without a full page reload and tint the row as open.
 A conversation that was passed to a human SHALL show an "Escalated" badge in the warning colour.
-When there are none, the list SHALL say "No conversations yet."
+When there are none, the list SHALL say "No conversations yet." The floating window SHALL open on the
+latest conversation unless it has been idle more than 30 minutes, in which case it SHALL open on a new
+conversation (the older one staying in the list); a question asked in a conversation the user opened
+SHALL continue that conversation.
 
 #### Scenario: Rows show question, who and when
 - **WHEN** Priya opens the Specific Fund Assistant for a fund where she asked "Which LPs are overdue on Call 3?" today at 10:42
@@ -57,6 +60,14 @@ When there are none, the list SHALL say "No conversations yet."
 #### Scenario: No conversations
 - **WHEN** a user opens a shared-chat screen with no earlier conversations
 - **THEN** the list says "No conversations yet."
+
+#### Scenario: Idle conversation not continued by default
+- **WHEN** a user opens the floating window and their latest conversation there was last active 2 hours ago
+- **THEN** the window shows a new, empty conversation and lists the older one
+
+#### Scenario: Reopened conversation continues
+- **WHEN** a user opens an older conversation from the list and asks a question
+- **THEN** the question is added to that conversation
 
 ### Requirement: Questions and answers
 A question SHALL show as a grey bubble on the right. An answer SHALL show without a bubble or

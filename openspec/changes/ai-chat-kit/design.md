@@ -664,13 +664,14 @@ Shared setup:
 | E7 | Snake_case answer | answer "KMH_01 … KMH_01" | renders `:rich` | no `<em>` | Snake_case names | `ai_chat/assistants_page.feature` |
 | E8 | Chart in rich, stripped in strict | answer with chart `canvas` markup | renders `:rich` / `:strict` | kept / stripped | Questions and answers (allowed content) | `ai_chat/answer_rendering.feature` |
 | E9 | New chat starts a session | window, latest session 5 min old | New chat, asks | a new `AgentChatSession` | Rows show question, who and when | `ai_chat/floating_window.feature` |
-| E10 | Reopened conversation continues | 2 sessions, older one opened | asks | message added to the older session | Rows show question, who and when | `ai_chat/floating_window.feature` |
+| E10 | Reopened conversation continues | 2 sessions, older one opened | asks | message added to the older session | Reopened conversation continues | `ai_chat/floating_window.feature` |
 | E11 | No params keeps today's rule | `GenericChatAgent.call` without keywords (WhatsApp) | called | latest session unless idle 30 min | Screens that use the shared chat (WhatsApp unchanged) | `ai_chat/floating_window.feature` |
 | E12 | Non-CS agent no feedback | Portfolio Assistant answer | renders | no 👍/👎 | Other agents have no rating | `ai_chat/customer_support.feature` |
 | E13 | Window scoped to record | sessions on Acme and Beta Robotics | opens on Acme | only Acme's rows | Only the user's own conversations | `ai_chat/floating_window.feature` |
 | E14 | 51 conversations | Priya has 51 Fund I chats | opens | 50 rows, "50+ conversations" | Conversation list | `ai_chat/assistants_page.feature` |
 | E15 | KPI blank answer fallback | stream ends with blank content | final broadcast | answer shows the fallback text | Thinking line | `ai_chat/kpi_chat.feature` |
 | E16 | Icons | each kit screen | renders | no `fa-`/`bi-` classes | No Font Awesome or Bootstrap Icons | `ai_chat/assistants_page.feature`, `floating_window.feature`, `kpi_chat.feature` |
+| E18 | Idle conversation not continued | latest window conversation last active 2 hours ago | opens the window | a new, empty conversation; the old one listed | Idle conversation not continued by default | `ai_chat/floating_window.feature` |
 | E17 | Voice path | `/assistants/transcribe` (stubbed transcription "Call 3 status") | posts audio | kit question "Call 3 status" + pending | Enter sends | `ai_chat/assistants_page.feature` |
 
 #### Error Cases

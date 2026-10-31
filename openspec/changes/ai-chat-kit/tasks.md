@@ -94,13 +94,13 @@
 
 ## 5. Customer Support agent extras
 
-- [ ] 5.1 Add `ai_chat/_feedback` (👍/👎, note box after 👎, "Thanks for your feedback") rendered under
+- [x] 5.1 Add `ai_chat/_feedback` (👍/👎, note box after 👎, "Thanks for your feedback") rendered under
       answers only when the agent is `CustomerSupportAgent`, and `ai_chat_feedback_controller.js`
       calling the unchanged `feedback_support_agent_chat_path` PATCH. LLD § File Map ⑧. Verify: in
       dev, 👎 + note creates/updates the `AgentChatMessageFeedback` row.
-- [ ] 5.2 Map `AgentChatSession#status == "escalated"` to the Escalated badge (warning) in kit rows.
+- [x] 5.2 Map `AgentChatSession#status == "escalated"` to the Escalated badge (warning) in kit rows.
       Verify: an escalated dev session shows the badge under Conversations.
-- [ ] 5.3 Write `features/ai_chat/customer_support.feature` for H9, H10, E12, X9; run it with
+- [x] 5.3 Write `features/ai_chat/customer_support.feature` for H9, H10, E12, X9; run it with
       `TEST_ENV_NUMBER=$RANDOM bundle exec cucumber features/ai_chat/customer_support.feature`, then
       `features/customer_support_agent`, and confirm all are green before starting phase 6.
 

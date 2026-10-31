@@ -92,6 +92,15 @@ Feature: Floating agent chat window on the chat kit
     When the agent is asked "Next?" about "Golden Angels Fund I" without naming a conversation
     Then "Next?" is in the conversation that started "Show recent valuations"
 
+  # E18 — Edge case: the window opens on a new conversation once the latest has been idle over 30 minutes; the old one stays in the list
+  Scenario: Idle conversation is not continued by default
+    Given Priya has window conversations on "Golden Angels Fund I":
+      | question               | last changed |
+      | Show recent valuations | 2 hours ago  |
+    When Priya opens the window on "Golden Angels Fund I"
+    Then the window opens on a new conversation
+    And the window lists "Show recent valuations"
+
   # E13 — Edge case: the window on one record lists only that record's conversations
   Scenario: Window scoped to its record
     Given the fund "Golden Angels Fund II" of Golden Angels

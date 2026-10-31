@@ -35,6 +35,21 @@ class GenericChatAgent < SupportAgentService
     persist_conversation: "Save Messages"
   }.freeze
 
+  # A conversation idle this long is not continued: the next question starts a new one.
+  SESSION_IDLE_TIMEOUT = 30.minutes
+
+  # The idle rule, also used by the chat window when it opens (E18): a conversation idle longer than
+  # SESSION_IDLE_TIMEOUT is not continued unless the user reopens it.
+  #
+  # @param session [AgentChatSession]
+  # @return [Boolean]
+  def self.session_expired?(session)
+    last_message = session.agent_chat_messages.order(created_at: :desc).first
+    return true if last_message.nil?
+
+    last_message.created_at < SESSION_IDLE_TIMEOUT.ago
+  end
+
   step :initialize_chat
   step :resolve_provider
   step :setup_ruby_llm_chat
@@ -216,12 +231,7 @@ class GenericChatAgent < SupportAgentService
 
   # @param session [AgentChatSession] the session to check
   # @return [Boolean] true if the session's last message is older than 30 minutes
-  SESSION_IDLE_TIMEOUT = 30.minutes # rubocop:disable Lint/UselessConstantScoping
-
   def session_expired?(session)
-    last_message = session.agent_chat_messages.order(created_at: :desc).first
-    return true if last_message.nil?
-
-    last_message.created_at < SESSION_IDLE_TIMEOUT.ago
+    self.class.session_expired?(session)
   end
 end

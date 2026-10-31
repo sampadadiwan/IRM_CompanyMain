@@ -68,7 +68,7 @@ class SupportAgentChatsController < ApplicationController
     load_window
     @session = if params[:new_session].present? then nil
                elsif params[:session_id].present? then window_sessions.find_by(id: params[:session_id])
-               else window_sessions.order(updated_at: :desc).first
+               else current_window_session
                end
     render partial: "support_agents/chat_window", locals: window_locals
   end
@@ -88,6 +88,13 @@ class SupportAgentChatsController < ApplicationController
     @support_agent = SupportAgent.find(params[:support_agent_id])
     authorize @support_agent, :show?
     @target = find_chattable || @support_agent
+  end
+
+  # The conversation the window opens on: the latest, unless it has been idle past GenericChatAgent's
+  # limit — then a new one, as asking would start one anyway (E18). Reopening it from the list continues it.
+  def current_window_session
+    latest = window_sessions.order(updated_at: :desc).first
+    latest unless latest.nil? || GenericChatAgent.session_expired?(latest)
   end
 
   # X7, E13 — only the current user's conversations with this agent about this record.
