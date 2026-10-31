@@ -900,7 +900,6 @@ Accessed via `DealsController#agent_settings`:
 | `app/packs/startups/deals/services/deal_investor_destroy.rb` | Investor soft delete |
 | `app/packs/startups/deals/services/complete_deal_activity.rb` | Activity completion |
 | `app/packs/startups/deals/services/perform_activity_action.rb` | Step advancement (core workflow) |
-| `app/packs/startups/deals/services/update_sequences.rb` | Activity reordering |
 | `app/packs/startups/deals/services/import_deal_investor_service.rb` | Bulk Excel import |
 
 ### Jobs
@@ -995,8 +994,6 @@ end
 
 resources :deal_activities do
   get    :search
-  get    :update_sequence
-  post   :update_sequences
   post   :toggle_completed
   post   :perform_activity_action
   put    :restore_deleted
