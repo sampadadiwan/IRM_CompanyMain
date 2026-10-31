@@ -192,14 +192,15 @@ export default class extends Controller {
 
   buildSlides() {
     this.slidesTarget.innerHTML = ""
-    const cards = Array.from(this.sourceTarget.querySelectorAll('.message-wrapper, .card'))
+    // The chat kit's messages (ai_chat/_question, ai_chat/_answer), in order.
+    const cards = Array.from(this.sourceTarget.querySelectorAll('.aic-message'))
 
     cards.forEach((card) => {
-      const isUserCard = !!card.querySelector('.ti-user') || (card.classList.contains('message-wrapper') && !card.classList.contains('assistant-message-card'))
-      const isAssistantCard = !!card.querySelector('.ti-robot') || card.classList.contains('assistant-message-card')
+      const isAssistantCard = card.hasAttribute('data-ai-chat-answer')
+      const isUserCard = !isAssistantCard
 
       if (isUserCard) {
-        const questionEl = card.querySelector('.fw-semibold, .message-content')
+        const questionEl = card.querySelector('.aic-question')
         if (questionEl && questionEl.innerText.trim().length > 0) {
           const qSection = document.createElement('section')
           qSection.innerHTML = `
@@ -210,7 +211,7 @@ export default class extends Controller {
         }
       }
 
-      const proseEl = card.querySelector('.prose')
+      const proseEl = card.querySelector('[data-ai-chat-answer-body]')
       if (isAssistantCard && proseEl) {
         let currentSection = document.createElement('section')
         const badge = document.createElement('div')

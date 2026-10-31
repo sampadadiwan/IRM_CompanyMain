@@ -2,7 +2,7 @@
     The layout, sidebar and thread are the chat kit's (app/packs/ai/ai_chat/views/ai_chat). %>
 <%= render layout: "ai_chat/layout",
            locals: { rows: @rows, frame: "support-console-thread", new_url: support_console_entity_path(@entity),
-                     active_id: @session&.id, root_class: "support-console", controllers: "support-console-fit",
+                     active_id: @session&.id, root_class: "support-console",
                      storage_key: "supportConsole.sidebarCollapsed",
                      # The retention rule (SupportConsoleRetentionJob), visible where the list is.
                      footer_note: "kept #{SupportConsoleRetentionJob::RETENTION.inspect}",

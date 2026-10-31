@@ -4,20 +4,22 @@
     rows        AiChatRows             the conversation list
     frame       String                 Turbo Frame the rows and New chat load into
     new_url     String                 New chat link
+    new_frame   String, nil            where New chat opens (default: frame; "_top" for a full page)
     active_id   Integer, nil           the open conversation's id
     footer_note String, nil            appended to the list's count line (e.g. "kept 90 days")
     ids         Hash                   DOM ids for :new, :search, :list (the screen's own)
-    controllers String, nil            extra Stimulus controllers on the panes (e.g. a fit controller)
+    controllers String, nil            extra Stimulus controllers on the panes
     root_class  String, nil            extra classes on the root (e.g. "support-console")
     storage_key String                 localStorage key remembering a hidden sidebar
   @see openspec/changes/ai-chat-kit/design.md (card ③ Chat layout)
 %>
 <div class="ai-chat <%= local_assigns[:root_class] %>">
   <div class="aic-panes d-flex flex-column flex-lg-row rounded-4 border bg-white overflow-hidden"
-       data-controller="<%= ["ai-chat-sidebar", local_assigns[:controllers]].compact_blank.join(" ") %>"
+       data-controller="<%= ["ai-chat-fit", "ai-chat-sidebar", local_assigns[:controllers]].compact_blank.join(" ") %>"
        data-ai-chat-sidebar-frame-value="<%= frame %>"
        data-ai-chat-sidebar-storage-key-value="<%= storage_key %>">
-    <%= render "ai_chat/sidebar", rows: rows, frame: frame, new_url: new_url, active_id: local_assigns[:active_id],
+    <%= render "ai_chat/sidebar", rows: rows, frame: frame, new_url: new_url, new_frame: local_assigns[:new_frame] || frame,
+                                  active_id: local_assigns[:active_id],
                                   footer_note: local_assigns[:footer_note], ids: ids %>
     <section class="flex-grow-1 d-flex flex-column" style="min-width: 0; min-height: 0;">
       <%= yield %>

@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
-// Support Console: sizes the two panes (conversations + chat) to exactly fill the window below
-// the page title, so no space is left under the cards and the page itself never scrolls.
+// Chat kit (ai_chat/_layout): sizes the two panes (conversations + chat) to exactly fill the window
+// below the page title, so no space is left under the cards and the page itself never scrolls.
 const BOTTOM_GAP_PX = 12
 const MIN_HEIGHT_PX = 480
 

@@ -40,7 +40,9 @@ class AiChatRows < Data.define(:rows, :more)
     shown = chats.first(LIMIT)
     titles = first_contents(Message, :chat_id, shown.map(&:id))
     rows = shown.map do |chat|
-      AiChatRow.new(id: chat.id, title: titles[chat.id] || chat.name, starter: chat.user&.full_name,
+      # A chat with no question yet (the Assistants page creates one on open) reads "New conversation"
+      # (AiChatHelper#ai_chat_title), not its generated "<record> Chat <timestamp>" name.
+      AiChatRow.new(id: chat.id, title: titles[chat.id], starter: chat.user&.full_name,
                     updated_at: chat.updated_at, status: nil, url: url.call(chat))
     end
     new(rows:, more: chats.size > LIMIT)

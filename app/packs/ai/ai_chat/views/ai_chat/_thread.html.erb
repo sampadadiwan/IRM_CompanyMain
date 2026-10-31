@@ -6,8 +6,12 @@
                               frame loads (session_id, session_url, first_question, session_meta)
     header       SafeBuffer   the screen's header content (title, switcher, badges, actions)
     streams      SafeBuffer   turbo_stream_from tags the screen listens on
-    scroller_id  String       the messages container's DOM id
-    empty        Boolean      no messages yet: show empty_state instead of the block
+    scroller_id  String       the scrolling container's DOM id
+    items_data   Hash         extra data-* on the messages container (e.g. exporters' targets)
+    items_id     String       the messages container's DOM id (default "<id>-items")
+    empty        Boolean      no messages yet: show empty_state above the (empty) messages
+  The messages sit in "<id>-items" and the empty state in "<id>-empty", so a screen can append a
+  question and answer over Turbo Streams and remove the empty state (Assistants page).
     empty_state  SafeBuffer   what an empty thread shows
     below        SafeBuffer   a notice under the messages (e.g. a refusal), optional
     composer     SafeBuffer   the question box (ai_chat/_composer)
@@ -30,10 +34,9 @@
          data-ai-chat-thread-target="scroller" data-action="scroll->ai-chat-thread#onScroll">
       <div class="aic-column h-100 px-4 pt-4">
         <% if empty %>
-          <%= empty_state %>
-        <% else %>
-          <%= yield %>
+          <div id="<%= id %>-empty" class="h-100"><%= empty_state %></div>
         <% end %>
+        <div id="<%= local_assigns[:items_id] || "#{id}-items" %>" <%= tag.attributes(data: local_assigns.fetch(:items_data, {})) %>><%= yield %></div>
       </div>
     </div>
     <button type="button" class="btn btn-sm btn-light border shadow-sm rounded-circle aic-jump d-none" title="Jump to latest"

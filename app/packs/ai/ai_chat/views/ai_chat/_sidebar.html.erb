@@ -3,7 +3,7 @@
 <aside class="aic-sidebar d-flex flex-column bg-body-tertiary border-end">
   <div class="d-flex align-items-center gap-1 p-2">
     <%= link_to new_url, class: "btn btn-primary fw-normal flex-grow-1", id: ids[:new], title: "New chat (Ctrl+K)",
-                data: { ai_chat_sidebar_target: "newChat", turbo_frame: frame } do %>
+                data: { ai_chat_sidebar_target: "newChat", turbo_frame: new_frame } do %>
       <i class="ti ti-edit"></i>New chat
     <% end %>
     <button type="button" class="btn btn-sm aic-icon-btn d-none d-lg-inline-flex" title="Hide sidebar"

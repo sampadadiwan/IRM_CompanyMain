@@ -4,7 +4,7 @@
 // answers are plain text in a centred reading column, with a rounded composer at the bottom.
 // Theme colours only — Bootstrap variables, no hand-picked hex.
 .ai-chat {
-  // A screen's fit controller (e.g. support_console_fit_controller) sets the exact height to the window's remaining space;
+  // ai_chat_fit_controller sets the exact height to the window's remaining space;
   // this is the fallback before it connects.
   .aic-panes { height: calc(100vh - 120px); min-height: 480px; }
 
@@ -190,6 +190,12 @@
   // The theme gives every icon in a .btn a right margin (for "icon + label" buttons); these
   // buttons are icon-only, so that margin would push the icon off centre.
   .aic-send i, .aic-icon-btn i { margin: 0 !important; line-height: 1; }
+
+  // Assistants page: the slides overlay covers the thread while a deck is shown.
+  .aic-slideshow { position: absolute; inset: 0; background: var(--bs-body-bg); z-index: 2000; }
+
+  // Hold-to-speak (Assistants page): the mic turns danger-red while it listens.
+  .aic-icon-btn.mic-active { color: var(--bs-danger); background: var(--bs-danger-bg-subtle); }
 
   // Stacked (below lg): the sidebar becomes a short list above the thread.
   @media (max-width: 991.98px) {

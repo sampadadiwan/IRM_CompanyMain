@@ -4,7 +4,8 @@ class AssistantQueryJob < ApplicationJob
   # The maximum time the job is allowed to run before being interrupted.
   TIMEOUT = 180.seconds
 
-  # Runs the assistant in the background and replaces the placeholder turbo-frame in the UI.
+  # Runs the assistant in the background and replaces the pending answer in the chat kit's thread
+  # (assistants/ask.turbo_stream put it there), then re-renders the question box.
   #
   # @param user_id [Integer]
   # @param chat_id [Integer]
@@ -12,7 +13,7 @@ class AssistantQueryJob < ApplicationJob
   # @param query [String]
   def perform(user_id, chat_id, request_id, query, assistant_type)
     user = User.find(user_id)
-    chat = Chat.find(chat_id)
+    chat = Chat.find_by(id: chat_id)
 
     assistant = case assistant_type.to_s
                 when 'PortfolioCompanyAssistant'
@@ -34,45 +35,54 @@ class AssistantQueryJob < ApplicationJob
       assistant.run(query)
     end
 
-    Turbo::StreamsChannel.broadcast_replace_to(
-      [user, "assistant"],
-      target: turbo_frame_dom_id(request_id),
-      partial: "assistants/ask_frame",
-      locals: { query: query, response: response, request_id: request_id, error: nil }
-    )
+    # H3 — the answer replaces the pending one in the thread (ai_chat/_answer, rich mode).
+    broadcast_answer(chat, request_id, AiChatItem.transient(dom_id: turbo_frame_dom_id(request_id), role: "assistant",
+                                                            content: response.content))
+    broadcast_composer(chat)
   rescue Timeout::Error => e
     Rails.logger.error { "AssistantQueryJob timed out after #{TIMEOUT} seconds: #{e.message}" }
-    broadcast_error(user_id, request_id, query, "The request timed out. Please try again or refine your query.")
+    # X3 — a timeout reads "Not answered" with the reason; the question goes back in the box.
+    broadcast_error(chat, request_id, query, "The request timed out. Please try again or refine your query.")
   rescue StandardError => e
     Rails.logger.error { "AssistantQueryJob failed: #{e.class}: #{e.message}\n#{e.backtrace&.join("\n")}" }
-    broadcast_error(user_id, request_id, query, e.message)
-  ensure
-    broadcast_hide_spinner(user_id)
+    broadcast_error(chat, request_id, query, e.message)
   end
 
   private
 
-  def broadcast_hide_spinner(user_id)
-    user = User.find_by(id: user_id)
-    return unless user
-
-    Turbo::StreamsChannel.broadcast_append_to(
-      [user, "assistant"],
-      target: "chat-feed", # Or wherever the spinner can be targeted
-      content: "<script>const s = document.querySelector('[data-voice-chat-target=\"spinner\"]'); if(s) s.classList.add('d-none');</script>"
+  # Streams are per chat, so another open assistant tab is never touched.
+  #
+  # @param chat [Chat]
+  # @param request_id [String]
+  # @param item [AiChatItem]
+  def broadcast_answer(chat, request_id, item)
+    Turbo::StreamsChannel.broadcast_replace_to(
+      [chat, :assistant],
+      target: turbo_frame_dom_id(request_id),
+      partial: "ai_chat/answer",
+      locals: { item: item, mode: :rich }
     )
   end
 
-  def broadcast_error(user_id, request_id, query, error_message)
-    user = User.find_by(id: user_id)
-    return unless user
-
+  # Re-renders the question box once the turn ends: Ask enabled again, and a failed question back in it.
+  #
+  # @param chat [Chat]
+  # @param value [String, nil]
+  def broadcast_composer(chat, value: nil)
     Turbo::StreamsChannel.broadcast_replace_to(
-      [user, "assistant"],
-      target: turbo_frame_dom_id(request_id),
-      partial: "assistants/ask_frame",
-      locals: { query: query, response: nil, request_id: request_id, error: error_message }
+      [chat, :assistant],
+      target: "assistant-composer",
+      partial: "assistants/composer",
+      locals: { chat: chat, running: false, value: value }
     )
+  end
+
+  def broadcast_error(chat, request_id, query, error_message)
+    return unless chat
+
+    broadcast_answer(chat, request_id, AiChatItem.transient(dom_id: turbo_frame_dom_id(request_id), role: "assistant",
+                                                            content: error_message, status: :failed))
+    broadcast_composer(chat, value: query)
   end
 
   def turbo_frame_dom_id(request_id)

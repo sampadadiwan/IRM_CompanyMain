@@ -59,7 +59,7 @@ step (J1.3 = journey 1, step 3) · **R** = Role sweep · **C** = Cross-cutting c
 
 | ☐ | ID | What to check | Preconditions | Steps | Expected result | Pass / Fail | Notes |
 |---|---|---|---|---|---|---|---|
-| ☐ | E1 | No conversations | A fund Priya never used the assistant on | 1. Open its Assistant | "No conversations yet."; greeting "Hello, Priya" | | |
+| ☐ | E1 | First visit | A fund Priya never used the assistant on | 1. Open its Assistant | One row "New conversation"; greeting "Hello, Priya" (screens that create no chat on open, e.g. the floating window, say "No conversations yet.") | | |
 | ☐ | E2 | Quoted question | A conversation started with `"Why is TSTF2 overpaid?"` (with quotes) | 1. Look at its row | Title shows without the quote marks | | |
 | ☐ | E3 | Dates by locale | A conversation from 28 Oct 2026 | 1. View its row under English (UK) and English (US) | 28/10/2026 and 10/28/2026 | | |
 | ☐ | E4 | Blank question | — | 1. Press Enter in an empty box | Nothing is sent | | |

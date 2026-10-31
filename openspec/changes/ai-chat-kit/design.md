@@ -655,7 +655,7 @@ Shared setup:
 
 | # | Scenario | Given | When | Then | Spec scenario | Feature |
 |---|---|---|---|---|---|---|
-| E1 | No conversations | Priya has no Fund I chats | opens assistant | "No conversations yet." | No conversations | `ai_chat/assistants_page.feature` |
+| E1 | First visit | Priya has no Fund I chats | opens assistant | one row "New conversation" (the page creates the chat on open); greeting "Hello, Priya" | No conversations | `ai_chat/assistants_page.feature` |
 | E2 | Quoted first question | session first question `"Why is TSTF2 overpaid?"` | lists | title without quotes | Rows show question, who and when | `ai_chat/floating_window.feature` |
 | E3 | Date by locale | conversation last changed 28/10/2026 | lists under `en` and `en-US` | 28/10/2026 / 10/28/2026 | Older conversation shows a date | `ai_chat/assistants_page.feature` |
 | E4 | Blank question | window | posts blank message | nothing created, no answer item | Blank question | `ai_chat/floating_window.feature` |

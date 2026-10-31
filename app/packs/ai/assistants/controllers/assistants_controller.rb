@@ -16,8 +16,14 @@ class AssistantsController < ApplicationController
 
     Rails.logger.debug { "Loaded chat: #{@chat.id}" }
     @assistant_description = assistant_class.constantize::DESCRIPTION
-    @messages = @chat.messages.where(role: %w[user assistant]).order(created_at: :asc)
-    @chats = Chat.where(user: current_user, entity_id: current_user.entity_id, assistant_type: assistant_class).order(created_at: :desc)
+    # The chat kit's thread: questions and answers only. An assistant message without content is a
+    # tool-call step of the model's loop, not an answer, so it is not drawn.
+    @items = @chat.messages.where(role: %w[user assistant]).order(created_at: :asc)
+                  .reject { |m| m.role == "assistant" && m.content.blank? }
+                  .map { |m| AiChatItem.from_message(m) }
+    # H2, E14 — the sidebar: this assistant's conversations for the same record, newest first, capped.
+    @rows = AiChatRows.for_chats(assistant_chats(@chat),
+                                 url: ->(chat) { assistant_path("assistant", assistant_type: assistant_class, chat_id: chat.id) })
   end
 
   def efficiency_report
@@ -59,16 +65,12 @@ class AssistantsController < ApplicationController
     render "efficiency_report"
   end
 
+  # H3 — the question and its pending answer go into the thread at once; AssistantQueryJob replaces
+  # the pending answer (by request id) when it finishes.
   def ask
     authorize :assistant, :ask?
     query = params.require(:query).to_s
-    chat_id = params.require(:chat_id)
-    assistant_type = params[:assistant_type] || 'fund'
-    request_id = SecureRandom.hex(12)
-
-    AssistantQueryJob.perform_later(current_user.id, chat_id, request_id, query, assistant_type)
-
-    render partial: "ask_frame", locals: { query: query, response: nil, request_id: request_id, error: nil }
+    enqueue_question(query)
   end
 
   def transcribe
@@ -82,13 +84,8 @@ class AssistantsController < ApplicationController
       f.flush
 
       transcription = RubyLLM.transcribe(f.path) # RubyLLM transcription
-      query = transcription.text.to_s
-      assistant_type = params[:assistant_type] || 'fund'
-      request_id = SecureRandom.hex(12)
-
-      AssistantQueryJob.perform_later(current_user.id, chat_id, request_id, query, assistant_type)
-
-      render partial: "ask_frame", locals: { query: query, response: nil, request_id: request_id, error: nil }
+      # E17 — the spoken question is asked like a typed one.
+      enqueue_question(transcription.text.to_s, chat_id:)
     end
   end
 
@@ -129,6 +126,29 @@ class AssistantsController < ApplicationController
   end
 
   private
+
+  # Queues the question for AssistantQueryJob and renders it with its pending answer
+  # (assistants/ask.turbo_stream). The chat must be the user's own, in their entity.
+  #
+  # @param query [String]
+  # @param chat_id [String] defaults to params[:chat_id]
+  def enqueue_question(query, chat_id: params.require(:chat_id))
+    @chat = Chat.find_by!(id: chat_id, user: current_user, entity_id: current_user.entity_id)
+    @query = query
+    @request_id = SecureRandom.hex(12)
+    AssistantQueryJob.perform_later(current_user.id, @chat.id, @request_id, query, @chat.assistant_type)
+    render "assistants/ask", formats: :turbo_stream
+  end
+
+  # The conversations listed beside a chat: the user's chats with the same assistant and, for an
+  # assistant about one record (a fund, a company, a commitment), the same record.
+  #
+  # @param chat [Chat]
+  # @return [ActiveRecord::Relation<Chat>]
+  def assistant_chats(chat)
+    scope = Chat.where(user: current_user, entity_id: current_user.entity_id, assistant_type: assistant_class)
+    chat.owner_type.in?(ALLOWED_CHAT_OWNER_TYPES) ? scope.where(owner: chat.owner) : scope
+  end
 
   # Resolves owner_type/owner_id to a record the *current user* is actually authorized to
   # see. A bare `owner_type.constantize.find_by(id: owner_id)` would let any authenticated

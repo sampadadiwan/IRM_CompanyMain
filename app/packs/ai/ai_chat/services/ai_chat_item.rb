@@ -44,6 +44,19 @@ class AiChatItem < Data.define(:dom_id, :role, :content, :time, :status, :turn_s
         feedback_rating: nil, message_id: message.id)
   end
 
+  # A question or answer that is not (yet) a saved message — the Assistants page's just-asked
+  # question, its pending answer and the job's result, which reach the page by request id.
+  #
+  # @param dom_id [String]
+  # @param role [String] "user" or "assistant"
+  # @param content [String, nil]
+  # @param status [Symbol] :running, :answered or :failed
+  # @return [AiChatItem]
+  def self.transient(dom_id:, role:, content: nil, status: :answered)
+    new(dom_id:, role:, content:, time: Time.current, status:, turn_status: nil, progress: [], model: nil,
+        asker: nil, feedback_rating: nil, message_id: nil)
+  end
+
   # @param turn_status [String, nil] metadata["turn_status"] (Support Console); nil elsewhere
   # @return [Symbol] :running, :stopped, :failed, :refused or :answered
   def self.status_for(turn_status)

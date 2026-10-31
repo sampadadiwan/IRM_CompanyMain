@@ -37,22 +37,22 @@
 
 ## 2. Assistants page on the kit
 
-- [ ] 2.1 `AssistantsController#show`: build rows (`AiChatRows.for_chats`, same scope as today's
+- [x] 2.1 `AssistantsController#show`: build rows (`AiChatRows.for_chats`, same scope as today's
       `@chats`, capped 50) and items; render `ai_chat/_layout` with frame `ai-chat-thread`
       (`turbo_action: advance`), header slot (owner link + Export menu) and empty state
       (`DESCRIPTION`, "Hello, <first name>"). LLD § Controllers. Verify: Fund I › Assistant in dev
       shows the sidebar and opening a row swaps only the thread.
-- [ ] 2.2 `#ask` / `#transcribe` respond with turbo_stream (append `_question` + `_pending` with id
+- [x] 2.2 `#ask` / `#transcribe` respond with turbo_stream (append `_question` + `_pending` with id
       `assistant_response_<request_id>`); `AssistantQueryJob` broadcasts `ai_chat/_answer`
       (answered or failed) to replace it and drops `broadcast_hide_spinner`. LLD § Controllers,
       § Background Jobs, § Error Mapping. Verify: asking in dev shows "Thinking…" then the answer.
-- [ ] 2.3 Trim `voice_chat_controller.js` to recording/transcribing (posts via the kit form); move
+- [x] 2.3 Trim `voice_chat_controller.js` to recording/transcribing (posts via the kit form); move
       the mic + hint into the composer slot; delete `assistants/_ask` and `_ask_frame`. Verify: hold
       🎤 in dev, the transcribed question appears and is answered.
-- [ ] 2.4 Point `ppt_export_controller.js` and `slideshow_controller.js` at `[data-ai-chat-answer]` /
+- [x] 2.4 Point `ppt_export_controller.js` and `slideshow_controller.js` at `[data-ai-chat-answer]` /
       `[data-ai-chat-answer-body]`; `_answer` emits both attributes. Verify: Export PowerPoint in dev
       produces a slide with an answer's table.
-- [ ] 2.5 Write `features/ai_chat/assistants_page.feature` for H2, H3, H4, E1, E3, E6, E7, E14, E16
+- [x] 2.5 Write `features/ai_chat/assistants_page.feature` for H2, H3, H4, E1, E3, E6, E7, E14, E16
       (Assistants), E17, X3 with `features/step_definitions/ai_chat_steps.rb`; run it with
       `TEST_ENV_NUMBER=$RANDOM bundle exec cucumber features/ai_chat/assistants_page.feature`, then the
       existing `features/ai/assistants` and `features/ai/fund_assistant` features, and confirm all are

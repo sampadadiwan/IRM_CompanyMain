@@ -1,0 +1,11 @@
+<%# H3 / E17 — the question and its pending answer join the thread at once; AssistantQueryJob replaces the
+    pending answer (assistant_response_<request id>) and re-renders the box when it finishes. %>
+<%= turbo_stream.remove "assistant-chat-empty" %>
+<%= turbo_stream.append "assistant-chat-items" do %>
+  <%= render "ai_chat/question", item: AiChatItem.transient(dom_id: "assistant_question_#{@request_id}", role: "user", content: @query) %>
+  <%= render "ai_chat/answer", item: AiChatItem.transient(dom_id: "assistant_response_#{@request_id}", role: "assistant", status: :running),
+                               mode: :rich %>
+<% end %>
+<%= turbo_stream.replace "assistant-composer" do %>
+  <%= render "assistants/composer", chat: @chat, running: true %>
+<% end %>

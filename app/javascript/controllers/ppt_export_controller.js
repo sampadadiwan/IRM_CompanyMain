@@ -29,7 +29,8 @@ export default class extends Controller {
 
     pres.layout = 'LAYOUT_WIDE'
 
-    const messages = this.responsesTarget.querySelectorAll('.assistant-message-card, .card.assistant-message-card')
+    // H4 — the chat kit marks each answer and its rendered body (ai_chat/_answer).
+    const messages = this.responsesTarget.querySelectorAll('[data-ai-chat-answer]')
 
     if (messages.length === 0) {
       alert("No assistant responses found to export.")
@@ -37,7 +38,7 @@ export default class extends Controller {
     }
 
     for (const [index, card] of messages.entries()) {
-      const prose = card.querySelector('.prose')
+      const prose = card.querySelector('[data-ai-chat-answer-body]')
       if (!prose) continue
 
       let currentSlide = pres.addSlide()
@@ -108,8 +109,10 @@ export default class extends Controller {
           currentY = 0.8
         }
 
-        if (block.tagName === 'TABLE') {
-          const tableData = this.extractTableData(block)
+        // The kit wraps each table in a bordered card (AiChatHelper), so look inside it.
+        const table = block.tagName === 'TABLE' ? block : (block.classList.contains('card') ? block.querySelector('table') : null)
+        if (table) {
+          const tableData = this.extractTableData(table)
           if (tableData.length > 0) {
             currentSlide.addTable(tableData, {
               x: 0.5,
