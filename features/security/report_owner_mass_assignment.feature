@@ -20,12 +20,13 @@ Feature: Report owner cannot be re-assigned - 2026-10 security review (H17)
     And the report is saved with name "Renamed by form"
     And re-owning the report to "Zoe" directly is refused
 
-  # H17-2 — Edge case: the owner has left the firm (or a support owner is switched elsewhere): no insight runs
+  # H17-2 — Edge case: the owner has left the firm (or a support owner is switched elsewhere): no scheduled insight runs.
+  # A scheduled run reads as the owner; a manual run reads as the clicking user instead (H17-C1)
   @security @rack_test
-  Scenario: H17-2 An insight for a report whose owner is in another firm is refused
+  Scenario: H17-2 A scheduled insight for a report whose owner is in another firm is refused
     Given a user "Sam" of my firm owns a report "Support Commitments"
     And the report's owner has moved to "Zeta Capital"
-    When the report's insight job runs
+    When the report's scheduled insight job runs
     Then the insight fails with "Report owner is no longer in this firm"
     And no LLM was asked and no insight email was sent
 
@@ -46,3 +47,24 @@ Feature: Report owner cannot be re-assigned - 2026-10 security review (H17)
     When I rename the report to "Renamed after leaving"
     Then the report is saved with name "Renamed after leaving"
     And the report is still owned by "Sam" of "Artha"
+
+  # H17-C1 — Edge case: a fund-restricted employee generating an insight on the company admin's report sends the LLM only the rows they can open
+  @security @rack_test
+  Scenario: H17-C1 A manual insight run reads with the clicking employee's fund scope
+    Given my firm has funds "Open Fund" and "Closed Fund" with one commitment each
+    And there is an employee "Eli" of my firm with access to the fund "Open Fund" only
+    And "report_analysis_agent" support agent is enabled for the entity
+    And I own a report "Artha Commitments"
+    When "Eli" clicks Generate insight on the report
+    Then the data sent to the LLM has only the commitments of "Open Fund"
+    And the insight is a "manual" run triggered by "Eli"
+
+  # H17-CH — Happy path: a scheduled run (no one clicked) still reads with the report owner's scope
+  @security @rack_test
+  Scenario: H17-CH A scheduled insight run reads with the report owner's scope
+    Given my firm has funds "Open Fund" and "Closed Fund" with one commitment each
+    And there is an employee "Eli" of my firm with access to the fund "Open Fund" only
+    And I own a report "Artha Commitments"
+    When the report's scheduled insight job runs
+    Then the data sent to the LLM has only the commitments of "Open Fund, Closed Fund"
+    And the insight is a "system" run triggered by "nobody"

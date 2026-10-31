@@ -168,10 +168,7 @@ Devise.setup do |config|
   # ==> Configuration for :timeoutable
   # The time you want to timeout the user session without activity. After this
   # time the user will be asked for credentials again. Default is 30 minutes.
-  # N7 (security review 2026-10): sessions idle for 12 hours must sign in again
-  # The test env keeps a long timeout because many scenarios time-travel days while signed in;
-  # features/security/session_timeout.feature shortens it to prove the timeout (N7-1, N7-H).
-  config.timeout_in = Rails.env.test? ? 100.years : 12.hours
+  # config.timeout_in = 30.minutes
 
   # ==> Configuration for :lockable
   # Defines which strategy will be used to lock an account.

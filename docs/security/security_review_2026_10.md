@@ -996,7 +996,7 @@ File: `features/security/two_factor_attempts.feature` (`@cross-region-cache`). M
 |---|---|---|---|
 | N5 | Medium | Anyone can self-register an OAuth app named "CapHive Mail Add-in" with the out-of-band redirect, and `MailAddinToken.issued?` would trust it | M2 (reserved names, shape check, ops cleanup) |
 | N6 | Medium | `EntityDeactivationJob` uses `update_all(active: false)`, so phones of a deactivated entity's users stay signed in | M4 (check at use) |
-| N7 | Low | Cookie-store sessions with `timeoutable` off: a saved session cookie never expires on the server | Decision: enable `timeoutable` (e.g. 12 h) or rotate the session on sensitive actions |
+| N7 | ~~Low~~ **Not an issue** | ~~Cookie-store sessions with `timeoutable` off: a saved session cookie never expires on the server~~ Wrong premise: `session_store.rb` sets `expire_after: 60.minutes`, enforced server-side (a replayed copy is refused at 61 min) | No change. `session_timeout.feature` N7-X pins the 60-minute expiry |
 
 ---
 
@@ -1607,11 +1607,11 @@ or URL between them.
 | L5 | `config.hosts` behind `ENFORCE_HOST_AUTHORIZATION=1`; full CSP report-only; cookie domain unchanged |
 | L11 | Blog kept, writes support-only |
 | L12 | `entities#search`: employees only, results limited to firms already linked as stakeholders |
-| N7 | Not implemented (session timeout is a product decision) |
+| N7 | Not needed (see the follow-up row below) |
 | C4 follow-up | RM `download?` is owner-only: RMs can't download the full sale PII sheet (they see their mapped clients on screen) |
 | H19 follow-up | EOI `approve?` is firm-only (`permissioned_employee?(:update)` + approver); LP-side approvers no longer approve EOIs |
 | H17 follow-up | A manual "Generate insight" reads with the **clicking user's** scope; scheduled runs use the report owner |
-| N7 | Devise `:timeoutable`, 12 h idle (test env 100 years; `session_timeout.feature` shortens it) |
+| N7 | **Withdrawn**: the 60-minute `expire_after` already ends idle sessions on the server, so a 12 h `:timeoutable` could never fire; the change was reverted (N7-X guards the expiry) |
 | C7 follow-up | Starting a CKYC fetch needs KYC **create** rights, the same as the OTP download |
 | H15 follow-up | RM interest uploads unchanged (any GP investor), as decided. Import authorization now uses the type's own predicate (`import_offers?` / `import_interests?`), so an RM can't upload offers |
 | M2 / R10 | Confirmed: keep `https://claude.com/api/mcp/auth_callback` and `https://chatgpt.com/connector_platform_oauth_redirect` in `config/mcp_clients.yml` |

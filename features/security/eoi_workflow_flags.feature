@@ -32,3 +32,19 @@ Feature: EOI workflow flags - 2026-10 security review (H19)
   Scenario: H19-H3 The opportunity's company admin allocates an EOI
     When I allocate the EOI with "allocation_amount=1500000;verified=1;approved=0;comment=Allocated"
     Then the EOI has "allocation_amount=1500000;verified=true;comment=Allocated"
+
+  # H19-A1 — Edge case: an LP-side user holding the approver role cannot approve their own EOI
+  @security @rack_test
+  Scenario: H19-A1 An LP approver approving their own EOI is refused
+    Given the LP's user has the approver role
+    When the LP approves their EOI
+    Then I am denied access
+    And the EOI has "approved=false"
+    And the LP may not approve their EOI
+
+  # H19-AH — Happy path: an approver of the opportunity's firm approves the EOI
+  @security @rack_test
+  Scenario: H19-AH The opportunity firm's approver approves an EOI
+    Given the user has role "approver"
+    When I approve the EOI
+    Then the EOI has "approved=true"

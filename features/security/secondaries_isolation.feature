@@ -286,3 +286,21 @@ Feature: Secondaries isolation - 2026-10 security review
     And "B" has an unverified interest on the sale
     When the sale's company admin creates an allocation of 2 shares from the offer of "A" to the interest of "B"
     Then the sale has an allocation of 2 shares from the offer of "A" to the interest of "B"
+
+  # ---- C4 follow-up — the RM sale download ----------------------------------------------------
+
+  # C4-RM-1 — Edge case: an RM with an access right on the sale still cannot download the full-PII sale sheet
+  @security @rack_test
+  Scenario: C4-RM-1 An RM with access downloading the sale sheet as xlsx is refused
+    Given there is an RM "Rex" with access to the sale
+    When the RM "Rex" downloads the sale sheet as xlsx
+    Then I am denied access
+    And no seller or buyer PAN or bank account is in the response
+    And the RM "Rex" may still open the sale
+
+  # C4-RM-H — Happy path: the owner-only rule still lets the sale's company admin download the sale sheet.
+  # Checked on the policy, not the request: download.xlsx.axlsx calls SecondarySale#interest_allocation_quantity,
+  # a column dropped in Oct 2024, so the sheet raises for every user (nothing in the UI links to it).
+  @security @rack_test
+  Scenario: C4-RM-H The sale's company admin may download the sale sheet
+    Then the sale's company admin may download the sale sheet
