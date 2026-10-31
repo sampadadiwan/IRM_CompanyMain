@@ -237,6 +237,94 @@ Feature: Support Console asking
     And the answer shows no image
     And the answer links to "https://caphive.com/help" in a new tab
 
+  # H13 — Happy path: an answer in the brief's layout renders with Bootstrap structure — Summary card, Key figures stat cards, a table, a callout, a Questions list
+  Scenario: Answer laid out with cards, stats, a table and questions
+    Given the relay answers:
+      """
+      ## Summary
+      TSTF2 paid more than Call 2 asked for.
+
+      ## Key figures
+      - **Called:** 5,00,000
+      - **Paid:** 5,50,000
+
+      ## Details
+      | Investor | Paid |
+      |---|---|
+      | TSTF2 | 5,50,000 |
+
+      > The extra 50,000 sits unallocated.
+
+      ## Questions
+      - Was a refund issued?
+
+      ## Where this comes from
+      - app/packs/funds/capital_calls/models/capital_remittance.rb
+      """
+    When I open the Support Console for "Golden Angels"
+    And I ask "Why is TSTF2 marked Overpaid?"
+    Then the answer shows a "Summary" card saying "TSTF2 paid more than Call 2 asked for."
+    And the answer shows the stat card "Called" with "5,00,000"
+    And the answer shows the stat card "Paid" with "5,50,000"
+    And the answer shows a Bootstrap table with the cell "TSTF2"
+    And the answer shows "The extra 50,000 sits unallocated." as a callout
+    And the answer lists the question "Was a refund issued?"
+    And I see the answer "Where this comes from"
+    And the question is shown as a Bootstrap bubble
+    And the brief sent to the relay says "## Key figures"
+
+  # E40 — Edge case: an answer without the layout's headings (written before the layout existed) still renders, with no cards
+  Scenario: Answer without the layout headings
+    Given the relay answers "No Q3 entries exist for commitment 9001."
+    When I open the Support Console for "Golden Angels"
+    And I ask "Why is the closing balance zero?"
+    Then I see the answer "No Q3 entries exist for commitment 9001."
+    And the answer shows no stat cards
+
+  # E41 — Edge case: a Key figures bullet that is not "Label: value" stays a bullet; the others still become stat cards
+  Scenario: Key figures bullet of another shape
+    Given the relay answers:
+      """
+      ## Key figures
+      - **Called:** 5,00,000
+      - figures for Q4 are not in yet
+      """
+    When I open the Support Console for "Golden Angels"
+    And I ask "What was called?"
+    Then the answer shows the stat card "Called" with "5,00,000"
+    And the answer shows the bullet "figures for Q4 are not in yet"
+
+  # E42 — Edge case: sub-headings inside "Where this comes from" stay inside the collapsed section
+  Scenario: Sources with their own sub-headings
+    Given the relay answers:
+      """
+      ## Summary
+      No Q3 entries exist.
+
+      ## Where this comes from
+      ### Code
+      - app/packs/funds/account_entries/models/account_entry.rb
+      ### Lookups
+      - account_entries for commitment 9001
+      """
+    When I open the Support Console for "Golden Angels"
+    And I ask "Why is the closing balance zero?"
+    Then the sources section holds "### Code" and "account_entries for commitment 9001"
+
+  # X36 — Error case: a class or Stimulus hook written into an answer is stripped; only the app's own Bootstrap classes are added
+  Scenario: Answer tries to style or wire up the page
+    Given the relay answers:
+      """
+      ## Summary
+      Total is 5.
+
+      <p class="d-none" data-controller="evil">Hidden text</p>
+      """
+    When I open the Support Console for "Golden Angels"
+    And I ask "What is the total?"
+    Then the answer shows a "Summary" card saying "Total is 5."
+    And the answer has no class or data attribute of its own around "Hidden text"
+
   # X25 — Edge case: the Claude session id is stored as soon as the machine sends it, even when the turn then ends without an answer
   Scenario: Claude session kept for a turn without an answer
     Given the relay starts Claude session "cs-cut" and then the stream ends

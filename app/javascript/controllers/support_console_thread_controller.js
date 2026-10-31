@@ -5,7 +5,7 @@ import { Controller } from "@hotwired/stimulus"
 //   - follows the newest text while the reader is at the bottom, and offers "Jump to latest"
 //     when they have scrolled up to read instead of yanking them down;
 //   - keeps an open "steps" list or "Where this comes from" section open across the re-renders;
-//   - right-aligns amount cells in answer tables and lets wide tables scroll sideways;
+//   - right-aligns amount cells in answer tables;
 //   - shades the header once the thread is scrolled, and copies a message on its Copy button.
 const NEAR_BOTTOM_PX = 80
 // A cell that is only an amount or a number: ₹/$ signs, minus signs, digits, separators, %.
@@ -87,12 +87,8 @@ export default class extends Controller {
     })
 
     this.scrollerTarget.querySelectorAll(".sc-answer table:not([data-decorated])").forEach((table) => {
+      // SupportConsoleHelper already wraps the table in a scrolling card; only alignment is left.
       table.dataset.decorated = "true"
-      // Wide tables scroll inside the bubble.
-      const wrap = document.createElement("div")
-      wrap.className = "chat-table-wrap"
-      table.parentNode.insertBefore(wrap, table)
-      wrap.appendChild(table)
 
       // Right-align a column when every non-empty body cell in it is a number.
       const rows = Array.from(table.querySelectorAll("tbody tr"))

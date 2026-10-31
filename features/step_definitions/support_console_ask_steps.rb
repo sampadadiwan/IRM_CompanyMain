@@ -316,6 +316,70 @@ Then('the answer links to {string} in a new tab') do |href|
   end
 end
 
+# H13 / E40 / E41 / X36 — an answer written over several lines, as the brief's layout asks.
+Given('the relay answers:') do |text|
+  stub_relay_turns(SupportConsoleRelayStub.answer(text))
+end
+
+Then('the answer shows a {string} card saying {string}') do |title, text|
+  within("#support-console-messages .sc-answer-body") do
+    card = find(".card", text: title, match: :first)
+    expect(card).to have_css(".card-header h6", text: title)
+    expect(card).to have_content(text)
+  end
+end
+
+Then('the answer shows the stat card {string} with {string}') do |label, value|
+  within("#support-console-messages .sc-answer-body") do
+    card = find(".card.stat-card-accent", text: label)
+    expect(card).to have_css(".card-subtitle", text: label)
+    expect(card).to have_css("h2", text: value)
+  end
+end
+
+Then('the answer shows no stat cards') do
+  within("#support-console-messages .sc-answer-body") { expect(page).to have_no_css(".stat-card-accent") }
+end
+
+Then('the answer lists the question {string}') do |question|
+  within("#support-console-messages .sc-answer-body") do
+    expect(page).to have_css(".list-group .list-group-item", text: question)
+  end
+end
+
+Then('the answer shows a Bootstrap table with the cell {string}') do |cell|
+  within("#support-console-messages .sc-answer-body") do
+    expect(page).to have_css(".card .table-responsive table.table td", text: cell)
+  end
+end
+
+Then('the answer shows the bullet {string}') do |text|
+  within("#support-console-messages .sc-answer-body") { expect(page).to have_css("ul > li", text: text) }
+end
+
+Then('the answer shows {string} as a callout') do |text|
+  within("#support-console-messages .sc-answer-body") { expect(page).to have_css("blockquote.alert", text: text) }
+end
+
+Then('the answer has no class or data attribute of its own around {string}') do |text|
+  within("#support-console-messages .sc-answer-body") do
+    expect(page).to have_css("p", text: text, visible: :all)
+    expect(page).to have_no_css(".d-none", visible: :all)
+    expect(page).to have_no_css("[data-controller]", visible: :all)
+  end
+end
+
+Then('the sources section holds {string} and {string}') do |heading, text|
+  within("#support-console-messages details.sc-sources .sc-sources-body", visible: :all) do
+    expect(page).to have_css("h3", text: heading.delete_prefix("### "), visible: :all)
+    expect(page).to have_text(:all, text, normalize_ws: true)
+  end
+end
+
+Then('the question is shown as a Bootstrap bubble') do
+  within("#support-console-messages") { expect(page).to have_css(".sc-question.bg-body-tertiary.rounded-4") }
+end
+
 # X25 — the machine sends the session id, then the stream ends without a result (a stop or a crash).
 Given('the relay starts Claude session {string} and then the stream ends') do |claude_session_id|
   stub_relay_turns(SupportConsoleRelayStub.ndjson([{ type: "session", claude_session_id: claude_session_id },

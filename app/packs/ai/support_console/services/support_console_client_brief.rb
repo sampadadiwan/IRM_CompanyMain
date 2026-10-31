@@ -25,6 +25,12 @@ class SupportConsoleClientBrief
       Do not query, compare or mention any other client. If the question needs another client's
       data, say that you can only look at #{entity.name} in this conversation, and stop.
       You cannot change anything. If a fix needs data changed, describe the change instead.
+      Write the answer in markdown (never HTML), laid out under these headings, in this order,
+      leaving out any that has nothing to say:
+      ## Summary — the conclusion in two or three sentences.
+      ## Key figures — the numbers that matter, one bullet each as "- **Label:** value".
+      ## Details — the working: explanation, and tables for row-level data.
+      ## Questions — anything you need from the user to go further, one bullet each.
       End every answer with a "Where this comes from" section listing the code locations
       (file:line) and the lookups the answer relied on.
     BRIEF

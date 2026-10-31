@@ -91,6 +91,31 @@ the data lookups it relied on, and the page footer SHALL show the code version u
 - **WHEN** an answer completes
 - **THEN** it includes a "Where this comes from" section and the footer shows the code version
 
+### Requirement: Answers are laid out with Bootstrap structure
+The assistant SHALL be asked to write each answer in markdown under the headings Summary, Key figures
+(one "Label: value" bullet each), Details, Questions and "Where this comes from", leaving out any that
+has nothing to say. The page SHALL render a Summary as a card, each Key figures bullet as a stat card,
+tables inside a scrolling card with the app's table classes, quotes as a callout, Questions as a list
+group, and the user's questions as a Bootstrap bubble. These classes SHALL be added by the application
+after the answer is sanitized, so a class or data attribute written in the answer itself is never kept.
+An answer without these headings SHALL still render, without the cards.
+
+#### Scenario: Answer in the layout
+- **WHEN** an answer has Summary, Key figures, a table and Questions
+- **THEN** the Summary shows as a card, each figure as a stat card, the table in a card, and each question as a list item
+
+#### Scenario: Answer without the layout
+- **WHEN** an answer has none of the layout's headings
+- **THEN** it renders as plain text, with no stat cards
+
+#### Scenario: Key figures bullet of another shape
+- **WHEN** a Key figures bullet is not "Label: value"
+- **THEN** it stays a bullet and the other figures still show as stat cards
+
+#### Scenario: Answer tries to style the page
+- **WHEN** an answer contains its own class or data-controller attribute
+- **THEN** the attribute is stripped and only the application's own classes appear
+
 ### Requirement: Data is read from the replica only, read-only
 The assistant's data lookups SHALL go only to the read replica, through a login that can only read. The
 data tool SHALL refuse to run when it is connected to a database that is not read-only, or when its login

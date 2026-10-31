@@ -71,8 +71,11 @@
   .sc-message:hover .sc-actions, .sc-actions:focus-within { opacity: 1; }
   @media (hover: none) { .sc-actions { opacity: 1; } }
 
-  // Blinking cursor after the text while an answer streams in.
-  .sc-streaming > :last-child:not(details):not(.chat-table-wrap):not(table)::after {
+  // Blinking cursor after the text while an answer streams in — only after running text, not
+  // after a card, table or the sources section (SupportConsoleHelper builds those).
+  .sc-streaming > p:last-child::after,
+  .sc-streaming > :is(ul, ol):last-child > li:last-child::after,
+  .sc-streaming > .card:last-child > .card-body > p:last-child::after {
     content: "";
     display: inline-block;
     width: 0.5em;
@@ -84,43 +87,27 @@
     animation: sc-blink 1s steps(1) infinite;
   }
 
+  // Questions: the bubble's colour and shape are Bootstrap utilities in _message; this keeps
+  // its width and the asker's own line breaks.
   .sc-question {
     max-width: 75%;
-    background: var(--bs-tertiary-bg);
     white-space: pre-wrap;
     word-break: break-word;
   }
 
-  // Answers: no bubble, roomy typography.
+  // Answers: no bubble, roomy typography. Headings, tables, quotes, code, cards and stat cards
+  // carry Bootstrap classes from SupportConsoleHelper#support_console_answer_html; only spacing
+  // for plain running text is set here.
   .sc-answer {
     font-size: 0.95rem;
     line-height: 1.7;
 
-    .sc-answer-body > :first-child { margin-top: 0; }
+    .sc-answer-body > :first-child { margin-top: 0 !important; }
     .sc-answer-body > :last-child { margin-bottom: 0; }
     p, ul, ol { margin-bottom: 1rem; }
-    li { margin-bottom: 0.4rem; }
-    h1, h2, h3, h4, h5, h6 { margin: 1.6rem 0 0.6rem; }
-    pre { margin: 0.75rem 0; }
-
-    // Tables: thin lines, neutral header. !important beats the app-wide blue thead styles
-    // (another stylesheet loaded after this one paints th blue with its own colours).
-    .chat-table-wrap {
-      margin: 1rem 0 1.25rem;
-      border: 1px solid var(--bs-border-color);
-      border-radius: 0.75rem;
-    }
-    .chat-table-wrap table { width: 100%; }
-    table th, table td {
-      border: 0 !important;
-      border-bottom: 1px solid var(--bs-border-color) !important;
-      padding: 0.55rem 0.9rem;
-    }
-    table tr:last-child td { border-bottom: 0 !important; }
-    table thead th {
-      background: var(--bs-tertiary-bg) !important;
-      color: var(--bs-emphasis-color) !important;
-    }
+    li:not(.list-group-item) { margin-bottom: 0.4rem; }
+    // Inside a card the last paragraph sits on the card's own padding.
+    .card-body > :last-child, .list-group-item p:last-child, .alert > :last-child { margin-bottom: 0; }
   }
 
   // The collapsed pills at the end of an answer: "Where this comes from"
