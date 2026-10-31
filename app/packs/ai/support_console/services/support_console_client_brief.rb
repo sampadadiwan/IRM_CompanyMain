@@ -30,7 +30,9 @@ class SupportConsoleClientBrief
       ## Summary — the conclusion in two or three sentences.
       ## Key figures — the numbers that matter, one bullet each as "- **Label:** value".
       ## Details — the working: explanation, and tables for row-level data.
-      ## Questions — anything you need from the user to go further, one bullet each.
+      ## Follow-ups — 2 or 3 questions the user is likely to ask next, written as the user would
+      ask them, one bullet each. If you need something from the user, write it as a follow-up
+      they can send.
       End every answer with a "Where this comes from" section listing the code locations
       (file:line) and the lookups the answer relied on.
     BRIEF

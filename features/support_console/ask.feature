@@ -311,6 +311,79 @@ Feature: Support Console asking
     And I ask "Why is the closing balance zero?"
     Then the sources section holds "### Code" and "account_entries for commitment 9001"
 
+  # H14 — Happy path: an answer's follow-ups show as buttons above the box, not in the answer
+  Scenario: Follow-ups above the box
+    Given the relay answers:
+      """
+      ## Summary
+      4 investor accesses are unapproved.
+
+      ## Follow-ups
+      - List the 4 unapproved accesses with investor, email and fund
+      - Which of them were granted in the last 30 days?
+
+      ## Where this comes from
+      - investor_accesses where approved = 0
+      """
+    When I open the Support Console for "Golden Angels"
+    And I ask "How many investor accesses are unapproved?"
+    Then the follow-ups above the box are:
+      | List the 4 unapproved accesses with investor, email and fund |
+      | Which of them were granted in the last 30 days?               |
+    And a follow-up puts "Which of them were granted in the last 30 days?" in the box
+    And the answer does not show "Follow-ups"
+    And the answer does not show "List the 4 unapproved accesses"
+    And the brief sent to the relay says "## Follow-ups"
+
+  # E43 — Edge case: when the latest turn failed, the earlier answer's follow-ups are not offered; the question is back in the box
+  Scenario: No follow-ups after a failed turn
+    Given the relay answers this and then fails with status 500:
+      """
+      ## Summary
+      4 are unapproved.
+
+      ## Follow-ups
+      - List them
+      """
+    When I open the Support Console for "Golden Angels"
+    And I ask "How many are unapproved?"
+    Then the follow-ups above the box are:
+      | List them |
+    When I ask "And last month?"
+    Then I see the answer "The Support Console is unavailable right now. Try again in a few minutes."
+    And there are no follow-ups above the box
+    And the question box contains "And last month?"
+
+  # E44 — Edge case: four follow-ups; only the first three are offered
+  Scenario: At most three follow-ups
+    Given the relay answers:
+      """
+      ## Follow-ups
+      - First?
+      - Second?
+      - Third?
+      - Fourth?
+      """
+    When I open the Support Console for "Golden Angels"
+    And I ask "What next?"
+    Then the follow-ups above the box are:
+      | First?  |
+      | Second? |
+      | Third?  |
+
+  # X37 — Error case: markup written in a follow-up is shown as plain text, never as markup
+  Scenario: Follow-up with markup
+    Given the relay answers:
+      """
+      ## Follow-ups
+      - Show **bold** <b data-controller="evil">rows</b> [here](https://evil.test)
+      """
+    When I open the Support Console for "Golden Angels"
+    And I ask "What next?"
+    Then the follow-ups above the box are:
+      | Show bold rows here |
+    And no follow-up holds markup
+
   # X36 — Error case: a class or Stimulus hook written into an answer is stripped; only the app's own Bootstrap classes are added
   Scenario: Answer tries to style or wire up the page
     Given the relay answers:

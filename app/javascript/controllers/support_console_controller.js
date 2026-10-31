@@ -1,6 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
-// Support Console composer: blocks a second submit while a question is on its way (E4).
+// Support Console composer: blocks a second submit while a question is on its way (E4), and
+// fills the box from a suggested follow-up (H14).
 // The server is the real guard — SupportConsoleController#create_turn refuses a second turn —
 // this only stops a double click from sending two requests. After a turn ends the job
 // re-renders the composer, which reconnects this controller with running = false.
@@ -37,6 +38,16 @@ export default class extends Controller {
     // Nothing to send while a turn runs — Stop is the only action then.
     if (!this.hasAskTarget || this.askTarget.disabled) return
     this.questionTarget.form.requestSubmit(this.askTarget)
+  }
+
+  // H14 — a follow-up button puts its question in the box, ready to send or edit (it never sends).
+  fill(event) {
+    if (!this.hasQuestionTarget) return
+    const box = this.questionTarget
+    box.value = event.currentTarget.dataset.prompt || ""
+    this.resize()
+    box.focus()
+    box.setSelectionRange(box.value.length, box.value.length)
   }
 
   // Grow the box with its content, up to the CSS max-height.

@@ -376,6 +376,32 @@ Then('the sources section holds {string} and {string}') do |heading, text|
   end
 end
 
+# E43 — the first turn answers with follow-ups, the next one fails.
+Given('the relay answers this and then fails with status {int}:') do |status, text|
+  stub_relay_turns(SupportConsoleRelayStub.answer(text), { status: status, body: "" })
+end
+
+Then('the follow-ups above the box are:') do |table|
+  buttons = all("#support-console-follow-ups button").map { |b| b.text.squish }
+  expect(buttons).to eq(table.raw.flatten)
+end
+
+Then('a follow-up puts {string} in the box') do |question|
+  expect(page).to have_css("#support-console-follow-ups button[data-action='support-console#fill'][data-prompt='#{question}']")
+end
+
+Then('there are no follow-ups above the box') do
+  expect(page).to have_no_css("#support-console-follow-ups")
+end
+
+Then('the answer does not show {string}') do |text|
+  within("#support-console-messages .sc-answer-body") { expect(page).to have_no_content(text) }
+end
+
+Then('no follow-up holds markup') do
+  expect(page).to have_no_css("#support-console-follow-ups button *")
+end
+
 Then('the question is shown as a Bootstrap bubble') do
   within("#support-console-messages") { expect(page).to have_css(".sc-question.bg-body-tertiary.rounded-4") }
 end

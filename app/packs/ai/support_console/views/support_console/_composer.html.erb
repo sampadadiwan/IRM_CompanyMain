@@ -14,6 +14,8 @@
   answers = messages.select { |m| m.role == "assistant" }
   tokens = answers.sum { |m| (m.metadata&.dig("usage") || {}).values_at("input", "output", "cache_read", "cache_write").sum(&:to_i) }
   cost = answers.sum { |m| m.metadata&.dig("cost_usd").to_f }
+  # H14 — the latest answer's suggested next questions, only once it has finished normally (E43).
+  follow_ups = status == "completed" ? support_console_follow_ups(last_answer.content) : []
 %>
 <div class="sc-composer px-4 pb-3 pt-2" id="support-console-composer"
      data-controller="support-console" data-support-console-running-value="<%= running %>">
@@ -24,6 +26,16 @@
                     data: { turbo: true }, class: "d-none" do %>
         <%= hidden_field_tag :session_id, session.id %>
       <% end %>
+    <% end %>
+
+    <% if follow_ups.any? %>
+      <%# A click puts the question in the box to send or edit; it never sends by itself. %>
+      <div class="d-flex flex-wrap gap-2 mb-2" id="support-console-follow-ups">
+        <% follow_ups.each do |question| %>
+          <button type="button" class="btn btn-sm btn-outline-primary rounded-pill text-start"
+                  data-action="support-console#fill" data-prompt="<%= question %>"><%= question %></button>
+        <% end %>
+      </div>
     <% end %>
 
     <%= form_with url: support_console_turns_path(entity), method: :post, data: { turbo: true, action: "submit->support-console#ask" } do |f| %>

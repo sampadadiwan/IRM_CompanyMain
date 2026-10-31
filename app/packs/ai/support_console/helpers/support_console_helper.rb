@@ -16,13 +16,18 @@ module SupportConsoleHelper
   # text alone, so an answer written before the layout existed simply has no such sections.
   SUMMARY_HEADING = /\A\s*(summary|final analysis|conclusion|answer|in short)\s*:?\s*\z/i
   FIGURES_HEADING = /\A\s*(key figures|key numbers|figures|stats|statistics)\s*:?\s*\z/i
+  # Kept for answers saved before Follow-ups replaced it: they still show their Questions card.
   QUESTIONS_HEADING = /\A\s*(questions|open questions|questions for you)\s*:?\s*\z/i
+  FOLLOW_UPS_HEADING = /\A\s*(follow-?ups?|follow-?up questions|suggested questions|next questions)\s*:?\s*\z/i
+  # The most suggested next questions shown above the composer (E44).
+  MAX_FOLLOW_UPS = 3
   # "Label: value" — the shape of one Key figures bullet (the label is usually bold).
   FIGURE_ITEM = /\A\s*([^:]{1,60}?)\s*:\s*(.+)\z/m
 
   # Renders an answer's markdown with Bootstrap structure (H13): Summary as a card, Key figures as
   # stat cards, Questions as a list group, tables/quotes/code with Bootstrap classes, and the
-  # "Where this comes from" section folded into a collapsed <details>. An answer without those
+  # "Where this comes from" section folded into a collapsed <details>. Follow-ups are left out;
+  # the composer shows them (support_console_follow_ups). An answer without those
   # headings (E40), or still streaming before them, keeps the element-level classes only.
   #
   # X36 — the classes are added here, after the sanitizer has stripped every class the answer
@@ -38,7 +43,14 @@ module SupportConsoleHelper
 
     # Then turn each recognised section into its Bootstrap block.
     answer_sections(fragment).each do |heading, body|
-      next if heading.nil? || body.none? { |n| n.element? || n.text.strip.present? }
+      next if heading.nil?
+
+      # H14 — follow-ups are shown once, as buttons above the composer, not in the answer.
+      if follow_ups_heading?(heading)
+        ([heading] + body).each(&:remove)
+        next
+      end
+      next if body.none? { |n| n.element? || n.text.strip.present? }
 
       block = answer_section_block(fragment.document, heading, body)
       next unless block
@@ -51,7 +63,31 @@ module SupportConsoleHelper
     fragment.to_html.html_safe # rubocop:disable Rails/OutputSafety
   end
 
+  # H14 — the suggested next questions at the end of an answer, for the composer's buttons.
+  # Plain text only (X37): whatever markup a bullet carried is dropped.
+  #
+  # @param text [String] the answer's markdown
+  # @return [Array<String>] at most MAX_FOLLOW_UPS questions, in the answer's order
+  def support_console_follow_ups(text)
+    return [] if text.blank?
+
+    fragment = Nokogiri::HTML5.fragment(answer_markdown_html(text).to_s)
+    _heading, body = answer_sections(fragment).find { |h, _| h && follow_ups_heading?(h) }
+    return [] unless body
+
+    # Bullets as the brief asks; paragraphs when the answer wrote them that way.
+    items = answer_list_items(body)
+    items = body.select { |n| n.element? && n.name == "p" } if items.empty?
+    items.map { |item| item.text.squish }.compact_blank.first(MAX_FOLLOW_UPS)
+  end
+
   private
+
+  # @param heading [Nokogiri::XML::Element]
+  # @return [Boolean]
+  def follow_ups_heading?(heading)
+    heading.text.strip.match?(FOLLOW_UPS_HEADING)
+  end
 
   # Bootstrap classes on the plain markdown elements, wherever they sit in the answer.
   #
@@ -106,7 +142,7 @@ module SupportConsoleHelper
 
     # A paragraph counts only when it is exactly one of the layout's titles.
     node.name == "p" &&
-      [SOURCES_HEADING, SUMMARY_HEADING, FIGURES_HEADING, QUESTIONS_HEADING].any? { |re| node.text.match?(re) }
+      [SOURCES_HEADING, SUMMARY_HEADING, FIGURES_HEADING, QUESTIONS_HEADING, FOLLOW_UPS_HEADING].any? { |re| node.text.match?(re) }
   end
 
   # The Bootstrap block for one recognised section, or nil to leave the section as plain text.
@@ -222,12 +258,13 @@ module SupportConsoleHelper
     card
   end
 
-  # A card header: icon + the section's title, as text (never markup from the answer).
+  # A card header: icon + the section's title, as text (never markup from the answer). The icon
+  # sits inside the h6, as in the app's other card headers, so the two line up on one centre.
   def answer_card_header(doc, icon, colour, title)
-    header = html_node(doc, "div", "card-header bg-transparent d-flex align-items-center")
-    header.inner_html = %(<i class="ti #{icon} #{colour} me-2"></i>)
-    label = html_node(doc, "h6", "mb-0")
-    label.content = title
+    header = html_node(doc, "div", "card-header bg-transparent")
+    label = html_node(doc, "h6", "mb-0 d-flex align-items-center")
+    label.inner_html = %(<i class="ti #{icon} #{colour} me-2"></i>)
+    label.add_child(Nokogiri::XML::Text.new(title, doc))
     header.add_child(label)
     header
   end

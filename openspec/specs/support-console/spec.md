@@ -93,16 +93,37 @@ the data lookups it relied on, and the page footer SHALL show the code version u
 
 ### Requirement: Answers are laid out with Bootstrap structure
 The assistant SHALL be asked to write each answer in markdown under the headings Summary, Key figures
-(one "Label: value" bullet each), Details, Questions and "Where this comes from", leaving out any that
+(one "Label: value" bullet each), Details, Follow-ups and "Where this comes from", leaving out any that
 has nothing to say. The page SHALL render a Summary as a card, each Key figures bullet as a stat card,
-tables inside a scrolling card with the app's table classes, quotes as a callout, Questions as a list
-group, and the user's questions as a Bootstrap bubble. These classes SHALL be added by the application
+tables inside a scrolling card with the app's table classes, quotes as a callout, a Questions section
+(in answers saved before Follow-ups) as a list group, and the user's questions as a Bootstrap bubble. These classes SHALL be added by the application
 after the answer is sanitized, so a class or data attribute written in the answer itself is never kept.
 An answer without these headings SHALL still render, without the cards.
 
 #### Scenario: Answer in the layout
 - **WHEN** an answer has Summary, Key figures, a table and Questions
 - **THEN** the Summary shows as a card, each figure as a stat card, the table in a card, and each question as a list item
+
+### Requirement: Suggested follow-ups above the question box
+When the latest answer completed normally, its Follow-ups (at most three, as plain text) SHALL be shown
+as buttons above the question box, and not inside the answer. Clicking one SHALL put the question in the
+box without sending it. No follow-ups SHALL be shown while a turn runs or after a turn that did not complete.
+
+#### Scenario: Follow-ups shown
+- **WHEN** an answer ends with two follow-ups
+- **THEN** two buttons with those questions show above the box, and the answer body does not repeat them
+
+#### Scenario: Latest turn failed
+- **WHEN** the latest turn failed after an answer with follow-ups
+- **THEN** no follow-ups show and the failed question is back in the box
+
+#### Scenario: More than three
+- **WHEN** an answer has four follow-ups
+- **THEN** only the first three show
+
+#### Scenario: Markup in a follow-up
+- **WHEN** a follow-up contains markup
+- **THEN** its button shows plain text only
 
 #### Scenario: Answer without the layout
 - **WHEN** an answer has none of the layout's headings
