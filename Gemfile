@@ -34,7 +34,7 @@ gem 'yajl-ruby', require: 'yajl'
 # To convert Doc into PDF
 gem 'libreconv'
 # Use the Puma web server [https://github.com/puma/puma]
-gem "puma", "~> 6.0"
+gem "puma", "~> 7.2", ">= 7.2.1"
 # gem "secure_headers"
 # Used to produce mail merge documents from word templates and DB data
 gem 'docx'
@@ -147,7 +147,7 @@ gem 'caxlsx_rails'
 gem "after_commit_action"
 gem 'counter_culture'
 
-gem 'roo'
+gem 'roo', '~> 3.0'
 
 gem 'ransack'
 gem "view_component"
@@ -158,7 +158,8 @@ gem 'rack-attack'
 
 # for making external API calls
 gem 'httparty'
-gem 'rubyzip', "2.4.1"
+gem 'rubyzip', '~> 3.4'
+gem 'selenium-webdriver', '>= 4.14', require: false # used by ScrapeSebi (app/packs/core/investors/models/scrape_sebi.rb)
 
 # SMS delivery for two-factor one-time codes. See docs/modules/two_factor_auth/twilio_sms_otp_design.md.
 gem 'twilio-ruby'
@@ -274,7 +275,6 @@ group :test do
   gem 'database_cleaner-active_record'
 
   gem 'simplecov', require: false, group: :test
-  gem "webdrivers"
   # gem "selenium-webdriver"
   gem 'capybara-playwright-driver'
   gem 'playwright-ruby-client', '1.61.0'
