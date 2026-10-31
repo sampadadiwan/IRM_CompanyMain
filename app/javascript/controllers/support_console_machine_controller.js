@@ -2,7 +2,7 @@ import { Controller } from "@hotwired/stimulus"
 
 // Opens the Start / Stop popup of the Support Console machine badge (support_console/_machine).
 //
-// The popup markup is rendered inside the badge's turbo-frame, which sits in .sc-header. That header
+// The popup markup is rendered inside the badge's turbo-frame, which sits in .aic-header. That header
 // is position: relative; z-index: 3, so a modal left inside it is stacked under Bootstrap's backdrop
 // (appended to <body>) and nothing in it can be clicked. A copy is therefore shown from <body> and
 // removed again when closed. Living on <body> also means a live badge update

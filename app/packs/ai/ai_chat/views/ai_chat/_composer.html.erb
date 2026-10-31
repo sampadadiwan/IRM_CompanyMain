@@ -1,0 +1,51 @@
+<%#
+  The question box: a rounded field, Enter sends, Shift+Enter adds a line, it grows as you type.
+  Each screen fills its own slots. Locals:
+    id           String       root DOM id
+    form_url     String       where the question is posted
+    hidden       Hash         hidden fields (e.g. session_id)
+    field        Symbol       the question's param name (default :question)
+    question_id  String       the field's DOM id
+    ask_id       String       the send button's DOM id
+    placeholder  String
+    value        String, nil  text to put back in the box (a failed question, X4)
+    running      Boolean      a turn is in progress: Ask is replaced by stop_button, or disabled
+    before       SafeBuffer   markup before everything (e.g. a separate Stop form)
+    above        SafeBuffer   above the field (e.g. follow-ups)
+    extras       SafeBuffer   inside the field, left of the send button (model, mic, document)
+    stop_button  SafeBuffer   shown instead of Ask while running (Support Console)
+    footer       SafeBuffer   the line under the box
+  @see openspec/changes/ai-chat-kit/design.md (card ⑤ Question box)
+%>
+<div class="aic-composer px-4 pb-3 pt-2" id="<%= id %>"
+     data-controller="ai-chat-composer" data-ai-chat-composer-running-value="<%= running %>">
+  <div class="aic-column">
+    <%= local_assigns[:before] %>
+    <%= local_assigns[:above] %>
+
+    <%= form_with url: form_url, method: :post, data: { turbo: true, action: "submit->ai-chat-composer#ask" } do %>
+      <% local_assigns.fetch(:hidden, {}).each do |name, value| %>
+        <%= hidden_field_tag name, value %>
+      <% end %>
+      <div class="aic-input d-flex align-items-end gap-2 border rounded-4 shadow-sm bg-white ps-3 pe-2 py-2">
+        <%= text_area_tag local_assigns.fetch(:field, :question), local_assigns[:value], rows: 1, maxlength: 4000,
+                          class: "form-control border-0 shadow-none bg-transparent px-0",
+                          placeholder: placeholder, id: question_id,
+                          data: { ai_chat_composer_target: "question",
+                                  action: "keydown->ai-chat-composer#keydown input->ai-chat-composer#resize" } %>
+        <%= local_assigns[:extras] %>
+        <% if running && local_assigns[:stop_button].present? %>
+          <%# E9 — while a turn runs, the send button becomes Stop. %>
+          <%= stop_button %>
+        <% else %>
+          <button type="submit" class="btn btn-primary rounded-circle aic-send" id="<%= ask_id %>" title="Ask (Enter)"
+                  data-ai-chat-composer-target="ask">
+            <i class="ti ti-arrow-up"></i><span class="visually-hidden">Ask</span>
+          </button>
+        <% end %>
+      </div>
+    <% end %>
+
+    <%= local_assigns[:footer] %>
+  </div>
+</div>

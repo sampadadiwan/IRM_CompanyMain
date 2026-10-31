@@ -1,9 +1,9 @@
 import { Controller } from "@hotwired/stimulus"
 
-// Support Console composer: blocks a second submit while a question is on its way (E4), and
-// fills the box from a suggested follow-up (H14).
-// The server is the real guard — SupportConsoleController#create_turn refuses a second turn —
-// this only stops a double click from sending two requests. After a turn ends the job
+// Chat kit question box (ai_chat/_composer): Enter sends, Shift+Enter adds a line, the box grows, a
+// suggestion fills it (H14), and a second submit is blocked while a question is on its way (E4).
+// The server is the real guard (e.g. SupportConsoleController#create_turn refuses a second turn) —
+// this only stops a double click from sending two requests. After a turn ends the screen
 // re-renders the composer, which reconnects this controller with running = false.
 export default class extends Controller {
   static targets = ["question", "ask"]

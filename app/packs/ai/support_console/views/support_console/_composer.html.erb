@@ -18,88 +18,61 @@
   # running or failed turn (E43), or a newer answer without follow-ups (E48), does not hide them.
   follow_up_answer, follow_ups = answers.reverse.lazy
                                         .select { |m| m.metadata&.dig("turn_status") == "completed" }
-                                        .map { |m| [m, support_console_follow_ups(m.content)] }
+                                        .map { |m| [m, ai_follow_ups(m.content)] }
                                         .find { |_m, questions| questions.any? }
   follow_ups ||= []
   # H18 — a follow-up asked since that answer stays in place, marked asked.
   asked = messages.select { |m| m.role == "user" && follow_up_answer && m.id > follow_up_answer.id }
                   .to_set { |m| m.content.to_s.squish }
 %>
-<div class="sc-composer px-4 pb-3 pt-2" id="support-console-composer"
-     data-controller="support-console" data-support-console-running-value="<%= running %>">
-  <div class="sc-column">
-    <% if running %>
-      <%# Stop lives in its own form (forms cannot nest); its button below points at it with form=. %>
-      <%= form_with url: support_console_stop_turn_path(entity), method: :delete, id: "support-console-stop-form",
-                    data: { turbo: true }, class: "d-none" do %>
-        <%= hidden_field_tag :session_id, session.id %>
-      <% end %>
+<%# The Console's question box: the chat kit's composer (ai_chat/_composer) with the Console's slots —
+    Stop (E9), follow-ups (H14/H18), the model choice (E29) and the data/code/usage footer. %>
+<% before = capture do %>
+  <% if running %>
+    <%# Stop lives in its own form (forms cannot nest); its button below points at it with form=. %>
+    <%= form_with url: support_console_stop_turn_path(entity), method: :delete, id: "support-console-stop-form",
+                  data: { turbo: true }, class: "d-none" do %>
+      <%= hidden_field_tag :session_id, session.id %>
     <% end %>
-
-    <% if follow_ups.any? %>
-      <%# The question puts it in the box to edit first; Ask (H17) sends it straight away. While a
-          turn runs Ask is disabled (only one question at a time, E4); the text still fills the box. %>
-      <div class="d-flex flex-wrap gap-2 mb-2" id="support-console-follow-ups">
-        <% follow_ups.each do |question| %>
-          <% if asked.include?(question) %>
-            <div class="btn-group btn-group-sm" role="group" data-role="asked">
-              <button type="button" class="btn btn-outline-secondary text-start" disabled><%= question %></button>
-              <button type="button" class="btn btn-secondary" disabled><i class="ti ti-check"></i>Asked</button>
-            </div>
-          <% else %>
-            <div class="btn-group btn-group-sm" role="group">
-              <button type="button" class="btn btn-outline-primary text-start"
-                      data-action="support-console#fill" data-prompt="<%= question %>"><%= question %></button>
-              <button type="button" class="btn btn-primary flex-grow-0" title="Ask this now" aria-label="Ask: <%= question %>"
-                      data-action="support-console-thread#askNow" data-prompt="<%= question %>"
-                      <%= "disabled" if running %>><i class="ti ti-arrow-up"></i>Ask</button>
-            </div>
-          <% end %>
-        <% end %>
-      </div>
+  <% end %>
+<% end %>
+<% above = capture do %>
+  <% if follow_ups.any? %>
+    <%= render "ai_chat/suggestions", id: "support-console-follow-ups", questions: follow_ups, asked: asked, running: running %>
+  <% end %>
+<% end %>
+<% extras = capture do %>
+  <%# E29 — Sonnet (faster, cheaper; the default) or Opus (deeper) for this question. %>
+  <%= select_tag :model, options_for_select([["Sonnet", "sonnet"], ["Opus", "opus"]], model),
+                 class: "form-select form-select-sm border-0 bg-transparent shadow-none w-auto text-muted aic-model",
+                 id: "support-console-model", title: "Sonnet: faster and cheaper. Opus: deeper, for hard investigations.",
+                 aria: { label: "Model" } %>
+<% end %>
+<% stop_button = capture do %>
+  <button type="submit" form="support-console-stop-form" class="btn btn-secondary rounded-circle aic-send" id="support-console-stop" title="Stop">
+    <i class="ti ti-player-stop-filled"></i><span class="visually-hidden">Stop</span>
+  </button>
+<% end %>
+<% footer = capture do %>
+  <div class="text-center small text-muted mt-2">
+    <% if failed_question %>
+      <i class="ti ti-arrow-back-up me-1"></i>Your question is back in the box — press Enter to try again.
+    <% else %>
+      Answers cite the code and the rows behind them
     <% end %>
-
-    <%= form_with url: support_console_turns_path(entity), method: :post, data: { turbo: true, action: "submit->support-console#ask" } do |f| %>
-      <%= hidden_field_tag :session_id, session&.id %>
-      <div class="sc-input d-flex align-items-end gap-2 border rounded-4 shadow-sm bg-white ps-3 pe-2 py-2">
-        <%= text_area_tag :question, failed_question, rows: 1, maxlength: 4000, class: "form-control border-0 shadow-none bg-transparent px-0",
-                          placeholder: (session ? "Ask a follow-up" : "Ask anything about #{entity.name}"),
-                          id: "support-console-question",
-                          data: { support_console_target: "question", action: "keydown->support-console#keydown input->support-console#resize" } %>
-        <%# E29 — Sonnet (faster, cheaper; the default) or Opus (deeper) for this question. %>
-        <%= select_tag :model, options_for_select([["Sonnet", "sonnet"], ["Opus", "opus"]], model),
-                       class: "form-select form-select-sm border-0 bg-transparent shadow-none w-auto text-muted sc-model",
-                       id: "support-console-model", title: "Sonnet: faster and cheaper. Opus: deeper, for hard investigations.",
-                       aria: { label: "Model" } %>
-        <% if running %>
-          <%# E9 — while a turn runs, the send button becomes Stop. %>
-          <button type="submit" form="support-console-stop-form" class="btn btn-secondary rounded-circle sc-send" id="support-console-stop" title="Stop">
-            <i class="ti ti-player-stop-filled"></i><span class="visually-hidden">Stop</span>
-          </button>
-        <% else %>
-          <button type="submit" class="btn btn-primary rounded-circle sc-send" id="support-console-ask" title="Ask (Enter)"
-                  data-support-console-target="ask">
-            <i class="ti ti-arrow-up"></i><span class="visually-hidden">Ask</span>
-          </button>
-        <% end %>
-      </div>
+    <% if last_answer && !running && (lag || code_rev) %>
+      <%# E18 — lag above 60 s is highlighted. Lag is unknown without replica status (local mode, or no REPLICATION CLIENT grant). %>
+      · <span class="<%= lag.to_i > SupportConsoleTurnJob::LAG_WARNING_SECONDS ? 'text-danger fw-semibold' : 'text-muted' %>" id="support-console-footer"><% unless lag.nil? %>Data as of <%= lag.to_i %> seconds ago · <% end %>Code version <%= code_rev.to_s.first(7) %></span>
     <% end %>
-
-    <div class="text-center small text-muted mt-2">
-      <% if failed_question %>
-        <i class="ti ti-arrow-back-up me-1"></i>Your question is back in the box — press Enter to try again.
-      <% else %>
-        Answers cite the code and the rows behind them
-      <% end %>
-      <% if last_answer && !running && (lag || code_rev) %>
-        <%# E18 — lag above 60 s is highlighted. Lag is unknown without replica status (local mode, or no REPLICATION CLIENT grant). %>
-        · <span class="<%= lag.to_i > SupportConsoleTurnJob::LAG_WARNING_SECONDS ? 'text-danger fw-semibold' : 'text-muted' %>" id="support-console-footer"><% unless lag.nil? %>Data as of <%= lag.to_i %> seconds ago · <% end %>Code version <%= code_rev.to_s.first(7) %></span>
-      <% end %>
-      <% usage = [(number_to_human(tokens, units: { unit: "", thousand: "k", million: "M", billion: "B" }, precision: 3, format: "%n%u") + " tokens" if tokens.positive?),
-                  ("≈ $#{number_with_precision(cost, precision: 2)}" if cost.positive?)].compact %>
-      <% if usage.any? %>
-        · <span id="support-console-usage" title="This conversation so far, at Claude API prices. On the subscription token the actual charge is the flat plan.">Conversation: <%= usage.join(" · ") %></span>
-      <% end %>
-    </div>
+    <% usage = [(number_to_human(tokens, units: { unit: "", thousand: "k", million: "M", billion: "B" }, precision: 3, format: "%n%u") + " tokens" if tokens.positive?),
+                ("≈ $#{number_with_precision(cost, precision: 2)}" if cost.positive?)].compact %>
+    <% if usage.any? %>
+      · <span id="support-console-usage" title="This conversation so far, at Claude API prices. On the subscription token the actual charge is the flat plan.">Conversation: <%= usage.join(" · ") %></span>
+    <% end %>
   </div>
-</div>
+<% end %>
+<%= render "ai_chat/composer", id: "support-console-composer", form_url: support_console_turns_path(entity),
+                               hidden: { session_id: session&.id }, question_id: "support-console-question",
+                               ask_id: "support-console-ask", value: failed_question, running: running,
+                               placeholder: (session ? "Ask a follow-up" : "Ask anything about #{entity.name}"),
+                               before: before, above: above, extras: extras, stop_button: stop_button, footer: footer %>

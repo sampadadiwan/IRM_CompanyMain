@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
-// Support Console message thread. SupportConsoleTurnJob replaces message elements over Turbo
-// streams while an answer streams in; this controller keeps the view usable around that:
+// Chat kit message thread (ai_chat/_thread). The screen's back end replaces message elements over
+// Turbo streams while an answer streams in; this controller keeps the view usable around that:
 //   - follows the newest text while the reader is at the bottom, and offers "Jump to latest"
 //     when they have scrolled up to read instead of yanking them down;
 //   - keeps an open "steps" list or "Where this comes from" section open across the re-renders;
@@ -33,8 +33,8 @@ export default class extends Controller {
   }
 
   rememberSteps = (event) => {
-    const id = event.target.closest("[id^='agent_chat_message_']")?.id
-    const kind = ["sc-steps", "sc-sources"].find((k) => event.target.matches(`details.${k}`))
+    const id = event.target.closest(".aic-message")?.id
+    const kind = ["aic-steps", "aic-sources"].find((k) => event.target.matches(`details.${k}`))
     if (!id || !kind) return
     const key = `${id} details.${kind}`
     event.target.open ? this.openSteps.add(key) : this.openSteps.delete(key)
@@ -54,14 +54,15 @@ export default class extends Controller {
     this.following = el.scrollHeight - el.scrollTop - el.clientHeight < NEAR_BOTTOM_PX
     if (this.following) this.jumpTarget.classList.add("d-none")
     // A faint header shadow only once content has scrolled under it.
-    if (this.hasHeaderTarget) this.headerTarget.classList.toggle("sc-scrolled", el.scrollTop > 4)
+    if (this.hasHeaderTarget) this.headerTarget.classList.toggle("aic-scrolled", el.scrollTop > 4)
   }
 
   // H16/H17 — an Ask button on a suggested question: put it in the box and send it, as Enter would.
   // While a turn runs the composer shows Stop, not Ask, so nothing is sent (the server refuses too, E4).
   askNow(event) {
-    const box = document.getElementById("support-console-question")
-    const ask = document.getElementById("support-console-ask")
+    // The thread's own question box (the composer sits inside the thread element).
+    const box = this.element.querySelector("[data-ai-chat-composer-target='question']")
+    const ask = this.element.querySelector("[data-ai-chat-composer-target='ask']")
     if (!box || !ask || ask.disabled) return
     box.value = event.currentTarget.dataset.prompt || ""
     box.form.requestSubmit(ask)
@@ -97,8 +98,8 @@ export default class extends Controller {
       if (details && !details.open) details.open = true
     })
 
-    this.scrollerTarget.querySelectorAll(".sc-answer table:not([data-decorated])").forEach((table) => {
-      // SupportConsoleHelper already wraps the table in a scrolling card; only alignment is left.
+    this.scrollerTarget.querySelectorAll(".aic-answer table:not([data-decorated])").forEach((table) => {
+      // AiChatHelper already wraps the table in a scrolling card; only alignment is left.
       table.dataset.decorated = "true"
 
       // Right-align a column when every non-empty body cell in it is a number.

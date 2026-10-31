@@ -1,14 +1,19 @@
 # frozen_string_literal: true
 
-# View helpers for the Support Console thread (support_console/_message).
-module SupportConsoleHelper
+# View helpers for the AI chat kit (app/packs/ai/ai_chat/views/ai_chat): answer rendering, follow-ups,
+# sidebar titles and status badges. Moved out of the Support Console so every chat screen draws
+# answers the same way.
+#
+# @see openspec/changes/ai-chat-kit/design.md (card ④ Answer renderer)
+module AiChatHelper
   # Matches the closing section SupportConsoleClientBrief asks every answer to end with.
   SOURCES_HEADING = /\A\s*where this comes from\s*:?\s*\z/i
 
-  # X24 — answers quote client data, which a planted prompt can steer. So, unlike the chat panel's
-  # cleaner (MarkdownHelper), nothing here loads by itself or reaches into the page: no img/canvas
-  # (a remote image would send data out on render), no id/class (could clobber Turbo targets), no
-  # data-* (could attach a Stimulus controller). Links stay, but only http(s) and opened on a click.
+  # X24 — :strict mode (the Support Console). Its answers quote client data, which a planted prompt
+  # can steer. So, unlike :rich (MarkdownHelper's cleaner, which keeps charts), nothing here loads by
+  # itself or reaches into the page: no img/canvas (a remote image would send data out on render), no
+  # id/class (could clobber Turbo targets), no data-* (could attach a Stimulus controller). Links
+  # stay, but only http(s) and opened on a click.
   ANSWER_TAGS = %w[h1 h2 h3 h4 h5 h6 p a strong em del br hr ul ol li table thead tbody tr th td pre code blockquote].freeze
   ANSWER_ATTRIBUTES = %w[href title].freeze
 
@@ -24,21 +29,27 @@ module SupportConsoleHelper
   # "Label: value" — the shape of one Key figures bullet (the label is usually bold).
   FIGURE_ITEM = /\A\s*([^:]{1,60}?)\s*:\s*(.+)\z/m
 
-  # A turn's status as a badge: [theme colour, icon, label]. Shared by the answer (_message) and the
-  # sidebar row (_conversation), so a status reads the same in both. A completed answer has none.
-  STATUS_BADGES = {
+  # The renderer's two modes (design card ④): :strict keeps X24 for the Support Console; :rich is
+  # MarkdownHelper#markdown_to_html's allow-list (charts kept) for the other chat screens.
+  ANSWER_MODES = %i[strict rich].freeze
+
+  # A turn's or conversation's status as a badge: [theme colour, icon, label]. Shared by the answer
+  # (ai_chat/_answer) and the sidebar row (ai_chat/_conversation), so a status reads the same in both.
+  # A completed answer has none; "escalated" is a conversation handed to a human (Customer Support).
+  AI_CHAT_STATUS_BADGES = {
     "queued" => %w[primary ti-loader Running],
     "running" => %w[primary ti-loader Running],
     "stopped" => %w[secondary ti-player-stop Stopped],
     "failed" => ["danger", "ti-alert-circle", "Not answered"],
-    "refused" => ["danger", "ti-lock", "Access ended"]
+    "refused" => ["danger", "ti-lock", "Access ended"],
+    "escalated" => %w[warning ti-headset Escalated]
   }.freeze
 
   # E46 — a sidebar title: the first question without the quote marks it was often pasted with.
   #
   # @param question [String, nil]
   # @return [String]
-  def support_console_conversation_title(question)
+  def ai_chat_title(question)
     question.to_s.squish.sub(/\A["'“‘]+/, "").sub(/["'”’]+\z/, "").presence || "New conversation"
   end
 
@@ -46,23 +57,41 @@ module SupportConsoleHelper
   #
   # @param time [ActiveSupport::TimeWithZone]
   # @return [String]
-  def support_console_conversation_when(time)
+  def ai_chat_when(time)
     time.to_date == Time.zone.today ? l(time, format: :time_only) : l(time.to_date)
+  end
+
+  # E21 — the sidebar group a conversation falls in, ChatGPT-style, by when it last changed.
+  #
+  # @param time [ActiveSupport::TimeWithZone]
+  # @return [String] "Today", "Yesterday", "Previous 7 days" or "Older"
+  def ai_chat_group(time)
+    today = Time.zone.today
+    day = time.to_date
+    if day == today then "Today"
+    elsif day == today - 1 then "Yesterday"
+    elsif day > today - 7 then "Previous 7 days"
+    else "Older"
+    end
   end
 
   # Renders an answer's markdown with Bootstrap structure (H13): Summary as a card, Key figures as
   # stat cards, Questions as a list group, tables/quotes/code with Bootstrap classes, and the
   # "Where this comes from" section folded into a collapsed <details>. Follow-ups are left out;
-  # the composer shows them (support_console_follow_ups). An answer without those
+  # the composer shows them (ai_follow_ups). An answer without those
   # headings (E40), or still streaming before them, keeps the element-level classes only.
   #
   # X36 — the classes are added here, after the sanitizer has stripped every class the answer
-  # itself carried, and are chosen only from fixed lists by element name or heading text.
+  # itself carried (:strict), and are chosen only from fixed lists by element name or heading text.
   #
   # @param text [String] the answer's markdown
+  # @param mode [Symbol] :strict (Support Console, X24) or :rich (charts allowed, E8)
+  # @param ask_buttons [Boolean] give each Questions-card item an Ask button (H16); the Console's
+  #   thread handles them, other screens opt in once their prompts write Questions (AI phase)
   # @return [ActiveSupport::SafeBuffer]
-  def support_console_answer_html(text)
-    fragment = Nokogiri::HTML5.fragment(answer_markdown_html(text).to_s)
+  # @raise [ArgumentError] for an unknown mode
+  def ai_answer_html(text, mode:, ask_buttons: mode == :strict)
+    fragment = Nokogiri::HTML5.fragment(ai_chat_markdown(text, mode).to_s)
 
     # Element-level classes first, so the sections built below carry them along.
     decorate_answer_elements(fragment)
@@ -78,7 +107,7 @@ module SupportConsoleHelper
       end
       next if body.none? { |n| n.element? || n.text.strip.present? }
 
-      block = answer_section_block(fragment.document, heading, body)
+      block = answer_section_block(fragment.document, heading, body, ask_buttons:)
       next unless block
 
       # The block takes the heading's place; the body nodes have moved into it.
@@ -94,12 +123,12 @@ module SupportConsoleHelper
   #
   # @param text [String] the answer's markdown
   # @return [Array<String>] at most MAX_FOLLOW_UPS questions, in the answer's order
-  def support_console_follow_ups(text)
+  def ai_follow_ups(text)
     # A cheap text check first: the composer looks back through every completed answer, and ones
     # written before Follow-ups existed should not each be rendered and parsed on every turn.
     return [] unless text.to_s.match?(/follow-?up|suggested questions|next questions/i)
 
-    fragment = Nokogiri::HTML5.fragment(answer_markdown_html(text).to_s)
+    fragment = Nokogiri::HTML5.fragment(ai_chat_markdown(text, :strict).to_s)
     _heading, body = answer_sections(fragment).find { |h, _| h && follow_ups_heading?(h) }
     return [] unless body
 
@@ -178,24 +207,25 @@ module SupportConsoleHelper
   # @param doc [Nokogiri::XML::Document]
   # @param heading [Nokogiri::XML::Element]
   # @param body [Array<Nokogiri::XML::Node>]
+  # @param ask_buttons [Boolean] passed through to the Questions card
   # @return [Nokogiri::XML::Element, nil]
-  def answer_section_block(doc, heading, body)
+  def answer_section_block(doc, heading, body, ask_buttons:)
     title = heading.text.strip.delete_suffix(":").strip
     case title
     when SOURCES_HEADING then answer_sources_block(doc, body)
     when SUMMARY_HEADING then answer_summary_block(doc, title, body)
     when FIGURES_HEADING then answer_figures_block(doc, heading, body)
-    when QUESTIONS_HEADING then answer_questions_block(doc, title, body)
+    when QUESTIONS_HEADING then answer_questions_block(doc, title, body, ask_buttons:)
     end
   end
 
   # "Where this comes from": collapsed, so the explanation reads first.
   def answer_sources_block(doc, body)
-    details = html_node(doc, "details", "sc-sources mt-3")
-    summary = html_node(doc, "summary")
+    details = ai_chat_node(doc, "details", "aic-sources mt-3")
+    summary = ai_chat_node(doc, "summary")
     summary.inner_html = '<i class="ti ti-file-code me-1"></i>Where this comes from'
     details.add_child(summary)
-    wrap = html_node(doc, "div", "sc-sources-body")
+    wrap = ai_chat_node(doc, "div", "aic-sources-body")
     body.each { |n| wrap.add_child(n) }
     details.add_child(wrap)
     details
@@ -203,9 +233,9 @@ module SupportConsoleHelper
 
   # Summary / final analysis: a card with the section's own title in its header.
   def answer_summary_block(doc, title, body)
-    card = html_node(doc, "div", "card shadow-sm mb-3")
+    card = ai_chat_node(doc, "div", "card shadow-sm mb-3")
     card.add_child(answer_card_header(doc, "ti-bulb", "text-primary", title))
-    card_body = html_node(doc, "div", "card-body")
+    card_body = ai_chat_node(doc, "div", "card-body")
     body.each { |n| card_body.add_child(n) }
     card.add_child(card_body)
     card
@@ -222,13 +252,13 @@ module SupportConsoleHelper
     end
     return nil if figures.empty?
 
-    section = html_node(doc, "div")
+    section = ai_chat_node(doc, "div")
     # The heading stays, so the cards are introduced like every other section — rebuilt as a
     # heading at the answer's one size, since it may have been a bold paragraph.
-    title = html_node(doc, "h6", "h6 mt-4 mb-2")
+    title = ai_chat_node(doc, "h6", "h6 mt-4 mb-2")
     title.content = heading.text.strip
     section.add_child(title)
-    row = html_node(doc, "div", "row g-0 mb-3")
+    row = ai_chat_node(doc, "div", "row g-0 mb-3")
     figures.each do |li, label, value|
       li.remove
       row.add_child(answer_stat_card(doc, label, value))
@@ -241,12 +271,12 @@ module SupportConsoleHelper
 
   # One Key figures card: value large, label underneath, primary accent along the top.
   def answer_stat_card(doc, label, value)
-    col = html_node(doc, "div", "col-sm-6 col-lg-3 d-flex")
-    card = html_node(doc, "div", "card m-2 border-top stat-card-accent border-primary shadow-sm flex-fill")
-    card_body = html_node(doc, "div", "card-body")
-    figure = html_node(doc, "h2", "fs-6 fw-normal mb-1")
+    col = ai_chat_node(doc, "div", "col-sm-6 col-lg-3 d-flex")
+    card = ai_chat_node(doc, "div", "card m-2 border-top stat-card-accent border-primary shadow-sm flex-fill")
+    card_body = ai_chat_node(doc, "div", "card-body")
+    figure = ai_chat_node(doc, "h2", "fs-6 fw-normal mb-1")
     figure.content = value.strip
-    caption = html_node(doc, "span", "card-subtitle mb-0 text-primary")
+    caption = ai_chat_node(doc, "span", "card-subtitle mb-0 text-primary")
     caption.content = label.strip
     card_body.add_child(figure)
     card_body.add_child(caption)
@@ -256,31 +286,31 @@ module SupportConsoleHelper
   end
 
   # Questions: a card holding a list group, one item per question, each with an Ask button.
-  def answer_questions_block(doc, title, body)
+  def answer_questions_block(doc, title, body, ask_buttons:)
     items = answer_list_items(body)
     # Questions written as paragraphs instead of bullets count too.
     items = body.select { |n| n.element? && n.name == "p" } if items.empty?
     return nil if items.empty?
 
-    card = html_node(doc, "div", "card shadow-sm mb-3")
+    card = ai_chat_node(doc, "div", "card shadow-sm mb-3")
     card.add_child(answer_card_header(doc, "ti-help-circle", "text-info", title))
-    group = html_node(doc, "ul", "list-group list-group-flush")
+    group = ai_chat_node(doc, "ul", "list-group list-group-flush")
     items.each do |item|
       # Read before the children move: the question as plain text, for its Ask button (X38).
       question = item.text.squish
-      li = html_node(doc, "li", "list-group-item d-flex gap-2")
+      li = ai_chat_node(doc, "li", "list-group-item d-flex gap-2")
       li.inner_html = '<i class="ti ti-help-circle text-info mt-1"></i>'
-      text = html_node(doc, "div", "flex-grow-1")
+      text = ai_chat_node(doc, "div", "flex-grow-1")
       item.children.each { |c| text.add_child(c) }
       li.add_child(text)
-      li.add_child(answer_ask_button(doc, question)) if question.present?
+      li.add_child(answer_ask_button(doc, question)) if ask_buttons && question.present?
       group.add_child(li)
     end
     card.add_child(group)
     # Anything else in the section (an intro line) sits above the list.
     rest = body.reject { |n| items.include?(n) || answer_list?(n) }
     unless rest.none? { |n| n.element? || n.text.strip.present? }
-      intro = html_node(doc, "div", "card-body pb-0")
+      intro = ai_chat_node(doc, "div", "card-body pb-0")
       rest.each { |n| intro.add_child(n) }
       group.add_previous_sibling(intro)
     end
@@ -289,15 +319,15 @@ module SupportConsoleHelper
     card
   end
 
-  # H16 — sends the question straight away (support_console_thread_controller#askNow). Only this
+  # H16 — sends the question straight away (ai_chat_thread_controller#askNow). Only this
   # fixed button carries a data-action; the question is a plain-text attribute value, never markup.
   def answer_ask_button(doc, question)
-    button = html_node(doc, "button", "btn btn-sm btn-outline-primary flex-shrink-0 align-self-start")
+    button = ai_chat_node(doc, "button", "btn btn-sm btn-outline-primary flex-shrink-0 align-self-start")
     button["type"] = "button"
     button["title"] = "Ask this now"
     # Its own accessible name, so it is not one more button called just "Ask".
     button["aria-label"] = "Ask: #{question}"
-    button["data-action"] = "support-console-thread#askNow"
+    button["data-action"] = "ai-chat-thread#askNow"
     button["data-prompt"] = question
     button.inner_html = '<i class="ti ti-arrow-up"></i>Ask'
     button
@@ -306,8 +336,8 @@ module SupportConsoleHelper
   # A card header: icon + the section's title, as text (never markup from the answer). The icon
   # sits inside the h6, as in the app's other card headers, so the two line up on one centre.
   def answer_card_header(doc, icon, colour, title)
-    header = html_node(doc, "div", "card-header bg-transparent")
-    label = html_node(doc, "h6", "mb-0 d-flex align-items-center")
+    header = ai_chat_node(doc, "div", "card-header bg-transparent")
+    label = ai_chat_node(doc, "h6", "mb-0 d-flex align-items-center")
     label.inner_html = %(<i class="ti #{icon} #{colour} me-2"></i>)
     label.add_child(Nokogiri::XML::Text.new(title, doc))
     header.add_child(label)
@@ -325,17 +355,30 @@ module SupportConsoleHelper
   end
 
   # @return [Nokogiri::XML::Element] a new element with an optional fixed class list
-  def html_node(doc, name, css_class = nil)
+  def ai_chat_node(doc, name, css_class = nil)
     node = Nokogiri::XML::Node.new(name, doc)
     node["class"] = css_class if css_class
     node
   end
 
+  # The answer's markdown as sanitised HTML, by mode.
+  #
+  # @param text [String] the answer's markdown
+  # @param mode [Symbol] :strict or :rich
+  # @return [ActiveSupport::SafeBuffer]
+  # @raise [ArgumentError] for an unknown mode
+  def ai_chat_markdown(text, mode)
+    raise ArgumentError, "unknown answer mode #{mode.inspect}" unless ANSWER_MODES.include?(mode)
+    return ActiveSupport::SafeBuffer.new if text.blank?
+    # E8 — :rich is exactly MarkdownHelper's allow-list (charts kept); X6 — it drops scripts and on*=.
+    return markdown_to_html(text) if mode == :rich
+
+    strict_answer_markdown(text)
+  end
+
   # @param text [String] the answer's markdown
   # @return [ActiveSupport::SafeBuffer] HTML with only ANSWER_TAGS / ANSWER_ATTRIBUTES (X24)
-  def answer_markdown_html(text)
-    return ActiveSupport::SafeBuffer.new if text.blank?
-
+  def strict_answer_markdown(text)
     scrubber = Rails::Html::PermitScrubber.new
     scrubber.tags = ANSWER_TAGS
     scrubber.attributes = ANSWER_ATTRIBUTES

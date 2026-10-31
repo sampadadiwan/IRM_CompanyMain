@@ -1,21 +1,21 @@
 import { Controller } from "@hotwired/stimulus"
 
-// Support Console sidebar and keyboard shortcuts:
+// Chat kit sidebar (ai_chat/_layout, ai_chat/_sidebar) and keyboard shortcuts:
 //   - filters the conversation list as you type, hiding date groups left empty;
 //   - hides / shows the sidebar (remembered per browser — a viewing preference only);
 //   - Ctrl/Cmd+K starts a new chat, "/" jumps to the question box;
-//   - keeps the list in step with the chat frame (Turbo Frame "support-console-thread"): highlights
+//   - keeps the list in step with the chat frame (the Turbo Frame named by frameValue): highlights
 //     the open conversation, adds a just-started one under Today, and falls back to a full visit
 //     when a response has no frame (e.g. the not-authorized redirect to the dashboard).
-const COLLAPSED_KEY = "supportConsole.sidebarCollapsed"
-
 export default class extends Controller {
   static targets = ["conversation", "group", "newChat", "list", "empty"]
+  // frame: the Turbo Frame the thread loads into; storageKey: where a hidden sidebar is remembered.
+  static values = { frame: String, storageKey: { type: String, default: "aiChat.sidebarCollapsed" } }
 
   connect() {
     // localStorage can be unavailable (private window, blocked storage): default to shown.
     try {
-      if (localStorage.getItem(COLLAPSED_KEY) === "1") this.element.classList.add("sc-collapsed")
+      if (localStorage.getItem(this.storageKeyValue) === "1") this.element.classList.add("aic-collapsed")
     } catch {}
     window.addEventListener("keydown", this.shortcut)
     this.element.addEventListener("turbo:frame-load", this.frameLoaded)
@@ -29,8 +29,8 @@ export default class extends Controller {
   }
 
   frameLoaded = (event) => {
-    if (event.target.id !== "support-console-thread") return
-    const chat = event.target.querySelector("#support-console-chat")
+    if (event.target.id !== this.frameValue) return
+    const chat = event.target.querySelector("[data-ai-chat-root]")
     if (!chat) return
     const id = chat.dataset.sessionId
 
@@ -45,7 +45,7 @@ export default class extends Controller {
     })
 
     // New chat: ready to type straight away.
-    if (!id) document.getElementById("support-console-question")?.focus()
+    if (!id) this.questionBox()?.focus()
   }
 
   // The response had no matching frame (a redirect away from the console): show that page in full.
@@ -61,21 +61,21 @@ export default class extends Controller {
     if (!today) {
       today = document.createElement("div")
       today.className = "small fw-normal text-body-secondary px-3 pt-3 pb-1"
-      today.dataset.supportConsoleSidebarTarget = "group"
+      today.dataset.aiChatSidebarTarget = "group"
       today.dataset.group = "Today"
       today.textContent = "Today"
       this.listTarget.prepend(today)
     }
 
-    // Same markup as support_console/_conversation. No status badge: the row is the open
+    // Same markup as ai_chat/_conversation. No status badge: the row is the open
     // conversation, whose thread shows its status (the CSS hides an open row's badge anyway).
     const title = (chat.dataset.firstQuestion || "").trim().replace(/^["'“‘]+/, "").replace(/["'”’]+$/, "") || "New conversation"
     const row = document.createElement("a")
     row.href = chat.dataset.sessionUrl
-    row.className = "sc-conversation d-block fw-normal px-3 py-2 rounded-3"
+    row.className = "aic-conversation d-block fw-normal px-3 py-2 rounded-3"
     row.title = title
-    row.dataset.supportConsoleSidebarTarget = "conversation"
-    row.dataset.turboFrame = "support-console-thread"
+    row.dataset.aiChatSidebarTarget = "conversation"
+    row.dataset.turboFrame = this.frameValue
     row.dataset.sessionId = chat.dataset.sessionId
     const text = document.createElement("span")
     text.className = "d-block text-truncate"
@@ -93,8 +93,8 @@ export default class extends Controller {
   }
 
   toggle() {
-    const collapsed = this.element.classList.toggle("sc-collapsed")
-    try { localStorage.setItem(COLLAPSED_KEY, collapsed ? "1" : "0") } catch {}
+    const collapsed = this.element.classList.toggle("aic-collapsed")
+    try { localStorage.setItem(this.storageKeyValue, collapsed ? "1" : "0") } catch {}
   }
 
   filter(event) {
@@ -122,11 +122,16 @@ export default class extends Controller {
     }
     // "/" — focus the question box, unless already typing somewhere.
     if (event.key === "/" && !event.ctrlKey && !event.metaKey && !event.target.closest("input, textarea, select, [contenteditable]")) {
-      const box = document.getElementById("support-console-question")
+      const box = this.questionBox()
       if (box) {
         event.preventDefault()
         box.focus()
       }
     }
+  }
+
+  // The open thread's question box (ai_chat/_composer), wherever the screen puts it.
+  questionBox() {
+    return this.element.querySelector("[data-ai-chat-composer-target='question']")
   }
 }

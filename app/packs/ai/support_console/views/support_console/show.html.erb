@@ -1,70 +1,15 @@
-<%
-  # Sidebar groups, ChatGPT-style: by when each conversation last changed (the list's sort order).
-  today = Time.zone.today
-  groups = @conversations.group_by do |conversation|
-    day = conversation.updated_at.to_date
-    if day == today then "Today"
-    elsif day == today - 1 then "Yesterday"
-    elsif day > today - 7 then "Previous 7 days"
-    else "Older"
-    end
-  end
-%>
-<%# One window: the page title lives in the chat header (with the client switcher), not a row above it. %>
-<div class="support-console">
-  <div class="sc-panes d-flex flex-column flex-lg-row rounded-4 border bg-white overflow-hidden"
-       data-controller="support-console-fit support-console-sidebar">
-    <aside class="sc-sidebar d-flex flex-column bg-body-tertiary border-end">
-      <div class="d-flex align-items-center gap-1 p-2">
-        <%= link_to support_console_entity_path(@entity), class: "btn btn-primary fw-normal flex-grow-1",
-                    id: "support-console-new", title: "New chat (Ctrl+K)",
-                    data: { support_console_sidebar_target: "newChat", turbo_frame: "support-console-thread" } do %>
-          <i class="ti ti-edit"></i>New chat
-        <% end %>
-        <button type="button" class="btn btn-sm sc-icon-btn d-none d-lg-inline-flex" title="Hide sidebar"
-                data-action="support-console-sidebar#toggle">
-          <i class="ti ti-layout-sidebar-left-collapse"></i>
-        </button>
-      </div>
-      <%# E45 — always shown. Filters the list in the browser; the list is capped at CONVERSATION_LIST_LIMIT. %>
-      <div class="px-2 pb-1">
-        <div class="input-group input-group-sm">
-          <span class="input-group-text bg-body border-end-0"><i class="ti ti-search text-body-secondary"></i></span>
-          <input type="search" class="form-control border-start-0 shadow-none" id="support-console-search"
-                 placeholder="Search chats" aria-label="Search chats"
-                 data-action="input->support-console-sidebar#filter">
-        </div>
-      </div>
-      <nav class="flex-grow-1 overflow-auto px-2 pb-2" id="support-console-conversations" data-support-console-sidebar-target="list">
-        <% if @conversations.empty? %>
-          <p class="text-body-secondary small px-3 mb-0" data-support-console-sidebar-target="empty">No conversations yet.</p>
-        <% else %>
-          <%# E21 — newest first. %>
-          <% groups.each do |label, conversations| %>
-            <div class="small fw-normal text-body-secondary px-3 pt-3 pb-1" data-support-console-sidebar-target="group" data-group="<%= label %>"><%= label %></div>
-            <% conversations.each do |conversation| %>
-              <%= render "support_console/conversation", entity: @entity, conversation: conversation,
-                                                         first_question: @first_questions[conversation.id],
-                                                         status: @latest_statuses[conversation.id],
-                                                         active: conversation == @session %>
-            <% end %>
-          <% end %>
-        <% end %>
-      </nav>
-      <%# The retention rule (SupportConsoleRetentionJob), visible where the list is. The list stops at
-          CONVERSATION_LIST_LIMIT, so a full list may be more than it shows. %>
-      <% limit = SupportConsoleController::CONVERSATION_LIST_LIMIT %>
-      <div class="border-top small text-body-secondary px-3 py-2">
-        <%= @conversations.size >= limit ? "#{limit}+ conversations" : pluralize(@conversations.size, "conversation") %> · kept <%= SupportConsoleRetentionJob::RETENTION.inspect %>
-      </div>
-    </aside>
-
-    <section class="flex-grow-1 d-flex flex-column" style="min-width: 0; min-height: 0;">
-      <%# Opening a conversation, New chat and asking all reload only this frame, not the page.
-          advance: the URL follows, so a reload or a shared link opens the same conversation. %>
-      <%= turbo_frame_tag "support-console-thread", class: "d-flex flex-column h-100", style: "min-height: 0;", data: { turbo_action: "advance" } do %>
-        <%= render "support_console/chat", entity: @entity, session: @session, entities: @entities %>
-      <% end %>
-    </section>
-  </div>
-</div>
+<%# One window: the page title lives in the chat header (with the client switcher), not a row above it.
+    The layout, sidebar and thread are the chat kit's (app/packs/ai/ai_chat/views/ai_chat). %>
+<%= render layout: "ai_chat/layout",
+           locals: { rows: @rows, frame: "support-console-thread", new_url: support_console_entity_path(@entity),
+                     active_id: @session&.id, root_class: "support-console", controllers: "support-console-fit",
+                     storage_key: "supportConsole.sidebarCollapsed",
+                     # The retention rule (SupportConsoleRetentionJob), visible where the list is.
+                     footer_note: "kept #{SupportConsoleRetentionJob::RETENTION.inspect}",
+                     ids: { new: "support-console-new", search: "support-console-search", list: "support-console-conversations" } } do %>
+  <%# Opening a conversation, New chat and asking all reload only this frame, not the page.
+      advance: the URL follows, so a reload or a shared link opens the same conversation. %>
+  <%= turbo_frame_tag "support-console-thread", class: "d-flex flex-column h-100", style: "min-height: 0;", data: { turbo_action: "advance" } do %>
+    <%= render "support_console/chat", entity: @entity, session: @session, entities: @entities %>
+  <% end %>
+<% end %>
