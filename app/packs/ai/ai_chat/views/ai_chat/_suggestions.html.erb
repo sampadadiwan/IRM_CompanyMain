@@ -1,0 +1,27 @@
+<%#
+  Suggested questions as button pairs: the text puts the question in the box to edit first; Ask
+  (H17) sends it straight away. While a turn runs Ask is disabled (one question at a time, E4).
+  A question already asked stays, marked Asked (H18). Locals:
+    id         String      DOM id of the group
+    questions  Array<String>
+    asked      Set<String>, optional
+    running    Boolean
+%>
+<div class="d-flex flex-wrap gap-2 mb-2" id="<%= id %>">
+  <% questions.each do |question| %>
+    <% if local_assigns.fetch(:asked, Set.new).include?(question) %>
+      <div class="btn-group btn-group-sm" role="group" data-role="asked">
+        <button type="button" class="btn btn-outline-secondary text-start" disabled><%= question %></button>
+        <button type="button" class="btn btn-secondary" disabled><i class="ti ti-check"></i>Asked</button>
+      </div>
+    <% else %>
+      <div class="btn-group btn-group-sm" role="group">
+        <button type="button" class="btn btn-outline-primary text-start"
+                data-action="ai-chat-thread#fill" data-prompt="<%= question %>"><%= question %></button>
+        <button type="button" class="btn btn-primary flex-grow-0" title="Ask this now" aria-label="Ask: <%= question %>"
+                data-action="ai-chat-thread#askNow" data-prompt="<%= question %>"
+                <%= "disabled" if running %>><i class="ti ti-arrow-up"></i>Ask</button>
+      </div>
+    <% end %>
+  <% end %>
+</div>

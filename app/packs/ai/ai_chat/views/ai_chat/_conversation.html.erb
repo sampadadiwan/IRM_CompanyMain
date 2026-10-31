@@ -1,0 +1,21 @@
+<%
+  # One conversation row (H15): the first question, then who started it, when it last changed, and a
+  # status badge. ai_chat_sidebar_controller#addConversation builds the same markup for a conversation
+  # started on this page. Locals: row (AiChatRow), frame, active.
+  question = ai_chat_title(row.title)
+  badge = AiChatHelper::AI_CHAT_STATUS_BADGES[row.status]
+%>
+<%= link_to row.url,
+            class: "aic-conversation d-block fw-normal px-3 py-2 rounded-3 #{'active' if active}",
+            data: { ai_chat_sidebar_target: "conversation", turbo_frame: frame, session_id: row.id },
+            title: question,
+            aria: { current: (active ? "page" : nil) } do %>
+  <span class="d-block text-truncate" data-role="first-question"><%= question %></span>
+  <span class="d-flex align-items-center gap-2 small text-body-secondary" data-role="meta">
+    <span class="text-truncate"><%= row.starter %> · <%= ai_chat_when(row.updated_at) %></span>
+    <% if badge %>
+      <%# Hidden on the open conversation, whose thread already shows its status live (CSS). %>
+      <span class="badge fw-normal bg-<%= badge[0] %>-subtle text-<%= badge[0] %> ms-auto" data-role="status"><i class="ti <%= badge[1] %> me-1"></i><%= badge[2] %></span>
+    <% end %>
+  </span>
+<% end %>

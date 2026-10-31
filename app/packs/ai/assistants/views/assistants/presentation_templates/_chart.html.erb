@@ -1,0 +1,36 @@
+<%# A chart (Chart.js, drawn by chart_renderer_controller) with up to three notes beside it. %>
+<%
+  config = slide["chart_config"].deep_dup
+  # Fill the card; colours from the deck's palette where the model gave none.
+  palette = %w[#3b82f6 #10b981 #f59e0b #ef4444 #8b5cf6 #64748b]
+  config["options"] = (config["options"].is_a?(Hash) ? config["options"] : {}).merge("responsive" => true, "maintainAspectRatio" => false)
+  Array(config.dig("data", "datasets")).each_with_index do |dataset, i|
+    # A model-written config: skip anything that is not a dataset object.
+    next unless dataset.is_a?(Hash)
+
+    colour = palette[i % palette.size]
+    if config["type"].to_s.match?(/doughnut|pie/)
+      dataset["backgroundColor"] ||= palette.first(Array(dataset["data"]).size)
+    else
+      dataset["borderColor"] ||= colour
+      dataset["backgroundColor"] ||= "#{colour}33"
+    end
+  end
+  notes = Array(slide["notes"]).first(3)
+%>
+<%= render layout: "assistants/presentation_templates/frame", locals: { slide:, index:, total:, record:, date:, kicker: "Trend" } do %>
+  <div class="cs-chart-grid <%= 'cs-chart-only' if notes.empty? %>">
+    <div class="cs-card cs-chart-card">
+      <div data-controller="chart-renderer" data-chart-renderer-spec-value="<%= config.to_json %>" class="cs-chart-box">
+        <canvas data-chart-renderer-target="canvas"></canvas>
+      </div>
+    </div>
+    <% if notes.any? %>
+      <ul class="cs-notes">
+        <% notes.each do |note| %>
+          <li><i class="ti ti-point"></i><span><%= note %></span></li>
+        <% end %>
+      </ul>
+    <% end %>
+  </div>
+<% end %>

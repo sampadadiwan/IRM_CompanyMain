@@ -12,8 +12,9 @@ class SupportConsoleClientBrief
   # @return [String]
   def self.call(entity)
     # Names and ids only; one query.
-    funds = Fund.where(entity_id: entity.id).order(:name).limit(MAX_FUNDS).pluck(:id, :name)
-    fund_lines = funds.map { |id, name| "- #{name} (fund_id #{id})" }
+    funds = Fund.where(entity_id: entity.id).order(:name).limit(MAX_FUNDS).pluck(:id, :name, :currency)
+    # The currency too, so amounts can be written in it (E49).
+    fund_lines = funds.map { |id, name, currency| "- #{name} (fund_id #{id}, currency #{currency})" }
     fund_lines << "- (more funds not listed)" if funds.size == MAX_FUNDS
 
     <<~BRIEF
@@ -25,6 +26,10 @@ class SupportConsoleClientBrief
       Do not query, compare or mention any other client. If the question needs another client's
       data, say that you can only look at #{entity.name} in this conversation, and stop.
       You cannot change anything. If a fix needs data changed, describe the change instead.
+      #{AiChatAnswerLayout.instructions}
+      When you mention a CapHive record by its id, link the id to its page, e.g. [13573](/capital_remittances/13573).
+      Only these record pages can be linked: #{AiChatHelper::RECORD_LINK_RESOURCES.map { |r| "/#{r}/<id>" }.join(', ')}.
+      Leave other ids as plain text.
       End every answer with a "Where this comes from" section listing the code locations
       (file:line) and the lookups the answer relied on.
     BRIEF

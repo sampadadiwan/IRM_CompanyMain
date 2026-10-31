@@ -1,0 +1,29 @@
+# Questions for `rake ai_chat:widget_eval ASSISTANT=PortfolioCompanyAssistant PORTFOLIO_COMPANY_ID=… USER_ID=…`
+# — the real Portfolio Company Assistant (its prompt, tools and the company's data). `expect`: widgets the
+# answer should use; `forbid`: widgets it must not. Widgets: verdict, checks, what_to_do.
+# "{company}" is replaced by the portfolio company's name.
+- question: List {company}'s portfolio investments.
+  expect: []
+  forbid: [verdict, checks, what_to_do]
+- question: What is {company}'s latest valuation?
+  expect: []
+  forbid: [verdict, checks, what_to_do]
+- question: Show {company}'s KPIs for the last four quarters.
+  expect: []
+  forbid: [verdict, what_to_do]
+- question: Does {company}'s current FMV match its latest valuation times the shares held?
+  expect: [verdict, checks]
+  forbid: []
+# An explanation question (the metrics differ by definition), not a right-or-wrong one: no Verdict needed.
+- question: Why does {company}'s TVPI differ from its MOIC?
+  expect: []
+  forbid: [what_to_do]
+- question: Is {company}'s cap table consistent with the investments recorded?
+  expect: [verdict, checks]
+  forbid: []
+- question: "{company}'s Q3 KPI report is missing. How do I fix it?"
+  expect: [what_to_do]
+  forbid: [verdict]
+- question: How do I record a new valuation for {company}?
+  expect: [what_to_do]
+  forbid: [verdict, checks]

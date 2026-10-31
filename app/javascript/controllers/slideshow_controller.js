@@ -192,25 +192,32 @@ export default class extends Controller {
 
   buildSlides() {
     this.slidesTarget.innerHTML = ""
-    const cards = Array.from(this.sourceTarget.querySelectorAll('.message-wrapper, .card'))
+    // The chat kit's messages (ai_chat/_question, ai_chat/_answer), in order.
+    const cards = Array.from(this.sourceTarget.querySelectorAll('.aic-message'))
 
     cards.forEach((card) => {
-      const isUserCard = !!card.querySelector('.ti-user') || (card.classList.contains('message-wrapper') && !card.classList.contains('assistant-message-card'))
-      const isAssistantCard = !!card.querySelector('.ti-robot') || card.classList.contains('assistant-message-card')
+      const isAssistantCard = card.hasAttribute('data-ai-chat-answer')
+      const isUserCard = !isAssistantCard
 
       if (isUserCard) {
-        const questionEl = card.querySelector('.fw-semibold, .message-content')
+        const questionEl = card.querySelector('.aic-question')
         if (questionEl && questionEl.innerText.trim().length > 0) {
+          // The question is text, never markup: build the slide with textContent.
           const qSection = document.createElement('section')
-          qSection.innerHTML = `
-            <div class="step-badge">Question</div>
-            <h2 class="question-text" style="font-size: 1.5em; margin-top: 40px;">${questionEl.innerText}</h2>
-          `
+          const badge = document.createElement('div')
+          badge.className = "step-badge"
+          badge.textContent = "Question"
+          const heading = document.createElement('h2')
+          heading.className = "question-text"
+          heading.style.fontSize = "1.5em"
+          heading.style.marginTop = "40px"
+          heading.textContent = questionEl.innerText
+          qSection.append(badge, heading)
           this.slidesTarget.appendChild(qSection)
         }
       }
 
-      const proseEl = card.querySelector('.prose')
+      const proseEl = card.querySelector('[data-ai-chat-answer-body]')
       if (isAssistantCard && proseEl) {
         let currentSection = document.createElement('section')
         const badge = document.createElement('div')

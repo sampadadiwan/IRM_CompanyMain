@@ -12,7 +12,11 @@ module MarkdownHelper
       fenced_code_blocks: true,
       strikethrough: true,
       lax_spacing: true,
-      space_after_headers: true
+      space_after_headers: true,
+      # AI answers are full of snake_case names; without this the underscores in "KMH_01 … KMH_01"
+      # or "fund_id and entity_id" open and close an <em>, italicising everything between them.
+      # Emphasis at word boundaries (_like this_) still works.
+      no_intra_emphasis: true
     )
 
     rendered_html = markdown.render(text.to_s)

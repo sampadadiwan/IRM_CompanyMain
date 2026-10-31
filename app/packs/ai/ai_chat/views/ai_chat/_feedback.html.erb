@@ -1,0 +1,21 @@
+<%#
+  👍 / 👎 under an answer (the Customer Support agent's), with a note box after 👎 (H9). Saves through
+  SupportAgentChatFeedbacksController#update (unchanged) — the CS feedback review queue. The chosen
+  rating shows coloured (👍 primary, 👎 danger), also when the conversation is reopened.
+  Locals: url (the PATCH endpoint), rating ("positive", "negative" or nil).
+%>
+<div class="d-flex flex-wrap align-items-center gap-1 mt-1" data-controller="ai-chat-feedback" data-ai-chat-feedback
+     data-ai-chat-feedback-url-value="<%= url %>" data-ai-chat-feedback-rating-value="<%= rating %>">
+  <button type="button" class="btn btn-sm aic-icon-btn aic-rate" title="Helpful" aria-label="Helpful"
+          data-ai-chat-feedback-target="up" data-rating="positive" data-action="ai-chat-feedback#rate"
+          aria-pressed="<%= rating == "positive" %>"><i class="ti ti-thumb-up"></i></button>
+  <button type="button" class="btn btn-sm aic-icon-btn aic-rate" title="Not helpful" aria-label="Not helpful"
+          data-ai-chat-feedback-target="down" data-rating="negative" data-action="ai-chat-feedback#rate"
+          aria-pressed="<%= rating == "negative" %>"><i class="ti ti-thumb-down"></i></button>
+  <div class="input-group input-group-sm w-auto ms-1 d-none" data-ai-chat-feedback-target="note">
+    <input type="text" class="form-control" placeholder="What was wrong?" aria-label="What was wrong?"
+           data-ai-chat-feedback-target="noteInput" data-action="keydown.enter->ai-chat-feedback#sendNote:prevent">
+    <button type="button" class="btn btn-outline-secondary" data-action="ai-chat-feedback#sendNote">Send</button>
+  </div>
+  <span class="small text-muted ms-1 d-none" data-ai-chat-feedback-target="thanks">Thanks for your feedback</span>
+</div>

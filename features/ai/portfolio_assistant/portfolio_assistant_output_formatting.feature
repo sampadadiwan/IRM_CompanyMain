@@ -35,3 +35,12 @@ Feature: PortfolioAssistant output formatting fixes
     When I render the markdown "<a href=\"/investors/123\" target=\"_blank\">Acme Co</a>" to HTML
     Then the rendered HTML should include "target=\"_blank\""
     And the rendered HTML should include "href=\"/investors/123\""
+
+  # Regression test for: underscores inside snake_case names ("KMH_01 … KMH_01", "fund_id and
+  # entity_id") were read as emphasis markers, italicising every word between them. The shared
+  # renderer (MarkdownHelper#markdown_to_html) now sets no_intra_emphasis; _word_ emphasis still works.
+  Scenario: Underscores inside names do not italicise text
+    When I render the markdown "KMH_01 was created, so KMH_01 moved. Check fund_id and entity_id. This _is_ emphasis." to HTML
+    Then the rendered HTML should include "KMH_01 was created, so KMH_01 moved. Check fund_id and entity_id."
+    And the rendered HTML should include "<em>is</em>"
+    And the rendered HTML should not include "<em>01"

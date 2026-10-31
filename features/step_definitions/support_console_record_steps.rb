@@ -142,6 +142,6 @@ Given('{string} has a conversation about {string} with a finished answer') do |f
 end
 
 Then('the question {string} is labelled with {string}') do |question, first_name|
-  bubble = find("#support-console-messages .sc-question", text: question)
+  bubble = find("#support-console-messages .aic-question", text: question)
   expect(bubble[:title]).to start_with(@support_console_users.fetch(first_name).full_name)
 end

@@ -1,0 +1,31 @@
+<%# One chat on the chat kit's thread (ai_chat/_thread). ChatStreamJob streams answers into it over
+    turbo_stream_from(chat, "messages"). Locals: chat (Chat), items (Array<AiChatItem>). %>
+<% owner = chat.owner %>
+<% header = capture do %>
+  <span class="text-muted">Analysis</span>
+  <% if owner %>
+    <i class="ti ti-chevron-right text-muted small"></i>
+    <%= link_to owner.to_s, owner, class: "text-body text-truncate", data: { turbo_frame: "_top" } %>
+  <% end %>
+  <span class="text-muted text-truncate ms-auto small"><%= chat.name %></span>
+<% end %>
+<% empty_state = capture do %>
+  <%= render "ai_chat/empty_state", title: "What do you want to know#{" about #{owner}" if owner}?",
+                                    text: "Answers use this conversation and any document you choose, sent to an external AI model." %>
+<% end %>
+<%= render layout: "ai_chat/thread",
+           locals: { id: "chat-panel", scroller_id: "chat-messages",
+                     data: { session_id: chat.id, session_url: chat_path(chat),
+                             first_question: items.find(&:question?)&.content,
+                             session_meta: "#{chat.user&.full_name} · #{ai_chat_when(chat.updated_at)}" },
+                     header: header, streams: turbo_stream_from(chat, "messages"),
+                     empty: items.empty?, empty_state: empty_state,
+                     composer: render("chats/composer", chat: chat, running: false, items: items) } do %>
+  <% items.each do |item| %>
+    <% if item.question? %>
+      <%= render "ai_chat/question", item: item %>
+    <% else %>
+      <%= render "ai_chat/answer", item: item, mode: :rich %>
+    <% end %>
+  <% end %>
+<% end %>

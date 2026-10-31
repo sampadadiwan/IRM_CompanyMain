@@ -1,0 +1,50 @@
+<%#
+  The chat kit's thread pane: header, scrolling messages (the block), jump-to-latest, an optional
+  notice, and the question box. Rendered as a layout. Locals:
+    id           String       root DOM id (the screen's own)
+    data         Hash         extra data-* on the root, read by ai_chat_sidebar_controller when the
+                              frame loads (session_id, session_url, first_question, session_meta)
+    header       SafeBuffer   the screen's header content (title, switcher, badges, actions)
+    streams      SafeBuffer   turbo_stream_from tags the screen listens on
+    scroller_id  String       the scrolling container's DOM id
+    items_data   Hash         extra data-* on the messages container (e.g. exporters' targets)
+    items_id     String       the messages container's DOM id (default "<id>-items")
+    empty        Boolean      no messages yet: show empty_state above the (empty) messages
+  The messages sit in "<id>-items" and the empty state in "<id>-empty", so a screen can append a
+  question and answer over Turbo Streams and remove the empty state (Assistants page).
+    empty_state  SafeBuffer   what an empty thread shows
+    below        SafeBuffer   a notice under the messages (e.g. a refusal), optional
+    composer     SafeBuffer   the question box (ai_chat/_composer)
+  @see openspec/changes/ai-chat-kit/design.md (card ③ Chat layout)
+%>
+<div class="d-flex flex-column h-100" id="<%= id %>" data-controller="ai-chat-thread" data-ai-chat-root
+     <%= tag.attributes(data: local_assigns.fetch(:data, {})) %>>
+  <div class="aic-header d-flex align-items-center gap-2 px-3 py-2" data-ai-chat-thread-target="header">
+    <%# Shown only while the sidebar is hidden (ai_chat_sidebar_controller). %>
+    <button type="button" class="btn btn-sm aic-icon-btn aic-show-sidebar" title="Show sidebar"
+            data-action="ai-chat-sidebar#toggle">
+      <i class="ti ti-layout-sidebar-left-expand"></i>
+    </button>
+    <%= header %>
+  </div>
+  <%= local_assigns[:streams] %>
+
+  <div class="position-relative flex-grow-1" style="min-height: 0;">
+    <div class="h-100 overflow-auto chat-markdown" id="<%= scroller_id %>"
+         data-ai-chat-thread-target="scroller" data-action="scroll->ai-chat-thread#onScroll">
+      <div class="aic-column h-100 px-4 pt-4">
+        <% if empty %>
+          <div id="<%= id %>-empty" class="h-100"><%= empty_state %></div>
+        <% end %>
+        <div id="<%= local_assigns[:items_id] || "#{id}-items" %>" class="aic-items" <%= tag.attributes(data: local_assigns.fetch(:items_data, {})) %>><%= yield %></div>
+      </div>
+    </div>
+    <button type="button" class="btn btn-sm btn-light border shadow-sm rounded-circle aic-jump d-none" title="Jump to latest"
+            data-ai-chat-thread-target="jump" data-action="ai-chat-thread#jumpToLatest">
+      <i class="ti ti-arrow-down"></i>
+    </button>
+  </div>
+
+  <%= local_assigns[:below] %>
+  <%= composer %>
+</div>

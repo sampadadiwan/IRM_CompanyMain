@@ -1,0 +1,60 @@
+<%
+  # An answer: plain text across the column, no bubble. Locals:
+  #   item         AiChatItem
+  #   mode         :strict (Support Console) or :rich — see AiChatHelper#ai_answer_html
+  #   ask_buttons  Boolean, optional — Ask on Questions-card items (defaults by mode)
+  #   feedback     SafeBuffer, optional — a rating row under the answer (Customer Support agent)
+  running = item.running?
+  steps = item.progress
+  # Ended turns other than a normal answer get a status badge (theme colours only); a running
+  # turn shows its progress line instead.
+  badge = (AiChatHelper::AI_CHAT_STATUS_BADGES[item.status.to_s] unless running)
+  answer_text = item.text
+  html_options = local_assigns.key?(:ask_buttons) ? { mode: mode, ask_buttons: ask_buttons } : { mode: mode }
+%>
+<div id="<%= item.dom_id %>" class="aic-message aic-answer mb-4" data-turn-status="<%= item.turn_status %>" data-ai-chat-answer>
+  <% if running %>
+    <%= render "ai_chat/pending", text: steps.last %>
+  <% elsif badge %>
+    <span class="badge bg-<%= badge[0] %>-subtle text-<%= badge[0] %> mb-2"><i class="ti <%= badge[1] %> me-1"></i><%= badge[2] %></span>
+  <% end %>
+
+  <% if answer_text %>
+    <%# While streaming, a blinking cursor follows the text (CSS, on .aic-streaming). %>
+    <div class="aic-answer-body <%= 'aic-streaming' if running %>" data-ai-chat-answer-body><%= ai_answer_html(answer_text, **html_options) %></div>
+  <% end %>
+
+  <% if steps.any? %>
+    <%# Every step the assistant took, kept after the answer so the working can be checked. %>
+    <details class="aic-steps mt-2">
+      <summary>
+        <i class="ti ti-list-search me-1"></i><%= running ? "#{pluralize(steps.size, 'step')} so far" : "How this was worked out · #{pluralize(steps.size, 'step')}" %>
+      </summary>
+      <ol class="aic-sources-body list-unstyled text-muted mb-0">
+        <% steps.each do |step| %>
+          <% icon = case step
+                    when /\AReading/ then "ti-file-code"
+                    when /\AChecking columns/ then "ti-table"
+                    when /\ALooking up/ then "ti-database"
+                    else "ti-point"
+                    end %>
+          <li class="d-flex gap-2 mb-1"><i class="ti <%= icon %> mt-1"></i><span class="text-break"><%= step %></span></li>
+        <% end %>
+      </ol>
+    </details>
+  <% end %>
+
+  <% if answer_text && !running %>
+    <%# Copy the answer's markdown, and when it was answered — shown on hover. %>
+    <div class="aic-actions d-flex align-items-center gap-1 mt-2">
+      <button type="button" class="btn btn-sm aic-icon-btn" title="Copy answer" data-copy-text="<%= answer_text %>"
+              data-action="ai-chat-thread#copy"><i class="ti ti-copy"></i></button>
+      <span class="small text-muted"><%= l(item.time) %></span>
+      <% if item.model %>
+        <%# E29 — which model answered. %>
+        <span class="small text-muted" data-role="model">· <%= item.model.capitalize %></span>
+      <% end %>
+    </div>
+    <%= local_assigns[:feedback] %>
+  <% end %>
+</div>

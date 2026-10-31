@@ -28,11 +28,8 @@ resources :support_agents do
     get 'executions/:execution_id', action: :execution, as: :execution, on: :collection
   end
 
-  # Generic chat routes
+  # Generic chat routes — the floating chat window (support_agents/_chat_panel) on the chat kit
   resources :chats, controller: 'support_agent_chats', only: %i[index create destroy] do
-    collection do
-      get :sessions
-    end
     member do
       patch :feedback, controller: 'support_agent_chat_feedbacks', action: :update
     end

@@ -1,0 +1,30 @@
+<%#
+  Every content slide's frame (rendered as a layout): an icon and title, the slide's body (the block),
+  its "What this means" line, and a footer with the record, the date and the slide's number.
+  Locals: slide (Hash, normalised by SlideGeneratorService), index, total, record, date, kicker.
+%>
+<section class="cs-section" data-slide-template="<%= slide["template"] %>">
+  <div class="cs-slide">
+    <header class="cs-head">
+      <span class="cs-icon"><i class="ti ti-<%= slide["icon"] %>"></i></span>
+      <div class="min-w-0">
+        <div class="cs-kicker"><%= kicker %></div>
+        <h2 class="cs-title"><%= slide["title"] %></h2>
+      </div>
+    </header>
+
+    <div class="cs-body"><%= yield %></div>
+
+    <% if slide["takeaway"].present? %>
+      <div class="cs-takeaway" data-slide-takeaway>
+        <i class="ti ti-bulb"></i>
+        <div><strong>What this means</strong><span><%= slide["takeaway"] %></span></div>
+      </div>
+    <% end %>
+
+    <footer class="cs-foot">
+      <span><%= [record.presence, date].compact.join(" · ") %></span>
+      <span data-slide-number><%= index %> / <%= total %></span>
+    </footer>
+  </div>
+</section>

@@ -75,17 +75,18 @@ end
 
 When('I ask {string}') do |question|
   fill_in "support-console-question", with: question
-  click_button "Ask"
+  # The composer's own Ask, by id: suggested questions carry Ask buttons too (H16, H17).
+  click_button "support-console-ask"
 end
 
 When('I ask a question of {int} characters') do |length|
   fill_in "support-console-question", with: "a" * length
-  click_button "Ask"
+  click_button "support-console-ask"
 end
 
 When('I press Ask with an empty question') do
   fill_in "support-console-question", with: ""
-  click_button "Ask"
+  click_button "support-console-ask"
 end
 
 Then('I see the answer {string}') do |text|
@@ -314,6 +315,170 @@ Then('the answer links to {string} in a new tab') do |href|
   within("#support-console-messages") do
     expect(page).to have_css("a[href='#{href}'][target='_blank'][rel~='noopener']")
   end
+end
+
+# H13 / E40 / E41 / X36 — an answer written over several lines, as the brief's layout asks.
+Given('the relay answers:') do |text|
+  stub_relay_turns(SupportConsoleRelayStub.answer(text))
+end
+
+Then('the answer shows a {string} card saying {string}') do |title, text|
+  within("#support-console-messages .aic-answer-body") do
+    card = find(".card", text: title, match: :first)
+    expect(card).to have_css(".card-header h6", text: title)
+    expect(card).to have_content(text)
+  end
+end
+
+Then('the answer shows the stat card {string} with {string}') do |label, value|
+  within("#support-console-messages .aic-answer-body") do
+    card = find(".card.stat-card-accent", text: label)
+    expect(card).to have_css(".card-subtitle", text: label)
+    expect(card).to have_css("h2", text: value)
+  end
+end
+
+Then('the answer shows no stat cards') do
+  within("#support-console-messages .aic-answer-body") { expect(page).to have_no_css(".stat-card-accent") }
+end
+
+Then('the answer lists the question {string}') do |question|
+  within("#support-console-messages .aic-answer-body") do
+    expect(page).to have_css(".list-group .list-group-item", text: question)
+  end
+end
+
+Then('the answer shows a Bootstrap table with the cell {string}') do |cell|
+  within("#support-console-messages .aic-answer-body") do
+    expect(page).to have_css(".card .table-responsive table.table td", text: cell)
+  end
+end
+
+Then('the answer shows the bullet {string}') do |text|
+  within("#support-console-messages .aic-answer-body") { expect(page).to have_css("ul > li", text: text) }
+end
+
+Then('the answer shows {string} as a callout') do |text|
+  within("#support-console-messages .aic-answer-body") { expect(page).to have_css("blockquote.alert", text: text) }
+end
+
+Then('the answer has no class or data attribute of its own around {string}') do |text|
+  within("#support-console-messages .aic-answer-body") do
+    expect(page).to have_css("p", text: text, visible: :all)
+    expect(page).to have_no_css(".d-none", visible: :all)
+    expect(page).to have_no_css("[data-controller]", visible: :all)
+  end
+end
+
+Then('the sources section holds {string} and {string}') do |heading, text|
+  within("#support-console-messages details.aic-sources .aic-sources-body", visible: :all) do
+    expect(page).to have_css("h3", text: heading.delete_prefix("### "), visible: :all)
+    expect(page).to have_text(:all, text, normalize_ws: true)
+  end
+end
+
+# E43 — the first turn answers with follow-ups, the next one fails.
+Given('the relay answers this and then fails with status {int}:') do |status, text|
+  stub_relay_turns(SupportConsoleRelayStub.answer(text), { status: status, body: "" })
+end
+
+Then('the follow-ups above the box are:') do |table|
+  buttons = all("#support-console-follow-ups button[data-action='ai-chat-thread#fill']").map { |b| b.text.squish }
+  expect(buttons).to eq(table.raw.flatten)
+end
+
+Then('a follow-up puts {string} in the box') do |question|
+  expect(page).to have_css("#support-console-follow-ups button[data-action='ai-chat-thread#fill'][data-prompt='#{question}']")
+end
+
+Then('there are no follow-ups above the box') do
+  expect(page).to have_no_css("#support-console-follow-ups")
+end
+
+Then('the answer does not show {string}') do |text|
+  within("#support-console-messages .aic-answer-body") { expect(page).to have_no_content(text) }
+end
+
+Then('no follow-up holds markup') do
+  expect(page).to have_no_css("#support-console-follow-ups button[data-action='ai-chat-thread#fill'] *")
+end
+
+# H15 — a sidebar row: who started the conversation, when it last changed, and its latest status.
+Then('the sidebar row {string} shows {string}\'s name, the time and the badge {string}') do |question, first_name, badge|
+  user = @support_console_users.fetch(first_name)
+  row = find("#support-console-conversations .aic-conversation", text: question)
+  time = I18n.l(@running_session.reload.updated_at, format: :time_only)
+  expect(row).to have_css("[data-role='meta']", text: "#{user.full_name} · #{time}")
+  expect(row).to have_css("[data-role='status'].badge", text: badge)
+end
+
+# E46 — a first question pasted with quote marks around it.
+Given('{string} has a conversation about {string} that started with {string}') do |first_name, entity_name, question|
+  session = AgentChatSession.create!(support_agent: SupportConsoleAgent.record, analyst: @support_console_users.fetch(first_name),
+                                     chattable: support_console_entity(entity_name), channel: "web", status: "active")
+  session.agent_chat_messages.create!(role: "user", content: question, channel: "web")
+end
+
+Then('the sidebar search box is shown') do
+  expect(page).to have_field("support-console-search", type: "search")
+end
+
+Then('the sidebar footer says {string}') do |text|
+  within(".aic-sidebar") { expect(page).to have_css(".border-top", text: text) }
+end
+
+# H16 — a question in an answer's Questions card sends itself from its Ask button.
+Then('the question {string} has an Ask button') do |question|
+  within("#support-console-messages .list-group") do
+    expect(page).to have_css(".list-group-item button[data-action='ai-chat-thread#askNow'][data-prompt='#{question}']", text: "Ask")
+  end
+end
+
+# H17 — a follow-up above the box sends itself from its Ask button.
+Then('the follow-up {string} has an Ask button') do |question|
+  expect(page).to have_css("#support-console-follow-ups .btn-group button[data-action='ai-chat-thread#askNow'][data-prompt='#{question}']",
+                           text: "Ask")
+end
+
+# E47 — underscores inside names (KMH_01, fund_id) are not emphasis.
+Then('the answer shows no italics') do
+  within("#support-console-messages .aic-answer-body") { expect(page).to have_no_css("em") }
+end
+
+# E48 — the first turn answers with follow-ups, the next one with something else.
+Given('the relay answers this and then {string}:') do |second, text|
+  stub_relay_turns(SupportConsoleRelayStub.answer(text), SupportConsoleRelayStub.answer(second))
+end
+
+# H18 — an answer with two follow-ups, the first of them asked and still being answered.
+Given('{string} has a conversation about {string} that suggested {string} and {string}, now answering {string}') do |first_name, entity_name, first, second, asked|
+  @running_session = AgentChatSession.create!(support_agent: SupportConsoleAgent.record, analyst: @support_console_users.fetch(first_name),
+                                              chattable: support_console_entity(entity_name), channel: "web", status: "active")
+  @running_session.agent_chat_messages.create!(role: "user", content: "How many are unapproved?", channel: "web")
+  @running_session.agent_chat_messages.create!(role: "assistant", content: "## Summary\n4.\n\n## Follow-ups\n- #{first}\n- #{second}",
+                                               channel: "web", metadata: { "turn_status" => "completed" })
+  @running_session.agent_chat_messages.create!(role: "user", content: asked, channel: "web")
+  @running_session.agent_chat_messages.create!(role: "assistant", content: "Working…", channel: "web",
+                                               metadata: { "turn_status" => "running" })
+end
+
+Then('the follow-up {string} is marked asked') do |question|
+  expect(page).to have_css("#support-console-follow-ups [data-role='asked'] button[disabled]", text: question)
+  expect(page).to have_css("#support-console-follow-ups [data-role='asked'] button[disabled]", text: "Asked")
+end
+
+Then('the follow-up Ask buttons are disabled') do
+  expect(page).to have_css("#support-console-follow-ups button[data-action='ai-chat-thread#askNow'][disabled]")
+  expect(page).to have_no_css("#support-console-follow-ups button[data-action='ai-chat-thread#askNow']:not([disabled])")
+end
+
+# E49 — a fund for the client, so the brief lists it with its currency.
+Given('the client {string} has a fund {string} in {string}') do |entity_name, fund_name, currency|
+  FactoryBot.create(:fund, entity: support_console_entity(entity_name), name: fund_name, currency: currency)
+end
+
+Then('the question is shown as a Bootstrap bubble') do
+  within("#support-console-messages") { expect(page).to have_css(".aic-question.bg-body-tertiary.rounded-4") }
 end
 
 # X25 — the machine sends the session id, then the stream ends without a result (a stop or a crash).

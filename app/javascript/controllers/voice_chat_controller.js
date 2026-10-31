@@ -1,65 +1,20 @@
 import { Controller } from "@hotwired/stimulus"
 
+// Assistants page hold-to-speak (assistants/_composer): records while the mic is held, stops after a
+// pause, and posts the audio to /assistants/transcribe, which answers with the same Turbo Stream as a
+// typed question (assistants/ask.turbo_stream). Sending typed questions is the chat kit's composer.
 export default class extends Controller {
-  static targets = ["input", "responses", "spinner", "micBtn", "hint", "welcome", "assistantType", "chatInterface"]
-  static values = { chatId: Number }
+  static targets = ["micBtn", "hint"]
 
   connect() {
     this.mediaRecorder = null
     this.chunks = []
     this.stream = null
     this.isRecording = false
-    this.originalInputHeight = null
     this.audioContext = null
     this.analyser = null
     this.silenceTimer = null
     this.speakingDetected = false
-  }
-
-  // Auto-resize the textarea as user types
-  autoResize() {
-    const el = this.inputTarget
-    if (!this.originalInputHeight) this.originalInputHeight = el.offsetHeight
-
-    el.style.height = 'auto'
-    el.style.height = `${Math.min(el.scrollHeight, 150)}px` // Max height 150px
-  }
-
-  // Handle Enter key (Send) vs Shift+Enter (NewLine)
-  handleEnter(e) {
-    if (!e.shiftKey) {
-      e.preventDefault()
-      this.sendText()
-    }
-  }
-
-  async sendText() {
-    const query = (this.inputTarget.value || "").trim()
-    const assistant_type = this.hasAssistantTypeTarget ? this.assistantTypeTarget.value : 'fund'
-    if (!query) return
-
-    // UI Updates
-    this.hideWelcome()
-    this.appendUserMessage(query)
-    this.inputTarget.value = ""
-    this.autoResize() // Reset height
-    this.showSpinner()
-    this.scrollToBottom()
-
-    try {
-      const html = await this.postForm("/assistants/ask", {
-        query,
-        assistant_type,
-        chat_id: this.chatIdValue
-      })
-      this.appendAssistantResponse(html)
-    } catch (err) {
-      console.error(err)
-      this.appendErrorMessage("Sorry, something went wrong. Please try again.")
-      this.hideSpinner()
-    } finally {
-      this.scrollToBottom()
-    }
   }
 
   async startRecording(e) {
@@ -130,24 +85,16 @@ export default class extends Controller {
         const file = new File([blob], "voice.webm", { type: blob.type })
         const formData = new FormData()
         formData.append("audio", file)
-        const assistant_type = this.hasAssistantTypeTarget ? this.assistantTypeTarget.value : 'fund'
-        formData.append("assistant_type", assistant_type)
-        formData.append("chat_id", this.chatIdValue)
+        // The open conversation, from the question box (it follows the conversation frame).
+        formData.append("chat_id", this.chatId())
 
-        this.hideWelcome()
-        // Optionally append a placeholder like "🎤 Audio message..." if you want immediate feedback
-        this.showSpinner()
-
-        const html = await this.postMultipart("/assistants/transcribe", formData)
-        this.appendAssistantResponse(html)
+        // E17 — the server transcribes and answers with the same Turbo Stream as a typed question.
+        await this.postTurboStream("/assistants/transcribe", formData)
       } catch (err) {
         console.error(err)
-        this.appendErrorMessage("Audio upload failed.")
-        this.hideSpinner()
+        if (this.hasHintTarget) this.hintTarget.textContent = "Audio upload failed. Please try again."
       } finally {
         this.cleanupStream()
-        // this.setIdle()
-        this.scrollToBottom()
       }
     }
 
@@ -201,117 +148,19 @@ export default class extends Controller {
   }
 
 
-  hideWelcome() {
-    if (this.hasWelcomeTarget) {
-      this.welcomeTarget.classList.add("d-none")
-    }
+  // The open conversation's id, from the question box's hidden field.
+  chatId() {
+    return this.element.querySelector("#assistant-composer input[name='chat_id']")?.value || ""
   }
 
-  showSpinner() {
-    if (this.hasSpinnerTarget) {
-      this.spinnerTarget.classList.remove("d-none")
-      // Ensure it's at the end of the responses container
-      this.responsesTarget.appendChild(this.spinnerTarget)
-    }
-  }
-
-  hideSpinner() {
-    if (this.hasSpinnerTarget) {
-      this.spinnerTarget.classList.add("d-none")
-    }
-  }
-
-  scrollToBottom() {
-    const chatFeed = document.getElementById("chat-feed")
-    if (chatFeed) {
-        // slight delay to ensure DOM update
-        setTimeout(() => {
-            chatFeed.scrollTop = chatFeed.scrollHeight
-        }, 50)
-    }
-  }
-
-  appendUserMessage(text) {
-    const html = `
-      <div class="d-flex justify-content-end mb-3">
-        <div class="bg-primary text-white rounded-4 py-2 px-3" style="border-bottom-right-radius: 4px !important;">
-          ${this.escapeHtml(text)}
-        </div>
-      </div>
-    `
-    this.responsesTarget.insertAdjacentHTML("beforeend", html)
-  }
-
-  appendAssistantResponse(htmlContent) {
-    // We append the raw HTML content because the backend partial (assistants/_ask_frame)
-    // already provides the necessary structure and styling, or targets a specific Turbo Frame.
-    this.responsesTarget.insertAdjacentHTML("beforeend", htmlContent)
-    this.removeDuplicateResponses()
-    if (!this.spinnerTarget.classList.contains("d-none")) {
-      this.responsesTarget.appendChild(this.spinnerTarget)
-    }
-  }
-
-  // Prevents duplicate assistant responses by checking if a Turbo Frame with the same ID already exists
-  removeDuplicateResponses() {
-    const responses = this.responsesTarget.querySelectorAll('[id^="assistant_response_"]')
-    const seenIds = new Set()
-
-    responses.forEach(el => {
-      if (seenIds.has(el.id)) {
-        el.remove()
-      } else {
-        seenIds.add(el.id)
-      }
-    })
-  }
-
-  appendErrorMessage(msg) {
-     const html = `
-      <div class="text-center text-danger small my-2">
-        ${this.escapeHtml(msg)}
-      </div>
-    `
-    this.responsesTarget.insertAdjacentHTML("beforeend", html)
-  }
-
-  escapeHtml(text) {
-    const div = document.createElement('div')
-    div.textContent = text
-    return div.innerHTML
-  }
-
-  async postForm(url, dataObj) {
+  async postTurboStream(url, formData) {
     const token = document.querySelector('meta[name="csrf-token"]').getAttribute("content")
-    const body = new URLSearchParams(dataObj)
-
     const res = await fetch(url, {
       method: "POST",
-      headers: {
-        "X-CSRF-Token": token,
-        "Content-Type": "application/x-www-form-urlencoded",
-        "Accept": "text/html" // Request HTML fragment
-      },
-      body
-    })
-
-    if (!res.ok) throw new Error(`HTTP ${res.status}`)
-    return await res.text()
-  }
-
-  async postMultipart(url, formData) {
-    const token = document.querySelector('meta[name="csrf-token"]').getAttribute("content")
-
-    const res = await fetch(url, {
-      method: "POST",
-      headers: {
-        "X-CSRF-Token": token,
-        "Accept": "text/html"
-      },
+      headers: { "X-CSRF-Token": token, "Accept": "text/vnd.turbo-stream.html" },
       body: formData
     })
-
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
-    return await res.text()
+    window.Turbo.renderStreamMessage(await res.text())
   }
 }

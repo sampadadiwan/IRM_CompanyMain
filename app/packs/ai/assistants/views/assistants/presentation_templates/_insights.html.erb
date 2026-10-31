@@ -1,0 +1,15 @@
+<%# The points that matter, each with a short title, one sentence, an icon and a tone — all of them shown. %>
+<%= render layout: "assistants/presentation_templates/frame", locals: { slide:, index:, total:, record:, date:, kicker: "Insights" } do %>
+  <% items = slide["items"].first(6) %>
+  <div class="cs-insights <%= items.size > 4 ? 'cs-cols-3' : 'cs-cols-2' %>">
+    <% items.each do |item| %>
+      <div class="cs-card cs-tone-<%= item["tone"] %>">
+        <span class="cs-icon cs-icon-tone"><i class="ti ti-<%= item["icon"] %>"></i></span>
+        <div>
+          <% if item["title"].present? %><div class="cs-card-title"><%= item["title"] %></div><% end %>
+          <div class="cs-card-text"><%= item["text"] %></div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+<% end %>

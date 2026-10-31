@@ -8,8 +8,15 @@ class ChatsController < ApplicationController
     @pagy, @chats = pagy(@chats) unless params[:format] == "xlsx"
   end
 
-  # GET /chats/1
-  def show; end
+  # GET /chats/1 — on the chat kit (openspec/changes/ai-chat-kit, card ①): the record's chats beside
+  # this one (the same chats the Analysis tab lists), and this chat's questions and answers.
+  def show
+    @rows = AiChatRows.for_chats(policy_scope(Chat.all).where(owner: @chat.owner), url: ->(chat) { chat_path(chat) })
+    # An assistant message without content is a tool-call step, not an answer, so it is not drawn.
+    @items = @chat.messages.where(role: %w[user assistant]).order(:created_at)
+                  .reject { |m| m.role == "assistant" && m.content.blank? }
+                  .map { |m| AiChatItem.from_message(m) }
+  end
 
   # GET /chats/new
   def new
@@ -45,8 +52,15 @@ class ChatsController < ApplicationController
     end
   end
 
+  # POST /chats/1/send_message — H5: the question and a pending answer join the thread at once
+  # (send_message.turbo_stream); ChatStreamJob streams the answer into the pending one by request id.
   def send_message
-    ChatStreamJob.perform_later(@chat.id, params[:user_content], document_id: params[:document_id])
+    @query = params[:user_content].to_s.strip
+    # A blank question is never sent (the box blocks it too).
+    return head(:unprocessable_entity) if @query.blank?
+
+    @request_id = SecureRandom.hex(12)
+    ChatStreamJob.perform_later(@chat.id, @query, document_id: params[:document_id], request_id: @request_id)
   end
 
   # DELETE /chats/1

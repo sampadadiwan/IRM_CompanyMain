@@ -91,6 +91,92 @@ the data lookups it relied on, and the page footer SHALL show the code version u
 - **WHEN** an answer completes
 - **THEN** it includes a "Where this comes from" section and the footer shows the code version
 
+### Requirement: Amounts are shown in currency, never as stored cents
+The assistant SHALL be told that columns ending in _cents store the amount multiplied by 100, and to
+write every amount divided by 100 in the record's own currency (else its fund's), INR with Indian
+grouping, never as a raw _cents value or without its currency. The brief SHALL list each fund's currency.
+
+#### Scenario: Brief names fund currencies
+- **WHEN** a question is sent for a client with an INR fund
+- **THEN** the brief lists that fund with "currency INR" and says never to show a raw _cents value
+
+### Requirement: Answers are laid out with Bootstrap structure
+The assistant SHALL be asked to write each answer in markdown under the headings Summary, Key figures
+(one "Label: value" bullet each), Details, Follow-ups and "Where this comes from", leaving out any that
+has nothing to say. The page SHALL render a Summary as a card, each Key figures bullet as a stat card,
+tables inside a scrolling card with the app's table classes, quotes as a callout, a Questions section
+(in answers saved before Follow-ups) as a list group, and the user's questions as a Bootstrap bubble. These classes SHALL be added by the application
+after the answer is sanitized, so a class or data attribute written in the answer itself is never kept.
+An answer without these headings SHALL still render, without the cards.
+
+#### Scenario: Answer in the layout
+- **WHEN** an answer has Summary, Key figures, a table and Questions
+- **THEN** the Summary shows as a card, each figure as a stat card, the table in a card, and each question as a list item
+
+### Requirement: Sidebar rows show who, when and status
+Each conversation in the sidebar SHALL show its first question (without surrounding quote marks), the
+support user who started it, when it last changed (the time today, the locale's date before), and a
+status badge when its latest answer is running, stopped, not answered or refused. The open
+conversation's badge SHALL be hidden, since its thread shows the status. Search SHALL always be shown,
+and the sidebar SHALL state how many conversations are listed and that they are kept for 90 days.
+
+#### Scenario: Running conversation in the list
+- **WHEN** a conversation's latest turn is running and another page of the console is open
+- **THEN** its row shows the starter's name, the time and a Running badge
+
+#### Scenario: One conversation
+- **WHEN** only one conversation exists
+- **THEN** the search box is shown
+
+#### Scenario: Quoted first question
+- **WHEN** a first question was pasted with quote marks around it
+- **THEN** the sidebar title leaves the quote marks out
+
+### Requirement: Suggested follow-ups above the question box
+When the latest answer completed normally, its Follow-ups (at most three, as plain text) SHALL be shown
+as buttons above the question box, and not inside the answer. Clicking one SHALL put the question in the
+box without sending it; each SHALL also have an Ask button that sends it straight away. Each question in
+an answer's Questions card SHALL have the same Ask button. An Ask button SHALL carry the question as plain
+text only, and SHALL be disabled while a turn runs. The follow-ups shown SHALL be those of the most
+recent completed answer that has any, so a running or failed turn, or a newer answer without
+follow-ups, does not hide them; one already asked since that answer SHALL stay, marked asked.
+
+#### Scenario: Follow-ups stay while one is answered
+- **WHEN** the user asks one of two follow-ups and the answer is still running
+- **THEN** both still show, the asked one marked asked, and the other's Ask button disabled until the turn ends
+
+#### Scenario: Ask a suggested question straight away
+- **WHEN** the user clicks Ask on a follow-up or on a question in a Questions card
+- **THEN** that question is sent as if typed and Enter pressed
+
+#### Scenario: Follow-ups shown
+- **WHEN** an answer ends with two follow-ups
+- **THEN** two buttons with those questions show above the box, and the answer body does not repeat them
+
+#### Scenario: Latest turn failed
+- **WHEN** the latest turn failed after an answer with follow-ups
+- **THEN** the follow-ups still show and the failed question is back in the box
+
+#### Scenario: More than three
+- **WHEN** an answer has four follow-ups
+- **THEN** only the first three show
+
+#### Scenario: Markup in a follow-up
+- **WHEN** a follow-up contains markup
+- **THEN** its button shows plain text only
+
+#### Scenario: Answer without the layout
+- **WHEN** an answer has none of the layout's headings
+- **THEN** it renders as plain text, with no stat cards
+
+#### Scenario: Key figures bullet of another shape
+- **WHEN** a Key figures bullet is not "Label: value"
+- **THEN** it stays a bullet and the other figures still show as stat cards
+
+#### Scenario: Answer tries to style the page
+- **WHEN** an answer contains its own class or data-controller attribute
+- **THEN** the attribute is stripped and only the application's own classes appear
+
 ### Requirement: Data is read from the replica only, read-only
 The assistant's data lookups SHALL go only to the read replica, through a login that can only read. The
 data tool SHALL refuse to run when it is connected to a database that is not read-only, or when its login

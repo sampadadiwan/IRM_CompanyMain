@@ -1,0 +1,126 @@
+import { Controller } from "@hotwired/stimulus"
+
+// Chat kit message thread (ai_chat/_thread). The screen's back end replaces message elements over
+// Turbo streams while an answer streams in; this controller keeps the view usable around that:
+//   - follows the newest text while the reader is at the bottom, and offers "Jump to latest"
+//     when they have scrolled up to read instead of yanking them down;
+//   - keeps an open "steps" list or "Where this comes from" section open across the re-renders;
+//   - right-aligns amount cells in answer tables;
+//   - shades the header once the thread is scrolled, and copies a message on its Copy button;
+//   - sends a suggested question straight away from its Ask button.
+const NEAR_BOTTOM_PX = 80
+// A cell that is only an amount or a number: ₹/$ signs, minus signs, digits, separators, %.
+const NUMERIC_CELL = /^[-−–+(]?\s*[₹$€£]?\s*[-−]?\s*[\d.,]+\s*(%|cr|crore|lakh|L)?\)?$/i
+
+export default class extends Controller {
+  static targets = ["scroller", "jump", "header"]
+
+  connect() {
+    this.following = true
+    this.openSteps = new Set()
+    this.decorate()
+    this.scrollToBottom()
+    // Turbo stream replaces land as child-list changes inside the scroller.
+    this.observer = new MutationObserver(() => this.changed())
+    this.observer.observe(this.scrollerTarget, { childList: true, subtree: true })
+    // Remember which collapsible sections are open so a re-render does not collapse them.
+    this.scrollerTarget.addEventListener("toggle", this.rememberSteps, true)
+  }
+
+  disconnect() {
+    this.observer?.disconnect()
+    this.scrollerTarget.removeEventListener("toggle", this.rememberSteps, true)
+  }
+
+  rememberSteps = (event) => {
+    const id = event.target.closest(".aic-message")?.id
+    const kind = ["aic-steps", "aic-sources"].find((k) => event.target.matches(`details.${k}`))
+    if (!id || !kind) return
+    const key = `${id} details.${kind}`
+    event.target.open ? this.openSteps.add(key) : this.openSteps.delete(key)
+  }
+
+  changed() {
+    // Our own DOM edits also trigger the observer; pause it while decorating.
+    this.observer.disconnect()
+    this.decorate()
+    this.observer.observe(this.scrollerTarget, { childList: true, subtree: true })
+    if (this.following) this.scrollToBottom()
+    else this.jumpTarget.classList.remove("d-none")
+  }
+
+  onScroll() {
+    const el = this.scrollerTarget
+    this.following = el.scrollHeight - el.scrollTop - el.clientHeight < NEAR_BOTTOM_PX
+    if (this.following) this.jumpTarget.classList.add("d-none")
+    // A faint header shadow only once content has scrolled under it.
+    if (this.hasHeaderTarget) this.headerTarget.classList.toggle("aic-scrolled", el.scrollTop > 4)
+  }
+
+  // H16/H17 — an Ask button on a suggested question: put it in the box and send it, as Enter would.
+  // While a turn runs the composer shows Stop, not Ask, so nothing is sent (the server refuses too, E4).
+  askNow(event) {
+    // The thread's own question box (the composer sits inside the thread element).
+    const box = this.element.querySelector("[data-ai-chat-composer-target='question']")
+    const ask = this.element.querySelector("[data-ai-chat-composer-target='ask']")
+    if (!box || !ask || ask.disabled) return
+    box.value = event.currentTarget.dataset.prompt || ""
+    box.form.requestSubmit(ask)
+  }
+
+  // A suggestion's text (ai_chat/_suggestions): put it in the box to edit first; nothing is sent (H11).
+  fill(event) {
+    const box = this.element.querySelector("[data-ai-chat-composer-target='question']")
+    if (!box) return
+    box.value = event.currentTarget.dataset.prompt || ""
+    box.dispatchEvent(new Event("input", { bubbles: true }))
+    box.focus()
+    box.setSelectionRange(box.value.length, box.value.length)
+  }
+
+  // Copies a message's text (its markdown, for answers) and flashes a check on the button.
+  async copy(event) {
+    const button = event.currentTarget
+    try {
+      await navigator.clipboard.writeText(button.dataset.copyText || "")
+    } catch {
+      return // clipboard blocked (insecure origin or denied): leave the icon as it was
+    }
+    const icon = button.querySelector("i")
+    icon.className = "ti ti-check"
+    setTimeout(() => { icon.className = "ti ti-copy" }, 1500)
+  }
+
+  jumpToLatest() {
+    this.following = true
+    this.scrollToBottom()
+    this.jumpTarget.classList.add("d-none")
+  }
+
+  scrollToBottom() {
+    this.scrollerTarget.scrollTop = this.scrollerTarget.scrollHeight
+  }
+
+  decorate() {
+    // Re-open sections the reader had open before the message was re-rendered.
+    this.openSteps.forEach((key) => {
+      const details = this.scrollerTarget.querySelector(`#${key}`)
+      if (details && !details.open) details.open = true
+    })
+
+    this.scrollerTarget.querySelectorAll(".aic-answer table:not([data-decorated])").forEach((table) => {
+      // AiChatHelper already wraps the table in a scrolling card; only alignment is left.
+      table.dataset.decorated = "true"
+
+      // Right-align a column when every non-empty body cell in it is a number.
+      const rows = Array.from(table.querySelectorAll("tbody tr"))
+      const columns = Math.max(0, ...rows.map((r) => r.cells.length))
+      for (let i = 0; i < columns; i++) {
+        const cells = rows.map((r) => r.cells[i]).filter((c) => c && c.textContent.trim() !== "")
+        if (cells.length === 0 || !cells.every((c) => NUMERIC_CELL.test(c.textContent.trim()))) continue
+        cells.forEach((c) => c.classList.add("text-end"))
+        table.querySelector("thead tr")?.cells[i]?.classList.add("text-end")
+      }
+    })
+  }
+}

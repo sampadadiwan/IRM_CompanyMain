@@ -1,0 +1,47 @@
+<%# The conversation list: New chat, search, rows grouped by when they last changed, and a count line.
+    Locals as ai_chat/_layout, plus window (Boolean): in the floating window the list is a view of its own
+    (Conversations), so it gets a Back to chat button. %>
+<aside class="aic-sidebar d-flex flex-column bg-body-tertiary border-end">
+  <div class="d-flex align-items-center gap-1 p-2">
+    <%= link_to new_url, class: "btn btn-primary fw-normal flex-grow-1", id: ids[:new], title: "New chat (Ctrl+K)",
+                data: { ai_chat_sidebar_target: "newChat", turbo_frame: new_frame } do %>
+      <i class="ti ti-edit"></i>New chat
+    <% end %>
+    <% if local_assigns[:window] %>
+      <button type="button" class="btn btn-sm aic-icon-btn aic-window-back" title="Back to chat" aria-label="Back to chat"
+              data-action="ai-chat-window#toggleList">
+        <i class="ti ti-arrow-back-up"></i>
+      </button>
+    <% else %>
+      <button type="button" class="btn btn-sm aic-icon-btn d-none d-lg-inline-flex" title="Hide sidebar"
+              data-action="ai-chat-sidebar#toggle">
+        <i class="ti ti-layout-sidebar-left-collapse"></i>
+      </button>
+    <% end %>
+  </div>
+  <%# E45 — always shown. Filters the list in the browser; the list is capped at AiChatRows::LIMIT. %>
+  <div class="px-2 pb-1">
+    <div class="input-group input-group-sm">
+      <span class="input-group-text bg-body border-end-0"><i class="ti ti-search text-body-secondary"></i></span>
+      <input type="search" class="form-control border-start-0 shadow-none" id="<%= ids[:search] %>"
+             placeholder="Search chats" aria-label="Search chats"
+             data-action="input->ai-chat-sidebar#filter">
+    </div>
+  </div>
+  <nav class="flex-grow-1 overflow-auto px-2 pb-2" id="<%= ids[:list] %>" data-ai-chat-sidebar-target="list">
+    <% if rows.empty? %>
+      <p class="text-body-secondary small px-3 mb-0" data-ai-chat-sidebar-target="empty">No conversations yet.</p>
+    <% else %>
+      <%# E21 — newest first, grouped ChatGPT-style by when each conversation last changed. %>
+      <% rows.rows.group_by { |row| ai_chat_group(row.updated_at) }.each do |label, group| %>
+        <div class="small fw-normal text-body-secondary px-3 pt-3 pb-1" data-ai-chat-sidebar-target="group" data-group="<%= label %>"><%= label %></div>
+        <% group.each do |row| %>
+          <%= render "ai_chat/conversation", row: row, frame: frame, active: row.id == active_id %>
+        <% end %>
+      <% end %>
+    <% end %>
+  </nav>
+  <div class="border-top small text-body-secondary px-3 py-2">
+    <%= [rows.count_label, footer_note].compact_blank.join(" · ") %>
+  </div>
+</aside>

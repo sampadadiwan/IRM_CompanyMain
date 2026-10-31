@@ -1,0 +1,14 @@
+<%# What to do next: 2–4 numbered actions. %>
+<%= render layout: "assistants/presentation_templates/frame", locals: { slide:, index:, total:, record:, date:, kicker: "Next steps" } do %>
+  <ol class="cs-steps">
+    <% slide["steps"].first(4).each_with_index do |step, i| %>
+      <li>
+        <span class="cs-step-number"><%= i + 1 %></span>
+        <div>
+          <% if step["title"].present? %><div class="cs-card-title"><%= step["title"] %></div><% end %>
+          <div class="cs-card-text"><%= step["text"] %></div>
+        </div>
+      </li>
+    <% end %>
+  </ol>
+<% end %>
