@@ -1,0 +1,13 @@
+<%# The numbers that matter as tiles, each with its comparison and a tone (good, bad or neither). %>
+<%= render layout: "assistants/presentation_templates/frame", locals: { slide:, index:, total:, record:, date:, kicker: "Key figures" } do %>
+  <div class="cs-figures cs-cols-<%= [slide["figures"].size, 4].min %>">
+    <% slide["figures"].first(4).each do |figure| %>
+      <div class="cs-figure cs-tone-<%= figure["tone"] %>">
+        <span class="cs-icon cs-icon-tone"><i class="ti ti-<%= figure["icon"] %>"></i></span>
+        <div class="cs-figure-value"><%= figure["value"] %></div>
+        <div class="cs-figure-label"><%= figure["label"] %></div>
+        <% if figure["context"].present? %><div class="cs-figure-context"><%= figure["context"] %></div><% end %>
+      </div>
+    <% end %>
+  </div>
+<% end %>

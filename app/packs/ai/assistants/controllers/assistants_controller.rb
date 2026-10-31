@@ -92,15 +92,22 @@ class AssistantsController < ApplicationController
   def generate_slides
     authorize :assistant, :show?
 
-    @chat_id = params.require(:chat_id)
+    # X50 — only the user's own chat: a deck shows the chat's transcript, so never a colleague's or another
+    # entity's by id (the job reads the chat unscoped).
+    chat = Chat.find_by(id: params.require(:chat_id), user: current_user, entity_id: current_user.entity_id)
+    return head(:not_found) unless chat
+
+    @chat_id = chat.id
     force_generate = params[:generate] == 'true'
 
+    # A saved deck is redrawn from its blueprint with today's templates (no AI call) — H29.
     existing = (AiPresentation.find_by(chat_id: @chat_id, entity_id: current_user.entity_id) unless force_generate)
+    existing_html = SlideGeneratorService.new(chat_id: @chat_id).call if existing
 
     respond_to do |format|
       format.json do
         if existing
-          render json: { html: existing.content_html, status: "ready" }
+          render json: { html: existing_html, status: "ready" }
         else
           GenerateSlidesJob.perform_later(current_user.id, @chat_id, force_generate: force_generate)
           render json: { status: "queued" }, status: :accepted
@@ -109,7 +116,7 @@ class AssistantsController < ApplicationController
 
       format.html do
         if existing
-          @slides_html = existing.content_html
+          @slides_html = existing_html
         else
           GenerateSlidesJob.perform_later(current_user.id, @chat_id, force_generate: force_generate)
         end

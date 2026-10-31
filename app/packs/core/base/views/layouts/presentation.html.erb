@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html class="reveal-presentation">
   <head>
+    <%# Explicit, so ₹ and × survive a saved or printed deck (the HTTP header is not always there). %>
+    <meta charset="utf-8">
     <title><%= content_for?(:title) ? yield(:title) : "Presentation" %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <%= csrf_meta_tags %>
@@ -32,7 +34,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.2.1/theme/white.min.css" id="theme">
 
     <!-- Tabler Icons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.45.0/tabler-icons.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.50.0/dist/tabler-icons.min.css">
 
     <style>
       :root {
@@ -79,6 +81,91 @@
         --palette-text-muted: #94a3b8;
         --palette-border: #334155;
       }
+
+      /* ── AI Slides (assistants/presentation_templates): one frame, one type scale ─────────────── */
+      .cs-section { height: 100%; }
+      .cs-slide { display: flex; flex-direction: column; gap: 36px; width: 1920px; height: 1080px;
+                  padding: 72px 104px 44px; box-sizing: border-box; color: var(--palette-text); }
+      .cs-head { display: flex; align-items: center; gap: 28px; }
+      .cs-icon { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 76px;
+                 width: 76px; height: 76px; border-radius: 22px; font-size: 40px;
+                 background: var(--palette-surface); color: var(--palette-accent); border: 1px solid var(--palette-border); }
+      .cs-icon-sm { flex-basis: 48px; width: 48px; height: 48px; border-radius: 14px; font-size: 26px; margin-right: 16px; }
+      .cs-kicker { display: flex; align-items: center; font-size: 22px; color: var(--palette-text-muted); margin-bottom: 8px; }
+      .reveal .cs-title { font-size: 56px; font-weight: 600; color: var(--palette-primary); line-height: 1.15; }
+      .cs-body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; justify-content: center; }
+      .cs-takeaway { display: flex; gap: 22px; align-items: flex-start; padding: 26px 34px; border-radius: 18px;
+                     background: var(--palette-surface); border-left: 6px solid var(--palette-accent);
+                     font-size: 27px; line-height: 1.45; color: var(--palette-secondary); }
+      .cs-takeaway > i { font-size: 36px; color: var(--palette-accent); margin-top: 2px; }
+      .cs-takeaway strong { display: block; font-size: 20px; font-weight: 600; color: var(--palette-text-muted); margin-bottom: 4px; }
+      /* Right padding keeps the slide number clear of Reveal's arrows. */
+      .cs-foot { display: flex; justify-content: space-between; padding: 18px 120px 0 0; font-size: 19px;
+                 color: var(--palette-text-muted); border-top: 1px solid var(--palette-border); }
+
+      /* Tones: good news, bad news, neither */
+      .cs-tone-positive { --cs-tone: #059669; --cs-tone-bg: #ecfdf5; }
+      .cs-tone-negative { --cs-tone: #e11d48; --cs-tone-bg: #fff1f2; }
+      .cs-tone-neutral  { --cs-tone: var(--palette-accent); --cs-tone-bg: var(--palette-surface); }
+      .cs-icon-tone { color: var(--cs-tone); background: var(--cs-tone-bg); border-color: transparent; }
+
+      /* Title slide */
+      .cs-title-slide { justify-content: space-between; background: linear-gradient(120deg, var(--palette-surface), var(--palette-bg) 60%); }
+      .cs-title-grid { flex: 1 1 auto; display: grid; grid-template-columns: 1.35fr 1fr; gap: 80px; align-items: center; }
+      .reveal .cs-hero { font-size: 92px; font-weight: 600; line-height: 1.05; color: var(--palette-primary); margin: 18px 0 28px; }
+      .cs-subtitle { font-size: 32px; line-height: 1.45; color: var(--palette-secondary); max-width: 1000px; }
+      .cs-hero-figures { display: flex; flex-direction: column; gap: 22px; }
+      .cs-hero-figure { padding: 28px 34px; border-radius: 20px; background: var(--palette-bg); border: 1px solid var(--palette-border);
+                        border-left: 6px solid var(--palette-accent); box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05); }
+
+      /* Key figures */
+      .cs-figures { display: grid; gap: 28px; }
+      .cs-cols-1 { grid-template-columns: 1fr; } .cs-cols-2 { grid-template-columns: repeat(2, 1fr); }
+      .cs-cols-3 { grid-template-columns: repeat(3, 1fr); } .cs-cols-4 { grid-template-columns: repeat(4, 1fr); }
+      .cs-figure { padding: 34px; border-radius: 22px; background: var(--palette-bg); border: 1px solid var(--palette-border);
+                   border-top: 6px solid var(--cs-tone); box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05); }
+      .cs-figure .cs-icon { margin-bottom: 26px; }
+      .cs-figure-value { font-size: 64px; font-weight: 300; line-height: 1.1; color: var(--palette-primary); }
+      .cs-figure-label { font-size: 25px; margin-top: 10px; color: var(--palette-secondary); }
+      .cs-figure-context { font-size: 21px; margin-top: 8px; color: var(--palette-text-muted); }
+
+      /* Cards: insights, chart, table, comparison */
+      .cs-insights { display: grid; gap: 26px; }
+      .cs-card { display: flex; gap: 24px; padding: 30px 32px; border-radius: 22px; background: var(--palette-bg);
+                 border: 1px solid var(--palette-border); box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05); }
+      .cs-card-title { display: flex; align-items: center; font-size: 28px; font-weight: 600; color: var(--palette-primary); margin-bottom: 8px; }
+      .cs-card-text { font-size: 24px; line-height: 1.45; color: var(--palette-secondary); }
+      .cs-chart-grid { display: grid; grid-template-columns: 1.7fr 1fr; gap: 40px; height: 100%; align-items: stretch; }
+      .cs-chart-only { grid-template-columns: 1fr; }
+      .cs-chart-card { min-height: 0; }
+      .cs-chart-box { position: relative; width: 100%; height: 520px; }
+      .cs-notes { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; justify-content: center; gap: 22px; }
+      .cs-notes li { display: flex; gap: 14px; font-size: 25px; line-height: 1.45; color: var(--palette-secondary); }
+      .cs-notes li i { color: var(--palette-accent); font-size: 22px; margin-top: 8px; }
+      .cs-table-card { display: block; padding: 8px 12px; }
+      .cs-table { width: 100%; border-collapse: collapse; font-size: 23px; }
+      .cs-table th { text-align: left; font-weight: 600; font-size: 21px; color: var(--palette-text-muted);
+                     padding: 18px 20px; border-bottom: 2px solid var(--palette-border); }
+      .cs-table td { padding: 16px 20px; border-bottom: 1px solid var(--palette-border); color: var(--palette-secondary); }
+      .cs-table tr:last-child td { border-bottom: 0; }
+      .cs-table .cs-highlight { color: var(--palette-primary); font-weight: 600; background: var(--palette-surface); }
+      .cs-badge { display: inline-block; padding: 4px 14px; border-radius: 999px; font-size: 20px; color: var(--cs-tone); background: var(--cs-tone-bg); }
+      .cs-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+      .cs-compare-side { flex-direction: column; }
+      .cs-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 22px; }
+      /* Reveal indents lists (".reveal ol/ul { margin-left: … }"); the slides' own lists sit flush. */
+      .reveal .cs-steps, .reveal .cs-notes { display: flex; margin: 0; padding: 0; }
+      .cs-steps li { display: flex; gap: 26px; align-items: flex-start; padding: 26px 30px; border-radius: 20px;
+                     border: 1px solid var(--palette-border); background: var(--palette-bg); }
+      .cs-step-number { flex: 0 0 56px; width: 56px; height: 56px; border-radius: 50%; display: inline-flex; align-items: center;
+                        justify-content: center; font-size: 26px; font-weight: 600; color: #fff; background: var(--palette-accent); }
+
+      /* Regenerate (generate_slides): out of the way, hidden in print */
+      .cs-regenerate { position: fixed; top: 16px; right: 20px; z-index: 50; font: 500 14px/1 "Inter", sans-serif;
+                       padding: 10px 16px; border-radius: 999px; background: #fff; color: var(--palette-secondary);
+                       border: 1px solid var(--palette-border); box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08); text-decoration: none; }
+      .cs-regenerate:hover { color: var(--palette-accent); }
+      @media print { .cs-regenerate { display: none; } }
 
       /* Global resets and layout */
       .reveal {

@@ -657,6 +657,9 @@ Shared setup:
 | H24 | Checks | ✓ / ✗ bullets | renders | list group, failed checks first, marks as icons | Questions and answers | `ai_chat/widgets.feature` |
 | H25 | What to do | numbered steps | renders | numbered list group in a card | Questions and answers | `ai_chat/widgets.feature` |
 | H26 | Status badges | a table with a Status column | renders | known status words as coloured badges; other words and columns untouched | Questions and answers | `ai_chat/widgets.feature` |
+| H27 | AI Slides deck | a blueprint with one slide of each type | drawn for AX on 31/10/2026 | 7 slides, numbered 1 / 7…7 / 7, every content slide has "What this means", footer "AX · 31/10/2026", no old filler text | AI Slides | `ai_chat/slides.feature` |
+| H28 | Regenerate a deck | a saved deck | opens AI Slides | a Regenerate link for that chat (`generate=true`) | AI Slides | `ai_chat/slides.feature` |
+| H29 | Saved deck redrawn | a saved blueprint and stale saved HTML | opens AI Slides | drawn from the blueprint with today's templates, no AI call | AI Slides | `ai_chat/slides.feature` |
 | H12 | Maximise markup | window | renders | Maximise control and sidebar container present | Maximise the floating window | `ai_chat/floating_window.feature` |
 
 #### Edge Cases
@@ -686,6 +689,11 @@ Shared setup:
 | E52 | Unmarked checks | Checks bullets without ✓ / ✗ | renders | plain list, no card | Questions and answers | `ai_chat/widgets.feature` |
 | E53 | Widgets optional in the prompt | the layout instructions | read | "Most answers need none…", an example with no widget | Screens that use the shared chat | `ai_chat/widgets.feature` |
 | E54 | Widget usage logged | an answer with Summary, Verdict, Checks | logged | `[ai_chat] answer sections source=… sections=summary,verdict,checks` | Screens that use the shared chat | `ai_chat/widgets.feature` |
+| E55 | Empty slide skipped | an insights slide with no items + a key figures slide | drawn | 1 slide, numbered 1 / 1 | AI Slides | `ai_chat/slides.feature` |
+| E56 | Unknown icon or tone | icon `made-up`, tone `weird` | drawn | the slide type's icon (`bulb`), tone neutral | AI Slides | `ai_chat/slides.feature` |
+| E57 | Old slide types | hero, bullets, split_chart | drawn | title, insights, chart; `analysis` becomes the takeaway | AI Slides | `ai_chat/slides.feature` |
+| E58 | Slide brief | the brief | read | grounded numbers only, the amounts rule, a takeaway per slide, the icon list | AI Slides | `ai_chat/slides.feature` |
+| E59 | Saved slides without their type | old blueprint with no `template` keys (the old renderer deleted them) | drawn | types read from the fields: title, insights, chart, comparison | AI Slides | `ai_chat/slides.feature` |
 | E17 | Voice path | `/assistants/transcribe` (stubbed transcription "Call 3 status") | posts audio | kit question "Call 3 status" + pending | Enter sends | `ai_chat/assistants_page.feature` |
 
 #### Error Cases
@@ -708,6 +716,10 @@ Shared setup:
 | X44 | Asking an agent without access | another entity's user | posts a question | refused (Pundit), not a 500; nothing saved | Only the user's own conversations | `ai_chat/floating_window.feature` |
 | X45 | Record id links to its page | Console answer `[13573](/capital_remittances/13573)` | renders `:strict` | a link to the remittance, new tab | Questions and answers | `ai_chat/answer_rendering.feature` |
 | X46 | Other site paths stay text | `/users/sign_out`, `/funds/1/edit`, `/funds/abc` | renders `:strict` | plain text, no link | Questions and answers | `ai_chat/answer_rendering.feature` |
+| X47 | AI Slides opens | an assistant chat's AI Slides | opens | 200, the deck, no tear-sheet editor (the shared presentation layout built the editor's URL with no id) | AI Slides | `ai_chat/assistants_page.feature` |
+| X48 | Blueprint saved intact | a blueprint | drawn | every slide still names its template (drawing does not change it) | AI Slides | `ai_chat/slides.feature` |
+| X49 | Malformed blueprint | a stray string, a chart with string options and a string dataset | drawn | the chart and the valid slide draw; nothing raises | AI Slides | `ai_chat/slides.feature` |
+| X50 | A colleague's chat's slides | a colleague's `chat_id` | Priya opens AI Slides | 404, no deck queued (a deck shows the chat's transcript; found in review) | AI Slides | `ai_chat/slides.feature` |
 | E50 | Console asks for record links | the client brief | built | asks to link record ids, lists the allowed record pages | Questions and answers | `ai_chat/answer_rendering.feature` |
 | X9 | Feedback on another's message | Arjun PATCHes feedback for Priya's message | requests | refused as today | Rate down with a note | `ai_chat/customer_support.feature` |
 

@@ -11,6 +11,14 @@
   <%= turbo_stream_from([@slides_user, "assistant_slides", params[:chat_id].to_s]) %>
 <% end %>
 
+<% content_for :turbo_streams do %>
+  <%# Decks are saved once; Regenerate redraws this chat's deck with the current slide templates. %>
+  <%= link_to generate_slides_assistants_path(chat_id: params[:chat_id], generate: true), class: "cs-regenerate",
+              id: "slides-regenerate", data: { turbo: false } do %>
+    <i class="ti ti-refresh"></i> Regenerate
+  <% end %>
+<% end %>
+
 <% if defined?(@slides_html) && @slides_html.present? %>
   <%= @slides_html.html_safe %>
 <% else %>

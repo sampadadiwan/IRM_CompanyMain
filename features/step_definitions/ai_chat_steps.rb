@@ -1021,3 +1021,149 @@ Then('logging it for {string} writes {string}') do |source, line|
   AiChatAnswerLayout.log_usage(source, @answer_markdown)
   expect(logged).to include(line)
 end
+
+# ---- AI Slides deck (features/ai_chat/slides.feature) --------------------------------------------------------
+
+FULL_BLUEPRINT = [
+  { "template" => "title", "title" => "AX: steady value", "subtitle" => "Where it stands.",
+    "figures" => [{ "value" => "₹2,34,216", "label" => "Current FMV" }] },
+  { "template" => "key_figures", "title" => "FMV above cost", "icon" => "chart-dots", "takeaway" => "In profit on paper.",
+    "figures" => [{ "value" => "₹2,25,665", "label" => "Cost", "icon" => "wallet", "tone" => "neutral" }] },
+  { "template" => "chart", "title" => "Revenue fell", "takeaway" => "Volume, not margin.", "notes" => ["Peak in Q3 2024."],
+    "chart_config" => { "type" => "line", "data" => { "labels" => %w[Q1 Q2], "datasets" => [{ "label" => "Revenue", "data" => [1, 2] }] } } },
+  { "template" => "insights", "title" => "What the numbers say", "takeaway" => "Healthy returns.",
+    "items" => [{ "title" => "Strong returns", "text" => "IRR 72%.", "icon" => "trending-up", "tone" => "positive" }] },
+  { "template" => "table", "title" => "Holdings", "takeaway" => "One below cost.", "columns" => %w[Holding Status],
+    "rows" => [%w[Infosys Active]], "highlight" => "Holding" },
+  { "template" => "comparison", "title" => "Capital vs operations", "takeaway" => "Valuation lags.",
+    "left" => { "title" => "Capital", "items" => ["Cost ₹2,25,665"] }, "right" => { "title" => "Operations", "items" => ["Revenue ₹12.6 Cr"] } },
+  { "template" => "next_steps", "title" => "What to check next", "takeaway" => "Nothing changes today.",
+    "steps" => [{ "title" => "Ask for the Q1 note", "text" => "From AX." }] }
+].freeze
+
+Given('a slide blueprint with one slide of each type') do
+  @blueprint = FULL_BLUEPRINT.map(&:deep_dup)
+end
+
+Given('a slide blueprint with an insights slide that has no items and a key figures slide') do
+  @blueprint = [{ "template" => "insights", "title" => "Empty", "items" => [] }, FULL_BLUEPRINT[1].deep_dup]
+end
+
+Given('a slide blueprint with an insights slide using the icon {string} and tone {string}') do |icon, tone|
+  @blueprint = [{ "template" => "insights", "title" => "Fallbacks", "icon" => icon, "takeaway" => "x",
+                  "items" => [{ "title" => "One", "text" => "Point.", "icon" => icon, "tone" => tone }] }]
+end
+
+Given('an old-style slide blueprint with hero, bullets and split_chart slides') do
+  @blueprint = [
+    { "template" => "hero", "title" => "AX overview", "subtitle" => "Old deck", "icon" => "business-plan" },
+    { "template" => "bullets", "title" => "Summary", "items" => [{ "text" => "IRR 72%.", "icon" => "trending-up" }] },
+    { "template" => "split_chart", "title" => "Revenue", "analysis" => "Revenue fell 62% in Q1 2025.",
+      "chart_config" => { "type" => "bar", "data" => { "labels" => %w[Q4 Q1], "datasets" => [{ "data" => [99, 38] }] } } }
+  ]
+end
+
+When('the blueprint is drawn for {string} on {string}') do |record, date|
+  @deck = Nokogiri::HTML5.fragment(SlideGeneratorService.render_blueprint(@blueprint, record:, date:))
+end
+
+Then('the deck has {int} slides of types {string}') do |count, types|
+  slides = @deck.css("section[data-slide-template]")
+  expect(slides.size).to eq(count)
+  expect(slides.pluck("data-slide-template").join(", ")).to eq(types)
+end
+
+Then('the slides are numbered {string} to {string}') do |first, last|
+  numbers = @deck.css("[data-slide-number]").map { |n| n.text.strip }
+  expect([numbers.first, numbers.last]).to eq([first, last])
+end
+
+Then('every slide but the title says what it means') do
+  @deck.css("section[data-slide-template]").reject { |s| s["data-slide-template"] == "title" }.each do |slide|
+    expect(slide.at_css("[data-slide-takeaway]")&.text).to include("What this means")
+  end
+end
+
+Then('the deck has none of the old filler text') do
+  text = @deck.text
+  ["Point 1", "AMBITION", "Actionable insight", "STRATEGIC OUTLOOK", "Automated insight", "Option A", "VS"].each do |filler|
+    expect(text).not_to include(filler)
+  end
+end
+
+Then('the footer reads {string}') do |footer|
+  expect(@deck.css(".cs-foot span").map { |s| s.text.strip }).to include(footer)
+end
+
+Then('the slide\'s icon is {string} and its card\'s tone is {string}') do |icon, tone|
+  expect(@deck.at_css(".cs-head .cs-icon i")["class"]).to eq("ti ti-#{icon}")
+  card = @deck.at_css(".cs-card")
+  expect(card["class"]).to include("cs-tone-#{tone}")
+  expect(card.at_css(".cs-icon i")["class"]).to eq("ti ti-#{icon}")
+end
+
+Then('the chart slide says what it means from its old analysis') do
+  chart = @deck.at_css("section[data-slide-template='chart']")
+  expect(chart.at_css("[data-slide-takeaway]").text).to include("Revenue fell 62% in Q1 2025.")
+end
+
+When('the slide brief is read') do
+  @brief = SlideGeneratorService::SYSTEM_PROMPT.squish
+end
+
+Then('it says {string}') do |text|
+  expect(@brief).to include(text)
+end
+
+Then('it lists the icon {string}') do |icon|
+  expect(@brief).to include(icon)
+end
+
+Then('every slide in the blueprint still names its template') do
+  expect(@blueprint.pluck("template")).to eq(FULL_BLUEPRINT.pluck("template"))
+end
+
+Then('the page offers Regenerate for that chat') do
+  expect(page).to have_css("a#slides-regenerate[href*='generate=true'][href*='chat_id=#{@slides_chat.id}']", text: "Regenerate")
+end
+
+Given('a slide blueprint with a stray string, a chart with bad options and datasets, and a key figures slide') do
+  @blueprint = ["not a slide",
+                { "template" => "chart", "title" => "Odd chart", "takeaway" => "x",
+                  "chart_config" => { "type" => "bar", "options" => "nope", "data" => { "labels" => ["A"], "datasets" => ["oops", { "data" => [1] }] } } },
+                { "template" => "chart", "title" => "Chart with string data", "chart_config" => { "type" => "bar", "data" => "oops" } },
+                FULL_BLUEPRINT[1].deep_dup]
+end
+
+Given('a saved old-style blueprint with no template keys: a title, bullets, a chart and a comparison') do
+  # The shape chat decks were saved in before the redesign (the old renderer deleted "template").
+  @blueprint = [
+    { "title" => "AX overview", "subtitle" => "Old deck", "icon" => "business-plan" },
+    { "title" => "Summary", "items" => [{ "text" => "IRR 72%." }] },
+    { "title" => "Revenue", "analysis" => "Revenue fell.", "icon" => "chart-bar",
+      "chart_config" => { "type" => "bar", "data" => { "labels" => %w[Q4 Q1], "datasets" => [{ "data" => [99, 38] }] } } },
+    { "title" => "Then vs now", "left_col" => { "title" => "Then", "items" => ["a"] }, "right_col" => { "title" => "Now", "items" => ["b"] } }
+  ]
+end
+
+When('the chat\'s slides are generated without forcing') do
+  # A saved blueprint (and stale saved HTML): no AI call is stubbed, so one would fail the step.
+  AiPresentation.find_by!(chat_id: @slides_chat.id).update!(blueprint: FULL_BLUEPRINT.to_json, content_html: "<section>stale</section>")
+  expect(LlmService).not_to receive(:ruby_llm_chat)
+  @deck = Nokogiri::HTML5.fragment(SlideGeneratorService.new(chat_id: @slides_chat.id).call)
+end
+
+Then('the slides are drawn from the saved blueprint with the current templates') do
+  expect(@deck.css("section[data-slide-template]").size).to eq(FULL_BLUEPRINT.size)
+  expect(@deck.text).not_to include("stale")
+end
+
+When('Priya opens AI Slides for that colleague\'s chat') do
+  # Any job queued here would be a deck made from the colleague's transcript.
+  expect(GenerateSlidesJob).not_to receive(:perform_later)
+  visit generate_slides_assistants_path(chat_id: @colleague_chat.id)
+end
+
+Then('the slides page is not found and no deck is queued') do
+  expect(page.status_code).to eq(404)
+end

@@ -147,3 +147,16 @@
 - [x] 8.5 Write `features/ai_chat/widgets.feature` and run it with the kit, Console, CS, LP and assistant
       features — 326/326.
 
+## 9. AI Slides redesign (added at the user's request)
+
+- [x] 9.1 `SlideGeneratorService`: a new brief (5–8 slides, title → key figures → insights/chart → table or
+      comparison → next steps; grounded numbers; the amounts rule; a takeaway per slide; an icon list) and
+      `render_blueprint`, which normalises each slide (legacy names and saved blueprints without a
+      `template` key, icon and tone allow-lists, empty slides dropped) without changing the blueprint.
+      Verify: E55–E59, X48, X49.
+- [x] 9.2 Templates `title, key_figures, insights, chart, table, comparison, next_steps` on one frame
+      (`_frame`: icon, title, body, "What this means", footer record · date · n / total); filler text removed;
+      styles in the presentation layout on its palette variables. Verify: H27.
+- [x] 9.3 Saved decks are redrawn from their blueprint (no AI call); Regenerate makes a new one. Tabler
+      icons load (the old CDN URL 404'd); `<meta charset>` so ₹ and × survive. AI Slides only for
+      the user's own chat (found in review). Verify: H28, H29, X50.
