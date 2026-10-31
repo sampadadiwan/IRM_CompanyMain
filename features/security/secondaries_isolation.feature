@@ -298,9 +298,9 @@ Feature: Secondaries isolation - 2026-10 security review
     And no seller or buyer PAN or bank account is in the response
     And the RM "Rex" may still open the sale
 
-  # C4-RM-H — Happy path: the owner-only rule still lets the sale's company admin download the sale sheet.
-  # Checked on the policy, not the request: download.xlsx.axlsx calls SecondarySale#interest_allocation_quantity,
-  # a column dropped in Oct 2024, so the sheet raises for every user (nothing in the UI links to it).
+  # C4-RM-H — Happy path: the owner-only rule still lets the sale's company admin download the sale sheet,
+  # and the sheet renders (it used to raise on the dropped interest_allocation_quantity / offer.interest)
   @security @rack_test
   Scenario: C4-RM-H The sale's company admin may download the sale sheet
-    Then the sale's company admin may download the sale sheet
+    When the sale's company admin downloads the sale sheet as xlsx
+    Then the sale sheet lists the approved offer with its seller's PAN

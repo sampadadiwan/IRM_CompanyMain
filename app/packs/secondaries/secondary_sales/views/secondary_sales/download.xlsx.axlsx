@@ -22,7 +22,9 @@ wb.styles do |s|
     sheet.add_row ["Final Price", @secondary_sale.final_price], style: wrap_text
     allocation_percentage = @secondary_sale.allocation_percentage < 1 ? 100 : (1.0 / @secondary_sale.allocation_percentage * 100).round(2)
     sheet.add_row ["Interest Allocation %", allocation_percentage], style: wrap_text
-    sheet.add_row ["Interest Allocation Quantity", @secondary_sale.interest_allocation_quantity], style: wrap_text
+    # interest_allocation_quantity was dropped (71d52145da): each allocation pairs one offer with one
+    # interest, so the sale's allocation_quantity is the allocated quantity on both sides
+    sheet.add_row ["Interest Allocation Quantity", @secondary_sale.allocation_quantity], style: wrap_text
     allocation_percentage = @secondary_sale.allocation_percentage > 1 ? 100 : (@secondary_sale.allocation_percentage * 100).round(2)
     sheet.add_row ["Offer Allocation %", allocation_percentage], style: wrap_text
     sheet.add_row ["Offer Allocation Quantity", @secondary_sale.allocation_quantity], style: wrap_text
@@ -42,8 +44,12 @@ wb.add_worksheet(name: "Offers") do |sheet|
                  "Verified", "Comments", "SPA File Name"] + custom_headers
 
   # Create entries for each offer
-  @secondary_sale.offers.approved.includes(:user, :entity, investor: :investor_entity).find_each do |o|
+  @secondary_sale.offers.approved.includes(:user, :entity, investor: :investor_entity, interests: :interest_entity).find_each do |o|
     custom_field_values = get_custom_values(o, form_type, custom_field_names)
+    # An offer reaches its buyers through its allocations (Offer has_many :interests, through:
+    # :allocations; the old single offer.interest no longer exists). One cell per field, buyers joined.
+    buyers = o.interests.to_a
+    buyer_values = ->(&value) { buyers.map(&value).compact_blank.uniq.join("; ") }
 
     row = sheet.add_row ["Link", o.user&.full_name, o.investor&.investor_name,
                          custom_format_number(o.quantity, params), o.percentage, o.final_price,
@@ -51,8 +57,8 @@ wb.add_worksheet(name: "Offers") do |sheet|
                          o.allocation_quantity, money_to_currency(o.allocation_amount, params), o.approved,
                          o.full_name, o.PAN, o.address,
                          o.bank_account_number, o.ifsc_code,
-                         o.interest&.interest_entity&.name, o.interest&.PAN, o.interest&.buyer_entity_name,
-                         o.interest&.address, o.interest&.contact_name, o.interest&.email,
+                         buyer_values.call { _1.interest_entity&.name }, buyer_values.call(&:PAN), buyer_values.call(&:buyer_entity_name),
+                         buyer_values.call(&:address), buyer_values.call(&:contact_name), buyer_values.call(&:email),
                          o.verified, o.comments, "#{o.id}.pdf"] + custom_field_values
 
     sheet.add_hyperlink location: offer_url(o), ref: row.cells.first

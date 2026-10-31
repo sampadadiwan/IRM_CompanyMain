@@ -67,10 +67,24 @@ Then('the RM {string} may still open the sale') do |name|
   expect(Pundit.policy(sec_rms.fetch(name), @sale).show?).to be(true)
 end
 
-Then("the sale's company admin may download the sale sheet") do
-  # The owner-only rule still admits the sale's own firm. Checked on the policy: the sheet's template
-  # (download.xlsx.axlsx) raises before rendering for every user - see the scenario's comment
-  expect(Pundit.policy(@user, @sale).download?).to be(true)
+When("the sale's company admin downloads the sale sheet as xlsx") do
+  # The owner-only rule still admits the sale's own firm (@user is the sale's company admin)
+  sr_sign_in(@user)
+  sr_request(:get, download_secondary_sale_path(@sale, format: :xlsx))
+end
+
+Then("the sale sheet lists the approved offer with its seller's PAN") do
+  # The download rendered (200) and is a real workbook whose Offers sheet carries the approved offer
+  expect(page.status_code).to eq(200)
+  offer = @sale.offers.approved.first
+  file = Tempfile.new(["sale_sheet", ".xlsx"], binmode: true)
+  file.write(page.body)
+  file.flush
+  offers_sheet = Roo::Excelx.new(file.path).sheet("Offers")
+  cells = (1..offers_sheet.last_row).flat_map { |row| offers_sheet.row(row) }.map(&:to_s)
+  expect(cells).to include(offer.PAN)
+ensure
+  file&.close!
 end
 
 # ==== H19 follow-up — EOI approval ============================================================
