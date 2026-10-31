@@ -5,12 +5,9 @@
   turn_status = metadata["turn_status"]
   running = %w[queued running].include?(turn_status)
   steps = Array(metadata["progress"])
-  # Ended turns other than a normal answer get a status badge (theme colours only).
-  badge = {
-    "stopped" => ["secondary", "ti-player-stop", "Stopped"],
-    "failed" => ["danger", "ti-alert-circle", "Not answered"],
-    "refused" => ["danger", "ti-lock", "Access ended"]
-  }[turn_status]
+  # Ended turns other than a normal answer get a status badge (theme colours only); a running
+  # turn shows its progress line instead.
+  badge = (SupportConsoleHelper::STATUS_BADGES[turn_status] unless running)
   # The placeholder text the controller stores before the first streamed chunk.
   answer_text = content unless content.blank? || content == "Working…" || content == "…"
   # X23 — a follow-up may come from another support user than the conversation's starter.

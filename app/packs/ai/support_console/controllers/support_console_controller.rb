@@ -37,6 +37,8 @@ class SupportConsoleController < ApplicationController
     @entities = pickable_entities
     @conversations = conversations_for(@entity)
     @first_questions = first_questions(@conversations)
+    # H15 — each row's status badge comes from its latest answer.
+    @latest_statuses = latest_statuses(@conversations)
     # X3 — a session is only found through this client and the console's agent, never by id alone.
     @session = find_session(@entity, params[:session_id]) if params[:session_id].present?
   end
@@ -184,6 +186,17 @@ class SupportConsoleController < ApplicationController
     first_ids = AgentChatMessage.where(agent_chat_session_id: conversations.map(&:id), role: "user")
                                 .group(:agent_chat_session_id).minimum(:id)
     AgentChatMessage.where(id: first_ids.values).pluck(:agent_chat_session_id, :content).to_h
+  end
+
+  # The turn status of each conversation's latest answer, in two small queries (one row per conversation).
+  #
+  # @param conversations [ActiveRecord::Relation<AgentChatSession>]
+  # @return [Hash{Integer => String}] session id => turn_status ("running", "failed", …)
+  def latest_statuses(conversations)
+    last_ids = AgentChatMessage.where(agent_chat_session_id: conversations.map(&:id), role: "assistant")
+                               .group(:agent_chat_session_id).maximum(:id)
+    AgentChatMessage.where(id: last_ids.values).pluck(:agent_chat_session_id, :metadata)
+                    .to_h { |session_id, metadata| [session_id, metadata&.dig("turn_status")] }
   end
 
   # @param entity [Entity]

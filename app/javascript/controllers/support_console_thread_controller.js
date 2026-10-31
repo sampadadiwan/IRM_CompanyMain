@@ -6,7 +6,8 @@ import { Controller } from "@hotwired/stimulus"
 //     when they have scrolled up to read instead of yanking them down;
 //   - keeps an open "steps" list or "Where this comes from" section open across the re-renders;
 //   - right-aligns amount cells in answer tables;
-//   - shades the header once the thread is scrolled, and copies a message on its Copy button.
+//   - shades the header once the thread is scrolled, and copies a message on its Copy button;
+//   - sends a suggested question straight away from its Ask button.
 const NEAR_BOTTOM_PX = 80
 // A cell that is only an amount or a number: ₹/$ signs, minus signs, digits, separators, %.
 const NUMERIC_CELL = /^[-−–+(]?\s*[₹$€£]?\s*[-−]?\s*[\d.,]+\s*(%|cr|crore|lakh|L)?\)?$/i
@@ -54,6 +55,16 @@ export default class extends Controller {
     if (this.following) this.jumpTarget.classList.add("d-none")
     // A faint header shadow only once content has scrolled under it.
     if (this.hasHeaderTarget) this.headerTarget.classList.toggle("sc-scrolled", el.scrollTop > 4)
+  }
+
+  // H16/H17 — an Ask button on a suggested question: put it in the box and send it, as Enter would.
+  // While a turn runs the composer shows Stop, not Ask, so nothing is sent (the server refuses too, E4).
+  askNow(event) {
+    const box = document.getElementById("support-console-question")
+    const ask = document.getElementById("support-console-ask")
+    if (!box || !ask || ask.disabled) return
+    box.value = event.currentTarget.dataset.prompt || ""
+    box.form.requestSubmit(ask)
   }
 
   // Copies a message's text (its markdown, for answers) and flashes a check on the button.

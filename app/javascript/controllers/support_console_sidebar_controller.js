@@ -60,25 +60,35 @@ export default class extends Controller {
     let today = this.groupTargets.find((g) => g.dataset.group === "Today")
     if (!today) {
       today = document.createElement("div")
-      today.className = "text-muted small px-3 pt-3 pb-1"
+      today.className = "small fw-normal text-body-secondary px-3 pt-3 pb-1"
       today.dataset.supportConsoleSidebarTarget = "group"
       today.dataset.group = "Today"
       today.textContent = "Today"
       this.listTarget.prepend(today)
     }
 
-    // Same markup as the server-rendered rows in show.html.erb.
+    // Same markup as support_console/_conversation. No status badge: the row is the open
+    // conversation, whose thread shows its status (the CSS hides an open row's badge anyway).
+    const title = (chat.dataset.firstQuestion || "").trim().replace(/^["'“‘]+/, "").replace(/["'”’]+$/, "") || "New conversation"
     const row = document.createElement("a")
     row.href = chat.dataset.sessionUrl
-    row.className = "sc-conversation d-block px-3 py-2 rounded-3 text-truncate"
-    row.title = chat.dataset.sessionTitle || ""
+    row.className = "sc-conversation d-block fw-normal px-3 py-2 rounded-3"
+    row.title = title
     row.dataset.supportConsoleSidebarTarget = "conversation"
     row.dataset.turboFrame = "support-console-thread"
     row.dataset.sessionId = chat.dataset.sessionId
     const text = document.createElement("span")
+    text.className = "d-block text-truncate"
     text.dataset.role = "first-question"
-    text.textContent = chat.dataset.firstQuestion || "New conversation"
-    row.append(text)
+    text.textContent = title
+    const meta = document.createElement("span")
+    meta.className = "d-flex align-items-center gap-2 small text-body-secondary"
+    meta.dataset.role = "meta"
+    const who = document.createElement("span")
+    who.className = "text-truncate"
+    who.textContent = chat.dataset.sessionMeta || ""
+    meta.append(who)
+    row.append(text, meta)
     today.after(row)
   }
 

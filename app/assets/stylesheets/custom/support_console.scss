@@ -24,17 +24,23 @@
   // ── Sidebar ────────────────────────────────────────────────────────────────
   .sc-sidebar { width: 280px; flex: 0 0 280px; }
 
-  .sc-new, .sc-conversation {
+  // Conversation rows (support_console/_conversation): regular weight throughout, the question at
+  // 0.875rem and the asker/time line below it smaller. The open row is tinted with the theme's
+  // primary and marked by an accent on its left edge.
+  .sc-conversation {
+    font-size: 0.875rem;
     color: var(--bs-body-color);
     text-decoration: none;
+    border-left: 3px solid transparent;
+    [data-role="meta"] { font-size: 0.75rem; }
     &:hover { background: var(--bs-secondary-bg); color: var(--bs-body-color); }
-  }
-  .sc-conversation.active { background: var(--bs-secondary-bg); }
-
-  .sc-search {
-    background: var(--bs-body-bg);
-    border: 1px solid var(--bs-border-color);
-    input::placeholder { color: var(--bs-secondary-color); }
+    &.active {
+      background: var(--bs-primary-bg-subtle);
+      color: var(--bs-primary-text-emphasis);
+      border-left-color: var(--bs-primary);
+    }
+    // The open conversation's thread shows its status live; a badge here could be stale.
+    &.active [data-role="status"] { display: none; }
   }
 
   // Hidden sidebar (support_console_sidebar_controller): the thread takes the full width and
@@ -46,12 +52,17 @@
   }
 
   // ── Header ─────────────────────────────────────────────────────────────────
-  // Flat until the thread scrolls under it, then a hairline shadow.
+  // Flat until the thread scrolls under it, then a hairline shadow. One font across the bar: the
+  // breadcrumb, client switcher, Read-only and machine badges and Start/Stop all take the header's
+  // size and regular weight (Bootstrap's .badge is 0.75em bold, which made each item look different).
   .sc-header {
     position: relative;
     z-index: 3;
     min-height: 3.25rem;
+    font-size: 0.875rem;
+    font-weight: 400;
     transition: box-shadow 0.15s;
+    .badge, .btn { font-size: inherit; font-weight: inherit; }
     &.sc-scrolled { box-shadow: 0 1px 0 var(--bs-border-color), 0 4px 12px rgba(var(--bs-body-color-rgb), 0.05); }
   }
   .sc-switcher {
@@ -63,8 +74,9 @@
   }
 
   // ── Thread ─────────────────────────────────────────────────────────────────
-  // One centred column shared by the messages and the composer, so they line up.
-  .sc-column { max-width: 960px; margin: 0 auto; }
+  // One column shared by the messages and the composer, so they line up. It spans the whole
+  // panel: answers carry wide tables, which a narrow reading column squeezed.
+  .sc-column { width: 100%; }
 
   // Message actions (copy, time) appear on hover, and stay reachable by keyboard.
   .sc-actions { opacity: 0; transition: opacity 0.15s; }
@@ -98,9 +110,17 @@
   // Answers: no bubble, roomy typography. Headings, tables, quotes, code, cards and stat cards
   // carry Bootstrap classes from SupportConsoleHelper#support_console_answer_html; only spacing
   // for plain running text is set here.
+  // One font for prose and tables (E47): the size and slate of the theme's table cells
+  // (minimalist_theme.scss .table tbody td), regular weight, and bold lead-ins in the same colour
+  // rather than .chat-markdown's near-black. Before, prose was 0.95rem blue-grey with black bold
+  // while tables were 0.875rem slate, so the two read as different fonts.
   .sc-answer {
-    font-size: 0.95rem;
+    font-size: 0.875rem;
     line-height: 1.7;
+    color: #334155;
+    [data-bs-theme=dark] & { color: var(--bs-body-color); }
+    strong { color: inherit; font-weight: 600; }
+    .table tbody td { color: inherit; font-weight: 400; }
 
     .sc-answer-body > :first-child { margin-top: 0 !important; }
     .sc-answer-body > :last-child { margin-bottom: 0; }

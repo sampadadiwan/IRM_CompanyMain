@@ -12,8 +12,9 @@ class SupportConsoleClientBrief
   # @return [String]
   def self.call(entity)
     # Names and ids only; one query.
-    funds = Fund.where(entity_id: entity.id).order(:name).limit(MAX_FUNDS).pluck(:id, :name)
-    fund_lines = funds.map { |id, name| "- #{name} (fund_id #{id})" }
+    funds = Fund.where(entity_id: entity.id).order(:name).limit(MAX_FUNDS).pluck(:id, :name, :currency)
+    # The currency too, so amounts can be written in it (E49).
+    fund_lines = funds.map { |id, name, currency| "- #{name} (fund_id #{id}, currency #{currency})" }
     fund_lines << "- (more funds not listed)" if funds.size == MAX_FUNDS
 
     <<~BRIEF
@@ -25,6 +26,11 @@ class SupportConsoleClientBrief
       Do not query, compare or mention any other client. If the question needs another client's
       data, say that you can only look at #{entity.name} in this conversation, and stop.
       You cannot change anything. If a fix needs data changed, describe the change instead.
+      Amounts: a column ending in _cents stores the amount multiplied by 100. Never show a raw
+      _cents value or an amount without its currency. Divide by 100 and write it the way the app
+      does, in the record's own currency (its currency or folio_currency column), else its fund's:
+      INR as ₹ with Indian grouping (₹20,00,000), other currencies with their symbol or code and
+      standard grouping ($1,250,000). This applies to tables and Key figures too.
       Write the answer in markdown (never HTML), laid out under these headings, in this order,
       leaving out any that has nothing to say:
       ## Summary — the conclusion in two or three sentences.

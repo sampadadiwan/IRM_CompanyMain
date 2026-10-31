@@ -237,7 +237,7 @@ Feature: Support Console asking
     And the answer shows no image
     And the answer links to "https://caphive.com/help" in a new tab
 
-  # H13 — Happy path: an answer in the brief's layout renders with Bootstrap structure — Summary card, Key figures stat cards, a table, a callout, a Questions list
+  # H13 / H16 — Happy path: an answer in the brief's layout renders with Bootstrap structure — Summary card, Key figures stat cards, a table, a callout, a Questions list whose rows each have an Ask button
   Scenario: Answer laid out with cards, stats, a table and questions
     Given the relay answers:
       """
@@ -269,6 +269,7 @@ Feature: Support Console asking
     And the answer shows a Bootstrap table with the cell "TSTF2"
     And the answer shows "The extra 50,000 sits unallocated." as a callout
     And the answer lists the question "Was a refund issued?"
+    And the question "Was a refund issued?" has an Ask button
     And I see the answer "Where this comes from"
     And the question is shown as a Bootstrap bubble
     And the brief sent to the relay says "## Key figures"
@@ -311,7 +312,7 @@ Feature: Support Console asking
     And I ask "Why is the closing balance zero?"
     Then the sources section holds "### Code" and "account_entries for commitment 9001"
 
-  # H14 — Happy path: an answer's follow-ups show as buttons above the box, not in the answer
+  # H14 / H17 — Happy path: an answer's follow-ups show as buttons above the box, not in the answer, each with an Ask button
   Scenario: Follow-ups above the box
     Given the relay answers:
       """
@@ -331,12 +332,13 @@ Feature: Support Console asking
       | List the 4 unapproved accesses with investor, email and fund |
       | Which of them were granted in the last 30 days?               |
     And a follow-up puts "Which of them were granted in the last 30 days?" in the box
+    And the follow-up "Which of them were granted in the last 30 days?" has an Ask button
     And the answer does not show "Follow-ups"
     And the answer does not show "List the 4 unapproved accesses"
     And the brief sent to the relay says "## Follow-ups"
 
-  # E43 — Edge case: when the latest turn failed, the earlier answer's follow-ups are not offered; the question is back in the box
-  Scenario: No follow-ups after a failed turn
+  # E43 — Edge case: when the latest turn failed, the earlier answer's follow-ups are still offered, and the question is back in the box
+  Scenario: Follow-ups kept after a failed turn
     Given the relay answers this and then fails with status 500:
       """
       ## Summary
@@ -351,8 +353,37 @@ Feature: Support Console asking
       | List them |
     When I ask "And last month?"
     Then I see the answer "The Support Console is unavailable right now. Try again in a few minutes."
-    And there are no follow-ups above the box
+    And the follow-ups above the box are:
+      | List them |
     And the question box contains "And last month?"
+
+  # H18 — Happy path: while a follow-up is being answered, the suggestions stay; the asked one is marked and Ask waits for the turn
+  Scenario: Follow-ups stay while one is answered
+    Given "Meera" has a conversation about "Golden Angels" that suggested "List them" and "Which are overdue?", now answering "List them"
+    When I open that conversation
+    Then the follow-up "List them" is marked asked
+    And the follow-ups above the box are:
+      | Which are overdue? |
+    And the follow-up Ask buttons are disabled
+
+  # E48 — Edge case: a newer answer without follow-ups leaves the earlier answer's follow-ups showing
+  Scenario: Newer answer without follow-ups
+    Given the relay answers this and then "Here they are.":
+      """
+      ## Summary
+      4 are unapproved.
+
+      ## Follow-ups
+      - List them
+      - Which are overdue?
+      """
+    When I open the Support Console for "Golden Angels"
+    And I ask "How many are unapproved?"
+    And I ask "List them"
+    Then I see the answer "Here they are."
+    And the follow-up "List them" is marked asked
+    And the follow-ups above the box are:
+      | Which are overdue? |
 
   # E44 — Edge case: four follow-ups; only the first three are offered
   Scenario: At most three follow-ups
@@ -383,6 +414,54 @@ Feature: Support Console asking
     Then the follow-ups above the box are:
       | Show bold rows here |
     And no follow-up holds markup
+
+  # H15 — Happy path: a sidebar row shows who started it, when, and a running turn's badge
+  Scenario: Sidebar row with its asker, time and status
+    Given "Meera" has a conversation about "Golden Angels" with a turn still running
+    When I open the Support Console for "Golden Angels"
+    Then the sidebar row "Why is the balance zero?" shows "Meera"'s name, the time and the badge "Running"
+    And the sidebar footer says "1 conversation · kept 90 days"
+
+  # E45 — Edge case: search is shown even with a single conversation
+  Scenario: Search with one conversation
+    Given "Meera" has a conversation about "Golden Angels" that started with "Why is the balance zero?"
+    When I open the Support Console for "Golden Angels"
+    Then the sidebar search box is shown
+
+  # E46 — Edge case: quote marks a first question was pasted with are left out of its sidebar title
+  Scenario: Quoted first question
+    Given "Meera" has a conversation about "Golden Angels" that started with "\"Why is TSTF2 marked Overpaid?\""
+    When I open the Support Console for "Golden Angels"
+    Then the conversations are listed newest first as "Why is TSTF2 marked Overpaid?"
+
+  # X38 — Error case: a question written with markup reaches its Ask button as plain text only
+  Scenario: Ask button on a question with markup
+    Given the relay answers:
+      """
+      ## Questions
+      - Check **bold** <b data-controller="evil">rows</b>?
+      """
+    When I open the Support Console for "Golden Angels"
+    And I ask "What next?"
+    Then the question "Check bold rows?" has an Ask button
+
+  # E47 — Edge case: underscores inside names in an answer do not italicise the text between them
+  Scenario: Snake_case names in an answer
+    Given the relay answers "KMH_01 was created later, so the system added KMH_01 to calls. Check fund_id and entity_id."
+    When I open the Support Console for "Golden Angels"
+    And I ask "Why is KMH_01 overdue?"
+    Then I see the answer "KMH_01 was created later, so the system added KMH_01 to calls."
+    And the answer shows no italics
+
+  # E49 — Edge case: the brief tells the assistant never to show raw cents, and names each fund's currency
+  Scenario: Amounts in currency, never cents
+    Given the client "Golden Angels" has a fund "Fund I" in "INR"
+    And the relay answers "Done."
+    When I open the Support Console for "Golden Angels"
+    And I ask "What was called?"
+    Then the brief sent to the relay says "Never show a raw"
+    And the brief sent to the relay says "Fund I (fund_id"
+    And the brief sent to the relay says "currency INR)"
 
   # X36 — Error case: a class or Stimulus hook written into an answer is stripped; only the app's own Bootstrap classes are added
   Scenario: Answer tries to style or wire up the page

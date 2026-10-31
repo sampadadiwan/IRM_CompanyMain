@@ -14,8 +14,16 @@
   answers = messages.select { |m| m.role == "assistant" }
   tokens = answers.sum { |m| (m.metadata&.dig("usage") || {}).values_at("input", "output", "cache_read", "cache_write").sum(&:to_i) }
   cost = answers.sum { |m| m.metadata&.dig("cost_usd").to_f }
-  # H14 — the latest answer's suggested next questions, only once it has finished normally (E43).
-  follow_ups = status == "completed" ? support_console_follow_ups(last_answer.content) : []
+  # H14 / H18 — suggested next questions from the most recent completed answer that has any, so a
+  # running or failed turn (E43), or a newer answer without follow-ups (E48), does not hide them.
+  follow_up_answer, follow_ups = answers.reverse.lazy
+                                        .select { |m| m.metadata&.dig("turn_status") == "completed" }
+                                        .map { |m| [m, support_console_follow_ups(m.content)] }
+                                        .find { |_m, questions| questions.any? }
+  follow_ups ||= []
+  # H18 — a follow-up asked since that answer stays in place, marked asked.
+  asked = messages.select { |m| m.role == "user" && follow_up_answer && m.id > follow_up_answer.id }
+                  .to_set { |m| m.content.to_s.squish }
 %>
 <div class="sc-composer px-4 pb-3 pt-2" id="support-console-composer"
      data-controller="support-console" data-support-console-running-value="<%= running %>">
@@ -29,11 +37,24 @@
     <% end %>
 
     <% if follow_ups.any? %>
-      <%# A click puts the question in the box to send or edit; it never sends by itself. %>
+      <%# The question puts it in the box to edit first; Ask (H17) sends it straight away. While a
+          turn runs Ask is disabled (only one question at a time, E4); the text still fills the box. %>
       <div class="d-flex flex-wrap gap-2 mb-2" id="support-console-follow-ups">
         <% follow_ups.each do |question| %>
-          <button type="button" class="btn btn-sm btn-outline-primary rounded-pill text-start"
-                  data-action="support-console#fill" data-prompt="<%= question %>"><%= question %></button>
+          <% if asked.include?(question) %>
+            <div class="btn-group btn-group-sm" role="group" data-role="asked">
+              <button type="button" class="btn btn-outline-secondary text-start" disabled><%= question %></button>
+              <button type="button" class="btn btn-secondary" disabled><i class="ti ti-check"></i>Asked</button>
+            </div>
+          <% else %>
+            <div class="btn-group btn-group-sm" role="group">
+              <button type="button" class="btn btn-outline-primary text-start"
+                      data-action="support-console#fill" data-prompt="<%= question %>"><%= question %></button>
+              <button type="button" class="btn btn-primary flex-grow-0" title="Ask this now" aria-label="Ask: <%= question %>"
+                      data-action="support-console-thread#askNow" data-prompt="<%= question %>"
+                      <%= "disabled" if running %>><i class="ti ti-arrow-up"></i>Ask</button>
+            </div>
+          <% end %>
         <% end %>
       </div>
     <% end %>

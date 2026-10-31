@@ -5,7 +5,7 @@
      data-session-id="<%= session&.id %>"
      data-session-url="<%= session && support_console_entity_path(entity, session_id: session.id) %>"
      data-first-question="<%= messages.find { |m| m.role == 'user' }&.content %>"
-     data-session-title="<%= session && "#{session.analyst.full_name} · #{l(session.created_at.to_date)}" %>">
+     data-session-meta="<%= session && "#{session.analyst.full_name} · #{support_console_conversation_when(session.updated_at)}" %>">
   <div class="sc-header d-flex align-items-center gap-2 px-3 py-2" data-support-console-thread-target="header">
     <%# Shown only while the sidebar is hidden (support_console_sidebar_controller). %>
     <button type="button" class="btn btn-sm sc-icon-btn sc-show-sidebar" title="Show sidebar"

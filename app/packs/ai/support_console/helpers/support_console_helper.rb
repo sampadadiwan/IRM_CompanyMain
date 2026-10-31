@@ -24,6 +24,32 @@ module SupportConsoleHelper
   # "Label: value" — the shape of one Key figures bullet (the label is usually bold).
   FIGURE_ITEM = /\A\s*([^:]{1,60}?)\s*:\s*(.+)\z/m
 
+  # A turn's status as a badge: [theme colour, icon, label]. Shared by the answer (_message) and the
+  # sidebar row (_conversation), so a status reads the same in both. A completed answer has none.
+  STATUS_BADGES = {
+    "queued" => %w[primary ti-loader Running],
+    "running" => %w[primary ti-loader Running],
+    "stopped" => %w[secondary ti-player-stop Stopped],
+    "failed" => ["danger", "ti-alert-circle", "Not answered"],
+    "refused" => ["danger", "ti-lock", "Access ended"]
+  }.freeze
+
+  # E46 — a sidebar title: the first question without the quote marks it was often pasted with.
+  #
+  # @param question [String, nil]
+  # @return [String]
+  def support_console_conversation_title(question)
+    question.to_s.squish.sub(/\A["'“‘]+/, "").sub(/["'”’]+\z/, "").presence || "New conversation"
+  end
+
+  # H15 — when a sidebar conversation last changed: the time today, the locale's date before that.
+  #
+  # @param time [ActiveSupport::TimeWithZone]
+  # @return [String]
+  def support_console_conversation_when(time)
+    time.to_date == Time.zone.today ? l(time, format: :time_only) : l(time.to_date)
+  end
+
   # Renders an answer's markdown with Bootstrap structure (H13): Summary as a card, Key figures as
   # stat cards, Questions as a list group, tables/quotes/code with Bootstrap classes, and the
   # "Where this comes from" section folded into a collapsed <details>. Follow-ups are left out;
@@ -69,7 +95,9 @@ module SupportConsoleHelper
   # @param text [String] the answer's markdown
   # @return [Array<String>] at most MAX_FOLLOW_UPS questions, in the answer's order
   def support_console_follow_ups(text)
-    return [] if text.blank?
+    # A cheap text check first: the composer looks back through every completed answer, and ones
+    # written before Follow-ups existed should not each be rendered and parsed on every turn.
+    return [] unless text.to_s.match?(/follow-?up|suggested questions|next questions/i)
 
     fragment = Nokogiri::HTML5.fragment(answer_markdown_html(text).to_s)
     _heading, body = answer_sections(fragment).find { |h, _| h && follow_ups_heading?(h) }
@@ -227,7 +255,7 @@ module SupportConsoleHelper
     col
   end
 
-  # Questions: a card holding a list group, one item per question.
+  # Questions: a card holding a list group, one item per question, each with an Ask button.
   def answer_questions_block(doc, title, body)
     items = answer_list_items(body)
     # Questions written as paragraphs instead of bullets count too.
@@ -238,11 +266,14 @@ module SupportConsoleHelper
     card.add_child(answer_card_header(doc, "ti-help-circle", "text-info", title))
     group = html_node(doc, "ul", "list-group list-group-flush")
     items.each do |item|
+      # Read before the children move: the question as plain text, for its Ask button (X38).
+      question = item.text.squish
       li = html_node(doc, "li", "list-group-item d-flex gap-2")
       li.inner_html = '<i class="ti ti-help-circle text-info mt-1"></i>'
-      text = html_node(doc, "div")
+      text = html_node(doc, "div", "flex-grow-1")
       item.children.each { |c| text.add_child(c) }
       li.add_child(text)
+      li.add_child(answer_ask_button(doc, question)) if question.present?
       group.add_child(li)
     end
     card.add_child(group)
@@ -256,6 +287,20 @@ module SupportConsoleHelper
     # The questions' text has moved into the list group; drop the emptied lists and paragraphs.
     body.each { |n| n.remove if answer_list?(n) || items.include?(n) }
     card
+  end
+
+  # H16 — sends the question straight away (support_console_thread_controller#askNow). Only this
+  # fixed button carries a data-action; the question is a plain-text attribute value, never markup.
+  def answer_ask_button(doc, question)
+    button = html_node(doc, "button", "btn btn-sm btn-outline-primary flex-shrink-0 align-self-start")
+    button["type"] = "button"
+    button["title"] = "Ask this now"
+    # Its own accessible name, so it is not one more button called just "Ask".
+    button["aria-label"] = "Ask: #{question}"
+    button["data-action"] = "support-console-thread#askNow"
+    button["data-prompt"] = question
+    button.inner_html = '<i class="ti ti-arrow-up"></i>Ask'
+    button
   end
 
   # A card header: icon + the section's title, as text (never markup from the answer). The icon
@@ -286,13 +331,27 @@ module SupportConsoleHelper
     node
   end
 
+  # E47 — the chat panel's markdown options (MarkdownHelper#markdown_to_html) plus no_intra_emphasis:
+  # answers are full of snake_case names, and without it the underscores in "KMH_01 … KMH_01" or
+  # "fund_id and entity_id" open and close an <em>, italicising everything between them.
+  #
+  # @param text [String] the answer's markdown
+  # @return [String] raw HTML, sanitized by the caller
+  def answer_markdown_render(text)
+    renderer = Redcarpet::Render::HTML.new(hard_wrap: true)
+    Redcarpet::Markdown.new(renderer, autolink: true, tables: true, fenced_code_blocks: true, strikethrough: true,
+                                      lax_spacing: true, space_after_headers: true, no_intra_emphasis: true).render(text.to_s)
+  end
+
   # @param text [String] the answer's markdown
   # @return [ActiveSupport::SafeBuffer] HTML with only ANSWER_TAGS / ANSWER_ATTRIBUTES (X24)
   def answer_markdown_html(text)
+    return ActiveSupport::SafeBuffer.new if text.blank?
+
     scrubber = Rails::Html::PermitScrubber.new
     scrubber.tags = ANSWER_TAGS
     scrubber.attributes = ANSWER_ATTRIBUTES
-    fragment = Nokogiri::HTML5.fragment(sanitize(markdown_to_html(text).to_s, scrubber: scrubber))
+    fragment = Nokogiri::HTML5.fragment(sanitize(answer_markdown_render(text), scrubber: scrubber))
     fragment.css("a").each do |link|
       # Anything but an absolute http(s) link becomes its text.
       next link.replace(link.text) unless link["href"].to_s.match?(%r{\Ahttps?://}i)
