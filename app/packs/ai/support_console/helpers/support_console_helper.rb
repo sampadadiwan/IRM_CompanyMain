@@ -331,18 +331,6 @@ module SupportConsoleHelper
     node
   end
 
-  # E47 — the chat panel's markdown options (MarkdownHelper#markdown_to_html) plus no_intra_emphasis:
-  # answers are full of snake_case names, and without it the underscores in "KMH_01 … KMH_01" or
-  # "fund_id and entity_id" open and close an <em>, italicising everything between them.
-  #
-  # @param text [String] the answer's markdown
-  # @return [String] raw HTML, sanitized by the caller
-  def answer_markdown_render(text)
-    renderer = Redcarpet::Render::HTML.new(hard_wrap: true)
-    Redcarpet::Markdown.new(renderer, autolink: true, tables: true, fenced_code_blocks: true, strikethrough: true,
-                                      lax_spacing: true, space_after_headers: true, no_intra_emphasis: true).render(text.to_s)
-  end
-
   # @param text [String] the answer's markdown
   # @return [ActiveSupport::SafeBuffer] HTML with only ANSWER_TAGS / ANSWER_ATTRIBUTES (X24)
   def answer_markdown_html(text)
@@ -351,7 +339,8 @@ module SupportConsoleHelper
     scrubber = Rails::Html::PermitScrubber.new
     scrubber.tags = ANSWER_TAGS
     scrubber.attributes = ANSWER_ATTRIBUTES
-    fragment = Nokogiri::HTML5.fragment(sanitize(answer_markdown_render(text), scrubber: scrubber))
+    # E47 — markdown_to_html renders with no_intra_emphasis, so snake_case names are not italicised.
+    fragment = Nokogiri::HTML5.fragment(sanitize(markdown_to_html(text).to_s, scrubber: scrubber))
     fragment.css("a").each do |link|
       # Anything but an absolute http(s) link becomes its text.
       next link.replace(link.text) unless link["href"].to_s.match?(%r{\Ahttps?://}i)
