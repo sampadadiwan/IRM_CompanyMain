@@ -46,3 +46,22 @@ Feature: AI chat answer rendering
     When it is rendered in strict mode
     Then the rendered answer has a table in a card
     And the rendered answer has no italics
+
+  # X39 — Error case: a link the strict cleaner turns into text keeps its text as text, never as markup
+  Scenario: Link text is never markup
+    Given an answer:
+      """
+      See [&lt;img src=x onerror=alert(1)&gt;](/funds/1) here
+      """
+    When it is rendered in strict mode
+    Then the rendered answer has no script and no inline event handler
+    And the rendered answer says "<img src=x onerror=alert(1)>"
+
+  # X40 — Error case: a rich answer cannot take a page element's id or attach another controller
+  Scenario: Rich answers lose their own ids and controllers
+    Given an answer:
+      """
+      <div id="assistant-composer" data-controller="ai-chat-window" data-action="click->x#y">Hijack</div>
+      """
+    When it is rendered in rich mode
+    Then the rendered answer has no element ids and no controller but the chart renderer

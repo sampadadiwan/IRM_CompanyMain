@@ -50,6 +50,13 @@ Feature: Record analysis chat on the chat kit
     And the live chat answer reads "Not answered"
     And the live chat question box holds "Summarise revenue"
 
+  # X41 — Error case: a document that is not the chat's record's is never sent to the model
+  Scenario: Another record's document
+    Given the chat model streams "Done."
+    And another entity has a document "Rival financials"
+    When Priya sends "Summarise this" in the chat with that document
+    Then the model was asked without any document
+
   # X8 — Error case: a user of another entity cannot open the chat
   Scenario: Another entity's chat
     Given "Arjun Rao" of "Beta Capital" is signed in

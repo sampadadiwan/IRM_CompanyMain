@@ -31,7 +31,7 @@
     <%= local_assigns[:before] %>
     <%= local_assigns[:above] %>
 
-    <%= form_with url: form_url, method: :post, data: { turbo: true, action: "submit->ai-chat-composer#ask" } do %>
+    <%= form_with url: form_url, method: :post, data: { turbo: true, action: "submit->ai-chat-composer#ask turbo:submit-start->ai-chat-composer#sent" } do %>
       <% local_assigns.fetch(:hidden, {}).each do |name, value| %>
         <%= hidden_field_tag name, value %>
       <% end %>

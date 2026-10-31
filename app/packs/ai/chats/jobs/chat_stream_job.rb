@@ -22,10 +22,11 @@ class ChatStreamJob < ApplicationJob
     @chunk_counter = 0
 
     begin
-      # Load the document if provided and valid
-      if document_id.present?
-        document = Document.find_by(id: document_id)
-        Rails.logger.debug { "Adding document to chat: #{document.name}" }
+      # Load the document if provided and valid — only one of the chat's own record's documents (the ones
+      # the picker offers), never another record's or tenant's by id (X41).
+      if document_id.present? && @chat.owner.respond_to?(:documents)
+        document = @chat.owner.documents.find_by(id: document_id)
+        Rails.logger.debug { "Adding document to chat: #{document&.name}" }
       end
 
       # Prepare the `with:` options for the chat request

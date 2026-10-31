@@ -164,7 +164,8 @@ class AssistantsController < ApplicationController
   end
 
   def find_or_create_chat
-    return Chat.find_by(id: params[:chat_id], entity_id: current_user.entity_id, assistant_type: assistant_class) if params[:new].blank? && params[:chat_id].present?
+    # X42 — only the user's own chat (as the sidebar lists and #ask accepts), never a colleague's by id.
+    return Chat.find_by(id: params[:chat_id], user: current_user, entity_id: current_user.entity_id, assistant_type: assistant_class) if params[:new].blank? && params[:chat_id].present?
 
     owner = find_chat_owner(params[:owner_type], params[:owner_id])
 

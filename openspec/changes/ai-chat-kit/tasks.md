@@ -111,7 +111,7 @@
       `docs/user_guides/agents/` that mention the chat window — for the sidebar/Conversations list,
       suggestion Ask buttons and the unchanged 👍/👎; FAQs per the user-guide FAQ standard. Verify:
       `UserGuideLint` passes on the edited guides.
-- [ ] 6.2 Run every phase's feature plus the Console suite together with
+- [x] 6.2 Run every phase's feature plus the Console suite together with
       `pcuc -n 4 features/ai_chat features/support_console features/customer_support_agent features/ai/lp_assistant features/ai/assistants features/ai/fund_assistant`
       and confirm it is green; run `bundle exec rubocop` on all touched Ruby.
 - [ ] 6.3 QA: run `qa-checklist.md` on a deployed build and record the sign-off (for QA, not the apply

@@ -686,6 +686,12 @@ Shared setup:
 | X6 | Rich strips scripts | answer with `<script>` and `onerror=` | renders `:rich` | removed | Questions and answers | `ai_chat/answer_rendering.feature` |
 | X7 | Other user's session id | Kavya posts `session_id` of another investor's session | asks | not used; her own session gets the message | Only the user's own conversations | `ai_chat/floating_window.feature` |
 | X8 | Other entity's chat | Arjun (Beta) opens a Golden Angels `chats#show` | requests | refused as today | Only the user's own conversations | `ai_chat/kpi_chat.feature` |
+| X39 | Strict link text stays text | Console answer `[&lt;img src=x onerror=…&gt;](/funds/1)` | renders `:strict` | the link becomes escaped text, no `<img>` (found in review; existed in the Console) | Questions and answers | `ai_chat/answer_rendering.feature` |
+| X40 | Rich answer cannot take page ids | answer with `<div id="assistant-composer" data-controller="ai-chat-window">` | renders `:rich` | no `id`, no `data-*` except the chart renderer's | Questions and answers | `ai_chat/answer_rendering.feature` |
+| X41 | Another record's document | `send_message` with another tenant's `document_id` | job runs | the model is asked with no document (only the chat record's documents are used) | Document picker kept | `ai_chat/kpi_chat.feature` |
+| X42 | Colleague's assistant chat | a colleague's `chat_id` | Priya opens it | not shown (own chats only) | Only the user's own conversations | `ai_chat/assistants_page.feature` |
+| X43 | Window fails twice | AI unreachable | asks, fails, asks again | each failure moves off the pending ids, so the next pending answer is replaced | Provider unreachable | `ai_chat/floating_window.feature` |
+| X44 | Asking an agent without access | another entity's user | posts a question | refused (Pundit), not a 500; nothing saved | Only the user's own conversations | `ai_chat/floating_window.feature` |
 | X9 | Feedback on another's message | Arjun PATCHes feedback for Priya's message | requests | refused as today | Rate down with a note | `ai_chat/customer_support.feature` |
 
 ### Testing
@@ -710,6 +716,12 @@ carries a `# H3 — Happy path: …` comment; code comments name the IDs of the 
   `SupportAgent`) as a follow-up.
 - **Synchronous LLM call in the window's request** (existing): long answers hold a web worker; kept as
   today.
+- **Answer broadcast racing the HTTP response** (Assistants page, record chat): if the job finishes
+  before the browser receives the response that adds the pending answer, the answer broadcast finds
+  nothing to replace and "Thinking…" stays until a reload. The box is no longer locked by the response
+  (review fix), so the user can ask again; the window is unaffected (its answer is the response).
+  Rare (the job must finish within the response's round trip); a follow-up could have the page fetch
+  the answer when a pending one outlives its job.
 
 ### FAQ
 

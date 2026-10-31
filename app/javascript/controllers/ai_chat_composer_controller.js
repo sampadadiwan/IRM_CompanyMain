@@ -34,6 +34,14 @@ export default class extends Controller {
     this.showPending()
   }
 
+  // Once Turbo has taken the form's data: clear the box. Ask stays disabled until the screen re-renders
+  // the box (the answer's job, or the window's response), which also puts back a failed question.
+  sent() {
+    if (!this.hasQuestionTarget) return
+    this.questionTarget.value = ""
+    this.resize()
+  }
+
   // Shows the question and a "Thinking…" line at once, from the composer's <template>, while the
   // request runs; the response replaces them.
   showPending() {

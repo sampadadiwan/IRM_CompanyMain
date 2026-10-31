@@ -29,6 +29,10 @@ module AiChatHelper
   # "Label: value" — the shape of one Key figures bullet (the label is usually bold).
   FIGURE_ITEM = /\A\s*([^:]{1,60}?)\s*:\s*(.+)\z/m
 
+  # The data-* a chart in a :rich answer needs (MarkdownHelper's chart renderer); nothing else may
+  # attach behaviour.
+  RICH_DATA_ATTRIBUTES = %w[data-controller data-chart-renderer-spec-value data-chart-renderer-target].freeze
+
   # The renderer's two modes (design card ④): :strict keeps X24 for the Support Console; :rich is
   # MarkdownHelper#markdown_to_html's allow-list (charts kept) for the other chat screens.
   ANSWER_MODES = %i[strict rich].freeze
@@ -370,10 +374,30 @@ module AiChatHelper
   def ai_chat_markdown(text, mode)
     raise ArgumentError, "unknown answer mode #{mode.inspect}" unless ANSWER_MODES.include?(mode)
     return ActiveSupport::SafeBuffer.new if text.blank?
-    # E8 — :rich is exactly MarkdownHelper's allow-list (charts kept); X6 — it drops scripts and on*=.
-    return markdown_to_html(text) if mode == :rich
+    # E8 — :rich is MarkdownHelper's allow-list (charts kept); X6 — it drops scripts and on*=.
+    return rich_answer_markdown(text) if mode == :rich
 
     strict_answer_markdown(text)
+  end
+
+  # @param text [String] the answer's markdown
+  # @return [ActiveSupport::SafeBuffer] MarkdownHelper's HTML without the answer's own ids, and with
+  #   data-* only for the chart renderer (X40) — an answer must not take the place of the page's
+  #   own elements (e.g. id="assistant-composer") or attach other Stimulus controllers.
+  def rich_answer_markdown(text)
+    fragment = Nokogiri::HTML5.fragment(markdown_to_html(text).to_s)
+    fragment.traverse do |node|
+      next unless node.element?
+
+      node.remove_attribute("id")
+      node.attribute_nodes.each do |attr|
+        next unless attr.name.start_with?("data-")
+
+        keep = RICH_DATA_ATTRIBUTES.include?(attr.name) && (attr.name != "data-controller" || attr.value == "chart-renderer")
+        node.remove_attribute(attr.name) unless keep
+      end
+    end
+    fragment.to_html.html_safe # rubocop:disable Rails/OutputSafety
   end
 
   # @param text [String] the answer's markdown
@@ -385,8 +409,9 @@ module AiChatHelper
     # E47 — markdown_to_html renders with no_intra_emphasis, so snake_case names are not italicised.
     fragment = Nokogiri::HTML5.fragment(sanitize(markdown_to_html(text).to_s, scrubber: scrubber))
     fragment.css("a").each do |link|
-      # Anything but an absolute http(s) link becomes its text.
-      next link.replace(link.text) unless link["href"].to_s.match?(%r{\Ahttps?://}i)
+      # Anything but an absolute http(s) link becomes its text — as a text node: replace(String)
+      # would parse the decoded text as markup, turning "[&lt;img onerror…&gt;](/x)" into a live tag (X39).
+      next link.replace(Nokogiri::XML::Text.new(link.text, link.document)) unless link["href"].to_s.match?(%r{\Ahttps?://}i)
 
       link["target"] = "_blank"
       link["rel"] = "noopener noreferrer nofollow"

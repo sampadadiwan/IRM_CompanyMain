@@ -202,11 +202,17 @@ export default class extends Controller {
       if (isUserCard) {
         const questionEl = card.querySelector('.aic-question')
         if (questionEl && questionEl.innerText.trim().length > 0) {
+          // The question is text, never markup: build the slide with textContent.
           const qSection = document.createElement('section')
-          qSection.innerHTML = `
-            <div class="step-badge">Question</div>
-            <h2 class="question-text" style="font-size: 1.5em; margin-top: 40px;">${questionEl.innerText}</h2>
-          `
+          const badge = document.createElement('div')
+          badge.className = "step-badge"
+          badge.textContent = "Question"
+          const heading = document.createElement('h2')
+          heading.className = "question-text"
+          heading.style.fontSize = "1.5em"
+          heading.style.marginTop = "40px"
+          heading.textContent = questionEl.innerText
+          qSection.append(badge, heading)
           this.slidesTarget.appendChild(qSection)
         }
       }

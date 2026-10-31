@@ -90,6 +90,12 @@ step (J1.3 = journey 1, step 3) · **R** = Role sweep · **C** = Cross-cutting c
 | ☐ | X6 | Scripts stripped | A developer seeds an answer with a script | 1. Open it | No script runs; text only | | |
 | ☐ | X7 | Another investor's conversation | Two investors | 1. As Kavya, ask a developer to replay a request with the other investor's conversation id | Her question goes to her own conversation | | |
 | ☐ | X8 | Other entity's KPI chat | Arjun | 1. Open a Golden Angels chat link | Refused | | |
+| ☐ | X39 | Unsafe link in a Console answer | A developer seeds an answer with a relative link whose text is an HTML tag | 1. Open it | The tag shows as text; nothing runs | | |
+| ☐ | X40 | Answer pretending to be page parts | A developer seeds a rich answer with `id="assistant-composer"` | 1. Ask another question | The real question box still works | | |
+| ☐ | X41 | Another tenant's document | A developer replays a chat request with another entity's document id | 1. Check the model call | No document attached | | |
+| ☐ | X42 | Colleague's assistant chat | Two users in one entity | 1. Open the colleague's chat link | Their conversation is not shown | | |
+| ☐ | X43 | Window fails twice | AI blocked | 1. Ask 2. Ask again | Two "Not answered" answers; neither spins forever | | |
+| ☐ | X44 | Agent without access | Arjun | 1. A developer posts a question to a Golden Angels agent | Refused normally (not an error page); nothing saved | | |
 | ☐ | X9 | Feedback on another's message | Arjun | 1. A developer replays a rating request for Priya's message | Refused | | |
 
 ---

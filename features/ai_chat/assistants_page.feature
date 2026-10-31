@@ -33,7 +33,7 @@ Feature: Assistants page on the chat kit
     When Priya opens the Specific Fund Assistant for "Golden Angels Fund I"
     And Priya asks the assistant "Which LPs are overdue on Call 3?"
     Then the response adds the question "Which LPs are overdue on Call 3?" with "Thinking…" under it
-    And the response puts the question box in its working state
+    And the response leaves the question box to the job
     And the live answer replaces the pending one with a table in a card
     And the live question box is ready again
 
@@ -86,6 +86,12 @@ Feature: Assistants page on the chat kit
     When Priya opens the Specific Fund Assistant for "Golden Angels Fund I"
     And Priya sends a voice question
     Then the response adds the question "Call 3 status" with "Thinking…" under it
+
+  # X42 — Error case: a colleague's conversation cannot be opened by its id
+  Scenario: A colleague's conversation
+    Given Priya's colleague "Meera Nair" has a Specific Fund Assistant chat on "Golden Angels Fund I" asking "Colleague question"
+    When Priya opens that colleague's assistant chat by its id
+    Then the thread does not show "Colleague question"
 
   # X3 — Error case: a timed-out answer reads "Not answered" with the reason, and the question goes back in the box
   Scenario: Assistant times out

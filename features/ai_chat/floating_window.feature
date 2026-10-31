@@ -134,6 +134,19 @@ Feature: Floating agent chat window on the chat kit
     And Priya asks in the window "Show recent valuations"
     Then the window's pending answer reads "Not answered" with "Chat agent execution failed"
 
+  # X43 — Error case: a failed attempt moves off the pending ids, so the next attempt's pending answer is found again
+  Scenario: Failing twice in a row
+    Given the agent cannot reach the AI service
+    When Priya opens the window on "Golden Angels Fund I"
+    And Priya asks in the window "Show recent valuations"
+    Then the failed attempt no longer uses the pending ids
+
+  # X44 — Error case: asking an agent the user may not use is refused normally, not a server error
+  Scenario: Asking an agent without access
+    Given "Arjun Rao" of "Beta Capital" is signed in
+    When Arjun asks the Portfolio Assistant agent "Show recent valuations"
+    Then the question is refused without a server error and nothing is saved
+
   # X7 — Error case: naming another investor's conversation is ignored; the question goes into her own
   Scenario: Another investor's conversation
     Given Golden Angels has the "LpAssistantAgent" agent "LP Assistant" with chat on

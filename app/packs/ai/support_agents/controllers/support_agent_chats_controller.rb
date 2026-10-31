@@ -31,11 +31,40 @@ class SupportAgentChatsController < ApplicationController
   # re-rendered for the conversation it went into (its list included); on failure the pending answer
   # reads "Not answered" with the reason and the question goes back in the box (X1, X2).
   def create
+    # Outside the rescue below: a missing agent or a refusal is handled like anywhere else (404 / Pundit).
     load_window
     message = params[:message].to_s.strip
     # E4 — a blank question is never sent (the box blocks it too).
     return head(:unprocessable_entity) if message.blank?
 
+    ask_agent(message)
+  end
+
+  # GET /support_agents/:support_agent_id/chats — the window's inside: a conversation (the one asked
+  # for, else the latest; none with new_session) and the record's conversation list.
+  def index
+    load_window
+    @session = if params[:new_session].present? then nil
+               elsif params[:session_id].present? then window_sessions.find_by(id: params[:session_id])
+               else current_window_session
+               end
+    render partial: "support_agents/chat_window", locals: window_locals
+  end
+
+  def destroy
+    @support_agent = SupportAgent.find(params[:support_agent_id])
+    authorize @support_agent, :show?
+    session = AgentChatSession.find_by!(id: params[:id], analyst_id: current_user.id)
+    session.destroy!
+    head :no_content
+  end
+
+  private
+
+  # Asks GenericChatAgent and renders the window, or the failed answer (X1, X2).
+  #
+  # @param message [String]
+  def ask_agent(message)
     result = GenericChatAgent.call(
       support_agent_id: @support_agent.id,
       target: @target,
@@ -61,27 +90,6 @@ class SupportAgentChatsController < ApplicationController
       render_failed_answer("Chat error: #{e.message}", message, status: :internal_server_error)
     end
   end
-
-  # GET /support_agents/:support_agent_id/chats — the window's inside: a conversation (the one asked
-  # for, else the latest; none with new_session) and the record's conversation list.
-  def index
-    load_window
-    @session = if params[:new_session].present? then nil
-               elsif params[:session_id].present? then window_sessions.find_by(id: params[:session_id])
-               else current_window_session
-               end
-    render partial: "support_agents/chat_window", locals: window_locals
-  end
-
-  def destroy
-    @support_agent = SupportAgent.find(params[:support_agent_id])
-    authorize @support_agent, :show?
-    session = AgentChatSession.find_by!(id: params[:id], analyst_id: current_user.id)
-    session.destroy!
-    head :no_content
-  end
-
-  private
 
   # The agent (authorized), the record the window is about, and the user's sessions on it.
   def load_window
@@ -112,12 +120,17 @@ class SupportAgentChatsController < ApplicationController
                                               partial: "support_agents/chat_window", locals: window_locals)
   end
 
-  # The pending answer becomes a failed one, and the question goes back in the box.
+  # The pending question and answer become this attempt's question and failed answer, under ids of
+  # their own — so a retry's pending pair (the composer's fixed ids) is found again, however many times
+  # it fails (X1) — and the question goes back in the box.
   def render_failed_answer(reason, message, status:)
     frame_id = helpers.agent_chat_frame_id(@support_agent)
     @session = window_sessions.find_by(id: params[:session_id]) if params[:session_id].present?
-    item = AiChatItem.transient(dom_id: "#{frame_id}-pending-answer", role: "assistant", content: reason, status: :failed)
+    attempt = SecureRandom.hex(6)
+    question = AiChatItem.transient(dom_id: "#{frame_id}-question-#{attempt}", role: "user", content: message)
+    item = AiChatItem.transient(dom_id: "#{frame_id}-answer-#{attempt}", role: "assistant", content: reason, status: :failed)
     render status: status, turbo_stream: [
+      turbo_stream.replace("#{frame_id}-pending-question", partial: "ai_chat/question", locals: { item: question }),
       turbo_stream.replace("#{frame_id}-pending-answer", partial: "ai_chat/answer", locals: { item: item, mode: :rich }),
       turbo_stream.replace("#{frame_id}-composer", partial: "support_agents/chat_composer",
                                                    locals: window_locals.merge(value: message,

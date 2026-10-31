@@ -24,9 +24,11 @@ Then('the rendered answer says {string}') do |text|
   expect(@rendered_answer.text).to include(text)
 end
 
+# Checked on elements, not the HTML string: escaped text ("&lt;img onerror=…&gt;") is safe and expected.
 Then('the rendered answer has no script and no inline event handler') do
-  expect(@rendered_answer.css("script")).to be_empty
-  expect(@rendered_answer.to_html).not_to match(/\son\w+=/i)
+  expect(@rendered_answer.css("script, img[onerror]")).to be_empty
+  handlers = @rendered_answer.css("*").flat_map(&:attribute_nodes).select { |attr| attr.name.start_with?("on") }
+  expect(handlers).to be_empty
 end
 
 Then('the rendered answer has a table in a card') do
@@ -199,9 +201,9 @@ Then('the response adds the question {string} with {string} under it') do |quest
   expect(html.at_css("[data-ai-chat-answer]").text).to include(pending)
 end
 
-Then('the response puts the question box in its working state') do
-  box = @stream.at_css("turbo-stream[action='replace'][target='assistant-composer'] template")
-  expect(box.inner_html).to include('data-ai-chat-composer-running-value="true"')
+# The job re-renders the box when it ends; the response must not (its broadcast can arrive first).
+Then('the response leaves the question box to the job') do
+  expect(@stream.at_css("turbo-stream[target='assistant-composer']")).to be_nil
 end
 
 # The job's broadcast of the answer (replacing the pending one), rendered as the browser would get it.
@@ -247,7 +249,8 @@ end
 
 # Chat#ask is stubbed as RubyLLM streams: it saves the question and an empty answer, then yields chunks.
 def stub_chat_ask(chunks: [], error: nil)
-  allow_any_instance_of(Chat).to receive(:ask) do |chat, content, with: [], &block| # rubocop:disable Lint/UnusedBlockArgument -- RubyLLM passes with:
+  allow_any_instance_of(Chat).to receive(:ask) do |chat, content, with: [], &block|
+    @ask_with = with
     raise error if error
 
     chat.messages.create!(role: "user", content:)
@@ -719,4 +722,64 @@ Then('the window\'s conversation list is visible beside the thread') do
   expect(page).to have_css(".aic-window.aic-maximized")
   expect(page).to have_css("##{window_frame_id}-conversations", visible: :visible)
   expect(page).to have_css("##{window_frame_id}-question", visible: :visible)
+end
+
+# ---- Review fixes (X39–X44) --------------------------------------------------------------------------------
+
+Then('the rendered answer has no element ids and no controller but the chart renderer') do
+  expect(@rendered_answer.css("[id]")).to be_empty
+  expect(@rendered_answer.css("[data-action]")).to be_empty
+  expect(@rendered_answer.css("[data-controller]").reject { |node| node["data-controller"] == "chart-renderer" }).to be_empty
+end
+
+Given('Priya\'s colleague {string} has a Specific Fund Assistant chat on {string} asking {string}') do |full_name, fund_name, question|
+  first_name, last_name = full_name.split(" ", 2)
+  colleague = FactoryBot.create(:user, entity: @entity, first_name:, last_name:)
+  @colleague_chat = Chat.create!(user: colleague, entity: @entity, owner: Fund.find_by!(name: fund_name),
+                                 assistant_type: "SpecificFundAssistant", name: "Colleague chat")
+  @colleague_chat.messages.create!(role: "user", content: question)
+end
+
+When('Priya opens that colleague\'s assistant chat by its id') do
+  visit assistant_path("assistant", assistant_type: "SpecificFundAssistant", chat_id: @colleague_chat.id)
+end
+
+Then('the thread does not show {string}') do |text|
+  expect(page).to have_no_content(text)
+end
+
+Then('the failed attempt no longer uses the pending ids') do
+  question = stream_template("replace", "#{window_frame_id}-pending-question")
+  answer = stream_template("replace", "#{window_frame_id}-pending-answer")
+  expect(question.at_css(".aic-message")["id"]).not_to eq("#{window_frame_id}-pending-question")
+  expect(answer.at_css("[data-ai-chat-answer]")["id"]).not_to eq("#{window_frame_id}-pending-answer")
+end
+
+When('Arjun asks the Portfolio Assistant agent {string}') do |question|
+  page.driver.browser.post(support_agent_chats_path(@agent),
+                           { "message" => question, "chattable_type" => "Fund", "chattable_id" => @fund.id },
+                           { "HTTP_ACCEPT" => "text/vnd.turbo-stream.html" })
+  @window_status = page.driver.browser.last_response.status
+end
+
+Then('the question is refused without a server error and nothing is saved') do
+  expect(@window_status).to be < 500
+  expect(@window_status).not_to eq(200)
+  expect(AgentChatMessage.count).to eq(0)
+end
+
+Given('another entity has a document {string}') do |name|
+  rival = FactoryBot.create(:entity, name: "Rival Capital", entity_type: "Investment Fund")
+  rival_fund = FactoryBot.create(:fund, entity: rival, name: "Rival Fund")
+  rival_user = FactoryBot.create(:user, entity: rival)
+  @rival_document = FactoryBot.create(:document, name:, entity: rival, owner: rival_fund, user: rival_user,
+                                                 folder: rival_fund.document_folder)
+end
+
+When('Priya sends {string} in the chat with that document') do |question|
+  post_turbo_stream(send_message_chat_path(@chat), { user_content: question, document_id: @rival_document.id })
+end
+
+Then('the model was asked without any document') do
+  expect(@ask_with).to eq([])
 end
