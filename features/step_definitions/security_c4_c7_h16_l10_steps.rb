@@ -11,7 +11,14 @@ module SecurityC4C7H16L10Helpers
   # Sends one request as the signed-in user and keeps its status and body. A removed route raises
   # ActionController::RoutingError in tests (show_exceptions is off) where production answers 404.
   def sr_request(method, path, params = {})
-    # Submit through the driver so redirects are followed like a browser would
+    # Submit through the driver so redirects are followed like a browser would.
+    # For a GET the driver drops any query string in `path` (it mimics a form submit), so a path
+    # helper's query params (investor_kyc_id, query, description, …) move into the request params
+    uri = URI.parse(path)
+    if method.to_s.casecmp?("get") && uri.query.present?
+      params = Rack::Utils.parse_nested_query(uri.query).merge(params)
+      path = uri.path
+    end
     page.driver.submit(method, path, params)
     @sr_status = page.status_code
     @sr_body = page.html
@@ -19,6 +26,13 @@ module SecurityC4C7H16L10Helpers
     # No route matched: what a user gets in production is a 404 with nothing of the record in it
     @sr_status = 404
     @sr_body = ""
+  end
+
+  # C4 / SL: an approved investor access of `user` to `investor`, as the firm's approval gives a
+  # signed-up LP user (the sale's investor scope requires one)
+  def c4_approve_investor_access(investor, user)
+    InvestorAccess.create!(investor:, user:, entity_id: investor.entity_id, email: user.email,
+                           first_name: user.first_name, last_name: user.last_name, approved: true)
   end
 
   # A fresh session signed in as `user`, so a scenario can act as a second person
@@ -88,6 +102,9 @@ end
 # Reuses the sale-access steps: a seller with an approved offer and a buyer with a short-listed
 # interest, each an employee of their own investor entity. The offer and interest carry the PAN and
 # bank account the removed report used to print.
+# Each employee also gets an approved investor access to their investor, as a real seller or buyer
+# has: without it the sale is not in their scope at all (SaleAccessScopes.for_investor), so the
+# legitimate sale pages (SL-H) would be refused to them too.
 Given('the sale has a seller with an approved offer and a buyer with a short-listed interest') do
   @c4_parties = {}
   steps %(
@@ -96,13 +113,15 @@ Given('the sale has a seller with an approved offer and a buyer with a short-lis
     And the investor has an offer "quantity=10;PAN=SELLR1234P;bank_account_number=99887766554433" for the sale
     And the offer is approved
   )
-  @c4_parties["seller"] = @employee_investor
+  c4_approve_investor_access(@investor, @employee_investor)
+  @c4_parties["seller"] = @employee_investor.reload
   steps %(
     Given there is an existing investor entity "investor_name=Buyer;entity_type=Investor" with employee "first_name=Buy"
     And the investor has "Buyer" access rights to the sale
     And the investor has an interest "quantity=10;short_listed_status=short_listed;verified=true;PAN=BUYER1234Q" for the sale
   )
-  @c4_parties["buyer"] = @employee_investor
+  c4_approve_investor_access(@investor, @employee_investor)
+  @c4_parties["buyer"] = @employee_investor.reload
 end
 
 When("the sale's {string} opens the sale's report address with report {string}") do |party, report|

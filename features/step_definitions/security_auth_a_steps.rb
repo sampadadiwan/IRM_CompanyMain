@@ -35,7 +35,12 @@ module SecurityAuthAHelpers
 
   # Stubs one credentials key for the scenario; every other lookup still reads the real file
   def sa_stub_credential(*path, value)
-    allow(Rails.application.credentials).to receive(:dig).and_call_original
+    # The catch-all pass-through goes in once only: RSpec tries the most recent stub first, so a
+    # second blanket `and_call_original` would shadow the credential stubbed by the previous call
+    unless @sa_credentials_stubbed
+      allow(Rails.application.credentials).to receive(:dig).and_call_original
+      @sa_credentials_stubbed = true
+    end
     allow(Rails.application.credentials).to receive(:dig).with(*path).and_return(value)
   end
 
@@ -332,6 +337,9 @@ end
 # with a bearer token of that client, and with the client's own credentials. Under the old
 # `allow_token_introspection { true }` both answered {"active": true, ...}. (A token asking about
 # itself is refused by Doorkeeper whatever the setting, so it would prove nothing.)
+# `allow_token_introspection false` makes `use_doorkeeper` skip the route altogether
+# (Doorkeeper::Rails::Routes#introspection_routes?), so there is no endpoint left to answer: the
+# request is a RoutingError, which production renders as a 404 (and counts as a scanner 404).
 When("the client introspects another of the user's tokens") do
   app = Doorkeeper::Application.create!(name: "Introspecting client", redirect_uri: SecurityAuthAHelpers::CLAUDE_CALLBACK,
                                         scopes: "read", confidential: true)
@@ -339,21 +347,28 @@ When("the client introspects another of the user's tokens") do
     Doorkeeper::AccessToken.create!(application: app, resource_owner_id: @user.id, entity_id: @entity.id,
                                     scopes: "read", expires_in: 1.hour.to_i).plaintext_token
   end
-  @sa_introspections = [
-    sa_client.tap { |session| session.post "/oauth/introspect", params: { token: other }, headers: { "Authorization" => "Bearer #{bearer}" } }.response,
-    sa_client.tap do |session|
-      session.post "/oauth/introspect", params: { token: other },
-                                        headers: { "Authorization" => ActionController::HttpAuthentication::Basic.encode_credentials(app.uid, app.plaintext_secret) }
-    end.response
+  credentials = [
+    "Bearer #{bearer}",
+    ActionController::HttpAuthentication::Basic.encode_credentials(app.uid, app.plaintext_secret)
   ]
+  # Status per attempt; an unrouted path raises here unless @allow-rescue renders it
+  @sa_introspections = credentials.map do |authorization|
+    session = sa_client
+    session.post "/oauth/introspect", params: { token: other }, headers: { "Authorization" => authorization }
+    [session.response.status, session.response.body]
+  rescue ActionController::RoutingError
+    [404, ""]
+  end
 end
 
 Then("neither introspection should report the token") do
-  bearer_answer, client_answer = @sa_introspections
-  # Bearer: refused outright
-  expect(bearer_answer.status).to eq(401), "bearer: #{bearer_answer.status} #{bearer_answer.body}"
-  # Client credentials: RFC 7662 answers "inactive", with nothing else about the token
-  expect(JSON.parse(client_answer.body)).to eq("active" => false)
+  # Neither the bearer nor the client-credentials call reaches an introspection action
+  @sa_introspections.each do |status, body|
+    expect(status).to eq(404), "introspection answered #{status} #{body}"
+    expect(body).not_to include("active")
+  end
+  # And nothing in the app can build a link to it (discovery omits introspection_endpoint)
+  expect(Rails.application.routes.url_helpers).not_to respond_to(:oauth_introspect_url)
 end
 
 # ── L2 — hashed tokens ──────────────────────────────────────────────────────
@@ -477,5 +492,8 @@ end
 
 Then("the first {int} posts should reach the app and the rest be throttled") do |allowed|
   expect(@sa_throttle_statuses.first(allowed)).not_to include(429)
-  expect(@sa_throttle_statuses.drop(allowed)).to all(eq(429))
+  # Compare whole arrays: Capybara's `all` finder shadows RSpec's `all` matcher in the World
+  rest = @sa_throttle_statuses.drop(allowed)
+  expect(rest).not_to be_empty
+  expect(rest).to eq(Array.new(rest.size, 429))
 end

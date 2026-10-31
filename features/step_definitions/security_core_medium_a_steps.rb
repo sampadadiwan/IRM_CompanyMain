@@ -46,6 +46,13 @@ module SecurityCoreMediumAHelpers
   # Sends one request as the signed-in user; the response is then on `page`. A removed route raises
   # ActionController::RoutingError in tests (show_exceptions is off) where production answers 404.
   def cma_request(method, path, params = {})
+    # Capybara's rack_test submit blanks the query string of a GET (form semantics), so a path
+    # helper's query params (chat_id, board_id, owner_id, nudge[...]) move into the request params
+    uri = URI.parse(path)
+    if method.to_s.casecmp?("get") && uri.query.present?
+      params = Rack::Utils.parse_nested_query(uri.query).merge(params)
+      path = uri.path
+    end
     page.driver.submit(method, path, params)
     @cma_status = page.status_code
   rescue ActionController::RoutingError
@@ -165,7 +172,8 @@ Given('{string} has a kanban board {string} with a card {string}') do |firm_name
   board = KanbanBoard.create!(name: board_name, entity:)
   board.update!(owner: board)
   column = board.kanban_columns.first || KanbanColumn.create!(name: "Todo", sequence: 1, entity:, kanban_board: board)
-  KanbanCard.create!(kanban_board: board, kanban_column: column, entity:, title: card_title)
+  # info_field is always set by KanbanCardManager on real cards; the card partial splits it
+  KanbanCard.create!(kanban_board: board, kanban_column: column, entity:, title: card_title, info_field: "")
 end
 
 When('they filter the board {string}') do |board_name|
@@ -309,21 +317,22 @@ end
 # ---- M18 task templates -----------------------------------------------------------------------
 
 Given('there is a global {string} task template {string}') do |for_class, details|
-  TaskTemplate.create!(for_class:, details:, due_in_days: 3, entity_id: nil)
+  # tag_list is NOT NULL in task_templates
+  TaskTemplate.create!(for_class:, details:, tag_list: "Default", due_in_days: 3, entity_id: nil)
 end
 
 Given('{string} has a {string} task template {string}') do |firm_name, for_class, details|
-  TaskTemplate.create!(for_class:, details:, due_in_days: 3, entity: cma_firm(firm_name))
+  TaskTemplate.create!(for_class:, details:, tag_list: "Default", due_in_days: 3, entity: cma_firm(firm_name))
 end
 
 When('they create a {string} task template {string} for no firm') do |for_class, details|
   # entity_id left blank: a global template
-  cma_request(:post, task_templates_path, { task_template: { for_class:, details:, due_in_days: 3, entity_id: "" } })
+  cma_request(:post, task_templates_path, { task_template: { for_class:, details:, tag_list: "Default", due_in_days: 3, entity_id: "" } })
 end
 
 When('they create a {string} task template {string} for {string}') do |for_class, details, firm_name|
   cma_request(:post, task_templates_path,
-              { task_template: { for_class:, details:, due_in_days: 3, entity_id: cma_firm(firm_name).id } })
+              { task_template: { for_class:, details:, tag_list: "Default", due_in_days: 3, entity_id: cma_firm(firm_name).id } })
 end
 
 When('they change the task template {string} to {string}') do |details, new_details|
@@ -349,7 +358,8 @@ end
 # WithNextSteps#generate_next_steps without saving: the details of the tasks it would create
 Then('next steps for a {string} of {string} are {string}') do |for_class, firm_name, expected|
   record = for_class.constantize.new(entity_id: cma_firm(firm_name).id)
-  expect(record.generate_next_steps(save_step: false).map(&:details).sort).to eq(expected.split(",").map(&:strip).sort)
+  # Task#details is ActionText rich text, so compare its plain text
+  expect(record.generate_next_steps(save_step: false).map { |task| task.details.to_plain_text }.sort).to eq(expected.split(",").map(&:strip).sort)
 end
 
 Then('a task template with help link {string} is refused') do |link|

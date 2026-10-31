@@ -23,6 +23,12 @@ class DealActivityPolicy < DealBasePolicy
     true
   end
 
+  # L11 — search is the list narrowed by title: same check as index?, and the controller reads it
+  # through policy_scope, so it shows only what the list would. Test L11-3
+  def search?
+    index?
+  end
+
   def show?
     return true if support?
 

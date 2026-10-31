@@ -186,6 +186,12 @@ Given('the environment sets SKIP_AUTHENTICITY_TOKEN and VULN_SCAN to {string}') 
   ENV["VULN_SCAN"] = value
 end
 
+# The factory user has already accepted the terms, so a refused post would leave accept_terms true
+# either way; clear it so "the user has not accepted the terms" can only pass if the post was refused
+Given('the user has yet to accept the terms') do
+  @user.update_columns(accept_terms: false, accepted_terms_on: nil)
+end
+
 When('I accept the terms without a CSRF token') do
   # rack_test posts without the form's authenticity token, as a cross-site form would
   page.driver.submit :post, accept_terms_users_path, {}

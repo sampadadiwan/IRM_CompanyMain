@@ -10,6 +10,7 @@ Feature: Security L4 - CSRF cannot be switched off outside development
 
   Background:
     Given Im logged in as a user "" for an entity "entity_type=Company"
+    And the user has yet to accept the terms
 
   # L4-H — Happy path: a form post without the CSRF token is refused
   @security @rack_test @csrf-protection

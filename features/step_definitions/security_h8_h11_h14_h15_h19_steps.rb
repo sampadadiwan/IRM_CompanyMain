@@ -190,23 +190,23 @@ end
 
 When("{string} lists the sale's allocations") do |label|
   sr_sign_in(sec_parties.fetch(label)[:user])
-  sr_request(:get, allocations_path(secondary_sale_id: @sale.id))
+  sr_request(:get, allocations_path, secondary_sale_id: @sale.id)
 end
 
 When("{string} lists the sale's allocations filtered by {string} {string}") do |label, condition, value|
   sr_sign_in(sec_parties.fetch(label)[:user])
   # The generic filter dropdown sends the condition as q[...]
-  sr_request(:get, allocations_path(secondary_sale_id: @sale.id, q: { condition => value }))
+  sr_request(:get, allocations_path, secondary_sale_id: @sale.id, q: { condition => value })
 end
 
 When('{string} lists the allocations of the sale {string}') do |label, sale_name|
   sr_sign_in(sec_parties.fetch(label)[:user])
-  sr_request(:get, allocations_path(secondary_sale_id: sec_foreign_sales.fetch(sale_name).id))
+  sr_request(:get, allocations_path, secondary_sale_id: sec_foreign_sales.fetch(sale_name).id)
 end
 
 When("the sale's company admin lists the sale's allocations sorted by {string}") do |sort|
   sr_sign_in(@user)
-  sr_request(:get, allocations_path(secondary_sale_id: @sale.id, q: { s: sort }))
+  sr_request(:get, allocations_path, secondary_sale_id: @sale.id, q: { s: sort })
 end
 
 Then('the allocations listed are {string}') do |pairs|
@@ -224,7 +224,8 @@ end
 Then('the allocations listed in order are {string}') do |pairs|
   # Every row is listed, and in the order given
   positions = sec_pair_list(pairs).map { |pair| @sr_body.index(%(id="allocation_#{sec_allocations.fetch(pair).id}")) }
-  expect(positions).to all(be_present)
+  # (Capybara's `all` finder shadows RSpec's `all` matcher in the World, so check for nil directly)
+  expect(positions).not_to include(nil)
   expect(positions).to eq(positions.sort)
 end
 

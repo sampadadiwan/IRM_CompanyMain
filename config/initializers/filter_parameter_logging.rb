@@ -28,3 +28,12 @@ Rails.application.config.filter_parameters += [
   :bank_account_number, :aadhaar, :pan_card_data, :address_proof_data, :bank_routing_info,
   :virtual_bank_account, :passport
 ]
+
+# L8-H — the list above reaches ActiveRecord #inspect only through Rails' "set_filter_attributes"
+# on_load hook, which copies config.filter_parameters as they stand when ActiveRecord::Base loads.
+# Here that is at Bundler.require time (devise-api's `Devise::Api::Token < ActiveRecord::Base`),
+# before any config/initializers run, so the copy was empty and #inspect printed PAN, passwords
+# and every other key in clear. Re-sync once every initializer has added its keys.
+Rails.application.config.after_initialize do
+  ActiveRecord::Base.filter_attributes |= Rails.application.config.filter_parameters
+end

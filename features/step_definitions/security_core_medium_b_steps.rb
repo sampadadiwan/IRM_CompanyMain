@@ -419,7 +419,8 @@ end
 # ---- L11 ------------------------------------------------------------------------------------------
 
 When('I post a new blog {string}') do |title|
-  sr_request(:post, blogs_path, blog: { title:, content: "Notes for LPs" })
+  # As the blog form posts it: the tag field is always sent (the show page splits it)
+  sr_request(:post, blogs_path, blog: { title:, tag_list: "Updates", content: "Notes for LPs" })
 end
 
 Then('there is no blog {string}') do |title|

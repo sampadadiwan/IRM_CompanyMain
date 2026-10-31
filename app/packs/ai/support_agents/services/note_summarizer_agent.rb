@@ -189,8 +189,9 @@ class NoteSummarizerAgent < SupportAgentService
                                    .compact_blank
 
     # Load only notes that have no tags yet within the period — no need to re-tag existing ones
+    # Notes hang off their investor through the polymorphic owner (notes.investor is not an association)
     untagged = Note
-               .where(investor: investor, entity: @support_agent.entity)
+               .where(owner: investor, entity: @support_agent.entity)
                .where(on: ctx[:period_start]..ctx[:period_end])
                .where(tags: [nil, ""])
                .with_all_rich_text
@@ -280,7 +281,7 @@ class NoteSummarizerAgent < SupportAgentService
     # Exclude auto-generated summary notes (tagged "summary") so they are never
     # included in future summaries — they exist only for reference.
     notes = Note
-            .where(investor: investor, entity: @support_agent.entity)
+            .where(owner: investor, entity: @support_agent.entity)
             .where(on: ctx[:period_start]..ctx[:period_end])
             .where("tags NOT REGEXP ? OR tags IS NULL OR tags = ''", "(^|,)summary(,|$)")
             .with_all_rich_text # eager-loads the ActionText body in one query
@@ -417,12 +418,12 @@ class NoteSummarizerAgent < SupportAgentService
     note_date = ctx[:period_end]
 
     # Find an existing summary note for this period to overwrite rather than duplicate
-    existing = Note.where(investor: investor, entity: @support_agent.entity, on: note_date)
+    existing = Note.where(owner: investor, entity: @support_agent.entity, on: note_date)
                    .where("tags REGEXP ?", "(^|,)summary(,|$)")
                    .first
 
     note = existing || Note.new(
-      investor: investor,
+      owner: investor,
       entity: @support_agent.entity,
       user: User.where(entity_id: @support_agent.entity_id).first, # system note — use first entity user
       on: note_date

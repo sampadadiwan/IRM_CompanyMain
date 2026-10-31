@@ -63,6 +63,12 @@ Given('there is an LP firm {string}') do |name|
   tenants[name] = flagged_entity(name, "Investor")
 end
 
+Given('the support user is mapped to my firm') do
+  # The admin panel scopes support to clients with an enabled mapping and enable_support set
+  # (BaseScope#resolve_admin); enable_support sets both, as enabling a mapping does in the app
+  SupportClientMapping.create!(user: @user, entity: @entity, enabled: false).enable_support
+end
+
 # ---- C5 actions -------------------------------------------------------------------------------
 
 When('I update the LP {string} with the linked firm of {string} and city {string}') do |name, firm_name, city|

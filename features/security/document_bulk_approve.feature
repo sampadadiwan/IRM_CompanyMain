@@ -24,7 +24,7 @@ Feature: Bulk document approval - 2026-10 security review (H1)
   # H1-2 — Edge case: an approver of another firm cannot approve (and email) this firm's folder tree
   @rack_test
   Scenario: H1-2 Another firm's approver approving this firm's folder is refused
-    Given I am signed in as an approver of another firm "Zeta Capital"
+    Given I am signed in as a document approver of another firm "Zeta Capital"
     When I bulk approve the documents of the folder from yesterday to today with notification
     Then I am denied access
     And the folder's generated documents are still unapproved
@@ -33,7 +33,7 @@ Feature: Bulk document approval - 2026-10 security review (H1)
   # H1-3 — Edge case: another firm's approver opening the page with this firm's folder learns nothing about it
   @rack_test
   Scenario: H1-3 Another firm's approver opening the approval page for this firm's folder is refused
-    Given I am signed in as an approver of another firm "Zeta Capital"
+    Given I am signed in as a document approver of another firm "Zeta Capital"
     When I open the approval page for the folder
     Then I am denied access
     And the folder's name is not on the page

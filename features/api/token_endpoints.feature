@@ -45,7 +45,9 @@ Feature: The token endpoints do not reveal which accounts exist and cannot be ha
     When 6 visitors from different IPs ask for a token for "target@example.com"
     Then the first 5 posts should reach the app and the rest be throttled
 
-  # M6-3 — Edge case: Doorkeeper's client endpoints allow 60 posts a minute per IP, then throttle
+  # M6-3 — Edge case: Doorkeeper's client endpoints allow 60 posts a minute per IP, then throttle.
+  # /oauth/introspect is not listed: with introspection off (M2) Doorkeeper does not route it, so it
+  # is a plain 404 and the 404-scanner rules throttle it far sooner (oauth_clients.feature, M2-X).
   @rack_attack
   Scenario Outline: The OAuth client endpoints are throttled per IP
     Given a visitor "Client" browsing from IP "198.51.100.8"
@@ -56,7 +58,6 @@ Feature: The token endpoints do not reveal which accounts exist and cannot be ha
       | path              |
       | /oauth/token      |
       | /oauth/revoke     |
-      | /oauth/introspect |
 
   # M2 (throttle part of the registration gate) — Edge case: the 31st registration from one IP within an hour is throttled
   @rack_attack

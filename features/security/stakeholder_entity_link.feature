@@ -68,6 +68,7 @@ Feature: Security C5 - a stakeholder's linked firm, and the users a merge moves
   @security @rack_test
   Scenario: C5-X Support relinks a stakeholder in the admin panel
     Given the user has role "support"
+    And the support user is mapped to my firm
     And there is an LP "Harshal" of my fund
     And the LP "Harshal" has a contact "lata@harshal.example"
     And there is an LP firm "Harshal Holdings"

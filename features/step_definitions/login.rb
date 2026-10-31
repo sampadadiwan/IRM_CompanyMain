@@ -165,8 +165,9 @@ end
 When('I set my new password to {string}') do |new_password|
   fill_in('user_password', with: new_password)
   fill_in('user_password_confirmation', with: new_password)
-  # The Reset Password submit input on this page uses type="Submit" (capital S),
-  # which click_on's case-sensitive selector misses even though browsers treat it as submit.
+  # The Reset Password submit input used type="Submit" (capital S), which click_on's
+  # case-sensitive selector and rack_test's submit check both missed; it is lowercase now, and the
+  # xpath click keeps working either way.
   find(:xpath, "//input[@value='Reset Password']").click
 end
 

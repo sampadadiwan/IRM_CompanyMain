@@ -177,13 +177,16 @@ Feature: C2 - stored formulas are evaluated only after an allowlist check of the
     And the text "fund_unit_setting.management_fee" checked with profile "fund_formula" and locals "fund_unit_setting" passes
     And the text "fund_unit_setting.management_fee" checked with profile "fund_formula" and locals "" is refused with "unknown name fund_unit_setting"
 
-  # C2-X2 — Edge case: a Cumulate formula holds entry names, which are never treated as code
+  # C2-X2 — Edge case: a Cumulate formula holds entry names, which are never treated as code.
+  # "Setup Fees" parses as Ruby, and checked as code would be refused ("self method Setup", "bare
+  # constant Fees"); the pre-existing Ruby syntax check still applies to every rule type, so the name
+  # must parse.
   @security @rack_test
   Scenario: C2-X2 Cumulate entry names are not checked as code
     Given the formula sandbox mode is "enforce"
     And there is a user "first_name=Gita" for an entity "name=Artha;entity_type=Investment Fund"
     And there is a fund "name=C2 Fund" for the entity
-    When I save a "CumulateAccountEntry" fund formula "Fees - Setup (Q1)"
+    When I save a "CumulateAccountEntry" fund formula "Setup Fees"
     Then the fund formula is saved
 
   # C2-X3 — Edge case: a mistyped formula keeps the existing syntax-error messages in enforce mode

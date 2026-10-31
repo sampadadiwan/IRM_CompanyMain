@@ -114,7 +114,7 @@ Given('the investor has a KYC with a generated document awaiting approval') do
   @h1_kyc_document = h1_generated_document(name: "KYC Form", owner: h2_kyc)
 end
 
-Given('I am signed in as an approver of another firm {string}') do |name|
+Given('I am signed in as a document approver of another firm {string}') do |name|
   h1_sign_in(h1_other_firm_approver(name))
 end
 
@@ -264,7 +264,9 @@ end
 
 Then('the email is filed against the KYC with {int} document credited to {string}') do |count, sender|
   incoming = IncomingEmail.last
-  expect(incoming.owner).to eq(h2_kyc)
+  # The KYC reloads as its STI subclass (IndividualKyc) while h2_kyc is the InvestorKyc the factory
+  # built, and AR == compares classes, so match on the polymorphic key instead
+  expect([incoming.owner_type, incoming.owner_id]).to eq([h2_kyc.class.base_class.name, h2_kyc.id])
   expect(incoming.entity_id).to eq(@entity.id)
   expect(incoming.documents.count).to eq(count)
   expect(incoming.documents.unscope(:order).distinct.pluck(:user_id)).to eq([h2_sender(sender).id])

@@ -238,5 +238,8 @@ end
 
 Then("the first {int} code posts should reach the app and the next be throttled") do |allowed|
   expect(@h13_code_statuses.first(allowed)).not_to include(429)
-  expect(@h13_code_statuses.drop(allowed)).to all(eq(429))
+  # Compare whole arrays: Capybara's `all` finder shadows RSpec's `all` matcher in the World
+  rest = @h13_code_statuses.drop(allowed)
+  expect(rest).not_to be_empty
+  expect(rest).to eq(Array.new(rest.size, 429))
 end

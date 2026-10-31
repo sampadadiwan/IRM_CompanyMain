@@ -1277,7 +1277,12 @@ Then('the document esign is cancelled') do
   click_on("Signatures")
   # sleep(1)
   click_on("Cancel eSignatures")
-  # sleep(3)
+  # Wait for the cancel PATCH to finish. button_to submits via Turbo (a fetch, not a page navigation),
+  # so the click returns while the request is still in flight; the next step's visit then raced it -
+  # the show page loaded the document before the cancel committed (status "Requested") and its
+  # signatures after it ("Cancelled"), so "Re-Send for eSignatures" never rendered.
+  expect(page).to have_content("Document's eSignature(s) was cancelled")
+  expect(@doc.reload.esign_status.downcase).to eq("cancelled")
 end
 
 Then('the docusign document esign is cancelled') do

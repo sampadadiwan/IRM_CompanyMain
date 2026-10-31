@@ -64,23 +64,23 @@ end
 
 When("the sale's {string} lists the interests of the sale {string}") do |party, sale_name|
   sr_sign_in(@c4_parties.fetch(party))
-  sr_request(:get, interests_path(secondary_sale_id: sec_foreign_sales.fetch(sale_name).id))
+  sr_request(:get, interests_path, secondary_sale_id: sec_foreign_sales.fetch(sale_name).id)
 end
 
 When("the sale's {string} lists the offers of the sale {string}") do |party, sale_name|
   sr_sign_in(@c4_parties.fetch(party))
-  sr_request(:get, offers_path(secondary_sale_id: sec_foreign_sales.fetch(sale_name).id))
+  sr_request(:get, offers_path, secondary_sale_id: sec_foreign_sales.fetch(sale_name).id)
 end
 
 When("the sale's {string} searches the offers of the sale {string} for {string}") do |party, sale_name, query|
   sr_sign_in(@c4_parties.fetch(party))
   # The search box sends the sale id and the query; the sale is resolved before any index lookup
-  sr_request(:get, search_offers_path(secondary_sale_id: sec_foreign_sales.fetch(sale_name).id, query:))
+  sr_request(:get, search_offers_path, secondary_sale_id: sec_foreign_sales.fetch(sale_name).id, query:)
 end
 
 When("the sale's {string} lists the interests of the sale") do |party|
   sr_sign_in(@c4_parties.fetch(party))
-  sr_request(:get, interests_path(secondary_sale_id: @sale.id))
+  sr_request(:get, interests_path, secondary_sale_id: @sale.id)
 end
 
 # ==== M11 — allocation create and update =======================================================

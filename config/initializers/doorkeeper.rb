@@ -37,8 +37,9 @@ Doorkeeper.configure do
 
   # Allow client credentials via request params
   # M2 — introspection off. Nothing here calls /oauth/introspect, and `true` let any client (or
-  # any bearer) ask about any token. A client-authenticated call now always answers
-  # {"active": false}; a bearer-authenticated one gets 401. Also throttled (rack_attack.rb).
+  # any bearer) ask about any token. `false` (not a block returning false) makes `use_doorkeeper`
+  # skip the route entirely, so POST /oauth/introspect is a 404 and the OIDC discovery document
+  # omits introspection_endpoint. (rack_attack.rb still lists the path in case it is ever re-enabled.)
   # docs/security/security_review_2026_10.md "Authentication and session — Medium / Low", M2.
   allow_token_introspection false
 
