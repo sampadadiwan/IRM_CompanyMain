@@ -236,3 +236,114 @@ end
 Then('the live question box holds {string}') do |question|
   expect(live_composer_update[:locals][:value]).to eq(question)
 end
+
+# ---- Record analysis chat (features/ai_chat/kpi_chat.feature) ------------------------------------------
+
+Given('Priya has a chat about {string} that asked {string}') do |fund_name, question|
+  @chat = Chat.create!(user: @user, entity: @entity, owner: Fund.find_by!(name: fund_name), name: "#{fund_name} analysis")
+  @chat.messages.create!(role: "user", content: question)
+  @chat.messages.create!(role: "assistant", content: "Q2 was steady.")
+end
+
+# Chat#ask is stubbed as RubyLLM streams: it saves the question and an empty answer, then yields chunks.
+def stub_chat_ask(chunks: [], error: nil)
+  allow_any_instance_of(Chat).to receive(:ask) do |chat, content, with: [], &block| # rubocop:disable Lint/UnusedBlockArgument -- RubyLLM passes with:
+    raise error if error
+
+    chat.messages.create!(role: "user", content:)
+    chat.messages.create!(role: "assistant", content: "")
+    chunks.each { |text| block.call(OpenStruct.new(content: text)) }
+  end
+end
+
+Given('the chat model streams {string}') do |text|
+  stub_chat_ask(chunks: text.split(/(?<=\s)/))
+end
+
+Given('the chat model streams nothing') do
+  stub_chat_ask
+end
+
+Given('the chat model fails with {string}') do |message|
+  stub_chat_ask(error: StandardError.new(message))
+end
+
+Given('alerts are recorded') do
+  @alerts = []
+  allow_any_instance_of(ChatStreamJob).to receive(:send_notification) { |_job, *args| @alerts << args }
+end
+
+When('Priya opens that chat') do
+  visit chat_path(@chat)
+end
+
+When('Priya sends {string} in the chat') do |question|
+  post_turbo_stream(send_message_chat_path(@chat), { user_content: question })
+end
+
+Then('the chat sidebar lists {string}') do |question|
+  within("#chat-conversations") { expect(page).to have_css(".aic-conversation", text: question) }
+end
+
+Then('the chat response adds the question {string} with {string} under it') do |question, pending|
+  appended = @stream.at_css("turbo-stream[action='append'][target='chat-panel-items'] template")
+  html = Nokogiri::HTML5.fragment(appended.inner_html)
+  expect(html.at_css(".aic-question").text.strip).to eq(question)
+  expect(html.at_css("[data-ai-chat-answer]").text).to include(pending)
+end
+
+def chat_answer_updates
+  @live_updates.select { |u| u[:target].to_s.start_with?("chat_response_") }
+end
+
+def render_live(update)
+  Nokogiri::HTML5.fragment(ApplicationController.render(partial: update[:partial], locals: update[:locals]))
+end
+
+Then('the live chat answer streamed before it finished') do
+  statuses = chat_answer_updates.map { |u| u[:locals][:item].status }
+  expect(statuses).to include(:running)
+  expect(statuses.last).to eq(:answered)
+end
+
+Then('the live chat answer shows {string}') do |text|
+  expect(render_live(chat_answer_updates.last).text).to include(text)
+end
+
+Then('the live chat answer reads {string}') do |badge|
+  expect(render_live(chat_answer_updates.last).at_css(".badge").text).to include(badge)
+end
+
+Then('the live chat question box is ready again') do
+  update = @live_updates.rfind { |u| u[:target] == "chat-composer" }
+  expect(update[:locals]).to include(running: false, value: nil)
+end
+
+Then('the live chat question box holds {string}') do |question|
+  expect(@live_updates.rfind { |u| u[:target] == "chat-composer" }[:locals][:value]).to eq(question)
+end
+
+Then('there is no document picker') do
+  expect(page).to have_no_css("#chat-document")
+end
+
+Then('Priya is alerted {string}') do |message|
+  expect(@alerts).to include([message, @user.id, :alert])
+end
+
+Given('{string} of {string} is signed in') do |full_name, entity_name|
+  first_name, last_name = full_name.split(" ", 2)
+  entity = FactoryBot.create(:entity, name: entity_name, entity_type: "Investment Fund")
+  @other_user = FactoryBot.create(:user, entity:, first_name:, last_name:)
+  @other_user.add_role(:company_admin)
+  log_in(@other_user)
+end
+
+When("Arjun opens Priya's chat") do
+  visit chat_path(@chat)
+end
+
+Then("the chat's questions are not shown") do
+  expect(page).to have_no_content("Summarise Q2")
+  expect(page).to have_no_css("#chat-panel")
+end

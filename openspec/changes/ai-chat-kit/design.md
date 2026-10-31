@@ -247,7 +247,7 @@ stateDiagram-v2
 | Screen | `pending` comes from | `answered` / `failed` comes from |
 |---|---|---|
 | Assistants | `AssistantsController#ask` response (pending frame) | `AssistantQueryJob` broadcast (answer or `error`) |
-| KPI chat | `Message` with blank content (assistant) | `ChatStreamJob` chunks / final broadcast; fallback text when blank |
+| KPI chat | `ChatsController#send_message` response (pending `chat_response_<request_id>`) | `ChatStreamJob` re-renders it while streaming (running), then answered / failed; fallback text when blank |
 | Floating window | `_pending` template inserted by ⑤ on submit | `SupportAgentChatsController#create` turbo_stream (answer or error) |
 | Support Console | `metadata.turn_status` queued/running (stored, unchanged) | `SupportConsoleTurnJob` (unchanged) |
 
@@ -478,7 +478,7 @@ keep `faq_thread_controller`).
 |---|---|
 | `AssistantsController#ask`, `#transcribe` | Render `ai_chat` question + pending (Turbo Stream append) instead of `assistants/_ask_frame` |
 | `AssistantQueryJob` | Broadcast `ai_chat/_answer` (answered or failed) replacing the pending id; drop `broadcast_hide_spinner` |
-| `Message` broadcasts, `messages/_message`, `messages/_streamed_markdown` | Render `ai_chat/_question`/`_answer`; keep `dom_id(message, "content")` as the chunk target |
+| `ChatsController#send_message`, `ChatStreamJob` | Same pattern as the Assistants page: the response appends the question + pending answer; the job takes a `request_id` and replaces `chat_response_<request_id>` with the answer so far (running) at sentence/line ends, then the finished or failed answer, and re-renders the box. **Found during phase 3:** `Chat#enable_broadcast` is an in-memory flag nothing sets, so `Message`'s own broadcasts never fired and answers only appeared after a reload — the request-id path fixes that without touching `Message`. `messages/_message` renders the kit; `messages/_streamed_markdown` and `chats/_chat_box` are removed |
 | `SupportAgentChatsController` | `index`/`sessions` → HTML (kit thread / rows); `create` → turbo_stream (question + answer or failed item); passes `session_id`/`new_session` |
 | `GenericChatAgent` | Optional `session_id:` (must match agent, chattable, analyst) and `new_session:`; defaults keep today's rule |
 | `SupportConsoleTurnJob` | None (renders the same partial names via `_message` wrapper) |

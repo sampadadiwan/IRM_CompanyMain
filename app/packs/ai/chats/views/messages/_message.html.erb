@@ -1,40 +1,8 @@
-<%= turbo_frame_tag message do %>
-  <%
-    is_user = message.role == 'user'
-    alignment_class = is_user ? 'justify-content-end' : 'justify-content-start'
-    bg_class = is_user ? 'bg-primary text-white' : 'bg-light text-dark border'
-    avatar_bg = is_user ? 'bg-secondary' : 'bg-info'
-  %>
-
-  <div class="d-flex <%= alignment_class %> mb-3" data-faq-thread-target="message" data-role="<%= message.role %>">
-    <% unless is_user %>
-      <div class="flex-shrink-0 me-2">
-        <div class="rounded-circle <%= avatar_bg %> d-flex align-items-center justify-content-center text-white fw-bold" style="width: 32px; height: 32px;">
-          AI
-        </div>
-      </div>
-    <% end %>
-
-    <div class="p-3 rounded-3 shadow-sm <%= bg_class %>" style="max-width: 85%;">
-      <% if is_user %>
-        <%= simple_format(message.content, class: "mb-0") %>
-      <% else %>
-        <% if message.role == "assistant" && message.content.blank? %>
-          <em>Thinking...</em>
-        <% else %>
-          <div class="lh-lg">
-            <%= markdown_to_html(message.content) rescue simple_format(message.content) %>
-          </div>
-        <% end %>
-      <% end %>
-    </div>
-
-    <% if is_user %>
-      <div class="flex-shrink-0 ms-2">
-        <div class="rounded-circle <%= avatar_bg %> d-flex align-items-center justify-content-center text-white fw-bold" style="width: 32px; height: 32px;">
-          You
-        </div>
-      </div>
-    <% end %>
-  </div>
+<%# A chat Message drawn by the chat kit (ai_chat/_question, ai_chat/_answer), for any `render message`.
+    Message's own broadcasts use it. Local: message (Message). %>
+<% item = AiChatItem.from_message(message) %>
+<% if item.question? %>
+  <%= render "ai_chat/question", item: item %>
+<% else %>
+  <%= render "ai_chat/answer", item: item, mode: :rich %>
 <% end %>

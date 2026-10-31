@@ -1,0 +1,27 @@
+<%#
+  The chat's question box: the chat kit's composer with the document picker (when the record has PDF
+  or CSV documents) and the external-model notice. ChatStreamJob re-renders it when an answer ends,
+  putting a failed question back. Locals: chat (Chat), running (Boolean), value (String, optional).
+%>
+<%# The picker lists the record's PDF/CSV documents, so they are loaded here on purpose (E5). %>
+<% documents = chat.owner.respond_to?(:documents) ? chat.owner.documents.to_a.select { |d| d.pdf? || d.csv? } : [] %>
+<% extras = capture do %>
+  <% if documents.any? %>
+    <%= select_tag :document_id, options_for_select(documents.map { |d| [d.name, d.id] }), prompt: "Select document",
+                   class: "form-select form-select-sm border-0 bg-transparent shadow-none w-auto text-muted",
+                   id: "chat-document", aria: { label: "Document" } %>
+  <% end %>
+<% end %>
+<% footer = capture do %>
+  <div class="text-center small text-muted mt-2">
+    <% if local_assigns[:value].present? %>
+      <i class="ti ti-arrow-back-up me-1"></i>Your question is back in the box — press Enter to try again.
+    <% else %>
+      The data in this chat, and any document you select, are sent to an external AI model to answer.
+    <% end %>
+  </div>
+<% end %>
+<%= render "ai_chat/composer", id: "chat-composer", form_url: send_message_chat_path(chat), field: :user_content,
+                               question_id: "chat-question", ask_id: "chat-ask", value: local_assigns[:value],
+                               running: running, placeholder: "Ask about #{chat.owner || 'this chat'}",
+                               extras: extras, footer: footer %>

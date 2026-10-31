@@ -1,7 +1,0 @@
-<turbo-stream action="replace" target="<%= dom_id(message, 'content') %>">
-  <template>
-    <div id="<%= dom_id(message, 'content') %>" class="markdown-body">
-      <%= markdown_to_html(message.content) %>
-    </div>
-  </template>
-</turbo-stream>

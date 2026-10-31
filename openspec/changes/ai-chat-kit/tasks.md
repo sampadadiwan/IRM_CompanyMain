@@ -60,14 +60,14 @@
 
 ## 3. KPI analysis chat on the kit
 
-- [ ] 3.1 `ChatsController#show`: rows from `policy_scope(Chat)` with the same owner as `@chat`,
+- [x] 3.1 `ChatsController#show`: rows from `policy_scope(Chat)` with the same owner as `@chat`,
       items from `@chat.messages`; render `ai_chat/_layout` (`:rich`) with the document picker slot
       when the owner has PDF/CSV documents. Remove `faq_thread_controller` from `chats/show` only.
       LLD § Controllers. Verify: KPI report › Analysis › a chat in dev shows the kit page.
-- [ ] 3.2 `messages/_message` and `messages/_streamed_markdown` render `ai_chat/_question` /
+- [x] 3.2 `messages/_message` and `messages/_streamed_markdown` render `ai_chat/_question` /
       `_answer`, keeping `dom_id(message, "content")` as the chunk target. Verify: a streamed answer in
       dev grows in place with the blinking cursor and ends as a kit answer.
-- [ ] 3.3 Write `features/ai_chat/kpi_chat.feature` for H5, E5, E15, E16 (KPI), X4, X8; run it with
+- [x] 3.3 Write `features/ai_chat/kpi_chat.feature` for H5, E5, E15, E16 (KPI), X4, X8; run it with
       `TEST_ENV_NUMBER=$RANDOM bundle exec cucumber features/ai_chat/kpi_chat.feature` and confirm it
       is green before starting phase 4.
 
