@@ -206,6 +206,13 @@ stateDiagram-v2
 
 Open [**Chats**](/chats) and click **New Chat** to start one; chats can also be opened in context, for example from a KPI report's details panel. Which topics are available depends on the AI model configured and the features enabled for your entity. See the **LLM Configuration Guide** for model setup.
 
+A chat page has the same layout as CapHive's other AI chats — the **Assistant** pages (Fund, Specific Fund, Portfolio, Portfolio Company and Capital Commitment assistants) and the agents' floating **Need help?** windows:
+
+- **Conversations on the left** — earlier chats about the same record, newest first, grouped Today / Yesterday / Previous 7 days / Older, each with its first question, who started it and when; a search box filters them and **New chat** starts another. Click one to open it without leaving the page.
+- **The thread** — your questions in grey bubbles on the right; answers as plain text, with tables in bordered cards (they scroll sideways when wide) and a **Copy** button and time on hover.
+- **The question box** — press **Enter** to send and **Shift+Enter** for a new line. Your question shows at once with a "Thinking…" line under it, and the answer fills in as it is written. On a chat about a record with PDF or CSV documents, pick one beside the box to include it. On an Assistant page, hold the microphone to ask by voice, and use **Export** in the header for slides, PowerPoint or the Efficiency Report.
+- If an answer fails, it reads **Not answered** with the reason, and your question is put back in the box to try again.
+
 ---
 
 ## FAQ Threads (Support Bot)
@@ -248,6 +255,9 @@ There is no sidebar entry; open [**AI Portfolio Reports**](/ai_portfolio_reports
 
 **How do I get to Investment Criteria Templates?**
 Open [**Investment Criteria Templates**](/investment_criteria_templates) (no menu link). You can also create a template inline while creating a report: on the **New Report** form choose **Create new template**, give it a **Template Name** and fill in the **Evaluation Criteria**. See [Investment Criteria Templates](#investment-criteria-templates).
+
+**Where are my earlier chats and assistant conversations?**
+In the list on the left of the chat or Assistant page — the conversations about the same record, newest first, with their first question, who started each and when. On a floating **Need help?** window, click **Conversations** in its header (or maximise the window to keep the list beside the chat).
 
 **How do I open Chats?**
 Open [**Chats**](/chats) and click [**New Chat**](/chats/new). Chats are also opened in context, for example from a KPI report's details panel, which pre-fills the record the chat is about. See [Chats](#chats).

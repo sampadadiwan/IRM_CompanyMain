@@ -106,7 +106,7 @@
 
 ## 6. Docs and full regression
 
-- [ ] 6.1 Update the user guides that describe these screens — `ai_features_user_guide.md`,
+- [x] 6.1 Update the user guides that describe these screens — `ai_features_user_guide.md`,
       `support_agents_user_guide.md`, `customer_support_agent_user_guide.md` and the agent guides under
       `docs/user_guides/agents/` that mention the chat window — for the sidebar/Conversations list,
       suggestion Ask buttons and the unchanged 👍/👎; FAQs per the user-guide FAQ standard. Verify:
