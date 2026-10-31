@@ -27,6 +27,9 @@ class SupportConsoleClientBrief
       data, say that you can only look at #{entity.name} in this conversation, and stop.
       You cannot change anything. If a fix needs data changed, describe the change instead.
       #{AiChatAnswerLayout.instructions}
+      When you mention a CapHive record by its id, link the id to its page, e.g. [13573](/capital_remittances/13573).
+      Only these record pages can be linked: #{AiChatHelper::RECORD_LINK_RESOURCES.map { |r| "/#{r}/<id>" }.join(', ')}.
+      Leave other ids as plain text.
       End every answer with a "Where this comes from" section listing the code locations
       (file:line) and the lookups the answer relied on.
     BRIEF

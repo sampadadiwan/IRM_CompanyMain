@@ -65,3 +65,29 @@ Feature: AI chat answer rendering
       """
     When it is rendered in rich mode
     Then the rendered answer has no element ids and no controller but the chart renderer
+
+  # X45 — Happy path: a Support Console answer links a record id to the record's page, opening in a new tab
+  Scenario: Record id links to its page
+    Given an answer:
+      """
+      Remittance [13573](/capital_remittances/13573) is still pending on call [1093](/capital_calls/1093).
+      """
+    When it is rendered in strict mode
+    Then the rendered answer links "13573" to "/capital_remittances/13573" in a new tab
+    And the rendered answer links "1093" to "/capital_calls/1093" in a new tab
+
+  # X46 — Error case: a same-site link that is not a record page stays plain text
+  Scenario: Other site paths stay text
+    Given an answer:
+      """
+      [Sign out](/users/sign_out), [edit it](/funds/1/edit) and [fund](/funds/abc).
+      """
+    When it is rendered in strict mode
+    Then the rendered answer has no links
+    And the rendered answer says "Sign out, edit it and fund."
+
+  # E50 — Edge case: the Support Console's prompt asks for record links and lists the pages it may link
+  Scenario: The Console asks for record links
+    When the Support Console brief is built for a client
+    Then it asks for record ids to be linked like "[13573](/capital_remittances/13573)"
+    And it lists "/capital_remittances/<id>" among the record pages

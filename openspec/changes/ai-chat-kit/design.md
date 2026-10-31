@@ -698,6 +698,9 @@ Shared setup:
 | X42 | Colleague's assistant chat | a colleague's `chat_id` | Priya opens it | not shown (own chats only) | Only the user's own conversations | `ai_chat/assistants_page.feature` |
 | X43 | Window fails twice | AI unreachable | asks, fails, asks again | each failure moves off the pending ids, so the next pending answer is replaced | Provider unreachable | `ai_chat/floating_window.feature` |
 | X44 | Asking an agent without access | another entity's user | posts a question | refused (Pundit), not a 500; nothing saved | Only the user's own conversations | `ai_chat/floating_window.feature` |
+| X45 | Record id links to its page | Console answer `[13573](/capital_remittances/13573)` | renders `:strict` | a link to the remittance, new tab | Questions and answers | `ai_chat/answer_rendering.feature` |
+| X46 | Other site paths stay text | `/users/sign_out`, `/funds/1/edit`, `/funds/abc` | renders `:strict` | plain text, no link | Questions and answers | `ai_chat/answer_rendering.feature` |
+| E50 | Console asks for record links | the client brief | built | asks to link record ids, lists the allowed record pages | Questions and answers | `ai_chat/answer_rendering.feature` |
 | X9 | Feedback on another's message | Arjun PATCHes feedback for Priya's message | requests | refused as today | Rate down with a note | `ai_chat/customer_support.feature` |
 
 ### Testing

@@ -916,3 +916,28 @@ end
 Given('Priya has a window conversation on the agent\'s page that started {string}') do |question|
   window_session(@agent, question, time: 2.hours.ago)
 end
+
+# ---- Record links in Support Console answers (X45, X46, E50) ----------------------------------------------
+
+Then('the rendered answer links {string} to {string} in a new tab') do |text, href|
+  link = @rendered_answer.css("a").find { |a| a.text == text }
+  expect(link).to be_present
+  expect([link["href"], link["target"]]).to eq([href, "_blank"])
+  expect(link["rel"]).to include("noopener")
+end
+
+Then('the rendered answer has no links') do
+  expect(@rendered_answer.css("a")).to be_empty
+end
+
+When('the Support Console brief is built for a client') do
+  @brief = SupportConsoleClientBrief.call(FactoryBot.create(:entity, name: "Golden Angels", entity_type: "Investment Fund"))
+end
+
+Then('it asks for record ids to be linked like {string}') do |example|
+  expect(@brief).to include("link the id to its page").and include(example)
+end
+
+Then('it lists {string} among the record pages') do |path|
+  expect(@brief).to include(path)
+end

@@ -33,6 +33,14 @@ module AiChatHelper
   # attach behaviour.
   RICH_DATA_ATTRIBUTES = %w[data-controller data-chart-renderer-spec-value data-chart-renderer-target].freeze
 
+  # Record pages an answer may link to in :strict mode (X45): a record's show page on this site, by
+  # numeric id. Anything else relative stays text — an answer steered by client data must not be able to
+  # point at a page that acts on a click (X46). SupportConsoleClientBrief lists the same paths.
+  RECORD_LINK_RESOURCES = %w[funds capital_commitments capital_calls capital_remittances capital_distributions
+                             capital_distribution_payments investors investor_kycs account_entries
+                             portfolio_investments valuations kpi_reports documents deals].freeze
+  RECORD_LINK_PATH = %r{\A/(?:#{RECORD_LINK_RESOURCES.join('|')})/\d+\z}
+
   # The renderer's two modes (design card ④): :strict keeps X24 for the Support Console; :rich is
   # MarkdownHelper#markdown_to_html's allow-list (charts kept) for the other chat screens.
   ANSWER_MODES = %i[strict rich].freeze
@@ -428,9 +436,11 @@ module AiChatHelper
     # E47 — markdown_to_html renders with no_intra_emphasis, so snake_case names are not italicised.
     fragment = Nokogiri::HTML5.fragment(sanitize(markdown_to_html(text).to_s, scrubber: scrubber))
     fragment.css("a").each do |link|
-      # Anything but an absolute http(s) link becomes its text — as a text node: replace(String)
-      # would parse the decoded text as markup, turning "[&lt;img onerror…&gt;](/x)" into a live tag (X39).
-      next link.replace(Nokogiri::XML::Text.new(link.text, link.document)) unless link["href"].to_s.match?(%r{\Ahttps?://}i)
+      href = link["href"].to_s
+      # Anything but an absolute http(s) link or a record page (X45) becomes its text — as a text node:
+      # replace(String) would parse the decoded text as markup, turning "[&lt;img onerror…&gt;](/x)" into
+      # a live tag (X39).
+      next link.replace(Nokogiri::XML::Text.new(link.text, link.document)) unless href.match?(%r{\Ahttps?://}i) || href.match?(RECORD_LINK_PATH)
 
       link["target"] = "_blank"
       link["rel"] = "noopener noreferrer nofollow"
