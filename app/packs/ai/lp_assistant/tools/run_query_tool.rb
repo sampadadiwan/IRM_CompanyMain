@@ -24,8 +24,8 @@
 #   6. Hard LIMIT 100; on MySQL a 5 s MAX_EXECUTION_TIME hint and a read-only transaction; always
 #      inside ActiveRecord's while_preventing_writes.
 #
-# FmRunQueryTool inherits the substitution / formatting helpers and keeps its own validation and
-# execution unchanged.
+# FmRunQueryTool shares layers 1–3 (statement_error), the execution guards of layer 6 and the
+# substitution / formatting helpers; its scope CTEs come from FmQueryScope (entity-wide, follow-up F1).
 #
 # Worked examples H5-1…H5-5, H5-H, H5-X — features/security/lp_assistant_run_query.feature
 #
@@ -64,8 +64,10 @@ class RunQueryTool < RubyLLM::Tool
 
   FORBIDDEN_KEYWORDS = %w[INSERT UPDATE DELETE DROP ALTER TRUNCATE GRANT REVOKE CREATE].freeze
   MAX_ROWS = 100
+  # The statement's own LIMIT: its last clause (LIMIT n, LIMIT m, n or LIMIT n OFFSET m)
+  TRAILING_LIMIT = /\blimit\s+\d+(?:\s*,\s*\d+|\s+offset\s+\d+)?\s*\z/i
 
-  # H5 — LP path only (FmRunQueryTool's own validation does not read these). A model-written WITH
+  # H5 / F1 — both assistants (statement_error). A model-written WITH
   # could not reach past the scope CTEs either, but is refused so the statement stays one SELECT.
   FORBIDDEN_LP_KEYWORDS = %w[WITH INTO LOAD_FILE SLEEP BENCHMARK GET_LOCK].freeze
   # Schemas that would reach outside the scope CTEs (the app's own database names are added at run time)
@@ -135,31 +137,9 @@ class RunQueryTool < RubyLLM::Tool
   # @param sql [String]
   # @return [String, nil] rejection reason, or nil if the query passes all guards
   def validate(sql)
-    # Backslashes are refused: MySQL and SQLite read them differently inside literals, and the
-    # literal stripping below must see the same literals the database does
-    return 'backslashes are not allowed.' if sql.to_s.include?('\\')
-
-    # Every later check reads the SQL with literals and comments taken out
-    stripped, error = strip_literals_and_comments(sql)
+    # The checks both assistants share (literals, keywords, schemas, tables outside the CTEs)
+    error, stripped, identifiers = statement_error(sql, LpQueryScope.tables)
     return error if error
-    return 'only SELECT queries are allowed.' unless /\Aselect\s/i.match?(stripped)
-
-    # Statement-level bans: the existing blocklist, then the LP-only constructs (H5-5)
-    upper = stripped.upcase
-    kw = (FORBIDDEN_KEYWORDS + FORBIDDEN_LP_KEYWORDS).find { |w| upper.match?(/\b#{w}\b/) }
-    return "forbidden keyword: #{kw}" if kw
-    return 'user and system variables (@) are not allowed.' if stripped.include?('@')
-    return 'only one statement is allowed.' if stripped.sub(/;\s*\z/, '').include?(';')
-
-    # Identifier checks (H5-2, H5-3): no schema / database names, no real table outside the allowlist
-    identifiers = sql_identifiers(stripped)
-    schema = identifiers.map(&:first).find { |name| forbidden_schema_names.include?(name) }
-    return "schema not allowed: #{schema}" if schema
-
-    # A name after a dot is a column of an alias (cap_call.notes), not a table; anywhere else it is a table
-    # reference, and only the tables LpQueryScope shadows are allowed
-    invalid = identifiers.reject(&:last).map(&:first).select { |name| self.class.real_table_names.include?(name) } - LpQueryScope.tables
-    return "tables not allowed: #{invalid.uniq.join(', ')}" if invalid.any?
 
     # Placeholders count only outside literals and comments
     return 'missing {ENTITY_ID} placeholder — scope required.' unless stripped.include?('{ENTITY_ID}')
@@ -171,6 +151,44 @@ class RunQueryTool < RubyLLM::Tool
     return 'missing {VISIBLE_PI_IDS} placeholder — scope required.' if tables.include?('portfolio_investments') && stripped.exclude?('{VISIBLE_PI_IDS}')
 
     nil
+  end
+
+  # The statement checks shared by the LP tool and FmRunQueryTool (H5 fix 2; F1 for the FM tool).
+  # @param sql [String] the model's SQL
+  # @param scope_tables [Array<String>] the tables the caller's scope CTEs shadow — the only real tables allowed
+  # @return [Array(String|nil, String, Array)] rejection reason (nil = passes), the stripped SQL, its identifiers
+  def statement_error(sql, scope_tables)
+    # Backslashes are refused: MySQL and SQLite read them differently inside literals, and the
+    # literal stripping below must see the same literals the database does
+    return ['backslashes are not allowed.', '', []] if sql.to_s.include?('\\')
+
+    # Every later check reads the SQL with literals and comments taken out
+    stripped, error = strip_literals_and_comments(sql)
+    return [error, stripped, []] if error
+    return ['only SELECT queries are allowed.', stripped, []] unless /\Aselect\s/i.match?(stripped)
+
+    # Statement-level bans: the existing blocklist, then WITH / INTO / file and timing functions (H5-5, F1-4)
+    upper = stripped.upcase
+    kw = (FORBIDDEN_KEYWORDS + FORBIDDEN_LP_KEYWORDS).find { |w| upper.match?(/\b#{w}\b/) }
+    return ["forbidden keyword: #{kw}", stripped, []] if kw
+    return ['user and system variables (@) are not allowed.', stripped, []] if stripped.include?('@')
+    return ['only one statement is allowed.', stripped, []] if stripped.sub(/;\s*\z/, '').include?(';')
+
+    # Identifier checks (H5-2, H5-3, F1-2, F1-3): no schema / database names, no real table outside the allowlist
+    identifiers = sql_identifiers(stripped)
+    schema = identifiers.map(&:first).find { |name| forbidden_schema_names.include?(name) }
+    return ["schema not allowed: #{schema}", stripped, identifiers] if schema
+
+    # A name after a dot is a column of an alias (cap_call.notes), not a table; anywhere else it is a table
+    # reference, and only the tables the caller's scope shadows are allowed
+    invalid = identifiers.reject(&:last).map(&:first).select { |name| self.class.real_table_names.include?(name) } - scope_tables
+    if invalid.any?
+      # A column that shares a table's name (notes) reads as that table unless written alias.column
+      return ["tables not allowed: #{invalid.uniq.join(', ')} — if you meant a column of that name, write it as alias.column.",
+              stripped, identifiers]
+    end
+
+    [nil, stripped, identifiers]
   end
 
   # Replaces literals with '' and comments with a space. Double-quoted and backticked text is kept
@@ -228,43 +246,66 @@ class RunQueryTool < RubyLLM::Tool
     scope = LpQueryScope.new(user: @user, entity_id: @entity_ids.first, fund_ids: @accessible_fund_ids,
                              investor_ids: @accessible_investor_ids, visible_api_ids: @visible_api_ids,
                              visible_pi_ids: @visible_pi_ids)
-    query = substitute_and_limit(sql)
-    if LpQueryScope.mysql?
-      query = query.sub(%r{\A(\s*(?:(?:--|\#)[^\n]*\n\s*|/\*.*?\*/\s*)*)select\b}im) do
-        "#{Regexp.last_match(1)}SELECT /*+ MAX_EXECUTION_TIME(#{MAX_EXECUTION_MS}) */"
-      end
+    "#{scope.with_clause}\n#{with_execution_time_hint(substitute_and_limit(sql))}"
+  end
+
+  # MySQL only: MAX_EXECUTION_TIME hint after the statement's leading SELECT (shared with FmRunQueryTool)
+  def with_execution_time_hint(query)
+    return query unless LpQueryScope.mysql?
+
+    query.sub(%r{\A(\s*(?:(?:--|\#)[^\n]*\n\s*|/\*.*?\*/\s*)*)select\b}im) do
+      "#{Regexp.last_match(1)}SELECT /*+ MAX_EXECUTION_TIME(#{MAX_EXECUTION_MS}) */"
     end
-    "#{scope.with_clause}\n#{query}"
   end
 
   # Runs the statement with writes refused: always ActiveRecord's while_preventing_writes; on MySQL
   # also a read-only transaction. SET TRANSACTION READ ONLY applies to the next transaction, which
   # the block below opens — skipped when a transaction is already open, since MySQL refuses to
   # change an open transaction's characteristics.
-  def run_read_only(sql)
+  # @param name [String] the log label (shared with FmRunQueryTool)
+  def run_read_only(sql, name = 'LP Assistant Query')
     conn = ActiveRecord::Base.connection
     ActiveRecord::Base.while_preventing_writes do
-      next conn.exec_query(sql, 'LP Assistant Query') unless LpQueryScope.mysql? && !conn.transaction_open?
+      next conn.exec_query(sql, name) unless LpQueryScope.mysql? && !conn.transaction_open?
 
       conn.execute('SET TRANSACTION READ ONLY')
-      conn.transaction { conn.exec_query(sql, 'LP Assistant Query') }
+      conn.transaction { conn.exec_query(sql, name) }
     end
   end
 
   # @param sql [String]
-  # @return [String] SQL with placeholders substituted and LIMIT 100 applied if absent
+  # @return [String] SQL with comments removed, placeholders substituted and LIMIT 100 applied if absent
   def substitute_and_limit(sql)
     investor_ids_sql = @accessible_investor_ids.join(',')
     investor_ids_sql = 'NULL' if investor_ids_sql.empty? # only hit when {INVESTOR_IDS} not in sql
 
-    substituted = sql.gsub('{ENTITY_ID}',    @entity_ids.join(','))
-                     .gsub('{FUND_IDS}',     @accessible_fund_ids.join(','))
-                     .gsub('{INVESTOR_IDS}', investor_ids_sql)
-                     .gsub('{VISIBLE_API_IDS}', @visible_api_ids.join(',').presence || 'NULL')
-                     .gsub('{VISIBLE_PI_IDS}', @visible_pi_ids.join(',').presence || 'NULL')
-                     .sub(/;\s*\z/, '')
+    # Comments out first (validate read the statement without them too): a trailing "-- …" swallowed
+    # the " LIMIT 100" appended after it, so the query ran unlimited (F5-6). Then the trailing ";".
+    query = without_comments(sql).strip.sub(/;\s*\z/, '')
 
-    substituted.match?(/\blimit\s+\d/i) ? substituted : "#{substituted} LIMIT #{MAX_ROWS}"
+    substituted = query.gsub('{ENTITY_ID}',    @entity_ids.join(','))
+                       .gsub('{FUND_IDS}',     @accessible_fund_ids.join(','))
+                       .gsub('{INVESTOR_IDS}', investor_ids_sql)
+                       .gsub('{VISIBLE_API_IDS}', @visible_api_ids.join(',').presence || 'NULL')
+                       .gsub('{VISIBLE_PI_IDS}', @visible_pi_ids.join(',').presence || 'NULL')
+
+    # The model's own LIMIT counts only as the statement's last clause, read outside literals: a LIMIT
+    # inside a subquery or a string used to stand in for it and leave the outer SELECT unlimited
+    return substituted if strip_literals_and_comments(substituted).first.match?(TRAILING_LIMIT)
+
+    # On a line of its own, so nothing left on the model's last line can reach it
+    "#{substituted}\nLIMIT #{MAX_ROWS}"
+  end
+
+  # The SQL with every comment replaced by a space; literals and quoted identifiers are kept as written.
+  # An unclosed /* is dropped to the end too: SQLite reads it as a comment running to the end of the
+  # statement (it would swallow the LIMIT line), MySQL refuses it.
+  def without_comments(sql)
+    unclosed_block_comment = %r{/\*(?!.*?\*/).*\z}m
+    sql.to_s.gsub(Regexp.union(sql_token_regex, unclosed_block_comment)) do |token|
+      # Comments become a space; literals, quoted names and everything else stay
+      token.match?(%r{\A(?:/\*|--|\#)}) ? ' ' : token
+    end
   end
 
   # @param result [ActiveRecord::Result]

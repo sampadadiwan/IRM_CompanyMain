@@ -35,8 +35,12 @@
       Source
     </td>
     <td>
-      <% object = kanban_card.data_source_type.constantize.find(kanban_card.data_source_id)  %>
-      <%= link_to(object, :target => "_blank") %>
+      <%# L14 / F2 — the same lookup as kanban_cards/show: data_source_type resolves only to a card-source
+          model (never constantized), and the source is linked only when the user may open it (F2-2) %>
+      <% source_class = ApplicationRecord.model_class_from_param(kanban_card.data_source_type, allowed: %w[DealInvestor]) %>
+      <% object = source_class&.find_by(id: kanban_card.data_source_id) %>
+      <% object = nil unless visible_record?(object) %>
+      <%= link_to(object, :target => "_blank") if object %>
     </td>
   </tr>
   <% end %>

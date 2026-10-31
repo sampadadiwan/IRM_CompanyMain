@@ -26,6 +26,8 @@
 #   portfolio_investments          — visible purchases only (LpPortfolioVisibility)
 #   aggregate_portfolio_investments— visible holdings only
 #   fund_ratios                    — fund-level, visible holdings / companies, or own investor / commitments
+#                                    (a company's ratios and valuations have owner_type "Investor": a
+#                                    portfolio company is an investors row)
 #   investors                      — own investor rows and visible portfolio companies, never pan / json_fields
 #   valuations                     — visible portfolio companies
 #   documents                      — Document.for_investor minus templates
@@ -172,11 +174,13 @@ class LpQueryScope
   # Fund-level ratios (not tied to another LP's commitment), ratios on visible holdings and companies,
   # and ratios on the LP's own investor rows and commitments
   def fund_ratio_rows(base)
+    # Fund-level, plus the LP's own commitments
     fund_level = base.where(owner_type: "Fund", owner_id: @fund_ids, capital_commitment_id: [nil, *own_commitment_ids])
+    # A portfolio company's ratios are owned by its investors row (FundRatiosJob writes owner_type
+    # "Investor"); no row is ever "PortfolioCompany", so that rule is gone (F5-5)
     rows = fund_level
            .or(base.where(owner_type: "CapitalCommitment", owner_id: own_commitment_ids))
            .or(base.where(owner_type: "Investor", owner_id: @investor_ids + visible_company_ids))
-           .or(base.where(owner_type: "PortfolioCompany", owner_id: visible_company_ids))
            .or(base.where(owner_type: "AggregatePortfolioInvestment", owner_id: @visible_api_ids))
            .or(base.where(owner_type: "PortfolioInvestment", owner_id: @visible_pi_ids))
     rows.where(entity_id: @entity_id, fund_id: @fund_ids)

@@ -43,6 +43,15 @@ class InterestEmployeePolicy < SaleBasePolicy
     false
   end
 
+  # The firm sets an interest's allocation quantity and verified flag (interests#allocate)
+  def allocate?
+    permissioned_employee?(:update)
+  end
+
+  def allocation_form?
+    allocate?
+  end
+
   def matched_offers?
     true
   end

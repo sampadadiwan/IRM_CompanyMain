@@ -22,8 +22,10 @@ class CustomNotificationPolicy < ApplicationPolicy
     permissioned_employee?(:create) && parent_in_users_firms?(record.owner)
   end
 
-  # E: the fields this user may send. is_erb makes the body run as Ruby code when the email renders,
-  # so only support may set it (the form shows its toggle only to support; this makes the server agree)
+  # E: the fields this user may send. is_erb marks a legacy ERB body: nothing in it is evaluated any
+  # more (C2, CustomNotification#render_erb_body fills only the two KNOWN_ERB_TAGS and shows any other
+  # tag as text), but it stays support-only (the form shows its toggle only to support; this makes the
+  # server agree)
   def permitted_attributes
     fields = %i[subject body whatsapp for_type show_details entity_id owner_id owner_type attachment_password
                 password_protect_attachment show_details_link email_method enabled to attachment_names tag

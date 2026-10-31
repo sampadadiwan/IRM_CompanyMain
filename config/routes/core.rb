@@ -202,7 +202,8 @@ end
 
 resources :kyc_datas do
   get 'search', on: :collection
-  get 'fetch_ckyc_data', on: :collection
+  # No `fetch_ckyc_data` collection route: KycDatasController has no such action. CKYC data is fetched
+  # through the investor_kycs member route of the same name (F5-4)
   get 'send_ckyc_otp', on: :member
   put 'download_ckyc_with_otp', on: :member
   put 'refresh', on: :member

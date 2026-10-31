@@ -1,5 +1,5 @@
 class OffersController < ApplicationController
-  before_action :set_offer, only: %i[show edit update destroy approve allocate allocation_form accept_spa generate_docs]
+  before_action :set_offer, only: %i[show edit update destroy approve accept_spa generate_docs]
   after_action :verify_authorized, except: %i[index search]
 
   # GET /offers or /offers.json

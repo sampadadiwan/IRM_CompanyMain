@@ -39,7 +39,8 @@ Doorkeeper.configure do
   # M2 — introspection off. Nothing here calls /oauth/introspect, and `true` let any client (or
   # any bearer) ask about any token. `false` (not a block returning false) makes `use_doorkeeper`
   # skip the route entirely, so POST /oauth/introspect is a 404 and the OIDC discovery document
-  # omits introspection_endpoint. (rack_attack.rb still lists the path in case it is ever re-enabled.)
+  # omits introspection_endpoint. Re-enabling it means adding the path back to rack_attack.rb's
+  # OAUTH_CLIENT_PATHS throttle.
   # docs/security/security_review_2026_10.md "Authentication and session — Medium / Low", M2.
   allow_token_introspection false
 

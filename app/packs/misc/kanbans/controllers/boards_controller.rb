@@ -71,10 +71,10 @@ class BoardsController < ApplicationController
     @kanban_board = KanbanBoard.new(kanban_board_params.except(:entity_id, :owner_id, :owner_type))
     @kanban_board.entity_id = current_user.entity_id
     authorize @kanban_board
-    # Only now saved; a plain board is its own owner, which needs its id
+    # Only now saved; a plain board is its own owner, which needs its id. Saving also creates the
+    # columns (KanbanBoard#post_create_ops), so they are not created again here (F5-3)
     @kanban_board.save!
     @kanban_board.update(owner_type: "KanbanBoard", owner_id: @kanban_board.id)
-    @kanban_board.create_columns
 
     respond_to do |format|
       if @kanban_board.persisted?

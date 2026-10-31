@@ -41,6 +41,11 @@ class AllocationEmployeePolicy < SaleBasePolicy
     update?
   end
 
+  # Verify / unverify is an edit of the allocation, as in the bulk Verify action (AllocationsBulkActionJob)
+  def verify?
+    update?
+  end
+
   def destroy?
     permissioned_employee?(:destroy) && !record.verified?
   end

@@ -8,10 +8,12 @@
     # its page shows), never an arbitrary constant; a name that is not a model is a 404 (L14-4)
     owner_class = ApplicationRecord.model_class_from_param(params[:owner_type])
     raise ActiveRecord::RecordNotFound, "Unknown owner type" unless owner || owner_class
-    owner ||= owner_class.find_by(id: params[:owner_id])
+    # F2 — a record named by the params is the heading only when the user may open it (its own policy's
+    # show?): an id from another firm, or of a model with no policy, names nothing (F2-1)
+    owner ||= owner_class.find_by(id: params[:owner_id]).then { |found| found if visible_record?(found) }
     label = owner.to_s if owner
   elsif params[:deal_id].present?
-    owner ||= Deal.find_by(id: params[:deal_id])
+    owner ||= Deal.find_by(id: params[:deal_id]).then { |found| found if visible_record?(found) }
     label = owner.to_s if owner
   end
 

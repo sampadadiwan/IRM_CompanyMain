@@ -46,6 +46,15 @@ class InterestRmPolicy < SaleBasePolicy
     permissioned_rm? && record.verified
   end
 
+  # H19: an RM acts for the buyer, never for the selling firm, so never allocates or verifies
+  def allocate?
+    false
+  end
+
+  def allocation_form?
+    false
+  end
+
   def matched_offers?
     permissioned_rm?
   end

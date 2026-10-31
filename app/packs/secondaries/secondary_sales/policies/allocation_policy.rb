@@ -42,7 +42,11 @@ class AllocationPolicy < SaleBasePolicy
     end
   end
 
-  delegate :bulk_actions?, :show?, :create?, :generate_docs?, :accept_spa?, :new?, :update?, :edit?, :destroy?, to: :specific_policy
+  # verify? (allocations#verify toggles verified) was missing, so set_allocation's authorize raised
+  # NoMethodError for everyone. Firm-side only, as H19. Tests F5-2, F5-2H —
+  # features/security/security_review_2026_10_followups.feature
+  delegate :bulk_actions?, :show?, :create?, :generate_docs?, :accept_spa?, :new?, :update?, :edit?, :destroy?, :verify?,
+           to: :specific_policy
 
   def index?
     user.enable_secondary_sale

@@ -41,6 +41,11 @@ class AllocationRmPolicy < SaleBasePolicy
     update?
   end
 
+  # H19: an RM acts for a seller or buyer, never verifies an allocation
+  def verify?
+    false
+  end
+
   def destroy?
     false
   end

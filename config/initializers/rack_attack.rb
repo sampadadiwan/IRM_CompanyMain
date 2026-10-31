@@ -357,10 +357,11 @@ module Rack
       mobile_sign_in_email(req) if token_sign_in?(req)
     end
 
-    # M6 — Doorkeeper's client endpoints: code/refresh exchange, revocation and introspection.
-    # An MCP client calls /oauth/token a few times an hour, so 60 a minute per IP is far above real
-    # use (even several clients behind one vendor egress IP) and stops secret/code guessing.
-    OAUTH_CLIENT_PATHS = ['/oauth/token', '/oauth/revoke', '/oauth/introspect'].freeze
+    # M6 — Doorkeeper's client endpoints: code/refresh exchange and revocation (introspection is off,
+    # M2, so /oauth/introspect is not routed). An MCP client calls /oauth/token a few times an hour,
+    # so 60 a minute per IP is far above real use (even several clients behind one vendor egress IP)
+    # and stops secret/code guessing.
+    OAUTH_CLIENT_PATHS = ['/oauth/token', '/oauth/revoke'].freeze
 
     throttle('oauth/client/ip', limit: 60, period: 1.minute) do |req|
       client_ip(req) if req.post? && OAUTH_CLIENT_PATHS.include?(req.path)

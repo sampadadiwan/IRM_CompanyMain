@@ -1,8 +1,9 @@
 resources :offers do
   patch 'approve', on: :member
   patch 'accept_spa', on: :member
-  patch 'allocate', on: :member
-  get   'allocation_form', on: :member
+  # No `allocate` / `allocation_form` member routes: OffersController has neither action (removed with
+  # their views in "Secondary allocations" #503) and nothing links to them (F5-1X —
+  # features/security/security_review_2026_10_followups.feature). Allocations are made on AllocationsController.
   get 'search', on: :collection
   patch 'generate_esign_link', on: :member
   post 'bulk_actions', on: :collection

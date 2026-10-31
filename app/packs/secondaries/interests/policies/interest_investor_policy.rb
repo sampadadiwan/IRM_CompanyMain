@@ -46,6 +46,15 @@ class InterestInvestorPolicy < SaleBasePolicy
     permissioned_investor?(:buyer) && record.verified
   end
 
+  # H19: a buyer never allocates or verifies their own interest
+  def allocate?
+    false
+  end
+
+  def allocation_form?
+    false
+  end
+
   def matched_offers?
     true
   end

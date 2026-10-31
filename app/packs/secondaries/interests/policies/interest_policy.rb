@@ -8,7 +8,11 @@ class InterestPolicy < SaleBasePolicy
   # by a buyer's form; escrow_deposited is rendered only for the sale's firm.
   FIRM_ATTRIBUTES = %i[user_id entity_id verified final_agreement escrow_deposited allocation_quantity].freeze
 
-  delegate :show?, :create?, :new?, :update?, :edit?, :destroy?, :generate_docs?, :short_list?, :matched_offers?, :accept_spa?, :matched_offer?, :owner?, :send_email_to_change?, to: :specific_policy
+  # allocate? / allocation_form? (interests#allocate sets the allocation quantity and verified) were not
+  # delegated, so set_interest's authorize raised NoMethodError for everyone. Firm-side only, as H19.
+  # Tests F5-1, F5-1H — features/security/security_review_2026_10_followups.feature
+  delegate :show?, :create?, :new?, :update?, :edit?, :destroy?, :generate_docs?, :short_list?, :matched_offers?, :accept_spa?, :matched_offer?, :owner?, :send_email_to_change?,
+           :allocate?, :allocation_form?, to: :specific_policy
 
   def index?
     user.enable_secondary_sale

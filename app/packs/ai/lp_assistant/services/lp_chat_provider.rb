@@ -32,10 +32,11 @@ class LpChatProvider < BaseChatProvider
         - {INVESTOR_IDS} — comma-separated investors.id rows for THIS LP org in this FM's
                           books. Include this filter ONLY when querying per-LP tables
                           (capital_commitments, capital_remittances,
-                          capital_distribution_payments, or fund_ratios with
-                          owner_type = 'Investor' / 'CapitalCommitment'). Do NOT use it on
-                          fund-level tables (portfolio_investments, funds,
-                          fund_ratios owner_type='Fund').
+                          capital_distribution_payments) on their investor_id. Do NOT use it on
+                          fund-level tables (portfolio_investments, funds) or on
+                          fund_ratios / valuations: their owner_id is a fund, commitment or
+                          portfolio company id, never an investors.id of this LP
+                          (owner_type = 'Investor' there means a portfolio company).
         - {VISIBLE_API_IDS} / {VISIBLE_PI_IDS} — the portfolio holdings this investor may see
                           (aggregate_portfolio_investments.id / portfolio_investments.id). Always
                           required when querying those tables (e.g. `api.id IN ({VISIBLE_API_IDS})`);
