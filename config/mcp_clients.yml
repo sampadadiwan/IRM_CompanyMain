@@ -1,0 +1,55 @@
+# MCP client kinds: which OAuth clients may register themselves at POST /oauth/registration, and
+# how a registered client is recognised afterwards (McpClientRegistry).
+#
+# A client is identified by its REDIRECT URI, never by the name it registers with: anyone can
+# register an app called "Claude" (or "CapHive Mail Add-in"), but only Anthropic receives codes at
+# claude.ai. Each redirect URI a client registers must match one pattern of ONE kind below, or the
+# registration is refused with 400 invalid_redirect_uri. Entity admins allow AI clients by kind
+# (Entity > MCP > Allowed AI Clients), and the MCP gate classifies each token's app by its redirect.
+#
+# Patterns are Ruby regexps, anchored with \A and \z — keep them single-quoted so YAML leaves the
+# backslashes alone. legacy_names maps the app names entity allowlists stored before kinds existed
+# (one release; McpClientRegistry::LEGACY_NAMES_UNTIL).
+#
+# Callbacks: docs/modules/ai/mcp_server/technical_design.md ("Claude.ai (Web App)", "ChatGPT").
+# No loopback (Claude Desktop / Claude Code) and no urn: / http:// outside development — those
+# would let any local process on any machine register and receive codes.
+#
+# docs/security/security_review_2026_10.md "Authentication and session — Medium / Low", M2.
+
+shared:
+  # Names no self-registered client may take: they are trusted or displayed as first-party
+  # (MailAddinToken::APPLICATION_NAME is always reserved as well, and so is any "CapHive…" name).
+  reserved_names:
+    - CapHive Mail Add-in
+    - Paperclip
+  kinds:
+    claude:
+      label: Claude (claude.ai)
+      legacy_names:
+        - Claude
+      redirect_patterns:
+        - '\Ahttps://claude\.ai/api/mcp/auth_callback\z'
+        - '\Ahttps://claude\.com/api/mcp/auth_callback\z'
+    chatgpt:
+      label: ChatGPT
+      legacy_names:
+        - ChatGPT
+      redirect_patterns:
+        - '\Ahttps://chatgpt\.com/connector/oauth/[A-Za-z0-9_-]+\z'
+        - '\Ahttps://chatgpt\.com/connector_platform_oauth_redirect\z'
+
+development:
+  kinds:
+    # Claude Desktop / Claude Code on a developer's machine (local OAuth callback)
+    loopback:
+      label: Local client (localhost)
+      legacy_names: []
+      redirect_patterns:
+        - '\Ahttp://(localhost|127\.0\.0\.1)(:\d+)?/[^\s]*\z'
+
+test:
+
+staging:
+
+production:

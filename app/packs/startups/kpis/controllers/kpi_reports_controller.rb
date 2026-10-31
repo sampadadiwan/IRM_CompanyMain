@@ -455,9 +455,24 @@ class KpiReportsController < ApplicationController
     end
   end
 
+  # M19 — the policy decides on the record the job will act on, never on the bare class unless the
+  # all-tenant run was asked for
   def trigger_periodic_reports
-    authorize KpiReport, :trigger_periodic_reports?
-    GeneratePeriodicKpiReportsJob.perform_later(params[:portfolio_company_id], params[:id])
+    if params[:id].present?
+      # One report: the reminder goes out for this report only (M19-H2)
+      kpi_report = KpiReport.find(params[:id])
+      authorize kpi_report
+      GeneratePeriodicKpiReportsJob.perform_later(nil, kpi_report.id)
+    elsif params[:portfolio_company_id].present?
+      # One portfolio company: authorized as a report of that company's fund firm (M19-X4)
+      portfolio_company = Investor.find(params[:portfolio_company_id])
+      authorize KpiReport.new(entity_id: portfolio_company.entity_id, portfolio_company:)
+      GeneratePeriodicKpiReportsJob.perform_later(portfolio_company.id, nil)
+    else
+      # Every tenant: support only (M19-X3)
+      authorize KpiReport, :trigger_periodic_reports?
+      GeneratePeriodicKpiReportsJob.perform_later
+    end
     redirect_to request.referer || kpi_reports_path, notice: "Periodic KPI reports generation triggered."
   end
 

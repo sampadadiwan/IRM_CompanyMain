@@ -106,7 +106,8 @@
             <!-- Content Editor -->
             <div class="ai-content-editor">
                <div id="report-content" contenteditable="true" class="ai-editable-content">
-                  <%= @current_section.current_content.to_s.html_safe %>
+                  <%# C3-7 - sanitized at the sink too, so rows stored before the before_save are safe %>
+                  <%= AiReportHtml.sanitize(@current_section.current_content.to_s).html_safe %>
                </div>
             </div>
             <!-- AI Refinement Tools -->

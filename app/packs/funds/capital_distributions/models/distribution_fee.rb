@@ -11,8 +11,9 @@ class DistributionFee < ApplicationRecord
   validates :name, :audit_name, length: { maximum: 65 }, allow_blank: true
   validates :fee_type, length: { maximum: 20 }, allow_blank: true
 
-  # `notes` holds a Ruby fee formula that is eval-ed in #calculate_formula. Reject any
-  # code-execution constructs at write time (execution-time is guarded again via safe_eval!).
+  # `notes` may hold a fee formula. It is no longer evaluated anywhere (C2: the dead
+  # #calculate_formula was removed, and no stored formula exists); the write-time check stays so a
+  # formula never enters the table.
   validate :notes_kosher?
   def notes_kosher?
     errors.add(:notes, "You cannot do CRUD or system operations in a fee formula") if notes.present? && notes.downcase.match?(SAFE_EVAL_REGEX)
@@ -47,15 +48,5 @@ class DistributionFee < ApplicationRecord
   def setup_entity
     self.entity_id = capital_distribution.entity_id
     self.fund_id = capital_distribution.fund_id
-  end
-
-  # This is used to calculate the fee based on the formula in the notes
-  # Should return the amount in cents
-  def calculate_formula(capital_remittance)
-    capital_distribution = self.capital_distribution
-    capital_commitment = capital_distribution.capital_commitment
-    # Guard at the eval boundary so bypasses of the notes_kosher? validation (update_column,
-    # imports, seeds) still cannot execute arbitrary code.
-    eval(ApplicationRecord.safe_eval!(notes, context: "DistributionFee##{id} notes"), binding)
   end
 end

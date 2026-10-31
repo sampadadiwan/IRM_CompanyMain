@@ -16,6 +16,10 @@ class Deal < ApplicationRecord
   update_index('deal') { self if index_record? }
 
   belongs_to :entity
+  # L12 — the deal whose step templates a new deal copies (deals#create clone_from_id) must be one of
+  # this deal's firm's deals. Tests L12-1, L12-H1 — features/security/security_review_2026_10_low.feature
+  belongs_to :clone_from, class_name: "Deal", optional: true
+  validate(if: :will_save_change_to_clone_from_id?) { validate_parent_in_own_firm(:clone_from) }
 
   counter_culture :entity
   delegate :name, to: :entity, prefix: :entity

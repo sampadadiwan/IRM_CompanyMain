@@ -5,9 +5,11 @@
 # Example: pivot { group_by: "name", value_col: "amount", aggregate: "sum" }
 # produces columns "Management Fees (sum)", "Setup Fees (sum)", etc.
 class ReportBuilderPivotAggregator
-  def initialize(join_config:, root_ids:)
+  # user – whose Pundit scope of the child model limits the rows pivoted (M16-2)
+  def initialize(join_config:, root_ids:, user:)
     @join_config = join_config.with_indifferent_access
     @root_ids    = root_ids
+    @user        = user
     @pivot       = @join_config[:pivot].with_indifferent_access
   end
 
@@ -34,7 +36,7 @@ class ReportBuilderPivotAggregator
 
   private
 
-  attr_reader :join_config, :root_ids, :pivot
+  attr_reader :join_config, :root_ids, :pivot, :user
 
   def relation    = join_config[:relation].to_s
   def child_class = join_config[:base_class].to_s.constantize
@@ -48,8 +50,18 @@ class ReportBuilderPivotAggregator
     (join_config[:child_filters] || {}).with_indifferent_access
   end
 
+  # M16 — the user's visible ids of the child model (a subquery), built once per aggregator
+  def visible_child_ids
+    return @visible_child_ids if defined?(@visible_child_ids)
+
+    @visible_child_ids = ReportBuilderQueryEngine.visible_ids(user, child_class)
+  end
+
   def base_scope
     scope = child_class.where(fk => root_ids)
+    # M16 — only the children the user may see, so an out-of-scope row adds no pivot column or value
+    # (M16-2). The value discovery and the latest-value subquery both start here.
+    scope = scope.where(id: visible_child_ids) if visible_child_ids
     scope = scope.joins(joins.to_sym) if joins.present?
     child_filters.present? ? scope.ransack(child_filters).result : scope
   end

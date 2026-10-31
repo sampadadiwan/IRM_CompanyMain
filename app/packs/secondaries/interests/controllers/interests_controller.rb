@@ -9,7 +9,9 @@ class InterestsController < ApplicationController
     @secondary_sale = nil
 
     if params[:secondary_sale_id].present?
-      @secondary_sale = SecondarySale.find(params[:secondary_sale_id])
+      # Only a sale this user can see (as allocations#index does, H11). An unscoped find printed another
+      # firm's sale name in the breadcrumb; now it is "Access Denied" (SL-1 — secondaries_isolation.feature)
+      @secondary_sale = policy_scope(SecondarySale).find(params[:secondary_sale_id])
 
       @interests = @interests.where(secondary_sale_id: params[:secondary_sale_id])
       @interests = @interests.order(allocation_quantity: :desc)
@@ -28,7 +30,7 @@ class InterestsController < ApplicationController
     @pagy, @interests = pagy(@interests) unless request.format.xlsx? || params[:all].present?
 
     if params[:secondary_sale_id].present?
-      @secondary_sale = SecondarySale.find(params[:secondary_sale_id])
+      # The breadcrumb reuses the scoped sale found above (SL-1)
       @bread_crumbs = { Secondaries: secondary_sales_path,
                         "#{@secondary_sale.name}": secondary_sale_path(@secondary_sale) }
     end
@@ -208,12 +210,11 @@ class InterestsController < ApplicationController
     @bread_crumbs[@interest.to_s] = interest_path(@interest)
   end
 
-  # Only allow a list of trusted parameters through.
+  # H19: only the fields this user's role may send (InterestPolicy#permitted_attributes). Buyers and
+  # RMs lose the firm's workflow flags (verified, final_agreement, escrow_deposited,
+  # allocation_quantity, user_id, entity_id); the policy is asked with the saved interest on update
+  # and with the class on new / create.
   def interest_params
-    params.require(:interest).permit(:entity_id, :quantity, :price, :user_id, :verified, :completed,
-                                     :comments, :escrow_deposited, :details, :allocation_quantity,
-                                     :investor_id, :secondary_sale_id, :buyer_entity_name,
-                                     :demat, :city, :bank_account_number, :ifsc_code, :form_type_id,
-                                     :address, :contact_name, :email, :PAN, :final_agreement, :signature, :buyer_signatory_emails, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
+    params.require(:interest).permit(policy(@interest&.persisted? ? @interest : Interest).permitted_attributes)
   end
 end

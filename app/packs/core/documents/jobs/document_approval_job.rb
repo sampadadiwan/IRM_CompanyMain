@@ -30,9 +30,10 @@ class DocumentApprovalJob < ApplicationJob
 
         document.send_notification_for_owner if notification
       rescue StandardError => e
-        Rails.logger.error("Document approval for #{doc.name}, #{doc.id} failed: #{e.message}")
+        # N4: the block variable is `document` - the old `doc` raised NameError inside this rescue
+        Rails.logger.error("Document approval for #{document.name}, #{document.id} failed: #{e.message}")
         Rails.logger.error(e.backtrace.join("\n"))
-        send_notification("Document approval for #{doc.name}, #{doc.id} failed: #{e.message}", user_id, "danger")
+        send_notification("Document approval for #{document.name}, #{document.id} failed: #{e.message}", user_id, "danger")
       end
 
       # Real-time journey progress (no-op without a journey). Worked examples J2.2 — openspec/changes/archive/2026-10-02-capital-call-journey/design.md#worked-examples
@@ -44,10 +45,19 @@ class DocumentApprovalJob < ApplicationJob
 
   def documents_to_approve(entity_id, parent_folder_id, start_date, end_date, owner_type)
     if parent_folder_id.present?
-      # Get all the documents in the folder and its subfolders
-      parent_folder = Folder.find(parent_folder_id)
-      folder_ids = parent_folder.descendant_ids << parent_folder_id
-      documents = Document.where(folder_id: folder_ids)
+      # H1-4: only a folder of this firm. The controller already refuses another firm's folder
+      # (FolderPolicy#approve_documents?); this is defence in depth for any other caller.
+      # Worked example H1-4 — docs/security/security_review_2026_10.md#h1--bulk-document-approval
+      parent_folder = Folder.find_by(id: parent_folder_id, entity_id:)
+      if parent_folder
+        # Get all the firm's documents in the folder and its subfolders
+        folder_ids = parent_folder.descendant_ids << parent_folder.id
+        documents = Document.where(entity_id:, folder_id: folder_ids)
+      else
+        # Another firm's (or no such) folder: nothing to approve
+        Rails.logger.warn { "DocumentApprovalJob: folder #{parent_folder_id} is not in entity #{entity_id}, nothing approved" }
+        documents = Document.none
+      end
     else
       # Get all the documents in the entity
       documents = Document.where(entity_id:)

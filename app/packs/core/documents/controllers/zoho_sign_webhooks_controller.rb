@@ -18,7 +18,8 @@ class ZohoSignWebhooksController < ApplicationController
 
     # H8: the panel's "Last update" - proves the webhook works (no audit entry for it)
     connection.update_column(:last_webhook_at, Time.current)
-    ZohoWebhookJob.perform_later(connection.id, request.raw_post)
+    # L9-2 — a byte-identical resend of a verified body is acknowledged but not applied again
+    ZohoWebhookJob.perform_later(connection.id, request.raw_post) if ZohoEsignHelper.claim_webhook_body(request.raw_post)
     render json: "Ok"
   end
 end

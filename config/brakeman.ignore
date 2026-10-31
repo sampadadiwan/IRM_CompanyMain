@@ -1073,78 +1073,6 @@
       "note": ""
     },
     {
-      "warning_type": "Dangerous Eval",
-      "warning_code": 13,
-      "fingerprint": "012a953f9f9119652f65b46524a8312fad319992402c8002bcb54f49c452f048",
-      "check_name": "Evaluation",
-      "message": "Model attribute evaluated as code",
-      "file": "app/packs/funds/funds/models/fund_formula.rb",
-      "line": 491,
-      "link": "https://brakemanscanner.org/docs/warning_types/dangerous_eval/",
-      "code": "eval(ApplicationRecord.safe_eval!(account_entry.explanation.first, :context => (\"FundFormula##{id}\")), binding)",
-      "render_path": null,
-      "location": {
-        "type": "method",
-        "class": "FundFormula",
-        "method": "reparse_and_save"
-      },
-      "user_input": "ApplicationRecord.safe_eval!(account_entry.explanation.first, :context => (\"FundFormula##{id}\"))",
-      "confidence": "High",
-      "cwe_id": [
-        913,
-        95
-      ],
-      "note": "Formula-engine eval; expression is guarded at the call site by ApplicationRecord.safe_eval! (denylist blocks constantize/File/IO/Kernel/system etc. at execution time). Accepted by design 2026-07-27."
-    },
-    {
-      "warning_type": "Dangerous Eval",
-      "warning_code": 13,
-      "fingerprint": "0e1930dff20b16e8dabf20c0d2c9edd71b0c8e24381cb86d014329f5767a613c",
-      "check_name": "Evaluation",
-      "message": "Model attribute evaluated as code",
-      "file": "app/packs/funds/capital_distributions/models/distribution_fee.rb",
-      "line": 57,
-      "link": "https://brakemanscanner.org/docs/warning_types/dangerous_eval/",
-      "code": "eval(ApplicationRecord.safe_eval!(notes, :context => (\"DistributionFee##{id} notes\")), binding)",
-      "render_path": null,
-      "location": {
-        "type": "method",
-        "class": "DistributionFee",
-        "method": "calculate_formula"
-      },
-      "user_input": "ApplicationRecord.safe_eval!(notes, :context => (\"DistributionFee##{id} notes\"))",
-      "confidence": "High",
-      "cwe_id": [
-        913,
-        95
-      ],
-      "note": "Formula-engine eval; expression is guarded at the call site by ApplicationRecord.safe_eval! (denylist blocks constantize/File/IO/Kernel/system etc. at execution time). Accepted by design 2026-07-27."
-    },
-    {
-      "warning_type": "Dangerous Eval",
-      "warning_code": 13,
-      "fingerprint": "26ce6102c2a1e4908933a6d7ae15fc618e630c2cec6a7c59ac2a4c28b3a55d3c",
-      "check_name": "Evaluation",
-      "message": "Model attribute evaluated as code",
-      "file": "app/packs/funds/funds/models/fund_formula.rb",
-      "line": 358,
-      "link": "https://brakemanscanner.org/docs/warning_types/dangerous_eval/",
-      "code": "eval(ApplicationRecord.safe_eval!(addend_exp, :context => (\"FundFormula##{id}\")), binding)",
-      "render_path": null,
-      "location": {
-        "type": "method",
-        "class": "FundFormula",
-        "method": "parse_statement"
-      },
-      "user_input": "ApplicationRecord.safe_eval!(addend_exp, :context => (\"FundFormula##{id}\"))",
-      "confidence": "High",
-      "cwe_id": [
-        913,
-        95
-      ],
-      "note": "Formula-engine eval; expression is guarded at the call site by ApplicationRecord.safe_eval! (denylist blocks constantize/File/IO/Kernel/system etc. at execution time). Accepted by design 2026-07-27."
-    },
-    {
       "warning_type": "SQL Injection",
       "warning_code": 0,
       "fingerprint": "27b196a1d1ca2860e5a3d0d3e506915ade8a6690140dc99b11131f43685332e4",
@@ -1166,30 +1094,6 @@
         89
       ],
       "note": "Accepted: table name and foreign key come from internal ActiveRecord reflection, not user input. Reviewed 2026-07-27."
-    },
-    {
-      "warning_type": "Dangerous Eval",
-      "warning_code": 13,
-      "fingerprint": "282b3a73310071d2da4ffffdea9d9332819b84d202d7ae38a867a049bbaa50fb",
-      "check_name": "Evaluation",
-      "message": "Model attribute evaluated as code",
-      "file": "app/packs/misc/form_custom_fields/models/concerns/with_custom_field.rb",
-      "line": 167,
-      "link": "https://brakemanscanner.org/docs/warning_types/dangerous_eval/",
-      "code": "eval(ApplicationRecord.safe_eval!(fcf.meta_data, :context => (\"FormCustomField##{fcf.id} meta_data\")))",
-      "render_path": null,
-      "location": {
-        "type": "method",
-        "class": "WithCustomField",
-        "method": "perform_custom_calculation"
-      },
-      "user_input": "ApplicationRecord.safe_eval!(fcf.meta_data, :context => (\"FormCustomField##{fcf.id} meta_data\"))",
-      "confidence": "High",
-      "cwe_id": [
-        913,
-        95
-      ],
-      "note": "Formula-engine eval; expression is guarded at the call site by ApplicationRecord.safe_eval! (denylist blocks constantize/File/IO/Kernel/system etc. at execution time). Accepted by design 2026-07-27."
     },
     {
       "warning_type": "Dangerous Send",
@@ -1259,54 +1163,6 @@
         77
       ],
       "note": "False positive: call is inside `if SecondarySale::NOTIFICATIONS.include?(params[:notification])` allowlist guard, and public_send cannot reach private methods. Reviewed 2026-07-27."
-    },
-    {
-      "warning_type": "Dangerous Eval",
-      "warning_code": 13,
-      "fingerprint": "3e9f64dd3d7d18963e0f01f034aefaed77f84d3d40330ec1d942055fc3e6b57d",
-      "check_name": "Evaluation",
-      "message": "Model attribute evaluated as code",
-      "file": "app/packs/funds/funds/models/fund_formula.rb",
-      "line": 368,
-      "link": "https://brakemanscanner.org/docs/warning_types/dangerous_eval/",
-      "code": "eval(ApplicationRecord.safe_eval!((node.children[0].to_s or \"@#{node.children[0]}\"), :context => (\"FundFormula##{id}\")), binding)",
-      "render_path": null,
-      "location": {
-        "type": "method",
-        "class": "FundFormula",
-        "method": "parse_statement"
-      },
-      "user_input": "ApplicationRecord.safe_eval!((node.children[0].to_s or \"@#{node.children[0]}\"), :context => (\"FundFormula##{id}\"))",
-      "confidence": "High",
-      "cwe_id": [
-        913,
-        95
-      ],
-      "note": "Formula-engine eval; expression is guarded at the call site by ApplicationRecord.safe_eval! (denylist blocks constantize/File/IO/Kernel/system etc. at execution time). Accepted by design 2026-07-27."
-    },
-    {
-      "warning_type": "Dangerous Eval",
-      "warning_code": 13,
-      "fingerprint": "5aa2628854e71a3c41c4f098f8adcc61c4537581613a45b21a37611a28a33b06",
-      "check_name": "Evaluation",
-      "message": "Model attribute evaluated as code",
-      "file": "app/packs/funds/portfolios/models/portfolio_investment.rb",
-      "line": 291,
-      "link": "https://brakemanscanner.org/docs/warning_types/dangerous_eval/",
-      "code": "eval(ApplicationRecord.safe_eval!(entity.entity_setting.portflio_expense_account_entry_filter, :context => \"EntitySetting portflio_expense_account_entry_filter\"))",
-      "render_path": null,
-      "location": {
-        "type": "method",
-        "class": "PortfolioInvestment",
-        "method": "expense_cents"
-      },
-      "user_input": "ApplicationRecord.safe_eval!(entity.entity_setting.portflio_expense_account_entry_filter, :context => \"EntitySetting portflio_expense_account_entry_filter\")",
-      "confidence": "High",
-      "cwe_id": [
-        913,
-        95
-      ],
-      "note": "Formula-engine eval; expression is guarded at the call site by ApplicationRecord.safe_eval! (denylist blocks constantize/File/IO/Kernel/system etc. at execution time). Accepted by design 2026-07-27."
     },
     {
       "warning_type": "Command Injection",
@@ -1401,30 +1257,6 @@
       "note": "False positive: tag values are passed as bind placeholders and escaped with sanitize_sql_like; only the count of 'tag_list LIKE ?' fragments is interpolated. Reviewed 2026-07-27."
     },
     {
-      "warning_type": "Dangerous Eval",
-      "warning_code": 13,
-      "fingerprint": "a85a57256fd6765a11c4c75e27f543d487a9f606544c9ab8eccab8f4d102b303",
-      "check_name": "Evaluation",
-      "message": "Model attribute evaluated as code",
-      "file": "app/packs/allocation_engine/account_entry_allocation/generate_portfolio_numbers_for_fund.rb",
-      "line": 33,
-      "link": "https://brakemanscanner.org/docs/warning_types/dangerous_eval/",
-      "code": "eval(ApplicationRecord.safe_eval!(ctx[:fund_formula].formula, :context => (\"FundFormula##{ctx[:fund_formula].id}\")))",
-      "render_path": null,
-      "location": {
-        "type": "method",
-        "class": "AccountEntryAllocation::GeneratePortfolioNumbersForFund",
-        "method": "allocate_portfolios_company"
-      },
-      "user_input": "ApplicationRecord.safe_eval!(ctx[:fund_formula].formula, :context => (\"FundFormula##{ctx[:fund_formula].id}\"))",
-      "confidence": "High",
-      "cwe_id": [
-        913,
-        95
-      ],
-      "note": "Formula-engine eval; expression is guarded at the call site by ApplicationRecord.safe_eval! (denylist blocks constantize/File/IO/Kernel/system etc. at execution time). Accepted by design 2026-07-27."
-    },
-    {
       "warning_type": "Command Injection",
       "warning_code": 14,
       "fingerprint": "b019359df5291eb01ba2a98957e09eeab1ff96312413a07bd40ead8327a08669",
@@ -1446,78 +1278,6 @@
         77
       ],
       "note": "False positive: command uses multi-arg (array) exec form, so no shell is involved and arguments cannot be interpreted as shell syntax. Reviewed 2026-07-27."
-    },
-    {
-      "warning_type": "Dangerous Eval",
-      "warning_code": 13,
-      "fingerprint": "b0d8ff5b7cb9006bac9ad17c99c89acc36e3c2e94aff214ad79126f4ebc9e3ee",
-      "check_name": "Evaluation",
-      "message": "Model attribute evaluated as code",
-      "file": "app/packs/ai/ai_rules/services/ai_polars.rb",
-      "line": 55,
-      "link": "https://brakemanscanner.org/docs/warning_types/dangerous_eval/",
-      "code": "eval(ApplicationRecord.safe_eval!(generate_query(query, model_classes), :context => \"AiPolars query\"))",
-      "render_path": null,
-      "location": {
-        "type": "method",
-        "class": "AiPolars",
-        "method": "self.run_query"
-      },
-      "user_input": "ApplicationRecord.safe_eval!(generate_query(query, model_classes), :context => \"AiPolars query\")",
-      "confidence": "High",
-      "cwe_id": [
-        913,
-        95
-      ],
-      "note": "Formula-engine eval; expression is guarded at the call site by ApplicationRecord.safe_eval! (denylist blocks constantize/File/IO/Kernel/system etc. at execution time). Accepted by design 2026-07-27."
-    },
-    {
-      "warning_type": "Dangerous Eval",
-      "warning_code": 13,
-      "fingerprint": "c25beb89fef34f3ca095b8ca3eb3ff2ba17ec43dc9a55632f63e3f430221ab7e",
-      "check_name": "Evaluation",
-      "message": "Model attribute evaluated as code",
-      "file": "app/packs/allocation_engine/account_entry_allocation/allocation_base_operation.rb",
-      "line": 38,
-      "link": "https://brakemanscanner.org/docs/warning_types/dangerous_eval/",
-      "code": "eval(ApplicationRecord.safe_eval!(eval_string, :context => \"AllocationBaseOperation\"), bdg, \"app/packs/allocation_engine/account_entry_allocation/allocation_base_operation.rb\", 38)",
-      "render_path": null,
-      "location": {
-        "type": "method",
-        "class": "AccountEntryAllocation::AllocationBaseOperation",
-        "method": "safe_eval"
-      },
-      "user_input": "ApplicationRecord.safe_eval!(eval_string, :context => \"AllocationBaseOperation\")",
-      "confidence": "High",
-      "cwe_id": [
-        913,
-        95
-      ],
-      "note": "Formula-engine eval; expression is guarded at the call site by ApplicationRecord.safe_eval! (denylist blocks constantize/File/IO/Kernel/system etc. at execution time). Accepted by design 2026-07-27."
-    },
-    {
-      "warning_type": "Dangerous Eval",
-      "warning_code": 13,
-      "fingerprint": "c344da77d06a177803653fdde33fadd7c3a741c9f9b1aa852283625b056c25a2",
-      "check_name": "Evaluation",
-      "message": "Model attribute evaluated as code",
-      "file": "app/packs/funds/capital_calls/models/call_fee.rb",
-      "line": 35,
-      "link": "https://brakemanscanner.org/docs/warning_types/dangerous_eval/",
-      "code": "eval(ApplicationRecord.safe_eval!(notes, :context => (\"CallFee##{id} notes\")), binding)",
-      "render_path": null,
-      "location": {
-        "type": "method",
-        "class": "CallFee",
-        "method": "calculate_formula"
-      },
-      "user_input": "ApplicationRecord.safe_eval!(notes, :context => (\"CallFee##{id} notes\"))",
-      "confidence": "High",
-      "cwe_id": [
-        913,
-        95
-      ],
-      "note": "Formula-engine eval; expression is guarded at the call site by ApplicationRecord.safe_eval! (denylist blocks constantize/File/IO/Kernel/system etc. at execution time). Accepted by design 2026-07-27."
     },
     {
       "warning_type": "SQL Injection",
@@ -1559,30 +1319,6 @@
         "method": "metadata_args"
       },
       "user_input": "ApplicationRecord.safe_eval!(metadata, :context => (\"DashboardWidget##{id} metadata\"))",
-      "confidence": "High",
-      "cwe_id": [
-        913,
-        95
-      ],
-      "note": "Formula-engine eval; expression is guarded at the call site by ApplicationRecord.safe_eval! (denylist blocks constantize/File/IO/Kernel/system etc. at execution time). Accepted by design 2026-07-27."
-    },
-    {
-      "warning_type": "Dangerous Eval",
-      "warning_code": 13,
-      "fingerprint": "de6d94616560453e2a793ffa996b0a7808f483b39840fcc8530bdf9a2cc4104b",
-      "check_name": "Evaluation",
-      "message": "Model attribute evaluated as code",
-      "file": "app/packs/allocation_engine/account_entry_allocation/allocation_base_operation.rb",
-      "line": 62,
-      "link": "https://brakemanscanner.org/docs/warning_types/dangerous_eval/",
-      "code": "bdg.eval(ApplicationRecord.safe_eval!(var, :context => \"AllocationBaseOperation var\"))",
-      "render_path": null,
-      "location": {
-        "type": "method",
-        "class": "AccountEntryAllocation::AllocationBaseOperation",
-        "method": "safe_eval"
-      },
-      "user_input": "ApplicationRecord.safe_eval!(var, :context => \"AllocationBaseOperation var\")",
       "confidence": "High",
       "cwe_id": [
         913,
@@ -1636,78 +1372,6 @@
         89
       ],
       "note": "False positive: interpolated fragment is only repeated 'tag_list LIKE ?' placeholders; tag values are passed as bind params. Reviewed 2026-07-27."
-    },
-    {
-      "warning_type": "Dangerous Eval",
-      "warning_code": 13,
-      "fingerprint": "f5a2b46af5484b4f33fe89303298c5de642e37e21a22a91444b71e80c31015ed",
-      "check_name": "Evaluation",
-      "message": "Model attribute evaluated as code",
-      "file": "app/packs/funds/funds/models/fund_formula.rb",
-      "line": 316,
-      "link": "https://brakemanscanner.org/docs/warning_types/dangerous_eval/",
-      "code": "eval(ApplicationRecord.safe_eval!(exp, :context => (\"FundFormula##{id}\")), binding)",
-      "render_path": null,
-      "location": {
-        "type": "method",
-        "class": "FundFormula",
-        "method": "parse_statement"
-      },
-      "user_input": "ApplicationRecord.safe_eval!(exp, :context => (\"FundFormula##{id}\"))",
-      "confidence": "High",
-      "cwe_id": [
-        913,
-        95
-      ],
-      "note": "Formula-engine eval; expression is guarded at the call site by ApplicationRecord.safe_eval! (denylist blocks constantize/File/IO/Kernel/system etc. at execution time). Accepted by design 2026-07-27."
-    },
-    {
-      "warning_type": "Dangerous Eval",
-      "warning_code": 13,
-      "fingerprint": "f5a2b46af5484b4f33fe89303298c5de642e37e21a22a91444b71e80c31015ed",
-      "check_name": "Evaluation",
-      "message": "Model attribute evaluated as code",
-      "file": "app/packs/funds/funds/models/fund_formula.rb",
-      "line": 382,
-      "link": "https://brakemanscanner.org/docs/warning_types/dangerous_eval/",
-      "code": "eval(ApplicationRecord.safe_eval!(exp, :context => (\"FundFormula##{id}\")), binding)",
-      "render_path": null,
-      "location": {
-        "type": "method",
-        "class": "FundFormula",
-        "method": "parse_statement"
-      },
-      "user_input": "ApplicationRecord.safe_eval!(exp, :context => (\"FundFormula##{id}\"))",
-      "confidence": "High",
-      "cwe_id": [
-        913,
-        95
-      ],
-      "note": "Formula-engine eval; expression is guarded at the call site by ApplicationRecord.safe_eval! (denylist blocks constantize/File/IO/Kernel/system etc. at execution time). Accepted by design 2026-07-27."
-    },
-    {
-      "warning_type": "Dangerous Eval",
-      "warning_code": 13,
-      "fingerprint": "f5a2b46af5484b4f33fe89303298c5de642e37e21a22a91444b71e80c31015ed",
-      "check_name": "Evaluation",
-      "message": "Model attribute evaluated as code",
-      "file": "app/packs/funds/funds/models/fund_formula.rb",
-      "line": 401,
-      "link": "https://brakemanscanner.org/docs/warning_types/dangerous_eval/",
-      "code": "eval(ApplicationRecord.safe_eval!(exp, :context => (\"FundFormula##{id}\")), binding)",
-      "render_path": null,
-      "location": {
-        "type": "method",
-        "class": "FundFormula",
-        "method": "parse_statement"
-      },
-      "user_input": "ApplicationRecord.safe_eval!(exp, :context => (\"FundFormula##{id}\"))",
-      "confidence": "High",
-      "cwe_id": [
-        913,
-        95
-      ],
-      "note": "Formula-engine eval; expression is guarded at the call site by ApplicationRecord.safe_eval! (denylist blocks constantize/File/IO/Kernel/system etc. at execution time). Accepted by design 2026-07-27."
     },
     {
       "warning_type": "Command Injection",
@@ -1777,6 +1441,54 @@
         89
       ],
       "note": "False positive: key is escaped with lease_connection.quote (the Rails 8.1 replacement for .connection, which Brakeman does recognize as a sanitizer). Reviewed 2026-07-27."
+    },
+    {
+      "warning_type": "Dangerous Eval",
+      "warning_code": 13,
+      "fingerprint": "416fa78832321f997292f71d156b22f2298337590377d53670a57c43a2b16cc5",
+      "check_name": "Evaluation",
+      "message": "Model attribute evaluated as code",
+      "file": "app/packs/core/base/services/formula_sandbox.rb",
+      "line": 71,
+      "link": "https://brakemanscanner.org/docs/warning_types/dangerous_eval/",
+      "code": "bdg.eval((text.to_s or ApplicationRecord.safe_eval!(text.to_s, :context => context)), file, line)",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "FormulaSandbox",
+        "method": "evaluate"
+      },
+      "user_input": "ApplicationRecord.safe_eval!(text.to_s, :context => context)",
+      "confidence": "High",
+      "cwe_id": [
+        913,
+        95
+      ],
+      "note": "C2: the one evaluation point for stored formulas (fund formulas, run checks, call fees, Calculation fields, expense filter). Guarded by ApplicationRecord.safe_eval! in every mode and by the FormulaSandbox allowlist (parse tree checked with the binding locals) in log/enforce mode. docs/security/security_review_2026_10.md#c2. Remove with safe_eval! at rollout step 4."
+    },
+    {
+      "warning_type": "Dangerous Eval",
+      "warning_code": 13,
+      "fingerprint": "4caf1a9b5b367a7593414559242a4ea32bcf12198b48a5e17538332dac2c1b0f",
+      "check_name": "Evaluation",
+      "message": "Model attribute evaluated as code",
+      "file": "app/packs/allocation_engine/account_entry_allocation/generate_portfolio_numbers_for_fund.rb",
+      "line": 109,
+      "link": "https://brakemanscanner.org/docs/warning_types/dangerous_eval/",
+      "code": "eval(ApplicationRecord.safe_eval!(formula, :context => context))",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "AccountEntryAllocation::GeneratePortfolioNumbersForFund",
+        "method": "literal_fallback"
+      },
+      "user_input": "ApplicationRecord.safe_eval!(formula, :context => context)",
+      "confidence": "High",
+      "cwe_id": [
+        913,
+        95
+      ],
+      "note": "C2: off/log-mode fallback for a field map that is not a plain literal (RubyLiteral reads every literal map without eval; none stored in prod 2026-10-31). Refused in enforce mode; guarded by safe_eval!. Remove with safe_eval! at rollout step 4."
     }
   ],
   "updated": "2026-07-27 00:00:00 +0000",

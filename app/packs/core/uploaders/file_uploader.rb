@@ -1,4 +1,7 @@
 class FileUploader < Shrine
+  # The largest file any upload may be (2 GB). Also the cap on the direct-upload endpoints
+  # (config/routes/misc.rb, L1), so an oversized file is refused before it is stored.
+  MAX_SIZE = 2048 * 1024 * 1024
   ALLOWED_TYPES = %w[*/*].freeze
   MIME_TYPES = [
     "text/html", "image/jpeg", "image/png", "image/gif", "image/bmp", "application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "application/vnd.ms-powerpoint", "application/vnd.openxmlformats-officedocument.presentationml.presentation", "text/plain", "text/html", "text/css", "text/csv", "application/xml", "application/json", "audio/mpeg", "audio/wav", "video/mp4", "video/mpeg", "application/zip", "application/x-rar-compressed", "application/x-tar", "application/x-gzip", "application/x-7z-compressed", "application/x-bzip2", "application/x-iso9660-image", "application/x-ole-storage", "application/vnd.sqlite3", "application/x-sqlite3"
@@ -6,7 +9,7 @@ class FileUploader < Shrine
   Attacher.validate do
     # validate_mime_type ALLOWED_TYPES
     validate_mime_type MIME_TYPES, message: "upload with this extension '#{file.mime_type}' is not allowed"
-    validate_max_size 2048 * 1024 * 1024, message: "is too large (max is 2GB)" unless record.instance_of?(Document) && record.owner_tag == "Generated"
+    validate_max_size MAX_SIZE, message: "is too large (max is 2GB)" unless record.instance_of?(Document) && record.owner_tag == "Generated"
   end
 
   def generate_location(io, record: nil, derivative: nil, **)

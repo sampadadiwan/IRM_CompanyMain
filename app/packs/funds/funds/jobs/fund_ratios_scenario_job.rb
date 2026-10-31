@@ -11,6 +11,11 @@ class FundRatiosScenarioJob < ApplicationJob
   queue_as :low
   sidekiq_options retry: 1
 
+  # M8 — raised when the run names a fund the triggering user cannot see. The user has already been
+  # notified, and a retry cannot succeed, so the job is dropped rather than retried.
+  class InaccessibleFundsError < StandardError; end
+  discard_on InaccessibleFundsError
+
   # fund_id                     — anchor fund; stored on FundRatioRun for document folder
   #                               resolution and policy scoping. Does NOT limit calculation data.
   # fund_ids                    — source funds whose data feeds cross-fund calculations.
@@ -107,8 +112,14 @@ class FundRatiosScenarioJob < ApplicationJob
   end
 
   def setup(fund_id, end_date, user_id, fund_ids: nil, portfolio_company_ids: nil, portfolio_companies_tags: nil, portfolio_companies_sectors: nil, currency: nil)
-    @fund_id  = fund_id
-    @fund     = Fund.find_by(id: fund_id) # anchor fund — optional, document storage only
+    # The user is loaded first: every fund below is resolved through their Pundit scope (M8)
+    @user = User.find(user_id)
+    accessible_funds = Pundit.policy_scope!(@user, Fund)
+
+    @fund_id = fund_id
+    # Anchor fund — optional, document storage only. It must be one the user can see (M8-X2)
+    refuse_inaccessible_funds!([fund_id.to_i]) if fund_id.present? && !accessible_funds.exists?(id: fund_id)
+    @fund = Fund.find_by(id: fund_id)
     @end_date = end_date
 
     # @funds is the ActiveRecord relation used in calculations; @fund_ids is stored on
@@ -116,15 +127,31 @@ class FundRatiosScenarioJob < ApplicationJob
     # Coerce to integers so the JSON column stores numeric values (required for the
     # CAST(fund_ids AS UNSIGNED ARRAY) multi-valued index used by MEMBER OF queries).
     @fund_ids = Array(fund_ids).map(&:to_i).reject(&:zero?).presence
-    @funds    = Fund.where(id: @fund_ids) if @fund_ids.present?
+    if @fund_ids.present?
+      # Source funds come from the user's scope only. A run naming any other fund (another firm's, or one
+      # of this firm's the user has no access to) fails outright rather than silently running on the
+      # intersection, so a stored template never reports figures over a different fund set (M8-X1, M8-X3)
+      missing = @fund_ids - accessible_funds.where(id: @fund_ids).pluck(:id)
+      refuse_inaccessible_funds!(missing) if missing.any?
+      # Every id is accessible: the calculation relation stays the plain one it always was (the scope's
+      # access-right joins never reach the ratio queries)
+      @funds = Fund.where(id: @fund_ids)
+    end
     # Raw inputs stored on FundRatioRun for auditing and fingerprinting.
     # Resolution (IDs ∪ tags ∪ sectors) happens via @run.resolved_portfolio_companies.
     @portfolio_company_ids       = Array(portfolio_company_ids).map(&:to_i).reject(&:zero?).presence
     @portfolio_companies_tags    = portfolio_companies_tags
     @portfolio_companies_sectors = Array(portfolio_companies_sectors).compact_blank
 
-    @user     = User.find(user_id)
     @currency = currency || @user.entity.currency
+  end
+
+  # M8 — tells the user which fund ids were refused, then stops the run before any FundRatioRun or
+  # FundRatio row is written.
+  def refuse_inaccessible_funds!(fund_ids)
+    message = "Fund ratios not run: you do not have access to fund(s) #{fund_ids.join(', ')}."
+    notify(message, @user.id, level: "danger")
+    raise InaccessibleFundsError, message
   end
 
   def calc_fund_ratios

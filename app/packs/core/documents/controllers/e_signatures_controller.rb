@@ -48,6 +48,8 @@ class ESignaturesController < ApplicationController
   # GET /e_signatures/new
   def new
     @e_signature = ESignature.new(e_signature_params)
+    # M26 — the firm always comes from the document, never from the request
+    @e_signature.entity_id = @e_signature.document&.entity_id
     authorize @e_signature
     @bread_crumbs = { "#{@e_signature.document.name}": document_path(@e_signature.document), 'New eSignature': nil }
   end
@@ -60,6 +62,8 @@ class ESignaturesController < ApplicationController
   # POST /e_signatures or /e_signatures.json
   def create
     @e_signature = ESignature.new(e_signature_params)
+    # M26 — the firm always comes from the document, never from the request
+    @e_signature.entity_id = @e_signature.document&.entity_id
     authorize @e_signature
     respond_to do |format|
       if @e_signature.save
@@ -75,7 +79,8 @@ class ESignaturesController < ApplicationController
   # PATCH/PUT /e_signatures/1 or /e_signatures/1.json
   def update
     respond_to do |format|
-      if @e_signature.update(e_signature_params)
+      # M26 — an update never moves the signer to another document (it was authorized on this one)
+      if @e_signature.update(e_signature_params.except(:document_id))
         format.html { redirect_to e_signature_url(@e_signature), notice: "E signature was successfully updated." }
         format.json { render :show, status: :ok, location: @e_signature }
       else
@@ -152,7 +157,9 @@ class ESignaturesController < ApplicationController
   end
 
   # Only allow a list of trusted parameters through.
+  # M26 — entity_id (taken from the document) and status (written by the e-sign provider callbacks)
+  # are not accepted from the form (M26-X5)
   def e_signature_params
-    params.require(:e_signature).permit(:entity_id, :user_id, :label, :signature_type, :document_id, :notes, :status)
+    params.require(:e_signature).permit(:user_id, :label, :signature_type, :document_id, :notes)
   end
 end

@@ -158,7 +158,7 @@ def file_email_via_api(subject, message_id)
 end
 
 Given('I have a mail add-in token') do
-  @mail_token = MailAddinToken.issue_for(@user).token
+  @mail_token = MailAddinToken.issue_for(@user).plaintext_token
 end
 
 Given('I have an invalid mail add-in token') do
@@ -175,7 +175,7 @@ Given('I have a token issued to a different OAuth application') do
   @mail_token = Doorkeeper::AccessToken.create!(
     application: other_app, resource_owner_id: @user.id, scopes: 'read',
     expires_in: 3600, use_refresh_token: false, entity_id: @user.entity_id
-  ).token
+  ).plaintext_token
 end
 
 Given('that investor has primary_email {string}') do |email|

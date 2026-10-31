@@ -171,7 +171,9 @@ class NdaStatusController < ApplicationController
   def destroy_signatory
     authorize @nda_config, policy_class: NdaStatusPolicy
 
-    signatory = NdaSignatory.find(params[:id])
+    # M13 — only a signatory of the NDA config just authorized; another config's id (another firm's
+    # included) is not found here, so it can never be removed through this config (M13-1, M13-H)
+    signatory = @nda_config.nda_signatories.find(params[:id])
     user_id = signatory.user_id
     signatory.destroy!
 
@@ -217,8 +219,14 @@ class NdaStatusController < ApplicationController
   end
 
   # @return [void] Loads the folder from params.
+  # M13 — the folder decides which investors the summary and dashboard list, so it must be a folder
+  # of the NDA config's own firm that the user may open; another firm's folder id is not found
+  # (M13-2, M13-H)
   def set_folder
-    @folder = Folder.find(params[:folder_id])
+    # 1. Looked up only within the NDA config's firm
+    @folder = Folder.where(entity_id: @nda_config.entity_id).find(params[:folder_id])
+    # 2. And one the user may see (FolderPolicy#show?, which also covers advisors)
+    authorize @folder, :show?
   end
 
   # @param nda_config [NdaConfig] the NDA config

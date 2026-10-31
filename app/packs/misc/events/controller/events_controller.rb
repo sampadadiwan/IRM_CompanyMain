@@ -134,7 +134,12 @@ class EventsController < ApplicationController
       @owner = @current_user.entity
       owner_type = "Entity"
     else
-      @owner = owner_type.constantize.find(owner_id)
+      # L14 — any model of the app (the breadcrumb's "Add an event" links from every show page), never an
+      # arbitrary constant; the owner is authorized just below, and a non-model name is a 404 (L14-8)
+      owner_class = ApplicationRecord.model_class_from_param(owner_type)
+      raise ActiveRecord::RecordNotFound, "Unknown owner type" unless owner_class
+
+      @owner = owner_class.find(owner_id)
     end
 
     authorize @owner unless owner_type == "Entity"

@@ -60,15 +60,56 @@ module UpdateInvestor
       users = old_investor.investor_entity&.employees
       user_ids = users&.pluck(:id) || []
       Rails.logger.debug { "Found Users to update: #{user_ids} for old investor entity_id: #{old_investor.investor_entity_id}." }
+      # Users moved from the old linked firm are re-homed in the new one; any skipped are counted
+      # so InvestorMergeJob can tell the merging user to ask support for an Entity merge.
+      users_not_moved = 0
       if user_ids.present?
-        # Update entity_id for all users
-        users.update_all(entity_id: new_investor.investor_entity_id)
-        # reset_access_rights_cache loop removed: live DB queries make per-user cache
-        # invalidation unnecessary after a merge.
+        if allow_cross_entity || users_movable_on_merge?(old_investor, new_investor)
+          # C5-H — both linked firms are LP firms only this fund knows (or the support-only Entity
+          # merge, which is unchanged): update entity_id for all users so their access still matches
+          # the stakeholder's linked firm (InvestorAccess#ensure_entity_id).
+          users.update_all(entity_id: new_investor.investor_entity_id)
+          # reset_access_rights_cache loop removed: live DB queries make per-user cache
+          # invalidation unnecessary after a merge.
+        else
+          # C5-2 / C5-3 — a linked firm is shared with another GP (or is not an LP firm): moving its
+          # users would re-home another GP's contacts. The fund data above is merged, the users stay.
+          users_not_moved = user_ids.size
+          Rails.logger.info { "Merge #{old_investor.id} -> #{new_investor.id}: #{users_not_moved} users not moved, linked firm not private to entity #{new_investor.entity_id}." }
+        end
       end
 
       old_investor.update_column(:investor_name, "#{old_investor.investor_name} - Defunct/Inactive")
+
+      # Returned to InvestorMergeJob for its alert
+      users_not_moved
     end
+
+    # Users of the old linked firm may follow the merge only when both linked firms are LP firms
+    # known to no fund except the one merging. A firm that is already the same on both sides needs
+    # no move at all.
+    def self.users_movable_on_merge?(old_investor, new_investor)
+      # Same firm on both sides: there is nothing to re-home, so nothing to refuse
+      return true if old_investor.investor_entity_id == new_investor.investor_entity_id
+
+      # C5-2 (old side shared) / C5-3 (new side shared) both block the move
+      old_investor.identity_private_to?(new_investor.entity_id) &&
+        new_investor.identity_private_to?(new_investor.entity_id)
+    end
+  end
+
+  # Entity types whose users are LP contacts (the same set User#setup_defaults gives the investor role)
+  LP_FIRM_TYPES = ["Investor", "Investment Advisor", "Family Office"].freeze
+
+  # True when this stakeholder's linked firm is an LP-type firm that no fund other than
+  # fund_entity_id has as a stakeholder - i.e. its users are this fund's contacts only, and
+  # re-homing them (UpdateInvestor.merge) cannot affect another GP.
+  def identity_private_to?(fund_entity_id)
+    # No linked firm, or a GP / advisor-type firm: never private
+    return false unless investor_entity && LP_FIRM_TYPES.include?(investor_entity.entity_type)
+
+    # Any other fund with a stakeholder on the same firm makes it shared (SELECT 1 ... LIMIT 1)
+    Investor.where(investor_entity_id:).where.not(entity_id: fund_entity_id).none?
   end
 
   # Some associations cache the investor_name, so update that if the name changes here.

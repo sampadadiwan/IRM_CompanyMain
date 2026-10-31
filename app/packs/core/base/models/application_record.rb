@@ -68,6 +68,48 @@ class ApplicationRecord < ActiveRecord::Base
     errors.add(association, "must be in this record's firm") unless parent_firm == (entity_id_in_database || entity_id)
   end
 
+  # H10 — the same idea one level down, for a fund record whose parent is another fund record (a
+  # payment's remittance, a remittance's call or commitment, a unit's commitment): the parent must be in
+  # this record's own fund. The stored fund is the reference, since fund_id is attr_readonly on these models.
+  # The parent id is attr_readonly too, and an attempt to move an existing record is refused here rather
+  # than left to attr_readonly: that drops the column from the UPDATE but still reports it as a saved
+  # change, so counter caches (a payment's collected amount) would move to the other parent anyway.
+  # docs/security/security_review_2026_10.md#h10--parent-ids-on-payments-remittances-fund-units
+  def validate_parent_in_own_fund(association)
+    foreign_key = self.class.reflect_on_association(association).foreign_key
+    # Nothing to check unless the parent is being set (create) or changed (update)
+    return unless will_save_change_to_attribute?(foreign_key)
+    # An existing record never moves to another parent (H10-2, H10-3)
+    return errors.add(association, "cannot be changed") if persisted?
+
+    parent = public_send(association)
+    return if parent.nil?
+
+    # A new record's parent must be in its fund (H10-1, H10-4, H10-X1)
+    errors.add(association, "must be in this record's fund") unless parent.fund_id == (fund_id_in_database || fund_id)
+  end
+
+  # L14 — the model class a request param (`owner_type`, `target_type`, …) names, or nil. Replaces
+  # `params[:x_type].constantize`, which raises (a 500) on an unknown name and resolves any constant at
+  # all (Kernel, ActiveRecord::Base, a service class). Only concrete ApplicationRecord models come back;
+  # `allowed:` narrows that to a per-site list of names (e.g. SupportAgent::RUN_TARGET_TYPES), compared
+  # as written, so `::Investor` or a subclass name is not a way round the list. Callers answer nil with a
+  # 404. docs/security/security_review_2026_10.md (L14 row; first used by N8)
+  def self.model_class_from_param(name, allowed: nil)
+    # Only a non-blank string can name a model
+    name = name.to_s
+    return nil if name.blank?
+    # The call site's list, when it has one, is checked on the name itself (N8-X); no list: any model
+    return nil if allowed&.map(&:to_s)&.exclude?(name)
+
+    # safe_constantize answers nil for an unknown name instead of raising
+    klass = name.safe_constantize
+    # A concrete model of this app — never Kernel, ActiveRecord::Base or an abstract base like this one
+    return nil unless klass.is_a?(Class) && klass < ApplicationRecord && !klass.abstract_class?
+
+    klass
+  end
+
   # Currently we write and read from the primary database
   connects_to database: { writing: :primary, reading: :primary }
 

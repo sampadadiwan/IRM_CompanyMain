@@ -12,6 +12,11 @@ class IncomingEmail < ApplicationRecord
   belongs_to :owner, polymorphic: true, optional: true
   belongs_to :entity
   belongs_to :filed_by_user, class_name: 'User', optional: true
+  # M22 — the owner must be in the email's own firm, checked when it is set or changed (create, or an
+  # edit that sends owner_id / owner_type), so an email can't be filed against another firm's record.
+  # Every writer (SendGrid, mail add-ins, the controller) already takes the firm from the owner.
+  # Worked examples M22-1, M22-2 — docs/security/security_review_2026_10.md#core--misc--medium-and-low
+  validate { validate_parent_in_own_firm(:owner) if entity_id.present? && (will_save_change_to_owner_id? || will_save_change_to_owner_type?) }
 
   # Blank must become NULL, not "". idx_incoming_emails_dedup is unique across
   # (entity_id, internet_message_id, owner_type, owner_id), and while both MySQL and SQLite
@@ -81,8 +86,21 @@ class IncomingEmail < ApplicationRecord
     fund_entity = Entity.joins(:entity_setting).where(entity_settings: { investor_presentations_email: to }).first
 
     if match_data[:owner_type].present? && match_data[:owner_id].present?
-      # This email is sent by a user, to a specific owner model
-      self.owner ||= match_data[:owner_type].camelize.constantize.find(match_data[:owner_id])
+      # This email is sent by a user, to a specific owner model.
+      # H2-3: the address names the class, so only the models that take incoming email
+      # (ApplicationRecords including WithIncomingEmail, and their STI subclasses such as IndividualKyc)
+      # may be resolved - never an arbitrary constant.
+      # Not done yet (deferred): HMAC-tagged addresses (<type>.<id>.<tag>@...) and a cutoff for
+      # untagged legacy ones (INCOMING_EMAIL_LEGACY_UNTIL). Owner addresses have not been published
+      # since 2026-09-25 (b8fd493aa8); add both before they are published again - see "Fix" items 3
+      # and the decisions in docs/security/security_review_2026_10.md#h2--sendgrid-inbound-email
+      owner_class = match_data[:owner_type].camelize.safe_constantize
+      unless incoming_email_owner_class?(owner_class)
+        errors.add(:to, "Invalid email address, does not belong to any owner.")
+        return nil
+      end
+
+      self.owner ||= owner_class.find(match_data[:owner_id])
       self.entity_id ||= owner.entity_id
     elsif fund_entity.present?
       # This email is sent by a potential portfolio company, with the investor presentation to the fund.
@@ -97,14 +115,42 @@ class IncomingEmail < ApplicationRecord
     errors.add(:base, "Could not resolve email owner: #{e.message}")
   end
 
+  # H2-3: an owner class named by an address must be a model that takes incoming email
+  def incoming_email_owner_class?(owner_class)
+    owner_class.is_a?(Class) && owner_class < ApplicationRecord && owner_class.include?(WithIncomingEmail)
+  end
+
   # SendGrid posts attachments as attachment1, attachment2, ... alongside the mail fields.
+  # Worked examples H2-H, H2-6 — docs/security/security_review_2026_10.md#h2--sendgrid-inbound-email
   def save_attachments(params)
     attachment_keys = params.keys.select { |k| k.start_with?("attachment") && params[k].is_a?(ActionDispatch::Http::UploadedFile) }
     return if attachment_keys.empty?
 
-    # Resolve once outside the loop to avoid N+1 queries per attachment
-    user = User.where(email: from).first || entity.employees.first || User.support_users.first
-    save_uploaded_attachments(attachment_keys.map { |key| params[key] }, user: user)
+    # H2-6: the From header is the sender's claim, not proof. Credit the documents to the sender only
+    # when they are someone the owner's firm knows; otherwise to the support user, never to an
+    # arbitrary employee of the firm. Resolved once, outside the loop.
+    user = credited_sender || User.support_users.first
+    failures = save_uploaded_attachments(attachment_keys.map { |key| params[key] }, user: user)
+    # The webhook still answers 200 (the email itself is filed); say why an attachment is missing
+    Rails.logger.warn { "IncomingEmail #{id}: attachments not saved: #{failures.join('; ')}" } if failures.any?
+  end
+
+  # The user the From address names, if they are staff of the owner's firm or one of its stakeholder
+  # contacts (an approved investor access of that firm). nil for anyone else (H2-H, H2-6).
+  def credited_sender
+    # The bare address out of "Name <someone@example.com>"
+    address = from.to_s[/<([^>]+)>/, 1] || from.to_s.strip
+    return nil if address.blank? || entity_id.nil?
+
+    sender = User.find_by(email: address.downcase)
+    return nil if sender.nil?
+
+    # Staff of the owner's firm
+    return sender if sender.entity_id == entity_id
+    # A stakeholder contact of the owner's firm
+    return sender if InvestorAccess.exists?(entity_id:, email: sender.email, approved: true)
+
+    nil
   end
 
   # Shared attachment path, used by the SendGrid webhook above and by the Outlook/Gmail

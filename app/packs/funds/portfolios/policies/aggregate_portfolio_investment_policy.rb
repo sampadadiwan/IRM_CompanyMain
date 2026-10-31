@@ -60,15 +60,20 @@ class AggregatePortfolioInvestmentPolicy < FundBasePolicy
     update?
   end
 
+  # M26 — adding a valuation or an investment changes the fund's holding, so it needs update rights on
+  # the fund (the same access-right rule as other fund records), not just membership of the firm
+  # (M26-X1, M26-H1)
   def add_valuation?
-    belongs_to_entity?(user, record)
+    permissioned_employee?(:update)
   end
 
   def add_investment?
-    belongs_to_entity?(user, record)
+    permissioned_employee?(:update)
   end
 
+  # M26 — destroying an API cascades to its portfolio investments, so it needs destroy rights on the
+  # fund (M26-X2, M26-H2). No extra refusal when the buys have attributions (decided: not added).
   def destroy?
-    belongs_to_entity?(user, record)
+    permissioned_employee?(:destroy)
   end
 end

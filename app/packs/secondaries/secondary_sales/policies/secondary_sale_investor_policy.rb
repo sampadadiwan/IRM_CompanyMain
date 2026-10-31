@@ -37,10 +37,6 @@ class SecondarySaleInvestorPolicy < SaleBasePolicy
     permissioned_investor?
   end
 
-  def report?
-    show?
-  end
-
   def create?
     false
   end

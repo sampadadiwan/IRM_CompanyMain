@@ -61,16 +61,19 @@ class KpiReportPolicy < KpiPolicyBase
     update? && user.entity_id == record.entity_id
   end
 
+  # M19 — recomputing rewrites every report of the portfolio company, so it is fund-only, like closing
+  # the report: the report's own firm (or a permissioned employee). Portfolio-company users and other
+  # tenants' KPI users are refused (M19-X1, M19-X2, M19-H1)
   def recompute_percentage_change?
-    index?
+    mark_reviewed?
   end
 
   def recompute_cumulative?
-    index?
+    mark_reviewed?
   end
 
   def recompute_fx_conversion?
-    index?
+    mark_reviewed?
   end
 
   def mark_reviewed?
@@ -89,8 +92,13 @@ class KpiReportPolicy < KpiPolicyBase
       (belongs_to_entity?(user, record) || portfolio_company_user?)
   end
 
+  # M19 — on the class (no report or portfolio company named) the job runs for every tenant, so only
+  # support may fire it (M19-X3). On a report, or a report built for one portfolio company, it is the
+  # fund-only mark_reviewed? rule (M19-H2, M19-X4)
   def trigger_periodic_reports?
-    user.enable_kpis
+    return support? if record.is_a?(Class)
+
+    mark_reviewed?
   end
 
   def edit?

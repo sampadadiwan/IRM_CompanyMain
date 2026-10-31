@@ -212,15 +212,49 @@ class CustomNotification < ApplicationRecord
     email_methods.index_with { |method_name| placeholders_for(method_name) }
   end
 
-  def render_erb_string
-    renderer = ERB.new(body)
-    # You need to set up the binding context. Here it’s done with the top-level binding, but it might be your controller or view context.
-    renderer.result(binding)
-  end
-
   PLACEHOLDER_REGEXP = /\{\{\s*(\w+)\s*\}\}/
 
-  # Safe alternative to render_erb_string for clients who can't write ERB: substitutes {{name}}
+  # An ERB tag in an is_erb body: <%= code %>, <% code %>, <%# comment %>, with optional -%> trim
+  ERB_TAG_REGEXP = /<%(?<flag>[=#-]?)(?<code>.*?)-?%>/m
+
+  # C2 — the only two ERB tags stored in production (survey 2026-10-31: 8 bodies, 4 entities), each
+  # resolved by reading the mailer's own instance variables. Nothing in a body is evaluated.
+  KNOWN_ERB_TAGS = {
+    "@document.owner.investor_kyc.full_name" => lambda { |view|
+      owner = view.instance_variable_get(:@document)&.owner
+      owner.investor_kyc&.full_name if owner.respond_to?(:investor_kyc)
+    },
+    "@investor_kyc.full_name" => ->(view) { view.instance_variable_get(:@investor_kyc)&.full_name }
+  }.freeze
+
+  # Renders an is_erb body without evaluating it (C2: the body used to run as ERB, i.e. as Ruby code,
+  # in the mailer's view). The body is unescaped as before (the rich-text editor stores <%= as &lt;%=),
+  # then each ERB tag is replaced: one of KNOWN_ERB_TAGS by its value, html-escaped; any other tag is
+  # shown as its own escaped text and logged, so whoever owns the notification can see and fix it.
+  # @param view [ActionView::Base] the mailer view rendering the body (holds @document / @investor_kyc)
+  def render_erb_body(view)
+    # Same pre-processing the ERB path did
+    content = CGI.unescapeHTML(body.to_s).gsub("&nbsp;", " ")
+
+    rendered = content.gsub(ERB_TAG_REGEXP) do |tag|
+      match = Regexp.last_match
+      # Whitespace inside the tag does not matter: <%=@investor_kyc.full_name%> is the same tag
+      resolver = KNOWN_ERB_TAGS[match[:code].strip.gsub(/\s+/, "")] if match[:flag] == "="
+      if resolver
+        ERB::Util.html_escape(resolver.call(view).to_s)
+      else
+        Rails.logger.warn("[custom_notification] CustomNotification##{id}: ERB tag shown as text, not evaluated: #{tag.truncate(120)}")
+        ERB::Util.html_escape(tag)
+      end
+    end
+
+    # rubocop:disable Rails/OutputSafety -- the body is the client's own rich-text HTML (as on the
+    # placeholder path); every substituted value and every unknown tag is html_escape'd above
+    rendered.html_safe
+    # rubocop:enable Rails/OutputSafety
+  end
+
+  # Safe alternative to ERB for clients who can't write ERB: substitutes {{name}}
   # tokens against the rendering mailer's PLACEHOLDERS allowlist. Never evaluates arbitrary code.
   # Unknown placeholders are left as-is so clients notice typos instead of getting silent blanks.
   def render_safe_body(mailer)

@@ -20,6 +20,10 @@ class PortfolioReportDraft < ApplicationRecord
   validates :kpi_tag,         inclusion: { in: KpiReport::TAG_LIST.values }
   validates :n_periods,       numericality: { greater_than: 0 }
   validate  :end_date_after_start_date
+  # L12 — the template is the report's own, and the portfolio company is in the report's firm. The
+  # draft has no entity_id column (it is the report's), so validate_parent_in_own_firm does not apply.
+  validate  :template_and_company_in_report_firm,
+            if: -> { will_save_change_to_portfolio_report_id? || will_save_change_to_portfolio_report_template_id? || will_save_change_to_portfolio_company_id? }
 
   # Returns the narrative HTML for a section — user edit takes precedence over LLM output.
   # Legacy plain-text content (no leading "<") is auto-upgraded to <ul><li> HTML on read.
@@ -65,6 +69,19 @@ class PortfolioReportDraft < ApplicationRecord
   end
 
   private
+
+  # L12 (Test L12-6): investors#generate_reports took the template id from the request unscoped
+  def template_and_company_in_report_firm
+    return if portfolio_report.nil?
+
+    # The template must be one of this report's templates
+    template_elsewhere = portfolio_report_template && portfolio_report_template.portfolio_report_id != portfolio_report_id
+    errors.add(:portfolio_report_template, "must belong to this portfolio report") if template_elsewhere
+    # The portfolio company must be a stakeholder of the report's firm
+    return unless portfolio_company && portfolio_company.entity_id != portfolio_report.entity_id
+
+    errors.add(:portfolio_company, "must be in this portfolio report's firm")
+  end
 
   def end_date_after_start_date
     return unless start_date && end_date

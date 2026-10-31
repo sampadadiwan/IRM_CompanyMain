@@ -37,7 +37,9 @@ resources :secondary_sales do
   patch 'short_list_interests', on: :member
   get 'interests', on: :member
   get 'payments', on: :member
-  get 'report', on: :member
+  # No `report` member route: it rendered any secondary_sales template named in params[:report]
+  # (e.g. the full-PII download / payments sheets) to anyone who could see the sale, and nothing has
+  # linked to it since Oct 2025 (C4-1, C4-2 in features/security/secondaries_isolation.feature).
   put :restore_deleted, on: :member
   get :show_deleted, on: :collection
 end

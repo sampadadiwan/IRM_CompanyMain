@@ -15,8 +15,33 @@ class TemplateDecorator < ApplicationDecorator
     nil
   end
 
+  # SECURITY (finding M27): a template field names a method that is called with no arguments. Only
+  # plain reader names qualify: word characters (PAN is a column), optionally ending in "?", and not a persistence verb
+  # (destroy, delete, save, update, touch, create, insert, upsert — alone or as the first word, so
+  # updated_at / created_at still read). "!" and "=" methods never qualify. Rendering also runs with
+  # writes refused (DocumentGeneratorBase#render_read_only), which stops a writing reader this list
+  # does not know. Tests M27-1, M27-2, M27-H — features/security/security_review_2026_10_medium.feature
+  PLAIN_READER_NAME = /\A[A-Za-z_][A-Za-z0-9_]*\??\z/
+  WRITER_NAME = /\A(?:destroy|delete|save|update|touch|create|insert|upsert)(?:_|\z)/
+
+  def self.template_reader!(name)
+    name = name.to_s
+    # A reader-shaped name that is not a persistence verb: callable
+    return name if name.match?(PLAIN_READER_NAME) && !name.match?(WRITER_NAME)
+
+    # Anything else is refused before it is called (M27-2)
+    raise ArgumentError, "#{name.inspect} is not a readable template field"
+  end
+
+  # Calls a template-named reader on `receiver` (this decorator by default): public methods only, and
+  # only names template_reader! accepts. Replaces every `send(attr)` this decorator used to make.
+  def template_read(name, receiver = self)
+    receiver.public_send(TemplateDecorator.template_reader!(name))
+  end
+
   def add_filter_clause(association, filter_field, filter_value)
-    relation = object.send(association)
+    # M27: the association name is a template-supplied reader
+    relation = template_read(association, object)
     column = TemplateDecorator.safe_filter_column(relation, filter_field)
     return relation.none unless column
 
@@ -36,22 +61,22 @@ class TemplateDecorator < ApplicationDecorator
       begin
         if params.include?("_noteq_")
           filter_field, filter_value = params.split("_noteq_")
-          return send(filter_field)&.parameterize&.underscore != filter_value.downcase
+          return template_read(filter_field)&.parameterize&.underscore != filter_value.downcase
         elsif params.include?("_eq_")
           filter_field, filter_value = params.split("_eq_")
-          return send(filter_field)&.parameterize&.underscore == filter_value.downcase
+          return template_read(filter_field)&.parameterize&.underscore == filter_value.downcase
         elsif params.include?("_gt_")
           filter_field, filter_value = params.split("_gt_")
-          return send(filter_field)&.parameterize&.underscore&.> filter_value.downcase
+          return template_read(filter_field)&.parameterize&.underscore&.> filter_value.downcase
         elsif params.include?("_gteq_")
           filter_field, filter_value = params.split("_gteq_")
-          return send(filter_field)&.parameterize&.underscore&.>= filter_value.downcase
+          return template_read(filter_field)&.parameterize&.underscore&.>= filter_value.downcase
         elsif params.include?("_lt_")
           filter_field, filter_value = params.split("_lt_")
-          return send(filter_field)&.parameterize&.underscore&.< filter_value.downcase
+          return template_read(filter_field)&.parameterize&.underscore&.< filter_value.downcase
         elsif params.include?("_lteq_")
           filter_field, filter_value = params.split("_lteq_")
-          return send(filter_field)&.parameterize&.underscore&.<= filter_value.downcase
+          return template_read(filter_field)&.parameterize&.underscore&.<= filter_value.downcase
         else
           raise ArgumentError, "Invalid comparison method name: #{method_name}"
         end
@@ -63,14 +88,14 @@ class TemplateDecorator < ApplicationDecorator
     elsif method_name.to_s.starts_with?("skip_")
       underlying_method = method_name.to_s.sub(/^skip_/, "")
       begin
-        return send(underlying_method)
+        return template_read(underlying_method)
       rescue StandardError => e
         Rails.logger.error { "Undefined method error in TemplateDecorator for method: #{method_name}  - #{e.message}" }
         return ""
       end
     elsif method_name.to_s.starts_with?("to_s_")
       underlying_method = method_name.to_s.sub(/^to_s_/, "")
-      return send(underlying_method).to_s
+      return template_read(underlying_method).to_s
     elsif method_name.to_s.starts_with?("where_")
       # This is used in the template to filter a collection based on a field
       # for example where_investor_name_eq_John
@@ -86,14 +111,14 @@ class TemplateDecorator < ApplicationDecorator
       # This is used in the template to format a money attribute
       # for example money_investment_amount
       attr_name = method_name.to_s.gsub("money_", "")
-      return money_to_currency(send(attr_name))
+      return money_to_currency(template_read(attr_name))
 
     elsif method_name.to_s.starts_with?("date_format_")
       # This is used in the template to format a date attribute
       # for example date_format_investment_date
       # It will return the date in the format of "dd Month yyyy"
       attr_name = method_name.to_s.gsub("date_format_", "")
-      date_val = send(attr_name)
+      date_val = template_read(attr_name)
       return date_val ? I18n.l(date_val, format: :day_month_year) : nil
 
     elsif method_name.to_s.starts_with?("format_nd_")
@@ -101,7 +126,7 @@ class TemplateDecorator < ApplicationDecorator
       # for example format_nd_investment_amount
       # It will return the number with no decimal places and with a comma as a delimiter
       attr_name = method_name.to_s.gsub("format_nd_", "")
-      return number_doc_format(send(attr_name).to_d, precision: 0, delimiter: ",")
+      return number_doc_format(template_read(attr_name).to_d, precision: 0, delimiter: ",")
 
     # if method_name starts_with "sum_amt_" && method name contains and or sub
     # then split the method name by _and_ and _sub_ and call sum on each part
@@ -123,17 +148,17 @@ class TemplateDecorator < ApplicationDecorator
         sub_values = sub_parts&.map { |attr| sum(attr.to_sym) } || []
       else
         # if object is not an ActiveRecord::Relation it is a singular object, we need to call send on each part
-        add_values = add_parts.map { |attr| send(attr) }
-        sub_values = sub_parts&.map { |attr| send(attr) } || []
+        add_values = add_parts.map { |attr| template_read(attr) }
+        sub_values = sub_parts&.map { |attr| template_read(attr) } || []
       end
 
       # Final calculation
       # We determine the subunit to divide by so we can return the result in amount and not cents
       # Necessary as some Currenncies dont have a 100 subunit ie 100 cents make a dollar but for yen the subunit is 1 as they dont have a subunit
       subunit_to_unit = if object.is_a?(ActiveRecord::Relation)
-                          object.first.send(add_parts.first.gsub("_cents", "").to_sym).currency.subunit_to_unit.to_d
+                          template_read(add_parts.first.gsub("_cents", ""), object.first).currency.subunit_to_unit.to_d
                         else
-                          object.send(add_parts.first.gsub("_cents", "").to_sym).currency.subunit_to_unit.to_d
+                          template_read(add_parts.first.gsub("_cents", ""), object).currency.subunit_to_unit.to_d
                         end
 
       # Divide by sububit to return the amount
@@ -146,9 +171,9 @@ class TemplateDecorator < ApplicationDecorator
       # We determine the subunit to divide by so we can return the result in amount and not cents
       # Necessary as some Currenncies dont have a 100 subunit ie 100 cents make a dollar but for yen the subunit is 1 as they dont have a subunit
       subunit_to_unit = if object.is_a?(ActiveRecord::Relation)
-                          object.first.send(attr_name.gsub("_cents", "").to_sym).currency.subunit_to_unit.to_d
+                          template_read(attr_name.gsub("_cents", ""), object.first).currency.subunit_to_unit.to_d
                         else
-                          object.send(attr_name.gsub("_cents", "").to_sym).currency.subunit_to_unit.to_d
+                          template_read(attr_name.gsub("_cents", ""), object).currency.subunit_to_unit.to_d
                         end
 
       # Divide by sububit to return the amount
@@ -177,34 +202,34 @@ class TemplateDecorator < ApplicationDecorator
 
       # Return the attribute formatted with the specified number of decimal places
       # using .to_d to handle nil values gracefully (nil becomes 0.0)
-      return number_doc_format(send(attr_name).to_d, precision: precision, delimiter: ",")
+      return number_doc_format(template_read(attr_name).to_d, precision: precision, delimiter: ",")
 
     elsif method_name.to_s.starts_with?("rupees_")
       attr_name = method_name.to_s.gsub("rupees_", "")
-      return send(attr_name).to_i.rupees.humanize
+      return template_read(attr_name).to_i.rupees.humanize
 
     elsif method_name.to_s.starts_with?("dollars_")
       attr_name = method_name.to_s.gsub("dollars_", "")
-      return send(attr_name).to_i.to_words.humanize
+      return template_read(attr_name).to_i.to_words.humanize
 
     elsif method_name.to_s.starts_with?("list_")
       attr_name = method_name.to_s.gsub("list_", "")
-      return send(attr_name)&.join("; ")
+      return template_read(attr_name)&.join("; ")
 
     elsif method_name.to_s.starts_with?("indian_words_")
       attr_name = method_name.to_s.gsub("indian_words_", "")
-      return send(attr_name).to_i.rupees.humanize
+      return template_read(attr_name).to_i.rupees.humanize
 
     elsif method_name.to_s.starts_with?("words_")
       attr_name = method_name.to_s.gsub("words_", "")
-      return send(attr_name).humanize
+      return template_read(attr_name).humanize
 
     elsif method_name.to_s.starts_with?("sanitized_")
       attr_name = method_name.to_s.gsub("sanitized_", "")
-      return send(attr_name)&.gsub(/\r?\n/, ' ').to_s
+      return template_read(attr_name)&.gsub(/\r?\n/, ' ').to_s
     elsif method_name.to_s.starts_with?("boolean_custom_field_")
       attr_name = method_name.to_s.gsub("boolean_custom_field_", "")
-      return %w[true yes 1].include? custom_fields.send(attr_name).to_s.downcase
+      return %w[true yes 1].include? template_read(attr_name, custom_fields).to_s.downcase
     elsif method_name.to_s.starts_with?("doc_exists_")
       doc_name_underscored = method_name.to_s.gsub("doc_exists_", "")
       doc_name_humanized = doc_name_underscored.to_s.tr("_", " ").humanize
@@ -216,13 +241,13 @@ class TemplateDecorator < ApplicationDecorator
       # for example div_7_committed_amount divides committed_amount by 10,000,000 (1 crore)
       divisor = 10**match_data[1].to_i
       attr_name = match_data[2]
-      return send(attr_name).to_d / divisor
+      return template_read(attr_name).to_d / divisor
     elsif (match_data = method_name.to_s.match(/^mult_(\d+)_(.+)/))
       # This is used in the template to multiply a number attribute by 10^N
       # for example mult_2_irr multiplies irr by 100 (a fraction such as 0.12 shown as 12)
       multiplier = 10**match_data[1].to_i
       attr_name = match_data[2]
-      return send(attr_name).to_d * multiplier
+      return template_read(attr_name).to_d * multiplier
     end
     super
   rescue StandardError => e

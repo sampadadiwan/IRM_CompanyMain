@@ -92,6 +92,13 @@ class CapitalRemittance < ApplicationRecord
   belongs_to :capital_commitment
   has_one :investor_kyc, through: :capital_commitment
   belongs_to :investor
+  # H10 — a remittance stays on its call and commitment, both in the remittance's fund; its investor is
+  # one of the firm's own (same firm, not "equals the commitment's investor": 4 live legacy rows differ).
+  # Tests H10-3, H10-X2, H10-X3 — features/security/fund_parent_ids_same_firm.feature
+  attr_readonly :capital_call_id, :capital_commitment_id
+  validate { validate_parent_in_own_fund(:capital_call) }
+  validate { validate_parent_in_own_fund(:capital_commitment) }
+  validate(if: :will_save_change_to_investor_id?) { validate_parent_in_own_firm(:investor) }
   belongs_to :exchange_rate, optional: true
   has_many :capital_remittance_payments, dependent: :destroy
   has_many :fund_units, as: :owner, dependent: :destroy

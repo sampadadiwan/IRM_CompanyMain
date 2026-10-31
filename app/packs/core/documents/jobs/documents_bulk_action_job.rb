@@ -1,4 +1,8 @@
 class DocumentsBulkActionJob < BulkActionJob
+  # H6 step 3 — bulk_action → the policy query the single-document action authorises with. Approve is
+  # not listed: its branch below already checks approve? and explains why a document was refused.
+  ACTIONS = { "delete" => :destroy?, "send document" => :send_document_notification?, "send for esignatures" => :update? }.freeze
+
   # Runs the bulk action, then re-checks once per affected call or distribution (not once per
   # document) when their notices were approved.
   # Worked examples J2.2 — openspec/changes/archive/2026-10-02-capital-call-journey/design.md#worked-examples
@@ -15,6 +19,12 @@ class DocumentsBulkActionJob < BulkActionJob
   def perform_action(document, user_id, bulk_action, params: {})
     msg = "#{bulk_action}: #{document.name}"
     send_notification(msg, user_id, :success)
+
+    # H6 step 3 — the documents list (and its bulk menu) also renders for LPs, so DocumentPolicy#bulk_actions?
+    # lets them in; each row is then held to what they could do one document at a time. Test H6-6 —
+    # features/security/bulk_actions_authorization.feature
+    query = ACTIONS[bulk_action.to_s.downcase]
+    return set_error("Not authorized to #{bulk_action.to_s.downcase} #{document.name}", document, user_id) if query && !Pundit.policy!(@user, document).public_send(query)
 
     case bulk_action.downcase
 

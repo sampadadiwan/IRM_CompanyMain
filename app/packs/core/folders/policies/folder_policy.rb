@@ -49,4 +49,12 @@ class FolderPolicy < ApplicationPolicy
   def send_for_esign?
     user.entity_id == record.entity_id
   end
+
+  # H1: bulk-approving the generated documents of one folder tree. The folder must be the user's own
+  # firm's - the approval job only ever looks inside the user's firm - and the user must be allowed to
+  # bulk-approve at all (DocumentPolicy#bulk_approve?: an approver employee, or support).
+  # Worked examples H1-2, H1-3 — docs/security/security_review_2026_10.md#h1--bulk-document-approval
+  def approve_documents?
+    user.entity_id == record.entity_id && new_policy(Document).bulk_approve?
+  end
 end

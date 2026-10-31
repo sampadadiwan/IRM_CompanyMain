@@ -133,15 +133,19 @@ class LpChatProvider < BaseChatProvider
     [
       ListSkillsTool.new,
       LoadSkillTool.new,
-      # Portfolio rows are limited to the holdings this LP may see (LpPortfolioVisibility — H19, E69–E71)
+      # Portfolio rows are limited to the holdings this LP may see (LpPortfolioVisibility — H19, E69–E71);
+      # every table is scoped to this LP by LpQueryScope, whose documents rule needs the user (H5)
       RunQueryTool.new(
         entity_ids: entity_ids,
         accessible_fund_ids: fund_ids,
         accessible_investor_ids: investor_ids,
         visible_api_ids: portfolio_visibility.assistant_api_ids(support_agent.entity_id),
-        visible_pi_ids: portfolio_visibility.assistant_pi_ids(support_agent.entity_id)
+        visible_pi_ids: portfolio_visibility.assistant_pi_ids(support_agent.entity_id),
+        user: analyst
       ),
+      # Each URL is also checked with DocumentPolicy#show? for this LP (H4)
       DocumentUrlTool.new(
+        user: analyst,
         entity_ids: entity_ids,
         accessible_fund_ids: fund_ids,
         accessible_investor_ids: investor_ids

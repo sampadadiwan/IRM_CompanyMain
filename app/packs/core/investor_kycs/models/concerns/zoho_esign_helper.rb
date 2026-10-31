@@ -255,6 +255,58 @@ class ZohoEsignHelper
     Rails.env.local?
   end
 
+  # L9 — Zoho's HMAC proves who sent a body, not when, so a captured body could be posted again.
+  # docs/security/security_review_2026_10.md "Authentication and session — Medium / Low", L9.
+  WEBHOOK_REPLAY_TTL = 7.days
+
+  # Events about one signer; every other operation is about the whole request
+  RECIPIENT_OPERATIONS = %w[RequestSigningSuccess RequestRejected RequestForwarded RequestViewed].freeze
+
+  # L9-2 — claims a verified body the first time it arrives. A byte-identical resend within
+  # WEBHOOK_REPLAY_TTL is acknowledged (Zoho stops retrying) but not applied again.
+  # @return [Boolean] true the first time this exact body is seen
+  def self.claim_webhook_body(raw_body)
+    # write(unless_exist:) is first-writer-wins, so two concurrent deliveries apply once
+    claimed = Rails.cache.write("zoho_webhook:body:#{Digest::SHA256.hexdigest(raw_body.to_s)}", true,
+                                unless_exist: true, expires_in: WEBHOOK_REPLAY_TTL)
+    Rails.logger.info("Zoho Sign webhook ignored - the same body was already received") unless claimed
+    claimed
+  end
+
+  # L9-2 — whether an event is older than the last one applied for the same signer (or, for a
+  # request-level event, the same document). Scoped per signer so two signers' events arriving out
+  # of order still both apply; events without Zoho's performed_at are never treated as stale.
+  def self.stale_webhook_event?(doc, payload)
+    performed_at = webhook_performed_at(payload)
+    return false if performed_at.nil?
+
+    performed_at < Rails.cache.read(webhook_order_key(doc, payload)).to_i
+  end
+
+  # Stamps an applied event's time so an older replay of it (stale_webhook_event?) is ignored
+  def self.record_webhook_event(doc, payload)
+    performed_at = webhook_performed_at(payload)
+    return if performed_at.nil?
+
+    key = webhook_order_key(doc, payload)
+    Rails.cache.write(key, [performed_at, Rails.cache.read(key).to_i].max, expires_in: WEBHOOK_REPLAY_TTL)
+  end
+
+  # Zoho's notifications.performed_at, epoch milliseconds
+  def self.webhook_performed_at(payload)
+    Integer(payload.dig("notifications", "performed_at"), exception: false)
+  end
+
+  def self.webhook_order_key(doc, payload)
+    notification = payload["notifications"] || {}
+    scope = if RECIPIENT_OPERATIONS.include?(notification["operation_type"])
+              "signer:#{notification['action_id'].presence || notification['performed_by_email']}"
+            else
+              "request"
+            end
+    "zoho_webhook:last:#{doc.id}:#{scope}"
+  end
+
   private
 
   # One client per document's account for the life of this helper (a job or a request).

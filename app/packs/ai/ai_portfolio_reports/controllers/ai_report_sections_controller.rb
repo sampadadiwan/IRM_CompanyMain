@@ -1,12 +1,12 @@
 # Controller for editing and toggling AI report sections.
 class AiReportSectionsController < ApplicationController
+  # C3-6 - every action loads its report through the policy scope (see set_report_and_section)
+  before_action :set_report_and_section
+
   # Update section content and mark reviewed.
   #
   # @return [void]
   def update
-    @report = AiPortfolioReport.find(params[:ai_portfolio_report_id])
-    @section = @report.ai_report_sections.find(params[:id])
-
     authorize @section
 
     # Handle content from contenteditable
@@ -34,9 +34,6 @@ class AiReportSectionsController < ApplicationController
   #
   # @return [void]
   def toggle_web_search
-    @report = AiPortfolioReport.find(params[:ai_portfolio_report_id])
-    @section = @report.ai_report_sections.find(params[:id])
-
     authorize @section
 
     # Get the desired state from params (if provided) or toggle
@@ -75,7 +72,8 @@ class AiReportSectionsController < ApplicationController
     render json: {
       success: true,
       web_search_enabled: @section.web_search_enabled,
-      content: content_to_return,
+      # C3-7 - the cached copy never went through before_save, so sanitize on the way out
+      content: AiReportHtml.sanitize(content_to_return),
       has_web_content: @section.content_html_with_web.present?,
       message: @section.web_search_enabled ? 'Web search enabled' : 'Web search disabled'
     }
@@ -87,9 +85,6 @@ class AiReportSectionsController < ApplicationController
   #
   # @return [void]
   def add_content
-    @report = AiPortfolioReport.find(params[:ai_portfolio_report_id])
-    @section = @report.ai_report_sections.find(params[:id])
-
     authorize @section
 
     content_to_add = params[:content]
@@ -103,16 +98,14 @@ class AiReportSectionsController < ApplicationController
 
     @section.save!
 
-    render json: { success: true, content: @section.content_html }
+    # C3-7 - already sanitized by before_save; sanitized again as every JSON content response is
+    render json: { success: true, content: AiReportHtml.sanitize(@section.content_html) }
   end
 
   # Toggle reviewed flag for a section.
   #
   # @return [void]
   def toggle_reviewed
-    @report = AiPortfolioReport.find(params[:ai_portfolio_report_id])
-    @section = @report.ai_report_sections.find(params[:id])
-
     authorize @section
 
     @section.reviewed = !@section.reviewed
@@ -131,9 +124,6 @@ class AiReportSectionsController < ApplicationController
   #
   # @return [void]
   def generate_chart_preview
-    @report = AiPortfolioReport.find(params[:ai_portfolio_report_id])
-    @section = @report.ai_report_sections.find(params[:id])
-
     authorize @section
     user_prompt = params[:prompt]
 
@@ -159,9 +149,6 @@ class AiReportSectionsController < ApplicationController
   #
   # @return [void]
   def insert_chart
-    @report = AiPortfolioReport.find(params[:ai_portfolio_report_id])
-    @section = @report.ai_report_sections.find(params[:id])
-
     authorize @section
 
     chart_config = params[:chart_config]
@@ -169,8 +156,9 @@ class AiReportSectionsController < ApplicationController
 
     Rails.logger.info "Chart title: #{chart_config['title'] || 'N/A'}"
     # Create AgentChart record
+    # The chart belongs to the portfolio company's firm, not to whichever firm the analyst is in
     chart = AgentChart.create!(
-      entity_id: @report.analyst.entity_id,
+      entity_id: @report.portfolio_company.entity_id,
       owner: @report,
       prompt: user_prompt,
       spec: chart_config,
@@ -190,9 +178,6 @@ class AiReportSectionsController < ApplicationController
   #
   # @return [void]
   def remove_chart
-    @report = AiPortfolioReport.find(params[:ai_portfolio_report_id])
-    @section = @report.ai_report_sections.find(params[:id])
-
     authorize @section
     chart_id = params[:chart_id].to_i
 
@@ -226,9 +211,6 @@ class AiReportSectionsController < ApplicationController
   #
   # @return [void]
   def regenerate
-    @report = AiPortfolioReport.find(params[:ai_portfolio_report_id])
-    @section = @report.ai_report_sections.find(params[:id])
-
     authorize @section
 
     user_prompt = params[:prompt]
@@ -256,10 +238,10 @@ class AiReportSectionsController < ApplicationController
         @section.update(content_html: refined_content)
 
       else
-        # Text sections
+        # Text sections - the agent of the portfolio company's firm, not of the analyst's firm
         agent = SupportAgent.find_or_create_by!(
           agent_type: 'PortfolioReportAgent',
-          entity_id: @report.analyst.entity_id
+          entity_id: @report.portfolio_company.entity_id
         ) do |a|
           a.name = 'Portfolio Report Generator'
           a.enabled = true
@@ -299,9 +281,10 @@ class AiReportSectionsController < ApplicationController
         end
       end
 
+      # C3-7 - AI / chart output and the client's current_content are sanitized before returning
       render json: {
         success: true,
-        content: refined_content
+        content: AiReportHtml.sanitize(refined_content)
       }
     rescue StandardError => e
       Rails.logger.error "Error: #{e.message}"
@@ -309,4 +292,16 @@ class AiReportSectionsController < ApplicationController
     end
   end
   # rubocop:enable Metrics/MethodLength
+
+  private
+
+  # The report and section every action works on.
+  #
+  # @return [void]
+  def set_report_and_section
+    # C3-6 - only reports of the user's firms are found; another tenant's id is RecordNotFound (denied)
+    @report = policy_scope(AiPortfolioReport).find(params[:ai_portfolio_report_id])
+    # The section must belong to that report
+    @section = @report.ai_report_sections.find(params[:id])
+  end
 end

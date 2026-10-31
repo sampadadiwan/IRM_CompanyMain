@@ -15,8 +15,16 @@ class ReportBuilderConfig
     @group_rows_by = t[:group_rows_by]
   end
 
+  # M16 — the root model comes from ReportBuilderModelDiscovery.roots, never from constantizing the
+  # stored name: a template naming User, AccessRight or any other class is not a report root. An
+  # unlisted name raises like the old constantize did, so callers that rescue keep working (M16-3)
   def root_class
-    root_model.constantize
+    root_from_discovery || raise(NameError, "#{root_model.inspect} is not a report builder root model")
+  end
+
+  # The discovery-list class whose name is exactly root_model, or nil (M16-3)
+  def root_from_discovery
+    ReportBuilderModelDiscovery.roots.find { |klass| klass.name == root_model }
   end
 
   def join_for(relation)
@@ -29,12 +37,9 @@ class ReportBuilderConfig
     aggregates[gvp_key] || aggregates[strip_col_type(gvp_key)]
   end
 
+  # Valid only for a root on the discovery list (M16-3); an unknown or unlisted name runs nothing
   def valid?
-    root_model.present? && begin
-      root_model.constantize
-    rescue StandardError
-      nil
-    end.present?
+    root_model.present? && root_from_discovery.present?
   end
 
   # Display-only currency symbol for the report (e.g. "$", "₹") — no

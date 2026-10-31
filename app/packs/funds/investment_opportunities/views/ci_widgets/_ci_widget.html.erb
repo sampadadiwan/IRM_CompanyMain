@@ -4,7 +4,7 @@
     <%= ci_widget.title %>
   </td>
   <td>
-    <%= ci_widget.details&.html_safe %>
+    <%= ci_widget_rich_text(ci_widget.details) %>
   </td>
   <td>
     <%= ci_widget.image_placement %>

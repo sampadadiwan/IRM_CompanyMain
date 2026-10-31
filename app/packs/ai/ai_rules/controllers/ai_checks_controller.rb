@@ -1,4 +1,8 @@
 class AiChecksController < ApplicationController
+  # L14 — the classes AI checks run on: AiRule::FOR_CLASSES, plus InvestorKyc, the base class the KYC
+  # checks are stored under (production parents: Fund, InvestorKyc; owners: InvestorKyc, PortfolioInvestment)
+  CHECKABLE_TYPES = (AiRule::FOR_CLASSES + %w[InvestorKyc]).uniq.freeze
+
   before_action :set_ai_check, only: %i[show edit update destroy]
 
   # GET /ai_checks
@@ -26,13 +30,21 @@ class AiChecksController < ApplicationController
     # Get the model to run the checks on
 
     if params[:parent_id].present?
-      @parent = params[:parent_type].constantize.find(params[:parent_id])
+      # L14 — only a class AI rules run on (CHECKABLE_TYPES); an unknown name is a 404 (L14-12)
+      parent_class = ApplicationRecord.model_class_from_param(params[:parent_type], allowed: CHECKABLE_TYPES)
+      raise ActiveRecord::RecordNotFound, "Unknown parent type" unless parent_class
+
+      @parent = parent_class.find(params[:parent_id])
       authorize(@parent, :run_checks?)
       params[:for_classes]&.split(",") || AiRule::FOR_CLASSES
     end
 
     if params[:owner_id].present?
-      @owner = params[:owner_type].constantize.find(params[:owner_id])
+      # L14 — same list for the owner (L14-12)
+      owner_class = ApplicationRecord.model_class_from_param(params[:owner_type], allowed: CHECKABLE_TYPES)
+      raise ActiveRecord::RecordNotFound, "Unknown owner type" unless owner_class
+
+      @owner = owner_class.find(params[:owner_id])
       authorize(@owner, :run_checks?)
     end
 

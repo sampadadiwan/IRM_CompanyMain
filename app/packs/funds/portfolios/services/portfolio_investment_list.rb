@@ -72,7 +72,9 @@ class PortfolioInvestmentList < BaseList
 
     if @params[:group_fields].present?
       build_data_frame_result(result_attrs)
-      result_attrs[:template] = @params[:template].presence || template
+      # M10 — a grouped list may pick one of its own folder's views (index_group, …) by bare name only; a
+      # path ("/", "../") falls back to the default view, so the request never names a template elsewhere
+      result_attrs[:template] = @params[:template].to_s.match?(/\A[a-z0-9_]+\z/) ? @params[:template].to_s : template
     elsif @params[:time_series].present?
       build_time_series_result(result_attrs)
     end

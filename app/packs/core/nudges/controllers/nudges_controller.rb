@@ -18,8 +18,10 @@ class NudgesController < ApplicationController
     @nudge = Nudge.new(nudge_params)
     @nudge.user_id = current_user.id
     @nudge.entity_id = current_user.entity_id
-    @nudge.pre_populate
+    # M14 — ask permission first: pre_populate copies the item's LP emails into the form, so they must
+    # never be read for an item the user may not see (M14-1, M14-H)
     authorize @nudge
+    @nudge.pre_populate
   end
 
   # GET /nudges/1/edit

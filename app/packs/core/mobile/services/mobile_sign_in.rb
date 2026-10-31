@@ -56,7 +56,7 @@ class MobileSignIn
       end
     end
 
-    # @return [Result] kind ∈ :session, :invalid_code, :too_many_attempts, :expired, :spent
+    # @return [Result] kind ∈ :session, :invalid_code, :too_many_attempts, :locked, :expired, :spent
     def verify(challenge:, code:, device:)
       payload = read_challenge(challenge)
       # E2 — past its 10 minutes (or tampered)
@@ -79,6 +79,14 @@ class MobileSignIn
 
       # E1 — wrong code: count it; X2 — the third ends the challenge, as on the website
       attempts = Rails.cache.increment(cache_key(nonce, :attempts), 1, expires_in: CHALLENGE_TTL).to_i
+      # H13-2 — the miss also counts toward the per-user hourly limit shared with the website
+      # (TwoFactorVerifier::USER_MISS_LIMIT); the miss that reaches it locks the account and ends
+      # this challenge, so the app shows the same "locked" answer a locked password login gets
+      if TwoFactorVerifier.record_user_miss(user)
+        claim(nonce)
+        return Result.new(kind: :locked)
+      end
+
       if attempts >= TwoFactorVerifier::MAX_ATTEMPTS
         claim(nonce)
         Result.new(kind: :too_many_attempts)

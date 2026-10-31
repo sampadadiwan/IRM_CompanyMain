@@ -175,7 +175,11 @@ class InvestorsController < ApplicationController
     authorize @investor, :generate_reports?
 
     if request.post?
-      template = PortfolioReportTemplate.find(params[:portfolio_report_template_id])
+      # L12 — the template is one of the portfolio company's firm's report templates (the same list
+      # the form offers); another firm's template id is a 404. Tests L12-6, L12-H6 —
+      # features/security/security_review_2026_10_low.feature
+      template = PortfolioReportTemplate.where(portfolio_report: @investor.entity.portfolio_reports)
+                                        .find(params[:portfolio_report_template_id])
 
       draft = PortfolioReportDraft.create!(
         portfolio_company: @investor,
@@ -421,7 +425,7 @@ class InvestorsController < ApplicationController
     respond_to do |format|
       # SECURITY (finding H6): strip entity_id so an investor cannot be relocated to another
       # tenant via mass assignment (entity_id is pinned to current_user at #create). investor_entity_id
-      # is deliberately NOT stripped — it is a legitimate, updateable link to the investor's own entity.
+      # never reaches here: investor_params does not permit it (C5-1), so a posted linked firm is ignored.
       if @investor.update(investor_params.except(:entity_id))
         format.html { redirect_to investor_url(@investor), notice: "Stakeholder was successfully updated." }
         format.json { render :show, status: :ok, location: @investor }
@@ -494,8 +498,12 @@ class InvestorsController < ApplicationController
   end
 
   # Only allow a list of trusted parameters through.
+  # C5-1 — investor_entity_id (the stakeholder's linked firm) is deliberately NOT permitted: on create
+  # Investor#update_name finds/builds it from the email or PAN, and afterwards it changes only through
+  # the email-change relink (reassign_entity_on_email_change) or the support admin panel. Accepting it
+  # here let a company admin point a stakeholder at any firm in the system.
   def investor_params
-    params.require(:investor).permit(:investor_entity_id, :tag_list, :investor_name, :form_type_id, :sector,
+    params.require(:investor).permit(:tag_list, :investor_name, :form_type_id, :sector,
                                      :managed_by_user_id, :pan, :entity_id, :category, :city, :primary_email, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
   end
 

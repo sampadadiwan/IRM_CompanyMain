@@ -2,6 +2,9 @@ class CapitalRemittancesBulkActionJob < BulkActionJob
   # Bulk actions that can undo journey progress (capital-call-journey)
   JOURNEY_UNDO_ACTIONS = ["verify", "mark notification unsent"].freeze
 
+  # H6 step 3 — bulk_action → the policy query the single-remittance button authorises with
+  ACTIONS = { "verify" => :verify?, "mark notification sent" => :update?, "mark notification unsent" => :update? }.freeze
+
   # Runs the bulk action, then re-checks each affected call's journey once (as an undo) instead of
   # once per remittance. Worked examples E18, E24 — openspec/changes/archive/2026-10-02-capital-call-journey/design.md#worked-examples
   def perform(record_ids, user_id, bulk_action, params: {})
@@ -32,6 +35,12 @@ class CapitalRemittancesBulkActionJob < BulkActionJob
     msg = "Performing #{bulk_action} on remittance #{capital_remittance}"
     Rails.logger.info(msg + " params: #{params}")
     send_notification(msg, user_id, :success)
+    # H6 step 3 — the same permission the single-remittance action checks, per row: a read-only employee
+    # gets a "Not authorized" line in the errors email and the remittance is left as it was.
+    # Tests H6-7, H6-H1 — features/security/bulk_actions_authorization.feature
+    query = ACTIONS[bulk_action.to_s.downcase]
+    return record_unauthorized(capital_remittance, bulk_action) if query && !Pundit.policy!(@user, capital_remittance).public_send(query)
+
     case bulk_action.downcase
 
     when "verify"
@@ -52,6 +61,12 @@ class CapitalRemittancesBulkActionJob < BulkActionJob
   end
 
   private
+
+  # H6 — a row the user may not act on; reported by BulkActionJob's completion notification and email
+  def record_unauthorized(capital_remittance, bulk_action)
+    @error_msg << { msg: "Not authorized to #{bulk_action.to_s.downcase}", folio_id: capital_remittance.folio_id,
+                    capital_remittance_id: capital_remittance.id }
+  end
 
   def record_failure(capital_remittance, result)
     return unless result.failure?

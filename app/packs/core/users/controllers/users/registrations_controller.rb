@@ -8,6 +8,11 @@ module Users
     def create
       build_resource(sign_up_params)
       ensure_entity(resource)
+      # C6-1 / C6-2 / C6-H / C6-X — Devise controllers skip verify_authorized, so authorize here,
+      # once the new user's firm is pinned: UserPolicy#create? allows a company admin of that firm,
+      # or support. A refusal raises Pundit::NotAuthorizedError, which WithAuthentication#deny_access
+      # turns into the normal Access Denied response before anything is saved.
+      authorize resource, :create?
       resource.save
 
       yield resource if block_given?
@@ -18,7 +23,10 @@ module Users
       else
         clean_up_passwords resource
         set_minimum_password_length
-        redirect_to new_user_path(params.to_unsafe_h), alert: resource.errors.full_messages.join(", ")
+        # C6-4 / L7 — refill the New User form from the permitted fields only, never the password
+        # (a redirect puts every param in the URL, and so in browser history and access logs)
+        redirect_to new_user_path(user: sign_up_params.except(:password, :password_confirmation).to_h),
+                    alert: resource.errors.full_messages.join(", ")
       end
     end
 

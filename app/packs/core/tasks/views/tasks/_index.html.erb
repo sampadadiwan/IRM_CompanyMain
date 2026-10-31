@@ -4,7 +4,11 @@
   base_query = filter_query
   label = "Tasks"
   if params[:owner_type] && params[:owner_id]
-    owner ||= params[:owner_type].constantize.find_by(id: params[:owner_id])
+    # L14 — any model of the app, as with_owner_access (the help slide-out lists tasks for whatever model
+    # its page shows), never an arbitrary constant; a name that is not a model is a 404 (L14-4)
+    owner_class = ApplicationRecord.model_class_from_param(params[:owner_type])
+    raise ActiveRecord::RecordNotFound, "Unknown owner type" unless owner || owner_class
+    owner ||= owner_class.find_by(id: params[:owner_id])
     label = owner.to_s if owner
   elsif params[:deal_id].present?
     owner ||= Deal.find_by(id: params[:deal_id])

@@ -209,6 +209,9 @@ class ApplicationController < ActionController::Base
     # Mark the user as having signed ID access for policy authorization.
     # This allows Pundit policies to check if access was granted via a shared link.
     user.define_singleton_method(:signed_id_access?) { true }
+    # L1 / L6: the page's direct uploads and live-update socket are open to this user for
+    # UploadAccess::UPLOAD_WINDOW from now, without signing in
+    UploadAccess.remember_signed_id_user(session, user)
 
     # Dynamically set the instance variable based on the record's base class name.
     # Using base_class handles STI subclasses (e.g., IndividualKyc → @investor_kyc).

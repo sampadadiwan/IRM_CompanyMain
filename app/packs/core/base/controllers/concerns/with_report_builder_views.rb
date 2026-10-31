@@ -16,10 +16,11 @@ module WithReportBuilderViews
     # Verify entity scoping
     return unless @report_view.entity_id == current_user.entity_id
 
-    # Run the query engine
+    # Run the query engine over the rows the viewer may see (M16)
     engine = ReportBuilderQueryEngine.new(
       report: @report_view,
       entity: current_user.entity,
+      user: current_user,
       external_filters: params[:q]
     )
 

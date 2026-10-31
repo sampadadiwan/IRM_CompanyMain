@@ -148,7 +148,7 @@ module KpiCumulative
   # @param formula [String] The formula to evaluate (e.g., "Revenue - Cost").
   # @param force [Boolean] Whether to overwrite existing values.
   def compute_value_for_report(report, formula, force: false)
-    # Simple eval based computation
+    # Numeric computation without eval (N1: FormulaSandbox.numeric_fold)
     # Formula example: Revenue - Cost
     # Replace KPI Names with the value of that KPI in the same report
 
@@ -176,7 +176,11 @@ module KpiCumulative
     begin
       # Basic safety check: allow only numbers and math operators
       if %r{\A[\d\s+\-*/.()]+\z}.match?(clean_formula)
-        computed_val = eval(clean_formula) # rubocop:disable Security/Eval
+        # N1 — fold the parse tree with Ruby's own + - * / instead of eval: the same value (integer
+        # division included), and ** (which the regex above lets through) is refused, so a huge
+        # exponent can no longer tie up a worker. A refusal is a FormulaSandbox::NotNumeric, which the
+        # rescue below records like any other formula error.
+        computed_val = FormulaSandbox.numeric_fold(clean_formula)
         process_cumulative_kpi(nil, computed_val, report.period, nil, report.as_of, note: "Auto-generated Computed", user_id: report.user_id, force: force, tag_list: report.tag_list)
       else
         error_msg = "Invalid formula after replacement for report #{report.id} (#{report.period} #{report.as_of}): #{clean_formula}"

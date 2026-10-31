@@ -380,8 +380,11 @@ class TasksController < ApplicationController
       if params[:deal_id].present?
         Deal.find_by(id: params[:deal_id], entity_id: current_user.entity_id)
       elsif params[:owner_type].present? && params[:owner_id].present? &&
-            BOARD_SCOPE_TYPES.include?(params[:owner_type])
-        params[:owner_type].constantize.find_by(id: params[:owner_id])
+            (owner_class = ApplicationRecord.model_class_from_param(params[:owner_type], allowed: BOARD_SCOPE_TYPES))
+        # L14 — resolved through the helper (BOARD_SCOPE_TYPES) and looked up in the user's own firm only,
+        # so another firm's record never names this board (L14-3). A type outside the list still just
+        # leaves the heading off, as before
+        owner_class.find_by(id: params[:owner_id], entity_id: current_user.entity_id)
       elsif params[:investor_id].present?
         # The stakeholder select's own value — owner_type=Investor is covered by
         # the whitelisted owner branch above.

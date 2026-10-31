@@ -3,7 +3,10 @@ class AccountEntryPolicy < FundBasePolicy
     user.enable_funds && user.curr_role != "investor"
   end
 
-  def adhoc?
+  # H7 — "Delete Results" on the filtered ledger list: a staff action (LPs never reach the list). Which
+  # funds' entries actually go is decided per fund in AccountEntryDeleteJob, with the same rule as a
+  # single entry's delete (destroy?). Tests H7-1, H7-2 — features/security/account_entries_delete_all.feature
+  def delete_all?
     index?
   end
 

@@ -8,6 +8,10 @@
 # Security: the tool re-verifies — server-side, per owner_type — that the
 # requested document belongs to a fund/commitment the LP can access.
 # It NEVER trusts the document_id or owner context passed by the LLM.
+# On top of that owner check it asks DocumentPolicy#show? for the LP user — the
+# same rule as the LP documents screen (approved-or-not-generated, private
+# folders, access rights, advisor switch) — and never resolves templates.
+# Worked examples H4-1…H4-4, H4-H, H4-X — docs/security/security_review_2026_10.md (H4)
 #
 # Supported owner_types:
 #   CapitalCommitment         -> scoped by fund_id + investor_id
@@ -31,11 +35,13 @@ class DocumentUrlTool < RubyLLM::Tool
             description: 'The documents.id returned by run_query.',
             required: true
 
+  # @param user [User] the LP asking — every document is checked with DocumentPolicy#show? for them (H4)
   # @param entity_ids [Array<Integer>] FM entity_ids the LP can see documents under
   # @param accessible_fund_ids [Array<Integer>] fund_ids scoping Fund/Call/Distribution docs
   # @param accessible_investor_ids [Array<Integer>] investor_ids scoping CapitalCommitment docs
-  def initialize(entity_ids:, accessible_fund_ids:, accessible_investor_ids: [])
+  def initialize(user:, entity_ids:, accessible_fund_ids:, accessible_investor_ids: [])
     super()
+    @user = user
     @entity_ids = Array(entity_ids).map(&:to_i).uniq
     @accessible_fund_ids = accessible_fund_ids.map(&:to_i).uniq
     @accessible_investor_ids = accessible_investor_ids.map(&:to_i).uniq
@@ -44,6 +50,8 @@ class DocumentUrlTool < RubyLLM::Tool
   # @param document_id [Integer] documents.id returned by run_query
   # @return [String] short-lived download URL, or a human-readable error string
   def execute(document_id:)
+    # H4 — no user, no policy check: refuse rather than fall back to the owner check alone
+    return 'No investor user context available.' if @user.nil?
     return 'No accessible funds for this investor.' if @accessible_fund_ids.empty?
     return 'No accessible fund manager entities for this investor.' if @entity_ids.empty?
 
@@ -68,17 +76,22 @@ class DocumentUrlTool < RubyLLM::Tool
   private
 
   # @param id [Integer]
-  # @return [Document, nil] document scoped to the LP's entities and with a
-  #   supported owner_type whose owner row the LP can access; nil otherwise.
+  # @return [Document, nil] a non-template document scoped to the LP's entities, with a
+  #   supported owner_type whose owner row the LP can access, that the LP may open; nil otherwise.
   def find_scoped_document(id)
-    doc = Document.where(
+    # Templates (SOA / call-notice blueprints) are never handed out — H4-2
+    doc = Document.not_templates.where(
       id: id,
       entity_id: @entity_ids,
       deleted_at: nil
     ).first
     return nil unless doc
     return nil unless SUPPORTED_OWNER_TYPES.include?(doc.owner_type)
+    # Owner row in the LP's funds / own commitments — another LP's SOA stops here (H4-X)
     return nil unless accessible?(doc)
+    # The documents screen's own rule: unapproved generated drafts (H4-1, H4-4), private
+    # folders (H4-3) and docs without the LP's access right are refused; H4-H passes
+    return nil unless Pundit.policy!(@user, doc).show?
 
     doc
   end

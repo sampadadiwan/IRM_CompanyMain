@@ -1,10 +1,20 @@
 class AccessRightSearch
+  # L14 — the models access rights hang off: the owner types stored in production plus the models
+  # declaring has_many :access_rights, as: :owner. Also the owners InvestorSearch lists investors of
+  # (ApplicationRecord#investors reads their access rights)
+  OWNER_TYPES = %w[Approval Deal DealInvestor Document Entity Folder Fund InvestmentOpportunity Investor
+                   KpiReport Nudge SecondarySale].freeze
+
   def self.search(access_rights, params, current_user)
     owner = nil
 
     if params[:owner_type].present? && params[:owner_id].present?
+      # L14 — only an access-right owner type; an unknown name is a 404, not a 500 (L14-5)
+      owner_class = ApplicationRecord.model_class_from_param(params[:owner_type], allowed: OWNER_TYPES)
+      raise ActiveRecord::RecordNotFound, "Unknown owner type" unless owner_class
+
       # Search in fund provided user is authorized
-      owner = params[:owner_type].constantize.find(params[:owner_id])
+      owner = owner_class.find(params[:owner_id])
     else
       # Search in users entity only
       term = { entity_id: current_user.entity_id }

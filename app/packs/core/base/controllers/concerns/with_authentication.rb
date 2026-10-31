@@ -2,7 +2,8 @@ module WithAuthentication
   extend ActiveSupport::Concern
 
   included do
-    after_action :verify_authorized, except: %i[index search bulk_actions], unless: :devise_controller?
+    # H6 — bulk_actions is no longer exempt: WithBulkActions#bulk_actions authorizes :bulk_actions? first
+    after_action :verify_authorized, except: %i[index search], unless: :devise_controller?
     after_action :verify_policy_scoped, only: [:index]
 
     before_action :set_current_entity
@@ -36,6 +37,15 @@ module WithAuthentication
       authenticate_devise_api_token!
       # set the current user to the user that is logged in
       @current_user = current_devise_api_user
+      # M4-1 / M4-2 / N6 — checked at use: a deactivated user's token stops at once, including the
+      # users of a deactivated firm, whom EntityDeactivationJob flips with update_all (no callbacks,
+      # so nothing revoked their tokens). The `active` column, not active_for_authentication?, so a
+      # short Devise lockout does not break a user's integrations.
+      if !performed? && @current_user && !@current_user.active?
+        render json: { error: "account_deactivated", error_description: ["This account has been deactivated."] },
+               status: :unauthorized
+        return
+      end
       # E11: a Profile › API tokens token records when it was last used (a phone's token has no row)
       ApiToken.find_by(devise_api_token_id: current_devise_api_token.id)&.touch_last_used! if current_devise_api_token && !performed?
     else
@@ -63,18 +73,26 @@ module WithAuthentication
     end
   end
 
+  # L4-H / L4-1 — CSRF is verified for every cookie request. Bearer-token requests carry no cookie
+  # to forge, so they skip it as before. SKIP_AUTHENTICITY_TOKEN is honoured in development only
+  # (CsrfSwitches, config/initializers/csrf_switches.rb, which also refuses it at boot in
+  # production/staging), and VULN_SCAN no longer switches CSRF off at all.
   def verify_authenticity_token
-    if ENV['VULN_SCAN'] == "true"
-      false if controller_name == "sessions"
-    elsif request.headers['Authorization'].blank? && ENV['SKIP_AUTHENTICITY_TOKEN'] != "true"
-      super
-    end
+    # Bearer-token API requests: no session cookie, nothing to forge
+    return if request.headers['Authorization'].present?
+    # Local ngrok development only
+    return if CsrfSwitches.skip_verification?
+
+    super
   end
 
   protected
 
   def configure_permitted_parameters
-    devise_parameter_sanitizer.permit(:sign_up, keys: %i[first_name last_name phone role entity_id whatsapp_enabled dept call_code])
+    # C6 step 3 — no `role` (users have no such attribute). entity_id stays permitted for the super
+    # user only in effect: Users::RegistrationsController#ensure_entity overwrites it with the
+    # creator's own firm for everyone else (C6-X2).
+    devise_parameter_sanitizer.permit(:sign_up, keys: %i[first_name last_name phone entity_id whatsapp_enabled dept call_code])
   end
 
   private

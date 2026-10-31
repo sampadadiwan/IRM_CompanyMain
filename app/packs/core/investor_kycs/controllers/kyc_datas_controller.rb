@@ -142,10 +142,15 @@ class KycDatasController < ApplicationController
   def compare_ckyc_kra
     @ckyc_data = nil
     @kra_data = nil
-    authorize(KycData)
 
     if params[:investor_kyc_id].present?
       @investor_kyc = InvestorKyc.find(params[:investor_kyc_id])
+      # Authorize against this KYC before reading any of its data: the screen opens for the users who
+      # can open the KYC itself (KycDataPolicy#compare_ckyc_kra?). It used to be a class-level check
+      # ("KYCs are on for me"), which let any firm's user read any KYC's CKYC/KRA data by id.
+      # Worked examples C7-1, C7-5, C7-H — features/security/kyc_data_access.feature
+      authorize(KycData.new(investor_kyc: @investor_kyc, entity: @investor_kyc.entity), :compare_ckyc_kra?)
+
       @ckyc_data = @investor_kyc.ckyc_data
       @kra_data = @investor_kyc.kra_data
 
@@ -183,6 +188,8 @@ class KycDatasController < ApplicationController
         end
       end
     else
+      # No KYC named, so nothing is shown: keep the old feature-level check for this redirect only
+      authorize(KycData, :index?)
       redirect_to investor_kycs_path, status: :unprocessable_entity, alert: "Investor KYC ID is required."
     end
   end
@@ -266,6 +273,9 @@ class KycDatasController < ApplicationController
 
   def set_kyc_data
     @kyc_data = KycData.find(params[:id])
+    # Authorizes the loaded record for this action (refresh?, send_ckyc_otp?, download_ckyc_with_otp?,
+    # destroy?, …), so the KYC-level rules in KycDataPolicy apply before any CKYC/KRA call
+    # (C7-2, C7-3, C7-4 — features/security/kyc_data_access.feature)
     authorize(@kyc_data)
     @bread_crumbs = { KYCs: investor_kycs_path, "#{@kyc_data.investor_kyc.full_name}": investor_kyc_path(@kyc_data.investor_kyc), "#{@kyc_data.source.upcase} Data": kyc_data_path(@kyc_data) }
   end

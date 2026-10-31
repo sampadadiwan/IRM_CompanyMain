@@ -1,6 +1,8 @@
 class WorkflowAutoAssignmentRule < ApplicationRecord
   belongs_to :entity
   belongs_to :workflow_template
+  # L12 — a rule launches one of its own firm's templates (Test L12-5)
+  validate(if: :will_save_change_to_workflow_template_id?) { validate_parent_in_own_firm(:workflow_template) }
   belongs_to :created_by, class_name: "User", optional: true
 
   validates :workflowable_type, presence: true,

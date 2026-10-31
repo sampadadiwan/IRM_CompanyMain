@@ -3,11 +3,15 @@ class KanbanCardsController < ApplicationController
   skip_before_action :verify_authenticity_token, only: %i[move_kanban_card update_sequence]
 
   def index
+    # M12 — the board is rendered with all its columns and cards, so it must be one the user may open:
+    # load and authorize it before anything is queried (M12-1, M12-H)
+    kanban_board = KanbanBoard.find(params["board_id"])
+    authorize kanban_board, :show?
+
     @q = KanbanCard.ransack(params[:q])
     @kanban_cards = policy_scope(@q.result).includes(:kanban_board)
     @kanban_cards = @kanban_cards.where(kanban_board_id: params[:kanban_board_id]) if params[:kanban_board_id].present?
     @filtered_results = params[:query].present?
-    kanban_board = KanbanBoard.find(params["board_id"])
     render turbo_stream: [
       turbo_stream.replace("board_#{kanban_board.id}", partial: "/boards/kanban", locals: { kanban_cards: @kanban_cards, kanban_board:, filtered_results: @filtered_results })
     ]
@@ -121,6 +125,10 @@ class KanbanCardsController < ApplicationController
   end
 
   def search
+    # M12 — same rule as #index: only a board the user may open is rendered (M12-2)
+    kanban_board = KanbanBoard.find(params[:kanban_board])
+    authorize kanban_board, :show?
+
     @entity = current_user.entity
     @q = DealInvestor.ransack(params[:q])
     @filtered_results = false
@@ -131,7 +139,6 @@ class KanbanCardsController < ApplicationController
                                               .query(simple_query_string: { fields: KanbanCardIndex::SEARCH_FIELDS,
                                                                             query: "#{params[:query]}*", default_operator: 'and' }).objects
     end
-    kanban_board = KanbanBoard.find(params[:kanban_board])
     render turbo_stream: [
       turbo_stream.replace("board_#{kanban_board.id}", partial: "/boards/kanban", locals: { kanban_board:, filtered_results: @filtered_results, kanban_cards: @searched_kanban_cards })
     ]

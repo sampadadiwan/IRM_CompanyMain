@@ -32,7 +32,7 @@ module DocumentGeneratorBase
     # Mail Merge
     file_path = File.expand_path("#{file_name}.docx")
     Rails.logger.debug { "#{self.class} Generating document at #{file_path}" }
-    template.render_to_file(file_path, context)
+    render_read_only(template, file_path, context)
 
     # Run DOCX post-processor atomically: take a backup so we can restore the original
     # if it fails mid-write, preventing a half-processed file from being used.
@@ -59,6 +59,19 @@ module DocumentGeneratorBase
     if to_pdf
       # Convert to PDF with accessibility tags
       convert_to_accessible_pdf(file_name, template_name, doc_template: doc_template)
+    end
+  end
+
+  # SECURITY (finding M27): Sablon calls every segment of a merge field (`=investor.destroy`) on the
+  # context objects, and the templates are uploaded by GP users. The mail merge therefore runs with
+  # database writes refused: a field that would write (destroy, update, touch, ...) raises
+  # ActiveRecord::ReadOnlyError and the generation fails, leaving the record untouched. Reads, and
+  # everything after the merge (upload, e-sign setup), are unaffected.
+  # Tests M27-1, M27-H — features/security/security_review_2026_10_medium.feature
+  def render_read_only(template, file_path, context)
+    # Every connection refuses INSERT / UPDATE / DELETE for the length of the merge
+    ActiveRecord::Base.while_preventing_writes do
+      template.render_to_file(file_path, context)
     end
   end
 

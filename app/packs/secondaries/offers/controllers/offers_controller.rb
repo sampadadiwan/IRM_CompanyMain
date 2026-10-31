@@ -22,7 +22,9 @@ class OffersController < ApplicationController
     @q = Offer.ransack(params[:q])
     @offers = policy_scope(@q.result).includes(:user, :investor, :secondary_sale)
     @offers = OfferSearchService.perform(@offers, current_user, params)
-    @secondary_sale = SecondarySale.find(params[:secondary_sale_id]) if params[:secondary_sale_id].present?
+    # Only a sale this user can see (as allocations#index does, H11): another firm's sale id is
+    # "Access Denied", not its name in the page (SL-2 — secondaries_isolation.feature)
+    @secondary_sale = policy_scope(SecondarySale).find(params[:secondary_sale_id]) if params[:secondary_sale_id].present?
     @pagy, @offers = pagy(@offers, limit: params[:per_page]) unless request.format.xlsx? || params[:all] == 'true'
     authorize(Offer)
     @offers
@@ -31,7 +33,9 @@ class OffersController < ApplicationController
   def search_term
     if params[:secondary_sale_id].present?
       @secondary_sale_id = params[:secondary_sale_id].to_i
-      @secondary_sale = SecondarySale.find(params[:secondary_sale_id])
+      # The sale through the user's scope, as in #fetch_rows (SL-3); the sale filter applies only to the
+      # selling firm's own users, everyone else keeps the PolicyScopedSearch restriction below
+      @secondary_sale = policy_scope(SecondarySale).find(params[:secondary_sale_id])
 
       term = { secondary_sale_id: @secondary_sale_id } if @secondary_sale.entity_id == current_user.entity_id
     elsif params[:interest_id].present?
@@ -112,6 +116,10 @@ class OffersController < ApplicationController
   # POST /offers or /offers.json
   def create
     @offer = Offer.new(offer_params)
+    # H19: who made the offer and which firm it belongs to are not the seller's to send (they are
+    # firm-only fields): the signed-in user, and the sale's firm. Mirrors interests#create.
+    @offer.user_id ||= current_user.id
+    @offer.entity_id = @offer.secondary_sale&.entity_id
     authorize @offer
     setup_doc_user(@offer)
     result = OfferCreate.call(offer: @offer, current_user:)
@@ -173,8 +181,10 @@ class OffersController < ApplicationController
     @bread_crumbs[@offer.to_s] = offer_path(@offer)
   end
 
-  # Only allow a list of trusted parameters through.
+  # H19: only the fields this user's role may send (OfferPolicy#permitted_attributes). Sellers and
+  # RMs lose the firm's workflow flags (verified, allocation_quantity, interest_id, user_id,
+  # entity_id); the policy is asked with the saved offer on update and with the class on new / create.
   def offer_params
-    params.require(:offer).permit(:user_id, :entity_id, :secondary_sale_id, :investor_id, :price, :completed, :quantity, :percentage, :notes, :full_name, :PAN, :address, :bank_account_number, :bank_name, :ifsc_code, :city, :demat, :comments, :verified, :interest_id, :form_type_id, :allocation_quantity, :acquirer_name, :bank_routing_info, :id_proof, :address_proof, :spa, :seller_signatory_emails, docs_uploaded_check: {}, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
+    params.require(:offer).permit(policy(@offer&.persisted? ? @offer : Offer).permitted_attributes)
   end
 end

@@ -1,5 +1,5 @@
 class EntitiesController < ApplicationController
-  before_action :set_entity, only: %w[show update destroy edit report kpi_reminder db_dump deactivate]
+  before_action :set_entity, only: %w[show update destroy edit kpi_reminder db_dump deactivate]
   after_action :verify_authorized, except: %i[dashboard search index investor_entities delete_attachment]
 
   # GET /entities or /entities.json
@@ -14,29 +14,31 @@ class EntitiesController < ApplicationController
     redirect_to @dashboard if @dashboard.present?
   end
 
-  # Template names allowed to be rendered by #report: simple path segments (letters/digits joined by
-  # "_" or "/"), never containing ".." or absolute paths. Blocks path traversal / template injection.
-  SAFE_REPORT_TEMPLATE = %r{\A[a-z0-9]+(?:[_/][a-z0-9]+)*\z}i
-
-  def report
-    # SECURITY (finding M8): params[:report] flows into the rendered template path; confine it so a
-    # crafted value cannot traverse out of entities/ or render an unintended template.
-    return head(:not_found) unless params[:report].to_s.match?(SAFE_REPORT_TEMPLATE)
-
-    render "entities/#{params[:report]}"
-  end
-
   def investor_entities
     @entities = Entity.for_investor(current_user)
     render "index", locals: { vc_view: true }
   end
 
+  # L12 — the stakeholder-name autocomplete. It listed every firm in the system to any signed-in user;
+  # now it is for employees (EntityPolicy#search?) and names only firms already linked to the user's
+  # firm as stakeholders. Tests L12-7, L12-H7 — features/security/security_review_2026_10_low.feature
   def search
+    authorize Entity, :search?
     query = params[:query].presence || params[:term]
     if query.present?
       query += "*"
-      @entities = EntityIndex.query(simple_query_string: { fields: %i[name entity_type category],
-                                                           query:, default_operator: 'and' }).objects
+      # The firms this user's firm has as stakeholders (deduplicated in SQL)
+      linked_ids = Investor.where(entity_id: current_user.entity_id).where.not(investor_entity_id: nil)
+                           .unscope(:order).distinct.pluck(:investor_entity_id)
+      hits = if linked_ids.empty?
+               []
+             else
+               # Searched among those firms only, and re-checked against them in case the index lags
+               EntityIndex.filter(ids: { values: linked_ids })
+                          .query(simple_query_string: { fields: %i[name entity_type category], query:, default_operator: 'and' })
+                          .objects
+             end
+      @entities = hits.compact.select { |entity| linked_ids.include?(entity.id) }
     end
 
     render "index", locals: { vc_view: true }

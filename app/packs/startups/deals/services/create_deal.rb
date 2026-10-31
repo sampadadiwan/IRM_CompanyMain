@@ -77,9 +77,9 @@ class CreateDeal < DealActions
   # The deal's template steps, numbered from 1: copied from the deal it is cloned from, or the configured defaults
   def create_template_steps(deal)
     seq = 1
-    if deal.clone_from_id.present?
-      clone_from = Deal.find(deal.clone_from_id)
-      DealActivity.templates(clone_from).each do |template|
+    if deal.clone_from.present?
+      # L12: through the association, which Deal validates is in the new deal's firm
+      DealActivity.templates(deal.clone_from).each do |template|
         DealActivity.create!(deal_id: deal.id, deal_investor_id: nil, status: "Template",
                              entity_id: deal.entity_id, title: template.title, sequence: seq, days: template.days)
         seq += 1

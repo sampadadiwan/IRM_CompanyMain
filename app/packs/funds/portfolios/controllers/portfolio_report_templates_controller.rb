@@ -4,7 +4,8 @@ class PortfolioReportTemplatesController < ApplicationController
 
   # GET /portfolio_reports/:portfolio_report_id/portfolio_report_templates
   def index
-    authorize PortfolioReportTemplate
+    # M20 — the list is the portfolio report's, so the report itself is what is authorized (M20-X3)
+    authorize @portfolio_report, :show?
     @templates = @portfolio_report.portfolio_report_templates
   end
 
@@ -60,7 +61,8 @@ class PortfolioReportTemplatesController < ApplicationController
     # shallow routes (edit/show/update/destroy) omit portfolio_report_id —
     # derive it from the template instead
     if params[:portfolio_report_id].present?
-      @portfolio_report = PortfolioReport.find(params[:portfolio_report_id])
+      # M20 — only a report of the user's own firm can be named (another firm's id is a 404)
+      @portfolio_report = policy_scope(PortfolioReport).find(params[:portfolio_report_id])
     elsif @template.present?
       @portfolio_report = @template.portfolio_report
     end

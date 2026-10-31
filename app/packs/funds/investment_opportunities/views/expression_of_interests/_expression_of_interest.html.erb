@@ -50,7 +50,8 @@
           </li>
         <% end %>
 
-        <% if policy(expression_of_interest).update? %>
+        <%# H19: Data Room access is the opportunity firm's call - the investor who may edit their own EOI no longer gets the toggle (H19-4) %>
+        <% if policy(expression_of_interest).update? && policy(expression_of_interest.investment_opportunity).update? %>
           <% if expression_of_interest.show_data_room %>
             <li>
               <%= button_to "Hide Data Room",

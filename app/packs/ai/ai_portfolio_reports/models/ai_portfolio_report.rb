@@ -20,6 +20,9 @@ class AiPortfolioReport < ApplicationRecord
 
   after_create :create_default_sections
 
+  # C3-7, C3-8 - the collated report is sanitized whenever it is stored (save_collated_report)
+  before_save :sanitize_collated_report_html
+
   SECTION_TYPES = [
     "Investment Fit Evaluation",
     "Company Overview",
@@ -65,6 +68,12 @@ class AiPortfolioReport < ApplicationRecord
   ].freeze
 
   private
+
+  # C3-7, C3-8 - strips img, script, event handlers etc.; see AiReportHtml.
+  def sanitize_collated_report_html
+    # Only when it changed, so other saves do not rewrite it
+    self.collated_report_html = AiReportHtml.sanitize(collated_report_html) if collated_report_html_changed?
+  end
 
   def create_default_sections
     SECTION_TYPES.each_with_index do |section_type, index|

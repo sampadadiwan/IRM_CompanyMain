@@ -466,9 +466,12 @@ class InvestorKycsController < ApplicationController
 
   # Assigns a selected KYC data record to an InvestorKyc and updates it
   def assign_kyc_data
-    if investor_kyc_params[:kyc_data_id].present?
-      # Find and assign the selected KYC data
-      @kyc_data = @investor_kyc.kyc_datas.find(investor_kyc_params[:kyc_data_id])
+    # M28: kyc_data_id is a selector posted by the "Select CKYC / KRA Data" buttons, not a KYC column,
+    # so it is read here rather than permitted for mass assignment (where it only raised a 500)
+    kyc_data_id = params.dig(:investor_kyc, :kyc_data_id)
+    if kyc_data_id.present?
+      # Find and assign the selected KYC data, from this KYC's own rows only
+      @kyc_data = @investor_kyc.kyc_datas.find(kyc_data_id)
       @investor_kyc.assign_kyc_data(@kyc_data, current_user)
     end
 

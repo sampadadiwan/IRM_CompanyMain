@@ -36,8 +36,11 @@
       Source
     </td>
     <td>
-      <% object = kanban_card.data_source_type.constantize.find(kanban_card.data_source_id)  %>
-      <%= link_to object %>
+      <%# L14 — data_source_type is a permitted card param: resolve it only to a model whose rows become
+          cards (KanbanCardManager: DealInvestor, the only source stored in production), never constantize it %>
+      <% source_class = ApplicationRecord.model_class_from_param(kanban_card.data_source_type, allowed: %w[DealInvestor]) %>
+      <% object = source_class&.find_by(id: kanban_card.data_source_id) %>
+      <%= link_to object if object %>
     </td>
   </tr>
   <% end %>

@@ -42,6 +42,10 @@ class FundRatioRunTemplateBatchJob < ApplicationJob
         template_id: template.id
       )
       completed_runs << run if run
+    rescue FundRatiosScenarioJob::InaccessibleFundsError
+      # M8 — this template names a fund the user cannot see. The scenario job has already told the user,
+      # so skip it and carry on with the rest of the batch (M8-E1)
+      next
     end
 
     notify_batch_complete(completed_runs, user_id)

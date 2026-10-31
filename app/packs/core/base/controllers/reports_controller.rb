@@ -21,7 +21,11 @@ class ReportsController < ApplicationController
 
   def prompt
     authorize Report
-    model_class = params[:model_class].constantize
+    # L14 — the filter bar sends the list's own model (controller_name), so any model of the app; never
+    # an arbitrary constant, and a non-model name is a 404, not a 500 (L14-11)
+    model_class = ApplicationRecord.model_class_from_param(params[:model_class])
+    raise ActiveRecord::RecordNotFound, "Unknown model" unless model_class
+
     query = params[:query]
     @report_url = ReportPrompt.generate_report_url(query, model_class)
     redirect_to @report_url.to_s
@@ -122,7 +126,10 @@ class ReportsController < ApplicationController
   end
 
   # Only allow a list of trusted parameters through.
+  # H17 — never entity_id / user_id: create sets both from current_user, and an update must not
+  # re-own the report (insights run with the owner's visibility). H17-1 in
+  # features/security/report_owner_mass_assignment.feature
   def report_params
-    params.require(:report).permit(:entity_id, :user_id, :name, :description, :url, :category, :tag_list, :curr_role, :metadata, :template_xls, :ai_prompt, :send_notification, :notification_recipients, :notification_ccs, :notification_start_after, :notification_start_unit, :notification_repeat_interval, :notification_repeat_unit)
+    params.require(:report).permit(:name, :description, :url, :category, :tag_list, :curr_role, :metadata, :template_xls, :ai_prompt, :send_notification, :notification_recipients, :notification_ccs, :notification_start_after, :notification_start_unit, :notification_repeat_interval, :notification_repeat_unit)
   end
 end

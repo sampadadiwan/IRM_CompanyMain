@@ -55,16 +55,25 @@ class BoardsController < ApplicationController
       @owner_ids = []
       return
     end
-    @owner_type = params[:owner_type].constantize
+    # L14 — only a board owner type (KanbanBoard::OWNER_TYPES); an unknown name is a 404, not a 500 (L14-9)
+    @owner_type = ApplicationRecord.model_class_from_param(params[:owner_type], allowed: KanbanBoard::OWNER_TYPES.keys)
+    raise ActiveRecord::RecordNotFound, "Unknown owner type" unless @owner_type
+
     name_attr = KanbanBoard::OWNER_TYPES[@owner_type.to_s.to_sym]
     @owner_ids = @owner_type.where(entity_id: current_user.entity_id).pluck(name_attr.to_sym, :id)
     @owner_ids || []
   end
 
   def create
-    @kanban_board = KanbanBoard.create!(kanban_board_params)
-    @kanban_board.update(owner_type: "KanbanBoard", owner_id: @kanban_board.id)
+    # M15 — build first, in the user's own firm (the form's entity_id and any owner are ignored: a
+    # board made here is a plain board), and ask permission before anything is written, so a refused
+    # board leaves no row behind (M15-1, M15-2, M15-H)
+    @kanban_board = KanbanBoard.new(kanban_board_params.except(:entity_id, :owner_id, :owner_type))
+    @kanban_board.entity_id = current_user.entity_id
     authorize @kanban_board
+    # Only now saved; a plain board is its own owner, which needs its id
+    @kanban_board.save!
+    @kanban_board.update(owner_type: "KanbanBoard", owner_id: @kanban_board.id)
     @kanban_board.create_columns
 
     respond_to do |format|

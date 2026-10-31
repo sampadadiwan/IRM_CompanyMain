@@ -13,6 +13,8 @@ class DashboardWidget < ApplicationRecord
   validates :size, length: { maximum: 10 }
   validates :tag_list, length: { maximum: 20 }, allow_blank: true
   validates :tags, length: { maximum: 100 }
+  # C1 — metadata is read as a plain literal, never evaluated; refuse anything else when it changes
+  validate :metadata_must_be_literal, if: :will_save_change_to_metadata?
 
   # LP layouts: Portfolio Company Dashboard layouts whose comma-separated name includes the tag "LP" ("LP",
   # "LP, FinTech"). The company's tags pick one for each shared company (LpLayoutResolver); only these widget
@@ -27,6 +29,9 @@ class DashboardWidget < ApplicationRecord
   # Starter settings so a new LP layout is not blank: the Data Card shows a few company fields
   LP_STARTER_METADATA = { "Data Card" => '{cols: 2, fields: "Category:category,Sector:sector,City:city", title: "Summary"}' }.freeze
   LP_UNSAFE_MESSAGE = "This widget can't be added to an LP layout: it isn't safe to show LPs.".freeze
+  # C1 — shown on the form and in import row errors when metadata is not a plain literal
+  METADATA_LITERAL_MESSAGE = "can only contain plain values: text, numbers, true/false, nil, [lists] and {key: value} hashes. " \
+                             "Calculations and code are not allowed".freeze
 
   scope :enabled, -> { where(enabled: true) }
   scope :disabled, -> { where(enabled: false) }
@@ -341,12 +346,17 @@ class DashboardWidget < ApplicationRecord
     end
   end
 
-  # rubocop:disable Security/Eval
+  # The widget's settings, from the metadata hash literal ({months: 12, ratio_names: %w[XIRR TVPI]}).
+  # Built by RubyLiteral without evaluating anything (C1 — docs/security/security_review_2026_10.md).
   def metadata_args
-    # metadata is a Ruby hash literal eval-ed here; block code-execution constructs first.
-    ret_val = metadata ? eval(ApplicationRecord.safe_eval!(metadata, context: "DashboardWidget##{id} metadata")) : {}
-    ret_val = {} unless ret_val.is_a?(Hash)
-    ret_val.deep_symbolize_keys
+    # C1-X1…X4 — literals (incl. %w[], duplicate keys, escaped quotes, surrounding whitespace) give the
+    # same values eval did; blank metadata gives {}
+    RubyLiteral.parse_hash(metadata).deep_symbolize_keys
+  rescue RubyLiteral::NotLiteral => e
+    # C1-2 — a stored expression (e.g. written by update_column, skipping validation) is never run:
+    # log it and render the widget with its defaults
+    Rails.logger.warn { "DashboardWidget##{id} metadata is not a plain literal, using defaults: #{e.message}" }
+    {}
   end
 
   def metadata_help_hash
@@ -370,17 +380,16 @@ class DashboardWidget < ApplicationRecord
                      .gsub(/,\s*\]/, "]")
                      .gsub(/,\s*\}/, "}")
 
-    # sanitized_help is only cosmetically normalized above (not a security check); block
-    # code-execution constructs before eval-ing this Ruby hash literal.
-    ret_val = eval(ApplicationRecord.safe_eval!(sanitized_help, context: "DashboardWidget##{id} metadata_help"))
-    ret_val = {} unless ret_val.is_a?(Hash)
+    # sanitized_help is only cosmetically normalized above; build the hash from the literal without
+    # evaluating it (C1). Help text that is not a plain literal raises NotLiteral -> regex fallback below.
+    ret_val = RubyLiteral.parse_hash(sanitized_help)
     # Clean up values in the hash
     ret_val.each do |k, v|
       ret_val[k] = v.gsub(/\.\.\.*/, "").gsub(/,\s*$/, "").strip if v.is_a?(String)
     end
     ret_val.deep_symbolize_keys
-  rescue StandardError, SyntaxError
-    # Fallback to a more robust regex-based extractor if eval fails
+  rescue StandardError
+    # Fallback to a more robust regex-based extractor if the help text is not a plain literal
     extract_keys_from_help.deep_symbolize_keys
   end
 
@@ -391,6 +400,16 @@ class DashboardWidget < ApplicationRecord
     return unless lp_layout? && (new_record? || will_save_change_to_name? || will_save_change_to_widget_name?)
 
     errors.add(:base, LP_UNSAFE_MESSAGE) unless self.class.lp_safe_widget_names(entity).include?(widget_name)
+  end
+
+  # C1 — metadata must be a plain {key: value} literal. Checked only when metadata changes, so the
+  # form, the xlsx import, starter layouts and seeds all get a clear error instead of a stored expression.
+  def metadata_must_be_literal
+    # C1-1 / C1-3 — an expression ({title: 6 * 7}) is refused for GP and LP users alike;
+    # C1-X5 — on import the row fails with this message and the other rows still save
+    RubyLiteral.parse_hash(metadata)
+  rescue RubyLiteral::NotLiteral => e
+    errors.add(:metadata, "#{METADATA_LITERAL_MESSAGE} (#{e.message})")
   end
 
   def extract_keys_from_help
@@ -412,5 +431,4 @@ class DashboardWidget < ApplicationRecord
   rescue StandardError
     {}.deep_symbolize_keys
   end
-  # rubocop:enable Security/Eval
 end

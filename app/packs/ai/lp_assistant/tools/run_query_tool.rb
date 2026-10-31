@@ -1,30 +1,36 @@
 # frozen_string_literal: true
 
-# Tool that executes a read-only MySQL SELECT query on behalf of the LP Assistant.
-# Enforces the LP's scope through placeholder substitution, table whitelisting,
-# and SQL keyword validation. The LLM's SQL must contain `{ENTITY_ID}` and
-# `{FUND_IDS}` placeholders; it may additionally use `{INVESTOR_IDS}` for per-LP
-# tables. The tool substitutes all three with trusted comma-joined integer lists
-# supplied by LpChatProvider. Any query missing {ENTITY_ID} or {FUND_IDS} is
-# rejected.
+# Tool that executes a read-only SELECT query on behalf of the LP Assistant.
 #
-# {ENTITY_ID} is the single FM entity_id; IN syntax kept for uniformity.
+# The LLM writes the SQL, so the scope is put on the DATA, not on the SQL text (finding H5):
+# LpQueryScope prefixes the statement with one CTE per allowed table, built from ActiveRecord
+# relations for this LP (`WITH funds AS (…), capital_commitments AS (…), … <model's SELECT>`).
+# A CTE name shadows the real table everywhere in the statement, so a comma join, a parenthesised
+# join or a dropped investor filter can only ever see this LP's rows.
 #
-# Security layers:
-#   1. SELECT-only (rejects WITH, INSERT, UPDATE, DELETE, DDL, etc.)
-#   2. Forbidden keyword blocklist
-#   3. Table whitelist (ALLOWED_TABLES)
-#   4. Required placeholders {ENTITY_ID} and {FUND_IDS};
-#      optional {INVESTOR_IDS} for per-LP tables (capital_commitments,
-#      capital_remittances, capital_distribution_payments, and fund_ratios
-#      when owner_type IN ('Investor','CapitalCommitment')).
-#   5. Placeholder substitution with integer-cast, trusted values
-#   6. Hard LIMIT 100
-#   7. Portfolio tables need the LP's visible holdings: {VISIBLE_API_IDS} for
-#      aggregate_portfolio_investments, {VISIBLE_PI_IDS} for portfolio_investments
-#      (lp-folio-portfolio-dashboard H19, E69–E71, X18)
+# Security layers (LP path):
+#   1. Literals and comments are stripped before any check (so a keyword inside a string is not
+#      mistaken for SQL, and a placeholder inside a comment does not count); optimizer hints,
+#      executable comments and backslashes are rejected outright.
+#   2. SELECT-only; forbidden keyword blocklist, plus WITH, INTO, LOAD_FILE, SLEEP, BENCHMARK,
+#      GET_LOCK, `@` variables and a second statement.
+#   3. Any identifier naming a real table outside ALLOWED_TABLES is rejected (wherever it appears —
+#      FROM, JOIN, comma list, parentheses, subquery), and so is any database / schema name
+#      (information_schema, mysql, performance_schema, sys, the app's own database), so the model
+#      cannot write a qualified name that reaches past the CTEs.
+#   4. Required placeholders {ENTITY_ID} and {FUND_IDS}, and {VISIBLE_API_IDS} / {VISIBLE_PI_IDS} for
+#      the portfolio tables — checked on the stripped SQL, substituted with trusted integer lists.
+#   5. LpQueryScope CTEs over every allowed table (the real control).
+#   6. Hard LIMIT 100; on MySQL a 5 s MAX_EXECUTION_TIME hint and a read-only transaction; always
+#      inside ActiveRecord's while_preventing_writes.
+#
+# FmRunQueryTool inherits the substitution / formatting helpers and keeps its own validation and
+# execution unchanged.
+#
+# Worked examples H5-1…H5-5, H5-H, H5-X — features/security/lp_assistant_run_query.feature
 #
 # @see LpChatProvider
+# @see LpQueryScope
 class RunQueryTool < RubyLLM::Tool
   description "Execute a read-only MySQL SELECT query. The SQL MUST include " \
               "the literal placeholders {ENTITY_ID} and {FUND_IDS} where scoping " \
@@ -59,18 +65,34 @@ class RunQueryTool < RubyLLM::Tool
   FORBIDDEN_KEYWORDS = %w[INSERT UPDATE DELETE DROP ALTER TRUNCATE GRANT REVOKE CREATE].freeze
   MAX_ROWS = 100
 
+  # H5 — LP path only (FmRunQueryTool's own validation does not read these). A model-written WITH
+  # could not reach past the scope CTEs either, but is refused so the statement stays one SELECT.
+  FORBIDDEN_LP_KEYWORDS = %w[WITH INTO LOAD_FILE SLEEP BENCHMARK GET_LOCK].freeze
+  # Schemas that would reach outside the scope CTEs (the app's own database names are added at run time)
+  FORBIDDEN_SCHEMAS = %w[information_schema mysql performance_schema sys main temp sqlite_master sqlite_schema
+                         sqlite_temp_master].freeze
+  # MySQL MAX_EXECUTION_TIME hint, in milliseconds
+  MAX_EXECUTION_MS = 5000
+
   # @param entity_ids [Array<Integer>] single-element list with the scoped FM entity_id.
   # @param accessible_fund_ids [Array<Integer>] — substitutes {FUND_IDS}
   # @param accessible_investor_ids [Array<Integer>] — substitutes {INVESTOR_IDS}; defaults to []
   # @param visible_api_ids / visible_pi_ids [Array<Integer>] — the LP's visible holdings and their purchases
   #   (LpPortfolioVisibility); substitute {VISIBLE_API_IDS} / {VISIBLE_PI_IDS}
-  def initialize(entity_ids:, accessible_fund_ids:, accessible_investor_ids: [], visible_api_ids: [], visible_pi_ids: [])
+  # @param user [User, nil] — the LP, for the documents scope (LpQueryScope); without it no documents are visible
+  def initialize(entity_ids:, accessible_fund_ids:, accessible_investor_ids: [], visible_api_ids: [], visible_pi_ids: [], user: nil)
     super()
     @visible_api_ids = visible_api_ids.map(&:to_i).uniq
     @visible_pi_ids = visible_pi_ids.map(&:to_i).uniq
     @entity_ids = Array(entity_ids).map(&:to_i).uniq
     @accessible_fund_ids = accessible_fund_ids.map(&:to_i).uniq
     @accessible_investor_ids = accessible_investor_ids.map(&:to_i).uniq
+    @user = user
+  end
+
+  # Names of every table / view in the database (fixed between deploys, so memoised per process)
+  def self.real_table_names
+    @real_table_names ||= ActiveRecord::Base.connection.data_sources.to_set(&:downcase)
   end
 
   # @param sql [String] SELECT query containing {ENTITY_ID} and {FUND_IDS} placeholders
@@ -93,12 +115,13 @@ class RunQueryTool < RubyLLM::Tool
       return "Query rejected: #{error}"
     end
 
-    safe_sql = substitute_and_limit(sql)
+    # The model's SELECT, placeholders filled, behind the LP's scope CTEs
+    safe_sql = scoped_sql(sql)
     t0 = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-    result = ActiveRecord::Base.connection.exec_query(safe_sql, 'LP Assistant Query')
+    result = run_read_only(safe_sql)
     Rails.logger.info("[lp_assistant] RunQueryTool took #{((Process.clock_gettime(Process::CLOCK_MONOTONIC) - t0) * 1000).round}ms sql=#{sql.first(200)}")
     format_result(result)
-  rescue ActiveRecord::StatementInvalid => e
+  rescue ActiveRecord::StatementInvalid, ActiveRecord::ReadOnlyError => e
     Rails.logger.error(
       "[lp_assistant][RunQueryTool] SQL FAILED — #{e.class}: #{e.message.lines.first&.strip}\n  " \
       "llm_sql=#{sql}\n  " \
@@ -112,30 +135,120 @@ class RunQueryTool < RubyLLM::Tool
   # @param sql [String]
   # @return [String, nil] rejection reason, or nil if the query passes all guards
   def validate(sql)
-    stripped = sql.to_s
-                  .gsub(%r{/\*.*?\*/}m, '')
-                  .gsub(/--[^\n]*/, '')
-                  .strip
+    # Backslashes are refused: MySQL and SQLite read them differently inside literals, and the
+    # literal stripping below must see the same literals the database does
+    return 'backslashes are not allowed.' if sql.to_s.include?('\\')
 
+    # Every later check reads the SQL with literals and comments taken out
+    stripped, error = strip_literals_and_comments(sql)
+    return error if error
     return 'only SELECT queries are allowed.' unless /\Aselect\s/i.match?(stripped)
 
+    # Statement-level bans: the existing blocklist, then the LP-only constructs (H5-5)
     upper = stripped.upcase
-    kw = FORBIDDEN_KEYWORDS.find { |w| upper.match?(/\b#{w}\b/) }
+    kw = (FORBIDDEN_KEYWORDS + FORBIDDEN_LP_KEYWORDS).find { |w| upper.match?(/\b#{w}\b/) }
     return "forbidden keyword: #{kw}" if kw
+    return 'user and system variables (@) are not allowed.' if stripped.include?('@')
+    return 'only one statement is allowed.' if stripped.sub(/;\s*\z/, '').include?(';')
 
-    return 'comma-separated FROM lists are not allowed; use explicit JOIN syntax.' if stripped.match?(/\bFROM\s+`?\w+`?\s*,/i)
+    # Identifier checks (H5-2, H5-3): no schema / database names, no real table outside the allowlist
+    identifiers = sql_identifiers(stripped)
+    schema = identifiers.map(&:first).find { |name| forbidden_schema_names.include?(name) }
+    return "schema not allowed: #{schema}" if schema
 
-    tables = stripped.scan(/(?:\bFROM|\bJOIN)\s+`?(\w+)`?/i).flatten.map(&:downcase).uniq
-    invalid = tables - ALLOWED_TABLES
-    return "tables not allowed: #{invalid.join(', ')}" if invalid.any?
+    # A name after a dot is a column of an alias (cap_call.notes), not a table; anywhere else it is a table
+    # reference, and only the tables LpQueryScope shadows are allowed
+    invalid = identifiers.reject(&:last).map(&:first).select { |name| self.class.real_table_names.include?(name) } - LpQueryScope.tables
+    return "tables not allowed: #{invalid.uniq.join(', ')}" if invalid.any?
 
-    return 'missing {ENTITY_ID} placeholder — scope required.' unless sql.include?('{ENTITY_ID}')
-    return 'missing {FUND_IDS} placeholder — scope required.'  unless sql.include?('{FUND_IDS}')
-    # X18 — portfolio tables are limited to the LP's visible holdings, never the whole fund
-    return 'missing {VISIBLE_API_IDS} placeholder — scope required.' if tables.include?('aggregate_portfolio_investments') && sql.exclude?('{VISIBLE_API_IDS}')
-    return 'missing {VISIBLE_PI_IDS} placeholder — scope required.' if tables.include?('portfolio_investments') && sql.exclude?('{VISIBLE_PI_IDS}')
+    # Placeholders count only outside literals and comments
+    return 'missing {ENTITY_ID} placeholder — scope required.' unless stripped.include?('{ENTITY_ID}')
+    return 'missing {FUND_IDS} placeholder — scope required.'  unless stripped.include?('{FUND_IDS}')
+
+    # X18 / H5-X — portfolio tables are limited to the LP's visible holdings, never the whole fund
+    tables = identifiers.map(&:first) & LpQueryScope.tables
+    return 'missing {VISIBLE_API_IDS} placeholder — scope required.' if tables.include?('aggregate_portfolio_investments') && stripped.exclude?('{VISIBLE_API_IDS}')
+    return 'missing {VISIBLE_PI_IDS} placeholder — scope required.' if tables.include?('portfolio_investments') && stripped.exclude?('{VISIBLE_PI_IDS}')
 
     nil
+  end
+
+  # Replaces literals with '' and comments with a space. Double-quoted and backticked text is kept
+  # as bare words, so the identifier checks see it (it is an identifier in SQLite / with backticks).
+  # @param sql [String]
+  # @return [Array(String, String|nil)] the stripped SQL and a rejection reason, if any
+  def strip_literals_and_comments(sql)
+    error = nil
+    stripped = sql.to_s.gsub(sql_token_regex) do |token|
+      case token
+      when %r{\A/\*[!+]}
+        # MySQL runs /*! … */ and reads /*+ … */ as optimizer hints: never accept them from the model
+        error ||= 'optimizer hints and executable comments are not allowed.'
+        ' '
+      when %r{\A(?:/\*|--|\#)} then ' '
+      when /\A'/ then "''"
+      else " #{token[1...-1]} "
+      end
+    end
+    [stripped.strip, error]
+  end
+
+  # Literals, quoted identifiers and comments as each database reads them: MySQL treats "-- " (dash
+  # dash space) and "#" as comments, SQLite any "--"
+  def sql_token_regex
+    if LpQueryScope.mysql?
+      %r{'(?:[^']|'')*'|"(?:[^"]|"")*"|`(?:[^`]|``)*`|/\*.*?\*/|--(?=\s|\z)[^\n]*|\#[^\n]*}m
+    else
+      %r{'(?:[^']|'')*'|"(?:[^"]|"")*"|`(?:[^`]|``)*`|/\*.*?\*/|--[^\n]*}m
+    end
+  end
+
+  # Every word in the stripped SQL, downcased, with whether it follows a dot (alias.column)
+  # @return [Array<Array(String, Boolean)>]
+  def sql_identifiers(stripped)
+    stripped.scan(/(\.\s*)?\b([a-z_][a-z0-9_$]*)/i).map { |dot, name| [name.downcase, dot.present?] }
+  end
+
+  # System schemas plus every database this connection can name (so `db`.`users` is refused)
+  def forbidden_schema_names
+    @forbidden_schema_names ||= begin
+      conn = ActiveRecord::Base.connection
+      databases = if LpQueryScope.mysql?
+                    conn.select_values('SHOW DATABASES')
+                  else
+                    conn.select_rows('PRAGMA database_list').map(&:second)
+                  end
+      (FORBIDDEN_SCHEMAS + databases.compact.map(&:downcase)).to_set
+    end
+  end
+
+  # The executed statement: scope CTEs, then the model's SELECT with placeholders filled, LIMIT
+  # applied and (MySQL) the execution-time hint after its leading SELECT
+  def scoped_sql(sql)
+    scope = LpQueryScope.new(user: @user, entity_id: @entity_ids.first, fund_ids: @accessible_fund_ids,
+                             investor_ids: @accessible_investor_ids, visible_api_ids: @visible_api_ids,
+                             visible_pi_ids: @visible_pi_ids)
+    query = substitute_and_limit(sql)
+    if LpQueryScope.mysql?
+      query = query.sub(%r{\A(\s*(?:(?:--|\#)[^\n]*\n\s*|/\*.*?\*/\s*)*)select\b}im) do
+        "#{Regexp.last_match(1)}SELECT /*+ MAX_EXECUTION_TIME(#{MAX_EXECUTION_MS}) */"
+      end
+    end
+    "#{scope.with_clause}\n#{query}"
+  end
+
+  # Runs the statement with writes refused: always ActiveRecord's while_preventing_writes; on MySQL
+  # also a read-only transaction. SET TRANSACTION READ ONLY applies to the next transaction, which
+  # the block below opens — skipped when a transaction is already open, since MySQL refuses to
+  # change an open transaction's characteristics.
+  def run_read_only(sql)
+    conn = ActiveRecord::Base.connection
+    ActiveRecord::Base.while_preventing_writes do
+      next conn.exec_query(sql, 'LP Assistant Query') unless LpQueryScope.mysql? && !conn.transaction_open?
+
+      conn.execute('SET TRANSACTION READ ONLY')
+      conn.transaction { conn.exec_query(sql, 'LP Assistant Query') }
+    end
   end
 
   # @param sql [String]

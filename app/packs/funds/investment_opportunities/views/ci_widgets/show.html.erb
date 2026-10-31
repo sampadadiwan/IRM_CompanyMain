@@ -55,7 +55,7 @@
       Intro Text
     </td>
     <td>
-      <%= @ci_widget.details_top&.html_safe %>
+      <%= ci_widget_rich_text(@ci_widget.details_top) %>
     </td>
   </tr>
   <tr>
@@ -63,7 +63,7 @@
       Details
     </td>
     <td>
-      <%= @ci_widget.details&.html_safe %>
+      <%= ci_widget_rich_text(@ci_widget.details) %>
     </td>
   </tr>
   <tr>
@@ -80,7 +80,8 @@
       Embed Script
     </td>
     <td>
-      <%= @ci_widget.embed_script&.html_safe %>
+      <%# L13 — the stored code is shown as text; the player itself is rebuilt by ci_widget_embed %>
+      <%= @ci_widget.embed_script %>
     </td>
   </tr>
 </table>

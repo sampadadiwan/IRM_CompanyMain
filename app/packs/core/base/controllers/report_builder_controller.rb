@@ -298,9 +298,11 @@ class ReportBuilderController < ApplicationController
     authorize @report, :show?
     @bread_crumbs = { Reports: reports_path, @report.name => nil }
 
+    # M16 — the rows the viewer may see (their Pundit scope of the root and of each join)
     engine = ReportBuilderQueryEngine.new(
       report: @report,
       entity: current_user.entity,
+      user: current_user,
       external_filters: params[:q]
     )
 
@@ -338,7 +340,9 @@ class ReportBuilderController < ApplicationController
   def preview
     authorize @report, :show?
 
-    engine   = ReportBuilderQueryEngine.new(report: @report, entity: current_user.entity, external_filters: params[:q])
+    # M16 — the preview shows only the rows the viewer may see
+    engine   = ReportBuilderQueryEngine.new(report: @report, entity: current_user.entity, user: current_user,
+                                            external_filters: params[:q])
     @rows    = engine.run(limit: 20)
     @columns = engine.columns
     @total   = engine.count
@@ -636,7 +640,8 @@ class ReportBuilderController < ApplicationController
     bad = referenced.reject { |r| allowed_keys.include?(r) }
     return render json: { ok: false, error: "Unknown column(s): #{bad.join(', ')}. Only selected report columns can be used in formulas." } if bad.any?
 
-    engine = ReportBuilderQueryEngine.new(report: @report, entity: current_user.entity)
+    # M16 — the sample row comes from the viewer's own scope
+    engine = ReportBuilderQueryEngine.new(report: @report, entity: current_user.entity, user: current_user)
     sample_row = engine.run(limit: 1).first || {}
     sample_row = referenced.index_with(0) if sample_row.empty?
 

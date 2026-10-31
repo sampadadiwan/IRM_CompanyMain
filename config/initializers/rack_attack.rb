@@ -289,6 +289,22 @@ module Rack
       client_ip(req) if req.post? && req.path.start_with?('/two_factor/send_sms')
     end
 
+    # H13 — the website's code-checking POSTs: the login code and the three enrollment
+    # confirmations (docs/security/security_review_2026_10.md "H13 — Web 2FA attempt counting").
+    # TwoFactorVerifier caps guesses per challenge and per user; this caps one IP spraying many
+    # accounts (or many fresh challenges) before the request reaches Rails. These paths stay in
+    # TWO_FACTOR_PAGE_PATHS for the 404 exemption — that list is about never 403'ing a real user
+    # mid-sign-in, which a 10-a-minute limit does not do (3 codes per challenge is the most a
+    # person types).
+    TWO_FACTOR_CODE_PATHS = ['/two_factor', '/two_factor/verify_enrollment',
+                             '/two_factor/verify_whatsapp_enrollment',
+                             '/two_factor/verify_sms_enrollment'].freeze
+
+    throttle('two_factor_code/ip', limit: 10, period: 60.seconds) do |req|
+      # A ".json"-style format suffix reaches the same action, so it must reach the same bucket
+      client_ip(req) if req.post? && TWO_FACTOR_CODE_PATHS.include?(req.path.sub(/\.\w+\z/, ''))
+    end
+
     # Throttle the public demo-form endpoint by IP.
     #
     # This is the only unauthenticated, CSRF-exempt write endpoint in the app
@@ -312,6 +328,49 @@ module Rack
     # @see docs/modules/website/website_lead_capture.md
     throttle('website_leads/ip', limit: 5, period: 1.hour) do |req|
       client_ip(req) if req.post? && req.path == '/website_leads'
+    end
+
+    # L5 — CSP violation reports (CspReportsController) are unauthenticated and CSRF-exempt by
+    # necessity. One page view can report a handful of violations, so 60 a minute per IP leaves
+    # real browsers alone while stopping anyone from using the endpoint to flood the logs.
+    throttle('csp_reports/ip', limit: 60, period: 1.minute) do |req|
+      client_ip(req) if req.post? && req.path == '/csp_reports'
+    end
+
+    # M6 — devise-api's password-for-token endpoint had no throttle at all, so it was an unmetered
+    # password-guessing oracle beside the throttled website login. Same limits as the website login
+    # per IP; per email as tight as the phone sign-in, since a script signs in once per run.
+    # A ".json"-style suffix reaches the same action, so it reaches the same bucket.
+    # docs/security/security_review_2026_10.md "Authentication and session — Medium / Low", M6.
+    TOKEN_SIGN_IN_PATH = '/users/tokens/sign_in'.freeze
+
+    def self.token_sign_in?(req)
+      req.post? && req.path.sub(/\.\w+\z/, '') == TOKEN_SIGN_IN_PATH
+    end
+
+    throttle('tokens/sign_in/ip', limit: 10, period: 30.seconds) do |req|
+      client_ip(req) if token_sign_in?(req)
+    end
+
+    # Top-level `email` (JSON or form), read like the phone sign-in's
+    throttle('tokens/sign_in/email', limit: 5, period: 60.seconds) do |req|
+      mobile_sign_in_email(req) if token_sign_in?(req)
+    end
+
+    # M6 — Doorkeeper's client endpoints: code/refresh exchange, revocation and introspection.
+    # An MCP client calls /oauth/token a few times an hour, so 60 a minute per IP is far above real
+    # use (even several clients behind one vendor egress IP) and stops secret/code guessing.
+    OAUTH_CLIENT_PATHS = ['/oauth/token', '/oauth/revoke', '/oauth/introspect'].freeze
+
+    throttle('oauth/client/ip', limit: 60, period: 1.minute) do |req|
+      client_ip(req) if req.post? && OAUTH_CLIENT_PATHS.include?(req.path)
+    end
+
+    # M2 — dynamic client registration (POST /oauth/registration) is open by design — Claude.ai and
+    # ChatGPT register themselves — so it is capped per IP: each new connector registers once, and
+    # 30 an hour stops anyone filling oauth_applications (and the admins' client lists).
+    throttle('oauth_registration/ip', limit: 30, period: 1.hour) do |req|
+      client_ip(req) if req.post? && req.path == '/oauth/registration'
     end
 
     # Throttle IPs that hit 404 errors multiple times

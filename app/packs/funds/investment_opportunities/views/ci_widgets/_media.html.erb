@@ -16,7 +16,8 @@
                             />
                     <% elsif widget.embed_script.present? %>
                         <div class="ratio ratio-16x9">
-                        <%= widget.embed_script.html_safe %>
+                        <%# L13 — rebuilt, sandboxed player iframe; the stored HTML is never echoed %>
+                        <%= ci_widget_embed(widget) %>
                         </div>
                     <% else %>
                         <%= widget.image_url %>

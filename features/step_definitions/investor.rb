@@ -1788,7 +1788,10 @@ Given('there is an incoming email sent for this investor {string}') do |args|
   @incoming_email = FactoryBot.build(:incoming_email)
   key_values(@incoming_email, args)
 
-  rails_app_url = "#{Capybara.app_host}/incoming_emails/sendgrid"
+  # H2: with the webhook token, as the configured SendGrid Inbound Parse URL sends it. The app server
+  # runs in this process, so the stubbed credential applies to it (SendgridInboundTestToken).
+  stub_sendgrid_inbound_tokens
+  rails_app_url = "#{Capybara.app_host}/incoming_emails/sendgrid?#{{ token: SendgridInboundTestToken::TOKEN }.to_query}"
 
   # Construct the request payload
   email_payload = {

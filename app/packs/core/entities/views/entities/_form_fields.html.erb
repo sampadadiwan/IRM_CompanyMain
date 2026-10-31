@@ -211,12 +211,25 @@
     <div class="form-group">
       <label>Allowed AI Clients</label>
       <small class="text-muted d-block mb-2">Leave all unchecked to allow all registered AI clients.</small>
-      <% Doorkeeper::Application.all.each do |app| %>
+      <%# M2 — client KINDS (config/mcp_clients.yml), recognised by redirect URI, rather than every
+          OAuth app's self-chosen name (which also listed other firms' apps here). A list saved
+          before kinds existed shows its names as the kinds they map to; a name that maps to none
+          stays as its own checked box, so saving the form never empties the list (empty = all). %>
+      <% saved_clients = entity_setting_subform.object.mcp_allowed_clients_list %>
+      <% allowed_kinds = McpClientRegistry.allowed_kinds(saved_clients) %>
+      <% McpClientRegistry.kinds.each do |kind, spec| %>
         <div class="form-check">
-          <%= check_box_tag "entity[entity_setting_attributes][mcp_allowed_clients_list][]", app.name,
-              entity_setting_subform.object.mcp_allowed_clients_list.include?(app.name),
-              class: "form-check-input", id: "mcp_client_#{app.id}" %>
-          <%= label_tag "mcp_client_#{app.id}", app.name, class: "form-check-label" %>
+          <%= check_box_tag "entity[entity_setting_attributes][mcp_allowed_clients_list][]", kind,
+              allowed_kinds.include?(kind),
+              class: "form-check-input", id: "mcp_client_#{kind}" %>
+          <%= label_tag "mcp_client_#{kind}", spec[:label], class: "form-check-label" %>
+        </div>
+      <% end %>
+      <% McpClientRegistry.unmapped_entries(saved_clients).each_with_index do |name, index| %>
+        <div class="form-check">
+          <%= check_box_tag "entity[entity_setting_attributes][mcp_allowed_clients_list][]", name, true,
+              class: "form-check-input", id: "mcp_client_legacy_#{index}" %>
+          <%= label_tag "mcp_client_legacy_#{index}", "#{name} (saved by name; allowed by name until #{l(McpClientRegistry::LEGACY_NAMES_UNTIL)})", class: "form-check-label" %>
         </div>
       <% end %>
     </div>

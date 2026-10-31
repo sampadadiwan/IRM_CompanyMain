@@ -33,6 +33,14 @@ class Task < ApplicationRecord
   belongs_to :for_entity, class_name: "Entity", optional: true
   belongs_to :user, optional: true
   belongs_to :assigned_to, class_name: "User", optional: true
+  # M28 — whenever the assignee is set or changed it must be a user of the task's firm (a support user
+  # or advisor switched into the firm counts, as their entity is the firm at that moment). Existing
+  # cross-firm assignees stay valid until the assignee is changed. Tests M28-5, M28-H4
+  # Support users are exempt: jobs such as GenerateDealStepTasksJob assign to the user who moved a
+  # deal step, and a support user may have switched out of the firm by the time the job runs.
+  validate(if: -> { will_save_change_to_assigned_to_id? && !assigned_to&.has_cached_role?(:support) }) do
+    validate_parent_in_own_firm(:assigned_to)
+  end
   belongs_to :owner, polymorphic: true, optional: true
   attr_readonly :owner_id, :owner_type # never moves to another owner (funds_api_security_policy_plan.md, B)
   # LP CRM: the person at the LP this task involves — the contact's InvestorAccess

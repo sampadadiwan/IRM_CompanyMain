@@ -1,4 +1,8 @@
 class CustomNotificationsController < ApplicationController
+  # L14 — owners of custom notifications: the models including WithCustomNotifications, which are also
+  # the owner types stored in production
+  OWNER_TYPES = %w[Approval CapitalCall CapitalDistribution Deal Entity Fund SecondarySale].freeze
+
   before_action :set_custom_notification, only: %i[show edit update destroy]
   # Editing an investor email invalidates the journey's review tasks (capital call and distribution journeys)
   before_action -> { @journey_started_at = Time.current }, only: %i[create update destroy]
@@ -10,7 +14,13 @@ class CustomNotificationsController < ApplicationController
     @custom_notifications = policy_scope(@q.result)
     @custom_notifications = with_owner_access(@custom_notifications)
 
-    @owner = params[:q][:owner_type_eq].constantize.find(params[:q][:owner_id_eq]) if params[:q] && params[:q][:owner_id_eq] && params[:q][:owner_type_eq]
+    if params[:q] && params[:q][:owner_id_eq] && params[:q][:owner_type_eq]
+      # L14 — only a model that carries custom notifications; an unknown name is a 404, not a 500 (L14-7)
+      owner_class = ApplicationRecord.model_class_from_param(params[:q][:owner_type_eq], allowed: OWNER_TYPES)
+      raise ActiveRecord::RecordNotFound, "Unknown owner type" unless owner_class
+
+      @owner = owner_class.find(params[:q][:owner_id_eq])
+    end
 
     @pagy, @custom_notifications = pagy(@custom_notifications)
   end

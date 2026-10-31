@@ -1,10 +1,20 @@
 class DealActivityPolicy < DealBasePolicy
   class Scope < Scope
+    # L11 — the list matched show?: company admins, support and group companies see every activity of
+    # their firm(s); anyone else only the activities of deals in their own deal list (DealPolicy::Scope),
+    # as show? asks DealPolicy / DealInvestorPolicy. Tests L11-2, L11-H2 —
+    # features/security/security_review_2026_10_low.feature
     def resolve
       if user.entity_type == "Group Company"
+        # A group company sees its child firms' activities, as before
         scope.where(entity_id: user.entity.child_ids)
-      else
+      elsif (user.curr_role == "employee" && user.has_cached_role?(:company_admin)) || user.support?
+        # Admins and support: every activity of the firm, as before
         scope.where("deal_activities.entity_id=?", user.entity_id)
+      else
+        # Everyone else: the firm's activities on deals this user can see
+        visible_deals = DealPolicy::Scope.new(user, Deal).resolve.unscope(:order).select(:id)
+        scope.where("deal_activities.entity_id=?", user.entity_id).where(deal_id: visible_deals)
       end
     end
   end
@@ -60,14 +70,6 @@ class DealActivityPolicy < DealBasePolicy
 
   def perform_activity_action?
     update?
-  end
-
-  def update_sequences?
-    deal_update_permission?
-  end
-
-  def update_sequence?
-    deal_update_permission?
   end
 
   def destroy?

@@ -17,7 +17,8 @@ class OauthBearerAuthenticator
 
   # @param token [String] the raw bearer token, header prefix already stripped
   # @return [OauthBearerAuthenticator::Result]
-  # @raise [AuthenticationError] when the token is missing, unknown, expired or revoked
+  # @raise [AuthenticationError] when the token is missing, unknown, expired or revoked, or its
+  #   user has been deactivated
   def self.authenticate(token)
     raise AuthenticationError, 'Missing token' if token.blank?
 
@@ -25,6 +26,12 @@ class OauthBearerAuthenticator
     raise AuthenticationError, 'Invalid or expired token' unless doorkeeper_token&.accessible?
 
     user = User.find(doorkeeper_token.resource_owner_id)
+    # M4-1 / M4-2 / N6 — checked at use, so a deactivated user's MCP and mail add-in tokens stop at
+    # once, including users of a deactivated firm (EntityDeactivationJob's update_all skips the
+    # User callback that revokes tokens). The `active` column rather than
+    # active_for_authentication?, so a short Devise lockout does not break the user's connectors.
+    raise AuthenticationError, 'This account has been deactivated' unless user.active?
+
     entity = if doorkeeper_token.entity_id.present?
                Entity.find(doorkeeper_token.entity_id)
              else

@@ -13,9 +13,7 @@ class FundUnitPolicy < FundBasePolicy
     user.enable_funds
   end
 
-  def bulk_actions?
-    index?
-  end
+  # bulk_actions? is FundBasePolicy's (H6): staff only. The job still re-checks each row.
 
   def show?
     permissioned_employee? ||

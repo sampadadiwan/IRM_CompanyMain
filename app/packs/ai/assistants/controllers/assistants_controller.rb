@@ -29,7 +29,13 @@ class AssistantsController < ApplicationController
   def efficiency_report
     authorize :assistant, :show?
 
+    # M7 — load the chat within the user's firm; an unknown id is a 404, not a nil error (M7-2)
     @chat = Chat.find_by(id: params[:chat_id], entity_id: current_user.entity_id)
+    return head(:not_found) unless @chat
+
+    # M7 — then ask the chat's own policy: only its user or a company admin sees the report (M7-1, M7-H)
+    authorize @chat, :efficiency_report?
+
     # RubyLLM 2.x keeps tool calls in ruby_llm_tool_calls and token counts in ruby_llm_usages
     # (one row per model request, linked to its assistant message), not on messages.
     @all_messages = @chat.messages.includes(:ruby_llm_tool_calls, :ruby_llm_usages).order(created_at: :asc)

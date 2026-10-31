@@ -17,9 +17,12 @@ class ValuationList < BaseList
 
     # Apply polymorphic owner filter
     if @params[:owner_id].present? && @params[:owner_type].present?
-      raise ArgumentError, "Invalid owner_type" unless ALLOWED_OWNER_TYPES.include?(@params[:owner_type])
+      # L14 — through the shared helper with this list: an unknown type is a 404 (it raised
+      # ArgumentError, a 500) (L14-6)
+      owner_class = ApplicationRecord.model_class_from_param(@params[:owner_type], allowed: ALLOWED_OWNER_TYPES)
+      raise ActiveRecord::RecordNotFound, "Invalid owner_type" unless owner_class
 
-      @owner = @params[:owner_type].constantize.find(@params[:owner_id])
+      @owner = owner_class.find(@params[:owner_id])
       @valuations = @valuations.where(owner: @owner)
     end
 
