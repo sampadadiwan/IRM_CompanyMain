@@ -131,3 +131,19 @@
 - [x] 7.4 Write `features/ai_chat/answer_layout.feature` (H19–H22, E19, E20) and run it with the kit,
       Console, CS, LP and assistant features — 312/312.
 
+## 8. Optional answer widgets (added at the user's request)
+
+- [x] 8.1 `AiChatAnswerLayout::WIDGETS`: an optional catalogue (Verdict, Checks, What to do), each with the
+      condition that calls for it and a "not for" line, plus three choosing examples (one with no widget).
+      Verify: E53.
+- [x] 8.2 `AiChatHelper` draws a well-formed widget (Verdict banner by opening word, Checks with failures
+      first, What to do as numbered steps) and leaves a malformed one as plain text; a table's Status column
+      gets badges for known status words. Verify: H23–H26, E51, E52.
+- [x] 8.3 `AiChatAnswerLayout.log_usage` in every back end (Console, Assistants, record chat, agents on the
+      web) logs which sections each answer used. Verify: E54.
+- [x] 8.4 `rake ai_chat:widget_eval` — the shared prompt (ENTITY_ID=…) or a real assistant with its tools
+      and data (ASSISTANT=… with its record and USER_ID=…, throwaway chat), questions per assistant in
+      `config/ai_chat/widget_eval/`. Run by a developer against a real model (not in Cucumber).
+- [x] 8.5 Write `features/ai_chat/widgets.feature` and run it with the kit, Console, CS, LP and assistant
+      features — 326/326.
+

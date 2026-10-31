@@ -46,6 +46,8 @@ class ChatStreamJob < ApplicationJob
       # Message has no role predicates (assistant? etc.); role is stored as a string.
       final_message.update!(content: FALLBACK_ANSWER) if final_message&.role == "assistant" && final_message.content.blank?
 
+      AiChatAnswerLayout.log_usage("record_chat", final_message&.content)
+
       # H5 — the finished answer replaces the streaming one; the box is ready for the next question.
       broadcast_answer(final_message&.content.presence || FALLBACK_ANSWER, status: :answered)
       broadcast_composer

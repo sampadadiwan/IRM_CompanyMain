@@ -958,3 +958,66 @@ Then('the slides show {string} without the slide editor') do |title|
   expect(page).to have_css("#slides_container h2", text: title, visible: :all)
   expect(page).to have_no_css("[data-controller~='slides-editor']", visible: :all)
 end
+
+# ---- Optional widgets (features/ai_chat/widgets.feature) -----------------------------------------------------
+
+Then('the answer shows a {string} verdict banner reading {string} and {string}') do |colour, label, reason|
+  banner = @rendered_answer.at_css("[data-ai-chat-verdict]")
+  expect(banner["class"]).to include("alert-#{colour}")
+  expect(banner.at_css("strong").text).to eq(label)
+  expect(banner.text.squish).to eq("#{label} #{reason}")
+end
+
+Then('the answer shows no verdict banner') do
+  expect(@rendered_answer.css("[data-ai-chat-verdict]")).to be_empty
+end
+
+Then('the checks read, in order:') do |table|
+  rows = @rendered_answer.css("[data-ai-chat-check]").map { |li| [li["data-ai-chat-check"], li.text.squish] }
+  expect(rows).to eq(table.raw.map { |state, text| [state, text.strip] })
+end
+
+Then('the answer shows no checks card') do
+  expect(@rendered_answer.css("[data-ai-chat-check]")).to be_empty
+  expect(@rendered_answer.text).to include("Remittances add up")
+end
+
+Then('the steps read {string} and {string}') do |first, second|
+  steps = @rendered_answer.css(".card ol.list-group-numbered > li").map { |li| li.text.squish }
+  expect(steps).to eq([first, second])
+end
+
+Then('the status badges read:') do |table|
+  badges = @rendered_answer.css("td .badge").map { |b| [b.text, b["class"][/bg-(\w+)-subtle/, 1]] }
+  expect(badges).to eq(table.raw)
+end
+
+Then('{string} and the Note column are not badges') do |text|
+  expect(@rendered_answer.css("td .badge").map(&:text)).not_to include(text)
+  notes = @rendered_answer.css("tbody tr").map { |tr| tr.css("td")[2] }
+  expect(notes.flat_map { |td| td.css(".badge").to_a }).to be_empty
+end
+
+When('the answer layout instructions are read') do
+  @instructions = AiChatAnswerLayout.instructions
+end
+
+# The instructions wrap lines; compare their text with whitespace normalised.
+Then('they say {string}') do |text|
+  expect(@instructions.squish).to include(text)
+end
+
+Then('they give the example {string}') do |text|
+  expect(@instructions.squish).to include(text)
+end
+
+Then('the answer\'s sections are {string}') do |sections|
+  expect(AiChatAnswerLayout.sections_in(@answer_markdown).join(", ")).to eq(sections)
+end
+
+Then('logging it for {string} writes {string}') do |source, line|
+  logged = []
+  allow(Rails.logger).to receive(:info) { |*args, &block| logged << (block ? block.call : args.first) }
+  AiChatAnswerLayout.log_usage(source, @answer_markdown)
+  expect(logged).to include(line)
+end

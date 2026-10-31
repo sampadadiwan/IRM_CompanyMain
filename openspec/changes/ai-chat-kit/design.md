@@ -653,6 +653,10 @@ Shared setup:
 | H20 | Record chat layout answer | same | opens the chat | same cards and follow-ups | Questions and answers | `ai_chat/answer_layout.feature` |
 | H21 | Window layout answer | same | opens the window | same cards, Ask and follow-ups | Questions and answers | `ai_chat/answer_layout.feature` |
 | H22 | Assistants asked for the layout | a Fund Assistant | answers | instructions end with `AiChatAnswerLayout` | Screens that use the shared chat | `ai_chat/answer_layout.feature` |
+| H23 | Verdict banner | `## Verdict` Mismatch / Matches / Can't tell — reason | renders | danger / success / secondary banner with the label and reason | Questions and answers | `ai_chat/widgets.feature` |
+| H24 | Checks | ✓ / ✗ bullets | renders | list group, failed checks first, marks as icons | Questions and answers | `ai_chat/widgets.feature` |
+| H25 | What to do | numbered steps | renders | numbered list group in a card | Questions and answers | `ai_chat/widgets.feature` |
+| H26 | Status badges | a table with a Status column | renders | known status words as coloured badges; other words and columns untouched | Questions and answers | `ai_chat/widgets.feature` |
 | H12 | Maximise markup | window | renders | Maximise control and sidebar container present | Maximise the floating window | `ai_chat/floating_window.feature` |
 
 #### Edge Cases
@@ -678,6 +682,10 @@ Shared setup:
 | E18 | Idle conversation not continued | latest window conversation last active 2 hours ago | opens the window | a new, empty conversation; the old one listed | Idle conversation not continued by default | `ai_chat/floating_window.feature` |
 | E19 | Agents: layout on the web, not WhatsApp | an agent's instructions | built for `web` / `whatsapp` | include / omit `AiChatAnswerLayout` | Screens that use the shared chat | `ai_chat/answer_layout.feature` |
 | E20 | Record chat instructions not saved | a record chat | a question is sent | `with_instructions(layout, persist: false)` | Screens that use the shared chat | `ai_chat/answer_layout.feature` |
+| E51 | Malformed verdict | a Verdict not starting Matches / Mismatch / Can't tell | renders | plain text, no banner | Questions and answers | `ai_chat/widgets.feature` |
+| E52 | Unmarked checks | Checks bullets without ✓ / ✗ | renders | plain list, no card | Questions and answers | `ai_chat/widgets.feature` |
+| E53 | Widgets optional in the prompt | the layout instructions | read | "Most answers need none…", an example with no widget | Screens that use the shared chat | `ai_chat/widgets.feature` |
+| E54 | Widget usage logged | an answer with Summary, Verdict, Checks | logged | `[ai_chat] answer sections source=… sections=summary,verdict,checks` | Screens that use the shared chat | `ai_chat/widgets.feature` |
 | E17 | Voice path | `/assistants/transcribe` (stubbed transcription "Call 3 status") | posts audio | kit question "Call 3 status" + pending | Enter sends | `ai_chat/assistants_page.feature` |
 
 #### Error Cases

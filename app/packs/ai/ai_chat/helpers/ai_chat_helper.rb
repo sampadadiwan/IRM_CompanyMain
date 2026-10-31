@@ -26,6 +26,29 @@ module AiChatHelper
   FOLLOW_UPS_HEADING = /\A\s*(follow-?ups?|follow-?up questions|suggested questions|next questions)\s*:?\s*\z/i
   # The most suggested next questions shown above the composer (E44).
   MAX_FOLLOW_UPS = 3
+  # Optional widgets (AiChatAnswerLayout::WIDGETS) — drawn only when the answer has the section.
+  VERDICT_HEADING = /\A\s*verdict\s*:?\s*\z/i
+  CHECKS_HEADING = /\A\s*checks?\s*:?\s*\z/i
+  WHAT_TO_DO_HEADING = /\A\s*(what to do|how to fix( it)?|next steps)\s*:?\s*\z/i
+  # A Verdict's opening word → [theme colour, icon]; anything else leaves the section as plain text.
+  VERDICTS = {
+    /\Amatch(es|ed)?\b/i => %w[success ti-circle-check],
+    /\Amismatch\b/i => %w[danger ti-alert-triangle],
+    /\A(can'?t|cannot) tell\b/i => %w[secondary ti-help-circle]
+  }.freeze
+  # A Checks bullet's mark: ✓ holds, ✗ does not.
+  CHECK_PASS = /\A\s*[✓✔✅]\s*/
+  CHECK_FAIL = /\A\s*[✗✘❌]\s*/
+  # Failed checks first; each state's icon.
+  CHECK_ORDER = { fail: 0, pass: 1 }.freeze
+  CHECK_ICONS = { fail: "ti-circle-x text-danger", pass: "ti-circle-check text-success" }.freeze
+  # Status words in a table's Status column → badge colour (danger first, so "Overpaid" is not "Paid").
+  STATUS_BADGE_COLOURS = [
+    [/\A(overdue|failed|rejected|cancell?ed|expired|mismatch|overpaid|underpaid|blocked|error)\b/i, "danger"],
+    [/\A(paid|completed?|approved|verified|done|active|matched|reconciled|closed|settled)\b/i, "success"],
+    [/\A(pending|partially|partly|due|in progress|draft|open|awaiting|scheduled|unverified)\b/i, "warning"]
+  ].freeze
+
   # "Label: value" — the shape of one Key figures bullet (the label is usually bold).
   FIGURE_ITEM = /\A\s*([^:]{1,60}?)\s*:\s*(.+)\z/m
 
@@ -186,6 +209,8 @@ module AiChatHelper
 
     # Tables: the app's .table look, inside a bordered card that scrolls sideways when wide.
     fragment.css("table").each do |table|
+      # A Status column's known status words as coloured badges (no choice for the assistant).
+      badge_status_column(table)
       table["class"] = "table table-sm table-hover align-middle mb-0"
       wrap = Nokogiri::XML::Node.new("div", fragment.document)
       wrap["class"] = "card border shadow-none overflow-hidden mb-3"
@@ -230,7 +255,8 @@ module AiChatHelper
 
     # A paragraph counts only when it is exactly one of the layout's titles.
     node.name == "p" &&
-      [SOURCES_HEADING, SUMMARY_HEADING, FIGURES_HEADING, QUESTIONS_HEADING, FOLLOW_UPS_HEADING].any? { |re| node.text.match?(re) }
+      [SOURCES_HEADING, SUMMARY_HEADING, FIGURES_HEADING, QUESTIONS_HEADING, FOLLOW_UPS_HEADING,
+       VERDICT_HEADING, CHECKS_HEADING, WHAT_TO_DO_HEADING].any? { |re| node.text.match?(re) }
   end
 
   # The Bootstrap block for one recognised section, or nil to leave the section as plain text.
@@ -247,6 +273,9 @@ module AiChatHelper
     when SUMMARY_HEADING then answer_summary_block(doc, title, body)
     when FIGURES_HEADING then answer_figures_block(doc, heading, body)
     when QUESTIONS_HEADING then answer_questions_block(doc, title, body, ask_buttons:)
+    when VERDICT_HEADING then answer_verdict_block(doc, body)
+    when CHECKS_HEADING then answer_checks_block(doc, title, body)
+    when WHAT_TO_DO_HEADING then answer_steps_block(doc, title, body)
     end
   end
 
@@ -348,6 +377,114 @@ module AiChatHelper
     # The questions' text has moved into the list group; drop the emptied lists and paragraphs.
     body.each { |n| n.remove if answer_list?(n) || items.include?(n) }
     card
+  end
+
+  # Verdict: a coloured banner for Matches / Mismatch / Can't tell, then the one-sentence reason.
+  # An opening word that is none of these leaves the section as plain text (nil).
+  def answer_verdict_block(doc, body)
+    text = body.map(&:text).join(" ").squish
+    colour, icon = VERDICTS.find { |pattern, _| text.match?(pattern) }&.last
+    return nil unless colour
+
+    label = text[VERDICTS.keys.find { |pattern| text.match?(pattern) }]
+    reason = text.sub(/\A#{Regexp.escape(label)}\s*[—–\-:.]?\s*/, "")
+    banner = ai_chat_node(doc, "div", "alert alert-#{colour} d-flex align-items-start gap-2 py-2 px-3 mb-3")
+    banner["data-ai-chat-verdict"] = label.downcase.tr("'", "").tr(" ", "_")
+    banner.inner_html = %(<i class="ti #{icon} mt-1"></i>)
+    content = ai_chat_node(doc, "div")
+    strong = ai_chat_node(doc, "strong")
+    strong.content = label.capitalize
+    content.add_child(strong)
+    content.add_child(Nokogiri::XML::Text.new(" #{reason}", doc)) if reason.present?
+    banner.add_child(content)
+    body.each(&:remove)
+    banner
+  end
+
+  # Checks: ✓ / ✗ bullets as a list group, failed checks first. Without any marked bullet the section stays
+  # plain text (nil).
+  def answer_checks_block(doc, title, body)
+    items = answer_list_items(body)
+    marked = items.map { |li| [li, check_state(li.text)] }
+    return nil if marked.none? { |_, state| state }
+
+    card = ai_chat_node(doc, "div", "card shadow-sm mb-3")
+    card.add_child(answer_card_header(doc, "ti-list-check", "text-primary", title))
+    group = ai_chat_node(doc, "ul", "list-group list-group-flush")
+    marked.sort_by { |_, state| CHECK_ORDER.fetch(state, 2) }.each do |li, state|
+      icon = CHECK_ICONS.fetch(state, "ti-point text-muted")
+      row = ai_chat_node(doc, "li", "list-group-item d-flex gap-2")
+      row["data-ai-chat-check"] = state.to_s
+      row.inner_html = %(<i class="ti #{icon} mt-1"></i>)
+      text = ai_chat_node(doc, "div", "flex-grow-1")
+      li.children.each { |child| text.add_child(child) }
+      strip_check_mark(text)
+      row.add_child(text)
+      group.add_child(row)
+    end
+    card.add_child(group)
+    body.each(&:remove)
+    card
+  end
+
+  # @param text [String] a check bullet's text
+  # @return [Symbol, nil] :fail (✗), :pass (✓) or nil (no mark)
+  def check_state(text)
+    if text.match?(CHECK_FAIL) then :fail
+    elsif text.match?(CHECK_PASS) then :pass
+    end
+  end
+
+  # The ✓ / ✗ at the start of a check's first text, which the icon now shows.
+  def strip_check_mark(node)
+    first_text = node.xpath(".//text()").find { |t| t.text.strip.present? }
+    first_text&.content = first_text.text.sub(CHECK_FAIL, "").sub(CHECK_PASS, "")
+  end
+
+  # What to do: the numbered steps in a card. Without a list the section stays plain text (nil).
+  def answer_steps_block(doc, title, body)
+    items = answer_list_items(body)
+    return nil if items.empty?
+
+    card = ai_chat_node(doc, "div", "card shadow-sm mb-3")
+    card.add_child(answer_card_header(doc, "ti-tool", "text-primary", title))
+    steps = ai_chat_node(doc, "ol", "list-group list-group-flush list-group-numbered")
+    items.each do |li|
+      step = ai_chat_node(doc, "li", "list-group-item")
+      li.children.each { |child| step.add_child(child) }
+      steps.add_child(step)
+    end
+    card.add_child(steps)
+    # Anything else in the section (an intro line) sits above the steps.
+    rest = body.reject { |n| answer_list?(n) }
+    unless rest.none? { |n| n.element? || n.text.strip.present? }
+      intro = ai_chat_node(doc, "div", "card-body pb-0")
+      rest.each { |n| intro.add_child(n) }
+      steps.add_previous_sibling(intro)
+    end
+    body.each { |n| n.remove if answer_list?(n) }
+    card
+  end
+
+  # Known status words in a table's "Status" column become coloured badges; other cells are untouched.
+  #
+  # @param table [Nokogiri::XML::Element]
+  def badge_status_column(table)
+    headers = table.css("thead th").map { |th| th.text.strip }
+    index = headers.index { |h| h.match?(/\Astatus\z/i) }
+    return unless index
+
+    table.css("tbody tr").each do |row|
+      cell = row.css("td")[index]
+      text = cell&.text.to_s.strip
+      colour = STATUS_BADGE_COLOURS.find { |pattern, _| text.match?(pattern) }&.last
+      next unless colour
+
+      badge = ai_chat_node(table.document, "span", "badge fw-normal bg-#{colour}-subtle text-#{colour}")
+      badge.content = text
+      cell.children.each(&:remove)
+      cell.add_child(badge)
+    end
   end
 
   # H16 — sends the question straight away (ai_chat_thread_controller#askNow). Only this

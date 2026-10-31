@@ -1,0 +1,33 @@
+# Typical questions for `rake ai_chat:widget_eval` (no ASSISTANT: the shared prompt alone) — does the model pick the right optional widgets
+# (AiChatAnswerLayout::WIDGETS)? `expect`: widgets the answer should use; `forbid`: widgets it must not.
+# Widgets: verdict, checks, what_to_do. Add real questions that went wrong.
+- question: How many commitments does Fund I have?
+  expect: []
+  forbid: [verdict, checks, what_to_do]
+- question: List the LPs in Fund I with their committed amounts.
+  expect: []
+  forbid: [verdict, checks, what_to_do]
+- question: What is the total called in Fund I so far?
+  expect: []
+  forbid: [verdict, what_to_do]
+- question: Why is investor TSTF2 marked Overpaid on Call 2?
+  expect: [verdict, checks]
+  forbid: []
+- question: Do the remittances on Call 3 add up to the call amount?
+  expect: [verdict, checks]
+  forbid: [what_to_do]
+- question: Is Mehta Family's unfunded commitment correct?
+  expect: [verdict]
+  forbid: []
+- question: How do I correct the exchange rate on a USD commitment?
+  expect: [what_to_do]
+  forbid: [verdict]
+- question: The distribution to Rao Trust went to the wrong bank account. How do I fix it?
+  expect: [what_to_do]
+  forbid: []
+- question: Show the KYC status of every investor in Fund I.
+  expect: []
+  forbid: [verdict, what_to_do]
+- question: Why does Iyer HUF's statement show a different closing balance from the ledger?
+  expect: [verdict, checks]
+  forbid: []

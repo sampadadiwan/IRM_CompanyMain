@@ -177,6 +177,9 @@ class GenericChatAgent < SupportAgentService
     assistant_message = session.agent_chat_messages.create!(role: "assistant", content: ai_response, channel: channel,
                                                             **(guide_search&.message_attributes || {}))
 
+    # Which layout sections and widgets the answer used (web answers follow AiChatAnswerLayout).
+    AiChatAnswerLayout.log_usage("agent:#{@support_agent.agent_type}", ai_response) if channel == "web"
+
     # Enqueue LLM-as-judge for CS agent responses (only if judge is enabled)
     ResponseJudgeJob.perform_later(assistant_message.id) if @support_agent.agent_type == "CustomerSupportAgent" && @support_agent.entity&.entity_setting&.cs_judge_enabled?
     true

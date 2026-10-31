@@ -35,6 +35,9 @@ class AssistantQueryJob < ApplicationJob
       assistant.run(query)
     end
 
+    # Which layout sections and widgets the answer used — over-use of a widget shows in the logs.
+    AiChatAnswerLayout.log_usage("assistants:#{assistant_type}", response.content)
+
     # H3 — the answer replaces the pending one in the thread (ai_chat/_answer, rich mode).
     broadcast_answer(chat, request_id, AiChatItem.transient(dom_id: turbo_frame_dom_id(request_id), role: "assistant",
                                                             content: response.content))
