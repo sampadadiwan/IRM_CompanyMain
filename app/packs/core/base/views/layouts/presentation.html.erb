@@ -257,9 +257,12 @@
 
     <%= yield :turbo_streams %>
 
+    <%# The inline slide editor saves to a portfolio report extract, so it is attached only on an extract's
+        page. Other decks using this layout (an assistant chat's AI Slides) have nothing to save to: building
+        the URL there raised "No route matches … update_slides_content … id: nil". %>
+    <% slides_editor_url = (update_slides_content_portfolio_report_extract_path(params[:id]) if controller_name == "portfolio_report_extracts" && params[:id].present?) %>
     <div class="reveal"
-         data-controller="slides-editor"
-         data-slides-editor-url-value="<%= update_slides_content_portfolio_report_extract_path(params[:id]) %>">
+         <% if slides_editor_url %>data-controller="slides-editor" data-slides-editor-url-value="<%= slides_editor_url %>"<% end %>>
 
       <!-- Saving Indicator -->
       <div data-slides-editor-target="indicator"

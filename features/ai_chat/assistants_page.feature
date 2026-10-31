@@ -93,6 +93,12 @@ Feature: Assistants page on the chat kit
     When Priya opens that colleague's assistant chat by its id
     Then the thread does not show "Colleague question"
 
+  # X47 — Error case: AI Slides opens for an assistant chat (the shared presentation layout built the tear-sheet editor's URL with no id)
+  Scenario: AI Slides page opens
+    Given Priya has a Specific Fund Assistant chat on "Golden Angels Fund I" with saved slides "Q3 overdue LPs"
+    When Priya opens that chat's AI Slides
+    Then the slides show "Q3 overdue LPs" without the slide editor
+
   # X3 — Error case: a timed-out answer reads "Not answered" with the reason, and the question goes back in the box
   Scenario: Assistant times out
     Given the assistant times out

@@ -941,3 +941,20 @@ end
 Then('it lists {string} among the record pages') do |path|
   expect(@brief).to include(path)
 end
+
+# ---- AI Slides (X47) -----------------------------------------------------------------------------------------
+
+Given('Priya has a Specific Fund Assistant chat on {string} with saved slides {string}') do |fund_name, title|
+  @slides_chat = assistant_chat_with(fund_name, "Which LPs are overdue?")
+  AiPresentation.create!(chat_id: @slides_chat.id, entity_id: @entity.id, content_html: "<section><h2>#{title}</h2></section>")
+end
+
+When('Priya opens that chat\'s AI Slides') do
+  visit generate_slides_assistants_path(chat_id: @slides_chat.id)
+end
+
+Then('the slides show {string} without the slide editor') do |title|
+  expect(page.status_code).to eq(200)
+  expect(page).to have_css("#slides_container h2", text: title, visible: :all)
+  expect(page).to have_no_css("[data-controller~='slides-editor']", visible: :all)
+end
