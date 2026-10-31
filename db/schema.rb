@@ -1899,8 +1899,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_29_120000) do
     t.text "api_updates"
     t.string "email", limit: 60
     t.bigint "document_id"
-    t.string "provider_signer_id", limit: 40
     t.datetime "signing_notified_at"
+    t.string "provider_signer_id", limit: 40
     t.index ["document_id"], name: "index_e_signatures_on_document_id"
     t.index ["entity_id"], name: "index_e_signatures_on_entity_id"
     t.index ["user_id"], name: "index_e_signatures_on_user_id"
@@ -4044,7 +4044,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_29_120000) do
     t.bigint "requested_by_id", null: false
     t.string "new_call_code", limit: 3, null: false
     t.string "new_phone", limit: 100, null: false
-    t.string "code_digest", limit: 64
+    t.string "code_digest", limit: 64, null: false
     t.datetime "expires_at", null: false
     t.integer "attempts", default: 0, null: false
     t.datetime "verified_at"
