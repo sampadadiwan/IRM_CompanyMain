@@ -672,3 +672,51 @@ Then('the rating is refused and nothing is saved') do
   expect(@feedback_status).not_to eq(200)
   expect(AgentChatMessageFeedback.where(agent_chat_message: @cs_answer)).not_to exist
 end
+
+# ---- Browser smoke (features/ai_chat/browser_smoke.feature, Playwright) ----------------------------------
+
+# A short delay, so the browser can be seen showing the pending question before the answer replaces it.
+Given('the agent answers slowly {string}') do |text|
+  stub_agent_reply(text:)
+  allow_any_instance_of(GenericChatAgent).to receive(:execute_chat).and_wrap_original do |_original, ctx, **|
+    sleep 1.5
+    ctx[:ai_response] = text
+    true
+  end
+end
+
+When('Priya clicks the chat bubble') do
+  find("[data-ai-chat-window-target='toggle']").click
+  # The window's inside loads lazily once it is visible.
+  expect(page).to have_css("##{window_frame_id}-question")
+end
+
+When('Priya types {string} in the window and presses Enter') do |question|
+  box = find("##{window_frame_id}-question")
+  box.fill_in(with: question)
+  box.send_keys(:enter)
+end
+
+Then('the window shows {string} with {string} before the answer arrives') do |question, pending|
+  expect(page).to have_css("##{window_frame_id}-pending-question .aic-question", text: question)
+  expect(page).to have_css("##{window_frame_id}-pending-answer", text: pending)
+end
+
+Then('the window shows the answer {string}') do |answer|
+  expect(page).to have_css(".aic-window [data-ai-chat-answer]", text: answer, wait: 15)
+  expect(page).to have_no_css("##{window_frame_id}-pending-answer")
+end
+
+When('Priya clicks Ask on the suggestion {string}') do |question|
+  find("##{window_frame_id}-suggestions button[data-action='ai-chat-thread#askNow'][data-prompt='#{question}']").click
+end
+
+When('Priya maximises the window') do
+  find("##{window_frame_id}-maximise").click
+end
+
+Then('the window\'s conversation list is visible beside the thread') do
+  expect(page).to have_css(".aic-window.aic-maximized")
+  expect(page).to have_css("##{window_frame_id}-conversations", visible: :visible)
+  expect(page).to have_css("##{window_frame_id}-question", visible: :visible)
+end
