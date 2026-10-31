@@ -160,3 +160,9 @@
 - [x] 9.3 Saved decks are redrawn from their blueprint (no AI call); Regenerate makes a new one. Tabler
       icons load (the old CDN URL 404'd); `<meta charset>` so ₹ and × survive. AI Slides only for
       the user's own chat (found in review). Verify: H28, H29, X50.
+- [x] 9.4 Widget eval follow-up: Checks gets the list/count/show exclusion Verdict already had (the
+      model added Checks to a plain investment list), with a choosing example. "Why do TVPI and MOIC differ?"
+      is an explanation, not a right-or-wrong question: the eval now expects no widget for it. Verify: E53.
+- [x] 9.5 `rake ai_chat:widget_eval REPEAT=n` asks each question n times and reports how often each widget
+      was used; a question passes when most of its answers are right (one sample could not tell "usually
+      right" from "usually wrong").

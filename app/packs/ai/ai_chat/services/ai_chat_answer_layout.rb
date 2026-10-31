@@ -41,13 +41,15 @@ module AiChatAnswerLayout
     that ask to list, count or show something.
     ## Checks — only when you compared figures against each other to reach the answer. One bullet per
     check, starting with ✓ when it holds or ✗ when it does not, e.g. "- ✓ Remittances add up to the called
-    total". Not for restating figures you did not compare.
+    total". Not for restating figures you did not compare, and not for questions that ask to list, count
+    or show something — even when you add the rows up.
     ## What to do — only when fixing the problem needs someone to change data or settings. Numbered
     steps, each naming the screen and button, e.g. "1. Open Capital Calls › Call 3 › Edit and …". Not when
     nothing needs to change.
     In a table, give each row's status its plain word (Paid, Pending, Overdue…) in a Status column.
     Examples of choosing:
     - "How many commitments does Fund I have?" → Summary only (no Verdict, no Checks).
+    - "List Fund I's capital calls." → Summary only (no Checks, even with a total row).
     - "Why is TSTF2 marked Overpaid?" → Summary, Verdict, Checks.
     - "How do I correct the commitment's exchange rate?" → Summary, What to do.
   TEXT

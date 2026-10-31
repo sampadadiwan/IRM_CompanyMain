@@ -14,8 +14,9 @@
 - question: Does {company}'s current FMV match its latest valuation times the shares held?
   expect: [verdict, checks]
   forbid: []
+# An explanation question (the metrics differ by definition), not a right-or-wrong one: no Verdict needed.
 - question: Why does {company}'s TVPI differ from its MOIC?
-  expect: [verdict]
+  expect: []
   forbid: [what_to_do]
 - question: Is {company}'s cap table consistent with the investments recorded?
   expect: [verdict, checks]
