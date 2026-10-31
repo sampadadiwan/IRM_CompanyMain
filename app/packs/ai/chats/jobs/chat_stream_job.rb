@@ -32,6 +32,10 @@ class ChatStreamJob < ApplicationJob
       # Prepare the `with:` options for the chat request
       with = document.present? ? [document.file.download.path] : []
 
+      # The shared answer layout (AiChatAnswerLayout), for this request only: chats have no saved
+      # instructions, and none are added to their history.
+      @chat.with_instructions(AiChatAnswerLayout.instructions, persist: false)
+
       # Ask the chat and stream the response chunk by chunk
       @chat.ask(user_content, with: with) do |chunk|
         process_chunk(chunk)

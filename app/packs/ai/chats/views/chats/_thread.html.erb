@@ -20,7 +20,7 @@
                              session_meta: "#{chat.user&.full_name} · #{ai_chat_when(chat.updated_at)}" },
                      header: header, streams: turbo_stream_from(chat, "messages"),
                      empty: items.empty?, empty_state: empty_state,
-                     composer: render("chats/composer", chat: chat, running: false) } do %>
+                     composer: render("chats/composer", chat: chat, running: false, items: items) } do %>
   <% items.each do |item| %>
     <% if item.question? %>
       <%= render "ai_chat/question", item: item %>

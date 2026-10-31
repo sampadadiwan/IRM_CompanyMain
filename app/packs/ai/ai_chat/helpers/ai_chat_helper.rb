@@ -90,11 +90,11 @@ module AiChatHelper
   #
   # @param text [String] the answer's markdown
   # @param mode [Symbol] :strict (Support Console, X24) or :rich (charts allowed, E8)
-  # @param ask_buttons [Boolean] give each Questions-card item an Ask button (H16); the Console's
-  #   thread handles them, other screens opt in once their prompts write Questions (AI phase)
+  # @param ask_buttons [Boolean] give each Questions-card item an Ask button (H16) — every kit thread
+  #   handles them (ai_chat_thread#askNow)
   # @return [ActiveSupport::SafeBuffer]
   # @raise [ArgumentError] for an unknown mode
-  def ai_answer_html(text, mode:, ask_buttons: mode == :strict)
+  def ai_answer_html(text, mode:, ask_buttons: true)
     fragment = Nokogiri::HTML5.fragment(ai_chat_markdown(text, mode).to_s)
 
     # Element-level classes first, so the sections built below carry them along.
@@ -140,6 +140,25 @@ module AiChatHelper
     items = answer_list_items(body)
     items = body.select { |n| n.element? && n.name == "p" } if items.empty?
     items.map { |item| item.text.squish }.compact_blank.first(MAX_FOLLOW_UPS)
+  end
+
+  # H14 / H18 — the follow-ups to offer above the question box: those of the most recent answered answer
+  # that has any (so a running or failed turn, or a newer answer without follow-ups, does not hide them),
+  # and which of them were asked since (marked Asked).
+  #
+  # @param items [Array<AiChatItem>] the thread, oldest first
+  # @return [Array(Array<String>, Set<String>)] the questions, and those already asked
+  def ai_chat_follow_ups(items)
+    items.each_with_index.reverse_each do |item, index|
+      next if item.question? || item.status != :answered
+
+      questions = ai_follow_ups(item.content)
+      next if questions.empty?
+
+      asked = items[(index + 1)..].select(&:question?).to_set { |question| question.content.to_s.squish }
+      return [questions, asked]
+    end
+    [[], Set.new]
   end
 
   private

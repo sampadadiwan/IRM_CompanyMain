@@ -235,6 +235,8 @@
   // show/hide-sidebar buttons and the composer's fade do not apply in a window.
   .ai-chat .aic-sidebar { display: none !important; }
   .aic-show-sidebar, [data-action="ai-chat-sidebar#toggle"] { display: none !important; }
+  // Back to chat only makes sense while the list replaces the chat; beside it (maximised) it is hidden.
+  &.aic-maximized .aic-window-back { display: none !important; }
   .ai-chat .aic-composer::before { display: none; }
 
   &.aic-show-list {

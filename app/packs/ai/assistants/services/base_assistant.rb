@@ -77,7 +77,9 @@ class BaseAssistant
 
     @chat ||= find_or_create_chat
 
-    @chat.with_instructions(system_prompt)
+    # The shared answer layout (AiChatAnswerLayout) follows the assistant's own prompt, so the Assistants
+    # page draws its Summary / Key figures cards and Follow-ups buttons.
+    @chat.with_instructions("#{system_prompt}\n\n#{AiChatAnswerLayout.instructions}")
     # A failing tool reports its error to the model rather than breaking the round (ToolErrorsAsResults).
     @chat.with_tools(*tools.each { |tool| tool.singleton_class.prepend(ToolErrorsAsResults) })
     @chat.with_messages { |msgs| message_filter(msgs) }

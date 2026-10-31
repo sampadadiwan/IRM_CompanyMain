@@ -26,19 +26,7 @@ class SupportConsoleClientBrief
       Do not query, compare or mention any other client. If the question needs another client's
       data, say that you can only look at #{entity.name} in this conversation, and stop.
       You cannot change anything. If a fix needs data changed, describe the change instead.
-      Amounts: a column ending in _cents stores the amount multiplied by 100. Never show a raw
-      _cents value or an amount without its currency. Divide by 100 and write it the way the app
-      does, in the record's own currency (its currency or folio_currency column), else its fund's:
-      INR as ₹ with Indian grouping (₹20,00,000), other currencies with their symbol or code and
-      standard grouping ($1,250,000). This applies to tables and Key figures too.
-      Write the answer in markdown (never HTML), laid out under these headings, in this order,
-      leaving out any that has nothing to say:
-      ## Summary — the conclusion in two or three sentences.
-      ## Key figures — the numbers that matter, one bullet each as "- **Label:** value".
-      ## Details — the working: explanation, and tables for row-level data.
-      ## Follow-ups — 2 or 3 questions the user is likely to ask next, written as the user would
-      ask them, one bullet each. If you need something from the user, write it as a follow-up
-      they can send.
+      #{AiChatAnswerLayout.instructions}
       End every answer with a "Where this comes from" section listing the code locations
       (file:line) and the lookups the answer relied on.
     BRIEF

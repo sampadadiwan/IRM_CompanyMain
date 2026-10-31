@@ -69,7 +69,7 @@
                        items_data: { ppt_export_target: "responses", slideshow_target: "source" },
                        header: header, streams: turbo_stream_from(chat, :assistant),
                        empty: items.empty?, empty_state: empty_state,
-                       composer: render("assistants/composer", chat: chat, running: false) } do %>
+                       composer: render("assistants/composer", chat: chat, running: false, items: items) } do %>
     <% items.each do |item| %>
       <% if item.question? %>
         <%= render "ai_chat/question", item: item %>

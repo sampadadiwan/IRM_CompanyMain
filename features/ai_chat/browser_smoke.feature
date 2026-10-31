@@ -30,3 +30,16 @@ Feature: Floating chat window in the browser
     And Priya clicks the chat bubble
     And Priya maximises the window
     Then the window's conversation list is visible beside the thread
+
+  # H7 / H12 — Happy path: Conversations replaces the chat with the list; Back returns, and opening a conversation shows it
+  Scenario: Conversations view and back
+    Given Priya has a window conversation on the agent's page that started "Plot KPIs over time"
+    When Priya opens the Portfolio Assistant agent's page
+    And Priya clicks the chat bubble
+    And Priya opens the window's Conversations
+    And Priya goes back to the chat
+    Then the window shows the chat, not the list
+    When Priya opens the window's Conversations
+    And Priya opens the conversation "Plot KPIs over time" from the list
+    Then the window shows the chat, not the list
+    And the window shows the question "Plot KPIs over time" in the chat

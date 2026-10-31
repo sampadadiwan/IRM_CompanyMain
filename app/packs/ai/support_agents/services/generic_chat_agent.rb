@@ -119,6 +119,9 @@ class GenericChatAgent < SupportAgentService
 
     instructions = provider.system_prompt
     instructions += "\n\nCONTEXT:\n#{ctx[:context]}" if ctx[:context].present?
+    # The chat window draws the shared answer layout as cards and buttons; WhatsApp cannot, so it keeps
+    # plain answers (AiChatAnswerLayout).
+    instructions += "\n\n#{AiChatAnswerLayout.instructions}" if (ctx[:channel] || "web") == "web"
 
     chat = LlmService.ruby_llm_chat(
       entity: @support_agent.entity,

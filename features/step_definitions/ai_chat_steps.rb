@@ -503,8 +503,8 @@ Then('the page has the chat bubble and a lazy window') do
 end
 
 Then('the window has Conversations, New, Maximise and Close') do
-  expect(page).to have_css("button[data-action='ai-chat-window#toggleList']", text: "Conversations")
-  expect(page).to have_css("a##{window_frame_id}-new-chat", text: "New")
+  expect(page).to have_css("button[data-action='ai-chat-window#toggleList'][title='Conversations']")
+  expect(page).to have_css("a##{window_frame_id}-new-chat[title='New chat']")
   expect(page).to have_css("button[data-action='ai-chat-window#toggleMaximize']")
   expect(page).to have_css("button[data-action='ai-chat-window#close']")
   expect(page).to have_css("##{window_frame_id}-conversations", visible: :all)
@@ -782,4 +782,137 @@ end
 
 Then('the model was asked without any document') do
   expect(@ask_with).to eq([])
+end
+
+# ---- Answer layout (features/ai_chat/answer_layout.feature) -------------------------------------------------
+
+LAYOUT_ANSWER = <<~MD
+  ## Summary
+  Three LPs are overdue on Call 3.
+
+  ## Key figures
+  - **Overdue:** ₹75,00,000
+
+  ## Questions
+  - Was a refund issued?
+
+  ## Follow-ups
+  - List the overdue LPs
+  - Which are over 30 days?
+MD
+
+Given('Priya has a Specific Fund Assistant conversation on {string} answered in the layout') do |fund_name|
+  assistant_chat_with(fund_name, "Which LPs are overdue on Call 3?", answer: LAYOUT_ANSWER)
+end
+
+Given('Priya has a chat about {string} answered in the layout') do |fund_name|
+  @chat = Chat.create!(user: @user, entity: @entity, owner: Fund.find_by!(name: fund_name), name: "#{fund_name} analysis")
+  @chat.messages.create!(role: "user", content: "Which LPs are overdue?")
+  @chat.messages.create!(role: "assistant", content: LAYOUT_ANSWER)
+end
+
+Given('Priya has a window conversation on {string} answered in the layout') do |fund_name|
+  session = window_session(Fund.find_by!(name: fund_name), "Which LPs are overdue?", time: 1.minute.ago)
+  session.agent_chat_messages.where(role: "assistant").update_all(content: LAYOUT_ANSWER)
+end
+
+Then('the answer shows a Summary card and the stat card {string} with {string}') do |label, value|
+  answer = find("[data-ai-chat-answer]", text: "Three LPs are overdue")
+  expect(answer).to have_css(".card .card-header h6", text: "Summary")
+  card = answer.find(".card.stat-card-accent", text: label)
+  expect(card).to have_css("h2", text: value)
+  # Follow-ups are offered as buttons, not repeated in the answer.
+  expect(answer).to have_no_content("List the overdue LPs")
+end
+
+Then('the question {string} in the answer has an Ask button') do |question|
+  expect(page).to have_css("[data-ai-chat-answer] .list-group-item button[data-action='ai-chat-thread#askNow'][data-prompt='#{question}']")
+end
+
+Then('the box offers the follow-up {string} in {string}') do |question, id|
+  expect(page).to have_css("##{id} button[data-action='ai-chat-thread#askNow'][data-prompt='#{question}']", text: "Ask")
+  expect(page).to have_css("##{id} button[data-action='ai-chat-thread#fill'][data-prompt='#{question}']")
+end
+
+Then('the window\'s box offers the follow-up {string}') do |question|
+  step %(the box offers the follow-up "#{question}" in "#{window_frame_id}-follow-ups")
+end
+
+When('a Fund Assistant answers a question') do
+  chat = Chat.create!(user: @user, entity: @entity, owner: @user, assistant_type: "FundAssistant", name: "Fund chat",
+                      model: PortfolioCompanyAssistant::AI_MODEL)
+  allow_any_instance_of(Chat).to receive(:with_instructions).and_wrap_original do |original, text, **options|
+    @instructions = text
+    original.call(text, **options)
+  end
+  allow_any_instance_of(Chat).to receive(:ask).and_return(OpenStruct.new(content: "Done."))
+  FundAssistant.new(user: @user, chat:).run("How many funds?")
+end
+
+Then('its instructions end with the answer layout') do
+  expect(@instructions).to end_with(AiChatAnswerLayout.instructions)
+  expect(@instructions.length).to be > AiChatAnswerLayout.instructions.length
+end
+
+# setup_ruby_llm_chat with a provider and LLM chat stood in, capturing the instructions it builds.
+When('the agent\'s instructions are built for the {string} channel') do |channel|
+  fake_chat = Object.new
+  captured = nil
+  fake_chat.define_singleton_method(:with_instructions) { |text| captured = text }
+  fake_chat.define_singleton_method(:add_message) { |**| nil }
+  allow(LlmService).to receive(:ruby_llm_chat).and_return(fake_chat)
+  provider = OpenStruct.new(system_prompt: "You are the Portfolio Assistant.", tools: [])
+  session = AgentChatSession.create!(support_agent: @agent, chattable: @fund, analyst: @user, channel:, status: "active")
+  agent = GenericChatAgent.new
+  agent.instance_variable_set(:@support_agent, @agent)
+  agent.send(:setup_ruby_llm_chat, { provider:, context: nil, channel:, chat_session: session })
+  @instructions = captured
+end
+
+Then('they include the answer layout') do
+  expect(@instructions).to include(AiChatAnswerLayout.instructions)
+end
+
+Then('they do not include the answer layout') do
+  expect(@instructions).not_to include("## Key figures")
+end
+
+Given('the chat\'s instructions are recorded') do
+  @instruction_calls = []
+  allow_any_instance_of(Chat).to receive(:with_instructions) do |_chat, text, **options|
+    @instruction_calls << [text, options]
+  end
+end
+
+Then('the chat was given the answer layout without saving it') do
+  expect(@instruction_calls).to eq([[AiChatAnswerLayout.instructions, { persist: false }]])
+end
+
+# ---- Conversations view (browser) --------------------------------------------------------------------------
+
+When('Priya opens the window\'s Conversations') do
+  find("##{window_frame_id}-list-toggle").click
+  expect(page).to have_css("##{window_frame_id}-conversations", visible: :visible)
+end
+
+When('Priya goes back to the chat') do
+  find(".aic-window .aic-window-back").click
+end
+
+When('Priya opens the conversation {string} from the list') do |question|
+  find("##{window_frame_id}-conversations .aic-conversation", text: question).click
+end
+
+Then('the window shows the chat, not the list') do
+  expect(page).to have_no_css(".aic-window.aic-show-list")
+  expect(page).to have_css("##{window_frame_id}-question", visible: :visible)
+end
+
+Then('the window shows the question {string} in the chat') do |question|
+  expect(page).to have_css("##{window_frame_id}-thread-items .aic-question", text: question)
+end
+
+# The agent's own page opens the window about the agent (support_agents/show).
+Given('Priya has a window conversation on the agent\'s page that started {string}') do |question|
+  window_session(@agent, question, time: 2.hours.ago)
 end

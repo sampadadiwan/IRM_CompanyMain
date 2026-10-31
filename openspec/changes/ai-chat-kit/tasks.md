@@ -116,3 +116,18 @@
       and confirm it is green; run `bundle exec rubocop` on all touched Ruby.
 - [ ] 6.3 QA: run `qa-checklist.md` on a deployed build and record the sign-off (for QA, not the apply
       agent).
+
+## 7. The answer layout (AI phase — added after phase 6 at the user's request)
+
+- [x] 7.1 Extract the Console's layout and amounts rule into `AiChatAnswerLayout` and use it in
+      `SupportConsoleClientBrief`, `BaseAssistant#run` (after each assistant's own prompt),
+      `GenericChatAgent#setup_ruby_llm_chat` (web channel only — WhatsApp stays plain) and
+      `ChatStreamJob` (`with_instructions(…, persist: false)`). Verify: H22, E19, E20.
+- [x] 7.2 Questions-card Ask buttons on in both modes; follow-ups above the box on every screen through
+      `AiChatHelper#ai_chat_follow_ups` + `ai_chat/_follow_ups` (the Console's rule, now shared; the
+      Console uses it too). Verify: H19–H21.
+- [x] 7.3 Floating window: Conversations and New as icon buttons; a Back to chat button in the list;
+      opening a conversation or New from the list returns to the chat. Verify: browser smoke scenario.
+- [x] 7.4 Write `features/ai_chat/answer_layout.feature` (H19–H22, E19, E20) and run it with the kit,
+      Console, CS, LP and assistant features — 312/312.
+

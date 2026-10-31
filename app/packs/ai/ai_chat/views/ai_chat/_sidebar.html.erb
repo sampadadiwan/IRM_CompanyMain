@@ -1,15 +1,23 @@
 <%# The conversation list: New chat, search, rows grouped by when they last changed, and a count line.
-    Locals as ai_chat/_layout. %>
+    Locals as ai_chat/_layout, plus window (Boolean): in the floating window the list is a view of its own
+    (Conversations), so it gets a Back to chat button. %>
 <aside class="aic-sidebar d-flex flex-column bg-body-tertiary border-end">
   <div class="d-flex align-items-center gap-1 p-2">
     <%= link_to new_url, class: "btn btn-primary fw-normal flex-grow-1", id: ids[:new], title: "New chat (Ctrl+K)",
                 data: { ai_chat_sidebar_target: "newChat", turbo_frame: new_frame } do %>
       <i class="ti ti-edit"></i>New chat
     <% end %>
-    <button type="button" class="btn btn-sm aic-icon-btn d-none d-lg-inline-flex" title="Hide sidebar"
-            data-action="ai-chat-sidebar#toggle">
-      <i class="ti ti-layout-sidebar-left-collapse"></i>
-    </button>
+    <% if local_assigns[:window] %>
+      <button type="button" class="btn btn-sm aic-icon-btn aic-window-back" title="Back to chat" aria-label="Back to chat"
+              data-action="ai-chat-window#toggleList">
+        <i class="ti ti-arrow-back-up"></i>
+      </button>
+    <% else %>
+      <button type="button" class="btn btn-sm aic-icon-btn d-none d-lg-inline-flex" title="Hide sidebar"
+              data-action="ai-chat-sidebar#toggle">
+        <i class="ti ti-layout-sidebar-left-collapse"></i>
+      </button>
+    <% end %>
   </div>
   <%# E45 — always shown. Filters the list in the browser; the list is capped at AiChatRows::LIMIT. %>
   <div class="px-2 pb-1">

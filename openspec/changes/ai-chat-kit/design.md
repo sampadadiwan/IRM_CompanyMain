@@ -649,6 +649,10 @@ Shared setup:
 | H9 | CS feedback | CS answer | clicks 👎, note "Wrong fund", Send; reopens | `AgentChatMessageFeedback` negative + note; 👎 filled on reopen | Rate down with a note; Earlier rating shown | `ai_chat/customer_support.feature` |
 | H10 | Escalated row | CS session status `escalated` | opens Conversations | row shows "Escalated" | Escalated conversation | `ai_chat/customer_support.feature` |
 | H11 | Suggestion buttons | empty window with 2 sample questions | renders | each has a text button (`fill`) and an Ask (`askNow`) carrying the question | Ask a suggestion; Fill from a suggestion | `ai_chat/floating_window.feature` |
+| H19 | Assistants page layout answer | an answer with Summary, Key figures, Questions, Follow-ups | opens the page | Summary card, stat card, Ask on the question, follow-ups above the box | Questions and answers; Suggested questions | `ai_chat/answer_layout.feature` |
+| H20 | Record chat layout answer | same | opens the chat | same cards and follow-ups | Questions and answers | `ai_chat/answer_layout.feature` |
+| H21 | Window layout answer | same | opens the window | same cards, Ask and follow-ups | Questions and answers | `ai_chat/answer_layout.feature` |
+| H22 | Assistants asked for the layout | a Fund Assistant | answers | instructions end with `AiChatAnswerLayout` | Screens that use the shared chat | `ai_chat/answer_layout.feature` |
 | H12 | Maximise markup | window | renders | Maximise control and sidebar container present | Maximise the floating window | `ai_chat/floating_window.feature` |
 
 #### Edge Cases
@@ -672,6 +676,8 @@ Shared setup:
 | E15 | KPI blank answer fallback | stream ends with blank content | final broadcast | answer shows the fallback text | Thinking line | `ai_chat/kpi_chat.feature` |
 | E16 | Icons | each kit screen | renders | no `fa-`/`bi-` classes | No Font Awesome or Bootstrap Icons | `ai_chat/assistants_page.feature`, `floating_window.feature`, `kpi_chat.feature` |
 | E18 | Idle conversation not continued | latest window conversation last active 2 hours ago | opens the window | a new, empty conversation; the old one listed | Idle conversation not continued by default | `ai_chat/floating_window.feature` |
+| E19 | Agents: layout on the web, not WhatsApp | an agent's instructions | built for `web` / `whatsapp` | include / omit `AiChatAnswerLayout` | Screens that use the shared chat | `ai_chat/answer_layout.feature` |
+| E20 | Record chat instructions not saved | a record chat | a question is sent | `with_instructions(layout, persist: false)` | Screens that use the shared chat | `ai_chat/answer_layout.feature` |
 | E17 | Voice path | `/assistants/transcribe` (stubbed transcription "Call 3 status") | posts audio | kit question "Call 3 status" + pending | Enter sends | `ai_chat/assistants_page.feature` |
 
 #### Error Cases

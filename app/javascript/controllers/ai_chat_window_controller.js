@@ -16,10 +16,14 @@ export default class extends Controller {
     this.maximized = false
     this.onMouseMove = this.mouseMove.bind(this)
     this.onMouseUp = this.mouseUp.bind(this)
+    // Opening a conversation (or New) from the Conversations view reloads the frame: show its chat.
+    this.onFrameLoad = () => this.panelTarget.classList.remove("aic-show-list")
+    this.panelTarget.addEventListener("turbo:frame-load", this.onFrameLoad)
   }
 
   disconnect() {
     this.mouseUp()
+    this.panelTarget.removeEventListener("turbo:frame-load", this.onFrameLoad)
   }
 
   open() {

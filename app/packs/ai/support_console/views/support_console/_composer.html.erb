@@ -14,16 +14,8 @@
   answers = messages.select { |m| m.role == "assistant" }
   tokens = answers.sum { |m| (m.metadata&.dig("usage") || {}).values_at("input", "output", "cache_read", "cache_write").sum(&:to_i) }
   cost = answers.sum { |m| m.metadata&.dig("cost_usd").to_f }
-  # H14 / H18 — suggested next questions from the most recent completed answer that has any, so a
-  # running or failed turn (E43), or a newer answer without follow-ups (E48), does not hide them.
-  follow_up_answer, follow_ups = answers.reverse.lazy
-                                        .select { |m| m.metadata&.dig("turn_status") == "completed" }
-                                        .map { |m| [m, ai_follow_ups(m.content)] }
-                                        .find { |_m, questions| questions.any? }
-  follow_ups ||= []
-  # H18 — a follow-up asked since that answer stays in place, marked asked.
-  asked = messages.select { |m| m.role == "user" && follow_up_answer && m.id > follow_up_answer.id }
-                  .to_set { |m| m.content.to_s.squish }
+  # H14 / H18 — the follow-ups above the box (ai_chat/_follow_ups) read the thread as kit items.
+  items = messages.map { |m| AiChatItem.from_agent_chat_message(m) }
 %>
 <%# The Console's question box: the chat kit's composer (ai_chat/_composer) with the Console's slots —
     Stop (E9), follow-ups (H14/H18), the model choice (E29) and the data/code/usage footer. %>
@@ -36,11 +28,7 @@
     <% end %>
   <% end %>
 <% end %>
-<% above = capture do %>
-  <% if follow_ups.any? %>
-    <%= render "ai_chat/suggestions", id: "support-console-follow-ups", questions: follow_ups, asked: asked, running: running %>
-  <% end %>
-<% end %>
+<% above = render("ai_chat/follow_ups", items: items, id: "support-console-follow-ups", running: running) %>
 <% extras = capture do %>
   <%# E29 — Sonnet (faster, cheaper; the default) or Opus (deeper) for this question. %>
   <%= select_tag :model, options_for_select([["Sonnet", "sonnet"], ["Opus", "opus"]], model),

@@ -1,8 +1,14 @@
 <%#
   The chat's question box: the chat kit's composer with the document picker (when the record has PDF
   or CSV documents) and the external-model notice. ChatStreamJob re-renders it when an answer ends,
-  putting a failed question back. Locals: chat (Chat), running (Boolean), value (String, optional).
+  putting a failed question back. Locals: chat (Chat), running (Boolean), value (String, optional),
+  items (Array<AiChatItem>, optional — the thread, for the follow-ups; read from the chat when the job
+  re-renders the box).
 %>
+<%# H14 — the follow-ups above the box; the recent messages are enough to find the latest answer's. %>
+<% items = local_assigns[:items] ||
+           chat.messages.where(role: %w[user assistant]).order(:id).last(20)
+               .reject { |m| m.role == "assistant" && m.content.blank? }.map { |m| AiChatItem.from_message(m) } %>
 <%# The picker lists the record's PDF/CSV documents, so they are loaded here on purpose (E5). %>
 <% documents = chat.owner.respond_to?(:documents) ? chat.owner.documents.to_a.select { |d| d.pdf? || d.csv? } : [] %>
 <% extras = capture do %>
@@ -24,4 +30,5 @@
 <%= render "ai_chat/composer", id: "chat-composer", form_url: send_message_chat_path(chat), field: :user_content,
                                question_id: "chat-question", ask_id: "chat-ask", value: local_assigns[:value],
                                running: running, placeholder: "Ask about #{chat.owner || 'this chat'}",
+                               above: render("ai_chat/follow_ups", items: items, id: "chat-follow-ups", running: running),
                                extras: extras, footer: footer %>
