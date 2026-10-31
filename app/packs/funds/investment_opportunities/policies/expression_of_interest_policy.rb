@@ -47,8 +47,11 @@ class ExpressionOfInterestPolicy < IoBasePolicy
     permissioned_employee?(:destroy)
   end
 
+  # Approving an EOI is the opportunity firm's decision: an approver there (or support, via
+  # permissioned_employee?). LP-side approvers no longer approve EOIs, including their own
+  # (security review 2026-10, H19 follow-up).
   def approve?
-    (permissioned_employee?(:update) || permissioned_investor?) && user.has_cached_role?(:approver)
+    permissioned_employee?(:update) && user.has_cached_role?(:approver)
   end
 
   # H19: allocating an EOI is the opportunity firm's decision. Was update?, which also admits the

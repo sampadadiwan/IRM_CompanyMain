@@ -28,12 +28,18 @@ class ReportInsightRunner < Trailblazer::Operation
     ctx[:errors] ||= []
     report = report_insight.report
     # A missing report / owner is reported by get_report_data below, with its own message
-    return true if report.blank? || report.user.blank?
-    return true if report.user.entity_id == report.entity_id
+    return true if report.blank? || run_user(report_insight).blank?
+    # The user whose visibility the run uses must be in the report's firm
+    return true if run_user(report_insight).entity_id == report.entity_id
 
     ctx[:errors] << OWNER_NOT_IN_FIRM
     report_insight.update!(status: "failed", status_message: OWNER_NOT_IN_FIRM)
     false
+  end
+
+  # Whose data visibility this run uses: the user who clicked Generate insight, else the report owner
+  def run_user(report_insight)
+    report_insight.triggered_by_user || report_insight.report&.user
   end
 
   # Initializes the LLM client using the configured model.
@@ -58,7 +64,10 @@ class ReportInsightRunner < Trailblazer::Operation
       return false
     end
 
-    user = report.user
+    # A manual run ("Generate insight") reads with the clicking user's own scope, so nobody sees rows
+    # they could not open; a scheduled run (no trigger user) reads as the report owner
+    # (security review 2026-10, H17 follow-up)
+    user = run_user(report_insight)
     if user.blank?
       ctx[:errors] << "Report Missing User"
       return false

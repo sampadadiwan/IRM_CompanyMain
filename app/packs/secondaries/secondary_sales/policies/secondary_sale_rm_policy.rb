@@ -65,8 +65,10 @@ class SecondarySaleRmPolicy < SaleBasePolicy
     show?
   end
 
+  # The full sale sheet holds every seller's and buyer's PAN, bank and address, so it is for the
+  # sale's own firm only (as for LPs) - an RM sees their mapped clients on screen (security review 2026-10, C4 follow-up)
   def download?
-    show?
+    owner?
   end
 
   def allocate?

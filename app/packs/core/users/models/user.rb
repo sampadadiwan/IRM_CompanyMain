@@ -175,9 +175,11 @@ class User < ApplicationRecord
 
   # Include default devise modules. Others available are:
   # :confirmable, :lockable, :timeoutable, :trackable and :omniauthable
+  # :timeoutable — a web session idle for Devise.timeout_in (12 h) must sign in again, so a copied
+  # session cookie stops working (security review 2026-10, N7)
   devise :database_authenticatable, :registerable, :trackable,
          :recoverable, :rememberable, :validatable, :lockable, :api,
-         :two_factor_authenticatable
+         :two_factor_authenticatable, :timeoutable
 
   # Override Devise::Models::Trackable to ensure the sign-in tracking
   # writes (sign_in_count, current_sign_in_at, etc.) always go to the

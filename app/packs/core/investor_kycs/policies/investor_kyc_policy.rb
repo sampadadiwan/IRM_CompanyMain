@@ -197,8 +197,10 @@ class InvestorKycPolicy < ApplicationPolicy
     create?(:investor_kyc_update) && record.entity.permissions.enable_kra?
   end
 
+  # Starting a CKYC fetch needs KYC create rights, the same as the OTP download that finishes it
+  # (KycDataPolicy), so nobody starts a paid CKYC / OTP flow they can't complete (security review 2026-10, C7 follow-up)
   def fetch_ckyc_data?
-    create?(:investor_kyc_update) && record.entity.permissions.enable_ckyc?
+    create? && record.entity.permissions.enable_ckyc?
   end
 
   def update?
