@@ -37,7 +37,7 @@ Feature: Assistants page on the chat kit
     And the live answer replaces the pending one with a table in a card
     And the live question box is ready again
 
-  # H4 — Happy path: answers carry the hooks Export PowerPoint and the slides read
+  # H4 — Happy path: answers carry the hook Export PowerPoint reads
   Scenario: Answers carry the export hooks
     Given Priya has a Specific Fund Assistant conversation on "Golden Angels Fund I" answered with a table
     When Priya opens the Specific Fund Assistant for "Golden Angels Fund I"
@@ -92,6 +92,12 @@ Feature: Assistants page on the chat kit
     Given Priya's colleague "Meera Nair" has a Specific Fund Assistant chat on "Golden Angels Fund I" asking "Colleague question"
     When Priya opens that colleague's assistant chat by its id
     Then the thread does not show "Colleague question"
+
+  # H30 — Happy path: Export offers AI Slides in a new tab; the old in-page "Chat Slides (Old)" deck is gone
+  Scenario: Export menu
+    Given Priya has a Specific Fund Assistant conversation on "Golden Angels Fund I" answered with a table
+    When Priya opens the Specific Fund Assistant for "Golden Angels Fund I"
+    Then Export offers AI Slides for that chat in a new tab, and not Chat Slides (Old)
 
   # X47 — Error case: AI Slides opens for an assistant chat (the shared presentation layout built the tear-sheet editor's URL with no id)
   Scenario: AI Slides page opens

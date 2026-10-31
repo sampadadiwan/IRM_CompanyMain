@@ -1,6 +1,6 @@
 <%#
   One assistant conversation on the chat kit's thread (ai_chat/_thread), with the page's own tools:
-  the record link and Export menu in the header, the slides overlay, and hold-to-speak in the box.
+  the record link and Export menu in the header, and hold-to-speak in the box.
   Lives inside the "assistant-thread" frame, so the tools follow the open conversation.
   Locals: chat (Chat), items (Array<AiChatItem>), description (the assistant's DESCRIPTION).
 %>
@@ -18,12 +18,11 @@
       <i class="ti ti-file-export"></i>Export
     </button>
     <div class="dropdown-menu dropdown-menu-end shadow-sm" aria-labelledby="assistant-export">
-      <button type="button" class="dropdown-item d-flex align-items-center gap-2" data-action="click->slideshow#openNew">
-        <i class="ti ti-presentation text-primary"></i>AI Slides (New)
-      </button>
-      <button type="button" class="dropdown-item d-flex align-items-center gap-2" data-action="click->slideshow#openOld" data-chat-id="<%= chat.id %>">
-        <i class="ti ti-layers-subtract text-info"></i>Chat Slides (Old)
-      </button>
+      <%# The AI Slides deck opens in its own tab; it is generated in the background and fills in when ready. %>
+      <%= link_to generate_slides_assistants_path(chat_id: chat.id), id: "assistant-ai-slides", target: "_blank", rel: "noopener",
+                  class: "dropdown-item d-flex align-items-center gap-2", data: { turbo: false } do %>
+        <i class="ti ti-presentation text-primary"></i>AI Slides
+      <% end %>
       <div class="dropdown-divider"></div>
       <button type="button" class="dropdown-item d-flex align-items-center gap-2" data-action="click->ppt-export#export">
         <i class="ti ti-file-export text-success"></i>Export PowerPoint
@@ -40,33 +39,15 @@
   <%= render "ai_chat/empty_state", title: "Hello, #{current_user.name.split.first}",
                                     text: description.presence || "I'm the CapHive assistant for #{owner || 'your data'}. How can I help you today?" %>
 <% end %>
-<div class="d-flex flex-column h-100 position-relative" data-controller="voice-chat ppt-export slideshow"
-     data-slideshow-chat-id-value="<%= chat.id %>">
-  <%# The slides overlay covers the thread while a deck is shown (slideshow_controller). %>
-  <div class="aic-slideshow d-none" data-slideshow-target="container">
-    <div class="d-flex flex-column h-100 position-relative">
-      <div class="p-3 d-flex justify-content-between align-items-center bg-white border-bottom">
-        <h5 class="mb-0"><i class="ti ti-presentation text-primary me-2"></i>Assistant Presentation</h5>
-        <button type="button" class="btn-close" data-action="click->slideshow#close"></button>
-      </div>
-      <div class="reveal flex-grow-1" data-slideshow-target="reveal">
-        <div class="text-center d-none" data-slideshow-target="loading">
-          <div class="spinner-border text-primary" role="status"></div>
-          <p class="mt-2 text-primary">Generating slides…</p>
-        </div>
-        <div class="slides" data-slideshow-target="slides"></div>
-      </div>
-    </div>
-  </div>
-
+<div class="d-flex flex-column h-100 position-relative" data-controller="voice-chat ppt-export">
   <%= render layout: "ai_chat/thread",
              locals: { id: "assistant-chat", scroller_id: "assistant-messages",
                        data: { session_id: chat.id,
                                session_url: assistant_path("assistant", assistant_type: chat.assistant_type, chat_id: chat.id),
                                first_question: items.find(&:question?)&.content,
                                session_meta: "#{chat.user.full_name} · #{ai_chat_when(chat.updated_at)}" },
-                       # H4 — Export PowerPoint and the slides read the answers from here.
-                       items_data: { ppt_export_target: "responses", slideshow_target: "source" },
+                       # H4 — Export PowerPoint reads the answers from here.
+                       items_data: { ppt_export_target: "responses" },
                        header: header, streams: turbo_stream_from(chat, :assistant),
                        empty: items.empty?, empty_state: empty_state,
                        composer: render("assistants/composer", chat: chat, running: false, items: items) } do %>

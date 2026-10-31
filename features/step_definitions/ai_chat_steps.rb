@@ -147,7 +147,7 @@ Then('the thread shows {string} without italics') do |text|
 end
 
 Then('the exported answers include a table inside the answer body') do
-  expect(page).to have_css("[data-ppt-export-target='responses'][data-slideshow-target='source'] " \
+  expect(page).to have_css("[data-ppt-export-target='responses'] " \
                            "[data-ai-chat-answer] [data-ai-chat-answer-body] .card table")
 end
 
@@ -1166,4 +1166,135 @@ end
 
 Then('the slides page is not found and no deck is queued') do
   expect(page.status_code).to eq(404)
+end
+
+Then('Export offers AI Slides for that chat in a new tab, and not Chat Slides \\(Old)') do
+  chat = Chat.where(user: @user).order(:id).last
+  expect(page).to have_css("a#assistant-ai-slides[target='_blank'][href='#{generate_slides_assistants_path(chat_id: chat.id)}']",
+                           text: "AI Slides", visible: :all)
+  expect(page).to have_no_text("Chat Slides", wait: 0)
+  expect(page).to have_no_css("[data-controller~='slideshow'], .aic-slideshow", visible: :all, wait: 0)
+end
+
+# ---- Export PowerPoint (features/ai_chat/ppt_export.feature) -------------------------------------------------
+
+EXPORT_FIGURES = { "Overdue LPs" => "3", "Called" => "₹4,50,00,000", "Received" => "₹3,75,00,000",
+                   "Outstanding" => "₹75,00,000", "Oldest due" => "28/09/2026", "Call" => "Call 3" }.freeze
+EXPORT_ANSWER = <<~MD.freeze
+  ## Summary
+  Three LPs are overdue on Call 3, for ₹75,00,000 in all.
+
+  ## Verdict
+  Mismatch — received is ₹75,00,000 short of the amount called.
+
+  ## Checks
+  - ✓ Remittances add up to the called total
+  - ✗ Every remittance is paid by its due date
+
+  ## Key figures
+  #{EXPORT_FIGURES.map { |label, value| "- **#{label}:** #{value}" }.join("\n")}
+
+  ## What to do
+  1. Open Capital Calls › Call 3 › Remittances and send reminders to the overdue LPs.
+  2. Record any payment received since the statement.
+
+  ## Details
+  ### Why they are overdue
+  #{(['Each overdue LP was sent the notice on the call date and has not paid by the due date.'] * 12).join(' ')}
+
+  ### Remittances on Call 3
+  | LP | Status | Amount |
+  |---|---|---|
+  #{(1..30).map { |i| "| LP #{format('%02d', i)} | #{i <= 3 ? 'Overdue' : 'Paid'} | ₹#{15 * i},00,000 |" }.join("\n")}
+MD
+EMU = 914_400.0 # EMUs per inch
+
+Given('Priya has a Specific Fund Assistant conversation on {string} with a long answer in the layout') do |fund_name|
+  assistant_chat_with(fund_name, "Which LPs are overdue on Call 3?", answer: EXPORT_ANSWER)
+end
+
+When('Priya exports the conversation to PowerPoint') do
+  path = Rails.root.join("tmp/ppt_export_#{ENV.fetch('TEST_ENV_NUMBER', '')}_#{SecureRandom.hex(4)}.pptx")
+  page.driver.with_playwright_page do |pw|
+    pw.click("#assistant-export")
+    download = pw.expect_download { pw.click("text=Export PowerPoint") }
+    download.save_as(path.to_s)
+  end
+  # Each slide's shapes: the text they hold and their box (inches), in slide order.
+  @slides = Zip::File.open(path.to_s) do |zip|
+    zip.glob("ppt/slides/slide*.xml").sort_by { |e| e.name[/\d+/].to_i }.map do |entry|
+      xml = Nokogiri::XML(entry.get_input_stream.read)
+      xml.xpath("//p:sp | //p:graphicFrame").map do |node|
+        off = node.at_xpath(".//a:off | .//p:xfrm/a:off")
+        ext = node.at_xpath(".//a:ext[@cx] | .//p:xfrm/a:ext")
+        rows = node.xpath(".//a:tr").map { |tr| tr.xpath(".//a:tc").map { |tc| tc.xpath(".//a:t").map(&:text).join } }
+        height = [ext["cy"].to_f, node.xpath(".//a:tr").sum { |tr| tr["h"].to_f }].max / EMU
+        # Font size (a:rPr sz is in hundredths of a point) and each paragraph's text, to check the box's height.
+        size = (node.at_xpath(".//a:rPr[@sz] | .//a:defRPr[@sz]")&.[]("sz") || 1800).to_f / 100
+        paragraphs = node.xpath(".//a:p").map { |p| p.xpath(".//a:t").map(&:text).join }.reject(&:empty?)
+        { text: node.xpath(".//a:t").map(&:text).join, table: rows.presence, size:, paragraphs:,
+          x: off["x"].to_f / EMU, y: off["y"].to_f / EMU, w: ext["cx"].to_f / EMU, h: height }
+      end
+    end
+  end
+ensure
+  FileUtils.rm_f(path) if path
+end
+
+Then('every slide is titled {string}') do |question|
+  expect(@slides.size).to be > 1
+  @slides.each { |shapes| expect(shapes.first[:text]).to start_with(question) }
+end
+
+Then('the deck contains every heading, figure and check of the answer') do
+  text = @slides.flatten.pluck(:text).join("\n")
+  ["Summary", "Checks", "Key figures", "What to do", "Details", "Why they are overdue", "Remittances on Call 3",
+   "Mismatch", "received is ₹75,00,000 short", "Remittances add up to the called total",
+   "Every remittance is paid by its due date", "send reminders to the overdue LPs"].each do |expected|
+    expect(text).to include(expected)
+  end
+  EXPORT_FIGURES.each do |label, value|
+    expect(text).to include(label)
+    expect(text).to include(value)
+  end
+end
+
+# A renderer grows a box that is too short for its text over whatever is below it, so declared boxes alone
+# prove nothing (the old export declared every box 0in tall). The lower bound here is independent of the
+# exporter's own estimate: each paragraph at least one line, wrapped at half the font size per character.
+Then('every text box is tall enough for its text') do
+  @slides.each_with_index do |shapes, index|
+    shapes.select { |s| s[:paragraphs].any? && s[:table].nil? }.each do |s|
+      per_line = [(s[:w] * 72 / (s[:size] * 0.5)).floor, 1].max
+      lines = s[:paragraphs].sum { |p| (p.length.to_f / per_line).ceil.clamp(1, nil) }
+      needed = lines * s[:size] * 1.15 / 72
+      expect(s[:h]).to be >= needed - 0.01, "slide #{index + 1}: #{s[:text].first(40).inspect} is #{s[:h].round(2)}in tall, its text needs #{needed.round(2)}in"
+    end
+  end
+end
+
+Then('no two text boxes or tables overlap on any slide') do
+  @slides.each_with_index do |shapes, index|
+    # Background shapes (tile and banner fills) hold no text and sit under text on purpose.
+    boxes = shapes.select { |s| s[:text].present? || s[:table] }
+    boxes.combination(2).each do |a, b|
+      overlap_x = [a[:x] + a[:w], b[:x] + b[:w]].min - [a[:x], b[:x]].max
+      overlap_y = [a[:y] + a[:h], b[:y] + b[:h]].min - [a[:y], b[:y]].max
+      expect(overlap_x > 0.01 && overlap_y > 0.01).to be(false),
+                                                      "slide #{index + 1}: #{a[:text].first(40).inspect} overlaps #{b[:text].first(40).inspect}"
+    end
+  end
+end
+
+Then('nothing runs off the bottom of a slide') do
+  @slides.each_with_index do |shapes, index|
+    shapes.each { |s| expect(s[:y] + s[:h]).to be <= 7.5, "slide #{index + 1}: #{s[:text].first(40).inspect} ends at #{(s[:y] + s[:h]).round(2)}in" }
+  end
+end
+
+Then('the table\'s {int} rows are all in the deck, split across slides with the header {string} on each part') do |count, header|
+  parts = @slides.flat_map { |shapes| shapes.filter_map { |s| s[:table] } }
+  expect(parts.size).to be > 1
+  parts.each { |rows| expect(rows.first.join(" | ")).to eq(header) }
+  expect(parts.flat_map { |rows| rows.drop(1).map(&:first) }).to eq((1..count).map { |i| "LP #{format('%02d', i)}" })
 end

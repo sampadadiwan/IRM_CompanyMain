@@ -196,7 +196,6 @@
   .aic-send i, .aic-icon-btn i { margin: 0 !important; line-height: 1; }
 
   // Assistants page: the slides overlay covers the thread while a deck is shown.
-  .aic-slideshow { position: absolute; inset: 0; background: var(--bs-body-bg); z-index: 2000; }
 
   // Hold-to-speak (Assistants page): the mic turns danger-red while it listens.
   .aic-icon-btn.mic-active { color: var(--bs-danger); background: var(--bs-danger-bg-subtle); }

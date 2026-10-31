@@ -166,3 +166,9 @@
 - [x] 9.5 `rake ai_chat:widget_eval REPEAT=n` asks each question n times and reports how often each widget
       was used; a question passes when most of its answers are right (one sample could not tell "usually
       right" from "usually wrong").
+- [x] 9.6 Remove "Chat Slides (Old)": the in-page Reveal overlay, `slideshow_controller.js`, the importmap
+      `reveal.js` pins and vendored files, `reveal.scss`; AI Slides is a plain new-tab link. Verify: H30.
+- [x] 9.7 Export PowerPoint reads each answer as pieces (headings, text, lists, Key figures tiles, Verdict,
+      Checks, tables, charts) placed at measured heights, with continuation slides and tables split with
+      their header; slides titled with the question. Verify: H31, E60, X51 (and the export rendered in
+      LibreOffice, as the bug was seen).

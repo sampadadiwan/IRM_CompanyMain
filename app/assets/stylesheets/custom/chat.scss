@@ -344,9 +344,6 @@
   100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
 }
 
-.reveal-viewport {
-  background-color: var(--bs-body-bg) !important;
-}
 // Shared markdown styles for assistant answers — used by the floating assistant chat
 // (support_agents/_chat_panel) and the Support Console. Headings stay near body size so an
 // answer never outranks the page title; tables are bordered with a neutral header.

@@ -660,6 +660,8 @@ Shared setup:
 | H27 | AI Slides deck | a blueprint with one slide of each type | drawn for AX on 31/10/2026 | 7 slides, numbered 1 / 7…7 / 7, every content slide has "What this means", footer "AX · 31/10/2026", no old filler text | AI Slides | `ai_chat/slides.feature` |
 | H28 | Regenerate a deck | a saved deck | opens AI Slides | a Regenerate link for that chat (`generate=true`) | AI Slides | `ai_chat/slides.feature` |
 | H29 | Saved deck redrawn | a saved blueprint and stale saved HTML | opens AI Slides | drawn from the blueprint with today's templates, no AI call | AI Slides | `ai_chat/slides.feature` |
+| H30 | Export menu | an assistant conversation | opens it | Export offers AI Slides (new tab, `generate_slides?chat_id=…`); the old in-page "Chat Slides (Old)" deck, its controller and the importmap Reveal are gone | AI Slides | `ai_chat/assistants_page.feature` |
+| H31 | Export PowerPoint content | a long layout answer (Verdict, Checks, 6 key figures, What to do, Details, 30-row table) | Export PowerPoint | every slide titled with the question ("(cont.)" after the first); every heading, figure (value and label), check and step in the deck | Export PowerPoint | `ai_chat/ppt_export.feature` |
 | H12 | Maximise markup | window | renders | Maximise control and sidebar container present | Maximise the floating window | `ai_chat/floating_window.feature` |
 
 #### Edge Cases
@@ -694,6 +696,7 @@ Shared setup:
 | E57 | Old slide types | hero, bullets, split_chart | drawn | title, insights, chart; `analysis` becomes the takeaway | AI Slides | `ai_chat/slides.feature` |
 | E58 | Slide brief | the brief | read | grounded numbers only, the amounts rule, a takeaway per slide, the icon list | AI Slides | `ai_chat/slides.feature` |
 | E59 | Saved slides without their type | old blueprint with no `template` keys (the old renderer deleted them) | drawn | types read from the fields: title, insights, chart, comparison | AI Slides | `ai_chat/slides.feature` |
+| E60 | Long table across slides | the same answer's 30-row table | exported | split across slides, header row on each part, all 30 rows in order | Export PowerPoint | `ai_chat/ppt_export.feature` |
 | E17 | Voice path | `/assistants/transcribe` (stubbed transcription "Call 3 status") | posts audio | kit question "Call 3 status" + pending | Enter sends | `ai_chat/assistants_page.feature` |
 
 #### Error Cases
@@ -720,6 +723,7 @@ Shared setup:
 | X48 | Blueprint saved intact | a blueprint | drawn | every slide still names its template (drawing does not change it) | AI Slides | `ai_chat/slides.feature` |
 | X49 | Malformed blueprint | a stray string, a chart with string options and a string dataset | drawn | the chart and the valid slide draw; nothing raises | AI Slides | `ai_chat/slides.feature` |
 | X50 | A colleague's chat's slides | a colleague's `chat_id` | Priya opens AI Slides | 404, no deck queued (a deck shows the chat's transcript; found in review) | AI Slides | `ai_chat/slides.feature` |
+| X51 | Export never overlaps | the same answer | exported | every text box at least as tall as its text, no two text boxes or tables overlap, nothing past the slide's foot (the old export declared every box 0in tall and guessed heights from character counts, so Key figures were drawn under Details) | Export PowerPoint | `ai_chat/ppt_export.feature` |
 | E50 | Console asks for record links | the client brief | built | asks to link record ids, lists the allowed record pages | Questions and answers | `ai_chat/answer_rendering.feature` |
 | X9 | Feedback on another's message | Arjun PATCHes feedback for Priya's message | requests | refused as today | Rate down with a note | `ai_chat/customer_support.feature` |
 
