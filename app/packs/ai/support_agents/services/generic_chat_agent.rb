@@ -55,14 +55,20 @@ class GenericChatAgent < SupportAgentService
     # Starts a new session if the previous one has been idle for more than 30 minutes,
     # preventing unbounded context growth across unrelated support queries.
     channel = ctx[:channel] || "web"
-    existing_session = AgentChatSession.where(
+    sessions = AgentChatSession.where(
       chattable: ctx[:target],
       support_agent: @support_agent,
       analyst_id: analyst&.id,
       channel: channel
-    ).order(updated_at: :desc).first
+    )
+    # ai-chat-kit decision 6 — the chat window names the conversation a question belongs to: a
+    # session_id is used only when it is this analyst's, with this agent, record and channel (E10, X7);
+    # new_session starts one (E9). Callers passing neither (WhatsApp) keep the rule above (E11).
+    requested_session = sessions.find_by(id: ctx[:session_id]) if ctx[:session_id].present?
+    existing_session = requested_session || sessions.order(updated_at: :desc).first
 
-    ctx[:chat_session] = if existing_session.nil? || session_expired?(existing_session)
+    ctx[:chat_session] = if ctx[:new_session] || existing_session.nil? ||
+                            (requested_session.nil? && session_expired?(existing_session))
                            AgentChatSession.create!(
                              chattable: ctx[:target],
                              support_agent: @support_agent,

@@ -1,0 +1,24 @@
+<%#
+  The floating window's question box: the chat kit's composer, posting to SupportAgentChatsController#create
+  with the conversation it belongs to (decision 6). On submit the question and "Thinking…" show at once
+  (the pending template); the response replaces them. Locals: support_agent, chattable, session,
+  new_session (Boolean), value (String, optional — a failed question put back, X1).
+%>
+<% frame_id = agent_chat_frame_id(support_agent) %>
+<% pending = capture do %>
+  <%= render "ai_chat/question", item: AiChatItem.transient(dom_id: "#{frame_id}-pending-question", role: "user", content: "") %>
+  <%= render "ai_chat/answer", item: AiChatItem.transient(dom_id: "#{frame_id}-pending-answer", role: "assistant", status: :running),
+                               mode: :rich %>
+<% end %>
+<% footer = capture do %>
+  <% if local_assigns[:value].present? %>
+    <div class="text-center small text-muted mt-2"><i class="ti ti-arrow-back-up me-1"></i>Your question is back in the box — press Enter to try again.</div>
+  <% end %>
+<% end %>
+<%= render "ai_chat/composer", id: "#{frame_id}-composer", form_url: support_agent_chats_path(support_agent), field: :message,
+                               hidden: { chattable_type: chattable.class.name, chattable_id: chattable.id,
+                                         session_id: session&.id, new_session: (1 if new_session) },
+                               question_id: "#{frame_id}-question", ask_id: "#{frame_id}-ask",
+                               value: local_assigns[:value], running: false, placeholder: "Ask #{support_agent.name}",
+                               pending: pending, pending_into: "#{frame_id}-thread-items", empty_id: "#{frame_id}-thread-empty",
+                               footer: footer %>

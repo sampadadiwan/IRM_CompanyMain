@@ -10,7 +10,9 @@ import { Controller } from "@hotwired/stimulus"
 export default class extends Controller {
   static targets = ["conversation", "group", "newChat", "list", "empty"]
   // frame: the Turbo Frame the thread loads into; storageKey: where a hidden sidebar is remembered.
-  static values = { frame: String, storageKey: { type: String, default: "aiChat.sidebarCollapsed" } }
+  // shortcuts: off in the floating window, so Ctrl+K and "/" stay with the page.
+  static values = { frame: String, storageKey: { type: String, default: "aiChat.sidebarCollapsed" },
+                    shortcuts: { type: Boolean, default: true } }
 
   connect() {
     // localStorage can be unavailable (private window, blocked storage): default to shown.
@@ -114,6 +116,7 @@ export default class extends Controller {
   }
 
   shortcut = (event) => {
+    if (!this.shortcutsValue) return
     // Ctrl/Cmd+K — new chat.
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k" && this.hasNewChatTarget) {
       event.preventDefault()

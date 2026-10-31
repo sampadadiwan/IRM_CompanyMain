@@ -11,11 +11,15 @@
     controllers String, nil            extra Stimulus controllers on the panes
     root_class  String, nil            extra classes on the root (e.g. "support-console")
     storage_key String                 localStorage key remembering a hidden sidebar
+    variant     Symbol                 :page (default) or :window — the floating window: no fit to the
+                                       viewport, no border, no keyboard shortcuts, list hidden by default
   @see openspec/changes/ai-chat-kit/design.md (card ③ Chat layout)
 %>
+<% window = local_assigns[:variant] == :window %>
 <div class="ai-chat <%= local_assigns[:root_class] %>">
-  <div class="aic-panes d-flex flex-column flex-lg-row rounded-4 border bg-white overflow-hidden"
-       data-controller="<%= ["ai-chat-fit", "ai-chat-sidebar", local_assigns[:controllers]].compact_blank.join(" ") %>"
+  <div class="aic-panes d-flex <%= window ? "h-100 bg-white" : "flex-column flex-lg-row rounded-4 border bg-white overflow-hidden" %>"
+       data-controller="<%= [("ai-chat-fit" unless window), "ai-chat-sidebar", local_assigns[:controllers]].compact_blank.join(" ") %>"
+       data-ai-chat-sidebar-shortcuts-value="<%= !window %>"
        data-ai-chat-sidebar-frame-value="<%= frame %>"
        data-ai-chat-sidebar-storage-key-value="<%= storage_key %>">
     <%= render "ai_chat/sidebar", rows: rows, frame: frame, new_url: new_url, new_frame: local_assigns[:new_frame] || frame,

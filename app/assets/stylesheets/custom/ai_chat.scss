@@ -214,3 +214,35 @@
 @keyframes aic-blink {
   50% { opacity: 0; }
 }
+
+// ── Floating agent window (support_agents/_chat_panel, ai_chat_window_controller) ─────────────
+// The bubble and the window sit outside the kit's .ai-chat root (that lives inside the window's frame).
+.ai-chat-window {
+  .aic-window-toggle { bottom: 24px; right: 24px; z-index: 1051; cursor: pointer; }
+  .aic-window-button { width: 56px; height: 56px; }
+}
+.aic-window {
+  bottom: 90px;
+  right: 24px;
+  width: 420px;
+  height: 70vh;
+  max-height: 700px;
+  z-index: 1052;
+
+  .ai-chat .aic-panes { height: 100% !important; min-height: 0; }
+  .aic-window-handle { cursor: grab; }
+  // The list is the Conversations view (or beside the thread when maximised); the page's
+  // show/hide-sidebar buttons and the composer's fade do not apply in a window.
+  .ai-chat .aic-sidebar { display: none !important; }
+  .aic-show-sidebar, [data-action="ai-chat-sidebar#toggle"] { display: none !important; }
+  .ai-chat .aic-composer::before { display: none; }
+
+  &.aic-show-list {
+    .ai-chat .aic-sidebar { display: flex !important; width: 100%; flex: 1 1 auto; max-height: none; border: 0 !important; }
+    .ai-chat .aic-panes > section { display: none !important; }
+  }
+  &.aic-maximized {
+    .ai-chat .aic-sidebar { display: flex !important; width: 280px; flex: 0 0 280px; max-height: none; }
+    .ai-chat .aic-panes > section { display: flex !important; }
+  }
+}

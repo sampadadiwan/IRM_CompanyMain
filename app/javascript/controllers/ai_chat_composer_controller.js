@@ -6,8 +6,10 @@ import { Controller } from "@hotwired/stimulus"
 // this only stops a double click from sending two requests. After a turn ends the screen
 // re-renders the composer, which reconnects this controller with running = false.
 export default class extends Controller {
-  static targets = ["question", "ask"]
-  static values = { running: Boolean }
+  static targets = ["question", "ask", "pending"]
+  // pendingInto / emptyId: where a pending question + "Thinking…" go on submit, for screens whose
+  // answer comes back with the response itself (the floating window); see ai_chat/_composer.
+  static values = { running: Boolean, pendingInto: String, emptyId: String }
 
   connect() {
     // E4 — while a turn runs the composer renders Stop instead of Ask; guard Ask anyway.
@@ -29,6 +31,20 @@ export default class extends Controller {
       return
     }
     if (this.hasAskTarget) this.askTarget.disabled = true
+    this.showPending()
+  }
+
+  // Shows the question and a "Thinking…" line at once, from the composer's <template>, while the
+  // request runs; the response replaces them.
+  showPending() {
+    if (!this.hasPendingTarget || !this.pendingIntoValue) return
+    const list = document.getElementById(this.pendingIntoValue)
+    if (!list) return
+    const pending = this.pendingTarget.content.cloneNode(true)
+    const question = pending.querySelector(".aic-question")
+    if (question) question.textContent = this.questionTarget.value.trim()
+    if (this.emptyIdValue) document.getElementById(this.emptyIdValue)?.remove()
+    list.append(pending)
   }
 
   // Enter sends, Shift+Enter adds a new line (IME composition is left alone).

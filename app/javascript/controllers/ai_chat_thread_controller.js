@@ -68,6 +68,16 @@ export default class extends Controller {
     box.form.requestSubmit(ask)
   }
 
+  // A suggestion's text (ai_chat/_suggestions): put it in the box to edit first; nothing is sent (H11).
+  fill(event) {
+    const box = this.element.querySelector("[data-ai-chat-composer-target='question']")
+    if (!box) return
+    box.value = event.currentTarget.dataset.prompt || ""
+    box.dispatchEvent(new Event("input", { bubbles: true }))
+    box.focus()
+    box.setSelectionRange(box.value.length, box.value.length)
+  }
+
   // Copies a message's text (its markdown, for answers) and flashes a check on the button.
   async copy(event) {
     const button = event.currentTarget

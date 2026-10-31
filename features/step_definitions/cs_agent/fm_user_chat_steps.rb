@@ -7,7 +7,8 @@ When("I navigate to the customer support agent page") do
 end
 
 Then("I should see the chat panel") do
-  expect(page).to have_css("[data-controller='agent-chat']")
+  # The floating window on the chat kit (support_agents/_chat_panel).
+  expect(page).to have_css("[data-controller='ai-chat-window']")
 end
 
 Then("the chat input should be enabled") do

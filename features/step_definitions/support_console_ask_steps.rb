@@ -383,12 +383,12 @@ Given('the relay answers this and then fails with status {int}:') do |status, te
 end
 
 Then('the follow-ups above the box are:') do |table|
-  buttons = all("#support-console-follow-ups button[data-action='ai-chat-composer#fill']").map { |b| b.text.squish }
+  buttons = all("#support-console-follow-ups button[data-action='ai-chat-thread#fill']").map { |b| b.text.squish }
   expect(buttons).to eq(table.raw.flatten)
 end
 
 Then('a follow-up puts {string} in the box') do |question|
-  expect(page).to have_css("#support-console-follow-ups button[data-action='ai-chat-composer#fill'][data-prompt='#{question}']")
+  expect(page).to have_css("#support-console-follow-ups button[data-action='ai-chat-thread#fill'][data-prompt='#{question}']")
 end
 
 Then('there are no follow-ups above the box') do
@@ -400,7 +400,7 @@ Then('the answer does not show {string}') do |text|
 end
 
 Then('no follow-up holds markup') do
-  expect(page).to have_no_css("#support-console-follow-ups button[data-action='ai-chat-composer#fill'] *")
+  expect(page).to have_no_css("#support-console-follow-ups button[data-action='ai-chat-thread#fill'] *")
 end
 
 # H15 — a sidebar row: who started the conversation, when it last changed, and its latest status.

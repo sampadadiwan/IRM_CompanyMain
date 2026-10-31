@@ -347,3 +347,238 @@ Then("the chat's questions are not shown") do
   expect(page).to have_no_content("Summarise Q2")
   expect(page).to have_no_css("#chat-panel")
 end
+
+# ---- Floating agent window (features/ai_chat/floating_window.feature) ------------------------------------
+
+Given('Golden Angels has the {string} agent {string} with chat on') do |agent_type, name|
+  agent = FactoryBot.create(:support_agent, entity: @entity, agent_type:, name:, enabled: true,
+                                            json_fields: { "chat_config" => { "enabled" => true } })
+  @agents ||= {}
+  @agents[agent_type] = agent
+  @agent ||= agent
+  @lp_agent = agent if agent_type == "LpAssistantAgent"
+end
+
+Given('the fund {string} of Golden Angels') do |fund_name|
+  FactoryBot.create(:fund, entity: @entity, name: fund_name)
+end
+
+# Only the model call is stubbed: GenericChatAgent still picks and saves the session itself.
+def stub_agent_reply(text: nil, provider_error: nil, fail: false)
+  allow_any_instance_of(GenericChatAgent).to receive(:resolve_provider) do |*|
+    raise provider_error if provider_error
+
+    true
+  end
+  allow_any_instance_of(GenericChatAgent).to receive(:setup_ruby_llm_chat).and_return(true)
+  allow_any_instance_of(GenericChatAgent).to receive(:execute_chat) do |_agent, ctx, **|
+    ctx[:ai_response] = text
+    !fail
+  end
+end
+
+Given('the agent answers {string}') do |text|
+  stub_agent_reply(text:)
+end
+
+Given('the agent cannot reach the AI service') do
+  stub_agent_reply(provider_error: SocketError.new("getaddrinfo: Name or service not known"))
+end
+
+Given('the agent fails') do
+  stub_agent_reply(fail: true)
+end
+
+# A window conversation, last changed at `time`.
+def window_session(chattable, question, time:, analyst: @user, agent: @agent)
+  session = AgentChatSession.create!(support_agent: agent, chattable:, analyst:, channel: "web", status: "active")
+  session.agent_chat_messages.create!(role: "user", content: question, channel: "web", created_at: time)
+  session.agent_chat_messages.create!(role: "assistant", content: "Answered.", channel: "web", created_at: time)
+  session.update_columns(created_at: time, updated_at: time)
+  session
+end
+
+def example_time_or_ago(text)
+  text =~ /\A(\d+) (minutes|hours) ago\z/ ? Regexp.last_match(1).to_i.send(Regexp.last_match(2)).ago : example_time(text)
+end
+
+Given('Priya has window conversations on {string}:') do |fund_name, table|
+  fund = Fund.find_by!(name: fund_name)
+  table.hashes.each { |row| window_session(fund, row["question"], time: example_time_or_ago(row["last changed"])) }
+end
+
+def window_path(chattable, agent: @agent, **params)
+  support_agent_chats_path(agent, chattable_type: chattable.class.name, chattable_id: chattable.id, **params)
+end
+
+def window_frame_id(agent = @agent) = "agent-chat-#{agent.id}"
+
+When('Priya opens the window on {string}') do |fund_name|
+  @window_record = Fund.find_by!(name: fund_name)
+  visit window_path(@window_record)
+end
+
+When('Priya starts a new conversation in the window on {string}') do |fund_name|
+  @window_record = Fund.find_by!(name: fund_name)
+  visit window_path(@window_record, new_session: 1)
+end
+
+When('Priya reopens {string} in the window on {string}') do |question, fund_name|
+  @window_record = Fund.find_by!(name: fund_name)
+  session = AgentChatSession.joins(:agent_chat_messages).find_by!(agent_chat_messages: { content: question })
+  visit window_path(@window_record, session_id: session.id)
+end
+
+When('Priya opens the Portfolio Assistant agent\'s page') do
+  visit support_agent_path(@agent)
+end
+
+# Posts the window's question box as the browser would: its own hidden fields, Accept turbo-stream.
+def ask_in_window(question, agent: @agent)
+  fields = all("##{window_frame_id(agent)}-composer input[type='hidden']", visible: :all)
+           .to_h { |input| [input[:name], input.value] }
+  page.driver.browser.post(support_agent_chats_path(agent), fields.merge("message" => question),
+                           { "HTTP_ACCEPT" => "text/vnd.turbo-stream.html" })
+  @window_status = page.driver.browser.last_response.status
+  @stream = Nokogiri::HTML5.fragment(page.driver.browser.last_response.body)
+end
+
+When('Priya asks in the window {string}') do |question|
+  ask_in_window(question)
+end
+
+def stream_template(action, target)
+  node = @stream.at_css("turbo-stream[action='#{action}'][target='#{target}'] template")
+  expect(node).to be_present, "no #{action} of #{target} in #{@stream.to_html.first(300)}"
+  Nokogiri::HTML5.fragment(node.inner_html)
+end
+
+Then('the window shows the question {string} and the answer {string}') do |question, answer|
+  html = stream_template("replace", window_frame_id)
+  expect(html.css(".aic-question").map { |q| q.text.strip }).to include(question)
+  expect(html.css("[data-ai-chat-answer]").map(&:text).join).to include(answer)
+  @window_html = html
+end
+
+Then('the window\'s answer has no rating buttons') do
+  expect(@window_html.css("[data-ai-chat-feedback]")).to be_empty
+end
+
+Then('the window lists {string} with {string}') do |question, meta|
+  row = find("##{window_frame_id}-conversations .aic-conversation", text: question)
+  expect(row).to have_css("[data-role='meta']", text: meta)
+end
+
+Then('the window lists {string}') do |question|
+  expect(page).to have_css("##{window_frame_id(@window_agent || @agent)}-conversations .aic-conversation", text: question)
+end
+
+Then('the window does not list {string}') do |question|
+  expect(page).to have_no_css("##{window_frame_id(@window_agent || @agent)}-conversations .aic-conversation", text: question)
+end
+
+Then('the window lists {string} without quote marks') do |question|
+  title = find("##{window_frame_id}-conversations .aic-conversation [data-role='first-question']").text
+  expect(title).to eq(question)
+end
+
+Then('the window suggests {string} with a fill button and an Ask button') do |question|
+  within("##{window_frame_id}-suggestions") do
+    expect(page).to have_css("button[data-action='ai-chat-thread#fill'][data-prompt='#{question}']")
+    expect(page).to have_css("button[data-action='ai-chat-thread#askNow'][data-prompt='#{question}']", text: "Ask")
+  end
+end
+
+Then('the page has the chat bubble and a lazy window') do
+  expect(page).to have_css("[data-controller='ai-chat-window'] [data-ai-chat-window-target='toggle']", text: "Need help?")
+  expect(page).to have_css("[data-ai-chat-window-target='panel'] turbo-frame##{window_frame_id}[loading='lazy']", visible: :all)
+end
+
+Then('the window has Conversations, New, Maximise and Close') do
+  expect(page).to have_css("button[data-action='ai-chat-window#toggleList']", text: "Conversations")
+  expect(page).to have_css("a##{window_frame_id}-new-chat", text: "New")
+  expect(page).to have_css("button[data-action='ai-chat-window#toggleMaximize']")
+  expect(page).to have_css("button[data-action='ai-chat-window#close']")
+  expect(page).to have_css("##{window_frame_id}-conversations", visible: :all)
+end
+
+Then('the window request is refused and no message is saved') do
+  expect(@window_status).to eq(422)
+  expect(AgentChatMessage.count).to eq(0)
+end
+
+Then('Priya has {int} window conversations on {string}') do |count, fund_name|
+  expect(AgentChatSession.where(chattable: Fund.find_by!(name: fund_name), analyst: @user).count).to eq(count)
+end
+
+def session_started_with(question)
+  first_ids = AgentChatMessage.where(role: "user").group(:agent_chat_session_id).minimum(:id).values
+  AgentChatMessage.where(id: first_ids, content: question).sole.agent_chat_session
+end
+
+Then('{string} is in the conversation that started {string}') do |question, first_question|
+  expect(session_started_with(first_question).agent_chat_messages.where(role: "user").pluck(:content)).to include(question)
+end
+
+When('the agent is asked {string} about {string} without naming a conversation') do |question, fund_name|
+  GenericChatAgent.call(support_agent_id: @agent.id, target: Fund.find_by!(name: fund_name), user_message: question,
+                        analyst_id: @user.id)
+end
+
+Then('the window\'s pending answer reads {string} with {string}') do |badge, reason|
+  html = stream_template("replace", "#{window_frame_id}-pending-answer")
+  expect(html.at_css(".badge").text).to include(badge)
+  expect(html.text).to include(reason)
+end
+
+Then('the window\'s question box holds {string}') do |question|
+  html = stream_template("replace", "#{window_frame_id}-composer")
+  expect(html.at_css("textarea").text).to eq(question)
+end
+
+# The LP chat: an investor (her own entity) with approved access to Golden Angels, and her window
+# about herself (chattable: current_user, as entities/_vc_dashboard renders it).
+def lp_investor_user(full_name)
+  first_name, last_name = full_name.split(" ", 2)
+  home = FactoryBot.create(:entity, name: "#{full_name} Family Office", entity_type: "Investor")
+  user = FactoryBot.create(:user, entity: home, first_name:, last_name:)
+  investor = FactoryBot.create(:investor, entity_id: @entity.id, investor_entity_id: home.id, investor_name: home.name,
+                                          category: "LP")
+  InvestorAccess.create!(investor:, entity: @entity, investor_entity: home, user:, email: user.email,
+                         first_name:, last_name:, approved: true)
+  user
+end
+
+Given('{string} is an investor of Golden Angels with her own LP chat {string}') do |full_name, question|
+  @kavya = lp_investor_user(full_name)
+  @kavya_session = window_session(@kavya, question, time: 10.minutes.ago, analyst: @kavya, agent: @lp_agent)
+end
+
+Given('another investor of Golden Angels has an LP chat {string}') do |question|
+  other = lp_investor_user("Ravi Menon")
+  @other_session = window_session(other, question, time: 5.minutes.ago, analyst: other, agent: @lp_agent)
+end
+
+When('Kavya opens her LP chat') do
+  log_in(@kavya)
+  @window_agent = @lp_agent
+  visit window_path(@kavya, agent: @lp_agent)
+end
+
+When('Kavya asks her LP chat {string} naming the other investor\'s conversation') do |question|
+  log_in(@kavya)
+  page.driver.browser.post(support_agent_chats_path(@lp_agent),
+                           { "message" => question, "chattable_type" => "User", "chattable_id" => @kavya.id,
+                             "session_id" => @other_session.id },
+                           { "HTTP_ACCEPT" => "text/vnd.turbo-stream.html" })
+  expect(page.driver.browser.last_response.status).to eq(200)
+end
+
+Then('the other investor\'s conversation is unchanged') do
+  expect(@other_session.agent_chat_messages.pluck(:content)).to eq(["Show my SOA", "Answered."])
+end
+
+Then('{string} is in Kavya\'s own LP chat') do |question|
+  sessions = AgentChatSession.where(analyst: @kavya, support_agent: @lp_agent)
+  expect(AgentChatMessage.where(agent_chat_session: sessions, content: question)).to exist
+end

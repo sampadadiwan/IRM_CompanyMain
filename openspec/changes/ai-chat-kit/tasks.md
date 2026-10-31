@@ -73,20 +73,20 @@
 
 ## 4. Floating agent window on the kit (all agents, LP chat included)
 
-- [ ] 4.1 `GenericChatAgent.call` accepts `session_id:` (used only when agent, chattable, analyst and
+- [x] 4.1 `GenericChatAgent.call` accepts `session_id:` (used only when agent, chattable, analyst and
       channel match) and `new_session:`; without them, today's rule. LLD § Method Contracts. Verify:
       `bin/rails runner` calls with and without the keywords create/continue sessions as described.
-- [ ] 4.2 `SupportAgentChatsController`: `index` → HTML thread, `sessions` → HTML rows
+- [x] 4.2 `SupportAgentChatsController`: `index` → HTML thread, `sessions` → HTML rows
       (`AiChatRows.for_agent_sessions`), `create` → turbo_stream (question + answer, or a failed
       answer with the question returned), pass `session_id` / `new_session`, refuse a blank message;
       remove the JSON responses. LLD § Controllers, § Error Mapping. Verify: `grep -rn "agent_chat_controller\|chats/sessions" app/javascript` finds nothing after 4.3.
-- [ ] 4.3 Rewrite the body of `support_agents/_chat_panel` as the kit window (`variant: :window`):
+- [x] 4.3 Rewrite the body of `support_agents/_chat_panel` as the kit window (`variant: :window`):
       bubble, white header with Conversations / New / Maximise / Close, empty state with
       `sample_questions` as suggestion buttons, `_pending` template; add `ai_chat_window_controller`
       (toggle, drag, resize, maximise, Conversations view, `data-turbo-temporary` kept); delete
       `agent_chat_controller.js`. LLD § File Map ⑥①. Verify: on Acme Robotics and on Kavya's dashboard
       in dev, the window opens, asks, lists conversations, drags and maximises.
-- [ ] 4.4 Write `features/ai_chat/floating_window.feature` for H6, H7, H8, H11, H12, E2, E4, E9, E10,
+- [x] 4.4 Write `features/ai_chat/floating_window.feature` for H6, H7, H8, H11, H12, E2, E4, E9, E10,
       E11, E13, E16 (window), X1, X2, X7; run it with
       `TEST_ENV_NUMBER=$RANDOM bundle exec cucumber features/ai_chat/floating_window.feature`, then
       `features/ai/lp_assistant` and `features/ai/support_agents/portfolio_agent_run.feature`, and

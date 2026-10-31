@@ -17,7 +17,7 @@
     <% else %>
       <div class="btn-group btn-group-sm" role="group">
         <button type="button" class="btn btn-outline-primary text-start"
-                data-action="ai-chat-composer#fill" data-prompt="<%= question %>"><%= question %></button>
+                data-action="ai-chat-thread#fill" data-prompt="<%= question %>"><%= question %></button>
         <button type="button" class="btn btn-primary flex-grow-0" title="Ask this now" aria-label="Ask: <%= question %>"
                 data-action="ai-chat-thread#askNow" data-prompt="<%= question %>"
                 <%= "disabled" if running %>><i class="ti ti-arrow-up"></i>Ask</button>
