@@ -1,0 +1,44 @@
+<%# Health badge and panel: "All good" or the number of warnings, and a list of what will look wrong, each
+    with a Fix button opening the tab that fixes it. Replaced with every builder change. H14, H15, E14–E18. %>
+<% health   = ReportBuilderHealthCheck.new(report: @report, entity: current_user.entity, user: current_user) %>
+<% items    = health.items %>
+<% warnings = health.warnings_count %>
+<%= turbo_frame_tag "report_builder_health" do %>
+  <div class="dropdown d-inline-block">
+    <% if warnings.zero? %>
+      <button type="button" class="btn btn-sm btn-outline-success rb-health-badge" data-bs-toggle="dropdown" aria-expanded="false"
+              title="Report check" aria-label="Report check: all good" <%= 'disabled' if items.empty? %>>
+        <i class="ti ti-circle-check"></i> All good
+      </button>
+    <% else %>
+      <button type="button" class="btn btn-sm btn-outline-warning rb-health-badge" data-bs-toggle="dropdown" aria-expanded="false"
+              title="Report check" aria-label="Report check: <%= pluralize(warnings, 'warning') %>">
+        <i class="ti ti-alert-triangle"></i> <%= pluralize(warnings, "warning") %>
+      </button>
+    <% end %>
+
+    <% if items.any? %>
+      <div class="dropdown-menu dropdown-menu-end p-3 shadow rb-health-panel" style="min-width:380px;">
+        <% items.each do |item| %>
+          <div class="d-flex align-items-start gap-2 py-2 border-bottom rb-health-item" data-level="<%= item[:level] %>">
+            <% if item[:level] == :warning %>
+              <span class="badge bg-warning-subtle text-warning"><i class="ti ti-alert-triangle"></i> Warning</span>
+            <% else %>
+              <span class="badge bg-info-subtle text-info"><i class="ti ti-info-circle"></i> Note</span>
+            <% end %>
+            <span class="small flex-grow-1 rb-health-message"><%= item[:message] %></span>
+            <% if local_assigns[:wizard] %>
+              <%# In the wizard, Fix opens the step that fixes it (delivery lives in the builder) %>
+              <% step = { "columns" => "show", "related" => "show", "filters" => "fund_filters", "formulas" => "order", "sort" => "order" }[item[:tab]] %>
+              <%= link_to "Fix", step ? wizard_report_builder_step_path(@report, step: step) : edit_report_builder_path(@report, tab: item[:tab]),
+                    class: "btn btn-sm btn-outline-primary flex-shrink-0", data: { tab: item[:tab], turbo_frame: "_top" } %>
+            <% else %>
+              <button type="button" class="btn btn-sm btn-outline-primary flex-shrink-0" data-tab="<%= item[:tab] %>"
+                      data-action="click->report-builder#openTab">Fix</button>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+<% end %>

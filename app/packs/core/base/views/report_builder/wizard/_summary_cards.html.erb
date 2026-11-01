@@ -1,0 +1,32 @@
+<%# What the report will be, one card per wizard step, each opening the step that changes it (H27, H28) %>
+<% columns   = @gvps.reject { |g| g.key.start_with?("formula:", "pivot:") }.map { |g| g.label.presence || g.name } %>
+<% sentences = wizard_filter_sentences(@config, current_user.entity).pluck(:text) %>
+<% sort_gvp  = @gvps.find { |g| g.key.split(";").first.strip == @config.sort[:key].to_s } %>
+<% sort_label = sort_gvp&.then { |g| g.label.presence || g.name } ||
+                (@config.formulas || []).find { |f| f["key"] == @config.sort[:key].to_s }&.dig("label") %>
+<% cards = [
+     { title: "Each row", step: nil, lines: ["One row per #{wizard_model_label(@root_class.name).downcase}"] },
+     { title: "Columns", step: "show", lines: columns.presence || ["No columns yet"] },
+     { title: "Only include", step: "fund_filters", lines: sentences.presence || ["Everything"] },
+     { title: "Order and calculations", step: "order",
+       lines: [sort_label ? "Sorted by #{sort_label} (#{@config.sort[:dir] == 'desc' ? 'largest first' : 'smallest first'})" : "In stored order"] +
+              (@config.formulas || []).map { |f| "Calculates #{f['label']}" } }
+   ] %>
+<div class="row g-3 mb-3 rb-wizard-summary">
+  <% cards.each do |card| %>
+    <div class="col-md-6">
+      <div class="card h-100" data-card="<%= card[:title] %>">
+        <div class="card-header d-flex align-items-center justify-content-between">
+          <span class="fw-semibold"><%= card[:title] %></span>
+          <% if card[:step] %>
+            <%= link_to "Change", wizard_report_builder_step_path(@report, step: card[:step]), class: "btn btn-sm btn-outline-primary",
+                  "aria-label": "Change #{card[:title].downcase}" %>
+          <% end %>
+        </div>
+        <div class="card-body small">
+          <% card[:lines].each do |line| %><div><%= line %></div><% end %>
+        </div>
+      </div>
+    </div>
+  <% end %>
+</div>

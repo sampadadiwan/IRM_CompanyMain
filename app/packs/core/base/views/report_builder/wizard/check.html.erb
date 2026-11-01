@@ -1,0 +1,45 @@
+<%# Wizard step 5 — Check and save: what the report will be, anything that will look wrong, the sample, and
+    the name (suggested; a blank name keeps the suggestion). Save and open, or fine-tune in the builder.
+    H27, H28, H29, H30, E25. %>
+<% content_for :title, "Guided setup – Check and save" %>
+
+<div class="container-fluid py-3">
+  <%= render "report_builder/wizard/header" %>
+
+  <div class="row g-3">
+    <div class="col-xl-5">
+      <%= render "report_builder/wizard/summary_cards" %>
+
+      <div class="card mb-3">
+        <div class="card-header d-flex align-items-center justify-content-between">
+          <span class="fw-semibold">Report check</span>
+          <%= render "report_builder/health", wizard: true %>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header fw-semibold">Name and save</div>
+        <div class="card-body">
+          <%= form_tag wizard_report_builder_save_path(@report), method: :patch, class: "rb-wizard-save" do %>
+            <label class="form-label small" for="wizard_report_name">Report name</label>
+            <input type="text" name="name" id="wizard_report_name" class="form-control mb-3"
+                   value="<%= @report.name.start_with?('Untitled ') ? @suggested_name : @report.name %>"
+                   placeholder="<%= @suggested_name %>">
+            <div class="d-flex gap-2">
+              <button type="submit" class="btn btn-primary"><i class="ti ti-device-floppy"></i> Save and open</button>
+              <%= link_to edit_report_builder_path(@report), class: "btn btn-outline-secondary" do %>
+                <i class="ti ti-tools"></i> Fine-tune in builder
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-7">
+      <%= render "report_builder/wizard/sample" %>
+    </div>
+  </div>
+
+  <%= render "report_builder/wizard/footer_nav", back_step: "order" %>
+</div>

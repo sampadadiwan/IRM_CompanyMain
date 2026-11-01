@@ -1,0 +1,21 @@
+<%# A report's chart (drawn by chart_renderer), with Hide chart. On the report page it is drawn from the page's
+    rows, so it follows the report's data. Worked examples H5, H7 —
+    openspec/changes/report-builder-assistant/business-rules.md
+    locals: report, chart ({ title:, spec: }) %>
+<div class="card shadow-sm border mb-4 rb-report-chart">
+  <div class="card-header bg-white py-2 d-flex align-items-center justify-content-between">
+    <span class="fw-semibold"><i class="ti ti-chart-bar me-1"></i><span class="rb-chart-title"><%= chart[:title] %></span></span>
+    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse"
+            data-bs-target="#rb_chart_body_<%= report.id %>" aria-expanded="true" aria-controls="rb_chart_body_<%= report.id %>">
+      <i class="ti ti-eye-off"></i> Hide chart
+    </button>
+  </div>
+  <div class="collapse show" id="rb_chart_body_<%= report.id %>">
+    <div class="card-body">
+      <div data-controller="chart-renderer" data-chart-renderer-spec-value="<%= chart[:spec].to_json %>"
+           data-chart-renderer-height-value="320">
+        <canvas data-chart-renderer-target="canvas"></canvas>
+      </div>
+    </div>
+  </div>
+</div>

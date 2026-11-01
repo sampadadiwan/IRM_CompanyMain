@@ -1,0 +1,55 @@
+<%# Sort tab: default sort, Excel row grouping and the display currency label %>
+<% gvps_for_sort = @report.grid_view_preferences.reorder(:sequence, :id).to_a %>
+
+<div class="mb-3">
+  <label class="form-label small mb-1" for="rb_sort_key">Default sort</label>
+  <div class="row g-2">
+    <div class="col-8">
+      <select id="rb_sort_key" class="form-select form-select-sm" data-action="change->report-builder#sortChanged"
+              data-report-builder-target="sortKey">
+        <option value="">— none —</option>
+        <% gvps_for_sort.each do |gvp| %>
+          <%# A formula's position row sorts by the formula's own key; a pivot block can't be a sort key %>
+          <% next if gvp.key.start_with?("pivot:") %>
+          <% ck = gvp.key.split(";").first.strip.delete_prefix("formula:") %>
+          <option value="<%= ck %>" <%= 'selected' if @config.sort[:key].to_s.split(";").first&.strip == ck %>><%= gvp.label.presence || gvp.name %></option>
+        <% end %>
+      </select>
+    </div>
+    <div class="col-4">
+      <select class="form-select form-select-sm" aria-label="Sort direction" data-action="change->report-builder#sortChanged"
+              data-report-builder-target="sortDir">
+        <option value="asc" <%= 'selected' if @config.sort[:dir] != "desc" %>>Lowest first</option>
+        <option value="desc" <%= 'selected' if @config.sort[:dir] == "desc" %>>Highest first</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<div class="mb-3">
+  <label class="form-label small mb-1" for="rb_group_rows">Group rows in Excel by</label>
+  <select id="rb_group_rows" class="form-select form-select-sm" data-action="change->report-builder#groupingChanged"
+          data-report-builder-target="groupRowsBy">
+    <option value="">— none —</option>
+    <% gvps_for_sort.each do |gvp| %>
+      <%# Formula and pivot positions aren't grouping columns %>
+      <% next if gvp.key.start_with?("formula:", "pivot:") %>
+      <% ck = gvp.key.split(";").first.strip %>
+      <option value="<%= ck %>" <%= 'selected' if @config.group_rows_by == ck %>><%= gvp.label.presence || gvp.name %></option>
+    <% end %>
+  </select>
+  <div class="form-text">Creates collapsible groups in the Excel export.</div>
+</div>
+
+<div>
+  <label class="form-label small mb-1" for="rb_currency">Display currency</label>
+  <select id="rb_currency" class="form-select form-select-sm" data-action="change->report-builder#currencyChanged"
+          data-report-builder-target="currency">
+    <option value="">— none —</option>
+    <% Money::Currency.table.values.sort_by { |c| c[:iso_code] }.each do |c| %>
+      <option value="<%= c[:iso_code] %>" <%= 'selected' if @config.currency.to_s.upcase == c[:iso_code] %>><%= c[:iso_code] %> (<%= c[:symbol] %>) — <%= c[:name] %></option>
+    <% end %>
+  </select>
+  <%# Display only — amounts are never converted %>
+  <div class="form-text">Labels amount columns with this currency. Display only — amounts are not converted.</div>
+</div>

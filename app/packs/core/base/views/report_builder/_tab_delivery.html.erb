@@ -1,0 +1,69 @@
+<%# Delivery tab: the email schedule. Save schedule checks the recipients first (field error, or the Immediate
+    Actions popup for people outside the company), then saves through the hidden form below, which targets the
+    settings frame so the answer is the builder's usual message. Turning the switch off saves at once.
+    @schedule_draft keeps what was typed when a save is refused.
+    Worked examples H4–H8, E3–E7, X2, X3 — openspec/changes/report-builder-delivery/business-rules.md %>
+<% schedule  = @report.report_schedule || ReportSchedule.new(timezone: ReportBuilder::Delivery::DEFAULT_TIMEZONE, enabled: false) %>
+<% draft     = @schedule_draft || {} %>
+<% frequency = draft[:frequency] || schedule.frequency || "daily" %>
+<% timezone  = draft[:timezone] || schedule.timezone %>
+<% typed     = draft.key?(:recipients) ? draft[:recipients] : Array(schedule.recipients).join(", ") %>
+<% shown     = schedule.enabled || draft.present? %>
+<div class="rb-delivery" data-check-url="<%= report_builder_schedule_check_path(@report) %>">
+  <div class="form-check form-switch mb-3">
+    <input class="form-check-input" type="checkbox" id="scheduleEnabledToggle" <%= 'checked' if shown %>
+           data-saved="<%= schedule.persisted? && schedule.enabled ? '1' : '0' %>"
+           data-action="change->report-builder#toggleSchedule">
+    <label class="form-check-label" for="scheduleEnabledToggle">Email this report on a schedule</label>
+  </div>
+
+  <div id="scheduleSettings" class="<%= 'd-none' unless shown %>">
+    <div class="mb-3">
+      <label class="form-label small mb-1" for="rb_schedule_frequency">Frequency</label>
+      <%= select_tag "rb_schedule_frequency", options_for_select(schedule_frequency_options(schedule), frequency),
+                     class: "form-select form-select-sm", data: { "report-builder-target": "scheduleFrequency" } %>
+    </div>
+    <div class="mb-3">
+      <label class="form-label small mb-1" for="rb_schedule_timezone">Time zone</label>
+      <%= select_tag "rb_schedule_timezone",
+                     options_for_select(AgentSchedule::CURATED_TIMEZONES.map { |tz, label| [label, tz] }, timezone),
+                     class: "form-select form-select-sm", data: { "report-builder-target": "scheduleTimezone" } %>
+    </div>
+    <div class="mb-3">
+      <label class="form-label small mb-1" for="rb_schedule_recipients">Recipients</label>
+      <textarea id="rb_schedule_recipients" rows="2" placeholder="name@company.com, …"
+                class="form-control form-control-sm <%= 'is-invalid' if draft[:error] %>"
+                aria-describedby="rb_schedule_recipients_help rb_schedule_recipients_error"
+                data-report-builder-target="scheduleRecipients"><%= typed %></textarea>
+      <div id="rb_schedule_recipients_error" class="invalid-feedback" role="status"><%= draft[:error] %></div>
+      <div id="rb_schedule_recipients_help" class="form-text">
+        Separate emails with commas. People outside <%= (@report.entity || current_user.entity).name %> get a warning first.
+      </div>
+    </div>
+    <div class="d-flex flex-wrap gap-2 mb-2">
+      <button type="button" class="btn btn-sm btn-primary" data-action="click->report-builder#saveSchedule">
+        <i class="ti ti-device-floppy"></i> Save schedule
+      </button>
+      <%# H6 — the same email, to the signed-in user alone %>
+      <%= button_to report_builder_schedule_test_path(@report), method: :post, class: "btn btn-sm btn-outline-secondary",
+            form: { class: "d-inline", data: { turbo_frame: "report_builder_settings" } } do %>
+        <i class="ti ti-send"></i> Send test to me
+      <% end %>
+    </div>
+    <% if schedule.persisted? %>
+      <div class="small text-muted rb-schedule-history"><i class="ti ti-history"></i> <%= report_schedule_history(schedule) %></div>
+    <% end %>
+  </div>
+
+  <%# What Save schedule submits; confirm#popup copies these hidden inputs when people outside are confirmed (H5) %>
+  <%= form_with url: update_report_builder_schedule_path(@report), method: :patch, id: "rb_schedule_form",
+                data: { turbo_frame: "report_builder_settings" } do %>
+    <%= hidden_field_tag :enabled, "true", id: "rb_schedule_enabled" %>
+    <%= hidden_field_tag :frequency, frequency, id: "rb_schedule_frequency_value" %>
+    <%= hidden_field_tag :timezone, timezone, id: "rb_schedule_timezone_value" %>
+    <%= hidden_field_tag :recipients, typed, id: "rb_schedule_recipients_value" %>
+    <%= hidden_field_tag :outsiders_ok, "0", id: "rb_schedule_outsiders_ok" %>
+    <button type="button" class="d-none" id="rb_schedule_confirm" data-method="patch" data-title="Email people outside your company?"
+            data-action="click->confirm#popup">Confirm</button>
+  <% end %>
+</div>

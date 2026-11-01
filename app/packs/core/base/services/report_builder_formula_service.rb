@@ -14,7 +14,7 @@ class ReportBuilderFormulaService
     # This avoids issues with dots in variable names.
     data = row.each_with_object({}) do |(k, v), h|
       safe_key = k.to_s.split(";").first.strip.gsub(".", "__")
-      h[safe_key] = v
+      h[safe_key] = plain(v)
     end
 
     @formulas.each do |formula|
@@ -44,8 +44,8 @@ class ReportBuilderFormulaService
   # Validates a formula expression against a sample row.
   def self.validate(expression, sample_row = {})
     calculator = Dentaku::Calculator.new
-    data = sample_row.transform_keys { |k| k.to_s.gsub(".", "__") }
-    safe_expr = expression.to_s.gsub(/\[([^\]]+)\]/) { ::Regexp.last_match(1).gsub(".", "__") }
+    data = sample_row.to_h { |k, v| [k.to_s.split(";").first.strip.gsub(".", "__"), plain(v)] }
+    safe_expr = expression.to_s.gsub(/\[([^\]]+)\]/) { ::Regexp.last_match(1).split(";").first.strip.gsub(".", "__") }
 
     begin
       calculator.evaluate!(safe_expr, data)
@@ -53,5 +53,18 @@ class ReportBuilderFormulaService
     rescue StandardError => e
       e.message
     end
+  end
+
+  # Formulas run on plain numbers: a root Money value becomes a BigDecimal, so
+  # ratios aren't "₹2.50", ROUND works, and own amounts mix with related totals
+  # (which are already BigDecimal). Worked examples H8, H9.
+  def self.plain(value)
+    value.is_a?(Money) ? value.to_d : value
+  end
+
+  private
+
+  def plain(value)
+    self.class.plain(value)
   end
 end

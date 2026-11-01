@@ -1,0 +1,73 @@
+<%# Columns tab: what can be added (left list) and what is in the report (drag to reorder) %>
+<% selected_keys = @report.grid_view_preferences.pluck(:key).map { |k| k.split(";").first.strip } %>
+
+<%# The picker: the row's own columns and each related data's, ticked and added together (H3, H4) %>
+<% sources = [{ title: "About the #{wizard_model_label(@root_class.name).downcase}", relation: nil }] +
+             @config.joins.map { |j| { title: "From #{j[:relation].to_s.humanize.downcase}", relation: j[:relation].to_s } } %>
+<%= render "report_builder/column_groups", sources: sources, frame: "report_builder_settings" %>
+
+<h2 class="h6 mt-4 mb-2 d-flex align-items-center justify-content-between">
+  <span>In the report</span>
+  <span class="badge bg-primary-subtle text-primary"><%= selected_keys.size %></span>
+</h2>
+<% gvps = @report.grid_view_preferences.reorder(:sequence, :id).to_a %>
+<% if gvps.empty? %>
+  <p class="text-muted small mb-0">Nothing yet — add columns from the list above.</p>
+<% else %>
+  <div class="table-responsive">
+    <table class="table table-bordered table-hover table-sm align-middle mb-0"
+           data-controller="draggable-row" data-owner-type="Report" data-owner-id="<%= @report.id %>">
+      <thead>
+        <tr>
+          <th scope="col"><span class="visually-hidden">Drag</span></th>
+          <th scope="col">Column and total</th>
+          <th scope="col"><span class="visually-hidden">Remove</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% gvps.each do |gvp| %>
+          <% clean_key = gvp.key.split(";").first.strip %>
+          <%# A formula's or pivot's place in the order (trust H10, H11): draggable, removed with its formula / pivot %>
+          <% position_kind = { "formula:" => "Formula", "pivot:" => "Pivot" }.find { |prefix, _| clean_key.start_with?(prefix) }&.last %>
+          <%# Totals only apply to many-per-row related data; one-per-row values show as they are %>
+          <% is_child = clean_key.include?(".") && position_kind.nil? &&
+                        @config.column_type.strategy_for(@config.column_type.relation_for(clean_key)) != :anchored_one %>
+          <% current_agg = @config.effective_aggregate(clean_key) %>
+          <tr class="column column_<%= gvp.id %>" data-draggable-row-target="column" draggable="true"
+              data-key="<%= gvp.key %>" data-row-id="<%= gvp.id %>" data-label="<%= gvp.label.presence || gvp.name %>">
+            <td class="text-center"><i class="ti ti-grip-vertical text-muted cursor-grab" title="Drag to reorder" aria-hidden="true"></i></td>
+            <td>
+              <div class="fw-semibold"><%= gvp.label.presence || gvp.name %></div>
+              <% if position_kind %>
+                <span class="badge bg-info-subtle text-info">
+                  <i class="ti <%= position_kind == 'Formula' ? 'ti-math-function' : 'ti-table-options' %> me-1"></i><%= position_kind %>
+                </span>
+              <% elsif clean_key.include?(".") %>
+                <span class="badge bg-secondary-subtle text-secondary"><i class="ti ti-link me-1"></i><%= clean_key.split(".", 2).first.humanize %></span>
+              <% end %>
+              <%# The total sits under the name: the panel is too narrow for its own column %>
+              <% if is_child %>
+                <% base = @config.column_type.base_type(clean_key) %>
+                <select class="form-select form-select-sm mt-1" aria-label="Total for <%= gvp.label.presence || gvp.name %>"
+                        data-action="change->report-builder#aggregateChanged" data-key="<%= clean_key %>">
+                  <% ReportBuilderColumnType::AGGREGATES.each do |agg| %>
+                    <option value="<%= agg %>" <%= 'selected' if current_agg == agg %>><%= ReportBuilderColumnType.aggregate_label(agg, base) %></option>
+                  <% end %>
+                </select>
+              <% end %>
+            </td>
+            <td class="text-end">
+              <% unless position_kind %>
+                <%= button_to remove_report_builder_column_path(@report, gvp_id: gvp.id), method: :delete,
+                      class: "btn btn-sm btn-outline-danger", title: "Remove #{gvp.label.presence || gvp.name}",
+                      "aria-label": "Remove #{gvp.label.presence || gvp.name}" do %>
+                  <i class="ti ti-trash"></i>
+                <% end %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

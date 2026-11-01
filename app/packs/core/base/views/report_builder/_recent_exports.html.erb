@@ -1,0 +1,30 @@
+<%# The report's last 5 exports, newest first: name, who, when, Download. The export job re-renders this
+    partial over the user's alert stream when a file is saved, so it reads only its locals (no current_user).
+    Worked examples H1, H3, E1, E2 — openspec/changes/report-builder-delivery/business-rules.md
+    locals: report, user %>
+<% exports = ReportBuilderRecentExports.for(report, user) %>
+<div id="rb_recent_exports_<%= report.id %>" class="card shadow-sm border mt-4 rb-recent-exports">
+  <div class="card-header bg-white py-3">
+    <h6 class="m-0 fw-semibold"><i class="ti ti-history me-1"></i>Recent exports</h6>
+  </div>
+  <% if exports.empty? %>
+    <div class="card-body">
+      <p class="text-muted small mb-0">No exports yet — Export XLSX makes one.</p>
+    </div>
+  <% else %>
+    <ul class="list-group list-group-flush">
+      <% exports.each do |doc| %>
+        <li class="list-group-item d-flex justify-content-between align-items-center gap-2 rb-recent-export">
+          <span>
+            <i class="ti ti-file-spreadsheet text-success me-1"></i><%= doc.name %>
+            <span class="text-muted small">· <%= doc.user&.full_name %> · <%= l(doc.created_at, format: :abbr_date_time) %></span>
+          </span>
+          <%= link_to document_path(doc), class: "btn btn-sm btn-outline-success", data: { turbo: false },
+                                          "aria-label": "Download #{doc.name} from #{l(doc.created_at, format: :abbr_date_time)}" do %>
+            <i class="ti ti-download"></i> Download
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+</div>

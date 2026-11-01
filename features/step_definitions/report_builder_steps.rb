@@ -731,8 +731,10 @@ When("I add the formula with expression {string} and label {string}") do |expr, 
 end
 
 When("I configure the schedule with frequency {string} and recipient {string}") do |freq, email|
+  # outsiders_ok: the address isn't a user of the company, and the save
+  # refuses outsiders until they are confirmed (report-builder-delivery X4)
   rb_patch "/report_builder/#{@created_report.id}/schedule",
-           params: { frequency: freq, recipients: email, enabled: "true" }
+           params: { frequency: freq, recipients: email, enabled: "true", outsiders_ok: "1" }
 end
 
 When("I request the preview for the report") do
@@ -947,28 +949,6 @@ end
 
 Then("the export should not include a {string} sheet") do |sheet_name|
   expect(@export_sheet.sheets).not_to include(sheet_name)
-end
-
-# The Totals sheet (ReportBuilderXlsxExporter#add_totals_sheet) is always
-# exactly 2 rows: column headers, then one row of totals.
-Then("the {string} sheet total for the column labeled {string} should equal {string}") do |sheet_name, label_substring, expected|
-  @export_sheet.default_sheet = sheet_name
-  headers = @export_sheet.row(1)
-  idx     = headers.index { |h| h.to_s.include?(label_substring) }
-  raise "No header containing #{label_substring.inspect} among #{headers.inspect}" unless idx
-
-  actual = @export_sheet.row(2)[idx]
-  expect(actual.to_f).to eq(expected.to_f)
-end
-
-Then("the {string} sheet should have no total for the column labeled {string}") do |sheet_name, label_substring|
-  @export_sheet.default_sheet = sheet_name
-  headers = @export_sheet.row(1)
-  idx     = headers.index { |h| h.to_s.include?(label_substring) }
-  raise "No header containing #{label_substring.inspect} among #{headers.inspect}" unless idx
-
-  actual = @export_sheet.row(2)[idx]
-  expect(actual).to be_nil
 end
 
 # Data sheet layout (ReportBuilderXlsxExporter#add_data_sheet): row 1 report

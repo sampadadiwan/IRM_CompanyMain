@@ -1,0 +1,28 @@
+<%# Filters tab: filters on the report's own rows, then on each many-per-row related data. Each row has the
+    input its field needs and saves itself after a short pause — there is no Save button (H7, H8). %>
+<% groups = [[nil, wizard_model_label(@root_class.name).pluralize, @root_filter_columns, @config.root_filters]] +
+            @config.joins.select { |j| @config.column_type.strategy_for(j[:relation]) == :grouped }
+                         .map { |j| [j[:relation].to_s, j[:relation].to_s.humanize, @joined_filter_columns[j[:relation].to_s] || [], j[:child_filters] || {}] } %>
+
+<div data-report-builder-target="filtersPanel" data-date-example="<%= l(Date.new(2026, 8, 19)) %>">
+  <% groups.each_with_index do |(relation, title, columns, filters), i| %>
+    <div class="filter-group mb-3 <%= 'pt-2 border-top' unless i.zero? %>">
+      <div class="d-flex align-items-center justify-content-between mb-2">
+        <span class="small fw-semibold"><%= title %></span>
+        <button type="button" class="btn btn-sm btn-outline-primary" data-action="click->report-builder#addFilterRow"
+                data-scope="<%= relation ? 'child' : 'root' %>" data-relation="<%= relation %>">
+          <i class="ti ti-plus"></i> Add filter
+        </button>
+      </div>
+      <div data-report-builder-target="<%= relation ? 'childFilterRows' : 'rootFilterRows' %>" data-relation="<%= relation %>"
+           data-row-url="<%= report_builder_filter_row_path(@report, relation: relation) %>">
+        <% filters.each do |pred_key, val| %>
+          <% parsed = report_builder_parse_filter(pred_key) %>
+          <%= render "report_builder/filter_row", scope: relation ? "child" : "root", relation: relation,
+                     field: parsed[:field], op: parsed[:op], value: val, columns: columns %>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+  <p class="text-muted small mb-0">Filters save themselves as you change them.</p>
+</div>

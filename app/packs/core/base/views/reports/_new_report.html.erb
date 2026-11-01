@@ -24,11 +24,18 @@
         <% end %>
     </div>
 
-    <% if policy(Report.new).create? %>
-    <div class="col-auto">
-      <%= link_to new_report_builder_path, class: "btn btn-outline-primary btn-sm" do %>
-        <i class="ti ti-wand me-1"></i>Builder Report
-      <% end %>
+    <%# One way to start a Report Builder report (report-builder-starting-points H1) %>
+    <% if policy(Report.new(entity: current_user.entity)).create? %>
+    <div class="col-auto dropdown rb-new-report">
+      <button type="button" class="btn btn-outline-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="ti ti-plus me-1"></i>New report
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end">
+        <li><%= link_to report_builder_templates_path, class: "dropdown-item" do %><i class="ti ti-template me-2"></i>From a template<% end %></li>
+        <li><%= link_to wizard_report_builder_path, class: "dropdown-item" do %><i class="ti ti-wand me-2"></i>Guided setup<% end %></li>
+        <%# report-builder-assistant H1 — a report from a question %>
+        <li><%= link_to report_builder_describe_path, class: "dropdown-item" do %><i class="ti ti-sparkles me-2"></i>Describe it<% end %></li>
+      </ul>
     </div>
     <% end %>
 </div>

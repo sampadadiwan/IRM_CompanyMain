@@ -1,0 +1,41 @@
+<%# Builder header: name (click to rename), table, and the page's actions. Worked example H17. %>
+<div class="d-flex align-items-center flex-wrap gap-3 mb-3">
+  <%= link_to reports_path, class: "btn btn-outline-secondary btn-sm", title: "Back to Reports", "aria-label": "Back to Reports" do %>
+    <i class="ti ti-arrow-left"></i>
+  <% end %>
+
+  <div class="flex-grow-1 min-width-0">
+    <div class="d-flex align-items-center gap-2">
+      <h1 class="h3 mb-0 text-truncate">
+        <span data-report-builder-target="nameDisplay" class="editable-name" role="button" tabindex="0"
+              title="Rename report" data-action="click->report-builder#startRename keydown.enter->report-builder#startRename"><%= @report.name %></span>
+        <input type="text" data-report-builder-target="nameInput" class="form-control d-none" aria-label="Report name"
+               value="<%= @report.name %>"
+               data-action="blur->report-builder#commitRename keydown.enter->report-builder#commitRename keydown.escape->report-builder#cancelRename">
+      </h1>
+      <span class="badge bg-primary-subtle text-primary"><i class="ti ti-database me-1"></i><%= wizard_model_label(@config.root_model) %></span>
+    </div>
+    <div class="text-muted small">
+      Created by <%= @report.user&.full_name %> · Last updated <%= time_ago_in_words(@report.updated_at) %> ago
+    </div>
+  </div>
+
+  <div class="d-flex flex-wrap gap-2 align-items-center">
+    <%= link_to user_guide_path("report_builder_user_guide"), class: "btn btn-outline-secondary btn-sm", target: "_blank",
+          title: "Report Builder guide", "aria-label": "Report Builder guide" do %>
+      <i class="ti ti-help"></i> Guide
+    <% end %>
+    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#commandPaletteModal"
+            title="Search columns and actions (⌘K)" aria-label="Search columns and actions">
+      <i class="ti ti-command"></i> K
+    </button>
+    <%= render "report_builder/health" %>
+    <%= link_to wizard_report_builder_step_path(@report, step: "show"), class: "btn btn-outline-primary btn-sm" do %>
+      <i class="ti ti-wand"></i> Guided setup
+    <% end %>
+    <%= render "report_builder/export_button", report: @report, size: :sm %>
+    <%= link_to view_report_builder_path(@report), class: "btn btn-outline-primary btn-sm" do %>
+      <i class="ti ti-eye"></i> Open report
+    <% end %>
+  </div>
+</div>

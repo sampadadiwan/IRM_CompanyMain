@@ -175,6 +175,8 @@ Sidekiq.configure_server do |config|
     # config/schedule.rb — a full Rails boot 24x/day just to enqueue one job;
     # sidekiq-cron can invoke the job class directly.
     Sidekiq::Cron::Job.create(name: 'ReportBuilderSchedulerJob', cron: 'every 1 hour', class: 'ReportBuilderSchedulerJob')
+    # "Describe it" drafts left unsaved for 7 days (report-builder-assistant E10); 02:30 UTC, off-peak
+    Sidekiq::Cron::Job.create(name: 'ReportDraftCleanupJob', cron: '30 2 * * *', class: 'ReportDraftCleanupJob')
 
     Sidekiq::Cron::Job.create(name: 'RecurringTaskGeneratorJob', cron: recurring_task_cron, class: 'RecurringTaskGeneratorJob')
     # Weekly task digest — Friday (docs/modules/tasks/weekly_task_digest_prd.md). Server

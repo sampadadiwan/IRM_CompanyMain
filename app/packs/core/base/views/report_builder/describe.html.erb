@@ -1,0 +1,70 @@
+<%# New report › Describe it: a question in plain words becomes a private draft report, drafted in the background
+    by the company's AI model. Examples are the starter templates' questions (clicking one fills the box).
+    Worked examples H1, X4 — openspec/changes/report-builder-assistant/business-rules.md %>
+<% content_for :title, "Describe your report" %>
+
+<div class="container-fluid py-3">
+  <div class="mb-3">
+    <h5 class="mb-1">Describe your report</h5>
+    <p class="text-muted small mb-0">Say what you want to know. The assistant drafts a report you can check, refine and save — using only what the report builder allows, inside your company.</p>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-xl-7">
+      <div class="card">
+        <div class="card-body">
+          <% if @available %>
+            <%= form_with url: report_builder_describe_create_path, method: :post, local: true, class: "rb-describe-form" do %>
+              <label class="form-label" for="rb_question">Your question</label>
+              <textarea id="rb_question" name="question" rows="3" class="form-control mb-3" required minlength="5" maxlength="1000"
+                        placeholder="e.g. Which LPs still owe money on calls? Biggest first."><%= params[:question] %></textarea>
+              <button type="submit" class="btn btn-primary" data-turbo-submits-with="Drafting…">
+                <i class="ti ti-sparkles"></i> Draft
+              </button>
+              <span class="text-muted small ms-2">Sends your question and the names of your report tables and columns to your configured AI model — never your data.</span>
+            <% end %>
+          <% else %>
+            <div class="alert alert-warning d-flex align-items-center gap-2 mb-0 rb-ai-not-set-up">
+              <i class="ti ti-alert-triangle"></i>
+              <span>AI drafting isn't set up for your account.</span>
+              <%= link_to report_builder_templates_path, class: "btn btn-sm btn-outline-primary ms-auto" do %>
+                <i class="ti ti-template"></i> Start from a template
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <% if @available && @examples.any? %>
+        <div class="card mt-3">
+          <div class="card-header fw-semibold">Examples</div>
+          <ul class="list-group list-group-flush rb-describe-examples">
+            <% @examples.each do |example| %>
+              <li class="list-group-item">
+                <%= link_to example, report_builder_describe_path(question: example), class: "text-reset" %>
+              </li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+    </div>
+
+    <div class="col-xl-5">
+      <div class="card">
+        <div class="card-header fw-semibold">Your drafts</div>
+        <% if @drafts.empty? %>
+          <div class="card-body text-muted small">No drafts. Drafts are only yours until you save them, and are deleted after 7 days without a change.</div>
+        <% else %>
+          <ul class="list-group list-group-flush rb-your-drafts">
+            <% @drafts.each do |draft| %>
+              <li class="list-group-item d-flex justify-content-between align-items-center gap-2">
+                <%= link_to draft.name, report_builder_draft_path(draft) %>
+                <span class="text-muted small"><%= l(draft.updated_at, format: :abbr_date_time) %></span>
+              </li>
+            <% end %>
+          </ul>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>

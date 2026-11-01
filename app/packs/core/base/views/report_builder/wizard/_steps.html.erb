@@ -1,0 +1,19 @@
+<%# The wizard's step bar: 1 Each row, then steps 2–5. Done steps show a tick; steps 2–5 are links once the
+    report exists. locals: current ("rows" | step key), report (nil on step 1) %>
+<% steps = [{ key: "rows", label: "Each row" }] + wizard_steps %>
+<% current_index = steps.index { |s| s[:key] == current } || 0 %>
+<ul class="nav nav-pills flex-nowrap overflow-auto gap-1 mb-4 border-bottom pb-2" aria-label="Wizard steps">
+  <% steps.each_with_index do |step, i| %>
+    <% state = if i == current_index then "active" elsif i < current_index then "done" end %>
+    <li class="nav-item">
+      <% label = capture do %>
+        <% if state == "done" %><i class="ti ti-check me-1"></i><% else %><span class="me-1"><%= i + 1 %></span><% end %><%= step[:label] %>
+      <% end %>
+      <% if report && step[:key] != "rows" && state != "active" %>
+        <%= link_to label, wizard_report_builder_step_path(report, step: step[:key]), class: "nav-link text-nowrap" %>
+      <% else %>
+        <span class="nav-link text-nowrap <%= 'active' if state == 'active' %>" <%= 'aria-current="step"'.html_safe if state == 'active' %>><%= label %></span>
+      <% end %>
+    </li>
+  <% end %>
+</ul>

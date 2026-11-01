@@ -1,0 +1,29 @@
+<%# Settings panel: one tab per part of the report. Re-rendered whole after each change, staying on the
+    open tab (builder_active_tab). Forms inside target this frame, which marks them as builder requests. %>
+<%= turbo_frame_tag "report_builder_settings" do %>
+  <% active = builder_active_tab %>
+  <div class="card border shadow-none">
+    <div class="card-header bg-white">
+      <ul class="nav nav-pills nav-justified flex-wrap gap-1" role="tablist">
+        <% ReportBuilderHelper::BUILDER_TABS.each do |key, label, icon| %>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link px-2 <%= 'active' if key == active %>" type="button" role="tab"
+                    id="rb-tab-<%= key %>" data-bs-toggle="tab" data-bs-target="#rb-pane-<%= key %>"
+                    aria-controls="rb-pane-<%= key %>" aria-selected="<%= key == active %>"
+                    data-tab="<%= key %>" data-action="click->report-builder#rememberTab">
+              <i class="ti <%= icon %>"></i> <%= label %>
+            </button>
+          </li>
+        <% end %>
+      </ul>
+    </div>
+    <div class="card-body tab-content">
+      <% ReportBuilderHelper::BUILDER_TABS.each do |key, label, _| %>
+        <div class="tab-pane fade <%= 'show active' if key == active %>" id="rb-pane-<%= key %>" role="tabpanel"
+             aria-labelledby="rb-tab-<%= key %>" tabindex="0">
+          <%= render "report_builder/tab_#{key}" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+<% end %>

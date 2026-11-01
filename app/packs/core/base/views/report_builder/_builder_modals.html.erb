@@ -1,0 +1,21 @@
+<%# Command search and formula editor modals of the builder (templates start new reports: New report › From a template) %>
+<div class="modal fade" id="commandPaletteModal" tabindex="-1" aria-hidden="true" aria-label="Search columns and actions"
+     data-command-palette-target="modal">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-body p-0">
+        <div class="input-group input-group-lg border-bottom">
+          <span class="input-group-text bg-white border-0"><i class="ti ti-search"></i></span>
+          <input type="text" class="form-control border-0 shadow-none" placeholder="Search columns or actions… (⌘K)"
+                 aria-label="Search columns or actions" data-command-palette-target="input" data-action="input->command-palette#search">
+        </div>
+        <div class="list-group list-group-flush overflow-auto rb-palette-results" data-command-palette-target="results"></div>
+      </div>
+      <div class="modal-footer justify-content-start small text-muted">
+        <span><kbd>↑↓</kbd> to move</span> <span><kbd>Enter</kbd> to choose</span> <span><kbd>Esc</kbd> to close</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%= render "report_builder/formula_modal" %>

@@ -1,0 +1,26 @@
+<%# Formulas tab: the report's formulas and adding one %>
+<% if @config.formulas.empty? %>
+  <p class="text-muted small">No formulas yet. A formula works out a new column from others, e.g. Called % = Called ÷ Committed × 100.</p>
+<% else %>
+  <div class="d-flex flex-column gap-2 mb-3">
+    <% @config.formulas.each do |formula| %>
+      <div class="border rounded p-2 d-flex align-items-center justify-content-between">
+        <div class="min-width-0">
+          <div class="fw-semibold small text-truncate"><%= formula[:label] %></div>
+          <code class="small text-muted text-truncate d-block"><%= formula[:expression] %></code>
+        </div>
+        <%= button_to remove_report_builder_formula_path(@report, key: formula[:key]), method: :delete,
+              class: "btn btn-sm btn-outline-danger ms-2", title: "Remove #{formula[:label]}", "aria-label": "Remove #{formula[:label]}",
+              form: { data: { turbo_frame: "report_builder_settings" } },
+              data: { msg: "Remove formula '#{formula[:label]}'?", action: "click->confirm#popup" } do %>
+          <i class="ti ti-trash"></i>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+<% end %>
+
+<button type="button" class="btn btn-sm btn-outline-primary w-100" data-bs-toggle="modal" data-bs-target="#formulaModal"
+        data-action="click->report-builder#fillFormulaColumns">
+  <i class="ti ti-plus"></i> Add formula
+</button>

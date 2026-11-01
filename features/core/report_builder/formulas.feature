@@ -46,3 +46,44 @@ Feature: ReportBuilderFormulaService — derived columns via safe expression eva
   Scenario: validate returns an error for an unclosed bracket
     When I validate the formula expression "[unclosed"
     Then the formula validation should fail with an error
+
+  # ── FORMULAS ON PLAIN NUMBERS (report-builder-trust) ────────────────────
+  # Worked examples: openspec/changes/report-builder-trust/design.md#worked-examples
+
+  # H8 — Happy path: a ratio of two root amounts is a plain number (2.50, not ₹2.50) and ROUND works
+  @report_builder
+  Scenario: A ratio of two amounts is a number
+    Given the Acme report builder data
+    And a "CapitalCommitment" report with columns "folio_id,committed_amount,call_amount"
+    And the report has formula "Committed to called" = "ROUND([committed_amount] / [call_amount], 2)"
+    When I run the report
+    Then the row where "folio_id" is "F-1" shows "2.5" in formula "Committed to called"
+
+  # H9 — Happy path: a root amount minus a related total (5,00,00,000 − 1,80,00,000 = 3,20,00,000)
+  @report_builder
+  Scenario: An own amount minus a related total
+    Given the Acme report builder data
+    And a "CapitalCommitment" report with columns "folio_id,committed_amount,capital_remittances.collected_amount"
+    And the report has related data "capital_remittances"
+    And the report has formula "Not yet collected" = "[committed_amount] - [capital_remittances.collected_amount]"
+    When I run the report
+    Then the row where "folio_id" is "F-1" shows "32000000" in formula "Not yet collected"
+
+  # E6 — Edge case: dividing by zero gives a blank for that row only
+  @report_builder
+  Scenario: Division by zero is blank for that row only
+    Given the Acme report builder data
+    And a "CapitalCommitment" report with columns "folio_id,call_amount,collected_amount"
+    And the report has formula "Called to collected" = "ROUND([call_amount] / [collected_amount], 2)"
+    When I run the report
+    Then the row where "folio_id" is "F-3" is blank in formula "Called to collected"
+    And the row where "folio_id" is "F-1" shows "1.11" in formula "Called to collected"
+
+  # X7 — Error case: a formula saved with broken syntax leaves its cells blank; the report still renders
+  @report_builder
+  Scenario: A broken formula leaves blank cells
+    Given the Acme report builder data
+    And a "CapitalCommitment" report with columns "folio_id,committed_amount"
+    And the report has formula "Broken" = "[committed_amount] / "
+    When I run the report
+    Then the row where "folio_id" is "F-1" is blank in formula "Broken"

@@ -1,0 +1,118 @@
+<%# Wizard step 3 — Fund and filters: one fund (or All funds), then filters added one at a time and read back
+    as sentences. Choosing a field draws its operators and input (date, Yes/No, fund or value list, number,
+    text). H23, H24, E22, E23. %>
+<% content_for :title, "Guided setup – Fund and filters" %>
+<% entity    = current_user.entity %>
+<% sentences = wizard_filter_sentences(@config, entity) %>
+<% grouped_joins = @config.joins.select { |j| @config.column_type.strategy_for(j[:relation]) == :grouped } %>
+<% field_groups = [[wizard_model_label(@root_class.name).pluralize, @root_filter_columns.map { |c| [c[:label], c[:key]] }]] +
+                  grouped_joins.map { |j| rel = j[:relation].to_s; [rel.humanize, (@joined_filter_columns[rel] || []).map { |c| [c[:label], "#{rel}.#{c[:key]}"] }] } %>
+
+<div class="container-fluid py-3">
+  <%= render "report_builder/wizard/header" %>
+
+  <div class="row g-3">
+    <div class="col-xl-5">
+      <%# E23 — no fund picker when neither the rows nor their related data have a fund %>
+      <% if @funds %>
+        <div class="card mb-3">
+          <div class="card-header fw-semibold">Which fund?</div>
+          <div class="card-body">
+            <%= form_tag wizard_report_builder_fund_path(@report), method: :post, class: "rb-wizard-fund" do %>
+              <select name="fund_id" class="form-select" aria-label="Fund" onchange="this.form.requestSubmit()">
+                <option value="">All funds</option>
+                <% @funds.each do |fund| %>
+                  <option value="<%= fund.id %>" <%= 'selected' if @current_fund_id.to_s == fund.id.to_s %>><%= fund.name %></option>
+                <% end %>
+              </select>
+            <% end %>
+            <div class="form-text">
+              <% if @fund_targets[:root] %>
+                Limits the <%= wizard_model_label(@root_class.name).pluralize.downcase %> to one fund.
+              <% else %>
+                Limits <%= @fund_targets[:relations].map(&:humanize).map(&:downcase).to_sentence %> to one fund.
+              <% end %>
+            </div>
+          </div>
+        </div>
+      <% end %>
+
+      <div class="card mb-3">
+        <div class="card-header fw-semibold">Only include…</div>
+        <div class="card-body">
+          <% if sentences.empty? %>
+            <p class="text-muted small">Everything — no filters yet.</p>
+          <% else %>
+            <ul class="list-unstyled mb-3 rb-wizard-sentences">
+              <% sentences.each do |sentence| %>
+                <li class="d-flex align-items-center justify-content-between gap-2 py-1 border-bottom">
+                  <span class="small"><%= sentence[:text] %></span>
+                  <%= button_to wizard_report_builder_remove_filter_path(@report), method: :delete,
+                        params: { pred_key: sentence[:pred_key], relation: sentence[:relation] },
+                        class: "btn btn-sm btn-outline-danger", title: "Remove this filter", "aria-label": "Remove: #{sentence[:text]}" do %>
+                    <i class="ti ti-trash"></i>
+                  <% end %>
+                </li>
+              <% end %>
+            </ul>
+          <% end %>
+
+          <%# Choosing a field draws its operators and input %>
+          <%= form_tag wizard_report_builder_step_path(@report, step: "fund_filters"), method: :get, class: "mb-2" do %>
+            <label class="form-label small mb-1" for="wizard_filter_field">Add a filter on</label>
+            <select name="field" id="wizard_filter_field" class="form-select form-select-sm" onchange="this.form.requestSubmit()">
+              <option value="">— choose a field —</option>
+              <% field_groups.each do |title, options| %>
+                <optgroup label="<%= title %>">
+                  <% options.each do |label, value| %>
+                    <option value="<%= value %>" <%= 'selected' if value == @filter_field %>><%= label %></option>
+                  <% end %>
+                </optgroup>
+              <% end %>
+            </select>
+          <% end %>
+
+          <% if @filter_field %>
+            <% relation = grouped_joins.map { |j| j[:relation].to_s }.select { |r| @filter_field.start_with?("#{r}.") }.max_by(&:length) %>
+            <% field = relation ? @filter_field.delete_prefix("#{relation}.") : @filter_field %>
+            <% info = ReportBuilderFilterField.new(config: @config, key: field, entity: entity, relation: relation) %>
+            <%= form_tag wizard_report_builder_add_filter_path(@report), method: :post, class: "rb-wizard-add-filter" do %>
+              <%= hidden_field_tag :field, @filter_field %>
+              <div class="d-flex gap-2 align-items-start">
+                <select name="op" class="form-select form-select-sm w-auto" aria-label="Operator">
+                  <% info.operators.each do |label, op| %>
+                    <option value="<%= op %>"><%= label %></option>
+                  <% end %>
+                </select>
+                <div class="flex-grow-1">
+                  <% case info.kind %>
+                  <% when :date %>
+                    <%= date_field_tag "value", nil, class: "form-control form-control-sm" %>
+                  <% when :boolean, :fund, :choice %>
+                    <select name="value[]" class="form-select form-select-sm" aria-label="Value" multiple size="<%= [info.options.size, 4].min %>">
+                      <% info.options.each do |label, v| %>
+                        <option value="<%= v %>"><%= label %></option>
+                      <% end %>
+                    </select>
+                    <div class="form-text">Pick one, or several with "is any of".</div>
+                  <% when :number %>
+                    <input type="number" step="any" name="value" class="form-control form-control-sm" aria-label="Value">
+                  <% else %>
+                    <input type="text" name="value" class="form-control form-control-sm" aria-label="Value" placeholder="value (several: separate with commas)">
+                  <% end %>
+                </div>
+                <button type="submit" class="btn btn-sm btn-outline-primary">Add</button>
+              </div>
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-7">
+      <%= render "report_builder/wizard/sample" %>
+    </div>
+  </div>
+
+  <%= render "report_builder/wizard/footer_nav", back_step: "show", next_step: "order" %>
+</div>

@@ -1,0 +1,45 @@
+<%# Tick columns, then Add selected (one request). Grouped by source, then by kind; already-added columns
+    are shown ticked and disabled. Shared by the builder's Columns tab and wizard step 2. H3, H4, E1, E3.
+    locals: sources — [{ title:, relation: (nil for the row's own) }], frame — target frame or nil %>
+<% present = @report.grid_view_preferences.pluck(:key).to_set { |k| k.split(";").first.strip } %>
+<%= form_tag add_report_builder_column_path(@report), method: :post, class: "rb-column-groups",
+      data: { turbo_frame: local_assigns[:frame], controller: "report-builder-select" } do %>
+  <%# In the wizard the answer returns to its step %>
+  <%= hidden_field_tag :wizard_step, local_assigns[:wizard_step] if local_assigns[:wizard_step] %>
+  <div class="input-group input-group-sm mb-3">
+    <span class="input-group-text"><i class="ti ti-search"></i></span>
+    <input type="text" class="form-control" placeholder="Search columns" aria-label="Search columns"
+           data-action="input->report-builder-select#filter">
+  </div>
+
+  <% sources.each_with_index do |source, i| %>
+    <% groups = ReportBuilderColumnCatalog.grouped_for(@config, source[:relation]) %>
+    <% next if groups.empty? %>
+    <details class="mb-2" <%= 'open' if i.zero? || local_assigns[:open_all] %>>
+      <summary class="small fw-semibold py-1"><%= source[:title] %></summary>
+      <% groups.each do |group| %>
+        <div class="text-muted small mt-2 mb-1"><%= group[:label] %></div>
+        <% group[:columns].each do |col| %>
+          <% added = present.include?(col[:key]) %>
+          <div class="form-check" data-report-builder-select-target="row"
+               data-search-text="<%= [source[:title], col[:label], col[:hint]].compact.join(' ').downcase %>">
+            <input class="form-check-input" type="checkbox" name="keys[]" value="<%= col[:raw_key] %>"
+                   id="rb_col_<%= col[:key].parameterize(separator: '_') %>" <%= 'checked disabled' if added %>
+                   data-action="change->report-builder-select#count">
+            <label class="form-check-label small" for="rb_col_<%= col[:key].parameterize(separator: '_') %>">
+              <i class="ti <%= col[:icon] %> text-muted me-1" aria-hidden="true"></i><%= col[:label] %>
+              <% if col[:hint] %><span class="text-muted">· <%= col[:hint] %></span><% end %>
+              <% if added %><span class="badge bg-success-subtle text-success ms-1">Added</span><% end %>
+            </label>
+          </div>
+        <% end %>
+      <% end %>
+    </details>
+  <% end %>
+
+  <%# E1 — disabled until at least one new column is ticked %>
+  <button type="submit" class="btn btn-sm btn-outline-primary w-100 mt-2" disabled
+          data-report-builder-select-target="submit">
+    <i class="ti ti-plus"></i> Add selected (<span data-report-builder-select-target="counter">0</span>)
+  </button>
+<% end %>

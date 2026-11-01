@@ -1,0 +1,27 @@
+<%# The value input for one filter field, by kind: a date picker, Yes / No, the funds, the values present,
+    a number or text. Shared by the builder's filter rows (no name: the builder's JS reads the inputs) and the
+    report page's Narrow down (name: "nv", a plain GET form). Worked examples (live builder) H8, E7, E8;
+    (delivery) H10 — openspec/changes/report-builder-delivery/business-rules.md
+    locals: field_info, op, values, name (optional) %>
+<% name     = local_assigns[:name] %>
+<% multiple = op == "in" %>
+<% case field_info.kind %>
+<% when :date %>
+  <%= date_field_tag name || "rb_filter_value", values.first.presence, class: "form-control form-control-sm",
+                     data: { "rb-filter-iso": "1" } %>
+<% when :boolean, :fund, :choice %>
+  <select class="form-select form-select-sm filter-val" aria-label="Value" <%= 'multiple' if multiple %>
+          <% if name %>name="<%= multiple ? "#{name}[]" : name %>"<% end %>>
+    <% unless multiple %><option value="">— choose —</option><% end %>
+    <% field_info.options.each do |label, v| %>
+      <option value="<%= v %>" <%= 'selected' if values.include?(v) %>><%= label %></option>
+    <% end %>
+  </select>
+<% when :number %>
+  <input type="number" step="any" class="form-control form-control-sm filter-val" aria-label="Value"
+         value="<%= values.first %>" <% if name %>name="<%= name %>"<% end %>>
+<% else %>
+  <input type="text" class="form-control form-control-sm filter-val" aria-label="Value"
+         value="<%= values.join(', ') %>" placeholder="<%= multiple ? 'value 1, value 2, …' : 'value' %>"
+         <% if name %>name="<%= name %>"<% end %>>
+<% end %>
