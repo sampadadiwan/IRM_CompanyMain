@@ -1,6 +1,6 @@
 <div class="io-preview-container w-100">
     <div class="preview-doc-card h-100">
-        <% url = document.orignal && policy(document).not_generated_or_approved ? document.file.url(response_content_disposition: "inline; filename=#{document.name_with_extension}") : document_path(document) %>
+        <% url = document.orignal && policy(document).not_generated_or_approved ? document.file.url(response_content_disposition: document.inline_disposition) : document_path(document) %>
 
         <div class="doc-header">
             <div class="icon-wrapper">

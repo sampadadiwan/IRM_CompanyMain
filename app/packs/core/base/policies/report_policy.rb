@@ -1,7 +1,12 @@
 class ReportPolicy < ApplicationPolicy
+  # An AI report draft ("Describe it") is private to its maker until saved
+  # (report-builder-assistant E9, X7)
+  AI_DRAFT = "AI draft".freeze
+
   class Scope < Scope
     def resolve
       scope.where(entity_id: [user.entity_id, nil], curr_role: user.curr_role)
+           .where("reports.category IS NULL OR reports.category <> ? OR reports.user_id = ?", AI_DRAFT, user.id)
     end
   end
 
@@ -14,7 +19,7 @@ class ReportPolicy < ApplicationPolicy
   end
 
   def show?
-    belongs_to_entity?(user, record) || record.entity.nil?
+    (belongs_to_entity?(user, record) || record.entity.nil?) && own_draft_or_not_a_draft?
   end
 
   def dynamic?
@@ -30,7 +35,7 @@ class ReportPolicy < ApplicationPolicy
   end
 
   def update?
-    create?
+    create? && own_draft_or_not_a_draft?
   end
 
   def edit?
@@ -43,6 +48,10 @@ class ReportPolicy < ApplicationPolicy
 
   def configure_grids?
     update?
+  end
+
+  def own_draft_or_not_a_draft?
+    record.category != AI_DRAFT || record.user_id == user.id
   end
 
   def generate_report_insight?

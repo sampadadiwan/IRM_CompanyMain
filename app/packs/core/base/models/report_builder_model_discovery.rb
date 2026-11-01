@@ -168,7 +168,7 @@ class ReportBuilderModelDiscovery
   rescue StandardError
     true
   end
-  private_class_method :pack_enabled_for?
+  # Public: the starter templates use the same rule (ReportBuilderTemplates)
 
   def self.pack_for(klass)
     path = Object.const_source_location(klass.name)&.first.to_s

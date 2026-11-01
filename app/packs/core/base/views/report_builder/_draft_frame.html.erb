@@ -1,0 +1,6 @@
+<%# Broadcast by ReportDraftJob when a draft is ready: a frame that loads the draft's state with the user's own
+    session (the job can't render it — it has no signed-in user). locals: report %>
+<%= turbo_frame_tag "rb_draft_#{report.id}",
+      src: Rails.application.routes.url_helpers.report_builder_draft_state_path(report, at: Time.current.to_i) do %>
+  <div class="text-muted small p-3"><span class="spinner-border spinner-border-sm"></span> Loading the draft…</div>
+<% end %>

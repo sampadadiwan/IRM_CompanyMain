@@ -12,38 +12,29 @@
       <%= link_to edit_report_builder_path(@report), class: "btn btn-outline-primary d-flex align-items-center gap-2" do %>
         <i class="ti ti-edit"></i> Edit Builder
       <% end %>
-      <%= link_to download_report_builder_path(@report), class: "btn btn-success d-flex align-items-center gap-2" do %>
-        <i class="ti ti-file-spreadsheet"></i> Export XLSX
+      <%# The same report for another fund: copy, then change the fund (report-builder-starting-points H9) %>
+      <% if policy(@report).update? %>
+        <%= button_to duplicate_report_builder_path(@report), method: :post,
+              class: "btn btn-outline-primary d-flex align-items-center gap-2", form: { class: "d-inline" } do %>
+          <i class="ti ti-copy"></i> Duplicate
+        <% end %>
       <% end %>
+      <%= render "report_builder/export_button", report: @report %>
     </div>
   </div>
 
-  <div class="card shadow-sm border mb-4">
-    <div class="card-header bg-white py-3">
-      <h6 class="m-0 font-weight-bold text-primary">Filters</h6>
-    </div>
-    <div class="card-body">
-      <% if @search_predicate %>
-        <%= search_form_for @q, url: view_report_builder_path(@report), method: :get, class: "row g-3" do |f| %>
-          <div class="col-md-10">
-            <div class="input-group">
-              <span class="input-group-text bg-light border-end-0"><i class="ti ti-search"></i></span>
-              <%= f.search_field @search_predicate, class: "form-control border-start-0", placeholder: "Search..." %>
-            </div>
-          </div>
-          <div class="col-md-2">
-            <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
-          </div>
-        <% end %>
-      <% else %>
-        <p class="text-muted small mb-0">No searchable text column available for this report's root model.</p>
-      <% end %>
-    </div>
-  </div>
+  <%# Headline totals, then the report's filters and Narrow down (report-builder-delivery H9–H11) %>
+  <%= render "report_builder/headline_totals" %>
+  <%= render "report_builder/view_filters" %>
+
+  <%# A chart chosen in Describe it, from this page's rows (report-builder-assistant H7) %>
+  <% chart = report_chart_for(@report, config: @config, columns: @columns, rows: @rows) %>
+  <%= render "report_builder/report_chart", report: @report, chart: chart if chart %>
 
   <div class="card shadow-sm border">
     <div class="card-body p-0">
-      <%= render ReportBuilderTable.new(report: @report, columns: @columns, rows: @rows, q: @q) %>
+      <%= render ReportBuilderTable.new(report: @report, columns: @columns, rows: @rows, q: @q, formatter: @formatter,
+                                        totals: @totals, sort: @sort, sort_capped: @sort_capped) %>
     </div>
     <div class="card-footer bg-white py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
       <div class="text-muted small">
@@ -52,4 +43,6 @@
       <%== pagy_nav(@pagy) if @pagy.pages > 1 %>
     </div>
   </div>
+
+  <%= render "report_builder/recent_exports", report: @report, user: current_user %>
 </div>

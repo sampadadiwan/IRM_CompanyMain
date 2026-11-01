@@ -34,7 +34,27 @@ class ReportBuilderPivotAggregator
     [[], {}]
   end
 
+  # How many columns the pivot would create and the first headers, without
+  # running it — shown in the pivot form before Apply. Worked examples H16, X2.
+  def preview_columns(limit: 5)
+    return { error: "Choose categories and a value" } if group_bys.blank? || value_col.blank?
+
+    unknown = (group_bys + [value_col]).find { |col| !column_exists?(col) }
+    return { error: "#{unknown} isn't a field of #{relation.humanize.downcase}" } if unknown
+
+    combinations = discover_values
+    { count: combinations.size, headers: combinations.first(limit).map { |combo| Array(combo).join(" · ") } }
+  rescue ActiveRecord::StatementInvalid => e
+    Rails.logger.warn "[ReportBuilderPivotAggregator] preview failed: #{e.message}"
+    { error: "The pivot couldn't be previewed" }
+  end
+
   private
+
+  def column_exists?(col)
+    bare = col.to_s.split(".").last
+    child_class.column_names.include?(bare) || child_class.column_names.include?("#{bare}_cents")
+  end
 
   attr_reader :join_config, :root_ids, :pivot, :user
 
@@ -62,6 +82,8 @@ class ReportBuilderPivotAggregator
     # M16 — only the children the user may see, so an out-of-scope row adds no pivot column or value
     # (M16-2). The value discovery and the latest-value subquery both start here.
     scope = scope.where(id: visible_child_ids) if visible_child_ids
+    # Polymorphic has_many: only the root's own owner type (H5)
+    scope = scope.where(join_config[:poly_type] => join_config[:poly_name]) if join_config[:poly_type].present?
     scope = scope.joins(joins.to_sym) if joins.present?
     child_filters.present? ? scope.ransack(child_filters).result : scope
   end
@@ -82,9 +104,11 @@ class ReportBuilderPivotAggregator
   def build_dynamic_columns(combinations)
     combinations.map do |combo|
       label = Array(combo).join(" | ")
+      # Headers name their related data, so two pivots with the same values
+      # stay distinguishable: "Capital commitments · A (sum)" (H12)
       ReportBuilderDynamicColumn.new(
         key: pivot_key(combo),
-        label: "#{label} (#{aggregate})"
+        label: "#{relation.humanize} · #{label} (#{aggregate})"
       )
     end
   end
@@ -112,18 +136,26 @@ class ReportBuilderPivotAggregator
     end
 
     fk_sql = Arel.sql("`#{child_class.table_name}`.`#{fk}`")
-    base_scope
-      .group(fk_sql)
-      .select(fk_sql, *case_exprs.map { |e| Arel.sql(e[:sql]) })
-      .each do |row|
-        id = row.send(fk)
-        case_exprs.each do |e|
-          raw = row.send(e[:alias])
-          result[id][pivot_key(e[:combo])] = monetized?(value_col) ? cents_to_amount(raw) : raw
-        end
+    relation = base_scope
+               .group(fk_sql)
+               .select(Arel.sql("#{fk_sql} AS rb_group_id"), *case_exprs.map { |e| Arel.sql(e[:sql]) })
+
+    # Plain rows, not model instances: a partial SELECT trips models whose
+    # after_initialize reads a column that isn't selected (e.g. Document)
+    select_rows(relation).each do |row|
+      id = row["rb_group_id"]
+      case_exprs.each do |e|
+        raw = row[e[:alias]]
+        # A count is a number of rows, never money (H2)
+        result[id][pivot_key(e[:combo])] = monetized?(value_col) && aggregate != "count" ? cents_to_amount(raw) : raw
       end
+    end
 
     result
+  end
+
+  def select_rows(relation)
+    child_class.connection.select_all(relation.to_sql).to_a
   end
 
   def run_latest_pivot_query(combinations)
@@ -138,20 +170,23 @@ class ReportBuilderPivotAggregator
 
     # Fetch values for those IDs
     db_val_col_name = db_col(value_col)
-    child_class
-      .joins(joins&.to_sym)
-      .where("`#{child_class.table_name}`.id IN (#{latest_ids_query.to_sql})")
-      .select("`#{child_class.table_name}`.`#{fk}`", *db_grp_cols, db_val_col_name)
-      .each do |row|
-        root_id = row.send(fk)
+    relation = child_class
+               .joins(joins.present? ? joins.to_sym : [])
+               .where("`#{child_class.table_name}`.id IN (#{latest_ids_query.to_sql})")
+               .select("`#{child_class.table_name}`.`#{fk}` AS rb_group_id",
+                       *db_grp_cols.each_with_index.map { |c, i| "#{c} AS rb_group_#{i}" },
+                       "#{db_val_col_name} AS rb_value")
 
-        # Extract combination from row
-        combo = group_bys.map { |gb| row.send(gb.split(".").last) }
-        next unless combinations.include?(combo) || combinations.include?(combo.first) # handle single vs multi
+    select_rows(relation).each do |row|
+      root_id = row["rb_group_id"]
 
-        raw = row.send(value_col.split(".").last)
-        result[root_id][pivot_key(combo)] = monetized?(value_col) ? cents_to_amount(raw) : raw
-      end
+      # Extract combination from row
+      combo = group_bys.each_index.map { |i| row["rb_group_#{i}"] }
+      next unless combinations.include?(combo) || combinations.include?(combo.first) # handle single vs multi
+
+      raw = row["rb_value"]
+      result[root_id][pivot_key(combo)] = monetized?(value_col) ? cents_to_amount(raw) : raw
+    end
 
     result
   end

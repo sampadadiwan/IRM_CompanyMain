@@ -1,27 +1,48 @@
+<%# E23 — a computed sort on a very large report only orders the first rows it loaded %>
+<% if @sort_capped %>
+  <div class="alert alert-info d-flex align-items-center gap-2 mb-0 py-2 rounded-0 border-0 border-bottom">
+    <i class="ti ti-info-circle flex-shrink-0"></i>
+    <span>Sorted within the first <%= number_with_delimiter(computed_sort_cap) %> rows.</span>
+  </div>
+<% end %>
 <div class="table-responsive">
   <table class="table table-bordered table-hover table-sm align-middle mb-0">
     <thead class="table-dark">
       <tr>
-        <% @columns.each do |col| %>
-          <th class="text-nowrap"><%= column_label(col) %></th>
+        <%# Each header sorts the page for this visit only (H20); the saved sort stays the default (E21) %>
+        <% columns.each do |col| %>
+          <th class="text-nowrap <%= formatter.align(col) %>" aria-sort="<%= sorted_by?(col) ? (@sort[:dir] == 'desc' ? 'descending' : 'ascending') : 'none' %>">
+            <%= link_to helpers.view_report_builder_path(@report, sort_link_params(col)),
+                  class: "text-reset text-decoration-none d-inline-flex align-items-center gap-1",
+                  title: "Sort by #{column_label(col)}" do %>
+              <span><%= column_label(col) %></span><i class="ti <%= sort_icon(col) %>"></i>
+            <% end %>
+          </th>
         <% end %>
       </tr>
     </thead>
     <tbody>
-      <% if @rows.empty? %>
+      <% if rows.empty? %>
         <tr>
-          <td colspan="<%= @columns.size %>" class="text-center py-4 text-muted">
+          <td colspan="<%= columns.size %>" class="text-center py-4 text-muted">
             No data found matching your filters.
           </td>
         </tr>
       <% else %>
-        <% @rows.each do |row| %>
+        <% rows.each do |row| %>
           <tr>
-            <% @columns.each do |col| %>
-              <% key = column_key(col) %>
-              <% clean_key = key.split(";").first.strip %>
-              <td>
-                <%= format_value(row[clean_key] || row[key], key) %>
+            <% columns.each do |col| %>
+              <td class="<%= formatter.align(col) %>"><%= formatter.display(value_for(row, col), col) %></td>
+            <% end %>
+          </tr>
+        <% end %>
+        <%# Totals row — "Total", or "Total (this page)" on a paged report (H17, E18); none without totalable
+            columns (E19). The last body row, so it gets the same cell padding as the rows above it. %>
+        <% if totals %>
+          <tr class="fw-semibold report-builder-totals">
+            <% columns.each_with_index do |col, i| %>
+              <td class="fw-semibold <%= formatter.align(col) %>">
+                <% if i.zero? %><span class="me-2"><%= totals_label %></span><% end %><%= formatter.display(totals[col.key], col) %>
               </td>
             <% end %>
           </tr>

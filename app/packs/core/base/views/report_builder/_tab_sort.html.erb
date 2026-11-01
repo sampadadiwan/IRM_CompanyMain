@@ -1,0 +1,92 @@
+<%# Sort & Excel tab: a help box, then three panels side by side — the default order, Excel row grouping and the
+    currency label, each saying what it changes (and that nothing is converted) %>
+<% gvps_for_sort = @report.grid_view_preferences.reorder(:sequence, :id).to_a %>
+
+<%= render "report_builder/wizard/help_box",
+      title: "How the report is ordered and how the Excel looks",
+      body: "The order is what readers see first — they can still click a column header to re-sort. " \
+            "Grouping and the currency label only change the exported Excel and the column headers, never the numbers." %>
+
+<div class="row g-3">
+  <%# The default order %>
+  <div class="col-lg-4">
+    <div class="card border shadow-none h-100 mb-0">
+      <div class="card-header bg-primary-subtle d-flex align-items-center gap-2 py-2">
+        <span class="wizard-card-icon"><i class="ti ti-arrows-sort"></i></span>
+        <label class="fw-semibold mb-0" for="rb_sort_key">Order rows by</label>
+      </div>
+      <div class="card-body">
+        <div class="row g-2">
+          <div class="col-12 col-xxl-7">
+            <select id="rb_sort_key" class="form-select form-select-sm" data-action="change->report-builder#sortChanged"
+                    data-report-builder-target="sortKey">
+              <option value="">— none —</option>
+              <% gvps_for_sort.each do |gvp| %>
+                <%# A formula's position row sorts by the formula's own key; a pivot block can't be a sort key %>
+                <% next if gvp.key.start_with?("pivot:") %>
+                <% ck = gvp.key.split(";").first.strip.delete_prefix("formula:") %>
+                <option value="<%= ck %>" <%= 'selected' if @config.sort[:key].to_s.split(";").first&.strip == ck %>><%= gvp.label.presence || gvp.name %></option>
+              <% end %>
+            </select>
+          </div>
+          <div class="col-12 col-xxl-5">
+            <select class="form-select form-select-sm" aria-label="Sort direction" data-action="change->report-builder#sortChanged"
+                    data-report-builder-target="sortDir">
+              <option value="asc" <%= 'selected' if @config.sort[:dir] != "desc" %>>Lowest first</option>
+              <option value="desc" <%= 'selected' if @config.sort[:dir] == "desc" %>>Highest first</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-text">e.g. Committed, Highest first — the biggest on top. None keeps the stored order.</div>
+      </div>
+    </div>
+  </div>
+
+  <%# Excel row grouping %>
+  <div class="col-lg-4">
+    <div class="card border shadow-none h-100 mb-0">
+      <div class="card-header bg-primary-subtle d-flex align-items-center gap-2 py-2">
+        <span class="wizard-card-icon"><i class="ti ti-list-tree"></i></span>
+        <label class="fw-semibold mb-0" for="rb_group_rows">Group rows in Excel by</label>
+        <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip"
+           title="The export gets collapsible groups (Excel's + / − on the left), one per value. The screens are not affected."></i>
+      </div>
+      <div class="card-body">
+        <select id="rb_group_rows" class="form-select form-select-sm" data-action="change->report-builder#groupingChanged"
+                data-report-builder-target="groupRowsBy">
+          <option value="">— none —</option>
+          <% gvps_for_sort.each do |gvp| %>
+            <%# Formula and pivot positions aren't grouping columns %>
+            <% next if gvp.key.start_with?("formula:", "pivot:") %>
+            <% ck = gvp.key.split(";").first.strip %>
+            <option value="<%= ck %>" <%= 'selected' if @config.group_rows_by == ck %>><%= gvp.label.presence || gvp.name %></option>
+          <% end %>
+        </select>
+        <div class="form-text">Creates collapsible groups in the Excel export, e.g. one per fund close.</div>
+      </div>
+    </div>
+  </div>
+
+  <%# The currency label — display only %>
+  <div class="col-lg-4">
+    <div class="card border shadow-none h-100 mb-0">
+      <div class="card-header bg-primary-subtle d-flex align-items-center gap-2 py-2">
+        <span class="wizard-card-icon"><i class="ti ti-currency-dollar"></i></span>
+        <label class="fw-semibold mb-0" for="rb_currency">Currency label</label>
+        <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip"
+           title="Adds the currency to the amount columns' headers. Amounts are never converted."></i>
+      </div>
+      <div class="card-body">
+        <select id="rb_currency" class="form-select form-select-sm" data-action="change->report-builder#currencyChanged"
+                data-report-builder-target="currency">
+          <option value="">— none —</option>
+          <% Money::Currency.table.values.sort_by { |c| c[:iso_code] }.each do |c| %>
+            <option value="<%= c[:iso_code] %>" <%= 'selected' if @config.currency.to_s.upcase == c[:iso_code] %>><%= c[:iso_code] %> (<%= c[:symbol] %>) — <%= c[:name] %></option>
+          <% end %>
+        </select>
+        <%# Display only — amounts are never converted %>
+        <div class="form-text">Labels amount columns with this currency. Display only — amounts are not converted.</div>
+      </div>
+    </div>
+  </div>
+</div>

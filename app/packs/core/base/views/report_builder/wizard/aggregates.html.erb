@@ -1,4 +1,4 @@
-<% content_for :title, "Guided Report Wizard – Summarize" %>
+<% content_for :title, "Guided setup – Summarize" %>
 <%
   agg_icons = { "sum" => "ti-sum", "count" => "ti-123", "avg" => "ti-chart-arrows",
                 "min" => "ti-arrow-down", "max" => "ti-arrow-up", "latest" => "ti-clock",
@@ -105,7 +105,8 @@
                 <div class="wizard-row-list wizard-scroll-list-sm">
                   <% selected_gvps.each do |gvp| %>
                     <% clean_key = gvp.key.split(";").first.strip %>
-                    <% current_agg = @config.aggregate_for(clean_key) %>
+                    <%# The total the report uses — the stored one, else the default for the column's type (★ W1) %>
+                    <% current_agg = @config.effective_aggregate(clean_key) %>
                     <div class="wizard-row-card wizard-row-card-stacked">
                       <%= form_tag update_report_builder_column_label_path(@report, gvp_id: gvp.id), method: :patch, class: "d-flex align-items-center gap-2" do %>
                         <span class="wizard-row-icon flex-shrink-0"><i class="ti <%= wizard_type_icon_for(gvp.key) %>"></i></span>

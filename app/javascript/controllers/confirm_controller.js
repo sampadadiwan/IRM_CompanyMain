@@ -134,6 +134,14 @@ export default class extends Controller {
         if(btn.attr("data-turbo") == "false") {
             $("#confirm_submit").attr("data-turbo", false);
         }
+        // Keep the original form's frame target, so a confirmed change answers like an
+        // unconfirmed one (e.g. the Report Builder settings panel's Turbo Streams)
+        const frame = this.deleteForm.dataset.turboFrame;
+        if (frame) {
+            $("#confirm_submit").attr("data-turbo-frame", frame);
+        } else {
+            $("#confirm_submit").removeAttr("data-turbo-frame");
+        }
 
         // Sync the CSRF authenticity token
         let at = $(this.deleteForm).find('input[name="authenticity_token"]').val();

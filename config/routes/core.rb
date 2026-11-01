@@ -46,6 +46,22 @@ scope path: 'report_builder', controller: :report_builder do
   # understands the report_builder template format.
   get    'wizard',                   action: :wizard_new,        as: :wizard_report_builder
   post   'wizard',                   action: :wizard_create,     as: :wizard_report_builder_create
+  # Starting points: the template page, creating from a template, Duplicate
+  # (report-builder-starting-points)
+  get    'templates',                action: :templates,         as: :report_builder_templates
+  post   'templates/:key',           action: :create_from_template, as: :create_report_builder_from_template
+  post   ':id/duplicate',            action: :duplicate,         as: :duplicate_report_builder
+  # Describe it — the AI assistant's drafts (report-builder-assistant)
+  get    'describe',                 action: :describe,          as: :report_builder_describe
+  post   'describe',                 action: :describe_create,   as: :report_builder_describe_create
+  get    ':id/draft',                action: :draft,             as: :report_builder_draft
+  get    ':id/draft/state',          action: :draft_state,       as: :report_builder_draft_state
+  post   ':id/draft/refine',         action: :draft_refine,      as: :report_builder_draft_refine
+  post   ':id/draft/fund',           action: :draft_fund,        as: :report_builder_draft_fund
+  patch  ':id/draft/chart',          action: :draft_chart,       as: :report_builder_draft_chart
+  post   ':id/draft/chart',          action: :draft_describe_chart, as: :report_builder_draft_describe_chart
+  patch  ':id/draft/save',           action: :draft_save,        as: :report_builder_draft_save
+  delete ':id/draft',                action: :draft_discard,     as: :report_builder_draft_discard
   get    ':id/wizard/:step',         action: :wizard_step,       as: :wizard_report_builder_step
   post   ':id/wizard_filter',        action: :wizard_add_filter,    as: :wizard_report_builder_add_filter
   delete ':id/wizard_filter',        action: :wizard_remove_filter, as: :wizard_report_builder_remove_filter
@@ -57,15 +73,20 @@ scope path: 'report_builder', controller: :report_builder do
   post   ':id/columns',              action: :add_column,        as: :add_report_builder_column
   delete ':id/columns/:gvp_id',      action: :remove_column,     as: :remove_report_builder_column
   patch  ':id/columns/:gvp_id',      action: :update_column_label, as: :update_report_builder_column_label
+  patch  ':id/columns/:gvp_id/move', action: :move_column,       as: :move_report_builder_column
+  post   ':id/undo',                  action: :undo,              as: :undo_report_builder
+  get    ':id/filter_row',            action: :filter_row,        as: :report_builder_filter_row
+  get    ':id/pivot_preview',         action: :pivot_preview,     as: :report_builder_pivot_preview
   post   ':id/join',                 action: :add_join,          as: :add_report_builder_join
   delete ':id/join',                 action: :remove_join,       as: :remove_report_builder_join
   patch  ':id/aggregate',            action: :update_aggregate,  as: :update_report_builder_aggregate
   patch  ':id/sort',                 action: :update_sort,       as: :update_report_builder_sort
   patch  ':id/name',                 action: :update_name,       as: :update_report_builder_name
   patch  ':id/pivot',                action: :update_pivot,      as: :update_report_builder_pivot
-  patch  ':id/view_settings',        action: :update_view_settings, as: :update_report_builder_view_settings
+  patch  ':id/join_settings',        action: :update_join_settings, as: :update_report_builder_join_settings
   patch  ':id/schedule',             action: :update_schedule,      as: :update_report_builder_schedule
-  post   ':id/apply_template',       action: :apply_template,       as: :apply_report_builder_template
+  post   ':id/schedule_check',       action: :schedule_check,       as: :report_builder_schedule_check
+  post   ':id/schedule_test',        action: :schedule_test,        as: :report_builder_schedule_test
   post   ':id/formulas',             action: :add_formula,       as: :add_report_builder_formula
   delete ':id/formulas/:key',        action: :remove_formula,    as: :remove_report_builder_formula
   post   ':id/validate_formula',     action: :validate_formula,  as: :validate_report_builder_formula

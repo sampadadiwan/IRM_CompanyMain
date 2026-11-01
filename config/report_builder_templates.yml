@@ -1,0 +1,288 @@
+# Report Builder starter templates — product content, reviewed in pull requests.
+#
+# Each template creates a NEW report (ReportSpecApplier); it never changes an
+# existing one. `fund`: required (sums money across funds — one fund only),
+# optional (All funds allowed; the report check warns on mixed currencies) or
+# none (fund-level or not money). Column keys are checked against the column
+# catalog by features/core/report_builder/templates_check.feature.
+#
+# Spec format: see ReportSpecApplier. Worked examples:
+# openspec/changes/report-builder-starting-points/business-rules.md
+
+lp_capital_account:
+  name: LP Capital Account Summary
+  area: investors
+  question: Which LPs owe us money, and how much of each commitment is called?
+  includes: [3 formulas, sorted by Unpaid]
+  fund: required
+  spec:
+    root_model: Investor
+    columns:
+      - key: investor_name
+      - key: category
+      - key: city
+      - key: tag_list
+      - { key: capital_commitments.committed_amount, label: Committed, total: sum }
+      - { key: capital_commitments.call_amount, label: Called, total: sum }
+      - { key: capital_commitments.collected_amount, label: Collected, total: sum }
+      - { key: capital_commitments.distribution_amount, label: Distributed, total: sum }
+      - { key: capital_commitments.folio_id, label: "# Commitments", total: count }
+      - formula: called_pct
+      - formula: unpaid
+      - formula: uncalled
+    joins:
+      - relation: capital_commitments
+    root_filters: { category_eq: LP }
+    formulas:
+      - key: called_pct
+        label: Called %
+        expression: "IF([capital_commitments.committed_amount] > 0, [capital_commitments.call_amount] / [capital_commitments.committed_amount] * 100, 0)"
+      - key: unpaid
+        label: Unpaid
+        expression: "[capital_commitments.call_amount] - [capital_commitments.collected_amount]"
+      - key: uncalled
+        label: Uncalled
+        expression: "[capital_commitments.committed_amount] - [capital_commitments.call_amount]"
+    sort: { key: unpaid, dir: desc }
+
+lp_holdings:
+  name: LP Holdings by Unit Class
+  area: investors
+  question: What does each LP hold in each unit class?
+  includes: [pivot by unit type, unit totals]
+  fund: required
+  spec:
+    root_model: Investor
+    columns:
+      - key: investor_name
+      - key: category
+      - pivot: capital_commitments
+      - { key: fund_units.quantity, label: Units held, total: sum }
+      - { key: fund_units.amount, label: Unit value, total: sum }
+      - { key: fund_units.issue_date, label: Last allotment, total: max }
+    joins:
+      - relation: capital_commitments
+        pivot: { group_bys: [unit_type], value_col: committed_amount, aggregate: sum }
+      - relation: fund_units
+    root_filters: { category_eq: LP }
+    sort: { key: investor_name, dir: asc }
+
+call_collection:
+  name: Capital Call Collection Tracker
+  area: capital_calls
+  question: For each call, how much is paid, pending or overdue?
+  includes: [pivot by remittance status]
+  fund: required
+  spec:
+    root_model: CapitalCall
+    columns:
+      - { key: fund.name, label: Fund }
+      - key: name
+      - key: call_date
+      - key: due_date
+      - key: percentage_called
+      - key: call_amount
+      - key: collected_amount
+      - pivot: capital_remittances
+    joins:
+      - relation: fund
+      - relation: capital_remittances
+        pivot: { group_bys: [status], value_col: call_amount, aggregate: sum }
+    sort: { key: due_date, dir: desc }
+
+overdue_chase:
+  name: Overdue Remittances Chase List
+  area: capital_calls
+  question: Who do we chase, and what have they paid so far?
+  includes: [is any of filter, Shortfall formula, Excel grouping]
+  fund: required
+  spec:
+    root_model: CapitalRemittance
+    columns:
+      - key: investor_name
+      - key: investing_entity_name
+      - key: folio_id
+      - key: remittance_date
+      - key: call_amount
+      - key: collected_amount
+      - key: arrear_amount
+      - key: status
+      - { key: capital_remittance_payments.amount, label: Received, total: sum }
+      - { key: capital_remittance_payments.payment_date, label: Last payment, total: max }
+      - { key: capital_remittance_payments.reference_no, label: Payment refs, total: list }
+      - formula: shortfall
+    joins:
+      - relation: capital_remittance_payments
+    root_filters: { status_in: [Overdue, Pending] }
+    formulas:
+      - key: shortfall
+        label: Shortfall
+        expression: "[call_amount] - [collected_amount]"
+    sort: { key: remittance_date, dir: asc }
+    group_rows_by: investor_name
+
+distribution_statement:
+  name: Distribution Statement by Folio
+  area: distributions
+  question: What did each folio receive, what was deducted, and what's the DPI?
+  includes: [filter on related rows, 2 related data, DPI formula]
+  fund: required
+  spec:
+    root_model: CapitalCommitment
+    columns:
+      - key: investor_name
+      - key: investor_kyc_full_name
+      - key: folio_id
+      - key: fund_close
+      - key: unit_type
+      - key: committed_amount
+      - { key: capital_distribution_payments.gross_payable, label: Gross Payable, total: sum }
+      - { key: capital_distribution_payments.cost_of_investment_with_fees, label: Return of capital, total: sum }
+      - { key: capital_distribution_payments.income_with_fees, label: Income, total: sum }
+      - { key: capital_distribution_payments.reinvestment_with_fees, label: Reinvestment, total: sum }
+      - { key: capital_distribution_payments.net_payable, label: Net Payable, total: sum }
+      - { key: capital_distribution_payments.payment_date, label: Last paid, total: max }
+      - { key: capital_remittances.collected_amount, label: Paid-in, total: sum }
+      - formula: deductions
+      - formula: dpi
+    joins:
+      - relation: capital_distribution_payments
+        child_filters: { completed_eq: "true" }
+      - relation: capital_remittances
+    formulas:
+      - key: deductions
+        label: Deductions
+        expression: "[capital_distribution_payments.gross_payable] - [capital_distribution_payments.net_payable]"
+      - key: dpi
+        label: DPI
+        expression: "IF([capital_remittances.collected_amount] > 0, [capital_distribution_payments.net_payable] / [capital_remittances.collected_amount], 0)"
+    sort: { key: investor_name, dir: asc }
+    group_rows_by: fund_close
+
+fund_scorecard:
+  name: Fund Scorecard
+  area: fund_overview
+  question: "One line per fund: raised, called, returned, invested."
+  includes: [4 related data, latest dates, lists]
+  fund: none
+  spec:
+    root_model: Fund
+    columns:
+      - key: name
+      - key: currency
+      - key: category
+      - key: first_close_date
+      - { key: capital_commitments.committed_amount, label: Committed, total: sum }
+      - { key: capital_commitments.folio_id, label: "# Commitments", total: count }
+      - { key: capital_calls.call_amount, label: Called, total: sum }
+      - { key: capital_calls.call_date, label: Last call, total: max }
+      - { key: capital_distribution_payments.net_payable, label: Distributed net, total: sum }
+      - { key: capital_distribution_payments.payment_date, label: Last distribution, total: max }
+      - { key: portfolio_investments.portfolio_company_name, label: Portfolio companies, total: list }
+      - formula: called_pct
+      - formula: dist_to_called
+    joins:
+      - relation: capital_commitments
+      - relation: capital_calls
+      - relation: capital_distribution_payments
+      - relation: portfolio_investments
+    formulas:
+      - key: called_pct
+        label: Called %
+        expression: "IF([capital_commitments.committed_amount] > 0, [capital_calls.call_amount] / [capital_commitments.committed_amount] * 100, 0)"
+      - key: dist_to_called
+        label: Distributed / Called
+        expression: "IF([capital_calls.call_amount] > 0, [capital_distribution_payments.net_payable] / [capital_calls.call_amount], 0)"
+    sort: { key: capital_commitments.committed_amount, dir: desc }
+
+fundraising_by_close:
+  name: Fundraising by Close
+  area: fund_overview
+  question: How much did each close raise, per unit class?
+  includes: [pivot on two categories]
+  fund: none
+  spec:
+    root_model: Fund
+    columns:
+      - key: name
+      - key: currency
+      - key: first_close_date
+      - key: last_close_date
+      - pivot: capital_commitments
+    joins:
+      - relation: capital_commitments
+        pivot: { group_bys: [fund_close, unit_type], value_col: committed_amount, aggregate: sum }
+    sort: { key: name, dir: asc }
+
+portfolio_moic:
+  name: Portfolio Performance (MOIC)
+  area: portfolio
+  question: What has each investment returned?
+  includes: [first investment date, MOIC formula, Excel grouping]
+  fund: required
+  spec:
+    root_model: AggregatePortfolioInvestment
+    columns:
+      - key: portfolio_company_name
+      - key: investment_instrument_name
+      - key: bought_amount
+      - key: sold_amount
+      - key: fmv
+      - key: gain
+      - key: unrealized_gain
+      - { key: portfolio_investments.investment_date, label: First investment, total: min }
+      - { key: portfolio_investments.amount, label: "# Transactions", total: count }
+      - formula: moic
+    joins:
+      - relation: portfolio_investments
+    formulas:
+      - key: moic
+        label: MOIC
+        expression: "IF([bought_amount] > 0, ([fmv] + [sold_amount]) / [bought_amount], 0)"
+    sort: { key: portfolio_company_name, dir: asc }
+
+kpi_matrix:
+  name: Portfolio KPI Matrix
+  area: portfolio
+  question: Each company's latest KPIs, one column per KPI.
+  includes: [latest-value pivot]
+  fund: none
+  spec:
+    root_model: KpiReport
+    columns:
+      - { key: entity_name, label: Company }
+      - key: as_of
+      - key: period
+      - key: tag_list
+      - pivot: kpis
+    joins:
+      - relation: kpis
+        pivot: { group_bys: [name], value_col: value, aggregate: latest }
+    root_filters: { period_eq: Quarter }
+    sort: { key: as_of, dir: desc }
+
+unverified_kyc:
+  name: "Unverified KYC: Money at Stake"
+  area: compliance
+  question: Which unverified KYCs hold the most committed money?
+  includes: [compliance filter, sort by a related total]
+  fund: optional
+  spec:
+    root_model: InvestorKyc
+    columns:
+      - key: full_name
+      - key: investor_name
+      - key: kyc_type
+      - key: verified
+      - key: aml_status
+      - key: expiry_date
+      - key: docs_completed
+      - key: completed_by_investor
+      - { key: capital_commitments.committed_amount, label: Committed, total: sum }
+      - { key: capital_commitments.folio_id, label: "# Folios", total: count }
+      - { key: capital_remittances.collected_amount, label: Money received, total: sum }
+    joins:
+      - relation: capital_commitments
+      - relation: capital_remittances
+    root_filters: { verified_eq: "false" }  # a string: Ransack drops a blank (false) value
+    sort: { key: capital_commitments.committed_amount, dir: desc }

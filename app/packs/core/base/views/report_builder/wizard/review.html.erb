@@ -1,4 +1,4 @@
-<% content_for :title, "Guided Report Wizard – Review" %>
+<% content_for :title, "Guided setup – Review" %>
 <%
   sort_desc = @config.sort[:key].present? ? "#{@gvps.find { |g| g.key.split(';').first.strip == @config.sort[:key].to_s.split(';').first.to_s.strip }&.label || @config.sort[:key]} (#{@config.sort[:dir] == 'desc' ? 'descending' : 'ascending'})" : nil
   total_filters = @config.root_filters.size + @config.joins.sum { |j| (j[:child_filters] || {}).size }
@@ -57,7 +57,7 @@
       <div class="mb-4">
         <div class="wizard-review-section-label"><i class="ti ti-list-check"></i>Columns</div>
         <% if @gvps.empty? %>
-          <p class="text-muted small mb-0">No columns added yet — you can add some in the Advanced Builder.</p>
+          <p class="text-muted small mb-0">No columns added yet — you can add some in the report builder.</p>
         <% else %>
           <div class="d-flex flex-wrap gap-2">
             <% @gvps.each do |gvp| %>
@@ -82,7 +82,8 @@
   </div>
 
   <div class="text-center mb-4">
-    <%= link_to edit_report_builder_path(@report), class: "btn btn-primary btn-lg d-flex align-items-center justify-content-center gap-2 px-5 mx-auto", style: "max-width: 360px" do %>
+    <%# ★ W11 — the report page, with its rows, totals and Export %>
+    <%= link_to view_report_builder_path(@report), class: "btn btn-primary btn-lg d-flex align-items-center justify-content-center gap-2 px-5 mx-auto", style: "max-width: 360px" do %>
       <i class="ti ti-eye"></i> Open My Report
     <% end %>
     <p class="text-muted small mt-3 mb-0">

@@ -1,0 +1,15 @@
+<%# Up to four headline totals above the table: the first four columns, in report order, that have a total
+    in the totals row — each card shows exactly that cell's text, and says "this page" when the totals row does.
+    Worked examples H11, E12, E13 — openspec/changes/report-builder-delivery/business-rules.md %>
+<% totals = @totals&.call %>
+<% carded = totals ? @columns.select { |col| !totals[col.key].nil? }.first(4) : [] %>
+<% if carded.any? %>
+  <div class="row mb-2 rb-headline-totals">
+    <% carded.each do |col| %>
+      <%= render NumberStatsComponent.new(path: nil, amount: @formatter.display(totals[col.key], col),
+                                          subtitle: col.respond_to?(:label) ? col.label.presence || col.name : col.key,
+                                          progress_bar_color: "info", fs_size: 5,
+                                          footnote: (@totals.label == "Total (this page)" ? "this page" : nil)) %>
+    <% end %>
+  </div>
+<% end %>

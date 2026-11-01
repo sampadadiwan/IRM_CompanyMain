@@ -1,0 +1,78 @@
+<%# The report page's filters: the report's own filters as chips (in guided setup's words; changed only in
+    the builder), the reader's own filters as chips with ✕, and Narrow down — one field at a time, with the
+    builder's typed inputs, for this visit only. Worked examples H9, H10, E8, E9, E10, E11 —
+    openspec/changes/report-builder-delivery/business-rules.md %>
+<% saved   = wizard_filter_sentences(@config, current_user.entity) %>
+<% reader  = @reader_filters %>
+<% kept    = request.query_parameters.except("page", "nf", "nop", "nv", "apply") %>
+<% fields  = ReportBuilderColumnCatalog.filter_columns_for(@config.root_class) %>
+<% picked  = fields.find { |c| c[:key] == params[:nf].to_s } %>
+<% info    = picked && ReportBuilderFilterField.new(config: @config, key: picked[:key], entity: current_user.entity) %>
+<% op      = info && (info.operators.find { |_, o| o == params[:nop].to_s } || info.operators.first)&.last %>
+<div class="card shadow-sm border mb-4 rb-view-filters">
+  <div class="card-body d-flex flex-column gap-2">
+    <% if saved.any? %>
+      <div class="d-flex flex-wrap align-items-center gap-2 rb-saved-filters">
+        <span class="text-muted small">This report shows only:</span>
+        <% saved.each do |sentence| %>
+          <span class="badge bg-secondary-subtle text-secondary"><i class="ti ti-filter"></i> <%= sentence[:text].sub(/\AOnly include .+? where /, "") %></span>
+        <% end %>
+        <% if policy(@report).update? %>
+          <%= link_to "Change in builder", edit_report_builder_path(@report, tab: "filters"), class: "small" %>
+        <% end %>
+      </div>
+    <% end %>
+
+    <% if reader.chips.any? %>
+      <div class="d-flex flex-wrap align-items-center gap-2 rb-reader-filters">
+        <span class="text-muted small">Narrowed by you:</span>
+        <% reader.chips.each do |chip| %>
+          <% rest = (kept["q"] || {}).except(chip[:key]) %>
+          <span class="badge bg-primary-subtle text-primary d-inline-flex align-items-center gap-1 rb-reader-chip">
+            <%= chip[:text] %>
+            <%= link_to view_report_builder_path(@report, kept.merge("q" => rest.presence).compact), class: "text-primary",
+                        title: "Remove #{chip[:text]}", "aria-label": "Remove #{chip[:text]}" do %><i class="ti ti-x"></i><% end %>
+          </span>
+        <% end %>
+      </div>
+    <% end %>
+
+    <% reader.dropped.each do |message| %>
+      <div class="small text-warning rb-reader-dropped"><i class="ti ti-alert-triangle"></i> <%= message %></div>
+    <% end %>
+
+    <%= form_with url: view_report_builder_path(@report), method: :get, local: true,
+                  class: "d-flex flex-wrap align-items-center gap-2 rb-narrow-down", data: { controller: "report-view-filter" } do %>
+      <% reader.applied.each do |key, value| %>
+        <% Array(value).each do |v| %>
+          <%= hidden_field_tag(value.is_a?(Array) ? "q[#{key}][]" : "q[#{key}]", v, id: nil) %>
+        <% end %>
+      <% end %>
+      <% %w[sort dir per_page].each do |k| %>
+        <%= hidden_field_tag k, params[k], id: nil if params[k].present? %>
+      <% end %>
+      <label class="small text-muted mb-0" for="rb_narrow_field">Narrow down</label>
+      <select id="rb_narrow_field" name="nf" class="form-select form-select-sm w-auto" aria-label="Field"
+              data-action="change->report-view-filter#pick">
+        <option value="">— field —</option>
+        <% fields.each do |c| %>
+          <option value="<%= c[:key] %>" <%= 'selected' if picked && c[:key] == picked[:key] %>><%= c[:label] %></option>
+        <% end %>
+      </select>
+      <% if info %>
+        <select name="nop" class="form-select form-select-sm w-auto" aria-label="Operator" data-action="change->report-view-filter#pick">
+          <% info.operators.each do |label, o| %>
+            <option value="<%= o %>" <%= 'selected' if o == op %>><%= label %></option>
+          <% end %>
+        </select>
+        <% unless ReportBuilderFilterField::NO_VALUE_OPS.include?(op) %>
+          <div class="w-auto">
+            <%= render "report_builder/filter_value_input", field_info: info, op: op, values: Array(params[:nv]).map(&:to_s), name: "nv" %>
+          </div>
+        <% end %>
+        <button type="submit" name="apply" value="1" class="btn btn-sm btn-primary"><i class="ti ti-filter"></i> Apply</button>
+      <% end %>
+      <span class="small text-muted">Doesn't change the report or its export</span>
+    <% end %>
+  </div>
+</div>

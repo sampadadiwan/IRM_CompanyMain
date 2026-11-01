@@ -5,6 +5,8 @@ followed by what you should see. Production then follows
 [the deploy checklist](security_review_2026_10_deploy_checklist.md), and the reasons behind each
 step are in [the security review](../security/security_review_2026_10.md) (R1–R13).
 
+What each enforcement and sandbox flag does, and how to turn it on: [the flags guide](security_review_2026_10_flags.md).
+
 **The one rule:** staging IN and staging US are separate. Generate new tokens for each one, and
 never paste a value from one into the other.
 

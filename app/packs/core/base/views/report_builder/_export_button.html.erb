@@ -1,0 +1,23 @@
+<%# The Export button, the same on the report page and in the builder header. "Preparing…" is set in the
+    browser on click (report_export_controller); the export job replaces this partial with the Download state
+    when the file is saved, or with the idle state when it fails. Worked examples H1, H2, X1 —
+    openspec/changes/report-builder-delivery/business-rules.md
+    locals: report, state (:idle | :ready), document (for :ready), size (:sm in the builder header) %>
+<% state    = local_assigns.fetch(:state, :idle) %>
+<% size     = local_assigns[:size] %>
+<% sm       = size.to_s == "sm" ? " btn-sm" : "" %>
+<% solid    = size.to_s == "sm" ? "btn-outline-success" : "btn-success" %>
+<% document = local_assigns[:document] %>
+<span id="<%= ["rb_export_#{report.id}", size.presence].compact.join("_") %>" class="d-inline-flex gap-2 rb-export" data-state="<%= state %>">
+  <% if state.to_s == "ready" && document %>
+    <%= link_to document_path(document), class: "btn #{solid}#{sm} d-flex align-items-center gap-2",
+                                         data: { turbo: false } do %>
+      <i class="ti ti-download"></i> Download
+    <% end %>
+  <% end %>
+  <%= link_to download_report_builder_path(report, size: size.presence),
+        class: "btn #{state.to_s == 'ready' ? 'btn-outline-success' : solid}#{sm} d-flex align-items-center gap-2",
+        data: { turbo_stream: true, controller: "report-export", action: "click->report-export#prepare" } do %>
+    <i class="ti ti-file-spreadsheet"></i> <%= state.to_s == "ready" ? "Export again" : "Export XLSX" %>
+  <% end %>
+</span>

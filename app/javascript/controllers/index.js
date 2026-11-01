@@ -106,6 +106,9 @@ function scrollTabBarToTop(nav, behavior) {
 // pane (an empty grid) doesn't shrink the page after loading and clamp it again.
 document.documentElement.addEventListener('show.bs.tab', function (e) {
     if (e.target.closest('.modal, .offcanvas')) return;
+    // Opt-out for tabs that sit above more content (the report builder's settings, with the preview
+    // below): padding the pane to the window height there leaves a blank screen above the preview
+    if (e.target.closest('[data-tab-fill-window="false"]')) return;
     var nav = e.target.closest('.nav, [role="tablist"]');
     var pane = resolveTabPane(e);
     // The incoming pane is still display:none here, so measure where it will sit from its container

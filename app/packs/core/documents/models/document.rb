@@ -526,6 +526,13 @@ class Document < ApplicationRecord
     "#{name.gsub(%r{[/\\,:*?"<>|#]}, ' ').strip}.#{extension}"
   end
 
+  # The Content-Disposition for a download link (S3's response-content-disposition): a plain-text filename plus
+  # a UTF-8 copy (RFC 6266). S3 refuses a header that isn't ISO-8859-1, so a name with an em dash, ₹ or Japanese
+  # characters failed with "Header value cannot be represented using ISO-8859-1"; browsers save the UTF-8 name.
+  def inline_disposition
+    ActionDispatch::Http::ContentDisposition.format(disposition: "inline", filename: name_with_extension)
+  end
+
   def duplicate(required_attributes = nil)
     doc = required_attributes ? Document.new(attributes.slice(*required_attributes)) : dup
     doc.file_data = nil

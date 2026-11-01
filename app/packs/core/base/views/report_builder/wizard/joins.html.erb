@@ -1,4 +1,4 @@
-<% content_for :title, "Guided Report Wizard – Related Data" %>
+<% content_for :title, "Guided setup – Related Data" %>
 <%
   added_relations = @config.joins.map { |j| j[:relation].to_s }
   available_assocs = @associations.reject { |a| added_relations.include?(a[:name]) }

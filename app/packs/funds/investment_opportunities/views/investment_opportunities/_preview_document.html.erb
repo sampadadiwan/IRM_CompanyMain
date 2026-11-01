@@ -1,6 +1,6 @@
 <div class="io-preview-container h-100">
     <div class="preview-doc-card">
-        <% url = document.orignal ? document.file.url(response_content_disposition: "inline; filename=#{document.name_with_extension}") : document_path(document) %>
+        <% url = document.orignal ? document.file.url(response_content_disposition: document.inline_disposition) : document_path(document) %>
         <a href="<%=url%>" class="stretched-link"></a>
 
         <div class="doc-header">

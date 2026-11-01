@@ -77,6 +77,9 @@ class Report < ApplicationRecord
     # The same lookup the query engine uses to run the report
     config = ReportBuilderConfig.new(template)
     return if config.valid?
+    # A "Describe it" draft has no table until the AI has answered; a blank root runs nothing
+    # (report-builder-assistant H2, X3)
+    return if template.to_h["draft"] && config.root_model.blank?
 
     errors.add(:template, "root model #{config.root_model.inspect} is not available for reports")
   end
