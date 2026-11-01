@@ -1557,6 +1557,9 @@ into M19).
 Steps ops must take **per environment**. IN and US are independent: never share a token, script id
 or URL between them.
 
+The step-by-step order for production IN and US is in
+[the deploy checklist](../operations/security_review_2026_10_deploy_checklist.md).
+
 | # | Finding | Step | When | If skipped |
 |---|---|---|---|---|
 | R1 | H12 | Add `gmail_addin.script_ids` to the credentials of staging, production IN and production US. Each environment gets only its own Apps Script id, from that environment's gitignored `addons/gmail/.clasp.<env>.json`. Developers set `GMAIL_ADDIN_DEV_SCRIPT_IDS` locally | **Before deploy** | Every new Gmail add-in sign-in returns 400 (existing tokens keep working) |
