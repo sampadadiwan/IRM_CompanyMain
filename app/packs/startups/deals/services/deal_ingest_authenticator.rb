@@ -174,12 +174,21 @@ class DealIngestAuthenticator
   # SendGrid includes these in the raw headers string as
   # Received-SPF and Authentication-Results headers.
   #
-  # In MVP, we check for explicit failures only — if the headers
-  # are missing (e.g. in development), we let it through.
+  # We check for explicit failures only. Missing headers are let through
+  # in development and test only (H2-8, below).
   #
   # @return [Result]
   def verify_email_auth
-    return Result.new(success: true) if @headers.blank?
+    # H2-8: SendGrid always posts the raw headers. A post without them carries no SPF/DKIM/DMARC
+    # verdict at all, so in production it fails here rather than trusting the From address
+    # unchecked; dev/test posts have no headers and still pass.
+    # Worked example H2-8 — docs/security/security_review_2026_10.md#h2--sendgrid-inbound-email
+    if @headers.blank?
+      return Result.new(success: true) unless email_auth_headers_required?
+
+      Rails.logger.debug { "DealIngestAuthenticator: no email auth headers, dropping" }
+      return Result.new(success: false, reason: "missing_email_auth_headers")
+    end
 
     spf_fail = @headers.match?(/Received-SPF:\s*fail/i)
     dkim_fail = @headers.match?(/dkim=fail/i)
@@ -191,6 +200,13 @@ class DealIngestAuthenticator
     end
 
     Result.new(success: true)
+  end
+
+  # Whether a post must carry the email auth headers to pass (H2-8): production only.
+  #
+  # @return [Boolean]
+  def email_auth_headers_required?
+    Rails.env.production?
   end
 
   # Step 5: Dedupe on RFC-822 Message-ID.

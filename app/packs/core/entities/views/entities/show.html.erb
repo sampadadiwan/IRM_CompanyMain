@@ -251,7 +251,8 @@
             <tr>
               <td>Allowed AI Clients</td>
               <td>
-                <%= @entity.entity_setting.mcp_allowed_clients_list.join(", ") %>
+                <%# M2 — kinds by label; a legacy name saved before kinds existed shows as saved %>
+                <%= @entity.entity_setting.mcp_allowed_clients_list.map { |entry| McpClientRegistry.label_for_entry(entry) }.join(", ") %>
               </td>
             </tr>
           <% else %>

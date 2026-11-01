@@ -279,10 +279,25 @@ class User < ApplicationRecord
   before_create :setup_defaults
   after_create :update_investor_access
   after_update :sync_investor_access_contact_details, if: :sync_investor_access_contact_details?
-  # A new password or a deactivation signs every phone out (lp-mobile-app X5, X6)
-  after_update_commit :revoke_mobile_devices,
+  # A new password or a deactivation signs every phone out (lp-mobile-app X5, X6) and ends the
+  # user's other bearer credentials (M4-2, M4-3) — see revoke_bearer_credentials
+  after_update_commit :revoke_bearer_credentials,
+                      if: -> { saved_change_to_encrypted_password? || (saved_change_to_active? && !active) }
+  # L6 — the same two events close the user's open live-update sockets (logout: Warden hook in
+  # config/initializers/action_cable_disconnect.rb)
+  after_update_commit :disconnect_cable_connections,
                       if: -> { saved_change_to_encrypted_password? || (saved_change_to_active? && !active) }
   before_save :update_kanban_permissions
+
+  # L6: closes every ActionCable socket identified as this user (ApplicationCable::Connection). A
+  # pub/sub hiccup must never fail the password change, deactivation or logout that triggered it.
+  # Test L6-H2 — features/security/security_review_2026_10_low.feature
+  def disconnect_cable_connections
+    # Broadcast a disconnect to every server holding a socket for this user
+    ActionCable.server.remote_connections.where(current_user: self).disconnect
+  rescue StandardError => e
+    Rails.logger.warn { "[L6] could not disconnect cable sockets for user #{id}: #{e.class} #{e.message}" }
+  end
 
   # LP mobile app push categories, kept under preferences["push"]. A missing key means on.
   # See MobilePushCategory for which notifications fall in which category.
@@ -302,9 +317,34 @@ class User < ApplicationRecord
     update!(preferences: (preferences || {}).merge("push" => current))
   end
 
-  def revoke_mobile_devices
+  # Ends every bearer credential the user holds outside the browser session, on a password change
+  # or a deactivation (docs/security/security_review_2026_10.md, M4):
+  #   * phones (MobileDevice)                              — both (lp-mobile-app X5, X6)
+  #   * OAuth tokens and grants (MCP connectors, mail add-ins) — both (M4-2, M4-3: they re-authorise)
+  #   * devise-api tokens from /users/tokens/sign_in        — both (M4-3)
+  #   * Profile › API tokens (ApiToken)                     — deactivation only (M4-2): a password
+  #     change leaves the user's own scripts running (decision: least disruptive)
+  # Deactivation through EntityDeactivationJob uses update_all and skips this callback; those users
+  # are refused at use instead (WithAuthentication, OauthBearerAuthenticator — M4-1 / N6).
+  # (inside the file's Rails/SkipsModelValidations-disabled block: update_all is deliberate here)
+  def revoke_bearer_credentials
+    deactivated = saved_change_to_active? && !active
+    # Phones first, with the same reason precedence as before (password change wins)
     reason = saved_change_to_encrypted_password? ? "password_changed" : "deactivated"
     MobileDevice.revoke_all_for!(self, reason:)
+
+    ActiveRecord::Base.connected_to(role: :writing) do
+      now = Time.current
+      # OAuth access tokens (their refresh tokens die with the row) and any unredeemed codes
+      Doorkeeper::AccessToken.where(resource_owner_id: id, revoked_at: nil).update_all(revoked_at: now)
+      Doorkeeper::AccessGrant.where(resource_owner_id: id, revoked_at: nil).update_all(revoked_at: now)
+      # devise-api tokens not wrapped by a Profile › API token (phones' tokens are already revoked above)
+      Devise::Api::Token.where(resource_owner: self, revoked_at: nil)
+                        .where.not(id: ApiToken.where(user_id: id).select(:devise_api_token_id))
+                        .update_all(revoked_at: now)
+      # Profile › API tokens only on deactivation; revoke! ends the row and its devise-api token together
+      ApiToken.where(user_id: id, revoked_at: nil).find_each(&:revoke!) if deactivated
+    end
   end
 
   def update_kanban_permissions
@@ -450,14 +490,15 @@ class User < ApplicationRecord
 
   # There may be pending investor access given before the user is created.
   # Ensure those are updated with this users id
+  # C6-3 / C6-H2 — only unclaimed grants at the user's OWN firm are linked. Matching on email alone
+  # let anyone who could create an account (e.g. an advisor-firm admin, whose users ensure_entity_id
+  # exempts) claim another GP's unclaimed grant for that address. Existing users get new invites
+  # through InvestorAccess#update_user, not here.
   def update_investor_access
-    InvestorAccess.where(email:).update(user_id: id)
-    ia = InvestorAccess.where(email:).first
-    # Sometimes the invite goes out via the investor access, hence we need to associate the user to the entity
-    if ia&.investor && entity_id.nil?
-      # Set the users entity
-      self.entity_id = ia.investor.investor_entity_id
-    end
+    # Link this firm's grants for this email that no user holds yet (a handful of rows, with callbacks)
+    InvestorAccess.where(email:, investor_entity_id: entity_id, user_id: nil).update(user_id: id)
+    # The old "adopt the grant's firm when entity_id is nil" branch is gone: belongs_to :entity is
+    # required, so a created user always has a firm, and adopting one from an email match was the claim.
     add_role :investor if entity && (entity.entity_type == "Investor")
     save
   end

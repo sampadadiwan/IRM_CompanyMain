@@ -50,7 +50,12 @@ end
 
 # Sets run_at_time to a few minutes ahead so AgentDailySchedulerService doesn't skip it
 Given("the schedule's run_at_time is in the future") do
-  @schedule.update!(run_at_time: Time.current.advance(minutes: 5))
+  # run_at_time is a wall-clock time in the schedule's timezone: AgentDailySchedulerService takes its
+  # hour and minute there. Writing a Time stored the app-zone (New Delhi) clock instead, which wraps
+  # past midnight from 18:30 UTC, so the run looked already missed and these scenarios failed every
+  # evening. Write the schedule zone's clock, kept within today so it never wraps.
+  local = Time.current.in_time_zone(@schedule.timezone)
+  @schedule.update!(run_at_time: [local + 5.minutes, local.end_of_day].min.strftime("%H:%M"))
 end
 
 # Forces next_run_at into the past so SchedulerPollingJob's .due scope picks it up

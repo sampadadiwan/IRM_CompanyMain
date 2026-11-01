@@ -24,6 +24,14 @@ class Report < ApplicationRecord
   validates :name, :curr_role, presence: true
   validates :category, length: { maximum: 30 }
   validate :validate_notification_recipients
+  # H17 — the owner must be in the report's firm, checked only when the owner is set or changed, so
+  # reports whose owner later left the firm (e.g. a support user who was switched in) stay editable.
+  # H17-1, H17-X in features/security/report_owner_mass_assignment.feature
+  validate { validate_parent_in_own_firm(:user) if entity_id.present? && will_save_change_to_user_id? }
+  # M16 — a report-builder template's root_model must be on ReportBuilderModelDiscovery.roots. Checked
+  # whenever the template is written (create, wizard_create, update_template), so a crafted
+  # root_model=User is refused when it is saved, not only when it runs (M16-3)
+  validate :validate_report_builder_root, if: -> { report_builder? && will_save_change_to_template? }
 
   # The report builder's root model, resolved from the template JSON.
   def root_class
@@ -62,6 +70,15 @@ class Report < ApplicationRecord
     end
 
     hash
+  end
+
+  # M16 — the stored root must be a discovery root (M16-3)
+  def validate_report_builder_root
+    # The same lookup the query engine uses to run the report
+    config = ReportBuilderConfig.new(template)
+    return if config.valid?
+
+    errors.add(:template, "root model #{config.root_model.inspect} is not available for reports")
   end
 
   def validate_notification_recipients

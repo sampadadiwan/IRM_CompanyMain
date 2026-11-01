@@ -17,10 +17,14 @@ class ZohoWebhookJob < ApplicationJob
     doc = find_document(connection_id, request_id)
     # E32: a request we don't track (or not in this address's scope) is acknowledged and ignored
     return Rails.logger.info("Zoho Sign webhook for request #{request_id} ignored - no matching document") if doc.nil?
+    # L9-2 — an event older than the last one applied for this signer/request is a replay
+    return Rails.logger.info("Zoho Sign webhook for request #{request_id} ignored - older than the last update applied") if ZohoEsignHelper.stale_webhook_event?(doc, payload)
 
     Chewy.strategy(:sidekiq) do
       ZohoEsignHelper.new.update_signature_progress(doc, payload)
     end
+    # Stamped only once applied, so a retried job (retry_on above) is not mistaken for a replay
+    ZohoEsignHelper.record_webhook_event(doc, payload)
   rescue JSON::ParserError => e
     Rails.logger.warn("Zoho Sign webhook body is not JSON - #{e.message}")
   end

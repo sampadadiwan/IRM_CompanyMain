@@ -1,6 +1,15 @@
 # Shared helper: builds a SendGrid-style multipart payload and POSTs it to the sendgrid endpoint.
 # Returns the Rack::Test response.
-def post_to_sendgrid(to:, from:, subject:, body:, message_id: nil, attachments: {})
+# H2: posts with the webhook token on the URL, as the configured SendGrid Inbound Parse URL does, and
+# stubs the credential to accept it (SendgridInboundTestToken), so these features pass with
+# SENDGRID_INBOUND_ENFORCE=1. token: nil posts without one; basic_password: sends a Basic auth
+# password instead (the other URL form SendGrid supports); headers: false omits the raw headers.
+def post_to_sendgrid(to:, from:, subject:, body:, message_id: nil, attachments: {},
+                     token: SendgridInboundTestToken::TOKEN, basic_password: nil, headers: true)
+  stub_sendgrid_inbound_tokens
+  # Attachments from senders the firm does not know go to the support user (H2-6)
+  ensure_sendgrid_fallback_author if attachments.any?
+
   headers_string = "Content-Type: text/plain\n"
   headers_string += "Message-ID: <#{message_id}>\n" if message_id.present?
 
@@ -13,13 +22,17 @@ def post_to_sendgrid(to:, from:, subject:, body:, message_id: nil, attachments: 
     "headers"     => headers_string,
     "attachments" => attachments.size.to_s
   }
+  payload.delete("headers") unless headers
 
   attachments.each do |key, file|
     payload[key] = file
   end
 
   session = Rack::Test::Session.new(Rack::MockSession.new(Rails.application))
-  session.post "/incoming_emails/sendgrid", payload
+  session.basic_authorize("sendgrid", basic_password) if basic_password.present?
+  path = "/incoming_emails/sendgrid"
+  path += "?#{{ token: }.to_query}" if token.present?
+  session.post path, payload
   session
 end
 

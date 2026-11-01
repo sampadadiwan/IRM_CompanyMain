@@ -12,6 +12,11 @@ module AccountEntryAllocation
 
     ADDITONAL_AE = ["Quarterly", "YTD", "Since Inception"].freeze
 
+    # N2 — the binding local that carries the formula's name into the Quarterly / YTD / Since Inception
+    # roll-up formulas. A double underscore can never come out of to_varable_name (it squeezes "_" and
+    # titleize drops a leading one), so no account-entry variable can shadow it.
+    ROLLUP_NAME_LOCAL = :__rollup_source_name
+
     def init(ctx, account_entry:, **)
       @variable_name = to_varable_name(account_entry.name)
       # Ensure all the instance variables needed for the formla are instansiated
@@ -41,7 +46,9 @@ module AccountEntryAllocation
 
     # Note the account_entry may be the original or the one used to generate quarterly, ytd, etc.
     # Note the formula may be the original or the one used to generate quarterly, ytd, etc.
-    def eval_formula(ctx, account_entry:, formula:, capital_commitment:, bdg:, parent:, **)
+    # display_formula: the text stored as the entry's explanation when it differs from the evaluated
+    # formula (the N2 roll-ups evaluate with the name as a binding local but store it as a literal).
+    def eval_formula(ctx, account_entry:, formula:, capital_commitment:, bdg:, parent:, display_formula: nil, **)
       commitment_cache = ctx[:commitment_cache]
       fund_formula   = ctx[:fund_formula]
       explain        = ctx[:explain]
@@ -79,9 +86,10 @@ module AccountEntryAllocation
           account_entry.amount_cents = safe_eval(formula, bdg)
           # Explanation data
           account_entry.explanation = []
-          account_entry.explanation << formula
+          account_entry.explanation << (display_formula || formula)
           account_entry.explanation << fund_formula.description if fund_formula.description.present?
-          account_entry.explanation << fund_formula.parse_statement(bdg, external_formula: formula).to_json if explained
+          # N2 — the breakdown reads the stored (literal-name) text, so its keys match the explanation
+          account_entry.explanation << fund_formula.parse_statement(bdg, external_formula: display_formula || formula).to_json if explained
         end
       end
 
@@ -134,8 +142,9 @@ module AccountEntryAllocation
         # Since this is a rollup, we set the rule_for to reporting
         ae.rule_for = "reporting"
         # Add the formula for the quarterly account entry
-        formula = "capital_commitment.quarterly('#{fund_formula.name}', nil, @start_date, @end_date) + #{@variable_name}"
-        eval_formula(ctx, account_entry: ae, formula:, capital_commitment:, bdg:, parent:, **)
+        # N2 — the name goes in as a binding local, never spliced into the evaluated text (N2-X1, N2-H1)
+        formula, display_formula = rollup_formulas(:quarterly, fund_formula, bdg)
+        eval_formula(ctx, account_entry: ae, formula:, display_formula:, capital_commitment:, bdg:, parent:, **)
       else
         true
       end
@@ -150,8 +159,9 @@ module AccountEntryAllocation
         # Since this is a rollup, we set the rule_for to reporting
         ae.rule_for = "reporting"
         # Add the formula for the year-to-date account entry
-        formula = "capital_commitment.year_to_date('#{fund_formula.name}', nil, @start_date, @end_date) + #{@variable_name}"
-        eval_formula(ctx, account_entry: ae, formula:, capital_commitment:, bdg:, parent:, **)
+        # N2 — the name goes in as a binding local, never spliced into the evaluated text (N2-X1, N2-H1)
+        formula, display_formula = rollup_formulas(:year_to_date, fund_formula, bdg)
+        eval_formula(ctx, account_entry: ae, formula:, display_formula:, capital_commitment:, bdg:, parent:, **)
       else
         true
       end
@@ -166,11 +176,28 @@ module AccountEntryAllocation
         # Since this is a rollup, we set the rule_for to reporting
         ae.rule_for = "reporting"
         # add the formula for the since inception account entry
-        formula = "capital_commitment.since_inception('#{fund_formula.name}', nil, @start_date, @end_date) + #{@variable_name}"
-        eval_formula(ctx, account_entry: ae, formula:, capital_commitment:, bdg:, parent:, **)
+        # N2 — the name goes in as a binding local, never spliced into the evaluated text (N2-X1, N2-H1)
+        formula, display_formula = rollup_formulas(:since_inception, fund_formula, bdg)
+        eval_formula(ctx, account_entry: ae, formula:, display_formula:, capital_commitment:, bdg:, parent:, **)
       else
         true
       end
+    end
+
+    # N2 — the evaluated roll-up formula and the one stored for display. The evaluated one reads the
+    # formula's name from ROLLUP_NAME_LOCAL, so a name holding a quote (or #{...}) is only ever data.
+    # The stored one keeps the literal name, because the explanation is re-read later outside this
+    # binding (FundFormula re-explain, FormulaReferenceScanner): single-quoted as before when that is
+    # safe, otherwise Ruby's own escaped literal (String#inspect).
+    def rollup_formulas(helper, fund_formula, bdg)
+      # The name, as data in the binding the formula is evaluated in
+      bdg.local_variable_set(ROLLUP_NAME_LOCAL, fund_formula.name)
+      tail = "nil, @start_date, @end_date) + #{@variable_name}"
+      evaluated = "capital_commitment.#{helper}(#{ROLLUP_NAME_LOCAL}, #{tail}"
+
+      # The display text: unchanged for ordinary names, escaped for names with a quote or backslash
+      literal = fund_formula.name.match?(/['\\]/) ? fund_formula.name.inspect : "'#{fund_formula.name}'"
+      [evaluated, "capital_commitment.#{helper}(#{literal}, #{tail}"]
     end
   end
 end

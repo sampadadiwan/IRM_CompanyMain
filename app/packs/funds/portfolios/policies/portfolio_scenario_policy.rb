@@ -3,10 +3,6 @@ class PortfolioScenarioPolicy < FundBasePolicy
     true
   end
 
-  def simple_scenario
-    true
-  end
-
   def report?
     update?
   end

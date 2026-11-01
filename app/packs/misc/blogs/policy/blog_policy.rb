@@ -13,8 +13,11 @@ class BlogPolicy < ApplicationPolicy
     true # support?
   end
 
+  # L11 — blogs are CapHive content: anyone signed in reads them, only support writes them
+  # (create / update / destroy all come here). Tests L11-1, L11-H —
+  # features/security/security_review_2026_10_low.feature
   def create?
-    true # support?
+    support?
   end
 
   def new?

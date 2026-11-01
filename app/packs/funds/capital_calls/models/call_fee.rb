@@ -15,6 +15,14 @@ class CallFee < ApplicationRecord
     errors.add(:notes, "You cannot do CRUD or system operations in a fee formula") if notes.present? && notes.downcase.match?(SAFE_EVAL_REGEX)
   end
 
+  # C2 — the allowlist check on save, in log (warning) / enforce (error) mode only; off adds nothing.
+  # Parsed with the locals calculate_formula's binding carries.
+  FORMULA_LOCALS = %i[capital_call capital_commitment capital_remittance e].freeze
+  validate :notes_sandboxed, if: -> { formula && notes.present? }
+  def notes_sandboxed
+    FormulaSandbox.validate_attribute(self, :notes, profile: "call_fee", locals: FORMULA_LOCALS)
+  end
+
   NESTED_ATTRIBUTES = %i[id name start_date end_date fee_type notes _destroy].freeze
   NESTED_ATTRIBUTES_WITH_FORMULA = %i[id name start_date end_date fee_type notes _destroy formula].freeze
 
@@ -38,10 +46,12 @@ class CallFee < ApplicationRecord
     capital_call = self.capital_call
     capital_commitment = capital_remittance.capital_commitment
     # Guard at the eval boundary so bypasses of the notes_kosher? validation (update_column,
-    # imports, seeds) still cannot execute arbitrary code.
-    eval(ApplicationRecord.safe_eval!(notes, context: "CallFee##{id} notes"), binding)
+    # imports, seeds) still cannot execute arbitrary code: safe_eval! in every mode, and the
+    # call_fee sandbox profile in log / enforce mode (C2)
+    FormulaSandbox.evaluate(notes, binding, profile: "call_fee", context: "CallFee##{id} notes")
   rescue ApplicationRecord::UnsafeEvalError
-    # A blocked formula is a security refusal, not a data problem - let it through unchanged
+    # A blocked formula is a security refusal, not a data problem - let it through unchanged.
+    # FormulaSandbox::Rejected is a kind of UnsafeEvalError, so a sandbox refusal is not wrapped either.
     raise
   rescue StandardError, SyntaxError => e
     # SyntaxError is not a StandardError, so list it explicitly to cover a mistyped formula.

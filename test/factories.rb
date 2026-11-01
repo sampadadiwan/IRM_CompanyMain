@@ -42,7 +42,6 @@ FactoryBot.define do
     tags { "MyString" }
     include_kpi { false }
     include_portfolio_investments { false }
-    extraction_questions { "" }
   end
 
   factory :excused_investor do

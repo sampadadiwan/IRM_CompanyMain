@@ -1,7 +1,7 @@
 class SecondarySalesController < ApplicationController
   before_action :set_secondary_sale,
                 only: %i[show edit update destroy make_visible download allocate
-                         send_notification offers interests payments approve_offers short_list_interests generate_spa report]
+                         send_notification offers interests payments approve_offers short_list_interests generate_spa]
 
   after_action :verify_policy_scoped, only: []
 
@@ -21,11 +21,9 @@ class SecondarySalesController < ApplicationController
     @offers = OfferSearchService.perform(@offers, current_user, params)
     @pagy, @offers = pagy(@offers, limit: params[:per_page]) if !request.format.xlsx? && params[:all].blank?
 
-    if params[:report]
-      render "/offers/#{params[:report]}"
-    else
-      render "/offers/index"
-    end
+    # M10 — only the report the sale page links to (Offers Completion Report); any other ?report= is a
+    # 404, never a render of a request-named template (M10-S1, C4-H)
+    render_sale_list("offers")
   end
 
   def interests
@@ -48,12 +46,12 @@ class SecondarySalesController < ApplicationController
 
     @pagy, @interests = pagy(@interests) unless request.format.xlsx?
 
-    if params[:report]
-      render "/interests/#{params[:report]}"
-    else
-      render "/interests/index"
-    end
+    # M10 — same allowlist as #offers (Interests Completion Report) (M10-S2, M10-SH)
+    render_sale_list("interests")
   end
+
+  # M10 — the reports the sale page links to from its Reports menu. Docs: security_review_2026_10.md (C4)
+  SALE_LIST_REPORTS = %w[completion_report].freeze
 
   def approve_offers
     errors = []
@@ -171,10 +169,6 @@ class SecondarySalesController < ApplicationController
     end
   end
 
-  def report
-    render "secondary_sales/#{params[:report]}"
-  end
-
   def generate_spa
     # Post the allocation, we need to upload the SPAs for verified offers
 
@@ -254,6 +248,19 @@ class SecondarySalesController < ApplicationController
   end
 
   private
+
+  # M10 — renders the offers / interests list of the sale, or one of SALE_LIST_REPORTS when ?report=
+  # names it. A report name that is not on the list answers 404 (M10-S1, M10-S2)
+  def render_sale_list(folder)
+    # No report asked for: the plain list
+    return render("/#{folder}/index") if params[:report].blank?
+
+    # Only a listed report name is rendered; it comes from the constant, not from the request
+    report = SALE_LIST_REPORTS.find { |name| name == params[:report].to_s }
+    return head(:not_found) unless report
+
+    render "/#{folder}/#{report}"
+  end
 
   # Use callbacks to share common setup or constraints between actions.
   def set_secondary_sale

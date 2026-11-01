@@ -8,15 +8,20 @@ class ESignaturePolicy < ApplicationPolicy
       belongs_to_entity?(user, record)
   end
 
+  # M26 — a signer row decides who signs the document, so adding one needs edit rights on the document
+  # itself (DocumentPolicy#update?), not just membership of the firm (M26-X3, M26-H3)
   def create?
     # D: the parent is in one of the user's firms (funds_api_security_policy_plan.md)
-    belongs_to_entity?(user, record) && parent_in_users_firms?(record.document)
+    return false unless belongs_to_entity?(user, record) && record.document.present? && parent_in_users_firms?(record.document)
+
+    DocumentPolicy.new(user, record.document).update?
   end
 
   def new?
     create?
   end
 
+  # M26 — changing or removing a signer: the same document rights, and only before it is sent (M26-X4)
   def update?
     create? && !record.document.sent_for_esign
   end

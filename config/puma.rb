@@ -40,7 +40,7 @@ plugin :solid_queue if ENV["SOLID_QUEUE_IN_PUMA"]
 # In other environments, only set the PID file if requested.
 pidfile ENV["PIDFILE"] if ENV["PIDFILE"]
 # in puma.rb
-on_worker_boot do
+before_worker_boot do
   require 'prometheus_exporter/instrumentation'
   PrometheusExporter::Instrumentation::ActiveRecord.start(
     custom_labels: { type: "puma_worker" }, # optional params

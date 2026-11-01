@@ -106,7 +106,9 @@ resources :form_custom_fields do
 end
 
 resources :form_types do
-  get 'clone', on: :member
+  # M25 — cloning writes a copy into the user's firm, so it is a POST (a GET link or prefetch must not
+  # create anything); GET now gives 404 (M25-1)
+  post 'clone', on: :member
   patch 'rename_fcf', on: :member
   patch 'add_regulatory_fields', on: :member
   get 'generate_upload_xlsx', on: :member
@@ -200,7 +202,8 @@ end
 
 resources :kyc_datas do
   get 'search', on: :collection
-  get 'fetch_ckyc_data', on: :collection
+  # No `fetch_ckyc_data` collection route: KycDatasController has no such action. CKYC data is fetched
+  # through the investor_kycs member route of the same name (F5-4)
   get 'send_ckyc_otp', on: :member
   put 'download_ckyc_with_otp', on: :member
   put 'refresh', on: :member
@@ -389,7 +392,9 @@ post 'workflow_magic_links/:token/submit', to: 'workflow_magic_link#submit', as:
 
 resources :entities do
   get 'search', on: :collection
-  get 'report', on: :member
+  # No `report` member route: it rendered any entities/ template named in params[:report] behind an
+  # always-true policy, and its only caller was removed in Oct 2025 (H16-1, H16-2 in
+  # features/security/entity_report.feature).
   get 'investor_entities', on: :collection
   get 'dashboard', on: :collection
   get 'investor_view', on: :member

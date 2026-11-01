@@ -26,8 +26,11 @@ class ReportBuilderExportJob < ApplicationJob
         return
       end
 
-      # 1. Generate data
-      engine   = ReportBuilderQueryEngine.new(report: report, entity: entity)
+      # 1. Generate data. M16 — the rows are limited to a user's Pundit scope: a scheduled run uses the
+      # report's owner (report.user, whose firm membership H17 / R4-X check), an on-demand export the
+      # user who asked for it, so a download never holds more than that user sees on screen (M16-4)
+      scope_user = schedule ? report.user : user
+      engine   = ReportBuilderQueryEngine.new(report: report, entity: entity, user: scope_user)
       # computed_sort_cap: nil — a download must contain every matching row
       # regardless of sort column, not just the first N used for on-screen sorting.
       all_rows = engine.run(computed_sort_cap: nil)

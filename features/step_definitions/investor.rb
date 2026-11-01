@@ -960,7 +960,8 @@ Then('we get the email with error {string}') do |error|
       current_email = email if email.subject.downcase.include?("errors")
     end
     expect(current_email).not_to be_nil, "No email found for #{@user.email} with subject 'Errors'"
-    expect(current_email.body).to include error
+    # The HTML body escapes the error (a Faker name like "O'Connell" arrives as O&#39;Connell)
+    expect(CGI.unescapeHTML(current_email.body.to_s)).to include error
   end
 end
 
@@ -974,7 +975,8 @@ Then('we get the email with error {string} and subject {string}') do |error, sub
       current_email = email if email.subject.include?(subject)
     end
     expect(current_email).not_to be_nil, "No email found for #{@user.email} with subject '#{subject}'"
-    expect(current_email.body).to include error
+    # Unescape the HTML body, as above
+    expect(CGI.unescapeHTML(current_email.body.to_s)).to include error
   end
 end
 
@@ -1277,7 +1279,12 @@ Then('the document esign is cancelled') do
   click_on("Signatures")
   # sleep(1)
   click_on("Cancel eSignatures")
-  # sleep(3)
+  # Wait for the cancel PATCH to finish. button_to submits via Turbo (a fetch, not a page navigation),
+  # so the click returns while the request is still in flight; the next step's visit then raced it -
+  # the show page loaded the document before the cancel committed (status "Requested") and its
+  # signatures after it ("Cancelled"), so "Re-Send for eSignatures" never rendered.
+  expect(page).to have_content("Document's eSignature(s) was cancelled")
+  expect(@doc.reload.esign_status.downcase).to eq("cancelled")
 end
 
 Then('the docusign document esign is cancelled') do
@@ -1788,7 +1795,10 @@ Given('there is an incoming email sent for this investor {string}') do |args|
   @incoming_email = FactoryBot.build(:incoming_email)
   key_values(@incoming_email, args)
 
-  rails_app_url = "#{Capybara.app_host}/incoming_emails/sendgrid"
+  # H2: with the webhook token, as the configured SendGrid Inbound Parse URL sends it. The app server
+  # runs in this process, so the stubbed credential applies to it (SendgridInboundTestToken).
+  stub_sendgrid_inbound_tokens
+  rails_app_url = "#{Capybara.app_host}/incoming_emails/sendgrid?#{{ token: SendgridInboundTestToken::TOKEN }.to_query}"
 
   # Construct the request payload
   email_payload = {

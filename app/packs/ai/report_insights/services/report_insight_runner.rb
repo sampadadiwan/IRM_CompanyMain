@@ -4,6 +4,7 @@ require "ruby_llm"
 class ReportInsightRunner < Trailblazer::Operation
   include LlmResponseParser
 
+  step :check_report_owner, Output(:failure) => End(:failure)
   step :initialize_llm, Output(:failure) => End(:failure)
   step :get_report_data, Output(:failure) => End(:failure)
   step :save_data_as_json
@@ -16,6 +17,31 @@ class ReportInsightRunner < Trailblazer::Operation
   #  Make a trailblazer operation
   ALLOWED_CHARTS = %w[bar line pie doughnut scatter radar polarArea].freeze
   MAX_RECORDS = 500
+  OWNER_NOT_IN_FIRM = "Report owner is no longer in this firm".freeze
+
+  # H17 — the insight reads data with the report owner's visibility, so it only runs while the owner
+  # is in the report's firm. An owner who left, or a support owner now switched into another tenant,
+  # would pull that other tenant's rows into this firm's insight and email. Refused before any LLM
+  # client is built; the insight is marked failed with the reason.
+  # H17-2 in features/security/report_owner_mass_assignment.feature
+  def check_report_owner(ctx, report_insight:, **)
+    ctx[:errors] ||= []
+    report = report_insight.report
+    # A missing report / owner is reported by get_report_data below, with its own message
+    return true if report.blank? || run_user(report_insight).blank?
+    # The user whose visibility the run uses must be in the report's firm
+    return true if run_user(report_insight).entity_id == report.entity_id
+
+    ctx[:errors] << OWNER_NOT_IN_FIRM
+    report_insight.update!(status: "failed", status_message: OWNER_NOT_IN_FIRM)
+    false
+  end
+
+  # Whose data visibility this run uses: the user who clicked Generate insight, else the report owner
+  def run_user(report_insight)
+    report_insight.triggered_by_user || report_insight.report&.user
+  end
+
   # Initializes the LLM client using the configured model.
   # Sets up the chat client in the context for later use.
   def initialize_llm(ctx, **)
@@ -38,7 +64,10 @@ class ReportInsightRunner < Trailblazer::Operation
       return false
     end
 
-    user = report.user
+    # A manual run ("Generate insight") reads with the clicking user's own scope, so nobody sees rows
+    # they could not open; a scheduled run (no trigger user) reads as the report owner
+    # (security review 2026-10, H17 follow-up)
+    user = run_user(report_insight)
     if user.blank?
       ctx[:errors] << "Report Missing User"
       return false

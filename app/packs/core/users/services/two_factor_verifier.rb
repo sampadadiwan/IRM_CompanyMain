@@ -20,6 +20,28 @@ class TwoFactorVerifier
   # nothing to check, so do not spend an API call finding out.
   VERIFY_CODE_TTL = 10.minutes
 
+  # H13 — the website's per-challenge attempt count is kept server side as well as in the
+  # cookie session, because a cookie saved before the misses can be replayed to reset the
+  # session copy. Same lifetime as the phone app's challenge (MobileSignIn::CHALLENGE_TTL).
+  WEB_CHALLENGE_TTL = 10.minutes
+  WEB_CACHE_PREFIX = "web_2fa".freeze
+
+  # H13 — wrong codes one user may enter, across every challenge on the website and the phone
+  # app, in a rolling hour before the account is locked (Devise lock_access!, which also sends
+  # the unlock email). Per-challenge limits alone cap guesses per password entry, not per hour.
+  USER_MISS_LIMIT = 10
+  USER_MISS_WINDOW = 1.hour
+  # The rolling hour is summed from 10-minute buckets: each bucket is one atomic cache
+  # increment, so two app servers counting the same user cannot lose a miss. Summing the
+  # current bucket plus the six before it always covers at least the last full hour.
+  USER_MISS_BUCKET = 10.minutes
+  USER_MISS_PREFIX = "two_factor_misses".freeze
+
+  # What a recorded wrong code amounts to.
+  #   attempts — the challenge's server-side count (0 when the caller has no challenge id)
+  #   locked   — this miss took the user to USER_MISS_LIMIT and the account is now locked
+  Failure = Struct.new(:attempts, :locked, keyword_init: true)
+
   class << self
     # What the user typed, minus whitespace. Codes copied out of a WhatsApp or SMS message
     # routinely arrive as "123 456" or with a trailing space, and both the TOTP check and Twilio
@@ -103,6 +125,75 @@ class TwoFactorVerifier
 
       OtpDelivery.where(user_id: user.id, channel: "sms", status: OtpDelivery::STATUS_QUEUED)
                  .exists?(created_at: VERIFY_CODE_TTL.ago..)
+    end
+
+    # Counts one wrong website code: against its challenge (when the caller has a challenge id)
+    # and against the user's rolling hour.
+    #
+    # Under the test env's :null_store the increment returns nil, so attempts reads 0 and the
+    # caller's own session count decides — exactly today's behaviour (H13 fix 1).
+    #
+    # @param challenge_id [String, nil] session[:otp_challenge_id], set by TwoFactorDispatch
+    # @return [Failure]
+    def record_failure(user, challenge_id:)
+      # The challenge's own count; nil from a store that keeps nothing reads as 0
+      attempts = if challenge_id.present?
+                   Rails.cache.increment(web_challenge_key(challenge_id), 1, expires_in: WEB_CHALLENGE_TTL).to_i
+                 else
+                   0
+                 end
+      # H13-2 — the same miss also counts toward the per-user hourly lockout
+      Failure.new(attempts:, locked: record_user_miss(user))
+    end
+
+    # The challenge's server-side count without adding to it — read before a code is checked,
+    # so a replayed cookie whose challenge is already spent cannot get one more guess in.
+    # @return [Integer]
+    def challenge_attempts(challenge_id)
+      return 0 if challenge_id.blank?
+
+      Rails.cache.read(web_challenge_key(challenge_id)).to_i
+    end
+
+    # Counts one wrong code toward the user's rolling-hour limit (website and phone app alike)
+    # and locks the account when it reaches USER_MISS_LIMIT.
+    #
+    # The buckets are deliberately NOT cleared on lock: a miss after an unlock (Devise unlocks by
+    # email, or by time after config.unlock_in) inside the same hour is still over the limit and
+    # locks again, which is what "10 per rolling hour" means.
+    #
+    # @return [Boolean] true when this miss locked the account
+    def record_user_miss(user)
+      now_bucket = Time.current.to_i / USER_MISS_BUCKET.to_i
+      # This miss lands in the current bucket; kept long enough to still be summed an hour later
+      Rails.cache.increment(user_miss_key(user, now_bucket), 1, expires_in: USER_MISS_WINDOW + (2 * USER_MISS_BUCKET))
+
+      # The rolling hour: the current bucket and the six before it, in one read
+      bucket_count = (USER_MISS_WINDOW / USER_MISS_BUCKET).to_i
+      keys = (0..bucket_count).map { |back| user_miss_key(user, now_bucket - back) }
+      misses = Rails.cache.read_multi(*keys).values.sum(&:to_i)
+      return false if misses < USER_MISS_LIMIT
+
+      # At the limit: lock (Devise sends the unlock email when the email unlock strategy is on).
+      # A user already locked is left alone, so a burst of misses sends one email, not ten.
+      ActiveRecord::Base.connected_to(role: :writing) do
+        user.reload
+        next false if user.access_locked?
+
+        Rails.logger.warn("[two_factor] user_id=#{user.id} locked after #{misses} wrong codes in #{USER_MISS_WINDOW.inspect}")
+        user.lock_access!
+        true
+      end
+    end
+
+    private
+
+    def web_challenge_key(challenge_id)
+      "#{WEB_CACHE_PREFIX}:#{challenge_id}"
+    end
+
+    def user_miss_key(user, bucket)
+      "#{USER_MISS_PREFIX}:#{user.id}:#{bucket}"
     end
   end
 end

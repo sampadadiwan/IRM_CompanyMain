@@ -1,6 +1,8 @@
 en-US:
   cross_region:
     unavailable: "That region is not available right now."
+    # M5-1 — UsersController#cross_site_link refuses a hand-off while support is impersonating
+    impersonating: "Region switching is not available while you are signed in as another user. Sign in to the other region yourself."
     regions:
       IN: "India"
       US: "US"

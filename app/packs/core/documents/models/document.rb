@@ -122,10 +122,26 @@ class Document < ApplicationRecord
   before_validation :setup_folder, :setup_entity
   # A document can move between its own firm's folders, never into another firm's (C)
   validate { validate_parent_in_own_firm(:folder) }
+  # M28 — a document's owner is set once (on upload, or attached later to an ownerless document) and
+  # never moves; the owner it is set to must be in the document's firm
+  validate :validate_owner_set_once_in_own_firm, if: -> { will_save_change_to_owner_id? || will_save_change_to_owner_type? }
   before_validation :validate_file_presence_on_update, on: :update
 
   def validate_file_presence_on_update
     errors.add(:file, "can't be blank") if file.blank? && file_data.blank?
+  end
+
+  # M28: owner_id / owner_type were mass-assignable on documents#update, so a document could be
+  # re-owned onto another firm's fund or KYC (and shown to that record's investors). Re-owning a
+  # stored document from the console must use update_columns.
+  # docs/security/security_review_2026_10.md (Core / misc — Medium and Low, M28)
+  def validate_owner_set_once_in_own_firm
+    # An owner already stored never changes (M28-1)
+    return errors.add(:owner, "cannot be changed once set") if persisted? && owner_id_in_database.present?
+
+    # A new document, or an ownerless one being attached: the owner must be in this document's firm
+    # (M28-2, M28-H). Owners without a firm column are left to the policy.
+    validate_parent_in_own_firm(:owner) if owner.is_a?(Entity) || owner.respond_to?(:entity_id)
   end
 
   after_destroy :update_owner

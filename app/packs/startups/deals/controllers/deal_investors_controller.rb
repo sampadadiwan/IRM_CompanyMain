@@ -24,9 +24,12 @@ class DealInvestorsController < ApplicationController
     @deal_investors = @deal_investors.order(last_interaction_date: :desc, updated_at: :desc, created_at: :desc) if @deal_investors.arel.orders.blank? && !ransack_has_attr?(params[:q], 's')
 
     if params[:turbo] && params[:boards] && params[:board_id].present?
+      # M12 — the filtered board is rendered with all its columns, so it must be one the user may open,
+      # checked before its cards are looked up (M12-3)
+      kanban_board = KanbanBoard.find(params["board_id"])
+      authorize kanban_board, :show?
       @kanban_cards = KanbanCard.where(data_source_type: "DealInvestor", data_source_id: @deal_investors.pluck(:id))
       @filtered_results = false
-      kanban_board = KanbanBoard.find(params["board_id"])
       render turbo_stream: [
         turbo_stream.replace("board_#{kanban_board.id}", partial: "/boards/kanban", locals: { kanban_cards: @kanban_cards, kanban_board:, filtered_results: @filtered_results })
       ]

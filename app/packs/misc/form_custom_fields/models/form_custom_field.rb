@@ -135,6 +135,14 @@ class FormCustomField < ApplicationRecord
     errors.add(:meta_data, "You cannot do CRUD operations in meta_data") if meta_data.downcase.match?(SAFE_EVAL_REGEX)
   end
 
+  # C2 — the allowlist check on save, in log (warning) / enforce (error) mode only; off adds nothing.
+  # Parsed with the locals WithCustomField#perform_custom_calculation's binding carries.
+  CALCULATION_LOCALS = %i[fcf val].freeze
+  validate :meta_data_sandboxed, if: -> { field_type == "Calculation" && meta_data.present? }
+  def meta_data_sandboxed
+    FormulaSandbox.validate_attribute(self, :meta_data, profile: "form_custom_field", locals: CALCULATION_LOCALS)
+  end
+
   def meta_data_present_for_option_types
     return unless OPTION_FIELD_TYPES.include?(field_type)
 

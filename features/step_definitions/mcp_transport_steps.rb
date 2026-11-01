@@ -40,7 +40,7 @@ end
 Given("the user has an MCP access token") do
   app = Doorkeeper::Application.create!(name: "Cucumber MCP client", redirect_uri: "https://localhost/callback", scopes: "read")
   @mcp_token = Doorkeeper::AccessToken.create!(application: app, resource_owner_id: @user.id, entity_id: @entity.id,
-                                               scopes: "read", expires_in: 1.hour.to_i).token
+                                               scopes: "read", expires_in: 1.hour.to_i).plaintext_token
 end
 
 When("the MCP client posts the JSON-RPC method {string}") do |method|

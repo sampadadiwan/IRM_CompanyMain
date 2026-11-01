@@ -3,6 +3,9 @@ class AiReportSection < ApplicationRecord
 
   validates :section_type, presence: true
 
+  # C3-7 - section HTML is sanitized whenever it is stored, whoever wrote it (editor, AI, chart insert)
+  before_save :sanitize_content_html
+
   def completed?
     content_html.present?
   end
@@ -43,5 +46,14 @@ class AiReportSection < ApplicationRecord
   # Check if web search content has ever been generated
   def web_search_content_exists?
     content_html_with_web.present?
+  end
+
+  private
+
+  # C3-7 - strips img, script, event handlers etc. from both content versions; see AiReportHtml.
+  def sanitize_content_html
+    # Only the columns that changed, so an untouched version is not rewritten
+    self.content_html = AiReportHtml.sanitize(content_html) if content_html_changed?
+    self.content_html_with_web = AiReportHtml.sanitize(content_html_with_web) if content_html_with_web_changed?
   end
 end

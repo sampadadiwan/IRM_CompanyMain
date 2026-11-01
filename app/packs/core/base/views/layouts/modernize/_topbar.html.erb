@@ -52,8 +52,10 @@
             <%# `switchable_region_codes`, not `regions.present?`: a user whose profile lists one
                 deployed region (or only undeployed ones) has nothing to switch to, and used to
                 get a one-option dropdown and a divider anyway. Computed once here and passed
-                down - this runs on every authenticated page render. %>
-            <% region_codes = current_user&.switchable_region_codes || [] %>
+                down - this runs on every authenticated page render.
+                M5-1: hidden while support is impersonating - UsersController#cross_site_link
+                refuses the hand-off in that session, so the selector would only offer an error. %>
+            <% region_codes = current_user && current_user.support_user_id.blank? ? current_user.switchable_region_codes : [] %>
             <% if region_codes.many? %>
                 <div class="topbar-divider "></div>
                 <%= render "/layouts/sites", codes: region_codes %>

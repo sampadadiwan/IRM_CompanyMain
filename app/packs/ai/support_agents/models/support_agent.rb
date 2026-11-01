@@ -17,6 +17,23 @@ class SupportAgent < ApplicationRecord
   AGENT_TYPES = %w[KycOnboardingAgent KycDocExtractorAgent PortfolioCompanyAgent FundStatsAgent PortfolioReportAgent CallNoticeAgent CashFlowAssistantAgent DistributionReadinessAgent EsignMonitorAgent DataQualityAgent LpAssistantAgent PortfolioAssistantAgent PortfolioScoringAgent NoteSummarizerAgent DealsReportAgent PresentationAnalystAgent CustomerSupportAgent RtaReconciliationAgent DealManagementAgent SideLetterObligationAgent TemplateFixAgent RemittanceReconciliationAgent CpCsExtractionAgent SupportConsoleAgent].freeze
   CATEGORIES = %w[Ops Finance Portfolio Onboarding Other].freeze
 
+  # N8 — the record types a run may name as its target (support_agents#run / #run_with_steps / #status and
+  # SupportAgentJob's target_type), resolved with ApplicationRecord.model_class_from_param. Every type the
+  # UI sends: investor, KYC (batch), call, fund, deal, portfolio investment, commitment and distribution
+  # pages; Entity from the agent's own "Run Now"; Note::OWNER_TYPES from the notes Summarise button
+  # (NoteSummarizerAgent sends the note's owner_type). Anything else is a 404 (N8-X).
+  RUN_TARGET_TYPES = (%w[Investor InvestorKyc CapitalCall Fund Entity Deal PortfolioInvestment CapitalCommitment
+                         CapitalDistribution] + Note::OWNER_TYPES).uniq.freeze
+
+  # N8 — the record a run request names, set by the controller before `authorize` so
+  # SupportAgentPolicy#run? can check its firm (N8-1). Not persisted.
+  attr_accessor :run_target
+
+  # N8 — the firm a run target belongs to: an Entity is its own firm, anything else carries entity_id
+  def self.firm_id_of(target)
+    target.is_a?(Entity) ? target.id : target.entity_id
+  end
+
   belongs_to :entity
   has_one :agent_schedule, dependent: :destroy
 

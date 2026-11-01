@@ -28,19 +28,17 @@ module AccountEntryAllocation
     end
 
     # @param source [String] the formula text
-    # @param label [String] identifies the formula in safe_eval!'s log line
+    # @param label [String] identifies the formula in safe_eval!'s / FormulaSandbox's log line
     # @return [Object] whatever the formula's last expression evaluates to
     def evaluate(source, label:)
-      guarded = ApplicationRecord.safe_eval!(source, context: label)
-      # rubocop:disable Security/Eval
-      eval(guarded, formula_binding, label, 1)
-      # rubocop:enable Security/Eval
+      # C2 — safe_eval! (every mode), then the run_check profile in log / enforce mode
+      FormulaSandbox.evaluate(source, formula_binding, profile: "run_check", context: label, file: label, line: 1)
     end
 
     private
 
     # A binding taken from a method with no locals, so the formula cannot see (or clobber)
-    # evaluate's own `source`/`label`/`guarded` variables.
+    # evaluate's own `source`/`label` variables.
     def formula_binding
       binding
     end

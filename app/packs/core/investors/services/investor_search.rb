@@ -6,7 +6,12 @@ class InvestorSearch
     investors = investors.where(category: params[:categories].split(",").map(&:strip)) if params[:categories].present?
 
     if params[:owner_id].present? && params[:owner_type].present?
-      owner = params[:owner_type].constantize.find(params[:owner_id])
+      # L14 — an owner whose access rights list its investors (Fund, InvestmentOpportunity, …); an
+      # unknown name is a 404, not a 500 (L14-5)
+      owner_class = ApplicationRecord.model_class_from_param(params[:owner_type], allowed: AccessRightSearch::OWNER_TYPES)
+      raise ActiveRecord::RecordNotFound, "Unknown owner type" unless owner_class
+
+      owner = owner_class.find(params[:owner_id])
       policy_class = "#{owner.class.name}Policy".constantize
       investors = if policy_class.new(current_user, owner).show?
                     owner.investors

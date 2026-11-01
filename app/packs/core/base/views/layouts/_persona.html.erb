@@ -1,5 +1,7 @@
 <% model ||= current_user %>
-<%= form_with(model: , method: :get, url: set_persona_users_path, id: "persona_form") do |form| %>
+<%# L7 — POST (with the CSRF token form_with adds), never GET: see UsersController#set_persona.
+    turbo: false keeps the full-page reload the GET form used to get, so the new persona's menus render. %>
+<%= form_with(model: , method: :post, url: set_persona_users_path, id: "persona_form", data: { turbo: false }) do |form| %>
   <%
 
     personas = []

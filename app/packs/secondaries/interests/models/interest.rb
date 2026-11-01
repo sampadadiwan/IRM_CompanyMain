@@ -169,10 +169,11 @@ class Interest < ApplicationRecord
     self.custom_matching_vals = ""
     if secondary_sale.custom_matching_fields.present?
       secondary_sale.custom_matching_fields.split(",").each do |cmf|
-        # For each custom matching field, we extract the value from the offers
-        val = eval <<-RUBY, binding, __FILE__, __LINE__ + 1
-              self.#{cmf} # Evaluate the custom_matching_fields
-        RUBY
+        # For each custom matching field, read the value from this record. N9 (security review 2026-10):
+        # the field list is stored on the sale, so each name is read only as a column of this record and
+        # never eval'd. Anything that is not a column contributes an empty value.
+        field = cmf.strip
+        val = self[field] if has_attribute?(field) # a column of this record only (no methods such as destroy)
         self.custom_matching_vals += "#{val}_"
       end
     else
@@ -250,8 +251,13 @@ class Interest < ApplicationRecord
 
   include RansackerAmounts.new(fields: %w[allocation_amount])
 
+  # H11: no PII (PAN address bank_account_number ifsc_code demat email contact_name). A seller still
+  # sees the buyers they are allocated to, so a PAN / email filter on Interests or Allocations
+  # (interest_PAN_eq) was an oracle for a counterparty's details. No screen or saved report filters
+  # on these; the GP's lookup is the search box.
+  # Tests H11-2, H11-3 — features/security/secondaries_isolation.feature
   def self.ransackable_attributes(_auth_object = nil)
-    %w[PAN address allocation_amount allocation_quantity amount bank_account_number buyer_entity_name city contact_name demat email entity_id ifsc_code quantity short_listed_status quantity price verified escrow_deposited created_at]
+    %w[allocation_amount allocation_quantity amount buyer_entity_name city entity_id quantity short_listed_status quantity price verified escrow_deposited created_at]
   end
 
   def self.ransackable_associations(_auth_object = nil)

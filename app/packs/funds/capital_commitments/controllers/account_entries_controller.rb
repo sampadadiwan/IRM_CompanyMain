@@ -3,22 +3,10 @@ class AccountEntriesController < ApplicationController
   include FundsHelper
   include WithCustomFieldFilter
 
-  after_action :verify_authorized, except: %i[index delete_all]
+  # H7 — delete_all is not exempt: it authorizes AccountEntry :delete_all? before queuing the job
+  after_action :verify_authorized, except: %i[index]
   before_action :set_account_entry, only: %i[show edit update destroy explain explanation_node]
   # around_action :log_memory_delta if Rails.env.development?
-
-  def adhoc
-    authorize AccountEntry
-    if params[:query].present? || params[:group_fields].present?
-      @account_entries = policy_scope(AccountEntry)
-      df = AccountEntryDf.df(@account_entries, current_user, params)
-      if params[:group_fields].present?
-        @adhoc_json = df.to_a.to_json
-      elsif params[:query].present?
-        @adhoc_json = AiPolars.run_query(params[:query], [AccountEntry, CapitalCommitment, Fund], df)
-      end
-    end
-  end
 
   def paginate
     folio_filter = @q.conditions.any? do |cond|
@@ -176,6 +164,10 @@ class AccountEntriesController < ApplicationController
   end
 
   def delete_all
+    # H7 — staff only (an LP gets 403); the job then deletes only from funds the user may delete in
+    # Tests H7-1, H7-H — features/security/account_entries_delete_all.feature
+    authorize AccountEntry, :delete_all?
+
     AccountEntryDeleteJob.perform_later(params.to_unsafe_h, current_user.id)
     redirect_to account_entries_path(params: params.to_unsafe_h), notice: "Account entries deletion in progress."
   end

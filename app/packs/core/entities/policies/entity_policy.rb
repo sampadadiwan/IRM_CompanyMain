@@ -25,16 +25,14 @@ class EntityPolicy < ApplicationPolicy
     user.has_cached_role?(:support)
   end
 
-  def report?
-    true
-  end
-
   def dashboard?
     true
   end
 
+  # L12 — the stakeholder-name autocomplete is a fund-side tool: employees only (results are limited
+  # to the firm's own linked stakeholders in EntitiesController#search). Test L12-7
   def search?
-    true
+    user.curr_role_employee?
   end
 
   # Any signed-in user may open a company's page (B1). Investors land on their GP's page after

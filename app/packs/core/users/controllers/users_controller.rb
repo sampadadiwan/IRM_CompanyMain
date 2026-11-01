@@ -21,8 +21,16 @@ class UsersController < ApplicationController
     @response = chat_class.new(user: current_user).query(params[:query])
   end
 
+  # WATI posts every inbound WhatsApp message here. M1: the callback URL configured in that
+  # environment's WATI dashboard carries ?webhook_token=<credentials.whatsapp.webhook_token>, so a
+  # forged post can no longer drive any user's WhatsApp agent by phone number (see WebhookToken).
   def whatsapp_webhook
-    WhatsappAgentJob.perform_later(params.to_json)
+    # M1-H / M1-1 / M1-E — refused only once WEBHOOK_TOKEN_ENFORCE=1; logged and accepted before that
+    expected = Rails.application.credentials.dig(:whatsapp, :webhook_token)
+    return render json: "Unauthorized", status: :unauthorized unless WebhookToken.accept?(params[:webhook_token], expected, source: "WhatsApp webhook")
+
+    # The secret stays out of the job's arguments (Sidekiq's queue and its logs)
+    WhatsappAgentJob.perform_later(params.except(:webhook_token).to_json)
 
     render json: "Ok"
   end
@@ -87,6 +95,15 @@ class UsersController < ApplicationController
 
   # Mints a hand-off credential for the requested region and sends the browser there.
   def cross_site_link
+    # M5-1 — no region hand-off while support is impersonating: the credential names only the
+    # impersonated user's email, so the other region would sign support in AS that user with no
+    # support_user_id and no audit trail of who acted. Support signs into the other region
+    # themselves. (The selector is hidden in layouts/modernize/_topbar for the same session.)
+    if session[:support_user_id].present?
+      skip_authorization
+      return redirect_back_or_to(root_path, alert: t("cross_region.impersonating"))
+    end
+
     code = SiteRegistry.normalize(params[:site])
 
     # Without the shared secret there is nothing to sign with, and CrossSiteLink.new would raise
@@ -392,6 +409,8 @@ class UsersController < ApplicationController
     redirect_to root_path
   end
 
+  # POST /users/set_persona (L7-H). Was a GET, so any link or <img> could flip a signed-in user's
+  # persona; the route is POST-only now and the form carries the CSRF token (L7-1).
   def set_persona
     ActiveRecord::Base.connected_to(role: :writing) do
       current_user.set_persona(params[:user][:persona]) if params[:user].present? && params[:user][:persona].present?
@@ -401,6 +420,16 @@ class UsersController < ApplicationController
 
   # This is used to reset password only for system generated users on the first login
   def reset_password
+    # L3-1 / L3-2 — this sets a password WITHOUT the current one, so it is only for the first-login
+    # banner of a system-created user, and never while support is impersonating (that would let
+    # support take over the account). Everyone else changes their password on Devise's edit page,
+    # which asks for the current password. L3-H continues below.
+    unless current_user.reset_password? && session[:support_user_id].blank?
+      return redirect_to edit_user_registration_path,
+                         alert: "Change your password here: enter your current password, then the new one."
+    end
+
+    # L3-H — mint a reset token, sign out, and open the set-password form with it
     raw, hashed = Devise.token_generator.generate(User, :reset_password_token)
     current_user.reset_password_token = hashed
     current_user.reset_password_sent_at = Time.now.utc

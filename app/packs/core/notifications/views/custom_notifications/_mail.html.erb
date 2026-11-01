@@ -1,12 +1,8 @@
 <% if @custom_notification.present? %>
 
     <% if @custom_notification.is_erb %>
-        <!-- Render the ERB content -->
-        <% 
-            content =  CGI.unescapeHTML(@custom_notification.body).gsub("&nbsp;", " ")
-            rendered_content = ERB.new(content).result(binding) 
-        %>
-        <%= raw rendered_content %>
+        <!-- C2: the known ERB tags are filled in from this view's records; nothing in the body is evaluated -->
+        <%= @custom_notification.render_erb_body(self) %>
     <% else %>
         <!-- Render the HTML content, substituting any {{placeholder}} tokens -->
         <%= @custom_notification.render_safe_body(controller) %>

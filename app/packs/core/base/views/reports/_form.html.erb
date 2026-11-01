@@ -13,8 +13,7 @@
     </div>
   <% end %>
 
-  <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
-  <%= form.text_field :user_id, class: "form-control", hidden: true  %>
+  <%# H17 — no entity_id / user_id fields: the controller sets them from the signed-in user %>
 
   <div class="form-group">
     <%= form.label :name %>

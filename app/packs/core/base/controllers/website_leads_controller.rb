@@ -28,7 +28,7 @@ class WebsiteLeadsController < ApplicationController
 
   before_action :set_cors_headers, only: %i[create options]
 
-  # verify_authorized is declared `except: %i[index search bulk_actions]`, so the
+  # verify_authorized is declared `except: %i[index search]`, so the
   # index would otherwise pass the check without ever consulting a policy.
   after_action :verify_authorized, only: :index
 

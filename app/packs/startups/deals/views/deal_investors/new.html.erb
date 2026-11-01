@@ -1,5 +1,7 @@
-<% if params[:form_type] %>
-    <%= render params[:form_type], deal_investor: @deal_investor %>
+<%# M10 — only this folder's own deal form may be picked by ?form_type=; any other value gets the default form %>
+<% form_type = %w[deal_form].find { |name| name == params[:form_type].to_s } %>
+<% if form_type %>
+    <%= render form_type, deal_investor: @deal_investor %>
 <% else %>
     <%= render "form", deal_investor: @deal_investor %>
 <% end %>

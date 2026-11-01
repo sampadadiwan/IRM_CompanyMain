@@ -108,7 +108,12 @@ class FundRatio < ApplicationRecord
 
   scope :latest, -> { where(latest: true) }
   scope :default, -> { where(scenario: "Default") }
-  scope :for_portfolio_companies, -> { where(owner_type: "PortfolioCompany") }
+  # A portfolio company is an investors row, so its ratios have owner_type "Investor" (FundRatiosJob
+  # #_create_gross_portfolio_irr_ratios, ImportFundRatio#find_owner, FinalizePortfolioScenario). No ratio
+  # has owner_type "PortfolioCompany", which made this scope always empty. The only other owners are
+  # Fund, CapitalCommitment, InvestorKyc and AggregatePortfolioInvestment, so "Investor" means a portco.
+  # Test F6-4 — features/security/security_review_2026_10_followups.feature
+  scope :for_portfolio_companies, -> { where(owner_type: "Investor") }
   scope :for_fund, ->(fund_id) { where(fund_id:, owner_type: "Fund") }
 
   # Cross-fund rows (fund_id: nil) have no parent fund to join against, so the INNER

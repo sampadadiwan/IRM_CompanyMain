@@ -149,6 +149,17 @@ class DocumentPolicy < ApplicationPolicy
     update? && record.approved && user.has_cached_role?(:approver)
   end
 
+  # H1: the "Approve Generated Documents" page (approve by date range, and "Approve KYC Docs" on the
+  # KYC list) approves every unapproved generated document of the user's firm in one go - and can
+  # email them to LPs. It needs what approving one document needs, the approver role, held by an
+  # employee of the firm with documents enabled; or support. Company admin alone is not enough here,
+  # as it is not enough for approve? - keep the two in step if that ever changes.
+  # The record is the Document class: there is no single document to check.
+  # Worked examples H1-1, H1-H, H1-H2, H1-X, H1-X2 — docs/security/security_review_2026_10.md#h1--bulk-document-approval
+  def bulk_approve?
+    (user.enable_documents && user.curr_role_employee? && user.has_cached_role?(:approver)) || support?
+  end
+
   # SECURITY (finding H7): publishing a document (public_visibility makes show? return true for
   # any user, beyond the owning entity) is a privileged action limited to company admins — not
   # every user who can edit the document. Enforced server-side in DocumentsController on both

@@ -36,9 +36,13 @@ Doorkeeper.configure do
   base_controller 'ActionController::Base' # Needed for Devise compatibility
 
   # Allow client credentials via request params
-  allow_token_introspection do
-    true
-  end
+  # M2 — introspection off. Nothing here calls /oauth/introspect, and `true` let any client (or
+  # any bearer) ask about any token. `false` (not a block returning false) makes `use_doorkeeper`
+  # skip the route entirely, so POST /oauth/introspect is a 404 and the OIDC discovery document
+  # omits introspection_endpoint. Re-enabling it means adding the path back to rack_attack.rb's
+  # OAUTH_CLIENT_PATHS throttle.
+  # docs/security/security_review_2026_10.md "Authentication and session — Medium / Low", M2.
+  allow_token_introspection false
 
   client_credentials :from_basic, :from_params
 
@@ -166,7 +170,10 @@ Doorkeeper.configure do
   #
   # You can not enable this option together with +hash_token_secrets+.
   #
-  reuse_access_token
+  # L2 — off: it needs plaintext tokens to hand back, and it stopped users switching accounts and
+  # kept revoked Claude.ai tokens alive (docs/modules/ai/mcp_server/technical_design.md, issue 3).
+  # Every authorization now mints a fresh token.
+  # reuse_access_token
 
   # In case you enabled `reuse_access_token` option Doorkeeper will try to find matching
   # token using `matching_token_for` Access Token API that searches for valid records
@@ -248,6 +255,16 @@ Doorkeeper.configure do
   # This can be done by adding 'fallback: plain', e.g. :
   #
   # hash_application_secrets using: '::Doorkeeper::SecretStoring::BCrypt', fallback: :plain
+
+  # L2 Phase 1 — tokens, refresh tokens, grants and client secrets were stored in plaintext (the prod
+  # dump restored onto the dev box held live tokens). Now SHA-256 hashed. fallback: :plain keeps
+  # every existing row working: the first time a plaintext value is presented it is found the old
+  # way and rewritten hashed (so token lookups must run on the primary — McpController, the mail
+  # API). Code that needs the raw value reads #plaintext_token / #plaintext_secret on the instance
+  # it just created; nothing can read it back later. Phase 2 (devise-api tokens) is designed
+  # separately. docs/security/security_review_2026_10.md "Authentication and session", L2.
+  hash_token_secrets fallback: :plain
+  hash_application_secrets fallback: :plain
 
   # Issue access tokens with refresh token (disabled by default), you may also
   # pass a block which accepts `context` to customize when to give a refresh

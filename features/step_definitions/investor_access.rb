@@ -57,25 +57,23 @@ Given('I {string} the investor access for {string}') do |action, email|
     within("#investor_access_#{@investor_access.id}") do
       click_on 'Approve'
     end
-    sleep(0.5)
-    expect(@investor_access.reload.approved).to be true
+    # The flash waits for the Turbo request to finish; a fixed sleep lost the race under pcuc load
     expect(page).to have_content('Approved '+@investor_access.email)
+    expect(@investor_access.reload.approved).to be true
   elsif action == 'unapprove'
     within("#investor_access_#{@investor_access.id}") do
       click_on 'UnApprove'
     end
-    sleep(0.5)
-    expect(@investor_access.reload.approved).to be false
     expect(page).to have_content('Un-approved '+@investor_access.email)
+    expect(@investor_access.reload.approved).to be false
   elsif action == 'delete'
     within("#investor_access_#{@investor_access.id}") do
       click_on("Actions")
       click_on 'Delete'
     end
     click_on 'Proceed'
-    sleep(0.5)
-    expect(InvestorAccess.find_by(email: email)).to be_nil
     expect(page).to have_content('Destroyed '+@investor_access.email)
+    expect(InvestorAccess.find_by(email: email)).to be_nil
   else
     raise "Unknown action #{action}"
   end

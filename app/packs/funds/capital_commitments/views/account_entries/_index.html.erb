@@ -72,14 +72,14 @@
 
 
         <%# pass import upload id to scope deletion properly %>
-        <%# dont show delete button if we are on import details page %>
-        <%= button_to "Delete Results", delete_all_account_entries_path(fund_id: params[:fund_id], import_upload_id: import_upload_id, q: params[:q].to_unsafe_h), class: "btn btn-outline-danger ti ti-trash", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false, msg: "Delete all account entries in search results?", method: :post}  if params[:q].present? && import_upload_id.blank? %>
+        <%# dont show delete button if we are on import details page; H7: only to users the policy allows %>
+        <%= button_to "Delete Results", delete_all_account_entries_path(fund_id: params[:fund_id], import_upload_id: import_upload_id, q: params[:q].to_unsafe_h), class: "btn btn-outline-danger ti ti-trash", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false, msg: "Delete all account entries in search results?", method: :post}  if params[:q].present? && import_upload_id.blank? && policy(AccountEntry).delete_all? %>
 
       <% else %>
         <%= link_to "Download", xl_link, class: "btn btn-outline-success" %>
         <%# pass import upload id to scope deletion properly %>
-        <%# dont show delete button if we are on import details page %>
-        <%= button_to "Delete Results", delete_all_account_entries_path(fund_id: params[:fund_id], import_upload_id: import_upload_id, q: params[:q].to_unsafe_h), class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false, msg: "Delete all account entries in search results?", method: :post}  if params[:q].present? && import_upload_id.blank? %>
+        <%# dont show delete button if we are on import details page; H7: only to users the policy allows %>
+        <%= button_to "Delete Results", delete_all_account_entries_path(fund_id: params[:fund_id], import_upload_id: import_upload_id, q: params[:q].to_unsafe_h), class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false, msg: "Delete all account entries in search results?", method: :post}  if params[:q].present? && import_upload_id.blank? && policy(AccountEntry).delete_all? %>
       <% end %>
 
 

@@ -99,8 +99,6 @@ end
 
 resources :account_entries do
   post 'delete_all', on: :collection
-  get 'adhoc', on: :collection
-  post 'adhoc', on: :collection
   post 'explain', on: :member
   # One opened line of the entry page's explanation, fetched into its Turbo Frame.
   get 'explanation_node', on: :member

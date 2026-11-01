@@ -15,7 +15,9 @@
                             <div class="text-center">
                                 <h1 class="h4 text-gray-900 mb-4">Reset Password</h1>
                             </div>
-                            <form class="user">
+                            <%# A div, not a nested <form>: a form inside form_for is invalid HTML, and parsers that
+                                keep it (rack_test's) submit the empty inner form instead of the reset. %>
+                            <div class="user">
                                 <div class="form-group row">
                                    <div class="form-group row">
                                     <div class="col-sm-6 mb-3 mb-sm-0">
@@ -30,9 +32,9 @@
                                     </div>
                                 </div>
 
-                                <input type="Submit" class="btn btn-outline-primary btn-outline-user btn-outline-block", value="Reset Password">                                    
-                                
-                            </form>
+                                <input type="submit" class="btn btn-outline-primary btn-outline-user btn-outline-block" value="Reset Password">
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

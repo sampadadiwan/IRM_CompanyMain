@@ -211,8 +211,11 @@ class ApplicationPolicy
       else
         # Some fund-child models (e.g. PortfolioScenario, FundRatio) have no direct
         # investor association; for those the fund-level AR is sufficient.
-        investor_check = !record.respond_to?(:investor) || record.investor.nil? ||
-                         record.investor.investor_entity_id == user.entity_id
+        # M23 — a record that HAS an investor association but no investor (a fund-level account entry)
+        # is not an LP's record: the investor branch needs the record's investor to be the user's
+        # (M23-X1, M23-H1)
+        investor_check = !record.respond_to?(:investor) ||
+                         (record.investor.present? && record.investor.investor_entity_id == user.entity_id)
         permission_metadata_ok && investor_check
       end
     else
@@ -243,9 +246,10 @@ class ApplicationPolicy
         permission_metadata_ok
       else
         # Some fund-child models have no direct investor association; skip entity check for those.
+        # M23 — as above, a record with an investor association but no investor never passes here (M23-X2)
         investor_check = as_entity_id.present? ||
-                         !record.respond_to?(:investor) || record.investor.nil? ||
-                         record.investor.investor_entity_id == user.entity_id
+                         !record.respond_to?(:investor) ||
+                         (record.investor.present? && record.investor.investor_entity_id == user.entity_id)
         permission_metadata_ok && investor_check
       end
     else

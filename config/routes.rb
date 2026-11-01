@@ -80,7 +80,8 @@ Rails.application.routes.draw do
     post 'magic_link', on: :collection
     post 'whatsapp_webhook', on: :collection
     get 'welcome', on: :collection
-    get 'set_persona', on: :collection
+    # L7 — POST only: a GET let any link or image flip a signed-in user's persona
+    post 'set_persona', on: :collection
     post 'reset_password', on: :collection
     post 'accept_terms', on: :collection
     get 'chat', on: :collection
@@ -209,6 +210,9 @@ Rails.application.routes.draw do
   # Same purpose for the Gmail add-on, which opens this in a browser tab and receives the
   # token back through Apps Script's usercallback.
   get 'gmail_addin/oauth_start', to: 'gmail_addin#oauth_start'
+  # H12 — the GET above only renders a confirm page; its CSRF-protected button posts here,
+  # and only this POST mints the token.
+  post 'gmail_addin/oauth_start', to: 'gmail_addin#oauth_confirm', as: :gmail_addin_oauth_confirm
   # Legacy session-authenticated endpoints for the old Outlook task pane. Superseded by
   # the token-authenticated /api/v1/mail/* API below, which both add-ins now use.
   get 'outlook_addin/investors', to: 'outlook_addin#investors'

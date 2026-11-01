@@ -4,6 +4,8 @@ class IncomingEmailsController < ApplicationController
   skip_before_action :verify_authenticity_token, only: [:sendgrid]
   skip_before_action :set_current_entity, only: [:sendgrid]
   skip_after_action :verify_authorized, only: [:sendgrid]
+  # H2: SendGrid has no user; it proves itself with the webhook token instead
+  before_action :verify_sendgrid_token, only: [:sendgrid]
 
   def sendgrid
     Rails.logger.debug { "Processing incoming email, to: #{params[:to]}, from: #{params[:from]}, subject: #{params[:subject]}" }
@@ -63,7 +65,8 @@ class IncomingEmailsController < ApplicationController
 
   # GET /incoming_emails/new
   def new
-    @incoming_email = IncomingEmail.new
+    # M22 — the blank form is the user's own firm's (IncomingEmailPolicy#create? checks the firm)
+    @incoming_email = IncomingEmail.new(entity_id: current_user.entity_id)
     authorize @incoming_email
   end
 
@@ -76,12 +79,13 @@ class IncomingEmailsController < ApplicationController
       investor = Investor.find(params[:investor_id])
       authorize investor, :update?
 
-      @incoming_email = IncomingEmail.new(incoming_email_params)
-      authorize @incoming_email
+      # M22 — build fully (owner and firm from the investor, never from the form), then authorize
+      @incoming_email = IncomingEmail.new(incoming_email_params.except(:owner_id, :owner_type, :entity_id))
       @incoming_email.owner = investor
       @incoming_email.entity = investor.entity
       @incoming_email.filed_by_user = current_user
       @incoming_email.received_at ||= Time.current
+      authorize @incoming_email
 
       respond_to do |format|
         if @incoming_email.save
@@ -91,7 +95,11 @@ class IncomingEmailsController < ApplicationController
         end
       end
     else
-      @incoming_email = IncomingEmail.new(incoming_email_params)
+      # M22 — the firm is pinned from the owner (the form's entity_id is ignored), or is the user's own
+      # when there is no owner; IncomingEmailPolicy#create? then checks the owner's firm and that the
+      # user may update the owner (M22-1, M22-H)
+      @incoming_email = IncomingEmail.new(incoming_email_params.except(:entity_id))
+      @incoming_email.entity_id = incoming_email_owner_firm_id(@incoming_email.owner) || current_user.entity_id
       authorize @incoming_email
       if @incoming_email.save
         redirect_to @incoming_email, notice: "Incoming email was successfully created."
@@ -119,10 +127,58 @@ class IncomingEmailsController < ApplicationController
 
   private
 
+  # H2 — authenticates the SendGrid Inbound Parse webhook. The Inbound Parse URL configured in the
+  # SendGrid dashboard carries a secret, either as ?token=<token> or as the Basic auth password
+  # (https://sendgrid:<token>@host/incoming_emails/sendgrid). It is compared in constant time with
+  # credentials[:sendgrid_inbound][:tokens], a list so a token can be rotated: list the new one
+  # next to the old, change the URL, then drop the old one.
+  # While ENV["SENDGRID_INBOUND_ENFORCE"] is not "1" an unauthenticated post is only logged and
+  # carries on, so mail keeps being filed until ops have configured the URL and watched the log;
+  # once it is "1" the post is refused with 401 (SendGrid retries non-2xx, so a misconfiguration
+  # delays mail rather than losing it). Same shape as GrafanaAlertsController#verify_token.
+  # Worked examples H2-1, H2-2, H2-R, H2-7 — docs/security/security_review_2026_10.md#h2--sendgrid-inbound-email
+  def verify_sendgrid_token
+    # 1. The token as SendGrid sends it: the URL's ?token= first, else the Basic auth password
+    received = params[:token].presence || sendgrid_basic_auth_password
+    # 2. Authenticated if it matches any configured token - the previous one too while rotating (H2-7)
+    return if received.present? && sendgrid_inbound_tokens.any? { |token| ActiveSupport::SecurityUtils.secure_compare(received.to_s, token) }
+
+    # 3. Not authenticated. Never log the token itself - only whether one was sent.
+    reason = received.present? ? "wrong token" : "no token"
+    if ENV["SENDGRID_INBOUND_ENFORCE"] == "1"
+      # Enforced: refused, nothing is filed (H2-1 no token, H2-2 wrong token)
+      Rails.logger.warn "[SendgridInbound] unauthenticated (#{reason}) from #{request.remote_ip}: refused with 401"
+      head :unauthorized
+    else
+      # Not yet enforced: accepted as before, logged so ops can see who still posts without it (H2-R)
+      Rails.logger.warn "[SendgridInbound] unauthenticated (#{reason}) from #{request.remote_ip}: accepted, SENDGRID_INBOUND_ENFORCE is off"
+    end
+  end
+
+  # The password of a Basic Authorization header, or nil when there is none
+  def sendgrid_basic_auth_password
+    return unless ActionController::HttpAuthentication::Basic.has_basic_credentials?(request)
+
+    ActionController::HttpAuthentication::Basic.user_name_and_password(request).last
+  end
+
+  # The accepted webhook tokens from this environment's credentials (IN and US have their own).
+  # Blank entries are dropped so an empty token can never match.
+  def sendgrid_inbound_tokens
+    Array(Rails.application.credentials.dig(:sendgrid_inbound, :tokens)).map(&:to_s).compact_blank
+  end
+
   # Use callbacks to share common setup or constraints between actions.
   def set_incoming_email
     @incoming_email = IncomingEmail.find(params[:id])
     authorize @incoming_email
+  end
+
+  # M22 — the firm an owner belongs to: an Entity owner (investor presentations) is the firm itself
+  def incoming_email_owner_firm_id(owner)
+    return nil if owner.nil?
+
+    owner.is_a?(Entity) ? owner.id : owner.entity_id
   end
 
   # Only allow a list of trusted parameters through.

@@ -27,6 +27,8 @@
 <link rel="stylesheet" href="/modernize/css/styles.css" />
 
 <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+<%# L5 — publishes the per-request CSP nonce for Turbo / scripts added at runtime %>
+<%= csp_meta_tag %>
 <%= render "/layouts/locale_date_meta" %>
 <%= javascript_importmap_tags %>
 

@@ -1,9 +1,27 @@
 class InvestorKycsBulkActionJob < BulkActionJob
   DELAY_SECONDS = 180
+
+  # H6 step 3 — bulk_action → the policy query the single-KYC action authorises with. Bank verification
+  # is a paid call, gated on KYC update (generate_docs?). "validatedocswithai" is not listed: its own
+  # method below already checks validate_docs_with_ai?.
+  ACTIONS = { "verify" => :toggle_verified?, "unverify" => :toggle_verified?,
+              "sendkyclink" => :send_kyc_reminder?, "sendreminder" => :send_kyc_reminder?,
+              "generateamlreports" => :generate_new_aml_report?, "bankverification" => :generate_docs? }.freeze
+
   def perform_action(investor_kyc, user_id, bulk_action, params: {})
     msg = "#{bulk_action}: #{investor_kyc}"
     Rails.logger.info "Performing #{msg} with #{params}"
     send_notification(msg, user_id, :success)
+
+    # H6 step 3 — per KYC: e.g. bulk verify needs the approve permission, as the single Verify toggle
+    # does; a KYC the user may not act on is left as it was and listed as "Not authorized". Test H6-5 —
+    # features/security/bulk_actions_authorization.feature
+    query = ACTIONS[bulk_action.to_s.downcase]
+    if query && !InvestorKycPolicy.new(@user, investor_kyc).public_send(query)
+      @error_msg << { msg: "Not authorized to #{bulk_action.to_s.downcase}", id: investor_kyc.id, Kyc: investor_kyc }
+      return
+    end
+
     case bulk_action.downcase
 
     when "verify"

@@ -100,12 +100,13 @@ end
     </div>
     <!-- Report Content -->
     <% if @collated_content.present? %>
-      <%= clean_for_word(@collated_content).html_safe %>
+      <%# C3-8 - sanitized before the chart conversion, so pandoc gets no img to fetch %>
+      <%= clean_for_word(AiReportHtml.sanitize(@collated_content)).html_safe %>
     <% else %>
       <% (@sections || []).each_with_index do |section, index| %>
         <div style="margin-bottom: 30px;<%= index > 0 ? ' page-break-before: always;' : '' %>">
           <div style="font-size: 11pt; line-height: 1.6;">
-            <%= clean_for_word(section.current_content).html_safe %>
+            <%= clean_for_word(AiReportHtml.sanitize(section.current_content)).html_safe %>
           </div>
         </div>
       <% end %>

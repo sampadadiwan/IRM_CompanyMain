@@ -18,8 +18,8 @@ class AiPortfolioReportsController < ApplicationController
     @report = AiPortfolioReport.new
     authorize @report
 
-    # Load user's templates for selection
-    @templates = current_user.entity.investment_criteria_templates.order(usage_count: :desc)
+    # Load the portfolio companies and templates the form offers
+    load_form_options
   end
 
   # Create a new portfolio report and enqueue generation.
@@ -28,21 +28,24 @@ class AiPortfolioReportsController < ApplicationController
   def create
     @report = AiPortfolioReport.new(report_params)
     @report.analyst_id = current_user.id
+
+    # An existing template chosen in the form is set before authorizing, so the policy checks it too
+    @report.investment_criteria_template_id = params[:investment_criteria_template_id] if params[:template_action] == 'use_existing' && params[:investment_criteria_template_id].present?
+
+    # C3-9 - authorize the portfolio company and template before anything (template, folder) is created
     authorize @report
 
-    # Handle template creation if "create new" was selected
+    # Handle template creation if "create new" was selected (created in the user's own entity)
     if params[:template_action] == 'create_new' && params[:new_template].present?
       template = create_template_from_params(params[:new_template])
       @report.investment_criteria_template = template
-    elsif params[:template_action] == 'use_existing' && params[:investment_criteria_template_id].present?
-      @report.investment_criteria_template_id = params[:investment_criteria_template_id]
     end
 
     # If 'skip' or no action, template remains nil
 
-    # Link report to the Company Evaluation Agent folder
-    if @report.portfolio_company_id.present?
-      pc = Investor.find(@report.portfolio_company_id)
+    # Link report to the Company Evaluation Agent folder of the (authorized) portfolio company
+    if @report.portfolio_company.present?
+      pc = @report.portfolio_company
       eval_folder = find_or_create_evaluation_folder(pc)
       @report.folder_id = eval_folder.id
       Rails.logger.debug { "=== REPORT FOLDER SET: folder_id=#{eval_folder.id}, name=#{eval_folder.name}, docs=#{eval_folder.documents.count} ===" }
@@ -52,7 +55,8 @@ class AiPortfolioReportsController < ApplicationController
       GenerateSectionContentJob.perform_later(@report.id)
       redirect_to @report, flash: { ai_notice: 'Report created! AI is generating content for all sections (this may take a minute)...' }
     else
-      @templates = current_user.entity.investment_criteria_templates.order(usage_count: :desc)
+      # Re-render the form with the same options
+      load_form_options
       render :new, status: :unprocessable_entity
     end
   end
@@ -189,9 +193,12 @@ class AiPortfolioReportsController < ApplicationController
     temp_docx = Tempfile.new(['report', '.docx'])
 
     begin
+      # C3-8 - html_content holds only AiReportHtml-sanitized report HTML (the export_docx view
+      # sanitizes at its sinks), so there is no img or link for pandoc to fetch
       temp_html.write(html_content)
       temp_html.close
 
+      # C3-8 - argv array, never a shell string. No --sandbox: prod pandoc 2.9 (Ubuntu 22.04) lacks it
       stdout, stderr, status = Open3.capture3('pandoc', temp_html.path, '-o', temp_docx.path)
       Rails.logger.info "Pandoc stdout: #{stdout}" if stdout.present?
       Rails.logger.error "Pandoc stderr: #{stderr}" if stderr.present?
@@ -288,7 +295,9 @@ class AiPortfolioReportsController < ApplicationController
   # @return [JSON] { folder_id, entity_id, documents: [{ id, name, file_url, created_at }] }
   def evaluation_folder_documents
     portfolio_company = Investor.find(params[:portfolio_company_id])
-    authorize AiPortfolioReport.new, :new?
+    # C3-4 - authorize the portfolio company before creating the folder (a GET used to create
+    # folders in another tenant)
+    authorize AiPortfolioReport.new(portfolio_company:), :new?
 
     folder = find_or_create_evaluation_folder(portfolio_company)
     render json: { folder_id: folder.id, entity_id: portfolio_company.entity_id, documents: serialize_documents(folder) }
@@ -303,7 +312,8 @@ class AiPortfolioReportsController < ApplicationController
   # @return [JSON] { folder_id, documents: [{ id, name, file_url, created_at }] }
   def upload_evaluation_documents
     portfolio_company = Investor.find(params[:portfolio_company_id])
-    authorize AiPortfolioReport.new, :create?
+    # C3-5 - authorize the portfolio company before creating the folder or any document
+    authorize AiPortfolioReport.new(portfolio_company:), :create?
 
     folder = find_or_create_evaluation_folder(portfolio_company)
 
@@ -327,7 +337,19 @@ class AiPortfolioReportsController < ApplicationController
   #
   # @return [void]
   def set_report
-    @report = AiPortfolioReport.find(params[:id])
+    # C3-1, C3-3 - only reports of the user's firms are found; any other id is RecordNotFound (denied)
+    @report = policy_scope(AiPortfolioReport).find(params[:id])
+  end
+
+  # The new-report form's choices.
+  #
+  # @return [void]
+  def load_form_options
+    # C3-X - only the portfolio companies of the user's own firm(s)
+    @portfolio_companies = policy_scope(Investor, policy_scope_class: AiPortfolioReportPolicy::CompanyScope)
+                           .where(category: 'Portfolio Company').order(:name)
+    # The user's templates, most used first
+    @templates = current_user.entity.investment_criteria_templates.order(usage_count: :desc)
   end
 
   # Strong parameters for report.

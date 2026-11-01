@@ -1,4 +1,7 @@
 class InvestorKycCreate < InvestorKycAction
+  # L14 — the records a new KYC can be attached to (the KYC form's hidden owner_type)
+  KYC_OWNER_TYPES = %w[CapitalCommitment ExpressionOfInterest].freeze
+
   step :check_required_file_custom_fields # validate required File custom fields before save bypasses model validations
   step :save
   step :associate_with_owner
@@ -46,7 +49,14 @@ class InvestorKycCreate < InvestorKycAction
   # This method is used to save the investor_kyc to the associated owner like capital_commitment or expression_of_interest
   def associate_with_owner(ctx, investor_kyc:, **)
     if ctx[:owner_id].present? && ctx[:owner_type].present?
-      owner = ctx[:owner_type].constantize.find(ctx[:owner_id])
+      # L14 — the owner type comes from the request (investor_kycs#create / #update); only a commitment
+      # or an EOI carries a KYC, anything else is a 404 (L14-15)
+      owner_class = ApplicationRecord.model_class_from_param(ctx[:owner_type], allowed: KYC_OWNER_TYPES)
+      raise ActiveRecord::RecordNotFound, "Unknown owner type" unless owner_class
+
+      # The owner must be in the KYC's own firm: the id comes from the request, so a bare find could
+      # attach this KYC to another firm's commitment / EOI
+      owner = owner_class.find_by!(id: ctx[:owner_id], entity_id: investor_kyc.entity_id)
       owner.update_columns(investor_kyc_id: investor_kyc.id)
     end
     true

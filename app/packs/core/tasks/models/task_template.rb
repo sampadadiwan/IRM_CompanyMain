@@ -6,6 +6,9 @@ class TaskTemplate < ApplicationRecord
   validates :for_class, length: { maximum: 40 }
   validates :tag_list, length: { maximum: 100 }, allow_blank: true
   validates :due_in_days, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
+  # M18 — help_link renders as a link on every generated task's timeline, so only a plain web address
+  # is accepted; a javascript: or data: URL would run in the viewer's session (M18-4, M18-H)
+  validates :help_link, format: { with: %r{\Ahttps?://[^\s]+\z}i, message: "must be an http(s) web address" }, allow_blank: true
   FOR_CLASS = %w[CapitalCommitment CapitalCall CapitalRemittance CapitalDistribution IndividualKyc NonIndividualKyc Offer Interest PortfolioInvestment].freeze
 
   STANDARD_COLUMNS = { "For; text-col" => "for_class; text-col",

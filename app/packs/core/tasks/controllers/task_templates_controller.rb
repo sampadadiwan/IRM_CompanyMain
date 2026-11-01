@@ -10,8 +10,15 @@ class TaskTemplatesController < ApplicationController
     @pagy, @task_templates = pagy(@task_templates)
   end
 
+  # L14 — the models that generate next steps from task templates (they include WithNextSteps)
+  NEXT_STEP_CLASSES = %w[CapitalCall CapitalCommitment PortfolioInvestment].freeze
+
   def generate
-    @model = params[:for_class].constantize.find(params[:for_class_id])
+    # L14 — only a next-steps model; an unknown for_class is a 404, not a 500 (L14-13)
+    model_class = ApplicationRecord.model_class_from_param(params[:for_class], allowed: NEXT_STEP_CLASSES)
+    raise ActiveRecord::RecordNotFound, "Unknown class" unless model_class
+
+    @model = model_class.find(params[:for_class_id])
     authorize @model, :update?
     @model.generate_next_steps(tag_list: params[:tag_list], save_step: true)
   end
@@ -22,6 +29,9 @@ class TaskTemplatesController < ApplicationController
   # GET /task_templates/new
   def new
     @task_template = TaskTemplate.new
+    # M18 — a company admin writes their own firm's templates, so the form starts on their firm; support
+    # starts blank (a global template). TaskTemplatePolicy#create? checks what is posted (M18-1, M18-H)
+    @task_template.entity_id = current_user.entity_id unless current_user.support?
     authorize @task_template
   end
 

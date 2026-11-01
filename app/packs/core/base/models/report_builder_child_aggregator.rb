@@ -21,11 +21,13 @@ class ReportBuilderChildAggregator
   # root_ids     – array of root record IDs
   # aggregates   – Hash { "relation.col" => "sum"|"count"|... } (clean keys, no col-type suffix)
   # gvp_keys     – GridViewPreference#key values belonging to this relation (raw, may have "; col-type")
-  def initialize(join_config:, root_ids:, aggregates:, gvp_keys:)
+  # user         – whose Pundit scope of the child model limits the rows aggregated (M16-2)
+  def initialize(join_config:, root_ids:, aggregates:, gvp_keys:, user:)
     @join_config = join_config.with_indifferent_access
     @root_ids    = root_ids
     @aggregates  = aggregates
     @gvp_keys    = gvp_keys
+    @user        = user
   end
 
   # Returns Hash { root_id => { gvp_key => value } }
@@ -46,7 +48,7 @@ class ReportBuilderChildAggregator
 
   private
 
-  attr_reader :join_config, :root_ids, :aggregates, :gvp_keys
+  attr_reader :join_config, :root_ids, :aggregates, :gvp_keys, :user
 
   # Drops any key whose column doesn't resolve to a real DB column (walking
   # association reflections for dotted paths). This is the boundary that
@@ -83,8 +85,18 @@ class ReportBuilderChildAggregator
     (join_config[:child_filters] || {}).with_indifferent_access
   end
 
+  # M16 — the user's visible ids of the child model (a subquery), built once per aggregator
+  def visible_child_ids
+    return @visible_child_ids if defined?(@visible_child_ids)
+
+    @visible_child_ids = ReportBuilderQueryEngine.visible_ids(user, child_class)
+  end
+
   def base_scope
     scope = child_class.where(fk => root_ids)
+    # M16 — only the children the user may see, so an out-of-scope row is not counted or summed
+    # either (M16-2). The latest-value query reuses this scope as its MAX(id) subquery.
+    scope = scope.where(id: visible_child_ids) if visible_child_ids
     scope = scope.joins(joins.to_sym) if joins.present?
     child_filters.present? ? scope.ransack(child_filters).result : scope
   end

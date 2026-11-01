@@ -301,7 +301,6 @@ class PortfolioInvestment < ApplicationRecord
   ##########################################################
 
   # Sums up all form custom fields tagged as 'Expense'
-  # rubocop:disable Security/Eval
   def expense_cents
     expense_fields = form_custom_fields.where(meta_data: "Expense").pluck(:name)
 
@@ -312,13 +311,18 @@ class PortfolioInvestment < ApplicationRecord
       nil
     end.sum * 100
 
-    # Now add up all the account entries tagged as 'Expense' for this investment
-    total += eval(ApplicationRecord.safe_eval!(entity.entity_setting.portflio_expense_account_entry_filter, context: "EntitySetting portflio_expense_account_entry_filter")).sum(:amount_cents) if entity.entity_setting.portflio_expense_account_entry_filter.present?
+    # Now add up all the account entries tagged as 'Expense' for this investment. The filter is a
+    # support-set expression evaluated on this investment (none is stored in production): safe_eval!
+    # in every mode, the expense_filter sandbox profile in log / enforce mode (C2)
+    # (read inline, not into a local, so the binding the filter sees keeps exactly its old locals)
+    if entity.entity_setting.portflio_expense_account_entry_filter.present?
+      total += FormulaSandbox.evaluate(entity.entity_setting.portflio_expense_account_entry_filter, binding,
+                                       profile: "expense_filter", context: "EntitySetting portflio_expense_account_entry_filter").sum(:amount_cents)
+    end
 
     # Negative if sell, positive if buy
     buy? ? total : -total
   end
-  # rubocop:enable Security/Eval
 
   ##########################################################
   ################ SNAPSHOT & TEMPORAL HELPERS #############

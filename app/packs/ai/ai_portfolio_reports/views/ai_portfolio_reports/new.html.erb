@@ -18,8 +18,9 @@
     
     <div class="mb-3">
       <%= f.label :portfolio_company_id, 'Portfolio Company', class: 'form-label' %>
+      <%# C3-X - only the user's own firm's portfolio companies (AiPortfolioReportsController#load_form_options) %>
       <%= f.collection_select :portfolio_company_id, 
-          Investor.where(category: 'Portfolio Company').order(:name), 
+          @portfolio_companies, 
           :id, :name, 
           { prompt: 'Select a portfolio company' }, 
           class: 'form-control',

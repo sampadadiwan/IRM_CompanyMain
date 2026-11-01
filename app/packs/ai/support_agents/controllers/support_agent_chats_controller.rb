@@ -91,11 +91,24 @@ class SupportAgentChatsController < ApplicationController
     end
   end
 
-  # The agent (authorized), the record the window is about, and the user's sessions on it.
+  # The agent (authorized), the record the window is about (authorized), and the user's sessions on it.
   def load_window
     @support_agent = SupportAgent.find(params[:support_agent_id])
     authorize @support_agent, :show?
-    @target = find_chattable || @support_agent
+    chattable = find_chattable
+    # H3-3 - no (or no usable) record named: the window is about the agent, as before
+    @target = chattable || @support_agent
+    # H3-1, H3-2 - a named record must be one the user may see
+    authorize_target if chattable
+  end
+
+  # H3-1, H3-2, H3-X - each record's own policy decides (show?). A class with no policy counts as
+  # refused, not as a server error. Raises Pundit::NotAuthorizedError, handled by deny_access.
+  def authorize_target
+    authorize @target, :show?
+  rescue Pundit::NotDefinedError
+    # No policy for this record type: refuse it like any other unauthorized record
+    raise Pundit::NotAuthorizedError, "not allowed to chat about #{@target.class.name}"
   end
 
   # The conversation the window opens on: the latest, unless it has been idle past GenericChatAgent's
@@ -138,12 +151,19 @@ class SupportAgentChatsController < ApplicationController
     ]
   end
 
+  # The record named by chattable_type / chattable_id, or nil (the window is then about the agent).
+  #
+  # @return [ApplicationRecord, nil]
   def find_chattable
     return nil unless params[:chattable_type].present? && params[:chattable_id].present?
 
-    params[:chattable_type].constantize.find_by(id: params[:chattable_id])
-  rescue NameError
-    nil
+    # H3-3 - resolve the name without constantize: an unknown name is nil, never an arbitrary constant
+    klass = params[:chattable_type].to_s.safe_constantize
+    # H3-3 - only concrete models (Kernel, ActiveRecord::Base, ApplicationRecord are not)
+    return nil unless klass.is_a?(Class) && klass < ApplicationRecord && !klass.abstract_class?
+
+    # An unknown id is nil too: the window falls back to the agent, as before
+    klass.find_by(id: params[:chattable_id])
   end
 
   def llm_connectivity_error?(error)

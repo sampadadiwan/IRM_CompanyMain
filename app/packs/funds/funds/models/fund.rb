@@ -129,6 +129,12 @@ class Fund < ApplicationRecord
   validates :units_allocation_engine, length: { maximum: 50 }, allow_blank: true
   # X1–X5 — the LP portfolio view's formula picks
   validate { LpPortfolioView.validate(self) }
+  # H9 — a feeder's master fund is one of this firm's own funds, and never the fund itself: a feeder's
+  # LPs see the master's portfolio, so another firm's fund here would expose it. Checked when the link is
+  # set or changed (H9-X2: clearing it, or saving anything else, is never refused).
+  # Tests H9-1, H9-2, H9-X1 — features/security/fund_parent_ids_same_firm.feature
+  validate(if: :will_save_change_to_master_fund_id?) { validate_parent_in_own_firm(:master_fund) }
+  validate :master_fund_is_not_self, if: :will_save_change_to_master_fund_id?
 
   scope :ordered, lambda {
     order(Arel.sql("
@@ -185,6 +191,11 @@ class Fund < ApplicationRecord
 
   def private_folder_names
     ["Reports", "Private Documents"]
+  end
+
+  # H9-X1 — a fund cannot be its own master (a new fund has no id yet, so it cannot point at itself)
+  def master_fund_is_not_self
+    errors.add(:master_fund, "cannot be the fund itself") if master_fund_id.present? && master_fund_id == id
   end
 
   def name_must_be_unique_for_non_snapshots

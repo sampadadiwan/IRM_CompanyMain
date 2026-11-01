@@ -11,9 +11,17 @@ class ReportBuilderQueryEngine
   # AccountEntry) with a computed sort key can't materialize the whole table.
   MAX_COMPUTED_SORT_ROWS = 20_000
 
-  def initialize(report:, entity:, external_filters: {})
+  # M16 — the rows a report shows are the rows `user` may see: pass1 starts from the user's Pundit
+  # scope of the root model, and each joined relation's aggregates count only the children in the
+  # user's scope of that model. Before, a fund-restricted employee's report read every KYC, commitment
+  # or user of the firm. Callers pass the person the rows are for: the viewer on screen, the requester
+  # of an on-demand export, the report's owner for a scheduled one (ReportBuilderExportJob).
+  # docs/security/security_review_2026_10.md (M16 row); tests M16-1, M16-2, M16-H —
+  # features/security/security_review_2026_10_medium.feature
+  def initialize(report:, entity:, user:, external_filters: {})
     @report           = report
     @entity           = entity
+    @user             = user
     @config           = ReportBuilderConfig.new(report.template)
     @external_filters = (external_filters || {}).with_indifferent_access
     @dynamic_columns  = []
@@ -48,10 +56,26 @@ class ReportBuilderQueryEngine
   def count
     return 0 unless config.valid?
 
-    scope = config.root_class.where(entity_id: entity.id)
+    # The same base as pass1: the user's scope of the root, inside the report's entity (M16-1)
+    scope = root_scope
     merged_filters = config.root_filters.merge(@external_filters)
     scope = scope.ransack(merged_filters).result
     scope.count
+  end
+
+  # M16 — the ids of `klass` rows `user` may see, as a subquery for a joined relation's aggregates, so
+  # out-of-scope children are left out even as a count or sum (M16-2). A subquery rather than the scope
+  # itself: a scope's own joins would repeat child rows under GROUP BY and inflate a SUM. A model with
+  # no Pundit scope answers nil and keeps the children of the (already scoped) root rows, as before.
+  def self.visible_ids(user, klass)
+    # Pundit's own lookup (KlassPolicy::Scope, inherited ones included); nil when the model has no
+    # policy (checked first: with no policy the finder would look up a top-level ::Scope)
+    finder = Pundit::PolicyFinder.new(klass)
+    scope_class = finder.policy && finder.scope
+    return nil unless scope_class
+
+    # Only the id column, with no ORDER BY, so it can sit inside IN (...) (CLAUDE.md, unscope(:order))
+    scope_class.new(user, klass.all).resolve.unscope(:order).reselect(klass.arel_table[:id])
   end
 
   # GVP columns + any dynamic pivot columns + formula columns.
@@ -65,7 +89,15 @@ class ReportBuilderQueryEngine
 
   private
 
-  attr_reader :report, :entity, :config
+  attr_reader :report, :entity, :user, :config
+
+  # M16 — the root rows this report may list: the user's Pundit scope of the root model, narrowed to
+  # the report's entity. Chained with where (never merge, which would let the scope's own entity_id
+  # condition replace this one). The scope's ORDER BY is dropped: pass1 applies the report's sort, and
+  # a DISTINCT scope would refuse an ORDER BY outside its select list on MySQL (M16-1, M16-H)
+  def root_scope
+    Pundit.policy_scope!(user, config.root_class).unscope(:order).where(entity_id: entity.id)
+  end
 
   # Fetches every row up to the safety cap (unbounded pass1/pass2 within that
   # cap), sorts by the computed key, then hands back just the requested page —
@@ -130,7 +162,8 @@ class ReportBuilderQueryEngine
   # ── Pass 1 ──────────────────────────────────────────────────────────────
 
   def pass1(limit: nil, offset: nil)
-    scope = config.root_class.where(entity_id: entity.id)
+    # M16 — start from the user's scope of the root, not every row of the entity (M16-1)
+    scope = root_scope
 
     merged_filters = config.root_filters.merge(@external_filters)
     scope = scope.ransack(merged_filters).result
@@ -148,7 +181,11 @@ class ReportBuilderQueryEngine
   def apply_sort(scope)
     key = sort_key
     dir = config.sort[:dir] == "desc" ? "DESC" : "ASC"
-    key.present? && config.root_class.column_names.include?(key) ? scope.order("#{key} #{dir}") : scope
+    return scope unless key.present? && config.root_class.column_names.include?(key)
+
+    # Qualified with the root's table: the user's scope may join tables that share the column name
+    column = config.root_class.arel_table[key]
+    scope.order(dir == "DESC" ? column.desc : column.asc)
   end
 
   # ── Pass 2 ──────────────────────────────────────────────────────────────
@@ -179,7 +216,8 @@ class ReportBuilderQueryEngine
       if pivot_ready
         dyn_cols, pivot_data = ReportBuilderPivotAggregator.new(
           join_config: join_cfg.merge(base_class: base_class, joins: remaining_path, fk: fk),
-          root_ids: root_ids
+          root_ids: root_ids,
+          user: user
         ).call
         @dynamic_columns.concat(dyn_cols)
         acc[relation_path] = pivot_data
@@ -194,7 +232,8 @@ class ReportBuilderQueryEngine
           join_config: join_cfg.merge(base_class: base_class, joins: remaining_path, fk: fk),
           root_ids: root_ids,
           aggregates: build_rel_aggregates(relation_path, gvp_keys),
-          gvp_keys: gvp_keys
+          gvp_keys: gvp_keys,
+          user: user
         ).call
       end
     end

@@ -1,8 +1,9 @@
 <% if params[:q].present? %>
 
-<% if params[:secondary_sale_id].present? %>
-        <% 
-            secondary_sale = SecondarySale.find(params[:secondary_sale_id])
+<% if params[:secondary_sale_id].present? && @secondary_sale %>
+        <%
+            # H11: the sale AllocationsController#index found through policy_scope - never a fresh unscoped find
+            secondary_sale = @secondary_sale
             document_folder = secondary_sale.document_folder
             allocations_folder = document_folder.children.find_by(name: "Allocations")
             folder_id =  allocations_folder&.id

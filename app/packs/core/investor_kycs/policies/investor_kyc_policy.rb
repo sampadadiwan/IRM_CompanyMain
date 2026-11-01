@@ -60,8 +60,11 @@ class InvestorKycPolicy < ApplicationPolicy
     index?
   end
 
+  # H6 step 2 — every KYC bulk action (verify, links, reminders, AML, bank verification, AI checks) is a
+  # fund-side action: investor personas are refused outright; InvestorKycsBulkActionJob re-checks each
+  # KYC against its single-record predicate. Test H6-5 — features/security/bulk_actions_authorization.feature
   def bulk_actions?
-    index?
+    index? && !user.curr_role_investor?
   end
 
   # Each path below is additive (return true if ...), never an exclusive elsif: failing one path
@@ -94,8 +97,10 @@ class InvestorKycPolicy < ApplicationPolicy
   # E: the fields this user may send. Verifying a KYC is the fund's job, so verified / pan_verified /
   # bank_verified are accepted only from fund-side users (curr_role employee, which includes company admins)
   # and support: not from investors, advisors or holding users, nor through a signed magic link
+  # M28 (Test M28-7): user_id and kyc_data_id are not KYC columns (sending them only raised a 500); kyc_data_id is
+  # read directly by investor_kycs#assign_kyc_data. investor_id is create-only (attr_readonly + same firm).
   def permitted_attributes
-    fields = %i[id investor_id entity_id user_id kyc_data_id kyc_type full_name birth_date PAN pan_card signature
+    fields = %i[id investor_id entity_id kyc_type full_name birth_date PAN pan_card signature
                 address corr_address bank_account_number ifsc_code bank_branch bank_account_type bank_name type
                 bank_verification_response expiry_date esign_emails bank_verification_status pan_verification_response
                 pan_verification_status comments completed_by_investor phone form_type_id send_kyc_form_to_user
@@ -192,8 +197,10 @@ class InvestorKycPolicy < ApplicationPolicy
     create?(:investor_kyc_update) && record.entity.permissions.enable_kra?
   end
 
+  # Starting a CKYC fetch needs KYC create rights, the same as the OTP download that finishes it
+  # (KycDataPolicy), so nobody starts a paid CKYC / OTP flow they can't complete (security review 2026-10, C7 follow-up)
   def fetch_ckyc_data?
-    create?(:investor_kyc_update) && record.entity.permissions.enable_ckyc?
+    create? && record.entity.permissions.enable_ckyc?
   end
 
   def update?

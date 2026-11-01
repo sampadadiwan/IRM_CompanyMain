@@ -21,8 +21,9 @@ module TwoFactorDispatch
   # clear the same list — a key cleared in one place but not the other is exactly how a
   # stale "verify" channel hint from an abandoned SMS challenge ended up steering a later
   # authenticator login into a Twilio Verify probe.
+  # otp_challenge_id names the challenge's server-side attempt counter (H13).
   CHALLENGE_SESSION_KEYS = %i[otp_user_id otp_failed_attempts otp_whatsapp_sent_at
-                              otp_sms_sent_at otp_code_channel].freeze
+                              otp_sms_sent_at otp_code_channel otp_challenge_id].freeze
 
   private
 
@@ -47,6 +48,11 @@ module TwoFactorDispatch
     CHALLENGE_SESSION_KEYS.each { |key| session.delete(key) }
     # Set before any sign_out, matching the ordering both call sites already relied on.
     session[:otp_user_id] = user.id
+    # H13 — a fresh id per challenge names its server-side attempt counter
+    # (TwoFactorVerifier.record_failure). The cookie copy of the count can be reset by replaying
+    # a cookie saved before the misses; the server copy, keyed by this id, cannot. A new password
+    # entry gets a new id, and the per-user hourly limit caps how often that helps.
+    session[:otp_challenge_id] = SecureRandom.uuid
 
     # Which modes send a code, and when a mode is undeliverable, live in TwoFactorVerifier so
     # the LP mobile app's sign-in applies exactly the same rules. This concern keeps only the

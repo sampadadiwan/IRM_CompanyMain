@@ -12,6 +12,24 @@ Doorkeeper::OpenidConnect.configure do
   # registration_endpoint in /.well-known/oauth-authorization-server metadata.
   dynamic_client_registration true
 
+  # M2 / N5 — registration was open to any redirect URI and any name, so anyone could register a
+  # client called "Claude" (or "CapHive Mail Add-in" with the out-of-band URI) and phish a consent.
+  # Now the redirect URIs must belong to one kind in config/mcp_clients.yml and reserved names are
+  # refused (McpClientRegistry). Runs inside the gem's DynamicClientRegistrationController
+  # (instance_exec), so `params` and `render` are the controller's. A refusal renders RFC 7591's
+  # 400 itself — the before_action then halts because a response was rendered — rather than
+  # returning false, which the gem would answer with a misleading 401 invalid_token.
+  # The endpoint is also throttled per IP (config/initializers/rack_attack.rb, oauth_registration/ip).
+  # docs/security/security_review_2026_10.md "Authentication and session — Medium / Low", M2.
+  authorize_dynamic_client_registration do
+    refusal = McpClientRegistry.registration_refusal(name: params[:client_name], redirect_uris: params[:redirect_uris])
+    if refusal
+      Rails.logger.warn("[OAuth registration] refused #{params[:client_name].inspect} #{Array(params[:redirect_uris]).inspect}: #{refusal.error}")
+      render json: { error: refusal.error, error_description: refusal.description }, status: :bad_request
+    end
+    true
+  end
+
   subject do |resource_owner, _application|
     # The unique identifier for the user
     resource_owner.id.to_s

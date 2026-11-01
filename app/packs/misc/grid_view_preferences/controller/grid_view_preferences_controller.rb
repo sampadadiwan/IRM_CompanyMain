@@ -1,7 +1,11 @@
 class GridViewPreferencesController < ApplicationController
+  # L14 — what grid columns belong to: a form type or a report (the only owners stored in production)
+  OWNER_TYPES = %w[FormType Report].freeze
+
   before_action :set_grid_view_preference, only: %i[destroy update_column_sequence show edit update]
   skip_before_action :verify_authenticity_token, only: %i[update_column_sequence]
-  after_action :verify_authorized, except: %i[configure_grids]
+  # M15 — configure_grids is authorized too (GridViewPreferencePolicy#configure_grids?)
+  after_action :verify_authorized
 
   def create
     # Find the Report or FormType based on the owner_type and owner_id
@@ -16,6 +20,8 @@ class GridViewPreferencesController < ApplicationController
     grid_view_preference = parent.grid_view_preferences.find_by(key: params[:key])
 
     if grid_view_preference
+      # M15 — permission on the existing column before saying anything about it
+      authorize grid_view_preference
       respond_to do |format|
         format.html { redirect_to configure_grids_grid_view_preferences_path(owner_type: parent.class.name, owner_id: parent.id), alert: "This column is already selected." }
       end
@@ -30,6 +36,9 @@ class GridViewPreferencesController < ApplicationController
         data_type: grid_view_preference_params[:data_type],
         derived_field: grid_view_preference_params[:derived_field]
       )
+      # M15 — ask permission on the built column (its parent's firm, company admin) before the save, so
+      # a refused column is never written (M15-3, M15-H); it used to be saved first and authorized after
+      authorize grid_view_preference
 
       respond_to do |format|
         if grid_view_preference.save
@@ -39,7 +48,6 @@ class GridViewPreferencesController < ApplicationController
         end
       end
     end
-    authorize grid_view_preference
   end
 
   def new
@@ -101,6 +109,11 @@ class GridViewPreferencesController < ApplicationController
 
   def configure_grids
     @parent = find_parent
+    # M15 — the screen lists the parent's columns and custom fields, so the parent must be the user's
+    # firm's; any user of that firm may open it (the Decision did not require company admin). Checked
+    # on a column for the parent, as #create does - not built through the association, which would put
+    # an unsaved column into the list the screen shows (M15-4, M15-H)
+    authorize GridViewPreference.new(owner: @parent, entity_id: @parent.entity_id), :configure_grids?
     model_class = begin
       @parent.name.constantize
     rescue StandardError
@@ -145,7 +158,12 @@ class GridViewPreferencesController < ApplicationController
     owner_id = permitted_params[:owner_id] || params[:grid_view_preference][:owner_id]
 
     if owner_type.present? && owner_id.present?
-      owner_type.constantize.find(owner_id)
+      # L14 — grid columns belong to a form type or a report (the only owners stored in production); an
+      # unknown name is a 404, not a 500 (L14-10)
+      owner_class = ApplicationRecord.model_class_from_param(owner_type, allowed: OWNER_TYPES)
+      raise ActiveRecord::RecordNotFound, "Unknown owner type" unless owner_class
+
+      owner_class.find(owner_id)
     else
       raise "Parent not found"
     end

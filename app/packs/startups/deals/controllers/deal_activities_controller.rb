@@ -1,9 +1,9 @@
 class DealActivitiesController < ApplicationController
   include DealInvestorsHelper
 
-  before_action :set_deal_activity, only: %w[show update destroy edit update_sequence toggle_completed perform_activity_action]
-  skip_before_action :verify_authenticity_token, only: %i[update_sequence perform_activity_action update_sequences], raise: false
-  after_action :verify_authorized, except: %w[update_sequences]
+  before_action :set_deal_activity, only: %w[show update destroy edit toggle_completed perform_activity_action]
+  skip_before_action :verify_authenticity_token, only: %i[perform_activity_action], raise: false
+  after_action :verify_authorized
 
   # GET /deal_activities or /deal_activities.json
   def index
@@ -26,9 +26,19 @@ class DealActivitiesController < ApplicationController
     @pagy, @deal_activities = pagy(@deal_activities) if params[:all].blank?
   end
 
+  # L11 — search is authorized like the list and returns only what the list would show. It used to call
+  # a DealActivity.search that no longer exists (a 500), with no authorization at all.
+  # Test L11-3 — features/security/security_review_2026_10_low.feature
   def search
+    authorize(DealActivity)
     @entity = current_user.entity
-    @deal_activities = DealActivity.search(params[:query].to_s, star: false, with: { entity_id: current_user.entity_id })
+    query = params[:query].to_s.strip
+
+    # The user's own list, narrowed to titles containing the query
+    @deal_activities = policy_scope(DealActivity).includes(:deal, deal_investor: :investor)
+    @deal_activities = @deal_activities.where("deal_activities.title LIKE ?", "%#{DealActivity.sanitize_sql_like(query)}%") if query.present?
+    # Paged like the list, which the index view expects
+    @pagy, @deal_activities = pagy(@deal_activities)
 
     render "index"
   end
@@ -108,23 +118,6 @@ class DealActivitiesController < ApplicationController
     end
   end
 
-  def update_sequence
-    ActiveRecord::Base.connected_to(role: :writing) do
-      @deal_activity.set_list_position(params[:sequence].to_i + 1)
-      @deal_activities = DealActivity.templates(@deal_activity.deal).includes(:deal).page params[:page]
-      params[:template] = true
-      @deal_activity.deal.kanban_board.presence&.broadcast_board_event
-    end
-    respond_to do |format|
-      format.turbo_stream do
-        render turbo_stream: [
-          turbo_stream.replace('deal_activities_frame', partial: "deal_activities/index", locals: { deal_activities: @deal_activities })
-        ]
-      end
-      format.html { redirect_to deal_path(@deal_activity.deal, tab: "activities-tab"), notice: "Success! Deal activites will be recreated in a bit, please refresh the page in a minute." }
-    end
-  end
-
   def toggle_completed
     result = CompleteDealActivity.call(deal_activity: @deal_activity, params: deal_activity_params, user_id: current_user.id)
 
@@ -152,16 +145,6 @@ class DealActivitiesController < ApplicationController
       }, status: :ok
     else
       render json: { errors: result["errors"] }, status: :unprocessable_entity
-    end
-  end
-
-  def update_sequences
-    @deal_activities = policy_scope(DealActivity)
-    result = UpdateSequences.call(params:)
-    if result.success?
-      render json: { success: true, message: "Sequences updated successfully" }
-    else
-      render json: { success: false, message: "Failed to update sequences" }, status: :unprocessable_entity
     end
   end
 

@@ -263,7 +263,8 @@ module AccountEntryAllocation
         bdg = scope.instance_eval { binding }
         bdg.local_variable_set(:capital_commitment, capital_commitment)
         bdg.local_variable_set(:fund_formula, fund_formula)
-        totals[capital_commitment.id] = bdg.eval(ApplicationRecord.safe_eval!(formula, context: "IncrementalMigration"))
+        # C2 — safe_eval! plus, in log / enforce mode, the formula's own sandbox profile
+        totals[capital_commitment.id] = FormulaSandbox.evaluate(formula, bdg, profile: fund_formula.sandbox_profile, context: "IncrementalMigration")
       rescue SkipRule
         next
       end

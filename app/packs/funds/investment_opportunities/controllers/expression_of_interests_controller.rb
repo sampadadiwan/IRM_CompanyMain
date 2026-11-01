@@ -142,8 +142,11 @@ class ExpressionOfInterestsController < ApplicationController
     @bread_crumbs["EOI"] = expression_of_interest_path(@expression_of_interest)
   end
 
-  # Only allow a list of trusted parameters through.
+  # H19: only the fields this user's role may send (ExpressionOfInterestPolicy#permitted_attributes).
+  # Investors and RMs lose approved / verified / show_data_room / allocation; the policy is asked with
+  # the saved EOI on update / allocate and with the class on new / create.
   def expression_of_interest_params
-    params.require(:expression_of_interest).permit(:entity_id, :user_id, :eoi_entity_id, :investor_name, :investor_id, :investor_kyc_id, :investment_opportunity_id, :amount, :approved, :verified, :show_data_room, :investor_email, :allocation_percentage, :comment, :investor_signatory_id, :allocation_amount, :details, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
+    record = @expression_of_interest&.persisted? ? @expression_of_interest : ExpressionOfInterest
+    params.require(:expression_of_interest).permit(policy(record).permitted_attributes)
   end
 end

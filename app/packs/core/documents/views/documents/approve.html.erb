@@ -14,8 +14,9 @@
 <div class="alert alert-info">
     <p>
         Approve all documents generated between Start end End dates below
-        <% if parent_folder_id.present? %> 
-            <% folder = Folder.find(parent_folder_id) %>
+        <% if parent_folder_id.present? %>
+            <%# H1: the folder the controller authorized (own firm + approver), never a fresh lookup by id %>
+            <% folder = @folder %>
             <%  if folder.owner %>
               for: <%= link_to folder.owner.to_s %>
             <% end %>

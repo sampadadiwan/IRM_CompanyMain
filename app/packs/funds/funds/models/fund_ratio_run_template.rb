@@ -31,6 +31,9 @@ class FundRatioRunTemplate < ApplicationRecord
 
   validates :name,     presence: true, uniqueness: { scope: :entity_id }
   validates :run_type, inclusion: { in: VALID_RUN_TYPES }
+  # M8 — a template only ever names funds of its own firm (the anchor and every source fund)
+  validate { validate_parent_in_own_firm(:anchor_fund) }
+  validate :fund_ids_in_own_firm
 
   # Ordered by position first so the UI respects user-set ordering, then by name
   # as a stable fallback when positions are equal or nil.
@@ -67,6 +70,17 @@ class FundRatioRunTemplate < ApplicationRecord
                     else
                       "cross-fund"
                     end
+  end
+
+  # M8 — every stored source fund must be one of this template's firm's funds (M8-X4). One indexed
+  # pluck over the named ids; the firm reference is the stored entity_id, which never changes.
+  def fund_ids_in_own_firm
+    ids = Array(fund_ids).map(&:to_i).reject(&:zero?)
+    return if ids.empty?
+
+    firm_id = entity_id_in_database || entity_id
+    foreign = ids - Fund.where(id: ids, entity_id: firm_id).pluck(:id)
+    errors.add(:fund_ids, "must all be funds of this firm") if foreign.any?
   end
 
   public

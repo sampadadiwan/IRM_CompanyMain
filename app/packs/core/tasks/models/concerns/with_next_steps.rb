@@ -30,7 +30,8 @@ module WithNextSteps
   private
 
   def task_templates(tag_list)
-    templates = TaskTemplate.where(for_class: self.class.name)
+    # M18 — the global templates and this record's own firm's, never another firm's (M18-3, M18-H)
+    templates = TaskTemplate.where(for_class: self.class.name, entity_id: [nil, entity_id])
     if tag_list
       tag_list = tag_list.split(",").map(&:strip)
       templates = templates.where(tag_list:)

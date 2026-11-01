@@ -234,6 +234,12 @@ class FundsController < ApplicationController
       when "cross-fund", "cross-portfolio"
         # scenario param removed — FundRatioRun.name is now the fingerprint derived from inputs.
         fund_ids = params[:fund_ids].nil? ? policy_scope(Fund).pluck(:id) : params[:fund_ids]
+        # M8 — refuse at once if a posted fund is outside the user's scope (the job checks again, since
+        # templates and batch runs reach it without this action)
+        requested_ids = Array(fund_ids).map(&:to_i).reject(&:zero?)
+        inaccessible_ids = requested_ids - policy_scope(Fund).where(id: requested_ids).pluck(:id)
+        return redirect_back_or_to(generate_fund_ratios_fund_path(@fund), alert: "You do not have access to the selected fund(s).") if inaccessible_ids.any?
+
         FundRatiosScenarioJob.set(wait: 3.seconds).perform_later(
           @fund.id,
           Date.local_parse(params[:end_date]),

@@ -10,6 +10,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <%= csrf_meta_tags %>
+<%# L5 — publishes the per-request CSP nonce for Turbo / scripts added at runtime %>
+<%= csp_meta_tag %>
 <link rel="shortcut icon" type="image/png" href="/favicon.png">
 <title><%= [@title, "CapHive"].compact.join(" — ") %></title>
 <link rel="preconnect" href="https://fonts.googleapis.com">

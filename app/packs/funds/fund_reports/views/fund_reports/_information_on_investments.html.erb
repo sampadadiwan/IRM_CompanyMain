@@ -1,8 +1,8 @@
 <%
+    # M10 — the report comes from the controller (@fund_report) or from the authorized fund (params[:id]);
+    # a bare fund_report_id from the request is never looked up, since that loaded any firm's report
     if @fund_report.present?
         fund_report ||= @fund_report
-    elsif params[:fund_report_id].present?
-        fund_report ||= FundReport.where(id: params[:fund_report_id]).last
     elsif params[:id].present?
         fund_report ||= FundReport.where(fund_id: params[:id], name: params['report'].split('/').last.camelize).last
     end

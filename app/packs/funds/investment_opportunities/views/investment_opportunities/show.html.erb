@@ -1,7 +1,8 @@
 
 <% if params[:preview].present? || !policy(@investment_opportunity).update? %>
-    <% if params[:template].present? %>
-        <%= render "/investment_opportunities/templates/#{params[:template]}/index", investment_opportunity: @investment_opportunity %>
+    <%# M10 — preview_template is the allowlisted ?template= value (InvestmentOpportunitiesController::PREVIEW_TEMPLATES) or nil %>
+    <% if preview_template %>
+        <%= render "/investment_opportunities/templates/#{preview_template}/index", investment_opportunity: @investment_opportunity %>
     <% else %>
         <%= render "/investment_opportunities/preview", investment_opportunity: @investment_opportunity %>
     <% end %>

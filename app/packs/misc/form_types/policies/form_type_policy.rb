@@ -61,7 +61,11 @@ class FormTypePolicy < ApplicationPolicy
     update? && record.name.constantize.const_defined?(:STANDARD_COLUMNS)
   end
 
+  # M25 — cloning copies another firm's form type, Calculation fields included, into the user's current
+  # firm. It is a support tool: support only, and only where the user may create form types (a company
+  # admin of the destination firm, which is always the user's current one). M25-2, M25-H in
+  # features/security/security_review_2026_10_medium.feature
   def clone?
-    true
+    support? && new_policy(FormType.new(entity_id: user.entity_id)).create?
   end
 end

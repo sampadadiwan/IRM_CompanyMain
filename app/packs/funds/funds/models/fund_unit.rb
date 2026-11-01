@@ -10,6 +10,11 @@ class FundUnit < ApplicationRecord
   attr_readonly :fund_id # never moves to another fund (funds_api_security_policy_plan.md, B)
   belongs_to :capital_commitment
   belongs_to :investor
+  # H10 — a unit stays on its commitment, which is in the unit's fund; its investor is one of the firm's
+  # own. Test H10-4 — features/security/fund_parent_ids_same_firm.feature
+  attr_readonly :capital_commitment_id
+  validate { validate_parent_in_own_fund(:capital_commitment) }
+  validate(if: :will_save_change_to_investor_id?) { validate_parent_in_own_firm(:investor) }
   belongs_to :owner, polymorphic: true, optional: true
 
   validates :unit_type, length: { maximum: 40 }
