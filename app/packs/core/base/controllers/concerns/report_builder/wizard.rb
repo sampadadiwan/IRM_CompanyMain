@@ -1,35 +1,22 @@
-# The guided wizard: five short steps onto the same Report#template the
-# builder writes, built from the builder's own parts (column picker, filter
-# fields, health check, preview).
+# The guided wizard ("Guided setup"): the original step-by-step front door
+# onto the same Report#template the builder writes — name and table, then
+# Columns → Related Data → Summarize → Filters → Sort → Review. Each step uses
+# the builder's own actions (add_column, add_join, update_aggregate,
+# update_sort …); only the filter form has its own two small actions.
 #
-#   1 Each row               wizard_new / wizard_create — a card per table
-#   2 What to show           step "show" — own and related columns, totals inline
-#   3 Fund and filters       step "fund_filters" — fund picker, filters read back as sentences
-#   4 Order and calculations step "order" — sort, suggested calculations
-#   5 Check and save         step "check" — summary cards, health, sample, name
-#
-# Links to the old six steps still work: they redirect to the step that
-# replaced them. Worked examples H18–H30, E21–E26, X4, X5 —
-# openspec/changes/report-builder-live-builder/business-rules.md
+# Restored after the five-step rework was judged harder to use; on top of the
+# original: an example question for every table, "Guided setup" naming, the
+# Summarize total shown is the one saved and used (W1), and Review's
+# "Open My Report" opens the report page (W11).
 module ReportBuilder
   module Wizard
     extend ActiveSupport::Concern
 
-    WIZARD_STEPS = [
-      { key: "show", label: "What to show" },
-      { key: "fund_filters", label: "Fund and filters" },
-      { key: "order", label: "Order and calculations" },
-      { key: "check", label: "Check and save" }
-    ].freeze
-    WIZARD_STEP_KEYS = WIZARD_STEPS.pluck(:key).freeze
+    WIZARD_STEPS = %w[columns joins aggregates filters sort review].freeze
+    # Steps a wizard form can name in params[:wizard_step] (BuilderUpdates#wizard_request?)
+    WIZARD_STEP_KEYS = WIZARD_STEPS
 
-    # E26 — bookmarks of the old steps land on the step that replaced them
-    OLD_WIZARD_STEPS = {
-      "columns" => "show", "joins" => "show", "aggregates" => "show",
-      "filters" => "fund_filters", "sort" => "order", "review" => "check"
-    }.freeze
-
-    # Icon + an example question for every table in step 1 (H18)
+    # Icon + example question for each table on the first page
     WIZARD_MODEL_META = {
       "Investor" => { icon: "ti-users", example: "Which LPs still have KYC pending?" },
       "Fund" => { icon: "ti-building-bank", example: "How much has each fund called vs. collected?" },
@@ -55,7 +42,17 @@ module ReportBuilder
     # Acronyms `.underscore.humanize` can't know about ("Investor kyc" → "Investor KYC")
     WIZARD_LABEL_ACRONYMS = { "Kyc" => "KYC", "Kpi" => "KPI", "Aml" => "AML" }.freeze
 
-    UNKNOWN_TABLE = "Choose one of the listed tables".freeze
+    # Plain-language explanation + a tiny example for each way of combining
+    # related rows — tooltips next to the picker on the Summarize step
+    WIZARD_AGGREGATE_HELP = {
+      "sum" => { label: "Sum", blurb: "Adds every value together.", example: "3 commitments of ₹10L, ₹20L, ₹5L → ₹35L" },
+      "count" => { label: "Count", blurb: "Counts how many rows there are — the column itself doesn't matter.", example: "3 commitments → 3" },
+      "avg" => { label: "Average", blurb: "The arithmetic mean of the values.", example: "₹10L, ₹20L, ₹5L → ₹11.7L" },
+      "min" => { label: "Minimum", blurb: "The smallest value.", example: "Commitment dates → the earliest one" },
+      "max" => { label: "Maximum", blurb: "The largest value.", example: "Call due dates → the most recent one" },
+      "latest" => { label: "Latest", blurb: "The value from the single most recent row.", example: "3 KYC records → the newest one's status" },
+      "list" => { label: "List", blurb: "A comma-separated list of every distinct value.", example: "Unit types → \"Class A, Class B\"" }
+    }.freeze
 
     # Model class names are PascalCase ("CapitalCommitment"), so plain
     # `.humanize` makes one run-together word; `.underscore` first splits it.
@@ -65,11 +62,10 @@ module ReportBuilder
     end
 
     included do
-      helper_method :wizard_model_label, :wizard_icon_for, :wizard_example_for, :wizard_steps
+      helper_method :wizard_model_label, :wizard_icon_for, :wizard_example_for, :wizard_type_icon_for, :wizard_aggregate_help
     end
 
-    # GET /report_builder/wizard — step 1: a card per table, each with an
-    # example question; choosing one creates the report (H18)
+    # GET /report_builder/wizard — name the report and pick the table it starts from
     def wizard_new
       authorize Report.new(entity: current_user.entity), :create?
       @bread_crumbs = { Reports: reports_path, 'Guided setup': nil }
@@ -77,69 +73,61 @@ module ReportBuilder
       render "report_builder/wizard/new"
     end
 
-    # POST /report_builder/wizard — creates "Untitled <table> report" and opens
-    # step 2; the name is suggested at the end (H19). An unknown table creates
-    # nothing (X4).
+    # POST /report_builder/wizard — creates the report, then opens the Columns step
     def wizard_create
-      authorize Report.new(entity: current_user.entity), :create?
-
-      root = ReportBuilderModelDiscovery.roots.find { |klass| klass.name == params[:root_model].to_s }
-      return redirect_to wizard_report_builder_path, alert: UNKNOWN_TABLE unless root
-
       @report = Report.new(
         user: current_user, entity: current_user.entity, curr_role: current_user.curr_role,
-        name: params[:name].to_s.strip.presence || "Untitled #{wizard_model_label(root.name)} report",
+        name: params[:name].to_s.strip.presence || "Untitled Report",
         report_builder: true, url: "/report_builder",
-        template: { version: 1, root_model: root.name, joins: [], aggregates: {}, root_filters: {}, sort: {} }
+        template: { version: 1, root_model: params[:root_model], joins: [], aggregates: {}, root_filters: {}, sort: {} }
       )
       authorize @report, :create?
 
       if @report.save
-        redirect_to wizard_report_builder_step_path(@report, step: "show")
+        redirect_to wizard_report_builder_step_path(@report, step: "columns")
       else
         redirect_to wizard_report_builder_path, alert: @report.errors.full_messages.to_sentence
       end
     end
 
-    # GET /report_builder/:id/wizard/:step — steps 2–5 (show, fund_filters,
-    # order, check); old step names redirect (E26)
+    # GET /report_builder/:id/wizard/:step — columns, joins, aggregates, filters, sort, review
     def wizard_step
       authorize @report, :update?
 
       step = params[:step].to_s
-      return redirect_to wizard_report_builder_step_path(@report, step: OLD_WIZARD_STEPS[step]) if OLD_WIZARD_STEPS.key?(step)
-      return redirect_to wizard_report_builder_step_path(@report, step: "show") unless WIZARD_STEP_KEYS.include?(step)
+      return redirect_to wizard_report_builder_step_path(@report, step: "columns") unless WIZARD_STEPS.include?(step)
 
       load_builder_state
-      return redirect_to wizard_report_builder_path, alert: "That report's table could not be loaded." unless @root_class
+      return redirect_to wizard_report_builder_path, alert: "That report's root model could not be loaded." unless @root_class
 
-      @step = step
+      # No related data yet — Summarize has nothing to show, so go straight past it
+      return redirect_to wizard_report_builder_step_path(@report, step: "filters") if step == "aggregates" && @config.joins.empty?
+
       @bread_crumbs = { Reports: reports_path, @report.name => view_report_builder_path(@report), 'Guided setup': nil }
+      @joined_columns = @config.joins.each_with_object({}) do |j, h|
+        klass = ReportBuilderColumnCatalog.related_class(@root_class, j[:relation].to_s)
+        h[j[:relation].to_s] = ReportBuilderColumnCatalog.related_columns_for(klass) if klass
+      end
       @gvps = @report.grid_view_preferences.reorder(:sequence, :id).to_a
-      load_wizard_step_state(step)
+
       render "report_builder/wizard/#{step}"
     end
 
-    # POST /report_builder/:id/wizard_filter — one filter from step 3's form.
-    # `field` is a root field, or "<relation>.<field>" for related data.
+    # POST /report_builder/:id/wizard_filter — one filter row (field, operator,
+    # value) from the Filters step, stored as the builder stores it ("field_op")
     def wizard_add_filter
       authorize @report, :update?
 
-      config = ReportBuilderConfig.new(@report.template)
-      relation, field = wizard_split_field(config, params[:field].to_s.strip)
-      return redirect_to wizard_report_builder_step_path(@report, step: "fund_filters") if field.blank?
+      field = params[:field].to_s.strip
+      op    = params[:op].to_s.strip.presence || "eq"
+      value = params[:value].to_s.strip
+      return redirect_to wizard_report_builder_step_path(@report, step: "filters") if field.blank?
 
-      filter = ReportBuilderFilterField.new(config: config, key: field, entity: current_user.entity, relation: relation)
-      op     = filter.operators.map(&:last).include?(params[:op].to_s) ? params[:op].to_s : filter.operators.first.last
-      value  = wizard_filter_value(op, params[:value])
-      # A row that can't be saved says why (E9, E10)
-      if (problem = filter.validate(op, value))
-        return redirect_to wizard_report_builder_step_path(@report, step: "fund_filters", field: params[:field]),
-                           alert: "#{ReportBuilderColumnCatalog.label_for(config, [relation, field].compact.join('.'))} #{problem}"
-      end
+      pred_val = op == "in" ? value.split(",").map(&:strip).compact_blank : value
+      pred_val = "1" if ReportBuilderFilterField::NO_VALUE_OPS.include?(op)
+      wizard_update_filters(params[:relation].to_s.strip.presence) { |filters| filters.merge("#{field}_#{op}" => pred_val) }
 
-      wizard_update_filters(relation) { |filters| filters.merge("#{field}_#{op}" => value) }
-      redirect_to wizard_report_builder_step_path(@report, step: "fund_filters")
+      redirect_to wizard_report_builder_step_path(@report, step: "filters")
     end
 
     # DELETE /report_builder/:id/wizard_filter — removes one filter by its key
@@ -147,46 +135,10 @@ module ReportBuilder
       authorize @report, :update?
 
       wizard_update_filters(params[:relation].to_s.strip.presence) { |filters| filters.except(params[:pred_key].to_s) }
-      redirect_to wizard_report_builder_step_path(@report, step: "fund_filters")
-    end
-
-    # POST /report_builder/:id/wizard_fund — step 3's fund picker: limits the
-    # report's own rows when they have a fund, else each related data with a
-    # fund; blank means All funds (H23, E22)
-    def wizard_fund
-      authorize @report, :update?
-
-      fund = params[:fund_id].present? ? Fund.where(entity_id: current_user.entity.id).find(params[:fund_id]) : nil
-      config = ReportBuilderConfig.new(@report.template)
-      targets = ReportBuilderFundTarget.for(config)
-      set_fund = ->(filters) { fund ? filters.merge("fund_id_eq" => fund.id.to_s) : filters.except("fund_id_eq") }
-
-      if targets[:root]
-        wizard_update_filters(nil, &set_fund)
-      else
-        targets[:relations].each { |relation| wizard_update_filters(relation, &set_fund) }
-      end
-
-      redirect_to wizard_report_builder_step_path(@report, step: "fund_filters"), notice: fund ? "Only #{fund.name}" : "All funds"
-    end
-
-    # PATCH /report_builder/:id/wizard_save — names the report (the suggested
-    # name when left blank) and opens its report page (H29, E25)
-    def wizard_save
-      authorize @report, :update?
-
-      gvps = @report.grid_view_preferences.reorder(:sequence, :id).to_a
-      name = params[:name].to_s.strip.presence ||
-             ReportBuilderSuggestions.name(ReportBuilderConfig.new(@report.template), gvps, current_user.entity)
-      @report.update!(name: name)
-      redirect_to view_report_builder_path(@report), notice: "Saved #{name}"
+      redirect_to wizard_report_builder_step_path(@report, step: "filters")
     end
 
     private
-
-    def wizard_steps
-      WIZARD_STEPS
-    end
 
     def wizard_model_label(model_name)
       ReportBuilder::Wizard.model_label(model_name)
@@ -200,42 +152,27 @@ module ReportBuilder
       WIZARD_MODEL_META.dig(model_name.to_s, :example)
     end
 
-    # What each step shows besides the shared builder state
-    def load_wizard_step_state(step)
-      case step
-      when "fund_filters"
-        @fund_targets = ReportBuilderFundTarget.for(@config)
-        @funds = Fund.where(entity_id: current_user.entity.id).order(:name) if @fund_targets[:root] || @fund_targets[:relations].any?
-        @current_fund_id = wizard_current_fund_id(@config, @fund_targets)
-        @filter_field = params[:field].presence
-      when "order"
-        @suggestions = ReportBuilderSuggestions.for(@config, @gvps)
-      when "check"
-        @suggested_name = ReportBuilderSuggestions.name(@config, @gvps, current_user.entity)
+    def wizard_aggregate_help
+      WIZARD_AGGREGATE_HELP
+    end
+
+    # Icon for one column in the pickers: the "; col-type" hint when there is
+    # one, else the real column's type (root and "relation.field" keys alike)
+    def wizard_type_icon_for(raw_key)
+      key = raw_key.to_s
+      return "ti-hash" if key.include?("num-col")
+      return "ti-calendar" if key.include?("date-col")
+      return "ti-tag" if key.include?("label-col")
+
+      column = @report&.model_columns_hash&.[](key.split(";").first.strip)
+      case column&.type
+      when :integer, :decimal, :float then "ti-hash"
+      when :date, :datetime then "ti-calendar"
+      when :boolean then "ti-toggle-left"
+      else "ti-abc"
       end
-    end
-
-    def wizard_current_fund_id(config, targets)
-      return config.root_filters["fund_id_eq"].presence if targets[:root]
-
-      targets[:relations].filter_map { |relation| (config.join_for(relation)[:child_filters] || {}).stringify_keys["fund_id_eq"] }.first
-    end
-
-    # "capital_commitments.unit_type" → ["capital_commitments", "unit_type"]
-    # when capital_commitments is many-per-row related data; else [nil, field]
-    def wizard_split_field(config, raw)
-      relation = config.joins.map { |j| j[:relation].to_s }
-                       .select { |rel| raw.start_with?("#{rel}.") && config.column_type.strategy_for(rel) == :grouped }
-                       .max_by(&:length)
-      relation ? [relation, raw.delete_prefix("#{relation}.")] : [nil, raw]
-    end
-
-    # The value as the filter stores it: "1" for empty / not empty, a list for "is any of"
-    def wizard_filter_value(op, raw)
-      return "1" if ReportBuilderFilterField::NO_VALUE_OPS.include?(op)
-      return Array(raw).flat_map { |v| v.to_s.split(",") }.map(&:strip).compact_blank if op == "in"
-
-      Array(raw).first.to_s.strip
+    rescue StandardError
+      "ti-abc"
     end
 
     # Yields the root filters (relation nil) or one related data's filters and saves the result

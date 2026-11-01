@@ -30,7 +30,7 @@
       <i class="ti ti-command"></i> K
     </button>
     <%= render "report_builder/health" %>
-    <%= link_to wizard_report_builder_step_path(@report, step: "show"), class: "btn btn-outline-primary btn-sm" do %>
+    <%= link_to wizard_report_builder_step_path(@report, step: "columns"), class: "btn btn-outline-primary btn-sm" do %>
       <i class="ti ti-wand"></i> Guided setup
     <% end %>
     <%= render "report_builder/export_button", report: @report, size: :sm %>

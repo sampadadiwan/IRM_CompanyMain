@@ -1,171 +1,110 @@
-@rack_test @report_builder
-Feature: Report Builder guided wizard — five steps onto the same report
+@rack_test
+Feature: Report Builder guided wizard — HTTP-level smoke tests
 
-  Worked examples: openspec/changes/report-builder-live-builder/business-rules.md
-  1 Each row (a card per table), 2 What to show (own and related columns with
-  totals), 3 Fund and filters (read back as sentences), 4 Order and
-  calculations (suggested formulas), 5 Check and save (summary, check, name).
+  The wizard is a friendlier, step-by-step front door onto the exact same
+  Report#template the advanced builder writes. These scenarios exercise it
+  purely over HTTP (no browser), the same way api.feature covers the
+  advanced builder's endpoints.
 
   Background:
-    Given the Acme report builder data
-    And I am signed in as Meera
+    Given a report builder entity and user
+    And that entity has an investor "Wizard Test Investor"
+    And I am signed in as the report builder user
 
-  # H18 — Happy path: step 1 has a card per reportable table, each with an icon and an example question
-  Scenario: Cards with examples
-    When I open the wizard
-    Then the wizard offers a card with an example question for every reportable table
+  Scenario: GET the wizard's first step lists root models to choose from
+    When I visit the wizard start page
+    Then the wizard page should be successful
+    And the wizard page should mention "Investor"
 
-  # H19 — Happy path: choosing Investors creates "Untitled Investor report" and opens step 2 (no name asked yet)
-  Scenario: No name yet
-    When I start a wizard report on "Investor"
-    Then the wizard report is named "Untitled Investor report"
-    And I am on wizard step "show"
+  Scenario: Creating a report via the wizard redirects into the columns step
+    When I create a report via the wizard with name "Wizard LP Summary" and root model "Investor"
+    Then the wizard-created report should have root model "Investor"
+    And I should be on the wizard "columns" step
 
-  # H20 — Happy path: own and related columns added together; the join is added and both amounts total with Sum (also report-builder-trust H25: Sum shown and saved)
-  Scenario: Own and related columns together
-    Given a wizard "Investor" report
-    When I add "investor_name, capital_commitments.committed_amount, capital_commitments.call_amount" in the wizard
-    Then the report includes related data "capital_commitments"
-    And the report has 3 columns in all
-    And the stored total for "capital_commitments.committed_amount" is "sum"
-    And the stored total for "capital_commitments.call_amount" is "sum"
-    And the wizard step shows the total "Sum" for "capital_commitments.committed_amount"
+  Scenario: Walking through every wizard step builds up a working report
+    Given I create a report via the wizard with name "Wizard Full Walkthrough" and root model "Investor"
+    When I add the column "investor_name" to the wizard report
+    Then the wizard report should have column "investor_name"
 
-  # H21 — Happy path: setting Called to Count on step 2 is saved and shown (also report-builder-trust H26)
-  Scenario: Change a total inline
-    Given a wizard "Investor" report
-    And I add "investor_name, capital_commitments.committed_amount, capital_commitments.call_amount" in the wizard
-    When I set the total for "capital_commitments.call_amount" to "count" in the wizard
-    Then I am on wizard step "show"
-    And the stored total for "capital_commitments.call_amount" is "count"
-    And the wizard step shows the total "Count" for "capital_commitments.call_amount"
+    When I visit the wizard "joins" step for the report
+    Then the wizard page should be successful
+    When I add the join "capital_commitments" with model "CapitalCommitment" to the wizard report
+    Then the wizard report template should include join "capital_commitments"
 
-  # H22 — Happy path: step 3 has the 5-row sample beside it
-  Scenario: Sample beside the step
-    Given a wizard "Investor" report
-    And I add "investor_name, capital_commitments.committed_amount" in the wizard
-    When I open wizard step "fund_filters"
-    Then the step has the 5-row sample
+    When I visit the wizard "aggregates" step for the report
+    Then the wizard page should be successful
+    When I add the column "capital_commitments.folio_committed_amount" to the wizard report
+    And I set the aggregate for "capital_commitments.folio_committed_amount" to "sum" via the wizard
+    Then the wizard report template aggregate for "capital_commitments.folio_committed_amount" should be "sum"
 
-  # H23 — Happy path: picking Growth Fund II limits the commitments and reads back as a sentence
-  Scenario: Fund on related data
-    Given a wizard "Investor" report
-    And I add "investor_name, capital_commitments.committed_amount" in the wizard
-    When I pick the fund "Growth Fund II" in the wizard
-    Then the related data "capital_commitments" is limited to the fund "Growth Fund II"
-    And the step reads "Only capital commitments in Growth Fund II"
+    When I visit the wizard "filters" step for the report
+    Then the wizard page should be successful
+    When I add a wizard root filter on field "investor_name" operator "cont" value "Wizard"
+    Then the wizard report template root filter "investor_name_cont" should be "Wizard"
+    When I remove the wizard root filter "investor_name_cont"
+    Then the wizard report template should not have root filter "investor_name_cont"
 
-  # H24 — Happy path: Category is LP reads back as a sentence
-  Scenario: Sentence filters
-    Given a wizard "Investor" report
-    And I add "investor_name" in the wizard
-    When I add the wizard filter "category" "eq" "LP"
-    Then I am on wizard step "fund_filters"
-    And the step reads "Only include investors where Category is LP"
+    When I visit the wizard "sort" step for the report
+    Then the wizard page should be successful
+    When I set the wizard sort to "investor_name" direction "desc"
+    Then the wizard report template sort key should be "investor_name"
 
-  # H25 — Happy path: with Committed, Called and Collected, step 4 suggests Called %, Unpaid and Uncalled
-  Scenario: Suggestions offered
-    Given a wizard "Investor" report
-    And I add "investor_name, capital_commitments.committed_amount, capital_commitments.call_amount, capital_commitments.collected_amount" in the wizard
-    When I open wizard step "order"
-    Then the wizard suggests "Called %, Unpaid, Uncalled"
+    When I visit the wizard "review" step for the report
+    Then the wizard page should be successful
+    And the wizard page should mention "Wizard Full Walkthrough"
 
-  # H26 — Happy path: adding Called % saves the formula and the suggestion shows Added
-  Scenario: Add a suggestion
-    Given a wizard "Investor" report
-    And I add "investor_name, capital_commitments.committed_amount, capital_commitments.call_amount" in the wizard
-    And I open wizard step "order"
-    When I add the suggestion "Called %"
-    Then the report has the formula "Called %"
-    And I am on wizard step "order"
-    And the suggestion "Called %" shows Added
+  Scenario: Aggregates step redirects straight to filters when no joins were added
+    Given I create a report via the wizard with name "No Joins Report" and root model "Investor"
+    When I visit the wizard "aggregates" step for the report
+    Then I should be on the wizard "filters" step
 
-  # H27 — Happy path: step 5 has the summary cards and suggests "Investors — Committed, Called — Growth Fund II"
-  Scenario: Summary and suggested name
-    Given a wizard "Investor" report
-    And I add "investor_name, capital_commitments.committed_amount, capital_commitments.call_amount" in the wizard
-    And I pick the fund "Growth Fund II" in the wizard
-    When I open wizard step "check"
-    Then the summary has the cards "Each row, Columns, Only include, Order and calculations"
-    And the step reads "Only capital commitments in Growth Fund II"
-    And the name box suggests "Investors — Committed, Called — Growth Fund II"
+  Scenario: Renaming a column's label via the wizard overrides its display header
+    Given I create a report via the wizard with name "Label Rename Report" and root model "Investor"
+    And I add the column "investor_name" to the wizard report
+    When I rename the wizard column "investor_name" to "Investor Full Name"
+    Then the wizard column "investor_name" should have label "Investor Full Name"
+    When I rename the wizard column "investor_name" to ""
+    Then the wizard column "investor_name" should have label "Investor name"
 
-  # H28 — Happy path: the Only include card opens step 3
-  Scenario: Card opens its step
-    Given a wizard "Investor" report
-    And I add "investor_name, capital_commitments.committed_amount" in the wizard
-    And I open wizard step "check"
-    When I follow the "Only include" card
-    Then I am on wizard step "fund_filters"
+  Scenario: Turning a join into a pivot on the Summarize step
+    Given I create a report via the wizard with name "Pivot Report" and root model "Investor"
+    And I add the join "capital_commitments" with model "CapitalCommitment" to the wizard report
+    And I add the column "capital_commitments.folio_committed_amount" to the wizard report
 
-  # H29 — Happy path: Save and open names the report and opens its report page
-  Scenario: Save and open
-    Given a wizard "Investor" report
-    And I add "investor_name, capital_commitments.committed_amount, capital_commitments.call_amount" in the wizard
-    And I pick the fund "Growth Fund II" in the wizard
-    And I open wizard step "check"
-    When I save and open the wizard report with the suggested name
-    Then the wizard report is named "Investors — Committed, Called — Growth Fund II"
-    And I am on the report's page
+    When I apply a wizard pivot on join "capital_commitments" grouping by "unit_type" valued by "folio_committed_amount" aggregate "sum"
+    Then the wizard report template join "capital_commitments" should have a pivot config
+    And the wizard report should not have column "capital_commitments.folio_committed_amount"
 
-  # H30 — Happy path: Fine-tune in builder opens the builder
-  Scenario: Fine-tune
-    Given a wizard "Investor" report
-    And I add "investor_name" in the wizard
-    And I open wizard step "check"
-    When I choose Fine-tune in builder
-    Then the builder opens
+    When I clear the wizard pivot on join "capital_commitments"
+    Then the wizard report template join "capital_commitments" should not have a pivot config
 
-  # E21 — Edge case: with several related sources, only the exchange rate's own columns start open
-  Scenario: Many related sources
-    Given a wizard "ExchangeRate" report
-    When I open wizard step "show"
-    Then the wizard picker opens only "About the exchange rate"
-    And the wizard picker lists "From documents, From leg1, From leg2" closed
+  # ── Restored wizard (2026-11-01): the original steps, plus four changes ────
+  # openspec/changes/report-builder-live-builder/business-rules.md#wizard-restored
 
-  # E22 — Edge case: All funds removes the fund filter
-  Scenario: All funds
-    Given a wizard "Investor" report
-    And I add "investor_name, capital_commitments.committed_amount" in the wizard
-    And I pick the fund "Growth Fund II" in the wizard
-    When I pick the fund "All funds" in the wizard
-    Then the report has no fund filter
+  # R1 — Happy path: every table on the first page has an example question
+  Scenario: Every table has an example question
+    When I visit the wizard start page
+    Then every table on the wizard start page has an example question
 
-  # E23 — Edge case: neither exchange rates nor their related data have a fund, so there is no fund picker
-  Scenario: No fund
-    Given a wizard "ExchangeRate" report
-    When I open wizard step "fund_filters"
-    Then the step has no fund picker
+  # R2 — Happy path: the wizard says "Guided setup" and "Open in builder", like the rest of the app
+  Scenario: One name everywhere
+    Given I create a report via the wizard with name "Naming Report" and root model "Investor"
+    When I visit the wizard "columns" step for the report
+    Then the wizard page should mention "Guided setup"
+    And the wizard page should mention "Open in builder"
+    And the wizard page should not mention "Guided Report Wizard"
+    And the wizard page should not mention "Advanced Builder"
 
-  # E24 — Edge case: with only the investor's name there is nothing to suggest
-  Scenario: Nothing to suggest
-    Given a wizard "Investor" report
-    And I add "investor_name" in the wizard
-    When I open wizard step "order"
-    Then the step reads "No suggestions for these columns"
+  # R3 — Edge case: a related column's total on Summarize is the one saved and used (was shown as Sum but not stored)
+  Scenario: The Summarize total is the saved total
+    Given I create a report via the wizard with name "Totals Report" and root model "Investor"
+    And I add the join "capital_commitments" with model "CapitalCommitment" to the wizard report
+    When I add the column "capital_commitments.committed_amount" to the wizard report
+    Then the wizard Summarize total for "capital_commitments.committed_amount" shows "Sum"
+    And the wizard report template aggregate for "capital_commitments.committed_amount" should be "sum"
 
-  # E25 — Edge case: a blank name keeps the suggested one
-  Scenario: Blank name
-    Given a wizard "Investor" report
-    And I add "investor_name, capital_commitments.committed_amount, capital_commitments.call_amount" in the wizard
-    And I pick the fund "Growth Fund II" in the wizard
-    When I save and open the wizard report with a blank name
-    Then the wizard report is named "Investors — Committed, Called — Growth Fund II"
-
-  # E26 — Edge case: links to the old six steps land on the steps that replaced them
-  Scenario: Old links
-    Given a wizard "Investor" report
-    Then the old wizard steps redirect as "columns → show, joins → show, aggregates → show, filters → fund_filters, sort → order, review → check"
-
-  # X4 — Error case: an unknown table goes back to step 1 with a message and creates nothing
-  Scenario: Unknown table
-    When I start a wizard report on "NotAModel"
-    Then I am back on the wizard start with "Choose one of the listed tables"
-    And no report is created
-
-  # X5 — Error case: a user of another entity can't open the report's step 2
-  Scenario: Another entity
-    Given a wizard "Investor" report
-    And I am signed in as Omar from another entity
-    When I open wizard step "show"
-    Then the change is refused
+  # R4 — Happy path: Review's "Open My Report" opens the report page, not the builder
+  Scenario: Open My Report opens the report page
+    Given I create a report via the wizard with name "Review Report" and root model "Investor"
+    When I visit the wizard "review" step for the report
+    Then "Open My Report" links to the report page

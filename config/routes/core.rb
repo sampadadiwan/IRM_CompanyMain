@@ -65,8 +65,6 @@ scope path: 'report_builder', controller: :report_builder do
   get    ':id/wizard/:step',         action: :wizard_step,       as: :wizard_report_builder_step
   post   ':id/wizard_filter',        action: :wizard_add_filter,    as: :wizard_report_builder_add_filter
   delete ':id/wizard_filter',        action: :wizard_remove_filter, as: :wizard_report_builder_remove_filter
-  post   ':id/wizard_fund',          action: :wizard_fund,       as: :wizard_report_builder_fund
-  patch  ':id/wizard_save',          action: :wizard_save,       as: :wizard_report_builder_save
   get    ':id/edit',                 action: :edit,              as: :edit_report_builder
   get    ':id/preview',              action: :preview,           as: :preview_report_builder
   get    ':id/view',                 action: :view,              as: :view_report_builder

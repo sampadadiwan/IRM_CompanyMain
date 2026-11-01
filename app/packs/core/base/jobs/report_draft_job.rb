@@ -20,11 +20,20 @@ class ReportDraftJob < ApplicationJob
 
     result = ReportDraftGenerator.new(entity: report.entity, question: ai["question"], spec: current,
                                       instruction: instruction).call
-    clean, problems = ReportSpecPruner.prune(result["spec"], entity: report.entity)
-    cannot = (result["cannot"] + problems).uniq
+    # No table picked: the AI's own reason is the whole story (no "aren't available" for a blank name)
+    clean, problems = result["spec"]["root_model"].present? ? ReportSpecPruner.prune(result["spec"], entity: report.entity) : [{}, []]
+    # "Couldn't do" is what our checks removed, in our words; the AI's own remarks are notes —
+    # unless it picked no table, when its reason is the only explanation there is
+    no_table = result["spec"]["root_model"].blank?
+    cannot = no_table ? result["cannot"] : problems.uniq
+    notes  = no_table ? [] : result["cannot"]
 
-    # X3 — nothing usable: only the couldn't-do list
+    # X3 — nothing usable: only the couldn't-do list, with the AI's remarks in it (the only explanation)
     usable = clean["root_model"].present? && clean["columns"].any? { |c| c["key"] }
+    unless usable
+      cannot = (cannot + notes).uniq
+      notes  = []
+    end
     if usable
       fund = Fund.where(entity_id: report.entity_id).find_by(id: ai["fund_id"]) if ai["fund_id"]
       ReportSpecApplier.apply!(report: report, spec: clean, fund: fund, validate: false, replace: true)
@@ -32,7 +41,7 @@ class ReportDraftJob < ApplicationJob
 
     turns = Array(ai["turns"]) + (instruction ? [{ "instruction" => instruction, "at" => Time.current.iso8601 }] : [])
     store(report, ai.merge("status" => usable ? "ready" : "empty", "questions" => result["questions"],
-                           "assumptions" => result["assumptions"], "cannot" => cannot, "turns" => turns,
+                           "assumptions" => result["assumptions"], "cannot" => cannot, "notes" => notes, "turns" => turns,
                            "name" => result["name"] || ai["name"], "error" => nil))
     finish(report, user, "Your draft report is ready", "success")
   rescue ReportDraftGenerator::Failed => e

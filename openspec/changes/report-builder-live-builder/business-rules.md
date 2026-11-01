@@ -109,3 +109,14 @@ The Phase 1 "Acme" fixture (`features/step_definitions/report_builder_trust_step
 |---|---|---|---|---|---|---|
 | X4 | Unknown table | Meera | Create a wizard report for "NotAModel" | Back to step 1 with "Choose one of the listed tables"; no report created | Unknown table | wizard |
 | X5 | Another entity | Wizard report of Acme | Omar opens its step 2 | Refused | Another entity | wizard |
+
+## Wizard restored
+
+**2026-11-01 — the five-step guided setup (WZ1–WZ8; worked examples H18–H30, E21–E26, X4, X5 above) was reverted.** In hands-on use it was harder to use than the original wizard: two cramped columns, a full-page reload on every change, and less guidance. The original wizard (Columns → Related Data → Summarize → Filters → Sort → Review, with its help boxes, icons and styling) is back, unchanged apart from four fixes. The builder rows of this change (H1–H17, E1–E20, X1–X3) stand. The five-step rows above are kept for history only; their scenarios were removed with it.
+
+| # | Scenario | Given | When | Then | Feature |
+|---|---|---|---|---|---|
+| R1 | Every table has an example question | The first page | Look at the table list | Every table has an example question (the original had 7 of 18) | wizard |
+| R2 | One name everywhere | A wizard report | Open a step | "Guided setup" and "Open in builder"; never "Guided Report Wizard" or "Advanced Builder" | wizard |
+| R3 | The Summarize total is the saved total | Investor report with capital commitments | Add Committed on Summarize | The picker shows Sum, and Sum is stored (it was shown but never stored, so the column was blank — W1) | wizard |
+| R4 | Open My Report opens the report page | A wizard report | Review | "Open My Report" links to the report page, not the builder (W11) | wizard |

@@ -88,7 +88,11 @@ class ReportSpecPruner
     list("columns").each do |col|
       next if col["formula"] || col["pivot"]
 
-      @kept["columns"] << col.slice("key", "label", "total") if try(@kept.merge("columns" => [col.slice("key", "label", "total")]))
+      column = col.slice("key", "label", "total")
+      # A total the column can't have (one value per row) is dropped; the column stays
+      column = column.except("total") if column["total"].present? && problem_with(@kept.merge("columns" => [column])) &&
+                                         problem_with(@kept.merge("columns" => [column.except("total")])).nil?
+      @kept["columns"] << column if try(@kept.merge("columns" => [column]))
     end
   end
 
@@ -164,6 +168,10 @@ class ReportSpecPruner
     @kept["joins"].each do |join|
       pivot = list("joins").find { |j| j["relation"].to_s == join["relation"] }&.dig("pivot")
       next unless pivot.is_a?(Hash)
+
+      # The AI often writes "fund_units.unit_type"; the pivot stores the related table's own column
+      bare = ->(field) { field.to_s.delete_prefix("#{join['relation']}.") }
+      pivot = pivot.merge("group_bys" => Array(pivot["group_bys"]).map(&bare), "value_col" => bare.call(pivot["value_col"]))
 
       joins = @kept["joins"].map { |j| j.equal?(join) ? j.merge("pivot" => pivot) : j }
       join["pivot"] = pivot if try(@kept.merge("joins" => joins))

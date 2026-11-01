@@ -86,7 +86,7 @@ Then("the card menu of {string} offers {string}") do |name, items|
 end
 
 When("I open {string} of the report") do |what|
-  path = { "guided setup" => "/report_builder/#{@report.id}/wizard/show",
+  path = { "guided setup" => "/report_builder/#{@report.id}/wizard/columns",
            "the builder" => "/report_builder/#{@report.id}/edit" }.fetch(what)
   rb_session.get path
   @last_rb_response = rb_session.response

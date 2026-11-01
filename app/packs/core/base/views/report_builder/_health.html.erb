@@ -29,7 +29,7 @@
             <span class="small flex-grow-1 rb-health-message"><%= item[:message] %></span>
             <% if local_assigns[:wizard] %>
               <%# In the wizard, Fix opens the step that fixes it (delivery lives in the builder) %>
-              <% step = { "columns" => "show", "related" => "show", "filters" => "fund_filters", "formulas" => "order", "sort" => "order" }[item[:tab]] %>
+              <% step = { "columns" => "columns", "related" => "joins", "filters" => "filters", "sort" => "sort" }[item[:tab]] %>
               <%= link_to "Fix", step ? wizard_report_builder_step_path(@report, step: step) : edit_report_builder_path(@report, tab: item[:tab]),
                     class: "btn btn-sm btn-outline-primary flex-shrink-0", data: { tab: item[:tab], turbo_frame: "_top" } %>
             <% else %>

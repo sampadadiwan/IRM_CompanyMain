@@ -69,7 +69,7 @@
 
               <% if report.report_builder? %>
                 <a class="note-social badge-group-item badge-social dropdown-item position-relative category-social d-flex ti ti-wand"
-                   href="<%= wizard_report_builder_step_path(report, step: "show") %>"> Guided setup</a>
+                   href="<%= wizard_report_builder_step_path(report, step: "columns") %>"> Guided setup</a>
                 <%# A copy with the same set-up, opened in the builder (report-builder-starting-points H9) %>
                 <%= button_to duplicate_report_builder_path(report), method: :post,
                       class: "note-social badge-group-item badge-social dropdown-item position-relative category-social d-flex ti ti-copy",

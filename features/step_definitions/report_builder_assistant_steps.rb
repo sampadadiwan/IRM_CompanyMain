@@ -224,6 +224,11 @@ Then("Couldn't do lists {string}") do |text|
   expect(items).to include(text), "couldn't do: #{items.inspect}"
 end
 
+Then("the assistant's notes list {string}") do |text|
+  items = draft_doc.css(".rb-draft-notes li").map { |li| li.text.gsub(/[[:space:]]+/, " ").strip }
+  expect(items).to include(text), "notes: #{items.inspect}"
+end
+
 Then("the draft has no preview and no Save") do
   expect(draft_doc.css(".rb-draft-save, turbo-frame#report_builder_preview")).to be_empty
 end

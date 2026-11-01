@@ -14,7 +14,7 @@ class ReportBuilderController < ApplicationController
     add_formula remove_formula validate_formula undo
     view duplicate
     draft draft_state draft_refine draft_fund draft_chart draft_describe_chart draft_save draft_discard
-    wizard_step wizard_add_filter wizard_remove_filter wizard_fund wizard_save
+    wizard_step wizard_add_filter wizard_remove_filter
   ]
 
   # Any other change ends the chance to undo a removal (ReportBuilderUndo).

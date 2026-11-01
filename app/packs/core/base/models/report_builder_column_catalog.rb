@@ -165,10 +165,8 @@ class ReportBuilderColumnCatalog
       cols_by_key = {}
 
       # 1. Ransackable attributes
-      if klass.respond_to?(:ransackable_attributes)
-        klass.ransackable_attributes.each do |attr|
-          cols_by_key[attr] = { label: attr.humanize, key: attr }
-        end
+      searchable_attributes(klass)&.each do |attr|
+        cols_by_key[attr] = { label: attr.humanize, key: attr }
       end
 
       # 2. Standard and 3. additional columns overlay labels and col-type hints
@@ -198,6 +196,20 @@ class ReportBuilderColumnCatalog
           raw_label: c[:label]
         }
       end.sort_by { |c| c[:label] }
+    end
+
+    # The model's ransackable attributes, or nil. Ransack raises for a model
+    # that never declared them (e.g. PortfolioAttribution, AmlReport) — such a
+    # table reached as related data offers no searchable columns rather than
+    # crashing the picker or the assistant's catalog.
+    def searchable_attributes(klass)
+      return nil unless klass.respond_to?(:ransackable_attributes)
+
+      klass.ransackable_attributes
+    rescue RuntimeError => e
+      raise unless e.message.include?("ransackable_attributes")
+
+      nil
     end
 
     # A blank instance tells attributes and methods apart from ransackers

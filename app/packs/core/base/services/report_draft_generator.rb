@@ -17,6 +17,18 @@ class ReportDraftGenerator
   class Failed < StandardError; end
 
   FAILED_MESSAGE = "Couldn't draft this right now — try again in a moment".freeze
+
+  # Business words → tables, so "each folio" isn't drafted as one row per fund
+  BUSINESS_WORDS = <<~WORDS.freeze
+    Business words: an LP, investor or stakeholder is an Investor; a folio or a commitment is a
+    CapitalCommitment (one investor in one fund); a close (First Close, Second Close) is the
+    commitment's fund_close; a call is a CapitalCall and each investor's share of it a
+    CapitalRemittance; a distribution to an investor is a CapitalDistributionPayment; an
+    investment is a PortfolioInvestment; a company's KPIs are Kpi rows of a KpiReport.
+  WORDS
+
+  # What the formula engine (Dentaku) evaluates; it has no date functions
+  FORMULA_FUNCTIONS = "IF, AND, OR, NOT, ROUND, ROUNDUP, ROUNDDOWN, MIN, MAX, SUM, AVG, ABS".freeze
   QUESTION_KINDS = %w[pick_fund choice text].freeze
 
   # X4 — a model for the company, or the platform's default
@@ -60,18 +72,36 @@ class ReportDraftGenerator
     ReportBuilderModelDiscovery.roots.select { |klass| ReportBuilderModelDiscovery.pack_enabled_for?(klass, @entity) }
   end
 
+  # A report has ONE table for its rows, plus related data pulled in from other
+  # tables (totalled per row: Sum, Count, Latest …). The first version listed only
+  # table names, so the AI refused questions that span tables ("investors, their
+  # commitments and their units") as needing several tables.
   def table_prompt
     <<~PROMPT
       REPORT TABLE
-      You choose the table a report's rows come from. Answer with ONLY a JSON object:
-      {"root_model": "<one model name from the list, or empty>", "cannot": ["<what can't be reported and why>"]}
-      If no table fits, leave root_model empty and say why in cannot.
+      You choose the table a report's rows come from. A report has ONE row table and can
+      also pull in related data from other tables — for example, investor rows can show each
+      investor's capital commitments, calls and fund units as totals (sum, count, latest …).
+      So a question that mentions several kinds of data is still ONE report: pick the table
+      whose rows the answer lists, and the rest comes in as related data.
 
-      Tables (model: what each row is):
-      #{tables.map { |klass| "#{klass.name}: #{ReportBuilder::Wizard.model_label(klass.name)}" }.join("\n")}
+      #{BUSINESS_WORDS}
+
+      Answer with ONLY a JSON object:
+      {"root_model": "<one model name from the list>", "cannot": ["<one short sentence per part of the question no table covers>"]}
+      Always pick the closest table. Leave root_model empty only when nothing in the list relates to the question.
+
+      Tables — model: what each row is; related data it can pull in:
+      #{tables.map { |klass| "#{klass.name}: one row per #{ReportBuilder::Wizard.model_label(klass.name).downcase}; related: #{related_names(klass)}" }.join("\n")}
 
       Question: #{@question}
     PROMPT
+  end
+
+  # "capital commitments, capital calls, fund units" — names only, for step 1
+  def related_names(klass)
+    names = ReportBuilderModelDiscovery.associations_for(klass, entity: @entity).map { |a| a[:name].to_s.humanize.downcase }
+    names.presence ? names.first(12).join(", ") : "none"
   end
 
   # Step 2: the spec, from one table's catalog
@@ -86,18 +116,21 @@ class ReportDraftGenerator
       Spec format:
       {"root_model": "#{root}",
        "columns": [{"key": "<column key>", "label": "<optional>", "total": "sum|count|avg|min|max"} | {"formula": "<formula key>"}],
-       "joins": [{"relation": "<related data>", "child_filters": {"<field>_<op>": "<value>"}}],
+       "joins": [{"relation": "<related data>", "child_filters": {"<field>_<op>": "<value>"},
+                  "pivot": {"group_bys": ["<related column>"], "value_col": "<related column>", "aggregate": "sum|count|latest"}}],
        "root_filters": {"<field>_<op>": "<value>"},
        "formulas": [{"key": "<key>", "label": "<label>", "expression": "[<column key>] - [<column key>]"}],
        "sort": {"key": "<column or formula key>", "dir": "asc|desc"}}
       Rules:
       - Use only the column keys and related data listed below. A related column's key is "<relation>.<column>".
-      - Related data with many rows per row needs a total on each of its columns (sum for amounts, count for ids, max for dates).
-      - Formulas only reference column keys that are in "columns"; add a {"formula": key} column to show one.
+      - A total goes ONLY on columns of related data with many rows per row (sum for amounts, count for ids, max or latest for dates). The row table's own columns, and related data with one row per row (e.g. fund), never have a total.
+      - "One column per X" is a pivot: add "pivot" to that related data's join and a {"pivot": "<relation>"} column.
+      - Formulas only reference column keys that are in "columns"; add a {"formula": key} column to show one. Functions: #{FORMULA_FUNCTIONS} and + - * /. There are no date functions — use a filter with a fixed date instead.
       - Operators: eq, not_eq, cont, in, gteq, lteq, null, not_null.
       - Never filter on a fund: if the question needs one fund, add a question {"kind": "pick_fund", "text": "Which fund?"}.
       - Turn relative dates ("last quarter") into fixed dates and say so in assumptions. Today is #{Time.zone.today.iso8601}.
-      - Put anything you can't do in cannot; never invent columns.
+      - Put in cannot only what the question asked for and you left out — one short sentence each, with a suggestion if there is one. No caveats or explanations. Never invent columns.
+      #{BUSINESS_WORDS}
 
       Examples:
       #{examples_for(root)}

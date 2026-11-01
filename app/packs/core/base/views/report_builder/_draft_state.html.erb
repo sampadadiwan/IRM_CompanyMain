@@ -1,6 +1,7 @@
-<%# The draft's state, in the rb_draft_<id> frame: drafting / failed / what was understood (guided setup's cards),
-    the assistant's questions, assumptions and couldn't-do, refine, the preview with the report check, the chart
-    and save. Forms here answer with this partial; Save and Discard leave the page.
+<%# The draft's state, in the rb_draft_<id> frame, stacked full width (approved mock, 2026-11-01): the question,
+    what was understood (4 cards across), questions / assumptions / couldn't do (+ the assistant's notes) in one
+    row, refine, the preview at full width, the chart, then name and save. Forms here answer with this partial;
+    Save and Discard leave the page.
     Worked examples H2–H9, E1–E12, X1–X3 — openspec/changes/report-builder-assistant/business-rules.md %>
 <% ai       = @ai || {} %>
 <% status   = ai["status"].to_s %>
@@ -31,130 +32,164 @@
     </div>
   <% end %>
 
-  <div class="row g-3">
-    <div class="col-xl-5">
-      <% if has_cols %>
-        <div class="text-muted small mb-2">What I understood</div>
-        <%= render "report_builder/wizard/summary_cards" %>
-      <% end %>
+  <% if has_cols %>
+    <%= render "report_builder/draft_understood" %>
+  <% end %>
 
-      <%# The assistant's questions: the fund from the company's funds (no AI call), others answered in words %>
-      <% questions = Array(ai["questions"]) %>
+  <%# The assistant's questions (the fund from the company's funds — no AI call), its assumptions, and what
+      couldn't be done, side by side; only the panels that have something show %>
+  <% questions = Array(ai["questions"]) %>
+  <% assumptions = Array(ai["assumptions"]) %>
+  <% cannot = Array(ai["cannot"]) %>
+  <% notes = Array(ai["notes"]) %>
+  <% if questions.any? || assumptions.any? || cannot.any? || notes.any? %>
+    <div class="row g-3 mb-3">
       <% if questions.any? %>
-        <div class="card mb-3 rb-draft-questions">
-          <div class="card-header fw-semibold">Questions</div>
-          <div class="card-body d-flex flex-column gap-3">
-            <% questions.each do |q| %>
-              <% if q["kind"] == "pick_fund" %>
-                <%= form_with url: report_builder_draft_fund_path(@report), method: :post, class: "d-flex flex-wrap align-items-center gap-2" do %>
-                  <label class="small mb-0" for="rb_draft_fund"><%= q["text"].presence || "Which fund?" %></label>
-                  <%= select_tag :fund_id, options_for_select(@funds || []), id: "rb_draft_fund", class: "form-select form-select-sm w-auto" %>
-                  <button type="submit" class="btn btn-sm btn-primary">Use this fund</button>
-                <% end %>
-              <% else %>
-                <%= form_with url: report_builder_draft_refine_path(@report), method: :post, class: "d-flex flex-wrap align-items-center gap-2" do %>
-                  <%= hidden_field_tag :answer_to, q["text"], id: nil %>
-                  <label class="small mb-0"><%= q["text"] %></label>
-                  <% if q["kind"] == "choice" && Array(q["options"]).any? %>
-                    <%= select_tag :instruction, options_for_select(Array(q["options"])), id: nil, class: "form-select form-select-sm w-auto",
-                                   "aria-label": q["text"] %>
-                  <% else %>
-                    <%= text_field_tag :instruction, nil, id: nil, class: "form-control form-control-sm w-auto", "aria-label": q["text"] %>
+        <div class="col-lg">
+          <div class="card h-100 rb-draft-questions">
+            <div class="card-header fw-semibold"><i class="ti ti-help-circle text-primary me-1"></i>Questions
+              <span class="badge bg-primary-subtle text-primary ms-1"><%= questions.size %></span></div>
+            <div class="card-body d-flex flex-column gap-3">
+              <% questions.each do |q| %>
+                <% if q["kind"] == "pick_fund" %>
+                  <%= form_with url: report_builder_draft_fund_path(@report), method: :post, class: "d-flex flex-wrap align-items-center gap-2" do %>
+                    <label class="small mb-0" for="rb_draft_fund"><%= q["text"].presence || "Which fund?" %></label>
+                    <%= select_tag :fund_id, options_for_select(@funds || []), id: "rb_draft_fund", class: "form-select form-select-sm w-auto" %>
+                    <button type="submit" class="btn btn-sm btn-primary">Use this fund</button>
                   <% end %>
-                  <button type="submit" class="btn btn-sm btn-outline-primary">Answer</button>
+                <% else %>
+                  <%= form_with url: report_builder_draft_refine_path(@report), method: :post, class: "d-flex flex-wrap align-items-center gap-2" do %>
+                    <%= hidden_field_tag :answer_to, q["text"], id: nil %>
+                    <label class="small mb-0"><%= q["text"] %></label>
+                    <% if q["kind"] == "choice" && Array(q["options"]).any? %>
+                      <%= select_tag :instruction, options_for_select(Array(q["options"])), id: nil, class: "form-select form-select-sm w-auto",
+                                     "aria-label": q["text"] %>
+                    <% else %>
+                      <%= text_field_tag :instruction, nil, id: nil, class: "form-control form-control-sm w-auto", "aria-label": q["text"] %>
+                    <% end %>
+                    <button type="submit" class="btn btn-sm btn-outline-primary">Answer</button>
+                  <% end %>
                 <% end %>
               <% end %>
-            <% end %>
+            </div>
           </div>
         </div>
       <% end %>
 
-      <% if Array(ai["assumptions"]).any? %>
-        <div class="card mb-3 rb-draft-assumptions">
-          <div class="card-header fw-semibold">Assumptions</div>
-          <ul class="list-group list-group-flush small">
-            <% ai["assumptions"].each do |text| %><li class="list-group-item"><i class="ti ti-info-circle text-info"></i> <%= text %></li><% end %>
-          </ul>
+      <% if assumptions.any? %>
+        <div class="col-lg">
+          <div class="card h-100 rb-draft-assumptions">
+            <div class="card-header fw-semibold"><i class="ti ti-info-circle text-info me-1"></i>Assumptions
+              <span class="badge bg-info-subtle text-info ms-1"><%= assumptions.size %></span></div>
+            <ul class="list-group list-group-flush small">
+              <% assumptions.each do |text| %><li class="list-group-item d-flex gap-2"><i class="ti ti-point-filled text-info"></i><span><%= text %></span></li><% end %>
+            </ul>
+          </div>
         </div>
       <% end %>
 
-      <% if Array(ai["cannot"]).any? %>
-        <div class="card mb-3 rb-draft-cannot">
-          <div class="card-header fw-semibold">Couldn't do</div>
-          <ul class="list-group list-group-flush small">
-            <% ai["cannot"].each do |text| %><li class="list-group-item"><i class="ti ti-circle-x text-danger"></i> <%= text %></li><% end %>
-          </ul>
-        </div>
-      <% end %>
-
-      <% unless status == "drafting" %>
-        <div class="card mb-3">
-          <div class="card-body">
-            <%= form_with url: report_builder_draft_refine_path(@report), method: :post, class: "rb-draft-refine" do %>
-              <label class="form-label small" for="rb_draft_instruction"><%= has_cols ? "Refine" : "Say it differently" %></label>
-              <textarea id="rb_draft_instruction" name="instruction" rows="2" class="form-control form-control-sm mb-2" required minlength="3" maxlength="500"
-                        placeholder="e.g. also show what was distributed"></textarea>
-              <button type="submit" class="btn btn-sm btn-outline-primary" data-turbo-submits-with="Drafting…"><i class="ti ti-sparkles"></i> Refine</button>
+      <% if cannot.any? || notes.any? %>
+        <div class="col-lg">
+          <div class="card h-100 rb-draft-cannot">
+            <% if cannot.any? %>
+              <div class="card-header fw-semibold"><i class="ti ti-alert-triangle text-danger me-1"></i>Couldn't do
+                <span class="badge bg-danger-subtle text-danger ms-1"><%= cannot.size %></span></div>
+              <ul class="list-group list-group-flush small">
+                <% cannot.each do |text| %><li class="list-group-item d-flex gap-2"><i class="ti ti-circle-x text-danger"></i><span><%= text %></span></li><% end %>
+              </ul>
+            <% else %>
+              <div class="card-header fw-semibold"><i class="ti ti-circle-check text-success me-1"></i>Couldn't do</div>
+              <div class="card-body small text-success"><i class="ti ti-check"></i> Nothing — everything asked for is in the draft.</div>
+            <% end %>
+            <%# The AI's own remarks, folded away: often caveats rather than anything left out %>
+            <% if notes.any? %>
+              <div class="rb-draft-notes border-top">
+                <button type="button" class="btn btn-link btn-sm text-muted text-decoration-none w-100 text-start d-flex justify-content-between align-items-center px-3 py-2"
+                        data-bs-toggle="collapse" data-bs-target="#rb_draft_notes_<%= @report.id %>" aria-expanded="false">
+                  <span><i class="ti ti-message-2 me-1"></i>Assistant's notes <span class="badge bg-secondary-subtle text-secondary"><%= notes.size %></span></span><i class="ti ti-chevron-down"></i>
+                </button>
+                <div class="collapse" id="rb_draft_notes_<%= @report.id %>">
+                  <ul class="list-group list-group-flush small">
+                    <% notes.each do |text| %><li class="list-group-item text-muted"><%= text %></li><% end %>
+                  </ul>
+                </div>
+              </div>
             <% end %>
           </div>
         </div>
       <% end %>
     </div>
+  <% end %>
 
-    <div class="col-xl-7">
-      <% if has_cols %>
-        <div class="card mb-3">
-          <div class="card-header d-flex align-items-center justify-content-between">
-            <span class="fw-semibold">Preview</span>
-            <%= render "report_builder/health", wizard: true %>
-          </div>
-          <div class="card-body p-0"><%= render "report_builder/preview_table" %></div>
-        </div>
-
-        <%# The chart: suggested by rules (no AI call), none, or described in words (H5, H8, E11, E12) %>
-        <% chart = report_chart_for(@report, config: @config, columns: @columns || [], rows: @rows || [], default: "suggested") %>
-        <% kind  = (@report.template || {}).dig("chart", "kind") || "suggested" %>
-        <div class="card mb-3 rb-draft-chart">
-          <div class="card-header fw-semibold">Chart</div>
-          <div class="card-body d-flex flex-column gap-2">
-            <%= form_with url: report_builder_draft_chart_path(@report), method: :patch, class: "d-flex gap-2" do %>
-              <button type="submit" name="kind" value="suggested" class="btn btn-sm <%= kind == 'suggested' ? 'btn-primary' : 'btn-outline-primary' %>">Suggested chart</button>
-              <button type="submit" name="kind" value="none" class="btn btn-sm <%= kind == 'none' ? 'btn-primary' : 'btn-outline-primary' %>">No chart</button>
-            <% end %>
-            <% if chart %>
-              <%= render "report_builder/report_chart", report: @report, chart: chart %>
-            <% elsif kind != "none" %>
-              <p class="text-muted small mb-0 rb-no-chart">No chart suggested</p>
-            <% end %>
-            <%= form_with url: report_builder_draft_describe_chart_path(@report), method: :post, class: "d-flex flex-wrap align-items-center gap-2" do %>
-              <%= text_field_tag :prompt, nil, class: "form-control form-control-sm w-auto flex-grow-1", placeholder: "Describe a chart, e.g. pie of committed by investor",
-                                               "aria-label": "Describe a chart", required: true %>
-              <button type="submit" class="btn btn-sm btn-outline-primary" data-turbo-submits-with="Drawing…"><i class="ti ti-chart-pie"></i> Describe a chart</button>
-              <span class="text-muted small w-100">Sends these 20 rows to your configured AI model</span>
-            <% end %>
-          </div>
-        </div>
-      <% end %>
-
-      <div class="card">
-        <div class="card-body">
-          <% if has_cols %>
-            <%= form_with url: report_builder_draft_save_path(@report), method: :patch, data: { turbo_frame: "_top" }, class: "rb-draft-save" do %>
-              <label class="form-label small" for="rb_draft_name">Report name</label>
-              <input type="text" name="name" id="rb_draft_name" class="form-control mb-3" value="<%= ai['name'] %>" placeholder="<%= ai['name'] %>">
-              <div class="d-flex flex-wrap gap-2">
-                <button type="submit" class="btn btn-primary"><i class="ti ti-device-floppy"></i> Save and open</button>
-                <button type="submit" name="fine_tune" value="1" class="btn btn-outline-secondary"><i class="ti ti-tools"></i> Fine-tune in builder</button>
-              </div>
-            <% end %>
-          <% end %>
-          <%= button_to report_builder_draft_discard_path(@report), method: :delete, class: "btn btn-outline-danger mt-3",
-                form: { data: { turbo_frame: "_top" } },
-                data: { msg: discard_draft_summary, method: "delete", action: "click->confirm#popup", title: "Discard this draft?" } do %>
-            <i class="ti ti-trash"></i> Discard
-          <% end %>
-        </div>
+  <% unless status == "drafting" %>
+    <div class="card mb-3">
+      <div class="card-body">
+        <%= form_with url: report_builder_draft_refine_path(@report), method: :post, class: "rb-draft-refine d-flex gap-2 align-items-start" do %>
+          <textarea id="rb_draft_instruction" name="instruction" rows="1" class="form-control form-control-sm" required minlength="3" maxlength="500"
+                    aria-label="<%= has_cols ? 'Refine' : 'Say it differently' %>"
+                    placeholder="<%= has_cols ? 'Refine — e.g. also show what was distributed' : 'Say it differently — e.g. one row per investor with their commitments' %>"></textarea>
+          <button type="submit" class="btn btn-sm btn-outline-primary text-nowrap" data-turbo-submits-with="Drafting…"><i class="ti ti-sparkles"></i> Refine</button>
+        <% end %>
       </div>
+    </div>
+  <% end %>
+
+  <% if has_cols %>
+    <%# The preview at full width, so the table's columns aren't squeezed %>
+    <div class="card mb-3">
+      <div class="card-header d-flex align-items-center justify-content-between">
+        <span class="fw-semibold">Preview</span>
+        <%= render "report_builder/health" %>
+      </div>
+      <div class="card-body p-0"><%= render "report_builder/preview_table" %></div>
+    </div>
+
+    <%# The chart: suggested by rules (no AI call), none, or described in words (H5, H8, E11, E12) %>
+    <% chart = report_chart_for(@report, config: @config, columns: @columns || [], rows: @rows || [], default: "suggested") %>
+    <% kind  = (@report.template || {}).dig("chart", "kind") || "suggested" %>
+    <div class="card mb-3 rb-draft-chart">
+      <div class="card-header d-flex align-items-center justify-content-between">
+        <span class="fw-semibold">Chart</span>
+        <%= form_with url: report_builder_draft_chart_path(@report), method: :patch, class: "d-flex gap-2" do %>
+          <button type="submit" name="kind" value="suggested" class="btn btn-sm <%= kind == 'suggested' ? 'btn-primary' : 'btn-outline-primary' %>">Suggested chart</button>
+          <button type="submit" name="kind" value="none" class="btn btn-sm <%= kind == 'none' ? 'btn-primary' : 'btn-outline-primary' %>">No chart</button>
+        <% end %>
+      </div>
+      <div class="card-body d-flex flex-column gap-2">
+        <% if chart %>
+          <%= render "report_builder/report_chart", report: @report, chart: chart %>
+        <% elsif kind != "none" %>
+          <p class="text-muted small mb-0 rb-no-chart">No chart suggested</p>
+        <% end %>
+        <%= form_with url: report_builder_draft_describe_chart_path(@report), method: :post, class: "d-flex flex-wrap align-items-center gap-2" do %>
+          <%= text_field_tag :prompt, nil, class: "form-control form-control-sm w-auto flex-grow-1", placeholder: "Describe a chart, e.g. pie of committed by investor",
+                                           "aria-label": "Describe a chart", required: true %>
+          <button type="submit" class="btn btn-sm btn-outline-primary" data-turbo-submits-with="Drawing…"><i class="ti ti-chart-pie"></i> Describe a chart</button>
+          <span class="text-muted small w-100">Sends these 20 rows to your configured AI model</span>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <%# Name and save, then Discard, on one row %>
+  <div class="card">
+    <div class="card-body d-flex flex-wrap align-items-end gap-2">
+      <% if has_cols %>
+        <%= form_with url: report_builder_draft_save_path(@report), method: :patch, data: { turbo_frame: "_top" },
+                      class: "rb-draft-save d-flex flex-wrap align-items-end gap-2 flex-grow-1" do %>
+          <div class="flex-grow-1">
+            <label class="form-label small" for="rb_draft_name">Report name</label>
+            <input type="text" name="name" id="rb_draft_name" class="form-control" value="<%= ai['name'] %>" placeholder="<%= ai['name'] %>">
+          </div>
+          <button type="submit" class="btn btn-primary"><i class="ti ti-device-floppy"></i> Save and open</button>
+          <button type="submit" name="fine_tune" value="1" class="btn btn-outline-secondary"><i class="ti ti-tools"></i> Fine-tune in builder</button>
+        <% end %>
+      <% end %>
+      <%= button_to report_builder_draft_discard_path(@report), method: :delete, class: "btn btn-outline-danger",
+            form: { data: { turbo_frame: "_top" } },
+            data: { msg: discard_draft_summary, method: "delete", action: "click->confirm#popup", title: "Discard this draft?" } do %>
+        <i class="ti ti-trash"></i> Discard
+      <% end %>
     </div>
   </div>
 <% end %>

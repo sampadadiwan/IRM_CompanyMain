@@ -22,7 +22,7 @@ Feature: Report Builder assistant — Describe it
   Scenario: A draft
     Given the AI drafts the LP owing report
     When I describe "Which LPs still owe money on calls? Biggest first."
-    Then the draft page shows the cards "One row per investor | Committed | Called | Collected | Only include investors where Category is LP | Sorted by Unpaid (largest first) | Calculates Unpaid"
+    Then the draft page shows the cards "One row per investor | Committed | Called | Collected | Category is LP | Sorted by Unpaid (largest first) | Unpaid"
     And the draft asks "Which fund?" with the funds "Global Fund, Growth Fund II"
     And the draft lists the assumption "owe money = Called − Collected"
     And the draft has a preview and Save
@@ -65,12 +65,12 @@ Feature: Report Builder assistant — Describe it
     Then I land on the builder
     And the report is no longer a draft and its description is "Which LPs still owe money on calls? Biggest first."
 
-  # E1 — Edge case: what the AI says it can't do is listed; the rest is drafted
+  # E1 — Edge case: what the AI says it can't do is under Assistant's notes; the rest is drafted
   Scenario: Something not reportable
     Given the AI picks "Fund" and answers with columns "Fund=name, committed_amount"
     And the AI's answer also says it can't do "IRR isn't a reportable column — try DPI"
     When I describe "Show IRR by fund"
-    Then Couldn't do lists "IRR isn't a reportable column — try DPI"
+    Then the assistant's notes list "IRR isn't a reportable column — try DPI"
     And the draft has a preview and Save
 
   # E2 — Edge case: a filter value that matches nothing is left out, with the real values

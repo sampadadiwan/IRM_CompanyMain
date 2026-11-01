@@ -1,0 +1,29 @@
+<%
+  wizard_steps = [
+    { key: "columns",    label: "Columns",   icon: "ti-columns" },
+    { key: "joins",      label: "Related Data", icon: "ti-git-merge" },
+    { key: "aggregates", label: "Summarize", icon: "ti-sum" },
+    { key: "filters",    label: "Filters",   icon: "ti-filter" },
+    { key: "sort",       label: "Sort",      icon: "ti-arrows-sort" },
+    { key: "review",     label: "Review",    icon: "ti-checklist" }
+  ]
+  current_index = wizard_steps.index { |s| s[:key] == current_step } || 0
+%>
+<div class="wizard-progress d-flex align-items-center justify-content-between mb-4">
+  <% wizard_steps.each_with_index do |s, i| %>
+    <%= link_to wizard_report_builder_step_path(report, step: s[:key]),
+          class: "wizard-progress-step text-decoration-none d-flex flex-column align-items-center flex-fill #{'is-current' if i == current_index} #{'is-done' if i < current_index}" do %>
+      <span class="wizard-progress-dot d-flex align-items-center justify-content-center">
+        <% if i < current_index %>
+          <i class="ti ti-check"></i>
+        <% else %>
+          <i class="ti <%= s[:icon] %>"></i>
+        <% end %>
+      </span>
+      <span class="wizard-progress-label small text-center mt-1"><%= s[:label] %></span>
+    <% end %>
+    <% unless i == wizard_steps.size - 1 %>
+      <div class="wizard-progress-line flex-fill <%= 'is-done' if i < current_index %>"></div>
+    <% end %>
+  <% end %>
+</div>

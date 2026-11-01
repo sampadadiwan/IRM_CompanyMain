@@ -52,33 +52,35 @@ On the **Reports** list click **New report**. There are four ways to start:
 | Way | When to use it | Where |
 |---|---|---|
 | **From a template** | Your question is a common one — LP capital accounts, call collection, overdue chasing, distribution statements, portfolio MOIC… | New report › From a template — see [Starting from a template](#starting-from-a-template) |
-| **Guided setup** | You want to choose the table, columns and filters yourself, one step at a time | New report › Guided setup — the five steps below |
+| **Guided setup** | You want to choose the table, columns and filters yourself, one step at a time | New report › Guided setup — the steps below |
 | **Duplicate** | You already have the report you want, for another fund or with a small change | A report card's ⋮ menu, or the report page — see [Duplicating a report](#duplicating-a-report) |
 | **Describe it** | You can say what you want in a sentence but don't know which table or fields give it | New report › Describe it — see [Describing your report](#describing-your-report) |
 
 ### Guided setup
 
-Follow its five steps. A sample of the first 5 rows sits beside steps 2–5 and follows every change.
+First name the report and choose what it reports on — each table shows an example question, such as *Capital commitment: List every commitment with its called amount.* — then click **Start Building**. Each step has a 💡 box explaining what to do; **Back** and **Continue** move between them, and the step bar at the top lets you jump to any step.
 
 ```mermaid
 flowchart LR
-    S1["1 Each row<br/>pick a table card"] --> S2["2 What to show<br/>own + related columns,<br/>totals"]
-    S2 --> S3["3 Fund and filters<br/>one fund, filters<br/>read as sentences"]
-    S3 --> S4["4 Order and calculations<br/>sort, suggested<br/>formulas"]
-    S4 --> S5["5 Check and save<br/>summary, report check,<br/>name"]
-    S5 -->|Save and open| R["Report page"]
-    S5 -->|Fine-tune in builder| B["Builder"]
+    S0["Name + table<br/>Start Building"] --> S1["Columns"]
+    S1 --> S2["Related Data<br/>(optional)"]
+    S2 --> S3["Summarize<br/>(when related data<br/>was added)"]
+    S3 --> S4["Filters<br/>(optional)"]
+    S4 --> S5["Sort<br/>(optional)"]
+    S5 --> S6["Review"]
+    S6 -->|Open My Report| R["Report page"]
 ```
 
 | Step | What you do |
 |---|---|
-| **1 Each row** | Click the card of the table each row should be — every card shows an example question, e.g. *Investors: Which LPs still have KYC pending?* The report is created as "Untitled Investor report"; you name it at the end. |
-| **2 What to show** | Tick columns under **About the investor** and under each related source (**From capital commitments**, …), then **Add selected**. Related data is added for you. Each related column's total (Sum, Count, …) can be changed in **In the report**. |
-| **3 Fund and filters** | **Which fund?** limits the report to one fund (or **All funds**); it appears only when the rows or their related data have a fund. **Add a filter on** a field, choose the operator and value, click **Add**. Each filter reads back as a sentence, such as *Only include investors where Category is LP* or *Only capital commitments in Growth Fund II*. |
-| **4 Order and calculations** | **In what order?** sets the default sort. **Suggested calculations** offers *Called %*, *Unpaid*, *Uncalled* and *DPI* when both of their columns are in the report — click **Add**. |
-| **5 Check and save** | One card per step with **Change** to go back, the **Report check**, and the report name — already filled with a suggestion such as *Investors — Committed, Called — Growth Fund II*. **Save and open** names the report and opens its report page; **Fine-tune in builder** opens the builder. |
+| **Columns** | Click **Add** next to each column you want. **Your columns so far** lists them in order; edit a name there to change the column's header. |
+| **Related Data** | Optional. **Add** related data such as the investors' commitments or KYC records; every related row is rolled into your report. |
+| **Summarize** | Only when related data was added. **Add** its columns and choose how to combine several rows into one — **Sum**, **Count**, **Average**, **Minimum**, **Maximum**, **Latest** or **List** (hover an option for an example). The total shown is the one the report uses: amounts start on **Sum**, dates on **Latest**. **Pivot instead** turns one related column into a column per category. |
+| **Filters** | Optional. Pick a field, an operator and a value, and click **Add Filter** — for the report's own rows or for each related data. |
+| **Sort** | Optional. Choose the column and **Ascending** or **Descending**, then **Save & Review & Finish**. |
+| **Review** | The name, the number of columns, related data and filters, the columns and the sort. **Open My Report** opens the report page; **Open in builder** at the top opens the report builder. |
 
-The one-page [advanced form](/report_builder/new) (**Report Name**, **Root Model**, **Create & Configure**) is linked from Guided setup step 1 ("Open the builder instead"); it takes you straight into the report builder. In the builder, click the report name to rename it (Enter or click away saves, Escape cancels; a blank name becomes "Untitled Report").
+The one-page [advanced form](/report_builder/new) (**Report Name**, **Root Model**, **Create & Configure**) is linked from the first page of Guided setup ("Prefer the report builder instead? Switch here"); it takes you straight into the report builder. In the builder, click the report name to rename it (Enter or click away saves, Escape cancels; a blank name becomes "Untitled Report").
 
 ### Starting from a template
 
@@ -196,7 +198,7 @@ When a related record can have **many** rows for each row of the report (an inve
 | **Latest** | The value from the most recent record (e.g. latest KYC status). |
 | **List** | A comma-separated list of all unique values. |
 
-Change it under the column in **In the report**, from the column's menu in the preview, or on wizard step 2.
+Change it under the column in **In the report**, from the column's menu in the preview, or on Guided setup's **Summarize** step.
 
 **A total is always chosen for you.** When you add a column from related data, it gets a sensible total straight away, which you can change at any time:
 
@@ -263,7 +265,7 @@ Pivoting turns row values into columns — for example, one column per unit type
 
 ## Report Check
 
-The badge in the builder's header says **All good** or how many warnings there are. Click it to see each item, with **Fix** to open the tab that fixes it. Wizard step 5 shows the same check.
+The badge in the builder's header says **All good** or how many warnings there are. Click it to see each item, with **Fix** to open the tab that fixes it.
 
 | It warns when… | Example |
 |---|---|
@@ -340,13 +342,15 @@ flowchart TD
 
 ## Worked Example
 
-**Goal:** a one-row-per-investor report showing each investor's category and their total committed capital in one fund.
+**Goal:** a one-row-per-investor report showing each investor's category and their total committed capital.
 
-1. **New report › Guided setup** → click the **Investors** card.
-2. On **What to show**, tick **Stakeholder** and **Category** under *About the investor*, and **Committed** under *From capital commitments*, then **Add selected**. Committed totals with **Sum**.
-3. On **Fund and filters**, choose the fund under **Which fund?**. Add a filter on **Category**, **is any of**, choose the categories you want, and click **Add**.
-4. On **Order and calculations**, sort by **Committed**, **Largest / Z first**, and **Save**.
-5. On **Check and save**, check the sample and the report check, keep or change the suggested name, and click **Save and open**. **Export XLSX** from the report page.
+1. **New report › Guided setup**: name the report, choose **Investor**, click **Start Building**.
+2. On **Columns**, **Add** **Stakeholder** and **Category**.
+3. On **Related Data**, **Add** **Capital commitments**.
+4. On **Summarize**, **Add** **Committed** under *Capital commitments*; it totals with **Sum**.
+5. On **Filters**, add **Category** *is any of* the categories you want (for example `LP, Co-Investor`).
+6. On **Sort**, choose **Committed**, **Descending**, then **Save & Review & Finish**.
+7. On **Review**, click **Open My Report**, then **Export XLSX**.
 
 Result: a clean list of investors ranked by how much they've committed to that fund.
 
@@ -477,7 +481,7 @@ On the [Reports page](/reports) click **New report** and choose **From a templat
 On the [Reports page](/reports) click the report's name to open its report page, or **Edit** in its card menu to open the report builder. **Guided setup** in the same menu reopens it step by step, and **Duplicate** copies it.
 
 **How do I switch between the guided wizard and the builder?**
-In the wizard click **Open in builder** at the top, or **Fine-tune in builder** on step 5. In the builder click **Guided setup**; it opens step 2 and the step bar lets you jump to any step. Both work on the same report, so nothing is lost either way.
+In Guided setup click **Open in builder** at the top. In the builder click **Guided setup**; it opens the **Columns** step and the step bar lets you jump to any step. Both work on the same report, so nothing is lost either way.
 
 **Where do exported files go?**
 Each **Export XLSX** saves an Excel document named after the report in your company's **Reports** documents folder (or the top folder if there is none). The report page lists the last 5 under **Recent exports**, and the button and an on-screen alert link to the new one. Browse them all under Sidebar → [**Documents**](/documents).
@@ -490,11 +494,11 @@ In the builder, on the **Delivery** tab. See [Email on a schedule](#email-on-a-s
 
 ### Creating, updating and managing reports
 
-**What are the steps in the guided wizard?**
-**Each row**, **What to show**, **Fund and filters**, **Order and calculations** and **Check and save**. Each change saves as you make it, and a 5-row sample beside steps 2–5 shows the result. See [Creating a Report](#creating-a-report).
+**What are the steps in Guided setup?**
+Name and table, then **Columns**, **Related Data**, **Summarize** (only when related data was added), **Filters**, **Sort** and **Review**. Each change saves as you make it. See [Guided setup](#guided-setup).
 
-**Why does the wizard ask for a name only at the end?**
-So the name can describe what you built. Step 5 suggests one from the table, the first two columns and the fund — for example *Investors — Committed, Called — Growth Fund II*. Keep it, change it, or leave the box empty to use the suggestion.
+**Why can't I change the table after starting?**
+Every column, filter and total is built on the table you chose. To report on another table, start a new report.
 
 **How do I add, rename, reorder or remove columns?**
 Tick columns on the **Columns** tab and click **Add selected**. Rename, total, move or remove a column from the ▾ menu on its header in the preview, or drag the grip in **In the report** to reorder. See [Adding and Arranging Columns](#adding-and-arranging-columns).
@@ -509,7 +513,7 @@ Each related column with several rows per row has a total — **Sum**, **Count**
 On the **Filters** tab click **Add filter** in the group, choose a field, then the operator and value; it saves itself. On the **Sort** tab pick **Default sort** and **Lowest first** or **Highest first**. See [Filtering and Sorting](#filtering-and-sorting).
 
 **How do I add a formula column?**
-On the **Formulas** tab click **Add formula**, enter a **Label**, click columns to insert them into the **Expression**, check **Result on the first rows** and click **Add formula**. On wizard step 4, **Suggested calculations** adds *Called %*, *Unpaid*, *Uncalled* or *DPI* in one click.
+On the **Formulas** tab click **Add formula**, enter a **Label**, click columns to insert them into the **Expression**, check **Result on the first rows** and click **Add formula**. 
 
 **How do I build a pivot table?**
 On a related data's card on the **Related data** tab, open **Pivot**, pick the **Categories**, **Value** and **Total**, check how many columns it will create, and click **Apply**. See [Pivot Tables](#pivot-tables).
@@ -555,7 +559,7 @@ Fund operations, finance and compliance teams who need ad-hoc or recurring data 
 ### What happens when I…
 
 **What happens when I create a report?**
-A report is saved for your company with the chosen table — named "Untitled <table> report" from the wizard until you name it on step 5, or the name you typed on the advanced form — and it appears on the [Reports page](/reports) for other users of your company with the same role. No data is exported and no one is notified.
+A report is saved for your company with the chosen table — with the name you typed in Guided setup or on the advanced form — and it appears on the [Reports page](/reports) for other users of your company with the same role. No data is exported and no one is notified.
 
 **What happens when I change columns, related data, filters or sorting?**
 The change is saved on the report straight away, and the settings, preview and report check update together without reloading the page. The next export or scheduled run uses the new set-up. A green message confirms it; a red one says why it wasn't saved.
@@ -593,9 +597,6 @@ A new report is saved for your company with the template's columns, totals, filt
 **What happens when I duplicate a report?**
 A new report "Copy of <name>" is saved with the same set-up and opened in the report builder. Its email schedule and any pending Undo are not copied, and the original is untouched. No one is notified.
 
-**What happens when I pick a fund on wizard step 3?**
-If the report's own rows have a fund (commitments, calls, remittances…), only that fund's rows are kept. Otherwise each related data that has a fund — an investor's capital commitments, say — is limited to that fund, and the step reads *Only capital commitments in Growth Fund II*. **All funds** removes the limit.
-
 **What happens when I turn on "Only … that have …" on related data?**
 Rows with no matching related records (after that related data's own filters) are left out of the preview, the report page and exports, and the row count drops to match. Turn it off to bring them back; nothing else changes.
 
@@ -617,7 +618,7 @@ A filter row that can't be read — an empty value, or a date like 31/31/2026 �
 The report has no columns yet: tick some on the **Columns** tab and click **Add selected**. If columns exist but no rows appear, open the report check — it names any filter that matches nothing on its own.
 
 **Why does the report check say an amount adds INR and USD?**
-The column sums amounts from funds in different currencies, so the total mixes them. Pick one fund (wizard step 3, or a **Fund** filter on the related data), or add the fund as a column so each row stays in one currency.
+The column sums amounts from funds in different currencies, so the total mixes them. Pick one fund (a **Fund** filter on the related data), or add the fund as a column so each row stays in one currency.
 
 **Why does a related-data column show 0 or blank?**
 That row has no matching related rows. Rows are kept rather than dropped, so they show 0 or blank in those columns.

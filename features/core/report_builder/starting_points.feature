@@ -14,7 +14,7 @@ Feature: Report Builder starting points — one New report, one set of names
   # H1 — Happy path: one New report menu; the old builder buttons are gone
   Scenario: One New report menu
     When I open the Reports page
-    Then the New report menu offers "From a template, Guided setup, Describe it"
+    Then the New report menu offers "From a template, Guided setup, Describe it, Blank report (builder)"
     And the page has no "New Custom Report"
     And the page has no "Builder Report"
 

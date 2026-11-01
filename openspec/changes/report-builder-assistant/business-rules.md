@@ -40,7 +40,7 @@ The Phase 1 "Acme" fixture (`report_builder_trust_steps.rb`), with Acme's defaul
 
 | # | Scenario | Given | When | Then | Spec scenario | Feature |
 |---|---|---|---|---|---|---|
-| E1 | Something not reportable | "Show IRR by fund" — AI: Fund rows, Name; cannot "IRR isn't a reportable column" (suggest DPI) | Draft | Couldn't do: "IRR isn't a reportable column — try DPI"; the rest is drafted | Couldn't do | assistant |
+| E1 | Something not reportable | "Show IRR by fund" — AI: Fund rows, Name; cannot "IRR isn't a reportable column" (suggest DPI) | Draft | Under **Assistant's notes** (collapsed): "IRR isn't a reportable column — try DPI"; the rest is drafted. **Couldn't do** lists only what CapHive's checks removed (real-model check, 2026-11-01: the model's own remarks were long and sometimes contradicted its draft) | Couldn't do | assistant |
 | E2 | A value that matches nothing | AI: investors where Category is "Partner" | Draft | Filter left out; Couldn't do: "No investors have Category Partner — values: Co-Investor, LP" (on the four largest tables, a text value is checked with one EXISTS and no list is given) | Couldn't do | assistant |
 | E3 | Fixed dates | AI: assumption "last quarter = 1 Jul – 30 Sep 2026", date filters | Draft | The assumption is listed; filters on those dates | Check the draft | assistant |
 | E4 | Data not in reports | AI step 1: `SecondarySale` | Draft | Couldn't do: "secondary sales aren't available in reports for your account"; nothing to preview | Couldn't do | assistant |
