@@ -7,6 +7,8 @@ reasons behind each step are in [the security review](../security/security_revie
 **Do staging first:** [the staging runbook](security_review_2026_10_staging_runbook.md) runs every
 step below as a paste-ready command, on staging IN and staging US.
 
+What each enforcement and sandbox flag does, and how to turn it on: [the flags guide](security_review_2026_10_flags.md).
+
 **The one rule:** IN and US are independent environments. Every token, script id and URL below is
 made **separately** for each one. Never copy a value from one region to the other, and never point
 one region's provider at the other's host.
