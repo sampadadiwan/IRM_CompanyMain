@@ -40,7 +40,10 @@ class DealingRoll
     return if rem.capital_call_id == call.id
 
     if rem.capital_remittance_payments.exists?
-      rem.update_columns(capital_call_id: call.id)
+      # capital_call_id is attr_readonly (H10 - no request may move a remittance to another call), so
+      # update_columns raises; this roll is the one sanctioned move, to the next settlement call of the
+      # same fund, so write it in SQL
+      CapitalRemittance.where(id: rem.id).update_all(capital_call_id: call.id)
       CapitalRemittancesCountersJob.perform_later([order.fund_id], user&.id, call.id)
     else
       DealingSettlement.remove_subscription_payment(order)

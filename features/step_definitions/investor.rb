@@ -960,7 +960,8 @@ Then('we get the email with error {string}') do |error|
       current_email = email if email.subject.downcase.include?("errors")
     end
     expect(current_email).not_to be_nil, "No email found for #{@user.email} with subject 'Errors'"
-    expect(current_email.body).to include error
+    # The HTML body escapes the error (a Faker name like "O'Connell" arrives as O&#39;Connell)
+    expect(CGI.unescapeHTML(current_email.body.to_s)).to include error
   end
 end
 
@@ -974,7 +975,8 @@ Then('we get the email with error {string} and subject {string}') do |error, sub
       current_email = email if email.subject.include?(subject)
     end
     expect(current_email).not_to be_nil, "No email found for #{@user.email} with subject '#{subject}'"
-    expect(current_email.body).to include error
+    # Unescape the HTML body, as above
+    expect(CGI.unescapeHTML(current_email.body.to_s)).to include error
   end
 end
 

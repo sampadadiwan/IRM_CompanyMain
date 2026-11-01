@@ -240,7 +240,7 @@ Each fix should get a `features/security/` scenario in the style of `tenant_isol
 | `Report` | owner must be in the report's firm when `user_id` changes; `root_model` on the discovery list | H17, M16 |
 | `Fund` | `master_fund` same firm, not self | H9 |
 | `CapitalRemittancePayment` | `attr_readonly :capital_remittance_id`; remittance in the same fund | H10 |
-| `CapitalRemittance` | `attr_readonly :capital_call_id, :capital_commitment_id`; call/commitment in the same fund; same-firm investor | H10 |
+| `CapitalRemittance` | `attr_readonly :capital_call_id, :capital_commitment_id`; call/commitment in the same fund; same-firm investor. One sanctioned move: an evergreen dealing roll re-points a pre-funded remittance to the next settlement call of the same fund, in SQL (`DealingRoll.move_subscription_payment`), since `update_columns` raises on a read-only column | H10 |
 | `FundUnit` | `attr_readonly :capital_commitment_id`; commitment in the same fund; same-firm investor | H10 |
 | `FundFormula` | `attr_readonly :fund_id`; same-firm fund | M24 |
 | `User` | `update_investor_access` links only own-firm unclaimed grants; `revoke_mobile_devices` → `revoke_bearer_credentials` | C6, M4 |
