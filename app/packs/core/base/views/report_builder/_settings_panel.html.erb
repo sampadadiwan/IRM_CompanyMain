@@ -1,17 +1,23 @@
 <%# Settings panel: one tab per part of the report. Re-rendered whole after each change, staying on the
-    open tab (builder_active_tab). Forms inside target this frame, which marks them as builder requests. %>
+    open tab (builder_active_tab). Forms inside target this frame, which marks them as builder requests.
+    Each tab shows its state as a badge (builder_tab_badge) and opens with a help box saying what it's for.
+    Its own tooltip controller re-attaches the tooltips each time the panel is replaced by a Turbo stream;
+    data-tab-fill-window="false" keeps the pane only as tall as its content, so the preview follows below. %>
 <%= turbo_frame_tag "report_builder_settings" do %>
   <% active = builder_active_tab %>
-  <div class="card border shadow-none">
+  <div class="card border shadow-none rb-settings" data-controller="tooltip" data-tab-fill-window="false"
+       data-report-builder-target="settings">
     <div class="card-header bg-white">
-      <ul class="nav nav-pills nav-justified flex-wrap gap-1" role="tablist">
+      <ul class="nav nav-pills nav-justified flex-wrap gap-1 rb-settings-tabs" role="tablist">
         <% ReportBuilderHelper::BUILDER_TABS.each do |key, label, icon| %>
           <li class="nav-item" role="presentation">
-            <button class="nav-link px-2 <%= 'active' if key == active %>" type="button" role="tab"
+            <button class="nav-link px-2 h-100 d-flex align-items-center justify-content-center gap-1 <%= 'active' if key == active %>" type="button" role="tab"
                     id="rb-tab-<%= key %>" data-bs-toggle="tab" data-bs-target="#rb-pane-<%= key %>"
                     aria-controls="rb-pane-<%= key %>" aria-selected="<%= key == active %>"
                     data-tab="<%= key %>" data-action="click->report-builder#rememberTab">
               <i class="ti <%= icon %>"></i> <%= label %>
+              <% badge = builder_tab_badge(key) %>
+              <% if badge %><span class="badge bg-<%= badge[1] %>-subtle text-<%= badge[1] %> ms-1" title="<%= badge[2] %>"><%= badge[0] %></span><% end %>
             </button>
           </li>
         <% end %>

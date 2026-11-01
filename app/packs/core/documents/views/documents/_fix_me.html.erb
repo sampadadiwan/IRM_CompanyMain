@@ -75,7 +75,7 @@
 
         <% result_doc = Document.find_by(id: template_fix_report.json_fields["result_document_id"]) %>
         <% if result_doc %>
-          <%= link_to result_doc.file.url(response_content_disposition: "inline; filename=#{result_doc.name_with_extension}"),
+          <%= link_to result_doc.file.url(response_content_disposition: result_doc.inline_disposition),
                       class: "btn btn-success", target: "_blank" do %>
             <i class="ti ti-download"></i> Download fixed draft (<%= template_fix_report.json_fields["page_count"] %> pages)
           <% end %>

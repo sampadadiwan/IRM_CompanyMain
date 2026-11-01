@@ -1,6 +1,6 @@
 <% content_for :title, "Report Builder – #{@report.name}" %>
 
-<%# The builder: settings tabs on the left, the live preview on the right. Every change re-renders the
+<%# The builder: settings tabs on top, the live preview full width below it. Every change re-renders the
     settings panel, the preview and the health badge together (ReportBuilder::BuilderUpdates). H1, H17. %>
 <div data-controller="report-builder command-palette tooltip"
      data-report-builder-aggregate-url-value="<%= update_report_builder_aggregate_path(@report) %>"
@@ -21,17 +21,18 @@
       <div>The table <strong><%= @config.root_model %></strong> could not be loaded, so this report can't be edited.</div>
     </div>
   <% else %>
-    <div class="row g-3">
-      <div class="col-xl-4">
+    <%# Stacked, so the preview's columns get the full width %>
+    <div class="d-flex flex-column gap-3">
+      <div>
         <%= render "report_builder/settings_panel" %>
       </div>
 
-      <div class="col-xl-8">
+      <div>
         <div class="card border shadow-none">
           <div class="card-header bg-white d-flex align-items-center justify-content-between">
             <div>
               <h2 class="h6 mb-0"><i class="ti ti-table me-1"></i>Preview</h2>
-              <div class="text-muted small">Up to <%= ReportBuilderController::PREVIEW_LIMIT %> rows — use Export XLSX for all of them.</div>
+              <div class="text-muted small">First <%= ReportBuilderController::PREVIEW_LIMIT %> rows — use Export XLSX for all of them. Updates as you change the settings above.</div>
             </div>
             <button type="button" class="btn btn-sm btn-outline-secondary" data-action="click->report-builder#loadPreview"
                     title="Refresh preview" aria-label="Refresh preview">

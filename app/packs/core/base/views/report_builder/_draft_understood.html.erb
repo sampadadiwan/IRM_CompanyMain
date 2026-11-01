@@ -17,8 +17,6 @@
     end
   end
   formulas  = (@config.formulas || []).index_by { |f| f["key"].to_s }
-  # A formula's expression with column keys shown as their labels: [a.b] / [c] → Committed / Called
-  formula_words = ->(expr) { expr.to_s.gsub(/\[([^\]]+)\]/) { by_key[Regexp.last_match(1).split(";").first.strip] || Regexp.last_match(1) } }
   # The row is already titled "Only include": "Only include investors where Category is LP" → "Category is LP"
   sentences = wizard_filter_sentences(@config, current_user.entity).pluck(:text).map { |t| t.sub(/\AOnly include .+? where /, "") }
   sort_key  = @config.sort[:key].to_s
@@ -55,7 +53,7 @@
           <% key = gvp.key.split(";").first.strip %>
           <% if key.start_with?("formula:") %>
             <% formula = formulas[key.delete_prefix("formula:")] %>
-            <span class="badge bg-info-subtle text-info fw-normal" title="<%= formula_words.call(formula&.dig('expression')) %>" data-bs-toggle="tooltip">
+            <span class="badge bg-info-subtle text-info fw-normal" title="<%= formula_in_words(formula&.dig("expression"), by_key) %>" data-bs-toggle="tooltip">
               <i class="ti ti-math-function"></i> <%= formula&.dig("label") || label_of.call(gvp) %>
             </span>
           <% elsif key.start_with?("pivot:") %>

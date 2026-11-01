@@ -126,7 +126,8 @@ end
 
 When("I turn the schedule on with the recipients {string}") do |recipients|
   open_builder_tab("delivery")
-  find("#scheduleEnabledToggle").check
+  # The input sits under the iOS-style slider; click the switch itself
+  find("label.ios-toggle:has(#scheduleEnabledToggle)").click
   find("#rb_schedule_recipients").set(recipients)
 end
 

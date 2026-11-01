@@ -1,26 +1,44 @@
-<%# Formulas tab: the report's formulas and adding one %>
-<% if @config.formulas.empty? %>
-  <p class="text-muted small">No formulas yet. A formula works out a new column from others, e.g. Called % = Called ÷ Committed × 100.</p>
-<% else %>
-  <div class="d-flex flex-column gap-2 mb-3">
-    <% @config.formulas.each do |formula| %>
-      <div class="border rounded p-2 d-flex align-items-center justify-content-between">
-        <div class="min-width-0">
-          <div class="fw-semibold small text-truncate"><%= formula[:label] %></div>
-          <code class="small text-muted text-truncate d-block"><%= formula[:expression] %></code>
-        </div>
-        <%= button_to remove_report_builder_formula_path(@report, key: formula[:key]), method: :delete,
-              class: "btn btn-sm btn-outline-danger ms-2", title: "Remove #{formula[:label]}", "aria-label": "Remove #{formula[:label]}",
-              form: { data: { turbo_frame: "report_builder_settings" } },
-              data: { msg: "Remove formula '#{formula[:label]}'?", action: "click->confirm#popup" } do %>
-          <i class="ti ti-trash"></i>
-        <% end %>
-      </div>
-    <% end %>
-  </div>
-<% end %>
+<%# Formulas tab: a help box, then the report's formulas read in words (columns as badges; the raw expression
+    in the tooltip of the code button) and Add formula %>
+<% labels_by_key = @report.grid_view_preferences.to_h { |g| [g.key.split(";").first.strip, g.label.presence || g.name] } %>
 
-<button type="button" class="btn btn-sm btn-outline-primary w-100" data-bs-toggle="modal" data-bs-target="#formulaModal"
-        data-action="click->report-builder#fillFormulaColumns">
-  <i class="ti ti-plus"></i> Add formula
-</button>
+<%= render "report_builder/wizard/help_box",
+      title: "Work out new columns from the ones you have",
+      body: "A formula adds a column calculated for each row from other columns. Use + − × ÷, and IF, ROUND, MIN or MAX " \
+            "for conditions and rounding. It appears in the Columns tab, where you can move it.",
+      example: "e.g. Called % = Called ÷ Committed × 100" %>
+
+<div class="card border shadow-none mb-0">
+  <div class="card-header bg-primary-subtle d-flex align-items-center gap-2 py-2">
+    <span class="wizard-card-icon"><i class="ti ti-math-function"></i></span>
+    <span class="fw-semibold">Formulas in this report</span>
+    <span class="badge bg-primary-subtle text-primary"><%= @config.formulas.size %></span>
+    <button type="button" class="btn btn-sm btn-primary ms-auto" data-bs-toggle="modal" data-bs-target="#formulaModal"
+            data-action="click->report-builder#fillFormulaColumns">
+      <i class="ti ti-plus"></i> Add formula
+    </button>
+  </div>
+  <% if @config.formulas.empty? %>
+    <div class="card-body text-muted small">No formulas yet. Click Add formula to work out a new column, e.g. Called ÷ Committed.</div>
+  <% else %>
+    <ul class="list-group list-group-flush">
+      <% @config.formulas.each do |formula| %>
+        <li class="list-group-item d-flex align-items-center gap-2">
+          <div class="flex-grow-1">
+            <span class="fw-semibold"><%= formula[:label] %></span>
+            <span class="ms-2">= <%= formula_in_words(formula[:expression], labels_by_key, html: true) %></span>
+          </div>
+          <%# The expression as stored, for people who want the exact formula %>
+          <span class="btn btn-sm btn-outline-secondary" tabindex="0" data-bs-toggle="tooltip" title="<%= formula[:expression] %>"
+                aria-label="Formula as written: <%= formula[:expression] %>"><i class="ti ti-code"></i></span>
+          <%= button_to remove_report_builder_formula_path(@report, key: formula[:key]), method: :delete,
+                class: "btn btn-sm btn-outline-danger", title: "Remove #{formula[:label]}", "aria-label": "Remove #{formula[:label]}",
+                form: { data: { turbo_frame: "report_builder_settings" } },
+                data: { msg: "Remove formula '#{formula[:label]}'?", action: "click->confirm#popup" } do %>
+            <i class="ti ti-trash"></i>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+</div>

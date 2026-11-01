@@ -63,7 +63,7 @@ class DocumentMailer < ApplicationMailer
 
   def email_link
     # Link will expire in 1 week
-    @link = @document.file.url(expires_in: (60 * 60 * 24 * 7), response_content_disposition: "inline; filename=#{@document.name_with_extension}")
+    @link = @document.file.url(expires_in: (60 * 60 * 24 * 7), response_content_disposition: @document.inline_disposition)
     @msg = params[:msg]
     subject = "Download link"
     send_mail(subject:)

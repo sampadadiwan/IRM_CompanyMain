@@ -3,10 +3,24 @@ module ReportBuilderHelper
     ["columns", "Columns", "ti-columns"],
     ["related", "Related data", "ti-git-merge"],
     ["filters", "Filters", "ti-filter"],
-    ["sort", "Sort", "ti-arrows-sort"],
+    ["sort", "Sort & Excel", "ti-arrows-sort"],
     ["formulas", "Formulas", "ti-math-function"],
     ["delivery", "Delivery", "ti-calendar-event"]
   ].freeze
+
+  # The badge on each builder tab, so the tab says what is set there without opening it:
+  # [text, colour, tooltip] — "15" columns, "Off" delivery — or nil when there is nothing to show
+  def builder_tab_badge(key)
+    case key
+    when "columns"  then count_badge(@report.grid_view_preferences.count)
+    when "related"  then count_badge(@config.joins.size)
+    # Filters on the rows plus filters on each related data's totals
+    when "filters"  then count_badge(@config.root_filters.size + @config.joins.sum { |j| (j[:child_filters] || {}).size })
+    when "formulas" then count_badge(@config.formulas.size)
+    when "sort"     then builder_sort_badge
+    when "delivery" then builder_delivery_badge
+    end
+  end
 
   KNOWN_OP_SUFFIXES = %w[eq not_eq cont not_cont in not_in gteq lteq gt lt null not_null].freeze
 
@@ -16,6 +30,51 @@ module ReportBuilderHelper
   def builder_active_tab
     tab = params[:tab].presence || cookies[:rb_tab].presence
     BUILDER_TABS.any? { |key, _, _| key == tab } ? tab : "columns"
+  end
+
+  # A formula as words: "[a.gross_payable] - [a.net_payable]" → "Gross Payable − Net Payable", with each column's
+  # label from labels (clean key → label) or its humanized name. html: true wraps each column in a badge.
+  def formula_in_words(expression, labels = {}, html: false)
+    parts = expression.to_s.split(/(\[[^\]]+\])/).map do |part|
+      if part.start_with?("[") && part.end_with?("]")
+        # A column reference: its label
+        key   = part[1..-2].split(";").first.strip
+        label = labels[key] || key.split(".").last.humanize
+        html ? tag.span(label, class: "badge bg-success-subtle text-success fw-normal") : label
+      else
+        # Between columns: the operators as people write them
+        part.tr("*", "×").tr("/", "÷").gsub(/(?<=\s)-(?=\s)/, "−")
+      end
+    end
+    html ? safe_join(parts) : parts.join
+  end
+
+  # A count, or nothing when there are none
+  def count_badge(count)
+    count.positive? ? [count.to_s, "primary"] : nil
+  end
+
+  # The sort direction as an icon, its column in the tooltip ("Sorted by Folio, lowest first");
+  # nothing when the report keeps its stored order
+  def builder_sort_badge
+    key = @config.sort[:key].to_s.split(";").first&.strip
+    return nil if key.blank?
+
+    gvp = @report.grid_view_preferences.find { |g| g.key.split(";").first.strip.delete_prefix("formula:") == key }
+    label = gvp&.label.presence || gvp&.name || @config.formulas.find { |f| f[:key].to_s == key }&.dig(:label)
+    return nil unless label
+
+    desc = @config.sort[:dir].to_s == "desc"
+    [tag.i(class: "ti #{desc ? 'ti-sort-descending' : 'ti-sort-ascending'}"), "secondary",
+     "Sorted by #{label}, #{desc ? 'highest' : 'lowest'} first"]
+  end
+
+  # "Weekly" when a schedule is on, "Off" otherwise
+  def builder_delivery_badge
+    schedule = @report.report_schedule
+    return %w[Off secondary] unless schedule&.enabled
+
+    [schedule.frequency.to_s.humanize, "success"]
   end
 
   # "investor_name_cont" → { field: "investor_name", op: "cont" }

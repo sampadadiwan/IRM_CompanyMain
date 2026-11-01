@@ -1,4 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
+import { initSelect2 } from "custom/select2_handler"
 
 export default class extends Controller {
   static targets = [
@@ -8,7 +9,8 @@ export default class extends Controller {
     "filtersPanel", "rootFilterRows", "childFilterRows",
     "formulaInput", "formulaPreview", "formulaSubmit", "formulaColumns",
     "scheduleFrequency", "scheduleRecipients", "scheduleTimezone",
-    "groupRowsBy", "currency"
+    "groupRowsBy", "currency",
+    "settings"
   ]
 
   static values = {
@@ -44,6 +46,12 @@ export default class extends Controller {
 
   _rememberAll() {
     this.element.querySelectorAll("select, input[type=checkbox]").forEach(el => this._remember(el))
+  }
+
+  // The settings panel is replaced by a Turbo stream after every change, which the global select2 setup
+  // (page and frame loads only) doesn't see — set up its select2 lists (the pivot's categories) each time
+  settingsTargetConnected(element) {
+    initSelect2(element)
   }
 
   // Keeps the open settings tab across re-renders (read by builder_active_tab)

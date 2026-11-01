@@ -1,73 +1,114 @@
-<%# Columns tab: what can be added (left list) and what is in the report (drag to reorder) %>
-<% selected_keys = @report.grid_view_preferences.pluck(:key).map { |k| k.split(";").first.strip } %>
+<%# Columns tab: a help box, then two panels — 1 Pick columns (left) and 2 In the report (right, drag to reorder,
+    the total for many-per-row related data on the same line). Both lists scroll inside their panel. %>
+<% gvps = @report.grid_view_preferences.reorder(:sequence, :id).to_a %>
+<% root_label = wizard_model_label(@root_class.name).downcase %>
+<% labels_by_key = gvps.to_h { |g| [g.key.split(";").first.strip, g.label.presence || g.name] } %>
+<% formulas_by_key = @config.formulas.index_by { |f| f[:key].to_s } %>
+
+<%= render "report_builder/wizard/help_box",
+      title: "Choose what each row shows",
+      body: "Tick columns on the left and click Add selected. They appear on the right in report order — drag the handle to reorder. " \
+            "Related data with many per row is totalled into one value per #{root_label}: pick how next to the column.",
+      example: wizard_example_for(@config.root_model) %>
 
 <%# The picker: the row's own columns and each related data's, ticked and added together (H3, H4) %>
-<% sources = [{ title: "About the #{wizard_model_label(@root_class.name).downcase}", relation: nil }] +
+<% sources = [{ title: "About the #{root_label}", relation: nil }] +
              @config.joins.map { |j| { title: "From #{j[:relation].to_s.humanize.downcase}", relation: j[:relation].to_s } } %>
-<%= render "report_builder/column_groups", sources: sources, frame: "report_builder_settings" %>
-
-<h2 class="h6 mt-4 mb-2 d-flex align-items-center justify-content-between">
-  <span>In the report</span>
-  <span class="badge bg-primary-subtle text-primary"><%= selected_keys.size %></span>
-</h2>
-<% gvps = @report.grid_view_preferences.reorder(:sequence, :id).to_a %>
-<% if gvps.empty? %>
-  <p class="text-muted small mb-0">Nothing yet — add columns from the list above.</p>
-<% else %>
-  <div class="table-responsive">
-    <table class="table table-bordered table-hover table-sm align-middle mb-0"
-           data-controller="draggable-row" data-owner-type="Report" data-owner-id="<%= @report.id %>">
-      <thead>
-        <tr>
-          <th scope="col"><span class="visually-hidden">Drag</span></th>
-          <th scope="col">Column and total</th>
-          <th scope="col"><span class="visually-hidden">Remove</span></th>
-        </tr>
-      </thead>
-      <tbody>
-        <% gvps.each do |gvp| %>
-          <% clean_key = gvp.key.split(";").first.strip %>
-          <%# A formula's or pivot's place in the order (trust H10, H11): draggable, removed with its formula / pivot %>
-          <% position_kind = { "formula:" => "Formula", "pivot:" => "Pivot" }.find { |prefix, _| clean_key.start_with?(prefix) }&.last %>
-          <%# Totals only apply to many-per-row related data; one-per-row values show as they are %>
-          <% is_child = clean_key.include?(".") && position_kind.nil? &&
-                        @config.column_type.strategy_for(@config.column_type.relation_for(clean_key)) != :anchored_one %>
-          <% current_agg = @config.effective_aggregate(clean_key) %>
-          <tr class="column column_<%= gvp.id %>" data-draggable-row-target="column" draggable="true"
-              data-key="<%= gvp.key %>" data-row-id="<%= gvp.id %>" data-label="<%= gvp.label.presence || gvp.name %>">
-            <td class="text-center"><i class="ti ti-grip-vertical text-muted cursor-grab" title="Drag to reorder" aria-hidden="true"></i></td>
-            <td>
-              <div class="fw-semibold"><%= gvp.label.presence || gvp.name %></div>
-              <% if position_kind %>
-                <span class="badge bg-info-subtle text-info">
-                  <i class="ti <%= position_kind == 'Formula' ? 'ti-math-function' : 'ti-table-options' %> me-1"></i><%= position_kind %>
-                </span>
-              <% elsif clean_key.include?(".") %>
-                <span class="badge bg-secondary-subtle text-secondary"><i class="ti ti-link me-1"></i><%= clean_key.split(".", 2).first.humanize %></span>
-              <% end %>
-              <%# The total sits under the name: the panel is too narrow for its own column %>
-              <% if is_child %>
-                <% base = @config.column_type.base_type(clean_key) %>
-                <select class="form-select form-select-sm mt-1" aria-label="Total for <%= gvp.label.presence || gvp.name %>"
-                        data-action="change->report-builder#aggregateChanged" data-key="<%= clean_key %>">
-                  <% ReportBuilderColumnType::AGGREGATES.each do |agg| %>
-                    <option value="<%= agg %>" <%= 'selected' if current_agg == agg %>><%= ReportBuilderColumnType.aggregate_label(agg, base) %></option>
-                  <% end %>
-                </select>
-              <% end %>
-            </td>
-            <td class="text-end">
-              <% unless position_kind %>
-                <%= button_to remove_report_builder_column_path(@report, gvp_id: gvp.id), method: :delete,
-                      class: "btn btn-sm btn-outline-danger", title: "Remove #{gvp.label.presence || gvp.name}",
-                      "aria-label": "Remove #{gvp.label.presence || gvp.name}" do %>
-                  <i class="ti ti-trash"></i>
-                <% end %>
-              <% end %>
-            </td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
+<div class="row g-3">
+  <div class="col-lg-5">
+    <div class="card border shadow-none h-100 mb-0">
+      <div class="card-header bg-primary-subtle d-flex align-items-center gap-2 py-2">
+        <span class="wizard-card-icon fw-semibold">1</span>
+        <span class="fw-semibold">Pick columns</span>
+        <i class="ti ti-info-circle text-muted ms-auto" data-bs-toggle="tooltip"
+           title="Grouped by where the value comes from: the <%= root_label %> itself, or related data added in the Related data tab"></i>
+      </div>
+      <div class="card-body p-3">
+        <%= render "report_builder/column_groups", sources: sources, frame: "report_builder_settings" %>
+      </div>
+    </div>
   </div>
-<% end %>
+
+  <div class="col-lg-7">
+    <div class="card border shadow-none h-100 mb-0">
+      <div class="card-header bg-primary-subtle d-flex align-items-center gap-2 py-2">
+        <span class="wizard-card-icon fw-semibold">2</span>
+        <span class="fw-semibold">In the report</span>
+        <span class="badge bg-primary-subtle text-primary"><%= gvps.size %></span>
+        <span class="text-muted small ms-auto"><i class="ti ti-grip-vertical"></i> Drag to reorder · left to right in the report</span>
+      </div>
+      <% if gvps.empty? %>
+        <div class="card-body text-muted small">Nothing yet — tick columns on the left and click Add selected.</div>
+      <% else %>
+        <div class="wizard-scroll-list">
+          <table class="table table-hover table-sm align-middle mb-0"
+                 data-controller="draggable-row" data-owner-type="Report" data-owner-id="<%= @report.id %>">
+            <tbody>
+              <% gvps.each do |gvp| %>
+                <% clean_key = gvp.key.split(";").first.strip %>
+                <% name = gvp.label.presence || gvp.name %>
+                <%# A formula's or pivot's place in the order (trust H10, H11): draggable, removed with its formula / pivot %>
+                <% position_kind = { "formula:" => "Formula", "pivot:" => "Pivot" }.find { |prefix, _| clean_key.start_with?(prefix) }&.last %>
+                <% relation = clean_key.include?(".") && position_kind.nil? ? @config.column_type.relation_for(clean_key) : nil %>
+                <%# Totals only apply to many-per-row related data; one-per-row values show as they are %>
+                <% is_child = relation && @config.column_type.strategy_for(relation) != :anchored_one %>
+                <% current_agg = @config.effective_aggregate(clean_key) %>
+                <tr class="column column_<%= gvp.id %>" data-draggable-row-target="column" draggable="true"
+                    data-key="<%= gvp.key %>" data-row-id="<%= gvp.id %>" data-label="<%= name %>">
+                  <td class="text-center ps-3" style="width: 2rem"><i class="ti ti-grip-vertical text-muted cursor-grab" title="Drag to reorder" aria-hidden="true"></i></td>
+                  <td>
+                    <span class="fw-semibold"><%= name %></span>
+                    <%# Where the value comes from, said in the tooltip %>
+                    <% if position_kind == "Formula" %>
+                      <% formula = formulas_by_key[clean_key.delete_prefix("formula:")] %>
+                      <span class="badge bg-info-subtle text-info fw-normal ms-1" data-bs-toggle="tooltip"
+                            title="<%= formula ? "= #{formula_in_words(formula[:expression], labels_by_key)}" : 'A formula' %> — change it in the Formulas tab">
+                        <i class="ti ti-math-function"></i> Formula</span>
+                    <% elsif position_kind == "Pivot" %>
+                      <span class="badge bg-info-subtle text-info fw-normal ms-1" data-bs-toggle="tooltip"
+                            title="One column per category value — set it up in the Related data tab">
+                        <i class="ti ti-table-options"></i> Pivot</span>
+                    <% elsif relation %>
+                      <span class="badge bg-success-subtle text-success fw-normal ms-1" data-bs-toggle="tooltip"
+                            title="<%= is_child ? "From #{relation.to_s.humanize.downcase}: a #{root_label} can have many, so they're totalled into one value per row" : "From the #{relation.to_s.humanize.singularize.downcase}: one per #{root_label}, shown as it is" %>">
+                        <i class="ti ti-link"></i> <%= relation.to_s.humanize %></span>
+                    <% end %>
+                  </td>
+                  <td style="width: 13rem">
+                    <% if is_child %>
+                      <% base = @config.column_type.base_type(clean_key) %>
+                      <div class="d-flex align-items-center gap-2">
+                        <select class="form-select form-select-sm" aria-label="Total for <%= name %>"
+                                data-action="change->report-builder#aggregateChanged" data-key="<%= clean_key %>">
+                          <% ReportBuilderColumnType::AGGREGATES.each do |agg| %>
+                            <option value="<%= agg %>" <%= 'selected' if current_agg == agg %>><%= ReportBuilderColumnType.aggregate_label(agg, base) %></option>
+                          <% end %>
+                        </select>
+                        <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip"
+                           title="How the many <%= relation.to_s.humanize.downcase %> of one <%= root_label %> become one value: Sum adds them up, Count counts them, Average, Lowest / Highest or Latest pick one, List shows them all"></i>
+                      </div>
+                    <% end %>
+                  </td>
+                  <td class="text-end pe-3" style="width: 3.5rem">
+                    <% if position_kind %>
+                      <%# Formulas and pivots are changed in their own tab %>
+                      <button type="button" class="btn btn-sm btn-outline-secondary" data-action="click->report-builder#openTab"
+                              data-tab="<%= position_kind == 'Formula' ? 'formulas' : 'related' %>" data-bs-toggle="tooltip"
+                              title="Change it in the <%= position_kind == 'Formula' ? 'Formulas' : 'Related data' %> tab"
+                              aria-label="Change <%= name %>"><i class="ti ti-pencil"></i></button>
+                    <% else %>
+                      <%= button_to remove_report_builder_column_path(@report, gvp_id: gvp.id), method: :delete,
+                            class: "btn btn-sm btn-outline-danger", title: "Remove #{name}", "aria-label": "Remove #{name}" do %>
+                        <i class="ti ti-trash"></i>
+                      <% end %>
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

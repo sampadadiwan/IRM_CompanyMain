@@ -160,7 +160,8 @@ end
 
 # H3 — sources, kinds, and no internal fields
 Then("the column picker has the sources {string}") do |titles|
-  summaries = page_doc.css(".rb-column-groups details summary").map { |s| s.text.strip }
+  # The source's name only — related data also carries a "many per row" badge
+  summaries = page_doc.css(".rb-column-groups details summary .rb-source-title").map { |s| s.text.strip }
   expect(summaries).to eq(titles.split(",").map(&:strip))
 end
 

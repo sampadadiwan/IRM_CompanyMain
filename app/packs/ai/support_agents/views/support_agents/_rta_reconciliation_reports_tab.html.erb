@@ -91,7 +91,7 @@
               <% source_doc = Document.find_by(id: data[:source_document_id]) if data[:source_document_id].present? %>
               <p class="rta-meta-line text-muted small mb-3">
                 <% if source_doc&.file.present? %>
-                  <%= link_to source_doc.file_url(response_content_disposition: "inline; filename=#{source_doc.name_with_extension}"),
+                  <%= link_to source_doc.file_url(response_content_disposition: source_doc.inline_disposition),
                               class: "badge rounded-pill bg-primary-subtle text-primary text-decoration-none",
                               target: "_blank", rel: "noopener" do %>
                     <i class="ti ti-download"></i> Statement #<%= source_doc.id %>

@@ -64,7 +64,7 @@ class DocumentUrlTool < RubyLLM::Tool
     return "Document #{document_id} has no file attached." if doc.file.blank?
 
     url = doc.file.url(
-      response_content_disposition: "inline; filename=\"#{doc.name_with_extension}\""
+      response_content_disposition: doc.inline_disposition
     )
     url.to_s
   rescue Shrine::Error, Aws::S3::Errors::ServiceError => e

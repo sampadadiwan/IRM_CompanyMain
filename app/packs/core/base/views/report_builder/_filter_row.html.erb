@@ -9,35 +9,40 @@
   no_value   = ReportBuilderFilterField::NO_VALUE_OPS.include?(op.to_s)
   values     = Array(value).map(&:to_s)
 %>
+<%# On one line: field, condition, value, remove; the error (E9, E10) under it %>
 <div class="filter-row border rounded p-2 mb-2" data-scope="<%= scope %>" data-relation="<%= relation %>"
      data-kind="<%= field_info&.kind %>"
      data-action="change->report-builder#filterChanged input->report-builder#filterChanged">
-  <div class="d-flex gap-1 align-items-start">
-    <select class="form-select form-select-sm filter-field" aria-label="Field"
+  <div class="d-flex gap-2 align-items-start">
+    <select class="form-select form-select-sm filter-field w-auto flex-grow-1" style="max-width: 16rem" aria-label="Field"
             data-action="change->report-builder#filterFieldChanged">
       <option value="">— field —</option>
       <% columns.each do |c| %>
         <option value="<%= c[:key] %>" <%= 'selected' if c[:key] == field %>><%= c[:label] %></option>
       <% end %>
     </select>
-    <button type="button" class="btn btn-sm btn-outline-danger flex-shrink-0" title="Remove filter" aria-label="Remove filter"
+
+    <% if field_info %>
+      <select class="form-select form-select-sm filter-op w-auto" aria-label="Operator" data-action="change->report-builder#filterOpChanged">
+        <% operators.each do |label, o| %>
+          <option value="<%= o %>" <%= 'selected' if o == op %>><%= label %></option>
+        <% end %>
+      </select>
+
+      <div class="filter-value flex-grow-1 <%= 'd-none' if no_value %>" style="min-width: 0">
+        <%= render "report_builder/filter_value_input", field_info: field_info, op: op, values: values %>
+      </div>
+    <% else %>
+      <span class="text-muted small align-self-center flex-grow-1">Pick a field to filter on</span>
+    <% end %>
+
+    <button type="button" class="btn btn-sm btn-outline-danger flex-shrink-0 ms-auto" title="Remove filter" aria-label="Remove filter"
             data-action="click->report-builder#removeFilterRow">
       <i class="ti ti-trash"></i>
     </button>
   </div>
 
   <% if field_info %>
-    <div class="d-flex gap-1 mt-1">
-      <select class="form-select form-select-sm filter-op" aria-label="Operator" data-action="change->report-builder#filterOpChanged">
-        <% operators.each do |label, o| %>
-          <option value="<%= o %>" <%= 'selected' if o == op %>><%= label %></option>
-        <% end %>
-      </select>
-
-      <div class="filter-value flex-grow-1 <%= 'd-none' if no_value %>">
-        <%= render "report_builder/filter_value_input", field_info: field_info, op: op, values: values %>
-      </div>
-    </div>
     <%# E9, E10 — filled in by the builder when the row can't be saved yet %>
     <div class="filter-error small text-danger mt-1 d-none" role="status"></div>
   <% end %>

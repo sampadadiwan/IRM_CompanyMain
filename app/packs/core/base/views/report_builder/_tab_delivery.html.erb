@@ -9,35 +9,61 @@
 <% timezone  = draft[:timezone] || schedule.timezone %>
 <% typed     = draft.key?(:recipients) ? draft[:recipients] : Array(schedule.recipients).join(", ") %>
 <% shown     = schedule.enabled || draft.present? %>
+<% saved_on  = schedule.persisted? && schedule.enabled %>
 <div class="rb-delivery" data-check-url="<%= report_builder_schedule_check_path(@report) %>">
-  <div class="form-check form-switch mb-3">
-    <input class="form-check-input" type="checkbox" id="scheduleEnabledToggle" <%= 'checked' if shown %>
-           data-saved="<%= schedule.persisted? && schedule.enabled ? '1' : '0' %>"
-           data-action="change->report-builder#toggleSchedule">
-    <label class="form-check-label" for="scheduleEnabledToggle">Email this report on a schedule</label>
+  <%= render "report_builder/wizard/help_box",
+        title: "Email this report automatically",
+        body: "Turn it on, pick when and who, and save. Each time, the full report — all rows, not the 20 in the preview — " \
+              "is emailed as an XLSX. Use Send test to me to see the email first.",
+        example: "e.g. Weekly on Monday at 09:00 IST to cfo@yourfund.com, ops@yourfund.com" %>
+
+  <%# iOS-style switch, as on the user form (toggle-row / ios-toggle); the line under it says the saved state %>
+  <div class="toggle-row">
+    <div>
+      <label class="toggle-row-label" for="scheduleEnabledToggle">Email this report on a schedule</label>
+      <small class="form-text text-muted d-block">
+        <% if saved_on %>
+          On — emailed <%= report_schedule_label(schedule) %> to <%= pluralize(Array(schedule.recipients).size, "person", plural: "people") %>.
+        <% else %>
+          Off — nobody gets it until you turn it on and save.
+        <% end %>
+      </small>
+    </div>
+    <label class="ios-toggle" title="Email this report on a schedule">
+      <input class="ios-toggle-input" type="checkbox" id="scheduleEnabledToggle" <%= 'checked' if shown %>
+             data-saved="<%= schedule.persisted? && schedule.enabled ? '1' : '0' %>"
+             data-action="change->report-builder#toggleSchedule">
+      <span class="ios-toggle-slider"></span>
+    </label>
   </div>
 
+  <%# How often, time zone and recipients on one row %>
   <div id="scheduleSettings" class="<%= 'd-none' unless shown %>">
-    <div class="mb-3">
-      <label class="form-label small mb-1" for="rb_schedule_frequency">Frequency</label>
-      <%= select_tag "rb_schedule_frequency", options_for_select(schedule_frequency_options(schedule), frequency),
-                     class: "form-select form-select-sm", data: { "report-builder-target": "scheduleFrequency" } %>
-    </div>
-    <div class="mb-3">
-      <label class="form-label small mb-1" for="rb_schedule_timezone">Time zone</label>
-      <%= select_tag "rb_schedule_timezone",
-                     options_for_select(AgentSchedule::CURATED_TIMEZONES.map { |tz, label| [label, tz] }, timezone),
-                     class: "form-select form-select-sm", data: { "report-builder-target": "scheduleTimezone" } %>
-    </div>
-    <div class="mb-3">
-      <label class="form-label small mb-1" for="rb_schedule_recipients">Recipients</label>
-      <textarea id="rb_schedule_recipients" rows="2" placeholder="name@company.com, …"
-                class="form-control form-control-sm <%= 'is-invalid' if draft[:error] %>"
-                aria-describedby="rb_schedule_recipients_help rb_schedule_recipients_error"
-                data-report-builder-target="scheduleRecipients"><%= typed %></textarea>
-      <div id="rb_schedule_recipients_error" class="invalid-feedback" role="status"><%= draft[:error] %></div>
-      <div id="rb_schedule_recipients_help" class="form-text">
-        Separate emails with commas. People outside <%= (@report.entity || current_user.entity).name %> get a warning first.
+    <div class="row g-3 mb-3">
+      <div class="col-md-3">
+        <label class="form-label small mb-1" for="rb_schedule_frequency">How often</label>
+        <%= select_tag "rb_schedule_frequency", options_for_select(schedule_frequency_options(schedule), frequency),
+                       class: "form-select form-select-sm", data: { "report-builder-target": "scheduleFrequency" } %>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small mb-1" for="rb_schedule_timezone">Time zone</label>
+        <%= select_tag "rb_schedule_timezone",
+                       options_for_select(AgentSchedule::CURATED_TIMEZONES.map { |tz, label| [label, tz] }, timezone),
+                       class: "form-select form-select-sm", data: { "report-builder-target": "scheduleTimezone" } %>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label small mb-1" for="rb_schedule_recipients">Recipients
+          <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip"
+             title="People outside <%= (@report.entity || current_user.entity).name %> get a warning before you save, since the report leaves your company"></i>
+        </label>
+        <textarea id="rb_schedule_recipients" rows="1" placeholder="name@company.com, …"
+                  class="form-control form-control-sm <%= 'is-invalid' if draft[:error] %>"
+                  aria-describedby="rb_schedule_recipients_help rb_schedule_recipients_error"
+                  data-report-builder-target="scheduleRecipients"><%= typed %></textarea>
+        <div id="rb_schedule_recipients_error" class="invalid-feedback" role="status"><%= draft[:error] %></div>
+        <div id="rb_schedule_recipients_help" class="form-text">
+          Separate emails with commas. People outside <%= (@report.entity || current_user.entity).name %> get a warning first.
+        </div>
       </div>
     </div>
     <div class="d-flex flex-wrap gap-2 mb-2">

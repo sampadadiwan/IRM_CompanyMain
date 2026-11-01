@@ -1,118 +1,166 @@
-<%# Related data tab: one card per related data (only-with-rows, pivot, remove) and adding another %>
-<% if @config.joins.empty? %>
-  <p class="text-muted small">No related data yet. Add one below to bring in, for example, an investor's commitments.</p>
-<% end %>
+<%# Related data tab: a help box, then one card per related data (many/one per row explained, how many columns
+    use it, only-with-rows, pivot, remove) and a card to add another — two across. %>
+<% root_label  = wizard_model_label(@root_class.name).downcase %>
+<% root_plural = wizard_model_label(@root_class.name).pluralize.downcase %>
+<% gvps = @report.grid_view_preferences.reorder(:sequence, :id).to_a %>
 
-<div class="d-flex flex-column gap-3">
+<%= render "report_builder/wizard/help_box",
+      title: "Bring in data that belongs to each #{root_label}",
+      body: "Add related data here, then pick its columns in the Columns tab. One per row (e.g. the fund) shows as it is. " \
+            "Many per row (e.g. payments) is totalled into one value per #{root_label} — or spread across columns with a pivot.",
+      example: "e.g. add capital distribution payments, then show Gross Payable as a Sum per #{root_label}" %>
+
+<div class="row g-3">
   <% @config.joins.each do |join| %>
     <% pivot    = (join[:pivot] || {}).with_indifferent_access %>
     <% join_rel = join[:relation].to_s %>
     <% join_cols = @joined_columns[join_rel] || [] %>
     <% grouped = @config.column_type.strategy_for(join_rel) == :grouped %>
-    <div class="join-item border rounded p-3"
-         data-report-builder-relation="<%= join_rel %>"
-         data-report-builder-model="<%= join[:model] %>"
-         data-report-builder-fk="<%= join[:fk] %>"
-         data-report-builder-pivot="<%= pivot.to_h.to_json %>"
-         data-report-builder-only-with-rows="<%= @config.only_with_rows?(join_rel) %>">
-
-      <div class="d-flex align-items-center justify-content-between mb-2">
-        <div>
+    <%# H13 — the popup names the columns that go with it; Undo brings them back %>
+    <% join_labels = gvps.select { |g| g.key.start_with?("#{join_rel}.") }.map { |g| g.label.presence || g.name } %>
+    <div class="col-lg-6">
+      <div class="card border shadow-none h-100 mb-0 join-item"
+           data-report-builder-relation="<%= join_rel %>"
+           data-report-builder-model="<%= join[:model] %>"
+           data-report-builder-fk="<%= join[:fk] %>"
+           data-report-builder-pivot="<%= pivot.to_h.to_json %>"
+           data-report-builder-only-with-rows="<%= @config.only_with_rows?(join_rel) %>">
+        <div class="card-header bg-primary-subtle d-flex align-items-center gap-2 py-2">
+          <span class="wizard-card-icon"><i class="ti ti-git-merge"></i></span>
           <span class="fw-semibold"><%= join_rel.humanize %></span>
-          <span class="badge bg-secondary-subtle text-secondary ms-1"><%= grouped ? "many per row" : "one per row" %></span>
-        </div>
-        <%# H13 — the popup names the columns that go with it; Undo brings them back %>
-        <% join_labels = @report.grid_view_preferences.reorder(:sequence, :id).select { |g| g.key.start_with?("#{join_rel}.") }.map { |g| g.label.presence || g.name } %>
-        <%= button_to remove_report_builder_join_path(@report), method: :delete, params: { relation: join_rel },
-              class: "btn btn-sm btn-outline-danger", title: "Remove #{join_rel.humanize}", "aria-label": "Remove #{join_rel.humanize}",
-              form: { data: { turbo_frame: "report_builder_settings" } },
-              data: { msg: remove_join_summary(join_rel, join_labels), method: "delete", action: "click->confirm#popup" } do %>
-          <i class="ti ti-x"></i>
-        <% end %>
-      </div>
-
-      <%# "Only rows that have …" — many-per-row related data only (trust H13, H14) %>
-      <% if grouped %>
-        <div class="form-check form-switch mb-2">
-          <input class="form-check-input" type="checkbox" id="onlyWithRows_<%= join_rel %>"
-                 <%= @config.only_with_rows?(join_rel) ? 'checked' : '' %>
-                 data-relation="<%= join_rel %>" data-action="change->report-builder#toggleOnlyWithRows">
-          <label class="form-check-label small" for="onlyWithRows_<%= join_rel %>">
-            Only <%= wizard_model_label(@root_class.name).pluralize.downcase %> that have <%= join_rel.humanize.downcase %>
-          </label>
-        </div>
-
-        <% pivot_active = Array(pivot[:group_bys] || pivot[:group_by]).any?(&:present?) && pivot[:value_col].present? %>
-        <details class="pivot-section border-top pt-2" <%= 'open' if pivot_active %>>
-          <summary class="small fw-semibold">
-            <i class="ti ti-table-options me-1"></i>Pivot
-            <% if pivot_active %><span class="badge bg-success-subtle text-success ms-1">Active</span><% end %>
-          </summary>
-          <p class="text-muted small mt-2 mb-2">Turns this related data into one column per category value, filled with the chosen value.</p>
-          <%# Says how many columns the pivot will create before Apply (H16, E17) %>
-          <%= form_tag update_report_builder_pivot_path(@report), method: :patch,
-                data: { action: "change->report-builder#pivotPreview", preview_url: report_builder_pivot_preview_path(@report) } do %>
-            <input type="hidden" name="relation" value="<%= join_rel %>">
-            <div class="row g-2">
-              <div class="col-12">
-                <label class="form-label small mb-1">Categories</label>
-                <select name="group_bys[]" class="form-select form-select-sm select2" multiple aria-label="Pivot categories">
-                  <% join_cols.each do |col| %>
-                    <option value="<%= col[:key] %>" <%= Array(pivot[:group_bys] || pivot[:group_by]).include?(col[:key].to_s) ? 'selected' : '' %>><%= col[:label] %></option>
-                  <% end %>
-                </select>
-              </div>
-              <div class="col-6">
-                <label class="form-label small mb-1">Value</label>
-                <select name="value_col" class="form-select form-select-sm" required aria-label="Pivot value">
-                  <option value="">— select —</option>
-                  <% join_cols.each do |col| %>
-                    <option value="<%= col[:key] %>" <%= pivot[:value_col] == col[:key] ? 'selected' : '' %>><%= col[:label] %></option>
-                  <% end %>
-                </select>
-              </div>
-              <div class="col-6">
-                <label class="form-label small mb-1">Total</label>
-                <select name="aggregate" class="form-select form-select-sm" aria-label="Pivot total">
-                  <% ReportBuilderColumnType::AGGREGATES.each do |agg| %>
-                    <option value="<%= agg %>" <%= (pivot[:aggregate] || 'sum') == agg ? 'selected' : '' %>><%= ReportBuilderColumnType.aggregate_label(agg) %></option>
-                  <% end %>
-                </select>
-              </div>
-              <div class="col-12 small" data-pivot-preview aria-live="polite"></div>
-              <div class="col-12 d-flex gap-2">
-                <button type="submit" class="btn btn-sm btn-outline-primary">Apply</button>
-                <% if pivot_active %>
-                  <%= button_to update_report_builder_pivot_path(@report), method: :patch, params: { relation: join_rel, clear: "1" },
-                        class: "btn btn-sm btn-outline-secondary", title: "Clear pivot", "aria-label": "Clear pivot" do %>
-                    <i class="ti ti-rotate"></i> Clear
-                  <% end %>
-                <% end %>
-              </div>
-            </div>
+          <span class="badge bg-secondary-subtle text-secondary fw-normal" data-bs-toggle="tooltip"
+                title="<%= grouped ? "A #{root_label} can have many, so their values are totalled into one per row (pick how in the Columns tab)" : "Each #{root_label} has exactly one, so its values show as they are" %>">
+            <%= grouped ? "many per row" : "one per row" %> <i class="ti ti-info-circle"></i></span>
+          <span class="text-muted small ms-auto"><%= pluralize(join_labels.size, "column") %> <%= join_labels.one? ? "uses" : "use" %> it</span>
+          <%= button_to remove_report_builder_join_path(@report), method: :delete, params: { relation: join_rel },
+                class: "btn btn-sm btn-outline-danger", title: "Remove #{join_rel.humanize}", "aria-label": "Remove #{join_rel.humanize}",
+                form: { data: { turbo_frame: "report_builder_settings" } },
+                data: { msg: remove_join_summary(join_rel, join_labels), method: "delete", action: "click->confirm#popup" } do %>
+            <i class="ti ti-x"></i>
           <% end %>
-        </details>
-      <% end %>
+        </div>
+
+        <div class="card-body d-flex flex-column gap-3">
+          <% if grouped %>
+            <%# "Only rows that have …" — many-per-row related data only (trust H13, H14); iOS switch as on the user form %>
+            <div class="toggle-row mb-0">
+              <div>
+                <label class="toggle-row-label" for="onlyWithRows_<%= join_rel %>">
+                  Only <%= root_plural %> that have <%= join_rel.humanize.downcase %>
+                </label>
+                <small class="form-text text-muted d-block">
+                  Off: every <%= root_label %> is listed, with 0 where there are none. On: <%= root_plural %> without any are left out.
+                </small>
+              </div>
+              <label class="ios-toggle" title="Only <%= root_plural %> that have <%= join_rel.humanize.downcase %>">
+                <input class="ios-toggle-input" type="checkbox" id="onlyWithRows_<%= join_rel %>"
+                       <%= @config.only_with_rows?(join_rel) ? 'checked' : '' %>
+                       data-relation="<%= join_rel %>" data-action="change->report-builder#toggleOnlyWithRows">
+                <span class="ios-toggle-slider"></span>
+              </label>
+            </div>
+
+            <% pivot_active = Array(pivot[:group_bys] || pivot[:group_by]).any?(&:present?) && pivot[:value_col].present? %>
+            <div class="pivot-section border rounded p-3">
+              <div class="d-flex align-items-center gap-2 mb-1">
+                <i class="ti ti-table-options text-primary"></i><span class="fw-semibold">Pivot</span>
+                <% if pivot_active %>
+                  <span class="badge bg-success-subtle text-success">On</span>
+                <% else %>
+                  <span class="badge bg-secondary-subtle text-secondary">Off</span>
+                <% end %>
+                <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip"
+                   title="Instead of one total, makes one column per category value — e.g. one column per payment type"></i>
+              </div>
+              <p class="text-muted small mb-2">
+                Spread the <%= join_rel.humanize.downcase %> into one column per category, each filled with the value you pick.
+              </p>
+              <%# Says how many columns the pivot will create before Apply (H16, E17) %>
+              <%= form_tag update_report_builder_pivot_path(@report), method: :patch,
+                    data: { action: "change->report-builder#pivotPreview", preview_url: report_builder_pivot_preview_path(@report) } do %>
+                <input type="hidden" name="relation" value="<%= join_rel %>">
+                <div class="row g-2">
+                  <div class="col-md-5">
+                    <label class="form-label small mb-1">Categories
+                      <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip" title="Each different value becomes a column"></i></label>
+                    <select name="group_bys[]" class="form-select form-select-sm select2" multiple aria-label="Pivot categories">
+                      <% join_cols.each do |col| %>
+                        <option value="<%= col[:key] %>" <%= Array(pivot[:group_bys] || pivot[:group_by]).include?(col[:key].to_s) ? 'selected' : '' %>><%= col[:label] %></option>
+                      <% end %>
+                    </select>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label small mb-1">Value
+                      <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip" title="The amount that fills each column"></i></label>
+                    <select name="value_col" class="form-select form-select-sm" required aria-label="Pivot value">
+                      <option value="">— select —</option>
+                      <% join_cols.each do |col| %>
+                        <option value="<%= col[:key] %>" <%= pivot[:value_col] == col[:key] ? 'selected' : '' %>><%= col[:label] %></option>
+                      <% end %>
+                    </select>
+                  </div>
+                  <div class="col-md-3">
+                    <label class="form-label small mb-1">Total
+                      <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip" title="How the values in each column are combined"></i></label>
+                    <select name="aggregate" class="form-select form-select-sm" aria-label="Pivot total">
+                      <% ReportBuilderColumnType::AGGREGATES.each do |agg| %>
+                        <option value="<%= agg %>" <%= (pivot[:aggregate] || 'sum') == agg ? 'selected' : '' %>><%= ReportBuilderColumnType.aggregate_label(agg) %></option>
+                      <% end %>
+                    </select>
+                  </div>
+                  <div class="col-12 small" data-pivot-preview aria-live="polite"></div>
+                  <div class="col-12 d-flex gap-2">
+                    <button type="submit" class="btn btn-sm btn-outline-primary">Apply</button>
+                    <% if pivot_active %>
+                      <%= button_to update_report_builder_pivot_path(@report), method: :patch, params: { relation: join_rel, clear: "1" },
+                            class: "btn btn-sm btn-outline-secondary", title: "Clear pivot", "aria-label": "Clear pivot" do %>
+                        <i class="ti ti-rotate"></i> Clear
+                      <% end %>
+                    <% end %>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+          <% else %>
+            <p class="text-muted small mb-0">Nothing to set — one <%= join_rel.humanize.singularize.downcase %> per <%= root_label %>. Pick its columns in the Columns tab.</p>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <%# Adding another related data %>
+  <% available_joins = @associations.reject { |a| @config.joins.any? { |j| j[:relation].to_s == a[:name] } } %>
+  <% if available_joins.any? %>
+    <div class="col-lg-6">
+      <div class="card border shadow-none mb-0">
+        <div class="card-header bg-primary-subtle d-flex align-items-center gap-2 py-2">
+          <span class="wizard-card-icon"><i class="ti ti-plus"></i></span>
+          <span class="fw-semibold">Add related data</span>
+        </div>
+        <div class="card-body">
+          <% if @config.joins.empty? %>
+            <p class="text-muted small">No related data yet. Add one to bring in, for example, each <%= root_label %>'s payments or its fund.</p>
+          <% end %>
+          <%= form_tag add_report_builder_join_path(@report), method: :post do %>
+            <label class="visually-hidden" for="rb_add_relation">Add related data</label>
+            <div class="input-group input-group-sm">
+              <select name="relation_json" id="rb_add_relation" class="form-select"
+                      data-action="change->report-builder#joinSelectChanged">
+                <option value="">Choose…</option>
+                <% available_joins.each do |assoc| %>
+                  <option value="<%= assoc.to_json %>"><%= assoc[:label] %> (<%= assoc[:macro] == "has_many" ? "many per row" : "one per row" %>)<%= assoc[:has_children] ? " ›" : "" %></option>
+                <% end %>
+              </select>
+              <input type="hidden" name="relation">
+              <input type="hidden" name="model">
+              <input type="hidden" name="fk">
+              <button type="submit" class="btn btn-primary">Add</button>
+            </div>
+            <div class="form-text">After adding, its columns appear under "From …" in the Columns tab.</div>
+          <% end %>
+        </div>
+      </div>
     </div>
   <% end %>
 </div>
-
-<% available_joins = @associations.reject { |a| @config.joins.any? { |j| j[:relation].to_s == a[:name] } } %>
-<% if available_joins.any? %>
-  <%= form_tag add_report_builder_join_path(@report), method: :post, class: "mt-3" do %>
-    <label class="form-label small mb-1" for="rb_add_relation">Add related data</label>
-    <div class="input-group input-group-sm">
-      <select name="relation_json" id="rb_add_relation" class="form-select"
-              data-action="change->report-builder#joinSelectChanged">
-        <option value="">Choose…</option>
-        <% available_joins.each do |assoc| %>
-          <option value="<%= assoc.to_json %>"><%= assoc[:label] %> (<%= assoc[:macro] == "has_many" ? "many per row" : "one per row" %>)<%= assoc[:has_children] ? " ›" : "" %></option>
-        <% end %>
-      </select>
-      <input type="hidden" name="relation">
-      <input type="hidden" name="model">
-      <input type="hidden" name="fk">
-      <button type="submit" class="btn btn-outline-primary">Add</button>
-    </div>
-  <% end %>
-<% end %>

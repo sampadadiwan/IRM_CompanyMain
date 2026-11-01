@@ -27,7 +27,7 @@ module DocumentHelper
     return nil if document.blank? || document.file.blank?
 
     if document.orignal && policy(document).not_generated_or_approved
-      document.file.url(response_content_disposition: "inline; filename=#{document.name_with_extension}")
+      document.file.url(response_content_disposition: document.inline_disposition)
     else
       document_path(document)
     end
