@@ -72,3 +72,52 @@ Then('the {string} hidden field should contain {string}') do |field_name, conten
     expect(val).to include(content)
   end
 end
+
+# --- fix-portfolio-dashboard-widgets: labels, helper text, retired settings, whole-number IDs ---
+
+Given('a dashboard widget {string} exists for {string} with metadata {string}') do |widget_name, dashboard_name, metadata|
+  @widget = DashboardWidget.create!(widget_name:, dashboard_name:, entity: @entity, tags: "test", size: "Medium", metadata:)
+end
+
+def metadata_field_group(key)
+  find_field("metadata_#{key}", visible: :all).find(:xpath, "./ancestor::div[contains(@class,'form-group')][1]")
+end
+
+Then('the field {string} should have the label {string}') do |key, label|
+  expect(metadata_field_group(key).find("label").text.strip).to eq(label)
+end
+
+Then('the field {string} should have helper text containing {string}') do |key, text|
+  expect(metadata_field_group(key)).to have_css(".form-text", text:)
+end
+
+Then('there should be no field for {string}') do |key|
+  expect(page).to have_no_field("metadata_#{key}")
+end
+
+When('I type {string} into the field {string}') do |text, key|
+  find_field("metadata_#{key}").send_keys(text)
+end
+
+When('I paste {string} into the field {string}') do |text, key|
+  field = find_field("metadata_#{key}")
+  page.execute_script(<<~JS, field, text)
+    const [el, text] = arguments
+    const data = new DataTransfer()
+    data.setData("text", text)
+    el.dispatchEvent(new ClipboardEvent("paste", { clipboardData: data, bubbles: true, cancelable: true }))
+  JS
+end
+
+Then('the field {string} should contain {string}') do |key, value|
+  expect(find_field("metadata_#{key}").value).to eq(value)
+end
+
+When('I save the widget') do
+  click_on("Save")
+  expect(page).to have_content("successfully updated")
+end
+
+Then('the saved metadata of the {string} widget should contain {string}') do |name, text|
+  expect(DashboardWidget.find_by(widget_name: name).reload.metadata.to_s).to include(text)
+end

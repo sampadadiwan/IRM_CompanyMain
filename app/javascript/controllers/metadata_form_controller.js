@@ -37,7 +37,7 @@ export default class extends Controller {
         value = field.value === "true" ? true : (field.value === "false" ? false : field.value)
       } else if (field.type === "number") {
         if (field.value === "") return // Skip empty
-        value = parseFloat(field.value)
+        value = field.dataset.metadataInteger ? parseInt(field.value, 10) : parseFloat(field.value)
       } else if (field.dataset.metadataType === "array") {
         if (field.value === "") return // Skip empty
         value = field.value.split(",").map(s => s.trim()).filter(s => s !== "")
@@ -50,6 +50,19 @@ export default class extends Controller {
 
     const rubyHash = this.toRubyHash(metadata)
     this.metadataInputTarget.value = rubyHash === "{}" ? "" : rubyHash
+  }
+
+  // Whole-number settings (IDs): refuse the characters a number input still lets through (e + - . ,) and keep only
+  // digits when text is pasted. E9, E10, E11
+  guardInteger(event) {
+    const field = event.target
+    if (event.type === "keydown") {
+      if (["e", "E", "+", "-", ".", ","].includes(event.key)) event.preventDefault()
+    } else if (event.type === "paste") {
+      event.preventDefault()
+      field.value = (event.clipboardData || window.clipboardData).getData("text").replace(/\D/g, "")
+      field.dispatchEvent(new Event("input", { bubbles: true }))
+    }
   }
 
   // Very basic JSON to Ruby Hash converter

@@ -15,9 +15,16 @@
     # LP Company Dashboard: the chosen LP layout, LP widget versions, no Reports menu or layout selector (E54a)
     lp_context ||= nil
     lp = lp_context.present?
+
+    # One lookup serves the page and the menu (H1, H17, H18, E1, E2): the menu is the page's widgets that have Show Menu.
+    page_widgets = dashboard_widgets(dashboard_name, entity_id, name:, owner:, lp:)
+    menu_widgets = dashboard_menu_widgets(page_widgets).to_a
+    # H18, E4 — with no Show Menu widget there is no menu row (so no Reports drop-down or layout selector either);
+    # the logo/title heading still shows when a logo is set
+    show_menu_row = menu_widgets.any?
 %>
 
-<% unless !show_nav || dashboard_name == "Portfolio Dashboard" %>
+<% unless !show_nav || dashboard_name == "Portfolio Dashboard" || !(logo.present? || show_menu_row) %>
 <nav class="dashboard-nav sticky-top <%= theme %> shadow-sm d-none d-md-block" style="top:70px; z-index: 1000;">
 
     <!-- Header row: logo + name on left, label/value on right -->
@@ -47,13 +54,10 @@
     <% end %>
 
     <!-- Nav pills row -->
+    <% if show_menu_row %>
     <ul class="nav nav-pills flex-nowrap align-items-center <%= theme %> mb-4" data-controller="nav-overflow" data-nav-overflow-target="nav">
         <!-- Add a link to the dashboard widgets -->
-        <%
-            all_widgets = dashboard_widgets(dashboard_name, entity_id, name:, owner:, show_menu: true, lp:).to_a
-        %>
-
-        <% all_widgets.each_with_index do |(name, dashboard_widget), index| %>
+        <% menu_widgets.each_with_index do |(name, dashboard_widget), index| %>
             <li class="nav-item" data-nav-overflow-target="item">
                 <% label = dashboard_widget.tags.presence || dashboard_widget.widget_name %>
                 <a class="nav-link py-2 text-center" href="#<%= "#{dashboard_widget.widget_name.parameterize.underscore}_#{dashboard_widget.position}" %>" data-turbo=false title="<%= label %>">
@@ -67,7 +71,7 @@
                 More
             </a>
             <ul class="dropdown-menu shadow" aria-labelledby="moreWidgetsDropdown" data-nav-overflow-target="moreDropdown">
-                <% all_widgets.each_with_index do |(name, dashboard_widget), index| %>
+                <% menu_widgets.each_with_index do |(name, dashboard_widget), index| %>
                     <li data-index="<%= index %>">
                         <a class="dropdown-item" href="#<%= "#{dashboard_widget.widget_name.parameterize.underscore}_#{dashboard_widget.position}" %>" data-turbo=false>
                             <% label = dashboard_widget.tags.presence || dashboard_widget.widget_name %>
@@ -112,12 +116,13 @@
               frame_id: "#{dashboard_name.parameterize(separator: '_')}_frame" %>
         <% end %>
     </ul>
+    <% end %>
 </nav>
 <% end %>
 
 <div class="row mt-4">
 
-    <% dashboard_widgets(dashboard_name, entity_id, name:, owner:, lp:).each do |name, dashboard_widget| %>
+    <% page_widgets.each do |name, dashboard_widget| %>
         <div id="<%= "#{dashboard_widget.widget_name.parameterize.underscore}_#{dashboard_widget.position}" %>" class="dashboard-widget-container <%= dashboard_widget.widget_size %>">
             <%= render (lp ? lp_widget_partial(dashboard_widget) : dashboard_widget.path), widget: dashboard_widget, name: dashboard_widget.widget_name, dashboard_widget:, widget_size: dashboard_widget.widget_size, args: dashboard_widget.metadata_args, uri_params:, owner:, entity_id:, lp_context:  %>
         </div>

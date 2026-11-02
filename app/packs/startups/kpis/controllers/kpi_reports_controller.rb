@@ -477,8 +477,18 @@ class KpiReportsController < ApplicationController
   end
 
   def show_performance
-    @as_of = params[:as_of].present? ? Date.local_parse(params[:as_of]) : (Time.zone.today.end_of_month - 1.month)
-    @kpi_report = KpiReport.find_by(portfolio_company_id: params[:portfolio_company_id], as_of: @as_of)
+    # H10, E12, E14, E18, E19 — the dropdown lists the months the viewer may see a report for, newest first, and the
+    # table opens on the latest one; with no report at all it falls back to last month's end
+    @report_months = performance_report_months
+    @as_of = if params[:as_of].present?
+               Date.local_parse(params[:as_of])
+             else
+               @report_months.first || (Time.zone.today.end_of_month - 1.month)
+             end
+    # Two reports can share a date (Actual and Budget): show the one the viewer may see; if they may see none, the first
+    # one is still authorized below so a direct request is refused (X2)
+    same_date_reports = KpiReport.where(portfolio_company_id: params[:portfolio_company_id], as_of: @as_of).to_a
+    @kpi_report = same_date_reports.find { |report| policy(report).show_performance? } || same_date_reports.first
     @portfolio_company = Investor.find(params[:portfolio_company_id]) if params[:portfolio_company_id].present?
 
     if @kpi_report.present?
@@ -506,6 +516,15 @@ class KpiReportsController < ApplicationController
   end
 
   private
+
+  # Distinct report dates of the company that the viewer's policy lets them open, newest first. Full records are loaded
+  # because KpiReportPolicy reads each report's owner and access rights (see lld.md Queries and Indexes).
+  def performance_report_months
+    return [] if params[:portfolio_company_id].blank?
+
+    KpiReport.where(portfolio_company_id: params[:portfolio_company_id]).where.not(as_of: nil).order(as_of: :desc).to_a
+             .select { |report| policy(report).show_performance? }.map(&:as_of).uniq
+  end
 
   # True when the acting user is NOT an employee of the fund that owns the report — i.e. a portco
   # self-reporting via magic link or a logged-in portco user. Drives param scoping and the submit gate.

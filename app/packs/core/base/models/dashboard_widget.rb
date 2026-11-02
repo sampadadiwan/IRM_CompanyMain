@@ -52,6 +52,36 @@ class DashboardWidget < ApplicationRecord
     @definitions_map ||= all_widgets.index_by { |w| [w.dashboard_name, w.widget_name] }
   end
 
+  # Label, one-line help, whole-number flag and pick-list source for the settings on the Widget Configuration form,
+  # keyed by widget name then setting key. Settings without an entry render as before (humanized key).
+  # H3, H4, H5, H8, H14 — openspec/changes/fix-portfolio-dashboard-widgets/design.md#worked-examples
+  METADATA_FIELD_HINTS = {
+    "Kpis" => {
+      "compound" => { label: "Data-only view",
+                      hint: "ON groups KPIs by category and shows data only (chart selection is off). " \
+                            "OFF shows the full table with a plot checkbox per KPI." },
+      "show_action_buttons" => { label: "Show action buttons",
+                                 hint: "ON shows the heading and the filter, chart and settings buttons above the table. OFF by default." }
+    },
+    "Kpis Budget vs Actual" => {
+      "category" => { label: "Default category", hint: "Category pre-selected in the filter above the table." }
+    },
+    "Documents" => {
+      "owner_id" => { label: "Owner ID", integer: true,
+                      hint: "Whole number: the ID of the Investor or Valuation whose documents to show. Leave empty for this company." },
+      "folder_id" => { label: "Folder ID", integer: true,
+                       hint: "Whole number: the ID of any folder you may see. Leave empty for the company's own folder." }
+    },
+    "Portfolio Investments" => {
+      "group_by_column" => { label: "Group by column", choices: :portfolio_investment_columns,
+                             hint: "Rows are grouped by this column. Choosing one uses the AG grid, whatever the Ag setting." }
+    }
+  }.freeze
+
+  def self.field_hint(widget_name, key)
+    METADATA_FIELD_HINTS.dig(widget_name.to_s, key.to_s)
+  end
+
   FM_LANDING_PAGE = "FM Landing Page".freeze
   LP_LANDING_PAGE = "LP Landing Page".freeze
   OPS_LANDING_PAGE = "Ops Landing Page".freeze
@@ -113,7 +143,7 @@ class DashboardWidget < ApplicationRecord
 
   INVESTOR_WIDGETS = [
 
-    DashboardWidget.new(dashboard_name: INVESTOR_DASHBOARD, widget_name: "Documents", path: "investors/widgets/documents", size: "XL", metadata_help: "{owner_type: 'Investor'/'Valuation', owner_id: 123, folder_id: 123, include_sub_folders: false, card_view: true, per_page: 6, per_row: 3, show_owner: false, show_tags: false, show_action_buttons: true, entity_id: 123}"),
+    DashboardWidget.new(dashboard_name: INVESTOR_DASHBOARD, widget_name: "Documents", path: "investors/widgets/documents", size: "XL", metadata_help: "{owner_type: 'Investor'/'Valuation', owner_id: 123, folder_id: 123, include_sub_folders: false, card_view: true, per_page: 6, per_row: 3, show_owner: false, show_tags: false, show_action_buttons: true}"),
     DashboardWidget.new(dashboard_name: INVESTOR_DASHBOARD, widget_name: "My Tasks", path: "dashboard_widgets/widgets/my_tasks", size: "Medium"),
     DashboardWidget.new(dashboard_name: INVESTOR_DASHBOARD, widget_name: "Upcoming Events", path: "dashboard_widgets/widgets/events", size: "Medium"),
     DashboardWidget.new(dashboard_name: INVESTOR_DASHBOARD, widget_name: "Notes", path: "dashboard_widgets/widgets/notes", size: "Medium"),
@@ -130,13 +160,13 @@ class DashboardWidget < ApplicationRecord
     DashboardWidget.new(dashboard_name: PORTFOLIO_COMPANY_DASHBOARD, widget_name: "Valuations", path: "investors/widgets/valuations", size: "XL"),
     DashboardWidget.new(dashboard_name: PORTFOLIO_COMPANY_DASHBOARD, widget_name: "Fund Ratios", path: "investors/widgets/fund_ratios", size: "XL", metadata_help: "{title: 'Title', scenario: 'Default', scenarios: 'Actual,Budget', condensed: true, chart: false, chart_type: 'line or bar or area', list: true, months: 12, latest: false, end_date: '31-12-2025', ratio_names: ['XIRR', 'TVPI', 'DPI'], show_y_axis: true, show_legend: true, decimals: 2, hide_fund_name: false }"),
 
-    DashboardWidget.new(dashboard_name: PORTFOLIO_COMPANY_DASHBOARD, widget_name: "Kpis", path: "investors/widgets/kpis_grid_view", size: "XL", metadata_help: "{title_suffix: 'Title Suffix', chart: false, tag_list: 'Actual,Budget', show_tags: false, compound: false, period: 'Quarter', no_of_periods: 12, no_actions: false, categories: 'Balance Sheet, Income Statement', force_units: 'Lakhs/Crores/Millions', decimals: 2, show_chart: true, show_table: true, budget_view: true, flexible_chart: true, category: 'General'}"),
-    DashboardWidget.new(dashboard_name: PORTFOLIO_COMPANY_DASHBOARD, widget_name: "Kpis Performance Table", path: "investors/widgets/performance_table", size: "XL", metadata_help: "{chart: false}"),
-    DashboardWidget.new(dashboard_name: PORTFOLIO_COMPANY_DASHBOARD, widget_name: "Kpis Budget vs Actual", path: "investors/widgets/kpis_budget_vs_actual", size: "XL", metadata_help: "{categories: 'Income Statement', category: 'Income Statement', tag_list: 'Actual,Budget', units: 'Lakhs', num_periods: 2, period: 'Year', title: 'Budget vs Actual', decimals: 1}"),
+    DashboardWidget.new(dashboard_name: PORTFOLIO_COMPANY_DASHBOARD, widget_name: "Kpis", path: "investors/widgets/kpis_grid_view", size: "XL", metadata_help: "{title_suffix: 'Title Suffix', chart: false, tag_list: 'Actual,Budget', show_tags: false, compound: false, period: 'Quarter', no_of_periods: 12, show_action_buttons: false, categories: 'Balance Sheet, Income Statement', force_units: 'Lakhs/Crores/Millions', decimals: 2, flexible_chart: true, category: 'General'}"),
+    DashboardWidget.new(dashboard_name: PORTFOLIO_COMPANY_DASHBOARD, widget_name: "Kpis Performance Table", path: "investors/widgets/performance_table", size: "XL"),
+    DashboardWidget.new(dashboard_name: PORTFOLIO_COMPANY_DASHBOARD, widget_name: "Kpis Budget vs Actual", path: "investors/widgets/kpis_budget_vs_actual", size: "XL", metadata_help: "{category: 'Income Statement', tag_list: 'Actual,Budget', units: 'Lakhs', num_periods: 2, period: 'Year', title: 'Budget vs Actual', decimals: 1}"),
     DashboardWidget.new(dashboard_name: PORTFOLIO_COMPANY_DASHBOARD, widget_name: "Data Card", path: "investors/widgets/data_card", size: "XL", metadata_help: '{cols: 1, fields: "Category:category,City:city,Sector:custom_fields.sector,Founder:custom_fields.founder", field_names: "Bought, Sold,...", title: "Summary"}'),
 
     DashboardWidget.new(dashboard_name: PORTFOLIO_COMPANY_DASHBOARD, widget_name: "Portfolio Investments", path: "aggregate_portfolio_investments/widgets/portfolio_investments", size: "XL", metadata_help: "{ag: true, group_by_column: 'investment_instrument_name', show_fund_name: true}"),
-    DashboardWidget.new(dashboard_name: PORTFOLIO_COMPANY_DASHBOARD, widget_name: "Documents", path: "investors/widgets/documents", size: "XL", metadata_help: "{folder_name: 'My Documents', owner_type: 'Investor'/'Valuation', owner_id: 123, folder_id: 123, include_sub_folders: false, card_view: true, per_page: 6, per_row: 3, show_owner: false, show_tags: false, show_action_buttons: true, entity_id: 123, documents_as_tags: false}"),
+    DashboardWidget.new(dashboard_name: PORTFOLIO_COMPANY_DASHBOARD, widget_name: "Documents", path: "investors/widgets/documents", size: "XL", metadata_help: "{folder_name: 'My Documents', owner_type: 'Investor'/'Valuation', owner_id: 123, folder_id: 123, include_sub_folders: false, card_view: true, per_page: 6, per_row: 3, show_owner: false, show_tags: false, show_action_buttons: true, documents_as_tags: false}"),
     DashboardWidget.new(dashboard_name: PORTFOLIO_COMPANY_DASHBOARD, widget_name: "My Tasks", path: "dashboard_widgets/widgets/my_tasks", size: "Medium"),
     DashboardWidget.new(dashboard_name: PORTFOLIO_COMPANY_DASHBOARD, widget_name: "Upcoming Events", path: "dashboard_widgets/widgets/events", size: "Medium"),
     DashboardWidget.new(dashboard_name: PORTFOLIO_COMPANY_DASHBOARD, widget_name: "Notes", path: "dashboard_widgets/widgets/notes", size: "XL", metadata_help: "{title: 'Imp Notes'}"),
@@ -144,7 +174,7 @@ class DashboardWidget < ApplicationRecord
     DashboardWidget.new(dashboard_name: PORTFOLIO_COMPANY_DASHBOARD, widget_name: "Captable", path: "investments/widgets/captable", size: "XL", metadata_help: "{show_charts: true, diluted_chart: 'pie/donut/half_donut', show_investments: false, show_captable: true, self_by_funding_round: true, amount_by_funding_round: true, diluted_share_holdings: true, amount_by_investor: true, each_funding_round: false, show_quantity_actual: false, show_quantity_diluted: false, ag: true, investment_type: 'Equity', investor_name: 'Name', category: 'Common', funding_round: 'Series A'}"),
     DashboardWidget.new(dashboard_name: PORTFOLIO_COMPANY_DASHBOARD, widget_name: "Portfolio Company Report", path: "funds/widgets/fund_report", size: "XL", metadata_help: "{report_id: 1, title: 'Valuations', show_table: true, show_chart: true, chart_type: 'DonutChart,LineChart,ColumnChart,SplineChart,AreaChart,PieChart,HalfDonutChart', show_prefix: false, show_name: true, show_inputs: false, show_tags: true, show_instrument: false, other_report_args: '...' }"),
     DashboardWidget.new(dashboard_name: PORTFOLIO_COMPANY_DASHBOARD, widget_name: "Portfolio Report", path: "investors/widgets/portfolio_report", size: "XL", metadata_help: "{tabs: 'Tab1, Tab2', portfolio_report_id: 123, title: 'Optional Title'}"),
-    DashboardWidget.new(dashboard_name: PORTFOLIO_COMPANY_DASHBOARD, widget_name: "Key Kpis", path: "investors/widgets/kpi_key_numbers", size: "XL", metadata_help: "{kpis: 'csv of kpi names to show'}"),
+    DashboardWidget.new(dashboard_name: PORTFOLIO_COMPANY_DASHBOARD, widget_name: "Key Kpis", path: "investors/widgets/kpi_key_numbers", size: "XL"),
 
     DashboardWidget.new(dashboard_name: PORTFOLIO_COMPANY_DASHBOARD, widget_name: "Portfolio Stats", path: "aggregate_portfolio_investments/widgets/stats", size: "XL", metadata_help: "{fields: 'Bought Amount,Sold Amount,...', field_names: 'Bought, Sold,...', force_units: 'Lakhs/Crores/Millions', tracking_currency: true, decimals: 2, currency: 'USD', per_row: 4, show_currency_filter: true}"),
     DashboardWidget.new(dashboard_name: PORTFOLIO_COMPANY_DASHBOARD, widget_name: "Embed Document", path: "investors/widgets/embedded_doc", size: "XL", metadata_help: "{name: 'Document Name', xlsx_as_grid: true, title: 'Optional Title'}"),

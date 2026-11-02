@@ -27,7 +27,7 @@ This guide is a reference for configuring dashboards and their widgets.
 
 Each dashboard is simply a collection of widgets you arrange on a grid. Every dashboard type (Fund, Investor, Portfolio Company, and so on) can have several **named configurations** — distinct sets of widgets you switch between, such as an operational view, a compliance view, and a presentation view. The configuration called **Default** is shown when no other is chosen.
 
-Widgets are configured on Company menu (house icon, top right) → **Dashboard Widgets**. Until you configure any, each dashboard shows its full built-in widget set (landing pages show the first four built-ins). Once at least one enabled widget exists for a dashboard type and name, that dashboard shows **only** your configured widgets.
+Widgets are configured on Company menu (house icon, top right) → **Dashboard Widgets**. Until you configure any, each dashboard shows its full built-in widget set (landing pages show the first four built-ins). Once at least one enabled widget exists for a dashboard type and name, that dashboard shows **only** your configured widgets. The quick-jump menu at the top lists the enabled widgets that have **Show Menu** ticked; if none has it ticked, the menu row is not shown (the Reports drop-down and layout selector go with it).
 
 ```mermaid
 flowchart LR
@@ -108,7 +108,8 @@ Most widgets accept **options** that customise their behaviour. On the widget fo
 
 | Option | Type | Description |
 |--------|------|-------------|
-| `folder_id` | Number | Limit to a specific folder. |
+| `owner_id` | Number | ID of the Investor or Valuation whose documents to show; leave empty for this company. |
+| `folder_id` | Number | ID of any folder you may see; leave empty for the company's own folder. A folder you may not see (another company's, or one not shared with an investor viewing the page) shows "No documents to show." and its name is not revealed. Company admins pick the folder in the widget's folder tree; investors and other employees see the documents in the folder (and its sub-folders) that they may see straight away. |
 | `card_view` | Yes/No | List vs card view. |
 | `per_page` | Number | Documents per page. |
 | `per_row` | Number | Cards per row. |
@@ -127,6 +128,12 @@ Most widgets accept **options** that customise their behaviour. On the widget fo
 | `no_of_periods` | Number | Periods to display (default 12). |
 | `tag_list` | Text | Filter by tags (e.g. 'Actual, Budget'). |
 | `flexible_chart` | Yes/No | Enable interactive charting. |
+| `compound` | Yes/No | Shown as **Data-only view**: ON groups KPIs by category and shows data only (chart selection is off); OFF shows the full table with a plot checkbox per KPI. |
+| `show_action_buttons` | Yes/No | ON shows the heading and the filter, chart and settings buttons above the table. OFF by default. |
+
+For the Actual vs Budget table add a **Kpis Budget vs Actual** widget (its `category` setting is shown as **Default category**, the category pre-selected in the filter; the filter lists all the company's KPI categories). The **Kpis Performance Table** month dropdown lists every month that has a report you may see, newest first, and opens on the latest.
+
+**Portfolio Investments** — the company's holdings. **Group by column** is a pick-list of the grid's columns (including Fund Name); choosing one groups the rows and uses the grid whether or not `ag` is set.
 
 **Captable** — capitalisation table with ownership breakdowns.
 
@@ -362,7 +369,7 @@ Yes. The page address includes `name=` when you pick one from the selector; copy
 Names sort alphabetically by default; set a preferred sequence on the user to override. Names not in the sequence are listed after it, alphabetically.
 
 **A widget appears in the list but not on the quick-jump menu at the top of the dashboard.**
-The menu only lists widgets with **Show Menu** ticked. Edit the widget and tick **Show Menu**; the widget itself renders either way.
+The menu only lists widgets with **Show Menu** ticked. Edit the widget and tick **Show Menu**; the widget itself renders either way. If no widget has it ticked there is no menu row at all, including the Reports drop-down and layout selector.
 
 **Why doesn't my widget show a heading?**
 Tick **Show Title** (shows the widget type) and/or **Show Tags** (shows the Tags label) on the widget. Both are off by default.

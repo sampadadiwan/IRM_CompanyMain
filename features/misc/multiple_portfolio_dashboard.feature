@@ -90,5 +90,12 @@ Feature: Cross Portfolio Dashboard
     Then the fund ratios for funds with tables and chart are shown
     Then the fund ratios fetched for funds "Alpha Fund,Beta Fund" should be correct and latest
 
-
-
+  # E5 — Edge case: enabled widgets but none with Show Menu, so no menu row and the default widgets are not added
+  # (openspec/changes/fix-portfolio-dashboard-widgets/design.md#worked-examples)
+  Scenario: Cross portfolio dashboard with no Show Menu widget has no menu row
+    Given the cross portfolio dashboard has the widget "Stats" with Show Menu off
+    And there is an existing portfolio company "name=MyFavStartup;category=Portfolio Company"
+    And portfolio company is added to list of companies
+    When I navigate to the cross portfolio dashboard
+    Then the cross portfolio dashboard should show only the widget "Stats"
+    And no menu row should be shown
