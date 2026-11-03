@@ -1,0 +1,1012 @@
+<title>CapHive Data Model</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+/* Layout: a sticky top bar with seven views; each view is a wide reading column, the schema view a three-pane explorer. */
+:root{
+  --bg:#FBFAF7; --surface:#FFFFFF; --sunk:#F3F0E9; --line:#E8E5DE; --fg:#101010; --mut:#6F6A62; --accent:#FF4D00; --accent-ink:#C53B00;
+  --ok:#0E8A5F; --warn:#B7791F; --bad:#C8322B;
+  --d-funds:#2F62C9; --d-accounting:#6D3FD1; --d-evergreen:#0E8A5F; --d-investors:#0B7F9C; --d-portfolio:#A16A00;
+  --d-deals:#C42A6E; --d-documents:#4B5563; --d-extend:#E04400; --d-workflow:#4D7C0F; --d-ai:#4F46E5; --d-platform:#78716C;
+  --display:"Instrument Serif", "Iowan Old Style", Georgia, serif;
+  --sans:"Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono:"Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121110; --surface:#1A1917; --sunk:#201F1C; --line:#2F2D29; --fg:#F2F0EB; --mut:#A39E94; --accent:#FF6A2B; --accent-ink:#FF8A57;
+  --ok:#3CC48F; --warn:#E3A93F; --bad:#F06A60;
+  --d-funds:#7FA6F5; --d-accounting:#AE8CF7; --d-evergreen:#4FD1A0; --d-investors:#52C3DE; --d-portfolio:#E6B54A;
+  --d-deals:#F07AAE; --d-documents:#A8B0BD; --d-extend:#FF7A3D; --d-workflow:#9BCB4B; --d-ai:#9C97FF; --d-platform:#B5AEA6; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121110; --surface:#1A1917; --sunk:#201F1C; --line:#2F2D29; --fg:#F2F0EB; --mut:#A39E94; --accent:#FF6A2B; --accent-ink:#FF8A57;
+  --ok:#3CC48F; --warn:#E3A93F; --bad:#F06A60;
+  --d-funds:#7FA6F5; --d-accounting:#AE8CF7; --d-evergreen:#4FD1A0; --d-investors:#52C3DE; --d-portfolio:#E6B54A;
+  --d-deals:#F07AAE; --d-documents:#A8B0BD; --d-extend:#FF7A3D; --d-workflow:#9BCB4B; --d-ai:#9C97FF; --d-platform:#B5AEA6; color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}
+body{background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+a{color:inherit}
+code,.mono{font-family:var(--mono);font-size:.86em}
+h1,h2,h3{text-wrap:balance;margin:0}
+p{margin:0}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+
+/* top bar */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;gap:20px;padding-block:10px}
+.brand{display:flex;align-items:baseline;gap:8px;white-space:nowrap;text-decoration:none}
+.brand b{font-weight:700;letter-spacing:-.02em;font-size:17px}
+.brand span{font-family:var(--display);font-style:italic;font-size:19px;color:var(--mut)}
+.nav{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;flex:1;min-width:0}
+.nav::-webkit-scrollbar{display:none}
+.nav a{padding:7px 11px;border-radius:7px;text-decoration:none;color:var(--mut);font-weight:500;font-size:14px;white-space:nowrap}
+.nav a:hover{color:var(--fg);background:var(--sunk)}
+.nav a[aria-current="page"]{color:var(--fg);background:var(--sunk);box-shadow:inset 0 -2px 0 var(--accent)}
+
+main{padding-block:28px 80px}
+.view{display:grid;gap:56px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+.h1{font-family:var(--display);font-weight:400;font-size:clamp(40px,6.4vw,76px);line-height:1;letter-spacing:-.01em}
+.h1 i,.h2 i{color:var(--accent)}
+.h2{font-family:var(--display);font-weight:400;font-size:clamp(30px,3.8vw,44px);line-height:1.05}
+.h3{font-size:17px;font-weight:600;letter-spacing:-.01em}
+.lede{font-size:18px;line-height:1.55;color:var(--mut);max-width:62ch}
+.lede strong{color:var(--fg);font-weight:600}
+.sec{display:grid;gap:22px}
+.sec-head{display:grid;gap:10px;max-width:760px}
+.muted{color:var(--mut)}
+.small{font-size:13px}
+
+/* hero */
+.hero{display:grid;gap:22px;padding-top:18px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.stat{padding:18px 16px 16px;border-right:1px solid var(--line);display:grid;gap:4px}
+.stat:last-child{border-right:0}
+.stat b{font-family:var(--display);font-weight:400;font-size:44px;line-height:1;font-variant-numeric:tabular-nums}
+.stat span{font-size:13px;color:var(--mut);line-height:1.35}
+
+/* cards grid */
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;display:grid;gap:10px;align-content:start;min-width:0}
+.card .k{font-family:var(--mono);font-size:12px;color:var(--accent-ink)}
+.card p{color:var(--mut);font-size:14px}
+pre.snip{margin:0;background:var(--sunk);border-radius:8px;padding:10px 12px;font-family:var(--mono);font-size:12px;line-height:1.55;overflow-x:auto;white-space:pre;color:var(--fg)}
+.snip .c{color:var(--mut)}
+.snip .s{color:var(--d-evergreen)}
+.snip .n{color:var(--d-funds)}
+
+/* chips */
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:3px 10px;font-family:var(--mono);font-size:12px;text-decoration:none;color:var(--fg);cursor:pointer;white-space:nowrap}
+.chip:hover{border-color:var(--fg)}
+.chip .dot{width:7px;height:7px;border-radius:50%;background:var(--dc,var(--mut))}
+.pill{display:inline-block;font-family:var(--mono);font-size:11px;padding:1px 7px;border-radius:5px;background:var(--sunk);color:var(--mut);white-space:nowrap}
+.pill.acc{background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent-ink)}
+.pill.ok{background:color-mix(in srgb,var(--ok) 15%,transparent);color:var(--ok)}
+
+/* diagram */
+.diagram{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow-x:auto}
+.diagram svg{display:block;min-width:900px;width:100%;height:auto}
+.dn rect{fill:var(--surface);stroke:var(--line);stroke-width:1.2;transition:stroke .15s}
+.dn text{font-family:var(--mono);font-size:12.5px;fill:var(--fg)}
+.dn text.sub{font-size:10.5px;fill:var(--mut)}
+.dn{cursor:pointer}
+.dn:hover rect,.dn.on rect{stroke:var(--accent);stroke-width:2}
+.de{fill:none;stroke:var(--line);stroke-width:1.4;transition:stroke .15s,opacity .15s}
+.de.on{stroke:var(--accent);stroke-width:2}
+.lane-t{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;fill:var(--mut)}
+.dim .de:not(.on){opacity:.25}
+.dim .dn:not(.on):not(.nb){opacity:.45}
+
+/* schema explorer */
+.ex{display:grid;grid-template-columns:230px 300px minmax(0,1fr);gap:0;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);min-height:72vh;overflow:hidden}
+.ex>div{min-width:0}
+.ex-dom{border-right:1px solid var(--line);padding:14px 10px;display:grid;gap:2px;align-content:start;background:var(--sunk)}
+.ex-dom button{display:flex;justify-content:space-between;gap:8px;align-items:center;border:0;background:none;text-align:left;padding:7px 10px;border-radius:7px;cursor:pointer;font-size:14px}
+.ex-dom button:hover{background:var(--surface)}
+.ex-dom button[aria-pressed="true"]{background:var(--surface);box-shadow:inset 3px 0 0 var(--dc,var(--accent));font-weight:600}
+.ex-dom button .n{font-family:var(--mono);font-size:12px;color:var(--mut)}
+.ex-dom .opt{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--mut);padding:12px 10px 0;border-top:1px solid var(--line);margin-top:10px}
+.ex-list{border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+.ex-list .search{padding:10px;border-bottom:1px solid var(--line)}
+input[type="search"],input[type="text"],input[type="number"],select{width:100%;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:7px;padding:8px 10px;font:inherit;font-size:14px}
+.ex-items{overflow-y:auto;max-height:68vh}
+.ex-items button{display:grid;gap:2px;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);background:none;padding:9px 12px;cursor:pointer}
+.ex-items button:hover{background:var(--sunk)}
+.ex-items button[aria-current="true"]{background:color-mix(in srgb,var(--accent) 9%,transparent)}
+.ex-items .tn{font-family:var(--mono);font-size:13px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.ex-items .tl{font-size:12px;color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ex-items .hit{font-size:11.5px;color:var(--accent-ink);font-family:var(--mono)}
+.ex-detail{padding:22px 24px;overflow-y:auto;max-height:76vh;display:flex;flex-direction:column;gap:18px}
+.ex-detail>*{flex-shrink:0}
+.ex-detail h2{font-family:var(--mono);font-size:22px;font-weight:500;letter-spacing:-.01em;word-break:break-all}
+.cols{width:100%;border-collapse:collapse;font-size:13px}
+.cols th{text-align:left;font-weight:500;color:var(--mut);font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;padding:6px 8px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--surface)}
+.cols td{padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+.cols td:first-child{font-family:var(--mono);white-space:nowrap}
+.cols td.ty{font-family:var(--mono);font-size:12px;color:var(--mut);white-space:nowrap}
+.cols tr.m td:first-child{color:var(--d-portfolio)}
+.cols tr.j td:first-child{color:var(--accent-ink)}
+.cols .lnk{color:var(--d-funds);text-decoration:underline;text-underline-offset:2px;cursor:pointer;background:none;border:0;padding:0;font:inherit}
+.tablewrap{overflow-x:auto}
+.callout{border-left:3px solid var(--accent);background:color-mix(in srgb,var(--accent) 7%,transparent);padding:12px 14px;border-radius:0 8px 8px 0;font-size:14px}
+.rels{display:grid;gap:8px}
+.rels .row{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.rels .lab{font-size:12px;color:var(--mut);min-width:86px}
+@media (max-width:980px){.ex{grid-template-columns:1fr}.ex-dom{grid-auto-flow:column;grid-auto-columns:max-content;overflow-x:auto;border-right:0;border-bottom:1px solid var(--line)}.ex-dom .opt{border-top:0;margin:0;padding:7px 10px}.ex-list{border-right:0;border-bottom:1px solid var(--line)}.ex-items{max-height:300px}.ex-detail{max-height:none}}
+
+/* two-col */
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+@media (max-width:860px){.two{grid-template-columns:1fr}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px;display:grid;gap:14px;align-content:start;min-width:0}
+.panel h3{font-size:15px;font-weight:600}
+.lbl{font-size:12px;color:var(--mut);display:grid;gap:4px}
+.form-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;align-items:end}
+.btn{border:1px solid var(--fg);background:var(--fg);color:var(--bg);border-radius:7px;padding:8px 14px;font-weight:600;cursor:pointer;font-size:14px}
+.btn.ghost{background:none;color:var(--fg);border-color:var(--line)}
+.btn:hover{opacity:.9}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;flex-wrap:wrap}
+.seg button{border:0;background:none;padding:6px 12px;cursor:pointer;font-size:13px}
+.seg button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
+.fprev{display:grid;gap:12px}
+.fprev .f{display:grid;gap:4px}
+.fprev .f label{font-size:13px;font-weight:500}
+.fprev .f .help{font-size:12px;color:var(--mut)}
+.fprev .std{opacity:.6}
+.fprev .f.custom label::after{content:"custom";margin-left:6px;font-family:var(--mono);font-size:10px;color:var(--accent-ink);background:color-mix(in srgb,var(--accent) 12%,transparent);padding:0 5px;border-radius:4px;vertical-align:1px}
+.fprev .hdr{font-weight:600;border-bottom:1px solid var(--line);padding-bottom:4px;margin-top:6px}
+.x{border:0;background:none;color:var(--mut);cursor:pointer;font-size:12px;padding:0 4px}
+.x:hover{color:var(--bad)}
+
+/* engines */
+.eng-nav{display:flex;flex-wrap:wrap;gap:6px}
+.eng-nav button{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 13px;cursor:pointer;font-size:13.5px}
+.eng-nav button[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.flow{display:grid;grid-template-columns:minmax(0,1fr) 34px minmax(0,1.5fr) 34px minmax(0,1fr);align-items:stretch;gap:0}
+.flow .col{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:grid;gap:10px;align-content:start}
+.flow .arrow{display:grid;place-items:center;color:var(--mut)}
+.flow .col.mid{border-color:color-mix(in srgb,var(--accent) 45%,var(--line))}
+.flow ol{margin:0;padding-left:20px;display:grid;gap:6px;font-size:14px}
+.flow .tag{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+@media (max-width:860px){.flow{grid-template-columns:1fr}.flow .arrow{transform:rotate(90deg);height:28px}}
+.demo{background:var(--sunk);border-radius:var(--r);padding:18px;display:grid;gap:14px}
+.demo h4{margin:0;font-size:14px;font-weight:600}
+.dt{width:100%;border-collapse:collapse;font-size:13px;background:var(--surface);border-radius:8px;overflow:hidden}
+.dt th,.dt td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.dt th{font-size:11.5px;color:var(--mut);font-weight:500;text-transform:uppercase;letter-spacing:.05em}
+.dt td.num,.dt th.num{text-align:right;font-variant-numeric:tabular-nums;font-family:var(--mono);font-size:12.5px}
+.dt input{padding:4px 6px;font-size:13px;min-width:0}
+.dt tfoot td{font-weight:600}
+.expl{font-family:var(--mono);font-size:11.5px;color:var(--mut)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px}
+.kpi{background:var(--surface);border-radius:8px;padding:12px;display:grid;gap:2px}
+.kpi b{font-family:var(--display);font-weight:400;font-size:32px;line-height:1;font-variant-numeric:tabular-nums}
+.kpi span{font-size:12px;color:var(--mut)}
+.rag{display:inline-flex;align-items:center;gap:8px;font-weight:600;padding:6px 12px;border-radius:999px}
+.rag::before{content:"";width:10px;height:10px;border-radius:50%;background:currentColor}
+.rag.Red{color:var(--bad);background:color-mix(in srgb,var(--bad) 12%,transparent)}
+.rag.Amber{color:var(--warn);background:color-mix(in srgb,var(--warn) 14%,transparent)}
+.rag.Green{color:var(--ok);background:color-mix(in srgb,var(--ok) 14%,transparent)}
+
+/* api */
+.api{display:grid;grid-template-columns:240px minmax(0,1fr);border:1px solid var(--line);border-radius:var(--r);background:var(--surface);overflow:hidden}
+.api-res{border-right:1px solid var(--line);background:var(--sunk);padding:10px;display:grid;gap:2px;align-content:start;max-height:70vh;overflow-y:auto}
+.api-res button{display:flex;justify-content:space-between;border:0;background:none;padding:7px 10px;border-radius:7px;cursor:pointer;font-family:var(--mono);font-size:12.5px;text-align:left;gap:8px}
+.api-res button[aria-pressed="true"]{background:var(--surface);box-shadow:inset 3px 0 0 var(--accent)}
+.api-res button .n{color:var(--mut)}
+.api-main{padding:20px 22px;display:grid;gap:16px;align-content:start;max-height:70vh;overflow-y:auto;min-width:0}
+.ep{display:grid;grid-template-columns:62px minmax(0,1fr);gap:10px;align-items:baseline;padding:6px 0;border-bottom:1px solid var(--line);font-size:13px}
+.ep .v{font-family:var(--mono);font-size:11px;font-weight:600;text-align:center;border-radius:5px;padding:2px 0}
+.ep .v.GET{color:var(--d-funds);background:color-mix(in srgb,var(--d-funds) 13%,transparent)}
+.ep .v.POST{color:var(--ok);background:color-mix(in srgb,var(--ok) 13%,transparent)}
+.ep .v.PATCH,.ep .v.PUT{color:var(--warn);background:color-mix(in srgb,var(--warn) 14%,transparent)}
+.ep .v.DELETE{color:var(--bad);background:color-mix(in srgb,var(--bad) 12%,transparent)}
+.ep code{word-break:break-all}
+@media (max-width:860px){.api{grid-template-columns:1fr}.api-res{grid-auto-flow:column;grid-auto-columns:max-content;overflow-x:auto;border-right:0;border-bottom:1px solid var(--line);max-height:none}.api-main{max-height:none}}
+
+/* lake */
+.cmp{width:100%;border-collapse:collapse;font-size:14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.cmp th,.cmp td{padding:12px 14px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.cmp thead th{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);font-weight:500;background:var(--sunk)}
+.cmp td:first-child{font-weight:600;width:18%}
+.cmp td:nth-child(2){color:var(--mut);width:36%}
+.cmp td:nth-child(3){width:46%}
+.pipe{display:grid;grid-template-columns:minmax(0,1fr) 30px minmax(0,1.3fr) 30px minmax(0,1fr);align-items:center}
+.pipe .box{border:1px solid var(--line);border-radius:var(--r);padding:16px;background:var(--surface);display:grid;gap:8px;min-width:0}
+.pipe .box.core{border:2px solid var(--accent)}
+.pipe ul{margin:0;padding-left:18px;font-size:13.5px;color:var(--mut);display:grid;gap:3px}
+.pipe .arrow{text-align:center;color:var(--mut)}
+@media (max-width:860px){.pipe{grid-template-columns:1fr}.pipe .arrow{transform:rotate(90deg)}}
+
+/* fit */
+.fit-list{display:grid;gap:0;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);overflow:hidden}
+.fit-row{display:grid;grid-template-columns:minmax(0,1.1fr) 120px minmax(0,1.6fr);gap:14px;padding:11px 16px;border-bottom:1px solid var(--line);align-items:baseline}
+.fit-row:last-child{border-bottom:0}
+.fit-row .what{font-weight:500}
+.fit-row .where{font-size:13.5px;color:var(--mut)}
+.fit-row .where .chip{margin-right:4px}
+.kind{font-family:var(--mono);font-size:11px;padding:2px 8px;border-radius:5px;justify-self:start}
+.kind.native{color:var(--d-funds);background:color-mix(in srgb,var(--d-funds) 12%,transparent)}
+.kind.ledger{color:var(--d-accounting);background:color-mix(in srgb,var(--d-accounting) 12%,transparent)}
+.kind.kpi{color:var(--d-portfolio);background:color-mix(in srgb,var(--d-portfolio) 14%,transparent)}
+.kind.custom{color:var(--accent-ink);background:color-mix(in srgb,var(--accent) 13%,transparent)}
+.kind.doc{color:var(--d-documents);background:color-mix(in srgb,var(--d-documents) 14%,transparent)}
+@media (max-width:700px){.fit-row{grid-template-columns:1fr}}
+.foot{border-top:1px solid var(--line);padding-block:22px;color:var(--mut);font-size:13px}
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#overview"><b>CapHive</b><span>data model</span></a>
+    <nav class="nav" id="nav" aria-label="Sections">
+      <a href="#overview">Overview</a>
+      <a href="#schema">Schema</a>
+      <a href="#extend">Custom fields</a>
+      <a href="#engines">Engines</a>
+      <a href="#api">API</a>
+      <a href="#lake">Data lake?</a>
+      <a href="#fit">Will my data fit?</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+<!-- ================= OVERVIEW ================= -->
+<section class="view" id="v-overview" data-view="overview">
+  <div class="hero">
+    <div class="eyebrow">CapHive · data model, generated from the production codebase on __GENERATED__</div>
+    <h1 class="h1">A schema shaped like a fund,<br>with room for <i>yours</i>.</h1>
+    <p class="lede">CapHive stores private-capital data in <strong>typed, related tables</strong> that already know what a commitment, a remittance, a cost lot or a KPI is. Where your funds differ, you add fields, formulas and ledger lines as configuration. <strong>No migrations, no forks, no side spreadsheets.</strong></p>
+  </div>
+  <div class="stats" id="stats"></div>
+
+  <div class="sec">
+    <div class="sec-head">
+      <div class="eyebrow">How the model flexes</div>
+      <h2 class="h2">Six ways to fit your data without changing the database</h2>
+      <p class="lede">These mechanisms are columns and tables you can inspect in the Schema tab, not features on a roadmap.</p>
+    </div>
+    <div class="grid" id="flex"></div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-head">
+      <div class="eyebrow">The core</div>
+      <h2 class="h2">How the main records connect</h2>
+      <p class="lede">Hover over a record to see what it connects to. Click it to open the table in the schema explorer.</p>
+    </div>
+    <div class="diagram" id="diagram"></div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-head">
+      <div class="eyebrow">Eleven domains</div>
+      <h2 class="h2">Every table, grouped by what it's for</h2>
+    </div>
+    <div class="grid" id="domcards"></div>
+  </div>
+</section>
+
+<!-- ================= SCHEMA ================= -->
+<section class="view" id="v-schema" data-view="schema" hidden>
+  <div class="sec-head">
+    <div class="eyebrow">Schema explorer</div>
+    <h2 class="h2">Every table, every column</h2>
+    <p class="lede">Search table and column names. Money columns are stored in cents and exposed in major units over the API. <span class="pill acc">json</span> columns hold custom fields and structured settings.</p>
+  </div>
+  <div class="ex">
+    <div class="ex-dom" id="exDom"></div>
+    <div class="ex-list">
+      <div class="search"><input type="search" id="exQ" placeholder="Search tables & columns, e.g. carry, folio, hurdle" aria-label="Search tables and columns"></div>
+      <div class="ex-items" id="exItems"></div>
+    </div>
+    <div class="ex-detail" id="exDetail"></div>
+  </div>
+</section>
+
+<!-- ================= CUSTOM FIELDS ================= -->
+<section class="view" id="v-extend" data-view="extend" hidden>
+  <div class="sec-head">
+    <div class="eyebrow">Extensibility</div>
+    <h2 class="h2">Add the fields your funds need. <i>Today</i>, not next release.</h2>
+    <p class="lede">An administrator defines custom fields on a <strong>form type</strong> for any of <b id="cfCount">35</b> record kinds. Values are stored in that record's <code>json_fields</code> column, so adding a field never needs a schema change. Forms, detail pages, imports, exports, Report Builder, document templates, formulas and API responses all pick the field up.</p>
+  </div>
+
+  <div class="two">
+    <div class="panel">
+      <h3>Try it: extend a record</h3>
+      <div class="seg" id="cfRec" role="group" aria-label="Record kind"></div>
+      <div class="form-row">
+        <label class="lbl" for="cfName">Field name<input type="text" id="cfName" value="Board seat"></label>
+        <label class="lbl" for="cfType">Field type<select id="cfType"></select></label>
+      </div>
+      <div class="form-row">
+        <label class="lbl" for="cfMeta">Options / meta data<input type="text" id="cfMeta" value="None,Observer,Director"></label>
+        <label class="lbl" for="cfReq" style="grid-auto-flow:column;justify-content:start;align-items:center;gap:8px"><input type="checkbox" id="cfReq"> Required</label>
+        <button class="btn" id="cfAdd" type="button">Add field</button>
+      </div>
+      <div class="fprev" id="cfForm"></div>
+    </div>
+    <div class="panel">
+      <h3>What gets stored</h3>
+      <p class="small muted">The record's standard columns are unchanged. Your fields land in <code>json_fields</code>, keyed by the field name:</p>
+      <pre class="snip" id="cfJson"></pre>
+      <h3>Where it shows up immediately</h3>
+      <div id="cfUse" class="rels"></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <h3 class="h3">Fourteen field types</h3>
+    <div class="grid" id="ftypes"></div>
+  </div>
+
+  <div class="two">
+    <div class="panel">
+      <h3>Rules that come with each field</h3>
+      <div class="rels small">
+        <div class="row"><span class="lab">Validation</span><span>min/max length, min/max value, date range, selections count, regex pattern, formats (email, phone, URL, tax ids), uniqueness, max file size, custom error message</span></div>
+        <div class="row"><span class="lab">Conditional</span><span>show a field only when another field <code>eq / not_eq / contains / lt / lte / gt / gte</code> a value</span></div>
+        <div class="row"><span class="lab">Multi-step</span><span>place fields on steps 1–9 of onboarding and KYC forms, with your own step titles</span></div>
+        <div class="row"><span class="lab">Visibility</span><span>read-only for investors, internal-only, or visible to named users</span></div>
+        <div class="row"><span class="lab">Search</span><span>mark a field "Show in filter" and it becomes a list filter</span></div>
+        <div class="row"><span class="lab">Regulatory sets</span><span>pre-built SEBI, CRISIL, IFSC and MAS field sets for KYC and instruments</span></div>
+        <div class="row"><span class="lab">Variants</span><span>several tagged form types for one record kind, e.g. Individual vs Institutional commitments</span></div>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>Other extension points</h3>
+      <div class="rels small">
+        <div class="row"><span class="lab">Ledger names</span><span>account entry <code>name</code> and <code>entry_type</code> are yours to define, so any fee, expense, income or reserve becomes a ledger line</span></div>
+        <div class="row"><span class="lab">KPI names</span><span>each company reports in its own words; mappings translate to your standard KPI names</span></div>
+        <div class="row"><span class="lab">Attachments</span><span>documents, valuations, tasks, notes, ratios and FX rates attach to any record through a polymorphic owner</span></div>
+        <div class="row"><span class="lab">Tags</span><span><code>tag_list</code> on funds, documents, KPI reports, allocation runs and more</span></div>
+        <div class="row"><span class="lab">Calculations</span><span>a Calculation field computes its value from other fields on every save</span></div>
+        <div class="row"><span class="lab">Saved views</span><span>per-user grid columns, filters and Report Builder reports</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <h3 class="h3">Record kinds that take custom fields</h3>
+    <div class="chips" id="cfTables"></div>
+  </div>
+</section>
+
+<!-- ================= ENGINES ================= -->
+<section class="view" id="v-engines" data-view="engines" hidden>
+  <div class="sec-head">
+    <div class="eyebrow">Engines</div>
+    <h2 class="h2">How the platform computes on your data</h2>
+    <p class="lede">Each engine reads named tables, runs rules you can see and change, and writes its results back as ordinary rows, with the working shown. <strong>Nothing is a black box:</strong> a generated ledger line records the formula that made it and a written explanation, and a ratio stores the cash flows it was computed from.</p>
+  </div>
+  <div class="eng-nav" id="engNav" role="group" aria-label="Engines"></div>
+  <div id="engBody" class="sec"></div>
+</section>
+
+<!-- ================= API ================= -->
+<section class="view" id="v-api" data-view="api" hidden>
+  <div class="sec-head">
+    <div class="eyebrow">API</div>
+    <h2 class="h2">The same data, over JSON</h2>
+    <p class="lede">The API runs on the same endpoints the application uses, under the same permissions, so an integration sees exactly what that user could see on screen. The OpenAPI 3 spec below is the published one; it is browsable live at <a href="https://app.caphive.com/api-docs/index.html" target="_blank" rel="noopener">app.caphive.com/api-docs</a>.</p>
+  </div>
+  <div class="grid">
+    <div class="card"><div class="k">Bearer tokens</div><h3 class="h3">Server-to-server</h3><p>Send <code>Authorization: Bearer &lt;token&gt;</code> on every request. Tokens are scoped to your organisation's account.</p></div>
+    <div class="card"><div class="k">OAuth2 · OpenID Connect</div><h3 class="h3">Client credentials</h3><p>CapHive is an OAuth2/OIDC provider. Your system exchanges a client id and secret for a scoped, time-limited access token.</p></div>
+    <div class="card"><div class="k">MCP server</div><h3 class="h3">AI assistants</h3><p>A Model Context Protocol server lets AI clients such as Claude query funds, commitments, calls, ratios, portfolio and KPIs under your permissions, with filters validated against a published ontology.</p></div>
+    <div class="card"><div class="k">Bulk</div><h3 class="h3">Spreadsheet import & dumps</h3><p>Import templates load any record kind, custom fields included. Scheduled per-organisation SQLite dumps hand you a portable copy of your data.</p></div>
+  </div>
+  <div class="api">
+    <div class="api-res" id="apiRes"></div>
+    <div class="api-main" id="apiMain"></div>
+  </div>
+</section>
+
+<!-- ================= LAKE ================= -->
+<section class="view" id="v-lake" data-view="lake" hidden>
+  <div class="sec-head">
+    <div class="eyebrow">System of record vs data lake</div>
+    <h2 class="h2">Keep the lake <i>downstream</i></h2>
+    <p class="lede">A data lake is good at storing rows. Running a fund needs more than storage: the data has to mean something, the numbers have to be computed the same way every quarter, corrections have to leave a trail, and each LP may see only their own slice. Putting a lake first means building all of that yourself. <strong>Put CapHive first, and feed your lake from it.</strong></p>
+  </div>
+  <div class="pipe">
+    <div class="box"><div class="eyebrow">Sources</div><ul><li>Administrator files & GL</li><li>Bank statements</li><li>LP subscription & KYC</li><li>Portfolio company KPI packs</li><li>Valuations & market prices</li></ul></div>
+    <div class="arrow">→</div>
+    <div class="box core"><div class="eyebrow" style="color:var(--accent-ink)">CapHive · system of record</div><ul><li>Typed tables + your custom fields</li><li>Validation, approvals, maker-checker</li><li>Formulas that compute the ledger, fees, units, ratios, NAV</li><li>Per-fund, per-investor access rights</li><li>Field-level audit trail, locked periods</li></ul></div>
+    <div class="arrow">→</div>
+    <div class="box"><div class="eyebrow">Consumers</div><ul><li>LP portal, notices, statements</li><li>Report Builder & dashboards</li><li>REST API & MCP for AI</li><li>Scheduled SQLite dumps</li><li><b style="color:var(--fg)">Your lake / BI, if you want one</b></li></ul></div>
+  </div>
+  <div class="tablewrap">
+  <table class="cmp">
+    <thead><tr><th>Need</th><th>Lake first</th><th>CapHive first</th></tr></thead>
+    <tbody id="cmpBody"></tbody>
+  </table>
+  </div>
+  <div class="callout">If you already run a warehouse, keep it. CapHive feeds it through the API, scheduled per-organisation SQLite dumps and Report Builder exports, and every exported row keeps the ids that tie it back to its source record. Your analysts get clean, computed data, and the numbers in the warehouse match the numbers your LPs were sent.</div>
+</section>
+
+<!-- ================= FIT ================= -->
+<section class="view" id="v-fit" data-view="fit" hidden>
+  <div class="sec-head">
+    <div class="eyebrow">Fit check</div>
+    <h2 class="h2">Where does <i>my</i> data go?</h2>
+    <p class="lede">Type something you track today. Each item maps to a native column, a ledger line, a KPI or a custom field. Anything not on this list becomes a custom field on the record it describes.</p>
+  </div>
+  <input type="search" id="fitQ" placeholder="e.g. hurdle, withholding tax, board seat, EBITDA" aria-label="Search data items">
+  <div class="chips" id="fitKinds"></div>
+  <div class="fit-list" id="fitList"></div>
+  <div class="callout">A schema comparison only goes so far. A better test: send us one fund's real files (commitments, calls, a quarter's ledger, a portfolio company's KPI pack) and we load them into a sandbox through the same import templates you would use, so you can check the numbers on screen.</div>
+</section>
+
+</main>
+<footer class="foot"><div class="wrap">Generated from the CapHive codebase (<code>db/schema.rb</code>, model definitions, MCP ontology and <code>swagger/v1/swagger.yaml</code>) on __GENERATED__. Table and column names are exact; descriptions are plain-English summaries.</div></footer>
+
+<script id="data" type="application/json">__DATA__</script>
+<script>
+(function(){
+"use strict";
+const D = JSON.parse(document.getElementById("data").textContent);
+const T = D.tables, DOMS = D.domains, DM = Object.fromEntries(DOMS.map(d=>[d.id,d]));
+const $ = (s,el=document)=>el.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const dc = dom => `var(--d-${dom})`;
+const human = n => n.replace(/_/g," ").replace(/^./,c=>c.toUpperCase());
+const fmt = (n,d=0) => (isFinite(n)? n.toLocaleString("en-US",{minimumFractionDigits:d,maximumFractionDigits:d}) : "–");
+const hasCol = (t,c) => T[t].columns.some(x=>x.name===c);
+
+/* incoming references */
+const INCOMING = {};
+for (const [name,t] of Object.entries(T)) for (const a of (t.assocs||[])) if (a.macro==="belongs_to" && a.table && a.table!==name) (INCOMING[a.table] ||= new Set()).add(name);
+
+function tableChip(name, label){
+  if (!T[name]) return `<span class="chip"><span class="dot"></span>${esc(label||name)}</span>`;
+  return `<a class="chip" style="--dc:${dc(T[name].domain)}" href="#table-${name.replace(/_/g,"-")}"><span class="dot"></span>${esc(label||name)}</a>`;
+}
+const chips = list => `<div class="chips">${list.map(x=>Array.isArray(x)?tableChip(x[0],x[1]):tableChip(x)).join("")}</div>`;
+
+/* ---------- stats & overview ---------- */
+const all = Object.values(T);
+const business = all.filter(t=>t.tier!=="internal");
+const cfTables = Object.keys(T).filter(n=>T[n].custom_fields).sort();
+const nCols = all.reduce((s,t)=>s+t.columns.length,0);
+const nOps = Object.values(D.api.resources).reduce((s,r)=>s+r.length,0);
+const nImport = all.filter(t=>t.columns.some(c=>c.name==="import_upload_id")).length;
+const nSoft = all.filter(t=>t.columns.some(c=>c.name==="deleted_at")).length;
+const nMoney = all.reduce((s,t)=>s+t.money.length,0);
+const nPoly = all.filter(t=>t.columns.some(c=>c.name==="owner_type"||c.name==="parent_type")).length;
+const RULE_TYPES = ["GenerateAccountEntry","GenerateAccountEntryMultiple","GenerateCustomField","CumulateAccountEntry","Percentage","AllocateAccountEntry-Name","AllocateAccountEntry-EntryType","AllocateAccountEntryIndividual-Name","AllocateAccountEntryIndividual-EntryType","AllocateMasterFundAccountEntry-Name","AllocateMasterFundAccountEntry-EntryType","AllocateMasterFundAccountEntryIndividual-Name","AllocateMasterFundAccountEntryIndividual-EntryType","AllocatePortfolioInvestment","AllocatePortfolioInvestment-Proforma","AllocateMasterFundPortfolioInvestment","AllocateMasterFundPortfolioInvestment-Proforma","AllocateAggregatePortfolios","GeneratePortfolioNumbersForFund","AllocateForPortfolioCompany","AllocateForPortfolioCompany-Folio","GenerateFinancialStatementLines","PreRunCheck","PostRunCheck"];
+
+$("#stats").innerHTML = [
+  [business.length, "business tables (plus "+(all.length-business.length)+" platform internals)"],
+  [fmt(nCols), "columns, all browsable in the Schema tab"],
+  [cfTables.length, "record kinds you can extend with custom fields"],
+  [RULE_TYPES.length, "formula rule types in the allocation engine"],
+  [nOps, "documented API operations, on "+Object.keys(D.api.resources).length+" resources"],
+].map(([b,s])=>`<div class="stat"><b>${b}</b><span>${s}</span></div>`).join("");
+
+const FLEX = [
+  ["json_fields", "Custom fields on "+cfTables.length+" record kinds", "Add any field to investors, KYC, commitments, calls, investments, KPIs and more. Values live in a JSON column on the record, so there is no schema change and nothing to deploy.",
+   `<span class="c"># capital_commitments.json_fields</span>\n{ <span class="s">"placement_agent"</span>: <span class="s">"Acme Partners"</span>,\n  <span class="s">"mfn_eligible"</span>: <span class="n">true</span>,\n  <span class="s">"closing"</span>: <span class="s">"Second"</span> }`],
+  ["fund_formulas", "Formulas are data, not code", "Fee, allocation and accounting rules are rows in fund_formulas: a rule type, a sequence and an expression. Change a rule and re-run the period; the code stays the same.",
+   `<span class="c"># fund_formulas.formula, rule AllocateAccountEntry-Name</span>\ncapital_commitment.committed_amount_cents\n  * ( fund_unit_setting.management_fee / 4 ) / 100`],
+  ["account_entries", "One ledger for every number", "Income, expenses, fees, allocations, NAV components and statement lines all go into one ledger at fund, folio or portfolio level. Names and entry types are yours to define.",
+   `name:        <span class="s">"Management Fee"</span>\nentry_type:  <span class="s">"Expense"</span>\nparent_type: <span class="s">"CapitalCommitment"</span>\nfund_formula_id, allocation_run_id, explanation`],
+  ["owner_type / owner_id", "Attach anything to anything", nPoly+" tables use a polymorphic owner or parent. One valuations table values an instrument or a company; one documents table holds files for any record.",
+   `documents.owner_type   <span class="s">"CapitalCommitment"</span>\nvaluations.owner_type  <span class="s">"Investor"</span>\nfund_ratios.owner_type <span class="s">"Fund" | "CapitalCommitment" | …</span>`],
+  ["*_cents · folio_* · tracking_*", "Every amount in up to four currencies", nMoney+" money columns, stored as integer cents. Amounts are kept in the fund currency, the LP's folio currency, an optional reporting (tracking) currency, and for holdings, the instrument's own currency.",
+   `amount_cents            <span class="c"># fund currency</span>\nfolio_amount_cents      <span class="c"># LP's currency</span>\ntracking_amount_cents   <span class="c"># reporting currency</span>\ninstrument_currency_fmv_cents`],
+  ["import_upload_id · audits", "Every row is traceable", nImport+" tables record the spreadsheet import that created each row, "+nSoft+" soft-delete instead of erasing, and an audit trail stores field-level history: who, when, before and after.",
+   `account_entries.import_upload_id → import_uploads\naudits: auditable_type, audited_changes,\n        user_id, created_at`],
+];
+$("#flex").innerHTML = FLEX.map(([k,h,p,s])=>`<div class="card"><div class="k">${esc(k)}</div><h3 class="h3">${esc(h)}</h3><p>${esc(p)}</p><pre class="snip">${s}</pre></div>`).join("");
+
+$("#domcards").innerHTML = DOMS.map(d=>{
+  const ts = Object.keys(T).filter(n=>T[n].domain===d.id && T[n].tier!=="internal").sort((a,b)=>(T[a].tier==="core"?0:1)-(T[b].tier==="core"?0:1)||a.localeCompare(b));
+  if(!ts.length) return "";
+  return `<div class="card" style="--dc:${dc(d.id)}"><div class="k" style="color:${dc(d.id)}">${ts.length} tables</div><h3 class="h3">${esc(d.name)}</h3><p>${esc(d.desc)}</p>${chips(ts.slice(0,9))}${ts.length>9?`<a class="small muted" href="#schema" data-dom="${d.id}">and ${ts.length-9} more →</a>`:""}</div>`;
+}).join("");
+document.querySelectorAll("[data-dom]").forEach(a=>a.addEventListener("click",()=>{state.dom=a.dataset.dom;}));
+
+/* ---------- diagram ---------- */
+const LANES = [
+  ["Investors", [["investors","Investor (LP)"],["investor_kycs","Investor KYC"],["investor_accesses","Investor access"],["documents","Documents"]]],
+  ["Funds & capital", [["funds","Fund"],["fund_unit_settings","Unit class"],["capital_commitments","Commitment (folio)"],["capital_calls","Capital call"],["capital_remittances","Remittance"],["capital_distributions","Distribution"],["capital_distribution_payments","Distribution payment"],["fund_units","Fund units"]]],
+  ["Ledger & engines", [["fund_formulas","Fund formulas"],["allocation_runs","Allocation run"],["account_entries","Account entries"],["ratio_formulas","Ratio formulas"],["fund_ratios","Fund ratios"],["fund_navs","NAV"],["exchange_rates","Exchange rates"]]],
+  ["Portfolio", [["investors:pc","Portfolio company"],["investment_instruments","Instrument"],["portfolio_investments","Portfolio investment"],["aggregate_portfolio_investments","Position (aggregate)"],["valuations","Valuation"],["kpi_reports","KPI report"],["kpis","KPI"]]],
+];
+const EDGES = [["investors","investor_kycs"],["investors","investor_accesses"],["investors","capital_commitments"],["investor_kycs","capital_commitments"],["documents","capital_commitments"],
+  ["funds","fund_unit_settings"],["funds","capital_commitments"],["capital_commitments","capital_remittances"],["capital_calls","capital_remittances"],["capital_distributions","capital_distribution_payments"],["capital_commitments","capital_distribution_payments"],["capital_commitments","fund_units"],["capital_remittances","fund_units"],["fund_unit_settings","capital_commitments"],
+  ["fund_formulas","account_entries"],["allocation_runs","account_entries"],["funds","fund_formulas"],["capital_commitments","account_entries"],["account_entries","fund_ratios"],["ratio_formulas","fund_ratios"],["account_entries","fund_navs"],["exchange_rates","account_entries"],["capital_remittances","fund_ratios"],["capital_distribution_payments","fund_ratios"],
+  ["investors:pc","investment_instruments"],["investment_instruments","portfolio_investments"],["portfolio_investments","aggregate_portfolio_investments"],["valuations","aggregate_portfolio_investments"],["investment_instruments","valuations"],["investors:pc","kpi_reports"],["kpi_reports","kpis"],["portfolio_investments","account_entries"],["aggregate_portfolio_investments","fund_ratios"]];
+(function drawDiagram(){
+  const W=1160, laneX=[24,314,604,894], NW=250, NH=40, GAP=58, TOP=56;
+  const pos={}; let maxY=0;
+  LANES.forEach(([t,nodes],li)=>nodes.forEach(([id],i)=>{pos[id]={x:laneX[li],y:TOP+i*GAP,lane:li}; maxY=Math.max(maxY,TOP+i*GAP);}));
+  const H=maxY+NH+24;
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Core entity relationship diagram">`;
+  LANES.forEach(([t],li)=>{s+=`<text class="lane-t" x="${laneX[li]}" y="30">${esc(t)}</text>`;});
+  s+=`<g id="edges">`;
+  EDGES.forEach(([a,b],i)=>{
+    const A=pos[a],B=pos[b]; if(!A||!B) return;
+    let d;
+    if(A.lane===B.lane){const x=A.x+NW, y1=A.y+NH/2, y2=B.y+NH/2, bend=Math.min(60,18+Math.abs(y2-y1)/5); d=`M${x} ${y1} C${x+bend} ${y1}, ${x+bend} ${y2}, ${x} ${y2}`;}
+    else { const fwd=A.lane<B.lane; const x1=fwd?A.x+NW:A.x, x2=fwd?B.x:B.x+NW, y1=A.y+NH/2, y2=B.y+NH/2, mx=(x1+x2)/2; d=`M${x1} ${y1} C${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`;}
+    s+=`<path class="de" data-a="${a}" data-b="${b}" d="${d}"/>`;
+  });
+  s+=`</g>`;
+  LANES.forEach(([t,nodes])=>nodes.forEach(([id,label])=>{
+    const p=pos[id], tbl=id.split(":")[0], t2=T[tbl];
+    const n=t2?t2.columns.length:0;
+    s+=`<g class="dn" tabindex="0" role="link" data-id="${id}" data-t="${tbl}" aria-label="${esc(label)}"><rect x="${p.x}" y="${p.y}" width="${NW}" height="${NH}" rx="8"/><rect x="${p.x}" y="${p.y}" width="4" height="${NH}" rx="2" style="fill:${dc(t2?t2.domain:'platform')};stroke:none"/><text x="${p.x+14}" y="${p.y+17}">${esc(label)}</text>${t2&&t2.custom_fields?`<text class="sub" x="${p.x+NW-10}" y="${p.y+17}" text-anchor="end" style="fill:var(--accent-ink)">+fields</text>`:""}<text class="sub" x="${p.x+14}" y="${p.y+31}">${esc(tbl)}</text><title>${esc(tbl)} · ${n} columns</title></g>`;
+  }));
+  s+=`</svg>`;
+  const host=$("#diagram"); host.innerHTML=s;
+  const svg=host.querySelector("svg");
+  const on=id=>{svg.classList.add("dim"); svg.querySelectorAll(".de").forEach(e=>{const hit=e.dataset.a===id||e.dataset.b===id; e.classList.toggle("on",hit); if(hit){svg.querySelector(`.dn[data-id="${e.dataset.a===id?e.dataset.b:e.dataset.a}"]`)?.classList.add("nb");}}); svg.querySelector(`.dn[data-id="${id}"]`).classList.add("on");};
+  const off=()=>{svg.classList.remove("dim"); svg.querySelectorAll(".on,.nb").forEach(e=>e.classList.remove("on","nb"));};
+  svg.querySelectorAll(".dn").forEach(g=>{
+    g.addEventListener("mouseenter",()=>on(g.dataset.id)); g.addEventListener("mouseleave",off);
+    g.addEventListener("focus",()=>on(g.dataset.id)); g.addEventListener("blur",off);
+    const go=()=>{location.hash="table-"+g.dataset.t.replace(/_/g,"-");};
+    g.addEventListener("click",go); g.addEventListener("keydown",e=>{if(e.key==="Enter")go();});
+  });
+})();
+
+/* ---------- schema explorer ---------- */
+const state={dom:"all", q:"", sel:"capital_commitments", internals:false};
+function renderDomains(){
+  const counts={}; for(const t of all){ if(!state.internals && t.tier==="internal") continue; counts[t.domain]=(counts[t.domain]||0)+1; }
+  const tot=Object.values(counts).reduce((a,b)=>a+b,0);
+  $("#exDom").innerHTML = `<button aria-pressed="${state.dom==="all"}" data-d="all"><span>All tables</span><span class="n">${tot}</span></button>`+
+   `<button aria-pressed="${state.dom==="cf"}" data-d="cf" style="--dc:var(--accent)"><span>Take custom fields</span><span class="n">${cfTables.length}</span></button>`+
+   DOMS.filter(d=>counts[d.id]).map(d=>`<button aria-pressed="${state.dom===d.id}" data-d="${d.id}" style="--dc:${dc(d.id)}"><span>${esc(d.name)}</span><span class="n">${counts[d.id]}</span></button>`).join("")+
+   `<label class="opt" for="exInt"><input type="checkbox" id="exInt" ${state.internals?"checked":""}> Show platform internals</label>`;
+  $("#exDom").querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{state.dom=b.dataset.d; renderDomains(); renderList();}));
+  $("#exInt").addEventListener("change",e=>{state.internals=e.target.checked; renderDomains(); renderList();});
+}
+function matchTable(name,q){
+  if(!q) return {ok:true};
+  const t=T[name], ql=q.toLowerCase();
+  if(name.includes(ql) || (t.label||"").toLowerCase().includes(ql) || (t.blurb||"").toLowerCase().includes(ql)) return {ok:true};
+  const cols=t.columns.filter(c=>c.name.includes(ql)).map(c=>c.name);
+  return cols.length?{ok:true,cols}:{ok:false};
+}
+function renderList(){
+  const q=state.q.trim();
+  const tierRank={core:0,supporting:1,internal:2};
+  let names=Object.keys(T).filter(n=>{
+    const t=T[n];
+    if(state.dom==="cf"){ if(!t.custom_fields) return false; }
+    else if(state.dom!=="all" && t.domain!==state.dom) return false;
+    if(!state.internals && t.tier==="internal" && n!==state.sel) return false;
+    return true;
+  });
+  const hits={};
+  names=names.filter(n=>{const m=matchTable(n,q); if(m.cols) hits[n]=m.cols; return m.ok;});
+  names.sort((a,b)=>(tierRank[T[a].tier]-tierRank[T[b].tier])||a.localeCompare(b));
+  $("#exItems").innerHTML = names.length? names.map(n=>{
+    const t=T[n];
+    return `<button data-t="${n}" aria-current="${n===state.sel}"><span class="tn"><span class="dot" style="width:7px;height:7px;border-radius:50%;background:${dc(t.domain)}"></span>${esc(n)}${t.tier==="core"?' <span class="pill">core</span>':""}${t.custom_fields?' <span class="pill acc">+fields</span>':""}</span><span class="tl">${esc(t.label||t.model||"")} · ${t.columns.length} columns</span>${hits[n]?`<span class="hit">${esc(hits[n].slice(0,4).join(", "))}${hits[n].length>4?" …":""}</span>`:""}</button>`;
+  }).join("") : `<p class="muted small" style="padding:14px">No table or column matches "${esc(q)}". Anything you track that isn't here can be a custom field.</p>`;
+  $("#exItems").querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{selectTable(b.dataset.t,true);}));
+}
+function fkTarget(t,col){
+  for(const a of (t.assocs||[])){
+    if(a.macro!=="belongs_to") continue;
+    const fk=a.fk||(a.name+"_id");
+    if(fk===col) return a.poly?{poly:a.name}:(a.table?{table:a.table}:null);
+  }
+  if(col.endsWith("_id")){ const base=col.slice(0,-3); if(t.columns.some(c=>c.name===base+"_type")) return {poly:base}; }
+  return null;
+}
+function renderDetail(){
+  const name=state.sel, t=T[name]; if(!t) return;
+  const dom=DM[t.domain];
+  const money=new Set(t.money.map(m=>m+"_cents"));
+  const rows=t.columns.map(c=>{
+    let ty=c.type+(c.limit?`(${c.limit})`:"")+(c.precision?`(${c.precision})`:"");
+    const notes=[];
+    if(c.pk||(t.pk.includes(c.name)&&c.name!=="id")) notes.push('<span class="pill">primary key</span>');
+    if(money.has(c.name)) notes.push(`<span class="pill">money · API field <code>${esc(c.name.replace(/_cents$/,""))}</code></span>`);
+    const fk=fkTarget(t,c.name);
+    if(fk&&fk.table) notes.push(`→ <button class="lnk" data-t="${fk.table}">${esc(fk.table)}</button>`);
+    if(fk&&fk.poly) notes.push(`→ any record (polymorphic <code>${esc(fk.poly)}</code>)`);
+    if(c.name==="json_fields") notes.push('<span class="pill acc">custom field values</span>');
+    if(c.name==="import_upload_id") notes.push("the import that created this row");
+    if(c.name==="deleted_at") notes.push("soft delete");
+    if(c.desc) notes.push(esc(c.desc));
+    if(c.comment) notes.push(esc(c.comment));
+    if(c.default!==undefined && c.default!=="nil") notes.push(`<span class="muted">default ${esc(c.default)}</span>`);
+    const cls=money.has(c.name)?"m":(c.type==="json"||c.name==="json_fields"?"j":"");
+    return `<tr class="${cls}"><td>${esc(c.name)}</td><td class="ty">${esc(ty)}${c.null===false?' <span title="required">·req</span>':""}</td><td>${notes.join(" ")}</td></tr>`;
+  }).join("");
+  const out=(t.assocs||[]).filter(a=>a.macro==="belongs_to");
+  const many=(t.assocs||[]).filter(a=>a.macro!=="belongs_to");
+  const relChip=a=>a.table?tableChip(a.table,a.name):`<span class="chip"><span class="dot"></span>${esc(a.name)}${a.poly?" (any)":""}${a.through?` <span class="muted">via ${esc(a.through)}</span>`:""}</span>`;
+  const inc=[...(INCOMING[name]||[])].sort();
+  const api=D.api.resources[name]||[];
+  $("#exDetail").innerHTML=`
+    <div style="display:grid;gap:8px">
+      <div class="chips"><span class="chip" style="--dc:${dc(t.domain)};cursor:default"><span class="dot"></span>${esc(dom.name)}</span>${t.model?`<span class="pill">model ${esc(t.model)}</span>`:""}${t.subclasses?`<span class="pill">subtypes ${esc(t.subclasses.join(", "))}</span>`:""}${t.custom_fields?'<span class="pill acc">takes custom fields</span>':""}${api.length?`<span class="pill ok">${api.length} API operations</span>`:""}</div>
+      <h2>${esc(name)}</h2>
+      ${t.blurb||t.description?`<p class="lede" style="font-size:16px">${esc(t.blurb||t.description)}</p>`:""}
+      ${t.blurb&&t.description?`<p class="small muted">${esc(t.description)}</p>`:""}
+    </div>
+    ${t.custom_fields?`<div class="callout">Plus any custom fields you define for <b>${esc(t.model)}</b>. They are stored in <code>json_fields</code> and appear on its forms, filters, imports, reports and API responses. <a href="#extend">How custom fields work →</a></div>`:""}
+    <div class="rels">
+      ${out.length?`<div class="row"><span class="lab">Belongs to</span><div class="chips">${out.map(relChip).join("")}</div></div>`:""}
+      ${many.length?`<div class="row"><span class="lab">Has</span><div class="chips">${many.slice(0,24).map(relChip).join("")}${many.length>24?`<span class="muted small">+${many.length-24} more</span>`:""}</div></div>`:""}
+      ${inc.length?`<div class="row"><span class="lab">Referenced by</span><div class="chips">${inc.slice(0,30).map(n=>tableChip(n)).join("")}${inc.length>30?`<span class="muted small">+${inc.length-30} more</span>`:""}</div></div>`:""}
+    </div>
+    <div class="tablewrap"><table class="cols"><thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead><tbody>${rows}</tbody></table></div>
+    ${t.indexes.length?`<details><summary class="small muted">${t.indexes.length} indexes</summary><div class="small mono" style="display:grid;gap:3px;margin-top:8px">${t.indexes.map(i=>`<span>${i.unique?"unique ":""}(${esc(i.columns.join(", "))})</span>`).join("")}</div></details>`:""}
+    ${api.length?`<div style="display:grid;gap:4px"><div class="eyebrow">API</div>${api.map(e=>`<div class="ep"><span class="v ${e.verb}">${e.verb}</span><code>${esc(e.path)}</code></div>`).join("")}</div>`:""}`;
+  $("#exDetail").querySelectorAll(".lnk").forEach(b=>b.addEventListener("click",()=>selectTable(b.dataset.t,true)));
+  $("#exDetail").scrollTop=0;
+}
+function selectTable(name,push){
+  if(!T[name]) return;
+  state.sel=name;
+  if(T[name].tier==="internal") state.internals=true;
+  if(state.dom!=="all" && state.dom!=="cf" && T[name].domain!==state.dom) state.dom="all";
+  if(state.dom==="cf" && !T[name].custom_fields) state.dom="all";
+  renderDomains(); renderList(); renderDetail();
+  const h="table-"+name.replace(/_/g,"-");
+  if(push && location.hash!=="#"+h) history.replaceState(null,"","#"+h);
+  $("#exItems").querySelector('[aria-current="true"]')?.scrollIntoView({block:"nearest"});
+}
+$("#exQ").addEventListener("input",e=>{state.q=e.target.value; renderList();});
+
+/* ---------- custom fields ---------- */
+$("#cfCount").textContent=cfTables.length;
+const FTYPES=[["TextField","Single-line text","—"],["TextArea","Multi-line text","—"],["NumberField","Number with display format","precision,separator e.g. 2,comma"],["Money","Amount in the record's currency","optional ISO currency e.g. USD"],["DateField","Date in the user's locale","—"],["CheckBox","Yes / no","—"],["Select","Single choice dropdown","options, comma-separated"],["Radio","Single choice buttons","options"],["MultiSelect","Several choices","options"],["DataList","Free text with suggestions","suggestions"],["File","Upload attached to the record","—"],["Header","Section heading between fields","—"],["GridColumns","Tabular entry inside a record","configured by CapHive"],["Calculation","Computed from other fields on save","expression, configured by CapHive"]];
+$("#ftypes").innerHTML=FTYPES.map(([n,d,m])=>`<div class="card" style="gap:4px;padding:14px"><div class="k">${n}</div><p style="color:var(--fg)">${d}</p><p class="small">${m==="—"?"":"Meta data: "+esc(m)}</p></div>`).join("");
+$("#cfType").innerHTML=FTYPES.filter(f=>!["GridColumns","Calculation"].includes(f[0])).map(f=>`<option>${f[0]}</option>`).join("");
+$("#cfType").value="Select";
+$("#cfTables").innerHTML=cfTables.map(n=>tableChip(n,T[n].model||n)).join("");
+const CF_RECS={
+  Investor:{table:"investors",std:[["investor_name","Name","text","Northwind Robotics"],["category","Category","text","Portfolio Company"],["city","City","text","Bengaluru"]],
+    fields:[{name:"Board seat",type:"Select",meta:"None,Observer,Director",val:"Director"},{name:"Lead partner",type:"TextField",val:"R. Mehta"},{name:"ESG score",type:"NumberField",meta:"1,comma",val:72.5}]},
+  CapitalCommitment:{table:"capital_commitments",std:[["investor_name","Investor","text","Halcyon Pension Trust"],["committed_amount","Committed amount","money","25,000,000.00"],["folio_id","Folio","text","F-0142"]],
+    fields:[{name:"Placement agent",type:"TextField",val:"Acme Partners"},{name:"MFN eligible",type:"CheckBox",val:true},{name:"Closing",type:"Select",meta:"First,Second,Final",val:"Second"}]},
+  PortfolioInvestment:{table:"portfolio_investments",std:[["portfolio_company_name","Company","text","Northwind Robotics"],["investment_date","Date","date","2025-06-30"],["amount","Amount","money","4,000,000.00"]],
+    fields:[{name:"Liquidation preference",type:"Select",meta:"1x non-participating,1x participating,2x",val:"1x non-participating"},{name:"Anti-dilution",type:"Select",meta:"Broad-based,Full ratchet,None",val:"Broad-based"},{name:"Pro-rata rights",type:"CheckBox",val:true}]},
+  InvestorKyc:{table:"investor_kycs",std:[["full_name","Full name","text","Halcyon Pension Trust"],["kyc_type","Type","text","Non-Individual"],["residency","Residency","text","Foreign"]],
+    fields:[{name:"FATCA classification",type:"Select",meta:"Active NFFE,Passive NFFE,Participating FFI",val:"Participating FFI"},{name:"Accredited investor",type:"CheckBox",val:true},{name:"Source of funds",type:"TextArea",val:"Pension contributions"}]},
+  Fund:{table:"funds",std:[["name","Fund name","text","Meridian Growth Fund II"],["currency","Currency","text","USD"],["start_date","Start date","date","2024-01-15"]],
+    fields:[{name:"Vintage year",type:"NumberField",meta:"0,none",val:2024},{name:"Strategy",type:"Select",meta:"Growth,Buyout,Venture,Credit",val:"Growth"},{name:"Hurdle rate",type:"NumberField",meta:"2,comma",val:8}]},
+};
+let cfRec="CapitalCommitment";
+const slug=n=>n.trim().toLowerCase().replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,"");
+function sampleVal(type,meta){switch(type){case"NumberField":return 12.5;case"Money":return 150000;case"CheckBox":return true;case"DateField":return"2026-03-31";case"Select":case"Radio":case"DataList":return (meta||"").split(",").map(s=>s.trim()).filter(Boolean)[0]||"";case"MultiSelect":return (meta||"").split(",").map(s=>s.trim()).filter(Boolean).slice(0,2);case"File":return"uploaded_file.pdf";case"Header":return undefined;default:return"Sample value";}}
+function inputFor(f){
+  const opts=(f.meta||"").split(",").map(s=>s.trim()).filter(Boolean);
+  const id="cfp-"+slug(f.name);
+  switch(f.type){
+    case"Header": return `<div class="hdr">${esc(f.name)}</div>`;
+    case"CheckBox": return `<label style="display:flex;gap:8px;align-items:center" for="${id}"><input type="checkbox" id="${id}" ${f.val?"checked":""} disabled> ${esc(f.name)}</label>`;
+    case"Select": case"DataList": return `<select id="${id}" disabled>${opts.map(o=>`<option ${o===f.val?"selected":""}>${esc(o)}</option>`).join("")}</select>`;
+    case"Radio": return `<div style="display:flex;gap:12px;flex-wrap:wrap">${opts.map(o=>`<label><input type="radio" disabled ${o===f.val?"checked":""}> ${esc(o)}</label>`).join("")}</div>`;
+    case"MultiSelect": return `<div class="chips">${(f.val||[]).map(o=>`<span class="pill">${esc(o)}</span>`).join("")}</div>`;
+    case"TextArea": return `<textarea id="${id}" rows="2" disabled style="width:100%;border:1px solid var(--line);border-radius:7px;background:var(--bg);color:var(--fg);padding:8px;font:inherit">${esc(f.val)}</textarea>`;
+    case"File": return `<input type="text" id="${id}" value="📎 ${esc(f.val)}" disabled>`;
+    default: return `<input type="text" id="${id}" value="${esc(typeof f.val==="number"?fmt(f.val,(f.meta||"").startsWith("2")?2:(f.meta||"").startsWith("1")?1:0):f.val)}" disabled>`;
+  }
+}
+function renderCF(){
+  const r=CF_RECS[cfRec];
+  $("#cfRec").innerHTML=Object.keys(CF_RECS).map(k=>`<button type="button" aria-pressed="${k===cfRec}" data-k="${k}">${k}</button>`).join("");
+  $("#cfRec").querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{cfRec=b.dataset.k; renderCF();}));
+  $("#cfForm").innerHTML=`<div class="eyebrow">${esc(cfRec)} form · example record</div>`+
+    r.std.map(([n,l,ty,v])=>`<div class="f std"><label>${esc(l)}</label><input type="text" value="${esc(v)}" disabled aria-label="${esc(l)}"></div>`).join("")+
+    r.fields.map((f,i)=>f.type==="Header"?inputFor(f):`<div class="f custom"><label>${esc(f.name)}${f.req?" *":""} <button class="x" data-i="${i}" type="button" aria-label="Remove ${esc(f.name)}">remove</button></label>${f.type==="CheckBox"?"":""}${inputFor(f)}<span class="help mono">${esc(f.type)}${f.meta?" · "+esc(f.meta):""}</span></div>`).join("");
+  $("#cfForm").querySelectorAll(".x").forEach(b=>b.addEventListener("click",()=>{r.fields.splice(+b.dataset.i,1); renderCF();}));
+  const j={}; r.fields.forEach(f=>{ if(f.type!=="Header") j[slug(f.name)]=f.val; });
+  $("#cfJson").innerHTML=`<span class="c"># ${r.table}.json_fields</span>\n`+esc(JSON.stringify(j,null,2));
+  const first=r.fields.find(f=>f.type!=="Header"); const k=first?slug(first.name):"field_name";
+  $("#cfUse").innerHTML=`
+    <div class="row"><span class="lab">Screens</span><span class="small">create, edit and detail pages of every ${esc(cfRec)}</span></div>
+    <div class="row"><span class="lab">Lists</span><span class="small">grid column and, with "Show in filter", a list filter</span></div>
+    <div class="row"><span class="lab">Imports</span><span class="small">a spreadsheet column headed <code>${esc(first?first.name:"Field name")}</code></span></div>
+    <div class="row"><span class="lab">Reports</span><span class="small">a column in Report Builder and in exports</span></div>
+    <div class="row"><span class="lab">Documents</span><span class="small">a merge field in notice and statement templates</span></div>
+    <div class="row"><span class="lab">Formulas</span><span class="small">${r.table==="capital_commitments"?`<code>capital_commitment["properties"]["${esc(k)}"]</code>`:"readable by fund formulas and Calculation fields"}</span></div>
+    <div class="row"><span class="lab">API</span><span class="small"><code>"custom_fields": { "${esc(k)}": … }</code> in JSON responses</span></div>`;
+}
+$("#cfAdd").addEventListener("click",()=>{
+  const name=$("#cfName").value.trim(); if(!name) {$("#cfName").focus(); return;}
+  const type=$("#cfType").value, meta=$("#cfMeta").value.trim();
+  const r=CF_RECS[cfRec];
+  if(r.fields.some(f=>slug(f.name)===slug(name))){ $("#cfName").setCustomValidity("A field with this name already exists on this form."); $("#cfName").reportValidity(); return; }
+  $("#cfName").setCustomValidity("");
+  r.fields.push({name,type,meta:["Select","Radio","MultiSelect","DataList","NumberField","Money"].includes(type)?meta:"",val:sampleVal(type,meta),req:$("#cfReq").checked});
+  renderCF();
+});
+$("#cfName").addEventListener("input",()=>$("#cfName").setCustomValidity(""));
+$("#cfType").addEventListener("change",e=>{const t=e.target.value; const m={Select:"Option A,Option B",Radio:"Yes,No",MultiSelect:"Asia,Europe,Americas",DataList:"Suggested A,Suggested B",NumberField:"2,comma",Money:"USD"}; $("#cfMeta").value=m[t]||"";});
+renderCF();
+
+/* ---------- engines ---------- */
+const money=(n,d=0)=>fmt(n,d);
+function xirr(flows){
+  if(flows.length<2) return NaN;
+  const t0=flows[0].d.getTime(); const yrs=f=>(f.d.getTime()-t0)/31557600000;
+  const npv=r=>flows.reduce((s,f)=>s+f.a/Math.pow(1+r,yrs(f)),0);
+  const dnpv=r=>flows.reduce((s,f)=>s-yrs(f)*f.a/Math.pow(1+r,yrs(f)+1),0);
+  let r=0.1;
+  for(let i=0;i<60;i++){const v=npv(r), dv=dnpv(r); if(!isFinite(v)||!isFinite(dv)||dv===0) break; const nr=r-v/dv; if(Math.abs(nr-r)<1e-9){r=nr; return r;} r=nr; if(r<=-0.999) break;}
+  let lo=-0.99, hi=10; if(npv(lo)*npv(hi)>0) return NaN;
+  for(let i=0;i<200;i++){const m=(lo+hi)/2; if(npv(lo)*npv(m)<=0) hi=m; else lo=m;}
+  return (lo+hi)/2;
+}
+const ENGINES=[
+ {id:"alloc", name:"Allocation engine", sub:"Fund formulas → ledger",
+  lede:"The engine behind fund accounting. It runs a fund's formulas in sequence for a period, folio by folio, and writes every result into the ledger. Fees, expense allocations, income splits, portfolio gains and statement lines are all formulas, so a fund with unusual terms gets different formulas, not different software.",
+  inputs:["fund_formulas","capital_commitments","fund_unit_settings","account_entries","portfolio_investments","aggregate_portfolio_investments","exchange_rates"],
+  steps:["Pre-run checks you define (PreRunCheck formulas) must pass, or nothing is touched","The fund's data is copied into an isolated scratch database, so a heavy run never contends with live users","Formulas run in sequence. Later formulas can read results of earlier ones","Each formula writes account entries with its formula id, the run id and a written explanation","Post-run checks assert totals tie, then ratios, investor statements and financial statements refresh","The period can be locked so later edits can't change reported numbers"],
+  outputs:["account_entries","allocation_runs","allocation_run_reports","fund_ratios"],
+  demo:"alloc"},
+ {id:"calls", name:"Capital calls & fees", sub:"Commitments → remittances",
+  lede:"A capital call creates one remittance per eligible LP. The amount is a percentage of commitment, a share of a total, or uploaded per LP. Fees are bundled in, each computed per folio from ledger entries in a date window or by formula, and the breakdown of every fee is kept.",
+  inputs:["capital_calls","capital_commitments","call_fees","account_entries","exchange_rates"],
+  steps:["Find eligible commitments by close and date","Call amount = % called × committed amount, or the LP's share of the total to be called","Each call fee is summed from the LP's matching ledger entries between its start and end dates, or computed by a formula","Fees part of capital are added to the call; other fees are shown as separate lines","Amounts are converted to the LP's folio currency at the call date","Payments recorded against the remittance update collected and arrears; allocating units for the call issues fund units"],
+  outputs:["capital_remittances","capital_remittance_payments","fund_units"],
+  formula:"remittance.call_amount = percentage_called × committed_amount + Σ fees_part_of_capital\nremittance.folio_call_amount = call_amount × fx(fund → folio currency, call_date)"},
+ {id:"dist", name:"Distributions", sub:"Distribution → per-LP payments",
+  lede:"A distribution declares fund-wide income, return of capital, reinvestment and fees, then splits them per LP by commitment percentage, by a stored investable-capital percentage, or by upload. Each payment keeps every component separately, gross and net, in fund, folio and tracking currency.",
+  inputs:["capital_distributions","capital_commitments","distribution_fees","account_entries","fund_units"],
+  steps:["Work out each LP's distribution percentage from the chosen basis","Split income, cost of investment and reinvestment by that percentage","Apply distribution fees and deductions, each computed from ledger entries or a formula","Compute gross payable and net payable","Redeem units where the fund issues units"],
+  outputs:["capital_distribution_payments","fund_units","account_entries"],
+  formula:"payment.income = distribution.income × lp_percentage\npayment.cost_of_investment = distribution.cost_of_investment × lp_percentage"},
+ {id:"cost", name:"Portfolio cost & gains", sub:"Lots → realised and unrealised gain",
+  lede:"Every buy is a lot. When a fund sells, the sale is matched to lots by FIFO or weighted average (set per fund), and each match is stored, so realised gain is explainable lot by lot. Positions roll up per company and instrument, and FMV comes from the latest valuation.",
+  inputs:["portfolio_investments","investment_instruments","valuations","stock_conversions","exchange_rates"],
+  steps:["Each buy, sell, transfer or conversion is a portfolio investment row","A sale is matched to open buy lots: FIFO or weighted average","Each match is written to portfolio attributions with cost of sold and gain","Positions aggregate bought, sold, cost of remaining and unrealised gain","FMV = quantity held × latest per-share valuation, converted to fund currency"],
+  outputs:["portfolio_attributions","aggregate_portfolio_investments","account_entries"],
+  demo:"cost"},
+ {id:"ratios", name:"Performance ratios", sub:"Cash flows → XIRR, DPI, TVPI, MOIC",
+  lede:"Ratios are computed for the fund, for each LP folio and for each portfolio company, as of any date. Inputs come from confirmed payments, completed distributions, FMV, cash and estimated carry. Ratio formulas let you add your own ledger amounts to either side of a ratio, and every ratio row stores the cash flows it used.",
+  inputs:["capital_remittance_payments","capital_distribution_payments","aggregate_portfolio_investments","account_entries","ratio_formulas","fund_unit_settings"],
+  steps:["Collect dated cash flows: paid-in (−), distributions (+), reinvestment (−)","Add residual value at the end date: FMV + cash + net current assets","For net IRR, deduct estimated carry at the end date","Apply ratio formulas: add or reduce numerator, denominator or cash flow","Store each ratio with its value, end date, owner and the cash flows used"],
+  outputs:["fund_ratios","fund_ratio_runs"],
+  demo:"ratios"},
+ {id:"nav", name:"NAV & fees (open-ended)", sub:"Ledger + valuations → NAV per class",
+  lede:"For evergreen funds, every dealing date gets one NAV per share class. Shared lines (investments, cash, other assets and liabilities) are split by each class's stake, then each class bears its own fees. A NAV is drafted, optionally adjusted, then approved, and only approved NAVs are used for dealing.",
+  inputs:["account_entries","aggregate_portfolio_investments","evergreen_class_terms","fund_units","dealing_orders"],
+  steps:["Draft: investments FMV + cash + other assets − other liabilities","Split shared lines across classes by stake","Deduct each class's management fee and expenses","Performance fee: fee % × gain above the high-water mark (plus hurdle) × units","Approve, then fill subscriptions and redemptions at the approved NAV per unit"],
+  outputs:["fund_navs","dealing_fills","fund_units","account_entries"],
+  formula:"mgmt_fee = nav_per_unit × units_held × class_fee_% × days / 365\nperf_fee = perf_fee_% × max(0, nav_per_unit_before_fee − hurdle_adjusted_hwm) × units_outstanding"},
+ {id:"kpi", name:"KPIs & RAG", sub:"Company reports → standardised metrics",
+  lede:"Portfolio companies report KPIs in their own names and currencies, by upload, by portal or from documents. Mappings translate them to your standard KPI names, convert currency, derive computed KPIs from a formula, and flag each value red, amber or green against budget, prior period or a fixed threshold.",
+  inputs:["kpi_reports","kpis","investor_kpi_mappings","exchange_rates"],
+  steps:["A KPI report holds a company's values for one period, tagged Actual, Budget or anything else","Reported names map to your standard names, in parent/child hierarchies","Values are converted to the fund's currency by the mapping's FX method","Computed KPIs are evaluated from a compute formula","RAG: value ÷ comparator (budget, prior period, or none) checked against red and green thresholds"],
+  outputs:["kpis","kpi_reports"],
+  demo:"rag"},
+ {id:"fx", name:"Currencies", sub:"FX rates → folio and tracking amounts",
+  lede:"A fund has a base currency, each LP folio can have its own, each instrument can have its own, and a fund can choose a tracking currency for consolidated reporting. Amounts are stored in each, converted at the rate for the transaction date, so a USD LP in an INR fund sees USD numbers that were right on the day.",
+  inputs:["exchange_rates","funds","capital_commitments"],
+  steps:["Rates are stored by currency pair and as-of date, from upload or a market data provider","Folio amounts convert at the transaction date's rate","Tracking amounts convert fund totals into the reporting currency","Instrument-currency FMV and gains are kept alongside fund-currency values"],
+  outputs:["capital_remittances","account_entries","portfolio_investments","funds"],
+  formula:"folio_amount_cents    = amount_cents × rate(fund_ccy → folio_ccy, as_of ≤ date)\ntracking_amount_cents = amount_cents × rate(fund_ccy → tracking_ccy, as_of ≤ date)"},
+ {id:"fs", name:"Financial statements", sub:"Ledger → balance sheet, P&L, partners' capital",
+  lede:"Balance Sheet, P&L and Statement of Changes in Partners' Capital are generated from the ledger the fund already keeps. Mapping rules assign ledger entries by name or entry type to statement accounts; unmapped entries are flagged; external figures can be tied out; a checked statement can be locked.",
+  inputs:["account_entries","financial_statement_accounts","financial_statement_mapping_rules","tie_out_figures"],
+  steps:["Map ledger entries to statement accounts by name or entry type","Compute each account for the period, year to date and since inception","Check that statements balance and tie to external figures","Flag unmapped entries","Lock the statement once approved"],
+  outputs:["financial_statements","account_entries"]},
+];
+let eng="alloc";
+function renderEngNav(){
+  $("#engNav").innerHTML=ENGINES.map(e=>`<button type="button" aria-pressed="${e.id===eng}" data-e="${e.id}">${esc(e.name)}</button>`).join("");
+  $("#engNav").querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{eng=b.dataset.e; renderEngNav(); renderEng();}));
+}
+function renderEng(){
+  const e=ENGINES.find(x=>x.id===eng);
+  $("#engBody").innerHTML=`
+    <div class="sec-head"><div class="eyebrow">${esc(e.sub)}</div><h3 class="h2" style="font-size:34px">${esc(e.name)}</h3><p class="lede" style="font-size:16px">${esc(e.lede)}</p></div>
+    <div class="flow">
+      <div class="col"><div class="tag">Reads</div>${chips(e.inputs)}</div>
+      <div class="arrow" aria-hidden="true">→</div>
+      <div class="col mid"><div class="tag">Does</div><ol>${e.steps.map(s=>`<li>${esc(s)}</li>`).join("")}</ol>${e.formula?`<pre class="snip">${esc(e.formula)}</pre>`:""}</div>
+      <div class="arrow" aria-hidden="true">→</div>
+      <div class="col"><div class="tag">Writes</div>${chips(e.outputs)}</div>
+    </div>
+    ${e.id==="alloc"?`<div class="panel"><h3>${RULE_TYPES.length} rule types</h3><div class="chips">${RULE_TYPES.map(r=>`<span class="pill">${esc(r)}</span>`).join("")}</div><p class="small muted">Generate creates entries from an expression; Allocate splits a fund-level entry across folios; Cumulate builds running totals; Percentage computes each folio's share; Portfolio rules turn holdings into fund entries; MasterFund rules flow a master fund's entries to feeders; Statement lines feed financial statements; Pre- and Post-run checks assert the data is right before and after.</p></div>`:""}
+    <div id="demo"></div>`;
+  const dm=$("#demo");
+  if(e.demo==="alloc") demoAlloc(dm);
+  if(e.demo==="cost") demoCost(dm);
+  if(e.demo==="ratios") demoRatios(dm);
+  if(e.demo==="rag") demoRag(dm);
+}
+function demoAlloc(el){
+  const lps=[{n:"Halcyon Pension Trust",cls:"A",c:25000000},{n:"Northgate Family Office",cls:"A",c:10000000},{n:"Sana Holdings",cls:"B",c:5000000}];
+  el.innerHTML=`<div class="demo"><h4>Try it: a quarterly management fee formula</h4>
+   <pre class="snip"><span class="c"># fund_formulas row · rule_type AllocateAccountEntry-Name · name "Management Fee"</span>
+capital_commitment.committed_amount_cents * ( fund_unit_setting.management_fee / 4 ) / 100</pre>
+   <div class="form-row"><label class="lbl" for="feeA">Class A management fee %<input type="number" id="feeA" value="2" step="0.25" min="0"></label><label class="lbl" for="feeB">Class B management fee %<input type="number" id="feeB" value="1.5" step="0.25" min="0"></label></div>
+   <div class="tablewrap"><table class="dt"><thead><tr><th>Folio (capital_commitment)</th><th>Class</th><th class="num">Committed</th><th class="num">account_entries.amount</th><th>explanation</th></tr></thead><tbody id="aBody"></tbody><tfoot><tr><td colspan="3">Fund-level roll-up entry</td><td class="num" id="aTot"></td><td class="expl">roll_up: true</td></tr></tfoot></table></div>
+   <p class="small muted">Example figures. Each row is one generated <code>account_entries</code> row with <code>reporting_date</code> 2026-09-30, <code>entry_type</code> "Expense", <code>generated</code> true and the formula's id. With "generate YTD / quarterly" on, the engine also writes Quarterly, YTD and Since Inception entries.</p></div>`;
+  const run=()=>{
+    const fee={A:+$("#feeA").value||0,B:+$("#feeB").value||0}; let tot=0;
+    $("#aBody").innerHTML=lps.map(l=>{const a=l.c*(fee[l.cls]/4)/100; tot+=a; return `<tr><td>${esc(l.n)}</td><td>${l.cls}</td><td class="num">${money(l.c)}</td><td class="num">${money(a,2)}</td><td class="expl">${money(l.c)} × (${fee[l.cls]} / 4) / 100 = ${money(a,2)}</td></tr>`;}).join("");
+    $("#aTot").textContent=money(tot,2);
+  };
+  el.querySelectorAll("input").forEach(i=>i.addEventListener("input",run)); run();
+}
+function demoCost(el){
+  const lots=[{n:"Lot 1",q:1000,p:100,d:"Mar 2021"},{n:"Lot 2",q:500,p:150,d:"Jun 2022"}];
+  let method="FIFO";
+  el.innerHTML=`<div class="demo"><h4>Try it: match a sale to buy lots</h4>
+    <div class="form-row"><label class="lbl" for="sq">Shares sold<input type="number" id="sq" value="1200" min="0" max="1500" step="50"></label><label class="lbl" for="sp">Sale price per share<input type="number" id="sp" value="200" min="0" step="5"></label><div class="seg" id="sm" role="group" aria-label="Method"><button type="button" data-m="FIFO" aria-pressed="true">FIFO</button><button type="button" data-m="WA" aria-pressed="false">Weighted average</button></div></div>
+    <div class="tablewrap"><table class="dt"><thead><tr><th>Buy lot</th><th class="num">Held</th><th class="num">Price</th><th class="num">Drawn</th><th class="num">Cost of sold</th><th class="num">Proceeds</th><th class="num">Gain</th></tr></thead><tbody id="cBody"></tbody><tfoot><tr id="cFoot"></tr></tfoot></table></div>
+    <p class="small muted">Each drawn row becomes a <code>portfolio_attributions</code> row (sold_pi_id, bought_pi_id, quantity, cost_of_sold, gain). Figures from the user guide's worked example.</p></div>`;
+  const run=()=>{
+    const total=lots.reduce((s,l)=>s+l.q,0); let q=Math.min(Math.max(+$("#sq").value||0,0),total); const sp=+$("#sp").value||0;
+    let rem=q; const rows=lots.map(l=>{let dr; if(method==="FIFO"){dr=Math.min(l.q,rem); rem-=dr;} else dr=q*l.q/total; return {...l,dr,cost:dr*l.p,pro:dr*sp,g:dr*(sp-l.p)};});
+    $("#cBody").innerHTML=rows.map(r=>`<tr><td>${r.n} · ${r.d}</td><td class="num">${fmt(r.q)}</td><td class="num">${money(r.p)}</td><td class="num">${fmt(r.dr)}</td><td class="num">${money(r.cost)}</td><td class="num">${money(r.pro)}</td><td class="num">${money(r.g)}</td></tr>`).join("");
+    const s=k=>rows.reduce((a,r)=>a+r[k],0);
+    $("#cFoot").innerHTML=`<td>Total</td><td></td><td></td><td class="num">${fmt(s("dr"))}</td><td class="num">${money(s("cost"))}</td><td class="num">${money(s("pro"))}</td><td class="num">${money(s("g"))}</td>`;
+  };
+  el.querySelectorAll("input").forEach(i=>i.addEventListener("input",run));
+  el.querySelectorAll("#sm button").forEach(b=>b.addEventListener("click",()=>{method=b.dataset.m; el.querySelectorAll("#sm button").forEach(x=>x.setAttribute("aria-pressed",x===b)); run();}));
+  run();
+}
+function demoRatios(el){
+  const flows=[["2022-03-31","call",-2000000],["2022-09-30","call",-3000000],["2023-06-30","call",-2500000],["2024-12-31","dist",1800000],["2025-09-30","dist",2600000]];
+  el.innerHTML=`<div class="demo"><h4>Try it: compute fund ratios from cash flows</h4>
+    <div class="tablewrap"><table class="dt"><thead><tr><th>Date</th><th>Type</th><th class="num">Amount (LP view)</th></tr></thead><tbody id="rBody"></tbody></table></div>
+    <div class="form-row"><label class="lbl" for="rEnd">End date<input type="text" id="rEnd" value="2026-09-30"></label><label class="lbl" for="rFmv">FMV + cash + net current assets at end date<input type="number" id="rFmv" value="9500000" step="100000"></label></div>
+    <div class="kpis" id="rOut"></div>
+    <p class="small muted">Example figures. Paid-in comes from confirmed remittance payments, distributions from completed distribution payments, residual value from positions. The flows used are stored in <code>fund_ratios.cash_flows</code>.</p></div>`;
+  $("#rBody").innerHTML=flows.map((f,i)=>`<tr><td><input type="text" data-i="${i}" data-k="0" value="${f[0]}" aria-label="Date ${i+1}"></td><td>${f[1]==="call"?"Capital call payment":"Distribution"}</td><td class="num"><input type="number" data-i="${i}" data-k="2" value="${f[2]}" step="100000" style="text-align:right" aria-label="Amount ${i+1}"></td></tr>`).join("");
+  const run=()=>{
+    const fmv=+$("#rFmv").value||0, end=new Date($("#rEnd").value);
+    const fl=flows.map(f=>({d:new Date(f[0]),a:+f[2],t:f[1]})).filter(f=>!isNaN(f.d));
+    const paid=-fl.filter(f=>f.a<0).reduce((s,f)=>s+f.a,0), dist=fl.filter(f=>f.a>0).reduce((s,f)=>s+f.a,0);
+    const all=[...fl]; if(!isNaN(end)) all.push({d:end,a:fmv}); all.sort((a,b)=>a.d-b.d);
+    const irr=xirr(all);
+    const k=[["DPI",paid?dist/paid:NaN,"x"],["RVPI",paid?fmv/paid:NaN,"x"],["TVPI",paid?(dist+fmv)/paid:NaN,"x"],["XIRR",irr*100,"%"]];
+    $("#rOut").innerHTML=k.map(([n,v,u])=>`<div class="kpi"><b>${isFinite(v)?fmt(v,u==="%"?1:2)+u:"–"}</b><span>${n}</span></div>`).join("")+`<div class="kpi"><b>${money(paid/1e6,1)}m</b><span>Paid-in</span></div>`;
+  };
+  el.querySelectorAll("#rBody input").forEach(i=>i.addEventListener("input",()=>{flows[+i.dataset.i][+i.dataset.k]=i.dataset.k==="2"?+i.value:i.value; run();}));
+  el.querySelectorAll("#rFmv,#rEnd").forEach(i=>i.addEventListener("input",run)); run();
+}
+function demoRag(el){
+  el.innerHTML=`<div class="demo"><h4>Try it: RAG status for a KPI</h4>
+    <div class="form-row"><label class="lbl" for="kName">KPI<select id="kName"><option value="h">Revenue (higher is better)</option><option value="l">Net burn (lower is better)</option></select></label><label class="lbl" for="kAct">Actual<input type="number" id="kAct" value="8.1"></label><label class="lbl" for="kBud">Budget (comparator)<input type="number" id="kBud" value="10"></label><label class="lbl" for="kRed">Red threshold<input type="number" id="kRed" value="0.7" step="0.05"></label><label class="lbl" for="kGreen">Green threshold<input type="number" id="kGreen" value="0.9" step="0.05"></label></div>
+    <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap"><span class="rag" id="kOut"></span><span class="small muted" id="kWhy"></span></div>
+    <p class="small muted">The rule is stored on <code>investor_kpi_mappings</code> (rag_comparator_tag, rag_direction, rag_red_threshold, rag_green_threshold); the result on <code>kpis.rag_status</code>.</p></div>`;
+  const run=()=>{
+    const dir=$("#kName").value, a=+$("#kAct").value, b=+$("#kBud").value, r=+$("#kRed").value, g=+$("#kGreen").value;
+    let st, ratio=b===0?NaN:a/b;
+    if(b===0) st="Red";
+    else if(dir==="h") st=ratio<r?"Red":ratio>=g?"Green":"Amber";
+    else st=ratio>r?"Red":ratio<=g?"Green":"Amber";
+    const o=$("#kOut"); o.className="rag "+st; o.textContent=st;
+    $("#kWhy").textContent=b===0?"Comparator is zero, so the KPI is flagged red.":`${fmt(a,2)} ÷ ${fmt(b,2)} = ${fmt(ratio,2)} · ${dir==="h"?`red below ${r}, green at or above ${g}`:`red above ${r}, green at or below ${g}`}`;
+  };
+  $("#kName").addEventListener("change",()=>{ if($("#kName").value==="l"){$("#kRed").value=1.2;$("#kGreen").value=1.0;$("#kAct").value=11;} else {$("#kRed").value=0.7;$("#kGreen").value=0.9;$("#kAct").value=8.1;} run();});
+  el.querySelectorAll("input").forEach(i=>i.addEventListener("input",run)); run();
+}
+
+/* ---------- api ---------- */
+const resNames=Object.keys(D.api.resources).sort();
+let apiSel="capital_commitments";
+const schemaFor={account_entries:"AccountEntry",aggregate_portfolio_investments:"AggregatePortfolioInvestment",capital_calls:"CapitalCall",capital_commitments:"CapitalCommitment",capital_distribution_payments:"CapitalDistributionPayment",capital_distributions:"CapitalDistribution",capital_remittance_payments:"CapitalRemittancePayment",capital_remittances:"CapitalRemittance",documents:"Document",fund_ratios:"FundRatio",fund_unit_settings:"FundUnitSetting",fund_units:"FundUnit",funds:"Fund",investors:"Investor",portfolio_investments:"PortfolioInvestment",valuations:"Valuation",investment_instruments:"InvestmentInstrument",exchange_rates:"ExchangeRate"};
+function renderApi(){
+  $("#apiRes").innerHTML=resNames.map(n=>`<button type="button" aria-pressed="${n===apiSel}" data-r="${n}"><span>${esc(n)}</span><span class="n">${D.api.resources[n].length}</span></button>`).join("");
+  $("#apiRes").querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{apiSel=b.dataset.r; renderApi();}));
+  const eps=D.api.resources[apiSel], sc=D.api.schemas[schemaFor[apiSel]];
+  const exObj={}; if(sc) for(const [k,v] of Object.entries(sc)){ if(v.example!==undefined) exObj[k]=v.example; else exObj[k]=v.nullable?null:(v.type==="integer"||v.type==="number"?0:v.type==="boolean"?false:""); }
+  $("#apiMain").innerHTML=`<div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline"><h3 class="mono" style="font-size:18px;font-weight:500">/${esc(apiSel)}</h3>${T[apiSel]?`<a class="small" href="#table-${apiSel.replace(/_/g,"-")}">Table definition →</a>`:""}</div>
+    <div>${eps.map(e=>`<div class="ep"><span class="v ${e.verb}">${e.verb}</span><span><code>${esc(e.path)}</code> <span class="muted small">${esc(e.summary)}</span></span></div>`).join("")}</div>
+    ${sc?`<div style="display:grid;gap:8px"><div class="eyebrow">Response schema · ${esc(schemaFor[apiSel])} · example</div><pre class="snip">${esc(JSON.stringify(exObj,null,2))}</pre></div>`:`<p class="small muted">Returns the same fields as the table definition.</p>`}
+    <p class="small muted">Authenticate with <code>Authorization: Bearer &lt;token&gt;</code>. List endpoints accept Ransack filters, e.g. <code>?q[fund_id_eq]=34</code>. Beyond this published spec, most other screens also serve <code>.json</code> under the same permissions.</p>`;
+}
+
+/* ---------- lake ---------- */
+const CMP=[
+ ["Meaning","Schema-on-read. Every report and notebook decides again what \"called\" or \"NAV\" means.","Typed tables that already model commitments, remittances, units, lots and KPIs, plus your custom fields."],
+ ["Calculations","Fee, carry and ratio logic lives in SQL and notebooks, re-implemented per report, with no link from a number back to its rule.","Formulas stored as data and run by one engine. Each result row records its formula, run and explanation."],
+ ["Corrections","Re-run the pipeline and history is overwritten.","Field-level audit trail, soft deletes, locked periods and per-row import lineage."],
+ ["Who sees what","Table or bucket permissions.","Per-fund, per-investor and per-document access rights, enforced the same way in the UI, API and AI tools."],
+ ["Workflow","None. Approvals, notices and e-sign are another system.","Approvals, maker-checker, capital call notices, statements and e-signature on the same records."],
+ ["Data quality","Checked after the fact, if at all.","Validation on entry: required fields, formats, ranges, uniqueness, pre- and post-run checks."],
+ ["Time to first LP report","Build ingestion, model, calculations, permissions and a portal first.","Import your files into existing templates and generate notices and statements."],
+ ["Analytics","Strong.","Report Builder and dashboards in-app, and a clean feed into your lake for anything else."],
+];
+$("#cmpBody").innerHTML=CMP.map(r=>`<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td><td>${esc(r[2])}</td></tr>`).join("");
+
+/* ---------- fit ---------- */
+const FIT=[
+ ["LP commitment amount","native",[["capital_commitments","committed_amount"]]],
+ ["Commitment in the LP's own currency","native",[["capital_commitments","folio_committed_amount, folio_currency"]]],
+ ["Commitment date, closing","native",[["capital_commitments","commitment_date, fund_close"]]],
+ ["Commitment increases, decreases, transfers","native",[["commitment_adjustments"],["fund_unit_transfers"]]],
+ ["Drawdown notice","native",[["capital_calls","percentage_called, call_basis, due_date"]]],
+ ["LP payment received","native",[["capital_remittance_payments"]]],
+ ["Arrears and defaults","native",[["capital_remittances","arrear_amount"]]],
+ ["Distribution split: income vs return of capital","native",[["capital_distribution_payments","income, cost_of_investment, reinvestment"]]],
+ ["Withholding tax on distributions","native",[["capital_distribution_payments","tax_with_fees"]]],
+ ["Management fee rate","native",[["fund_unit_settings","management_fee"]]],
+ ["Carry %","native",[["fund_unit_settings","carry"]]],
+ ["Share classes","native",[["fund_unit_settings"],["evergreen_class_terms"]]],
+ ["Hurdle / preferred return","custom",[["fund_unit_settings","custom field, used by formulas"],["evergreen_class_terms","hurdle_pct (open-ended)"]]],
+ ["Units held, NAV per unit","native",[["fund_units"],["fund_navs","nav_per_unit"]]],
+ ["Management fee charged per LP per quarter","ledger",[["account_entries","generated by a fund formula"]]],
+ ["Fund expenses: legal, audit, admin","ledger",[["account_entries","entry_type Expense"]]],
+ ["Administrator's GL / trial balance","ledger",[["account_entries","import"],["financial_statement_mapping_rules"]]],
+ ["Administrator's figures for tie-out","native",[["tie_out_figures"]]],
+ ["Side letter terms, MFN","native",[["side_letters"],["side_letter_obligations","mfn_relevant"]]],
+ ["LPs excused from a deal","native",[["excused_investors"]]],
+ ["LP tax id, bank details","native",[["investor_kycs","PAN, bank_name, bank_account_number"]]],
+ ["FATCA / CRS declarations","custom",[["investor_kycs","custom fields on extra KYC steps"]]],
+ ["Accredited / qualified investor status","custom",[["investor_kycs","custom field"]]],
+ ["AML screening","native",[["aml_reports"]]],
+ ["Relationship manager, placement agent","native",[["rm_mappings"]]],
+ ["Portfolio company","native",[["investors","category Portfolio Company"]]],
+ ["Sector, domicile","native",[["portfolio_investments","sector, investment_domicile"],["investment_instruments","sector"]]],
+ ["Security: Series A pref, SAFE, debt","native",[["investment_instruments","category, sub_category, currency"]]],
+ ["Liquidation preference, anti-dilution","custom",[["portfolio_investments","custom fields"]]],
+ ["Buys, sells, conversions","native",[["portfolio_investments"],["stock_conversions"]]],
+ ["Cost basis by lot (FIFO / weighted average)","native",[["portfolio_attributions"]]],
+ ["Dividends, interest received","native",[["portfolio_cashflows"]]],
+ ["Valuation marks","native",[["valuations","valuation_date, per_share_value"]]],
+ ["Listed prices","native",[["valuations","source, provider"],["market_data_runs"]]],
+ ["Revenue, EBITDA, ARR, headcount","kpi",[["kpis","name, value"],["kpi_reports","as_of, period"]]],
+ ["Budget vs actual","kpi",[["kpi_reports","tag_list"],["investor_kpi_mappings","rag_*"]]],
+ ["Company-specific KPI names","kpi",[["investor_kpi_mappings","reported_kpi_name → standard_kpi_name"]]],
+ ["Portfolio company cap table","native",[["investments"],["shareholder_positions","fully_diluted_percentage"]]],
+ ["Board seat, lead partner","custom",[["investors","custom fields on the company"]]],
+ ["FX hedges","native",[["derivative_contracts"]]],
+ ["FX rates","native",[["exchange_rates"]]],
+ ["Reporting currency across funds","native",[["funds","tracking_currency, tracking_*"]]],
+ ["Master / feeder structure","native",[["funds","master_fund_id"]]],
+ ["IRR, TVPI per LP","native",[["fund_ratios","owner = the LP's commitment"]]],
+ ["Co-investment opportunities","native",[["investment_opportunities"],["expression_of_interests"]]],
+ ["Deal pipeline","native",[["deals"],["deal_investors"]]],
+ ["Signed subscription documents","doc",[["documents"],["e_signatures"]]],
+ ["Quarterly LP reports","doc",[["documents","generated from templates"],["fund_reports"]]],
+ ["Scenario modelling","native",[["portfolio_scenarios","calculations"]]],
+ ["Anything else you track","custom",[["form_custom_fields","a custom field on the record it describes"]]],
+];
+const KINDS={native:"Native column",ledger:"Ledger entry",kpi:"KPI",custom:"Custom field",doc:"Document"};
+let fitKind="all";
+function renderFit(){
+  const q=$("#fitQ").value.trim().toLowerCase();
+  $("#fitKinds").innerHTML=[["all","All"],...Object.entries(KINDS)].map(([k,l])=>`<button type="button" class="chip" aria-pressed="${k===fitKind}" data-k="${k}" style="${k===fitKind?"border-color:var(--fg);font-weight:600":""}">${l} <span class="muted">${k==="all"?FIT.length:FIT.filter(f=>f[1]===k).length}</span></button>`).join("");
+  $("#fitKinds").querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{fitKind=b.dataset.k; renderFit();}));
+  const rows=FIT.filter(f=>(fitKind==="all"||f[1]===fitKind)&&(!q||f[0].toLowerCase().includes(q)||f[2].some(w=>(w[0]+" "+(w[1]||"")).toLowerCase().includes(q))));
+  $("#fitList").innerHTML=rows.length?rows.map(f=>`<div class="fit-row"><span class="what">${esc(f[0])}</span><span class="kind ${f[1]}">${KINDS[f[1]]}</span><span class="where">${f[2].map(w=>tableChip(w[0])+(w[1]?`<code>${esc(w[1])}</code>`:"")).join(" &nbsp; ")}</span></div>`).join("")
+   : `<div class="fit-row"><span class="what">${esc($("#fitQ").value)}</span><span class="kind custom">Custom field</span><span class="where">Not a named item here, so it becomes a custom field on the record it describes, stored in <code>json_fields</code>. Search the <a href="#schema">schema</a> to check for a native column first.</span></div>`;
+}
+$("#fitQ").addEventListener("input",renderFit);
+
+/* ---------- routing ---------- */
+const VIEWS=["overview","schema","extend","engines","api","lake","fit"];
+let rendered={};
+function route(){
+  let h=location.hash.slice(1)||"overview", table=null;
+  if(h.startsWith("table-")){ table=h.slice(6).replace(/-/g,"_"); h="schema"; }
+  if(!VIEWS.includes(h)) h="overview";
+  document.querySelectorAll(".view").forEach(v=>v.hidden=v.dataset.view!==h);
+  document.querySelectorAll("#nav a").forEach(a=>a.getAttribute("href")==="#"+h?a.setAttribute("aria-current","page"):a.removeAttribute("aria-current"));
+  if(h==="schema"){ if(table&&T[table]) selectTable(table,false); else {renderDomains(); renderList(); renderDetail();} }
+  if(h==="engines" && !rendered.engines){renderEngNav(); renderEng(); rendered.engines=true;}
+  if(h==="api" && !rendered.api){renderApi(); rendered.api=true;}
+  if(h==="fit" && !rendered.fit){renderFit(); rendered.fit=true;}
+  window.scrollTo({top:0});
+}
+window.addEventListener("hashchange",route);
+route();
+})();
+</script>
