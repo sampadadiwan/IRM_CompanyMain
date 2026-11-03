@@ -1,0 +1,5 @@
+# build outputs that are not kept in git (regenerate with build.py)
+*.artifact.html
+.data*.json
+.models.json
+__pycache__/
