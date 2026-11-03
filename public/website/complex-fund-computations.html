@@ -1,0 +1,995 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+(function(){
+  /* Website host -> the app host that receives its demo requests. Mirrors
+     WEBSITE_HOSTS in each deployment's .env file; keep the two in step, because
+     the receiving endpoint only returns CORS headers for origins in that list
+     and a mismatch here fails as a browser-side CORS error with nothing in our
+     logs to explain it. */
+  var ENDPOINTS = {
+    'caphive.com':          'https://app.caphive.com/website_leads',
+    'www.caphive.com':      'https://app.caphive.com/website_leads',
+    'caphive.us':           'https://app.caphive.us/website_leads',
+    'www.caphive.us':       'https://app.caphive.us/website_leads',
+    /* Staging is deliberately not a caphive.* domain. */
+    'altconnects.com':      'https://dev.altconnects.com/website_leads',
+    'www.altconnects.com':  'https://dev.altconnects.com/website_leads',
+    'dev.altconnects.com':  'https://dev.altconnects.com/website_leads'
+  };
+
+  /* Development is the one case the table cannot express. A single Rails process
+     serves BOTH the website (Host: caphive.localhost) and the app (Host:
+     localhost), on whichever port the developer started it on — 3000 and 3001
+     are both in use across this repo's Procfiles and .env.development. So derive
+     the app origin from the page's own port rather than hardcoding one and
+     having it fail on the other. Still cross-origin: the hostname differs, so
+     this exercises the real CORS path rather than quietly bypassing it. */
+  function endpointFor(hostname){
+    if(/(^|\.)localhost$/.test(hostname)){
+      return location.protocol + '//localhost' + (location.port ? ':' + location.port : '') + '/website_leads';
+    }
+    return ENDPOINTS[hostname] || '';
+  }
+
+  window.CAPHIVE = {
+    /* Empty for an unrecognised host — a preview deploy, someone's laptop, an
+       archived copy. The form then falls back to composing an email in the
+       visitor's own mail client rather than posting into a stack that would
+       reject it, so an unlisted host degrades instead of silently losing leads. */
+    formEndpoint: endpointFor(location.hostname),
+
+    /* Where the browser goes after a successful submission. Having its own URL
+       is what makes the conversion measurable. Do not change without updating
+       the conversion trigger in the analytics property. */
+    thankYouUrl: 'thank-you.html',
+
+    /* The public scheduling link. Every booking CTA on the site stays HIDDEN
+       while this is empty, and the header button keeps pointing at the contact
+       form — an advertised booking link that does not book is worse than no
+       booking link at all.
+
+       Availability must be genuinely bookable in US business hours; for an
+       India-based team that means evenings IST. The SAME url belongs in the
+       outbound email signature, which is not wired and must be edited by hand
+       (docs/gtm/prerequisites/C6_outbound_email_template.md §4).
+
+       If this account is ever closed or renamed, blank this line rather than
+       leaving a dead link on the highest-intent button on the site. */
+    bookingUrl: 'https://calendly.com/caphive-support'
+  };
+}());
+</script>
+<!-- Google tag (gtag.js) — GA4 property for caphive.com.
+     Rendered into the <head> of every page by _layout.html.erb, so the
+     measurement ID lives here and nowhere else.
+
+     Consent Mode v2: analytics_storage starts DENIED, so gtag.js loads and
+     sends cookieless pings but sets no _ga cookie until the visitor accepts in
+     the banner (_partials/consent_banner.html). The stored choice is replayed
+     below — synchronously, before config — so a returning visitor who already
+     accepted is measured properly on their very first pageview rather than
+     from the second one onwards. -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+
+  // We run no advertising tags, so the ad_* signals are denied permanently and
+  // the banner never grants them. Only analytics_storage is the visitor's call.
+  gtag('consent', 'default', {
+    ad_storage: 'denied',
+    ad_user_data: 'denied',
+    ad_personalization: 'denied',
+    analytics_storage: 'denied'
+  });
+
+  // localStorage throws in some privacy modes — a read failure just means we
+  // stay on the denied default, which is the safe direction to fail in.
+  try {
+    if(localStorage.getItem('caphive.consent.v1') === 'granted'){
+      gtag('consent', 'update', { analytics_storage: 'granted' });
+    }
+  } catch(e){}
+
+  gtag('js', new Date());
+  gtag('config', 'G-JR4ZT29M06');
+
+  // Named entry point for conversion events, so assets/js/caphive.js never
+  // touches gtag directly and stays loadable on any page rendered without this
+  // partial (it stubs caphiveTrack to a no-op when absent).
+  //
+  // Consent is deliberately NOT re-checked here. Consent Mode already suppresses
+  // the cookie while analytics_storage is denied, and a cookieless event is
+  // still the signal we want counted — gating on consent here would undercount
+  // conversions for no privacy gain.
+  //
+  // Never pass PII: the analytics property is not a place to store a lead.
+  window.caphiveTrack = function(name, params){
+    if(typeof gtag === 'function') gtag('event', name, params || {});
+  };
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-JR4ZT29M06"></script>
+<title>Complex fund computations: deterministic at the core, agentic at the edge | CapHive</title>
+<meta name="description" content="The most consequential fund computations are often the least automated. Why fees, carry and multi-vehicle allocations belong in a deterministic engine, and where AI agents fit around it.">
+<meta name="theme-color" content="#FBFAF7">
+<link rel="canonical" href="https://caphive.com/complex-fund-computations.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 34'%3E%3Cpath d='M15 1L29 9v16L15 33 1 25V9L15 1z' fill='none' stroke='%23FF4D00' stroke-width='3'/%3E%3Cpath d='M15 9l7 4v8l-7 4-7-4v-8l7-4z' fill='%23FF4D00'/%3E%3C/svg%3E">
+<meta property="og:title" content="Complex fund computations: deterministic at the core, agentic at the edge">
+<meta property="og:description" content="Financial correctness cannot be a matter of probability. Deterministic engines for the numbers, AI agents for the work around them.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://caphive.com/complex-fund-computations.html">
+<meta property="og:image" content="https://caphive.com/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Lobster&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/caphive.css?v=3a2cb24c">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "@id": "https://caphive.com/#organization",
+  "name": "CapHive",
+  "url": "https://caphive.com",
+  "logo": "https://caphive.com/assets/img/caphive-logo@3x.png",
+  "email": "hello@caphive.com",
+  "description": "Full-stack intelligent technology platform for powering private capital markets — funds, portfolios, deals & secondaries.",
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "801, One International Center, Tower 1, Senapati Bapat Marg, Lower Parel",
+    "addressLocality": "Mumbai",
+    "postalCode": "400013",
+    "addressCountry": "IN"
+  },
+  "areaServed": [
+    { "@type": "Country", "name": "India" },
+    { "@type": "Country", "name": "United States" }
+  ],
+  "founder": {
+    "@type": "Person",
+    "name": "Ausang Shukla",
+    "jobTitle": "Founder & CEO",
+    "sameAs": "https://in.linkedin.com/in/ausangshukla"
+  }
+}
+</script>
+</head>
+<body data-page="resources">
+
+<!-- DRAFT FOR REVIEW. Text supplied as a Word document (~/Downloads/Complex Fund Computations.docx).
+     The hexagon graphic and the set-up / ongoing slide from that document are rebuilt here as
+     HTML (cards and a table); the "How this was worked out" screenshot is kept as an image. -->
+
+<!-- ================= NAV ================= -->
+<header class="nav" id="nav">
+  <a class="brand" href="index.html" aria-label="CapHive home"><img class="logo" src="assets/img/caphive-logo-original.png?v=04e7b692" alt="CapHive" width="89" height="34"></a>
+  <nav class="nav-links" aria-label="Primary">
+    <div class="has-menu">
+      <a class="nav-link" href="products.html" data-nav="products">
+        Products
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="nav-menu">
+        <a href="funds.html"><strong>Funds</strong><span>Investor onboarding, capital calls, fund accounting</span></a>
+        <a href="portfolios.html"><strong>Portfolios</strong><span>Company data, performance, LP &amp; GP reporting</span></a>
+        <a href="deals-secondaries.html"><strong>Deals &amp; Secondaries</strong><span>Pipelines, SPVs, multi-party transactions</span></a>
+        <a href="ai-agents.html"><strong>AI Agents</strong><span>Sixteen agents purpose-built for private markets</span></a>
+        <a href="integrations.html"><strong>Data &amp; Integrations</strong><span>ERPs, e-sign, APIs</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="who-we-serve.html" data-nav="solutions">Who We Serve</a>
+    <div class="has-menu">
+      <a class="nav-link" href="resources.html" data-nav="resources">
+        Resources
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="nav-menu">
+        <a href="blog.html"><strong>Insights</strong><span>Writing on operations, AI and private markets</span></a>
+        
+        <a href="case-studies.html"><strong>Case Studies</strong><span>What changed for funds running on CapHive</span></a>
+        <a href="security.html"><strong>Security &amp; Trust</strong><span>Controls, hosting, certifications</span></a>
+        <a href="faq.html"><strong>FAQ</strong><span>Implementation, data, pricing, migration</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="about.html" data-nav="about">About</a>
+    <a class="nav-link" href="contact.html" data-nav="contact">Contact</a>
+  </nav>
+  <div class="nav-cta">
+    <div class="has-menu login-menu">
+      <button type="button" class="login nav-link">
+        Login
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <!-- Pinned per region, same as the footer's "Login — IND" / "Login — USA"
+           links. The trigger above is a non-navigating button — only these two
+           actually go anywhere. -->
+      <div class="nav-menu">
+        <a href="https://app.caphive.com/">Login — IND</a>
+        <a href="https://app.caphive.us/">Login — USA</a>
+      </div>
+    </div>
+    <!-- caphive.js rewrites this href to window.CAPHIVE.bookingUrl when that is set, so the
+         header CTA, the contact page and the outbound email signature all carry the same
+         link. Falls back to the contact form while no booking url is configured. -->
+    <a class="btn btn-primary btn-nav" href="contact.html" data-booking-cta>Setup a Demo</a>
+    <button class="nav-toggle" id="navToggle" aria-label="Open menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<div class="mobile-menu" id="mobileMenu">
+  <!-- Mirrors the desktop .login-menu dropdown in nav.html.erb, which is
+       hidden on mobile along with the rest of .nav-cta. Trigger is a plain
+       button (there's no login landing page to link to), so unlike the
+       Products/Resources groups below the whole row is the toggle. -->
+  <div class="mm-group">
+    <div class="mm-row">
+      <button type="button" class="mm-toggle mm-toggle-label" aria-expanded="false" aria-controls="mmLogin" aria-label="Show Login options">
+        Login
+        <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div class="mm-panel" id="mmLogin" hidden>
+      <a class="mm-sub" href="https://app.caphive.com/">Login — IND</a>
+      <a class="mm-sub" href="https://app.caphive.us/">Login — USA</a>
+    </div>
+  </div>
+
+  <hr class="mm-divider">
+
+  <a href="index.html">Home</a>
+
+  <!-- Products / Resources mirror the two desktop dropdowns in nav.html.erb.
+       The label stays a plain link so the parent page is still reachable; the
+       chevron beside it is a separate button that expands the children. Keep
+       both lists in step with the .nav-menu blocks in nav.html.erb. -->
+  <div class="mm-group">
+    <div class="mm-row">
+      <a href="products.html">Products</a>
+      <button type="button" class="mm-toggle" aria-expanded="false" aria-controls="mmProducts" aria-label="Show Products pages">
+        <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div class="mm-panel" id="mmProducts" hidden>
+      <a class="mm-sub" href="funds.html">Funds</a>
+      <a class="mm-sub" href="portfolios.html">Portfolios</a>
+      <a class="mm-sub" href="deals-secondaries.html">Deals &amp; Secondaries</a>
+      <a class="mm-sub" href="ai-agents.html">AI Agents</a>
+      <a class="mm-sub" href="integrations.html">Data &amp; Integrations</a>
+    </div>
+  </div>
+
+  <a href="who-we-serve.html">Who We Serve</a>
+
+  <div class="mm-group">
+    <div class="mm-row">
+      <a href="resources.html">Resources</a>
+      <button type="button" class="mm-toggle" aria-expanded="false" aria-controls="mmResources" aria-label="Show Resources pages">
+        <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div class="mm-panel" id="mmResources" hidden>
+      <a class="mm-sub" href="blog.html">Insights</a>
+      <a class="mm-sub" href="case-studies.html">Case Studies</a>
+      <a class="mm-sub" href="security.html">Security &amp; Trust</a>
+      <a class="mm-sub" href="faq.html">FAQ</a>
+    </div>
+  </div>
+
+  <hr class="mm-divider">
+
+  <a href="about.html">About</a>
+  <a href="contact.html">Contact</a>
+
+  <!-- Same booking-url swap as the desktop header CTA. -->
+  <a class="btn btn-primary" href="contact.html" data-booking-cta>Setup a Demo</a>
+</div>
+<script>
+(function(){
+  /* Inline rather than in assets/js/caphive.js because the homepage renders
+     _partials/index_scripts.html and never loads caphive.js — anything put
+     there would leave the accordion dead on the homepage.
+
+     The sub-links are ordinary <a>s, so the existing "close the menu on any
+     link click" handler in both script bundles already covers them. The
+     chevron is a <button>, so it deliberately does not match that selector
+     and expanding never closes the menu. */
+  document.querySelectorAll('#mobileMenu .mm-toggle').forEach(function(btn){
+    var panel = document.getElementById(btn.getAttribute('aria-controls'));
+    if(!panel) return;
+    btn.addEventListener('click', function(){
+      var open = panel.hidden;
+      panel.hidden = !open;
+      btn.setAttribute('aria-expanded', open);
+    });
+  });
+})();
+</script>
+
+
+<style>
+/* page-local (kept out of caphive.css to avoid a cache-bust) */
+.shot{margin:36px 0 8px}
+.shot a{display:block;background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px;overflow:hidden}
+.shot img{display:block;width:100%;height:auto;border-radius:8px}
+.shot figcaption,.split-table figcaption{margin-top:12px;font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut)}
+.split-table td{vertical-align:top}
+.split-table td ul{margin:0;padding-left:18px}
+.split-table td li{margin:0 0 6px;font-size:14.5px}
+.split-table th.ai{color:var(--orange)}
+.cfc-tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}
+.shot a{cursor:zoom-in;position:relative;transition:box-shadow .25s,border-color .25s}
+.shot a:hover{border-color:var(--fg);box-shadow:0 24px 48px -28px rgba(16,16,16,.25)}
+.shot .zoom-hint{position:absolute;right:18px;bottom:18px;display:flex;align-items:center;gap:6px;padding:6px 11px;border-radius:999px;background:rgba(16,16,16,.78);color:#fff;font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;opacity:0;transform:translateY(4px);transition:opacity .2s,transform .2s}
+.shot a:hover .zoom-hint,.shot a:focus-visible .zoom-hint{opacity:1;transform:none}
+@media (hover:none){.shot .zoom-hint{opacity:1;transform:none}}
+/* lightbox */
+.lightbox{border:0;padding:0;margin:auto;background:transparent;max-width:min(96vw,1680px);width:100%;max-height:94vh;overflow:visible}
+.lightbox::backdrop{background:rgba(12,12,12,.82);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.lightbox[open]{animation:lb-in .22s cubic-bezier(.2,.8,.3,1)}
+.lightbox[open]::backdrop{animation:lb-fade .22s ease}
+@keyframes lb-in{from{opacity:0;transform:scale(.97) translateY(8px)}to{opacity:1;transform:none}}
+@keyframes lb-fade{from{opacity:0}to{opacity:1}}
+.lightbox .lb-frame{background:#fff;border-radius:16px;padding:12px;max-height:calc(94vh - 52px);overflow:auto;box-shadow:0 40px 100px -30px rgba(0,0,0,.6)}
+.lightbox img{display:block;width:100%;height:auto;border-radius:8px}
+.lightbox .lb-bar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:12px;color:rgba(255,255,255,.75);font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase}
+.lightbox .lb-close{flex:none;width:40px;height:40px;border-radius:999px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;display:grid;place-items:center;cursor:pointer;transition:background .2s}
+.lightbox .lb-close:hover{background:rgba(255,255,255,.2)}
+@media (max-width:800px){.lightbox img{width:1500px;max-width:none}}
+@media (prefers-reduced-motion:reduce){.lightbox[open],.lightbox[open]::backdrop{animation:none}}
+</style>
+
+<article>
+  <!-- ================= ARTICLE HERO ================= -->
+  <header class="page-hero article-hero hero-tinted tint-black">
+    <div class="wrap">
+      <div class="hero-panel">
+        <div class="article-measure">
+          <nav class="crumbs" aria-label="Breadcrumb">
+            <a href="index.html">Home</a><span>/</span><a href="blog.html">Insights</a><span>/</span>Complex fund computations
+          </nav>
+          <span class="chip-label">Fund accounting</span>
+          <h1 style="margin-top:22px">Complex fund computations: deterministic at the core. <em>Agentic at the edge.</em></h1>
+          <p class="lede">
+            How <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> is helping private
+            market fund managers eliminate spreadsheet dependencies, institutionalise complex
+            financial logic, and build the foundation for AI-powered fund operations.
+          </p>
+          <div class="article-meta">
+            <time datetime="2026-11-03">Nov 3, 2026</time>
+            <span class="dot">·</span>
+            <span>7 min read</span>
+            <span class="dot">·</span>
+            <span>Fund accounting</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= ARTICLE BODY ================= -->
+  <div class="article-body">
+    <div class="wrap">
+      <div class="article-card">
+        <div class="article-measure">
+          <div class="prose">
+        <h2 id="last-mile">The last mile of fund automation remains surprisingly manual</h2>
+        <p>
+          Private markets have grown significantly in scale, complexity and sophistication. Yet,
+          behind the scenes, some of the most critical financial computations continue to depend
+          on spreadsheets, manual adjustments and the institutional knowledge of a handful of
+          experienced fund accountants.
+        </p>
+        <p>
+          The challenge is not simply calculating management fees, carried interest, NAVs or
+          investor allocations. It is managing the extraordinary variety of rules, exceptions and
+          interdependencies that arise across funds, investors, share classes, currencies and
+          investment vehicles.
+        </p>
+        <p>
+          Consider a fund with multiple feeder vehicles, investor-specific side letters, different
+          fee arrangements, complex distribution waterfalls and investments denominated in
+          multiple currencies. A seemingly straightforward fee or carry calculation can involve
+          dozens of interdependent computations, each governed by specific contractual terms.
+        </p>
+        <p>
+          Traditional fund accounting systems often struggle with this complexity. The result is a
+          familiar operating model: standard calculations happen in the system, while exceptions
+          and more complex logic are handled through Excel, manual overrides and offline
+          reconciliations.
+        </p>
+        <div class="pull">
+          <p>The most complex and consequential computations are often the least automated, least transparent and most dependent on individuals.</p>
+        </div>
+        <p>
+          At <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span>, we believe that
+          genuine fund automation requires a different architectural approach.
+        </p>
+
+        <h2 id="deterministic-by-design">Deterministic by design. Flexible by architecture</h2>
+        <p>
+          <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> has been purpose-built
+          to automate highly complex fund computations, without sacrificing the flexibility that
+          private market structures demand.
+        </p>
+        <p>
+          At the heart of the platform is a powerful, configurable computation framework that
+          supports fund-specific algorithms, investor-level rules, multi-vehicle dependencies and
+          sophisticated allocation methodologies.
+        </p>
+        <p>
+          Unlike platforms that rely on a fixed library of standard calculations,
+          <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> provides the
+          flexibility to model bespoke financial logic within the application itself. This
+          includes:
+        </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= WHAT IT COVERS ================= -->
+  <section class="section" style="padding-bottom:20px">
+    <div class="wrap">
+      <div class="f-grid reveal">
+        <div class="f-card"><span class="kick">01 · Computations</span><h3>Complex fund computations</h3><p>NAV, management fees, expense allocations, carried interest, preferred returns, hurdles, investor-level ratios and portfolio allocations.</p></div>
+        <div class="f-card"><span class="kick">02 · Waterfalls</span><h3>Customisable distribution waterfalls</h3><p>Fund-specific algorithms that accommodate complex commercial terms, investor classes and allocation rules.</p></div>
+        <div class="f-card"><span class="kick">03 · Structures</span><h3>Multi-vehicle structures</h3><p>Computations that span master funds, feeder funds, SPVs and other interconnected investment vehicles.</p></div>
+        <div class="f-card"><span class="kick">04 · Currency</span><h3>Multi-currency operations</h3><p>Currency conversions, exchange-rate movements and related adjustments.</p></div>
+        <div class="f-card"><span class="kick">05 · Investors</span><h3>Investor-specific arrangements</h3><p>Side letters, negotiated fees, expense limitations, excused investors and other exceptions that require individualised treatment.</p></div>
+        <div class="f-card"><span class="kick">06 · Shadow books</span><h3>Shadow books</h3><p>Information at your fingertips.</p></div>
+      </div>
+      <div class="cfc-tags reveal" data-delay="1">
+        <span class="tag">Same inputs, same numbers</span>
+        <span class="tag">Every figure explained to its inputs</span>
+        <span class="tag">Rules versioned with each run</span>
+        <span class="tag">Master before feeders, in order</span>
+        <span class="tag">No spreadsheet overlays</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="article-body">
+    <div class="wrap">
+      <div class="article-card">
+        <div class="article-measure">
+          <div class="prose">
+        <p>
+          Importantly, every financial computation is executed deterministically within
+          <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span>'s application, not
+          generated probabilistically by an AI model.
+        </p>
+        <p>
+          Given the same inputs, rules and configuration, the application produces the same
+          results. Computations are supported by traceable calculation logic, explainable
+          allocations and audit trails.
+        </p>
+        <div class="pull">
+          <p>Financial correctness cannot be a matter of probability.</p>
+        </div>
+        <p>
+          Fund managers need confidence not only in the final number, but also in their ability
+          to explain exactly how that number was derived, without having to depend on
+          individuals.
+        </p>
+        <figure class="shot">
+          <a href="assets/img/blog/complex-fund-computations-how-worked-out.png" target="_blank" rel="noopener" data-lightbox="lb-how-worked-out" aria-label="Enlarge: How this was worked out">
+            <img src="assets/img/blog/complex-fund-computations-how-worked-out.png" width="2580" height="856" loading="lazy"
+                 alt="CapHive's 'How this was worked out' panel: the formula that produced a capital account balance, as it was when the run happened, broken down into its components — opening balance, capital collected, total expenses (itself expanded into management, setup and operating expenses), realised and unrealised gains, distributions and other income — each with its value.">
+            <span class="zoom-hint" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M10 2h4v4M6 14H2v-4M14 2 9 7M2 14l5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Enlarge</span>
+          </a>
+          <figcaption>Every computed number carries the rule that produced it, and the values that went in.</figcaption>
+        </figure>
+        <dialog class="lightbox" id="lb-how-worked-out" aria-label="How this was worked out — enlarged">
+          <div class="lb-frame">
+            <img src="assets/img/blog/complex-fund-computations-how-worked-out.png" width="2580" height="856" loading="lazy" alt="">
+          </div>
+          <div class="lb-bar">
+            <span>Every computed number carries the rule that produced it, and the values that went in.</span>
+            <button type="button" class="lb-close" aria-label="Close"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3 3 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+          </div>
+        </dialog>
+
+        <h2 id="case-study">Case study: automating multi-vehicle, multi-currency computations for a multi-billion-dollar PE fund</h2>
+        <p>
+          A particularly compelling example comes from
+          <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span>'s work with a
+          multi-billion-dollar private equity fund operating a complex master-feeder structure.
+        </p>
+        <p>
+          The fund had two feeder vehicles, including one denominated in a different currency,
+          investing through a master fund, and a related SPV.
+        </p>
+
+        <h3>The challenge</h3>
+        <p>
+          The structure created intricate computational dependencies. Management fees and carried
+          interest calculations at the master fund level needed to reference computations
+          originating in the feeder vehicles, while also accounting for exchange-rate movements
+          and related adjustments.
+        </p>
+        <p>
+          These were not independent calculations that could be processed in isolation. A change
+          in one vehicle could affect calculations in another, requiring careful coordination
+          across the entire structure.
+        </p>
+        <p>
+          The fund administrator's existing systems could not natively handle all these
+          interdependencies. Instead, the team relied on spreadsheets and multiple manual overlays
+          to reconcile results and arrive at the required figures. This introduced several
+          operational risks:
+        </p>
+        <ul>
+          <li>Manual intervention created opportunities for errors and inconsistencies and weakened auditability.</li>
+          <li>Reconciliations became more time-consuming and difficult to reproduce.</li>
+          <li>Knowledge of unusual scenarios and edge cases was concentrated among a small number of experienced individuals.</li>
+          <li>Changes to calculations required careful coordination across multiple spreadsheets and teams.</li>
+        </ul>
+        <p>
+          The issue was not a lack of accounting expertise. It was an operating architecture that
+          depended excessively on that expertise to compensate for technological limitations.
+        </p>
+
+        <h3>The <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> approach</h3>
+        <p>
+          <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> configured the
+          underlying fee, carry, allocation and currency-adjustment logic directly within its
+          deterministic computation framework.
+        </p>
+        <p>
+          Computations could reference results across the feeder and master vehicles, apply the
+          appropriate currency treatments and execute the required interdependent calculations
+          without manual spreadsheet overlays. The outcome was a fundamentally more resilient
+          operating model:
+        </p>
+        <ul>
+          <li><strong>No manual calculation overlays:</strong> complex cross-vehicle calculations were automated within the platform.</li>
+          <li><strong>Full traceability:</strong> calculation logic, intermediate results and allocations could be reviewed and explained.</li>
+          <li><strong>Greater consistency:</strong> the same rules could be applied repeatedly, reducing reliance on individual interpretation.</li>
+          <li><strong>Institutionalised knowledge:</strong> bespoke logic and edge cases were embedded in the platform rather than retained in individual spreadsheets.</li>
+          <li><strong>Scalable operations:</strong> the fund gained a stronger foundation for managing growing transaction volumes and structural complexity without proportionately increasing manual effort.</li>
+        </ul>
+        <p>The most important transformation was not simply faster computation.</p>
+        <div class="pull">
+          <p>It was the conversion of a fragile, person-dependent process into a repeatable, controlled and institutionalised operating capability.</p>
+        </div>
+
+        <h2 id="ai-and-the-final-number">Why AI should not be responsible for the final financial number</h2>
+        <p>
+          As AI capabilities advance, there is understandable enthusiasm about using large language
+          models and autonomous agents for fund accounting.
+        </p>
+        <p>
+          But there is an important distinction between using AI to <em>assist</em> with financial
+          processes and asking AI to independently <em>determine</em> financial results.
+        </p>
+        <p>
+          Large language models are probabilistic by nature. They are remarkably capable of
+          interpreting documents, understanding context, suggesting approaches and identifying
+          anomalies. But their outputs are not inherently deterministic, and they are not
+          substitutes for controlled financial calculation engines.
+        </p>
+        <p>
+          For fund managers and administrators, this distinction is critical. An incorrect
+          allocation, an overlooked side-letter provision or an inconsistent carry calculation can
+          create financial, regulatory and reputational consequences.
+        </p>
+        <div class="callout">
+          <p>
+            <strong>Our philosophy is simple:</strong> use deterministic engines for financial
+            computations, and AI agents for the intelligence, interpretation and workflow
+            automation surrounding them.
+          </p>
+        </div>
+        <p>
+          This separation allows fund managers to embrace AI without compromising the integrity of
+          core financial calculations.
+        </p>
+        <p>
+          It also provides a more practical approach to data security and governance. AI
+          capabilities can be introduced selectively, with appropriate data access restrictions,
+          human approvals and auditability, rather than granting an autonomous model unrestricted
+          access to sensitive investor and financial information.
+        </p>
+
+        <h2 id="virtual-fund-operations">The next frontier: AI agents as virtual fund operations employees</h2>
+        <p>
+          While core calculations remain deterministic, many of the activities surrounding fund
+          accounting still require substantial human effort.
+        </p>
+        <p>
+          These include interpreting LPAs and side letters, reconciling historical records,
+          identifying inconsistencies, preparing data for upload, investigating exceptions,
+          explaining unexpected movements and coordinating reviews. These are precisely the
+          activities where AI agents have the potential to create substantial value.
+        </p>
+        <p>
+          <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span>'s architecture enables
+          clients to progressively introduce an optional AI and agentic layer around the core
+          application, without changing the deterministic nature of the underlying computations.
+          This operates at two levels: during initial set-up and configuration, and during ongoing
+          fund operations.
+        </p>
+        <figure class="split-table" style="margin:30px 0">
+          <table>
+            <thead>
+              <tr><th></th><th>Deterministic — natively in the app</th><th class="ai">AI / agentic overlay</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Set-up</strong></td>
+                <td>
+                  <ul>
+                    <li>Series and class settings: fees, hurdle, carry, opex limit — with LP-specific settings inside each commitment</li>
+                    <li>Algorithms for computations, set up from existing Excel computations and the team's feedback on edge cases, and checked against the LPA and side letters</li>
+                    <li>Pre- and post-checks</li>
+                  </ul>
+                </td>
+                <td>
+                  <ul>
+                    <li>Review of the set-up against the LPA and side letters</li>
+                    <li>Suggesting pre- and post-checks</li>
+                    <li>Reconciliation of historical data</li>
+                  </ul>
+                </td>
+              </tr>
+              <tr>
+                <td><strong>Ongoing</strong></td>
+                <td>
+                  <ul>
+                    <li>Accounting data pulled in through APIs or uploads (manual or agentic)</li>
+                    <li>Formulas run</li>
+                    <li>Click-through explanations</li>
+                  </ul>
+                </td>
+                <td>
+                  <ul>
+                    <li>Receiving emails and converting them to upload format</li>
+                    <li>AI assistant for reconciliation and explanation</li>
+                    <li>Updates to the team on status and matters needing review</li>
+                  </ul>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <figcaption>Deterministic by design. Flexible by architecture.</figcaption>
+        </figure>
+        <p>
+          Over time, this creates the foundation for something more powerful: virtual fund
+          operations employees.
+        </p>
+        <p>
+          Rather than simply answering questions through a chatbot, specialised agents can execute
+          increasingly sophisticated, multi-step operational workflows, coordinating with the core
+          platform and escalating exceptions to human teams.
+        </p>
+        <p>
+          A reconciliation agent, for example, can be tasked with reviewing a quarter-end close,
+          identifying unexplained differences, tracing them to underlying transactions and
+          preparing a structured exception report.
+        </p>
+        <p>
+          These agents could become available on demand, scaling alongside fund operations rather
+          than being constrained by traditional staffing models.
+        </p>
+        <p>
+          The goal is not to eliminate the need for experienced fund accountants. It is to allow
+          their expertise to be applied where it matters most: judgment, oversight, exception
+          resolution and investor relationships, instead of repetitive data handling and manual
+          reconciliations.
+        </p>
+
+        <h2 id="institutional-memory">Institutional memory: an overlooked benefit of automation</h2>
+        <p>
+          Complex funds accumulate institutional knowledge over many years. This includes how
+          unusual transactions are handled, why particular investors receive special treatment,
+          how historical exceptions were resolved and how sophisticated allocation methodologies
+          have evolved.
+        </p>
+        <p>
+          Much of this knowledge traditionally resides in spreadsheets, email correspondence and
+          the memories of a few senior fund accountants. When individuals leave or
+          responsibilities change, that knowledge can be difficult to recover.
+        </p>
+        <p>
+          By embedding financial logic, contractual configurations, calculation dependencies and
+          audit trails within the application,
+          <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> helps preserve this
+          institutional memory.
+        </p>
+        <p>
+          AI agents can potentially make that knowledge even more accessible by helping teams
+          investigate historical decisions, understand computational logic and navigate
+          exceptions. This is particularly valuable for multi-fund managers, administrators and
+          other organisations managing increasingly complex structures across jurisdictions.
+        </p>
+        <p>
+          The long-term competitive advantage is not merely automation. It is building an
+          institutional knowledge base that becomes stronger, more accessible and more scalable
+          over time.
+        </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= CLOSING ================= -->
+  <section class="section">
+    <div class="wrap">
+      <div class="band-dark reveal">
+        <span class="chip-label">An AI-ready operating architecture</span>
+        <h2 style="margin:20px 0 16px">Not traditional software <em>or</em> AI. <em>Both, combined well.</em></h2>
+        <p>
+          The future of fund operations will not be defined by choosing between traditional
+          software and AI. It will be defined by how intelligently the two are combined.
+          Financial computations demand precision, reproducibility and robust controls.
+          Operational workflows increasingly benefit from contextual reasoning, adaptability and
+          autonomous execution.
+        </p>
+        <div class="pull" style="margin:34px 0 30px;border-color:var(--orange)">
+          <p style="color:#fff">A deterministic, highly configurable financial computation engine at the core, complemented by an optional AI agentic layer that can progressively automate complex operational workflows.</p>
+        </div>
+        <p style="margin-bottom:26px">
+          Discover how <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> can
+          automate your most complex fund computations and prepare your operations for an agentic
+          future.
+        </p>
+        <a class="btn btn-primary" href="mailto:hello@caphive.com">hello@caphive.com <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      </div>
+      <!-- TODO: attribute this to a real author, or delete the byline if pieces are published under the firm's name. -->
+      <div class="article-measure" style="margin-top:8px">
+        <div class="byline">
+          <span class="avatar">CH</span>
+          <span>
+            <strong><span class="wordmark"><span class="wm-cap">Cap</span>Hive</span></strong>
+            <span>Written by the <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> team</span>
+          </span>
+        </div>
+      </div>
+    </div>
+  </section>
+</article>
+
+<!-- ================= RELATED ================= -->
+<section class="section" style="padding-top:40px">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="chip-label">Where this leads</span>
+      <h2>The engine, <em>up close.</em></h2>
+    </div>
+    <div class="f-grid reveal" data-delay="1">
+      <a class="link-card" href="allocation-engine.html">
+        <div>
+          <span class="kick">Computation</span>
+          <h3>Every number carries its own receipt</h3>
+          <p>How allocation runs store the formula and the input values behind every entry.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="link-card" href="tracking-currency.html">
+        <div>
+          <span class="kick">Multi-currency</span>
+          <h3>Tracking currency</h3>
+          <p>Commitments, investments and returns across currencies, without the side workbook.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="link-card" href="ai-agents.html">
+        <div>
+          <span class="kick">AI Agents</span>
+          <h3>The agentic layer</h3>
+          <p>Agents that cite their sources, inherit a role and stop at an approval step.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<script>
+/* page-local lightbox: a <dialog> per image; Esc closes natively. Without JS (or
+   without <dialog> support) the link just opens the image in a new tab. */
+(function () {
+  document.querySelectorAll('[data-lightbox]').forEach(function (link) {
+    var dlg = document.getElementById(link.getAttribute('data-lightbox'));
+    if (!dlg || typeof dlg.showModal !== 'function') return;
+    link.addEventListener('click', function (e) {
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return; // keep "open in new tab"
+      e.preventDefault();
+      dlg.showModal();
+      document.documentElement.style.overflow = 'hidden';
+    });
+    dlg.querySelector('.lb-close').addEventListener('click', function () { dlg.close(); });
+    // a click on the backdrop lands on the <dialog> itself, outside its content box
+    dlg.addEventListener('click', function (e) {
+      if (e.target !== dlg) return;
+      var r = dlg.getBoundingClientRect();
+      if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) dlg.close();
+    });
+    dlg.addEventListener('close', function () {
+      document.documentElement.style.overflow = '';
+      link.focus({ preventScroll: true });
+    });
+  });
+})();
+</script>
+
+<!-- ================= CTA ================= -->
+<section class="cta">
+  <div class="cta-card reveal">
+    <h2>See <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> on your <em>own fund data.</em></h2>
+    <p style="max-width:720px;margin-inline:auto">Book a walkthrough with our team — funds, portfolios, deals &amp; secondaries, end to end.</p>
+    <div class="hero-cta">
+      <a class="btn btn-white" href="contact.html">
+        Setup a Demo
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a class="btn btn-ghost" href="products.html">Explore the platform</a>
+    </div>
+    <a class="cta-mail" href="mailto:hello@caphive.com">or write to hello@CapHive.com</a>
+  </div>
+</section>
+<!-- ================= FOOTER ================= -->
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="brand" href="index.html"><img class="logo" src="assets/img/caphive-logo-original.png?v=04e7b692" alt="CapHive" width="89" height="34"></a>
+        
+        <p class="addr">
+          167 Madison Avenue,<br>
+          Suite 205 #4854,<br>
+          New York City, NY 10016,<br>
+          United States
+        </p>
+        <p class="addr">
+          801, One International Center, Tower 1,<br>
+          Senapati Bapat Marg, Lower Parel,<br>
+          Mumbai 400013,<br>
+          India<br>
+          <a class="mailto" href="mailto:hello@caphive.com">hello@CapHive.com</a>
+        </p>
+      </div>
+      <div class="foot-col">
+        <h4>Products</h4>
+        <ul>
+          <li><a href="products.html">Platform overview</a></li>
+          <li><a href="funds.html">Funds</a></li>
+          <li><a href="portfolios.html">Portfolios</a></li>
+          <li><a href="deals-secondaries.html">Deals &amp; Secondaries</a></li>
+          <li><a href="ai-agents.html">AI Agents</a></li>
+          <li><a href="integrations.html">Data &amp; Integrations</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Solutions</h4>
+        <ul>
+          <li><a href="who-we-serve.html">Venture &amp; growth funds</a></li>
+          <li><a href="who-we-serve.html">Private equity</a></li>
+          <li><a href="who-we-serve.html">Family offices</a></li>
+          <li><a href="who-we-serve.html">Fund administrators</a></li>
+          <li><a href="pricing.html">Pricing</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="about.html">About Us</a></li>
+          <li><a href="resources.html">Insights</a></li>
+          <li><a href="case-studies.html">Case Studies</a></li>
+          <li><a href="contact.html">Contact Us</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Get Started</h4>
+        <ul>
+          <li><a href="contact.html">Setup a Demo</a></li>
+          <li><a href="security.html">Security &amp; Trust</a></li>
+          <li><a href="faq.html">FAQ</a></li>
+                    <li><a href="https://app.caphive.com/">Login — IND</a></li>
+          <li><a href="https://app.caphive.us/">Login — USA</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-base">
+      <p>© <span data-year>2026</span> <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> Private Limited. All rights reserved.</p>
+            <p class="legal-links">
+        <a href="privacy.html">Privacy</a>
+        <a href="terms.html">Terms</a>
+        <a href="cookies.html">Cookies</a>
+        <a href="cookies.html" data-consent-open>Cookie settings</a>
+      </p>
+    </div>
+  </div>
+  <div class="foot-mark" aria-hidden="true">CapHive</div>
+</footer><!-- ================= COOKIE CONSENT ================= -->
+<!-- Small bottom-left card, not a full-width bar and not a modal: it never
+     covers the page content or blocks reading. Ships hidden and is revealed by
+     the script below only when no choice is stored yet, so returning visitors
+     never see it again.
+
+     The script is inline rather than in assets/js/caphive.js on purpose — the
+     homepage runs _partials/index_scripts.html and does not load caphive.js, so
+     anything living there would be dead on the busiest page of the site. -->
+<div class="consent" id="consent" role="region" aria-label="Cookie consent" hidden>
+  <p class="consent-text">
+    We use analytics cookies to see which pages are useful. Nothing is set until you accept.
+    <a href="cookies.html">Cookie Policy</a>
+  </p>
+  <div class="consent-actions">
+    <button type="button" class="btn btn-sm btn-outline" data-consent="denied">Decline</button>
+    <button type="button" class="btn btn-sm btn-dark" data-consent="granted">Accept</button>
+  </div>
+</div>
+<script>
+(function(){
+  var KEY = 'caphive.consent.v1';   /* version in the key: bump to re-ask after a policy change */
+  var el = document.getElementById('consent');
+  if(!el) return;
+
+  function read(){ try { return localStorage.getItem(KEY); } catch(e){ return null; } }
+  function write(v){ try { localStorage.setItem(KEY, v); } catch(e){} }
+
+  var hideTimer;
+  function show(){
+    /* cancel a pending hide, or reopening within the fade-out would be undone
+       by that timer firing afterwards */
+    clearTimeout(hideTimer);
+    el.hidden = false;
+    requestAnimationFrame(function(){ el.classList.add('in'); });
+  }
+  function hide(){
+    el.classList.remove('in');
+    /* keep it in the DOM until the transition finishes, then take it out of the
+       tab order entirely */
+    hideTimer = setTimeout(function(){ el.hidden = true; }, 300);
+  }
+
+  function choose(value){
+    write(value);
+    /* gtag is defined in the head partial, which runs before this script. The
+       guard covers the case where an ad blocker stripped it. */
+    if(typeof gtag === 'function'){
+      gtag('consent', 'update', { analytics_storage: value === 'granted' ? 'granted' : 'denied' });
+    }
+    hide();
+  }
+
+  el.querySelectorAll('[data-consent]').forEach(function(b){
+    b.addEventListener('click', function(){ choose(b.dataset.consent); });
+  });
+
+  /* "Cookie settings" in the footer reopens the banner so a choice can be
+     changed or withdrawn later — required, and the only way back once the
+     banner has been dismissed. */
+  document.querySelectorAll('[data-consent-open]').forEach(function(a){
+    a.addEventListener('click', function(e){ e.preventDefault(); show(); });
+  });
+
+  if(!read()) show();
+})();
+</script>
+
+
+<script src="assets/js/caphive.js?v=de00c116"></script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Complex fund computations: deterministic at the core, agentic at the edge",
+  "description": "The most consequential fund computations are often the least automated. Why fees, carry and multi-vehicle allocations belong in a deterministic engine, and where AI agents fit around it.",
+  "datePublished": "2026-11-03",
+  "image": "https://caphive.com/assets/img/blog/complex-fund-computations-how-worked-out.png",
+  "author": { "@type": "Organization", "name": "CapHive" },
+  "publisher": { "@type": "Organization", "name": "CapHive" },
+  "mainEntityOfPage": "https://caphive.com/complex-fund-computations.html"
+}
+</script>
+</body>
+</html>

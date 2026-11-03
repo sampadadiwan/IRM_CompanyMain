@@ -1,0 +1,468 @@
+---
+title: "How we onboard a fund: every number tied back to your books | CapHive"
+description: Your spreadsheets go in as they are. Our fund-ops team and purpose-built
+  tooling reshape them, load them through the same controls as the app, and reconcile
+  every folio, call, payment and unit back to your own figures before anything goes live.
+og_title: "How we onboard a fund: every number tied back to your books"
+og_description: More than eleven thousand checks against your own figures, and a go-live
+  gate that will not open on an assumption. Inside our fund onboarding method.
+data_page: resources
+og_type: article
+body_top: |+
+  <!-- DRAFT FOR REVIEW. Written from the client-onboarding skill (.claude/skills/client-onboarding:
+       SKILL.md, runbook.md, design-decisions.md, learnings.md, tools/README.md). Client names are
+       deliberately left out; every figure is from a real run recorded in learnings.md
+       (2026-10-27 live run: 0 failed rows, 28 minutes run time; fund recon 11,489 / 11,497 after the
+       "one drawdown event" check was fixed to read the source — the 8 are demo-grouped calls, assumption C10).
+       TODO: the "people" section speaks generally about the ops team's background, because the
+       site has no named team bios yet — add specific backgrounds (firms, years) only from facts
+       the team supplies. -->
+
+body_extra: |
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": "How we onboard a fund: every number tied back to your books",
+    "description": "Your spreadsheets go in as they are. Our fund-ops team and purpose-built tooling reshape them, load them through the same controls as the app, and reconcile every folio, call, payment and unit back to your own figures before anything goes live.",
+    "datePublished": "2026-11-03",
+    "author": { "@type": "Organization", "name": "CapHive" },
+    "publisher": { "@type": "Organization", "name": "CapHive" },
+    "mainEntityOfPage": "https://caphive.com/how-we-onboard-a-fund.html"
+  }
+  </script>
+---
+
+
+<style>
+/* page-local (kept out of caphive.css to avoid a cache-bust) */
+.ob-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.ob-stats .kpi strong{font-variant-numeric:tabular-nums}
+.ob-stats .kpi span{display:block;margin-top:10px;color:var(--mut);font-size:14px}
+.term{background:var(--dark);color:#fff;border-radius:22px;overflow:hidden;box-shadow:0 40px 80px -50px rgba(16,16,16,.55)}
+.term .frame-bar{padding:14px 18px}
+.term pre{margin:0;padding:6px 22px 24px;font-family:var(--mono);font-size:12.5px;line-height:1.75;color:rgba(255,255,255,.78);white-space:pre-wrap;word-break:break-word}
+.term .b{color:var(--orange)}
+.term .ok{color:#7fd8a4}
+.term .dim{color:rgba(255,255,255,.42)}
+.term .w{color:#fff;font-weight:600}
+.where{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:26px 0 8px}
+.where div{border:1px solid var(--line);border-radius:16px;padding:18px 18px 16px;background:var(--bg)}
+.where b{display:block;font-size:15.5px;color:var(--fg)}
+.where span{display:block;margin-top:6px;color:var(--mut);font-size:14px;line-height:1.5}
+/* scoped as .prose ol.tests so it outranks .prose ol li / ::before ("1." markers) */
+.prose ol.tests{counter-reset:t;list-style:none;padding:0;margin:22px 0}
+.prose ol.tests li{counter-increment:t;position:relative;padding:16px 0 16px 50px;margin:0;border-bottom:1px solid var(--line)}
+.prose ol.tests li:last-child{border-bottom:0}
+.prose ol.tests li::before{content:counter(t);position:absolute;left:0;top:16px;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--cream);color:var(--orange-2);font-family:var(--mono);font-size:12px;font-weight:500;line-height:1}
+.prose ol.tests li strong{color:var(--fg)}
+.steps-num.ob .step-n p{font-size:14px}
+/* 8 steps = two rows of 4: the 4th card's chevron would point off the row */
+@media (min-width:1001px){.steps-num.ob > .step-n:nth-child(4n)::after{display:none}}
+@media (max-width:1000px){.ob-stats{grid-template-columns:1fr 1fr}}
+@media (max-width:720px){.where{grid-template-columns:1fr}}
+@media (max-width:560px){.ob-stats{grid-template-columns:1fr}.term pre{font-size:11.5px;padding:4px 16px 20px}}
+</style>
+
+<article>
+  <!-- ================= ARTICLE HERO ================= -->
+  <header class="page-hero article-hero hero-tinted tint-orange tint-deep">
+    <div class="wrap">
+      <div class="hero-panel">
+        <div class="article-measure">
+          <nav class="crumbs" aria-label="Breadcrumb">
+            <a href="index.html">Home</a><span>/</span><a href="blog.html">Insights</a><span>/</span>How we onboard a fund
+          </nav>
+          <span class="chip-label">Onboarding</span>
+          <h1 style="margin-top:22px">How we onboard a fund: <em>every number tied back to your books.</em></h1>
+          <p class="lede">
+            Your spreadsheets go in as they are. What comes out is a fund where every folio, call,
+            payment, distribution and unit has been reconciled to your own figures, before a single
+            investor logs in.
+          </p>
+          <div class="article-meta">
+            <time datetime="2026-11-03">Nov 3, 2026</time>
+            <span class="dot">·</span>
+            <span>9 min read</span>
+            <span class="dot">·</span>
+            <span>Onboarding</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= ARTICLE BODY ================= -->
+  <div class="article-body">
+    <div class="wrap">
+      <div class="article-card">
+        <div class="article-measure">
+          <div class="prose">
+        <p>
+          Every fund manager who has changed systems knows the moment. The new platform is
+          configured, the demo looked right, and now ten years of drawdowns, distributions, TDS,
+          units and side arrangements have to move across. Usually that means somebody retyping
+          values into upload templates, an import that reports "completed", and a quiet hope that
+          the totals still match.
+        </p>
+        <p>
+          We don't think a migration should rest on hope. It should end with proof: a
+          reconciliation, row by row and total by total, against the figures <em>you</em> already
+          trust, and a written report that shows exactly how your data became ours.
+        </p>
+        <div class="pull">
+          <p>"Completed" is not success. An onboarding is done when every number has been tied back to the client's own books, and not before.</p>
+        </div>
+        <p>
+          This piece describes how we do it: the people, the rules they never waive, the tooling
+          they built, and the reconciliation every onboarding has to pass before it is allowed
+          to go live.
+        </p>
+
+        <h2 id="people">It starts with people who have done this before</h2>
+        <!-- TODO: replace with specific, supplied backgrounds (firms, roles, years) for the ops team. -->
+        <p>
+          <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> was built by a team with
+          deep experience in private capital markets and in capital-markets technology, and our
+          onboarding is run by fund-operations people, not by implementation generalists. They
+          know what a capital call is <em>for</em>, why a redemption and a gain distribution are
+          taxed differently, and why a unit balance that is right in total can still be wrong
+          for one folio.
+        </p>
+        <p>
+          That matters more than any tool, and we learned it the useful way. On an early rehearsal,
+          our automated reconciliation passed 10,992 checks out of 10,992. A fund-ops reviewer
+          then read the result the way an auditor would, and found three things the green ticks
+          had missed:
+        </p>
+        <ul>
+          <li><strong>Capital calls that never happened.</strong> The source recorded drawdowns per
+            investor. Grouping "each investor's first drawdown" into one call produced a call that
+            spanned eight years, which is not a fund event. Calls are now built only from real
+            fund-level events, and when the data cannot say which drawdowns belong together, the
+            question goes to the client instead of being guessed.</li>
+          <li><strong>Values nobody gave us.</strong> Payment references had been filled in to look
+            tidy. Now an optional field stays blank unless the client supplied it.</li>
+          <li><strong>Tax modelled in the wrong place.</strong> TDS had been stored alongside each
+            payment as information, so the platform's net payable still equalled gross. TDS now goes
+            in as account entries linked to the distribution as a tax fee, and the distribution is
+            recomputed, so what investors see is net of tax, exactly as in the client's books.</li>
+        </ul>
+        <p>
+          Each finding became a rule in the method, and the reconciliation was rebuilt so that it
+          compares the client's figures with what the platform <em>computes and shows investors</em>,
+          not with values we wrote ourselves. That is also why no onboarding goes live without a
+          fund-ops reviewer's sign-off, however green the checks are.
+        </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= HARD RULES ================= -->
+  <section class="section" style="padding-bottom:0">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="chip-label">Rules we never waive</span>
+        <h2>Six guarantees, <em>enforced by the tools.</em></h2>
+        <p>These are not guidelines in a slide deck. Each one is checked by the tooling itself, and the tooling stops when one is not met.</p>
+      </div>
+      <div class="f-grid reveal" data-delay="1">
+        <div class="f-card"><span class="kick">01 · Your files</span><h3>Your source files are never edited</h3><p>They are kept exactly as you sent them. Everything we produce is generated from them by script, so every output can be traced and rebuilt.</p></div>
+        <div class="f-card"><span class="kick">02 · No back door</span><h3>Nothing goes in around the app</h3><p>Every record is loaded through the platform's own APIs, as a named ops user, so permissions, validations, audit trails and calculations run exactly as they do for your team. The onboarding tools never write to the database directly.</p></div>
+        <div class="f-card"><span class="kick">03 · Sandbox</span><h3>Nothing reaches an investor</h3><p>The first write puts your entity in sandbox, and every later write re-checks it. Notifications go to our ops inbox instead, which doubles as a preview of every email before go-live.</p></div>
+        <div class="f-card"><span class="kick">04 · Assumptions</span><h3>Every assumption is a question</h3><p>Where your data is silent, we may proceed on an assumption, but only one recorded against a numbered question to you. The tools refuse an assumption without one.</p></div>
+        <div class="f-card"><span class="kick">05 · Review</span><h3>A person approves every file</h3><p>Every upload file is reviewed by ops, with row counts, money totals and dates, before it goes in. The approval pins the file's fingerprint: change one cell and it needs approving again.</p></div>
+        <div class="f-card"><span class="kick">06 · Investors last</span><h3>Access only after the proof</h3><p>Investor logins are created last, after every import has reconciled and the report is written, and always with explicit approval. Investors never see a half-loaded fund.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= THE METHOD ================= -->
+  <section class="section" style="padding-bottom:0">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="chip-label">The method</span>
+        <h2>Eight stages, <em>always in this order.</em></h2>
+        <p>The sequence is fixed because each stage depends on the last one having been proven, not merely run.</p>
+      </div>
+      <div class="steps-num ob reveal" data-delay="1">
+        <div class="step-n"><h3>Profile</h3><p>Read every sheet, column and total the client sent, and raise the must-have questions: fund terms, folios, drawdowns, distributions, contacts.</p></div>
+        <div class="step-n"><h3>Map</h3><p>Every source column is placed in exactly one of three homes, and the decision is written down with its reason.</p></div>
+        <div class="step-n"><h3>Reshape</h3><p>A script turns the client's layout into upload files, and checks its own output against the client's totals before stopping.</p></div>
+        <div class="step-n"><h3>Review</h3><p>Ops checks each file's rows, totals and dates, and approves that exact version.</p></div>
+        <div class="step-n"><h3>Load</h3><p>Imported through the app in dependency order: fund, investors, commitments, calls, payments, distributions, units.</p></div>
+        <div class="step-n"><h3>Reconcile</h3><p>An independent check ties every source row and every client total to what the platform holds and computes.</p></div>
+        <div class="step-n"><h3>Report &amp; sign-off</h3><p>A written report explains the mapping and proves the recon. A fund-ops reviewer signs it off.</p></div>
+        <div class="step-n"><h3>Go live</h3><p>Investor access, then sandbox off. Both are human decisions, never automatic.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="article-body" style="padding-top:60px">
+    <div class="wrap">
+      <div class="article-card">
+        <div class="article-measure">
+          <div class="prose">
+        <h2 id="mapping">Mapping: every column has exactly one home</h2>
+        <p>
+          A client's workbook is the product of years of good practice and local habit. Before we
+          write a line of transformation, every column in it is accounted for. Each one ends in
+          exactly one of three places, and a mapping file records which, and why:
+        </p>
+        <div class="where">
+          <div><b>A platform field</b><span>Folio, commitment, drawdown date, amount, TDS: the platform's own column, so its calculations use it.</span></div>
+          <div><b>A typed custom field</b><span>Anything the fund tracks beyond the standard model, created first with the right type: a date stays a date, a number stays a number.</span></div>
+          <div><b>Dropped, on purpose</b><span>Working columns, helper totals, notes to self, each listed with the reason it was left out.</span></div>
+        </div>
+        <p>
+          Nothing falls through the gaps, and nothing is quietly turned into free text. A typed field
+          created up front is the difference between "Initial ownership (%)" you can sort and total,
+          and a text box nobody can use.
+        </p>
+
+        <h2 id="reshaping">Reshaping: written as code, never retyped</h2>
+        <p>
+          No value is typed by hand. The transformation from the client's layout into the
+          platform's import templates is a script, so it is repeatable: run it twice and you get
+          the same file, and a rebuilt file can be proven identical to one already loaded. Our
+          tools already read the layouts funds actually use:
+        </p>
+        <ul>
+          <li><strong>One row per folio</strong>, with payments as repeated date-and-amount column pairs.</li>
+          <li><strong>Folio blocks</strong>: an opening row with the commitment, then a row per drawdown underneath.</li>
+          <li><strong>One column per call</strong>, as in a quarterly capital-account pack, with call dates taken from the schedule and the folio's receipts allocated oldest first.</li>
+          <li><strong>Monthly MIS packs</strong> for portfolio KPIs, where a P&amp;L file and a cash-flow file for the same month are merged into one workbook, cell for cell, with a check that every cell equals its source.</li>
+        </ul>
+        <p>
+          The details are where migrations usually go wrong, so the tooling carries the lessons.
+          A few that each cost someone, somewhere, a bad quarter-end:
+        </p>
+        <ul>
+          <li><strong>Dates are written as real dates, never as text.</strong> Text is parsed by locale, and 05/04/2021 quietly becomes 4 May instead of 5 April.</li>
+          <li><strong>Invisible characters are cleaned.</strong> Names with embedded line breaks and byte-order marks look identical on screen and match nothing.</li>
+          <li><strong>One remittance per folio per call.</strong> When an investor paid a call in several instalments, the instalments stay as separate payments under one remittance, which is how the call actually happened.</li>
+          <li><strong>Money is modelled the platform's way.</strong> Tax, fees and expenses go through the mechanisms that drive net payable and capital accounts, never into a side field that looks right and computes nothing.</li>
+          <li><strong>Labels are matched the way the reader matches them.</strong> Before any KPI is mapped, every line label is checked against the actual MIS, so a mapping that could never fill is caught on day one, not discovered blank a quarter later.</li>
+        </ul>
+        <p>
+          The script also checks itself before it stops. If a folio's payments do not add up to the
+          client's received total, or called does not equal received plus outstanding, the build
+          refuses to produce files at all.
+        </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= THE RUN ================= -->
+  <section class="section" style="padding-bottom:0">
+    <div class="wrap">
+      <div class="split reveal">
+        <div class="split-text">
+          <span class="tile-kicker">The tooling</span>
+          <h2>One command that knows the order. <em>And never does a step twice.</em></h2>
+          <p>
+            Our ops team runs onboarding from a single orchestrator, working alongside an AI
+            agent that writes the transformation scripts and narrates every step. Before each step
+            it says what it will do. Afterwards it confirms what happened from what it reads back.
+          </p>
+          <ul class="check-list">
+            <li>"Done" is read from the platform, not from a log, so a run resumes exactly where it stopped</li>
+            <li>A file is never uploaded twice, even if a step is restarted mid-import</li>
+            <li>Live progress on long imports, and an alert if anything stalls</li>
+            <li>Stops at the first failed row, with a suggested fix for each one</li>
+            <li>Undo is per upload, and always a human decision</li>
+          </ul>
+        </div>
+        <div class="term" aria-label="Excerpt from an onboarding run log">
+          <div class="frame-bar"><i></i><i></i><i></i></div>
+<pre><span class="dim">━━━━━━━━ STEP 10 / 33 · Remittance payments ━━━━━━━━</span>
+<span class="b">▶ Plan</span>   import approved file 05c_payments.xlsx
+         <span class="dim">review ✔ · sandbox ✔ · gate ✔</span>
+<span class="dim">⏳</span> Payments 50% · 2,050 / 4,109 rows · 0 failed
+<span class="ok">✔ Done</span>   4,109 rows · 0 failed · read back 4,109
+
+<span class="dim">━━━━━━━━ STEP 12 / 33 · Approve calls + verify ━━━━━━━━</span>
+<span class="ok">✔ Done</span>   every call approved · every paid
+         remittance verified · fund totals settled
+
+<span class="dim">━━━━━━━━ STEP 19 / 33 · Fund reconciliation ━━━━━━━━</span>
+<span class="w">fund recon  11,489 / 11,497</span>
+<span class="b">⚠</span> 8 calls span several drawdown dates
+         <span class="dim">grouped on assumption C10 · asked of client</span>
+<span class="b">🔒</span> go-live blocked until C10 is answered</pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="article-body" style="padding-top:60px">
+    <div class="wrap">
+      <div class="article-card">
+        <div class="article-measure">
+          <div class="prose">
+        <h2 id="reconciliation">Reconciliation: tick and tie, then prove the check can fail</h2>
+        <p>
+          The reconciliation is the heart of the method, and it is deliberately
+          <strong>independent of the transformation</strong>. It does not reuse the script that
+          built the files. It reads your raw rows again with its own reader, reads the platform
+          through its API, and compares the two. A mistake in the transformation cannot hide by
+          being repeated in the check.
+        </p>
+        <p>
+          It works like a careful auditor's tick and tie. Each source row is matched to a platform
+          record by folio, date and amount, and that record is taken out of the pool so it cannot
+          be counted twice. Then it runs these tests:
+        </p>
+        <ol class="tests">
+          <li><strong>Source to platform.</strong> Every folio, drawdown, payment and distribution in your file exists in the platform, with the right amount, date, class and fields.</li>
+          <li><strong>Platform to source.</strong> Nothing is left over: no record in the platform without a row in your file.</li>
+          <li><strong>Per folio.</strong> Committed, called, received, outstanding and the number of payments, for every investor.</li>
+          <li><strong>Per call.</strong> Each call equals the sum of its remittances and of your rows. Collected equals the sum of payments. Each call is a real event, checked against your own drawdown dates, and approved.</li>
+          <li><strong>Your own totals.</strong> The total cells and summary rows in your workbook, compared with the fund's figures in the platform.</li>
+          <li><strong>Distributions.</strong> Every entry is matched to one payment. Gross, tax and the platform's computed net payable all equal yours.</li>
+          <li><strong>Units.</strong> Issued, redeemed and the balance for every folio, to four decimal places, against your register.</li>
+        </ol>
+        <p>
+          Tolerances are tight: one paisa or cent on money, 0.0001 on units, and dates exact. The
+          portfolio side follows the same discipline: companies, investments and valuations are
+          reconciled to your holdings, and every KPI value is tied to the exact cell it came from
+          in your MIS before it is approved.
+        </p>
+        <div class="callout">
+          <p>
+            <strong>A check that cannot fail proves nothing.</strong> So we test the tests. With two
+            mapping rules deliberately broken, the reconciliation failed exactly the rows those rules
+            touched, and nothing else. When we found one check that compared the platform with a value
+            our own builder had written, we rewrote it to compare against your source instead.
+          </p>
+        </div>
+
+        <h2 id="report">The report you keep</h2>
+        <p>
+          Every onboarding ends with a written report, and the tooling will not let it be skipped:
+          the run cannot move on to investor access until the report is newer than the latest
+          reconciliation and carries its result. It has four parts:
+        </p>
+        <ul>
+          <li><strong>The checklist</strong>: every stage, and its status.</li>
+          <li><strong>How your data was mapped</strong>: each modelling decision with its reason, following one ordinary folio from your rows, through the records built from it, to its units arithmetic.</li>
+          <li><strong>The proof</strong>: the reconciliation's results, with the full per-folio tables in an appendix.</li>
+          <li><strong>The log</strong>: what ran, when, and what it read back.</li>
+        </ul>
+        <p>
+          Alongside it is the list of questions for you, each assumption with its number, so you can
+          see exactly what we inferred and confirm or correct it. Go-live is blocked while any
+          question marked "needed before go-live" is open.
+        </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= NUMBERS ================= -->
+  <section class="section" style="padding-bottom:0">
+    <div class="wrap">
+      <div class="section-head reveal" style="margin-bottom:32px">
+        <span class="chip-label">One real run</span>
+        <h2>A decade of fund history, <em>reconciled in an afternoon.</em></h2>
+        <p>A fund with more than a hundred investor folios, years of drawdowns, redemptions and gain distributions with TDS, and units, taken from a bare entity to a full reconciliation.</p>
+      </div>
+      <div class="ob-stats reveal" data-delay="1">
+        <div class="kpi"><strong>11,497</strong><span>reconciliation checks against the client's own figures; the 8 that rested on an assumed call schedule were held for the client's answer</span></div>
+        <div class="kpi"><strong>0</strong><span>failed rows, across every import</span></div>
+        <div class="kpi"><strong>28 <em>min</em></strong><span>run time, from sandbox on to a full reconciliation</span></div>
+        <div class="kpi"><strong>₹0.01</strong><span>money tolerance; units to four decimals, dates exact</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= CLOSING ================= -->
+  <section class="section">
+    <div class="wrap">
+      <div class="band-dark reveal">
+        <span class="chip-label">Why it matters</span>
+        <h2 style="margin:20px 0 16px">Trust starts <em>on day one.</em></h2>
+        <p>
+          The first thing your investors see on a new platform is their own capital account. If
+          it is wrong, nothing that follows will be believed. Onboarding is not an implementation
+          chore to get through. It is the moment the new system earns, or loses, the right to be
+          the record.
+        </p>
+        <div class="pull" style="margin:34px 0 30px;border-color:var(--orange)">
+          <p style="color:#fff">Experienced fund-ops people, tools that enforce their rules, and a reconciliation that has to pass before anyone logs in.</p>
+        </div>
+        <p style="margin-bottom:26px">
+          Send us your workbook, as it is. We'll show you what it looks like reconciled.
+        </p>
+        <a class="btn btn-primary" href="mailto:hello@caphive.com">hello@caphive.com <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      </div>
+      <!-- TODO: attribute this to a real author, or delete the byline if pieces are published under the firm's name. -->
+      <div class="article-measure" style="margin-top:8px">
+        <div class="byline">
+          <span class="avatar">CH</span>
+          <span>
+            <strong><span class="wordmark"><span class="wm-cap">Cap</span>Hive</span></strong>
+            <span>Written by the <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> team</span>
+          </span>
+        </div>
+      </div>
+    </div>
+  </section>
+</article>
+
+<!-- ================= RELATED ================= -->
+<section class="section" style="padding-top:40px">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="chip-label">Where this leads</span>
+      <h2>After onboarding, <em>the same discipline.</em></h2>
+    </div>
+    <div class="f-grid reveal" data-delay="1">
+      <a class="link-card" href="complex-fund-computations.html">
+        <div>
+          <span class="kick">Computation</span>
+          <h3>Deterministic at the core</h3>
+          <p>Fees, carry and multi-vehicle allocations in an engine, not a spreadsheet.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="link-card" href="allocation-engine.html">
+        <div>
+          <span class="kick">Audit trail</span>
+          <h3>Every number carries its own receipt</h3>
+          <p>The formula and inputs behind every generated entry, stored with it.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="link-card" href="portfolio-kpis-at-scale.html">
+        <div>
+          <span class="kick">Portfolio</span>
+          <h3>The portfolio that reports itself</h3>
+          <p>KPI collection as a monitored workflow, every value tied to its MIS cell.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CTA ================= -->
+<section class="cta">
+  <div class="cta-card reveal">
+    <h2>See <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> on your <em>own fund data.</em></h2>
+    <p style="max-width:720px;margin-inline:auto">Book a walkthrough with our team — funds, portfolios, deals &amp; secondaries, end to end.</p>
+    <div class="hero-cta">
+      <a class="btn btn-white" href="contact.html">
+        Setup a Demo
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a class="btn btn-ghost" href="products.html">Explore the platform</a>
+    </div>
+    <a class="cta-mail" href="mailto:hello@caphive.com">or write to hello@CapHive.com</a>
+  </div>
+</section>
