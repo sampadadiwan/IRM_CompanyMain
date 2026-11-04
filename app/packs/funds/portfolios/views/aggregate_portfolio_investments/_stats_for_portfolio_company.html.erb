@@ -7,24 +7,34 @@
 <% card_paths ||= {} %>
 <% extra_cards ||= [] %>
 <% fields ||= [] %>
+<% decimals ||= nil %>
+<% per_row ||= nil %>
+<%# The widget's Default currency (saved as currency) %>
+<% currency ||= nil %>
 <% if portfolio_company %>
 
-  <%# fields, force_units, card_paths and extra_cards change the rendered cards, so they are part of the key —
-      otherwise the dashboard widget and the show page would serve each other's fragment %>
-  <% cache_if(current_user != nil, cache_key(["api_stats", portfolio_company, params[:display_currency], show_currency_filter, fields, force_units, card_paths.to_a, extra_cards.map { |c| [c[:subtitle], c[:stat].to_s, c[:path]] }]), expires_in: 5.day) do %>
+  <%# Every setting that changes the rendered cards is part of the key — otherwise the dashboard widget and the
+      show page would serve each other's fragment, and a changed label or decimals would wait for the cache to
+      expire (H4, E4) %>
+  <% cache_if(current_user != nil, cache_key(["api_stats", portfolio_company, params[:display_currency], show_currency_filter, fields, field_names, force_units, decimals, per_row, tracking_currency, currency, card_paths.to_a, extra_cards.map { |c| [c[:subtitle], c[:stat].to_s, c[:path]] }]), expires_in: 5.day) do %>
     <%
       error = nil
       begin
         # How many decimals to show in the stats
         decimals ||= params[:decimals]&.to_i || 2
 
-        # Determine target currency based on user selection or defaults
+        # Determine target currency: picked on the page > tracking currency (if ON) > Default currency > firm's currency
         selected_currency = params[:display_currency] || params[:currency]
 
-        if selected_currency.present? && ['INR', 'USD'].include?(selected_currency.upcase)
+        if selected_currency.present? && portfolio_company.entity.currency_list.include?(selected_currency.upcase)
+          # E19 — a currency picked in the drop-down wins, if the firm has rates for it
           target_currency = selected_currency.upcase
         elsif tracking_currency.present? && portfolio_company.entity.tracking_currency.present?
+          # E20 — tracking currency wins over the Default currency
           target_currency = portfolio_company.entity.tracking_currency
+        elsif currency.present? && portfolio_company.entity.currency_list.include?(currency)
+          # H13 — the Default currency; X3 — one the firm has no rates for is ignored
+          target_currency = currency
         else
           target_currency = portfolio_company.entity.currency
         end
@@ -38,8 +48,10 @@
         debug_rates = [] if debug_mode
 
         # Summed in SQL per (currency, date) and converted once per group; only the requested fields are worked out
+        # The cards to show, in order, with their labels (E1, E2, E3, X1)
+        card_list = stats_cards(fields, field_names, available: PortfolioCompanyStats::FIELDS)
         stats = PortfolioCompanyStats.new(portfolio_company, target_currency, debug: debug_mode)
-        totals = stats.cents(fields)
+        totals = stats.cents(card_list.map { |card| card[:subtitle] })
         debug_rates = stats.debug_rates if debug_mode
         # Money card for a field, with "how it is worked out" as its tooltip
         money_card = lambda do |subtitle, color, icon, tooltip|
@@ -55,7 +67,7 @@
           ["Income", "success", "cash", "Sum of all portfolio income cashflows, converted from the instrument's currency to #{target_currency} at the rate on the payment date."],
           ["Sold + FMV", "warning", "coins", "Sold Amount plus FMV: what has been realised plus the value still held, in #{target_currency}."]
         ].select { |subtitle, *| totals.key?(subtitle) }.map { |args| money_card.call(*args) }
-        cards_data = fields.blank? ? all_cards_data : fields.map { |f| all_cards_data.find { |card| card[:subtitle] == f } }.compact
+        cards_data = card_list.filter_map { |card| all_cards_data.find { |data| data[:subtitle] == card[:subtitle] }&.merge(label: card[:label]) }
         # Link cards to their tabs (show page only) and append the caller's extra cards to the same row
         cards_data = cards_data.map { |card| card.merge(path: card_paths[card[:subtitle]]) } + extra_cards
 
@@ -86,57 +98,30 @@
                                 portfolio_company.entity.tracking_currency :
                                 portfolio_company.entity.currency
               %>
-              <option value="<%= base_currency %>" <%= 'selected' if target_currency == base_currency %>><%=base_currency %></option>
-              <% if base_currency != 'INR' %>
-                <option value="INR" <%= 'selected' if target_currency == 'INR' %>>INR</option>
-              <% end %>
-              <% if base_currency != 'USD' %>
-                <option value="USD" <%= 'selected' if target_currency == 'USD' %>>USD</option>
+              <%# H13 — the currency in use is listed and selected; the rest are the firm's currencies, as in the metadata editor %>
+              <% [base_currency, target_currency, *portfolio_company.entity.currency_list].uniq.each do |option_currency| %>
+                <option value="<%= option_currency %>" <%= 'selected' if target_currency == option_currency %>><%= option_currency %></option>
               <% end %>
             </select>
           </div>
         <% end %>
         <%
-          per_row ||= nil
-          card_row_styles = cards_data.map { "" }
-          if per_row.present? && per_row.to_i > 0
-            # Chunk into rows of `per_row` and size each row's columns off its own
-            # card count, so a trailing row with fewer cards than `per_row` stretches
-            # to fill the full row width instead of leaving blank space.
-            # Bootstrap's col-md-N classes only express widths that are exact
-            # divisors of 12, so a `per_row` like 5 or 7 would leave each row's
-            # columns short of summing to 100%; use a precise percentage via
-            # the stat-card-col class's --stat-card-width custom property instead.
-            per_row_i = [per_row.to_i, 12].min
-            card_row_classes = []
-            card_row_styles = []
-            cards_data.each_slice(per_row_i) do |row_cards|
-              width_percent = (100.0 / row_cards.length).round(4)
-              row_cards.each do
-                card_row_classes << "stat-card-col"
-                card_row_styles << "--stat-card-width: #{width_percent}%;"
-              end
-            end
-          else
-            card_col_class = case cards_data.length
-                             when 1 then "col-md-12"
-                             when 2 then "col-md-6"
-                             when 3 then "col-md-4"
-                             when 4 then "col-md-6"
-                             else ""
-                             end
-            card_row_classes = cards_data.map { card_col_class }
-          end
+          card_col_class = case cards_data.length
+                           when 1 then "col-md-12"
+                           when 2 then "col-md-6"
+                           when 3 then "col-md-4"
+                           when 4 then "col-md-6"
+                           else ""
+                           end
+          card_row_classes, card_row_styles = stats_card_layout(cards_data.length, per_row, default_class: card_col_class)
         %>
         <div id="stats_cards_<%= portfolio_company.id %>" class="row gy-3 single-portfolio-stats-row" <%= 'data-portfolio-stats-currency-target="stats"'.html_safe if show_currency_filter %>>
 
           <% cards_data.each_with_index do |card_data, index| %>
-            <% subtitle = card_data[:subtitle] %>
-            <% subtitle = field_names[index] if field_names[index].present? %>
             <%= render(NumberStatsComponent.new(
                         path: card_data[:path],
                         amount: card_data[:stat],
-                        subtitle: subtitle,
+                        subtitle: card_data[:label] || card_data[:subtitle],
                         fs_size: "5 font-weight-bold",
                         progress_bar_color: card_data[:progress_bar_color],
                         text_info: card_data[:text_info],

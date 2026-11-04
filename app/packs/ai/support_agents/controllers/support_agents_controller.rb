@@ -307,7 +307,7 @@ class SupportAgentsController < ApplicationController
           # (PI show page); SLO uses slo_progress_wrapper (commitment page).
           panel_locals = { report: @report, support_agent: @support_agent, target: target }
           wrapper_id = @support_agent.agent_type == "SideLetterObligationAgent" ? "slo_progress_wrapper" : "cp_cs_progress_wrapper"
-          render turbo_stream: [
+          streams = [
             turbo_stream.replace("progress_panel_#{@report.id}",
                                  partial: "support_agents/progress_panel",
                                  locals: panel_locals),
@@ -315,6 +315,12 @@ class SupportAgentsController < ApplicationController
                                  partial: "support_agents/progress_panel",
                                  locals: panel_locals)
           ]
+          # H11 — the Notes page has no progress panel, so say which notes are summarised and where the result goes
+          if @support_agent.agent_type == "NoteSummarizerAgent"
+            # user_alert is always in the layout; page_alerts exists only when the page loaded with a notice
+            streams << turbo_stream.update("user_alert", partial: "layouts/alerts", locals: { notice: note_summary_run_message })
+          end
+          render turbo_stream: streams
         else
           flash.now[:notice] = "Support agent job has been queued."
           render turbo_stream: turbo_stream.replace("page_alerts", partial: "layouts/alerts")
@@ -644,6 +650,14 @@ class SupportAgentsController < ApplicationController
   end
 
   private
+
+  # H11 — names the period the Note Summariser covers and where its summary appears (the summary note is dated
+  # the period's last day by NoteSummarizerAgent#save_summary_as_note)
+  def note_summary_run_message
+    period = NoteSummarizerAgent.summary_period(@support_agent)
+    "Summarising notes dated #{NoteSummarizerAgent.period_dates(period[:start], period[:end])}. The summary will appear " \
+      "in this Notes list as a note tagged 'summary' dated #{helpers.l(period[:end])}, and in the Note Summaries widget."
+  end
 
   # Merges chat configuration params into the support agent's json_fields.
   # Chat config fields (enabled, model, provider_type, system_prompt) are submitted

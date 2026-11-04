@@ -1,4 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
+import { initSelect2 } from "custom/select2_handler"
 
 export default class extends Controller {
   static targets = ["container", "metadataInput", "field"]
@@ -11,7 +12,16 @@ export default class extends Controller {
 
   fieldTargetConnected(field) {
     this.syncFieldFromMetadata(field)
+    if (field.multiple) this.connectMultiple(field)
     this.debounceUpdate()
+  }
+
+  // Multi-selects (stats Fields) are select2 widgets. E18 — fields inserted by the metadata_help turbo stream miss
+  // the turbo:load / turbo:frame-load hooks, so initialise here. select2 fires jQuery change events, which a
+  // data-action never hears, so listen through jQuery.
+  connectMultiple(field) {
+    if (!field.classList.contains("select2-hidden-accessible")) initSelect2(field.parentElement)
+    $(field).off("change.metadataForm").on("change.metadataForm", () => this.debounceUpdate())
   }
 
   debounceUpdate() {
@@ -32,7 +42,13 @@ export default class extends Controller {
       const key = field.dataset.metadataKey
       let value
 
-      if (field.tagName === "SELECT") {
+      if (field.multiple) {
+        // H1 — selected options are in DOM order, which select2_handler keeps in pick order. E17 — none picked
+        // leaves the key out.
+        const picked = Array.from(field.selectedOptions).map(option => option.value)
+        if (picked.length === 0) return
+        value = picked.join(", ")
+      } else if (field.tagName === "SELECT") {
         if (field.value === "") return // Skip "Default"
         value = field.value === "true" ? true : (field.value === "false" ? false : field.value)
       } else if (field.type === "number") {
@@ -96,9 +112,25 @@ export default class extends Controller {
     const key = field.dataset.metadataKey
     const values = this.parseRubyHash(raw)
 
+    if (field.multiple) {
+      if (values[key] !== undefined) this.restoreMultiple(field, values[key])
+      return
+    }
+
     if (values[key] !== undefined) {
       field.value = values[key].toString()
     }
+  }
+
+  // H2 — select the saved names (any case) and move them to the front in saved order, so the chips read in that order
+  restoreMultiple(field, saved) {
+    const names = String(saved).split(",").map(name => name.trim().toLowerCase()).filter(name => name !== "")
+    const options = Array.from(field.options)
+    const picked = [...new Set(names.map(name => options.find(option => option.value.toLowerCase() === name)).filter(Boolean))]
+
+    options.forEach(option => { option.selected = picked.includes(option) })
+    picked.slice().reverse().forEach(option => field.prepend(option))
+    if ($(field).data("select2")) $(field).trigger("change.select2")
   }
 
   parseRubyHash(raw) {

@@ -26,6 +26,12 @@
     <%= link_to "New Note", new_note_path("note[owner_id]": owner_id, "note[owner_type]": owner_type, "note[entity_id]": current_user.entity_id, "note[touch_point_id]": params[:touch_point_id].presence, list_touch_point_id: params[:touch_point_id].presence, show_owner: show_owner, return_to: params[:return_to], from: from_source, embedded_note_context: embedded_note_context, condensed: params[:condensed]), {class: "btn btn-outline-primary ti ti-plus", data: { turbo_frame: "new_note" }} %>
     <% if owner_id.present? && !hide_summarize_btn %>
       <% if current_user.entity.support_agents.set?(:note_summarization_agent) %>
+      <%
+        # H10, E8 — the window names the dates the run covers, from the same rule the agent uses
+        summarizer = SupportAgent.find_by(agent_type: "NoteSummarizerAgent", entity_id: current_user.entity_id)
+        period = NoteSummarizerAgent.summary_period(summarizer) if summarizer
+        period_notice = ("Summarises notes dated #{NoteSummarizerAgent.period_dates(period[:start], period[:end])} (the last completed #{period[:unit]})." if period)
+      %>
       <button type="button" class="btn btn-outline-secondary"
               data-bs-toggle="modal" data-bs-target="#run-note-summarizer-agent-modal">
         <i class="ti ti-brain"></i> Summarise Notes
@@ -39,7 +45,8 @@
                  description:      NoteSummarizerAgent::DESCRIPTION,
                  long_description: NoteSummarizerAgent::SINGLE_LONG_DESCRIPTION,
                  btn_text:         "Run Summariser",
-                 modal_title:      "Summarise Investor Notes" %>
+                 modal_title:      "Summarise Investor Notes",
+                 period_notice:    period_notice %>
       <% else %>
         <!-- note_summarization_agent disabled: show greyed-out button -->
         <span data-bs-toggle="tooltip" title="Note Summarisation Agent is disabled. Contact support to enable it">

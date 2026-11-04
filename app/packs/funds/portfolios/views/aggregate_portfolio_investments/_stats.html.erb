@@ -5,37 +5,74 @@
   # Worked examples H2, E43 — openspec/changes/lp-folio-portfolio-dashboard/business-rules.md
   lp_api_ids = (LpPortfolioVisibility.for_user(current_user).visible_api_ids(fund) if fund && current_user&.curr_role_investor?)
 %>
+<%
+  # Widget settings (Portfolio Dashboard "Portfolio Stats", Fund Dashboard "Fund Portfolio Stats"). The Portfolio
+  # Investments page passes none, so it shows the five default cards in the fund's units, as before (E5, E6).
+  # Amounts are always in the fund's currency. openspec/changes/fix-portfolio-dashboard-widgets-2/design.md
+  fields ||= nil
+  field_names ||= nil
+  force_units ||= nil
+  decimals ||= nil
+  per_row ||= nil
+%>
 <% if fund %>
-  <% cache_if(current_user != nil && lp_api_ids.nil?, cache_key(["api_stats", fund]), expires_in: 5.day) do %>
-    <% params[:force_units] = fund.default_currency_units %>
+  <%# Every setting is in the key, so the widget and the Portfolio Investments page never share a fragment (E5) %>
+  <% cache_if(current_user != nil && lp_api_ids.nil?, cache_key(["api_stats", fund, fields, field_names, force_units, decimals, per_row]), expires_in: 5.day) do %>
+    <%# H6 — Units setting, else the fund's default units %>
+    <% params[:force_units] = force_units.presence || fund.default_currency_units %>
     <%
       apis = fund.aggregate_portfolio_investments
       pis = fund.portfolio_investments
       cashflows = fund.portfolio_cashflows
       if lp_api_ids
+        # E7 — the LP's folio is narrowed before any card is chosen
         apis = apis.where(id: lp_api_ids)
         pis = pis.where(aggregate_portfolio_investment_id: lp_api_ids)
         cashflows = cashflows.where(aggregate_portfolio_investment_id: lp_api_ids)
       end
+
+      # Each card's sum runs only when the card is shown
+      sums = {
+        "Bought Amount" => -> { pis.sum(:net_bought_amount_cents) },
+        "Sold Amount" => -> { apis.sum(:sold_amount_cents) },
+        "FMV" => -> { apis.sum(:fmv_cents) },
+        "Cost Of Remaining" => -> { apis.sum(:cost_of_remaining_cents) },
+        "Income" => -> { cashflows.sum(:amount_cents) }
+      }
+      # H5 — Sold + FMV, only when picked
+      sums["Sold + FMV"] = -> { sums["Sold Amount"].call + sums["FMV"].call }
+
+      card_styles = {
+        "Bought Amount" => ["success", "currency-dollar", "What the fund has paid for its portfolio investments, net of shares sold"],
+        "Sold Amount" => ["danger", "cash", "What the fund has received from selling investments"],
+        "FMV" => ["info", "graph", "Fair market value: what the holdings are worth now, per the latest valuations"],
+        "Cost Of Remaining" => ["warning", "currency-dollar", "What the fund paid for the holdings it still owns"],
+        "Income" => ["success", "currency-dollar", "Dividends, interest and other income received from the portfolio"],
+        "Sold + FMV" => ["warning", "coins", "Sold Amount plus FMV: what has been realised plus the value still held"]
+      }
+
+      # E6 — without fields, the five cards shown before; X1 — fields matching no card fall back to them too
+      card_list = stats_cards(fields, field_names, available: card_styles.keys, defaults: card_styles.keys.first(5))
+      cards_data = card_list.map do |card|
+        color, icon, tooltip = card_styles[card[:subtitle]]
+        { path: nil, stat: money_to_currency(Money.new(sums[card[:subtitle]].call, fund.currency), params, decimals:),
+          subtitle: card[:label], progress_bar_color: color, text_info: icon, tooltip: }
+      end
+      # H7 — cards per row; without it the cards keep the component's default column
+      card_row_classes, card_row_styles = stats_card_layout(cards_data.length, per_row)
     %>
 
-    <% cards_data = [
-      { path: nil, stat: money_to_currency(Money.new(pis.sum(:net_bought_amount_cents), fund.currency), params), subtitle: "Bought Amount", progress_bar_color: "success", text_info: "currency-dollar", tooltip: "What the fund has paid for its portfolio investments, net of shares sold" },
-      { path: nil, stat: money_to_currency(Money.new(apis.sum(:sold_amount_cents), fund.currency), params), subtitle: "Sold Amount", progress_bar_color: "danger", text_info: "cash", tooltip: "What the fund has received from selling investments" },
-      { path: nil, stat: money_to_currency(Money.new(apis.sum(:fmv_cents), fund.currency), params), subtitle: "FMV", progress_bar_color: "info", text_info: "graph", tooltip: "Fair market value: what the holdings are worth now, per the latest valuations" },
-      { path: nil, stat: money_to_currency(Money.new(apis.sum(:cost_of_remaining_cents), fund.currency), params), subtitle: "Cost Of Remaining", progress_bar_color: "warning", text_info: "currency-dollar", tooltip: "What the fund paid for the holdings it still owns" },
-      { path: nil, stat: money_to_currency(Money.new(cashflows.sum(:amount_cents), fund.currency), params), subtitle: "Income", progress_bar_color: "success", text_info: "currency-dollar", tooltip: "Dividends, interest and other income received from the portfolio" },
-    ] %>
-
     <div class="row">
-      <% cards_data.each do |card_data| %>
+      <% cards_data.each_with_index do |card_data, index| %>
         <%= render(NumberStatsComponent.new(
                     path: card_data[:path],
                     amount: card_data[:stat],
                     subtitle: card_data[:subtitle],
                     progress_bar_color: card_data[:progress_bar_color],
                     text_info: card_data[:text_info],
-                    tooltip: card_data[:tooltip]
+                    tooltip: card_data[:tooltip],
+                    css_class: card_row_classes[index],
+                    css_style: card_row_styles[index]
         )) %>
       <% end %>
     </div>

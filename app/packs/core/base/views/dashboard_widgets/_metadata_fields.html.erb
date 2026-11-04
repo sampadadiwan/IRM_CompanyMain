@@ -43,10 +43,20 @@
         field_label = field_hint[:label] || key.to_s.humanize
         is_integer = field_hint[:integer].present?
         choices = nil
+        selected_values = nil
         if field_hint[:choices]
           choices = metadata_choices(field_hint[:choices], dashboard_widget.entity || try(:current_user)&.entity)
-          # E17 — a saved value that is not a listed column stays selectable, so saving does not change it
-          choices += [[db_value, db_value]] if db_value.present? && choices.none? { |_label, value| value == db_value.to_s }
+          if field_hint[:multiple]
+            # H2 — saved picks come first, in their saved order, so select2 shows them in that order.
+            # E11 — a saved name that is not a choice is not offered, so saving drops it.
+            saved = db_value.is_a?(Array) ? db_value : db_value.to_s.split(",")
+            selected_values = saved.filter_map { |name| choices.find { |_label, value| value.casecmp?(name.strip) }&.last }.uniq
+            choices = selected_values.map { |value| choices.find { |_label, choice| choice == value } } +
+                      choices.reject { |_label, value| selected_values.include?(value) }
+          elsif db_value.present? && choices.none? { |_label, value| value == db_value.to_s }
+            # E17 — a saved value that is not a listed column stays selectable, so saving does not change it
+            choices += [[db_value, db_value]]
+          end
         end
       %>
 
@@ -56,7 +66,17 @@
             <%= field_label %>
           </label>
 
-          <% if choices %>
+          <% if choices && selected_values %>
+            <%# metadata-form reads it through select2's jQuery change event, not a data-action %>
+            <%= select_tag "metadata_#{key}", options_for_select(choices, selected_values),
+                multiple: true,
+                class: "form-select select2",
+                style: "width: 100%",
+                data: {
+                  metadata_key: key,
+                  metadata_form_target: "field"
+                } %>
+          <% elsif choices %>
             <%= select_tag "metadata_#{key}", options_for_select(choices, db_value),
                 include_blank: "None",
                 class: "form-select",

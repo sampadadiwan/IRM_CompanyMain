@@ -11,7 +11,8 @@
     <strong>
       <% if data[:period_label].present? && data[:period_start].present? %>
         <%= data[:period_label] %>
-        (<%= l(Date.parse(data[:period_start]), format: :short) %> –
+        <%# E9 — the year on both dates, as in the run window %>
+        (<%= l(Date.parse(data[:period_start]), format: :abbr_month_day_year) %> –
         <%= l(Date.parse(data[:period_end]), format: :abbr_month_day_year) %>)
       <% else %>
         --
@@ -35,7 +36,23 @@
   </div>
 </div>
 
-<% if data[:summary_text].present? || can_edit %>
+<%
+  # E10 — a run whose period had no notes says which dates it covered instead of showing an empty summary box.
+  # X2 — notes existed but no summary came back (LLM failure): the "No summary text available" alert below stays.
+  empty_period = data[:note_count].present? && data[:note_count].to_i.zero? && data[:summary_text].blank? &&
+                 data[:period_start].present? && data[:period_end].present?
+%>
+<% if empty_period %>
+  <%
+    period_end = Date.parse(data[:period_end])
+    unit = data[:period_label].to_s.casecmp?("month") ? "month" : "quarter"
+  %>
+  <div class="alert alert-secondary">
+    <i class="ti ti-info-circle"></i>
+    No notes dated <%= NoteSummarizerAgent.period_dates(Date.parse(data[:period_start]), period_end) %>.
+    Notes dated after <%= l(period_end, format: :abbr_month_day_year) %> will be in the next <%= unit %>'s summary.
+  </div>
+<% elsif data[:summary_text].present? || can_edit %>
   <div class="card border-0 shadow-sm mb-3"
        <% if can_edit %>
        data-controller="note-summary-editor"

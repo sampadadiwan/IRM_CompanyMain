@@ -27,7 +27,7 @@ class DashboardWidget < ApplicationRecord
   # What "Set up LP layout" starts the "LP" layout with
   LP_STARTER_WIDGETS = ["Data Card", "Key Kpis", "Valuations"].freeze
   # Starter settings so a new LP layout is not blank: the Data Card shows a few company fields
-  LP_STARTER_METADATA = { "Data Card" => '{cols: 2, fields: "Category:category,Sector:sector,City:city", title: "Summary"}' }.freeze
+  LP_STARTER_METADATA = { "Data Card" => '{fields: "Category:category,Sector:sector,City:city", title: "Summary"}' }.freeze
   LP_UNSAFE_MESSAGE = "This widget can't be added to an LP layout: it isn't safe to show LPs.".freeze
   # C1 — shown on the form and in import row errors when metadata is not a plain literal
   METADATA_LITERAL_MESSAGE = "can only contain plain values: text, numbers, true/false, nil, [lists] and {key: value} hashes. " \
@@ -55,6 +55,16 @@ class DashboardWidget < ApplicationRecord
   # Label, one-line help, whole-number flag and pick-list source for the settings on the Widget Configuration form,
   # keyed by widget name then setting key. Settings without an entry render as before (humanized key).
   # H3, H4, H5, H8, H14 — openspec/changes/fix-portfolio-dashboard-widgets/design.md#worked-examples
+  # The stats widgets' card picker and labels, shared by the company and fund-level widgets
+  STATS_FIELD_HINTS = {
+    "fields" => { label: "Fields", choices: :stats_fields, multiple: true, hint: "Pick the cards to show, in order." },
+    "field_names" => { label: "Field names",
+                       hint: "List the names in the same order as the Fields you picked, separated by commas. " \
+                             "E.g. Bought Amount, Sold Amount, FMV → Buy, Sell, Fair value" },
+    "force_units" => { label: "Units" },
+    "per_row" => { label: "Cards per row", integer: true }
+  }.freeze
+
   METADATA_FIELD_HINTS = {
     "Kpis" => {
       "compound" => { label: "Data-only view",
@@ -75,6 +85,19 @@ class DashboardWidget < ApplicationRecord
     "Portfolio Investments" => {
       "group_by_column" => { label: "Group by column", choices: :portfolio_investment_columns,
                              hint: "Rows are grouped by this column. Choosing one uses the AG grid, whatever the Ag setting." }
+    },
+    # H1, H2, H3, E12, E17, E18 — openspec/changes/fix-portfolio-dashboard-widgets-2/design.md#worked-examples
+    "Portfolio Stats" => STATS_FIELD_HINTS.merge(
+      "currency" => { label: "Default currency", choices: :entity_currencies,
+                      hint: "Order: picked on page > Tracking currency (if ON) > Default currency > firm's currency" }
+    ),
+    "Fund Portfolio Stats" => STATS_FIELD_HINTS,
+    # H9 — openspec/changes/fix-portfolio-dashboard-widgets-2/design.md#worked-examples
+    "Data Card" => {
+      "fields" => { label: "Fields",
+                    hint: "Standard field: a label, a colon, then the field name, e.g. Category:category, Sector:sector, " \
+                          "City:city. Custom field: the same, with custom_fields. before the name, e.g. " \
+                          "KPI Currency:custom_fields.kpi_currency. Separate entries with commas." }
     }
   }.freeze
 
@@ -101,7 +124,7 @@ class DashboardWidget < ApplicationRecord
     DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "Fund Distributions", path: "funds/widgets/fund_distributions", size: "Medium"),
     DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "Fund Account Entries", path: "funds/widgets/fund_account_entries", size: "Medium", metadata_help: "{months: 12, entry_types: ['Expense', 'Fee'], use_entries: 'folio_only/fund_only'}"),
     DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "Fund Portfolios", path: "aggregate_portfolio_investments/widgets/portfolio_investments", size: "XL"),
-    DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "Fund Portfolio Stats", path: "aggregate_portfolio_investments/widgets/stats", size: "XL", metadata_help: "{fields: 'Bought Amount,Sold Amount,...', field_names: 'Bought, Sold,...', force_units: 'Lakhs/Crores/Millions', tracking_currency: true, currency: 'USD', decimals: 2, show_currency_filter: true}"),
+    DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "Fund Portfolio Stats", path: "aggregate_portfolio_investments/widgets/stats", size: "XL", metadata_help: "{fields: 'Bought Amount,Sold Amount,...', field_names: 'Bought, Sold,...', force_units: 'Lakhs/Crores/Millions', decimals: 2, per_row: 4}"),
     DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "Fund Report", path: "funds/widgets/fund_report", size: "XL", metadata_help: "{report_id: 1, title: 'Report Title', investor_id: 123, fund_id: 456, parent_name: 'Name', other_report_args: '...' }"),
     DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "Embed Document", path: "funds/widgets/embedded_doc", size: "XL", metadata_help: "{name: 'Document Name', xlsx_as_grid: true, title: 'Optional Title'}"),
     DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "Commitment Deployment", path: "capital_commitments/widgets/deployment", size: "Medium"),
@@ -163,7 +186,7 @@ class DashboardWidget < ApplicationRecord
     DashboardWidget.new(dashboard_name: PORTFOLIO_COMPANY_DASHBOARD, widget_name: "Kpis", path: "investors/widgets/kpis_grid_view", size: "XL", metadata_help: "{title_suffix: 'Title Suffix', chart: false, tag_list: 'Actual,Budget', show_tags: false, compound: false, period: 'Quarter', no_of_periods: 12, show_action_buttons: false, categories: 'Balance Sheet, Income Statement', force_units: 'Lakhs/Crores/Millions', decimals: 2, flexible_chart: true, category: 'General'}"),
     DashboardWidget.new(dashboard_name: PORTFOLIO_COMPANY_DASHBOARD, widget_name: "Kpis Performance Table", path: "investors/widgets/performance_table", size: "XL"),
     DashboardWidget.new(dashboard_name: PORTFOLIO_COMPANY_DASHBOARD, widget_name: "Kpis Budget vs Actual", path: "investors/widgets/kpis_budget_vs_actual", size: "XL", metadata_help: "{category: 'Income Statement', tag_list: 'Actual,Budget', units: 'Lakhs', num_periods: 2, period: 'Year', title: 'Budget vs Actual', decimals: 1}"),
-    DashboardWidget.new(dashboard_name: PORTFOLIO_COMPANY_DASHBOARD, widget_name: "Data Card", path: "investors/widgets/data_card", size: "XL", metadata_help: '{cols: 1, fields: "Category:category,City:city,Sector:custom_fields.sector,Founder:custom_fields.founder", field_names: "Bought, Sold,...", title: "Summary"}'),
+    DashboardWidget.new(dashboard_name: PORTFOLIO_COMPANY_DASHBOARD, widget_name: "Data Card", path: "investors/widgets/data_card", size: "XL", metadata_help: '{fields: "Category:category,City:city,Sector:custom_fields.sector,Founder:custom_fields.founder", title: "Summary"}'),
 
     DashboardWidget.new(dashboard_name: PORTFOLIO_COMPANY_DASHBOARD, widget_name: "Portfolio Investments", path: "aggregate_portfolio_investments/widgets/portfolio_investments", size: "XL", metadata_help: "{ag: true, group_by_column: 'investment_instrument_name', show_fund_name: true}"),
     DashboardWidget.new(dashboard_name: PORTFOLIO_COMPANY_DASHBOARD, widget_name: "Documents", path: "investors/widgets/documents", size: "XL", metadata_help: "{folder_name: 'My Documents', owner_type: 'Investor'/'Valuation', owner_id: 123, folder_id: 123, include_sub_folders: false, card_view: true, per_page: 6, per_row: 3, show_owner: false, show_tags: false, show_action_buttons: true, documents_as_tags: false}"),
@@ -202,7 +225,7 @@ class DashboardWidget < ApplicationRecord
   LP_ALLOCATED_PORTFOLIO_WIDGETS = ["Portfolio Investments"].freeze
 
   PORTFOLIO_WIDGETS = [
-    DashboardWidget.new(dashboard_name: PORTFOLIO_DASHBOARD, widget_name: "Portfolio Stats", path: "aggregate_portfolio_investments/widgets/stats", size: "XL", metadata_help: "{fields: 'Bought Amount,Sold Amount,...', field_names: 'Bought, Sold,...', force_units: 'Lakhs/Crores/Millions', tracking_currency: true, decimals: 2, currency: 'USD', per_row: 4, show_currency_filter: true}"),
+    DashboardWidget.new(dashboard_name: PORTFOLIO_DASHBOARD, widget_name: "Portfolio Stats", path: "aggregate_portfolio_investments/widgets/stats", size: "XL", metadata_help: "{fields: 'Bought Amount,Sold Amount,...', field_names: 'Bought, Sold,...', force_units: 'Lakhs/Crores/Millions', decimals: 2, per_row: 4}"),
     DashboardWidget.new(dashboard_name: PORTFOLIO_DASHBOARD, widget_name: "Portfolio Investments", path: "aggregate_portfolio_investments/widgets/portfolio_investments", size: "XL", metadata_help: "{ag: true, group_by_column: 'investment_instrument_name', show_fund_name: true/false}"),
     DashboardWidget.new(dashboard_name: PORTFOLIO_DASHBOARD, widget_name: "FMV %", path: "aggregate_portfolio_investments/widgets/fmv_percentage", size: "Medium"),
     DashboardWidget.new(dashboard_name: PORTFOLIO_DASHBOARD, widget_name: "Holding Cost %", path: "aggregate_portfolio_investments/widgets/holding_costs_percentage", size: "Medium"),

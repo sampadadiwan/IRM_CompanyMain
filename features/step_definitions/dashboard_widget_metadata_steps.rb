@@ -121,3 +121,43 @@ end
 Then('the saved metadata of the {string} widget should contain {string}') do |name, text|
   expect(DashboardWidget.find_by(widget_name: name).reload.metadata.to_s).to include(text)
 end
+
+# --- fix-portfolio-dashboard-widgets-2: stats Fields multi-select, Default currency ---
+
+Given('the entity has currency {string} and an exchange rate from {string} to {string}') do |currency, from, to|
+  @entity.update!(currency:)
+  ExchangeRate.create!(entity_id: @entity.id, from:, to:, rate: 83, as_of: Time.zone.today)
+end
+
+When('I pick {string} in the multi-select {string}') do |option, key|
+  metadata_field_group(key).find(".select2-selection").click
+  find(".select2-results__option", text: option, exact_text: true).click
+end
+
+When('I remove {string} from the multi-select {string}') do |option, key|
+  metadata_field_group(key).find(".select2-selection__choice[title='#{option}'] .select2-selection__choice__remove").click
+end
+
+Then('the multi-select {string} should show {string}') do |key, names|
+  chips = metadata_field_group(key).all(".select2-selection__choice").map { |chip| chip[:title] }
+  expect(chips).to eq(names.split(",").map(&:strip))
+end
+
+Then('the field {string} should offer {string}') do |key, names|
+  offered = find_field("metadata_#{key}").all("option").map(&:value).compact_blank
+  expect(offered).to match_array(names.split(",").map(&:strip))
+end
+
+Then('the saved metadata of the {string} widget should not contain {string}') do |name, text|
+  expect(DashboardWidget.find_by(widget_name: name).reload.metadata.to_s).not_to include(text)
+end
+
+When('I go to the new dashboard widget page') do
+  visit new_dashboard_widget_path
+end
+
+When('I choose the dashboard {string} and widget type {string}') do |dashboard_name, widget_name|
+  select(dashboard_name, from: "dashboard_name")
+  select(widget_name, from: "widget_name")
+  expect(page).to have_field("metadata_fields", visible: :all)
+end

@@ -266,6 +266,31 @@ module AggregatePortfolioInvestmentsHelper
     end
   end
 
+  # The cards a stats widget shows, in order, as [{subtitle:, label:}]. Saved fields match ignoring case and
+  # spaces (E1); unknown names and repeats are dropped (E3). Blank fields, or fields matching no card, give the
+  # defaults (X1). Field names relabel the cards by position; a card without a name keeps its own (E2).
+  # openspec/changes/fix-portfolio-dashboard-widgets-2/design.md#-card-picker
+  def stats_cards(fields, field_names, available:, defaults: available)
+    matched = Array(fields).filter_map { |field| available.find { |name| name.casecmp?(field.to_s.strip) } }.uniq
+    matched = defaults if matched.empty?
+    names = Array(field_names)
+    matched.each_with_index.map { |subtitle, index| { subtitle:, label: names[index].presence || subtitle } }
+  end
+
+  # Per-card column class and style for a row of stat cards. With per_row set, cards are chunked into rows of
+  # per_row and each row's cards share its width, so a short last row fills the line (H7). Bootstrap's col-md-N
+  # classes only express exact divisors of 12, so a per_row like 5 or 7 uses a precise percentage through the
+  # stat-card-col class's --stat-card-width custom property. Without per_row every card gets default_class.
+  def stats_card_layout(count, per_row, default_class: "")
+    return [Array.new(count, default_class), Array.new(count, "")] unless per_row.present? && per_row.to_i.positive?
+
+    per_row = [per_row.to_i, 12].min
+    styles = (0...count).each_slice(per_row).flat_map do |row|
+      Array.new(row.length, "--stat-card-width: #{(100.0 / row.length).round(4)}%;")
+    end
+    [Array.new(count, "stat-card-col"), styles]
+  end
+
   private
 
   # Smart grouping: show up to `limit` non-zero items

@@ -93,14 +93,29 @@ Most widgets accept **options** that customise their behaviour. On the widget fo
 | `series` | Text | Comma-separated series names. |
 | `chart_type` | Text | `line`, `bar`, `area`, or `spline`. |
 
-**Fund Portfolio Stats** — aggregate stats across the fund's investments.
+**Fund Portfolio Stats** — aggregate stats across the fund's investments. The same settings apply to **Portfolio Stats** on the Portfolio Dashboard.
 
 | Option | Type | Description |
 |--------|------|-------------|
-| `fields` | Text | Comma-separated fields (e.g. 'Bought Amount,FMV'). |
-| `field_names` | Text | Custom labels for the fields. |
-| `force_units` | Text | `Lakhs`, `Crores`, or `Millions`. |
-| `currency` | Text | Currency code (e.g. 'USD'). |
+| `fields` | Pick-list | **Fields**: the cards to show, in the order you pick them. Empty shows Bought Amount, Sold Amount, FMV, Cost Of Remaining and Income. **Sold + FMV** shows only when picked. |
+| `field_names` | Text | **Field names**: labels for the picked cards, comma-separated, in the same order as Fields. A card without a name keeps its own. |
+| `force_units` | Text | **Units**: `Lakhs`, `Crores`, or `Millions`. Empty uses the fund's units. |
+| `decimals` | Number | Decimal places (default 2). |
+| `per_row` | Number | **Cards per row**. A short last row fills the line. |
+
+Bought Amount here is net of shares sold. On the company Portfolio Stats widget it is every buy.
+
+Amounts are always shown in the fund's own currency. This applies to **Fund Portfolio Stats** and to **Portfolio Stats** on the Portfolio Dashboard. Neither widget shows the fund's tracking currency, because tracking-currency values aren't kept for every stat:
+
+| Stat | Kept in tracking currency? |
+|---|---|
+| Bought Amount | Yes, but before sales (the card shows the amount after sales) |
+| Sold Amount | Yes |
+| FMV | Yes |
+| Cost Of Remaining | No |
+| Income | No |
+
+To see a holding's Bought, Sold and FMV in the tracking currency, open the holding from the fund's Portfolio Investments page.
 
 ### Investor Dashboard
 
@@ -135,6 +150,10 @@ For the Actual vs Budget table add a **Kpis Budget vs Actual** widget (its `cate
 
 **Portfolio Investments** — the company's holdings. **Group by column** is a pick-list of the grid's columns (including Fund Name); choosing one groups the rows and uses the grid whether or not `ag` is set.
 
+**Portfolio Stats** — the company's totals across all funds. **Fields** is a pick-list of Bought Amount, Sold Amount, FMV, Cost Of Remaining, Income and Sold + FMV, shown in the order picked; **Field names** labels them in that same order. Saved fields that match no card show every card. Which currency is shown: picked on the page > Tracking currency (if ON) > Default currency > the firm's currency. A Default currency the firm has no exchange rates for is ignored.
+
+**Notes** and **Note Summaries** — **Summarise Notes** summarises the last completed quarter (or month, if the Note Summariser is set to Month), not the current one; the run window names the dates. The summary is saved as a note tagged "summary", dated the period's last day, and appears in Note Summaries. A period with no notes shows "No notes dated …" with the dates it covered.
+
 **Captable** — capitalisation table with ownership breakdowns.
 
 | Option | Type | Description |
@@ -144,7 +163,7 @@ For the Actual vs Budget table add a **Kpis Budget vs Actual** widget (its `cate
 | `show_captable` | Yes/No | Show the main table. |
 | `ag` | Yes/No | Use the high-performance grid for the table. |
 
-**Data Card** — selected record fields in a clean card, e.g. `{cols: 2, fields: "Category:category,City:city,Sector:custom_fields.sector"}`.
+**Data Card** — selected record fields in a clean card, e.g. `{fields: "Category:category,City:city,Sector:custom_fields.sector", title: "Summary"}`. In **Fields**, give a label, a colon, then the field name (`Sector:sector`); for a custom field put `custom_fields.` before its name (`KPI Currency:custom_fields.kpi_currency`).
 
 ### Portfolio Dashboard
 

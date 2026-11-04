@@ -114,6 +114,25 @@ class NoteSummarizerAgent < SupportAgentService
     issues
   end
 
+  # The period a run summarises: the last completed calendar month when summary_period is "Month", otherwise the
+  # last completed calendar quarter. The run window, the run message and the agent all read it, so they always
+  # name the same dates (H10, E8, E9, E14, E15). unit is "month" or "quarter" for the screens' wording.
+  def self.summary_period(support_agent, today: Time.zone.today)
+    label = (support_agent.json_fields || {})["summary_period"].presence || "Quarter"
+
+    if label.casecmp?("month")
+      { label:, unit: "month", start: today.prev_month.beginning_of_month, end: today.prev_month.end_of_month }
+    else
+      prev_quarter_last_day = today.beginning_of_quarter - 1.day
+      { label:, unit: "quarter", start: prev_quarter_last_day.beginning_of_quarter, end: prev_quarter_last_day.end_of_quarter }
+    end
+  end
+
+  # "Jul 01, 2026 – Sep 30, 2026", the period as the screens show it
+  def self.period_dates(start_date, end_date)
+    "#{I18n.l(start_date, format: :abbr_month_day_year)} – #{I18n.l(end_date, format: :abbr_month_day_year)}"
+  end
+
   private
 
   # Sets up investor context, computes the period date range from summary_period, and
@@ -130,28 +149,18 @@ class NoteSummarizerAgent < SupportAgentService
     investor = target
     ctx[:investor] = investor
 
-    # Derive lookback window from the summary_period field ("Month" or "Quarter")
-    period = @support_agent.json_fields["summary_period"].presence || "Quarter"
-    ctx[:period_label] = period
-
-    case period.downcase
-    when "month"
-      # Summarise the previous calendar month so the period is always complete
-      ctx[:period_start] = Time.zone.today.prev_month.beginning_of_month
-      ctx[:period_end]   = Time.zone.today.prev_month.end_of_month
-    else
-      # Default to previous calendar quarter using the same helper as PortfolioCompanyAgent
-      prev_quarter_last_day = Time.zone.today.beginning_of_quarter - 1.day
-      ctx[:period_start]    = prev_quarter_last_day.beginning_of_quarter
-      ctx[:period_end]      = prev_quarter_last_day.end_of_quarter
-    end
+    # Lookback window from the summary_period field: the last completed month or quarter
+    period = self.class.summary_period(@support_agent)
+    ctx[:period_label] = period[:label]
+    ctx[:period_start] = period[:start]
+    ctx[:period_end]   = period[:end]
 
     # Issues hash follows the same {key => Array<{type:, message:, severity:}>} contract
     # expected by the base class generate_progress_reports
     ctx[:issues] = { tagging_issues: [], note_issues: [], summary_issues: [] }
 
     Rails.logger.info do
-      "[NoteSummarizerAgent] Initialized investor=#{investor.id} period=#{period} " \
+      "[NoteSummarizerAgent] Initialized investor=#{investor.id} period=#{period[:label]} " \
         "(#{ctx[:period_start]}..#{ctx[:period_end]})"
     end
 

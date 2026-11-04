@@ -27,9 +27,9 @@
     ) do %>
   <!-- This block becomes the `content` inside the component -->
   <% if fund %>
-    <%= render "aggregate_portfolio_investments/stats",  fund: fund, fields: fields, force_units: force_units, decimals: decimals, widget_size: widget.widget_size %>
+    <%= render "aggregate_portfolio_investments/stats",  fund: fund, fields: fields, field_names: field_names, force_units: force_units, decimals: decimals, per_row: per_row, widget_size: widget.widget_size %>
   <% elsif portfolio_company %>
-    <%= render "aggregate_portfolio_investments/stats_for_portfolio_company", portfolio_company: portfolio_company, fields: fields, field_names: field_names, force_units: force_units, tracking_currency: tracking_currency, decimals: decimals, widget_size: widget.widget_size, per_row: per_row, show_currency_filter: show_currency_filter %>
+    <%= render "aggregate_portfolio_investments/stats_for_portfolio_company", portfolio_company: portfolio_company, fields: fields, field_names: field_names, force_units: force_units, tracking_currency: tracking_currency, currency: currency, decimals: decimals, widget_size: widget.widget_size, per_row: per_row, show_currency_filter: show_currency_filter %>
   <% elsif params[:multi_portfolio_dashboard].present? && @investors.present? %>
     <%= render "aggregate_portfolio_investments/stats_for_multiple_portfolio_companies", portfolio_companies: @investors, fields: fields, field_names: field_names, force_units: force_units, currency: currency, tracking_currency: tracking_currency, decimals: decimals, widget_size: widget.widget_size, show_currency_filter: show_currency_filter, widget_id: widget.id, per_row: per_row %>
   <% end %>
