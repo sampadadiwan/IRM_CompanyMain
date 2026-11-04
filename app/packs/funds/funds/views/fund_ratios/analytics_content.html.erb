@@ -2,6 +2,12 @@
   <% 
     months = params[:months].present? ? params[:months].to_i : 24 
     months_label = months == 0 ? "All Time" : "Last #{months} Months"
+    # On a commitment's Ratios tab (FundsController#analytics sets @capital_commitment) the charts plot
+    # that folio's own ratios, matching the list below them; otherwise the fund's.
+    commitment = @capital_commitment
+    chart_owner = commitment || @fund
+    # Same test as the list's message (fund_ratios/_index): any row for this folio, ignoring search
+    commitment_has_ratios = commitment && policy_scope(FundRatio).where(capital_commitment_id: commitment.id).exists?
   %>
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h5 class="mb-0">Latest Ratios</h5>
@@ -21,6 +27,8 @@
           <%= hidden_field_tag :type, "FundRatio" %>
           <%= hidden_field_tag :chart_type, params[:chart_type] %>
           <%= hidden_field_tag :widget_id, params[:widget_id] %>
+          <%# Keep the commitment scope when the range changes %>
+          <%= hidden_field_tag :capital_commitment_id, commitment.id if commitment %>
           <%= f.select :months, 
               [["Last 12 Months", 12], ["Last 24 Months", 24], ["Last 36 Months", 36], ["Last 60 Months", 60], ["All Time", 0]], 
               { selected: months }, 
@@ -30,14 +38,20 @@
       </div>
     </div>
   </div>
+  <% if commitment && !commitment_has_ratios %>
+    <%= render "fund_ratios/commitment_empty_state", fund: @fund %>
+  <% else %>
+  <%# Fund Utilization is a fund-level ratio, so its donut is not shown for a commitment %>
+  <% unless commitment %>
   <div class="mb-4">
     <%= fund_ratios_donut_charts(@fund) %>
   </div>
+  <% end %>
   <div class="mb-4">
     <h5 class="mb-3">Performance Trends (<%= months_label %>)</h5>
     <div class="card shadow mb-4">
       <div class="card-body">
-        <%= fund_ratios_line_chart(@fund, owner: @fund, ratio_names: ["XIRR", "MOIC", "Gross Portfolio IRR"], chart_id: "fund_performance_trends", months: (months == 0 ? nil : months), chart_type: params[:chart_type]) %>
+        <%= fund_ratios_line_chart(@fund, owner: chart_owner, hide_fund_name: commitment.present?, ratio_names: ["XIRR", "MOIC", "Gross Portfolio IRR"], chart_id: "fund_performance_trends", months:, chart_type: params[:chart_type]) %>
       </div>
     </div>
   </div>
@@ -45,8 +59,9 @@
     <h5 class="mb-3">Multiple Trends (<%= months_label %>)</h5>
     <div class="card shadow mb-4">
       <div class="card-body">
-        <%= fund_ratios_line_chart(@fund, owner: @fund, ratio_names: ["XIRR", "TVPI", "DPI", "RVPI"], chart_id: "fund_multiple_trends", months: (months == 0 ? nil : months), chart_type: params[:chart_type]) %>
+        <%= fund_ratios_line_chart(@fund, owner: chart_owner, hide_fund_name: commitment.present?, ratio_names: ["XIRR", "TVPI", "DPI", "RVPI"], chart_id: "fund_multiple_trends", months:, chart_type: params[:chart_type]) %>
       </div>
     </div>
   </div>
+  <% end %>
 <% end %>

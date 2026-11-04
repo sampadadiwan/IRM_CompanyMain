@@ -23,6 +23,9 @@
 <%= render "fund_ratios/analytics", fund: %>
 <% fund_ratios_frame = with_frame("fund_ratios_frame") %>
 <% q ||=nil %>
+<%# A commitment's Ratios tab with no rows for that folio: say why and how to create them. Checked
+    against all the folio's rows, not the searched page, so an empty search does not claim none exist %>
+<%= render "fund_ratios/commitment_empty_state", fund: fund if fund && params[:capital_commitment_id].present? && policy_scope(FundRatio).where(capital_commitment_id: params[:capital_commitment_id]).none? %>
 <%=render SearchComponent.new(data_source: data_source, turbo_frame: fund_ratios_frame) %>
 <div class="">
   <%= render RansackTable.new(FundRatio, q: q, current_user: current_user, records: fund_ratios, report_id: params["report_id"], turbo_frame: fund_ratios_frame, referrer: request.referrer, pagy: @pagy) %>

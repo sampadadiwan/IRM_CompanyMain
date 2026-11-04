@@ -1,0 +1,9 @@
+<%# A commitment's Ratios tab with no ratios for that folio: folio ratios are only created when a fund's
+    Compute Ratios run ticks "Generate For Each Folio" (funds/_generate_fund_ratios). Shared by the list
+    (fund_ratios/_index) and the analytics charts (fund_ratios/analytics_content) so both say the same. %>
+<div class="alert alert-info py-2 px-3 mb-3" id="fund_ratios_commitment_empty">
+  No ratios have been computed for this commitment yet.
+  <% if policy(fund).generate_fund_ratios? %>
+    To create them, click <strong>Compute Ratios</strong> and tick <strong>Generate For Each Folio</strong>.
+  <% end %>
+</div>

@@ -17,7 +17,9 @@ module FundDashboardHelper
       fund_ratios = result.fund_ratios
     end
 
-    from_date = months.is_a?(Numeric) ? Time.zone.today - months.months : nil
+    # 0 is "All Time" (the analytics Range's option): no date floor. nil already became the 24-month
+    # default above, so callers that pass nothing keep it.
+    from_date = months.is_a?(Numeric) && months.positive? ? Time.zone.today - months.months : nil
     fund_ratios = fund_ratios.where(end_date: from_date..) if from_date
     fund_ratios = fund_ratios.order(:name, :end_date)
 
