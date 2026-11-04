@@ -152,10 +152,16 @@ module EvergreenBadgesHelper
     eg_badge(:blue, "pencil", "Draft", "Needs approval by a user with the approver role.")
   end
 
-  def eg_nav_source_badge(nav)
+  # priced_on: { fund_nav_id => earliest dealing date priced at it } when the caller loaded it for a
+  # whole list (NavsController#index); without it this NAV's own dealing fills are queried.
+  def eg_nav_source_badge(nav, priced_on: nil)
     badges = [nav.source == "uploaded" ? eg_badge(:grey, "upload", "Uploaded", "Figures from the administrator's upload.") : eg_badge(:grey, "calculator", "Computed", "Drafted from the ledger and valuations.")]
     badges << eg_badge(:grey, "edit", "Overridden", "One or more lines were overridden with a reason — see the NAV page.") if nav.overrides_hash.present?
-    badges << eg_badge(:blue, "link", "Priced #{l(nav.used_by_dealing_date.date, format: :short)}", "Used to price a #{EvergreenLabels.lower(eg_word(:transaction_date, nav.fund))}, so it cannot be reopened.") if nav.approved? && nav.used_by_dealing?
+    if nav.approved?
+      # The date of the first dealing date priced at this NAV, or nil when none was
+      priced_date = priced_on ? priced_on[nav.id] : (nav.used_by_dealing_date&.date if nav.used_by_dealing?)
+      badges << eg_badge(:blue, "link", "Priced #{l(priced_date, format: :short)}", "Used to price a #{EvergreenLabels.lower(eg_word(:transaction_date, nav.fund))}, so it cannot be reopened.") if priced_date
+    end
     safe_join(badges, " ")
   end
 
