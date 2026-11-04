@@ -81,7 +81,9 @@ class DocChecksController < ApplicationController
     built = all.map do |name|
       next form if form&.document_name&.casecmp?(name)
 
-      DocChecks::CardForm.new(entity:, record_type: @record_type, document_name: name, rows: card_rows(saved[name.downcase]))
+      # The card's checks were loaded with every other card's above - passed in rather than re-queried
+      DocChecks::CardForm.new(entity:, record_type: @record_type, document_name: name, rows: card_rows(saved[name.downcase]),
+                              existing: Array(saved[name.downcase]))
     end
     built.partition { |card| card.rows.any? }.flatten
   end
