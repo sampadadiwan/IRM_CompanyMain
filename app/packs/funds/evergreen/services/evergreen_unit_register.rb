@@ -20,27 +20,41 @@ class EvergreenUnitRegister
     folios = folios.where(investor_id: @investor_ids) if @investor_ids
     navs = @fund.unit_types_list.index_with { |ut| FundNav.latest_approved(@fund, ut, @today) }
     setting = @fund.evergreen_fund_setting
-    folios.order(:folio_id).map do |cc|
+    folios = folios.order(:folio_id).to_a
+    # Every folio's unit history and open redemptions, one query each for the whole register
+    # instead of one per folio row
+    unit_rows = unit_history(folios.map(&:id))
+    open_redemptions = DealingOrder.where(capital_commitment_id: folios.map(&:id), kind: "redemption", status: DealingOrder::OPEN_STATUSES)
+                                   .includes(:dealing_fills).group_by(&:capital_commitment_id)
+    folios.map do |cc|
       qty = units[cc.id].to_d
       nav = navs[cc.unit_type]
       value = nav ? (qty * nav.nav_per_unit_cents.to_d).round(2) : nil
-      cost = average_cost_cents(cc)
+      cost = average_cost_cents(unit_rows.fetch(cc.id, []))
       locked_qty, locked_until = locked(cc, setting)
       # F7: what each open redemption still asks for — less what earlier dates filled, and an amount-form
       # order converted at the class's NAV per unit (it has no units of its own)
-      queued = DealingOrder.where(capital_commitment_id: cc.id, kind: "redemption", status: DealingOrder::OPEN_STATUSES).includes(:dealing_fills)
-                           .sum { |o| o.remaining_units(nav_per_unit_cents: nav&.nav_per_unit_cents).to_d }
+      queued = open_redemptions.fetch(cc.id, []).sum { |o| o.remaining_units(nav_per_unit_cents: nav&.nav_per_unit_cents).to_d }
       gain = value && cost.positive? ? (((value / cost) - 1) * 100).round(1) : nil
       Row.new(folio: cc, unit_type: cc.unit_type, units: qty, nav:, value_cents: value, cost_cents: cost, gain_pct: gain,
               locked_units: locked_qty, locked_until:, queued_units: queued)
     end
   end
 
-  # Cost at average cost: amount paid for units still held (allotments in order, redemptions at the running average)
-  def average_cost_cents(folio)
+  # { folio id => [[quantity, price_cents, premium_cents], ...] } in issue order, up to today
+  def unit_history(folio_ids)
+    FundUnit.where(capital_commitment_id: folio_ids, issue_date: ..@today)
+            .order(:capital_commitment_id, :issue_date, :id)
+            .pluck(:capital_commitment_id, :quantity, :price_cents, :premium_cents)
+            .group_by(&:first).transform_values { |rows| rows.map { |row| row.drop(1) } }
+  end
+
+  # Cost at average cost: amount paid for units still held (allotments in order, redemptions at the running average).
+  # unit_rows: the folio's [quantity, price_cents, premium_cents] in issue order (from unit_history)
+  def average_cost_cents(unit_rows)
     held = 0.to_d
     cost = 0.to_d
-    FundUnit.where(capital_commitment_id: folio.id, issue_date: ..@today).order(:issue_date, :id).pluck(:quantity, :price_cents, :premium_cents).each do |q, price, premium|
+    unit_rows.each do |q, price, premium|
       q = q.to_d
       if q.positive?
         cost += q * (price.to_d + premium.to_d)
