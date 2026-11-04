@@ -1,7 +1,7 @@
 <%#
   Document Verification Setup partial for KycOnboardingAgent.
   Renders one card per KYC form type with a 3-column mapping table:
-    1. Document (select — File-type FormCustomFields)
+    1. Document (select — standard uploads + File-type FormCustomFields)
     2. Information to pull (text — LLM extraction prompt)
     3. Field to verify (select — non-File, non-Header FormCustomFields)
   Wires up to the kyc-onboarding-config Stimulus controller which
@@ -18,6 +18,11 @@
   all_fields_by_ft     = FormCustomField.where(form_type_id: form_types.select(:id))
                                         .order(:position)
                                         .group_by(&:form_type_id)
+  # Standard upload labels hardcoded in the KYC form (not persisted FormCustomFields).
+  # PAN label is locale-aware: "PAN / Tax ID" (en) or "Tax ID" (en-US).
+  pan_label            = sys_t('investor_kyc.tax_id')
+  standard_doc_labels  = ["Upload #{pan_label}", "Upload Address Proof"]
+  strip_upload         = /\AUpload\s+/i
 %>
 
 <div data-controller="kyc-onboarding-config">
@@ -40,8 +45,8 @@
   <% form_types.each do |form_type| %>
     <% fields      = all_fields_by_ft[form_type.id] || [] %>
     <% doc_fields  = fields.select { |f| f.field_type == "File" } %>
+    <% all_doc_labels = standard_doc_labels + doc_fields.map { |f| f.label.presence || f.name } %>
     <% verify_fields = fields.reject { |f| %w[File Header].include?(f.field_type) } %>
-    <% next if doc_fields.empty? && verify_fields.empty? %>
     <% rules       = verification_rules[form_type.id.to_s] || [] %>
     <% template_id = "onboarding-rule-template-#{form_type.id}" %>
 
@@ -73,10 +78,10 @@
                           data-field="doc_label"
                           data-action="change->kyc-onboarding-config#syncConfig">
                     <option value="">— Select document —</option>
-                    <% doc_fields.each do |df| %>
-                      <option value="<%= df.label.presence || df.name %>"
-                              <%= "selected" if rule["doc_label"] == (df.label.presence || df.name) %>>
-                        <%= df.label.presence || df.name %>
+                    <% all_doc_labels.each do |dl| %>
+                      <option value="<%= dl %>"
+                              <%= "selected" if rule["doc_label"] == dl %>>
+                        <%= dl.sub(strip_upload, '') %>
                       </option>
                     <% end %>
                   </select>
@@ -121,9 +126,9 @@
                   data-field="doc_label"
                   data-action="change->kyc-onboarding-config#syncConfig">
             <option value="">— Select document —</option>
-            <% doc_fields.each do |df| %>
-              <option value="<%= df.label.presence || df.name %>">
-                <%= df.label.presence || df.name %>
+            <% all_doc_labels.each do |dl| %>
+              <option value="<%= dl %>">
+                <%= dl.sub(strip_upload, '') %>
               </option>
             <% end %>
           </select>
