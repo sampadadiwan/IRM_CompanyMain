@@ -31,6 +31,13 @@ class FundsController < ApplicationController
     when "LPFlow"
       render "/lp_flow/analytics_content", layout: false
     when "FundRatio"
+      # A commitment's Ratios tab: the charts follow the list's scope (that folio's own ratios, not the
+      # fund's). Found through the authorized @fund, as the remittance branch does, and authorized itself
+      # so an LP cannot chart another LP's folio by editing the id.
+      if params[:capital_commitment_id].present?
+        @capital_commitment = @fund.capital_commitments.find(params[:capital_commitment_id])
+        authorize(@capital_commitment, :show?)
+      end
       render "/fund_ratios/analytics_content", layout: false
     else
       render "/capital_commitments/analytics_content", layout: false
