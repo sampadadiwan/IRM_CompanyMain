@@ -65,7 +65,10 @@
       <%# Every card partial emits a .col-* wrapper, so lay them out in a row
           (card2 is col-lg-6 and needs it to sit two-up; the rest are col-lg-12). %>
       <div class="row">
-        <% funds.ordered.includes(:fund_ratios).each do |fund| %>
+        <%# One query for every card's latest ratios (FundsHelper#preload_latest_fund_ratios) %>
+        <% page_funds = funds.ordered.to_a %>
+        <% preload_latest_fund_ratios(page_funds) %>
+        <% page_funds.each do |fund| %>
           <%= render card_partial, fund: %>
         <% end %>
       </div>

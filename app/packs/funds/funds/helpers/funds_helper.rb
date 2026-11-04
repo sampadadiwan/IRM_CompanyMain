@@ -328,16 +328,34 @@ module FundsHelper
     fund_ratio.name.sub("Portfolio ", "")
   end
 
-  # Returns the latest values for specified ratios from pre-loaded fund_ratios
-  # Expects fund_ratios to be eager-loaded via includes(:fund_ratios) in controller
+  # Loads the latest Default-scenario fund-level ratios for a page of funds in one query, so each
+  # fund card's get_latest_fund_ratios is an in-memory lookup instead of a query per fund. Only the
+  # fund's own latest rows are loaded - includes(:fund_ratios) would pull every commitment-level and
+  # historical ratio of every fund on the page.
+  def preload_latest_fund_ratios(funds)
+    loaded = FundRatio.where(fund_id: funds.map(&:id), owner_type: "Fund")
+                      .where("fund_ratios.owner_id = fund_ratios.fund_id")
+                      .default.latest
+                      .group_by(&:fund_id)
+    # Every fund on the page gets a key, so one with no ratios is not looked up again
+    @latest_fund_ratios_by_fund_id = funds.to_h { |fund| [fund.id, loaded.fetch(fund.id, [])] }
+  end
+
+  # Returns the latest values for specified ratios. Reads the rows loaded by
+  # preload_latest_fund_ratios when this fund was part of that page, else queries for this fund.
   def get_latest_fund_ratios(fund, ratio_names = ["Gross Portfolio IRR", "Portfolio Value to Cost", "XIRR", "TVPI"])
     ratios_by_name = {}
 
-    # Filter pre-loaded ratios by name and owner, then group by name
-    # If multiple ratios are marked as latest (edge case), use the most recent end_date
-    ratios_by_name_group = fund.fund_ratios
-                               .where(name: ratio_names, owner: fund).default.latest
-                               .group_by(&:name)
+    # The fund's own (owner = fund) Default-scenario latest ratios with these names
+    candidates = if @latest_fund_ratios_by_fund_id&.key?(fund.id)
+                   @latest_fund_ratios_by_fund_id[fund.id].select { |ratio| ratio_names.include?(ratio.name) }
+                 else
+                   fund.fund_ratios.where(name: ratio_names, owner: fund).default.latest
+                 end
+
+    # Group by name; if multiple ratios are marked as latest (edge case), the most recent
+    # end_date wins below
+    ratios_by_name_group = candidates.group_by(&:name)
 
     # For each ratio, get the one with the most recent end_date
     ratio_names.each do |name|
