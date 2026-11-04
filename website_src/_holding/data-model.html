@@ -46,8 +46,8 @@ button{font:inherit;color:inherit}
 /* top bar */
 .top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--band);color:var(--band-fg);border-bottom:1px solid var(--band-line)}
 .top .wrap{display:flex;align-items:center;gap:40px;padding-block:0}
-.brand{display:flex;align-items:baseline;gap:8px;white-space:nowrap;text-decoration:none}
-.brand b{font-family:var(--display);font-weight:700;letter-spacing:-.02em;font-size:19px}
+.brand{display:flex;align-items:center;gap:10px;white-space:nowrap;text-decoration:none}
+.brand .logo{display:block;height:26px;width:auto}
 .brand span{font-size:14px;color:var(--band-mut);padding-left:10px;border-left:1px solid var(--band-line)}
 .nav{display:flex;gap:4px 26px;overflow-x:auto;scrollbar-width:none;flex:1;min-width:0}
 .nav::-webkit-scrollbar{display:none}
@@ -128,6 +128,12 @@ pre.snip{margin:0;background:var(--sunk);border-radius:3px;padding:14px 16px;fon
 .lane-t{font-family:var(--sans);font-size:13px;font-weight:600;fill:var(--fg)}
 .dim .de:not(.on){opacity:.25}
 .dim .dn:not(.on):not(.nb){opacity:.45}
+.rel-dia{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow-x:auto}
+.rel-dia svg{display:block;min-width:720px;width:100%;height:auto}
+.rel-dia .dn.st{cursor:default}
+.rel-dia .dn.self rect.box{stroke:var(--accent);stroke-width:2}
+.rel-dia .de{stroke:color-mix(in srgb,var(--mut) 55%,transparent)}
+.rel-dia .de.dash{stroke-dasharray:4 3}
 
 /* schema explorer */
 .ex{display:grid;grid-template-columns:230px 300px minmax(0,1fr);gap:0;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);min-height:72vh;overflow:hidden}
@@ -305,7 +311,21 @@ body.locked{overflow:hidden}
 
 <header class="top">
   <div class="wrap">
-    <a class="brand" href="#overview"><b>CapHive</b><span>data model</span></a>
+    <a class="brand" href="#overview"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 816.0 205.0" class="logo" role="img" aria-label="CapHive"><title>CapHive</title>
+<g transform="translate(0.0,0.0) scale(6.0294)" fill="none"><path d="M15 1L29 9v16L15 33 1 25V9L15 1z" stroke="#FF4D00" stroke-width="2"/><path d="M15 9l7 4v8l-7 4-7-4v-8l7-4z" fill="#FF4D00"/></g>
+<g transform="translate(239.67,152.50) scale(0.14085,-0.14085)">
+<path transform="translate(0,0)" d="M379 -16Q281 -16 204.5 28.0Q128 72 84.5 154.5Q41 237 41 354Q41 467 82.5 550.5Q124 634 201.0 680.0Q278 726 382 726Q525 726 604.5 656.0Q684 586 707 455L526 448Q515 512 478.0 548.0Q441 584 382 584Q330 584 293.5 555.0Q257 526 238.5 474.0Q220 422 220 354Q220 284 239.5 233.0Q259 182 295.0 154.0Q331 126 381 126Q446 126 481.5 164.5Q517 203 527 271L709 264Q694 175 652.0 112.5Q610 50 542.0 17.0Q474 -16 379 -16Z" fill="#FF4D00"/>
+<path transform="translate(715,0)" d="M226 -12Q142 -12 88.0 27.0Q34 66 34 135Q34 206 80.0 245.0Q126 284 214 302L381 336Q381 383 360.5 407.5Q340 432 302 432Q264 432 242.5 413.5Q221 395 215 361L43 367Q59 460 126.0 505.0Q193 550 302 550Q428 550 490.5 493.0Q553 436 553 323V153Q553 128 561.5 120.0Q570 112 585 112H598V0Q590 -3 572.0 -5.0Q554 -7 537 -7Q506 -7 477.0 3.5Q448 14 429.0 41.5Q410 69 410 121L423 108Q413 72 387.5 44.5Q362 17 322.0 2.5Q282 -12 226 -12Z" fill="#FF4D00"/>
+<path transform="translate(715,0)" d="M271 100Q303 100 328.0 113.0Q353 126 367.0 151.0Q381 176 381 213V235L277 211Q246 204 228.5 189.5Q211 175 211 151Q211 127 226.0 113.5Q241 100 271 100Z" fill="#FF4D00"/>
+<path transform="translate(1294,0)" d="M61 -150V538H228L231 425L218 430Q238 488 282.5 519.0Q327 550 388 550Q461 550 511.0 513.5Q561 477 587.0 413.5Q613 350 613 269Q613 189 586.5 125.0Q560 61 509.5 24.5Q459 -12 386 -12Q347 -12 313.5 2.5Q280 17 255.5 43.5Q231 70 220 106L233 112V-150Z" fill="#FF4D00"/>
+<path transform="translate(1294,0)" d="M334 115Q381 115 408.5 156.5Q436 198 436 269Q436 340 408.5 381.5Q381 423 334 423Q302 423 279.5 405.5Q257 388 245.0 354.0Q233 320 233 269Q233 218 245.0 184.0Q257 150 279.5 132.5Q302 115 334 115Z" fill="#FF4D00"/>
+<path transform="translate(1911,0)" d="M68 0V710H242V376L167 429H557L482 376V710H656V0H482V338L557 286H167L242 338V0Z" fill="#FFFFFF"/>
+<path transform="translate(2605,0)" d="M61 0V538H233V0Z" fill="#FFFFFF"/>
+<path transform="translate(2605,0)" d="M147.0 765.2L57.6 713.6L57.6 610.4L147.0 558.8L236.4 610.4L236.4 713.6Z" fill="#FF4D00"/>
+<path transform="translate(2869,0)" d="M217 0 20 538H199L317 172L434 538H612L415 0Z" fill="#FFFFFF"/>
+<path transform="translate(3472,0)" d="M314 -12Q230 -12 167.0 23.0Q104 58 69.0 121.0Q34 184 34 269Q34 354 69.0 416.5Q104 479 166.5 514.5Q229 550 313 550Q397 550 458.5 514.5Q520 479 553.0 413.0Q586 347 586 256V224H212Q215 168 243.5 140.5Q272 113 317 113Q351 113 374.0 126.5Q397 140 407 171L579 161Q557 77 486.0 32.5Q415 -12 314 -12Z" fill="#FFFFFF"/>
+<path transform="translate(3472,0)" d="M212 322H412Q410 375 383.0 401.5Q356 428 313 428Q272 428 244.5 400.0Q217 372 212 322Z" fill="#FFFFFF"/>
+</g></svg><span>data model</span></a>
     <nav class="nav" id="nav" aria-label="Sections">
       <a href="#overview">Overview</a>
       <a href="#schema">Schema</a>
@@ -481,7 +501,7 @@ body.locked{overflow:hidden}
   <div class="sec-head">
     <div class="eyebrow">System of record vs data lake</div>
     <h2 class="h2">Keep the lake <i>downstream</i></h2>
-    <p class="lede">A data lake is good at storing rows. Running a fund needs more than storage: the data has to mean something, the numbers have to be computed the same way every quarter, corrections have to leave a trail, and each LP may see only their own slice. Putting a lake first means building all of that yourself. <strong>Put CapHive first, and feed your lake from it.</strong></p>
+    <p class="lede">A data lake is good at storing rows. Running a fund needs more than storage: the data has to mean something, the numbers have to be computed the same way every quarter, corrections have to leave a trail, and each LP may see only their own slice. Putting a lake first means building all of that yourself. <strong>Put CapHive first, and feed your lake from it if you still need it.</strong></p>
   </div>
   <div class="pipe">
     <div class="box"><div class="eyebrow">Sources</div><ul><li>Administrator files & GL</li><li>Bank statements</li><li>LP subscription & KYC</li><li>Portfolio company KPI packs</li><li>Valuations & market prices</li></ul></div>
@@ -513,7 +533,7 @@ body.locked{overflow:hidden}
 </section>
 
 </main>
-<footer class="foot"><div class="wrap">Generated from the CapHive codebase (<code>db/schema.rb</code>, model definitions, MCP ontology and <code>swagger/v1/swagger.yaml</code>) on Nov 04, 2026. Table and column names are exact, except that two columns appear under neutral names: <code>tax_id</code> is stored as <code>PAN</code> and <code>bank_routing_code</code> as <code>ifsc_code</code>. Columns used only by integrations for other markets are omitted. Descriptions are plain-English summaries.</div></footer>
+<footer class="foot"><div class="wrap">Generated from the CapHive codebase (<code>db/schema.rb</code>, model definitions, MCP ontology and <code>swagger/v1/swagger.yaml</code>) on Nov 04, 2026.</div></footer>
 
 <div class="scrim" id="scrim" hidden></div>
 <aside class="side" id="side" role="dialog" aria-modal="true" aria-labelledby="sideTitle" hidden>
@@ -573,8 +593,8 @@ const FLEX = [
    `name:        <span class="s">"Management Fee"</span>\nentry_type:  <span class="s">"Expense"</span>\nparent_type: <span class="s">"CapitalCommitment"</span>\nfund_formula_id, allocation_run_id, explanation`],
   ["owner_type / owner_id", "Attach anything to anything", nPoly+" tables use a polymorphic owner or parent. One valuations table values an instrument or a company; one documents table holds files for any record.",
    `documents.owner_type   <span class="s">"CapitalCommitment"</span>\nvaluations.owner_type  <span class="s">"Investor"</span>\nfund_ratios.owner_type <span class="s">"Fund" | "CapitalCommitment" | …</span>`],
-  ["*_cents · folio_* · tracking_*", "Every amount in up to four currencies", nMoney+" money columns, stored as integer cents. Amounts are kept in the fund currency, the LP's folio currency, an optional reporting (tracking) currency, and for holdings, the instrument's own currency.",
-   `amount_cents            <span class="c"># fund currency</span>\nfolio_amount_cents      <span class="c"># LP's currency</span>\ntracking_amount_cents   <span class="c"># reporting currency</span>\ninstrument_currency_fmv_cents`],
+  ["*_cents · folio_* · tracking_*", "Every amount in up to three currencies", nMoney+" money columns, stored as integer cents. Amounts are kept in the fund currency, the LP's folio currency and an optional reporting (tracking) currency.",
+   `amount_cents            <span class="c"># fund currency</span>\nfolio_amount_cents      <span class="c"># LP's currency</span>\ntracking_amount_cents   <span class="c"># reporting currency</span>`],
   ["import_upload_id · audits", "Every row is traceable", nImport+" tables record the spreadsheet import that created each row, "+nSoft+" soft-delete instead of erasing, and an audit trail stores field-level history: who, when, before and after.",
    `account_entries.import_upload_id → import_uploads\naudits: auditable_type, audited_changes,\n        user_id, created_at`],
 ];
@@ -595,7 +615,7 @@ const LANES = [
   ["Portfolio", [["investors:pc","Portfolio company"],["investment_instruments","Instrument"],["portfolio_investments","Portfolio investment"],["aggregate_portfolio_investments","Position (aggregate)"],["valuations","Valuation"],["kpi_reports","KPI report"],["kpis","KPI"]]],
 ];
 const EDGES = [["investors","investor_kycs"],["investors","investor_accesses"],["investors","capital_commitments"],["investor_kycs","capital_commitments"],["documents","capital_commitments"],
-  ["funds","fund_unit_settings"],["funds","capital_commitments"],["capital_commitments","capital_remittances"],["capital_calls","capital_remittances"],["capital_distributions","capital_distribution_payments"],["capital_commitments","capital_distribution_payments"],["capital_commitments","fund_units"],["capital_remittances","fund_units"],["fund_unit_settings","capital_commitments"],
+  ["funds","fund_unit_settings"],["funds","capital_commitments"],["capital_commitments","capital_remittances"],["capital_calls","capital_remittances"],["capital_distributions","capital_distribution_payments"],["capital_commitments","capital_distribution_payments"],["capital_commitments","fund_units"],["capital_remittances","fund_units"],["capital_distribution_payments","fund_units"],["fund_unit_settings","capital_commitments"],
   ["fund_formulas","account_entries"],["allocation_runs","account_entries"],["funds","fund_formulas"],["capital_commitments","account_entries"],["account_entries","fund_ratios"],["ratio_formulas","fund_ratios"],["account_entries","fund_navs"],["exchange_rates","account_entries"],["capital_remittances","fund_ratios"],["capital_distribution_payments","fund_ratios"],
   ["investors:pc","investment_instruments"],["investment_instruments","portfolio_investments"],["portfolio_investments","aggregate_portfolio_investments"],["valuations","aggregate_portfolio_investments"],["investment_instruments","valuations"],["investors:pc","kpi_reports"],["kpi_reports","kpis"],["portfolio_investments","account_entries"],["aggregate_portfolio_investments","fund_ratios"]];
 (function drawDiagram(){
@@ -642,7 +662,7 @@ function renderDomains(){
    DOMS.filter(d=>counts[d.id]).map(d=>`<button aria-pressed="${state.dom===d.id}" data-d="${d.id}" style="--dc:${dc(d.id)}"><span>${esc(d.name)}</span><span class="n">${counts[d.id]}</span></button>`).join("")+
    `<label class="opt" for="exInt"><input type="checkbox" id="exInt" ${state.internals?"checked":""}> Show platform internals</label>`;
   $("#exDom").querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{state.dom=b.dataset.d; renderDomains(); renderList();}));
-  $("#exInt").addEventListener("change",e=>{state.internals=e.target.checked; renderDomains(); renderList();});
+  $("#exInt").addEventListener("change",e=>{state.internals=e.target.checked; renderDomains(); renderList(); renderDetail();});
 }
 function matchTable(name,q){
   if(!q) return {ok:true};
@@ -674,10 +694,125 @@ function fkTarget(t,col){
   for(const a of (t.assocs||[])){
     if(a.macro!=="belongs_to") continue;
     const fk=a.fk||(a.name+"_id");
-    if(fk===col) return a.poly?{poly:a.name}:(a.table?{table:a.table}:null);
+    if(fk===col) return a.poly?{poly:a.name}:(a.table?{table:a.table, name:a.name}:null);
   }
   if(col.endsWith("_id")){ const base=col.slice(0,-3); if(t.columns.some(c=>c.name===base+"_type")) return {poly:base}; }
   return null;
+}
+/* ---------- focused relationship diagram (one table + its neighbours) ---------- */
+// LPs, portfolio companies and RMs all live in the one investors table; the
+// association name says which role a link plays, so label links by that role.
+const INVESTOR_ROLE={investor:"Investor (LP)", portfolio_company:"Portfolio company", rm:"Relationship manager"};
+const INVESTOR_SHORT={investor:"LP", portfolio_company:"portfolio company", rm:"relationship manager"};
+const roleKey=(assocName,fk)=>INVESTOR_ROLE[assocName]?assocName:(fk||"").replace(/^access_to_/,"").replace(/_id$/,"");
+const roleOf=(assocName,fk)=>INVESTOR_ROLE[roleKey(assocName,fk)] || human(assocName||"investor");
+const shortRole=(assocName,fk)=>INVESTOR_SHORT[roleKey(assocName,fk)] || human(assocName||"investor").toLowerCase();
+// Tables every record links to (entity, users, audit trail). Hidden unless the
+// reader ticks "Show platform internals" or is looking at a platform table.
+const isNoise = n => T[n] && (T[n].domain==="platform" || T[n].tier==="internal");
+// Polymorphic links (owner_id on documents, fund_ratios…) can point at either role, so they show only the column
+const roleSub=(assocName,fk)=>{const k=roleKey(assocName,fk); return (k==="investor"||k==="rm")?`${fk} (${INVESTOR_SHORT[k]})`:fk;};
+function relGraph(name){
+  const t=T[name], hide=!state.internals && !isNoise(name);
+  // Count hidden tables once each, even when a table links both ways
+  const hiddenSet=new Set();
+  const keep=n=>{ if(hide && isNoise(n)){ hiddenSet.add(n); return false; } return true; };
+  // Left side: belongs_to targets, with the foreign key this table holds
+  const parents=[], seenP=new Set();
+  for(const a of (t.assocs||[])){
+    if(a.macro!=="belongs_to") continue;
+    const fk=a.fk||(a.name+"_id");
+    if(a.poly){ parents.push({key:"p:"+a.name, label:"any record", sub:`${a.name}_type + ${fk}`, poly:true}); continue; }
+    const inv=a.table==="investors", pk=inv?a.table+":"+a.name:a.table;
+    if(!a.table || a.table===name || seenP.has(pk) || !keep(a.table)) continue;
+    seenP.add(pk);
+    if(inv) parents.push({key:"p:"+pk, t:a.table, label:roleOf(a.name,fk), sub:"investors · "+fk});
+    else parents.push({key:"p:"+pk, t:a.table, label:a.table, sub:fk});
+  }
+  // Right side: "Has" and "Referenced by" merged into one list, keyed by table
+  const kids=new Map();
+  for(const a of (t.assocs||[])){
+    if(a.macro==="belongs_to") continue;
+    const tb=a.table || (T[a.name]?a.name:null);
+    if(tb===name) continue;
+    if(a.through){ if(tb && kids.has(tb)) continue; if(tb && !keep(tb)) continue;
+      kids.set(tb||"x:"+a.name,{key:"c:"+(tb||a.name), t:tb, label:tb||a.name, sub:"via "+a.through, via:true}); continue; }
+    if(!tb || !keep(tb)) continue;
+    kids.set(tb,{key:"c:"+tb, t:tb, label:tb, sub:name==="investors"?roleSub(a.name,a.fk):(a.fk||"")});
+  }
+  for(const n of (INCOMING[name]||[])){
+    if(n===name) continue;
+    const cur=kids.get(n);
+    if(cur && !cur.via) continue;
+    if(!cur && !keep(n)) continue;
+    const a=(T[n].assocs||[]).find(x=>x.macro==="belongs_to" && x.table===name);
+    const fk=a?(a.fk||a.name+"_id"):"";
+    kids.set(n,{key:"c:"+n, t:n, label:n, sub:name==="investors"&&a?roleSub(a.name,fk):fk});
+  }
+  // Order: core tables first, then the focus table's own domain, then A–Z
+  const rank=x=>!x.t||!T[x.t]?3:(T[x.t].tier==="core"?0:1)+(T[x.t].domain===t.domain?0:0.5);
+  const sort=l=>l.sort((a,b)=>rank(a)-rank(b)||a.label.localeCompare(b.label));
+  return {parents:sort(parents), kids:sort([...kids.values()]), hidden:hiddenSet.size};
+}
+function relDiagram(name){
+  const t=T[name], g=relGraph(name);
+  const MAXP=10, MAXC=12;
+  const cut=(l,max,side)=>l.length>max?{shown:l.slice(0,max-1).concat([{key:side+":more", more:l.length-(max-1), label:`+ ${l.length-(max-1)} more`, sub:"show the full list"}]), rest:l.slice(max-1)}:{shown:l,rest:[]};
+  const P=cut(g.parents,MAXP,"p"), C=cut(g.kids,MAXC,"c");
+  if(!P.shown.length && !C.shown.length)
+    return `<p class="small muted">No links to other tables${g.hidden?` (${g.hidden} platform ${g.hidden===1?"link":"links"} hidden; tick Show platform internals to see ${g.hidden===1?"it":"them"})`:""}.</p>`;
+  // Layout: three columns, each side centred against the taller one
+  const W=960, NW=250, NH=40, GAP=50, TOP=44, xL=0, xC=355, xR=710, CH=76;
+  const rows=Math.max(P.shown.length, C.shown.length, 2);
+  const span=rows*GAP-(GAP-NH);
+  const colTop=n=>TOP+(span-(n*GAP-(GAP-NH)))/2;
+  const cTop=TOP+(span-CH)/2, H=TOP+span+16;
+  const fit=(x,n)=>x.length>n?x.slice(0,n-1)+"…":x;
+  // Crow's foot: the fork sits on the "many" end of each link
+  const fork=(x,y,dir)=>`M${x-10*dir} ${y} L${x} ${y-6} M${x-10*dir} ${y} L${x} ${y+6}`;
+  const spread=(i,n)=>cTop+12+(i+0.5)*(CH-24)/n;
+  let s=`<svg viewBox="-16 -4 ${W+32} ${H+8}" role="img" aria-label="Tables linked to ${esc(name)}">`;
+  s+=`<text class="lane-t" x="${xL}" y="22">Belongs to (${g.parents.length})</text><text class="lane-t" x="${xC}" y="22">This table</text><text class="lane-t" x="${xR}" y="22">Has / referenced by (${g.kids.length})</text>`;
+  s+=`<g>`;
+  // Parent links: parent's right edge → centre's left edge; many end at this table
+  P.shown.forEach((n,i)=>{ if(n.more) return;
+    const y1=colTop(P.shown.length)+i*GAP+NH/2, y2=spread(i,P.shown.length), x1=xL+NW, x2=xC, mx=(x1+x2)/2;
+    s+=`<path class="de${n.poly?" dash":""}" data-a="${n.key}" data-b="self" d="M${x1} ${y1} C${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2} ${fork(x2,y2,1)}"/>`; });
+  // Child links: centre's right edge → child's left edge; many end at the child
+  C.shown.forEach((n,i)=>{ if(n.more) return;
+    const y1=spread(i,C.shown.length), y2=colTop(C.shown.length)+i*GAP+NH/2, x1=xC+NW, x2=xR, mx=(x1+x2)/2;
+    s+=`<path class="de${n.via?" dash":""}" data-a="self" data-b="${n.key}" d="M${x1} ${y1} C${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2} ${fork(x2,y2,1)}"/>`; });
+  s+=`</g>`;
+  // Neighbour boxes, styled like the overview diagram (domain colour bar, mono label)
+  const node=(n,x,y)=>{
+    const dom=n.t&&T[n.t]?T[n.t].domain:"platform", click=n.t&&T[n.t]&&!n.more;
+    return `<g class="dn${click?"":" st"}" tabindex="0" ${click?`role="link" data-t="${n.t}"`:n.more?`role="button" data-more="1"`:""} data-id="${n.key}" aria-label="${esc(n.label)}"><title>${esc(n.label+(n.sub?" · "+n.sub:""))}</title><rect class="box" x="${x}" y="${y}" width="${NW}" height="${NH}" rx="3"/>${n.more?"":`<rect x="${x}" y="${y}" width="4" height="${NH}" rx="1" style="fill:${dc(dom)};stroke:none"/>`}<text x="${x+14}" y="${y+17}">${esc(fit(n.label,30))}</text><text class="sub" x="${x+14}" y="${y+32}">${esc(fit(n.sub,37))}</text></g>`;
+  };
+  P.shown.forEach((n,i)=>{s+=node(n,xL,colTop(P.shown.length)+i*GAP);});
+  C.shown.forEach((n,i)=>{s+=node(n,xR,colTop(C.shown.length)+i*GAP);});
+  // The focus table, centred and outlined in the accent colour
+  s+=`<g class="dn st self" data-id="self"><rect class="box" x="${xC}" y="${cTop}" width="${NW}" height="${CH}" rx="3"/><rect x="${xC}" y="${cTop}" width="4" height="${CH}" rx="1" style="fill:${dc(t.domain)};stroke:none"/><text x="${xC+14}" y="${cTop+26}" style="font-weight:600">${esc(fit(name,30))}</text><text class="sub" x="${xC+14}" y="${cTop+44}">${esc(fit((t.model||"")+" · "+t.columns.length+" columns",34))}</text><text class="sub" x="${xC+14}" y="${cTop+60}">${esc(fit(name==="investors"?"LPs, portfolio companies, RMs":(DM[t.domain]?DM[t.domain].name:""),37))}</text></g>`;
+  s+=`</svg>`;
+  // Overflow lists, opened from the "+ N more" boxes
+  const restRow=(lab,l,side)=>l.length?`<div class="row" data-rest="${side}" hidden><span class="lab">${lab}</span><div class="chips">${l.map(n=>n.t?tableChip(n.t):`<span class="chip"><span class="dot"></span>${esc(n.label)}</span>`).join("")}</div></div>`:"";
+  return `<div class="rel-dia" id="relDia">${s}</div>
+    <p class="small muted">Left: tables this one points to, with the column that holds the link. Right: tables that point to it. The fork marks the "many" side; a dashed line is a link through another table or to any record type. Click a table to focus on it.${g.hidden?` ${g.hidden} platform ${g.hidden===1?"link is":"links are"} hidden (entity, users, audit trail); tick Show platform internals to include ${g.hidden===1?"it":"them"}.`:""}</p>
+    <div class="rels">${restRow("More parents",P.rest,"p")}${restRow("More children",C.rest,"c")}</div>`;
+}
+function wireRelDiagram(){
+  const host=$("#relDia"); if(!host) return;
+  const svg=host.querySelector("svg");
+  // Hover/focus: highlight a box's link and dim the rest, as in the overview diagram
+  const on=id=>{svg.classList.add("dim"); svg.querySelectorAll(".de").forEach(e=>{const hit=e.dataset.a===id||e.dataset.b===id; e.classList.toggle("on",hit); if(hit) svg.querySelector(`.dn[data-id="${e.dataset.a===id?e.dataset.b:e.dataset.a}"]`)?.classList.add("nb");}); svg.querySelector(`.dn[data-id="${id}"]`)?.classList.add("on");};
+  const off=()=>{svg.classList.remove("dim"); svg.querySelectorAll(".on,.nb").forEach(e=>e.classList.remove("on","nb"));};
+  svg.querySelectorAll(".dn").forEach(g=>{
+    g.addEventListener("mouseenter",()=>on(g.dataset.id)); g.addEventListener("mouseleave",off);
+    g.addEventListener("focus",()=>on(g.dataset.id)); g.addEventListener("blur",off);
+    // Click: refocus on that table, or open the overflow list for "+ N more"
+    const go=()=>{ if(g.dataset.t) selectTable(g.dataset.t,true);
+      else if(g.dataset.more){ const r=$("#exDetail").querySelector(`[data-rest="${g.dataset.id[0]}"]`); if(r) r.hidden=!r.hidden; } };
+    g.addEventListener("click",go); g.addEventListener("keydown",e=>{if(e.key==="Enter")go();});
+  });
 }
 function renderDetail(){
   const name=state.sel, t=T[name]; if(!t) return;
@@ -689,7 +824,7 @@ function renderDetail(){
     if(c.pk||(t.pk.includes(c.name)&&c.name!=="id")) notes.push('<span class="pill">primary key</span>');
     if(money.has(c.name)) notes.push(`<span class="pill">money · API field <code>${esc(c.name.replace(/_cents$/,""))}</code></span>`);
     const fk=fkTarget(t,c.name);
-    if(fk&&fk.table) notes.push(`→ <button class="lnk" data-t="${fk.table}">${esc(fk.table)}</button>`);
+    if(fk&&fk.table) notes.push(`→ <button class="lnk" data-t="${fk.table}">${esc(fk.table)}</button>${fk.table==="investors"?` <span class="muted">(${esc(shortRole(fk.name,c.name))})</span>`:""}`);
     if(fk&&fk.poly) notes.push(`→ any record (polymorphic <code>${esc(fk.poly)}</code>)`);
     if(c.name==="json_fields") notes.push('<span class="pill acc">custom field values</span>');
     if(c.name==="import_upload_id") notes.push("the import that created this row");
@@ -701,10 +836,6 @@ function renderDetail(){
     const hx=colHelp(c.name);
     return `<tr class="${cls}"><td>${esc(c.name)}${hx?` <button type="button" class="q" data-x="${hx}" aria-label="What is ${esc(c.name)}?">?</button>`:""}</td><td class="ty">${esc(ty)}${c.null===false?' <span title="required">·req</span>':""}</td><td>${notes.join(" ")}</td></tr>`;
   }).join("");
-  const out=(t.assocs||[]).filter(a=>a.macro==="belongs_to");
-  const many=(t.assocs||[]).filter(a=>a.macro!=="belongs_to");
-  const relChip=a=>a.table?tableChip(a.table,a.name):`<span class="chip"><span class="dot"></span>${esc(a.name)}${a.poly?" (any)":""}${a.through?` <span class="muted">via ${esc(a.through)}</span>`:""}</span>`;
-  const inc=[...(INCOMING[name]||[])].sort();
   const api=D.api.resources[name]||[];
   $("#exDetail").innerHTML=`
     <div style="display:grid;gap:8px">
@@ -715,15 +846,12 @@ function renderDetail(){
       ${t.blurb&&t.description?`<p class="small muted">${esc(t.description)}</p>`:""}
     </div>
     ${t.custom_fields?`<div class="callout">Plus any custom fields you define for <b>${esc(t.model)}</b>. They are stored in <code>json_fields</code> and appear on its forms, filters, imports, reports and API responses. <a href="#extend">How custom fields work →</a></div>`:""}
-    <div class="rels">
-      ${out.length?`<div class="row"><span class="lab">Belongs to</span><div class="chips">${out.map(relChip).join("")}</div></div>`:""}
-      ${many.length?`<div class="row"><span class="lab">Has</span><div class="chips">${many.slice(0,24).map(relChip).join("")}${many.length>24?`<span class="muted small">+${many.length-24} more</span>`:""}</div></div>`:""}
-      ${inc.length?`<div class="row"><span class="lab">Referenced by</span><div class="chips">${inc.slice(0,30).map(n=>tableChip(n)).join("")}${inc.length>30?`<span class="muted small">+${inc.length-30} more</span>`:""}</div></div>`:""}
-    </div>
     <div class="tablewrap"><table class="cols"><thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead><tbody>${rows}</tbody></table></div>
     ${t.indexes.length?`<details><summary class="small muted">${t.indexes.length} indexes</summary><div class="small mono" style="display:grid;gap:3px;margin-top:8px">${t.indexes.map(i=>`<span>${i.unique?"unique ":""}(${esc(i.columns.join(", "))})</span>`).join("")}</div></details>`:""}
-    ${api.length?`<div style="display:grid;gap:4px"><div class="eyebrow">API</div>${api.map(e=>`<div class="ep"><span class="v ${e.verb}">${e.verb}</span><code>${esc(e.path)}</code></div>`).join("")}</div>`:""}`;
+    ${api.length?`<div style="display:grid;gap:4px"><div class="eyebrow">API</div>${api.map(e=>`<div class="ep"><span class="v ${e.verb}">${e.verb}</span><code>${esc(e.path)}</code></div>`).join("")}</div>`:""}
+    <div style="display:grid;gap:10px"><div class="eyebrow">How it connects</div>${relDiagram(name)}</div>`;
   $("#exDetail").querySelectorAll(".lnk").forEach(b=>b.addEventListener("click",()=>selectTable(b.dataset.t,true)));
+  wireRelDiagram();
   $("#exDetail").scrollTop=0;
 }
 function selectTable(name,push){
