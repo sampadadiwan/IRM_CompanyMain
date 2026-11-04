@@ -17,15 +17,10 @@ class CapitalDistributionPaymentsController < ApplicationController
     respond_to do |format|
       format.html
       format.xlsx
-      # Bearer-token callers (the LP mobile app, API clients) get the jbuilder records; the
-      # website's DataTables grid keeps its own shape
-      format.json do
-        if api_request?
-          render :index
-        else
-          render json: CapitalDistributionPaymentDatatable.new(params, capital_distribution_payments: @capital_distribution_payments)
-        end
-      end
+      # jbuilder records for every caller (the LP mobile app, API clients, browser). The website's
+      # grid is the server-rendered RansackTable; the old DataTables JSON shape went with
+      # CapitalDistributionPaymentDatatable (removed in 8352637465), which this used to 500 on.
+      format.json
     end
   end
 

@@ -50,6 +50,8 @@ gem "stimulus-rails"
 
 # Build JSON APIs with ease [https://github.com/rails/jbuilder]
 gem "jbuilder"
+# Fast C JSON encoder; wired into ActiveSupport::JSON by config/initializers/oj.rb
+gem "oj"
 gem 'rswag-api'
 gem 'rswag-ui'
 
@@ -198,6 +200,10 @@ group :development, :test do
   gem 'erubis'
 
   gem 'bullet'
+  # N+1 detection that compares actual SQL fingerprints rather than tracking associations, so it
+  # catches N+1s Bullet misses (custom finders, pluck/exists? in loops). Off unless PROSOPITE=1 —
+  # see config/initializers/prosopite.rb.
+  gem 'prosopite'
   gem 'htmlbeautifier'
   gem 'parallel_tests'
   # Deliberately NOT adding cuke_modeler. It only exists to unlock
@@ -245,7 +251,9 @@ group :development do
 
   # Add speed badges [https://github.com/MiniProfiler/rack-mini-profiler]
   gem "rack-mini-profiler"
-  gem "ruby-prof"
+  # Low-overhead sampling profiler (GVL/GC/allocation aware) — profile a slow list view with
+  # `bundle exec vernier run -- bin/rails runner script.rb`; open the output at vernier.prof
+  gem "vernier", require: false
 
   # For memory profiling
   # gem 'memory_profiler'

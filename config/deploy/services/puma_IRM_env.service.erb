@@ -8,6 +8,13 @@ Type=simple
 User=ubuntu
 WorkingDirectory=/home/ubuntu/IRM/current
 Environment="RAILS-ENV=<%= fetch(:stage) %>"
+# jemalloc instead of glibc malloc: far less heap fragmentation, lower RSS (offsets YJIT's
+# code-cache memory). Bare soname so ld.so finds it on any arch; if libjemalloc2 is not
+# installed, ld.so prints a warning and Ruby runs on glibc malloc as before.
+<%# Staging-only trial. Widen to production once staging has run on jemalloc for a while. %>
+<% if fetch(:stage).to_s == "staging" %>
+Environment=LD_PRELOAD=libjemalloc.so.2
+<% end %>
 
 # Support older bundler versions where file descriptors weren't kept
 # See https://github.com/rubygems/rubygems/issues/3254

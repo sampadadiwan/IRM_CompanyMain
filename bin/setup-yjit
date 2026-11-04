@@ -1,0 +1,138 @@
+#!/usr/bin/env bash
+# setup-yjit — rebuild this machine's Ruby with YJIT, in one shot.
+#
+#   bin/setup-yjit              # Ruby from .ruby-version, interactive
+#   bin/setup-yjit 3.4.1        # a specific version
+#   bin/setup-yjit 3.4.1 -y     # no prompts
+#   bin/setup-yjit --check      # read-only: report, change nothing
+#   YJIT_MANAGER=rbenv bin/setup-yjit   # force a version manager (rvm | rbenv | mise)
+#
+# Why a rebuild: YJIT is written in Rust, so Ruby only gets it when rustc is present at compile
+# time. Most Rubies installed by rvm/rbenv/mise on dev machines were built without it, and then
+# config.yjit / RUBY_YJIT_ENABLE silently do nothing. This installs rustc, recompiles the same
+# Ruby version from source with --enable-yjit (configure fails loudly if rustc is unusable),
+# reinstalls the bundle, and proves YJIT runs with the app's gems.
+#
+# After it, YJIT is on by default in development and test (config.yjit in config/application.rb):
+# plain `bin/dev` and `bin/pcuc` run with it. YJIT=0 bin/dev runs without it.
+# Staging/production are handled by `cap <stage> yjit:enable` (lib/capistrano/tasks/yjit.rake).
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+VERSION="" ASSUME_YES=0 CHECK_ONLY=0
+for arg in "$@"; do
+  case "$arg" in
+    -y|--yes)   ASSUME_YES=1 ;;
+    --check)    CHECK_ONLY=1 ;;
+    -h|--help)  sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -*)         echo "unknown option: $arg" >&2; exit 2 ;;
+    *)          VERSION="${arg#ruby-}" ;;
+  esac
+done
+VERSION="${VERSION:-$(sed 's/^ruby-//' .ruby-version | tr -d '[:space:]')}"
+
+say()  { printf '\033[1;34m==>\033[0m %s\n' "$*"; }
+ok()   { printf '\033[1;32m ok\033[0m %s\n' "$*"; }
+warn() { printf '\033[1;33m !!\033[0m %s\n' "$*" >&2; }
+die()  { printf '\033[1;31mERR\033[0m %s\n' "$*" >&2; exit 1; }
+confirm() {
+  [[ $ASSUME_YES == 1 ]] && return 0
+  read -r -p "$1 [y/N] " reply
+  [[ $reply =~ ^[Yy]$ ]]
+}
+
+# ── Version manager ──────────────────────────────────────────────────────────────────────────
+MANAGER="${YJIT_MANAGER:-}"
+if [[ -z $MANAGER ]]; then
+  if   [[ -s $HOME/.rvm/scripts/rvm ]];    then MANAGER=rvm
+  elif command -v rbenv >/dev/null 2>&1;   then MANAGER=rbenv
+  elif command -v mise  >/dev/null 2>&1;   then MANAGER=mise
+  else die "no rvm, rbenv or mise found — install Ruby $VERSION with one of them first"
+  fi
+fi
+
+# Run a command under Ruby $VERSION from $MANAGER, regardless of what PATH would pick.
+with_ruby() {
+  case "$MANAGER" in
+    rvm)   bash -c 'source "$HOME/.rvm/scripts/rvm" >/dev/null && rvm "$0" do "$@"' "$VERSION" "$@" ;;
+    rbenv) RBENV_VERSION="$VERSION" rbenv exec "$@" ;;
+    mise)  mise exec "ruby@$VERSION" -- "$@" ;;
+    *)     die "unsupported YJIT_MANAGER=$MANAGER (use rvm, rbenv or mise)" ;;
+  esac
+}
+
+ruby_installed() { with_ruby ruby -e 'exit 0' >/dev/null 2>&1; }
+ruby_has_yjit()  { with_ruby ruby -e 'exit(defined?(RubyVM::YJIT.enable) ? 0 : 1)' >/dev/null 2>&1; }
+
+# ── Report ───────────────────────────────────────────────────────────────────────────────────
+say "Ruby $VERSION via $MANAGER"
+if ruby_installed; then
+  desc=$(with_ruby ruby -e 'print RUBY_DESCRIPTION' 2>/dev/null)
+  echo "    $desc"
+  if ruby_has_yjit; then HAS_YJIT=1; ok "YJIT is compiled in"; else HAS_YJIT=0; warn "built WITHOUT YJIT"; fi
+else
+  HAS_YJIT=0; warn "Ruby $VERSION is not installed under $MANAGER (it will be built)"
+fi
+if command -v rustc >/dev/null 2>&1; then ok "rustc $(rustc --version | awk '{print $2}')"; else warn "rustc not installed"; fi
+
+[[ $CHECK_ONLY == 1 ]] && exit 0
+
+# ── Rebuild ──────────────────────────────────────────────────────────────────────────────────
+if [[ $HAS_YJIT == 0 ]]; then
+  echo
+  echo "This will install rustc and recompile Ruby $VERSION from source with YJIT (~5-15 min)."
+  echo "Stop bin/dev and test runs first: Ruby $VERSION is unavailable while it rebuilds."
+  confirm "Continue?" || die "aborted"
+
+  if ! command -v rustc >/dev/null 2>&1; then
+    say "Installing rustc"
+    case "$(uname -s)" in
+      Linux)
+        command -v apt-get >/dev/null 2>&1 || die "no apt-get: install rustc >= 1.58 yourself, then re-run"
+        sudo apt-get install -y rustc ;;
+      Darwin)
+        command -v brew >/dev/null 2>&1 || die "no Homebrew: install rustc >= 1.58 yourself, then re-run"
+        brew install rust ;;
+      *) die "unsupported OS $(uname -s): install rustc >= 1.58, then re-run" ;;
+    esac
+  fi
+
+  say "Compiling Ruby $VERSION with YJIT"
+  case "$MANAGER" in
+    rvm)
+      # --disable-binary: an rvm prebuilt binary may lack YJIT. reinstall keeps the gems and
+      # runs `gem pristine` so native extensions are rebuilt against the new libruby.
+      sub=reinstall; ruby_installed || sub=install
+      bash -c 'source "$HOME/.rvm/scripts/rvm" && rvm "$0" "$1" --disable-binary -C --enable-yjit' "$sub" "$VERSION" ;;
+    rbenv)
+      RUBY_CONFIGURE_OPTS="${RUBY_CONFIGURE_OPTS:-} --enable-yjit" rbenv install -f "$VERSION" ;;
+    mise)
+      # MISE_RUBY_COMPILE: force ruby-build (source) even where mise defaults to precompiled.
+      MISE_RUBY_COMPILE=true RUBY_CONFIGURE_OPTS="${RUBY_CONFIGURE_OPTS:-} --enable-yjit" \
+        mise install -f "ruby@$VERSION" ;;
+  esac
+
+  ruby_has_yjit || die "Ruby $VERSION still has no YJIT — check the build output above for rustc errors"
+  ok "$(with_ruby ruby --yjit -e 'print RUBY_DESCRIPTION')"
+else
+  ok "nothing to rebuild"
+fi
+
+# ── Gems + proof ─────────────────────────────────────────────────────────────────────────────
+say "Installing the bundle on Ruby $VERSION"
+bundler=$(awk '/BUNDLED WITH/{getline; print $1}' Gemfile.lock)
+[[ -n $bundler ]] && with_ruby gem install bundler -v "$bundler" --conservative --no-document >/dev/null
+with_ruby bundle install --quiet
+
+# No RUBY_YJIT_ENABLE here on purpose: this proves config.yjit itself turns YJIT on in dev/test.
+for env in development test; do
+  say "Booting the app in $env"
+  out=$(YJIT= RAILS_ENV=$env with_ruby bundle exec rails runner 'print "yjit=#{RubyVM::YJIT.enabled?}"' 2>/dev/null | tail -1)
+  [[ $out == *"yjit=true"* ]] ||
+    die "$env booted without YJIT (got: ${out:-nothing}) — rerun: RAILS_ENV=$env bin/rails runner 'p RubyVM::YJIT.enabled?'"
+  ok "$env boots with YJIT on, all gems load"
+done
+
+echo
+ok "Done. bin/dev and bin/pcuc now run with YJIT (Puma's banner shows +YJIT). YJIT=0 to opt out."

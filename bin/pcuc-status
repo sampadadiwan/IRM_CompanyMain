@@ -38,8 +38,10 @@ fi
 
 # Find the run. If there are several, report on the oldest and list the others.
 # Anchored to the start of the command line, so a shell whose command merely mentions
-# parallel_cucumber (e.g. a `pgrep` typed by hand) is not taken for a run.
-mapfile -t pids < <(pgrep -f '^[^ ]*/bin/parallel_cucumber ' | sort -n)
+# parallel_cucumber (e.g. a `pgrep` typed by hand) is not taken for a run. The command line may
+# start with the interpreter: under rvm the binstub is exec'd as `ruby .../bin/parallel_cucumber`
+# (Ruby rewrites the process title), which the old `^[^ ]*/bin/parallel_cucumber` never matched.
+mapfile -t pids < <(pgrep -f '^([^ ]*ruby[^ ]* )?[^ ]*/bin/parallel_cucumber ' | sort -n)
 if (( ${#pids[@]} == 0 )); then
   echo "pcuc-status: no parallel_cucumber run in progress"
   exit 1

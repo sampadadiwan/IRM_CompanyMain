@@ -12,6 +12,14 @@ module CapHive
     # Initialize configuration defaults for originally generated Rails version.
     config.load_defaults 7.0
 
+    # YJIT: ~20-37% less controller time on the funds list views. Only takes effect if Ruby was
+    # compiled with rustc available — bin/setup-yjit does that on a dev machine,
+    # `cap <stage> yjit:enable` on a server; config/initializers/yjit_check.rb warns otherwise.
+    # On in dev and test (parity with staging, and long-lived cucumber workers benefit) and on
+    # staging; production stays off until the staging trial is done, then this becomes `true`.
+    # YJIT=0 opts out, e.g. to bisect a suspected YJIT issue on plain Ruby.
+    config.yjit = ENV["YJIT"] != "0" && (Rails.env.local? || Rails.env.staging?)
+
     config.active_support.key_generator_hash_digest_class = OpenSSL::Digest::SHA1
 
     # lib/middleware holds top-level Rack middleware loaded via require_relative from
