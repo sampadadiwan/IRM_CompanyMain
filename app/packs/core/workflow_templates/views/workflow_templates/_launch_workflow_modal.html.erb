@@ -21,9 +21,11 @@
             <label class="form-label fw-semibold" for="launch_workflow_template_id">
               Select Review Template
             </label>
+            <%# Every template's step count in one grouped query, not a COUNT per template %>
+            <% step_counts = WorkflowStep.where(workflow_template_id: available_templates.map(&:id)).group(:workflow_template_id).count %>
             <%= f.select :workflow_template_id,
                   available_templates.map { |wt|
-                    ["#{wt.name} (#{wt.workflow_steps.size} step(s))", wt.id]
+                    ["#{wt.name} (#{step_counts.fetch(wt.id, 0)} step(s))", wt.id]
                   },
                   { include_blank: "— Choose a template —",
                     selected: workflowable.workflow_assignment&.workflow_template_id },
