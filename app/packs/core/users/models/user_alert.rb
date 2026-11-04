@@ -11,9 +11,11 @@ class UserAlert < ApplicationRecord
   validates :level, length: { maximum: 8 }
 
   def broadcast
-    return unless user
+    # The channel needs only the id: loading the user here was a query per alert, and progress
+    # loops (doc generation, allocation) send one alert per item
+    return unless user_id
 
-    broadcast_replace_to "user_alert_#{user.id}",
+    broadcast_replace_to "user_alert_#{user_id}",
                          partial: '/users/user_alert',
                          locals: { user_alert: self },
                          target: "user_alert",
