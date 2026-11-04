@@ -26,12 +26,14 @@ class EvergreenUnitRegister
     unit_rows = unit_history(folios.map(&:id))
     open_redemptions = DealingOrder.where(capital_commitment_id: folios.map(&:id), kind: "redemption", status: DealingOrder::OPEN_STATUSES)
                                    .includes(:dealing_fills).group_by(&:capital_commitment_id)
+    # Remaining lots of every folio whose class has a lock-up, two queries for the whole register
+    lots = EvergreenLots.remaining_for(folios.select { |cc| setting.terms_for(cc.unit_type).lock_up? }.map { |cc| [cc.id, cc.unit_type] })
     folios.map do |cc|
       qty = units[cc.id].to_d
       nav = navs[cc.unit_type]
       value = nav ? (qty * nav.nav_per_unit_cents.to_d).round(2) : nil
       cost = average_cost_cents(unit_rows.fetch(cc.id, []))
-      locked_qty, locked_until = locked(cc, setting)
+      locked_qty, locked_until = locked(cc, setting, lots)
       # F7: what each open redemption still asks for — less what earlier dates filled, and an amount-form
       # order converted at the class's NAV per unit (it has no units of its own)
       queued = open_redemptions.fetch(cc.id, []).sum { |o| o.remaining_units(nav_per_unit_cents: nav&.nav_per_unit_cents).to_d }
@@ -67,11 +69,12 @@ class EvergreenUnitRegister
     cost.round(2)
   end
 
-  def locked(folio, setting)
+  # lots_by_folio: EvergreenLots.remaining_for of the register's lock-up folios
+  def locked(folio, setting, lots_by_folio)
     term = setting.terms_for(folio.unit_type)
     return [0.to_d, nil] unless term.lock_up?
 
-    lots = EvergreenLots.remaining(folio.id, folio.unit_type)
+    lots = lots_by_folio.fetch([folio.id, folio.unit_type])
     locked_lots = lots.select { |issued, _| issued.advance(months: term.lock_up_months) > @today }
     [locked_lots.sum { |_, q| q.to_d }, locked_lots.map { |issued, _| issued.advance(months: term.lock_up_months) }.max]
   end
