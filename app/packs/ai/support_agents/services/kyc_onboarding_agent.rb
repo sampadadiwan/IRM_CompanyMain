@@ -7,7 +7,7 @@ class KycOnboardingAgent < SupportAgentService
 
     Steps:
     • Field Completeness — checks that all mandatory fields (defined in FormCustomField) are populated.
-    • Document Presence — verifies required document types (passport, ID, etc.) have been uploaded.
+    • Document Presence — verifies required document types (Tax ID, Address Proof, Bank Details) have been uploaded.
     • Document Validity — validates document content and labels against expected criteria.
     • Field-to-Document Consistency — ensures field values match the uploaded document data.
     • Expiry Status — flags documents approaching or past their expiry date.
@@ -63,7 +63,7 @@ class KycOnboardingAgent < SupportAgentService
   # == Inputs ==
   # - InvestorKyc record
   # - FormCustomField (mandatory/optional rules)
-  # - Uploaded documents (passport, ID, etc.)
+  # - Uploaded documents (Tax ID, Address Proof, Bank Details)
   # - Document-to-field mapping
   # - Ad-hoc check prompts
   # - Reminder configuration
@@ -91,9 +91,10 @@ class KycOnboardingAgent < SupportAgentService
   # - AML checks auto-triggered on completion
 
   def targets(entity_id)
-    # Include :entity to avoid an N+1 query when trigger_aml_if_complete
-    # resolves entity.employees.active.first for each KYC record.
-    InvestorKyc.completed.where(entity_id: entity_id).includes(:documents, :investor, :entity)
+    # Include entity: :entity_setting to avoid N+1 queries when
+    # trigger_aml_if_complete checks entity.entity_setting.aml_enabled
+    # and entity.employees.active.first for each KYC record.
+    InvestorKyc.completed.where(entity_id: entity_id).includes(:documents, :investor, entity: :entity_setting)
   end
 
   # Human descriptions of the steps each json_fields toggle gates.
@@ -120,6 +121,11 @@ class KycOnboardingAgent < SupportAgentService
 
     issues
   end
+
+  # Normalized name patterns that identify PAN or Tax ID documents.
+  # Used by pan_or_tax_id_document? to filter which documents get
+  # AI label validation (product decision: only PAN/Tax ID for now).
+  PAN_TAX_ID_PATTERNS = (%w[pan tax_id taxid] + ["tax id"]).freeze
 
   private
 
@@ -244,7 +250,9 @@ class KycOnboardingAgent < SupportAgentService
     true
   end
 
-  # Uses LLM to validate each uploaded document against its label.
+  # Uses LLM to validate PAN/Tax ID documents against their labels.
+  # Non-PAN/Tax ID documents are skipped (product decision: reduces
+  # AI cost and avoids false positives on ambiguous document types).
   # Records mismatched or unparsable responses as issues.
   # Returns true in all branches so Trailblazer continues to the next step.
   def check_document_validity(ctx, investor_kyc:, **)
@@ -255,6 +263,10 @@ class KycOnboardingAgent < SupportAgentService
       llm = ctx[:llm]
 
       investor_kyc.documents.each do |doc|
+        unless pan_or_tax_id_document?(doc)
+          Rails.logger.debug { "[KycOnboardingAgent] Skipping document validity for non-PAN/Tax ID document: #{doc.name}" }
+          next
+        end
         Rails.logger.debug { "[KycOnboardingAgent] Starting document #{doc.name} consistency check for InvestorKyc ID=#{investor_kyc.id}" }
 
         label = doc.name
@@ -526,6 +538,14 @@ class KycOnboardingAgent < SupportAgentService
       return true
     end
 
+    # Guard: entity must have AML enabled (charged separately per entity).
+    # Uses safe navigation because entity_setting may not exist for older entities.
+    unless investor_kyc.entity&.entity_setting&.aml_enabled
+      Rails.logger.debug { "[KycOnboardingAgent] AML not enabled for entity ID=#{investor_kyc.entity_id}, skipping AML trigger" }
+      mark_step_skipped(report, :trigger_aml_if_complete, message: "AML not enabled for entity") if report
+      return true
+    end
+
     Rails.logger.debug { "[KycOnboardingAgent] Checking AML trigger condition for InvestorKyc ID=#{investor_kyc.id} for #{support_agent.id}" }
 
     # Guard: entity must have at least one active employee to act as the AML requestor.
@@ -555,5 +575,18 @@ class KycOnboardingAgent < SupportAgentService
     end
 
     true
+  end
+
+  # Checks whether a document is a PAN or Tax ID type by normalizing
+  # the name (stripping common upload prefixes) and matching against
+  # known patterns. Used to filter which documents get AI label validation.
+  #
+  # @param doc [Document] the document record to check
+  # @return [Boolean] true if the document is a PAN or Tax ID type
+  def pan_or_tax_id_document?(doc)
+    normalized = doc.name.to_s
+                    .sub(/\A(Upload|Attach your|Attach)\s*/i, "")
+                    .downcase.strip
+    PAN_TAX_ID_PATTERNS.any? { |pattern| normalized.include?(pattern) }
   end
 end

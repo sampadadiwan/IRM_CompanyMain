@@ -1,0 +1,158 @@
+<%#
+  Document Verification Setup partial for KycOnboardingAgent.
+  Renders one card per KYC form type with a 3-column mapping table:
+    1. Document (select — File-type FormCustomFields)
+    2. Information to pull (text — LLM extraction prompt)
+    3. Field to verify (select — non-File, non-Header FormCustomFields)
+  Wires up to the kyc-onboarding-config Stimulus controller which
+  serialises rows into support_agent[json_fields]["doc_verification_rules"].
+
+  Locals: support_agent, form
+%>
+<%
+  config               = support_agent.json_fields || {}
+  verification_rules   = config["doc_verification_rules"] || {}
+  form_types           = FormType.where(entity_id: current_user.entity_id,
+                                        name: %w[IndividualKyc NonIndividualKyc])
+  # Single query for all fields across form types — split in Ruby to avoid N+1
+  all_fields_by_ft     = FormCustomField.where(form_type_id: form_types.select(:id))
+                                        .order(:position)
+                                        .group_by(&:form_type_id)
+%>
+
+<div data-controller="kyc-onboarding-config">
+  <%= form.hidden_field :json_fields,
+        value: config.to_json,
+        data: { "kyc-onboarding-config-target": "jsonField" } %>
+
+  <hr class="my-4">
+  <h5>Document Verification Setup</h5>
+  <p class="text-muted small mb-3">
+    Configure which documents to cross-verify against form fields.
+    For each row, pick the uploaded document, describe what to extract, and choose
+    the field whose value should match the extraction.
+  </p>
+
+  <% if form_types.empty? %>
+    <div class="alert alert-warning">No KYC form types found for this entity.</div>
+  <% end %>
+
+  <% form_types.each do |form_type| %>
+    <% fields      = all_fields_by_ft[form_type.id] || [] %>
+    <% doc_fields  = fields.select { |f| f.field_type == "File" } %>
+    <% verify_fields = fields.reject { |f| %w[File Header].include?(f.field_type) } %>
+    <% next if doc_fields.empty? && verify_fields.empty? %>
+    <% rules       = verification_rules[form_type.id.to_s] || [] %>
+    <% template_id = "onboarding-rule-template-#{form_type.id}" %>
+
+    <div class="card mb-2" data-form-type-section>
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <strong><%= form_type.name %></strong><% if form_type.tag.present? %> <span class="text-muted small">(<%= form_type.tag %>)</span><% end %>
+        <button type="button" class="btn btn-sm btn-outline-primary"
+                data-action="click->kyc-onboarding-config#addRule">
+          + Add Rule
+        </button>
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-bordered mb-0">
+          <thead>
+            <tr>
+              <th style="width:25%;">Document</th>
+              <th>Information to Pull</th>
+              <th style="width:25%;">Field to Verify</th>
+              <th style="width:50px;"></th>
+            </tr>
+          </thead>
+          <tbody data-kyc-onboarding-config-target="rulesBody"
+                 data-form-type-id="<%= form_type.id %>"
+                 data-template-id="<%= template_id %>">
+            <% rules.each do |rule| %>
+              <tr data-rule-row>
+                <td>
+                  <select class="form-control form-control-sm"
+                          data-field="doc_label"
+                          data-action="change->kyc-onboarding-config#syncConfig">
+                    <option value="">— Select document —</option>
+                    <% doc_fields.each do |df| %>
+                      <option value="<%= df.label.presence || df.name %>"
+                              <%= "selected" if rule["doc_label"] == (df.label.presence || df.name) %>>
+                        <%= df.label.presence || df.name %>
+                      </option>
+                    <% end %>
+                  </select>
+                </td>
+                <td>
+                  <textarea class="form-control form-control-sm" rows="2"
+                            placeholder="e.g. Extract the PAN number from this document."
+                            data-field="prompt"
+                            data-action="input->kyc-onboarding-config#syncConfig"><%= rule["prompt"] %></textarea>
+                </td>
+                <td>
+                  <select class="form-control form-control-sm"
+                          data-field="target_field"
+                          data-action="change->kyc-onboarding-config#syncConfig">
+                    <option value="">— Select field —</option>
+                    <% verify_fields.each do |vf| %>
+                      <option value="<%= vf.name %>"
+                              <%= "selected" if rule["target_field"] == vf.name %>>
+                        <%= vf.label.presence || vf.name %>
+                      </option>
+                    <% end %>
+                  </select>
+                </td>
+                <td class="text-center">
+                  <button type="button" class="btn btn-sm btn-outline-danger"
+                          data-action="click->kyc-onboarding-config#removeRule">
+                    <i class="ti ti-x"></i>
+                  </button>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <%# Template for cloning new rows via Stimulus addRule action %>
+    <template id="<%= template_id %>">
+      <tr data-rule-row>
+        <td>
+          <select class="form-control form-control-sm"
+                  data-field="doc_label"
+                  data-action="change->kyc-onboarding-config#syncConfig">
+            <option value="">— Select document —</option>
+            <% doc_fields.each do |df| %>
+              <option value="<%= df.label.presence || df.name %>">
+                <%= df.label.presence || df.name %>
+              </option>
+            <% end %>
+          </select>
+        </td>
+        <td>
+          <textarea class="form-control form-control-sm" rows="2"
+                    placeholder="e.g. Extract the PAN number from this document."
+                    data-field="prompt"
+                    data-action="input->kyc-onboarding-config#syncConfig"></textarea>
+        </td>
+        <td>
+          <select class="form-control form-control-sm"
+                  data-field="target_field"
+                  data-action="change->kyc-onboarding-config#syncConfig">
+            <option value="">— Select field —</option>
+            <% verify_fields.each do |vf| %>
+              <option value="<%= vf.name %>">
+                <%= vf.label.presence || vf.name %>
+              </option>
+            <% end %>
+          </select>
+        </td>
+        <td class="text-center">
+          <button type="button" class="btn btn-sm btn-outline-danger"
+                  data-action="click->kyc-onboarding-config#removeRule">
+            <i class="ti ti-x"></i>
+          </button>
+        </td>
+      </tr>
+    </template>
+  <% end %>
+</div>
