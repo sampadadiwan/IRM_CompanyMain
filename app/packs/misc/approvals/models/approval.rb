@@ -64,21 +64,31 @@ class Approval < ApplicationRecord
   end
 
   def generate_responses
+    # The responses this approval already has, read once: this re-runs for every investor on each
+    # access-rights change, and an existing response is skipped without a lookup per investor/folio.
+    # Same keys (all ids) and the same soft-delete scope as the find_or_initialize_by below.
+    existing = ApprovalResponse.where(entity_id:, approval_id: id)
+                               .pluck(:investor_id, :owner_type, :owner_id, :response_entity_id).to_set
     investors.each do |inv|
       if owner
         # Generate a response for each investor's folio in the fund
         owner.approval_for(inv.id).each do |approval_response_owner|
-          create_response(inv, approval_response_owner:)
+          create_response(inv, approval_response_owner:, existing:)
         end
       else
         # Generate a response for each investor
-        create_response(inv)
+        create_response(inv, existing:)
       end
     end
     nil
   end
 
-  def create_response(inv, approval_response_owner: nil)
+  # existing: the [investor_id, owner_type, owner_id, response_entity_id] keys already saved
+  # (generate_responses); a match needs no lookup and is left as it is
+  def create_response(inv, approval_response_owner: nil, existing: nil)
+    key = [inv.id, approval_response_owner&.class&.polymorphic_name, approval_response_owner&.id, inv.investor_entity_id]
+    return if existing&.include?(key)
+
     ar = if approval_response_owner
            ApprovalResponse.find_or_initialize_by(entity_id:, investor_id: inv.id, owner: approval_response_owner,
                                                   response_entity_id: inv.investor_entity_id, approval_id: id)
