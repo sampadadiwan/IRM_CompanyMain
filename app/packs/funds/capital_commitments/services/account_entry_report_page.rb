@@ -100,7 +100,12 @@ class AccountEntryReportPage
   # Generate/Regenerate (the generate_commentary controller action), so loading the
   # report is always cheap and never fires an LLM call.
   def insights
-    @insights ||= AccountEntryReportInsight::SECTION_KEYS.index_with { |section_key| find_insight(section_key) }
+    @insights ||= begin
+      # One query for every section (idx_ae_report_insights_scope covers it), then pick each
+      # section out of the result - a find_by per section key was one query per key (N+1).
+      found = insights_scope.where(section_key: AccountEntryReportInsight::SECTION_KEYS).index_by(&:section_key)
+      AccountEntryReportInsight::SECTION_KEYS.index_with { |section_key| found[section_key] }
+    end
   end
 
   def entries
@@ -180,10 +185,12 @@ class AccountEntryReportPage
     @range_clamped = true
   end
 
-  def find_insight(section_key)
-    AccountEntryReportInsight.find_by(
+  # The cached insights for exactly this report: same fund, folio (nil for the fund-level
+  # report) and resolved date range.
+  def insights_scope
+    AccountEntryReportInsight.where(
       fund_id: @fund.id, capital_commitment_id: @capital_commitment&.id,
-      start_date: @start_date, end_date: @end_date, section_key: section_key
+      start_date: @start_date, end_date: @end_date
     )
   end
 end
