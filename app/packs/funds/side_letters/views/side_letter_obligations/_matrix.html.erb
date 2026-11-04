@@ -48,10 +48,13 @@
       </tr>
     </thead>
     <tbody>
+      <%# Every row's nearest open task due date (the Status badge) in one grouped query, not one per row %>
+      <% next_task_due = Task.incomplete.where(owner: obligations.to_a).where.not(due_date: nil).group(:owner_id).minimum(:due_date) %>
       <% obligations.each do |obligation| %>
         <%= render "side_letter_obligations/side_letter_obligation",
                    obligation: obligation,
-                   show_legal_category: show_legal_category %>
+                   show_legal_category: show_legal_category,
+                   next_task_due: next_task_due %>
       <% end %>
       <%# Empty-state row is intentionally omitted — a colspan row inside <tbody>
           causes a DataTables "unknown parameter" error because it expects one <td>
