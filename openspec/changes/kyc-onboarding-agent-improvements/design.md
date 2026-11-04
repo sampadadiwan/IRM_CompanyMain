@@ -225,7 +225,7 @@ N/A — no new stored or derived status. The agent report's `final_status` ("rea
 
 3. **PAN/Tax ID filter by normalized document name** — Use the same `normalize_doc_name` helper (strips "Upload"/"Attach your"/"Attach" prefixes) and match against `%w[pan tax_id tax\ id taxid]`. Alternative: filter by FormCustomField meta_data or ID. Rejected because: the document name is the only reliable attribute available at validation time — the doc record doesn't link back to its FormCustomField.
 
-4. **No `is_standard` column exists on FormCustomField** — All fields (standard and custom) are FormCustomField records. There is an `internal` boolean but it is not reliably set for standard fields. For Document Presence, we keep the current behavior: check `required_fields_for(field_type: "File")` which filters to `required: true`. Product's intent for "standard fields always required" would require marking standard fields distinctly, which is a schema change outside this scope. Alternative: query by `internal: true`. Rejected because: `internal` flag is inconsistent. The current `required: true` filter already covers the product need — standard document fields on KYC forms are typically set as required by the admin.
+4. **Standard upload fields are hardcoded in ERB views, not FormCustomFields** — Fields like "Upload PAN / Tax ID" and "Upload Address Proof" are rendered by `file_fields()` helper in `_form.html.erb` which creates in-memory (unsaved) FormCustomField objects at render time. They do NOT exist in the `form_custom_fields` table. The PAN label is locale-dependent: `sys_t('investor_kyc.tax_id')` resolves to "PAN / Tax ID" (en) or "Tax ID" (en-US). For the Setup UI Document dropdown, we must include these standard labels alongside any persisted File-type FormCustomFields. We build the standard list as `["Upload #{pan_label}", "Upload Address Proof"]` and merge with `FormCustomField.where(field_type: "File")` results. For Document Presence, entity-level required doc lists are already stored in `EntitySetting#individual_kyc_doc_list` / `non_individual_kyc_doc_list` — the `InvestorKycConcern#required_document_names` method returns these normalized names.
 
 5. **Entity setting eager-loaded via includes** — Add `:entity_setting` to the `includes` in `targets` to avoid N+1 when checking AML. Alternative: separate query. Rejected because: `has_one` with includes is cheaper and consistent with the existing `:entity` eager load.
 
@@ -234,8 +234,8 @@ N/A — no new stored or derived status. The agent report's `final_status` ("rea
 | Question | Answer |
 |---|---|
 | What if an admin has both old and new config? | The parser checks for `doc_verification_rules` key first (new format). If present, uses it exclusively. If absent, falls back to old `meta_data: "doc_extraction"` lookup. An admin who re-saves the form writes the new format, and the old FormCustomField records become inert. |
-| Does Document Presence behavior actually change? | No — we are keeping the current `required: true` filter. The proposal mentioned splitting standard/custom, but there's no DB-level distinction between them. The current behavior already matches product needs because standard doc fields are configured as required. |
-| Why not add an `is_standard` flag to FormCustomField? | That's a schema change affecting the entire form system, far beyond the KYC agent scope. It would need its own feature. |
+| Does Document Presence behavior actually change? | No — we are keeping the current `required: true` filter for FormCustomField-based docs. Standard upload fields (PAN, Address Proof) are hardcoded in ERB views via `file_fields()` and are always present on the form — their required doc names are stored in `EntitySetting#individual_kyc_doc_list` / `non_individual_kyc_doc_list`. |
+| Why not add an `is_standard` flag to FormCustomField? | Standard upload fields are not FormCustomFields at all — they are hardcoded in the view layer via `file_fields()` helper. Adding a flag would require migrating them to persisted records, which is a broader platform change outside this scope. |
 
 ---
 
@@ -247,12 +247,12 @@ The new structured config partial and Stimulus controller for the KYC Onboarding
 
 | Owns | Reads / receives | Produces |
 |---|---|---|
-| `_kyc_onboarding_config.html.erb`, `kyc_onboarding_config_controller.js` | FormCustomField records (File-type for doc dropdown, non-File for field dropdown) from entity's KYC form types | `json_fields["doc_verification_rules"]` — JSON array of mapping objects |
+| `_kyc_onboarding_config.html.erb`, `kyc_onboarding_config_controller.js` | Standard hardcoded upload labels (locale-aware PAN, Address Proof) + FormCustomField records (File-type for doc dropdown, non-File for field dropdown) from entity's KYC form types | `json_fields["doc_verification_rules"]` — JSON array of mapping objects |
 
 **How it works:**
 
-The partial queries `FormType.where(entity_id:, name: %w[IndividualKyc NonIndividualKyc])` to get KYC form types. For each form type, it queries `FormCustomField` records:
-- **Document dropdown:** `field_type: "File"` → labels like "Upload PAN", "Upload Bank Details"
+The partial queries `FormType.where(entity_id:, name: %w[IndividualKyc NonIndividualKyc])` to get KYC form types. For each form type, it builds the dropdown options from two sources:
+- **Document dropdown:** Standard hardcoded labels (`"Upload #{pan_label}"`, `"Upload Address Proof"`) PLUS persisted `FormCustomField` records with `field_type: "File"`. Standard labels are locale-aware via `sys_t('investor_kyc.tax_id')`. This ensures entities that have no File-type FormCustomFields (only standard uploads) still see document options.
 - **Field to verify dropdown:** `field_type` NOT "File", NOT "Header" → labels like "PAN", "bank_name", "permanent_address"
 
 The Stimulus controller (`kyc_onboarding_config_controller`) follows the same pattern as `kyc_doc_extractor_config_controller`:

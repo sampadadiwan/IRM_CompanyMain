@@ -131,7 +131,7 @@ flowchart TD
 |---|---|---|
 | KYC Onboarding Agent created for the entity | The setup UI lives on the agent settings page | Admin creates agent from the Agents page |
 | Investors have submitted KYC records | The agent only runs on completed KYC records | Investors fill in KYC form via emailed link |
-| Standard document fields exist on the KYC form | The Document dropdown populates from these | FormCustomField records with field_type "File" on the KYC form type |
+| Standard document fields exist on the KYC form | The Document dropdown populates from these | Standard upload labels hardcoded in ERB views (locale-aware "Upload PAN / Tax ID", "Upload Address Proof") plus any persisted FormCustomField records with field_type "File" on the KYC form type |
 
 ### Part A — once (setup)
 
@@ -294,7 +294,7 @@ flowchart TD
 
 **Behavior notes:**
 - The table is rendered inside the existing agent edit form, below the toggle fields
-- Document dropdown options come from `FormCustomField` records with `field_type: "File"` on the entity's KYC form types (IndividualKyc, NonIndividualKyc)
+- Document dropdown options come from two sources: (1) standard upload labels hardcoded in ERB views — locale-aware "Upload PAN / Tax ID" and "Upload Address Proof", and (2) persisted `FormCustomField` records with `field_type: "File"` on the entity's KYC form types (IndividualKyc, NonIndividualKyc)
 - Field to Verify dropdown options come from `FormCustomField` records with non-File field types on the same form types
 - Labels adapt per entity: "PAN" on Indian entities, "Tax ID" on US entities — based on what standard fields exist
 - The + button appends an empty row; the ✕ button removes its row
