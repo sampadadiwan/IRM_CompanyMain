@@ -532,6 +532,8 @@ class KycOnboardingAgent < SupportAgentService
     report = ctx[:support_agent_report]
     mark_step_running(report, :trigger_aml_if_complete) if report
 
+    Rails.logger.debug { "[KycOnboardingAgent] AML decision inputs — agent toggle trigger_aml=#{support_agent.json_fields['trigger_aml'].inspect}, entity_setting.aml_enabled=#{investor_kyc.entity&.entity_setting&.aml_enabled.inspect}" }
+
     unless enabled?("trigger_aml")
       Rails.logger.debug { "[KycOnboardingAgent] AML triggering is disabled, skipping." }
       mark_step_skipped(report, :trigger_aml_if_complete, message: "Disabled") if report

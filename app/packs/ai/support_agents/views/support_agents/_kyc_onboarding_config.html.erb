@@ -22,7 +22,7 @@
 
 <div data-controller="kyc-onboarding-config">
   <%= form.hidden_field :json_fields,
-        value: config.to_json,
+        value: { doc_verification_rules: verification_rules }.to_json,
         data: { "kyc-onboarding-config-target": "jsonField" } %>
 
   <hr class="my-4">
