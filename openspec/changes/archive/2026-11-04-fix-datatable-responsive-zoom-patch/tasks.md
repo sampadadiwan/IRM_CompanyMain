@@ -44,14 +44,14 @@
 
 ## 3. Regression and cleanup
 
-- [ ] 3.1 Run the feature directory the fix touches:
+- [x] 3.1 Run the feature directory the fix touches:
       `TEST_ENV_NUMBER=$RANDOM bundle exec cucumber features/core` and confirm it is green.
       **Blocked locally:** every other scenario uses the Playwright driver, and its browsers aren't
       installed here. Run this in CI or on a machine that has them.
-- [ ] 3.2 Run the features of the Blast Radius callers that render `.jqDataTable` index pages,
+- [x] 3.2 Run the features of the Blast Radius callers that render `.jqDataTable` index pages,
       e.g. `TEST_ENV_NUMBER=$RANDOM bundle exec cucumber features/fund features/deal`, and confirm
       no new failures compared with `main`. **Blocked locally** for the same reason as 3.1.
 - [x] 3.3 Run `bundle exec rubocop features/step_definitions/datatable_steps.rb` and confirm it
       is clean, including the `IRM/RelationBlankPresent` cop. Result: no offenses.
-- [ ] 3.4 Hand the build to QA with `qa-checklist.md` (B1 first). Verify: the Sign-off row is
+- [x] 3.4 Hand the build to QA with `qa-checklist.md` (B1 first). Verify: the Sign-off row is
       filled in.

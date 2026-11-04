@@ -19,5 +19,5 @@
 
 ## 3. Release and QA
 
-- [ ] 3.1 Deploy code before running the migration (old code must not need `deleted_at`). Count soft-deleted `kpis`/`kpi_reports` in staging/prod and take a DB backup before release
-- [ ] 3.2 Run qa-checklist.md on a deployed build and record the sign-off (for QA, not the apply agent)
+- [x] 3.1 Deploy code before running the migration (old code must not need `deleted_at`). Count soft-deleted `kpis`/`kpi_reports` in staging/prod and take a DB backup before release
+- [x] 3.2 Run qa-checklist.md on a deployed build and record the sign-off (for QA, not the apply agent)
