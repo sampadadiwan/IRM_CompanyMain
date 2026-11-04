@@ -179,7 +179,18 @@ class InvestorKpiMapping < ApplicationRecord
                else
                  entity.investors.where(investor_entity_id: kpi_report.entity_id).first
                end
-    kpi_report.kpis.each do |kpi|
+    kpis = kpi_report.kpis.to_a
+    # Names already mapped to themselves, in one query: re-running Generate, when every KPI is
+    # mapped, then costs one query instead of one per KPI
+    already_mapped = InvestorKpiMapping.where(entity:, investor:, reported_kpi_name: kpis.map(&:name))
+                                       .where("investor_kpi_mappings.reported_kpi_name = investor_kpi_mappings.standard_kpi_name")
+                                       .pluck(:reported_kpi_name).to_set
+
+    kpis.each do |kpi|
+      # Only an exact match is skipped; anything else takes the per-KPI lookup, which matches names
+      # the way the database does (MySQL ignores case) exactly as before
+      next if already_mapped.include?(kpi.name)
+
       ikm = InvestorKpiMapping.find_or_initialize_by(entity:, investor:, reported_kpi_name: kpi.name, standard_kpi_name: kpi.name)
       if ikm.new_record?
         ikm.show_in_report = true
