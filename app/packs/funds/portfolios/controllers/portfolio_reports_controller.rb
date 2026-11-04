@@ -12,7 +12,8 @@ class PortfolioReportsController < ApplicationController
   # GET /portfolio_reports
   def index
     @q = PortfolioReport.ransack(params[:q])
-    @portfolio_reports = policy_scope(@q.result)
+    # Each row's "Ready" badge checks the report's templates - preloaded so that is not a query per row
+    @portfolio_reports = policy_scope(@q.result).includes(:portfolio_report_templates)
   end
 
   # GET /portfolio_reports/1
