@@ -90,8 +90,12 @@ class WorkflowTemplate < ApplicationRecord
   # a template whose rules ALL evaluate false against this exact record could never have been
   # auto-assigned to it, which is a strong signal it's scoped to a different sub-audience.
   def eligible_for?(workflowable)
-    rules = workflow_auto_assignment_rules.where(workflowable_type: workflowable.workflowable_type_name)
-    return true if rules.none?
+    # Filtered in Ruby, not with .where: a template has a handful of rules, and this way a list that
+    # preloaded :workflow_auto_assignment_rules (Workflowable#launchable_workflow_templates) needs no
+    # query per template - .where would bypass the preload, and none? then a load cost two.
+    type_name = workflowable.workflowable_type_name
+    rules = workflow_auto_assignment_rules.select { |rule| rule.workflowable_type == type_name }
+    return true if rules.empty?
 
     # One field list for every rule checked against this record
     fields = WorkflowRuleFields.for(workflowable.workflowable_type_name, entity)
