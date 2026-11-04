@@ -1,0 +1,34 @@
+<%# H12 — confirm step of the Gmail add-on sign-in. The GET that renders this page mints
+    nothing; only the POST from the button below issues a token, so a link a user is tricked
+    into opening cannot connect their account on its own. Markup follows the 2FA code screen
+    (users/two_factor/new) so it sits in the devise layout the same way. %>
+<div id="gmail_addin_confirm_page">
+  <div class="login-container">
+    <div class="login-header">
+      <h2 class="h3 mb-2 fw-normal">Connect CapHive Filing (Gmail)</h2>
+      <p class="text-muted">The Gmail add-on is asking to file emails into CapHive for you</p>
+    </div>
+
+    <div class="login-body">
+      <div class="alert alert-info text-center mb-3">
+        Connecting as <strong><%= current_user.full_name %></strong> (<%= current_user.email %>)
+        <% if current_user.entity %>
+          for <strong><%= current_user.entity.name %></strong>
+        <% end %>
+      </div>
+
+      <p class="text-muted text-center">
+        The add-on can then match senders and file emails as you for 30 days.
+        If you did not just press <strong>Sign in to CapHive</strong> in Gmail, close this tab.
+      </p>
+
+      <%= form_tag gmail_addin_oauth_confirm_path, data: { turbo: false } do %>
+        <%= hidden_field_tag :redirect_uri, @callback.to_s %>
+        <button type="submit" id="gmail_addin_confirm" class="glow-edge btn btn-primary w-100" data-disable-with="Connecting...">
+          <span>Connect</span>
+          <i class="fas fa-check"></i>
+        </button>
+      <% end %>
+    </div>
+  </div>
+</div>

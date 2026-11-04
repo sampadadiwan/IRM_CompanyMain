@@ -68,8 +68,13 @@ module WithFilterParams
   def with_owner_access(relation, raise_error: true)
     if params[:owner_id].present? && params[:owner_type].present?
       unless current_user.company_admin?
+        # L14 — any model of the app (the Decision default: show? is authorized right after), never an
+        # arbitrary constant; an unknown owner_type is a 404, not a 500 (L14-1)
+        owner_class = ApplicationRecord.model_class_from_param(params[:owner_type])
+        raise ActiveRecord::RecordNotFound, "Unknown owner type" unless owner_class
+
         # If owner is passed, check if user is authorized to view the owner
-        @owner = params[:owner_type].constantize.find(params[:owner_id])
+        @owner = owner_class.find(params[:owner_id])
         authorize(@owner, :show?)
       end
       relation.where(owner_id: params[:owner_id], owner_type: params[:owner_type])

@@ -18,8 +18,17 @@ class OfferInvestorPolicy < SaleBasePolicy
     permissioned_investor?(:seller) || matched_interests?
   end
 
+  # H19: a seller offers only for their own investor - one in the user's own entity - and only as
+  # that investor's record at this sale's firm. This is the investor offers#new already picks. Was
+  # `true`, so a buyer could create an offer in the name of any investor id they posted.
+  # Tests H19-3, H19-H — features/security/secondaries_isolation.feature
   def create?
-    true
+    investor = record.investor
+    # No investor: nothing to offer for
+    return false if investor.nil?
+
+    # Their own investor, as recorded at the selling firm
+    investor.investor_entity_id == user.entity_id && investor.entity_id == record.secondary_sale&.entity_id
   end
 
   def approve?

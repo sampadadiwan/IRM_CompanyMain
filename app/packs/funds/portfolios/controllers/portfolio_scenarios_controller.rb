@@ -1,7 +1,7 @@
 class PortfolioScenariosController < ApplicationController
   before_action :set_portfolio_scenario, only: %i[show edit update destroy run finalize]
   before_action :preload_scenario_investments, only: %i[show]
-  after_action :verify_authorized, except: %i[index simple_scenario], unless: :devise_controller?
+  after_action :verify_authorized, except: %i[index], unless: :devise_controller?
 
   # GET /portfolio_scenarios or /portfolio_scenarios.json
   def index
@@ -11,8 +11,16 @@ class PortfolioScenariosController < ApplicationController
     @portfolio_scenarios = @portfolio_scenarios.where(user_id: params[:user_id]) if params[:user_id].present?
   end
 
+  # H8: the "Summary Scenario" what-if computes the fund's and every portfolio company's IRR. It was
+  # unauthorized (and exempt from verify_authorized), so anyone signed in could read any fund's IRRs
+  # by id. Now: a fund this user can see (another firm's is "Access Denied"), and update rights on it
+  # - the same test that shows the Portfolio tab's Scenarios button.
+  # Tests H8-1, H8-2, H8-3, H8-H — features/security/portfolio_scenario_isolation.feature
   def simple_scenario
-    @fund = Fund.find(params[:fund_id])
+    # Only funds in the user's scope resolve
+    @fund = policy_scope(Fund).find(params[:fund_id])
+    # Read-only employees and LPs can see the fund but not run its what-if
+    authorize @fund, :update?
   end
 
   # GET /portfolio_scenarios/1 or /portfolio_scenarios/1.json

@@ -109,6 +109,19 @@ server {
     return 301 https://$arg_sub_domain.<%= fetch(:website_domain) %>$request_uri;
   }
 
+  # Retired URLs from the old WordPress site -> their new page, one block per
+  # line of website_src/redirects.yml (the same list lib/middleware/website.rb
+  # applies in dev/test). ~* plus the optional slash mirror the middleware's
+  # case-insensitive, trailing-slash-agnostic match; $is_args$args carries the
+  # query string over. https:// is explicit because TLS terminates at the ALB
+  # and there is no :80 listener to bounce through.
+<% require File.expand_path("lib/middleware/website_redirects", Dir.pwd) %>
+<% WebsiteRedirects.load.each do |from, to| %>
+  location ~* "^<%= Regexp.escape(from) %>/?$" {
+    return 301 https://<%= fetch(:website_domain) %><%= to %>$is_args$args;
+  }
+<% end %>
+
   error_page 404 /404.html;
   # "/" -> /index.html; /about.html served directly; $uri.html keeps
   # extensionless URLs (/about) working exactly like the Rails

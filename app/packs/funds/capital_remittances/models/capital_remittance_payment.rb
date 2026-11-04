@@ -9,6 +9,10 @@ class CapitalRemittancePayment < ApplicationRecord
   belongs_to :fund
   attr_readonly :fund_id # never moves to another fund (funds_api_security_policy_plan.md, B)
   belongs_to :capital_remittance
+  # H10 — a payment stays on the remittance it was made against, and that remittance is in the payment's
+  # fund. Tests H10-1, H10-2, H10-X1, H10-H — features/security/fund_parent_ids_same_firm.feature
+  attr_readonly :capital_remittance_id
+  validate { validate_parent_in_own_fund(:capital_remittance) }
   has_one :capital_call, through: :capital_remittance
   has_one :investor, through: :capital_remittance
   has_one :capital_commitment, through: :capital_remittance

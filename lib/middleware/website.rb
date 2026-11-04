@@ -34,6 +34,8 @@
 # config/deploy/templates/nginx_conf.erb), so this middleware is the
 # dev/test server and a production fallback. Full design:
 # docs/modules/website/website_serving.md
+require_relative "website_redirects"
+
 class Website
   # Matches Entity#sub_domain values; anything else in ?sub_domain= is
   # ignored rather than reflected into a redirect Location.
@@ -54,6 +56,9 @@ class Website
       index: "index",
       headers: { "cache-control" => "public, max-age=300" }
     )
+    # Retired-URL 301s (website_src/redirects.yml), loaded once: the list
+    # only changes with a deploy, which restarts puma anyway.
+    @redirects = WebsiteRedirects.load
   end
 
   def call(env)
@@ -93,6 +98,15 @@ class Website
     # A brochure site has no writable endpoints.
     unless %w[GET HEAD].include?(request.request_method)
       return [405, { "allow" => "GET, HEAD", "content-type" => "text/plain" }, ["Method Not Allowed"]]
+    end
+
+    # Retired URLs from the old WordPress site (/about-us/ ...) -> their new
+    # page, checked before the file handler so an old link never 404s. Same
+    # list nginx renders into its vhost in production.
+    if (target = @redirects[WebsiteRedirects.normalize(request.path_info)])
+      # Carry the query string over, e.g. utm_* tags on an old campaign link.
+      query = request.query_string.empty? ? "" : "?#{request.query_string}"
+      return redirect("#{scheme_for(request)}://#{canonical}#{port_suffix(request)}#{target}#{query}")
     end
 
     if (response = @handler.attempt(env.dup))

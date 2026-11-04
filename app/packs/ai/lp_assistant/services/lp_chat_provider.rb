@@ -32,10 +32,11 @@ class LpChatProvider < BaseChatProvider
         - {INVESTOR_IDS} — comma-separated investors.id rows for THIS LP org in this FM's
                           books. Include this filter ONLY when querying per-LP tables
                           (capital_commitments, capital_remittances,
-                          capital_distribution_payments, or fund_ratios with
-                          owner_type = 'Investor' / 'CapitalCommitment'). Do NOT use it on
-                          fund-level tables (portfolio_investments, funds,
-                          fund_ratios owner_type='Fund').
+                          capital_distribution_payments) on their investor_id. Do NOT use it on
+                          fund-level tables (portfolio_investments, funds) or on
+                          fund_ratios / valuations: their owner_id is a fund, commitment or
+                          portfolio company id, never an investors.id of this LP
+                          (owner_type = 'Investor' there means a portfolio company).
         - {VISIBLE_API_IDS} / {VISIBLE_PI_IDS} — the portfolio holdings this investor may see
                           (aggregate_portfolio_investments.id / portfolio_investments.id). Always
                           required when querying those tables (e.g. `api.id IN ({VISIBLE_API_IDS})`);
@@ -133,15 +134,19 @@ class LpChatProvider < BaseChatProvider
     [
       ListSkillsTool.new,
       LoadSkillTool.new,
-      # Portfolio rows are limited to the holdings this LP may see (LpPortfolioVisibility — H19, E69–E71)
+      # Portfolio rows are limited to the holdings this LP may see (LpPortfolioVisibility — H19, E69–E71);
+      # every table is scoped to this LP by LpQueryScope, whose documents rule needs the user (H5)
       RunQueryTool.new(
         entity_ids: entity_ids,
         accessible_fund_ids: fund_ids,
         accessible_investor_ids: investor_ids,
         visible_api_ids: portfolio_visibility.assistant_api_ids(support_agent.entity_id),
-        visible_pi_ids: portfolio_visibility.assistant_pi_ids(support_agent.entity_id)
+        visible_pi_ids: portfolio_visibility.assistant_pi_ids(support_agent.entity_id),
+        user: analyst
       ),
+      # Each URL is also checked with DocumentPolicy#show? for this LP (H4)
       DocumentUrlTool.new(
+        user: analyst,
         entity_ids: entity_ids,
         accessible_fund_ids: fund_ids,
         accessible_investor_ids: investor_ids

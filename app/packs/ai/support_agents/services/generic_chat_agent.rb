@@ -35,6 +35,21 @@ class GenericChatAgent < SupportAgentService
     persist_conversation: "Save Messages"
   }.freeze
 
+  # A conversation idle this long is not continued: the next question starts a new one.
+  SESSION_IDLE_TIMEOUT = 30.minutes
+
+  # The idle rule, also used by the chat window when it opens (E18): a conversation idle longer than
+  # SESSION_IDLE_TIMEOUT is not continued unless the user reopens it.
+  #
+  # @param session [AgentChatSession]
+  # @return [Boolean]
+  def self.session_expired?(session)
+    last_message = session.agent_chat_messages.order(created_at: :desc).first
+    return true if last_message.nil?
+
+    last_message.created_at < SESSION_IDLE_TIMEOUT.ago
+  end
+
   step :initialize_chat
   step :resolve_provider
   step :setup_ruby_llm_chat
@@ -55,14 +70,20 @@ class GenericChatAgent < SupportAgentService
     # Starts a new session if the previous one has been idle for more than 30 minutes,
     # preventing unbounded context growth across unrelated support queries.
     channel = ctx[:channel] || "web"
-    existing_session = AgentChatSession.where(
+    sessions = AgentChatSession.where(
       chattable: ctx[:target],
       support_agent: @support_agent,
       analyst_id: analyst&.id,
       channel: channel
-    ).order(updated_at: :desc).first
+    )
+    # ai-chat-kit decision 6 — the chat window names the conversation a question belongs to: a
+    # session_id is used only when it is this analyst's, with this agent, record and channel (E10, X7);
+    # new_session starts one (E9). Callers passing neither (WhatsApp) keep the rule above (E11).
+    requested_session = sessions.find_by(id: ctx[:session_id]) if ctx[:session_id].present?
+    existing_session = requested_session || sessions.order(updated_at: :desc).first
 
-    ctx[:chat_session] = if existing_session.nil? || session_expired?(existing_session)
+    ctx[:chat_session] = if ctx[:new_session] || existing_session.nil? ||
+                            (requested_session.nil? && session_expired?(existing_session))
                            AgentChatSession.create!(
                              chattable: ctx[:target],
                              support_agent: @support_agent,
@@ -98,6 +119,9 @@ class GenericChatAgent < SupportAgentService
 
     instructions = provider.system_prompt
     instructions += "\n\nCONTEXT:\n#{ctx[:context]}" if ctx[:context].present?
+    # The chat window draws the shared answer layout as cards and buttons; WhatsApp cannot, so it keeps
+    # plain answers (AiChatAnswerLayout).
+    instructions += "\n\n#{AiChatAnswerLayout.instructions}" if (ctx[:channel] || "web") == "web"
 
     chat = LlmService.ruby_llm_chat(
       entity: @support_agent.entity,
@@ -152,6 +176,9 @@ class GenericChatAgent < SupportAgentService
     guide_search = Array(ctx[:tools]).find { |tool| tool.is_a?(SearchUserGuidesTool) && tool.searched? }
     assistant_message = session.agent_chat_messages.create!(role: "assistant", content: ai_response, channel: channel,
                                                             **(guide_search&.message_attributes || {}))
+
+    # Which layout sections and widgets the answer used (web answers follow AiChatAnswerLayout).
+    AiChatAnswerLayout.log_usage("agent:#{@support_agent.agent_type}", ai_response) if channel == "web"
 
     # Enqueue LLM-as-judge for CS agent responses (only if judge is enabled)
     ResponseJudgeJob.perform_later(assistant_message.id) if @support_agent.agent_type == "CustomerSupportAgent" && @support_agent.entity&.entity_setting&.cs_judge_enabled?
@@ -210,12 +237,7 @@ class GenericChatAgent < SupportAgentService
 
   # @param session [AgentChatSession] the session to check
   # @return [Boolean] true if the session's last message is older than 30 minutes
-  SESSION_IDLE_TIMEOUT = 30.minutes # rubocop:disable Lint/UselessConstantScoping
-
   def session_expired?(session)
-    last_message = session.agent_chat_messages.order(created_at: :desc).first
-    return true if last_message.nil?
-
-    last_message.created_at < SESSION_IDLE_TIMEOUT.ago
+    self.class.session_expired?(session)
   end
 end

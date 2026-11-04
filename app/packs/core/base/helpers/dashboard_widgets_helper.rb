@@ -4,7 +4,8 @@ module DashboardWidgetsHelper
   # Criteria for returning a widget:
   # 1. The widget must be enabled.
   # 2. It must match the dashboard_name, name (default is "Default"), and entity_id.
-  # 3. If show_menu is provided, it must match.
+  # 3. Show Menu does not filter here: the page shows every enabled widget and the menu is
+  #    dashboard_menu_widgets of the same result, so the two cannot disagree (H1, H18, E2).
   # 4. If an owner is provided, it must match the owner.
   # 5. Filtering by tag_list (CSV string):
   #    - If tag_list is not provided, it falls back to owner.tag_list if the owner responds to it.
@@ -14,22 +15,28 @@ module DashboardWidgetsHelper
   #    - If the resulting tag_list is blank:
   #      - Widgets with an empty tag_list are returned.
   #      - Widgets with a tag_list are NOT returned.
-  # 6. If no custom widgets are found after filtering, all available widgets for the dashboard are returned.
-  def dashboard_widgets(dashboard_name, entity_id, name: "Default", owner: nil, show_menu: nil, tag_list: nil, lp: false)
-    return lp_layout_widgets(dashboard_name, entity_id, name:, owner:, show_menu:) if lp
+  # 6. If no widget is enabled for the dashboard, all available widgets for the dashboard are returned (H17, E1).
+  #    Widgets that are enabled but all hidden by tags give an empty result, not the defaults (E7).
+  def dashboard_widgets(dashboard_name, entity_id, name: "Default", owner: nil, tag_list: nil, lp: false)
+    return lp_layout_widgets(dashboard_name, entity_id, name:, owner:) if lp
 
-    widgets = configured_dashboard_widgets(dashboard_name, entity_id, name:, owner:, show_menu:, tag_list:)
+    widgets = configured_dashboard_widgets(dashboard_name, entity_id, name:, owner:, tag_list:)
     lp_allocated_portfolio?(dashboard_name, owner) ? widgets.slice(*lp_allocated_portfolio_keys(widgets)) : widgets
+  end
+
+  # The menu is the page's widgets narrowed by Show Menu. Default widgets reach here with show_menu true
+  # (the column default), so a dashboard with nothing enabled lists its defaults in the menu too.
+  def dashboard_menu_widgets(widgets)
+    widgets.select { |_key, widget| widget.show_menu }
   end
 
   # The LP Company Dashboard's widgets: the chosen LP layout's enabled, LP-safe widgets, narrowed by the company's
   # own tags only (E86 — never the viewing LP's tags, E87) and never the default catalogue (E54).
   # Worked examples H11, E47, E54, E86, E87 — openspec/changes/lp-folio-portfolio-dashboard/business-rules.md
-  def lp_layout_widgets(dashboard_name, entity_id, name:, owner:, show_menu: nil)
+  def lp_layout_widgets(dashboard_name, entity_id, name:, owner:)
     available = DashboardWidget::WIDGETS[dashboard_name].index_by(&:widget_name)
     # E97 — KPI widgets are skipped when the fund manager has no KPI module, even if a layout still holds them
     widgets = DashboardWidget.enabled.where(dashboard_name:, name:, entity_id:, widget_name: DashboardWidget.lp_safe_widget_names(Entity.find_by(id: entity_id)))
-    widgets = widgets.where(show_menu:) if show_menu.present?
     company_tags = owner.respond_to?(:tag_list) ? owner.tag_list.to_s.presence : nil
     widgets.order(:position).filter_map do |widget|
       next unless available[widget.widget_name] && include_widget_by_tag?(widget, company_tags)
@@ -64,15 +71,12 @@ module DashboardWidgetsHelper
     widgets.select { |_key, widget| DashboardWidget::LP_ALLOCATED_PORTFOLIO_WIDGETS.include?(widget.widget_name) }.keys
   end
 
-  def configured_dashboard_widgets(dashboard_name, entity_id, name: "Default", owner: nil, show_menu: nil, tag_list: nil)
+  def configured_dashboard_widgets(dashboard_name, entity_id, name: "Default", owner: nil, tag_list: nil)
     # These are the available widgets for the dashboard_name, defined in DashboardWidget::WIDGETS
     available_widgets = DashboardWidget::WIDGETS[dashboard_name].index_by(&:widget_name)
 
     # Step 1: Fetch custom widgets from the database that are enabled and match the dashboard criteria.
     widgets = DashboardWidget.enabled.where(dashboard_name:, name:, entity_id:)
-
-    # Step 2: Apply optional filters from the query or parameters.
-    widgets = widgets.where(show_menu:) if show_menu.present?
 
     # Step 4: Build tag_list from owner and current_user so widget.tag_list can filter
     # by either owner tags (e.g. Fund category) OR user role tags (e.g. CFO, Admin).
@@ -107,6 +111,18 @@ module DashboardWidgetsHelper
       # Step 6: Convert the array of pairs to a hash and ensure the final sorting matches widget.position.
       dashboard_widgets.to_h.sort_by { |_k, v| v.position || 0 }.to_h
     end
+  end
+
+  # Pick-list for a setting whose hint names a +choices+ source on the Widget Configuration form. Returns
+  # [[label, key], ...]; empty for an unknown source. H14 — the group-by list is the grid's own columns plus Fund Name.
+  def metadata_choices(source, entity)
+    return [] unless source == :portfolio_investment_columns
+
+    columns = entity&.form_types&.find_by(name: "PortfolioInvestment")&.ag_selected_columns.presence ||
+              PortfolioInvestment.ag_grids_default_columns
+    choices = columns.map { |column| [column[:label], column[:key]] }
+    choices << ["Fund Name", "fund_name"] if choices.none? { |_label, key| key == "fund_name" }
+    choices.uniq(&:last)
   end
 
   def report_url(dashboard_name, report)

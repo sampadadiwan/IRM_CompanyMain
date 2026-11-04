@@ -1,6 +1,8 @@
 class FundFormulasController < ApplicationController
   before_action :set_fund_formula, only: %i[show edit update destroy generate_ai_description]
-  after_action :verify_authorized, except: %i[index enable_formulas generate_formula bulk_actions]
+  # H6 — enable_formulas and bulk_actions are not exempt: each authorizes before it changes anything
+  # L12 — generate_formula is no longer exempt either: it authorizes before the paid LLM call
+  after_action :verify_authorized, except: %i[index]
 
   # GET /fund_formulas or /fund_formulas.json
   def index
@@ -80,6 +82,13 @@ class FundFormulasController < ApplicationController
   end
 
   def enable_formulas
+    # H6 step 4 — Enable All / Disable All act on one fund: load it from the user's own funds (another
+    # firm's id is a 403 via deny_access), then need update on it, as a single formula's toggle does.
+    # Tests H6-4, H6-H2 — features/security/bulk_actions_authorization.feature
+    @fund = policy_scope(Fund).find(params[:fund_id])
+    authorize FundFormula.new(fund: @fund, entity_id: @fund.entity_id), :enable_formulas?
+
+    # The formulas on that fund (fetch_rows narrows to params[:fund_id]) that the list would show
     fetch_rows
     enabled = ActiveRecord::Type::Boolean.new.cast(params[:enable])
     respond_to do |format|
@@ -115,6 +124,11 @@ class FundFormulasController < ApplicationController
   end
 
   def generate_formula
+    # L12 — the formula generator calls the LLM (a cost), so only those who may write formulas use it
+    # (FundFormulaPolicy#generate_formula? = create?: support). Tests L12-3, L12-H3 —
+    # features/security/security_review_2026_10_low.feature
+    authorize FundFormula, :generate_formula?
+
     name = params[:name]
     rule_type = params[:rule_type]
     entry_type = params[:entry_type]
@@ -133,7 +147,9 @@ class FundFormulasController < ApplicationController
         name: name,
         rule_type: rule_type,
         entry_type: entry_type,
-        description: description
+        description: description,
+        # N3 — few-shot examples come from the user's own firm only
+        entity_id: current_user.entity_id
       )
 
       respond_to do |format|

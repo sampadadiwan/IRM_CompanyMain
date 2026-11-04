@@ -43,15 +43,35 @@ class KpiPolicy < KpiPolicyBase
     update?
   end
 
+  # H14: the portfolio company submits, the fund (the KPI's entity_id) reviews. Approving was a role
+  # check only, so an approver or company admin of ANY firm - or an LP user holding the approver role
+  # on a KPI shared with them - could approve, reject or unapprove another fund's KPIs.
+  # Tests H14-1, H14-4, H14-H — features/security/kpi_approval_isolation.feature
   def approve?
-    (user.company_admin? || user.has_cached_role?(:approver)) && record.unapproved?
+    approver? && record.unapproved? && fund_reviewer?
   end
 
+  # Rejecting deletes the staged value: the same reviewer as approving (H14-H)
   def reject?
     approve?
   end
 
+  # Test H14-3 — features/security/kpi_approval_isolation.feature
   def unapprove?
-    (user.company_admin? || user.has_cached_role?(:approver)) && record.approved?
+    approver? && record.approved? && fund_reviewer?
+  end
+
+  private
+
+  # Holds a reviewing role
+  def approver?
+    user.company_admin? || user.has_cached_role?(:approver)
+  end
+
+  # The KPI's own fund (or a child firm of the user's group company), the same test
+  # KpiReportPolicy#mark_reviewed? uses. permissioned_employee? falls back to support, who keep
+  # approving as themselves (H14-H2).
+  def fund_reviewer?
+    belongs_to_entity?(user, record) || permissioned_employee?
   end
 end

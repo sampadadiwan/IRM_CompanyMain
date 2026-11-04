@@ -1,4 +1,18 @@
 class FundFormulaPolicy < FundBasePolicy
+  # H18 — fund formulas are staff-only records: no LP screen, mobile endpoint or MCP answer is meant to list
+  # them. FundBasePolicy's investor branch would list every one in a fund the LP can see, so an investor
+  # persona (an LP, an advisor switched to investor) gets none. The RM branch is FundBasePolicy's, unchanged.
+  # Tests H18-2, H18-8 — features/security/lp_staff_only_fund_lists.feature
+  class Scope < FundBasePolicy::Scope
+    def resolve
+      # Investor persona (but not an RM, who keeps FundBasePolicy's RM branch): nothing
+      return scope.none if user.curr_role_investor? && !user.has_cached_role?(:rm)
+
+      # Staff, RMs and support: FundBasePolicy's scope, as before
+      super
+    end
+  end
+
   def index?
     user.enable_funds
   end

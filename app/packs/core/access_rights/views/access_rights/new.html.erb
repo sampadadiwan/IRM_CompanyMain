@@ -1,8 +1,11 @@
 <% partial_to_use ||= nil%>
 <h1>New Access Right</h1>
 
-<% if params[:form_type] %>
-    <%= render params[:form_type], access_right: @access_right, partial_to_use: partial_to_use %>
+<%# M10 — only the access-right forms the app links to (documents/folders, investors, deals); any other
+    ?form_type= value gets the default form, never a partial path named by the request %>
+<% form_type = %w[document_form investor_form deals/access_rights_form].find { |name| name == params[:form_type].to_s } %>
+<% if form_type %>
+    <%= render form_type, access_right: @access_right, partial_to_use: partial_to_use %>
 <% else %>
     <%= render "form", access_right: @access_right %>
 <% end %>

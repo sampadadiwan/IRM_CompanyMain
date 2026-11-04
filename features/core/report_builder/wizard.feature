@@ -77,3 +77,34 @@ Feature: Report Builder guided wizard — HTTP-level smoke tests
 
     When I clear the wizard pivot on join "capital_commitments"
     Then the wizard report template join "capital_commitments" should not have a pivot config
+
+  # ── Restored wizard (2026-11-01): the original steps, plus four changes ────
+  # openspec/changes/report-builder-live-builder/business-rules.md#wizard-restored
+
+  # R1 — Happy path: every table on the first page has an example question
+  Scenario: Every table has an example question
+    When I visit the wizard start page
+    Then every table on the wizard start page has an example question
+
+  # R2 — Happy path: the wizard says "Guided setup" and "Open in builder", like the rest of the app
+  Scenario: One name everywhere
+    Given I create a report via the wizard with name "Naming Report" and root model "Investor"
+    When I visit the wizard "columns" step for the report
+    Then the wizard page should mention "Guided setup"
+    And the wizard page should mention "Open in builder"
+    And the wizard page should not mention "Guided Report Wizard"
+    And the wizard page should not mention "Advanced Builder"
+
+  # R3 — Edge case: a related column's total on Summarize is the one saved and used (was shown as Sum but not stored)
+  Scenario: The Summarize total is the saved total
+    Given I create a report via the wizard with name "Totals Report" and root model "Investor"
+    And I add the join "capital_commitments" with model "CapitalCommitment" to the wizard report
+    When I add the column "capital_commitments.committed_amount" to the wizard report
+    Then the wizard Summarize total for "capital_commitments.committed_amount" shows "Sum"
+    And the wizard report template aggregate for "capital_commitments.committed_amount" should be "sum"
+
+  # R4 — Happy path: Review's "Open My Report" opens the report page, not the builder
+  Scenario: Open My Report opens the report page
+    Given I create a report via the wizard with name "Review Report" and root model "Investor"
+    When I visit the wizard "review" step for the report
+    Then "Open My Report" links to the report page

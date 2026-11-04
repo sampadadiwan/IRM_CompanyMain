@@ -37,10 +37,6 @@ class SecondarySaleRmPolicy < SaleBasePolicy
     permissioned_rm?
   end
 
-  def report?
-    show?
-  end
-
   def create?
     false
   end
@@ -53,8 +49,12 @@ class SecondarySaleRmPolicy < SaleBasePolicy
     false
   end
 
+  # H15: sale-wide SPA regeneration is the selling firm's job. Nothing in the UI links an RM to it
+  # (per-record documents go through generate_docs), and `record.active` alone let an RM with no
+  # access to the sale regenerate - and delete - every seller's SPA.
+  # Tests H15-1, H15-X — features/security/secondaries_isolation.feature
   def generate_spa?
-    record.active
+    false
   end
 
   def send_notification?
@@ -65,8 +65,10 @@ class SecondarySaleRmPolicy < SaleBasePolicy
     show?
   end
 
+  # The full sale sheet holds every seller's and buyer's PAN, bank and address, so it is for the
+  # sale's own firm only (as for LPs) - an RM sees their mapped clients on screen (security review 2026-10, C4 follow-up)
   def download?
-    show?
+    owner?
   end
 
   def allocate?
@@ -101,15 +103,20 @@ class SecondarySaleRmPolicy < SaleBasePolicy
     true
   end
 
+  # H15: RMs never upload offers (no button offers it to them)
   def import_offers?
-    true
+    false
   end
 
+  # H15: the "Upload Interests" button, on a live sale the RM can see. Was `true`, so an RM could
+  # import interests into any sale, including other firms' and closed ones.
+  # Tests H15-2, H15-H2, H15-X — features/security/secondaries_isolation.feature
   def import_interests?
-    true
+    show? && record.active?
   end
 
+  # H15: ImportUploadPolicy asks import? of the upload's owner; for an RM that is the interest upload
   def import?
-    true
+    import_interests?
   end
 end

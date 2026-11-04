@@ -141,7 +141,9 @@ class AccountEntryList < BaseList
     data_frame = AccountEntryDf.new.df(@account_entries, @current_user, @params)
     result_attrs[:data_frame] = data_frame
     result_attrs[:adhoc_json] = data_frame.to_a.to_json
-    result_attrs[:template] = @params[:template].presence || "index"
+    # M10 — a grouped list may pick one of its own folder's views (index_group, …) by bare name only; a
+    # path ("/", "../") falls back to the default view, so the request never names a template elsewhere
+    result_attrs[:template] = @params[:template].to_s.match?(/\A[a-z0-9_]+\z/) ? @params[:template].to_s : "index"
   end
 
   def build_time_series_result(result_attrs)

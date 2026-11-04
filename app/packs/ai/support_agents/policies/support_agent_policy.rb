@@ -71,10 +71,23 @@ class SupportAgentPolicy < ApplicationPolicy
   end
 
   def run?
-    update?
+    # The agent itself: own firm, company admin
+    return false unless update?
+
+    # N8-1 — the record the request names (SupportAgent#run_target, set by support_agents#run /
+    # #run_with_steps) must be in one of the user's firms. No target: the agent runs over its own
+    # firm's targets (batch, scheduled), nothing more to check (N8-H).
+    target = record.run_target
+    return true if target.nil?
+
+    # The target must be in the agent's own firm - the same rule SupportAgentJob enforces - so a
+    # group-company admin can't create a pending report on a child firm's record that the job refuses
+    target_firm = SupportAgent.firm_id_of(target)
+    target_firm == record.entity_id && users_firm?(user, target_firm)
   end
 
   def run_with_steps?
+    # Same target check as run? (N8-1)
     run?
   end
 

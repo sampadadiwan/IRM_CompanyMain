@@ -4,6 +4,8 @@
   args[:portfolio_company_id] = @investor.id
   args[:entity_id] = @investor.entity_id
   args[:all] = true
+  # Action buttons are off by default in the widget; the grid view hides them on no_actions
+  args[:no_actions] = true unless args.delete(:show_action_buttons).to_s == "true"
 
   uri = URI(kpi_reports_path(**args)) %>
 <%= render(

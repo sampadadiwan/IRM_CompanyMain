@@ -1,0 +1,62 @@
+<%# Doorkeeper's consent page (gem: app/views/doorkeeper/authorizations/new.html.erb), plus M2: the
+    host the authorization code is sent to. A client's name is whatever it registered with, so the
+    page also says where the account access actually goes — "Claude" sending you to claude.ai reads
+    differently from "Claude" sending you anywhere else.
+    docs/security/security_review_2026_10.md "Authentication and session — Medium / Low", M2. %>
+<% redirect_host = begin
+     uri = URI.parse(@pre_auth.redirect_uri.to_s)
+     uri.host.presence || uri.to_s
+   rescue URI::InvalidURIError
+     @pre_auth.redirect_uri.to_s
+   end %>
+<header class="page-header" role="banner">
+  <h1><%= t('doorkeeper.authorizations.new.title') %></h1>
+</header>
+
+<main role="main">
+  <p class="h4">
+    <%# As the gem: content_tag escapes the client's name; the translation itself is ours %>
+    <%= raw t('doorkeeper.authorizations.new.prompt', client_name: content_tag(:strong, class: 'text-info') { @pre_auth.client.name }) %>
+  </p>
+
+  <p id="oauth-redirect-host">
+    After you authorize, you will be sent back to <strong><%= redirect_host %></strong>.
+    If you do not recognise this address, choose Deny.
+  </p>
+
+  <% if @pre_auth.scopes.count > 0 %>
+    <div id="oauth-permissions">
+      <p><%= t('doorkeeper.authorizations.new.able_to') %></p>
+
+      <ul class="text-info">
+        <% @pre_auth.scopes.each do |scope| %>
+          <li><%= t scope, scope: [:doorkeeper, :scopes] %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="actions">
+    <%= form_tag oauth_authorization_path, method: :post do %>
+      <%= hidden_field_tag :client_id, @pre_auth.client.uid, id: nil %>
+      <%= hidden_field_tag :redirect_uri, @pre_auth.redirect_uri, id: nil %>
+      <%= hidden_field_tag :state, @pre_auth.state, id: nil %>
+      <%= hidden_field_tag :response_type, @pre_auth.response_type, id: nil %>
+      <%= hidden_field_tag :response_mode, @pre_auth.response_mode, id: nil %>
+      <%= hidden_field_tag :scope, @pre_auth.scope, id: nil %>
+      <%= hidden_field_tag :code_challenge, @pre_auth.code_challenge, id: nil %>
+      <%= hidden_field_tag :code_challenge_method, @pre_auth.code_challenge_method, id: nil %>
+      <%= submit_tag t('doorkeeper.authorizations.buttons.authorize'), class: "btn btn-success btn-lg btn-block" %>
+    <% end %>
+    <%= form_tag oauth_authorization_path, method: :delete do %>
+      <%= hidden_field_tag :client_id, @pre_auth.client.uid, id: nil %>
+      <%= hidden_field_tag :redirect_uri, @pre_auth.redirect_uri, id: nil %>
+      <%= hidden_field_tag :state, @pre_auth.state, id: nil %>
+      <%= hidden_field_tag :response_type, @pre_auth.response_type, id: nil %>
+      <%= hidden_field_tag :response_mode, @pre_auth.response_mode, id: nil %>
+      <%= hidden_field_tag :scope, @pre_auth.scope, id: nil %>
+      <%= hidden_field_tag :code_challenge, @pre_auth.code_challenge, id: nil %>
+      <%= submit_tag t('doorkeeper.authorizations.buttons.deny'), class: "btn btn-danger btn-lg btn-block" %>
+    <% end %>
+  </div>
+</main>

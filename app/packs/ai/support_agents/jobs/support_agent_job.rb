@@ -122,16 +122,24 @@ class SupportAgentJob < ApplicationJob
             return
           end
         elsif target_id.present? && target_type.present?
+          # N8-2 — the named record must be a RUN_TARGET_TYPES model (N8-X) in the agent's own firm.
+          # Checked here as well as in the controller, since the job is also enqueued from other code
+          # paths: nothing runs, and no report or document is created, for another tenant's record.
+          named_target = run_target_in_agent_firm(support_agent, target_type, target_id)
+          unless named_target
+            execution_log.mark_failed!("Target #{target_type.to_s.truncate(50)} ID=#{target_id} is not a record of this firm")
+            return
+          end
+
           targets = if target_type == "Entity" && execution_mode == :single_company_with_steps
                       resolve_step_ui_target(support_agent, target_id)
 
                     elsif target_type == "Entity"
                       # Scheduled/batch runs expand to individual sub-targets (e.g. Funds)
                       support_agent.agent.new.targets(target_id)
-                    elsif target_type == "Investor"
-                      [Investor.find(target_id)]
                     else
-                      [target_type.constantize.find(target_id)]
+                      # The exact record (N8-H)
+                      [named_target]
                     end
         else
           # No target specified: run for all targets from agent's entity
@@ -344,6 +352,25 @@ class SupportAgentJob < ApplicationJob
     end
 
     targets
+  end
+
+  # N8 — the record a run names, or nil when its type is not one of SupportAgent::RUN_TARGET_TYPES
+  # (N8-X), it does not exist, or it belongs to another firm than the agent's (N8-2). An Entity target
+  # is its own firm, so a foreign entity id never expands into that tenant's sub-targets.
+  #
+  # @param support_agent [SupportAgent] the agent being run
+  # @param target_type [String] the requested model name
+  # @param target_id [Integer, String] the requested record id
+  # @return [ApplicationRecord, nil]
+  def run_target_in_agent_firm(support_agent, target_type, target_id)
+    # L14 helper: only the allowed model names resolve
+    target_class = ApplicationRecord.model_class_from_param(target_type, allowed: SupportAgent::RUN_TARGET_TYPES)
+    target = target_class&.find_by(id: target_id)
+    return target if target && SupportAgent.firm_id_of(target) == support_agent.entity_id
+
+    # Refused: log it as the batch path logs filtered ids
+    Rails.logger.warn "SupportAgentJob: refused target #{target_type.to_s.truncate(50)} ID=#{target_id} for agent #{support_agent.id} of entity #{support_agent.entity_id}"
+    nil
   end
 
   # Resolves the target for step-UI runs. Expands the entity into

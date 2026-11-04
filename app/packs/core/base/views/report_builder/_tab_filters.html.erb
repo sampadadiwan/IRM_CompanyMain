@@ -1,0 +1,46 @@
+<%# Filters tab: a help box, then one panel per scope side by side — filters on the report's own rows, then on
+    each many-per-row related data (which only limit what goes into its totals). Each row has the input its field
+    needs and saves itself after a short pause — there is no Save button (H7, H8). %>
+<% root_label  = wizard_model_label(@root_class.name).downcase %>
+<% root_plural = wizard_model_label(@root_class.name).pluralize.downcase %>
+<% groups = [[nil, "Which #{root_plural}", @root_filter_columns, @config.root_filters]] +
+            @config.joins.select { |j| @config.column_type.strategy_for(j[:relation]) == :grouped }
+                         .map { |j| [j[:relation].to_s, "Which #{j[:relation].to_s.humanize.downcase} are totalled", @joined_filter_columns[j[:relation].to_s] || [], j[:child_filters] || {}] } %>
+
+<%= render "report_builder/wizard/help_box",
+      title: "Keep only the rows you need",
+      body: "Click Add filter, pick a field, then the condition. Filters on #{root_plural} remove rows from the report. " \
+            "Filters on related data only change which of them go into the totals — the rows stay. Changes save by themselves.",
+      example: "e.g. Fund is Demo Fund — or count only payments made after 01/04/2026" %>
+
+<div class="row g-3" data-report-builder-target="filtersPanel" data-date-example="<%= l(Date.new(2026, 8, 19)) %>">
+  <% groups.each do |relation, title, columns, filters| %>
+    <div class="col-lg-6">
+      <div class="card border shadow-none h-100 mb-0 filter-group">
+        <div class="card-header bg-primary-subtle d-flex align-items-center gap-2 py-2">
+          <span class="wizard-card-icon"><i class="ti ti-filter"></i></span>
+          <span class="fw-semibold"><%= title %></span>
+          <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip"
+             title="<%= relation ? "Doesn't remove rows — only limits which #{relation.humanize.downcase} go into the totals of their columns" : "Removes #{root_plural} that don't match from the report" %>"></i>
+          <button type="button" class="btn btn-sm btn-outline-primary ms-auto" data-action="click->report-builder#addFilterRow"
+                  data-scope="<%= relation ? 'child' : 'root' %>" data-relation="<%= relation %>">
+            <i class="ti ti-plus"></i> Add filter
+          </button>
+        </div>
+        <div class="card-body">
+          <div data-report-builder-target="<%= relation ? 'childFilterRows' : 'rootFilterRows' %>" data-relation="<%= relation %>"
+               data-row-url="<%= report_builder_filter_row_path(@report, relation: relation) %>">
+            <% filters.each do |pred_key, val| %>
+              <% parsed = report_builder_parse_filter(pred_key) %>
+              <%= render "report_builder/filter_row", scope: relation ? "child" : "root", relation: relation,
+                         field: parsed[:field], op: parsed[:op], value: val, columns: columns %>
+            <% end %>
+          </div>
+          <p class="text-muted small mb-0">
+            <%= relation ? "Without a filter, all #{relation.humanize.downcase} of each #{root_label} are counted." : "Without a filter, every #{root_label} is in the report." %>
+          </p>
+        </div>
+      </div>
+    </div>
+  <% end %>
+</div>

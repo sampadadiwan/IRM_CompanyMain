@@ -1,0 +1,7 @@
+<%# Suggested next questions above the question box (H14 / H18): from the most recent answered answer that
+    has any, each to fill the box or Ask at once, asked ones marked. Renders nothing without follow-ups.
+    Locals: items (Array<AiChatItem>, oldest first), id (DOM id), running (Boolean — Ask waits, E4). %>
+<% questions, asked = ai_chat_follow_ups(items) %>
+<% if questions.any? %>
+  <%= render "ai_chat/suggestions", id: id, questions: questions, asked: asked, running: running %>
+<% end %>

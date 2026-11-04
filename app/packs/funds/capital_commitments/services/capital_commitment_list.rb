@@ -41,7 +41,9 @@ class CapitalCommitmentList < BaseList
 
     @data_frame = CapitalCommitmentDf.new.df(@capital_commitments, @current_user, @params)
     @adhoc_json = @data_frame.to_a.to_json
-    @template = @params[:template].presence || "index"
+    # M10 — a grouped list may pick one of its own folder's views (index_group, …) by bare name only; a
+    # path ("/", "../") falls back to the default view, so the request never names a template elsewhere
+    @template = @params[:template].to_s.match?(/\A[a-z0-9_]+\z/) ? @params[:template].to_s : "index"
   end
 
   def search_ids

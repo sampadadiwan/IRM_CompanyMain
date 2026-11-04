@@ -51,8 +51,11 @@ class KanbanBoard < ApplicationRecord
     end
   end
 
+  # The one place a new board gets its columns (BoardsController#create no longer adds them again, F5-3)
   def post_create_ops
+    # A plain board (no Deal behind it) owns itself
     self.owner = self if owner_id.nil?
+    # One column per kanban step configured for the owner type
     create_columns
   end
 

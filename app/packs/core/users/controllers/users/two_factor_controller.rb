@@ -2,6 +2,10 @@ module Users
   class TwoFactorController < ApplicationController
     layout "devise"
 
+    # The actions that check a code the user typed: the login code, and the three
+    # enrollment confirmations. All four share one attempt count per challenge (H13).
+    CODE_CHECK_ACTIONS = %i[create verify_enrollment verify_whatsapp_enrollment verify_sms_enrollment].freeze
+
     # User is in pre-2FA state — not yet signed in
     skip_before_action :authenticate_user!
     skip_before_action :set_current_entity
@@ -16,6 +20,14 @@ module Users
     before_action :require_no_verified_method,
                   except: %i[new create send_sms send_whatsapp]
     skip_before_action :verify_authenticity_token, only: %i[send_whatsapp send_sms]
+    # H13 — every action that checks a typed code refuses up front when the challenge has
+    # already used its attempts (server count, so a replayed cookie does not help) or the
+    # account is locked. Declared after the guards above so it runs once they have passed.
+    before_action :refuse_spent_challenge, only: CODE_CHECK_ACTIONS
+
+    # Shown when a wrong code takes the user to TwoFactorVerifier::USER_MISS_LIMIT in an hour.
+    LOCKED_MESSAGE = "Your account has been locked after too many incorrect codes. " \
+                     "We have emailed you a link to unlock it.".freeze
 
     # ── Login verification ──────────────────────────────────────────────────
 
@@ -48,14 +60,8 @@ module Users
       if TwoFactorVerifier.verify(@user, submitted_code, verify_code_sent: session[:otp_code_channel] == "verify")
         complete_login
       else
-        increment_failed_attempts
-        if session[:otp_failed_attempts] >= TwoFactorVerifier::MAX_ATTEMPTS
-          reset_otp_session
-          redirect_to new_session_path(User), alert: "Too many failed attempts. Please sign in again."
-        else
-          flash.now[:alert] = "Invalid code. #{TwoFactorVerifier::MAX_ATTEMPTS - session[:otp_failed_attempts]} attempt(s) remaining."
-          render :new
-        end
+        # Counted server side as well as in the session — see handle_wrong_code
+        handle_wrong_code(:new)
       end
     end
 
@@ -141,13 +147,15 @@ module Users
         # screen to pass through any more.
         redirect_to root_path, notice: "Two-factor authentication is now enabled."
       else
-        flash.now[:alert] = "Invalid code. Please try again."
-        # Must match the label/issuer used by #enroll — a different one renders a different
-        # QR code, so a user who mistyped their first code would be told to re-scan.
-        @provisioning_uri = @user.otp_provisioning_uri("CapHive:#{@user.email}",
-                                                      issuer: "CapHive")
-        @qr_code = RQRCode::QRCode.new(@provisioning_uri)
-        render :enroll
+        # H13-X — enrollment codes count against the challenge like login codes; a re-render
+        # needs the QR code again, so it is rebuilt only when the page is shown
+        handle_wrong_code(:enroll) do
+          # Must match the label/issuer used by #enroll — a different one renders a different
+          # QR code, so a user who mistyped their first code would be told to re-scan.
+          @provisioning_uri = @user.otp_provisioning_uri("CapHive:#{@user.email}",
+                                                         issuer: "CapHive")
+          @qr_code = RQRCode::QRCode.new(@provisioning_uri)
+        end
       end
     end
 
@@ -182,8 +190,8 @@ module Users
         reset_otp_session
         redirect_to root_path, notice: "Two-factor authentication via WhatsApp is now enabled."
       else
-        flash.now[:alert] = "Invalid code. Please try again."
-        render :enroll_whatsapp
+        # H13-X — counted against the challenge like a login code
+        handle_wrong_code(:enroll_whatsapp)
       end
     end
 
@@ -227,8 +235,8 @@ module Users
         # other mode.
         redirect_to root_path, notice: "Two-factor authentication via text message is now enabled."
       else
-        flash.now[:alert] = "Invalid code. Please try again."
-        render :enroll_sms
+        # H13-X — counted against the challenge like a login code
+        handle_wrong_code(:enroll_sms)
       end
     end
 
@@ -346,6 +354,57 @@ module Users
     def increment_failed_attempts
       session[:otp_failed_attempts] ||= 0
       session[:otp_failed_attempts] += 1
+    end
+
+    # A wrong code on any CODE_CHECK_ACTIONS: count it, then either show `template` again with
+    # the attempts left, or end the challenge. The optional block prepares what `template`
+    # needs (the authenticator enrollment's QR code) and runs only when it is rendered.
+    def handle_wrong_code(template)
+      # The cookie copy, as before
+      increment_failed_attempts
+      # The server copy, keyed by this challenge's id, plus the user's hourly count (H13)
+      failure = TwoFactorVerifier.record_failure(@user, challenge_id: session[:otp_challenge_id])
+      # H13-1 — max(session, server): a replayed cookie resets only the session copy. Under the
+      # test env's :null_store the server copy reads 0, so the session decides as it always did.
+      attempts = [session[:otp_failed_attempts], failure.attempts].max
+
+      if failure.locked
+        # H13-2 — this miss reached the hourly limit; the account is locked and the unlock email
+        # is on its way, so there is nothing more to try here
+        reset_otp_session
+        redirect_to new_session_path(User), alert: LOCKED_MESSAGE
+      elsif attempts >= TwoFactorVerifier::MAX_ATTEMPTS
+        # The third wrong code ends this challenge (H13-X for the enrollment actions)
+        reset_otp_session
+        redirect_to new_session_path(User), alert: "Too many failed attempts. Please sign in again."
+      else
+        # Another try on the same screen
+        flash.now[:alert] = "Invalid code. #{TwoFactorVerifier::MAX_ATTEMPTS - attempts} attempt(s) remaining."
+        yield if block_given?
+        render template
+      end
+    end
+
+    # before_action for CODE_CHECK_ACTIONS: ends the challenge without checking the code when it
+    # can no longer succeed. Checked BEFORE the code, because a check after it would still let a
+    # replayed cookie's one extra guess through whenever that guess was right.
+    def refuse_spent_challenge
+      user = User.find(session[:otp_user_id])
+
+      # H13-2 — a locked account takes no codes, even from a cookie saved before the lock
+      if user.access_locked?
+        reset_otp_session
+        redirect_to new_session_path(User), alert: LOCKED_MESSAGE
+        return
+      end
+
+      # H13-1 — replayed cookie: server count still applies
+      attempts = [session[:otp_failed_attempts].to_i,
+                  TwoFactorVerifier.challenge_attempts(session[:otp_challenge_id])].max
+      return if attempts < TwoFactorVerifier::MAX_ATTEMPTS
+
+      reset_otp_session
+      redirect_to new_session_path(User), alert: "Too many failed attempts. Please sign in again."
     end
 
     # The key list lives with the dispatcher that starts a challenge, so both ends clear

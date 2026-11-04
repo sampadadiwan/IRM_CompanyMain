@@ -36,6 +36,11 @@ class AllocationInvestorPolicy < SaleBasePolicy
     update?
   end
 
+  # H19: a seller or buyer never verifies an allocation
+  def verify?
+    false
+  end
+
   def destroy?
     false
   end

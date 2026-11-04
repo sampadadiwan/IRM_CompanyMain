@@ -408,10 +408,12 @@ class GenerateSectionContentJob < ApplicationJob
   def generate_text_section(report, section, cached_documents_context)
     Rails.logger.info "  → Using PortfolioReportAgent (with cached documents)"
 
-    # Find or create PortfolioReportAgent
+    # Find or create PortfolioReportAgent in the firm that owns the report — its portfolio company's
+    # entity (C3 Option A), not the analyst's, who may since have moved firm or be a switched-in support
+    # user (follow-up F4 — features/security/security_review_2026_10_followups.feature)
     agent = SupportAgent.find_or_create_by!(
       agent_type: 'PortfolioReportAgent',
-      entity_id: report.analyst.entity_id
+      entity_id: report.portfolio_company.entity_id
     ) do |a|
       a.name = 'Portfolio Report Generator'
       a.enabled = true

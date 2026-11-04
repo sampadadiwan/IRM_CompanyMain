@@ -1,0 +1,12 @@
+<%# One builder message, shown by the shared toast controller. level: success | danger %>
+<div class="toast align-items-center text-bg-<%= level %> border-0 report-builder-toast" role="alert" aria-live="assertive" aria-atomic="true"
+     data-controller="toast" data-bs-delay="6000">
+  <div class="d-flex align-items-center">
+    <div class="toast-body fw-semibold"><%= message %></div>
+    <% if local_assigns[:undo_token] %>
+      <%= button_to "Undo", undo_report_builder_path(@report), method: :post, params: { token: undo_token },
+            class: "btn btn-sm btn-light me-2", form: { data: { turbo_frame: "report_builder_settings" } } %>
+    <% end %>
+    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+  </div>
+</div>

@@ -59,7 +59,7 @@
         </div>
 
         <% doc_file_required = document.persisted? ? false : true %>
-        <% label = document.file.blank? ? "Upload File" : link_to("Uploaded File: #{document.uploaded_file_name}", document.file.url(response_content_disposition: "inline; filename=#{document.name_with_extension}"), target: "_blank") %>
+        <% label = document.file.blank? ? "Upload File" : link_to("Uploaded File: #{document.uploaded_file_name}", document.file.url(response_content_disposition: document.inline_disposition), target: "_blank") %>
         <%= render "layouts/single_upload", form: form, field_label: label, required: doc_file_required,
                                   for_model: "document", field_name: "file",
                                   model: document %>
@@ -176,6 +176,26 @@
                 <%= form.check_box :force_esign_order, class: "form-check-input" %>
             <small class="text-muted">Signers will be sent the Document in the order they are added</small>
               </div>
+
+              <% if document.entity.entity_setting.esign_supports?(:expiry_settings) %>
+                <div class="form-group col">
+                  <%= form.label :esign_expiration_days, "eSign Expires In (days)" %>
+                  <%= form.number_field :esign_expiration_days, in: 1..ZohoEsignHelper::MAX_EXPIRATION_DAYS, class: "form-control", placeholder: ZohoEsignHelper::DEFAULT_EXPIRATION_DAYS %>
+                  <small class="text-muted">Defaults to <%= ZohoEsignHelper::DEFAULT_EXPIRATION_DAYS %> days if left blank. Max <%= ZohoEsignHelper::MAX_EXPIRATION_DAYS %> days.</small>
+                </div>
+
+                <div class="form-group col">
+                  <%= form.label :esign_email_reminders, "Send Automatic Reminders" %>
+                  <%= form.check_box :esign_email_reminders, class: "form-check-input", "data-action": "click->docform#toggleReminderPeriod" %>
+                  <small class="text-muted">Periodically email signers who haven't signed yet, until the document expires or is signed</small>
+                </div>
+
+                <div class="form-group col" id="esign_reminder_period_div">
+                  <%= form.label :esign_reminder_period, "eSign Reminder Every (days)" %>
+                  <%= form.number_field :esign_reminder_period, in: 1..ZohoEsignHelper::MAX_REMINDER_PERIOD_DAYS, class: "form-control", placeholder: ZohoEsignHelper::DEFAULT_REMINDER_PERIOD_DAYS %>
+                  <small class="text-muted">Defaults to <%= ZohoEsignHelper::DEFAULT_REMINDER_PERIOD_DAYS %> days if left blank. Max <%= ZohoEsignHelper::MAX_REMINDER_PERIOD_DAYS %> days.</small>
+                </div>
+              <% end %>
 
             </div>
             <br>

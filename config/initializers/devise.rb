@@ -92,7 +92,13 @@ Devise.setup do |config|
   # It will change confirmation, password recovery and other workflows
   # to behave the same regardless if the e-mail provided was right or wrong.
   # Does not affect registerable.
-  # config.paranoid = true
+  #
+  # M6 — on. Forgot-password answered "Email not found", and a locked account's sign-in said
+  # "Your account is locked", so either told an outsider which addresses have accounts. Now every
+  # answer reads the same ("If your email address exists in our database…", "Invalid email or
+  # password"). devise-api's /users/tokens/* has its own switch: config/initializers/devise_api.rb.
+  # docs/security/security_review_2026_10.md "Authentication and session — Medium / Low", M6.
+  config.paranoid = true
 
   # By default Devise will store the user in session. You can skip storage for
   # particular strategies by setting this option.

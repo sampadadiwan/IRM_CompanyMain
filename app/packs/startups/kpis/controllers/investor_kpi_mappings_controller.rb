@@ -1,6 +1,7 @@
 class InvestorKpiMappingsController < ApplicationController
   after_action :verify_policy_scoped, only: [:index]
-  after_action :verify_authorized, except: %i[index generate]
+  # L12 — generate authorizes too (see #generate)
+  after_action :verify_authorized, except: %i[index]
   before_action :set_investor_kpi_mapping, only: %i[show edit update destroy recompute_rag]
 
   # GET /investor_kpi_mappings or /investor_kpi_mappings.json
@@ -50,7 +51,13 @@ class InvestorKpiMappingsController < ApplicationController
   end
 
   def generate
-    investor = Investor.find(params[:investor_id])
+    # L12 — the portfolio company comes from the user's own stakeholder list (another firm's id is a
+    # 404), and generating needs create rights on its mappings (InvestorKpiMappingPolicy#generate?).
+    # Tests L12-4, L12-H4 — features/security/security_review_2026_10_low.feature
+    investor = policy_scope(Investor).find(params[:investor_id])
+    authorize InvestorKpiMapping.new(entity_id: current_user.entity_id, investor:), :generate?
+
+    # The latest KPI report of that company the user can see, as before
     kpi_report = policy_scope(KpiReport).where(entity_id: investor.investor_entity_id).or(policy_scope(KpiReport).where(portfolio_company_id: investor.id)).last
     InvestorKpiMapping.create_from(current_user.entity, kpi_report)
     redirect_to investor_path(investor.id, tab: "kpi-mappings-tab"), notice: "Investor KPI Mappings generated"

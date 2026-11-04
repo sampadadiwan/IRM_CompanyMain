@@ -190,8 +190,9 @@ module WithCustomField
     if fcf.meta_data.present?
       # meta_data is a Ruby calculation eval-ed here. FormCustomField#meta_data_kosher? guards
       # it at write time (only for Calculation fields); guard again at the eval boundary so paths
-      # that skip validation (update_column, imports) cannot execute arbitrary code.
-      val = eval(ApplicationRecord.safe_eval!(fcf.meta_data, context: "FormCustomField##{fcf.id} meta_data"))
+      # that skip validation (update_column, imports) cannot execute arbitrary code: safe_eval! in
+      # every mode, the form_custom_field sandbox profile in log / enforce mode (C2)
+      val = FormulaSandbox.evaluate(fcf.meta_data, binding, profile: "form_custom_field", context: "FormCustomField##{fcf.id} meta_data")
       json_fields[fcf.name] = val
       val
     end

@@ -1,0 +1,255 @@
+# Allowlist profiles for FormulaSandbox (app/packs/core/base/services/formula_sandbox.rb).
+# C2 — docs/security/security_review_2026_10.md#c2--formula-engine-allowlist-checked-evaluation
+#
+# A stored formula is parsed (never run) and every node, method, constant and query root in it must
+# appear below. `shared` applies to every profile; each profile adds what its own eval site needs.
+# The lists were derived from a parse-only survey of every stored formula in production (2026-10-31,
+# 4,545 texts). To allow a new name: check it reads data only, and cannot reach another firm's records.
+#
+# Method names are allowed on any receiver except a constant. Calls on a constant must be an allowed
+# (constant, method) pair (const_calls) or a pinned query root (pinned_roots).
+
+shared:
+  # Prism node types a formula may contain. Anything else (backticks, global variables, defined?,
+  # def/class/module, string-built symbols, `for`, retry, …) is refused.
+  nodes:
+    - ProgramNode
+    - StatementsNode
+    - CallNode
+    - ArgumentsNode
+    - StringNode
+    - SymbolNode
+    - IntegerNode
+    - FloatNode
+    - RationalNode
+    - NilNode
+    - TrueNode
+    - FalseNode
+    - ArrayNode
+    - HashNode
+    - AssocNode
+    - KeywordHashNode
+    - RangeNode
+    - ParenthesesNode
+    - IfNode
+    - UnlessNode
+    - ElseNode
+    - AndNode
+    - OrNode
+    - LocalVariableReadNode
+    - LocalVariableWriteNode
+    - LocalVariableOrWriteNode
+    - LocalVariableAndWriteNode
+    - LocalVariableOperatorWriteNode
+    - LocalVariableTargetNode
+    - MultiWriteNode
+    - InstanceVariableReadNode
+    - InstanceVariableWriteNode
+    - InstanceVariableOrWriteNode
+    - InstanceVariableOperatorWriteNode
+    - IndexOrWriteNode
+    - IndexOperatorWriteNode
+    - ConstantReadNode
+    - ConstantPathNode
+    - BlockNode
+    - BlockParametersNode
+    - ParametersNode
+    - RequiredParameterNode
+    - LambdaNode
+    - BlockArgumentNode
+    - InterpolatedStringNode
+    - EmbeddedStatementsNode
+    # `return` / `next` are control flow only (16 prod formulas end early with return)
+    - ReturnNode
+    - NextNode
+    # begin … end used as a grouping (2 prod formulas). A rescue / ensure clause is a separate node
+    # type and stays refused.
+    - BeginNode
+    - CaseNode
+    - WhenNode
+
+  # Refused on any receiver: reflection and dynamic dispatch, eval, constants by name, raw SQL
+  # connections, scope escapes, persistence, process control, blocking loops.
+  hard_deny:
+    [send, __send__, public_send, method, public_method, instance_method, singleton_method, define_method,
+     instance_variable_get, instance_variable_set, instance_variables, remove_instance_variable,
+     instance_eval, instance_exec, class_eval, module_eval, class_exec, eval, binding, const_get, const_set,
+     constantize, safe_constantize, to_proc, try, try!, unscoped, unscope, rewhere, only, except, invert_where,
+     connection, lease_connection, execute, exec_query, select_all, select_rows, select_value, find_by_sql,
+     count_by_sql, from, lock, extending, becomes, class, klass, model, base_class, superclass, singleton_class,
+     ancestors, reflect_on_association, association, system, exec, spawn, fork, open, popen, syscall, exit,
+     exit!, abort, at_exit, sleep, loop, trap, require, require_relative, load, autoload, extend, include,
+     prepend, tap, then, yield_self, gets, readline, readlines, caller, set_trace_func, trace_var,
+     update, update!, update_all, update_column, update_columns, update_attribute, update_attribute!,
+     delete, delete_all, destroy, destroy_all, save, save!, create, create!, insert, insert_all, upsert,
+     upsert_all, touch, toggle!, increment!, decrement!, reload, times, upto, downto, step, cycle]
+
+  operators: ["+", "-", "*", "/", "%", "==", "!=", "<", ">", "<=", ">=", "<=>", "-@", "+@", "!", "&", "|", "[]"]
+
+  # Reader methods (domain attributes, associations, scopes) and value methods. Reviewed 2026-10-31:
+  # each reads data only, and each association stays inside the formula's own firm.
+  methods:
+    # money / quantity readers
+    [amount_cents, account_entries, account_entries_sqlite, committed_amount_cents, committed_amount_cents_before,
+     percentage, quantity, json_fields, custom_fields, properties, fund_unit_setting, management_fee, setup_fee,
+     unit_type, investment_domicile, domicile, investment_instrument, fund_level_udr_code, portfolio_investments,
+     portfolio_company, id, name, rate, fmv_cents, cost_cents, gain, bought_amount_cents, unrealized_gain_cents,
+     allocation_of_cost_of_sold_cents, allocation_of_realized_gain_cents, allocation_of_sale_amount_cents,
+     capital_remittance_payments, capital_distribution_payments, collected_amount_cents, call_amount_cents,
+     total_units_premium_cents, ex_expenses_amount_cents, reporting_date, proforma_date, evergreen_nav_per_unit_cents,
+     cumulative_account_entry, cap_exp, cost_of_sold_cents, cost_of_remaining_cents, sold_amount_cents, gain_cents,
+     avg_cost_cents, folio_amount_cents, folio_currency, instrument_currency_unrealized_gain_cents, currency,
+     investment_date, carry, fund_close, folio_id, fund_id, entity_id, master_fund_id, feeder_fund_id,
+     portfolio_company_id, investor_kyc_id, portfolio_investment_ids, entry_type, commitment_date, amount,
+     fmv, unrealized_gain, cost_of_sold,
+     # associations and scopes (all inside the fund / firm; master_fund and feeder_fund are in-firm since H9)
+     fund, entity, parent, capital_commitment, capital_commitments, capital_remittances, capital_calls,
+     capital_distributions, fund_units, commitment_adjustments, master_fund, feeder_fund, exchange_rates,
+     fund_entries, for_parent_account_entries, for_aggregate_porfolio_investments, buys, pool,
+     # allocation helpers on commitments / funds / portfolio investments
+     get_account_entry, get_account_entry_or_zero, quarterly, year_to_date, since_inception, period,
+     for_pi_portfolio_company, for_portfolio_investments, for_aggregate_portfolio_investments,
+     for_api_portfolio_company, not_cumulative, cumulative, sells, on_date, compute_fmv_cents_on, net_quantity_on,
+     total_amount, compute_hurdle, catch_up, allocated_amount_with_percent, management_fees_days,
+     # relation readers (raw SQL strings are checked separately)
+     where, not, order, limit, first, last, sum, count, pluck, maximum, minimum, exists?, distinct, ids,
+     # value methods
+     abs, round, floor, ceil, to_d, to_f, to_i, to_s, to_date, to_sym, downcase, upcase, strip, gsub, sub,
+     split, underscore, parameterize, titleize, present?, blank?, nil?, zero?, positive?, negative?, is_a?,
+     kind_of?, map, select, reject, index_by, group_by, each_with_object, inject, reduce, "[]=", fetch, dig,
+     keys, values, include?, compact, compact_blank, max, min, uniq, size, length, any?, empty?, call,
+     number_to_rounded, new, year, month, day, beginning_of_quarter, end_of_quarter, beginning_of_month,
+     end_of_month, beginning_of_year, end_of_year, days, months, years, strftime, parse, today, presence,
+     flatten, sort, sort_by, filter_map, find, detect, each, transform_values, merge, to_a, to_h,
+     start_with?, end_with?, between?, clamp, nonzero?, odd?, even?, respond_to?, all?, none?, tally, zip,
+     values_at, key?, has_key?, prev_day, next_day, ago, since, in_time_zone]
+
+  # (constant, method) pairs callable on a constant receiver
+  const_calls:
+    ActiveSupport::NumberHelper: [number_to_rounded]
+    Date: [new, parse, today]
+    BigDecimal: []
+    SkipRule: [new]
+    CheckFailed: [new]
+    CheckWarning: [new]
+    Time: [zone]
+    FormCustomField: [to_name]
+    ExchangeRate: [get_rate]
+    Money: [new]
+
+  # Query roots allowed only when pinned to the formula's own fund (or firm, for exchange rates):
+  #   AccountEntry.where(fund_id: @fund.id, …)
+  # keys: column => the expressions it may equal (an array of them is allowed too).
+  # unpinned_methods: class methods that read no rows themselves.
+  pinned_roots:
+    AccountEntry: {keys: {fund_id: ["@fund.id", "fund.id"]}, unpinned_methods: [total_amount]}
+    AccountEntrySqlite: {keys: {fund_id: ["@fund.id", "fund.id"]}, unpinned_methods: [total_amount]}
+    PortfolioInvestment: {keys: {fund_id: ["@fund.id", "fund.id"]}}
+    CapitalRemittancePayment: {keys: {fund_id: ["@fund.id", "fund.id"]}}
+    CapitalDistributionPayment: {keys: {fund_id: ["@fund.id", "fund.id"]}}
+    CapitalRemittance: {keys: {fund_id: ["@fund.id", "fund.id"]}}
+    CapitalDistribution: {keys: {fund_id: ["@fund.id", "fund.id"]}}
+    DistributionFee: {keys: {fund_id: ["@fund.id", "fund.id"]}}
+    ExchangeRate: {keys: {entity_id: ["@fund.entity_id", "fund.entity_id"]}}
+
+  # Allowed only on a query whose chain starts at a pinned root (4 prod formulas join)
+  # …or on a chain that starts at one of the engine's own records (capital_commitment.account_entries…)
+  pinned_only_methods: [joins, left_joins]
+  scoped_roots: [capital_commitment, fund, "@fund"]
+  # A string join must be one join to one of these tables, on a column = column condition
+  joinable_tables: [investors, portfolio_investments, capital_commitments, aggregate_portfolio_investments, investment_instruments]
+
+  # Errors a formula may raise (engine control flow)
+  raisable: [SkipRule, CheckFailed, CheckWarning]
+
+  # Value classes a formula may test against: x.is_a?(String)
+  type_constants: [String, Integer, Float, Numeric, BigDecimal, Date, Time, Hash, Array, Symbol, NilClass, TrueClass, FalseClass,
+                   PortfolioInvestment, AggregatePortfolioInvestment, AccountEntry, AccountEntrySqlite, Investor, CapitalCommitment]
+
+  # Never assigned by a formula, nor shadowed by a block parameter: the engine's own context.
+  # Locals named start_date / end_date may be written (16 prod formulas narrow their window);
+  # @start_date / @end_date may not.
+  reserved_writes: [fund, capital_commitment, "@fund", "@start_date", "@end_date", "@allocation_run"]
+
+  # Raw SQL: these take SQL only in their first argument (later ones are bind values: "%usd")
+  sql_first_arg: [where, not]
+  # ...and these in every string argument
+  sql_all_args: [order, sum, pluck, maximum, minimum, count, select, average, group]
+  # SQL functions a raw fragment may call: sum("ABS(amount_cents)")
+  sql_functions: [abs, coalesce, ifnull, round]
+  # Words a raw SQL fragment may never contain
+  sql_keywords: [select, union, from, into, sleep, benchmark, load_file, outfile, information_schema, exec, drop, insert, update, delete, pg_sleep, waitfor]
+
+profiles:
+  # Allocation engine formulas (every rule type that computes entries), the explain breakdown and
+  # the incremental-allocation migration. Self is the operation, so no self methods but raise / puts.
+  fund_formula:
+    self_methods: [raise, puts]
+
+  # GenerateCustomField formulas also write the commitment's own custom fields
+  custom_field:
+    self_methods: [raise, puts]
+    index_write_receivers: ['\Acapital_commitment(\[["''](properties|json_fields)["'']\]|\.(properties|json_fields))\z']
+
+  # PreRunCheck / PostRunCheck formulas: evaluated inside AccountEntryAllocation::CheckContext
+  run_check:
+    self_methods: [check!, allowed_entry_names, required_custom_fields, entries_mapped_to_portfolio_investment,
+                   fx_rates_present, valuations_present, fund_entries_allocated, fund_entries_tie_to_folios,
+                   portfolio_allocations_tie, folio_shares_total, unit_settings_present, since_inception_matches_history,
+                   raise, puts]
+
+  # CallFee#calculate_formula: locals capital_call, capital_commitment, capital_remittance
+  call_fee:
+    self_methods: []
+
+  # FormCustomField Calculation meta_data, evaluated on the record that owns the custom field
+  # (a commitment, remittance, KYC, valuation, portfolio investment, investor, …). Bare names are the
+  # record's own readers.
+  form_custom_field:
+    nodes: [SelfNode]
+    self_methods:
+      [committed_amount, committed_amount_cents, call_amount, call_amount_cents, collected_amount, collected_amount_cents,
+       agreement_committed_amount, agreement_committed_amount_cents, quantity, quantity_as_of_date, net_quantity,
+       custom_fields, json_fields, properties, unrealized_gain, unrealized_gain_cents, fmv, fmv_cents, gain, gain_cents,
+       cost, cost_cents, amount, amount_cents, portfolio_investments, convert_currency, valuation_date, capital_commitment,
+       fund, currency, investment_date, folio_id, unit_type, percentage]
+    methods: [convert_currency]
+
+  # EntitySetting#portflio_expense_account_entry_filter, evaluated on a PortfolioInvestment.
+  # No stored value exists in production (survey 2026-10-31); support-only.
+  expense_filter:
+    self_methods: [account_entries, fund, portfolio_company, portfolio_company_id, fund_id, id]
+
+# The local variables each allocation operation's binding carries when it evaluates a formula of a
+# given rule type. Used only to check a formula on save (FundFormula validation, the audit): at
+# evaluation time the real binding's own locals are used. Derived from the operations' method bodies
+# (params + locals of each method that takes `binding`).
+fund_formula_locals:
+  shared: [capital_commitment, commitment_cache, ctx, end_date, fund_formula, idx, sample, start_date, user_id, e, ae]
+  by_rule_type:
+    AllocateAggregatePortfolios: [api, as_of_apis, fund, orig_api]
+    AllocateAccountEntry-Name: &allocate_entry [fund_account_entry, fund_unit_setting, fund_unit_settings, individual_account_entries, parent]
+    AllocateAccountEntry-EntryType: *allocate_entry
+    AllocateAccountEntryIndividual-Name: *allocate_entry
+    AllocateAccountEntryIndividual-EntryType: *allocate_entry
+    AllocateForPortfolioCompany: &portco [account_entry_name, account_entry_names, allocation_run_id, bulk_records, capital_commitments_collection, for_folios, fund, fund_ids, portfolio_companies, portfolio_company]
+    AllocateForPortfolioCompany-Folio: *portco
+    AllocateMasterFundAccountEntry-Name: &master [account_entry, aidx, already_filtered, entries, exchange_rate, feeder_account_entry, feeder_aggregate_entry, feeder_fund_commitments_ids, fund, grouped, master_aggregate_entry, master_fund_account_entries, master_fund_account_entries_array, master_fund_account_entries_by_folio, name_or_entry_type, parent]
+    AllocateMasterFundAccountEntry-EntryType: *master
+    # legacy rows stored without the -Name / -EntryType suffix (36 in prod)
+    AllocateMasterFundAccountEntry: *master
+    AllocateMasterFundAccountEntryIndividual-Name: *master
+    AllocateMasterFundAccountEntryIndividual-EntryType: *master
+    AllocatePortfolioInvestment: &portfolio_investment [fund, portfolio_investment, portfolio_investments, portfolio_investments_array, reporting_date, use_investment_date]
+    AllocatePortfolioInvestment-Proforma: *portfolio_investment
+    AllocateMasterFundPortfolioInvestment: *portfolio_investment
+    AllocateMasterFundPortfolioInvestment-Proforma: *portfolio_investment
+    GenerateAccountEntry: &generate [account_entry_name, account_entry_names, entry_name, entry_names, fund, fund_unit_setting, fund_unit_settings, multiple_name_formulas, per_name_formula, prefixed_name]
+    GenerateAccountEntryMultiple: *generate
+    GenerateCustomField: [fund_unit_setting, fund_unit_settings]
+    Percentage: [account_entry, amount_cents, bulk_records, cc_map, count, field_name, fund, last_ae, percentage, total]
+  # Rule types whose formula text is never evaluated: a name list, a literal field map, a statement
+  # definition, or a precomputed percentage (C2-X: Cumulate entry names are not treated as code)
+  not_evaluated: [CumulateAccountEntry, CumulateForPortfolioCompany, GeneratePortfolioNumbersForFund, GenerateFinancialStatementLines, Percentage]
+  # Run checks are evaluated in AccountEntryAllocation::CheckContext, whose binding has no locals
+  run_checks: [PreRunCheck, PostRunCheck]

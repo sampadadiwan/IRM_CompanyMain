@@ -8,6 +8,7 @@ export default class extends Controller {
     this.onPdfOptChange();
     this.checkOtherName();
     this.showSignature();
+    this.toggleReminderPeriod();
   }
 
   onOrignalChange(event) {
@@ -45,6 +46,14 @@ export default class extends Controller {
       } else {
         $("#other_name").hide();
       }
+    }
+  }
+
+  toggleReminderPeriod(event) {
+    if($("#document_esign_email_reminders").length > 0 && !$("#document_esign_email_reminders").is(':checked')) {
+      $("#esign_reminder_period_div").hide();
+    } else {
+      $("#esign_reminder_period_div").show();
     }
   }
 

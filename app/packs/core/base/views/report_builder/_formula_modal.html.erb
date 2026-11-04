@@ -1,0 +1,39 @@
+<%# Formula editor (phase 4 adds column buttons and sample results) %>
+<div class="modal fade" id="formulaModal" tabindex="-1" aria-hidden="true" aria-labelledby="formulaModalTitle">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="formulaModalTitle">Add a formula</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <%= form_tag add_report_builder_formula_path(@report), method: :post, data: { turbo_frame: "report_builder_settings" } do %>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label" for="rb_formula_label">Label</label>
+            <input type="text" name="label" id="rb_formula_label" class="form-control" placeholder="e.g. Called %" required>
+          </div>
+          <div class="mb-2">
+            <div class="form-label">Click a column to insert it</div>
+            <%# Filled from the report's columns when the editor opens (H9) %>
+            <div class="d-flex flex-wrap gap-1" data-report-builder-target="formulaColumns"></div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="rb_formula_expression">Expression</label>
+            <textarea name="expression" id="rb_formula_expression" class="form-control font-monospace" rows="3"
+                      placeholder="e.g. [capital_commitments.call_amount] / [capital_commitments.committed_amount] * 100"
+                      data-report-builder-target="formulaInput" data-action="input->report-builder#validateFormula"></textarea>
+            <div class="form-text">Use <code>[column.key]</code> for columns. Supports <code>+ - * / ( ) IF AND OR ROUND</code>.</div>
+          </div>
+          <div class="border rounded p-3 bg-light">
+            <div class="small fw-semibold mb-2">Result on the first rows</div>
+            <div data-report-builder-target="formulaPreview" class="small">Enter an expression to see the result.</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-outline-primary" data-report-builder-target="formulaSubmit" data-bs-dismiss="modal" disabled>Add formula</button>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

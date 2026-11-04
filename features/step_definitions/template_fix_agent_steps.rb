@@ -43,7 +43,13 @@ When('I open the fix me modal and describe the issue {string}') do |issue|
   click_button "Fix Me"
   within("#fixMeModal") do
     fill_in "issue_description", with: issue
-    click_button "Run Fix Me"
+    # The test env runs TemplateFixJob inline inside this POST (~7 s serially: two docx fixers plus a
+    # LibreOffice render of the real fixture), and the click waits for the resulting navigation. The
+    # default click timeout (default_max_wait_time x 1.1 = 16.5 s) was exceeded under parallel load,
+    # so give this one click room for the job rather than shortening the work. The wait goes on the
+    # element's click (the driver maps it to Playwright's click timeout); click_button's own wait: only
+    # governs finding the button.
+    find_button("Run Fix Me").click(wait: 60)
   end
 end
 

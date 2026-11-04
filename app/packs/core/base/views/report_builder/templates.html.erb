@@ -1,0 +1,39 @@
+<%# New report › From a template: the starter templates this company can use, grouped by area. Each card says
+    what it answers and opens a popup for the name and, where needed, the fund. Using one always creates a new
+    report. H2, H3, E1, E2 — openspec/changes/report-builder-starting-points/business-rules.md %>
+<% content_for :title, "Start from a template" %>
+
+<div class="container-fluid mw-100 py-3" data-controller="report-builder-select">
+  <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+    <div>
+      <h5 class="mb-1">Start from a template</h5>
+      <p class="text-muted small mb-0">Ready-made reports for common questions. Each creates a new report you can change in the report builder.</p>
+    </div>
+    <div class="input-group input-group-sm w-auto">
+      <span class="input-group-text"><i class="ti ti-search"></i></span>
+      <input type="text" class="form-control" placeholder="Search templates" aria-label="Search templates"
+             data-action="input->report-builder-select#filter">
+    </div>
+  </div>
+
+  <% if @templates_by_area.empty? %>
+    <p class="text-muted">No templates use the features your company has. Start with <%= link_to "Guided setup", wizard_report_builder_path %> instead.</p>
+  <% end %>
+
+  <% @templates_by_area.each do |area, templates| %>
+    <div class="text-muted small mb-2 rb-template-area"><%= area %></div>
+    <div class="row g-3 mb-4">
+      <% templates.each do |template| %>
+        <%= render "report_builder/template_card", template: template %>
+      <% end %>
+    </div>
+  <% end %>
+
+  <div class="text-muted small">
+    Prefer to choose everything yourself? <%= link_to "Use Guided setup", wizard_report_builder_path %>
+  </div>
+</div>
+
+<% @templates_by_area.values.flatten.each do |template| %>
+  <%= render "report_builder/template_modal", template: template %>
+<% end %>

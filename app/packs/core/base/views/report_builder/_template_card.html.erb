@@ -1,0 +1,32 @@
+<%# One starter template: name, the question it answers, the table it starts from, what it includes and
+    whether it needs a fund (H3). Use this opens its popup. locals: template %>
+<% root = template["spec"]["root_model"] %>
+<div class="col-sm-6 col-lg-4 col-xxl-3" data-report-builder-select-target="row"
+     data-search-text="<%= [template['name'], template['question'], *template['includes']].join(' ').downcase %>">
+  <div class="card h-100 border rb-template-card" data-template="<%= template['key'] %>">
+    <div class="card-body d-flex flex-column gap-2">
+      <div class="d-flex gap-3 align-items-start">
+        <span class="badge bg-primary-subtle text-primary fs-5"><i class="ti <%= wizard_icon_for(root) %>"></i></span>
+        <div>
+          <div class="fw-semibold"><%= template["name"] %></div>
+          <div class="text-muted small rb-template-question"><%= template["question"] %></div>
+        </div>
+      </div>
+      <div class="d-flex flex-wrap gap-1">
+        <span class="text-muted small w-100"><i class="ti ti-table"></i> Starts from <%= wizard_model_label(root).pluralize %></span>
+        <% if template["fund"] == "required" %>
+          <span class="badge bg-warning-subtle text-warning"><i class="ti ti-building-bank"></i> Needs a fund</span>
+        <% elsif template["fund"] == "optional" %>
+          <span class="badge bg-info-subtle text-info"><i class="ti ti-building-bank"></i> Fund optional</span>
+        <% end %>
+      </div>
+      <div class="text-muted small rb-template-includes">Includes: <%= Array(template["includes"]).join(" · ") %></div>
+      <div class="mt-auto text-end">
+        <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
+                data-bs-target="#templateModal_<%= template['key'] %>" aria-label="Use <%= template['name'] %>">
+          <i class="ti ti-plus"></i> Use this
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

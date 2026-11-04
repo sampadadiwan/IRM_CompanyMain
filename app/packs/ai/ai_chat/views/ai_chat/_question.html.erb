@@ -1,0 +1,9 @@
+<%# A question: a soft grey bubble on the right, with a copy button on hover. Local: item (AiChatItem). %>
+<div id="<%= item.dom_id %>" class="aic-message d-flex justify-content-end align-items-center gap-1 mb-4">
+  <div class="aic-actions">
+    <button type="button" class="btn btn-sm aic-icon-btn" title="Copy" data-copy-text="<%= item.content %>"
+            data-action="ai-chat-thread#copy"><i class="ti ti-copy"></i></button>
+  </div>
+  <div class="aic-question bg-body-tertiary text-body rounded-4 px-3 py-2"
+       title="<%= [item.asker, l(item.time)].compact.join(" · ") %>"><%= item.content %></div>
+</div>

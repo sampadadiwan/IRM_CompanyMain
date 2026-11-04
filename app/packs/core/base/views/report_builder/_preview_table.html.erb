@@ -1,48 +1,76 @@
 <%= turbo_frame_tag "report_builder_preview" do %>
+<% builder = local_assigns.fetch(:builder, false) %>
 
+<%# An engine error stays inside the preview; the settings keep working (E19) %>
+<% if @preview_error %>
+  <div class="alert alert-danger m-3 mb-3" role="alert">
+    <i class="ti ti-alert-circle me-1"></i> The preview couldn't be produced: <%= @preview_error %>
+  </div>
+<% else %>
+
+<%# Row count: "20 of 1,284 rows" for a sample, "All 7 rows" otherwise (trust H24, E20) %>
 <% if @total > @rows.size %>
   <div class="alert alert-info alert-dismissible d-flex align-items-center gap-2 mb-0 py-2 rounded-0 border-0 border-bottom">
     <i class="ti ti-info-circle flex-shrink-0"></i>
     <span>
-      <strong>This is a preview</strong> — showing <strong><%= @rows.size %> of <%= @total %> rows</strong>.
+      <strong>This is a preview</strong> — showing <strong><%= number_with_delimiter(@rows.size) %> of <%= number_with_delimiter(@total) %> rows</strong>.
       Previewing is fast because it fetches only a small sample; running the full report takes more time and database work.
-      Use <strong>Download as Excel</strong> to get all your data.
+      Use <strong>Export XLSX</strong> to get all your data.
     </span>
     <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
   </div>
 <% else %>
   <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom bg-light">
-    <small class="text-muted">Showing all <%= @rows.size %> rows</small>
+    <small class="text-muted">All <%= number_with_delimiter(@rows.size) %> rows</small>
   </div>
 <% end %>
 
 <% if @columns.empty? %>
-  <div class="alert alert-info mb-0">
-    <i class="ti ti-info-circle me-1"></i> Add columns to see data here.
+  <%# E20 — the empty state names the next action %>
+  <div class="text-center text-muted py-5">
+    <i class="ti ti-columns d-block mb-2" aria-hidden="true"></i>
+    <%= builder ? "Tick columns on the left, then Add selected." : "This report has no columns yet." %>
   </div>
 <% elsif @rows.empty? %>
   <div class="alert alert-warning mb-0">
     <i class="ti ti-search-off me-1"></i> No rows matched the current filters.
   </div>
 <% else %>
+  <% totals = @totals.call %>
   <div class="table-responsive">
     <table class="table table-bordered table-hover table-sm mb-0">
       <thead class="table-dark">
         <tr>
+          <%# In the builder each header carries its menu (Rename, Total, Move, Remove — H5, H6) %>
+          <% ordered = builder ? @report.grid_view_preferences.reorder(:sequence, :id).to_a : nil %>
           <% @columns.each do |col| %>
-            <th class="text-nowrap"><%= col.label.presence || col.name %></th>
+            <th class="text-nowrap <%= @formatter.align(col) %>" scope="col">
+              <% if builder %>
+                <%= render "report_builder/column_menu", col: col, ordered: ordered, label: col.label.presence || col.name %>
+              <% else %>
+                <%= col.label.presence || col.name %>
+              <% end %>
+            </th>
           <% end %>
         </tr>
       </thead>
       <tbody>
         <% @rows.each do |row| %>
           <tr>
+            <%# Values formatted by column type — the same as the report page (H15) %>
             <% @columns.each do |col| %>
-              <% val = row[col.key] %>
-              <%# "__pivot__" marks a dynamic pivot column (ReportBuilderPivotAggregator) —
-                  numeric like a "num-col", just not caught by that substring alone. %>
-              <td class="<%= (col.key.include?('num-col') || col.key.include?('__pivot__')) ? 'text-end' : '' %>">
-                <%= val.nil? ? "" : val %>
+              <td class="<%= @formatter.align(col) %>"><%= @formatter.display(row[col.key], col) %></td>
+            <% end %>
+          </tr>
+        <% end %>
+        <%# Totals row: summed columns, formulas recalculated from the totals (H17, H18). The last body row,
+            so it gets the same cell padding as the rows above it. %>
+        <% if totals %>
+          <tr class="fw-semibold report-builder-totals">
+            <% @columns.each_with_index do |col, i| %>
+              <td class="fw-semibold <%= @formatter.align(col) %>">
+                <%# The label sits in the first cell, before that column's own total if it has one %>
+                <% if i.zero? %><span class="me-2"><%= @totals.label %></span><% end %><%= @formatter.display(totals[col.key], col) %>
               </td>
             <% end %>
           </tr>
@@ -51,5 +79,7 @@
     </table>
   </div>
 <% end %>
+
+<% end %> <%# preview error %>
 
 <% end %>

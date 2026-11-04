@@ -89,7 +89,12 @@ module WithESignatures
     end
   end
 
-  # called by the provider once esign is completed
+  # called by the provider once esign is completed. Returns whether this call actually did the
+  # completion (vs. a no-op because another concurrent call already had) - the atomic update_all
+  # below is what protects against a document getting marked completed twice (e.g. a webhook and
+  # a manual "fetch updates" landing close together), so callers that do extra provider-side work
+  # on completion (downloading a signed copy, a certificate, etc.) should gate that work on this
+  # return value too, or it'll run once per caller instead of once per document.
   def signature_completed(signed_doc_from_provider)
     if Document.where(id:).where.not(esign_status: "completed").update_all(esign_status: "completed").positive?
       # We create a new document, and leave the old one intact.
@@ -97,13 +102,35 @@ module WithESignatures
       signed_doc.file = File.open(signed_doc_from_provider, "rb")
       signed_doc.from_template = self
       signed_doc.owner = owner
+      # A document with no owner has no owner folder for the copy to fall back on
+      signed_doc.folder = folder if owner.nil?
       signed_doc.owner_tag = "Signed"
       signed_doc.approved = true
       signed_doc.send_email = false
       signed_doc.locked = true
       signed_doc.save
+      true
     else
       Rails.logger.debug { "Document #{name} #{id} already marked as completed, hence skipping" }
+      false
     end
+  end
+
+  # Attaches a provider-supplied supplementary eSign file (e.g. Zoho's completion certificate, Digio's audit trail)
+  # as its own Document, alongside the signed copy. Deliberately not tagged "Signed" - that tag
+  # drives Document.signed/.signed?/DocumentsBulkActionJob behavior, which should stay keyed to
+  # the actual signed copy only.
+  def attach_esign_supplementary_document(file_path, name_suffix:, owner_tag:)
+    supplementary_doc = Document.new(attributes.slice("entity_id", "orignal", "download", "printing", "user_id"))
+    supplementary_doc.name = "#{name} - #{name_suffix}"
+    supplementary_doc.file = File.open(file_path, "rb")
+    supplementary_doc.from_template = self
+    supplementary_doc.owner = owner
+    supplementary_doc.folder = folder if owner.nil?
+    supplementary_doc.owner_tag = owner_tag
+    supplementary_doc.approved = true
+    supplementary_doc.send_email = false
+    supplementary_doc.locked = true
+    supplementary_doc.save
   end
 end

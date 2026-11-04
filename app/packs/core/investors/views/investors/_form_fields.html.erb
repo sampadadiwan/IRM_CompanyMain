@@ -2,7 +2,6 @@
   <div class="form-group" id="investor_name_group" data-controller="<%= investor.investor_entity_id.present? ? '' : 'investorsearch'%>">
     <%= form.label :investor_name, "New Stakeholder Name" %>
     <%= form.text_field :investor_name, class: "form-control", autocomplete: false %>
-    <%= form.text_field :investor_entity_id, class: "form-control", hidden: true %>
     <small class="text-muted">Enter a unique stakeholder name</small>
   </div>
 

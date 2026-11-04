@@ -1,8 +1,8 @@
 <div class="row row-cols-1 row-cols-md-2 g-4" data-metadata-form-target="container">
-  <% 
+  <%
     help_hash = dashboard_widget.metadata_help_hash.with_indifferent_access
     current_metadata = dashboard_widget.metadata_args.with_indifferent_access
-    
+
     # Merge keys: start with help definitions, then add any existing metadata keys not in help
     display_hash = help_hash.dup
     current_metadata.each do |key, value|
@@ -11,17 +11,17 @@
   %>
   <% if display_hash.any? %>
     <% display_hash.each do |key, sample_value| %>
-      <% 
+      <%
         # Only use the value if it's actually in the metadata
         db_value = current_metadata[key]
-        
+
         # Determine type based on the sample_value
         type_reference = help_hash.has_key?(key) ? help_hash[key] : db_value
-        
+
         input_type = "text"
         data_type = "string"
         is_boolean = false
-        
+
         if type_reference.is_a?(TrueClass) || type_reference.is_a?(FalseClass) || (type_reference.is_a?(String) && ["true", "false"].include?(type_reference))
           is_boolean = true
           data_type = "boolean"
@@ -37,45 +37,79 @@
         if type_reference.is_a?(String) && type_reference.include?("/")
           options = type_reference.split("/")
         end
+
+        # Label, one-line help, whole-number flag and pick-list from DashboardWidget::METADATA_FIELD_HINTS
+        field_hint = DashboardWidget.field_hint(dashboard_widget.widget_name, key) || {}
+        field_label = field_hint[:label] || key.to_s.humanize
+        is_integer = field_hint[:integer].present?
+        choices = nil
+        if field_hint[:choices]
+          choices = metadata_choices(field_hint[:choices], dashboard_widget.entity || try(:current_user)&.entity)
+          # E17 — a saved value that is not a listed column stays selectable, so saving does not change it
+          choices += [[db_value, db_value]] if db_value.present? && choices.none? { |_label, value| value == db_value.to_s }
+        end
       %>
 
       <div class="col">
         <div class="form-group mb-0">
           <label class="form-label fw-bold small text-muted mb-1">
-            <%= key.to_s.humanize %>
+            <%= field_label %>
           </label>
-          
-          <% if options %>
-            <%= select_tag "metadata_#{key}", options_for_select(options, db_value), 
-                include_blank: "Default",
-                class: "form-select", 
-                data: { 
-                  metadata_key: key, 
+
+          <% if choices %>
+            <%= select_tag "metadata_#{key}", options_for_select(choices, db_value),
+                include_blank: "None",
+                class: "form-select",
+                data: {
+                  metadata_key: key,
                   metadata_form_target: "field",
-                  action: "change->metadata-form#updateMetadata" 
+                  action: "change->metadata-form#updateMetadata"
+                } %>
+          <% elsif options %>
+            <%= select_tag "metadata_#{key}", options_for_select(options, db_value),
+                include_blank: "Default",
+                class: "form-select",
+                data: {
+                  metadata_key: key,
+                  metadata_form_target: "field",
+                  action: "change->metadata-form#updateMetadata"
                 } %>
           <% elsif is_boolean %>
-            <%= select_tag "metadata_#{key}", options_for_select([["Default", ""], ["ON", "true"], ["OFF", "false"]], db_value.nil? ? "" : db_value.to_s), 
-                class: "form-select", 
-                data: { 
-                  metadata_key: key, 
+            <%= select_tag "metadata_#{key}", options_for_select([["Default", ""], ["ON", "true"], ["OFF", "false"]], db_value.nil? ? "" : db_value.to_s),
+                class: "form-select",
+                data: {
+                  metadata_key: key,
                   metadata_form_target: "field",
-                  action: "change->metadata-form#updateMetadata" 
+                  action: "change->metadata-form#updateMetadata"
+                } %>
+          <% elsif is_integer %>
+            <%= text_field_tag "metadata_#{key}", db_value,
+                type: "number", step: 1, min: 1,
+                class: "form-control",
+                placeholder: "e.g. #{sample_value}",
+                data: {
+                  metadata_key: key,
+                  metadata_type: "number",
+                  metadata_integer: true,
+                  metadata_form_target: "field",
+                  action: "input->metadata-form#updateMetadata keydown->metadata-form#guardInteger paste->metadata-form#guardInteger"
                 } %>
           <% else %>
-            <%= text_field_tag "metadata_#{key}", db_value, 
+            <%= text_field_tag "metadata_#{key}", db_value,
                 type: input_type,
-                class: "form-control", 
+                class: "form-control",
                 placeholder: "e.g. #{sample_value}",
-                data: { 
-                  metadata_key: key, 
-                  metadata_type: data_type, 
+                data: {
+                  metadata_key: key,
+                  metadata_type: data_type,
                   metadata_form_target: "field",
-                  action: "input->metadata-form#updateMetadata" 
+                  action: "input->metadata-form#updateMetadata"
                 } %>
           <% end %>
-          
-          <% if data_type == "array" %>
+
+          <% if field_hint[:hint] %>
+            <div class="form-text x-small text-muted mt-1"><%= field_hint[:hint] %></div>
+          <% elsif data_type == "array" %>
             <div class="form-text x-small text-muted mt-1">Comma-separated list</div>
           <% end %>
         </div>

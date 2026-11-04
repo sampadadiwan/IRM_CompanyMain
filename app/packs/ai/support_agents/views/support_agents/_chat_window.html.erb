@@ -1,0 +1,68 @@
+<%#
+  The floating window's inside, on the chat kit (variant :window): one conversation's thread, and this
+  record's conversations under Conversations (beside the thread when maximised). All in one Turbo Frame,
+  so opening a conversation or New reloads it. Locals: support_agent, chattable, session (nil: a new
+  conversation), sessions (the user's sessions with this agent on this record).
+%>
+<%
+  frame_id = agent_chat_frame_id(support_agent)
+  rows = AiChatRows.for_agent_sessions(sessions, url: ->(s) { agent_chat_url(support_agent, chattable, session_id: s.id) })
+  messages = session ? session.agent_chat_messages.includes(:feedback).order(:created_at).to_a : []
+  items = messages.map { |m| AiChatItem.from_agent_chat_message(m) }
+  suggestions = support_agent.respond_to?(:sample_questions) ? Array(support_agent.sample_questions) : []
+  # H9, E12 — only the Customer Support agent's answers are rated (as before).
+  rated = support_agent.agent_type == "CustomerSupportAgent"
+%>
+<%= turbo_frame_tag frame_id, class: "d-flex flex-column h-100" do %>
+  <% header = capture do %>
+    <%# Drag the window by its header (ai_chat_window_controller; buttons excepted). %>
+    <div class="d-flex align-items-center gap-2 flex-grow-1 min-w-0 aic-window-handle" data-action="mousedown->ai-chat-window#startDrag">
+      <span class="text-truncate"><%= support_agent.name %></span>
+      <div class="d-flex align-items-center gap-1 ms-auto">
+        <%# Icon buttons, the size of Maximise and Close, so the header stays one compact row. %>
+        <button type="button" class="btn btn-sm aic-icon-btn" title="Conversations" aria-label="Conversations"
+                data-action="ai-chat-window#toggleList" id="<%= frame_id %>-list-toggle">
+          <i class="ti ti-history"></i>
+        </button>
+        <%= link_to agent_chat_url(support_agent, chattable, new_session: 1), class: "btn btn-sm aic-icon-btn",
+                    title: "New chat", aria: { label: "New chat" }, id: "#{frame_id}-new-chat", data: { turbo_frame: frame_id } do %>
+          <i class="ti ti-edit"></i>
+        <% end %>
+        <button type="button" class="btn btn-sm aic-icon-btn" title="Maximise" data-action="ai-chat-window#toggleMaximize" id="<%= frame_id %>-maximise">
+          <i class="ti ti-arrows-maximize"></i><span class="visually-hidden">Maximise</span>
+        </button>
+        <button type="button" class="btn btn-sm aic-icon-btn" title="Close" data-action="ai-chat-window#close">
+          <i class="ti ti-x"></i><span class="visually-hidden">Close</span>
+        </button>
+      </div>
+    </div>
+  <% end %>
+  <% empty_state = capture do %>
+    <%# H11 — the agent's suggested questions: text to the box, or Ask to send. %>
+    <%= render "ai_chat/empty_state", title: "Chat with #{support_agent.name}", text: "Ask questions or get help from the AI assistant.",
+                                      suggestions: (render("ai_chat/suggestions", id: "#{frame_id}-suggestions", questions: suggestions, running: false) if suggestions.any?) %>
+  <% end %>
+  <%= render layout: "ai_chat/layout",
+             locals: { rows: rows, frame: frame_id, variant: :window, active_id: session&.id, root_class: "h-100",
+                       new_url: agent_chat_url(support_agent, chattable, new_session: 1),
+                       storage_key: "agentChat.sidebarCollapsed",
+                       ids: { new: "#{frame_id}-sidebar-new", search: "#{frame_id}-search", list: "#{frame_id}-conversations" } } do %>
+    <%= render layout: "ai_chat/thread",
+               locals: { id: "#{frame_id}-thread", scroller_id: "#{frame_id}-messages", header: header,
+                         empty: items.empty?, empty_state: empty_state,
+                         composer: render("support_agents/chat_composer", support_agent: support_agent, chattable: chattable,
+                                                                          session: session, new_session: session.nil?, items: items) } do %>
+      <% items.each do |item| %>
+        <% if item.question? %>
+          <%= render "ai_chat/question", item: item %>
+        <% else %>
+          <%= render "ai_chat/answer", item: item, mode: :rich,
+                                       feedback: (if rated && item.message_id
+                                                    render("ai_chat/feedback", rating: item.feedback_rating,
+                                                                               url: feedback_support_agent_chat_path(support_agent, item.message_id))
+                                                  end) %>
+        <% end %>
+      <% end %>
+    <% end %>
+  <% end %>
+<% end %>

@@ -1,0 +1,118 @@
+<%# Describe it — "What I understood": one compact panel (approved mock, 2026-11-01). Each row, the columns as
+    badges (own column / related data / formula, with a type icon, their total, and a tooltip saying where the figure
+    comes from), the filters, and the order. Pencils open the builder's tab as a full page (outside the draft frame).
+    Worked examples H2, H3 — openspec/changes/report-builder-assistant/business-rules.md %>
+<%
+  label_of = ->(gvp) { gvp.label.presence || gvp.name }
+  by_key   = @gvps.to_h { |g| [g.key.split(";").first.strip, label_of.call(g)] }
+  type_icon = lambda do |key, label|
+    next "ti-percentage" if key.include?("percentage") || label.to_s.include?("%")
+
+    case @config.column_type.base_type(key)
+    when :money then "ti-cash"
+    when :number, :integer then "ti-hash"
+    when :date, :datetime then "ti-calendar"
+    when :boolean then "ti-toggle-left"
+    else "ti-abc"
+    end
+  end
+  formulas  = (@config.formulas || []).index_by { |f| f["key"].to_s }
+  # The row is already titled "Only include": "Only include investors where Category is LP" → "Category is LP"
+  sentences = wizard_filter_sentences(@config, current_user.entity).pluck(:text).map { |t| t.sub(/\AOnly include .+? where /, "") }
+  sort_key  = @config.sort[:key].to_s
+  sort_label = by_key[sort_key] || formulas[sort_key]&.dig("label")
+  pencil = lambda do |tab, words|
+    link_to edit_report_builder_path(@report, tab: tab), class: "btn btn-sm btn-outline-primary ms-auto flex-shrink-0",
+                                                         title: words, "aria-label": words, data: { turbo_frame: "_top", bs_toggle: "tooltip" } do
+      tag.i(class: "ti ti-pencil")
+    end
+  end
+%>
+<div class="card mb-3 rb-wizard-summary">
+  <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <span class="fw-semibold"><i class="ti ti-sparkles text-primary me-1"></i>What I understood</span>
+    <span class="small d-flex gap-2">
+      <span class="badge bg-primary-subtle text-primary">Own column</span>
+      <span class="badge bg-success-subtle text-success">Related data</span>
+      <span class="badge bg-info-subtle text-info">Formula</span>
+    </span>
+  </div>
+  <ul class="list-group list-group-flush">
+    <li class="list-group-item d-flex align-items-start gap-3 py-3">
+      <span class="fw-semibold text-muted text-nowrap" style="width: 11rem"><i class="ti ti-table text-primary me-1"></i>Each row</span>
+      <span class="badge bg-secondary-subtle text-secondary fw-normal" title="The report lists one row per <%= wizard_model_label(@root_class.name).downcase %>">
+        <i class="ti <%= wizard_icon_for(@root_class.name) %>"></i> One row per <%= wizard_model_label(@root_class.name).downcase %>
+      </span>
+    </li>
+
+    <li class="list-group-item d-flex align-items-start gap-3 py-3">
+      <span class="fw-semibold text-muted text-nowrap" style="width: 11rem"><i class="ti ti-columns text-primary me-1"></i>Columns
+        <span class="badge bg-primary-subtle text-primary"><%= @gvps.size %></span></span>
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <% @gvps.each do |gvp| %>
+          <% key = gvp.key.split(";").first.strip %>
+          <% if key.start_with?("formula:") %>
+            <% formula = formulas[key.delete_prefix("formula:")] %>
+            <span class="badge bg-info-subtle text-info fw-normal" title="<%= formula_in_words(formula&.dig("expression"), by_key) %>" data-bs-toggle="tooltip">
+              <i class="ti ti-math-function"></i> <%= formula&.dig("label") || label_of.call(gvp) %>
+            </span>
+          <% elsif key.start_with?("pivot:") %>
+            <% relation = key.delete_prefix("pivot:") %>
+            <% pivot = (@config.join_for(relation) || {})[:pivot] || {} %>
+            <% group = Array(pivot[:group_bys] || pivot[:group_by]).map(&:humanize).join(", ") %>
+            <span class="badge bg-success-subtle text-success fw-normal"
+                  title="<%= relation.humanize %>' <%= pivot[:value_col].to_s.humanize.downcase %>, one column per <%= group.downcase %> (<%= ReportBuilderColumnType.aggregate_label(pivot[:aggregate].presence || 'sum') %>)" data-bs-toggle="tooltip">
+              <i class="ti ti-table-column"></i> <%= relation.humanize %> by <%= group.downcase %>
+              <span class="badge bg-white text-success ms-1 py-0 px-1">Pivot · <%= ReportBuilderColumnType.aggregate_label(pivot[:aggregate].presence || "sum") %></span>
+            </span>
+          <% elsif key.include?(".") %>
+            <% relation = @config.column_type.relation_for(key) %>
+            <% many = relation && @config.column_type.strategy_for(relation) == :grouped %>
+            <% agg = many ? @config.effective_aggregate(key) : nil %>
+            <% source = relation.to_s.humanize %>
+            <span class="badge bg-success-subtle text-success fw-normal" data-bs-toggle="tooltip"
+                  title="<%= many ? "#{ReportBuilderColumnType.aggregate_label(agg)} of #{source.downcase}' #{key.split('.').last.humanize.downcase}" : "The #{source.singularize.downcase}'s #{key.split('.').last.humanize.downcase}" %>">
+              <i class="ti <%= type_icon.call(key, label_of.call(gvp)) %>"></i> <%= label_of.call(gvp) %>
+              <% if agg %><span class="badge bg-white text-success ms-1 py-0 px-1"><%= ReportBuilderColumnType.aggregate_label(agg) %></span><% end %>
+            </span>
+          <% else %>
+            <span class="badge bg-primary-subtle text-primary fw-normal" data-bs-toggle="tooltip"
+                  title="The <%= wizard_model_label(@root_class.name).downcase %>'s <%= key.humanize.downcase %>">
+              <i class="ti <%= type_icon.call(key, label_of.call(gvp)) %>"></i> <%= label_of.call(gvp) %>
+            </span>
+          <% end %>
+        <% end %>
+      </div>
+      <%= pencil.call("columns", "Change columns in the builder") %>
+    </li>
+
+    <li class="list-group-item d-flex align-items-start gap-3 py-3">
+      <span class="fw-semibold text-muted text-nowrap" style="width: 11rem"><i class="ti ti-filter text-primary me-1"></i>Only include</span>
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <% if sentences.any? %>
+          <% sentences.each do |text| %>
+            <span class="badge bg-secondary-subtle text-secondary fw-normal"><i class="ti ti-filter"></i> <%= text %></span>
+          <% end %>
+        <% else %>
+          <span class="text-muted">Everything</span>
+        <% end %>
+      </div>
+      <%= pencil.call("filters", "Change filters in the builder") %>
+    </li>
+
+    <li class="list-group-item d-flex align-items-start gap-3 py-3">
+      <span class="fw-semibold text-muted text-nowrap" style="width: 11rem"><i class="ti ti-arrows-sort text-primary me-1"></i>Order</span>
+      <div>
+        <% if sort_label %>
+          <span class="badge bg-secondary-subtle text-secondary fw-normal" title="The report's default order" data-bs-toggle="tooltip">
+            <i class="ti <%= @config.sort[:dir] == 'desc' ? 'ti-sort-descending' : 'ti-sort-ascending' %>"></i>
+            Sorted by <%= sort_label %> (<%= @config.sort[:dir] == "desc" ? "largest first" : "smallest first" %>)
+          </span>
+        <% else %>
+          <span class="text-muted">In stored order</span>
+        <% end %>
+      </div>
+      <%= pencil.call("sort", "Change the order in the builder") %>
+    </li>
+  </ul>
+</div>

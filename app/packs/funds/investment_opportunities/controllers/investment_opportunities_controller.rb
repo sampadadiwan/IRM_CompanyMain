@@ -3,6 +3,11 @@ class InvestmentOpportunitiesController < ApplicationController
   before_action :set_investment_opportunity, only: %i[show edit update destroy toggle allocate send_notification finalize_allocation show_email_list]
 
   skip_after_action :verify_authorized, only: [:no_password_show]
+
+  # M10 — the preview templates under investment_opportunities/templates/. Any other ?template= value
+  # renders the default preview, never a partial path built from the request (M10-X5, M10-H5)
+  PREVIEW_TEMPLATES = %w[light_simple].freeze
+  helper_method :preview_template
   # GET /investment_opportunities or /investment_opportunities.json
   def index
     @bread_crumbs = { Opportunities: investment_opportunities_path }
@@ -30,7 +35,8 @@ class InvestmentOpportunitiesController < ApplicationController
 
   # GET /investment_opportunities/1 or /investment_opportunities/1.json
   def show
-    render layout: false if params[:template].present?
+    # Only a known preview template is rendered bare (no layout); anything else is the normal page
+    render layout: false if preview_template
   end
 
   # Called when advisors share a link to the IO, the IO is shared without a password
@@ -146,6 +152,11 @@ class InvestmentOpportunitiesController < ApplicationController
   end
 
   private
+
+  # M10 — the allowlisted preview template the request asked for, or nil
+  def preview_template
+    PREVIEW_TEMPLATES.find { |name| name == params[:template].to_s }
+  end
 
   # Use callbacks to share common setup or constraints between actions.
   def set_investment_opportunity

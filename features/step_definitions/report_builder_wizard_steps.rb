@@ -145,3 +145,24 @@ Then("the wizard report template sort key should be {string}") do |key|
   @wizard_report.reload
   expect(@wizard_report.template["sort"]["key"]).to eq(key)
 end
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Restored wizard (R1–R4) — openspec/changes/report-builder-live-builder/business-rules.md#wizard-restored
+# ─────────────────────────────────────────────────────────────────────────────
+
+Then("every table on the wizard start page has an example question") do
+  options = Nokogiri::HTML(@last_rb_response.body).css("#wizard_root_model_select option[value]").reject { |o| o["value"].blank? }
+  expect(options).not_to be_empty
+  missing = options.select { |o| o["data-example"].blank? }.pluck("value")
+  expect(missing).to be_empty, "no example question for #{missing.join(', ')}"
+end
+
+Then("the wizard page should not mention {string}") do |text|
+  expect(@last_rb_response.body).not_to include(text)
+end
+
+Then("{string} links to the report page") do |label|
+  link = Nokogiri::HTML(@last_rb_response.body).css("a").find { |a| a.text.strip == label }
+  expect(link).not_to be_nil, "no #{label} link"
+  expect(link["href"]).to eq("/report_builder/#{@wizard_report.id}/view")
+end

@@ -7,7 +7,16 @@
 # @see SupportAgentJob
 # @see SupportAgentReport
 class SupportAgentsController < ApplicationController
+  # N8-X — a target_type that is not one of SupportAgent::RUN_TARGET_TYPES (or not a model at all)
+  class UnknownTargetType < StandardError; end
+
   before_action :set_support_agent, only: %i[show edit update destroy]
+
+  # N8-X — answered as a 404 rather than the 500 `constantize` used to raise. Raised before the
+  # action completes, so verify_authorized (an after_action) does not run on this path.
+  rescue_from UnknownTargetType do
+    head :not_found
+  end
 
   # Lists all support agents accessible by the current user.
   # Also computes a setup preview for the "Setup All Agents" modal when the user has permission.
@@ -220,9 +229,13 @@ class SupportAgentsController < ApplicationController
   # @return [void]
   def run
     @support_agent = SupportAgent.find_by(agent_type: params[:agent_type], entity_id: current_user.entity_id)
-    authorize @support_agent
 
+    # N8-X — the named target, through the allow-list; an unknown type is a 404
     target = resolve_target(params[:target_type], params[:target_id])
+    # N8-1 — run? checks the target's firm, so another tenant's record is refused here, before any
+    # report or uploaded Document is created on it
+    @support_agent&.run_target = target
+    authorize @support_agent
 
     # RtaReconciliationAgent: save the uploaded PDF as a Document now (before the async job runs)
     rta_pdf_document_id = nil
@@ -325,6 +338,10 @@ class SupportAgentsController < ApplicationController
   # @return [void]
   def run_with_steps
     @support_agent = SupportAgent.find(params[:id])
+    # N8-1 — the record the request names, before any Entity expansion (a foreign entity id must not
+    # expand into that tenant's portfolio companies); run_with_steps? checks its firm. N8-X: an unknown
+    # type is a 404.
+    @support_agent.run_target = resolve_target(params[:target_type], params[:target_id])
     authorize @support_agent
 
     target = find_target(params[:target_type], params[:target_id])
@@ -663,8 +680,8 @@ class SupportAgentsController < ApplicationController
       targets = @support_agent.agent.new.targets(target_id)
       targets.first # Return first portfolio company for UI purposes
     else
-      # Standard case: return the exact target
-      target_type.constantize.find_by(id: target_id)
+      # Standard case: return the exact target, its type through the N8 allow-list (N8-X)
+      resolve_target(target_type, target_id)
     end
   rescue NameError
     nil
@@ -761,13 +778,20 @@ class SupportAgentsController < ApplicationController
   end
 
   # Resolves a target record from type + id params without special-casing.
-  # Returns nil if either param is blank or the class cannot be resolved.
+  # Returns nil if either param is blank or no such record exists. The firm check is the policy's
+  # (SupportAgentPolicy#run?, via SupportAgent#run_target), not this method's.
+  #
+  # @raise [UnknownTargetType] when target_type is given but is not a SupportAgent::RUN_TARGET_TYPES model (N8-X)
   def resolve_target(target_type, target_id)
-    return nil if target_type.blank? || target_id.blank?
+    # No type named: the run has no specific target
+    return nil if target_type.blank?
 
-    target_type.constantize.find_by(id: target_id)
-  rescue NameError
-    nil
+    # N8-X / L14 — only the model types the UI sends; anything else (Kernel, a service, a typo) is a 404
+    target_class = ApplicationRecord.model_class_from_param(target_type, allowed: SupportAgent::RUN_TARGET_TYPES)
+    raise UnknownTargetType, target_type.to_s.truncate(100) unless target_class
+    return nil if target_id.blank?
+
+    target_class.find_by(id: target_id)
   end
 
   # Computes what SupportAgentsSetupService will do for the current entity without executing.

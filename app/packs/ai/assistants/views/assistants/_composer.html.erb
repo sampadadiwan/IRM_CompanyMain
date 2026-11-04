@@ -1,0 +1,33 @@
+<%#
+  The Assistants page's question box: the chat kit's composer with hold-to-speak (voice_chat_controller)
+  and its hint. AssistantQueryJob re-renders it when an answer ends, putting a failed question back.
+  Locals: chat (Chat), running (Boolean), value (String, optional — a question to put back, X3),
+  items (Array<AiChatItem>, optional — the thread, for the follow-ups; read from the chat when the job
+  re-renders the box).
+%>
+<% owner = chat.owner unless chat.owner.is_a?(User) %>
+<%# H14 — the follow-ups above the box; the recent messages are enough to find the latest answer's. %>
+<% items = local_assigns[:items] ||
+           chat.messages.where(role: %w[user assistant]).order(:id).last(20)
+               .reject { |m| m.role == "assistant" && m.content.blank? }.map { |m| AiChatItem.from_message(m) } %>
+<% extras = capture do %>
+  <button type="button" class="btn btn-sm aic-icon-btn" title="Hold to speak" data-voice-chat-target="micBtn"
+          data-action="mousedown->voice-chat#startRecording mouseup->voice-chat#stopRecording mouseleave->voice-chat#stopRecording touchstart->voice-chat#startRecording touchend->voice-chat#stopRecording">
+    <i class="ti ti-microphone"></i><span class="visually-hidden">Hold to speak</span>
+  </button>
+<% end %>
+<% footer = capture do %>
+  <div class="text-center small text-muted mt-2" data-voice-chat-target="hint">
+    <% if local_assigns[:value].present? %>
+      <i class="ti ti-arrow-back-up me-1"></i>Your question is back in the box — press Enter to try again.
+    <% else %>
+      Hold <i class="ti ti-microphone"></i> to speak · Press Enter to send
+    <% end %>
+  </div>
+<% end %>
+<%= render "ai_chat/composer", id: "assistant-composer", form_url: ask_assistants_path, hidden: { chat_id: chat.id },
+                               field: :query, question_id: "assistant-question", ask_id: "assistant-ask",
+                               value: local_assigns[:value], running: running,
+                               placeholder: "Ask anything about #{owner || 'your data'}",
+                               above: render("ai_chat/follow_ups", items: items, id: "assistant-follow-ups", running: running),
+                               extras: extras, footer: footer %>

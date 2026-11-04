@@ -553,3 +553,22 @@
   background: var(--bs-body-bg, #fff) !important;
   box-shadow: 0 0 0 2px rgba(var(--wizard-accent-rgb), 0.25);
 }
+
+// ── The builder's settings tabs reuse the wizard's help box and card icons ──
+// Same accent as the wizard, so .wizard-help-box / .wizard-card-icon render as they do there
+.rb-settings {
+  --wizard-accent: var(--bs-primary);
+  --wizard-accent-rgb: var(--bs-primary-rgb);
+  --wizard-accent-2: #7c3aed;
+}
+
+// One type scale: the tab labels at the page's body size, like the content under them
+.rb-settings-tabs .nav-link {
+  font-size: inherit;
+}
+
+// A tab's state badge stays readable on the active (filled) tab, as in the approved mock
+.rb-settings-tabs .nav-link.active .badge {
+  background: rgba(255, 255, 255, 0.25) !important;
+  color: #fff !important;
+}

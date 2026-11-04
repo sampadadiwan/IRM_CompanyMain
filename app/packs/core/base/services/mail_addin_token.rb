@@ -17,6 +17,12 @@
 class MailAddinToken
   APPLICATION_NAME = 'CapHive Mail Add-in'
 
+  # N5 — the exact row create_application makes. Dynamic client registration could also make an
+  # app with this name (it is now reserved there, McpClientRegistry), so add-in trust requires the
+  # whole server-created shape, not the name alone. Ops still delete any such app the server did
+  # not create (docs/security/security_review_2026_10.md "Authentication and session", M2).
+  APPLICATION_SHAPE = { name: APPLICATION_NAME, redirect_uri: 'urn:ietf:wg:oauth:2.0:oob', confidential: true }.freeze
+
   # Matches Doorkeeper's configured access_token_expires_in. When a token expires the
   # add-ins show a Sign in button rather than silently re-authenticating, because both
   # hosts restrict windows opened without a user gesture.
@@ -48,7 +54,8 @@ class MailAddinToken
   # @return [Hash]
   def self.payload_for(user)
     {
-      access_token: issue_for(user).token,
+      # L2 — tokens are stored hashed; only the instance just created knows the raw value
+      access_token: issue_for(user).plaintext_token,
       expires_at: (Time.current + TTL).iso8601,
       user_name: user.full_name,
       entity_name: user.entity&.name
@@ -79,18 +86,15 @@ class MailAddinToken
     application_scope.pluck(:id).include?(access_token.application_id)
   end
 
-  # Read-only, and therefore safe on the replica.
+  # Read-only, and therefore safe on the replica. N5 — the server-created shape, not just the name.
   def self.application_scope
-    Doorkeeper::Application.where(name: APPLICATION_NAME)
+    Doorkeeper::Application.where(APPLICATION_SHAPE)
   end
 
   def self.create_application
     ActiveRecord::Base.connected_to(role: :writing) do
-      Doorkeeper::Application.create_with(
-        redirect_uri: 'urn:ietf:wg:oauth:2.0:oob',
-        scopes: 'read',
-        confidential: true
-      ).find_or_create_by!(name: APPLICATION_NAME)
+      # Found by the whole shape, so a same-named app of another shape is never adopted (N5)
+      Doorkeeper::Application.create_with(scopes: 'read').find_or_create_by!(APPLICATION_SHAPE)
     end
   end
 end

@@ -86,7 +86,8 @@
     <div class="ai-collated-editor" id="collated-editor">
       <div class="ai-editor-wrapper">
         <div id="collated-content" contenteditable="true" class="ai-collated-content">
-          <%= @collated_content.html_safe %>
+          <%# C3-7 - sanitized at the sink: built from stored section HTML %>
+          <%= AiReportHtml.sanitize(@collated_content).html_safe %>
         </div>
       </div>
     </div>

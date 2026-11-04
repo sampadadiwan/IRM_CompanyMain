@@ -1,8 +1,20 @@
 class FundFormulasBulkActionJob < BulkActionJob
+  # H6 step 3 — bulk_action → the policy query the single-formula Enable / Disable authorises with
+  ACTIONS = { "enable" => :enable_formulas?, "disable" => :enable_formulas? }.freeze
+
   def perform_action(fund_formula, user_id, bulk_action, params: {})
     Rails.logger.info("Performing #{bulk_action} on FundFormula #{fund_formula.id} - #{params}")
     msg = "#{bulk_action}: FundFormula #{fund_formula.name}"
     send_notification(msg, user_id, :success)
+
+    # H6 step 3 — update on the formula's fund, per row: with update on fund A only, a bulk disable over
+    # A and B changes A's formulas and reports B's as "Not authorized". Tests H6-3, H6-X1 —
+    # features/security/bulk_actions_authorization.feature
+    query = ACTIONS[bulk_action.to_s.downcase]
+    if query && !Pundit.policy!(@user, fund_formula).public_send(query)
+      @error_msg << { msg: "Not authorized to #{bulk_action.to_s.downcase}", formula: "#{fund_formula.sequence} - #{fund_formula.name}" }
+      return
+    end
 
     case bulk_action.downcase
 

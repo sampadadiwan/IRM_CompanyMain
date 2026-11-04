@@ -165,6 +165,10 @@ Then('the rendered HTML should include {string}') do |expected|
   expect(@rendered_html).to include(expected)
 end
 
+Then('the rendered HTML should not include {string}') do |unexpected|
+  expect(@rendered_html).not_to include(unexpected)
+end
+
 When('I call list_portfolio_companies with scope {string}') do |scope|
   @data_manager.list_portfolio_companies(scope: scope)
 end

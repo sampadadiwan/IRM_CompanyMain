@@ -21,7 +21,7 @@ Fund ratios are calculated performance metrics for a fund or commitment. Each ra
 | value | decimal(20,8) | Raw numeric value — use for math/comparisons |
 | display_value | varchar(50) | Pre-formatted string for display (use this when showing to the user) |
 | end_date | date | As-of date for this ratio |
-| owner_type | varchar | 'Fund', 'CapitalCommitment', or 'PortfolioCompany' |
+| owner_type | varchar | 'Fund', 'CapitalCommitment', 'Investor' (a portfolio company — portcos are `investors` rows) or 'AggregatePortfolioInvestment'. There is no 'PortfolioCompany' owner_type |
 | owner_id | bigint | FK to the owner record (matches owner_type) |
 | scenario | varchar | 'Default' for actuals, or a portfolio scenario name for what-if analysis |
 | latest | boolean | TRUE if this is the most recent value for this ratio (use to find current values) |
@@ -50,15 +50,15 @@ Names observed across Caphive datasets. Name matching is case-sensitive — use 
 
 | Name | Meaning | Typical owner_type | Typical Value |
 |------|---------|--------------------|---------------|
-| XIRR | Annualised, dollar-weighted internal rate of return | Fund | "15.2%" |
-| XIRR (USD) | XIRR expressed in USD | Fund | "15.2%" |
-| IRR | Internal Rate of Return | Investor, AggregatePortfolioInvestment | "15.2%" |
-| IRR (USD) | IRR in USD | Investor, AggregatePortfolioInvestment | "15.2%" |
-| TVPI | Total Value to Paid-In | Fund | "2.1x" |
-| DPI | Distributed to Paid-In | Fund | "0.8x" |
-| RVPI | Residual Value to Paid-In | Fund | "1.3x" |
-| MOIC | Multiple on Invested Capital | Fund, Investor, AggregatePortfolioInvestment | "2.1x" |
-| MOIC (USD) | MOIC in USD | Fund, Investor, AggregatePortfolioInvestment | "2.1x" |
+| XIRR | Annualised, dollar-weighted internal rate of return | Fund, CapitalCommitment | "15.2%" |
+| XIRR (USD) | XIRR expressed in USD | Fund, CapitalCommitment | "15.2%" |
+| IRR | Internal Rate of Return | Investor (a portco), AggregatePortfolioInvestment | "15.2%" |
+| IRR (USD) | IRR in USD | Investor (a portco), AggregatePortfolioInvestment | "15.2%" |
+| TVPI | Total Value to Paid-In | Fund, CapitalCommitment | "2.1x" |
+| DPI | Distributed to Paid-In | Fund, CapitalCommitment | "0.8x" |
+| RVPI | Residual Value to Paid-In | Fund, CapitalCommitment | "1.3x" |
+| MOIC | Multiple on Invested Capital | Fund, Investor (a portco), AggregatePortfolioInvestment | "2.1x" |
+| MOIC (USD) | MOIC in USD | Fund, Investor (a portco), AggregatePortfolioInvestment | "2.1x" |
 | NAV | Net Asset Value per unit | Fund (may be absent in some datasets) | "1.45" |
 | Portfolio Value to Cost | Portfolio value / cost ratio | Fund | "1.4x" |
 | Paid In to Committed Capital | Drawdown ratio | Fund | "60%" |
@@ -90,11 +90,11 @@ If the user asks for "IRR" and you find `XIRR` at Fund level, use `XIRR` and cla
 
 4. **owner_type matters:**
    - `owner_type = 'Fund'` → fund-level ratios (fund's overall XIRR, TVPI, DPI, RVPI, MOIC, etc.)
-   - `owner_type = 'Investor'` → LP-specific ratios across this investor's positions (IRR, MOIC over time)
-   - `owner_type = 'CapitalCommitment'` → ratios tied to a specific capital commitment
-   - `owner_type = 'AggregatePortfolioInvestment'` → ratios on the aggregate portfolio (IRR, MOIC at portfolio level)
-   - `owner_type = 'PortfolioCompany'` → ratios on individual portfolio companies
-   - **Fallback strategy:** for LP questions about "my returns" or general fund performance, try `'Fund'` first. If no rows match, try `'Investor'`. Only try other owner_types if the user explicitly asks about portfolio companies or aggregate portfolio.
+   - `owner_type = 'CapitalCommitment'` → the LP's own ratios, one set per commitment (XIRR, TVPI, DPI, RVPI) — this is "my returns"
+   - `owner_type = 'Investor'` → ratios on individual **portfolio companies** (IRR, MOIC, Value To Cost per portco). A portco is an `investors` row, so `owner_id` is the portco's `investors.id`; join `investors i ON i.id = fr.owner_id` for its name. These are **not** the LP's own ratios
+   - `owner_type = 'AggregatePortfolioInvestment'` → ratios on one holding (IRR, MOIC of a fund's position in a portco)
+   - There is no `'PortfolioCompany'` owner_type — a filter on it returns nothing
+   - **Fallback strategy:** for LP questions about "my returns", use `'CapitalCommitment'`; for general fund performance, `'Fund'`. Only use `'Investor'` / `'AggregatePortfolioInvestment'` when the user asks about portfolio companies or holdings.
 
 5. **Latest values** — use `latest = true` to get current values:
    ```
@@ -210,12 +210,13 @@ WHERE fr.entity_id IN ({ENTITY_ID})
 ORDER BY f.name, fr.name
 ```
 
-### Q: "What is my personal IRR across my investments?" (Investor-level)
+### Q: "What is the IRR and MOIC of each portfolio company?" (portco-level)
 
 ```sql
-SELECT f.name AS fund_name, fr.name AS ratio, fr.display_value, fr.end_date
+SELECT f.name AS fund_name, i.investor_name AS company, fr.name AS ratio, fr.display_value, fr.end_date
 FROM fund_ratios fr
-JOIN funds f ON f.id = fr.fund_id
+JOIN funds f     ON f.id = fr.fund_id
+JOIN investors i ON i.id = fr.owner_id
 WHERE fr.entity_id IN ({ENTITY_ID})
   AND fr.fund_id IN ({FUND_IDS})
   AND fr.name IN ('IRR', 'MOIC')

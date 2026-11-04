@@ -25,7 +25,12 @@ class NotesController < ApplicationController
 
     if owner_id.present? && !across_owners
       if owner_type.present?
-        owner = owner_type.safe_constantize&.find_by(id: owner_id)
+        # L14 — only a note owner type (Note::OWNER_TYPES); an unknown name is a 404 rather than an empty
+        # list (L14-14)
+        owner_class = ApplicationRecord.model_class_from_param(owner_type, allowed: Note::OWNER_TYPES)
+        raise ActiveRecord::RecordNotFound, "Unknown owner type" unless owner_class
+
+        owner = owner_class.find_by(id: owner_id)
         @notes = if owner.present? && policy(owner).show?
                    @notes.where(owner_id:, owner_type:)
                  else

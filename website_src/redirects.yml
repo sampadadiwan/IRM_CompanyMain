@@ -1,0 +1,53 @@
+# Permanent (301) redirects for URLs from the retired GoDaddy/WordPress site.
+#
+#   old path on caphive.com: new page on caphive.com
+#
+# Read by BOTH servers of the site — nginx in production
+# (config/deploy/templates/nginx_conf.erb) and lib/middleware/website.rb in
+# dev/test — through lib/middleware/website_redirects.rb, so one edit here covers both.
+# Production only picks a change up after `cap <stage> nginx:update`
+# (website:deploy does NOT re-render the nginx config).
+#
+# Matching is exact, case-insensitive, and ignores a trailing slash: the line
+# for /about-us also catches /about-us/ and /About-Us. The query string is
+# carried over to the new URL. Both sides must start with /.
+#
+# Where the list came from: the Wayback Machine CDX index for caphive.com,
+# pulled on 2026-10-30 — every HTML page the WordPress-era site published.
+# /blog/ and /case-study/ were NOT in the archive; they are convenience
+# aliases for the obvious index pages, kept because people type them.
+# To add more, check Search Console -> Pages -> "Not found (404)" or
+# web.archive.org/web/*/caphive.com/* and add one line per old URL.
+# `rake website:build` aborts if a target page does not exist.
+
+# Company and legal
+/about-us/: /about.html
+/contact-us/: /contact.html
+/privacy-policy/: /privacy.html
+/terms-of-service/: /terms.html
+
+# Product pages
+/products/: /products.html
+/capital-management-saas/: /products.html
+/fund-saas/: /funds.html
+/secondaries-and-deals-saas/: /deals-secondaries.html
+
+# Articles
+/resources/: /resources.html
+/blog/: /blog.html
+/ai-is-ready-but-are-you/: /ai-is-ready.html
+/operational-alpha-the-game-changer-aifs-cant-ignore/: /operational-alpha.html
+/outlook-for-alternative-investment-funds-aifs-in-india/: /outlook-for-aifs-in-india.html
+/portfolio-management-shift-from-reporting-to-real-time-insight/: /portfolio-real-time-insight.html
+/imperative-for-tech-powered-portfolio-management-for-vc-pe-funds/: /tech-powered-portfolio-management-vc.html
+/supercharging-venture-capital-and-private-equity-funds-with-new-age-tech/: /supercharging-vc-pe-with-new-age-tech.html
+/the-infrastructure-to-get-your-ai-agents-to-deliver/: /ai-agent-infrastructure.html
+
+# Case studies
+/case-study/: /case-studies.html
+/case-study/capital-drawdowns/: /case-capital-drawdowns.html
+/case-study/investor-onboarding/: /case-investor-onboarding.html
+/case-study/investor-statements/: /case-investor-statements.html
+/case-study/multi-currency-computations-reporting/: /case-multi-currency-close.html
+/case-study/portfolio-reports/: /case-portfolio-reports.html
+/case-study/supercharging-multi-party-transactions/: /case-multi-party-transactions.html

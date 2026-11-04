@@ -1,0 +1,57 @@
+<%# The Use this popup of one template: report name, and the fund when the template asks for one — required
+    for templates that add up money across funds (no All funds), optional otherwise (All funds first).
+    Create makes a new report. H4–H8, E1, E6, E8. locals: template %>
+<% key = template["key"] %>
+<% fund_error = @fund_error_key == key %>
+<div class="modal fade" id="templateModal_<%= key %>" tabindex="-1" aria-hidden="true" aria-labelledby="templateModalTitle_<%= key %>">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <%= form_tag create_report_builder_from_template_path(key: key), method: :post, class: "rb-template-form" do %>
+        <div class="modal-header">
+          <h5 class="modal-title" id="templateModalTitle_<%= key %>"><%= template["name"] %></h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p class="text-muted small"><%= template["question"] %></p>
+          <div class="mb-3">
+            <label class="form-label" for="template_name_<%= key %>">Report name</label>
+            <input type="text" name="name" id="template_name_<%= key %>" class="form-control" value="<%= template['name'] %>">
+            <% unless template["fund"] == "none" %>
+              <div class="form-text">Left as it is, the chosen fund's name is added.</div>
+            <% end %>
+          </div>
+          <% unless template["fund"] == "none" %>
+            <div class="mb-1">
+              <label class="form-label" for="template_fund_<%= key %>">Fund</label>
+              <select name="fund_id" id="template_fund_<%= key %>" class="form-select <%= 'is-invalid' if fund_error %>"
+                      <%= 'required' if template['fund'] == 'required' %>>
+                <% if template["fund"] == "required" %>
+                  <option value="">— choose a fund —</option>
+                <% else %>
+                  <option value="">All funds</option>
+                <% end %>
+                <% @funds.each do |fund| %>
+                  <option value="<%= fund.id %>"><%= fund.name %></option>
+                <% end %>
+              </select>
+              <% if fund_error %>
+                <div class="invalid-feedback d-block"><%= ReportBuilder::Starting::FUND_NEEDED %></div>
+              <% end %>
+              <div class="form-text">
+                <% if template["fund"] == "required" %>
+                  This template adds up amounts, so it needs one fund.
+                <% else %>
+                  With All funds, the report check warns if amounts in different currencies are added together.
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="ti ti-plus"></i> Create</button>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

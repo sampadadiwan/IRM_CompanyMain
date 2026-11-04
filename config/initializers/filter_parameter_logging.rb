@@ -11,3 +11,29 @@ Rails.application.config.filter_parameters += %i[
 # already covered by "token" above). Exact match for "code" — a partial match would also hide
 # call_code, country codes and every other *_code param in the logs.
 Rails.application.config.filter_parameters += [/\Acode\z/, :challenge]
+# E8: the Zoho Self Client grant code redeemed on the company's Zoho eSign panel (client_secret is
+# already covered by "secret" above).
+Rails.application.config.filter_parameters += [:grant_code]
+# L8-H / L8-1 (docs/security/security_review_2026_10.md, L8): KYC and bank PII, shown as [FILTERED]
+# in request logs, exception mail and ActiveRecord #inspect (Rails copies this list into
+# ActiveRecord::Base.filter_attributes). Symbols match as substrings, so the short keys are anchored
+# regexps: a bare :pan would also hide company_name, company_id and every other *pan* key, and a
+# bare :ifsc / :birth_date would not stay confined to the fields that hold the value.
+#   \Apan\z        — the PAN column on investors / entities, not company_*
+#   \Aifsc         — ifsc_code (and ifsc), not unrelated keys that merely contain the letters
+#   \Abirth_date\z — the date of birth, not e.g. birth_date_verified flags
+# The remaining keys are distinctive enough to match as substrings (aadhaar_number, passport_no, ...).
+Rails.application.config.filter_parameters += [
+  /\Apan\z/, /\Aifsc/, /\Abirth_date\z/,
+  :bank_account_number, :aadhaar, :pan_card_data, :address_proof_data, :bank_routing_info,
+  :virtual_bank_account, :passport
+]
+
+# L8-H — the list above reaches ActiveRecord #inspect only through Rails' "set_filter_attributes"
+# on_load hook, which copies config.filter_parameters as they stand when ActiveRecord::Base loads.
+# Here that is at Bundler.require time (devise-api's `Devise::Api::Token < ActiveRecord::Base`),
+# before any config/initializers run, so the copy was empty and #inspect printed PAN, passwords
+# and every other key in clear. Re-sync once every initializer has added its keys.
+Rails.application.config.after_initialize do
+  ActiveRecord::Base.filter_attributes |= Rails.application.config.filter_parameters
+end

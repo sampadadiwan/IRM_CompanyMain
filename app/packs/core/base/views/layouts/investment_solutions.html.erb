@@ -151,7 +151,8 @@
                                 .elementor-widget-text-editor.elementor-drop-cap-view-stacked .elementor-drop-cap{background-color:#69727d;color:#fff}.elementor-widget-text-editor.elementor-drop-cap-view-framed .elementor-drop-cap{color:#69727d;border:3px solid;background-color:transparent}.elementor-widget-text-editor:not(.elementor-drop-cap-view-default) .elementor-drop-cap{margin-top:8px}.elementor-widget-text-editor:not(.elementor-drop-cap-view-default) .elementor-drop-cap-letter{width:1em;height:1em}.elementor-widget-text-editor .elementor-drop-cap{float:left;text-align:center;line-height:1;font-size:50px}.elementor-widget-text-editor .elementor-drop-cap-letter{display:inline-block}
                               </style>
                               <p>
-                                <%= @ci_profile.details.html_safe %>
+                                <%# F3 — GP-authored rich text through the L13 sanitizer (CiWidgetHelper), never echoed as-is %>
+                                <%= ci_widget_rich_text(@ci_profile.details) %>
                               </p>
                             </div>
                           </div>

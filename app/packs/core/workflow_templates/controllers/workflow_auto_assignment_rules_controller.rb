@@ -59,7 +59,10 @@ class WorkflowAutoAssignmentRulesController < ApplicationController
   private
 
   def set_workflow_template
-    @workflow_template = WorkflowTemplate.find(params[:workflow_template_id])
+    # L12 — the template comes from the user's own firm's templates (another firm's id is a 404), so
+    # its name and type are never shown to, or rules attached for, an outsider. Tests L12-5, L12-H5 —
+    # features/security/security_review_2026_10_low.feature
+    @workflow_template = policy_scope(WorkflowTemplate).find(params[:workflow_template_id])
     @bread_crumbs = {
       "Workflow Templates": workflow_templates_path,
       @workflow_template.name => workflow_template_path(@workflow_template),

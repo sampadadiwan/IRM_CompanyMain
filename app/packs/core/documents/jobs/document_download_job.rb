@@ -46,7 +46,7 @@ class DocumentDownloadJob < ApplicationJob
         folder_ids = folder.descendant_ids
         folder_ids << folder_id
 
-        Zip::File.open(zip_filename, Zip::File::CREATE) do |zipfile|
+        Zip::File.open(zip_filename, create: true) do |zipfile|
           add_documents(zipfile, user, folder_ids:, entity_id:, document_ids:, same_entity:)
         end
 

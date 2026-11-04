@@ -24,6 +24,10 @@ class KanbanBoardPolicy < ApplicationPolicy
   end
 
   def create?
+    # M15 — a new plain board has no owner until it is saved (BoardsController#create then makes it its
+    # own owner), so it gets the plain-board rule rather than an owner lookup (M15-1, M15-H)
+    return permissioned_employee? && user.enable_kanban if record.new_record? && record.owner.nil?
+
     show?
   end
 

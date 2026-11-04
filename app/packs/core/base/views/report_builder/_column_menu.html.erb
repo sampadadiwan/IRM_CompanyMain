@@ -1,0 +1,73 @@
+<%# One preview column header with its menu (builder only): Rename, Total, Move, Remove — or, for a formula,
+    Move and Edit in Formulas; a pivot's columns move as one block. H5, H6, E4, E5, E6.
+    locals: col (GVP or ReportBuilderDynamicColumn), ordered (GVPs in order), label %>
+<%
+  key        = col.key.to_s.split(";").first.strip
+  formula    = @config.formulas.any? { |f| f[:key].to_s == key }
+  pivot_rel  = key.include?("__pivot__") ? @config.column_type.relation_for(key.split("__pivot__").first) : nil
+  # The row in the column order this header moves: itself, or its formula / pivot position row
+  gvp = if formula then ordered.find { |g| g.key == "formula:#{key}" }
+        elsif pivot_rel then ordered.find { |g| g.key == "pivot:#{pivot_rel}" }
+        elsif col.respond_to?(:id) then col
+        end
+  index     = gvp && ordered.index(gvp)
+  dotted    = !formula && !pivot_rel && key.include?(".")
+  # E5 — one-per-row related data shows its value as it is: no total
+  many_rows = dotted && @config.column_type.strategy_for(@config.column_type.relation_for(key)) != :anchored_one
+  form_opts = { data: { turbo_frame: "report_builder_settings" } }
+%>
+<div class="dropdown">
+  <button type="button" class="btn btn-link p-0 text-reset text-decoration-none fw-semibold dropdown-toggle text-nowrap"
+          data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false"
+          data-bs-popper-config='{"strategy":"fixed"}'
+          aria-label="<%= label %> column menu"><%= label %></button>
+  <div class="dropdown-menu p-2 rb-column-menu">
+    <% if formula %>
+      <button type="button" class="dropdown-item" data-action="click->report-builder#openTab" data-tab="formulas">
+        <i class="ti ti-math-function me-1"></i> Edit in Formulas
+      </button>
+    <% elsif gvp && !pivot_rel %>
+      <%= form_tag update_report_builder_column_label_path(@report, gvp_id: gvp.id), method: :patch, class: "mb-2", **form_opts do %>
+        <label class="form-label small mb-1" for="rb_rename_<%= gvp.id %>">Rename</label>
+        <div class="input-group input-group-sm">
+          <input type="text" name="label" id="rb_rename_<%= gvp.id %>" class="form-control" value="<%= label %>"
+                 placeholder="<%= gvp.name %>">
+          <button type="submit" class="btn btn-outline-primary">Save</button>
+        </div>
+      <% end %>
+      <% if many_rows %>
+        <% base = @config.column_type.base_type(key) %>
+        <%= form_tag update_report_builder_aggregate_path(@report), method: :patch, class: "mb-2", **form_opts do %>
+          <%= hidden_field_tag :key, key, id: nil %>
+          <label class="form-label small mb-1" for="rb_total_<%= gvp.id %>">Total</label>
+          <select name="aggregate" id="rb_total_<%= gvp.id %>" class="form-select form-select-sm" onchange="this.form.requestSubmit()">
+            <% ReportBuilderColumnType::AGGREGATES.each do |agg| %>
+              <option value="<%= agg %>" <%= 'selected' if @config.effective_aggregate(key) == agg %>><%= ReportBuilderColumnType.aggregate_label(agg, base) %></option>
+            <% end %>
+          </select>
+        <% end %>
+      <% end %>
+    <% end %>
+
+    <% if gvp %>
+      <div class="d-flex gap-1 mb-2">
+        <%= button_to move_report_builder_column_path(@report, gvp_id: gvp.id), method: :patch, params: { direction: "left" },
+              class: "btn btn-sm btn-outline-secondary", form: form_opts, disabled: index.zero?,
+              title: "Move left", "aria-label": "Move #{label} left" do %>
+          <i class="ti ti-arrow-left"></i>
+        <% end %>
+        <%= button_to move_report_builder_column_path(@report, gvp_id: gvp.id), method: :patch, params: { direction: "right" },
+              class: "btn btn-sm btn-outline-secondary", form: form_opts, disabled: index == ordered.size - 1,
+              title: "Move right", "aria-label": "Move #{label} right" do %>
+          <i class="ti ti-arrow-right"></i>
+        <% end %>
+      </div>
+      <% unless formula || pivot_rel %>
+        <%= button_to remove_report_builder_column_path(@report, gvp_id: gvp.id), method: :delete,
+              class: "btn btn-sm btn-outline-danger w-100", form: form_opts do %>
+          <i class="ti ti-trash"></i> Remove
+        <% end %>
+      <% end %>
+    <% end %>
+  </div>
+</div>

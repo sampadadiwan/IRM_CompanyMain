@@ -25,7 +25,8 @@ module AccountEntryAllocation
         ae = AccountEntrySqlite.new(
           name: fund_formula.name,
           fund_formula_id: fund_formula.id,
-          amount_cents: safe_eval(fund_formula.formula, binding)
+          # C2 — the custom_field profile also allows writing capital_commitment's own properties
+          amount_cents: safe_eval(fund_formula.formula, binding, profile: "custom_field")
         )
 
         commitment_cache.add_to_computed_fields_cache(ctx, capital_commitment, ae)

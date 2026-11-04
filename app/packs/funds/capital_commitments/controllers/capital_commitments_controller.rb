@@ -93,8 +93,15 @@ class CapitalCommitmentsController < ApplicationController
     end
   end
 
+  # M10 — the only report the commitment page links to. Any other value is a 404, never a render of a
+  # template named by the request (M10-X1, M10-H1)
+  ALLOWED_REPORTS = %w[lp_statement].freeze
+
   def report
-    render params[:report]
+    report = ALLOWED_REPORTS.find { |name| name == params[:report].to_s }
+    return head(:not_found) unless report
+
+    render report
   end
 
   # GET /capital_commitments/1 or /capital_commitments/1.json

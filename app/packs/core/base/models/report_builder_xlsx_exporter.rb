@@ -1,47 +1,50 @@
+# Writes a Report Builder report to Excel: one "Data" sheet with the report
+# name, a filter summary, headers, the rows and — as its last row — the bold
+# totals row. Values go through ReportBuilderValueFormatter, so amounts and
+# dates are real number and date cells (sorting and SUM work in Excel) and
+# look the same as on screen; totals come from ReportBuilderTotals.
+#
+# Worked examples H16, H19 — openspec/changes/report-builder-trust/design.md#worked-examples
 class ReportBuilderXlsxExporter
   HEADER_COLOR  = "2D5BA3".freeze
   ALT_ROW_COLOR = "F0F4F8".freeze
-  TOTALABLE_AGGREGATES = %w[sum count avg].freeze
 
   def initialize(report:, rows:, columns: nil)
-    @report  = report
-    @rows    = rows
-    @config  = ReportBuilderConfig.new(report.template)
-    @columns = columns || report.grid_view_preferences.reorder(:sequence, :id).to_a
+    @report    = report
+    @rows      = rows
+    @config    = ReportBuilderConfig.new(report.template)
+    @columns   = columns || report.grid_view_preferences.reorder(:sequence, :id).to_a
+    @formatter = ReportBuilderValueFormatter.new(config: @config, entity: report.entity)
+    @styles    = {}
   end
 
   # Returns raw xlsx binary string.
   def generate
     package = Axlsx::Package.new
-    wb      = package.workbook
-
-    add_data_sheet(wb)
-    add_totals_sheet(wb) if any_numeric_aggregates?
-
+    add_data_sheet(package.workbook)
     package.to_stream.read
   end
 
   private
 
-  attr_reader :report, :rows, :config, :columns
+  attr_reader :report, :rows, :config, :columns, :formatter
 
-  # ── Sheets ───────────────────────────────────────────────────────────────
+  # ── Sheet ────────────────────────────────────────────────────────────────
 
   def add_data_sheet(wb)
     wb.add_worksheet(name: "Data") do |sheet|
       col_count = columns.length
 
       # Row 1: report name
-      sheet.add_row [report.name], style: [wb.styles.add_style(b: true, sz: 13)]
+      sheet.add_row [report.name], style: [style(wb, b: true, sz: 13)]
       sheet.merge_cells("A1:#{col_letter(col_count)}1") if col_count > 1
 
       # Row 2: filter summary
-      sheet.add_row [filter_summary], style: [wb.styles.add_style(sz: 9, fg_color: "888888")]
+      sheet.add_row [filter_summary], style: [style(wb, sz: 9, fg_color: "888888")]
       sheet.merge_cells("A2:#{col_letter(col_count)}2") if col_count > 1
 
       # Row 3: headers
-      header_styles = columns.map { |gvp| header_style(wb, gvp) }
-      sheet.add_row(column_headers, style: header_styles)
+      sheet.add_row(column_headers, style: columns.map { |c| header_style(wb, c) })
       sheet.sheet_view.pane do |p|
         p.top_left_cell = "A4"
         p.state         = :frozen
@@ -49,141 +52,105 @@ class ReportBuilderXlsxExporter
       end
       sheet.auto_filter = "A3:#{col_letter(col_count)}3"
 
-      # Data rows
-      current_group = nil
-      group_col = config.group_rows_by
+      add_data_rows(wb, sheet, col_count)
+      add_totals_row(wb, sheet)
 
-      # Sort rows by group if grouping is enabled
-      sorted_rows = if group_col.present?
-                      rows.sort_by { |r| r[group_col].to_s }
-                    else
-                      rows
-                    end
-
-      sorted_rows.each_with_index do |row_data, idx|
-        if group_col.present?
-          group_val = row_data[group_col].to_s
-          if group_val != current_group
-            # Add a group header row
-            sheet.add_row [group_val], style: bold_style(wb)
-            sheet.merge_cells("A#{sheet.rows.size}:#{col_letter(col_count)}#{sheet.rows.size}")
-            current_group = group_val
-          end
-        end
-
-        values = columns.map { |gvp| formatted_value(row_data[gvp.key], gvp) }
-        styles = columns.map { |gvp| data_style(wb, gvp, idx) }
-
-        row_opts = {}
-        row_opts[:outline_level] = 1 if group_col.present?
-
-        sheet.add_row(values, style: styles, **row_opts)
-      end
-
-      # Auto-fit column widths (sample first 200 rows + header)
-      columns.each_with_index do |gvp, i|
-        sample = [column_headers[i].to_s] +
-                 rows.first(200).map { |r| formatted_value(r[gvp.key], gvp).to_s }
+      # Auto-fit column widths from the header and up to 200 displayed values
+      columns.each_with_index do |col, i|
+        sample = [column_headers[i].to_s] + rows.first(200).map { |r| formatter.display(r[col.key], col) }
         sheet.column_info[i].width = [sample.map(&:length).max.to_i + 2, 8].max
       end
     end
   end
 
-  def add_totals_sheet(wb)
-    wb.add_worksheet(name: "Totals") do |sheet|
-      sheet.add_row(column_headers, style: columns.map { |gvp| header_style(wb, gvp) })
+  def add_data_rows(wb, sheet, col_count)
+    group_col     = config.group_rows_by
+    current_group = nil
 
-      totals = columns.map do |gvp|
-        agg = aggregate_type_for(gvp)
-        %w[sum count].include?(agg) ? rows.sum { |r| r[gvp.key].to_f } : nil
+    # Sort rows by group if grouping is enabled
+    sorted_rows = group_col.present? ? rows.sort_by { |r| r[group_col].to_s } : rows
+
+    sorted_rows.each_with_index do |row_data, idx|
+      if group_col.present?
+        group_val = row_data[group_col].to_s
+        if group_val != current_group
+          # A group header row starts each collapsible group
+          sheet.add_row [group_val], style: style(wb, b: true, sz: 13)
+          sheet.merge_cells("A#{sheet.rows.size}:#{col_letter(col_count)}#{sheet.rows.size}")
+          current_group = group_val
+        end
       end
 
-      sheet.add_row(totals)
+      # [value, number format] per cell — numbers and dates stay typed (H16)
+      cells  = columns.map { |c| formatter.xlsx(row_data[c.key], c) }
+      styles = columns.each_with_index.map { |c, i| cell_style(wb, c, cells[i][1], alt: idx.odd?) }
+
+      row_opts = {}
+      row_opts[:outline_level] = 1 if group_col.present?
+      sheet.add_row(cells.map(&:first), style: styles, **row_opts)
     end
   end
 
-  # Aggregate type for a column, whether it's a regular GVP-configured
-  # aggregate (looked up in config.aggregates) or a dynamic pivot column —
-  # pivot columns aren't in config.aggregates at all, their aggregate type
-  # lives on the join's own pivot config instead (join[:pivot][:aggregate]).
-  # Without this, pivot columns never got a total even when they held the
-  # exact same kind of summed/counted values a regular aggregate column does.
-  def aggregate_type_for(gvp)
-    return config.aggregate_for(gvp.key.split(";").first.strip) unless gvp.is_a?(ReportBuilderDynamicColumn) && gvp.pivot?
+  # The bold totals row, last on the sheet, over every exported row (H19).
+  # Formula columns are recalculated from the totals, not summed.
+  def add_totals_row(wb, sheet)
+    totals = ReportBuilderTotals.new(rows: rows, columns: columns, config: config, scope: :all).call
+    return unless totals
 
-    pivot_join = config.joins.find { |j| gvp.key.start_with?("#{j[:relation]}.") && j[:pivot].present? }
-    pivot_join && (pivot_join[:pivot][:aggregate].presence || "sum")
+    cells = columns.map { |c| formatter.xlsx(totals[c.key], c) }
+    # The label goes in the first cell unless that column has a total of its own
+    cells[0] = ["Total", nil] if cells.any? && cells[0][0].nil?
+    styles = columns.each_with_index.map { |c, i| cell_style(wb, c, cells[i][1], bold: true) }
+    sheet.add_row(cells.map(&:first), style: styles)
   end
 
   # ── Column headers ────────────────────────────────────────────────────────
 
   def column_headers
-    columns.map do |gvp|
-      label = (gvp.label.presence || gvp.name.to_s).split(";").first.strip
-      agg   = config.aggregate_for(gvp.key.split(";").first.strip)
-      agg ? "#{label} (#{agg})" : label
+    @column_headers ||= columns.map do |col|
+      label = (col.label.presence || col.name.to_s).split(";").first.strip
+      agg   = header_aggregate(col)
+      agg ? "#{label} (#{ReportBuilderColumnType.aggregate_label(agg, config.column_type.base_type(clean_key(col)))})" : label
     end
   end
 
-  # ── Styles ───────────────────────────────────────────────────────────────
+  # Only many-per-row related columns carry a total in their header
+  def header_aggregate(col)
+    key = clean_key(col)
+    return nil if col.is_a?(ReportBuilderDynamicColumn) || key.exclude?(".")
+    return nil if config.column_type.strategy_for(config.column_type.relation_for(key)) == :anchored_one
 
-  def header_style(wb, gvp)
-    wb.styles.add_style(
-      b: true,
-      bg_color: HEADER_COLOR,
-      fg_color: "FFFFFF",
-      alignment: { horizontal: numeric_col?(gvp) ? :right : :left }
-    )
+    config.effective_aggregate(key)
   end
 
-  def data_style(wb, gvp, row_idx)
-    opts = { alignment: { horizontal: numeric_col?(gvp) ? :right : :left } }
-    opts[:format_code] = number_format_code(gvp) if numeric_col?(gvp)
-    opts[:bg_color]    = ALT_ROW_COLOR if row_idx.odd?
-    wb.styles.add_style(opts)
+  def clean_key(col)
+    col.key.to_s.split(";").first.to_s.strip
   end
 
-  # A plain "#,##0.00" cell format, prefixed with the report's currency symbol
-  # (Excel number-format syntax, e.g. `"$"#,##0.00`) for monetized columns when
-  # a currency is configured. Unlike the HTML view, this keeps the cell a real
-  # number (not a string) — SUM formulas, sorting, and the Totals sheet still
-  # work. No currency configured (today's default) => identical to before.
-  def number_format_code(gvp)
-    symbol = config.currency_symbol
-    clean_key = gvp.key.split(";").first.strip.split("__pivot__").first
-    return "#,##0.00" unless symbol.present? && config.monetized?(clean_key)
+  # ── Styles (cached: one style per distinct look, not one per cell) ───────
 
-    "\"#{symbol}\"#,##0.00"
+  def header_style(wb, col)
+    style(wb, b: true, bg_color: HEADER_COLOR, fg_color: "FFFFFF",
+              alignment: { horizontal: numeric?(col) ? :right : :left })
   end
 
-  def bold_style(wb)
-    wb.styles.add_style(b: true, sz: 13)
+  def cell_style(wb, col, format_code, alt: false, bold: false)
+    opts = { alignment: { horizontal: numeric?(col) ? :right : :left } }
+    opts[:format_code] = format_code if format_code
+    opts[:bg_color]    = ALT_ROW_COLOR if alt
+    opts[:b]           = true if bold
+    style(wb, **opts)
   end
 
-  # ── Value formatting ──────────────────────────────────────────────────────
+  def style(wb, **opts)
+    @styles[opts] ||= wb.styles.add_style(opts)
+  end
 
-  def formatted_value(val, gvp)
-    return nil if val.nil?
-
-    case gvp.data_type&.downcase
-    when "date"     then val.respond_to?(:strftime) ? val.strftime("%d-%b-%Y") : val.to_s
-    when "datetime" then val.respond_to?(:strftime) ? val.strftime("%d-%b-%Y %H:%M") : val.to_s
-    when "boolean"  then val ? "Yes" : "No"
-    else            val
-    end
+  def numeric?(col)
+    formatter.align(col) == "text-end"
   end
 
   # ── Helpers ───────────────────────────────────────────────────────────────
-
-  def numeric_col?(gvp)
-    gvp.data_type.to_s.in?(%w[Decimal Float Integer decimal float integer]) ||
-      gvp.key.to_s.include?("num-col") ||
-      gvp.key.to_s.include?("__pivot__")
-  end
-
-  def any_numeric_aggregates?
-    columns.any? { |gvp| TOTALABLE_AGGREGATES.include?(aggregate_type_for(gvp)) }
-  end
 
   def filter_summary
     parts = config.root_filters.map do |key, val|
@@ -196,7 +163,7 @@ class ReportBuilderXlsxExporter
       end
     end
 
-    ts = "Generated: #{Time.current.strftime('%d-%b-%Y %H:%M')}"
+    ts = "Generated: #{I18n.l(Time.current, format: :abbr_date_time)}"
     parts.any? ? "#{ts} | Filters: #{parts.join(' | ')}" : ts
   end
 

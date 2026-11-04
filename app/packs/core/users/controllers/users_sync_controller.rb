@@ -17,6 +17,9 @@ class UsersSyncController < ActionController::API
 
   EXCLUDED_ENTITY_ATTRS = %w[id created_at updated_at].freeze
 
+  # L9-1 — how long a used signature stays claimed (see verify_hmac!)
+  SIGNATURE_REPLAY_TTL = 10.minutes
+
   # POST /internal/sync/users
   # Body: { action:"UPSERT", event_id, as_of, origin_region, target_region, ccf_hex,
   #         user:{...}, entity:{...}, roles:[{name}] }
@@ -38,6 +41,13 @@ class UsersSyncController < ActionController::API
     # Idempotency (target-side)
     return render json: { applied: false, reason: "no_change", ccf_hex_applied: user.last_synced_ccf_hex }, status: :ok if user.last_synced_ccf_hex.present? && user.last_synced_ccf_hex == ccf_hex
 
+    # L9-2 — an UPSERT built before the one already applied would roll the user back (an old
+    # request replayed, or a slow one overtaken by a newer edit). last_synced_at holds the as_of of
+    # the event applied last (stamped below), so both sides of the comparison are the origin's clock.
+    as_of = parse_as_of(payload["as_of"])
+    return render json: { error: "invalid_as_of" }, status: :bad_request if as_of == :invalid
+    return render json: { applied: false, reason: "stale_event", last_applied_as_of: user.last_synced_at&.utc&.iso8601(3) }, status: :conflict if as_of && user.last_synced_at && as_of < user.last_synced_at
+
     # ---- Entity: full upsert ----
     if (ejson = payload["entity"]).present?
       entity = find_or_build_entity(ejson)
@@ -55,7 +65,9 @@ class UsersSyncController < ActionController::API
     # Persist + stamp digest atomically
     User.transaction do
       user.save!
-      user.update_columns(last_synced_ccf_hex: ccf_hex, last_synced_at: Time.current)
+      # L9-2 — the event's own as_of, so the next UPSERT is ordered against it (senders that send
+      # no as_of keep the old apply-time stamp)
+      user.update_columns(last_synced_ccf_hex: ccf_hex, last_synced_at: as_of || Time.current)
     end
 
     render json: { applied: true, ccf_hex_applied: ccf_hex, event_id: payload["event_id"] }, status: :ok
@@ -123,7 +135,25 @@ class UsersSyncController < ActionController::API
     data   = "#{request.request_method.upcase}\n#{request.path}\n#{ts}\n#{Digest::SHA256.hexdigest(request.raw_post.to_s)}"
     expect = OpenSSL::HMAC.hexdigest("SHA256", secret, data)
 
-    render json: { error: "bad_signature" }, status: :forbidden unless ActiveSupport::SecurityUtils.secure_compare(expect, sig)
+    return render json: { error: "bad_signature" }, status: :forbidden unless ActiveSupport::SecurityUtils.secure_compare(expect, sig)
+
+    # L9-1 — the timestamp window alone let a captured request be replayed for 300 s. A signature is
+    # accepted once: claimed for 10 minutes (longer than the ±300 s window it could be valid in), so
+    # a replay is refused with 409. SyncApiClient re-signs every attempt (job retries build a new
+    # envelope and timestamp), so a genuine retry never collides. write(unless_exist:) is
+    # first-writer-wins, so two concurrent copies cannot both pass.
+    # docs/security/security_review_2026_10.md "Authentication and session — Medium / Low", L9.
+    claimed = Rails.cache.write("users_sync:signature:#{sig}", true, unless_exist: true, expires_in: SIGNATURE_REPLAY_TTL)
+    render json: { error: "replayed_request" }, status: :conflict unless claimed
+  end
+
+  # The UPSERT's as_of (ISO 8601). nil when the sender sent none, :invalid when it cannot be read.
+  def parse_as_of(value)
+    return nil if value.blank?
+
+    Time.iso8601(value.to_s)
+  rescue ArgumentError
+    :invalid
   end
 
   def parse_json_body!

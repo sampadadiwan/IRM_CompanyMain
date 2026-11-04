@@ -74,14 +74,15 @@ module AccountEntryAllocation
       UserAlert.new(user_id:, message:, level:).broadcast if user_id.present?
     end
 
-    # rubocop:disable Security/Eval
     # rubocop:disable Lint/RescueException
-    def safe_eval(eval_string, bdg)
+    # @param profile [String] the FormulaSandbox profile: "fund_formula", or "custom_field" for
+    #   GenerateCustomField formulas (which may also write the commitment's own custom fields)
+    def safe_eval(eval_string, bdg, profile: "fund_formula")
       Rails.logger.debug { "AllocationBaseOperation: eval_string = #{eval_string}" }
-      # Reject code-execution constructs before evaluating. eval_string is an interpolated fund
-      # formula; guarding here protects the choke point even if the source formula bypassed
-      # FundFormula#formula_kosher? at write time.
-      result = eval(ApplicationRecord.safe_eval!(eval_string, context: "AllocationBaseOperation"), bdg, __FILE__, __LINE__)
+      # C2 — FormulaSandbox runs safe_eval! (every mode), then in log / enforce mode checks the
+      # formula's parse tree, parsed with this binding's own locals, against the profile's allowlist.
+      # Guarding here protects the choke point even if the source formula skipped validation.
+      result = FormulaSandbox.evaluate(eval_string, bdg, profile:, context: "AllocationBaseOperation", file: __FILE__, line: __LINE__)
 
       # SQLite silently stores Float::INFINITY and NaN but MySQL DECIMAL columns reject them,
       # causing the migration to primary DB to fail. Raise here with formula context instead.
@@ -99,13 +100,17 @@ module AccountEntryAllocation
       msg = "AllocationBaseOperation: SkipRule in eval #{eval_string}: #{e.message}"
       Rails.logger.error msg
       raise e
+    rescue FormulaSandbox::Rejected
+      # C2-2 — a refused formula is a security refusal: raised as itself, never evaluated further
+      # (the variable dump below would evaluate parts of it)
+      raise
     rescue Exception => e
       # We should try and print out the variables used in the eval_string
       variables_used = ""
       begin
         FundFormula.new.interpolate_formula(eval_string:).each do |var|
-          # var is a formula variable name; guard before eval-ing it in this debug/error path.
-          variables_used += " #{var} = #{bdg.eval(ApplicationRecord.safe_eval!(var, context: 'AllocationBaseOperation var'))}, "
+          # var is a formula variable name; it goes through the same sandbox before being read
+          variables_used += " #{var} = #{FormulaSandbox.evaluate(var, bdg, profile:, context: 'AllocationBaseOperation var')}, "
         end
       rescue Exception => e
         variables_used = "Error in getting variables used: #{e.message}"
@@ -116,6 +121,5 @@ module AccountEntryAllocation
       raise msg
     end
     # rubocop:enable Lint/RescueException
-    # rubocop:enable Security/Eval
   end
 end

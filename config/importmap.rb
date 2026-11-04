@@ -41,10 +41,6 @@ pin "highcharts/modules/accessibility", to: "highcharts-accessibility.js"
 pin "chart.js", preload: true # @4.5.1
 pin "xlsx", to: "xlsx.js" # @0.20.3 (SheetJS CDN build; npm is stuck at 0.18.5)
 pin "pptxgenjs" # @4.0.1
-pin "reveal.js" # @5.2.1
-pin "reveal.js/plugin/highlight/highlight.esm.js", to: "reveal.js--plugin--highlight--highlight.esm.js.js" # @5.2.1
-pin "reveal.js/plugin/markdown/markdown.esm.js", to: "reveal.js--plugin--markdown--markdown.esm.js.js" # @5.2.1
-pin "reveal.js/plugin/notes/notes.esm.js", to: "reveal.js--plugin--notes--notes.esm.js.js" # @5.2.1
 pin "dompurify" # @3.4.12
 pin "marked" # @18.0.7
 pin "mermaid", to: "https://cdn.jsdelivr.net/npm/mermaid@11.16.0/dist/mermaid.esm.min.mjs"

@@ -35,10 +35,6 @@ class SecondarySaleCompanyAdminPolicy < SaleBasePolicy
     permissioned_employee?
   end
 
-  def report?
-    show?
-  end
-
   def create?
     user.enable_secondary_sale && permissioned_employee?(:create)
   end

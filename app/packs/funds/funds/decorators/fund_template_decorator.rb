@@ -36,7 +36,8 @@ class FundTemplateDecorator < TemplateDecorator
       # In cases where the resultant attribute is not a Money object but a numeric value, we convert it to Money using the currency of the fund before formatting it.
       # This is to handle cases where we might be summing up cents values directly from the database which would return a numeric value instead of a Money object.
       attr_name = method_name.to_s.gsub("money_", "")
-      res = send(attr_name)
+      # M27: a template-named reader only (TemplateDecorator.template_reader!), never an arbitrary send
+      res = template_read(attr_name)
 
       res = Money.new(res, @currency) if !res.is_a?(Money) && res.is_a?(Numeric)
 

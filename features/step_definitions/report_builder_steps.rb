@@ -143,6 +143,9 @@ end
 Given("a report builder entity and user") do
   @entity = build_fund_entity
   @user   = FactoryBot.create(:user, entity: @entity, permissions: User.permissions.keys)
+  # M16 — the engine now lists only the rows in the user's Pundit scope; the firm's company admin
+  # sees every row of the firm, which is what these scenarios assert on
+  @user.add_role(:company_admin)
 end
 
 Given("that entity has an investor {string}") do |name|
@@ -174,8 +177,16 @@ end
 # ─────────────────────────────────────────────────────────────────────────────
 
 Given("a report builder config with root model {string}") do |model|
-  if @entity && @user
+  if @entity && @user && ReportBuilderModelDiscovery.roots.any? { |klass| klass.name == model }
     @report = build_report(entity: @entity, user: @user, root_model: model, columns: [])
+    @config = ReportBuilderConfig.new(@report.template)
+  elsif @entity && @user
+    # M16 — Report now refuses a root that is not a discovery root, so a report stored before that
+    # validation is written past it, as such a row would exist in the database
+    @report = Report.new(entity: @entity, user: @user, name: "Test Report", report_builder: true,
+                         url: "/report_builder", curr_role: @user.curr_role,
+                         template: { version: 1, root_model: model, joins: [], aggregates: {} })
+    @report.save!(validate: false)
     @config = ReportBuilderConfig.new(@report.template)
   else
     @config = ReportBuilderConfig.new("root_model" => model)
@@ -333,17 +344,17 @@ Given("the report is sorted by {string} {string}") do |col, dir|
 end
 
 When("I run the report engine") do
-  @engine = ReportBuilderQueryEngine.new(report: @report, entity: @entity)
+  @engine = ReportBuilderQueryEngine.new(report: @report, entity: @entity, user: @user)
   @rows   = @engine.run
 end
 
 When("I run the report engine with a limit of {int}") do |limit|
-  @engine = ReportBuilderQueryEngine.new(report: @report, entity: @entity)
+  @engine = ReportBuilderQueryEngine.new(report: @report, entity: @entity, user: @user)
   @rows   = @engine.run(limit: limit)
 end
 
 When("I count rows via the report engine") do
-  @engine    = ReportBuilderQueryEngine.new(report: @report, entity: @entity)
+  @engine    = ReportBuilderQueryEngine.new(report: @report, entity: @entity, user: @user)
   @row_count = @engine.count
 end
 
@@ -402,7 +413,8 @@ When("I aggregate {string} on capital commitments for that investor using {strin
     join_config: join_config,
     root_ids:    [@investor.id],
     aggregates:  aggregates,
-    gvp_keys:    [gvp_key]
+    gvp_keys:    [gvp_key],
+    user:        @user
   )
   @agg_result = aggregator.call
 end
@@ -415,7 +427,8 @@ When("I aggregate {string} on capital commitments with empty root ids") do |col|
     join_config: join_config,
     root_ids:    [],
     aggregates:  { gvp_key => "count" },
-    gvp_keys:    [gvp_key]
+    gvp_keys:    [gvp_key],
+    user:        @user
   ).call
 end
 
@@ -441,7 +454,8 @@ When("I aggregate {string} on investor KYCs for that investor using {string}") d
     join_config: join_config,
     root_ids:    [@investor.id],
     aggregates:  aggregates,
-    gvp_keys:    [gvp_key]
+    gvp_keys:    [gvp_key],
+    user:        @user
   )
   @agg_result = aggregator.call
 end
@@ -464,7 +478,8 @@ When("I aggregate {string} on capital commitments for both investors using {stri
     join_config: join_config,
     root_ids:    [@investor.id, @investor2.id],
     aggregates:  aggregates,
-    gvp_keys:    [gvp_key]
+    gvp_keys:    [gvp_key],
+    user:        @user
   )
   @agg_result = aggregator.call
 end
@@ -508,7 +523,8 @@ When("I aggregate capital commitments with child filter {string} = {string} usin
     join_config: join_config,
     root_ids:    [@investor.id],
     aggregates:  { gvp_key => agg },
-    gvp_keys:    [gvp_key]
+    gvp_keys:    [gvp_key],
+    user:        @user
   )
   @agg_result = aggregator.call
 end
@@ -715,8 +731,10 @@ When("I add the formula with expression {string} and label {string}") do |expr, 
 end
 
 When("I configure the schedule with frequency {string} and recipient {string}") do |freq, email|
+  # outsiders_ok: the address isn't a user of the company, and the save
+  # refuses outsiders until they are confirmed (report-builder-delivery X4)
   rb_patch "/report_builder/#{@created_report.id}/schedule",
-           params: { frequency: freq, recipients: email, enabled: "true" }
+           params: { frequency: freq, recipients: email, enabled: "true", outsiders_ok: "1" }
 end
 
 When("I request the preview for the report") do
@@ -931,28 +949,6 @@ end
 
 Then("the export should not include a {string} sheet") do |sheet_name|
   expect(@export_sheet.sheets).not_to include(sheet_name)
-end
-
-# The Totals sheet (ReportBuilderXlsxExporter#add_totals_sheet) is always
-# exactly 2 rows: column headers, then one row of totals.
-Then("the {string} sheet total for the column labeled {string} should equal {string}") do |sheet_name, label_substring, expected|
-  @export_sheet.default_sheet = sheet_name
-  headers = @export_sheet.row(1)
-  idx     = headers.index { |h| h.to_s.include?(label_substring) }
-  raise "No header containing #{label_substring.inspect} among #{headers.inspect}" unless idx
-
-  actual = @export_sheet.row(2)[idx]
-  expect(actual.to_f).to eq(expected.to_f)
-end
-
-Then("the {string} sheet should have no total for the column labeled {string}") do |sheet_name, label_substring|
-  @export_sheet.default_sheet = sheet_name
-  headers = @export_sheet.row(1)
-  idx     = headers.index { |h| h.to_s.include?(label_substring) }
-  raise "No header containing #{label_substring.inspect} among #{headers.inspect}" unless idx
-
-  actual = @export_sheet.row(2)[idx]
-  expect(actual).to be_nil
 end
 
 # Data sheet layout (ReportBuilderXlsxExporter#add_data_sheet): row 1 report

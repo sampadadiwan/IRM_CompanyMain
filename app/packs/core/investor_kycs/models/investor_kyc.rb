@@ -79,6 +79,18 @@ class InvestorKyc < ApplicationRecord
   include WithSupportAgent
 
   belongs_to :investor
+  # M28 — a KYC never moves to another investor (merges use update_all), and the investor it is
+  # created for is in the KYC's firm. attr_readonly alone would drop the column from the UPDATE but
+  # still run the callbacks (set_investor_name) with the other investor, so a change is refused too.
+  # Tests M28-3, M28-4, M28-H3 — features/security/security_review_2026_10_medium.feature
+  attr_readonly :investor_id
+  validate(if: :will_save_change_to_investor_id?) do
+    # An existing KYC: the investor cannot change
+    next errors.add(:investor, "cannot be changed") if persisted?
+
+    # A new KYC: its investor must be in the KYC's firm
+    validate_parent_in_own_firm(:investor)
+  end
   belongs_to :entity
   # These are the capital_commitments that are linked to this KYC
   has_many :capital_commitments

@@ -73,17 +73,17 @@ All FM users within an enabled entity can access the support chat:
 
 When you navigate to your FM dashboard, you will see a floating chat bubble in the bottom-right corner of the screen:
 
-- A speech-tail label reads **"Need help? Ask Customer Support Agent"**
-- Next to it is a circular blue button with a robot icon
+- A label reads **"Need help? Ask Customer Support Agent"**
+- Next to it is a round blue button with a chat icon
 
-**To open the chat**, click anywhere on the bubble or the blue button. A chat panel will slide up from the bottom-right corner.
+**To open the chat**, click anywhere on the bubble or the blue button. A chat window opens in the bottom-right corner. It looks and works like CapHive's other AI chats: your questions in grey bubbles on the right, answers as plain text with tables in bordered cards, and a rounded question box at the bottom.
 
-**To close the chat**, click the **X** (Close) button in the chat panel header. The bubble is hidden while the panel is open and reappears when you close it.
+**To close the chat**, click the **X** (Close) button in the window's header. The bubble is hidden while the window is open and reappears when you close it.
 
-The chat panel can also be:
-- **Maximised** — Click the arrows icon (Maximize) to expand the panel to full screen. Click again to restore.
-- **Dragged** — Click and hold the blue header bar to drag the panel to a different position on screen.
-- **Resized** — Drag the edges of the panel to resize it.
+The chat window can also be:
+- **Maximised** — Click the expand icon (Maximise) to fill the screen; your conversations then show in a list beside the chat. Click again to restore.
+- **Dragged** — Click and hold the window's header (not its buttons) to drag it to a different position on screen.
+- **Resized** — Drag the edges of the window to resize it.
 
 ---
 
@@ -99,15 +99,15 @@ The welcome screen shows sample questions you can try:
 - "What's the process for investor onboarding?"
 - "How do I generate a distribution notice?"
 
-Click any suggestion to auto-fill it in the input box, then press **Enter** or click the **Send** button.
+Each suggestion has two parts: click its text to put it in the question box (so you can edit it first), or click **Ask** beside it to send it straight away.
 
 ### Typing Your Own Question
 
-1. Click the text input at the bottom of the chat panel
-2. Type your question in plain English
-3. Press **Enter** or click the blue Send button
+1. Click the question box at the bottom of the chat window
+2. Type your question in plain English (**Shift+Enter** starts a new line)
+3. Press **Enter** or click the round blue arrow button
 
-The agent will show a "Thinking..." spinner while it processes your question. Responses typically appear within a few seconds.
+Your question appears straight away, with a "Thinking…" line under it while the agent works. Responses typically appear within a few seconds. If the agent cannot be reached, the answer reads **Not answered** with the reason and your question is put back in the box so you can press **Enter** to try again.
 
 ---
 
@@ -221,15 +221,15 @@ The agent may escalate for several reasons:
 
 ### Starting a New Conversation
 
-Click the **New** button in the chat panel header to start a fresh conversation. This creates a new session — your previous conversation is saved and accessible via History.
+Click the **New** button in the chat window's header to start a fresh conversation. Your next question starts it; your previous conversation is saved and listed under **Conversations**.
 
 ### Viewing Past Sessions
 
-Click the **History** button in the chat panel header. A sidebar slides open showing your past sessions with the most recent at the top. Click any session to load its messages.
+Click the **Conversations** button in the chat window's header. The window shows your past conversations, newest first and grouped Today / Yesterday / Previous 7 days / Older, each with its first question and when it last changed; a search box filters them. Click one to open it — a question you then ask continues that conversation. A conversation handed to the CapHive support team shows an **Escalated** badge. When the window is maximised, the list stays beside the chat.
 
 ### Session Auto-Expire
 
-If you have been inactive for more than 30 minutes, the agent automatically starts a new session the next time you send a message. Your old session remains accessible via History.
+If your latest conversation has been idle for more than 30 minutes, the window opens on a new conversation, and your next question starts it. The older conversation stays under **Conversations**; open it from there to continue it.
 
 ---
 
@@ -248,7 +248,7 @@ If you have been inactive for more than 30 minutes, the agent automatically star
 ### Navigation and getting there
 
 **Where do I find the Customer Support Agent?**
-Open your dashboard from the sidebar ([**Dashboard**](/entities/dashboard)) and look for the floating bubble in the bottom-right corner that reads **"Need help? Ask Customer Support Agent"**. Click the bubble or its blue robot button to open the chat panel. See [Opening the Chat](#opening-the-chat).
+Open your dashboard from the sidebar ([**Dashboard**](/entities/dashboard)) and look for the floating bubble in the bottom-right corner that reads **"Need help? Ask Customer Support Agent"**. Click the bubble or its blue chat button to open the chat window. See [Opening the Chat](#opening-the-chat).
 
 **I don't see the chat bubble on my dashboard. Why?**
 The bubble only appears on the fund manager dashboard of a fund entity, and only after CapHive has set up the Customer Support Agent for your organisation with chat turned on. It is also hidden for CapHive support logins. If your colleagues see it and you do not, check you are on [**Dashboard**](/entities/dashboard); otherwise contact CapHive support.
@@ -260,15 +260,15 @@ No, the Customer Support Agent bubble is only on the dashboard. Chat bubbles on 
 Every fund manager user who lands on the fund manager dashboard can use it: company admins, operations staff and other employees. Investor (LP) logins see the investor dashboard instead, so they do not get this chat.
 
 **How do I get back to a previous conversation?**
-Open the chat panel and click **History** in its header. A sidebar lists your past sessions, newest first; click one to load its messages. See [Viewing Past Sessions](#viewing-past-sessions).
+Open the chat window and click **Conversations** in its header. It lists your past conversations, newest first; click one to open it and keep asking in it. See [Viewing Past Sessions](#viewing-past-sessions).
 
 ### Using the chat and managing conversations
 
 **How do I ask the agent a question?**
-Open the chat panel, type your question in plain English in the box at the bottom and press **Enter** or click **Send**. On a new session you can also click one of the suggested questions to fill it in. See [Asking Questions](#asking-questions).
+Open the chat window, type your question in plain English in the box at the bottom and press **Enter**. On a new conversation you can also click a suggested question's text to fill it in, or its **Ask** button to send it at once. See [Asking Questions](#asking-questions).
 
 **How do I start a fresh conversation?**
-Click **New** in the chat panel header. Your current conversation is saved and stays available under **History**. See [Starting a New Conversation](#starting-a-new-conversation).
+Click **New** in the chat window's header. Your current conversation is saved and stays available under **Conversations**. See [Starting a New Conversation](#starting-a-new-conversation).
 
 **How do I rate a response?**
 Click the **Thumbs Up** or **Thumbs Down** icon under the agent's message. Rating is optional and takes one click. See [Rating Responses](#rating-responses).

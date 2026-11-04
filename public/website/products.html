@@ -127,6 +127,35 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Lobster&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/caphive.css?v=3a2cb24c">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "@id": "https://caphive.com/#organization",
+  "name": "CapHive",
+  "url": "https://caphive.com",
+  "logo": "https://caphive.com/assets/img/caphive-logo@3x.png",
+  "email": "hello@caphive.com",
+  "description": "Full-stack intelligent technology platform for powering private capital markets — funds, portfolios, deals & secondaries.",
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "801, One International Center, Tower 1, Senapati Bapat Marg, Lower Parel",
+    "addressLocality": "Mumbai",
+    "postalCode": "400013",
+    "addressCountry": "IN"
+  },
+  "areaServed": [
+    { "@type": "Country", "name": "India" },
+    { "@type": "Country", "name": "United States" }
+  ],
+  "founder": {
+    "@type": "Person",
+    "name": "Ausang Shukla",
+    "jobTitle": "Founder & CEO",
+    "sameAs": "https://in.linkedin.com/in/ausangshukla"
+  }
+}
+</script>
 </head>
 <body data-page="products">
 
@@ -941,5 +970,21 @@
 
 
 <script src="assets/js/caphive.js?v=de00c116"></script>
+<!-- SoftwareApplication: labels the platform as business software for
+     entity understanding. No offers/aggregateRating — pricing is quoted per
+     engagement and there are no public reviews yet, so this earns no rich
+     result; add aggregateRating once G2/Capterra reviews exist. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "CapHive",
+  "url": "https://caphive.com/products.html",
+  "applicationCategory": "BusinessApplication",
+  "operatingSystem": "Web",
+  "description": "Private markets software on one system of record: fund administration and accounting, investor onboarding and LP portal, portfolio monitoring, deals and secondaries, and AI agents.",
+  "publisher": { "@id": "https://caphive.com/#organization" }
+}
+</script>
 </body>
 </html>

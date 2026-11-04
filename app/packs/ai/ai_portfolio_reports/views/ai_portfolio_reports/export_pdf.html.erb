@@ -13,10 +13,12 @@
     return '' unless content.present?
 
 
-    # Match chart placeholders and replace with img tags
-    content.gsub(/<div[^>]*class="chart-placeholder"[^>]*data-chart-config="([^"]*)"[^>]*data-chart-type="([^"]*)"[^>]*>.*?<\/div>/m) do |match|
-      config = CGI.unescapeHTML($1)
-      chart_type = $2 || 'bar'
+    # Match chart placeholders and replace with img tags. The content has been through
+    # AiReportHtml.sanitize (C3-7), whose serializer writes an attribute holding double quotes
+    # - the chart config JSON - in single quotes, so both quote styles are matched (C3-H)
+    content.gsub(/<div[^>]*class="chart-placeholder"[^>]*data-chart-config=(?:"([^"]*)"|'([^']*)')[^>]*data-chart-type=["']([^"']*)["'][^>]*>.*?<\/div>/m) do |match|
+      config = CGI.unescapeHTML($1 || $2)
+      chart_type = $3.presence || 'bar'
 
       image_url = chart_to_image_url(config, chart_type)
 
@@ -269,14 +271,15 @@
   <!-- Report Content -->
   <div class="report-content">
     <% if @collated_content.present? %>
-      <%= convert_charts_to_images(@collated_content).html_safe %>
+      <%# C3-7 - sanitized before the chart conversion, so wkhtmltopdf gets no img / script %>
+      <%= convert_charts_to_images(AiReportHtml.sanitize(@collated_content)).html_safe %>
     <% else%>
       <% @sections.each_with_index do |section, index| %>
       <% if index > 0 %><hr class="section-divider"><% end %>
 
       <div id="section-<%= section.id %>">
         <h2><%= section.section_type %></h2>
-        <%= convert_charts_to_images(section.current_content || '').html_safe %>
+        <%= convert_charts_to_images(AiReportHtml.sanitize(section.current_content || '')).html_safe %>
       </div>
       <% end %>
     <% end %>

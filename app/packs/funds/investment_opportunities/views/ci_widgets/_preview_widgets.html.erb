@@ -21,7 +21,7 @@
                     <% end %>
                     <div class="col-lg-7 mb-4">
                         <% if widget.details.present? %>
-                            <%=  widget.details.html_safe %>
+                            <%= ci_widget_rich_text(widget.details) %>
                         <% end %>
                     </div>
                 </div>
@@ -29,7 +29,7 @@
                 <div class="card-body lead row">
                     <div class="col-lg-7 mb-4">
                         <% if widget.details.present? %>
-                            <%=  widget.details.html_safe %>
+                            <%= ci_widget_rich_text(widget.details) %>
                         <% end %>
                     </div>
                     <% if widget.image.present? %>

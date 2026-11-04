@@ -88,7 +88,7 @@ For current holdings, filter `api.snapshot = false` (or omit snapshot rows).
 |--------|------|-------------|
 | id | bigint | Primary key |
 | entity_id | bigint | Scope |
-| owner_type | varchar | Filter `= 'PortfolioCompany'` for portco valuations |
+| owner_type | varchar | Filter `= 'Investor'` for portco valuations (a portco is an `investors` row; there is no `'PortfolioCompany'` owner_type) |
 | owner_id | bigint | FK — matches `investors.id` for portcos |
 | valuation_date | date | As-of date |
 | valuation_cents | decimal | Valuation amount |
@@ -219,7 +219,7 @@ JOIN portfolio_investments pi ON pi.portfolio_company_id = i.id
 JOIN funds f                  ON f.id = pi.fund_id
 WHERE fr.entity_id IN ({ENTITY_ID})
   AND fr.fund_id IN ({FUND_IDS})
-  AND fr.owner_type = 'PortfolioCompany'
+  AND fr.owner_type = 'Investor'
   AND fr.name = 'MOIC'
   AND fr.latest = true
   AND fr.scenario = 'Default'
@@ -250,7 +250,7 @@ JOIN funds f                  ON f.id = pi.fund_id
 WHERE v.entity_id IN ({ENTITY_ID})
   AND pi.fund_id IN ({FUND_IDS})
   AND pi.id IN ({VISIBLE_PI_IDS})
-  AND v.owner_type = 'PortfolioCompany'
+  AND v.owner_type = 'Investor'
   AND (f.features & 4) > 0
   AND pi.proforma = false
   AND v.deleted_at IS NULL
@@ -260,7 +260,7 @@ WHERE v.entity_id IN ({ENTITY_ID})
   AND v.valuation_date = (
     SELECT MAX(v2.valuation_date)
     FROM valuations v2
-    WHERE v2.owner_type = 'PortfolioCompany'
+    WHERE v2.owner_type = 'Investor'
       AND v2.owner_id = v.owner_id
       AND v2.entity_id IN ({ENTITY_ID})
       AND v2.deleted_at IS NULL
@@ -326,10 +326,11 @@ LIMIT 5
 | Using `pi.portfolio_company_name` for display | Denormalized and may be stale | Read `i.investor_name` from the joined `investors` |
 | Summing amounts across `pi` rows for current holdings | PI is a tx log including buys & sells — double-counts | Use `aggregate_portfolio_investments` for current position |
 | Reporting `*_cents` raw | User expects money, not minor units | Divide by 100 |
-| Filtering fund_ratios by `owner_type = 'Fund'` for portco metrics | Those are fund-level rows | For portco metrics use `owner_type = 'PortfolioCompany'` |
+| Filtering fund_ratios by `owner_type = 'Fund'` for portco metrics | Those are fund-level rows | For portco metrics use `owner_type = 'Investor'` with `owner_id` = the portco's `investors.id` |
+| Filtering valuations or fund_ratios by `owner_type = 'PortfolioCompany'` | No row has that owner_type — portcos are `investors` rows, so the query returns nothing | Use `owner_type = 'Investor'` |
 
 ## When to Use Other Skills
 
 - **Fund-level returns (TVPI, DPI, IRR of the fund)** → `fund_ratios` skill with `owner_type = 'Fund'`
 - **How much the LP committed / paid / received** → `commitments`, `capital_calls`, `distributions`
-- **Portco-level performance (MOIC / IRR per portco)** → this skill's cross-skill example above, or `fund_ratios` with `owner_type = 'PortfolioCompany'`
+- **Portco-level performance (MOIC / IRR per portco)** → this skill's cross-skill example above, or `fund_ratios` with `owner_type = 'Investor'`

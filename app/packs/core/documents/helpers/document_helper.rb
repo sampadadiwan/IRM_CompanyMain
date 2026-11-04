@@ -12,6 +12,16 @@ module DocumentHelper
     file.metadata['filename'] if file.metadata
   end
 
+  # X1 — a Documents widget's Folder ID is typed in by an admin, so it is only used when the viewer may see that
+  # folder (FolderPolicy#show?) or it is one shared with them as an investor. Any other id is not shown at all
+  # (no documents, no folder name) rather than letting the folder tree name another entity's folders.
+  def widget_folder_visible?(folder_id, user)
+    folder = Folder.find_by(id: folder_id)
+    return false if folder.nil?
+
+    Pundit.policy(user, folder).show? || Folder.for_investor(user, folder.entity).exists?(id: folder.id)
+  end
+
   # Where a link on a document's name should go: the stored file itself, opened in the browser,
   # falling back to the document page.
   #
@@ -27,7 +37,7 @@ module DocumentHelper
     return nil if document.blank? || document.file.blank?
 
     if document.orignal && policy(document).not_generated_or_approved
-      document.file.url(response_content_disposition: "inline; filename=#{document.name_with_extension}")
+      document.file.url(response_content_disposition: document.inline_disposition)
     else
       document_path(document)
     end

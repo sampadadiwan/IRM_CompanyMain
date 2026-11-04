@@ -72,7 +72,7 @@ Represents one signatory slot for a document.
 | `status`       | string  | See [Status Reference](#status-reference)           |
 | `position`     | integer | Signing order (via `acts_as_list`)                  |
 | `notes`        | text    | Notes / fallback email for template slots           |
-| `api_updates`  | text    | Cumulative raw API callback payloads                |
+| `api_updates`  | text    | First raw provider payload (Zoho, DocuSign and older Digio rows; Digio's now stay in `EsignLog`) |
 
 Key behaviors:
 - Email is normalised (whitespace stripped).
@@ -411,6 +411,11 @@ Document#signature_completed(signed_doc_from_provider)
         │    send_email  = false
         │
         └─ Both documents persist (original + signed copy)
+        │
+        ▼
+Digio only: DigioAuditTrailJob (background, retried, support alerted if it never arrives)
+        │
+        └─ Files "<name> - Audit Trail" (owner_tag "Audit Trail") beside the signed copy
 ```
 
 ---

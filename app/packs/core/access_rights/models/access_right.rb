@@ -25,6 +25,10 @@ class AccessRight < ApplicationRecord
   belongs_to :granted_by, class_name: "User", optional: true
   # If this is a specific investor access
   belongs_to :investor, foreign_key: :access_to_investor_id, optional: true # , strict_loading: true
+  # M28 — a grant to a specific stakeholder names one of the granting firm's own stakeholders.
+  # user_id is deliberately not checked: user grants are legitimately cross-firm (advisors, support).
+  # Tests M28-6, M28-H5 — features/security/security_review_2026_10_medium.feature
+  validate(if: :will_save_change_to_access_to_investor_id?) { validate_parent_in_own_firm(:investor) }
   has_many :noticed_events, as: :record, dependent: :destroy, class_name: "Noticed::Event"
 
   delegate :name, to: :entity, prefix: :entity

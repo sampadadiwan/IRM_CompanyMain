@@ -34,8 +34,11 @@ class ExchangeRatePolicy < ApplicationPolicy
     update?
   end
 
+  # M21 — deleting a rate needs the same rights as adding one: the rate's own firm, and update access
+  # on its fund for a fund-specific rate. Deleting the latest row leaves the pair without a latest
+  # (accepted). Tests M21-X1, M21-X2, M21-H1
   def destroy?
-    true
+    create?
   end
 
   def generate_tracking_numbers?

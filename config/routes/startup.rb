@@ -47,8 +47,9 @@ end
 
 resources :deal_activities do
   get 'search', on: :collection
-  get 'update_sequence', on: :member
-  post 'update_sequences', on: :collection
+  # No `update_sequence` / `update_sequences` routes: neither had a caller since 2024, and
+  # update_sequences moved any deal activity by id, in any firm, without authorizing it (L10-1 in
+  # features/security/security_review_2026_10_low.feature). Order is set from the activity form.
   post 'toggle_completed', on: :member
   post 'perform_activity_action', on: :member
   put :restore_deleted, on: :member

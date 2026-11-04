@@ -25,6 +25,13 @@ class EntitySetting < ApplicationRecord
   before_save :validate_document_colors
   # Evergreen wording overrides (EvergreenLabels): only a known unit word, and a fresh cache when they change
   validate :evergreen_unit_label_allowed
+  # C2 — the expense filter is evaluated on a PortfolioInvestment (PortfolioInvestment#expense_cents):
+  # checked on save against the expense_filter profile in log (warning) / enforce (error) mode only,
+  # with the locals that method's binding carries
+  validate :expense_filter_sandboxed, if: -> { portflio_expense_account_entry_filter.present? && will_save_change_to_portflio_expense_account_entry_filter? }
+  def expense_filter_sandboxed
+    FormulaSandbox.validate_attribute(self, :portflio_expense_account_entry_filter, profile: "expense_filter", locals: %i[expense_fields total])
+  end
   before_validation :compact_evergreen_labels
   after_commit :clear_evergreen_labels_cache, if: -> { saved_change_to_evergreen_labels? }
   # Add new flags to the end of this list
@@ -73,6 +80,14 @@ class EntitySetting < ApplicationRecord
     else
       {}
     end
+  end
+
+  # Features an eSign provider offers beyond send / track / cancel. Policies and views ask
+  # esign_supports?(feature) instead of comparing provider names (E2, E26).
+  ESIGN_CAPABILITIES = { "Zoho" => %i[expiry_settings reminders extend_expiry connection] }.freeze
+
+  def esign_supports?(feature)
+    ESIGN_CAPABILITIES.fetch(esign_provider.to_s, []).include?(feature)
   end
 
   def check_esign_provider

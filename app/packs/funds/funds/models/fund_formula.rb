@@ -48,6 +48,12 @@ class FundFormula < ApplicationRecord
 
   belongs_to :fund, optional: true, touch: true
   belongs_to :entity, optional: true
+  # M24 — a formula never moves to another fund once created (the policy authorized it on its stored
+  # fund; copies create new rows). A posted fund_id on update is left out of the save (M24-X1), and a
+  # new formula's fund must be in the formula's own firm (M24-X2). Formulas without a firm (legacy
+  # global templates) are not checked.
+  attr_readonly :fund_id
+  validate(if: -> { entity_id.present? && will_save_change_to_fund_id? }) { validate_parent_in_own_firm(:fund) }
   acts_as_list scope: %i[fund_id], column: :sequence
 
   enum :rule_for, { accounting: "Accounting", reporting: "Reporting" }
@@ -89,6 +95,24 @@ class FundFormula < ApplicationRecord
   validate :formula_kosher?
   def formula_kosher?
     errors.add(:formula, "You cannot do CRUD operations in a formula") if formula.downcase.match?(SAFE_EVAL_REGEX)
+  end
+
+  # C2 — the allowlist check on save, in log (warning) / enforce (error) mode only; off adds nothing.
+  # Parsed with the locals the rule type's operation binding carries (config/formula_sandbox.yml),
+  # so the tree checked is the tree that runs. Rule types whose text is never evaluated (Cumulate
+  # names, the literal field map, statements, percentages) are not checked as code (C2-X).
+  validate :formula_sandboxed, if: -> { FormulaSandbox.mode != "off" && formula.present? && FormulaSandbox.fund_formula_evaluated?(rule_type) }
+  def formula_sandboxed
+    FormulaSandbox.validate_attribute(self, :formula, profile: sandbox_profile, locals: FormulaSandbox.fund_formula_locals(rule_type))
+  end
+
+  # The FormulaSandbox profile this formula is evaluated under (and explained under). Worked out here,
+  # not from the YAML, so off mode never reads the sandbox config. Same answer as
+  # FormulaSandbox.fund_formula_profile.
+  def sandbox_profile
+    return "run_check" if run_check?
+
+    rule_type == "GenerateCustomField" ? "custom_field" : "fund_formula"
   end
 
   # Parses (but does not eval/execute) the formula to catch typos and malformed
@@ -375,14 +399,15 @@ class FundFormula < ApplicationRecord
       case kind
       when :addend
         val = begin
-          eval(ApplicationRecord.safe_eval!(exp, context: "FundFormula##{id}"), binding)
+          # C2 — each sub-expression goes through the formula's own profile, parsed with this binding's locals
+          FormulaSandbox.evaluate(exp, binding, profile: sandbox_profile, context: "FundFormula##{id}")
         rescue
           next
         end
         record_explained_value(expression_map, exp, val)
       else
         begin
-          val = eval(ApplicationRecord.safe_eval!(exp, context: "FundFormula##{id}"), binding)
+          val = FormulaSandbox.evaluate(exp, binding, profile: sandbox_profile, context: "FundFormula##{id}")
           record_explained_value(expression_map, exp, val)
         rescue => e
           # Name the exception: this rescue also covers summarising the value for display, so a bare
@@ -572,7 +597,8 @@ class FundFormula < ApplicationRecord
     return false if formula.blank?
 
     bdg = binding
-    eval(ApplicationRecord.safe_eval!(formula, context: "FundFormula##{id}"), bdg) # Step 1: populate formula-defined local variables in the binding
+    # Step 1: populate formula-defined local variables in the binding (C2 — through the sandbox)
+    FormulaSandbox.evaluate(formula, bdg, profile: sandbox_profile, context: "FundFormula##{id}")
     breakdown = parse_statement(bdg, external_formula: formula) # Step 2: extract values
     # The final result is the LAST entry — post-order traversal inserts the most
     # complex (outermost) expression last. max_by length was unreliable once addend

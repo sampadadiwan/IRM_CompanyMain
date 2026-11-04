@@ -21,6 +21,39 @@ class BaseAssistant
 
   AI_TIMEOUT = ENV.fetch('AI_ASSISTANT_TIMEOUT', '180').to_i.seconds
 
+  # Prepended to every tool the assistant registers: an exception inside a tool comes back to the model
+  # as a { error: } result (RubyLLM's recoverable-failure shape) instead of escaping chat.ask. Escaping
+  # left the round with an unanswered tool call, and RubyLLM then refused every later question in that
+  # conversation ("The last response has unanswered tool calls …").
+  module ToolErrorsAsResults
+    def call(...)
+      super
+    rescue StandardError => e
+      Rails.logger.error { "[#{self.class.name}] tool #{name} failed: #{e.class}: #{e.message}" }
+      { error: "The #{name} tool failed: #{e.message}" }
+    end
+  end
+
+  # Records an error result for every unanswered tool call left by an earlier, interrupted round, so the
+  # conversation can continue. Mirrors RubyLLM's own denial results (Chat#deny_tool_calls), through the
+  # ActiveRecord chat's callbacks so the results are saved and linked to their tool calls.
+  #
+  # @param chat [Chat]
+  # @return [Integer] how many tool calls were closed
+  def self.close_pending_tool_calls!(chat)
+    llm = chat.to_llm
+    response = llm.send(:pending_tool_response)
+    return 0 unless response
+
+    pending = llm.send(:pending_tool_calls, response)
+    pending.each_value do |tool_call|
+      llm.send(:run_callbacks, :before_message)
+      llm.send(:add_tool_result_message, tool_call,
+               { error: "The #{tool_call.name} tool call did not complete earlier. Try again if it is still needed." })
+    end
+    pending.size
+  end
+
   # Some models (esp. via certain providers) can leak a "Thought: ..." internal-monologue
   # line ahead of the real answer. clean_response only strips this specific leading marker --
   # a substring search for the bare word "thought" anywhere in the text (the old behavior)
@@ -44,12 +77,18 @@ class BaseAssistant
 
     @chat ||= find_or_create_chat
 
-    @chat.with_instructions(system_prompt)
-    @chat.with_tools(*tools)
+    # The shared answer layout (AiChatAnswerLayout) follows the assistant's own prompt, so the Assistants
+    # page draws its Summary / Key figures cards and Follow-ups buttons.
+    @chat.with_instructions("#{system_prompt}\n\n#{AiChatAnswerLayout.instructions}")
+    # A failing tool reports its error to the model rather than breaking the round (ToolErrorsAsResults).
+    @chat.with_tools(*tools.each { |tool| tool.singleton_class.prepend(ToolErrorsAsResults) })
     @chat.with_messages { |msgs| message_filter(msgs) }
 
     # RubyLLM handles the tool execution loop automatically
     response = begin
+      # A conversation an interrupted round left with unanswered tool calls cannot take a new question
+      # until they are answered; close them first (also before each retry below).
+      self.class.close_pending_tool_calls!(@chat)
       Timeout.timeout(AI_TIMEOUT) do
         @chat.ask(prompt)
       end

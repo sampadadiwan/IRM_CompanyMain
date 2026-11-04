@@ -41,19 +41,25 @@ export default class extends Controller {
   getSearchableItems() {
     const items = []
 
-    // 1. Available columns from the palette
-    document.querySelectorAll("[data-report-builder-target='paletteRow']").forEach(el => {
+    // 1. Columns from the column picker that aren't in the report yet:
+    //    choosing one ticks it and adds it (Add selected)
+    document.querySelectorAll("[data-report-builder-select-target='row']").forEach(el => {
+      const checkbox = el.querySelector("input[type=checkbox]")
+      if (!checkbox || checkbox.disabled) return
       items.push({
         text: el.dataset.searchText.toLowerCase(),
-        label: el.querySelector("span").textContent,
+        label: el.querySelector("label").textContent.trim(),
         type: "Column",
-        action: () => el.querySelector("button")?.click()
+        action: () => {
+          checkbox.checked = true
+          checkbox.dispatchEvent(new Event("change", { bubbles: true }))
+          el.closest("form")?.requestSubmit()
+        }
       })
     })
 
     // 2. Actions
     items.push({ text: "add formula", label: "Add Formula", type: "Action", action: () => document.querySelector("[data-bs-target='#formulaModal']")?.click() })
-    items.push({ text: "templates gallery", label: "Open Templates", type: "Action", action: () => document.querySelector("[data-bs-target='#templateModal']")?.click() })
     items.push({ text: "preview report", label: "Refresh Preview", type: "Action", action: () => document.querySelector("[data-action='click->report-builder#loadPreview']")?.click() })
     items.push({ text: "export xlsx", label: "Export to Excel", type: "Action", action: () => document.querySelector("[data-report-builder-target='exportBtn']")?.click() })
 

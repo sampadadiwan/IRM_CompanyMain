@@ -25,6 +25,10 @@ Given('an LP scope is set up with entity {string} and fund {string}') do |_entit
   @lp_entity_ids   = [@fund.entity_id]
   @lp_fund_ids     = [@fund.id]
   @lp_investor_ids = [@fund.id + 10_000] # placeholder investor id — real row not needed for query tests
+  # H4 — DocumentUrlTool asks DocumentPolicy#show? for the asking user, so the scope's LP is a real LP
+  # user (own investor entity, approved investor access, access right on the fund — lp_portfolio_steps.rb)
+  lp_investor_row, @lp_user = lp_investor(@fund.entity_id, "#{@fund.name} LP")
+  lp_grant_access(@fund, lp_investor_row)
 end
 
 Given('the LP scope is cleared of all accessible funds') do
@@ -136,8 +140,9 @@ end
 
 When('the LP requests the URL for that document') do
   tool = DocumentUrlTool.new(
-    entity_ids:              @lp_entity_ids,
-    accessible_fund_ids:     @lp_fund_ids,
+    user: @lp_user,
+    entity_ids: @lp_entity_ids,
+    accessible_fund_ids: @lp_fund_ids,
     accessible_investor_ids: @lp_investor_ids
   )
   # Stub out Shrine/S3 URL generation — we only assert scope, not signed URL mechanics

@@ -1,0 +1,31 @@
+<%# Row-level data (up to 8 rows), the column that matters most highlighted, statuses as badges. %>
+<%
+  columns = Array(slide["columns"]).map(&:to_s)
+  highlight = columns.index(slide["highlight"].to_s)
+  status_column = columns.index { |c| c.match?(/\Astatus\z/i) }
+  status_tone = lambda do |text|
+    case text.to_s
+    when /\A(overdue|failed|rejected|cancell?ed|expired|mismatch|overpaid|underpaid|blocked)/i then "negative"
+    when /\A(paid|completed?|approved|verified|done|active|matched|reconciled|closed|settled)/i then "positive"
+    else "neutral"
+    end
+  end
+%>
+<%= render layout: "assistants/presentation_templates/frame", locals: { slide:, index:, total:, record:, date:, kicker: "Detail" } do %>
+  <div class="cs-card cs-table-card">
+    <table class="cs-table">
+      <thead><tr><% columns.each_with_index do |column, i| %><th class="<%= 'cs-highlight' if i == highlight %>"><%= column %></th><% end %></tr></thead>
+      <tbody>
+        <% Array(slide["rows"]).first(8).each do |row| %>
+          <tr>
+            <% Array(row).each_with_index do |cell, i| %>
+              <td class="<%= 'cs-highlight' if i == highlight %>">
+                <% if i == status_column %><span class="cs-badge cs-tone-<%= status_tone.call(cell) %>"><%= cell %></span><% else %><%= cell %><% end %>
+              </td>
+            <% end %>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

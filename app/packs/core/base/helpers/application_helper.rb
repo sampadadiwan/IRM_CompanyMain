@@ -386,6 +386,18 @@ module ApplicationHelper
       params[:touch_point_scope] != "all" && params[:deal_id].blank?
   end
 
+  # Whether a record a view resolved from a bare id (a param, a card's data source) may be named to
+  # the current user: its own Pundit policy's show?, which keeps other firms' records out. A record
+  # whose model has no policy is never named. Follow-up F2 —
+  # features/security/security_review_2026_10_followups.feature
+  def visible_record?(record)
+    # Nothing found, or a model with no policy to ask: name nothing
+    return false if record.nil? || Pundit::PolicyFinder.new(record).policy.nil?
+
+    # The same predicate the record's own show page authorizes
+    policy(record).show?
+  end
+
   # Path to a polymorphic owner built from its type and id alone — the record is
   # never dereferenced to generate the URL. Safe because WithFriendlyId overrides
   # to_param to return the id, so this is byte-identical to what

@@ -1,6 +1,8 @@
 
 <div class="container-fluid mb-0">
 
+   <%= render "documents/embedded_sign_banner", document: @document %>
+
    <div class="row">
       <% if @document.video? %>
       <%= render "layouts/video", url: @document.file_url %>
@@ -45,7 +47,7 @@
                               Download
                            </td>
                            <td>
-                              <%= link_to @document.file.url(response_content_disposition: "inline; filename=#{@document.name_with_extension}"), class: "btn btn-outline-success", target: "_blank" do %>
+                              <%= link_to @document.file.url(response_content_disposition: @document.inline_disposition), class: "btn btn-outline-success", target: "_blank" do %>
                                  <%= @document.name.capitalize.titleize %>
                                  <i class="fas fa-download fa-xl"></i>
                               <% end %>
@@ -175,7 +177,31 @@
                               eSignature Status
                            </td>
                            <td>
-                              <%= @document.esign_status&.titleize %>
+                              <span class="badge bg-<%= @document.esign_status_badge %>"><%= @document.esign_status&.titleize %></span>
+                           </td>
+                        </tr>
+                        <% end %>
+
+                        <% if @document.entity.entity_setting.esign_supports?(:expiry_settings) && @document.sent_for_esign %>
+                        <tr>
+                           <td>
+                              eSignature Expires On
+                           </td>
+                           <td>
+                              <%= l(@document.esign_expires_at.to_date) if @document.esign_expires_at %>
+                           </td>
+                        </tr>
+
+                        <tr>
+                           <td>
+                              eSignature Reminders
+                           </td>
+                           <td>
+                              <% if @document.esign_email_reminders %>
+                                Every <%= @document.esign_reminder_period.presence || ZohoEsignHelper::DEFAULT_REMINDER_PERIOD_DAYS %> day(s)
+                              <% else %>
+                                Disabled
+                              <% end %>
                            </td>
                         </tr>
                         <% end %>

@@ -1,7 +1,8 @@
 
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
-  <% if params[:fund_id].present? %>
-    <% @fund = Fund.find(params[:fund_id]) %>
+  <%# H8: the heading names only a fund this user can see %>
+  <% @fund = policy_scope(Fund).find_by(id: params[:fund_id]) if params[:fund_id].present? %>
+  <% if @fund %>
     <h1 class="h3 mb-0 text-gray-800">Portfolio Scenarios: <%= link_to @fund.name, fund_path(@fund, tab: "portfolio-investments-tab") %> </h1>
   <% else %>
     <h1 class="h3 mb-0 text-gray-800">Portfolio Scenarios</h1>

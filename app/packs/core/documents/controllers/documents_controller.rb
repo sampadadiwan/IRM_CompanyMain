@@ -3,17 +3,35 @@ class DocumentsController < ApplicationController
   include DocumentHelper
 
   skip_before_action :verify_authenticity_token, :authenticate_user!, :set_current_entity, only: %i[signature_progress]
-  before_action :set_document, only: %w[show update destroy edit send_for_esign fetch_esign_updates force_send_for_esign cancel_esign send_document_notification resend_for_esign show_email_list verify_accessibility run_fix]
+  before_action :set_document, only: %w[show update destroy edit send_for_esign fetch_esign_updates force_send_for_esign cancel_esign extend_esign_expiry send_esign_reminder send_document_notification resend_for_esign show_email_list verify_accessibility run_fix]
   # Changed: Added NDA gate for LP folder access.
   # Why: Module 2 — LPs must accept an NDA before viewing NDA-protected folder contents.
   before_action :ensure_nda_accepted, only: [:folder]
-  after_action :verify_authorized, except: %i[index search investor folder signature_progress approve bulk_actions download show_email_list]
+  # H6 — bulk_actions is not exempt: WithBulkActions#bulk_actions authorizes Document :bulk_actions? first
+  # H1 — approve is not exempt either: it authorizes the folder tree or the firm-wide bulk approval
+  after_action :verify_authorized, except: %i[index search investor folder signature_progress download show_email_list]
   after_action :verify_policy_scoped, only: []
 
   def signature_progress
-    # Check response  - if contains proper info then update doc esign status
-    # if not then just respond with 200 OK
-    EsignHelper.update_signature_progress(params)
+    if zoho_webhook?
+      # CapHive's platform Zoho account posts here; companies with their own account post to
+      # ZohoSignWebhooksController. Verified, then applied in the background so Zoho gets its 200
+      # within its 5 second limit (E33).
+      unless ZohoEsignHelper.verify_signature(request.raw_post, request.headers["X-ZS-WEBHOOK-SIGNATURE"], ZohoSignAccount.platform.webhook_secret)
+        Rails.logger.warn "Zoho Sign webhook signature verification failed"
+        return render json: "Invalid signature", status: :unauthorized
+      end
+
+      # L9-2 — a byte-identical resend of a verified body is acknowledged but not applied again
+      ZohoWebhookJob.perform_later(nil, request.raw_post) if ZohoEsignHelper.claim_webhook_body(request.raw_post)
+    else
+      # M1 — DocuSign and Digio posts were applied unverified (a forged "completed"/"voided"/"signed")
+      return render json: "Unauthorized", status: :unauthorized unless esign_webhook_authentic?
+
+      # Check response  - if contains proper info then update doc esign status
+      # if not then just respond with 200 OK. The URL's secret is not passed on (esign logs).
+      EsignHelper.update_signature_progress(params.except(:webhook_token))
+    end
     # Always respond with 200 OK - Expected from Digio
     render json: "Ok"
   end
@@ -30,9 +48,29 @@ class DocumentsController < ApplicationController
 
     # If card view is requested then we paginate the results
     @pagy, @documents = pagy(@documents, limit: params[:per_page]) if (params[:card_view].to_s.downcase == "true") && params[:all].blank?
-    # Render the template sent via params else index
-    render params[:template].presence || "index"
+    # M10 — render only a template the app itself links to (the e-signature stats cards); a blank value
+    # is the plain index, anything else is a 404 rather than a render of a request-named template
+    # (M10-X2, M10-H2)
+    template = params[:template].presence || "index"
+    return head(:not_found) unless INDEX_TEMPLATES.include?(template)
+
+    render template
   end
+
+  # M10 — templates documents#index may render: the default list and the e-signatures page
+  INDEX_TEMPLATES = %w[index /e_signatures/e_signatures].freeze
+
+  # L14 — owner types ?owner_type= may name on the documents list: every owner type stored on documents
+  # in production, plus the models that include WithFolder (has_many :documents, as: :owner) and the
+  # KYC subclasses a KYC page may name
+  DOCUMENT_OWNER_TYPES = %w[AggregatePortfolioInvestment Allocation AmlReport Approval ApprovalResponse
+                            CapitalCall CapitalCommitment CapitalDistribution CapitalDistributionPayment
+                            CapitalRemittance CustomNotification Deal DealActivity DealInvestor Entity
+                            ExchangeRate ExpressionOfInterest Fund FundRatio IncomingEmail Interest
+                            IndividualKyc InvestmentOpportunity Investor InvestorKyc KpiReport
+                            NonIndividualKyc Offer OptionPool
+                            PortfolioCashflow PortfolioInvestment PortfolioReport PortfolioReportTemplate
+                            SecondarySale SupportAgent Task].freeze
 
   def folder
     if params[:folder_id].present?
@@ -186,7 +224,12 @@ class DocumentsController < ApplicationController
     eligible_for_update = @document.last_status_updated_at.nil? || @document.last_status_updated_at < 900.seconds.ago if @document.entity.entity_setting.esign_provider == "Docusign"
     # update the esign status of the document before cancelling
     if @document.eligible_for_esign_update? && eligible_for_update
-      EsignHelper.new(@document).update_esign_status
+      begin
+        EsignHelper.new(@document).update_esign_status
+      rescue ZohoSignClient::Error => e
+        # The recall below still runs; if Zoho is down it fails too and the user sees the error.
+        Rails.logger.warn("eSign status refresh before cancel failed for document #{@document.id} - #{e.message}")
+      end
       @document.reload
     end
     if @document.eligible_for_esign_update?
@@ -201,15 +244,52 @@ class DocumentsController < ApplicationController
     end
   end
 
-  def approve
-    if request.post?
-      options = params.to_unsafe_h.slice(:user_id, :notification, :owner_type, :parent_folder_id)
-      options[:user_id] = current_user.id
-
-      DocumentApprovalJob.perform_later(current_user.entity_id, params[:start_date], params[:end_date], options)
-
-      redirect_to documents_path, notice: "Document approval started, please check back in a few mins."
+  # allows a button to push out the expiry of an already-sent Zoho eSign request
+  def extend_esign_expiry
+    result = EsignHelper.new(@document).extend_expiry(params[:expire_by])
+    if result.success?
+      redirect_to [@document, { tab: "signatures-tab" }], notice: result.message
+    else
+      redirect_to [@document, { tab: "signatures-tab" }], alert: result.errors
     end
+  end
+
+  # allows a button to trigger an immediate reminder email to whichever signer(s) are pending
+  def send_esign_reminder
+    if EsignHelper.new(@document).send_reminder
+      redirect_to [@document, { tab: "signatures-tab" }], notice: "Reminder was sent to pending signer(s)"
+    else
+      redirect_to [@document, { tab: "signatures-tab" }], alert: "Error sending reminder"
+    end
+  end
+
+  # GET shows the "Approve Generated Documents" form; POST approves, in the background, every unapproved
+  # generated document of the user's firm in the date range (optionally one folder tree / owner type),
+  # emailing the owners when notification=1.
+  # H1: both verbs are authorized - the page names the folder, and the POST approves and emails.
+  # Worked examples H1-1, H1-2, H1-3, H1-H, H1-H2, H1-X, H1-X2 — docs/security/security_review_2026_10.md#h1--bulk-document-approval
+  def approve
+    if params[:parent_folder_id].present?
+      # One folder tree: the folder must be the user's firm's, and the user an approver (H1-2, H1-3).
+      # The view shows @folder, so it is only loaded and shown once authorized.
+      @folder = Folder.find(params[:parent_folder_id])
+      authorize @folder, :approve_documents?
+    else
+      # The whole firm: approver employees and support only (H1-1, H1-X, H1-X2)
+      authorize Document, :bulk_approve?
+    end
+
+    # GET: just the form
+    return unless request.post?
+
+    # The approver is always the signed-in user, never a user_id from the request
+    options = params.to_unsafe_h.slice(:user_id, :notification, :owner_type, :parent_folder_id)
+    options[:user_id] = current_user.id
+
+    # Approves only inside the user's firm; the job re-checks the folder's firm (H1-4)
+    DocumentApprovalJob.perform_later(current_user.entity_id, params[:start_date], params[:end_date], options)
+
+    redirect_to documents_path, notice: "Document approval started, please check back in a few mins."
   end
 
   # GET /documents/new
@@ -424,6 +504,32 @@ class DocumentsController < ApplicationController
   end
 
   # Use callbacks to share common setup or constraints between actions.
+  # Zoho signs its webhooks with this header; an unsigned Zoho update is recognised by its payload.
+  def zoho_webhook?
+    request.headers["X-ZS-WEBHOOK-SIGNATURE"].present? ||
+      (params.dig(:notifications, :operation_type).present? && params.dig(:requests, :request_id).present?)
+  end
+
+  # M1 — whether a DocuSign / Digio post really comes from the provider.
+  # docs/security/security_review_2026_10.md "Authentication and session — Medium / Low", M1.
+  def esign_webhook_authentic?
+    # DocuSign Connect HMAC, checked whenever DocuSign sent one and this environment has its key.
+    # DocuSign sends one X-DocuSign-Signature-N header per HMAC key on the account (N = 1, 2, …
+    # while keys are rotated).
+    signatures = (1..10).filter_map { |n| request.headers["X-DocuSign-Signature-#{n}"].presence }
+    connect_key = Rails.application.credentials.dig(:esign, :docusign_connect_key)
+    if signatures.any? && connect_key.present?
+      expected = Base64.strict_encode64(OpenSSL::HMAC.digest("SHA256", connect_key, request.raw_post))
+      # M1-3 (happy half) — a valid HMAC is proof enough, with or without the URL token
+      return true if signatures.any? { |signature| ActiveSupport::SecurityUtils.secure_compare(expected, signature) }
+      # M1-3 — a forged or stale HMAC is refused once enforcement is on, whatever the URL says
+      return false unless WebhookToken.accept_unauthenticated?("DocuSign Connect webhook", "HMAC signature mismatch")
+    end
+
+    # Digio, and DocuSign without HMAC: the per-environment secret in the callback URL (M1-H, M1-2)
+    WebhookToken.accept?(params[:webhook_token], Rails.application.credentials.dig(:esign, :webhook_token), source: "eSign webhook")
+  end
+
   def set_document
     @document = Document.find(params[:id])
     authorize @document
@@ -443,8 +549,12 @@ class DocumentsController < ApplicationController
     # We are trying to get documents that belong to some entity
     @owner = nil
     if params[:owner_type].present? && params[:owner_id].present?
+      # L14 — only a model documents are owned by (DOCUMENT_OWNER_TYPES); anything else is a 404 (L14-2)
+      owner_class = ApplicationRecord.model_class_from_param(params[:owner_type], allowed: DOCUMENT_OWNER_TYPES)
+      raise ActiveRecord::RecordNotFound, "Unknown owner type" unless owner_class
+
       # Show all the documents for the owner for that entity
-      @owner = params[:owner_type].constantize.find(params[:owner_id])
+      @owner = owner_class.find(params[:owner_id])
       @entity = @owner.entity
 
       @documents = if policy(@owner).show?
@@ -548,7 +658,7 @@ class DocumentsController < ApplicationController
                                      :pdf_conversion_engine,
                                      :signature_enabled, :public_visibility, :send_email, :display_on_page, :embed,
                                      :download, :printing, :orignal, :owner_id, :owner_type, :owner_tag, :approved, :approved_by_id,
-                                     :tag_list, :folder_id, :file, :force_esign_order, :as_of, properties: {}, e_signatures_attributes: %i[id user_id label signature_type notes _destroy], stamp_papers_attributes: %i[id tags sign_on_page notes note_on_page _destroy], emails: [])
+                                     :tag_list, :folder_id, :file, :force_esign_order, :as_of, :esign_expiration_days, :esign_reminder_period, :esign_email_reminders, properties: {}, e_signatures_attributes: %i[id user_id label signature_type notes _destroy], stamp_papers_attributes: %i[id tags sign_on_page notes note_on_page _destroy], emails: [])
   end
 
   # @return [void] NDA gate — redirects LP to acceptance screen if folder has an active NDA

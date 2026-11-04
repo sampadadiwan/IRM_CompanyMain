@@ -19,24 +19,29 @@ class KycDataPolicy < ApplicationPolicy
     Pundit.policy(user, record.investor_kyc).create?
   end
 
-  def refresh?
-    index?
-  end
-
+  # The side-by-side CKYC/KRA screen shows the PAN and addresses of the KYC it is built on, so it
+  # opens for exactly the users who can open that KYC (parent-policy delegation). The controller
+  # authorizes a KycData built on the KYC, since the screen is reached by investor_kyc_id.
+  # Worked examples C7-1, C7-5, C7-H — features/security/kyc_data_access.feature
   def compare_ckyc_kra?
-    index?
+    Pundit.policy(user, record.investor_kyc).show?
   end
 
-  def fetch_ckyc_data?
-    index?
+  # Re-fetching, sending an OTP and downloading with it each make a paid CKYC/KRA call that writes
+  # this record, so they need the same right as editing it: create rights on its KYC (the KYC's own
+  # firm staff with investor_kyc_create, or the investor on their own KYC). These were index?, i.e.
+  # "KYCs are switched on for me", so any firm's user could act on any firm's data by id.
+  # Worked examples C7-2, C7-3, C7-H, C7-H2 — features/security/kyc_data_access.feature
+  def refresh?
+    update?
   end
 
   def send_ckyc_otp?
-    index?
+    update?
   end
 
   def download_ckyc_with_otp?
-    index?
+    update?
   end
 
   def new?
@@ -51,7 +56,10 @@ class KycDataPolicy < ApplicationPolicy
     create?
   end
 
+  # Deleting needs the edit right on the record's KYC, and a successful fetch is kept as the record
+  # of what CKYC/KRA returned.
+  # Worked examples C7-4, C7-X — features/security/kyc_data_access.feature
   def destroy?
-    index? && record.status&.downcase != "success"
+    update? && record.status&.downcase != "success"
   end
 end

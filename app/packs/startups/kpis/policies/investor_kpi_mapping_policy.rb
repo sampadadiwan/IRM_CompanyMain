@@ -9,8 +9,10 @@ class InvestorKpiMappingPolicy < KpiPolicyBase
     user.enable_kpis
   end
 
+  # L12 — generating mappings from a KPI report creates them, so it needs what new? needs: the
+  # company in the user's firm and create rights (it used to be unauthorized). Test L12-4
   def generate?
-    index?
+    index? && create? && permissioned_employee?(:create)
   end
 
   def show?

@@ -20,6 +20,13 @@
   else
     args[:folder_id] ||= @investor.document_folder.id
   end
+  # X1 — a Folder ID that is not the entity's own folder (or one shared with the viewer) shows nothing, not another entity's tree
+  folder_hidden = args[:folder_id].present? && !widget_folder_visible?(args[:folder_id], current_user)
+  # E20, E21 — anyone but a company admin of the folder's entity (an investor, or an employee) gets show_root_docs, as on
+  # the fund documents tab, so the docs in the folder itself are listed, not only those in its descendants. A company
+  # admin of the entity already gets the full tree view (get_tree_view_folders) and picks the folder there.
+  folder_admin = belongs_to_entity_id?(current_user, Folder.where(id: args[:folder_id]).pick(:entity_id)) && current_user.has_cached_role?(:company_admin)
+  args[:show_root_docs] = true if args[:folder_id].present? && !folder_hidden && !folder_admin
   args[:no_folders] =  true if args[:folder_id].blank?
   args[:widget_id] = widget.id
 
@@ -38,7 +45,11 @@
     ) do
 %>
 
-    <%= turbo_frame_tag outer_frame_id, target: "_top", src: "#{uri.to_s}" do %>
+    <% if folder_hidden %>
+      <p class="text-muted mb-0">No documents to show.</p>
+    <% else %>
+      <%= turbo_frame_tag outer_frame_id, target: "_top", src: "#{uri.to_s}" do %>
+      <% end %>
     <% end %>
 
 <% end %>

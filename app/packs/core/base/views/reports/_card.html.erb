@@ -4,8 +4,13 @@
   <div class="card card-body">
     <span class="side-stick"></span>
     <h6 class="note-title text-truncate w-75 mb-0">
-      <% if report.report_builder? %>
-        <%= link_to report.name, edit_report_builder_path(report), class: "fw-bolder" %>
+      <% if report.report_builder? && report.category == ReportPolicy::AI_DRAFT %>
+        <%# An AI draft (only its maker sees it) opens the draft page (report-builder-assistant E9) %>
+        <%= link_to report.name, report_builder_draft_path(report), class: "fw-bolder" %>
+        <span class="badge bg-warning-subtle text-warning ms-1"><i class="ti ti-sparkles"></i> Draft</span>
+      <% elsif report.report_builder? %>
+        <%# The name opens the report itself; Edit (below) opens the builder (RD1, H21) %>
+        <%= link_to report.name, view_report_builder_path(report), class: "fw-bolder" %>
         <span class="badge bg-primary ms-1" style="font-size:.6rem">Builder</span>
       <% elsif report.is_dynamic? %>
         <%= report.name %>
@@ -64,7 +69,11 @@
 
               <% if report.report_builder? %>
                 <a class="note-social badge-group-item badge-social dropdown-item position-relative category-social d-flex ti ti-wand"
-                   href="<%= wizard_report_builder_step_path(report, step: "columns") %>"> Guided Wizard</a>
+                   href="<%= wizard_report_builder_step_path(report, step: "columns") %>"> Guided setup</a>
+                <%# A copy with the same set-up, opened in the builder (report-builder-starting-points H9) %>
+                <%= button_to duplicate_report_builder_path(report), method: :post,
+                      class: "note-social badge-group-item badge-social dropdown-item position-relative category-social d-flex ti ti-copy",
+                      form: { class: "d-inline" } do %> Duplicate<% end %>
               <% end %>
 
                 <% if report.allow_custom_grid_columns? %>

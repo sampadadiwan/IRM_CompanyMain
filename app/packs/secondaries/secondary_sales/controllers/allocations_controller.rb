@@ -8,7 +8,10 @@ class AllocationsController < ApplicationController
     @pagy, @allocations = pagy(@allocations) unless params[:format] == "xlsx"
 
     if params[:secondary_sale_id].present?
-      @secondary_sale = SecondarySale.find(params[:secondary_sale_id])
+      # H11: only a sale this user can see. An unscoped find printed another firm's sale name in the
+      # breadcrumb (and the bulk-actions partial, which reuses @secondary_sale); now it is "Access Denied".
+      # Test H11-4 — features/security/secondaries_isolation.feature
+      @secondary_sale = policy_scope(SecondarySale).find(params[:secondary_sale_id])
       @bread_crumbs = { Secondaries: secondary_sales_path,
                         "#{@secondary_sale.name}": secondary_sale_path(@secondary_sale) }
     end
@@ -51,7 +54,7 @@ class AllocationsController < ApplicationController
 
   # GET /allocations/new
   def new
-    @allocation = Allocation.new(allocation_params)
+    @allocation = Allocation.new(allocation_create_params)
     @allocation.entity_id = current_user.entity_id
     authorize @allocation
   end
@@ -61,10 +64,18 @@ class AllocationsController < ApplicationController
 
   # POST /allocations
   def create
-    @allocation = Allocation.new(allocation_params)
-    @allocation.entity_id = current_user.entity_id
+    # M11 — build the allocation from its offer and interest first, then authorize the record that will
+    # be saved. Authorizing a stand-in (own entity, request's sale) and then building from the offer let
+    # an allocation be authorized on one sale and saved into another firm's (M11-1, M11-H)
+    permitted = allocation_create_params
+    # The offer decides the sale and the selling firm; a missing id is a 404, not a 500 in build_from
+    offer = Offer.find(permitted[:offer_id])
+    interest = Interest.find(permitted[:interest_id])
+    # entity and sale come from the offer; the model refuses an interest of another sale. Quantity and
+    # price are decimal columns, cast as the attributes were before
+    @allocation = Allocation.build_from(offer, interest, permitted[:quantity].to_d, permitted[:price].to_d)
+    # The policy now sees the offer's firm and sale: another firm's offer is refused (M11-1)
     authorize @allocation
-    @allocation = Allocation.build_from(@allocation.offer, @allocation.interest, @allocation.quantity, @allocation.price)
     if @allocation.save
       redirect_to allocations_path(filter: true, secondary_sale_id: @allocation.secondary_sale_id), notice: "Allocation was successfully created."
     else
@@ -121,8 +132,15 @@ class AllocationsController < ApplicationController
                       "#{@allocation.secondary_sale.name}": secondary_sale_path(@allocation.secondary_sale) }
   end
 
-  # Only allow a list of trusted parameters through.
+  # The fields a new allocation is built from. The sale and the firm are never taken from here: create
+  # reads them off the offer (M11); new only uses secondary_sale_id to list that sale's offers in the form
+  def allocation_create_params
+    params.require(:allocation).permit(:offer_id, :interest_id, :secondary_sale_id, :quantity, :price, :notes, :verified)
+  end
+
+  # M11 — an existing allocation's own fields only. secondary_sale_id, offer_id, interest_id and
+  # entity_id are not permitted, so an update cannot move an allocation into another sale or firm (M11-2)
   def allocation_params
-    params.require(:allocation).permit(:offer_id, :interest_id, :secondary_sale_id, :entity_id, :quantity, :price, :amount, :notes, :verified)
+    params.require(:allocation).permit(:quantity, :price, :amount, :notes, :verified)
   end
 end

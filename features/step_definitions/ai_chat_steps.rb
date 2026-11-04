@@ -1,0 +1,1300 @@
+# frozen_string_literal: true
+
+# AI chat kit — features/ai_chat/*.feature.
+# @see openspec/changes/ai-chat-kit/design.md#worked-examples
+
+# E8, X6, E7 — AiChatHelper#ai_answer_html, called as a view would.
+Given('an answer:') do |markdown|
+  @answer_markdown = markdown
+end
+
+When('it is rendered in {word} mode') do |mode|
+  @rendered_answer = Nokogiri::HTML5.fragment(ApplicationController.helpers.ai_answer_html(@answer_markdown, mode: mode.to_sym).to_s)
+end
+
+Then('the rendered answer has a chart canvas') do
+  expect(@rendered_answer.css("canvas[data-controller='chart-renderer']")).not_to be_empty
+end
+
+Then('the rendered answer has no chart canvas') do
+  expect(@rendered_answer.css("canvas")).to be_empty
+end
+
+Then('the rendered answer says {string}') do |text|
+  expect(@rendered_answer.text).to include(text)
+end
+
+# Checked on elements, not the HTML string: escaped text ("&lt;img onerror=…&gt;") is safe and expected.
+Then('the rendered answer has no script and no inline event handler') do
+  expect(@rendered_answer.css("script, img[onerror]")).to be_empty
+  handlers = @rendered_answer.css("*").flat_map(&:attribute_nodes).select { |attr| attr.name.start_with?("on") }
+  expect(handlers).to be_empty
+end
+
+Then('the rendered answer has a table in a card') do
+  expect(@rendered_answer.css(".card .table-responsive table.table")).not_to be_empty
+end
+
+Then('the rendered answer has no italics') do
+  expect(@rendered_answer.css("em")).to be_empty
+end
+
+# ---- Assistants page (features/ai_chat/assistants_page.feature) --------------------------------------
+
+ASSISTANT_CLASSES = [FundAssistant, SpecificFundAssistant, PortfolioAssistant, PortfolioCompanyAssistant,
+                     CapitalCommitmentAssistant].freeze
+
+Given('{string} is a fund manager at {string} with the fund {string}') do |full_name, entity_name, fund_name|
+  first_name, last_name = full_name.split(" ", 2)
+  @entity = FactoryBot.create(:entity, name: entity_name, entity_type: "Investment Fund")
+  @user = FactoryBot.create(:user, entity: @entity, first_name:, last_name:)
+  @user.add_role(:company_admin)
+  @fund = FactoryBot.create(:fund, entity: @entity, name: fund_name)
+  log_in(@user)
+end
+
+# A Specific Fund Assistant chat for the fund, last changed at `time`, with its questions (and an answer each).
+def assistant_chat_with(fund_name, questions, time: Time.current, answer: "Answered.", type: "SpecificFundAssistant")
+  owner = type == "FundAssistant" ? @user : Fund.find_by!(name: fund_name)
+  chat = Chat.create!(user: @user, entity: @entity, owner:, assistant_type: type, name: "#{owner} Chat")
+  Array(questions).each do |question|
+    chat.messages.create!(role: "user", content: question, created_at: time, updated_at: time)
+    chat.messages.create!(role: "assistant", content: answer, created_at: time, updated_at: time)
+  end
+  # Messages touch the chat; put its "last changed" back to the example's time.
+  chat.update_columns(created_at: time, updated_at: time)
+  chat
+end
+
+# "today 09:15" or "2026-10-28" (noon that day).
+def example_time(text)
+  return Time.zone.now.change(hour: Regexp.last_match(1).to_i, min: Regexp.last_match(2).to_i) if text =~ /\Atoday (\d\d):(\d\d)\z/
+
+  Date.parse(text).in_time_zone.change(hour: 12)
+end
+
+Given('Priya has Specific Fund Assistant chats on {string}:') do |fund_name, table|
+  table.hashes.each { |row| assistant_chat_with(fund_name, row["question"], time: example_time(row["last changed"])) }
+end
+
+Given('Priya has {int} Specific Fund Assistant chats on {string}') do |count, fund_name|
+  count.times { |i| assistant_chat_with(fund_name, "Question #{i + 1}", time: (i + 1).minutes.ago) }
+end
+
+Given('Priya has a Specific Fund Assistant conversation on {string} answered with a table') do |fund_name|
+  assistant_chat_with(fund_name, "Which LPs are overdue?", answer: "Overdue:\n\n| Investor | Overdue |\n|---|---|\n| Mehta Family | 40,00,000 |")
+end
+
+Given('Priya has a Specific Fund Assistant conversation on {string} answered {string}') do |fund_name, answer|
+  assistant_chat_with(fund_name, "Which ids?", answer:)
+end
+
+When('Priya opens the Specific Fund Assistant for {string}') do |fund_name|
+  visit assistant_path("assistant", assistant_type: "SpecificFundAssistant", owner_id: Fund.find_by!(name: fund_name).id, owner_type: "Fund")
+end
+
+When('Priya opens the Specific Fund Assistant for {string} in locale {string}') do |fund_name, locale|
+  page.driver.header("Accept-Language", locale)
+  step %(Priya opens the Specific Fund Assistant for "#{fund_name}")
+end
+
+When('Priya opens the Fund Assistant') do
+  visit assistant_path("assistant", assistant_type: "FundAssistant")
+end
+
+Then('the assistant sidebar lists {string} under {string} with {string}') do |question, group, meta|
+  within("#assistant-conversations") do
+    row = find(".aic-conversation", text: question)
+    expect(row).to have_css("[data-role='meta']", text: meta)
+    # The row's group is the nearest group label above it.
+    expect(row.find(:xpath, "preceding-sibling::div[@data-group][1]")["data-group"]).to eq(group)
+  end
+end
+
+Then('the assistant sidebar shows {int} conversation titled {string}') do |count, title|
+  rows = all("#assistant-conversations .aic-conversation")
+  expect(rows.size).to eq(count)
+  expect(rows.first).to have_css("[data-role='first-question']", text: title)
+end
+
+Then('the assistant sidebar shows {int} conversations and says {string}') do |count, label|
+  expect(all("#assistant-conversations .aic-conversation").size).to eq(count)
+  expect(page).to have_css(".aic-sidebar .border-top", text: label)
+end
+
+Then('the assistant header names {string} and links to {string}') do |name, record|
+  within("#assistant-chat .aic-header") do
+    expect(page).to have_content(name)
+    expect(page).to have_link(record)
+  end
+end
+
+Then('the assistant header names {string} without a record link') do |name|
+  within("#assistant-chat .aic-header") { expect(page).to have_content(name) }
+  # The Export menu's Efficiency Report link sits in the dropdown, not in the header line itself.
+  expect(page).to have_no_css("#assistant-chat .aic-header > a")
+end
+
+Then('the thread greets {string}') do |greeting|
+  within("#assistant-chat") { expect(page).to have_content(greeting) }
+end
+
+Then('the thread shows {string} without italics') do |text|
+  within("#assistant-chat-items") do
+    expect(page).to have_content(text)
+    expect(page).to have_no_css("em")
+  end
+end
+
+Then('the exported answers include a table inside the answer body') do
+  expect(page).to have_css("[data-ppt-export-target='responses'] " \
+                           "[data-ai-chat-answer] [data-ai-chat-answer-body] .card table")
+end
+
+Then('the chat shows no Font Awesome or Bootstrap Icons') do
+  classes = Nokogiri::HTML(page.html).css(".ai-chat [class]").flat_map { |node| node["class"].split }
+  expect(classes.grep(/\A(fa|fas|far|fab|fa-.+|bi|bi-.+)\z/)).to be_empty
+end
+
+# The assistant itself is stubbed: these steps fix what every assistant's #run returns.
+Given('the assistant answers:') do |text|
+  ASSISTANT_CLASSES.each { |klass| allow_any_instance_of(klass).to receive(:run).and_return(OpenStruct.new(content: text)) }
+end
+
+Given('the assistant answers {string}') do |text|
+  ASSISTANT_CLASSES.each { |klass| allow_any_instance_of(klass).to receive(:run).and_return(OpenStruct.new(content: text)) }
+end
+
+Given('the assistant times out') do
+  ASSISTANT_CLASSES.each { |klass| allow_any_instance_of(klass).to receive(:run).and_raise(Timeout::Error) }
+end
+
+Given('speech is transcribed as {string}') do |text|
+  allow(RubyLLM).to receive(:transcribe).and_return(OpenStruct.new(text:))
+end
+
+# The open conversation, from the question box (as the browser would send it).
+def open_assistant_chat_id
+  find("#assistant-composer input[name='chat_id']", visible: :all).value
+end
+
+# Posts as Turbo does (Accept: turbo-stream) and keeps the stream the server answered with.
+def post_turbo_stream(path, params)
+  page.driver.browser.post(path, params, { "HTTP_ACCEPT" => "text/vnd.turbo-stream.html" })
+  expect(page.driver.browser.last_response.status).to eq(200)
+  @stream = Nokogiri::HTML5.fragment(page.driver.browser.last_response.body)
+end
+
+When('Priya asks the assistant {string}') do |question|
+  post_turbo_stream(ask_assistants_path, { query: question, chat_id: open_assistant_chat_id })
+end
+
+When('Priya sends a voice question') do
+  audio = Rack::Test::UploadedFile.new(StringIO.new("a" * 2000), "audio/webm", original_filename: "voice.webm")
+  post_turbo_stream(transcribe_assistants_path, { audio:, chat_id: open_assistant_chat_id })
+end
+
+Then('the response adds the question {string} with {string} under it') do |question, pending|
+  appended = @stream.at_css("turbo-stream[action='append'][target='assistant-chat-items'] template")
+  html = Nokogiri::HTML5.fragment(appended.inner_html)
+  expect(html.at_css(".aic-question").text.strip).to eq(question)
+  expect(html.at_css("[data-ai-chat-answer]").text).to include(pending)
+end
+
+# The job re-renders the box when it ends; the response must not (its broadcast can arrive first).
+Then('the response leaves the question box to the job') do
+  expect(@stream.at_css("turbo-stream[target='assistant-composer']")).to be_nil
+end
+
+# The job's broadcast of the answer (replacing the pending one), rendered as the browser would get it.
+def live_answer_html
+  update = @live_updates.rfind { |u| u[:target].to_s.start_with?("assistant_response_") }
+  expect(update).to be_present
+  Nokogiri::HTML5.fragment(ApplicationController.render(partial: update[:partial], locals: update[:locals]))
+end
+
+def live_composer_update
+  @live_updates.rfind { |u| u[:target] == "assistant-composer" }.tap { |u| expect(u).to be_present }
+end
+
+Then('the live answer replaces the pending one with a table in a card') do
+  html = live_answer_html
+  expect(html.css(".card .table-responsive table")).not_to be_empty
+  expect(html.text).not_to include("Thinking…")
+end
+
+Then('the live question box is ready again') do
+  update = live_composer_update
+  expect(update[:locals][:running]).to be(false)
+  expect(update[:locals][:value]).to be_nil
+end
+
+Then('the live answer reads {string} with {string}') do |badge, reason|
+  html = live_answer_html
+  expect(html.at_css(".badge").text).to include(badge)
+  expect(html.text).to include(reason)
+end
+
+Then('the live question box holds {string}') do |question|
+  expect(live_composer_update[:locals][:value]).to eq(question)
+end
+
+# ---- Record analysis chat (features/ai_chat/kpi_chat.feature) ------------------------------------------
+
+Given('Priya has a chat about {string} that asked {string}') do |fund_name, question|
+  @chat = Chat.create!(user: @user, entity: @entity, owner: Fund.find_by!(name: fund_name), name: "#{fund_name} analysis")
+  @chat.messages.create!(role: "user", content: question)
+  @chat.messages.create!(role: "assistant", content: "Q2 was steady.")
+end
+
+# Chat#ask is stubbed as RubyLLM streams: it saves the question and an empty answer, then yields chunks.
+def stub_chat_ask(chunks: [], error: nil)
+  allow_any_instance_of(Chat).to receive(:ask) do |chat, content, with: [], &block|
+    @ask_with = with
+    raise error if error
+
+    chat.messages.create!(role: "user", content:)
+    chat.messages.create!(role: "assistant", content: "")
+    chunks.each { |text| block.call(OpenStruct.new(content: text)) }
+  end
+end
+
+Given('the chat model streams {string}') do |text|
+  stub_chat_ask(chunks: text.split(/(?<=\s)/))
+end
+
+Given('the chat model streams nothing') do
+  stub_chat_ask
+end
+
+Given('the chat model fails with {string}') do |message|
+  stub_chat_ask(error: StandardError.new(message))
+end
+
+Given('alerts are recorded') do
+  @alerts = []
+  allow_any_instance_of(ChatStreamJob).to receive(:send_notification) { |_job, *args| @alerts << args }
+end
+
+When('Priya opens that chat') do
+  visit chat_path(@chat)
+end
+
+When('Priya sends {string} in the chat') do |question|
+  post_turbo_stream(send_message_chat_path(@chat), { user_content: question })
+end
+
+Then('the chat sidebar lists {string}') do |question|
+  within("#chat-conversations") { expect(page).to have_css(".aic-conversation", text: question) }
+end
+
+Then('the chat response adds the question {string} with {string} under it') do |question, pending|
+  appended = @stream.at_css("turbo-stream[action='append'][target='chat-panel-items'] template")
+  html = Nokogiri::HTML5.fragment(appended.inner_html)
+  expect(html.at_css(".aic-question").text.strip).to eq(question)
+  expect(html.at_css("[data-ai-chat-answer]").text).to include(pending)
+end
+
+def chat_answer_updates
+  @live_updates.select { |u| u[:target].to_s.start_with?("chat_response_") }
+end
+
+def render_live(update)
+  Nokogiri::HTML5.fragment(ApplicationController.render(partial: update[:partial], locals: update[:locals]))
+end
+
+Then('the live chat answer streamed before it finished') do
+  statuses = chat_answer_updates.map { |u| u[:locals][:item].status }
+  expect(statuses).to include(:running)
+  expect(statuses.last).to eq(:answered)
+end
+
+Then('the live chat answer shows {string}') do |text|
+  expect(render_live(chat_answer_updates.last).text).to include(text)
+end
+
+Then('the live chat answer reads {string}') do |badge|
+  expect(render_live(chat_answer_updates.last).at_css(".badge").text).to include(badge)
+end
+
+Then('the live chat question box is ready again') do
+  update = @live_updates.rfind { |u| u[:target] == "chat-composer" }
+  expect(update[:locals]).to include(running: false, value: nil)
+end
+
+Then('the live chat question box holds {string}') do |question|
+  expect(@live_updates.rfind { |u| u[:target] == "chat-composer" }[:locals][:value]).to eq(question)
+end
+
+Then('there is no document picker') do
+  expect(page).to have_no_css("#chat-document")
+end
+
+Then('Priya is alerted {string}') do |message|
+  expect(@alerts).to include([message, @user.id, :alert])
+end
+
+Given('{string} of {string} is signed in') do |full_name, entity_name|
+  first_name, last_name = full_name.split(" ", 2)
+  entity = FactoryBot.create(:entity, name: entity_name, entity_type: "Investment Fund")
+  @other_user = FactoryBot.create(:user, entity:, first_name:, last_name:)
+  @other_user.add_role(:company_admin)
+  log_in(@other_user)
+end
+
+When("Arjun opens Priya's chat") do
+  visit chat_path(@chat)
+end
+
+Then("the chat's questions are not shown") do
+  expect(page).to have_no_content("Summarise Q2")
+  expect(page).to have_no_css("#chat-panel")
+end
+
+# ---- Floating agent window (features/ai_chat/floating_window.feature) ------------------------------------
+
+Given('Golden Angels has the {string} agent {string} with chat on') do |agent_type, name|
+  agent = FactoryBot.create(:support_agent, entity: @entity, agent_type:, name:, enabled: true,
+                                            json_fields: { "chat_config" => { "enabled" => true } })
+  @agents ||= {}
+  @agents[agent_type] = agent
+  @agent ||= agent
+  @lp_agent = agent if agent_type == "LpAssistantAgent"
+end
+
+Given('the fund {string} of Golden Angels') do |fund_name|
+  FactoryBot.create(:fund, entity: @entity, name: fund_name)
+end
+
+# Only the model call is stubbed: GenericChatAgent still picks and saves the session itself.
+def stub_agent_reply(text: nil, provider_error: nil, fail: false)
+  allow_any_instance_of(GenericChatAgent).to receive(:resolve_provider) do |*|
+    raise provider_error if provider_error
+
+    true
+  end
+  allow_any_instance_of(GenericChatAgent).to receive(:setup_ruby_llm_chat).and_return(true)
+  allow_any_instance_of(GenericChatAgent).to receive(:execute_chat) do |_agent, ctx, **|
+    ctx[:ai_response] = text
+    !fail
+  end
+end
+
+Given('the agent answers {string}') do |text|
+  stub_agent_reply(text:)
+end
+
+Given('the agent cannot reach the AI service') do
+  stub_agent_reply(provider_error: SocketError.new("getaddrinfo: Name or service not known"))
+end
+
+Given('the agent fails') do
+  stub_agent_reply(fail: true)
+end
+
+# A window conversation, last changed at `time`.
+def window_session(chattable, question, time:, analyst: @user, agent: @agent)
+  session = AgentChatSession.create!(support_agent: agent, chattable:, analyst:, channel: "web", status: "active")
+  session.agent_chat_messages.create!(role: "user", content: question, channel: "web", created_at: time)
+  session.agent_chat_messages.create!(role: "assistant", content: "Answered.", channel: "web", created_at: time)
+  session.update_columns(created_at: time, updated_at: time)
+  session
+end
+
+def example_time_or_ago(text)
+  text =~ /\A(\d+) (minutes|hours) ago\z/ ? Regexp.last_match(1).to_i.send(Regexp.last_match(2)).ago : example_time(text)
+end
+
+Given('Priya has window conversations on {string}:') do |fund_name, table|
+  fund = Fund.find_by!(name: fund_name)
+  table.hashes.each { |row| window_session(fund, row["question"], time: example_time_or_ago(row["last changed"])) }
+end
+
+def window_path(chattable, agent: @agent, **params)
+  support_agent_chats_path(agent, chattable_type: chattable.class.name, chattable_id: chattable.id, **params)
+end
+
+def window_frame_id(agent = @agent) = "agent-chat-#{agent.id}"
+
+When('Priya opens the window on {string}') do |fund_name|
+  @window_record = Fund.find_by!(name: fund_name)
+  visit window_path(@window_record)
+end
+
+When('Priya starts a new conversation in the window on {string}') do |fund_name|
+  @window_record = Fund.find_by!(name: fund_name)
+  visit window_path(@window_record, new_session: 1)
+end
+
+When('Priya reopens {string} in the window on {string}') do |question, fund_name|
+  @window_record = Fund.find_by!(name: fund_name)
+  session = AgentChatSession.joins(:agent_chat_messages).find_by!(agent_chat_messages: { content: question })
+  visit window_path(@window_record, session_id: session.id)
+end
+
+When('Priya opens the Portfolio Assistant agent\'s page') do
+  visit support_agent_path(@agent)
+end
+
+# Posts the window's question box as the browser would: its own hidden fields, Accept turbo-stream.
+def ask_in_window(question, agent: @agent)
+  fields = all("##{window_frame_id(agent)}-composer input[type='hidden']", visible: :all)
+           .to_h { |input| [input[:name], input.value] }
+  page.driver.browser.post(support_agent_chats_path(agent), fields.merge("message" => question),
+                           { "HTTP_ACCEPT" => "text/vnd.turbo-stream.html" })
+  @window_status = page.driver.browser.last_response.status
+  @stream = Nokogiri::HTML5.fragment(page.driver.browser.last_response.body)
+end
+
+When('Priya asks in the window {string}') do |question|
+  ask_in_window(question)
+end
+
+def stream_template(action, target)
+  node = @stream.at_css("turbo-stream[action='#{action}'][target='#{target}'] template")
+  expect(node).to be_present, "no #{action} of #{target} in #{@stream.to_html.first(300)}"
+  Nokogiri::HTML5.fragment(node.inner_html)
+end
+
+Then('the window shows the question {string} and the answer {string}') do |question, answer|
+  html = stream_template("replace", window_frame_id)
+  expect(html.css(".aic-question").map { |q| q.text.strip }).to include(question)
+  expect(html.css("[data-ai-chat-answer]").map(&:text).join).to include(answer)
+  @window_html = html
+end
+
+Then('the window\'s answer has no rating buttons') do
+  expect(@window_html.css("[data-ai-chat-feedback]")).to be_empty
+end
+
+Then('the window opens on a new conversation') do
+  expect(page).to have_css("##{window_frame_id}-thread-empty")
+  expect(find("##{window_frame_id}-composer input[name='new_session']", visible: :all).value).to eq("1")
+end
+
+Then('the window lists {string} with {string}') do |question, meta|
+  row = find("##{window_frame_id}-conversations .aic-conversation", text: question)
+  expect(row).to have_css("[data-role='meta']", text: meta)
+end
+
+Then('the window lists {string}') do |question|
+  expect(page).to have_css("##{window_frame_id(@window_agent || @agent)}-conversations .aic-conversation", text: question)
+end
+
+Then('the window does not list {string}') do |question|
+  expect(page).to have_no_css("##{window_frame_id(@window_agent || @agent)}-conversations .aic-conversation", text: question)
+end
+
+Then('the window lists {string} without quote marks') do |question|
+  title = find("##{window_frame_id}-conversations .aic-conversation [data-role='first-question']").text
+  expect(title).to eq(question)
+end
+
+Then('the window suggests {string} with a fill button and an Ask button') do |question|
+  within("##{window_frame_id}-suggestions") do
+    expect(page).to have_css("button[data-action='ai-chat-thread#fill'][data-prompt='#{question}']")
+    expect(page).to have_css("button[data-action='ai-chat-thread#askNow'][data-prompt='#{question}']", text: "Ask")
+  end
+end
+
+Then('the page has the chat bubble and a lazy window') do
+  expect(page).to have_css("[data-controller='ai-chat-window'] [data-ai-chat-window-target='toggle']", text: "Need help?")
+  expect(page).to have_css("[data-ai-chat-window-target='panel'] turbo-frame##{window_frame_id}[loading='lazy']", visible: :all)
+end
+
+Then('the window has Conversations, New, Maximise and Close') do
+  expect(page).to have_css("button[data-action='ai-chat-window#toggleList'][title='Conversations']")
+  expect(page).to have_css("a##{window_frame_id}-new-chat[title='New chat']")
+  expect(page).to have_css("button[data-action='ai-chat-window#toggleMaximize']")
+  expect(page).to have_css("button[data-action='ai-chat-window#close']")
+  expect(page).to have_css("##{window_frame_id}-conversations", visible: :all)
+end
+
+Then('the window request is refused and no message is saved') do
+  expect(@window_status).to eq(422)
+  expect(AgentChatMessage.count).to eq(0)
+end
+
+Then('Priya has {int} window conversations on {string}') do |count, fund_name|
+  expect(AgentChatSession.where(chattable: Fund.find_by!(name: fund_name), analyst: @user).count).to eq(count)
+end
+
+def session_started_with(question)
+  first_ids = AgentChatMessage.where(role: "user").group(:agent_chat_session_id).minimum(:id).values
+  AgentChatMessage.where(id: first_ids, content: question).sole.agent_chat_session
+end
+
+Then('{string} is in the conversation that started {string}') do |question, first_question|
+  expect(session_started_with(first_question).agent_chat_messages.where(role: "user").pluck(:content)).to include(question)
+end
+
+When('the agent is asked {string} about {string} without naming a conversation') do |question, fund_name|
+  GenericChatAgent.call(support_agent_id: @agent.id, target: Fund.find_by!(name: fund_name), user_message: question,
+                        analyst_id: @user.id)
+end
+
+Then('the window\'s pending answer reads {string} with {string}') do |badge, reason|
+  html = stream_template("replace", "#{window_frame_id}-pending-answer")
+  expect(html.at_css(".badge").text).to include(badge)
+  expect(html.text).to include(reason)
+end
+
+Then('the window\'s question box holds {string}') do |question|
+  html = stream_template("replace", "#{window_frame_id}-composer")
+  expect(html.at_css("textarea").text).to eq(question)
+end
+
+# The LP chat: an investor (her own entity) with approved access to Golden Angels, and her window
+# about herself (chattable: current_user, as entities/_vc_dashboard renders it).
+def lp_investor_user(full_name)
+  first_name, last_name = full_name.split(" ", 2)
+  home = FactoryBot.create(:entity, name: "#{full_name} Family Office", entity_type: "Investor")
+  user = FactoryBot.create(:user, entity: home, first_name:, last_name:)
+  investor = FactoryBot.create(:investor, entity_id: @entity.id, investor_entity_id: home.id, investor_name: home.name,
+                                          category: "LP")
+  InvestorAccess.create!(investor:, entity: @entity, investor_entity: home, user:, email: user.email,
+                         first_name:, last_name:, approved: true)
+  user
+end
+
+Given('{string} is an investor of Golden Angels with her own LP chat {string}') do |full_name, question|
+  @kavya = lp_investor_user(full_name)
+  @kavya_session = window_session(@kavya, question, time: 10.minutes.ago, analyst: @kavya, agent: @lp_agent)
+end
+
+Given('another investor of Golden Angels has an LP chat {string}') do |question|
+  other = lp_investor_user("Ravi Menon")
+  @other_session = window_session(other, question, time: 5.minutes.ago, analyst: other, agent: @lp_agent)
+end
+
+When('Kavya opens her LP chat') do
+  log_in(@kavya)
+  @window_agent = @lp_agent
+  visit window_path(@kavya, agent: @lp_agent)
+end
+
+When('Kavya asks her LP chat {string} naming the other investor\'s conversation') do |question|
+  log_in(@kavya)
+  page.driver.browser.post(support_agent_chats_path(@lp_agent),
+                           { "message" => question, "chattable_type" => "User", "chattable_id" => @kavya.id,
+                             "session_id" => @other_session.id },
+                           { "HTTP_ACCEPT" => "text/vnd.turbo-stream.html" })
+  expect(page.driver.browser.last_response.status).to eq(200)
+end
+
+Then('the other investor\'s conversation is unchanged') do
+  expect(@other_session.agent_chat_messages.pluck(:content)).to eq(["Show my SOA", "Answered."])
+end
+
+Then('{string} is in Kavya\'s own LP chat') do |question|
+  sessions = AgentChatSession.where(analyst: @kavya, support_agent: @lp_agent)
+  expect(AgentChatMessage.where(agent_chat_session: sessions, content: question)).to exist
+end
+
+# ---- Customer Support extras (features/ai_chat/customer_support.feature) ---------------------------------
+
+Given('Priya has a Customer Support conversation {string} answered {string}') do |question, answer|
+  agent = @agents["CustomerSupportAgent"]
+  @cs_session = AgentChatSession.create!(support_agent: agent, chattable: @user, analyst: @user, channel: "web", status: "active")
+  @cs_session.agent_chat_messages.create!(role: "user", content: question, channel: "web")
+  @cs_answer = @cs_session.agent_chat_messages.create!(role: "assistant", content: answer, channel: "web")
+end
+
+Given('that conversation was passed to a human') do
+  @cs_session.update!(status: "escalated")
+end
+
+Given('Priya has a {string} conversation on {string} answered {string}') do |agent_name, fund_name, answer|
+  agent = SupportAgent.find_by!(name: agent_name)
+  session = AgentChatSession.create!(support_agent: agent, chattable: Fund.find_by!(name: fund_name), analyst: @user,
+                                     channel: "web", status: "active")
+  session.agent_chat_messages.create!(role: "user", content: "How are valuations?", channel: "web")
+  session.agent_chat_messages.create!(role: "assistant", content: answer, channel: "web")
+end
+
+When('Priya opens the Customer Support window') do
+  visit window_path(@user, agent: @agents["CustomerSupportAgent"])
+end
+
+When('Priya opens a new conversation in the Customer Support window') do
+  visit window_path(@user, agent: @agents["CustomerSupportAgent"], new_session: 1)
+end
+
+When('Priya opens the {string} window on {string}') do |agent_name, fund_name|
+  visit window_path(Fund.find_by!(name: fund_name), agent: SupportAgent.find_by!(name: agent_name))
+end
+
+Then('the answer offers 👍 and 👎') do
+  within("##{ActionView::RecordIdentifier.dom_id(@cs_answer)} [data-ai-chat-feedback]") do
+    expect(page).to have_css("button[data-rating='positive'][data-action='ai-chat-feedback#rate']")
+    expect(page).to have_css("button[data-rating='negative'][data-action='ai-chat-feedback#rate']")
+  end
+end
+
+Then('the answer offers no rating') do
+  expect(page).to have_css("[data-ai-chat-answer]")
+  expect(page).to have_no_css("[data-ai-chat-feedback]")
+end
+
+# The PATCH the 👍/👎 buttons and the note's Send make (ai_chat_feedback_controller).
+def patch_feedback(message, body)
+  url = find("##{ActionView::RecordIdentifier.dom_id(message)} [data-ai-chat-feedback]")["data-ai-chat-feedback-url-value"]
+  page.driver.browser.patch(url, body.to_json, { "CONTENT_TYPE" => "application/json", "HTTP_ACCEPT" => "application/json" })
+  expect(page.driver.browser.last_response.status).to eq(200)
+end
+
+When('Priya rates the answer {string}') do |rating|
+  patch_feedback(@cs_answer, { rating: })
+end
+
+When('Priya sends the feedback note {string}') do |notes|
+  patch_feedback(@cs_answer, { notes: })
+end
+
+Then('the answer\'s feedback is {string} with the note {string}') do |rating, notes|
+  feedback = AgentChatMessageFeedback.find_by!(agent_chat_message: @cs_answer)
+  expect([feedback.rating, feedback.notes]).to eq([rating, notes])
+end
+
+Then('the answer shows its rating {string}') do |rating|
+  expect(page).to have_css("##{ActionView::RecordIdentifier.dom_id(@cs_answer)} [data-ai-chat-feedback-rating-value='#{rating}']")
+end
+
+Then('the conversation {string} shows {string}') do |question, badge|
+  row = find("#agent-chat-#{@agents['CustomerSupportAgent'].id}-conversations .aic-conversation", text: question)
+  expect(row).to have_css("[data-role='status']", text: badge)
+end
+
+When('Arjun rates Priya\'s answer {string}') do |rating|
+  url = feedback_support_agent_chat_path(@agents["CustomerSupportAgent"], @cs_answer)
+  page.driver.browser.patch(url, { rating: }.to_json, { "CONTENT_TYPE" => "application/json", "HTTP_ACCEPT" => "application/json" })
+  @feedback_status = page.driver.browser.last_response.status
+end
+
+Then('the rating is refused and nothing is saved') do
+  expect(@feedback_status).not_to eq(200)
+  expect(AgentChatMessageFeedback.where(agent_chat_message: @cs_answer)).not_to exist
+end
+
+# ---- Browser smoke (features/ai_chat/browser_smoke.feature, Playwright) ----------------------------------
+
+# A short delay, so the browser can be seen showing the pending question before the answer replaces it.
+Given('the agent answers slowly {string}') do |text|
+  stub_agent_reply(text:)
+  allow_any_instance_of(GenericChatAgent).to receive(:execute_chat).and_wrap_original do |_original, ctx, **|
+    sleep 1.5
+    ctx[:ai_response] = text
+    true
+  end
+end
+
+When('Priya clicks the chat bubble') do
+  find("[data-ai-chat-window-target='toggle']").click
+  # The window's inside loads lazily once it is visible.
+  expect(page).to have_css("##{window_frame_id}-question")
+end
+
+When('Priya types {string} in the window and presses Enter') do |question|
+  box = find("##{window_frame_id}-question")
+  box.fill_in(with: question)
+  box.send_keys(:enter)
+end
+
+Then('the window shows {string} with {string} before the answer arrives') do |question, pending|
+  expect(page).to have_css("##{window_frame_id}-pending-question .aic-question", text: question)
+  expect(page).to have_css("##{window_frame_id}-pending-answer", text: pending)
+end
+
+Then('the window shows the answer {string}') do |answer|
+  expect(page).to have_css(".aic-window [data-ai-chat-answer]", text: answer, wait: 15)
+  expect(page).to have_no_css("##{window_frame_id}-pending-answer")
+end
+
+When('Priya clicks Ask on the suggestion {string}') do |question|
+  find("##{window_frame_id}-suggestions button[data-action='ai-chat-thread#askNow'][data-prompt='#{question}']").click
+end
+
+When('Priya maximises the window') do
+  find("##{window_frame_id}-maximise").click
+end
+
+Then('the window\'s conversation list is visible beside the thread') do
+  expect(page).to have_css(".aic-window.aic-maximized")
+  expect(page).to have_css("##{window_frame_id}-conversations", visible: :visible)
+  expect(page).to have_css("##{window_frame_id}-question", visible: :visible)
+end
+
+# ---- Review fixes (X39–X44) --------------------------------------------------------------------------------
+
+Then('the rendered answer has no element ids and no controller but the chart renderer') do
+  expect(@rendered_answer.css("[id]")).to be_empty
+  expect(@rendered_answer.css("[data-action]")).to be_empty
+  expect(@rendered_answer.css("[data-controller]").reject { |node| node["data-controller"] == "chart-renderer" }).to be_empty
+end
+
+Given('Priya\'s colleague {string} has a Specific Fund Assistant chat on {string} asking {string}') do |full_name, fund_name, question|
+  first_name, last_name = full_name.split(" ", 2)
+  colleague = FactoryBot.create(:user, entity: @entity, first_name:, last_name:)
+  @colleague_chat = Chat.create!(user: colleague, entity: @entity, owner: Fund.find_by!(name: fund_name),
+                                 assistant_type: "SpecificFundAssistant", name: "Colleague chat")
+  @colleague_chat.messages.create!(role: "user", content: question)
+end
+
+When('Priya opens that colleague\'s assistant chat by its id') do
+  visit assistant_path("assistant", assistant_type: "SpecificFundAssistant", chat_id: @colleague_chat.id)
+end
+
+Then('the thread does not show {string}') do |text|
+  expect(page).to have_no_content(text)
+end
+
+Then('the failed attempt no longer uses the pending ids') do
+  question = stream_template("replace", "#{window_frame_id}-pending-question")
+  answer = stream_template("replace", "#{window_frame_id}-pending-answer")
+  expect(question.at_css(".aic-message")["id"]).not_to eq("#{window_frame_id}-pending-question")
+  expect(answer.at_css("[data-ai-chat-answer]")["id"]).not_to eq("#{window_frame_id}-pending-answer")
+end
+
+When('Arjun asks the Portfolio Assistant agent {string}') do |question|
+  page.driver.browser.post(support_agent_chats_path(@agent),
+                           { "message" => question, "chattable_type" => "Fund", "chattable_id" => @fund.id },
+                           { "HTTP_ACCEPT" => "text/vnd.turbo-stream.html" })
+  @window_status = page.driver.browser.last_response.status
+end
+
+Then('the question is refused without a server error and nothing is saved') do
+  expect(@window_status).to be < 500
+  expect(@window_status).not_to eq(200)
+  expect(AgentChatMessage.count).to eq(0)
+end
+
+Given('another entity has a document {string}') do |name|
+  rival = FactoryBot.create(:entity, name: "Rival Capital", entity_type: "Investment Fund")
+  rival_fund = FactoryBot.create(:fund, entity: rival, name: "Rival Fund")
+  rival_user = FactoryBot.create(:user, entity: rival)
+  @rival_document = FactoryBot.create(:document, name:, entity: rival, owner: rival_fund, user: rival_user,
+                                                 folder: rival_fund.document_folder)
+end
+
+When('Priya sends {string} in the chat with that document') do |question|
+  post_turbo_stream(send_message_chat_path(@chat), { user_content: question, document_id: @rival_document.id })
+end
+
+Then('the model was asked without any document') do
+  expect(@ask_with).to eq([])
+end
+
+# ---- Answer layout (features/ai_chat/answer_layout.feature) -------------------------------------------------
+
+LAYOUT_ANSWER = <<~MD
+  ## Summary
+  Three LPs are overdue on Call 3.
+
+  ## Key figures
+  - **Overdue:** ₹75,00,000
+
+  ## Questions
+  - Was a refund issued?
+
+  ## Follow-ups
+  - List the overdue LPs
+  - Which are over 30 days?
+MD
+
+Given('Priya has a Specific Fund Assistant conversation on {string} answered in the layout') do |fund_name|
+  assistant_chat_with(fund_name, "Which LPs are overdue on Call 3?", answer: LAYOUT_ANSWER)
+end
+
+Given('Priya has a chat about {string} answered in the layout') do |fund_name|
+  @chat = Chat.create!(user: @user, entity: @entity, owner: Fund.find_by!(name: fund_name), name: "#{fund_name} analysis")
+  @chat.messages.create!(role: "user", content: "Which LPs are overdue?")
+  @chat.messages.create!(role: "assistant", content: LAYOUT_ANSWER)
+end
+
+Given('Priya has a window conversation on {string} answered in the layout') do |fund_name|
+  session = window_session(Fund.find_by!(name: fund_name), "Which LPs are overdue?", time: 1.minute.ago)
+  session.agent_chat_messages.where(role: "assistant").update_all(content: LAYOUT_ANSWER)
+end
+
+Then('the answer shows a Summary card and the stat card {string} with {string}') do |label, value|
+  answer = find("[data-ai-chat-answer]", text: "Three LPs are overdue")
+  expect(answer).to have_css(".card .card-header h6", text: "Summary")
+  card = answer.find(".card.stat-card-accent", text: label)
+  expect(card).to have_css("h2", text: value)
+  # Follow-ups are offered as buttons, not repeated in the answer.
+  expect(answer).to have_no_content("List the overdue LPs")
+end
+
+Then('the question {string} in the answer has an Ask button') do |question|
+  expect(page).to have_css("[data-ai-chat-answer] .list-group-item button[data-action='ai-chat-thread#askNow'][data-prompt='#{question}']")
+end
+
+Then('the box offers the follow-up {string} in {string}') do |question, id|
+  expect(page).to have_css("##{id} button[data-action='ai-chat-thread#askNow'][data-prompt='#{question}']", text: "Ask")
+  expect(page).to have_css("##{id} button[data-action='ai-chat-thread#fill'][data-prompt='#{question}']")
+end
+
+Then('the window\'s box offers the follow-up {string}') do |question|
+  step %(the box offers the follow-up "#{question}" in "#{window_frame_id}-follow-ups")
+end
+
+When('a Fund Assistant answers a question') do
+  chat = Chat.create!(user: @user, entity: @entity, owner: @user, assistant_type: "FundAssistant", name: "Fund chat",
+                      model: PortfolioCompanyAssistant::AI_MODEL)
+  allow_any_instance_of(Chat).to receive(:with_instructions).and_wrap_original do |original, text, **options|
+    @instructions = text
+    original.call(text, **options)
+  end
+  allow_any_instance_of(Chat).to receive(:ask).and_return(OpenStruct.new(content: "Done."))
+  FundAssistant.new(user: @user, chat:).run("How many funds?")
+end
+
+Then('its instructions end with the answer layout') do
+  expect(@instructions).to end_with(AiChatAnswerLayout.instructions)
+  expect(@instructions.length).to be > AiChatAnswerLayout.instructions.length
+end
+
+# setup_ruby_llm_chat with a provider and LLM chat stood in, capturing the instructions it builds.
+When('the agent\'s instructions are built for the {string} channel') do |channel|
+  fake_chat = Object.new
+  captured = nil
+  fake_chat.define_singleton_method(:with_instructions) { |text| captured = text }
+  fake_chat.define_singleton_method(:add_message) { |**| nil }
+  allow(LlmService).to receive(:ruby_llm_chat).and_return(fake_chat)
+  provider = OpenStruct.new(system_prompt: "You are the Portfolio Assistant.", tools: [])
+  session = AgentChatSession.create!(support_agent: @agent, chattable: @fund, analyst: @user, channel:, status: "active")
+  agent = GenericChatAgent.new
+  agent.instance_variable_set(:@support_agent, @agent)
+  agent.send(:setup_ruby_llm_chat, { provider:, context: nil, channel:, chat_session: session })
+  @instructions = captured
+end
+
+Then('they include the answer layout') do
+  expect(@instructions).to include(AiChatAnswerLayout.instructions)
+end
+
+Then('they do not include the answer layout') do
+  expect(@instructions).not_to include("## Key figures")
+end
+
+Given('the chat\'s instructions are recorded') do
+  @instruction_calls = []
+  allow_any_instance_of(Chat).to receive(:with_instructions) do |_chat, text, **options|
+    @instruction_calls << [text, options]
+  end
+end
+
+Then('the chat was given the answer layout without saving it') do
+  expect(@instruction_calls).to eq([[AiChatAnswerLayout.instructions, { persist: false }]])
+end
+
+# ---- Conversations view (browser) --------------------------------------------------------------------------
+
+When('Priya opens the window\'s Conversations') do
+  find("##{window_frame_id}-list-toggle").click
+  expect(page).to have_css("##{window_frame_id}-conversations", visible: :visible)
+end
+
+When('Priya goes back to the chat') do
+  find(".aic-window .aic-window-back").click
+end
+
+When('Priya opens the conversation {string} from the list') do |question|
+  find("##{window_frame_id}-conversations .aic-conversation", text: question).click
+end
+
+Then('the window shows the chat, not the list') do
+  expect(page).to have_no_css(".aic-window.aic-show-list")
+  expect(page).to have_css("##{window_frame_id}-question", visible: :visible)
+end
+
+Then('the window shows the question {string} in the chat') do |question|
+  expect(page).to have_css("##{window_frame_id}-thread-items .aic-question", text: question)
+end
+
+# The agent's own page opens the window about the agent (support_agents/show).
+Given('Priya has a window conversation on the agent\'s page that started {string}') do |question|
+  window_session(@agent, question, time: 2.hours.ago)
+end
+
+# ---- Record links in Support Console answers (X45, X46, E50) ----------------------------------------------
+
+Then('the rendered answer links {string} to {string} in a new tab') do |text, href|
+  link = @rendered_answer.css("a").find { |a| a.text == text }
+  expect(link).to be_present
+  expect([link["href"], link["target"]]).to eq([href, "_blank"])
+  expect(link["rel"]).to include("noopener")
+end
+
+Then('the rendered answer has no links') do
+  expect(@rendered_answer.css("a")).to be_empty
+end
+
+When('the Support Console brief is built for a client') do
+  @brief = SupportConsoleClientBrief.call(FactoryBot.create(:entity, name: "Golden Angels", entity_type: "Investment Fund"))
+end
+
+Then('it asks for record ids to be linked like {string}') do |example|
+  expect(@brief).to include("link the id to its page").and include(example)
+end
+
+Then('it lists {string} among the record pages') do |path|
+  expect(@brief).to include(path)
+end
+
+# ---- AI Slides (X47) -----------------------------------------------------------------------------------------
+
+Given('Priya has a Specific Fund Assistant chat on {string} with saved slides {string}') do |fund_name, title|
+  @slides_chat = assistant_chat_with(fund_name, "Which LPs are overdue?")
+  AiPresentation.create!(chat_id: @slides_chat.id, entity_id: @entity.id, content_html: "<section><h2>#{title}</h2></section>")
+end
+
+When('Priya opens that chat\'s AI Slides') do
+  visit generate_slides_assistants_path(chat_id: @slides_chat.id)
+end
+
+Then('the slides show {string} without the slide editor') do |title|
+  expect(page.status_code).to eq(200)
+  expect(page).to have_css("#slides_container h2", text: title, visible: :all)
+  expect(page).to have_no_css("[data-controller~='slides-editor']", visible: :all)
+end
+
+# ---- Optional widgets (features/ai_chat/widgets.feature) -----------------------------------------------------
+
+Then('the answer shows a {string} verdict banner reading {string} and {string}') do |colour, label, reason|
+  banner = @rendered_answer.at_css("[data-ai-chat-verdict]")
+  expect(banner["class"]).to include("alert-#{colour}")
+  expect(banner.at_css("strong").text).to eq(label)
+  expect(banner.text.squish).to eq("#{label} #{reason}")
+end
+
+Then('the answer shows no verdict banner') do
+  expect(@rendered_answer.css("[data-ai-chat-verdict]")).to be_empty
+end
+
+Then('the checks read, in order:') do |table|
+  rows = @rendered_answer.css("[data-ai-chat-check]").map { |li| [li["data-ai-chat-check"], li.text.squish] }
+  expect(rows).to eq(table.raw.map { |state, text| [state, text.strip] })
+end
+
+Then('the answer shows no checks card') do
+  expect(@rendered_answer.css("[data-ai-chat-check]")).to be_empty
+  expect(@rendered_answer.text).to include("Remittances add up")
+end
+
+Then('the steps read {string} and {string}') do |first, second|
+  steps = @rendered_answer.css(".card ol.list-group-numbered > li").map { |li| li.text.squish }
+  expect(steps).to eq([first, second])
+end
+
+Then('the status badges read:') do |table|
+  badges = @rendered_answer.css("td .badge").map { |b| [b.text, b["class"][/bg-(\w+)-subtle/, 1]] }
+  expect(badges).to eq(table.raw)
+end
+
+Then('{string} and the Note column are not badges') do |text|
+  expect(@rendered_answer.css("td .badge").map(&:text)).not_to include(text)
+  notes = @rendered_answer.css("tbody tr").map { |tr| tr.css("td")[2] }
+  expect(notes.flat_map { |td| td.css(".badge").to_a }).to be_empty
+end
+
+When('the answer layout instructions are read') do
+  @instructions = AiChatAnswerLayout.instructions
+end
+
+# The instructions wrap lines; compare their text with whitespace normalised.
+Then('they say {string}') do |text|
+  expect(@instructions.squish).to include(text)
+end
+
+Then('they give the example {string}') do |text|
+  expect(@instructions.squish).to include(text)
+end
+
+Then('the answer\'s sections are {string}') do |sections|
+  expect(AiChatAnswerLayout.sections_in(@answer_markdown).join(", ")).to eq(sections)
+end
+
+Then('logging it for {string} writes {string}') do |source, line|
+  logged = []
+  allow(Rails.logger).to receive(:info) { |*args, &block| logged << (block ? block.call : args.first) }
+  AiChatAnswerLayout.log_usage(source, @answer_markdown)
+  expect(logged).to include(line)
+end
+
+# ---- AI Slides deck (features/ai_chat/slides.feature) --------------------------------------------------------
+
+FULL_BLUEPRINT = [
+  { "template" => "title", "title" => "AX: steady value", "subtitle" => "Where it stands.",
+    "figures" => [{ "value" => "₹2,34,216", "label" => "Current FMV" }] },
+  { "template" => "key_figures", "title" => "FMV above cost", "icon" => "chart-dots", "takeaway" => "In profit on paper.",
+    "figures" => [{ "value" => "₹2,25,665", "label" => "Cost", "icon" => "wallet", "tone" => "neutral" }] },
+  { "template" => "chart", "title" => "Revenue fell", "takeaway" => "Volume, not margin.", "notes" => ["Peak in Q3 2024."],
+    "chart_config" => { "type" => "line", "data" => { "labels" => %w[Q1 Q2], "datasets" => [{ "label" => "Revenue", "data" => [1, 2] }] } } },
+  { "template" => "insights", "title" => "What the numbers say", "takeaway" => "Healthy returns.",
+    "items" => [{ "title" => "Strong returns", "text" => "IRR 72%.", "icon" => "trending-up", "tone" => "positive" }] },
+  { "template" => "table", "title" => "Holdings", "takeaway" => "One below cost.", "columns" => %w[Holding Status],
+    "rows" => [%w[Infosys Active]], "highlight" => "Holding" },
+  { "template" => "comparison", "title" => "Capital vs operations", "takeaway" => "Valuation lags.",
+    "left" => { "title" => "Capital", "items" => ["Cost ₹2,25,665"] }, "right" => { "title" => "Operations", "items" => ["Revenue ₹12.6 Cr"] } },
+  { "template" => "next_steps", "title" => "What to check next", "takeaway" => "Nothing changes today.",
+    "steps" => [{ "title" => "Ask for the Q1 note", "text" => "From AX." }] }
+].freeze
+
+Given('a slide blueprint with one slide of each type') do
+  @blueprint = FULL_BLUEPRINT.map(&:deep_dup)
+end
+
+Given('a slide blueprint with an insights slide that has no items and a key figures slide') do
+  @blueprint = [{ "template" => "insights", "title" => "Empty", "items" => [] }, FULL_BLUEPRINT[1].deep_dup]
+end
+
+Given('a slide blueprint with an insights slide using the icon {string} and tone {string}') do |icon, tone|
+  @blueprint = [{ "template" => "insights", "title" => "Fallbacks", "icon" => icon, "takeaway" => "x",
+                  "items" => [{ "title" => "One", "text" => "Point.", "icon" => icon, "tone" => tone }] }]
+end
+
+Given('an old-style slide blueprint with hero, bullets and split_chart slides') do
+  @blueprint = [
+    { "template" => "hero", "title" => "AX overview", "subtitle" => "Old deck", "icon" => "business-plan" },
+    { "template" => "bullets", "title" => "Summary", "items" => [{ "text" => "IRR 72%.", "icon" => "trending-up" }] },
+    { "template" => "split_chart", "title" => "Revenue", "analysis" => "Revenue fell 62% in Q1 2025.",
+      "chart_config" => { "type" => "bar", "data" => { "labels" => %w[Q4 Q1], "datasets" => [{ "data" => [99, 38] }] } } }
+  ]
+end
+
+When('the blueprint is drawn for {string} on {string}') do |record, date|
+  @deck = Nokogiri::HTML5.fragment(SlideGeneratorService.render_blueprint(@blueprint, record:, date:))
+end
+
+Then('the deck has {int} slides of types {string}') do |count, types|
+  slides = @deck.css("section[data-slide-template]")
+  expect(slides.size).to eq(count)
+  expect(slides.pluck("data-slide-template").join(", ")).to eq(types)
+end
+
+Then('the slides are numbered {string} to {string}') do |first, last|
+  numbers = @deck.css("[data-slide-number]").map { |n| n.text.strip }
+  expect([numbers.first, numbers.last]).to eq([first, last])
+end
+
+Then('every slide but the title says what it means') do
+  @deck.css("section[data-slide-template]").reject { |s| s["data-slide-template"] == "title" }.each do |slide|
+    expect(slide.at_css("[data-slide-takeaway]")&.text).to include("What this means")
+  end
+end
+
+Then('the deck has none of the old filler text') do
+  text = @deck.text
+  ["Point 1", "AMBITION", "Actionable insight", "STRATEGIC OUTLOOK", "Automated insight", "Option A", "VS"].each do |filler|
+    expect(text).not_to include(filler)
+  end
+end
+
+Then('the footer reads {string}') do |footer|
+  expect(@deck.css(".cs-foot span").map { |s| s.text.strip }).to include(footer)
+end
+
+Then('the slide\'s icon is {string} and its card\'s tone is {string}') do |icon, tone|
+  expect(@deck.at_css(".cs-head .cs-icon i")["class"]).to eq("ti ti-#{icon}")
+  card = @deck.at_css(".cs-card")
+  expect(card["class"]).to include("cs-tone-#{tone}")
+  expect(card.at_css(".cs-icon i")["class"]).to eq("ti ti-#{icon}")
+end
+
+Then('the chart slide says what it means from its old analysis') do
+  chart = @deck.at_css("section[data-slide-template='chart']")
+  expect(chart.at_css("[data-slide-takeaway]").text).to include("Revenue fell 62% in Q1 2025.")
+end
+
+When('the slide brief is read') do
+  @brief = SlideGeneratorService::SYSTEM_PROMPT.squish
+end
+
+Then('it says {string}') do |text|
+  expect(@brief).to include(text)
+end
+
+Then('it lists the icon {string}') do |icon|
+  expect(@brief).to include(icon)
+end
+
+Then('every slide in the blueprint still names its template') do
+  expect(@blueprint.pluck("template")).to eq(FULL_BLUEPRINT.pluck("template"))
+end
+
+Then('the page offers Regenerate for that chat') do
+  expect(page).to have_css("a#slides-regenerate[href*='generate=true'][href*='chat_id=#{@slides_chat.id}']", text: "Regenerate")
+end
+
+Given('a slide blueprint with a stray string, a chart with bad options and datasets, and a key figures slide') do
+  @blueprint = ["not a slide",
+                { "template" => "chart", "title" => "Odd chart", "takeaway" => "x",
+                  "chart_config" => { "type" => "bar", "options" => "nope", "data" => { "labels" => ["A"], "datasets" => ["oops", { "data" => [1] }] } } },
+                { "template" => "chart", "title" => "Chart with string data", "chart_config" => { "type" => "bar", "data" => "oops" } },
+                FULL_BLUEPRINT[1].deep_dup]
+end
+
+Given('a saved old-style blueprint with no template keys: a title, bullets, a chart and a comparison') do
+  # The shape chat decks were saved in before the redesign (the old renderer deleted "template").
+  @blueprint = [
+    { "title" => "AX overview", "subtitle" => "Old deck", "icon" => "business-plan" },
+    { "title" => "Summary", "items" => [{ "text" => "IRR 72%." }] },
+    { "title" => "Revenue", "analysis" => "Revenue fell.", "icon" => "chart-bar",
+      "chart_config" => { "type" => "bar", "data" => { "labels" => %w[Q4 Q1], "datasets" => [{ "data" => [99, 38] }] } } },
+    { "title" => "Then vs now", "left_col" => { "title" => "Then", "items" => ["a"] }, "right_col" => { "title" => "Now", "items" => ["b"] } }
+  ]
+end
+
+When('the chat\'s slides are generated without forcing') do
+  # A saved blueprint (and stale saved HTML): no AI call is stubbed, so one would fail the step.
+  AiPresentation.find_by!(chat_id: @slides_chat.id).update!(blueprint: FULL_BLUEPRINT.to_json, content_html: "<section>stale</section>")
+  expect(LlmService).not_to receive(:ruby_llm_chat)
+  @deck = Nokogiri::HTML5.fragment(SlideGeneratorService.new(chat_id: @slides_chat.id).call)
+end
+
+Then('the slides are drawn from the saved blueprint with the current templates') do
+  expect(@deck.css("section[data-slide-template]").size).to eq(FULL_BLUEPRINT.size)
+  expect(@deck.text).not_to include("stale")
+end
+
+When('Priya opens AI Slides for that colleague\'s chat') do
+  # Any job queued here would be a deck made from the colleague's transcript.
+  expect(GenerateSlidesJob).not_to receive(:perform_later)
+  visit generate_slides_assistants_path(chat_id: @colleague_chat.id)
+end
+
+Then('the slides page is not found and no deck is queued') do
+  expect(page.status_code).to eq(404)
+end
+
+Then('Export offers AI Slides for that chat in a new tab, and not Chat Slides \\(Old)') do
+  chat = Chat.where(user: @user).order(:id).last
+  expect(page).to have_css("a#assistant-ai-slides[target='_blank'][href='#{generate_slides_assistants_path(chat_id: chat.id)}']",
+                           text: "AI Slides", visible: :all)
+  expect(page).to have_no_text("Chat Slides", wait: 0)
+  expect(page).to have_no_css("[data-controller~='slideshow'], .aic-slideshow", visible: :all, wait: 0)
+end
+
+# ---- Export PowerPoint (features/ai_chat/ppt_export.feature) -------------------------------------------------
+
+EXPORT_FIGURES = { "Overdue LPs" => "3", "Called" => "₹4,50,00,000", "Received" => "₹3,75,00,000",
+                   "Outstanding" => "₹75,00,000", "Oldest due" => "28/09/2026", "Call" => "Call 3" }.freeze
+EXPORT_ANSWER = <<~MD.freeze
+  ## Summary
+  Three LPs are overdue on Call 3, for ₹75,00,000 in all.
+
+  ## Verdict
+  Mismatch — received is ₹75,00,000 short of the amount called.
+
+  ## Checks
+  - ✓ Remittances add up to the called total
+  - ✗ Every remittance is paid by its due date
+
+  ## Key figures
+  #{EXPORT_FIGURES.map { |label, value| "- **#{label}:** #{value}" }.join("\n")}
+
+  ## What to do
+  1. Open Capital Calls › Call 3 › Remittances and send reminders to the overdue LPs.
+  2. Record any payment received since the statement.
+
+  ## Details
+  ### Why they are overdue
+  #{(['Each overdue LP was sent the notice on the call date and has not paid by the due date.'] * 12).join(' ')}
+
+  ### Remittances on Call 3
+  | LP | Status | Amount |
+  |---|---|---|
+  #{(1..30).map { |i| "| LP #{format('%02d', i)} | #{i <= 3 ? 'Overdue' : 'Paid'} | ₹#{15 * i},00,000 |" }.join("\n")}
+MD
+EMU = 914_400.0 # EMUs per inch
+
+Given('Priya has a Specific Fund Assistant conversation on {string} with a long answer in the layout') do |fund_name|
+  assistant_chat_with(fund_name, "Which LPs are overdue on Call 3?", answer: EXPORT_ANSWER)
+end
+
+When('Priya exports the conversation to PowerPoint') do
+  path = Rails.root.join("tmp/ppt_export_#{ENV.fetch('TEST_ENV_NUMBER', '')}_#{SecureRandom.hex(4)}.pptx")
+  page.driver.with_playwright_page do |pw|
+    pw.click("#assistant-export")
+    download = pw.expect_download { pw.click("text=Export PowerPoint") }
+    download.save_as(path.to_s)
+  end
+  # Each slide's shapes: the text they hold and their box (inches), in slide order.
+  @slides = Zip::File.open(path.to_s) do |zip|
+    zip.glob("ppt/slides/slide*.xml").sort_by { |e| e.name[/\d+/].to_i }.map do |entry|
+      xml = Nokogiri::XML(entry.get_input_stream.read)
+      xml.xpath("//p:sp | //p:graphicFrame").map do |node|
+        off = node.at_xpath(".//a:off | .//p:xfrm/a:off")
+        ext = node.at_xpath(".//a:ext[@cx] | .//p:xfrm/a:ext")
+        rows = node.xpath(".//a:tr").map { |tr| tr.xpath(".//a:tc").map { |tc| tc.xpath(".//a:t").map(&:text).join } }
+        height = [ext["cy"].to_f, node.xpath(".//a:tr").sum { |tr| tr["h"].to_f }].max / EMU
+        # Font size (a:rPr sz is in hundredths of a point) and each paragraph's text, to check the box's height.
+        size = (node.at_xpath(".//a:rPr[@sz] | .//a:defRPr[@sz]")&.[]("sz") || 1800).to_f / 100
+        paragraphs = node.xpath(".//a:p").map { |p| p.xpath(".//a:t").map(&:text).join }.reject(&:empty?)
+        { text: node.xpath(".//a:t").map(&:text).join, table: rows.presence, size:, paragraphs:,
+          x: off["x"].to_f / EMU, y: off["y"].to_f / EMU, w: ext["cx"].to_f / EMU, h: height }
+      end
+    end
+  end
+ensure
+  FileUtils.rm_f(path) if path
+end
+
+Then('every slide is titled {string}') do |question|
+  expect(@slides.size).to be > 1
+  @slides.each { |shapes| expect(shapes.first[:text]).to start_with(question) }
+end
+
+Then('the deck contains every heading, figure and check of the answer') do
+  text = @slides.flatten.pluck(:text).join("\n")
+  ["Summary", "Checks", "Key figures", "What to do", "Details", "Why they are overdue", "Remittances on Call 3",
+   "Mismatch", "received is ₹75,00,000 short", "Remittances add up to the called total",
+   "Every remittance is paid by its due date", "send reminders to the overdue LPs"].each do |expected|
+    expect(text).to include(expected)
+  end
+  EXPORT_FIGURES.each do |label, value|
+    expect(text).to include(label)
+    expect(text).to include(value)
+  end
+end
+
+# A renderer grows a box that is too short for its text over whatever is below it, so declared boxes alone
+# prove nothing (the old export declared every box 0in tall). The lower bound here is independent of the
+# exporter's own estimate: each paragraph at least one line, wrapped at half the font size per character.
+Then('every text box is tall enough for its text') do
+  @slides.each_with_index do |shapes, index|
+    shapes.select { |s| s[:paragraphs].any? && s[:table].nil? }.each do |s|
+      per_line = [(s[:w] * 72 / (s[:size] * 0.5)).floor, 1].max
+      lines = s[:paragraphs].sum { |p| (p.length.to_f / per_line).ceil.clamp(1, nil) }
+      needed = lines * s[:size] * 1.15 / 72
+      expect(s[:h]).to be >= needed - 0.01, "slide #{index + 1}: #{s[:text].first(40).inspect} is #{s[:h].round(2)}in tall, its text needs #{needed.round(2)}in"
+    end
+  end
+end
+
+Then('no two text boxes or tables overlap on any slide') do
+  @slides.each_with_index do |shapes, index|
+    # Background shapes (tile and banner fills) hold no text and sit under text on purpose.
+    boxes = shapes.select { |s| s[:text].present? || s[:table] }
+    boxes.combination(2).each do |a, b|
+      overlap_x = [a[:x] + a[:w], b[:x] + b[:w]].min - [a[:x], b[:x]].max
+      overlap_y = [a[:y] + a[:h], b[:y] + b[:h]].min - [a[:y], b[:y]].max
+      expect(overlap_x > 0.01 && overlap_y > 0.01).to be(false),
+                                                      "slide #{index + 1}: #{a[:text].first(40).inspect} overlaps #{b[:text].first(40).inspect}"
+    end
+  end
+end
+
+Then('nothing runs off the bottom of a slide') do
+  @slides.each_with_index do |shapes, index|
+    shapes.each { |s| expect(s[:y] + s[:h]).to be <= 7.5, "slide #{index + 1}: #{s[:text].first(40).inspect} ends at #{(s[:y] + s[:h]).round(2)}in" }
+  end
+end
+
+Then('the table\'s {int} rows are all in the deck, split across slides with the header {string} on each part') do |count, header|
+  parts = @slides.flat_map { |shapes| shapes.filter_map { |s| s[:table] } }
+  expect(parts.size).to be > 1
+  parts.each { |rows| expect(rows.first.join(" | ")).to eq(header) }
+  expect(parts.flat_map { |rows| rows.drop(1).map(&:first) }).to eq((1..count).map { |i| "LP #{format('%02d', i)}" })
+end

@@ -1,0 +1,11 @@
+<h3>Dear <%= @user.first_name.presence || "User" %></h3>
+
+<p>
+    Your signature is requested on <strong><%= @document.name %></strong> from <%= @document.entity.name %>.
+</p>
+
+<p class="btn btn-outline-primary"><%= link_to 'Sign now', sign_e_signature_url(@e_signature, subdomain: @document.entity.sub_domain) %></p>
+
+<p>
+    Digio has also sent you a signing link. Either one works.
+</p>

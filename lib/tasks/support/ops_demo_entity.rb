@@ -371,7 +371,7 @@ class OpsDemoEntity
     say("  #{@open_fund.name}: /funds/#{@open_fund.id}")
     say("  Log in as #{ops_email} / password")
     say("  MCP bearer token for #{bot_email} (expires #{(@token.created_at + @token.expires_in.seconds).to_date}):")
-    say("    #{@token.token}")
+    say("    #{@token.plaintext_token}")
     say("  Planted problems:")
     planted.each { |id, text| say("    #{id} #{text}") }
   end

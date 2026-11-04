@@ -10,6 +10,8 @@ class Document < ApplicationRecord
   SIGNATURE_TYPES = { image: "Signature Image", adhaar: "Adhaar eSign", dsc: "Digital Signing" }.freeze
   SKIP_ESIGN_UPDATE_STATUSES = %w[cancelled completed expired voided].freeze
   RESEND_FOR_ESIGN_STATUSES = %w[cancelled voided expired failed].freeze
+  ESIGN_ACTIVE_STATUSES = %w[requested sent inprogress].freeze
+  ESIGN_COMPLETED_STATUSES = %w[completed signed].freeze
 
   MODELS_WITH_DOCS = %w[Fund CapitalCommitment CapitalCall CapitalRemittance CapitalRemittancePayment CapitalDitribution CapitalDitributionPayment Deal DealInvestor InvestmentOpportunity ExpressionOfInterest].freeze
 
@@ -104,6 +106,11 @@ class Document < ApplicationRecord
                                           "(replace its file) or delete it before uploading another with the same name" },
                    if: :template_identity_changing?
   validates :owner_tag, length: { maximum: 40 }
+  # E14, E15, E16: blank means the provider default (90 / 4 days)
+  validates :esign_expiration_days, numericality: { only_integer: true, greater_than_or_equal_to: 1, less_than_or_equal_to: ZohoEsignHelper::MAX_EXPIRATION_DAYS,
+                                                    message: "must be between 1 and #{ZohoEsignHelper::MAX_EXPIRATION_DAYS}" }, allow_nil: true
+  validates :esign_reminder_period, numericality: { only_integer: true, greater_than_or_equal_to: 1, less_than_or_equal_to: ZohoEsignHelper::MAX_REMINDER_PERIOD_DAYS,
+                                                    message: "must be between 1 and #{ZohoEsignHelper::MAX_REMINDER_PERIOD_DAYS}" }, allow_nil: true
   validates :tag_list, length: { maximum: 120 }
   # The DB default only applies when the column is left unset; an explicit nil (e.g. from an
   # attributes hash written before this column existed) would otherwise fail the inclusion
@@ -115,10 +122,26 @@ class Document < ApplicationRecord
   before_validation :setup_folder, :setup_entity
   # A document can move between its own firm's folders, never into another firm's (C)
   validate { validate_parent_in_own_firm(:folder) }
+  # M28 — a document's owner is set once (on upload, or attached later to an ownerless document) and
+  # never moves; the owner it is set to must be in the document's firm
+  validate :validate_owner_set_once_in_own_firm, if: -> { will_save_change_to_owner_id? || will_save_change_to_owner_type? }
   before_validation :validate_file_presence_on_update, on: :update
 
   def validate_file_presence_on_update
     errors.add(:file, "can't be blank") if file.blank? && file_data.blank?
+  end
+
+  # M28: owner_id / owner_type were mass-assignable on documents#update, so a document could be
+  # re-owned onto another firm's fund or KYC (and shown to that record's investors). Re-owning a
+  # stored document from the console must use update_columns.
+  # docs/security/security_review_2026_10.md (Core / misc — Medium and Low, M28)
+  def validate_owner_set_once_in_own_firm
+    # An owner already stored never changes (M28-1)
+    return errors.add(:owner, "cannot be changed once set") if persisted? && owner_id_in_database.present?
+
+    # A new document, or an ownerless one being attached: the owner must be in this document's firm
+    # (M28-2, M28-H). Owners without a firm column are left to the policy.
+    validate_parent_in_own_firm(:owner) if owner.is_a?(Entity) || owner.respond_to?(:entity_id)
   end
 
   after_destroy :update_owner
@@ -146,6 +169,7 @@ class Document < ApplicationRecord
   scope :esign_status_completed, -> { where(esign_status: "completed") }
   scope :esign_status_failed, -> { where(esign_status: "failed") }
   scope :esign_status_requested, -> { where(esign_status: "requested") }
+  scope :esign_status_in_progress, -> { where(esign_status: "inprogress") }
   scope :esign_status_all, -> { where.not(esign_status: nil) }
 
   scope :signed, -> { where(owner_tag: "Signed") }
@@ -263,6 +287,46 @@ class Document < ApplicationRecord
 
   def esign_voided?
     esign_status&.casecmp?("voided")
+  end
+
+  # Same status -> color mapping as ESignature#status_badge, so the document-level badge (one
+  # eSign request) reads consistently with the per-signer badges shown alongside it.
+  # "inprogress" is Zoho's own status once a signer has actually started - distinct from
+  # "requested", which we set locally right after sending and before any signer has acted.
+  def esign_status_badge
+    case esign_status&.downcase
+    when "signed", "completed"
+      "success"
+    when "failed", "cancelled", "expired", "voided"
+      "danger"
+    when "requested"
+      "warning"
+    when "sent", "inprogress"
+      "info"
+    else
+      "secondary"
+    end
+  end
+
+  # Tells each signer whose turn it is, once per signature request: a bell entry and an email, for signers who
+  # are platform users that may sign inside CapHive (ESignaturePolicy#sign?). Safe to call after every status
+  # change: a signer already notified is skipped by the atomic claim. Callers rescue and report, so a
+  # notification problem never fails a send or a webhook. Worked examples H9, H10, E29-E35, X12 —
+  # openspec/changes/embedded-esign-digio/design.md#worked-examples
+  # @return [Integer] how many signers were notified by this call
+  def notify_ready_signers
+    notified = 0
+    e_signatures.not_signed.in_sequence.each do |esign|
+      next unless esign.signing_state == :ready
+
+      user = User.find_by(email: esign.email.to_s.downcase)
+      next if user.blank? || !ESignaturePolicy.new(user, esign).sign?
+      next unless esign.claim_signing_notification!
+
+      EsignSigningNotifier.with(record: esign, entity_id:).deliver_later(user)
+      notified += 1
+    end
+    notified
   end
 
   def eligible_for_esign_update?
@@ -460,6 +524,13 @@ class Document < ApplicationRecord
 
   def name_with_extension
     "#{name.gsub(%r{[/\\,:*?"<>|#]}, ' ').strip}.#{extension}"
+  end
+
+  # The Content-Disposition for a download link (S3's response-content-disposition): a plain-text filename plus
+  # a UTF-8 copy (RFC 6266). S3 refuses a header that isn't ISO-8859-1, so a name with an em dash, ₹ or Japanese
+  # characters failed with "Header value cannot be represented using ISO-8859-1"; browsers save the UTF-8 name.
+  def inline_disposition
+    ActionDispatch::Http::ContentDisposition.format(disposition: "inline", filename: name_with_extension)
   end
 
   def duplicate(required_attributes = nil)

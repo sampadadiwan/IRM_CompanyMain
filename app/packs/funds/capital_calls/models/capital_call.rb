@@ -59,6 +59,10 @@ class CapitalCall < ApplicationRecord
   accepts_nested_attributes_for :call_fees, allow_destroy: true
   # This stores any formulas selected by the user, to be used for call_fee computation for the folio
   serialize :fee_formula_ids, type: Array
+  # L12 — the selected fee formulas are call fees of this call's firm (reusing another fund's formula
+  # of the same firm is real and stays allowed). Tests L12-2, L12-H2 —
+  # features/security/security_review_2026_10_low.feature
+  validate :fee_formulas_in_own_firm, if: :will_save_change_to_fee_formula_ids?
 
   validates_uniqueness_of :name, scope: :fund_id
   normalizes :name, with: ->(name) { name.strip.squeeze(" ") }
@@ -229,8 +233,18 @@ class CapitalCall < ApplicationRecord
     ["fund"]
   end
 
+  # L12: only this call's firm's call fees, whatever ids are stored
   def fee_formulas
-    fee_formula_ids.present? ? CallFee.where(id: fee_formula_ids) : CallFee.none
+    fee_formula_ids.present? ? CallFee.where(id: fee_formula_ids, entity_id:) : CallFee.none
+  end
+
+  def fee_formulas_in_own_firm
+    ids = Array(fee_formula_ids).compact_blank
+    return if ids.empty?
+
+    # Any selected id that is not one of the firm's call fees (another firm's, or no such fee) is refused
+    own = CallFee.where(id: ids, entity_id: entity_id_in_database || entity_id).count
+    errors.add(:fee_formula_ids, "must be call fee formulas of this firm") if own < ids.map(&:to_s).uniq.size
   end
 
   def all_call_fees

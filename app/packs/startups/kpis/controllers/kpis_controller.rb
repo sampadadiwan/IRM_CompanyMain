@@ -174,6 +174,13 @@ class KpisController < ApplicationController
     portfolio_company_id = params[:portfolio_company_id]
     entity_id = params[:entity_id] || current_user.entity_id
 
+    # H14: may this user review this fund's KPIs at all? Checked first, on an unsaved pending KPI of
+    # the posted fund, so a foreign entity_id is refused before anything runs - before, it was only
+    # checked when nothing was pending, after the reject branch had already moved the other fund's
+    # report journeys on. reject? is the same rule as approve?.
+    # Tests H14-2, H14-X — features/security/kpi_approval_isolation.feature
+    authorize Kpi.new(entity_id:, portfolio_company_id:, status: :unapproved), :approve?
+
     unapproved_kpis = Kpi.unapproved.where(portfolio_company_id: portfolio_company_id, entity_id: entity_id)
 
     if params[:reject] == 'true'
@@ -194,9 +201,8 @@ class KpisController < ApplicationController
       # Approving is ~10 queries per KPI plus save callbacks - hundreds of KPIs can outlast the request.
       # The job approves, then moves the journeys on (H10) and notifies this user.
       if kpi_ids.empty?
-        # E6: nothing pending - say so now rather than queue a job that would only report the same. The loop above
-        # authorised no KPI, so check the same approve? rule (the user's role) on an unsaved pending KPI
-        authorize Kpi.new(entity_id:, portfolio_company_id:, status: :unapproved), :approve?
+        # E6: nothing pending - say so now rather than queue a job that would only report the same (the
+        # user's right to review this fund was checked at the top)
         notice = "There are no pending KPIs to approve."
       else
         KpiApproveAllJob.perform_later(kpi_ids, current_user.id, entity_id, portfolio_company_id)

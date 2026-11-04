@@ -114,6 +114,8 @@ class SupportConsoleTurnJob < ApplicationJob
     return finish("failed", UNAVAILABLE) unless @result
 
     finish("completed")
+    # Which layout sections and widgets the answer used — over-use of a widget shows in the logs.
+    AiChatAnswerLayout.log_usage("support_console", @message.reload.content)
   end
 
   # H9 — starts a stopped machine (or waits for one already starting) and waits for its relay.

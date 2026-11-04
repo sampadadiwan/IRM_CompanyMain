@@ -3,10 +3,19 @@ module WithBulkActions
 
   # This is a common action for all models which have filters. Bulk actions can be applied to filtered results. A Job "#{controller_name}BulkActionJob", needs to be defined, which will be passed the ids of the filtered results. and the bulk action to perform on them. Note that the controller must implement a fetch_rows method which returns the filtered results.
   def bulk_actions
+    # H6 step 1 — the class-level gate, before any row is fetched: e.g. CapitalRemittancePolicy#bulk_actions?
+    # refuses LPs and other investor personas (403). The job then re-checks every row against the same
+    # predicate its single-record button uses (H6 step 3). Tests H6-1…H6-6, H6-S1 —
+    # features/security/bulk_actions_authorization.feature
+    authorize(controller_name.classify.constantize, :bulk_actions?)
+
     # Here we get a ransack search
     rows = fetch_rows
 
     # and a bulk action to perform on the results
+    # H6 step 5 — NOTE: this condition is inverted (`.blank?` picks the prefixed job), so the prefix is
+    # ignored today and only the default job ever runs. Do NOT "fix" it without first allowlisting
+    # bulk_action_job_prefix: once honoured, a request param would choose which job class is constantized.
     bulk_action_job = if params[:bulk_action_job_prefix].blank?
                         # The specific bulk action job is passed as a parameter
                         "#{params[:bulk_action_job_prefix]}_#{controller_name}_bulk_action_job".classify.constantize

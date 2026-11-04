@@ -120,11 +120,12 @@ Scenario: Value falls
   When the consolidated report data is built for "2026-07-01" to "2026-09-30"
   Then the line of "Company B" shows fmv_change_percent "-12.5"
 
-# E11 — Edge case: 10 Cr more is bought at the same price; nothing is revalued but the change is +100%
-Scenario: A purchase in the quarter raises the change
+# E11 — Edge case: 10 Cr more is bought at the same price; the value per unit is unchanged, so the change is 0% (it was +100%
+# before the change is measured in value per unit; see portfolio_report_fmv_per_unit_change.feature)
+Scenario: A purchase in the quarter does not raise the change
   Given Company E is worth 10 crore at 30 June and buys 10 crore more at the same price in August
   When the consolidated report data is built for "2026-07-01" to "2026-09-30"
-  Then the line of "Company E" shows fmv_change_percent "100.0"
+  Then the line of "Company E" shows fmv_change_percent "0.0"
 
 # E12 — Edge case: no value before the start date, nothing to compare with
 Scenario: No prior value

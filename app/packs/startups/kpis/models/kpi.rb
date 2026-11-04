@@ -167,11 +167,15 @@ class Kpi < ApplicationRecord
     as_of.end_of_month == as_of ? as_of.prev_year.end_of_month : as_of.prev_year
   end
 
+  # How far kpi is from the figure it is compared with (H7-H14, E11-E16, E22-E24, E33).
+  # The change is relative to the size of the comparison figure, so a loss that shrinks is a rise and a loss that grows is a
+  # fall; dividing by the signed figure would flip both. A percentage KPI (EBITDA %) follows the same rule: a margin that goes
+  # from -63.2% to -55.7% is up 11.87%.
   def self.change_against(comparator, kpi)
     # if the divisor (the comparator) is 0, the percentage is infinity but we cant store that so keeping it nil
     return nil if comparator.value.zero?
 
-    ((kpi.value - comparator.value) / comparator.value) * 100
+    ((kpi.value - comparator.value) / comparator.value.abs) * 100
   end
 
   # Rounded to the stored 2 decimals first, then checked: 9,999.995 rounds to 10,000.00 and would overflow the

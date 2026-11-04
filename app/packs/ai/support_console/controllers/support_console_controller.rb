@@ -9,8 +9,6 @@
 #
 # @see openspec/changes/archive/2026-10-22-support-console/design.md (card ① Console page)
 class SupportConsoleController < ApplicationController
-  CONVERSATION_LIST_LIMIT = 50
-
   # Opening a conversation, New chat and asking reload only the "support-console-thread" Turbo
   # Frame; Turbo discards everything outside it, so skip rendering the app layout for those.
   layout -> { turbo_frame_request? ? false : "modernize" }
@@ -35,8 +33,10 @@ class SupportConsoleController < ApplicationController
     authorize @entity, :ask?, policy_class: SupportConsolePolicy
 
     @entities = pickable_entities
-    @conversations = conversations_for(@entity)
-    @first_questions = first_questions(@conversations)
+    # E21, H15 — the sidebar: newest first, capped at AiChatRows::LIMIT, each row's badge from its
+    # latest answer (titles and statuses in grouped queries, not one per row).
+    @rows = AiChatRows.for_agent_sessions(conversations_for(@entity),
+                                          url: ->(session) { support_console_entity_path(@entity, session_id: session.id) })
     # X3 — a session is only found through this client and the console's agent, never by id alone.
     @session = find_session(@entity, params[:session_id]) if params[:session_id].present?
   end
@@ -161,7 +161,7 @@ class SupportConsoleController < ApplicationController
     policy_scope(Entity, policy_scope_class: SupportConsolePolicy::Scope).order(:name)
   end
 
-  # E21 — newest first.
+  # The client's conversations (AiChatRows orders and caps them).
   #
   # @param entity [Entity]
   # @return [ActiveRecord::Relation<AgentChatSession>]
@@ -171,19 +171,6 @@ class SupportConsoleController < ApplicationController
     return AgentChatSession.none unless agent
 
     AgentChatSession.where(support_agent: agent, chattable: entity)
-                    .includes(:analyst)
-                    .order(updated_at: :desc)
-                    .limit(CONVERSATION_LIST_LIMIT)
-  end
-
-  # The first question of each conversation, in one grouped query.
-  #
-  # @param conversations [ActiveRecord::Relation<AgentChatSession>]
-  # @return [Hash{Integer => String}] session id => first question
-  def first_questions(conversations)
-    first_ids = AgentChatMessage.where(agent_chat_session_id: conversations.map(&:id), role: "user")
-                                .group(:agent_chat_session_id).minimum(:id)
-    AgentChatMessage.where(id: first_ids.values).pluck(:agent_chat_session_id, :content).to_h
   end
 
   # @param entity [Entity]

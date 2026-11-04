@@ -13,8 +13,7 @@
     </div>
   <% end %>
 
-  <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
-  <%= form.text_field :user_id, class: "form-control", hidden: true  %>
+  <%# H17 — no entity_id / user_id fields: the controller sets them from the signed-in user %>
 
   <div class="form-group">
     <%= form.label :name %>
@@ -43,7 +42,7 @@
   </div>
 
   <div class="form-group">
-    <% label = report.template_xls.blank? ? "Upload Sample Template" : link_to("Upload Sample Template: #{report.template_xls_name}", report.template_xls.url(response_content_disposition: "inline; filename=#{report.template_xls_name}"), target: "_blank") %>
+    <% label = report.template_xls.blank? ? "Upload Sample Template" : link_to("Upload Sample Template: #{report.template_xls_name}", report.template_xls.url(response_content_disposition: ActionDispatch::Http::ContentDisposition.format(disposition: "inline", filename: report.template_xls_name)), target: "_blank") %>
 
     <%= render "layouts/single_upload", form: form, field_label: label,
                             for_model: "report", field_name: "template_xls",

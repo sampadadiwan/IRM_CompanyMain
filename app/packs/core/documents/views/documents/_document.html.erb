@@ -9,7 +9,7 @@
       <small class="text-muted d-block"><i class="ti ti-folder"></i> <%= document.folder.name %></small>
     <% end %>
     <% if !lp_view && document.orignal && policy(document).not_generated_or_approved %>
-      <%= link_to document.file_url(response_content_disposition: "inline; filename=#{document.name_with_extension}"), class: "document_download_icon", target: "_blank" do %>
+      <%= link_to document.file_url(response_content_disposition: document.inline_disposition), class: "document_download_icon", target: "_blank" do %>
         <i class="fas fa-download"></i>
       <% end %>
     <% end %>

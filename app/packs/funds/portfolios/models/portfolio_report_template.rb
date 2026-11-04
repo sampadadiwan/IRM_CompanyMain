@@ -13,6 +13,20 @@ class PortfolioReportTemplate < ApplicationRecord
 
   validates :name,          presence: true
   validates :output_format, inclusion: { in: OUTPUT_FORMATS }
+  # M20 — the style document must be one of the report's own firm's documents (M20-X4)
+  validate :style_document_in_own_firm
+
+  private
+
+  # entity_id is delegated to the portfolio report (no column of its own), so the check compares the
+  # document's firm with the report's rather than using validate_parent_in_own_firm
+  def style_document_in_own_firm
+    return if style_document.nil? || portfolio_report.nil?
+
+    errors.add(:style_document, "must be in this report's firm") unless style_document.entity_id == portfolio_report.entity_id
+  end
+
+  public
 
   def to_s
     name

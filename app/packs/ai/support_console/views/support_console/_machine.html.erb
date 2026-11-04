@@ -10,7 +10,7 @@
   }.fetch(status, ["danger", "ti-help-circle", "Machine unavailable"])
   idle_minutes = ENV.fetch("SUPPORT_CONSOLE_IDLE_STOP_MINUTES", SupportConsoleIdleStopJob::DEFAULT_IDLE_MINUTES).to_i
 %>
-<%# The popups are opened from <body> by support_console_machine_controller — inside .sc-header they sit under the backdrop. %>
+<%# The popups are opened from <body> by support_console_machine_controller — inside .aic-header they sit under the backdrop. %>
 <%# data-controller sits on a div inside the frame: a lazy frame load swaps only the frame's children, so an
     attribute on the <turbo-frame> itself never reaches the page and the buttons stayed dead. %>
 <turbo-frame id="support-console-machine" class="ms-auto">

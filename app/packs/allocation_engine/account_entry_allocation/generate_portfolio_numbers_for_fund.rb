@@ -26,15 +26,13 @@ module AccountEntryAllocation
                                 .distinct
 
       # We create account_entries for each of the following fields
-      # rubocop :disable Security/Eval
       fields = begin
-        # safe_eval! raises UnsafeEvalError (a StandardError) on a dangerous formula, which the
-        # rescue below turns into the safe DEFAULT_FEILDS fallback.
-        eval(ApplicationRecord.safe_eval!(fund_formula.formula, context: "FundFormula##{fund_formula.id}"))
-      rescue StandardError => e
+        field_map(fund_formula)
+      rescue StandardError
+        # A formula that is not a usable field map (or is refused) falls back to the default fields,
+        # as before: safe_eval!'s UnsafeEvalError and FormulaSandbox::Rejected are StandardErrors
         DEFAULT_FEILDS
       end
-      # rubocop :enable Security/Eval
 
       fields = DEFAULT_FEILDS if fields.keys.blank?
 
@@ -74,6 +72,41 @@ module AccountEntryAllocation
       end
 
       true
+    end
+
+    # The fields an AggregatePortfolioInvestment may be read through ("aggregate_portfolio_investment.#{field}"
+    # becomes a formula below): the defaults, which are the API's money and quantity readers
+    ALLOWED_FIELDS = DEFAULT_FEILDS.values.freeze
+
+    # C2 — the formula is a {"Entry name" => :field} hash literal. It is read with RubyLiteral (parse
+    # only, nothing runs), which gives exactly the hash eval gave for every literal map. Only a text
+    # that is not a plain literal goes on to the mode: off evaluates it as before (behind safe_eval!),
+    # log logs and evaluates it, enforce refuses it. A field outside ALLOWED_FIELDS is logged in log
+    # mode and refused in enforce mode.
+    def field_map(fund_formula)
+      context = "FundFormula##{fund_formula.id}"
+      fields = begin
+        RubyLiteral.parse_hash(fund_formula.formula)
+      rescue RubyLiteral::NotLiteral => e
+        literal_fallback(fund_formula.formula, context, e)
+      end
+
+      # Every field name must be one the aggregate exposes for this rule (log / enforce)
+      unknown = fields.values.map { |field| field.to_s.to_sym }.reject { |field| ALLOWED_FIELDS.include?(field) }
+      if unknown.any? && FormulaSandbox.mode != "off"
+        message = "[formula_sandbox] #{FormulaSandbox.mode == 'enforce' ? 'rejected' : 'would_reject'} profile=portfolio_numbers context=#{context} reasons=unknown fields #{unknown.join(', ')}"
+        Rails.logger.warn(message)
+        raise FormulaSandbox::Rejected, "Refusing fields #{unknown.join(', ')} (#{context})" if FormulaSandbox.mode == "enforce"
+      end
+      fields
+    end
+
+    # A field map that is not a plain literal: today's evaluation in off / log mode, refused in enforce
+    def literal_fallback(formula, context, error)
+      raise FormulaSandbox::Rejected, "Refusing a field map that is not a plain hash (#{context}): #{error.message}" if FormulaSandbox.mode == "enforce"
+
+      Rails.logger.warn("[formula_sandbox] would_reject profile=portfolio_numbers context=#{context} reasons=#{error.message}") if FormulaSandbox.mode == "log"
+      eval(ApplicationRecord.safe_eval!(formula, context:)) # rubocop:disable Security/Eval
     end
   end
 end

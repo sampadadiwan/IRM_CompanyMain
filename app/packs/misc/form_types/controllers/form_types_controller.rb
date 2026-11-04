@@ -21,6 +21,8 @@ class FormTypesController < ApplicationController
     end
   end
 
+  # POST /form_types/1/clone — M25: support only, into the user's current firm; authorized by
+  # set_form_type (FormTypePolicy#clone?). M25-1, M25-2, M25-H
   def clone
     if @form_type.entity_id == current_user.entity_id
       redirect_to form_type_path(@form_type), alert: "Cannot clone form type in the same entity."

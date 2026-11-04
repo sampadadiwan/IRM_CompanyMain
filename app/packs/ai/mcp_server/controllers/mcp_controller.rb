@@ -74,7 +74,10 @@ class McpController < ActionController::API
   # Returns 401 with WWW-Authenticate header on failure (triggers MCP client OAuth discovery).
   def authenticate_mcp!
     token = request.headers['Authorization']&.sub(/^Bearer /i, '')
-    result = McpAuthService.authenticate(token)
+    # L2 — Doorkeeper now stores tokens hashed and rewrites a still-plaintext row the first time it
+    # is presented (hash_token_secrets fallback: :plain). GET /mcp runs on the replica, where that
+    # write would raise, so the lookup always uses the primary (as the mail add-in API does).
+    result = ActiveRecord::Base.connected_to(role: :writing) { McpAuthService.authenticate(token) }
     @mcp_user = result.user
     @mcp_entity = result.entity
     @mcp_token = result.doorkeeper_token
@@ -85,6 +88,12 @@ class McpController < ActionController::API
     # before. The mail add-in API applies the same rule.
     # Worked examples B4-5, B4-5-H — openspec/changes/fix-tenant-isolation-batch2/report.md#verification
     raise McpAuthService::AuthenticationError, "This token was issued for another organisation. Re-authorise the client." if @mcp_token.entity_id.present? && @mcp_entity.id != @mcp_user.entity_id
+
+    # H12-X — a mail add-in token (Outlook task pane / Gmail add-on) is for the mail API only.
+    # It is minted without a consent screen naming an MCP client, so honouring it here would turn
+    # a leaked add-in token into read access to everything the user's MCP tools can see.
+    # docs/security/security_review_2026_10.md "H12 — Gmail add-in sign-in", fix 3.
+    raise McpAuthService::AuthenticationError, "Mail add-in tokens cannot be used for MCP. Authorise an MCP client instead." if MailAddinToken.issued?(@mcp_token)
   rescue McpAuthService::AuthenticationError => e
     # Include resource_metadata so MCP clients (Claude.ai etc.) can discover the OAuth server via RFC 9728
     resource_metadata_url = "#{request.base_url}/.well-known/oauth-protected-resource"
@@ -96,7 +105,8 @@ class McpController < ActionController::API
   # Level 1: CapHive admin gate — entity.permissions.enable_mcp? (bitflag, managed at /admin/entities)
   # Level 2: Entity admin gate — entity_setting.mcp_enabled? (boolean, managed at /entities/edit)
   # Level 3: Role allowlist — entity_setting.mcp_allowed_roles_list
-  # Level 4: Client allowlist — entity_setting.mcp_allowed_clients_list (optional)
+  # Level 4: Client allowlist — entity_setting.mcp_allowed_clients_list (optional); client kinds,
+  #          matched by the token's app redirect URI (McpClientRegistry), not its self-chosen name
   # @return [void] renders JSON-RPC error (codes -32000 to -32003) and halts on denial
   def enforce_entity_governance!
     unless @mcp_entity.permissions.enable_mcp?
@@ -128,12 +138,15 @@ class McpController < ActionController::API
 
     allowed_clients = setting.mcp_allowed_clients_list
     if allowed_clients.present?
-      app_name = @mcp_token&.application&.name
+      application = @mcp_token&.application
 
-      unless allowed_clients.include?(app_name)
+      # M2-4 — an app that merely calls itself "Claude" is not the Claude kind: the kind comes from
+      # where its codes are sent. Legacy name entries still match for one release (see the registry).
+      # docs/security/security_review_2026_10.md "Authentication and session — Medium / Low", M2.
+      unless McpClientRegistry.allowed?(application, allowed_clients)
         render json: {
           jsonrpc: "2.0", id: nil,
-          error: { code: -32_003, message: "This AI client (#{app_name}) is not authorized for your organization." }
+          error: { code: -32_003, message: "This AI client (#{McpClientRegistry.label_for(application)}) is not authorized for your organization." }
         }, status: :forbidden
       end
     end
