@@ -175,7 +175,10 @@
     red_count = pricing.redemptions.size + unready_reds.size + awaiting_reds.size
   else
     # Confirmed: the stored fills, one row each
-    fill_includes = [:fund_nav, { fund: :evergreen_fund_setting, dealing_order: [:investor, :capital_commitment, :dealing_date] }]
+    # document (_document_state) and the order's capital_remittance (DealingOrder#fully_paid?) are read
+    # by every tracker row — preloaded so they are not a query per row
+    fill_includes = [:fund_nav, :document,
+                     { fund: :evergreen_fund_setting, dealing_order: [:investor, :capital_commitment, :dealing_date, :capital_remittance] }]
     sub_fills = dd.subscription_fills.includes(*fill_includes, :capital_remittance).to_a
     red_fills = dd.redemption_fills.includes(*fill_includes, :capital_distribution_payment).to_a
     sub_count = sub_fills.size
