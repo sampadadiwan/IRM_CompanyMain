@@ -144,6 +144,56 @@ BLURB = {
     "workflow_templates": "Reusable multi-step workflows with actors and auto-assignment.",
 }
 
+# Market-specific columns (India KYC, e-sign and depository integrations) are left out of the
+# explorer: they are empty for funds outside that market. Two general-purpose columns keep
+# India-era names in the database; they are shown under neutral names, and the page footnote
+# gives the physical names so the explorer still matches a database copy.
+REGION_TABLES = {"stamp_papers"}
+REGION_COLUMNS = {"pan_verified", "pan_verification_response", "pan_verification_status", "pan_verification",
+                  "pan_card_data", "demat", "ckyc_kra_enabled", "stamp_paper_tags", "disable_pan_kyc",
+                  "digio_client_id", "digio_client_secret", "digio_cutover_date"}
+REGION_DEFAULTS = {"SEBI", "Digio"}
+ALIAS = {"PAN": "tax_id", "pan": "tax_id", "ifsc_code": "bank_routing_code"}
+# Swagger examples recorded from an India-based demo, restated for the page only (swagger.yaml is unchanged).
+EXAMPLES = {
+    ("AccountEntry", "fund_currency"): "USD", ("AccountEntry", "folio_currency"): "EUR",
+    ("PortfolioInvestment", "instrument_currency"): "USD", ("Valuation", "currency"): "USD",
+    ("ExchangeRate", "to"): "EUR", ("Fund", "category"): "Closed-ended",
+    ("FundUnit", "reason"): "Issuing units for net collected amount $500,000.00",
+    ("CapitalRemittance", "investing_entity"): "John Doe Family Trust",
+    ("Document", "name"): "Bank statement", ("Document", "owner_tag"): "Bank statement",
+    ("CapitalCommitment", "tax_id"): "12-3456789",
+}
+
+
+def neutralise(tables, schemas):
+    for name in REGION_TABLES:
+        tables.pop(name, None)
+    for t in tables.values():
+        t["columns"] = [c for c in t["columns"] if c["name"] not in REGION_COLUMNS]
+        for c in t["columns"]:
+            c["name"] = ALIAS.get(c["name"], c["name"])
+            if c.get("default") in REGION_DEFAULTS:
+                del c["default"]
+        t["indexes"] = [i for i in t["indexes"] if not REGION_COLUMNS & set(i["columns"])]
+        for i in t["indexes"]:
+            i["columns"] = [ALIAS.get(x, x) for x in i["columns"]]
+        t["assocs"] = [a for a in t.get("assocs", []) if a.get("table") not in REGION_TABLES]
+    for props in schemas.values():
+        for k in [k for k in props if k in REGION_COLUMNS]:
+            del props[k]
+        for k in [k for k in props if k in ALIAS]:
+            props[ALIAS[k]] = props.pop(k)
+        for v in props.values():
+            if v.get("example") == "INR":
+                v["example"] = "USD"
+    for (schema, prop), value in EXAMPLES.items():
+        if prop in schemas.get(schema, {}):
+            schemas[schema][prop]["example"] = value
+
+
+neutralise(T, d["api"]["schemas"])
+
 dom_names = {k: n for k, n, _ in DOMAINS}
 for name, t in T.items():
     dom = OVERRIDE.get(name) or PACK.get(t.get("pack")) or ("ai" if (t.get("pack") or "").startswith("ai/") else "platform")
