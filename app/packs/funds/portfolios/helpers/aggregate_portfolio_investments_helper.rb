@@ -267,7 +267,7 @@ module AggregatePortfolioInvestmentsHelper
   end
 
   # The cards a stats widget shows, in order, as [{subtitle:, label:}]. Saved fields match ignoring case and
-  # spaces (E1); unknown names and repeats are dropped (E3). Blank fields, or fields matching no card, give the
+  # surrounding spaces (E1); unknown names and repeats are dropped (E3). Blank fields, or fields matching no card, give the
   # defaults (X1). Field names relabel the cards by position; a card without a name keeps its own (E2).
   # openspec/changes/fix-portfolio-dashboard-widgets-2/design.md#-card-picker
   def stats_cards(fields, field_names, available:, defaults: available)

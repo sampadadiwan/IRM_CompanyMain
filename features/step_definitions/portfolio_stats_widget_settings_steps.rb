@@ -3,12 +3,15 @@
 
 Given('view caching is on') do
   @stats_previous_cache_store = ActionController::Base.cache_store
+  @stats_previous_perform_caching = ActionController::Base.perform_caching
   ActionController::Base.cache_store = ActiveSupport::Cache::MemoryStore.new
+  ActionController::Base.perform_caching = true
 end
 
 After do
   if @stats_previous_cache_store
     ActionController::Base.cache_store = @stats_previous_cache_store
+    ActionController::Base.perform_caching = @stats_previous_perform_caching
     @stats_previous_cache_store = nil
   end
 end
@@ -72,11 +75,11 @@ Then('the stats card widths should be {string}') do |widths|
 end
 
 Then('the stats currency drop-down should have {string} selected') do |currency|
-  expect(page).to have_select(class: "form-select-sm", selected: currency)
+  expect(find('select[data-portfolio-stats-currency-target="select"]')).to match_selector(:select, selected: currency)
 end
 
 Then('the stats currency drop-down should list {string}') do |currencies|
-  expect(page).to have_select(class: "form-select-sm", options: currencies.split(",").map(&:strip))
+  expect(find('select[data-portfolio-stats-currency-target="select"]')).to match_selector(:select, options: currencies.split(",").map(&:strip))
 end
 
 When('I pick {string} in the stats currency drop-down') do |currency|

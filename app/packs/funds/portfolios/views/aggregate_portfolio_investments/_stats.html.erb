@@ -39,8 +39,10 @@
         "Cost Of Remaining" => -> { apis.sum(:cost_of_remaining_cents) },
         "Income" => -> { cashflows.sum(:amount_cents) }
       }
+      # Each sum runs at most once, so Sold + FMV reuses the Sold Amount and FMV cards' totals
+      totals = Hash.new { |cache, subtitle| cache[subtitle] = sums[subtitle].call }
       # H5 — Sold + FMV, only when picked
-      sums["Sold + FMV"] = -> { sums["Sold Amount"].call + sums["FMV"].call }
+      sums["Sold + FMV"] = -> { totals["Sold Amount"] + totals["FMV"] }
 
       card_styles = {
         "Bought Amount" => ["success", "currency-dollar", "What the fund has paid for its portfolio investments, net of shares sold"],
@@ -55,7 +57,7 @@
       card_list = stats_cards(fields, field_names, available: card_styles.keys, defaults: card_styles.keys.first(5))
       cards_data = card_list.map do |card|
         color, icon, tooltip = card_styles[card[:subtitle]]
-        { path: nil, stat: money_to_currency(Money.new(sums[card[:subtitle]].call, fund.currency), params, decimals:),
+        { path: nil, stat: money_to_currency(Money.new(totals[card[:subtitle]], fund.currency), params, decimals:),
           subtitle: card[:label], progress_bar_color: color, text_info: icon, tooltip: }
       end
       # H7 — cards per row; without it the cards keep the component's default column
