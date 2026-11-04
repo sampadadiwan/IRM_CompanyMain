@@ -138,13 +138,11 @@ flowchart TD
 | Step | Who | Where | Action | What the system does | What you see |
 |---|---|---|---|---|---|
 | A1 | Admin | Agents › KYC Onboarding Agent › Edit | Opens agent settings | Loads settings form | Settings page with toggles and the new Document Verification Setup section |
-| A2 | Admin | Settings page › Document Verification Setup | Scrolls to the section | — | A table with 3 columns: Document, Information to pull, Field to verify. Empty initially. |
-| A3 | Admin | Document dropdown | Selects "Upload PAN" | — | Dropdown shows standard document fields from the KYC form (e.g., Upload PAN, Upload Address Proof, Upload Bank Details). Label shows "PAN" on Indian entities, "Tax ID" on US entities. |
-| A4 | Admin | "Information to pull" text field | Types "PAN / Tax ID number" | — | Free text describing what the AI should extract from the document |
-| A5 | Admin | "Field to verify" dropdown | Selects "PAN" | — | Dropdown shows standard fields from the KYC form (text/number fields, not file fields). |
-| A6 | Admin | + button | Clicks to add a new row | Appends empty row to the table | New row appears with empty dropdowns and text field |
-| A7 | Admin | New rows | Adds Bank Details (bank name, branch, account type, SWIFT/IFSC, account number) and Address Proof (permanent address) rows | — | Three rows configured in the table |
-| A8 | Admin | Save button | Saves the agent | Stores the configuration as structured JSON in the agent's settings | Success flash: "Agent updated successfully" |
+| A2 | Admin | Settings page › Document Verification Setup | Scrolls to the section | — | Two sections: "Standard Documents" with fixed PAN/Tax ID and Address Proof rows (prompt-only editable), and per-form-type cards for custom documents (full dropdowns). |
+| A3 | Admin | Standard Documents › PAN / Tax ID row | Types extraction prompt | — | Document and field labels are fixed ("PAN / Tax ID" → `PAN`). Only the prompt is editable. Label shows "PAN / Tax ID" on Indian entities, "Tax ID" on US entities. |
+| A4 | Admin | Standard Documents › Address Proof row | Types extraction prompt | — | Document and field labels are fixed ("Address Proof" → `address`). Only the prompt is editable. |
+| A5 | Admin | Custom section › + Add Rule | Clicks to add a custom mapping | Appends row with Document and Field to Verify dropdowns | New row with dropdowns for custom File-type FormCustomFields |
+| A6 | Admin | Save button | Saves the agent | Stores the configuration as structured JSON in the agent's settings | Success flash: "Agent updated successfully" |
 
 ### Part B — every time (agent runs)
 
@@ -293,14 +291,15 @@ flowchart TD
 ```
 
 **Behavior notes:**
-- The table is rendered inside the existing agent edit form, below the toggle fields
-- Document dropdown options come from two sources: (1) standard upload labels hardcoded in ERB views — locale-aware "Upload PAN / Tax ID" and "Upload Address Proof", and (2) persisted `FormCustomField` records with `field_type: "File"` on the entity's KYC form types (IndividualKyc, NonIndividualKyc)
-- Field to Verify dropdown options come from `FormCustomField` records with non-File field types on the same form types
-- Labels adapt per entity: "PAN" on Indian entities, "Tax ID" on US entities — based on what standard fields exist
-- The + button appends an empty row; the ✕ button removes its row
+- The setup is split into two sections: Standard Documents (fixed mappings, prompt-only editable) and per-form-type Custom Documents (full dropdowns)
+- Standard Documents section shows fixed rows for PAN/Tax ID and Address Proof. Document name and target DB column are labels, not dropdowns. Only the extraction prompt is editable. These map to `investor_kycs` DB columns (`PAN`, `address`)
+- Custom Documents section uses dropdowns for Document (File-type FormCustomFields) and Field to Verify (non-File, non-Header FormCustomFields)
+- PAN label adapts per locale: "PAN / Tax ID" (en) vs "Tax ID" (en-US) via `sys_t('investor_kyc.tax_id')`
+- The + button appends an empty row in custom sections; the ✕ button removes its row
 - Changes are serialized into the hidden `json_fields` input on every edit via a Stimulus controller
-- A row with no document selected is silently dropped on save
-- The table persists across page reloads
+- Standard mappings are stored under `doc_verification_rules["standard"]`, custom under `doc_verification_rules["<form_type_id>"]`
+- A custom row with no document selected is silently dropped on save
+- If a new standard document is added to the platform, it requires adding one entry to the `STANDARD_DOC_MAPPINGS` constant
 
 ---
 

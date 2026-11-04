@@ -1,9 +1,11 @@
 <%#
   Document Verification Setup partial for KycOnboardingAgent.
-  Renders one card per KYC form type with a 3-column mapping table:
-    1. Document (select — standard uploads + File-type FormCustomFields)
-    2. Information to pull (text — LLM extraction prompt)
-    3. Field to verify (select — non-File, non-Header FormCustomFields)
+  Two sections:
+    1. Standard Documents — fixed rows for platform-level uploads (PAN/Tax ID,
+       Address Proof). Document and target field are labels; only the prompt is
+       editable. Maps to investor_kycs DB columns.
+    2. Custom Documents — per-form-type cards with dropdown-based rows for
+       custom File-type FormCustomFields.
   Wires up to the kyc-onboarding-config Stimulus controller which
   serialises rows into support_agent[json_fields]["doc_verification_rules"].
 
@@ -14,15 +16,17 @@
   verification_rules   = config["doc_verification_rules"] || {}
   form_types           = FormType.where(entity_id: current_user.entity_id,
                                         name: %w[IndividualKyc NonIndividualKyc])
-  # Single query for all fields across form types — split in Ruby to avoid N+1
   all_fields_by_ft     = FormCustomField.where(form_type_id: form_types.select(:id))
                                         .order(:position)
                                         .group_by(&:form_type_id)
-  # Standard upload labels hardcoded in the KYC form (not persisted FormCustomFields).
-  # PAN label is locale-aware: "PAN / Tax ID" (en) or "Tax ID" (en-US).
-  pan_label            = sys_t('investor_kyc.tax_id')
-  standard_doc_labels  = ["Upload #{pan_label}", "Upload Address Proof"]
-  strip_upload         = /\AUpload\s+/i
+  # Standard upload fields hardcoded in the KYC form (not persisted FormCustomFields).
+  # Each entry: [doc_label stored in Document.name, display_name, target DB column, display for target]
+  pan_label = sys_t('investor_kyc.tax_id')
+  standard_mappings = [
+    { doc_label: "Upload #{pan_label}", doc_display: pan_label, target_field: "PAN", target_display: pan_label },
+    { doc_label: "Upload Address Proof", doc_display: "Address Proof", target_field: "address", target_display: "Address" }
+  ]
+  standard_rules = verification_rules["standard"] || []
 %>
 
 <div data-controller="kyc-onboarding-config">
@@ -34,21 +38,62 @@
   <h5>Document Verification Setup</h5>
   <p class="text-muted small mb-3">
     Configure which documents to cross-verify against form fields.
-    For each row, pick the uploaded document, describe what to extract, and choose
-    the field whose value should match the extraction.
+    Standard documents have fixed mappings — only the extraction prompt is editable.
+    Use the custom section below to add entity-specific document rules.
   </p>
 
+  <%# Section 1 — Standard Documents (fixed doc + field, prompt-only editable) %>
+  <div class="card mb-3">
+    <div class="card-header">
+      <strong>Standard Documents</strong>
+    </div>
+    <div class="card-body p-0">
+      <table class="table table-bordered mb-0">
+        <thead>
+          <tr>
+            <th style="width:25%;">Document</th>
+            <th>Information to Pull</th>
+            <th style="width:25%;">Field to Verify</th>
+          </tr>
+        </thead>
+        <tbody data-kyc-onboarding-config-target="rulesBody"
+               data-form-type-id="standard">
+          <% standard_mappings.each do |mapping| %>
+            <% saved = standard_rules.find { |r| r["doc_label"] == mapping[:doc_label] } %>
+            <tr data-rule-row>
+              <td>
+                <input type="hidden" data-field="doc_label" value="<%= mapping[:doc_label] %>">
+                <span class="form-control-plaintext form-control-sm"><%= mapping[:doc_display] %></span>
+              </td>
+              <td>
+                <textarea class="form-control form-control-sm" rows="2"
+                          placeholder="e.g. Extract the <%= mapping[:doc_display] %> from this document."
+                          data-field="prompt"
+                          data-action="input->kyc-onboarding-config#syncConfig"><%= saved&.dig("prompt") %></textarea>
+              </td>
+              <td>
+                <input type="hidden" data-field="target_field" value="<%= mapping[:target_field] %>">
+                <span class="form-control-plaintext form-control-sm"><%= mapping[:target_display] %></span>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <%# Section 2 — Custom Documents (per form type, full dropdowns) %>
   <% if form_types.empty? %>
     <div class="alert alert-warning">No KYC form types found for this entity.</div>
   <% end %>
 
   <% form_types.each do |form_type| %>
-    <% fields      = all_fields_by_ft[form_type.id] || [] %>
-    <% doc_fields  = fields.select { |f| f.field_type == "File" } %>
-    <% all_doc_labels = standard_doc_labels + doc_fields.map { |f| f.label.presence || f.name } %>
+    <% fields       = all_fields_by_ft[form_type.id] || [] %>
+    <% doc_fields   = fields.select { |f| f.field_type == "File" } %>
     <% verify_fields = fields.reject { |f| %w[File Header].include?(f.field_type) } %>
-    <% rules       = verification_rules[form_type.id.to_s] || [] %>
-    <% template_id = "onboarding-rule-template-#{form_type.id}" %>
+    <% next if doc_fields.empty? && verify_fields.empty? %>
+    <% rules        = verification_rules[form_type.id.to_s] || [] %>
+    <% template_id  = "onboarding-rule-template-#{form_type.id}" %>
 
     <div class="card mb-2" data-form-type-section>
       <div class="card-header d-flex justify-content-between align-items-center">
@@ -78,10 +123,10 @@
                           data-field="doc_label"
                           data-action="change->kyc-onboarding-config#syncConfig">
                     <option value="">— Select document —</option>
-                    <% all_doc_labels.each do |dl| %>
-                      <option value="<%= dl %>"
-                              <%= "selected" if rule["doc_label"] == dl %>>
-                        <%= dl.sub(strip_upload, '') %>
+                    <% doc_fields.each do |df| %>
+                      <option value="<%= df.label.presence || df.name %>"
+                              <%= "selected" if rule["doc_label"] == (df.label.presence || df.name) %>>
+                        <%= df.label.presence || df.name %>
                       </option>
                     <% end %>
                   </select>
@@ -126,9 +171,9 @@
                   data-field="doc_label"
                   data-action="change->kyc-onboarding-config#syncConfig">
             <option value="">— Select document —</option>
-            <% all_doc_labels.each do |dl| %>
-              <option value="<%= dl %>">
-                <%= dl.sub(strip_upload, '') %>
+            <% doc_fields.each do |df| %>
+              <option value="<%= df.label.presence || df.name %>">
+                <%= df.label.presence || df.name %>
               </option>
             <% end %>
           </select>

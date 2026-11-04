@@ -243,21 +243,35 @@ N/A — no new stored or derived status. The agent report's `final_status` ("rea
 
 ### ① Setup UI
 
-The new structured config partial and Stimulus controller for the KYC Onboarding Agent's Field-to-Document Consistency settings. Replaces the raw text input with a 3-column table using dropdowns.
+The setup UI has two distinct sections:
+
+1. **Standard Documents** — fixed-mapping rows for platform-level upload fields (PAN/Tax ID, Address Proof). Document name and target DB column are fixed labels; only the extraction prompt is editable. These map to DB columns on `investor_kycs` (e.g., `PAN`, `address`).
+2. **Per-form-type tables** — dropdown-based rows for custom File-type FormCustomFields. Document, prompt, and target field are all configurable via dropdowns.
 
 | Owns | Reads / receives | Produces |
 |---|---|---|
-| `_kyc_onboarding_config.html.erb`, `kyc_onboarding_config_controller.js` | Standard hardcoded upload labels (locale-aware PAN, Address Proof) + FormCustomField records (File-type for doc dropdown, non-File for field dropdown) from entity's KYC form types | `json_fields["doc_verification_rules"]` — JSON array of mapping objects |
+| `_kyc_onboarding_config.html.erb`, `kyc_onboarding_config_controller.js` | `STANDARD_DOC_MAPPINGS` constant (locale-aware), FormCustomField records (File-type for doc dropdown, non-File/non-Header for field dropdown) | `json_fields["doc_verification_rules"]` — JSON with `"standard"` key for fixed mappings and per-form-type-id keys for custom mappings |
 
 **How it works:**
 
-The partial queries `FormType.where(entity_id:, name: %w[IndividualKyc NonIndividualKyc])` to get KYC form types. For each form type, it builds the dropdown options from two sources:
-- **Document dropdown:** Standard hardcoded labels (`"Upload #{pan_label}"`, `"Upload Address Proof"`) PLUS persisted `FormCustomField` records with `field_type: "File"`. Standard labels are locale-aware via `sys_t('investor_kyc.tax_id')`. This ensures entities that have no File-type FormCustomFields (only standard uploads) still see document options.
-- **Field to verify dropdown:** `field_type` NOT "File", NOT "Header" → labels like "PAN", "bank_name", "permanent_address"
+The partial renders two sections:
+
+**Standard Documents section:** Defined by a constant `STANDARD_DOC_MAPPINGS` that pairs each standard upload label with its DB column:
+
+| Document label | Target DB column | Notes |
+|---|---|---|
+| `"Upload #{pan_label}"` | `PAN` | `pan_label` = `sys_t('investor_kyc.tax_id')`, locale-aware |
+| `"Upload Address Proof"` | `address` | Same across all KYC types |
+
+Each row shows the document name and mapped field as fixed labels. Only the prompt textarea is editable. No dropdowns needed — the mapping is deterministic.
+
+**Per-form-type section:** Queries `FormType.where(entity_id:, name: %w[IndividualKyc NonIndividualKyc])`. For each form type with File-type FormCustomFields:
+- **Document dropdown:** File-type FormCustomFields (custom attachments like CML, cancelled cheque)
+- **Field to verify dropdown:** non-File, non-Header FormCustomFields
 
 The Stimulus controller (`kyc_onboarding_config_controller`) follows the same pattern as `kyc_doc_extractor_config_controller`:
 - Hidden `json_fields` input as target
-- `syncConfig()` reads all rows, serializes to `{doc_verification_rules: {<form_type_id>: [{doc_label, prompt, target_field}]}}`, writes to hidden field
+- `syncConfig()` reads standard rows + per-form-type rows, serializes to `doc_verification_rules`, writes to hidden field
 - `addRule()` clones row from `<template>`, appends to tbody
 - `removeRule()` removes row, syncs
 
@@ -268,10 +282,12 @@ The Stimulus controller (`kyc_onboarding_config_controller`) follows the same pa
 ```
 {
   "doc_verification_rules": {
+    "standard": [
+      {"doc_label": "Upload PAN / Tax ID", "prompt": "Extract the PAN number", "target_field": "PAN"},
+      {"doc_label": "Upload Address Proof", "prompt": "Extract the full address", "target_field": "address"}
+    ],
     "42": [
-      {"doc_label": "Upload PAN", "prompt": "PAN / Tax ID number", "target_field": "PAN"},
-      {"doc_label": "Upload Bank Details", "prompt": "bank name", "target_field": "bank_name"},
-      ...
+      {"doc_label": "CML", "prompt": "Extract demat account number", "target_field": "demat_account"}
     ]
   },
   "validate_fields": "true",
@@ -286,9 +302,11 @@ The Stimulus controller (`kyc_onboarding_config_controller`) follows the same pa
 
 | Question | Answer |
 |---|---|
-| Why per-form-type grouping? | IndividualKyc and NonIndividualKyc may have different document fields. Following KycDocExtractorAgent's pattern. |
-| Can the same document appear in multiple rows? | Yes — e.g., Bank Details appears 5 times for 5 different target fields. This is expected. |
-| What if the entity has no KYC form types? | The section shows "No KYC form types found for this entity" (same as KycDocExtractorAgent). |
+| Why separate standard vs custom sections? | Standard upload fields (PAN, Address Proof) are hardcoded in ERB views and map to DB columns. Custom fields are FormCustomFields that vary per entity/form type. Separating them avoids confusion and prevents wrong mappings. |
+| Why are standard document mappings fixed (no dropdowns)? | PAN always maps to `PAN` column, Address Proof always maps to `address` column. Making these configurable adds complexity with no benefit — the old text config hardcoded the same mappings. |
+| Can custom File fields still be added per form type? | Yes — the per-form-type cards below the standard section have full dropdowns for custom File-type FormCustomFields. |
+| What if the entity has no custom File-type FormCustomFields? | Only the Standard Documents section appears. The per-form-type cards are hidden. |
+| What if a new standard document is added in future? | Add it to `STANDARD_DOC_MAPPINGS` constant — one-line code change. |
 
 ---
 
