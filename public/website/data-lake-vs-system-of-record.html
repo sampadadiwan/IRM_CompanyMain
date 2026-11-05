@@ -1,0 +1,885 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+(function(){
+  /* Website host -> the app host that receives its demo requests. Mirrors
+     WEBSITE_HOSTS in each deployment's .env file; keep the two in step, because
+     the receiving endpoint only returns CORS headers for origins in that list
+     and a mismatch here fails as a browser-side CORS error with nothing in our
+     logs to explain it. */
+  var ENDPOINTS = {
+    'caphive.com':          'https://app.caphive.com/website_leads',
+    'www.caphive.com':      'https://app.caphive.com/website_leads',
+    'caphive.us':           'https://app.caphive.us/website_leads',
+    'www.caphive.us':       'https://app.caphive.us/website_leads',
+    /* Staging is deliberately not a caphive.* domain. */
+    'altconnects.com':      'https://dev.altconnects.com/website_leads',
+    'www.altconnects.com':  'https://dev.altconnects.com/website_leads',
+    'dev.altconnects.com':  'https://dev.altconnects.com/website_leads'
+  };
+
+  /* Development is the one case the table cannot express. A single Rails process
+     serves BOTH the website (Host: caphive.localhost) and the app (Host:
+     localhost), on whichever port the developer started it on — 3000 and 3001
+     are both in use across this repo's Procfiles and .env.development. So derive
+     the app origin from the page's own port rather than hardcoding one and
+     having it fail on the other. Still cross-origin: the hostname differs, so
+     this exercises the real CORS path rather than quietly bypassing it. */
+  function endpointFor(hostname){
+    if(/(^|\.)localhost$/.test(hostname)){
+      return location.protocol + '//localhost' + (location.port ? ':' + location.port : '') + '/website_leads';
+    }
+    return ENDPOINTS[hostname] || '';
+  }
+
+  window.CAPHIVE = {
+    /* Empty for an unrecognised host — a preview deploy, someone's laptop, an
+       archived copy. The form then falls back to composing an email in the
+       visitor's own mail client rather than posting into a stack that would
+       reject it, so an unlisted host degrades instead of silently losing leads. */
+    formEndpoint: endpointFor(location.hostname),
+
+    /* Where the browser goes after a successful submission. Having its own URL
+       is what makes the conversion measurable. Do not change without updating
+       the conversion trigger in the analytics property. */
+    thankYouUrl: 'thank-you.html',
+
+    /* The public scheduling link. Every booking CTA on the site stays HIDDEN
+       while this is empty, and the header button keeps pointing at the contact
+       form — an advertised booking link that does not book is worse than no
+       booking link at all.
+
+       Availability must be genuinely bookable in US business hours; for an
+       India-based team that means evenings IST. The SAME url belongs in the
+       outbound email signature, which is not wired and must be edited by hand
+       (docs/gtm/prerequisites/C6_outbound_email_template.md §4).
+
+       If this account is ever closed or renamed, blank this line rather than
+       leaving a dead link on the highest-intent button on the site. */
+    bookingUrl: 'https://calendly.com/caphive-support'
+  };
+}());
+</script>
+<!-- Google tag (gtag.js) — GA4 property for caphive.com.
+     Rendered into the <head> of every page by _layout.html.erb, so the
+     measurement ID lives here and nowhere else.
+
+     Consent Mode v2: analytics_storage starts DENIED, so gtag.js loads and
+     sends cookieless pings but sets no _ga cookie until the visitor accepts in
+     the banner (_partials/consent_banner.html). The stored choice is replayed
+     below — synchronously, before config — so a returning visitor who already
+     accepted is measured properly on their very first pageview rather than
+     from the second one onwards. -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+
+  // We run no advertising tags, so the ad_* signals are denied permanently and
+  // the banner never grants them. Only analytics_storage is the visitor's call.
+  gtag('consent', 'default', {
+    ad_storage: 'denied',
+    ad_user_data: 'denied',
+    ad_personalization: 'denied',
+    analytics_storage: 'denied'
+  });
+
+  // localStorage throws in some privacy modes — a read failure just means we
+  // stay on the denied default, which is the safe direction to fail in.
+  try {
+    if(localStorage.getItem('caphive.consent.v1') === 'granted'){
+      gtag('consent', 'update', { analytics_storage: 'granted' });
+    }
+  } catch(e){}
+
+  gtag('js', new Date());
+  gtag('config', 'G-JR4ZT29M06');
+
+  // Named entry point for conversion events, so assets/js/caphive.js never
+  // touches gtag directly and stays loadable on any page rendered without this
+  // partial (it stubs caphiveTrack to a no-op when absent).
+  //
+  // Consent is deliberately NOT re-checked here. Consent Mode already suppresses
+  // the cookie while analytics_storage is denied, and a cookieless event is
+  // still the signal we want counted — gating on consent here would undercount
+  // conversions for no privacy gain.
+  //
+  // Never pass PII: the analytics property is not a place to store a lead.
+  window.caphiveTrack = function(name, params){
+    if(typeof gtag === 'function') gtag('event', name, params || {});
+  };
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-JR4ZT29M06"></script>
+<title>Your data lake is waiting on your operations | CapHive</title>
+<meta name="description" content="Large funds buy a data lake to get one view of their data. But fund data is small, it has to be loaded somewhere anyway, and a lake can't make the numbers right. Why the system of record comes first, and how it feeds the lake you already have.">
+<meta name="theme-color" content="#FBFAF7">
+<link rel="canonical" href="https://caphive.com/data-lake-vs-system-of-record.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 34'%3E%3Cpath d='M15 1L29 9v16L15 33 1 25V9L15 1z' fill='none' stroke='%23FF4D00' stroke-width='3'/%3E%3Cpath d='M15 9l7 4v8l-7 4-7-4v-8l7-4z' fill='%23FF4D00'/%3E%3C/svg%3E">
+<meta property="og:title" content="Your data lake is waiting on your operations">
+<meta property="og:description" content="Fund data isn't big data. You have to load it somewhere, so load it where it gets checked, computed and permissioned, and feed your lake from there.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://caphive.com/data-lake-vs-system-of-record.html">
+<meta property="og:image" content="https://caphive.com/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Lobster&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/caphive.css?v=3a2cb24c">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "@id": "https://caphive.com/#organization",
+  "name": "CapHive",
+  "url": "https://caphive.com",
+  "logo": "https://caphive.com/assets/img/caphive-logo@3x.png",
+  "email": "hello@caphive.com",
+  "description": "Full-stack intelligent technology platform for powering private capital markets — funds, portfolios, deals & secondaries.",
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "801, One International Center, Tower 1, Senapati Bapat Marg, Lower Parel",
+    "addressLocality": "Mumbai",
+    "postalCode": "400013",
+    "addressCountry": "IN"
+  },
+  "areaServed": [
+    { "@type": "Country", "name": "India" },
+    { "@type": "Country", "name": "United States" }
+  ],
+  "founder": {
+    "@type": "Person",
+    "name": "Ausang Shukla",
+    "jobTitle": "Founder & CEO",
+    "sameAs": "https://in.linkedin.com/in/ausangshukla"
+  }
+}
+</script>
+</head>
+<body data-page="resources">
+
+<!-- ================= NAV ================= -->
+<header class="nav" id="nav">
+  <a class="brand" href="index.html" aria-label="CapHive home"><img class="logo" src="assets/img/caphive-logo-original.png?v=04e7b692" alt="CapHive" width="89" height="34"></a>
+  <nav class="nav-links" aria-label="Primary">
+    <div class="has-menu">
+      <a class="nav-link" href="products.html" data-nav="products">
+        Products
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="nav-menu">
+        <a href="funds.html"><strong>Funds</strong><span>Investor onboarding, capital calls, fund accounting</span></a>
+        <a href="portfolios.html"><strong>Portfolios</strong><span>Company data, performance, LP &amp; GP reporting</span></a>
+        <a href="deals-secondaries.html"><strong>Deals &amp; Secondaries</strong><span>Pipelines, SPVs, multi-party transactions</span></a>
+        <a href="ai-agents.html"><strong>AI Agents</strong><span>Sixteen agents purpose-built for private markets</span></a>
+        <a href="integrations.html"><strong>Data &amp; Integrations</strong><span>ERPs, e-sign, APIs</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="who-we-serve.html" data-nav="solutions">Who We Serve</a>
+    <div class="has-menu">
+      <a class="nav-link" href="resources.html" data-nav="resources">
+        Resources
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="nav-menu">
+        <a href="blog.html"><strong>Insights</strong><span>Writing on operations, AI and private markets</span></a>
+        
+        <a href="case-studies.html"><strong>Case Studies</strong><span>What changed for funds running on CapHive</span></a>
+        <a href="security.html"><strong>Security &amp; Trust</strong><span>Controls, hosting, certifications</span></a>
+        <a href="faq.html"><strong>FAQ</strong><span>Implementation, data, pricing, migration</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="about.html" data-nav="about">About</a>
+    <a class="nav-link" href="contact.html" data-nav="contact">Contact</a>
+  </nav>
+  <div class="nav-cta">
+    <div class="has-menu login-menu">
+      <button type="button" class="login nav-link">
+        Login
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <!-- Pinned per region, same as the footer's "Login — IND" / "Login — USA"
+           links. The trigger above is a non-navigating button — only these two
+           actually go anywhere. -->
+      <div class="nav-menu">
+        <a href="https://app.caphive.com/">Login — IND</a>
+        <a href="https://app.caphive.us/">Login — USA</a>
+      </div>
+    </div>
+    <!-- caphive.js rewrites this href to window.CAPHIVE.bookingUrl when that is set, so the
+         header CTA, the contact page and the outbound email signature all carry the same
+         link. Falls back to the contact form while no booking url is configured. -->
+    <a class="btn btn-primary btn-nav" href="contact.html" data-booking-cta>Setup a Demo</a>
+    <button class="nav-toggle" id="navToggle" aria-label="Open menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<div class="mobile-menu" id="mobileMenu">
+  <!-- Mirrors the desktop .login-menu dropdown in nav.html.erb, which is
+       hidden on mobile along with the rest of .nav-cta. Trigger is a plain
+       button (there's no login landing page to link to), so unlike the
+       Products/Resources groups below the whole row is the toggle. -->
+  <div class="mm-group">
+    <div class="mm-row">
+      <button type="button" class="mm-toggle mm-toggle-label" aria-expanded="false" aria-controls="mmLogin" aria-label="Show Login options">
+        Login
+        <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div class="mm-panel" id="mmLogin" hidden>
+      <a class="mm-sub" href="https://app.caphive.com/">Login — IND</a>
+      <a class="mm-sub" href="https://app.caphive.us/">Login — USA</a>
+    </div>
+  </div>
+
+  <hr class="mm-divider">
+
+  <a href="index.html">Home</a>
+
+  <!-- Products / Resources mirror the two desktop dropdowns in nav.html.erb.
+       The label stays a plain link so the parent page is still reachable; the
+       chevron beside it is a separate button that expands the children. Keep
+       both lists in step with the .nav-menu blocks in nav.html.erb. -->
+  <div class="mm-group">
+    <div class="mm-row">
+      <a href="products.html">Products</a>
+      <button type="button" class="mm-toggle" aria-expanded="false" aria-controls="mmProducts" aria-label="Show Products pages">
+        <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div class="mm-panel" id="mmProducts" hidden>
+      <a class="mm-sub" href="funds.html">Funds</a>
+      <a class="mm-sub" href="portfolios.html">Portfolios</a>
+      <a class="mm-sub" href="deals-secondaries.html">Deals &amp; Secondaries</a>
+      <a class="mm-sub" href="ai-agents.html">AI Agents</a>
+      <a class="mm-sub" href="integrations.html">Data &amp; Integrations</a>
+    </div>
+  </div>
+
+  <a href="who-we-serve.html">Who We Serve</a>
+
+  <div class="mm-group">
+    <div class="mm-row">
+      <a href="resources.html">Resources</a>
+      <button type="button" class="mm-toggle" aria-expanded="false" aria-controls="mmResources" aria-label="Show Resources pages">
+        <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div class="mm-panel" id="mmResources" hidden>
+      <a class="mm-sub" href="blog.html">Insights</a>
+      <a class="mm-sub" href="case-studies.html">Case Studies</a>
+      <a class="mm-sub" href="security.html">Security &amp; Trust</a>
+      <a class="mm-sub" href="faq.html">FAQ</a>
+    </div>
+  </div>
+
+  <hr class="mm-divider">
+
+  <a href="about.html">About</a>
+  <a href="contact.html">Contact</a>
+
+  <!-- Same booking-url swap as the desktop header CTA. -->
+  <a class="btn btn-primary" href="contact.html" data-booking-cta>Setup a Demo</a>
+</div>
+<script>
+(function(){
+  /* Inline rather than in assets/js/caphive.js because the homepage renders
+     _partials/index_scripts.html and never loads caphive.js — anything put
+     there would leave the accordion dead on the homepage.
+
+     The sub-links are ordinary <a>s, so the existing "close the menu on any
+     link click" handler in both script bundles already covers them. The
+     chevron is a <button>, so it deliberately does not match that selector
+     and expanding never closes the menu. */
+  document.querySelectorAll('#mobileMenu .mm-toggle').forEach(function(btn){
+    var panel = document.getElementById(btn.getAttribute('aria-controls'));
+    if(!panel) return;
+    btn.addEventListener('click', function(){
+      var open = panel.hidden;
+      panel.hidden = !open;
+      btn.setAttribute('aria-expanded', open);
+    });
+  });
+})();
+</script>
+
+
+<style>
+/* page-local (kept out of caphive.css to avoid a cache-bust) */
+.split-table td{vertical-align:top}
+.split-table td ul{margin:0;padding-left:18px}
+.split-table td li{margin:0 0 6px;font-size:14.5px}
+.split-table th.ch{color:var(--orange)}
+.split-table figcaption{margin-top:12px;font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut)}
+</style>
+
+<article>
+  <!-- ================= ARTICLE HERO ================= -->
+  <header class="page-hero article-hero hero-tinted tint-black">
+    <div class="wrap">
+      <div class="hero-panel">
+        <div class="article-measure">
+          <nav class="crumbs" aria-label="Breadcrumb">
+            <a href="index.html">Home</a><span>/</span><a href="blog.html">Insights</a><span>/</span>Data lake or system of record
+          </nav>
+          <span class="chip-label">Data strategy</span>
+          <h1 style="margin-top:22px">Your data lake is waiting on <em>your operations.</em></h1>
+          <p class="lede">
+            Large funds buy a data lake to finally see all their data in one place. But fund data
+            is small, it has to be loaded somewhere anyway, and a lake can't make the numbers
+            right. Why the system of record comes first, and how it feeds the lake you may
+            already have.
+          </p>
+          <div class="article-meta">
+            <time datetime="2026-11-05">Nov 5, 2026</time>
+            <span class="dot">·</span>
+            <span>9 min read</span>
+            <span class="dot">·</span>
+            <span>Data strategy</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= ARTICLE BODY ================= -->
+  <div class="article-body">
+    <div class="wrap">
+      <div class="article-card">
+        <div class="article-measure">
+          <div class="prose">
+
+        <h2 id="why">Why large funds want a lake</h2>
+        <p>
+          The pitch is familiar. Load the administrator files, the general ledger, the bank
+          statements, the CRM and the portfolio companies' KPI packs into Snowflake or Databricks,
+          put Power BI on top, and you will finally have one source of truth.
+        </p>
+        <p>
+          The reasons behind it are real, and it is worth being fair about them:
+        </p>
+        <ul>
+          <li><strong>Fragmentation.</strong> One or more administrators, a GL, a CRM, a portfolio
+            monitoring tool and a great many spreadsheets. Each holds part of the picture, and none
+            of them talk to each other. The lake is the first place they all meet.</li>
+          <li><strong>Ownership.</strong> "We own our data, not the vendor." Nobody wants their
+            fund history locked inside someone else's product.</li>
+          <li><strong>A mandate.</strong> The board, or a consultant, asks for a "data strategy" or
+            for the firm to be "AI-ready". A lake is a visible thing to buy.</li>
+          <li><strong>Tools.</strong> Analysts want SQL, notebooks and their own dashboards, not a
+            vendor's report screen.</li>
+        </ul>
+        <p>
+          Notice what is not on the list: analytics the firm cannot do today because the data is
+          too big, or the queries too heavy. The lake is bought as an analytics project, but it is
+          really an integration project. And integration is the part a lake does not do for you.
+        </p>
+
+        <h2 id="size">It isn't big data</h2>
+        <p>
+          Warehouses like Snowflake and Databricks are built for billions of rows: website
+          clickstreams, device telemetry, market tick data. A large private-markets manager has a
+          few thousand LPs, a few hundred portfolio companies, some dozens of vehicles and ten or
+          fifteen years of quarters. Even the capital account ledger, the largest table any fund
+          keeps, runs to millions of lines, not billions.
+        </p>
+        <div class="pull">
+          <p><span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> can hand an organisation its entire history as a single SQLite file. That is how big the problem is.</p>
+        </div>
+        <p>
+          An ordinary relational database runs queries over data of this size comfortably. Scale
+          is not why funds need a lake, and it is not what goes wrong when they build one.
+        </p>
+
+        <h2 id="cost">The bill that never stops</h2>
+        <p>
+          What a fund does end up paying for is big-data infrastructure and the people to run it.
+          The warehouse subscription is the line everyone sees, but it is rarely the largest:
+        </p>
+        <ul>
+          <li><strong>The platform.</strong> Snowflake or Databricks compute and storage, billed
+            on usage. Every dashboard refresh, every pipeline run and every analyst's query keeps
+            the meter running.</li>
+          <li><strong>The pipes.</strong> Ingestion tools to pull from each source, a
+            transformation layer to model the data, an orchestrator to schedule it, monitoring to
+            tell you when it breaks, and BI licences for everyone who reads the result.</li>
+          <li><strong>The team.</strong> Data engineers to build and maintain the pipelines,
+            analytics engineers to model the data, and someone who understands fund accounting
+            well enough to tell them whether the numbers are right. Even a small team of two or
+            three costs far more each year than the platform does.</li>
+        </ul>
+        <p>
+          The team is also permanent. The work is never finished, because the inputs keep changing.
+          The administrator changes a file layout. A new fund launches with a different fee
+          basis. A side letter adds an exception. A new vehicle sits above two others. Each change
+          breaks a pipeline or a model, and the team re-implements in SQL logic that the fund
+          already knows. When the one engineer who understood the carry model leaves, that
+          knowledge leaves with them.
+        </p>
+        <div class="pull">
+          <p>A permanent data team and a big-data platform, to manage a few gigabytes of numbers that still have to be reconciled by hand.</p>
+        </div>
+        <p>
+          A system of record spends that money once, on getting the data right where it is
+          created. The fund's rules live in one place, are maintained as configuration rather
+          than code, and stay with the fund when people move on.
+        </p>
+
+        <h2 id="load-somewhere">You have to load the data somewhere</h2>
+        <p>
+          Whichever way you go, someone has to collect the administrator's files, the GL extract,
+          the bank statements, the subscription documents and the KPI packs, and load them. That
+          work is the same. What differs is where the data lands, and what happens to it there.
+        </p>
+        <p>
+          <strong>In a lake, it lands as rows.</strong> What those rows mean is decided later,
+          each time someone reads them. Every dashboard and notebook decides again what "called",
+          "unfunded" or "NAV" means. Fee, carry and IRR logic is rewritten in SQL for each report,
+          and no number points back to the rule that produced it.
+        </p>
+        <div class="callout">
+          <p style="margin:0">
+            <strong>A typical quarter-end.</strong> Two dashboards show different unfunded
+            commitments for Fund II. One subtracts every call issued. The other subtracts only the
+            calls that have been paid. Both queries are correct, they just answer different
+            questions, and the data team spends a day finding out which one went to the LP
+            advisory committee.
+          </p>
+        </div>
+        <p>
+          <strong>In a system of record, it lands in records that already know what they
+          are.</strong> <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> stores
+          commitments, calls, remittances, distributions, units, cost lots and KPIs in tables built
+          for them, plus whatever custom fields your funds need. Data is validated as it is
+          imported: required fields, formats, ranges, duplicates. Fees, allocations and ratios are
+          computed by one engine from formulas you can read, and every generated ledger line
+          stores the formula and the input values that produced it. Access is set per fund, per
+          investor and per document, and every change is logged with who made it and when.
+        </p>
+        <p>
+          The loading effort is the same. Only one of the two destinations makes the data
+          trustworthy.
+        </p>
+
+        <h2 id="wish-list">The lake wish-list, done in the system of record</h2>
+        <p>
+          The honest test is to take everything a fund hopes to get from a lake and ask whether it
+          needs the lake. For a private-markets manager, almost none of it does.
+        </p>
+        <figure class="split-table table-scroll" style="margin:30px 0">
+          <table>
+            <thead>
+              <tr><th>What you want</th><th>With a lake</th><th class="ch">With <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span></th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>One view across systems</strong></td>
+                <td>Build a pipeline per source, then model the data yourself</td>
+                <td>Import each source through the API or spreadsheet templates into records that already have a model, with validation on the way in</td>
+              </tr>
+              <tr>
+                <td><strong>Benchmarking</strong></td>
+                <td>Buy the benchmark data, load it, and write the comparison queries</td>
+                <td>We load your benchmark data next to your fund returns and build the comparison screens for you</td>
+              </tr>
+              <tr>
+                <td><strong>Legacy or acquired funds</strong></td>
+                <td>Another source to map and reconcile, every quarter</td>
+                <td>Onboard them once, through the same import process as any fund, and reconcile each figure to your books</td>
+              </tr>
+              <tr>
+                <td><strong>Custom models</strong> (pacing, stress tests, forecasts)</td>
+                <td>Notebooks over the raw rows, re-deriving the fund's numbers first</td>
+                <td>Run models on numbers that are already computed and approved, through the API, the AI tools or a database export</td>
+              </tr>
+              <tr>
+                <td><strong>Your own tools</strong> (SQL, BI, notebooks)</td>
+                <td>Open access to the warehouse</td>
+                <td>A direct database connection for tenants on dedicated AWS hosting, or a scheduled SQLite export of your organisation's data</td>
+              </tr>
+              <tr>
+                <td><strong>AI</strong></td>
+                <td>A model reading raw tables inherits every ambiguity in them</td>
+                <td>AI assistants query defined measures under the user's own permissions, so they get the same answer the screens show</td>
+              </tr>
+            </tbody>
+          </table>
+          <figcaption>Each item a lake is bought for, and where it can live instead</figcaption>
+        </figure>
+        <p>
+          Lakes are good at analytics, and that has not changed. The point is that this analytics
+          does not need a second copy of the data that nobody checks. Done in the system of
+          record, it runs on numbers that have already been validated, computed and approved.
+        </p>
+
+        <h2 id="correction">What a correction costs</h2>
+        <p>
+          The difference shows most clearly when something is wrong. A side letter cut one LP's
+          management fee from 2.0% to 1.75% from the first quarter, and nobody applied it. Two
+          quarters later, someone notices.
+        </p>
+        <h3>Lake first</h3>
+        <ol>
+          <li>Find every notebook, view and dashboard that computes fees.</li>
+          <li>Patch the logic in each one, or in a shared transform, and backfill.</li>
+          <li>Re-derive the LP's balances, ratios and statements further down the pipeline.</li>
+          <li>Work out what the LP was already sent. The old values are gone unless someone kept
+            snapshots.</li>
+        </ol>
+        <h3>System of record first</h3>
+        <ol>
+          <li>Set the 1.75% rate on the LP's commitment.</li>
+          <li>Unlock and re-run the two quarters. The fee entries are recomputed, and each one
+            records the new rate in its working.</li>
+          <li>Ratios, statements and the next capital call pick up the corrected ledger.</li>
+          <li>The audit trail records who changed the rate and when, and the run history shows
+            each re-run. Locked periods mean nothing else moves without someone deciding it should.</li>
+        </ol>
+        <div class="pull">
+          <p>A lake keeps the latest answer. A system of record keeps the answer, the rule behind it, and what you told your investors along the way.</p>
+        </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= FEED THE LAKE ================= -->
+  <section class="section">
+    <div class="wrap">
+      <div class="band-dark reveal">
+        <span class="chip-label">Already have a lake?</span>
+        <h2 style="margin:20px 0 16px">Keep it. <em>Feed it from the system of record.</em></h2>
+        <p style="margin-bottom:34px">
+          If your firm already runs a warehouse, there is no reason to switch it off. Put
+          <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> in front of it, and
+          the lake receives fund numbers that have already been checked and computed, instead
+          of raw files it has to make sense of.
+        </p>
+        <div class="flow">
+          <div class="flow-node" data-step="01">
+            <h4>Your sources</h4>
+            <span class="amt-lab">Admin files · GL · banks · KYC · KPI packs</span>
+            <p>The same files you would have loaded into the lake.</p>
+          </div>
+          <div class="flow-node" data-step="02">
+            <h4>Import</h4>
+            <span class="amt-lab">API · spreadsheet templates</span>
+            <p>Validated on the way in. Bad rows are rejected with a reason.</p>
+          </div>
+          <div class="flow-node" data-step="03">
+            <h4><span class="wordmark"><span class="wm-cap">Cap</span>Hive</span></h4>
+            <span class="amt-lab">System of record</span>
+            <p>Computed, approved, permissioned and audited. LP notices and statements go out from here.</p>
+          </div>
+          <div class="flow-node" data-step="04">
+            <h4>Export</h4>
+            <span class="amt-lab">SQLite dumps · API · Report Builder</span>
+            <p>Scheduled or on demand. Every row keeps the id of the record it came from.</p>
+          </div>
+          <div class="flow-node" data-step="05">
+            <h4>Your lake &amp; BI</h4>
+            <span class="amt-lab">Snowflake · Databricks · Power BI</span>
+            <p>Joined with the rest of the firm's data, on numbers that match what LPs were sent.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="article-body">
+    <div class="wrap">
+      <div class="article-card">
+        <div class="article-measure">
+          <div class="prose">
+        <p>
+          There are three ways out of <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span>,
+          and a lake can use any of them:
+        </p>
+        <ul>
+          <li><strong>Scheduled database dumps.</strong> A SQLite copy of your organisation's data,
+            produced at the frequency you set (or on demand), stored as a document, and kept for a
+            retention period you choose.</li>
+          <li><strong>The REST API.</strong> The same endpoints the application uses, under the
+            same permissions, so an integration sees exactly what that user could see on
+            screen.</li>
+          <li><strong>Report Builder exports.</strong> The reports your team already uses,
+            exported for the warehouse to pick up.</li>
+        </ul>
+        <p>
+          Because every exported row carries the id of its source record, the warehouse can always
+          trace a number back to where it came from. The data team stops rebuilding fee and IRR
+          logic in SQL, and the numbers in the warehouse match the numbers your LPs received.
+        </p>
+
+        <h2 id="when-you-need-one">When you genuinely need a lake</h2>
+        <p>
+          Some firms do. A multi-strategy manager with public-markets trading data has a real
+          big-data problem: tick data and order books do run to billions of rows. A group that
+          mandates one lake across all its businesses, of which funds are only one, will have a
+          lake whatever the fund team thinks. In both cases the argument still holds. Fund
+          operations data should reach that lake from a system of record, not be rebuilt inside it.
+        </p>
+
+        <h2 id="checklist">Before you buy a lake</h2>
+        <p>Six questions worth answering first:</p>
+        <ul class="check-list">
+          <li>Do your LP statements, notices and capital accounts come from one place today, or from spreadsheets around several systems?</li>
+          <li>If a fee rate turned out to be wrong, how many places would you have to fix?</li>
+          <li>Can you say, for any row, which investors are allowed to see it?</li>
+          <li>Is your data actually too big for an ordinary database, or just spread across too many systems?</li>
+          <li>Who will maintain the pipelines in year three, and what will that team cost every year after?</li>
+          <li>Is the data you want to analyse already checked anywhere, or will the lake be the first place it is checked?</li>
+        </ul>
+        <p>
+          If the answers point to operations rather than analytics, the lake can wait. Fix the
+          system of record first. The lake, if you still want one, gets smaller, cheaper and more
+          accurate as a result.
+        </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= CLOSING ================= -->
+  <section class="section">
+    <div class="wrap">
+      <div class="band-dark reveal">
+        <span class="chip-label">System of record first</span>
+        <h2 style="margin:20px 0 16px">Load your data once. <em>Load it where it gets checked.</em></h2>
+        <p>
+          Send us one fund's real files: commitments, calls, a quarter's ledger, a portfolio
+          company's KPI pack. We load them into a sandbox through the same import templates you
+          would use, so you can check the numbers on screen, and see what your lake would receive.
+        </p>
+        <div class="pull" style="margin:34px 0 30px;border-color:var(--orange)">
+          <p style="color:#fff">The lake was never the hard part. Getting the numbers right before they reach it is.</p>
+        </div>
+        <a class="btn btn-primary" href="mailto:hello@caphive.com">hello@caphive.com <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      </div>
+      <div class="article-measure" style="margin-top:8px">
+        <div class="byline">
+          <span class="avatar">CH</span>
+          <span>
+            <strong><span class="wordmark"><span class="wm-cap">Cap</span>Hive</span></strong>
+            <span>Written by the <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> team</span>
+          </span>
+        </div>
+      </div>
+    </div>
+  </section>
+</article>
+
+<!-- ================= RELATED ================= -->
+<section class="section" style="padding-top:40px">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="chip-label">Where this leads</span>
+      <h2>The system of record, <em>up close.</em></h2>
+    </div>
+    <div class="f-grid reveal" data-delay="1">
+      <a class="link-card" href="how-we-onboard-a-fund.html">
+        <div>
+          <span class="kick">Onboarding</span>
+          <h3>How we onboard a fund</h3>
+          <p>Your files go in as they are, and every number is tied back to your books before go-live.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="link-card" href="allocation-engine.html">
+        <div>
+          <span class="kick">Computation</span>
+          <h3>Every number carries its own receipt</h3>
+          <p>How allocation runs store the formula and the input values behind every entry.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="link-card" href="semantic-layer.html">
+        <div>
+          <span class="kick">AI</span>
+          <h3>The number was right. The question wasn&rsquo;t</h3>
+          <p>Why an AI assistant needs defined measures, not raw tables, to answer fund questions.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CTA ================= -->
+<section class="cta">
+  <div class="cta-card reveal">
+    <h2>See <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> on your <em>own fund data.</em></h2>
+    <p style="max-width:720px;margin-inline:auto">Book a walkthrough with our team — funds, portfolios, deals &amp; secondaries, end to end.</p>
+    <div class="hero-cta">
+      <a class="btn btn-white" href="contact.html">
+        Setup a Demo
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a class="btn btn-ghost" href="products.html">Explore the platform</a>
+    </div>
+    <a class="cta-mail" href="mailto:hello@caphive.com">or write to hello@CapHive.com</a>
+  </div>
+</section>
+<!-- ================= FOOTER ================= -->
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="brand" href="index.html"><img class="logo" src="assets/img/caphive-logo-original.png?v=04e7b692" alt="CapHive" width="89" height="34"></a>
+        
+        <p class="addr">
+          167 Madison Avenue,<br>
+          Suite 205 #4854,<br>
+          New York City, NY 10016,<br>
+          United States
+        </p>
+        <p class="addr">
+          801, One International Center, Tower 1,<br>
+          Senapati Bapat Marg, Lower Parel,<br>
+          Mumbai 400013,<br>
+          India<br>
+          <a class="mailto" href="mailto:hello@caphive.com">hello@CapHive.com</a>
+        </p>
+      </div>
+      <div class="foot-col">
+        <h4>Products</h4>
+        <ul>
+          <li><a href="products.html">Platform overview</a></li>
+          <li><a href="funds.html">Funds</a></li>
+          <li><a href="portfolios.html">Portfolios</a></li>
+          <li><a href="deals-secondaries.html">Deals &amp; Secondaries</a></li>
+          <li><a href="ai-agents.html">AI Agents</a></li>
+          <li><a href="integrations.html">Data &amp; Integrations</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Solutions</h4>
+        <ul>
+          <li><a href="who-we-serve.html">Venture &amp; growth funds</a></li>
+          <li><a href="who-we-serve.html">Private equity</a></li>
+          <li><a href="who-we-serve.html">Family offices</a></li>
+          <li><a href="who-we-serve.html">Fund administrators</a></li>
+          <li><a href="pricing.html">Pricing</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="about.html">About Us</a></li>
+          <li><a href="resources.html">Insights</a></li>
+          <li><a href="case-studies.html">Case Studies</a></li>
+          <li><a href="contact.html">Contact Us</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Get Started</h4>
+        <ul>
+          <li><a href="contact.html">Setup a Demo</a></li>
+          <li><a href="security.html">Security &amp; Trust</a></li>
+          <li><a href="faq.html">FAQ</a></li>
+                    <li><a href="https://app.caphive.com/">Login — IND</a></li>
+          <li><a href="https://app.caphive.us/">Login — USA</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-base">
+      <p>© <span data-year>2026</span> <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> Private Limited. All rights reserved.</p>
+            <p class="legal-links">
+        <a href="privacy.html">Privacy</a>
+        <a href="terms.html">Terms</a>
+        <a href="cookies.html">Cookies</a>
+        <a href="cookies.html" data-consent-open>Cookie settings</a>
+      </p>
+    </div>
+  </div>
+  <div class="foot-mark" aria-hidden="true">CapHive</div>
+</footer><!-- ================= COOKIE CONSENT ================= -->
+<!-- Small bottom-left card, not a full-width bar and not a modal: it never
+     covers the page content or blocks reading. Ships hidden and is revealed by
+     the script below only when no choice is stored yet, so returning visitors
+     never see it again.
+
+     The script is inline rather than in assets/js/caphive.js on purpose — the
+     homepage runs _partials/index_scripts.html and does not load caphive.js, so
+     anything living there would be dead on the busiest page of the site. -->
+<div class="consent" id="consent" role="region" aria-label="Cookie consent" hidden>
+  <p class="consent-text">
+    We use analytics cookies to see which pages are useful. Nothing is set until you accept.
+    <a href="cookies.html">Cookie Policy</a>
+  </p>
+  <div class="consent-actions">
+    <button type="button" class="btn btn-sm btn-outline" data-consent="denied">Decline</button>
+    <button type="button" class="btn btn-sm btn-dark" data-consent="granted">Accept</button>
+  </div>
+</div>
+<script>
+(function(){
+  var KEY = 'caphive.consent.v1';   /* version in the key: bump to re-ask after a policy change */
+  var el = document.getElementById('consent');
+  if(!el) return;
+
+  function read(){ try { return localStorage.getItem(KEY); } catch(e){ return null; } }
+  function write(v){ try { localStorage.setItem(KEY, v); } catch(e){} }
+
+  var hideTimer;
+  function show(){
+    /* cancel a pending hide, or reopening within the fade-out would be undone
+       by that timer firing afterwards */
+    clearTimeout(hideTimer);
+    el.hidden = false;
+    requestAnimationFrame(function(){ el.classList.add('in'); });
+  }
+  function hide(){
+    el.classList.remove('in');
+    /* keep it in the DOM until the transition finishes, then take it out of the
+       tab order entirely */
+    hideTimer = setTimeout(function(){ el.hidden = true; }, 300);
+  }
+
+  function choose(value){
+    write(value);
+    /* gtag is defined in the head partial, which runs before this script. The
+       guard covers the case where an ad blocker stripped it. */
+    if(typeof gtag === 'function'){
+      gtag('consent', 'update', { analytics_storage: value === 'granted' ? 'granted' : 'denied' });
+    }
+    hide();
+  }
+
+  el.querySelectorAll('[data-consent]').forEach(function(b){
+    b.addEventListener('click', function(){ choose(b.dataset.consent); });
+  });
+
+  /* "Cookie settings" in the footer reopens the banner so a choice can be
+     changed or withdrawn later — required, and the only way back once the
+     banner has been dismissed. */
+  document.querySelectorAll('[data-consent-open]').forEach(function(a){
+    a.addEventListener('click', function(e){ e.preventDefault(); show(); });
+  });
+
+  if(!read()) show();
+})();
+</script>
+
+
+<script src="assets/js/caphive.js?v=de00c116"></script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Your data lake is waiting on your operations",
+  "description": "Large funds buy a data lake to get one view of their data. But fund data is small, it has to be loaded somewhere anyway, and a lake can't make the numbers right. Why the system of record comes first, and how it feeds the lake you already have.",
+  "datePublished": "2026-11-05",
+  "author": { "@type": "Organization", "name": "CapHive" },
+  "publisher": { "@type": "Organization", "name": "CapHive" },
+  "mainEntityOfPage": "https://caphive.com/data-lake-vs-system-of-record.html"
+}
+</script>
+</body>
+</html>
