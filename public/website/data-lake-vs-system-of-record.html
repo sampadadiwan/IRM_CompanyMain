@@ -311,6 +311,30 @@
 /* page-local (kept out of caphive.css to avoid a cache-bust) */
 .split-table td{vertical-align:top}
 .split-table th.ch{color:var(--orange)}
+.dgm{margin:34px 0}
+.dgm > div{background:#FFFFFF;border:1px solid var(--line);border-radius:14px;padding:22px;overflow-x:auto}
+.dgm svg{display:block;width:100%;height:auto;min-width:640px}
+.dgm figcaption{margin-top:14px;font-size:14px;line-height:1.6;color:var(--mut);max-width:720px}
+.dgm text{font-family:var(--font)}
+.d-box{fill:#FFFFFF;stroke:var(--fg);stroke-width:1.3}
+.d-box-soft{fill:var(--cream);stroke:var(--line);stroke-width:1.3}
+.d-box-hot{fill:#FFF3ED;stroke:var(--orange);stroke-width:1.3}
+.d-hub{fill:#FFFFFF;stroke:var(--orange);stroke-width:2}
+.d-pill{fill:var(--cream)}
+.d-t{font-size:13px;font-weight:600;fill:var(--fg)}
+.d-s{font-family:var(--mono);font-size:10.5px;fill:var(--mut);letter-spacing:.02em}
+.d-p{font-family:var(--mono);font-size:10.5px;fill:var(--orange-2);letter-spacing:.02em}
+.d-hdr{font-family:var(--mono);font-size:10px;fill:var(--mut);letter-spacing:.14em}
+.d-tag{font-size:12px;font-weight:600;fill:var(--orange-2)}
+.d-wm{font-size:19px;font-weight:700;fill:var(--fg);letter-spacing:-.01em}
+.d-wm-cap{fill:var(--orange)}
+.d-n{fill:var(--orange)}
+.d-n-t{font-size:11px;font-weight:700;fill:#FFFFFF}
+.d-chk{stroke:var(--orange);stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.d-hot{fill:var(--orange-2)}
+.d-line{stroke:var(--fg);stroke-width:1.3;fill:none}
+.d-line-hot{stroke:var(--orange);stroke-width:1.6;fill:none}
+.d-line-soft{stroke:var(--mut);stroke-width:1.1;fill:none;opacity:.7}
 .split-table figcaption{margin-top:12px;font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut)}
 </style>
 
@@ -378,8 +402,123 @@
         <p>
           The data has to be loaded somewhere, so load it once, into a system that checks it on
           the way in, computes the fund's numbers with one engine, and controls who sees what.
-          Everything a lake is usually bought for is covered:
         </p>
+        <figure class="dgm">
+          <div>
+<svg viewBox="0 0 900 480" role="img" aria-label="Without a data lake: five sources, each fed by the people who own them, are imported into CapHive. CapHive validates, computes, approves, controls access and audits, run by the fund operations team, and serves the LP portal, dashboards, benchmarking, AI assistants and analysts' own tools directly.">
+<defs>
+  <marker id="ar1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#101010"/></marker>
+  <marker id="arh1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#FF4D00"/></marker>
+  <symbol id="pp1" viewBox="0 0 11 11"><circle cx="5.5" cy="3.2" r="2.6" fill="#FF4D00"/><path d="M0.6 11 C0.6 6.6 10.4 6.6 10.4 11 Z" fill="#FF4D00"/></symbol>
+</defs>
+<text class="d-hdr" x="93" y="30" text-anchor="middle">YOUR SOURCES</text>
+<text class="d-hdr" x="807" y="30" text-anchor="middle">WHO IT SERVES</text>
+<rect class="d-box-soft" x="8" y="50" width="170" height="60" rx="10"/>
+<text class="d-t" x="22" y="70">Administrator &amp; GL</text>
+<text class="d-s" x="22" y="86">files, trial balances</text>
+<use href="#pp1" x="22" y="90" width="11" height="11"/>
+<text class="d-p" x="38" y="99">Fund administrator</text>
+<path class="d-line" d="M178 80 L256 80" marker-end="url(#ar1)"/>
+<rect class="d-box-soft" x="8" y="118" width="170" height="60" rx="10"/>
+<text class="d-t" x="22" y="138">Bank statements</text>
+<text class="d-s" x="22" y="154">receipts, payments</text>
+<use href="#pp1" x="22" y="158" width="11" height="11"/>
+<text class="d-p" x="38" y="167">Treasury</text>
+<path class="d-line" d="M178 148 L256 148" marker-end="url(#ar1)"/>
+<rect class="d-box-soft" x="8" y="186" width="170" height="60" rx="10"/>
+<text class="d-t" x="22" y="206">LP subscriptions</text>
+<text class="d-s" x="22" y="222">commitments, KYC</text>
+<use href="#pp1" x="22" y="226" width="11" height="11"/>
+<text class="d-p" x="38" y="235">Investors &amp; IR team</text>
+<path class="d-line" d="M178 216 L256 216" marker-end="url(#ar1)"/>
+<rect class="d-box-soft" x="8" y="254" width="170" height="60" rx="10"/>
+<text class="d-t" x="22" y="274">Portfolio KPI packs</text>
+<text class="d-s" x="22" y="290">in their own format</text>
+<use href="#pp1" x="22" y="294" width="11" height="11"/>
+<text class="d-p" x="38" y="303">Portfolio companies</text>
+<path class="d-line" d="M178 284 L256 284" marker-end="url(#ar1)"/>
+<rect class="d-box-soft" x="8" y="322" width="170" height="60" rx="10"/>
+<text class="d-t" x="22" y="342">Benchmark data</text>
+<text class="d-s" x="22" y="358">loaded for you</text>
+<use href="#pp1" x="22" y="362" width="11" height="11"/>
+<text class="d-p" x="38" y="371">Data providers</text>
+<path class="d-line" d="M178 352 L256 352" marker-end="url(#ar1)"/>
+<rect class="d-box" x="722" y="50" width="170" height="60" rx="10"/>
+<text class="d-t" x="736" y="70">LP portal</text>
+<text class="d-s" x="736" y="86">notices, statements, docs</text>
+<use href="#pp1" x="736" y="90" width="11" height="11"/>
+<text class="d-p" x="752" y="99">LPs &amp; advisors</text>
+<path class="d-line-hot" d="M640 80 L718 80" marker-end="url(#arh1)"/>
+<rect class="d-box" x="722" y="118" width="170" height="60" rx="10"/>
+<text class="d-t" x="736" y="138">Dashboards &amp; reports</text>
+<text class="d-s" x="736" y="154">Report Builder, KPIs</text>
+<use href="#pp1" x="736" y="158" width="11" height="11"/>
+<text class="d-p" x="752" y="167">CFO &amp; fund ops</text>
+<path class="d-line-hot" d="M640 148 L718 148" marker-end="url(#arh1)"/>
+<rect class="d-box" x="722" y="186" width="170" height="60" rx="10"/>
+<text class="d-t" x="736" y="206">Benchmarking</text>
+<text class="d-s" x="736" y="222">returns vs peers</text>
+<use href="#pp1" x="736" y="226" width="11" height="11"/>
+<text class="d-p" x="752" y="235">Partners &amp; IR</text>
+<path class="d-line-hot" d="M640 216 L718 216" marker-end="url(#arh1)"/>
+<rect class="d-box" x="722" y="254" width="170" height="60" rx="10"/>
+<text class="d-t" x="736" y="274">AI assistants</text>
+<text class="d-s" x="736" y="290">under your permissions</text>
+<use href="#pp1" x="736" y="294" width="11" height="11"/>
+<text class="d-p" x="752" y="303">Partners &amp; analysts</text>
+<path class="d-line-hot" d="M640 284 L718 284" marker-end="url(#arh1)"/>
+<rect class="d-box" x="722" y="322" width="170" height="60" rx="10"/>
+<text class="d-t" x="736" y="342">Your own tools</text>
+<text class="d-s" x="736" y="358">SQLite · DB connection</text>
+<use href="#pp1" x="736" y="362" width="11" height="11"/>
+<text class="d-p" x="752" y="371">Analysts</text>
+<path class="d-line-hot" d="M640 352 L718 352" marker-end="url(#arh1)"/>
+<rect class="d-hub" x="262" y="44" width="376" height="356" rx="14"/>
+<text class="d-wm" x="282" y="72" text-anchor="start"><tspan class="d-wm-cap">Cap</tspan>Hive</text>
+<text class="d-s" x="618" y="71" text-anchor="end">system of record</text>
+<rect class="d-pill" x="278" y="86" width="344" height="40" rx="8"/>
+<circle class="d-n" cx="298" cy="106" r="10"/>
+<text class="d-n-t" x="298" y="110" text-anchor="middle">1</text>
+<text class="d-t" x="318" y="103">Import &amp; validate</text>
+<text class="d-s" x="318" y="118">API · xlsx templates · checks on entry</text>
+<rect class="d-pill" x="278" y="132" width="344" height="40" rx="8"/>
+<circle class="d-n" cx="298" cy="152" r="10"/>
+<text class="d-n-t" x="298" y="156" text-anchor="middle">2</text>
+<text class="d-t" x="318" y="149">One computation engine</text>
+<text class="d-s" x="318" y="164">fees · carry · units · NAV</text>
+<rect class="d-pill" x="278" y="178" width="344" height="40" rx="8"/>
+<circle class="d-n" cx="298" cy="198" r="10"/>
+<text class="d-n-t" x="298" y="202" text-anchor="middle">3</text>
+<text class="d-t" x="318" y="195">Ratios &amp; analytics</text>
+<text class="d-s" x="318" y="210">IRR · TVPI · DPI · Report Builder</text>
+<rect class="d-pill" x="278" y="224" width="344" height="40" rx="8"/>
+<circle class="d-n" cx="298" cy="244" r="10"/>
+<text class="d-n-t" x="298" y="248" text-anchor="middle">4</text>
+<text class="d-t" x="318" y="241">Approvals &amp; workflow</text>
+<text class="d-s" x="318" y="256">maker-checker · notices · e-sign</text>
+<rect class="d-pill" x="278" y="270" width="344" height="40" rx="8"/>
+<circle class="d-n" cx="298" cy="290" r="10"/>
+<text class="d-n-t" x="298" y="294" text-anchor="middle">5</text>
+<text class="d-t" x="318" y="287">Access control</text>
+<text class="d-s" x="318" y="302">per fund · investor · document</text>
+<rect class="d-pill" x="278" y="316" width="344" height="40" rx="8"/>
+<circle class="d-n" cx="298" cy="336" r="10"/>
+<text class="d-n-t" x="298" y="340" text-anchor="middle">6</text>
+<text class="d-t" x="318" y="333">Audit trail</text>
+<text class="d-s" x="318" y="348">every change · locked periods</text>
+<use href="#pp1" x="282" y="377" width="11" height="11"/>
+<text class="d-p" x="298" y="386">Run by your fund ops &amp; finance team, with approvals</text>
+<rect class="d-box-hot" x="100" y="428" width="220" height="34" rx="17"/>
+<text class="d-tag" x="210" y="450" text-anchor="middle">No pipelines to build</text>
+<rect class="d-box-hot" x="340" y="428" width="220" height="34" rx="17"/>
+<text class="d-tag" x="450" y="450" text-anchor="middle">No warehouse to run</text>
+<rect class="d-box-hot" x="580" y="428" width="220" height="34" rx="17"/>
+<text class="d-tag" x="690" y="450" text-anchor="middle">No data team to hire</text>
+</svg>
+          </div>
+          <figcaption>Without a lake: each source is loaded once by the people who own it, <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> does the checking, computing and controlling, and every user reads from the same place.</figcaption>
+        </figure>
+        <p>Everything a lake is usually bought for is covered:</p>
         <figure class="split-table table-scroll" style="margin:30px 0">
           <table>
             <thead>
@@ -391,7 +530,7 @@
               <tr><td><strong>Benchmarking</strong></td><td>We load your benchmark data next to your fund returns and build the comparison screens for you</td></tr>
               <tr><td><strong>Analytics and reports</strong></td><td>Report Builder and dashboards on IRR, TVPI, DPI, fees, carry and KPIs, across funds and currencies</td></tr>
               <tr><td><strong>Custom models</strong></td><td>Pacing, forecasts and stress tests run on numbers that are already computed and approved, through the API or a database export</td></tr>
-              <tr><td><strong>Your own tools</strong></td><td>A direct database connection on dedicated AWS hosting, or a scheduled SQLite export for SQL, notebooks and BI</td></tr>
+              <tr><td><strong>Your own tools</strong></td><td>A scheduled SQLite export for SQL, notebooks and BI, or, for large clients on single-tenant AWS installations, a direct SQL connection</td></tr>
               <tr><td><strong>AI</strong></td><td>AI assistants query defined measures under each user's own permissions, so they give the same answer as the screens</td></tr>
             </tbody>
           </table>
@@ -402,66 +541,126 @@
           configuration, and stay with the fund when people move on.
         </p>
 
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
 
-  <!-- ================= WITH A LAKE ================= -->
-  <section class="section">
-    <div class="wrap">
-      <div class="band-dark reveal">
-        <span class="chip-label">With a lake</span>
-        <h2 style="margin:20px 0 16px"><span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> <em>feeds it cleanly.</em></h2>
-        <p style="margin-bottom:34px">
-          If your firm runs a lake, keep it. Put <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span>
-          in front of it as the fund-operations source, and the lake receives fund numbers that
-          are already checked and computed, ready to join with the rest of the firm's data.
+        <h2 id="with-lake">With a lake: <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> feeds it cleanly</h2>
+        <p>
+          If your firm runs a lake, keep it. Put <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> in front of it as the fund-operations source,
+          and the lake receives fund numbers that are already checked and computed, ready to join
+          with the rest of the firm's data. Investors are still served straight from <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span>.
         </p>
-        <div class="flow">
-          <div class="flow-node" data-step="01">
-            <h4>Your sources</h4>
-            <span class="amt-lab">Admin files · GL · banks · KYC · KPI packs</span>
-            <p>The files you already receive.</p>
+        <figure class="dgm">
+          <div>
+<svg viewBox="0 0 900 450" role="img" aria-label="With a data lake: sources are imported into CapHive, which validates, computes, approves and permissions the data and serves LPs directly. CapHive exports to the lake through scheduled SQLite dumps, the REST API, Report Builder exports and, on single-tenant AWS installations, a direct SQL connection, with a source id on every row. The lake joins fund data with other firm data and feeds BI and data science.">
+<defs>
+  <marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#101010"/></marker>
+  <marker id="arh2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#FF4D00"/></marker>
+  <symbol id="pp2" viewBox="0 0 11 11"><circle cx="5.5" cy="3.2" r="2.6" fill="#FF4D00"/><path d="M0.6 11 C0.6 6.6 10.4 6.6 10.4 11 Z" fill="#FF4D00"/></symbol>
+</defs>
+<text class="d-hdr" x="83" y="30" text-anchor="middle">YOUR SOURCES</text>
+<text class="d-hdr" x="560" y="30" text-anchor="middle">EXPORTS</text>
+<text class="d-hdr" x="791" y="30" text-anchor="middle">YOUR LAKE</text>
+<rect class="d-box-soft" x="8" y="56" width="158" height="60" rx="10"/>
+<text class="d-t" x="22" y="76">Administrator &amp; GL</text>
+<text class="d-s" x="22" y="92">files, trial balances</text>
+<use href="#pp2" x="22" y="96" width="11" height="11"/>
+<text class="d-p" x="38" y="105">Fund administrator</text>
+<path class="d-line" d="M166 86 L190 86" marker-end="url(#ar2)"/>
+<rect class="d-box-soft" x="8" y="128" width="158" height="60" rx="10"/>
+<text class="d-t" x="22" y="148">Bank statements</text>
+<text class="d-s" x="22" y="164">receipts, payments</text>
+<use href="#pp2" x="22" y="168" width="11" height="11"/>
+<text class="d-p" x="38" y="177">Treasury</text>
+<path class="d-line" d="M166 158 L190 158" marker-end="url(#ar2)"/>
+<rect class="d-box-soft" x="8" y="200" width="158" height="60" rx="10"/>
+<text class="d-t" x="22" y="220">LP subscriptions</text>
+<text class="d-s" x="22" y="236">commitments, KYC</text>
+<use href="#pp2" x="22" y="240" width="11" height="11"/>
+<text class="d-p" x="38" y="249">Investors &amp; IR</text>
+<path class="d-line" d="M166 230 L190 230" marker-end="url(#ar2)"/>
+<rect class="d-box-soft" x="8" y="272" width="158" height="60" rx="10"/>
+<text class="d-t" x="22" y="292">Portfolio KPI packs</text>
+<text class="d-s" x="22" y="308">own format</text>
+<use href="#pp2" x="22" y="312" width="11" height="11"/>
+<text class="d-p" x="38" y="321">Portfolio companies</text>
+<path class="d-line" d="M166 302 L190 302" marker-end="url(#ar2)"/>
+<rect class="d-hub" x="196" y="44" width="244" height="326" rx="14"/>
+<text class="d-wm" x="212" y="72" text-anchor="start"><tspan class="d-wm-cap">Cap</tspan>Hive</text>
+<text class="d-s" x="424" y="71" text-anchor="end">system of record</text>
+<rect class="d-pill" x="212" y="88" width="212" height="30" rx="8"/>
+<path class="d-chk" d="M224 103 l4 4 l8 -8"/>
+<text class="d-t" x="244" y="108">Validated on import</text>
+<rect class="d-pill" x="212" y="126" width="212" height="30" rx="8"/>
+<path class="d-chk" d="M224 141 l4 4 l8 -8"/>
+<text class="d-t" x="244" y="146">Computed by one engine</text>
+<rect class="d-pill" x="212" y="164" width="212" height="30" rx="8"/>
+<path class="d-chk" d="M224 179 l4 4 l8 -8"/>
+<text class="d-t" x="244" y="184">Approved &amp; audited</text>
+<rect class="d-pill" x="212" y="202" width="212" height="30" rx="8"/>
+<path class="d-chk" d="M224 217 l4 4 l8 -8"/>
+<text class="d-t" x="244" y="222">Permissioned per investor</text>
+<rect class="d-box-hot" x="212" y="250" width="212" height="70" rx="10"/>
+<text class="d-t" x="226" y="272">LP portal &amp; notices</text>
+<text class="d-s" x="226" y="288">served straight from here</text>
+<use href="#pp2" x="226" y="299" width="11" height="11"/>
+<text class="d-p" x="242" y="308">LPs &amp; advisors</text>
+<use href="#pp2" x="212" y="343" width="11" height="11"/>
+<text class="d-p" x="228" y="352">Run by fund ops &amp; finance</text>
+<rect class="d-box" x="470" y="60" width="180" height="54" rx="10"/>
+<text class="d-t" x="484" y="82">SQLite dumps</text>
+<text class="d-s" x="484" y="99">scheduled or on demand</text>
+<path class="d-line-hot" d="M440 87 L466 87" marker-end="url(#arh2)"/>
+<rect class="d-box" x="470" y="132" width="180" height="54" rx="10"/>
+<text class="d-t" x="484" y="154">REST API</text>
+<text class="d-s" x="484" y="171">under your permissions</text>
+<path class="d-line-hot" d="M440 159 L466 159" marker-end="url(#arh2)"/>
+<rect class="d-box" x="470" y="204" width="180" height="54" rx="10"/>
+<text class="d-t" x="484" y="226">Report Builder exports</text>
+<text class="d-s" x="484" y="243">reports you already use</text>
+<path class="d-line-hot" d="M440 231 L466 231" marker-end="url(#arh2)"/>
+<rect class="d-box" x="470" y="276" width="180" height="54" rx="10"/>
+<text class="d-t" x="484" y="298">Direct SQL connection</text>
+<text class="d-s" x="484" y="315">single-tenant AWS only</text>
+<path class="d-line-hot" d="M440 303 L466 303" marker-end="url(#arh2)"/>
+<text class="d-s d-hot" x="560" y="356" text-anchor="middle">every row keeps its source id</text>
+<rect class="d-box-soft" x="690" y="44" width="202" height="56" rx="10"/>
+<text class="d-t" x="704" y="64">Other firm data</text>
+<text class="d-s" x="704" y="80">CRM · HR · market data</text>
+<path class="d-line-soft" d="M791 100 L791 120" marker-end="url(#ar2)"/>
+<rect class="d-box" x="690" y="124" width="202" height="104" rx="10"/>
+<text class="d-t" x="704" y="148">Your data lake</text>
+<text class="d-s" x="704" y="165">Snowflake · Databricks</text>
+<text class="d-s" x="704" y="181">fund data + the rest</text>
+<use href="#pp2" x="704" y="205" width="11" height="11"/>
+<text class="d-p" x="720" y="214">Data engineering team</text>
+<path class="d-line-hot" d="M650 87 C 670 87 666 146 686 146" marker-end="url(#arh2)"/>
+<path class="d-line-hot" d="M650 159 C 670 159 666 166 686 166" marker-end="url(#arh2)"/>
+<path class="d-line-hot" d="M650 231 C 670 231 666 186 686 186" marker-end="url(#arh2)"/>
+<path class="d-line-hot" d="M650 303 C 670 303 666 206 686 206" marker-end="url(#arh2)"/>
+<rect class="d-box" x="690" y="262" width="202" height="72" rx="10"/>
+<text class="d-t" x="704" y="282">BI &amp; data science</text>
+<text class="d-s" x="704" y="298">Power BI · notebooks · models</text>
+<use href="#pp2" x="704" y="314" width="11" height="11"/>
+<text class="d-p" x="720" y="323">Analysts &amp; partners</text>
+<path class="d-line" d="M791 228 L791 258" marker-end="url(#ar2)"/>
+<rect class="d-box-hot" x="37" y="398" width="262" height="34" rx="17"/>
+<text class="d-tag" x="168" y="420" text-anchor="middle">Numbers match what LPs were sent</text>
+<rect class="d-box-hot" x="319" y="398" width="262" height="34" rx="17"/>
+<text class="d-tag" x="450" y="420" text-anchor="middle">No fee or IRR logic rebuilt in SQL</text>
+<rect class="d-box-hot" x="601" y="398" width="262" height="34" rx="17"/>
+<text class="d-tag" x="732" y="420" text-anchor="middle">Your lake, your tools</text>
+</svg>
           </div>
-          <div class="flow-node" data-step="02">
-            <h4>Import</h4>
-            <span class="amt-lab">API · spreadsheet templates</span>
-            <p>Validated on the way in.</p>
-          </div>
-          <div class="flow-node" data-step="03">
-            <h4><span class="wordmark"><span class="wm-cap">Cap</span>Hive</span></h4>
-            <span class="amt-lab">System of record</span>
-            <p>Computed, approved and audited. LP notices and statements go out from here.</p>
-          </div>
-          <div class="flow-node" data-step="04">
-            <h4>Export</h4>
-            <span class="amt-lab">SQLite dumps · API · Report Builder</span>
-            <p>Scheduled or on demand, with source ids on every row.</p>
-          </div>
-          <div class="flow-node" data-step="05">
-            <h4>Your lake &amp; BI</h4>
-            <span class="amt-lab">Snowflake · Databricks · Power BI</span>
-            <p>Joined with the firm's other data.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <div class="article-body">
-    <div class="wrap">
-      <div class="article-card">
-        <div class="article-measure">
-          <div class="prose">
-        <p>The lake can take data from <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> three ways:</p>
+          <figcaption>With a lake: <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> stays the system of record and serves LPs directly; the lake receives computed, approved numbers and joins them with the firm's other data.</figcaption>
+        </figure>
+        <p>The lake can take data from <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> four ways:</p>
         <ul>
           <li><strong>Scheduled database dumps.</strong> A SQLite copy of your organisation's data,
             at the frequency you set or on demand.</li>
           <li><strong>The REST API.</strong> The same endpoints the application uses, under the
             same permissions.</li>
           <li><strong>Report Builder exports.</strong> The reports your team already uses.</li>
+          <li><strong>A direct SQL connection.</strong> Straight to your own database, on
+            single-tenant installations on AWS, typically for large clients.</li>
         </ul>
         <p>
           Every row carries the id of the record it came from, so the warehouse can trace any
