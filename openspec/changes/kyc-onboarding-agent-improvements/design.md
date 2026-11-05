@@ -568,6 +568,17 @@ N/A — no new multi-table writes. The `entity_setting` read is a single `has_on
 
 Cucumber only. Two feature files: `kyc_agent_setup.feature` (UI: setup table renders, add/remove rows, save/reload, edge cases) and `kyc_agent_validation.feature` (agent run: PAN-only validity, AML gate, description text, old format compat). Shared step file: `support_agent_steps.rb` (reused from existing agent features). New step file: `kyc_agent_setup_steps.rb` for the setup UI interactions.
 
+### Bug fix: consistency mismatch message shows blank platform value
+
+**Problem:** `compare_extracted_with_model` in `SupportAgentHelper` reads the platform value via `model[attribute_name]`, which only reads ActiveRecord database columns (e.g., `pan`, `bank_name`). When the doc verification rule targets a custom form field stored in `json_fields` (e.g., `clientid` from a CML document), `model["clientid"]` returns `nil` because no DB column exists. The mismatch message then shows `InvestorKyc ()` instead of `InvestorKyc (98765)`.
+
+**Fix:** Fall back to `model.json_fields[attribute_name]` when `model[attribute_name]` returns nil. DB columns take precedence (they are the canonical source for standard fields like `pan`); json_fields is the fallback for custom form fields.
+
+**Affected method:** `SupportAgentHelper#compare_extracted_with_model` — line that reads `model_val = model[attribute_name]`.
+
+**Before:** `Cml, clientid (123456) does not match IndividualKyc ()`
+**After:** `Cml, clientid (123456) does not match IndividualKyc (98765)`
+
 ### Risks and open questions
 
 - **Risk:** Old-format agents may have inconsistent FormCustomField records (orphaned, renamed) → Mitigation: the parser handles missing/blank gracefully (existing behavior).

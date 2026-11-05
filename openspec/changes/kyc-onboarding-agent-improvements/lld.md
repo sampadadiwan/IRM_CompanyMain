@@ -99,6 +99,14 @@ N/A — no table or column changes. All config is stored in the existing `suppor
 
 **Pattern list:** `PAN_TAX_ID_PATTERNS = %w[pan tax_id taxid].freeze` — plus `"tax id"` (with space).
 
+### `compare_extracted_with_model` (SupportAgentHelper) — BUG FIX
+
+**Current behavior:** `model_val = model[attribute_name]` — reads only ActiveRecord DB columns. Returns `nil` for custom form fields stored in `json_fields` (e.g., `clientid`).
+
+**New behavior:** `model_val = model[attribute_name] || model.try(:json_fields)&.dig(attribute_name)` — DB column first, json_fields fallback. Ensures custom form fields configured in doc verification rules produce correct mismatch messages showing both extracted and platform values.
+
+**Why DB column first:** Standard fields like `pan`, `bank_name` exist as both DB columns and json_fields entries. The DB column is the canonical source and should take precedence.
+
 ### `trigger_aml_if_complete` (KycOnboardingAgent) — MODIFIED
 
 **New guard clause** inserted after `enabled?("trigger_aml")` and before the employee check:

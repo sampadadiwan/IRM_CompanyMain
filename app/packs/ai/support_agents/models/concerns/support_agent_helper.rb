@@ -149,7 +149,8 @@ module SupportAgentHelper
 
     field_map.each_key do |attribute_name|
       extracted_val = extracted[attribute_name]
-      model_val = model[attribute_name]
+      # DB column first; fall back to json_fields for custom form fields
+      model_val = model[attribute_name] || model.try(:json_fields)&.dig(attribute_name)
 
       # Perform type-specific comparisons to reduce false mismatches.
       matched = case model_val
