@@ -1,5 +1,7 @@
 # [Feature Name] — Design
 
+<!-- STYLE: bullets and diagrams, not prose. One idea per bullet; a diagram per concept (model, lifecycle, flow); table cells a phrase each — longer reasoning goes in bullets under the table. -->
+
 > **Audience:** Engineering team.
 > **Companion documents:** [Proposal](proposal.md) · [Spec](specs/)
 
@@ -279,9 +281,41 @@ erDiagram
 
 <!-- CONDITIONAL. One row per failure mode: who is alerted, channel (tie to `Noticed`), detail. -->
 
-#### Performance and security
+#### Architecture and design patterns
 
-<!-- CORE. A bullet or two each: volume, background vs inline, tenant isolation, sanitisation. -->
+<!-- CORE — never omitted. One row per item: 1 Pack boundaries (Packwerk), 2 Thin controllers /
+     skinny models (Trailblazer operations, services), 3 Single responsibility / deep modules,
+     4 Reuse before you add (existing concerns, services, partials; flag existing-model changes),
+     5 Configuration as data (global default + entity override, versioned), 6 Explicit state
+     machines, 7 Append-only audit records, 8 Background work (idempotent Sidekiq, schedule.rb),
+     9 Notifications (Noticed, CustomNotification), 10 UI (Turbo, Stimulus, ViewComponent, Draper,
+     existing styling), 11 Queries and data (SQL aggregates, Ransack allowlist, money cents,
+     large tables), 12 AI (LlmService, structured output, jobs, never in deterministic paths),
+     13 Rollout (per entity, phased), 14 YAGNI / DRY. A row may say "not needed — reason". -->
+
+| # | Pattern | How this design applies it | Existing example reused | Where |
+|---|---|---|---|---|
+| 1 | Pack boundaries | | | |
+
+#### Performance
+
+<!-- CORE. Bullets: volume, background vs inline, batching, large tables (CLAUDE.md). -->
+
+#### Security
+
+<!-- CORE — never omitted, never "N/A". One row per item; every new action, job, policy, upload,
+     AI call and token appears. Items: 1 Authorization (Pundit, policy_scope then authorize),
+     2 Tenant isolation (entity + parent ids same-firm, ForInvestor), 3 Mass assignment,
+     4 No code from data (eval/constantize/send allowlists), 5 Injection (SQL, Ransack allowlist,
+     XSS, paths), 6 Background jobs (reload + re-check access), 7 Files and documents,
+     8 AI/LLM (prompt injection, no write tools, validated structured output, entity-only context,
+     minimum PII), 9 Webhooks/tokens/links, 10 Rate limiting and cost, 11 Audit and logging,
+     12 Verification (Brakeman, bundler-audit, features/security/ scenarios). See
+     docs/security/security_review_2026_10.md "Recurring root causes". -->
+
+| # | Item | How this design meets it | Where | Test |
+|---|---|---|---|---|
+| 1 | Authorization | | | |
 
 ### Worked examples
 

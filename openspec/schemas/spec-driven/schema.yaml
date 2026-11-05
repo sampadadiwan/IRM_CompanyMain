@@ -13,8 +13,19 @@ artifacts:
 
       **Planning only: do not make any code changes while writing this document.**
 
+      **Writing style — bullets and diagrams, not prose (applies to every section).** The
+      reader understands best from bullet points and diagrams:
+      - Explain with short bullets (one idea each), never paragraphs. A section that would
+        be a paragraph becomes 3-6 bullets.
+      - Give each concept a diagram: a model or relationship → mermaid flowchart/class
+        diagram; a lifecycle → stateDiagram; a flow → flowchart or sequence diagram; a
+        computed figure → the arithmetic laid out line by line.
+      - Keep table cells short (a phrase). Move any reasoning longer than one line out of the
+        table into a bulleted sub-section under it.
+      - Worked examples use real-looking figures, shown as bullets or an ASCII mockup.
+
       Sections (follow the template's structure and order):
-      - **Why**: 1-2 sentences on the problem or opportunity. What problem does this solve? Why
+      - **Why**: 2-4 bullets on the problem or opportunity. What problem does this solve? Why
         now? How does it work today, if at all?
       - **What Changes**: What changes for the user/business, in plain language, with a mermaid
         flowchart pair (before/after, never ASCII art) for each existing flow the change alters. Mark breaking changes with
@@ -188,6 +199,17 @@ artifacts:
 
       **Planning only: do not make any code changes while writing this document.**
 
+      **Writing style — bullets and diagrams, not prose (applies to every section).** The
+      reader understands best from bullet points and diagrams:
+      - Explain with short bullets (one idea each), never paragraphs. A section that would
+        be a paragraph becomes 3-6 bullets.
+      - Give each concept a diagram: a model or relationship → mermaid flowchart/class
+        diagram; a lifecycle → stateDiagram; a flow → flowchart or sequence diagram; a
+        computed figure → the arithmetic laid out line by line.
+      - Keep table cells short (a phrase). Move any reasoning longer than one line out of the
+        table into a bulleted sub-section under it.
+      - Worked examples use real-looking figures, shown as bullets or an ASCII mockup.
+
       Rules that apply to every section:
       - **Design, not code.** Tell the design through mermaid diagrams and tables. Do NOT paste
         Ruby/JS class bodies, migrations, route blocks, policy code or Stimulus code. Put real
@@ -277,7 +299,88 @@ artifacts:
           how re-runs and retries are kept from re-sending. If the change truly sends nothing, keep
           the heading and say why after considering both audiences — a bare "N/A" is not enough.
         - **Cross-cutting concerns**: Transactions and queries (CONDITIONAL); Exception handling
-          and monitoring (CONDITIONAL, tied to `Noticed`); Performance and security (CORE).
+          and monitoring (CONDITIONAL, tied to `Noticed`); Performance (CORE).
+        - **Architecture and design patterns** (CORE — never omitted): a table Pattern | How this
+          design applies it | Existing example reused | Where (box / class). One row per item below;
+          a row may say "not needed — reason". Items:
+          1. **Pack boundaries (Packwerk)** — new code lives in one pack under app/packs/<domain>/<feature>;
+             cross-pack calls go through the other pack's public API; package.yml dependencies declared.
+          2. **Thin controllers, skinny models** — controllers authorize, load and render; multi-step
+             business flows are Trailblazer operations (`step :`), single-purpose logic is a service
+             with `.call`; models hold associations, validations, scopes and small queries.
+          3. **Single responsibility, deep modules** — each box has one job, a small interface and
+             hides its detail; composition over inheritance.
+          4. **Reuse before you add** — existing concerns (WithFolder, WithCustomField, ForInvestor,
+             Trackable, WithExchangeRate, WithSnapshot, WithValidationRules, WithCustomNotifications),
+             services, partials, components and helpers are used before anything new is written;
+             say which ones in the table. Changes to existing models are flagged for approval.
+          5. **Configuration as data** — where users or CapHive must change behaviour without a
+             release, model it as data with the global-default + entity-override pattern
+             (ValidationRule / ValidationRuleOverride), versioned when results depend on it.
+          6. **Explicit state machines** — status columns with the allowed transitions and guards in
+             one place, drawn as a stateDiagram; every transition recorded (`audited` or a history table).
+          7. **Append-only audit records** — results, snapshots and approvals are written once and
+             never updated; corrections are new rows.
+          8. **Background work** — anything slow, scheduled or AI-backed runs in Sidekiq jobs that are
+             idempotent, retry-safe, fan out per fund/record, and are scheduled in config/schedule.rb;
+             no long calls in the request path.
+          9. **Notifications** — Noticed notifiers + existing mailers/digests; investor emails through
+             CustomNotification; one place decides recipients.
+          10. **UI** — Hotwire (Turbo frames/streams, Stimulus controllers), ViewComponents for reused
+              widgets, Draper decorators for presentation; copy existing screens' styling (no new CSS).
+          11. **Queries and data** — aggregate in SQL, Ransack with allowlisted attributes, money as
+              `_cents` + RansackerAmounts, no N+1, CLAUDE.md large-table rules; no speculative eager loads.
+          12. **AI** — only through LlmService with the entity's provider; prompts and parsing in one
+              service; structured output validated like form input; AI calls in jobs, never in a run
+              path that must be deterministic.
+          13. **Rollout** — per-entity enablement, phased delivery, each phase shippable alone.
+          14. **YAGNI / DRY** — no abstraction without two real callers; no duplicated rules between
+              proposal, spec and design.
+        - **Security** (CORE — never omitted, never "N/A"): a table with one row per item below —
+          Item | How this design meets it | Where (box / class / policy) | Test (H/E/X or
+          features/security/ scenario). Every new controller action, job, policy, upload, AI call
+          and token must appear somewhere in the table. Items:
+          1. **Authorization (Pundit)** — every action calls `authorize`; records are loaded through
+             `policy_scope(...)` then authorized, never a bare `Model.find(params[:id])` (root cause 1
+             of docs/security/security_review_2026_10.md). No new exclusion from `verify_authorized` /
+             `verify_policy_scoped` without a written reason. Every allow/refuse rule lives in the
+             policy, delegating to the parent policy; no predicate that is just a feature flag or `true`
+             (root cause 2).
+          2. **Tenant isolation** — every query is scoped to the user's entity and fund access;
+             `entity_id` is `attr_readonly`; every other parent id (fund, commitment, document…) is
+             validated as same-firm on create and update (root cause 4); LP/investor-facing paths use
+             the ForInvestor scoping and never fall into its "all rows of an accessible fund" branch (root cause 5).
+          3. **Mass assignment** — strong params permit only what the form edits; never `entity_id`,
+             owner/parent ids, approval flags, status, `approved_by`, or role fields.
+          4. **No code from data** — no `eval`, `instance_eval`, `send`, `constantize` or
+             `public_send` on user- or AI-supplied strings; use an allowlist (root cause 6); stored
+             expressions only through FormulaSandbox profiles.
+          5. **Injection** — SQL only through bound parameters / Arel / `sanitize_sql`; no identifier
+             interpolation; Ransack attributes explicitly allowlisted (`ignore_unknown_conditions` is
+             on, so a wrong name silently widens results — see the CLAUDE.md MCP note); no `html_safe`
+             / `raw` on user or document text; file names and template paths never taken from params.
+          6. **Background jobs** — jobs take ids, reload the record through its entity, and re-check
+             that the acting user still has access; never trust ids captured at enqueue time for a
+             different tenant; idempotent on retry.
+          7. **Files and documents** — uploads validated for type and size; served through existing
+             authorized/expiring URLs, never public paths; document text treated as untrusted data.
+          8. **AI / LLM** — document and user text is untrusted input (prompt injection): it goes in
+             as data, the model gets no tools that write, output is structured and validated like form
+             input, and AI output never authorizes anything. Few-shot examples and context come only
+             from the requesting entity (N3). Send the minimum PII, use the entity's configured
+             provider, and record what was sent.
+          9. **Webhooks, tokens, links** — verify provider signatures; tokens have a purpose and an
+             expiry; no open redirects from params.
+          10. **Rate limiting and cost** — expensive or AI endpoints sit behind rack-attack or a
+              per-entity cap.
+          11. **Audit and logging** — sensitive changes (approvals, overrides, role changes) recorded
+              with who/when/before→after (`audited` or an explicit history table); no PII or secrets in
+              logs (filter_parameter_logging); secrets only in Rails credentials.
+          12. **Verification** — Brakeman and bundler-audit clean for the change; a
+              `features/security/` scenario per new controller/action in the style of
+              `tenant_isolation_batch1.feature` (other firm's user refused, owner allowed, direct
+              request bypassing the UI refused).
+
         - **Worked examples** (CORE): Happy Path (H1..), Edge Cases (E1..), Error Cases (X1..)
           tables with columns # | Scenario | Given | When | Then | Spec scenario | Feature, using
           real-ish data from a shared-setup table. Every spec scenario must appear in the Spec
@@ -309,6 +412,17 @@ artifacts:
 
       **Planning only: do not make any code changes while writing this document.**
 
+      **Writing style — bullets and diagrams, not prose (applies to every section).** The
+      reader understands best from bullet points and diagrams:
+      - Explain with short bullets (one idea each), never paragraphs. A section that would
+        be a paragraph becomes 3-6 bullets.
+      - Give each concept a diagram: a model or relationship → mermaid flowchart/class
+        diagram; a lifecycle → stateDiagram; a flow → flowchart or sequence diagram; a
+        computed figure → the arithmetic laid out line by line.
+      - Keep table cells short (a phrase). Move any reasoning longer than one line out of the
+        table into a bulleted sub-section under it.
+      - Worked examples use real-looking figures, shown as bullets or an ASCII mockup.
+
       Rules:
       - Write for a developer reviewer. Every section must make a reviewable decision explicit
         (a type, a limit, an index, a lock, a retry count, an error mapping), not describe the
@@ -319,6 +433,8 @@ artifacts:
         its heading with `N/A — <reason>`.
       - Every section ends with a **Reviewer checks** list of `- [ ]` items the developer ticks
         during review. These are concrete, falsifiable checks, not "looks good".
+      - The LLD carries a CORE **Security detail** section: per new action/job/AI call, the exact
+        policy method, scope used to load, permitted params, and the security scenario that covers it.
       - The closing **Project rules checklist** is CORE. It carries this repo's standing rules
         (large-table hygiene, date formatting, tenant scoping, MCP ontology, IRM cops) marked
         Applies / N/A, and it is how the reviewer confirms the CLAUDE.md rules were considered.

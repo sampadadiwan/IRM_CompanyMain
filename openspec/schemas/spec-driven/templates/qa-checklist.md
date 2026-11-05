@@ -1,5 +1,7 @@
 # [Feature Name] — Manual QA Checklist
 
+<!-- STYLE: bullets and diagrams, not prose. One idea per bullet; a diagram per concept (model, lifecycle, flow); table cells a phrase each — longer reasoning goes in bullets under the table. -->
+
 > **Audience:** Testers running the feature by hand on a deployed build. No code knowledge needed.
 > **Companion documents:** [Proposal](proposal.md) · [Design](design.md)
 

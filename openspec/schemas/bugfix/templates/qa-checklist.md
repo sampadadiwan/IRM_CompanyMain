@@ -1,5 +1,7 @@
 # [Bug Name] — Manual QA Checklist
 
+<!-- STYLE: bullets and diagrams, not prose. One idea per bullet; a diagram per concept (model, lifecycle, flow); table cells a phrase each — longer reasoning goes in bullets under the table. -->
+
 > **Audience:** Testers running the fix by hand on a deployed build. No code knowledge needed.
 > **Companion document:** [Report](report.md)
 

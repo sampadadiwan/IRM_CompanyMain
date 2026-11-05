@@ -14,6 +14,17 @@ artifacts:
 
       **Planning only: do not make any code changes while writing this document.**
 
+      **Writing style — bullets and diagrams, not prose (applies to every section).** The
+      reader understands best from bullet points and diagrams:
+      - Explain with short bullets (one idea each), never paragraphs. A section that would
+        be a paragraph becomes 3-6 bullets.
+      - Give each concept a diagram: a model or relationship → mermaid flowchart/class
+        diagram; a lifecycle → stateDiagram; a flow → flowchart or sequence diagram; a
+        computed figure → the arithmetic laid out line by line.
+      - Keep table cells short (a phrase). Move any reasoning longer than one line out of the
+        table into a bulleted sub-section under it.
+      - Worked examples use real-looking figures, shown as bullets or an ASCII mockup.
+
       **Read the code before writing a word of this.** A bug report whose root cause is a guess
       is worse than no report: it sends the fix at the wrong line. Every claim in Root Cause
       carries a `path/to/file.rb:LINE` reference that you have actually opened. If you cannot

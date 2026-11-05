@@ -1,5 +1,7 @@
 # [Feature Name] — Low-Level Design
 
+<!-- STYLE: bullets and diagrams, not prose. One idea per bullet; a diagram per concept (model, lifecycle, flow); table cells a phrase each — longer reasoning goes in bullets under the table. -->
+
 > **Audience:** The developer who reviews the implementation plan before coding starts.
 > **Companion documents:** [Design](design.md) · [Spec](specs/) · [Tasks](tasks.md)
 
@@ -235,6 +237,25 @@ of migrations; schema.rb / schema_test.rb both updated -->
 | <!-- `features/<domain>/x.feature` --> | <!-- WebMock stub helper --> | <!-- `:thing` --> | <!-- `Given a connected ...` --> |
 
 ---
+
+
+## Pattern Conformance
+
+<!-- CORE. For each new class: its pattern (operation / service / job / policy / component /
+     decorator / concern), its pack, its public interface, and which existing class it is modelled
+     on. Reviewer checks that no class mixes roles (e.g. a controller doing business logic). -->
+
+| Class | Pattern | Pack | Public interface | Modelled on |
+|---|---|---|---|---|
+
+## Security Detail
+
+<!-- CORE. One row per new controller action, job, AI call, upload and token: the policy method,
+     the scope used to load the record, permitted params, tenant/parent-id checks, and the
+     features/security/ scenario that covers it. Mirrors design.md › Security. -->
+
+| Action / job / call | Policy method | Loaded through | Permitted params | Tenant checks | Security scenario |
+|---|---|---|---|---|---|
 
 ## Project Rules Checklist
 
