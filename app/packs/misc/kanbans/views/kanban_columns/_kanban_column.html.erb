@@ -43,7 +43,12 @@
       </div>
     </div>
     <div class="connect-sorting-content ui-sortable mb-0 pb-0" data-sortable="true">
-      <% kanban_cards = if searched_kanban_cards.nil?
+      <%# When the board preloaded every column's cards (boards/_kanban), sort those in Ruby: calling
+          .sequenced on them would ignore the preload and query once per column. NULL sequences sort
+          first, as MySQL's ORDER BY sequence ASC puts them. %>
+      <% kanban_cards = if searched_kanban_cards.nil? && kanban_column.kanban_cards.loaded?
+                          kanban_column.kanban_cards.sort_by { |c| [c.sequence.nil? ? 0 : 1, c.sequence.to_i] }
+                        elsif searched_kanban_cards.nil?
                           kanban_column.kanban_cards.sequenced
                         else
                           searched_kanban_cards.sort_by(&:sequence)
