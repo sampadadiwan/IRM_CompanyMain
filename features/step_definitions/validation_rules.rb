@@ -329,24 +329,39 @@ end
 # requires curr_role "investor" (User#setup_defaults derives that from the entity type) AND that
 # the user does not belong to the fund's entity. entity_type is pinned — the factory picks one at
 # random and a "Group Company" draw would empty the policy scope.
-def create_subscribed_investor(name)
+def create_subscribed_investor(name, **contact)
   investor_entity = FactoryBot.create(:entity, entity_type: "Investor")
   investor = FactoryBot.create(:investor, entity: @entity, investor_entity: investor_entity, investor_name: name)
+  add_investor_contact(investor, **contact)
+  investor
+end
 
-  # notification_users(fund) filters through Pundit's show? for the fund, so the user needs
-  # enable_funds plus an AccessRight linking their investor to the fund — mirrors "the
-  # remittances have proper notification users" in features/step_definitions/capital_call.rb.
-  user = FactoryBot.create(:user, entity: investor_entity)
-  user.permissions.set(:enable_funds)
+# A contact user in an Investor-type entity. funds: false withholds the Funds feature from the
+# user, which FundPolicy#show? (user.enable_funds) requires before it looks at any access right.
+def create_investor_contact_user(entity, funds: true)
+  user = FactoryBot.create(:user, entity: entity)
+  funds ? user.permissions.set(:enable_funds) : user.permissions.unset(:enable_funds)
   user.save!
   user.entity.permissions.set(:enable_funds)
   user.entity.save!
-  AccessRight.create!(entity: @fund.entity, access_to_investor_id: investor.id, metadata: "investor", access_type: "Fund", owner: @fund) unless @fund.access_rights.exists?(access_to_investor_id: investor.id)
+  user
+end
+
+# Adds an approved contact to the investor. The defaults make a contact who receives Capital Call
+# emails; each keyword switches off one thing that makes them count:
+#   tag_list:    the topics they are subscribed to (blank = every topic)
+#   fund_access: whether the investor gets an AccessRight on the fund
+#   funds:       whether the contact user gets the Funds feature
+def add_investor_contact(investor, tag_list: nil, fund_access: true, funds: true)
+  # notification_users(fund) filters through Pundit's show? for the fund, so the user needs
+  # enable_funds plus an AccessRight linking their investor to the fund — mirrors "the
+  # remittances have proper notification users" in features/step_definitions/capital_call.rb.
+  user = create_investor_contact_user(investor.investor_entity, funds:)
+  AccessRight.create!(entity: @fund.entity, access_to_investor_id: investor.id, metadata: "investor", access_type: "Fund", owner: @fund) if fund_access && !@fund.access_rights.exists?(access_to_investor_id: investor.id)
   # InvestorAccess#update_user resolves `user` from the email regardless of what is passed, but
   # pass the investor-entity user anyway so the fixture reads as it behaves.
-  InvestorAccess.create!(email: user.email, investor: investor, approved: true, entity: investor.entity,
-                          first_name: user.first_name, last_name: user.last_name, user: user, email_enabled: true)
-  investor
+  InvestorAccess.create!(email: user.email, investor: investor, approved: true, entity: investor.entity, tag_list:,
+                         first_name: user.first_name, last_name: user.last_name, user: user, email_enabled: true)
 end
 
 # Builds a CapitalRemittance for @capital_call the way production data is shaped: every
@@ -379,6 +394,39 @@ end
 
 Given('the capital call has a remittance for an investor with a subscribed notification user') do
   create_rule_test_remittance(create_subscribed_investor("Subscribed Investor"))
+end
+
+Given('the capital call has a remittance for a subscribed investor {string}') do |name|
+  create_rule_test_remittance(create_subscribed_investor(name))
+end
+
+Given('the capital call has a remittance for an unsubscribed investor {string}') do |name|
+  create_rule_test_remittance(create_unsubscribed_investor(name))
+end
+
+# The contact is approved and has fund access, but has opted into other topics only.
+Given('the capital call has a remittance for an investor {string} whose only contact is subscribed to {string} only') do |name, tag|
+  create_rule_test_remittance(create_subscribed_investor(name, tag_list: tag))
+end
+
+# The contact is approved and subscribed, but the investor has no AccessRight on the fund, so
+# FundPolicy#show? turns them down.
+Given('the capital call has a remittance for an investor {string} whose only contact has no access to the fund') do |name|
+  create_rule_test_remittance(create_subscribed_investor(name, fund_access: false))
+end
+
+# The contact is approved, subscribed and the investor has fund access, but the user lacks the
+# Funds feature, so FundPolicy#show? turns them down before looking at access rights.
+Given('the capital call has a remittance for an investor {string} whose only contact cannot use funds') do |name|
+  create_rule_test_remittance(create_subscribed_investor(name, funds: false))
+end
+
+# Two contacts: the first is turned down by the fund policy, the second receives Capital Call
+# emails — one is enough, wherever it sits in the list.
+Given('the capital call has a remittance for an investor {string} whose first contact cannot use funds but whose second contact is subscribed') do |name|
+  investor = create_subscribed_investor(name, funds: false)
+  add_investor_contact(investor)
+  create_rule_test_remittance(investor)
 end
 
 # A skip_doc_gen commitment is excluded from every send path, so a missing subscription must
@@ -451,6 +499,12 @@ Then('the rule message includes {string}') do |expected_text|
   messages = @rule_results.map(&:message)
   expect(messages.any? { |m| m.include?(expected_text) }).to be(true),
     "Expected a rule message to include '#{expected_text}' but got: #{messages.inspect}"
+end
+
+# Scoped to one rule: other capital call rules (e.g. notices not generated) name every investor.
+Then('the rule {string} message does not include {string}') do |rule_name, unexpected_text|
+  match = @rule_results.find { |r| r.rule.name == rule_name }
+  expect(match.message).not_to include(unexpected_text)
 end
 
 Then('the rule message includes the portfolio company name') do

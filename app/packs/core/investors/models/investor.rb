@@ -364,15 +364,8 @@ class Investor < ApplicationRecord
   #             Contacts whose tag_list does not intersect with_tag are excluded.
   def notification_users(model = nil, with_tag: nil)
     accesses = approved_investor_accesses.includes(user: :roles)
-
-    if with_tag.present?
-      # Include access records that have no tag (subscribed to all) OR whose tag_list contains the topic.
-      accesses = accesses.where(
-        "investor_accesses.tag_list IS NULL OR investor_accesses.tag_list = '' " \
-        "OR investor_accesses.tag_list LIKE ?",
-        "%#{with_tag}%"
-      )
-    end
+    # Contacts with no tag (subscribed to all) OR whose tag_list contains the topic
+    accesses = accesses.subscribed_to(with_tag) if with_tag.present?
 
     # filter_map, not map: an InvestorAccess whose user row has been deleted yields nil, and one
     # nil takes down the entire notification rather than just that contact - Pundit.policy(nil,
@@ -395,18 +388,7 @@ class Investor < ApplicationRecord
     end
 
     if model
-      allowed = users.select do |user|
-        policy = Pundit.policy(user, model)
-        if user.has_cached_role?(:investor_advisor)
-          # Use the original user object directly. dup clears the primary key and association cache,
-          # causing has_cached_role? to fail. permissioned_investor_advisor? does not use curr_role.
-          advisor_notifiable?(user, model, policy)
-        else
-          # For normal users, check show? first; fall back to overview? for models
-          # (like Deal) where investors access via overview? rather than show?.
-          investor_can_view?(policy)
-        end
-      end
+      allowed = users.select { |user| notifiable_user?(user, model) }
 
       # An approved, subscribed contact dropped here gets no notification row and no skip reason,
       # while the Users tab still shows them approved and email-enabled - which is how the
@@ -423,6 +405,22 @@ class Investor < ApplicationRecord
       allowed
     else
       users
+    end
+  end
+
+  # Whether one of this investor's contacts may be sent a notice about `model` — the access check
+  # #notification_users applies to each contact, shared with the bulk subscriber check
+  # (.capital_call_subscriber_ids) so the two cannot drift.
+  def notifiable_user?(user, model)
+    policy = Pundit.policy(user, model)
+    if user.has_cached_role?(:investor_advisor)
+      # Use the original user object directly. dup clears the primary key and association cache,
+      # causing has_cached_role? to fail. permissioned_investor_advisor? does not use curr_role.
+      advisor_notifiable?(user, model, policy)
+    else
+      # For normal users, check show? first; fall back to overview? for models
+      # (like Deal) where investors access via overview? rather than show?.
+      investor_can_view?(policy)
     end
   end
 
@@ -478,7 +476,25 @@ class Investor < ApplicationRecord
   # commitment does not count — only a named, approved contact does (see
   # docs/user_guides/capital_call_actions_and_notifications_matrix.md, Question 6).
   def capital_call_subscribers?(fund)
-    notification_users(fund, with_tag: 'CapitalCall').any?
+    self.class.capital_call_subscriber_ids([self], fund).include?(id)
+  end
+
+  # Bulk form of #capital_call_subscribers?: the ids of those `investors` with at least one contact
+  # who will receive Capital Call emails for `fund`. Same contacts as
+  # notification_users(fund, with_tag: 'CapitalCall') and the same per-contact check
+  # (#notifiable_user?), but every investor's contacts load in one query, and an investor stops at
+  # its first contact who passes instead of checking them all.
+  def self.capital_call_subscriber_ids(investors, fund)
+    investors_by_id = investors.index_by(&:id)
+    InvestorAccess.approved.subscribed_to('CapitalCall')
+                  .where(investor_id: investors_by_id.keys)
+                  .includes(user: :roles)
+                  .group_by(&:investor_id)
+                  .filter_map do |investor_id, accesses|
+                    investor = investors_by_id[investor_id]
+                    # A contact whose user row is gone is skipped, as notification_users does
+                    investor_id if accesses.any? { |access| access.user && investor.notifiable_user?(access.user, fund) }
+                  end
   end
 
   # add_to_user_access_rights_cache / remove_from_user_access_rights_cache removed:

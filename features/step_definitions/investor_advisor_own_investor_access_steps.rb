@@ -450,3 +450,25 @@ Then('the alert shows {string} as text, not markup') do |name|
     expect(page).to have_button("Switch to #{name}")
   end
 end
+
+Given("the plain contact's own contact row is tagged {string}") do |tag|
+  @plain_access.update_columns(tag_list: tag)
+end
+
+# The capital call's "nobody subscribed" check (the Approve-time warning and the journey panel),
+# plus the single-investor form used by the send grey-out, for every investor on the call.
+def call_subscriber_check
+  CapitalCallRuleContextProvider.new.call(record: @capital_call, entity: @fund_company)[:investors_without_notification_subscribers]
+end
+
+Then("the call's subscriber check names nobody") do
+  expect(call_subscriber_check).to be_nil
+  expect(@own_investor.capital_call_subscribers?(@fund)).to be true
+  expect(@client_investor.capital_call_subscribers?(@fund)).to be true if @client_remittance
+end
+
+Then("the call's subscriber check names only the own investor") do
+  expect(call_subscriber_check).to eq(@own_investor.investor_name)
+  expect(@own_investor.capital_call_subscribers?(@fund)).to be false
+  expect(@client_investor.capital_call_subscribers?(@fund)).to be true
+end
