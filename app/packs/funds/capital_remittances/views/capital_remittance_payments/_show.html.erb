@@ -114,7 +114,7 @@
           Notes
         </td>
         <td>
-          <%= capital_remittance_payment.notes&.html_safe %>
+          <%= safe_rich_text(capital_remittance_payment.notes) %>
         </td>
       </tr>
 

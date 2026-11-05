@@ -50,7 +50,7 @@
       "new"           => ["bg-info text-dark",    "New"],
     }
     cls, label = map[status.to_s.downcase] || ["bg-secondary", status.to_s.titleize]
-    "<span class=\"badge #{cls}\" style=\"font-size:0.72rem;\">#{label}</span>".html_safe
+    "<span class=\"badge #{cls}\" style=\"font-size:0.72rem;\">#{h label}</span>".html_safe
   }
 
   category_badge = ->(cat) {
@@ -63,7 +63,7 @@
       "governance" => "bg-dark",
     }
     cls = map[cat.to_s.downcase] || "bg-secondary"
-    "<span class=\"badge #{cls}\" style=\"font-size:0.72rem;\">#{cat}</span>".html_safe
+    "<span class=\"badge #{cls}\" style=\"font-size:0.72rem;\">#{h cat}</span>".html_safe
   }
 %>
 

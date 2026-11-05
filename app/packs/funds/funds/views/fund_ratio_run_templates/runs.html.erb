@@ -1,5 +1,5 @@
 <%= render NewCard.new(col_md: "col-md-12") do %>
-  <%= render FormCard.new(title: "Runs for &ldquo;#{@template.name}&rdquo;".html_safe) do %>
+  <%= render FormCard.new(title: "Runs for &ldquo;#{h @template.name}&rdquo;".html_safe) do %>
 
     <p class="text-muted mb-3">
       Each row is a <strong>FundRatioRun</strong> produced when this template was triggered.

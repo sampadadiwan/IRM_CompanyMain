@@ -57,7 +57,7 @@
               <div class="col-12">
                 <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Details</label>
                 <div class="p-3 bg-light rounded border-start border-4 border-primary">
-                  <%= fund.details&.html_safe.presence || '<span class="text-muted fst-italic">No details provided</span>'.html_safe %>
+                  <%= safe_rich_text(fund.details).presence || '<span class="text-muted fst-italic">No details provided</span>'.html_safe %>
                 </div>
               </div>
             </div>

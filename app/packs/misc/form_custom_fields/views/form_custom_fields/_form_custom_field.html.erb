@@ -17,7 +17,7 @@
         Show in Filter <%= display_boolean f.filter_in_search %> <br>
         Reg Env: <%= f.reg_env&.html_safe %> <br>
         Metadata: <%= f.meta_data %> <br>
-        Help Text: <%= f.help_text&.html_safe %> <br>
+        Help Text: <%= safe_rich_text(f.help_text) %> <br>
         <%
             class_name = f.form_type.name.underscore
             class_name = "investor_kyc" if ["individual_kyc", "non_individual_kyc"].include?(class_name)

@@ -1,0 +1,39 @@
+<%#
+  Shows a whole email (its own <html>, <head>, <style>) inside the page without letting anything in
+  it run. Local: html — the email's HTML as a String.
+
+  Why a frame and not sanitize: the email body contains text other people wrote (a custom
+  notification body, record names). Printed raw into the page, a `<img onerror=…>` in it ran as
+  script for whoever opened it, including the LP recipient on the notification page
+  (docs/security/security_coverage_gaps_2026_11.md). Sanitizing would also strip the email's
+  <style>, so the preview would stop looking like the email.
+
+  How it stays safe and looks the same:
+    * srcdoc       — the email is its own document: its CSS can't leak into the app, the app's
+                     CSS can't leak into it (the preview shows what the recipient sees)
+    * sandbox      — no allow-scripts, so no script in the email ever runs; no allow-forms either.
+                     allow-same-origin only lets the script below read the email's height
+    * allow-popups + <base target="_blank"> — links in the email open in a new tab
+    * the nonce'd script sizes the frame to the email, so the page reads like before (no inner
+      scrollbar). It uses the CSP nonce, not an inline handler, and needs no app JavaScript
+      (the preview page is rendered without the app's layout).
+%>
+<% frame_id = "sandboxed_email_#{SecureRandom.hex(6)}" %>
+<iframe id="<%= frame_id %>" title="Email content"
+        sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+        srcdoc="<%= "<base target=\"_blank\">#{html}" %>"
+        style="display: block; width: 100%; min-height: 120px; border: 0;"></iframe>
+<%= javascript_tag nonce: true do %>
+  (function () {
+    var frame = document.getElementById("<%= frame_id %>");
+    if (!frame) return;
+    // Step 1: grow the frame to the email's full height once it has laid out
+    function fit() {
+      var doc = frame.contentDocument;
+      if (doc && doc.documentElement) frame.style.height = doc.documentElement.scrollHeight + "px";
+    }
+    // Step 2: fit on load (and right away if it already loaded before this ran)
+    frame.addEventListener("load", fit);
+    if (frame.contentDocument && frame.contentDocument.readyState === "complete") fit();
+  })();
+<% end %>

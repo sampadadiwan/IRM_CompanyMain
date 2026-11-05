@@ -19,5 +19,5 @@
           minlength: vr["min_length"],
           maxlength: vr["max_length"],
           pattern: vr["pattern"] %>
-    <small class="text-muted"><%= field.help_text&.html_safe %></small>
+    <small class="text-muted"><%= safe_rich_text(field.help_text) %></small>
 </div>

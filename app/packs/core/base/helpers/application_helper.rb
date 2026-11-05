@@ -2,6 +2,24 @@ module ApplicationHelper
   include Pagy::Backend
   include Pagy::Frontend
 
+  # Renders text a user formatted (Trix notes, fund details, notification bodies, help text, toasts)
+  # so the formatting shows but nothing in it can run. Replaces `.html_safe` on user-entered text,
+  # which printed it raw (features/security/stored_and_reflected_xss.feature). The allowlist lives
+  # in SafeHtml.
+  #
+  #   safe_rich_text('<b>Wire by Friday</b><img src="x" onerror="steal()">')
+  #   # => '<b>Wire by Friday</b><img src="x">'
+  def safe_rich_text(html)
+    SafeHtml.rich_text(html)
+  end
+
+  # A Json2table table whose values may hold user text (audit trail JSON fields, KYC / AML responses,
+  # notification params, report data). Replaces `Json2table.get_html_table(…).html_safe`, which
+  # printed every value raw because Json2table does not escape. See SafeHtml.json_table.
+  def safe_json_table(data, options = JsonTable::TABLE_OPTIONS, builder: :get_html_table)
+    SafeHtml.json_table(data, options, builder:)
+  end
+
   # Renders a locale-formatted display input with a calendar icon that opens the native
   # browser date picker. The actual submission uses a hidden ISO input so date parsing
   # is unaffected by locale on the server side.
@@ -277,7 +295,8 @@ module ApplicationHelper
 
   def json2table(json, table_options: nil)
     table_options ||= { table_class: "table table-bordered dataTable no_hover_table" }.freeze
-    Json2table.get_html_table(json, table_options)
+    # Json2table does not escape values: sanitize so a value can't carry a script (SafeHtml.json_table)
+    SafeHtml.json_table(json, table_options)
   end
 
   def cache_key(key, include_theme: false)

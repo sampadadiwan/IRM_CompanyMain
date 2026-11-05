@@ -12,7 +12,7 @@
         end
       %>
       <% if data.is_a?(Hash) || data.is_a?(Array) %>
-        <%= Json2table.get_html_table(data.to_json, JsonTable::TABLE_OPTIONS).html_safe %>
+        <%= safe_json_table(data.to_json, JsonTable::TABLE_OPTIONS) %>
       <% elsif data.present? %>
         <%= data %>
       <% end %>

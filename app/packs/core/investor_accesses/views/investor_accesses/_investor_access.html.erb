@@ -31,7 +31,7 @@
               data-bs-toggle="tooltip"
               data-bs-placement="top"
               data-bs-html="true"
-              title="<%= cc_emails[1..].join('<br>').html_safe %>"
+              title="<%= safe_join(cc_emails[1..], tag.br) %>"
               style="cursor: default;">+<%= cc_emails.size - 1 %> more</span>
       <% end %>
     <% end %>

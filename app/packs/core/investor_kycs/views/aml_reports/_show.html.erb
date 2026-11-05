@@ -59,7 +59,7 @@
             </tr>
             <tr>
                 <td>
-                <%= Json2table.get_html_table(JSON.parse(data), JsonTable::TABLE_OPTIONS).html_safe%>
+                <%= safe_json_table(JSON.parse(data), JsonTable::TABLE_OPTIONS)%>
                 </td>
             </tr>
         <% end %>

@@ -168,7 +168,7 @@
           "data-portfolio-stats-currency-widget-id-value" => widget_id.to_s
         } : {}
       %>
-      <div <%= stimulus_data.map { |k, v| "#{k}=\"#{v}\"" }.join(" ").html_safe %>>
+      <div <%= stimulus_data.map { |k, v| "#{k}=\"#{h v}\"" }.join(" ").html_safe %>>
         <% if show_currency_filter %>
           <div class="d-flex justify-content-end mb-3">
             <label class="me-2 align-self-center mb-0">Currency:</label>

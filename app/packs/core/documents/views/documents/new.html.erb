@@ -21,7 +21,7 @@
 
                 <% if @document.entity.entity_setting.kyc_docs_note.present? %>
                   <tr>
-                      <td><%= @document.entity.entity_setting.kyc_docs_note.html_safe %></td>
+                      <td><%= safe_rich_text(@document.entity.entity_setting.kyc_docs_note) %></td>
                   </tr>
                 <% end %>
                 

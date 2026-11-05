@@ -54,7 +54,7 @@
           Details
         </td>
         <td>
-          <%= fund.details&.html_safe %>
+          <%= safe_rich_text(fund.details) %>
         </td>
       </tr>
 

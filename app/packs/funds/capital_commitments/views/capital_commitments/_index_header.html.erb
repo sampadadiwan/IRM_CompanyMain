@@ -2,7 +2,7 @@
 <% toolbar ||= "Yes" %>
 <% title ||= "Capital Commitments" %>
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
-  <h1 class="h3 mb-0 text-gray-800"><%= title.html_safe %></h1>
+  <h1 class="h3 mb-0 text-gray-800"><%= SafeHtml.ui_markup(title) %></h1>
   <% if toolbar == "Yes" %>
     <div class="d-flex flex-wrap align-items-center gap-2">
       <%= user_guide_info_icon %>

@@ -67,7 +67,7 @@
       <% if data.is_a?(Hash) || data.is_a?(Array) %>
         <%# Assuming Json2table returns a table with Bootstrap classes if configured correctly, otherwise we might need to wrap it %>
         <div class="">
-          <%= Json2table.get_html_table(data.to_json, JsonTable::TABLE_OPTIONS).html_safe %>
+          <%= safe_json_table(data.to_json, JsonTable::TABLE_OPTIONS) %>
         </div>
       <% elsif data.present? %>
         <div class="p-4 bg-light rounded text-monospace small">

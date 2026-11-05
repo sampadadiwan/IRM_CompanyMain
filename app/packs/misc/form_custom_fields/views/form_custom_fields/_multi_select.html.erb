@@ -14,5 +14,5 @@
    <% end %>
     <% options = field.options %>
     <%= f.select field.name, options, {include_blank: false, include_hidden: false}, class: "form-control  custom_field select2", required: field.required, multiple: true %>
-    <small class="text-muted"><%= field.help_text&.html_safe %></small>
+    <small class="text-muted"><%= safe_rich_text(field.help_text) %></small>
 </div>

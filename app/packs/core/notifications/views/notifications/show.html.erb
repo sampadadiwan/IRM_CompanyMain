@@ -32,7 +32,7 @@
     </td>
     <td>
       <% table_options = { table_class: "table table-bordered dataTable" } %>
-      <%= Json2table::get_html_table(@notification.params.to_json, table_options).html_safe %>
+      <%= safe_json_table(@notification.params.to_json, table_options) %>
     </td>
   </tr>
   <% end %>
@@ -99,12 +99,13 @@
         table_options = { table_class: "table table-bordered dataTable no_hover_table" }
         details = @notification.email
       %>
-      <%= details["email"].dig("mail","body","raw_source")&.html_safe if @notification.email %>
+      <% email_html = details["email"].dig("mail", "body", "raw_source") if @notification.email %>
+      <%= render "layouts/sandboxed_email", html: email_html if email_html.present? %>
       <%
         details["email"].delete("params")
         details["email"].delete("mail")
       %>
-      <%= Json2table::get_html_table(details, table_options).html_safe if @notification.email %>
+      <%= safe_json_table(details, table_options) if @notification.email %>
     </td>
   </tr>
   <% end %>
@@ -126,7 +127,7 @@
     <td>
       <%=
         table_options = { table_class: "table table-bordered dataTable" }
-        Json2table::get_html_table(JSON.parse(@notification.whatsapp), table_options).html_safe if @notification.whatsapp.present?
+        safe_json_table(JSON.parse(@notification.whatsapp), table_options) if @notification.whatsapp.present?
       %>
     </td>
   </tr>

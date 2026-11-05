@@ -87,7 +87,7 @@
               <% end %>
             </h6>
             <% table_options = { table_class: "table table-bordered dataTable"} %>
-            <%= Json2table::get_html_table(portfolio_scenario.calculations[:xirr_cash_flows], table_options).html_safe %>
+            <%= safe_json_table(portfolio_scenario.calculations[:xirr_cash_flows], table_options) %>
           </td>
         </tr>
       <% end %>
@@ -127,7 +127,7 @@
               <% end %>
             </h6>
             <% table_options = { table_class: "table table-bordered dataTable"} %>
-            <%= Json2table::get_html_table(portfolio_scenario.calculations[:moic_cash_flows], table_options).html_safe %>
+            <%= safe_json_table(portfolio_scenario.calculations[:moic_cash_flows], table_options) %>
           </td>
         </tr>
       <% end %>
@@ -152,7 +152,7 @@
         <tr class="collapse" id="portfolio_company_metrics">
           <td colspan="3">
             <% table_options = { table_class: "table table-bordered dataTable" } %>
-            <%= Json2table::get_html_table((JSON.parse portfolio_scenario.calculations[:portfolio_company_metrics]).values.to_json, table_options).html_safe %>
+            <%= safe_json_table((JSON.parse portfolio_scenario.calculations[:portfolio_company_metrics]).values.to_json, table_options) %>
           </td>
         </tr>
 

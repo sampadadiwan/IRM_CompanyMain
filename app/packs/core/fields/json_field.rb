@@ -12,7 +12,9 @@ class JsonField < Administrate::Field::Base
                        # handle other cases
                        data
                      end
-      Json2table.get_html_table(updated_data, TABLE_OPTIONS).html_safe
+      # Admin screens show JSON from every firm to support staff; Json2table does not escape values,
+      # so sanitize its output (SafeHtml.json_table) rather than marking it html_safe.
+      SafeHtml.json_table(updated_data, TABLE_OPTIONS)
     else
       ""
     end

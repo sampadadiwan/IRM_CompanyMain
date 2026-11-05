@@ -32,5 +32,5 @@
           value: val,
           min: min_date_val,
           max: max_date_val %>
-    <small class="text-muted"><%= field.help_text&.html_safe %></small>
+    <small class="text-muted"><%= safe_rich_text(field.help_text) %></small>
 </div>

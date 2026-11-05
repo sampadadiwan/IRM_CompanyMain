@@ -1,5 +1,7 @@
 <div id="user_alert" class="page_alerts">
     <div class="alert alert-<%= user_alert.level %>">
-        <%= user_alert.message.html_safe %>
+        <%# Some toasts carry a link or <br> (e.g. FinalizePortfolioScenarioJob), others a record name a user
+            typed. safe_rich_text keeps the links and drops any script (stored_and_reflected_xss.feature). %>
+        <%= safe_rich_text(user_alert.message) %>
     </div>
 </div>

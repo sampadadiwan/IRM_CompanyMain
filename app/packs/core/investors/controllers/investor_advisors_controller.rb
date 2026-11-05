@@ -148,8 +148,9 @@ class InvestorAdvisorsController < ApplicationController
       @investor_advisor = InvestorAdvisor.find(params[:id])
       authorize(@investor_advisor)
       @investor_advisor.switch(current_user)
-      # S8: layouts/_alerts renders flashes html_safe and the entity name is admin-editable.
-      notice = "You have now been switched to the advisor role for #{ERB::Util.html_escape(@investor_advisor.entity.name)}."
+      # S8: the entity name is admin-editable. layouts/_alerts now escapes every flash, so the name is
+      # interpolated as-is: escaping it here as well would show "Smith &amp; Co" for "Smith & Co".
+      notice = "You have now been switched to the advisor role for #{@investor_advisor.entity.name}."
       # The Access Denied "Switch to ..." button sends the page it was denied on, so the advisor
       # lands back there. Worked examples H8, X10 —
       # openspec/changes/fix-advisor-own-investor-access/report.md#verification

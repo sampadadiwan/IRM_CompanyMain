@@ -46,7 +46,7 @@
         Logs
       </td>
       <td>
-        <%= Json2table.get_html_table(JSON.parse(@ai_check.audit_log), JsonTable::TABLE_OPTIONS).html_safe %>
+        <%= safe_json_table(JSON.parse(@ai_check.audit_log), JsonTable::TABLE_OPTIONS) %>
       </td>
     </tr>
   </table>

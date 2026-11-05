@@ -103,7 +103,10 @@ module WithAuthentication
       render json: { error: "Access Denied" }, status: :forbidden
     elsif request.headers['Turbo-Frame'].present?
       frame_id = ERB::Util.html_escape(request.headers['Turbo-Frame'])
-      render html: "<turbo-frame id='#{frame_id}'><div class='alert alert-danger mb-0'>#{access_denied_message(exception)}</div></turbo-frame>".html_safe,
+      # The message is plain text (it names an entity, which is admin-editable): escape it here, where
+      # it is put into HTML by hand.
+      message = ERB::Util.html_escape(access_denied_message(exception))
+      render html: "<turbo-frame id='#{frame_id}'><div class='alert alert-danger mb-0'>#{message}</div></turbo-frame>".html_safe,
              status: :forbidden
     else
       redirect_to root_path, alert: access_denied_message(exception, with_button: true)
@@ -123,8 +126,10 @@ module WithAuthentication
   # dropdown would do, so the hint can never point at a switch that would still be denied. Nothing
   # is said when no switch helps, so the message never reveals that a record exists.
   # Cheap: runs only on the deny path, against at most two candidate grants.
-  # Names are HTML-escaped: layouts/_alerts.html.erb renders flashes with html_safe, and entity
-  # names are admin-editable.
+  # Returns PLAIN TEXT. layouts/_alerts.html.erb escapes every flash (stored_and_reflected_xss.feature,
+  # XSS-6), so names are not pre-escaped here — that would show "Smith &amp; Co". The switch button is
+  # not part of the text any more: with_button stores what the button needs in flash[:switch_persona]
+  # and the alerts partial draws it (see switch_persona_flash).
   # Worked examples H8, E17, E18, X9, X11 — openspec/changes/fix-advisor-own-investor-access/report.md#verification
   def access_denied_message(exception, with_button: false)
     default = "Access Denied"
@@ -135,7 +140,7 @@ module WithAuthentication
 
     policy_class = exception.policy&.class || Pundit::PolicyFinder.new(record).policy!
     allowed = ->(persona) { persona.present? && policy_class.new(persona, record).public_send(exception.query) }
-    where_now = current_user.investor_advisor? ? "you are currently switched into #{ERB::Util.html_escape(current_user.entity.name)}. " : ""
+    where_now = current_user.investor_advisor? ? "you are currently switched into #{current_user.entity.name}. " : ""
 
     # 1. Their own investment, while switched away (home_persona is nil when at home).
     return "#{default}: #{where_now}Switch your persona to Self to view this." if allowed.call(current_user.home_persona)
@@ -144,9 +149,10 @@ module WithAuthentication
     grant = advisor_grant_that_can_see(record) { |candidate| allowed.call(current_user.switched_persona(candidate)) }
     return default unless grant
 
-    name = ERB::Util.html_escape(grant.entity.name)
-    message = "#{default}: #{where_now}You can view this as an advisor for #{name}. Switch your persona to #{name} to view it."
-    with_button ? "#{message} #{switch_persona_button(grant)}" : message
+    name = grant.entity.name
+    # The button that switches and returns here, drawn by layouts/_alerts.html.erb from this flash
+    flash[:switch_persona] = switch_persona_flash(grant) if with_button && request.get?
+    "#{default}: #{where_now}You can view this as an advisor for #{name}. Switch your persona to #{name} to view it."
   rescue StandardError => e
     Rails.logger.warn { "access_denied_message: #{e.class}: #{e.message}" }
     default
@@ -171,16 +177,14 @@ module WithAuthentication
     grants.sort_by { |g| candidate_entity_ids.index(g.entity_id) }.find(&)
   end
 
-  # The persona dropdown's own endpoint (POST /investor_advisors/switch with id), plus return_to so
-  # the advisor lands back on the page they were denied. GET requests only: a denied form
-  # submission has nothing safe to return to.
-  def switch_persona_button(grant)
-    return "" unless request.get?
-
-    helpers.button_to("Switch to #{grant.entity.name}", switch_investor_advisors_path,
-                      params: { id: grant.id, return_to: request.fullpath }, method: :post,
-                      form: { class: "d-inline ms-2", data: { turbo: false } },
-                      class: "btn btn-sm btn-light rounded-pill px-3")
+  # What the Access Denied alert's "Switch to <client>" button needs, as plain data. The alerts partial
+  # turns it into the persona dropdown's own form (POST /investor_advisors/switch with id), plus
+  # return_to so the advisor lands back on the page they were denied. GET requests only (checked by
+  # the caller): a denied form submission has nothing safe to return to.
+  # It used to be a button_to string appended to the flash text, which only worked while the alerts
+  # partial printed flashes raw — and that let any name in any flash run as script.
+  def switch_persona_flash(grant)
+    { "grant_id" => grant.id, "label" => "Switch to #{grant.entity.name}", "return_to" => request.fullpath }
   end
 
   # The developer error email for a failing page carries ErrorReportContext.for_request under

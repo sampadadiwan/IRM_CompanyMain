@@ -1,0 +1,278 @@
+# Views that print a NON-literal value raw: `x.html_safe`, `raw(x)` or `<%== x %>`.
+# Checked by features/security/security_surface_drift_guard.feature (SG-7).
+#
+# Why: `.html_safe` on text a user typed let that text run as script for whoever opened the page
+# (stored_and_reflected_xss.feature; docs/security/security_coverage_gaps_2026_11.md). User-formatted
+# text must go through `safe_rich_text` (ApplicationHelper), which keeps formatting and drops
+# scripts. A new raw output must be reviewed: either use safe_rich_text / h(), or add it here with
+# the reason the value can never hold user text.
+#
+# Format: "path | expression": "Why this is acceptable". Every entry needs a reason. Remove an
+# entry when the code no longer has it: the guard fails on stale entries too.
+# Regenerate the current list (review each new line, never paste wholesale):
+#   TEST_ENV_NUMBER=$RANDOM RAILS_ENV=test bin/rails runner 'require "./features/security/support/security_surface"; puts SecuritySurface.dynamic_raw_output'
+? 'app/packs/ai/agent_charts/views/agent_charts/show.html.erb | "#{h @agent_chart.title}: &nbsp; #{link_to portfolio_company.name, portfolio_company}".html_safe'
+: Developer-built markup; the interpolated values pass through h() (escaped) — fixed 2026-11-05.
+? app/packs/ai/ai_portfolio_reports/views/ai_portfolio_reports/collated_report.html.erb | AiReportHtml.sanitize(@collated_content).html_safe
+: Already sanitized by AiReportHtml.sanitize (C3 fix, ai_portfolio_reports_isolation.feature C3-7).
+? app/packs/ai/ai_portfolio_reports/views/ai_portfolio_reports/export_docx.html.erb | clean_for_word(AiReportHtml.sanitize(@collated_content)).html_safe
+: Already sanitized by AiReportHtml.sanitize (C3 fix, ai_portfolio_reports_isolation.feature C3-7).
+? app/packs/ai/ai_portfolio_reports/views/ai_portfolio_reports/export_docx.html.erb | clean_for_word(AiReportHtml.sanitize(section.current_content)).html_safe
+: Already sanitized by AiReportHtml.sanitize (C3 fix, ai_portfolio_reports_isolation.feature C3-7).
+? app/packs/ai/ai_portfolio_reports/views/ai_portfolio_reports/export_pdf.html.erb | convert_charts_to_images(AiReportHtml.sanitize(@collated_content)).html_safe
+: Already sanitized by AiReportHtml.sanitize (C3 fix, ai_portfolio_reports_isolation.feature C3-7).
+? app/packs/ai/ai_portfolio_reports/views/ai_portfolio_reports/export_pdf.html.erb | convert_charts_to_images(AiReportHtml.sanitize(section.current_content || '')).html_safe
+: Already sanitized by AiReportHtml.sanitize (C3 fix, ai_portfolio_reports_isolation.feature C3-7).
+? app/packs/ai/ai_portfolio_reports/views/ai_portfolio_reports/show.html.erb | AiReportHtml.sanitize(@current_section.current_content.to_s).html_safe
+: Already sanitized by AiReportHtml.sanitize (C3 fix, ai_portfolio_reports_isolation.feature C3-7).
+app/packs/ai/ai_rules/views/ai_checks/_index.html.erb | raw(pagy_bootstrap_nav(@pagy)): Pagy pagination HTML built by the gem from page numbers; no user text.
+app/packs/ai/ai_rules/views/ai_rules/index.html.erb | raw(pagy_bootstrap_nav(@pagy)): Pagy pagination HTML built by the gem from page numbers; no user text.
+? 'app/packs/ai/assistants/views/assistant_tasks/_index.html.erb | raw(pagy_bootstrap_nav(@pagy, anchor_string: %(data-turbo-frame="assistant_tasks_frame" data-remote="true")))'
+: Pagy pagination HTML built by the gem from page numbers; no user text.
+app/packs/ai/assistants/views/assistant_tasks/_index.html.erb | raw(pagy_info(@pagy)): Pagy pagination HTML built by the gem from page numbers; no user text.
+app/packs/ai/assistants/views/assistants/generate_slides.html.erb | @slides_html.html_safe: HTML rendered by our own slide partials (assistants/presentation_templates, tear sheet templates), which escape every model-supplied value; SG-7 scans those partials too.
+app/packs/ai/chats/views/chats/index.html.erb | raw(pagy_bootstrap_nav(@pagy)): Pagy pagination HTML built by the gem from page numbers; no user text.
+app/packs/ai/customer_support_agent/views/cs_feedback_reviews/index.html.erb | raw(pagy_bootstrap_nav(@pagy_escalations)): Pagy pagination HTML built by the gem from page numbers; no user text.
+app/packs/ai/customer_support_agent/views/cs_feedback_reviews/index.html.erb | raw(pagy_bootstrap_nav(@pagy_feedbacks)): Pagy pagination HTML built by the gem from page numbers; no user text.
+app/packs/ai/guide_faqs/views/faq_entries/index.html.erb | raw(pagy_bootstrap_nav(@pagy)): Pagy pagination HTML built by the gem from page numbers; no user text.
+? 'app/packs/ai/portfolio_company_dashboard/views/portfolio_company_dashboard/_table.html.erb | raw(pagy_bootstrap_nav(pagy, anchor_string: %(data-turbo-frame="portfolio_table_frame" data-remote="true"), params: pagy_params))'
+: Pagy pagination HTML built by the gem from page numbers; no user text.
+app/packs/ai/portfolio_company_dashboard/views/portfolio_company_dashboard/_table.html.erb | raw(pagy_info(pagy)): Pagy pagination HTML built by the gem from page numbers; no user text.
+? 'app/packs/ai/portfolio_company_dashboard/views/portfolio_validation_digest_mailer/validation_summary.html.erb | "#{doc_overdue} #{''company''.pluralize(doc_overdue)} missing required documents.".html_safe'
+: 'Email view: mail clients do not run scripts; emails were out of scope on 2026-11-05. Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+? 'app/packs/ai/portfolio_company_dashboard/views/portfolio_validation_digest_mailer/validation_summary.html.erb | "#{kpi_overdue} #{''company''.pluralize(kpi_overdue)} missing KPI reports for #{h period_label}.".html_safe'
+: 'Email view: mail clients do not run scripts; emails were out of scope on 2026-11-05. Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+? 'app/packs/ai/portfolio_company_dashboard/views/portfolio_validation_digest_mailer/validation_summary.html.erb | "#{val_overdue} #{''company''.pluralize(val_overdue)} missing valuation for #{h period_label}.".html_safe'
+: 'Email view: mail clients do not run scripts; emails were out of scope on 2026-11-05. Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+? 'app/packs/ai/portfolio_company_dashboard/views/portfolio_validation_digest_mailer/validation_summary.html.erb | "Sent by the Portfolio Company Agent · #{h @entity.name} · #{period_label} · #{I18n.l(@run_at, format: :abbr_date_time)}".html_safe'
+: 'Email view: mail clients do not run scripts; emails were out of scope on 2026-11-05. Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+? 'app/packs/ai/portfolio_company_dashboard/views/portfolio_validation_digest_mailer/validation_summary.html.erb | @errors.map { |e| "&#10007; #{h(e[:target_name] || e[''target_name''])} &mdash; #{h(e[:error] || e[''error''])}" }.join("<br>").html_safe'
+: 'Email view: mail clients do not run scripts; emails were out of scope on 2026-11-05. Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+? 'app/packs/ai/portfolio_scoring_dashboard/views/portfolio_scoring_dashboard/_table.html.erb | raw(pagy_bootstrap_nav(pagy, anchor_string: %(data-turbo-frame="scoring_table_frame" data-remote="true"), params: pagy_params))'
+: Pagy pagination HTML built by the gem from page numbers; no user text.
+app/packs/ai/portfolio_scoring_dashboard/views/portfolio_scoring_dashboard/_table.html.erb | raw(pagy_info(pagy)): Pagy pagination HTML built by the gem from page numbers; no user text.
+? 'app/packs/ai/presentation_analyst_dashboard/views/presentation_analyst_dashboard/_table.html.erb | raw(pagy_bootstrap_nav(pagy, anchor_string: %(data-turbo-frame="presentation_table_frame" data-remote="true"), params: sticky_presentation_filters.compact))'
+: Pagy pagination HTML built by the gem from page numbers; no user text.
+app/packs/ai/presentation_analyst_dashboard/views/presentation_analyst_dashboard/_table.html.erb | raw(pagy_info(pagy)): Pagy pagination HTML built by the gem from page numbers; no user text.
+app/packs/ai/report_insights/views/report_insight_mailer/send_report_insight_summary.html.erb | @summary_html.html_safe: 'Email view: mail clients do not run scripts; emails were out of scope on 2026-11-05. Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+app/packs/ai/report_insights/views/report_insights/_overview.html.erb | raw(@report_insight.charts_spec.to_json): JSON for a script/data attribute from our own records; ActiveSupport escapes <, > and & in to_json (escape_html_entities_in_json), so a value cannot close the tag.
+? 'app/packs/ai/support_agents/views/cash_flow_reminder_mailer/send_reminder.html.erb | "#{blocked_funds.size} fund#{blocked_funds.size == 1 ? '''' : ''s''} #{blocked_funds.size == 1 ? ''has'' : ''have''} stale data. Please update the data listed above so the cash flow report generates correctly.".html_safe'
+: 'Email view: mail clients do not run scripts; emails were out of scope on 2026-11-05. Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+? 'app/packs/ai/support_agents/views/cash_flow_reminder_mailer/send_reminder.html.erb | "The Cash Flow Report for <strong>#{h @support_agent.entity.name}</strong> is scheduled to run on <strong>#{run_date}</strong> (#{@days_until_run} day#{@days_until_run == 1 ? '''' : ''s''} from now). The table below shows the data readiness for each fund.".html_safe'
+: 'Email view: mail clients do not run scripts; emails were out of scope on 2026-11-05. Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+? 'app/packs/ai/support_agents/views/cash_flow_report_mailer/send_report.html.erb | "This fund has insufficient cash to cover upcoming investments and expenses. Raise a capital call of <strong>#{format_amount.call(fund[:recommended_call], @currency)}</strong> to restore the required buffer. <a href=\"#{capital_calls_url(subdomain: sub)}\" style=\"color:#{SupportAgentEmailHelper::SA_COLORS[:danger][:text]};font-weight:600;text-decoration:none\">Raise Capital Call &rarr;</a>".html_safe'
+: 'Email view: mail clients do not run scripts; emails were out of scope on 2026-11-05. Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+? 'app/packs/ai/support_agents/views/cash_flow_report_mailer/send_report.html.erb | "This is an automated cash flow analysis report for <strong>#{h @entity.name}</strong> covering #{@fund_results.size} fund#{@fund_results.size != 1 ? ''s'' : ''''}. Review any shortfalls and initiate capital calls promptly.".html_safe'
+: 'Email view: mail clients do not run scripts; emails were out of scope on 2026-11-05. Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+? 'app/packs/ai/support_agents/views/cash_flow_report_mailer/send_report.html.erb | shortfall_funds.map { |f| "#{h f[:name]} &mdash; capital call of <strong>#{format_amount.call(f[:recommended_call], @currency)}</strong> recommended. <a href=\"#{capital_calls_url(subdomain: sub)}\" style=\"color:#{SupportAgentEmailHelper::SA_COLORS[:danger][:text]};font-weight:600;text-decoration:none\">Raise Call &rarr;</a>" }.join("<br>").html_safe'
+: 'Email view: mail clients do not run scripts; emails were out of scope on 2026-11-05. Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+? app/packs/ai/support_agents/views/deal_management_digest_mailer/pipeline_digest.html.erb | "<strong>#{r['ai_grade'] || r[:ai_grade]}</strong>".html_safe
+: 'Email view: mail clients do not run scripts; emails were out of scope on 2026-11-05. Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+? app/packs/ai/support_agents/views/deal_management_digest_mailer/pipeline_digest.html.erb | "<strong>#{r['ai_score'] || r[:ai_score]}</strong>".html_safe
+: 'Email view: mail clients do not run scripts; emails were out of scope on 2026-11-05. Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+? 'app/packs/ai/support_agents/views/deal_management_digest_mailer/pipeline_digest.html.erb | "Sent by the Deal Management Agent · #{h @entity.name} · <a href=\"#{deal_url}\" style=\"color:#aaa\">Open Deal</a> · <a href=\"#{report_url}\" style=\"color:#aaa\">Full Report</a>".html_safe'
+: 'Email view: mail clients do not run scripts; emails were out of scope on 2026-11-05. Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+? 'app/packs/ai/support_agents/views/deal_management_digest_mailer/pipeline_digest.html.erb | [ blocking_docs.map { |i| "&#10007; #{h(i[''document_name''] || i[:document_name])} <em>(missing)</em>" }, present_docs.map { |i| "<span style=\"color:#{SupportAgentEmailHelper::SA_COLORS[:success][:text]}\">&#10003; #{h(i[''document_name''] || i[:document_name])}</span>" } ].flatten.join("<br>").html_safe'
+: 'Email view: mail clients do not run scripts; emails were out of scope on 2026-11-05. Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+? 'app/packs/ai/support_agents/views/deal_management_digest_mailer/pipeline_digest.html.erb | overdue.map { |i| act_id = i["activity_id"] || i[:activity_id] msg = h(i["message"] || i[:message]) link = act_id.present? ? " &mdash; <a href=\"#{deal_activity_url(act_id)}\" style=\"color:#1565c0\">View Activity</a>" : "" "#{msg}#{link}" }.join("<br>").html_safe'
+: 'Email view: mail clients do not run scripts; emails were out of scope on 2026-11-05. Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+? app/packs/ai/support_agents/views/deal_management_digest_mailer/pipeline_digest.html.erb | stagnant.map { |i| msg = h(i["message"] || i[:message]) "#{msg} &mdash; <a href=\"#{deal_url}\" style=\"color:#1565c0\">View Deal</a>" }.join("<br>").html_safe
+: 'Email view: mail clients do not run scripts; emails were out of scope on 2026-11-05. Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+? 'app/packs/ai/support_agents/views/deal_management_digest_mailer/weekly_summary.html.erb | "#{newly_stagnant} investor#{''s'' unless newly_stagnant == 1} went idle in the last #{stagnant_days} days.".html_safe'
+: 'Email view: mail clients do not run scripts; emails were out of scope on 2026-11-05. Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+? 'app/packs/ai/support_agents/views/deal_management_digest_mailer/weekly_summary.html.erb | "Weekly Summary · #{h @deal.name} · #{h @entity.name} · <a href=\"#{dashboard_url}\" style=\"color:#aaa\">Open Dashboard</a>".html_safe'
+: 'Email view: mail clients do not run scripts; emails were out of scope on 2026-11-05. Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+? 'app/packs/ai/support_agents/views/deal_management_digest_mailer/weekly_summary.html.erb | [ "<strong>#{h task_title}</strong>", task_company.present? ? "Investor: #{h task_company}" : nil, task_responsible.present? ? "Assigned to: #{h task_responsible}" : nil, task_due.present? ? "Due: #{task_due}" : nil ].compact.join("<br>").html_safe'
+: 'Email view: mail clients do not run scripts; emails were out of scope on 2026-11-05. Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+app/packs/ai/support_agents/views/deals_report_mailer/send_report.html.erb | "<strong>#{h deal[:deal_name]}</strong>".html_safe: 'Email view: mail clients do not run scripts; emails were out of scope on 2026-11-05. Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+? 'app/packs/ai/support_agents/views/deals_report_mailer/send_report.html.erb | "Deal fundraising update for <strong>#{h @support_agent.entity.name}</strong> &mdash; #{I18n.l(Time.zone.today, format: :month_year_full)}.".html_safe'
+: 'Email view: mail clients do not run scripts; emails were out of scope on 2026-11-05. Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+? 'app/packs/ai/support_agents/views/deals_report_mailer/send_report.html.erb | attention_deals.map { |d| "#{h d[:deal_name]}: Fill rate #{d[:fill_rate]}% — needs investor engagement." }.join("<br>").html_safe'
+: 'Email view: mail clients do not run scripts; emails were out of scope on 2026-11-05. Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+? 'app/packs/ai/support_agents/views/deals_report_mailer/send_report.html.erb | stale_deals.map { |d| "#{h d[:deal_name]}: #{d[:stale_days]} days since last activity." }.join("<br>").html_safe'
+: 'Email view: mail clients do not run scripts; emails were out of scope on 2026-11-05. Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+? 'app/packs/ai/support_agents/views/deals_report_mailer/send_report.html.erb | tasks_due.map { |t| "#{h t.title} — due #{t.due_date ? I18n.l(t.due_date, format: :short) : ''''}" }.join("<br>").html_safe'
+: 'Email view: mail clients do not run scripts; emails were out of scope on 2026-11-05. Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+? 'app/packs/ai/support_agents/views/deals_report_mailer/send_report.html.erb | tasks_overdue.map { |t| "#{h t.title} — was due #{t.due_date ? I18n.l(t.due_date, format: :short) : ''''}" }.join("<br>").html_safe'
+: 'Email view: mail clients do not run scripts; emails were out of scope on 2026-11-05. Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+? 'app/packs/ai/support_agents/views/esign_monitor_mailer/stuck_documents_report.html.erb | "The <strong>E-Sign Monitor</strong> has completed its scan for <strong>#{h @entity&.name}</strong> and found #{total_issues} item#{total_issues == 1 ? '''' : ''s''} that need#{total_issues == 1 ? ''s'' : ''''} attention.".html_safe'
+: 'Email view: mail clients do not run scripts; emails were out of scope on 2026-11-05. Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+? app/packs/ai/support_agents/views/remittance_reconciliation_mailer/reconciliation_report.html.erb | Array(d["reasoning"]).map { |r| h(r) }.join("<br>").html_safe
+: 'Email view: mail clients do not run scripts; emails were out of scope on 2026-11-05. Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+? app/packs/ai/support_agents/views/remittance_reconciliation_mailer/reconciliation_report.html.erb | blocking.map { |i| h(i[:message] || i["message"]) }.join("<br>").html_safe
+: 'Email view: mail clients do not run scripts; emails were out of scope on 2026-11-05. Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+? app/packs/ai/support_agents/views/remittance_reconciliation_mailer/reconciliation_report.html.erb | warnings.map { |i| h(i[:message] || i["message"]) }.join("<br>").html_safe
+: 'Email view: mail clients do not run scripts; emails were out of scope on 2026-11-05. Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+? 'app/packs/ai/support_agents/views/rta_reconciliation_mailer/reconciliation_report.html.erb | missing.map { |m| "Folio #{h m[:folio_id]}" }.join(", ").html_safe'
+: 'Email view: mail clients do not run scripts; emails were out of scope on 2026-11-05. Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+? 'app/packs/ai/support_agents/views/rta_reconciliation_mailer/reconciliation_report.html.erb | pending.map { |p| "Folio #{h p[:folio_number]}: #{h p[:detail]}" }.join("<br>").html_safe'
+: 'Email view: mail clients do not run scripts; emails were out of scope on 2026-11-05. Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+? 'app/packs/ai/support_agents/views/support_agents/_presentation_report_detail.html.erb | "<span class=\"badge #{cls}\" style=\"font-size:0.72rem;\">#{h cat}</span>".html_safe'
+: Developer-built markup; the interpolated values pass through h() (escaped) — fixed 2026-11-05.
+? 'app/packs/ai/support_agents/views/support_agents/_presentation_report_detail.html.erb | "<span class=\"badge #{cls}\" style=\"font-size:0.72rem;\">#{h label}</span>".html_safe'
+: Developer-built markup; the interpolated values pass through h() (escaped) — fixed 2026-11-05.
+? 'app/packs/core/access_rights/views/access_rights/_index.html.erb | raw(pagy_bootstrap_nav(@pagy, anchor_string: %(data-turbo-frame="#{frame}" data-remote="true")))'
+: Pagy pagination HTML built by the gem from page numbers; no user text.
+app/packs/core/access_rights/views/access_rights/_index.html.erb | raw(pagy_info(@pagy)): Pagy pagination HTML built by the gem from page numbers; no user text.
+'app/packs/core/base/views/admin/application/index.html.erb | raw(pagy_bootstrap_nav(@pagy, param_name: ''_page''))': Pagy pagination HTML built by the gem from page numbers; no user text.
+app/packs/core/base/views/dashboard_widgets/_index.html.erb | raw(pagy_bootstrap_nav(@pagy)): Pagy pagination HTML built by the gem from page numbers; no user text.
+? 'app/packs/core/base/views/doorkeeper/authorizations/new.html.erb | raw(t(''doorkeeper.authorizations.new.prompt'', client_name: content_tag(:strong, class: ''text-info'') { @pre_auth.client.name }))'
+: Translation text from config/locales (developer-written).
+'app/packs/core/base/views/fields/has_many/_show.html.erb | raw(pagy_bootstrap_nav(@pagy, param_name: "#{field_name}[page]"))': Pagy pagination HTML built by the gem from page numbers; no user text.
+app/packs/core/base/views/layouts/_audit_timeline_tab.html.erb | <%== ( pagy_bootstrap_nav(pagy) ) %>: Pagy pagination HTML built by the gem from page numbers; no user text.
+app/packs/core/base/views/layouts/deleted_index.html.erb | <%== ( pagy_bootstrap_nav(@pagy) ) %>: Pagy pagination HTML built by the gem from page numbers; no user text.
+app/packs/core/base/views/outlook_addin/oauth_start.html.erb | raw(json_escape(@token_payload.to_json)): JSON for a script/data attribute from our own records; ActiveSupport escapes <, > and & in to_json (escape_html_entities_in_json), so a value cannot close the tag.
+app/packs/core/base/views/quick_links/index.html.erb | raw(pagy_bootstrap_nav(@pagy)): Pagy pagination HTML built by the gem from page numbers; no user text.
+app/packs/core/base/views/report_builder/view.html.erb | <%== ( pagy_nav(@pagy) if @pagy.pages > 1 ) %>: Pagy pagination HTML built by the gem from page numbers; no user text.
+app/packs/core/base/views/website_leads/index.html.erb | raw(pagy_bootstrap_nav(@pagy)): Pagy pagination HTML built by the gem from page numbers; no user text.
+app/packs/core/components/number_stats_component.html.erb | "style=\"#{@css_style}\"".html_safe: Inline style passed by the developer code that renders the component; no user text.
+? 'app/packs/core/components/ransack_table.html.erb | raw(pagy_bootstrap_nav(@pagy, anchor_string: %(data-turbo-frame="#{@turbo_frame}" data-remote="true")))'
+: Pagy pagination HTML built by the gem from page numbers; no user text.
+? 'app/packs/core/components/ransack_table.html.erb | raw(pagy_bootstrap_nav(@pagy, size: 0, anchor_string: %(data-turbo-frame="#{@turbo_frame}" data-remote="true")))'
+: Pagy pagination HTML built by the gem from page numbers; no user text.
+app/packs/core/components/ransack_table.html.erb | raw(pagy_info(@pagy)): Pagy pagination HTML built by the gem from page numbers; no user text.
+app/packs/core/documents/views/doc_check_results/index.html.erb | raw(pagy_bootstrap_nav(@pagy)): Pagy pagination HTML built by the gem from page numbers; no user text.
+app/packs/core/documents/views/document_mailer/email_link.html.erb | @msg.html_safe: 'Email view: mail clients do not run scripts; emails were out of scope on 2026-11-05. Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+? 'app/packs/core/documents/views/documents/_index_cards.html.erb | raw(pagy_bootstrap_nav(@pagy, anchor_string: %(data-turbo-frame="#{frame_id}")))'
+: Pagy pagination HTML built by the gem from page numbers; no user text.
+app/packs/core/documents/views/documents/_index_cards.html.erb | raw(pagy_info(@pagy)): Pagy pagination HTML built by the gem from page numbers; no user text.
+? 'app/packs/core/documents/views/documents/_tree_view.html.erb | raw(pagy_bootstrap_nav(@pagy, anchor_string: %(data-turbo-frame="#{documents_frame_id}" data-remote="true")))'
+: Pagy pagination HTML built by the gem from page numbers; no user text.
+? 'app/packs/core/documents/views/documents/index.html.erb | raw(pagy_bootstrap_nav(@pagy, anchor_string: %(data-turbo-frame="#{documents_frame_id}" data-remote="true")))'
+: Pagy pagination HTML built by the gem from page numbers; no user text.
+app/packs/core/documents/views/documents/index.html.erb | raw(pagy_info(@pagy)): Pagy pagination HTML built by the gem from page numbers; no user text.
+? 'app/packs/core/documents/views/documents/show.html.erb | raw(@document.tag_list.split(",").collect{|tag| link_to(tag.strip, search_documents_path(query: tag.strip))}.join(", "))'
+: Each tag goes through link_to, which escapes it; only the ", " joiner is raw.
+app/packs/core/email_deliverability/views/email_bounce_events/index.html.erb | raw(pagy_bootstrap_nav(@pagy)): Pagy pagination HTML built by the gem from page numbers; no user text.
+app/packs/core/entities/views/entities/widgets/_funds.html.erb | raw(pagy_bootstrap_nav(@pagy)): Pagy pagination HTML built by the gem from page numbers; no user text.
+app/packs/core/entities/views/entities/widgets/_funds.html.erb | raw(pagy_info(@pagy)): Pagy pagination HTML built by the gem from page numbers; no user text.
+app/packs/core/investor_accesses/views/investor_accesses/index.html.erb | raw(pagy_bootstrap_nav(@pagy)): Pagy pagination HTML built by the gem from page numbers; no user text.
+app/packs/core/investor_kycs/views/investor_kyc_mailer/kyc_required_reminder.html.erb | @investor_kyc.notification_msg.html_safe: 'Email view: mail clients do not run scripts; emails were out of scope on 2026-11-05. Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+app/packs/core/investor_kycs/views/investor_kyc_mailer/notify_kyc_required.html.erb | @investor_kyc.notification_msg.html_safe: 'Email view: mail clients do not run scripts; emails were out of scope on 2026-11-05. Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+? app/packs/core/investor_kycs/views/investor_kycs/_investor_kyc.html.erb | t('investor_kyc_actions.complete_kyc_details').html_safe
+: Translation text from config/locales (developer-written).
+app/packs/core/investors/views/investor_advisors/_personas.html.erb | raw(investor_advisors.to_json): JSON for a script/data attribute from our own records; ActiveSupport escapes <, > and & in to_json (escape_html_entities_in_json), so a value cannot close the tag.
+? 'app/packs/core/investors/views/investors/_show.html.erb | raw(@investor.tag_list.split(",")&.collect{|tag| link_to(tag, search_investors_path(query: tag))}.join(", "))'
+: Each tag goes through link_to, which escapes it; only the ", " joiner is raw.
+? 'app/packs/core/investors/views/investors/generate_reports.html.erb | @portfolio_reports.each_with_object({}) { |r, h| h[r.id] = r.portfolio_report_templates.map { |t| { id: t.id, name: t.name } } }.to_json.html_safe'
+: JSON for a script/data attribute from our own records; ActiveSupport escapes <, > and & in to_json (escape_html_entities_in_json), so a value cannot close the tag.
+app/packs/core/investors/views/investors/widgets/_data_card.html.erb | CGI.escapeHTML(strip_tags(display_value.to_s)).html_safe: Developer-built markup; the interpolated user values visibly pass through h()/html_escape first. Re-check when editing.
+? app/packs/core/investors/views/investors/widgets/_kpi_key_numbers.erb | "#{ERB::Util.html_escape(kpi.name)} <i class='ti ti-info-circle text-muted' data-bs-toggle='tooltip' title='#{ERB::Util.html_escape(fx_tooltip)}'></i>".html_safe
+: Developer-built markup; the interpolated user values visibly pass through h()/html_escape first. Re-check when editing.
+app/packs/core/investors/views/shareholder_positions/_list.html.erb | raw(pagy_bootstrap_nav(@pagy)): Pagy pagination HTML built by the gem from page numbers; no user text.
+? 'app/packs/core/notes/views/notes/_index.html.erb | raw(pagy_bootstrap_nav(@pagy, anchor_string: %(data-turbo-frame="notes_frame" data-remote="true")))'
+: Pagy pagination HTML built by the gem from page numbers; no user text.
+app/packs/core/notes/views/notes/_index.html.erb | raw(pagy_info(@pagy)): Pagy pagination HTML built by the gem from page numbers; no user text.
+app/packs/core/notifications/views/custom_notifications/index.html.erb | raw(pagy_bootstrap_nav(@pagy)): Pagy pagination HTML built by the gem from page numbers; no user text.
+'app/packs/core/notifications/views/notifications/index.html.erb | raw(pagy_bootstrap_nav(@pagy, aria_label: "Pagination"))': Pagy pagination HTML built by the gem from page numbers; no user text.
+app/packs/core/tasks/views/task_digest_mailer/_section.html.erb | "#{pluralize(more_count, 'more task')} not shown".html_safe: 'Email view: mail clients do not run scripts; emails were out of scope on 2026-11-05. Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+? 'app/packs/core/tasks/views/task_digest_mailer/weekly_digest.html.erb | "Week of #{l(week.first)} &ndash; #{l(week.last)} &middot; #{h @entity.name}".html_safe'
+: 'Email view: mail clients do not run scripts; emails were out of scope on 2026-11-05. Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+? 'app/packs/core/tasks/views/task_digest_mailer/weekly_digest.html.erb | "You receive this every Friday because you are tagged &ldquo;Tasks&rdquo; on #{h @entity.name}. Ask an administrator to remove the tag to stop.".html_safe'
+: 'Email view: mail clients do not run scripts; emails were out of scope on 2026-11-05. Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+app/packs/core/tasks/views/task_templates/_timeline.html.erb | raw(pagy_bootstrap_nav(@pagy)): Pagy pagination HTML built by the gem from page numbers; no user text.
+? 'app/packs/core/tasks/views/tasks/index.html.erb | raw(pagy_bootstrap_nav(@pagy, anchor_string: %(data-turbo-frame="tasks_frame" data-remote="true")))'
+: Pagy pagination HTML built by the gem from page numbers; no user text.
+app/packs/core/users/views/users/two_factor/_authenticator_apps.html.erb | raw(qr_svg.call(app[:android])): 'QR-code SVG generated by RQRCode from our own provisioning URI: path data only, no text.'
+app/packs/core/users/views/users/two_factor/_authenticator_apps.html.erb | raw(qr_svg.call(app[:ios])): 'QR-code SVG generated by RQRCode from our own provisioning URI: path data only, no text.'
+? 'app/packs/core/users/views/users/two_factor/enroll.html.erb | raw(@qr_code.as_svg( module_size: 4, standalone: true, use_path: true ))'
+: 'QR-code SVG generated by RQRCode from our own provisioning URI: path data only, no text.'
+? app/packs/core/workflow_templates/views/workflow_templates/show.html.erb | "<span class='d-inline-flex align-items-center gap-2'>" \ "<i class='ti ti-route'></i>#{h @workflow_template.name}</span>".html_safe
+: Developer-built markup; the interpolated user values visibly pass through h()/html_escape first. Re-check when editing.
+app/packs/funds/capital_commitments/views/account_entries/_pivot.html.erb | <%== ( pagy_bootstrap_nav(@pivot.pagy) ) %>: Pagy pagination HTML built by the gem from page numbers; no user text.
+app/packs/funds/capital_commitments/views/account_entry_reports/_dependencies.html.erb | json_escape(graph.to_json).html_safe: JSON for a script/data attribute from our own records; ActiveSupport escapes <, > and & in to_json (escape_html_entities_in_json), so a value cannot close the tag.
+? app/packs/funds/capital_commitments/views/account_entry_reports/_detail_pivot.html.erb | <%== ( pagy_bootstrap_nav(pivot.pagy) ) %>
+: Pagy pagination HTML built by the gem from page numbers; no user text.
+? app/packs/funds/capital_remittances/views/capital_remittance_payment_mailer/_capital_remittance_payment_email_details.html.erb | capital_remittance_payment.notes.html_safe
+: 'Email view: mail clients do not run scripts; emails were out of scope on 2026-11-05. Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+? 'app/packs/funds/capital_remittances/views/capital_remittance_payments/_index.html.erb | raw(pagy_bootstrap_nav(@pagy, anchor_string: %(data-turbo-frame="#{@turbo_frame}" data-remote="true")))'
+: Pagy pagination HTML built by the gem from page numbers; no user text.
+app/packs/funds/capital_remittances/views/capital_remittance_payments/_index.html.erb | raw(pagy_info(@pagy)): Pagy pagination HTML built by the gem from page numbers; no user text.
+? app/packs/funds/evergreen/views/evergreen/orders/index.html.erb | <%== ( pagy_bootstrap_nav(@pagy) if @pagy && @pagy.pages > 1 ) %>
+: Pagy pagination HTML built by the gem from page numbers; no user text.
+? 'app/packs/funds/funds/views/data_quality_mailer/quality_report.html.erb | "<strong>All checks passed.</strong> No issues found for #{h @fund.name}. Great work keeping your data clean.".html_safe'
+: 'Email view: mail clients do not run scripts; emails were out of scope on 2026-11-05. Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+? app/packs/funds/funds/views/data_quality_mailer/quality_report.html.erb | "This is an automated data quality report from the nightly integrity check for <strong>#{h @fund.name}</strong>. Review and resolve any issues below to keep your fund data accurate and your investors informed.".html_safe
+: 'Email view: mail clients do not run scripts; emails were out of scope on 2026-11-05. Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+app/packs/funds/funds/views/data_quality_mailer/quality_report.html.erb | section[:help].html_safe: 'Email view: mail clients do not run scripts; emails were out of scope on 2026-11-05. Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+app/packs/funds/funds/views/fund_formulas/show.html.erb | @fund_formula.formula.html_safe: Fund formulas are support-only to write (FundFormulaPolicy, C2).
+app/packs/funds/funds/views/fund_ratio_run_templates/runs.html.erb | "Runs for &ldquo;#{h @template.name}&rdquo;".html_safe: Developer-built markup; the interpolated values pass through h() (escaped) — fixed 2026-11-05.
+app/packs/funds/funds/views/fund_ratio_runs/index.html.erb | raw(pagy_bootstrap_nav(@pagy)): Pagy pagination HTML built by the gem from page numbers; no user text.
+? app/packs/funds/funds/views/fund_ratios/_index_scenarios.html.erb | "data-controller=\"fund-ratios-filter\" data-fund-ratios-filter-entity-currency-value=\"#{h entity_currency}\"".html_safe
+: Developer-built markup; the interpolated values pass through h() (escaped) — fixed 2026-11-05.
+app/packs/funds/funds/views/fund_ratios/_index_scenarios.html.erb | "data-is-base=\"#{is_base_metric}\"".html_safe: metric_currency is captured by /\(([A-Z]{3})\)$/ (three capitals) and is_base is a boolean; no user text.
+app/packs/funds/funds/views/fund_ratios/_index_scenarios.html.erb | "data-metric-currency=\"#{metric_currency}\"".html_safe: metric_currency is captured by /\(([A-Z]{3})\)$/ (three capitals) and is_base is a boolean; no user text.
+? 'app/packs/funds/funds/views/fund_stats_mailer/fund_stats_update.html.erb | "#{@ctx[:stakeholder_summary][:period_lps]} LP(s) &middot; #{@ctx[:stakeholder_summary][:period_portfolio_companies]} Portfolio Compan#{@ctx[:stakeholder_summary][:period_portfolio_companies] == 1 ? ''y'' : ''ies''}".html_safe'
+: 'Email view: mail clients do not run scripts; emails were out of scope on 2026-11-05. Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+? app/packs/funds/funds/views/fund_stats_mailer/fund_stats_update.html.erb | "Here are the latest fund statistics for <strong>#{h @entity.name}</strong> covering the period ending <strong>#{@ctx[:effective_date]}</strong>.".html_safe
+: 'Email view: mail clients do not run scripts; emails were out of scope on 2026-11-05. Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+? 'app/packs/funds/funds/views/fund_units/_index.html.erb | raw(pagy_bootstrap_nav(@pagy, anchor_string: %(data-turbo-frame="#{frame}" data-remote="true")))'
+: Pagy pagination HTML built by the gem from page numbers; no user text.
+app/packs/funds/funds/views/fund_units/_index.html.erb | raw(pagy_info(@pagy)): Pagy pagination HTML built by the gem from page numbers; no user text.
+app/packs/funds/funds/views/funds/_index.html.erb | raw(pagy_bootstrap_nav(@pagy)): Pagy pagination HTML built by the gem from page numbers; no user text.
+app/packs/funds/funds/views/funds/_index.html.erb | raw(pagy_info(@pagy)): Pagy pagination HTML built by the gem from page numbers; no user text.
+? 'app/packs/funds/investment_opportunities/views/investment_opportunities/_card_table.html.erb | raw(investment_opportunity.tag_list.split(",").collect{|tag| link_to(tag, search_investment_opportunities_path(query: tag))}.join(", "))'
+: Each tag goes through link_to, which escapes it; only the ", " joiner is raw.
+app/packs/funds/investment_opportunities/views/investment_opportunities/_index.html.erb | raw(pagy_bootstrap_nav(@pagy)): Pagy pagination HTML built by the gem from page numbers; no user text.
+? 'app/packs/funds/investment_opportunities/views/investment_opportunities/finalize_allocation.html.erb | raw(pagy_bootstrap_nav(@pagy, anchor_string: %(data-turbo-frame="#{@turbo_frame}" data-remote="true")))'
+: Pagy pagination HTML built by the gem from page numbers; no user text.
+app/packs/funds/investment_opportunities/views/investment_opportunities/finalize_allocation.html.erb | raw(pagy_info(@pagy)): Pagy pagination HTML built by the gem from page numbers; no user text.
+? app/packs/funds/portfolios/views/aggregate_portfolio_investments/_stats_for_multiple_portfolio_companies.html.erb | stimulus_data.map { |k, v| "#{k}=\"#{h v}\"" }.join(" ").html_safe
+: Developer-built markup; the interpolated values pass through h() (escaped) — fixed 2026-11-05.
+? app/packs/funds/portfolios/views/aggregate_portfolio_investments/_stats_for_portfolio_company.html.erb | "data-controller=\"portfolio-stats-currency\" data-portfolio-stats-currency-portfolio-company-id-value=\"#{portfolio_company.id}\" data-portfolio-stats-currency-current-path-value=\"#{h request.fullpath}\"".html_safe
+: Developer-built markup; the interpolated values pass through h() (escaped) — fixed 2026-11-05.
+app/packs/funds/portfolios/views/excused_investors/index.html.erb | raw(pagy_bootstrap_nav(@pagy)): Pagy pagination HTML built by the gem from page numbers; no user text.
+app/packs/funds/portfolios/views/portfolio_report_extracts/generate_tear_sheet.html.erb | @slides_html.html_safe: HTML rendered by our own slide partials (assistants/presentation_templates, tear sheet templates), which escape every model-supplied value; SG-7 scans those partials too.
+app/packs/funds/portfolios/views/portfolio_reports/_setup_roadmap.html.erb | <%== ( roadmap_icon(all_styled) ) %>: Helper returns a fixed icon span chosen in code.
+app/packs/funds/portfolios/views/portfolio_reports/_setup_roadmap.html.erb | <%== ( roadmap_icon(sections_ok) ) %>: Helper returns a fixed icon span chosen in code.
+app/packs/funds/portfolios/views/portfolio_reports/_setup_roadmap.html.erb | <%== ( roadmap_icon(templates_ok) ) %>: Helper returns a fixed icon span chosen in code.
+app/packs/funds/portfolios/views/stock_conversions/index.html.erb | raw(pagy_bootstrap_nav(@pagy)): Pagy pagination HTML built by the gem from page numbers; no user text.
+app/packs/misc/form_custom_fields/views/form_custom_fields/_check_box.html.erb | field.data_attributes.html_safe: Attribute string built by FormCustomField#data_attributes, which HTML-escapes every value (fixed 2026-11-05).
+app/packs/misc/form_custom_fields/views/form_custom_fields/_data_list.html.erb | field.data_attributes.html_safe: Attribute string built by FormCustomField#data_attributes, which HTML-escapes every value (fixed 2026-11-05).
+app/packs/misc/form_custom_fields/views/form_custom_fields/_date_field.html.erb | field.data_attributes.html_safe: Attribute string built by FormCustomField#data_attributes, which HTML-escapes every value (fixed 2026-11-05).
+app/packs/misc/form_custom_fields/views/form_custom_fields/_file.html.erb | field.data_attributes.html_safe: Attribute string built by FormCustomField#data_attributes, which HTML-escapes every value (fixed 2026-11-05).
+app/packs/misc/form_custom_fields/views/form_custom_fields/_form_custom_field.html.erb | f.reg_env.html_safe: reg_env is validated against FormCustomField::REGULATORY_ENVS (a fixed list), so it holds no user text.
+app/packs/misc/form_custom_fields/views/form_custom_fields/_header.html.erb | field.data_attributes.html_safe: Attribute string built by FormCustomField#data_attributes, which HTML-escapes every value (fixed 2026-11-05).
+app/packs/misc/form_custom_fields/views/form_custom_fields/_money.html.erb | field.data_attributes.html_safe: Attribute string built by FormCustomField#data_attributes, which HTML-escapes every value (fixed 2026-11-05).
+app/packs/misc/form_custom_fields/views/form_custom_fields/_multi_select.html.erb | field.data_attributes.html_safe: Attribute string built by FormCustomField#data_attributes, which HTML-escapes every value (fixed 2026-11-05).
+app/packs/misc/form_custom_fields/views/form_custom_fields/_number_field.html.erb | field.data_attributes.html_safe: Attribute string built by FormCustomField#data_attributes, which HTML-escapes every value (fixed 2026-11-05).
+app/packs/misc/form_custom_fields/views/form_custom_fields/_radio.html.erb | field.data_attributes.html_safe: Attribute string built by FormCustomField#data_attributes, which HTML-escapes every value (fixed 2026-11-05).
+app/packs/misc/form_custom_fields/views/form_custom_fields/_select.html.erb | field.data_attributes.html_safe: Attribute string built by FormCustomField#data_attributes, which HTML-escapes every value (fixed 2026-11-05).
+app/packs/misc/form_custom_fields/views/form_custom_fields/_text_area.html.erb | field.data_attributes.html_safe: Attribute string built by FormCustomField#data_attributes, which HTML-escapes every value (fixed 2026-11-05).
+app/packs/misc/form_custom_fields/views/form_custom_fields/_text_field.html.erb | field.data_attributes.html_safe: Attribute string built by FormCustomField#data_attributes, which HTML-escapes every value (fixed 2026-11-05).
+app/packs/misc/form_types/views/form_types/_custom_field_on_index.html.erb | f.reg_env.html_safe: reg_env is validated against FormCustomField::REGULATORY_ENVS (a fixed list), so it holds no user text.
+app/packs/misc/import_uploads/views/import_uploads/index.html.erb | raw(pagy_bootstrap_nav(@pagy)): Pagy pagination HTML built by the gem from page numbers; no user text.
+app/packs/misc/incoming_emails/views/incoming_emails/_index.html.erb | raw(pagy_bootstrap_nav(@pagy)): Pagy pagination HTML built by the gem from page numbers; no user text.
+? 'app/packs/secondaries/interests/views/interests/_index.html.erb | raw(pagy_bootstrap_nav(@pagy, anchor_string: %(data-turbo-frame="interests_frame" data-remote="true")))'
+: Pagy pagination HTML built by the gem from page numbers; no user text.
+app/packs/secondaries/interests/views/interests/_index.html.erb | raw(pagy_info(@pagy)): Pagy pagination HTML built by the gem from page numbers; no user text.
+? 'app/packs/secondaries/offers/views/offers/_index.html.erb | raw(pagy_bootstrap_nav(@pagy, anchor_string: %(data-turbo-frame="offers_frame" data-remote="true")))'
+: Pagy pagination HTML built by the gem from page numbers; no user text.
+app/packs/secondaries/offers/views/offers/_index.html.erb | raw(pagy_info(@pagy)): Pagy pagination HTML built by the gem from page numbers; no user text.
+? 'app/packs/secondaries/offers/views/offers/_offer_steps.html.erb | t(''secondaries_actions.accept_transaction_documents_button'', accept_button: accept_spa).html_safe'
+: Translation text from config/locales (developer-written).
+app/packs/secondaries/offers/views/offers/_offer_steps.html.erb | t('secondaries_actions.acceptance_recorded').html_safe: Translation text from config/locales (developer-written).
+? app/packs/secondaries/offers/views/offers/_offer_steps.html.erb | t('secondaries_actions.complete_offer_details_button').html_safe
+: Translation text from config/locales (developer-written).
+? 'app/packs/secondaries/offers/views/offers/_offer_steps.html.erb | t(''secondaries_actions.review_transaction_documents'', documents: spas.join('' '')).html_safe'
+: Translation text from config/locales (developer-written).
+? app/packs/secondaries/offers/views/offers/_offer_steps.html.erb | t('secondaries_actions.upload_documents_complete_offer').html_safe
+: Translation text from config/locales (developer-written).
+app/packs/secondaries/secondary_sales/views/allocations/_index.html.erb | raw(pagy_bootstrap_nav(@pagy)): Pagy pagination HTML built by the gem from page numbers; no user text.
+app/packs/startups/deals/views/deal_activities/index.html.erb | raw(pagy_bootstrap_nav(@pagy)): Pagy pagination HTML built by the gem from page numbers; no user text.
+? 'app/packs/startups/deals/views/deal_investors/create.turbo_stream.erb | render(template: "deal_investors/show", formats: [:json], locals: { deal_investor: @deal_investor }).html_safe'
+: 'Jbuilder JSON inside a <script>: Jbuilder escapes <, > and & (\u003c…), so a value cannot close the script tag.'
+? 'app/packs/startups/deals/views/deals/consolidated_access_rights.html.erb | raw(pagy_bootstrap_nav(@pagy, link_extra: "data-turbo-frame=''#{frame}'' data-remote=''true''", params: request.query_parameters))'
+: Pagy pagination HTML built by the gem from page numbers; no user text.
+'app/packs/startups/deals/views/deals/consolidated_access_rights.html.erb | raw(pagy_info(@pagy, item_name: "access group"))': Pagy pagination HTML built by the gem from page numbers; no user text.
+app/packs/startups/deals/views/warehouse_items/index.html.erb | <%== ( pagy_nav(@pagy) if @pagy.pages > 1 ) %>: Pagy pagination HTML built by the gem from page numbers; no user text.
+app/packs/startups/investments/views/investments/_index.html.erb | raw(pagy_bootstrap_nav(@pagy)): Pagy pagination HTML built by the gem from page numbers; no user text.
+app/packs/startups/kpis/views/kpi_reports/_grid_view_table.html.erb | kpi_percentage_class(kpi, ikm).html_safe: Helper returns a CSS class name chosen in code.
+app/packs/startups/kpis/views/kpis/_grid_view.html.erb | kpi_percentage_class(kpi, ikm).html_safe: Helper returns a CSS class name chosen in code.
+? 'app/packs/startups/kpis/views/kpis/_grid_view.html.erb | raw(pagy_bootstrap_nav(@pagy_series, anchor_string: %(data-turbo-frame="kpis_frame" data-remote="true")))'
+: Pagy pagination HTML built by the gem from page numbers; no user text.
+app/packs/startups/kpis/views/kpis/_grid_view.html.erb | raw(pagy_info(@pagy_series)): Pagy pagination HTML built by the gem from page numbers; no user text.
+app/packs/startups/kpis/views/kpis/_index.html.erb | raw(pagy_bootstrap_nav(@pagy)): Pagy pagination HTML built by the gem from page numbers; no user text.
+app/packs/startups/kpis/views/kpis/_index.html.erb | raw(pagy_info(@pagy)): Pagy pagination HTML built by the gem from page numbers; no user text.
+app/views/exception_notifier/_data.text.erb | raw(PP.pp(rest, +"")): 'Email view: mail clients do not run scripts; emails were out of scope on 2026-11-05. Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+app/views/exception_notifier/_report.text.erb | raw(value.to_s): 'Email view: mail clients do not run scripts; emails were out of scope on 2026-11-05. Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'

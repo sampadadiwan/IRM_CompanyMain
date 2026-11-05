@@ -82,7 +82,7 @@
         <%= error %>
       </div>
     <% else %>
-      <div <%= "data-controller=\"portfolio-stats-currency\" data-portfolio-stats-currency-portfolio-company-id-value=\"#{portfolio_company.id}\" data-portfolio-stats-currency-current-path-value=\"#{request.fullpath}\"".html_safe if show_currency_filter %>>
+      <div <%= "data-controller=\"portfolio-stats-currency\" data-portfolio-stats-currency-portfolio-company-id-value=\"#{portfolio_company.id}\" data-portfolio-stats-currency-current-path-value=\"#{h request.fullpath}\"".html_safe if show_currency_filter %>>
         <% if show_currency_filter %>
           <div class="d-flex justify-content-end mb-3">
             <label for="currency_selector_<%= portfolio_company.id %>" class="me-2 align-self-center mb-0">Currency:</label>

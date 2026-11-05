@@ -34,7 +34,7 @@
           </div>
         <% end %>
         <%= form.submit account.new_record? ? "Add account" : "Save account", class: "btn btn-outline-primary" %>
-        <%= link_to "Cancel", params[:return_to].presence || financial_statement_mappings_path(fund_id: account.fund_id), class: "btn btn-link" %>
+        <%= link_to "Cancel", return_path(financial_statement_mappings_path(fund_id: account.fund_id)), class: "btn btn-link" %>
       <% end %>
     <% end %>
   </div>
