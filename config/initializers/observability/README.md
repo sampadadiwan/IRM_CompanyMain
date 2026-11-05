@@ -176,7 +176,9 @@ this table only calls out the ones worth a note.
 | Avg Request Duration Critical | irate sum/count × 1000 | >2000ms | 5m |
 | Sidekiq Retry Queue Critical | ruby_sidekiq_stats_retry_size | >20 jobs | 5m |
 | Web Memory Critical | avg ruby_rss (web/puma_worker) | >700 MB | 5m |
-| Web Worker Memory | ruby_rss per process (master/web/puma_master/puma_worker) | >450 MB | 5m |
+| Web Worker Memory | ruby_rss per process (master/web/puma_master/puma_worker) | >900 MB | 5m |
+| YJIT Not Running Where Expected | ruby_yjit_expected − ruby_yjit_enabled per process (YjitMetrics, config/initializers/prometheus.rb) | >0 | 10m — a process started on a Ruby without YJIT although config.yjit asks for it; silent while production runs without YJIT |
+| YJIT Memory Near Limit | ruby_yjit_code_region_bytes + ruby_yjit_alloc_bytes per process | >115 MB (of the 128 MB --yjit-mem-size default) | 30m — at the limit YJIT stops compiling new code |
 | Memory Sidekiq | ruby_rss per process (sidekiq) | >1000 MB | 5m — was firing repeatedly in July 2026, a real recurring leak |
 | Sidekiq Canary Stale | time() − ruby_sidekiq_canary_last_run_timestamp_seconds (SidekiqCanaryJob, every minute) | >600 s | 2m — catches a worker that is alive but not processing, which Sidekiq Down cannot |
 | Sidekiq Duplicate Workers | max(count by hostname of ruby_rss{type="sidekiq"}) | >1 | 5m — a second Sidekiq started outside the systemd unit |

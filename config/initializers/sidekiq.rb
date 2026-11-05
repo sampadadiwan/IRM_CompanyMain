@@ -297,6 +297,8 @@ Sidekiq.configure_server do |config|
     PrometheusExporter::Instrumentation::SidekiqProcess.start
     PrometheusExporter::Instrumentation::SidekiqQueue.start
     PrometheusExporter::Instrumentation::SidekiqStats.start
+    # YJIT state and memory for this process (see YjitMetrics in config/initializers/prometheus.rb)
+    YjitMetrics.start(type: 'sidekiq')
   end
 end
 

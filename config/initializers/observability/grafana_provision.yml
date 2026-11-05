@@ -547,12 +547,45 @@ alert_rules:
 
   # Per-process, unlike the fleet-average "Web Memory Critical" above — catches
   # a single runaway worker that an average across all workers would dilute.
-  - title: "Web Worker Memory (>450MB per process)"
+  # 900, not 450: until 2026-11-05 no Puma worker reported its RSS (the reporter thread started
+  # in the preloading master and did not survive fork), so this only ever saw the master
+  # (~350MB). Workers now report (config/initializers/prometheus.rb); estimated from node memory
+  # they sit at ~590-650MB on prod IN without YJIT, ~900MB at the week's peak. Re-set from a
+  # week of real puma_worker data, and again once YJIT (+15-20%) reaches production.
+  - title: "Web Worker Memory (>900MB per process)"
     group: rails
     expr: 'ruby_rss{namespace=~".*", type=~"master|web|puma_master|puma_worker"} / 1024 / 1024'
-    threshold_gt: 450
+    threshold_gt: 900
     for: 5m
-    summary: "A single Puma worker process RSS has exceeded 450MB — possible per-worker memory leak"
+    summary: "A single Puma worker process RSS has exceeded 900MB — possible per-worker memory leak"
+    labels:
+      severity: warning
+      category: rails
+
+  # YJIT — gauges from YjitMetrics (config/initializers/prometheus.rb), one series per puma worker
+  # and per sidekiq. ruby_yjit_expected mirrors config.yjit, so this stays silent while production
+  # runs without YJIT and starts guarding the day config.yjit is widened to production. It catches
+  # the silent fallback seen on staging 2026-11-05: sidekiq restarted on the plain Ruby (RVM's
+  # .ruby-version cd hook) while puma ran YJIT, and nothing failed — it just ran slower.
+  - title: "YJIT Not Running Where Expected"
+    group: rails
+    expr: 'max by(instance, type, worker)(ruby_yjit_expected - ruby_yjit_enabled)'
+    threshold_gt: 0
+    for: 10m
+    summary: "A Puma worker or Sidekiq is running without YJIT although config.yjit asks for it — it started on a Ruby built without YJIT. Run: cap <stage> yjit:check"
+    labels:
+      severity: warning
+      category: rails
+
+  # --yjit-mem-size (Ruby default 128 MiB) caps generated code + YJIT's bookkeeping. At the cap
+  # YJIT stops compiling (no code GC by default since Ruby 3.3), so code it has not reached yet
+  # runs interpreted. 115 MB = ~90%: time to raise it via config.yjit = { mem_size: ... }.
+  - title: "YJIT Memory Near Limit (>115MB of 128MB)"
+    group: rails
+    expr: 'max by(instance, type, worker)(ruby_yjit_code_region_bytes + ruby_yjit_alloc_bytes) / 1048576'
+    threshold_gt: 115
+    for: 30m
+    summary: "A process's YJIT memory is above 115MB of its 128MB limit — at the limit YJIT stops compiling new code"
     labels:
       severity: warning
       category: rails
@@ -626,6 +659,7 @@ dashboards:
       - add_controller_variable  # $controller dropdown for error breakdown filtering
       - add_rails_depth_panels   # P99 latency, Puma thread saturation, Sidekiq depth/latency
       - add_mysql_depth_panels   # InnoDB miss rate, deadlocks, aborted connections
+      - add_yjit_panels          # YJIT row: expected-but-off, YJIT memory, per-worker RSS, compile failures
 
   - uid: caphive-sidekiq
     name: "Sidekiq Memory & Jobs Dashboard"

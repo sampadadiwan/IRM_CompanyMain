@@ -275,6 +275,7 @@ class GrafanaProvisioner
         when 'add_roc_panels'          then add_roc_panels!(board)
         when 'add_rails_depth_panels'  then add_rails_depth_panels!(board)
         when 'add_mysql_depth_panels'  then add_mysql_depth_panels!(board)
+        when 'add_yjit_panels'         then add_yjit_panels!(board)
         end
       end
 
@@ -546,6 +547,57 @@ class GrafanaProvisioner
 
     board['panels'] += new_panels
     puts "    add_mysql_depth_panels: appended #{new_panels.size} panels (InnoDB miss, deadlocks, aborted)"
+  end
+
+  # Appends a YJIT row: is YJIT on where config.yjit asks for it, what it costs in memory, and
+  # per-worker RSS to compare before/after a switch-over. The ruby_yjit_* gauges and
+  # ruby_rss{type="puma_worker"} come from config/initializers/prometheus.rb (YjitMetrics and the
+  # after_fork hook); the latency side of the comparison is the existing P99 Latency panel.
+  def add_yjit_panels!(board)
+    panels = board['panels'] ||= []
+    max_id = panels.map { |p| p['id'].to_i }.max.to_i
+
+    if panels.any? { |p| p['type'] == 'row' && p['title'] == 'YJIT' }
+      puts "    add_yjit_panels: already present, skipping"
+      return
+    end
+
+    new_panels = [
+      row_panel(id: max_id + 220, title: 'YJIT', y: 9998),
+
+      # expected comes from config.yjit, so this reads 0 everywhere while production runs without
+      # YJIT, and anything above 0 is a process that should be on YJIT but is not
+      ts_panel(id: max_id + 221, title: 'YJIT Expected but Off (processes)', x: 0,
+        desc: 'Processes where config.yjit asks for YJIT but it is not running. 0 is healthy. ' \
+              'Above 0: the process started on a Ruby built without YJIT — e.g. on staging, ' \
+              'sidekiq once restarted on the plain Ruby. Check with: cap <stage> yjit:check.',
+        expr: 'sum by(instance)(ruby_yjit_expected - ruby_yjit_enabled)',
+        legend: '{{instance}}', unit: 'short'),
+
+      # code + bookkeeping is what --yjit-mem-size (default 128 MiB) limits; at the limit YJIT
+      # stops compiling (Ruby 4.0 has no code GC by default) and new code runs interpreted
+      ts_panel(id: max_id + 222, title: 'YJIT Memory per Process (MB, limit 128)', x: 12,
+        desc: 'Generated machine code + YJIT bookkeeping, per process. YJIT stops compiling at ' \
+              '128 MB (Ruby default --yjit-mem-size) and new code then runs interpreted.',
+        expr: 'max by(instance, type, worker)(ruby_yjit_code_region_bytes + ruby_yjit_alloc_bytes) / 1048576',
+        legend: '{{instance}} {{type}} {{worker}}', unit: 'decmbytes'),
+
+      ts_panel(id: max_id + 223, title: 'Puma Worker Memory (MB)', x: 0,
+        desc: 'Resident memory of each Puma worker (not the master). YJIT typically adds 15-20%; ' \
+              'compare the days before and after it is switched on.',
+        expr: 'max by(instance, worker)(ruby_rss{type="puma_worker"}) / 1048576',
+        legend: '{{instance}} worker {{worker}}', unit: 'decmbytes'),
+
+      # compilation_failure is a cumulative count sent as a gauge, hence delta() not rate()
+      ts_panel(id: max_id + 224, title: 'YJIT Compile Failures (per 15 min)', x: 12,
+        desc: 'Compilations YJIT gave up on. Rises once a process reaches the 128 MB YJIT limit; ' \
+              'sustained growth means the limit is too small for the app.',
+        expr: 'max by(instance, type, worker)(delta(ruby_yjit_compilation_failure[15m]))',
+        legend: '{{instance}} {{type}} {{worker}}', unit: 'short'),
+    ]
+
+    board['panels'] += new_panels
+    puts "    add_yjit_panels: appended #{new_panels.size} panels (YJIT row: expected-but-off, memory, worker RSS, compile failures)"
   end
 
   # Builds a Grafana timeseries panel hash. unit is a Grafana unit string (ms, percent, s, short).
