@@ -33,7 +33,7 @@
           </div>
         </div>
         <%= form.submit rule.new_record? ? "Save rule" : "Save rule", class: "btn btn-outline-primary" %>
-        <%= link_to "Cancel", params[:return_to].presence || financial_statement_mappings_path(fund_id: rule.fund_id), class: "btn btn-link" %>
+        <%= link_to "Cancel", return_path(financial_statement_mappings_path(fund_id: rule.fund_id)), class: "btn btn-link" %>
       <% end %>
     <% end %>
   </div>

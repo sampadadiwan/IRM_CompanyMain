@@ -23,5 +23,5 @@
      %>
         <%= f.select field.name, options, {}, class: "form-control custom_field", required: field.required, data: {action: field.js_events} %>
     <% end %>
-    <small class="text-muted"><%= field.help_text&.html_safe %></small>
+    <small class="text-muted"><%= safe_rich_text(field.help_text) %></small>
 </div>

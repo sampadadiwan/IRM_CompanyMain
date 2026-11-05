@@ -38,7 +38,7 @@
     </td>
     <td class="json_table">
       <% table_options = { table_class: "table table-bordered dataTable" } %>
-      <%= Json2table::get_html_table(@fund_report.data, table_options).html_safe %>
+      <%= safe_json_table(@fund_report.data, table_options) %>
 
     </td>
   </tr>

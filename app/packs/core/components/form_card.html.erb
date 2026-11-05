@@ -1,10 +1,11 @@
 <div class="form_card card shadow mb-4 <%=@css_class%>" data-controller=<%=@controller%>>
   <div class="card-header py-3">
       <h6 class="m-0 font-weight-bold text-primary <%=@header_css_class%>">
-          <%= @title.html_safe %>
+          <%# 175 callers interpolate record names into the title (e.g. "Document : #{document.name}"): sanitize, keeping their icons and tooltips %>
+          <%= SafeHtml.ui_markup(@title) %>
       </h6>
       <% if @note.present? %>
-        <small class="text-muted d-block mt-1"><%= @note.html_safe %></small>
+        <small class="text-muted d-block mt-1"><%= SafeHtml.ui_markup(@note) %></small>
       <% end %>
   </div>
   <div class="card-body">

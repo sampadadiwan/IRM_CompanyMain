@@ -71,7 +71,7 @@
             <% if capital_remittance.notes.present? %>
               <div class="col-12">
                 <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Notes</label>
-                <div class="fs-4 fw-medium "><%= capital_remittance.notes.html_safe %></div>
+                <div class="fs-4 fw-medium "><%= safe_rich_text(capital_remittance.notes) %></div>
               </div>
             <% end %>
 

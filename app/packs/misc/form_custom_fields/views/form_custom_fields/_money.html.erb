@@ -13,5 +13,5 @@
          } %>
    <% end %>
     <%= f.number_field field.name, class: "form-control custom_field", required: field.required, step: :any, data: {action: "input->currencyformat#format"} %>
-    <small class="text-muted"><%= field.help_text&.html_safe %></small>
+    <small class="text-muted"><%= safe_rich_text(field.help_text) %></small>
 </div>

@@ -2,13 +2,21 @@
   <div id="page_alerts" class="page_alerts">
     <% if notice %>
       <div id="notice" class="alert alert-info alert-dismissible border-0 fade show" role="alert">
-        <%= notice.html_safe %>
+        <%= notice %>
         <button type="button" class="btn-close btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
       </div>
     <% end %>
     <% if alert %>
       <div id="alert" class="alert alert-danger alert-dismissible border-0 fade show" role="alert">
-        <%= alert.html_safe %>
+        <%= alert %>
+        <%# An advisor's Access Denied can offer "Switch to <client>" (WithAuthentication#switch_persona_flash).
+            Drawn here from plain data so the alert text itself can stay escaped. %>
+        <% if (switch = flash[:switch_persona]).is_a?(Hash) && switch["grant_id"].present? %>
+          <%= button_to switch["label"], switch_investor_advisors_path,
+                        params: { id: switch["grant_id"], return_to: switch["return_to"] }, method: :post,
+                        form: { class: "d-inline ms-2", data: { turbo: false } },
+                        class: "btn btn-sm btn-light rounded-pill px-3" %>
+        <% end %>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
       </div>
     <% end %>

@@ -307,11 +307,22 @@ class FormCustomField < ApplicationRecord
     css_class
   end
 
+  # The data-* attributes the conditional-field JS reads, as a string the field partials print raw
+  # (`<div … <%= field.data_attributes&.html_safe %>>`). Every value is HTML-escaped: condition_params
+  # is admin-entered, and an unescaped `x' onmouseover='…` would close the attribute and add an event
+  # handler on the KYC form every investor fills (docs/security/security_coverage_gaps_2026_11.md).
+  # The browser decodes the entities, so the JS reads exactly the same values (dataset.matchValue).
   def data_attributes
+    # Step 1: escape each value (escapes ' as &#39;, so it can't end the single-quoted attribute)
+    match_value = ERB::Util.html_escape(condition_params)
+    criteria = ERB::Util.html_escape(condition_criteria)
+    mandatory = ERB::Util.html_escape(required)
+
+    # Step 2: build the same attributes as before
     if condition_on.present?
-      "data-match-value='#{condition_params}' data-match-criteria='#{condition_criteria}' data-mandatory='#{required}'"
+      "data-match-value='#{match_value}' data-match-criteria='#{criteria}' data-mandatory='#{mandatory}'"
     else
-      "data-mandatory='#{required}'"
+      "data-mandatory='#{mandatory}'"
     end
   end
 

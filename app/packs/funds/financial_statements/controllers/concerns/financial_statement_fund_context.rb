@@ -3,6 +3,12 @@
 module FinancialStatementFundContext
   extend ActiveSupport::Concern
 
+  included do
+    # The forms' Cancel links use the same rule as the redirects after save, so a crafted
+    # `return_to=javascript:…` can never become a link (features/security/stored_and_reflected_xss.feature, XSS-7)
+    helper_method :return_path
+  end
+
   private
 
   def set_fund_from_params
@@ -14,10 +20,16 @@ module FinancialStatementFundContext
                       'Financial Statements': financial_statements_path(fund_id: @fund.id), "#{current}": nil }
   end
 
-  # Back to the tab the form was opened from (only a local path), else the default
+  # Back to the tab the form was opened from (only a local path), else the default.
+  # A local path starts with exactly one "/". Refused, each with the reason:
+  #   "javascript:…", "https://evil.example" — not a path at all
+  #   "//evil.example"                       — protocol-relative: the browser goes to evil.example
+  #   "/\evil.example"                       — browsers read "\" as "/", so this is "//evil.example" too
+  # Every return_to the app builds is request.fullpath, which always passes.
   def return_path(default)
     path = params[:return_to].to_s
-    path.start_with?("/") && !path.start_with?("//") ? path : default
+    local = path.start_with?("/") && !path.start_with?("//") && !path.start_with?("/\\")
+    local ? path : default
   end
 
   # A date from a form or query string; nil for blank or unreadable input (no 500 on garbage)

@@ -48,7 +48,7 @@
   available_currencies.sort!
 %>
 
-<div class="" <%= "data-controller=\"fund-ratios-filter\" data-fund-ratios-filter-entity-currency-value=\"#{entity_currency}\"".html_safe if show_currency_filter %>>
+<div class="" <%= "data-controller=\"fund-ratios-filter\" data-fund-ratios-filter-entity-currency-value=\"#{h entity_currency}\"".html_safe if show_currency_filter %>>
 
 <%= render "fund_ratios/index_header", fund: , data_source: , show_currency_filter: , available_currencies: , entity_currency: %>
 <%= render "fund_ratios/analytics", fund: %>

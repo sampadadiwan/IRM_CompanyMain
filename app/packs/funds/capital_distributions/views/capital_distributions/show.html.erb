@@ -48,7 +48,7 @@
             <% if @capital_distribution.notes.present? %>
               <div class="col-12">
                 <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Notes</label>
-                <div class="fs-4 fw-medium "><%= @capital_distribution.notes.html_safe %></div>
+                <div class="fs-4 fw-medium "><%= safe_rich_text(@capital_distribution.notes) %></div>
               </div>
             <% end %>
 

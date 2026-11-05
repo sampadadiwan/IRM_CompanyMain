@@ -58,7 +58,7 @@
 
     <div class="email-preview__panel">
       <div class="email-preview__body">
-        <%= raw @html_body %>
+        <%= render "layouts/sandboxed_email", html: @html_body %>
       </div>
     </div>
 

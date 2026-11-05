@@ -51,7 +51,7 @@
         <i class="ti ti-file-text me-1 text-muted"></i>Body
       </td>
       <td>
-        <%= @custom_notification.body.html_safe %>
+        <%= safe_rich_text(@custom_notification.body) %>
       </td>
     </tr>
     <tr>

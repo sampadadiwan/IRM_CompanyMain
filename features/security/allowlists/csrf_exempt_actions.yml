@@ -1,0 +1,69 @@
+# Routed actions that run WITHOUT the CSRF authenticity-token check.
+# Checked by features/security/security_surface_drift_guard.feature (SG-3).
+#
+# Why: an action that uses the cookie session but skips the token can be triggered by another
+# site. L10 (deal step reorder) was exactly that. Token / webhook endpoints are fine (no cookie);
+# signed-in endpoints in this list depend on the session cookie staying SameSite=Lax.
+#
+# Format: "Entry": "Why this is acceptable". Every entry needs a reason. A new entry must say why
+# the action is safe without the check (what authenticates or authorizes it instead) — "baseline"
+# is reserved for the entries present when the guard was added on 2026-11-05.
+# Remove an entry when the code no longer needs it: the guard also fails on stale entries, so this
+# list can only shrink silently, never grow.
+# Regenerate the current list (do NOT paste it over this file wholesale — review each new line):
+#   TEST_ENV_NUMBER=$RANDOM RAILS_ENV=test bin/rails runner 'require "./features/security/support/security_surface"; puts SecuritySurface.unprotected_actions["csrf"]'
+Api::Mobile::V1::CrossSiteLinksController#create: 'Mobile API: its own bearer-token authentication in Api::Mobile::V1::BaseController, not the web session (features/mobile).'
+Api::Mobile::V1::DevicesController#update: 'Mobile API: its own bearer-token authentication in Api::Mobile::V1::BaseController, not the web session (features/mobile).'
+Api::Mobile::V1::DocumentsController#index: 'Mobile API: its own bearer-token authentication in Api::Mobile::V1::BaseController, not the web session (features/mobile).'
+Api::Mobile::V1::HomeController#show: 'Mobile API: its own bearer-token authentication in Api::Mobile::V1::BaseController, not the web session (features/mobile).'
+Api::Mobile::V1::MeController#push_preferences: 'Mobile API: its own bearer-token authentication in Api::Mobile::V1::BaseController, not the web session (features/mobile).'
+Api::Mobile::V1::MeController#show: 'Mobile API: its own bearer-token authentication in Api::Mobile::V1::BaseController, not the web session (features/mobile).'
+Api::Mobile::V1::SessionsController#create: 'Mobile API: its own bearer-token authentication in Api::Mobile::V1::BaseController, not the web session (features/mobile).'
+Api::Mobile::V1::SessionsController#cross_site: 'Mobile API: its own bearer-token authentication in Api::Mobile::V1::BaseController, not the web session (features/mobile).'
+Api::Mobile::V1::SessionsController#destroy: 'Mobile API: its own bearer-token authentication in Api::Mobile::V1::BaseController, not the web session (features/mobile).'
+Api::Mobile::V1::SessionsController#refresh: 'Mobile API: its own bearer-token authentication in Api::Mobile::V1::BaseController, not the web session (features/mobile).'
+Api::Mobile::V1::SessionsController#resend: 'Mobile API: its own bearer-token authentication in Api::Mobile::V1::BaseController, not the web session (features/mobile).'
+Api::Mobile::V1::SessionsController#verify: 'Mobile API: its own bearer-token authentication in Api::Mobile::V1::BaseController, not the web session (features/mobile).'
+Api::Mobile::V1::SitesController#index: 'Mobile API: its own bearer-token authentication in Api::Mobile::V1::BaseController, not the web session (features/mobile).'
+Api::Mobile::V1::WebHandoffsController#create: 'Mobile API: its own bearer-token authentication in Api::Mobile::V1::BaseController, not the web session (features/mobile).'
+Api::V1::Mail::BaseController#preflight: 'Mail add-in API: its own OAuth token authentication in Api::V1::Mail::BaseController (mail_addin_oauth.feature).'
+Api::V1::Mail::FilingsController#attachments: 'Mail add-in API: its own OAuth token authentication in Api::V1::Mail::BaseController (mail_addin_oauth.feature).'
+Api::V1::Mail::FilingsController#create: 'Mail add-in API: its own OAuth token authentication in Api::V1::Mail::BaseController (mail_addin_oauth.feature).'
+Api::V1::Mail::FilingsController#destroy: 'Mail add-in API: its own OAuth token authentication in Api::V1::Mail::BaseController (mail_addin_oauth.feature).'
+Api::V1::Mail::MatchesController#create: 'Mail add-in API: its own OAuth token authentication in Api::V1::Mail::BaseController (mail_addin_oauth.feature).'
+Api::V1::Mail::OwnersController#index: 'Mail add-in API: its own OAuth token authentication in Api::V1::Mail::BaseController (mail_addin_oauth.feature).'
+CspReportsController#create: 'Browser CSP violation reports: anonymous by design, logged without query strings (security_headers.feature L5-1).'
+DealActivitiesController#perform_activity_action: Signed-in JSON endpoint without a CSRF token. Safe only while the session cookie is SameSite=Lax (pinned by SG-5 in security_surface_drift_guard.feature).
+DocumentsController#signature_progress: 'Provider webhook: authenticated by its own token / HMAC, not a user session (webhook_auth.feature, sendgrid_inbound.feature).'
+GrafanaAlertsController#alert: 'Provider webhook: authenticated by its own token / HMAC, not a user session (webhook_auth.feature, sendgrid_inbound.feature).'
+GridViewPreferencesController#update_column_sequence: Signed-in JSON endpoint without a CSRF token. Safe only while the session cookie is SameSite=Lax (pinned by SG-5 in security_surface_drift_guard.feature).
+IncomingEmailsController#sendgrid: 'Provider webhook: authenticated by its own token / HMAC, not a user session (webhook_auth.feature, sendgrid_inbound.feature).'
+KanbanCardsController#move_kanban_card: Signed-in JSON endpoint without a CSRF token. Safe only while the session cookie is SameSite=Lax (pinned by SG-5 in security_surface_drift_guard.feature).
+KanbanCardsController#update_sequence: Signed-in JSON endpoint without a CSRF token. Safe only while the session cookie is SameSite=Lax (pinned by SG-5 in security_surface_drift_guard.feature).
+KanbanColumnsController#delete_column: Signed-in JSON endpoint without a CSRF token. Safe only while the session cookie is SameSite=Lax (pinned by SG-5 in security_surface_drift_guard.feature).
+KanbanColumnsController#update: Signed-in JSON endpoint without a CSRF token. Safe only while the session cookie is SameSite=Lax (pinned by SG-5 in security_surface_drift_guard.feature).
+KanbanColumnsController#update_sequence: Signed-in JSON endpoint without a CSRF token. Safe only while the session cookie is SameSite=Lax (pinned by SG-5 in security_surface_drift_guard.feature).
+McpController#create: 'MCP: OAuth bearer authentication (McpAuthService) plus entity governance; the OAuth metadata documents are public by the MCP spec.'
+McpController#preflight: 'MCP: OAuth bearer authentication (McpAuthService) plus entity governance; the OAuth metadata documents are public by the MCP spec.'
+NdaAcceptancesController#create: 'Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+NdaAcceptancesController#decline: 'Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+OauthMetadataController#protected_resource: 'MCP: OAuth bearer authentication (McpAuthService) plus entity governance; the OAuth metadata documents are public by the MCP spec.'
+OauthMetadataController#show: 'MCP: OAuth bearer authentication (McpAuthService) plus entity governance; the OAuth metadata documents are public by the MCP spec.'
+SesNotificationsController#create: 'Provider webhook: authenticated by its own token / HMAC, not a user session (webhook_auth.feature, sendgrid_inbound.feature).'
+Users::PasswordsController#create: 'Devise sign-in / password / 2FA / token flow: runs before a signed-in user exists. Covered by two_factor_attempts, password_reset_two_factor, user_creation and features/api/token_endpoints.'
+Users::TokensController#info: 'Devise sign-in / password / 2FA / token flow: runs before a signed-in user exists. Covered by two_factor_attempts, password_reset_two_factor, user_creation and features/api/token_endpoints.'
+Users::TokensController#refresh: 'Devise sign-in / password / 2FA / token flow: runs before a signed-in user exists. Covered by two_factor_attempts, password_reset_two_factor, user_creation and features/api/token_endpoints.'
+Users::TokensController#revoke: 'Devise sign-in / password / 2FA / token flow: runs before a signed-in user exists. Covered by two_factor_attempts, password_reset_two_factor, user_creation and features/api/token_endpoints.'
+Users::TokensController#sign_in: 'Devise sign-in / password / 2FA / token flow: runs before a signed-in user exists. Covered by two_factor_attempts, password_reset_two_factor, user_creation and features/api/token_endpoints.'
+Users::TokensController#sign_up: 'Devise sign-in / password / 2FA / token flow: runs before a signed-in user exists. Covered by two_factor_attempts, password_reset_two_factor, user_creation and features/api/token_endpoints.'
+Users::TwoFactorController#send_sms: 'Devise sign-in / password / 2FA / token flow: runs before a signed-in user exists. Covered by two_factor_attempts, password_reset_two_factor, user_creation and features/api/token_endpoints.'
+Users::TwoFactorController#send_whatsapp: 'Devise sign-in / password / 2FA / token flow: runs before a signed-in user exists. Covered by two_factor_attempts, password_reset_two_factor, user_creation and features/api/token_endpoints.'
+UsersController#whatsapp_webhook: 'Provider webhook: authenticated by its own token / HMAC, not a user session (webhook_auth.feature, sendgrid_inbound.feature).'
+UsersSyncController#digest: 'Provider webhook: authenticated by its own token / HMAC, not a user session (webhook_auth.feature, sendgrid_inbound.feature).'
+UsersSyncController#disable: 'Provider webhook: authenticated by its own token / HMAC, not a user session (webhook_auth.feature, sendgrid_inbound.feature).'
+UsersSyncController#upsert: 'Provider webhook: authenticated by its own token / HMAC, not a user session (webhook_auth.feature, sendgrid_inbound.feature).'
+WebsiteLeadsController#create: Public by design (website demo-request form / public user guides / Outlook task-pane shell); reads or writes no tenant data.
+WebsiteLeadsController#options: Public by design (website demo-request form / public user guides / Outlook task-pane shell); reads or writes no tenant data.
+WorkflowMagicLinkController#show: 'Signed-link / magic-link flow: the signed token is the credential (docs/security/magic_link_security_review.md).'
+WorkflowMagicLinkController#submit: 'Signed-link / magic-link flow: the signed token is the credential (docs/security/magic_link_security_review.md).'
+ZohoSignWebhooksController#create: 'Provider webhook: authenticated by its own token / HMAC, not a user session (webhook_auth.feature, sendgrid_inbound.feature).'

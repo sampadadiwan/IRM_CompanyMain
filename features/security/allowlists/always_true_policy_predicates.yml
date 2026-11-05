@@ -1,0 +1,86 @@
+# Pundit policy predicates whose entire body is the literal `true`.
+# Checked by features/security/security_surface_drift_guard.feature (SG-4).
+#
+# Why: a predicate that is just `true` was the second most common root cause in the October 2026
+# review — C3 (AI portfolio reports), H14, H15, H16, M18–M21, M25. Each let any signed-in user of
+# any firm act on the record. `index?` is usually fine (the Scope filters rows); create?, update?,
+# destroy? and custom actions almost never are.
+#
+# Format: "Entry": "Why this is acceptable". Every entry needs a reason. A new entry must say why
+# the action is safe without the check (what authenticates or authorizes it instead) — "baseline"
+# is reserved for the entries present when the guard was added on 2026-11-05.
+# Remove an entry when the code no longer needs it: the guard also fails on stale entries, so this
+# list can only shrink silently, never grow.
+# Regenerate the current list (do NOT paste it over this file wholesale — review each new line):
+#   TEST_ENV_NUMBER=$RANDOM RAILS_ENV=test bin/rails runner 'require "./features/security/support/security_surface"; puts SecuritySurface.always_true_policy_predicates'
+AccessRightPolicy#index?: index? only opens the list page; the rows come from the policy Scope.
+ActivitiesPolicy#index?: index? only opens the list page; the rows come from the policy Scope.
+AgentChartPolicy#index?: index? only opens the list page; the rows come from the policy Scope.
+AggregatePortfolioInvestmentPolicy#index?: index? only opens the list page; the rows come from the policy Scope.
+AiPortfolioReportPolicy#index?: index? only opens the list page; the rows come from the policy Scope.
+ApiTokenPolicy#create?: 'Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+ApiTokenPolicy#index?: index? only opens the list page; the rows come from the policy Scope.
+AssistantPolicy#show?: 'Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+AssistantTaskPolicy#index?: index? only opens the list page; the rows come from the policy Scope.
+AuditPolicy#index?: index? only opens the list page; the rows come from the policy Scope.
+Audited::AuditPolicy#show?: 'Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+BlogPolicy#index?: index? only opens the list page; the rows come from the policy Scope.
+BlogPolicy#show?: 'Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+CapitalCommitmentPolicy#documents?: 'Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+CapitalRemittancePaymentPolicy#index?: index? only opens the list page; the rows come from the policy Scope.
+ChatPolicy#index?: index? only opens the list page; the rows come from the policy Scope.
+CiTrackRecordPolicy#index?: index? only opens the list page; the rows come from the policy Scope.
+CiWidgetPolicy#index?: index? only opens the list page; the rows come from the policy Scope.
+CustomNotificationPolicy#index?: index? only opens the list page; the rows come from the policy Scope.
+DashboardWidgetPolicy#dashboard?: 'Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+DashboardWidgetPolicy#index?: index? only opens the list page; the rows come from the policy Scope.
+DashboardWidgetPolicy#metadata_help?: 'Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+DealActivityPolicy#index?: index? only opens the list page; the rows come from the policy Scope.
+DealInvestorPolicy#index?: index? only opens the list page; the rows come from the policy Scope.
+EmailBounceEventPolicy#index?: index? only opens the list page; the rows come from the policy Scope.
+EntityPolicy#dashboard?: 'Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+EntityPolicy#index?: index? only opens the list page; the rows come from the policy Scope.
+EntityPolicy#show?: 'Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+ExchangeRatePolicy#index?: index? only opens the list page; the rows come from the policy Scope.
+ExcusedInvestorPolicy#index?: index? only opens the list page; the rows come from the policy Scope.
+FavoritePolicy#index?: index? only opens the list page; the rows come from the policy Scope.
+FeePolicy#index?: index? only opens the list page; the rows come from the policy Scope.
+FolderPolicy#data_rooms?: 'Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+FolderPolicy#index?: index? only opens the list page; the rows come from the policy Scope.
+FormTypePolicy#search?: 'Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+InterestCompanyAdminPolicy#matched_offer?: 'Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+InterestCompanyAdminPolicy#matched_offers?: 'Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+InterestEmployeePolicy#matched_offers?: 'Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+InterestInvestorPolicy#matched_offers?: 'Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+InvestmentCriteriaTemplatePolicy#create?: 'Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+InvestmentCriteriaTemplatePolicy#index?: index? only opens the list page; the rows come from the policy Scope.
+InvestmentCriteriaTemplatePolicy#new?: 'Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+InvestmentInstrumentPolicy#sub_categories?: 'Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+KpiChartSettingPolicy#create?: 'Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+KpiChartSettingPolicy#index?: index? only opens the list page; the rows come from the policy Scope.
+MessagePolicy#index?: index? only opens the list page; the rows come from the policy Scope.
+MobileDevicePolicy#index?: index? only opens the list page; the rows come from the policy Scope.
+NudgePolicy#index?: index? only opens the list page; the rows come from the policy Scope.
+PaymentPolicy#index?: index? only opens the list page; the rows come from the policy Scope.
+PermissionPolicy#index?: index? only opens the list page; the rows come from the policy Scope.
+PortfolioInvestmentPolicy#base_amount_form?: 'Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+PortfolioInvestmentPolicy#index?: index? only opens the list page; the rows come from the policy Scope.
+PortfolioScenarioPolicy#index?: index? only opens the list page; the rows come from the policy Scope.
+QuickLinkPolicy#index?: index? only opens the list page; the rows come from the policy Scope.
+QuickLinkStepPolicy#index?: index? only opens the list page; the rows come from the policy Scope.
+ReminderPolicy#index?: index? only opens the list page; the rows come from the policy Scope.
+ReportPolicy#index?: index? only opens the list page; the rows come from the policy Scope.
+ReportPolicy#prompt?: 'Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+ScenarioInvestmentPolicy#index?: index? only opens the list page; the rows come from the policy Scope.
+SecondarySaleInvestorPolicy#view_allocations?: 'Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+SecondarySaleRmPolicy#buyer?: 'Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+SecondarySaleRmPolicy#seller?: 'Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+SupportAgentPolicy#index?: index? only opens the list page; the rows come from the policy Scope.
+SupportClientMappingPolicy#index?: index? only opens the list page; the rows come from the policy Scope.
+TaskTemplatePolicy#generate?: 'Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+TaskTemplatePolicy#index?: index? only opens the list page; the rows come from the policy Scope.
+UserPolicy#search_by_email?: 'Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+UserPolicy#welcome?: 'Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+UserPolicy#whatsapp_webhook?: 'Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+ValidationRulePolicy#evaluate?: 'Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
+ValuationPolicy#index?: index? only opens the list page; the rows come from the policy Scope.

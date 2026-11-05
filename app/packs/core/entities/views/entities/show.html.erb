@@ -142,7 +142,7 @@
                 KYC Documents Note
               </td>
               <td>
-                <%= @entity.entity_setting.kyc_docs_note&.html_safe %>
+                <%= safe_rich_text(@entity.entity_setting.kyc_docs_note) %>
               </td>
             </tr>
           <% end %>

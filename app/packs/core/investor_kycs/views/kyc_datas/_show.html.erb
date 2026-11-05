@@ -180,7 +180,7 @@
           Final Response
         </td>
         <td>
-           <%= Json2table.get_html_table(kyc_data.response, JsonTable::TABLE_OPTIONS).html_safe %>
+           <%= safe_json_table(kyc_data.response, JsonTable::TABLE_OPTIONS) %>
         </td>
       </tr>
 
@@ -189,7 +189,7 @@
           Request Data
         </td>
         <td>
-           <%= Json2table.get_html_table(kyc_data.request_data, JsonTable::TABLE_OPTIONS).html_safe %>
+           <%= safe_json_table(kyc_data.request_data, JsonTable::TABLE_OPTIONS) %>
         </td>
       </tr>
 
@@ -198,7 +198,7 @@
           Response Data
         </td>
         <td>
-          <%= Json2table.get_html_table(kyc_data.response_data, JsonTable::TABLE_OPTIONS).html_safe %>
+          <%= safe_json_table(kyc_data.response_data, JsonTable::TABLE_OPTIONS) %>
         </td>
       </tr>
       <% end %>
