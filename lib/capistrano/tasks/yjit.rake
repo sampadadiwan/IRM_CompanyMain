@@ -56,10 +56,6 @@ def yjit_default_ruby
   ruby
 end
 
-def yjit_puma_banner
-  capture("grep -a 'Ruby version:' #{current_path}/log/puma.error.log 2>/dev/null | tail -1 || true").strip
-end
-
 def yjit_has_yjit?(ruby)
   test(*yjit_sh("rvm #{ruby} do ruby -e 'exit(defined?(RubyVM::YJIT.enable) ? 0 : 1)'"))
 end
@@ -67,7 +63,9 @@ end
 def yjit_plain_name(ruby) = ruby.delete_suffix('-yjit')
 
 def yjit_unit_pid(unit)
-  pid = capture(:systemctl, :show, '-p', 'MainPID', '--value', unit).strip
+  # --no-pager: deploy.rb sets pty, so without it systemctl wraps the PID in pager escape codes
+  # and to_i reads 0 (same as the systemctl show calls in config/deploy.rb)
+  pid = capture(:systemctl, :show, unit, '-p', 'MainPID', '--value', '--no-pager').strip
   pid.to_i.positive? ? pid : nil
 end
 
@@ -75,27 +73,38 @@ def yjit_jemalloc_loaded?(pid)
   pid && test("sudo grep -qs libjemalloc /proc/#{pid}/maps")
 end
 
+# YJIT reserves its code region the moment it is enabled, and Ruby names that mapping
+# [anon:Ruby:rb_jit_reserve_addr_space] — absent on plain Ruby or with YJIT off. (Named anonymous
+# mappings need CONFIG_ANON_VMA_NAME, which the Ubuntu 24.04 app boxes have.) Puma's
+# "* Ruby version: ... +YJIT" banner cannot tell: it is printed before Rails loads and runs
+# the :enable_yjit initializer, so it never shows +YJIT for a config.yjit-enabled app.
+def yjit_running?(pid)
+  pid && test("sudo grep -qs jit_reserve_addr_space /proc/#{pid}/maps")
+end
+
 def yjit_report
   ruby = yjit_default_ruby
   info "#{host}: RVM default #{ruby} | YJIT compiled in: #{yjit_has_yjit?(ruby) ? 'yes' : 'NO'} | " \
        "libjemalloc2: #{test('dpkg -s libjemalloc2 >/dev/null 2>&1') ? 'installed' : 'missing'}"
 
-  # Puma prints "* Ruby version: ruby 4.0.6 (...) +YJIT +PRISM" at boot; +YJIT appears only
-  # when YJIT is actually running, so the last banner is the truth for the live process.
-  banner = yjit_puma_banner
-  info "#{host}: puma #{banner.empty? ? 'banner not found' : banner.sub(/.*Ruby version: /, '')}"
-
-  { puma: fetch(:puma_service_unit_name), sidekiq: fetch(:sidekiq_service_unit_name) }.each do |name, unit|
+  # Per live process: which Ruby binary it runs, and whether YJIT and jemalloc are actually in it
+  { puma: fetch(:puma_service_unit_name), sidekiq: fetch(:sidekiq_service_unit_name) }.to_h do |name, unit|
     pid = yjit_unit_pid(unit)
-    info "#{host}: #{name} pid #{pid || '-'} jemalloc: #{yjit_jemalloc_loaded?(pid) ? 'loaded' : 'not loaded'}"
+    exe = pid ? capture("sudo readlink /proc/#{pid}/exe").strip : '-'
+    running = yjit_running?(pid)
+    info "#{host}: #{name} pid #{pid || '-'} #{exe} | YJIT: #{running ? 'running' : 'NOT running'} | " \
+         "jemalloc: #{yjit_jemalloc_loaded?(pid) ? 'loaded' : 'not loaded'}"
+    [name, running]
   end
-  banner
 end
 
 namespace :yjit do
   desc 'Report YJIT and jemalloc status on each host (read-only)'
   task :check do
-    on roles(:app) { yjit_report }
+    # do...end, not braces: `on roles(:app) { ... }` binds the block to roles(), leaving `on` blockless
+    on roles(:app) do
+      yjit_report
+    end
   end
 
   desc 'Build a YJIT Ruby beside the live one, install jemalloc, switch over, restart and verify'
@@ -149,10 +158,11 @@ namespace :yjit do
     on roles(:app) do
       next if yjit_dry_run?
 
-      # Wait for the restarted puma's boot banner (the log also holds every older one).
-      12.times { yjit_puma_banner.include?('+YJIT') ? break : sleep(5) }
-      banner = yjit_report
-      raise "#{host}: puma banner lacks +YJIT after restart: #{banner}" unless banner.include?('+YJIT')
+      # Rails enables YJIT while booting, so give a just-restarted process up to a minute to get there
+      units = [fetch(:puma_service_unit_name), fetch(:sidekiq_service_unit_name)]
+      12.times { units.all? { |unit| yjit_running?(yjit_unit_pid(unit)) } ? break : sleep(5) }
+      off = yjit_report.reject { |_name, running| running }.keys
+      raise "#{host}: YJIT is not running in #{off.join(' and ')} after restart (see the lines above)" if off.any?
 
       info "#{host}: YJIT is live. Watch per-worker RSS for a day; roll back with yjit:disable"
     end

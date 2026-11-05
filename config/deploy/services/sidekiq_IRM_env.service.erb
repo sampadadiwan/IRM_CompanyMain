@@ -76,7 +76,9 @@ Environment=LD_PRELOAD=libjemalloc.so.2
 # binstub, and Bundler loads sidekiq into that same ruby process. Ruby being the
 # main PID is what lets KillMode=mixed below signal Sidekiq and nothing else.
 # WATCHDOG_PID is unset so the watchdog still works if that ever stops holding.
-ExecStart=/bin/bash -lc 'unset WATCHDOG_PID; source /home/ubuntu/.rvm/scripts/rvm && rvm use default >/dev/null && cd /home/ubuntu/IRM/current && exec bundle exec sidekiq -e <%= fetch(:stage) %>'
+# cd comes BEFORE `rvm use default`: RVM's cd hook switches to the Ruby named in the release's
+# .ruby-version (plain ruby-4.0.6), which silently undid the switch to the default YJIT Ruby.
+ExecStart=/bin/bash -lc 'unset WATCHDOG_PID; cd /home/ubuntu/IRM/current && source /home/ubuntu/.rvm/scripts/rvm && rvm use default >/dev/null && exec bundle exec sidekiq -e <%= fetch(:stage) %>'
 
 # mixed: SIGTERM to Sidekiq only. Sidekiq stops fetching, gives in-flight jobs
 # its 25s shutdown timeout, pushes unfinished ones back to Redis and exits; only
