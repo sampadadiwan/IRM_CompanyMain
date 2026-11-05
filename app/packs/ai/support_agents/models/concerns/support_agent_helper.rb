@@ -28,7 +28,7 @@ module SupportAgentHelper
       next unless extracted
 
       invalid_count = compare_extracted_with_model(ctx, doc, model, extracted, field_map)
-      ctx[:issues][:document_issues] << { type: :info, name: doc.name, message: "All fields match for #{doc.name}", severity: :success } if invalid_count.zero?
+      ctx[:issues][:document_issues] << { type: :info, name: doc.name, message: "All fields match for #{doc.name}", severity: :success, step: :consistency } if invalid_count.zero?
     end
   end
 
@@ -176,6 +176,7 @@ module SupportAgentHelper
           type: :field_mismatch,
           name: doc.name,
           severity: :blocking,
+          step: :consistency,
           message: "#{doc.name}, #{attribute_name} (#{extracted_val}) does not match #{model.class.name} (#{model_val})"
         }
         Rails.logger.debug { "[SupportAgent] Field mismatch in #{doc.name}: #{attribute_name}=#{extracted_val.inspect}, expected #{attribute_name}=#{model_val.inspect}" }

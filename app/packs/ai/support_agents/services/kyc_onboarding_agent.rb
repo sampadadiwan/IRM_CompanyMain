@@ -202,11 +202,11 @@ class KycOnboardingAgent < SupportAgentService
       next unless str_val.empty? || invalid_tokens.include?(str_val.downcase)
 
       Rails.logger.debug { "[KycOnboardingAgent] Invalid required field detected: #{attr}=#{value.inspect}" }
-      ctx[:issues][:field_issues] << { type: :invalid_field_value, message: attr, value: value, severity: :blocking }
+      ctx[:issues][:field_issues] << { type: :invalid_field_value, message: attr, value: value, severity: :blocking, step: :field_completeness }
       invalid_count += 1
     end
 
-    ctx[:issues][:field_issues] << { type: :info, message: "All required attributes are valid", severity: :success } if invalid_count.zero?
+    ctx[:issues][:field_issues] << { type: :info, message: "All required attributes are valid", severity: :success, step: :field_completeness } if invalid_count.zero?
 
     true
   end
@@ -226,18 +226,18 @@ class KycOnboardingAgent < SupportAgentService
       elsif fcf.field_type == "Select"
         options = fcf.meta_data.split(",").map(&:strip).compact_blank
         unless options.include?(str_val) || str_val.empty?
-          ctx[:issues][:field_issues] << { type: :invalid, message: fcf.name, value: value, severity: :blocking }
+          ctx[:issues][:field_issues] << { type: :invalid, message: fcf.name, value: value, severity: :blocking, step: :field_completeness }
           Rails.logger.debug { "[KycOnboardingAgent] Invalid select field value for #{fcf.name}: #{value.inspect}" }
           invalid_count += 1
         end
       elsif str_val.empty? || invalid_tokens.include?(str_val.downcase)
-        ctx[:issues][:field_issues] << { type: :invalid, message: fcf.name, value: value, severity: :blocking }
+        ctx[:issues][:field_issues] << { type: :invalid, message: fcf.name, value: value, severity: :blocking, step: :field_completeness }
         Rails.logger.debug { "[KycOnboardingAgent] Invalid JSON field detected: #{fcf.name}=#{value.inspect}" }
         invalid_count += 1
       end
     end
 
-    ctx[:issues][:field_issues] << { type: :info, message: "All required custom fields are valid", severity: :success } if invalid_count.zero?
+    ctx[:issues][:field_issues] << { type: :info, message: "All required custom fields are valid", severity: :success, step: :field_completeness } if invalid_count.zero?
   end
 
   # Verifies all required documents (from form fields and support_agent config)
@@ -288,24 +288,24 @@ class KycOnboardingAgent < SupportAgentService
           content = content.sub(/\A```(?:json)?/i, "").sub(/```$/, "").strip
           result = JSON.parse(content)
           if result["matches"]
-            ctx[:issues][:document_issues] << { type: :info, name: doc.name, message: "Valid #{label}", severity: :success }
+            ctx[:issues][:document_issues] << { type: :info, name: doc.name, message: "Valid #{label}", severity: :success, step: :document_validity }
             Rails.logger.debug { "[KycOnboardingAgent] Document validated successfully: #{label}" }
           else
-            ctx[:issues][:document_issues] << { type: :mismatched_document, name: doc.name, message: "Invalid #{label}", severity: :blocking, explanation: result["explanation"] }
+            ctx[:issues][:document_issues] << { type: :mismatched_document, name: doc.name, message: "Invalid #{label}", severity: :blocking, explanation: result["explanation"], step: :document_validity }
             Rails.logger.debug { "[KycOnboardingAgent] Document mismatch detected: #{label}, explanation=#{result['explanation']}" }
           end
         rescue JSON::ParserError
-          ctx[:issues][:document_issues] << { type: :llm_parse_error, name: doc.name, message: "Could not ascertain #{label}", severity: :warning, raw: raw }
+          ctx[:issues][:document_issues] << { type: :llm_parse_error, name: doc.name, message: "Could not ascertain #{label}", severity: :warning, raw: raw, step: :document_validity }
           Rails.logger.warn("[KycOnboardingAgent] LLM parse error for document #{label}, raw=#{raw.inspect}")
         rescue Faraday::ResourceNotFound, Faraday::Error => e
-          ctx[:issues][:document_issues] << { type: :document_unavailable, name: doc.name, message: "Document file not accessible (#{e.class})", severity: :warning }
+          ctx[:issues][:document_issues] << { type: :document_unavailable, name: doc.name, message: "Document file not accessible (#{e.class})", severity: :warning, step: :document_validity }
           Rails.logger.warn("[KycOnboardingAgent] Document file unavailable for #{label}: #{e.message.lines.first.chomp}")
         rescue Errno::ENOENT => e
           # doc.file.url returns a web-relative path (/uploads/...) in local/test storage.
           # RubyLLM treats it as an absolute filesystem path and raises ENOENT when the
           # file doesn't exist there (the file lives at Rails.root/public/uploads/...).
           # Log a warning and skip validity checking rather than crashing the pipeline.
-          ctx[:issues][:document_issues] << { type: :document_unavailable, name: doc.name, message: "Document file not accessible locally (#{e.class})", severity: :warning }
+          ctx[:issues][:document_issues] << { type: :document_unavailable, name: doc.name, message: "Document file not accessible locally (#{e.class})", severity: :warning, step: :document_validity }
           Rails.logger.warn("[KycOnboardingAgent] Document file not found on filesystem for #{label}: #{e.message.lines.first.chomp}")
         end
       end
@@ -375,7 +375,7 @@ class KycOnboardingAgent < SupportAgentService
     expiry_date = investor_kyc.expiry_date
 
     if expiry_date.nil?
-      ctx[:issues][:field_issues] << { type: :info, message: "No expiry date set", severity: :success }
+      ctx[:issues][:field_issues] << { type: :info, message: "No expiry date set", severity: :success, step: :expiry_status }
       mark_step_success(report, :check_expiry_status, message: "No expiry date set") if report
       return true
     end
@@ -390,7 +390,8 @@ class KycOnboardingAgent < SupportAgentService
       ctx[:issues][:field_issues] << {
         type: :kyc_expired,
         message: "KYC expired on #{expiry_date}",
-        severity: :blocking
+        severity: :blocking,
+        step: :expiry_status
       }
       Rails.logger.warn { "[KycOnboardingAgent] KYC expired for InvestorKyc ID=#{investor_kyc.id}" }
       # "Check complete" prefix — the STEP succeeded (it ran and found the problem);
@@ -401,6 +402,7 @@ class KycOnboardingAgent < SupportAgentService
         type: :kyc_expiring_soon,
         message: "KYC expires in #{days_remaining} day(s) on #{expiry_date}",
         severity: :warning,
+        step: :expiry_status,
         # days_remaining lets send_reminders compute the reminder milestone band
         # without re-deriving dates from the message string
         days_remaining: days_remaining
@@ -411,7 +413,8 @@ class KycOnboardingAgent < SupportAgentService
       ctx[:issues][:field_issues] << {
         type: :info,
         message: "KYC valid until #{expiry_date} (#{days_remaining} days remaining)",
-        severity: :success
+        severity: :success,
+        step: :expiry_status
       }
       mark_step_success(report, :check_expiry_status, message: "Valid until #{expiry_date}") if report
     end

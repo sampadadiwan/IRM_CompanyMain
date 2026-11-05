@@ -102,14 +102,14 @@ class SupportAgentService < Trailblazer::Operation
 
         required_docs.each do |name|
           unless uploaded_docs.include?(name)
-            ctx[:issues][:document_issues] << { type: :missing, message: name, severity: :blocking }
+            ctx[:issues][:document_issues] << { type: :missing, message: name, severity: :blocking, step: :document_presence }
             Rails.logger.debug { "[#{self.class.name}] Missing document detected: #{name}" }
           end
         end
-        ctx[:issues][:document_issues] << { type: :info, message: "All required documents are present", severity: :success } if ctx[:issues][:document_issues].empty?
+        ctx[:issues][:document_issues] << { type: :info, message: "All required documents are present", severity: :success, step: :document_presence } if ctx[:issues][:document_issues].empty?
         Rails.logger.debug { "[#{self.class.name}] Document presence check completed. Issues found: #{ctx[:issues][:document_issues].count}" }
       else
-        ctx[:issues][:document_issues] << { type: :missing, message: "No record found for document check", severity: :blocking }
+        ctx[:issues][:document_issues] << { type: :missing, message: "No record found for document check", severity: :blocking, step: :document_presence }
         Rails.logger.warn { "[#{self.class.name}] No model provided for document presence check." }
       end
     else
