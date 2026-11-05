@@ -125,32 +125,57 @@ class GridViewPreferencesController < ApplicationController
     # Add the ADDITIONAL_COLUMNS if they are defined
     @field_options = @field_options.merge(model_class::ADDITIONAL_COLUMNS) if model_class.const_defined?(:ADDITIONAL_COLUMNS)
 
-    # Check if the model_class defines ADDITIONAL_COLUMNS
-    if model_class.const_defined?(:ADDITIONAL_COLUMNS_FROM)
-      model_class::ADDITIONAL_COLUMNS_FROM.each do |add_relationship|
-        add_class = model_class.reflect_on_association(add_relationship).klass
-        # Merge additional columns from the class into field_options but add a prefix to the keys and values
-        @field_options = @field_options.merge(add_class::STANDARD_COLUMNS.transform_keys { |key| "#{add_relationship.humanize}.#{key}" }.transform_values { |value| "#{add_relationship}.#{value}" })
-        # Merge the custom columns of the add_class
-        form_type = FormType.find_by(entity_id: current_user.entity_id, name: add_class.to_s)
-        if form_type.present?
-          @custom_field_names = form_type.form_custom_fields.where.not(field_type: "GridColumns").pluck(:name).map(&:to_s)
-          @field_options = @field_options.merge(Array(@custom_field_names).to_h { |name| ["#{add_relationship.humanize}.#{name.humanize}", "#{add_relationship}.custom_fields.#{name}"] })
-        end
-      end
+    # The related classes whose columns are offered too (e.g. a commitment's investor), keyed by relationship
+    add_classes = if model_class.const_defined?(:ADDITIONAL_COLUMNS_FROM)
+                    model_class::ADDITIONAL_COLUMNS_FROM.index_with { |rel| model_class.reflect_on_association(rel).klass }
+                  else
+                    {}
+                  end
+    # Custom field names for the model and every related class, loaded together instead of a
+    # FormType find_by plus a pluck per class
+    custom_names = grid_custom_field_names([model_class, *add_classes.values])
+
+    add_classes.each do |add_relationship, add_class|
+      # Merge additional columns from the class into field_options but add a prefix to the keys and values
+      @field_options = @field_options.merge(add_class::STANDARD_COLUMNS.transform_keys { |key| "#{add_relationship.humanize}.#{key}" }.transform_values { |value| "#{add_relationship}.#{value}" })
+      # Merge the custom columns of the add_class
+      names = custom_names[add_class.to_s]
+      @field_options = @field_options.merge(names.to_h { |name| ["#{add_relationship.humanize}.#{name.humanize}", "#{add_relationship}.custom_fields.#{name}"] }) if names
     end
 
-    form_type = FormType.find_by(entity_id: current_user.entity_id, name: model_class.to_s)
-    if form_type.present?
-      @custom_field_names = form_type.form_custom_fields.where.not(field_type: "GridColumns").pluck(:name).map(&:to_s)
-      @field_options = (@field_options.map { |name, value| [name, value] } + Array(@custom_field_names).map { |name| [name.humanize, "custom_fields.#{name}"] }).to_h
-    end
+    # Then the model's own custom fields
+    names = custom_names[model_class.to_s]
+    @field_options = (@field_options.map { |name, value| [name, value] } + names.map { |name| [name.humanize, "custom_fields.#{name}"] }).to_h if names
 
     # Clean up the labels in field_options for display in the dropdown
     @field_options = @field_options.transform_keys { |k| k.split(";").first.strip }
   end
 
   private
+
+  # Grid-selectable custom field names per class name, for the current user's firm, in one query
+  # for the form types and one for their fields.
+  #
+  # Same results as the per-class lookups it replaced:
+  #   - a class with no FormType is absent from the hash (the caller then adds nothing for it);
+  #   - with duplicate FormTypes of one name, the lowest id wins, as find_by returned it;
+  #   - fields come in the association's position order, minus "GridColumns" fields and fields
+  #     with no field_type (SQL's field_type != 'GridColumns' never matched NULL).
+  #
+  # @param classes [Array<Class>]
+  # @return [Hash{String => Array<String>}] e.g. { "Investor" => ["pan", "risk_rating"] }
+  def grid_custom_field_names(classes)
+    form_types = FormType.where(entity_id: current_user.entity_id, name: classes.map(&:to_s))
+                         .order(:id).includes(:form_custom_fields)
+    form_types.each_with_object({}) do |form_type, names|
+      # Keep the first (lowest id) form type per name
+      next if names.key?(form_type.name)
+
+      names[form_type.name] = form_type.form_custom_fields
+                                       .reject { |f| f.field_type.nil? || f.field_type == "GridColumns" }
+                                       .map { |f| f.name.to_s }
+    end
+  end
 
   def find_parent
     permitted_params = params.permit(:owner_type, :owner_id)
