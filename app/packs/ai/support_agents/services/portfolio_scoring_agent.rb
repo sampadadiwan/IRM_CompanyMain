@@ -72,7 +72,13 @@ class PortfolioScoringAgent < SupportAgentService
     # Skill fields the template says must exist, keyed by field name
     template_fields = SupportAgentsSetupService.skill_field_templates(support_agent.agent_type)
 
-    live_fields = support_agent.form_custom_fields.where(field_type: "File")
+    live_fields = support_agent.form_custom_fields.where(field_type: "File").to_a
+
+    # Names of the skill files already uploaded, fetched once for every field below rather than
+    # one exists? query per field. Only the File fields' labels can match, so filter on those.
+    # Keyed by Document.name_key so the Ruby match stays case/accent-insensitive like the column.
+    uploaded_names = support_agent.documents.where(name: live_fields.map(&:human_label))
+                                  .unscope(:order).distinct.pluck(:name).to_set { |n| Document.name_key(n) }
 
     template_fields.each do |tpl|
       fcf = live_fields.find { |f| f.name == tpl[:name] }
@@ -88,7 +94,7 @@ class PortfolioScoringAgent < SupportAgentService
         next
       end
 
-      if (msg = missing_upload_issue(support_agent, fcf))
+      if (msg = missing_upload_issue(uploaded_names, fcf))
         issues << msg
       end
     end
@@ -99,7 +105,7 @@ class PortfolioScoringAgent < SupportAgentService
       f.skill_tagged? && template_fields.none? { |tpl| tpl[:name] == f.name }
     end
     extra_skill_fields.each do |fcf|
-      if (msg = missing_upload_issue(support_agent, fcf))
+      if (msg = missing_upload_issue(uploaded_names, fcf))
         issues << msg
       end
     end
@@ -109,8 +115,10 @@ class PortfolioScoringAgent < SupportAgentService
 
   # The uploaded document must be named exactly after the field label —
   # mirrors skill_for_sector's documents.find_by(name: fcf.human_label) lookup.
-  def self.missing_upload_issue(support_agent, fcf)
-    return nil if support_agent.documents.exists?(name: fcf.human_label)
+  #
+  # @param uploaded_names [Set<String>] Document.name_key of the agent's documents, from config_issues
+  def self.missing_upload_issue(uploaded_names, fcf)
+    return nil if uploaded_names.include?(Document.name_key(fcf.human_label))
 
     "No skill file uploaded for '#{fcf.human_label}'. Upload it on the agent edit page."
   end
