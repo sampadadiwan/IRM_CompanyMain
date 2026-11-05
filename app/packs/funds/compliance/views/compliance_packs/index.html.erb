@@ -1,0 +1,20 @@
+<%# Rule library: CapHive packs (published ones for customers) and the firm's own entity packs %>
+<%= render FormCard.new(title: "Rule library") do %>
+  <% if policy(CompliancePack).create? %>
+    <%= link_to "New entity pack", new_compliance_pack_path, class: "btn btn-primary mb-3" %>
+  <% end %>
+  <table class="table table-bordered align-middle" id="compliance_packs">
+    <thead><tr><th>Pack</th><th>Owner</th><th>Latest version</th><th>Status</th></tr></thead>
+    <tbody>
+      <% @packs.each do |pack| %>
+        <% latest = pack.latest_published_version %>
+        <tr id="pack_<%= pack.id %>">
+          <td><%= link_to pack.name, compliance_pack_path(pack) %></td>
+          <td><%= pack.caphive? ? "CapHive" : "Entity pack" %><%= " · Locked — CapHive pack" if pack.locked %></td>
+          <td><%= latest ? "#{latest.label} · effective #{l(latest.effective_from)}" : "Draft" %></td>
+          <td><%= pack.retired? ? "Retired #{l(pack.retired_on)}" : (latest ? "Published" : "Draft") %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>

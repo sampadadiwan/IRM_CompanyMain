@@ -1,0 +1,21 @@
+<%# Setup: inputs (✓/✗), per-fund figures, reference lists with dates, owner and monitoring %>
+<%= render FormCard.new(title: "Compliance setup") do %>
+  <% if flash[:alert] %><div class="alert alert-danger" id="setup_error"><%= flash[:alert] %></div><% end %>
+  <table class="table table-bordered" id="setup_inputs">
+    <thead><tr><th>Input</th><th>Used by</th><th>Status</th></tr></thead>
+    <tbody>
+      <% @inputs.each do |inp| %>
+        <tr id="input_<%= inp.key %>"><td><%= inp.label %></td><td><%= inp.packs.join(", ") %></td>
+          <td><%= inp.missing? ? "✗ #{inp.missing_funds.any? ? "missing for #{inp.missing_funds.join(', ')}" : 'not mapped'}" : "✓" %></td></tr>
+      <% end %>
+    </tbody>
+  </table>
+  <p>Monitoring: <strong id="monitoring_state"><%= @setup.monitoring_enabled ? "on" : "off" %></strong>
+    · Owner: <%= @setup.owner&.full_name || "—" %></p>
+  <% if policy(@setup).update? %>
+    <%= form_with model: @setup, url: compliance_entity_setup_path, method: :patch do |f| %>
+      <%= hidden_field_tag "compliance_entity_setup[monitoring_enabled]", @setup.monitoring_enabled ? "0" : "1" %>
+      <%= f.submit(@setup.monitoring_enabled ? "Turn monitoring off" : "Turn monitoring on", class: "btn btn-primary") %>
+    <% end %>
+  <% end %>
+<% end %>

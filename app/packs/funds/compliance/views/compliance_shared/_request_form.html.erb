@@ -1,0 +1,21 @@
+<%# Maker–checker request form (override / disable / detach / explanation / early adoption / classification).
+    Locals: target, kind, check_key (optional), label, fields (array of payload keys) %>
+<%= form_with url: compliance_requests_path, scope: :compliance_request, method: :post, class: "row g-2 align-items-end mb-2" do |f| %>
+  <%= f.hidden_field :kind, value: kind %>
+  <%= f.hidden_field :target_type, value: target.class.name %>
+  <%= f.hidden_field :target_id, value: target.id %>
+  <%= f.hidden_field :check_key, value: local_assigns[:check_key] %>
+  <% Array(local_assigns[:fields]).each do |field| %>
+    <div class="col-md-2">
+      <%= label_tag "compliance_request_payload_#{field}", field.to_s.humanize, class: "form-label" %>
+      <%= text_field_tag "compliance_request[payload][#{field}]", nil, id: "compliance_request_payload_#{field}", class: "form-control" %>
+    </div>
+  <% end %>
+  <div class="col-md-5">
+    <%= f.label :reason, "Reason (at least 10 characters)", class: "form-label" %>
+    <%= f.text_field :reason, class: "form-control" %>
+  </div>
+  <div class="col-md-3">
+    <%= f.submit label, class: "btn btn-outline-primary" %>
+  </div>
+<% end %>

@@ -1,0 +1,15 @@
+<%# One stored result: its working and the setup of its day (H18) %>
+<% w = @result.working_hash %>
+<%= render FormCard.new(title: "#{w['check_name'] || @result.check_key} — #{l(@result.compliance_run.run_date)}") do %>
+  <% if @result.superseded? %><div class="alert alert-secondary">Superseded — pack correction</div><% end %>
+  <p><%= render "compliance_shared/outcome_badge", outcome: @result.outcome %> <%= w["message"] %></p>
+  <div class="card mb-3"><div class="card-body" id="result_working">
+    <% Array(w["lines"]).each do |line| %><div><%= line %></div><% end %>
+  </div></div>
+  <h6>Setup that day</h6>
+  <ul id="setup_that_day">
+    <li>Version: <%= @setup_then["version"] %></li>
+    <li>Classification: <%= @setup_then["classification"] %></li>
+    <li>Override: <%= @setup_then["override"] %></li>
+  </ul>
+<% end %>

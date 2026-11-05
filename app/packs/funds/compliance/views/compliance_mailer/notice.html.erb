@@ -1,0 +1,8 @@
+<%= sa_light_banner(title: "Compliance", label: @message, subtitle: h(@entity&.name), tone: :info) %>
+<% if @lines.any? %>
+  <ul>
+    <% @lines.each do |line| %>
+      <li><%= line %></li>
+    <% end %>
+  </ul>
+<% end %>

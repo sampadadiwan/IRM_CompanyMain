@@ -90,6 +90,24 @@ flowchart LR
 | R46 | SEBI check 7 becomes a content check in Phase 3 via SEBI v1.1 (applies to all funds) | Uses the versioning mechanism itself |
 | R47 | Message wording aligned to business-rules.md (e.g. "Locked pack: overrides can only tighten this limit", "Upload the evidence", "In transition until <date>") | Tests assert these strings |
 | R48 | Cucumber runs on this branch use plain cucumber with TEST_ENV_NUMBER 41201–41204, never pcuc | Other sessions run pcuc on workers 1–4 concurrently |
+| R49 | Phase 1 schema added by hand-editing `db/schema.rb` / `db/schema_test.rb` (plus the migration file); the shared dev DB was **not** migrated from this branch | Memory: no dev-DB migrations from a side branch; dev DB lags schema.rb |
+| R50 | During a transition period every breach of the fund's new version shows as a Warning (not only checks new in that version) | Simpler, and still never a pass; counsel can narrow it later |
+| R51 | `compliance` added to `funds_view_paths` in `config/application.rb`; `draw :compliance` added to `config/routes.rb` | Required for pack views and routes (two one-line edits to existing files) |
+| R52 | Models use `audited` directly instead of `Trackable` | `Trackable` adds `acts_as_paranoid`, which needs `deleted_at`; compliance rows are never soft-deleted |
+| R53 | One `ComplianceNotifier` with a `kind` param (assignment, approval request, decision, escalation, run failed, version, digest) instead of six notifier classes | One recipient rule set, same Noticed/email plumbing |
+| R54 | Register export is built on request and streamed (no background job, no stored file, no download link) | Nothing another user could open (X36); sizes are per-period and bounded |
+| R55 | `ComplianceDocumentCheckQuery` uses three bounded queries (records, documents, sign-offs) instead of one SQL join | Simpler and portable; failing list capped at 500 |
+| R56 | Investment "cost" is `portfolio_investments.amount_cents` of buy rows (quantity > 0) | Matches `PortfolioInvestment#buy?`; counsel may prefer net cost |
+| R57 | A "wound-up" fund means a soft-deleted fund (no fund status column exists) | No new column on `funds` (existing-model rule) |
+| R58 | The entity's local time zone for the 02:00 run / 08:00 digest lives on `compliance_entity_setups.time_zone` (default Asia/Kolkata) | No time zone on entities today; avoids changing `entities` |
+| R59 | One-off digest lines (version applied late, dropped overrides, reassignments) are kept in `compliance_entity_setups.digest_notes` and cleared after each digest | Persisted between the run and the 08:00 digest; no extra table |
+| R60 | Approvers who were deactivated are remembered in `ai_settings["handled_inactive_user_ids"]` so the "pending approvals returned" line appears once (E112) | Avoids a new column; once-only note |
+| R61 | Category III NAV is a per-fund input entered in setup (`nav`) until the source is confirmed; blank → "Could not check — missing: NAV" (X38, A10) | Keeps check 2 honest without guessing a source |
+| R62 | Run-now rate limiting relies on the running-run dedupe (E18); no rack-attack rule added in Phase 1 | Deferred — existing initializer untouched; revisit with Security item 10 |
+| R63 | Failed-run alert to "CapHive support" is a logged error (no support mailbox constant exists); owners get the in-app + email notice | Wire to the support address when ops confirm one |
+| R64 | Classifications are stored as their display names ("Category II", "Category II — LVF") rather than codes | Pre-fill compares with `funds.category` text directly (H12, E11) |
+| R65 | Draft definitions are edited as one JSON document in Phase 1 (form-per-field builder deferred; Phase 2 "Describe in words" fills it) | Simplest editor that still validates everything on save |
+| R66 | Group 11 rows that need AI-read document facts (E129, E130, E135) and SEBI E55/E56 move to Phase 3 with the facts feature; H54/E103/E104/E105 test the dated IC list directly in Phase 1 | Facts do not exist until Phase 3 |
 
 ## 3. Assumptions (verify these)
 

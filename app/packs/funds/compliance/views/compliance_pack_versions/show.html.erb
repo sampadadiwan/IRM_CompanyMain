@@ -1,0 +1,46 @@
+<%# A pack version: checks in plain words, the JSON definition (drafts), test run (preview — nothing stored) and publish %>
+<% editable = policy(@version).update? %>
+<%= render FormCard.new(title: "#{@version.compliance_pack.name} · #{@version.label} · #{@version.published? ? 'Published' : 'Draft'}") do %>
+  <% if flash[:alert] %><div class="alert alert-danger"><%= flash[:alert] %></div><% end %>
+  <% if @version.locked && !editable %><div class="alert alert-secondary">Locked — CapHive pack</div><% end %>
+  <table class="table table-bordered align-middle" id="version_checks">
+    <thead><tr><th>Check</th><th>Kind</th><th>Applies to</th><th>Limit</th><th>Source</th></tr></thead>
+    <tbody>
+      <% @version.checks.each do |c| %>
+        <tr id="check_<%= c['key'] %>">
+          <td><%= c["name"] || c["key"] %></td>
+          <td><%= c["kind"].to_s.humanize %><%= " · not overridable" if c["override"] == "none" %></td>
+          <td><%= c["applies_to"] == "all" || c["applies_to"].nil? ? "all" : Array(c["applies_to"]).join(", ") %></td>
+          <td><%= c.dig("limit", "value") ? ComplianceFormat.limit(c.dig("limit", "value"), c.dig("limit", "unit"), @version.currency) : (c.dig("limit", "expr") ? ComplianceDescriber.expr(@version, c.dig("limit", "expr")) : "—") %></td>
+          <td><%= c["citation"] %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <% if @preview %>
+    <h5>Test run (nothing stored)</h5>
+    <table class="table table-sm" id="preview_rows">
+      <% @preview.rows.each do |row| %>
+        <tr><td><%= row.name %></td><td><%= render "compliance_shared/outcome_badge", outcome: row.outcome %></td><td><%= row.message %></td></tr>
+      <% end %>
+    </table>
+  <% end %>
+  <% if editable %>
+    <%= form_with model: @version, url: compliance_pack_version_path(@version), method: :patch do |f| %>
+      <%= f.label :definition, "Definition (JSON)", class: "form-label" %>
+      <%= f.text_area :definition, value: JSON.pretty_generate(@version.definition_hash), rows: 12, class: "form-control font-monospace mb-2" %>
+      <%= f.submit "Save draft", class: "btn btn-outline-primary" %>
+    <% end %>
+    <%= form_with url: publish_compliance_pack_version_path(@version), scope: :compliance_pack_version, method: :patch, class: "row g-2 mt-3" do |f| %>
+      <div class="col-md-2"><%= f.label :effective_from, class: "form-label" %><%= f.date_field :effective_from, class: "form-control" %></div>
+      <% if @version.caphive? %>
+        <div class="col-md-2"><%= f.label :applicability, "Applies to", class: "form-label" %>
+          <%= f.select :applicability, [["All funds", "all"], ["New funds only", "new_funds"], ["All funds, with transition", "transition"]], {}, class: "form-select" %></div>
+        <div class="col-md-2"><%= f.label :transition_ends_on, class: "form-label" %><%= f.date_field :transition_ends_on, class: "form-control" %></div>
+        <div class="col-md-2"><%= f.label :counsel_reviewer, class: "form-label" %><%= f.text_field :counsel_reviewer, class: "form-control" %></div>
+        <div class="col-md-2"><%= f.label :counsel_reviewed_on, class: "form-label" %><%= f.date_field :counsel_reviewed_on, class: "form-control" %></div>
+      <% end %>
+      <div class="col-md-2 align-self-end"><%= f.submit "Publish", class: "btn btn-primary" %></div>
+    <% end %>
+  <% end %>
+<% end %>

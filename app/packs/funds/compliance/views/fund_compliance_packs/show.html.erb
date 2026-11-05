@@ -1,0 +1,56 @@
+<%# The fund's compliance dashboard: run health, version banners, latest result per check grouped by pack %>
+<% d = @dashboard %>
+<%= render FormCard.new(title: "#{d.fund.name} — Compliance") do %>
+  <% last = d.last_success %>
+  <div class="mb-2" id="run_health">
+    <% if last.nil? %>
+      <span class="badge bg-secondary-subtle text-secondary">No successful run yet</span>
+    <% elsif d.stale? %>
+      <span class="badge bg-warning-subtle text-warning">Last successful run <%= l(last.finished_at, format: :abbr_date_time) %> — results may be out of date</span>
+    <% else %>
+      <span class="badge bg-success-subtle text-success">Last successful run <%= l(last.finished_at, format: :abbr_date_time) %></span>
+    <% end %>
+    <% c = d.counts %>
+    <span class="ms-2"><%= c["breach"] %> breaches · <%= c["needs_review"] %> needs review · <%= c["could_not_check"] %> could not check · <%= c["pass"] %> pass</span>
+  </div>
+  <% d.unclassified.each do |fp| %>
+    <div class="alert alert-warning"><%= fp.pack_name %>: no classification — no checks run</div>
+  <% end %>
+  <% d.upcoming_versions.each do |fp, v| %>
+    <div class="alert alert-info" id="upcoming_<%= v.id %>">
+      <%= fp.pack_name %> <%= v.label %> coming into effect <%= l(v.effective_from) %> ·
+      <%= link_to "Preview", preview_fund_compliance_pack_path(fp, version_id: v.id) %>
+    </div>
+  <% end %>
+  <% if @preview %>
+    <div class="card mb-3" id="version_preview"><div class="card-body">
+      <h6>Under <%= @preview.version.label %> (preview — nothing is logged)</h6>
+      <% if @preview.not_applicable %>
+        <p>This version will not apply to this fund</p>
+      <% else %>
+        <% @preview.rows.each do |row| %>
+          <div><%= row.name %>: <%= row.message || row.outcome.humanize %> → <%= render "compliance_shared/outcome_badge", outcome: row.outcome %></div>
+        <% end %>
+      <% end %>
+    </div></div>
+  <% end %>
+  <% d.fund_packs.each do |fp| %>
+    <h6 class="mt-3"><%= fp.pack_name %> <%= fp.compliance_pack_version&.label %><%= " · #{fp.classification}" if fp.classification.present? %></h6>
+    <table class="table table-bordered align-middle">
+      <thead><tr><th>Check</th><th>Figure / working</th><th>Result</th></tr></thead>
+      <tbody>
+        <% (d.latest_results[fp.id] || []).each do |r| %>
+          <% w = r.working_hash %>
+          <tr id="result_<%= r.check_key %>">
+            <td><%= link_to(w["check_name"] || r.check_key, compliance_result_path(r)) %><%= tag.div(w["pending_override"], class: "text-muted small") if w["pending_override"] %></td>
+            <td><%= w["message"] || Array(w["lines"]).last %></td>
+            <td><%= render "compliance_shared/outcome_badge", outcome: r.outcome %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+  <% if policy(d.fund_packs.first || FundCompliancePack.new).run_now? && d.fund_packs.any? %>
+    <%= button_to "Run now", run_now_fund_compliance_pack_path(d.fund_packs.first), class: "btn btn-outline-primary" %>
+  <% end %>
+<% end %>

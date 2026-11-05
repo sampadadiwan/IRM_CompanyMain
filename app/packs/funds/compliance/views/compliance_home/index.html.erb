@@ -1,0 +1,36 @@
+<%# Compliance home: every visible fund, its packs and open items. Funds with no pack are "Not monitored" (E10). %>
+<%= render FormCard.new(title: "Compliance") do %>
+  <div class="alert alert-info d-flex align-items-start gap-2 mb-3">
+    <i class="ti ti-info-circle fs-5 mt-1"></i>
+    <div>Each fund is checked every night against the rule packs attached to it. A check that cannot be computed shows
+      <strong>Could not check</strong> — never a pass. Open the fund to see each result with its working.</div>
+  </div>
+  <div class="d-flex gap-2 mb-3">
+    <%= link_to "Register", compliance_register_items_path, class: "btn btn-outline-primary" %>
+    <%= link_to "Duties", compliance_duties_path, class: "btn btn-outline-primary" %>
+    <%= link_to "Setup", compliance_entity_setup_path, class: "btn btn-outline-primary" %>
+    <%= link_to "Packs", fund_compliance_packs_path, class: "btn btn-outline-primary" %>
+    <%= link_to "Rule library", compliance_packs_path, class: "btn btn-outline-primary" %>
+  </div>
+  <table class="table table-bordered align-middle" id="compliance_funds">
+    <thead><tr><th>Fund</th><th>Packs</th><th>Open items</th></tr></thead>
+    <tbody>
+      <% @funds.each do |fund| %>
+        <% fps = @fund_packs[fund.id] || [] %>
+        <tr id="fund_<%= fund.id %>">
+          <td><%= fund.name %></td>
+          <td>
+            <% if fps.empty? %>
+              <span class="badge bg-warning-subtle text-warning">Not monitored</span>
+            <% else %>
+              <% fps.each do |fp| %>
+                <%= link_to fp.to_s, fund_compliance_pack_path(fp), class: "me-2" %>
+              <% end %>
+            <% end %>
+          </td>
+          <td><%= @open_counts[fund.id] || 0 %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>

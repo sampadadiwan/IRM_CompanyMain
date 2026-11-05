@@ -1,0 +1,23 @@
+<%# Setup › Funds: which packs each fund carries, and attaching one (classification per pack) %>
+<%= render FormCard.new(title: "Packs per fund") do %>
+  <table class="table table-bordered align-middle" id="fund_pack_grid">
+    <thead><tr><th>Fund</th><% @packs.each do |p| %><th><%= p.name %></th><% end %></tr></thead>
+    <tbody>
+      <% @funds.each do |fund| %>
+        <tr id="grid_fund_<%= fund.id %>">
+          <td><%= fund.name %></td>
+          <% @packs.each do |p| %>
+            <% fp = (@fund_packs[fund.id] || []).detect { |x| x.compliance_pack_id == p.id } %>
+            <td><%= fp.nil? ? "—" : (fp.classification.presence || "⚠ choose") %><%= " (detached)" if fp && !fp.active? %></td>
+          <% end %>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <%= form_with url: fund_compliance_packs_path, scope: :fund_compliance_pack, method: :post, class: "row g-2 align-items-end", id: "attach_pack_form" do |f| %>
+    <div class="col-md-3"><%= f.label :fund_id, "Fund", class: "form-label" %><%= f.select :fund_id, @funds.map { |x| [x.name, x.id] }, {}, class: "form-select" %></div>
+    <div class="col-md-3"><%= f.label :compliance_pack_id, "Pack", class: "form-label" %><%= f.select :compliance_pack_id, @packs.select(&:attachable?).map { |x| [x.name, x.id] }, {}, class: "form-select" %></div>
+    <div class="col-md-3"><%= f.label :classification, "Classification (leave blank to use the fund's Category)", class: "form-label" %><%= f.text_field :classification, class: "form-control" %></div>
+    <div class="col-md-3"><%= f.submit "Attach pack", class: "btn btn-primary" %></div>
+  <% end %>
+<% end %>

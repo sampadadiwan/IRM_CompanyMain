@@ -1,0 +1,22 @@
+<%= render FormCard.new(title: "Compliance register") do %>
+  <div class="mb-2">
+    <% %w[open closed all].each do |s| %>
+      <%= link_to s.humanize, compliance_register_items_path(status: s), class: "btn btn-sm #{@status == s ? 'btn-primary' : 'btn-outline-primary'}" %>
+    <% end %>
+  </div>
+  <table class="table table-bordered align-middle" id="register_items">
+    <thead><tr><th>Fund</th><th>Pack</th><th>Check</th><th>Opened</th><th>Fix by</th><th>Status</th></tr></thead>
+    <tbody>
+      <% @items.each do |item| %>
+        <tr id="item_<%= item.id %>">
+          <td><%= item.fund.name %></td>
+          <td><%= item.fund_compliance_pack.pack_name %></td>
+          <td><%= link_to item.check_name, compliance_register_item_path(item) %></td>
+          <td><%= l(item.opened_on) %></td>
+          <td><%= item.fix_by ? l(item.fix_by) : "—" %><%= tag.span(" Overdue", class: "badge bg-danger-subtle text-danger") if item.overdue? %></td>
+          <td><%= item.closed? ? item.closed_label : item.status.humanize %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>

@@ -57,6 +57,7 @@ Rails.application.routes.draw do
   draw :core
   draw :ai
   draw :mobile
+  draw :compliance
 
   devise_for :users, controllers: {
     # We no longer allow users to register on their own

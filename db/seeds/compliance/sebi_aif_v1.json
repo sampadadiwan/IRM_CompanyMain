@@ -1,0 +1,79 @@
+{
+  "pack": {
+    "name": "SEBI — AIF",
+    "regime": "SEBI",
+    "locked": true,
+    "time_zone": "Asia/Kolkata"
+  },
+  "version": {
+    "effective_from": "2026-12-01",
+    "applicability": "all",
+    "counsel_reviewer": "TO BE RECORDED — figures pending counsel review (see proposal › Questions for counsel)"
+  },
+  "definition": {
+    "currency": "INR",
+    "period_basis": "fy_apr",
+    "classifications": ["Category I", "Category II", "Category III", "Category I — LVF", "Category II — LVF"],
+    "inputs": [
+      {"key": "sponsor", "type": "investor_group", "label": "Sponsor/manager"},
+      {"key": "employees", "type": "investor_group", "label": "Employees/directors", "optional": true},
+      {"key": "est_expenses", "type": "fund_figure", "label": "estimated expenses"},
+      {"key": "nav", "type": "fund_figure", "label": "NAV"}
+    ],
+    "measures": [
+      {"key": "corpus", "label": "Corpus", "op": "sum", "source": "commitments", "field": "amount"},
+      {"key": "est_expenses", "label": "Estimated expenses", "op": "input", "input": "est_expenses"},
+      {"key": "investable_funds", "label": "Investable funds", "op": "expr", "expr": ["-", "corpus", "est_expenses"]},
+      {"key": "nav", "label": "NAV", "op": "input", "input": "nav"},
+      {"key": "cost_per_investee", "label": "Investment cost per investee", "op": "sum", "source": "portfolio_investments", "field": "cost", "group_by": "investee", "filters": [["transaction", "eq", "buy"]]},
+      {"key": "sponsor_committed", "label": "Sponsor/manager commitment", "op": "sum", "source": "commitments", "field": "amount", "filters": [["investor_group", "in", "sponsor"]]},
+      {"key": "sponsor_paid", "label": "Sponsor/manager paid in", "op": "sum", "source": "payments", "field": "amount", "filters": [["investor_group", "in", "sponsor"]]},
+      {"key": "others_committed", "label": "Others committed", "op": "sum", "source": "commitments", "field": "amount", "filters": [["investor_group", "not_in", "sponsor"]]},
+      {"key": "others_paid", "label": "Others paid in", "op": "sum", "source": "payments", "field": "amount", "filters": [["investor_group", "not_in", "sponsor"]]},
+      {"key": "others_paid_share", "label": "Others' paid-in share", "unit": "pct", "op": "expr", "expr": ["/", "others_paid", "others_committed"]},
+      {"key": "required_interest_cat12", "label": "Required continuing interest", "op": "expr", "expr": ["min", ["*", 0.025, "corpus"], 50000000]},
+      {"key": "required_interest_cat3", "label": "Required continuing interest", "op": "expr", "expr": ["min", ["*", 0.05, "corpus"], 100000000]},
+      {"key": "commitment_per_investor", "label": "Commitment per investor", "op": "sum", "source": "commitments", "field": "amount", "group_by": "investor", "filters": [["investor_group", "not_in", "employees"], ["amount", "gt", 0]]},
+      {"key": "commitment_per_employee", "label": "Commitment per employee/director", "op": "sum", "source": "commitments", "field": "amount", "group_by": "investor", "filters": [["investor_group", "in", "employees"], ["amount", "gt", 0]]},
+      {"key": "investor_count", "label": "Investors in scheme", "unit": "count", "op": "count_distinct", "source": "commitments", "field": "investor", "filters": [["amount", "gt", 0]]}
+    ],
+    "checks": [
+      {"key": "sebi_concentration_cat12", "name": "Single-investee concentration", "kind": "limit", "applies_to": ["Category I", "Category II"],
+       "figure": ["/", "cost_per_investee", "investable_funds"], "compare": "lte", "limit": {"value": 25, "unit": "pct"},
+       "tested": "continuous", "override": "stricter_only", "time_to_fix_days": 30, "severity": "breach", "citation": "SEBI AIF Regulations, Reg 15(1)(c)"},
+      {"key": "sebi_concentration_lvf", "name": "Single-investee concentration (Large Value Fund)", "kind": "limit", "applies_to": ["Category I — LVF", "Category II — LVF"],
+       "figure": ["/", "cost_per_investee", "investable_funds"], "compare": "lte", "limit": {"value": 50, "unit": "pct"},
+       "tested": "continuous", "override": "stricter_only", "time_to_fix_days": 30, "severity": "breach", "citation": "SEBI Master Circular for AIFs (Large Value Funds)"},
+      {"key": "sebi_concentration_cat3", "name": "Single-investee concentration (Category III)", "kind": "limit", "applies_to": ["Category III"],
+       "figure": ["/", "cost_per_investee", "nav"], "compare": "lte", "limit": {"value": 10, "unit": "pct"},
+       "tested": "continuous", "override": "stricter_only", "time_to_fix_days": 30, "severity": "breach", "citation": "SEBI AIF Regulations, Reg 15 (Category III, NAV source pending)"},
+      {"key": "sebi_ci_amount_cat12", "name": "Continuing interest — amount", "kind": "limit", "applies_to": ["Category I", "Category II", "Category I — LVF", "Category II — LVF"],
+       "figure": "sponsor_committed", "compare": "gte", "limit": {"expr": "required_interest_cat12", "unit": "amount"},
+       "tested": "continuous", "override": "stricter_only", "time_to_fix_days": 30, "severity": "breach", "citation": "SEBI AIF Regulations, Reg 10(d)"},
+      {"key": "sebi_ci_amount_cat3", "name": "Continuing interest — amount", "kind": "limit", "applies_to": ["Category III"],
+       "figure": "sponsor_committed", "compare": "gte", "limit": {"expr": "required_interest_cat3", "unit": "amount"},
+       "tested": "continuous", "override": "stricter_only", "time_to_fix_days": 30, "severity": "breach", "citation": "SEBI AIF Regulations, Reg 10(d)"},
+      {"key": "sebi_ci_prorata_cat12", "name": "Continuing interest — pro-rata", "kind": "limit", "applies_to": ["Category I", "Category II", "Category I — LVF", "Category II — LVF"],
+       "figure": "sponsor_paid", "compare": "gte", "limit": {"expr": ["*", "required_interest_cat12", "others_paid_share"], "unit": "amount"},
+       "tested": "continuous", "override": "stricter_only", "time_to_fix_days": 30, "severity": "breach", "citation": "SEBI Master Circular for AIFs, para 17.6.1 (CapHive's reading — counsel to confirm)"},
+      {"key": "sebi_ci_prorata_cat3", "name": "Continuing interest — pro-rata", "kind": "limit", "applies_to": ["Category III"],
+       "figure": "sponsor_paid", "compare": "gte", "limit": {"expr": ["*", "required_interest_cat3", "others_paid_share"], "unit": "amount"},
+       "tested": "continuous", "override": "stricter_only", "time_to_fix_days": 30, "severity": "breach", "citation": "SEBI Master Circular for AIFs, para 17.6.1 (CapHive's reading — counsel to confirm)"},
+      {"key": "sebi_min_investment", "name": "Minimum investment per investor", "kind": "limit", "applies_to": "all",
+       "figure": "commitment_per_investor", "each": true, "compare": "gte", "limit": {"value": 10000000, "unit": "amount"},
+       "tested": "continuous", "override": "stricter_only", "time_to_fix_days": 30, "severity": "breach", "citation": "SEBI AIF Regulations, Reg 10(c)"},
+      {"key": "sebi_min_investment_employees", "name": "Minimum investment — employees/directors", "kind": "limit", "applies_to": "all",
+       "figure": "commitment_per_employee", "each": true, "compare": "gte", "limit": {"value": 2500000, "unit": "amount"},
+       "tested": "continuous", "override": "stricter_only", "time_to_fix_days": 30, "severity": "breach", "citation": "SEBI AIF Regulations, Reg 10(c) proviso"},
+      {"key": "sebi_investor_count", "name": "Investors in scheme", "kind": "limit", "applies_to": "all",
+       "figure": "investor_count", "compare": "lte", "limit": {"value": 1000, "unit": "count"},
+       "tested": "continuous", "override": "none", "time_to_fix_days": 30, "severity": "breach", "citation": "SEBI AIF Regulations, Reg 10(f)"}
+    ],
+    "duties": [
+      {"key": "sebi_investor_group_dd", "name": "Investor group ≥ 50% — enhanced due diligence (manual until Phase 3)", "trigger": {"on_demand": true}, "evidence": true, "applies_to": "all"},
+      {"key": "sebi_new_investor_dd", "name": "Due diligence for a new investor (related parties, land-border countries)", "trigger": {"event": "new_investor", "from": "2026-11-01"}, "due": {"days_after": "event", "n": 15}, "evidence": true, "applies_to": "all"},
+      {"key": "sebi_quarterly_report", "name": "Quarterly SEBI report filed", "trigger": {"schedule": "quarterly"}, "due": {"days_after": "period_end", "n": 15}, "evidence": true, "link": "sebi_report", "applies_to": "all"},
+      {"key": "sebi_ctr_ppm_audit", "name": "Annual compliance test report / PPM audit", "trigger": {"schedule": "yearly"}, "due": {"days_after": "period_end", "n": 30}, "evidence": true, "applies_to": "all"}
+    ]
+  }
+}

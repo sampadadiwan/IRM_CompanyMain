@@ -1,0 +1,18 @@
+<%= render FormCard.new(title: @pack.name) do %>
+  <p><%= @pack.caphive? ? "CapHive pack" : "Entity pack" %><%= " · Locked — CapHive pack" if @pack.locked %>
+    <%= " · Retired #{l(@pack.retired_on)}" if @pack.retired_on %></p>
+  <table class="table table-bordered align-middle" id="pack_versions">
+    <thead><tr><th>Version</th><th>Status</th><th>Effective</th><th>Applies to</th><th>Checks</th></tr></thead>
+    <tbody>
+      <% @versions.each do |v| %>
+        <tr id="version_<%= v.id %>">
+          <td><%= link_to v.label, compliance_pack_version_path(v) %></td>
+          <td><%= v.published? ? "Published #{v.label}" : "Draft" %></td>
+          <td><%= v.effective_from ? l(v.effective_from) : "—" %></td>
+          <td><%= { "all" => "All funds", "new_funds" => "New funds only", "transition" => "All funds, with transition" }[v.applicability] %></td>
+          <td><%= v.checks.size %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>

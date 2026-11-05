@@ -1,0 +1,81 @@
+# ② Applies a setup form: group mappings, document mappings, per-fund figures, dated reference lists,
+# owner, time zone and the monitoring switch (blocked while an input is missing — X15).
+# Every change is audited on the setup (Setup › History — H56, R3).
+class ComplianceSetupUpdate
+  Result = Struct.new(:error, :notice, keyword_init: true) do
+    def success?
+      error.nil?
+    end
+  end
+
+  def self.call(setup:, params:, user:)
+    new(setup, params, user).call
+  end
+
+  def initialize(setup, params, user)
+    @setup = setup
+    @params = params
+    @user = user
+  end
+
+  def call
+    apply_mappings
+    apply_fund_figures
+    apply_reference_lists
+    @setup.owner_id = @params[:owner_id] if @params.key?(:owner_id)
+    @setup.time_zone = @params[:time_zone] if @params[:time_zone].present?
+    notice = toggle_monitoring
+    return Result.new(error: @blocked) if @blocked
+    return Result.new(error: @setup.errors.full_messages.to_sentence) unless @setup.save
+
+    Result.new(notice: notice || "Setup saved")
+  end
+
+  private
+
+  # {"sponsor" => "Sponsor, Promoter"} or {"ic_note" => {"tag" => "IC Note"}}
+  def apply_mappings
+    (@params[:mappings] || {}).each do |key, value|
+      value = value.to_h if value.respond_to?(:to_h) && !value.is_a?(String)
+      mapping = value.is_a?(Hash) ? value.slice("tag", "name") : { "categories" => value.to_s.split(",").map(&:strip).compact_blank }
+      @setup.set_mapping(key, mapping)
+    end
+  end
+
+  # {"est_expenses" => {"<fund_id>" => "300000000"}} — only funds of the firm
+  def apply_fund_figures
+    (@params[:fund_figures] || {}).each do |key, per_fund|
+      per_fund.to_h.each do |fund_id, value|
+        fund = Fund.find_by(id: fund_id, entity_id: @setup.entity_id)
+        @setup.set_fund_figure(key, fund, value) if fund
+      end
+    end
+  end
+
+  # {"ic_members" => {"quorum" => "3", "entries" => [{"name","valid_from","valid_to"}]}}
+  def apply_reference_lists
+    (@params[:reference_lists] || {}).each do |key, list|
+      list = list.to_h
+      entries = Array(list["entries"].is_a?(Hash) ? list["entries"].values : list["entries"]).map(&:to_h).select { |e| e["name"].present? }
+      @setup.set_reference_list(key, entries:, quorum: list["quorum"])
+    end
+  end
+
+  def toggle_monitoring
+    return nil unless @params.key?(:monitoring_enabled)
+
+    on = ActiveModel::Type::Boolean.new.cast(@params[:monitoring_enabled])
+    if on && !@setup.monitoring_enabled
+      @setup.save! if @setup.changed?
+      missing = ComplianceInputs.missing_labels(@setup.entity)
+      if missing.any?
+        @blocked = "#{missing.size} input#{'s' if missing.size != 1} missing — #{missing.join(', ')}"
+        return nil
+      end
+      @setup.owner_id ||= @user.id
+      @setup.monitoring_since = Time.zone.today
+    end
+    @setup.monitoring_enabled = on
+    on ? "Monitoring on — first run tonight" : "Monitoring off"
+  end
+end
