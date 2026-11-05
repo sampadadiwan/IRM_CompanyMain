@@ -1,0 +1,113 @@
+# Fund Compliance Monitoring — Decisions and Assumptions
+
+> **Why this file exists:** the user asked (2026-11-05) to proceed without them — "make
+> recommendations and move on, but document them". Every choice made on their behalf is listed
+> here so it can be reviewed and overturned in one place. Nothing here is a counsel opinion.
+
+---
+
+## How to read this
+
+- **Decided by the user** — confirmed in conversation.
+- **Recommended and applied** — chosen by Claude, applied to the docs; review and overturn freely.
+- **Assumption** — something believed true but not verified; listed with how to check it.
+- **For counsel** — regulatory facts that must be confirmed before a pack is published.
+
+```mermaid
+flowchart LR
+    U["Decided by the user"] --> D["Docs"]
+    R["Recommended and applied<br/>(review these)"] --> D
+    A["Assumptions<br/>(verify these)"] --> D
+    C["For counsel<br/>(before publishing a pack)"] -.-> P["SEBI / IFSCA pack content"]
+```
+
+---
+
+## 1. Decided by the user
+
+| # | Decision |
+|---|---|
+| U1 | Compliance module is generic across funds; JEV is not part of it |
+| U2 | SEBI first, but extendable to SEC / IFSCA / others without code changes |
+| U3 | Several packs per fund (e.g. SEBI + fund agreement; IFSCA for GIFT City funds) |
+| U4 | Users can describe rules in words; AI drafts the check |
+| U5 | Funds' own internal rules (fund agreement) are supported as entity packs |
+| U6 | IC note per portfolio investment is a compliance check; wet-ink signatures count |
+| U7 | AI checks on document contents are included |
+| U8 | CapHive regulator packs are locked; versions apply by rule (all / new funds only / transition) |
+| U9 | All 27 changes-over-time items applied with Claude's defaults, filtered for simplicity |
+| U10 | Proposals and docs use bullets and diagrams; designs always include security and architecture-pattern sections |
+
+## 2. Recommended and applied (review these)
+
+| # | Recommendation | Why |
+|---|---|---|
+| R1 | Checks are structured fields (figure, grouping, limit), not fund-formula code | Readable sign-off by counsel; validated on save; no stored code runs nightly |
+| R2 | AI only drafts checks and reads document facts; never decides pass/fail; nightly runs never call AI | Same data → same result; auditability |
+| R3 | AI-read facts count only once a person confirms them | A misread can cause a false breach but never a false pass |
+| R4 | One register item per check per fund per breach episode | Avoids a new item every night |
+| R5 | "Could not check" / "Not monitored" are never shown as pass | Silent-pass is the main risk (same class as the Ransack ignore-unknown issue) |
+| R6 | Maker–checker on explanations, overrides, disabling, detaching, early adoption, classification changes; approver = any Compliance approver or company admin ≠ requester | Stops someone silencing their own breach |
+| R7 | Single-eligible-user entity may self-approve, labelled "Self-approved — single approver" | Small GPs would otherwise be blocked |
+| R8 | IC note check covers buy transactions only (filter, changeable) | Most fund agreements require IC approval for investments; exits vary |
+| R9 | Due rules count calendar days in v1 | Business days need a holiday calendar |
+| R10 | No "confirmer ≠ uploader" setting in v1 | Simplicity; add if a customer asks |
+| R11 | Unconfirmed AI facts show their age in the digest; no separate escalation | Simplicity |
+| R12 | Duties without an owner go to the compliance owner | Usability — setup is never blocked |
+| R13 | Monthly AI document-reading cap default 200 per entity | Cost control; CapHive can change per entity |
+| R14 | Percentages compared as displayed, rounded to 2 decimals (25.0037% passes ≤ 25%) | Matches what users see; counsel may prefer exact |
+| R15 | Results "out of date" after 26 hours (25 h is current) | One nightly run plus slack |
+| R16 | Override equal to the pack limit is refused ("Same as the pack's limit") | It would change nothing |
+| R17 | Transition-period warnings open no register items; an item opens when it becomes a Breach | Keeps the register to real breaches |
+| R18 | Grandfathered funds keep the old version's duties only | Consistent with staying on the old version |
+| R19 | "New funds only" applicability date defaults to the effective date | Most common case |
+| R20 | Missing fund start date where needed → "Could not check" | Never guess grandfathering |
+| R21 | Effective dates use the regime's time zone (IST for SEBI/IFSCA); runs at 02:00 entity time | Law changes on Indian dates |
+| R22 | Delivery in four phases: (1) limits + document-exists + register + SEBI pack, (2) AI drafting, (3) AI document reading, (4) IFSCA pack | Phase 1 useful with no AI |
+| R23 | SEBI check 7 (investor groups ≥ 50%) is a manual duty until Phase 3 | Needs AI-read ownership facts |
+| R24 | Large Value Fund is a SEBI classification, not an override | Overrides on locked packs may only tighten |
+| R25 | No re-running past dates; past results never rewritten | Past record states are not reliably reconstructable |
+| R26 | Results, register and history never auto-deleted in v1 | Retention period pending counsel |
+| R27 | Event-duty example: due diligence due 15 days after a new investor | Illustrative; each pack sets its own |
+| R28 | Reference-list from/to dates are inclusive on both ends | A member counts on their first and last day |
+| R29 | Correction versions are numbered like "v2.1" and may share the faulty version's effective date | The only exception to "effective date after the previous version's" |
+| R30 | A version published on its effective date before that day's 02:00 run applies the same day and is not flagged "Published late" | It made the first run that could use it |
+| R31 | A pack attached on a period-end day gets its first duty for the period ending that day | That period has not finished yet |
+| R32 | Re-running a past date or deleting a stored result by direct request is refused | Results are append-only (R25, R26) |
+| R33 | Existing-code changes approved on the user's behalf: append `compliance_edit` / `compliance_approve` to `UserEnabled`; add a Compliance item to the company menu partial; register an hourly `ComplianceScheduleJob` in `config/initializers/sidekiq.rb` | Smallest touch on existing code; additive only |
+| R34 | Reuse the existing `enable_compliance` flag as the feature gate (it already gates AI Rules) | One switch for "compliance features"; no new flag |
+| R35 | Wet-ink sign-off lives in a new `document_signoffs` table, not new columns on `documents` | `Document` (and other core models) stay unchanged — memory: ask before changing existing models |
+| R36 | "Compliance owner" is a new `compliance_entity_setups.owner_id`; digest recipients are users with the existing `Compliance` notification tag | Needed by R12/R13; reuses existing tagging |
+| R37 | Draft-pack test runs are preview mode — computed and shown, never stored | Simplicity; no test-run rows |
+| R38 | "AI unavailable" means the entity's AI-drafting switch is off; provider errors/timeouts are a separate case | `LlmService` falls back to CapHive keys, so a missing key never makes AI unavailable |
+| R39 | Implementation proceeds without a separate design sign-off | User instructed (2026-11-05): "start executing … dont stop till done" |
+| R40 | Phase-4 rows living in Phase-1 feature files are tagged `@phase4`; Phase 1 runs `--tags 'not @phase4'` | Each phase green on its own |
+| R41 | Compliance figures stored as `decimal(20,4)` in major units (sources' `_cents` ÷ 100 in the query) | Ratios and derived amounts, not ledger money |
+| R42 | "Latest result per check" = highest `id` | Monotonic; avoids clock ties |
+| R43 | One open register item per check enforced by a unique `open_key` ("1" open, NULL closed); scheduled duties store `''`/`0` subjects so their unique key holds | Database-level guarantee against duplicates on re-runs |
+| R44 | One cron (`5 * * * *`) picks entities whose local hour is 02 (runs) or 08 (digest) | Per-entity time zones with a single schedule entry |
+| R45 | Pack content in `db/seeds/compliance/*.json`, loaded by `rake compliance:load_pack[path]` (dry-run; `EXECUTE=1` applies) | Ops-as-rake-task convention; packs as reviewable data |
+| R46 | SEBI check 7 becomes a content check in Phase 3 via SEBI v1.1 (applies to all funds) | Uses the versioning mechanism itself |
+| R47 | Message wording aligned to business-rules.md (e.g. "Locked pack: overrides can only tighten this limit", "Upload the evidence", "In transition until <date>") | Tests assert these strings |
+| R48 | Cucumber runs on this branch use plain cucumber with TEST_ENV_NUMBER 41201–41204, never pcuc | Other sessions run pcuc on workers 1–4 concurrently |
+
+## 3. Assumptions (verify these)
+
+| # | Assumption | How to check |
+|---|---|---|
+| A1 | One CapHive fund = one SEBI scheme for all customers | Ask product / sample customers; counsel Q2 |
+| A2 | A CapHive demo entity exists (or can be created) for test-running draft packs | Check with ops |
+| A3 | Company admins should get all compliance roles by default | Product |
+| A4 | "Investable funds" = corpus less estimated expenses, entered once per fund | Counsel Q4; compare with the SEBI report's corpus definition |
+| A5 | Category III NAV is available from existing fund ratios / valuations | Design confirms the source |
+| A6 | Entities' configured AI provider is acceptable for KYC / IC documents | Data-protection review |
+| A7 | Investor categories are free text per entity, so inputs must be mapped | Verified in code (`Investor.INVESTOR_CATEGORIES` per entity) |
+| A8 | Pricing / billing unchanged | Product |
+| A9 | Customers sign IC notes in wet ink or via CapHive e-sign only | Customer interviews |
+| A10 | Category III NAV source (FundRatio vs valuations) — unresolved; check 2 shows "Could not check — missing: NAV" until settled | Design risk list |
+
+## 4. For counsel (before any pack is published)
+
+See proposal › Questions for counsel: when each limit is tested; fund vs scheme; continuing-interest
+pro-rata reading; investable funds; Large Value Fund; Category III NAV; IFSCA figures after the
+Dec 2024 amendments; investor-count definition; record retention; citations for every check.
