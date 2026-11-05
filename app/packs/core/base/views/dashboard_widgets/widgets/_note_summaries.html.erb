@@ -4,7 +4,10 @@
   owner_id    = owner.is_a?(Investor) ? owner.id : nil
   frame_id    = "note_summaries_widget_#{entity_id}_#{owner_id}"
 
-  sa = SupportAgent.find_by(agent_type: "NoteSummarizerAgent", entity_id: entity_id)
+  # Reuse the already-loaded current entity when the widget is for it; only another entity needs a lookup
+  widget_entity = entity_id.to_i == current_user&.entity_id ? current_user.entity : Entity.find_by(id: entity_id)
+  # The entity's support_agents flag decides whether the summariser is enabled
+  summarizer_enabled = widget_entity&.support_agents&.set?(:note_summarization_agent)
 %>
 
 <%= render(
@@ -15,9 +18,9 @@
       )
     ) do %>
 
-  <% if sa.nil? %>
+  <% unless summarizer_enabled %>
     <div class="alert alert-secondary m-3">
-      <i class="ti ti-info-circle"></i> No Note Summarizer agent configured for this entity.
+      <i class="ti ti-info-circle"></i> Note Summarisation Agent is not enabled for this entity.
     </div>
   <% else %>
     <%# Load note summaries asynchronously so the dashboard doesn't block on DB queries %>

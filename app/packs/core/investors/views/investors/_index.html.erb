@@ -102,23 +102,24 @@
               <i class="ti ti-file-analytics"></i> AI Portfolio Reports
             <% end %>
           <% end %>
-          <% if SupportAgent.find_by(entity_id: current_user.entity_id, agent_type: "PortfolioCompanyAgent") %>
+          <%# Agent dashboards are gated on the entity's support_agents flags (enabled agents), not on SupportAgent rows %>
+          <% if current_user.entity.support_agents.set?(:portfolio_company_agent) %>
             <%= link_to portfolio_company_dashboard_path,
                         class: "dropdown-item d-flex align-items-center",
                         data: { turbo: false } do %>
               <i class="ti ti-dashboard"></i> Portfolio Company Agent Dashboard
             <% end %>
           <% end %>
-          <%# Scoring dashboard — only shown when the entity has a scoring agent set up %>
-          <% if SupportAgent.find_by(entity_id: current_user.entity_id, agent_type: "PortfolioScoringAgent") %>
+          <%# Scoring dashboard — only shown when the scoring agent is enabled for the entity %>
+          <% if current_user.entity.support_agents.set?(:portfolio_scoring_agent) %>
             <%= link_to portfolio_scoring_dashboard_path,
                         class: "dropdown-item d-flex align-items-center",
                         data: { turbo: false } do %>
               <i class="ti ti-award"></i> Portfolio Scoring Dashboard
             <% end %>
           <% end %>
-          <%# Presentation analyst dashboard — only shown when the entity has that agent set up %>
-          <% if SupportAgent.find_by(entity_id: current_user.entity_id, agent_type: "PresentationAnalystAgent") %>
+          <%# Presentation analyst dashboard — only shown when that agent is enabled for the entity %>
+          <% if current_user.entity.support_agents.set?(:presentation_analyst_agent) %>
             <%= link_to presentation_analyst_dashboard_path,
                         class: "dropdown-item d-flex align-items-center",
                         data: { turbo: false } do %>

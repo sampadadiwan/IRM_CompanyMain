@@ -240,10 +240,13 @@ class Document < ApplicationRecord
   def trigger_side_letter_extraction
     return unless owner_type == "CapitalCommitment" && !template
 
+    # Feature is dark for the tenant — don't extract obligations nobody can see.
+    # The flag is a bitmask read, so tenants without the agent never query support_agents.
+    return unless entity&.support_agents&.set?(:side_letter_obligation_agent)
+
+    # The record is still needed for its settings (auto-extract switch, document label)
     agent = SupportAgent.enabled.where(entity_id: entity_id, agent_type: "SideLetterObligationAgent").last
     return if agent.nil?
-    # Feature is dark for the tenant — don't extract obligations nobody can see.
-    return unless agent.entity_flag_enabled?
     return unless (agent.json_fields || {})["auto_extract_on_upload"].to_s.casecmp("yes").zero?
     # Matches the configured name label, or a "Side Letter"/"SideLetter" tag in any casing.
     return unless SideLetterObligationAgent.side_letter_document?(self, SideLetterObligationAgent.doc_label(agent))
