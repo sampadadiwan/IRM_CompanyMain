@@ -190,3 +190,49 @@ Feature: Compliance — tenant isolation and maker–checker
     When I request deletion of the latest Growth Fund I result
     Then the compliance request is denied
     And the latest Growth Fund I result still exists
+
+  # E64 — Edge case: Delta has checks; when Horizon drafts, only Horizon and CapHive examples are sent to the AI
+  @security @rack_test
+  Scenario: E64 Own-entity examples
+    Given Delta Partners has an entity pack with a check "Delta secret house limit"
+    And Describe in words is on for Horizon
+    And Meera has a draft v2 of the fund agreement pack
+    And the compliance AI replies with:
+      """
+      {"kind": "limit", "name": "Single LP limit (AI)", "figure": {"op": "sum", "source": "commitments", "field": "amount", "group_by": "investor"},
+       "divided_by": {"measure": "corpus"}, "compare": "lte", "limit_value": 20, "limit_unit": "pct"}
+      """
+    And I am signed in to compliance as "Meera"
+    When I send a draft request for the fund agreement draft
+    Then the AI prompt does not mention "Delta secret house limit"
+    And the AI prompt mentions "Single-sector limit"
+    And the examples sent come only from Horizon and CapHive packs
+
+  # E65 — Edge case: a draft request sends no investor names, amounts or documents
+  @security @rack_test
+  Scenario: E65 No investor data
+    Given Describe in words is on for Horizon
+    And Meera has a draft v2 of the fund agreement pack
+    And "Horizon Growth Fund I" invested in "Orbit Health" on "2026-11-02" with an IC note e-signed on "2026-11-01"
+    And the compliance AI replies with:
+      """
+      {"kind": "limit", "name": "Single LP limit (AI)", "figure": {"op": "sum", "source": "commitments", "field": "amount", "group_by": "investor"},
+       "divided_by": {"measure": "corpus"}, "compare": "lte", "limit_value": 20, "limit_unit": "pct"}
+      """
+    And I am signed in to compliance as "Meera"
+    When I send a draft request for the fund agreement draft
+    Then the AI prompt carries no investor names, amounts or documents
+
+  # X43 — Error case: Vikram (viewer) sends a direct draft request — refused, nothing drafted
+  @security @rack_test
+  Scenario: X43 Viewer drafts
+    Given Describe in words is on for Horizon
+    And Meera has a draft v2 of the fund agreement pack
+    And the compliance AI replies with:
+      """
+      {"kind": "limit", "name": "x"}
+      """
+    And I am signed in to compliance as "Vikram"
+    When I send a draft request for the fund agreement draft
+    Then the compliance request is denied
+    And no draft check was created

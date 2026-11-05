@@ -24,7 +24,7 @@ class ComplianceSetupUpdate
     apply_reference_lists
     @setup.owner_id = @params[:owner_id] if @params.key?(:owner_id)
     @setup.time_zone = @params[:time_zone] if @params[:time_zone].present?
-    notice = toggle_monitoring
+    notice = toggle_ai_drafting || toggle_monitoring
     return Result.new(error: @blocked) if @blocked
     return Result.new(error: @setup.errors.full_messages.to_sentence) unless @setup.save
 
@@ -59,6 +59,15 @@ class ComplianceSetupUpdate
       entries = Array(list["entries"].is_a?(Hash) ? list["entries"].values : list["entries"]).map(&:to_h).select { |e| e["name"].present? }
       @setup.set_reference_list(key, entries:, quorum: list["quorum"])
     end
+  end
+
+  # X41: the entity's AI-drafting switch for "Describe in words" (ai_settings["drafting"])
+  def toggle_ai_drafting
+    return nil unless @params.key?(:ai_drafting)
+
+    on = ActiveModel::Type::Boolean.new.cast(@params[:ai_drafting])
+    @setup.ai_settings = @setup.ai_settings_hash.merge("drafting" => on)
+    on ? "Describe in words on" : "Describe in words off"
   end
 
   def toggle_monitoring

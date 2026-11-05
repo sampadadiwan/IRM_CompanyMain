@@ -77,12 +77,12 @@
 
 ## 2. Phase 2 — Describe in words (AI drafting)
 
-- [ ] 2.1 Migration for `compliance_check_drafts`; schema files per the standing rule; verify `db:schema:load` in test.
-- [ ] 2.2 `ComplianceCheckDraft` model + `ComplianceCheckDrafter` (`app/packs/ai/compliance`) using `LlmService.ruby_llm_chat(entity:)` with `with_schema`; prompt sends sentence as quoted data, catalogue field list, entity input names, few-shot from the entity's own checks only; output validated by `ComplianceDefinitionValidator`; unmappable → manual duty; ambiguous → "Assumed" line; verify with a stubbed `LlmService` in runner.
-- [ ] 2.3 `ComplianceCheckDraftJob`; drafting switch in `ai_settings` (off → "Describe in words is unavailable — use the form"); provider error/timeout → "Drafting failed — try again or use the form"; verify both paths via runner with stubs.
-- [ ] 2.4 `ComplianceCheckDraftPolicy`, routes, `ComplianceCheckDraftsController` (create/update/test/save; Save only when tested since last edit; provenance on save) and the Describe-in-words modal (existing modal styling); verify in the dev app with a stub.
-- [ ] 2.5 Write `features/compliance/ai_check_drafting.feature` — H37–H39; E57–E63; X39–X42 (LlmService stubbed); extend `features/security/compliance_tenant_isolation.feature` — E64–E65; X43.
-- [ ] 2.6 Phase 2 review (card ⑧ drafting, Security item 8 AI rules, brakeman/rubocop/packwerk), then run the Phase 2 features plus `features/compliance/rule_library.feature` as a regression with the launch rules above until green; commit Phase 2 as its own commit.
+- [x] 2.1 Migration for `compliance_check_drafts`; schema files per the standing rule; verify `db:schema:load` in test. — *hand-inserted into both schema files (R49); test DB rebuilt by maintain_test_schema*
+- [x] 2.2 `ComplianceCheckDraft` model + `ComplianceCheckDrafter` (`app/packs/ai/compliance`) using `LlmService.ruby_llm_chat(entity:)` with `with_schema`; prompt sends sentence as quoted data, catalogue field list, entity input names, few-shot from the entity's own checks only; output validated by `ComplianceDefinitionValidator`; unmappable → manual duty; ambiguous → "Assumed" line; verify with a stubbed `LlmService` in runner. — *lives in `app/packs/funds/compliance` (R69); flat draft shape (R70); verified through the stubbed features*
+- [x] 2.3 `ComplianceCheckDraftJob`; drafting switch in `ai_settings` (off → "Describe in words is unavailable — use the form"); provider error/timeout → "Drafting failed — try again or use the form"; verify both paths via runner with stubs.
+- [x] 2.4 `ComplianceCheckDraftPolicy`, routes, `ComplianceCheckDraftsController` (create/update/test/save; Save only when tested since last edit; provenance on save) and the Describe-in-words modal (existing modal styling); verify in the dev app with a stub. — *done; exercised through rack_test in the features, not in the dev app (shared dev DB not migrated, R49); draft review is a page opened from the modal (R78)*
+- [x] 2.5 Write `features/compliance/ai_check_drafting.feature` — H37–H39; E57–E63; X39–X42 (LlmService stubbed); extend `features/security/compliance_tenant_isolation.feature` — E64–E65; X43.
+- [x] 2.6 Phase 2 review (card ⑧ drafting, Security item 8 AI rules, brakeman/rubocop/packwerk), then run the Phase 2 features plus `features/compliance/rule_library.feature` as a regression with the launch rules above until green; commit Phase 2 as its own commit.
 
 ## 3. Phase 3 — Document-content checks (AI reading)
 

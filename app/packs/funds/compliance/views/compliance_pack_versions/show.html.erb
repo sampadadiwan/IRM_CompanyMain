@@ -8,7 +8,8 @@
     <tbody>
       <% @version.checks.each do |c| %>
         <tr id="check_<%= c['key'] %>">
-          <td><%= c["name"] || c["key"] %></td>
+          <td><%= c["name"] || c["key"] %>
+            <%= render "compliance_check_drafts/provenance", entry: c %></td>
           <td><%= c["kind"].to_s.humanize %><%= " · not overridable" if c["override"] == "none" %></td>
           <td><%= c["applies_to"] == "all" || c["applies_to"].nil? ? "all" : Array(c["applies_to"]).join(", ") %></td>
           <td><%= c.dig("limit", "value") ? ComplianceFormat.limit(c.dig("limit", "value"), c.dig("limit", "unit"), @version.currency) : (c.dig("limit", "expr") ? ComplianceDescriber.expr(@version, c.dig("limit", "expr")) : "—") %></td>
@@ -17,6 +18,24 @@
       <% end %>
     </tbody>
   </table>
+  <% if @version.duties.any? %>
+    <table class="table table-bordered align-middle" id="version_duties">
+      <thead><tr><th>Duty</th><th>When</th><th>Evidence</th></tr></thead>
+      <tbody>
+        <% @version.duties.each do |d| %>
+          <tr id="duty_<%= d['key'] %>">
+            <td><%= d["name"] || d["key"] %><% if d["reason"].present? %><div class="text-muted small"><%= d["reason"] %></div><% end %>
+              <%= render "compliance_check_drafts/provenance", entry: d %></td>
+            <td><%= d.dig("trigger", "on_demand") ? "On demand" : (d.dig("trigger", "schedule") || d.dig("trigger", "event")).to_s.humanize %></td>
+            <td><%= d["evidence"] ? "Required" : "—" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+  <% if editable %>
+    <%= render "compliance_check_drafts/describe_modal", version: @version %>
+  <% end %>
   <% if @preview %>
     <h5>Test run (nothing stored)</h5>
     <table class="table table-sm" id="preview_rows">
@@ -31,7 +50,7 @@
       <%= f.text_area :definition, value: JSON.pretty_generate(@version.definition_hash), rows: 12, class: "form-control font-monospace mb-2" %>
       <%= f.submit "Save draft", class: "btn btn-outline-primary" %>
     <% end %>
-    <%= form_with url: publish_compliance_pack_version_path(@version), scope: :compliance_pack_version, method: :patch, class: "row g-2 mt-3" do |f| %>
+    <%= form_with model: @version, url: publish_compliance_pack_version_path(@version), scope: :compliance_pack_version, method: :patch, class: "row g-2 mt-3" do |f| %>
       <div class="col-md-2"><%= f.label :effective_from, class: "form-label" %><%= f.date_field :effective_from, class: "form-control" %></div>
       <% if @version.caphive? %>
         <div class="col-md-2"><%= f.label :applicability, "Applies to", class: "form-label" %>

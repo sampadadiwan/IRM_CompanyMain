@@ -10,6 +10,12 @@ scope :compliance do
       patch :publish
     end
   end
+  resources :compliance_check_drafts, path: "drafts", only: %i[create show update] do
+    member do
+      post :test_run
+      post :save_check
+    end
+  end
   resources :fund_compliance_packs, path: "fund_packs", only: %i[index create show] do
     member do
       post :run_now

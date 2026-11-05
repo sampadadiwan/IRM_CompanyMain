@@ -1,0 +1,8 @@
+<%# H38: provenance of an AI-drafted check or duty — "Drafted with AI from: '…' · confirmed by Meera, <date>" %>
+<% ai = entry["drafted_with_ai"] %>
+<% if ai.is_a?(Hash) %>
+  <div class="text-muted small ai-provenance">
+    <span class="badge bg-info-subtle text-info"><i class="ti ti-sparkles"></i> AI</span>
+    Drafted with AI from: '<%= ai["sentence"] %>' · confirmed by <%= ai["confirmed_by"] %>, <%= ai["confirmed_on"].present? ? l(Date.parse(ai["confirmed_on"])) : "—" %>
+  </div>
+<% end %>

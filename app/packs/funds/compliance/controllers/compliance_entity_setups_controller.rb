@@ -1,4 +1,5 @@
-# ② Setup: input mappings, per-fund figures, dated reference lists, owner, monitoring (H17, X15, X16, E14).
+# ② Setup: input mappings, per-fund figures, dated reference lists, owner, monitoring (H17, X15, X16, E14)
+# and the AI-drafting switch (X41).
 class ComplianceEntitySetupsController < ApplicationController
   before_action :set_setup
 
@@ -27,7 +28,7 @@ class ComplianceEntitySetupsController < ApplicationController
 
   # owner_id is checked same-firm by the model; entity_id is never permitted
   def setup_params
-    params.expect(compliance_entity_setup: [:owner_id, :monitoring_enabled, :time_zone,
+    params.expect(compliance_entity_setup: [:owner_id, :monitoring_enabled, :ai_drafting, :time_zone,
                                             { mappings: {}, fund_figures: {}, reference_lists: {} }])
   end
 end

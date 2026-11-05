@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_05_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_06_120000) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -1269,6 +1269,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_05_120000) do
     t.index ["exchange_rate_id"], name: "index_commitment_adjustments_on_exchange_rate_id"
     t.index ["fund_id"], name: "index_commitment_adjustments_on_fund_id"
     t.index ["owner_type", "owner_id"], name: "index_commitment_adjustments_on_owner"
+  end
+
+  create_table "compliance_check_drafts", force: :cascade do |t|
+    t.bigint "entity_id"
+    t.bigint "compliance_pack_version_id", null: false
+    t.bigint "user_id", null: false
+    t.text "sentence", null: false
+    t.json "sent_context"
+    t.json "draft"
+    t.json "test_result"
+    t.bigint "test_fund_id"
+    t.string "status", limit: 10, default: "drafting", null: false
+    t.string "failure_reason", limit: 120
+    t.string "saved_check_key", limit: 80
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["compliance_pack_version_id"], name: "index_compliance_check_drafts_on_compliance_pack_version_id"
+    t.index ["entity_id"], name: "index_compliance_check_drafts_on_entity_id"
+    t.index ["user_id"], name: "index_compliance_check_drafts_on_user_id"
   end
 
   create_table "compliance_duties", force: :cascade do |t|
@@ -5732,6 +5751,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_05_120000) do
   add_foreign_key "commitment_adjustments", "entities"
   add_foreign_key "commitment_adjustments", "exchange_rates"
   add_foreign_key "commitment_adjustments", "funds"
+  add_foreign_key "compliance_check_drafts", "compliance_pack_versions"
+  add_foreign_key "compliance_check_drafts", "entities"
+  add_foreign_key "compliance_check_drafts", "users"
   add_foreign_key "compliance_duties", "entities"
   add_foreign_key "compliance_duties", "fund_compliance_packs"
   add_foreign_key "compliance_entity_setups", "entities"
