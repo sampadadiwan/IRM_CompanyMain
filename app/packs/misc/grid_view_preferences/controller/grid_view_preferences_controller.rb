@@ -139,12 +139,12 @@ class GridViewPreferencesController < ApplicationController
       # Merge additional columns from the class into field_options but add a prefix to the keys and values
       @field_options = @field_options.merge(add_class::STANDARD_COLUMNS.transform_keys { |key| "#{add_relationship.humanize}.#{key}" }.transform_values { |value| "#{add_relationship}.#{value}" })
       # Merge the custom columns of the add_class
-      names = custom_names[add_class.to_s]
+      names = custom_names[add_class.to_s.downcase]
       @field_options = @field_options.merge(names.to_h { |name| ["#{add_relationship.humanize}.#{name.humanize}", "#{add_relationship}.custom_fields.#{name}"] }) if names
     end
 
     # Then the model's own custom fields
-    names = custom_names[model_class.to_s]
+    names = custom_names[model_class.to_s.downcase]
     @field_options = (@field_options.map { |name, value| [name, value] } + names.map { |name| [name.humanize, "custom_fields.#{name}"] }).to_h if names
 
     # Clean up the labels in field_options for display in the dropdown
@@ -160,20 +160,23 @@ class GridViewPreferencesController < ApplicationController
   #   - a class with no FormType is absent from the hash (the caller then adds nothing for it);
   #   - with duplicate FormTypes of one name, the lowest id wins, as find_by returned it;
   #   - fields come in the association's position order, minus "GridColumns" fields and fields
-  #     with no field_type (SQL's field_type != 'GridColumns' never matched NULL).
+  #     with no field_type (SQL's field_type != 'GridColumns' never matched NULL);
+  #   - names and field types compare case-insensitively, as the MySQL columns' _ci collation did.
   #
   # @param classes [Array<Class>]
-  # @return [Hash{String => Array<String>}] e.g. { "Investor" => ["pan", "risk_rating"] }
+  # @return [Hash{String => Array<String>}] keyed by the class name downcased, so callers look up
+  #   with model_class.to_s.downcase, e.g. { "investor" => ["pan", "risk_rating"] }
   def grid_custom_field_names(classes)
     form_types = FormType.where(entity_id: current_user.entity_id, name: classes.map(&:to_s))
                          .order(:id).includes(:form_custom_fields)
     form_types.each_with_object({}) do |form_type, names|
+      key = form_type.name.downcase
       # Keep the first (lowest id) form type per name
-      next if names.key?(form_type.name)
+      next if names.key?(key)
 
-      names[form_type.name] = form_type.form_custom_fields
-                                       .reject { |f| f.field_type.nil? || f.field_type == "GridColumns" }
-                                       .map { |f| f.name.to_s }
+      names[key] = form_type.form_custom_fields
+                            .reject { |f| f.field_type.nil? || f.field_type.casecmp?("GridColumns") }
+                            .map { |f| f.name.to_s }
     end
   end
 
