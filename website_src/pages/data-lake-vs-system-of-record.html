@@ -1,11 +1,11 @@
 ---
-title: "Your data lake is waiting on your operations | CapHive"
-description: Large funds buy a data lake to get one view of their data. But fund data is
-  small, it has to be loaded somewhere anyway, and a lake can't make the numbers right.
-  Why the system of record comes first, and how it feeds the lake you already have.
-og_title: "Your data lake is waiting on your operations"
-og_description: Fund data isn't big data. You have to load it somewhere, so load it where it
-  gets checked, computed and permissioned, and feed your lake from there.
+title: "Data lake or not, CapHive fits either way | CapHive"
+description: Some funds run a data lake, some would rather not take on the cost and
+  complexity. CapHive feeds a lake cleanly when you have one, and covers every need on its
+  own when you don't.
+og_title: "Data lake or not, CapHive fits either way"
+og_description: CapHive works alongside your data lake, or stands alone so you never need
+  one. Either way, your fund numbers are computed once and match what LPs were sent.
 data_page: resources
 og_type: article
 body_extra: |
@@ -13,8 +13,8 @@ body_extra: |
   {
     "@context": "https://schema.org",
     "@type": "BlogPosting",
-    "headline": "Your data lake is waiting on your operations",
-    "description": "Large funds buy a data lake to get one view of their data. But fund data is small, it has to be loaded somewhere anyway, and a lake can't make the numbers right. Why the system of record comes first, and how it feeds the lake you already have.",
+    "headline": "Data lake or not, CapHive fits either way",
+    "description": "Some funds run a data lake, some would rather not take on the cost and complexity. CapHive feeds a lake cleanly when you have one, and covers every need on its own when you don't.",
     "datePublished": "2026-11-05",
     "author": { "@type": "Organization", "name": "CapHive" },
     "publisher": { "@type": "Organization", "name": "CapHive" },
@@ -27,8 +27,6 @@ body_extra: |
 <style>
 /* page-local (kept out of caphive.css to avoid a cache-bust) */
 .split-table td{vertical-align:top}
-.split-table td ul{margin:0;padding-left:18px}
-.split-table td li{margin:0 0 6px;font-size:14.5px}
 .split-table th.ch{color:var(--orange)}
 .split-table figcaption{margin-top:12px;font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut)}
 </style>
@@ -40,20 +38,19 @@ body_extra: |
       <div class="hero-panel">
         <div class="article-measure">
           <nav class="crumbs" aria-label="Breadcrumb">
-            <a href="index.html">Home</a><span>/</span><a href="blog.html">Insights</a><span>/</span>Data lake or system of record
+            <a href="index.html">Home</a><span>/</span><a href="blog.html">Insights</a><span>/</span>Data lake or not
           </nav>
           <span class="chip-label">Data strategy</span>
-          <h1 style="margin-top:22px">Your data lake is waiting on <em>your operations.</em></h1>
+          <h1 style="margin-top:22px">Data lake or not. <em><span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> fits either way.</em></h1>
           <p class="lede">
-            Large funds buy a data lake to finally see all their data in one place. But fund data
-            is small, it has to be loaded somewhere anyway, and a lake can't make the numbers
-            right. Why the system of record comes first, and how it feeds the lake you may
-            already have.
+            Some funds run a data lake. Others would rather not take on the cost and complexity of
+            one. <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> feeds a lake
+            cleanly when you have one, and covers every need on its own when you don't.
           </p>
           <div class="article-meta">
             <time datetime="2026-11-05">Nov 5, 2026</time>
             <span class="dot">·</span>
-            <span>9 min read</span>
+            <span>4 min read</span>
             <span class="dot">·</span>
             <span>Data strategy</span>
           </div>
@@ -69,195 +66,58 @@ body_extra: |
         <div class="article-measure">
           <div class="prose">
 
-        <h2 id="why">Why large funds want a lake</h2>
+        <h2 id="why">Why funds look at a lake</h2>
         <p>
-          The pitch is familiar. Load the administrator files, the general ledger, the bank
-          statements, the CRM and the portfolio companies' KPI packs into Snowflake or Databricks,
-          put Power BI on top, and you will finally have one source of truth.
+          A large manager's data sits in many places: one or more administrators, a general
+          ledger, a CRM, portfolio company KPI packs, and a good number of spreadsheets. A data
+          lake such as Snowflake or Databricks promises to bring it together, keep it in the
+          firm's own hands, and let analysts work in SQL, notebooks and Power BI.
         </p>
         <p>
-          The reasons behind it are real, and it is worth being fair about them:
-        </p>
-        <ul>
-          <li><strong>Fragmentation.</strong> One or more administrators, a GL, a CRM, a portfolio
-            monitoring tool and a great many spreadsheets. Each holds part of the picture, and none
-            of them talk to each other. The lake is the first place they all meet.</li>
-          <li><strong>Ownership.</strong> "We own our data, not the vendor." Nobody wants their
-            fund history locked inside someone else's product.</li>
-          <li><strong>A mandate.</strong> The board, or a consultant, asks for a "data strategy" or
-            for the firm to be "AI-ready". A lake is a visible thing to buy.</li>
-          <li><strong>Tools.</strong> Analysts want SQL, notebooks and their own dashboards, not a
-            vendor's report screen.</li>
-        </ul>
-        <p>
-          Notice what is not on the list: analytics the firm cannot do today because the data is
-          too big, or the queries too heavy. The lake is bought as an analytics project, but it is
-          really an integration project. And integration is the part a lake does not do for you.
-        </p>
-
-        <h2 id="size">It isn't big data</h2>
-        <p>
-          Warehouses like Snowflake and Databricks are built for billions of rows: website
-          clickstreams, device telemetry, market tick data. A large private-markets manager has a
-          few thousand LPs, a few hundred portfolio companies, some dozens of vehicles and ten or
-          fifteen years of quarters. Even the capital account ledger, the largest table any fund
-          keeps, runs to millions of lines, not billions.
-        </p>
-        <div class="pull">
-          <p><span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> can hand an organisation its entire history as a single SQLite file. That is how big the problem is.</p>
-        </div>
-        <p>
-          An ordinary relational database runs queries over data of this size comfortably. Scale
-          is not why funds need a lake, and it is not what goes wrong when they build one.
-        </p>
-
-        <h2 id="cost">The bill that never stops</h2>
-        <p>
-          What a fund does end up paying for is big-data infrastructure and the people to run it.
-          The warehouse subscription is the line everyone sees, but it is rarely the largest:
+          Those are sensible goals. Two things are worth knowing before choosing how to meet them.
         </p>
         <ul>
-          <li><strong>The platform.</strong> Snowflake or Databricks compute and storage, billed
-            on usage. Every dashboard refresh, every pipeline run and every analyst's query keeps
-            the meter running.</li>
-          <li><strong>The pipes.</strong> Ingestion tools to pull from each source, a
-            transformation layer to model the data, an orchestrator to schedule it, monitoring to
-            tell you when it breaks, and BI licences for everyone who reads the result.</li>
-          <li><strong>The team.</strong> Data engineers to build and maintain the pipelines,
-            analytics engineers to model the data, and someone who understands fund accounting
-            well enough to tell them whether the numbers are right. Even a small team of two or
-            three costs far more each year than the platform does.</li>
+          <li><strong>Fund data is small.</strong> A few thousand LPs, a few hundred portfolio
+            companies and fifteen years of quarters add up to gigabytes, not the billions of rows
+            these platforms are built for. <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span>
+            can export an organisation's entire history as a single SQLite file.</li>
+          <li><strong>A lake is an ongoing commitment.</strong> Alongside the platform's usage
+            bill come ingestion and transformation tools, BI licences, and a data engineering team
+            to keep pipelines running as administrators change file layouts and new funds launch
+            with new terms. For many firms the team is the larger cost.</li>
         </ul>
         <p>
-          The team is also permanent. The work is never finished, because the inputs keep changing.
-          The administrator changes a file layout. A new fund launches with a different fee
-          basis. A side letter adds an exception. A new vehicle sits above two others. Each change
-          breaks a pipeline or a model, and the team re-implements in SQL logic that the fund
-          already knows. When the one engineer who understood the carry model leaves, that
-          knowledge leaves with them.
-        </p>
-        <div class="pull">
-          <p>A permanent data team and a big-data platform, to manage a few gigabytes of numbers that still have to be reconciled by hand.</p>
-        </div>
-        <p>
-          A system of record spends that money once, on getting the data right where it is
-          created. The fund's rules live in one place, are maintained as configuration rather
-          than code, and stay with the fund when people move on.
+          Some firms will want that investment, others won't.
+          <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> works with both.
         </p>
 
-        <h2 id="load-somewhere">You have to load the data somewhere</h2>
+        <h2 id="stand-alone">Without a lake: <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> on its own</h2>
         <p>
-          Whichever way you go, someone has to collect the administrator's files, the GL extract,
-          the bank statements, the subscription documents and the KPI packs, and load them. That
-          work is the same. What differs is where the data lands, and what happens to it there.
-        </p>
-        <p>
-          <strong>In a lake, it lands as rows.</strong> What those rows mean is decided later,
-          each time someone reads them. Every dashboard and notebook decides again what "called",
-          "unfunded" or "NAV" means. Fee, carry and IRR logic is rewritten in SQL for each report,
-          and no number points back to the rule that produced it.
-        </p>
-        <div class="callout">
-          <p style="margin:0">
-            <strong>A typical quarter-end.</strong> Two dashboards show different unfunded
-            commitments for Fund II. One subtracts every call issued. The other subtracts only the
-            calls that have been paid. Both queries are correct, they just answer different
-            questions, and the data team spends a day finding out which one went to the LP
-            advisory committee.
-          </p>
-        </div>
-        <p>
-          <strong>In a system of record, it lands in records that already know what they
-          are.</strong> <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> stores
-          commitments, calls, remittances, distributions, units, cost lots and KPIs in tables built
-          for them, plus whatever custom fields your funds need. Data is validated as it is
-          imported: required fields, formats, ranges, duplicates. Fees, allocations and ratios are
-          computed by one engine from formulas you can read, and every generated ledger line
-          stores the formula and the input values that produced it. Access is set per fund, per
-          investor and per document, and every change is logged with who made it and when.
-        </p>
-        <p>
-          The loading effort is the same. Only one of the two destinations makes the data
-          trustworthy.
-        </p>
-
-        <h2 id="wish-list">The lake wish-list, done in the system of record</h2>
-        <p>
-          The honest test is to take everything a fund hopes to get from a lake and ask whether it
-          needs the lake. For a private-markets manager, almost none of it does.
+          The data has to be loaded somewhere, so load it once, into a system that checks it on
+          the way in, computes the fund's numbers with one engine, and controls who sees what.
+          Everything a lake is usually bought for is covered:
         </p>
         <figure class="split-table table-scroll" style="margin:30px 0">
           <table>
             <thead>
-              <tr><th>What you want</th><th>With a lake</th><th class="ch">With <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span></th></tr>
+              <tr><th>What you need</th><th class="ch">How <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> covers it</th></tr>
             </thead>
             <tbody>
-              <tr>
-                <td><strong>One view across systems</strong></td>
-                <td>Build a pipeline per source, then model the data yourself</td>
-                <td>Import each source through the API or spreadsheet templates into records that already have a model, with validation on the way in</td>
-              </tr>
-              <tr>
-                <td><strong>Benchmarking</strong></td>
-                <td>Buy the benchmark data, load it, and write the comparison queries</td>
-                <td>We load your benchmark data next to your fund returns and build the comparison screens for you</td>
-              </tr>
-              <tr>
-                <td><strong>Legacy or acquired funds</strong></td>
-                <td>Another source to map and reconcile, every quarter</td>
-                <td>Onboard them once, through the same import process as any fund, and reconcile each figure to your books</td>
-              </tr>
-              <tr>
-                <td><strong>Custom models</strong> (pacing, stress tests, forecasts)</td>
-                <td>Notebooks over the raw rows, re-deriving the fund's numbers first</td>
-                <td>Run models on numbers that are already computed and approved, through the API, the AI tools or a database export</td>
-              </tr>
-              <tr>
-                <td><strong>Your own tools</strong> (SQL, BI, notebooks)</td>
-                <td>Open access to the warehouse</td>
-                <td>A direct database connection for tenants on dedicated AWS hosting, or a scheduled SQLite export of your organisation's data</td>
-              </tr>
-              <tr>
-                <td><strong>AI</strong></td>
-                <td>A model reading raw tables inherits every ambiguity in them</td>
-                <td>AI assistants query defined measures under the user's own permissions, so they get the same answer the screens show</td>
-              </tr>
+              <tr><td><strong>One view across systems</strong></td><td>Administrator files, GL extracts, bank statements, KYC and KPI packs are imported through the API or spreadsheet templates, and validated as they load</td></tr>
+              <tr><td><strong>Legacy or acquired funds</strong></td><td>Onboarded through the same import process as any fund, with every figure reconciled to your books</td></tr>
+              <tr><td><strong>Benchmarking</strong></td><td>We load your benchmark data next to your fund returns and build the comparison screens for you</td></tr>
+              <tr><td><strong>Analytics and reports</strong></td><td>Report Builder and dashboards on IRR, TVPI, DPI, fees, carry and KPIs, across funds and currencies</td></tr>
+              <tr><td><strong>Custom models</strong></td><td>Pacing, forecasts and stress tests run on numbers that are already computed and approved, through the API or a database export</td></tr>
+              <tr><td><strong>Your own tools</strong></td><td>A direct database connection on dedicated AWS hosting, or a scheduled SQLite export for SQL, notebooks and BI</td></tr>
+              <tr><td><strong>AI</strong></td><td>AI assistants query defined measures under each user's own permissions, so they give the same answer as the screens</td></tr>
             </tbody>
           </table>
-          <figcaption>Each item a lake is bought for, and where it can live instead</figcaption>
+          <figcaption>A lake's usual wish-list, covered without one</figcaption>
         </figure>
         <p>
-          Lakes are good at analytics, and that has not changed. The point is that this analytics
-          does not need a second copy of the data that nobody checks. Done in the system of
-          record, it runs on numbers that have already been validated, computed and approved.
+          No pipelines to maintain and no data team to hire. Your fund rules live in one place as
+          configuration, and stay with the fund when people move on.
         </p>
-
-        <h2 id="correction">What a correction costs</h2>
-        <p>
-          The difference shows most clearly when something is wrong. A side letter cut one LP's
-          management fee from 2.0% to 1.75% from the first quarter, and nobody applied it. Two
-          quarters later, someone notices.
-        </p>
-        <h3>Lake first</h3>
-        <ol>
-          <li>Find every notebook, view and dashboard that computes fees.</li>
-          <li>Patch the logic in each one, or in a shared transform, and backfill.</li>
-          <li>Re-derive the LP's balances, ratios and statements further down the pipeline.</li>
-          <li>Work out what the LP was already sent. The old values are gone unless someone kept
-            snapshots.</li>
-        </ol>
-        <h3>System of record first</h3>
-        <ol>
-          <li>Set the 1.75% rate on the LP's commitment.</li>
-          <li>Unlock and re-run the two quarters. The fee entries are recomputed, and each one
-            records the new rate in its working.</li>
-          <li>Ratios, statements and the next capital call pick up the corrected ledger.</li>
-          <li>The audit trail records who changed the rate and when, and the run history shows
-            each re-run. Locked periods mean nothing else moves without someone deciding it should.</li>
-        </ol>
-        <div class="pull">
-          <p>A lake keeps the latest answer. A system of record keeps the answer, the rule behind it, and what you told your investors along the way.</p>
-        </div>
 
           </div>
         </div>
@@ -265,43 +125,42 @@ body_extra: |
     </div>
   </div>
 
-  <!-- ================= FEED THE LAKE ================= -->
+  <!-- ================= WITH A LAKE ================= -->
   <section class="section">
     <div class="wrap">
       <div class="band-dark reveal">
-        <span class="chip-label">Already have a lake?</span>
-        <h2 style="margin:20px 0 16px">Keep it. <em>Feed it from the system of record.</em></h2>
+        <span class="chip-label">With a lake</span>
+        <h2 style="margin:20px 0 16px"><span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> <em>feeds it cleanly.</em></h2>
         <p style="margin-bottom:34px">
-          If your firm already runs a warehouse, there is no reason to switch it off. Put
-          <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> in front of it, and
-          the lake receives fund numbers that have already been checked and computed, instead
-          of raw files it has to make sense of.
+          If your firm runs a lake, keep it. Put <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span>
+          in front of it as the fund-operations source, and the lake receives fund numbers that
+          are already checked and computed, ready to join with the rest of the firm's data.
         </p>
         <div class="flow">
           <div class="flow-node" data-step="01">
             <h4>Your sources</h4>
             <span class="amt-lab">Admin files · GL · banks · KYC · KPI packs</span>
-            <p>The same files you would have loaded into the lake.</p>
+            <p>The files you already receive.</p>
           </div>
           <div class="flow-node" data-step="02">
             <h4>Import</h4>
             <span class="amt-lab">API · spreadsheet templates</span>
-            <p>Validated on the way in. Bad rows are rejected with a reason.</p>
+            <p>Validated on the way in.</p>
           </div>
           <div class="flow-node" data-step="03">
             <h4><span class="wordmark"><span class="wm-cap">Cap</span>Hive</span></h4>
             <span class="amt-lab">System of record</span>
-            <p>Computed, approved, permissioned and audited. LP notices and statements go out from here.</p>
+            <p>Computed, approved and audited. LP notices and statements go out from here.</p>
           </div>
           <div class="flow-node" data-step="04">
             <h4>Export</h4>
             <span class="amt-lab">SQLite dumps · API · Report Builder</span>
-            <p>Scheduled or on demand. Every row keeps the id of the record it came from.</p>
+            <p>Scheduled or on demand, with source ids on every row.</p>
           </div>
           <div class="flow-node" data-step="05">
             <h4>Your lake &amp; BI</h4>
             <span class="amt-lab">Snowflake · Databricks · Power BI</span>
-            <p>Joined with the rest of the firm's data, on numbers that match what LPs were sent.</p>
+            <p>Joined with the firm's other data.</p>
           </div>
         </div>
       </div>
@@ -313,50 +172,26 @@ body_extra: |
       <div class="article-card">
         <div class="article-measure">
           <div class="prose">
-        <p>
-          There are three ways out of <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span>,
-          and a lake can use any of them:
-        </p>
+        <p>The lake can take data from <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> three ways:</p>
         <ul>
           <li><strong>Scheduled database dumps.</strong> A SQLite copy of your organisation's data,
-            produced at the frequency you set (or on demand), stored as a document, and kept for a
-            retention period you choose.</li>
+            at the frequency you set or on demand.</li>
           <li><strong>The REST API.</strong> The same endpoints the application uses, under the
-            same permissions, so an integration sees exactly what that user could see on
-            screen.</li>
-          <li><strong>Report Builder exports.</strong> The reports your team already uses,
-            exported for the warehouse to pick up.</li>
+            same permissions.</li>
+          <li><strong>Report Builder exports.</strong> The reports your team already uses.</li>
         </ul>
         <p>
-          Because every exported row carries the id of its source record, the warehouse can always
-          trace a number back to where it came from. The data team stops rebuilding fee and IRR
-          logic in SQL, and the numbers in the warehouse match the numbers your LPs received.
+          Every row carries the id of the record it came from, so the warehouse can trace any
+          number back to its source, and the figures there match what your LPs were sent. Your
+          data team spends its time on analysis, not on rebuilding fee and IRR logic.
         </p>
 
-        <h2 id="when-you-need-one">When you genuinely need a lake</h2>
-        <p>
-          Some firms do. A multi-strategy manager with public-markets trading data has a real
-          big-data problem: tick data and order books do run to billions of rows. A group that
-          mandates one lake across all its businesses, of which funds are only one, will have a
-          lake whatever the fund team thinks. In both cases the argument still holds. Fund
-          operations data should reach that lake from a system of record, not be rebuilt inside it.
-        </p>
-
-        <h2 id="checklist">Before you buy a lake</h2>
-        <p>Six questions worth answering first:</p>
+        <h2 id="choosing">Which way suits you</h2>
         <ul class="check-list">
-          <li>Do your LP statements, notices and capital accounts come from one place today, or from spreadsheets around several systems?</li>
-          <li>If a fee rate turned out to be wrong, how many places would you have to fix?</li>
-          <li>Can you say, for any row, which investors are allowed to see it?</li>
-          <li>Is your data actually too big for an ordinary database, or just spread across too many systems?</li>
-          <li>Who will maintain the pipelines in year three, and what will that team cost every year after?</li>
-          <li>Is the data you want to analyse already checked anywhere, or will the lake be the first place it is checked?</li>
+          <li><span><strong>A lake makes sense</strong> if the firm already runs one, if fund data needs to sit alongside other businesses or public-markets trading data, or if there is a group-wide mandate for a single warehouse.</span></li>
+          <li><span><strong><span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> on its own makes sense</strong> if the goal is one reliable view of your funds, investors and portfolio, without the cost of a platform and a team to run it.</span></li>
+          <li><span><strong>Either way,</strong> the fund's numbers are computed once, in one place, and everything downstream reads the same figures.</span></li>
         </ul>
-        <p>
-          If the answers point to operations rather than analytics, the lake can wait. Fix the
-          system of record first. The lake, if you still want one, gets smaller, cheaper and more
-          accurate as a result.
-        </p>
           </div>
         </div>
       </div>
@@ -367,16 +202,14 @@ body_extra: |
   <section class="section">
     <div class="wrap">
       <div class="band-dark reveal">
-        <span class="chip-label">System of record first</span>
-        <h2 style="margin:20px 0 16px">Load your data once. <em>Load it where it gets checked.</em></h2>
-        <p>
+        <span class="chip-label">Try it on your data</span>
+        <h2 style="margin:20px 0 16px">One fund's files. <em>Your numbers on screen.</em></h2>
+        <p style="margin-bottom:26px">
           Send us one fund's real files: commitments, calls, a quarter's ledger, a portfolio
           company's KPI pack. We load them into a sandbox through the same import templates you
-          would use, so you can check the numbers on screen, and see what your lake would receive.
+          would use, so you can check the numbers, and see exactly what a lake would receive if
+          you run one.
         </p>
-        <div class="pull" style="margin:34px 0 30px;border-color:var(--orange)">
-          <p style="color:#fff">The lake was never the hard part. Getting the numbers right before they reach it is.</p>
-        </div>
         <a class="btn btn-primary" href="mailto:hello@caphive.com">hello@caphive.com <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
       </div>
       <div class="article-measure" style="margin-top:8px">
