@@ -156,6 +156,33 @@ class DealingOrder < ApplicationRecord
     units_held(as_of:) - unsettled_redemption_units(excluding_date_id:)
   end
 
+  # #free_units for many orders at once, keyed by order id — the same two sums as #units_held and
+  # #unsettled_redemption_units, run once per class instead of once per order. Each class keeps its
+  # own query, so the class still matches the way `unit_type =` does there (the database compares
+  # the names, not Ruby). Keep in step with those two methods.
+  def self.free_units_by_order(orders, as_of: Time.zone.today, excluding_date_id: nil)
+    orders = orders.to_a
+    # Same guard as the single-order methods: an order with no folio has nothing free
+    ActiveRecord::Associations::Preloader.new(records: orders, associations: :capital_commitment).call
+    with_folio, without_folio = orders.partition(&:capital_commitment)
+    free = without_folio.to_h { |o| [o.id, 0.to_d] }
+
+    with_folio.group_by(&:unit_type).each do |unit_type, class_orders|
+      folio_ids = class_orders.map(&:capital_commitment_id).uniq
+      # Units held per folio in this class
+      held = FundUnit.where(capital_commitment_id: folio_ids, unit_type:, issue_date: ..as_of)
+                     .group(:capital_commitment_id).sum(:quantity)
+      # Dealt-but-unpaid redemption units per folio in this class
+      fills = DealingFill.joins(:dealing_order).where(kind: "redemption", fund_unit_id: nil, unit_type:)
+                         .where(dealing_orders: { capital_commitment_id: folio_ids })
+      fills = fills.where.not(dealing_date_id: excluding_date_id) if excluding_date_id
+      unsettled = fills.group("dealing_orders.capital_commitment_id").sum(:units)
+
+      class_orders.each { |o| free[o.id] = held[o.capital_commitment_id].to_d - unsettled[o.capital_commitment_id].to_d }
+    end
+    free
+  end
+
   # Units this redemption asks for, resolved at a time: all units → held then; amount → amount ÷ NAV per unit.
   # Worked example E34
   def resolved_units(at: Time.zone.today, nav_per_unit_cents: nil)

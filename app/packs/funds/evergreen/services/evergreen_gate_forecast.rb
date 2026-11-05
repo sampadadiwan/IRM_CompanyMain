@@ -86,6 +86,8 @@ class EvergreenGateForecast
     navs = @fund.unit_types_list.index_with { |ut| FundNav.latest_approved(@fund, ut, Time.zone.today) }
     priced, unpriced = queue.partition { |o| navs[o.unit_type] }
 
+    # Free units of every units / all-units request in grouped queries, not three per order
+    @free_units = DealingOrder.free_units_by_order(priced.reject { |o| o.form == "amount" })
     # Same allocation the confirm runs; requests keep queue order
     requests = priced.map { |o| request_for(o, navs[o.unit_type]) }
     used = @setting.gate_pct.to_d.positive? ? DealingPricer.gate_used(@fund, @setting, dealing_date.date, excluding_dealing_date_id: dealing_date.id) : {}
@@ -120,7 +122,7 @@ class EvergreenGateForecast
       GateAllocator::Request.new(order_id: order.id, investor_id: order.investor_id, unit_type: order.unit_type, units: nil,
                                  nav_per_unit_cents: nav.nav_per_unit_cents, amount_cents: order.amount_cents.to_d - prior.sum { |f| f.amount_cents.to_d })
     else
-      free = [order.free_units, 0].max
+      free = [@free_units.fetch(order.id), 0].max
       units = order.all_units ? free : [order.units.to_d - prior.sum { |f| f.units.to_d }, free].min
       GateAllocator::Request.new(order_id: order.id, investor_id: order.investor_id, unit_type: order.unit_type, units:,
                                  nav_per_unit_cents: nav.nav_per_unit_cents, amount_cents: nil)
