@@ -7,6 +7,15 @@ class FundRatioCalcs
   delegate :portfolio_investments, to: :model
   delegate :ratio_formulas, to: :model
 
+  # The formulas apply_static_formulas reads, keyed by their query. One calc asks the same question
+  # for every portfolio company, and FundRatiosJob hands one cache to the calc of every folio in a
+  # run; nothing changes the formulas while ratios are computed.
+  attr_writer :static_formula_cache
+
+  def static_formula_cache
+    @static_formula_cache ||= {}
+  end
+
   def xirr(model:, net_irr: false, return_cash_flows: false,
            adjustment_cash: 0, scenarios: nil, use_tracking_currency: false, label: nil, level: nil)
     @model = model
@@ -274,6 +283,7 @@ class FundRatioCalcs
   def apply_static_formulas(ratio_name, numerator, denominator, use_tracking_currency, level, label: nil, fmv: 0)
     formulas = ratio_formulas.where(action: %w[add_numerator reduce_numerator add_denominator reduce_denominator], ratio: ratio_name, label: label)
     formulas = formulas.where(level: level) if level.present?
+    formulas = static_formula_cache[formulas.to_sql] ||= formulas.to_a
     fmv_reduced = false
     formulas.each do |formula|
       if formula.skip_portfolio_fmv && !fmv_reduced

@@ -73,6 +73,8 @@ class FundRatiosJob < ApplicationJob
     _delete_previous_fund_ratios(fund, capital_commitment, end_date)
     # Use factory here to initialize the appropriate calculator based on whether we're calculating for a fund or capital commitment or KYC
     calc, owner = FundRatioCalcInitializer.call(fund, capital_commitment, end_date)
+    # Every folio's calc reads the same formulas: look each one up once per run
+    calc.static_formula_cache = (@static_formula_cache ||= {})
 
     _create_xirr_ratios(calc, owner, fund, capital_commitment, end_date, return_cash_flows, user_id)
     _create_moic_ratios(calc, owner, fund, capital_commitment, end_date, return_cash_flows, user_id)
