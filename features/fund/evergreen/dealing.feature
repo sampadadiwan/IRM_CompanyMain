@@ -1,5 +1,5 @@
 Feature: Evergreen dealing dates — list, pricing, confirm, roll, carry forward, undo
-  Worked examples H16, H17, H18, H21, H26, E6, E21, E22, E23, E24, E25, E26, E33, E34, X17, X20, E102, E103, E105–E110, E208, E209, E210, E221, E222, E223, X56–X62
+  Worked examples H16, H17, H18, H21, H26, E6, E21, E22, E23, E24, E25, E26, E33, E34, X17, X20, E102, E103, E105–E110, E346, E208, E209, E210, E221, E222, E223, X56–X62
   — openspec/changes/open-ended-funds/design.md#worked-examples
 
   Background:
@@ -294,7 +294,7 @@ Feature: Evergreen dealing dates — list, pricing, confirm, roll, carry forward
       | investor | filled      | carried | units |
       | C HUF    | 1,53,30,000 | 0       | 1500  |
 
-  # E105b — Edge case: two all-units redemptions on one date each count their OWN folio's free units —
+  # E346 — Edge case: two all-units redemptions on one date each count their OWN folio's free units —
   # C HUF's 2,000 less the 500 dealt but unpaid on 2 Nov (1,500), B LLP's full 7,000 — both in the
   # dealing date's pricing and in the Redemptions list (its Amount estimate and the gate forecast's
   # running total, 1,53,30,000 + 7,15,40,000 = 8,68,70,000).

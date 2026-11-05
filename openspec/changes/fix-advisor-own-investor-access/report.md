@@ -291,6 +291,8 @@ and plain contact **P** as approved contacts. A advises client entity **Client**
 | E16 | Advisor account without the role at home | stored home roles `investor` | A opens client-only fund G; opens F | G denied; F allowed | own_investor_access |
 | E17 | Switched into the wrong client | switched into Mehta | A opens Harshal's remittance | message names Mehta (current) and Harshal (switch to) | own_investor_access |
 | E18 | Fund Advisor switch offered | Fund Advisor grant; Rao remittance | A opens it | message names Artha | own_investor_access |
+| E19 | Call's subscriber check counts the advisor | P's own contact row tagged `KYC`; Harshal's only contact is A (personal grant) | reminder sent; call's "nobody subscribed" check | only A notified for Own; check names nobody | own_investor_access |
+| E20 | Subscriber check while switched away | switched into Mehta (no grant on F); P's row tagged `KYC` | call's "nobody subscribed" check | names nobody — A counts for Own, judged as after a revert | own_investor_access |
 
 ### Error Cases
 
@@ -307,6 +309,7 @@ and plain contact **P** as approved contacts. A advises client entity **Client**
 | X9 | No switch would help | fund G granted only to ClientInv, no personal grant | A opens G | exactly "Access Denied" | own_investor_access |
 | X10 | Off-site `return_to` | — | switch posted with `//evil…` / `https://evil…` | no off-site redirect; switch still happens | own_investor_access |
 | X11 | Admin-editable client name with markup | client renamed `Client <b>Bold</b> & Co` | A opens the client remittance | name shown escaped in message and button | own_investor_access |
+| X12 | Subscriber check without Own's fund grant | Own's grant on F removed | call's "nobody subscribed" check | names Own only; Harshal still counts through A's personal grant | own_investor_access |
 
 **Fails against current code:** H1, H2, H3, H5, H7, E1, E8, E9, E12 and X5 (seen failing, 2026-10-16). Added after the review: H8, E13 (on top of the first fix), E14, E15, E17, E18, X6, X7, X10 cover behaviour the base code lacks or that the first fix regressed.
 The others are regression guards that pass today and must keep passing.

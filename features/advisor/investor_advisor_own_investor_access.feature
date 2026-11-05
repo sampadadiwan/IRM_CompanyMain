@@ -327,7 +327,7 @@ Feature: An advisor keeps their own investor access
     Given the advisor is an Investor Advisor for a client "Harshal" who invests in the fund
     And the plain contact's own contact row is tagged "KYC"
     When the capital call reminder is sent
-    Then the advisor is notified exactly once for the own remittance
+    Then only the advisor is notified for the own remittance
     And the call's subscriber check names nobody
 
   # E20 — Edge case: switched into a client with no grant on the fund, the advisor still counts

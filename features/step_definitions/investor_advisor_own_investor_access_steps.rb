@@ -56,6 +56,11 @@ module AdvisorOwnInvestorAccessHelpers
     @user.reload
   end
 
+  # The capital call's "nobody subscribed" check (the Approve-time warning and the journey panel)
+  def call_subscriber_check
+    CapitalCallRuleContextProvider.new.call(record: @capital_call, entity: @fund_company)[:investors_without_notification_subscribers]
+  end
+
   def can_see?(user, record)
     Pundit.policy(user, record).show?
   end
@@ -455,10 +460,8 @@ Given("the plain contact's own contact row is tagged {string}") do |tag|
   @plain_access.update_columns(tag_list: tag)
 end
 
-# The capital call's "nobody subscribed" check (the Approve-time warning and the journey panel),
-# plus the single-investor form used by the send grey-out, for every investor on the call.
-def call_subscriber_check
-  CapitalCallRuleContextProvider.new.call(record: @capital_call, entity: @fund_company)[:investors_without_notification_subscribers]
+Then('only the advisor is notified for the own remittance') do
+  expect(remittance_recipient_ids(@own_remittance)).to contain_exactly(@user.id)
 end
 
 Then("the call's subscriber check names nobody") do
