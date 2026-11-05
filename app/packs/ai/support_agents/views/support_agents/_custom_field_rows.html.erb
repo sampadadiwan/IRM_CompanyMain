@@ -4,10 +4,11 @@
 <%= display_custom_fields(support_agent, timestamps_and_snapshot: timestamps_and_snapshot) %>
 <% file_fields = support_agent.form_custom_fields.select { |f| f.field_type == "File" } %>
 <%# Load every file field's document in one query rather than one find_by per field. Ordered by id
-    and keeping the first per name, so a duplicate-named document resolves as find_by did. %>
-<% docs_by_name = file_fields.any? ? support_agent.documents.where(name: file_fields.map(&:human_label)).order(:id).each_with_object({}) { |d, h| h[d.name] ||= d } : {} %>
+    and keeping the first per name, so a duplicate-named document resolves as find_by did; keyed by
+    Document.name_key so the match stays case/accent-insensitive like the column's collation. %>
+<% docs_by_name = file_fields.any? ? support_agent.documents.where(name: file_fields.map(&:human_label)).order(:id).each_with_object({}) { |d, h| h[Document.name_key(d.name)] ||= d } : {} %>
 <% file_fields.each do |fcf| %>
-  <% doc = docs_by_name[fcf.human_label] %>
+  <% doc = docs_by_name[Document.name_key(fcf.human_label)] %>
   <tr>
     <td>
       <%= fcf.human_label %>
