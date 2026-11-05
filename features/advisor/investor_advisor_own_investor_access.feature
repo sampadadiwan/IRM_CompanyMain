@@ -317,3 +317,32 @@ Feature: An advisor keeps their own investor access
     And the client entity is renamed to "Client <b>Bold</b> & Co"
     When I visit the client remittance
     Then the alert shows "Client <b>Bold</b> & Co" as text, not markup
+
+  # E19 — Edge case: the call's "nobody subscribed" check counts an advisor the same way the
+  # send path does. The plain contact opts out of Capital Call emails, so the advisor is the own
+  # investor's only subscriber (at home, through the investor's grant), and the client's only
+  # contact is the advisor (through their personal grant).
+  @security @rack_test
+  Scenario: E19 The call's subscriber check counts the advisor as a subscriber, like the reminder does
+    Given the advisor is an Investor Advisor for a client "Harshal" who invests in the fund
+    And the plain contact's own contact row is tagged "KYC"
+    When the capital call reminder is sent
+    Then only the advisor is notified for the own remittance
+    And the call's subscriber check names nobody
+
+  # E20 — Edge case: switched into a client with no grant on the fund, the advisor still counts
+  # for their own investor (judged as after a revert), as E1 shows for the reminder.
+  @security @rack_test
+  Scenario: E20 Switched into another client, the advisor still counts as their own investor's subscriber
+    Given the advisor is an Investor Advisor for a client "Mehta" who has no grant on the fund
+    And the advisor has switched into the client "Mehta"
+    And the plain contact's own contact row is tagged "KYC"
+    Then the call's subscriber check names nobody
+
+  # X12 — Error case: without a fund grant for the own investor, neither contact receives the
+  # call (X1), so the check names the own investor — and only the own investor.
+  @security @rack_test
+  Scenario: X12 Without a fund grant for the own investor the subscriber check names it
+    Given the advisor is an Investor Advisor for a client "Harshal" who invests in the fund
+    And the own investor's grant on the fund is removed
+    Then the call's subscriber check names only the own investor

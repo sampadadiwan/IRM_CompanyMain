@@ -235,6 +235,9 @@ class ReportBuilderController < ApplicationController
     refused = []
 
     Report.transaction do
+      # Each added column goes after the last; nothing else in the loop adds columns, so the current
+      # maximum is read once and counted up rather than queried again for every key
+      last_sequence = @report.grid_view_preferences.maximum(:sequence) || 0
       keys.each do |key|
         clean = key.split(";").first.strip
         # E2 — already in the report: skip quietly
@@ -248,9 +251,9 @@ class ReportBuilderController < ApplicationController
         end
 
         name = bulk ? ReportBuilderColumnCatalog.label_for(ReportBuilderConfig.new(@report.template), key) : (params[:name].presence || clean.split(".").last.humanize)
-        max_seq = @report.grid_view_preferences.maximum(:sequence) || 0
+        last_sequence += 1
         @report.grid_view_preferences.create!(key: key, name: name, label: (bulk ? nil : params[:label].presence) || name,
-                                              entity_id: @report.entity_id, sequence: max_seq + 1)
+                                              entity_id: @report.entity_id, sequence: last_sequence)
         store_default_aggregate(key)
         present << clean
         added << name

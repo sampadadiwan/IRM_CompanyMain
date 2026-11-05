@@ -271,7 +271,7 @@ class WorkflowEvaluator < Trailblazer::Operation
       # Worked examples E29 — openspec/changes/archive/2026-10-02-capital-call-journey/design.md#worked-examples
       # A review someone actually confirmed stays done even once the skip applies (e.g. notices
       # sent afterwards): the skip exists so a missing review never blocks, not to erase a real one
-      response = acknowledgement(step, instance, history) if step[:kind].to_s == "acknowledge"
+      response = acknowledgement(step, history) if step[:kind].to_s == "acknowledge"
       return reviewed(response) if response
 
       return { status: "na", message: skip.message }
@@ -279,7 +279,7 @@ class WorkflowEvaluator < Trailblazer::Operation
 
     case step[:kind].to_s
     when "system" then judge_system(step, record, history)
-    when "acknowledge" then judge_acknowledge(step, record, instance, history)
+    when "acknowledge" then judge_acknowledge(step, record, history)
     else judge_human(step, instance, history)
     end
   rescue StandardError => e
@@ -306,7 +306,7 @@ class WorkflowEvaluator < Trailblazer::Operation
   end
 
   # Worked examples H4, E12 — openspec/changes/archive/2026-10-02-capital-call-journey/design.md#worked-examples
-  def judge_acknowledge(step, record, instance, history)
+  def judge_acknowledge(step, record, history)
     result = nil
     if step[:check_key].present?
       result = WorkflowChecks::Registry.fetch(step[:check_key]).call(record)
@@ -319,7 +319,7 @@ class WorkflowEvaluator < Trailblazer::Operation
     confirmed = result&.review == :confirmed && (invalidated_at.nil? || (result.fresh_since && result.fresh_since > invalidated_at))
     return { status: "passed", message: result.message, passed_since: result.passed_since } if confirmed
 
-    response = acknowledgement(step, instance, history)
+    response = acknowledgement(step, history)
     return reviewed(response) if response
 
     # Worked examples E3, E4 — openspec/changes/investor-kyc-journey/design.md#worked-examples
@@ -354,8 +354,8 @@ class WorkflowEvaluator < Trailblazer::Operation
 
   # The latest "Mark reviewed" on an acknowledge step that still counts: active, and given after the
   # step was last invalidated (an email edit, an undo). nil when there is none.
-  def acknowledgement(step, instance, history)
-    response = instance.workflow_actor_responses.active.for_step(step[:position]).order(:responded_at).last
+  def acknowledgement(step, history)
+    response = history.last_response(step[:position])
     return nil unless response
 
     invalidated_at = history.last_at(step[:position], "invalidated")
@@ -373,7 +373,7 @@ class WorkflowEvaluator < Trailblazer::Operation
     first_state = step[:states].to_s.split(",").first&.strip
     if resolution[:resolved].present? && resolution[:resolved] == first_state
       # The last vote is the one that resolved the step: its time is the pass time, its actor the history's
-      last_vote = instance.workflow_actor_responses.active.for_step(step[:position]).order(:responded_at).last
+      last_vote = history.last_response(step[:position])
       return { status: "passed", message: first_state.to_s, passed_since: last_vote&.responded_at, response: last_vote }
     end
 
@@ -485,6 +485,15 @@ class WorkflowEvaluator < Trailblazer::Operation
 
     def last_note(position, to_state)
       last_event(position, to_state)&.note
+    end
+
+    # The latest active confirmation or vote on a step, or nil. Loaded once per walk, with actors
+    # (the history row names them): the walk only reads responses - reset_later_sign_offs, which
+    # archives them, runs after it - so one query serves every step instead of one per step.
+    def last_response(position)
+      @responses_by_step ||= @instance.workflow_actor_responses.active.includes(:actor).order(:responded_at)
+                                      .group_by(&:step_position)
+      @responses_by_step[position.to_i]&.last
     end
 
     # For the current step: was it reached by moving back, and why (shown as ↺ and in the banner)

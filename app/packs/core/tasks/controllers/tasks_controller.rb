@@ -274,9 +274,13 @@ class TasksController < ApplicationController
     if @task.task_recurrence_rule.present?
       rule = @task.task_recurrence_rule
       tasks = rule.tasks.to_a
+      # Everything each task's destroy callbacks read, so the series is not a query per task for each.
+      # has_rich_text :details / :response are associations of their own, and destroying a rich text
+      # reads its embeds' attachments, so those come along too.
       ActiveRecord::Associations::Preloader.new(
         records: tasks,
-        associations: %i[documents folders reminders noticed_events]
+        associations: [:documents, :folders, :reminders, :noticed_events,
+                       { rich_text_details: :embeds_attachments }, { rich_text_response: :embeds_attachments }]
       ).call
       rule.destroy
       notice = "Entire task series was successfully destroyed."

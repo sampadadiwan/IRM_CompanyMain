@@ -12,11 +12,13 @@ module DocChecks
 
     attr_reader :entity, :record_type, :document_name, :rows
 
-    def initialize(entity:, document_name:, rows: [], record_type: "InvestorKyc")
+    # existing: the card's saved checks when the caller already loaded them (the index page loads every
+    # card's checks in one query); without it they are read here, as a save always does
+    def initialize(entity:, document_name:, rows: [], record_type: "InvestorKyc", existing: nil)
       @entity = entity
       @record_type = record_type
       @document_name = document_name.to_s.squish
-      @existing = DocCheck.where(entity:, record_type:, document_name: @document_name).index_by(&:id)
+      @existing = (existing || DocCheck.where(entity:, record_type:, document_name: @document_name)).index_by(&:id)
       @rows = build_rows(row_list(rows))
     end
 

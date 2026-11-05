@@ -22,6 +22,10 @@ module Evergreen
         last_approved[n.unit_type] = n if n.approved?
         [n.id, prev]
       end
+      # Source column's "Priced" badge: the earliest dealing date priced at each NAV, for every NAV in
+      # one query instead of two per approved row (FundNav#used_by_dealing? / #used_by_dealing_date)
+      @priced_on = DealingFill.joins(:dealing_date).where(fund_nav_id: navs.map(&:id))
+                              .group(:fund_nav_id).minimum("dealing_dates.date")
       navs = navs.select(&:draft?) if @filter == "awaiting"
       navs = navs.select(&:approved?) if @filter == "approved"
       # Drafts first (they need someone), then newest first

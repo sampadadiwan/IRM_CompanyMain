@@ -209,8 +209,11 @@ class CapitalRemittance < ApplicationRecord
     reasons = []
     reasons << "the call is not approved" unless capital_call.approved?
     reasons << "the call is set up to not send payment notifications" unless capital_call.send_payment_notification_flag
-    reasons << "there are no recorded payments with a positive amount" if capital_remittance_payments.where("amount_cents > 0").none?
-    reasons << "a payment notification has already been sent for every recorded payment" if capital_remittance_payments.any? && capital_remittance_payments.where(payment_notification_sent: false).none?
+    # One query for both payment conditions (this runs for every unverified row of the remittances
+    # list). Same tests as SQL would make: a NULL amount is not positive, a NULL flag is not "false".
+    payments = capital_remittance_payments.pluck(:amount_cents, :payment_notification_sent)
+    reasons << "there are no recorded payments with a positive amount" if payments.none? { |amount_cents, _| amount_cents&.positive? }
+    reasons << "a payment notification has already been sent for every recorded payment" if payments.any? && payments.none? { |_, sent| sent == false }
     reasons << "no investor contacts are subscribed to Capital Call notifications" unless investor.capital_call_subscribers?(fund)
     reasons
   end

@@ -1,5 +1,5 @@
 Feature: Evergreen dealing dates — list, pricing, confirm, roll, carry forward, undo
-  Worked examples H16, H17, H18, H21, H26, E6, E21, E22, E23, E24, E25, E26, E33, E34, X17, X20, E102, E103, E105–E110, E208, E209, E210, E221, E222, E223, X56–X62
+  Worked examples H16, H17, H18, H21, H26, E6, E21, E22, E23, E24, E25, E26, E33, E34, X17, X20, E102, E103, E105–E110, E346, E208, E209, E210, E221, E222, E223, X56–X62
   — openspec/changes/open-ended-funds/design.md#worked-examples
 
   Background:
@@ -293,6 +293,33 @@ Feature: Evergreen dealing dates — list, pricing, confirm, roll, carry forward
     Then the pricing of "2026-12-01" should fill:
       | investor | filled      | carried | units |
       | C HUF    | 1,53,30,000 | 0       | 1500  |
+
+  # E346 — Edge case: two all-units redemptions on one date each count their OWN folio's free units —
+  # C HUF's 2,000 less the 500 dealt but unpaid on 2 Nov (1,500), B LLP's full 7,000 — both in the
+  # dealing date's pricing and in the Redemptions list (its Amount estimate and the gate forecast's
+  # running total, 1,53,30,000 + 7,15,40,000 = 8,68,70,000).
+  @rack_test
+  Scenario: Two all-units redemptions each count their own folio's free units
+    Given the fund setting has "gate_pct=0"
+    And today is "2026-09-10"
+    And "C HUF" has placed a "redemption" order "folio=F-044;units=500" received "2026-09-10 09:00"
+    And an approved NAV for class "A" on "2026-10-31" with NAV per unit "10,220" and units "100000"
+    And today is "2026-11-02"
+    And the fund admin confirms dealing date "2026-11-02"
+    And today is "2026-11-10"
+    And class "A" of the fund has "notice_days=7"
+    And "C HUF" has placed a "redemption" order "folio=F-044;all_units=true" received "2026-11-10 10:00"
+    And "B LLP" has placed a "redemption" order "folio=F-031;all_units=true" received "2026-11-10 11:00"
+    And an approved NAV for class "A" on "2026-11-30" with NAV per unit "10,220" and units "100000"
+    And today is "2026-12-01"
+    Then the pricing of "2026-12-01" should fill:
+      | investor | filled      | carried | units |
+      | C HUF    | 1,53,30,000 | 0       | 1500  |
+      | B LLP    | 7,15,40,000 | 0       | 7000  |
+    When I open the redemptions list
+    Then the "Amount" cell of the order of "C HUF" should show "1,53,30,000"
+    And the "Amount" cell of the order of "B LLP" should show "7,15,40,000"
+    And the "Running total" cell of the order of "B LLP" should show "8,68,70,000"
 
   # E106 — Edge case: undo returns a fully filled redemption, a carried redemption (moved to 1 Dec) and a cancelled not-ready subscription all to pending on 2 Nov.
   @rack_test

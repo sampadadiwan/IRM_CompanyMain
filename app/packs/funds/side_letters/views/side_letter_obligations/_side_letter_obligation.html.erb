@@ -68,7 +68,8 @@
       <% end %>
     <% end %>
   </td>
-  <td><%= obligation_status_badge(obligation) %></td>
+  <%# next_task_due is passed by the matrix; a row re-rendered on its own (turbo stream) queries its own tasks %>
+  <td><%= obligation_status_badge(obligation, next_task_due: local_assigns[:next_task_due]) %></td>
   <%# Legal classification assigned by the LLM — counsel can correct via edit before approving.
       Hidden when the matrix is already scoped to a single legal category group. %>
   <% if show_legal_category %>

@@ -69,7 +69,7 @@
             <td class="text-end"><%= number_with_precision(nav.units_outstanding, precision: 4, delimiter: ",") %></td>
             <td class="text-end"><%= evergreen_money(nav.nav_cents, @fund) %></td>
             <td><%= eg_nav_status_badge(nav) %></td>
-            <td><%= eg_nav_source_badge(nav) %></td>
+            <td><%= eg_nav_source_badge(nav, priced_on: @priced_on) %></td>
             <td class="action-col"><%= link_to t_common(:view), evergreen_nav_path(@fund, nav), class: "btn btn-outline-primary ti ti-eye", data: { turbo_frame: "_top", bs_toggle: "tooltip", bs_title: "Open NAV #{l(nav.nav_date)} class #{nav.unit_type}" }, aria: { label: "Open NAV #{l(nav.nav_date)} class #{nav.unit_type}" } %></td>
           </tr>
         <% end %>

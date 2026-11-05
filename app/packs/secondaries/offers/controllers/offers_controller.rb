@@ -14,7 +14,7 @@ class OffersController < ApplicationController
         ] = "attachment; filename=offers.xlsx"
       end
       format.html { render :index }
-      format.json { render json: OfferDatatable.new(params, offers: @offers) }
+      format.json # index.json.jbuilder (OfferDatatable was removed in 8352637465; this used to 500)
     end
   end
 

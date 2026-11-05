@@ -105,8 +105,10 @@ module Workflowable
                     .for_workflowable_type(workflowable_type_name)
                     .where(entity_id:)
                     .order(:name)
-                    # eligible_for? reads each template's entity; all share this entity_id, so one query
-                    .includes(:entity)
+                    # eligible_for? reads each template's entity (all share this entity_id, so one query)
+                    # and its auto-assignment rules - preloaded so the eligibility check is not a query
+                    # per template
+                    .includes(:entity, :workflow_auto_assignment_rules)
                     .select { |t| t.eligible_for?(self) }
   end
 

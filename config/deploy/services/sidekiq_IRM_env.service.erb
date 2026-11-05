@@ -62,6 +62,12 @@ Environment=RAILS_ENV=<%= fetch(:stage) %>
 # Sidekiq process fragments heavily under large transient allocations (doc
 # generation, allocations, exports) and RSS never returns to the OS.
 Environment=MALLOC_ARENA_MAX=2
+# jemalloc (see puma unit): addresses the same fragmentation more thoroughly. MALLOC_ARENA_MAX
+# is kept as the fallback for hosts where libjemalloc2 is not installed yet.
+<%# Staging-only trial. Widen to production once staging has run on jemalloc for a while. %>
+<% if fetch(:stage).to_s == "staging" %>
+Environment=LD_PRELOAD=libjemalloc.so.2
+<% end %>
 
 # Login shell for the same environment every previous launcher had (cap's
 # `bash -lc`, monit's `su -`). Every step hands over its PID rather than forking:

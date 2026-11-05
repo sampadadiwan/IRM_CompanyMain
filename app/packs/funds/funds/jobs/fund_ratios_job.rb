@@ -73,6 +73,8 @@ class FundRatiosJob < ApplicationJob
     _delete_previous_fund_ratios(fund, capital_commitment, end_date)
     # Use factory here to initialize the appropriate calculator based on whether we're calculating for a fund or capital commitment or KYC
     calc, owner = FundRatioCalcInitializer.call(fund, capital_commitment, end_date)
+    # Every folio's calc reads the same formulas: look each one up once per run
+    calc.static_formula_cache = (@static_formula_cache ||= {})
 
     _create_xirr_ratios(calc, owner, fund, capital_commitment, end_date, return_cash_flows, user_id)
     _create_moic_ratios(calc, owner, fund, capital_commitment, end_date, return_cash_flows, user_id)
@@ -93,9 +95,17 @@ class FundRatiosJob < ApplicationJob
     FundRatio.where(fund:, capital_commitment:, end_date:).delete_all
   end
 
+  # The labels the fund's formulas use for one ratio and level, plus nil for unlabeled formulas: one
+  # FundRatio is created per label. Read once per run — every folio asks the same question, and
+  # nothing changes the formulas while ratios are computed. Frozen because it is shared.
+  def formula_labels(fund, ratio, level)
+    @formula_labels ||= {}
+    @formula_labels[[fund.id, ratio, level]] ||= (fund.ratio_formulas.where(ratio:, level:).pluck(:label).uniq.compact_blank + [nil]).freeze
+  end
+
   def _create_xirr_ratios(calc, owner, fund, capital_commitment, end_date, return_cash_flows, user_id)
     # fetch relevant labels
-    labels = fund.ratio_formulas.where(ratio: "XIRR", level: calc.ratio_formula_level).pluck(:label).uniq.compact_blank + [nil] # include unlabeled formulas as well
+    labels = formula_labels(fund, "XIRR", calc.ratio_formula_level)
     # create FundRatio records for each label
     labels.each do |label|
       xirr, cash_flows = calc.xirr(return_cash_flows:, label: label)
@@ -118,7 +128,7 @@ class FundRatiosJob < ApplicationJob
     return unless calc.is_a?(FundPortfolioCalcs)
 
     # fetch relevant labels
-    labels = fund.ratio_formulas.where(ratio: "MOIC", level: calc.ratio_formula_level).pluck(:label).uniq.compact_blank + [nil] # include unlabeled formulas as well
+    labels = formula_labels(fund, "MOIC", calc.ratio_formula_level)
 
     # create FundRatio records for each label
     labels.each do |label|
@@ -138,7 +148,7 @@ class FundRatiosJob < ApplicationJob
   end
 
   def _create_rvpi_ratio(calc, owner, fund, capital_commitment, end_date, use_tracking_currency: false)
-    labels = fund.ratio_formulas.where(ratio: "RVPI", level: calc.ratio_formula_level).pluck(:label).uniq.compact_blank + [nil] # include unlabeled formulas as well
+    labels = formula_labels(fund, "RVPI", calc.ratio_formula_level)
     # create FundRatio records for each label
     labels.each do |label|
       value = calc.rvpi(use_tracking_currency:, label: label)
@@ -150,7 +160,7 @@ class FundRatiosJob < ApplicationJob
   end
 
   def _create_dpi_ratio(calc, owner, fund, capital_commitment, end_date, use_tracking_currency: false)
-    labels = fund.ratio_formulas.where(ratio: "DPI", level: calc.ratio_formula_level).pluck(:label).uniq.compact_blank + [nil] # include unlabeled formulas as well
+    labels = formula_labels(fund, "DPI", calc.ratio_formula_level)
     # create FundRatio records for each label
     labels.each do |label|
       value = calc.dpi(use_tracking_currency:, label: label)
@@ -162,7 +172,7 @@ class FundRatiosJob < ApplicationJob
   end
 
   def _create_tvpi_ratio(calc, owner, fund, capital_commitment, end_date, use_tracking_currency: false)
-    labels = fund.ratio_formulas.where(ratio: "TVPI", level: calc.ratio_formula_level).pluck(:label).uniq.compact_blank + [nil] # include unlabeled formulas as well
+    labels = formula_labels(fund, "TVPI", calc.ratio_formula_level)
     # create FundRatio records for each label
     labels.each do |label|
       value = calc.tvpi(use_tracking_currency:, label: label)
@@ -196,7 +206,7 @@ class FundRatiosJob < ApplicationJob
   end
 
   def _create_paid_in_to_committed_capital_ratio(calc, owner, fund, capital_commitment, end_date, use_tracking_currency: false)
-    labels = fund.ratio_formulas.where(ratio: "PIC", level: calc.ratio_formula_level).pluck(:label).uniq.compact_blank + [nil] # include unlabeled formulas as well
+    labels = formula_labels(fund, "PIC", calc.ratio_formula_level)
     labels.each do |label|
       value = calc.paid_in_to_committed_capital(use_tracking_currency:, label: label)
       display_value = value ? "#{value.round(2)}x" : nil
@@ -207,7 +217,7 @@ class FundRatiosJob < ApplicationJob
   end
 
   def _create_portfolio_company_irr_ratios(calc, fund, capital_commitment, end_date, return_cash_flows:, user_id:)
-    labels = fund.ratio_formulas.where(ratio: "XIRR", level: "PortfolioCompany").pluck(:label).uniq.compact_blank + [nil] # include unlabeled formulas as well
+    labels = formula_labels(fund, "XIRR", "PortfolioCompany")
     labels.each do |label|
       calc.portfolio_company_irr(return_cash_flows:, label: label).each do |portfolio_company_id, values|
         name = label.presence || "IRR"
@@ -245,7 +255,7 @@ class FundRatiosJob < ApplicationJob
   end
 
   def _create_portfolio_company_moic_ratios(calc, fund, capital_commitment, end_date, return_cash_flows:, user_id:)
-    labels = fund.ratio_formulas.where(ratio: "MOIC", level: "PortfolioCompany").pluck(:label).uniq.compact_blank + [nil] # include unlabeled formulas as well
+    labels = formula_labels(fund, "MOIC", "PortfolioCompany")
     labels.each do |label|
       calc.portfolio_company_metrics(return_cash_flows:, label: label).each do |portfolio_company_id, values|
         name = label.presence || "MOIC"
@@ -274,7 +284,7 @@ class FundRatiosJob < ApplicationJob
   end
 
   def _create_gross_portfolio_irr_ratios(calc, owner, fund, capital_commitment, end_date, return_cash_flows:, user_id:)
-    labels = fund.ratio_formulas.where(ratio: "Gross Portfolio IRR", level: "Fund").pluck(:label).uniq.compact_blank + [nil] # include unlabeled formulas as well
+    labels = formula_labels(fund, "Gross Portfolio IRR", "Fund")
     labels.each do |label|
       result = calc.gross_portfolio_irr(return_cash_flows:, label: label)
       xirr_value = result[:xirr]

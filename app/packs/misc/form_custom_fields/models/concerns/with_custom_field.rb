@@ -62,8 +62,12 @@ module WithCustomField
     # Ensure that the form type is set, if not already present
     before_save :setup_form_type, if: -> { skip_cf_before_save != true }
 
-    # This is done so that if there are any custom_fields which are calculations, then they are run and computed
-    before_save :perform_all_calculations, if: -> { skip_cf_before_save != true && form_custom_fields && form_custom_fields.calculations.present? }
+    # This is done so that if there are any custom_fields which are calculations, then they are run and computed.
+    # No form type means no custom fields: checked first because form_custom_fields (through a nil form_type)
+    # still runs a query that can never match - on every save of every record without a form type.
+    before_save :perform_all_calculations, if: lambda {
+      skip_cf_before_save != true && form_type_id.present? && form_custom_fields.calculations.exists?
+    }
 
     validate :check_required_custom_fields, if: -> { form_type.present? && skip_cf_before_save != true }
     validate :check_custom_field_formats,   if: -> { form_type.present? && skip_cf_before_save != true }

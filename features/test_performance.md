@@ -23,6 +23,10 @@ new tests).
 
 - `Bullet.enable` now requires `BULLET=1`. N+1 instrumentation ran on every request in
   every scenario; opt in only when actively hunting N+1s.
+- `PROSOPITE=1` turns on Prosopite (`config/initializers/prosopite.rb`), which finds N+1s by
+  repeated SQL fingerprint and so catches ones Bullet misses (`exists?`/`pluck`/`count` in a
+  loop, custom finders). It wraps each controller action, so it covers JS scenarios too.
+  Findings go to `log/prosopite.log`. Bullet stays for unused eager loading.
 - `config.log_level` defaults to `:warn` (was `:debug`), and
   `verbose_query_logs` only turns on when `LOG_LEVEL=debug` is set. The old defaults
   logged every SQL statement with its call site across all 1561 scenarios.

@@ -312,6 +312,56 @@ Feature: Validation Rule Engine
     When the validation rules are evaluated for the capital call
     Then the rule "capital_call_investors_without_notification_subscribers" does not fire
 
+  # The warning must agree with who a Capital Call email would actually reach
+  # (Investor#notification_users): approved contacts, subscribed to the CapitalCall topic, who
+  # pass the fund's access check. Each scenario below breaks exactly one of those.
+  Scenario: A contact subscribed only to another topic does not count as a Capital Call subscriber
+    Given there is a fund "name=RuleTestFund;currency=INR" for the entity
+    And the entity has opted in to all validation rules
+    And there is a capital call "{'First Close':'100'}" for the fund
+    And the capital call has a remittance for an investor "KYC Only Investor" whose only contact is subscribed to "KYC" only
+    When the validation rules are evaluated for the capital call
+    Then the rule "capital_call_investors_without_notification_subscribers" fires as a "warning"
+    And the rule message includes "KYC Only Investor"
+
+  Scenario: A subscribed contact whose investor has no access to the fund does not count
+    Given there is a fund "name=RuleTestFund;currency=INR" for the entity
+    And the entity has opted in to all validation rules
+    And there is a capital call "{'First Close':'100'}" for the fund
+    And the capital call has a remittance for an investor "No Access Investor" whose only contact has no access to the fund
+    When the validation rules are evaluated for the capital call
+    Then the rule "capital_call_investors_without_notification_subscribers" fires as a "warning"
+    And the rule message includes "No Access Investor"
+
+  Scenario: A subscribed contact without the Funds feature does not count
+    Given there is a fund "name=RuleTestFund;currency=INR" for the entity
+    And the entity has opted in to all validation rules
+    And there is a capital call "{'First Close':'100'}" for the fund
+    And the capital call has a remittance for an investor "No Funds Investor" whose only contact cannot use funds
+    When the validation rules are evaluated for the capital call
+    Then the rule "capital_call_investors_without_notification_subscribers" fires as a "warning"
+    And the rule message includes "No Funds Investor"
+
+  Scenario: One contact who receives Capital Call emails is enough, even after one who does not
+    Given there is a fund "name=RuleTestFund;currency=INR" for the entity
+    And the entity has opted in to all validation rules
+    And there is a capital call "{'First Close':'100'}" for the fund
+    And the capital call has a remittance for an investor "Mixed Contacts Investor" whose first contact cannot use funds but whose second contact is subscribed
+    When the validation rules are evaluated for the capital call
+    Then the rule "capital_call_investors_without_notification_subscribers" does not fire
+
+  Scenario: Only the investors with nobody subscribed are named, in name order
+    Given there is a fund "name=RuleTestFund;currency=INR" for the entity
+    And the entity has opted in to all validation rules
+    And there is a capital call "{'First Close':'100'}" for the fund
+    And the capital call has a remittance for an unsubscribed investor "Zeta Holdings"
+    And the capital call has a remittance for a subscribed investor "Gamma Partners"
+    And the capital call has a remittance for an investor "Alpha Trust" whose only contact has no access to the fund
+    When the validation rules are evaluated for the capital call
+    Then the rule "capital_call_investors_without_notification_subscribers" fires as a "warning"
+    And the rule message includes "Alpha Trust, Zeta Holdings"
+    And the rule "capital_call_investors_without_notification_subscribers" message does not include "Gamma Partners"
+
   # ── CapitalCommitment rules ────────────────────────────────────────────────────
 
   # The commitment-time half of the Question 6 proactive check: the same "nobody subscribed"

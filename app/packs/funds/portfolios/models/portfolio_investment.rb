@@ -302,7 +302,9 @@ class PortfolioInvestment < ApplicationRecord
 
   # Sums up all form custom fields tagged as 'Expense'
   def expense_cents
-    expense_fields = form_custom_fields.where(meta_data: "Expense").pluck(:name)
+    # No form type means no custom fields - and form_custom_fields through a nil form_type would still
+    # run a query that can never match, once per investment in UpdatePortfolioInvestmentsJob
+    expense_fields = form_type_id.present? ? form_custom_fields.where(meta_data: "Expense").pluck(:name) : []
 
     # Convert values to cents and sum
     total = expense_fields.filter_map do |name|

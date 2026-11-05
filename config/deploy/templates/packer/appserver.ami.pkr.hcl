@@ -133,7 +133,11 @@ build {
 
       // RVM
       "echo INSTALLING- RVM and Ruby 4.0.6",
-      "sudo apt-get install -y curl gnupg build-essential",
+      // rustc must be present when rvm compiles Ruby, or Ruby is built without YJIT
+      // (config.yjit then silently does nothing; config/initializers/yjit_check.rb warns)
+      "sudo apt-get install -y curl gnupg build-essential rustc",
+      // jemalloc: preloaded by the puma/sidekiq units (LD_PRELOAD) to cut malloc fragmentation
+      "sudo apt-get install -y libjemalloc2",
       "gpg --keyserver keyserver.ubuntu.com --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB",
       // "curl -sSL https://get.rvm.io | bash",
       // "curl -sSL https://get.rvm.io | bash -s stable --rails"

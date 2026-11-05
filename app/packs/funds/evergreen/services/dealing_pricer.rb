@@ -4,7 +4,7 @@
 # Worked examples H18, H19, H20, E24–E30, E34, X17 — openspec/changes/open-ended-funds/design.md#worked-examples
 class DealingPricer
   SubRow = Data.define(:order, :nav, :amount_cents, :units)
-  RedRow = Data.define(:order, :nav, :requested_units, :requested_value_cents, :filled_units, :value_cents, :carried_units, :early_fee_cents, :queue_position)
+  RedRow = Data.define(:order, :nav, :requested_units, :requested_value_cents, :filled_units, :value_cents, :carried_units, :early_fee_cents)
   UnreadyRow = Data.define(:order, :reason, :fate)
   # A ready order whose class has no usable NAV (missing, unapproved or already used): not priced, but still
   # listed so the dealing date's tabs show every order the list counts (E322)
@@ -124,6 +124,8 @@ class DealingPricer
   end
 
   def redemption_rows(orders, navs)
+    # Free units of every units / all-units request at this dealing date, in grouped queries
+    @free_units = DealingOrder.free_units_by_order(orders.reject { |o| o.form == "amount" }, as_of: @dd.date, excluding_date_id: @dd.id)
     requests = orders.map { |o| request_for(o, navs[o.unit_type]) }
     pools = gate_pools(navs)
     fills = GateAllocator.allocate(requests:, pools:, level: @setting.gate_level, method: @setting.gate_method,
@@ -133,7 +135,7 @@ class DealingPricer
       f = fills[o.id]
       RedRow.new(order: o, nav: navs[o.unit_type], requested_units: f.filled_units + f.carried_units, requested_value_cents: req.requested_value,
                  filled_units: f.filled_units, value_cents: f.value_cents, carried_units: f.carried_units,
-                 early_fee_cents: early_fee(o, f, navs[o.unit_type]), queue_position: o.queue_position)
+                 early_fee_cents: early_fee(o, f, navs[o.unit_type]))
     end
     # The same whole-fund NAV the gate pool uses, so the summary never reads "= ₹0.00" on a date
     # with no ready redemptions (E112, review finding)
@@ -148,15 +150,16 @@ class DealingPricer
   # What is still being asked for: the order's units / amount less what earlier dealing dates filled.
   # All-units orders are counted at this dealing date (E34).
   def request_for(order, nav)
-    prior = order.dealing_fills.where.not(dealing_date_id: @dd.id)
+    # The fills are preloaded with the orders (#preview); dealing_date_id is never null
+    prior = order.dealing_fills.reject { |f| f.dealing_date_id == @dd.id }
     if order.form == "amount"
-      amount = order.amount_cents.to_d - prior.sum(:amount_cents).to_d
+      amount = order.amount_cents.to_d - prior.sum { |f| f.amount_cents.to_d }
       GateAllocator::Request.new(order_id: order.id, investor_id: order.investor_id, unit_type: order.unit_type, units: nil,
                                  nav_per_unit_cents: nav.nav_per_unit_cents, amount_cents: amount)
     else
       # Never more than the folio still holds net of other dates' dealt-but-unpaid redemptions
-      free = [order.free_units(as_of: @dd.date, excluding_date_id: @dd.id), 0].max
-      units = order.all_units ? free : [order.units.to_d - prior.sum(:units).to_d, free].min
+      free = [@free_units.fetch(order.id), 0].max
+      units = order.all_units ? free : [order.units.to_d - prior.sum { |f| f.units.to_d }, free].min
       GateAllocator::Request.new(order_id: order.id, investor_id: order.investor_id, unit_type: order.unit_type, units:,
                                  nav_per_unit_cents: nav.nav_per_unit_cents, amount_cents: nil)
     end

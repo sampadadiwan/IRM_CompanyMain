@@ -27,7 +27,9 @@ class SideLettersController < ApplicationController
     # tasks are owned by the obligation (so completion records fulfillment),
     # which is why they don't appear in commitment-owned task lists.
     @covenant_tasks = Task.where(owner_type: "SideLetterObligation", owner_id: @obligations.map(&:id))
-                          .includes(:assigned_to)
+                          # Each task row shows its owner and (legacy check) its rich-text details - preloaded
+                          # like the main task list (TaskList) so neither is a query per row
+                          .includes(:assigned_to, :owner, :rich_text_details)
                           .order(Arel.sql("completed ASC, due_date IS NULL, due_date ASC"))
   end
 

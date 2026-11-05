@@ -4,7 +4,9 @@ module SideLetterObligationsHelper
   # first (pending/rejected), then lifecycle for approved rows. Every badge
   # carries a tooltip (needs a data-controller="tooltip" ancestor) because the
   # states are the hardest part of this feature for users to internalise.
-  def obligation_status_badge(obligation)
+  # next_task_due: { obligation id => earliest open task due date } when the caller loaded it for a whole
+  # list (the matrix); without it the obligation's own tasks are queried
+  def obligation_status_badge(obligation, next_task_due: nil)
     if obligation.pending_review?
       obligation_badge_tag("Pending review", "bg-warning text-dark",
                            "Waiting for counsel to approve or reject. Nothing is tracked and no alerts are sent until approval.")
@@ -15,7 +17,7 @@ module SideLetterObligationsHelper
       obligation_badge_tag("Armed", "bg-info text-dark",
                            "Event-triggered: there is no due date until the event happens. Use Fire to set a deadline when it does.")
     elsif obligation.obligation_active?
-      obligation_due_badge(obligation)
+      obligation_due_badge(obligation, next_task_due)
     elsif obligation.status.to_s == "waived"
       obligation_badge_tag("Waived", "bg-secondary",
                            "Counsel ended this obligation. Open tasks were removed; completed history is preserved. Use Revert if this was a mistake.")
@@ -76,8 +78,9 @@ module SideLetterObligationsHelper
   # Private (and obligation-prefixed) because Rails mixes every helper module
   # into every view — a generic name here silently overrides same-named helpers
   # in other packs (this collided with DealInvestorsHelper#status_badge).
-  def obligation_due_badge(obligation)
-    due = obligation.tasks.incomplete.where.not(due_date: nil).minimum(:due_date) || obligation.next_due_date
+  def obligation_due_badge(obligation, next_task_due = nil)
+    task_due = next_task_due ? next_task_due[obligation.id] : obligation.tasks.incomplete.where.not(due_date: nil).minimum(:due_date)
+    due = task_due || obligation.next_due_date
     return obligation_badge_tag("Active", "bg-success", "Approved and tracked — tasks and due-date alerts are live.") if due.blank?
 
     days = (due - Time.zone.today).to_i

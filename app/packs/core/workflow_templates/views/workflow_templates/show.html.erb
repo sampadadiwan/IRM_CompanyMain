@@ -121,7 +121,9 @@
 
   <%# ── Flow diagram ─────────────────────────────────────────────────────── %>
   <%
-    steps = @workflow_template.workflow_steps.includes(:owner_user, :workflow_step_actors => :user)
+    # actor_users is its own (through) association - WorkflowStepDiagramPresenter reads it, so it is
+    # preloaded too or each step queries its actors' users
+    steps = @workflow_template.workflow_steps.includes(:owner_user, :actor_users, :workflow_step_actors => :user)
     step_presenters = steps.map { |s| WorkflowStepDiagramPresenter.for_template_step(s) }
   %>
 

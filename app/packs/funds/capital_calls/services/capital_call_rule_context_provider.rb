@@ -93,19 +93,10 @@ class CapitalCallRuleContextProvider
                          .uniq
     return nil if investor_ids.empty?
 
-    # Cheap set-based pre-filter: an investor with no approved contact whose tag_list admits
-    # CapitalCall cannot be subscribed, whatever the fund policy says — so the per-contact Pundit
-    # check in capital_call_subscribers? is only run for investors who have at least one
-    # candidate contact. Tag semantics mirror Investor#notification_users (blank tag_list =
-    # subscribed to everything).
-    candidate_ids = InvestorAccess.approved
-                                  .where(investor_id: investor_ids)
-                                  .where("investor_accesses.tag_list IS NULL OR investor_accesses.tag_list = '' OR investor_accesses.tag_list LIKE ?", "%CapitalCall%")
-                                  .distinct
-                                  .pluck(:investor_id)
-
-    unsubscribed_ids = investor_ids - candidate_ids
-    unsubscribed_ids += Investor.where(id: candidate_ids).reject { |investor| investor.capital_call_subscribers?(record.fund) }.map(&:id)
+    # Every investor's subscribed contacts in one query, each investor stopping at its first contact
+    # who passes the fund access check — not one capital_call_subscribers? call per investor
+    subscribed_ids = Investor.capital_call_subscriber_ids(Investor.where(id: investor_ids), record.fund)
+    unsubscribed_ids = investor_ids - subscribed_ids
     return nil if unsubscribed_ids.empty?
 
     names = Investor.where(id: unsubscribed_ids).order(:investor_name).limit(MAX_NAMES_IN_MESSAGE).pluck(:investor_name)

@@ -128,6 +128,15 @@ pcuc() {
     fi
   fi
 
+  # Tests run under YJIT (config.yjit). Check the Ruby the workers will use BEFORE booting any:
+  # config/initializers/yjit_check.rb would also stop each worker, but this says it once, up front.
+  if [[ "${YJIT:-}" != "0" ]] && ! ruby -e 'exit(defined?(RubyVM::YJIT.enable) ? 0 : 1)' 2>/dev/null; then
+    print -u2 "pcuc: $(ruby -e 'print RUBY_DESCRIPTION') ($(command -v ruby)) has no YJIT."
+    print -u2 "pcuc: run bin/setup-yjit $(ruby -e 'print RUBY_VERSION'), or YJIT=0 pcuc ... to run without it on purpose."
+    return 1
+  fi
+  print "pcuc: $(ruby --yjit -e 'print RUBY_DESCRIPTION')"
+
   # One schema-loaded sqlite DB per worker, building only the missing ones. A worker whose DB
   # is absent fails at boot without saying why.
   local -a missing
@@ -195,6 +204,10 @@ pcuc() {
   # (set_unknown_runtime, test/runner.rb:308), which is no worse than the filesize guess.
   local group=runtime
   local allowed_missing=100
+  # --group-by runtime IO.reads the log unconditionally (test/runner.rb:245) and dies with ENOENT
+  # on a machine that has never run pcuc. An empty log is fine: with --allowed-missing 100 every
+  # file just gets the same unknown runtime, i.e. the first run is grouped evenly by count.
+  mkdir -p tmp && touch tmp/parallel_runtime_cucumber.log
 
   # Count the same tags over the same files (the whole tree when none were named).
   # PCUC_QUIET: step-definition puts/ap/pp/print go nowhere (features/support/quiet_step_output.rb);

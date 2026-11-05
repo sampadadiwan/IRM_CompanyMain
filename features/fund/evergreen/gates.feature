@@ -1,6 +1,6 @@
 @rack_test
 Feature: Evergreen redemption gates
-  Worked examples H19, H20, E27, E28, E29, E30, E111–E119 — openspec/changes/open-ended-funds/design.md#worked-examples
+  Worked examples H19, H20, E27, E28, E29, E30, E111–E119, E347 — openspec/changes/open-ended-funds/design.md#worked-examples
 
   Background:
     Given Im logged in as a user "first_name=Asha" for an entity "name=Caphive Demo;entity_type=Investment Fund"
@@ -103,6 +103,30 @@ Feature: Evergreen redemption gates
       | investor | filled      | carried     |
       | A Ltd    | 4,00,00,000 | 1,00,00,000 |
       | B LLP    | 1,00,00,000 | 1,00,00,000 |
+
+  # E347 — Edge case: a class-level gate with a units request in class A (A Ltd, 5,000 of its 80,000) and an
+  # all-units request in class B (B LLP's 20,000) — each class's free units and gate are its own: A is paid
+  # 4,000 units (₹4,00,00,000 of its ₹4 Cr gate), B 1,000 units (₹1,00,00,000) with 19,000 carried, both
+  # in the pricing and in the Redemptions list's gate forecast.
+  Scenario: A class-level gate counts each class's own free units for units requests
+    Given the evergreen fund "Alpha Long-Short Fund" with classes "A,B" and settings "redemption_calendar=monthly;gate_pct=5;gate_level=class;gate_method=fifo"
+    And "A Ltd" holds "80000" units of class "A" in folio "F-012" issued "2025-09-01"
+    And "B LLP" holds "20000" units of class "B" in folio "F-031" issued "2025-09-01"
+    And an approved NAV for class "A" on "2026-08-31" with NAV per unit "10,000" and units "80000"
+    And an approved NAV for class "B" on "2026-08-31" with NAV per unit "10,000" and units "20000"
+    And "A Ltd" has placed a "redemption" order "folio=F-012;units=5000" received "2026-09-10 09:00"
+    And "B LLP" has placed a "redemption" order "folio=F-031;all_units=true;class=B" received "2026-09-10 10:00"
+    And an approved NAV for class "A" on "2026-10-31" with NAV per unit "10,000" and units "80000"
+    And an approved NAV for class "B" on "2026-10-31" with NAV per unit "10,000" and units "20000"
+    And today is "2026-11-02"
+    Then the pricing of "2026-11-02" should fill:
+      | investor | filled      | carried      | units |
+      | A Ltd    | 4,00,00,000 | 1,00,00,000  | 4000  |
+      | B LLP    | 1,00,00,000 | 19,00,00,000 | 1000  |
+    When I open the redemptions list
+    Then the "Will be paid" cell of the order of "A Ltd" should show "4,00,00,000"
+    And the "Will be paid" cell of the order of "B LLP" should show "1,00,00,000"
+    And the "Will be carried" cell of the order of "B LLP" should show "19,00,00,000"
 
   # E111 — Edge case: redemptions exactly equal to the gate (₹3,00,00,000 + ₹2,11,00,000 = 5 % of ₹102,20,00,000) are filled in full, both orders are dealt and nothing is carried.
   Scenario: Redemptions exactly at the gate are filled in full

@@ -31,7 +31,13 @@ class PortfolioInvestmentsController < ApplicationController
 
       format.xlsx { render_xlsx(@portfolio_investments) }
 
-      format.json
+      format.json do
+        # The nested valuations/_valuation partial reads valuation.investment_instrument (via
+        # Valuation#currency) and valuation.owner for every row — two N+1s found by Prosopite.
+        # JSON-only: the HTML table never renders valuations, so preloading them there would be
+        # unused eager loading (see the PortfolioInvestment :valuation entry in Bullet's safelist).
+        @portfolio_investments = @portfolio_investments.preload(valuation: %i[investment_instrument owner])
+      end
     end
   end
 

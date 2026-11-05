@@ -724,6 +724,8 @@ GEM
       racc (~> 1.4)
     noticed (3.1.0)
       rails (>= 7.1.0)
+    oj (3.17.8)
+      bigdecimal (>= 3.0)
     openssl (4.0.2)
     orm_adapter (0.5.0)
     ostruct (0.6.3)
@@ -796,6 +798,9 @@ GEM
     prism (1.9.0)
     prometheus_exporter (2.3.1)
       webrick
+    prosopite (2.5.0)
+      activerecord (>= 6.1)
+      railties (>= 6.1)
     pry (0.16.1)
       coderay (~> 1.1)
       method_source (~> 1.0)
@@ -962,9 +967,6 @@ GEM
       rubocop (>= 1.89.0, < 2.0)
       rubocop-ast (>= 1.44.0, < 2.0)
     ruby-ole (1.2.13.1)
-    ruby-prof (2.0.5)
-      base64
-      ostruct
     ruby-progressbar (1.13.0)
     ruby-rc4 (0.1.5)
     ruby2_keywords (0.0.5)
@@ -1134,6 +1136,7 @@ GEM
       roda (>= 2.27, < 4)
     uri (1.1.2)
     useragent (0.16.11)
+    vernier (1.12.0)
     version_gem (1.1.15)
     view_component (4.17.0)
       actionview (>= 7.1.0)
@@ -1286,6 +1289,7 @@ DEPENDENCIES
   net-smtp
   net-ssh
   noticed
+  oj
   ostruct
   overcommit
   packs-rails
@@ -1299,6 +1303,7 @@ DEPENDENCIES
   polars-df
   pragmatic_segmenter
   prometheus_exporter
+  prosopite
   pry-byebug
   public_activity
   puma (~> 7.2, >= 7.2.1)
@@ -1318,7 +1323,6 @@ DEPENDENCIES
   rubocop-performance
   rubocop-rails
   ruby-openai!
-  ruby-prof
   rubyXL (= 3.4.33)
   ruby_linear_regression
   ruby_llm (~> 2.1.0)
@@ -1345,6 +1349,7 @@ DEPENDENCIES
   twilio-ruby
   tzinfo-data
   uppy-s3_multipart
+  vernier
   view_component
   web-console
   webmock

@@ -49,6 +49,12 @@ class InvestorAccess < ApplicationRecord
 
   scope :with_tag, ->(tag) { where("investor_accesses.tag_list LIKE ?", "%#{tag}%") }
 
+  # Contacts who receive notices on `topic`: a blank tag_list subscribes them to every topic,
+  # otherwise the topic must be in their list
+  scope :subscribed_to, lambda { |topic|
+    where("investor_accesses.tag_list IS NULL OR investor_accesses.tag_list = '' OR investor_accesses.tag_list LIKE ?", "%#{topic}%")
+  }
+
   scope :approved_for_user, lambda { |user, across_all_entities: false|
     if across_all_entities && user.has_cached_role?(:investor_advisor)
       where("investor_accesses.user_id=? and investor_accesses.approved=?", user.id, true).distinct
