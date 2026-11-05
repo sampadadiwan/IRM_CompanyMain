@@ -357,7 +357,7 @@
           <div class="article-meta">
             <time datetime="2026-11-05">Nov 5, 2026</time>
             <span class="dot">·</span>
-            <span>4 min read</span>
+            <span>5 min read</span>
             <span class="dot">·</span>
             <span>Data strategy</span>
           </div>
@@ -405,7 +405,7 @@
         </p>
         <figure class="dgm">
           <div>
-<svg viewBox="0 0 900 520" role="img" aria-label="Without a data lake: six sources, each fed by the people who own them, arrive in CapHive as file imports or through API connectors CapHive builds to other systems. CapHive validates, computes, approves, controls access and audits, run by the fund operations team, is operated by the fund administrator or the in-house operations team, and serves fund managers, the LP portal, dashboards, benchmarking, AI assistants and analysts' own tools directly.">
+<svg viewBox="0 0 900 520" role="img" aria-label="Without a data lake: six sources, each fed by the people who own them, arrive in CapHive as file imports or through API connectors CapHive builds to other systems. CapHive validates, computes, approves, controls access and audits, run by the fund operations team, is operated by the fund administrator or the in-house operations team, and serves fund managers, the LP portal, dashboards, benchmarking, MCP connectors for AI clients and analysts' own tools directly, each limited to what that user may see.">
 <defs>
   <marker id="ar1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#101010"/></marker>
   <marker id="arh1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#FF4D00"/></marker>
@@ -474,8 +474,8 @@
 <text class="d-p" x="752" y="291">Partners &amp; IR</text>
 <path class="d-line-hot" d="M640 272 L718 272" marker-end="url(#arh1)"/>
 <rect class="d-box" x="722" y="308" width="170" height="60" rx="10"/>
-<text class="d-t" x="736" y="328">AI assistants</text>
-<text class="d-s" x="736" y="344">under your permissions</text>
+<text class="d-t" x="736" y="328">MCP connectors</text>
+<text class="d-s" x="736" y="344">custom views on demand</text>
 <use href="#pp1" x="736" y="348" width="11" height="11"/>
 <text class="d-p" x="752" y="357">Partners &amp; analysts</text>
 <path class="d-line-hot" d="M640 338 L718 338" marker-end="url(#arh1)"/>
@@ -544,7 +544,7 @@
               <tr><td><strong>Analytics and reports</strong></td><td>Report Builder and dashboards on IRR, TVPI, DPI, fees, carry and KPIs, across funds and currencies</td></tr>
               <tr><td><strong>Custom models</strong></td><td>Pacing, forecasts and stress tests run on numbers that are already computed and approved, through the API or a database export</td></tr>
               <tr><td><strong>Your own tools</strong></td><td>A scheduled SQLite export for SQL, notebooks and BI, or, for large clients on single-tenant AWS installations, a direct SQL connection</td></tr>
-              <tr><td><strong>AI</strong></td><td>AI assistants query defined measures under each user's own permissions, so they give the same answer as the screens</td></tr>
+              <tr><td><strong>Custom views and AI</strong></td><td>MCP connectors let Claude or another AI client build any view across your data on request, limited to what the person connecting can see on the platform</td></tr>
             </tbody>
           </table>
           <figcaption>A lake's usual wish-list, covered without one</figcaption>
@@ -556,6 +556,34 @@
           hire.
         </p>
 
+
+        <h3 id="mcp">Custom views through MCP connectors</h3>
+        <p>
+          Not every question deserves a report. <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> runs an MCP server, so a partner or analyst can
+          connect Claude, or any AI client that speaks the Model Context Protocol, and build the view
+          they need by asking for it:
+        </p>
+        <ul>
+          <li>"Unfunded commitments by investor type across Fund I and Fund II."</li>
+          <li>"Management fees by quarter for 2025, per fund."</li>
+          <li>"Revenue and EBITDA for each portfolio company over the last four quarters."</li>
+        </ul>
+        <p>
+          The connector covers sixteen kinds of record: funds, commitments, capital calls,
+          remittances and their payments, distributions and their payments, the ledger, units,
+          ratios, portfolio companies, investments, portfolio investments, valuations, KPIs and
+          documents. It can filter, sort, group and total them. A filter the
+          data does not support is rejected with a reason, rather than quietly ignored, so an
+          answer never covers more data than was asked for.
+        </p>
+        <div class="callout">
+          <p style="margin:0">
+            <strong>Everything is access-controlled.</strong> A connection acts as the person who
+            made it, and sees only what that person can see on the platform: the same funds,
+            investors and documents, under the same permission rules as the screens and the API.
+            A colleague with access to one fund gets answers about that fund, and nothing else.
+          </p>
+        </div>
 
         <h2 id="with-lake">With a lake: <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> feeds it cleanly</h2>
         <p>
