@@ -245,10 +245,12 @@ class CapitalCallsController < ApplicationController
     deposits = report.json_fields["deposits"] || []
     counts = Hash.new(0)
     errors = []
-    deposits.each do |deposit|
-      next unless deposit["tier"] == "exact" && deposit["payment_status"].blank? && deposit["matched_remittance_id"].present?
-
-      remittance = @capital_call.capital_remittances.find_by(id: deposit["matched_remittance_id"])
+    # Only Exact deposits with a match and no payment yet are applied here
+    pending = deposits.select { |d| d["tier"] == "exact" && d["payment_status"].blank? && d["matched_remittance_id"].present? }
+    # Load every matched remittance in one query instead of one find_by per deposit
+    remittances = RemittanceDepositPaymentApplier.remittances_by_id(@capital_call, pending)
+    pending.each do |deposit|
+      remittance = remittances[deposit["matched_remittance_id"].to_s]
       outcome = if remittance
                   RemittanceDepositPaymentApplier.call(deposit: deposit, capital_remittance: remittance, fund: @capital_call.fund)
                 else

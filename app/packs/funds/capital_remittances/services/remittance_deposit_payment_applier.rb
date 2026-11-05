@@ -85,6 +85,25 @@ module RemittanceDepositPaymentApplier
     end
   end
 
+  # Loads, in one query, every remittance the given deposits are matched to, for callers that apply
+  # a whole batch of deposits (the agent's auto-apply step, the reviewer's "Confirm all exact").
+  # Each used to call capital_call.capital_remittances.find_by per deposit, and #call then loaded
+  # that remittance's entity and commitment one by one too.
+  #
+  # Still scoped through capital_call.capital_remittances, so a deposit pointing at another call's
+  # remittance finds nothing here, exactly as the per-deposit find_by did.
+  #
+  # @return [Hash{String => CapitalRemittance}] keyed by id as a string — the JSON report may hold
+  #   matched_remittance_id as either an integer or a string, so callers look up with #to_s.
+  def remittances_by_id(capital_call, deposits)
+    # Collect the matched ids once; nil/blank means the deposit had no match
+    ids = deposits.filter_map { |d| d["matched_remittance_id"].presence }.uniq
+    return {} if ids.empty?
+
+    # One query for the remittances, plus one each for the entity and commitment #call reads
+    capital_call.capital_remittances.where(id: ids).includes(:entity, :capital_commitment).index_by { |r| r.id.to_s }
+  end
+
   # The bank's own transaction id where the statement exposes one (ICICI's "Tran Id" column);
   # otherwise a deterministic hash of sheet+row+narration+amount, stable across re-runs of the
   # same statement (row numbers don't change on a re-upload of the same file) so idempotency

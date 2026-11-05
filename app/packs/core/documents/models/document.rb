@@ -459,6 +459,18 @@ class Document < ApplicationRecord
     end
   end
 
+  # Comparison key for a document name, for code that loads documents in one query and then
+  # matches them to labels in Ruby instead of running find_by(name:) per label.
+  #
+  # Mirrors the documents.name column collation (utf8mb4_0900_ai_ci), which is case- AND
+  # accent-insensitive, so the Ruby match agrees with what find_by(name:) found:
+  #   name_key("Healthcare Skill") == name_key("healthcare skill")   # => true
+  #   name_key("Café") == name_key("Cafe")                           # => true
+  def self.name_key(name)
+    # NFKD splits accented letters into base letter + combining mark; drop the marks, then fold case
+    name.to_s.unicode_normalize(:nfkd).gsub(/\p{Mn}/, "").downcase
+  end
+
   def self.documents_for(current_user, entity)
     # Is this user from an investor
     investor = Investor.for(current_user, entity).first

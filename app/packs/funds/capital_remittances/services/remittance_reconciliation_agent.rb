@@ -363,12 +363,15 @@ class RemittanceReconciliationAgent < SupportAgentService
 
     # Exact rows with no payment outcome yet — score_deposits already settled the ones whose
     # reference was found on this fund (already_recorded / recorded_elsewhere).
-    ctx[:deposits].select { |d| d["tier"] == "exact" && d["payment_status"].blank? }.each do |deposit|
-      # Scoped through capital_call.capital_remittances (not a bare CapitalRemittance.find_by)
-      # as defense in depth: matched_remittance_id is always sourced from ctx[:candidates],
-      # itself already scoped to this call, so this can't fire in the normal flow - it's here
-      # so a future bug upstream can never apply a payment against the wrong call's remittance.
-      remittance = ctx[:capital_call].capital_remittances.find_by(id: deposit["matched_remittance_id"])
+    pending = ctx[:deposits].select { |d| d["tier"] == "exact" && d["payment_status"].blank? }
+    # Scoped through capital_call.capital_remittances (not a bare CapitalRemittance lookup)
+    # as defense in depth: matched_remittance_id is always sourced from ctx[:candidates],
+    # itself already scoped to this call, so a miss can't happen in the normal flow - it's here
+    # so a future bug upstream can never apply a payment against the wrong call's remittance.
+    # Loaded in one query for all pending deposits rather than one find_by per deposit.
+    remittances = RemittanceDepositPaymentApplier.remittances_by_id(ctx[:capital_call], pending)
+    pending.each do |deposit|
+      remittance = remittances[deposit["matched_remittance_id"].to_s]
       unless remittance
         deposit["payment_status"] = "error"
         deposit["payment_error"] = "matched remittance no longer exists"

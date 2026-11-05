@@ -363,7 +363,9 @@ class Investor < ApplicationRecord
   #             a contact with tags is subscribed ONLY to topics whose tag is in their list.
   #             Contacts whose tag_list does not intersect with_tag are excluded.
   def notification_users(model = nil, with_tag: nil)
-    accesses = approved_investor_accesses.includes(user: :roles)
+    # :entity is preloaded because the per-user policy check below reads it (FundPolicy#show? ->
+    # UserEnabled#enable_funds -> user.entity); without it each contact costs an entities lookup.
+    accesses = approved_investor_accesses.includes(user: %i[roles entity])
     # Contacts with no tag (subscribed to all) OR whose tag_list contains the topic
     accesses = accesses.subscribed_to(with_tag) if with_tag.present?
 
