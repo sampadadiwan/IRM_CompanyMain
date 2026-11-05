@@ -247,11 +247,12 @@
 </div>
 
 <% if @investor.category == "Portfolio Company" %>
+  <%# The chat panel needs the agent record, but skip the lookup entirely unless the Portfolio Assistant is enabled %>
   <% portfolio_agent = SupportAgent.find_by(
     entity_id: @investor.entity_id,
     agent_type: "PortfolioAssistantAgent",
     enabled: true
-  ) %>
+  ) if @investor.entity.support_agents.set?(:portfolio_assistant) %>
   <% if portfolio_agent&.chat_enabled? %>
     <%= render "support_agents/chat_panel",
                support_agent: portfolio_agent,

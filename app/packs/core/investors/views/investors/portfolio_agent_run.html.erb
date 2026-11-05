@@ -168,11 +168,12 @@
     No portfolio companies found matching the selected tag or sector filters.
   </div>
 <% end %>
+  <%# The chat panel needs the agent record, but skip the lookup entirely unless the Portfolio Assistant is enabled %>
   <% portfolio_agent = SupportAgent.find_by(
        entity_id: current_user.entity_id,
        agent_type: "PortfolioAssistantAgent",
        enabled: true
-     ) %>
+     ) if current_user.entity.support_agents.set?(:portfolio_assistant) %>
   <% if portfolio_agent&.chat_enabled? %>
     <%= render "support_agents/chat_panel",
                support_agent: portfolio_agent,
