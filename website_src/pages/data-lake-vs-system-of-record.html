@@ -276,129 +276,6 @@ body_extra: |
         </p>
 
 
-        <h3 id="mcp">Custom views through MCP connectors</h3>
-        <p>
-          Not every question deserves a report. <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> runs an MCP server, so a partner or analyst can
-          connect Claude or ChatGPT to it and build the view they need by asking for it:
-        </p>
-        <ul>
-          <li>"Unfunded commitments by investor type across Fund I and Fund II."</li>
-          <li>"Management fees by quarter for 2025, per fund."</li>
-          <li>"Revenue and EBITDA for each portfolio company over the last four quarters."</li>
-        </ul>
-        <p>
-          The connector covers sixteen kinds of record: funds, commitments, capital calls,
-          remittances and their payments, distributions and their payments, the ledger, units,
-          ratios, portfolio companies, investments, portfolio investments, valuations, KPIs and
-          documents. It can filter, sort, group and total them. A filter the
-          data does not support is rejected with a reason, rather than quietly ignored, so an
-          answer never covers more data than was asked for.
-        </p>
-        <div class="callout">
-          <p style="margin:0">
-            <strong>Everything is access-controlled.</strong> A connection acts as the person who
-            made it, and sees only what that person can see on the platform: the same funds,
-            investors and documents, under the same permission rules as the screens and the API.
-            A colleague with access to one fund gets answers about that fund, and nothing else.
-          </p>
-        </div>
-        <figure class="dgm">
-          <div>
-<svg viewBox="0 0 900 776" role="img" aria-label="Connecting Claude to CapHive over MCP. Connect once: you add CapHive as a connector; Claude discovers CapHive's OAuth metadata and registers as a supported client; you sign in to CapHive with your own login and approve read-only access; CapHive issues Claude an access token using the authorization code flow with PKCE. Every question: you ask Claude; Claude calls a CapHive tool with the token; CapHive checks the token, that MCP is on for your organisation, that your role and this AI client are allowed, and that the filters are valid, then returns only the data you can see on the platform; Claude shows you the custom view.">
-<defs>
-  <marker id="ar3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#101010"/></marker>
-  <marker id="arh3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#FF4D00"/></marker>
-  <symbol id="pp3" viewBox="0 0 11 11"><circle cx="5.5" cy="3.2" r="2.6" fill="#FF4D00"/><path d="M0.6 11 C0.6 6.6 10.4 6.6 10.4 11 Z" fill="#FF4D00"/></symbol>
-</defs>
-<rect class="d-band" x="8" y="94" width="884" height="222" rx="12"/>
-<text class="d-hdr" x="26" y="116">1 · CONNECT ONCE</text>
-<rect class="d-band" x="8" y="328" width="884" height="380" rx="12"/>
-<text class="d-hdr" x="26" y="350">2 · EVERY QUESTION</text>
-<path class="d-life" d="M110 72 L110 708"/>
-<path class="d-life" d="M450 72 L450 708"/>
-<path class="d-life" d="M780 72 L780 708"/>
-<rect class="d-box-soft" x="0" y="16" width="220" height="56" rx="12"/>
-<text class="d-t" x="110" y="40" text-anchor="middle" style="font-size:14px">You</text>
-<text class="d-s" x="110" y="60" text-anchor="middle"></text>
-<use href="#pp3" x="58" y="51" width="11" height="11"/>
-<text class="d-p" x="74" y="60">Partner or analyst</text>
-<rect class="d-box" x="340" y="16" width="220" height="56" rx="12"/>
-<text class="d-t" x="450" y="40" text-anchor="middle" style="font-size:14px">Claude</text>
-<text class="d-s" x="450" y="60" text-anchor="middle">or ChatGPT</text>
-<rect class="d-hub" x="670" y="16" width="220" height="56" rx="12"/>
-<text class="d-wm" x="780" y="42" text-anchor="middle"><tspan class="d-wm-cap">Cap</tspan>Hive</text>
-<text class="d-s" x="780" y="60" text-anchor="middle">sign-in server + MCP server</text>
-<path class="d-line" d="M122 150 L446 150" marker-end="url(#ar3)"/>
-<circle class="d-n" cx="110" cy="150" r="10"/>
-<text class="d-n-t" x="110" y="154" text-anchor="middle">1</text>
-<text class="d-t" x="280" y="141" text-anchor="middle">Add CapHive as a connector</text>
-<text class="d-s" x="280" y="167" text-anchor="middle">paste your CapHive MCP address</text>
-<path class="d-line" d="M462 198 L776 198" marker-end="url(#ar3)"/>
-<circle class="d-n" cx="450" cy="198" r="10"/>
-<text class="d-n-t" x="450" y="202" text-anchor="middle">2</text>
-<text class="d-t" x="615" y="189" text-anchor="middle">Discover and register</text>
-<text class="d-s" x="615" y="215" text-anchor="middle">/.well-known metadata · supported clients only</text>
-<path class="d-line" d="M768 246 L114 246" marker-end="url(#ar3)"/>
-<circle class="d-n" cx="780" cy="246" r="10"/>
-<text class="d-n-t" x="780" y="250" text-anchor="middle">3</text>
-<text class="d-t" x="280" y="237" text-anchor="middle">Sign in to CapHive and approve</text>
-<text class="d-s" x="280" y="263" text-anchor="middle">your own login · read-only access</text>
-<path class="d-line" d="M768 294 L454 294" marker-end="url(#ar3)"/>
-<circle class="d-n" cx="780" cy="294" r="10"/>
-<text class="d-n-t" x="780" y="298" text-anchor="middle">4</text>
-<text class="d-t" x="615" y="285" text-anchor="middle">Access token for Claude</text>
-<text class="d-s" x="615" y="311" text-anchor="middle">authorization code + PKCE · 30 days</text>
-<path class="d-line" d="M122 384 L446 384" marker-end="url(#ar3)"/>
-<circle class="d-n" cx="110" cy="384" r="10"/>
-<text class="d-n-t" x="110" y="388" text-anchor="middle">5</text>
-<text class="d-t" x="280" y="375" text-anchor="middle">Ask for a view</text>
-<text class="d-s" x="280" y="401" text-anchor="middle">“unfunded by investor type, Fund I &amp; II”</text>
-<path class="d-line-hot" d="M462 432 L776 432" marker-end="url(#arh3)"/>
-<circle class="d-n" cx="450" cy="432" r="10"/>
-<text class="d-n-t" x="450" y="436" text-anchor="middle">6</text>
-<text class="d-t" x="615" y="423" text-anchor="middle">Tool call with the token</text>
-<text class="d-s" x="615" y="449" text-anchor="middle">list_capital_commitments · group · total</text>
-<rect class="d-hub" x="640" y="466" width="252" height="196" rx="12"/>
-<text class="d-hdr" x="656" y="488">CHECKED ON EVERY CALL</text>
-<rect class="d-pill" x="652" y="500" width="228" height="22" rx="6"/>
-<path class="d-chk" d="M664 511 l3.5 3.5 l7 -7"/>
-<text class="d-t" x="682" y="515" style="font-size:12px">Token valid and not expired</text>
-<rect class="d-pill" x="652" y="526" width="228" height="22" rx="6"/>
-<path class="d-chk" d="M664 537 l3.5 3.5 l7 -7"/>
-<text class="d-t" x="682" y="541" style="font-size:12px">MCP on for your organisation</text>
-<rect class="d-pill" x="652" y="552" width="228" height="22" rx="6"/>
-<path class="d-chk" d="M664 563 l3.5 3.5 l7 -7"/>
-<text class="d-t" x="682" y="567" style="font-size:12px">Your role is allowed</text>
-<rect class="d-pill" x="652" y="578" width="228" height="22" rx="6"/>
-<path class="d-chk" d="M664 589 l3.5 3.5 l7 -7"/>
-<text class="d-t" x="682" y="593" style="font-size:12px">This AI client is allowed</text>
-<rect class="d-pill" x="652" y="604" width="228" height="22" rx="6"/>
-<path class="d-chk" d="M664 615 l3.5 3.5 l7 -7"/>
-<text class="d-t" x="682" y="619" style="font-size:12px">Filters checked, none ignored</text>
-<rect class="d-box-hot" x="652" y="630" width="228" height="22" rx="6"/>
-<path class="d-chk" d="M664 641 l3.5 3.5 l7 -7"/>
-<text class="d-t d-hot" x="682" y="645" style="font-size:12px">Only data you can see</text>
-<path class="d-line-hot" d="M628 641 L454 641" marker-end="url(#arh3)"/>
-<circle class="d-n" cx="640" cy="641" r="10"/>
-<text class="d-n-t" x="640" y="645" text-anchor="middle">7</text>
-<text class="d-t" x="545" y="632" text-anchor="middle">Answer</text>
-<text class="d-s" x="545" y="658" text-anchor="middle">only rows your permissions allow</text>
-<path class="d-line" d="M438 684 L114 684" marker-end="url(#ar3)"/>
-<circle class="d-n" cx="450" cy="684" r="10"/>
-<text class="d-n-t" x="450" y="688" text-anchor="middle">8</text>
-<text class="d-t" x="280" y="675" text-anchor="middle">Your custom view</text>
-<text class="d-s" x="280" y="701" text-anchor="middle">a table, chart or summary in Claude</text>
-<rect class="d-box-hot" x="37" y="726" width="262" height="34" rx="17"/>
-<text class="d-tag" x="168" y="748" text-anchor="middle">Read-only access</text>
-<rect class="d-box-hot" x="319" y="726" width="262" height="34" rx="17"/>
-<text class="d-tag" x="450" y="748" text-anchor="middle">Your permissions, nothing more</text>
-<rect class="d-box-hot" x="601" y="726" width="262" height="34" rx="17"/>
-<text class="d-tag" x="732" y="748" text-anchor="middle">Admins choose roles and AI clients</text>
-</svg>
-          </div>
-          <figcaption>Connecting Claude to <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span>: sign in once with your own <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> login. After that, every question is checked on the way in and answered only from the data you can see on the platform.</figcaption>
-        </figure>
-
         <h2 id="with-lake">With a lake: <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> feeds it cleanly</h2>
         <p>
           If your firm runs a lake, keep it. Put <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> in front of it as the fund-operations source,
@@ -537,6 +414,59 @@ body_extra: |
           <li><strong><span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> on its own makes sense</strong> if the goal is one reliable view of your funds, investors and portfolio, without the cost of a platform and a team to run it.</li>
           <li><strong>Either way,</strong> the fund's numbers are computed once, in one place, and everything downstream reads the same figures.</li>
         </ul>
+
+        <h2 id="your-ai">So what about connecting your own AI?</h2>
+        <p>
+          You can, with either path. Connect Claude or ChatGPT to <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> through its MCP connector,
+          sign in once with your own <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> login, and ask for the view you need:
+        </p>
+        <ul>
+          <li>"Unfunded commitments by investor type across Fund I and Fund II."</li>
+          <li>"Revenue and EBITDA for each portfolio company over the last four quarters."</li>
+        </ul>
+        <figure class="dgm">
+          <div>
+<svg viewBox="0 0 760 222" role="img" aria-label="You ask Claude or ChatGPT for a view. Claude, connected once with your own CapHive login, queries CapHive as you. CapHive checks your permissions and returns only the data you can see on the platform, and Claude shows you the custom view. Access is read-only.">
+<defs>
+  <marker id="ar3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#101010"/></marker>
+  <marker id="arh3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#FF4D00"/></marker>
+  <symbol id="pp3" viewBox="0 0 11 11"><circle cx="5.5" cy="3.2" r="2.6" fill="#FF4D00"/><path d="M0.6 11 C0.6 6.6 10.4 6.6 10.4 11 Z" fill="#FF4D00"/></symbol>
+</defs>
+<rect class="d-box-soft" x="10" y="30" width="180" height="112" rx="14"/>
+<text class="d-t" x="100" y="72" text-anchor="middle" style="font-size:15px">You</text>
+<text class="d-s" x="100" y="92" text-anchor="middle">ask in plain English</text>
+<use href="#pp3" x="50" y="109" width="11" height="11"/>
+<text class="d-p" x="66" y="118">Partner or analyst</text>
+<rect class="d-box" x="290" y="30" width="180" height="112" rx="14"/>
+<text class="d-t" x="380" y="72" text-anchor="middle" style="font-size:15px">Claude or ChatGPT</text>
+<text class="d-s" x="380" y="92" text-anchor="middle">connected once with</text>
+<text class="d-s" x="380" y="108" text-anchor="middle">your CapHive login</text>
+<rect class="d-hub" x="570" y="30" width="180" height="112" rx="14"/>
+<text class="d-wm" x="660" y="74" text-anchor="middle"><tspan class="d-wm-cap">Cap</tspan>Hive</text>
+<text class="d-s" x="660" y="94" text-anchor="middle">MCP server</text>
+<text class="d-p" x="660" y="118" text-anchor="middle">checks your permissions</text>
+<path class="d-line" d="M196 68 L284 68" marker-end="url(#ar3)"/>
+<text class="d-s" x="240" y="58" text-anchor="middle">Ask for a view</text>
+<path class="d-line-hot" d="M284 104 L196 104" marker-end="url(#arh3)"/>
+<text class="d-p" x="240" y="124" text-anchor="middle">Custom view</text>
+<path class="d-line" d="M476 68 L564 68" marker-end="url(#ar3)"/>
+<text class="d-s" x="520" y="58" text-anchor="middle">Query, as you</text>
+<path class="d-line-hot" d="M564 104 L476 104" marker-end="url(#arh3)"/>
+<text class="d-p" x="520" y="124" text-anchor="middle">Only your data</text>
+<rect class="d-box-hot" x="15" y="172" width="230" height="34" rx="17"/>
+<text class="d-tag" x="130" y="194" text-anchor="middle">One sign-in, your own login</text>
+<rect class="d-box-hot" x="265" y="172" width="230" height="34" rx="17"/>
+<text class="d-tag" x="380" y="194" text-anchor="middle">Read-only</text>
+<rect class="d-box-hot" x="515" y="172" width="230" height="34" rx="17"/>
+<text class="d-tag" x="630" y="194" text-anchor="middle">Only what you can see</text>
+</svg>
+          </div>
+        </figure>
+        <p>
+          Access is read-only, and a connection sees only what the person who made it can see on the
+          platform: the same funds, investors and documents, under the same permission rules as the
+          screens. Your administrators choose which roles and which AI clients may connect.
+        </p>
           </div>
         </div>
       </div>
