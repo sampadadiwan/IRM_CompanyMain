@@ -384,3 +384,51 @@ Then('the home pane is drawn inline with the {string} pane as a lazy frame') do 
   expect(frame[:loading]).to eq("lazy")
   expect(frame[:src]).to eq(compliance_duties_path)
 end
+
+# ── E201 / E202 / X95: step popups and minimise ─────────────────────────────────────────────────
+# E201 — the circle carries the shared journey-step-info action and its popup URL, as on other journeys
+Then('the {string} step circle opens its popup') do |key|
+  circle = find_by_id("gs_step_#{key}")
+  expect(circle["data-action"]).to include("journey-step-info#open")
+  expect(circle["data-journey-step-info-url-param"]).to eq(compliance_getting_started_step_path(key:))
+end
+
+# What journey_step_info_controller.js fetches when the circle is clicked
+When('I open the Getting started popup for {string}') do |key|
+  visit compliance_getting_started_step_path(key:)
+end
+
+Then('the step popup is titled {string}') do |title|
+  expect(find_by_id("journeyStepInfoModalLabel", visible: :all)).to have_text(title)
+end
+
+Then('the step popup lists {string}') do |text|
+  expect(find_by_id("getting_started_step_details", visible: :all)).to have_text(text)
+end
+
+Then('the step popup has the button {string}') do |label|
+  expect(find_by_id("getting_started_step_action", visible: :all)).to have_text(label)
+end
+
+Then('the Getting started steps are expanded') do
+  expect(find_by_id("getting_started_body", visible: :all)[:class].split).to include("show")
+end
+
+# E202 — what collapse-preference sends on Bootstrap's hidden.bs.collapse
+When('I minimise Getting started') do
+  page.driver.submit :patch, compliance_getting_started_collapse_path, { collapsed: "true" }
+end
+
+Then('the Getting started steps are folded under the header') do
+  expect(find_by_id("getting_started_body", visible: :all)[:class].split).not_to include("show")
+  expect(find_by_id("getting_started_toggle")["aria-expanded"]).to eq("false")
+end
+
+# X95
+When('I request the Getting started step popup {string}') do |key|
+  visit compliance_getting_started_step_path(key:)
+end
+
+Then('the compliance request is not found') do
+  expect(page.status_code).to eq(404)
+end

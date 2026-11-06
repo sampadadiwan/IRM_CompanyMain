@@ -48,6 +48,15 @@ class ComplianceGettingStarted
     Result.new(steps:, done_count: steps.count(&:done?), current:)
   end
 
+  # E201: the specifics behind one step, shown in its popup (the rail's circles open it, as on every other
+  # journey). Worked out from the same data as the panel; read-only. Each line is { label:, text:, ok: }
+  # where ok is true (✓), false (✗) or nil (neutral). Unknown keys return nil (X95 → 404 in the controller).
+  def details(key)
+    return nil unless STEPS.include?(key.to_s)
+
+    send(:"#{key}_details")
+  end
+
   # Reference lists the attached content checks read that their packs do not ship themselves (E181) —
   # also what the Setup page's list editor shows
   def needed_lists
@@ -123,9 +132,7 @@ class ComplianceGettingStarted
   end
 
   def recipients_step
-    tagged = User.where(entity_id: @entity.id, active: true).with_tag(ComplianceNotices::TAG).to_a
-                 .any? { |u| u.tag_list.to_s.split(",").map(&:strip).include?(ComplianceNotices::TAG) }
-    step("recipients", tagged, path: routes.users_path, can_act: @user.has_cached_role?(:company_admin))
+    step("recipients", tagged_users.any?, path: routes.users_path, can_act: @user.has_cached_role?(:company_admin))
   end
 
   def monitoring_step
@@ -140,5 +147,112 @@ class ComplianceGettingStarted
     ran = ComplianceRun.exists?(entity_id: @entity.id, status: "succeeded")
     step("owned", ran && unowned.zero?, path: routes.compliance_register_items_path,
                                         count: ActionController::Base.helpers.pluralize(unowned, "open item"))
+  end
+
+  # ── Popup specifics (E201) ─────────────────────────────────────────────────────────────────────
+
+  def line(text, ok = nil, label: nil)
+    { label:, text:, ok: }
+  end
+
+  def none
+    I18n.t("compliance.getting_started.details.none")
+  end
+
+  # The owner and every eligible approver (company admins included, as maker–checker counts them)
+  def owner_details
+    approvers = ComplianceAccess.eligible_approvers(@entity)
+    [line(@setup.owner&.full_name || none, @setup.owner.present?, label: tr("owner.details.owner")),
+     line(approvers.map(&:full_name).join(", ").presence || none, approvers.any?, label: tr("owner.details.approvers"))]
+  end
+
+  # Every attached fund × pack, plus how many visible funds still carry none (never shown as compliant, E10)
+  def attach_details
+    lines = @fund_packs.sort_by { |fp| [fp.fund.name, fp.pack_name] }.map do |fp|
+      parts = [fp.pack_name, fp.classification.presence, fp.compliance_pack_version&.label].compact
+      line(parts.join(" · "), true, label: fp.fund.name)
+    end
+    lines = [line(none, false)] if lines.empty?
+    unmonitored = ComplianceAccess.fund_ids(@user).size - @fund_packs.map(&:fund_id).uniq.size
+    lines << line(tr("attach.details.unmonitored", count: unmonitored)) if unmonitored.positive?
+    lines
+  end
+
+  # Each input the attached checks read: mapped, optional, or the checks a missing one blocks (H81)
+  def inputs_details
+    inputs = ComplianceInputs.for(@entity)
+    return [line(tr("inputs.details.no_packs"), nil)] if inputs.empty?
+
+    inputs.map do |inp|
+      label = "#{inp.label.upcase_first} (#{inp.packs.join(', ')})"
+      if inp.missing?
+        blocked = ComplianceInputs.blocked_checks_count(@entity, [inp.key])
+        missing = inp.type == "fund_figure" ? tr("inputs.details.missing_for", funds: inp.missing_funds.join(", ")) : tr("inputs.details.unmapped")
+        line("#{missing} — #{tr('inputs.details.blocks', count: ActionController::Base.helpers.pluralize(blocked, 'check'))}", false, label:)
+      elsif inp.optional && !inp.mapped
+        line(tr("inputs.details.optional"), nil, label:)
+      else
+        line(tr("inputs.details.mapped"), true, label:)
+      end
+    end
+  end
+
+  # Each list an attached content check reads, with its entry count — or "not needed" (E181)
+  def lists_details
+    needed = needed_lists
+    return [line(tr("lists.not_needed"), nil)] if needed.empty?
+
+    needed.map do |key|
+      n = @setup.reference_list(key).size
+      line(ActionController::Base.helpers.pluralize(n, "entry"), n.positive?, label: key.humanize)
+    end
+  end
+
+  # The firm's last successful run, in its own time zone
+  def first_run_details
+    last = ComplianceRun.where(entity_id: @entity.id, status: "succeeded").includes(:fund).order(:created_at, :id).last
+    return [line(tr("first_run.details.none"), false)] unless last
+
+    at = I18n.l(last.created_at.in_time_zone(@setup.time_zone.presence || "Asia/Kolkata"), format: :abbr_date_time)
+    [line("#{last.fund&.name} · #{at} (#{last.trigger == 'nightly' ? 'nightly' : 'Run now'})", true, label: tr("first_run.details.last"))]
+  end
+
+  def recipients_details
+    users = tagged_users
+    return [line(tr("recipients.details.none"), false)] if users.empty?
+
+    users.map { |u| line(u.full_name, true) }
+  end
+
+  # On since when; off → why it may be refused (X15: monitoring stays off while an input is missing)
+  def monitoring_details
+    if @setup.monitoring_enabled?
+      since = @setup.monitoring_since
+      return [line(since ? tr("monitoring.details.switched_on", since: I18n.l(since)) : tr("monitoring.details.switched_on_undated"), true)]
+    end
+
+    lines = [line(tr("monitoring.details.switched_off"), false)]
+    missing = ComplianceInputs.missing_labels(@entity)
+    lines << line(tr("monitoring.details.refused", names: missing.join(", "))) if missing.any?
+    lines
+  end
+
+  # Open items nobody owns (up to 10, then "and N more")
+  def owned_details
+    return [line(tr("owned.details.no_results"), nil)] unless ComplianceRun.exists?(entity_id: @entity.id, status: "succeeded")
+
+    scope = ComplianceRegisterItem.open_items.where(entity_id: @entity.id, assignee_id: nil)
+                                  .where.not(status: %w[pending_approval explained])
+    total = scope.count
+    return [line(tr("owned.details.all_owned"), true)] if total.zero?
+
+    lines = scope.includes(:fund).order(:fix_by, :id).limit(10).map { |i| line(i.check_name, false, label: i.fund.name) }
+    lines << line(tr("owned.details.more", count: total - 10)) if total > 10
+    lines
+  end
+
+  def tagged_users
+    User.where(entity_id: @entity.id, active: true).with_tag(ComplianceNotices::TAG).to_a
+        .select { |u| u.tag_list.to_s.split(",").map(&:strip).include?(ComplianceNotices::TAG) }
   end
 end

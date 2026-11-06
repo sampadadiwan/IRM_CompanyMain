@@ -3,6 +3,9 @@ scope :compliance do
   get "/", to: "compliance_home#index", as: :compliance_home
   # ⑩ Phase 5 newcomer guidance: the Getting started frame and the super-admin customer setup list
   get "getting_started", to: "compliance_home#getting_started", as: :compliance_getting_started
+  # E201 step popup (opened from the rail like other journeys) and E202 the minimise toggle, remembered per user
+  get "getting_started/step", to: "compliance_home#getting_started_step", as: :compliance_getting_started_step
+  patch "getting_started/collapse", to: "compliance_home#getting_started_collapse", as: :compliance_getting_started_collapse
   get "onboarding", to: "compliance_onboarding#index", as: :compliance_onboarding
   resources :compliance_packs, path: "packs", only: %i[index show new create] do
     member { patch :retire }

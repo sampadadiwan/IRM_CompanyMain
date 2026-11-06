@@ -379,3 +379,33 @@ Feature: Newcomer guidance — Getting started, What's next, check descriptions 
     When the description backfill runs with EXECUTE=1
     Then the backfill reports "SEBI — AIF v1: rules differ from the seed file — not touched"
     And SEBI v1 is unchanged
+
+  # E201 — Edge case: clicking a step's circle opens its popup, as on other journeys — "Map inputs" lists each input with mapped / not mapped and the checks a missing one blocks; "Owner & approvers" shows the owner and approvers
+  @rack_test
+  Scenario: E201 Step popups
+    Given the Horizon compliance setup
+    And the sponsor/manager input is unmapped
+    And I am signed in to compliance as "Meera"
+    When I open the compliance home
+    Then the "inputs" step circle opens its popup
+    When I open the Getting started popup for "inputs"
+    Then the step popup is titled "Map inputs"
+    And the step popup lists "Sponsor/manager (SEBI — AIF): Not mapped — blocks"
+    And the step popup has the button "Map inputs"
+    When I open the Getting started popup for "owner"
+    Then the step popup is titled "Owner & approvers"
+    And the step popup lists "Owner: Meera"
+
+  # E202 — Edge case: minimising Getting started is remembered for the user — the steps stay folded under the header on the next visit
+  @rack_test
+  Scenario: E202 Minimise remembered
+    Given the Horizon compliance setup
+    And the sponsor/manager input is unmapped
+    And I am signed in to compliance as "Meera"
+    When I open the compliance home
+    Then the Getting started steps are expanded
+    When I minimise Getting started
+    And I open the compliance home
+    Then the Getting started steps are folded under the header
+    And Getting started shows "of 8 done"
+

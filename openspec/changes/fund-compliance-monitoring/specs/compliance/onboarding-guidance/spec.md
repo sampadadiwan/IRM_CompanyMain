@@ -89,6 +89,14 @@ Every compliance page SHALL show one section bar: Home, Register, Duties, Facts 
 - **WHEN** Meera opens Compliance with the Register tab selected (or clicks Register on the Compliance hub)
 - **THEN** the Register pill is active and its pane loads lazily into the page from the register's own URL, without a full page visit; on other compliance pages the same pill returns to the hub with that tab open
 
+#### Scenario: Step popups
+- **WHEN** Meera clicks the "Map inputs" circle in the Getting started rail
+- **THEN** a popup, like every other journey's step popup, shows what to do, each input with mapped or not mapped and the checks a missing one blocks, the Map inputs button, what the step is and why it matters; an investor is refused and an unknown step is not found
+
+#### Scenario: Minimise Getting started
+- **WHEN** Meera minimises Getting started and later reopens Compliance
+- **THEN** only its header (title and "n of 8 done") shows until she expands it again
+
 ### Requirement: Welcome notice and reminders
 When a firm's compliance setup is first created, its company admins and users tagged Compliance SHALL receive one welcome notice, in-app and by email, linking to Getting started. If setup is still incomplete after 7 days, the owner SHALL receive one reminder naming the next step, and one more after 21 days. No reminders SHALL be sent after that, or once setup is complete. A firm without the Compliance entity flag SHALL receive none.
 

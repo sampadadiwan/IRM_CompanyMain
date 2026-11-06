@@ -37,4 +37,30 @@ class ComplianceHomeController < ApplicationController
     authorize :compliance_home, :index?
     render partial: "compliance_shared/getting_started"
   end
+
+  # E201: one step's popup, fetched by journey_step_info_controller.js when its circle is clicked (as on
+  # every other journey — WorkflowInstancesController#step_info). The firm is always the user's own;
+  # the key is matched against the fixed step list, never used to call anything (X95: unknown → 404).
+  def getting_started_step
+    authorize :compliance_home, :index?
+    key = ComplianceGettingStarted::STEPS.find { |k| k == params[:key].to_s }
+    return head(:not_found) unless key
+
+    service = ComplianceGettingStarted.new(current_user.entity, current_user)
+    step = service.call.steps.find { |s| s.key == key }
+    render partial: "compliance_shared/getting_started_step",
+           locals: { step:, details: service.details(key), setup: ComplianceEntitySetup.for(current_user.entity) }
+  end
+
+  # E202: remember the panel's minimise toggle for this user, in their own preferences
+  # (users.preferences["compliance"]["getting_started_collapsed"]) — no schema change. Only a boolean is
+  # read from params; the rest of the user's preferences are kept as they are.
+  def getting_started_collapse
+    authorize :compliance_home, :index?
+    prefs = (current_user.preferences.is_a?(Hash) ? current_user.preferences : {}).deep_dup
+    prefs["compliance"] = (prefs["compliance"] || {}).merge("getting_started_collapsed" => params[:collapsed].to_s == "true")
+    # update_column: a UI preference, not a profile edit — no validations, callbacks or audit noise
+    current_user.update_column(:preferences, prefs)
+    head :no_content
+  end
 end

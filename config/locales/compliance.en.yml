@@ -89,6 +89,16 @@ en:
       title: "Getting started with Compliance"
       complete: "Setup complete"
       show_steps: "Show steps"
+      minimise: "Minimise or expand the setup steps"
+      popup:
+        done: "Done"
+        what_to_do: "What to do"
+        not_needed: "Not needed"
+        means: "What this step is"
+        why: "Why it matters"
+        open: "%{label} — show details"
+      details:
+        none: "None yet"
       steps:
         owner:
           label: "Owner & approvers"
@@ -96,42 +106,78 @@ en:
           why: "The owner gets anything nobody else owns; an approver is needed for every maker–checker request."
           action: "Open Setup"
           single: "Only you can approve — your approvals will be labelled Self-approved."
+          means: "The compliance owner is the default person for duties and anything unassigned. Approvers decide maker–checker requests (overrides, explanations, disabling a check) — never their own."
+          details:
+            owner: "Owner"
+            approvers: "Approvers"
         attach:
           label: "Attach packs"
           todo: "Attach a rule pack to a fund."
           why: "Nothing is checked until a fund carries a pack."
           action: "Attach a pack"
+          means: "A pack is a set of rules (e.g. SEBI — AIF). A fund is only checked against the packs attached to it, each with a classification."
+          details:
+            unmonitored: "%{count} more fund(s) carry no pack — Not monitored"
         inputs:
           label: "Map inputs"
           todo: "Map %{count} for %{packs}: %{names}."
           why: "Without them %{checks} show Could not check."
           action: "Map inputs"
+          means: "An input is something a pack needs that CapHive cannot work out by itself — e.g. which investors are the sponsor. You map it once for the whole firm."
+          details:
+            no_packs: "No pack attached yet, so no inputs are needed."
+            mapped: "Mapped"
+            optional: "Optional — not mapped"
+            unmapped: "Not mapped"
+            missing_for: "Missing for %{funds}"
+            blocks: "blocks %{count}"
         lists:
           label: "Reference lists"
           todo: "Fill in %{names}."
           why: "Checks that compare documents with a list (IC members, excluded sectors) need it."
           action: "Open Setup"
           not_needed: "Not needed for your packs"
+          means: "Reference lists are names your checks compare documents with — IC members, excluded sectors, sponsor associates."
         first_run:
           label: "First run"
           todo: "Run every check of %{fund} now — results today, instead of after tonight's 02:00 run."
           why: "You see what the checks find before turning monitoring on."
           action: "Run now on %{fund}"
+          means: "A run works out every check of a fund from your data and stores the results. Run now does it immediately instead of waiting for 02:00."
+          details:
+            none: "No successful run yet"
+            last: "Last successful run"
         recipients:
           label: "Digest recipients"
           todo: "Tag at least one user with the Compliance notification tag."
           why: "They get the morning digest of what changed."
           action: "Open users"
+          means: "Users tagged Compliance get the morning digest of what changed: new breaches, cleared items, duties due."
+          details:
+            none: "Nobody is tagged Compliance yet"
         monitoring:
           label: "Monitoring on"
           todo: "Turn monitoring on so every attached fund is checked every night."
           why: "Until it is on, nothing runs on schedule."
           action: "Open Setup"
+          why: "Until it is on, nothing runs on schedule."
+          action: "Open Setup"
+          means: "When monitoring is on, every attached fund is checked every night at 02:00 in your time zone."
+          details:
+            switched_on: "On since %{since}"
+            switched_on_undated: "On"
+            switched_off: "Off — nothing runs on schedule"
+            refused: "It can't be turned on while these inputs are missing: %{names}"
         owned:
           label: "Open items owned"
           todo: "%{count} without an owner — assign each one."
           why: "Every breach needs someone working on it before its fix-by date."
           action: "Open the register"
+          means: "Each open register item is one breach episode. It needs an assignee, or an approved explanation, before its fix-by date."
+          details:
+            no_results: "No results yet — nothing to own"
+            all_owned: "Every open item has an owner"
+            more: "and %{count} more"
       ask_owner: "Ask %{owner} (compliance owner) to do this."
       ask_editor: "Ask a compliance editor to do this."
     timing:

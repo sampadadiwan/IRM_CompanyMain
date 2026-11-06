@@ -660,9 +660,10 @@ flowchart LR
 | E190 | Welcome sent once | Welcome already sent | Setup saved again; home reopened | No second welcome | OG: Welcome notice | compliance_guidance |
 | E191 | Monitoring on before inputs mapped | Step 3 not done (Sponsor/manager unmapped) | Meera presses Turn monitoring on | Refused as X15 ("1 input missing — Sponsor/manager"); Getting started keeps step 3 current and step 7 to-do — guidance never overrides the X15 gate | OG: Steps tick from data | compliance_guidance |
 | E192 | Super admin sees who is stuck | Horizon 3 of 8 since 04/11/2026 | Super admin opens Compliance › Customer setup | Row "Horizon Capital · 3 of 8 · next: Map inputs · since 04/11/2026" | OG: Customer setup progress | compliance_guidance |
+| E201 | Step popup shows the specifics | Demo-like setup: owner Meera, approver Rahul; SEBI on Growth Fund I; Sponsor/manager unmapped | Meera clicks the "Map inputs" circle, then "Owner & approvers" | A popup (as on other journeys) titled "Map inputs": What to do + each input with ✓/✗ — "Sponsor/manager (SEBI — AIF): Not mapped — blocks N checks" — the Map inputs button, What this step is, Why it matters; "Owner & approvers" shows Done with "Owner: Meera" and the approvers | OG: Step popups | compliance_guidance |
+| E202 | Minimise remembered | Setup in progress | Meera minimises Getting started, then reopens Compliance | The steps and What's needed now stay folded under the header (only the title and "n of 8 done" show) until she expands them; the choice is kept in her own preferences | OG: Minimise Getting started | compliance_guidance |
 
 ### Error cases
-| X94 | Backfill never changes a rule | A published version whose rules differ from its seed file (e.g. a limit edited) | `compliance:backfill_descriptions` EXECUTE=1 | That version is skipped: "SEBI — AIF v1: rules differ from the seed file — not touched"; in production it refuses without FORCE=1 | OG: Descriptions backfilled | compliance_guidance |
 
 | # | Scenario | Given | When | Then | Spec scenario | Feature |
 |---|---|---|---|---|---|---|
@@ -670,6 +671,8 @@ flowchart LR
 | X91 | Customer setup list is super-admin only, counts only | Meera (company admin) | Requests Compliance › Customer setup | Refused; for a super admin the list shows step names and counts only — no fund names, figures or people | OG: Customer setup progress | compliance_tenant_isolation |
 | X92 | Other firm's guidance refused | Delta's admin | Requests Horizon's result page (where its What's next is drawn) | Refused | OG: Guidance is for compliance users only | compliance_tenant_isolation |
 | X93 | No welcome without the flag | Horizon's `enable_compliance` entity flag off | Setup created by a super admin | No welcome, no reminders | OG: Welcome notice | compliance_tenant_isolation |
+| X94 | Backfill never changes a rule | A published version whose rules differ from its seed file (e.g. a limit edited) | `compliance:backfill_descriptions` EXECUTE=1 | That version is skipped: "SEBI — AIF v1: rules differ from the seed file — not touched"; in production it refuses without FORCE=1 | OG: Descriptions backfilled | compliance_guidance |
+| X95 | Step popup refused or unknown | Lata (investor); Meera | Lata requests a Getting started step popup; Meera requests the step "bogus" | Lata refused; "bogus" → not found (the key must be one of the 8 steps; the firm is always the user's own) | OG: Step popups | compliance_tenant_isolation |
 
 ---
 
@@ -695,8 +698,8 @@ flowchart LR
 | 10 Pack versions and locking | 8 | 23 | 12 | 43 |
 | 11 Changes over time | 8 | 35 | 6 | 49 |
 | 12 Screens | 0 | 6 | 1 | 7 |
-| 13 Newcomer guidance (Phase 5) | 13 | 21 | 5 | 39 |
-| **Total** | **74** | **165** | **74** | **313** |
+| 13 Newcomer guidance (Phase 5) | 13 | 23 | 6 | 42 |
+| **Total** | **74** | **167** | **75** | **316** |
 
 - `features/security/compliance_tenant_isolation.feature` gathers every refusal row (other firm, investor, viewer, self-approval, injection, AI context) — attacker refused, owner allowed, direct request refused.
 - An edge case found during apply gets a new row here **and** a scenario.

@@ -4,6 +4,9 @@
 <% gs = ComplianceGettingStarted.call(entity: current_user.entity, user: current_user) %>
 <% setup = ComplianceEntitySetup.for(current_user.entity) %>
 <% state_map = { "done" => "passed", "current" => "current", "todo" => "not_yet", "not_needed" => "na" } %>
+<%# E202: the rail and "What's needed now" fold away under the header, remembered for this user. A finished
+    setup keeps its own fold ("Setup complete · Show steps"), so the preference only applies while in progress. %>
+<% collapsed = !gs.complete? && current_user.preferences.is_a?(Hash) && current_user.preferences.dig("compliance", "getting_started_collapsed") == true %>
 <%= turbo_frame_tag "getting_started" do %>
   <% if gs.complete? %>
     <div class="alert alert-success d-flex align-items-center gap-2 py-2" id="getting_started_complete">
@@ -25,16 +28,34 @@
           <div class="progress-bar bg-success" style="width: <%= percent %>%"></div>
         </div>
       </div>
+      <%# E202: the same toggle button as ToggleCard (btn-outline-primary + caret), driving a Bootstrap collapse %>
+      <% unless gs.complete? %>
+        <a class="btn btn-outline-primary show_details_link flex-shrink-0" data-bs-toggle="collapse" href="#getting_started_body"
+           role="button" id="getting_started_toggle" aria-controls="getting_started_body" aria-expanded="<%= !collapsed %>"
+           aria-label="<%= t('compliance.getting_started.minimise') %>" title="<%= t('compliance.getting_started.minimise') %>">
+          <i class="fa-solid fa-caret-down" aria-hidden="true"></i>
+        </a>
+      <% end %>
     </div>
 
-    <div class="cc-rail" id="getting_started_rail">
+    <div class="collapse <%= 'show' unless collapsed %>" id="getting_started_body"
+         data-controller="collapse-preference"
+         data-collapse-preference-url-value="<%= compliance_getting_started_collapse_path %>">
+
+    <%# E201: clicking a circle opens the step's popup, exactly as on every other journey — the shared
+        journey_step_info_controller.js fetches it from ComplianceHomeController#getting_started_step %>
+    <div class="cc-rail" id="getting_started_rail" data-controller="journey-step-info">
       <% gs.steps.each_with_index do |s, idx| %>
         <% status = state_map.fetch(s.state) %>
         <% view = journey_step_view({ status: }) %>
         <% linked = idx.positive? && gs.steps[idx - 1].done? %>
         <span class="cc-step journey-step journey-step-<%= status %> <%= view[:modifier] %> <%= 'cc-step--linked' if linked %>"
               id="gs_step_<%= s.key %>" data-step-state="<%= s.state %>" data-bs-toggle="tooltip"
-              data-bs-title="<%= s.state == 'not_needed' ? s.detail : s.why %>">
+              data-bs-title="<%= s.state == 'not_needed' ? s.detail : s.why %>"
+              role="button" tabindex="0"
+              data-action="click->journey-step-info#open keydown.enter->journey-step-info#open"
+              data-journey-step-info-url-param="<%= compliance_getting_started_step_path(key: s.key) %>"
+              aria-label="<%= t('compliance.getting_started.popup.open', label: s.label) %>">
           <span class="cc-step-dot"><i class="ti <%= view[:icon] %>" aria-hidden="true"></i></span>
           <span class="cc-step-label"><%= s.label %></span>
         </span>
@@ -68,5 +89,6 @@
     <% if (note = gs.steps.find { |s| s.note.present? }&.note) %>
       <div class="small text-muted px-3 pb-2" id="getting_started_note"><%= cmp_icon(:approve) %><%= note %></div>
     <% end %>
+    </div>
   </div>
 <% end %>

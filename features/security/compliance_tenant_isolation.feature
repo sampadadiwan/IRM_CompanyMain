@@ -330,3 +330,14 @@ Feature: Compliance — tenant isolation and maker–checker
     When the hourly compliance tick happens 7 days after setup at 08:00 IST
     Then "Omar" got the compliance notice "Compliance is on" 0 times
     And "Omar" got the compliance notice "Getting started" 0 times
+
+  # X95 — Error case: a Getting started step popup is refused for an investor, and an unknown step is not found
+  @security @rack_test
+  Scenario: X95 Step popup refused or unknown
+    Given I am signed in to compliance as "Lata"
+    When I request the Getting started step popup "inputs"
+    Then the compliance request is denied
+    Given I am signed in to compliance as "Meera"
+    When I request the Getting started step popup "bogus"
+    Then the compliance request is not found
+
