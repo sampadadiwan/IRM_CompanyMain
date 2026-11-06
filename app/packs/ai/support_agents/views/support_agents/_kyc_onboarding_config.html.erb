@@ -29,7 +29,8 @@
   standard_rules = verification_rules["standard"] || []
 %>
 
-<div data-controller="kyc-onboarding-config">
+<div data-controller="kyc-onboarding-config"
+     data-kyc-onboarding-config-aml-enabled-value="<%= support_agent.entity&.entity_setting&.aml_enabled ? 'true' : 'false' %>">
   <%= form.hidden_field :json_fields,
         value: { doc_verification_rules: verification_rules }.to_json,
         data: { "kyc-onboarding-config-target": "jsonField" } %>

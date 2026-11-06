@@ -9,9 +9,31 @@ import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
   static targets = ["jsonField", "rulesBody"]
+  static values = { amlEnabled: String }
 
   connect() {
     this.syncConfig()
+    this._disableAmlToggleIfNeeded()
+  }
+
+  /**
+   * Disables the trigger_aml select when AML is not enabled at entity level.
+   */
+  _disableAmlToggleIfNeeded() {
+    if (this.amlEnabledValue === "true") return
+
+    const amlSelect = this.element
+      .closest("form")
+      ?.querySelector('select[name*="trigger_aml"]')
+    if (!amlSelect) return
+
+    amlSelect.value = "No"
+    amlSelect.disabled = true
+
+    const hint = document.createElement("small")
+    hint.className = "text-muted d-block mt-1"
+    hint.textContent = "AML is not enabled for this entity. Enable it in Entity Settings."
+    amlSelect.parentElement.appendChild(hint)
   }
 
   /**

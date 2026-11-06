@@ -206,7 +206,7 @@ class KycOnboardingAgent < SupportAgentService
       invalid_count += 1
     end
 
-    ctx[:issues][:field_issues] << { type: :info, message: "All required attributes are valid", severity: :success, step: :field_completeness } if invalid_count.zero?
+    ctx[:issues][:field_issues] << { type: :info, message: "All required fields are filled", severity: :success, step: :field_completeness } if invalid_count.zero?
 
     true
   end
@@ -237,7 +237,7 @@ class KycOnboardingAgent < SupportAgentService
       end
     end
 
-    ctx[:issues][:field_issues] << { type: :info, message: "All required custom fields are valid", severity: :success, step: :field_completeness } if invalid_count.zero?
+    ctx[:issues][:field_issues] << { type: :info, message: "All custom fields are filled", severity: :success, step: :field_completeness } if invalid_count.zero?
   end
 
   # Verifies all required documents (from form fields and support_agent config)
