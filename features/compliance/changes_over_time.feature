@@ -7,8 +7,14 @@ Feature: Changes over time
 
   # H54 — Happy path: R. Mehta (to 15 Oct 2026) counts on a note signed 15 Oct — 3 members ≥ quorum 3
   Scenario: H54 Member on last day
-    Given the dated IC members list
-    Then on "2026-10-15" the IC members among "A. Rao, K. Shah, R. Mehta" are 3 against quorum 3
+    Given Horizon checks IC note contents on "Horizon Growth Fund I"
+    And the dated IC members list
+    And "Horizon Growth Fund I" invested ₹18.0 cr in "Orbit Health" on "2026-10-20"
+    And the IC note of "Orbit Health" has been read and confirmed with:
+      | approval_date | 2026-10-15                |
+      | signatories   | A. Rao, K. Shah, R. Mehta |
+    When the nightly compliance run happens on "2026-11-07"
+    Then the "IC quorum" check on "Horizon Growth Fund I" is "pass"
 
   # H55 — Happy path: Cat II → Cat II — LVF approved 12 Nov — 12 Nov uses 25%, 13 Nov uses 50%; pending before
   Scenario: H55 Classification change
@@ -67,15 +73,29 @@ Feature: Changes over time
     And on the "fy_apr" basis "2027-02-10" is in quarter "FY27-Q4" ending "2027-03-31"
     And on the "fy_apr" basis "2026-11-10" is in year "FY27" ending "2027-03-31"
 
-  # E103 — Edge case: signed 16 Oct by Rao, Shah, Mehta — Mehta left 15 Oct — 2 < 3
+  # E103 — Edge case: signed 16 Oct by Rao, Shah, Mehta — Mehta left 15 Oct — 2 < 3, naming R. Mehta
   Scenario: E103 Member day after "to"
-    Given the dated IC members list
-    Then on "2026-10-16" the IC members among "A. Rao, K. Shah, R. Mehta" are 2 against quorum 3
+    Given Horizon checks IC note contents on "Horizon Growth Fund I"
+    And the dated IC members list
+    And "Horizon Growth Fund I" invested ₹18.0 cr in "Orbit Health" on "2026-10-20"
+    And the IC note of "Orbit Health" has been read and confirmed with:
+      | approval_date | 2026-10-16                |
+      | signatories   | A. Rao, K. Shah, R. Mehta |
+    When the nightly compliance run happens on "2026-11-07"
+    Then the "IC quorum" check on "Horizon Growth Fund I" is "breach"
+    And the working shows "2 IC members signed, quorum 3"
+    And the working shows "R. Mehta — not an IC member on 16/10/2026"
 
   # E104 — Edge case: S. Nair from 05 Oct counts on a note signed 05 Oct
   Scenario: E104 "From" equals signed date
-    Given the dated IC members list
-    Then on "2026-10-05" the IC members among "S. Nair" are 1 against quorum 3
+    Given Horizon checks IC note contents on "Horizon Growth Fund I"
+    And the dated IC members list
+    And "Horizon Growth Fund I" invested ₹18.0 cr in "Orbit Health" on "2026-10-20"
+    And the IC note of "Orbit Health" has been read and confirmed with:
+      | approval_date | 2026-10-05               |
+      | signatories   | A. Rao, K. Shah, S. Nair |
+    When the nightly compliance run happens on "2026-11-07"
+    Then the "IC quorum" check on "Horizon Growth Fund I" is "pass"
 
   # E105 — Edge case: blank dates mean always — A. Rao counts on a 2019 note
   Scenario: E105 Blank dates = always
@@ -252,6 +272,34 @@ Feature: Changes over time
     And the nightly compliance run happens on "2026-11-05"
     Then the IC note list includes "Orbit Health" as "Missing"
 
+  # E129 — Edge case: the confirmed Orbit note moved to Kite Pay — its facts are compared with Kite Pay, not Orbit Health
+  Scenario: E129 Facts move with note
+    Given Horizon checks IC note contents on "Horizon Growth Fund I"
+    And "Horizon Growth Fund I" invested ₹18.0 cr in "Orbit Health" on "2026-10-05"
+    And the IC note of "Orbit Health" has been read and confirmed
+    And "Horizon Growth Fund I" invested ₹14.0 cr in "Kite Pay" on "2026-10-20"
+    When the IC note of "Orbit Health" is moved to "Kite Pay"
+    And the nightly compliance run happens on "2026-11-07"
+    Then the "IC note names the investee" check on "Horizon Growth Fund I" is "needs_review"
+    And the working shows "Kite Pay"
+    And the working shows "Document appears to concern Orbit Health"
+    And the "Invested within IC approval" check on "Horizon Growth Fund I" is "pass"
+
+  # E130 — Edge case: v2 adds "Instrument class"; 40 confirmed notes — each "Needs review — new fact in v2", re-read within the cap
+  Scenario: E130 New fact in v2
+    Given Horizon checks IC note contents on "Horizon Growth Fund I"
+    And AI reading is on for the "IC note" input
+    And "Horizon Growth Fund I" has 40 investments with confirmed IC notes
+    And version 2 of the IC note contents pack adds the fact "Instrument class" effective "2026-11-03"
+    When the nightly compliance run happens on "2026-11-07"
+    Then the "Invested within IC approval" check on "Horizon Growth Fund I" lists 40 records as "Needs review — new fact in v2"
+    Given the monthly reading cap is 30
+    And the document AI reads the Orbit Health IC note
+    When the documents are read
+    Then 30 documents were sent to the AI
+    And 10 IC notes wait for the reading cap
+    And the re-read IC note of "Noted Co 1" shows "AI-read — 1 fact to confirm"
+
   # E131 — Edge case: 1,000 non-zero investors, 3 zero and 2 transferred out — count 1,000, pass
   Scenario: E131 Investor count definition
     Given "Count Fund" has exactly 1000 investors
@@ -280,6 +328,14 @@ Feature: Changes over time
   # E134 — Edge case: a payment saved during a run is either fully in or out — one repeatable-read snapshot on MySQL
   Scenario: E134 Payment during run
     Then a compliance run reads one snapshot per fund
+
+  # E135 — Edge case: facts unconfirmed since 27 Oct — the 05 Nov digest says "facts waiting 9 days"
+  Scenario: E135 Facts waiting age
+    Given Horizon checks IC note contents on "Horizon Growth Fund I"
+    And "Horizon Growth Fund I" invested ₹18.0 cr in "Orbit Health" on "2026-10-05"
+    And the IC note of "Orbit Health" has facts waiting since "2026-10-27"
+    When the compliance digest is sent on "2026-11-05"
+    Then the digest lines include "facts waiting 9 days"
 
   # X62 — Error case: applicability C with Fund U having no start date — "Could not check — missing: fund start date"
   Scenario: X62 Missing start date (C)

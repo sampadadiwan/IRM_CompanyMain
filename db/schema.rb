@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_06_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_06_130000) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -2003,6 +2003,44 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_06_120000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["document_id"], name: "index_doc_shares_on_document_id"
+  end
+
+  create_table "document_facts", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.bigint "document_reading_id", null: false
+    t.string "fact_key", limit: 80, null: false
+    t.string "value_type", limit: 10, null: false
+    t.json "value"
+    t.text "quote"
+    t.integer "page"
+    t.string "source", limit: 10, default: "ai", null: false
+    t.string "status", limit: 10, default: "ai_read", null: false
+    t.bigint "confirmed_by_id"
+    t.datetime "confirmed_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["confirmed_by_id"], name: "index_document_facts_on_confirmed_by_id"
+    t.index ["document_reading_id", "fact_key"], name: "idx_doc_facts_unique", unique: true
+    t.index ["entity_id"], name: "index_document_facts_on_entity_id"
+  end
+
+  create_table "document_readings", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.bigint "document_id", null: false
+    t.string "input_key", limit: 80, null: false
+    t.string "file_checksum", limit: 64, null: false
+    t.string "facts_signature", limit: 64, null: false
+    t.string "status", limit: 10, default: "queued", null: false
+    t.string "llm_model", limit: 80
+    t.bigint "byte_size"
+    t.datetime "sent_at"
+    t.string "failure_reason", limit: 120
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["document_id", "input_key", "file_checksum", "facts_signature"], name: "idx_doc_readings_unique", unique: true
+    t.index ["entity_id", "sent_at"], name: "idx_doc_readings_cap"
+    t.index ["entity_id"], name: "index_document_readings_on_entity_id"
   end
 
   create_table "document_signoffs", force: :cascade do |t|
@@ -5842,6 +5880,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_06_120000) do
   add_foreign_key "doc_check_runs", "users", on_delete: :nullify
   add_foreign_key "doc_checks", "entities"
   add_foreign_key "doc_shares", "documents"
+  add_foreign_key "document_facts", "document_readings"
+  add_foreign_key "document_facts", "entities"
+  add_foreign_key "document_facts", "users", column: "confirmed_by_id"
+  add_foreign_key "document_readings", "documents"
+  add_foreign_key "document_readings", "entities"
   add_foreign_key "document_signoffs", "documents"
   add_foreign_key "document_signoffs", "entities"
   add_foreign_key "documents", "folders"

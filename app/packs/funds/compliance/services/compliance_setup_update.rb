@@ -24,7 +24,7 @@ class ComplianceSetupUpdate
     apply_reference_lists
     @setup.owner_id = @params[:owner_id] if @params.key?(:owner_id)
     @setup.time_zone = @params[:time_zone] if @params[:time_zone].present?
-    notice = toggle_ai_drafting || toggle_monitoring
+    notice = toggle_ai_drafting || toggle_ai_reading || toggle_monitoring
     return Result.new(error: @blocked) if @blocked
     return Result.new(error: @setup.errors.full_messages.to_sentence) unless @setup.save
 
@@ -68,6 +68,26 @@ class ComplianceSetupUpdate
     on = ActiveModel::Type::Boolean.new.cast(@params[:ai_drafting])
     @setup.ai_settings = @setup.ai_settings_hash.merge("drafting" => on)
     on ? "Describe in words on" : "Describe in words off"
+  end
+
+  # E74: AI document reading per document input (ai_settings["reading"][key]); off by default.
+  # Turning it on starts the hourly sweep from now — older documents are read with Read now (H45).
+  def toggle_ai_reading
+    return nil unless @params.key?(:ai_reading)
+
+    reading = (@setup.ai_settings_hash["reading"] || {}).dup
+    labels = []
+    @params[:ai_reading].to_h.each do |key, value|
+      input = ComplianceDocumentInputs.find(@setup.entity, key)
+      next if input.nil?
+
+      reading[key.to_s] = ActiveModel::Type::Boolean.new.cast(value)
+      labels << "#{input.label} reading #{reading[key.to_s] ? 'on' : 'off'}"
+    end
+    settings = @setup.ai_settings_hash.merge("reading" => reading)
+    settings["reading_swept_at"] ||= Time.current.iso8601
+    @setup.ai_settings = settings
+    labels.to_sentence.presence
   end
 
   def toggle_monitoring

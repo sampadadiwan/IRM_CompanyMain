@@ -29,6 +29,6 @@ class ComplianceEntitySetupsController < ApplicationController
   # owner_id is checked same-firm by the model; entity_id is never permitted
   def setup_params
     params.expect(compliance_entity_setup: [:owner_id, :monitoring_enabled, :ai_drafting, :time_zone,
-                                            { mappings: {}, fund_figures: {}, reference_lists: {} }])
+                                            { mappings: {}, fund_figures: {}, reference_lists: {}, ai_reading: {} }])
   end
 end

@@ -118,6 +118,10 @@ Content checks SHALL compare document facts with reference lists entered in setu
 - **WHEN** a confirmed director of the investee is on the sponsor's associates list
 - **THEN** the related-party check is Breach naming the person
 
+#### Scenario: Owner in a land-border country
+- **WHEN** an investor's confirmed KYC ownership facts list a beneficial owner's country that is on the land-border list shipped with the SEBI pack
+- **THEN** the check shows Needs review "Beneficial owner in a land-border country: <country>"
+
 ### Requirement: AI notes on manual duties
 For judgement duties (e.g. PPM change review, report disclosures), AI notes SHALL be attached to the duty; the person still marks the duty done.
 

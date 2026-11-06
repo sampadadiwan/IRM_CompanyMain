@@ -3,6 +3,9 @@
 #   08:00 → reassign items of deactivated users (R12), escalate overdue items (E36), version notices
 #           7 days ahead (E87), then the digest (H29, E45)
 # Entities with monitoring off are skipped — no runs, no backfill (E133).
+# Every hour, entities with AI document reading on for any input get a reading sweep: new or replaced
+# documents are queued (read once per version — H40, E68), versions that added a fact re-queue (E130) and
+# capped readings are released when the month or cap allows (E75). No hook is added to Document (R80).
 class ComplianceScheduleJob < ApplicationJob
   queue_as :low
 
@@ -16,6 +19,17 @@ class ComplianceScheduleJob < ApplicationJob
       morning(setup, local.to_date) if local.hour == DIGEST_HOUR
     rescue StandardError => e
       Rails.logger.error("[ComplianceScheduleJob] entity #{setup.entity_id}: #{e.class}")
+    end
+    sweep_readings(now)
+  end
+
+  def sweep_readings(now)
+    ComplianceEntitySetup.includes(:entity).find_each do |setup|
+      next unless setup.ai_settings_hash["reading"].to_h.value?(true)
+
+      DocumentReadingQueue.sweep(setup, now:)
+    rescue StandardError => e
+      Rails.logger.error("[ComplianceScheduleJob] reading sweep entity #{setup.entity_id}: #{e.class}")
     end
   end
 

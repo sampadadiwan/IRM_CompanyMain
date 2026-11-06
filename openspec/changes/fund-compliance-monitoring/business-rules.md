@@ -390,6 +390,7 @@ flowchart LR
 | E77 | Wrong deal | "IC Note" file is Kite Pay's | Read | Needs review "appears to concern Kite Pay" | DC: IC note for another company | document_content_checks |
 | E78 | Excluded sector | Business "tobacco products" | Run | Breach "Excluded sector: Tobacco" | DC: Excluded sector | document_content_checks |
 | E79 | Associate director | Director V. Menon | Run | Related-party breach naming V. Menon | DC: Associate among directors | document_content_checks |
+| E136 | Land-border owner | SEBI v1.1; an investor's confirmed KYC owner countries include "China" | Run | Needs review "Beneficial owner in a land-border country: China" (pack-shipped list) | DC: Owner in a land-border country | document_content_checks |
 
 ### Error cases
 
@@ -567,7 +568,7 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    S["197 spec scenarios<br/>(6 specs)"] --> R["Every scenario named in<br/>≥ 1 Spec scenario cell"]
+    S["198 spec scenarios<br/>(6 specs)"] --> R["Every scenario named in<br/>≥ 1 Spec scenario cell"]
     R --> F["Every row → 1 Cucumber scenario<br/>with '# ID — path' comment"]
 ```
 
@@ -581,10 +582,10 @@ flowchart LR
 | 6 Notifications, digest, export | 3 | 3 | 2 | 8 |
 | 7 SEBI pack | 5 | 9 | 2 | 16 |
 | 8 AI drafting | 3 | 9 | 5 | 17 |
-| 9 Document-content checks | 6 | 14 | 6 | 26 |
+| 9 Document-content checks | 6 | 15 | 6 | 27 |
 | 10 Pack versions and locking | 8 | 23 | 12 | 43 |
 | 11 Changes over time | 8 | 33 | 6 | 47 |
-| **Total** | **61** | **135** | **67** | **263** |
+| **Total** | **61** | **136** | **67** | **264** |
 
 - `features/security/compliance_tenant_isolation.feature` gathers every refusal row (other firm, investor, viewer, self-approval, injection, AI context) — attacker refused, owner allowed, direct request refused.
 - An edge case found during apply gets a new row here **and** a scenario.

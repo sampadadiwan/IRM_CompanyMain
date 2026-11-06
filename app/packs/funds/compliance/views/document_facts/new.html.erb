@@ -1,0 +1,19 @@
+<%# H43 / X45: enter a document's facts by hand — nothing is sent to AI; they count once saved %>
+<%= render FormCard.new(title: "Enter facts — #{@reading.document.name}") do %>
+  <p class="text-muted">These facts are confirmed as you save them and are used by tonight's compliance run.</p>
+  <%= form_with url: manual_document_readings_path, method: :post do %>
+    <%= hidden_field_tag :document_id, @reading.document_id %>
+    <%= hidden_field_tag :input_key, @reading.input_key %>
+    <% @input.facts.each do |f| %>
+      <div class="mb-3">
+        <%= label_tag "values_#{f['key']}", f["label"].presence || f["key"].humanize, class: "form-label" %>
+        <% if f["type"] == "date" %>
+          <%= date_field_tag "values[#{f['key']}]" %>
+        <% else %>
+          <%= text_field_tag "values[#{f['key']}]", nil, class: "form-control", placeholder: { "names" => "Names, separated by commas", "amount" => "Amount", "yes_no" => "Yes or No" }[f["type"]] %>
+        <% end %>
+      </div>
+    <% end %>
+    <%= submit_tag "Save and confirm", class: "btn btn-primary" %>
+  <% end %>
+<% end %>

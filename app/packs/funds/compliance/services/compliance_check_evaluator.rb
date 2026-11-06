@@ -2,7 +2,7 @@
 # Never raises: an unmapped input or blank figure is "Could not check — missing: …" (X24, X29), and an
 # unexpected error is could_not_check with the error class (LLD › Error Mapping) — never a pass.
 # Percentages are compared as displayed, rounded to 2 decimals (R14, E22).
-# Worked examples H20, H21, H33, H34, H35, E22, E23, E24, E48–E54, E82, E85, E17, X24, X29, X38 —
+# Worked examples H20, H21, H33, H34, H35, E22, E23, E24, E48–E54, E82, E85, E17, X24, X29, X38, H41, E66 —
 # openspec/changes/fund-compliance-monitoring/business-rules.md
 class ComplianceCheckEvaluator
   Outcome = Struct.new(:outcome, :figure, :limit_value, :working, keyword_init: true)
@@ -52,6 +52,7 @@ class ComplianceCheckEvaluator
   def call
     case @check["kind"]
     when "record_document" then evaluate_document_check
+    when "content" then evaluate_content_check
     else evaluate_limit_check
     end
   rescue ComplianceMeasureQuery::MissingInput => e
@@ -126,6 +127,16 @@ class ComplianceCheckEvaluator
     finish(res.failing_count.zero? ? "pass" : failing_outcome, res.failing_count, 0, lines,
            failing_records: res.failing, checked: res.checked, ok: res.ok, earlier: res.earlier,
            message: lines.first, unit: "count")
+  end
+
+  # Shape 3 — document contents compared with records and lists over confirmed facts (Phase 3).
+  # Breach → failing outcome (Warning in a transition); otherwise the worst of Needs review / Pass.
+  def evaluate_content_check
+    res = ComplianceContentCheck.call(@check, @ctx)
+    outcome = res.outcome == "breach" ? failing_outcome : res.outcome
+    message = res.failing.size == 1 ? res.failing.first["problem"] : res.lines.first
+    finish(outcome, res.figure, 0, res.lines, failing_records: res.failing, message: outcome == "pass" ? nil : message,
+                                              unit: "count", **res.extra.symbolize_keys)
   end
 
   # Grouped figure without "each": the worst group decides (largest for ≤, smallest for ≥)

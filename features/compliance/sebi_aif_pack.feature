@@ -93,6 +93,29 @@ Feature: SEBI — AIF pack
     When the nightly compliance run happens on "2026-11-05" for "Big Fund"
     Then the "Investors in scheme" check on "Big Fund" is "breach"
 
+  # E55 — Edge case: two investors with a common beneficial owner hold 50.00% — Needs review + enhanced due-diligence duty (SEBI v1.1)
+  Scenario: E55 Group at 50%
+    Given SEBI v1.1 is published effective "2026-12-02"
+    And "Group Test Fund" is a SEBI fund whose investors commit "Alpha LP = 25; Beta LP = 25; Gamma LP = 30; Delta LP = 20"
+    And the confirmed KYC ownership of "Alpha LP" lists owners "X Holdings" in "India"
+    And the confirmed KYC ownership of "Beta LP" lists owners "X Holdings, Y Trust" in "India"
+    And the confirmed KYC ownership of "Gamma LP" lists owners "Z Ltd" in "India"
+    When the nightly compliance run happens on "2026-12-05" for "Group Test Fund"
+    Then the "Investor group with a common beneficial owner" check on "Group Test Fund" is "needs_review"
+    And the working shows "Alpha LP, Beta LP: Investor group 50.00% of commitments"
+    And "Group Test Fund" has an enhanced due-diligence duty for "Alpha LP"
+
+  # E56 — Edge case: the same group at 49.99% passes; no duty
+  Scenario: E56 Group at 49.99%
+    Given SEBI v1.1 is published effective "2026-12-02"
+    And "Group Test Fund" is a SEBI fund whose investors commit "Alpha LP = 24.99; Beta LP = 25; Gamma LP = 50.01"
+    And the confirmed KYC ownership of "Alpha LP" lists owners "X Holdings" in "India"
+    And the confirmed KYC ownership of "Beta LP" lists owners "X Holdings, Y Trust" in "India"
+    And the confirmed KYC ownership of "Gamma LP" lists owners "Z Ltd" in "India"
+    When the nightly compliance run happens on "2026-12-05" for "Group Test Fund"
+    Then the "Investor group with a common beneficial owner" check on "Group Test Fund" is "pass"
+    And "Group Test Fund" has no enhanced due-diligence duty
+
   # X37 — Error case: the yearly compliance test report duty needs evidence
   Scenario: X37 Yearly duty without evidence
     When the nightly compliance run happens on "2026-11-05"

@@ -1,7 +1,7 @@
 # ⑨ The daily digest for one entity: only when something changed or a duty is due/overdue (E45).
 # Lines: new breaches, needs review, cleared items, attachments without classification, duties due within
 # the reminder window and overdue, bulk duty lines (E108), one-off notes (versions, dropped overrides,
-# reassignments — E2, E112, E113). Summary line as H29: "3 new breaches, 1 needs review, 1 duty due in 7 days".
+# reassignments — E2, E112, E113), documents waiting for the reading cap (E75) and facts waiting (E135). Summary line as H29: "3 new breaches, 1 needs review, 1 duty due in 7 days".
 class ComplianceDigest
   Digest = Struct.new(:summary, :lines, keyword_init: true) do
     delegate :empty?, to: :lines
@@ -33,6 +33,7 @@ class ComplianceDigest
     end
 
     duty_lines(fund_pack_ids, parts, lines)
+    reading_lines(lines)
     Array(@setup.digest_notes).each { |n| lines << n }
 
     Digest.new(summary: if parts.any?
@@ -61,6 +62,20 @@ class ComplianceDigest
       n = new_event.count
       lines << "#{n} new investor#{'s' if n != 1} — #{n} due-diligence dut#{n == 1 ? 'y' : 'ies'}"
     end
+  end
+
+  # E75: documents waiting for next month's reading cap; E135: facts waiting for a person, with their age
+  def reading_lines(lines)
+    capped = DocumentReading.where(entity_id: @entity.id, status: "capped").count
+    lines << "#{pluralize(capped, 'document', 'documents')} waiting — cap reached" if capped.positive?
+
+    current = DocumentReading.where(entity_id: @entity.id).group(:document_id, :input_key).maximum(:id).values
+    waiting = DocumentReading.where(id: current, status: %w[read failed])
+                             .where(id: DocumentFact.where(entity_id: @entity.id, status: %w[ai_read not_found]).select(:document_reading_id))
+    return unless waiting.exists?
+
+    days = (@date - waiting.minimum(:created_at).to_date).to_i
+    lines << "#{pluralize(waiting.count, 'document', 'documents')} with facts to confirm — facts waiting #{days} day#{'s' if days != 1}"
   end
 
   def latest_results(fund_pack_ids)

@@ -129,6 +129,7 @@ class ComplianceRunOperation < Trailblazer::Operation
                                                        pending_override: pending.include?(check["key"]),
                                                        transition_until: state.transition_until)
         store(run, fund_pack, version, check, outcome)
+        check_duties(fund_pack, version, check, outcome, run.run_date, setup)
       end
     end
     ComplianceDutyScheduler.call(fund_pack, version:, run_date: run.run_date, setup:)
@@ -155,6 +156,22 @@ class ComplianceRunOperation < Trailblazer::Operation
                                                      transition_until: state.transition_until)
       store(run, fund_pack, version, check, outcome, subject: rec)
     end
+  end
+
+  # E55: a content check that names a duty (SEBI check 7 → enhanced due diligence) opens one occurrence per
+  # failing subject; the duty's unique key means later runs do not add it again
+  def check_duties(fund_pack, version, check, outcome, run_date, setup)
+    subjects = Array(outcome.working["duty_subjects"])
+    duty = version.duties.detect { |d| d["key"] == check["duty"] } if check["duty"].present?
+    return if duty.nil? || subjects.empty? || outcome.outcome == "pass"
+
+    now = Time.current
+    rows = subjects.map do |investor_id|
+      { entity_id: fund_pack.entity_id, fund_compliance_pack_id: fund_pack.id, duty_key: duty["key"], period_key: "",
+        subject_type: "Investor", subject_id: investor_id, due_on: run_date + (duty.dig("due", "n") || check["time_to_fix_days"] || 30).to_i.days,
+        owner_id: setup&.owner_id, created_at: now, updated_at: now }
+    end
+    ComplianceDuty.insert_all(rows, unique_by: :idx_cduty_unique)
   end
 
   def store_all_could_not_check(run, fund_pack, version, checks, message)

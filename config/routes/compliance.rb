@@ -38,5 +38,13 @@ scope :compliance do
     member { patch :complete }
   end
   resources :document_signoffs, only: %i[create]
+  # Phase 3: facts read from documents — confirm, correct, enter by hand, read now (H40–H45, X48)
+  resources :document_readings, path: "facts", controller: "document_facts", only: %i[index show new] do
+    member { patch :confirm }
+    collection do
+      post :manual
+      post :read_now
+    end
+  end
   resources :compliance_exports, path: "exports", only: %i[create]
 end

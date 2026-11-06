@@ -6,6 +6,29 @@
   <div class="card mb-3"><div class="card-body" id="result_working">
     <% Array(w["lines"]).each do |line| %><div><%= line %></div><% end %>
   </div></div>
+  <% if w["document_input"].present? && Array(w["failing_records"]).any? %>
+    <%# Phase 3 content checks: each record links to its document's facts (confirm, correct or enter by hand) %>
+    <% doc_ids = Array(w["failing_records"]).filter_map { |f| f["document_id"] } %>
+    <% readings = DocumentReading.where(entity_id: current_user.entity_id, document_id: doc_ids, input_key: w["document_input"]).group(:document_id).maximum(:id) %>
+    <table class="table table-bordered align-middle" id="content_failing">
+      <thead><tr><th>Record</th><th>What to do</th><th></th></tr></thead>
+      <tbody>
+        <% Array(w["failing_records"]).each do |f| %>
+          <tr>
+            <td><%= f["label"] %></td>
+            <td><%= f["problem"] %></td>
+            <td>
+              <% if readings[f["document_id"]] %>
+                <%= link_to "Open facts", document_reading_path(readings[f["document_id"]]), class: "btn btn-sm btn-outline-primary" %>
+              <% elsif f["document_id"] %>
+                <%= link_to "Enter facts", new_document_reading_path(document_id: f["document_id"], input_key: w["document_input"]), class: "btn btn-sm btn-outline-primary" %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
   <h6>Setup that day</h6>
   <ul id="setup_that_day">
     <li>Version: <%= @setup_then["version"] %></li>

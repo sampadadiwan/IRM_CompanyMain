@@ -1,6 +1,7 @@
 # ⑥ Creates manual-duty occurrences for one fund pack on a run date:
 #   scheduled — one per period of the pack's basis, starting with the period containing the attach date (E120, E121)
 #   event     — "for each new investor": one per investor whose commitment date is on/after the duty's "from" date (H28, E106, E107)
+#   document  — one per new document of a document input, e.g. each new PPM version (H44 — ComplianceDocumentDuties)
 # Due dates count calendar days (R19, E117). Owner defaults to the compliance owner (R13, E122).
 # Bulk creation uses insert_all; the unique key makes re-runs harmless (E44).
 class ComplianceDutyScheduler
@@ -25,6 +26,9 @@ class ComplianceDutyScheduler
                    schedule_period(duty, trig["schedule"])
                  elsif trig["event"] == "new_investor"
                    schedule_new_investors(duty, Date.parse(trig["from"].to_s))
+                 elsif trig["document"].present?
+                   # H44: one occurrence per new document of the input, with AI notes when read
+                   ComplianceDocumentDuties.schedule(@fp, duty, @setup)
                  else
                    0
                  end

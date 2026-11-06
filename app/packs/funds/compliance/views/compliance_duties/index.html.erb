@@ -6,7 +6,10 @@
         <% state = duty.state %>
         <tr id="duty_<%= duty.id %>">
           <td><%= duty.fund_compliance_pack.fund.name %></td>
-          <td><%= duty.name %></td>
+          <td><%= duty.name %>
+            <%# H44: kind-4 duties — AI prepares notes, the person still decides and marks the duty done %>
+            <% if duty.ai_notes.present? %><div class="small text-muted ai-notes">AI notes (prepared for you — check before marking done): <%= duty.ai_notes %></div><% end %>
+          </td>
           <td><%= duty.period_key.presence || "—" %></td>
           <td><%= duty.due_on ? l(duty.due_on) : "—" %></td>
           <td><span class="badge bg-<%= { 'overdue' => 'danger', 'due' => 'warning', 'done' => 'success' }[state] || 'secondary' %>-subtle text-<%= { 'overdue' => 'danger', 'due' => 'warning', 'done' => 'success' }[state] || 'secondary' %>"><%= state.humanize %><%= " — late (#{duty.late_days} days)" if duty.done? && duty.late_days.positive? %></span></td>

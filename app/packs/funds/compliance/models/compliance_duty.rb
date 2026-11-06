@@ -56,7 +56,7 @@ class ComplianceDuty < ApplicationRecord
   def subject
     return nil if subject_type.blank? || subject_id.zero?
 
-    { "Investor" => Investor, "CapitalCommitment" => CapitalCommitment }[subject_type]&.find_by(id: subject_id)
+    { "Investor" => Investor, "CapitalCommitment" => CapitalCommitment, "Document" => Document }[subject_type]&.find_by(id: subject_id)
   end
 
   def folder_path
