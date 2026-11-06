@@ -1,6 +1,6 @@
 # ② A pack attached to a fund: the fund's classification under that pack and the version the fund
 # is currently on (moved forward by ComplianceVersionMover on effective dates; grandfathered funds stay).
-# Worked examples H11, H12, E9, E11, E16, X14, X23, H16 — openspec/changes/fund-compliance-monitoring/business-rules.md
+# Worked examples H11, H12, E9, E11, E16, X14, X23, H16 — openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md
 class FundCompliancePack < ApplicationRecord
   STATUSES = %w[active detached].freeze
 

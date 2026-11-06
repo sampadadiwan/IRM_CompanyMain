@@ -2,7 +2,7 @@
 # A pack's definition names a source + field; nothing in a definition is ever evaluated or
 # constantized — the model classes and SQL fragments below are fixed in code.
 # `account_entries` is deliberately not a source (CLAUDE.md large-table rules).
-# Worked examples H2, E4, X5 — openspec/changes/fund-compliance-monitoring/business-rules.md
+# Worked examples H2, E4, X5 — openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md
 class ComplianceDataCatalog
   class UnknownSource < StandardError; end
   class UnknownField < StandardError; end

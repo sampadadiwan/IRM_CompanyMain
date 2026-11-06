@@ -1,6 +1,6 @@
 Feature: Manual duties
   Recurring duties (filings, attestations) scheduled per fund by the attached packs, with evidence.
-  Worked examples: openspec/changes/fund-compliance-monitoring/business-rules.md (group 5)
+  Worked examples: openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md (group 5)
 
   Background:
     Given the Horizon compliance setup

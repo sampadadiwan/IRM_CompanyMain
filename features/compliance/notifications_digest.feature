@@ -1,6 +1,6 @@
 Feature: Notifications, digest and export
   Internal notices only — the digest goes out only when something changed; exports respect fund access.
-  Worked examples: openspec/changes/fund-compliance-monitoring/business-rules.md (group 6)
+  Worked examples: openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md (group 6)
 
   Background:
     Given the Horizon compliance setup

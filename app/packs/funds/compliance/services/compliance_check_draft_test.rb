@@ -1,7 +1,7 @@
 # ⑧ Test run of a drafted check on one fund, inside CapHive (no AI — E63): evaluates only the drafted
 # check against today's data with the pack's merged definition and returns the working to show.
 # Nothing is stored except the result on the draft itself (a preview — R37).
-# Worked examples H38, E58, E59 — openspec/changes/fund-compliance-monitoring/business-rules.md
+# Worked examples H38, E58, E59 — openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md
 class ComplianceCheckDraftTest
   def self.call(draft:, fund:)
     new(draft, fund).call

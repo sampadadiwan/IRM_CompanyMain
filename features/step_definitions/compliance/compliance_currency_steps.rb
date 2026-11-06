@@ -1,5 +1,5 @@
 # Phase 4 steps: the IFSCA pack, a second regime on one entity, and currency conversion.
-# Worked examples H13, E8, H24, X25, X68 — openspec/changes/fund-compliance-monitoring/business-rules.md
+# Worked examples H13, E8, H24, X25, X68 — openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md
 
 # The IFSCA pack, published the same way as SEBI's: an ops load of the seed file with the counsel fields filled
 Given('the IFSCA pack is published') do

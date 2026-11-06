@@ -1,7 +1,7 @@
 # ① A rulebook: CapHive-owned (entity_id NULL, usually locked) or an entity's own fund-agreement pack.
 # Its rules live in versions (CompliancePackVersion#definition); this row holds identity, owner,
 # lock, the regime time zone and retirement.
-# Worked examples H1, H5, E1, E99, X12, X60 — openspec/changes/fund-compliance-monitoring/business-rules.md
+# Worked examples H1, H5, E1, E99, X12, X60 — openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md
 class CompliancePack < ApplicationRecord
   belongs_to :entity, optional: true
   has_many :versions, -> { order(:version_no) }, class_name: "CompliancePackVersion", dependent: :destroy, inverse_of: :compliance_pack

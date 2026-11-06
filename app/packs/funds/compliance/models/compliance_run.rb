@@ -1,5 +1,5 @@
 # ⑤ One run of one fund (nightly or Run now). Status drives run health / staleness (E28, X28, R22).
-# Worked examples H19, E18, X28, E132 — openspec/changes/fund-compliance-monitoring/business-rules.md
+# Worked examples H19, E18, X28, E132 — openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md
 class ComplianceRun < ApplicationRecord
   TRIGGERS = %w[nightly run_now].freeze
   STATUSES = %w[running succeeded failed].freeze

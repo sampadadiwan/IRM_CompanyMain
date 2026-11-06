@@ -1,6 +1,6 @@
 Feature: Compliance runs and results
   Nightly runs evaluate every attached pack's checks for a fund and store each result with its working.
-  Worked examples: openspec/changes/fund-compliance-monitoring/business-rules.md (group 3)
+  Worked examples: openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md (group 3)
 
   Background:
     Given the Horizon compliance setup

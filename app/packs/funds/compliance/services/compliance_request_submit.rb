@@ -1,6 +1,6 @@
 # ⑦ Creates a maker–checker request from an editor. Explanations move the item to Pending approval
 # (E32); approvers are told (E46). Validation (reason length, lock rules, early adoption) lives on the model.
-# Worked examples H14, E13, E17, E32, E46, X17, X52, X53, X56 — openspec/changes/fund-compliance-monitoring/business-rules.md
+# Worked examples H14, E13, E17, E32, E46, X17, X52, X53, X56 — openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md
 class ComplianceRequestSubmit
   Result = Struct.new(:request, :error, keyword_init: true) do
     def success?

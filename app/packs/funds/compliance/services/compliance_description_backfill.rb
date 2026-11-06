@@ -10,7 +10,7 @@
 #
 #   sources = { "SEBI — AIF" => [definition_hash, ...], "Demo Fund — LPA rules" => [definition_hash] }
 #
-# Worked examples E194, X94 — openspec/changes/fund-compliance-monitoring/business-rules.md
+# Worked examples E194, X94 — openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md
 class ComplianceDescriptionBackfill
   Line = Struct.new(:pack, :version, :status, :checks, keyword_init: true) do
     def to_s

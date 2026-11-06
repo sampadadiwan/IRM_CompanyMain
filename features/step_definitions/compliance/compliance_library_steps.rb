@@ -1,4 +1,4 @@
-# Rule library steps — openspec/changes/fund-compliance-monitoring/business-rules.md (group 1)
+# Rule library steps — openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md (group 1)
 module ComplianceLibraryHelpers
   MEASURES = {
     "largest investment cost per investee" => { "key" => "cost_per_investee", "op" => "sum", "source" => "portfolio_investments", "field" => "cost", "group_by" => "investee" },

@@ -1,6 +1,6 @@
 Feature: Rule library
   CapHive and entity packs: drafts, validation, test runs, publishing and versions.
-  Worked examples: openspec/changes/fund-compliance-monitoring/business-rules.md (group 1)
+  Worked examples: openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md (group 1)
 
   Background:
     Given the Horizon compliance setup

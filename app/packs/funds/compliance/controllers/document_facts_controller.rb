@@ -1,7 +1,7 @@
 # ⑦/⑧ Facts to confirm: the list of documents whose facts wait for a person, one document's facts with
 # quote and page, confirm/correct, enter by hand, and Read now. Every record is loaded through the
 # policy scope first and then authorized (design › Security item 1); documents through Document's scope.
-# Worked examples H40, H43, H45, E67, X45, X46, X48 — openspec/changes/fund-compliance-monitoring/business-rules.md
+# Worked examples H40, H43, H45, E67, X45, X46, X48 — openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md
 class DocumentFactsController < ApplicationController
   include ComplianceCrumbs
 

@@ -1,6 +1,6 @@
 Feature: Compliance register
   A failed check opens one item per check per fund pack; it stays open until the data clears it or an
-  approved explanation exists. Worked examples: openspec/changes/fund-compliance-monitoring/business-rules.md (group 4)
+  approved explanation exists. Worked examples: openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md (group 4)
 
   Background:
     Given the Horizon compliance setup

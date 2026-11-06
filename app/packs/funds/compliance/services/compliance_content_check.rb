@@ -14,7 +14,7 @@
 # the document's signed date (R1). The record a document is attached to decides what it is compared
 # with, so facts follow a moved document (E129).
 # Worked examples H41, H42, H54, E55, E56, E66, E69, E70–E79, E103, E104, E129, E136, X47 —
-# openspec/changes/fund-compliance-monitoring/business-rules.md
+# openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md
 class ComplianceContentCheck
   RULES = %w[record_within_fact fact_date_not_after_record quorum names_disjoint matches_record text_not_in_list
              names_not_in_list common_owner_share].freeze

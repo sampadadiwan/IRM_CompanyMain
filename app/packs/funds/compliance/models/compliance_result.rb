@@ -1,6 +1,6 @@
 # ⑤ One check outcome — append-only. The only column ever updated is superseded_reason, once (R14).
 # outcome: pass / breach / warning / needs_review / could_not_check
-# Worked examples H20, E20, X66, H57, X67 — openspec/changes/fund-compliance-monitoring/business-rules.md
+# Worked examples H20, E20, X66, H57, X67 — openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md
 class ComplianceResult < ApplicationRecord
   OUTCOMES = %w[pass breach warning needs_review could_not_check].freeze
 

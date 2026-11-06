@@ -1,5 +1,5 @@
 # Fund compliance monitoring — filter field names (activerecord.attributes) and one place for the words newcomers read (D15, R154).
-# The glossary matches openspec/changes/fund-compliance-monitoring/design.md › Key concepts; tooltips
+# The glossary matches openspec/changes/archive/2026-11-06-fund-compliance-monitoring/design.md › Key concepts; tooltips
 # (cmp_term), page intros (cmp_intro), Getting started and What's next all read from here.
 en:
   activerecord:

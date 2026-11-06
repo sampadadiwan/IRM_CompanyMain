@@ -2,7 +2,7 @@
 # The required document is a pack input (e.g. "ic_note") mapped per entity to a tag or name.
 # Signed = CapHive e-sign completed (signed date = completion) or a wet-ink sign-off (entered date).
 # Records before the check's "checks from" date are counted, not listed (H22, E25).
-# Worked examples H22, H23, E25, E26, E27, E30, X26, E125, E127, E128 — openspec/changes/fund-compliance-monitoring/business-rules.md
+# Worked examples H22, H23, E25, E26, E27, E30, X26, E125, E127, E128 — openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md
 class ComplianceDocumentCheckQuery
   MAX_LISTED = 500
 

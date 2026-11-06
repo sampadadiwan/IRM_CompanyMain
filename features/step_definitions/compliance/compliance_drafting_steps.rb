@@ -2,7 +2,7 @@
 # features/security/compliance_tenant_isolation.feature (E64, E65, X43).
 # The AI is always stubbed at LlmService.ruby_llm_chat; every prompt it receives is captured so
 # scenarios can check what was (and was not) sent.
-# openspec/changes/fund-compliance-monitoring/business-rules.md › 8. AI drafting
+# openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md › 8. AI drafting
 
 # A fake RubyLLM chat: records instructions + messages, answers with the given reply or raises
 class ComplianceFakeDraftChat

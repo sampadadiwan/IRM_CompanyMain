@@ -1,6 +1,6 @@
 # ⑧ Plain-words reading of an AI draft, field by field (AD spec: "Plain-words review"):
 #   figure "largest investment cost per sector" · divided by "investable funds" · limit "≤ 15%" · source "LPA cl. 8.2"
-# Worked examples H37, H39, E57 — openspec/changes/fund-compliance-monitoring/business-rules.md
+# Worked examples H37, H39, E57 — openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md
 module ComplianceCheckDraftWords
   OPS = { "sum" => "total", "count" => "number of", "count_distinct" => "number of different",
           "max" => "largest", "min" => "smallest" }.freeze

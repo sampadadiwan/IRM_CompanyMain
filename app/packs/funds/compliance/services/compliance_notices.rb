@@ -2,7 +2,7 @@
 # roles inside the fund manager's firm only — never investors or advisors (X35):
 #   owners    — the compliance owner + active users tagged "Compliance" who can see the fund
 #   approvers — eligible approvers (Compliance approver or company admin)
-# Worked examples H30, E12, E36, E46, X28, H49, X35 — openspec/changes/fund-compliance-monitoring/business-rules.md
+# Worked examples H30, E12, E36, E46, X28, H49, X35 — openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md
 module ComplianceNotices
   TAG = "Compliance".freeze
 

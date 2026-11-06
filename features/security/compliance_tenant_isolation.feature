@@ -1,6 +1,6 @@
 Feature: Compliance — tenant isolation and maker–checker
   Other firms, viewers, investors and direct requests are refused; approvers never approve their own requests.
-  Worked examples: openspec/changes/fund-compliance-monitoring/business-rules.md
+  Worked examples: openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md
 
   Background:
     Given the Horizon compliance setup

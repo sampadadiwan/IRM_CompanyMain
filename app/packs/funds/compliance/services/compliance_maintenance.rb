@@ -1,5 +1,5 @@
 # ⑥⑨ Morning housekeeping before the digest.
-# Worked examples E36, E87, E112, E113 — openspec/changes/fund-compliance-monitoring/business-rules.md
+# Worked examples E36, E87, E112, E113 — openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md
 module ComplianceMaintenance
   module_function
 

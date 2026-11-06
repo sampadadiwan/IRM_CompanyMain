@@ -9,7 +9,7 @@
 #   a needed fact unconfirmed     → "Needs review — AI-read, unconfirmed"     (E66)
 # Facts belong to the document's newest reading, so they follow the document to another record (E129).
 # Read-only; one query for the readings (facts preloaded).
-# Worked examples E66, E69, E74, E75, E129, E130, X45 — openspec/changes/fund-compliance-monitoring/business-rules.md
+# Worked examples E66, E69, E74, E75, E129, E130, X45 — openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md
 class ComplianceFactSource
   State = Struct.new(:usable, :problem, :facts, keyword_init: true)
 

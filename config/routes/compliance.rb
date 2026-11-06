@@ -1,4 +1,4 @@
-# Fund compliance monitoring — openspec/changes/fund-compliance-monitoring/lld.md › Controllers
+# Fund compliance monitoring — openspec/changes/archive/2026-11-06-fund-compliance-monitoring/lld.md › Controllers
 scope :compliance do
   get "/", to: "compliance_home#index", as: :compliance_home
   # ⑩ Phase 5 newcomer guidance: the Getting started frame and the super-admin customer setup list

@@ -5,7 +5,7 @@
 #                  "est_expenses" => {"<fund_id>" => 300000000.0}}
 # reference_lists {"ic_members" => {"quorum" => 3, "entries" => [{"name" => "A. Rao", "valid_from" => nil, "valid_to" => nil}]}}
 #
-# Worked examples H17, X15, E14, X16, H60, E105, H56, E133 — openspec/changes/fund-compliance-monitoring/business-rules.md
+# Worked examples H17, X15, E14, X16, H60, E105, H56, E133 — openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md
 class ComplianceEntitySetup < ApplicationRecord
   belongs_to :entity
   belongs_to :owner, class_name: "User", optional: true

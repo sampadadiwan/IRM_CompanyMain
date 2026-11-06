@@ -12,7 +12,7 @@
 #   7 monitoring monitoring switched on (E191: still refused while an input is missing — the X15 gate)
 #   8 owned     every open register item has an assignee, or is pending approval or explained
 #
-# Worked examples H80–H83, E180–E183, E191 — openspec/changes/fund-compliance-monitoring/business-rules.md
+# Worked examples H80–H83, E180–E183, E191 — openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md
 class ComplianceGettingStarted
   STEPS = %w[owner attach inputs lists first_run recipients monitoring owned].freeze
 

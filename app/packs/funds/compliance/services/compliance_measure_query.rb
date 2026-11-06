@@ -2,7 +2,7 @@
 # Aggregates run in SQL over catalogue sources only; expressions combine measures with + - * / min max.
 # A missing input (unmapped group, blank fund figure) raises MissingInput, which the evaluator turns
 # into "Could not check — missing: <input>" — never a pass (X24, X29).
-# Worked examples H2, H3, H20, H21, E22, E23, E30, E123, E124, E131, X24, X29 — openspec/changes/fund-compliance-monitoring/business-rules.md
+# Worked examples H2, H3, H20, H21, E22, E23, E30, E123, E124, E131, X24, X29 — openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md
 class ComplianceMeasureQuery
   class MissingInput < StandardError
     attr_reader :input_label

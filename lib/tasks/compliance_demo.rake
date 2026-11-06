@@ -13,7 +13,7 @@
 # Never in production. No AI is called: the drafting reply and the facts read from IC notes are stubbed,
 # exactly as the Cucumber features stub them. No files are uploaded (dev storage is S3), so the demo IC
 # notes are document records without a file.
-# Worked examples are named on each step — openspec/changes/fund-compliance-monitoring/business-rules.md
+# Worked examples are named on each step — openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md
 namespace :compliance do
   desc "Set up a compliance demo on an existing fund (dry-run unless EXECUTE=1)"
   task demo: :environment do

@@ -1,6 +1,6 @@
 Feature: Pack versions and locking
   Locked CapHive packs; each version applies to all funds, new funds only, or all with a transition period.
-  Worked examples: openspec/changes/fund-compliance-monitoring/business-rules.md (group 10)
+  Worked examples: openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md (group 10)
 
   Background:
     Given the Horizon compliance setup

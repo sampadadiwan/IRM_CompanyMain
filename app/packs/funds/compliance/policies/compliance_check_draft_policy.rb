@@ -1,7 +1,7 @@
 # ⑧ "Describe in words" drafts. Drafting writes into a pack version, so it needs the same right as editing
 # that version (editors of the firm for entity packs, super admins for CapHive packs); viewers are refused
 # (X43). A draft is only ever seen by the person who made it.
-# Worked examples X43, E64 — openspec/changes/fund-compliance-monitoring/business-rules.md
+# Worked examples X43, E64 — openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md
 class ComplianceCheckDraftPolicy < ComplianceBasePolicy
   class Scope < ApplicationPolicy::Scope
     def resolve

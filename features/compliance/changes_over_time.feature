@@ -1,6 +1,6 @@
 Feature: Changes over time
   History is never rewritten; dated reference lists; approvals; corrections; dates and periods.
-  Worked examples: openspec/changes/fund-compliance-monitoring/business-rules.md (group 11)
+  Worked examples: openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md (group 11)
 
   Background:
     Given the Horizon compliance setup

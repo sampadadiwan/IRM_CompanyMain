@@ -1,7 +1,7 @@
 # Period arithmetic for duty schedules, by the pack's period basis (R20):
 #   fy_apr   — financial year April–March; quarters Q1 Apr–Jun … Q4 Jan–Mar; "FY27" = Apr 2026 – Mar 2027
 #   calendar — calendar quarters and years
-# Worked examples H61, E118, E119, E120, E121 — openspec/changes/fund-compliance-monitoring/business-rules.md
+# Worked examples H61, E118, E119, E120, E121 — openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md
 module CompliancePeriod
   module_function
 

@@ -1,7 +1,7 @@
 # ⑧ "Describe in words": draft a check from a sentence (AI in a job), review it in plain words, edit it
 # field by field, test-run it on a fund and save it into the pack version's draft with its provenance.
 # Every record is loaded through policy_scope and then authorized (design › Security item 1).
-# Worked examples H37, H38, H39, E57–E62, X39–X43 — openspec/changes/fund-compliance-monitoring/business-rules.md
+# Worked examples H37, H38, H39, E57–E62, X39–X43 — openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md
 class ComplianceCheckDraftsController < ApplicationController
   include ComplianceCrumbs
 

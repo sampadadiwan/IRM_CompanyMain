@@ -4,7 +4,7 @@
 #   pass   → close the open item: "Cleared by data", "Pack corrected" (first result superseded, H57) or
 #            "Record deleted" (the failing records/groups no longer exist, E125, E126)
 #   warning / needs review / could not check → no change (E82: transition warnings open nothing)
-# Worked examples H25, E31, E33, E34, E37, E40, E82, E83, H57, E126 — openspec/changes/fund-compliance-monitoring/business-rules.md
+# Worked examples H25, E31, E33, E34, E37, E40, E82, E83, H57, E126 — openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md
 class ComplianceRegisterUpdater
   DEFAULT_TIME_TO_FIX = 30
 

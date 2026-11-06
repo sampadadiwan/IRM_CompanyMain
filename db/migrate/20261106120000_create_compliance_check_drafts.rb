@@ -1,5 +1,5 @@
 # Fund compliance monitoring — Phase 2: one AI draft of a check from a sentence ("Describe in words").
-# Design: openspec/changes/fund-compliance-monitoring/design.md › compliance_check_drafts
+# Design: openspec/changes/archive/2026-11-06-fund-compliance-monitoring/design.md › compliance_check_drafts
 # A new table only; no existing table is altered.
 class CreateComplianceCheckDrafts < ActiveRecord::Migration[8.1]
   def change

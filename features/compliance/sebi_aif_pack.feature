@@ -1,6 +1,6 @@
 Feature: SEBI — AIF pack
   The first CapHive pack: concentration, continuing interest, minimum investment, investor count and duties.
-  Figures pending counsel review. Worked examples: openspec/changes/fund-compliance-monitoring/business-rules.md (group 7)
+  Figures pending counsel review. Worked examples: openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md (group 7)
 
   Background:
     Given the Horizon compliance setup

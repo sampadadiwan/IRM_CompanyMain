@@ -4,7 +4,7 @@
 # The AI is always stubbed at LlmService.ruby_llm_chat (ComplianceFakeDraftChat from the drafting steps);
 # every prompt it receives is captured so scenarios can check what was — and was not — sent.
 # Documents get real .txt files (Shrine test storage) so DocumentTextPages reads them as CapHive would.
-# openspec/changes/fund-compliance-monitoring/business-rules.md › 9. Document-content checks
+# openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md › 9. Document-content checks
 
 module ComplianceReadingWorld
   IC_NOTE_TEXT = <<~TEXT.freeze

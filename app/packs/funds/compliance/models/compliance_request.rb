@@ -1,7 +1,7 @@
 # ⑦ Maker–checker: an editor requests, a different approver decides (R6, R11).
 # kinds: override / disable / detach / explanation / early_adoption / classification
 # status: pending → approved / rejected; overrides later become dropped / archived across versions (E92, E93).
-# Worked examples H14, H15, H16, E12, E13, X17, X18, X52, X53, X56, H55 — openspec/changes/fund-compliance-monitoring/business-rules.md
+# Worked examples H14, H15, H16, E12, E13, X17, X18, X52, X53, X56, H55 — openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md
 class ComplianceRequest < ApplicationRecord
   KINDS = %w[override disable detach explanation early_adoption classification].freeze
   STATUSES = %w[pending approved rejected dropped archived].freeze

@@ -3,7 +3,7 @@
 # One transaction per fund with a repeatable-read snapshot on MySQL, so a payment saved mid-run is
 # either fully in or fully out (R21, E134). Nightly runs are idempotent per fund and date; a second
 # Run now while one is running returns the running one (E18).
-# Worked examples H19, H20, H22, E9, E17, E18, E19, E21, E24, E86, X24, X28 — openspec/changes/fund-compliance-monitoring/business-rules.md
+# Worked examples H19, H20, H22, E9, E17, E18, E19, E21, E24, E86, X24, X28 — openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md
 class ComplianceRunOperation < Trailblazer::Operation
   step :load_fund
   step :start_run

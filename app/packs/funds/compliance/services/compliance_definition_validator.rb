@@ -1,7 +1,7 @@
 # ① Validates a pack version's definition JSON against ComplianceDataCatalog.
 # Returns a list of error messages naming the offending key (X1–X7, X63, E3–E5).
 # Nothing in the definition is evaluated — only checked against fixed lists.
-# Worked examples H2, H3, H7, H9, H10, X68, E3, E4, E5, X1–X7, X63, X44 — openspec/changes/fund-compliance-monitoring/business-rules.md
+# Worked examples H2, H3, H7, H9, H10, X68, E3, E4, E5, X1–X7, X63, X44 — openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md
 class ComplianceDefinitionValidator
   MEASURE_OPS = %w[sum count count_distinct max min expr input].freeze
   EXPR_OPS = %w[+ - * / min max].freeze

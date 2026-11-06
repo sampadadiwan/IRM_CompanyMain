@@ -1,5 +1,5 @@
 # Fund compliance monitoring — Phase 3: AI document reading and the facts a person confirms.
-# Design: openspec/changes/fund-compliance-monitoring/design.md › document_readings, document_facts
+# Design: openspec/changes/archive/2026-11-06-fund-compliance-monitoring/design.md › document_readings, document_facts
 # New tables only; no existing table is altered.
 class CreateDocumentReadingsAndFacts < ActiveRecord::Migration[8.1]
   def change

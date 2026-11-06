@@ -1,6 +1,6 @@
 # ⑥ One occurrence of a manual duty (scheduled per period, on demand, or per event subject).
 # Scheduled / Due / Overdue / Done are derived from dates (no status column).
-# Worked examples H27, H28, E41–E44, X33, X37, E117–E122 — openspec/changes/fund-compliance-monitoring/business-rules.md
+# Worked examples H27, H28, E41–E44, X33, X37, E117–E122 — openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md
 class ComplianceDuty < ApplicationRecord
   include WithFolder
 

@@ -1,7 +1,7 @@
 # ① One version of a pack's rules. The whole rulebook is one JSON `definition` (classifications,
 # inputs, reference lists, measures, checks, duties) validated by ComplianceDefinitionValidator.
 # A draft is editable; publishing freezes it. Effective / superseded / retired are derived from dates.
-# Worked examples H5, H6, H8, E6, X8, X9, X10, X50, X51, H57 — openspec/changes/fund-compliance-monitoring/business-rules.md
+# Worked examples H5, H6, H8, E6, X8, X9, X10, X50, X51, H57 — openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md
 class CompliancePackVersion < ApplicationRecord
   APPLICABILITIES = %w[all new_funds transition].freeze
   STATUSES = %w[draft published].freeze

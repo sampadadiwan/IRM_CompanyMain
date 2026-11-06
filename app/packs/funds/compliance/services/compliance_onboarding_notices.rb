@@ -5,7 +5,7 @@
 #             is incomplete, each once (onboarding.reminders_sent); nothing after day 21 (E189)
 # A firm without the Compliance entity flag gets neither (X93). Sent through ComplianceNotices, so
 # investors and advisors are never recipients (X35).
-# Worked examples H87, E189, E190, X93 — openspec/changes/fund-compliance-monitoring/business-rules.md
+# Worked examples H87, E189, E190, X93 — openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md
 class ComplianceOnboardingNotices
   REMINDER_DAYS = [7, 21].freeze
 

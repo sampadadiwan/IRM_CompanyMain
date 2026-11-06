@@ -1,7 +1,7 @@
 Feature: Compliance screens — filter, lazy tabs, Turbo streams and the explained working
   The register filter and its tabs agree, tabs load lazily like the fund page, row actions answer with
   Turbo streams, and every result page explains its working. Worked examples:
-  openspec/changes/fund-compliance-monitoring/business-rules.md (group 12)
+  openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md (group 12)
 
   Background:
     Given the Horizon compliance setup

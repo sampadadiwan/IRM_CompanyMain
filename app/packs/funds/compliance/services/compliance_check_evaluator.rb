@@ -6,7 +6,7 @@
 # (default: the pack's). When they differ the figure is converted at the run-date rate from FxRateResolver
 # and the rate is shown in the working; no rate → "Could not check — missing: INR/USD rate for <date>" (H24, X25).
 # Worked examples H24, X25, H20, H21, H33, H34, H35, E22, E23, E24, E48–E54, E82, E85, E17, X24, X29, X38, H41, E66 —
-# openspec/changes/fund-compliance-monitoring/business-rules.md
+# openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md
 class ComplianceCheckEvaluator
   Outcome = Struct.new(:outcome, :figure, :limit_value, :working, keyword_init: true)
 

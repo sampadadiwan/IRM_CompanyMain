@@ -4,7 +4,7 @@ Feature: Newcomer guidance — Getting started, What's next, check descriptions 
   section bar, the timing banner, a guide that opens at the page's section, a welcome and two reminders,
   and super-admin setup progress. Every check carries a plain-words description ("About this check") and
   every working reads "How we checked". Worked examples:
-  openspec/changes/fund-compliance-monitoring/business-rules.md (group 13)
+  openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md (group 13)
 
   # H80 — Happy path: a firm with an owner and an approver but no packs sees "1 of 8 done" with Attach packs current
   @rack_test

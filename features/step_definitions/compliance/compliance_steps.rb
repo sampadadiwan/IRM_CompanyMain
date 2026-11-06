@@ -1,4 +1,4 @@
-# Steps for features/compliance/*.feature — openspec/changes/fund-compliance-monitoring/business-rules.md
+# Steps for features/compliance/*.feature — openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md
 # Most steps drive the services directly (runs, register, duties); screen and direct-request steps
 # use rack_test in compliance_ui_steps.rb.
 

@@ -3,7 +3,7 @@
 # that input on the fund (e.g. each new PPM version), due n days after upload, with the AI's notes
 # attached when reading is on. The duty stays Due until a person marks it done (H44).
 # Documents are those attached to the fund itself (R82). Re-runs create nothing twice (unique key).
-# Worked examples H44 — openspec/changes/fund-compliance-monitoring/business-rules.md
+# Worked examples H44 — openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md
 class ComplianceDocumentDuties
   def self.document_trigger?(duty)
     duty.dig("trigger", "document").present?

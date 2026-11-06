@@ -2,7 +2,7 @@
 # closed, so the unique index allows exactly one open item per check (E31, R43).
 # status: open / in_progress / pending_approval / explained / closed
 # closed_reason: cleared / pack_corrected / record_deleted / check_removed / detached / disabled
-# Worked examples H25, H26, E31–E40, X30–X32, E94, H57, E126 — openspec/changes/fund-compliance-monitoring/business-rules.md
+# Worked examples H25, H26, E31–E40, X30–X32, E94, H57, E126 — openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md
 class ComplianceRegisterItem < ApplicationRecord
   STATUSES = %w[open in_progress pending_approval explained closed].freeze
   CLOSED_REASONS = %w[cleared pack_corrected record_deleted check_removed detached disabled].freeze

@@ -2,7 +2,7 @@ Feature: Document-content checks (AI reading)
   AI reads the declared facts of a document once per version, with quote and page; a person confirms
   them; plain rules compare the confirmed facts with CapHive's records and reference lists. AI never
   decides pass or fail. The AI is stubbed at LlmService.
-  Worked examples: openspec/changes/fund-compliance-monitoring/business-rules.md (group 9)
+  Worked examples: openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md (group 9)
 
   Background:
     Given the Horizon compliance setup

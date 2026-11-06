@@ -19,8 +19,8 @@
 
 > **Traceability (every phase):**
 > - Every H/E/X row in [business-rules.md](business-rules.md) has exactly one scenario, with a comment directly above it:
->   `# H20 — Happy path: …` / `# E31 — Edge case: …` / `# X18 — Error case: …`. Feature headers link `openspec/changes/fund-compliance-monitoring/business-rules.md`.
-> - Code names the IDs of the paths it implements: `# Worked examples H20, X18 — openspec/changes/fund-compliance-monitoring/business-rules.md`.
+>   `# H20 — Happy path: …` / `# E31 — Edge case: …` / `# X18 — Error case: …`. Feature headers link `openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md`.
+> - Code names the IDs of the paths it implements: `# Worked examples H20, X18 — openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md`.
 > - An edge case found during apply gets a new business-rules row AND a scenario, never a scenario alone.
 
 > **Standing rules:** after any local `db:migrate`, restore `db/schema.rb` / `db/schema_test.rb`

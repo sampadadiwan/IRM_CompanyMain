@@ -9,7 +9,7 @@
 #    "duty_trigger" => "on_demand" | "quarterly" | "half_yearly" | "yearly", "duty_due_days", "evidence",
 #    "reason" => "CapHive does not record key-person events", "assumptions" => [{"part","text"}]}
 #
-# Worked examples H37, H38, H39, E57–E62, X39–X42 — openspec/changes/fund-compliance-monitoring/business-rules.md
+# Worked examples H37, H38, H39, E57–E62, X39–X42 — openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md
 class ComplianceCheckDraft < ApplicationRecord
   MAX_SENTENCE = 1_000
   STATUSES = %w[drafting ready saved failed].freeze

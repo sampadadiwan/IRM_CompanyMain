@@ -12,7 +12,7 @@
 #   - the context is this one document (and, for notes, the previous version of the same document)
 #   - prompts and replies are not logged; what was sent is recorded (model, checksum, size, time)
 #
-# Worked examples H40, H44, H45, E68, E69, E130, X45, X46, X49 — openspec/changes/fund-compliance-monitoring/business-rules.md
+# Worked examples H40, H44, H45, E68, E69, E130, X45, X46, X49 — openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md
 class DocumentFactReader
   TIMEOUT = 90.seconds
   MAX_QUOTE = 500

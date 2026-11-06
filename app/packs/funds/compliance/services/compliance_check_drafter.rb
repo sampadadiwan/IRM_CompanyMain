@@ -10,7 +10,7 @@
 #     pack — the user reviews, test-runs and saves (H38)
 #   - prompts and replies are not logged (LLD › External Integrations)
 #
-# Worked examples H37, H39, E57, E64, E65, X40, X42 — openspec/changes/fund-compliance-monitoring/business-rules.md
+# Worked examples H37, H39, E57, E64, E65, X40, X42 — openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md
 class ComplianceCheckDrafter
   EXAMPLES = 5
   TIMEOUT = 45.seconds

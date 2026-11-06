@@ -1,7 +1,7 @@
 # ⑩ Newcomer guidance (Phase 5): the words come from one glossary (config/locales/compliance.en.yml,
 # D15) so a tooltip, a page intro and the user guide never say different things. Only existing pieces
 # are used — the tooltip icon, the explainer alert, the user-guide button (D16).
-# Worked examples H86, H88, H90, H92, E184, E185 — openspec/changes/fund-compliance-monitoring/business-rules.md
+# Worked examples H86, H88, H90, H92, E184, E185 — openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md
 module ComplianceGuidanceHelper
   GUIDE = "compliance_monitoring_user_guide".freeze
 

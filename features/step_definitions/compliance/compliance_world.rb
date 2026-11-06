@@ -3,7 +3,7 @@
 # investors, commitments, payments, investments, IC notes, the SEBI pack and Horizon's fund-agreement pack.
 # Bulk rows (investors, commitments, payments, investments) are inserted directly: the checks read
 # these tables with SQL, so model callbacks add nothing but time.
-# openspec/changes/fund-compliance-monitoring/business-rules.md
+# openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md
 module ComplianceWorld
   CRORE = 10_000_000
   IST = "Asia/Kolkata".freeze

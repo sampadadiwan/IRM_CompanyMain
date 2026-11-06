@@ -3,7 +3,7 @@
 # entered the facts by hand and nothing was sent to AI (H43). A reading is superseded (derived) when a
 # newer reading exists for the same document and input. Facts belong to the reading, so they follow the
 # document wherever it is attached (R10, E129).
-# Worked examples H40, H43, H45, E68, E74, E75, E130, X45, X46 — openspec/changes/fund-compliance-monitoring/business-rules.md
+# Worked examples H40, H43, H45, E68, E74, E75, E130, X45, X46 — openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md
 class DocumentReading < ApplicationRecord
   STATUSES = %w[queued capped read failed manual].freeze
   WAITING = %w[queued capped].freeze

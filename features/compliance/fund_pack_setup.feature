@@ -1,6 +1,6 @@
 Feature: Fund pack setup
   Attaching packs to funds with a classification per pack, overrides, disabling, detaching and monitoring.
-  Worked examples: openspec/changes/fund-compliance-monitoring/business-rules.md (group 2)
+  Worked examples: openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md (group 2)
 
   Background:
     Given the Horizon compliance setup

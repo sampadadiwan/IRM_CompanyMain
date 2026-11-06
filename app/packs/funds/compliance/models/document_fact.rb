@@ -2,7 +2,7 @@
 # A fact counts toward a result only once a compliance editor confirms it (E66). Every edit and
 # confirmation is audited, so the history reads "AI read ₹1.50 cr → Meera set ₹15.00 cr, 06 Nov 2026" (E67).
 # Values are typed: text, amount (major units of the pack currency), date (ISO), names (list), yes_no.
-# Worked examples H40, H43, E66, E67, E69, X45 — openspec/changes/fund-compliance-monitoring/business-rules.md
+# Worked examples H40, H43, E66, E67, E69, X45 — openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md
 class DocumentFact < ApplicationRecord
   TYPES = %w[text amount date names yes_no].freeze
   STATUSES = %w[ai_read not_found confirmed].freeze

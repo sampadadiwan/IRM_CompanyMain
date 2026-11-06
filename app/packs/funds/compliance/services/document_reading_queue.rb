@@ -7,7 +7,7 @@
 #   read_now — an older document a person asks to read (H45), or a retry after a failed read (X46)
 # Nothing here calls AI: DocumentFactReadJob does, one reading at a time.
 # No hook is added to Document uploads: the hourly sweep finds new and replaced files (R80).
-# Worked examples H40, H45, E68, E74, E75, E130, X46 — openspec/changes/fund-compliance-monitoring/business-rules.md
+# Worked examples H40, H45, E68, E74, E75, E130, X46 — openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md
 class DocumentReadingQueue
   DEFAULT_CAP = 200
   # How far back the first sweep looks after reading is switched on (older files use Read now — H45)

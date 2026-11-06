@@ -2,7 +2,7 @@
 # company admin) other than the requester — unless the entity has exactly one eligible user, who then
 # self-approves and the request is labelled "Self-approved — single approver" (R11, E109, E111, X18, X30, X57, X64).
 # The approved change is applied in the same transaction; a second decision changes nothing (X31).
-# Worked examples H14, H15, H16, H26, H50, H55, H59, E12, E39 — openspec/changes/fund-compliance-monitoring/business-rules.md
+# Worked examples H14, H15, H16, H26, H50, H55, H59, E12, E39 — openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md
 class ComplianceRequestDecide < Trailblazer::Operation
   step :lock_pending
   step :check_decider

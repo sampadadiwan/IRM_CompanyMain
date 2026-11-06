@@ -2,7 +2,7 @@
 # Re-checks the entity's opt-in and the monthly cap at run time; over the cap the reading waits as
 # "capped" until the month turns or the cap is raised (E74, E75). Idempotent: a reading that is no
 # longer queued is left alone on retry.
-# Worked examples H40, E74, E75, X46 — openspec/changes/fund-compliance-monitoring/business-rules.md
+# Worked examples H40, E74, E75, X46 — openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md
 class DocumentFactReadJob < ApplicationJob
   queue_as :low
 

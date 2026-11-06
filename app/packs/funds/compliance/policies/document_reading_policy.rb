@@ -3,7 +3,7 @@
 #   see     — a compliance viewer of the same firm who can see the document itself (DocumentPolicy#show?)
 #   confirm — the same, and a compliance editor (X48: viewers are refused, button and direct request)
 # Investors and advisors are never compliance viewers (X22).
-# Worked examples X48 — openspec/changes/fund-compliance-monitoring/business-rules.md
+# Worked examples X48 — openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md
 class DocumentReadingPolicy < ComplianceBasePolicy
   def index?
     viewer?

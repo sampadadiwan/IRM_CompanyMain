@@ -3,7 +3,7 @@
 # what the fact history shows ("AI read ₹1.50 cr → Meera set ₹15.00 cr", E67).
 # Manual entry (H43, X45): when reading is off or a document could not be read, the facts are entered and
 # confirmed in one step; nothing is sent to AI.
-# Worked examples H43, E67, X45 — openspec/changes/fund-compliance-monitoring/business-rules.md
+# Worked examples H43, E67, X45 — openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md
 class DocumentFactConfirm
   Result = Struct.new(:reading, :error, :notice, keyword_init: true)
 

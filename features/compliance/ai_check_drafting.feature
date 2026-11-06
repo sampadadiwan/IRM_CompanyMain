@@ -2,7 +2,7 @@ Feature: Describe a check in words (AI drafting)
   A compliance editor types a rule as a sentence; the AI drafts the check's structured fields, which the
   editor reviews in plain words, edits, test-runs on a fund and saves. AI never runs at check time.
   The AI is stubbed at LlmService.
-  Worked examples: openspec/changes/fund-compliance-monitoring/business-rules.md (group 8)
+  Worked examples: openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md (group 8)
 
   Background:
     Given the Horizon compliance setup

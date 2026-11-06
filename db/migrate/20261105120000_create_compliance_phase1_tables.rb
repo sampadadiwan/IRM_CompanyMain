@@ -1,5 +1,5 @@
 # Fund compliance monitoring — Phase 1 tables.
-# Design: openspec/changes/fund-compliance-monitoring/design.md › Data model and schema changes
+# Design: openspec/changes/archive/2026-11-06-fund-compliance-monitoring/design.md › Data model and schema changes
 # Every table is new; no existing table is altered (LLD › Migration safety).
 class CreateCompliancePhase1Tables < ActiveRecord::Migration[8.1]
   def change

@@ -1,7 +1,7 @@
 # ⑩ The Compliance hub's sections (R170): the order of the pills, their icons, the URL each lazy pane
 # loads, and which section-bar count it shows. Used by the hub page (pill tabs) and by the section bar
 # on standalone and detail pages (links back to the hub with ?tab=).
-# Worked example E200 — openspec/changes/fund-compliance-monitoring/business-rules.md
+# Worked example E200 — openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md
 module ComplianceHub
   # key, label, icon, count key (compliance_section_counts), badge colour
   SECTIONS = [

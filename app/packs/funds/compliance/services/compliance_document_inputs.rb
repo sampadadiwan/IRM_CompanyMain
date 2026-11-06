@@ -3,7 +3,7 @@
 # key to one tag or name, so every pack using "ic_note" reads the same documents), and any "notes" request
 # (kind-4 duties: AI prepares, a person decides — H44).
 # The facts signature is a hash of the declared fact keys: a version adding a fact changes it (R17, E130).
-# Worked examples H40, H44, E130, X44 — openspec/changes/fund-compliance-monitoring/business-rules.md
+# Worked examples H40, H44, E130, X44 — openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md
 class ComplianceDocumentInputs
   Input = Struct.new(:key, :label, :facts, :notes, keyword_init: true) do
     def fact_keys

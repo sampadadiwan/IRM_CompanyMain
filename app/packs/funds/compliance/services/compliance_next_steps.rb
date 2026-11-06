@@ -3,7 +3,7 @@
 # the user's own policy allows it, so the panel never offers a button that would be refused.
 # Read-only: it links to existing, separately authorized actions.
 #
-# Worked examples H84, H85, E186, E187, E188 — openspec/changes/fund-compliance-monitoring/business-rules.md
+# Worked examples H84, H85, E186, E187, E188 — openspec/changes/archive/2026-11-06-fund-compliance-monitoring/business-rules.md
 class ComplianceNextSteps
   MAX_ACTIONS = 3
 
