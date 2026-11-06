@@ -14,7 +14,8 @@ class DocumentFact < ApplicationRecord
   belongs_to :document_reading
   belongs_to :confirmed_by, class_name: "User", optional: true
 
-  audited only: %i[value status source]
+  # Changes and deletions only (R177): the AI-read value is the row as created; History shows each later edit
+  audited only: %i[value status source], on: %i[update destroy]
 
   attr_readonly :entity_id, :document_reading_id, :fact_key
 
@@ -87,7 +88,9 @@ class DocumentFact < ApplicationRecord
   def history(currency = "INR")
     # From the loaded audits (callers preload them: document_facts.includes(:audits)) — no query per fact (R176)
     all = audits.to_a.sort_by(&:id)
-    origin = all.detect { |a| a.action == "create" }&.audited_changes&.dig("source") || source
+    # Where the first value came from: `source` is fixed at creation (manual entry or AI read) and
+    # never changes, so no create audit is needed to know it (R177)
+    origin = source
     edits = all.select { |a| a.action == "update" && a.audited_changes["value"].is_a?(Array) }
     edits.each_with_index.map do |a, i|
       change = a.audited_changes["value"]

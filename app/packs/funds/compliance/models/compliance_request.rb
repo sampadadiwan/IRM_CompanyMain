@@ -13,8 +13,9 @@ class ComplianceRequest < ApplicationRecord
   belongs_to :requested_by, class_name: "User"
   belongs_to :decided_by, class_name: "User", optional: true
 
-  audited
+  # Audit changes and deletions only — the row itself records its creation (who/when columns, created_at) (R177)
 
+  audited on: %i[update destroy]
   attr_readonly :entity_id
 
   validates :kind, inclusion: { in: KINDS }

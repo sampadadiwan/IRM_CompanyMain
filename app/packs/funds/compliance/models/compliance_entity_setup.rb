@@ -10,8 +10,9 @@ class ComplianceEntitySetup < ApplicationRecord
   belongs_to :entity
   belongs_to :owner, class_name: "User", optional: true
 
-  audited
+  # Audit changes and deletions only — the row itself records its creation (who/when columns, created_at) (R177)
 
+  audited on: %i[update destroy]
   attr_readonly :entity_id
 
   validates :entity_id, uniqueness: true
