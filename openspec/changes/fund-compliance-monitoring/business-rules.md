@@ -154,6 +154,7 @@ flowchart LR
 | X11 | Test run without consent | Delta has not granted support access | Priya requests a test run on Delta directly | Refused; Delta not offered | RL: Test run on a customer without support access refused | compliance_tenant_isolation |
 | X12 | Other firm reads entity pack | Horizon FA pack | Dev lists packs / opens it by URL | Not listed; refused | RL: Entity pack invisible to another firm | compliance_tenant_isolation |
 | X13 | Customer edits CapHive pack | SEBI v1 | Meera sends an edit request directly | Refused | RL: Customer user cannot edit a CapHive pack | compliance_tenant_isolation |
+| X68 | Bad limit currency (P4) | Draft | Amount limit in "US$"; then a % limit with "USD" | "Unknown currency: US$"; "A currency applies only to a fixed amount limit" | RL: Limit currency must be a code on an amount limit | rule_library |
 
 ---
 
@@ -568,13 +569,13 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    S["198 spec scenarios<br/>(6 specs)"] --> R["Every scenario named in<br/>≥ 1 Spec scenario cell"]
+    S["200 spec scenarios<br/>(6 specs)"] --> R["Every scenario named in<br/>≥ 1 Spec scenario cell"]
     R --> F["Every row → 1 Cucumber scenario<br/>with '# ID — path' comment"]
 ```
 
 | Group | H | E | X | Total |
 |---|---|---|---|---|
-| 1 Rule library | 10 | 7 | 13 | 30 |
+| 1 Rule library | 10 | 7 | 14 | 31 |
 | 2 Fund pack setup | 8 | 10 | 10 | 28 |
 | 3 Runs and results | 6 | 13 | 6 | 25 |
 | 4 Register | 2 | 10 | 3 | 15 |
@@ -585,7 +586,7 @@ flowchart LR
 | 9 Document-content checks | 6 | 15 | 6 | 27 |
 | 10 Pack versions and locking | 8 | 23 | 12 | 43 |
 | 11 Changes over time | 8 | 33 | 6 | 47 |
-| **Total** | **61** | **136** | **67** | **264** |
+| **Total** | **61** | **136** | **68** | **265** |
 
 - `features/security/compliance_tenant_isolation.feature` gathers every refusal row (other firm, investor, viewer, self-approval, injection, AI context) — attacker refused, owner allowed, direct request refused.
 - An edge case found during apply gets a new row here **and** a scenario.

@@ -1,7 +1,7 @@
 # ① Validates a pack version's definition JSON against ComplianceDataCatalog.
 # Returns a list of error messages naming the offending key (X1–X7, X63, E3–E5).
 # Nothing in the definition is evaluated — only checked against fixed lists.
-# Worked examples H2, H3, H7, H9, H10, E3, E4, E5, X1–X7, X63, X44 — openspec/changes/fund-compliance-monitoring/business-rules.md
+# Worked examples H2, H3, H7, H9, H10, X68, E3, E4, E5, X1–X7, X63, X44 — openspec/changes/fund-compliance-monitoring/business-rules.md
 class ComplianceDefinitionValidator
   MEASURE_OPS = %w[sum count count_distinct max min expr input].freeze
   EXPR_OPS = %w[+ - * / min max].freeze
@@ -15,6 +15,7 @@ class ComplianceDefinitionValidator
   PERIOD_BASES = %w[fy_apr calendar].freeze
   INPUT_TYPES = %w[investor_group fund_figure document].freeze
   MAX_TIME_TO_FIX = 365
+  CURRENCY_FORMAT = /\A[A-Z]{3}\z/
 
   def self.call(definition, caphive: false)
     new(definition, caphive:).errors
@@ -196,6 +197,17 @@ class ComplianceDefinitionValidator
     @errors << "Unknown unit: #{limit['unit']}" if UNITS.exclude?(limit["unit"].to_s)
     @errors << "Limit is required (#{key})" if limit["value"].nil? && limit["expr"].nil?
     validate_expr(limit["expr"], key) if limit["expr"]
+    validate_limit_currency(limit, key)
+  end
+
+  # X68: a limit currency is a three-letter code on a fixed amount limit only — a percentage or count has
+  # no currency, and a limit expression is built from the fund's own figures (in the fund's currency)
+  def validate_limit_currency(limit, key)
+    cur = limit["currency"]
+    return if cur.nil?
+
+    @errors << "Unknown currency: #{cur} (#{key})" unless cur.to_s.match?(CURRENCY_FORMAT)
+    @errors << "A currency applies only to a fixed amount limit (#{key})" if limit["unit"] != "amount" || limit["expr"]
   end
 
   # X6: record-level document checks need a checks-from date

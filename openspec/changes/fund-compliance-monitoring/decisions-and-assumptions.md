@@ -138,6 +138,15 @@ flowchart LR
 | R94 | The digest line "N documents with facts to confirm — facts waiting D days" counts from when the reading was made and repeats daily while facts wait | Keeps waiting facts visible without a separate reminder (E135) |
 | R95 | A names fact the document states as empty ("No conflicts declared") is stored as found with no names, not "Not found in document" | Distinguishes "none" from "missing section" (E69) |
 | R96 | H54/E103/E104 now run the quorum content check over confirmed signatory facts (the Phase 1 list-only stand-in is replaced); E105 still tests the dated list directly | Facts exist from Phase 3 (R66) |
+| R97 | Fund figures are in the fund's currency; an amount limit's currency is `limit.currency`, else the pack's. Only a **fixed** amount limit (value or approved override) in another currency converts the figure; a limit expression (pro-rata, FME contribution) is built from the fund's own figures and is compared in the fund's currency | Smallest rule that covers H24; no per-measure currency |
+| R98 | The rate is looked up limit → fund currency (USD→INR) through `FxRateResolver.lookup` with the fund's `SourcePolicy`, so the reverse/cross rates are used only when the fund accepts derived rates; the figure is divided by it ("₹1,20,00,000 ÷ 83.00 = USD 144,578") | One conversion path, same precedence as every other fund conversion; matches how INR rates are quoted |
+| R99 | The working shows a "Rate: ₹83.00 per USD on <date> (<source>)" line and stores `working.fx` (from, to, rate, as_of, source); measure lines stay in the fund's currency, the comparison in the limit's | "Rate shown" (H24) without new columns (`figure`/`limit_value` stay decimals, design § schema) |
+| R100 | No accepted rate on or before the run date → "Could not check — missing: INR/USD rate for <date>" (fund/limit order, locale date) | Spec wording (X25); never a pass |
+| R101 | `ComplianceDefinitionValidator` refuses a limit currency that is not a three-letter code, or a currency on a % / count limit or a limit expression — new row X68 + spec scenario | Edge found during apply (rule: row + scenario) |
+| R102 | IFSCA pack `db/seeds/compliance/ifsca_fm_v1.json`: USD; classifications Venture Capital / Restricted / Retail Scheme; checks: minimum investment per investor (Restricted USD 150,000; VCS USD 250,000; accredited and sponsor excluded), Restricted < 1,000 investors, FME contribution lower of 2.5% of corpus and USD 750,000 (VCS + Restricted); one yearly duty (annual compliance report, 90 days). Effective 01 Jan 2027 placeholder; every figure listed under `version.counsel_figures_to_confirm` | Proposal › IFSCA sample pack; GIFT schemes are foreign-currency denominated, so the USD 750,000 inside the expression is read in the fund's (USD) currency |
+| R103 | The IFSCA "Accredited investors" input reuses the investor-group input type (optional; unmapped = nobody excluded) and "Sponsor/manager" reuses SEBI's key so one mapping serves both packs (H13) | No new input type; shared inputs by key already supported |
+| R104 | The entity regulator setting (`entity_settings.regulatory_env`) does not restrict which packs can be attached (E8) — no code, asserted by a scenario | Funds of one manager can sit under different regulators |
+| R105 | The version page shows each fixed amount limit in its own currency ("USD 150,000" on an INR-default page) | Consistent with the working |
 
 ## 3. Assumptions (verify these)
 
@@ -153,6 +162,8 @@ flowchart LR
 | A8 | Pricing / billing unchanged | Product |
 | A9 | Customers sign IC notes in wet ink or via CapHive e-sign only | Customer interviews |
 | A10 | Category III NAV source (FundRatio vs valuations) — unresolved; check 2 shows "Could not check — missing: NAV" until settled | Design risk list |
+| A11 | GIFT City (IFSCA) schemes are denominated in a foreign currency, so constants inside IFSCA limit expressions (USD 750,000) are read in the fund's currency | Counsel Q7; an INR fund under the IFSCA pack converts only fixed limits |
+| A12 | CapHive's manual/market USD→INR rates are acceptable for compliance comparisons on the run date (no separate "regulatory rate" such as the RBI reference rate) | Counsel / product |
 
 ## 4. For counsel (before any pack is published)
 

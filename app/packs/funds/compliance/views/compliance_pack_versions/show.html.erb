@@ -12,7 +12,7 @@
             <%= render "compliance_check_drafts/provenance", entry: c %></td>
           <td><%= c["kind"].to_s.humanize %><%= " · not overridable" if c["override"] == "none" %></td>
           <td><%= c["applies_to"] == "all" || c["applies_to"].nil? ? "all" : Array(c["applies_to"]).join(", ") %></td>
-          <td><%= c.dig("limit", "value") ? ComplianceFormat.limit(c.dig("limit", "value"), c.dig("limit", "unit"), @version.currency) : (c.dig("limit", "expr") ? ComplianceDescriber.expr(@version, c.dig("limit", "expr")) : "—") %></td>
+          <td><%= c.dig("limit", "value") ? ComplianceFormat.limit(c.dig("limit", "value"), c.dig("limit", "unit"), c.dig("limit", "currency").presence || @version.currency) : (c.dig("limit", "expr") ? ComplianceDescriber.expr(@version, c.dig("limit", "expr")) : "—") %></td>
           <td><%= c["citation"] %></td>
         </tr>
       <% end %>

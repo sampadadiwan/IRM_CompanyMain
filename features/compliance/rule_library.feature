@@ -167,6 +167,14 @@ Feature: Rule library
     And Priya adds a quarterly duty without a due rule
     Then the draft is refused with "Due rule is required"
 
+  # X68 — Error case: a limit currency must be a three-letter code on a fixed amount limit — "US$" and a currency on a % limit are refused
+  Scenario: X68 Unknown limit currency refused
+    When Priya creates a draft CapHive pack "Draft Pack" with 5 classifications
+    And Priya adds an amount limit of 150000 in "US$"
+    Then the draft is refused with "Unknown currency: US$"
+    When Priya adds a percentage limit of 25 in "USD"
+    Then the draft is refused with "A currency applies only to a fixed amount limit"
+
   # X8 — Error case: publishing an untested draft is refused "Run a test first"
   Scenario: X8 Publish without test
     When Priya creates a draft CapHive pack "Draft Pack" with 5 classifications

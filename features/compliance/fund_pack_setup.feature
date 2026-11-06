@@ -19,6 +19,14 @@ Feature: Fund pack setup
     When "Meera" attaches "SEBI — AIF" to "Horizon Growth Fund I" without a classification
     Then the setup grid shows "Horizon Growth Fund I" with "SEBI — AIF" as "Category II"
 
+  # H13 — Happy path: SEBI (Growth I) and IFSCA (GIFT) share the "Sponsor/manager" input — mapped once to "Sponsor", both packs ✓
+  Scenario: H13 Shared input mapped once
+    Given the IFSCA pack is published
+    And the sponsor/manager input is unmapped
+    When "Meera" attaches "IFSCA — Fund Management" to "Horizon GIFT Opportunities" as "Restricted Scheme"
+    And "Meera" maps the sponsor/manager input to "Sponsor"
+    Then the inputs list "Sponsor/manager" once, used by "IFSCA — Fund Management, SEBI — AIF", mapped
+
   # H14 — Happy path: a 20% override is pending until Rahul approves, then "20% (pack: 25%)"
   Scenario: H14 Override approved
     When "Meera" requests an override of "Single-investee concentration" on "Horizon Growth Fund I" to 20 because "Board policy 2026-07"
@@ -63,6 +71,14 @@ Feature: Fund pack setup
     And the nightly compliance run happens on "2026-11-10"
     Then the "2026-11-09" "Single-investee concentration" result shows the setup "No override" with limit 25
     And the "2026-11-10" "Single-investee concentration" result shows the setup "20% (pack: 25%)" with limit 20
+
+  # E8 — Edge case: Horizon's regulator setting is SEBI; attaching IFSCA to GIFT Opportunities is still allowed
+  Scenario: E8 Regulator setting does not block another regime's pack
+    Given the IFSCA pack is published
+    And Horizon's regulator setting is "SEBI"
+    When "Meera" attaches "IFSCA — Fund Management" to "Horizon GIFT Opportunities" as "Restricted Scheme"
+    Then the attachment saves
+    And the setup grid shows "Horizon GIFT Opportunities" with "IFSCA — Fund Management" as "Restricted Scheme"
 
   # E9 — Edge case: SEBI on Seed Fund with no Category — amber "no classification — no checks run", 0 SEBI results
   Scenario: E9 No classification

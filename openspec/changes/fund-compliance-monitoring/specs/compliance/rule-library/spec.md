@@ -66,6 +66,10 @@ An amount limit SHALL carry a currency, defaulting to the pack's currency.
 - **WHEN** an author enters a limit of 50,000,000 on an amount measure in an INR pack without choosing a currency
 - **THEN** the limit is saved as ₹5.00 cr (INR)
 
+#### Scenario: Limit currency must be a code on an amount limit
+- **WHEN** an author enters an amount limit in "US$", or gives a currency to a percentage limit
+- **THEN** the draft is refused with "Unknown currency: US$" or "A currency applies only to a fixed amount limit"
+
 ### Requirement: Record-level document check definition
 A check of the "every record has a required document" shape SHALL name the record type, the same filters as a measure (the sample IC note check defaults to buy transactions only), the required document input, whether the document must be signed (default yes), whether its signed date must be on or before the record's date (default yes), and a "checks from" date; the record type, document input and "checks from" date MUST be present.
 

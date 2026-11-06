@@ -65,6 +65,17 @@ Feature: Compliance runs and results
     When the nightly compliance run happens on "2026-11-05"
     Then "Horizon Growth Fund I" has 0 compliance runs on "2026-11-05"
 
+  # H24 — Happy path: a USD 150,000 minimum on a ₹1.20 cr commitment at ₹83.00/USD — 1,20,00,000 ÷ 83.00 = USD 144,578 < 150,000 → Breach; rate shown
+  Scenario: H24 USD limit on an INR figure
+    Given the IFSCA pack is published
+    And "Horizon India Feeder" is an INR fund classified "Restricted Scheme" under IFSCA with an investor committing ₹1.20 cr
+    And the USD to INR rate is 83.00 on "2026-11-04"
+    When the nightly compliance run happens on "2026-11-05" for "Horizon India Feeder"
+    Then the "Minimum investment per investor (Restricted Scheme)" check on "Horizon India Feeder" is "breach"
+    And the working shows "Rate: ₹83.00 per USD on 04/11/2026 (manual)"
+    And the working shows "₹1,20,00,000 ÷ 83.00 = USD 144,578 < USD 150,000"
+    And the result's working records the rate 83.00 from "INR" to "USD"
+
   # E20 — Edge case: correcting data later does not rewrite an earlier result
   Scenario: E20 Corrected data does not rewrite history
     When the nightly compliance run happens on "2026-11-05"
@@ -172,6 +183,14 @@ Feature: Compliance runs and results
     When the nightly compliance run happens on "2026-11-05"
     Then the "Single-investee concentration" check on "Horizon Growth Fund I" is "could_not_check"
     And the working shows "Could not check — missing: estimated expenses"
+
+  # X25 — Error case: no INR/USD rate on or before the run date → "Could not check — missing: INR/USD rate for <date>"
+  Scenario: X25 Missing exchange rate
+    Given the IFSCA pack is published
+    And "Horizon India Feeder" is an INR fund classified "Restricted Scheme" under IFSCA with an investor committing ₹1.20 cr
+    When the nightly compliance run happens on "2026-11-05" for "Horizon India Feeder"
+    Then the "Minimum investment per investor (Restricted Scheme)" check on "Horizon India Feeder" is "could_not_check"
+    And the working shows "Could not check — missing: INR/USD rate for 05/11/2026"
 
   # X26 — Error case: an IC note scan not marked signed is "Not signed — mark as signed (wet ink)"
   Scenario: X26 Scan not marked signed

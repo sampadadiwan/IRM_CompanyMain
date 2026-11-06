@@ -19,6 +19,20 @@ module ComplianceFormat
     end
   end
 
+  # Full digits, no crore shorthand — the conversion line of a currency check: "₹1,20,00,000", "USD 144,578" (H24)
+  def amount_full(value, currency = "INR")
+    return "—" if value.nil?
+
+    whole = value.to_d.round(0).to_i
+    currency == "INR" ? "₹#{indian_grouping(whole)}" : "#{currency} #{ActiveSupport::NumberHelper.number_to_delimited(whole)}"
+  end
+
+  # An exchange rate as written in the working: 83 → "83.00"; a derived 0.01204819 keeps its decimals (H24)
+  def rate(value)
+    r = value.to_d
+    r == r.round(2) ? format("%.2f", r) : r.round(8).to_s("F")
+  end
+
   # 0.266666 → "26.67%" (rounded to 2 decimals as displayed)
   def pct(ratio)
     return "—" if ratio.nil?
