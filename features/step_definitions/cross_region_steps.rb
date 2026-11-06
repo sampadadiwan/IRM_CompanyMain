@@ -14,12 +14,19 @@ CROSS_REGION_TEST_SITES = {
 
 CROSS_REGION_SECRET = "cross-region-test-secret-value-0123456789"
 
-Before("@cross-region-issuance", "@cross-region-login") do
+# One tag expression joined with "or", not two arguments: Cucumber ANDs separate arguments
+# (RunningTestCase checks `tag_expressions.all?`), and no scenario carries both tags, so the old
+# Before("@cross-region-issuance", "@cross-region-login") never ran. CURRENT_SITE was then never
+# restored, and a scenario ending on "the current region is \"US\"" (cross_region_issuance E2)
+# made later scenarios on the same pcuc worker behave as the US site: +1 default call code,
+# January fiscal year (investor_notice_criteria, kpi_upload_validation_extended,
+# kpi_cumulate_multi_year failed only in parallel runs).
+Before("@cross-region-issuance or @cross-region-login") do
   @cross_region_env = ENV.to_h.slice("SITES", "CURRENT_SITE")
   allow(CrossSiteTrust).to receive(:secret).and_return(CROSS_REGION_SECRET)
 end
 
-After("@cross-region-issuance", "@cross-region-login") do
+After("@cross-region-issuance or @cross-region-login") do
   %w[SITES CURRENT_SITE].each do |key|
     @cross_region_env&.key?(key) ? ENV[key] = @cross_region_env[key] : ENV.delete(key)
   end
