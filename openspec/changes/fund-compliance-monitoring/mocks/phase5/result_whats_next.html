@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css" rel="stylesheet">
+<style>body{background:#f6f8fb;font-size:14px}.mock-note{font-size:12px}</style>
+<title>Mock — Result with What's next (Phase 5)</title></head><body>
+<div class="container-fluid p-3">
+  <p class="mock-note text-muted"><i class="ti ti-info-circle"></i> Static mock (Phase 5). The Working list is the restyled one; Phase 5 adds the section bar, timing banner and What's next card. Data: Fund 1, SEBI concentration breach.</p>
+  <div class="card mb-3"><div class="card-body py-2 small">Home &bull; Funds &bull; Fund 1 &bull; Compliance &bull; SEBI — AIF &bull; <b>Single-investee concentration</b></div></div>
+  <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row">
+    <a class="nav-link" href="#"><i class="ti ti-shield-check me-1"></i>Home</a>
+    <a class="nav-link active" href="#"><i class="ti ti-alert-triangle me-1"></i>Register <span class="badge bg-danger-subtle text-danger">7</span></a>
+    <a class="nav-link" href="#"><i class="ti ti-checklist me-1"></i>Duties <span class="badge bg-info-subtle text-info">2</span></a>
+    <a class="nav-link" href="#"><i class="ti ti-file-text me-1"></i>Facts to confirm <span class="badge bg-secondary-subtle text-secondary">4</span></a>
+    <a class="nav-link" href="#"><i class="ti ti-book me-1"></i>Packs</a>
+    <a class="nav-link" href="#"><i class="ti ti-settings me-1"></i>Setup</a>
+  </nav>
+  <div class="alert alert-secondary d-flex align-items-center gap-2 py-2 small"><i class="ti ti-clock"></i>Results from the 02:00 IST run on 06/11/2026 · next run 07/11/2026 02:00 IST</div>
+
+  <div class="row">
+    <div class="col-lg-8">
+      <!-- What's next -->
+      <div class="alert alert-info d-flex align-items-start gap-2">
+        <i class="ti ti-arrow-big-right-lines fs-5 mt-1"></i>
+        <div><div class="fw-semibold">What's next</div>
+          <div>This check is in breach. Either:</div>
+          <div class="d-flex flex-wrap gap-2 mt-2">
+            <a class="btn btn-outline-primary btn-sm d-inline-flex align-items-center"><i class="ti ti-user-plus me-1"></i>Assign it</a>
+            <a class="btn btn-outline-primary btn-sm d-inline-flex align-items-center"><i class="ti ti-message-2 me-1"></i>Request an explanation</a>
+          </div>
+          <div class="small text-muted mt-2">…or fix the data (e.g. record a sale of Ace Limited) — the next run clears it by itself.</div>
+        </div>
+      </div>
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header border-bottom py-3"><i class="ti ti-calculator me-1 text-primary"></i><b>Working</b>
+          <i class="ti ti-info-circle text-muted ms-1" title="How the figure was worked out on the run date, step by step, from your own records."></i></div>
+        <div class="card-body pb-0"><span class="badge bg-danger-subtle text-danger"><i class="ti ti-alert-triangle"></i> Breach</span>
+          Ace Limited is 41.91% of investable funds — above the 25% limit.<div class="small text-muted">SEBI AIF Regulations, Reg 15(1)(c)</div></div>
+        <ul class="list-group list-group-flush mt-2">
+          <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4"><span><span class="text-muted">① Corpus</span><div class="small text-muted">total of 81 commitments</div></span><span class="fw-bold">₹375.72 cr <i class="ti ti-external-link"></i></span></li>
+          <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4"><span><span class="text-muted">② Less estimated expenses</span><div class="small text-muted">from Setup</div></span><span class="fw-bold">₹15.00 cr <i class="ti ti-external-link"></i></span></li>
+          <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4"><span><span class="text-muted">③ Investable funds</span><div class="small text-muted">① − ②</div></span><span class="fw-bold">₹360.72 cr</span></li>
+          <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4"><span><span class="text-muted">④ Largest investee — Ace Limited</span><div class="small text-muted">6 portfolio investments</div></span><span class="fw-bold">₹151.20 cr <i class="ti ti-external-link"></i></span></li>
+          <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4"><span><span class="text-muted">⑤ Share of investable funds</span><div class="small text-muted">④ ÷ ③</div></span><span class="fw-bold">41.91%</span></li>
+          <li class="list-group-item list-group-item-danger d-flex justify-content-between align-items-center py-3 px-4"><span class="fw-semibold">Result: 41.91% &gt; 25%</span><span class="badge bg-danger-subtle text-danger"><i class="ti ti-alert-triangle"></i> Breach</span></li>
+        </ul>
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header border-bottom py-3"><i class="ti ti-settings me-1 text-primary"></i><b>Setup that day</b></div>
+        <ul class="list-group list-group-flush">
+          <li class="list-group-item d-flex justify-content-between py-3 px-4"><span class="text-muted">Version</span><span class="fw-bold">v1</span></li>
+          <li class="list-group-item d-flex justify-content-between py-3 px-4"><span class="text-muted">Classification <i class="ti ti-info-circle" title="Which part of the pack applies to this fund."></i></span><span class="fw-bold">Category I</span></li>
+          <li class="list-group-item d-flex justify-content-between py-3 px-4"><span class="text-muted">Override</span><span class="fw-bold">None</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div></body></html>

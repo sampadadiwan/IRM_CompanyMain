@@ -1,0 +1,25 @@
+<%# H43 / X45: enter a document's facts by hand — nothing is sent to AI; they count once saved %>
+<%= render FormCard.new(title: "Enter facts — #{@reading.document.name}") do %>
+  <%= cmp_explainer("Nothing is sent to the AI. These facts are confirmed as you save them and are used by tonight's compliance run.") %>
+  <%= form_with url: manual_document_readings_path, method: :post do %>
+    <%= hidden_field_tag :document_id, @reading.document_id %>
+    <%= hidden_field_tag :input_key, @reading.input_key %>
+    <div class="row g-3">
+      <% @input.facts.each do |f| %>
+        <div class="col-md-6">
+          <%= label_tag "values_#{f['key']}", class: "form-label" do %><%= f["label"].presence || f["key"].humanize %> <%= cmp_tip("As written in the document. Leave blank if the document does not say") %><% end %>
+          <% if f["type"] == "date" %>
+            <%= date_field_tag "values[#{f['key']}]" %>
+          <% else %>
+            <%= text_field_tag "values[#{f['key']}]", nil, class: "form-control",
+                               placeholder: { "names" => "Names, separated by commas", "amount" => "Amount", "yes_no" => "Yes or No" }[f["type"]] %>
+          <% end %>
+          <small class="form-text text-muted d-block"><%= { "names" => "Separate names with commas.", "amount" => "In the fund's currency, e.g. 15,00,00,000.", "date" => "The date written in the document.", "yes_no" => "Yes or No." }[f["type"]] %></small>
+        </div>
+      <% end %>
+    </div>
+    <div class="mt-3">
+      <%= button_tag type: "submit", class: "btn btn-outline-success" do %><%= cmp_icon(:save) %>Save and confirm<% end %>
+    </div>
+  <% end %>
+<% end %>

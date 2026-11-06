@@ -1,0 +1,32 @@
+<%# Maker–checker request form (override / disable / detach / explanation / early adoption / classification).
+    Locals: target, kind, check_key (optional), label, fields (array of payload keys), hidden_payload (optional). Answers by Turbo
+    stream; closes its modal on success (modal-form). %>
+<% field_help = { text: "What you want the approver to know, e.g. why the breach is temporary",
+                  limit: "The new limit for this fund. On a locked CapHive pack it may only be stricter",
+                  version_id: "The newer version to move this fund to early",
+                  classification: "The part of the pack that applies to this fund, e.g. Category II" } %>
+<%= form_with url: compliance_requests_path, scope: :compliance_request, method: :post, class: "row g-3", namespace: "req_#{kind}",
+              data: { controller: "modal-form", action: "turbo:submit-end->modal-form#close" } do |f| %>
+  <%= f.hidden_field :kind, value: kind %>
+  <%= f.hidden_field :target_type, value: target.class.name %>
+  <%= f.hidden_field :target_id, value: target.id %>
+  <%= f.hidden_field :check_key, value: local_assigns[:check_key] %>
+  <%# Payload the page already knows (e.g. the version to adopt early) %>
+  <% (local_assigns[:hidden_payload] || {}).each do |key, value| %>
+    <%= hidden_field_tag "compliance_request[payload][#{key}]", value, id: "compliance_request_payload_#{key}_#{target.id}" %>
+  <% end %>
+  <% Array(local_assigns[:fields]).each do |field| %>
+    <div class="col-12">
+      <%= label_tag "compliance_request_payload_#{field}", class: "form-label" do %><%= field.to_s.humanize %> <%= cmp_tip(field_help[field.to_sym].to_s) %><% end %>
+      <%= text_field_tag "compliance_request[payload][#{field}]", nil, id: "compliance_request_payload_#{field}", class: "form-control" %>
+    </div>
+  <% end %>
+  <div class="col-12">
+    <%= f.label :reason, class: "form-label" do %>Reason <%= cmp_tip("Kept with the request in history and exports. The approver sees it before deciding") %><% end %>
+    <%= f.text_field :reason, class: "form-control" %>
+    <small class="form-text text-muted d-block">At least 10 characters.</small>
+  </div>
+  <div class="col-12">
+    <%= f.button type: "submit", class: "btn btn-outline-primary" do %><%= cmp_icon(:publish) %><%= label %><% end %>
+  </div>
+<% end %>

@@ -1,0 +1,143 @@
+<%# Setup: inputs (✓/✗), owner and monitoring, the AI drafting switch and AI document reading (per input,
+    monthly cap). Switches post back to Setup (a full-page form, kept as a redirect — R112). %>
+<% editor = policy(@setup).update? %>
+<% missing = @inputs.count(&:missing?) %>
+<div class="container-fluid mw-100 p-3">
+  <%= render layout: "compliance_shared/header", locals: { intro: :setup, title: "Compliance setup", icon: :setup } do %>
+    <%= cmp_header_link "Funds", compliance_home_path(tab: ComplianceHub.pane_id(:home)), icon: :fund_pack %>
+  <% end %>
+  <% if flash[:alert] %><div class="alert alert-danger" id="setup_error"><%= flash[:alert] %></div><% end %>
+
+  <%= cmp_stats([
+    { stat: @setup.monitoring_enabled ? "On" : "Off", subtitle: "Monitoring", colour: @setup.monitoring_enabled ? "success" : "secondary", icon: :run,
+      tooltip: "When on, every attached fund is checked each night at 02:00 (#{@setup.time_zone})" },
+    { stat: "#{@inputs.size - missing} of #{@inputs.size}", subtitle: "Inputs mapped", colour: missing.zero? ? "success" : "danger", icon: :fund_pack,
+      tooltip: "Facts the packs need that CapHive cannot work out alone, e.g. which investors are the sponsor" },
+    { stat: @setup.owner&.full_name || "—", subtitle: "Compliance owner", colour: "info", icon: :user,
+      tooltip: "Gets unassigned duties and items returned from people who leave" }
+  ], id: "setup_stats") %>
+
+  <div class="row">
+    <div class="col-lg-7">
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header border-bottom py-3">
+          <h5 class="mb-0 fw-bold"><%= cmp_icon(:fund_pack, "me-2 text-primary") %>Inputs <%= cmp_tip("Each input is mapped once for the whole firm and used by every pack that names it") %></h5>
+        </div>
+        <div class="card-body p-0">
+          <table class="table table-bordered dataTable action_table hover mb-0" id="setup_inputs">
+            <thead><tr><th class="text-col">Input</th><th class="text-col">Used by</th><th class="text-col">Status <%= cmp_tip("✓ mapped; ✗ missing — the checks needing it show Could not check") %></th></tr></thead>
+            <tbody>
+              <% @inputs.each do |inp| %>
+                <tr id="input_<%= inp.key %>"><td class="text-col"><%= inp.label %></td><td class="text-col"><%= inp.packs.join(", ") %></td>
+                  <td class="text-col"><%= inp.missing? ? cmp_badge("✗ #{inp.missing_funds.any? ? "missing for #{inp.missing_funds.join(', ')}" : 'not mapped'}", "danger") : cmp_badge("✓", "success") %></td></tr>
+              <% end %>
+            </tbody>
+          </table>
+          <% if @inputs.empty? %><p class="text-muted p-3 mb-0">No inputs — attach a pack to a fund first.</p><% end %>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-5">
+      <div class="card shadow-sm border-0 mb-4" id="setup_monitoring">
+        <div class="card-header border-bottom py-3">
+          <h5 class="mb-0 fw-bold"><%= cmp_icon(:run, "me-2 text-primary") %>Monitoring <%= cmp_term(:monitoring) %></h5>
+        </div>
+        <div class="card-body">
+          <p>Monitoring: <strong id="monitoring_state"><%= @setup.monitoring_enabled ? "on" : "off" %></strong> · Owner: <%= @setup.owner&.full_name || "—" %></p>
+          <%# ⑩ Getting started step 1: choose the compliance owner %>
+          <% if editor %>
+            <%= form_with model: @setup, url: compliance_entity_setup_path, method: :patch, class: "row g-2 mb-3", id: "setup_owner_form" do |f| %>
+              <div class="col-8">
+                <%= label_tag "compliance_entity_setup[owner_id]", class: "form-label" do %>Compliance owner <%= cmp_tip("Gets anything nobody else owns — unassigned duties, and items returned from people who leave") %><% end %>
+                <%= select_tag "compliance_entity_setup[owner_id]", options_from_collection_for_select(@owner_choices, :id, :full_name, @setup.owner_id),
+                               include_blank: "Choose…", class: "form-select", id: "setup_owner_id" %>
+              </div>
+              <div class="col-4 d-flex align-items-end">
+                <%= f.button type: "submit", class: "btn btn-outline-primary", id: "setup_owner_save" do %><%= cmp_icon(:save) %>Save<% end %>
+              </div>
+            <% end %>
+          <% end %>
+          <% if editor %>
+            <%= form_with model: @setup, url: compliance_entity_setup_path, method: :patch do |f| %>
+              <%= hidden_field_tag "compliance_entity_setup[monitoring_enabled]", @setup.monitoring_enabled ? "0" : "1" %>
+              <%= f.button type: "submit", class: "btn btn-outline-#{@setup.monitoring_enabled ? 'danger' : 'success'}" do %>
+                <%= cmp_icon(:run) %><%= @setup.monitoring_enabled ? "Turn monitoring off" : "Turn monitoring on" %>
+              <% end %>
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+      <%# ⑩ Getting started step 4: the reference lists the attached checks compare documents with %>
+      <% if @list_keys.any? %>
+        <div class="card shadow-sm border-0 mb-4" id="setup_lists">
+          <div class="card-header border-bottom py-3">
+            <h5 class="mb-0 fw-bold"><%= cmp_icon(:history, "me-2 text-primary") %>Reference lists <%= cmp_tip("Names a check compares documents with — e.g. the excluded sectors, or the IC members and their quorum") %></h5>
+          </div>
+          <div class="card-body">
+            <%= form_with model: @setup, url: compliance_entity_setup_path, method: :patch, id: "setup_lists_form" do |f| %>
+              <% @list_keys.each do |key| %>
+                <div class="mb-3">
+                  <%= label_tag "compliance_entity_setup[reference_lists][#{key}][names]", key.humanize, class: "form-label" %>
+                  <%= text_area_tag "compliance_entity_setup[reference_lists][#{key}][names]", @setup.reference_list(key).join("\n"), rows: 3,
+                                    class: "form-control", id: "setup_list_#{key}", disabled: !editor %>
+                  <small class="form-text text-muted d-block">One name per line. A name already on the list keeps its from/to dates.</small>
+                </div>
+              <% end %>
+              <% if editor %><%= f.button type: "submit", class: "btn btn-outline-primary", id: "setup_lists_save" do %><%= cmp_icon(:save) %>Save lists<% end %><% end %>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header border-bottom py-3">
+          <h5 class="mb-0 fw-bold"><%= cmp_icon(:ai, "me-2 text-info") %>Describe in words <%= cmp_tip("AI drafts a check from a sentence; a person reviews, tests and saves it. Only field names and your own checks are sent — never investor data") %></h5>
+        </div>
+        <div class="card-body">
+          <p>AI drafting of checks: <strong id="ai_drafting_state"><%= @setup.ai_drafting_enabled? ? "on" : "off" %></strong></p>
+          <% if editor %>
+            <%= form_with model: @setup, url: compliance_entity_setup_path, method: :patch do |f| %>
+              <%= hidden_field_tag "compliance_entity_setup[ai_drafting]", @setup.ai_drafting_enabled? ? "0" : "1" %>
+              <%= f.button type: "submit", class: "btn btn-outline-primary" do %><%= cmp_icon(:ai) %><%= @setup.ai_drafting_enabled? ? "Turn Describe in words off" : "Turn Describe in words on" %><% end %>
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%# Phase 3: AI document reading — off until turned on per document input; monthly cap (E74, E75) %>
+  <% doc_inputs = ComplianceDocumentInputs.for(@setup.entity) %>
+  <% if doc_inputs.any? %>
+    <div class="card shadow-sm border-0 mb-4">
+      <div class="card-header border-bottom py-3">
+        <h5 class="mb-0 fw-bold"><%= cmp_icon(:read, "me-2 text-info") %>AI document reading
+          <%= cmp_tip("AI reads each document once when it is uploaded or replaced; a person confirms the facts before they count") %></h5>
+      </div>
+      <div class="card-body">
+        <p class="text-muted">Monthly cap: <strong id="reading_cap"><%= DocumentReadingQueue.cap(@setup) %></strong> documents
+          (<%= DocumentReading.sent_in_month(@setup.entity_id, Time.current).count %> read this month). Over the cap, documents wait for next month.</p>
+        <table class="table table-bordered dataTable action_table hover mb-0" id="ai_reading">
+          <thead><tr><th class="text-col">Document</th><th class="text-col">Facts read</th><th class="text-col">Reading</th><th class="action-col">Actions</th></tr></thead>
+          <tbody>
+            <% doc_inputs.each_value do |inp| %>
+              <% on = DocumentReadingQueue.enabled?(@setup, inp.key) %>
+              <tr id="reading_<%= inp.key %>">
+                <td class="text-col"><%= inp.label %></td>
+                <td class="text-col"><%= inp.facts.map { |f| f["label"].presence || f["key"].humanize }.join(", ").presence || "Notes only" %></td>
+                <td class="text-col"><%= cmp_badge(on ? "On" : "Off", on ? "success" : "secondary", on ? :done : nil) %></td>
+                <td class="action-col">
+                  <% if editor %>
+                    <%= form_with model: @setup, url: compliance_entity_setup_path, method: :patch do |f| %>
+                      <%= hidden_field_tag "compliance_entity_setup[ai_reading][#{inp.key}]", on ? "0" : "1" %>
+                      <%= f.button type: "submit", class: "btn btn-outline-primary" do %><%= cmp_icon(:read) %><%= on ? "Turn reading off" : "Turn reading on" %><% end %>
+                    <% end %>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  <% end %>
+</div>

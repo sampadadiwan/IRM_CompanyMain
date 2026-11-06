@@ -1,0 +1,34 @@
+<% frame = with_frame("compliance_packs_frame") %>
+<%= render layout: "compliance_shared/header", locals: { intro: :packs, title: "Rule library", icon: :pack } do %>
+  <%= link_to compliance_packs_path(filter: true), class: "btn btn-outline-primary d-inline-flex align-items-center", id: "packs_filter_btn",
+              data: { turbo_frame: "_top", bs_toggle: "tooltip", bs_title: "Filter by name, regime, locked or retired" } do %>
+    <%= cmp_icon(:filter) %>Filter
+  <% end %>
+  <% if policy(CompliancePack).create? %>
+    <%= link_to new_compliance_pack_path, class: "btn btn-outline-primary d-inline-flex align-items-center", id: "new_pack_btn", data: { turbo_frame: "_top" } do %>
+      <%= cmp_icon(:new) %>New entity pack
+    <% end %>
+  <% end %>
+<% end %>
+
+
+<%
+  scope = @stats_scope
+  cards = [
+    { stat: scope.where(entity_id: nil).count, subtitle: "CapHive packs", colour: "secondary", icon: :lock, tooltip: "Regulator packs published by CapHive in this list (locked)" },
+    { stat: scope.where.not(entity_id: nil).count, subtitle: "Entity packs", colour: "info", icon: :pack, tooltip: "Your firm's own packs in this list" },
+    { stat: FundCompliancePack.active.where(compliance_pack_id: scope.select(:id), entity_id: current_user.entity_id).count, subtitle: "Attachments",
+      colour: "success", icon: :fund_pack, tooltip: "Funds of your firm these packs are attached to" }
+  ]
+%>
+<%= cmp_stats(cards, id: "packs_grid_stats") %>
+
+<%= render SearchComponent.new(data_source: compliance_packs_path(params: params.to_unsafe_h.except("controller", "action")), turbo_frame: frame) %>
+<% if packs.empty? %>
+  <div class="alert alert-secondary d-flex align-items-start gap-2" id="packs_empty"><%= cmp_icon(:pack, "fs-5 flex-shrink-0") %>
+    <div>No packs here. Create an entity pack for your fund agreement's rules, or clear the filter.
+      <%= link_to "New entity pack", new_compliance_pack_path, class: "btn btn-sm btn-outline-primary ms-2", data: { turbo_frame: "_top" } if policy(CompliancePack).create? %></div></div>
+<% else %>
+  <%= render RansackTable.new(CompliancePack, q: @q, current_user:, entity: current_user.entity, records: packs,
+                              turbo_frame: frame, referrer: request.referrer, pagy: @pagy) %>
+<% end %>

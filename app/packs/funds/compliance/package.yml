@@ -1,0 +1,9 @@
+metadata:
+      stewards:
+      - "@CapHive/funds"
+      slack_channels:
+      - "#funds"
+      enforce_privacy: true
+      dependencies:
+        - app/packs/core
+        - app/packs/funds

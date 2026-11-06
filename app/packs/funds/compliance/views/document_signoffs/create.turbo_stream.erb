@@ -1,0 +1,7 @@
+<%# After Mark signed: the row says so, the flash shows, the modal closes %>
+<% if @alert.blank? %>
+  <%= turbo_stream.update "failing_doc_#{@signoff.document_id}_action" do %>
+    <%= cmp_badge("Marked signed #{l(@signoff.signed_on)}", "success", :done) %>
+  <% end %>
+<% end %>
+<%= render "compliance_shared/flash_streams" %>

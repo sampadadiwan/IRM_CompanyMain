@@ -1,0 +1,7 @@
+<tr id="pack_<%= compliance_pack.id %>">
+  <%= render RansackTableRow.new(model: compliance_pack, columns:) %>
+  <td class="action-col">
+    <%= link_to t_common(:view), compliance_pack_path(compliance_pack), class: "btn btn-outline-primary ti ti-eye",
+                data: { turbo_frame: "_top", bs_toggle: "tooltip", bs_title: "Its versions, checks and duties" } %>
+  </td>
+</tr>

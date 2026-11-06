@@ -1,5 +1,7 @@
 # [Feature Name] — Low-Level Design
 
+<!-- STYLE: bullets and diagrams, not prose. One idea per bullet; a diagram per concept (model, lifecycle, flow); table cells a phrase each — longer reasoning goes in bullets under the table. -->
+
 > **Audience:** The developer who reviews the implementation plan before coding starts.
 > **Companion documents:** [Design](design.md) · [Spec](specs/) · [Tasks](tasks.md)
 
@@ -117,6 +119,10 @@ of migrations; schema.rb / schema_test.rb both updated -->
 **Reviewer checks**
 - [ ] No action without `authorize` / `policy_scope`
 - [ ] Permitted params can't set `entity_id`, `user_id` or other ownership fields
+- [ ] Actions that change one row or card answer `format.turbo_stream` (replace by `dom_id`, refresh
+      cards, flash) with an HTML redirect fallback, as design.md *Screen standards* says
+- [ ] Every page action sets breadcrumbs (`@bread_crumbs` / `fund_bread_crumbs`); tab panes and lazy
+      frames render only their frame for a `turbo_frame_request?`
 
 ---
 
@@ -132,6 +138,10 @@ of migrations; schema.rb / schema_test.rb both updated -->
 **Reviewer checks**
 - [ ] Every query is scoped by `entity_id`, or explains why not
 - [ ] No N+1 on list pages. No unbounded loads (use `find_each` / `in_batches`)
+- [ ] Every page / frame / job from design.md's **Query budget** has its preloads and grouped
+      queries named here; nothing inside a row loop issues a query (`exists?`, `count`, `find_by`,
+      a querying policy check, an un-preloaded association)
+- [ ] The phase's features run clean under Prosopite (`PROSOPITE=1 … cucumber`) for this change's code
 
 ---
 
@@ -236,6 +246,25 @@ of migrations; schema.rb / schema_test.rb both updated -->
 
 ---
 
+
+## Pattern Conformance
+
+<!-- CORE. For each new class: its pattern (operation / service / job / policy / component /
+     decorator / concern), its pack, its public interface, and which existing class it is modelled
+     on. Reviewer checks that no class mixes roles (e.g. a controller doing business logic). -->
+
+| Class | Pattern | Pack | Public interface | Modelled on |
+|---|---|---|---|---|
+
+## Security Detail
+
+<!-- CORE. One row per new controller action, job, AI call, upload and token: the policy method,
+     the scope used to load the record, permitted params, tenant/parent-id checks, and the
+     features/security/ scenario that covers it. Mirrors design.md › Security. -->
+
+| Action / job / call | Policy method | Loaded through | Permitted params | Tenant checks | Security scenario |
+|---|---|---|---|---|---|
+
 ## Project Rules Checklist
 
 <!-- CORE. This repo's standing rules (CLAUDE.md). Mark each Applies / N/A with a one-line
@@ -252,6 +281,8 @@ of migrations; schema.rb / schema_test.rb both updated -->
 | MCP tool surfaces changed only via the ontology YAML (run the ontology drift feature) | | |
 | Cucumber only (no RSpec); `TEST_ENV_NUMBER=$RANDOM` on every run | | |
 | `bundle exec rubocop` clean, including the `IRM/RelationBlankPresent` cop | | |
+| No query inside a row loop (per-row `exists?`/`count`/`find_by`, querying policy checks, un-preloaded associations); access checks and nav/card counts once per request; the phase's features clean under `PROSOPITE=1` | | |
+| Screens copy the reference screen in design.md *Screen standards*: `FormCard` only for forms, show pages `container-fluid mw-100`, lazy pill tabs, Actions dropdown, help as tooltips (never grey paragraphs), no new CSS | | |
 
 ---
 

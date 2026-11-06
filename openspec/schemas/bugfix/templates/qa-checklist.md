@@ -1,5 +1,7 @@
 # [Bug Name] — Manual QA Checklist
 
+<!-- STYLE: bullets and diagrams, not prose. One idea per bullet; a diagram per concept (model, lifecycle, flow); table cells a phrase each — longer reasoning goes in bullets under the table. -->
+
 > **Audience:** Testers running the fix by hand on a deployed build. No code knowledge needed.
 > **Companion document:** [Report](report.md)
 
@@ -92,6 +94,8 @@
 | ☐ | C3 | Narrow / mobile width | No horizontal scroll; buttons reachable | | |
 | ☐ | C4 | Tenant isolation | A user in a different entity cannot see or reach this data, even with a direct URL | | |
 | ☐ | C5 | Screens the fix touched | Each still does everything it did before | | |
+| ☐ | C6 | Screens the fix touched still look like CapHive | Same breadcrumbs, buttons, tables, tabs and tooltips as the screens around them; small actions don't reload the whole page | | |
+| ☐ | C7 | Speed | Lists the fix touched open as fast as before on the largest test entity | | |
 
 ---
 

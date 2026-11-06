@@ -1,5 +1,7 @@
 # [Bug Name] — Report
 
+<!-- STYLE: bullets and diagrams, not prose. One idea per bullet; a diagram per concept (model, lifecycle, flow); table cells a phrase each — longer reasoning goes in bullets under the table. -->
+
 > **Audience:** The developer fixing this, and the reviewer checking the fix.
 > **Companion document:** [Tasks](tasks.md)
 
@@ -34,7 +36,17 @@
 
 ### The idea
 
-<!-- Two or three paragraphs: the problem the feature solves and the mechanism it uses. -->
+<!-- 3-6 bullets (no paragraphs): the problem the feature solves and the mechanism it uses. -->
+
+### Key concepts
+
+<!-- REQUIRED. Every domain word the rest of the report uses (Root Cause, Fix), defined before it
+     is used: Concept | What it is, in one line | Example | Stored in. Add 3-5 bullets for any
+     concept with its own rules (an approval step, a recurring job, a grouping). -->
+
+| Concept | What it is, in one line | Example | Stored in |
+|---|---|---|---|
+| <!-- --> | <!-- --> | <!-- --> | <!-- --> |
 
 ### How it fits together
 
@@ -80,7 +92,7 @@ sequenceDiagram
 
 ## Root Cause
 
-<!-- The actual defect. One short paragraph per contributing cause, each with file:line. -->
+<!-- The actual defect. One bullet per contributing cause, each with file:line. -->
 
 **Why it was hard to see:**
 

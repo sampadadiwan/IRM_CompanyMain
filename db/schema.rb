@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_29_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_06_150000) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -1271,6 +1271,190 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_29_120000) do
     t.index ["owner_type", "owner_id"], name: "index_commitment_adjustments_on_owner"
   end
 
+  create_table "compliance_check_drafts", force: :cascade do |t|
+    t.bigint "entity_id"
+    t.bigint "compliance_pack_version_id", null: false
+    t.bigint "user_id", null: false
+    t.text "sentence", null: false
+    t.json "sent_context"
+    t.json "draft"
+    t.json "test_result"
+    t.bigint "test_fund_id"
+    t.string "status", limit: 10, default: "drafting", null: false
+    t.string "failure_reason", limit: 120
+    t.string "saved_check_key", limit: 80
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["compliance_pack_version_id"], name: "index_compliance_check_drafts_on_compliance_pack_version_id"
+    t.index ["entity_id"], name: "index_compliance_check_drafts_on_entity_id"
+    t.index ["user_id"], name: "index_compliance_check_drafts_on_user_id"
+  end
+
+  create_table "compliance_duties", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.bigint "fund_compliance_pack_id", null: false
+    t.string "duty_key", limit: 80, null: false
+    t.string "period_key", limit: 20, default: "", null: false
+    t.string "subject_type", limit: 40, default: "", null: false
+    t.bigint "subject_id", default: 0, null: false
+    t.date "period_end"
+    t.date "due_on"
+    t.bigint "owner_id"
+    t.bigint "done_by_id"
+    t.date "done_on"
+    t.text "note"
+    t.text "ai_notes"
+    t.bigint "document_folder_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.datetime "deleted_at"
+    t.index ["entity_id"], name: "index_compliance_duties_on_entity_id"
+    t.index ["fund_compliance_pack_id", "duty_key", "period_key", "subject_type", "subject_id"], name: "idx_cduty_unique", unique: true
+    t.index ["fund_compliance_pack_id"], name: "index_compliance_duties_on_fund_compliance_pack_id"
+    t.index ["deleted_at"], name: "index_compliance_duties_on_deleted_at"
+  end
+
+  create_table "compliance_entity_setups", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.json "input_mappings"
+    t.json "reference_lists"
+    t.bigint "owner_id"
+    t.json "ai_settings"
+    t.boolean "monitoring_enabled", default: false, null: false
+    t.date "monitoring_since"
+    t.string "time_zone", limit: 50, default: "Asia/Kolkata", null: false
+    t.date "last_digest_on"
+    t.json "digest_notes"
+    t.json "onboarding"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.datetime "deleted_at"
+    t.index ["entity_id"], name: "index_compliance_entity_setups_on_entity_id", unique: true
+    t.index ["deleted_at"], name: "index_compliance_entity_setups_on_deleted_at"
+  end
+
+  create_table "compliance_pack_versions", force: :cascade do |t|
+    t.bigint "compliance_pack_id", null: false
+    t.integer "version_no", null: false
+    t.date "effective_from"
+    t.string "status", limit: 10, default: "draft", null: false
+    t.bigint "corrects_version_id"
+    t.string "applicability", limit: 12, default: "all", null: false
+    t.date "applicability_date"
+    t.date "transition_ends_on"
+    t.boolean "allows_early_adoption", default: false, null: false
+    t.json "definition"
+    t.datetime "tested_at"
+    t.bigint "tested_by_id"
+    t.string "counsel_reviewer", limit: 120
+    t.date "counsel_reviewed_on"
+    t.bigint "published_by_id"
+    t.datetime "published_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["compliance_pack_id", "version_no"], name: "idx_cpv_pack_version", unique: true
+    t.index ["compliance_pack_id"], name: "index_compliance_pack_versions_on_compliance_pack_id"
+  end
+
+  create_table "compliance_packs", force: :cascade do |t|
+    t.bigint "entity_id"
+    t.string "name", limit: 120, null: false
+    t.string "regime", limit: 30, default: "SEBI", null: false
+    t.boolean "locked", default: false, null: false
+    t.string "time_zone", limit: 50, default: "Asia/Kolkata", null: false
+    t.date "retired_on"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_compliance_packs_on_entity_id"
+  end
+
+  create_table "compliance_register_items", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.bigint "fund_id", null: false
+    t.bigint "fund_compliance_pack_id", null: false
+    t.string "check_key", limit: 80, null: false
+    t.string "status", limit: 16, default: "open", null: false
+    t.bigint "first_result_id"
+    t.bigint "last_result_id"
+    t.date "opened_on"
+    t.date "fix_by"
+    t.bigint "assignee_id"
+    t.decimal "approved_figure", precision: 20, scale: 4
+    t.string "closed_reason", limit: 16
+    t.date "closed_on"
+    t.string "open_key", limit: 1
+    t.boolean "reopened_worse", default: false, null: false
+    t.date "escalated_on"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.datetime "deleted_at"
+    t.index ["entity_id", "status"], name: "idx_creg_entity_status"
+    t.index ["entity_id"], name: "index_compliance_register_items_on_entity_id"
+    t.index ["fund_compliance_pack_id", "check_key", "open_key"], name: "idx_creg_open_item", unique: true
+    t.index ["fund_compliance_pack_id"], name: "index_compliance_register_items_on_fund_compliance_pack_id"
+    t.index ["fund_id"], name: "index_compliance_register_items_on_fund_id"
+    t.index ["deleted_at"], name: "index_compliance_register_items_on_deleted_at"
+  end
+
+  create_table "compliance_requests", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.string "kind", limit: 20, null: false
+    t.string "target_type", limit: 40, null: false
+    t.bigint "target_id", null: false
+    t.string "check_key", limit: 80
+    t.json "payload"
+    t.text "reason"
+    t.string "status", limit: 12, default: "pending", null: false
+    t.boolean "self_approved", default: false, null: false
+    t.bigint "requested_by_id", null: false
+    t.bigint "decided_by_id"
+    t.datetime "decided_at"
+    t.text "decision_note"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.datetime "deleted_at"
+    t.index ["entity_id"], name: "index_compliance_requests_on_entity_id"
+    t.index ["target_type", "target_id", "status"], name: "idx_creq_target_status"
+    t.index ["deleted_at"], name: "index_compliance_requests_on_deleted_at"
+  end
+
+  create_table "compliance_results", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.bigint "compliance_run_id", null: false
+    t.bigint "fund_compliance_pack_id", null: false
+    t.bigint "compliance_pack_version_id", null: false
+    t.string "check_key", limit: 80, null: false
+    t.string "subject_type", limit: 40
+    t.bigint "subject_id"
+    t.string "outcome", limit: 16, null: false
+    t.decimal "figure", precision: 20, scale: 4
+    t.decimal "limit_value", precision: 20, scale: 4
+    t.json "working"
+    t.string "superseded_reason", limit: 20
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["check_key", "subject_type", "subject_id"], name: "idx_cres_subject"
+    t.index ["compliance_run_id"], name: "index_compliance_results_on_compliance_run_id"
+    t.index ["entity_id"], name: "index_compliance_results_on_entity_id"
+    t.index ["fund_compliance_pack_id", "check_key", "id"], name: "idx_cres_pack_check_id"
+    t.index ["fund_compliance_pack_id"], name: "index_compliance_results_on_fund_compliance_pack_id"
+  end
+
+  create_table "compliance_runs", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.bigint "fund_id", null: false
+    t.date "run_date", null: false
+    t.string "trigger", limit: 10, default: "nightly", null: false
+    t.string "status", limit: 10, default: "running", null: false
+    t.datetime "finished_at"
+    t.text "error_summary"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_compliance_runs_on_entity_id"
+    t.index ["fund_id", "run_date", "trigger"], name: "idx_crun_fund_date_trigger"
+    t.index ["fund_id"], name: "index_compliance_runs_on_fund_id"
+  end
+
   create_table "corporate_action_suggestions", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.bigint "investment_instrument_id", null: false
@@ -1828,6 +2012,59 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_29_120000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["document_id"], name: "index_doc_shares_on_document_id"
+  end
+
+  create_table "document_facts", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.bigint "document_reading_id", null: false
+    t.string "fact_key", limit: 80, null: false
+    t.string "value_type", limit: 10, null: false
+    t.json "value"
+    t.text "quote"
+    t.integer "page"
+    t.string "source", limit: 10, default: "ai", null: false
+    t.string "status", limit: 10, default: "ai_read", null: false
+    t.bigint "confirmed_by_id"
+    t.datetime "confirmed_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.datetime "deleted_at"
+    t.index ["confirmed_by_id"], name: "index_document_facts_on_confirmed_by_id"
+    t.index ["document_reading_id", "fact_key"], name: "idx_doc_facts_unique", unique: true
+    t.index ["entity_id"], name: "index_document_facts_on_entity_id"
+    t.index ["deleted_at"], name: "index_document_facts_on_deleted_at"
+  end
+
+  create_table "document_readings", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.bigint "document_id", null: false
+    t.string "input_key", limit: 80, null: false
+    t.string "file_checksum", limit: 64, null: false
+    t.string "facts_signature", limit: 64, null: false
+    t.string "status", limit: 10, default: "queued", null: false
+    t.string "llm_model", limit: 80
+    t.bigint "byte_size"
+    t.datetime "sent_at"
+    t.string "failure_reason", limit: 120
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["document_id", "input_key", "file_checksum", "facts_signature"], name: "idx_doc_readings_unique", unique: true
+    t.index ["entity_id", "sent_at"], name: "idx_doc_readings_cap"
+    t.index ["entity_id"], name: "index_document_readings_on_entity_id"
+  end
+
+  create_table "document_signoffs", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.bigint "document_id", null: false
+    t.date "signed_on", null: false
+    t.bigint "marked_by_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.datetime "deleted_at"
+    t.index ["document_id"], name: "index_document_signoffs_on_document_id", unique: true
+    t.index ["entity_id"], name: "index_document_signoffs_on_entity_id"
+    t.index ["deleted_at"], name: "index_document_signoffs_on_deleted_at"
   end
 
   create_table "documents", force: :cascade do |t|
@@ -2533,6 +2770,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_29_120000) do
     t.index ["slug", "sluggable_type", "scope"], name: "index_friendly_id_slugs_on_slug_and_sluggable_type_and_scope", unique: true, length: { slug: 70, scope: 70 }
     t.index ["slug", "sluggable_type"], name: "index_friendly_id_slugs_on_slug_and_sluggable_type", length: { slug: 140 }
     t.index ["sluggable_type", "sluggable_id"], name: "index_friendly_id_slugs_on_sluggable_type_and_sluggable_id"
+  end
+
+  create_table "fund_compliance_packs", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.bigint "fund_id", null: false
+    t.bigint "compliance_pack_id", null: false
+    t.string "classification", limit: 40
+    t.bigint "compliance_pack_version_id"
+    t.string "status", limit: 10, default: "active", null: false
+    t.date "attached_on"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["compliance_pack_id"], name: "index_fund_compliance_packs_on_compliance_pack_id"
+    t.index ["compliance_pack_version_id"], name: "index_fund_compliance_packs_on_compliance_pack_version_id"
+    t.index ["entity_id"], name: "index_fund_compliance_packs_on_entity_id"
+    t.index ["fund_id", "compliance_pack_id"], name: "idx_fcp_fund_pack", unique: true
+    t.index ["fund_id"], name: "index_fund_compliance_packs_on_fund_id"
   end
 
   create_table "fund_formula_operations", force: :cascade do |t|
@@ -5548,6 +5802,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_29_120000) do
   add_foreign_key "commitment_adjustments", "entities"
   add_foreign_key "commitment_adjustments", "exchange_rates"
   add_foreign_key "commitment_adjustments", "funds"
+  add_foreign_key "compliance_check_drafts", "compliance_pack_versions"
+  add_foreign_key "compliance_check_drafts", "entities"
+  add_foreign_key "compliance_check_drafts", "users"
+  add_foreign_key "compliance_duties", "entities"
+  add_foreign_key "compliance_duties", "fund_compliance_packs"
+  add_foreign_key "compliance_entity_setups", "entities"
+  add_foreign_key "compliance_pack_versions", "compliance_packs"
+  add_foreign_key "compliance_packs", "entities"
+  add_foreign_key "compliance_register_items", "entities"
+  add_foreign_key "compliance_register_items", "fund_compliance_packs"
+  add_foreign_key "compliance_register_items", "funds"
+  add_foreign_key "compliance_requests", "entities"
+  add_foreign_key "compliance_results", "compliance_runs"
+  add_foreign_key "compliance_results", "entities"
+  add_foreign_key "compliance_results", "fund_compliance_packs"
+  add_foreign_key "compliance_runs", "entities"
+  add_foreign_key "compliance_runs", "funds"
   add_foreign_key "corporate_action_suggestions", "entities"
   add_foreign_key "corporate_action_suggestions", "investment_instruments"
   add_foreign_key "corporate_action_suggestions", "stock_adjustments"
@@ -5622,6 +5893,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_29_120000) do
   add_foreign_key "doc_check_runs", "users", on_delete: :nullify
   add_foreign_key "doc_checks", "entities"
   add_foreign_key "doc_shares", "documents"
+  add_foreign_key "document_facts", "document_readings"
+  add_foreign_key "document_facts", "entities"
+  add_foreign_key "document_facts", "users", column: "confirmed_by_id"
+  add_foreign_key "document_readings", "documents"
+  add_foreign_key "document_readings", "entities"
+  add_foreign_key "document_signoffs", "documents"
+  add_foreign_key "document_signoffs", "entities"
   add_foreign_key "documents", "folders"
   add_foreign_key "documents", "form_types"
   add_foreign_key "documents", "users"
@@ -5691,6 +5969,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_29_120000) do
   add_foreign_key "folders", "entities"
   add_foreign_key "form_custom_fields", "form_types"
   add_foreign_key "form_types", "entities"
+  add_foreign_key "fund_compliance_packs", "compliance_pack_versions"
+  add_foreign_key "fund_compliance_packs", "compliance_packs"
+  add_foreign_key "fund_compliance_packs", "entities"
+  add_foreign_key "fund_compliance_packs", "funds"
   add_foreign_key "fund_formulas", "entities"
   add_foreign_key "fund_formulas", "funds"
   add_foreign_key "fund_navs", "entities"

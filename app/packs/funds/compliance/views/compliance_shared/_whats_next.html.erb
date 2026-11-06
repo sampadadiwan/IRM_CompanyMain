@@ -1,0 +1,29 @@
+<%# ⑩ What's next (H84, H85, E186–E188): up to 3 actions for this record and this user, each already
+    allowed by the user's policy (ComplianceNextSteps). Same alert-info card as the page explainers. %>
+<% panel = ComplianceNextSteps.call(record:, user: current_user, context: local_assigns[:context] || {}) %>
+<% if panel %>
+  <div class="alert alert-info d-flex align-items-start gap-2" id="whats_next">
+    <i class="ti ti-arrow-big-right-lines fs-5 flex-shrink-0"></i>
+    <div>
+      <div class="fw-semibold"><%= t("compliance.next.title") %> <%= cmp_term(:whats_next) %></div>
+      <div id="whats_next_message"><%= panel.message %></div>
+      <% if panel.actions.any? %>
+        <div class="d-flex flex-wrap gap-2 mt-2" id="whats_next_actions">
+          <% panel.actions.each do |a| %>
+            <% case a.kind %>
+            <% when :modal %>
+              <button type="button" class="btn btn-sm btn-outline-<%= a.colour %> d-inline-flex align-items-center" data-bs-toggle="modal"
+                      data-bs-target="<%= a.target %>" id="<%= a.id %>"><%= cmp_icon(a.icon) %><%= a.label %></button>
+            <% when :button %>
+              <%= button_to a.path, method: a.http_method, form_class: "d-inline", id: a.id,
+                            class: "btn btn-sm btn-outline-#{a.colour} d-inline-flex align-items-center" do %><%= cmp_icon(a.icon) %><%= a.label %><% end %>
+            <% else %>
+              <%= link_to a.path, class: "btn btn-sm btn-outline-#{a.colour} d-inline-flex align-items-center", id: a.id do %><%= cmp_icon(a.icon) %><%= a.label %><% end %>
+            <% end %>
+          <% end %>
+        </div>
+      <% end %>
+      <% if panel.note.present? %><small class="text-muted d-block mt-2" id="whats_next_note"><%= panel.note %></small><% end %>
+    </div>
+  </div>
+<% end %>

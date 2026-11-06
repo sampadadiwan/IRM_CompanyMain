@@ -153,7 +153,18 @@ module UserGuideHelper
     # No dedicated guide yet — fall back to the general overview guide.
     'FundStatsAgent' => 'support_agents_user_guide.md',
     'LpAssistantAgent' => 'support_agents_user_guide.md',
-    'PortfolioAssistantAgent' => 'support_agents_user_guide.md'
+    'PortfolioAssistantAgent' => 'support_agents_user_guide.md',
+    # Fund compliance monitoring — every compliance screen opens the same guide
+    'compliance_home' => 'compliance_monitoring_user_guide.md',
+    'compliance_register_items' => 'compliance_monitoring_user_guide.md',
+    'compliance_duties' => 'compliance_monitoring_user_guide.md',
+    'document_facts' => 'compliance_monitoring_user_guide.md',
+    'fund_compliance_packs' => 'compliance_monitoring_user_guide.md',
+    'compliance_packs' => 'compliance_monitoring_user_guide.md',
+    'compliance_pack_versions' => 'compliance_monitoring_user_guide.md',
+    'compliance_check_drafts' => 'compliance_monitoring_user_guide.md',
+    'compliance_entity_setups' => 'compliance_monitoring_user_guide.md',
+    'compliance_results' => 'compliance_monitoring_user_guide.md'
   }.freeze
 
   def current_user_guide_path

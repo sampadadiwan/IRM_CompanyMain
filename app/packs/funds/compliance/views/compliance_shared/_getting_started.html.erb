@@ -1,0 +1,94 @@
+<%# ⑩ Getting started (H80–H83, E180–E183, E191): the 8 setup steps worked out from data on every view
+    (ComplianceGettingStarted, D14). Drawn with the capital-call journey panel's own classes (cc-journey,
+    cc-rail, cc-now — workflow_instances/_journey_panel), no new CSS. Folds to one line when complete. %>
+<% gs = ComplianceGettingStarted.call(entity: current_user.entity, user: current_user) %>
+<% setup = ComplianceEntitySetup.for(current_user.entity) %>
+<% state_map = { "done" => "passed", "current" => "current", "todo" => "not_yet", "not_needed" => "na" } %>
+<%# E202: the rail and "What's needed now" fold away under the header, remembered for this user. A finished
+    setup keeps its own fold ("Setup complete · Show steps"), so the preference only applies while in progress. %>
+<% collapsed = !gs.complete? && current_user.preferences.is_a?(Hash) && current_user.preferences.dig("compliance", "getting_started_collapsed") == true %>
+<%= turbo_frame_tag "getting_started" do %>
+  <% if gs.complete? %>
+    <div class="alert alert-success d-flex align-items-center gap-2 py-2" id="getting_started_complete">
+      <i class="ti ti-circle-check"></i><span><%= t("compliance.getting_started.complete") %></span> ·
+      <a href="#getting_started_steps" data-bs-toggle="collapse" role="button" aria-expanded="false" id="getting_started_show"><%= t("compliance.getting_started.show_steps") %></a>
+    </div>
+  <% end %>
+  <div class="card cc-journey mb-3 <%= 'collapse' if gs.complete? %>" id="getting_started_steps">
+    <div class="cc-journey-head">
+      <div class="cc-journey-badge"><i class="ti ti-route" aria-hidden="true"></i></div>
+      <div>
+        <div class="cc-journey-eyebrow">Setup <%= cmp_term(:getting_started) %></div>
+        <h6 class="cc-journey-title"><%= t("compliance.getting_started.title") %></h6>
+      </div>
+      <% percent = (gs.done_count * 100 / gs.steps.size) %>
+      <div class="cc-journey-progress" data-bs-toggle="tooltip" data-bs-title="<%= "#{gs.done_count} of #{gs.steps.size} setup steps done" %>">
+        <div class="cc-journey-count" id="getting_started_count"><span><%= gs.done_count %> of <%= gs.steps.size %> done</span><span><%= percent %>%</span></div>
+        <div class="progress" role="progressbar" aria-label="Setup progress" aria-valuenow="<%= percent %>" aria-valuemin="0" aria-valuemax="100">
+          <div class="progress-bar bg-success" style="width: <%= percent %>%"></div>
+        </div>
+      </div>
+      <%# E202: the same toggle button as ToggleCard (btn-outline-primary + caret), driving a Bootstrap collapse %>
+      <% unless gs.complete? %>
+        <a class="btn btn-outline-primary show_details_link flex-shrink-0" data-bs-toggle="collapse" href="#getting_started_body"
+           role="button" id="getting_started_toggle" aria-controls="getting_started_body" aria-expanded="<%= !collapsed %>"
+           aria-label="<%= t('compliance.getting_started.minimise') %>" title="<%= t('compliance.getting_started.minimise') %>">
+          <i class="fa-solid fa-caret-down" aria-hidden="true"></i>
+        </a>
+      <% end %>
+    </div>
+
+    <div class="collapse <%= 'show' unless collapsed %>" id="getting_started_body"
+         data-controller="collapse-preference"
+         data-collapse-preference-url-value="<%= compliance_getting_started_collapse_path %>">
+
+    <%# E201: clicking a circle opens the step's popup, exactly as on every other journey — the shared
+        journey_step_info_controller.js fetches it from ComplianceHomeController#getting_started_step %>
+    <div class="cc-rail" id="getting_started_rail" data-controller="journey-step-info">
+      <% gs.steps.each_with_index do |s, idx| %>
+        <% status = state_map.fetch(s.state) %>
+        <% view = journey_step_view({ status: }) %>
+        <% linked = idx.positive? && gs.steps[idx - 1].done? %>
+        <span class="cc-step journey-step journey-step-<%= status %> <%= view[:modifier] %> <%= 'cc-step--linked' if linked %>"
+              id="gs_step_<%= s.key %>" data-step-state="<%= s.state %>" data-bs-toggle="tooltip"
+              data-bs-title="<%= s.state == 'not_needed' ? s.detail : s.why %>"
+              role="button" tabindex="0"
+              data-action="click->journey-step-info#open keydown.enter->journey-step-info#open"
+              data-journey-step-info-url-param="<%= compliance_getting_started_step_path(key: s.key) %>"
+              aria-label="<%= t('compliance.getting_started.popup.open', label: s.label) %>">
+          <span class="cc-step-dot"><i class="ti <%= view[:icon] %>" aria-hidden="true"></i></span>
+          <span class="cc-step-label"><%= s.label %></span>
+        </span>
+      <% end %>
+    </div>
+
+    <% if (cur = gs.current) %>
+      <div class="cc-now" id="getting_started_now">
+        <div class="cc-now-icon"><i class="ti ti-progress" aria-hidden="true"></i></div>
+        <div class="flex-grow-1">
+          <div class="cc-now-eyebrow">What's needed now</div>
+          <div class="cc-now-msg" id="getting_started_message"><strong><%= cur.label %>:</strong> <%= cur.detail %></div>
+          <div class="small text-muted mb-2" id="getting_started_why">Why: <%= cur.why %></div>
+          <% if cur.can_act && cur.action_path %>
+            <% if cur.action_method == :post %>
+              <%= button_to cur.action_path, method: :post, form_class: "d-inline", id: "getting_started_action", data: { turbo_frame: "_top" },
+                            class: "btn btn-sm btn-outline-primary d-inline-flex align-items-center" do %><%= cmp_icon(:run) %><%= cur.action_label %><% end %>
+            <% else %>
+              <%= link_to cur.action_path, id: "getting_started_action", data: { turbo_frame: "_top" },
+                          class: "btn btn-sm btn-outline-primary d-inline-flex align-items-center" do %><%= cmp_icon(:setup) %><%= cur.action_label %><% end %>
+            <% end %>
+          <% else %>
+            <%# E182: a viewer sees the steps, and who can act %>
+            <span class="text-muted small" id="getting_started_ask">
+              <%= setup.owner ? t("compliance.getting_started.ask_owner", owner: setup.owner.full_name) : t("compliance.getting_started.ask_editor") %>
+            </span>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+    <% if (note = gs.steps.find { |s| s.note.present? }&.note) %>
+      <div class="small text-muted px-3 pb-2" id="getting_started_note"><%= cmp_icon(:approve) %><%= note %></div>
+    <% end %>
+    </div>
+  </div>
+<% end %>

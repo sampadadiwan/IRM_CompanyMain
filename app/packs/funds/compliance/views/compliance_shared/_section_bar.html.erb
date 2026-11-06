@@ -1,0 +1,14 @@
+<%# ⑩ Section bar on standalone and detail compliance pages (H89): the fund page's nav-pills look, with counts
+    of open items, due duties and facts waiting (three SQL counts). Each pill goes back to the Compliance
+    hub with that section's tab open (?tab=, read by tabs_controller#clickTab), where it loads lazily
+    (R170). On the hub itself the same pills are tabs (compliance_home/index). %>
+<% counts = compliance_section_counts %>
+<% current = local_assigns[:current] %>
+<nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row" id="compliance_section_bar" aria-label="Compliance sections">
+  <% ComplianceHub::SECTIONS.each do |key, label, icon, count_key, colour| %>
+    <% path = key == :home ? compliance_home_path : compliance_home_path(tab: ComplianceHub.pane_id(key)) %>
+    <%= link_to path, class: "nav-link text-nowrap #{'active' if current == key}", id: "section_#{key}", aria: { current: (current == key ? "page" : nil) } do %>
+      <%= cmp_icon(icon) %><%= label %><% if count_key %> <span class="badge bg-<%= colour %>-subtle text-<%= colour %>"><%= counts[count_key] %></span><% end %>
+    <% end %>
+  <% end %>
+</nav>

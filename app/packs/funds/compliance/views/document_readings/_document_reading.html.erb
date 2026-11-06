@@ -1,0 +1,7 @@
+<tr id="<%= dom_id(document_reading) %>">
+  <%= render RansackTableRow.new(model: document_reading, columns:) %>
+  <td class="action-col">
+    <%= link_to t_common(:view), document_reading_path(document_reading), class: "btn btn-outline-primary ti ti-eye",
+                data: { turbo_frame: "_top", bs_toggle: "tooltip", bs_title: "Check each fact against its quote and page, correct it if needed, then confirm" } %>
+  </td>
+</tr>

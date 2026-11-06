@@ -1,0 +1,120 @@
+<%# Replaced in place by assign / explain / approve / reject (updated.turbo_stream.erb) %>
+<% w = item.last_result&.working_hash || {} %>
+<div id="<%= dom_id(item) %>">
+  <%= cmp_stats([
+    { stat: item.closed? ? (item.closed_label || "Closed") : ComplianceUiHelper::CMP_ITEM_STATUSES.dig(item.status, 0), subtitle: "Status",
+      colour: item.closed? ? "success" : "danger", icon: :register,
+      tooltip: "Open → In progress (assigned) → Pending approval (explanation sent) → Explained; Closed when a run passes or the check is removed" },
+    { stat: item.last_result ? ComplianceUiHelper::CMP_OUTCOMES.dig(item.last_result.outcome, 0) : "—", subtitle: "Latest result", colour: "info", icon: :result,
+      tooltip: "What the most recent nightly run found for this check" },
+    { stat: item.fix_by ? l(item.fix_by) : "—", subtitle: item.overdue? ? "Fix by — overdue" : "Fix by", colour: item.overdue? ? "danger" : "secondary",
+      icon: :overdue, tooltip: "Opened date + the check's time to fix. Past it, the owner and approvers are told once" },
+    { stat: pluralize((Time.zone.today - item.opened_on).to_i, "day"), subtitle: "Open for", colour: "secondary", icon: :calendar,
+      tooltip: "Days since the first failing run of this episode" }
+  ], id: "item_stats") %>
+
+  <div class="row">
+    <div class="col-lg-8">
+      <%# ⑩ E186 / E187: approve or reject for an approver; "waiting for an approver" for the requester %>
+      <%= render "compliance_shared/whats_next", record: item %>
+      <%# H91: About this check (R158) %>
+      <%= render "compliance_shared/about_check", check: (item.last_result&.compliance_pack_version || item.fund_compliance_pack.compliance_pack_version)&.check(item.check_key) %>
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header border-bottom py-3">
+          <%# H92 / R160: "How we checked", from the latest run %>
+          <h5 class="mb-0 fw-bold"><%= cmp_icon(:result, "me-2 text-primary") %><%= t("compliance.how_we_checked.title") %> <%= cmp_term(:how_we_checked) %></h5>
+          <small class="text-muted d-block mt-1" id="how_we_checked_subtitle"><%= cmp_how_we_checked_subtitle(item.last_result&.compliance_run, ComplianceEntitySetup.for(item.fund.entity).time_zone) %></small>
+        </div>
+        <div class="card-body" id="item_working">
+          <% if item.last_result %>
+            <%= render "compliance_shared/working", working: item.last_result.working_hash, outcome: item.last_result.outcome, fund: item.fund %>
+            <%= link_to compliance_result_path(item.last_result), class: "btn btn-outline-primary mt-2 d-inline-flex align-items-center" do %>
+              <%= cmp_icon(:result) %>Open the result
+            <% end %>
+          <% else %>
+            <p class="text-muted mb-0">No result yet.</p>
+          <% end %>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header border-bottom py-3">
+          <h5 class="mb-0 fw-bold"><%= cmp_icon(:register, "me-2 text-danger") %>Details</h5>
+        </div>
+        <% req = item.pending_explanation %>
+        <% rows = [["Fund", link_to(item.fund.name, fund_path(item.fund, tab: "compliance-tab"))], ["Pack", item.fund_compliance_pack.pack_name],
+                   ["Check", item.check_name], ["First seen", l(item.opened_on)], ["Fix by", item.fix_by ? l(item.fix_by) : "—"],
+                   ["Assigned to", item.assignee&.full_name || "—"], ["Status", item.closed? ? item.closed_label : item.status.humanize]] %>
+        <ul class="list-group list-group-flush" id="item_details">
+          <% rows.each do |key, value| %>
+            <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+              <span class="text-muted"><%= key %><%= cmp_tip("Assigning emails the person; the item moves to In progress") if key == "Assigned to" %>
+                <%# H88: the glossary's words for the item's status (R154) %>
+                <%= cmp_term(item.closed? ? :closed : item.status) if key == "Status" %><%= cmp_term(:fix_by) if key == "Fix by" %></span>
+              <span class="fw-bold text-end" id="<%= { 'Assigned to' => 'item_assignee', 'Status' => 'item_status' }[key] %>"><%= value %>
+                <%= cmp_badge("Worsened since approval", "danger", :warning) if key == "Status" && item.reopened_worse %></span>
+            </li>
+          <% end %>
+          <% if req %>
+            <li class="list-group-item py-3 px-4 list-group-item-info" id="pending_explanation">
+              <span class="text-muted d-block"><%= cmp_icon(:explain) %>Explanation waiting <%= cmp_tip("Maker–checker: an approver other than the requester must approve before the item counts as Explained") %></span>
+              <span class="fw-bold d-block"><%= req.reason %></span>
+              <small class="text-muted">Asked by <%= req.requested_by.full_name %>, <%= l(req.created_at.to_date) %></small>
+            </li>
+          <% end %>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <%# Actions row (capital_calls/show): primary buttons, then the Actions dropdown; each item gated by policy %>
+  <% editor = item.open? && policy(item).assign? %>
+  <% fp = item.fund_compliance_pack %>
+  <div class="d-flex flex-wrap gap-2" id="item_actions">
+    <% if editor %>
+      <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#assignItemModal" id="register_item_assign_btn">
+        <%= cmp_icon(:assign) %>Assign
+      </button>
+      <% unless item.status == "pending_approval" %>
+        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#explainItemModal" id="register_item_explain_btn">
+          <%= cmp_icon(:explain) %>Request explanation
+        </button>
+      <% end %>
+    <% end %>
+    <% if (req = item.pending_explanation) && policy(req).approve? %>
+      <%= button_to approve_compliance_request_path(req), method: :patch, class: "btn btn-outline-success", form_class: "d-inline", id: "register_item_approve_btn",
+                    data: { bs_toggle: "tooltip", bs_title: "Accept the breach with this reason. It reopens if the figure gets worse" } do %>
+        <%= cmp_icon(:approve) %>Approve explanation
+      <% end %>
+      <%= button_to reject_compliance_request_path(req), method: :patch, class: "btn btn-outline-danger", form_class: "d-inline", id: "register_item_reject_btn",
+                    data: { bs_toggle: "tooltip", bs_title: "Send it back: the item returns to In progress" } do %>
+        <%= cmp_icon(:reject) %>Reject explanation
+      <% end %>
+    <% end %>
+    <div class="btn-group">
+      <div class="dropdown">
+        <button id="register_item_actions_btn" class="btn btn-outline-success dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+          <i class="ti ti-settings"></i> Actions
+        </button>
+        <div class="dropdown-menu" aria-labelledby="register_item_actions_btn">
+          <% if editor %>
+            <a href="#" class="dropdown-item ti ti-adjustments" id="register_item_override_btn" data-bs-toggle="modal" data-bs-target="#overrideItemModal"
+               title="Ask an approver to set a different limit for this fund (on a locked pack, only stricter)"> Request override</a>
+            <a href="#" class="dropdown-item ti ti-ban" id="register_item_disable_btn" data-bs-toggle="modal" data-bs-target="#disableItemModal"
+               title="Ask an approver to stop this check for this fund; its open item closes"> Disable check</a>
+          <% end %>
+          <% if item.last_result %>
+            <%= link_to " View result", compliance_result_path(item.last_result), class: "dropdown-item ti ti-calculator", id: "register_item_result_btn",
+                        title: "The full working of the latest result" %>
+          <% end %>
+          <%= link_to " View fund pack", fund_compliance_pack_path(fp), class: "dropdown-item ti ti-link", id: "register_item_fund_pack_btn",
+                      title: "Every check of #{fp.pack_name} on #{item.fund.name}" %>
+          <%= link_to " View check in pack", compliance_pack_version_path(fp.compliance_pack_version), class: "dropdown-item ti ti-book", id: "register_item_version_btn",
+                      title: "The check's definition in the pack version this fund is on" if fp.compliance_pack_version %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>

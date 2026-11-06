@@ -1,0 +1,14 @@
+<tr id="<%= dom_id(compliance_duty) %>">
+  <%= render RansackTableRow.new(model: compliance_duty, columns:) %>
+  <td class="action-col">
+    <% duty = compliance_duty.object %>
+    <% if !duty.done? && policy(duty).complete? %>
+      <%# E198: the grid's filter travels with Mark done so the cards it refreshes match the grid %>
+      <%= link_to "Mark done", mark_done_compliance_duty_path(duty, request.query_parameters.slice("q", "search")), class: "btn btn-outline-success ti ti-circle-check",
+                  id: "mark_done_#{duty.id}",
+                  data: { turbo_frame: "remote_modal", bs_toggle: "tooltip", bs_title: "Record that this was done, with a note and evidence" } %>
+    <% elsif duty.done? %>
+      <span class="text-muted small"><%= cmp_icon(:done) %><%= l(duty.done_on) %><%= " · #{duty.done_by.full_name}" if duty.done_by %></span>
+    <% end %>
+  </td>
+</tr>

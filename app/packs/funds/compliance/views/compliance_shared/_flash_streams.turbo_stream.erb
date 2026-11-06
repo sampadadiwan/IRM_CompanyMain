@@ -1,0 +1,4 @@
+<%= turbo_stream.update "user_alert", partial: "layouts/alerts", locals: { notice: @notice, alert: @alert } %>
+<% if @alert.blank? %>
+  <%= turbo_stream.update "remote_modal", "" %>
+<% end %>

@@ -1,0 +1,62 @@
+<%# Assign and Explain modals; their forms answer by Turbo stream and close on success (modal-form) %>
+<% if item.open? && policy(item).assign? %>
+  <%# ⑩ What's next on a result links here with ?open=assign / ?open=explain: the existing `modal` controller opens it %>
+  <div class="modal fade" id="assignItemModal" tabindex="-1" aria-labelledby="assignItemModalLabel" aria-hidden="true"<%= ' data-controller=modal' if params[:open] == "assign" %>>
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <%= form_with url: assign_compliance_register_item_path(item), method: :patch,
+                      data: { controller: "modal-form", action: "turbo:submit-end->modal-form#close" } do %>
+          <div class="modal-header">
+            <h5 class="modal-title" id="assignItemModalLabel"><%= cmp_icon(:assign) %>Assign this item</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <%= label_tag :assignee_id, class: "form-label" do %>Assign to <%= cmp_tip("Users of your firm. The person is emailed and the item moves to In progress") %><% end %>
+            <%= select_tag :assignee_id, options_from_collection_for_select(User.where(entity_id: item.entity_id, active: true).order(:first_name), :id, :full_name, item.assignee_id), class: "form-select" %>
+            <small class="form-text text-muted d-block">Assigning does not close the item — only a passing run or an approved explanation does.</small>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">Cancel</button>
+            <%= button_tag type: "submit", class: "btn btn-outline-primary" do %><%= cmp_icon(:assign) %>Assign<% end %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="explainItemModal" tabindex="-1" aria-labelledby="explainItemModalLabel" aria-hidden="true"<%= ' data-controller=modal' if params[:open] == "explain" %>>
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="explainItemModalLabel"><%= cmp_icon(:explain) %>Explain this breach</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <%= cmp_explainer("Maker–checker: your explanation goes to an approver other than you. Once approved, the item shows Explained; it reopens if the figure gets worse.") %>
+          <%= render "compliance_shared/request_form", target: item, kind: "explanation", label: "Send for approval", fields: [:text] %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <% fp = item.fund_compliance_pack %>
+  <% { "override" => ["overrideItemModal", "Request override", "ti-adjustments", [:limit],
+                     "Maker–checker: an approver other than you must approve. On a locked CapHive pack the new limit may only be stricter."],
+       "disable" => ["disableItemModal", "Disable check", "ti-ban", [],
+                    "Maker–checker: once approved, this check stops running for this fund and its open item closes as Check disabled."] }.each do |kind, (modal_id, title, icon, fields, help)| %>
+    <div class="modal fade" id="<%= modal_id %>" tabindex="-1" aria-labelledby="<%= modal_id %>Label" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="<%= modal_id %>Label"><i class="ti <%= icon %> me-1"></i><%= title %> — <%= item.check_name %></h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <%= cmp_explainer(help) %>
+            <%= render "compliance_shared/request_form", target: fp, kind:, check_key: item.check_key, label: "Send for approval", fields: %>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+<% end %>

@@ -1,0 +1,20 @@
+<%= render FormCard.new(title: "New entity pack") do %>
+  <%= cmp_explainer("An entity pack holds your own rules — typically the fund agreement's limits. It starts with an empty draft version: add checks (or describe them in words), test on a fund, then publish.") %>
+  <%= form_with model: @pack, url: compliance_packs_path do |f| %>
+    <% if @pack.errors.any? %><div class="alert alert-danger"><%= @pack.errors.full_messages.to_sentence %></div><% end %>
+    <div class="row g-3">
+      <div class="col-md-6">
+        <%= f.label :name, class: "form-label" do %>Name <%= cmp_tip("Shown on every fund it is attached to, e.g. Horizon — fund agreement") %><% end %>
+        <%= f.text_field :name, class: "form-control" %>
+        <small class="form-text text-muted d-block">Up to 120 characters.</small>
+      </div>
+      <div class="col-md-3">
+        <%= f.label :regime, class: "form-label" do %>Source <%= cmp_tip("Where the rules come from, e.g. LPA or Internal") %><% end %>
+        <%= f.text_field :regime, class: "form-control", value: @pack.regime.presence || "LPA" %>
+      </div>
+    </div>
+    <div class="mt-3">
+      <%= f.button type: "submit", class: "btn btn-outline-primary" do %><%= cmp_icon(:new) %>Create pack<% end %>
+    </div>
+  <% end %>
+<% end %>

@@ -1,0 +1,16 @@
+<%# H91 / R158: "About this check" — the check's plain-words description from its pack version, shown
+    first on a result and a register item. Locals: check (definition hash or nil), citation (optional). %>
+<% check ||= nil %>
+<div class="card shadow-sm border-0 mb-4" id="about_this_check">
+  <div class="card-header border-bottom py-3">
+    <h5 class="mb-0 fw-bold"><%= cmp_icon(:pack, "me-2 text-primary") %>About this check <%= cmp_term(:about_this_check) %></h5>
+  </div>
+  <div class="card-body">
+    <% if check && check["description"].present? %>
+      <p class="mb-1" id="about_this_check_text"><%= check["description"] %></p>
+    <% else %>
+      <p class="mb-1 text-muted" id="about_this_check_text">No description has been written for this check yet.</p>
+    <% end %>
+    <% if check && check["citation"].present? %><small class="text-muted d-block"><%= cmp_icon(:pack) %><%= check["citation"] %></small><% end %>
+  </div>
+</div>

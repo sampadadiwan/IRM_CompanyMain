@@ -1,0 +1,164 @@
+<%# ⑧ A drafted check in plain words: review field by field, edit, test-run on a fund, then Save (H37, H38, E57–E61, X40, X42) %>
+<% version = @draft.compliance_pack_version %>
+<% d = @draft.draft_hash %>
+<% errors = @draft.ready? ? @draft.validation_errors : [] %>
+<% tested = @draft.tested? %>
+<% result = @draft.test_result_hash %>
+<% assumed = @draft.assumptions.group_by { |a| a["part"] } %>
+<turbo-frame id="check_draft" target="_top">
+<div class="container-fluid mw-100 p-3">
+  <%= render layout: "compliance_shared/header", locals: { intro: :draft, title: "Describe in words · #{version.compliance_pack.name} · #{version.label}", icon: :ai } do %>
+    <%= cmp_header_link "Back to #{version.label}", compliance_pack_version_path(version), icon: :version %>
+  <% end %>
+  <% if flash[:alert] %><div class="alert alert-danger" id="draft_alert"><%= flash[:alert] %></div><% end %>
+  <% if flash[:notice] %><div class="alert alert-info" id="draft_notice"><%= flash[:notice] %></div><% end %>
+  <p class="mb-3"><%= cmp_icon(:explain) %>Rule: <strong id="draft_sentence">"<%= @draft.sentence %>"</strong></p>
+
+  <% if @draft.status == "drafting" %>
+    <div data-controller="auto-refresh" data-auto-refresh-url-value="<%= compliance_check_draft_path(@draft) %>" data-auto-refresh-active-value="true" data-auto-refresh-interval-value="3000">
+      <div class="alert alert-info" id="draft_status"><i class="ti ti-loader"></i> Drafting… this page updates by itself.</div>
+    </div>
+  <% elsif @draft.status == "failed" %>
+    <%# X42: nothing was saved; the form still works %>
+    <div class="alert alert-danger" id="draft_status">Drafting failed — try again or use the form</div>
+    <%= link_to "Back to #{version.label}", compliance_pack_version_path(version), class: "btn btn-outline-primary" %>
+  <% else %>
+    <% if @draft.saved? %>
+      <div class="alert alert-success" id="draft_status">Saved to <%= version.label %> as "<%= d["name"] %>".</div>
+    <% end %>
+    <% if errors.any? %>
+      <div class="alert alert-danger" id="draft_errors">
+        <% errors.each do |e| %><div><%= e %></div><% end %>
+        <div class="small">Change the field below — the draft cannot be saved until it reads only fields CapHive holds.</div>
+      </div>
+    <% end %>
+
+    <div class="card shadow-sm border-0 mb-4">
+      <div class="card-header border-bottom py-3">
+        <h5 class="mb-0 fw-bold"><%= cmp_icon(:ai, "me-2 text-info") %>What the AI drafted <%= cmp_tip("The check in plain words. 'Assumed' lines are guesses the AI made — change them if they are not what the rule means") %></h5>
+      </div>
+      <div class="card-body p-0">
+    <table class="table table-bordered dataTable action_table hover mb-0" id="draft_words">
+      <tbody>
+        <tr id="draft_kind"><th class="w-25">Kind</th><td><%= @draft.duty? ? "Manual duty" : "Limit check" %></td></tr>
+        <tr id="draft_name"><th>Name</th><td><%= d["name"] %></td></tr>
+        <% if @draft.duty? %>
+          <tr id="draft_when"><th>When</th><td><%= ComplianceCheckDraftWords.trigger(d) %><%= ", due #{d['duty_due_days']} days after the period ends" if d["duty_trigger"].present? && d["duty_trigger"] != "on_demand" %></td></tr>
+          <tr id="draft_evidence"><th>Evidence</th><td><%= d["evidence"] == false ? "Not required" : "Required" %></td></tr>
+          <tr id="draft_reason"><th>Why a duty</th><td><%= d["reason"].presence || "—" %></td></tr>
+        <% else %>
+          <% ComplianceCheckDraft::PARTS.each do |role| %>
+            <tr id="draft_<%= role %>"><th><%= role == "figure" ? "Figure" : "Divided by" %></th>
+              <td><%= d[role].is_a?(Hash) ? ComplianceCheckDraftWords.part(version, d[role]) : "—" %>
+                <% Array(assumed[role]).each do |a| %>
+                  <div class="assumption"><%= cmp_badge("Assumed: #{a['text']}", "info", :warning) %>
+                    <span class="small text-muted">— change it below if that is not what the rule means</span></div>
+                <% end %>
+              </td></tr>
+          <% end %>
+          <tr id="draft_limit"><th>Limit</th><td><%= ComplianceCheckDraftWords.limit(d, version.currency) %></td></tr>
+        <% end %>
+        <%# H91/E199: the plain-words description the AI proposed — shown as "About this check" once saved (R158) %>
+        <tr id="draft_description"><th>About this check <%= cmp_tip("Plain words for someone new to compliance: what it tests, why it matters, what usually causes a failure. Required to publish") %></th>
+          <td><%= d["description"].presence || tag.span("No description yet — add one below; a version cannot be published without it", class: "text-danger") %></td></tr>
+        <tr id="draft_citation"><th>Source</th><td><%= d["citation"].presence || "—" %></td></tr>
+        <% Array(assumed.except("figure", "divided_by").values.flatten).each do |a| %>
+          <tr class="assumption"><th>Assumed</th><td><%= cmp_badge("Assumed: #{a['text']}", "info", :warning) %></td></tr>
+        <% end %>
+      </tbody>
+    </table>
+      </div>
+    </div>
+
+    <% unless @draft.saved? %>
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header border-bottom py-3">
+          <h5 class="mb-0 fw-bold"><%= cmp_icon(:edit, "me-2 text-primary") %>Change a field <%= cmp_tip("Edit any part the AI got wrong. Only fields CapHive holds can be used") %></h5>
+        </div>
+        <div class="card-body">
+      <p class="text-muted small">Any change clears the test run — run it again before saving.</p>
+      <%= form_with model: @draft, url: compliance_check_draft_path(@draft), method: :patch, class: "row g-2 mb-3", id: "draft_edit" do |f| %>
+        <div class="col-md-4"><%= f.label :name, "Name", class: "form-label" %><%= f.text_field :name, value: d["name"], class: "form-control" %></div>
+        <div class="col-md-4"><%= f.label :citation, "Source", class: "form-label" %><%= f.text_field :citation, value: d["citation"], class: "form-control" %></div>
+        <div class="col-12"><%= f.label :description, "About this check", class: "form-label" %>
+          <%= f.text_area :description, value: d["description"], rows: 2, maxlength: 600, class: "form-control" %>
+          <small class="form-text text-muted d-block">What it tests, why it matters and what usually causes a failure — shown to everyone who opens a result of this check.</small></div>
+        <% if @draft.duty? %>
+          <div class="col-md-2"><%= f.label :duty_trigger, "When", class: "form-label" %>
+            <%= f.select :duty_trigger, ComplianceCheckDraftWords::TRIGGERS.invert.to_a, { selected: d["duty_trigger"] }, class: "form-select" %></div>
+          <div class="col-md-2"><%= f.label :duty_due_days, "Due (days after period)", class: "form-label" %><%= f.number_field :duty_due_days, value: d["duty_due_days"], min: 0, max: 365, class: "form-control" %></div>
+        <% else %>
+          <div class="col-md-2"><%= f.label :compare, "Must be", class: "form-label" %>
+            <%= f.select :compare, ComplianceCheckEvaluator::SYMBOLS.invert.to_a, { selected: d["compare"] }, class: "form-select" %></div>
+          <div class="col-md-1"><%= f.label :limit_value, "Limit", class: "form-label" %><%= f.number_field :limit_value, value: d["limit_value"], step: "any", class: "form-control" %></div>
+          <div class="col-md-1"><%= f.label :limit_unit, "Unit", class: "form-label" %>
+            <%= f.select :limit_unit, [["%", "pct"], ["Amount", "amount"], ["Count", "count"]], { selected: d["limit_unit"] }, class: "form-select" %></div>
+          <% measure_options = [["— describe a figure —", ""]] + version.measures.map { |m| [m["label"].presence || m["key"], m["key"]] } %>
+          <% source_options = ComplianceDataCatalog::SOURCES.keys.map { |s| [s.humanize, s] } %>
+          <% ComplianceCheckDraft::PARTS.each do |role| %>
+            <% part = d[role].is_a?(Hash) ? d[role] : {} %>
+            <% label = role == "figure" ? "Figure" : "Divided by" %>
+            <%= f.fields_for role do |p| %>
+              <div class="col-md-3"><%= p.label :measure, "#{label}: measure", class: "form-label" %>
+                <%= p.select :measure, (role == "divided_by" ? [["Nothing — compare the figure itself", "none"]] : []) + measure_options, { selected: part["measure"].presence || (role == "divided_by" && d[role].blank? ? "none" : "") }, class: "form-select" %></div>
+              <div class="col-md-2"><%= p.label :op, "#{label}: how", class: "form-label" %>
+                <%= p.select :op, ComplianceCheckDraftWords::OPS.invert.to_a, { selected: part["op"], include_blank: true }, class: "form-select" %></div>
+              <div class="col-md-3"><%= p.label :source, "#{label}: records", class: "form-label" %>
+                <%= p.select :source, source_options, { selected: part["source"], include_blank: true }, class: "form-select" %></div>
+              <div class="col-md-2"><%= p.label :field, "#{label}: field", class: "form-label" %><%= p.text_field :field, value: part["field"], class: "form-control" %></div>
+              <div class="col-md-2"><%= p.label :group_by, "#{label}: per", class: "form-label" %><%= p.text_field :group_by, value: part["group_by"], class: "form-control" %></div>
+            <% end %>
+          <% end %>
+        <% end %>
+        <div class="col-12"><%= f.submit "Update draft", class: "btn btn-outline-primary" %></div>
+      <% end %>
+        </div>
+      </div>
+
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header border-bottom py-3">
+          <h5 class="mb-0 fw-bold"><%= cmp_icon(:view, "me-2 text-primary") %>Test run <%= cmp_tip("Runs inside CapHive on today's data — no AI call, nothing stored, no register item") %></h5>
+        </div>
+        <div class="card-body">
+      <p class="text-muted small">Runs inside CapHive on today's data for the fund you pick. Nothing is stored.</p>
+      <%= form_with url: test_run_compliance_check_draft_path(@draft), method: :post, class: "row g-2 mb-3", id: "draft_test" do |f| %>
+        <div class="col-md-4"><%= label_tag :fund_id, "Fund", class: "form-label" %>
+          <%= select_tag :fund_id, options_from_collection_for_select(@funds, :id, :name, @draft.test_fund_id), class: "form-select" %></div>
+        <div class="col-md-2 align-self-end"><%= f.submit "Test run", class: "btn btn-outline-primary" %></div>
+      <% end %>
+        </div>
+      </div>
+    <% end %>
+
+    <% if tested %>
+      <div class="card shadow-sm border-0 mb-4" id="draft_test_result"><div class="card-body">
+        <div class="mb-2">Tested on <strong><%= result["fund_name"] %></strong>, <%= l(Date.parse(result["tested_on"])) %>:
+          <% if result["outcome"] == "duty" %><%= cmp_badge("Manual duty", "info", :duty) %><% else %><%= cmp_outcome_badge(result["outcome"]) %><% end %></div>
+        <%= render "compliance_shared/working", working: result, outcome: result["outcome"] == "duty" ? "needs_review" : result["outcome"] %>
+      </div></div>
+    <% end %>
+
+    <% unless @draft.saved? %>
+      <div class="d-flex gap-2">
+        <%= button_to "Save check", save_check_compliance_check_draft_path(@draft), method: :post, class: "btn btn-outline-success",
+                      disabled: !tested || errors.any?, form: { id: "draft_save" } %>
+        <%= link_to "Cancel", compliance_pack_version_path(version), class: "btn btn-outline-danger", id: "draft_cancel" %>
+        <div class="btn-group">
+          <div class="dropdown">
+            <button id="draft_actions_btn" class="btn btn-outline-success dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <i class="ti ti-settings"></i> Actions
+            </button>
+            <div class="dropdown-menu" aria-labelledby="draft_actions_btn">
+              <%= link_to " Back to #{version.label}", compliance_pack_version_path(version), class: "dropdown-item ti ti-versions", id: "draft_back_btn",
+                          title: "Return to the version without saving this draft" %>
+              <%= link_to " Test run tab", compliance_pack_version_path(version, tab: "version-test-tab"), class: "dropdown-item ti ti-eye", id: "draft_version_test_btn",
+                          title: "Test the whole version on a fund" %>
+            </div>
+          </div>
+        </div>
+      </div>
+      <% unless tested %><div class="form-text" id="save_hint">Save is available after a test run.</div><% end %>
+    <% end %>
+  <% end %>
+</div>
+</turbo-frame>

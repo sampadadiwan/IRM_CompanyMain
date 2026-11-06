@@ -1,0 +1,7 @@
+<%# After Mark done: replace the row, refresh the cards, show the flash, close the modal (E140) %>
+<% if @alert.blank? %>
+  <% columns = RansackTableHeader.new(ComplianceDuty, q: nil, turbo_frame: nil, current_user:, entity: current_user.entity, records: [@duty]).columns %>
+  <%= turbo_stream.replace dom_id(@duty), partial: "compliance_duties/compliance_duty", locals: { compliance_duty: @duty.reload.decorate, columns: } %>
+  <%= turbo_stream.replace "duties_grid_stats", partial: "compliance_duties/grid_stats", locals: { scope: @stats_scope } %>
+<% end %>
+<%= render "compliance_shared/flash_streams" %>

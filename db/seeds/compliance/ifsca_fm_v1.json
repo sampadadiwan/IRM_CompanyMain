@@ -1,0 +1,44 @@
+{
+  "pack": {
+    "name": "IFSCA — Fund Management",
+    "regime": "IFSCA",
+    "locked": true,
+    "time_zone": "Asia/Kolkata"
+  },
+  "version": {
+    "effective_from": "2027-01-01",
+    "applicability": "all",
+    "counsel_reviewer": "TO BE RECORDED — every figure below is CapHive's reading of the IFSCA (Fund Management) Regulations, 2025 and is pending counsel review (proposal › Questions for counsel, item 7)",
+    "counsel_figures_to_confirm": [
+      "Minimum investment per investor: Restricted Scheme USD 150,000; Venture Capital Scheme USD 250,000 (accredited investors excluded)",
+      "Restricted Scheme: fewer than 1,000 investors",
+      "Fund management entity contribution: lower of 2.5% of corpus and USD 750,000 (Venture Capital and Restricted Schemes)",
+      "Effective date 01 Jan 2027 is a placeholder"
+    ]
+  },
+  "definition": {
+    "currency": "USD",
+    "period_basis": "fy_apr",
+    "classifications": ["Venture Capital Scheme", "Restricted Scheme", "Retail Scheme"],
+    "inputs": [
+      {"key": "sponsor", "type": "investor_group", "label": "Sponsor/manager"},
+      {"key": "accredited", "type": "investor_group", "label": "Accredited investors", "optional": true}
+    ],
+    "measures": [
+      {"key": "corpus", "label": "Corpus", "op": "sum", "source": "commitments", "field": "amount"},
+      {"key": "commitment_per_investor", "label": "Commitment per investor", "op": "sum", "source": "commitments", "field": "amount", "group_by": "investor", "filters": [["investor_group", "not_in", "accredited"], ["investor_group", "not_in", "sponsor"], ["amount", "gt", 0]]},
+      {"key": "investor_count", "label": "Investors in scheme", "unit": "count", "op": "count_distinct", "source": "commitments", "field": "investor", "filters": [["amount", "gt", 0]]},
+      {"key": "sponsor_committed", "label": "Fund management entity commitment", "op": "sum", "source": "commitments", "field": "amount", "filters": [["investor_group", "in", "sponsor"]]},
+      {"key": "required_fme_contribution", "label": "Required FME contribution", "op": "expr", "expr": ["min", ["*", 0.025, "corpus"], 750000]}
+    ],
+    "checks": [
+      {"key": "ifsca_min_investment_restricted", "name": "Minimum investment per investor (Restricted Scheme)", "description": "Each investor in a Restricted Scheme must commit at least USD 150,000 (accredited investors excepted). IFSCA sets this floor so only investors able to bear the risk invest. Usually breached when a small commitment is recorded or an accredited investor is not mapped.", "kind": "limit", "applies_to": ["Restricted Scheme"], "figure": "commitment_per_investor", "each": true, "compare": "gte", "limit": {"value": 150000, "unit": "amount", "currency": "USD"}, "tested": "continuous", "override": "stricter_only", "time_to_fix_days": 30, "severity": "breach", "citation": "IFSCA (Fund Management) Regulations, 2025 — Restricted Scheme minimum investment (counsel to confirm)"},
+      {"key": "ifsca_min_investment_vcs", "name": "Minimum investment per investor (Venture Capital Scheme)", "description": "Each investor in a Venture Capital Scheme must commit at least USD 250,000 (accredited investors excepted). Usually breached when a small commitment is recorded or the accredited-investor list is not mapped.", "kind": "limit", "applies_to": ["Venture Capital Scheme"], "figure": "commitment_per_investor", "each": true, "compare": "gte", "limit": {"value": 250000, "unit": "amount", "currency": "USD"}, "tested": "continuous", "override": "stricter_only", "time_to_fix_days": 30, "severity": "breach", "citation": "IFSCA (Fund Management) Regulations, 2025 — Venture Capital Scheme minimum investment (counsel to confirm)"},
+      {"key": "ifsca_investor_count_restricted", "name": "Investors in scheme (Restricted Scheme)", "description": "A Restricted Scheme must have fewer than 1,000 investors, keeping it a private offering under IFSCA rules. Usually breached by a wide close or many small commitments.", "kind": "limit", "applies_to": ["Restricted Scheme"], "figure": "investor_count", "compare": "lt", "limit": {"value": 1000, "unit": "count"}, "tested": "continuous", "override": "none", "time_to_fix_days": 30, "severity": "breach", "citation": "IFSCA (Fund Management) Regulations, 2025 — Restricted Scheme investor cap (counsel to confirm)"},
+      {"key": "ifsca_fme_contribution", "name": "Fund management entity contribution", "description": "The fund management entity must keep its own money in the scheme: at least the lower of 2.5% of corpus and USD 750,000, so it shares the investors' risk. Usually breached when the corpus grows but the manager's commitment is not topped up.", "kind": "limit", "applies_to": ["Venture Capital Scheme", "Restricted Scheme"], "figure": "sponsor_committed", "compare": "gte", "limit": {"expr": "required_fme_contribution", "unit": "amount"}, "tested": "continuous", "override": "stricter_only", "time_to_fix_days": 30, "severity": "breach", "citation": "IFSCA (Fund Management) Regulations, 2025 — FME contribution, lower of 2.5% of corpus and USD 750,000 (counsel to confirm; the USD 750,000 is read in the fund's currency — GIFT schemes are denominated in a foreign currency)"}
+    ],
+    "duties": [
+      {"key": "ifsca_annual_compliance_report", "name": "Annual compliance report filed with IFSCA", "trigger": {"schedule": "yearly"}, "due": {"days_after": "period_end", "n": 90}, "evidence": true, "applies_to": "all"}
+    ]
+  }
+}

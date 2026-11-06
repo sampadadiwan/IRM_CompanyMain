@@ -1,0 +1,102 @@
+<% owner = reading.document.owner %>
+<% currency = (owner.is_a?(Fund) ? owner : owner.try(:fund))&.currency.presence || "INR" %>
+<% editor = policy(reading).confirm? %>
+<%# audits preloaded: each fact's History column reads them (R176) %>
+<% facts = reading.document_facts.includes(:audits).to_a %>
+<div id="<%= dom_id(reading) %>">
+  <%= cmp_stats([
+    { stat: facts.size, subtitle: "Facts", colour: "info", icon: :fact, tooltip: "Facts the pack asks for from this kind of document" },
+    { stat: facts.count(&:confirmed?), subtitle: "Confirmed", colour: "success", icon: :done,
+      tooltip: "Facts a person confirmed — only these count in compliance checks" },
+    { stat: facts.count { |f| !f.confirmed? }, subtitle: "Waiting", colour: "danger", icon: :overdue,
+      tooltip: "Facts read by AI (or not found) that nobody has confirmed yet" }
+  ], id: "reading_stats") %>
+
+  <%= cmp_explainer(editor ? "Check each value against the quote and page. Correct it in the box if the AI misread it, then confirm — your correction is kept in the history." :
+                             "Only compliance editors can confirm or correct these facts.") %>
+
+  <%# Full width (user: inputs were squeezed in a two-thirds column). The document details that sat in a
+      side card are one muted line under the heading; AI notes follow the table. %>
+  <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header border-bottom py-3">
+          <h5 class="mb-0 fw-bold" id="reading_summary"><%= cmp_icon(:fact, "me-2 text-primary") %><%= reading.summary %></h5>
+          <div class="small text-muted mt-1" id="reading_document">
+            <%= reading.document.name %> · <%= input&.label || reading.input_key.humanize %> <%= cmp_tip("Which kind of document the pack reads facts from") %>
+            · Read on <%= reading.sent_at ? l(reading.sent_at.to_date) : "—" %>
+          </div>
+        </div>
+        <div class="card-body">
+          <% if reading.status == "failed" %>
+            <div class="alert alert-danger d-flex align-items-start gap-2" id="reading_failed">
+              <%= cmp_icon(:warning, "fs-5 flex-shrink-0") %>
+              <div><%= reading.failure_reason.presence || "Could not read document" %>. Enter the facts by hand, or read it again.
+                <% if editor %>
+                  <div class="d-flex gap-2 mt-2">
+                    <%= link_to new_document_reading_path(document_id: reading.document_id, input_key: reading.input_key), class: "btn btn-outline-primary" do %><%= cmp_icon(:edit) %>Enter facts by hand<% end %>
+                    <%= button_to read_now_document_readings_path(document_id: reading.document_id, input_key: reading.input_key), class: "btn btn-outline-primary" do %><%= cmp_icon(:read) %>Read again<% end %>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+          <% if facts.any? %>
+            <%= form_with url: confirm_document_reading_path(reading), method: :patch do %>
+              <div class="table-responsive">
+                <table class="table table-bordered dataTable action_table hover" id="facts">
+                  <thead>
+                    <tr>
+                      <th class="text-col" style="width: 15%">Fact</th>
+                      <th class="text-col" style="width: 28%">Value <%= cmp_tip("What the AI read (or a person entered). Change it here to correct it") %></th>
+                      <th class="text-col" style="width: 30%">Read from <%= cmp_tip("The exact words in the document and the page they are on") %></th>
+                      <th class="text-col" style="width: 12%">Status <%= cmp_tip("Only confirmed facts count in compliance checks") %></th>
+                      <th class="text-col" style="width: 15%">History <%= cmp_tip("Every change: what the AI read, who changed it to what, and when") %></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% facts.each do |fact| %>
+                      <% label = input&.fact(fact.fact_key)&.dig("label").presence || fact.fact_key.humanize %>
+                      <tr id="fact_<%= fact.fact_key %>">
+                        <td class="text-col"><%= label %></td>
+                        <td class="text-col">
+                          <% if editor %>
+                            <% if fact.value_type == "date" %>
+                              <%= date_field_tag "values[#{fact.fact_key}]", fact.value %>
+                            <% else %>
+                              <%= text_field_tag "values[#{fact.fact_key}]", fact.value_type == "names" ? Array(fact.value).join(", ") : fact.value,
+                                                 class: "form-control", style: "min-width: 220px", placeholder: fact.not_found? ? "Not found in document" : nil %>
+                            <% end %>
+                            <small class="form-text text-muted d-block"><%= fact.display_value(currency) %></small>
+                          <% else %>
+                            <%= fact.display_value(currency) %>
+                          <% end %>
+                        </td>
+                        <td class="text-col"><%= fact.quote.present? ? "“#{fact.quote}”" : "—" %><%= " · page #{fact.page}" if fact.page %></td>
+                        <td class="text-col">
+                          <% if fact.confirmed? %>
+                            <%= cmp_badge("Confirmed", "success", :done) %>
+                          <% else %>
+                            <%= cmp_badge(fact.not_found? ? "Not found in document" : "AI-read, unconfirmed", "info", :ai) %>
+                          <% end %>
+                        </td>
+                        <td class="text-col"><% fact.history(currency).each do |h| %><div class="small"><%= h %></div><% end %></td>
+                      </tr>
+                    <% end %>
+                  </tbody>
+                </table>
+              </div>
+              <% if editor %>
+                <%= button_tag type: "submit", class: "btn btn-outline-success", id: "confirm_facts_btn" do %><%= cmp_icon(:approve) %>Confirm facts<% end %>
+              <% end %>
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+      <% if reading.notes.present? %>
+        <div class="card shadow-sm border-0 mb-4">
+          <div class="card-header border-bottom py-3">
+            <h5 class="mb-0 fw-bold"><%= cmp_icon(:ai, "me-2 text-info") %>AI notes <%= cmp_tip("Prepared by the AI for you to check — they never decide a result") %></h5>
+          </div>
+          <div class="card-body" id="reading_notes"><%= simple_format(reading.notes) %></div>
+        </div>
+      <% end %>
+</div>

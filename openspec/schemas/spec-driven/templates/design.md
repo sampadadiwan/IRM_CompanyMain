@@ -1,5 +1,7 @@
 # [Feature Name] — Design
 
+<!-- STYLE: bullets and diagrams, not prose. One idea per bullet; a diagram per concept (model, lifecycle, flow); table cells a phrase each — longer reasoning goes in bullets under the table. -->
+
 > **Audience:** Engineering team.
 > **Companion documents:** [Proposal](proposal.md) · [Spec](specs/)
 
@@ -67,6 +69,75 @@ flowchart LR
     P -- "decisions" --> E
     E -- "status of every step" --> U
 ```
+
+### Key concepts
+
+<!-- CORE — never omitted. Placed right after the picture and BEFORE the walkthrough: every word the
+     rest of the design leans on, explained in plain language so a reader new to the domain can
+     follow. Rules:
+     - **Concept map**: one mermaid flowchart of how the concepts relate (subgraphs allowed here:
+       e.g. "the rules" / "one record" / "what happens every night"), with 3 bullets under it.
+     - **Glossary** table: Concept | What it is, in one line | Example (from the walkthrough's data)
+       | Stored in (table/column, or "Not stored"). Every domain noun, status word and role used
+       later appears here — including words the team takes for granted (episode, maker–checker,
+       duty, applicability, preview, …).
+     - **One #### explainer per concept that has its own rules or lifecycle** (e.g. an approval
+       model, a recurring obligation, a grouping like "episode"). Each explainer has:
+       - what it is and WHY it exists (the problem it solves), as bullets;
+       - a table of its kinds/triggers with a real example per row;
+       - what it does NOT cover (e.g. which actions need no approval) — readers ask this first;
+       - one diagram (sequenceDiagram or timeline) of one example start to finish;
+       - its rules as bullets (who, when, exceptions, what happens on reject/undo).
+     - Later sections LINK back here instead of re-explaining (cards add a line "New to X? Read
+       [X](#anchor) first").
+     - Never introduce a concept first in a card, decision or schema table. -->
+
+**How the concepts fit together**
+
+```mermaid
+flowchart TB
+    subgraph RULES["The rules"]
+        A["Concept A<br/>one-line meaning"] --> B["Concept B"]
+    end
+    subgraph REC["One record"]
+        C["Concept C"]
+    end
+    B --> C
+    C --> D["What happens<br/>every night / on save"]
+```
+
+- <!-- what the top box is -->
+- <!-- what the middle is -->
+- <!-- what the bottom is -->
+
+**Glossary**
+
+| Concept | What it is, in one line | Example | Stored in |
+|---|---|---|---|
+| <!-- e.g. Register item --> | <!-- one breach episode: opened by the first failing run, closed by the first passing run --> | <!-- "Concentration — open since 5 Nov, fix by 5 Dec" --> | <!-- `compliance_register_items` --> |
+
+#### <!-- Concept with its own rules, e.g. "Maker–checker — two-person approval" -->
+
+- **What:** <!-- -->
+- **Why:** <!-- the problem it solves -->
+
+| Kind / trigger | What it does | Example |
+|---|---|---|
+| <!-- --> | <!-- --> | <!-- --> |
+
+**What it does NOT cover:** <!-- e.g. actions one person may do alone, and why -->
+
+```mermaid
+sequenceDiagram
+    actor M as Maker
+    participant App as CapHive
+    actor C as Checker
+    M->>App: one real example, start to finish
+    App-->>C: …
+```
+
+**Rules**
+- <!-- who, when, exceptions, what happens on reject / undo -->
 
 ### Walkthrough: one example, start to finish
 
@@ -159,14 +230,57 @@ Colour = footprint: **green** new, **amber** modified, **grey** reused unchanged
      - the main everyday journey here: a small ASCII wireframe with ①②③ callouts plus a
        Step | The user… | They see table.
      Other journeys go in the card of the box they belong to. User-facing messages stay in the
-     proposal. Turbo/Stimulus details go in the owning card's build notes. -->
+     proposal. Turbo/Stimulus details go in the owning card's build notes.
+     - **Screen standards** (REQUIRED whenever a screen is added or changed): one row per screen, so
+       every page is DESIGNED to the app's standard instead of being fixed after it is built. Name a
+       real existing screen to copy for each one — never "reuse existing styling" in general.
+       Defaults to copy: index = capital_calls/_index (h1.h3 header + outline `ti` buttons +
+       grid_stats + layouts/filter + SearchComponent + RansackTable + pagy); show = capital_calls/show
+       + _show (container-fluid mw-100 p-3, stats, `card shadow-sm border-0` sections, actions row +
+       "Actions" dropdown); tabs = funds/_owner_fund_details (data-controller="tabs", nav-pills,
+       lazy turbo-frame panes with layouts/loading); journeys = workflow_instances/_journey_panel
+       (step popups via journey-step-info); forms = FormCard (forms only). -->
+
+**Screen standards**
+
+| Screen | Kind | Copies | Breadcrumbs | Tabs (lazy pills) | Turbo (frames / streams per action) | Stats cards (= grid totals) | Filter + search | Actions (header + Actions dropdown) | Help (title ⓘ intro, field tooltips, empty state, What's next) | Full width |
+|---|---|---|---|---|---|---|---|---|---|---|
+| <!-- Register --> | <!-- index --> | <!-- capital_calls/_index --> | <!-- Compliance › Register --> | <!-- Open/Closed/All --> | <!-- grid frame; assign = stream replacing row --> | <!-- Open, Overdue… --> | <!-- layouts/filter: fund, status… --> | <!-- Filter · Download --> | <!-- yes --> | <!-- mw-100 --> |
+
+- Every action that changes one row or card answers `format.turbo_stream` (replace by `dom_id`, refresh cards, flash) with an HTML redirect fallback; a full reload only where the whole page changes — say which.
+- Help text is a tooltip, never a grey paragraph under the title; a coloured box only when something needs attention.
+- One icon per concept across the feature; badges `bg-X-subtle text-X` with only success/info/danger/secondary.
 
 ### Design decisions
 
-<!-- CORE. Numbered: choice, alternative considered, why rejected. Favour the simpler/DRYer option,
-     and say why when you don't. -->
+<!-- CORE. Written so a reader who was not in the room understands each call. Rules:
+     - Open with an **At a glance** table: # | Decision | Why, in one line. Number D1, D2, … in order
+       (never out of order, never gaps).
+     - Then one #### block per decision, ALWAYS with these five bullets:
+       - **Problem:** what had to be decided, in plain words, with a concrete example;
+       - **Decision:** what we build (real names);
+       - **Why:** 2-4 bullets;
+       - **Not chosen:** the alternative, and why not;
+       - **Where:** the classes / tables that carry it.
+     - Use only concepts already defined in [Key concepts](#key-concepts); link to them.
+     - Favour the simpler/DRYer option, and say why when you don't.
+     - During apply, add a **Changed during the build** table (Log # | What changed | Why) and update
+       any decision the build changed (mark it "Changed during the build: …"), so design.md never
+       contradicts the code. -->
 
-1. **Decision title** — Choice made. Alternative considered: X. Rejected because: Y.
+**At a glance**
+
+| # | Decision | Why, in one line |
+|---|---|---|
+| D1 | <!-- --> | <!-- --> |
+
+#### D1. <!-- Decision title -->
+
+- **Problem:** <!-- -->
+- **Decision:** <!-- -->
+- **Why:** <!-- -->
+- **Not chosen:** <!-- alternative — because … -->
+- **Where:** <!-- classes / tables -->
 
 **FAQ**
 
@@ -279,9 +393,57 @@ erDiagram
 
 <!-- CONDITIONAL. One row per failure mode: who is alerted, channel (tie to `Noticed`), detail. -->
 
-#### Performance and security
+#### Architecture and design patterns
 
-<!-- CORE. A bullet or two each: volume, background vs inline, tenant isolation, sanitisation. -->
+<!-- CORE — never omitted. One row per item: 1 Pack boundaries (Packwerk), 2 Thin controllers /
+     skinny models (Trailblazer operations, services), 3 Single responsibility / deep modules,
+     4 Reuse before you add (existing concerns, services, partials; flag existing-model changes),
+     5 Configuration as data (global default + entity override, versioned), 6 Explicit state
+     machines, 7 Append-only audit records, 8 Background work (idempotent Sidekiq, schedule.rb),
+     9 Notifications (Noticed, CustomNotification), 10 UI (Turbo, Stimulus, ViewComponent, Draper,
+     existing styling), 11 Queries and data (SQL aggregates, Ransack allowlist, money cents,
+     large tables), 12 AI (LlmService, structured output, jobs, never in deterministic paths),
+     13 Rollout (per entity, phased), 14 YAGNI / DRY. A row may say "not needed — reason". -->
+
+| # | Pattern | How this design applies it | Existing example reused | Where |
+|---|---|---|---|---|
+| 1 | Pack boundaries | | | |
+
+#### Performance
+
+<!-- CORE. Bullets: volume, background vs inline, batching, large tables (CLAUDE.md). PLUS a query
+     budget for every page, frame and job the change adds, so N+1s are designed out rather than found
+     by Prosopite after the code is written. Rules:
+     - No query inside a loop over rows: no per-row `exists?`/`count`/`find_by`, no per-row Pundit
+       `policy(record).x?` that queries, no per-row association not preloaded. Use `includes`,
+       `group(...).count` / `maximum`, one `pluck` into a Hash, or a per-request memo.
+     - Access checks used per row (roles, fund visibility) are loaded once per request.
+     - Counts shown in nav bars / cards are grouped SQL counts, memoised per request.
+     - Jobs that loop over funds/records batch their lookups the same way.
+     - Each phase's gate runs its features under Prosopite (`PROSOPITE=1`, see
+       config/initializers/prosopite.rb) and fixes every N+1 whose stack is in the change's code. -->
+
+**Query budget**
+
+| Page / frame / job | Rows shown or processed | Queries (budget, independent of rows) | Preloads / grouped queries | Per-row lookups avoided |
+|---|---|---|---|---|
+| <!-- Register grid --> | <!-- 10–500 items --> | <!-- ≤ 12 --> | <!-- includes(:fund, :assignee); group(:fund_id).count --> | <!-- policy per row → fund_ids memo --> |
+
+#### Security
+
+<!-- CORE — never omitted, never "N/A". One row per item; every new action, job, policy, upload,
+     AI call and token appears. Items: 1 Authorization (Pundit, policy_scope then authorize),
+     2 Tenant isolation (entity + parent ids same-firm, ForInvestor), 3 Mass assignment,
+     4 No code from data (eval/constantize/send allowlists), 5 Injection (SQL, Ransack allowlist,
+     XSS, paths), 6 Background jobs (reload + re-check access), 7 Files and documents,
+     8 AI/LLM (prompt injection, no write tools, validated structured output, entity-only context,
+     minimum PII), 9 Webhooks/tokens/links, 10 Rate limiting and cost, 11 Audit and logging,
+     12 Verification (Brakeman, bundler-audit, features/security/ scenarios). See
+     docs/security/security_review_2026_10.md "Recurring root causes". -->
+
+| # | Item | How this design meets it | Where | Test |
+|---|---|---|---|---|
+| 1 | Authorization | | | |
 
 ### Worked examples
 

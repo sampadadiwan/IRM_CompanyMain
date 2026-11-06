@@ -1,0 +1,29 @@
+<%# Attach a pack, drawn in the remote modal (R175, E203). Opened from any row of the funds grid (fund
+    chosen), from the grid header (choose the fund), from a pack's page (pack chosen) or from a fund's
+    empty Compliance tab. The form posts to #create and lands back on the funds grid. %>
+<%= render layout: "compliance_shared/modal", locals: { id: "attachPackModal", icon: :fund_pack, title: "Attach a pack to a fund" } do %>
+  <%= form_with url: fund_compliance_packs_path, scope: :fund_compliance_pack, method: :post, id: "attach_pack_form", data: { turbo_frame: "_top" } do |f| %>
+    <div class="modal-body">
+      <div class="mb-3">
+        <%= f.label :fund_id, class: "form-label" do %>Fund <%= cmp_tip("The fund whose data the pack's checks will read every night") %><% end %>
+        <%= f.select :fund_id, @funds.map { |x| [x.name, x.id] }, { selected: @fund&.id }, class: "form-select" %>
+      </div>
+      <div class="mb-3">
+        <%= f.label :compliance_pack_id, class: "form-label" do %>Pack <%= cmp_tip("A CapHive regulator pack (locked) or one of your own entity packs") %><% end %>
+        <%= f.select :compliance_pack_id, @packs.map { |x| [x.name, x.id] }, { selected: @pack&.id }, class: "form-select" %>
+        <% if @attached_names.present? %>
+          <small class="form-text text-muted d-block">Already on <%= @fund.name %>: <%= @attached_names.to_sentence %>.</small>
+        <% end %>
+      </div>
+      <div class="mb-3">
+        <%= f.label :classification, class: "form-label" do %>Classification <%= cmp_tip("Which part of the pack applies, e.g. Category II. Changing it later needs an approver") %><% end %>
+        <%= f.text_field :classification, class: "form-control" %>
+        <small class="form-text text-muted d-block">Leave blank to use the fund's Category when the pack has it.</small>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">Cancel</button>
+      <%= f.button type: "submit", class: "btn btn-outline-primary", id: "attach_pack_submit" do %><%= cmp_icon(:fund_pack) %>Attach pack<% end %>
+    </div>
+  <% end %>
+<% end %>

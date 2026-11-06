@@ -1,0 +1,9 @@
+<%# Facts to confirm (H40): documents whose facts wait for a person. Only confirmed facts count in a run. %>
+<% frame = with_frame("document_readings_frame") %>
+<%= render "/layouts/filter", associations: [:document], url: document_readings_path, form_html: { data: { turbo_frame: frame } } %>
+
+<%= render ReportingComponent.new do %>
+  <%= turbo_frame_tag frame, target: "_top" do %>
+    <%= render "document_facts/index", readings: @readings %>
+  <% end %>
+<% end %>

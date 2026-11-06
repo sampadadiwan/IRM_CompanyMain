@@ -1,0 +1,49 @@
+<%# Register: the standard grid filter (layouts/filter) above lazy Open / Closed / All pills, as the fund
+    page's tabs (funds/_owner_fund_details). Each pane's grid loads into its own frame with the tab's
+    preset status filter plus the user's filter. A status condition in the filter replaces the tabs with
+    one "Filter results" pane, so the two never disagree (E139). %>
+<%= render "/layouts/filter", associations: [:fund, :assignee], url: compliance_register_items_path,
+           form_html: { data: { turbo_frame: "_top" } } %>
+
+<%= render layout: "compliance_shared/header", locals: { intro: :register, title: "Compliance register", icon: :register } do %>
+  <%= link_to compliance_register_items_path(filter: true, q: @user_q.presence), class: "btn btn-outline-primary d-inline-flex align-items-center",
+              id: "register_filter_btn", data: { bs_toggle: "tooltip", bs_title: "Filter by fund, pack, check, status, dates, overdue, assignee or escalation" } do %>
+    <%= cmp_icon(:filter) %>Filter
+  <% end %>
+  <button type="button" class="btn btn-outline-success d-inline-flex align-items-center" data-bs-toggle="modal" data-bs-target="#registerExportModal" id="register_export_btn">
+    <%= cmp_icon(:download) %>Download
+  </button>
+<% end %>
+
+<%# ⑩ H86 / E188: which run the items come from; an empty register says when the next run is %>
+<%= cmp_runs_timing_banner %>
+<%= render "compliance_shared/whats_next", record: :register, context: { open_count: compliance_section_counts[:open] } %>
+
+<%
+  base = { q: @user_q.presence, fund_id: params[:fund_id].presence, search: params[:search].presence }.compact
+  tabs = if @filter_sets_status
+           [["filtered", "Filter results", :filter]]
+         else
+           [["open", "Open", :register], ["closed", "Closed", :done], ["all", "All", :history]]
+         end
+%>
+<div class="associated_entity" data-controller="tabs">
+  <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row" role="tablist" id="register_tabs">
+    <% tabs.each_with_index do |(tab, label, icon), i| %>
+      <a class="nav-link <%= 'active' if i.zero? %>" data-bs-toggle="pill" href="#register-<%= tab %>-tab" id="register_tab_<%= tab %>">
+        <%= cmp_icon(icon) %><%= label %>
+      </a>
+    <% end %>
+  </nav>
+  <div class="tab-content">
+    <% tabs.each_with_index do |(tab, _label, _icon), i| %>
+      <div id="register-<%= tab %>-tab" class="tab-pane fade in <%= 'show active' if i.zero? %>">
+        <%= turbo_frame_tag "register_#{tab}_frame", src: compliance_register_items_path(**base, status: tab), loading: :lazy, target: "_top" do %>
+          <%= render "/layouts/loading" %>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<%= render "compliance_register_items/export_modal" %>

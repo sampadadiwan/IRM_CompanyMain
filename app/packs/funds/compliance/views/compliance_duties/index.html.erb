@@ -1,0 +1,11 @@
+<%# Duties: the standard grid filter above a turbo-framed list (capital_commitments/index pattern) %>
+<% frame = with_frame("compliance_duties_frame") %>
+<%= render "/layouts/filter", associations: [:fund, :owner], url: compliance_duties_path, form_html: { data: { turbo_frame: frame } } %>
+
+<%= render ReportingComponent.new do %>
+  <%= turbo_frame_tag frame, target: "_top" do %>
+    <%= render "compliance_duties/index", duties: @duties %>
+  <% end %>
+<% end %>
+<%# Standalone page only — inside the hub, the hub draws the single remote_modal frame %>
+<%= render "compliance_shared/remote_modal" unless @in_compliance_hub %>

@@ -1,5 +1,7 @@
 # [Feature Name] — Proposal
 
+<!-- STYLE: bullets and diagrams, not prose. One idea per bullet; a diagram per concept (model, lifecycle, flow); table cells a phrase each — longer reasoning goes in bullets under the table. -->
+
 > **Audience:** Business team, product, QA, support — non-technical.
 > **Companion document:** [Design](design.md)
 > **New to this? Start with the [Workflow Journey](#workflow-journey)** — every action, in order, from start to the outcome.
@@ -11,14 +13,28 @@
 
 ## Why
 
-<!-- 1-2 sentences: what problem does this solve, or what opportunity does it capture? Why now?
-     How does it work today (if anything)? -->
+<!-- 2-4 bullets, no paragraphs: what problem does this solve, or what opportunity does it
+     capture? Why now? How does it work today (if anything)? Add a small diagram if the problem
+     has a shape (e.g. a breach that happens with no user action). -->
 
 ## What Changes
 
-<!-- What changes for the user/business, in plain language. If the feature introduces a new
-     mental model, explain it with a simple analogy. Bullet the concrete changes; mark breaking
-     changes with **BREAKING**. -->
+<!-- What changes for the user/business, in plain language, as bullets (no paragraphs). If the
+     feature introduces a new mental model, explain it with a simple analogy AND a mermaid diagram
+     of the concepts and how they relate. Bullet the concrete changes; mark breaking changes with
+     **BREAKING**. -->
+
+### Key concepts
+
+<!-- REQUIRED — never omitted. Every new word a business reader meets in this proposal, explained
+     before it is used. One mermaid diagram of how the concepts relate, then a table:
+     Concept | What it means for you | Example (real-looking figures). For any concept with its own
+     rules (an approval step, a recurring task, a grouping), add 3-5 bullets: what, why, what it
+     does NOT cover, one example. No table or class names here — design.md has those. -->
+
+| Concept | What it means for you | Example |
+|---|---|---|
+| <!-- --> | <!-- --> | <!-- --> |
 
 ### Flow Diagram
 

@@ -14,6 +14,17 @@ artifacts:
 
       **Planning only: do not make any code changes while writing this document.**
 
+      **Writing style — bullets and diagrams, not prose (applies to every section).** The
+      reader understands best from bullet points and diagrams:
+      - Explain with short bullets (one idea each), never paragraphs. A section that would
+        be a paragraph becomes 3-6 bullets.
+      - Give each concept a diagram: a model or relationship → mermaid flowchart/class
+        diagram; a lifecycle → stateDiagram; a flow → flowchart or sequence diagram; a
+        computed figure → the arithmetic laid out line by line.
+      - Keep table cells short (a phrase). Move any reasoning longer than one line out of the
+        table into a bulleted sub-section under it.
+      - Worked examples use real-looking figures, shown as bullets or an ASCII mockup.
+
       **Read the code before writing a word of this.** A bug report whose root cause is a guess
       is worse than no report: it sends the fix at the wrong line. Every claim in Root Cause
       carries a `path/to/file.rb:LINE` reference that you have actually opened. If you cannot
@@ -35,6 +46,9 @@ artifacts:
         of the data, who holds what, what is checked where, and WHY it is built that way rather
         than an obvious alternative. Add a mermaid diagram of the normal, intended flow.
         Nothing in this section describes the bug - it is what SHOULD happen.
+        It MUST include a **Key concepts** table (Concept | What it is, in one line | Example |
+        Stored in) defining every domain word Root Cause and Fix use, with 3-5 bullets for any
+        concept that has its own rules - never leave a reader to guess a term.
         This is the section that makes the report worth reading six months later. A reader who
         has never seen the feature must be able to follow Root Cause after reading it, and
         should come away understanding the DESIGN, not just the defect. Treat a bug as the
@@ -171,6 +185,10 @@ artifacts:
         touches, and `bundle exec rubocop` on the changed files
       - If the report's Blast Radius lists other callers, the final phase MUST include a task
         that runs their features too
+      - The final phase MUST also include an N+1 check under Prosopite (`PROSOPITE=1`) when the
+        fix touches a query, a list page or a job, and a UI check when it touches a screen (still
+        matches the app's standard screens); each says "not applicable — <reason>" otherwise
+      - Wait on each test run's PID (`cmd & p=$!; wait $p`), never a `while pgrep` loop
       - `TEST_ENV_NUMBER` must be set to a fresh random value on every cucumber run (unset, runs
         share one sqlite db and corrupt each other); Redis must be up on 6379
 

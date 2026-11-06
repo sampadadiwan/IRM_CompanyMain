@@ -1,0 +1,4 @@
+<%# The fund page's Compliance tab, loaded lazily into its turbo frame (funds/_owner_fund_details) %>
+<%= turbo_frame_tag "fund_compliance_tab" do %>
+  <%= render "fund_compliance_packs/dashboard", dashboard: @dashboard %>
+<% end %>

@@ -426,8 +426,6 @@ en:
     chat_with_caphive: Chat With CapHive
     company_employees: Company Employees
     company_profile: Company Profile
-    compliance_checks: Compliance Checks
-    compliance_rules: Compliance Rules
     customize_forms: Customize Forms
     dashboard_widgets: Dashboard Widgets
     dark_theme: Dark
@@ -452,7 +450,6 @@ en:
     manage_workflow_templates: Manage Workflow Templates
     personalize_investor_notices: Personalize Investor Notices
     provide_access: Provide Access
-    setup_compliance_rules: Setup Compliance Rules
     todo_daily_tasks: To-do and Daily Tasks
     user_guides: User Guides
     help: Help
@@ -466,7 +463,6 @@ en:
     learn_how_to_use: Learn how to use CapHive
     user: User
     user_profile: User Profile
-    view_all_checks: View All Checks
     view_bounce_report: View bounce & complaint report
     settings: Settings
     settings_with_caphive: Layouts & Colors

@@ -1,0 +1,3 @@
+<%# After Confirm facts: replace the facts card in place and show the flash (E140) %>
+<%= turbo_stream.replace dom_id(@reading), partial: "document_facts/reading", locals: { reading: @reading, input: @input } %>
+<%= render "compliance_shared/flash_streams" %>

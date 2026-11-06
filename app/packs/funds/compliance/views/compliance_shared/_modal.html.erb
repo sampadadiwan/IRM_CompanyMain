@@ -1,0 +1,15 @@
+<%# A form modal drawn into the remote_modal frame; data-controller="modal" shows it on load and hides
+    it when the frame is cleared after a successful Turbo stream (kpi_reports/new_notification) %>
+<%= turbo_frame_tag "remote_modal" do %>
+  <div class="modal fade" data-controller="modal" tabindex="-1" aria-labelledby="<%= id %>_label">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="<%= id %>_label"><%= cmp_icon(icon) %><%= title %></h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <%= yield %>
+      </div>
+    </div>
+  </div>
+<% end %>

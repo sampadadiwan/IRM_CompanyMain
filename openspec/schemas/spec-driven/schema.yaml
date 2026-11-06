@@ -13,12 +13,28 @@ artifacts:
 
       **Planning only: do not make any code changes while writing this document.**
 
+      **Writing style — bullets and diagrams, not prose (applies to every section).** The
+      reader understands best from bullet points and diagrams:
+      - Explain with short bullets (one idea each), never paragraphs. A section that would
+        be a paragraph becomes 3-6 bullets.
+      - Give each concept a diagram: a model or relationship → mermaid flowchart/class
+        diagram; a lifecycle → stateDiagram; a flow → flowchart or sequence diagram; a
+        computed figure → the arithmetic laid out line by line.
+      - Keep table cells short (a phrase). Move any reasoning longer than one line out of the
+        table into a bulleted sub-section under it.
+      - Worked examples use real-looking figures, shown as bullets or an ASCII mockup.
+
       Sections (follow the template's structure and order):
-      - **Why**: 1-2 sentences on the problem or opportunity. What problem does this solve? Why
+      - **Why**: 2-4 bullets on the problem or opportunity. What problem does this solve? Why
         now? How does it work today, if at all?
       - **What Changes**: What changes for the user/business, in plain language, with a mermaid
         flowchart pair (before/after, never ASCII art) for each existing flow the change alters. Mark breaking changes with
         **BREAKING**.
+        - **Key concepts** (REQUIRED, never omitted, inside What Changes before the flow
+          diagrams): every new word a business reader meets, explained before it is used — one
+          mermaid diagram of how the concepts relate, then Concept | What it means for you |
+          Example. Concepts with their own rules (an approval step, a recurring task, a grouping)
+          get 3-5 bullets: what, why, what it does NOT cover, one example. No table/class names.
       - **Workflow Journey** (REQUIRED, placed before User Stories and linked from the header):
         one worked journey from "nothing set up" to the outcome, listing EVERY action in order -
         who is involved; one mermaid flowchart of the whole journey (subgraph per part: before
@@ -188,6 +204,17 @@ artifacts:
 
       **Planning only: do not make any code changes while writing this document.**
 
+      **Writing style — bullets and diagrams, not prose (applies to every section).** The
+      reader understands best from bullet points and diagrams:
+      - Explain with short bullets (one idea each), never paragraphs. A section that would
+        be a paragraph becomes 3-6 bullets.
+      - Give each concept a diagram: a model or relationship → mermaid flowchart/class
+        diagram; a lifecycle → stateDiagram; a flow → flowchart or sequence diagram; a
+        computed figure → the arithmetic laid out line by line.
+      - Keep table cells short (a phrase). Move any reasoning longer than one line out of the
+        table into a bulleted sub-section under it.
+      - Worked examples use real-looking figures, shown as bullets or an ASCII mockup.
+
       Rules that apply to every section:
       - **Design, not code.** Tell the design through mermaid diagrams and tables. Do NOT paste
         Ruby/JS class bodies, migrations, route blocks, policy code or Stimulus code. Put real
@@ -225,6 +252,15 @@ artifacts:
         - **The idea in one picture**: ONE flowchart, 5-9 boxes numbered ①②③ in reading order,
           plain-English names plus a one-line description each, the core of the idea in the
           middle, every arrow labelled. No class names, subgraphs, colours or error paths.
+        - **Key concepts** (CORE, never omitted, right after the picture and before the
+          walkthrough): a concept map (mermaid flowchart), a Glossary table (Concept | What it is,
+          in one line | Example from the walkthrough data | Stored in), and one #### explainer per
+          concept with its own rules or lifecycle (approval models such as maker–checker,
+          recurring obligations such as duties, groupings such as episodes): what + why, a
+          kinds/triggers table with examples, what it does NOT cover, one sequence/timeline
+          diagram, rules incl. exceptions and reject/undo. Every domain noun, status word and role
+          used later must be defined here; later sections link back instead of re-explaining.
+          A concept must never appear first in a card, decision or schema table.
         - **Walkthrough: one example, start to finish**: a realistic example told as a story right
           after the picture: setup, a legend for any notation, optional mermaid `timeline`, then
           phase tables (# | When | What happens | Behind the scenes citing ①②③ | Result) including
@@ -247,8 +283,23 @@ artifacts:
         - **What users see** (CONDITIONAL, whenever a screen, email or alert changes): an "At a
           glance" table plus the main everyday journey (ASCII wireframe with ①②③ callouts and a
           Step | The user… | They see table). Other journeys go in their box's card. Messages stay
-          in the proposal.
-        - **Design decisions**: choice, alternative, why rejected. Favour the simpler/DRYer option.
+          in the proposal. PLUS a **Screen standards** table (REQUIRED whenever a screen is added
+          or changed): one row per screen — Screen | Kind | Copies (a real existing screen) |
+          Breadcrumbs | Tabs (lazy pills) | Turbo (frames / streams per action) | Stats cards (=
+          grid totals) | Filter + search | Actions (header + Actions dropdown) | Help (title ⓘ
+          intro tooltip, field tooltips, empty state, What's next) | Full width. Defaults to copy:
+          index = capital_calls/_index; show = capital_calls/show + _show (container-fluid mw-100);
+          tabs = funds/_owner_fund_details (lazy turbo-frame pills); journeys =
+          workflow_instances/_journey_panel; forms = FormCard only. Never write "reuse existing
+          styling" without naming the screen. Help text is a tooltip, never a grey paragraph; a
+          coloured box only when something needs attention.
+        - **Design decisions** (CORE): an At a glance table (# | Decision | Why, in one line),
+          numbered D1, D2… in order; then one #### block per decision with five bullets —
+          Problem (plain words + concrete example), Decision (real names), Why (2-4 bullets),
+          Not chosen (alternative and why not), Where (classes/tables). Only use concepts from Key
+          concepts. Favour the simpler/DRYer option. During apply, add a "Changed during the
+          build" table (Log # | What changed | Why) and correct any decision the build changed,
+          so design.md never contradicts the code.
         - **FAQ**.
       - **3. One card per box** (CORE): one ### card per box, in picture order (a trivial box may
         share a card with its neighbour). Every card: what it is (1-2 sentences); an Owns | Reads /
@@ -277,7 +328,94 @@ artifacts:
           how re-runs and retries are kept from re-sending. If the change truly sends nothing, keep
           the heading and say why after considering both audiences — a bare "N/A" is not enough.
         - **Cross-cutting concerns**: Transactions and queries (CONDITIONAL); Exception handling
-          and monitoring (CONDITIONAL, tied to `Noticed`); Performance and security (CORE).
+          and monitoring (CONDITIONAL, tied to `Noticed`); Performance (CORE) — which MUST
+          include a **Query budget** table (Page / frame / job | Rows | Queries budget, independent
+          of rows | Preloads / grouped queries | Per-row lookups avoided) covering every page, frame
+          and job the change adds, with the rule that nothing inside a row loop queries (no per-row
+          exists?/count/find_by, querying policy checks or un-preloaded associations; access checks
+          and nav/card counts loaded once per request). Each phase gate runs its features under
+          Prosopite (`PROSOPITE=1`) and fixes every N+1 in the change's code.
+        - **Architecture and design patterns** (CORE — never omitted): a table Pattern | How this
+          design applies it | Existing example reused | Where (box / class). One row per item below;
+          a row may say "not needed — reason". Items:
+          1. **Pack boundaries (Packwerk)** — new code lives in one pack under app/packs/<domain>/<feature>;
+             cross-pack calls go through the other pack's public API; package.yml dependencies declared.
+          2. **Thin controllers, skinny models** — controllers authorize, load and render; multi-step
+             business flows are Trailblazer operations (`step :`), single-purpose logic is a service
+             with `.call`; models hold associations, validations, scopes and small queries.
+          3. **Single responsibility, deep modules** — each box has one job, a small interface and
+             hides its detail; composition over inheritance.
+          4. **Reuse before you add** — existing concerns (WithFolder, WithCustomField, ForInvestor,
+             Trackable, WithExchangeRate, WithSnapshot, WithValidationRules, WithCustomNotifications),
+             services, partials, components and helpers are used before anything new is written;
+             say which ones in the table. Changes to existing models are flagged for approval.
+          5. **Configuration as data** — where users or CapHive must change behaviour without a
+             release, model it as data with the global-default + entity-override pattern
+             (ValidationRule / ValidationRuleOverride), versioned when results depend on it.
+          6. **Explicit state machines** — status columns with the allowed transitions and guards in
+             one place, drawn as a stateDiagram; every transition recorded (`audited` or a history table).
+          7. **Append-only audit records** — results, snapshots and approvals are written once and
+             never updated; corrections are new rows.
+          8. **Background work** — anything slow, scheduled or AI-backed runs in Sidekiq jobs that are
+             idempotent, retry-safe, fan out per fund/record, and are scheduled in config/schedule.rb;
+             no long calls in the request path.
+          9. **Notifications** — Noticed notifiers + existing mailers/digests; investor emails through
+             CustomNotification; one place decides recipients.
+          10. **UI** — Hotwire (Turbo frames/streams, Stimulus controllers), ViewComponents for reused
+              widgets, Draper decorators for presentation; copy existing screens' styling (no new CSS).
+          11. **Queries and data** — aggregate in SQL, Ransack with allowlisted attributes, money as
+              `_cents` + RansackerAmounts, no N+1, CLAUDE.md large-table rules; no speculative eager loads.
+          12. **AI** — only through LlmService with the entity's provider; prompts and parsing in one
+              service; structured output validated like form input; AI calls in jobs, never in a run
+              path that must be deterministic.
+          13. **Rollout** — per-entity enablement, phased delivery, each phase shippable alone.
+          14. **YAGNI / DRY** — no abstraction without two real callers; no duplicated rules between
+              proposal, spec and design.
+        - **Security** (CORE — never omitted, never "N/A"): a table with one row per item below —
+          Item | How this design meets it | Where (box / class / policy) | Test (H/E/X or
+          features/security/ scenario). Every new controller action, job, policy, upload, AI call
+          and token must appear somewhere in the table. Items:
+          1. **Authorization (Pundit)** — every action calls `authorize`; records are loaded through
+             `policy_scope(...)` then authorized, never a bare `Model.find(params[:id])` (root cause 1
+             of docs/security/security_review_2026_10.md). No new exclusion from `verify_authorized` /
+             `verify_policy_scoped` without a written reason. Every allow/refuse rule lives in the
+             policy, delegating to the parent policy; no predicate that is just a feature flag or `true`
+             (root cause 2).
+          2. **Tenant isolation** — every query is scoped to the user's entity and fund access;
+             `entity_id` is `attr_readonly`; every other parent id (fund, commitment, document…) is
+             validated as same-firm on create and update (root cause 4); LP/investor-facing paths use
+             the ForInvestor scoping and never fall into its "all rows of an accessible fund" branch (root cause 5).
+          3. **Mass assignment** — strong params permit only what the form edits; never `entity_id`,
+             owner/parent ids, approval flags, status, `approved_by`, or role fields.
+          4. **No code from data** — no `eval`, `instance_eval`, `send`, `constantize` or
+             `public_send` on user- or AI-supplied strings; use an allowlist (root cause 6); stored
+             expressions only through FormulaSandbox profiles.
+          5. **Injection** — SQL only through bound parameters / Arel / `sanitize_sql`; no identifier
+             interpolation; Ransack attributes explicitly allowlisted (`ignore_unknown_conditions` is
+             on, so a wrong name silently widens results — see the CLAUDE.md MCP note); no `html_safe`
+             / `raw` on user or document text; file names and template paths never taken from params.
+          6. **Background jobs** — jobs take ids, reload the record through its entity, and re-check
+             that the acting user still has access; never trust ids captured at enqueue time for a
+             different tenant; idempotent on retry.
+          7. **Files and documents** — uploads validated for type and size; served through existing
+             authorized/expiring URLs, never public paths; document text treated as untrusted data.
+          8. **AI / LLM** — document and user text is untrusted input (prompt injection): it goes in
+             as data, the model gets no tools that write, output is structured and validated like form
+             input, and AI output never authorizes anything. Few-shot examples and context come only
+             from the requesting entity (N3). Send the minimum PII, use the entity's configured
+             provider, and record what was sent.
+          9. **Webhooks, tokens, links** — verify provider signatures; tokens have a purpose and an
+             expiry; no open redirects from params.
+          10. **Rate limiting and cost** — expensive or AI endpoints sit behind rack-attack or a
+              per-entity cap.
+          11. **Audit and logging** — sensitive changes (approvals, overrides, role changes) recorded
+              with who/when/before→after (`audited` or an explicit history table); no PII or secrets in
+              logs (filter_parameter_logging); secrets only in Rails credentials.
+          12. **Verification** — Brakeman and bundler-audit clean for the change; a
+              `features/security/` scenario per new controller/action in the style of
+              `tenant_isolation_batch1.feature` (other firm's user refused, owner allowed, direct
+              request bypassing the UI refused).
+
         - **Worked examples** (CORE): Happy Path (H1..), Edge Cases (E1..), Error Cases (X1..)
           tables with columns # | Scenario | Given | When | Then | Spec scenario | Feature, using
           real-ish data from a shared-setup table. Every spec scenario must appear in the Spec
@@ -309,6 +447,17 @@ artifacts:
 
       **Planning only: do not make any code changes while writing this document.**
 
+      **Writing style — bullets and diagrams, not prose (applies to every section).** The
+      reader understands best from bullet points and diagrams:
+      - Explain with short bullets (one idea each), never paragraphs. A section that would
+        be a paragraph becomes 3-6 bullets.
+      - Give each concept a diagram: a model or relationship → mermaid flowchart/class
+        diagram; a lifecycle → stateDiagram; a flow → flowchart or sequence diagram; a
+        computed figure → the arithmetic laid out line by line.
+      - Keep table cells short (a phrase). Move any reasoning longer than one line out of the
+        table into a bulleted sub-section under it.
+      - Worked examples use real-looking figures, shown as bullets or an ASCII mockup.
+
       Rules:
       - Write for a developer reviewer. Every section must make a reviewable decision explicit
         (a type, a limit, an index, a lock, a retry count, an error mapping), not describe the
@@ -319,6 +468,8 @@ artifacts:
         its heading with `N/A — <reason>`.
       - Every section ends with a **Reviewer checks** list of `- [ ]` items the developer ticks
         during review. These are concrete, falsifiable checks, not "looks good".
+      - The LLD carries a CORE **Security detail** section: per new action/job/AI call, the exact
+        policy method, scope used to load, permitted params, and the security scenario that covers it.
       - The closing **Project rules checklist** is CORE. It carries this repo's standing rules
         (large-table hygiene, date formatting, tenant scoping, MCP ontology, IRM cops) marked
         Applies / N/A, and it is how the reviewer confirms the CLAUDE.md rules were considered.
@@ -386,6 +537,18 @@ artifacts:
       passes - the task list itself should make it clear that phase N+1 only starts once phase N's
       feature run is green. This project has no RSpec tier; every phase's verification is a
       Cucumber feature, not a unit spec.
+
+      Before that green run, every phase ends with two more gate tasks (always present; the UI one
+      may say "no screens changed in this phase"):
+      - **UI review** — screenshot each new/changed screen beside the reference screen named in
+        design.md's *Screen standards* table and apply the UI self-review checklist (breadcrumbs,
+        lazy pill tabs, Turbo streams for row actions, stats cards = grid totals, standard filter +
+        search, header buttons + Actions dropdown, title ⓘ tooltip / field tooltips / empty states /
+        What's next, full width). Fix differences in the same phase.
+      - **N+1 check** — run the phase's features with `PROSOPITE=1` (config/initializers/prosopite.rb),
+        read `log/prosopite.log` (truncate first, never commit) and fix every N+1 whose stack is in
+        this change's code; list ones from shared code with call sites rather than editing them.
+      Test runs: wait on each run's PID (`cmd & p=$!; wait $p`), never a `while pgrep` loop.
 
       Guidelines:
       - Group related tasks under ## numbered headings (phases)

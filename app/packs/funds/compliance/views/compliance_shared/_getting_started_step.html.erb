@@ -1,0 +1,90 @@
+<%# E201: one Getting started step's popup, opened by clicking its circle in the rail — the same modal as
+    every other journey's step popup (workflow_instances/_step_info: id journeyStepInfoModal, action-summary
+    cards), fetched and shown by journey_step_info_controller.js. Built from ComplianceGettingStarted, so it
+    always matches the panel.
+      Done / What to do / Not needed — where the step stands, the specifics behind it (who, which packs,
+                                       which inputs, …) and its button when the user can act
+      What this step is              — the glossary-style meaning
+      Why it matters                 — the step's why
+    Locals: step (ComplianceGettingStarted::Step), details (lines of { label:, text:, ok: }), setup. %>
+<% gs_t = ->(key, **opts) { t("compliance.getting_started.popup.#{key}", **opts) } %>
+<% means = t("compliance.getting_started.steps.#{step.key}.means") %>
+
+<div class="modal fade" id="journeyStepInfoModal" tabindex="-1" aria-labelledby="journeyStepInfoModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="journeyStepInfoModalLabel"><%= step.label %></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <div class="modal-body" id="getting_started_step_<%= step.key %>">
+        <div class="action-summary__list mb-0">
+          <%# Where the step stands, with the specifics from data %>
+          <% tone, icon, title = case step.state
+                                 when "done" then ["green", "ti-circle-check", gs_t.(:done)]
+                                 when "not_needed" then ["grey", "ti-circle-minus", gs_t.(:not_needed)]
+                                 else ["blue", "ti-hand-finger", gs_t.(:what_to_do)]
+                                 end %>
+          <div class="action-summary__item action-summary__item--<%= tone %>">
+            <span class="action-summary__icon"><i class="ti <%= icon %>"></i></span>
+            <div class="flex-grow-1">
+              <div class="action-summary__title"><%= title %></div>
+              <% unless step.done? %>
+                <div class="action-summary__desc small"><%= step.detail %></div>
+              <% end %>
+              <ul class="list-unstyled small mb-0 mt-1" id="getting_started_step_details">
+                <% Array(details).each do |d| %>
+                  <li class="d-flex gap-1 align-items-start">
+                    <% if d[:ok] == true %><i class="ti ti-circle-check text-success mt-1"></i>
+                    <% elsif d[:ok] == false %><i class="ti ti-circle-x text-danger mt-1"></i>
+                    <% else %><i class="ti ti-point mt-1"></i><% end %>
+                    <span><% if d[:label] %><span class="text-muted"><%= d[:label] %>:</span> <% end %><%= d[:text] %></span>
+                  </li>
+                <% end %>
+              </ul>
+
+              <%# The step's own button (re-doable setup: attach another pack, run again) — closes the popup
+                  via journey-step-info#dismiss without stopping the link or form, as on other journeys %>
+              <% if step.state != "not_needed" && step.action_path %>
+                <% if step.can_act %>
+                  <div class="d-flex flex-wrap gap-1 mt-2" data-action="click->journey-step-info#dismiss">
+                    <% if step.action_method == :post %>
+                      <%= button_to step.action_path, method: :post, form_class: "d-inline", data: { turbo_frame: "_top" },
+                                    class: "btn btn-sm btn-primary", id: "getting_started_step_action" do %><%= step.action_label %> <i class="ti ti-arrow-right"></i><% end %>
+                    <% else %>
+                      <%= link_to step.action_path, class: "btn btn-sm btn-primary", id: "getting_started_step_action", data: { turbo_frame: "_top" } do %>
+                        <%= step.action_label %> <i class="ti ti-arrow-right"></i>
+                      <% end %>
+                    <% end %>
+                  </div>
+                <% elsif !step.done? %>
+                  <%# E182: a viewer sees the specifics, and who can act %>
+                  <div class="small text-muted mt-2" id="getting_started_step_ask">
+                    <%= setup.owner ? t("compliance.getting_started.ask_owner", owner: setup.owner.full_name) : t("compliance.getting_started.ask_editor") %>
+                  </div>
+                <% end %>
+              <% end %>
+            </div>
+          </div>
+
+          <div class="action-summary__item action-summary__item--purple">
+            <span class="action-summary__icon"><i class="ti ti-book"></i></span>
+            <div>
+              <div class="action-summary__title"><%= gs_t.(:means) %></div>
+              <div class="action-summary__desc small"><%= means %></div>
+            </div>
+          </div>
+
+          <div class="action-summary__item action-summary__item--amber">
+            <span class="action-summary__icon"><i class="ti ti-bulb"></i></span>
+            <div>
+              <div class="action-summary__title"><%= gs_t.(:why) %></div>
+              <div class="action-summary__desc small"><%= step.why %></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

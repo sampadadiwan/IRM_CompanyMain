@@ -1,0 +1,15 @@
+<%# Standard list/page header (capital_calls/_index): h1.h3 title with its icon, the user-guide icon and
+    right-aligned outline buttons passed as the block. Phase 5 (⑩): the compliance section bar above it
+    (H89) and a guide icon that opens the guide at this page's own section (H90). %>
+<% section, anchor = ComplianceGuidanceHelper::PAGE_GUIDE.fetch(controller_name, [nil, nil]) %>
+<%# No section bar inside a Compliance hub pane: the hub draws it once, as tabs (R170) %>
+<%= render "compliance_shared/section_bar", current: local_assigns.fetch(:section, section) unless local_assigns[:no_section_bar] || @in_compliance_hub %>
+<%# The page's one-line "what this page is for" (compliance.intros.*) is a hover tooltip on an ⓘ beside the
+    title, not a line of grey text under it (user, 2026-11-06); the round guide button opens the guide. %>
+<div class="d-sm-flex align-items-center justify-content-between mb-3">
+  <h1 class="h3 mb-0 text-gray-800"><%= cmp_icon(icon) %><%= title %><% if local_assigns[:intro] %><span class="fs-5 align-middle" id="page_intro"><%= cmp_tip(t("compliance.intros.#{intro}")) %></span><% end %></h1>
+  <div class="d-flex flex-wrap align-items-center gap-2">
+    <%= anchor ? cmp_guide_icon(local_assigns.fetch(:anchor, anchor)) : user_guide_info_icon %>
+    <%= yield %>
+  </div>
+</div>

@@ -1,0 +1,7 @@
+<tr id="<%= dom_id(compliance_register_item) %>">
+  <%= render RansackTableRow.new(model: compliance_register_item, columns:) %>
+  <td class="action-col">
+    <%= link_to t_common(:view), compliance_register_item_path(compliance_register_item), class: "btn btn-outline-primary ti ti-eye",
+                data: { turbo_frame: "_top", bs_toggle: "tooltip", bs_title: "Open the item: its working, assign it, explain it" } %>
+  </td>
+</tr>

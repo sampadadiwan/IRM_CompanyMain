@@ -1,0 +1,34 @@
+<%# ⑩ The Compliance hub (R170, E200): the section bar as pill tabs, exactly like the fund page's tabs
+    (funds/_owner_fund_details) — data-controller="tabs", nav-pills, tab-pane fade, one lazy turbo frame per
+    section whose src is the section's own index URL (it answers the frame request with just its content).
+    Home is the landing pane and is drawn inline, so the first paint needs no extra request. ?tab=
+    opens a section: the pane is marked active here and tabs_controller#clickTab selects its pill. %>
+<% active = ComplianceHub.section_for(params[:tab]) %>
+<% counts = compliance_section_counts %>
+<% srcs = { register: compliance_register_items_path, duties: compliance_duties_path, facts: document_readings_path,
+            packs: compliance_packs_path, setup: compliance_entity_setup_path } %>
+<div class="associated_entity" data-controller="tabs">
+  <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row" role="tablist" id="compliance_section_bar" aria-label="Compliance sections">
+    <% ComplianceHub::SECTIONS.each do |key, label, icon, count_key, colour| %>
+      <a class="nav-link text-nowrap <%= 'active' if key == active %>" data-bs-toggle="pill" href="#<%= ComplianceHub.pane_id(key) %>" id="section_<%= key %>">
+        <%= cmp_icon(icon) %><%= label %><% if count_key %> <span class="badge bg-<%= colour %>-subtle text-<%= colour %>"><%= counts[count_key] %></span><% end %>
+      </a>
+    <% end %>
+  </nav>
+
+  <div class="tab-content">
+    <div id="<%= ComplianceHub.pane_id(:home) %>" class="tab-pane fade in <%= 'show active' if active == :home %>">
+      <%= render "compliance_home/home" %>
+    </div>
+    <% srcs.each do |key, src| %>
+      <div id="<%= ComplianceHub.pane_id(key) %>" class="tab-pane fade in <%= 'show active' if active == key %>">
+        <%= turbo_frame_tag ComplianceHub.frame_id(key), src:, loading: :lazy, target: "_top" do %>
+          <%= render "/layouts/loading" %>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</div>
+<%# One remote_modal frame for the whole hub, outside the panes (a modal inside a hidden pane cannot show):
+    Home's Attach (E203) and the Duties pane's Mark done both open into it %>
+<%= render "compliance_shared/remote_modal" %>

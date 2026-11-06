@@ -148,6 +148,9 @@ Sidekiq.configure_server do |config|
     # capital-call-journey: re-checks every journey every 15 minutes so progress is picked up and
     # approvers are told promptly even when nobody opens the record (WorkflowEvaluateJob)
     Sidekiq::Cron::Job.create(name: 'WorkflowEvaluateJob', cron: '*/15 * * * *', class: 'WorkflowEvaluateJob')
+    # fund-compliance-monitoring: hourly tick; each entity's runs start at 02:00 and its digest at 08:00 in
+    # the entity's own time zone, so one UTC-agnostic hourly cron serves every region (task 1.12, R67).
+    Sidekiq::Cron::Job.create(name: 'ComplianceScheduleJob', cron: '5 * * * *', class: 'ComplianceScheduleJob')
     # Evergreen jobs follow the same per-region LOCAL anchors as the jobs above (review fix 10, 10 Oct
     # 2026). They used flat UTC times, which in the US region put the investor reminders and team
     # alerts at ~11:30pm Eastern the evening before.
