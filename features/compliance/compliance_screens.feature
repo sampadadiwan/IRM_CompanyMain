@@ -105,3 +105,17 @@ Feature: Compliance screens — filter, lazy tabs, Turbo streams and the explain
     And the result steps include "Required continuing interest" = "₹5.00 cr"
     And the compliance page shows "₹1.00 cr above the limit"
     And no result step restates its own value
+
+  # E203 — Edge case: one funds grid on Compliance home — Attach on a row opens with that fund chosen, the row then shows the pack, and the old Fund packs page lands on the same grid
+  @rack_test
+  Scenario: E203 One funds grid, attach from any row
+    Given I am signed in to compliance as "Meera"
+    When I open the compliance home
+    Then the funds grid row "Horizon Seed Fund" shows "Not monitored"
+    And the funds grid row "Horizon Seed Fund" has an Attach button
+    When I open the attach form from the "Horizon Seed Fund" row
+    Then the attach form has "Horizon Seed Fund" chosen
+    When I attach "SEBI — AIF" as "Category II" from the attach form
+    Then the funds grid row "Horizon Seed Fund" shows "Category II · v1" under "SEBI — AIF"
+    When I open the old fund packs page
+    Then I am on the compliance funds grid

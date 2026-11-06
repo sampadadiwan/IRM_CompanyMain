@@ -8,8 +8,13 @@
   <div class="alert alert-secondary d-flex align-items-start gap-2" id="no_packs_attached">
     <%= cmp_icon(:fund_pack, "fs-5 flex-shrink-0") %>
     <div>No packs attached — nothing is checked for <%= d.fund.name %>, so it shows as Not monitored (never as compliant).
-      <%= link_to fund_compliance_packs_path, class: "btn btn-sm btn-outline-primary ms-2", data: { turbo_frame: "_top" } do %><%= cmp_icon(:fund_pack) %>Attach a pack<% end %></div>
+      <% if ComplianceAccess.editor?(current_user) %>
+        <%# E203: the attach modal with this fund chosen; its own remote_modal frame (the fund page has none) %>
+        <%= link_to new_fund_compliance_pack_path(fund_id: d.fund.id), class: "btn btn-sm btn-outline-primary ms-2", id: "dashboard_attach_btn",
+                    data: { turbo_frame: "remote_modal" } do %><%= cmp_icon(:fund_pack) %>Attach a pack<% end %>
+      <% end %></div>
   </div>
+  <%= render "compliance_shared/remote_modal" if ComplianceAccess.editor?(current_user) %>
 <% else %>
   <%
     cards = [

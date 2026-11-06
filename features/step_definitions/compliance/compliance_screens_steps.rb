@@ -172,3 +172,42 @@ Then('no result step restates its own value') do
     expect(calc).not_to eq(value), "step restates its value: #{li.text}"
   end
 end
+
+# ── E203 one funds grid (R175) ───────────────────────────────────────────────────────────────
+Then('the funds grid row {string} shows {string}') do |fund_name, text|
+  expect(find("#compliance_funds #fund_#{cmp_fund(fund_name).id}")).to have_text(text)
+end
+
+Then('the funds grid row {string} has an Attach button') do |fund_name|
+  expect(page).to have_css("#attach_fund_#{cmp_fund(fund_name).id}")
+end
+
+# The row's Attach opens the form in the remote_modal frame; rack_test requests it as Turbo does
+When('I open the attach form from the {string} row') do |fund_name|
+  path = find("#attach_fund_#{cmp_fund(fund_name).id}")[:href]
+  cmp_frame_visit("remote_modal", path)
+end
+
+Then('the attach form has {string} chosen') do |fund_name|
+  expect(page).to have_select("fund_compliance_pack[fund_id]", selected: fund_name)
+end
+
+When('I attach {string} as {string} from the attach form') do |pack_name, classification|
+  select pack_name, from: "fund_compliance_pack[compliance_pack_id]"
+  fill_in "fund_compliance_pack[classification]", with: classification
+  find_by_id("attach_pack_submit").click
+end
+
+Then('the funds grid row {string} shows {string} under {string}') do |fund_name, text, pack_name|
+  pack = CompliancePack.find_by!(name: pack_name)
+  expect(page).to have_css("#fund_#{cmp_fund(fund_name).id}_pack_#{pack.id}", text:)
+end
+
+When('I open the old fund packs page') do
+  visit fund_compliance_packs_path
+end
+
+Then('I am on the compliance funds grid') do
+  expect(page).to have_current_path(compliance_home_path, ignore_query: true)
+  expect(page).to have_css("#compliance_funds")
+end

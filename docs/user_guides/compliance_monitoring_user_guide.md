@@ -59,7 +59,7 @@ flowchart TB
 | Register item | **View** on a register row | **What's next**, **About this check**, **How we checked**, **Assign**, **Request explanation**, **Approve explanation** / **Reject explanation**; **Actions** → Request override, Disable check |
 | Duties | [**Compliance → Duties**](/compliance/duties) | **Filter**, search; **Mark done** with a note and evidence |
 | Facts to confirm | [**Compliance → Facts to confirm**](/compliance/facts) | Open a document, check each fact against its quote and page, correct it, **Confirm facts** |
-| Fund packs | Compliance home → **Manage → Fund packs** | Which pack each fund carries; **Attach pack** |
+| Fund packs | Compliance home — the funds grid | Which pack each fund carries, its classification, version and latest results; **Attach** on every row |
 | Rule library | Compliance home → **Manage → Rule library** | Packs and their versions; **New entity pack**; a version's **Checks**, **Duties**, **Definition** and **Publish** tabs; **Describe in words** |
 | Setup | Compliance home → **Manage → Setup** | Inputs, monitoring on/off, owner, AI drafting and AI document reading switches |
 
@@ -128,7 +128,7 @@ On a draft version of your own pack, **Describe in words** lets AI draft a check
 
 ## Fund packs
 
-Which rule packs each fund carries and its classification in each. A fund with no pack is **Not monitored** — never shown as compliant.
+The funds grid on **Compliance home** has one column per pack you use: each cell shows the fund's classification · version under that pack and its latest results (breaches, needs review, could not check). A fund with no pack is **Not monitored** — never shown as compliant. Every row has **Attach**, which opens the attach form with that fund chosen; **Attach pack** above the grid lets you choose the fund. Search and **Filter** narrow the funds, and the cards above total the funds shown.
 
 ## Setup
 
@@ -190,7 +190,7 @@ Open the fund from [**Funds**](/funds) and choose its **Compliance** tab, or cli
 ### Creating, updating and managing compliance checks
 
 **How do I attach a pack to a fund?**
-Go to **Compliance → Manage → Fund packs**, click **Attach pack**, choose the fund and the pack, and enter the classification (or leave it blank to use the fund's Category). You need **Compliance Edit** or company admin. The fund is checked from the next nightly run.
+On **Compliance home**, click **Attach** on the fund's row (or **Attach pack** above the grid and choose the fund), choose the pack, and enter the classification (or leave it blank to use the fund's Category). You need **Compliance Edit** or company admin. The fund is checked from the next nightly run.
 
 **How do I map inputs such as "Sponsor/manager"?**
 Open **Compliance → Manage → Setup**. The **Inputs** card lists every input your attached packs need, with ✓ when mapped and ✗ when missing. Until an input is mapped, the checks that need it show **Could not check**.
@@ -243,7 +243,7 @@ Getting started is the list of eight setup steps on Compliance home, ticked off 
 Limits such as single-company concentration can be breached with no action on your part — for example when investable funds shrink. The nightly run catches those, keeps the arithmetic of every result, and keeps one register item per breach until the data clears it.
 
 **Why is a fund marked "Not monitored"?**
-It has no pack attached, so nothing is checked. CapHive never shows an unmonitored fund as compliant. Attach a pack from **Compliance → Manage → Fund packs**.
+It has no pack attached, so nothing is checked. CapHive never shows an unmonitored fund as compliant. Attach a pack with **Attach** on its row in the funds grid on **Compliance home**.
 
 **Why do some changes need a second person (maker–checker)?**
 Overriding a limit, disabling a check, detaching a pack, explaining a breach, adopting a version early and changing a fund's classification all weaken or exempt monitoring, so an approver other than the requester must approve. If your firm has exactly one approver, they may approve their own request and it is labelled "Self-approved — single approver".

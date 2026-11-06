@@ -7,4 +7,5 @@
     <%= render "compliance_duties/index", duties: @duties %>
   <% end %>
 <% end %>
-<%= render "compliance_shared/remote_modal" %>
+<%# Standalone page only — inside the hub, the hub draws the single remote_modal frame %>
+<%= render "compliance_shared/remote_modal" unless @in_compliance_hub %>

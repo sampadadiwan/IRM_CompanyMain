@@ -8,6 +8,12 @@ class FundCompliancePackPolicy < ComplianceBasePolicy
     viewer? && fund_scoped_visible?
   end
 
+  # The attach form (R175): editors only; the fund and pack offered are scoped in the action, and #create
+  # re-checks the chosen pair through create?
+  def new?
+    editor?
+  end
+
   def create?
     editor? && fund_scoped_visible? && record.compliance_pack.present? &&
       (record.compliance_pack.entity_id.nil? || record.compliance_pack.entity_id == user.entity_id)

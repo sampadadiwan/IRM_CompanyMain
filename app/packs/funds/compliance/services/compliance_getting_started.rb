@@ -96,7 +96,8 @@ class ComplianceGettingStarted
   end
 
   def attach_step
-    step("attach", @fund_packs.any?, path: routes.fund_compliance_packs_path)
+    # R175: the Home funds grid, where every row has Attach
+    step("attach", @fund_packs.any?, path: routes.compliance_home_path(tab: ComplianceHub.pane_id(:home), anchor: "compliance_funds"))
   end
 
   # 3. H81 / E180: names the unmapped inputs and how many checks they block

@@ -16,7 +16,7 @@
   <div class="alert alert-secondary d-flex align-items-start gap-2" id="duties_empty">
     <%= cmp_icon(:duty, "fs-5 flex-shrink-0") %>
     <div>No duties here. Duties are created by the packs attached to your funds — on a schedule, for each new investor or document, or when a check asks for one.
-      <%= link_to "Fund packs", fund_compliance_packs_path, class: "btn btn-sm btn-outline-primary ms-2", data: { turbo_frame: "_top" } %></div>
+      <%= link_to "Funds", compliance_home_path(tab: ComplianceHub.pane_id(:home)), class: "btn btn-sm btn-outline-primary ms-2", data: { turbo_frame: "_top" } %></div>
   </div>
 <% else %>
   <%= render RansackTable.new(ComplianceDuty, q: @q, current_user:, entity: current_user.entity, records: duties,

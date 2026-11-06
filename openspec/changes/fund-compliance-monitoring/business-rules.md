@@ -662,6 +662,7 @@ flowchart LR
 | E192 | Super admin sees who is stuck | Horizon 3 of 8 since 04/11/2026 | Super admin opens Compliance › Customer setup | Row "Horizon Capital · 3 of 8 · next: Map inputs · since 04/11/2026" | OG: Customer setup progress | compliance_guidance |
 | E201 | Step popup shows the specifics | Demo-like setup: owner Meera, approver Rahul; SEBI on Growth Fund I; Sponsor/manager unmapped | Meera clicks the "Map inputs" circle, then "Owner & approvers" | A popup (as on other journeys) titled "Map inputs": What to do + each input with ✓/✗ — "Sponsor/manager (SEBI — AIF): Not mapped — blocks N checks" — the Map inputs button, What this step is, Why it matters; "Owner & approvers" shows Done with "Owner: Meera" and the approvers | OG: Step popups | compliance_guidance |
 | E202 | Minimise remembered | Setup in progress | Meera minimises Getting started, then reopens Compliance | The steps and What's needed now stay folded under the header (only the title and "n of 8 done" show) until she expands them; the choice is kept in her own preferences | OG: Minimise Getting started | compliance_guidance |
+| E203 | One funds grid; attach from any row | Shared setup; Horizon Seed Fund carries no pack | Meera presses Attach on Seed Fund's row on Compliance home, chooses SEBI — AIF as Category II; then opens /compliance/fund_packs | The form opens with Seed Fund chosen; back on Home the row shows "Category II · v1" under SEBI — AIF instead of Not monitored; /compliance/fund_packs lands on the same Home grid | OG: One funds grid | compliance_screens |
 
 ### Error cases
 
@@ -698,8 +699,8 @@ flowchart LR
 | 10 Pack versions and locking | 8 | 23 | 12 | 43 |
 | 11 Changes over time | 8 | 35 | 6 | 49 |
 | 12 Screens | 0 | 6 | 1 | 7 |
-| 13 Newcomer guidance (Phase 5) | 13 | 23 | 6 | 42 |
-| **Total** | **74** | **167** | **75** | **316** |
+| 13 Newcomer guidance (Phase 5) | 13 | 24 | 6 | 43 |
+| **Total** | **74** | **168** | **75** | **317** |
 
 - `features/security/compliance_tenant_isolation.feature` gathers every refusal row (other firm, investor, viewer, self-approval, injection, AI context) — attacker refused, owner allowed, direct request refused.
 - An edge case found during apply gets a new row here **and** a scenario.

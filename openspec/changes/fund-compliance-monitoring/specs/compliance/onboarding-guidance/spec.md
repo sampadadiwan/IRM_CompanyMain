@@ -97,6 +97,13 @@ Every compliance page SHALL show one section bar: Home, Register, Duties, Facts 
 - **WHEN** Meera minimises Getting started and later reopens Compliance
 - **THEN** only its header (title and "n of 8 done") shows until she expands it again
 
+### Requirement: One funds grid
+Compliance home SHALL show one funds grid: every fund the user can see, one column per attached pack (classification · version and that pack's latest results), open items, and per-row actions. A compliance editor SHALL be able to attach a pack from any row, with that fund already chosen. The old Fund packs page SHALL lead to the same grid; there SHALL NOT be a second fund × pack view.
+
+#### Scenario: One funds grid
+- **WHEN** Meera presses Attach on Horizon Seed Fund's row and attaches SEBI — AIF as Category II
+- **THEN** the form opened with Seed Fund chosen, and the row now shows "Category II · v1" under SEBI — AIF instead of Not monitored; opening /compliance/fund_packs lands on the same grid
+
 ### Requirement: Welcome notice and reminders
 When a firm's compliance setup is first created, its company admins and users tagged Compliance SHALL receive one welcome notice, in-app and by email, linking to Getting started. If setup is still incomplete after 7 days, the owner SHALL receive one reminder naming the next step, and one more after 21 days. No reminders SHALL be sent after that, or once setup is complete. A firm without the Compliance entity flag SHALL receive none.
 

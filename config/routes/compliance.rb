@@ -22,7 +22,7 @@ scope :compliance do
       post :save_check
     end
   end
-  resources :fund_compliance_packs, path: "fund_packs", only: %i[index create show] do
+  resources :fund_compliance_packs, path: "fund_packs", only: %i[index new create show] do
     # The fund page's lazy Compliance tab
     collection { get :fund_tab }
     member do

@@ -68,8 +68,13 @@
             <%= link_to " Describe in words", compliance_pack_version_path(draft), class: "dropdown-item ti ti-sparkles", id: "pack_describe_btn",
                         title: "Open the draft and describe a new check in a sentence" %>
           <% end %>
-          <%= link_to " Fund packs", fund_compliance_packs_path, class: "dropdown-item ti ti-link", id: "pack_fund_packs_btn",
-                      title: "Which funds carry this pack; attach it to more" %>
+          <%# E203: attach this pack to a fund in the remote modal (pack chosen); the funds grid shows who carries it %>
+          <% if ComplianceAccess.editor?(current_user) && @pack.attachable? %>
+            <%= link_to " Attach to a fund", new_fund_compliance_pack_path(compliance_pack_id: @pack.id), class: "dropdown-item ti ti-link",
+                        id: "pack_fund_packs_btn", data: { turbo_frame: "remote_modal" }, title: "Attach this pack to one of your funds" %>
+          <% end %>
+          <%= link_to " Funds", compliance_home_path(tab: ComplianceHub.pane_id(:home)), class: "dropdown-item ti ti-building-bank",
+                      title: "Every fund and the packs it carries" %>
           <% if policy(@pack).retire? && !@pack.retired? %>
             <%= button_to retire_compliance_pack_path(@pack), method: :patch, class: "dropdown-item ti ti-archive", id: "pack_retire_btn", form_class: "d-inline",
                           data: { action: "click->confirm#popup", title: "Retire #{@pack.name}?",
@@ -80,3 +85,4 @@
     </div>
   </div>
 </div>
+<%= render "compliance_shared/remote_modal" %>

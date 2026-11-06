@@ -8,7 +8,7 @@
     <div class="alert alert-secondary d-flex align-items-start gap-2" id="register_empty_<%= tab %>">
       <%= cmp_icon(:done, "fs-5 flex-shrink-0") %>
       <div>No register items here. Items open by themselves when a nightly run fails a check — try <strong>All</strong>, or attach packs to more funds.
-        <%= link_to "Fund packs", fund_compliance_packs_path, class: "btn btn-sm btn-outline-primary ms-2" %></div>
+        <%= link_to "Funds", compliance_home_path(tab: ComplianceHub.pane_id(:home)), class: "btn btn-sm btn-outline-primary ms-2", data: { turbo_frame: "_top" } %></div>
     </div>
   <% else %>
     <%= render RansackTable.new(ComplianceRegisterItem, q: @q, current_user:, entity: current_user.entity, records: items,

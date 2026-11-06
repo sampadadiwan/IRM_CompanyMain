@@ -1,0 +1,115 @@
+<%# The one funds grid (R175, E203) — Home draws it; /compliance/fund_packs redirects here. One column per
+    attached pack (classification · version + that pack's latest outcomes), open items, and per-row
+    Attach / View. Wrapped in its own frame so search updates the cards and rows together (cards are grid
+    totals). Plain standard table: the pack columns are dynamic (R111). Locals: grid (ComplianceFundsGrid). %>
+<% editor = ComplianceAccess.editor?(current_user) %>
+<%= turbo_frame_tag "compliance_funds_frame", target: "_top" do %>
+  <%# Search by fund name inside the frame, as the register's grid does — rows and cards update together %>
+  <%= render SearchComponent.new(data_source: compliance_home_path(params: params.to_unsafe_h.except("controller", "action", "search", "tab")),
+                                 turbo_frame: "compliance_funds_frame") %>
+  <%
+    s = grid.stats
+    # Each card says what it counts; zero cards that would only be noise are left out (capital_calls/_grid_stats)
+    cards = [
+      { stat: "#{s[:monitored]} of #{s[:funds]}", subtitle: "Funds monitored", colour: "info", icon: :compliance,
+        tooltip: "Funds in this list with at least one rule pack attached. A fund with none is Not monitored — never shown as compliant" },
+      { stat: s[:breach], subtitle: "Breaches", colour: "danger", icon: :breach, path: compliance_register_items_path,
+        tooltip: "Checks whose latest result is a breach, across the funds in this list" },
+      { stat: s[:needs_review], subtitle: "Needs review", colour: "info", icon: :needs_review,
+        tooltip: "Checks a person must look at — e.g. a document that seems to concern another company" }
+    ]
+    if s[:could_not_check].positive?
+      cards << { stat: s[:could_not_check], subtitle: "Could not check", colour: "secondary", icon: :could_not_check,
+                 tooltip: "Checks that could not be computed because something is missing (an input, a rate, a date). Never counted as a pass" }
+    end
+    if s[:overdue].positive?
+      cards << { stat: s[:overdue], subtitle: "Overdue items", colour: "danger", icon: :overdue, path: compliance_register_items_path,
+                 tooltip: "Open register items past their fix-by date (opened date + the check's time to fix)" }
+    end
+    if s[:stale].positive?
+      cards << { stat: s[:stale], subtitle: "Stale runs", colour: "danger", icon: :run,
+                 tooltip: "Monitored funds whose last successful run is more than 26 hours old — their results may be out of date" }
+    end
+  %>
+  <%= cmp_stats(cards, id: "compliance_home_stats") %>
+
+  <div class="table-responsive">
+    <table class="table table-bordered dataTable action_table hover" id="compliance_funds">
+      <thead>
+        <tr>
+          <th class="text-col">Fund</th>
+          <% if grid.packs.empty? %>
+            <th class="text-col">Packs <%= cmp_tip("The rule packs attached to the fund, with its classification and version") %></th>
+          <% else %>
+            <% grid.packs.each do |p| %>
+              <th class="text-col"><%= p.name %> <%= cmp_tip("This fund's classification and version under #{p.name}, and that pack's latest results. — means not attached") %></th>
+            <% end %>
+          <% end %>
+          <th class="num-col">Open items <%= cmp_tip("Open register items for this fund — each is one breach episode") %></th>
+          <th class="action-col">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% grid.funds.each do |fund| %>
+          <tr id="fund_<%= fund.id %>">
+            <td class="text-col">
+              <%= link_to fund_path(fund, tab: "compliance-tab"), data: { bs_toggle: "tooltip", bs_title: "Open #{fund.name}'s Compliance tab" } do %><%= cmp_icon(:fund) %><%= fund.name %><% end %>
+            </td>
+            <% if !grid.monitored?(fund) %>
+              <%# E10: no pack at all — one cell across the pack columns, never shown as compliant %>
+              <td class="text-col" colspan="<%= [grid.packs.size, 1].max %>">
+                <%= cmp_badge("Not monitored", "secondary", :warning, title: "No pack attached — nothing is checked for this fund") %>
+              </td>
+            <% else %>
+              <% grid.packs.each do |p| %>
+                <% fp = grid.pack_for(fund, p) %>
+                <td class="text-col" id="fund_<%= fund.id %>_pack_<%= p.id %>">
+                  <% if fp.nil? %>
+                    <span class="text-muted">—</span>
+                  <% else %>
+                    <%= link_to fund_compliance_pack_path(fp) do %>
+                      <% if fp.classification.blank? %>
+                        <%= cmp_badge("Choose a classification", "danger", :warning, title: "No classification — this pack runs no checks until one is set") %>
+                      <% else %>
+                        <%= cmp_badge([fp.classification, fp.compliance_pack_version&.label].compact.join(" · "), "success", :pack) %>
+                      <% end %>
+                    <% end %>
+                    <% o = grid.outcomes_for(fp) %>
+                    <div class="small mt-1">
+                      <% if o.empty? %>
+                        <span class="text-muted">No results yet</span>
+                      <% else %>
+                        <% parts = [] %>
+                        <% parts << tag.span(pluralize(o["breach"], "breach"), class: "text-danger") if o["breach"].to_i.positive? %>
+                        <% parts << tag.span("#{o['needs_review']} needs review", class: "text-info") if o["needs_review"].to_i.positive? %>
+                        <% parts << tag.span("#{o['could_not_check']} could not check", class: "text-secondary") if o["could_not_check"].to_i.positive? %>
+                        <%= parts.any? ? safe_join(parts, " · ") : tag.span("All #{o['pass']} pass", class: "text-success") %>
+                      <% end %>
+                    </div>
+                  <% end %>
+                </td>
+              <% end %>
+            <% end %>
+            <td class="num-col"><%= grid.open_counts[fund.id] || 0 %></td>
+            <td class="action-col text-nowrap">
+              <%# Attach from any row: the attach modal opens in the remote modal with this fund chosen %>
+              <% if editor %>
+                <%= link_to new_fund_compliance_pack_path(fund_id: fund.id), class: "btn btn-outline-primary ti ti-link", id: "attach_fund_#{fund.id}",
+                            data: { turbo_frame: "remote_modal", bs_toggle: "tooltip", bs_title: "Attach a rule pack to #{fund.name} so its checks run nightly" } do %>
+                  Attach
+                <% end %>
+              <% end %>
+              <% if grid.monitored?(fund) %>
+                <%= link_to t_common(:view), fund_path(fund, tab: "compliance-tab"), class: "btn btn-outline-primary ti ti-eye",
+                            data: { bs_toggle: "tooltip", bs_title: "Open #{fund.name}'s Compliance tab" } %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+        <% if grid.funds.empty? %>
+          <tr><td colspan="<%= [grid.packs.size, 1].max + 3 %>" class="text-muted">No funds match — clear the search or filter, or create funds first.</td></tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

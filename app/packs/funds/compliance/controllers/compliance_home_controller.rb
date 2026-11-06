@@ -10,25 +10,16 @@ class ComplianceHomeController < ApplicationController
     runs = ComplianceRun.where(entity_id: current_user.entity_id)
     @last_success = runs.where(status: "succeeded").order(:created_at, :id).last
     @failed_since = @last_success.present? && runs.where(status: "failed").exists?(["created_at > ?", @last_success.created_at])
-    @funds = Fund.where(id: ComplianceAccess.fund_ids(current_user)).order(:name)
-    @fund_packs = policy_scope(FundCompliancePack).active.includes(:compliance_pack, :compliance_pack_version).group_by(&:fund_id)
-    items = policy_scope(ComplianceRegisterItem).open_items
-    @open_counts = items.group(:fund_id).count
-    # Stats cards (SQL counts): latest result per check of every visible attached pack, as each fund's
-    # Compliance tab shows them (R42: highest id, superseded ignored)
-    fp_ids = @fund_packs.values.flatten.map(&:id)
-    latest_ids = ComplianceResult.where(fund_compliance_pack_id: fp_ids, superseded_reason: nil)
-                                 .group(:fund_compliance_pack_id, :check_key).maximum(:id).values
-    outcomes = ComplianceResult.where(id: latest_ids).group(:outcome).count
-    monitored = @funds.select { |f| @fund_packs[f.id].present? }
-    @stats = {
-      monitored: monitored.size,
-      breach: outcomes["breach"].to_i,
-      needs_review: outcomes["needs_review"].to_i,
-      could_not_check: outcomes["could_not_check"].to_i,
-      overdue: items.where(fix_by: ...Time.zone.today).count,
-      stale: monitored.count { |f| ComplianceRun.stale?(f) }
-    }
+    # R175 / E203: the one funds grid (ComplianceFundsGrid) — the standard grid filter (Fund ransack, its
+    # own allowlisted attributes) and search by fund name narrow the rows, and the cards are their totals
+    @q = Fund.where(id: ComplianceAccess.fund_ids(current_user)).ransack(params[:q])
+    funds = @q.result.order(:name)
+    term = params.dig(:search, :value).to_s.strip
+    funds = funds.where("funds.name LIKE ?", "%#{Fund.sanitize_sql_like(term)}%") if term.present?
+    @grid = ComplianceFundsGrid.new(funds, fund_packs: policy_scope(FundCompliancePack), items: policy_scope(ComplianceRegisterItem))
+    # Search / filter inside the grid's own frame: just the cards and table
+    return render(partial: "compliance_shared/funds_grid", locals: { grid: @grid }) if turbo_frame_request? && request.headers["Turbo-Frame"] == "compliance_funds_frame"
+
     compliance_crumbs
   end
 

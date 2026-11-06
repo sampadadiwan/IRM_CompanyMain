@@ -5,12 +5,26 @@ class FundCompliancePacksController < ApplicationController
 
   before_action :set_fund_pack, only: %i[show run_now preview rerun]
 
+  # R175 / E203: the fund × pack grid is the Home funds grid (compliance_shared/_funds_grid), which also
+  # attaches from any row — one view instead of two. Old links and bookmarks land there.
   def index
     authorize FundCompliancePack
+    # A redirect that reads no records — the grid it lands on is policy-scoped in ComplianceHomeController
+    skip_policy_scope
+    redirect_to compliance_home_path(tab: ComplianceHub.pane_id(:home))
+  end
+
+  # The attach form in the remote modal, opened from a grid row (fund chosen), the grid header, a pack's
+  # page (pack chosen) or a fund's empty Compliance tab. Only the user's own visible funds and attachable
+  # packs are offered; an id from another firm simply is not found (X23).
+  def new
+    authorize FundCompliancePack, :new?
     @funds = Fund.where(id: ComplianceAccess.fund_ids(current_user)).order(:name)
-    @fund_packs = policy_scope(FundCompliancePack).includes(:compliance_pack, :compliance_pack_version).group_by(&:fund_id)
-    @packs = policy_scope(CompliancePack).reject(&:retired?)
-    compliance_crumbs(["Fund packs", nil])
+    # versions preloaded: attachable? reads the latest published version per pack (no query per pack)
+    @packs = policy_scope(CompliancePack).includes(:versions).reject(&:retired?).select(&:attachable?)
+    @fund = @funds.find_by(id: params[:fund_id])
+    @pack = @packs.detect { |p| p.id.to_s == params[:compliance_pack_id].to_s }
+    @attached_names = @fund ? policy_scope(FundCompliancePack).active.where(fund_id: @fund.id).includes(:compliance_pack).map(&:pack_name) : []
   end
 
   # The fund page's Compliance tab (lazy turbo frame): the same dashboard as #show, for one fund
@@ -30,10 +44,12 @@ class FundCompliancePacksController < ApplicationController
     raise Pundit::NotAuthorizedError if fund.nil? || pack.nil?
 
     authorize @fund_pack
+    # Back to the funds grid, where the row now shows the pack (E203)
+    home = compliance_home_path(tab: ComplianceHub.pane_id(:home))
     if @fund_pack.save
-      redirect_to fund_compliance_packs_path, notice: "#{pack.name} attached to #{fund.name}"
+      redirect_to home, notice: "#{pack.name} attached to #{fund.name}"
     else
-      redirect_to fund_compliance_packs_path, alert: @fund_pack.errors.full_messages.to_sentence
+      redirect_to home, alert: @fund_pack.errors.full_messages.to_sentence
     end
   end
 
