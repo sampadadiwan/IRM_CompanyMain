@@ -1,0 +1,32 @@
+<%# Register export for a period (Excel, streamed — nothing stored, X36) %>
+<div class="modal fade" id="registerExportModal" tabindex="-1" aria-labelledby="registerExportModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <%= form_with url: compliance_exports_path, method: :post, data: { turbo: false } do %>
+        <div class="modal-header">
+          <h5 class="modal-title" id="registerExportModalLabel"><%= cmp_icon(:download) %>Download the register</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p class="text-muted">An Excel file of every result and register item in the period, for the funds you can see. It is built when you click and is not stored.</p>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <%= label_tag :from, class: "form-label" do %>From <%= cmp_tip("First run date to include") %><% end %>
+              <%= date_field_tag :from, (Time.zone.today.beginning_of_month).iso8601 %>
+            </div>
+            <div class="col-md-6">
+              <%= label_tag :to, class: "form-label" do %>To <%= cmp_tip("Last run date to include") %><% end %>
+              <%= date_field_tag :to, Time.zone.today.iso8601 %>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">Cancel</button>
+          <%= button_tag type: "submit", class: "btn btn-outline-success d-inline-flex align-items-center", id: "register_export_submit" do %>
+            <%= cmp_icon(:download) %>Download
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

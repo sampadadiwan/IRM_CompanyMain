@@ -17,6 +17,8 @@ scope :compliance do
     end
   end
   resources :fund_compliance_packs, path: "fund_packs", only: %i[index create show] do
+    # The fund page's lazy Compliance tab
+    collection { get :fund_tab }
     member do
       post :run_now
       get :preview
@@ -35,9 +37,12 @@ scope :compliance do
   end
   resources :compliance_results, path: "results", only: %i[show destroy]
   resources :compliance_duties, path: "duties", only: %i[index] do
-    member { patch :complete }
+    member do
+      get :mark_done
+      patch :complete
+    end
   end
-  resources :document_signoffs, only: %i[create]
+  resources :document_signoffs, only: %i[new create]
   # Phase 3: facts read from documents — confirm, correct, enter by hand, read now (H40–H45, X48)
   resources :document_readings, path: "facts", controller: "document_facts", only: %i[index show new] do
     member { patch :confirm }

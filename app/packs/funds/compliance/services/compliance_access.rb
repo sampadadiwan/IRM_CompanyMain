@@ -16,6 +16,12 @@ module ComplianceAccess
       (user.has_cached_role?(:company_admin) || user.has_cached_role?(:employee))
   end
 
+  # The firm has bought Compliance: the existing enable_compliance entity flag (shared with AI Rules, R114).
+  # Background work (runs, digests, reading, drafting) and Run now stop when it is off (X69).
+  def entity_enabled?(entity)
+    entity.present? && entity.permissions.enable_compliance?
+  end
+
   def viewer?(user)
     employee?(user) && user.enable_compliance
   end

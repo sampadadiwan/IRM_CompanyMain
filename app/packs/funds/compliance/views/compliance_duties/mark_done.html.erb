@@ -1,0 +1,21 @@
+<%# Mark done, drawn in the remote modal; answers by Turbo stream (complete.turbo_stream.erb) %>
+<%= render layout: "compliance_shared/modal", locals: { id: "markDoneModal", icon: :done, title: "Mark done — #{@duty.name}" } do %>
+  <%= form_with url: complete_compliance_duty_path(@duty), method: :patch, multipart: true, data: { turbo_frame: "_top" } do %>
+    <div class="modal-body">
+      <p class="text-muted"><%= cmp_icon(:calendar) %><%= @duty.period_key.presence || "On demand" %> · due <%= @duty.due_on ? l(@duty.due_on) : "—" %></p>
+      <div class="mb-3">
+        <%= label_tag :note, class: "form-label" do %>Note <%= cmp_tip("What was done and where — kept with the duty in history and exports") %><% end %>
+        <%= text_field_tag :note, nil, class: "form-control", placeholder: "e.g. Filed on the SEBI portal, ack no. 12345" %>
+      </div>
+      <div class="mb-3">
+        <%= label_tag :evidence, class: "form-label" do %>Evidence <%= cmp_tip("The filing receipt, report or sign-off that proves it was done") %><% end %>
+        <%= file_field_tag :evidence, class: "form-control" %>
+        <small class="form-text text-muted d-block"><%= @duty.evidence_required? ? "Required for this duty — Done is refused without a file." : "Optional for this duty." %></small>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">Cancel</button>
+      <%= button_tag type: "submit", class: "btn btn-outline-success", id: "mark_done_submit" do %><%= cmp_icon(:done) %>Mark done<% end %>
+    </div>
+  <% end %>
+<% end %>

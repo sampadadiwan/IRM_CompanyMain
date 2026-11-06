@@ -17,6 +17,30 @@ class CompliancePack < ApplicationRecord
   scope :visible_to_entity, ->(entity_id) { where(entity_id: nil).or(where(entity_id: entity_id)) }
   scope :caphive, -> { where(entity_id: nil) }
 
+  # Rule library grid (RansackTable); display values come from CompliancePackDecorator
+  STANDARD_COLUMNS = {
+    "Pack; text-col" => "name; text-col",
+    "Regime; text-col" => "regime; text-col",
+    "Owner; text-col" => "locked; text-col",
+    "Latest version; text-col" => "latest_version; text-col",
+    "Status; text-col" => "retired_on; text-col"
+  }.freeze
+
+  COLUMN_HELP = {
+    "regime" => "The regulator or source the rules come from",
+    "locked" => "CapHive packs are locked: you use them as published and may only make a limit stricter per fund. Entity packs are your own rules",
+    "latest_version" => "The newest published version and the date it takes effect",
+    "retired_on" => "Published packs can be attached to funds; retired packs keep their history but cannot be attached"
+  }.freeze
+
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[created_at locked name regime retired_on].sort
+  end
+
+  def self.ransackable_associations(_auth_object = nil)
+    []
+  end
+
   def caphive?
     entity_id.nil?
   end

@@ -3,6 +3,8 @@
 # Every record is loaded through policy_scope and then authorized (design › Security item 1).
 # Worked examples H37, H38, H39, E57–E62, X39–X43 — openspec/changes/fund-compliance-monitoring/business-rules.md
 class ComplianceCheckDraftsController < ApplicationController
+  include ComplianceCrumbs
+
   UNAVAILABLE = "Describe in words is unavailable — use the form".freeze
 
   before_action :set_draft, except: :create
@@ -29,6 +31,9 @@ class ComplianceCheckDraftsController < ApplicationController
   def show
     authorize @draft
     @funds = test_funds
+    version = @draft.compliance_pack_version
+    compliance_crumbs(["Rule library", compliance_packs_path], [version.compliance_pack.name, compliance_pack_path(version.compliance_pack)],
+                      [version.label, compliance_pack_version_path(version)], ["Describe in words", nil])
   end
 
   # Field-by-field edits; any edit clears the test run (E60) and settles that part's assumption (E58)

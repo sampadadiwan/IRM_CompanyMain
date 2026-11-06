@@ -81,7 +81,8 @@ class ComplianceDocumentCheckQuery
 
     # The earliest signed copy decides; re-uploading a later copy cannot clear "signed late" (E27)
     dates = docs.filter_map { |d| signed_on[d.id] }
-    return base.merge("problem" => "Not signed — mark as signed (wet ink)", "code" => "not_signed") if dates.empty?
+    # document_id lets the result page offer "Mark signed (wet ink)" on that document (H23)
+    return base.merge("problem" => "Not signed — mark as signed (wet ink)", "code" => "not_signed", "document_id" => docs.first.id) if dates.empty?
 
     first = dates.min
     # Timing uses the signed date, never the upload date (H23, E26); on by default

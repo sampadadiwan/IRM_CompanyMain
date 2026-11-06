@@ -1,0 +1,31 @@
+<%# Stats cards above the register grid. scope: every item the grid covers across its pages, after the
+    filter, search and status tab (ComplianceRegisterItemsController#index @stats_scope). SQL counts only. %>
+<%
+  today = Time.zone.today
+  open = scope.open_items
+  counts = {
+    open: open.count,
+    overdue: open.where(fix_by: ...today).count,
+    pending: scope.where(status: "pending_approval").count,
+    explained: scope.where(status: "explained").count,
+    closed30: scope.closed_items.where(closed_on: (today - 30)..today).count
+  }
+  cards = [
+    { stat: counts[:open], subtitle: "Open", colour: "danger", icon: :register,
+      tooltip: "Items in this list still open: the check is still failing and nobody has accepted it" },
+    { stat: counts[:overdue], subtitle: "Overdue", colour: "danger", icon: :overdue,
+      tooltip: "Open items in this list past their fix-by date. The owner and approvers were told on the first overdue day" },
+    { stat: counts[:pending], subtitle: "Pending approval", colour: "info", icon: :explain,
+      tooltip: "Items in this list waiting for a second person to approve an explanation (maker–checker)" }
+  ]
+  # Zero cards here would only be noise
+  if counts[:explained].positive?
+    cards << { stat: counts[:explained], subtitle: "Explained", colour: "secondary", icon: :approve,
+               tooltip: "Items an approver accepted with a reason. They reopen if the figure gets worse" }
+  end
+  if counts[:closed30].positive?
+    cards << { stat: counts[:closed30], subtitle: "Closed in 30 days", colour: "success", icon: :done,
+               tooltip: "Items in this list closed in the last 30 days — most by a passing run (Cleared by data)" }
+  end
+%>
+<%= cmp_stats(cards, id: "register_grid_stats") %>

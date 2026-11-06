@@ -172,9 +172,25 @@ class ComplianceCheckEvaluator
     shown = displayed(value)
     ok = self.class.passes?(shown, displayed_limit(limit), cmp)
     lines << "#{fmt(value)} #{ok ? SYMBOLS[cmp] : FAIL_SYMBOLS[cmp]} #{limit_text(limit)} → #{ok ? 'Pass' : 'Breach'}"
+    explained = ComplianceWorkingSteps.new(self, fig:, value:, limit:, ok:, group_label:).call
     finish(ok ? "pass" : failing_outcome, shown, displayed_limit(limit), lines,
-           message: ok ? nil : "#{fmt(value)} #{FAIL_SYMBOLS[cmp]} #{limit_text(limit)}", largest: group_label)
+           message: ok ? nil : "#{fmt(value)} #{FAIL_SYMBOLS[cmp]} #{limit_text(limit)}", largest: group_label, **explained)
   end
+
+  # Read by ComplianceWorkingSteps, which turns this evaluation into the result page's steps (R113)
+  public
+
+  attr_reader :check, :ctx, :mq, :worst_group
+
+  def explain_fmt(value, u = unit) = fmt(value, u)
+  def explain_fmt_fund(value, u) = fmt_fund(value, u)
+  def explain_render(expr, group_id: nil) = render(expr, group_id:)
+  def explain_limit_text(limit) = limit_text(limit)
+  def explain_unit = unit
+  def explain_cmp = cmp
+  def explain_conversion = conversion
+
+  private
 
   # "each" — every group must pass; failing groups are listed with their shortfall (E23, E52)
   def evaluate_each(fig, limit, lines)
@@ -197,8 +213,14 @@ class ComplianceCheckEvaluator
             else
               groups.values.compact.public_send(%w[lte lt].include?(cmp) ? :max : :min)
             end
+    # One-line verdict for the result page (R113)
+    verdict = if failing.empty?
+                "All #{fig.groups.size} meet the #{limit_text(limit)} limit."
+              else
+                "#{failing.size} of #{fig.groups.size} are #{%w[lte lt].include?(cmp) ? 'above' : 'below'} the #{limit_text(limit)} limit."
+              end
     finish(failing.empty? ? "pass" : failing_outcome, worst ? displayed(worst) : failing.size, lim, lines,
-           failing_groups: failing.first(ComplianceDocumentCheckQuery::MAX_LISTED), failing_count: failing.size,
+           failing_groups: failing.first(ComplianceDocumentCheckQuery::MAX_LISTED), failing_count: failing.size, verdict:,
            message: failing.empty? ? nil : "#{failing.size} below the limit")
   end
 
@@ -206,9 +228,15 @@ class ComplianceCheckEvaluator
   def evaluate_document_check
     res = ComplianceDocumentCheckQuery.call(@check, @ctx)
     lines = ["#{res.ok} of #{res.checked} OK · #{res.failing_count} failing · #{res.earlier} earlier not checked"]
+    # One-line verdict for the result page (R113)
+    verdict = if res.failing_count.zero?
+                "All #{res.checked} records have their signed document."
+              else
+                "#{res.failing_count} of #{res.checked} records are missing a signed document or were signed late."
+              end
     res.failing.each { |f| lines << "#{f['label']} (#{f['date']}): #{f['problem']}" }
     finish(res.failing_count.zero? ? "pass" : failing_outcome, res.failing_count, 0, lines,
-           failing_records: res.failing, checked: res.checked, ok: res.ok, earlier: res.earlier,
+           failing_records: res.failing, checked: res.checked, ok: res.ok, earlier: res.earlier, verdict:,
            message: lines.first, unit: "count")
   end
 

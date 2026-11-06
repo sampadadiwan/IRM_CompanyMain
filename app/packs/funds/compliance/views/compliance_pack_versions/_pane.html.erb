@@ -1,0 +1,140 @@
+<%# One lazy tab of the version page, rendered into its own frame (CompliancePackVersionsController#show pane=) %>
+<% editable = policy(@version).update? %>
+<%= turbo_frame_tag "version_#{pane}_pane", target: "_top" do %>
+  <% if pane == "checks" %>
+">
+        <div class="table-responsive">
+          <table class="table table-bordered dataTable action_table hover" id="version_checks">
+            <thead>
+              <tr>
+                <th class="text-col">Check</th>
+                <th class="text-col">Kind <%= cmp_tip("Limit = a figure against a limit; Record document = every record has its signed document; Content = what a document says vs the records") %></th>
+                <th class="text-col">Applies to <%= cmp_tip("The fund classifications this check runs for") %></th>
+                <th class="text-col">Limit <%= cmp_tip("The pack's limit. A fund may have an approved stricter override") %></th>
+                <th class="text-col">Source <%= cmp_tip("The regulation or clause the rule comes from") %></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @version.checks.each do |c| %>
+                <tr id="check_<%= c['key'] %>">
+                  <td class="text-col"><%= c["name"] || c["key"] %>
+                    <%= render "compliance_check_drafts/provenance", entry: c %></td>
+                  <td class="text-col"><%= c["kind"].to_s.humanize %><%= " · not overridable" if c["override"] == "none" %></td>
+                  <td class="text-col"><%= c["applies_to"] == "all" || c["applies_to"].nil? ? "all" : Array(c["applies_to"]).join(", ") %></td>
+                  <td class="text-col"><%= c.dig("limit", "value") ? ComplianceFormat.limit(c.dig("limit", "value"), c.dig("limit", "unit"), c.dig("limit", "currency").presence || @version.currency) : (c.dig("limit", "expr") ? ComplianceDescriber.expr(@version, c.dig("limit", "expr")) : "—") %></td>
+                  <td class="text-col"><%= c["citation"] %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+        <% if @version.checks.empty? %>
+          <p class="text-muted">No checks yet<%= editable ? " — use Describe in words, or add them on the Definition tab." : "." %></p>
+        <% end %>
+  <% elsif pane == "duties" %>
+
+        <% if @version.duties.any? %>
+          <div class="table-responsive">
+            <table class="table table-bordered dataTable action_table hover" id="version_duties">
+              <thead>
+                <tr>
+                  <th class="text-col">Duty</th>
+                  <th class="text-col">When <%= cmp_tip("Schedule (each quarter/year), an event (each new investor or document), or on demand") %></th>
+                  <th class="text-col">Evidence <%= cmp_tip("Required: Mark done is refused without a file") %></th>
+                </tr>
+              </thead>
+              <tbody>
+                <% @version.duties.each do |d| %>
+                  <tr id="duty_<%= d['key'] %>">
+                    <td class="text-col"><%= d["name"] || d["key"] %><% if d["reason"].present? %><div class="text-muted small"><%= d["reason"] %></div><% end %>
+                      <%= render "compliance_check_drafts/provenance", entry: d %></td>
+                    <td class="text-col"><%= d.dig("trigger", "on_demand") ? "On demand" : (d.dig("trigger", "schedule") || d.dig("trigger", "event")).to_s.humanize %></td>
+                    <td class="text-col"><%= d["evidence"] ? "Required" : "—" %></td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        <% else %>
+          <p class="text-muted">No duties in this version.</p>
+        <% end %>
+  <% elsif pane == "test" %>
+    <%= cmp_explainer("Test run on today's data — nothing is stored and no register item opens.") %>
+    <% funds = @test_funds || [] %>
+    <% if @preview.nil? && funds.empty? %>
+      <p class="text-muted" id="test_no_funds">No fund you may test this version on.</p>
+    <% elsif @preview.nil? %>
+      <%= form_with url: test_run_compliance_pack_version_path(@version), method: :post, class: "row g-3", id: "version_test_form",
+                    data: { turbo_frame: "version_test_pane" } do %>
+        <div class="col-md-5">
+          <%= label_tag :fund_id, class: "form-label" do %>Fund <%= cmp_tip("The checks run on this fund's data as of today. Nothing is stored") %><% end %>
+          <%= select_tag :fund_id, options_from_collection_for_select(funds, :id, :name), class: "form-select" %>
+        </div>
+        <div class="col-md-2 align-self-end">
+          <%= button_tag type: "submit", class: "btn btn-outline-primary", id: "version_test_btn" do %><%= cmp_icon(:view) %>Test run<% end %>
+        </div>
+      <% end %>
+    <% else %>
+
+          <table class="table table-bordered dataTable action_table hover" id="preview_rows">
+            <thead><tr><th class="text-col">Check</th><th class="text-col">Result</th><th class="text-col">Working</th></tr></thead>
+            <tbody>
+              <% @preview.rows.each do |row| %>
+                <tr><td class="text-col"><%= row.name %></td><td class="text-col"><%= cmp_outcome_badge(row.outcome) %></td>
+                  <td class="text-col"><%= row.working&.dig("verdict").presence || row.message %>
+                    <% if row.working.present? %>
+                      <details class="mt-1"><summary class="text-muted small">Working</summary>
+                        <%= render "compliance_shared/working", working: row.working, outcome: row.outcome %>
+                      </details>
+                    <% end %></td></tr>
+              <% end %>
+            </tbody>
+          </table>
+          <%= link_to compliance_pack_version_path(@version, pane: "test"), class: "btn btn-outline-primary", data: { turbo_frame: "version_test_pane" } do %>
+            <%= cmp_icon(:view) %>Test another fund
+          <% end %>
+    <% end %>
+  <% elsif pane == "definition" %>
+    <% if editable %>
+
+          <%= form_with model: @version, url: compliance_pack_version_path(@version), method: :patch do |f| %>
+            <%= f.label :definition, class: "form-label" do %>Definition (JSON) <%= cmp_tip("The whole version as one document: classifications, inputs, measures, checks and duties. It is validated on save") %><% end %>
+            <%= f.text_area :definition, value: JSON.pretty_generate(@version.definition_hash), rows: 16, class: "form-control font-monospace mb-2" %>
+            <small class="form-text text-muted d-block mb-2">Only fields CapHive holds can be named; an unknown field is refused on save.</small>
+            <%= f.button type: "submit", class: "btn btn-outline-primary" do %><%= cmp_icon(:save) %>Save draft<% end %>
+          <% end %>
+    <% end %>
+  <% elsif pane == "publish" %>
+    <% if editable %>
+
+          <%= cmp_explainer("Publishing freezes this version. Funds move to it on the effective date by the rule you choose; owners are told now and 7 days before.") %>
+          <%= form_with model: @version, url: publish_compliance_pack_version_path(@version), scope: :compliance_pack_version, method: :patch, class: "row g-3" do |f| %>
+            <div class="col-md-3">
+              <%= f.label :effective_from, class: "form-label" do %>Effective from <%= cmp_tip("The night funds move to this version") %><% end %>
+              <%= f.date_field :effective_from, class: "form-control" %>
+            </div>
+            <% if @version.caphive? %>
+              <div class="col-md-3">
+                <%= f.label :applicability, class: "form-label" do %>Applies to <%= cmp_tip("All funds · new funds only · all funds with a transition period (breaches show as warnings until it ends)") %><% end %>
+                <%= f.select :applicability, [["All funds", "all"], ["New funds only", "new_funds"], ["All funds, with transition", "transition"]], {}, class: "form-select" %>
+              </div>
+              <div class="col-md-3">
+                <%= f.label :transition_ends_on, class: "form-label" do %>Transition ends on <%= cmp_tip("Only for All funds, with transition") %><% end %>
+                <%= f.date_field :transition_ends_on, class: "form-control" %>
+              </div>
+              <div class="col-md-3">
+                <%= f.label :counsel_reviewer, class: "form-label" do %>Counsel reviewer <%= cmp_tip("Who reviewed this version — required before publishing a regulator pack") %><% end %>
+                <%= f.text_field :counsel_reviewer, class: "form-control" %>
+              </div>
+              <div class="col-md-3">
+                <%= f.label :counsel_reviewed_on, class: "form-label" do %>Reviewed on<% end %>
+                <%= f.date_field :counsel_reviewed_on, class: "form-control" %>
+              </div>
+            <% end %>
+            <div class="col-12">
+              <%= f.button type: "submit", class: "btn btn-outline-success" do %><%= cmp_icon(:publish) %>Publish<% end %>
+            </div>
+          <% end %>
+    <% end %>
+  <% end %>
+<% end %>

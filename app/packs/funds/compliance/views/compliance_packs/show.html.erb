@@ -1,18 +1,82 @@
-<%= render FormCard.new(title: @pack.name) do %>
-  <p><%= @pack.caphive? ? "CapHive pack" : "Entity pack" %><%= " · Locked — CapHive pack" if @pack.locked %>
-    <%= " · Retired #{l(@pack.retired_on)}" if @pack.retired_on %></p>
-  <table class="table table-bordered align-middle" id="pack_versions">
-    <thead><tr><th>Version</th><th>Status</th><th>Effective</th><th>Applies to</th><th>Checks</th></tr></thead>
-    <tbody>
-      <% @versions.each do |v| %>
-        <tr id="version_<%= v.id %>">
-          <td><%= link_to v.label, compliance_pack_version_path(v) %></td>
-          <td><%= v.published? ? "Published #{v.label}" : "Draft" %></td>
-          <td><%= v.effective_from ? l(v.effective_from) : "—" %></td>
-          <td><%= { "all" => "All funds", "new_funds" => "New funds only", "transition" => "All funds, with transition" }[v.applicability] %></td>
-          <td><%= v.checks.size %></td>
-        </tr>
+<%# A pack: its versions (published / upcoming / draft) %>
+<div class="container-fluid p-3">
+  <%= render layout: "compliance_shared/header", locals: { title: @pack.name, icon: :pack } do %>
+    <%= cmp_header_link "Rule library", compliance_packs_path, icon: :pack %>
+  <% end %>
+  <%= cmp_explainer(@pack.caphive? ? "A CapHive pack. Each version is frozen once published; funds move to a new version on its effective date, by the rule it states (all funds, new funds only, or with a transition)." :
+                                     "Your own pack. Edit the draft version, test it on a fund, then publish it — it then applies to every fund it is attached to.") %>
+  <% latest = @pack.latest_published_version %>
+  <%= cmp_stats([
+    { stat: @versions.size, subtitle: "Versions", colour: "info", icon: :version, tooltip: "Every version of this pack, drafts included" },
+    { stat: latest&.label || "—", subtitle: "Latest published", colour: "success", icon: :publish, tooltip: "The newest published version" },
+    { stat: latest ? latest.checks.size : 0, subtitle: "Checks in latest", colour: "secondary", icon: :result, tooltip: "Checks in the newest published version" },
+    { stat: @pack.fund_compliance_packs.active.where(entity_id: current_user.entity_id).count, subtitle: "Your funds", colour: "info", icon: :fund_pack,
+      tooltip: "Funds of your firm this pack is attached to" }
+  ], id: "pack_stats") %>
+
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-header border-bottom py-3">
+      <h5 class="mb-0 fw-bold"><%= cmp_icon(:version, "me-2 text-primary") %>Versions
+        <% if @pack.locked %><%= cmp_badge("Locked — CapHive pack", "secondary", :lock) %><% end %>
+        <% if @pack.retired_on %><%= cmp_badge("Retired #{l(@pack.retired_on)}", "secondary") %><% end %></h5>
+    </div>
+    <div class="card-body p-0">
+      <table class="table table-bordered dataTable action_table hover mb-0" id="pack_versions">
+        <thead>
+          <tr>
+            <th class="text-col">Version</th>
+            <th class="text-col">Status</th>
+            <th class="date-col">Effective <%= cmp_tip("The date funds move to this version (in the pack's regime time zone)") %></th>
+            <th class="text-col">Applies to <%= cmp_tip("All funds · new funds only (older funds stay on their version) · all funds with a transition period") %></th>
+            <th class="num-col">Checks</th>
+            <th class="action-col">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @versions.each do |v| %>
+            <tr id="version_<%= v.id %>">
+              <td class="text-col"><%= link_to v.label, compliance_pack_version_path(v) %></td>
+              <td class="text-col"><%= v.published? ? cmp_badge("Published #{v.label}", "success", :publish) : cmp_badge("Draft", "secondary", :edit) %></td>
+              <td class="date-col"><%= v.effective_from ? l(v.effective_from) : "—" %></td>
+              <td class="text-col"><%= cmp_applicability(v) %></td>
+              <td class="num-col"><%= v.checks.size %></td>
+              <td class="action-col"><%= link_to t_common(:view), compliance_pack_version_path(v), class: "btn btn-outline-primary ti ti-eye" %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <%# Actions row (capital_calls/show) %>
+  <% draft = @pack.draft_version %>
+  <% editable_draft = draft && policy(draft).update? %>
+  <div class="d-flex flex-wrap gap-2" id="pack_actions">
+    <% if editable_draft %>
+      <%= link_to compliance_pack_version_path(draft), class: "btn btn-outline-primary", id: "pack_draft_btn",
+                  data: { bs_toggle: "tooltip", bs_title: "Edit the draft version: add checks, test, publish" } do %>
+        <%= cmp_icon(:edit) %>Open draft <%= draft.label %>
       <% end %>
-    </tbody>
-  </table>
-<% end %>
+    <% end %>
+    <div class="btn-group">
+      <div class="dropdown">
+        <button id="pack_actions_btn" class="btn btn-outline-success dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+          <i class="ti ti-settings"></i> Actions
+        </button>
+        <div class="dropdown-menu" aria-labelledby="pack_actions_btn">
+          <% if editable_draft %>
+            <%= link_to " Describe in words", compliance_pack_version_path(draft), class: "dropdown-item ti ti-sparkles", id: "pack_describe_btn",
+                        title: "Open the draft and describe a new check in a sentence" %>
+          <% end %>
+          <%= link_to " Fund packs", fund_compliance_packs_path, class: "dropdown-item ti ti-link", id: "pack_fund_packs_btn",
+                      title: "Which funds carry this pack; attach it to more" %>
+          <% if policy(@pack).retire? && !@pack.retired? %>
+            <%= button_to retire_compliance_pack_path(@pack), method: :patch, class: "dropdown-item ti ti-archive", id: "pack_retire_btn", form_class: "d-inline",
+                          data: { action: "click->confirm#popup", title: "Retire #{@pack.name}?",
+                                  msg: "Retired packs keep their history but can no longer be attached to funds. Funds already attached keep running." } do %> Retire pack<% end %>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,25 +1,9 @@
 <%# Facts to confirm (H40): documents whose facts wait for a person. Only confirmed facts count in a run. %>
-<%= render FormCard.new(title: "Facts to confirm") do %>
-  <p class="text-muted">AI reads each document once. A fact counts in compliance checks only after you confirm it.</p>
-  <% if @readings.empty? %>
-    <p id="no_facts_waiting">Nothing waiting.</p>
-  <% else %>
-    <table class="table table-bordered align-middle" id="facts_to_confirm">
-      <thead><tr><th>Document</th><th>Input</th><th>Status</th><th>Waiting since</th><th></th></tr></thead>
-      <tbody>
-        <% @readings.each do |reading| %>
-          <tr id="reading_<%= reading.id %>">
-            <td><%= reading.document.name %></td>
-            <td><%= reading.input_key.humanize %></td>
-            <td>
-              <% colour = reading.status == "failed" ? "danger" : (reading.waiting? ? "secondary" : "warning") %>
-              <span class="badge bg-<%= colour %>-subtle text-<%= colour %>"><%= reading.summary %></span>
-            </td>
-            <td><%= l(reading.created_at.to_date) %></td>
-            <td><%= link_to "Open", document_reading_path(reading), class: "btn btn-sm btn-outline-primary" %></td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
+<% frame = with_frame("document_readings_frame") %>
+<%= render "/layouts/filter", associations: [:document], url: document_readings_path, form_html: { data: { turbo_frame: frame } } %>
+
+<%= render ReportingComponent.new do %>
+  <%= turbo_frame_tag frame, target: "_top" do %>
+    <%= render "document_facts/index", readings: @readings %>
   <% end %>
 <% end %>

@@ -1,0 +1,3 @@
+<%# After assign / explain / approve / reject: replace the item's summary and show the flash %>
+<%= turbo_stream.replace dom_id(@item), partial: "compliance_register_items/item", locals: { item: @item } %>
+<%= render "compliance_shared/flash_streams" %>

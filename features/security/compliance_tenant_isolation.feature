@@ -282,3 +282,15 @@ Feature: Compliance — tenant isolation and maker–checker
     When the nightly compliance run happens on "2026-11-07"
     Then the "Invested within IC approval" check on "Horizon Growth Fund I" is "needs_review"
     And the working shows "Needs review — AI-read, unconfirmed"
+
+  # X69 — Error case: Horizon without the Compliance flag (the existing enable_compliance entity flag) — no menu, /compliance denied, no fund-page Compliance tab, no nightly run
+  @security @rack_test
+  Scenario: X69 Entity without Compliance
+    Given Horizon has Compliance switched off
+    Then "Meera" has no Compliance menu entry
+    Given I am signed in to compliance as "Meera"
+    When I open the compliance home
+    Then the compliance request is denied
+    And the fund page of "Horizon Growth Fund I" has no Compliance tab
+    When the hourly compliance tick happens at "2026-11-05 02:10" "Asia/Kolkata"
+    Then "Horizon Growth Fund I" has no compliance runs

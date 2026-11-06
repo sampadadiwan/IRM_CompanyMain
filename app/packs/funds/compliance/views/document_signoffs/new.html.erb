@@ -1,0 +1,15 @@
+<%# Mark signed (wet ink), drawn in the remote modal (H23, X27) %>
+<%= render layout: "compliance_shared/modal", locals: { id: "markSignedModal", icon: :done, title: "Mark signed (wet ink) — #{@signoff.document.name}" } do %>
+  <%= form_with url: document_signoffs_path, scope: :document_signoff, method: :post do |f| %>
+    <%= f.hidden_field :document_id, value: @signoff.document_id %>
+    <div class="modal-body">
+      <%= f.label :signed_on, class: "form-label" do %>Signed on <%= cmp_tip("The date written on the signed paper copy — checks compare it with the investment date") %><% end %>
+      <%= f.date_field :signed_on, class: "form-control" %>
+      <small class="form-text text-muted d-block">Cannot be in the future. The next nightly run counts the document as signed.</small>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">Cancel</button>
+      <%= f.button type: "submit", class: "btn btn-outline-success", id: "mark_signed_submit" do %><%= cmp_icon(:done) %>Mark signed<% end %>
+    </div>
+  <% end %>
+<% end %>

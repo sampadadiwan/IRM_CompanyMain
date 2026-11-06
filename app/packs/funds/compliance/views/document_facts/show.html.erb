@@ -1,56 +1,34 @@
-<%# One document's facts with quote and page (H40); confirm or correct (E66, E67); retry or enter by hand (X45, X46) %>
-<% owner = @reading.document.owner %>
-<% currency = (owner.is_a?(Fund) ? owner : owner.try(:fund))&.currency.presence || "INR" %>
-<% editor = policy(@reading).confirm? %>
-<%= render FormCard.new(title: "Facts — #{@reading.document.name}") do %>
-  <p id="reading_summary"><strong><%= @reading.summary %></strong>
-    <span class="text-muted">· <%= (@input&.label || @reading.input_key.humanize) %><%= " · read #{l(@reading.sent_at.to_date)}" if @reading.sent_at %></span></p>
-  <% if @reading.status == "failed" %>
-    <div class="alert alert-warning" id="reading_failed">
-      <%= @reading.failure_reason.presence || "Could not read document" %>. Enter the facts by hand, or read it again.
-      <% if editor %>
-        <div class="d-flex gap-2 mt-2">
-          <%= link_to "Enter facts by hand", new_document_reading_path(document_id: @reading.document_id, input_key: @reading.input_key), class: "btn btn-sm btn-primary" %>
-          <%= button_to "Read again", read_now_document_readings_path(document_id: @reading.document_id, input_key: @reading.input_key), class: "btn btn-sm btn-outline-primary" %>
-        </div>
-      <% end %>
-    </div>
+<%# One document's facts with quote and page (H40); confirm or correct (E66, E67); retry or enter by hand
+    (X45, X46). Confirm answers by Turbo stream and replaces the facts card (confirm.turbo_stream.erb). %>
+<div class="container-fluid p-3">
+  <%= render layout: "compliance_shared/header", locals: { title: "Facts — #{@reading.document.name}", icon: :fact } do %>
+    <%= link_to document_readings_path, class: "btn btn-outline-primary d-inline-flex align-items-center" do %><%= cmp_icon(:fact) %>All facts to confirm<% end %>
   <% end %>
-  <% if @reading.notes.present? %>
-    <div class="card mb-3"><div class="card-body" id="reading_notes"><h6>AI notes</h6><%= simple_format(@reading.notes) %></div></div>
-  <% end %>
-  <% if @reading.document_facts.any? %>
-    <%= form_with url: confirm_document_reading_path(@reading), method: :patch do %>
-      <table class="table table-bordered align-middle" id="facts">
-        <thead><tr><th>Fact</th><th>Value</th><th>Read from</th><th>Status</th><th>History</th></tr></thead>
-        <tbody>
-          <% @reading.document_facts.each do |fact| %>
-            <% label = @input&.fact(fact.fact_key)&.dig("label").presence || fact.fact_key.humanize %>
-            <tr id="fact_<%= fact.fact_key %>">
-              <td><%= label %></td>
-              <td>
-                <% if editor %>
-                  <% if fact.value_type == "date" %>
-                    <%= date_field_tag "values[#{fact.fact_key}]", fact.value %>
-                  <% else %>
-                    <%= text_field_tag "values[#{fact.fact_key}]", fact.value_type == "names" ? Array(fact.value).join(", ") : fact.value, class: "form-control", placeholder: fact.not_found? ? "Not found in document" : nil %>
-                  <% end %>
-                  <div class="small text-muted"><%= fact.display_value(currency) %></div>
-                <% else %>
-                  <%= fact.display_value(currency) %>
-                <% end %>
-              </td>
-              <td><%= fact.quote.present? ? "“#{fact.quote}”" : "—" %><%= " · page #{fact.page}" if fact.page %></td>
-              <td>
-                <% colour = fact.confirmed? ? "success" : "warning" %>
-                <span class="badge bg-<%= colour %>-subtle text-<%= colour %>"><%= fact.confirmed? ? "Confirmed" : (fact.not_found? ? "Not found in document" : "AI-read, unconfirmed") %></span>
-              </td>
-              <td><% fact.history(currency).each do |h| %><div class="small"><%= h %></div><% end %></td>
-            </tr>
+  <%= render "document_facts/reading", reading: @reading, input: @input %>
+
+  <%# Actions row (capital_calls/show). Confirm facts is the button under the facts table %>
+  <% editor = policy(@reading).confirm? %>
+  <div class="d-flex flex-wrap gap-2" id="reading_actions">
+    <div class="btn-group">
+      <div class="dropdown">
+        <button id="reading_actions_btn" class="btn btn-outline-success dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+          <i class="ti ti-settings"></i> Actions
+        </button>
+        <div class="dropdown-menu" aria-labelledby="reading_actions_btn">
+          <% if editor %>
+            <%= button_to read_now_document_readings_path(document_id: @reading.document_id, input_key: @reading.input_key), class: "dropdown-item ti ti-scan",
+                          id: "reading_read_now_btn", form_class: "d-inline",
+                          data: { action: "click->confirm#popup", title: "Read this document again?",
+                                  msg: "The AI reads the document again and counts against this month's reading cap. Facts already confirmed for unchanged values are kept." } do %> Read again<% end %>
+            <%= link_to " Enter facts by hand", new_document_reading_path(document_id: @reading.document_id, input_key: @reading.input_key),
+                        class: "dropdown-item ti ti-edit", id: "reading_manual_btn", title: "Type the facts yourself — nothing is sent to AI" %>
           <% end %>
-        </tbody>
-      </table>
-      <% if editor %><%= submit_tag "Confirm facts", class: "btn btn-primary" %><% end %>
-    <% end %>
-  <% end %>
-<% end %>
+          <% if policy(@reading.document).show? %>
+            <%= link_to " View document", document_path(@reading.document), class: "dropdown-item ti ti-file-text", id: "reading_document_btn",
+                        title: "Open the document itself" %>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

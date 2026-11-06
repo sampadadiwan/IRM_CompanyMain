@@ -1,0 +1,32 @@
+<%# One pack's latest result per check, loaded lazily into its tab on the fund dashboard %>
+<%= turbo_frame_tag "pack_#{fund_pack.id}_results", target: "_top" do %>
+  <% if results.empty? %>
+    <p class="text-muted" id="no_results_<%= fund_pack.id %>">No results yet — checks run tonight at 02:00, or use <strong>Run now</strong>.</p>
+  <% else %>
+    <div class="table-responsive">
+      <table class="table table-bordered dataTable action_table hover" id="results_<%= fund_pack.id %>">
+        <thead>
+          <tr>
+            <th class="text-col">Check</th>
+            <th class="text-col">Figure / working <%= cmp_tip("The figure the nightly run computed against the limit, in words. Open the result for the full arithmetic") %></th>
+            <th class="text-col">Result <%= cmp_tip("Pass, Breach, Needs review, or Could not check (something missing — never a pass)") %></th>
+            <th class="action-col">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% results.each do |r| %>
+            <% w = r.working_hash %>
+            <tr id="result_<%= r.check_key %>">
+              <td class="text-col"><%= link_to(w["check_name"] || r.check_key, compliance_result_path(r)) %>
+                <%= tag.div(w["pending_override"], class: "text-muted small") if w["pending_override"] %></td>
+              <td class="text-col"><%= w["verdict"].presence || w["message"].presence || "See the working" %></td>
+              <td class="text-col"><%= cmp_outcome_badge(r.outcome) %></td>
+              <td class="action-col"><%= link_to t_common(:view), compliance_result_path(r), class: "btn btn-outline-primary ti ti-eye",
+                                                  data: { bs_toggle: "tooltip", bs_title: "The full working and the setup used that day" } %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% end %>
+<% end %>

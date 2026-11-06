@@ -109,7 +109,10 @@ Given('the fund agreement concentration on {string} has an open item') do |fund_
 end
 
 When('I open the compliance register') do
+  # The page holds lazy tabs; then load the All tab's grid as Turbo would, so assertions see the rows
   visit compliance_register_items_path(status: "all")
+  @register_page_html = page.html
+  cmp_frame_visit("register_all_frame", compliance_register_items_path(status: "all"))
 end
 
 When('I open the GIFT register item by URL') do

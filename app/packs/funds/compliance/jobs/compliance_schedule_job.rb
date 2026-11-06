@@ -14,6 +14,9 @@ class ComplianceScheduleJob < ApplicationJob
 
   def perform(now: Time.current)
     ComplianceEntitySetup.where(monitoring_enabled: true).includes(:entity).find_each do |setup|
+      # X69: a firm without Compliance gets no runs or digests
+      next unless ComplianceAccess.entity_enabled?(setup.entity)
+
       local = now.in_time_zone(setup.time_zone)
       run_funds(setup, local.to_date) if local.hour == RUN_HOUR
       morning(setup, local.to_date) if local.hour == DIGEST_HOUR
@@ -26,6 +29,7 @@ class ComplianceScheduleJob < ApplicationJob
   def sweep_readings(now)
     ComplianceEntitySetup.includes(:entity).find_each do |setup|
       next unless setup.ai_settings_hash["reading"].to_h.value?(true)
+      next unless ComplianceAccess.entity_enabled?(setup.entity)
 
       DocumentReadingQueue.sweep(setup, now:)
     rescue StandardError => e

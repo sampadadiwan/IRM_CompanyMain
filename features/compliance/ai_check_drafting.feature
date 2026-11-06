@@ -207,7 +207,7 @@ Feature: Describe a check in words (AI drafting)
     And I am signed in to compliance as "Meera"
     When I open the fund agreement draft version
     Then the compliance page shows "Describe in words is unavailable — use the form"
-    And the compliance page shows "Definition (JSON)"
+    And the "definition" tab of the fund agreement draft shows "Definition (JSON)"
     When I send a draft request for the fund agreement draft
     Then the compliance page shows "Describe in words is unavailable — use the form"
     And no draft check was created

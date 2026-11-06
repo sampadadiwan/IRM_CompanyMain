@@ -1,29 +1,10 @@
-<%= render FormCard.new(title: "Compliance duties") do %>
-  <table class="table table-bordered align-middle" id="duties">
-    <thead><tr><th>Fund</th><th>Duty</th><th>Period</th><th>Due</th><th>State</th><th></th></tr></thead>
-    <tbody>
-      <% @duties.each do |duty| %>
-        <% state = duty.state %>
-        <tr id="duty_<%= duty.id %>">
-          <td><%= duty.fund_compliance_pack.fund.name %></td>
-          <td><%= duty.name %>
-            <%# H44: kind-4 duties — AI prepares notes, the person still decides and marks the duty done %>
-            <% if duty.ai_notes.present? %><div class="small text-muted ai-notes">AI notes (prepared for you — check before marking done): <%= duty.ai_notes %></div><% end %>
-          </td>
-          <td><%= duty.period_key.presence || "—" %></td>
-          <td><%= duty.due_on ? l(duty.due_on) : "—" %></td>
-          <td><span class="badge bg-<%= { 'overdue' => 'danger', 'due' => 'warning', 'done' => 'success' }[state] || 'secondary' %>-subtle text-<%= { 'overdue' => 'danger', 'due' => 'warning', 'done' => 'success' }[state] || 'secondary' %>"><%= state.humanize %><%= " — late (#{duty.late_days} days)" if duty.done? && duty.late_days.positive? %></span></td>
-          <td>
-            <% if !duty.done? && policy(duty).complete? %>
-              <%= form_with url: complete_compliance_duty_path(duty), method: :patch, multipart: true, class: "d-flex gap-2" do %>
-                <%= text_field_tag :note, nil, class: "form-control", placeholder: "Note" %>
-                <%= file_field_tag :evidence, class: "form-control" %>
-                <%= submit_tag "Mark done", class: "btn btn-sm btn-primary" %>
-              <% end %>
-            <% end %>
-          </td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
+<%# Duties: the standard grid filter above a turbo-framed list (capital_commitments/index pattern) %>
+<% frame = with_frame("compliance_duties_frame") %>
+<%= render "/layouts/filter", associations: [:fund, :owner], url: compliance_duties_path, form_html: { data: { turbo_frame: frame } } %>
+
+<%= render ReportingComponent.new do %>
+  <%= turbo_frame_tag frame, target: "_top" do %>
+    <%= render "compliance_duties/index", duties: @duties %>
+  <% end %>
 <% end %>
+<%= render "compliance_shared/remote_modal" %>

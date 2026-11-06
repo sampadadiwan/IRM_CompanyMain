@@ -1,0 +1,23 @@
+<% frame = with_frame("compliance_duties_frame") %>
+<%= render layout: "compliance_shared/header", locals: { title: "Compliance duties", icon: :duty } do %>
+  <%= link_to compliance_duties_path(filter: true), class: "btn btn-outline-primary d-inline-flex align-items-center", id: "duties_filter_btn",
+              data: { turbo_frame: "_top", bs_toggle: "tooltip", bs_title: "Filter by fund, duty, period, due date, done date, owner or overdue" } do %>
+    <%= cmp_icon(:filter) %>Filter
+  <% end %>
+<% end %>
+
+<%= cmp_explainer("Duties are things a person must do and prove, which data cannot show — a filed report, an audit, due diligence on a new investor. Mark each done with a note and, where required, an evidence file.") %>
+
+<%= render "compliance_duties/grid_stats", scope: @stats_scope %>
+
+<%= render SearchComponent.new(data_source: compliance_duties_path(params: params.to_unsafe_h.except("controller", "action")), turbo_frame: frame) %>
+<% if duties.empty? %>
+  <div class="alert alert-secondary d-flex align-items-start gap-2" id="duties_empty">
+    <%= cmp_icon(:duty, "fs-5 flex-shrink-0") %>
+    <div>No duties here. Duties are created by the packs attached to your funds — on a schedule, for each new investor or document, or when a check asks for one.
+      <%= link_to "Fund packs", fund_compliance_packs_path, class: "btn btn-sm btn-outline-primary ms-2", data: { turbo_frame: "_top" } %></div>
+  </div>
+<% else %>
+  <%= render RansackTable.new(ComplianceDuty, q: @q, current_user:, entity: current_user.entity, records: duties,
+                              turbo_frame: frame, referrer: request.referrer, pagy: @pagy) %>
+<% end %>

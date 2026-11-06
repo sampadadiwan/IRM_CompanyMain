@@ -1,0 +1,20 @@
+<%# Stats cards above the facts grid. scope: every reading the grid covers across its pages
+    (DocumentFactsController#index @stats_scope). %>
+<%
+  setup = ComplianceEntitySetup.for(current_user.entity)
+  waiting_docs = scope.where(status: DocumentReading::WAITING).count
+  facts_waiting = DocumentFact.where(document_reading_id: scope.select(:id)).where.not(status: "confirmed").count
+  oldest = scope.minimum(:created_at)
+  read_month = DocumentReading.sent_in_month(current_user.entity_id, Time.current).count
+  cards = [
+    { stat: facts_waiting, subtitle: "Facts to confirm", colour: "info", icon: :fact,
+      tooltip: "Facts in these documents read by AI and not yet confirmed — they do not count in any check until confirmed" },
+    { stat: waiting_docs, subtitle: "Documents waiting", colour: "secondary", icon: :read,
+      tooltip: "Documents queued for reading, or held because the monthly reading cap was reached" },
+    { stat: oldest ? "#{(Time.zone.today - oldest.to_date).to_i} days" : "—", subtitle: "Oldest wait", colour: "danger", icon: :calendar,
+      tooltip: "Days since the oldest document in this list was picked up for reading — the digest reports it daily" },
+    { stat: "#{read_month} of #{DocumentReadingQueue.cap(setup)}", subtitle: "Read this month", colour: "info", icon: :ai,
+      tooltip: "Documents sent to the AI this calendar month against your monthly cap. Over the cap, documents wait for next month" }
+  ]
+%>
+<%= cmp_stats(cards, id: "facts_grid_stats") %>

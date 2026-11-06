@@ -321,3 +321,23 @@ A compliance viewer SHALL be able to export, for a chosen period, funds and pack
 #### Scenario: Export limited by fund access
 - **WHEN** a viewer without access to GIFT Opportunities exports all funds
 - **THEN** the export contains no GIFT Opportunities rows
+
+### Requirement: Screens explain themselves and update in place
+The compliance screens SHALL use the app's standard layouts: the register filter and its Open / Closed / All tabs SHALL never disagree; tabs SHALL load lazily like the fund page; row actions SHALL update the row or summary in place with the flash; and every result page SHALL explain its working from the data stored at run time.
+
+#### Scenario: Register filter and tabs agree
+- **WHEN** the register is filtered by status = closed and by fund
+- **THEN** the grid and its cards list only those items, and a status condition in the filter replaces the tabs with one "Filter results" tab
+
+#### Scenario: Actions update in place
+- **WHEN** a user assigns an item, requests or approves an explanation, marks a duty done, confirms facts or clicks Run now
+- **THEN** the response replaces that item, row or facts card and shows the flash, without a full page load
+
+#### Scenario: Result explains its working
+- **WHEN** a user opens the concentration result of Horizon Growth Fund I (Acme ₹72.00 cr of ₹270.00 cr investable)
+- **THEN** it shows the verdict "26.67% of investable funds — above the 25% limit", the numbered steps with their sources, and how to get back within the limit: reduce Acme to ₹67.50 cr (₹4.50 cr less) or raise investable funds to ₹288.00 cr
+
+#### Scenario: Tabs load lazily
+- **WHEN** a user opens the register, a pack version or a fund dashboard
+- **THEN** each tab's content loads into its own frame when the tab is opened
+

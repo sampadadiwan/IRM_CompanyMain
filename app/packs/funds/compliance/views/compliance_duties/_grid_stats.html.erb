@@ -1,0 +1,25 @@
+<%# Stats cards above the duties grid. scope: every duty the grid covers across its pages, after the
+    filter and search (ComplianceDutiesController#index @stats_scope). SQL counts only. %>
+<%
+  today = Time.zone.today
+  pending = scope.where(done_on: nil)
+  counts = {
+    due: pending.where(due_on: today..(today + ComplianceDuty::REMINDER_DAYS)).count,
+    overdue: pending.where(due_on: ...today).count,
+    done_month: scope.where(done_on: today.beginning_of_month..today).count,
+    late: scope.where("compliance_duties.done_on > compliance_duties.due_on").count
+  }
+  cards = [
+    { stat: counts[:due], subtitle: "Due in #{ComplianceDuty::REMINDER_DAYS} days", colour: "info", icon: :calendar,
+      tooltip: "Duties in this list not done and due within the reminder window — the digest reminds their owners" },
+    { stat: counts[:overdue], subtitle: "Overdue", colour: "danger", icon: :overdue,
+      tooltip: "Duties in this list not done by their due date" },
+    { stat: counts[:done_month], subtitle: "Done this month", colour: "success", icon: :done,
+      tooltip: "Duties in this list marked done since the 1st of this month" }
+  ]
+  if counts[:late].positive?
+    cards << { stat: counts[:late], subtitle: "Done late", colour: "secondary", icon: :overdue,
+               tooltip: "Duties in this list marked done after their due date" }
+  end
+%>
+<%= cmp_stats(cards, id: "duties_grid_stats") %>

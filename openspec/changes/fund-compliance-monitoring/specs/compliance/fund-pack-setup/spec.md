@@ -180,6 +180,10 @@ Compliance setup, results, register, history and exports MUST be scoped to the u
 - **WHEN** an investor or investor advisor of Growth Fund I requests any Compliance page
 - **THEN** the request is refused and Compliance does not appear in their menus
 
+#### Scenario: Firm without Compliance
+- **WHEN** Horizon's Compliance flag (the existing enable_compliance entity setting) is off
+- **THEN** no user of Horizon sees the Compliance menu, Compliance pages or the fund-page Compliance tab, and no nightly run, digest or document reading happens for Horizon
+
 #### Scenario: Staff with an investor role
 - **WHEN** Meera, a company admin who also holds the investor role, opens Compliance while acting as an employee
 - **THEN** the page shows; and once she switches to her investor role, the same request is refused

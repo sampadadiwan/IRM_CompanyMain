@@ -1,0 +1,165 @@
+<%# The working of one result, explained (R113) — used wherever a working is shown: result page, register
+    item, previews and draft test runs. Locals: working (hash), outcome, fund (for source links, optional).
+    Old results without steps fall back to their text lines, in the same list layout. %>
+<% w = working || {} %>
+<% fund = local_assigns[:fund] %>
+<% steps = Array(w["steps"]) %>
+<% remedy = w["remedy"] || {} %>
+<% failing = Array(w["failing_records"]) %>
+<% label, colour = ComplianceUiHelper::CMP_OUTCOMES[outcome] || [outcome.to_s.humanize, "secondary"] %>
+<%
+  source_path = lambda do |src|
+    next nil unless fund
+
+    case src&.dig("kind")
+    when "setup" then compliance_entity_setup_path
+    when "commitments" then capital_commitments_path(fund_id: fund.id)
+    when "portfolio_investments" then portfolio_investments_path(fund_id: fund.id)
+    when "payments" then capital_remittance_payments_path(fund_id: fund.id)
+    when "distributions" then capital_distributions_path(fund_id: fund.id)
+    end
+  end
+%>
+<%# 1. Verdict %>
+<div class="mb-3">
+  <p class="mb-0" id="result_verdict"><%= cmp_outcome_badge(outcome) %>
+    <%= w["verdict"].presence || w["message"].presence || Array(w["lines"]).last %></p>
+  <% if w["citation"].present? %><small class="text-muted d-block mt-1"><%= cmp_icon(:pack) %><%= w["citation"] %></small><% end %>
+</div>
+
+<% if outcome == "could_not_check" %>
+  <div class="alert alert-secondary d-flex align-items-start gap-2" id="result_missing">
+    <%= cmp_icon(:could_not_check, "fs-5 flex-shrink-0") %>
+    <div>The check needs <strong><%= w["missing"].presence || "information CapHive does not have yet" %></strong>. Add it and the next nightly run checks again — until then this is never counted as a pass.
+      <%= link_to compliance_entity_setup_path, class: "btn btn-sm btn-outline-primary ms-2", id: "result_fix_setup_btn" do %><%= cmp_icon(:setup) %>Fix it in Setup<% end %></div>
+  </div>
+<% elsif outcome == "needs_review" %>
+  <div class="alert alert-info d-flex align-items-start gap-2" id="result_review">
+    <%= cmp_icon(:needs_review, "fs-5 flex-shrink-0") %>
+    <div>A person must look at this: <%= w["message"].presence || "see the records below" %>. Rules cannot decide it, so it is never counted as a pass.</div>
+  </div>
+<% end %>
+
+<%# 3. Numbered steps %>
+<% if steps.any? %>
+  <%# Key/value list (capital_calls/_show list-group); the last row is the result, in the outcome's colour %>
+  <% final_class = { "pass" => "list-group-item-success", "breach" => "list-group-item-danger" }.fetch(outcome, "list-group-item-info") %>
+  <ul class="list-group list-group-flush border rounded mb-3" id="result_steps">
+    <% steps.each do |s| %>
+      <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4 <%= final_class if s['final'] %>" id="result_step_<%= s['n'] %>">
+        <div class="d-flex align-items-start gap-3">
+          <span class="badge bg-light-subtle text-body rounded-circle"><%= s["n"] %></span>
+          <div>
+            <span class="<%= s['final'] ? 'fw-bold' : 'text-muted' %> step-label"><%= s["final"] ? "Result" : s["label"] %></span><%= cmp_tip(s["help"]) if s["help"].present? %>
+            <small class="text-muted d-block step-calc"><%= s["calc"] %></small>
+          </div>
+        </div>
+        <div class="text-end step-value">
+          <% if s["final"] %>
+            <%= cmp_outcome_badge(s["value"] == "Pass" ? "pass" : outcome) %>
+          <% else %>
+            <span class="fw-bold"><%= s["value"] %></span>
+            <% if (path = source_path.call(s["source"])) %>
+              <%= link_to path, class: "d-block small", title: "Open #{s.dig('source', 'label')}" do %><i class="ti ti-external-link me-1"></i><%= s.dig("source", "label") %><% end %>
+            <% elsif s.dig("source", "label") %>
+              <small class="text-muted d-block"><%= s.dig("source", "label") %></small>
+            <% end %>
+          <% end %>
+        </div>
+      </li>
+    <% end %>
+  </ul>
+<% elsif failing.empty? && Array(w["failing_groups"]).empty? %>
+  <%# Results stored before structured steps: the text lines, in the same list layout %>
+  <ul class="list-group list-group-flush border rounded mb-3" id="result_lines">
+    <% Array(w["lines"]).each do |line| %>
+      <li class="list-group-item py-3 px-4"><%= line %></li>
+    <% end %>
+  </ul>
+<% end %>
+
+<%# 4. What gets it back within the limit (or the headroom on a pass) %>
+<% if remedy["kind"] == "breach" %>
+  <div class="alert alert-info d-flex align-items-start gap-2" id="result_remedy">
+    <%= cmp_icon(:pass, "fs-5 flex-shrink-0") %>
+    <div><strong>To get back within the limit</strong>, either:
+      <ul class="mb-0">
+        <li>reduce <%= remedy["subject"] %> to <strong><%= remedy["reduce_to"] %></strong> or less — <strong><%= remedy["reduce_by"] %></strong> less than today; or</li>
+        <li>raise <%= remedy["raise_label"].to_s.downcase %> to <strong><%= remedy["raise_to"] %></strong> or more.</li>
+      </ul>
+    </div>
+  </div>
+<% elsif %w[gap headroom_text].include?(remedy["kind"]) %>
+  <div class="alert alert-info d-flex align-items-start gap-2" id="result_remedy">
+    <%= cmp_icon(:pass, "fs-5 flex-shrink-0") %>
+    <div><strong><%= remedy["kind"] == "gap" ? "To get back within the limit:" : "Headroom:" %></strong> <%= remedy["text"] %></div>
+  </div>
+<% elsif remedy["kind"] == "headroom" %>
+  <div class="alert alert-info d-flex align-items-start gap-2" id="result_remedy">
+    <%= cmp_icon(:pass, "fs-5 flex-shrink-0") %>
+    <div><strong>Headroom:</strong> <%= remedy["subject"] %> can grow by <strong><%= remedy["amount"] %></strong> (<%= remedy["pts"] %>) before it reaches the limit.</div>
+  </div>
+<% end %>
+
+<%# 5. Who is next %>
+<% if Array(w["others"]).size > 1 %>
+  <h6 class="mt-3"><%= cmp_icon(:fund) %>Largest <%= Array(w["others"]).size %> <%= cmp_tip("The biggest groups for this check, so you see who is closest to the limit") %></h6>
+  <table class="table table-bordered dataTable action_table hover" id="result_others">
+    <thead><tr><th class="text-col">Name</th><th class="num-col">Amount</th><th class="num-col">Share</th><th class="num-col">Headroom <%= cmp_tip("How much more before reaching the limit; negative means over it") %></th></tr></thead>
+    <tbody>
+      <% w["others"].each do |o| %>
+        <tr><td class="text-col"><%= o["label"] %></td><td class="num-col"><%= o["value"] %></td><td class="num-col"><%= o["share"] %></td><td class="num-col"><%= o["headroom"] %></td></tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>
+
+<%# "Each" checks (e.g. minimum investment per investor): the groups past the limit %>
+<% if Array(w["failing_groups"]).any? %>
+  <h6 class="mt-3"><%= cmp_icon(:breach) %>Past the limit <%= cmp_tip("Each one that fails, with how far it is from the limit") %></h6>
+  <table class="table table-bordered dataTable action_table hover" id="result_failing_groups">
+    <thead><tr><th class="text-col">Name</th><th class="num-col">Figure</th><th class="num-col">Short by</th></tr></thead>
+    <tbody>
+      <% w["failing_groups"].each do |g| %>
+        <tr><td class="text-col"><%= g["label"] %></td><td class="num-col"><%= g["figure"] %></td><td class="num-col"><%= g["short"] %></td></tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>
+
+<%# Document and content checks: each failing record with what to do %>
+<% if failing.any? %>
+  <%
+    doc_ids = failing.filter_map { |f| f["document_id"] }
+    readings = w["document_input"].present? ? DocumentReading.where(entity_id: current_user.entity_id, document_id: doc_ids, input_key: w["document_input"]).group(:document_id).maximum(:id) : {}
+  %>
+  <h6 class="mt-3"><%= cmp_icon(:breach) %>Records that fail <%= cmp_tip("Each record the check found failing, with what to do about it. The next run re-checks them") %></h6>
+  <table class="table table-bordered dataTable action_table hover" id="content_failing">
+    <thead><tr><th class="text-col">Record</th><th class="text-col">Problem</th><th class="action-col">What to do</th></tr></thead>
+    <tbody>
+      <% failing.each do |f| %>
+        <tr>
+          <td class="text-col"><%= f["label"] %><%= " (#{l(Date.parse(f['date']))})" if f["date"].present? %></td>
+          <td class="text-col"><%= f["problem"] %></td>
+          <td class="action-col" id="failing_doc_<%= f['document_id'] || "rec_#{f['id']}" %>_action">
+            <% if w["document_input"].present? && readings[f["document_id"]] %>
+              <%= link_to "Open facts", document_reading_path(readings[f["document_id"]]), class: "btn btn-outline-primary ti ti-file-text" %>
+            <% elsif w["document_input"].present? && f["document_id"] %>
+              <%= link_to "Enter facts", new_document_reading_path(document_id: f["document_id"], input_key: w["document_input"]), class: "btn btn-outline-primary ti ti-edit" %>
+            <% elsif f["code"] == "not_signed" && f["document_id"] && ComplianceAccess.editor?(current_user) %>
+              <%= link_to "Mark signed", new_document_signoff_path(document_id: f["document_id"]), class: "btn btn-outline-success ti ti-signature",
+                          data: { turbo_frame: "remote_modal", bs_toggle: "tooltip", bs_title: "Record the date this paper copy was signed (wet ink)" } %>
+            <% elsif f["code"] == "missing" %>
+              <span class="text-muted small">Upload the document on the record</span>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <% if steps.empty? %>
+    <details class="mt-2"><summary class="text-muted small">All working lines</summary>
+      <% Array(w["lines"]).each do |line| %><div class="small"><%= line %></div><% end %>
+    </details>
+  <% end %>
+<% end %>

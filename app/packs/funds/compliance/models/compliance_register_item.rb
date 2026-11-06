@@ -29,6 +29,48 @@ class ComplianceRegisterItem < ApplicationRecord
   scope :open_items, -> { where(open_key: "1") }
   scope :closed_items, -> { where(open_key: nil) }
 
+  # Register grid (RansackTable). Display values come from ComplianceRegisterItemDecorator, which
+  # shows the check name, badges and links under the same keys so sorting still uses the columns.
+  STANDARD_COLUMNS = {
+    "Fund; text-col" => "fund_name; text-col",
+    "Pack; text-col" => "pack_name; text-col",
+    "Check; text-col" => "check_key; text-col",
+    "Opened; date-col" => "opened_on; date-col",
+    "Fix by; date-col" => "fix_by; date-col",
+    "Assigned to; text-col" => "assignee_first_name; text-col",
+    "Status; text-col" => "status; text-col"
+  }.freeze
+
+  COLUMN_HELP = {
+    "fund_name" => "The fund whose nightly run failed this check",
+    "pack_name" => "The rule pack the check belongs to (e.g. SEBI — AIF, or your fund agreement pack)",
+    "check_key" => "The check that failed. One item covers the whole breach episode: it stays one row while the check keeps failing",
+    "opened_on" => "Date of the first failing run of this episode",
+    "fix_by" => "Opened date + the check's time to fix. Past this date the item is overdue and the owner and approvers are told once",
+    "assignee_first_name" => "Who is working on it. Assigning emails them",
+    "status" => "Open → In progress (assigned) → Pending approval (explanation sent) → Explained, or Closed when a run passes"
+  }.freeze
+
+  # Pack name for filtering and sorting (fund pack → pack), as a subquery so no join changes the rows
+  ransacker :pack_name do
+    Arel.sql("(SELECT compliance_packs.name FROM fund_compliance_packs JOIN compliance_packs " \
+             "ON compliance_packs.id = fund_compliance_packs.compliance_pack_id " \
+             "WHERE fund_compliance_packs.id = compliance_register_items.fund_compliance_pack_id)")
+  end
+
+  # Overdue = open and past fix-by (same rule as #overdue?), so the filter matches the badge
+  ransacker :overdue, type: :boolean do
+    Arel.sql("(CASE WHEN compliance_register_items.open_key = '1' AND compliance_register_items.fix_by < CURRENT_DATE THEN 1 ELSE 0 END)")
+  end
+
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[check_key closed_on closed_reason escalated_on fix_by opened_on overdue pack_name status].sort
+  end
+
+  def self.ransackable_associations(_auth_object = nil)
+    %w[assignee fund]
+  end
+
   def open?
     open_key == "1"
   end

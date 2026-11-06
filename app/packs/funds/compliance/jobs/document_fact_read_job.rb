@@ -10,6 +10,12 @@ class DocumentFactReadJob < ApplicationJob
     reading = DocumentReading.find_by(id: reading_id)
     return if reading.nil? || reading.status != "queued" || reading.document.nil?
 
+    # X69: no reading for a firm without Compliance
+    unless ComplianceAccess.entity_enabled?(reading.entity)
+      Rails.logger.info("[DocumentFactReadJob] reading #{reading_id}: Compliance is off for the entity — skipped")
+      return
+    end
+
     setup = ComplianceEntitySetup.for(reading.entity)
     # E74: switched off after it was queued — nothing is sent
     return unless DocumentReadingQueue.enabled?(setup, reading.input_key)

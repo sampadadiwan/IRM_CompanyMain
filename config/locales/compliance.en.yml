@@ -1,0 +1,36 @@
+# Field names the compliance grids' filter (layouts/filter, ransack) shows, in the words the screens use
+en:
+  activerecord:
+    attributes:
+      compliance_register_item:
+        check_key: "Check"
+        closed_on: "Closed on"
+        closed_reason: "Closed reason (cleared, check_removed, detached, disabled…)"
+        escalated_on: "Escalated on"
+        fix_by: "Fix by"
+        opened_on: "Opened on"
+        overdue: "Overdue (true / false)"
+        pack_name: "Pack"
+        status: "Status (open, in_progress, pending_approval, explained, closed)"
+        assignee: "Assigned to"
+        fund: "Fund"
+      compliance_duty:
+        done_on: "Done on"
+        due_on: "Due on"
+        duty_key: "Duty"
+        overdue: "Overdue (true / false)"
+        period_key: "Period (e.g. FY27-Q3)"
+        owner: "Owner"
+        fund: "Fund"
+      document_reading:
+        created_at: "Waiting since"
+        input_key: "Input (e.g. ic_note)"
+        sent_at: "Read on"
+        status: "Status (queued, capped, read, failed)"
+        document: "Document"
+      compliance_pack:
+        created_at: "Created on"
+        locked: "Locked (true / false)"
+        name: "Pack"
+        regime: "Regime / source"
+        retired_on: "Retired on"

@@ -170,6 +170,16 @@ end
 
 Then('the version shows {string}') do |text|
   expect(page).to have_current_path(compliance_pack_version_path(cmp_fa_draft))
+  # The version's Checks and Duties tabs load lazily into their frames (E143): read both as Turbo would
+  shown = %w[checks duties].any? do |pane|
+    cmp_frame_visit("version_#{pane}_pane", compliance_pack_version_path(cmp_fa_draft, pane:))
+    page.has_text?(text, wait: 0)
+  end
+  expect(shown).to be(true), "#{text} is not on the version's Checks or Duties tab"
+end
+
+Then('the {string} tab of the fund agreement draft shows {string}') do |pane, text|
+  cmp_frame_visit("version_#{pane}_pane", compliance_pack_version_path(cmp_fa_draft, pane:))
   expect(page).to have_text(text)
 end
 

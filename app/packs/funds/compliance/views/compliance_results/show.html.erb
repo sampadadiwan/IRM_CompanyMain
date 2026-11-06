@@ -1,38 +1,121 @@
-<%# One stored result: its working and the setup of its day (H18) %>
+<%# One stored result, explained (R113): stats that answer at a glance, then the Working — a one-line
+    verdict, the numbered steps with their sources (compliance_shared/_working), what gets it
+    back within the limit, and who is next. Everything comes from the working stored at run time
+    (results are never re-computed); results stored before this change fall back to their text lines.
+    Setup that day sits below (H18). %>
 <% w = @result.working_hash %>
-<%= render FormCard.new(title: "#{w['check_name'] || @result.check_key} — #{l(@result.compliance_run.run_date)}") do %>
-  <% if @result.superseded? %><div class="alert alert-secondary">Superseded — pack correction</div><% end %>
-  <p><%= render "compliance_shared/outcome_badge", outcome: @result.outcome %> <%= w["message"] %></p>
-  <div class="card mb-3"><div class="card-body" id="result_working">
-    <% Array(w["lines"]).each do |line| %><div><%= line %></div><% end %>
-  </div></div>
-  <% if w["document_input"].present? && Array(w["failing_records"]).any? %>
-    <%# Phase 3 content checks: each record links to its document's facts (confirm, correct or enter by hand) %>
-    <% doc_ids = Array(w["failing_records"]).filter_map { |f| f["document_id"] } %>
-    <% readings = DocumentReading.where(entity_id: current_user.entity_id, document_id: doc_ids, input_key: w["document_input"]).group(:document_id).maximum(:id) %>
-    <table class="table table-bordered align-middle" id="content_failing">
-      <thead><tr><th>Record</th><th>What to do</th><th></th></tr></thead>
-      <tbody>
-        <% Array(w["failing_records"]).each do |f| %>
-          <tr>
-            <td><%= f["label"] %></td>
-            <td><%= f["problem"] %></td>
-            <td>
-              <% if readings[f["document_id"]] %>
-                <%= link_to "Open facts", document_reading_path(readings[f["document_id"]]), class: "btn btn-sm btn-outline-primary" %>
-              <% elsif f["document_id"] %>
-                <%= link_to "Enter facts", new_document_reading_path(document_id: f["document_id"], input_key: w["document_input"]), class: "btn btn-sm btn-outline-primary" %>
-              <% end %>
-            </td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
+<% run = @result.compliance_run %>
+<% fp = @result.fund_compliance_pack %>
+<% fund = fp.fund %>
+<% outcome = @result.outcome %>
+<% label, colour = ComplianceUiHelper::CMP_OUTCOMES[outcome] || [outcome.humanize, "secondary"] %>
+<% steps = Array(w["steps"]) %>
+<% remedy = w["remedy"] || {} %>
+<% failing = Array(w["failing_records"]) %>
+<div class="container-fluid p-3">
+  <%= render layout: "compliance_shared/header", locals: { title: w["check_name"] || @result.check_key.humanize, icon: :result } do %>
+    <%= cmp_header_link "Fund dashboard", fund_compliance_pack_path(fp), icon: :compliance %>
   <% end %>
-  <h6>Setup that day</h6>
-  <ul id="setup_that_day">
-    <li>Version: <%= @setup_then["version"] %></li>
-    <li>Classification: <%= @setup_then["classification"] %></li>
-    <li>Override: <%= @setup_then["override"] %></li>
-  </ul>
-<% end %>
+  <p class="text-muted" id="result_subtitle"><%= cmp_icon(:calendar) %>Run of <%= l(run.run_date) %> (<%= run.trigger.humanize.downcase %>) ·
+    <%= fp.pack_name %> <%= @result.compliance_pack_version&.label %> · <%= fund.name %></p>
+  <% if @result.superseded? %>
+    <div class="alert alert-secondary d-flex align-items-start gap-2"><%= cmp_icon(:history, "fs-5 flex-shrink-0") %><div>Superseded — pack correction. A newer result replaces this one; it stays here for history.</div></div>
+  <% end %>
+
+  <%
+    # Stats cards: the answer at a glance, per check kind
+    cards = []
+    if w["checked"].present?
+      cards << { stat: w["checked"], subtitle: "Records checked", colour: "info", icon: :result, tooltip: "Records this check looked at on the run date" }
+      cards << { stat: w["ok"], subtitle: "OK", colour: "success", icon: :pass, tooltip: "Records with their signed document, on time" }
+      cards << { stat: w["failing_count"].to_i, subtitle: "Failing", colour: "danger", icon: :breach, tooltip: "Records missing a document, unsigned, or signed late" }
+    elsif outcome != "could_not_check" && @result.figure
+      cards << { stat: ComplianceFormat.by_unit(w["unit"] == "pct" ? @result.figure.to_d / 100 : @result.figure, w["unit"] || "amount", w["currency"] || "INR"),
+                 subtitle: "Figure", colour: colour, icon: :result, tooltip: "What the check measured on the run date" }
+      cards << { stat: ComplianceFormat.limit(@result.limit_value, w["unit"] || "amount", w["currency"] || "INR"), subtitle: "Limit", colour: "secondary",
+                 icon: :lock, tooltip: "The pack's limit, or the approved override for this fund" }
+      if remedy["kind"] == "breach"
+        cards << { stat: "#{remedy['over_pts']} · #{remedy['reduce_by']}", subtitle: "Over by", colour: "danger", icon: :overdue,
+                   tooltip: "How far above the limit: in percentage points, and the amount to reduce" }
+      elsif remedy["kind"] == "gap"
+        cards << { stat: remedy["amount"], subtitle: "Gap to the limit", colour: "danger", icon: :overdue,
+                   tooltip: "How much the figure must change to meet the limit" }
+      elsif remedy["kind"] == "headroom"
+        cards << { stat: "#{remedy['pts']} · #{remedy['amount']}", subtitle: "Headroom", colour: "success", icon: :pass,
+                   tooltip: "How much room is left below the limit" }
+      end
+    end
+    cards << { stat: label, subtitle: "Result", colour: colour, icon: ComplianceUiHelper::CMP_ICONS.key?(outcome.to_sym) ? outcome.to_sym : :result,
+               tooltip: "Pass, Breach, Needs review, or Could not check (something missing — never a pass)" }
+  %>
+  <%= cmp_stats(cards, id: "result_stats") %>
+
+  <div class="row">
+  <div class="col-lg-8">
+  <div class="card shadow-sm border-0 mb-4" id="result_working_card">
+    <div class="card-header border-bottom py-3">
+      <h5 class="mb-0 fw-bold"><%= cmp_icon(:result, "me-2 text-primary") %>Working <%= cmp_tip("How the nightly run reached this result: every figure, where it comes from, and the arithmetic") %></h5>
+    </div>
+    <div class="card-body" id="result_working">
+      <%= render "compliance_shared/working", working: w, outcome:, fund: %>
+    </div>
+  </div>
+
+  </div>
+  <div class="col-lg-4">
+  <%# Setup that day: the same key/value list, beside the Working (stacks below on narrow screens) %>
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-header border-bottom py-3">
+      <h5 class="mb-0 fw-bold"><%= cmp_icon(:setup, "me-2 text-secondary") %>Setup that day <%= cmp_tip("The fund's setup when this result was computed. Later changes never rewrite it") %></h5>
+    </div>
+    <ul class="list-group list-group-flush" id="setup_that_day">
+      <% rows = [["Version", @setup_then["version"]], ["Classification", @setup_then["classification"]], ["Override", @setup_then["override"].presence || "None"]]
+         rows << ["Exchange rate", "#{w['fx']['rate']} #{w['fx']['from']}/#{w['fx']['to']} on #{l(Date.parse(w['fx']['as_of']))} (#{w['fx']['source']})"] if w["fx"].present?
+         Array(steps).select { |st| st.dig("source", "kind") == "setup" }.each { |st| rows << ["Input used", "#{st.dig('source', 'label').to_s.delete_prefix('Setup › ')}: #{st['value']}"] }
+         rows << ["Facts used", "Confirmed facts of #{w['document_input'].to_s.humanize}"] if w["document_input"].present? %>
+      <% rows.each do |key, value| %>
+        <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+          <span class="text-muted"><%= key %><%= cmp_tip("An approved per-fund limit, if any (maker–checker)") if key == "Override" %></span>
+          <span class="fw-bold text-end"><%= value %></span>
+        </li>
+      <% end %>
+    </ul>
+  </div>
+  </div>
+  </div>
+
+  <%# Actions row (capital_calls/show): primary button, then the Actions dropdown %>
+  <% item = ComplianceRegisterItem.where(fund_compliance_pack_id: fp.id, check_key: @result.check_key).order(id: :desc).first %>
+  <div class="d-flex flex-wrap gap-2" id="result_actions">
+    <% if item && policy(item).show? %>
+      <%= link_to compliance_register_item_path(item), class: "btn btn-outline-primary", id: "result_register_item_btn",
+                  data: { bs_toggle: "tooltip", bs_title: "The breach episode for this check: assign it or request an explanation" } do %>
+        <%= cmp_icon(:register) %>View register item
+      <% end %>
+    <% end %>
+    <div class="btn-group">
+      <div class="dropdown">
+        <button id="result_actions_btn" class="btn btn-outline-success dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+          <i class="ti ti-settings"></i> Actions
+        </button>
+        <div class="dropdown-menu" aria-labelledby="result_actions_btn">
+          <%= link_to " View fund pack", fund_compliance_pack_path(fp), class: "dropdown-item ti ti-link", id: "result_fund_pack_btn",
+                      title: "Every check of #{fp.pack_name} on this fund" %>
+          <% if @result.compliance_pack_version %>
+            <%= link_to " View check in pack version", compliance_pack_version_path(@result.compliance_pack_version), class: "dropdown-item ti ti-book",
+                        id: "result_version_btn", title: "How this check is defined in the version used that night" %>
+          <% end %>
+          <% if w["document_input"].present? %>
+            <%= link_to " Facts to confirm", document_readings_path, class: "dropdown-item ti ti-file-text", id: "result_facts_btn",
+                        title: "Documents whose facts wait for a person" %>
+          <% end %>
+          <% if policy(fp).run_now? %>
+            <%= button_to run_now_fund_compliance_pack_path(fp), class: "dropdown-item ti ti-player-play", id: "result_run_now_btn", form_class: "d-inline",
+                          title: "Run every check of this fund now" do %> Run now (fund)<% end %>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<%= render "compliance_shared/remote_modal" %>

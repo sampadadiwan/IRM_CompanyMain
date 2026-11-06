@@ -4,6 +4,12 @@ class ComplianceDigestJob < ApplicationJob
 
   def perform(entity_id, as_of)
     entity = Entity.find(entity_id)
+    # X69: no digest for a firm without Compliance
+    unless ComplianceAccess.entity_enabled?(entity)
+      Rails.logger.info("[ComplianceDigestJob] entity #{entity_id}: Compliance is off — skipped")
+      return
+    end
+
     date = Date.parse(as_of.to_s)
     setup = ComplianceEntitySetup.for(entity)
     return if setup.last_digest_on && setup.last_digest_on >= date

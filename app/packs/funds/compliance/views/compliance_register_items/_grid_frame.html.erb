@@ -1,0 +1,17 @@
+<%# One register tab's grid in its own frame: stats cards that follow the filter, search and the standard
+    RansackTable; search, sort and pages stay inside this frame %>
+<% frame = "register_#{tab}_frame" %>
+<%= turbo_frame_tag frame, target: "_top" do %>
+  <%= render "compliance_register_items/grid_stats", scope: @stats_scope %>
+  <%= render SearchComponent.new(data_source: compliance_register_items_path(params: params.to_unsafe_h.except("controller", "action", "page")), turbo_frame: frame) %>
+  <% if items.empty? %>
+    <div class="alert alert-secondary d-flex align-items-start gap-2" id="register_empty_<%= tab %>">
+      <%= cmp_icon(:done, "fs-5 flex-shrink-0") %>
+      <div>No register items here. Items open by themselves when a nightly run fails a check — try <strong>All</strong>, or attach packs to more funds.
+        <%= link_to "Fund packs", fund_compliance_packs_path, class: "btn btn-sm btn-outline-primary ms-2" %></div>
+    </div>
+  <% else %>
+    <%= render RansackTable.new(ComplianceRegisterItem, q: @q, current_user:, entity: current_user.entity, records: items,
+                                turbo_frame: frame, referrer: request.referrer, pagy: @pagy, id: "register_#{tab}") %>
+  <% end %>
+<% end %>

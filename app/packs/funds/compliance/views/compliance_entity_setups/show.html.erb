@@ -1,57 +1,110 @@
-<%# Setup: inputs (✓/✗), per-fund figures, reference lists with dates, owner and monitoring %>
-<%= render FormCard.new(title: "Compliance setup") do %>
+<%# Setup: inputs (✓/✗), owner and monitoring, the AI drafting switch and AI document reading (per input,
+    monthly cap). Switches post back to Setup (a full-page form, kept as a redirect — R112). %>
+<% editor = policy(@setup).update? %>
+<% missing = @inputs.count(&:missing?) %>
+<div class="container-fluid p-3">
+  <%= render layout: "compliance_shared/header", locals: { title: "Compliance setup", icon: :setup } do %>
+    <%= cmp_header_link "Fund packs", fund_compliance_packs_path, icon: :fund_pack %>
+  <% end %>
   <% if flash[:alert] %><div class="alert alert-danger" id="setup_error"><%= flash[:alert] %></div><% end %>
-  <table class="table table-bordered" id="setup_inputs">
-    <thead><tr><th>Input</th><th>Used by</th><th>Status</th></tr></thead>
-    <tbody>
-      <% @inputs.each do |inp| %>
-        <tr id="input_<%= inp.key %>"><td><%= inp.label %></td><td><%= inp.packs.join(", ") %></td>
-          <td><%= inp.missing? ? "✗ #{inp.missing_funds.any? ? "missing for #{inp.missing_funds.join(', ')}" : 'not mapped'}" : "✓" %></td></tr>
-      <% end %>
-    </tbody>
-  </table>
-  <p>Monitoring: <strong id="monitoring_state"><%= @setup.monitoring_enabled ? "on" : "off" %></strong>
-    · Owner: <%= @setup.owner&.full_name || "—" %></p>
-  <% if policy(@setup).update? %>
-    <%= form_with model: @setup, url: compliance_entity_setup_path, method: :patch do |f| %>
-      <%= hidden_field_tag "compliance_entity_setup[monitoring_enabled]", @setup.monitoring_enabled ? "0" : "1" %>
-      <%= f.submit(@setup.monitoring_enabled ? "Turn monitoring off" : "Turn monitoring on", class: "btn btn-primary") %>
-    <% end %>
-  <% end %>
-  <p class="mt-3">Describe in words (AI drafting of checks): <strong id="ai_drafting_state"><%= @setup.ai_drafting_enabled? ? "on" : "off" %></strong></p>
-  <% if policy(@setup).update? %>
-    <%= form_with model: @setup, url: compliance_entity_setup_path, method: :patch do |f| %>
-      <%= hidden_field_tag "compliance_entity_setup[ai_drafting]", @setup.ai_drafting_enabled? ? "0" : "1" %>
-      <%= f.submit(@setup.ai_drafting_enabled? ? "Turn Describe in words off" : "Turn Describe in words on", class: "btn btn-outline-primary") %>
-    <% end %>
-  <% end %>
+  <%= cmp_explainer("Map each input once for your firm, then turn monitoring on. Until an input is mapped, the checks that need it show Could not check — never a pass.") %>
+
+  <%= cmp_stats([
+    { stat: @setup.monitoring_enabled ? "On" : "Off", subtitle: "Monitoring", colour: @setup.monitoring_enabled ? "success" : "secondary", icon: :run,
+      tooltip: "When on, every attached fund is checked each night at 02:00 (#{@setup.time_zone})" },
+    { stat: "#{@inputs.size - missing} of #{@inputs.size}", subtitle: "Inputs mapped", colour: missing.zero? ? "success" : "danger", icon: :fund_pack,
+      tooltip: "Facts the packs need that CapHive cannot work out alone, e.g. which investors are the sponsor" },
+    { stat: @setup.owner&.full_name || "—", subtitle: "Compliance owner", colour: "info", icon: :user,
+      tooltip: "Gets unassigned duties and items returned from people who leave" }
+  ], id: "setup_stats") %>
+
+  <div class="row">
+    <div class="col-lg-7">
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header border-bottom py-3">
+          <h5 class="mb-0 fw-bold"><%= cmp_icon(:fund_pack, "me-2 text-primary") %>Inputs <%= cmp_tip("Each input is mapped once for the whole firm and used by every pack that names it") %></h5>
+        </div>
+        <div class="card-body p-0">
+          <table class="table table-bordered dataTable action_table hover mb-0" id="setup_inputs">
+            <thead><tr><th class="text-col">Input</th><th class="text-col">Used by</th><th class="text-col">Status <%= cmp_tip("✓ mapped; ✗ missing — the checks needing it show Could not check") %></th></tr></thead>
+            <tbody>
+              <% @inputs.each do |inp| %>
+                <tr id="input_<%= inp.key %>"><td class="text-col"><%= inp.label %></td><td class="text-col"><%= inp.packs.join(", ") %></td>
+                  <td class="text-col"><%= inp.missing? ? cmp_badge("✗ #{inp.missing_funds.any? ? "missing for #{inp.missing_funds.join(', ')}" : 'not mapped'}", "danger") : cmp_badge("✓", "success") %></td></tr>
+              <% end %>
+            </tbody>
+          </table>
+          <% if @inputs.empty? %><p class="text-muted p-3 mb-0">No inputs — attach a pack to a fund first.</p><% end %>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-5">
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header border-bottom py-3">
+          <h5 class="mb-0 fw-bold"><%= cmp_icon(:run, "me-2 text-primary") %>Monitoring</h5>
+        </div>
+        <div class="card-body">
+          <p>Monitoring: <strong id="monitoring_state"><%= @setup.monitoring_enabled ? "on" : "off" %></strong> · Owner: <%= @setup.owner&.full_name || "—" %></p>
+          <% if editor %>
+            <%= form_with model: @setup, url: compliance_entity_setup_path, method: :patch do |f| %>
+              <%= hidden_field_tag "compliance_entity_setup[monitoring_enabled]", @setup.monitoring_enabled ? "0" : "1" %>
+              <%= f.button type: "submit", class: "btn btn-outline-#{@setup.monitoring_enabled ? 'danger' : 'success'}" do %>
+                <%= cmp_icon(:run) %><%= @setup.monitoring_enabled ? "Turn monitoring off" : "Turn monitoring on" %>
+              <% end %>
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header border-bottom py-3">
+          <h5 class="mb-0 fw-bold"><%= cmp_icon(:ai, "me-2 text-info") %>Describe in words <%= cmp_tip("AI drafts a check from a sentence; a person reviews, tests and saves it. Only field names and your own checks are sent — never investor data") %></h5>
+        </div>
+        <div class="card-body">
+          <p>AI drafting of checks: <strong id="ai_drafting_state"><%= @setup.ai_drafting_enabled? ? "on" : "off" %></strong></p>
+          <% if editor %>
+            <%= form_with model: @setup, url: compliance_entity_setup_path, method: :patch do |f| %>
+              <%= hidden_field_tag "compliance_entity_setup[ai_drafting]", @setup.ai_drafting_enabled? ? "0" : "1" %>
+              <%= f.button type: "submit", class: "btn btn-outline-primary" do %><%= cmp_icon(:ai) %><%= @setup.ai_drafting_enabled? ? "Turn Describe in words off" : "Turn Describe in words on" %><% end %>
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <%# Phase 3: AI document reading — off until turned on per document input; monthly cap (E74, E75) %>
   <% doc_inputs = ComplianceDocumentInputs.for(@setup.entity) %>
   <% if doc_inputs.any? %>
-    <h6 class="mt-3">AI document reading</h6>
-    <p class="text-muted">AI reads each document once when it is uploaded or replaced; a person confirms the facts before they count.
-      Monthly cap: <strong id="reading_cap"><%= DocumentReadingQueue.cap(@setup) %></strong> documents
-      (<%= DocumentReading.sent_in_month(@setup.entity_id, Time.current).count %> read this month).</p>
-    <table class="table table-bordered align-middle" id="ai_reading">
-      <thead><tr><th>Document</th><th>Facts read</th><th>Reading</th><th></th></tr></thead>
-      <tbody>
-        <% doc_inputs.each_value do |inp| %>
-          <% on = DocumentReadingQueue.enabled?(@setup, inp.key) %>
-          <tr id="reading_<%= inp.key %>">
-            <td><%= inp.label %></td>
-            <td><%= inp.facts.map { |f| f["label"].presence || f["key"].humanize }.join(", ").presence || "Notes only" %></td>
-            <td><span class="badge bg-<%= on ? 'success' : 'secondary' %>-subtle text-<%= on ? 'success' : 'secondary' %>"><%= on ? "On" : "Off" %></span></td>
-            <td>
-              <% if policy(@setup).update? %>
-                <%= form_with model: @setup, url: compliance_entity_setup_path, method: :patch do |f| %>
-                  <%= hidden_field_tag "compliance_entity_setup[ai_reading][#{inp.key}]", on ? "0" : "1" %>
-                  <%= f.submit(on ? "Turn reading off" : "Turn reading on", class: "btn btn-sm btn-outline-primary") %>
-                <% end %>
-              <% end %>
-            </td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
+    <div class="card shadow-sm border-0 mb-4">
+      <div class="card-header border-bottom py-3">
+        <h5 class="mb-0 fw-bold"><%= cmp_icon(:read, "me-2 text-info") %>AI document reading
+          <%= cmp_tip("AI reads each document once when it is uploaded or replaced; a person confirms the facts before they count") %></h5>
+      </div>
+      <div class="card-body">
+        <p class="text-muted">Monthly cap: <strong id="reading_cap"><%= DocumentReadingQueue.cap(@setup) %></strong> documents
+          (<%= DocumentReading.sent_in_month(@setup.entity_id, Time.current).count %> read this month). Over the cap, documents wait for next month.</p>
+        <table class="table table-bordered dataTable action_table hover mb-0" id="ai_reading">
+          <thead><tr><th class="text-col">Document</th><th class="text-col">Facts read</th><th class="text-col">Reading</th><th class="action-col">Actions</th></tr></thead>
+          <tbody>
+            <% doc_inputs.each_value do |inp| %>
+              <% on = DocumentReadingQueue.enabled?(@setup, inp.key) %>
+              <tr id="reading_<%= inp.key %>">
+                <td class="text-col"><%= inp.label %></td>
+                <td class="text-col"><%= inp.facts.map { |f| f["label"].presence || f["key"].humanize }.join(", ").presence || "Notes only" %></td>
+                <td class="text-col"><%= cmp_badge(on ? "On" : "Off", on ? "success" : "secondary", on ? :done : nil) %></td>
+                <td class="action-col">
+                  <% if editor %>
+                    <%= form_with model: @setup, url: compliance_entity_setup_path, method: :patch do |f| %>
+                      <%= hidden_field_tag "compliance_entity_setup[ai_reading][#{inp.key}]", on ? "0" : "1" %>
+                      <%= f.button type: "submit", class: "btn btn-outline-primary" do %><%= cmp_icon(:read) %><%= on ? "Turn reading off" : "Turn reading on" %><% end %>
+                    <% end %>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
   <% end %>
-<% end %>
+</div>

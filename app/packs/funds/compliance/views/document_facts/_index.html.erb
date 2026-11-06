@@ -1,0 +1,26 @@
+<% frame = with_frame("document_readings_frame") %>
+<%= render layout: "compliance_shared/header", locals: { title: "Facts to confirm", icon: :fact } do %>
+  <%= link_to document_readings_path(filter: true), class: "btn btn-outline-primary d-inline-flex align-items-center", id: "facts_filter_btn",
+              data: { turbo_frame: "_top", bs_toggle: "tooltip", bs_title: "Filter by document, input, status or dates" } do %>
+    <%= cmp_icon(:filter) %>Filter
+  <% end %>
+  <%= link_to compliance_entity_setup_path, class: "btn btn-outline-primary d-inline-flex align-items-center", data: { turbo_frame: "_top" } do %>
+    <%= cmp_icon(:setup) %>Reading settings
+  <% end %>
+<% end %>
+
+<%= cmp_explainer("AI reads each document once and quotes where each fact came from. A fact counts in compliance checks only after a person confirms it — check the quote and page, correct the value if needed, then confirm.", id: "facts_explainer") %>
+
+<%= render "document_facts/grid_stats", scope: @stats_scope %>
+
+<%= render SearchComponent.new(data_source: document_readings_path(params: params.to_unsafe_h.except("controller", "action")), turbo_frame: frame) %>
+<% if readings.empty? %>
+  <div class="alert alert-secondary d-flex align-items-start gap-2" id="no_facts_waiting">
+    <%= cmp_icon(:done, "fs-5 flex-shrink-0") %>
+    <div>Nothing waiting. New IC notes and other mapped documents are read within an hour of upload once reading is on for that document type.
+      <%= link_to "Reading settings", compliance_entity_setup_path, class: "btn btn-sm btn-outline-primary ms-2", data: { turbo_frame: "_top" } %></div>
+  </div>
+<% else %>
+  <%= render RansackTable.new(DocumentReading, q: @q, current_user:, entity: current_user.entity, records: readings,
+                              turbo_frame: frame, referrer: request.referrer, pagy: @pagy) %>
+<% end %>

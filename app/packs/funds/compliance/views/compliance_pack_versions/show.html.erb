@@ -1,75 +1,90 @@
-<%# A pack version: checks in plain words, the JSON definition (drafts), test run (preview — nothing stored) and publish %>
+<%# A pack version: checks in plain words, duties, test run (preview — nothing stored), the JSON definition
+    (drafts) and publish, as tabs (fund page tab bar pattern). %>
 <% editable = policy(@version).update? %>
-<%= render FormCard.new(title: "#{@version.compliance_pack.name} · #{@version.label} · #{@version.published? ? 'Published' : 'Draft'}") do %>
-  <% if flash[:alert] %><div class="alert alert-danger"><%= flash[:alert] %></div><% end %>
-  <% if @version.locked && !editable %><div class="alert alert-secondary">Locked — CapHive pack</div><% end %>
-  <%# When a published version takes effect and who it applies to (H5, H46–H49) — tells an upcoming version from the live one %>
+<% active = @preview ? "version-test-tab" : "version-checks-tab" %>
+<div class="container-fluid p-3">
+  <%= render layout: "compliance_shared/header", locals: { title: "#{@version.compliance_pack.name} · #{@version.label} · #{@version.published? ? 'Published' : 'Draft'}", icon: :version } do %>
+    <%= cmp_header_link @version.compliance_pack.name, compliance_pack_path(@version.compliance_pack), icon: :pack %>
+    <% if editable %><%= render "compliance_check_drafts/describe_modal", version: @version %><% end %>
+  <% end %>
+  <% if @version.locked && !editable %>
+    <div class="alert alert-secondary d-flex align-items-start gap-2"><%= cmp_icon(:lock, "fs-5 flex-shrink-0") %><div>Locked — CapHive pack. You use it as published; per fund, an approver may only make a limit stricter.</div></div>
+  <% elsif editable && !@version.published? %>
+    <%= cmp_explainer("A draft: add or change checks (Describe in words, or the Definition tab), test it on a fund, then publish it with an effective date.") %>
+  <% end %>
+  <%# When a published version takes effect and who it applies to (H5, H46–H49) %>
   <% if @version.published? %>
-    <p class="text-muted small" id="version_effective">
-      Effective <%= @version.effective_from ? l(@version.effective_from) : "—" %>
-      · <%= { "all" => "all funds", "new_funds" => "new funds only (started on or after #{@version.applicability_date ? l(@version.applicability_date) : '—'})",
-              "transition" => "all funds, transition until #{@version.transition_ends_on ? l(@version.transition_ends_on) : '—'}" }[@version.applicability] %>
+    <p class="text-muted" id="version_effective">
+      <%= cmp_icon(:calendar) %>Effective <%= @version.effective_from ? l(@version.effective_from) : "—" %> · <%= cmp_applicability(@version) %>
       <% if @version.published_at %>· Published <%= l(@version.published_at.to_date) %><%= " by #{@version.published_by.full_name}" if @version.published_by %><% end %>
       <% if @version.counsel_reviewer.present? %>· Counsel review: <%= @version.counsel_reviewer %><%= " on #{l(@version.counsel_reviewed_on)}" if @version.counsel_reviewed_on %><% end %>
     </p>
   <% end %>
-  <table class="table table-bordered align-middle" id="version_checks">
-    <thead><tr><th>Check</th><th>Kind</th><th>Applies to</th><th>Limit</th><th>Source</th></tr></thead>
-    <tbody>
-      <% @version.checks.each do |c| %>
-        <tr id="check_<%= c['key'] %>">
-          <td><%= c["name"] || c["key"] %>
-            <%= render "compliance_check_drafts/provenance", entry: c %></td>
-          <td><%= c["kind"].to_s.humanize %><%= " · not overridable" if c["override"] == "none" %></td>
-          <td><%= c["applies_to"] == "all" || c["applies_to"].nil? ? "all" : Array(c["applies_to"]).join(", ") %></td>
-          <td><%= c.dig("limit", "value") ? ComplianceFormat.limit(c.dig("limit", "value"), c.dig("limit", "unit"), c.dig("limit", "currency").presence || @version.currency) : (c.dig("limit", "expr") ? ComplianceDescriber.expr(@version, c.dig("limit", "expr")) : "—") %></td>
-          <td><%= c["citation"] %></td>
-        </tr>
+
+  <%= cmp_stats([
+    { stat: @version.checks.size, subtitle: "Checks", colour: "info", icon: :result, tooltip: "Rules the nightly run tests from your data" },
+    { stat: @version.duties.size, subtitle: "Duties", colour: "secondary", icon: :duty, tooltip: "Things a person must do and prove, created on a schedule or by events" },
+    { stat: FundCompliancePack.active.where(compliance_pack_version_id: @version.id, entity_id: current_user.entity_id).count, subtitle: "Your funds on it",
+      colour: "success", icon: :fund_pack, tooltip: "Funds of your firm whose attachment is on this version today" }
+  ], id: "version_stats") %>
+
+  <%# Actions row (capital_calls/show): Publish and Test run open their tabs (?tab= deep link) %>
+  <div class="d-flex flex-wrap gap-2 mb-3" id="version_actions">
+    <% if editable && !@version.published? %>
+      <%= link_to compliance_pack_version_path(@version, tab: "version-publish-tab"), class: "btn btn-outline-success", id: "version_publish_btn",
+                  data: { bs_toggle: "tooltip", bs_title: "Freeze this version and choose when funds move to it" } do %>
+        <%= cmp_icon(:publish) %>Publish
       <% end %>
-    </tbody>
-  </table>
-  <% if @version.duties.any? %>
-    <table class="table table-bordered align-middle" id="version_duties">
-      <thead><tr><th>Duty</th><th>When</th><th>Evidence</th></tr></thead>
-      <tbody>
-        <% @version.duties.each do |d| %>
-          <tr id="duty_<%= d['key'] %>">
-            <td><%= d["name"] || d["key"] %><% if d["reason"].present? %><div class="text-muted small"><%= d["reason"] %></div><% end %>
-              <%= render "compliance_check_drafts/provenance", entry: d %></td>
-            <td><%= d.dig("trigger", "on_demand") ? "On demand" : (d.dig("trigger", "schedule") || d.dig("trigger", "event")).to_s.humanize %></td>
-            <td><%= d["evidence"] ? "Required" : "—" %></td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
-  <% end %>
-  <% if editable %>
-    <%= render "compliance_check_drafts/describe_modal", version: @version %>
-  <% end %>
-  <% if @preview %>
-    <h5>Test run (nothing stored)</h5>
-    <table class="table table-sm" id="preview_rows">
-      <% @preview.rows.each do |row| %>
-        <tr><td><%= row.name %></td><td><%= render "compliance_shared/outcome_badge", outcome: row.outcome %></td><td><%= row.message %></td></tr>
-      <% end %>
-    </table>
-  <% end %>
-  <% if editable %>
-    <%= form_with model: @version, url: compliance_pack_version_path(@version), method: :patch do |f| %>
-      <%= f.label :definition, "Definition (JSON)", class: "form-label" %>
-      <%= f.text_area :definition, value: JSON.pretty_generate(@version.definition_hash), rows: 12, class: "form-control font-monospace mb-2" %>
-      <%= f.submit "Save draft", class: "btn btn-outline-primary" %>
     <% end %>
-    <%= form_with model: @version, url: publish_compliance_pack_version_path(@version), scope: :compliance_pack_version, method: :patch, class: "row g-2 mt-3" do |f| %>
-      <div class="col-md-2"><%= f.label :effective_from, class: "form-label" %><%= f.date_field :effective_from, class: "form-control" %></div>
-      <% if @version.caphive? %>
-        <div class="col-md-2"><%= f.label :applicability, "Applies to", class: "form-label" %>
-          <%= f.select :applicability, [["All funds", "all"], ["New funds only", "new_funds"], ["All funds, with transition", "transition"]], {}, class: "form-select" %></div>
-        <div class="col-md-2"><%= f.label :transition_ends_on, class: "form-label" %><%= f.date_field :transition_ends_on, class: "form-control" %></div>
-        <div class="col-md-2"><%= f.label :counsel_reviewer, class: "form-label" %><%= f.text_field :counsel_reviewer, class: "form-control" %></div>
-        <div class="col-md-2"><%= f.label :counsel_reviewed_on, class: "form-label" %><%= f.date_field :counsel_reviewed_on, class: "form-control" %></div>
-      <% end %>
-      <div class="col-md-2 align-self-end"><%= f.submit "Publish", class: "btn btn-primary" %></div>
+    <%= link_to compliance_pack_version_path(@version, tab: "version-test-tab"), class: "btn btn-outline-primary", id: "version_test_run_btn",
+                data: { bs_toggle: "tooltip", bs_title: "Run this version on one of your funds today — nothing is stored" } do %>
+      <%= cmp_icon(:view) %>Test run
     <% end %>
-  <% end %>
-<% end %>
+    <div class="btn-group">
+      <div class="dropdown">
+        <button id="version_actions_btn" class="btn btn-outline-success dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+          <i class="ti ti-settings"></i> Actions
+        </button>
+        <div class="dropdown-menu" aria-labelledby="version_actions_btn">
+          <% if editable %>
+            <a href="#" class="dropdown-item ti ti-sparkles" id="version_describe_btn" data-bs-toggle="modal" data-bs-target="#describeInWordsModal"
+               title="Write a rule in a sentence; the AI drafts the check for you to review"> Describe in words</a>
+            <%= link_to " Edit definition", compliance_pack_version_path(@version, tab: "version-definition-tab"), class: "dropdown-item ti ti-code",
+                        id: "version_definition_btn", title: "The whole version as one JSON document" %>
+          <% end %>
+          <%= link_to " #{@version.compliance_pack.name}", compliance_pack_path(@version.compliance_pack), class: "dropdown-item ti ti-book",
+                      id: "version_pack_btn", title: "All versions of this pack" %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%
+    # Lazy pills (funds/_owner_fund_details pattern); a test run answered as a full page shows its results inline
+    panes = [["checks", "Checks", :result], ["duties", "Duties", :duty], ["test", "Test run", :view]]
+    panes += [["definition", "Definition", :json], ["publish", "Publish", :publish]] if editable
+    active = @preview ? "test" : "checks"
+  %>
+  <div class="associated_entity" data-controller="tabs">
+    <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row" role="tablist" id="version_tabs">
+      <% panes.each do |pane, label, icon| %>
+        <a class="nav-link <%= 'active' if pane == active %>" data-bs-toggle="pill" href="#version-<%= pane %>-tab" id="version_tab_<%= pane %>">
+          <%= cmp_icon(icon) %><%= label %>
+        </a>
+      <% end %>
+    </nav>
+    <div class="tab-content">
+      <% panes.each do |pane, _label, _icon| %>
+        <div id="version-<%= pane %>-tab" class="tab-pane fade in <%= 'show active' if pane == active %>">
+          <% if pane == "test" && @preview %>
+            <%= render "compliance_pack_versions/pane", pane: "test" %>
+          <% else %>
+            <%= turbo_frame_tag "version_#{pane}_pane", src: compliance_pack_version_path(@version, pane:), loading: :lazy, target: "_top" do %>
+              <%= render "/layouts/loading" %>
+            <% end %>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

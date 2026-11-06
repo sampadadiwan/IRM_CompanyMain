@@ -1,27 +1,6 @@
-<%# Register item: the working of its latest result, assignment, explanation and approval %>
-<%= render FormCard.new(title: "#{@item.check_name} — #{@item.fund.name}") do %>
-  <p>Status: <strong id="item_status"><%= @item.closed? ? @item.closed_label : @item.status.humanize %></strong>
-    <%= tag.span("Worsened since approval", class: "badge bg-danger-subtle text-danger") if @item.reopened_worse %>
-    · First seen <%= l(@item.opened_on) %> · Fix by <%= @item.fix_by ? l(@item.fix_by) : "—" %>
-    · Owner: <%= @item.assignee&.full_name || "—" %></p>
-  <% w = @item.last_result&.working_hash || {} %>
-  <div class="card mb-3"><div class="card-body" id="item_working">
-    <div class="small text-muted"><%= w["citation"] %></div>
-    <% Array(w["lines"]).each do |line| %><div><%= line %></div><% end %>
-  </div></div>
-  <% if @item.open? && policy(@item).assign? %>
-    <%= form_with url: assign_compliance_register_item_path(@item), method: :patch, class: "row g-2 mb-2" do %>
-      <div class="col-md-4"><%= select_tag :assignee_id, options_from_collection_for_select(User.where(entity_id: @item.entity_id, active: true).order(:first_name), :id, :full_name), class: "form-select" %></div>
-      <div class="col-md-2"><%= submit_tag "Assign", class: "btn btn-outline-primary" %></div>
-    <% end %>
-    <% unless @item.status == "pending_approval" %>
-      <%= render "compliance_shared/request_form", target: @item, kind: "explanation", label: "Explain", fields: [:text] %>
-    <% end %>
-  <% end %>
-  <% if (req = @item.pending_explanation) && policy(req).approve? %>
-    <div class="d-flex gap-2">
-      <%= button_to "Approve explanation", approve_compliance_request_path(req), method: :patch, class: "btn btn-primary" %>
-      <%= button_to "Reject explanation", reject_compliance_request_path(req), method: :patch, class: "btn btn-outline-danger" %>
-    </div>
-  <% end %>
-<% end %>
+<%# Register item (one breach episode): its working, owner and the maker–checker explanation. Actions
+    answer with Turbo streams that replace the summary below (E140). %>
+<div class="container-fluid p-3">
+  <%= render "compliance_register_items/item", item: @item %>
+</div>
+<%= render "compliance_register_items/action_modals", item: @item %>

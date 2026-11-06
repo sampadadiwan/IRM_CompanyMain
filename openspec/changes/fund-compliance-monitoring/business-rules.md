@@ -20,7 +20,9 @@
 11. [Document-content checks](#9-document-content-checks--phase-3)
 12. [Pack versions and locking](#10-pack-versions-and-locking--phase-1)
 13. [Changes over time](#11-changes-over-time--phase-1)
-14. [Coverage](#coverage)
+14. [Screens](#12-screens--filter-tabs-turbo-streams-explained-working-ui-restyle)
+15. [Newcomer guidance](#13-newcomer-guidance--phase-5)
+16. [Coverage](#coverage)
 
 ---
 
@@ -567,6 +569,98 @@ flowchart LR
 
 ---
 
+## 12. Screens — filter, tabs, Turbo streams, explained working (UI restyle)
+
+- Added with the UI restyle (R110–R115): the register filter and its tabs agree, tabs load lazily like the fund page, row actions answer with Turbo streams, and each result explains its working. X69 gates the whole module on the firm's Compliance flag.
+
+### Edge cases
+
+| # | Scenario | Given | When | Then | Spec scenario | Feature |
+|---|---|---|---|---|---|---|
+| E139 | Register filter and tabs agree | Horizon: 2 open items; Horizon Credit Fund: 1 closed item | Open tab; then filter status = closed and fund = Horizon Credit Fund; then a page filtered by status | Open tab lists 2 (card Open 2); filtered grid lists 1 (card Open 0); a status condition replaces the tabs with one "Filter results" tab | CM: Register filter and tabs agree | compliance_screens |
+| E140 | Row actions as Turbo streams | Run 05 Nov; IC note read | Assign, request explanation, approve, mark duty done, confirm facts, Run now with Accept: turbo-stream | Each answers `<turbo-stream action="replace">` for its item / row / facts card (Run now: the flash only) and updates `user_alert` | CM: Actions update in place | compliance_screens |
+| E141 | Concentration working explained | Shared setup: Acme ₹72.00 cr, investable ₹300.00 − ₹30.00 = ₹270.00 cr | Open the result | Verdict "… is 26.67% of investable funds — above the 25% limit"; steps Corpus ₹300.00 cr, Investable funds ₹270.00 cr; remedy: reduce Acme to ₹67.50 cr (₹4.50 cr less) or raise investable funds to ₹288.00 cr; largest investees listed | CM: Result explains its working | compliance_screens |
+| E142 | Every check kind has a verdict | Acme B2 with no IC note; estimated expenses blank | Open the IC-note, concentration and investor-count results | "… records are missing a signed document" + Records that fail; "Could not check — missing: estimated expenses" + Fix it in Setup; investor count "… within the … limit" | CM: Result explains its working | compliance_screens |
+| E143 | Tabs load lazily | Run 05 Nov | Open the register, the SEBI version and the fund dashboard; then a non-default tab of each | Each pane is a lazy turbo frame; the Closed tab, the Duties tab and the SEBI results tab load their own content | CM: Tabs load lazily | compliance_screens |
+| E144 | Limit worked out from the fund's figures | Shared setup: sponsor committed ₹6.00 cr; corpus ₹300.00 cr | Open the continuing-interest (amount) result | Steps: Sponsor/manager commitment ₹6.00 cr; 2.5% of Corpus ₹7.50 cr; Fixed amount ₹5.00 cr; Required = the lower of those = ₹5.00 cr; Result Pass; "Headroom: … ₹1.00 cr above the limit"; no step restates its own value ("X = X") | CM: Result explains its working | compliance_screens |
+
+### Error cases
+
+| # | Scenario | Given | When | Then | Spec scenario | Feature |
+|---|---|---|---|---|---|---|
+| X69 | Entity without Compliance | Horizon's `enable_compliance` entity flag off | Menu, /compliance, fund page, 02:00 tick | No Compliance menu entry; /compliance denied; no fund-page Compliance tab; no nightly run | FS: Firm without Compliance | compliance_tenant_isolation |
+
+---
+
+## 13. Newcomer guidance — Phase 5
+
+```mermaid
+flowchart LR
+    NEW["Firm switches<br/>Compliance on"] --> W["Welcome notice<br/>to admins + tagged users"]
+    W --> GS["Getting started<br/>8 steps, ticked from data"]
+    GS --> NX["What's next panel<br/>on every page"]
+    NX --> DONE["Setup complete:<br/>panel folds away"]
+    GS -. "stalls 7 / 21 days" .-> REM["One reminder each<br/>to the owner"]
+```
+
+- **Getting started** steps, in order. Each is worked out from data and never stored as "done":
+  1. Owner and approvers.
+  2. Attach packs.
+  3. Map inputs.
+  4. Reference lists.
+  5. First run.
+  6. Digest recipients.
+  7. Monitoring on.
+  8. Every open item has an owner.
+- **What's next** shows at most 3 actions, worked out from the page's own record and the user's role. Nothing new is stored for it.
+- **Wording:** tooltips and page intros use the Key concepts wording (one glossary in the locale file).
+- **Shared setup:** Horizon Capital, as in the shared setup, but with Compliance just switched on: Meera is the owner, Rahul an approver, no packs are attached, and there are no runs.
+
+### Happy path
+
+| # | Scenario | Given | When | Then | Spec scenario | Feature |
+|---|---|---|---|---|---|---|
+| H80 | Getting started on first visit | Horizon setup with owner Meera and approver Rahul; no packs | Meera opens Compliance home | Panel "Getting started — 1 of 8 done"; step 1 ✓; step 2 current; What's needed now: "Attach a rule pack to a fund" + [Attach a pack] | OG: Getting started on first visit | compliance_guidance |
+| H81 | Steps tick from data | H80 | Meera attaches SEBI — AIF to Growth Fund I | Step 2 ✓; step 3 current: "Map 2 inputs for SEBI — AIF: Sponsor/manager, estimated expenses" + [Map inputs]; "Why: without them 4 checks show Could not check" | OG: Steps tick from data | compliance_guidance |
+| H82 | First run from the journey | Steps 1–4 done | Meera presses [Run now on Growth Fund I] in step 5 | Results appear without waiting for 02:00; step 5 ✓ | OG: First run from Getting started | compliance_guidance |
+| H83 | Setup complete folds away | All 8 steps done | Open Compliance home | One line "Setup complete · [Show steps]"; dashboard shows first | OG: Setup complete folds away | compliance_guidance |
+| H84 | What's next on a breach | Concentration breach 26.67% (shared setup) | Meera opens the result | "What's next: Assign it · Request an explanation · Or fix the data — the next run clears it" with the 3 buttons | OG: What's next on a result | compliance_guidance |
+| H85 | What's next on Could not check | Sponsor/manager unmapped | Open the continuing-interest result | "Map Sponsor/manager in Setup" linking to that input's row in Setup | OG: What's next on a result | compliance_guidance |
+| H86 | Timing banner | Last run 05/11/2026 02:00 IST succeeded | Open Compliance home on 05/11/2026 10:00 | "Results from the 02:00 IST run on 05/11/2026 · next run 06/11/2026 02:00 IST" | OG: Timing banner | compliance_guidance |
+| H87 | Welcome notice | Horizon's compliance setup is created for the first time | — | Company admins and users tagged Compliance get the in-app + email "Compliance is on for Horizon Capital — start with Getting started (8 steps)" | OG: Welcome notice | compliance_guidance |
+| H88 | Term tooltip | Register item status Explained | Hover the ⓘ beside "Explained" | Tooltip: "An approver accepted this breach with a reason. It reopens if the figure gets worse." — same words as Key concepts | OG: Terms explained in place | compliance_guidance |
+| H89 | Section bar with counts | 3 open items, 1 duty due, 6 facts waiting | Open any compliance page | Bar "Home · Register (3) · Duties (1) · Facts to confirm (6) · Packs · Setup", current section active | OG: Section bar on every page | compliance_guidance |
+| H90 | Guide opens at the page's section | — | Press the guide ⓘ on the Register | The compliance user guide opens at "#the-register" | OG: Guide opens at the page's section | compliance_guidance |
+
+### Edge cases
+
+| # | Scenario | Given | When | Then | Spec scenario | Feature |
+|---|---|---|---|---|---|---|
+| E180 | Step goes back | All 8 done | Meera attaches the IFSCA pack, whose "Accredited investors" input is unmapped | Step 3 reopens: "Map 1 input for IFSCA — FM: Accredited investors"; panel unfolds; "7 of 8 done" | OG: Steps tick from data | compliance_guidance |
+| E181 | Reference list not needed | No attached check uses excluded sectors or IC members | Open Getting started | Step 4 shows "Not needed for your packs" and counts as done | OG: Steps tick from data | compliance_guidance |
+| E182 | Viewer sees steps, not buttons | Priya is a viewer | Priya opens Compliance home | Same steps; no Do-it buttons; "Ask Meera (compliance owner) to map inputs" | OG: Getting started on first visit | compliance_guidance |
+| E183 | Single approver | Meera is the only eligible user | Open Getting started | Step 1 ✓ with note "Only you can approve — your approvals are labelled Self-approved" | OG: Getting started on first visit | compliance_guidance |
+| E184 | Never run | No runs yet | Open Compliance home | Banner "No results yet — first run tonight at 02:00 IST, or [Run now]" | OG: Timing banner | compliance_guidance |
+| E185 | Stale results | Last successful run 05/11 02:00; 06/11 run failed; now 06/11 10:00 | Open Compliance home | Amber banner "Last successful run 05/11/2026 02:00 IST — results may be out of date. CapHive support has been told." | OG: Timing banner | compliance_guidance |
+| E186 | Approver's next step | Meera requested an explanation; Rahul is an approver | Rahul opens the register item | "What's next: Approve or reject Meera's explanation" + [Approve] [Reject] | OG: What's next on a register item | compliance_guidance |
+| E187 | Requester's next step | Same request | Meera opens the register item | "Waiting for an approver (Rahul or Anil) — you'll be told the decision"; no Approve button | OG: What's next on a register item | compliance_guidance |
+| E188 | Empty register | No open items | Open the register | "Nothing open. The next run is tonight at 02:00 IST." | OG: Empty pages say what to do | compliance_guidance |
+| E189 | Reminders stop | Setup 3 of 8 done, created 04/11/2026 | Days 7 and 21 pass; then day 35 | Meera gets one reminder on 11/11 and one on 25/11: "Getting started: 3 of 8 done — next: Map inputs"; nothing on day 35; nothing at all once complete | OG: Welcome notice | compliance_guidance |
+| E190 | Welcome sent once | Welcome already sent | Setup saved again; home reopened | No second welcome | OG: Welcome notice | compliance_guidance |
+| E191 | Monitoring on before inputs mapped | Step 3 not done | Meera turns monitoring on | Allowed; What's next warns "2 inputs unmapped — 4 checks will show Could not check tonight" | OG: Steps tick from data | compliance_guidance |
+| E192 | Super admin sees who is stuck | Horizon 3 of 8 since 04/11/2026 | Super admin opens Compliance › Customer setup | Row "Horizon Capital · 3 of 8 · next: Map inputs · since 04/11/2026" | OG: Customer setup progress | compliance_guidance |
+
+### Error cases
+
+| # | Scenario | Given | When | Then | Spec scenario | Feature |
+|---|---|---|---|---|---|---|
+| X90 | Investor sees no guidance | Lata (investor) | Requests the Getting started frame and a What's next frame directly | Refused | OG: Guidance is for compliance users only | compliance_tenant_isolation |
+| X91 | Customer setup list is super-admin only, counts only | Meera (company admin) | Requests Compliance › Customer setup | Refused; for a super admin the list shows step names and counts only — no fund names, figures or people | OG: Customer setup progress | compliance_tenant_isolation |
+| X92 | Other firm's guidance refused | Delta's admin | Requests Horizon's Getting started frame by id | Refused | OG: Guidance is for compliance users only | compliance_tenant_isolation |
+| X93 | No welcome without the flag | Horizon's `enable_compliance` entity flag off | Setup created by a super admin | No welcome, no reminders | OG: Welcome notice | compliance_tenant_isolation |
+
+---
+
 ## Coverage
 
 ```mermaid
@@ -587,8 +681,10 @@ flowchart LR
 | 8 AI drafting | 3 | 9 | 5 | 17 |
 | 9 Document-content checks | 6 | 15 | 6 | 27 |
 | 10 Pack versions and locking | 8 | 23 | 12 | 43 |
-| 11 Changes over time | 8 | 33 | 6 | 47 |
-| **Total** | **61** | **136** | **68** | **265** |
+| 11 Changes over time | 8 | 35 | 6 | 49 |
+| 12 Screens | 0 | 6 | 1 | 7 |
+| 13 Newcomer guidance (Phase 5) | 11 | 13 | 4 | 28 |
+| **Total** | **72** | **157** | **73** | **302** |
 
 - `features/security/compliance_tenant_isolation.feature` gathers every refusal row (other firm, investor, viewer, self-approval, injection, AI context) — attacker refused, owner allowed, direct request refused.
 - An edge case found during apply gets a new row here **and** a scenario.

@@ -1,6 +1,8 @@
 # ② Setup: input mappings, per-fund figures, dated reference lists, owner, monitoring (H17, X15, X16, E14)
 # and the AI-drafting switch (X41).
 class ComplianceEntitySetupsController < ApplicationController
+  include ComplianceCrumbs
+
   before_action :set_setup
 
   def show
@@ -24,6 +26,7 @@ class ComplianceEntitySetupsController < ApplicationController
 
   def set_setup
     @setup = ComplianceEntitySetup.for(current_user.entity)
+    compliance_crumbs(["Setup", nil])
   end
 
   # owner_id is checked same-firm by the model; entity_id is never permitted

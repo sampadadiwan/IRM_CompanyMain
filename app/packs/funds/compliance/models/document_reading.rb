@@ -21,6 +21,30 @@ class DocumentReading < ApplicationRecord
   # Readings sent to AI this calendar month — the monthly cap counts these (E75)
   scope :sent_in_month, ->(entity_id, at) { where(entity_id:, sent_at: at.all_month) }
 
+  # Facts-to-confirm grid (RansackTable); display values come from DocumentReadingDecorator
+  STANDARD_COLUMNS = {
+    "Document; text-col" => "document_name; text-col",
+    "Input; text-col" => "input_key; text-col",
+    "Status; text-col" => "status; text-col",
+    "Read on; date-col" => "sent_at; date-col",
+    "Waiting since; date-col" => "created_at; date-col"
+  }.freeze
+
+  COLUMN_HELP = {
+    "input_key" => "Which kind of document the pack reads facts from (e.g. IC note)",
+    "status" => "AI reads each document once; a fact counts in compliance checks only after a person confirms it",
+    "sent_at" => "When the document was sent to the AI. Blank while it waits (queued, or over the monthly cap)",
+    "created_at" => "When the document was picked up for reading — the digest counts the days facts have waited from here"
+  }.freeze
+
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[created_at input_key sent_at status].sort
+  end
+
+  def self.ransackable_associations(_auth_object = nil)
+    %w[document]
+  end
+
   # Stored file id + size: a replaced file is a new version and is read again (E68).
   # The file is never downloaded to decide this.
   def self.checksum_for(document)

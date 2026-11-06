@@ -1,10 +1,15 @@
 # ⑤ One stored result with its working and the setup of its day (H18). Results are never deleted (X66).
 class ComplianceResultsController < ApplicationController
+  include ComplianceCrumbs
+
   before_action :set_result
 
   def show
     authorize @result
     @setup_then = ComplianceSetupAsOf.call(@result)
+    fp = @result.fund_compliance_pack
+    compliance_fund_crumbs(fp.fund, [fp.pack_name, fund_compliance_pack_path(fp)],
+                           [@result.working_hash["check_name"] || @result.check_key.humanize, nil])
   end
 
   def destroy

@@ -1,0 +1,9 @@
+<%# Standard list/page header (capital_calls/_index): h1.h3 title with its icon, the user-guide icon and
+    right-aligned outline buttons passed as the block %>
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <h1 class="h3 mb-0 text-gray-800"><%= cmp_icon(icon) %><%= title %></h1>
+  <div class="d-flex flex-wrap align-items-center gap-2">
+    <%= user_guide_info_icon %>
+    <%= yield %>
+  </div>
+</div>

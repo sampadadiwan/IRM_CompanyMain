@@ -1,7 +1,7 @@
 # ① ⑤ Evaluates a version on a fund WITHOUT storing anything — the draft test run (R37, H4, E7) and the
 # "coming into effect" preview (H48, E88, E89). Never writes results, items or digest lines.
 class CompliancePreview
-  Row = Struct.new(:check_key, :name, :outcome, :figure, :limit, :message, keyword_init: true)
+  Row = Struct.new(:check_key, :name, :outcome, :figure, :limit, :message, :working, keyword_init: true)
   Preview = Struct.new(:version, :rows, :not_applicable, keyword_init: true)
 
   DEMO_ENTITY_NAME = ENV.fetch("COMPLIANCE_DEMO_ENTITY", "CapHive Demo")
@@ -40,7 +40,7 @@ class CompliancePreview
 
       out = ComplianceCheckEvaluator.call(check, context:)
       Row.new(check_key: check["key"], name: check["name"], outcome: out.outcome, figure: out.figure,
-              limit: out.limit_value, message: out.working["message"] || out.working["lines"]&.last)
+              limit: out.limit_value, message: out.working["message"] || out.working["lines"]&.last, working: out.working)
     end
     Preview.new(version: @version, rows:, not_applicable: false)
   end

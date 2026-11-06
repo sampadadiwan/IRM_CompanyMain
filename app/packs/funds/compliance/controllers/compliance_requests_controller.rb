@@ -1,4 +1,6 @@
 # ⑦ Maker–checker: create (editor), approve / reject (approver ≠ requester — X18, X30, X57, X64).
+# Turbo stream: a request on a register item replaces that item's summary on its page and shows the
+# flash; any other request shows the flash only. HTML falls back to a redirect (E140).
 class ComplianceRequestsController < ApplicationController
   def create
     target = find_target
@@ -9,7 +11,7 @@ class ComplianceRequestsController < ApplicationController
     result = ComplianceRequestSubmit.call(user: current_user, kind: request_params[:kind], target:,
                                           reason: request_params[:reason], check_key: request_params[:check_key],
                                           payload: payload_params)
-    redirect_back_or_to(compliance_home_path, **(result.success? ? { notice: "Request sent for approval" } : { alert: result.error }))
+    respond_with_target(target, **(result.success? ? { notice: "Request sent for approval" } : { alert: result.error }))
   end
 
   def approve
@@ -26,7 +28,19 @@ class ComplianceRequestsController < ApplicationController
     request = policy_scope(ComplianceRequest).find_by(id: params[:id]) || raise(Pundit::NotAuthorizedError)
     authorize request, decision == "approve" ? :approve? : :reject?
     result = ComplianceRequestDecide.call(request:, decider: current_user, decision:, note: params[:note])
-    redirect_back_or_to(compliance_home_path, **(result.success? ? { notice: "Request #{request.reload.status}" } : { alert: result[:error] }))
+    respond_with_target(request.target, **(result.success? ? { notice: "Request #{request.reload.status}" } : { alert: result[:error] }))
+  end
+
+  def respond_with_target(target, notice: nil, alert: nil)
+    respond_to do |format|
+      format.turbo_stream do
+        @notice = notice
+        @alert = alert
+        @item = target.is_a?(ComplianceRegisterItem) ? target.reload : nil
+        render @item ? "compliance_register_items/updated" : "compliance_shared/flash"
+      end
+      format.html { redirect_back_or_to(compliance_home_path, notice:, alert:) }
+    end
   end
 
   # Allow-listed target types only, loaded through the policy scope (never constantized from params)

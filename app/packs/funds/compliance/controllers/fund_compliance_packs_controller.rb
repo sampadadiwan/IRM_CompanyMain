@@ -1,6 +1,8 @@
 # ② The setup grid (packs per fund), attaching a pack (H11, X14, X23), the fund's compliance dashboard,
 # Run now (E18) and the read-only version preview (H48, E89). Re-running a past date is refused (X65).
 class FundCompliancePacksController < ApplicationController
+  include ComplianceCrumbs
+
   before_action :set_fund_pack, only: %i[show run_now preview rerun]
 
   def index
@@ -8,6 +10,15 @@ class FundCompliancePacksController < ApplicationController
     @funds = Fund.where(id: ComplianceAccess.fund_ids(current_user)).order(:name)
     @fund_packs = policy_scope(FundCompliancePack).includes(:compliance_pack, :compliance_pack_version).group_by(&:fund_id)
     @packs = policy_scope(CompliancePack).reject(&:retired?)
+    compliance_crumbs(["Fund packs", nil])
+  end
+
+  # The fund page's Compliance tab (lazy turbo frame): the same dashboard as #show, for one fund
+  def fund_tab
+    authorize FundCompliancePack, :index?
+    @fund = Fund.where(id: ComplianceAccess.fund_ids(current_user)).find_by(id: params[:fund_id]) || raise(Pundit::NotAuthorizedError)
+    @dashboard = ComplianceDashboard.new(@fund, current_user)
+    render layout: false
   end
 
   def create
@@ -30,12 +41,26 @@ class FundCompliancePacksController < ApplicationController
   def show
     authorize @fund_pack
     @dashboard = ComplianceDashboard.new(@fund_pack.fund, current_user)
+    # A pack tab's lazy pane: only that pack's latest results, in its frame
+    if params[:pane] == "results" && turbo_frame_request?
+      return render partial: "fund_compliance_packs/results_frame",
+                    locals: { fund_pack: @fund_pack, results: @dashboard.latest_results[@fund_pack.id] || [] }
+    end
+
+    compliance_fund_crumbs(@fund_pack.fund, [@fund_pack.pack_name, nil])
   end
 
   def run_now
     authorize @fund_pack
     ComplianceFundRunJob.perform_later(@fund_pack.fund_id, Time.current.in_time_zone(setup_time_zone).to_date.iso8601, "run_now")
-    redirect_to fund_compliance_pack_path(@fund_pack), notice: "Running…"
+    notice = "Running — results update when the run finishes. Refresh in a minute."
+    respond_to do |format|
+      format.turbo_stream do
+        @notice = notice
+        render "compliance_shared/flash"
+      end
+      format.html { redirect_to fund_compliance_pack_path(@fund_pack), notice: }
+    end
   end
 
   def preview
@@ -43,6 +68,7 @@ class FundCompliancePacksController < ApplicationController
     version = @fund_pack.compliance_pack.versions.find_by(id: params[:version_id]) || raise(Pundit::NotAuthorizedError)
     @preview = CompliancePreview.call(version:, fund: @fund_pack.fund, classification: @fund_pack.classification)
     @dashboard = ComplianceDashboard.new(@fund_pack.fund, current_user)
+    compliance_fund_crumbs(@fund_pack.fund, [@fund_pack.pack_name, fund_compliance_pack_path(@fund_pack)], ["Preview #{version.label}", nil])
     render :show
   end
 

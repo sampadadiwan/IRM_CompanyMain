@@ -1,27 +1,30 @@
-<%# ⑧ "Describe in words" — a sentence becomes a draft check; the form above keeps working when AI is off (X41) %>
+<%# ⑧ "Describe in words" — a sentence becomes a draft check; the form keeps working when AI is off (X41) %>
 <% available = ComplianceCheckDrafter.available?(version, current_user) %>
-<button type="button" class="btn btn-outline-primary mt-2" data-bs-toggle="modal" data-bs-target="#describeInWordsModal" id="describe_in_words">
-  <i class="ti ti-sparkles"></i> Describe in words
-</button>
+<%# The trigger lives in the page's Actions dropdown (Describe in words); pass button: true for a standalone button %>
+<% if local_assigns[:button] %>
+  <button type="button" class="btn btn-outline-primary d-inline-flex align-items-center" data-bs-toggle="modal" data-bs-target="#describeInWordsModal" id="describe_in_words">
+    <%= cmp_icon(:ai) %>Describe in words
+  </button>
+<% end %>
 <div class="modal fade" id="describeInWordsModal" tabindex="-1" aria-labelledby="describeInWordsModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="describeInWordsModalLabel">Describe a check in words</h5>
+        <h5 class="modal-title" id="describeInWordsModalLabel"><%= cmp_icon(:ai) %>Describe a check in words</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <% if available %>
         <%= form_with scope: :compliance_check_draft, url: compliance_check_drafts_path(compliance_pack_version_id: version.id), method: :post do |f| %>
           <div class="modal-body">
-            <p class="text-muted">Write the rule as you would to a colleague, with its source. The AI drafts the check; you review it, test it on a fund and save it. Nothing is saved until you press Save.</p>
-            <%= f.label :sentence, "Rule", class: "form-label" %>
+            <%= cmp_explainer("Write the rule as you would to a colleague, with its source. The AI drafts the check; you review it, test it on a fund and save it. Nothing is saved until you press Save.") %>
+            <%= f.label :sentence, class: "form-label" do %>Rule <%= cmp_tip("Only field names and your own checks are sent to the AI — never investor data. The AI never decides a result") %><% end %>
             <%= f.text_area :sentence, rows: 4, maxlength: ComplianceCheckDraft::MAX_SENTENCE, class: "form-control",
                             placeholder: "No more than 15% of investable funds in any one sector — LPA clause 8.2" %>
-            <div class="form-text">Up to 1,000 characters. Only field names and your own checks are sent to the AI — never investor data.</div>
+            <small class="form-text text-muted d-block">Up to 1,000 characters.</small>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">Cancel</button>
-            <%= f.submit "Draft check", class: "btn btn-primary" %>
+            <%= f.submit "Draft check", class: "btn btn-outline-primary" %>
           </div>
         <% end %>
       <% else %>

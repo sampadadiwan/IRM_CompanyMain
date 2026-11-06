@@ -1,5 +1,2 @@
-<%# Outcome badge using the app's subtle badge style; "Could not check" is never green (R5) %>
-<% colours = { "pass" => "success", "breach" => "danger", "warning" => "warning", "needs_review" => "info", "could_not_check" => "secondary" } %>
-<% labels = { "pass" => "✓ Pass", "breach" => "✗ Breach", "warning" => "Warning", "needs_review" => "Needs review", "could_not_check" => "Could not check" } %>
-<% c = colours[outcome] || "secondary" %>
-<span class="badge bg-<%= c %>-subtle text-<%= c %>"><%= labels[outcome] || outcome.to_s.humanize %></span>
+<%# Outcome badge — see ComplianceUiHelper#cmp_outcome_badge; "Could not check" is never green (R5) %>
+<%= cmp_outcome_badge(outcome) %>
