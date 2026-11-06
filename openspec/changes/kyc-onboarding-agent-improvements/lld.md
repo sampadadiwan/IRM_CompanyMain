@@ -107,6 +107,24 @@ N/A — no table or column changes. All config is stored in the existing `suppor
 
 **Why DB column first:** Standard fields like `pan`, `bank_name` exist as both DB columns and json_fields entries. The DB column is the canonical source and should take precedence.
 
+### Success message text (KycOnboardingAgent, SupportAgentService) — TEXT CHANGE
+
+Three info messages renamed for clarity:
+- `check_field_completeness` line 209: `"All required attributes are valid"` → `"All required fields are filled"`
+- `validate_custom_fields` line 240: `"All required custom fields are valid"` → `"All custom fields are filled"`
+- `check_document_presence` line 109 (SupportAgentService): `"All required documents are present"` → `"All required documents are uploaded"`
+
+### AML toggle disable (UI) — NEW
+
+**Files:** `_kyc_onboarding_config.html.erb`, `kyc_onboarding_config_controller.js`
+
+**Behavior:** On Stimulus connect, check `data-aml-enabled` value on the config div. If `"false"`:
+1. Find the `select` element whose `name` contains `trigger_aml` (rendered by `custom_form_fields`)
+2. Set its value to `"No"` and disable it
+3. Insert helper text after the select: "AML is not enabled for this entity. Enable it in Entity Settings."
+
+**Data flow:** `_kyc_onboarding_config.html.erb` sets `data-kyc-onboarding-config-aml-enabled-value="<%= support_agent.entity&.entity_setting&.aml_enabled ? 'true' : 'false' %>"` on the controller div.
+
 ### `trigger_aml_if_complete` (KycOnboardingAgent) — MODIFIED
 
 **New guard clause** inserted after `enabled?("trigger_aml")` and before the employee check:
@@ -117,6 +135,8 @@ Check `investor_kyc.entity&.entity_setting&.aml_enabled`. If falsy → `mark_ste
 - [ ] `parse_field_document_mappings` returns identical hash shape for both formats — verify with test data
 - [ ] `parse_new_format_mappings` skips rules with blank doc_label or target_field
 - [ ] `pan_or_tax_id_document?` pattern list covers both Indian (PAN) and US (Tax ID) naming
+- [ ] Success info messages updated in all three locations
+- [ ] AML toggle disabled on UI when entity_setting.aml_enabled is false
 - [ ] AML guard uses safe navigation (`&.`) on both `entity` and `entity_setting`
 - [ ] AML guard is placed before employee check (so entity without AML never queries employees)
 

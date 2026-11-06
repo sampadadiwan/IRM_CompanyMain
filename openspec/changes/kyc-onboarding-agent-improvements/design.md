@@ -579,6 +579,35 @@ Cucumber only. Two feature files: `kyc_agent_setup.feature` (UI: setup table ren
 **Before:** `Cml, clientid (123456) does not match IndividualKyc ()`
 **After:** `Cml, clientid (123456) does not match IndividualKyc (98765)`
 
+### Product feedback #10: Clearer success messages in run output
+
+**Problem:** The run output shows `"All required attributes are valid"` which is technical jargon — product asked "what is this?". Similarly, `"All required custom fields are valid"` and `"All required documents are present"` are not user-friendly.
+
+**Fix:** Rename the success info messages to plain English:
+
+| Current message | New message | Method |
+|---|---|---|
+| `All required attributes are valid` | `All required fields are filled` | `check_field_completeness` in `kyc_onboarding_agent.rb` |
+| `All required custom fields are valid` | `All custom fields are filled` | `validate_custom_fields` in `kyc_onboarding_agent.rb` |
+| `All required documents are present` | `All required documents are uploaded` | `check_document_presence` in `support_agent_service.rb` |
+
+These are `type: :info, severity: :success` issues that appear as green "Passed" rows in the run output panel.
+
+### Product feedback #11: Grey out AML toggle when not enabled for entity
+
+**Problem:** The agent setup page shows a `trigger_aml` Yes/No toggle even when AML is not enabled in entity settings. Product wants this greyed out (disabled) with a message, so admins don't enable a toggle that has no effect.
+
+**Fix:** In `_kyc_onboarding_config.html.erb`, add a Stimulus action on connect that checks `entity.entity_setting.aml_enabled`. If false:
+- Find the `trigger_aml` select field rendered by `custom_form_fields`
+- Disable it and set value to "No"
+- Append a helper text: "AML is not enabled for this entity. Enable it in Entity Settings."
+
+**Approach:** Pass `aml_enabled` as a data attribute on the config container div. The existing `kyc-onboarding-config` Stimulus controller reads it on connect and disables the field. This avoids modifying the generic `custom_form_fields` helper.
+
+**Affected files:**
+- `_kyc_onboarding_config.html.erb` — add `data-aml-enabled` attribute
+- `kyc_onboarding_config_controller.js` — add `connect()` logic to disable AML toggle
+
 ### Risks and open questions
 
 - **Risk:** Old-format agents may have inconsistent FormCustomField records (orphaned, renamed) → Mitigation: the parser handles missing/blank gracefully (existing behavior).
