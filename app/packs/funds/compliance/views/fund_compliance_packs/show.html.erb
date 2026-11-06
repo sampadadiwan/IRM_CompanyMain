@@ -2,7 +2,7 @@
 <% fp = @fund_pack %>
 <% editor = ComplianceAccess.editor?(current_user) %>
 <% upcoming = @dashboard.upcoming_versions.select { |f, _v| f.id == fp.id }.map(&:last) %>
-<div class="container-fluid p-3">
+<div class="container-fluid mw-100 p-3">
   <%= render layout: "compliance_shared/header", locals: { title: "#{@dashboard.fund.name} — Compliance", icon: :compliance } do %>
     <%= cmp_header_link "Register", compliance_register_items_path(fund_id: @dashboard.fund.id), icon: :register %>
     <%= cmp_header_link "Fund page", fund_path(@dashboard.fund, tab: "compliance-tab"), icon: :fund %>

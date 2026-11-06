@@ -3,7 +3,7 @@
     (H89) and a guide icon that opens the guide at this page's own section (H90). %>
 <% section, anchor = ComplianceGuidanceHelper::PAGE_GUIDE.fetch(controller_name, [nil, nil]) %>
 <%= render "compliance_shared/section_bar", current: local_assigns.fetch(:section, section) unless local_assigns[:no_section_bar] %>
-<div class="d-sm-flex align-items-center justify-content-between mb-4">
+<div class="d-sm-flex align-items-center justify-content-between mb-2">
   <h1 class="h3 mb-0 text-gray-800"><%= cmp_icon(icon) %><%= title %></h1>
   <div class="d-flex flex-wrap align-items-center gap-2">
     <%= anchor ? cmp_guide_icon(local_assigns.fetch(:anchor, anchor)) : user_guide_info_icon %>

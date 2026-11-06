@@ -14,11 +14,15 @@
   <%= cmp_explainer(editor ? "Check each value against the quote and page. Correct it in the box if the AI misread it, then confirm — your correction is kept in the history." :
                              "Only compliance editors can confirm or correct these facts.") %>
 
-  <div class="row">
-    <div class="col-lg-8">
-      <div class="card shadow-sm border-0 mb-4">
+  <%# Full width (user: inputs were squeezed in a two-thirds column). The document details that sat in a
+      side card are one muted line under the heading; AI notes follow the table. %>
+  <div class="card shadow-sm border-0 mb-4">
         <div class="card-header border-bottom py-3">
           <h5 class="mb-0 fw-bold" id="reading_summary"><%= cmp_icon(:fact, "me-2 text-primary") %><%= reading.summary %></h5>
+          <div class="small text-muted mt-1" id="reading_document">
+            <%= reading.document.name %> · <%= input&.label || reading.input_key.humanize %> <%= cmp_tip("Which kind of document the pack reads facts from") %>
+            · Read on <%= reading.sent_at ? l(reading.sent_at.to_date) : "—" %>
+          </div>
         </div>
         <div class="card-body">
           <% if reading.status == "failed" %>
@@ -40,11 +44,11 @@
                 <table class="table table-bordered dataTable action_table hover" id="facts">
                   <thead>
                     <tr>
-                      <th class="text-col">Fact</th>
-                      <th class="text-col">Value <%= cmp_tip("What the AI read (or a person entered). Change it here to correct it") %></th>
-                      <th class="text-col">Read from <%= cmp_tip("The exact words in the document and the page they are on") %></th>
-                      <th class="text-col">Status <%= cmp_tip("Only confirmed facts count in compliance checks") %></th>
-                      <th class="text-col">History <%= cmp_tip("Every change: what the AI read, who changed it to what, and when") %></th>
+                      <th class="text-col" style="width: 15%">Fact</th>
+                      <th class="text-col" style="width: 28%">Value <%= cmp_tip("What the AI read (or a person entered). Change it here to correct it") %></th>
+                      <th class="text-col" style="width: 30%">Read from <%= cmp_tip("The exact words in the document and the page they are on") %></th>
+                      <th class="text-col" style="width: 12%">Status <%= cmp_tip("Only confirmed facts count in compliance checks") %></th>
+                      <th class="text-col" style="width: 15%">History <%= cmp_tip("Every change: what the AI read, who changed it to what, and when") %></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -58,7 +62,7 @@
                               <%= date_field_tag "values[#{fact.fact_key}]", fact.value %>
                             <% else %>
                               <%= text_field_tag "values[#{fact.fact_key}]", fact.value_type == "names" ? Array(fact.value).join(", ") : fact.value,
-                                                 class: "form-control", placeholder: fact.not_found? ? "Not found in document" : nil %>
+                                                 class: "form-control", style: "min-width: 220px", placeholder: fact.not_found? ? "Not found in document" : nil %>
                             <% end %>
                             <small class="form-text text-muted d-block"><%= fact.display_value(currency) %></small>
                           <% else %>
@@ -86,21 +90,6 @@
           <% end %>
         </div>
       </div>
-    </div>
-    <div class="col-lg-4">
-      <div class="card shadow-sm border-0 mb-4">
-        <div class="card-header border-bottom py-3">
-          <h5 class="mb-0 fw-bold"><%= cmp_icon(:fact, "me-2 text-primary") %>Document</h5>
-        </div>
-        <div class="card-body">
-          <dl class="row mb-0">
-            <dt class="col-sm-5">Document</dt><dd class="col-sm-7"><%= reading.document.name %></dd>
-            <dt class="col-sm-5">Input <%= cmp_tip("Which kind of document the pack reads facts from") %></dt>
-            <dd class="col-sm-7"><%= input&.label || reading.input_key.humanize %></dd>
-            <dt class="col-sm-5">Read on</dt><dd class="col-sm-7"><%= reading.sent_at ? l(reading.sent_at.to_date) : "—" %></dd>
-          </dl>
-        </div>
-      </div>
       <% if reading.notes.present? %>
         <div class="card shadow-sm border-0 mb-4">
           <div class="card-header border-bottom py-3">
@@ -109,6 +98,4 @@
           <div class="card-body" id="reading_notes"><%= simple_format(reading.notes) %></div>
         </div>
       <% end %>
-    </div>
-  </div>
 </div>

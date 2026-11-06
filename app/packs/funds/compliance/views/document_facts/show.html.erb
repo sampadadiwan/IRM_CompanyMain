@@ -1,6 +1,6 @@
 <%# One document's facts with quote and page (H40); confirm or correct (E66, E67); retry or enter by hand
     (X45, X46). Confirm answers by Turbo stream and replaces the facts card (confirm.turbo_stream.erb). %>
-<div class="container-fluid p-3">
+<div class="container-fluid mw-100 p-3">
   <%= render layout: "compliance_shared/header", locals: { title: "Facts — #{@reading.document.name}", icon: :fact } do %>
     <%= link_to document_readings_path, class: "btn btn-outline-primary d-inline-flex align-items-center" do %><%= cmp_icon(:fact) %>All facts to confirm<% end %>
   <% end %>

@@ -6,7 +6,7 @@
 <% result = @draft.test_result_hash %>
 <% assumed = @draft.assumptions.group_by { |a| a["part"] } %>
 <turbo-frame id="check_draft" target="_top">
-<div class="container-fluid p-3">
+<div class="container-fluid mw-100 p-3">
   <%= render layout: "compliance_shared/header", locals: { title: "Describe in words · #{version.compliance_pack.name} · #{version.label}", icon: :ai } do %>
     <%= cmp_header_link "Back to #{version.label}", compliance_pack_version_path(version), icon: :version %>
   <% end %>

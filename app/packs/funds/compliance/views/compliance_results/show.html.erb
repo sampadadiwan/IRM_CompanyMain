@@ -12,7 +12,7 @@
 <% steps = Array(w["steps"]) %>
 <% remedy = w["remedy"] || {} %>
 <% failing = Array(w["failing_records"]) %>
-<div class="container-fluid p-3">
+<div class="container-fluid mw-100 p-3">
   <%= render layout: "compliance_shared/header", locals: { title: w["check_name"] || @result.check_key.humanize, icon: :result } do %>
     <%= cmp_header_link "Fund dashboard", fund_compliance_pack_path(fp), icon: :compliance %>
   <% end %>

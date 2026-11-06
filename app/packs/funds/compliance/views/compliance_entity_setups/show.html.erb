@@ -2,7 +2,7 @@
     monthly cap). Switches post back to Setup (a full-page form, kept as a redirect — R112). %>
 <% editor = policy(@setup).update? %>
 <% missing = @inputs.count(&:missing?) %>
-<div class="container-fluid p-3">
+<div class="container-fluid mw-100 p-3">
   <%= render layout: "compliance_shared/header", locals: { title: "Compliance setup", icon: :setup } do %>
     <%= cmp_header_link "Fund packs", fund_compliance_packs_path, icon: :fund_pack %>
   <% end %>

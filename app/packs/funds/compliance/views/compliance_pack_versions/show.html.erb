@@ -2,7 +2,7 @@
     (drafts) and publish, as tabs (fund page tab bar pattern). %>
 <% editable = policy(@version).update? %>
 <% active = @preview ? "version-test-tab" : "version-checks-tab" %>
-<div class="container-fluid p-3">
+<div class="container-fluid mw-100 p-3">
   <%= render layout: "compliance_shared/header", locals: { title: "#{@version.compliance_pack.name} · #{@version.label} · #{@version.published? ? 'Published' : 'Draft'}", icon: :version } do %>
     <%= cmp_header_link @version.compliance_pack.name, compliance_pack_path(@version.compliance_pack), icon: :pack %>
     <% if editable %><%= render "compliance_check_drafts/describe_modal", version: @version %><% end %>

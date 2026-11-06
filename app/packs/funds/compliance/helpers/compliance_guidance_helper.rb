@@ -8,7 +8,7 @@ module ComplianceGuidanceHelper
   # Which section bar pill is active, and which guide section the page's guide icon opens (H89, H90)
   PAGE_GUIDE = {
     "compliance_home" => [:home, "compliance-home"], "fund_compliance_packs" => [:home, "fund-packs"],
-    "compliance_results" => [:home, "how-to-read-a-result"], "compliance_register_items" => [:register, "the-register"],
+    "compliance_results" => [:register, "how-to-read-a-result"], "compliance_register_items" => [:register, "the-register"],
     "compliance_duties" => [:duties, "duties"], "document_facts" => [:facts, "facts-to-confirm"],
     "compliance_packs" => [:packs, "packs-and-versions"], "compliance_pack_versions" => [:packs, "packs-and-versions"],
     "compliance_check_drafts" => [:packs, "describe-a-check-in-words"], "compliance_entity_setups" => [:setup, "setup"],
@@ -34,14 +34,13 @@ module ComplianceGuidanceHelper
     cmp_tip(t("compliance.glossary.#{key}"))
   end
 
-  # One or two lines on what the page is for, with a link to its section of the guide (H90)
+  # One or two lines on what the page is for, with a link to its section of the guide (H90).
+  # A muted subtitle under the page title, not a coloured box: a box is kept for things that need
+  # attention (stale results), so two blue bars no longer stack on top of every page.
   def cmp_intro(page, anchor: nil)
-    tag.div(class: "alert alert-info d-flex align-items-start gap-2", id: "page_intro") do
-      safe_join([tag.i(class: "ti ti-info-circle fs-5 flex-shrink-0"),
-                 tag.div do
-                   safe_join([t("compliance.intros.#{page}"), " ",
-                              (anchor ? link_to("Learn more", user_guide_path(GUIDE, anchor:), target: "_blank", rel: "noopener", class: "alert-link") : nil)].compact)
-                 end])
+    tag.p(class: "text-muted mb-1", id: "page_intro") do
+      safe_join([t("compliance.intros.#{page}"), " ",
+                 (anchor ? link_to("Learn more", user_guide_path(GUIDE, anchor:), target: "_blank", rel: "noopener") : nil)].compact)
     end
   end
 
@@ -77,7 +76,7 @@ module ComplianceGuidanceHelper
     run_time = format("%02d:00", ComplianceScheduleJob::RUN_HOUR)
     if last_success.nil?
       text = t("compliance.timing.none", time: run_time, zone:)
-      css = "alert-secondary"
+      css = nil
     elsif failed_since || last_success.finished_at.nil? || last_success.finished_at < ComplianceRun::STALE_AFTER.ago
       done = last_success.created_at.in_time_zone(tz)
       text = t("compliance.timing.stale", date: l(done.to_date), time: l(done, format: :time_only), zone:)
@@ -86,10 +85,18 @@ module ComplianceGuidanceHelper
       next_run = now.hour < ComplianceScheduleJob::RUN_HOUR ? now.to_date : now.to_date + 1
       time = last_success.trigger == "nightly" ? run_time : l(last_success.created_at.in_time_zone(tz), format: :time_only)
       text = t("compliance.timing.latest", time:, zone:, date: l(last_success.run_date), next_date: l(next_run), next_time: run_time)
-      css = "alert-secondary"
+      css = nil
     end
-    tag.div(class: "alert #{css} d-flex align-items-center gap-2 py-2 small", id: "timing_banner") do
-      safe_join([tag.i(class: "ti ti-clock"), text])
+    # Normal and "no results yet": a small muted line under the intro. Stale (E185): the amber box,
+    # because it needs attention.
+    if css
+      tag.div(class: "alert #{css} d-flex align-items-center gap-2 py-2 small", id: "timing_banner") do
+        safe_join([tag.i(class: "ti ti-clock"), text])
+      end
+    else
+      tag.p(class: "text-muted small d-flex align-items-center gap-1 mb-3", id: "timing_banner") do
+        safe_join([tag.i(class: "ti ti-clock"), text])
+      end
     end
   end
 
