@@ -150,6 +150,7 @@ flowchart LR
 | R106 | Failed-run alert goes to `SUPPORT_EMAIL_TO` (set in every `.env.*`, same mailbox as `EntityMailer`) via `ComplianceMailer#run_failed_support`; contains entity, fund, run date, run id, trigger and error class only — no investor data; skipped if the variable is blank | User pointed out the .env support address (2026-11-06) |
 | R107 | Rows with no date (e.g. commitments imported without a commitment date) count in every measure; only dated rows after the run date are left out (E123) | Fund 1 on the dev DB has 70 of 81 commitments undated: dropping them showed corpus ₹24.21 cr instead of ₹375.72 cr — a false breach and a false pass (E137) |
 | R108 | Duty occurrences are bulk-inserted with plain `insert_all` (no `unique_by:`); duplicates are skipped by the NOT NULL unique key `idx_cduty_unique` on MySQL (ON DUPLICATE KEY) and SQLite (ON CONFLICT DO NOTHING) alike | MySQL raises "does not support :unique_by", which failed every nightly run with a duty; SQLite tests hid it (found running `compliance:demo` on the dev DB, 2026-11-06) |
+| R109 | "Investor" is judged by the role a user is acting in (`curr_role == "investor"`), as `ApplicationPolicy` does — not by holding the investor role at all. Investor advisors stay refused. Users of investor entities are refused because their `curr_role` is investor | User was refused on /compliance as fm1 (employee + company_admin + investor); 14 of 54 fund-side staff on dev hold both roles (E138) |
 
 ## 3. Assumptions (verify these)
 

@@ -552,6 +552,7 @@ flowchart LR
 | E134 | Payment during run | Payment saved mid-run | Run finishes | All figures include it, or all exclude it | CM: Payment recorded during a run | changes_over_time |
 | E135 | Facts waiting age | Unconfirmed since 27 Oct | Digest 05 Nov | "facts waiting 9 days" | CM: Waiting facts show their age | changes_over_time |
 | E137 | Undated commitment | Shared setup + a ₹10.00 cr commitment with no commitment date | Run 05 Nov | Counted: "Corpus = ₹310.00 cr"; continuing interest amount passes (₹6.00 cr ≥ ₹5.00 cr) — an undated row is never dropped | CM: Undated record counted | changes_over_time |
+| E138 | Staff who also hold an investor role | Meera (company admin) also holds the investor role, acting as employee | Opens Compliance home; then switches to her investor role and opens it again | First: page shows; second: refused — what counts is the role she acts in, not the roles she holds | FS: Staff with an investor role | compliance_tenant_isolation |
 
 ### Error cases
 

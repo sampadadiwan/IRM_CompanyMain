@@ -180,6 +180,10 @@ Compliance setup, results, register, history and exports MUST be scoped to the u
 - **WHEN** an investor or investor advisor of Growth Fund I requests any Compliance page
 - **THEN** the request is refused and Compliance does not appear in their menus
 
+#### Scenario: Staff with an investor role
+- **WHEN** Meera, a company admin who also holds the investor role, opens Compliance while acting as an employee
+- **THEN** the page shows; and once she switches to her investor role, the same request is refused
+
 ### Requirement: Setup history
 Every setup change (attachments, classifications, mappings, reference lists, overrides, disabling, detaching, roles, owners, fact edits) SHALL be recorded with who, when, before → after and the approver where applicable, in Setup › History. Input-mapping and reference-list changes SHALL apply from the change; past results MUST NOT be rewritten. Each result SHALL link to the setup that applied to its run.
 

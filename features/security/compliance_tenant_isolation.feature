@@ -78,6 +78,18 @@ Feature: Compliance — tenant isolation and maker–checker
     Then the compliance request is denied
     And Lata has no Compliance menu entry
 
+  # E138 — Edge case: a fund-side employee who also holds an investor role sees Compliance while acting as staff, and is refused once they switch to their investor role
+  @security @rack_test
+  Scenario: E138 Staff who also hold an investor role
+    Given "Meera" also holds the investor role
+    And I am signed in to compliance as "Meera"
+    When I open the compliance home
+    Then the compliance page shows "Compliance"
+    Given "Meera" is acting as an investor
+    And I am signed in to compliance as "Meera"
+    When I open the compliance home
+    Then the compliance request is denied
+
   # X23 — Error case: an attach request carrying Delta's fund id is refused and creates nothing
   @security @rack_test
   Scenario: X23 Foreign fund id smuggled

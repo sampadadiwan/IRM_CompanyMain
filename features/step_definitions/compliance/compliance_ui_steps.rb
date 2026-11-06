@@ -15,6 +15,17 @@ Given('an investor user {string} in Growth Fund I') do |name|
   cmp[:users][name] = User.find(user.id)
 end
 
+# E138 — GP staff can hold the investor role too; what counts is the role they act in (curr_role)
+Given('{string} also holds the investor role') do |name|
+  user = cmp_user(name)
+  user.add_role(:investor)
+  expect(user.reload.curr_role).to eq("employee")
+end
+
+Given('{string} is acting as an investor') do |name|
+  cmp_user(name).update_column(:curr_role, "investor")
+end
+
 Given('I am signed in to compliance as {string}') do |name|
   @me = User.find(cmp_user(name).id)
   Warden.test_mode!
