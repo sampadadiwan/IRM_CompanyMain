@@ -152,12 +152,17 @@ module WithFolder
     folder = nil
     parent = entity.root_folder
     path_list = path.split("/")
-    path_list.each_with_index do |folder_name, _idx|
-      next if folder_name.blank?
+    # One workflow-rule lookup for the whole path, not one per level (each new Folder is a Workflowable)
+    WorkflowRulePresence.remember do
+      path_list.each_with_index do |folder_name, _idx|
+        next if folder_name.blank?
 
-      # Check if it exists
-      folder = parent.children.where(entity_id:, name: folder_name, folder_type:).first_or_create
-      parent = folder
+        # Check if it exists. A new level is told its parent, which is already loaded here, so its
+        # same-firm check and permission copy don't load it again (Folder#parent_for_callbacks)
+        level_parent = parent
+        folder = parent.children.where(entity_id:, name: folder_name, folder_type:).first_or_create { |f| f.parent_in_hand = level_parent }
+        parent = folder
+      end
     end
 
     folder

@@ -31,14 +31,14 @@ class Folder < ApplicationRecord
 
   validates :name, presence: true
   # A folder can move under another of its own firm's folders, never into another firm's (C)
-  validate { validate_parent_in_own_firm(:parent) }
+  validate { validate_parent_in_own_firm(:parent, record: parent_for_callbacks) }
   validates :nda_inheritance_mode, inclusion: { in: NDA_INHERITANCE_MODES }
   normalizes :name, with: ->(name) { name.strip }
 
   validates :full_path, uniqueness: { scope: %i[owner_id owner_type entity_id], message: "combination must be unique" }
 
   before_create :set_defaults
-  after_create :set_parent_permissions, if: :parent
+  after_create :set_parent_permissions, if: :parent_for_callbacks
 
   scope :for, ->(user) { where("folders.entity_id=?", user.entity_id).order(:full_path) }
   scope :for_entity, ->(entity) { where("folders.entity_id=?", entity.id).order(:full_path) }
@@ -101,8 +101,8 @@ class Folder < ApplicationRecord
   end
 
   def set_defaults
-    # ancestry's #parent runs a query on every call - read it once
-    parent_folder = parent
+    # ancestry's #parent runs a query on every call - read it once (or use the one the caller passed in)
+    parent_folder = parent_for_callbacks
     if parent_folder
       self.level = parent_folder.level + 1
       self.full_path = level == 1 ? "#{parent_folder.full_path}#{name}" : "#{parent_folder.full_path}/#{name}"
@@ -124,10 +124,22 @@ class Folder < ApplicationRecord
     documents.to_a
   end
 
+  # Set by WithFolder#setup_folder_from_path when it creates a level under a parent it has already loaded
+  attr_writer :parent_in_hand
+
+  # The parent for this record's own callbacks: the one the caller passed in when it is still this folder's
+  # parent (same id), else ancestry's #parent (a query, as before). Callers outside the path builder never
+  # set it, so their behaviour is unchanged.
+  def parent_for_callbacks
+    return @parent_in_hand if @parent_in_hand && @parent_in_hand.id == parent_id
+
+    parent
+  end
+
   # Inherits access rights from the parent folder upon creation.
   def set_parent_permissions
-    # ancestry's #parent runs a query on every call - read it once
-    parent_folder = parent
+    # ancestry's #parent runs a query on every call - read it once (or use the one the caller passed in)
+    parent_folder = parent_for_callbacks
     parent_folder.access_rights.each do |parent_ar|
       parent_ar.replicate_to(self)
 

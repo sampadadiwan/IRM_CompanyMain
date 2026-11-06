@@ -60,8 +60,9 @@ class ApplicationRecord < ActiveRecord::Base
   # must be in this record's own firm. The stored firm is the reference, since entity_id never changes
   # (an in-memory change, like Document#setup_entity copying the folder's firm, is not saved).
   # docs/modules/funds/funds_api_security_policy_plan.md (C)
-  def validate_parent_in_own_firm(association)
-    parent = public_send(association)
+  def validate_parent_in_own_firm(association, record: nil)
+    # record: the parent when the caller already has it loaded (Folder#parent_for_callbacks); else read it
+    parent = record || public_send(association)
     return if parent.nil?
 
     parent_firm = parent.is_a?(Entity) ? parent.id : parent.entity_id
