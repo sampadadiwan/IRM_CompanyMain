@@ -35,41 +35,41 @@ module ComplianceReadingWorld
            "kind" => "content", "applies_to" => "all", "severity" => "breach", "tested" => "continuous", "override" => "any",
            "time_to_fix_days" => 30 }
     cmp_described({
-      "currency" => "INR", "period_basis" => "calendar", "classifications" => ["All funds"],
-      "inputs" => [
-        { "key" => "ic_note", "type" => "document", "label" => "IC note", "facts" => [
-          { "key" => "company", "label" => "Company", "type" => "text" },
-          { "key" => "amount_approved", "label" => "Amount approved", "type" => "amount" },
-          { "key" => "approval_date", "label" => "Approval date", "type" => "date" },
-          { "key" => "signatories", "label" => "Signatories", "type" => "names" },
-          { "key" => "conflicts", "label" => "Conflicts", "type" => "names" },
-          { "key" => "business", "label" => "Business", "type" => "text" }
-        ] },
-        { "key" => "investee_profile", "type" => "document", "label" => "Investee profile",
-          "facts" => [{ "key" => "directors", "label" => "Directors", "type" => "names" }] },
-        { "key" => "ppm", "type" => "document", "label" => "PPM", "notes" => "List the sections that changed since the previous version" }
-      ],
-      "reference_lists" => [{ "key" => "ic_members", "dated" => true, "quorum" => true }, { "key" => "excluded_sectors" },
-                            { "key" => "sponsor_associates" }],
-      "measures" => [],
-      "checks" => [
-        ic.merge("key" => "ic_amount", "name" => "Invested within IC approval", "rule" => "record_within_fact", "field" => "cost",
-                 "fact" => "amount_approved", "words" => { "record" => "invested", "fact" => "approved" }),
-        ic.merge("key" => "ic_date", "name" => "Approved before investing", "rule" => "fact_date_not_after_record", "fact" => "approval_date"),
-        ic.merge("key" => "ic_quorum", "name" => "IC quorum", "rule" => "quorum", "fact" => "signatories", "list" => "ic_members",
-                 "date_fact" => "approval_date"),
-        ic.merge("key" => "ic_conflicts", "name" => "No conflicted member approved", "rule" => "names_disjoint", "fact" => "conflicts",
-                 "other_fact" => "signatories", "words" => { "breach" => "Conflicted member approved" }),
-        ic.merge("key" => "ic_company", "name" => "IC note names the investee", "rule" => "matches_record", "fact" => "company"),
-        ic.merge("key" => "ic_sector", "name" => "Not in an excluded sector", "rule" => "text_not_in_list", "fact" => "business",
-                 "list" => "excluded_sectors", "words" => { "breach" => "Excluded sector" }),
-        ic.merge("key" => "profile_associates", "name" => "No sponsor associate among directors", "rule" => "names_not_in_list",
-                 "document_input" => "investee_profile", "fact" => "directors", "list" => "sponsor_associates",
-                 "words" => { "breach" => "Related party among directors" })
-      ],
-      "duties" => [{ "key" => "ppm_review", "name" => "PPM change review", "trigger" => { "document" => "ppm" },
-                     "due" => { "days_after" => "event", "n" => 5 }, "evidence" => false }]
-    })
+                    "currency" => "INR", "period_basis" => "calendar", "classifications" => ["All funds"],
+                    "inputs" => [
+                      { "key" => "ic_note", "type" => "document", "label" => "IC note", "facts" => [
+                        { "key" => "company", "label" => "Company", "type" => "text" },
+                        { "key" => "amount_approved", "label" => "Amount approved", "type" => "amount" },
+                        { "key" => "approval_date", "label" => "Approval date", "type" => "date" },
+                        { "key" => "signatories", "label" => "Signatories", "type" => "names" },
+                        { "key" => "conflicts", "label" => "Conflicts", "type" => "names" },
+                        { "key" => "business", "label" => "Business", "type" => "text" }
+                      ] },
+                      { "key" => "investee_profile", "type" => "document", "label" => "Investee profile",
+                        "facts" => [{ "key" => "directors", "label" => "Directors", "type" => "names" }] },
+                      { "key" => "ppm", "type" => "document", "label" => "PPM", "notes" => "List the sections that changed since the previous version" }
+                    ],
+                    "reference_lists" => [{ "key" => "ic_members", "dated" => true, "quorum" => true }, { "key" => "excluded_sectors" },
+                                          { "key" => "sponsor_associates" }],
+                    "measures" => [],
+                    "checks" => [
+                      ic.merge("key" => "ic_amount", "name" => "Invested within IC approval", "rule" => "record_within_fact", "field" => "cost",
+                               "fact" => "amount_approved", "words" => { "record" => "invested", "fact" => "approved" }),
+                      ic.merge("key" => "ic_date", "name" => "Approved before investing", "rule" => "fact_date_not_after_record", "fact" => "approval_date"),
+                      ic.merge("key" => "ic_quorum", "name" => "IC quorum", "rule" => "quorum", "fact" => "signatories", "list" => "ic_members",
+                               "date_fact" => "approval_date"),
+                      ic.merge("key" => "ic_conflicts", "name" => "No conflicted member approved", "rule" => "names_disjoint", "fact" => "conflicts",
+                               "other_fact" => "signatories", "words" => { "breach" => "Conflicted member approved" }),
+                      ic.merge("key" => "ic_company", "name" => "IC note names the investee", "rule" => "matches_record", "fact" => "company"),
+                      ic.merge("key" => "ic_sector", "name" => "Not in an excluded sector", "rule" => "text_not_in_list", "fact" => "business",
+                               "list" => "excluded_sectors", "words" => { "breach" => "Excluded sector" }),
+                      ic.merge("key" => "profile_associates", "name" => "No sponsor associate among directors", "rule" => "names_not_in_list",
+                               "document_input" => "investee_profile", "fact" => "directors", "list" => "sponsor_associates",
+                               "words" => { "breach" => "Related party among directors" })
+                    ],
+                    "duties" => [{ "key" => "ppm_review", "name" => "PPM change review", "trigger" => { "document" => "ppm" },
+                                   "due" => { "days_after" => "event", "n" => 5 }, "evidence" => false }]
+                  })
   end
 
   def cmp_reading_key(label)

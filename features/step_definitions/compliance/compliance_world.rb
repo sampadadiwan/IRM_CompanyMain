@@ -157,7 +157,7 @@ module ComplianceWorld
 
   # ── Packs ─────────────────────────────────────────────────────────────────────────────────
   def cmp_sebi_data
-    JSON.parse(File.read(Rails.root.join("db/seeds/compliance/sebi_aif_v1.json")))
+    JSON.parse(Rails.root.join("db/seeds/compliance/sebi_aif_v1.json").read)
   end
 
   def cmp_sebi_pack!(effective: "2026-12-01")
@@ -292,7 +292,7 @@ module ComplianceWorld
   def cmp_check_key(name_or_key, fund_name = "Horizon Growth Fund I")
     return name_or_key if name_or_key.match?(/\A[a-z0-9_]+\z/)
 
-    FundCompliancePack.where(fund_id: cmp_fund(fund_name).id).includes(:compliance_pack_version).each do |fp|
+    FundCompliancePack.where(fund_id: cmp_fund(fund_name).id).includes(:compliance_pack_version).find_each do |fp|
       check = fp.compliance_pack_version.checks.detect do |c|
         c["name"] == name_or_key && (c["applies_to"].nil? || c["applies_to"] == "all" || Array(c["applies_to"]).include?(fp.classification))
       end

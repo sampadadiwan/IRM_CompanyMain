@@ -3,10 +3,10 @@
 Given('the dated IC members list') do
   setup = cmp_setup
   setup.set_reference_list("ic_members", quorum: 3, entries: [
-    { "name" => "A. Rao" }, { "name" => "K. Shah" }, { "name" => "M. Iyer" },
-    { "name" => "R. Mehta", "valid_from" => "2025-04-01", "valid_to" => "2026-10-15" },
-    { "name" => "S. Nair", "valid_from" => "2026-10-05" }
-  ])
+                             { "name" => "A. Rao" }, { "name" => "K. Shah" }, { "name" => "M. Iyer" },
+                             { "name" => "R. Mehta", "valid_from" => "2025-04-01", "valid_to" => "2026-10-15" },
+                             { "name" => "S. Nair", "valid_from" => "2026-10-05" }
+                           ])
   setup.save!
 end
 
@@ -149,7 +149,7 @@ Then('both items are assigned to {string}') do |name|
 end
 
 Given('SEBI v2 is published at {string} effective {string} for {string} funds') do |at, effective, applicability|
-  date, time = at.split(" ")
+  date, time = at.split
   cmp_publish_sebi_version(date, effective, applicability, published_at_time: time)
 end
 
@@ -158,7 +158,7 @@ Then('{string} has no compliance run on {string}') do |fund_name, date|
 end
 
 When('the nightly compliance run happens at {string} Eastern time') do |at|
-  date, time = at.split(" ")
+  date, time = at.split
   cmp_run!("Horizon Growth Fund I", date, time:, zone: "Eastern Time (US & Canada)")
   @result = cmp_latest("Horizon Growth Fund I", "sebi_concentration_cat12")
 end

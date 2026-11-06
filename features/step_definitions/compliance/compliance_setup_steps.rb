@@ -124,7 +124,7 @@ Then('{string} is a compliance viewer, editor and approver') do |user|
 end
 
 Then('the Compliance home lists {string} as {string}') do |fund_name, label|
-  monitored = FundCompliancePack.active.where(fund_id: cmp_fund(fund_name).id).exists?
+  monitored = FundCompliancePack.active.exists?(fund_id: cmp_fund(fund_name).id)
   expect(monitored ? "Monitored" : "Not monitored").to eq(label)
 end
 

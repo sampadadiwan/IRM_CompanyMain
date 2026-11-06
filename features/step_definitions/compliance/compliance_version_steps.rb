@@ -193,7 +193,7 @@ end
 When('Priya publishes a SEBI draft effective {string} with a transition until {string}') do |effective, until_date|
   cmp_sebi_draft
   @published = @draft.publish!(user: nil, attrs: { effective_from: cmp_date(effective), applicability: "transition", transition_ends_on: cmp_date(until_date),
-                                                    counsel_reviewer: "A. Kapoor", counsel_reviewed_on: Date.new(2026, 11, 20) })
+                                                   counsel_reviewer: "A. Kapoor", counsel_reviewed_on: Date.new(2026, 11, 20) })
 end
 
 Then('the version publish is refused with {string}') do |message|

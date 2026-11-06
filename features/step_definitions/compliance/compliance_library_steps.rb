@@ -9,13 +9,13 @@ module ComplianceLibraryHelpers
 
   def draft_definition(classifications = 5)
     cmp_described({
-      "currency" => "INR", "period_basis" => "fy_apr",
-      "classifications" => ["Category I", "Category II", "Category III", "Category I — LVF", "Category II — LVF"].first(classifications),
-      "inputs" => [], "measures" => [{ "key" => "corpus", "label" => "Corpus", "op" => "sum", "source" => "commitments", "field" => "amount" }],
-      "checks" => [{ "key" => "corpus_min", "name" => "Corpus minimum", "kind" => "limit", "applies_to" => "all", "figure" => "corpus",
-                     "compare" => "gte", "limit" => { "value" => 1, "unit" => "amount" }, "citation" => "Test citation" }],
-      "duties" => []
-    })
+                    "currency" => "INR", "period_basis" => "fy_apr",
+                    "classifications" => ["Category I", "Category II", "Category III", "Category I — LVF", "Category II — LVF"].first(classifications),
+                    "inputs" => [], "measures" => [{ "key" => "corpus", "label" => "Corpus", "op" => "sum", "source" => "commitments", "field" => "amount" }],
+                    "checks" => [{ "key" => "corpus_min", "name" => "Corpus minimum", "kind" => "limit", "applies_to" => "all", "figure" => "corpus",
+                                   "compare" => "gte", "limit" => { "value" => 1, "unit" => "amount" }, "citation" => "Test citation" }],
+                    "duties" => []
+                  })
   end
 
   def edit_draft
@@ -85,7 +85,7 @@ end
 
 Then('the test run shows results with figures') do
   expect(@preview.rows).not_to be_empty
-  expect(@preview.rows.map(&:message).compact).not_to be_empty
+  expect(@preview.rows.filter_map(&:message)).not_to be_empty
 end
 
 Then('no compliance results exist for {string}') do |fund_name|
@@ -99,7 +99,7 @@ end
 When('Priya publishes the draft effective {string} with counsel {string} on {string}') do |effective, reviewer, on|
   @draft.reload
   @published = @draft.publish!(user: cmp_user("Priya"), attrs: { effective_from: cmp_date(effective), applicability: "all",
-                                                                  counsel_reviewer: reviewer.presence, counsel_reviewed_on: on.present? ? cmp_date(on) : nil })
+                                                                 counsel_reviewer: reviewer.presence, counsel_reviewed_on: on.present? ? cmp_date(on) : nil })
 end
 
 Then('publishing is refused with {string}') do |message|

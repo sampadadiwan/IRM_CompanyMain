@@ -377,7 +377,7 @@ Then('the {string} item on {string} is closed as {string}') do |check, fund_name
 end
 
 Then('the item keeps its failing working {string} and its clearing working {string}') do |failing, clearing|
-  item = ComplianceRegisterItem.order(:id).last
+  ComplianceRegisterItem.order(:id).last
   item = ComplianceRegisterItem.where.not(closed_on: nil).order(:id).last
   expect(cmp_text(item.first_result)).to include(failing)
   expect(cmp_text(item.last_result)).to include(clearing)
@@ -492,7 +492,7 @@ def cmp_duty(name, fund_name = "Horizon Growth Fund I", period: nil)
 end
 
 def cmp_evidence_file
-  Rack::Test::UploadedFile.new(Rails.root.join("public/img/whatsappQR.png"), "image/png")
+  Rack::Test::UploadedFile.new(Rails.public_path.join('img/whatsappQR.png'), "image/png")
 end
 
 Then('{string} has a {string} duty for {string} due {string}') do |fund_name, name, period, due|

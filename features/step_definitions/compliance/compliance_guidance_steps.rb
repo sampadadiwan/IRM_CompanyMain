@@ -151,7 +151,7 @@ Then('the timing banner is amber') do
 end
 
 Then('the page has the tooltip {string}') do |text|
-  titles = page.all("[data-bs-title]", visible: :all).map { |e| e["data-bs-title"] }
+  titles = page.all("[data-bs-title]", visible: :all).pluck("data-bs-title")
   expect(titles).to include(text)
 end
 
@@ -261,7 +261,7 @@ Given("SEBI v1's concentration limit was edited after loading") do
 end
 
 def cmp_backfill(execute)
-  sources = { "SEBI — AIF" => Dir[Rails.root.join("db/seeds/compliance/sebi_aif_*.json")].map { |p| JSON.parse(File.read(p))["definition"] } }
+  sources = { "SEBI — AIF" => Rails.root.glob("db/seeds/compliance/sebi_aif_*.json").map { |p| JSON.parse(File.read(p))["definition"] } }
   @audits_before = Audit.where(auditable_type: "CompliancePackVersion").count
   @backfill_lines = ComplianceDescriptionBackfill.call(sources:, execute:).map(&:to_s)
 end
@@ -284,7 +284,7 @@ end
 
 Then('every SEBI v1 check has its description and nothing else changed') do
   d = cmp[:sebi].reload.definition_hash
-  expect(d["checks"].map { |c| c["description"] }.all?(&:present?)).to be(true)
+  expect(d["checks"].pluck("description").all?(&:present?)).to be(true)
   expect(ComplianceDescriptionBackfill.without_descriptions(d)).to eq(@before_backfill)
   expect(Audit.where(auditable_type: "CompliancePackVersion").count).to eq(@audits_before + 1)
 end

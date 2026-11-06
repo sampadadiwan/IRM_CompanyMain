@@ -50,7 +50,7 @@ end
 
 Then('the export has results for {string}') do |fund_name|
   expect(@export[:results].map(&:first)).to include(fund_name)
-  expect(@export_bytes.bytesize).to be > 0
+  expect(@export_bytes.bytesize).to be_positive
 end
 
 Then('the export has register items for {string}') do |fund_name|
