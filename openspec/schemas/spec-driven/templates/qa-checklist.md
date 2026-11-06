@@ -6,7 +6,7 @@
 > **Companion documents:** [Proposal](proposal.md) · [Design](design.md)
 
 > **How to use:** work top to bottom. Tick ☐ → ☑ and write Pass or Fail for each row. For a Fail,
-> put the defect link in Notes. Row IDs match the design's worked examples (H/E/X) and UI journeys
+> put the defect link in Notes. Row IDs match the design's worked examples (H/E/X, in design.md or business-rules.md) and UI journeys
 > (J), so a failure maps straight to the automated test that should have caught it.
 
 **ID legend:** **H** = Happy path · **E** = Edge case · **X** = Error case · **J** = UI journey

@@ -322,7 +322,7 @@ Colour = footprint: **green** new, **amber** modified, **grey** reused unchanged
 
 <!-- detail -->
 
-**Worked examples:** <!-- H1, E3, X2 -->
+**Worked examples:** <!-- H1, E3, X2 — with business-rules.md: H1–H10, E1–E7 ([business-rules § 1](business-rules.md#1-group--phase-1)) -->
 
 **FAQ**
 
@@ -451,7 +451,12 @@ erDiagram
      columns # | Scenario | Given | When | Then | Spec scenario | Feature, using real-ish data from
      a shared-setup table. Every spec scenario must appear in the Spec scenario column of at least
      one row; check and add rows for gaps. Each row becomes exactly one Cucumber scenario. Prose
-     Given/When/Then bullets are not acceptable. -->
+     Given/When/Then bullets are not acceptable.
+     LARGE CHANGES (about 30+ rows, or 3+ feature files): move all of the tables below, with the
+     shared setup, into business-rules.md (templates/business-rules.md) and replace them with one
+     paragraph: "Every H/E/X row — shared setup, happy path, edge and error cases, with their spec
+     scenario and feature — lives in [business-rules.md](business-rules.md) (H1–Hn, E1–En,
+     X1–Xn). The cards above cite the IDs; the QA checklist and tasks reuse them." -->
 
 **ID legend:** **H** = Happy path · **E** = Edge case · **X** = Error (exception) case.
 

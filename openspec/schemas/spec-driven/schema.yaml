@@ -306,7 +306,8 @@ artifacts:
         receives | Produces row; only the detail that box owns (edge/error sequence diagrams,
         decision flowcharts, component responsibility rows with queue/retry/idempotency/transaction,
         routes and build notes for UI, the role → access table with entity_id scoping where access
-        is checked, secondary user journeys); **Worked examples:** the H/E/X IDs that prove it;
+        is checked, secondary user journeys); **Worked examples:** the H/E/X IDs that prove it
+        (linked to their business-rules.md section when the change has one);
         **FAQ**. Link to Part 4 for schema and class diagram instead of copying them.
       - **4. Reference**:
         - **Class diagram** (CORE): classDiagram of every new or changed class in `namespace`
@@ -426,6 +427,17 @@ artifacts:
           lots / classes / folios / records, rounding, dates on and either side of a cut-off or
           month/year end, out-of-order state transitions, re-runs and double clicks, permissions and
           direct requests that bypass the UI, and the closed/legacy path that must stay unchanged.
+        - **Large changes only — split the worked examples into business-rules.md.** When the
+          H/E/X tables pass about 30 rows, or their scenarios span 3 or more feature files, write
+          them into `<changeRoot>/business-rules.md` instead, following
+          `openspec/schemas/spec-driven/templates/business-rules.md` (how to read this, shared
+          setup, one numbered section per group with its phase and Happy path / Edge cases / Error
+          cases tables, coverage counts). Decide this while writing design.md, not later. design.md
+          then keeps the Worked examples heading with one paragraph that links to business-rules.md
+          and names the ID ranges, and each card's **Worked examples:** line links to the
+          business-rules section holding its IDs. Every rule above (exhaustive edge/error tables,
+          one row = one scenario, every spec scenario covered) applies unchanged. A smaller change
+          has no business-rules.md; its tables stay here.
         - **Testing** (CORE, 2-4 lines): Cucumber only. Shared setup and reused vs new step files.
           State the traceability rule: every scenario carries a comment naming its ID and path, and
           code comments name the IDs of the paths they implement (see the tasks rules).
@@ -443,7 +455,8 @@ artifacts:
       Create the low-level design (LLD): the implementation-level decisions a reviewing developer
       must check and sign off before coding starts. It is ADDITIVE to design.md. Do not change
       design.md, and do not restate it. Link to design.md sections (boundaries, class diagram,
-      sequences, worked examples) and go one level deeper.
+      sequences, worked examples — or business-rules.md when the change has one) and go one
+      level deeper.
 
       **Planning only: do not make any code changes while writing this document.**
 
@@ -489,7 +502,8 @@ artifacts:
       someone who knows CapHive's screens but not this feature's internals.
 
       Sources, with nothing new invented:
-      - Every worked example in design.md (H/E/X IDs) becomes one checklist row with the SAME ID,
+      - Every worked example in design.md, or in business-rules.md when the change has one
+        (H/E/X IDs), becomes one checklist row with the SAME ID,
         so a failed row maps straight to its Cucumber scenario.
       - Every step of every UI journey in design.md (Part 2 "What users see" and the cards) becomes a row, with IDs J1.1,
         J1.2, ... (journey.step).
@@ -591,7 +605,8 @@ artifacts:
       name the LLD section it implements. The last phase ends with a task to run qa-checklist.md
       on a deployed build and record the sign-off (that task is for QA, not for the apply agent).
       Each phase's closing feature task names the worked-example IDs it covers (H = happy path, E = edge case,
-      X = error case), taken from the Feature column of design.md's Worked examples tables (Part 4).
+      X = error case), taken from the Feature column of design.md's Worked examples tables (Part 4), or of
+      business-rules.md when the change has one.
 
       **Traceability - required for every change (feature files AND code):**
       - Every H/E/X worked example has exactly one Cucumber scenario, with a comment line directly above
@@ -599,14 +614,15 @@ artifacts:
           `# H7 — Happy path: a ₹5 Cr subscription at ₹9,980.69 allots 5,009.6736 units`
           `# E16 — Edge case: units in a soft lock-up are redeemed, with the 2% fee on the locked units only`
           `# X14 — Error case: units still in a hard lock-up on the dealing date are refused; the message names the unlock date`
-        The feature file header links to design.md#worked-examples.
+        The feature file header links to design.md#worked-examples, or to business-rules.md when the
+        change has one.
       - Code carries the same IDs: each service, job, check and each significant branch (guard,
         refusal, skip, rounding, fallback) has a comment naming the IDs whose path runs through it,
         e.g. `# X14 hard lock-up refuses; E16 soft lock-up records the fee`, so a reader can go
         code → ID → scenario and back.
-      - The last phase includes a coverage task: list every H/E/X ID in design.md and every ID
+      - The last phase includes a coverage task: list every H/E/X ID in design.md (or business-rules.md) and every ID
         comment in features/ and confirm the two sets are equal (no ID without a scenario, no
-        scenario without an ID); an edge case found during apply gets a new ID row in design.md
+        scenario without an ID); an edge case found during apply gets a new ID row in design.md (or business-rules.md)
         AND a scenario, never a scenario alone.
     requires:
       - specs

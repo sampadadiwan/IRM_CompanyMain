@@ -238,7 +238,7 @@ of migrations; schema.rb / schema_test.rb both updated -->
 
 ## Test Plumbing
 
-<!-- CORE. What the Cucumber features in design.md's Worked examples (Part 4) need to run. -->
+<!-- CORE. What the Cucumber features in design.md's Worked examples (Part 4), or business-rules.md when the change has one, need to run. -->
 
 | Feature file | Stubs / fixtures | Factories | New step definitions |
 |---|---|---|---|
