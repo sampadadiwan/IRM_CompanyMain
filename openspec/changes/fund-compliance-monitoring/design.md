@@ -693,6 +693,7 @@ The full log of every smaller call (R1–R106) is in [decisions-and-assumptions.
 - **Not chosen:** a separate setup-history table, which would duplicate what `audited` already records.
 - **Changed during the build:** the design said `Trackable`. We use `audited` directly, because `Trackable` adds soft-delete, which needs a `deleted_at` column, and compliance rows are never soft-deleted (R52).
 - **Changed again:** audits record updates and deletions only (`on: %i[update destroy]`). Creation is already on the row (created_at and the who-columns), and fewer rows land in the large `audits` table (R177).
+- **And again:** the models now use the app's `Trackable` module with those same options, so they also get soft delete and data recovery like every other audited model; each table gained an indexed `deleted_at` (R178).
 - **Where:** `audited` on `ComplianceEntitySetup` (mappings, lists, AI settings), `ComplianceRequest`, `ComplianceRegisterItem`, `ComplianceDuty`, `DocumentSignoff`, `DocumentFact`; snapshot in `compliance_results.working`. Published pack versions are never edited, so they need no audit.
 
 #### D6. Duties are their own model, not `Task`

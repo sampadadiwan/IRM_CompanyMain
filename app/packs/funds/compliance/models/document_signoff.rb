@@ -5,9 +5,10 @@ class DocumentSignoff < ApplicationRecord
   belongs_to :document
   belongs_to :marked_by, class_name: "User"
 
-  # Audit changes and deletions only — the row itself records its creation (who/when columns, created_at) (R177)
+  # The app's Trackable (soft delete + audits + associated audits), auditing changes and deletions only —
+  # the row itself records its creation (who/when columns, created_at) (R177, R178)
+  include Trackable.new(on: %i[update destroy])
 
-  audited on: %i[update destroy]
   attr_readonly :entity_id
 
   validates :signed_on, presence: true

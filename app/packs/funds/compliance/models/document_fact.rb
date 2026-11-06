@@ -14,8 +14,9 @@ class DocumentFact < ApplicationRecord
   belongs_to :document_reading
   belongs_to :confirmed_by, class_name: "User", optional: true
 
-  # Changes and deletions only (R177): the AI-read value is the row as created; History shows each later edit
-  audited only: %i[value status source], on: %i[update destroy]
+  # Trackable like the app's other audited models (R178); changes and deletions only (R177): the AI-read value
+  # is the row as created, and History shows each later edit
+  include Trackable.new(on: %i[update destroy], audit_fields: %i[value status source])
 
   attr_readonly :entity_id, :document_reading_id, :fact_key
 

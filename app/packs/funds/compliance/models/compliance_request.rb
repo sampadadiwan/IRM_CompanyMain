@@ -13,9 +13,10 @@ class ComplianceRequest < ApplicationRecord
   belongs_to :requested_by, class_name: "User"
   belongs_to :decided_by, class_name: "User", optional: true
 
-  # Audit changes and deletions only — the row itself records its creation (who/when columns, created_at) (R177)
+  # The app's Trackable (soft delete + audits + associated audits), auditing changes and deletions only —
+  # the row itself records its creation (who/when columns, created_at) (R177, R178)
+  include Trackable.new(on: %i[update destroy])
 
-  audited on: %i[update destroy]
   attr_readonly :entity_id
 
   validates :kind, inclusion: { in: KINDS }

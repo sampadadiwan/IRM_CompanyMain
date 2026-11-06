@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_06_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_06_150000) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -1307,9 +1307,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_06_140000) do
     t.bigint "document_folder_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "deleted_at"
     t.index ["entity_id"], name: "index_compliance_duties_on_entity_id"
     t.index ["fund_compliance_pack_id", "duty_key", "period_key", "subject_type", "subject_id"], name: "idx_cduty_unique", unique: true
     t.index ["fund_compliance_pack_id"], name: "index_compliance_duties_on_fund_compliance_pack_id"
+    t.index ["deleted_at"], name: "index_compliance_duties_on_deleted_at"
   end
 
   create_table "compliance_entity_setups", force: :cascade do |t|
@@ -1326,7 +1328,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_06_140000) do
     t.json "onboarding"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "deleted_at"
     t.index ["entity_id"], name: "index_compliance_entity_setups_on_entity_id", unique: true
+    t.index ["deleted_at"], name: "index_compliance_entity_setups_on_deleted_at"
   end
 
   create_table "compliance_pack_versions", force: :cascade do |t|
@@ -1383,11 +1387,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_06_140000) do
     t.date "escalated_on"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "deleted_at"
     t.index ["entity_id", "status"], name: "idx_creg_entity_status"
     t.index ["entity_id"], name: "index_compliance_register_items_on_entity_id"
     t.index ["fund_compliance_pack_id", "check_key", "open_key"], name: "idx_creg_open_item", unique: true
     t.index ["fund_compliance_pack_id"], name: "index_compliance_register_items_on_fund_compliance_pack_id"
     t.index ["fund_id"], name: "index_compliance_register_items_on_fund_id"
+    t.index ["deleted_at"], name: "index_compliance_register_items_on_deleted_at"
   end
 
   create_table "compliance_requests", force: :cascade do |t|
@@ -1406,8 +1412,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_06_140000) do
     t.text "decision_note"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "deleted_at"
     t.index ["entity_id"], name: "index_compliance_requests_on_entity_id"
     t.index ["target_type", "target_id", "status"], name: "idx_creq_target_status"
+    t.index ["deleted_at"], name: "index_compliance_requests_on_deleted_at"
   end
 
   create_table "compliance_results", force: :cascade do |t|
@@ -2020,9 +2028,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_06_140000) do
     t.datetime "confirmed_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "deleted_at"
     t.index ["confirmed_by_id"], name: "index_document_facts_on_confirmed_by_id"
     t.index ["document_reading_id", "fact_key"], name: "idx_doc_facts_unique", unique: true
     t.index ["entity_id"], name: "index_document_facts_on_entity_id"
+    t.index ["deleted_at"], name: "index_document_facts_on_deleted_at"
   end
 
   create_table "document_readings", force: :cascade do |t|
@@ -2051,8 +2061,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_06_140000) do
     t.bigint "marked_by_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "deleted_at"
     t.index ["document_id"], name: "index_document_signoffs_on_document_id", unique: true
     t.index ["entity_id"], name: "index_document_signoffs_on_entity_id"
+    t.index ["deleted_at"], name: "index_document_signoffs_on_deleted_at"
   end
 
   create_table "documents", force: :cascade do |t|

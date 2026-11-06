@@ -12,9 +12,10 @@ class ComplianceDuty < ApplicationRecord
   belongs_to :done_by, class_name: "User", optional: true
   has_one :fund, through: :fund_compliance_pack
 
-  # Audit changes and deletions only — the row itself records its creation (who/when columns, created_at) (R177)
+  # The app's Trackable (soft delete + audits + associated audits), auditing changes and deletions only —
+  # the row itself records its creation (who/when columns, created_at) (R177, R178)
+  include Trackable.new(on: %i[update destroy])
 
-  audited on: %i[update destroy]
   attr_readonly :entity_id
 
   validates :duty_key, presence: true
