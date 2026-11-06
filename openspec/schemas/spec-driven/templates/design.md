@@ -70,6 +70,75 @@ flowchart LR
     E -- "status of every step" --> U
 ```
 
+### Key concepts
+
+<!-- CORE — never omitted. Placed right after the picture and BEFORE the walkthrough: every word the
+     rest of the design leans on, explained in plain language so a reader new to the domain can
+     follow. Rules:
+     - **Concept map**: one mermaid flowchart of how the concepts relate (subgraphs allowed here:
+       e.g. "the rules" / "one record" / "what happens every night"), with 3 bullets under it.
+     - **Glossary** table: Concept | What it is, in one line | Example (from the walkthrough's data)
+       | Stored in (table/column, or "Not stored"). Every domain noun, status word and role used
+       later appears here — including words the team takes for granted (episode, maker–checker,
+       duty, applicability, preview, …).
+     - **One #### explainer per concept that has its own rules or lifecycle** (e.g. an approval
+       model, a recurring obligation, a grouping like "episode"). Each explainer has:
+       - what it is and WHY it exists (the problem it solves), as bullets;
+       - a table of its kinds/triggers with a real example per row;
+       - what it does NOT cover (e.g. which actions need no approval) — readers ask this first;
+       - one diagram (sequenceDiagram or timeline) of one example start to finish;
+       - its rules as bullets (who, when, exceptions, what happens on reject/undo).
+     - Later sections LINK back here instead of re-explaining (cards add a line "New to X? Read
+       [X](#anchor) first").
+     - Never introduce a concept first in a card, decision or schema table. -->
+
+**How the concepts fit together**
+
+```mermaid
+flowchart TB
+    subgraph RULES["The rules"]
+        A["Concept A<br/>one-line meaning"] --> B["Concept B"]
+    end
+    subgraph REC["One record"]
+        C["Concept C"]
+    end
+    B --> C
+    C --> D["What happens<br/>every night / on save"]
+```
+
+- <!-- what the top box is -->
+- <!-- what the middle is -->
+- <!-- what the bottom is -->
+
+**Glossary**
+
+| Concept | What it is, in one line | Example | Stored in |
+|---|---|---|---|
+| <!-- e.g. Register item --> | <!-- one breach episode: opened by the first failing run, closed by the first passing run --> | <!-- "Concentration — open since 5 Nov, fix by 5 Dec" --> | <!-- `compliance_register_items` --> |
+
+#### <!-- Concept with its own rules, e.g. "Maker–checker — two-person approval" -->
+
+- **What:** <!-- -->
+- **Why:** <!-- the problem it solves -->
+
+| Kind / trigger | What it does | Example |
+|---|---|---|
+| <!-- --> | <!-- --> | <!-- --> |
+
+**What it does NOT cover:** <!-- e.g. actions one person may do alone, and why -->
+
+```mermaid
+sequenceDiagram
+    actor M as Maker
+    participant App as CapHive
+    actor C as Checker
+    M->>App: one real example, start to finish
+    App-->>C: …
+```
+
+**Rules**
+- <!-- who, when, exceptions, what happens on reject / undo -->
+
 ### Walkthrough: one example, start to finish
 
 <!-- CORE. Right after the picture: one realistic example (use the shared-setup data from Part 4) told
@@ -165,10 +234,34 @@ Colour = footprint: **green** new, **amber** modified, **grey** reused unchanged
 
 ### Design decisions
 
-<!-- CORE. Numbered: choice, alternative considered, why rejected. Favour the simpler/DRYer option,
-     and say why when you don't. -->
+<!-- CORE. Written so a reader who was not in the room understands each call. Rules:
+     - Open with an **At a glance** table: # | Decision | Why, in one line. Number D1, D2, … in order
+       (never out of order, never gaps).
+     - Then one #### block per decision, ALWAYS with these five bullets:
+       - **Problem:** what had to be decided, in plain words, with a concrete example;
+       - **Decision:** what we build (real names);
+       - **Why:** 2-4 bullets;
+       - **Not chosen:** the alternative, and why not;
+       - **Where:** the classes / tables that carry it.
+     - Use only concepts already defined in [Key concepts](#key-concepts); link to them.
+     - Favour the simpler/DRYer option, and say why when you don't.
+     - During apply, add a **Changed during the build** table (Log # | What changed | Why) and update
+       any decision the build changed (mark it "Changed during the build: …"), so design.md never
+       contradicts the code. -->
 
-1. **Decision title** — Choice made. Alternative considered: X. Rejected because: Y.
+**At a glance**
+
+| # | Decision | Why, in one line |
+|---|---|---|
+| D1 | <!-- --> | <!-- --> |
+
+#### D1. <!-- Decision title -->
+
+- **Problem:** <!-- -->
+- **Decision:** <!-- -->
+- **Why:** <!-- -->
+- **Not chosen:** <!-- alternative — because … -->
+- **Where:** <!-- classes / tables -->
 
 **FAQ**
 

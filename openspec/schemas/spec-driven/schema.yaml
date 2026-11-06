@@ -30,6 +30,11 @@ artifacts:
       - **What Changes**: What changes for the user/business, in plain language, with a mermaid
         flowchart pair (before/after, never ASCII art) for each existing flow the change alters. Mark breaking changes with
         **BREAKING**.
+        - **Key concepts** (REQUIRED, never omitted, inside What Changes before the flow
+          diagrams): every new word a business reader meets, explained before it is used — one
+          mermaid diagram of how the concepts relate, then Concept | What it means for you |
+          Example. Concepts with their own rules (an approval step, a recurring task, a grouping)
+          get 3-5 bullets: what, why, what it does NOT cover, one example. No table/class names.
       - **Workflow Journey** (REQUIRED, placed before User Stories and linked from the header):
         one worked journey from "nothing set up" to the outcome, listing EVERY action in order -
         who is involved; one mermaid flowchart of the whole journey (subgraph per part: before
@@ -247,6 +252,15 @@ artifacts:
         - **The idea in one picture**: ONE flowchart, 5-9 boxes numbered ①②③ in reading order,
           plain-English names plus a one-line description each, the core of the idea in the
           middle, every arrow labelled. No class names, subgraphs, colours or error paths.
+        - **Key concepts** (CORE, never omitted, right after the picture and before the
+          walkthrough): a concept map (mermaid flowchart), a Glossary table (Concept | What it is,
+          in one line | Example from the walkthrough data | Stored in), and one #### explainer per
+          concept with its own rules or lifecycle (approval models such as maker–checker,
+          recurring obligations such as duties, groupings such as episodes): what + why, a
+          kinds/triggers table with examples, what it does NOT cover, one sequence/timeline
+          diagram, rules incl. exceptions and reject/undo. Every domain noun, status word and role
+          used later must be defined here; later sections link back instead of re-explaining.
+          A concept must never appear first in a card, decision or schema table.
         - **Walkthrough: one example, start to finish**: a realistic example told as a story right
           after the picture: setup, a legend for any notation, optional mermaid `timeline`, then
           phase tables (# | When | What happens | Behind the scenes citing ①②③ | Result) including
@@ -270,7 +284,13 @@ artifacts:
           glance" table plus the main everyday journey (ASCII wireframe with ①②③ callouts and a
           Step | The user… | They see table). Other journeys go in their box's card. Messages stay
           in the proposal.
-        - **Design decisions**: choice, alternative, why rejected. Favour the simpler/DRYer option.
+        - **Design decisions** (CORE): an At a glance table (# | Decision | Why, in one line),
+          numbered D1, D2… in order; then one #### block per decision with five bullets —
+          Problem (plain words + concrete example), Decision (real names), Why (2-4 bullets),
+          Not chosen (alternative and why not), Where (classes/tables). Only use concepts from Key
+          concepts. Favour the simpler/DRYer option. During apply, add a "Changed during the
+          build" table (Log # | What changed | Why) and correct any decision the build changed,
+          so design.md never contradicts the code.
         - **FAQ**.
       - **3. One card per box** (CORE): one ### card per box, in picture order (a trivial box may
         share a card with its neighbour). Every card: what it is (1-2 sentences); an Owns | Reads /

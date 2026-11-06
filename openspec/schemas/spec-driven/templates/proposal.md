@@ -24,6 +24,18 @@
      of the concepts and how they relate. Bullet the concrete changes; mark breaking changes with
      **BREAKING**. -->
 
+### Key concepts
+
+<!-- REQUIRED — never omitted. Every new word a business reader meets in this proposal, explained
+     before it is used. One mermaid diagram of how the concepts relate, then a table:
+     Concept | What it means for you | Example (real-looking figures). For any concept with its own
+     rules (an approval step, a recurring task, a grouping), add 3-5 bullets: what, why, what it
+     does NOT cover, one example. No table or class names here — design.md has those. -->
+
+| Concept | What it means for you | Example |
+|---|---|---|
+| <!-- --> | <!-- --> | <!-- --> |
+
 ### Flow Diagram
 
 <!-- Show the current flow ("Before") and the new flow ("After") as mermaid flowcharts, not

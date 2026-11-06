@@ -38,6 +38,16 @@
 
 <!-- 3-6 bullets (no paragraphs): the problem the feature solves and the mechanism it uses. -->
 
+### Key concepts
+
+<!-- REQUIRED. Every domain word the rest of the report uses (Root Cause, Fix), defined before it
+     is used: Concept | What it is, in one line | Example | Stored in. Add 3-5 bullets for any
+     concept with its own rules (an approval step, a recurring job, a grouping). -->
+
+| Concept | What it is, in one line | Example | Stored in |
+|---|---|---|---|
+| <!-- --> | <!-- --> | <!-- --> | <!-- --> |
+
 ### How it fits together
 
 ```mermaid

@@ -46,6 +46,9 @@ artifacts:
         of the data, who holds what, what is checked where, and WHY it is built that way rather
         than an obvious alternative. Add a mermaid diagram of the normal, intended flow.
         Nothing in this section describes the bug - it is what SHOULD happen.
+        It MUST include a **Key concepts** table (Concept | What it is, in one line | Example |
+        Stored in) defining every domain word Root Cause and Fix use, with 3-5 bullets for any
+        concept that has its own rules - never leave a reader to guess a term.
         This is the section that makes the report worth reading six months later. A reader who
         has never seen the feature must be able to follow Root Cause after reading it, and
         should come away understanding the DESIGN, not just the defect. Treat a bug as the
