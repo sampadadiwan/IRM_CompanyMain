@@ -134,6 +134,10 @@ of migrations; schema.rb / schema_test.rb both updated -->
 **Reviewer checks**
 - [ ] Every query is scoped by `entity_id`, or explains why not
 - [ ] No N+1 on list pages. No unbounded loads (use `find_each` / `in_batches`)
+- [ ] Every page / frame / job from design.md's **Query budget** has its preloads and grouped
+      queries named here; nothing inside a row loop issues a query (`exists?`, `count`, `find_by`,
+      a querying policy check, an un-preloaded association)
+- [ ] The phase's features run clean under Prosopite (`PROSOPITE=1 … cucumber`) for this change's code
 
 ---
 

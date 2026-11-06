@@ -230,7 +230,26 @@ Colour = footprint: **green** new, **amber** modified, **grey** reused unchanged
      - the main everyday journey here: a small ASCII wireframe with ①②③ callouts plus a
        Step | The user… | They see table.
      Other journeys go in the card of the box they belong to. User-facing messages stay in the
-     proposal. Turbo/Stimulus details go in the owning card's build notes. -->
+     proposal. Turbo/Stimulus details go in the owning card's build notes.
+     - **Screen standards** (REQUIRED whenever a screen is added or changed): one row per screen, so
+       every page is DESIGNED to the app's standard instead of being fixed after it is built. Name a
+       real existing screen to copy for each one — never "reuse existing styling" in general.
+       Defaults to copy: index = capital_calls/_index (h1.h3 header + outline `ti` buttons +
+       grid_stats + layouts/filter + SearchComponent + RansackTable + pagy); show = capital_calls/show
+       + _show (container-fluid mw-100 p-3, stats, `card shadow-sm border-0` sections, actions row +
+       "Actions" dropdown); tabs = funds/_owner_fund_details (data-controller="tabs", nav-pills,
+       lazy turbo-frame panes with layouts/loading); journeys = workflow_instances/_journey_panel
+       (step popups via journey-step-info); forms = FormCard (forms only). -->
+
+**Screen standards**
+
+| Screen | Kind | Copies | Breadcrumbs | Tabs (lazy pills) | Turbo (frames / streams per action) | Stats cards (= grid totals) | Filter + search | Actions (header + Actions dropdown) | Help (title ⓘ intro, field tooltips, empty state, What's next) | Full width |
+|---|---|---|---|---|---|---|---|---|---|---|
+| <!-- Register --> | <!-- index --> | <!-- capital_calls/_index --> | <!-- Compliance › Register --> | <!-- Open/Closed/All --> | <!-- grid frame; assign = stream replacing row --> | <!-- Open, Overdue… --> | <!-- layouts/filter: fund, status… --> | <!-- Filter · Download --> | <!-- yes --> | <!-- mw-100 --> |
+
+- Every action that changes one row or card answers `format.turbo_stream` (replace by `dom_id`, refresh cards, flash) with an HTML redirect fallback; a full reload only where the whole page changes — say which.
+- Help text is a tooltip, never a grey paragraph under the title; a coloured box only when something needs attention.
+- One icon per concept across the feature; badges `bg-X-subtle text-X` with only success/info/danger/secondary.
 
 ### Design decisions
 
@@ -392,7 +411,23 @@ erDiagram
 
 #### Performance
 
-<!-- CORE. Bullets: volume, background vs inline, batching, large tables (CLAUDE.md). -->
+<!-- CORE. Bullets: volume, background vs inline, batching, large tables (CLAUDE.md). PLUS a query
+     budget for every page, frame and job the change adds, so N+1s are designed out rather than found
+     by Prosopite after the code is written. Rules:
+     - No query inside a loop over rows: no per-row `exists?`/`count`/`find_by`, no per-row Pundit
+       `policy(record).x?` that queries, no per-row association not preloaded. Use `includes`,
+       `group(...).count` / `maximum`, one `pluck` into a Hash, or a per-request memo.
+     - Access checks used per row (roles, fund visibility) are loaded once per request.
+     - Counts shown in nav bars / cards are grouped SQL counts, memoised per request.
+     - Jobs that loop over funds/records batch their lookups the same way.
+     - Each phase's gate runs its features under Prosopite (`PROSOPITE=1`, see
+       config/initializers/prosopite.rb) and fixes every N+1 whose stack is in the change's code. -->
+
+**Query budget**
+
+| Page / frame / job | Rows shown or processed | Queries (budget, independent of rows) | Preloads / grouped queries | Per-row lookups avoided |
+|---|---|---|---|---|
+| <!-- Register grid --> | <!-- 10–500 items --> | <!-- ≤ 12 --> | <!-- includes(:fund, :assignee); group(:fund_id).count --> | <!-- policy per row → fund_ids memo --> |
 
 #### Security
 

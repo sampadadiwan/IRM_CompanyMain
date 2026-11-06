@@ -283,7 +283,16 @@ artifacts:
         - **What users see** (CONDITIONAL, whenever a screen, email or alert changes): an "At a
           glance" table plus the main everyday journey (ASCII wireframe with ①②③ callouts and a
           Step | The user… | They see table). Other journeys go in their box's card. Messages stay
-          in the proposal.
+          in the proposal. PLUS a **Screen standards** table (REQUIRED whenever a screen is added
+          or changed): one row per screen — Screen | Kind | Copies (a real existing screen) |
+          Breadcrumbs | Tabs (lazy pills) | Turbo (frames / streams per action) | Stats cards (=
+          grid totals) | Filter + search | Actions (header + Actions dropdown) | Help (title ⓘ
+          intro tooltip, field tooltips, empty state, What's next) | Full width. Defaults to copy:
+          index = capital_calls/_index; show = capital_calls/show + _show (container-fluid mw-100);
+          tabs = funds/_owner_fund_details (lazy turbo-frame pills); journeys =
+          workflow_instances/_journey_panel; forms = FormCard only. Never write "reuse existing
+          styling" without naming the screen. Help text is a tooltip, never a grey paragraph; a
+          coloured box only when something needs attention.
         - **Design decisions** (CORE): an At a glance table (# | Decision | Why, in one line),
           numbered D1, D2… in order; then one #### block per decision with five bullets —
           Problem (plain words + concrete example), Decision (real names), Why (2-4 bullets),
@@ -319,7 +328,13 @@ artifacts:
           how re-runs and retries are kept from re-sending. If the change truly sends nothing, keep
           the heading and say why after considering both audiences — a bare "N/A" is not enough.
         - **Cross-cutting concerns**: Transactions and queries (CONDITIONAL); Exception handling
-          and monitoring (CONDITIONAL, tied to `Noticed`); Performance (CORE).
+          and monitoring (CONDITIONAL, tied to `Noticed`); Performance (CORE) — which MUST
+          include a **Query budget** table (Page / frame / job | Rows | Queries budget, independent
+          of rows | Preloads / grouped queries | Per-row lookups avoided) covering every page, frame
+          and job the change adds, with the rule that nothing inside a row loop queries (no per-row
+          exists?/count/find_by, querying policy checks or un-preloaded associations; access checks
+          and nav/card counts loaded once per request). Each phase gate runs its features under
+          Prosopite (`PROSOPITE=1`) and fixes every N+1 in the change's code.
         - **Architecture and design patterns** (CORE — never omitted): a table Pattern | How this
           design applies it | Existing example reused | Where (box / class). One row per item below;
           a row may say "not needed — reason". Items:
@@ -522,6 +537,18 @@ artifacts:
       passes - the task list itself should make it clear that phase N+1 only starts once phase N's
       feature run is green. This project has no RSpec tier; every phase's verification is a
       Cucumber feature, not a unit spec.
+
+      Before that green run, every phase ends with two more gate tasks (always present; the UI one
+      may say "no screens changed in this phase"):
+      - **UI review** — screenshot each new/changed screen beside the reference screen named in
+        design.md's *Screen standards* table and apply the UI self-review checklist (breadcrumbs,
+        lazy pill tabs, Turbo streams for row actions, stats cards = grid totals, standard filter +
+        search, header buttons + Actions dropdown, title ⓘ tooltip / field tooltips / empty states /
+        What's next, full width). Fix differences in the same phase.
+      - **N+1 check** — run the phase's features with `PROSOPITE=1` (config/initializers/prosopite.rb),
+        read `log/prosopite.log` (truncate first, never commit) and fix every N+1 whose stack is in
+        this change's code; list ones from shared code with call sites rather than editing them.
+      Test runs: wait on each run's PID (`cmd & p=$!; wait $p`), never a `while pgrep` loop.
 
       Guidelines:
       - Group related tasks under ## numbered headings (phases)

@@ -98,6 +98,10 @@ step (J2.3 = journey 2, step 3) · **R** = Role sweep · **C** = Cross-cutting c
 | ☐ | C4 | Tenant isolation | A user in a different entity cannot see or reach any of this data, even with a direct URL | | |
 | ☐ | C5 | Regression on modified screens | Each modified screen still does what it did before | | |
 | ☐ | C6 | Empty states | New lists/panels with no data show a sensible message | | |
+| ☐ | C7 | Looks like the rest of CapHive | Each changed screen matches the reference screen in design.md *Screen standards*: breadcrumbs, header buttons + Actions dropdown, stats cards, standard table + filter, full width | | |
+| ☐ | C8 | No full page reloads for small actions | Tabs fade in place and load lazily; row actions (approve, assign, mark done…) update just the row and cards | | |
+| ☐ | C9 | Explains itself | Every page has a title ⓘ explaining it; computed columns and labels have tooltips; empty lists say what to do next | | |
+| ☐ | C10 | Speed on a large entity | Lists and dashboards on the largest test entity open in under ~2 s; no visible slowdown as rows grow | | |
 
 ---
 
