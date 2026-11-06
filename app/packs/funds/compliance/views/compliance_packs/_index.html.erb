@@ -1,5 +1,5 @@
 <% frame = with_frame("compliance_packs_frame") %>
-<%= render layout: "compliance_shared/header", locals: { title: "Rule library", icon: :pack } do %>
+<%= render layout: "compliance_shared/header", locals: { intro: :packs, title: "Rule library", icon: :pack } do %>
   <%= link_to compliance_packs_path(filter: true), class: "btn btn-outline-primary d-inline-flex align-items-center", id: "packs_filter_btn",
               data: { turbo_frame: "_top", bs_toggle: "tooltip", bs_title: "Filter by name, regime, locked or retired" } do %>
     <%= cmp_icon(:filter) %>Filter
@@ -11,7 +11,6 @@
   <% end %>
 <% end %>
 
-<%= cmp_intro(:packs, anchor: "packs-and-versions") %>
 
 <%
   scope = @stats_scope

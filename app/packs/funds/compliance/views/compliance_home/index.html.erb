@@ -1,5 +1,5 @@
 <%# Compliance home: every visible fund, its packs and open items. Funds with no pack are "Not monitored" (E10). %>
-<%= render layout: "compliance_shared/header", locals: { title: "Compliance", icon: :compliance } do %>
+<%= render layout: "compliance_shared/header", locals: { intro: :home, title: "Compliance", icon: :compliance } do %>
   <%# Register, Duties and Facts are on the section bar above (H89) — only Manage stays here %>
   <div class="dropdown">
     <button class="btn btn-outline-success dropdown-toggle d-inline-flex align-items-center" type="button" id="compliance_manage_btn"
@@ -14,7 +14,6 @@
   </div>
 <% end %>
 
-<%= cmp_intro(:home, anchor: "compliance-home") %>
 <%# ⑩ H86 / E184 / E185: which run these results come from, and when the next one is %>
 <%= cmp_timing_banner(@setup, last_success: @last_success, failed_since: @failed_since) %>
 <%# ⑩ H80–H83: the 8 setup steps, folded to one line once complete %>

@@ -1,12 +1,11 @@
 <% frame = with_frame("compliance_duties_frame") %>
-<%= render layout: "compliance_shared/header", locals: { title: "Compliance duties", icon: :duty } do %>
+<%= render layout: "compliance_shared/header", locals: { intro: :duties, title: "Compliance duties", icon: :duty } do %>
   <%= link_to compliance_duties_path(filter: true), class: "btn btn-outline-primary d-inline-flex align-items-center", id: "duties_filter_btn",
               data: { turbo_frame: "_top", bs_toggle: "tooltip", bs_title: "Filter by fund, duty, period, due date, done date, owner or overdue" } do %>
     <%= cmp_icon(:filter) %>Filter
   <% end %>
 <% end %>
 
-<%= cmp_intro(:duties, anchor: "duties") %>
 <%# ⑩ What's next: upload evidence, then Mark done — or nothing due %>
 <%= render "compliance_shared/whats_next", record: :duties, context: { due_count: compliance_section_counts[:due] } %>
 

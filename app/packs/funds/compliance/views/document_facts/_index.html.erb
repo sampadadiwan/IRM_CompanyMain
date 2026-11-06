@@ -1,5 +1,5 @@
 <% frame = with_frame("document_readings_frame") %>
-<%= render layout: "compliance_shared/header", locals: { title: "Facts to confirm", icon: :fact } do %>
+<%= render layout: "compliance_shared/header", locals: { intro: :facts, title: "Facts to confirm", icon: :fact } do %>
   <%= link_to document_readings_path(filter: true), class: "btn btn-outline-primary d-inline-flex align-items-center", id: "facts_filter_btn",
               data: { turbo_frame: "_top", bs_toggle: "tooltip", bs_title: "Filter by document, input, status or dates" } do %>
     <%= cmp_icon(:filter) %>Filter
@@ -9,7 +9,6 @@
   <% end %>
 <% end %>
 
-<%= cmp_intro(:facts, anchor: "facts-to-confirm") %>
 <%= render "compliance_shared/whats_next", record: :facts, context: { waiting: compliance_section_counts[:facts] } %>
 
 <%= render "document_facts/grid_stats", scope: @stats_scope %>

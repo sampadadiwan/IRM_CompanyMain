@@ -34,16 +34,6 @@ module ComplianceGuidanceHelper
     cmp_tip(t("compliance.glossary.#{key}"))
   end
 
-  # One or two lines on what the page is for, with a link to its section of the guide (H90).
-  # A muted subtitle under the page title, not a coloured box: a box is kept for things that need
-  # attention (stale results), so two blue bars no longer stack on top of every page.
-  def cmp_intro(page, anchor: nil)
-    tag.p(class: "text-muted mb-1", id: "page_intro") do
-      safe_join([t("compliance.intros.#{page}"), " ",
-                 (anchor ? link_to("Learn more", user_guide_path(GUIDE, anchor:), target: "_blank", rel: "noopener") : nil)].compact)
-    end
-  end
-
   # H90: the standard user-guide button (user_guide_info_icon's look), opening the guide at this page's section
   def cmp_guide_icon(anchor)
     return nil if current_user&.curr_role == "investor"

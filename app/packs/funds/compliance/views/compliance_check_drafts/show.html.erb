@@ -7,12 +7,11 @@
 <% assumed = @draft.assumptions.group_by { |a| a["part"] } %>
 <turbo-frame id="check_draft" target="_top">
 <div class="container-fluid mw-100 p-3">
-  <%= render layout: "compliance_shared/header", locals: { title: "Describe in words · #{version.compliance_pack.name} · #{version.label}", icon: :ai } do %>
+  <%= render layout: "compliance_shared/header", locals: { intro: :draft, title: "Describe in words · #{version.compliance_pack.name} · #{version.label}", icon: :ai } do %>
     <%= cmp_header_link "Back to #{version.label}", compliance_pack_version_path(version), icon: :version %>
   <% end %>
   <% if flash[:alert] %><div class="alert alert-danger" id="draft_alert"><%= flash[:alert] %></div><% end %>
   <% if flash[:notice] %><div class="alert alert-info" id="draft_notice"><%= flash[:notice] %></div><% end %>
-  <%= cmp_intro(:draft, anchor: "describe-a-check-in-words") %>
   <p class="mb-3"><%= cmp_icon(:explain) %>Rule: <strong id="draft_sentence">"<%= @draft.sentence %>"</strong></p>
 
   <% if @draft.status == "drafting" %>

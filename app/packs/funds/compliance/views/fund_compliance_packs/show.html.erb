@@ -3,11 +3,10 @@
 <% editor = ComplianceAccess.editor?(current_user) %>
 <% upcoming = @dashboard.upcoming_versions.select { |f, _v| f.id == fp.id }.map(&:last) %>
 <div class="container-fluid mw-100 p-3">
-  <%= render layout: "compliance_shared/header", locals: { title: "#{@dashboard.fund.name} — Compliance", icon: :compliance } do %>
+  <%= render layout: "compliance_shared/header", locals: { intro: :fund_pack, title: "#{@dashboard.fund.name} — Compliance", icon: :compliance } do %>
     <%= cmp_header_link "Register", compliance_register_items_path(fund_id: @dashboard.fund.id), icon: :register %>
     <%= cmp_header_link "Fund page", fund_path(@dashboard.fund, tab: "compliance-tab"), icon: :fund %>
   <% end %>
-  <%= cmp_intro(:fund_pack, anchor: "fund-packs") %>
   <%# ⑩ H86: this fund's last run and the next one %>
   <%= cmp_runs_timing_banner(fund: @dashboard.fund) %>
   <%= render "fund_compliance_packs/dashboard", dashboard: @dashboard, preview: @preview %>

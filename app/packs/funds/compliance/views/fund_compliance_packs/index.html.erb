@@ -1,6 +1,6 @@
 <%# Setup › Funds: which packs each fund carries, and attaching one (classification per pack). A fund ×
     pack matrix has one column per pack, so it is the standard table rather than a RansackTable (R111). %>
-<%= render layout: "compliance_shared/header", locals: { title: "Fund packs", icon: :fund_pack } do %>
+<%= render layout: "compliance_shared/header", locals: { intro: :fund_packs, title: "Fund packs", icon: :fund_pack } do %>
   <% if ComplianceAccess.editor?(current_user) %>
     <button type="button" class="btn btn-outline-primary d-inline-flex align-items-center" data-bs-toggle="modal" data-bs-target="#attachPackModal" id="attach_pack_btn">
       <%= cmp_icon(:new) %>Attach pack
@@ -9,7 +9,6 @@
   <%= cmp_header_link "Rule library", compliance_packs_path, icon: :pack %>
 <% end %>
 
-<%= cmp_intro(:fund_packs, anchor: "fund-packs") %>
 
 <%
   all_fps = @fund_packs.values.flatten

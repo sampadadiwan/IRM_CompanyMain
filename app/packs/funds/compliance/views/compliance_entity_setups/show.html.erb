@@ -3,11 +3,10 @@
 <% editor = policy(@setup).update? %>
 <% missing = @inputs.count(&:missing?) %>
 <div class="container-fluid mw-100 p-3">
-  <%= render layout: "compliance_shared/header", locals: { title: "Compliance setup", icon: :setup } do %>
+  <%= render layout: "compliance_shared/header", locals: { intro: :setup, title: "Compliance setup", icon: :setup } do %>
     <%= cmp_header_link "Fund packs", fund_compliance_packs_path, icon: :fund_pack %>
   <% end %>
   <% if flash[:alert] %><div class="alert alert-danger" id="setup_error"><%= flash[:alert] %></div><% end %>
-  <%= cmp_intro(:setup, anchor: "setup") %>
 
   <%= cmp_stats([
     { stat: @setup.monitoring_enabled ? "On" : "Off", subtitle: "Monitoring", colour: @setup.monitoring_enabled ? "success" : "secondary", icon: :run,
