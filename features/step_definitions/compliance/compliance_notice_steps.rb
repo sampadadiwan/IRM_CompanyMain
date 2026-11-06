@@ -35,6 +35,14 @@ Then('an email went to {string} about {string}') do |name, text|
   expect(mails).not_to be_empty
 end
 
+# X28 — the support alert goes to SUPPORT_EMAIL_TO (.env.test: support@caphive.com)
+Then('CapHive support got an email about {string}') do |text|
+  support = ENV.fetch("SUPPORT_EMAIL_TO")
+  mails = ActionMailer::Base.deliveries.select { |m| Array(m.to).include?(support) && m.subject.to_s.include?(text) }
+  expect(mails).not_to be_empty
+  expect(mails.last.body.encoded).to include("Error:")
+end
+
 When('{string} exports the register from {string} to {string}') do |user, from, to|
   @export = ComplianceRegisterExport.new(cmp_user(user), cmp_date(from), cmp_date(to), []).rows_for_test
   @export_bytes = ComplianceRegisterExport.call(user: cmp_user(user), from: cmp_date(from), to: cmp_date(to))

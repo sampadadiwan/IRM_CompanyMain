@@ -204,12 +204,13 @@ Feature: Compliance runs and results
     Given the compliance date is "2026-11-05"
     Then marking a document signed on "2026-11-06" is refused with "Signed date cannot be in the future"
 
-  # X28 — Error case: a failed run shows the last successful run as out of date and tells owners
+  # X28 — Error case: a failed run shows the last successful run as out of date and tells owners and CapHive support
   Scenario: X28 Failed run
     When the nightly compliance run happens on "2026-11-05"
     And the nightly compliance run on "2026-11-06" fails
     Then the latest run of "Horizon Growth Fund I" is "failed"
     And "Meera" got the compliance notice "Compliance run failed for Horizon Growth Fund I"
+    And CapHive support got an email about "Compliance run failed"
     Given 26 hours pass after the last successful run
     Then the results of "Horizon Growth Fund I" are stale
 

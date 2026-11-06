@@ -35,6 +35,8 @@ module ComplianceNotices
     return if run.nil?
 
     deliver(owners(run.entity, run.fund), run.entity, "run_failed", "Compliance run failed for #{run.fund.name} on #{I18n.l(run.run_date)}")
+    # Support hears about every failed run, not only the owners (R63 → R106)
+    ComplianceMailer.with(run_id: run.id).run_failed_support.deliver_later
     Rails.logger.error("[Compliance] run #{run.id} failed for fund #{run.fund_id} — support alerted")
   end
 

@@ -1,0 +1,7 @@
+<%= sa_light_banner(title: "Compliance", label: "Compliance run failed", subtitle: h("#{@entity.name} · #{@fund.name}"), tone: :muted) %>
+<ul>
+  <li>Run date: <%= l(@run.run_date) %></li>
+  <li>Run: #<%= @run.id %> (<%= @run.trigger %>)</li>
+  <li>Error: <%= @run.error_summary.presence || "unknown" %></li>
+</ul>
+<p>The fund's compliance owners were told in the app and by email. Results stay on the last successful run until a run succeeds.</p>

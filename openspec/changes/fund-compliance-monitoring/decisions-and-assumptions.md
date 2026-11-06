@@ -104,7 +104,7 @@ flowchart LR
 | R60 | Approvers who were deactivated are remembered in `ai_settings["handled_inactive_user_ids"]` so the "pending approvals returned" line appears once (E112) | Avoids a new column; once-only note |
 | R61 | Category III NAV is a per-fund input entered in setup (`nav`) until the source is confirmed; blank → "Could not check — missing: NAV" (X38, A10) | Keeps check 2 honest without guessing a source |
 | R62 | Run-now rate limiting relies on the running-run dedupe (E18); no rack-attack rule added in Phase 1 | Deferred — existing initializer untouched; revisit with Security item 10 |
-| R63 | Failed-run alert to "CapHive support" is a logged error (no support mailbox constant exists); owners get the in-app + email notice | Wire to the support address when ops confirm one |
+| R63 | ~~Failed-run alert to "CapHive support" is a logged error~~ — superseded by R106 | — |
 | R64 | Classifications are stored as their display names ("Category II", "Category II — LVF") rather than codes | Pre-fill compares with `funds.category` text directly (H12, E11) |
 | R65 | Draft definitions are edited as one JSON document in Phase 1 (form-per-field builder deferred; Phase 2 "Describe in words" fills it) | Simplest editor that still validates everything on save |
 | R66 | Group 11 rows that need AI-read document facts (E129, E130, E135) and SEBI E55/E56 move to Phase 3 with the facts feature; H54/E103/E104/E105 test the dated IC list directly in Phase 1 | Facts do not exist until Phase 3 |
@@ -147,6 +147,7 @@ flowchart LR
 | R103 | The IFSCA "Accredited investors" input reuses the investor-group input type (optional; unmapped = nobody excluded) and "Sponsor/manager" reuses SEBI's key so one mapping serves both packs (H13) | No new input type; shared inputs by key already supported |
 | R104 | The entity regulator setting (`entity_settings.regulatory_env`) does not restrict which packs can be attached (E8) — no code, asserted by a scenario | Funds of one manager can sit under different regulators |
 | R105 | The version page shows each fixed amount limit in its own currency ("USD 150,000" on an INR-default page) | Consistent with the working |
+| R106 | Failed-run alert goes to `SUPPORT_EMAIL_TO` (set in every `.env.*`, same mailbox as `EntityMailer`) via `ComplianceMailer#run_failed_support`; contains entity, fund, run date, run id, trigger and error class only — no investor data; skipped if the variable is blank | User pointed out the .env support address (2026-11-06) |
 
 ## 3. Assumptions (verify these)
 

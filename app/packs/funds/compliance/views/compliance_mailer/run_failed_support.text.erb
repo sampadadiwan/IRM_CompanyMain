@@ -1,0 +1,6 @@
+Compliance run failed — <%= @entity.name %> / <%= @fund.name %>
+- Run date: <%= l(@run.run_date) %>
+- Run: #<%= @run.id %> (<%= @run.trigger %>)
+- Error: <%= @run.error_summary.presence || "unknown" %>
+
+The fund's compliance owners were told in the app and by email. Results stay on the last successful run until a run succeeds.
