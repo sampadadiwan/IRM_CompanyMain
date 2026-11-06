@@ -54,11 +54,17 @@ class ComplianceContentCheck
   def call
     return owner_share if @rule == "common_owner_share"
 
-    records = record_rows
+    # The run's content checks often read the same records, documents and facts (e.g. every IC-note rule
+    # on the same investments): each is memoised in the run's context cache (R176)
+    records = run_cached(:records, @check["source"], @check["filters"], @check["field"]) { record_rows }
     from = @check["checks_from"].present? ? Date.parse(@check["checks_from"].to_s) : nil
     earlier, checked = records.partition { |r| from && (r[:date].nil? || r[:date] < from) }
-    docs = latest_documents(checked.pluck(:id))
-    source = fact_source(docs.values.map(&:id))
+    # The newest mapped document of every record of the source, once per run; each check takes its own
+    docs = run_cached(:documents, @check["source"], @check["document_input"], mapping) do
+      latest_documents(fund_records(ComplianceDataCatalog.model(@check["source"])).unscope(:order).pluck(:id))
+    end.slice(*checked.pluck(:id))
+    doc_ids = docs.values.map(&:id)
+    source = run_cached(:facts, @check["document_input"], doc_ids) { fact_source(doc_ids) }
     failing = checked.filter_map do |rec|
       doc = docs[rec[:id]]
       next if doc.nil? # no document at all is the record-document check's job (shape 2)
@@ -69,6 +75,12 @@ class ComplianceContentCheck
   end
 
   private
+
+  def run_cached(*key, &)
+    return yield unless @ctx.respond_to?(:cache) && @ctx.cache
+
+    @ctx.cache.fetch([:content_check, *key]) { @ctx.cache[[:content_check, *key]] = yield }
+  end
 
   def mapping
     @mapping ||= @ctx.setup&.document_mapping(@check["document_input"]) ||

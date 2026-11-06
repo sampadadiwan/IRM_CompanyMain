@@ -52,7 +52,7 @@ module ComplianceNotices
   # Owners: the compliance owner plus active users tagged Compliance (optionally limited to a fund's viewers)
   def owners(entity, fund = nil)
     setup = ComplianceEntitySetup.find_by(entity_id: entity.id)
-    users = User.where(entity_id: entity.id, active: true).with_tag(TAG).to_a.select { |u| u.tag_list.to_s.split(",").map(&:strip).include?(TAG) }
+    users = User.where(entity_id: entity.id, active: true).with_tag(TAG).includes(:roles, :entity).to_a.select { |u| u.tag_list.to_s.split(",").map(&:strip).include?(TAG) }
     users << setup.owner if setup&.owner&.active?
     users = users.uniq.select { |u| ComplianceAccess.viewer?(u) }
     fund ? users.select { |u| ComplianceAccess.fund_visible?(u, fund) } : users

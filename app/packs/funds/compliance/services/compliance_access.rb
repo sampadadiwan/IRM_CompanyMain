@@ -36,7 +36,8 @@ module ComplianceAccess
 
   # Active users of the entity who can approve (company admins included — H59)
   def eligible_approvers(entity)
-    User.where(entity_id: entity.id, active: true).select { |u| approver?(u) }
+    # roles/entity preloaded: approver? checks roles and the entity flag per user (Prosopite, R176)
+    User.where(entity_id: entity.id, active: true).includes(:roles, :entity).select { |u| approver?(u) }
   end
 
   # Fund ids the user may see (fund access rights for non-admin employees — X20, E47)

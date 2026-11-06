@@ -40,7 +40,15 @@ class ComplianceRunOperation < Trailblazer::Operation
 
     ctx[:events] = []
     snapshot do
-      FundCompliancePack.active.where(fund_id: fund.id).order(:id).includes(:compliance_pack).find_each do |fp|
+      # Preloaded for the version mover and evaluator (fund, current version, the pack's versions) and the
+      # override/disable requests of every attachment in one query — no queries per pack (R176)
+      fps = FundCompliancePack.active.where(fund_id: fund.id).order(:id)
+                              .includes(:fund, :compliance_pack_version, compliance_pack: :versions).to_a
+      FundCompliancePack.preload_requests(fps)
+      # Every attachment's open register items in one query (ComplianceRegisterUpdater reads them per result)
+      open_items = ComplianceRegisterItem.open_items.where(fund_compliance_pack_id: fps.map(&:id)).group_by(&:fund_compliance_pack_id)
+      fps.each do |fp|
+        fp.run_open_items = (open_items[fp.id] || []).index_by(&:check_key)
         evaluate_pack(ctx, fp, run, setup, run_at)
       end
     end
@@ -104,6 +112,8 @@ class ComplianceRunOperation < Trailblazer::Operation
 
   def evaluate_pack(ctx, fund_pack, run, setup, run_at)
     state = ComplianceVersionMover.call(fund_pack, run_at:)
+    # A version move may drop or archive overrides — read them fresh after one
+    fund_pack.clear_preloaded_requests if state.events.any?
     ctx[:events].concat(state.events.map { |e| e.merge("fund_pack_id" => fund_pack.id) })
     return if state.status == :retired
     # E9: no classification → no checks run (shown amber on the dashboard)
@@ -115,7 +125,7 @@ class ComplianceRunOperation < Trailblazer::Operation
 
     context = ComplianceMeasureQuery.context(fund: fund_pack.fund, as_of: run.run_date, setup:, version:)
     overrides = fund_pack.active_overrides
-    pending = ComplianceRequest.where(target_type: "FundCompliancePack", target_id: fund_pack.id, kind: "override", status: "pending").pluck(:check_key)
+    pending = fund_pack.pending_override_keys
     disabled = fund_pack.disabled_check_keys
 
     checks.each do |check|
@@ -182,15 +192,22 @@ class ComplianceRunOperation < Trailblazer::Operation
     end
   end
 
+  # The attachment's open register items by check, loaded once per fund run (R176). Kept on the
+  # attachment record, which this run loaded fresh, so nothing outlives the run.
+  def open_items_for(fund_pack)
+    fund_pack.run_open_items ||= ComplianceRegisterItem.open_items.where(fund_compliance_pack_id: fund_pack.id).index_by(&:check_key)
+  end
+
   def store(run, fund_pack, version, check, outcome, subject: nil)
     working = outcome.working.merge("version" => version.label, "classification" => fund_pack.classification,
                                     "check_name" => check["name"], "citation" => check["citation"])
+    # entity as the run's loaded record, not an id — the belongs_to check would load it once per result
     result = ComplianceResult.create!(
-      entity_id: run.entity_id, compliance_run: run, fund_compliance_pack: fund_pack, compliance_pack_version: version,
+      entity: run.entity, compliance_run: run, fund_compliance_pack: fund_pack, compliance_pack_version: version,
       check_key: check["key"], subject_type: subject&.class&.name, subject_id: subject&.id,
       outcome: outcome.outcome, figure: outcome.figure, limit_value: outcome.limit_value, working:
     )
-    ComplianceRegisterUpdater.call(result, check:, run_date: run.run_date)
+    ComplianceRegisterUpdater.call(result, check:, run_date: run.run_date, open_items: open_items_for(fund_pack))
     result
   end
 end

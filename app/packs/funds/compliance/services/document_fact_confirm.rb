@@ -10,7 +10,7 @@ class DocumentFactConfirm
   # values: {"amount_approved" => "150000000"}; only keys of this reading's facts are used
   def self.call(reading:, user:, values: {})
     values = values.to_h.stringify_keys
-    facts = reading.document_facts.to_a
+    facts = reading.document_facts.includes(:entity).to_a
     errors = parse_errors(facts.to_h { |f| [f.fact_key, f.value_type] }, values, facts.index_by(&:fact_key))
     return Result.new(reading:, error: errors.to_sentence) if errors.any?
 

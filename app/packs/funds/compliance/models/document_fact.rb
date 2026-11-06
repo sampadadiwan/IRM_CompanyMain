@@ -85,8 +85,10 @@ class DocumentFact < ApplicationRecord
 
   # E67: "AI read ₹1.50 cr → Meera set ₹15.00 cr, 06 Nov 2026" — from the audits of the value
   def history(currency = "INR")
-    origin = audits.where(action: "create").first&.audited_changes&.dig("source") || source
-    edits = audits.where(action: "update").order(:id).select { |a| a.audited_changes["value"].is_a?(Array) }
+    # From the loaded audits (callers preload them: document_facts.includes(:audits)) — no query per fact (R176)
+    all = audits.to_a.sort_by(&:id)
+    origin = all.detect { |a| a.action == "create" }&.audited_changes&.dig("source") || source
+    edits = all.select { |a| a.action == "update" && a.audited_changes["value"].is_a?(Array) }
     edits.each_with_index.map do |a, i|
       change = a.audited_changes["value"]
 

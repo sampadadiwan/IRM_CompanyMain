@@ -1,7 +1,8 @@
 <% owner = reading.document.owner %>
 <% currency = (owner.is_a?(Fund) ? owner : owner.try(:fund))&.currency.presence || "INR" %>
 <% editor = policy(reading).confirm? %>
-<% facts = reading.document_facts.to_a %>
+<%# audits preloaded: each fact's History column reads them (R176) %>
+<% facts = reading.document_facts.includes(:audits).to_a %>
 <div id="<%= dom_id(reading) %>">
   <%= cmp_stats([
     { stat: facts.size, subtitle: "Facts", colour: "info", icon: :fact, tooltip: "Facts the pack asks for from this kind of document" },

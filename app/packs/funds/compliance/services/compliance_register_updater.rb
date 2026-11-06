@@ -8,21 +8,36 @@
 class ComplianceRegisterUpdater
   DEFAULT_TIME_TO_FIX = 30
 
-  def self.call(result, check:, run_date:)
-    new(result, check, run_date).call
+  # open_items: optional { check_key => open item } for the result's attachment, loaded once per fund
+  # run and kept current here — saves one lookup query per result (R176). Without it, it is looked up.
+  def self.call(result, check:, run_date:, open_items: nil)
+    new(result, check, run_date, open_items).call
   end
 
-  def initialize(result, check, run_date)
+  def initialize(result, check, run_date, open_items = nil)
     @result = result
     @check = check
     @date = run_date
+    @open_items = open_items
   end
 
   def call
-    item = ComplianceRegisterItem.open_items.find_by(fund_compliance_pack_id: @result.fund_compliance_pack_id, check_key: @result.check_key)
+    key = @result.check_key
+    item = if @open_items
+             @open_items[key]
+           else
+             ComplianceRegisterItem.open_items.find_by(fund_compliance_pack_id: @result.fund_compliance_pack_id, check_key: key)
+           end
     case @result.outcome
-    when "breach" then breach(item)
-    when "pass" then close(item) if item
+    when "breach"
+      kept = breach(item)
+      @open_items[key] = kept if @open_items
+      kept
+    when "pass"
+      return unless item
+
+      close(item)
+      @open_items&.delete(key)
     end
   end
 

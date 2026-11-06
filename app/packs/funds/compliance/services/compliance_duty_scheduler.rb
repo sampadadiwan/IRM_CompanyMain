@@ -16,24 +16,25 @@ class ComplianceDutyScheduler
     @setup = setup
   end
 
+  # Rows from every scheduled / new-investor duty are inserted together — one insert and one pair of
+  # counts per attachment instead of per duty (R176). Returns how many occurrences were created.
   def call
+    rows = []
     created = 0
     @version.duties.each do |duty|
       next unless applies?(duty)
 
       trig = duty["trigger"] || {}
-      created += if trig["schedule"].present?
-                   schedule_period(duty, trig["schedule"])
-                 elsif trig["event"] == "new_investor"
-                   schedule_new_investors(duty, Date.parse(trig["from"].to_s))
-                 elsif trig["document"].present?
-                   # H44: one occurrence per new document of the input, with AI notes when read
-                   ComplianceDocumentDuties.schedule(@fp, duty, @setup)
-                 else
-                   0
-                 end
+      if trig["schedule"].present?
+        rows.concat(schedule_period(duty, trig["schedule"]))
+      elsif trig["event"] == "new_investor"
+        rows.concat(schedule_new_investors(duty, Date.parse(trig["from"].to_s)))
+      elsif trig["document"].present?
+        # H44: one occurrence per new document of the input, with AI notes when read
+        created += ComplianceDocumentDuties.schedule(@fp, duty, @setup)
+      end
     end
-    created
+    created + insert(rows)
   end
 
   private
@@ -47,11 +48,10 @@ class ComplianceDutyScheduler
     duty.dig("due", "n").to_i
   end
 
-  # The period containing the run date; never one that ended before the pack was attached (E120)
+  # The period containing the run date; never one that ended before the pack was attached (E120). Returns rows.
   def schedule_period(duty, schedule)
     key, period_end = CompliancePeriod.for([@date, @fp.attached_on || @date].max, schedule, @version.period_basis)
-    rows = [row(duty, key, period_end, period_end + due_days(duty).days)]
-    insert(rows)
+    [row(duty, key, period_end, period_end + due_days(duty).days)]
   end
 
   # One duty per investor whose first commitment in the fund is on/after the "from" date (E106, E107)
@@ -59,12 +59,11 @@ class ComplianceDutyScheduler
     firsts = CapitalCommitment.where(entity_id: @fp.entity_id, fund_id: @fp.fund_id)
                               .where.not(investor_id: nil)
                               .group(:investor_id).minimum(:commitment_date)
-    rows = firsts.filter_map do |investor_id, date|
+    firsts.filter_map do |investor_id, date|
       next if date.nil? || date < from || date > @date
 
       row(duty, "", nil, date + due_days(duty).days, subject_type: "Investor", subject_id: investor_id)
     end
-    insert(rows)
   end
 
   def row(duty, period_key, period_end, due_on, subject_type: "", subject_id: 0)

@@ -31,15 +31,33 @@ class FundCompliancePack < ApplicationRecord
     status == "active"
   end
 
+  # Transient, per fund run: the attachment's open register items by check (ComplianceRunOperation, R176)
+  attr_accessor :run_open_items
+
+  # A fund run reads the override / disable requests of every attachment in one query (R176)
+  def self.preload_requests(fund_packs)
+    by_fp = ComplianceRequest.where(target_type: "FundCompliancePack", target_id: fund_packs.map(&:id),
+                                    kind: %w[override disable], status: %w[approved pending]).group_by(&:target_id)
+    fund_packs.each { |fp| fp.instance_variable_set(:@preloaded_requests, by_fp[fp.id] || []) }
+  end
+
+  def clear_preloaded_requests
+    @preloaded_requests = nil
+  end
+
   # Approved, not archived/dropped overrides for this attachment, keyed by check
   def active_overrides
-    ComplianceRequest.where(target_type: "FundCompliancePack", target_id: id, kind: "override", status: "approved")
-                     .index_by(&:check_key)
+    requests_of("override", "approved").index_by(&:check_key)
   end
 
   # Checks switched off for this fund (approved disable requests)
   def disabled_check_keys
-    ComplianceRequest.where(target_type: "FundCompliancePack", target_id: id, kind: "disable", status: "approved").pluck(:check_key)
+    requests_of("disable", "approved").map(&:check_key)
+  end
+
+  # Overrides waiting for an approver (the old limit keeps applying)
+  def pending_override_keys
+    requests_of("override", "pending").map(&:check_key)
   end
 
   # E15/H18-style labels: "SEBI — AIF · Category II"
@@ -77,5 +95,13 @@ class FundCompliancePack < ApplicationRecord
     return if compliance_pack_version.classifications.include?(classification)
 
     errors.add(:classification, "\"#{classification}\" is not a classification of #{pack_name}")
+  end
+
+  def requests_of(kind, status)
+    if @preloaded_requests
+      @preloaded_requests.select { |r| r.kind == kind && r.status == status }
+    else
+      ComplianceRequest.where(target_type: "FundCompliancePack", target_id: id, kind:, status:).to_a
+    end
   end
 end
