@@ -185,6 +185,10 @@ artifacts:
         touches, and `bundle exec rubocop` on the changed files
       - If the report's Blast Radius lists other callers, the final phase MUST include a task
         that runs their features too
+      - The final phase MUST also include an N+1 check under Prosopite (`PROSOPITE=1`) when the
+        fix touches a query, a list page or a job, and a UI check when it touches a screen (still
+        matches the app's standard screens); each says "not applicable — <reason>" otherwise
+      - Wait on each test run's PID (`cmd & p=$!; wait $p`), never a `while pgrep` loop
       - `TEST_ENV_NUMBER` must be set to a fresh random value on every cucumber run (unset, runs
         share one sqlite db and corrupt each other); Redis must be up on 6379
 

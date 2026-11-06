@@ -35,3 +35,9 @@
       needing checking, and confirm they are green.
 - [ ] 3.3 Run `bundle exec rubocop` on the changed files and confirm it is clean, including the
       `IRM/RelationBlankPresent` cop.
+- [ ] 3.4 N+1 check (if the fix touches a query, a list page or a job): run the feature with
+      `PROSOPITE=1 TEST_ENV_NUMBER=$RANDOM bundle exec cucumber features/<path>/<feature>.feature`,
+      read `log/prosopite.log` (truncate first, never commit) and fix any N+1 the fix introduced.
+- [ ] 3.5 UI check (if the fix touches a screen): screenshot it beside its unchanged neighbours and
+      confirm it still matches the app's standard screens (breadcrumbs, tabs, buttons, tooltips).
+      Otherwise write "no screens touched".

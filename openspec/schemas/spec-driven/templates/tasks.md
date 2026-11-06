@@ -31,5 +31,5 @@
 - [ ] 2.5 N+1 check under Prosopite; fix every N+1 in this change's code.
 - [ ] 2.6 Run the phase's features green before starting phase 3.
 
-<!-- Add further numbered phases as needed, each ending in its own feature file + a green run
-     before the next phase starts. -->
+<!-- Add further numbered phases as needed, each ending with the same gate — feature file, UI review
+     (or "no screens changed"), N+1 check under Prosopite, green run — before the next phase starts. -->

@@ -119,6 +119,10 @@ of migrations; schema.rb / schema_test.rb both updated -->
 **Reviewer checks**
 - [ ] No action without `authorize` / `policy_scope`
 - [ ] Permitted params can't set `entity_id`, `user_id` or other ownership fields
+- [ ] Actions that change one row or card answer `format.turbo_stream` (replace by `dom_id`, refresh
+      cards, flash) with an HTML redirect fallback, as design.md *Screen standards* says
+- [ ] Every page action sets breadcrumbs (`@bread_crumbs` / `fund_bread_crumbs`); tab panes and lazy
+      frames render only their frame for a `turbo_frame_request?`
 
 ---
 
@@ -277,6 +281,8 @@ of migrations; schema.rb / schema_test.rb both updated -->
 | MCP tool surfaces changed only via the ontology YAML (run the ontology drift feature) | | |
 | Cucumber only (no RSpec); `TEST_ENV_NUMBER=$RANDOM` on every run | | |
 | `bundle exec rubocop` clean, including the `IRM/RelationBlankPresent` cop | | |
+| No query inside a row loop (per-row `exists?`/`count`/`find_by`, querying policy checks, un-preloaded associations); access checks and nav/card counts once per request; the phase's features clean under `PROSOPITE=1` | | |
+| Screens copy the reference screen in design.md *Screen standards*: `FormCard` only for forms, show pages `container-fluid mw-100`, lazy pill tabs, Actions dropdown, help as tooltips (never grey paragraphs), no new CSS | | |
 
 ---
 
