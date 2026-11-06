@@ -1,4 +1,4 @@
-<%= sa_light_banner(title: "Compliance digest", label: @message, subtitle: "#{l(@as_of)} · #{h @entity&.name}".html_safe, tone: :info) %>
+<%= sa_light_banner(title: "Compliance digest", label: @message, subtitle: h("#{l(@as_of)} · #{@entity&.name}"), tone: :info) %>
 <ul>
   <% @lines.each do |line| %>
     <li><%= line %></li>
