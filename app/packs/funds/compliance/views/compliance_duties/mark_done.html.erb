@@ -1,6 +1,8 @@
 <%# Mark done, drawn in the remote modal; answers by Turbo stream (complete.turbo_stream.erb) %>
 <%= render layout: "compliance_shared/modal", locals: { id: "markDoneModal", icon: :done, title: "Mark done — #{@duty.name}" } do %>
   <%= form_with url: complete_compliance_duty_path(@duty), method: :patch, multipart: true, data: { turbo_frame: "_top" } do %>
+    <%= hidden_field_tag :grid_q, params[:q].respond_to?(:to_unsafe_h) ? params[:q].to_unsafe_h.to_json : nil %>
+    <%= hidden_field_tag :grid_search, params.dig(:search, :value) %>
     <div class="modal-body">
       <p class="text-muted"><%= cmp_icon(:calendar) %><%= @duty.period_key.presence || "On demand" %> · due <%= @duty.due_on ? l(@duty.due_on) : "—" %></p>
       <div class="mb-3">

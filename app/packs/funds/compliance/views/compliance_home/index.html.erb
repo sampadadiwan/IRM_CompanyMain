@@ -1,8 +1,6 @@
 <%# Compliance home: every visible fund, its packs and open items. Funds with no pack are "Not monitored" (E10). %>
 <%= render layout: "compliance_shared/header", locals: { title: "Compliance", icon: :compliance } do %>
-  <%= cmp_header_link "Register", compliance_register_items_path, icon: :register, id: "home_register" %>
-  <%= cmp_header_link "Duties", compliance_duties_path, icon: :duty, id: "home_duties" %>
-  <%= cmp_header_link "Facts to confirm", document_readings_path, icon: :fact, id: "home_facts" %>
+  <%# Register, Duties and Facts are on the section bar above (H89) — only Manage stays here %>
   <div class="dropdown">
     <button class="btn btn-outline-success dropdown-toggle d-inline-flex align-items-center" type="button" id="compliance_manage_btn"
             data-bs-toggle="dropdown" aria-expanded="false">
@@ -16,7 +14,11 @@
   </div>
 <% end %>
 
-<%= cmp_explainer("Each fund is checked every night at 02:00 against the rule packs attached to it. A check that cannot be computed shows Could not check — never a pass. Open a fund to see each result with its working.") %>
+<%= cmp_intro(:home, anchor: "compliance-home") %>
+<%# ⑩ H86 / E184 / E185: which run these results come from, and when the next one is %>
+<%= cmp_timing_banner(@setup, last_success: @last_success, failed_since: @failed_since) %>
+<%# ⑩ H80–H83: the 8 setup steps, folded to one line once complete %>
+<%= render "compliance_shared/getting_started" %>
 
 <%
   # Each card says what it counts; zero cards that would only be noise are left out (capital_calls/_grid_stats)

@@ -8,6 +8,9 @@ class ComplianceEntitySetupsController < ApplicationController
   def show
     authorize @setup
     @inputs = ComplianceInputs.for(current_user.entity)
+    # ⑩ Getting started steps 1 and 4 land here: owner choices and the lists the attached checks read
+    @owner_choices = User.where(entity_id: current_user.entity_id, active: true).order(:first_name).select { |u| ComplianceAccess.viewer?(u) }
+    @list_keys = (ComplianceGettingStarted.new(current_user.entity, current_user).needed_lists + @setup.reference_lists_hash.keys).uniq
   end
 
   def update
@@ -17,6 +20,8 @@ class ComplianceEntitySetupsController < ApplicationController
       redirect_to compliance_entity_setup_path, notice: result.notice
     else
       @inputs = ComplianceInputs.for(current_user.entity)
+      @owner_choices = User.where(entity_id: current_user.entity_id, active: true).order(:first_name).select { |u| ComplianceAccess.viewer?(u) }
+      @list_keys = (ComplianceGettingStarted.new(current_user.entity, current_user).needed_lists + @setup.reference_lists_hash.keys).uniq
       flash.now[:alert] = result.error
       render :show, status: :unprocessable_content
     end

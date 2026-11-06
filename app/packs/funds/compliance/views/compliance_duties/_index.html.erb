@@ -6,7 +6,9 @@
   <% end %>
 <% end %>
 
-<%= cmp_explainer("Duties are things a person must do and prove, which data cannot show — a filed report, an audit, due diligence on a new investor. Mark each done with a note and, where required, an evidence file.") %>
+<%= cmp_intro(:duties, anchor: "duties") %>
+<%# ⑩ What's next: upload evidence, then Mark done — or nothing due %>
+<%= render "compliance_shared/whats_next", record: :duties, context: { due_count: compliance_section_counts[:due] } %>
 
 <%= render "compliance_duties/grid_stats", scope: @stats_scope %>
 

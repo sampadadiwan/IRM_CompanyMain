@@ -1,0 +1,19 @@
+<%# ⑩ Section bar on every compliance page (H89): the fund page's nav-pills look, but each pill is a page
+    (Turbo Drive visit), with counts of open items, due duties and facts waiting — three SQL counts. %>
+<% counts = compliance_section_counts %>
+<% current = local_assigns[:current] %>
+<% sections = [
+     [:home, "Home", compliance_home_path, :compliance, nil, "danger"],
+     [:register, "Register", compliance_register_items_path, :register, counts[:open], "danger"],
+     [:duties, "Duties", compliance_duties_path, :duty, counts[:due], "info"],
+     [:facts, "Facts to confirm", document_readings_path, :fact, counts[:facts], "secondary"],
+     [:packs, "Packs", compliance_packs_path, :pack, nil, nil],
+     [:setup, "Setup", compliance_entity_setup_path, :setup, nil, nil]
+   ] %>
+<nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row" id="compliance_section_bar" aria-label="Compliance sections">
+  <% sections.each do |key, label, path, icon, count, colour| %>
+    <%= link_to path, class: "nav-link text-nowrap #{'active' if current == key}", id: "section_#{key}", aria: { current: (current == key ? "page" : nil) } do %>
+      <%= cmp_icon(icon) %><%= label %><% if count %> <span class="badge bg-<%= colour %>-subtle text-<%= colour %>"><%= count %></span><% end %>
+    <% end %>
+  <% end %>
+</nav>

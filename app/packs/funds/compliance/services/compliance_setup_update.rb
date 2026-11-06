@@ -53,11 +53,19 @@ class ComplianceSetupUpdate
   end
 
   # {"ic_members" => {"quorum" => "3", "entries" => [{"name","valid_from","valid_to"}]}}
+  # or, from the Setup page's list editor, {"excluded_sectors" => {"names" => "Tobacco\nGambling"}}: one name
+  # per line; a name already on the list keeps its dates (E14)
   def apply_reference_lists
     (@params[:reference_lists] || {}).each do |key, list|
       list = list.to_h
-      entries = Array(list["entries"].is_a?(Hash) ? list["entries"].values : list["entries"]).map(&:to_h).select { |e| e["name"].present? }
-      @setup.set_reference_list(key, entries:, quorum: list["quorum"])
+      entries = if list.key?("names")
+                  existing = Array(@setup.reference_lists_hash.dig(key.to_s, "entries")).index_by { |e| e["name"] }
+                  list["names"].to_s.lines.map(&:strip).compact_blank.uniq.map { |n| existing[n] || { "name" => n } }
+                else
+                  Array(list["entries"].is_a?(Hash) ? list["entries"].values : list["entries"]).map(&:to_h).select { |e| e["name"].present? }
+                end
+      # The list editor sends names only: an existing quorum is kept
+      @setup.set_reference_list(key, entries:, quorum: list["quorum"].presence || @setup.reference_lists_hash.dig(key.to_s, "quorum"))
     end
   end
 

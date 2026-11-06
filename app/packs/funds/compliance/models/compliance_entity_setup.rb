@@ -15,6 +15,9 @@ class ComplianceEntitySetup < ApplicationRecord
   attr_readonly :entity_id
 
   validates :entity_id, uniqueness: true
+
+  # ⑩ H87 / E190: the welcome goes out once, when the firm's setup row is first created (R155)
+  after_create_commit { ComplianceOnboardingNotices.welcome(self) }
   validate :owner_in_same_firm
   validate :reference_lists_valid
 
@@ -29,6 +32,16 @@ class ComplianceEntitySetup < ApplicationRecord
       input_mappings
     else
       (input_mappings.present? ? JSON.parse(input_mappings) : {})
+    end
+  end
+
+  # {"welcome_sent_on" => "2026-11-04", "reminders_sent" => [7]} — only notice dates; step progress is
+  # never stored (D14)
+  def onboarding_hash
+    if onboarding.is_a?(Hash)
+      onboarding
+    else
+      (onboarding.present? ? JSON.parse(onboarding) : {})
     end
   end
 

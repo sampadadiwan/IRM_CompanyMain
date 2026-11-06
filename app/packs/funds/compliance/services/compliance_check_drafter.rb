@@ -34,6 +34,7 @@ class ComplianceCheckDrafter
       properties: {
         kind: { type: "string", enum: %w[limit duty] },
         name: { type: "string" },
+        description: { type: "string" },
         citation: { type: "string" },
         figure: MEASURE_PART,
         divided_by: MEASURE_PART,
@@ -46,7 +47,7 @@ class ComplianceCheckDrafter
         reason: { type: "string" },
         assumptions: { type: "array", items: { type: "object", properties: { part: { type: "string" }, text: { type: "string" } } } }
       },
-      required: %w[kind name]
+      required: %w[kind name description]
     }
   }.freeze
 
@@ -61,7 +62,10 @@ class ComplianceCheckDrafter
     with duty_trigger, evidence true and "reason" saying what CapHive does not record.
     When the rule is ambiguous (for example "of the fund" without saying commitments or paid-in), choose the most
     likely reading and add an assumption naming the part ("figure" or "divided_by") and the reading chosen.
-    Put any clause or section reference in "citation". Return only the JSON object.
+    Put any clause or section reference in "citation".
+    Write "description" in two or three plain sentences for someone new to compliance: what the check tests, why it
+    matters, and what usually causes a failure. No jargon, no figures that are not in the rule.
+    Return only the JSON object.
   TEXT
 
   def self.call(draft:)
@@ -169,6 +173,8 @@ class ComplianceCheckDrafter
     out = {
       "kind" => reply["kind"] == "duty" ? "duty" : "limit",
       "name" => text(reply["name"]), "citation" => text(reply["citation"]), "reason" => text(reply["reason"]),
+      # H91/E199: the plain-words description, editable before save (R158)
+      "description" => text(reply["description"], 600),
       "figure" => part(reply["figure"]), "divided_by" => part(reply["divided_by"]),
       "compare" => ComplianceDefinitionValidator::COMPARES.include?(reply["compare"]) ? reply["compare"] : "lte",
       "limit_value" => number(reply["limit_value"]),
@@ -199,8 +205,8 @@ class ComplianceCheckDrafter
     p.presence
   end
 
-  def text(value)
-    value.is_a?(String) || value.is_a?(Numeric) ? value.to_s.strip.first(MAX_TEXT).presence : nil
+  def text(value, max = MAX_TEXT)
+    value.is_a?(String) || value.is_a?(Numeric) ? value.to_s.strip.first(max).presence : nil
   end
 
   def number(value)

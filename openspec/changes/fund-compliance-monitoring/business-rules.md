@@ -216,7 +216,7 @@ flowchart LR
 | H19 | Nightly run | Monitoring on | 02:00 IST | Every attached pack's checks stored for Growth I | CM: Nightly run | compliance_runs |
 | H20 | Concentration working | Shared setup | Run | Breach: 300.00 − 30.00 = 270.00; 72.00 ÷ 270.00 = 26.67% > 25% | CM: Concentration breach with working | compliance_runs |
 | H21 | Passive breach (continuous) | Acme ₹50 cr of ₹200 cr investable | LP default → ₹180 cr; run | Breach: 50 ÷ 180 = 27.78% | CM: Continuous check catches a passive breach | compliance_runs |
-| H22 | IC note list | 17 investments ≥ 01 Apr 2026; 120 earlier | Run | "14 of 17 OK · 3 failing · 120 earlier not checked" | CM: IC note list | compliance_runs |
+| H22 | IC note list | 17 investments ≥ 01 Apr 2026; 120 earlier | Run | "14 of 17 OK · 3 failing · 120 investments made before this check started are not checked" | CM: IC note list | compliance_runs |
 | H23 | Wet ink scanned late | Signed 10 Sep, uploaded 15 Sep, investment 12 Sep | Marked signed 10 Sep; run | Passes: 10 Sep ≤ 12 Sep | CM: Wet ink scanned after the investment | compliance_runs |
 | H24 | USD limit, INR figure (P4) | ₹1.20 cr commitment; ₹83.00/USD | Run | 1,20,00,000 ÷ 83.00 = USD 144,578 < 150,000 → Breach; rate shown | CM: USD limit on an INR figure | compliance_runs |
 
@@ -614,9 +614,12 @@ flowchart LR
   8. Every open item has an owner.
 - **What's next** shows at most 3 actions, worked out from the page's own record and the user's role. Nothing new is stored for it.
 - **Wording:** tooltips and page intros use the Key concepts wording (one glossary in the locale file).
+- **Added after review (U12, R158–R163):** every check carries a plain-words description shown as "About this check"; the working is called "How we checked"; descriptions are backfilled into published versions (text only).
 - **Shared setup:** Horizon Capital, as in the shared setup, but with Compliance just switched on: Meera is the owner, Rahul an approver, no packs are attached, and there are no runs.
 
 ### Happy path
+| H91 | About this check | SEBI concentration check with its description | Meera opens a concentration result, or its register item | Card "About this check" first: "The most invested in any one company, as a share of investable funds. SEBI caps it so one company's failure cannot sink the fund. Usually breached when a follow-on is made before new capital is raised." | OG: About this check | compliance_guidance |
+| H92 | How we checked | Run 06/11/2026 02:00 IST | Open any result | The working card is titled "How we checked" with "Step by step, from your records as they stood at the 02:00 IST run on 06/11/2026"; a Run now result names its own time | OG: How we checked | compliance_guidance |
 
 | # | Scenario | Given | When | Then | Spec scenario | Feature |
 |---|---|---|---|---|---|---|
@@ -633,6 +636,13 @@ flowchart LR
 | H90 | Guide opens at the page's section | — | Press the guide ⓘ on the Register | The compliance user guide opens at "#the-register" | OG: Guide opens at the page's section | compliance_guidance |
 
 ### Edge cases
+| E193 | Publish needs a description on every check | Entity-pack draft whose "Sector cap" check has no description | Open the draft; then Publish | Draft shows "1 check has no description: Sector cap"; Publish refused with "Add a description to every check: Sector cap" | OG: About this check | compliance_guidance |
+| E194 | Backfill descriptions into published versions | Published SEBI v1 loaded without descriptions | `compliance:backfill_descriptions` dry run, then EXECUTE=1 | Dry run lists "SEBI — AIF v1: 10 checks to describe"; apply writes only the descriptions; every other field identical; one audit row per version | OG: Descriptions backfilled | compliance_guidance |
+| E195 | Needs-review summary shown once | IC-note content check with 4 to look at | Open the result | The summary ("1 of 10 OK · 4 to look at · 5 without a document") appears once; the box below only says why a person must look | OG: How we checked | compliance_guidance |
+| E196 | Records before the check started | 22 investments dated before the check's checks-from date | Open the IC-note result | "22 investments made before this check started are not checked" with a link to them — never "earlier not checked" | OG: How we checked | compliance_guidance |
+| E197 | Small amounts in crores | Sponsor needs ₹0.15 cr more | Open the continuing-interest result | Remedy reads "₹0.15 cr", never "₹15,00,000" | OG: How we checked | compliance_guidance |
+| E198 | Duty cards follow the filter | Duties filtered to Fund 1; 2 due there, 5 firm-wide | Mark one Fund 1 duty done | Cards update to Fund 1's numbers (Due 1), not the firm-wide totals | OG: What's next on a register item | compliance_guidance |
+| E199 | AI draft carries a description | "No more than 15% in one sector" (LlmService stubbed) | Draft, edit the description, test, save | Draft shows the AI's description, editable; the saved check keeps the edited text | OG: About this check | compliance_guidance |
 
 | # | Scenario | Given | When | Then | Spec scenario | Feature |
 |---|---|---|---|---|---|---|
@@ -647,16 +657,17 @@ flowchart LR
 | E188 | Empty register | No open items | Open the register | "Nothing open. The next run is tonight at 02:00 IST." | OG: Empty pages say what to do | compliance_guidance |
 | E189 | Reminders stop | Setup 3 of 8 done, created 04/11/2026 | Days 7 and 21 pass; then day 35 | Meera gets one reminder on 11/11 and one on 25/11: "Getting started: 3 of 8 done — next: Map inputs"; nothing on day 35; nothing at all once complete | OG: Welcome notice | compliance_guidance |
 | E190 | Welcome sent once | Welcome already sent | Setup saved again; home reopened | No second welcome | OG: Welcome notice | compliance_guidance |
-| E191 | Monitoring on before inputs mapped | Step 3 not done | Meera turns monitoring on | Allowed; What's next warns "2 inputs unmapped — 4 checks will show Could not check tonight" | OG: Steps tick from data | compliance_guidance |
+| E191 | Monitoring on before inputs mapped | Step 3 not done (Sponsor/manager unmapped) | Meera presses Turn monitoring on | Refused as X15 ("1 input missing — Sponsor/manager"); Getting started keeps step 3 current and step 7 to-do — guidance never overrides the X15 gate | OG: Steps tick from data | compliance_guidance |
 | E192 | Super admin sees who is stuck | Horizon 3 of 8 since 04/11/2026 | Super admin opens Compliance › Customer setup | Row "Horizon Capital · 3 of 8 · next: Map inputs · since 04/11/2026" | OG: Customer setup progress | compliance_guidance |
 
 ### Error cases
+| X94 | Backfill never changes a rule | A published version whose rules differ from its seed file (e.g. a limit edited) | `compliance:backfill_descriptions` EXECUTE=1 | That version is skipped: "SEBI — AIF v1: rules differ from the seed file — not touched"; in production it refuses without FORCE=1 | OG: Descriptions backfilled | compliance_guidance |
 
 | # | Scenario | Given | When | Then | Spec scenario | Feature |
 |---|---|---|---|---|---|---|
 | X90 | Investor sees no guidance | Lata (investor) | Requests the Getting started frame and a What's next frame directly | Refused | OG: Guidance is for compliance users only | compliance_tenant_isolation |
 | X91 | Customer setup list is super-admin only, counts only | Meera (company admin) | Requests Compliance › Customer setup | Refused; for a super admin the list shows step names and counts only — no fund names, figures or people | OG: Customer setup progress | compliance_tenant_isolation |
-| X92 | Other firm's guidance refused | Delta's admin | Requests Horizon's Getting started frame by id | Refused | OG: Guidance is for compliance users only | compliance_tenant_isolation |
+| X92 | Other firm's guidance refused | Delta's admin | Requests Horizon's result page (where its What's next is drawn) | Refused | OG: Guidance is for compliance users only | compliance_tenant_isolation |
 | X93 | No welcome without the flag | Horizon's `enable_compliance` entity flag off | Setup created by a super admin | No welcome, no reminders | OG: Welcome notice | compliance_tenant_isolation |
 
 ---
@@ -683,8 +694,8 @@ flowchart LR
 | 10 Pack versions and locking | 8 | 23 | 12 | 43 |
 | 11 Changes over time | 8 | 35 | 6 | 49 |
 | 12 Screens | 0 | 6 | 1 | 7 |
-| 13 Newcomer guidance (Phase 5) | 11 | 13 | 4 | 28 |
-| **Total** | **72** | **157** | **73** | **302** |
+| 13 Newcomer guidance (Phase 5) | 13 | 20 | 5 | 38 |
+| **Total** | **74** | **164** | **74** | **312** |
 
 - `features/security/compliance_tenant_isolation.feature` gathers every refusal row (other firm, investor, viewer, self-approval, injection, AI context) — attacker refused, owner allowed, direct request refused.
 - An edge case found during apply gets a new row here **and** a scenario.

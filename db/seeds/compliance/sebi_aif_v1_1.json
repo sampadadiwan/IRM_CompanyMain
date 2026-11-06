@@ -262,6 +262,7 @@
       {
         "key": "sebi_concentration_cat12",
         "name": "Single-investee concentration",
+        "description": "The most invested in any one company, as a share of the fund's investable funds (corpus less estimated expenses). SEBI caps it at 25% so one company's failure cannot sink the fund. Usually breached by a follow-on investment made before new capital is raised, or when expenses grow and investable funds shrink.",
         "kind": "limit",
         "applies_to": [
           "Category I",
@@ -286,6 +287,7 @@
       {
         "key": "sebi_concentration_lvf",
         "name": "Single-investee concentration (Large Value Fund)",
+        "description": "The same single-company test for a Large Value Fund, where SEBI allows up to 50% of investable funds in one company because its investors commit at least ₹70 crore each. Usually breached by a large follow-on before the next close.",
         "kind": "limit",
         "applies_to": [
           "Category I — LVF",
@@ -310,6 +312,7 @@
       {
         "key": "sebi_concentration_cat3",
         "name": "Single-investee concentration (Category III)",
+        "description": "For a Category III fund, the most invested in any one company as a share of the fund's NAV. SEBI caps it at 10% because these funds trade listed securities and must stay diversified. Usually breached when one holding rises in value or NAV falls after redemptions.",
         "kind": "limit",
         "applies_to": [
           "Category III"
@@ -333,6 +336,7 @@
       {
         "key": "sebi_ci_amount_cat12",
         "name": "Continuing interest — amount",
+        "description": "The sponsor or manager must keep its own money in the fund: at least the lower of 2.5% of corpus and ₹5 crore. SEBI requires it so the manager shares the investors' risk. Usually breached when the corpus grows at a later close but the sponsor's commitment is not topped up.",
         "kind": "limit",
         "applies_to": [
           "Category I",
@@ -355,6 +359,7 @@
       {
         "key": "sebi_ci_amount_cat3",
         "name": "Continuing interest — amount",
+        "description": "The sponsor or manager of a Category III fund must keep at least the lower of 5% of corpus and ₹10 crore in the fund, so it shares the investors' risk. Usually breached when the corpus grows but the sponsor's commitment is not topped up.",
         "kind": "limit",
         "applies_to": [
           "Category III"
@@ -374,6 +379,7 @@
       {
         "key": "sebi_ci_prorata_cat12",
         "name": "Continuing interest — pro-rata",
+        "description": "The sponsor or manager must pay in its continuing interest at the same pace as the other investors: its paid amount must keep up with the share of capital the others have paid. Usually breached when a capital call is collected from investors but the sponsor's own drawdown is late.",
         "kind": "limit",
         "applies_to": [
           "Category I",
@@ -400,6 +406,7 @@
       {
         "key": "sebi_ci_prorata_cat3",
         "name": "Continuing interest — pro-rata",
+        "description": "For a Category III fund, the sponsor or manager's paid amount must keep pace with what the other investors have paid in, so its stake is real at every point. Usually breached when the sponsor's drawdown lags a call.",
         "kind": "limit",
         "applies_to": [
           "Category III"
@@ -423,6 +430,7 @@
       {
         "key": "sebi_min_investment",
         "name": "Minimum investment per investor",
+        "description": "Each investor must commit at least ₹1 crore. SEBI sets this floor so only investors able to bear the risk can invest. Usually breached when a small commitment is recorded, or a transfer leaves an investor below the minimum.",
         "kind": "limit",
         "applies_to": "all",
         "figure": "commitment_per_investor",
@@ -441,6 +449,7 @@
       {
         "key": "sebi_min_investment_employees",
         "name": "Minimum investment — employees/directors",
+        "description": "Employees and directors of the manager or sponsor may invest less than ₹1 crore, but at least ₹25 lakh. Usually breached when a staff commitment is recorded below ₹25 lakh, or the staff category is not mapped.",
         "kind": "limit",
         "applies_to": "all",
         "figure": "commitment_per_employee",
@@ -459,6 +468,7 @@
       {
         "key": "sebi_investor_count",
         "name": "Investors in scheme",
+        "description": "A scheme may have at most 1,000 investors. SEBI caps it to keep AIFs a private-placement product. Usually breached by a wide final close or by splitting commitments across many small investors.",
         "kind": "limit",
         "applies_to": "all",
         "figure": "investor_count",
@@ -476,6 +486,7 @@
       {
         "key": "sebi_investor_groups",
         "name": "Investor group with a common beneficial owner",
+        "description": "Investors who share a beneficial owner are treated as one group; a group holding 50% or more of the scheme needs enhanced due diligence. SEBI's Oct 2024 circular requires it to stop one party controlling a fund through several entities. Needs review when confirmed KYC ownership facts link investors whose combined share reaches 50%.",
         "kind": "content",
         "applies_to": "all",
         "rule": "common_owner_share",
@@ -496,6 +507,7 @@
       {
         "key": "sebi_land_border_owner",
         "name": "Beneficial owner in a land-border country",
+        "description": "No beneficial owner of an investor may be from a country sharing a land border with India unless government approval is on record. Needed under FEMA Press Note 3 (2020) and SEBI's Oct 2024 due-diligence circular. Needs review when a confirmed KYC ownership fact names such a country.",
         "kind": "content",
         "applies_to": "all",
         "rule": "names_not_in_list",

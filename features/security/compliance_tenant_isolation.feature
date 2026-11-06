@@ -294,3 +294,39 @@ Feature: Compliance — tenant isolation and maker–checker
     And the fund page of "Horizon Growth Fund I" has no Compliance tab
     When the hourly compliance tick happens at "2026-11-05 02:10" "Asia/Kolkata"
     Then "Horizon Growth Fund I" has no compliance runs
+
+  # X90 — Error case: an investor requests the Getting started frame directly and is refused
+  @security @rack_test
+  Scenario: X90 Investor sees no guidance
+    Given I am signed in to compliance as "Lata"
+    When I open the Getting started frame
+    Then the compliance request is denied
+
+  # X91 — Error case: Customer setup is super-admin only, and shows counts and steps — no funds, figures or people
+  @security @rack_test
+  Scenario: X91 Customer setup list is super-admin only, counts only
+    Given I am signed in to compliance as "Meera"
+    When I open the customer setup list
+    Then the compliance request is denied
+    Given "Sam" is a CapHive super admin
+    And I am signed in to compliance as "Sam"
+    When I open the customer setup list
+    Then the compliance page shows "Horizon Capital"
+    And the compliance page does not show "Horizon Growth Fund I"
+    And the compliance page does not show "Meera"
+
+  # X92 — Error case: another firm's admin requests Horizon's result (with its What's next) and is refused
+  @security @rack_test
+  Scenario: X92 Other firm's guidance refused
+    Given the nightly compliance run happens on "2026-11-05"
+    And I am signed in to compliance as "Dev"
+    When I open the latest "Single-investee concentration" result of "Horizon Growth Fund I"
+    Then the compliance request is denied
+
+  # X93 — Error case: a firm without the Compliance entity flag gets no welcome and no reminders
+  @security
+  Scenario: X93 No welcome without the flag
+    Given a firm "Shadow Capital" without the Compliance flag sets up compliance
+    When the hourly compliance tick happens 7 days after setup at 08:00 IST
+    Then "Omar" got the compliance notice "Compliance is on" 0 times
+    And "Omar" got the compliance notice "Getting started" 0 times

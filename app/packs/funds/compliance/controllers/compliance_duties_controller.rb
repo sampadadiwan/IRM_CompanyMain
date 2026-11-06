@@ -8,10 +8,8 @@ class ComplianceDutiesController < ApplicationController
 
   def index
     authorize :compliance_home, :index?
-    @q = ComplianceDuty.ransack(params[:q])
-    scope = @q.result.where(entity_id: current_user.entity_id, fund_compliance_pack_id: fund_pack_ids)
-              .includes(:owner, fund_compliance_pack: %i[fund compliance_pack compliance_pack_version])
-    scope = search(scope, params.dig(:search, :value))
+    scope = filtered_scope(params[:q], params.dig(:search, :value))
+            .includes(:owner, fund_compliance_pack: %i[fund compliance_pack compliance_pack_version])
     @stats_scope = ComplianceDuty.where(id: scope.select(:id))
     scope = scope.order(:due_on, :id) if params.dig(:q, :s).blank?
     @pagy, @duties = pagy(scope, limit: params[:per_page] || 10)
@@ -35,7 +33,8 @@ class ComplianceDutiesController < ApplicationController
       format.turbo_stream do
         @notice = notice
         @alert = alert
-        @stats_scope = ComplianceDuty.where(entity_id: current_user.entity_id, fund_compliance_pack_id: fund_pack_ids)
+        # E198 / R163: the cards follow the grid's own filter and search, carried by the Mark done form
+        @stats_scope = ComplianceDuty.where(id: filtered_scope(grid_query, params[:grid_search]).select(:id))
         render "compliance_duties/complete"
       end
       format.html { redirect_back_or_to(compliance_duties_path, notice:, alert:) }
@@ -46,6 +45,20 @@ class ComplianceDutiesController < ApplicationController
 
   def fund_pack_ids
     policy_scope(FundCompliancePack).select(:id)
+  end
+
+  # The grid's ransack filter, sent back by the Mark done form as JSON; anything unreadable means "no filter"
+  def grid_query
+    value = params[:grid_q].present? ? JSON.parse(params[:grid_q]) : nil
+    value.is_a?(Hash) ? value : nil
+  rescue JSON::ParserError
+    nil
+  end
+
+  # The grid's rows: ransack filter (allow-listed attributes only) + search box, inside the user's funds
+  def filtered_scope(query, search_value)
+    @q = ComplianceDuty.ransack(query)
+    search(@q.result.where(entity_id: current_user.entity_id, fund_compliance_pack_id: fund_pack_ids), search_value)
   end
 
   def set_duty

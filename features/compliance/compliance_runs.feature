@@ -32,7 +32,7 @@ Feature: Compliance runs and results
     Then the "Single-investee concentration" check on "Horizon Growth Fund I" is "breach"
     And the working shows "27.78%"
 
-  # H22 — Happy path: IC note list "14 of 17 OK · 3 failing · 120 earlier not checked"
+  # H22 — Happy path: IC note list "14 of 17 OK · 3 failing · 120 investments made before this check started are not checked"
   Scenario: H22 IC note list
     Given "Horizon Growth Fund I" also carries the fund agreement pack
     And "Horizon Growth Fund I" has 14 investments with signed IC notes from "2026-04-02"
@@ -42,7 +42,7 @@ Feature: Compliance runs and results
     And "Horizon Growth Fund I" has 117 investments before "2026-04-01" with no IC note
     When the nightly compliance run happens on "2026-11-05"
     Then the "IC note for every investment" check on "Horizon Growth Fund I" is "breach"
-    And the IC note list shows "14 of 17 OK · 3 failing · 120 earlier not checked"
+    And the IC note list shows "14 of 17 OK · 3 failing · 120 investments made before this check started are not checked"
     And the IC note list includes "Acme B2" as "Missing"
     And the IC note list includes "Zen Seed" as "Not signed — mark as signed (wet ink)"
     And the IC note list includes "Kite A" as "after investment date"
@@ -134,7 +134,7 @@ Feature: Compliance runs and results
     Then the "IC note for every investment" check on "Horizon Growth Fund I" is "breach"
     And the IC note list includes "April Co" as "Missing"
     And the IC note list does not include "March Co"
-    And the IC note list shows "0 of 1 OK · 1 failing · 4 earlier not checked"
+    And the IC note list shows "0 of 1 OK · 1 failing · 4 investments made before this check started are not checked"
 
   # E26 — Edge case: a note signed on the investment day passes (12 Sep ≤ 12 Sep)
   Scenario: E26 Signed on investment day

@@ -1,4 +1,4 @@
-<%# One stored result, explained (R113): stats that answer at a glance, then the Working — a one-line
+<%# One stored result, explained (R113): stats that answer at a glance, then How we checked — a one-line
     verdict, the numbered steps with their sources (compliance_shared/_working), what gets it
     back within the limit, and who is next. Everything comes from the working stored at run time
     (results are never re-computed); results stored before this change fall back to their text lines.
@@ -52,9 +52,15 @@
 
   <div class="row">
   <div class="col-lg-8">
+  <%# ⑩ H84 / H85: what to do now about this result, for this user %>
+  <%= render "compliance_shared/whats_next", record: @result %>
+  <%# H91: what the check tests, why it matters, what usually causes a failure (R158) %>
+  <%= render "compliance_shared/about_check", check: @result.compliance_pack_version&.check(@result.check_key) %>
   <div class="card shadow-sm border-0 mb-4" id="result_working_card">
     <div class="card-header border-bottom py-3">
-      <h5 class="mb-0 fw-bold"><%= cmp_icon(:result, "me-2 text-primary") %>Working <%= cmp_tip("How the nightly run reached this result: every figure, where it comes from, and the arithmetic") %></h5>
+      <%# H92 / R160: "How we checked" (was "Working"), with the run it comes from %>
+      <h5 class="mb-0 fw-bold"><%= cmp_icon(:result, "me-2 text-primary") %><%= t("compliance.how_we_checked.title") %> <%= cmp_term(:how_we_checked) %></h5>
+      <small class="text-muted d-block mt-1" id="how_we_checked_subtitle"><%= cmp_how_we_checked_subtitle(run, ComplianceEntitySetup.for(fund.entity).time_zone) %></small>
     </div>
     <div class="card-body" id="result_working">
       <%= render "compliance_shared/working", working: w, outcome:, fund: %>

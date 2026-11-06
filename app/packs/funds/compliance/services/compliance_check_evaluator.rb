@@ -184,6 +184,9 @@ class ComplianceCheckEvaluator
 
   def explain_fmt(value, u = unit) = fmt(value, u)
   def explain_fmt_fund(value, u) = fmt_fund(value, u)
+  # E197: remedies read in crores (R162)
+  def explain_fmt_remedy(value, u = unit) = u == "amount" ? ComplianceFormat.amount_cr(value, currency) : fmt(value, u)
+  def explain_fmt_fund_remedy(value) = ComplianceFormat.amount_cr(value, figure_currency)
   def explain_render(expr, group_id: nil) = render(expr, group_id:)
   def explain_limit_text(limit) = limit_text(limit)
   def explain_unit = unit
@@ -227,7 +230,8 @@ class ComplianceCheckEvaluator
   # Shape 2 — record has a required, signed, timely document (H22)
   def evaluate_document_check
     res = ComplianceDocumentCheckQuery.call(@check, @ctx)
-    lines = ["#{res.ok} of #{res.checked} OK · #{res.failing_count} failing · #{res.earlier} earlier not checked"]
+    # E196 / R161: records before the check's start date, in words (the page links to them)
+    lines = ["#{res.ok} of #{res.checked} OK · #{res.failing_count} failing · #{ComplianceFormat.earlier_words(res.earlier, @check['source'])}"]
     # One-line verdict for the result page (R113)
     verdict = if res.failing_count.zero?
                 "All #{res.checked} records have their signed document."
@@ -237,6 +241,7 @@ class ComplianceCheckEvaluator
     res.failing.each { |f| lines << "#{f['label']} (#{f['date']}): #{f['problem']}" }
     finish(res.failing_count.zero? ? "pass" : failing_outcome, res.failing_count, 0, lines,
            failing_records: res.failing, checked: res.checked, ok: res.ok, earlier: res.earlier, verdict:,
+           source: @check["source"], checks_from: @check["checks_from"],
            message: lines.first, unit: "count")
   end
 

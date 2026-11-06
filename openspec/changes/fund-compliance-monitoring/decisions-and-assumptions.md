@@ -38,6 +38,7 @@ flowchart LR
 | U9 | All 27 changes-over-time items applied with Claude's defaults, filtered for simplicity |
 | U10 | Proposals and docs use bullets and diagrams; designs always include security and architecture-pattern sections |
 | U11 | Phase 5 newcomer guidance approved ("yes write it into openspec as phase 5"): Getting started (8 steps from data), What's next on every page, intros + tooltips, section bar, timing banner, guide at the page's section, welcome + 2 reminders, super-admin setup progress; with Claude's three recommendations (simple step list not the workflow engine; Run now offered in the first-run step; help slide-out unchanged) |
+| U12 | Backfill check descriptions into already-published versions ("yes backfill descriptions into the published versions") — text only, an explicit exception to "published versions are immutable" |
 
 ## 2. Recommended and applied (review these)
 
@@ -166,6 +167,18 @@ flowchart LR
 | R155 | Welcome once when the setup row is first created; reminders to the owner on days 7 and 21 only while setup is incomplete; none for entities without `enable_compliance` (H87, E189, E190, X93) | Enough to bring people back without nagging |
 | R156 | Customer setup progress is a super-admin-only page showing firm name, step count, next step and start date — no fund names, figures or people (X91) | Support can reach stuck firms without seeing customer data |
 | R157 | Product tours, videos, sample/sandbox data for prospects and HelpSlideOut changes are out of Phase 5 (D16) | Simplicity; no change to a core component |
+| R158 | Every check carries `description` (plain words: what it tests, why it matters, what usually causes a failure); `CompliancePackVersion#publish_errors` refuses publishing while any check lacks one; drafts list the missing ones; the validator does not reject drafts for it | User: "we need a description for every pack check" (E193) |
+| R159 | `compliance:backfill_descriptions` writes only `description` keys into published versions, from the seed files (and the demo LPA pack); a version whose definition minus descriptions differs from its file is skipped and reported; `update_column` + one `Audit` row per version (comment names U12); dry-run unless EXECUTE=1; production needs FORCE=1 (E194, X94) | Text-only exception to immutability, approved as U12; `update_column` avoids clearing `tested_at` on a published version |
+| R160 | "Working" is renamed "How we checked" everywhere, with the subtitle "Step by step, from your records as they stood at the <time> <tz> run on <date>" (nightly 02:00 in the firm's time zone; Run now uses its own start time) | User: "Its not clear to the user what the Working means" (H92) |
+| R161 | A document/content check's summary appears once (verdict line); the Needs-review box only explains why a person must look. "N earlier not checked" reads "N <records> made before this check started are not checked" with a link to the list | Duplicate text and jargon found on /compliance/results/135 (E195, E196) |
+| R162 | Remedy and headroom amounts use `ComplianceFormat` crore formatting ("₹0.15 cr") like the steps | Restyle gap: small amounts printed as "₹15,00,000" (E197) |
+| R163 | After Mark done, the duty stats cards are recomputed from the same filtered relation as the grid (the turbo-stream passes the grid's ransack params) | Restyle gap: cards showed firm-wide totals (E198) |
+| R164 | What's next is rendered inline by each page from the record it already loaded and authorized — no `next_steps` frame endpoint and no `record_type` parameter (X92 now tests the page itself) | Simpler and safer than an allow-listed frame endpoint; nothing reaches `constantize` |
+| R165 | Getting started renders inline on Compliance home (8 small `exists?`/`count` queries); `/compliance/getting_started` returns the same frame for refreshes and X90 | rack_test-friendly; no extra request on the busiest page |
+| R166 | Setup gained a compliance-owner picker and a reference-list editor (one name per line; existing dated entries and the quorum are kept) | Getting started steps 1 and 4 needed a place to send the user; the Setup service already accepted both |
+| R167 | Step 8 "Open items owned" counts as done only after a first successful run; E191 follows the existing X15 gate — monitoring stays refused while an input is missing | A vacuous "done" before any result would mislead; guidance never overrides a validation gate |
+| R168 | Results stored before structured steps (R113) are drawn as the same numbered steps by parsing their stored lines ("A = B", "A = calc = B", "x > y → Breach"); a line that only restates a value is dropped. No raw working line is shown anywhere | User: "All Working lines should be made pretty" — old demo results 126–136 |
+| R169 | Section bar pills are page links (Turbo Drive visits), styled with the fund page's `nav-pills`; the guide icon opens the guide at the page's own section (`PAGE_GUIDE` map); page intros come from `compliance.intros.*` | H89, H90; one glossary (D15) |
 
 ## 3. Assumptions (verify these)
 

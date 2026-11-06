@@ -22,8 +22,8 @@ namespace :compliance do
     ComplianceDemoSetup.new(
       entity_id: ENV.fetch("ENTITY_ID", "157").to_i,
       fund_id: ENV.fetch("FUND_ID", "11").to_i,
-      # fm10 is a company admin without the investor role; users who also hold the investor role are
-      # never Compliance viewers (X22), so fm1@demofund.com cannot be the demo owner.
+      # fm10 is a company admin. Users who also hold the investor role can view Compliance while acting
+      # as staff (R109, E138); fm10 stays the default demo owner.
       owner_email: ENV.fetch("OWNER_EMAIL", "fm10@demofund.com"),
       execute: ENV["EXECUTE"] == "1"
     ).call
@@ -42,6 +42,20 @@ class ComplianceDemoSetup
   # Attached from 1 Jul 2026, so a run in late September creates the July–September duties
   ATTACHED_ON = Date.new(2026, 7, 1)
   DRAFT_SENTENCE = "No more than 15% of investable funds in any one sector — LPA clause 8.2"
+  # Plain-words description of each LPA check (R158, H91) — also what compliance:backfill_descriptions
+  # writes into an LPA pack published before descriptions existed (R159, U12)
+  LPA_DESCRIPTIONS = {
+    "lpa_single_company" => "The most invested in any one company, as a share of investable funds. The LPA caps it at 20% — " \
+                            "stricter than SEBI's 25% — to keep the portfolio diversified. Usually breached by a follow-on made before new capital comes in.",
+    "lpa_expense_cap" => "Fund expenses so far this year must stay within 2% of corpus, as the LPA promises investors. " \
+                         "Usually breached by one-off legal or deal costs; it cannot be checked until the year-to-date expenses are entered in Setup.",
+    "lpa_ic_note" => "Every investment made from 1 Jan 2022 needs an IC note signed on or before the investment date — the record " \
+                     "that the investment committee approved it. Usually fails when a note is uploaded late, left unsigned, or never uploaded.",
+    "lpa_ic_amount" => "The amount invested in a company must not exceed the amount the investment committee approved in its signed IC note. " \
+                       "Catches investments made above what the committee agreed; needs the note's approved amount confirmed first.",
+    "lpa_excluded_sector" => "The business described in each IC note must not be in a sector the LPA excludes (e.g. tobacco, gambling, weapons). " \
+                             "Needs the note's business fact confirmed; breached when it matches the excluded-sector list in Setup."
+  }.freeze
 
   # A stand-in for RubyLLM's chat: answers with a fixed reply, never calls a provider (as the features do)
   class StubChat
@@ -209,7 +223,7 @@ class ComplianceDemoSetup
         # E78: the business the IC note describes is not on the excluded-sector list
         ic.merge("key" => "lpa_excluded_sector", "name" => "Not in an excluded sector", "kind" => "content", "rule" => "text_not_in_list",
                  "fact" => "business", "list" => "excluded_sectors", "words" => { "breach" => "Excluded sector" }, "citation" => "LPA sch. 2")
-      ],
+      ].map { |c| c.merge("description" => LPA_DESCRIPTIONS.fetch(c["key"])) },
       "duties" => [
         # H27/E120: one per quarter, due 30 days after the quarter ends; no evidence needed
         { "key" => "lpa_quarterly_lp_report", "name" => "Quarterly LP report sent", "trigger" => { "schedule" => "quarterly" },
@@ -413,6 +427,8 @@ class ComplianceDemoSetup
 
     draft = ComplianceCheckDraft.create!(entity_id: @entity.id, compliance_pack_version: draft_version, user: @owner, sentence: DRAFT_SENTENCE)
     reply = { "kind" => "limit", "name" => "Single-sector limit (AI)", "citation" => "LPA cl. 8.2",
+              "description" => "The most invested in any one sector, as a share of investable funds. The LPA caps it at 15% so a downturn " \
+                               "in one industry cannot sink the fund. Usually breached by several investments in the same sector.",
               "figure" => { "op" => "sum", "source" => "portfolio_investments", "field" => "cost", "group_by" => "sector",
                             "filters" => [{ "field" => "transaction", "op" => "eq", "value" => "buy" }] },
               "divided_by" => { "measure" => "investable_funds" }, "compare" => "lte", "limit_value" => 15, "limit_unit" => "pct",

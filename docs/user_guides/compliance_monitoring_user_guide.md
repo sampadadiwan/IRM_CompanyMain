@@ -54,14 +54,85 @@ flowchart TB
 |---|---|---|
 | Compliance home | [**Compliance**](/compliance) | See every fund, its packs and open items; cards for breaches, needs review, overdue items and stale runs |
 | Fund dashboard | A fund's **Compliance** tab, or **View** on the home page | The latest result of every check, one tab per pack; **Run now**; **Preview** an upcoming version |
-| Result | Click a check on the fund dashboard | The verdict, each step of the working with its source, what gets it back within the limit, the records that fail, and the setup used that day |
+| Result | Click a check on the fund dashboard | **About this check**, then **How we checked**: the verdict, each step with its source, what gets it back within the limit, the records that fail, and the setup used that day |
 | Register | [**Compliance → Register**](/compliance/register) | Open, Closed and All tabs; **Filter**, search, **Download**; open an item |
-| Register item | **View** on a register row | Working, **Assign**, **Request explanation**, **Approve explanation** / **Reject explanation**; **Actions** → Request override, Disable check |
+| Register item | **View** on a register row | **What's next**, **About this check**, **How we checked**, **Assign**, **Request explanation**, **Approve explanation** / **Reject explanation**; **Actions** → Request override, Disable check |
 | Duties | [**Compliance → Duties**](/compliance/duties) | **Filter**, search; **Mark done** with a note and evidence |
 | Facts to confirm | [**Compliance → Facts to confirm**](/compliance/facts) | Open a document, check each fact against its quote and page, correct it, **Confirm facts** |
 | Fund packs | Compliance home → **Manage → Fund packs** | Which pack each fund carries; **Attach pack** |
 | Rule library | Compliance home → **Manage → Rule library** | Packs and their versions; **New entity pack**; a version's **Checks**, **Duties**, **Definition** and **Publish** tabs; **Describe in words** |
 | Setup | Compliance home → **Manage → Setup** | Inputs, monitoring on/off, owner, AI drafting and AI document reading switches |
+
+Every compliance page has the same **section bar** (Home · Register · Duties · Facts to confirm · Packs · Setup, with counts), a one-line intro with **Learn more**, and a **What's next** box with up to three things you can do now. The sections below match those pages; the guide icon on each page opens its section here.
+
+## Compliance home
+
+The home page lists every fund you can see with its packs and open items, and the cards count breaches, items needing review, overdue items and stale runs. A grey line under the intro says which run the results come from ("Results from the 02:00 IST run on 06/11/2026 · next run 07/11/2026 02:00 IST"); it turns amber when the last successful run is more than 26 hours old.
+
+## Getting started
+
+Until your setup is complete, Compliance home shows **Getting started** — eight steps, each ticked off from your own data:
+
+| # | Step | Done when |
+|---|---|---|
+| 1 | Owner and approvers | A compliance owner is chosen and at least one person can approve |
+| 2 | Attach packs | At least one fund carries a rule pack |
+| 3 | Map inputs | Every input the attached checks read is mapped (otherwise those checks show Could not check) |
+| 4 | Reference lists | Every list a check compares documents with has names (or "Not needed for your packs") |
+| 5 | First run | A run has succeeded — **Run now** gives you results today instead of after 02:00 |
+| 6 | Digest recipients | At least one user carries the Compliance notification tag |
+| 7 | Monitoring on | Monitoring is switched on in Setup |
+| 8 | Open items owned | Every open register item is assigned, explained or waiting for approval |
+
+The first step not done shows **What's needed now**, why it matters and a button that takes you there. A step reopens by itself if your setup changes — for example when a new pack needs an input you have not mapped. When all eight are done the panel folds to **Setup complete · Show steps**.
+
+## Your first week
+
+1. Day 1 — Setup: choose the owner, attach SEBI — AIF to your funds, map the inputs, then press **Run now** on one fund.
+2. Day 1 — Read the results: open each breach and read **About this check** and **How we checked**.
+3. Day 2 — Turn monitoring on, and tag the people who should get the morning digest.
+4. Days 2–5 — Work the register: assign each breach, fix the data or request an explanation; confirm the facts read from your IC notes.
+5. Every morning — the digest tells you what changed; **What's next** on each page says what to do.
+
+If setup is still incomplete after 7 days (and again after 21), the compliance owner gets one reminder naming the next step.
+
+## How to read a result
+
+A result page answers three questions, top to bottom:
+
+- **About this check** — what the check tests, why it matters and what usually causes a failure.
+- **How we checked** — "Step by step, from your records as they stood at the 02:00 IST run on …": a one-line verdict, then numbered steps, each with its value and a link to the records it came from. The last step is the result, in its colour.
+- **What's next** — what you can do: for a breach, **Assign it**, **Request an explanation**, or fix the data (the next run clears it by itself).
+
+Records dated before a check started are not checked; the page says how many ("22 investments made before this check started are not checked") with a link to them.
+
+## The register
+
+One row per breach episode — opened by the first failing run, closed by the first passing run. Use the Open, Closed and All tabs, **Filter** and search; open an item to assign it or request an explanation. An approver sees **Approve** and **Reject** in **What's next**; the person who asked sees who will decide.
+
+## Duties
+
+Things a person must do and prove that data cannot show — a filed report, an audit, due diligence on a new investor. Click **Mark done**, add a note and, where required, the evidence file. The cards above the grid follow your filter.
+
+## Facts to confirm
+
+Values read from your documents (by AI or entered by hand). Open a document, check each value against its quote and page, correct it if needed and click **Confirm facts**. Only confirmed facts count in a check.
+
+## Packs and versions
+
+The rule library holds CapHive's regulator packs (locked) and your own packs. Each version is a frozen copy of the rules with the date it takes effect; its **Checks** tab shows each check with its plain-words description. A version cannot be published until every check has one.
+
+## Describe a check in words
+
+On a draft version of your own pack, **Describe in words** lets AI draft a check from a sentence. It proposes the name, figure, limit and a plain-words description; correct any field, test it on a fund, then save.
+
+## Fund packs
+
+Which rule packs each fund carries and its classification in each. A fund with no pack is **Not monitored** — never shown as compliant.
+
+## Setup
+
+Map each input once for your firm, choose the compliance owner, fill in the reference lists your checks need, and switch monitoring and the AI helpers on or off. Monitoring cannot be switched on while an input is missing.
 
 ### A breach, start to finish
 
@@ -154,8 +225,17 @@ Click **Filter** on the register and add conditions such as Fund, Pack, Check, S
 **How do I download the register?**
 On the register click **Download**, choose the period and click **Download**. The Excel file covers the funds you can see and is built when you click; it is not stored.
 
-**How do I read a result's working?**
-Open the result from the fund's **Compliance** tab. The first line says what was found and against which limit. Below it each step lists a figure, how it was worked out and where it came from — click the source to see the records. For a breach of a percentage limit, the page shows how far to reduce the largest item, or how far the total must grow, to get back within the limit.
+**How do I read a result?**
+Open the result from the fund's **Compliance** tab. **About this check** says what it tests and why. **How we checked** gives the verdict, then each step with a figure, how it was worked out and where it came from — click the source to see the records. For a breach of a percentage limit, the page shows how far to reduce the largest item, or how far the total must grow, to get back within the limit.
+
+**What does "How we checked" mean?**
+It is how the nightly run reached the result, step by step, from your records as they stood at that run. Nothing in it is typed in by hand, and it never changes afterwards — a later run writes a new result.
+
+**Why does a result say some records "made before this check started are not checked"?**
+A record-level check (such as "every investment has a signed IC note") only applies from its start date. Older records are counted but not checked; the link next to the sentence opens them.
+
+**What is Getting started, and why did a step reopen?**
+Getting started is the list of eight setup steps on Compliance home, ticked off from your own data. Nothing is stored as done, so if your setup changes — say a new pack needs an input you have not mapped — that step shows as not done again until you fix it.
 
 ### Why use compliance monitoring
 

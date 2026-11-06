@@ -123,6 +123,8 @@ class CompliancePackVersion < ApplicationRecord
   def publish_errors
     errs = []
     errs << "Run a test first" if tested_at.nil?
+    # E193: every check needs a plain-words description before it is published (R158)
+    errs << "Add a description to every check: #{checks_without_description.join(', ')}" if checks_without_description.any?
     errs << "Record the counsel review" if caphive? && (counsel_reviewer.blank? || counsel_reviewed_on.blank?)
     errs << "Choose who this version applies to" if caphive? && applicability.blank?
     # Entity packs offer no grandfathering or transition (E98)
@@ -132,6 +134,11 @@ class CompliancePackVersion < ApplicationRecord
     prev = previous_published
     errs << "Effective date must be after #{prev.label}'s" if prev && effective_from && prev.effective_from && effective_from <= prev.effective_from && !correction_on_same_date?(prev)
     errs
+  end
+
+  # Names of the checks with no plain-words description (E193) — drafts list them, publishing refuses them
+  def checks_without_description
+    checks.select { |c| c["description"].to_s.strip.empty? }.map { |c| c["name"].presence || c["key"] }
   end
 
   def previous_published

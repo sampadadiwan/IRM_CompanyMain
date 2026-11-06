@@ -12,6 +12,8 @@
   <% elsif editable && !@version.published? %>
     <%= cmp_explainer("A draft: add or change checks (Describe in words, or the Definition tab), test it on a fund, then publish it with an effective date.") %>
   <% end %>
+  <%# ⑩ What's next: test then publish a draft; preview an upcoming version before its date %>
+  <%= render "compliance_shared/whats_next", record: @version %>
   <%# When a published version takes effect and who it applies to (H5, H46–H49) %>
   <% if @version.published? %>
     <p class="text-muted" id="version_effective">

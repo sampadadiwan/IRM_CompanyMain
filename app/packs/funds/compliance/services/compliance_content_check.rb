@@ -338,10 +338,14 @@ class ComplianceContentCheck
 
   def summarise(checked, failing, earlier, without:)
     ok = checked - failing.size - without
-    lines = ["#{ok} of #{checked} OK · #{failing.size} to look at · #{without} without a document · #{earlier} earlier not checked"]
+    # E195 / E196: one summary line (shown once as the verdict); records before the start date in words
+    summary = "#{ok} of #{checked} OK · #{failing.size} to look at · #{without} without a document"
+    lines = [summary]
+    lines << ComplianceFormat.earlier_words(earlier, @check["source"]) if earlier.positive?
     failing.first(ComplianceDocumentCheckQuery::MAX_LISTED).each { |f| lines << "#{f['label']} (#{f['date']}): #{f['problem']}" }
     Result.new(outcome: worst(failing), figure: failing.size, lines:, failing: failing.first(ComplianceDocumentCheckQuery::MAX_LISTED),
                extra: { "checked" => checked, "ok" => ok, "earlier" => earlier, "failing_count" => failing.size,
-                        "document_input" => @check["document_input"] })
+                        "document_input" => @check["document_input"], "verdict" => summary,
+                        "source" => @check["source"], "checks_from" => @check["checks_from"] })
   end
 end

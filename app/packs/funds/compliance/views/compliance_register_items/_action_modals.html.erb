@@ -1,6 +1,7 @@
 <%# Assign and Explain modals; their forms answer by Turbo stream and close on success (modal-form) %>
 <% if item.open? && policy(item).assign? %>
-  <div class="modal fade" id="assignItemModal" tabindex="-1" aria-labelledby="assignItemModalLabel" aria-hidden="true">
+  <%# ⑩ What's next on a result links here with ?open=assign / ?open=explain: the existing `modal` controller opens it %>
+  <div class="modal fade" id="assignItemModal" tabindex="-1" aria-labelledby="assignItemModalLabel" aria-hidden="true"<%= ' data-controller=modal' if params[:open] == "assign" %>>
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <%= form_with url: assign_compliance_register_item_path(item), method: :patch,
@@ -23,7 +24,7 @@
     </div>
   </div>
 
-  <div class="modal fade" id="explainItemModal" tabindex="-1" aria-labelledby="explainItemModalLabel" aria-hidden="true">
+  <div class="modal fade" id="explainItemModal" tabindex="-1" aria-labelledby="explainItemModalLabel" aria-hidden="true"<%= ' data-controller=modal' if params[:open] == "explain" %>>
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header">

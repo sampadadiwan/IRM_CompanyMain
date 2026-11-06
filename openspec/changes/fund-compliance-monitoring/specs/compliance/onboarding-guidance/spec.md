@@ -105,8 +105,34 @@ It SHALL show step names and counts only: no fund names, figures or people. Any 
 - **THEN** the list shows "Horizon Capital · 3 of 8 · next: Map inputs · since 04/11/2026"
 
 ### Requirement: Guidance is for compliance users only
-Getting started, What's next and the section bar SHALL be shown only to compliance viewers of the firm. Their frames SHALL be authorized like any other compliance page. A direct request from an investor or another firm SHALL be refused.
+Getting started, What's next and the section bar SHALL be shown only to compliance viewers of the firm, on pages (and the Getting started frame) authorized like any other compliance page. A direct request from an investor or another firm SHALL be refused.
 
 #### Scenario: Guidance is for compliance users only
-- **WHEN** an investor, or another firm's admin, requests Horizon's Getting started frame directly
+- **WHEN** an investor requests the Getting started frame directly, or another firm's admin requests a Horizon result page (which carries its What's next)
 - **THEN** the request is refused
+
+### Requirement: About this check
+Every check in a pack definition SHALL carry a plain-words description: what it tests, why it matters, and what usually causes a failure. A version SHALL NOT be published while any check has no description; a draft SHALL list the checks missing one. AI drafting SHALL propose a description that the editor can change before saving. The result page and the register item SHALL open with an "About this check" card showing it, and the version page SHALL show it under each check.
+
+#### Scenario: About this check
+- **WHEN** Meera opens a concentration result or its register item
+- **THEN** the first card, "About this check", explains what the check tests, why SEBI caps it and what usually causes a breach
+
+#### Scenario: Publish needs descriptions
+- **WHEN** a draft has a check with no description and its editor presses Publish
+- **THEN** publishing is refused with "Add a description to every check" naming the check
+
+### Requirement: Descriptions backfilled
+A one-off task SHALL write descriptions into versions that were published before descriptions existed, from the pack files. It SHALL write only the description text; any version whose rules differ from its file SHALL be skipped and reported. It SHALL be a dry run unless EXECUTE=1, SHALL record an audit row per version changed, and SHALL refuse production unless forced.
+
+#### Scenario: Descriptions backfilled
+- **WHEN** the task runs with EXECUTE=1 over a SEBI v1 loaded without descriptions
+- **THEN** every check gains its description and every other field of the definition is unchanged
+
+### Requirement: How we checked
+The working of every result SHALL be titled "How we checked", with the run it comes from ("Step by step, from your records as they stood at the 02:00 IST run on 06/11/2026", or the Run now time), shown as numbered steps wherever a working appears. A summary SHALL appear once. Records dated before a check started SHALL be described in words with a link to them. Amounts SHALL use the same crore format as the rest of the page.
+
+#### Scenario: How we checked
+- **WHEN** Meera opens a document-check result with 4 records to look at and 22 made before the check started
+- **THEN** the card is titled "How we checked", the summary appears once, and it reads "22 investments made before this check started are not checked" with a link to them
+

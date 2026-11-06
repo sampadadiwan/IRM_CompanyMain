@@ -38,7 +38,8 @@ def cmp_v2_with_new_check
   defn = cmp[:sebi].definition_hash
   defn["checks"] << { "key" => "sebi_new_v2_cap", "name" => "New v2 investor cap", "kind" => "limit", "applies_to" => "all", "figure" => "investor_count",
                       "compare" => "lte", "limit" => { "value" => 0, "unit" => "count" }, "tested" => "continuous", "override" => "none",
-                      "time_to_fix_days" => 30, "severity" => "breach", "citation" => "Test amendment" }
+                      "time_to_fix_days" => 30, "severity" => "breach", "citation" => "Test amendment",
+                      "description" => "At most one investor — a test amendment every fund fails." }
   defn
 end
 

@@ -39,17 +39,44 @@ class ComplianceInputs
     self.for(entity).select(&:missing?).map { |i| i.label.upcase_first }
   end
 
+  # How many applicable checks of the entity's attachments read any of these input keys — the
+  # "without them 4 checks show Could not check" count in Getting started (H81, E191)
+  def self.blocked_checks_count(entity, keys)
+    new(entity).blocked_checks_count(keys)
+  end
+
+  def blocked_checks_count(keys)
+    keys = Array(keys).map(&:to_s)
+    return 0 if keys.empty?
+
+    FundCompliancePack.active.where(entity_id: @entity.id).includes(:compliance_pack_version).sum do |fp|
+      v = fp.compliance_pack_version
+      next 0 unless v
+
+      applicable_checks(fp).count { |c| used_by_check(c, v).intersect?(keys) }
+    end
+  end
+
   private
 
   # Inputs referenced by the checks that apply to this attachment's classification
   def used_inputs(fund_pack)
     v = fund_pack.compliance_pack_version
-    checks = v.checks.select { |c| c["applies_to"].nil? || c["applies_to"] == "all" || Array(c["applies_to"]).include?(fund_pack.classification) }
-    refs = checks.flat_map { |c| [c["figure"], c.dig("limit", "expr"), c["document_input"]] }
-    measure_keys = expand(refs, v)
-    input_refs = v.measures.select { |m| measure_keys.include?(m["key"]) }
-                  .flat_map { |m| [m["input"]] + Array(m["filters"]).select { |f| f.first == "investor_group" }.map(&:last) }
-    (input_refs + checks.pluck("document_input")).compact.uniq
+    applicable_checks(fund_pack).flat_map { |c| used_by_check(c, v) }.uniq
+  end
+
+  def applicable_checks(fund_pack)
+    fund_pack.compliance_pack_version.checks.select do |c|
+      c["applies_to"].nil? || c["applies_to"] == "all" || Array(c["applies_to"]).include?(fund_pack.classification)
+    end
+  end
+
+  # The input keys one check reads, through its measures (and its document input)
+  def used_by_check(check, version)
+    measure_keys = expand([check["figure"], check.dig("limit", "expr"), check["document_input"]], version)
+    input_refs = version.measures.select { |m| measure_keys.include?(m["key"]) }
+                        .flat_map { |m| [m["input"]] + Array(m["filters"]).select { |f| f.first == "investor_group" }.map(&:last) }
+    (input_refs + [check["document_input"]]).compact.uniq
   end
 
   def expand(refs, version)

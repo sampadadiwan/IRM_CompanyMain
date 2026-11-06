@@ -1330,6 +1330,7 @@ flowchart TD
   - reminders go out on day 7 and day 21 if setup is incomplete, recorded in `onboarding.reminders_sent`, via the hourly `ComplianceScheduleJob`;
   - entities without `enable_compliance` get none.
 - **Customer setup (super admins):** `ComplianceOnboardingController#index` (super only) lists each entity's step count, next step and start date. It shows names of steps only.
+- **Built (R164–R167):** What's next renders inline on each page from the record it already authorized (no frame endpoint, no `record_type` param); the Getting started panel renders inline on home (its frame endpoint `/compliance/getting_started` refreshes it); Setup gained the owner picker and a reference-list editor so steps 1 and 4 have somewhere to go; step 8 counts only after a first run; E191 keeps the X15 gate (monitoring refused while an input is missing).
 
 **Worked examples:** H80–H90, E180–E192, X90–X93 ([§ 13](business-rules.md#13-newcomer-guidance--phase-5)).
 

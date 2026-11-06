@@ -76,7 +76,7 @@
               <% preview.rows.each do |row| %>
                 <tr><td class="text-col"><%= row.name %>
                     <% if row.working.present? %>
-                      <details class="mt-1"><summary class="text-muted small">Working</summary>
+                      <details class="mt-1"><summary class="text-muted small">How we checked</summary>
                         <%= render "compliance_shared/working", working: row.working, outcome: row.outcome, fund: d.fund %>
                       </details>
                     <% end %></td>

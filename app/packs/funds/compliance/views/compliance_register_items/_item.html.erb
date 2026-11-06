@@ -15,9 +15,15 @@
 
   <div class="row">
     <div class="col-lg-8">
+      <%# ⑩ E186 / E187: approve or reject for an approver; "waiting for an approver" for the requester %>
+      <%= render "compliance_shared/whats_next", record: item %>
+      <%# H91: About this check (R158) %>
+      <%= render "compliance_shared/about_check", check: (item.last_result&.compliance_pack_version || item.fund_compliance_pack.compliance_pack_version)&.check(item.check_key) %>
       <div class="card shadow-sm border-0 mb-4">
         <div class="card-header border-bottom py-3">
-          <h5 class="mb-0 fw-bold"><%= cmp_icon(:result, "me-2 text-primary") %>Working <%= cmp_tip("How the latest nightly run reached this result: every figure, where it comes from, and the arithmetic") %></h5>
+          <%# H92 / R160: "How we checked", from the latest run %>
+          <h5 class="mb-0 fw-bold"><%= cmp_icon(:result, "me-2 text-primary") %><%= t("compliance.how_we_checked.title") %> <%= cmp_term(:how_we_checked) %></h5>
+          <small class="text-muted d-block mt-1" id="how_we_checked_subtitle"><%= cmp_how_we_checked_subtitle(item.last_result&.compliance_run, ComplianceEntitySetup.for(item.fund.entity).time_zone) %></small>
         </div>
         <div class="card-body" id="item_working">
           <% if item.last_result %>
@@ -43,7 +49,9 @@
         <ul class="list-group list-group-flush" id="item_details">
           <% rows.each do |key, value| %>
             <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
-              <span class="text-muted"><%= key %><%= cmp_tip("Assigning emails the person; the item moves to In progress") if key == "Assigned to" %></span>
+              <span class="text-muted"><%= key %><%= cmp_tip("Assigning emails the person; the item moves to In progress") if key == "Assigned to" %>
+                <%# H88: the glossary's words for the item's status (R154) %>
+                <%= cmp_term(item.closed? ? :closed : item.status) if key == "Status" %><%= cmp_term(:fix_by) if key == "Fix by" %></span>
               <span class="fw-bold text-end" id="<%= { 'Assigned to' => 'item_assignee', 'Status' => 'item_status' }[key] %>"><%= value %>
                 <%= cmp_badge("Worsened since approval", "danger", :warning) if key == "Status" && item.reopened_worse %></span>
             </li>

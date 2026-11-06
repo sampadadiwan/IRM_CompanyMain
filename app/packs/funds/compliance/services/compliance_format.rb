@@ -19,6 +19,24 @@ module ComplianceFormat
     end
   end
 
+  # E197 / R162: remedy and headroom amounts always read in crores, like the steps above them —
+  # "₹0.15 cr", never "₹15,00,000". Amounts under ₹1 lakh keep their digits ("₹45,000").
+  def amount_cr(value, currency = "INR")
+    return amount(value, currency) unless currency == "INR" && value && value.to_d.abs >= 100_000
+
+    "₹#{format('%.2f', (value.to_d / CRORE).round(2))} cr"
+  end
+
+  # "22 investments made before this check started are not checked" (E196, R161)
+  RECORD_NOUNS = { "portfolio_investments" => %w[investment investments], "commitments" => %w[commitment commitments],
+                   "payments" => %w[payment payments], "distributions" => %w[distribution distributions],
+                   "investor_kycs" => ["KYC record", "KYC records"] }.freeze
+
+  def earlier_words(count, source)
+    one, many = RECORD_NOUNS.fetch(source.to_s, %w[record records])
+    count.to_i == 1 ? "1 #{one} made before this check started is not checked" : "#{count} #{many} made before this check started are not checked"
+  end
+
   # Full digits, no crore shorthand — the conversion line of a currency check: "₹1,20,00,000", "USD 144,578" (H24)
   def amount_full(value, currency = "INR")
     return "—" if value.nil?

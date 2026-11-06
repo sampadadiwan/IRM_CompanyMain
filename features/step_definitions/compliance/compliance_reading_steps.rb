@@ -34,7 +34,7 @@ module ComplianceReadingWorld
     ic = { "source" => "portfolio_investments", "document_input" => "ic_note", "filters" => [%w[transaction eq buy]],
            "kind" => "content", "applies_to" => "all", "severity" => "breach", "tested" => "continuous", "override" => "any",
            "time_to_fix_days" => 30 }
-    {
+    cmp_described({
       "currency" => "INR", "period_basis" => "calendar", "classifications" => ["All funds"],
       "inputs" => [
         { "key" => "ic_note", "type" => "document", "label" => "IC note", "facts" => [
@@ -69,7 +69,7 @@ module ComplianceReadingWorld
       ],
       "duties" => [{ "key" => "ppm_review", "name" => "PPM change review", "trigger" => { "document" => "ppm" },
                      "due" => { "days_after" => "event", "n" => 5 }, "evidence" => false }]
-    }
+    })
   end
 
   def cmp_reading_key(label)

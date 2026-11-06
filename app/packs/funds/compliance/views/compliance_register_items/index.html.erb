@@ -15,7 +15,10 @@
   </button>
 <% end %>
 
-<%= cmp_explainer("One row per breach episode: it opens on the first failing night and closes by itself when a run passes. Assign it, or ask an approver to accept it with an explanation.") %>
+<%= cmp_intro(:register, anchor: "the-register") %>
+<%# ⑩ H86 / E188: which run the items come from; an empty register says when the next run is %>
+<%= cmp_runs_timing_banner %>
+<%= render "compliance_shared/whats_next", record: :register, context: { open_count: compliance_section_counts[:open] } %>
 
 <%
   base = { q: @user_q.presence, fund_id: params[:fund_id].presence, search: params[:search].presence }.compact

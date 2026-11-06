@@ -172,8 +172,19 @@ module ComplianceWorld
     cmp_sebi_data["definition"]
   end
 
+  # R158 / E193: a version cannot be published while a check has no plain-words description, so test
+  # fixtures give every check one (scenarios about a missing description remove it on purpose)
+  def cmp_described(definition)
+    Array(definition["checks"]).each { |c| c["description"] ||= "#{c['name'] || c['key']} — test description of what it checks and why." }
+    definition
+  end
+
   # Horizon's own fund-agreement pack (entity pack): single-sector ≤ 15%, concentration ≤ 20%, IC note per investment
   def cmp_fa_definition
+    cmp_described(cmp_fa_definition_raw)
+  end
+
+  def cmp_fa_definition_raw
     sebi = cmp_sebi_definition
     measures = sebi["measures"].select { |m| %w[corpus est_expenses investable_funds cost_per_investee].include?(m["key"]) } +
                [{ "key" => "cost_per_sector", "label" => "Investment cost per sector", "op" => "sum", "source" => "portfolio_investments",

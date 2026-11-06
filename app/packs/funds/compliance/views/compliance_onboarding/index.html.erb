@@ -1,0 +1,31 @@
+<%# ⑩ Customer setup (super admins, E192, X91): firm · steps done · next step · since. Counts only. %>
+<div class="container-fluid p-3">
+  <%= render layout: "compliance_shared/header", locals: { title: "Customer setup", icon: :compliance, no_section_bar: true } do %><% end %>
+  <%= cmp_intro(:onboarding, anchor: "getting-started") %>
+  <%= cmp_stats([
+    { stat: @rows.size, subtitle: "Firms with Compliance on", colour: "info", icon: :compliance,
+      tooltip: "Firms whose Compliance entity flag is on and that have opened Compliance setup" },
+    { stat: @rows.count { |r| r.next_step.nil? }, subtitle: "Setup complete", colour: "success", icon: :done,
+      tooltip: "All 8 Getting started steps done" },
+    { stat: @rows.count { |r| r.next_step && r.since < 7.days.ago.to_date }, subtitle: "Stuck over 7 days", colour: "danger", icon: :overdue,
+      tooltip: "Setup still incomplete a week after it started — worth a call from support" }
+  ], id: "onboarding_stats") %>
+  <div class="table-responsive">
+    <table class="table table-bordered dataTable action_table hover" id="onboarding_rows">
+      <thead><tr>
+        <th class="text-col">Firm</th>
+        <th class="num-col">Steps done <%= cmp_term(:getting_started) %></th>
+        <th class="text-col">Next step</th>
+        <th class="text-col">Since <%= cmp_tip("When the firm's compliance setup was created") %></th>
+      </tr></thead>
+      <tbody>
+        <% @rows.each do |r| %>
+          <tr><td class="text-col"><%= r.firm %></td><td class="num-col"><%= r.done %> of <%= r.total %></td>
+            <td class="text-col"><%= r.next_step ? r.next_step : cmp_badge("Complete", "success", :done) %></td>
+            <td class="text-col"><%= l(r.since) %></td></tr>
+        <% end %>
+        <% if @rows.empty? %><tr><td colspan="4" class="text-muted">No firm has started Compliance setup yet.</td></tr><% end %>
+      </tbody>
+    </table>
+  </div>
+</div>

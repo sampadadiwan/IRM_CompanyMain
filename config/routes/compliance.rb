@@ -1,6 +1,9 @@
 # Fund compliance monitoring — openspec/changes/fund-compliance-monitoring/lld.md › Controllers
 scope :compliance do
   get "/", to: "compliance_home#index", as: :compliance_home
+  # ⑩ Phase 5 newcomer guidance: the Getting started frame and the super-admin customer setup list
+  get "getting_started", to: "compliance_home#getting_started", as: :compliance_getting_started
+  get "onboarding", to: "compliance_onboarding#index", as: :compliance_onboarding
   resources :compliance_packs, path: "packs", only: %i[index show new create] do
     member { patch :retire }
   end

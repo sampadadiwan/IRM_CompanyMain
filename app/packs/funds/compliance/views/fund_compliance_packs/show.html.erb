@@ -7,7 +7,9 @@
     <%= cmp_header_link "Register", compliance_register_items_path(fund_id: @dashboard.fund.id), icon: :register %>
     <%= cmp_header_link "Fund page", fund_path(@dashboard.fund, tab: "compliance-tab"), icon: :fund %>
   <% end %>
-  <%= cmp_explainer("The latest result of every check, one tab per pack. Each night at 02:00 the run writes new results — nobody edits a result; fix the data or the setup and the next run clears it.") %>
+  <%= cmp_intro(:fund_pack, anchor: "fund-packs") %>
+  <%# ⑩ H86: this fund's last run and the next one %>
+  <%= cmp_runs_timing_banner(fund: @dashboard.fund) %>
   <%= render "fund_compliance_packs/dashboard", dashboard: @dashboard, preview: @preview %>
 
   <%# Actions row for this fund pack (capital_calls/show): Run now is on the dashboard; the rest are

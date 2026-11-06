@@ -502,10 +502,9 @@ All under `/compliance` (Turbo; HTML + turbo_stream). Super-admin Rule Library u
 | Verb and path | Controller#action | Authorize | Responds with |
 |---|---|---|---|
 | GET `/compliance/getting_started` | `ComplianceHomeController#getting_started` | `ComplianceHomePolicy#index?` | Turbo frame (lazy, on home) |
-| GET `/compliance/next_steps?record_type=&record_id=` | `ComplianceHomeController#next_steps` | record loaded via `policy_scope(allow-listed type)` then `authorize record, :show?` | Turbo frame |
 | GET `/compliance/onboarding` | `ComplianceOnboardingController#index` | `ComplianceOnboardingPolicy#index?` = `user.has_cached_role?(:super)` | Page (standard table) |
 
-- `record_type` is matched against an allow-list (`ComplianceResult`, `ComplianceRegisterItem`, `ComplianceDuty`, `DocumentReading`, `CompliancePackVersion`). It is never passed to `constantize`.
+- What's next is rendered inline by each page from the record that page already loaded and authorized (`compliance_shared/_whats_next`), so no `record_type` parameter exists and nothing reaches `constantize` (built this way — R164).
 
 **Queries** (Compliance home, per view): owner/approver check; `FundCompliancePack.active.exists?`; unmapped inputs computed in Ruby from the attached versions' definitions (small JSON); reference-list presence in JSON; `ComplianceRun.succeeded.exists?`; tagged users `exists?`; open items without an assignee `count`. That is 8 cheap queries, with no large tables touched. The section bar does 3 `count`s, memoised per request.
 

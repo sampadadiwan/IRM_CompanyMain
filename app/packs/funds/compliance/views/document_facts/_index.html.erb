@@ -9,7 +9,8 @@
   <% end %>
 <% end %>
 
-<%= cmp_explainer("AI reads each document once and quotes where each fact came from. A fact counts in compliance checks only after a person confirms it — check the quote and page, correct the value if needed, then confirm.", id: "facts_explainer") %>
+<%= cmp_intro(:facts, anchor: "facts-to-confirm") %>
+<%= render "compliance_shared/whats_next", record: :facts, context: { waiting: compliance_section_counts[:facts] } %>
 
 <%= render "document_facts/grid_stats", scope: @stats_scope %>
 

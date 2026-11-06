@@ -42,6 +42,8 @@ class ComplianceCheckDraftsController < ApplicationController
     draft = @draft.draft_hash
     edits = draft_params
     %w[name citation compare limit_unit duty_trigger reason].each { |k| draft[k] = edits[k].to_s.strip.first(200) if edits.key?(k) }
+    # E199: the plain-words description is editable before save (R158)
+    draft["description"] = edits[:description].to_s.strip.first(600) if edits.key?(:description)
     draft["limit_value"] = edits[:limit_value].presence && edits[:limit_value].to_d.to_f if edits.key?(:limit_value)
     draft["duty_due_days"] = edits[:duty_due_days].to_i.clamp(0, 365) if edits.key?(:duty_due_days)
     draft["evidence"] = edits[:evidence] == "1" if edits.key?(:evidence)
@@ -96,7 +98,7 @@ class ComplianceCheckDraftsController < ApplicationController
   end
 
   def draft_params
-    params.expect(compliance_check_draft: [:name, :citation, :compare, :limit_value, :limit_unit, :duty_trigger, :duty_due_days,
+    params.expect(compliance_check_draft: [:name, :description, :citation, :compare, :limit_value, :limit_unit, :duty_trigger, :duty_due_days,
                                            :evidence, :reason, { figure: %i[measure op source field group_by],
                                                                  divided_by: %i[measure op source field group_by] }])
   end

@@ -8,14 +8,14 @@ module ComplianceLibraryHelpers
   }.freeze
 
   def draft_definition(classifications = 5)
-    {
+    cmp_described({
       "currency" => "INR", "period_basis" => "fy_apr",
       "classifications" => ["Category I", "Category II", "Category III", "Category I — LVF", "Category II — LVF"].first(classifications),
       "inputs" => [], "measures" => [{ "key" => "corpus", "label" => "Corpus", "op" => "sum", "source" => "commitments", "field" => "amount" }],
       "checks" => [{ "key" => "corpus_min", "name" => "Corpus minimum", "kind" => "limit", "applies_to" => "all", "figure" => "corpus",
                      "compare" => "gte", "limit" => { "value" => 1, "unit" => "amount" }, "citation" => "Test citation" }],
       "duties" => []
-    }
+    })
   end
 
   def edit_draft
@@ -193,7 +193,7 @@ end
 def cmp_publish_sebi_version(published_on, effective, applicability, limit: nil, transition_end: nil, early: false, corrects: nil,
                              published_at_time: "10:00", definition: nil)
   pack = cmp[:sebi].compliance_pack
-  defn = definition || cmp[:sebi].definition_hash
+  defn = cmp_described(definition || cmp[:sebi].definition_hash)
   if limit
     defn["checks"].each { |c| c["limit"]["value"] = limit if c["key"] == "sebi_concentration_cat12" }
   end

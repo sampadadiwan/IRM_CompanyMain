@@ -24,6 +24,18 @@ class ComplianceScheduleJob < ApplicationJob
       Rails.logger.error("[ComplianceScheduleJob] entity #{setup.entity_id}: #{e.class}")
     end
     sweep_readings(now)
+    onboarding_reminders(now)
+  end
+
+  # ⑩ E189: Getting started reminders on day 7 and 21, at 08:00 local, for every firm still setting up —
+  # monitoring is usually still off then, so this sweeps every setup, not just monitored ones
+  def onboarding_reminders(now)
+    ComplianceEntitySetup.includes(:entity, :owner).find_each do |setup|
+      local = now.in_time_zone(setup.time_zone)
+      ComplianceOnboardingNotices.remind(setup, local.to_date) if local.hour == DIGEST_HOUR
+    rescue StandardError => e
+      Rails.logger.error("[ComplianceScheduleJob] onboarding reminder entity #{setup.entity_id}: #{e.class}")
+    end
   end
 
   def sweep_readings(now)

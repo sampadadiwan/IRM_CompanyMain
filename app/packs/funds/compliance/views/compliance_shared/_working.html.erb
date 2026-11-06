@@ -4,6 +4,11 @@
 <% w = working || {} %>
 <% fund = local_assigns[:fund] %>
 <% steps = Array(w["steps"]) %>
+<%# Old results (before R113) only have text lines: shown as the same numbered steps (cmp_steps_from_lines) %>
+<%# Document/content checks ("checked" set) are fully said by the verdict + the records sentence — no steps %>
+<% if steps.empty? && w["checked"].nil? && Array(w["failing_records"]).empty? && Array(w["failing_groups"]).empty? && outcome != "could_not_check" %>
+  <% steps = cmp_steps_from_lines(w["lines"]) %>
+<% end %>
 <% remedy = w["remedy"] || {} %>
 <% failing = Array(w["failing_records"]) %>
 <% label, colour = ComplianceUiHelper::CMP_OUTCOMES[outcome] || [outcome.to_s.humanize, "secondary"] %>
@@ -20,11 +25,26 @@
     end
   end
 %>
-<%# 1. Verdict %>
+<%# 1. Verdict — shown once (E195). Results stored before R161 carry "· N earlier not checked" in their
+    summary; it is dropped here and said in words below instead (E196). %>
+<% verdict_text = (w["verdict"].presence || w["message"].presence || Array(w["lines"]).last).to_s.sub(/ · \d+ earlier not checked/, "") %>
 <div class="mb-3">
   <p class="mb-0" id="result_verdict"><%= cmp_outcome_badge(outcome) %>
-    <%= w["verdict"].presence || w["message"].presence || Array(w["lines"]).last %></p>
+    <%= verdict_text %></p>
   <% if w["citation"].present? %><small class="text-muted d-block mt-1"><%= cmp_icon(:pack) %><%= w["citation"] %></small><% end %>
+  <%# E196 / R161: records dated before the check started, in words, with a link to them %>
+  <% if w["earlier"].to_i.positive? %>
+    <% src = w["source"].presence %>
+    <% date_col = src && ComplianceDataCatalog.source?(src) ? ComplianceDataCatalog.source(src).record_date : nil %>
+    <% earlier_path = if fund && w["checks_from"].present? && date_col
+                        case src
+                        when "portfolio_investments" then portfolio_investments_path(fund_id: fund.id, filter: true, q: { "#{date_col}_lt" => w["checks_from"] })
+                        when "commitments" then capital_commitments_path(fund_id: fund.id, filter: true, q: { "#{date_col}_lt" => w["checks_from"] })
+                        end
+                      end %>
+    <small class="text-muted d-block mt-1" id="result_earlier"><%= cmp_icon(:calendar) %><%= ComplianceFormat.earlier_words(w["earlier"], src) %><%= " (before #{l(Date.parse(w['checks_from'].to_s))})" if w["checks_from"].present? %>.
+      <% if earlier_path %><%= link_to "See them", earlier_path, id: "result_earlier_link" %><% end %></small>
+  <% end %>
 </div>
 
 <% if outcome == "could_not_check" %>
@@ -36,7 +56,9 @@
 <% elsif outcome == "needs_review" %>
   <div class="alert alert-info d-flex align-items-start gap-2" id="result_review">
     <%= cmp_icon(:needs_review, "fs-5 flex-shrink-0") %>
-    <div>A person must look at this: <%= w["message"].presence || "see the records below" %>. Rules cannot decide it, so it is never counted as a pass.</div>
+    <%# E195: the summary is already the verdict above — say only why a person must look %>
+    <% extra = w["message"].to_s.sub(/ · \d+ earlier not checked/, "") %>
+    <div>A person must look at this<%= ": #{extra}" if extra.present? && extra != verdict_text %>. Rules cannot decide it, so it is never counted as a pass — confirm the facts waiting or check the records below.</div>
   </div>
 <% end %>
 
@@ -69,11 +91,11 @@
       </li>
     <% end %>
   </ul>
-<% elsif failing.empty? && Array(w["failing_groups"]).empty? %>
+<% elsif failing.empty? && Array(w["failing_groups"]).empty? && w["checked"].nil? && outcome != "could_not_check" %>
   <%# Results stored before structured steps: the text lines, in the same list layout %>
   <ul class="list-group list-group-flush border rounded mb-3" id="result_lines">
     <% Array(w["lines"]).each do |line| %>
-      <li class="list-group-item py-3 px-4"><%= line %></li>
+      <li class="list-group-item py-3 px-4"><%= line.to_s.sub(/ · (\d+) earlier not checked/) { " · #{ComplianceFormat.earlier_words(Regexp.last_match(1), w['source'])}" } %></li>
     <% end %>
   </ul>
 <% end %>
@@ -157,9 +179,5 @@
       <% end %>
     </tbody>
   </table>
-  <% if steps.empty? %>
-    <details class="mt-2"><summary class="text-muted small">All working lines</summary>
-      <% Array(w["lines"]).each do |line| %><div class="small"><%= line %></div><% end %>
-    </details>
-  <% end %>
+  <%# The failing records above are the whole story — no raw working lines are repeated under them (R160) %>
 <% end %>

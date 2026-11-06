@@ -19,4 +19,31 @@ namespace :compliance do
     version = CompliancePackLoader.call(data, publish: ENV["PUBLISH"] == "1")
     puts "Loaded #{version.compliance_pack.name} #{version.label} (#{version.status})"
   end
+
+  # U12 / R159: plain-words check descriptions into versions published before descriptions existed —
+  # text only; a version whose rules differ from its source file is reported and not touched (X94).
+  #   bin/rails compliance:backfill_descriptions             # dry run: what would change
+  #   EXECUTE=1 bin/rails compliance:backfill_descriptions   # apply (one Audit row per version)
+  #   Production also needs FORCE=1.
+  desc "Backfill check descriptions into published pack versions (dry-run unless EXECUTE=1)"
+  task backfill_descriptions: :environment do
+    abort("Refusing in production without FORCE=1") if Rails.env.production? && ENV["FORCE"] != "1"
+
+    sources = Hash.new { |h, k| h[k] = [] }
+    Rails.root.glob("db/seeds/compliance/*.json").each do |path|
+      data = JSON.parse(File.read(path))
+      sources[data.dig("pack", "name")] << data["definition"]
+    end
+    # The demo's entity pack (lib/tasks/compliance_demo.rake), when that task file is loaded
+    if defined?(ComplianceDemoSetup)
+      demo = ComplianceDemoSetup.allocate
+      sources[ComplianceDemoSetup::CUSTOM_PACK] << demo.send(:custom_definition)
+    end
+
+    execute = ENV["EXECUTE"] == "1"
+    lines = ComplianceDescriptionBackfill.call(sources:, execute:)
+    lines.each { |line| puts line }
+    puts "No published version of a known pack found" if lines.empty?
+    puts execute ? "Applied." : "Dry run — set EXECUTE=1 to apply"
+  end
 end

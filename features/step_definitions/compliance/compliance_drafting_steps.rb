@@ -38,6 +38,13 @@ module ComplianceDraftingWorld
 
   def cmp_stub_ai!(reply: nil, error: nil)
     prompts = cmp_ai_prompts
+    # R158: the drafter asks for a plain-words description; a canned reply without one gets a test text
+    # (E199 passes its own and asserts it)
+    if reply.is_a?(String) && reply.strip.start_with?("{")
+      parsed = JSON.parse(reply)
+      # Only check drafts (they carry "kind"); the document reader's canned replies are left as they are
+      reply = parsed.merge("description" => parsed["description"].presence || "Drafted check — test description of what it checks and why.").to_json if parsed.is_a?(Hash) && parsed.key?("kind")
+    end
     allow(LlmService).to receive(:ruby_llm_chat) { ComplianceFakeDraftChat.new(reply:, error:, prompts:) }
   end
 

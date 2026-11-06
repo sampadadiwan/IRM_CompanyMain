@@ -200,9 +200,9 @@ class ComplianceWorkingSteps
     return nil if ratio? || @ev.explain_conversion || %w[amount count].exclude?(unit)
 
     gap = (@limit.to_d - @value.to_d).abs
-    gap_text = @ev.explain_fmt(gap)
-    value_text = @ev.explain_fmt(@value)
-    limit_text = @ev.explain_fmt(@limit)
+    gap_text = @ev.explain_fmt_remedy(gap) # E197: crores
+    value_text = @ev.explain_fmt_remedy(@value)
+    limit_text = @ev.explain_fmt_remedy(@limit)
     text = if @ok
              "#{subject_label} is #{gap_text} #{upper_limit? ? 'below' : 'above'} the limit."
            elsif upper_limit?
@@ -252,19 +252,19 @@ class ComplianceWorkingSteps
     cap = share * den
     subject = @group_label.presence || "the figure"
     if @ok
-      { "kind" => "headroom", "amount" => @ev.explain_fmt_fund(cap - num, "amount"),
+      { "kind" => "headroom", "amount" => @ev.explain_fmt_fund_remedy(cap - num),
         "pts" => "#{format('%.2f', (@limit.to_d - ComplianceFormat.pct_value(@value)).round(2))} pts", "subject" => subject }
     else
-      { "kind" => "breach", "subject" => subject, "reduce_to" => @ev.explain_fmt_fund(cap, "amount"),
-        "reduce_by" => @ev.explain_fmt_fund(num - cap, "amount"), "raise_label" => denominator_label,
-        "raise_to" => @ev.explain_fmt_fund(num / share, "amount"),
+      { "kind" => "breach", "subject" => subject, "reduce_to" => @ev.explain_fmt_fund_remedy(cap),
+        "reduce_by" => @ev.explain_fmt_fund_remedy(num - cap), "raise_label" => denominator_label,
+        "raise_to" => @ev.explain_fmt_fund_remedy(num / share),
         "over_pts" => "#{format('%.2f', (ComplianceFormat.pct_value(@value) - @limit.to_d).round(2))} pts" }
     end
   end
 
   # "₹47.50 cr" of room, or "₹4.50 cr over" when past the limit
   def headroom_text(room)
-    room.negative? ? "#{@ev.explain_fmt_fund(-room, 'amount')} over" : @ev.explain_fmt_fund(room, "amount")
+    room.negative? ? "#{@ev.explain_fmt_fund_remedy(-room)} over" : @ev.explain_fmt_fund_remedy(room)
   end
 
   # The next largest groups with their share and headroom (who is closest to the limit)

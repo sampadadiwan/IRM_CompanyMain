@@ -6,6 +6,10 @@ class ComplianceHomeController < ApplicationController
   def index
     authorize :compliance_home, :index?
     @setup = ComplianceEntitySetup.for(current_user.entity)
+    # ⑩ Timing banner: the firm's last successful run, and whether a later run failed (E185)
+    runs = ComplianceRun.where(entity_id: current_user.entity_id)
+    @last_success = runs.where(status: "succeeded").order(:created_at, :id).last
+    @failed_since = @last_success.present? && runs.where(status: "failed").exists?(["created_at > ?", @last_success.created_at])
     @funds = Fund.where(id: ComplianceAccess.fund_ids(current_user)).order(:name)
     @fund_packs = policy_scope(FundCompliancePack).active.includes(:compliance_pack, :compliance_pack_version).group_by(&:fund_id)
     items = policy_scope(ComplianceRegisterItem).open_items
@@ -26,5 +30,11 @@ class ComplianceHomeController < ApplicationController
       stale: monitored.count { |f| ComplianceRun.stale?(f) }
     }
     compliance_crumbs
+  end
+
+  # ⑩ The Getting started frame on its own (refreshes in place; X90: viewers of the firm only)
+  def getting_started
+    authorize :compliance_home, :index?
+    render partial: "compliance_shared/getting_started"
   end
 end

@@ -173,6 +173,8 @@ class ComplianceCheckDraft < ApplicationRecord
       "tested" => "continuous", "override" => "any", "time_to_fix_days" => 30, "severity" => "breach"
     }
     check["citation"] = draft["citation"] if draft["citation"].present?
+    # H91: saved with its plain-words description (R158)
+    check["description"] = draft["description"] if draft["description"].present?
     check
   end
 
@@ -186,6 +188,7 @@ class ComplianceCheckDraft < ApplicationRecord
     duty["due"] = { "days_after" => "period_end", "n" => draft["duty_due_days"].to_i } if trigger != "on_demand"
     duty["reason"] = draft["reason"] if draft["reason"].present?
     duty["citation"] = draft["citation"] if draft["citation"].present?
+    duty["description"] = draft["description"] if draft["description"].present?
     duty
   end
 

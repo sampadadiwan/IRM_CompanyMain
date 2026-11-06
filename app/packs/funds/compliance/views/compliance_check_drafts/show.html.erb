@@ -12,7 +12,7 @@
   <% end %>
   <% if flash[:alert] %><div class="alert alert-danger" id="draft_alert"><%= flash[:alert] %></div><% end %>
   <% if flash[:notice] %><div class="alert alert-info" id="draft_notice"><%= flash[:notice] %></div><% end %>
-  <%= cmp_explainer("The AI drafted this check from your sentence. Read it field by field, change anything it got wrong, run a test on a fund, then save it into the draft version. The AI never decides a result.") %>
+  <%= cmp_intro(:draft, anchor: "describe-a-check-in-words") %>
   <p class="mb-3"><%= cmp_icon(:explain) %>Rule: <strong id="draft_sentence">"<%= @draft.sentence %>"</strong></p>
 
   <% if @draft.status == "drafting" %>
@@ -59,6 +59,9 @@
           <% end %>
           <tr id="draft_limit"><th>Limit</th><td><%= ComplianceCheckDraftWords.limit(d, version.currency) %></td></tr>
         <% end %>
+        <%# H91/E199: the plain-words description the AI proposed — shown as "About this check" once saved (R158) %>
+        <tr id="draft_description"><th>About this check <%= cmp_tip("Plain words for someone new to compliance: what it tests, why it matters, what usually causes a failure. Required to publish") %></th>
+          <td><%= d["description"].presence || tag.span("No description yet — add one below; a version cannot be published without it", class: "text-danger") %></td></tr>
         <tr id="draft_citation"><th>Source</th><td><%= d["citation"].presence || "—" %></td></tr>
         <% Array(assumed.except("figure", "divided_by").values.flatten).each do |a| %>
           <tr class="assumption"><th>Assumed</th><td><%= cmp_badge("Assumed: #{a['text']}", "info", :warning) %></td></tr>
@@ -78,6 +81,9 @@
       <%= form_with model: @draft, url: compliance_check_draft_path(@draft), method: :patch, class: "row g-2 mb-3", id: "draft_edit" do |f| %>
         <div class="col-md-4"><%= f.label :name, "Name", class: "form-label" %><%= f.text_field :name, value: d["name"], class: "form-control" %></div>
         <div class="col-md-4"><%= f.label :citation, "Source", class: "form-label" %><%= f.text_field :citation, value: d["citation"], class: "form-control" %></div>
+        <div class="col-12"><%= f.label :description, "About this check", class: "form-label" %>
+          <%= f.text_area :description, value: d["description"], rows: 2, maxlength: 600, class: "form-control" %>
+          <small class="form-text text-muted d-block">What it tests, why it matters and what usually causes a failure — shown to everyone who opens a result of this check.</small></div>
         <% if @draft.duty? %>
           <div class="col-md-2"><%= f.label :duty_trigger, "When", class: "form-label" %>
             <%= f.select :duty_trigger, ComplianceCheckDraftWords::TRIGGERS.invert.to_a, { selected: d["duty_trigger"] }, class: "form-select" %></div>

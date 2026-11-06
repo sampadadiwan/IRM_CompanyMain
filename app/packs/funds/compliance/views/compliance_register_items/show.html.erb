@@ -1,6 +1,11 @@
-<%# Register item (one breach episode): its working, owner and the maker–checker explanation. Actions
+<%# Register item (one breach episode): About this check, How we checked, owner and the maker–checker explanation. Actions
     answer with Turbo streams that replace the summary below (E140). %>
 <div class="container-fluid p-3">
+  <%# Standard header with the section bar and the guide icon (H89, H90) %>
+  <%= render layout: "compliance_shared/header", locals: { title: @item.check_name, icon: :register } do %>
+    <%= cmp_header_link "Register", compliance_register_items_path, icon: :register %>
+  <% end %>
+  <%= cmp_intro(:register_item, anchor: "the-register") %>
   <%= render "compliance_register_items/item", item: @item %>
 </div>
 <%= render "compliance_register_items/action_modals", item: @item %>

@@ -74,7 +74,7 @@ flowchart LR
 | ☐ | H19 | Nightly run | Monitoring on | 1. 02:00 IST. | Every attached pack's checks stored for Growth I | | |
 | ☐ | H20 | Concentration working | Shared setup | 1. Run. 2. Trigger it: press Run now on the fund, or ask a developer to run the nightly compliance job / digest for the date shown. | Breach: 300.00 − 30.00 = 270.00; 72.00 ÷ 270.00 = 26.67% > 25% | | |
 | ☐ | H21 | Passive breach (continuous) | Acme ₹50 cr of ₹200 cr investable | 1. LP default → ₹180 cr; run. 2. Trigger it: press Run now on the fund, or ask a developer to run the nightly compliance job / digest for the date shown. | Breach: 50 ÷ 180 = 27.78% | | |
-| ☐ | H22 | IC note list | 17 investments ≥ 01 Apr 2026; 120 earlier | 1. Run. 2. Trigger it: press Run now on the fund, or ask a developer to run the nightly compliance job / digest for the date shown. | "14 of 17 OK · 3 failing · 120 earlier not checked" | | |
+| ☐ | H22 | IC note list | 17 investments ≥ 01 Apr 2026; 120 earlier | 1. Run. 2. Trigger it: press Run now on the fund, or ask a developer to run the nightly compliance job / digest for the date shown. | "14 of 17 OK · 3 failing · 120 investments made before this check started are not checked" | | |
 | ☐ | H23 | Wet ink scanned late | Signed 10 Sep, uploaded 15 Sep, investment 12 Sep | 1. Marked signed 10 Sep; run. 2. Trigger it: press Run now on the fund, or ask a developer to run the nightly compliance job / digest for the date shown. | Passes: 10 Sep ≤ 12 Sep | | |
 | ☐ | H25 | Cleared by data | Pro-rata breach (₹2.10 vs ₹2.25 cr) | 1. Sponsor pays ₹0.15 cr; run. 2. Trigger it: press Run now on the fund, or ask a developer to run the nightly compliance job / digest for the date shown. | Paid ₹2.25 ≥ ₹2.25 → item "Cleared by data", both figures kept | | |
 | ☐ | H26 | Assign, explain, approve | Concentration item Open | 1. Meera assigns Arjun; explains; Rahul approves. | In progress → Pending approval → Explained | | |
@@ -419,7 +419,7 @@ flowchart LR
 | ☐ | E188 | Empty register | No open items | 1. Open the register. | "Nothing open. Next run tonight…" | | |
 | ☐ | E189 | Reminders stop | Incomplete setup | 1. Ask a developer to run the schedule job for day 7, 21, 35. | Reminders on 7 and 21 only | | |
 | ☐ | E190 | Welcome once | Welcome sent | 1. Re-open home; save setup. | No second welcome | | |
-| ☐ | E191 | Monitoring before mapping | Step 3 open | 1. Turn monitoring on. | Allowed; warning names inputs + checks | | |
+| ☐ | E191 | Monitoring before mapping | Step 3 open | 1. Turn monitoring on. | Refused (X15) naming the missing input; step 3 stays current | | |
 | ☐ | E192 | Customer setup | Super admin | 1. Open Compliance › Customer setup. | Firm · n of 8 · next step · since | | |
 
 ### Error cases — Phase 5
@@ -428,7 +428,7 @@ flowchart LR
 |---|---|---|---|---|---|---|---|
 | ☐ | X90 | Investor | Investor login | 1. Open the guidance frame URLs. | Refused | | |
 | ☐ | X91 | Customer setup restricted | Company admin | 1. Open /compliance/onboarding. | Refused; super admin sees counts only | | |
-| ☐ | X92 | Other firm | Other firm's admin | 1. Open a Horizon next-steps URL. | Refused | | |
+| ☐ | X92 | Other firm | Other firm's admin | 1. Open a Horizon result URL (it carries What's next). | Refused | | |
 | ☐ | X93 | No flag, no welcome | Firm without `enable_compliance` | 1. Super admin creates setup. | No welcome, no reminders | | |
 
 ---

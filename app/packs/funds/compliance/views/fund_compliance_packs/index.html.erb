@@ -9,7 +9,7 @@
   <%= cmp_header_link "Rule library", compliance_packs_path, icon: :pack %>
 <% end %>
 
-<%= cmp_explainer("A fund is checked only against the packs attached to it. Each pack needs the fund's classification (e.g. Category II) to know which of its checks apply.") %>
+<%= cmp_intro(:fund_packs, anchor: "fund-packs") %>
 
 <%
   all_fps = @fund_packs.values.flatten
