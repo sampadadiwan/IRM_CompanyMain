@@ -551,6 +551,7 @@ flowchart LR
 | E133 | Compliance off and on | Off 01 Dec, on 10 Dec | — | No runs 02–10 Dec; read-only meanwhile; no backfill | FS: Compliance turned off and on | changes_over_time |
 | E134 | Payment during run | Payment saved mid-run | Run finishes | All figures include it, or all exclude it | CM: Payment recorded during a run | changes_over_time |
 | E135 | Facts waiting age | Unconfirmed since 27 Oct | Digest 05 Nov | "facts waiting 9 days" | CM: Waiting facts show their age | changes_over_time |
+| E137 | Undated commitment | Shared setup + a ₹10.00 cr commitment with no commitment date | Run 05 Nov | Counted: "Corpus = ₹310.00 cr"; continuing interest amount passes (₹6.00 cr ≥ ₹5.00 cr) — an undated row is never dropped | CM: Undated record counted | changes_over_time |
 
 ### Error cases
 

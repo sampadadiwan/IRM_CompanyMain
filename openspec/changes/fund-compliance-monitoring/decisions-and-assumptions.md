@@ -148,6 +148,8 @@ flowchart LR
 | R104 | The entity regulator setting (`entity_settings.regulatory_env`) does not restrict which packs can be attached (E8) — no code, asserted by a scenario | Funds of one manager can sit under different regulators |
 | R105 | The version page shows each fixed amount limit in its own currency ("USD 150,000" on an INR-default page) | Consistent with the working |
 | R106 | Failed-run alert goes to `SUPPORT_EMAIL_TO` (set in every `.env.*`, same mailbox as `EntityMailer`) via `ComplianceMailer#run_failed_support`; contains entity, fund, run date, run id, trigger and error class only — no investor data; skipped if the variable is blank | User pointed out the .env support address (2026-11-06) |
+| R107 | Rows with no date (e.g. commitments imported without a commitment date) count in every measure; only dated rows after the run date are left out (E123) | Fund 1 on the dev DB has 70 of 81 commitments undated: dropping them showed corpus ₹24.21 cr instead of ₹375.72 cr — a false breach and a false pass (E137) |
+| R108 | Duty occurrences are bulk-inserted with plain `insert_all` (no `unique_by:`); duplicates are skipped by the NOT NULL unique key `idx_cduty_unique` on MySQL (ON DUPLICATE KEY) and SQLite (ON CONFLICT DO NOTHING) alike | MySQL raises "does not support :unique_by", which failed every nightly run with a duty; SQLite tests hid it (found running `compliance:demo` on the dev DB, 2026-11-06) |
 
 ## 3. Assumptions (verify these)
 

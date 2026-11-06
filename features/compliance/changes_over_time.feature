@@ -234,6 +234,13 @@ Feature: Changes over time
     Then the "Continuing interest — amount" check on "Horizon Growth Fund I" is "breach"
     And the working shows "Corpus = ₹294.00 cr"
 
+  # E137 — Edge case: a commitment with no commitment date still counts toward corpus (never silently dropped)
+  Scenario: E137 Undated commitment
+    Given a commitment of ₹10.0 cr with no commitment date is added to "Horizon Growth Fund I"
+    When the nightly compliance run happens on "2026-11-05"
+    Then the "Continuing interest — amount" check on "Horizon Growth Fund I" is "pass"
+    And the working shows "Corpus = ₹310.00 cr"
+
   # E125 — Edge case: a deleted failing investment drops off the list — "14 of 16"
   Scenario: E125 Deleted failing row
     Given "Horizon Growth Fund I" also carries the fund agreement pack

@@ -40,6 +40,10 @@ Each run SHALL store, per check per fund: pack and version, classification, resu
 - **WHEN** an investor's commitment is soft-deleted
 - **THEN** the next run's figures exclude it
 
+#### Scenario: Undated record counted
+- **WHEN** a commitment of ₹10.00 cr has no commitment date
+- **THEN** the run counts it ("Corpus = ₹310.00 cr") rather than dropping it from the figures
+
 #### Scenario: Corrected data does not rewrite history
 - **WHEN** Acme's cost is corrected to ₹65.00 cr after the 5 Nov run
 - **THEN** the 5 Nov result still shows 26.67% and the next run shows 24.07%

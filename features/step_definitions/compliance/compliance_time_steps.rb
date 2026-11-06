@@ -181,6 +181,11 @@ Then('the due-diligence duty for {string} is owned by {string}') do |investor, o
   expect(ComplianceDuty.find_by!(subject_type: "Investor", subject_id: inv.id).owner).to eq(cmp_user(owner))
 end
 
+# E137 — a commitment imported without a commitment date still belongs to the fund
+Given('a commitment of ₹{float} cr with no commitment date is added to {string}') do |amount, fund_name|
+  cmp_commit_bulk!(cmp_fund(fund_name), [[cmp_investor!(horizon, "Undated LP").id, cr(amount), nil]])
+end
+
 Given("the sponsor's commitment is deleted") do
   CapitalCommitment.where(investor_id: cmp[:sponsor].id).update_all(deleted_at: Time.current)
 end

@@ -3,6 +3,16 @@
 <%= render FormCard.new(title: "#{@version.compliance_pack.name} · #{@version.label} · #{@version.published? ? 'Published' : 'Draft'}") do %>
   <% if flash[:alert] %><div class="alert alert-danger"><%= flash[:alert] %></div><% end %>
   <% if @version.locked && !editable %><div class="alert alert-secondary">Locked — CapHive pack</div><% end %>
+  <%# When a published version takes effect and who it applies to (H5, H46–H49) — tells an upcoming version from the live one %>
+  <% if @version.published? %>
+    <p class="text-muted small" id="version_effective">
+      Effective <%= @version.effective_from ? l(@version.effective_from) : "—" %>
+      · <%= { "all" => "all funds", "new_funds" => "new funds only (started on or after #{@version.applicability_date ? l(@version.applicability_date) : '—'})",
+              "transition" => "all funds, transition until #{@version.transition_ends_on ? l(@version.transition_ends_on) : '—'}" }[@version.applicability] %>
+      <% if @version.published_at %>· Published <%= l(@version.published_at.to_date) %><%= " by #{@version.published_by.full_name}" if @version.published_by %><% end %>
+      <% if @version.counsel_reviewer.present? %>· Counsel review: <%= @version.counsel_reviewer %><%= " on #{l(@version.counsel_reviewed_on)}" if @version.counsel_reviewed_on %><% end %>
+    </p>
+  <% end %>
   <table class="table table-bordered align-middle" id="version_checks">
     <thead><tr><th>Check</th><th>Kind</th><th>Applies to</th><th>Limit</th><th>Source</th></tr></thead>
     <tbody>

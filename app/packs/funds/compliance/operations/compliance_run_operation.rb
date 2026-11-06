@@ -171,7 +171,8 @@ class ComplianceRunOperation < Trailblazer::Operation
         subject_type: "Investor", subject_id: investor_id, due_on: run_date + (duty.dig("due", "n") || check["time_to_fix_days"] || 30).to_i.days,
         owner_id: setup&.owner_id, created_at: now, updated_at: now }
     end
-    ComplianceDuty.insert_all(rows, unique_by: :idx_cduty_unique)
+    # Duplicates skipped by idx_cduty_unique (no unique_by: — MySQL does not support it)
+    ComplianceDuty.insert_all(rows)
   end
 
   def store_all_could_not_check(run, fund_pack, version, checks, message)

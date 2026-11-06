@@ -51,7 +51,8 @@ class ComplianceDocumentDuties
         owner_id: setup&.owner_id, ai_notes: notes[id], created_at: now, updated_at: now }
     end
     before = ComplianceDuty.where(fund_compliance_pack_id: fund_pack.id).count
-    ComplianceDuty.insert_all(rows, unique_by: :idx_cduty_unique)
+    # Duplicates skipped by idx_cduty_unique (no unique_by: — MySQL does not support it)
+    ComplianceDuty.insert_all(rows)
     # Notes that arrived after the occurrence was created
     notes.each do |doc_id, text|
       ComplianceDuty.where(fund_compliance_pack_id: fund_pack.id, duty_key: duty["key"], subject_type: "Document", subject_id: doc_id, ai_notes: nil)

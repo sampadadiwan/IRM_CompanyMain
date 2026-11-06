@@ -133,6 +133,8 @@ class ComplianceMeasureQuery
   end
 
   # Records of the fund, as of the run date (backdated rows count once their date ≤ as_of — E123).
+  # A row with no date at all (e.g. a commitment imported without a commitment date) still belongs to
+  # the fund and counts — dropping it would understate corpus and turn a breach into a pass (R107).
   # Soft-deleted rows are excluded by the models' default scopes (E124).
   def base_scope(source)
     src = ComplianceDataCatalog.source(source)
@@ -142,7 +144,10 @@ class ComplianceMeasureQuery
             else
               model.where(entity_id: @ctx.fund.entity_id, fund_id: @ctx.fund.id)
             end
-    scope = scope.where(model.arel_table[src.date].lteq(@ctx.as_of)) if src.date && @ctx.as_of
+    if src.date && @ctx.as_of
+      date = model.arel_table[src.date]
+      scope = scope.where(date.lteq(@ctx.as_of).or(date.eq(nil)))
+    end
     scope
   end
 

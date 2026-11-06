@@ -73,12 +73,14 @@ class ComplianceDutyScheduler
       period_end:, due_on:, subject_type:, subject_id:, owner_id: @setup&.owner_id, created_at: now, updated_at: now }
   end
 
-  # insert_all skips rows already present (unique key) — re-runs and double clicks create nothing (E44)
+  # insert_all skips rows already present (unique key idx_cduty_unique) — re-runs and double clicks create
+  # nothing (E44). No `unique_by:`: MySQL does not support it (ON DUPLICATE KEY skips on any unique key);
+  # SQLite's ON CONFLICT DO NOTHING behaves the same. The key columns are NOT NULL, so duplicates collide.
   def insert(rows)
     return 0 if rows.empty?
 
     before = ComplianceDuty.where(fund_compliance_pack_id: @fp.id).count
-    rows.each_slice(500) { |slice| ComplianceDuty.insert_all(slice, unique_by: :idx_cduty_unique) }
+    rows.each_slice(500) { |slice| ComplianceDuty.insert_all(slice) }
     ComplianceDuty.where(fund_compliance_pack_id: @fp.id).count - before
   end
 end
