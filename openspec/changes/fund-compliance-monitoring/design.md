@@ -18,6 +18,7 @@
 - [1. The idea](#1-the-idea)
   - [What this adds](#what-this-adds)
   - [The idea in one picture](#the-idea-in-one-picture)
+  - [Key concepts](#key-concepts) — glossary, [register items](#register-items--breach-episodes), [maker–checker](#makerchecker--two-person-approval), [duties](#duties--things-a-person-must-do)
   - [Walkthrough: one example, start to finish](#walkthrough-one-example-start-to-finish)
   - [Key ideas](#key-ideas)
 - [2. The same picture with real names](#2-the-same-picture-with-real-names)
@@ -26,7 +27,7 @@
   - [One run, end to end](#one-run-end-to-end)
   - [Lifecycles](#lifecycles)
   - [What users see](#what-users-see)
-  - [Design decisions](#design-decisions)
+  - [Design decisions](#design-decisions) — D1–D13, plus changes made during the build
 - [3. One card per box](#3-one-card-per-box)
   - [① Rule library](#①-rule-library)
   - [② Fund setup](#②-fund-setup)
@@ -83,6 +84,198 @@ flowchart LR
     P -- "confirmed<br/>facts" --> D
     G -- "what changed" --> N
 ```
+
+### Key concepts
+
+Read this before the walkthrough. Every later section uses these words.
+
+**How the concepts fit together**
+
+```mermaid
+flowchart TB
+    subgraph LIB["Rule library — what the rules are"]
+        P["Pack<br/>e.g. SEBI — AIF"] --> V["Pack version<br/>v1, v1.1 …"]
+        V --> CK["Checks<br/>computed from data"]
+        V --> DU["Duty definitions<br/>done by a person"]
+        V --> IN["Inputs + classifications<br/>what the firm must tell us"]
+    end
+    subgraph FUND["One fund — what applies to it"]
+        AT["Attachment<br/>fund + pack + version<br/>+ classification"]
+    end
+    V --> AT
+    AT --> RUN["Nightly run"]
+    RUN --> RES["Result per check<br/>pass · breach · needs review<br/>· could not check"]
+    RES -- "failing" --> RI["Register item<br/>one per breach episode"]
+    AT --> DO["Duty occurrence<br/>e.g. Q3 report due 15 Jan"]
+    RI --> RQ["Request<br/>maker asks, checker approves"]
+    AT --> RQ
+    DOC["Document"] --> SO["Sign-off<br/>wet-ink date"]
+    DOC --> RD["Reading + facts<br/>AI reads, person confirms"]
+    SO --> RUN
+    RD -- "confirmed facts only" --> RUN
+```
+
+- **Top box:** the rules, written once per pack version.
+- **Middle:** which rules apply to one fund.
+- **Bottom:** what happens every night, and what people do about it.
+
+**Glossary** — the example column uses the walkthrough's Horizon Growth Fund I.
+
+| Concept | What it is, in one line | Example | Stored in |
+|---|---|---|---|
+| Pack | A named set of rules from one source | "SEBI — AIF" (CapHive's); "Horizon — fund agreement" (the firm's own) | `compliance_packs` |
+| Locked pack | A CapHive regulator pack: customers use it but cannot edit it | SEBI's 25% can be tightened to 20% for one fund, never loosened to 30% | `compliance_packs.locked` |
+| Pack version | A frozen copy of a pack's rules, with an effective date | SEBI v1 (in force); v1.1 (from 01 Jan 2027) | `compliance_pack_versions.definition` |
+| Applicability | Which funds a new version applies to | All funds · new funds only · all, with a transition period | On the version |
+| Classification | Which part of a pack applies to a fund | "Category II" → 25% limit; "Category III" → 10% | `fund_compliance_packs.classification` |
+| Input | A fact a pack needs that CapHive cannot work out alone; mapped once per firm | "Sponsor/manager" = investors in category "Sponsor" | `compliance_entity_setups.input_mappings` |
+| Measure | A figure CapHive computes from its own data with SQL | Largest investment in one company = ₹72.00 cr | In the version's definition |
+| Check | One rule: a figure against a limit, or a document requirement | ₹72.00 cr ÷ ₹270.00 cr must be ≤ 25% | In the definition, by stable `key` |
+| Attachment | A pack switched on for one fund, on one version | Growth Fund I + SEBI, on v1, "Category II" | `fund_compliance_packs` |
+| Run | One nightly pass over every check of a fund | 5 Nov 02:00 | `compliance_runs` |
+| Result | What one check found in one run, with its working; never edited | "26.67% > 25% — Breach" | `compliance_results` |
+| Register item | One breach **episode**: opened by the first failing run, closed by the first passing run | "Concentration — open since 5 Nov, fix by 5 Dec" | `compliance_register_items` |
+| Request (maker–checker) | A change one person asks for and a second person approves | Meera asks to explain a breach; Rahul approves | `compliance_requests` |
+| Duty | Something a person must do and prove, that data cannot show | "Quarterly SEBI report filed", FY27-Q3 | `compliance_duties` |
+| Sign-off | The date a document was signed on paper | IC note signed in wet ink, 28 Sep | `document_signoffs` |
+| Reading and facts | The AI reads named facts from a document once; a person confirms each | "Approved amount: ₹15.00 cr (page 2)" | `document_readings`, `document_facts` |
+| Draft | A check the AI wrote from a sentence, waiting for review | "No more than 20% in one company" | `compliance_check_drafts` |
+| Preview | Running a draft or a future version on a fund without saving anything | SEBI v2 tried on Growth Fund I in December | Not stored |
+
+**Three kinds of check**
+
+| Kind | Question it answers | Example | Data it reads |
+|---|---|---|---|
+| Limit | Is a figure within a limit? | Largest company ≤ 25% of investable funds | Measures (SQL over CapHive records) |
+| Document present | Does every record have its signed document? | Every portfolio investment has a signed IC note | Documents + e-sign status + sign-offs |
+| Document contents | Does what the document says match the records? | Invested ₹18.00 cr vs approved ₹15.00 cr | Confirmed facts + records |
+
+**Four outcomes of a check**
+
+| Outcome | Means | Counts as pass? |
+|---|---|---|
+| Pass | Within the limit | Yes |
+| Breach | Outside the limit — opens a register item | No |
+| Needs review | Cannot be decided by rule; a person must look (e.g. a name match) | No |
+| Could not check | Something is missing — an input, a rate, a start date — and the message names it | No — never shown as a pass |
+
+#### Register items — breach episodes
+
+- **The problem it solves:** a breach that lasts 30 nights would otherwise produce 30 separate "breaches".
+- **The idea:** one register item covers the whole stretch of nights a check keeps failing for a fund. That stretch is called an **episode**.
+- **Opens:** on the first failing run. The fix-by date is that day + the check's "time to fix" (e.g. 30 days).
+- **Stays one item:** while the check keeps failing. Each run only updates "last result".
+- **Closes by data, never by hand:**
+  - a passing run → "Cleared by data";
+  - the check was removed in a new version, the pack was detached, or the check was disabled → closed with that reason.
+- **Explained:** an approver can accept a breach with a reason (via maker–checker, below). If the figure later gets **worse** than at approval, the item reopens.
+- **Overdue:** derived — today is past fix-by. On the first overdue day, the owner and approvers are told once.
+
+```mermaid
+timeline
+    title One episode — single-company concentration, Growth Fund I
+    5 Nov : run fails 26.67% : item opens, fix by 5 Dec
+    6–20 Nov : runs keep failing : same item, last result updated
+    21 Nov : second close lifts investable funds to ₹300 cr : run passes 24.00%
+           : item closed — Cleared by data
+```
+
+#### Maker–checker — two-person approval
+
+- **What:** any change that **weakens or exempts monitoring** needs two people.
+  - The **maker** asks (a compliance editor).
+  - The **checker** approves or rejects (a compliance approver or company admin who is **not** the maker).
+- **Why:** this is standard "four-eyes" control in fund compliance. One person alone must not be able to silence a breach, loosen a limit or switch a check off.
+- **Until approved, nothing changes:** the old limit keeps applying and the item stays open.
+
+**The six things that need a second person**
+
+| Request kind | What it does once approved | Example |
+|---|---|---|
+| Override | Changes one check's limit for one fund. On a locked pack, only stricter. | Concentration 25% → 20% for Growth Fund I |
+| Disable | Stops one check for one fund; its open item closes "Check disabled" | Turn off the investor-count check for a fund with 3 investors |
+| Detach | Removes a pack from a fund; open items close "Pack detached"; history stays | Detach the IFSCA pack from an onshore fund |
+| Explanation | Accepts an open breach with a reason; the item becomes "Explained" | "Temporary — follow-on call due 30 Nov" |
+| Early adoption | Moves a fund to an upcoming version before its effective date, if that version allows it | Move to SEBI v2 in December |
+| Classification | Changes which part of a pack applies to a fund | "Category II" → "Category II — Large Value Fund" |
+
+**What does NOT need a second person** — one person acts and the change is audited:
+- attach a pack;
+- map inputs;
+- assign a register item;
+- mark a document signed;
+- confirm or correct an AI-read fact;
+- mark a duty done.
+
+All of these either add monitoring or record a fact. None of them weakens monitoring.
+
+**One request, start to finish**
+
+```mermaid
+sequenceDiagram
+    actor Meera as Meera (maker)
+    participant App as CapHive
+    actor Rahul as Rahul (checker)
+    Meera->>App: Request explanation for concentration breach
+    App->>App: Save request — status pending
+    App-->>Rahul: Email + in-app: approval needed
+    Meera->>App: Tries to approve her own request
+    App-->>Meera: Refused — another approver must approve
+    Rahul->>App: Approve
+    App->>App: Request approved, item "Explained"
+    App-->>Meera: In-app: your request was approved
+    Note over App: Nightly run: if the figure gets worse than<br/>at approval, the item reopens
+```
+
+**Rules**
+- The checker must hold the approver role (or be a company admin), belong to the same firm and be able to see the fund.
+- The checker must not be the maker.
+  - **Exception:** if the firm has exactly one eligible person, they may approve their own request. It is labelled "Self-approved — single approver" everywhere: on the item, in history and in exports.
+- A request is decided once. A second click changes nothing.
+- **Rejected:** nothing changes. An explanation's item goes back to "In progress".
+- **The approver is deactivated:** pending requests go back to the compliance owner, and the digest says so once.
+
+#### Duties — things a person must do
+
+- **What:** a compliance obligation that CapHive **cannot check from data**. A person does it and, usually, attaches evidence.
+- **Why separate from checks:** a check is decided by the nightly run. A duty is only "done" when a named person says so, with proof.
+
+| | Check | Duty |
+|---|---|---|
+| Who decides | The nightly run, from data | A person |
+| Proof | The working (figures, limit) | Evidence document attached |
+| Example | Concentration ≤ 25% | Quarterly SEBI report filed |
+| When it is "red" | Breach → register item | Past its due date → overdue |
+
+**What creates a duty occurrence**
+
+| Trigger | Creates | SEBI pack example | Due |
+|---|---|---|---|
+| Schedule | One per period | "Quarterly SEBI report filed" for FY27-Q3 | 15 days after the quarter ends |
+| Schedule | One per year | "Annual compliance test report / PPM audit" for FY27 | 30 days after the year ends |
+| Event | One per new record | "Due diligence for a new investor" — for each investor added on or after 01 Nov 2026 | 15 days after the investor is added |
+| Document event (Phase 3) | One per new document | Review a new PPM; the AI prepares notes, a person decides | n days after upload |
+| On demand | When a check asks for it | Enhanced due diligence for an investor group ≥ 50% (SEBI v1.1) | Set by the check |
+
+**One duty, start to finish**
+
+```mermaid
+timeline
+    title Quarterly SEBI report — FY27-Q3 (Oct–Dec 2026), due 15 Jan 2027
+    31 Dec : quarter ends : occurrence exists, Scheduled
+    8 Jan : 7-day reminder window opens : Due, owner reminded in digest
+    14 Jan : Arjun uploads the filing receipt : marks Done
+    15 Jan : due date : no reminder, already done
+```
+
+- **Late:** if marked done after the due date, it shows "Done — late (3 days)".
+- **Owner:** the duty's named owner, else the firm's compliance owner.
+- **Evidence:** stored in the duty's folder (`WithFolder`). If the duty requires evidence, Done is refused without a file.
+- **Never twice:** one occurrence per duty + period + subject (unique index), so reruns never create duplicates.
+- **No backfill:**
+  - a pack attached mid-period gets its first duty at the next period end;
+  - records older than the event duty's `from` date create none.
+- **Stored:** only `done_on` is stored. "Scheduled", "due" and "overdue" are worked out from `due_on`, the 7-day reminder window and today.
 
 ### Walkthrough: one example, start to finish
 
@@ -166,7 +359,7 @@ timeline
 | 2 | Allow-listed data catalogue | Measures can only name record types and fields the catalogue lists | [④](#④-measure-engine) |
 | 3 | Results are immutable | Each run writes new rows with the full working and setup snapshot | [⑤](#⑤-check-runner) |
 | 4 | One register item per episode | Opened by a failing run, cleared by a passing run | [⑥](#⑥-register-and-duties) |
-| 5 | One maker–checker model | `ComplianceRequest` for override, disable, detach, explanation | [⑦](#⑦-peoples-decisions) |
+| 5 | One maker–checker model | `ComplianceRequest` for override, disable, detach, explanation, early adoption, classification ([explained](#makerchecker--two-person-approval)) | [⑦](#⑦-peoples-decisions) |
 | 6 | AI at the edges only | Drafts and document facts need a person; runs never call AI | [⑧](#⑧-ai-helpers) |
 | 7 | Locked packs, versions by rule | Regulator packs can only be tightened per fund; each fund's version moves on the effective date by the version's applicability | [①](#①-rule-library), [⑤](#⑤-check-runner) |
 
@@ -409,19 +602,170 @@ stateDiagram-v2
 
 ### Design decisions
 
-1. **Pack definition as one JSON document per version** — Choice: `compliance_pack_versions.definition` (classifications, inputs, measures, checks, document inputs, duties) validated by `ComplianceDefinitionValidator`. Alternative: separate tables per measure/check/input. Rejected: every version would need deep copies across 5 tables; one immutable document is simpler to version, diff and test.
-2. **Stable check keys** — Choice: each check has a `key` that survives versions. Alternative: ids per version. Rejected: overrides and register items must follow a check across versions (E2).
-3. **New SQL measure compiler, not `ConditionTreeEvaluator`** — Choice: `ComplianceMeasureQuery` compiles allow-listed JSON to Arel aggregates; it reuses the ConditionTree **operator names** (`gt`, `lt`, `eq`, `blank`…) for filters. Alternative: extend `ConditionTreeEvaluator`. Rejected: it evaluates one in-memory record with `public_send` on a field name — wrong shape for aggregates and unsafe for user-authored names.
-4. **One maker–checker model** — Choice: `ComplianceRequest` (kind ∈ override, disable, detach, explanation). Alternative: approval columns on each model. Rejected: four copies of the same guard; the self-approval rule must live in one policy.
-5. **Setup history from `Trackable` audits + result snapshots** — Choice: setup models `include Trackable.new`; each result stores the setup it used. Alternative: a dedicated history table. Rejected: `audited` already gives who/when/before→after.
-6. **Duties are their own model, not `Task`** — Choice: `ComplianceDuty` with evidence via `WithFolder`. Alternative: reuse `Task` + `TaskRecurrenceRule` like side letters. Rejected: tasks are editable to-dos without the evidence rule, period key or event subject; a duty must be provable.
-7. **Wet-ink sign-off as a new table** — Choice: `document_signoffs` (document, signed_on, marked_by). Alternative: three columns on `documents`. Rejected for now to keep `Document` unchanged (memory: ask before changing existing models) — open for approval.
-8. **Digest recipients = Compliance notification tag** — Choice: users tagged `Compliance` (`User::NOTIFICATION_TAGS`). Alternative: an owners list. Rejected: the tag already exists and is managed on the user screen.
-9. **Schedule via an hourly sidekiq-cron tick** — Choice: one `ComplianceScheduleJob` per hour picks entities whose local time is 02:00 (`entity_settings.timezone`). Alternative: per-region fixed UTC crons. Rejected: entities in one region can sit in different time zones (E29).
-11. **Lock as a pack flag + per-check override direction** — Choice: `compliance_packs.locked` (true for CapHive regulator packs) and `override` ∈ `stricter_only` / `not_overridable` per check in the definition. Alternative: separate "regulator check" model. Rejected: one flag and one field cover all rules 1–2.
-12. **Fund's current version lives on the attachment, moved by the nightly run** — Choice: `fund_compliance_packs.compliance_pack_version_id`, advanced in `ComplianceRunOperation#advance_versions` on the run of the effective date. Alternative: resolve "version effective on run_date" every run. Rejected: grandfathering (B) and early adoption need a stored per-fund answer.
-13. **Preview runs are not persisted** — Choice: preview = the same operation in `mode: :preview`, rendered and discarded. Alternative: store with a preview flag. Rejected: "never logged" is simplest to guarantee by never writing (H48, E89).
-10. **Record-time checks stored per subject** — Choice: `compliance_results.subject_type/subject_id` for checks tested "when a record is made"; a subject already tested is skipped. Alternative: a verdict table. Rejected: same columns, one fewer table.
+Each decision has the same parts:
+- **Problem** — what had to be decided.
+- **Decision** — what we built.
+- **Why** — the reasons.
+- **Not chosen** — the alternative, and why not.
+- **Where** — where it lives in the code.
+
+The full log of every smaller call (R1–R106) is in [decisions-and-assumptions.md](decisions-and-assumptions.md).
+
+**At a glance**
+
+| # | Decision | Why, in one line |
+|---|---|---|
+| D1 | A pack version's rules are one JSON document | Versioning becomes "copy one document"; no code per regulator |
+| D2 | Every check has a stable key | Overrides and open breaches follow a check across versions |
+| D3 | A new SQL figure engine, not `ConditionTreeEvaluator` | Compliance needs totals over thousands of rows, safely |
+| D4 | One request model for all six two-person approvals | One approval rule in one place |
+| D5 | Setup history from `audited`; each result keeps the setup it used | "Who changed what" without a new history table |
+| D6 | Duties are their own model, not `Task` | A duty must be provable and must never be created twice |
+| D7 | Wet-ink sign-offs in a new table | `Document` stays unchanged |
+| D8 | Digest goes to users tagged "Compliance" | The tag already exists and is managed on the user screen |
+| D9 | One hourly job picks each firm's 02:00 | Firms in one region sit in different time zones |
+| D10 | Record-time checks store their subject on the result | No extra table for "already tested" |
+| D11 | Locking is one pack flag plus a per-check override rule | Two fields cover every locking rule |
+| D12 | A fund's current version is stored on its attachment | Funds on the same pack can be on different versions |
+| D13 | Previews are never saved | "Preview never touches the register" is guaranteed by never writing |
+
+#### D1. A pack version's rules are one JSON document
+
+- **Problem:** a regulator pack has classifications, inputs, measures, checks, document inputs and duties. Each new version must be a frozen copy, so old results can still be explained.
+- **Decision:** all of a version's rules live in one JSON column, `compliance_pack_versions.definition`. `ComplianceDefinitionValidator` checks it on every save.
+- **Why:**
+  - a new version is one copied document, not copies across 5 tables;
+  - published versions are never edited, so nothing needs to query inside them;
+  - adding SEBI, IFSCA or a firm's own rules is data, not code.
+- **Not chosen:** a table each for measures, checks, inputs and so on — every version would need deep copies across all of them.
+- **Where:** `CompliancePackVersion`, `ComplianceDefinitionValidator`, `db/seeds/compliance/*.json`.
+
+#### D2. Every check has a stable key
+
+- **Problem:** a fund's override (25% → 20%) and an open breach must still point to "the concentration check" after SEBI v2 replaces v1.
+- **Decision:** each check carries a `key` (e.g. `sebi_concentration_cat12`) that stays the same across versions. Results, register items and requests store `check_key`.
+- **Why:** the check's identity survives a new version, so overrides carry over and open items continue.
+- **Not chosen:** referring to checks by per-version id — every new version would orphan overrides and open items.
+- **Where:** `check_key` columns on `compliance_results`, `compliance_register_items` and `compliance_requests`.
+
+#### D3. A new SQL figure engine, not `ConditionTreeEvaluator`
+
+- **Problem:** checks need figures such as "largest total invested in one company" over all of a fund's records, and the rules are written by users.
+- **Decision:** `ComplianceMeasureQuery` turns an allow-listed JSON measure (total, count, distinct, largest, smallest, with filters) into one Arel aggregate query. Filters reuse the ConditionTree operator names (`gt`, `lt`, `eq`, `blank`…) so they look familiar.
+- **Why:**
+  - aggregates belong in the database — no loading of thousands of rows (CLAUDE.md large-table rules);
+  - only record types and fields listed in `ComplianceDataCatalog` can be named, so a user-written rule can never reach arbitrary columns or code.
+- **Not chosen:** extending `ConditionTreeEvaluator`. It tests one in-memory record at a time with `public_send` on a field name — the wrong shape for totals, and unsafe for user-written names.
+- **Where:** `ComplianceMeasureQuery`, `ComplianceDataCatalog`.
+
+#### D4. One request model for all six two-person approvals
+
+- **Problem:** six actions need a second person: override, disable, detach, explanation, early adoption and classification ([Maker–checker](#makerchecker--two-person-approval)).
+- **Decision:** one `ComplianceRequest` model (`kind` = one of the six) and one operation, `ComplianceRequestDecide`, that applies the approved change.
+- **Why:**
+  - "the approver is not the requester" and the single-approver exception are written once;
+  - one approvals list, one email and one history for all six.
+- **Not chosen:** approval columns on each affected model — six copies of the same guard that could drift apart.
+- **Where:** `ComplianceRequest`, `ComplianceRequestSubmit`, `ComplianceRequestDecide`, `ComplianceRequestPolicy`.
+
+#### D5. Setup history from `audited`; each result keeps the setup it used
+
+- **Problem:** an auditor asks "why did this check pass on 5 Nov?" when the limit, classification or mapping has since changed.
+- **Decision:**
+  - the models people change use `audited`, which records who changed what, when, and the before → after values;
+  - fund-level changes (classification, early adoption, detach) only happen through approved requests, which are audited too;
+  - each result also stores a snapshot of the setup it used.
+- **Why:** the history comes for free, and a result explains itself without replaying history.
+- **Not chosen:** a separate setup-history table, which would duplicate what `audited` already records.
+- **Changed during the build:** the design said `Trackable`. We use `audited` directly, because `Trackable` adds soft-delete, which needs a `deleted_at` column, and compliance rows are never soft-deleted (R52).
+- **Where:** `audited` on `ComplianceEntitySetup` (mappings, lists, AI settings), `ComplianceRequest`, `ComplianceRegisterItem`, `ComplianceDuty`, `DocumentSignoff`, `DocumentFact`; snapshot in `compliance_results.working`. Published pack versions are never edited, so they need no audit.
+
+#### D6. Duties are their own model, not `Task`
+
+- **Problem:** duties such as "Quarterly SEBI report filed" recur, must carry evidence, and must never appear twice for the same quarter ([Duties](#duties--things-a-person-must-do)).
+- **Decision:** a `ComplianceDuty` row is one occurrence (duty + period + subject). Evidence goes in its folder via `WithFolder`.
+- **Why:**
+  - the unique `(duty, period, subject)` index makes reruns safe;
+  - "Done" can require evidence;
+  - the period key (e.g. `FY27-Q3`) and the event subject (e.g. the new investor) are first-class.
+- **Not chosen:** `Task` + `TaskRecurrenceRule`, as side letters use. Tasks are free-form to-dos anyone can edit, with no evidence rule, period key or subject, so a duty could not be proved.
+- **Where:** `ComplianceDuty`, `ComplianceDutyScheduler`, `ComplianceDutyComplete`, `CompliancePeriod`.
+
+#### D7. Wet-ink sign-offs in a new table
+
+- **Problem:** many IC notes are signed on paper, not through e-sign, so the system needs to record "signed on 28 Sep".
+- **Decision:** a new `document_signoffs` table holds the document, the signed date and who marked it.
+- **Why:** `Document` is a large, shared model. Changing it needs approval (project rule), and a side table needs none.
+- **Not chosen:** three new columns on `documents` — open for approval later if you prefer it.
+- **Where:** `DocumentSignoff`, `DocumentSignoffsController`.
+
+#### D8. Digest goes to users tagged "Compliance"
+
+- **Problem:** who receives the daily digest and alerts?
+- **Decision:** the firm's compliance owner plus active users carrying the existing "Compliance" notification tag.
+- **Why:** the tag already exists in `User::NOTIFICATION_TAGS`, and admins manage it on the user screen.
+- **Not chosen:** a separate recipients list on the compliance setup — a second place to keep up to date.
+- **Where:** `ComplianceNotices.owners`.
+
+#### D9. One hourly job picks each firm's 02:00
+
+- **Problem:** runs must happen at 02:00 in each firm's own time zone, and firms in one region can be in different zones.
+- **Decision:** one cron job, `ComplianceScheduleJob`, runs every hour at 5 past. It starts runs for firms whose local time is 02:00 and digests for those at 08:00, then fans out one `ComplianceFundRunJob` per fund.
+- **Why:** one cron covers every time zone, and adding a firm needs no cron change.
+- **Not chosen:** a fixed UTC cron per region, which would be wrong for any firm outside the region's main zone.
+- **Changed during the build:** the time zone lives on `compliance_entity_setups.time_zone` (default Asia/Kolkata), not `entity_settings`, so the existing table is unchanged (R58). The cron line is in `config/initializers/sidekiq.rb` (R67).
+- **Where:** `ComplianceScheduleJob`, `ComplianceFundRunJob`.
+
+#### D10. Record-time checks store their subject on the result
+
+- **Problem:** some rules apply when a record is made and must test each record once, not every night. For example, a firm's own rule "each new commitment ≥ ₹1 cr at signing" must not re-flag an old commitment after a later transfer.
+- **Decision:** a check marked `tested: on_record` writes its result with `subject_type` and `subject_id`. A subject that has already been tested is skipped on later runs. (`tested: continuous` checks run every night.)
+- **Why:** the same results table serves both kinds of check.
+- **Not chosen:** a separate "verdict per record" table — the same columns in one more table.
+- **Where:** `compliance_results.subject_type` / `subject_id`; `ComplianceRunOperation`.
+
+#### D11. Locking is one pack flag plus a per-check override rule
+
+- **Problem:** customers must not loosen a regulator's limit, but may tighten it, and some checks must not be changed at all.
+- **Decision:**
+  - `compliance_packs.locked` is true for CapHive regulator packs;
+  - each check's `override` field says `stricter_only` (default on a locked pack), `none` (cannot be changed) or `any`;
+  - an override request on a locked pack is refused unless it is stricter.
+- **Why:** two fields express every locking rule, and they are checked when the request is made.
+- **Not chosen:** a separate "regulator check" model with its own screens.
+- **Where:** `CompliancePack#locked`; `ComplianceRequest#override_allowed`.
+
+#### D12. A fund's current version is stored on its attachment
+
+- **Problem:** when SEBI v2 takes effect, some funds move and some stay ("new funds only"), and a fund may adopt early.
+- **Decision:** `fund_compliance_packs.compliance_pack_version_id` holds the fund's version. The nightly run of the effective date moves it, following the version's applicability.
+- **Why:** grandfathered and early-adopted funds need a stored per-fund answer, which "work it out from today's date" cannot give.
+- **Not chosen:** working out "the version in force on the run date" on every run.
+- **Where:** `ComplianceVersionMover`, called from `ComplianceRunOperation`.
+
+#### D13. Previews are never saved
+
+- **Problem:** firms want to see how a draft or a future version would score on a real fund, without touching the register or history.
+- **Decision:** `CompliancePreview` runs the same figure engine and the same evaluator (`ComplianceMeasureQuery` + `ComplianceCheckEvaluator`) as the nightly run, shows the results and writes nothing.
+- **Why:** "a preview never appears in history" is guaranteed by never writing.
+- **Not chosen:** saving preview results with a flag, where every query would have to remember to exclude them.
+- **Where:** `CompliancePreview`.
+
+**Changed or added during the build** — the decisions that moved the design. Details are in the log.
+
+| Log # | What changed | Why |
+|---|---|---|
+| R52 | `audited` instead of `Trackable` | Compliance rows are never soft-deleted |
+| R53 | One `ComplianceNotifier` with a `kind`, not six notifier classes | One recipient rule set |
+| R58 | Time zone on `compliance_entity_setups` | `entities` unchanged |
+| R67 | Hourly cron registered at 5 past | Hourly run scheduling |
+| R69 | AI drafting code lives in the compliance pack, not `app/packs/ai` | The pack stays self-contained |
+| R70 | The AI returns a flat draft (figure, divided by, compare, limit), not a formula tree | Easier to check and to show in words |
+| R80 | New documents found by the hourly sweep, not a hook on `Document` | `Document` unchanged; reading can take up to an hour |
+| R84 | Document-contents checks use 8 fixed rules in code | Safe, testable and listed by name in the pack |
+| R93 | Facts policy is `DocumentReadingPolicy` | Pundit resolves the policy by record class |
+| R97–R100 | Currency: only fixed limits in another currency convert; the rate is shown; no rate → "Could not check" | Never a silent pass |
+| R106 | A failed run emails `SUPPORT_EMAIL_TO` | The address exists in every `.env.*` |
 
 **FAQ**
 
@@ -429,7 +773,7 @@ stateDiagram-v2
 |---|---|
 | Why not reuse `ValidationRule` rows for checks? | They are per-record save gates with no versions, citations, classifications or results; we copy the default+override *pattern*, not the table. |
 | Why JSON for definitions — can't it be queried? | Runs read one version at a time; nothing queries inside definitions. Results and register items carry `check_key` columns for querying. |
-| Is `ComplianceRequest` over-general? | Four real callers share one guard (approver ≠ requester); YAGNI is satisfied. |
+| Is `ComplianceRequest` over-general? | Six real callers share one guard (approver ≠ requester); YAGNI is satisfied. |
 | Why is ⑦ amber? | It appends two flags to `UserEnabled` and adds a menu item; everything else is new. |
 
 ---
@@ -725,6 +1069,7 @@ flowchart TD
 ### ⑥ Register and duties
 
 - Turns results into episodes people work to closure, and schedules manual duties.
+- New to these terms? Read [Register items](#register-items--breach-episodes) and [Duties](#duties--things-a-person-must-do) first.
 
 | Owns | Reads / receives | Produces |
 |---|---|---|
@@ -768,6 +1113,7 @@ flowchart TD
 ### ⑦ People's decisions
 
 - Every human action: assign, request/approve, mark signed, confirm facts, mark duty done — and the single maker–checker rule.
+- New to maker–checker? Read [Maker–checker — two-person approval](#makerchecker--two-person-approval) first: which six changes need a second person, and which do not.
 
 | Owns | Reads / receives | Produces |
 |---|---|---|
@@ -1250,7 +1596,7 @@ erDiagram
 | `ai_settings` | json | Drafting on/off (X41); reading opt-in per document input; monthly cap (E74, E75) |
 | `monitoring_enabled` | boolean | Gate for scheduled runs (H17, X15) |
 
-**`compliance_requests`** (new): maker–checker for four actions.
+**`compliance_requests`** (new): maker–checker for six actions ([explained](#makerchecker--two-person-approval)).
 
 | Column / index | What changed | Why it's needed |
 |---|---|---|

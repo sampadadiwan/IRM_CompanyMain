@@ -45,6 +45,8 @@ flowchart LR
 
 ## What Changes
 
+### Key concepts
+
 **The idea: rulebooks plus a logbook**
 
 ```mermaid
@@ -72,6 +74,48 @@ flowchart LR
     class F1,F2 fund
     class R,L out
 ```
+
+
+**The words used in this proposal**
+
+| Concept | What it means for you | Example |
+|---|---|---|
+| Pack (rulebook) | A set of rules from one source, attached to funds | "SEBI — AIF" from CapHive; "Horizon — fund agreement", your own |
+| Locked pack | A CapHive regulator pack: you use it, you cannot edit it; per fund you may only make a limit stricter | SEBI's 25% → 20% for one fund: allowed. 30%: refused |
+| Version | A dated edition of a pack; the old one stays readable | SEBI v1 today, v1.1 from 01 Jan 2027 |
+| Classification | Which part of a pack applies to a fund | "Category II" → 25% concentration limit |
+| Input | Something the pack needs to know that CapHive can't guess; you map it once | "Sponsor/manager" = investors in category "Sponsor" |
+| Check | One rule CapHive tests from your data every night | Largest company ≤ 25% of investable funds |
+| Result | What a check found on one night, with the arithmetic | ₹72.00 cr ÷ ₹270.00 cr = 26.67% > 25% — Breach |
+| Register item | One breach from the night it starts to the night it clears — not one per night | "Concentration — open since 5 Nov, fix by 5 Dec" |
+| Maker–checker | A change that weakens monitoring needs two people: one asks, another approves | Meera asks to explain a breach; Rahul approves |
+| Duty | Something a person must do and prove, that data can't show | "Quarterly SEBI report filed" for Oct–Dec, due 15 Jan |
+| Sign-off | Recording that a paper document was signed, and when | IC note signed in wet ink on 28 Sep |
+| Fact | A value the AI read from a document, which counts only after a person confirms it | "Approved amount ₹15.00 cr (page 2)" |
+| Preview | Trying a draft or future version on a real fund; nothing is saved | SEBI v2 tried on Growth Fund I in December |
+
+**Register items, in brief**
+- One item per breach **episode**: it opens on the first failing night and stays one item while the check keeps failing.
+- It closes by itself when a run passes ("Cleared by data"). Nobody closes a breach by hand.
+- An approver can accept it with a reason ("Explained"). If the figure later gets worse, it reopens.
+
+**Maker–checker, in brief**
+- **Needs two people:** override a limit, disable a check, detach a pack, explain a breach, adopt a version early, change a fund's classification.
+- **One person is enough** (each action is still recorded): attach a pack, map inputs, assign an item, mark a document signed, confirm a fact, mark a duty done. These add monitoring or record facts, so none of them weakens it.
+- **Self-approval:** you cannot approve your own request, unless you are the firm's only approver. Then it is labelled "Self-approved — single approver".
+
+**Duties, in brief**
+- **What they cover:** things data can't prove, such as a filed report, a completed audit, or due diligence on a new investor.
+- **What creates them:**
+  - a schedule (each quarter or year);
+  - an event (each new investor);
+  - a new document (a new PPM to review);
+  - a check that asks for one.
+- **When they turn red:** a duty is reminded 7 days before it is due and is overdue after the due date. "Done" can require an evidence file.
+
+The full explanations, with diagrams, are in [design.md › Key concepts](design.md#key-concepts).
+
+### In detail
 
 **Rulebooks (rule packs)**
 - CapHive publishes one pack per regime — first "SEBI — Alternative Investment Funds", next "IFSCA — Fund Management".
