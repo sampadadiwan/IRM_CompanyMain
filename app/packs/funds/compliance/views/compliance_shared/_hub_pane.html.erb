@@ -1,0 +1,7 @@
+<%# ⑩ One section of the Compliance hub, answered to the hub pane's lazy frame request (R170, E200): the
+    section's own page content inside the matching frame. The section bar is skipped (@in_compliance_hub,
+    the hub already has it) and a frame request has no layout, so no breadcrumbs. target "_top": links to
+    records open full pages; the inner grids keep their own frames for search, sort and pages. %>
+<%= turbo_frame_tag ComplianceHub.frame_id(section), target: "_top" do %>
+  <%= render template: template %>
+<% end %>

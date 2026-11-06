@@ -19,12 +19,14 @@ class ComplianceRegisterItemsController < ApplicationController
     # A status condition in the filter replaces the tabs with one "Filter results" pane (E139)
     @filter_sets_status = status_condition?(@user_q)
     compliance_crumbs(["Register", nil])
-    return render_grid_frame if turbo_frame_request?
+    # The inner Open / Closed / All tab frames; the hub's Register pane (R170) is answered below
+    return render_grid_frame if turbo_frame_request? && !hub_frame_request?(:register)
 
     # The filter panel shows only the user's own conditions, never a tab's preset. The rows load in the
     # tab frames; the page itself still goes through the policy scope (verify_policy_scoped)
     @q = ComplianceRegisterItem.ransack(@user_q)
     policy_scope(ComplianceRegisterItem)
+    render_hub_pane(:register, "compliance_register_items/index") if hub_frame_request?(:register)
   end
 
   def show

@@ -16,6 +16,9 @@ class CompliancePacksController < ApplicationController
     scope = scope.order(:name) if params.dig(:q, :s).blank?
     @pagy, @packs = pagy(scope, limit: params[:per_page] || 10)
     compliance_crumbs(["Rule library", nil])
+    # The Compliance hub's lazy Packs pane (R170): this page's content inside the hub frame
+    return render_hub_pane(:packs, "compliance_packs/index") if hub_frame_request?(:packs)
+
     respond_to do |format|
       format.html
       format.turbo_stream { render partial: "compliance_packs/index", locals: { packs: @packs } }

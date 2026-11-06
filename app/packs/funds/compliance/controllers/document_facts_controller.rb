@@ -23,6 +23,9 @@ class DocumentFactsController < ApplicationController
     scope = scope.order(id: :desc) if params.dig(:q, :s).blank?
     @pagy, @readings = pagy(scope, limit: params[:per_page] || 10)
     compliance_crumbs(["Facts to confirm", nil])
+    # The Compliance hub's lazy Facts pane (R170): this page's content inside the hub frame
+    return render_hub_pane(:facts, "document_facts/index") if hub_frame_request?(:facts)
+
     respond_to do |format|
       format.html
       format.turbo_stream { render partial: "document_facts/index", locals: { readings: @readings } }

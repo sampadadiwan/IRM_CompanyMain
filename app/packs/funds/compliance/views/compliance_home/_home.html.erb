@@ -1,0 +1,89 @@
+<%# The Home pane of the Compliance hub: every visible fund, its packs and open items. Funds with no pack are
+    "Not monitored" (E10). The hub draws the section bar, so this header has none. %>
+<%= render layout: "compliance_shared/header", locals: { intro: :home, title: "Compliance", icon: :compliance, no_section_bar: true } do %>
+  <%# Register, Duties and Facts are on the section bar above (H89) — only Manage stays here %>
+  <div class="dropdown">
+    <button class="btn btn-outline-success dropdown-toggle d-inline-flex align-items-center" type="button" id="compliance_manage_btn"
+            data-bs-toggle="dropdown" aria-expanded="false">
+      <%= cmp_icon(:setup) %>Manage
+    </button>
+    <div class="dropdown-menu" aria-labelledby="compliance_manage_btn">
+      <%= link_to fund_compliance_packs_path, class: "dropdown-item" do %><%= cmp_icon(:fund_pack) %>Fund packs<% end %>
+      <%= link_to compliance_packs_path, class: "dropdown-item" do %><%= cmp_icon(:pack) %>Rule library<% end %>
+      <%= link_to compliance_entity_setup_path, class: "dropdown-item" do %><%= cmp_icon(:setup) %>Setup<% end %>
+    </div>
+  </div>
+<% end %>
+
+<%# ⑩ H86 / E184 / E185: which run these results come from, and when the next one is %>
+<%= cmp_timing_banner(@setup, last_success: @last_success, failed_since: @failed_since) %>
+<%# ⑩ H80–H83: the 8 setup steps, folded to one line once complete %>
+<%= render "compliance_shared/getting_started" %>
+
+<%
+  # Each card says what it counts; zero cards that would only be noise are left out (capital_calls/_grid_stats)
+  cards = [
+    { stat: "#{@stats[:monitored]} of #{@funds.size}", subtitle: "Funds monitored", colour: "info", icon: :compliance,
+      tooltip: "Funds with at least one rule pack attached. A fund with none is Not monitored — never shown as compliant" },
+    { stat: @stats[:breach], subtitle: "Breaches", colour: "danger", icon: :breach, path: compliance_register_items_path,
+      tooltip: "Checks whose latest result is a breach, across every monitored fund" },
+    { stat: @stats[:needs_review], subtitle: "Needs review", colour: "info", icon: :needs_review,
+      tooltip: "Checks a person must look at — e.g. a document that seems to concern another company" }
+  ]
+  if @stats[:could_not_check].positive?
+    cards << { stat: @stats[:could_not_check], subtitle: "Could not check", colour: "secondary", icon: :could_not_check,
+               tooltip: "Checks that could not be computed because something is missing (an input, a rate, a date). Never counted as a pass" }
+  end
+  if @stats[:overdue].positive?
+    cards << { stat: @stats[:overdue], subtitle: "Overdue items", colour: "danger", icon: :overdue, path: compliance_register_items_path,
+               tooltip: "Open register items past their fix-by date (opened date + the check's time to fix)" }
+  end
+  if @stats[:stale].positive?
+    cards << { stat: @stats[:stale], subtitle: "Stale runs", colour: "danger", icon: :run,
+               tooltip: "Monitored funds whose last successful run is more than 26 hours old — their results may be out of date" }
+  end
+%>
+<%= cmp_stats(cards, id: "compliance_home_stats") %>
+
+<div class="table-responsive">
+  <table class="table table-bordered dataTable action_table hover" id="compliance_funds">
+    <thead>
+      <tr>
+        <th class="text-col">Fund</th>
+        <th class="text-col">Packs <%= cmp_tip("The rule packs attached to the fund and the version each fund is on") %></th>
+        <th class="num-col">Open items <%= cmp_tip("Open register items for this fund — each is one breach episode") %></th>
+        <th class="action-col">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @funds.each do |fund| %>
+        <% fps = @fund_packs[fund.id] || [] %>
+        <tr id="fund_<%= fund.id %>">
+          <td class="text-col"><%= cmp_icon(:fund) %><%= fund.name %></td>
+          <td class="text-col">
+            <% if fps.empty? %>
+              <%= cmp_badge("Not monitored", "secondary", :warning, title: "No pack attached — nothing is checked for this fund") %>
+            <% else %>
+              <% fps.each do |fp| %>
+                <%= link_to fund_compliance_pack_path(fp), class: "me-2" do %><%= cmp_icon(:pack) %><%= fp %><% end %>
+              <% end %>
+            <% end %>
+          </td>
+          <td class="num-col"><%= @open_counts[fund.id] || 0 %></td>
+          <td class="action-col">
+            <% if fps.empty? %>
+              <%= link_to "Attach a pack", fund_compliance_packs_path, class: "btn btn-outline-primary ti ti-link",
+                          data: { bs_toggle: "tooltip", bs_title: "Attach a rule pack to #{fund.name} so its checks run nightly" } %>
+            <% else %>
+              <%= link_to t_common(:view), fund_path(fund, tab: "compliance-tab"), class: "btn btn-outline-primary ti ti-eye",
+                          data: { bs_toggle: "tooltip", bs_title: "Open #{fund.name}'s Compliance tab" } %>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+      <% if @funds.empty? %>
+        <tr><td colspan="4" class="text-muted">No funds you can see yet — compliance runs on your funds once they are created.</td></tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

@@ -11,6 +11,8 @@ class ComplianceEntitySetupsController < ApplicationController
     # ⑩ Getting started steps 1 and 4 land here: owner choices and the lists the attached checks read
     @owner_choices = User.where(entity_id: current_user.entity_id, active: true).order(:first_name).select { |u| ComplianceAccess.viewer?(u) }
     @list_keys = (ComplianceGettingStarted.new(current_user.entity, current_user).needed_lists + @setup.reference_lists_hash.keys).uniq
+    # The Compliance hub's lazy Setup pane (R170): this page's content inside the hub frame
+    render_hub_pane(:setup, "compliance_entity_setups/show") if hub_frame_request?(:setup)
   end
 
   def update

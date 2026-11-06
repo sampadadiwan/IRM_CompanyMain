@@ -14,6 +14,9 @@ class ComplianceDutiesController < ApplicationController
     scope = scope.order(:due_on, :id) if params.dig(:q, :s).blank?
     @pagy, @duties = pagy(scope, limit: params[:per_page] || 10)
     compliance_crumbs(["Duties", nil])
+    # The Compliance hub's lazy Duties pane (R170): this page's content inside the hub frame
+    return render_hub_pane(:duties, "compliance_duties/index") if hub_frame_request?(:duties)
+
     respond_to do |format|
       format.html
       format.turbo_stream { render partial: "compliance_duties/index", locals: { duties: @duties } }

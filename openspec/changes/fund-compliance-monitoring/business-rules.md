@@ -643,6 +643,7 @@ flowchart LR
 | E197 | Small amounts in crores | Sponsor needs ₹0.15 cr more | Open the continuing-interest result | Remedy reads "₹0.15 cr", never "₹15,00,000" | OG: How we checked | compliance_guidance |
 | E198 | Duty cards follow the filter | Duties filtered to Fund 1; 2 due there, 5 firm-wide | Mark one Fund 1 duty done | Cards update to Fund 1's numbers (Due 1), not the firm-wide totals | OG: What's next on a register item | compliance_guidance |
 | E199 | AI draft carries a description | "No more than 15% in one sector" (LlmService stubbed) | Draft, edit the description, test, save | Draft shows the AI's description, editable; the saved check keeps the edited text | OG: About this check | compliance_guidance |
+| E200 | Section bar as lazy tabs on the hub | Run 05 Nov | Open /compliance?tab=compliance-register-tab; then the Register pane's frame | The Register pill is active; its pane is a lazy turbo frame whose src is the register page; that src, asked as the hub frame, answers the register content inside the frame with no section bar; Home is drawn inline | OG: Section bar loads sections in place | compliance_guidance |
 
 | # | Scenario | Given | When | Then | Spec scenario | Feature |
 |---|---|---|---|---|---|---|
@@ -694,8 +695,8 @@ flowchart LR
 | 10 Pack versions and locking | 8 | 23 | 12 | 43 |
 | 11 Changes over time | 8 | 35 | 6 | 49 |
 | 12 Screens | 0 | 6 | 1 | 7 |
-| 13 Newcomer guidance (Phase 5) | 13 | 20 | 5 | 38 |
-| **Total** | **74** | **164** | **74** | **312** |
+| 13 Newcomer guidance (Phase 5) | 13 | 21 | 5 | 39 |
+| **Total** | **74** | **165** | **74** | **313** |
 
 - `features/security/compliance_tenant_isolation.feature` gathers every refusal row (other firm, investor, viewer, self-approval, injection, AI context) — attacker refused, owner allowed, direct request refused.
 - An edge case found during apply gets a new row here **and** a scenario.

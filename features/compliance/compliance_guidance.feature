@@ -118,7 +118,20 @@ Feature: Newcomer guidance — Getting started, What's next, check descriptions 
     And the section bar shows "Facts to confirm"
     And the section bar shows the open item count on Register
 
-  # H90 — Happy path: the register's guide icon opens the guide at its own section
+  # E200 — Edge case: the section bar is lazy tabs on the Compliance hub — the Register pane loads its own content from its frame src, and ?tab= opens it
+  @rack_test
+  Scenario: E200 Section bar loads sections in place
+    Given the Horizon compliance setup
+    And the nightly compliance run happens on "2026-11-05"
+    And I am signed in to compliance as "Meera"
+    When I open the compliance hub at the "register" tab
+    Then the "register" section pill is active on the hub
+    And the "register" pane is a lazy frame loading the register page
+    When the "register" pane's frame loads
+    Then the frame answer holds the register inside the "register" hub frame, without a section bar
+    When I open the compliance home
+    Then the home pane is drawn inline with the "duties" pane as a lazy frame
+
   @rack_test
   Scenario: H90 Guide opens at the page's section
     Given the Horizon compliance setup

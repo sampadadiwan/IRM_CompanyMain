@@ -85,6 +85,10 @@ Every compliance page SHALL show one section bar: Home, Register, Duties, Facts 
 - **WHEN** there are 3 open items, 1 duty due and 6 facts waiting
 - **THEN** the bar reads "Home · Register (3) · Duties (1) · Facts to confirm (6) · Packs · Setup"
 
+#### Scenario: Section bar loads sections in place
+- **WHEN** Meera opens Compliance with the Register tab selected (or clicks Register on the Compliance hub)
+- **THEN** the Register pill is active and its pane loads lazily into the page from the register's own URL, without a full page visit; on other compliance pages the same pill returns to the hub with that tab open
+
 ### Requirement: Welcome notice and reminders
 When a firm's compliance setup is first created, its company admins and users tagged Compliance SHALL receive one welcome notice, in-app and by email, linking to Getting started. If setup is still incomplete after 7 days, the owner SHALL receive one reminder naming the next step, and one more after 21 days. No reminders SHALL be sent after that, or once setup is complete. A firm without the Compliance entity flag SHALL receive none.
 

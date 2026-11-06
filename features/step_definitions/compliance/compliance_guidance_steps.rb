@@ -114,13 +114,13 @@ end
 
 Given('Horizon attaches a pack needing the unmapped input {string}') do |label|
   definition = cmp_described({
-    "currency" => "INR", "period_basis" => "calendar", "classifications" => ["All funds"],
-    "inputs" => [{ "key" => "board_cap", "type" => "fund_figure", "label" => label }],
-    "measures" => [{ "key" => "board_cap", "label" => label, "op" => "input", "input" => "board_cap" }],
-    "checks" => [{ "key" => "board_cap_check", "name" => "Board cap", "kind" => "limit", "applies_to" => "all", "figure" => "board_cap",
-                   "compare" => "lte", "limit" => { "value" => 10, "unit" => "amount" }, "citation" => "LPA cl. 1" }],
-    "duties" => []
-  })
+                               "currency" => "INR", "period_basis" => "calendar", "classifications" => ["All funds"],
+                               "inputs" => [{ "key" => "board_cap", "type" => "fund_figure", "label" => label }],
+                               "measures" => [{ "key" => "board_cap", "label" => label, "op" => "input", "input" => "board_cap" }],
+                               "checks" => [{ "key" => "board_cap_check", "name" => "Board cap", "kind" => "limit", "applies_to" => "all", "figure" => "board_cap",
+                                              "compare" => "lte", "limit" => { "value" => 10, "unit" => "amount" }, "citation" => "LPA cl. 1" }],
+                               "duties" => []
+                             })
   pack = cmp_entity_pack!(horizon, "Horizon — board rules", definition)
   cmp_attach!(cmp_fund("Horizon Growth Fund I"), pack, "All funds")
 end
@@ -343,4 +343,44 @@ Then('the refreshed duty cards count only {string} duties') do |fund_name|
   firm = ComplianceDuty.where(entity_id: horizon.id, done_on: nil).where(due_on: ...today).count
   expect(filtered).not_to eq(firm)
   expect(shown).to eq(filtered)
+end
+
+# ── E200: the section bar as lazy tabs on the Compliance hub (R170) ─────────────────────────
+When('I open the compliance hub at the {string} tab') do |section|
+  visit compliance_home_path(tab: ComplianceHub.pane_id(section.to_sym))
+end
+
+Then('the {string} section pill is active on the hub') do |section|
+  pill = find_by_id("section_#{section}")
+  expect(pill[:class]).to include("active")
+  expect(pill[:'data-bs-toggle']).to eq("pill")
+  expect(find_by_id(ComplianceHub.pane_id(section.to_sym), visible: :all)[:class]).to include("show active")
+end
+
+Then('the {string} pane is a lazy frame loading the register page') do |section|
+  frame = find("turbo-frame##{ComplianceHub.frame_id(section.to_sym)}", visible: :all)
+  expect(frame[:loading]).to eq("lazy")
+  expect(frame[:src]).to eq(compliance_register_items_path)
+  @hub_frame_src = frame[:src]
+end
+
+# What Turbo does when the pane becomes visible: GET the src with the Turbo-Frame header
+When('the {string} pane\'s frame loads') do |section|
+  page.driver.header("Turbo-Frame", ComplianceHub.frame_id(section.to_sym))
+  visit @hub_frame_src
+  page.driver.header("Turbo-Frame", nil)
+end
+
+Then('the frame answer holds the register inside the {string} hub frame, without a section bar') do |section|
+  frame = find("turbo-frame##{ComplianceHub.frame_id(section.to_sym)}")
+  expect(frame).to have_text("Compliance register")
+  expect(frame).to have_css("turbo-frame#register_open_frame[loading='lazy']", visible: :all)
+  expect(page).to have_no_css("#compliance_section_bar")
+end
+
+Then('the home pane is drawn inline with the {string} pane as a lazy frame') do |section|
+  expect(find_by_id(ComplianceHub.pane_id(:home))).to have_css("#compliance_funds")
+  frame = find("turbo-frame##{ComplianceHub.frame_id(section.to_sym)}", visible: :all)
+  expect(frame[:loading]).to eq("lazy")
+  expect(frame[:src]).to eq(compliance_duties_path)
 end

@@ -27,4 +27,20 @@ module ComplianceCrumbs
     last = @bread_crumbs.keys.last
     @bread_crumbs[last] = nil
   end
+
+  # ⑩ Compliance hub (R170): /compliance shows the section bar as lazy pill tabs, like the fund page's
+  # tabs. Each section pane is a turbo frame named compliance_hub_<section>_frame whose src is the
+  # section's own index URL. That URL answers the frame request with just its content inside the
+  # frame (no section bar; the frame request has no layout, so no breadcrumbs), and a normal request
+  # with the full standalone page. The frame name only picks the rendering; authorization is the
+  # action's own (authorize / policy_scope run before this is called).
+  # Named compliance_hub_* because compliance_duties_frame etc. are already the inner grids' frames.
+  def hub_frame_request?(section)
+    turbo_frame_request? && request.headers["Turbo-Frame"] == ComplianceHub.frame_id(section)
+  end
+
+  def render_hub_pane(section, template)
+    @in_compliance_hub = true
+    render partial: "compliance_shared/hub_pane", locals: { section:, template: }
+  end
 end
