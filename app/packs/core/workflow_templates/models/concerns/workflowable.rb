@@ -305,6 +305,10 @@ module Workflowable
     return unless respond_to?(:entity) && entity.present?
     # Evergreen settlement records and opted-out orders get no journey (open-ended-funds B4)
     return if respond_to?(:skip_journey?) && skip_journey?
+    # Inside WorkflowRulePresence.remember (e.g. a folder path built level by level) a known "no rules for
+    # this entity and type" skips the service's two lookups; outside a block this is always false, so the
+    # common path runs exactly as before
+    return if WorkflowRulePresence.known_none?(entity.id, workflowable_type_name)
 
     WorkflowAutoAssignmentService.call(workflowable: self)
   rescue StandardError => e
@@ -316,8 +320,12 @@ module Workflowable
   # or if a template is already assigned (nothing left to auto-assign).
   def apply_workflow_auto_assignment_on_update
     return unless respond_to?(:entity) && entity.present?
+    # Inside WorkflowRulePresence.remember a known "no rules" ends here before the assignment lookup;
+    # outside a block this is always false (no query), so the usual order below is unchanged
+    return if WorkflowRulePresence.known_none?(entity.id, workflowable_type_name)
     return if workflow_assignment.present?
-    return unless WorkflowAutoAssignmentRule.where(entity: entity, workflowable_type: workflowable_type_name).exists?
+    # Same exists? query as before; memoised only inside WorkflowRulePresence.remember
+    return unless WorkflowRulePresence.any?(entity.id, workflowable_type_name)
     # Evergreen settlement records and opted-out orders get no journey (open-ended-funds B4)
     return if respond_to?(:skip_journey?) && skip_journey?
 
