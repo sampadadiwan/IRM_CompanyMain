@@ -38,6 +38,7 @@
   - [⑦ People's decisions](#⑦-peoples-decisions)
   - [⑧ AI helpers](#⑧-ai-helpers)
   - [⑨ Notices and exports](#⑨-notices-and-exports)
+  - [⑩ Newcomer guidance (Phase 5)](#⑩-newcomer-guidance-phase-5)
 - [4. Reference](#4-reference)
   - [Class diagram](#class-diagram)
   - [Data model and schema changes](#data-model-and-schema-changes)
@@ -73,6 +74,7 @@ flowchart LR
     P["⑦ People's decisions<br/>explain, approve, sign, confirm"]
     A["⑧ AI helpers<br/>draft checks, read documents"]
     N["⑨ Notices and exports<br/>digest, alerts, reports"]
+    X["⑩ Newcomer guidance<br/>getting started, what's next"]
     L -- "checks to run" --> R
     S -- "which packs,<br/>which inputs" --> R
     D -- "records" --> M
@@ -83,6 +85,8 @@ flowchart LR
     A -- "facts to<br/>confirm" --> P
     P -- "confirmed<br/>facts" --> D
     G -- "what changed" --> N
+    S -- "setup state" --> X
+    G -- "open items,<br/>duties, facts" --> X
 ```
 
 ### Key concepts
@@ -141,6 +145,8 @@ flowchart TB
 | Reading and facts | The AI reads named facts from a document once; a person confirms each | "Approved amount: ₹15.00 cr (page 2)" | `document_readings`, `document_facts` |
 | Draft | A check the AI wrote from a sentence, waiting for review | "No more than 20% in one company" | `compliance_check_drafts` |
 | Preview | Running a draft or a future version on a fund without saving anything | SEBI v2 tried on Growth Fund I in December | Not stored |
+| Getting started (Phase 5) | The 8 setup steps on Compliance home, each ticked off from the firm's own data | "3 of 8 done — next: Map inputs" | Not stored (worked out per view); only welcome/reminder dates in `compliance_entity_setups.onboarding` |
+| What's next (Phase 5) | Up to 3 actions for the record on screen and the user's role | On a breach: Assign · Request an explanation · Fix the data | Not stored |
 
 **Three kinds of check**
 
@@ -392,6 +398,7 @@ flowchart LR
     P["⑦ Compliance controllers + policies<br/>ComplianceRequest · DocumentSignoff<br/>UserEnabled flags (modified)<br/><i>people's decisions, maker–checker</i>"]:::mod
     A["⑧ ComplianceCheckDrafter · DocumentFactReader<br/>DocumentReading · DocumentFact · LlmService (reused)<br/><i>AI drafts and document facts</i>"]:::new
     N["⑨ Compliance*Notifier < BaseNotifier<br/>ComplianceRegisterExportJob<br/><i>digest, alerts, exports</i>"]:::new
+    X["⑩ ComplianceGettingStarted · ComplianceNextSteps<br/>compliance glossary (locale) · guidance partials<br/><i>guidance worked out from data (Phase 5)</i>"]:::new
     L -- "published<br/>definition" --> R
     S -- "active packs,<br/>overrides" --> R
     D -- "rows" --> M
@@ -402,6 +409,8 @@ flowchart LR
     A -- "DocumentFact<br/>ai_read" --> P
     P -- "confirmed<br/>DocumentFact" --> D
     G -- "changes since<br/>last digest" --> N
+    S -- "setup, mappings,<br/>monitoring flag" --> X
+    G -- "open items,<br/>duties, readings" --> X
     click L "#①-rule-library" "Open card ①"
     click S "#②-fund-setup" "Open card ②"
     click D "#③-data-caphive-holds" "Open card ③"
@@ -411,6 +420,7 @@ flowchart LR
     click P "#⑦-peoples-decisions" "Open card ⑦"
     click A "#⑧-ai-helpers" "Open card ⑧"
     click N "#⑨-notices-and-exports" "Open card ⑨"
+    click X "#⑩-newcomer-guidance-phase-5" "Open card ⑩"
 ```
 
 Colour = footprint: **green** new, **amber** modified, **grey** reused unchanged. Exact files are in [lld.md File Map](lld.md#file-map).
@@ -431,6 +441,7 @@ Colour = footprint: **green** new, **amber** modified, **grey** reused unchanged
 | ⑦ | People's decisions | Controllers + policies, `ComplianceRequest`, `DocumentSignoff` | Assign, explain, approve, mark signed, confirm facts, mark duties done | Request | Who may do what; maker–checker | [card ⑦](#⑦-peoples-decisions) |
 | ⑧ | AI helpers | `ComplianceCheckDrafter`, `DocumentFactReader`, `DocumentReading`, `DocumentFact`, `ComplianceCheckDraft` | Draft a check from a sentence; read facts from a document | Sidekiq jobs | Nothing final — drafts and unconfirmed facts | [card ⑧](#⑧-ai-helpers) |
 | ⑨ | Notices and exports | `ComplianceDigestNotifier` and friends, `ComplianceRegisterExportJob` | Digest, alerts, escalation, exports | After runs; on events; on request | Whether today has anything to say | [card ⑨](#⑨-notices-and-exports) |
+| ⑩ | Newcomer guidance (Phase 5) | `ComplianceGettingStarted`, `ComplianceNextSteps`, guidance partials, glossary locale | Works out the 8 setup steps and each page's next actions; sends welcome/reminders | Every page view; hourly tick for reminders | Which step is current; which ≤ 3 actions to offer | [card ⑩](#⑩-newcomer-guidance-phase-5) |
 
 ### One run, end to end
 
@@ -628,6 +639,9 @@ The full log of every smaller call (R1–R106) is in [decisions-and-assumptions.
 | D11 | Locking is one pack flag plus a per-check override rule | Two fields cover every locking rule |
 | D12 | A fund's current version is stored on its attachment | Funds on the same pack can be on different versions |
 | D13 | Previews are never saved | "Preview never touches the register" is guaranteed by never writing |
+| D14 | Getting started is worked out from data, never stored as done (Phase 5) | It can never disagree with the setup, and reopens by itself when setup changes |
+| D15 | One glossary in the locale file feeds tooltips, intros and the guide (Phase 5) | The same words everywhere, matching Key concepts |
+| D16 | Guidance reuses existing parts; the help slide-out is unchanged (Phase 5) | No new component and no change to a core one |
 
 #### D1. A pack version's rules are one JSON document
 
@@ -750,6 +764,38 @@ The full log of every smaller call (R1–R106) is in [decisions-and-assumptions.
 - **Why:** "a preview never appears in history" is guaranteed by never writing.
 - **Not chosen:** saving preview results with a flag, where every query would have to remember to exclude them.
 - **Where:** `CompliancePreview`.
+
+#### D14. Getting started is worked out from data, never stored as done (Phase 5)
+
+- **Problem:** a new firm needs to know which setup step comes next. A stored checklist goes stale. For example, attaching the IFSCA pack adds a new unmapped input, but a stored "Map inputs ✓" would still say done.
+- **Decision:** `ComplianceGettingStarted.call(entity, user)` works out the 8 steps on each view, from the owner, approvers, attachments, mappings, reference lists, runs, Compliance-tagged users, the monitoring flag and open items. Only the welcome and reminder dates are stored, in `compliance_entity_setups.onboarding`.
+- **Why:**
+  - it can never contradict the data;
+  - a step reopens by itself (E180);
+  - there is no migration of "progress" when a pack version adds an input.
+- **Not chosen:** the workflow-template journey engine (`WorkflowInstance`). It is built for per-record approvals with stored step state, which is heavier than needed and can drift from the setup.
+- **Where:** `ComplianceGettingStarted`; `compliance_home/_getting_started.html.erb`, drawn like `workflow_instances/_journey_panel`.
+
+#### D15. One glossary in the locale file feeds tooltips, intros and the guide (Phase 5)
+
+- **Problem:** terms like "Explained", "Could not check" and "episode" are explained in the design, the proposal, the guide and dozens of tooltips. Separate copies drift apart.
+- **Decision:** a `compliance.glossary.*` and `compliance.intros.*` locale block in `config/locales/compliance.en.yml`. The `cmp_term(:explained)` helper renders the tooltip icon, and the user guide's glossary is checked against the same keys.
+- **Why:** one place to fix wording. Translators (ja) see every string.
+- **Not chosen:** hard-coded strings in views, which drift and can't be translated.
+- **Where:** `config/locales/compliance.en.yml`, the compliance helper, `docs/user_guides/compliance_monitoring_user_guide.md`.
+
+#### D16. Guidance reuses existing parts; the help slide-out is unchanged (Phase 5)
+
+- **Problem:** newcomers need in-place help. The app's `HelpSlideOut` (a core component on every page) shows only tasks.
+- **Decision:** guidance is built only from existing parts:
+  - the journey-panel look for Getting started;
+  - `alert alert-info` cards for What's next and intros;
+  - tooltip icons;
+  - `nav-pills` for the section bar;
+  - `user_guide_icon_for` with an anchor for "open the guide at this page".
+- **Why:** no new component, and no risk to every other page of the app.
+- **Not chosen:** loading guide sections into `HelpSlideOut`. That changes a core component used everywhere (open for a later, separate change).
+- **Where:** card ⑩.
 
 **Changed or added during the build** — the decisions that moved the design. Details are in the log.
 
@@ -1227,6 +1273,77 @@ sequenceDiagram
 
 ---
 
+### ⑩ Newcomer guidance (Phase 5)
+
+- Helps a fund new to Compliance get from "switched on" to "working breaches". Every page says what it is for, what its terms mean and what to do next.
+- New to the terms? Read [Key concepts](#key-concepts) first.
+
+| Owns | Reads / receives | Produces |
+|---|---|---|
+| `ComplianceGettingStarted`, `ComplianceNextSteps`, guidance partials, `compliance.en.yml` glossary, `compliance_entity_setups.onboarding` | Setup ②, runs and results ⑤, register and duties ⑥, readings ⑧, the user's role ⑦ | Getting started panel, What's next panel, section bar, timing banner, welcome/reminder notices via ⑨ |
+
+**The 8 steps and how each is worked out**
+
+| # | Step | Done when | Do-it button opens |
+|---|---|---|---|
+| 1 | Owner and approvers | `owner_id` set and ≥ 1 eligible approver (single approver → done, with a note) | Setup › People |
+| 2 | Attach packs | ≥ 1 active `FundCompliancePack` | Fund packs › Attach |
+| 3 | Map inputs | Every non-optional input used by an attached version is in `input_mappings` | Setup › Inputs, at the first unmapped one |
+| 4 | Reference lists | Every list an attached check reads has ≥ 1 entry; none needed → "Not needed" (done) | Setup › Lists |
+| 5 | First run | ≥ 1 succeeded `ComplianceRun` | Run now on the first attached fund |
+| 6 | Digest recipients | ≥ 1 active user tagged `Compliance` | Users, filtered |
+| 7 | Monitoring on | `monitoring_enabled` | Setup › Monitoring |
+| 8 | Open items owned | Every open register item has an assignee, or is pending approval or explained | Register, filtered to unassigned |
+
+```mermaid
+flowchart TD
+    V["Page view"] --> GS["ComplianceGettingStarted<br/>8 checks, SQL counts"]
+    GS --> C{"All done?"}
+    C -- "no" --> P["Panel: steps +<br/>What's needed now"]
+    C -- "yes" --> F["One line:<br/>Setup complete"]
+    V --> NS["ComplianceNextSteps<br/>(record, user)"]
+    NS --> W["≤ 3 actions,<br/>policy-filtered"]
+```
+
+**What's next rules** (each action shows only if the user's policy allows it):
+
+| Page / state | Actions |
+|---|---|
+| Result: breach | Assign · Request an explanation · "or fix the data — the next run clears it" |
+| Result: could not check | "Map <input> in Setup" (link to that input) |
+| Result: needs review | Confirm facts · Open the record |
+| Register item: pending, user is an eligible approver | Approve · Reject |
+| Register item: pending, user is the requester | "Waiting for an approver (names)" |
+| Register item: overdue | "Overdue since <date> — escalated to <names>" · Assign |
+| Duty: due or overdue | Upload evidence · Mark done |
+| Facts: waiting | "Check each fact against its quote, then Confirm" |
+| Version: draft | Test run · Publish |
+| Version: ahead | Preview on a fund before <date> |
+| Empty list or nothing to do | "Nothing to do. Next run tonight at 02:00 <tz>." |
+
+- **Timing banner:** last succeeded run time and next 02:00 in `compliance_entity_setups.time_zone`. Amber when > 26 h (shares the X28 rule). "No results yet — first run tonight, or Run now" when there are no runs.
+- **Section bar:** `nav-pills` links (Turbo Drive visits) with counts from three SQL counts, which are cached per request.
+- **Intros and tooltips:** `cmp_intro(:register)` and `cmp_term(:explained)` read `compliance.intros.*` and `compliance.glossary.*`.
+- **Guide icon:** `user_guide_icon_for(:compliance, anchor: "the-register")`.
+- **Notices:**
+  - the welcome goes out when the setup row is first created, recorded in `onboarding.welcome_sent_on`;
+  - reminders go out on day 7 and day 21 if setup is incomplete, recorded in `onboarding.reminders_sent`, via the hourly `ComplianceScheduleJob`;
+  - entities without `enable_compliance` get none.
+- **Customer setup (super admins):** `ComplianceOnboardingController#index` (super only) lists each entity's step count, next step and start date. It shows names of steps only.
+
+**Worked examples:** H80–H90, E180–E192, X90–X93 ([§ 13](business-rules.md#13-newcomer-guidance--phase-5)).
+
+**FAQ**
+
+| Question | Answer |
+|---|---|
+| Is the progress stored? | No. It is worked out on each view from setup data, so it reopens when setup changes (D14). |
+| Does guidance ever change a result or the register? | No. It only reads data and links to existing actions. |
+| Why not a product tour? | Tours are skipped and forgotten. Guidance worked out from data stays true, and points at the exact next action. |
+| Cost on every page? | 8 small `exists?`/`count` queries on Compliance home, and 3 counts for the section bar. No large tables are touched. |
+
+---
+
 ## 4. Reference
 
 ### Class diagram
@@ -1595,6 +1712,7 @@ erDiagram
 | `owner_id` | FK users | Compliance owner: default duty owner, reassignment target (R12, R13) |
 | `ai_settings` | json | Drafting on/off (X41); reading opt-in per document input; monthly cap (E74, E75) |
 | `monitoring_enabled` | boolean | Gate for scheduled runs (H17, X15) |
+| `onboarding` (Phase 5) | json, new column on this new table | `welcome_sent_on`, `reminders_sent` (dates): welcome once, reminders on days 7 and 21 only (H87, E189, E190). Step state is never stored (D14) |
 
 **`compliance_requests`** (new): maker–checker for six actions ([explained](#makerchecker--two-person-approval)).
 
@@ -1733,6 +1851,8 @@ erDiagram
 | Bulk event duties | Many records in one day | Duty owner | Digest, one grouped line (R6) | No | On | In digest only |
 | Run failed / stale | Run failed or > 26 h | `Compliance` tag + CapHive support (`support@`) | Email | No | On | Once per failed run |
 | New version published | CapHive / entity publishes a version for a pack the entity carries | `Compliance` tag | Email + in-app | No | On | Once per version per entity (H49) |
+| Welcome to Compliance (Phase 5) | Compliance setup row first created, entity has `enable_compliance` | Company admins + `Compliance` tag | Email + in-app | No | On | Once per entity (`onboarding.welcome_sent_on`, E190) |
+| Getting started reminder (Phase 5) | Setup incomplete on day 7 and day 21 | Compliance owner | Email + in-app | No | On | At most two, then never; none once complete (E189) |
 | Version coming into effect | 7 days before `effective_from` | `Compliance` tag | Email | No | On | Once per version per entity (E87) |
 | Version effective — fund moved / grandfathered | Nightly run of the effective date | `Compliance` tag | Digest | No | On | Once per fund per version |
 | Override kept / dropped / archived, item closed "check removed" | Version move | `Compliance` tag + override requester | Digest | No | On | Once per change |
@@ -1809,6 +1929,7 @@ erDiagram
 | 10 | Rate limiting and cost | rack-attack throttles on Run now, draft and test-run endpoints; one in-flight run per fund; monthly AI reading cap | ⑤ ⑧ | E18, E75 |
 | 11 | Audit and logging | `Trackable` on setup, requests, signoffs, facts; version moves, early adoptions and override keep/drop/archive recorded as audits; results append-only; logs carry ids only (no names, quotes or amounts) | all | H18, E67 |
 | 12 | Verification | Brakeman + bundler-audit clean; `features/security/compliance_tenant_isolation.feature` (other firm refused, owner allowed, direct request refused, investor refused) per new controller | — | X12, X20–X23, X35, X36 |
+| 13 | Guidance (Phase 5) | Getting started / What's next frames go through `ComplianceHomePolicy` + record policies; actions offered only when the user's policy allows them; Customer setup list super-admin only and shows step names + counts, no fund names, figures or people | ⑩ | X90–X93 |
 
 ### Changes over time
 

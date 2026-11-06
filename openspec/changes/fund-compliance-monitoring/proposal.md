@@ -93,6 +93,8 @@ flowchart LR
 | Sign-off | Recording that a paper document was signed, and when | IC note signed in wet ink on 28 Sep |
 | Fact | A value the AI read from a document, which counts only after a person confirms it | "Approved amount ₹15.00 cr (page 2)" |
 | Preview | Trying a draft or future version on a real fund; nothing is saved | SEBI v2 tried on Growth Fund I in December |
+| Getting started (Phase 5) | The 8 setup steps on Compliance home, ticked off from your own data | "3 of 8 done — next: Map inputs" |
+| What's next (Phase 5) | Up to 3 suggested actions on every page, for the record in front of you | On a breach: Assign · Request an explanation · Fix the data |
 
 **Register items, in brief**
 - One item per breach **episode**: it opens on the first failing night and stays one item while the check keeps failing.
@@ -696,13 +698,80 @@ flowchart LR
     P1["Phase 1<br/>Limit checks (shape 1)<br/>Document-exists checks (shape 2)<br/>Register, roles, digest, export<br/>SEBI pack"] --> P2["Phase 2<br/>Describe in words<br/>(AI drafting)"]
     P2 --> P3["Phase 3<br/>Document-contents checks<br/>(shape 3, AI reading)"]
     P3 --> P4["Phase 4<br/>IFSCA pack<br/>(currency conversion)"]
+    P4 --> P5["Phase 5<br/>Newcomer guidance<br/>(getting started, what's next)"]
 ```
 
 - **Phase 1** stands alone — useful with no AI at all. SEBI checks 1–6 and 8–10 ship here; check 7 (investor groups) needs AI-read ownership facts and arrives in Phase 3 — until then it is a manual duty.
 - **Phase 2** adds AI only at authoring time.
 - **Phase 3** adds AI reading of documents, opt-in per entity.
 - **Phase 4** is pack content plus currency handling; no new screens. The IFSCA steps in the Workflow Journey apply from Phase 4.
+- **Phase 5** makes the feature usable by a fund that is new to compliance monitoring. See [Phase 5 — Newcomer guidance](#phase-5--newcomer-guidance). It adds no new compliance rules. Everything it shows is worked out from data the earlier phases already hold.
 - Each phase ships with its own Cucumber features and can be paused without breaking the previous one.
+
+---
+
+## Phase 5 — Newcomer guidance
+
+**Why**
+- Compliance asks a new fund to learn many ideas at once: packs, versions, classifications, inputs, checks, breach episodes, maker–checker, duties and facts.
+- The order matters. Nothing can run until a pack is attached and its inputs are mapped, and today no screen says so.
+- Results arrive only after the 02:00 run, so a new user first meets empty screens.
+- A breach, an empty register or "Could not check" never says what to do next.
+
+**What changes**
+
+```mermaid
+flowchart LR
+    ON["Compliance<br/>switched on"] --> W["① Welcome notice"]
+    W --> GS["② Getting started<br/>8 steps from data"]
+    GS --> D["Daily use"]
+    D --> NX["③ What's next<br/>on every page"]
+    D --> EX["④ Page intros +<br/>term tooltips"]
+    D --> NAV["⑤ Section bar +<br/>timing banner"]
+    NX --> G["⑥ Guide at the<br/>page's section"]
+    GS -. "stuck 7 / 21 days" .-> R["Reminder to owner;<br/>support sees progress"]
+```
+
+| # | Piece | What the user gets |
+|---|---|---|
+| ① | Welcome notice | Company admins and Compliance-tagged users are told Compliance is on, with a link to Getting started. Sent once. |
+| ② | Getting started | 8 steps on Compliance home: owner and approvers → attach packs → map inputs → reference lists → first run → digest recipients → monitoring on → every open item has an owner. Each step ticks itself from data, with a "Do it" button and a line on why it matters. The panel folds away when setup is done. |
+| ③ | What's next | Up to 3 actions on every page, for the record shown and your role. For example, a breach offers Assign, Request an explanation, or fix the data. |
+| ④ | Page intros and tooltips | One or two lines at the top of each page on what it is for. A tooltip on every compliance term, in the same words as Key concepts. |
+| ⑤ | Section bar and timing | Home · Register (3) · Duties (1) · Facts to confirm (6) · Packs · Setup, on every page. "Results from the 02:00 IST run on 05/11/2026 · next run tonight", amber when out of date. |
+| ⑥ | Guide and support | The guide icon opens the compliance guide at the page's own section. The guide gains "Your first week" and "How to read a result", and the support chatbot reads it. Super admins see which firms are stuck in setup. |
+
+**Getting started on Compliance home**
+
+```
+┌ Getting started with Compliance ───────────────────── 3 of 8 done ┐
+│ ✓ Owner & approvers  ✓ Attach packs  ● Map inputs  ○ Reference lists │
+│ ○ First run  ○ Digest recipients  ○ Monitoring on  ○ Open items owned │
+├ What's needed now ─────────────────────────────────────────────────┤
+│ Map 2 inputs for SEBI — AIF: Sponsor/manager, estimated expenses.  │
+│ Why: without them 4 checks show "Could not check".                 │
+│ [Map inputs]   What is an input? ⓘ                                  │
+└────────────────────────────────────────────────────────────────────┘
+```
+
+**What's next on a breach**
+
+```
+┌ What's next ───────────────────────────────────────────────────────┐
+│ This check is in breach. Either:                                   │
+│ [Assign it]  [Request an explanation]  or fix the data — the next  │
+│ run clears it by itself.                                           │
+└────────────────────────────────────────────────────────────────────┘
+```
+
+**Decisions taken (U11)**
+- **The journey is a simple step list worked out from data**, drawn like the capital call journey panel. It does not use the workflow-template engine, which is built for per-record approvals.
+- **The first-run step offers Run now**, so a new fund sees results the same day.
+- **The help slide-out (a core component) is left unchanged.** The guide icon opens the page's own section instead.
+
+**Not covered:** product tours or pop-up walkthroughs, video, sample or sandbox data for prospects, and changing the help slide-out.
+
+**Rules:** [business-rules.md › 13](business-rules.md#13-newcomer-guidance--phase-5) (H80–H90, E180–E192, X90–X93). **Spec:** [onboarding-guidance](specs/compliance/onboarding-guidance/spec.md).
 
 ---
 
@@ -873,6 +942,18 @@ flowchart LR
 **Acceptance criteria:**
 - The digest lists new breaches, cleared items, attachments missing a classification, duties due within the pack's reminder window and overdue duties, grouped by fund and pack.
 - No email is sent on a day with none of these.
+
+### US-9: Know what to do next, from day one (Phase 5)
+
+**As a** compliance officer at a fund new to CapHive Compliance,
+**I want** the screens to tell me what to set up, what each page and term means, and what to do next,
+**So that** I can go from "just switched on" to working breaches without training.
+
+**Acceptance criteria:**
+- Compliance home shows Getting started (8 steps) until setup is complete, each step ticked off from data, with a Do-it button.
+- Every page has a one-line intro, term tooltips, a section bar, and a What's next panel of up to 3 actions.
+- Pages say which run their results come from and when the next run is. Empty pages say what to do.
+- A welcome notice, and at most two reminders, go to the right people. Super admins can see who is stuck.
 
 ---
 
@@ -1241,6 +1322,9 @@ Settle before the SEBI pack is published:
 | 39 | Are reference lists dated? | Yes — optional from/to per entry; checks read the list as at the document's date |
 | 40 | Fund start date missing? | "Could not check" — never guessed |
 | 41 | Business days? | Calendar days in v1 |
+| 43 | How do new funds learn the feature? | Phase 5: Getting started (8 steps from data), What's next on every page, intros, tooltips, section bar, timing banner, welcome + 2 reminders |
+| 44 | Workflow-template engine for Getting started? | No — a simple step list worked out from data, drawn like the journey panel |
+| 45 | Help slide-out shows the guide? | No — core component unchanged; the guide icon opens the page's section |
 | 42 | Things deliberately left out for simplicity | "Confirmer ≠ uploader" setting; separate escalation of unconfirmed facts; extra detach/re-attach rules; blocking monitoring until every duty has an owner |
 
 
@@ -1274,6 +1358,7 @@ flowchart LR
 - `compliance/fund-pack-setup`: Attaching several packs to a fund with a classification per pack, input mapping, reference lists, per-fund overrides and disabling with maker–checker approval, compliance roles, owners, and setup history.
 - `compliance/compliance-monitoring`: Nightly and on-demand runs across every attached pack, tested-when and currency handling, stored results with figures, run health, the compliance register lifecycle with fix-by dates and escalation, scheduled and event-triggered manual duties with evidence, notifications, the daily digest, and register export.
 - `compliance/sebi-aif-rule-pack`: The content and expected results of the first SEBI AIF pack.
+- `compliance/onboarding-guidance` (Phase 5): the Getting started journey, What's next panels, timing banner, section bar, page intros and term tooltips, the guide opening at each page's section, welcome and reminder notices, and customer setup progress for super admins.
 
 ### Modified Capabilities
 

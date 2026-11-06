@@ -31,6 +31,7 @@
 - [Test Plumbing](#test-plumbing)
 - [Pattern Conformance](#pattern-conformance)
 - [Security Detail](#security-detail)
+- [Phase 5 — Newcomer guidance (detail)](#phase-5--newcomer-guidance-detail)
 - [Project Rules Checklist](#project-rules-checklist)
 - [Sign-off](#sign-off)
 
@@ -107,6 +108,16 @@ Pack: `app/packs/funds/compliance` (depends on `app/packs/core`, `app/packs/fund
 | — | `config/routes/compliance.rb` (drawn from `config/routes.rb`) | New + Mod | Routes | 1 |
 | — | `app/packs/funds/compliance/package.yml` | New | Packwerk deps | 1 |
 | — | `features/compliance/*.feature`, `features/step_definitions/compliance/*.rb`, `features/security/compliance_tenant_isolation.feature` | New | Cucumber | 1–4 |
+| ⑩ | `services/compliance_getting_started.rb` | New | 8 steps worked out from data; `Step(key, state, count, detail, action_path)` | 5 |
+| ⑩ | `services/compliance_next_steps.rb` | New | ≤ 3 actions for (record, user), policy-filtered | 5 |
+| ⑩ | `views/compliance_shared/_getting_started.html.erb`, `_whats_next.html.erb`, `_timing_banner.html.erb`, `_section_bar.html.erb` | New | Guidance partials (journey-panel look, `alert alert-info`, `nav-pills`) | 5 |
+| ⑩ | `helpers/compliance_guidance_helper.rb` | New | `cmp_term(key)`, `cmp_intro(page)`, `cmp_guide_icon(anchor)` | 5 |
+| ⑩ | `config/locales/compliance.en.yml` (repo root) | New | `compliance.glossary.*`, `compliance.intros.*`, `compliance.next.*` | 5 |
+| ⑩ | `controllers/compliance_onboarding_controller.rb` + view | New | Customer setup progress (super admins) | 5 |
+| ⑩ | `services/compliance_onboarding_notices.rb` | New | Welcome once; reminders day 7 / 21 (called from `ComplianceScheduleJob`) | 5 |
+| ⑩ | `db/migrate/…_add_onboarding_to_compliance_entity_setups.rb` | New | `onboarding` json column | 5 |
+| ⑩ | `docs/user_guides/compliance_monitoring_user_guide.md` (repo root) | Mod | "Your first week", "How to read a result", anchors per page | 5 |
+| ⑩ | `features/compliance/compliance_guidance.feature` + steps | New | H80–H90, E180–E192 | 5 |
 
 **Reviewer checks**
 - [ ] Every class in design.md › Class diagram has a row here, and nothing here is missing from it
@@ -427,6 +438,8 @@ All under `/compliance` (Turbo; HTML + turbo_stream). Super-admin Rule Library u
 | `Compliance*Notifier` | Noticed notifier | funds/compliance | `deliver` | `WeeklyTaskDigestNotifier` |
 | `Compliance*Policy` | Pundit policy | funds/compliance | predicates + Scope | `SideLetterObligationPolicy` |
 | `ComplianceCheckDrafter`, `DocumentFactReader` | AI service | ai/compliance | `.call` | `FundFormulaGenerator`, `KycDocExtractorAgent` |
+| `ComplianceGettingStarted`, `ComplianceNextSteps`, `ComplianceOnboardingNotices` | Service `.call` (read-only; notices via ⑨) | funds/compliance | `.call(entity, user)` → steps; `.call(record, user)` → actions | `JourneyHelper` + `workflow_instances/_journey_panel` look |
+| Guidance partials, `ComplianceGuidanceHelper` | Partials + helper; locale strings | funds/compliance | `cmp_term`, `cmp_intro`, `cmp_guide_icon` | `user_guide_icon_for`, capital_calls tooltip icons |
 
 **Reviewer checks**
 - [ ] No controller computes figures or decides outcomes
@@ -473,6 +486,34 @@ All under `/compliance` (Turbo; HTML + turbo_stream). Super-admin Rule Library u
 | Rubocop incl. `IRM/RelationBlankPresent` | Applies | Per-phase task |
 
 ---
+
+## Phase 5 — Newcomer guidance (detail)
+
+**Method contracts**
+
+| Method | Input | Output | Rules |
+|---|---|---|---|
+| `ComplianceGettingStarted.call(entity:, user:)` | Entity, current user | `Result(steps: [Step], done_count:, current:)`; `Step(key, state ∈ done/current/todo/not_needed, detail, why, action_label, action_path, can_act)` | 8 steps in fixed order; each from `exists?`/`count`, never `present?` on relations; `can_act` = editor/approver per step; nothing written |
+| `ComplianceNextSteps.call(record:, user:)` | Result, RegisterItem, Duty, DocumentReading, PackVersion, or a list key | ≤ 3 `Action(label, path, method, style)` + optional `note` | Each action kept only if `Pundit.policy(user, target).<action>?`; wording from `compliance.next.*` |
+| `ComplianceOnboardingNotices.call(setup:, today:)` | Setup | Sends welcome / reminder via `ComplianceNotifier` kinds `welcome`, `getting_started_reminder` | Welcome once (`onboarding.welcome_sent_on`); reminders when `today - created_at` ∈ {7, 21} and steps incomplete; skip without `enable_compliance` |
+
+**Routes and controllers**
+
+| Verb and path | Controller#action | Authorize | Responds with |
+|---|---|---|---|
+| GET `/compliance/getting_started` | `ComplianceHomeController#getting_started` | `ComplianceHomePolicy#index?` | Turbo frame (lazy, on home) |
+| GET `/compliance/next_steps?record_type=&record_id=` | `ComplianceHomeController#next_steps` | record loaded via `policy_scope(allow-listed type)` then `authorize record, :show?` | Turbo frame |
+| GET `/compliance/onboarding` | `ComplianceOnboardingController#index` | `ComplianceOnboardingPolicy#index?` = `user.has_cached_role?(:super)` | Page (standard table) |
+
+- `record_type` is matched against an allow-list (`ComplianceResult`, `ComplianceRegisterItem`, `ComplianceDuty`, `DocumentReading`, `CompliancePackVersion`). It is never passed to `constantize`.
+
+**Queries** (Compliance home, per view): owner/approver check; `FundCompliancePack.active.exists?`; unmapped inputs computed in Ruby from the attached versions' definitions (small JSON); reference-list presence in JSON; `ComplianceRun.succeeded.exists?`; tagged users `exists?`; open items without an assignee `count`. That is 8 cheap queries, with no large tables touched. The section bar does 3 `count`s, memoised per request.
+
+**Security detail**
+- No new write paths except the notices.
+- What's next only links to existing, separately authorized actions.
+- The Customer setup list selects only `entity.name` and the computed counts. No fund, investor or figure columns are read.
+- Investors are refused by `ComplianceAccess.viewer?` (X90). Another firm's record id fails `policy_scope` (X92).
 
 ## Sign-off
 

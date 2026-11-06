@@ -102,3 +102,23 @@
 - [x] 4.4 Final coverage task: list every H/E/X ID in business-rules.md and every `# <ID> —` comment under `features/`; confirm the two sets are equal (263 IDs) and every code ID comment points at an existing row; fix any gap with a row + scenario. — *265 rows (X68 added) = 265 `# <ID> —` comments under features/compliance + security, no duplicates; every ID named in app/packs/funds/compliance and lib/tasks/compliance.rake exists*
 - [x] 4.5 Phase 4 review (brakeman/bundle-audit/rubocop/packwerk; decisions log updated), then run **all** compliance features (`features/compliance/*.feature`, `features/security/compliance_tenant_isolation.feature`) split across 41201–41204 with the launch rules above until green; commit Phase 4 as its own commit. — *brakeman 0 compliance warnings, bundle-audit clean, rubocop clean on changed files; `bin/packwerk check` still aborts on the pre-existing `ViewedBiesController` constant; all compliance features + security green: 65 + 63 + 59 + 79 = 266 scenarios on 41201–41204*
 - [ ] 4.6 (QA, not the apply agent) Run [qa-checklist.md](qa-checklist.md) on a deployed staging build and record the sign-off.
+
+## 5. Phase 5 — Newcomer guidance
+
+> Reuse only (D16): the journey-panel look, `alert alert-info`, the tooltip icon, `nav-pills`, `user_guide_icon_for`. No new CSS. No change to `HelpSlideOut`. Phase 5 starts after the UI restyle commit.
+
+- [ ] 5.1 Migration adding `onboarding` (json) to `compliance_entity_setups`; schema files per the standing rule.
+- [ ] 5.2 `config/locales/compliance.en.yml`: `compliance.glossary.*` (wording = design Key concepts), `compliance.intros.*` (one per page), `compliance.next.*`. Add `ComplianceGuidanceHelper` (`cmp_term`, `cmp_intro`, `cmp_guide_icon(anchor)`). Replace hard-coded tooltip and intro strings in compliance views with these.
+- [ ] 5.3 `ComplianceGettingStarted.call(entity:, user:)`: the 8 steps from data (design card ⑩ table). Steps are never stored, use `exists?`/`count` only, and set `can_act` per role. `compliance_shared/_getting_started.html.erb` on Compliance home: a lazy turbo frame, drawn like `workflow_instances/_journey_panel`, folding to "Setup complete · Show steps". Step 5's button is Run now on the first attached fund. Covers H80–H83, E180–E183, E191.
+- [ ] 5.4 `ComplianceNextSteps.call(record:, user:)` and `_whats_next.html.erb` on result, register item, duty, facts, version and list pages: ≤ 3 policy-filtered actions, wording from `compliance.next.*`, and empty states that say what to do and when the next run is. Covers H84, H85, E186–E188.
+- [ ] 5.5 `_timing_banner.html.erb` (home, fund page, register) and `_section_bar.html.erb` (every compliance page, with counts memoised per request). Covers H86, H89, E184, E185.
+- [ ] 5.6 User guide: anchors per page; "Your first week" and "How to read a result" (annotated screenshot); glossary section from the same wording; FAQ (user-guide-faqs skill, UserGuideLint). Wire `cmp_guide_icon(anchor)` into each page header. Covers H88, H90.
+- [ ] 5.7 `ComplianceOnboardingNotices` (welcome once on setup creation; reminders on day 7 / 21 while incomplete; none without `enable_compliance`), called from `ComplianceScheduleJob`, using `ComplianceNotifier` kinds `welcome` and `getting_started_reminder`. Add the two notification rows to the design's Notifications table if wording changes. Covers H87, E189, E190, X93.
+- [ ] 5.8 `ComplianceOnboardingController#index` + `ComplianceOnboardingPolicy` (super admins only) as a standard table: firm · n of 8 · next step · since. Selects no fund, investor or figure columns. Covers E192, X91.
+- [ ] 5.9 Write `features/compliance/compliance_guidance.feature` (H80–H90, E180–E192). Extend `features/security/compliance_tenant_isolation.feature` with X90–X93. Each scenario carries its `# ID —` comment.
+- [ ] 5.10 Phase 5 review:
+  - screenshots of home (new firm, half-way, complete), a breach result, a register item as approver and as requester, and the empty register, compared with the [mocks](mocks/phase5/);
+  - the UI self-review checklist;
+  - brakeman, rubocop, the security drift guard.
+
+  Then run all compliance features plus security on 41201–41204, waiting with `wait $pid` and never a pgrep loop, until green. Commit Phase 5 as its own commit.

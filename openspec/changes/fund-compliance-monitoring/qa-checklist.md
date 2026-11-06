@@ -26,6 +26,7 @@ flowchart LR
 - [Phase 2 — Describe in words (AI drafting)](#phase-2--describe-in-words-ai-drafting)
 - [Phase 3 — Document-content checks (AI reading)](#phase-3--document-content-checks-ai-reading)
 - [Phase 4 — IFSCA pack and currency](#phase-4--ifsca-pack-and-currency)
+- [Phase 5 — Newcomer guidance](#phase-5--newcomer-guidance)
 - [UI Journeys](#ui-journeys)
 - [Role Sweep](#role-sweep)
 - [Cross-cutting Checks](#cross-cutting-checks)
@@ -385,6 +386,53 @@ flowchart LR
 | ☐ | X25 | Missing FX rate (P4) | No INR/USD rate for run date | 1. Run. 2. Trigger it: press Run now on the fund, or ask a developer to run the nightly compliance job / digest for the date shown. | "Could not check — missing: INR/USD rate for <date>" | | |
 
 ---
+## Phase 5 — Newcomer guidance
+
+### Happy path — Phase 5
+
+| ☐ | ID | What to check | Preconditions | Steps | Expected result | Pass / Fail | Notes |
+|---|---|---|---|---|---|---|---|
+| ☐ | H80 | Getting started on first visit | Fresh firm: owner + approver, no packs | 1. Open Compliance home. | "Getting started — 1 of 8 done"; step 2 current; [Attach a pack] | | |
+| ☐ | H81 | Steps tick from data | H80 | 1. Attach SEBI to a fund. 2. Back to home. | Step 2 ✓; step 3 names the unmapped inputs and why | | |
+| ☐ | H82 | First run from the journey | Steps 1–4 done | 1. Press Run now in step 5. | Results appear the same day; step 5 ✓ | | |
+| ☐ | H83 | Setup complete folds away | All done | 1. Open home. | "Setup complete · Show steps" | | |
+| ☐ | H84 | What's next on a breach | A breach result | 1. Open it. | Assign · Request an explanation · fix the data | | |
+| ☐ | H85 | What's next on Could not check | Input unmapped | 1. Open the result. | "Map <input> in Setup" opens Setup at that input | | |
+| ☐ | H86 | Timing banner | A run succeeded last night | 1. Open home. | "Results from the 02:00 … run on … · next run …" | | |
+| ☐ | H87 | Welcome notice | New firm with Compliance on | 1. Open Compliance first time. | Admins + tagged users get the welcome email + bell once | | |
+| ☐ | H88 | Term tooltip | Item status Explained | 1. Hover ⓘ. | Glossary wording | | |
+| ☐ | H89 | Section bar | Items, duties, facts exist | 1. Open any compliance page. | Bar with counts; current section active | | |
+| ☐ | H90 | Guide at section | — | 1. Press the guide ⓘ on Register. | Guide opens at the register section | | |
+
+### Edge cases — Phase 5
+
+| ☐ | ID | What to check | Preconditions | Steps | Expected result | Pass / Fail | Notes |
+|---|---|---|---|---|---|---|---|
+| ☐ | E180 | Step reopens | All done | 1. Attach a pack with an unmapped input. | Step 3 reopens; panel unfolds | | |
+| ☐ | E181 | List not needed | No check uses lists | 1. Open home. | Step 4 "Not needed for your packs" | | |
+| ☐ | E182 | Viewer | Log in as a viewer | 1. Open home. | Steps, no buttons, "Ask <owner>…" | | |
+| ☐ | E183 | Single approver | One eligible user | 1. Open home. | Step 1 ✓ with Self-approved note | | |
+| ☐ | E184 | Never run | No runs | 1. Open home. | "No results yet — first run tonight, or Run now" | | |
+| ☐ | E185 | Stale | Last run failed | 1. Open home. | Amber "may be out of date"; support told | | |
+| ☐ | E186 | Approver's next step | Pending explanation | 1. Open the item as an approver. | Approve · Reject | | |
+| ☐ | E187 | Requester's next step | Same | 1. Open the item as requester. | "Waiting for an approver"; no Approve | | |
+| ☐ | E188 | Empty register | No open items | 1. Open the register. | "Nothing open. Next run tonight…" | | |
+| ☐ | E189 | Reminders stop | Incomplete setup | 1. Ask a developer to run the schedule job for day 7, 21, 35. | Reminders on 7 and 21 only | | |
+| ☐ | E190 | Welcome once | Welcome sent | 1. Re-open home; save setup. | No second welcome | | |
+| ☐ | E191 | Monitoring before mapping | Step 3 open | 1. Turn monitoring on. | Allowed; warning names inputs + checks | | |
+| ☐ | E192 | Customer setup | Super admin | 1. Open Compliance › Customer setup. | Firm · n of 8 · next step · since | | |
+
+### Error cases — Phase 5
+
+| ☐ | ID | What to check | Preconditions | Steps | Expected result (message, who is alerted) | Pass / Fail | Notes |
+|---|---|---|---|---|---|---|---|
+| ☐ | X90 | Investor | Investor login | 1. Open the guidance frame URLs. | Refused | | |
+| ☐ | X91 | Customer setup restricted | Company admin | 1. Open /compliance/onboarding. | Refused; super admin sees counts only | | |
+| ☐ | X92 | Other firm | Other firm's admin | 1. Open a Horizon next-steps URL. | Refused | | |
+| ☐ | X93 | No flag, no welcome | Firm without `enable_compliance` | 1. Super admin creates setup. | No welcome, no reminders | | |
+
+---
+
 ## UI Journeys
 
 | ☐ | ID | Screen | Do | Expect to see | Pass / Fail | Notes |
