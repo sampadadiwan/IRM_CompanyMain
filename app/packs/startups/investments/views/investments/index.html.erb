@@ -19,60 +19,78 @@
     show_downloads = portfolio_company_id.blank? || has_investments || has_shareholder_positions
   %>
 
-  <div class="d-flex flex-wrap align-items-center gap-2">
+  <div id="investment_header_actions" class="d-flex flex-wrap align-items-center gap-2">
+    <%# The one primary action stays a button; every upload/view/download entry point lives in the Actions menu below %>
     <% if show_investment_actions %>
-      <%= link_to "New Investment", new_investment_path(portfolio_company_id: params[:portfolio_company_id]), {class: "btn btn-outline-primary ti ti-plus d-inline-flex align-items-center"}  %>
-      <%= link_to new_import_upload_path(
-                    "import_upload[import_type]": "Investment",
-                    "sample_upload": "INVESTMENT_SAMPLE"),
-                  class: "btn btn-outline-success d-inline-flex align-items-center" do %>
-        <i class="ti ti-upload"></i> <%= t("investment.upload_investments") %>
-      <% end %>
-        <%= link_to investments_path(portfolio_company_id: params[:portfolio_company_id], index: true),
-                  class: "btn btn-outline-success" do %>
-        <i class="ti ti-list"></i> View Investments
-      <% end %>
-
-      <% if show_downloads %>
-        <%
-          data_source ||= investments_path(params: params.to_unsafe_h, format: :xlsx)
-          xl_link = download_xl_link(data_source)
-        %>
-
-        <%= link_to xl_link, class: "btn btn-outline-success", data: { turbo: false } do %>
-          <i class="ti ti-download"></i> <%= t("investment.download_investments") %>
-        <% end %>
-      <% end %>
-    <% end %>
-    <% if show_shareholder_upload %>
-
-
-      <%= link_to new_shareholder_position_upload_path(
-                    "sample_upload": "SHAREHOLDER_POSITION_SAMPLE",
-                    "owner_id": params[:portfolio_company_id],
-                    "owner_type": (params[:portfolio_company_id].present? ? "Investor" : nil)),
-                  class: "btn btn-outline-success d-inline-flex align-items-center" do %>
-        <i class="ti ti-upload"></i> <%= "Upload Shareholding Patterns" %>
-      <% end %>
-
-      <%= link_to shareholder_positions_path(portfolio_company_id: params[:portfolio_company_id]),
-                  class: "btn btn-outline-success" do %>
-        <i class="ti ti-list"></i> View Shareholding Patterns
-      <% end %>
-
-
-      <% if show_downloads %>
-        <%
-          shareholder_positions_data_source = shareholder_positions_path(portfolio_company_id: params[:portfolio_company_id], format: :xlsx)
-          shareholder_positions_xl_link = download_xl_link(shareholder_positions_data_source)
-        %>
-
-        <%= link_to shareholder_positions_xl_link, class: "btn btn-outline-success", data: { turbo: false } do %>
-          <i class="ti ti-download"></i> <%= t("investment.download_shareholding_patterns") %>
-        <% end %>
+      <%= link_to new_investment_path(portfolio_company_id: params[:portfolio_company_id]), class: "btn btn-outline-primary d-inline-flex align-items-center" do %>
+        <i class="ti ti-plus me-1"></i> New Investment
       <% end %>
     <% end %>
 
+    <%# A company holding both kinds of data gets no entry points at all, so skip an empty menu %>
+    <% if show_investment_actions || show_shareholder_upload %>
+      <div class="dropdown">
+        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+          <i class="ti ti-settings"></i> Actions
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end">
+          <%# Investments section: upload, list and (only when there is data) download %>
+          <% if show_investment_actions %>
+            <li><h6 class="dropdown-header">Investments</h6></li>
+            <li>
+              <%= link_to new_import_upload_path("import_upload[import_type]": "Investment", "sample_upload": "INVESTMENT_SAMPLE"), class: "dropdown-item" do %>
+                <i class="ti ti-upload me-1"></i> <%= t("investment.upload_investments") %>
+              <% end %>
+            </li>
+            <li>
+              <%= link_to investments_path(portfolio_company_id: params[:portfolio_company_id], index: true), class: "dropdown-item" do %>
+                <i class="ti ti-list me-1"></i> View Investments
+              <% end %>
+            </li>
+            <% if show_downloads %>
+              <% xl_link = download_xl_link(investments_path(params: params.to_unsafe_h, format: :xlsx)) %>
+              <li>
+                <%= link_to xl_link, class: "dropdown-item", data: { turbo: false } do %>
+                  <i class="ti ti-download me-1"></i> <%= t("investment.download_investments") %>
+                <% end %>
+              </li>
+            <% end %>
+          <% end %>
+
+          <%# Divider only when both sections are shown (the global Investments list, or a brand new company) %>
+          <% if show_investment_actions && show_shareholder_upload %>
+            <li><hr class="dropdown-divider"></li>
+          <% end %>
+
+          <%# Shareholding Patterns section: same three entry points for shareholder positions %>
+          <% if show_shareholder_upload %>
+            <li><h6 class="dropdown-header">Shareholding Patterns</h6></li>
+            <li>
+              <%= link_to new_shareholder_position_upload_path(
+                            "sample_upload": "SHAREHOLDER_POSITION_SAMPLE",
+                            "owner_id": params[:portfolio_company_id],
+                            "owner_type": (params[:portfolio_company_id].present? ? "Investor" : nil)),
+                          class: "dropdown-item" do %>
+                <i class="ti ti-upload me-1"></i> Upload Shareholding Patterns
+              <% end %>
+            </li>
+            <li>
+              <%= link_to shareholder_positions_path(portfolio_company_id: params[:portfolio_company_id]), class: "dropdown-item" do %>
+                <i class="ti ti-list me-1"></i> View Shareholding Patterns
+              <% end %>
+            </li>
+            <% if show_downloads %>
+              <% shareholder_positions_xl_link = download_xl_link(shareholder_positions_path(portfolio_company_id: params[:portfolio_company_id], format: :xlsx)) %>
+              <li>
+                <%= link_to shareholder_positions_xl_link, class: "dropdown-item", data: { turbo: false } do %>
+                  <i class="ti ti-download me-1"></i> <%= t("investment.download_shareholding_patterns") %>
+                <% end %>
+              </li>
+            <% end %>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
   </div>
 </div>
 

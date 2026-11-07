@@ -12,7 +12,7 @@ Feature: Cap table sample upload files
   Scenario: The investments sample imports as-is with its subgroup and instrument columns
     Given there is an existing portfolio company "investor_name=AX;category=Portfolio Company"
     When I go to the captable of the portfolio company
-    And I click the "Upload Investments" button
+    And I pick "Upload Investments" from the cap table Actions menu
     Then the upload page should offer the sample file "investments.xlsx"
     When I upload the sample file "investments.xlsx"
     Then the upload should succeed with 2 rows
@@ -40,7 +40,7 @@ Feature: Cap table sample upload files
   Scenario Outline: The investments import accepts the subgroup header as "<header>"
     Given there is an existing portfolio company "investor_name=AX;category=Portfolio Company"
     When I go to the captable of the portfolio company
-    And I click the "Upload Investments" button
+    And I pick "Upload Investments" from the cap table Actions menu
     And I upload an investments file with:
       | Portfolio Company | Category | Currency | Investor Name | <header>      | Investment Type | Funding Round | Quantity | Price | Investment Date | Notes | Update Only |
       | AX                | Other    | USD      | Angel One     | Institutional | Equity          | Seed          | 100      | 10    | 01/01/2025      |       | No          |
@@ -62,7 +62,7 @@ Feature: Cap table sample upload files
       | investor_name     | category | investment_type | funding_round | quantity | price | investment_date | instrument_name | instrument_quantity |
       | NorthInc Ventures | Other    | Convertible     | Series A      | 1500     | 1.0   | 2025-06-25      | CCPS            | 10                  |
     When I go to the captable of the portfolio company
-    And I click the "Upload Investments" button
+    And I pick "Upload Investments" from the cap table Actions menu
     And I upload an update-only investments file for "NorthInc Ventures" with:
       | Subgroup            | Institutional |
       | Instrument Name     | CCPS Series A |
@@ -79,7 +79,7 @@ Feature: Cap table sample upload files
       | investor_name     | category | investment_type | funding_round | quantity | price | investment_date | subgroup      | instrument_name | instrument_quantity |
       | NorthInc Ventures | Other    | Convertible     | Series A      | 1500     | 1.0   | 2025-06-25      | Institutional | CCPS            | 10                   |
     When I go to the captable of the portfolio company
-    And I click the "Upload Investments" button
+    And I pick "Upload Investments" from the cap table Actions menu
     And I upload an update-only investments file for "NorthInc Ventures" with:
       | Quantity | 2000 |
     Then the upload should succeed with 1 row
@@ -92,7 +92,7 @@ Feature: Cap table sample upload files
   Scenario: The shareholder positions sample imports as-is for both of its As Of snapshots
     Given there is an existing portfolio company "investor_name=Ace Ltd;category=Portfolio Company"
     When I go to the captable of the portfolio company
-    And I click the "Upload Shareholding Patterns" button
+    And I pick "Upload Shareholding Patterns" from the cap table Actions menu
     Then the upload page should offer the sample file "shareholder_positions.xlsx"
     When I upload the sample file "shareholder_positions.xlsx"
     Then the upload should succeed with 15 rows
