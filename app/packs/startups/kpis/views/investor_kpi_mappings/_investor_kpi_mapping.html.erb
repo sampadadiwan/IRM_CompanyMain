@@ -1,36 +1,7 @@
+<%# One KPI mapping: the chosen columns (RansackTableRow), then its actions.
+    openspec/changes/grid-columns-inline-settings — D21 %>
 <tr id="<%= dom_id investor_kpi_mapping %>">
-  <td>
-    <%= investor_kpi_mapping.position %>
-  <td>
-    <%= investor_kpi_mapping.investor.investor_name %>
-  </td>
-  <td>
-    <%= investor_kpi_mapping.reported_kpi_name %>
-  </td>
-  <td>
-    <%= investor_kpi_mapping.standard_kpi_name %>
-  </td>
-  <td>
-    <%= investor_kpi_mapping.category %>
-  </td>
-  <td>
-    <%= investor_kpi_mapping.autofill&.humanize %>
-  </td>
-  <td>
-    <%= display_boolean investor_kpi_mapping.base_for_common_size %>
-  </td>
-  <td>
-    <%= display_boolean investor_kpi_mapping.show_in_report %>
-  </td>
-  <td>
-    <%= investor_kpi_mapping.lower_threshold %>
-  </td>
-  <td>
-    <%= investor_kpi_mapping.upper_threshold %>
-  </td>
-  <td>
-    <%= investor_kpi_mapping.rag_rule_summary %>
-  </td>
+  <%= render RansackTableRow.new(model: investor_kpi_mapping, columns:) %>
   <td>
     <%= link_to  t_common(:show), investor_kpi_mapping , {class: "btn btn-outline-primary"}%>
     <%= link_to  t_common(:edit), edit_investor_kpi_mapping_path(investor_kpi_mapping), {class: "btn btn-outline-success"} if policy(investor_kpi_mapping).edit? %>

@@ -61,9 +61,7 @@ class ExpressionOfInterestsController < ApplicationController
     respond_to do |format|
       if @expression_of_interest.update(expression_of_interest_params)
         format.turbo_stream do
-          render turbo_stream: [
-            turbo_stream.replace(@expression_of_interest)
-          ]
+          render turbo_stream: [eoi_row_stream]
         end
         format.html { redirect_to expression_of_interest_url(@expression_of_interest), notice: "Expression of interest was successfully updated." }
         format.json { render :show, status: :ok, location: @expression_of_interest }
@@ -88,9 +86,7 @@ class ExpressionOfInterestsController < ApplicationController
 
     respond_to do |format|
       format.turbo_stream do
-        render turbo_stream: [
-          turbo_stream.replace(@expression_of_interest)
-        ]
+        render turbo_stream: [eoi_row_stream]
       end
       format.html { redirect_to expression_of_interest_url(@expression_of_interest), notice: "EOI was successfully approved." }
       format.json { @expression_of_interest.to_json }
@@ -132,6 +128,16 @@ class ExpressionOfInterestsController < ApplicationController
   end
 
   private
+
+  # The list row again after an update or approve, with the list's columns (the firm's chosen ones or
+  # ExpressionOfInterest::LIST_COLUMNS) and the decorated record the row's cells read
+  # (openspec/changes/grid-columns-inline-settings — D21)
+  def eoi_row_stream
+    columns = RansackTableHeader.new(ExpressionOfInterest, q: nil, turbo_frame: nil, default_columns_map: ExpressionOfInterest::LIST_COLUMNS,
+                                                           current_user:, records: [@expression_of_interest]).columns
+    turbo_stream.replace(@expression_of_interest, partial: "expression_of_interests/expression_of_interest",
+                                                  locals: { expression_of_interest: @expression_of_interest.decorate, columns: })
+  end
 
   # Use callbacks to share common setup or constraints between actions.
   def set_expression_of_interest

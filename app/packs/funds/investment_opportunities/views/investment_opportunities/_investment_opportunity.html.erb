@@ -1,22 +1,7 @@
+<%# One investment opportunity in the row view: the chosen columns (RansackTableRow), then its action.
+    openspec/changes/grid-columns-inline-settings — D21 %>
 <tr id="<%= dom_id investment_opportunity %>">
-  <td>
-    <%= investment_opportunity.company_name %>
-  </td>
-  <td>
-    <%= investment_opportunity.tag_list %>
-  </td>
-  <td>
-    <%= money_to_currency investment_opportunity.fund_raise_amount, params %>
-  </td>
-  <td>
-    <%= money_to_currency investment_opportunity.min_ticket_size, params %>
-  </td>
-  <td>
-    <%= l investment_opportunity.last_date %>
-  </td>
-  <td>
-    <%= investment_opportunity.currency %>
-  </td>
+  <%= render RansackTableRow.new(model: investment_opportunity, columns:) %>
   <td>
     <%= link_to  t_common(:show) , investment_opportunity , {class: "btn btn-outline-primary" }%>
   </td>

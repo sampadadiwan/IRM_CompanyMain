@@ -1,0 +1,91 @@
+<%# One column in the columns list (side panel and Configure Grids). A saved row is sent back by id (its key never
+    comes from the browser, except a derived field's, E24), a new or standard one by key. Locked rows (E2) are not
+    sent. ⌄ opens the row's details: data type, alignment and, for a derived field, its key (D20). On the full
+    Configure Grids page saved rows also get Show / Edit / Delete (D19).
+    Locals: row (Hash from GridColumnsHelper), actions (Boolean, default false) %>
+<% actions = local_assigns.fetch(:actions, false) %>
+<% derived = row[:derived] %>
+<li class="grid-columns-row <%= 'locked' if row[:locked] %>" data-grid-columns-row
+    data-id="<%= row[:id] %>" data-key="<%= row[:key] %>" data-locked="<%= row[:locked] %>"
+    data-derived="<%= derived ? 'true' : 'false' %>" data-stored-alignment="<%= row[:alignment] %>"
+    draggable="<%= !row[:locked] %>">
+  <div class="grid-columns-main">
+    <i class="ti ti-grip-vertical grid-columns-handle" title="Drag to reorder" aria-hidden="true"></i>
+    <div class="grid-columns-name">
+      <input type="text" value="<%= row[:label] %>" maxlength="100" aria-label="Heading for <%= row[:label] %>"
+             data-grid-columns-label <%= 'disabled' if row[:locked] %>>
+      <div class="grid-columns-key" data-grid-columns-key-text><%= GridColumnOptions.clean(row[:key]) %></div>
+    </div>
+    <% if row[:locked] %>
+      <span class="grid-columns-chip" title="Always shown on this page"><i class="ti ti-lock"></i> Always shown</span>
+    <% end %>
+    <% if row[:hidden] %>
+      <span class="grid-columns-chip" data-grid-columns-hidden title="Saved, but this page does not show it; saving keeps it">Not shown on this page</span>
+    <% end %>
+    <% if derived %>
+      <span class="grid-columns-chip" title="A derived field: its key is a path you typed"><i class="ti ti-math-function"></i> Derived</span>
+    <% end %>
+    <span class="grid-columns-chip" data-grid-columns-type-chip><%= row[:type] %></span>
+    <% unless row[:locked] %>
+      <button type="button" class="grid-columns-icon-btn" data-action="grid-columns-form#toggleDetails"
+              title="Data type, alignment<%= derived ? ' and key' : '' %>" aria-label="Details of <%= row[:label] %>">
+        <i class="ti ti-chevron-down"></i>
+      </button>
+    <% end %>
+    <% if actions && row[:id].present? %>
+      <%# D19 — the full page keeps Show / Edit / Delete for a saved column, as before %>
+      <%= link_to grid_view_preference_path(row[:id]), class: "grid-columns-icon-btn", title: "Show", aria: { label: "Show #{row[:label]}" },
+                  data: { turbo_frame: "grid_column_detail", grid_columns_show: true } do %><i class="ti ti-eye"></i><% end %>
+      <%= link_to edit_grid_view_preference_path(row[:id]), class: "grid-columns-icon-btn", title: "Edit", aria: { label: "Edit #{row[:label]}" },
+                  data: { turbo_frame: "grid_column_detail", grid_columns_edit: true } do %><i class="ti ti-edit"></i><% end %>
+      <button type="button" class="grid-columns-icon-btn grid-columns-delete" title="Delete" aria-label="Delete <%= row[:label] %>"
+              data-grid-columns-delete data-action="click->confirm#popup" data-title="Delete column"
+              data-msg="This removes the <%= row[:label] %> column from the grid now. Unsaved changes in the list are lost. Proceed?"
+              data-submit-form="#delete_grid_column_<%= row[:id] %>">
+        <i class="ti ti-trash"></i>
+      </button>
+    <% end %>
+    <button type="button" class="grid-columns-remove" data-action="grid-columns-form#remove"
+            title="Remove from the list (saved when you click Save)" aria-label="Remove <%= row[:label] %>" <%= 'disabled' if row[:locked] %>>
+      <i class="ti ti-x"></i>
+    </button>
+  </div>
+  <% unless row[:locked] %>
+    <div class="grid-columns-details d-none" data-grid-columns-details>
+      <div class="row g-2">
+        <div class="col-6">
+          <label class="form-label small mb-1">Data type</label>
+          <select class="form-select form-select-sm" data-grid-columns-type data-initial="<%= row[:type] %>"
+                  data-action="change->grid-columns-form#typeChanged">
+            <% GridColumnsSave::DATA_TYPES.each do |type| %>
+              <option value="<%= type %>" <%= 'selected' if type == row[:type] %>><%= type %></option>
+            <% end %>
+            <%# A type worked out from the database (Integer, Datetime…) shows as is; it is only sent when changed %>
+            <% if GridColumnsSave::DATA_TYPES.exclude?(row[:type]) %>
+              <option value="<%= row[:type] %>" selected><%= row[:type] %></option>
+            <% end %>
+          </select>
+        </div>
+        <div class="col-6">
+          <label class="form-label small mb-1">Alignment</label>
+          <select class="form-select form-select-sm" data-grid-columns-align data-initial="<%= row[:alignment] %>">
+            <option value="">Default</option>
+            <% { "text-start" => "Left", "text-center" => "Centre", "text-end" => "Right" }.each do |value, name| %>
+              <option value="<%= value %>" <%= 'selected' if value == row[:alignment] %>><%= name %></option>
+            <% end %>
+            <% if row[:alignment].present? && GridColumnsSave::ALIGNMENTS.exclude?(row[:alignment]) %>
+              <option value="<%= row[:alignment] %>" selected><%= row[:alignment] %></option>
+            <% end %>
+          </select>
+        </div>
+        <% if derived %>
+          <div class="col-12">
+            <label class="form-label small mb-1">Key</label>
+            <input type="text" class="form-control form-control-sm" maxlength="255" value="<%= row[:key] %>" data-grid-columns-dkey
+                   placeholder="e.g. investor.custom_fields.relationship_manager">
+          </div>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+</li>

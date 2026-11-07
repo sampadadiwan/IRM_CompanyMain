@@ -12,6 +12,27 @@ class Approval < ApplicationRecord
   include ForInvestor
 
   belongs_to :entity
+
+  # The Approvals list's columns before a firm chooses its own (openspec/changes/grid-columns-inline-settings — D21).
+  # Plain attributes only, so the report builder can query them.
+  STANDARD_COLUMNS = {
+    "Title" => "title",
+    "Due Date" => "due_date"
+  }.freeze
+  # Exactly what the list showed when it was a hand-built table (ApprovalDecorator cells)
+  LIST_COLUMNS = {
+    "Entity" => "entity_name",
+    "Title" => "title_link",
+    "Due Date" => "due_date"
+  }.freeze
+  # The firm's own users (company, fund) also see each status's response count
+  LIST_COLUMNS_WITH_STATS = LIST_COLUMNS.merge("Responses Status" => "responses_status_badges; responses_count").freeze
+  # List-only cells the columns editor offers (never the report builder)
+  GRID_COLUMNS = {
+    "Entity" => "entity_name",
+    "Title (link)" => "title_link",
+    "Responses Status" => "responses_status_badges"
+  }.freeze
   # Associated owner such as Fund, Deal etc. The AccessRights of the owner will be copied over to the approval post creation
   belongs_to :owner, polymorphic: true, optional: true
 

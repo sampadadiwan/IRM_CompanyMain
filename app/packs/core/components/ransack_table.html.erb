@@ -1,3 +1,6 @@
+<%# ① The columns icon floats on the table's corner (openspec/changes/grid-columns-inline-settings — D1) %>
+<div class="grid-columns-host" data-controller="grid-columns">
+<%= render partial: "grid_columns/button", locals: { header: @ransack_table_header } %>
 <div class="table-responsive">
     <table id="<%= @model.model_name.plural %>" class="table table-bordered dataTable action_table hover <%= @table_css_class %>">
     <%= render @ransack_table_header %>
@@ -24,4 +27,5 @@
             </div>
         <% end %>
     <% end %>
+</div>
 </div>

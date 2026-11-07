@@ -258,7 +258,6 @@ app/packs/secondaries/offers/views/offers/_offer_steps.html.erb | t('secondaries
 : Translation text from config/locales (developer-written).
 ? app/packs/secondaries/offers/views/offers/_offer_steps.html.erb | t('secondaries_actions.upload_documents_complete_offer').html_safe
 : Translation text from config/locales (developer-written).
-app/packs/secondaries/secondary_sales/views/allocations/_index.html.erb | raw(pagy_bootstrap_nav(@pagy)): Pagy pagination HTML built by the gem from page numbers; no user text.
 app/packs/startups/deals/views/deal_activities/index.html.erb | raw(pagy_bootstrap_nav(@pagy)): Pagy pagination HTML built by the gem from page numbers; no user text.
 ? 'app/packs/startups/deals/views/deal_investors/create.turbo_stream.erb | render(template: "deal_investors/show", formats: [:json], locals: { deal_investor: @deal_investor }).html_safe'
 : 'Jbuilder JSON inside a <script>: Jbuilder escapes <, > and & (\u003c…), so a value cannot close the script tag.'
@@ -266,7 +265,6 @@ app/packs/startups/deals/views/deal_activities/index.html.erb | raw(pagy_bootstr
 : Pagy pagination HTML built by the gem from page numbers; no user text.
 'app/packs/startups/deals/views/deals/consolidated_access_rights.html.erb | raw(pagy_info(@pagy, item_name: "access group"))': Pagy pagination HTML built by the gem from page numbers; no user text.
 app/packs/startups/deals/views/warehouse_items/index.html.erb | <%== ( pagy_nav(@pagy) if @pagy.pages > 1 ) %>: Pagy pagination HTML built by the gem from page numbers; no user text.
-app/packs/startups/investments/views/investments/_index.html.erb | raw(pagy_bootstrap_nav(@pagy)): Pagy pagination HTML built by the gem from page numbers; no user text.
 app/packs/startups/kpis/views/kpi_reports/_grid_view_table.html.erb | kpi_percentage_class(kpi, ikm).html_safe: Helper returns a CSS class name chosen in code.
 app/packs/startups/kpis/views/kpis/_grid_view.html.erb | kpi_percentage_class(kpi, ikm).html_safe: Helper returns a CSS class name chosen in code.
 ? 'app/packs/startups/kpis/views/kpis/_grid_view.html.erb | raw(pagy_bootstrap_nav(@pagy_series, anchor_string: %(data-turbo-frame="kpis_frame" data-remote="true")))'

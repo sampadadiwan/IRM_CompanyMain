@@ -15,51 +15,11 @@
   </span>
 </div>
 
-<div class="table-responsive">
-
-  <table id="deal_investors" class="table table-bordered dataTable jqDataTable">
-    <thead>
-      <tr>
-        <th>
-          Deal
-        </th>
-        <th>
-          Start Date
-        </th>
-        <th>
-          Investor
-        </th>
-        <th>
-          Entity
-        </th>
-        <th>
-          Pre Money Valuation
-        </th>
-        <th>
-          Primary Amount
-        </th>
-        <th>
-          Secondary Investment
-        </th>
-        <th>
-          Company Advisor
-        </th>
-        <th>
-          Investor Advisor
-        </th>
-        <th>
-          Action
-        </th>
-
-      </tr>
-    </thead>
-    <tbody>
-      <% deal_investors.each do |deal_investor| %>
-        <%= render deal_investor %>
-      <% end %>
-    </tbody>
-  </table>
-
-  </div>
+<%# D21 — the firm's chosen columns (or the list's own, DealInvestor::LIST_COLUMNS), sorted, searched and paged in
+    the page by jQuery DataTables (the datatable controller sits around this partial in index.html.erb).
+    openspec/changes/grid-columns-inline-settings %>
+<%= render RansackTable.new(DealInvestor, q: @q, default_columns_map: DealInvestor::LIST_COLUMNS, current_user: current_user,
+                            records: deal_investors, report_id: params["report_id"], turbo_frame: "deal_investors_frame",
+                            referrer: request.referrer, pagy: nil, table_css_class: "jqDataTable", sortable: false) %>
 
 <% end %>

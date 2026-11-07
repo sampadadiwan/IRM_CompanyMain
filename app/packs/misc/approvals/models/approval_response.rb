@@ -7,6 +7,23 @@ class ApprovalResponse < ApplicationRecord
 
   belongs_to :entity
   belongs_to :investor
+
+  # The Approval Responses list's columns before a firm chooses its own (openspec/changes/grid-columns-inline-settings
+  # — D21). Plain attributes only, so the report builder can query them.
+  STANDARD_COLUMNS = {
+    "Status" => "status",
+    "Updated On" => "updated_at"
+  }.freeze
+  # Exactly what the list showed when it was a hand-built table (ApprovalResponseDecorator cells)
+  LIST_COLUMNS = {
+    "Investor" => "investor_link",
+    "Tag" => "investor_tags",
+    "Response By" => "response_user_name",
+    "Status" => "status_badge",
+    "Updated On" => "updated_on"
+  }.freeze
+  # List-only cells the columns editor offers (never the report builder)
+  GRID_COLUMNS = LIST_COLUMNS.transform_keys { |label| label == "Status" ? "Status (badge)" : label }.freeze
   # This is the folio, offer, deal_investor
   belongs_to :owner, polymorphic: true, optional: true
   belongs_to :response_entity, class_name: "Entity"

@@ -154,6 +154,32 @@ class Fund < ApplicationRecord
     "Tags; text-col" => "tag_list; text-col"
   }.freeze
 
+  # The Funds list's columns before a firm chooses its own (openspec/changes/grid-columns-inline-settings — D21):
+  # exactly what the list showed when it was a hand-built table. Name and tags are decorator cells (FundDecorator);
+  # money formats through RansackTableRow.
+  LIST_COLUMNS = {
+    "Name; text-col" => "name_link; text-col",
+    "Category; text-col" => "category; text-col",
+    "Tag List; text-col" => "tag_badges; text-col",
+    "Committed; amount-col text-end" => "committed_amount; amount-col text-end",
+    "Collected; amount-col text-end" => "collected_amount; amount-col text-end",
+    "Distributed; amount-col text-end" => "distributed_amount_abs; amount-col text-end"
+  }.freeze
+  # An investor sees funds of several firms: the firm comes first
+  INVESTOR_LIST_COLUMNS = { "Entity; text-col" => "entity_name; text-col" }.merge(LIST_COLUMNS).freeze
+
+  # List-only columns the columns editor offers (decorator cells and money), kept out of STANDARD/ADDITIONAL so
+  # the report builder never queries them (D21)
+  GRID_COLUMNS = {
+    "Name (link); text-col" => "name_link; text-col",
+    "Tag badges; text-col" => "tag_badges; text-col",
+    "Entity; text-col" => "entity_name; text-col",
+    "Committed; amount-col text-end" => "committed_amount; amount-col text-end",
+    "Collected; amount-col text-end" => "collected_amount; amount-col text-end",
+    "Called; amount-col text-end" => "call_amount; amount-col text-end",
+    "Distributed; amount-col text-end" => "distributed_amount_abs; amount-col text-end"
+  }.freeze
+
   monetize  :tracking_committed_amount_cents, :tracking_call_amount_cents,
             :tracking_collected_amount_cents, :tracking_distribution_amount_cents,
             with_currency: ->(f) { f.tracking_currency.presence || f.currency }

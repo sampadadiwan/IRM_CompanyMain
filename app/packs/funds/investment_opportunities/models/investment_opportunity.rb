@@ -36,6 +36,18 @@ class InvestmentOpportunity < ApplicationRecord
     self.currency ||= entity.currency
   end
 
+  # Grid columns (openspec/changes/grid-columns-inline-settings — D21): what the Investment Opportunities row view
+  # (?view=row) showed when it was a hand-built table — all plain attributes, so they are also the list's own.
+  STANDARD_COLUMNS = {
+    "Company Name" => "company_name",
+    "Tags" => "tag_list",
+    "Fund Raise Amount" => "fund_raise_amount",
+    "Min Ticket Size" => "min_ticket_size",
+    "Last Date" => "last_date",
+    "Currency" => "currency"
+  }.freeze
+  LIST_COLUMNS = STANDARD_COLUMNS
+
   monetize :fund_raise_amount_cents, :valuation_cents,
            :min_ticket_size_cents, :eoi_amount_cents, with_model_currency: :currency
 

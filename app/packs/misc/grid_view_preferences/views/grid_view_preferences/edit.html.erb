@@ -1,1 +1,5 @@
-<%= render "form", grid_view_preference: @grid_view_preference %>
+<%# Editing one saved grid column, in the detail panel on Configure Grids (frame "grid_column_detail").
+    openspec/changes/grid-columns-inline-settings — D19 %>
+<%= turbo_frame_tag "grid_column_detail" do %>
+  <%= render "form", grid_view_preference: @grid_view_preference %>
+<% end %>

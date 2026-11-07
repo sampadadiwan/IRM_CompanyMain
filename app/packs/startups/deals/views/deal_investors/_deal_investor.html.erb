@@ -1,43 +1,6 @@
+<%# One deal investor in the Deal Investors list: the chosen columns (RansackTableRow), then its action — D21 %>
 <tr id="<%= dom_id deal_investor %>">
-    <td>
-        <% if belongs_to_entity_id?(current_user, deal_investor.entity_id) %>
-            <%= link_to deal_investor.deal_name, deal_investor.deal %>
-        <% else %>
-            <%= deal_investor.deal_name %>
-        <% end %>
-        
-    </td>
-    <td>
-        <%= l deal_investor.deal.start_date if deal_investor.deal.start_date  %>
-    </td>
-    <td>
-        <%= belongs_to_entity_id?(current_user, deal_investor.entity_id) ? 
-            link_to(deal_investor.investor_name, deal_investor) : deal_investor.investor_name %>
-        <div>
-            <span class="badge <%= status_badge(deal_investor) %>">
-                <%= deal_investor.status %>
-            </span>            
-        </div>
-    </td>
-    <td>
-        <%= deal_investor.entity.name %>
-    </td>
-    <td>
-        <%= money_to_currency deal_investor.pre_money_valuation, params %>
-    </td>
-    <td>
-        <%= money_to_currency deal_investor.primary_amount, params %>
-    </td>
-    <td>
-        <%= money_to_currency deal_investor.secondary_investment, params %>
-    </td>
-    <td>
-        <%= deal_investor.company_advisor %>
-    </td>
-    <td>
-        <%= deal_investor.investor_advisor %>
-    </td>
-    
+    <%= render RansackTableRow.new(model: deal_investor, columns:) %>
 
     <td>
         <%= link_to  t_common(:show), deal_investor, class: "btn btn-outline-primary" %>

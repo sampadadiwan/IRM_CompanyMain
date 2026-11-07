@@ -1,22 +1,7 @@
+<%# One distribution in the Distributions list: the chosen columns (RansackTableRow), then its actions.
+    openspec/changes/grid-columns-inline-settings — D21 %>
 <tr id="<%= dom_id capital_distribution %>">
-  <td class="text-col">
-    <%= link_to capital_distribution.title, capital_distribution %>
-  </td>
-  <td class="date-col">
-    <%= l capital_distribution.distribution_date if capital_distribution.distribution_date %>
-  </td>
-  <td class="num-col">
-    <%= money_to_currency capital_distribution.gross_amount, params %>
-  </td>
-  <td class="num-col">
-    <%= money_to_currency capital_distribution.distribution_amount, params %>
-  </td>
-  <td class="num-col">
-    <%= money_to_currency capital_distribution.completed_distribution_amount, params %>
-  </td>
-  <td class="text-col">
-    <%= display_boolean capital_distribution.approved %>
-  </td>
+  <%= render RansackTableRow.new(model: capital_distribution, columns:) %>
   <td class="action-col">
     <div class="btn-group">
       <div class="dropdown">

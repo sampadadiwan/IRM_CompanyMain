@@ -55,30 +55,14 @@
                       { class: "btn btn-outline-success ti ti-upload", data: {bs_toggle: "tooltip", bs_title: "Opens page to bulk upload Investment Instruments in excel"} } %>
     </div>
   </div>
-  <div class="table-responsive" data-controller="datatable">
-    <table id="investment_instruments" class="table table-bordered dataTable jqDataTable">
-      <thead>
-        <tr>
-          <% if params[:portfolio_company_id].blank? %>
-            <th class="text-col">
-              Portfolio Company
-            </th>
-          <% end %>
-          <th class="text-col">
-            Name
-          </th>
-          <th class="text-col">
-            Currency
-          </th>
-          <th class="action-col">
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        <% investment_instruments.each do |investment_instrument| %>
-          <%= render investment_instrument %>
-        <% end %>
-      </tbody>
-    </table>
+  <%# D21 — the firm's chosen columns (or the list's own, InvestmentInstrument::LIST_COLUMNS), sorted, searched and
+      paged in the page by jQuery DataTables (sortable: false, pagy: nil). openspec/changes/grid-columns-inline-settings %>
+  <% list_columns = params[:portfolio_company_id].blank? ? InvestmentInstrument::ALL_COMPANIES_LIST_COLUMNS : InvestmentInstrument::LIST_COLUMNS %>
+  <% instruments_table = RansackTable.new(InvestmentInstrument, q: @q, default_columns_map: list_columns, current_user: current_user,
+                                          records: investment_instruments, report_id: params["report_id"],
+                                          turbo_frame: "investment_instruments_list", referrer: request.referrer, pagy: nil,
+                                          table_css_class: "jqDataTable", sortable: false) %>
+  <div data-controller="datatable" data-datatable-money-columns-value="<%= instruments_table.money_column_indexes %>">
+    <%= render instruments_table %>
   </div>
 <% end %>

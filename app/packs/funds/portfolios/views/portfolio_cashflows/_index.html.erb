@@ -17,38 +17,13 @@
   </div>
 
 </div>
-<div class="table-responsive" data-controller="datatable" data-datatable-responsive-details-value=true>
-  <table id="portfolio_cashflows" class="table table-bordered dataTable jqDataTable">
-    <thead>
-      <tr>
-        <% if params.include?("portfolio_company_id") %>
-          <th>
-            Fund Name
-          </th>
-        <% end %>
-        <th>
-          Instrument
-        </th>
-        <th>
-          Payment Date
-        </th>
-        <th>
-          Amount
-        </th>
-        <th>
-          Tag
-        </th>
-        <th>
-          Notes
-        </th>
-        <th>
-        </th>
-      </tr>
-    </thead>
-    <tbody>
-      <% portfolio_cashflows.each do |portfolio_cashflow| %>
-        <%= render portfolio_cashflow %>
-      <% end %>
-    </tbody>
-  </table>
+<%# D21 — the firm's chosen columns (or the list's own, PortfolioCashflow::LIST_COLUMNS), sorted, searched and paged
+    in the page by jQuery DataTables (sortable: false, pagy: nil). openspec/changes/grid-columns-inline-settings %>
+<% list_columns = params[:portfolio_company_id].present? ? PortfolioCashflow::WITH_FUND_LIST_COLUMNS : PortfolioCashflow::LIST_COLUMNS %>
+<% cashflows_table = RansackTable.new(PortfolioCashflow, q: @q, default_columns_map: list_columns, current_user: current_user,
+                                      records: portfolio_cashflows, report_id: params["report_id"], turbo_frame: "portfolio_cashflows_frame",
+                                      referrer: request.referrer, pagy: nil, table_css_class: "jqDataTable", sortable: false) %>
+<div data-controller="datatable" data-datatable-responsive-details-value=true
+     data-datatable-money-columns-value="<%= cashflows_table.money_column_indexes %>">
+  <%= render cashflows_table %>
 </div>

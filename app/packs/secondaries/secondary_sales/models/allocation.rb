@@ -22,6 +22,30 @@ class Allocation < ApplicationRecord
 
   monetize :amount_cents, with_currency: ->(s) { s.entity.currency }
 
+  # The Allocations list's columns before a firm chooses its own (openspec/changes/grid-columns-inline-settings —
+  # D21). Plain attributes only, so the report builder can query them.
+  STANDARD_COLUMNS = {
+    "Allocation Quantity" => "quantity",
+    "Allocation Price" => "price",
+    "Allocation Amount" => "amount",
+    "Notes" => "notes",
+    "Verified" => "verified"
+  }.freeze
+  # Exactly what the list showed when it was a hand-built table. The offer / interest cells are AllocationDecorator
+  # methods named after the Ransack sort attributes the list sorted by, so the heading sort links keep working.
+  LIST_COLUMNS = {
+    "Offer" => "offer_full_name",
+    "Offer Investor" => "offer_investor_investor_name",
+    "Offer Price" => "offer_price",
+    "Offer Quantity" => "offer_quantity",
+    "Interest" => "interest_buyer_entity_name",
+    "Interest Investor" => "interest_investor_investor_name",
+    "Interest Price" => "interest_price",
+    "Interest Quantity" => "interest_quantity"
+  }.merge(STANDARD_COLUMNS).freeze
+  # List-only cells the columns editor offers (never the report builder)
+  GRID_COLUMNS = LIST_COLUMNS.except(*STANDARD_COLUMNS.keys).freeze
+
   scope :verified, -> { where(verified: true) }
   scope :unverified, -> { where(verified: false) }
 

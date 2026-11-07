@@ -1,13 +1,14 @@
 import { Controller } from "@hotwired/stimulus"
+import { bindEscape, showToast, refreshPage, restoreScroll, prefersReducedMotion } from "custom/side_panel"
 
 // Widget settings in place — openspec/changes/archive/2026-11-07-dashboard-widget-inline-settings (cards ②, ⑥, ⑦; D4, D5, D7).
 // Sits on a dashboard's widget row. The settings icon loads the form into the popup's frame; this controller
 // opens the panel when the form arrives, and when the save answers with the saved marker it closes the panel and
 // reloads only that widget (or the whole page after the dashboard's defaults were saved).
+// Toast, Esc, page refresh and reduced motion are shared with the table columns and custom fields panels
+// (custom/side_panel.js — openspec/changes/grid-columns-inline-settings D12)
 const FRAME_ID = "widget_settings"
-const SCROLL_KEY = "widgetSettingsScrollY"
 const HIGHLIGHT_MS = 1200
-const TOAST_MS = 3000
 
 export default class extends Controller {
   static targets = ["modal"]
@@ -16,16 +17,9 @@ export default class extends Controller {
     this.onFrameLoad = this.frameLoaded.bind(this)
     document.addEventListener("turbo:frame-load", this.onFrameLoad)
     // Esc closes the panel wherever keyboard focus is (Bootstrap's own Esc only works with focus inside it)
-    this.onKeydown = (event) => {
-      if (event.key === "Escape" && this.hasModalTarget && this.modalTarget.classList.contains("show")) this.modal().hide()
-    }
-    document.addEventListener("keydown", this.onKeydown)
+    this.onKeydown = bindEscape(() => (this.hasModalTarget ? this.modalTarget : null))
     // D5 — after a full refresh, put the page back where it was
-    const savedScroll = sessionStorage.getItem(SCROLL_KEY)
-    if (savedScroll !== null) {
-      sessionStorage.removeItem(SCROLL_KEY)
-      window.scrollTo(0, parseInt(savedScroll, 10))
-    }
+    restoreScroll()
     if (this.hasModalTarget) {
       // Empty the frame when the panel closes, so the next widget's panel never flashes the previous form,
       // and give keyboard focus back to the icon that opened it
@@ -82,10 +76,10 @@ export default class extends Controller {
     this.reloadWidget(container, widgetFrame, sizeClass, label)
   }
 
-  // D4 — reload one widget through the page's own URL, so the page rebuilds its context (fund, company, filters)
+  // D4 — reload one widget through the dashboard's own URL, so the page rebuilds its context (fund, company, filters)
   reloadWidget(container, widgetFrame, sizeClass, label) {
     container.classList.add("widget-refreshing")
-    const url = new URL(window.location.href)
+    const url = new URL(this.dashboardUrl())
     url.searchParams.set("only_widget", container.id)
 
     const done = (ok) => {
@@ -110,10 +104,32 @@ export default class extends Controller {
     widgetFrame.src = url.toString()
   }
 
-  // D5 — after saving the defaults every widget's key changes: refresh the page in place, keeping the scroll
+  // D5 — after saving the defaults every widget's key changes: refresh the page in place, keeping the scroll.
+  // A dashboard loaded into a frame (the fund page's Portfolio Dashboard tab) reloads just that frame, so the
+  // page keeps its open tab; restoreScroll runs again when this controller reconnects on the new content.
   refreshPage() {
-    sessionStorage.setItem(SCROLL_KEY, String(window.scrollY))
-    window.Turbo.visit(window.location.href, { action: "replace" })
+    const frame = this.dashboardFrame()
+    if (frame) {
+      refreshPage(null, frame)
+    } else {
+      refreshPage()
+    }
+  }
+
+  // The frame the dashboard was loaded into from its own URL (e.g. funds/_owner_fund_details'
+  // portfolio_dashboard_frame → /funds/:id/dashboard?dashboard_name=Portfolio+Dashboard), or null when the
+  // dashboard is the page itself. Searched from above the widget row, so a widget's own frame (which gets a src
+  // after its first reload) and the settings panel's frame never match.
+  dashboardFrame() {
+    return this.element.parentElement?.closest("turbo-frame[src]") || null
+  }
+
+  // The URL that draws this dashboard: the browser's URL only when the dashboard is the page itself — a frame's
+  // host page (/funds/:id) has no widget frames, so asking it for ?only_widget= answered "This section couldn't load"
+  dashboardUrl() {
+    const frame = this.dashboardFrame()
+    // A frame's src may be relative; resolve it against the page
+    return frame ? new URL(frame.getAttribute("src"), window.location.href).toString() : window.location.href
   }
 
   swapSizeClass(container, sizeClass) {
@@ -130,26 +146,7 @@ export default class extends Controller {
 
   // ⑦ "<widget> updated", bottom-right, for a few seconds
   toast(label) {
-    let area = document.querySelector(".widget-settings-toast-area")
-    if (!area) {
-      area = document.createElement("div")
-      area.className = "widget-settings-toast-area"
-      document.body.appendChild(area)
-    }
-    const toast = document.createElement("div")
-    toast.className = "toast widget-settings-toast align-items-center"
-    toast.setAttribute("role", "status")
-    toast.setAttribute("aria-live", "polite")
-    toast.dataset.widgetSettingsToast = ""
-    const body = document.createElement("div")
-    body.className = "toast-body d-flex align-items-center gap-2"
-    body.innerHTML = '<i class="ti ti-circle-check text-success fs-5"></i>'
-    body.appendChild(document.createTextNode(label || "Saved"))
-    toast.appendChild(body)
-    area.appendChild(toast)
-    const instance = window.bootstrap.Toast.getOrCreateInstance(toast, { delay: TOAST_MS, animation: !this.reducedMotion() })
-    toast.addEventListener("hidden.bs.toast", () => toast.remove())
-    instance.show()
+    showToast(label)
   }
 
   // ② The settings panel (a Bootstrap offcanvas sliding in from the right)
@@ -162,6 +159,6 @@ export default class extends Controller {
   }
 
   reducedMotion() {
-    return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    return prefersReducedMotion()
   }
 }

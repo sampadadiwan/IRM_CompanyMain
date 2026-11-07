@@ -67,51 +67,19 @@
                  long_description: FundStatsAgent::LONG_DESCRIPTION %>
     <% end %>
   </div>
-  <div class="table-responsive" data-controller="datatable" data-datatable-responsive-details-value=false>
+  <%# D21 — the firm's chosen columns (or the list's own, Fund::LIST_COLUMNS), sorted, searched and paged in the page
+      by jQuery DataTables: sortable: false (no Ransack sort links), pagy: nil (DataTables pages).
+      openspec/changes/grid-columns-inline-settings — H19 %>
+  <% list_columns = current_user.curr_role_investor? ? Fund::INVESTOR_LIST_COLUMNS : Fund::LIST_COLUMNS %>
+  <% funds_table = RansackTable.new(Fund, q: @q, default_columns_map: list_columns, current_user: current_user, records: funds,
+                                    report_id: params["report_id"], turbo_frame: "funds_frame", referrer: request.referrer,
+                                    snapshot: params[:snapshot], pagy: nil, table_css_class: "jqDataTable", sortable: false) %>
+  <%# Responsive details on (the ▶ expander): a firm's own columns may not all fit; folded ones stay reachable %>
+  <div data-controller="datatable" data-datatable-responsive-details-value=true
+       data-datatable-money-columns-value="<%= funds_table.money_column_indexes %>">
     <span id="funds-table-search-help" class="visually-hidden" aria-live="polite">
       Table content updates as you type in the search field.
     </span>
-    <table id="funds" class="table table-bordered dataTable jqDataTable" aria-describedby="funds-table-search-help">
-      <thead>
-        <tr>
-          <% if current_user.curr_role_investor? %>
-            <th class="text-col">
-              Entity
-            </th>
-          <% end %>
-          <th class="text-col">
-            Name
-          </th>
-          <th class="text-col">
-            Category
-          </th>
-          <th class="text-col">
-            Tag List
-          </th>
-          <th class="amount-col text-end">
-            Committed
-          </th>
-          <th class="amount-col text-end">
-            Collected
-          </th>
-          <th class="amount-col text-end">
-            Distributed
-          </th>
-          <% if params[:snapshot].present? %>
-            <th class="date-col">
-              Snapshot Date
-            </th>
-          <% end %>
-          <th class="action-col">
-             Actions
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        <% funds.each do |fund| %>
-          <%= render "/funds/fund", fund: fund %>
-        <% end %>
-      </tbody>
-    </table>
+    <%= render funds_table %>
   </div>
 <% end %>

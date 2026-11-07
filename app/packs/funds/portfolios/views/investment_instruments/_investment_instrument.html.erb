@@ -1,15 +1,6 @@
+<%# One instrument in the Investment Instruments list: the chosen columns (RansackTableRow), then its actions — D21 %>
 <tr id="<%= dom_id investment_instrument %>">
-  <% if params[:portfolio_company_id].blank? %>
-    <td class="text-col">
-      <%= link_to investment_instrument.portfolio_company %>
-    </td>
-  <% end %>
-  <td class="text-col">
-    <%= link_to investment_instrument.name, investment_instrument %>
-  </td>
-  <td class="text-col">
-    <%= investment_instrument.currency %>
-  </td>
+  <%= render RansackTableRow.new(model: investment_instrument, columns:) %>
   <td class="action-col">
     <%= link_to  t_common(:show), investment_instrument , {class: "btn btn-outline-primary ti ti-eye"}%>
   </td>

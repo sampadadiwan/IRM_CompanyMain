@@ -25,7 +25,7 @@
           <td class="date-col"><%= l c.expiry_date %></td>
           <td class="num-col"><%= last_val ? money_to_currency(Money.new(last_val.value_cents, c.currency), params) : "—" %></td>
           <td class="text-col"><%= last_val ? [last_val.source.capitalize, last_val.provider].compact_blank.join(" · ") : "—" %></td>
-          <td class="action-col"><%= link_to t_common(:show), derivative_contract_path(c), class: "btn btn-sm btn-outline-primary" %></td>
+          <td class="action-col"><%= link_to derivative_contract_path(c), class: "btn btn-sm btn-outline-primary" do %><i class="ti ti-eye"></i> <%= t_common(:show) %><% end %></td>
         </tr>
       <% end %>
     </tbody>

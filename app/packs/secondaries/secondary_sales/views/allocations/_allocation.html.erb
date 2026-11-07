@@ -1,51 +1,11 @@
+<%# One allocation in the Allocations list: the chosen columns (RansackTableRow), then its actions.
+    openspec/changes/grid-columns-inline-settings — D21 %>
+<%# RansackTable passes a decorated record; SaleBasePolicy picks the role policy from record.class, so ask it with the
+    record itself %>
 <tr id="<%= dom_id allocation %>">
-  <td>
-    <%= link_to allocation.offer.full_name, allocation.offer %>
-  </td>
-  <td>
-    <%= allocation.offer.investor.investor_name %>
-  </td>
-  <td>
-    <%= number_with_delimiter allocation.offer.price %>
-  </td>
-  <td>
-    <%= number_with_delimiter allocation.offer.quantity %>
-    <% if params[:debug].present? %>
-      <div class="small text-muted"> <%= allocation.avail_offer_quantity %></div>
-    <% end %>
-  </td>
-  <td>
-    <%= link_to allocation.interest.buyer_entity_name, allocation.interest %>
-  </td>
-  <td>
-    <%= allocation.interest.investor.investor_name %>
-  </td>
-  <td>
-    <%= number_with_delimiter allocation.interest.price %>
-  </td>
-  <td>
-    <%= allocation.interest.quantity %>
-    <% if params[:debug].present? %>
-      <div class="small text-muted"> <%= allocation.avail_interest_quantity %> </div>
-    <% end %>
-  </td>
-  <td>
-    <%= number_with_delimiter allocation.quantity %>
-  </td>
-  <td>
-    <%= number_with_delimiter allocation.price %>
-  </td>
-  <td>
-    <%= money_to_currency allocation.amount, params %>
-  </td>
-  <td>
-    <%= allocation.notes %>
-  </td>
-  <td>
-    <%= display_boolean allocation.verified %>
-  </td>
+  <%= render RansackTableRow.new(model: allocation, columns:) %>
   <td>
     <%= link_to  t_common(:show), allocation , {class: "btn btn-outline-primary ti ti-eye"}%>
-    <%= link_to  t_common(:edit), edit_allocation_path(allocation), {class: "btn btn-outline-success ti ti-edit"} if policy(allocation).update? %>
+    <%= link_to  t_common(:edit), edit_allocation_path(allocation), {class: "btn btn-outline-success ti ti-edit"} if policy(allocation.try(:decorated?) ? allocation.object : allocation).update? %>
   </td>
 </tr>

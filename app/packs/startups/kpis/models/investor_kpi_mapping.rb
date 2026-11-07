@@ -20,6 +20,38 @@ class InvestorKpiMapping < ApplicationRecord
   # "Addendum: prior-period comparator" in docs/modules/portfolio/kpis/kpi_rag_rules_redesign.md.
   PRIOR_PERIOD_COMPARATOR = "PriorPeriod".freeze
 
+  # Grid columns (openspec/changes/grid-columns-inline-settings — D21). STANDARD_COLUMNS: plain attributes, so the
+  # report builder can query them. LIST_COLUMNS: what the Investor KPI Mappings list showed when it was a hand-built
+  # table (rich cells are InvestorKpiMappingDecorator methods). GRID_COLUMNS: list-only cells for the columns editor.
+  STANDARD_COLUMNS = {
+    "Position" => "position",
+    "Reported Kpi Name" => "reported_kpi_name",
+    "Standard Kpi Name" => "standard_kpi_name",
+    "Category" => "category",
+    "Lower Threshhold" => "lower_threshold",
+    "Upper Threshold" => "upper_threshold"
+  }.freeze
+  LIST_COLUMNS = {
+    "Position" => "position",
+    "Investor" => "investor.investor_name",
+    "Reported Kpi Name" => "reported_kpi_name",
+    "Standard Kpi Name" => "standard_kpi_name",
+    "Category" => "category",
+    "Auto Fill" => "autofill_label",
+    "Common Size" => "common_size_badge",
+    "Show In Report" => "show_in_report_badge",
+    "Lower Threshhold" => "lower_threshold",
+    "Upper Threshold" => "upper_threshold",
+    "RAG Rule" => "rag_rule_summary"
+  }.freeze
+  GRID_COLUMNS = {
+    "Investor" => "investor.investor_name",
+    "Auto Fill" => "autofill_label",
+    "Common Size" => "common_size_badge",
+    "Show In Report" => "show_in_report_badge",
+    "RAG Rule" => "rag_rule_summary"
+  }.freeze
+
   belongs_to :entity
   belongs_to :investor
   acts_as_list scope: :investor, add_new_at: :bottom

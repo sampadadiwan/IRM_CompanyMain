@@ -1,0 +1,5 @@
+<%# ④ → ⑥ The save succeeded: the panel controller closes the panel and reloads the table's frame.
+    openspec/changes/grid-columns-inline-settings — card ⑥ %>
+<%= turbo_frame_tag "grid_columns", class: "widget-settings-frame" do %>
+  <div data-grid-columns-saved data-label="<%= label %>"></div>
+<% end %>

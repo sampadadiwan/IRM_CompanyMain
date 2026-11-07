@@ -193,8 +193,8 @@
             <div class="mb-1"><%= f.label :notes, class: "form-label" %><%= f.text_field :notes, class: "form-control" %></div>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal"><%= t_common(:cancel) %></button>
-            <%= f.submit "Record event", class: "btn btn-outline-success" %>
+            <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal"><i class="ti ti-x"></i> <%= t_common(:cancel) %></button>
+            <%= f.button type: "submit", class: "btn btn-outline-success" do %><i class="ti ti-check"></i> Record event<% end %>
           </div>
         <% end %>
       </div>
