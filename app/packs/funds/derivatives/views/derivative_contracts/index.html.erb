@@ -3,12 +3,19 @@
   <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0">Derivatives — <%= @fund.name %></h1>
     <div>
-      <% %w[open closed all].each do |st| %>
-        <%= link_to st.capitalize, fund_derivative_contracts_path(@fund, status: st), class: "btn btn-sm #{@status == st ? 'btn-primary' : 'btn-outline-secondary'}" %>
+      <%# Status filters: each carries its own icon, same size as the action buttons beside them %>
+      <% { "open" => "ti-lock-open", "closed" => "ti-lock", "all" => "ti-list" }.each do |st, icon| %>
+        <%= link_to fund_derivative_contracts_path(@fund, status: st), class: "btn #{@status == st ? 'btn-primary' : 'btn-outline-secondary'}" do %>
+          <i class="ti <%= icon %>"></i> <%= st.capitalize %>
+        <% end %>
       <% end %>
       <% if policy(DerivativeContract.new(fund: @fund, entity_id: @fund.entity_id)).create? %>
-        <%= link_to "Upload valuations", new_import_upload_path("import_upload[import_type]": "DerivativeEvent", "import_upload[owner_type]": "Fund", "import_upload[owner_id]": @fund.id), class: "btn btn-outline-primary ti ti-upload" %>
-        <%= link_to "New contract", new_fund_derivative_contract_path(@fund), class: "btn btn-outline-primary ti ti-plus" %>
+        <%= link_to new_import_upload_path("import_upload[import_type]": "DerivativeEvent", "import_upload[owner_type]": "Fund", "import_upload[owner_id]": @fund.id), class: "btn btn-outline-primary" do %>
+          <i class="ti ti-upload"></i> Upload valuations
+        <% end %>
+        <%= link_to new_fund_derivative_contract_path(@fund), class: "btn btn-outline-primary" do %>
+          <i class="ti ti-plus"></i> New contract
+        <% end %>
       <% end %>
     </div>
   </div>
