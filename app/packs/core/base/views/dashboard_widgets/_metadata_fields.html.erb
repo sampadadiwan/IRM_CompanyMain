@@ -62,8 +62,18 @@
 
       <div class="col">
         <div class="form-group mb-0">
+          <%# compact: the settings panel on a dashboard (openspec/changes/dashboard-widget-inline-settings) — an icon
+              for the kind of setting and an ⓘ tooltip carrying the hint, instead of hint text under the field %>
+          <% compact = local_assigns[:compact] %>
+          <% kind = if is_boolean then :boolean elsif choices || options then :choice elsif is_integer || data_type == "number" then :number elsif data_type == "array" then :list else :text end %>
           <label class="form-label fw-bold small text-muted mb-1">
+            <% if compact %><i class="ti <%= metadata_field_icon(kind, key) %> widget-settings-field-icon" aria-hidden="true"></i><% end %>
             <%= field_label %>
+            <% if compact %>
+              <%# Created inside the panel: the theme's offcanvas sits above body-level tooltips %>
+              <i class="ti ti-info-circle widget-settings-tip" data-bs-toggle="tooltip" data-bs-container=".widget-settings-panel"
+                 title="<%= field_hint[:hint].presence || metadata_field_default_tip(kind) %>"></i>
+            <% end %>
           </label>
 
           <% if choices && selected_values %>
@@ -127,7 +137,9 @@
                 } %>
           <% end %>
 
-          <% if field_hint[:hint] %>
+          <% if compact %>
+            <%# the hint is in the label's tooltip %>
+          <% elsif field_hint[:hint] %>
             <div class="form-text x-small text-muted mt-1"><%= field_hint[:hint] %></div>
           <% elsif data_type == "array" %>
             <div class="form-text x-small text-muted mt-1">Comma-separated list</div>

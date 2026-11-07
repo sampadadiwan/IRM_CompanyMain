@@ -1,0 +1,10 @@
+<%# ① Settings icon — opens this widget's settings in the popup (D1). Saved widgets by id; default widgets by
+    dashboard, layout and widget name. openspec/changes/dashboard-widget-inline-settings — H1, H7 %>
+<%= link_to settings_dashboard_widgets_path(widget_settings_params(widget, dashboard_name, layout)),
+            class: "widget-settings-btn",
+            title: "Change this widget's settings",
+            aria: { label: "Change #{widget.widget_name} settings" },
+            data: { turbo_frame: "widget_settings", bs_toggle: "tooltip", widget_settings_key: widget_frame_key(widget),
+                    action: "click->widget-settings#opening" } do %>
+  <i class="ti ti-adjustments-horizontal"></i>
+<% end %>

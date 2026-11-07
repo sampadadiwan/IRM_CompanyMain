@@ -1,0 +1,9 @@
+<%# ④ Saved marker — tells the page's widget-settings controller what to reload.
+    openspec/changes/dashboard-widget-inline-settings — D4, D5; H3–H5 %>
+<%= turbo_frame_tag "widget_settings" do %>
+  <div data-widget-settings-saved
+       data-key="<%= widget_frame_key(widget) %>"
+       data-refresh="<%= refresh %>"
+       data-size-class="<%= widget.widget_size %>"
+       data-label="<%= "#{widget.widget_name} updated" %>"></div>
+<% end %>

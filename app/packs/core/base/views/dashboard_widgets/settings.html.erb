@@ -1,0 +1,94 @@
+<%# ③ Settings form — the widget edit page's settings fields plus Size, inside the settings panel's frame.
+    openspec/changes/dashboard-widget-inline-settings — D2; H2, H8, E9, X4, X5 %>
+<% widget = @dashboard_widget %>
+<% layout_label = widget.name.presence || "Default" %>
+<%= turbo_frame_tag "widget_settings", class: "widget-settings-frame" do %>
+  <%# Header: the widget's name, and who the change applies to (settings belong to the firm's layout) %>
+  <div class="offcanvas-header widget-settings-header">
+    <div class="min-w-0">
+      <h5 class="offcanvas-title mb-1 text-truncate" id="widget_settings_title">
+        <i class="ti ti-adjustments-horizontal me-1 text-primary"></i><%= widget.widget_name %> settings
+      </h5>
+      <%# One line; the full explanation is in the tooltip %>
+      <div class="text-muted small text-truncate" data-widget-settings-note data-bs-toggle="tooltip" data-bs-container=".widget-settings-panel"
+           title="Settings belong to the <%= layout_label %> layout of the <%= widget.dashboard_name %>, not to one person: everyone in your firm who uses it sees the change.">
+        <i class="ti ti-users me-1"></i>Shared with everyone in your firm on the <%= layout_label %> layout
+      </div>
+    </div>
+    <button type="button" class="btn-close ms-2" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+  </div>
+
+  <%= form_with model: widget, url: save_settings_dashboard_widgets_path, method: :patch, class: "widget-settings-form",
+                data: { action: "submit->widget-settings#submitting", widget_settings_target: "form" } do |form| %>
+    <%# Which widget: a saved one by id, or a default one by dashboard, layout and widget name %>
+    <% if widget.persisted? %>
+      <%= hidden_field_tag :widget_id, widget.id %>
+    <% else %>
+      <%= hidden_field_tag :dashboard_name, widget.dashboard_name %>
+      <%= hidden_field_tag :layout, layout_label %>
+      <%= hidden_field_tag :widget_name, widget.widget_name %>
+    <% end %>
+
+    <div class="offcanvas-body widget-settings-body" data-controller="metadata-form">
+      <%# X4, X5 — why the save was refused %>
+      <% if widget.errors.any? %>
+        <div class="alert alert-danger py-2 small" role="alert" data-widget-settings-errors>
+          <% widget.errors.full_messages.each do |message| %><div><%= message %></div><% end %>
+        </div>
+      <% end %>
+
+      <% unless widget.persisted? %>
+        <%# First save on a dashboard showing its defaults (H5) %>
+        <p class="text-muted small mb-3" data-widget-settings-defaults>
+          This dashboard shows its default widgets. Saving keeps all of them, as they are now.
+        </p>
+      <% end %>
+
+      <%# The same fields, labels and helper text as the widget edit page (H2); E9 — saved settings that are not
+          in the widget's list still appear, so saving keeps them %>
+      <div id="dynamic_metadata_fields">
+        <% if widget.metadata_help_hash.any? || widget.metadata_args.any? %>
+          <p class="widget-settings-hint" data-widget-settings-hint>
+            <i class="ti ti-bulb me-1"></i>Leave a setting empty to use the widget's default. Point at
+            <i class="ti ti-info-circle"></i> to see what a setting does.
+          </p>
+          <%= render "dashboard_widgets/metadata_fields", dashboard_widget: widget, compact: true %>
+        <% else %>
+          <%# H8 — nothing to set but the size %>
+          <p class="text-muted mb-0" data-widget-settings-none>This widget has no settings of its own.</p>
+        <% end %>
+      </div>
+      <%= form.hidden_field :metadata, data: { metadata_form_target: "metadataInput" } %>
+
+      <div class="widget-settings-size">
+        <label class="form-label" for="dashboard_widget_size">
+          <i class="ti ti-layout-columns widget-settings-field-icon" aria-hidden="true"></i>Size
+          <i class="ti ti-info-circle widget-settings-tip" data-bs-toggle="tooltip" data-bs-container=".widget-settings-panel"
+             title="How much of the row the widget takes: XL is the full row, Medium half, Small a third, XS a quarter."></i>
+        </label>
+        <%= form.select :size, DashboardWidget::SIZES, {}, class: "form-select" %>
+      </div>
+    </div>
+
+    <%# Footer stays at the bottom of the panel, whatever the number of settings: a quiet icon link to the full
+        page, a text Cancel and a small Save %>
+    <div class="widget-settings-footer">
+      <% if widget.persisted? %>
+        <%= link_to edit_dashboard_widget_path(widget), class: "widget-settings-full-page me-auto",
+                    title: "Open the widget's full edit page: type, tags, menu and display options",
+                    aria: { label: "Open the full widget page" },
+                    data: { turbo_frame: "_top", bs_toggle: "tooltip", bs_container: ".widget-settings-panel" } do %>
+          <i class="ti ti-external-link"></i>
+        <% end %>
+      <% else %>
+        <span class="me-auto"></span>
+      <% end %>
+      <button type="button" class="btn btn-sm btn-link text-muted text-decoration-none" data-bs-dismiss="offcanvas">Cancel</button>
+      <button type="submit" class="btn btn-sm btn-primary rounded-pill px-3" data-widget-settings-target="submit"
+              title="Save, then reload this widget in place" data-bs-toggle="tooltip" data-bs-container=".widget-settings-panel">
+        <span class="spinner-border spinner-border-sm me-1 d-none" aria-hidden="true" data-widget-settings-target="spinner"></span>
+        <i class="ti ti-check me-1" data-widget-settings-target="saveIcon"></i>Save
+      </button>
+    </div>
+  <% end %>
+<% end %>

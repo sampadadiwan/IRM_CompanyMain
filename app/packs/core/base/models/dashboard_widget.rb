@@ -429,6 +429,21 @@ class DashboardWidget < ApplicationRecord
     ].sort
   end
 
+  # The sizes a widget can take, largest first (the widget edit form and the settings popup offer these)
+  SIZES = %w[XL Large Medium Small XS].freeze
+
+  # Landing pages show only the first few catalogue widgets by default, to avoid context-specific widget crashes
+  LANDING_PAGES = [FM_LANDING_PAGE, LP_LANDING_PAGE, OPS_LANDING_PAGE].freeze
+  LANDING_PAGE_DEFAULT_COUNT = 4
+
+  # The default widgets a dashboard shows when its layout has no enabled widget: the whole catalogue, or the
+  # first four on the landing pages. Unsaved catalogue entries. The settings popup saves exactly this set on the
+  # first save (openspec/changes/dashboard-widget-inline-settings — H5, E4)
+  def self.default_widgets_for(dashboard_name)
+    catalogue = WIDGETS.fetch(dashboard_name, [])
+    LANDING_PAGES.include?(dashboard_name) ? catalogue.take(LANDING_PAGE_DEFAULT_COUNT) : catalogue
+  end
+
   def to_s
     "#{dashboard_name} #{widget_name} #{tags} #{tag_list}"
   end

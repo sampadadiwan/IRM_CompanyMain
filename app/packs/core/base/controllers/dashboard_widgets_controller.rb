@@ -22,6 +22,30 @@ class DashboardWidgetsController < ApplicationController
   # GET /dashboard_widgets/1
   def show; end
 
+  # GET /dashboard_widgets/settings — the settings popup's form, rendered into the popup's turbo frame.
+  # openspec/changes/dashboard-widget-inline-settings — D2; H2, H8, X1, X2, X6
+  def settings
+    @dashboard_widget = settings_target
+    authorize @dashboard_widget, :inline_settings?
+    render layout: false
+  end
+
+  # PATCH /dashboard_widgets/save_settings — saves the popup: only the settings and size (D2), saving the
+  # dashboard's defaults first when it has none saved (D3). H3–H5, E3–E6, X4, X5, X7
+  def save_settings
+    @dashboard_widget = settings_target
+    authorize @dashboard_widget, :inline_settings?
+    result = DashboardWidgetSettingsSave.call(user: current_user, target: @dashboard_widget,
+                                              metadata: settings_params[:metadata], size: settings_params[:size])
+    if result.success?
+      # The marker tells the page which widget to reload, or to refresh the page after saving the defaults
+      render partial: "dashboard_widgets/settings_saved", locals: { widget: result.widget, refresh: result.refresh }
+    else
+      @dashboard_widget = result.widget
+      render :settings, layout: false, status: :unprocessable_content
+    end
+  end
+
   def dashboard
     @dashboard_name = params[:dashboard_name] || "Ops Dashboard"
     @dashboard_names, @name = resolve_dashboard(@dashboard_name, params[:name])
@@ -127,6 +151,27 @@ class DashboardWidgetsController < ApplicationController
     @bread_crumbs[@dashboard_widget.dashboard_name.to_s] = dashboard_widgets_path(q: RansackQueryBuilder.single("dashboard_name", :eq, @dashboard_widget.dashboard_name)) if @dashboard_widget.dashboard_name.present?
 
     @bread_crumbs[@dashboard_widget.widget_name.to_s] = dashboard_widget_path(@dashboard_widget)
+  end
+
+  # The widget the settings popup is for: a saved widget of the user's firm (X2 — another firm's id is not found),
+  # or a default widget named by dashboard, layout and widget name, looked up in the catalogue (X6 — an unknown
+  # dashboard or widget name is not found; nothing is constantized or evaluated)
+  def settings_target
+    return policy_scope(DashboardWidget).find(params[:widget_id]) if params[:widget_id].present?
+
+    dashboard_name = params[:dashboard_name].to_s
+    definition = DashboardWidget::WIDGETS.fetch(dashboard_name) { raise ActiveRecord::RecordNotFound }
+                                         .find { |widget| widget.widget_name == params[:widget_name].to_s }
+    raise ActiveRecord::RecordNotFound unless definition
+
+    DashboardWidget.new(entity_id: current_user.entity_id, dashboard_name:, name: params[:layout].presence || "Default",
+                        widget_name: definition.widget_name, size: definition.size, metadata: definition.metadata,
+                        tags: definition.widget_name, position: definition.position)
+  end
+
+  # X7 — the popup changes only the settings and the size; never the firm, the dashboard or the widget type
+  def settings_params
+    params.fetch(:dashboard_widget, {}).permit(:metadata, :size)
   end
 
   # Only allow a list of trusted parameters through.
