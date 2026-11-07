@@ -222,7 +222,7 @@ Fields appear in their **Position** order within a step. Edit the position numbe
 
 ## Changing Fields from a Record or Form
 
-You don't have to leave a record to fix its fields. Company admins see a small form icon (🗎):
+You don't have to leave a record to fix its fields. Company admins see a small form icon:
 
 - on a record's page, beside the minimize button of the card that shows its custom fields (for example an investor's page);
 - on a record's new or edit form, on the right of the form's header.
@@ -476,7 +476,7 @@ On the [**Form Types**](/form_types) list click **Import Template** on the Form 
 Click the columns button (▦) right of the list's search box (company admins only), change the list in the side panel and click **Save**; only that list reloads. The same editor is on **Configure Grids** on the Form Type row or page. The change applies to every list of that record kind in your company. See [Choosing a List's Columns](#choosing-a-lists-columns).
 
 **Can I change a record's custom fields from its page or form?**
-Yes, if you are a company admin: click the form icon (🗎) beside the minimize button of the card showing the fields, or on the right of a form's header. Reorder, rename, switch Required / Read only / Internal, edit help text, remove or add fields, then **Save**; the page refreshes in place. See [Changing Fields from a Record or Form](#changing-fields-from-a-record-or-form).
+Yes, if you are a company admin: click the form icon beside the minimize button of the card showing the fields, or on the right of a form's header. Reorder, rename, switch Required / Read only / Internal, edit help text, remove or add fields, then **Save**; the page refreshes in place. See [Changing Fields from a Record or Form](#changing-fields-from-a-record-or-form).
 
 **Why don't I see the columns button or the form icon?**
 Both are shown only to company admins of the company that owns the list or record, and never while you act as an investor. A list whose record kind has no standard columns, and a list of fields chosen elsewhere (such as a KYC's reporting fields), have no button.

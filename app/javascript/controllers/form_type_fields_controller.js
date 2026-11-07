@@ -32,8 +32,10 @@ export default class extends Controller {
     // On a form: the form card's header, on its right
     const formHeader = this.element.closest(".form_card")?.querySelector(":scope > .card-header")
     if (formHeader) {
-      this.button.className = "btn btn-sm btn-outline-primary float-end form-type-fields-btn"
-      formHeader.prepend(this.button)
+      this.button.className = "btn btn-outline-primary form-type-fields-btn"
+      // A flex row so the button sits level with the title (grid_columns.scss .form-type-fields-header)
+      formHeader.classList.add("form-type-fields-header")
+      formHeader.appendChild(this.button)
       return
     }
     const card = this.element.closest(".card")

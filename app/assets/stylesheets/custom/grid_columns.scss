@@ -275,3 +275,32 @@
     border-radius: var(--bs-border-radius);
   }
 }
+
+// The custom fields button (sliders): a full-size glyph, centred, so it reads clearly beside the card's own buttons
+// (user feedback 2026-11-07 — it was small and blurred at the small button size)
+.form-type-fields-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.4rem;
+  min-height: 2.4rem;
+  padding: 0.3rem 0.55rem;
+
+  .ti {
+    font-size: 1.3rem;
+    line-height: 1;
+  }
+}
+
+// The form card's header once it holds the custom fields button: title and button on one centred line, the
+// header's note (if any) on its own line below (user feedback 2026-11-07 — the floated button sat off the title)
+.form_card > .card-header.form-type-fields-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 0.75rem;
+
+  > h6 { flex: 1 1 auto; margin-bottom: 0; }
+  > small { flex-basis: 100%; order: 2; }
+  > .form-type-fields-btn { order: 1; flex: 0 0 auto; }
+}
