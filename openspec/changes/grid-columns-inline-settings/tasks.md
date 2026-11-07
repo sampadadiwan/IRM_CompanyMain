@@ -119,7 +119,7 @@
       following the user-guide FAQ standard; run UserGuideLint. Verify: lint passes.
 - [x] 5.3 Brakeman on the changed files (0 new warnings) and rubocop on changed Ruby files (clean).
 - [x] 5.4 Fill design.md and lld.md "Changed during the build" with anything the build changed.
-- [ ] 5.5 Run the regression set: all features from 1.11, 2.5 and 3.9 together, green.
+- [x] 5.5 Run the regression set: all features from 1.11, 2.5 and 3.9 together, green.
 - [ ] 5.6 (QA, not the apply agent) Run qa-checklist.md on a deployed build and record the sign-off.
 
 ## Apply log
@@ -128,6 +128,7 @@
 |---|---|---|
 | 1 | 2026-11-07 | Phase 1 green: 38 new scenarios + custom_grid_view (14, steps retargeted to the shared editor), widget settings, security review low/medium, drift guard. First run: 9 failures, all in new steps (sort arrows in headings, Playwright drag API, rack_test GET query). |
 | 2 | 2026-11-07 | Prosopite: no N+1 in this change's code. Shared-code N+1 listed, not edited: `investor_kycs/_stats.html.erb:19` (count per status in a loop). |
+| 9 | 2026-11-07 | Final regression (480 scenarios, all phases + touched features): 479 passed; SG-7 drift guard flagged two allowlist entries made stale by the Allocations / Investments conversions (their `raw(pagy_bootstrap_nav(@pagy))` lines are gone — RansackTable renders the pager). Entries removed; drift guard 8/8 green. |
 | 8 | 2026-11-07 | Phase 5: coverage 71 IDs = 71 scenario comments; rubocop clean on this change's lines (5 pre-existing offenses in committed lines left); Brakeman: no new warnings (the one in form_types_controller.rb:176 is a pre-existing `constantize` in an untouched action); user guide updated (two sections, two diagrams, three FAQs, lint clean). |
 | 7 | 2026-11-07 | Phase 4: fields panel on record pages and (user) at the form level; icon beside the card's minimize button / in the form card header / breadcrumb bar. 55 scenarios green (26 new + custom_fields + regulatory_custom_fields); first run 2 failures in new scenarios (H11 asked for Read only on a required field — a model rule; E16 setup positions). Fixed alongside: nested-field error messages shown without their "Form custom fields …" prefix; locked rows kept when the panel re-renders after a refused save. Prosopite: no N+1 in this change's code. |
 | 5 | 2026-11-07 | Phase 2 gate: lists feature (5) + 27 features of the converted lists — 238/243 first run; 4 real failures (EOI approve/update re-rendered the row without `columns` → `ExpressionOfInterestsController#eoi_row_stream`), 1 timing flake (capital_distributions:272, green serially). Rerun green. |
