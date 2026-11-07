@@ -1,0 +1,46 @@
+<%# KPI Movers — the KPIs that changed most on the company's latest report (H3, H4, E3–E8).
+    openspec/changes/dashboard-insight-widgets/business-rules.md#2. Table markup as the
+    regular app tables (tasks/_index.html.erb). %>
+<% return unless insight_widget_visible? && insight_kpis_visible? %>
+<%
+  args ||= {}
+  # The company this dashboard is about
+  company = owner.is_a?(Investor) ? owner : @investor
+  # Settings: report tag and period (E6), rows to show (H4, E1 — 0 or text falls back to 5)
+  settings = insight_kpi_report_settings(args)
+  top_n = insight_int_arg(args, :top_n, 5)
+  report = insight_latest_kpi_report(company, settings)
+  movers = report ? insight_kpi_movers(report, top_n).to_a : []
+%>
+<%= render(WidgetCardComponent.new(widget: widget, args: args, widget_size: widget.widget_size)) do %>
+  <div data-insight-widget="kpi-movers">
+    <% if report.nil? %>
+      <%# E7 — no report with this tag and period %>
+      <%= insight_empty_state(insight_no_kpi_report_message(settings)) %>
+    <% elsif movers.empty? %>
+      <%# E4 — the latest report has no KPI with a stored change %>
+      <%= insight_empty_state("No KPI on the #{l(report.as_of)} report has a change against an earlier report yet.") %>
+    <% else %>
+      <div class="text-muted mb-1" data-bs-toggle="tooltip" title="Each change compares the KPI with the same KPI on the previous <%= settings[:period] %> report (a year earlier for YTD)">
+        <%= settings[:tag] %> <%= settings[:period] %> report of <span data-insight-report-date><%= l(report.as_of) %></span>
+      </div>
+      <div class="table-responsive">
+      <table class="table table-bordered dataTable mb-0">
+        <thead>
+          <tr><th>KPI</th><th class="text-end">Value</th><th class="text-end">Change</th></tr>
+        </thead>
+        <tbody>
+          <% movers.each do |kpi| %>
+            <tr data-insight-row="<%= kpi.name %>">
+              <td><%= kpi.name %></td>
+              <td class="text-end"><%= display_kpi(kpi, kpi.investor_kpi_mapping) %></td>
+              <%# Coloured against the KPI mapping's thresholds, exactly as on the KPI grid %>
+              <td class="text-end"><%= sanitize(kpi_percentage_class(kpi, kpi.investor_kpi_mapping)) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+      </div>
+    <% end %>
+  </div>
+<% end %>

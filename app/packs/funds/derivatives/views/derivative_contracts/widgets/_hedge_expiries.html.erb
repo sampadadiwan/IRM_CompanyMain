@@ -1,0 +1,49 @@
+<%# Hedge Expiries — the fund's open derivative contracts expiring within the window, and open ones already
+    past expiry, soonest first. Worked examples H16, E42–E44 — openspec/changes/dashboard-insight-widgets/business-rules.md#5 %>
+<% return unless insight_widget_visible? %>
+<%
+  # The fund that owns the Fund Dashboard
+  fund = local_assigns[:owner]
+  fund = (local_assigns[:uri_params] || {})[:fund] unless fund.is_a?(Fund)
+  return unless fund.is_a?(Fund)
+
+  # Window in days, default 90 (E43)
+  days = insight_int_arg(args, :days, 90)
+  # One query, joined to the underlying instrument
+  rows = hedge_expiry_rows(fund, days:)
+%>
+<%= render(WidgetCardComponent.new(widget: widget, args: args, widget_size: widget.widget_size)) do %>
+  <% if rows.empty? %>
+    <%# E44 — nothing expiring %>
+    <%= insight_empty_state("No open contracts expire in the next #{days} days.") %>
+  <% else %>
+    <%# Table markup as the regular app tables (tasks/_index.html.erb) %>
+    <div class="table-responsive">
+    <table class="table table-bordered dataTable mb-0" data-insight-table="hedge-expiries">
+      <thead>
+        <tr>
+          <th>Contract</th>
+          <th>Type</th>
+          <th>Underlying</th>
+          <th class="text-end">Notional</th>
+          <th>Expiry</th>
+          <th class="text-end">Days left</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% rows.each do |row| %>
+          <%# E42 — an expired contract that is still open is flagged in the danger colour %>
+          <tr data-contract="<%= row[:name] %>">
+            <td><%= link_to row[:name], derivative_contract_path(row[:id]), target: "_top" %></td>
+            <td><%= row[:type] %></td>
+            <td><%= row[:underlying] %></td>
+            <td class="text-end"><%= row[:notional_cents] ? insight_money(row[:notional_cents], row[:currency]) : "—" %></td>
+            <td><%= l(row[:expiry_date]) %></td>
+            <td class="text-end <%= 'text-danger' if row[:days_left].negative? %>" data-days-left><%= hedge_days_left_label(row[:days_left]) %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    </div>
+  <% end %>
+<% end %>

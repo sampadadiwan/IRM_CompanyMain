@@ -1,0 +1,37 @@
+<%# Overdue Tasks by Assignee — open overdue tasks per person (H22, E59, E60, X11).
+    openspec/changes/dashboard-insight-widgets/business-rules.md#7. Chart styling copied from
+    capital_calls/helpers/capital_call_dashboard_helper.rb (chartkick + chart_theme_color). %>
+<% return unless insight_widget_visible? %>
+<%
+  args ||= {}
+  # People to show before the rest are grouped as Others (E59 — default 10)
+  top_n = insight_int_arg(args, :top_n, 10)
+  rows = overdue_tasks_by_assignee(top_n)
+%>
+<%= render(WidgetCardComponent.new(widget: widget, args: args, widget_size: widget.widget_size)) do %>
+  <div data-insight-widget="overdue-tasks-by-assignee">
+    <% if rows.empty? %>
+      <%# E60 — nothing overdue %>
+      <%= insight_empty_state("No overdue tasks.") %>
+    <% else %>
+      <%= bar_chart rows, id: "overdue_tasks_by_assignee_#{widget.id || widget.position}", height: "#{[rows.size * 36, 160].max}px",
+                    library: { plotOptions: { bar: { dataLabels: { enabled: true } } }, **chart_theme_color } %>
+      <div class="table-responsive">
+      <table class="table table-bordered dataTable mb-0">
+        <thead><tr><th>Assignee</th><th class="text-end">Overdue tasks</th></tr></thead>
+        <tbody>
+          <% rows.each do |label, count| %>
+            <tr data-insight-row="<%= label %>">
+              <td><%= label %></td>
+              <td class="text-end" data-insight-value><%= count %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+      </div>
+      <div class="mt-2">
+        <%= link_to "View overdue tasks", overdue_tasks_path, class: "btn btn-sm btn-outline-primary", data: { turbo_frame: "_top" } %>
+      </div>
+    <% end %>
+  </div>
+<% end %>

@@ -1,0 +1,53 @@
+<%# Side-letter Obligations — active obligations falling due or overdue (H18, H24, E51–E53).
+    On the Investor Dashboard only that LP's obligations; on the Ops Dashboard all the viewer may see.
+    openspec/changes/dashboard-insight-widgets/business-rules.md#6. Table markup as the regular app
+    tables (tasks/_index.html.erb). %>
+<% return unless insight_widget_visible? %>
+<%
+  args ||= {}
+  # Due window in days (E51 — default 30)
+  days = insight_int_arg(args, :days, 30)
+  # The Investor Dashboard passes the LP as the owner; the Ops Dashboard has none
+  investor = owner if defined?(owner) && owner.is_a?(Investor)
+  rows, total = side_letter_obligations_due(days, investor:)
+  today = Time.zone.today
+%>
+<%= render(WidgetCardComponent.new(widget: widget, args: args, widget_size: widget.widget_size)) do %>
+  <div data-insight-widget="side-letter-obligations">
+    <% if rows.empty? %>
+      <%= insight_empty_state("No side-letter obligation falls due in the next #{days} days.") %>
+    <% else %>
+      <div class="table-responsive">
+      <table class="table table-bordered dataTable mb-0">
+        <thead>
+          <tr>
+            <th>Obligation</th>
+            <% unless investor %><th>Investor</th><% end %>
+            <th>Fund</th><th>Owner</th><th class="text-end">Due</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% rows.each do |obligation| %>
+            <% commitment = obligation.side_letter&.capital_commitment %>
+            <tr data-insight-row="<%= obligation.title %>">
+              <td><%= link_to obligation.title, side_letter_obligation_path(obligation), data: { turbo_frame: "_top" } %></td>
+              <% unless investor %><td><%= commitment&.investor_name %></td><% end %>
+              <td><%= commitment&.fund&.name %></td>
+              <td><%= obligation.owner_user&.full_name %></td>
+              <td class="text-end" data-insight-value>
+                <%= l(obligation.next_due_date) %>
+                <%# E52 — an obligation past its due date is flagged %>
+                <% if obligation.next_due_date < today %><span class="badge bg-danger-subtle text-danger ms-1">Overdue</span><% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+      </div>
+      <div class="d-flex justify-content-between align-items-center mt-2">
+        <%= link_to "View obligations", side_letter_obligations_path, class: "btn btn-sm btn-outline-primary", data: { turbo_frame: "_top" } %>
+        <% if total > rows.size %><span class="text-muted small">Showing <%= rows.size %> of <%= total %></span><% end %>
+      </div>
+    <% end %>
+  </div>
+<% end %>

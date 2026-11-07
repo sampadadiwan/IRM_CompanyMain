@@ -1,0 +1,46 @@
+<%# Winners & Losers — the fund's companies with the largest unrealised gains and losses, summed across
+    instruments. Worked examples H11, E26–E28 — openspec/changes/dashboard-insight-widgets/business-rules.md#4 %>
+<% return unless insight_widget_visible? %>
+<%
+  # The fund that owns the Portfolio Dashboard
+  fund = local_assigns[:owner]
+  fund = (local_assigns[:uri_params] || {})[:fund] unless fund.is_a?(Fund)
+  return unless fund.is_a?(Fund)
+
+  # Rows per list, default 5 (E1)
+  top_n = insight_int_arg(args, :top_n, 5)
+  # Two queries: grouped totals, then the names of the listed companies
+  lists = winners_and_losers(fund, top_n:)
+  sections = [["Gains", lists[:gains], "text-success", "No holding is above cost."],
+              ["Losses", lists[:losses], "text-danger", "No holding is below cost."]]
+%>
+<%= render(WidgetCardComponent.new(widget: widget, args: args, widget_size: widget.widget_size)) do %>
+  <div class="row">
+    <% sections.each do |title, rows, color, empty_message| %>
+      <div class="col-md-6" data-winners-losers="<%= title %>">
+        <h6 class="<%= color %> mb-2"><%= title %></h6>
+        <% if rows.empty? %>
+          <%# E27 — an empty list says why %>
+          <%= insight_empty_state(empty_message) %>
+        <% else %>
+          <%# Table markup as the regular app tables (tasks/_index.html.erb) %>
+          <div class="table-responsive">
+          <table class="table table-bordered dataTable mb-0">
+            <thead>
+              <tr><th>Company</th><th class="text-end">Unrealised gain (<%= fund.currency %>)</th></tr>
+            </thead>
+            <tbody>
+              <% rows.each do |row| %>
+                <tr data-company="<%= row[:name] %>">
+                  <td><%= link_to row[:name], dashboard_investor_path(id: row[:id]), target: "_top" %></td>
+                  <td class="text-end <%= color %>"><%= insight_money(row[:cents], fund.currency) %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+<% end %>

@@ -1,0 +1,39 @@
+<%# Stuck Workflows — active journeys waiting too long on one step (H23, E61–E63).
+    openspec/changes/dashboard-insight-widgets/business-rules.md#7. Table markup as the
+    regular app tables (tasks/_index.html.erb). %>
+<% return unless insight_widget_visible? %>
+<%
+  args ||= {}
+  # Days on a step before a journey counts as stuck (E61 — default 7, exactly 7 counts) and rows to list
+  days = insight_int_arg(args, :days, 7)
+  limit = insight_int_arg(args, :limit, 10)
+  rows, total = stuck_workflows(days, limit)
+%>
+<%= render(WidgetCardComponent.new(widget: widget, args: args, widget_size: widget.widget_size)) do %>
+  <div data-insight-widget="stuck-workflows">
+    <% if rows.empty? %>
+      <%= insight_empty_state("No journey has waited #{days} days or more on a step.") %>
+    <% else %>
+      <div class="table-responsive">
+      <table class="table table-bordered dataTable mb-0">
+        <thead>
+          <tr><th>Record</th><th>Journey</th><th>Step</th><th class="text-end">Days on step</th></tr>
+        </thead>
+        <tbody>
+          <% rows.each do |instance| %>
+            <tr data-insight-row="<%= workflow_record_label(instance) %>">
+              <td><%= link_to workflow_record_label(instance), workflow_instance_path(instance), data: { turbo_frame: "_top" } %></td>
+              <td><%= instance.template_name %></td>
+              <td><%= instance.current_step_data&.dig(:name) %></td>
+              <td class="text-end" data-insight-value><%= workflow_days_on_step(instance) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+      </div>
+      <% if total > rows.size %>
+        <div class="text-muted small mt-1">Showing <%= rows.size %> of <%= total %></div>
+      <% end %>
+    <% end %>
+  </div>
+<% end %>

@@ -1,0 +1,50 @@
+<%# Peer KPI Comparison — one KPI's latest value and change across the companies on the Aggregated Portfolio
+    Dashboard (H13, E31, E32, X8). openspec/changes/dashboard-insight-widgets/business-rules.md#4. Locals as in
+    _portfolio_company_charts.html.erb (investors, funds); table markup as tasks/_index.html.erb. %>
+<% return unless insight_widget_visible? && insight_kpis_visible? %>
+<%
+  args ||= {}
+  investors ||= Investor.none
+  # Settings: which KPI (by reported or standard name) and which reports (tag, period)
+  kpi_name = insight_str_arg(args, :kpi_name, nil)
+  settings = insight_kpi_report_settings(args)
+  # The companies on this page — the same list the other aggregated widgets use
+  rows = kpi_name ? insight_peer_kpi_rows(investors.pluck(:id), kpi_name, settings) : []
+%>
+<%= render(WidgetCardComponent.new(widget: widget, args: args, widget_size: widget.widget_size)) do %>
+  <div data-insight-widget="peer-kpi-comparison">
+    <% if kpi_name.nil? %>
+      <%# X8 — no KPI chosen yet %>
+      <%= insight_empty_state("Set the KPI name in this widget's settings.") %>
+    <% elsif rows.empty? %>
+      <%# E32 — no company on this page has the KPI on a matching report %>
+      <%= insight_empty_state("No company here has #{kpi_name} on its latest #{settings[:tag]} #{settings[:period]} KPI report.") %>
+    <% else %>
+      <div class="text-muted mb-1" data-bs-toggle="tooltip" title="Each company's latest <%= settings[:tag] %> <%= settings[:period] %> report; the KPI matches by its reported or standard name">
+        <%= kpi_name %> — change against each company's previous <%= settings[:period] %> report
+      </div>
+      <% chart_data = insight_peer_kpi_chart_data(rows) %>
+      <% if chart_data.any? %>
+        <%= column_chart chart_data, id: "insight_peer_kpi_#{widget.id || 'chart'}", height: "280px", suffix: "%",
+                         library: { **chart_theme_color } %>
+      <% end %>
+      <div class="table-responsive">
+      <table class="table table-bordered dataTable mb-0">
+        <thead>
+          <tr><th>Company</th><th class="text-end"><%= kpi_name %></th><th class="text-end">Change</th><th class="text-end">Report date</th></tr>
+        </thead>
+        <tbody>
+          <% rows.each do |row| %>
+            <tr data-insight-row="<%= row[:company_name] %>">
+              <td><%= row[:company_name] %></td>
+              <td class="text-end"><%= display_kpi(row[:kpi], row[:kpi].investor_kpi_mapping) %></td>
+              <td class="text-end" data-insight-change><%= sanitize(kpi_percentage_class(row[:kpi], row[:kpi].investor_kpi_mapping)) %></td>
+              <td class="text-end"><%= l(row[:as_of]) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+      </div>
+    <% end %>
+  </div>
+<% end %>

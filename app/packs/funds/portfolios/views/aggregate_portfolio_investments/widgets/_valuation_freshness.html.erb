@@ -1,0 +1,72 @@
+<%# Valuation Freshness — how old each held company's latest valuation is (Current / Due / Stale / Never).
+    Portfolio Dashboard: the companies the fund still holds (H9). Aggregated Portfolio Dashboard: the companies on
+    that page, passed as `investors` (H10). Worked examples H9, H10, E20–E25, X7 —
+    openspec/changes/dashboard-insight-widgets/business-rules.md#4 %>
+<% return unless insight_widget_visible? %>
+<%
+  # The owner is the fund on the Portfolio Dashboard; the Aggregated dashboard passes `investors` instead
+  fund = local_assigns[:owner]
+  fund = (local_assigns[:uri_params] || {})[:fund] unless fund.is_a?(Fund)
+  fund = nil unless fund.is_a?(Fund)
+  investors = local_assigns[:investors]
+  return if fund.nil? && investors.nil?
+
+  # Settings, each falling back to its default when missing or not a positive whole number (E1, E2, E22)
+  current_days = insight_int_arg(args, :current_days, 90)
+  due_days = insight_int_arg(args, :due_days, 180)
+  limit = insight_int_arg(args, :limit, 15)
+
+  # Two queries in all: the companies, then their latest valuation dates (grouped)
+  companies = freshness_companies(fund:, investors: fund ? nil : investors)
+  rows = valuation_freshness_rows(companies, entity_id: fund&.entity_id || current_user.entity_id, current_days:, due_days:)
+  counts = freshness_counts(rows)
+%>
+<%= render(WidgetCardComponent.new(widget: widget, args: args, widget_size: widget.widget_size)) do %>
+  <% if rows.empty? %>
+    <%= insight_empty_state(fund ? "This fund holds no portfolio companies." : "No portfolio companies match the filters.") %>
+  <% else %>
+    <%# Count cards: the stat card markup of tasks/_stats.html.erb, with the number written out (no counter animation) %>
+    <div class="row">
+      <% PortfolioInsightWidgetsHelper::FRESHNESS_STATUSES.each do |status| %>
+        <% color = PortfolioInsightWidgetsHelper::FRESHNESS_COLORS[status] %>
+        <div class="col">
+          <div class="card border-top stat-card-accent border-<%= color %> shadow-sm" data-freshness-card="<%= status %>">
+            <div class="card-body">
+              <h3 class="fs-7" data-freshness-count><%= counts[status] %></h3>
+              <h6 class="card-subtitle mb-1 text-<%= color %>"><%= status %></h6>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <%# Table markup as the regular app tables (tasks/_index.html.erb) %>
+    <div class="table-responsive">
+    <table class="table table-bordered dataTable mb-0" data-insight-table="valuation-freshness">
+      <thead>
+        <tr>
+          <th>Company</th>
+          <th>Last valuation</th>
+          <th class="text-end">Days since</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% rows.first(limit).each do |row| %>
+          <% color = PortfolioInsightWidgetsHelper::FRESHNESS_COLORS[row[:status]] %>
+          <tr data-company="<%= row[:name] %>" data-status="<%= row[:status] %>">
+            <td><%= link_to row[:name], dashboard_investor_path(id: row[:id]), target: "_top" %></td>
+            <td><%= row[:last_date] ? l(row[:last_date]) : "—" %></td>
+            <td class="text-end"><%= row[:days] || "—" %></td>
+            <td><span class="badge bg-<%= color %>-subtle text-<%= color %>"><%= row[:status] %></span></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    </div>
+    <%# E24 — the limit caps the rows; say how many of the total are shown %>
+    <% if rows.size > limit %>
+      <p class="text-muted small mt-2 mb-0" data-freshness-showing>Showing <%= limit %> of <%= rows.size %></p>
+    <% end %>
+  <% end %>
+<% end %>

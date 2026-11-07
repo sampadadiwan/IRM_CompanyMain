@@ -1,0 +1,46 @@
+<%# NAV per Unit Trend — approved NAV per unit for each unit class, over the months up to the latest approved
+    NAV. Worked examples H15, E39–E41 — openspec/changes/dashboard-insight-widgets/business-rules.md#5 %>
+<% return unless insight_widget_visible? %>
+<%
+  # The fund that owns the Fund Dashboard
+  fund = local_assigns[:owner]
+  fund = (local_assigns[:uri_params] || {})[:fund] unless fund.is_a?(Fund)
+  return unless fund.is_a?(Fund)
+
+  # E40 — months to plot, default 12
+  months = insight_int_arg(args, :months, 12)
+  # Two queries: the latest approved date, then the approved NAVs in the window (drafts left out, E39)
+  series = nav_per_unit_series(fund, months:)
+%>
+<%= render(WidgetCardComponent.new(widget: widget, args: args, widget_size: widget.widget_size)) do %>
+  <% if series.empty? %>
+    <%# E41 — a closed-end fund has no NAVs %>
+    <%= insight_empty_state("This fund has no approved NAVs. NAV per unit is kept for evergreen funds.") %>
+  <% else %>
+    <%# Line chart as on the evergreen LP card (evergreen/funds/_lp_card.html.erb) %>
+    <%= line_chart series, height: "260px", id: "insight_nav_per_unit_#{fund.id}_#{widget.position}",
+                   prefix: "#{fund.currency}:", library: { **chart_theme_color } %>
+    <%# The plotted points, so the figures can be read without hovering %>
+    <div class="table-responsive">
+    <table class="table table-bordered dataTable mb-0" data-insight-table="nav-per-unit">
+      <thead>
+        <tr>
+          <th>Class</th>
+          <th>Latest NAV date</th>
+          <th class="text-end">NAV per unit (<%= fund.currency %>)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% series.each do |line| %>
+          <% latest_date, latest_value = line[:data].max_by(&:first) %>
+          <tr data-nav-class="<%= line[:name] %>" data-nav-points="<%= line[:data].map { |date, value| "#{date.iso8601}=#{format('%.2f', value)}" }.join(',') %>">
+            <td><%= line[:name] %></td>
+            <td><%= l(latest_date) %></td>
+            <td class="text-end"><%= number_with_precision(latest_value, precision: 2, delimiter: ",") %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    </div>
+  <% end %>
+<% end %>
