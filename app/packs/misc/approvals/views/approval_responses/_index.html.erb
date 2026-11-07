@@ -29,41 +29,13 @@
 
     </div>
 
-    <div class="table-responsive" data-controller="datatable">
-
-      <table id="approval_responses" class="table table-bordered dataTable jqDataTable">
-    
-        <thead>
-          <tr>
-            <th>
-              Investor
-            </th>
-            <th>
-              Tag
-            </th>
-            <th>
-              Response By
-            </th>
-            <th>
-              Status
-            </th>
-            <th>
-              Updated On
-            </th>
-        
-            <th>
-            </th>
-          </tr>
-        </thead>
-    
-        
-        <tbody>
-        <% approval_responses.each do |approval_response| %>
-          <%= render approval_response %>
-        <% end %>
-        </tbody>
-      </table>
-    
+    <%# D21 — the firm's chosen columns (or the list's own, ApprovalResponse::LIST_COLUMNS), sorted, searched and
+        paged in the page by jQuery DataTables (sortable: false, pagy: nil). openspec/changes/grid-columns-inline-settings %>
+    <% responses_table = RansackTable.new(ApprovalResponse, q: nil, default_columns_map: ApprovalResponse::LIST_COLUMNS,
+                                          current_user: current_user, records: approval_responses, turbo_frame: "_top",
+                                          referrer: request.referrer, pagy: nil, table_css_class: "jqDataTable", sortable: false) %>
+    <div data-controller="datatable" data-datatable-money-columns-value="<%= responses_table.money_column_indexes %>">
+      <%= render responses_table %>
     </div>
 
   <% end %>

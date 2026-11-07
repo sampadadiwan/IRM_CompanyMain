@@ -1,57 +1,27 @@
-<div class="card shadow mb-4">
-  <div class="card-header py-3">
-    <h6 class="m-0 font-weight-bold text-primary">Grid View Preference Details: <%= @grid_view_preference.owner.name %></h6>
+<%# One saved grid column. On Configure Grids it opens in the detail panel on the right (frame
+    "grid_column_detail"); opened directly it is a page of its own. openspec/changes/grid-columns-inline-settings — D19 %>
+<% preference = @grid_view_preference %>
+<% owner = preference.owner %>
+<%= turbo_frame_tag "grid_column_detail" do %>
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="card-title mb-0"><i class="ti ti-eye me-1 text-primary"></i><%= preference.clean_label %></h5>
+    <%= link_to configure_grids_grid_view_preferences_path(owner_type: owner.class.name, owner_id: owner.id),
+                class: "btn-close", aria: { label: "Close" }, data: { turbo_frame: "grid_column_detail" } do %><% end %>
   </div>
   <div class="card-body">
-    <table class="table table-bordered dataTable">
-      <tr>
-        <td>Name</td>
-        <td><%= @grid_view_preference.name %></td>
-      </tr>
-
-      <tr>
-        <td>DataType</td>
-        <td>
-          <%
-            data_type = if @grid_view_preference.data_type.present?
-                          @grid_view_preference.data_type
-                        elsif @grid_view_preference.key.include?("custom_fields.")
-                          "String"
-                        else
-                          @grid_view_preference.owner.name.constantize.columns_hash[@grid_view_preference.key]&.type.to_s.capitalize
-                        end
-          %>
-          <%= data_type %>
-        </td>
-      </tr>
-
-      <tr>
-        <td>Label</td>
-        <td><%= @grid_view_preference.label %></td>
-      </tr>
-
-      <tr>
-        <td>Sequence</td>
-        <td><%= @grid_view_preference.sequence %></td>
-      </tr>
-
-      <tr>
-        <td>Alignment</td>
-        <td><%= @grid_view_preference.alignment %></td>
-      </tr>
-
-      <tr>
-        <td>Owner</td>
-        <td>
-          <%= link_to "#{@grid_view_preference.owner_type} - #{@grid_view_preference.owner.respond_to?(:name) ? @grid_view_preference.owner.name : @grid_view_preference.owner.class.to_s}", polymorphic_path(@grid_view_preference.owner) %>
-        </td>
-      </tr>
+    <table class="table table-bordered mb-3" data-grid-column-detail>
+      <tr><td class="text-muted">Name</td><td><%= preference.clean_name %></td></tr>
+      <tr><td class="text-muted">Heading</td><td><%= preference.clean_label %></td></tr>
+      <tr><td class="text-muted">Key</td><td><code><%= preference.clean_key %></code></td></tr>
+      <tr><td class="text-muted">Data type</td><td><%= preference.custom_data_type %></td></tr>
+      <tr><td class="text-muted">Alignment</td><td><%= preference.alignment.presence || "Default" %></td></tr>
+      <tr><td class="text-muted">Position</td><td><%= preference.sequence %></td></tr>
+      <tr><td class="text-muted">Derived field</td><td><%= preference.derived_field ? "Yes" : "No" %></td></tr>
+      <tr><td class="text-muted">Belongs to</td><td><%= owner.class.name.titleize %> — <%= owner.respond_to?(:name) ? owner.name : owner.to_s %></td></tr>
     </table>
+    <%= link_to edit_grid_view_preference_path(preference), class: "btn btn-sm btn-outline-primary",
+                data: { turbo_frame: "grid_column_detail" } do %>
+      <i class="ti ti-edit me-1"></i>Edit
+    <% end %>
   </div>
-</div>
-
-<div class="actions">
-  <%= link_to edit_grid_view_preference_path(@grid_view_preference), {class: "btn btn-outline-primary"} do %>
-    <i class="ti ti-edit"></i> Edit
-  <% end %>
-</div>
+<% end %>

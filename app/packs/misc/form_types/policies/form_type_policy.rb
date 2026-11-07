@@ -57,6 +57,14 @@ class FormTypePolicy < ApplicationPolicy
     update?
   end
 
+  # The custom fields icon and side panel on a record page (openspec/changes/grid-columns-inline-settings — D17):
+  # whoever may edit the form type (company admin of its firm), never a user acting as an investor (X11). The
+  # record's own show? is checked by the controller before this. For a form type created on the first save the
+  # record is unsaved and carries the firm (H13).
+  def inline_fields?
+    update? && !user.curr_role_investor?
+  end
+
   def configure_grids?
     update? && record.name.constantize.const_defined?(:STANDARD_COLUMNS)
   end

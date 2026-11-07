@@ -41,6 +41,38 @@ class ExpressionOfInterest < ApplicationRecord
                   }
 
   # === Monetize ===
+  # Grid columns (openspec/changes/grid-columns-inline-settings — D21). STANDARD_COLUMNS: plain attributes, so the
+  # report builder can query them. LIST_COLUMNS: what the Expressions of Interest list showed when it was a
+  # hand-built table (rich cells are ExpressionOfInterestDecorator methods; "eoi_approved" stays on the Approved
+  # cell, which features look inside). GRID_COLUMNS: list-only cells the columns editor offers, never reports.
+  STANDARD_COLUMNS = {
+    "Stakeholder" => "investor_name",
+    "Amount" => "amount",
+    "Approved" => "approved",
+    "Verified" => "verified",
+    "Data Room Access" => "show_data_room",
+    "Allocation Percentage; text-end" => "allocation_percentage; text-end",
+    "Allocation Amount; text-end" => "allocation_amount; text-end"
+  }.freeze
+  LIST_COLUMNS = {
+    "Created By" => "created_by_name",
+    "Stakeholder" => "stakeholder_name",
+    "Amount" => "amount",
+    "Approved" => "approved_badge; eoi_approved",
+    "Verified" => "verified_badge",
+    "Data Room Access" => "data_room_badge",
+    "Allocation Percentage" => "allocation_percentage_label; text-end",
+    "Allocation Amount" => "allocation_amount; text-end"
+  }.freeze
+  GRID_COLUMNS = {
+    "Created By" => "created_by_name",
+    "Stakeholder (name)" => "stakeholder_name",
+    "Approved (badge)" => "approved_badge; eoi_approved",
+    "Verified (badge)" => "verified_badge",
+    "Data Room Access (badge)" => "data_room_badge",
+    "Allocation Percentage (%)" => "allocation_percentage_label; text-end"
+  }.freeze
+
   monetize :amount_cents, :allocation_amount_cents,
            with_currency: ->(eoi) { eoi.investment_opportunity.currency }
 

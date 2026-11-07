@@ -360,6 +360,27 @@ class User < ApplicationRecord
   end
   # rubocop:enable Rails/SkipsModelValidations
 
+  # Grid columns (openspec/changes/grid-columns-inline-settings — D21). STANDARD_COLUMNS: plain attributes, so the
+  # report builder can query them. LIST_COLUMNS: what the Users list showed when it was a hand-built table (rich
+  # cells are UserDecorator methods). GRID_COLUMNS: list-only cells for the columns editor, never reports.
+  STANDARD_COLUMNS = {
+    "First name; text-col" => "first_name; text-col",
+    "Last name; text-col" => "last_name; text-col",
+    "Tags; text-col" => "tag_list; text-col"
+  }.freeze
+  LIST_COLUMNS = {
+    "First name; text-col" => "first_name_link; text-col",
+    "Last name; text-col" => "last_name; text-col",
+    "Roles; text-col" => "role_names; text-col",
+    "Tags; text-col" => "tag_list; text-col",
+    "Entity; text-col" => "entity_name; text-col"
+  }.freeze
+  GRID_COLUMNS = {
+    "First name (link); text-col" => "first_name_link; text-col",
+    "Roles; text-col" => "role_names; text-col",
+    "Entity; text-col" => "entity_name; text-col"
+  }.freeze
+
   delegate :name, to: :entity, prefix: :entity
 
   def to_s

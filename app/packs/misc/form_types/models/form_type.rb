@@ -22,6 +22,14 @@ class FormType < ApplicationRecord
 
   before_save :add_regulatory_custom_fields, if: -> { reg_env.present? && FormCustomField::REGULATORY_FIELD_MODELS.include?(name) }
 
+  # Calculation fields keep Ruby in meta_data, so only CapHive support (or a local environment) may submit one.
+  # Used by Form Types › Edit and the custom fields side panel (openspec/changes/grid-columns-inline-settings — D14,
+  # X16). Same rule FormTypesController#update applied inline before.
+  # @param fields [Array<Hash>] the submitted form_custom_fields_attributes
+  def self.calculation_change_allowed?(user, fields)
+    user.support? || Rails.env.local? || fields.none? { |fcf| fcf["field_type"].to_s == "Calculation" }
+  end
+
   # Add the regulatory fields to the form type
   def add_regulatory_custom_fields
     # Skip if the form type is not one of the regulatory models

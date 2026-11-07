@@ -1,0 +1,4 @@
+<%# ④ → ⑥ The save succeeded: the panel controller refreshes the page in place (D16) %>
+<%= turbo_frame_tag "form_type_fields", class: "widget-settings-frame" do %>
+  <div data-form-type-fields-saved data-label="<%= label %>"></div>
+<% end %>

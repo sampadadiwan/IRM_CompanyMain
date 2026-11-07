@@ -53,6 +53,21 @@ class CapitalDistribution < ApplicationRecord
   # gross_amount - this is the total amount that has to be distributed
   # reinvestment - This is the amount that is reinvested
   # income - This is the income from sale of portfolio that is to be distributed
+  # The Distributions list's columns before a firm chooses its own — what the list showed when it was a hand-built
+  # table (openspec/changes/grid-columns-inline-settings — D21). Plain attributes, so the report builder can use them.
+  STANDARD_COLUMNS = {
+    "Name; text-col" => "title; text-col",
+    "Distribution Date; date-col" => "distribution_date; date-col",
+    "Gross Payable; num-col" => "gross_amount; num-col",
+    "Net Payable; num-col" => "distribution_amount; num-col",
+    "Distributed; num-col" => "completed_distribution_amount; num-col",
+    "Approved; text-col" => "approved; text-col"
+  }.freeze
+  # The list itself links the name (CapitalDistributionDecorator#title_link)
+  LIST_COLUMNS = STANDARD_COLUMNS.merge("Name; text-col" => "title_link; text-col").freeze
+  # List-only cells the columns editor offers (never the report builder)
+  GRID_COLUMNS = { "Name (link); text-col" => "title_link; text-col" }.freeze
+
   monetize :income_cents, :reinvestment_cents, :gross_amount_cents, :distribution_amount_cents, :completed_distribution_amount_cents, :cost_of_investment_cents, :fee_cents, with_currency: ->(i) { i.fund.currency }
 
   # Totals of the fund Distributions grid's money columns, for the stats cards above it

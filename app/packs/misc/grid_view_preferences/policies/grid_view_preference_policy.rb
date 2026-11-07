@@ -18,6 +18,18 @@ class GridViewPreferencePolicy < ApplicationPolicy
     belongs_to_entity?(user, record) && parent_in_users_firms?(record.owner)
   end
 
+  # The columns icon and side panel on a table (openspec/changes/grid-columns-inline-settings — D11): whoever may
+  # save columns for the owner (company admin of its firm), never a user acting as an investor (X2), and for a
+  # report's own columns only someone who may edit that report (X7, parent-policy delegation). The record is an
+  # unsaved column for the owner, as configure_grids builds it; a new FormType owner carries the firm (H4).
+  def inline_columns?
+    # X1, X3 — firm + company admin; X2 — not acting as an investor
+    return false unless create? && !user.curr_role_investor?
+
+    # X7 — a report's columns need the right to edit the report
+    record.owner.is_a?(Report) ? new_policy(record.owner).update? : true
+  end
+
   def show?
     create?
   end

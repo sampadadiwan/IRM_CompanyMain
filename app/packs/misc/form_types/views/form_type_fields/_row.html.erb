@@ -1,0 +1,40 @@
+<%# One custom field in the panel. Locals: field (Hash from FormTypeFieldsHelper). A saved field goes back by id
+    (name, type and options never come from the browser — E17); a new one by label, type and options.
+    Locked: a calculation field for a user who is not CapHive support (E14). %>
+<% locked = field[:locked] %>
+<li class="grid-columns-row <%= 'locked' if locked %> <%= 'removed' if field[:removed] %>" data-form-type-fields-row
+    data-id="<%= field[:id] %>" data-name="<%= field[:name] %>" data-field-type="<%= field[:field_type] %>"
+    data-options="<%= field[:options] %>" data-locked="<%= locked %>" data-removed="<%= field[:removed] %>"
+    data-required="<%= field[:required] ? 'true' : 'false' %>" data-read-only="<%= field[:read_only] ? 'true' : 'false' %>"
+    data-internal="<%= field[:internal] ? 'true' : 'false' %>" draggable="<%= !locked %>">
+  <div class="grid-columns-main">
+    <i class="ti ti-grip-vertical grid-columns-handle" title="Drag to reorder" aria-hidden="true"></i>
+    <div class="grid-columns-name">
+      <input type="text" value="<%= field[:label] %>" maxlength="254" aria-label="Label of <%= field[:label] %>"
+             data-form-type-fields-label <%= 'disabled' if locked %>>
+      <div class="grid-columns-key"><%= field[:name] %></div>
+    </div>
+    <span class="grid-columns-chip"><%= field[:field_type] == "Calculation" ? raw('<i class="ti ti-math-function"></i> ') : "" %><%= field[:field_type] %></span>
+    <% if locked %>
+      <span class="grid-columns-chip" title="Calculation fields are changed by CapHive support"><i class="ti ti-lock"></i> Support</span>
+    <% else %>
+      <% [["required", "ti-asterisk", "Required"], ["read_only", "ti-lock", "Read only"], ["internal", "ti-eye-off", "Internal: hidden from investors"]].each do |flag, icon, title| %>
+        <button type="button" class="form-type-fields-flag <%= 'on' if field[flag.to_sym] %>" data-flag="<%= flag %>"
+                data-action="form-type-fields-form#toggleFlag" title="<%= title %>" aria-label="<%= title %>"
+                aria-pressed="<%= field[flag.to_sym] ? 'true' : 'false' %>"><i class="ti <%= icon %>"></i></button>
+      <% end %>
+    <% end %>
+    <button type="button" class="grid-columns-icon-btn" data-action="form-type-fields-form#toggleDetails" title="Help text"
+            aria-label="Help text of <%= field[:label] %>"><i class="ti ti-chevron-down"></i></button>
+    <% unless locked %>
+      <button type="button" class="grid-columns-remove" data-action="form-type-fields-form#toggleRemove"
+              title="Remove from the form (values already entered stay stored)" aria-label="Remove <%= field[:label] %>">
+        <i class="ti <%= field[:removed] ? 'ti-arrow-back-up' : 'ti-x' %>"></i>
+      </button>
+    <% end %>
+  </div>
+  <div class="grid-columns-details d-none" data-grid-columns-details>
+    <input type="text" class="form-control form-control-sm" placeholder="Help text shown under the field"
+           value="<%= field[:help_text] %>" data-form-type-fields-help <%= 'disabled' if locked %>>
+  </div>
+</li>

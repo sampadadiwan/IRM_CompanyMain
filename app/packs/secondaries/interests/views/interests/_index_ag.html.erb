@@ -25,9 +25,12 @@
 
     <%= render "interests/index_header", secondary_sale: @secondary_sale, secondary_sale_id: secondary_sale_id %>
 
+    <%# ① The columns icon on the grid (openspec/changes/grid-columns-inline-settings — phase 3, D1; H9, E12) %>
+    <div class="grid-columns-host" data-controller="grid-columns">
+    <%= render "grid_columns/button", header: ransack_table_header %>
     <div id="interests_table" class="<%= get_ag_theme %>" data-source="<%= data_source %>">
+    </div>
     </div>
 
     </div>
 </div>
-

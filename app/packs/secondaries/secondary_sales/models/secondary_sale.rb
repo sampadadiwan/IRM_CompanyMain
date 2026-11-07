@@ -16,6 +16,36 @@ class SecondarySale < ApplicationRecord
 
   SALE_TYPES = %w[Regular Tranche].freeze
 
+  # The Secondary Sales list's columns before a firm chooses its own (openspec/changes/grid-columns-inline-settings —
+  # D21). Plain attributes only, so the report builder can query them.
+  STANDARD_COLUMNS = {
+    "Name" => "name",
+    "Total Offered" => "total_offered_quantity",
+    "Start Date" => "start_date",
+    "End Date" => "end_date",
+    "Min Price" => "min_price",
+    "Max Price" => "max_price"
+  }.freeze
+  # Exactly what the list showed when it was a hand-built table; numbers and Active are SecondarySaleDecorator cells
+  LIST_COLUMNS = {
+    "Name" => "name",
+    "Total Offered" => "total_offered_display",
+    "Entity" => "entity_name",
+    "Start Date" => "start_date",
+    "End Date" => "end_date",
+    "Min Price" => "min_price_display",
+    "Max Price" => "max_price_display",
+    "Active" => "active_label"
+  }.freeze
+  # List-only cells the columns editor offers (never the report builder)
+  GRID_COLUMNS = {
+    "Total Offered (formatted)" => "total_offered_display",
+    "Entity" => "entity_name",
+    "Min Price (formatted)" => "min_price_display",
+    "Max Price (formatted)" => "max_price_display",
+    "Active" => "active_label"
+  }.freeze
+
   belongs_to :entity
 
   include FileUploader::Attachment(:spa)

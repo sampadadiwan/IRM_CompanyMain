@@ -3,31 +3,8 @@
   <%= link_to "New User" , new_user_path(entity_id: current_user.entity_id),
       {class: "btn btn-outline-primary" } if policy(User).new? %>
 </div>
-<table id="users" class="table table-bordered  dataTable jqDataTable">
-  <thead>
-    <tr>
-      <th class="text-col">
-        First name
-      </th>
-      <th class="text-col">
-        Last name
-      </th>
-      <th class="text-col">
-        Roles
-      </th>
-      <th class="text-col">
-        Tags
-      </th>
-      <th class="text-col">
-        Entity
-      </th>
-      <th class="action-col">
-      </th>
-    </tr>
-  </thead>
-  <tbody>
-    <% users.each do |user| %>
-      <%= render partial: "users/user", locals: {user: user} %>
-    <% end %>
-  </tbody>
-</table>
+<%# D21 — the firm's chosen columns (or the list's own, User::LIST_COLUMNS), sorted, searched and paged in the page
+    by jQuery DataTables (the datatable controller sits on users/index). openspec/changes/grid-columns-inline-settings %>
+<%= render RansackTable.new(User, q: @q, default_columns_map: User::LIST_COLUMNS, current_user: current_user, records: users,
+                            report_id: params["report_id"], turbo_frame: "users_frame", referrer: request.referrer, pagy: nil,
+                            table_css_class: "jqDataTable", sortable: false) %>

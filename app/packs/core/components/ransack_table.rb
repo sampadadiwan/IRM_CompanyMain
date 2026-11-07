@@ -21,4 +21,13 @@ class RansackTable < ViewComponent::Base
     @ransack_table_header = RansackTableHeader.new(model, q: q, turbo_frame: turbo_frame, default_columns_map: default_columns_map, entity: entity, current_user: current_user, records: records, report_id: report_id, id: id, css_class: header_css_class, referrer: referrer, snapshot: snapshot, actions_column: actions_column, sortable: sortable, required_columns: required_columns, excluded_columns: excluded_columns)
   end
   # rubocop:enable Naming/MethodParameterName
+
+  # D21 — for a list sorted in the page by jQuery DataTables: the 0-based positions of its money / number columns
+  # (css amount-col / num-col), as the datatable controller's money-columns value wants them. Worked out from the
+  # columns shown, so it follows a firm's own column choice.
+  def money_column_indexes
+    @ransack_table_header.columns.each_with_index.filter_map do |(label, key), index|
+      index if "#{label} #{key}".match?(/\b(amount-col|num-col)\b/)
+    end.join(",")
+  end
 end

@@ -22,7 +22,20 @@ module FormTypeHelper
 
     fields = fields.where(step: step_name) if step_name.present?
 
-    render partial: "/form_types/custom_form_fields", locals: { model:, form:, required:, struct:, fields: }
+    inputs = render partial: "/form_types/custom_form_fields", locals: { model:, form:, required:, struct:, fields: }
+    # D13 (user, 2026-11-07) — the custom fields icon at the form level too, where the fields are filled in; not for
+    # a list of fields chosen elsewhere (regulatory lists pass custom_fields:). One icon per page (the controller).
+    return inputs unless custom_fields.blank? && form_type_fields_allowed_for_form?(model)
+
+    safe_join([render(partial: "/form_type_fields/anchor", locals: { model:, form_type: model.form_type }), inputs])
+  end
+
+  # The form-level icon: a signed-in user (never in a mailer) allowed FormTypePolicy#inline_fields? on the form
+  # type the form shows. Works for a new record too — the panel is opened for the form type, not the record.
+  def form_type_fields_allowed_for_form?(model)
+    return false unless respond_to?(:current_user) && current_user && model.form_type&.persisted?
+
+    policy(model.form_type).inline_fields?
   end
 
   # allowed_types: Uppy allowedFileTypes (extensions like ".xlsx" or MIME types); defaults to any file.
@@ -39,7 +52,23 @@ module FormTypeHelper
                            model.form_type.present? ? model.form_custom_fields.not_regulatory : []
                          end
 
-    render partial: "/form_types/display_custom_fields", locals: { model:, collapsed:, form_custom_fields: form_custom_fields, timestamps_and_snapshot: }
+    rows = render partial: "/form_types/display_custom_fields", locals: { model:, collapsed:, form_custom_fields: form_custom_fields, timestamps_and_snapshot: }
+    # D13 — the custom fields icon for the card holding these rows, when they come from the record's form type
+    # (not a reporting list's own fields — E19) and the user may change it (openspec/changes/grid-columns-inline-settings)
+    return rows unless custom_fields.blank? && form_type_fields_allowed?(model)
+
+    safe_join([render(partial: "/form_type_fields/anchor", locals: { model: }), rows])
+  end
+
+  # D17 — the icon only for a saved record of a custom-fields record type, a signed-in user (never in a mailer),
+  # and FormTypePolicy#inline_fields? on the form type its fields come from. Checked once per call.
+  def form_type_fields_allowed?(model)
+    return false unless model.respond_to?(:persisted?) && model.persisted? && model.class.include?(WithCustomField)
+    return false unless respond_to?(:current_user) && current_user
+
+    policy(FormTypeFieldsSave.form_type_for(model)).inline_fields?
+  rescue Pundit::NotDefinedError
+    false
   end
 
   # Human-readable tab label for a given step enum name string (e.g. "four") and optional form_type.

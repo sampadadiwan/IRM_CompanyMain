@@ -1,28 +1,7 @@
-
+<%# One response in the Approval Responses list: the chosen columns (RansackTableRow), then its actions.
+    openspec/changes/grid-columns-inline-settings — D21 %>
 <tr id="<%= dom_id approval_response %>">
-  <td>
-    <%= link_to approval_response.investor %>
-  </td>
-
-  <td>
-    <%= approval_response.investor.tag_list %>
-  </td>
-
-  <td>
-    <%= approval_response.response_user&.full_name %>
-  </td>
-  <td>
-    <%
-      colors = ["bg-success", "bg-warning", "bg-secondary", "bg-info", "bg-primary", "bg-light", "bg-dark"].freeze
-
-      idx = approval_response.approval.response_status&.split(",")&.index(approval_response.status) || 0
-
-    %>
-    <span class="badge <%=colors[idx]%>"><%= approval_response.status %></span>
-  </td>
-  <td>
-    <%= l approval_response.updated_at %>
-  </td>
+  <%= render RansackTableRow.new(model: approval_response, columns:) %>
   <td>
     <%= link_to  t_common(:show) , approval_response , {class: "btn btn-outline-primary" }%>
     <% if policy(approval_response).update? %>

@@ -13,47 +13,12 @@
     </span>
   </div>
 
-  <div class="table-responsive" data-controller="datatable">
-
-    <table id="expression_of_interests" class="table table-bordered dataTable jqDataTable">
-
-      <thead>
-        <tr>
-          <th>
-            Created By
-          </th>
-          <th>
-            Stakeholder
-          </th>
-          <th>
-            Amount
-          </th>
-          <th>
-            Approved
-          </th>
-          <th>
-            Verified
-          </th>
-          <th>
-            Data Room Access
-          </th>
-          <th>
-            Allocation Percentage
-          </th>
-          <th>
-            Allocation Amount
-          </th>
-
-          <th>
-          </th>
-        </tr>
-      </thead>
-
-      <tbody>
-      <% expression_of_interests.each do |expression_of_interest| %>
-        <%= render expression_of_interest %>
-      <% end %>
-      </tbody>
-    </table>
-
+  <%# D21 — the firm's chosen columns (or the list's own, ExpressionOfInterest::LIST_COLUMNS), sorted, searched and
+      paged in the page by jQuery DataTables (sortable: false, pagy: nil). openspec/changes/grid-columns-inline-settings %>
+  <% eoi_table = RansackTable.new(ExpressionOfInterest, q: @q, default_columns_map: ExpressionOfInterest::LIST_COLUMNS,
+                                  current_user: current_user, records: expression_of_interests, report_id: params["report_id"],
+                                  turbo_frame: "expression_of_interests_frame", referrer: request.referrer, pagy: nil,
+                                  table_css_class: "jqDataTable", sortable: false) %>
+  <div data-controller="datatable" data-datatable-money-columns-value="<%= eoi_table.money_column_indexes %>">
+    <%= render eoi_table %>
   </div>

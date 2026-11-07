@@ -261,9 +261,10 @@ end
 
 When('they add the grid column {string} to the {string} form type of {string}') do |key, form_type_name, firm_name|
   form_type = FormType.find_by!(entity: cma_firm(firm_name), name: form_type_name)
-  cma_request(:post, grid_view_preferences_path,
-              { owner_type: "FormType", owner_id: form_type.id,
-                grid_view_preference: { key:, label: key.humanize, data_type: "String" } })
+  # Columns are added through the shared columns editor now (grid-columns-inline-settings D19; the old
+  # grid_view_preferences#create is gone): a save carrying that form type's signed context and one new column
+  context = GridColumnsContext.for_owner(form_type).to_token
+  cma_request(:patch, save_grid_columns_path, { context:, rows: [{ key:, label: key.humanize }].to_json })
 end
 
 When('they open Configure Grid for the {string} form type of {string}') do |form_type_name, firm_name|

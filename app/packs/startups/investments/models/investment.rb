@@ -29,6 +29,23 @@ class Investment < ApplicationRecord
                        "Amount; num-col" => "amount; num-col",
                        "Quantity; num-col" => "quantity; num-col" }.freeze
 
+  # The Investments list's columns before a firm chooses its own — what the hand-built list showed
+  # (openspec/changes/grid-columns-inline-settings — D21). The portfolio company is a link (InvestmentDecorator)
+  # whose key is also its Ransack sort key; Category shows "Self" as the company's firm (InvestmentDecorator#category).
+  LIST_COLUMNS = {
+    "Portfolio Company; text-col" => "portfolio_company_investor_name; text-col",
+    "Category; text-col" => "category; text-col",
+    "Investor Name; text-col" => "investor_name; text-col",
+    "Investment Type; text-col" => "investment_type; text-col",
+    "Funding Round; text-col" => "funding_round; text-col",
+    "Quantity; num-col" => "quantity; num-col",
+    "Price; num-col" => "price; num-col",
+    "Amount; num-col" => "amount; num-col",
+    "Investment Date; date-col" => "investment_date; date-col"
+  }.freeze
+  # List-only cells the columns editor offers (never the report builder) — D21
+  GRID_COLUMNS = { "Portfolio Company (link); text-col" => "portfolio_company_investor_name; text-col" }.freeze
+
   def display_category
     category == "Self" ? portfolio_company.entity.name : category
   end

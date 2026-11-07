@@ -1,0 +1,11 @@
+<%# ① The columns icon: a small round button on the table's top-right corner, shown on hover, for users allowed to
+    change the columns this table shows. Carries the signed record of what the table showed.
+    openspec/changes/grid-columns-inline-settings — card ①, D1, D2; H1, X1, X2 %>
+<% if header.grid_columns_allowed?(current_user) %>
+  <%= link_to settings_grid_columns_path(context: header.grid_columns_context.to_token),
+              class: "grid-columns-btn",
+              title: "Choose this table's columns", aria: { label: "Choose this table's columns" },
+              data: { action: "grid-columns#open", bs_toggle: "tooltip" } do %>
+    <i class="ti ti-table-options"></i>
+  <% end %>
+<% end %>

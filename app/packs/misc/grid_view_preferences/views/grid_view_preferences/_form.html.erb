@@ -1,56 +1,55 @@
-<%= render FormCard.new(title: "Grid View Preference #{grid_view_preference.name}", css_class: "dynamic_form") do %>
-
-<%= form_with(model: grid_view_preference, id: "grid_view_form", validates: true) do |form| %>
-  <% if grid_view_preference.errors.any? %>
-    <div class="alert alert-danger">
-      <h2><%= pluralize(grid_view_preference.errors.count, "error") %> prohibited this grid view preference from being saved:</h2>
-      <ul>
-        <% grid_view_preference.errors.each do |error| %>
-          <li><%= error.full_message %></li>
-        <% end %>
-      </ul>
-    </div>
-  <% end %>
-
-  <%= form.hidden_field :owner_type, value: grid_view_preference.owner_type, class: "form-control" %>
-  <%= form.hidden_field :owner_id, value: grid_view_preference.owner_id, class: "form-control" %>
-  <%= form.hidden_field :derived_field, value: grid_view_preference.derived_field, class: "form-control"
-  %>
-
-  <% if grid_view_preference.new_record? || grid_view_preference.derived_field %>
-    <div class="form-group">
-      <%= form.label :key, "Enter Grid View Key" %>
-      <%= form.text_area :key, class: "form-control", placeholder: "Enter the element to extract the data for" %>
-    </div>
-  <% end %>
-
-  <div class="form-group">
-    <%= form.label :label, "Label" %>
-    <%= form.text_field :label, class: "form-control" %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :data_type, "Data Type", class: "col-sm-2 col-form-label" %>
-      <% field_types =  %w[String Number Decimal Date HTML].sort %>
-      <%= form.select :data_type, options_for_select(field_types, grid_view_preference.data_type), { prompt: "Select Data Type" }, class: "form-control" %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :sequence, "Sequence" %>
-    <%= form.number_field :sequence, class: "form-control", min: 1 %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :alignment, "Alignment", class: "col-sm-2 col-form-label" %>
-    <%= form.text_field :alignment, class: "form-control", placeholder: "e.g. text-start, text-center, text-end" %>
-  </div>
-
-  <div class="form-group">
-    <%= form.button type: 'submit', class: "btn btn-outline-primary" do %>
-        <i class="ti ti-device-floppy"></i> <%= t_common(:save) %>
+<%# Edit one saved grid column (heading, data type, alignment, position; a derived field's key). Saving goes back
+    to Configure Grids with this column open on the right, so the list there is current.
+    openspec/changes/grid-columns-inline-settings — D19 %>
+<% owner = grid_view_preference.owner %>
+<div class="card-header d-flex justify-content-between align-items-center">
+  <h5 class="card-title mb-0"><i class="ti ti-edit me-1 text-primary"></i>Edit <%= grid_view_preference.clean_label %></h5>
+  <%= link_to grid_view_preference_path(grid_view_preference), class: "btn-close", aria: { label: "Close" },
+              data: { turbo_frame: "grid_column_detail" } do %><% end %>
+</div>
+<div class="card-body">
+  <%= form_with(model: grid_view_preference, id: "grid_view_form", data: { turbo_frame: "_top" }) do |form| %>
+    <% if grid_view_preference.errors.any? %>
+      <div class="alert alert-danger py-2 small">
+        <% grid_view_preference.errors.full_messages.each do |message| %><div><%= message %></div><% end %>
+      </div>
     <% end %>
-    <a class="btn btn-outline-danger ti ti-x" data-action="click->grid-view#close">Close</a>
-  </div>
-<% end %>
 
-<% end %>
+    <% if grid_view_preference.derived_field %>
+      <div class="mb-3">
+        <%= form.label :key, "Key", class: "form-label" %>
+        <%= form.text_field :key, class: "form-control", maxlength: 255, placeholder: "e.g. investor.custom_fields.relationship_manager" %>
+      </div>
+    <% end %>
+
+    <div class="mb-3">
+      <%= form.label :label, "Heading", class: "form-label" %>
+      <%# The heading as shown (no "; css" part); the alignment suffix is kept on save %>
+      <%= form.text_field :label, value: grid_view_preference.clean_label, class: "form-control", placeholder: grid_view_preference.clean_name %>
+    </div>
+
+    <div class="row g-3 mb-3">
+      <div class="col-6">
+        <%= form.label :data_type, "Data type", class: "form-label" %>
+        <%= form.select :data_type, options_for_select(GridColumnsSave::DATA_TYPES, grid_view_preference.data_type), { include_blank: "Default" }, class: "form-select" %>
+      </div>
+      <div class="col-6">
+        <%= form.label :alignment, "Alignment", class: "form-label" %>
+        <%= form.select :alignment, options_for_select([["Left", "text-start"], ["Centre", "text-center"], ["Right", "text-end"]], grid_view_preference.alignment), { include_blank: "Default" }, class: "form-select" %>
+      </div>
+    </div>
+
+    <div class="mb-3">
+      <%= form.label :sequence, "Position", class: "form-label" %>
+      <%= form.number_field :sequence, class: "form-control", min: 1 %>
+    </div>
+
+    <div class="d-flex justify-content-end gap-2">
+      <%= link_to "Cancel", grid_view_preference_path(grid_view_preference), class: "btn btn-sm btn-link text-muted text-decoration-none",
+                  data: { turbo_frame: "grid_column_detail" } %>
+      <%= form.button type: "submit", class: "btn btn-sm btn-primary rounded-pill px-3" do %>
+        <i class="ti ti-check me-1"></i><%= t_common(:save) %>
+      <% end %>
+    </div>
+  <% end %>
+</div>

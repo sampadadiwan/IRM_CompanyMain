@@ -39,10 +39,10 @@ class RansackTableHeader < ViewComponent::Base
   attr_accessor :columns, :entity, :current_user, :actions_column
 
   def ag_selected_columns
-    report = Report.find_by(id: @report_id)
     columns = report.ag_selected_columns if report.present?
 
-    form_type = entity.form_types.find_by(name: @model.to_s)
+    # D6 — the same form type the columns panel saves to (lowest id of that name)
+    form_type = GridColumnsContext.form_type_for(entity, @model)
     columns = form_type&.ag_selected_columns if columns.blank?
 
     if columns.blank? && @default_columns_map.present?
@@ -90,6 +90,47 @@ class RansackTableHeader < ViewComponent::Base
     columns
   end
 
+  # The open report (?report_id=), loaded once. Unscoped as before: it only supplies column definitions, and the
+  # columns panel loads it again through the user's report scope (openspec/changes/grid-columns-inline-settings)
+  def report
+    return @report if defined?(@report)
+
+    @report = (Report.find_by(id: @report_id) if @report_id.present?)
+  end
+
+  # ① The signed context the columns icon carries: what this table showed, for which firm and report.
+  # openspec/changes/grid-columns-inline-settings — design D2; worked examples H3, H5, E2, E3, E4, E11
+  def grid_columns_context
+    @grid_columns_context ||= GridColumnsContext.new(
+      model_class: @model, entity:,
+      # H5/E4 — the report owns the columns only when it has its own; otherwise the table showed the firm's
+      report: (report if report&.grid_view_preferences&.exists?),
+      # E11 — the snapshot column is added for snapshot views only, never saved
+      shown: @columns.except("Snapshot Date").to_a,
+      # E2 — only the columns this page adds itself (required ones the resolved set lacked) are locked; a
+      # required column the set already has is an ordinary row, so saving keeps it. E3 — saved columns it hides
+      required: grid_columns_added_keys, excluded: @excluded_columns
+    )
+  end
+
+  # E2 — the required keys this page prepended because the resolved column set lacked them
+  def grid_columns_added_keys
+    return [] if @required_columns.empty?
+
+    base_keys = base_columns(entity, @default_columns_map).values.map { |key| bare_key(key) }
+    @required_columns.values.map { |key| bare_key(key) }.reject { |key| base_keys.include?(key) }
+  end
+
+  # ① Show the columns icon? Only for a model with standard columns, a firm, and a user the policy lets change
+  # the columns this table shows (company admin of the firm, not acting as investor; a report they may edit).
+  # Checked once per table, never per row. X1, X2, X7
+  def grid_columns_allowed?(user)
+    return @grid_columns_allowed if defined?(@grid_columns_allowed)
+
+    @grid_columns_allowed = user.present? && entity.present? && @model.const_defined?(:STANDARD_COLUMNS) &&
+                            Pundit.policy!(user, GridViewPreference.new(owner: grid_columns_context.owner, entity_id: entity.id)).inline_columns?
+  end
+
   private
 
   def cache_key(default_columns_map)
@@ -97,7 +138,9 @@ class RansackTableHeader < ViewComponent::Base
     # different map per-request (e.g. params[:debug]), and without this the cached
     # result from one variant gets served to the other until the 5-day expiry.
     # required/excluded columns too: the same entity's columns are adjusted differently per page.
-    ["#{@model}Header", current_user, entity, @referrer, @report_id, default_columns_map, @required_columns, @excluded_columns]
+    # D10 — the report record (versioned by updated_at, touched when its columns change), not just its id, so a
+    # report's column change shows at once instead of after the 5-day expiry
+    ["#{@model}Header", current_user, entity, @referrer, report || @report_id, default_columns_map, @required_columns, @excluded_columns]
   end
 
   def fetch_columns(entity, default_columns_map)
@@ -108,14 +151,20 @@ class RansackTableHeader < ViewComponent::Base
 
   # Fetches the columns based on the report or entity
   def get_columns(entity, default_columns_map)
-    report = Report.find_by(id: @report_id)
+    adjust_columns(base_columns(entity, default_columns_map))
+  end
+
+  # The columns before this page's required/excluded rules: the report's, the form type's, the page's default
+  # map, or the model's standard columns
+  def base_columns(entity, default_columns_map)
     columns = report.selected_columns if report.present?
 
-    form_type = entity.form_types.find_by(name: @model.to_s)
+    # D6 — the same form type the columns panel saves to (lowest id of that name)
+    form_type = GridColumnsContext.form_type_for(entity, @model)
     columns = form_type&.selected_columns if columns.blank?
     columns = default_columns_map if columns.blank?
     columns = @model::STANDARD_COLUMNS if columns.blank?
-    adjust_columns(columns)
+    columns
   end
 
   # The plain attribute key of a "key; css-class" column value

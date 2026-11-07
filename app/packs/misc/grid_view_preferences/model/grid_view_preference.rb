@@ -107,10 +107,14 @@ class GridViewPreference < ApplicationRecord
 
   private
 
-  # Touches the associated entity to trigger cache invalidation or updated timestamps
-  # Only applicable if the owner is a FormType and has an associated entity
+  # Touches what the table header's column cache is keyed on, so a column change shows at once:
+  # a FormType's entity, or (D10 — openspec/changes/grid-columns-inline-settings, H5) the Report itself
   def touch_entity
-    owner.entity.touch if owner.is_a?(FormType) && owner.entity.present?
+    if owner.is_a?(FormType)
+      owner.entity.presence&.touch
+    elsif owner.is_a?(Report)
+      owner.touch
+    end
   end
   # rubocop:enable Rails/SkipsModelValidations
 end

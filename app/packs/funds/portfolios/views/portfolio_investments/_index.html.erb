@@ -102,6 +102,9 @@
     %>
 
     <% table_suffix = rand(100000) %>
+    <%# ① The columns icon on the grid (openspec/changes/grid-columns-inline-settings — phase 3, D1; H9, E12) %>
+    <div class="grid-columns-host" data-controller="grid-columns">
+    <%= render "grid_columns/button", header: ransack_table_header %>
     <div class="portfolio_investment_ag_grid" data-controller="ag"
       data-ag-grid-div-name-value="portfolio_investment_ag_grid"
       data-ag-lazy-load-data-value=<%= false %>
@@ -114,6 +117,7 @@
       </div>
 
       </div>
+    </div>
   </div>
 
 <% else %>

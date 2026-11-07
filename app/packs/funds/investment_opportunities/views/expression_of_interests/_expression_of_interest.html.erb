@@ -1,32 +1,9 @@
 
 
+<%# One expression of interest: the chosen columns (RansackTableRow), then its actions.
+    openspec/changes/grid-columns-inline-settings — D21 %>
 <tr id="<%= dom_id expression_of_interest %>">
-  <td>
-    <%= expression_of_interest.user.full_name %>
-  </td>
-  <td>
-    <%= expression_of_interest.investor_name.presence || expression_of_interest.investor.investor_name%>
-  </td>
-  <td>
-    <%= money_to_currency expression_of_interest.amount, params %>
-  </td>
-  <td class="eoi_approved">
-    <%= display_boolean expression_of_interest.approved %>
-  </td>
-  <td>
-    <%= display_boolean expression_of_interest.verified %>
-  </td>
-  <td>
-    <%= display_boolean expression_of_interest.show_data_room %>
-  </td>
-
-  <td class="text-end">
-    <%= expression_of_interest.allocation_percentage %> %
-  </td>
-
-  <td class="text-end">
-    <%= money_to_currency expression_of_interest.allocation_amount, params %>
-  </td>
+  <%= render RansackTableRow.new(model: expression_of_interest, columns:) %>
   <td>
     <div class="dropdown">
       <button class="btn btn-outline-primary dropdown-toggle" type="button" id="eoiActionsDropdown"

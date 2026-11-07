@@ -1,20 +1,7 @@
+<%# One user: the chosen columns (RansackTableRow), then the actions.
+    openspec/changes/grid-columns-inline-settings — D21 %>
 <tr id="user_<%= user.id %>">
-  <td class="text-col">
-    <%# An advisor switched in from another company is listed, but their page belongs to their own firm (R5). %>
-    <%= policy(user).show? ? link_to(user.first_name, user_path(user.id)) : user.first_name %>
-  </td>
-  <td class="text-col">
-    <%= user.last_name %>
-  </td>
-  <td class="text-col">
-    <%= user.roles.collect(&:name) %>
-  </td>
-  <td class="text-col">
-    <%= user.tag_list %>
-  </td>
-  <td class="text-col">
-    <%= user.entity_name %>
-  </td>
+  <%= render RansackTableRow.new(model: user, columns:) %>
   <td class="action-col">
     <%= link_to  t_common(:show), user, {class: "btn btn-outline-primary ti ti-eye" } if policy(user).show? %>
     <%= link_to  t_common(:edit), edit_user_path(user), {class: "btn btn-outline-success ti ti-pencil" } if policy(user).edit? %>

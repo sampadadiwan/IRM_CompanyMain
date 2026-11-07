@@ -65,9 +65,18 @@ end
 
 resources :kanban_boards, controller: "boards"
 
-resources :grid_view_preferences do
+# new/create removed — columns are added in the shared columns editor (openspec/changes/grid-columns-inline-settings — D19)
+resources :grid_view_preferences, except: %i[new create index] do
   patch 'update_column_sequence', on: :member
   get 'configure_grids', on: :collection
+end
+
+# The columns side panel on tables (openspec/changes/grid-columns-inline-settings — D3)
+resources :grid_columns, only: [] do
+  collection do
+    get :settings
+    patch :save
+  end
 end
 
 resources :events

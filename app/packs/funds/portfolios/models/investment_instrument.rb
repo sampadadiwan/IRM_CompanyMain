@@ -7,6 +7,20 @@ class InvestmentInstrument < ApplicationRecord
     "Currency; text-col" => "currency; text-col"
   }.freeze
 
+  # The Investment Instruments list's columns before a firm chooses its own — what the hand-built list showed
+  # (openspec/changes/grid-columns-inline-settings — D21). Links come from InvestmentInstrumentDecorator.
+  LIST_COLUMNS = {
+    "Name; text-col" => "name_link; text-col",
+    "Currency; text-col" => "currency; text-col"
+  }.freeze
+  # Without a portfolio company in view the list leads with the company
+  ALL_COMPANIES_LIST_COLUMNS = { "Portfolio Company; text-col" => "portfolio_company_link; text-col" }.merge(LIST_COLUMNS).freeze
+  # List-only cells the columns editor offers (never the report builder) — D21
+  GRID_COLUMNS = {
+    "Name (link); text-col" => "name_link; text-col",
+    "Portfolio Company; text-col" => "portfolio_company_link; text-col"
+  }.freeze
+
   # SECTORS = ENV["SECTORS"].split(",").sort
   # rubocop:disable Layout/SpaceAfterComma
   TYPES_OF_INVESTEE_COMPANY = ["Company","LLP","AIF","REIT","InvIT","Mutual Fund (MF)","Venture Capital Undertaking","Startup","Trust set up by an Asset Reconstruction Company (ARC)","ARC","Micro enterprise","Small enterprise","Medium enterprise","SPV","Social Enterprise"].freeze

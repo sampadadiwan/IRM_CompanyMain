@@ -8,47 +8,13 @@
       {class: "btn btn-outline-primary ti ti-plus" } if current_user.has_cached_role?(:employee) %>
   </div>
 
-  <div class="table-responsive" data-controller="datatable">
-
-
-    <table id="secondary_sales" class="table table-bordered dataTable jqDataTable">
-      <thead>
-        <tr>
-          <th>
-            <%= t('secondaries_actions.name') %>
-          </th>
-          <th>
-            <%= t('secondaries_actions.total_offered') %>
-          </th>
-          <th>
-            <%= t('secondaries_actions.entity') %>
-          </th>
-          <th>
-            <%= t('secondaries_actions.start_date') %>
-          </th>
-          <th>
-            <%= t('secondaries_actions.end_date') %>
-          </th>
-          <th>
-            <%= t('secondaries_actions.min_price') %>
-          </th>
-          <th>
-            <%= t('secondaries_actions.max_price') %>
-          </th>
-          <th>
-            <%= t('secondaries_actions.active') %>
-          </th>
-
-          <th>
-          </th>
-        </tr>
-      </thead>
-
-      <tbody>
-      <% @secondary_sales.each do |secondary_sale| %>
-          <%= render secondary_sale %>
-        <% end %>
-      </tbody>
-    </table>
-
+  <%# D21 — the firm's chosen columns (or the list's own, SecondarySale::LIST_COLUMNS), sorted, searched and paged in
+      the page by jQuery DataTables (sortable: false, pagy: nil). openspec/changes/grid-columns-inline-settings %>
+  <%# Headings translated as the hand-built list's were (secondaries_actions.<label>, e.g. total_offered; the label itself when there is no translation) %>
+  <% list_columns = SecondarySale::LIST_COLUMNS.to_h { |label, key| [t("secondaries_actions.#{label.parameterize(separator: '_')}", default: label), key] } %>
+  <% secondary_sales_table = RansackTable.new(SecondarySale, q: @q, default_columns_map: list_columns,
+                                              current_user: current_user, records: @secondary_sales, turbo_frame: "_top",
+                                              referrer: request.referrer, pagy: nil, table_css_class: "jqDataTable", sortable: false) %>
+  <div data-controller="datatable" data-datatable-money-columns-value="<%= secondary_sales_table.money_column_indexes %>">
+    <%= render secondary_sales_table %>
   </div>

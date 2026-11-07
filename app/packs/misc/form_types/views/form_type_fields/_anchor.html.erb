@@ -1,0 +1,11 @@
+<%# D13 — a hidden element the form-type-fields controller uses to place the custom fields icon: on a record's page
+    (a row among its custom field rows, panel opened for the record) or on a form (panel opened for the form type it
+    shows — new records included). openspec/changes/grid-columns-inline-settings — phase 4; H10, E19
+    Locals: model, form_type (only on forms) %>
+<% form_type = local_assigns[:form_type] %>
+<% url = form_type ? settings_form_type_fields_path(form_type_id: form_type.id) : settings_form_type_fields_path(record_type: model.class.name, record_id: model.id) %>
+<% if form_type %>
+  <div class="d-none" data-controller="form-type-fields" data-form-type-fields-url-value="<%= url %>"></div>
+<% else %>
+  <tr class="d-none" data-controller="form-type-fields" data-form-type-fields-url-value="<%= url %>"><td></td></tr>
+<% end %>

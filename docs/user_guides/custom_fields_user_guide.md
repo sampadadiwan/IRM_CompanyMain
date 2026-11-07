@@ -30,18 +30,20 @@ Details for each step are below.
 8. [Custom Field Settings](#custom-field-settings)
 9. [Field Types](#field-types)
 10. [Ordering Fields](#ordering-fields)
-11. [Multi-Step Forms](#multi-step-forms)
-12. [Extra KYC Steps (4–9)](#extra-kyc-steps-49)
-13. [Reviewing a Form Type](#reviewing-a-form-type)
-14. [Required and Read-Only Fields](#required-and-read-only-fields)
-15. [Conditional Visibility](#conditional-visibility)
-16. [Regulatory Fields](#regulatory-fields)
-17. [Showing a Field to Specific Users](#showing-a-field-to-specific-users)
-18. [How the Data Is Stored](#how-the-data-is-stored)
-19. [Renaming a Field](#renaming-a-field)
-20. [Importing Custom Field Data](#importing-custom-field-data)
-21. [Worked Example](#worked-example)
-22. [Frequently Asked Questions](#frequently-asked-questions)
+11. [Changing Fields from a Record or Form](#changing-fields-from-a-record-or-form)
+12. [Choosing a List's Columns](#choosing-a-lists-columns)
+13. [Multi-Step Forms](#multi-step-forms)
+14. [Extra KYC Steps (4–9)](#extra-kyc-steps-49)
+15. [Reviewing a Form Type](#reviewing-a-form-type)
+16. [Required and Read-Only Fields](#required-and-read-only-fields)
+17. [Conditional Visibility](#conditional-visibility)
+18. [Regulatory Fields](#regulatory-fields)
+19. [Showing a Field to Specific Users](#showing-a-field-to-specific-users)
+20. [How the Data Is Stored](#how-the-data-is-stored)
+21. [Renaming a Field](#renaming-a-field)
+22. [Importing Custom Field Data](#importing-custom-field-data)
+23. [Worked Example](#worked-example)
+24. [Frequently Asked Questions](#frequently-asked-questions)
 
 ---
 
@@ -214,7 +216,54 @@ Each field row has these settings. Only **Name** and **Field type** are mandator
 
 ## Ordering Fields
 
-Fields appear in their **Position** order within a step. Edit the position number on each field row (gaps don't matter), or use the inline **Edit** on the Form Type page to move one field. Use a **Header** field to put a titled divider between groups of fields.
+Fields appear in their **Position** order within a step. Edit the position number on each field row (gaps don't matter), or use the inline **Edit** on the Form Type page to move one field. Use a **Header** field to put a titled divider between groups of fields. You can also drag fields into order in the side panel described next.
+
+---
+
+## Changing Fields from a Record or Form
+
+You don't have to leave a record to fix its fields. Company admins see a small form icon (🗎):
+
+- on a record's page, beside the minimize button of the card that shows its custom fields (for example an investor's page);
+- on a record's new or edit form, on the right of the form's header.
+
+Clicking it opens a side panel listing the record's Form Type fields in form order. In it you can:
+
+- drag a field to reorder it;
+- click a label to rename it;
+- switch **Required**, **Read only** and **Internal** (hidden from investors) on or off;
+- open ⌄ to edit the help text;
+- remove a field (✕; click ↶ to keep it before saving);
+- add a field — a label and a type (Text, Number, Date, Text area, Check box, Select with comma-separated options, or Money in your company's currency).
+
+```mermaid
+flowchart LR
+    A["Record page or form"] --> B["Click the form icon"]
+    B --> C["Side panel:<br/>reorder, rename,<br/>flags, add, remove"]
+    C --> D{"Save?"}
+    D -- "Cancel / Esc" --> A
+    D -- "Save" --> E["Every record on the<br/>Form Type changes"]
+    E --> F["Page refreshes<br/>in place"]
+```
+
+Nothing changes until you click **Save**; Cancel or Esc closes the panel without saving. After saving, the page refreshes where you were. The change applies to every record on that Form Type. Calculation fields are shown locked (only CapHive support can change them), regulatory fields are not listed, and conditions, validation rules and steps stay on the full Form Type page (the ↗ link in the panel).
+
+---
+
+## Choosing a List's Columns
+
+Lists of records (Investors, Capital Commitments, Capital Calls, Funds, Distributions and many more) have a columns button (▦) right of the list's search box. It opens a side panel with the list's columns, where company admins can drag columns into order, rename a heading, remove a column, add one (the record's fields, your custom fields, or fields of related records), set a column's data type and alignment, add a derived field (a column whose value is a path you type), or reset to the standard columns. **Save** stores the whole list at once and only that list reloads, keeping your search, sort and page.
+
+```mermaid
+flowchart LR
+    A["List with a search box"] --> B["Columns button"]
+    B --> C["Side panel:<br/>drag, rename,<br/>add, remove"]
+    C --> D["Save"]
+    D --> E["Only this list reloads,<br/>search and page kept"]
+    D --> F["Every list of this<br/>kind in your company"]
+```
+
+The columns belong to your company and the record kind, not to one person: every list of that kind shows the change. When a saved report with its own columns is open, the panel edits the report's columns instead. **Configure Grids** on the Form Type page shows the same list on a full page, with **Show**, **Edit** and **Delete** for each saved column.
 
 ---
 
@@ -281,7 +330,7 @@ The Form Type page (click a row in the [**Form Types**](/form_types) list) lists
 - **Tabs by Step** — one tab per step, with a field count, to audit what appears on each wizard page and spot fields on the wrong step. **Flat List** switches back.
 - **Inline edit** — every field row has an **Edit** action to quickly fix a label, change a step, or toggle "required", with the same validation as the full editor.
 
-Buttons at the bottom of the page: **Edit** (the full editor, where you add fields), **Delete** (permanently removes the Form Type and its field definitions — there is no restore — but keeps the data already saved on records), **Configure Grids** (list-column layout for supported records), **Download Custom Fields** and **Upload Custom Fields** (Excel export/import of the field definitions).
+Buttons at the bottom of the page: **Edit** (the full editor, where you add fields), **Delete** (permanently removes the Form Type and its field definitions — there is no restore — but keeps the data already saved on records), **Configure Grids** (the list-column editor for this record kind — the same list as the columns button on a list, plus Show / Edit / Delete per column; see [Choosing a List's Columns](#choosing-a-lists-columns)), **Download Custom Fields** and **Upload Custom Fields** (Excel export/import of the field definitions).
 
 ---
 
@@ -424,7 +473,13 @@ On the Form Type page click **Download Custom Fields** for an Excel file of the 
 On the [**Form Types**](/form_types) list click **Import Template** on the Form Type's row. It downloads an Excel template for importing records of that kind with a column for each custom field. See [Importing Custom Field Data](#importing-custom-field-data).
 
 **How do I change which columns show in a record list?**
-Click **Configure Grids** on the Form Type row or page (shown for record kinds that support it, such as Investor, Capital Commitment, Investor KYC, Capital Call and Valuation). Pick standard and custom-field columns for the list grid.
+Click the columns button (▦) right of the list's search box (company admins only), change the list in the side panel and click **Save**; only that list reloads. The same editor is on **Configure Grids** on the Form Type row or page. The change applies to every list of that record kind in your company. See [Choosing a List's Columns](#choosing-a-lists-columns).
+
+**Can I change a record's custom fields from its page or form?**
+Yes, if you are a company admin: click the form icon (🗎) beside the minimize button of the card showing the fields, or on the right of a form's header. Reorder, rename, switch Required / Read only / Internal, edit help text, remove or add fields, then **Save**; the page refreshes in place. See [Changing Fields from a Record or Form](#changing-fields-from-a-record-or-form).
+
+**Why don't I see the columns button or the form icon?**
+Both are shown only to company admins of the company that owns the list or record, and never while you act as an investor. A list whose record kind has no standard columns, and a list of fields chosen elsewhere (such as a KYC's reporting fields), have no button.
 
 **How do I add SEBI regulatory fields?**
 On the [**Form Types**](/form_types) list, rows for Individual KYC, Non-Individual KYC and Investment Instrument Form Types have **Add Reporting Fields → SEBI** for company admins; confirm the prompt. Other environments (CRISIL, IFSC, MAS) are set up by CapHive support. See [Regulatory Fields](#regulatory-fields).
@@ -450,6 +505,12 @@ Records only have CapHive's standard fields. Anything extra has to live outside 
 
 **What happens when I save a new Form Type?**
 The Form Type is created for your company, and every existing record of that kind that had no Form Type is linked to it straight away, so its fields appear on those records' forms and pages. A second Form Type for the same record kind is refused unless the kind allows several. No one is notified.
+
+**What happens when I remove a field in the side panel and save?**
+The field's definition is deleted, as **Delete** on the Form Type page does: it disappears from forms and pages for every record on that Form Type. Values already entered stay stored on the records, unseen; adding a field with the same name later shows them again. The panel warns you before you save.
+
+**What happens to my form when I save the fields panel from it?**
+The page refreshes after saving so the form shows the new fields, so anything you typed in the form and had not saved yet is lost. The panel says so above its list — save the record first if you have changes.
 
 **What happens when I add a custom field?**
 The field appears immediately on every record of that kind; existing records simply show it empty. Nothing is written to the records until someone fills it in. If you tick **Required**, see the next question.

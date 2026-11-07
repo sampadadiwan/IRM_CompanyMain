@@ -14,6 +14,9 @@
 
 <%= render "/capital_commitments/index_header", fund: fund, xl_link: xl_link %>
 
+<%# ① The columns icon on the grid (openspec/changes/grid-columns-inline-settings — phase 3, D1; H9, E12) %>
+<div class="grid-columns-host" data-controller="grid-columns">
+<%= render "grid_columns/button", header: ransack_table_header %>
 <div class="capital_commitments_ag_grid" data-controller="ag"
   data-ag-grid-div-name-value="capital_commitments_ag_grid"
   data-ag-lazy-load-data-value=<%= lazy_load_data %>
@@ -23,5 +26,6 @@
   data-ag-custom-fields-value="" >
   <div id="capital_commitments_table" class="<%= get_ag_theme %>" data-source="<%= data_source %>">
   </div>
+</div>
 </div>
 

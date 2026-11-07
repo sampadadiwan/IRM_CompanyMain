@@ -1,0 +1,153 @@
+<%# The columns list, add controls and Save — one editor for the side panel and the full Configure Grids page
+    (openspec/changes/grid-columns-inline-settings — cards ③, D19, D20; H1, H3, H5, H16, H18, E2, E3, E4, E11, X4, X6).
+    Locals: context (GridColumnsContext), rows, errors, reset, embedded (true on Configure Grids), can_save %>
+<% note, note_tip = grid_columns_note(context) %>
+<% tip_container = embedded ? "body" : ".grid-columns-panel" %>
+<%= turbo_frame_tag "grid_columns", class: "widget-settings-frame" do %>
+  <% unless embedded %>
+    <div class="offcanvas-header widget-settings-header">
+      <div class="min-w-0">
+        <h5 class="offcanvas-title mb-1 text-truncate" id="grid_columns_title">
+          <i class="ti ti-table-options me-1 text-primary"></i><%= context.report ? "Columns of report '#{context.report.name}'" : grid_columns_title(context) %>
+        </h5>
+        <%# One line; the full explanation is in the tooltip %>
+        <div class="text-muted small text-truncate" data-grid-columns-note data-bs-toggle="tooltip"
+             data-bs-container="<%= tip_container %>" title="<%= note_tip %>">
+          <i class="ti ti-users me-1"></i><%= note %>
+        </div>
+      </div>
+      <button type="button" class="btn-close ms-2" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+  <% end %>
+
+  <%= form_with url: save_grid_columns_path, method: :patch, class: "widget-settings-form grid-columns-editor",
+                data: { controller: "grid-columns-form", action: "submit->grid-columns-form#serialise" } do %>
+    <%= hidden_field_tag :context, context.to_token %>
+    <%= hidden_field_tag :embedded, embedded ? "1" : "0" %>
+    <%= hidden_field_tag :rows, "", data: { grid_columns_form_target: "rows" } %>
+    <%= hidden_field_tag :reset, reset ? "1" : "0", data: { grid_columns_form_target: "reset" } %>
+
+    <div class="<%= embedded ? 'grid-columns-embedded-body' : 'offcanvas-body widget-settings-body' %>">
+      <%# X4, X6, X19 — why the save was refused %>
+      <% if errors.present? %>
+        <div class="alert alert-danger py-2 small" role="alert" data-grid-columns-errors>
+          <% errors.each do |message| %><div><%= message %></div><% end %>
+        </div>
+      <% end %>
+      <% if embedded %>
+        <p class="text-muted small mb-2" data-bs-toggle="tooltip" title="<%= note_tip %>"><i class="ti ti-users me-1"></i><%= note %></p>
+      <% end %>
+      <% unless can_save %>
+        <p class="widget-settings-hint" data-grid-columns-read-only><i class="ti ti-lock me-1"></i>Only company admins can change these columns.</p>
+      <% end %>
+
+      <p class="widget-settings-hint">
+        <i class="ti ti-bulb me-1"></i>Drag <i class="ti ti-grip-vertical"></i> to reorder. Click a name to rename the
+        heading, <i class="ti ti-chevron-down"></i> for data type and alignment. Nothing changes until you save.
+      </p>
+
+      <label class="form-label">
+        <i class="ti ti-list-details widget-settings-field-icon" aria-hidden="true"></i>Shown columns
+        <i class="ti ti-info-circle widget-settings-tip" data-bs-toggle="tooltip" data-bs-container="<%= tip_container %>"
+           title="The columns this table shows, left to right. A locked row is always shown on this page and cannot be moved or removed here."></i>
+        <span class="ms-auto fw-normal" data-grid-columns-form-target="count"></span>
+      </label>
+      <ul class="grid-columns-list" data-grid-columns-form-target="list">
+        <% rows.each do |row| %>
+          <%= render "grid_columns/row", row: row, actions: embedded %>
+        <% end %>
+      </ul>
+
+      <%# H6 — what saving after a reset does %>
+      <p class="text-danger small <%= 'd-none' unless reset %>" data-grid-columns-form-target="resetNote" data-grid-columns-reset-note>
+        <i class="ti ti-alert-triangle me-1"></i>Saving removes the saved <%= context.report ? "columns of this report" : "#{grid_columns_plural(context)} columns" %>, including derived fields.
+      </p>
+
+      <label class="form-label" for="grid_columns_add">
+        <i class="ti ti-plus widget-settings-field-icon" aria-hidden="true"></i>Add a column
+        <i class="ti ti-info-circle widget-settings-tip" data-bs-toggle="tooltip" data-bs-container="<%= tip_container %>"
+           title="The record's own fields, your firm's custom fields, and fields of related records. Columns already shown are left out."></i>
+      </label>
+      <select id="grid_columns_add" class="form-select mb-3" data-grid-columns-add
+              data-grid-columns-form-target="add" data-action="change->grid-columns-form#add">
+        <option value="">Search or pick a column…</option>
+        <% grid_columns_add_options(context).each do |group, options| %>
+          <optgroup label="<%= group %>">
+            <% options.each do |label, key, type| %>
+              <option value="<%= key %>" data-label="<%= label %>" data-type="<%= type %>"><%= label %></option>
+            <% end %>
+          </optgroup>
+        <% end %>
+      </select>
+
+      <%# H18 — a derived field: a heading, a key you type and a data type %>
+      <details class="grid-columns-derived mb-3" data-grid-columns-derived>
+        <summary class="small text-muted"><i class="ti ti-math-function me-1"></i>Add derived field
+          <i class="ti ti-info-circle widget-settings-tip" data-bs-toggle="tooltip" data-bs-container="<%= tip_container %>"
+             title="A column whose value is a path you type, e.g. investor.custom_fields.relationship_manager or a related record's field."></i>
+        </summary>
+        <div class="row g-2 mt-1">
+          <div class="col-6"><input type="text" class="form-control form-control-sm" maxlength="100" placeholder="Heading, e.g. RM" data-grid-columns-form-target="derivedLabel" aria-label="Derived field heading"></div>
+          <div class="col-6">
+            <select class="form-select form-select-sm" data-grid-columns-form-target="derivedType" aria-label="Derived field data type">
+              <% GridColumnsSave::DATA_TYPES.each do |type| %><option value="<%= type %>"><%= type %></option><% end %>
+            </select>
+          </div>
+          <div class="col-12"><input type="text" class="form-control form-control-sm" maxlength="255" placeholder="Key, e.g. custom_fields.relationship_manager" data-grid-columns-form-target="derivedKey" aria-label="Derived field key"></div>
+          <div class="col-12 text-end">
+            <button type="button" class="btn btn-sm btn-outline-primary rounded-pill" data-action="grid-columns-form#addDerived" data-grid-columns-add-derived>
+              <i class="ti ti-plus me-1"></i>Add
+            </button>
+          </div>
+        </div>
+      </details>
+
+      <div class="small">
+        <a href="#" class="text-muted text-decoration-none" data-grid-columns-reset
+           data-action="grid-columns-form#reset" data-bs-toggle="tooltip" data-bs-container="<%= tip_container %>"
+           title="Show the standard columns again. The saved columns are removed when you save.">
+          <i class="ti ti-restore me-1"></i>Reset to standard columns
+        </a>
+      </div>
+
+      <%# The standard columns, for Reset (E2 locked rows stay) %>
+      <template data-grid-columns-form-target="standard">
+        <% context.shown.each do |label, key| %>
+          <%= render "grid_columns/row", row: { id: nil, key: key, label: label.split(";").first.strip,
+                                                type: grid_column_type(context.model_class, key), derived: false, alignment: nil,
+                                                locked: context.required.include?(GridColumnOptions.clean(key)), hidden: false } %>
+        <% end %>
+      </template>
+    </div>
+
+    <div class="widget-settings-footer <%= 'grid-columns-embedded-footer' if embedded %>">
+      <% if !embedded && context.owner.persisted? %>
+        <%= link_to configure_grids_grid_view_preferences_path(owner_type: context.owner.class.name, owner_id: context.owner.id),
+                    class: "widget-settings-full-page me-auto",
+                    title: "Open Configure Grids: the full page, with Show / Edit / Delete for each column",
+                    aria: { label: "Open Configure Grids" },
+                    data: { turbo_frame: "_top", bs_toggle: "tooltip", bs_container: tip_container } do %>
+          <i class="ti ti-external-link"></i>
+        <% end %>
+      <% else %>
+        <span class="me-auto"></span>
+      <% end %>
+      <% unless embedded %>
+        <button type="button" class="btn btn-sm btn-link text-muted text-decoration-none" data-bs-dismiss="offcanvas">Cancel</button>
+      <% end %>
+      <button type="submit" class="btn btn-sm btn-primary rounded-pill px-3" data-grid-columns-save <%= 'disabled' unless can_save %>
+              title="<%= embedded ? 'Save the columns' : 'Save, then reload this table in place' %>" data-bs-toggle="tooltip" data-bs-container="<%= tip_container %>">
+        <span class="spinner-border spinner-border-sm me-1 d-none" aria-hidden="true" data-side-panel-spinner></span>
+        <i class="ti ti-check me-1" data-side-panel-save-icon></i>Save
+      </button>
+    </div>
+  <% end %>
+
+  <% if embedded %>
+    <%# D19 — the forms Delete submits (after the confirmation popup), outside the editor form %>
+    <% rows.select { |row| row[:id].present? }.each do |row| %>
+      <%= form_with url: grid_view_preference_path(row[:id]), method: :delete, id: "delete_grid_column_#{row[:id]}",
+                    class: "d-none", data: { turbo: false } do %><% end %>
+    <% end %>
+  <% end %>
+<% end %>

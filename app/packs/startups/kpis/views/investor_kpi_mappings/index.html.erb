@@ -36,53 +36,14 @@
   </span>
 
   </div>
-  <div class="table-responsive" data-controller="datatable">
-    <table id="investor_kpi_mappings" class="table table-bordered dataTable jqDataTable">
-      <thead>
-        <tr>
-          <th>
-            Position
-          </th>
-          <th>
-            Investor
-          </th>
-          <th>
-            Reported Kpi Name
-          </th>
-          <th>
-            Standard Kpi Name
-          </th>
-          <th>
-            Category
-          </th>
-          <th>
-            Auto Fill
-          </th>
-          <th>
-            Common Size
-          </th>
-          <th>
-            Show In Report
-          </th>
-          <th>
-            Lower Threshhold
-          </th>
-          <th>
-            Upper Threshold
-          </th>
-          <th>
-            RAG Rule
-          </th>
-          <th>
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        <% @investor_kpi_mappings.each do |investor_kpi_mapping| %>
-          <%= render investor_kpi_mapping %>
-        <% end %>
-      </tbody>
-    </table>
+  <%# D21 — the firm's chosen columns (or the list's own, InvestorKpiMapping::LIST_COLUMNS), sorted, searched and
+      paged in the page by jQuery DataTables (sortable: false, pagy: nil). openspec/changes/grid-columns-inline-settings %>
+  <% ikm_table = RansackTable.new(InvestorKpiMapping, q: @q, default_columns_map: InvestorKpiMapping::LIST_COLUMNS,
+                                  current_user: current_user, records: @investor_kpi_mappings, report_id: params["report_id"],
+                                  turbo_frame: "investor_kpi_mappings_frame", referrer: request.referrer, pagy: nil,
+                                  table_css_class: "jqDataTable", sortable: false) %>
+  <div data-controller="datatable" data-datatable-money-columns-value="<%= ikm_table.money_column_indexes %>">
+    <%= render ikm_table %>
   </div>
 
 <% end %>

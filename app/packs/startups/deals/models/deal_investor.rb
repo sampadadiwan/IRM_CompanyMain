@@ -45,6 +45,28 @@ class DealInvestor < ApplicationRecord
   validates :deal_lead, :source, :tags, length: { maximum: 255 }
 
   STATUS = %w[Active Pending Declined].freeze
+  # The Deal Investors list's columns before a firm chooses its own — what the hand-built list showed
+  # (openspec/changes/grid-columns-inline-settings — D21). Unstyled headings, as before; links and the status badge
+  # come from DealInvestorDecorator.
+  LIST_COLUMNS = {
+    "Deal" => "deal_link",
+    "Start Date" => "deal.start_date",
+    "Investor" => "investor_name_with_status",
+    "Entity" => "entity.name",
+    "Pre Money Valuation" => "pre_money_valuation",
+    "Primary Amount" => "primary_amount",
+    "Secondary Investment" => "secondary_investment",
+    "Company Advisor" => "company_advisor",
+    "Investor Advisor" => "investor_advisor"
+  }.freeze
+  # List-only cells the columns editor offers (never the report builder) — D21
+  GRID_COLUMNS = {
+    "Deal (link)" => "deal_link",
+    "Start Date; date-col" => "deal.start_date; date-col",
+    "Investor (with status)" => "investor_name_with_status",
+    "Entity; text-col" => "entity.name; text-col"
+  }.freeze
+
   STANDARD_COLUMNS = {
     "Investor Name; text-col" => "investor_name; text-col",
     "Status; text-col" => "status; text-col",

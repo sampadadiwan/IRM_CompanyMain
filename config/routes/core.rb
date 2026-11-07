@@ -126,6 +126,14 @@ resources :form_custom_fields do
   get :show_deleted, on: :collection
 end
 
+# The custom fields side panel on record pages (openspec/changes/grid-columns-inline-settings — phase 4, D14)
+resources :form_type_fields, only: [] do
+  collection do
+    get :settings
+    patch :save
+  end
+end
+
 resources :form_types do
   # M25 — cloning writes a copy into the user's firm, so it is a POST (a GET link or prefetch must not
   # create anything); GET now gives 404 (M25-1)
