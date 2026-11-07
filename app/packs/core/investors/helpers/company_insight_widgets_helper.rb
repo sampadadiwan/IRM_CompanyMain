@@ -18,6 +18,54 @@ module CompanyInsightWidgetsHelper
                       .first
   end
 
+  # The three areas the agent checks, in the order the widget shows them
+  MONITORING_AREAS = [
+    { key: :kpi, issues_key: "kpi_issues", label: "KPI submissions", icon: "ti-chart-histogram",
+      help: "Were the expected KPI reports submitted for the period?" },
+    { key: :document, issues_key: "document_issues", label: "Documents", icon: "ti-files",
+      help: "Were the required documents received?" },
+    { key: :valuation, issues_key: "valuation_issues", label: "Valuations", icon: "ti-scale",
+      help: "Is the company's valuation up to date?" }
+  ].freeze
+
+  # Rows the "Needs attention" list shows before pointing to the agent report
+  MONITORING_ISSUE_ROWS = 6
+
+  # One summary per area of the report: label, icon, help, status text and theme colour (H5).
+  # An area with a blocking or missing item has issues; one that only has passing items is All clear;
+  # one the agent recorded nothing for has No data — the same reading as the agent dashboard.
+  def monitoring_areas(report)
+    data = report.json_fields.to_h.with_indifferent_access
+    MONITORING_AREAS.map do |area|
+      issues = Array(data[area[:issues_key]]).map { |issue| issue.to_h.with_indifferent_access }
+      problems = issues.count { |issue| monitoring_problem?(issue) }
+      status, color = if problems.positive? then [pluralize(problems, "issue"), "danger"]
+                      elsif issues.any? then ["All clear", "success"]
+                      else ["No data", "secondary"]
+                      end
+      area.merge(status:, color:, problems:)
+    end
+  end
+
+  # The report's problems across the three areas, blocking first: [{ area:, icon:, badge:, css:, message:, detail: }]
+  def monitoring_open_issues(report)
+    data = report.json_fields.to_h.with_indifferent_access
+    rows = MONITORING_AREAS.flat_map do |area|
+      Array(data[area[:issues_key]]).map { |issue| issue.to_h.with_indifferent_access }
+                                    .select { |issue| monitoring_problem?(issue) }
+                                    .map { |issue| monitoring_issue_row(area, issue) }
+    end
+    rows.sort_by { |row| row[:badge] == "Blocking" ? 0 : 1 }
+  end
+
+  # The report's overall result as a badge: Blocked (red), Ready (green), or the stored status otherwise
+  def monitoring_status_badge(report)
+    status = report.json_fields.to_h.with_indifferent_access[:final_status].presence || report.status.to_s
+    css = { "blocked" => "bg-danger-subtle text-danger", "ready" => "bg-success-subtle text-success" }
+          .fetch(status.to_s.downcase, "bg-secondary-subtle text-secondary")
+    content_tag(:span, status.to_s.titleize, class: "badge #{css}", data: { insight_monitoring_status: true })
+  end
+
   # Investment Timeline: buys and sells of the company per period, in the firm's currency (H7, E15–E17, X6).
   # Returns { periods: [label, ...], bought: { label => cents }, sold: { label => -cents }, skipped: count, currency: }
   def insight_investment_timeline(company, period)
@@ -78,5 +126,23 @@ module CompanyInsightWidgetsHelper
     trend.group_by { |(_date, group), _pct| group.presence || "Unspecified" }.map do |group, points|
       { name: group, data: points.to_h { |(date, _group), pct| [date, pct.to_f.round(2)] } }
     end
+  end
+
+  private
+
+  # A blocking item, or a missing document, is a problem; passing ("success") items are not
+  def monitoring_problem?(issue)
+    severity = issue[:severity].to_s
+    severity == "blocking" || (severity != "success" && issue[:type].to_s == "missing")
+  end
+
+  def monitoring_issue_row(area, issue)
+    badge = if issue[:severity].to_s == "blocking" then "Blocking"
+            elsif issue[:type].to_s == "missing" then "Missing"
+            else issue[:severity].to_s.titleize.presence || "Warning"
+            end
+    css = badge == "Warning" ? "bg-warning-subtle text-warning" : "bg-danger-subtle text-danger"
+    { area: area[:label], icon: area[:icon], badge:, css:, message: issue[:message].presence || "No details recorded",
+      detail: issue[:document_name].presence || issue[:period].presence }
   end
 end

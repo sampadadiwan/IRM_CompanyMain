@@ -1,5 +1,7 @@
 <%# Monitoring Status — the portfolio company agent's latest check of this company (H5, E13, E14, X4, X5).
-    Reuses the AI Portfolio Company Dashboard's report detail. openspec/changes/dashboard-insight-widgets/business-rules.md#2 %>
+    openspec/changes/dashboard-insight-widgets/business-rules.md#2. A compact summary (status, three area tiles,
+    the open problems); the full report stays on the Portfolio Company Dashboard (AI). Tiles use the stat-card
+    markup of tasks/_stats.html.erb, as Valuation Freshness does. %>
 <% return unless insight_widget_visible? %>
 <%
   args ||= {}
@@ -16,14 +18,68 @@
       <%# E13 — the agent has not checked this company yet %>
       <%= insight_empty_state("Not checked yet. The portfolio company agent checks each company once a period.") %>
     <% else %>
+      <% areas = monitoring_areas(report) %>
+      <% open_issues = monitoring_open_issues(report) %>
       <%= insight_help_line("The portfolio company agent's latest check of this company: KPIs submitted, required documents received and valuation up to date.") %>
-      <div class="d-flex justify-content-between align-items-center mb-2">
-        <span class="text-muted" data-bs-toggle="tooltip" title="The date the agent last checked this company; it re-checks once a period">Checked on <span data-insight-checked-on><%= l(report.updated_at.to_date) %></span></span>
-        <%= link_to "All companies", portfolio_company_dashboard_path, class: "btn btn-outline-primary btn-sm",
-                    data: { bs_toggle: "tooltip" }, title: "Open the Portfolio Company Dashboard (AI) with every company's latest check" %>
+
+      <%# Overall result, when it was checked, and the full agent dashboard %>
+      <div class="d-flex align-items-center gap-2 mb-3">
+        <%= monitoring_status_badge(report) %>
+        <span class="text-muted small" data-bs-toggle="tooltip" title="The date the agent last checked this company; it re-checks once a period">
+          <i class="ti ti-clock me-1"></i>Checked on <span data-insight-checked-on><%= l(report.updated_at.to_date) %></span>
+        </span>
+        <%= link_to portfolio_company_dashboard_path, class: "btn btn-sm btn-link text-decoration-none ms-auto px-0",
+                    data: { bs_toggle: "tooltip", turbo_frame: "_top" }, title: "Open the Portfolio Company Dashboard (AI) with every company's latest check" do %>
+          All companies <i class="ti ti-arrow-right"></i>
+        <% end %>
       </div>
-      <%# H5, E14 — the latest report's KPI, document and valuation results, exactly as the AI dashboard shows them %>
-      <%= render "portfolio_company_dashboard/report_detail", report: report, data: report.json_fields %>
+
+      <%# H5 — one tile per area: issues (red), all clear (green) or no data (grey) %>
+      <div class="row g-3 mb-3">
+        <% areas.each do |area| %>
+          <div class="col-md-4">
+            <div class="card border-top stat-card-accent border-<%= area[:color] %> shadow-sm mb-0 h-100" data-monitoring-area="<%= area[:label] %>">
+              <div class="card-body py-3">
+                <div class="d-flex align-items-center">
+                  <div>
+                    <h6 class="card-subtitle mb-1 text-muted">
+                      <%= area[:label] %>
+                      <i class="ti ti-info-circle" data-bs-toggle="tooltip" title="<%= area[:help] %>"></i>
+                    </h6>
+                    <div class="fw-semibold text-<%= area[:color] %>" data-monitoring-area-status><%= area[:status] %></div>
+                  </div>
+                  <span class="ms-auto text-<%= area[:color] %> fs-6 opacity-75"><i class="ti <%= area[:icon] %>"></i></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+
+      <%# What needs attention, blocking first; the rest is in the agent report %>
+      <% if open_issues.any? %>
+        <h6 class="text-muted small mb-2">Needs attention</h6>
+        <ul class="list-group list-group-flush" data-monitoring-issues>
+          <% open_issues.first(CompanyInsightWidgetsHelper::MONITORING_ISSUE_ROWS).each do |issue| %>
+            <li class="list-group-item px-0 d-flex align-items-start gap-2" data-insight-row="<%= issue[:message] %>">
+              <i class="ti <%= issue[:icon] %> text-muted mt-1" data-bs-toggle="tooltip" title="<%= issue[:area] %>"></i>
+              <span class="badge <%= issue[:css] %>"><%= issue[:badge] %></span>
+              <span class="flex-grow-1">
+                <%= issue[:message] %>
+                <% if issue[:detail].present? %><span class="text-muted small d-block"><%= issue[:detail] %></span><% end %>
+              </span>
+            </li>
+          <% end %>
+        </ul>
+        <% if open_issues.size > CompanyInsightWidgetsHelper::MONITORING_ISSUE_ROWS %>
+          <div class="small text-muted mt-2">
+            +<%= open_issues.size - CompanyInsightWidgetsHelper::MONITORING_ISSUE_ROWS %> more in the
+            <%= link_to "agent report", portfolio_company_dashboard_path, data: { turbo_frame: "_top" } %>
+          </div>
+        <% end %>
+      <% else %>
+        <p class="text-success small mb-0"><i class="ti ti-circle-check me-1"></i>Nothing needs attention.</p>
+      <% end %>
     <% end %>
   </div>
 <% end %>

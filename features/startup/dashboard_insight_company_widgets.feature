@@ -169,8 +169,10 @@ Feature: Company insight widgets on the Portfolio Company Dashboard
     And the company dashboard has the widget "Monitoring Status" with metadata ""
     When I open the company dashboard of "Zeta Foods"
     Then the "Monitoring Status" insight widget should show "Checked on 15/09/2026"
-    And the "Monitoring Status" insight widget should show "1 Issues"
-    And the "Monitoring Status" insight widget should show "✓ Compliant"
+    And the "Monitoring Status" insight widget should show "Blocked"
+    And the "Monitoring Status" insight widget should show "1 issue"
+    And the "Monitoring Status" insight widget should show "All clear"
+    And the "Monitoring Status" insight widget should show "No data"
     And the "Monitoring Status" insight widget should show "Q2 2026 KPIs not submitted"
 
   # E13 — Edge case: a company the agent has not checked yet

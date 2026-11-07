@@ -118,7 +118,7 @@ Portfolio Company Dashboard (owner: the company).
 |---|---|---|---|---|---|---|
 | H3 | KPI Movers ranks by size of change | Zeta Foods, Actual Quarter report 30 Jun 2026: Revenue +12.50, EBITDA −30.00, Headcount +2.00, Churn +8.00 | Company page | Rows: EBITDA -30.0 %, Revenue 12.5 %, Churn 8.0 %, Headcount 2.0 % (the KPI grid's format, lld B1) | DIW: KPI Movers lists the biggest changes | `features/startup/dashboard_insight_company_widgets.feature` |
 | H4 | KPI Movers honours top_n | Same, `{top_n: 2}` | Company page | Only EBITDA and Revenue | DIW: KPI Movers lists the biggest changes | same |
-| H5 | Monitoring Status shows the latest agent result | Portco agent report for Zeta Foods: KPI "Q2 2026 KPIs not submitted" (blocking), valuation OK | Company page | KPI card "1 Issues", Valuations "✓ Compliant", "Checked on" date | DIW: Monitoring Status shows the agent's latest check | same |
+| H5 | Monitoring Status shows the latest agent result | Portco agent report for Zeta Foods: KPI "Q2 2026 KPIs not submitted" (blocking), valuation OK | Company page | Status "Blocked"; tiles KPI submissions "1 issue", Documents "No data", Valuations "All clear"; "Checked on" date; the KPI problem under "Needs attention" | DIW: Monitoring Status shows the agent's latest check | same |
 | H6 | KPI Threshold Watch flags breaches | Revenue mapping lower 10 / upper 25; Revenue change 5.00; EBITDA RAG red; Churn change 30.00 with upper 25 | Company page | EBITDA "Red", Revenue "Below 10 % threshold", Churn "Above 25 % threshold" in that order | DIW: KPI Threshold Watch flags KPIs outside their limits | same |
 
 ### Edge cases

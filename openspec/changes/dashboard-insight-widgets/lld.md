@@ -134,6 +134,7 @@ N/A — no schema change. Settings are keys in `dashboard_widgets.metadata` (exi
 | B14 | Document rows load `send_email`, `approved`, `template`, `sent_for_esign` too | `Document` sets these flags on load; a narrower select raised `MissingAttributeError` |
 | B15 | E37 is tested by running the link's own query through `CapitalRemittanceList` and comparing counts, not by clicking | Same assertion, no grid JS in rack_test |
 | B16 | Needs Attention's "Imports with errors" card and its `import_days` setting removed (user request, 2026-11-07); E56 withdrawn, H19/H20/E58 now four cards | Fewer cards; failed imports stay visible on the Import Uploads list |
+| B17 | Monitoring Status shows a compact summary (status badge, three area tiles, "Needs attention" list) instead of reusing the AI dashboard's full report detail | User review: the reused detail was too heavy for a dashboard card |
 
 ---
 
