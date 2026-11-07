@@ -170,10 +170,13 @@ Then('the form editor label is {string}') do |label|
   expect(find(".fcf-pane.active [data-fcf-label]").value).to eq(label)
 end
 
-# Drag one row onto another: dropped on the lower half it goes below
+# Drag one row onto another: dropped on the lower half it goes below. The target is first scrolled to the middle of
+# the screen: Playwright only scrolls it just into view, which can leave it under the sticky Save bar, and the drop
+# then lands on the bar instead of the row.
 When('I drag {string} below {string} in the form editor') do |dragged, target|
   page.driver.with_playwright_page do |pw|
     to = pw.locator("xpath=#{cfe_row_xpath(target)}")
+    to.evaluate("el => el.scrollIntoView({ block: 'center' })")
     box = to.bounding_box
     pw.locator("xpath=#{cfe_row_xpath(dragged)}").drag_to(to, targetPosition: { x: 40, y: box["height"] - 4 })
   end
@@ -182,6 +185,7 @@ end
 When('I drag {string} onto the {string} heading in the form editor') do |dragged, heading|
   page.driver.with_playwright_page do |pw|
     head = pw.locator("xpath=//div[@data-fcf-step-head][span[1][normalize-space()='#{heading}']]")
+    head.evaluate("el => el.scrollIntoView({ block: 'center' })") # clear of the sticky Save bar (see above)
     pw.locator("xpath=#{cfe_row_xpath(dragged)}").drag_to(head, targetPosition: { x: 20, y: 5 })
   end
 end
