@@ -43,6 +43,13 @@ class DashboardWidgetPolicy < ApplicationPolicy
     update?
   end
 
+  # The settings icon and popup on a dashboard (openspec/changes/archive/2026-11-07-dashboard-widget-inline-settings — D6):
+  # whoever may edit the widget, except a user acting as an investor (X1). For a default widget the record is
+  # an unsaved DashboardWidget of the user's own firm, so the same firm check applies (X2).
+  def inline_settings?
+    update? && !user.curr_role_investor?
+  end
+
   def destroy?
     update?
   end

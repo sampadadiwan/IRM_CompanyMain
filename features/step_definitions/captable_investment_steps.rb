@@ -197,12 +197,26 @@ end
 
 # ── Cap table page buttons ────────────────────────────────────────────────────────────────────
 
+# Everything but "New Investment" sits inside the closed Actions dropdown, which a JS driver
+# reports as hidden - so check presence in the markup (visible: :all), scoped to the page header.
 Then('I should see these cap table actions:') do |table|
-  table.raw.flatten.each { |label| expect(page).to have_link(label) }
+  within("#investment_header_actions") do
+    table.raw.flatten.each { |label| expect(page).to have_link(label, visible: :all) }
+  end
 end
 
 Then('I should not see these cap table actions:') do |table|
-  table.raw.flatten.each { |label| expect(page).to have_no_link(label) }
+  within("#investment_header_actions") do
+    table.raw.flatten.each { |label| expect(page).to have_no_link(label, visible: :all) }
+  end
+end
+
+# Opens the header's Actions dropdown (like a user would) and clicks one of its entries.
+When('I pick {string} from the cap table Actions menu') do |label|
+  within("#investment_header_actions") do
+    click_on("Actions")
+    click_on(label)
+  end
 end
 
 # ── Uploads ───────────────────────────────────────────────────────────────────────────────────

@@ -1,0 +1,54 @@
+<%# Remittance Ageing — the fund's open (Pending / Overdue) remittances grouped by days past their call's
+    due date, with count and due amount per group and a link to the same rows in the remittances grid.
+    Worked examples H14, E33–E38 — openspec/changes/archive/2026-11-07-dashboard-insight-widgets/business-rules.md#5 %>
+<% return unless insight_widget_visible? %>
+<%
+  # The fund that owns the Fund Dashboard
+  fund = local_assigns[:owner]
+  fund = (local_assigns[:uri_params] || {})[:fund] unless fund.is_a?(Fund)
+  return unless fund.is_a?(Fund)
+
+  # One grouped query over capital_remittances (a large table: never loaded row by row)
+  buckets = remittance_ageing(fund)
+  total_count = buckets.values.sum { |bucket| bucket[:count] }
+%>
+<%= render(WidgetCardComponent.new(widget: widget, args: args, widget_size: widget.widget_size)) do %>
+  <% if total_count.zero? %>
+    <%# E38 — nothing unpaid %>
+    <%= insight_empty_state("No unpaid remittances in this fund.") %>
+  <% else %>
+    <%= insight_help_line("Money still owed on this fund's capital calls (Pending or Overdue remittances), grouped by how long ago the call's due date passed.") %>
+    <%# Chart styled as the Capital Call History widget (capital_call_dashboard_helper.rb) %>
+    <%= column_chart buckets.transform_values { |bucket| (bucket[:cents] / 100).to_f }, height: "260px",
+                     id: "insight_remittance_ageing_#{fund.id}_#{widget.position}", prefix: "#{fund.currency}:",
+                     library: { plotOptions: { column: { dataLabels: { enabled: true, format: "{point.y:,.0f}" } } },
+                                **chart_theme_color } %>
+    <%# Table markup as the regular app tables (tasks/_index.html.erb) %>
+    <div class="table-responsive">
+    <table class="table table-bordered dataTable mb-0" data-insight-table="remittance-ageing">
+      <thead>
+        <tr>
+          <%= insight_th("Days past due date", "Days from the capital call's due date to today; Not yet due when the date is still ahead") %>
+          <%= insight_th("Remittances", "Number of investor remittances in the bucket", right: true) %>
+          <%= insight_th("Due (#{fund.currency})", "Call amount + other fees − amount already collected", right: true) %>
+        </tr>
+      </thead>
+      <tbody>
+        <% buckets.each do |label, bucket| %>
+          <tr data-bucket="<%= label %>">
+            <td><%= label %></td>
+            <td class="text-end" data-bucket-count><%= bucket[:count] %></td>
+            <td class="text-end" data-bucket-due><%= insight_money(bucket[:cents], fund.currency) %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    </div>
+    <%# E37 — the grid link filters on the same fund and statuses, so it lists the same rows %>
+    <div class="mt-3">
+      <%= link_to "View open remittances",
+                  capital_remittances_path(fund_id: fund.id, status: FundInsightWidgetsHelper::AGEING_OPEN_STATUSES.join(",")),
+                  class: "btn btn-outline-primary btn-sm", target: "_top" %>
+    </div>
+  <% end %>
+<% end %>

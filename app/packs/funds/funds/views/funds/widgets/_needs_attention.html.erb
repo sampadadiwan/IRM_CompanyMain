@@ -1,0 +1,36 @@
+<%# Needs Attention — four counts of stuck work, each linking to the list it counts (H19–H21, E54–E58, X3).
+    openspec/changes/archive/2026-11-07-dashboard-insight-widgets/business-rules.md#7. Card markup copied from
+    tasks/_stats.html.erb (border-top stat-card-accent, counters controller, icon). %>
+<% return unless insight_widget_visible? %>
+<%
+  args ||= {}
+  # B16 — the "Imports with errors" card was removed on request (2026-11-07); four cards remain
+  cards = needs_attention_cards
+%>
+<%= render(WidgetCardComponent.new(widget: widget, args: args, widget_size: widget.widget_size)) do %>
+  <%= insight_help_line("Work that is stuck right now, across everything you can see. Each card opens the list it counts.") %>
+  <div class="row g-3" data-insight-widget="needs-attention">
+    <% cards.each do |card| %>
+      <div class="col">
+        <a href="<%= card.path %>" data-insight-card="<%= card.subtitle %>" data-bs-toggle="tooltip" title="<%= card.help %>">
+          <div class="card border-top stat-card-accent border-<%= card.color %> shadow-sm mb-0">
+            <div class="card-body">
+              <div class="d-flex align-items-center">
+                <div>
+                  <%# The count is rendered as text too, so it reads right before (or without) the count-up animation %>
+                  <div data-controller="counters" data-counters-value-value="<%= card.total %>">
+                    <h3 class="fs-7" data-counters-target="output" data-insight-count><%= card.total %></h3>
+                  </div>
+                  <h6 class="card-subtitle mb-1 text-<%= card.color %>"><%= card.subtitle %></h6>
+                </div>
+                <div class="ms-auto">
+                  <span class="text-<%= card.color %> display-6 number-stats-icon"><i class="<%= card.icon %>"></i></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </a>
+      </div>
+    <% end %>
+  </div>
+<% end %>

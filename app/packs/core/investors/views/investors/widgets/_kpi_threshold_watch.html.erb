@@ -1,0 +1,55 @@
+<%# KPI Threshold Watch — KPIs on the latest report that are RAG red/amber or outside their mapping's thresholds
+    (H6, E7–E12). openspec/changes/archive/2026-11-07-dashboard-insight-widgets/business-rules.md#2. Table markup as the
+    regular app tables (tasks/_index.html.erb). %>
+<% return unless insight_widget_visible? && insight_kpis_visible? %>
+<%
+  args ||= {}
+  # The company this dashboard is about
+  company = owner.is_a?(Investor) ? owner : @investor
+  # Settings: report tag and period, same defaults as KPI Movers
+  settings = insight_kpi_report_settings(args)
+  report = insight_latest_kpi_report(company, settings)
+  flagged = report ? insight_kpi_threshold_flags(report) : []
+%>
+<%= render(WidgetCardComponent.new(widget: widget, args: args, widget_size: widget.widget_size)) do %>
+  <div data-insight-widget="kpi-threshold-watch">
+    <% if report.nil? %>
+      <%# E7 — no report with this tag and period %>
+      <%= insight_empty_state(insight_no_kpi_report_message(settings)) %>
+    <% elsif flagged.empty? %>
+      <%# E11 — nothing outside its limits %>
+      <%= insight_empty_state("No KPI is outside its limits on the #{l(report.as_of)} report.") %>
+    <% else %>
+      <%= insight_help_line("KPIs to look at on the latest report: rated red or amber, or moved past the threshold set for them in KPI Mappings.") %>
+      <div class="text-muted mb-1" data-bs-toggle="tooltip" title="Thresholds come from each KPI's mapping; RAG status from the KPI itself">
+        <%= settings[:tag] %> <%= settings[:period] %> report of <span data-insight-report-date><%= l(report.as_of) %></span>
+      </div>
+      <div class="table-responsive">
+      <table class="table table-bordered dataTable mb-0">
+        <thead>
+          <tr>
+            <%= insight_th("KPI") %>
+            <%= insight_th("Value", "As reported on this report, in the KPI's own unit", right: true) %>
+            <%= insight_th("Change", "Against the same KPI on the previous report", right: true) %>
+            <%= insight_th("Why flagged", "Red / Amber: the KPI's RAG rating. Below / Above: the change broke the lower or upper threshold in KPI Mappings") %>
+          </tr>
+        </thead>
+        <tbody>
+          <% flagged.each do |kpi, flags| %>
+            <tr data-insight-row="<%= kpi.name %>">
+              <td><%= kpi.name %></td>
+              <td class="text-end"><%= display_kpi(kpi, kpi.investor_kpi_mapping) %></td>
+              <td class="text-end"><%= kpi_percentage_display(kpi) %></td>
+              <td>
+                <% flags.each do |flag| %>
+                  <span class="badge <%= flag[:css] %>" data-insight-flag><%= flag[:label] %></span>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+      </div>
+    <% end %>
+  </div>
+<% end %>

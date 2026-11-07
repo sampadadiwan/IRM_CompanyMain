@@ -1,0 +1,42 @@
+<%# Ownership Trend — fully diluted % per holder group on each cap-table date (H8, E18, E19).
+    openspec/changes/archive/2026-11-07-dashboard-insight-widgets/business-rules.md#3. Table markup as the
+    regular app tables (tasks/_index.html.erb). %>
+<% return unless insight_widget_visible? && policy(ShareholderPosition).index? %>
+<%
+  args ||= {}
+  # The company this dashboard is about
+  company = owner.is_a?(Investor) ? owner : @investor
+  trend = insight_ownership_trend(company)
+%>
+<%= render(WidgetCardComponent.new(widget: widget, args: args, widget_size: widget.widget_size)) do %>
+  <div data-insight-widget="ownership-trend">
+    <% if trend.empty? %>
+      <%# E19 — nothing dated with a % to plot %>
+      <%= insight_empty_state("No dated cap-table positions with a fully diluted % yet.") %>
+    <% else %>
+      <%= insight_help_line("Who owns the company, fully diluted, on each approved cap-table date, by holder group.") %>
+      <%= line_chart insight_ownership_series(trend), id: "insight_ownership_trend_#{widget.id || company.id}", height: "260px",
+                     suffix: "%", library: { **chart_theme_color } %>
+      <div class="table-responsive">
+      <table class="table table-bordered dataTable mb-0">
+        <thead>
+          <tr>
+            <%= insight_th("Date", "The cap table's as-of date") %>
+            <%= insight_th("Holder group", "The group set on the cap-table upload: Founder, Self (your funds), Employee or Other") %>
+            <%= insight_th("Fully diluted %", "The group's total fully diluted holding on that date", right: true) %>
+          </tr>
+        </thead>
+        <tbody>
+          <% trend.each do |(date, group), pct| %>
+            <tr data-insight-row="<%= "#{date} #{group}" %>">
+              <td><%= l(date) %></td>
+              <td><%= group.presence || "Unspecified" %></td>
+              <td class="text-end"><%= number_with_precision(pct, precision: 2) %> %</td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+      </div>
+    <% end %>
+  </div>
+<% end %>

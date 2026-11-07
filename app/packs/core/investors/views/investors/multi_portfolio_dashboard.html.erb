@@ -89,12 +89,25 @@
     </nav>
     <% end %>
 
-    <div class="row mt-4 portfolio-dashboard__widgets">
+    <%# Widget settings in place — openspec/changes/archive/2026-11-07-dashboard-widget-inline-settings %>
+    <% settings_allowed = widget_settings_allowed?(@dashboard_name, @name, entity_id: current_user.entity_id) %>
+    <div class="row mt-4 portfolio-dashboard__widgets" <%= 'data-controller=widget-settings' if settings_allowed %>>
+
+      <%# ② One settings popup per page %>
+      <%= render "dashboard_widgets/settings_modal" if settings_allowed %>
 
       <% page_widgets.each do |name, dashboard_widget| %>
-        <div id="<%="#{dashboard_widget.widget_name.parameterize.underscore}_#{dashboard_widget.position}" %>" class="dashboard-widget-container <%= dashboard_widget.widget_size %>">
+        <% widget_key = widget_frame_key(dashboard_widget) %>
+        <%# ⑥ One-widget reload (D4): with ?only_widget=<key> only that widget is drawn, into its frame %>
+        <% next if params[:only_widget].present? && params[:only_widget] != widget_key %>
+        <div id="<%= widget_key %>" class="dashboard-widget-container position-relative <%= dashboard_widget.widget_size %>">
 
-          <%= render dashboard_widget.path, widget: dashboard_widget, name: dashboard_widget.widget_name, dashboard_widget:, widget_size: dashboard_widget.widget_size, args: dashboard_widget.metadata_args, tags: dashboard_widget.tags, investors: @investors, uri_params: params, funds: @funds %>
+          <%# target _top: links and forms inside a widget still open full pages %>
+          <%= turbo_frame_tag "dashboard_widget_#{widget_key}", target: "_top", class: "dashboard-widget-frame" do %>
+            <%= render dashboard_widget.path, widget: dashboard_widget, name: dashboard_widget.widget_name, dashboard_widget:, widget_size: dashboard_widget.widget_size, args: dashboard_widget.metadata_args, tags: dashboard_widget.tags, investors: @investors, uri_params: params, funds: @funds %>
+          <% end %>
+          <%# ① The widget's settings icon %>
+          <%= render "dashboard_widgets/settings_button", widget: dashboard_widget, dashboard_name: @dashboard_name, layout: @name if settings_allowed %>
         </div>
       <% end %>
     </div>

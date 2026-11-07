@@ -65,6 +65,62 @@ class DashboardWidget < ApplicationRecord
     "per_row" => { label: "Cards per row", integer: true }
   }.freeze
 
+  # Settings of the insight widgets (H2, E1, E2 — openspec/changes/archive/2026-11-07-dashboard-insight-widgets/business-rules.md#1).
+  # A missing, zero, negative or non-numeric whole-number setting falls back to the default named in the hint.
+  INSIGHT_KPI_REPORT_HINTS = {
+    "tag_list" => { label: "Report tag", hint: "Which KPI reports to read, e.g. Actual or Budget. Default Actual." },
+    "period" => { label: "Report period", hint: "Month, Quarter, Year or YTD. The latest report with this period is used. Default Quarter." }
+  }.freeze
+
+  INSIGHT_FIELD_HINTS = {
+    "KPI Movers" => INSIGHT_KPI_REPORT_HINTS.merge(
+      "top_n" => { label: "Rows to show", integer: true, hint: "How many KPIs to list, biggest change first. Default 5." }
+    ),
+    "KPI Threshold Watch" => INSIGHT_KPI_REPORT_HINTS,
+    "Peer KPI Comparison" => INSIGHT_KPI_REPORT_HINTS.merge(
+      "kpi_name" => { label: "KPI name", hint: "The KPI to compare, by its reported or standard name, e.g. Revenue." }
+    ),
+    "Investment Timeline" => {
+      "period" => { label: "Group by", hint: "quarter or year. Default quarter." }
+    },
+    "Valuation Freshness" => {
+      "current_days" => { label: "Current up to (days)", integer: true,
+                          hint: "A valuation this many days old or newer is Current. Default 90." },
+      "due_days" => { label: "Due up to (days)", integer: true,
+                      hint: "Older than Current but up to this many days is Due; older is Stale. Default 180." },
+      "limit" => { label: "Rows to show", integer: true, hint: "How many companies to list, oldest valuation first. Default 15." }
+    },
+    "Winners & Losers" => {
+      "top_n" => { label: "Rows per list", integer: true, hint: "How many gains and how many losses to list. Default 5." }
+    },
+    "Sector Exposure" => {
+      "measure" => { label: "Measure", hint: "fmv (current fair value) or cost (cost of the holdings still held). Default fmv." }
+    },
+    "NAV per Unit Trend" => {
+      "months" => { label: "Months", integer: true, hint: "How many months to plot, up to the latest approved NAV. Default 12." }
+    },
+    "Hedge Expiries" => {
+      "days" => { label: "Expiring within (days)", integer: true,
+                  hint: "List open contracts expiring within this many days, and any already expired. Default 90." }
+    },
+    "Investor Pending Actions" => {
+      "kyc_expiry_days" => { label: "KYC expiry warning (days)", integer: true,
+                             hint: "List a verified KYC that expires within this many days. Default 60." }
+    },
+    "Side-letter Obligations" => {
+      "days" => { label: "Due within (days)", integer: true,
+                  hint: "List active obligations due within this many days, and any overdue. Default 30." }
+    },
+    "Overdue Tasks by Assignee" => {
+      "top_n" => { label: "People to show", integer: true, hint: "The rest are grouped as Others. Default 10." }
+    },
+    "Stuck Workflows" => {
+      "days" => { label: "Waiting at least (days)", integer: true,
+                  hint: "List journeys that have been on their current step this many days or more. Default 7." },
+      "limit" => { label: "Rows to show", integer: true, hint: "How many journeys to list, longest wait first. Default 10." }
+    }
+  }.freeze
+
   METADATA_FIELD_HINTS = {
     "Kpis" => {
       "compound" => { label: "Data-only view",
@@ -99,7 +155,7 @@ class DashboardWidget < ApplicationRecord
                           "City:city. Custom field: the same, with custom_fields. before the name, e.g. " \
                           "KPI Currency:custom_fields.kpi_currency. Separate entries with commas." }
     }
-  }.freeze
+  }.merge(INSIGHT_FIELD_HINTS).freeze
 
   def self.field_hint(widget_name, key)
     METADATA_FIELD_HINTS.dig(widget_name.to_s, key.to_s)
@@ -154,6 +210,10 @@ class DashboardWidget < ApplicationRecord
     DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "Realized vs Unrealized", path: "aggregate_portfolio_investments/widgets/gain_breakdown", size: "Medium"),
     DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "Instrument Exposure", path: "aggregate_portfolio_investments/widgets/instrument_exposure", size: "Medium"),
     DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "Portfolio Income", path: "aggregate_portfolio_investments/widgets/income_by_company", size: "Medium"),
+    # Insight widgets — openspec/changes/archive/2026-11-07-dashboard-insight-widgets (business-rules.md §5)
+    DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "Remittance Ageing", path: "capital_remittances/widgets/ageing", size: "Medium"),
+    DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "NAV per Unit Trend", path: "evergreen/widgets/nav_per_unit_trend", size: "Medium", metadata_help: "{months: 12}"),
+    DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "Hedge Expiries", path: "derivative_contracts/widgets/hedge_expiries", size: "Medium", metadata_help: "{days: 90}"),
     DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "Account Entries Chart", path: "capital_commitments/widgets/account_entries_chart", size: "Medium", metadata_help: "{account_entry_names: 'Management Fee, Setup Fee', entry_name: '...', chart_type: 'column/pie/line', aggregate_by: 'quarter/year/sum', period_type: 'quarter', number_of_periods: 8, no_of_periods: 8, compact: true, use_entries: 'folio_only/fund_only'}")
   ].freeze
 
@@ -161,7 +221,12 @@ class DashboardWidget < ApplicationRecord
     DashboardWidget.new(dashboard_name: OPS_DASHBOARD, widget_name: "My Tasks", path: "dashboard_widgets/widgets/my_tasks", size: "Medium"),
     DashboardWidget.new(dashboard_name: OPS_DASHBOARD, widget_name: "Upcoming Events", path: "dashboard_widgets/widgets/events", size: "Medium"),
     DashboardWidget.new(dashboard_name: OPS_DASHBOARD, widget_name: "Investors No Interaction", path: "dashboard_widgets/widgets/investors_no_interaction", size: "Medium", metadata_help: "{days: 30, categories: 'Category1, Category2'}"),
-    DashboardWidget.new(dashboard_name: OPS_DASHBOARD, widget_name: "Notes", path: "dashboard_widgets/widgets/notes", size: "Medium")
+    DashboardWidget.new(dashboard_name: OPS_DASHBOARD, widget_name: "Notes", path: "dashboard_widgets/widgets/notes", size: "Medium"),
+    # Insight widgets — openspec/changes/archive/2026-11-07-dashboard-insight-widgets (business-rules.md §7)
+    DashboardWidget.new(dashboard_name: OPS_DASHBOARD, widget_name: "Needs Attention", path: "funds/widgets/needs_attention", size: "XL"),
+    DashboardWidget.new(dashboard_name: OPS_DASHBOARD, widget_name: "Overdue Tasks by Assignee", path: "dashboard_widgets/widgets/overdue_tasks_by_assignee", size: "Medium", metadata_help: "{top_n: 10}"),
+    DashboardWidget.new(dashboard_name: OPS_DASHBOARD, widget_name: "Stuck Workflows", path: "dashboard_widgets/widgets/stuck_workflows", size: "Medium", metadata_help: "{days: 7, limit: 10}"),
+    DashboardWidget.new(dashboard_name: OPS_DASHBOARD, widget_name: "Side-letter Obligations", path: "side_letter_obligations/widgets/due", size: "Medium", metadata_help: "{days: 30}")
   ].freeze
 
   INVESTOR_WIDGETS = [
@@ -174,7 +239,10 @@ class DashboardWidget < ApplicationRecord
     DashboardWidget.new(dashboard_name: INVESTOR_DASHBOARD, widget_name: "Commitments", path: "investors/widgets/commitments", size: "Medium"),
     DashboardWidget.new(dashboard_name: INVESTOR_DASHBOARD, widget_name: "Embed Document", path: "investors/widgets/embedded_doc", size: "XL", metadata_help: "{name: 'Document Name', xlsx_as_grid: true, title: 'Optional Title'}"),
     DashboardWidget.new(dashboard_name: INVESTOR_DASHBOARD, widget_name: "Fund Ratios", path: "investors/widgets/fund_ratios", size: "XL", metadata_help: "{title: 'Title', scenario: 'Default', scenarios: 'Actual,Budget', condensed: true, chart: false, chart_type: 'line or bar or area', list: true, months: 12, latest: false, end_date: '31-12-2025', ratio_names: ['XIRR', 'TVPI', 'DPI'], show_y_axis: true, show_legend: true, decimals: 2, hide_fund_name: false, for_commitments: true, timeseries: true }"),
-    DashboardWidget.new(dashboard_name: INVESTOR_DASHBOARD, widget_name: "Note Summaries", path: "dashboard_widgets/widgets/note_summaries", size: "XL", metadata_help: "{title: 'Note Summaries'}")
+    DashboardWidget.new(dashboard_name: INVESTOR_DASHBOARD, widget_name: "Note Summaries", path: "dashboard_widgets/widgets/note_summaries", size: "XL", metadata_help: "{title: 'Note Summaries'}"),
+    # Insight widgets — openspec/changes/archive/2026-11-07-dashboard-insight-widgets (business-rules.md §6)
+    DashboardWidget.new(dashboard_name: INVESTOR_DASHBOARD, widget_name: "Investor Pending Actions", path: "funds/widgets/investor_pending_actions", size: "XL", metadata_help: "{kyc_expiry_days: 60}"),
+    DashboardWidget.new(dashboard_name: INVESTOR_DASHBOARD, widget_name: "Side-letter Obligations", path: "side_letter_obligations/widgets/due", size: "Medium", metadata_help: "{days: 30}")
 
   ].freeze
 
@@ -205,7 +273,14 @@ class DashboardWidget < ApplicationRecord
     DashboardWidget.new(dashboard_name: PORTFOLIO_COMPANY_DASHBOARD, widget_name: "Agent Chart", path: "investors/widgets/agent_chart", size: "XL", metadata_help: "{title: 'Chart Title', height: 420}"),
     DashboardWidget.new(dashboard_name: PORTFOLIO_COMPANY_DASHBOARD, widget_name: "Scoring Report", path: "investors/widgets/scoring_report", size: "XL", metadata_help: "{title: 'Company Score', agent_type: 'PortfolioScoringAgent'}"),
     DashboardWidget.new(dashboard_name: PORTFOLIO_COMPANY_DASHBOARD, widget_name: "Note Summaries", path: "dashboard_widgets/widgets/note_summaries", size: "XL", metadata_help: "{title: 'Note Summaries'}"),
-    DashboardWidget.new(dashboard_name: PORTFOLIO_COMPANY_DASHBOARD, widget_name: "Presentation Analyst", path: "investors/widgets/presentation_analyst", size: "XL", metadata_help: "{title: 'Investor Presentation Analysis', last_n: 6}")
+    DashboardWidget.new(dashboard_name: PORTFOLIO_COMPANY_DASHBOARD, widget_name: "Presentation Analyst", path: "investors/widgets/presentation_analyst", size: "XL", metadata_help: "{title: 'Investor Presentation Analysis', last_n: 6}"),
+
+    # Insight widgets — openspec/changes/archive/2026-11-07-dashboard-insight-widgets (business-rules.md §2, §3)
+    DashboardWidget.new(dashboard_name: PORTFOLIO_COMPANY_DASHBOARD, widget_name: "KPI Movers", path: "investors/widgets/kpi_movers", size: "Medium", metadata_help: "{top_n: 5, tag_list: 'Actual', period: 'Quarter/Month/Year/YTD'}"),
+    DashboardWidget.new(dashboard_name: PORTFOLIO_COMPANY_DASHBOARD, widget_name: "KPI Threshold Watch", path: "investors/widgets/kpi_threshold_watch", size: "Medium", metadata_help: "{tag_list: 'Actual', period: 'Quarter/Month/Year/YTD'}"),
+    DashboardWidget.new(dashboard_name: PORTFOLIO_COMPANY_DASHBOARD, widget_name: "Monitoring Status", path: "investors/widgets/monitoring_status", size: "XL"),
+    DashboardWidget.new(dashboard_name: PORTFOLIO_COMPANY_DASHBOARD, widget_name: "Investment Timeline", path: "investors/widgets/investment_timeline", size: "Medium", metadata_help: "{period: 'quarter/year'}"),
+    DashboardWidget.new(dashboard_name: PORTFOLIO_COMPANY_DASHBOARD, widget_name: "Ownership Trend", path: "investors/widgets/ownership_trend", size: "Medium")
 
   ].freeze
 
@@ -217,7 +292,43 @@ class DashboardWidget < ApplicationRecord
     "Holding Cost %" => "Share of the cost of current holdings in each company",
     "Bought %" => "Share of the total amount invested that went into each company",
     "Sold %" => "Share of sale proceeds that came from each company",
-    "Portfolio IRR" => "Annualised return (IRR) and multiple (MOIC) on each portfolio company"
+    "Portfolio IRR" => "Annualised return (IRR) and multiple (MOIC) on each portfolio company",
+    # Insight widgets — openspec/changes/archive/2026-11-07-dashboard-insight-widgets
+    "KPI Movers" => "The KPIs that moved most on the company's latest report against the previous report of the " \
+                    "same period. Set the report tag, period and rows in the widget settings.",
+    "KPI Threshold Watch" => "KPIs on the latest report rated red or amber, or whose change broke a threshold set in KPI " \
+                             "Mappings. Set thresholds there to get flags.",
+    "Monitoring Status" => "The portfolio company agent's latest check of this company: KPIs submitted, required documents " \
+                           "received and valuation up to date. All companies opens the full agent dashboard.",
+    "Investment Timeline" => "Purchases and sales in this company per quarter or year, in the firm's currency, across the " \
+                             "funds you can open.",
+    "Ownership Trend" => "Fully diluted ownership per holder group (Founder, Self, Employee, Other) on each approved " \
+                         "cap-table date.",
+    "Valuation Freshness" => "How long ago each company was last valued: Current, Due, Stale or Never, by the day limits in " \
+                             "the widget settings. Stalest first.",
+    "Winners & Losers" => "The companies furthest above and below cost in this fund: unrealised gain = fair value − cost " \
+                          "of the remaining holding.",
+    "Sector Exposure" => "The fund's holdings by the portfolio company's sector, by fair value or by cost (widget " \
+                         "settings).",
+    "Peer KPI Comparison" => "One KPI (set in the widget settings) across the companies on this page, from each company's " \
+                             "latest report, biggest change first.",
+    "Remittance Ageing" => "Money still owed on this fund's capital calls, grouped by days past the call's due date. View " \
+                           "open remittances lists the same rows.",
+    "NAV per Unit Trend" => "Approved NAV per unit for each unit class over the last months (widget settings). Evergreen " \
+                            "funds only.",
+    "Hedge Expiries" => "Open derivative contracts expiring within the window in the widget settings, and any past " \
+                        "expiry but still open.",
+    "Investor Pending Actions" => "Everything still open with this investor, in four parts: unpaid capital calls, KYCs to verify or " \
+                                  "refresh, approvals awaiting their reply and documents awaiting their signature. Each count " \
+                                  "covers every matching record and opens the full list; each table shows the first 5.",
+    "Side-letter Obligations" => "Approved, active side-letter obligations due within the window in the widget settings, and any " \
+                                 "overdue, earliest first.",
+    "Needs Attention" => "Work that is stuck right now: overdue tasks, KYCs to verify, overdue remittances and open " \
+                         "e-sign requests. Each card opens the list it counts.",
+    "Overdue Tasks by Assignee" => "Open tasks past their due date, per person, most first; the rest grouped as Others. View " \
+                                   "overdue tasks opens the same list.",
+    "Stuck Workflows" => "Active journeys waiting on the same step for at least the days in the widget settings, longest " \
+                         "wait first."
   }.freeze
 
   # Portfolio Dashboard widgets an LP keeps under an Allocated LP portfolio view: the holdings list, which the
@@ -231,7 +342,11 @@ class DashboardWidget < ApplicationRecord
     DashboardWidget.new(dashboard_name: PORTFOLIO_DASHBOARD, widget_name: "Holding Cost %", path: "aggregate_portfolio_investments/widgets/holding_costs_percentage", size: "Medium"),
     DashboardWidget.new(dashboard_name: PORTFOLIO_DASHBOARD, widget_name: "Bought %", path: "aggregate_portfolio_investments/widgets/bought_percentage", size: "Medium"),
     DashboardWidget.new(dashboard_name: PORTFOLIO_DASHBOARD, widget_name: "Sold %", path: "aggregate_portfolio_investments/widgets/sold_percentage", size: "Medium"),
-    DashboardWidget.new(dashboard_name: PORTFOLIO_DASHBOARD, widget_name: "Portfolio IRR", path: "aggregate_portfolio_investments/widgets/irr", size: "XL", metadata_help: "{show_table: false, show_chart: false}")
+    DashboardWidget.new(dashboard_name: PORTFOLIO_DASHBOARD, widget_name: "Portfolio IRR", path: "aggregate_portfolio_investments/widgets/irr", size: "XL", metadata_help: "{show_table: false, show_chart: false}"),
+    # Insight widgets — openspec/changes/archive/2026-11-07-dashboard-insight-widgets (business-rules.md §4)
+    DashboardWidget.new(dashboard_name: PORTFOLIO_DASHBOARD, widget_name: "Valuation Freshness", path: "aggregate_portfolio_investments/widgets/valuation_freshness", size: "XL", metadata_help: "{current_days: 90, due_days: 180, limit: 15}"),
+    DashboardWidget.new(dashboard_name: PORTFOLIO_DASHBOARD, widget_name: "Winners & Losers", path: "aggregate_portfolio_investments/widgets/winners_losers", size: "Medium", metadata_help: "{top_n: 5}"),
+    DashboardWidget.new(dashboard_name: PORTFOLIO_DASHBOARD, widget_name: "Sector Exposure", path: "aggregate_portfolio_investments/widgets/sector_exposure", size: "Medium", metadata_help: "{measure: 'fmv/cost'}")
   ].freeze
 
   AGGREGATED_WIDGETS = [
@@ -254,7 +369,10 @@ class DashboardWidget < ApplicationRecord
     ),
     DashboardWidget.new(dashboard_name: AGGREGATED_PORTFOLIO_DASHBOARD, widget_name: "Company Charts", path: "aggregate_portfolio_investments/widgets/portfolio_company_charts", size: "XL", metadata_help: "{show_sector_wise: true, show_portfolio_company_wise: true , show_table: true, show_chart: true, plot: 'fmv/bought_amount/sold_amount', table_limit: 10, title: 'FMV by Company'}", position: 4),
     DashboardWidget.new(dashboard_name: AGGREGATED_PORTFOLIO_DASHBOARD, widget_name: "Fund Ratios", path: "aggregate_portfolio_investments/widgets/fund_ratio_aggregate", size: "XL", metadata_help: "{show_table: true, show_chart: true, display_mode: 'aggregate/per_company', aggregate_ratio_names: ['Gross Portfolio IRR', 'MOIC', 'RVPI', 'DPI', 'TVPI', 'Portfolio Value to Cost', 'Paid In to Committed Capital'], company_ratio_names: ['IRR', 'MOIC', 'Value To Cost'], titles: ['IRR', 'MOIC'], latest: true, end_date: '31-12-2025', show_y_axis: true, show_legend: true, hide_fund_name: false, positive_colors: ['green', 'DarkOrange'], negative_colors: ['orange', 'red'], decimals: 2, template_names: 'Ecom+AI, AI'}"),
-    DashboardWidget.new(dashboard_name: AGGREGATED_PORTFOLIO_DASHBOARD, widget_name: "Company Ratios", path: "aggregate_portfolio_investments/widgets/company_ratios_aggregate", size: "XL", metadata_help: "{show_table: true, show_chart: true, ratio_names: ['IRR', 'MOIC'], titles: ['IRR', 'MOIC'], owner_type: ['Investor'], owner_id: [1,2,3], latest: true, end_date: '31-12-2025', chart_colors: ['green', 'DarkOrange'], negative_colors:['orange', 'red'], decimals: 2}")
+    DashboardWidget.new(dashboard_name: AGGREGATED_PORTFOLIO_DASHBOARD, widget_name: "Company Ratios", path: "aggregate_portfolio_investments/widgets/company_ratios_aggregate", size: "XL", metadata_help: "{show_table: true, show_chart: true, ratio_names: ['IRR', 'MOIC'], titles: ['IRR', 'MOIC'], owner_type: ['Investor'], owner_id: [1,2,3], latest: true, end_date: '31-12-2025', chart_colors: ['green', 'DarkOrange'], negative_colors:['orange', 'red'], decimals: 2}"),
+    # Insight widgets — openspec/changes/archive/2026-11-07-dashboard-insight-widgets (business-rules.md §4)
+    DashboardWidget.new(dashboard_name: AGGREGATED_PORTFOLIO_DASHBOARD, widget_name: "Valuation Freshness", path: "aggregate_portfolio_investments/widgets/valuation_freshness", size: "XL", metadata_help: "{current_days: 90, due_days: 180, limit: 15}"),
+    DashboardWidget.new(dashboard_name: AGGREGATED_PORTFOLIO_DASHBOARD, widget_name: "Peer KPI Comparison", path: "aggregate_portfolio_investments/widgets/peer_kpi_comparison", size: "XL", metadata_help: "{kpi_name: 'Revenue', tag_list: 'Actual', period: 'Quarter/Month/Year/YTD'}")
 
   ].freeze
 
@@ -266,7 +384,10 @@ class DashboardWidget < ApplicationRecord
     # card_type: card (classic), card2 (compact ledger, 2-up), card3 (refined current),
     #            card4 (stat strip, 1 row per fund), card5 (chart-forward donut)
     DashboardWidget.new(dashboard_name: FM_LANDING_PAGE, widget_name: "Funds", path: "entities/widgets/funds", size: "XL", metadata_help: "{card_type: 'card/card2/card3/card4/card5'}"),
-    DashboardWidget.new(dashboard_name: FM_LANDING_PAGE, widget_name: "Investment Opportunities", path: "entities/widgets/investment_opportunities", size: "XL")
+    DashboardWidget.new(dashboard_name: FM_LANDING_PAGE, widget_name: "Investment Opportunities", path: "entities/widgets/investment_opportunities", size: "XL"),
+    # Insight widget — openspec/changes/archive/2026-11-07-dashboard-insight-widgets (business-rules.md §7, H20). Fifth in the list, so
+    # it is not in the 4 landing-page defaults (configured_dashboard_widgets takes the first 4) and appears only once enabled.
+    DashboardWidget.new(dashboard_name: FM_LANDING_PAGE, widget_name: "Needs Attention", path: "funds/widgets/needs_attention", size: "XL")
   ].freeze
 
   LP_LANDING_PAGE_WIDGETS = [
@@ -306,6 +427,21 @@ class DashboardWidget < ApplicationRecord
       PORTFOLIO_COMPANY_DASHBOARD,
       AGGREGATED_PORTFOLIO_DASHBOARD
     ].sort
+  end
+
+  # The sizes a widget can take, largest first (the widget edit form and the settings popup offer these)
+  SIZES = %w[XL Large Medium Small XS].freeze
+
+  # Landing pages show only the first few catalogue widgets by default, to avoid context-specific widget crashes
+  LANDING_PAGES = [FM_LANDING_PAGE, LP_LANDING_PAGE, OPS_LANDING_PAGE].freeze
+  LANDING_PAGE_DEFAULT_COUNT = 4
+
+  # The default widgets a dashboard shows when its layout has no enabled widget: the whole catalogue, or the
+  # first four on the landing pages. Unsaved catalogue entries. The settings popup saves exactly this set on the
+  # first save (openspec/changes/archive/2026-11-07-dashboard-widget-inline-settings — H5, E4)
+  def self.default_widgets_for(dashboard_name)
+    catalogue = WIDGETS.fetch(dashboard_name, [])
+    LANDING_PAGES.include?(dashboard_name) ? catalogue.take(LANDING_PAGE_DEFAULT_COUNT) : catalogue
   end
 
   def to_s

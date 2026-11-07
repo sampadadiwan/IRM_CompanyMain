@@ -1,0 +1,51 @@
+<%# Sector Exposure — the fund's FMV (or cost of the holdings still held) split by the portfolio company's
+    sector; a blank sector is "Unassigned". Worked examples H12, E29, E30 —
+    openspec/changes/archive/2026-11-07-dashboard-insight-widgets/business-rules.md#4 %>
+<% return unless insight_widget_visible? %>
+<%
+  # The fund that owns the Portfolio Dashboard
+  fund = local_assigns[:owner]
+  fund = (local_assigns[:uri_params] || {})[:fund] unless fund.is_a?(Fund)
+  return unless fund.is_a?(Fund)
+
+  # E29 — measure: fmv (default) or cost
+  measure = insight_choice_arg(args, :measure, %w[fmv cost], "fmv")
+  # One grouped query
+  rows = sector_exposure_rows(fund, measure:)
+  measure_label = measure == "cost" ? "Cost of remaining" : "FMV"
+%>
+<%= render(WidgetCardComponent.new(widget: widget, args: args, widget_size: widget.widget_size)) do %>
+  <% if rows.empty? %>
+    <%# E30 — nothing held at a value %>
+    <%= insight_empty_state(measure == "cost" ? "No holding has a remaining cost yet." : "No holding has a fair value yet.") %>
+  <% else %>
+    <%= insight_help_line("Where the fund's money sits by the portfolio company's sector, measured by #{measure_label.downcase}. Companies without a sector show as Unassigned.") %>
+    <%# Donut as on the Portfolio Allocation widget (aggregate_portfolio_investment_dashboard_helper.rb) %>
+    <%= pie_chart rows.to_h { |row| [row[:sector], (row[:cents] / 100).to_f] }, donut: true,
+                  id: "insight_sector_exposure_#{fund.id}_#{widget.position}",
+                  prefix: "#{fund.currency}:",
+                  library: { plotOptions: { pie: { dataLabels: { enabled: true, format: "<b>{point.name}</b>: {point.percentage:.1f} %" } } },
+                             **chart_theme_color } %>
+    <%# Table markup as the regular app tables (tasks/_index.html.erb) %>
+    <div class="table-responsive">
+    <table class="table table-bordered dataTable mb-0" data-insight-table="sector-exposure">
+      <thead>
+        <tr>
+          <%= insight_th("Sector", "The sector set on the portfolio company") %>
+          <%= insight_th("#{measure_label} (#{fund.currency})", measure == "cost" ? "Cost of the holdings the fund still has" : "Current fair market value of the holdings", right: true) %>
+          <%= insight_th("%", "Share of the fund's total #{measure_label.downcase}", right: true) %>
+        </tr>
+      </thead>
+      <tbody>
+        <% rows.each do |row| %>
+          <tr data-sector="<%= row[:sector] %>">
+            <td><%= row[:sector] %></td>
+            <td class="text-end"><%= insight_money(row[:cents], fund.currency) %></td>
+            <td class="text-end" data-sector-percent><%= number_with_precision(row[:percent], precision: 2) %> %</td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    </div>
+  <% end %>
+<% end %>

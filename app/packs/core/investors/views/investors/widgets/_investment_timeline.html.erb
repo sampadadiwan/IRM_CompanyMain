@@ -1,0 +1,53 @@
+<%# Investment Timeline — buys and sells in this company per quarter or year, in the firm's currency
+    (H7, E15–E17, X6). openspec/changes/archive/2026-11-07-dashboard-insight-widgets/business-rules.md#3. Table markup as the
+    regular app tables (tasks/_index.html.erb). %>
+<% return unless insight_widget_visible? %>
+<%
+  args ||= {}
+  # The company this dashboard is about
+  company = owner.is_a?(Investor) ? owner : @investor
+  # E16 — quarter (default) or year
+  period = insight_choice_arg(args, :period, %w[quarter year], "quarter")
+  timeline = insight_investment_timeline(company, period)
+  currency = timeline[:currency]
+%>
+<%= render(WidgetCardComponent.new(widget: widget, args: args, widget_size: widget.widget_size)) do %>
+  <div data-insight-widget="investment-timeline">
+    <% if timeline[:periods].empty? %>
+      <%# E17 — no transactions the viewer can see %>
+      <%= insight_empty_state("No investments recorded for this company yet.") %>
+    <% else %>
+      <%= insight_help_line("Money your funds put into this company (bought) and took out (sold) each #{period}, in #{currency}, across the funds you can open.") %>
+      <%= column_chart insight_investment_timeline_series(timeline),
+                       id: "insight_investment_timeline_#{widget.id || company.id}", height: "260px",
+                       prefix: "#{currency}:", library: { **chart_theme_color } %>
+      <div class="table-responsive">
+      <table class="table table-bordered dataTable mb-0">
+        <thead>
+          <tr>
+            <%= insight_th(period == "year" ? "Year" : "Quarter", "By investment date; change it in this widget's settings (Group by)") %>
+            <%= insight_th("Bought", "Total amount of purchases in the period, in #{currency}", right: true) %>
+            <%= insight_th("Sold", "Total amount of sales in the period, shown as a negative, in #{currency}", right: true) %>
+          </tr>
+        </thead>
+        <tbody>
+          <% timeline[:periods].each do |label| %>
+            <tr data-insight-row="<%= label %>">
+              <td><%= label %></td>
+              <td class="text-end" data-insight-bought><%= insight_money(timeline[:bought][label], currency) if timeline[:bought][label].nonzero? %></td>
+              <td class="text-end" data-insight-sold><%= insight_money(timeline[:sold][label], currency) if timeline[:sold][label].nonzero? %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+      </div>
+    <% end %>
+    <% if timeline[:skipped].positive? %>
+      <%# E15 — a foreign-currency transaction with no firm-currency amount yet cannot be added in %>
+      <div class="text-muted mt-2" data-insight-skipped>
+        <%= pluralize(timeline[:skipped], "transaction") %> in another currency without a <%= currency %> amount yet
+        <i class="ti ti-info-circle" data-bs-toggle="tooltip" title="Firm-currency amounts are filled in by the tracking-currency update. Until then these transactions are left out of the totals."></i>
+      </div>
+    <% end %>
+  </div>
+<% end %>

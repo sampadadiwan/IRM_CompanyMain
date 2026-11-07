@@ -24,6 +24,56 @@ module DashboardWidgetsHelper
     lp_allocated_portfolio?(dashboard_name, owner) ? widgets.slice(*lp_allocated_portfolio_keys(widgets)) : widgets
   end
 
+  # ── Widget settings in place — openspec/changes/archive/2026-11-07-dashboard-widget-inline-settings ──────────────────────────
+
+  # A widget's key on the page: its container id and the suffix of its turbo frame (same as the menu anchors)
+  def widget_frame_key(widget)
+    "#{widget.widget_name.parameterize.underscore}_#{widget.position}"
+  end
+
+  # Query params that name the widget for the settings popup: a saved widget by id, a default one by
+  # dashboard, layout and widget name (D2)
+  def widget_settings_params(widget, dashboard_name, layout)
+    return { widget_id: widget.id } if widget.persisted?
+
+    { dashboard_name:, layout: layout.presence || "Default", widget_name: widget.widget_name }
+  end
+
+  # Whether this page shows the settings icons (H1, X1, X3): only on the user's own firm's dashboards, never in an
+  # LP context, and only when the policy allows it. Worked out once per dashboard and layout, not per widget.
+  def widget_settings_allowed?(dashboard_name, layout, entity_id:, lp: false)
+    return false if lp || current_user.nil? || entity_id.to_i != current_user.entity_id
+
+    # Memoised per request, false results included
+    @widget_settings_allowed ||= {}
+    key = [dashboard_name, layout]
+    return @widget_settings_allowed[key] if @widget_settings_allowed.key?(key)
+
+    @widget_settings_allowed[key] =
+      policy(DashboardWidget.new(entity_id: current_user.entity_id, dashboard_name:, name: layout.presence || "Default"))
+      .inline_settings?
+  end
+
+  # The icon shown beside a setting's label in the settings panel, by the kind of setting (and a few telling keys)
+  def metadata_field_icon(kind, key)
+    key = key.to_s
+    return "ti-calendar" if key.include?("date")
+    return "ti-heading" if key.include?("title") || key.include?("name")
+
+    { boolean: "ti-toggle-left", choice: "ti-list-details", number: "ti-hash", list: "ti-list" }.fetch(kind, "ti-forms")
+  end
+
+  # The tooltip of a setting that has no hint of its own
+  def metadata_field_default_tip(kind)
+    case kind
+    when :boolean then "ON or OFF. Default lets the widget decide."
+    when :choice then "Pick one. Default lets the widget decide."
+    when :number then "A number. Leave it empty to use the widget's default."
+    when :list then "A comma-separated list. Leave it empty to use the widget's default."
+    else "Leave it empty to use the widget's default."
+    end
+  end
+
   # The menu is the page's widgets narrowed by Show Menu. Default widgets reach here with show_menu true
   # (the column default), so a dashboard with nothing enabled lists its defaults in the menu too.
   def dashboard_menu_widgets(widgets)
@@ -86,13 +136,9 @@ module DashboardWidgetsHelper
     Rails.logger.debug { "Filtering widgets for dashboard '#{dashboard_name}' with tags: #{tag_list} for owner #{owner}" }
 
     if widgets.empty?
-      # Step 5a: If no custom widgets are configured for this dashboard/entity/owner, return the default set.
-      # For Landing Page, we only show a subset by default to avoid context-specific widget crashes
-      if [DashboardWidget::FM_LANDING_PAGE, DashboardWidget::LP_LANDING_PAGE, DashboardWidget::OPS_LANDING_PAGE].include?(dashboard_name)
-        DashboardWidget::WIDGETS[dashboard_name].take(4).index_by(&:widget_name)
-      else
-        DashboardWidget::WIDGETS[dashboard_name].index_by(&:widget_name)
-      end
+      # Step 5a: If no custom widgets are configured for this dashboard/entity/owner, return the default set
+      # (the first four on landing pages — DashboardWidget.default_widgets_for owns that rule)
+      DashboardWidget.default_widgets_for(dashboard_name).index_by(&:widget_name)
     else
       # Step 5b: If custom widgets exist, filter and transform them into a hash.
       dashboard_widgets = []

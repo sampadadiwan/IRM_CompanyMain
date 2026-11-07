@@ -1,0 +1,93 @@
+<%# Investor Pending Actions — what is still outstanding with this LP (H17, E45–E50, X10).
+    openspec/changes/archive/2026-11-07-dashboard-insight-widgets/business-rules.md#6. Table markup as the regular app tables
+    (tasks/_index.html.erb); tooltips through the layout's tooltip controller (data-bs-toggle="tooltip"). %>
+<% return unless insight_widget_visible? %>
+<%
+  args ||= {}
+  # The LP this dashboard is about
+  investor = owner.is_a?(Investor) ? owner : @investor
+  # A verified KYC is listed when it expires within this many days (E45, E46 — default 60)
+  kyc_expiry_days = insight_int_arg(args, :kyc_expiry_days, 60)
+  sections = investor_pending_sections(investor, kyc_expiry_days)
+%>
+<%= render(WidgetCardComponent.new(widget: widget, args: args, widget_size: widget.widget_size)) do %>
+  <div data-insight-widget="investor-pending-actions">
+    <% if sections.all? { |section| section.total.zero? } %>
+      <%# E49 — all clear %>
+      <%= insight_empty_state("Nothing outstanding with #{investor.investor_name}.") %>
+    <% else %>
+      <div class="row g-3">
+        <% sections.each do |section| %>
+          <div class="col-md-6" data-insight-section="<%= section.title %>">
+            <div class="d-flex align-items-center justify-content-between">
+              <h6 class="mb-0"><i class="<%= section.icon %> me-1"></i><%= section.title %></h6>
+              <%# The count is every matching record, not only the rows shown; it opens the full list %>
+              <%= link_to section.total, section.path, class: "badge #{section.total.positive? ? 'bg-danger-subtle text-danger' : 'bg-secondary-subtle text-secondary'}",
+                          data: { insight_count: true, turbo_frame: "_top", bs_toggle: "tooltip" },
+                          title: "#{section.total} in all#{section.total > section.rows.size ? " — showing the first #{section.rows.size}" : ''}. Click to open the full list." %>
+            </div>
+            <%# What this section counts, in one line %>
+            <div class="text-muted small mt-1 mb-2" data-insight-section-help><%= section.help %></div>
+            <% if section.rows.empty? %>
+              <div class="text-muted small mt-1">None</div>
+            <% else %>
+              <div class="table-responsive">
+              <table class="table table-bordered dataTable mb-0">
+                <%# Column headings per section; an ⓘ explains a column whose meaning is not obvious %>
+                <thead>
+                  <tr>
+                    <% section.columns.each do |heading, tooltip, right| %>
+                      <th class="<%= 'text-end' if right %>">
+                        <%= heading %>
+                        <% if tooltip %><i class="ti ti-info-circle" data-bs-toggle="tooltip" title="<%= tooltip %>"></i><% end %>
+                      </th>
+                    <% end %>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% case section.key
+                     when :remittances %>
+                    <% section.rows.each do |remittance| %>
+                      <tr data-insight-row="<%= remittance.capital_call.name %>">
+                        <td><%= link_to remittance.capital_call.name, capital_remittance_path(remittance), data: { turbo_frame: "_top" } %>
+                          <div class="text-muted small"><%= remittance.fund.name %></div></td>
+                        <td><%= l(remittance.capital_call.due_date) %></td>
+                        <td><span class="badge <%= remittance.status == 'Overdue' ? 'bg-danger-subtle text-danger' : 'bg-warning-subtle text-warning' %>"><%= remittance.status %></span></td>
+                        <td class="text-end" data-insight-value><%= money_to_currency(remittance.due_amount) %></td>
+                      </tr>
+                    <% end %>
+                  <% when :kycs %>
+                    <% section.rows.each do |kyc| %>
+                      <tr data-insight-row="<%= kyc.full_name %>">
+                        <td><%= link_to kyc.full_name.presence || "KYC ##{kyc.id}", investor_kyc_path(kyc), data: { turbo_frame: "_top" } %></td>
+                        <td class="text-end" data-insight-value><%= pending_kyc_reason(kyc) %></td>
+                      </tr>
+                    <% end %>
+                  <% when :approvals %>
+                    <% section.rows.each do |response| %>
+                      <tr data-insight-row="<%= response.approval.title %>">
+                        <td><%= link_to response.approval.title, approval_path(response.approval), data: { turbo_frame: "_top" } %></td>
+                        <td class="text-end" data-insight-value><%= l(response.approval.due_date) %></td>
+                      </tr>
+                    <% end %>
+                  <% when :esign %>
+                    <% section.rows.each do |document| %>
+                      <tr data-insight-row="<%= document.name %>">
+                        <td><%= link_to document.name, document_path(document), data: { turbo_frame: "_top" } %></td>
+                        <td class="text-end" data-insight-value>
+                          <%= document.esign_status.to_s.titleize %>
+                          <% if document.sent_for_esign_date %><div class="text-muted small">Sent <%= l(document.sent_for_esign_date.to_date) %></div><% end %>
+                        </td>
+                      </tr>
+                    <% end %>
+                  <% end %>
+                </tbody>
+              </table>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+<% end %>

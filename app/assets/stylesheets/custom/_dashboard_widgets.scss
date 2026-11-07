@@ -30,6 +30,13 @@
   overflow: visible;
 }
 
+// The full-page portfolio grid drops its card's padding (scaffolds.scss: `.card:has(.portfolio_investment_ag_grid)
+// .card-body { padding: 0 !important }`). On a dashboard the grid sits in a widget card beside other widgets, so
+// give it the card's usual padding back and it lines up with the tables around it.
+.dashboard-widget-container .card:has(.portfolio_investment_ag_grid) .card-body {
+  padding: var(--bs-card-spacer-y, 1.5rem) var(--bs-card-spacer-x, 1.5rem) !important;
+}
+
 // Ensure all dashboard widget containers propagate full row height to their children
 .dashboard-widget-container {
   // Use align-self:stretch (default in a flex row) + display:flex so children
