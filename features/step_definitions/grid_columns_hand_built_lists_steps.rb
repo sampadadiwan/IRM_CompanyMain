@@ -87,3 +87,33 @@ Then("each converted list should render with the columns button:") do |table|
   end
   expect(failures).to be_empty, "lists without the columns button: #{failures.join(', ')}"
 end
+
+# --- Responsive width (E31, E32 — ui/datatable-layout, modified) -----------------------------------------------
+
+Given("my browser is {int} pixels wide") do |width|
+  page.driver.with_playwright_page { |pw| pw.set_viewport_size(width:, height: 900) }
+end
+
+def gcl_visible_headings(table_id)
+  sleep 1.5 # DataTables measures and folds after the first draw
+  all("table##{table_id} thead th").select(&:visible?).map { |th| th.text.gsub(/[▲▼]/, "").squish }
+end
+
+Then("the {string} list should show its first column {string}") do |table_id, label|
+  gcs_eventually { gcl_visible_headings(table_id).first == label }
+end
+
+Then("the {string} list should fold its actions column") do |table_id|
+  gcs_eventually { gcl_visible_headings(table_id).exclude?("Actions") }
+end
+
+Then("the {string} list should show its actions column") do |table_id|
+  gcs_eventually { gcl_visible_headings(table_id).include?("Actions") }
+end
+
+Then("the {string} list should fold some middle columns") do |table_id|
+  gcs_eventually do
+    all_headings = all("table##{table_id} thead th", visible: :all).size
+    gcl_visible_headings(table_id).size < all_headings
+  end
+end

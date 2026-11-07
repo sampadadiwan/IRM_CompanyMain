@@ -1,4 +1,4 @@
-# Worked examples H19, H20, E28, E29, E30 —
+# Worked examples H19, H20, E28–E32 —
 # openspec/changes/grid-columns-inline-settings/business-rules.md#1b-hand-built-list-tables--phase-2
 Feature: Hand-built lists get the columns button
   Lists that used to render fixed columns, sorted and searched in the page by jQuery DataTables, now use the firm's
@@ -46,6 +46,22 @@ Feature: Hand-built lists get the columns button
   Scenario: Configure Grids offered
     When I open the form type page for my firm's "CapitalDistribution"
     Then the page should offer Configure Grids
+
+  # E31 — Edge case: at phone width the first column (the name) stays; the actions fold behind ▶
+  Scenario: Phone width keeps the name
+    Given my browser is 400 pixels wide
+    When I open the "/funds" page
+    Then the "funds" list should show its first column "Name"
+    And the "funds" list should fold its actions column
+
+  # E32 — Edge case: slightly too wide — the name and the buttons stay, middle columns fold
+  Scenario: Slightly too wide keeps the name and the buttons
+    Given my firm's "Fund" columns are "name_link, category, tag_badges, committed_amount, collected_amount, distributed_amount_abs, call_amount"
+    And my browser is 1000 pixels wide
+    When I open the "/funds" page
+    Then the "funds" list should show its first column "Name"
+    And the "funds" list should show its actions column
+    And the "funds" list should fold some middle columns
 
   # E30 — Edge case: every converted list renders, with the columns button, for the firm's admin
   Scenario: Every converted list renders

@@ -40,7 +40,7 @@ flowchart LR
 ```
 
 - **ID legend:** **H** = happy path · **E** = edge case · **X** = error case. IDs run across the whole file.
-- **Spec scenario** column: `GC: <scenario>` = `ui/grid-columns-inline-settings`; `CF: <scenario>` =
+- **Spec scenario** column (`DL:` = `ui/datatable-layout`, modified): `GC: <scenario>` = `ui/grid-columns-inline-settings`; `CF: <scenario>` =
   `forms/custom-fields-inline-settings`.
 - **Feature** column: `core-gc` = `features/core/grid_columns_inline_settings.feature`; `core-gc-lists` =
   `features/core/grid_columns_hand_built_lists.feature`; `sec-gc` =
@@ -141,6 +141,8 @@ flowchart LR
 |---|---|---|---|---|---|---|
 | E28 | Search and sort after customising | H20 saved; distributions "Dec 2025", "Jun 2026" | Types "Dec" in Search:, sorts by Name | Only Dec 2025 listed; sort works | GC: Search and sort after customising | core-gc-lists |
 | E29 | Configure Grids offered | Capital Distribution form type | Opens its Form Type page | Configure Grids button present | GC: Configure Grids offered | core-gc-lists |
+| E31 | Phone width keeps the name | Funds "Growth Fund I", "Fund II" | Meera opens Funds at phone width (400px) | Name column shown; Actions folded behind ▶ | DL: Phone width | core-gc-lists |
+| E32 | Slightly too wide keeps name and buttons | Funds list with 7 columns saved | Meera opens Funds at 1000px | Name and Actions shown; middle columns folded behind ▶ | DL: Table slightly too wide | core-gc-lists |
 | E30 | Every converted list renders | One record each; no saved columns | Opens each of the 14 lists | Each renders with ▥ and its rows (no errors) | GC: Today's columns by default | core-gc-lists |
 
 ### Error cases
@@ -218,17 +220,17 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    S["76 spec scenarios<br/>(2 specs)"] --> R["Every scenario named in<br/>≥ 1 Spec scenario cell"]
+    S["78 spec scenarios<br/>(3 specs)"] --> R["Every scenario named in<br/>≥ 1 Spec scenario cell"]
     R --> F["Every row → 1 Cucumber scenario<br/>with '# ID — path' comment"]
 ```
 
 | Group | H | E | X | Total |
 |---|---|---|---|---|
 | 1 Table columns | 11 | 16 | 11 | 38 |
-| 1b Hand-built lists | 2 | 3 | 0 | 5 |
+| 1b Hand-built lists | 2 | 5 | 0 | 7 |
 | 2 AG grid columns | 1 | 1 | 0 | 2 |
 | 3 Custom fields | 7 | 10 | 9 | 26 |
-| **Total** | 21 | 30 | 20 | 71 |
+| **Total** | 21 | 32 | 20 | 73 |
 
 - `features/security/grid_columns_inline_settings_isolation.feature` and
   `features/security/custom_fields_inline_settings_isolation.feature` gather every refusal row: other firm, wrong
