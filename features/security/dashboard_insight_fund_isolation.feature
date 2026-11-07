@@ -1,4 +1,4 @@
-# Worked examples X7, X9: openspec/changes/dashboard-insight-widgets/business-rules.md (§4, §5)
+# Worked examples X7, X9: openspec/changes/archive/2026-11-07-dashboard-insight-widgets/business-rules.md (§4, §5)
 @rack_test
 Feature: Fund insight widgets stay inside the firm and away from LPs
   Valuation Freshness counts only the firm's own valuations, and an investor-role user who requests a fund

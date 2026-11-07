@@ -1,4 +1,4 @@
-# Worked examples X1, X2, X3, X6, X7 — openspec/changes/dashboard-widget-inline-settings/design.md#worked-examples
+# Worked examples X1, X2, X3, X6, X7 — openspec/changes/archive/2026-11-07-dashboard-widget-inline-settings/design.md#worked-examples
 @rack_test
 Feature: Widget settings in place — access
   Only the firm's own users, not acting as investors, may open or save a widget's settings. Direct requests that

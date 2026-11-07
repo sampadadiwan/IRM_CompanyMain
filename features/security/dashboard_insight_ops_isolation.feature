@@ -1,4 +1,4 @@
-# Worked examples X3, X10, X11 — openspec/changes/dashboard-insight-widgets/business-rules.md#1, #6, #7
+# Worked examples X3, X10, X11 — openspec/changes/archive/2026-11-07-dashboard-insight-widgets/business-rules.md#1, #6, #7
 Feature: Ops and investor insight widgets count only what the viewer may see
   Needs Attention, Investor Pending Actions and the task counts go through the same policy scopes as the lists
   they link to, so another firm's records and records the viewer cannot open are never counted.

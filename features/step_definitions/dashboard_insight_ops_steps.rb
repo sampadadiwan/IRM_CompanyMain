@@ -1,7 +1,7 @@
 # Steps for features/core/dashboard_insight_investor_widgets.feature, features/core/dashboard_insight_ops_widgets.feature
 # and features/security/dashboard_insight_ops_isolation.feature — the Investor Pending Actions, Side-letter
 # Obligations, Needs Attention, Overdue Tasks by Assignee and Stuck Workflows insight widgets.
-# Worked examples H17–H24, E45–E63, X3, X10, X11 — openspec/changes/dashboard-insight-widgets/business-rules.md#6 and #7
+# Worked examples H17–H24, E45–E63, X3, X10, X11 — openspec/changes/archive/2026-11-07-dashboard-insight-widgets/business-rules.md#6 and #7
 # Records are built directly (update_columns after create) so each row's figures are exactly what the scenario names.
 
 module DashboardInsightOpsSteps

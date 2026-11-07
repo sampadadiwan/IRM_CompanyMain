@@ -1,5 +1,5 @@
 # Shared rules for the dashboard insight widgets (KPI Movers, Valuation Freshness, Remittance Ageing, Needs
-# Attention, ...). Worked examples E1, E2, X2, X9 — openspec/changes/dashboard-insight-widgets/business-rules.md#1
+# Attention, ...). Worked examples E1, E2, X2, X9 — openspec/changes/archive/2026-11-07-dashboard-insight-widgets/business-rules.md#1
 module InsightWidgetsHelper
   # The 17 insight widgets show internal fund-manager data, so none of them renders for a user acting as an
   # investor, whatever dashboard URL that user requests (X2, X9). They are also left out of

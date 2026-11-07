@@ -1,5 +1,5 @@
 # Ops Dashboard insight widgets that read core data only: Overdue Tasks by Assignee and Stuck Workflows.
-# Worked examples H22, H23, E59–E63, X11 — openspec/changes/dashboard-insight-widgets/business-rules.md#7
+# Worked examples H22, H23, E59–E63, X11 — openspec/changes/archive/2026-11-07-dashboard-insight-widgets/business-rules.md#7
 module OpsInsightWidgetsHelper
   UNASSIGNED_LABEL = "Unassigned".freeze
   OTHERS_LABEL = "Others".freeze

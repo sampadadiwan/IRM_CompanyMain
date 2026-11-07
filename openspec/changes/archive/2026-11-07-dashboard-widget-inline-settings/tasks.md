@@ -31,9 +31,9 @@
 
 ## 3. Coverage, docs and hand-off
 
-- [ ] 3.1 Coverage: the 24 H/E/X IDs in design.md equal the `# ID —` comments in the three feature files
-- [ ] 3.2 RuboCop and Brakeman clean on the changed files; `openspec validate dashboard-widget-inline-settings` passes; mermaid lint exit 0
-- [ ] 3.3 Dev-DB render check of the 9 dashboards (every widget frame 200, no errors) as fm1@demofund.com
+- [x] 3.1 Coverage: the 24 H/E/X IDs in design.md equal the `# ID —` comments in the three feature files
+- [x] 3.2 RuboCop and Brakeman clean on the changed files; `openspec validate dashboard-widget-inline-settings` passes; mermaid lint exit 0
+- [x] 3.3 Dev-DB render check of the 9 dashboards (every widget frame 200, no errors) as fm1@demofund.com
 - [x] 3.4 Update design.md / lld.md "Changed during the build" with any deviation
 - [ ] 3.5 QA runs qa-checklist.md on a deployed build and records the sign-off (for QA, not the apply agent)
 

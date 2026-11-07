@@ -1,6 +1,6 @@
 # Data for the KPI insight widgets: KPI Movers and KPI Threshold Watch (Portfolio Company Dashboard) and
 # Peer KPI Comparison (Aggregated Portfolio Dashboard).
-# Worked examples H3–H6, E3–E12, H13, E31, E32, X8 — openspec/changes/dashboard-insight-widgets/business-rules.md#2
+# Worked examples H3–H6, E3–E12, H13, E31, E32, X8 — openspec/changes/archive/2026-11-07-dashboard-insight-widgets/business-rules.md#2
 module KpiInsightWidgetsHelper
   # Columns the widgets read from kpis — the table carries wide json/notes columns we never need here
   INSIGHT_KPI_COLUMNS = %i[id name value percentage_change rag_status portfolio_company_id kpi_report_id investor_kpi_mapping_id].freeze

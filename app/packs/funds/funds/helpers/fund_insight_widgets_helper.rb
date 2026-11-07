@@ -1,7 +1,7 @@
 # Data for the Fund Dashboard insight widgets: Remittance Ageing, NAV per Unit Trend and Hedge Expiries.
 # Each method runs a fixed number of grouped queries; capital_remittances is a large table, so it is only
 # ever read as grouped totals (CLAUDE.md large-table rules).
-# Worked examples H14–H16, E33–E44, X9 — openspec/changes/dashboard-insight-widgets/business-rules.md#5
+# Worked examples H14–H16, E33–E44, X9 — openspec/changes/archive/2026-11-07-dashboard-insight-widgets/business-rules.md#5
 module FundInsightWidgetsHelper
   # Open = the statuses the remittances grid link filters on, so the widget's count equals the grid's rows (E37)
   AGEING_OPEN_STATUSES = %w[Pending Overdue].freeze

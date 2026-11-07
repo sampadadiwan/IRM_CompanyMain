@@ -1,5 +1,5 @@
 # Steps for the widget settings popup on dashboards.
-# openspec/changes/dashboard-widget-inline-settings/design.md#worked-examples
+# openspec/changes/archive/2026-11-07-dashboard-widget-inline-settings/design.md#worked-examples
 # Reuses: 'the {string} widget on the {string} has settings {string}', 'I open the {string} of fund {string}',
 # 'I open the fund dashboard {string}', 'I open the stakeholders portfolio dashboard', 'the fund {string} holds:'
 # and the LP steps of lp_portfolio_steps.rb.

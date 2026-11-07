@@ -1,6 +1,6 @@
 # Data for the company insight widgets on the Portfolio Company Dashboard: Monitoring Status, Investment Timeline
 # and Ownership Trend. Worked examples H5, E13, E14, X4, X5 (§2) and H7, H8, E15–E19, X6 (§3) —
-# openspec/changes/dashboard-insight-widgets/business-rules.md
+# openspec/changes/archive/2026-11-07-dashboard-insight-widgets/business-rules.md
 module CompanyInsightWidgetsHelper
   # The firm's portfolio company agent, when the viewer may see it; nil hides Monitoring Status (X4)
   def insight_portfolio_company_agent

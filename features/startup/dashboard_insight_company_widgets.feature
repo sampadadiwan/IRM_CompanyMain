@@ -1,4 +1,4 @@
-# Worked examples H3–H8, E3–E19, X4: openspec/changes/dashboard-insight-widgets/business-rules.md#2 and #3
+# Worked examples H3–H8, E3–E19, X4: openspec/changes/archive/2026-11-07-dashboard-insight-widgets/business-rules.md#2 and #3
 @rack_test
 Feature: Company insight widgets on the Portfolio Company Dashboard
   KPI Movers, KPI Threshold Watch, Monitoring Status, Investment Timeline and Ownership Trend answer

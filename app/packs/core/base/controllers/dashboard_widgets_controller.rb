@@ -23,7 +23,7 @@ class DashboardWidgetsController < ApplicationController
   def show; end
 
   # GET /dashboard_widgets/settings — the settings popup's form, rendered into the popup's turbo frame.
-  # openspec/changes/dashboard-widget-inline-settings — D2; H2, H8, X1, X2, X6
+  # openspec/changes/archive/2026-11-07-dashboard-widget-inline-settings — D2; H2, H8, X1, X2, X6
   def settings
     @dashboard_widget = settings_target
     authorize @dashboard_widget, :inline_settings?

@@ -1,4 +1,4 @@
-# Worked examples H1, H2, H7, H8, E1, E2, E4, E5, E6, E9, X4, X5 — openspec/changes/dashboard-widget-inline-settings/design.md#worked-examples
+# Worked examples H1, H2, H7, H8, E1, E2, E4, E5, E6, E9, X4, X5 — openspec/changes/archive/2026-11-07-dashboard-widget-inline-settings/design.md#worked-examples
 # (X1–X3, X6, X7: features/security/dashboard_widget_inline_settings_isolation.feature; H3–H6, E3, E7, E8:
 # features/core/dashboard_widget_inline_settings_refresh.feature)
 Feature: Widget settings in place

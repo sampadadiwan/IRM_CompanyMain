@@ -2,7 +2,7 @@
 # NAV per Unit Trend, Hedge Expiries):
 #   features/fund/dashboard_insight_portfolio_widgets.feature, features/fund/dashboard_insight_fund_widgets.feature,
 #   features/security/dashboard_insight_fund_isolation.feature
-# Worked examples §4 and §5 — openspec/changes/dashboard-insight-widgets/business-rules.md
+# Worked examples §4 and §5 — openspec/changes/archive/2026-11-07-dashboard-insight-widgets/business-rules.md
 # Reuses: 'today is', 'the fund {string} holds:', 'the {string} widget on the {string} has settings {string}',
 # 'I open the {string} of fund {string}', 'I open the fund dashboard {string}', 'LP {string} has folio {string} in {string}'.
 

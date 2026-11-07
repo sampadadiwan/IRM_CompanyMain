@@ -1,7 +1,7 @@
 # Dashboard Insight Widgets — Business Rules (H/E/X)
 
 > **Audience:** Product, QA, developers. Every row becomes exactly one Cucumber scenario.
-> **Companions:** [Proposal](proposal.md) · [Design](design.md) · [Specs](specs/) · [Recommendations](../../../docs/modules/dashboards/widget_recommendations.md)
+> **Companions:** [Proposal](proposal.md) · [Design](design.md) · [Specs](specs/) · [Recommendations](../../../../docs/modules/dashboards/widget_recommendations.md)
 
 ---
 

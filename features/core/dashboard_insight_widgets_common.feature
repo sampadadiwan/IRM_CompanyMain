@@ -1,4 +1,4 @@
-# Worked examples (H1, H2, E1, E2, X1, X2): openspec/changes/dashboard-insight-widgets/business-rules.md#1-rules-every-widget-follows--phase-1
+# Worked examples (H1, H2, E1, E2, X1, X2): openspec/changes/archive/2026-11-07-dashboard-insight-widgets/business-rules.md#1-rules-every-widget-follows--phase-1
 Feature: Rules every dashboard insight widget follows
   The 17 insight widgets are offered on their dashboards only, label and explain every setting, fall back to
   defaults for bad settings, and are never shown to LPs.

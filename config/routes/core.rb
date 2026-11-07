@@ -450,7 +450,7 @@ resources :dashboard_widgets do
   post 'new_lp_layout', on: :collection
   get 'dashboard', on: :collection
   get 'metadata_help', on: :collection
-  # Widget settings in place — openspec/changes/dashboard-widget-inline-settings (D2)
+  # Widget settings in place — openspec/changes/archive/2026-11-07-dashboard-widget-inline-settings (D2)
   get 'settings', on: :collection
   patch 'save_settings', on: :collection
 end

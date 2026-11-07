@@ -1,4 +1,4 @@
-# Worked examples H14–H16, E33–E44 (§5): openspec/changes/dashboard-insight-widgets/business-rules.md#5-fund-capital-widgets--phase-1-and-2
+# Worked examples H14–H16, E33–E44 (§5): openspec/changes/archive/2026-11-07-dashboard-insight-widgets/business-rules.md#5-fund-capital-widgets--phase-1-and-2
 # (X9 is in features/security/dashboard_insight_fund_isolation.feature)
 @rack_test
 Feature: Fund capital insight widgets

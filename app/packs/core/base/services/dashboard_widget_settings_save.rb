@@ -1,5 +1,5 @@
 # Saves a widget's settings and size from the settings popup on a dashboard.
-# openspec/changes/dashboard-widget-inline-settings — design D2, D3; worked examples H3–H5, E3–E6, X4, X5
+# openspec/changes/archive/2026-11-07-dashboard-widget-inline-settings — design D2, D3; worked examples H3–H5, E3–E6, X4, X5
 #
 # The target is either a saved widget, or an unsaved default widget (a dashboard whose layout has no enabled
 # widget shows the catalogue defaults). Saving a default first saves every default the page shows, so the

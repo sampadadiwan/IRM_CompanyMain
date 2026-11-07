@@ -1,4 +1,4 @@
-# Worked examples H13, E31, E32, X8: openspec/changes/dashboard-insight-widgets/business-rules.md#4
+# Worked examples H13, E31, E32, X8: openspec/changes/archive/2026-11-07-dashboard-insight-widgets/business-rules.md#4
 @rack_test
 Feature: Peer KPI Comparison on the Aggregated Portfolio Dashboard
   One KPI's latest value and change, side by side for every company on the page.

@@ -1,11 +1,11 @@
 # Dashboard Insight Widgets — Proposal
 
 > **Audience:** Business team, product, QA, support — non-technical.
-> **Companion documents:** [Design](design.md) · [Business rules](business-rules.md) · [Recommendations review](../../../docs/modules/dashboards/widget_recommendations.md)
+> **Companion documents:** [Design](design.md) · [Business rules](business-rules.md) · [Recommendations review](../../../../docs/modules/dashboards/widget_recommendations.md)
 > **New to this? Start with the [Workflow Journey](#workflow-journey)** — every action, in order, from start to the outcome.
 
 > **Written while the user was away.** Every judgement call is listed in the recommendations doc's
-> [Assumptions](../../../docs/modules/dashboards/widget_recommendations.md#assumptions-for-review) table.
+> [Assumptions](../../../../docs/modules/dashboards/widget_recommendations.md#assumptions-for-review) table.
 
 ---
 

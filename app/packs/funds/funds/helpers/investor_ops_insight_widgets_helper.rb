@@ -1,7 +1,7 @@
 # Insight widgets that read fund data for an LP or for the whole firm: Investor Pending Actions (Investor
 # Dashboard), Needs Attention (Ops Dashboard, FM Landing Page) and Side-letter Obligations (Investor and Ops
 # Dashboards). Worked examples H17–H21, H24, E45–E58, X3, X10 —
-# openspec/changes/dashboard-insight-widgets/business-rules.md#6 and #7
+# openspec/changes/archive/2026-11-07-dashboard-insight-widgets/business-rules.md#6 and #7
 module InvestorOpsInsightWidgetsHelper
   # Rows each Investor Pending Actions section lists; the count covers all of them
   PENDING_ACTION_ROWS = 5

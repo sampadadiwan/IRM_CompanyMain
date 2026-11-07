@@ -1,5 +1,5 @@
 # Steps for features/core/dashboard_insight_widgets_common.feature
-# (openspec/changes/dashboard-insight-widgets/business-rules.md#1-rules-every-widget-follows--phase-1)
+# (openspec/changes/archive/2026-11-07-dashboard-insight-widgets/business-rules.md#1-rules-every-widget-follows--phase-1)
 
 # H1 — the New Widget form carries every dashboard's widget types as JSON (widget_options_json); the widget must be
 # listed under exactly the named dashboards

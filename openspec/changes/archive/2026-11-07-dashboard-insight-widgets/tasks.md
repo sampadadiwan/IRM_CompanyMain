@@ -1,7 +1,7 @@
 # Tasks
 
 > Phases follow the feature files, not the waves: each phase closes with its own green Cucumber run. Wave 1 and wave 2
-> widgets ([recommendations §5](../../../docs/modules/dashboards/widget_recommendations.md#5-wave-1-shortlist-being-built))
+> widgets ([recommendations §5](../../../../docs/modules/dashboards/widget_recommendations.md#5-wave-1-shortlist-being-built))
 > are spread across phases 2–5. IDs come from [business-rules.md](business-rules.md).
 
 ## 1. Catalogue and shared helper

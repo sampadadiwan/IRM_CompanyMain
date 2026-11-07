@@ -24,7 +24,7 @@ module DashboardWidgetsHelper
     lp_allocated_portfolio?(dashboard_name, owner) ? widgets.slice(*lp_allocated_portfolio_keys(widgets)) : widgets
   end
 
-  # ── Widget settings in place — openspec/changes/dashboard-widget-inline-settings ──────────────────────────
+  # ── Widget settings in place — openspec/changes/archive/2026-11-07-dashboard-widget-inline-settings ──────────────────────────
 
   # A widget's key on the page: its container id and the suffix of its turbo frame (same as the menu anchors)
   def widget_frame_key(widget)

@@ -1,4 +1,4 @@
-# Worked examples H19–H24, E54–E63 — openspec/changes/dashboard-insight-widgets/business-rules.md#7
+# Worked examples H19–H24, E54–E63 — openspec/changes/archive/2026-11-07-dashboard-insight-widgets/business-rules.md#7
 Feature: Ops Dashboard insight widgets
   Needs Attention counts stuck work and links to it; Overdue Tasks by Assignee shows who is behind; Stuck Workflows
   lists journeys waiting too long on a step; Side-letter Obligations lists obligations falling due across LPs.

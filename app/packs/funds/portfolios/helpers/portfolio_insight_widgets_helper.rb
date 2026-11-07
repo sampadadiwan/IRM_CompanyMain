@@ -1,7 +1,7 @@
 # Data for the Portfolio Dashboard / Aggregated Portfolio Dashboard insight widgets: Valuation Freshness,
 # Winners & Losers and Sector Exposure. Each method runs a fixed number of grouped queries, whatever the
 # number of companies (no per-row lookups).
-# Worked examples H9–H12, E20–E30, X7 — openspec/changes/dashboard-insight-widgets/business-rules.md#4
+# Worked examples H9–H12, E20–E30, X7 — openspec/changes/archive/2026-11-07-dashboard-insight-widgets/business-rules.md#4
 module PortfolioInsightWidgetsHelper
   FRESHNESS_STATUSES = %w[Current Due Stale Never].freeze
   # Bootstrap theme colour per status, used for the count cards and row badges

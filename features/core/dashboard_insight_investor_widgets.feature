@@ -1,4 +1,4 @@
-# Worked examples H17, H18, E45–E53 — openspec/changes/dashboard-insight-widgets/business-rules.md#6
+# Worked examples H17, H18, E45–E53 — openspec/changes/archive/2026-11-07-dashboard-insight-widgets/business-rules.md#6
 Feature: Investor Dashboard insight widgets
   Investor Pending Actions lists what is still outstanding with an LP (unpaid calls, KYC, approvals awaiting a
   reply, documents awaiting e-signature); Side-letter Obligations lists that LP's obligations falling due.

@@ -1,4 +1,4 @@
-# Worked examples H3, H4, H5, H6, E3, E7, E8 — openspec/changes/dashboard-widget-inline-settings/design.md#worked-examples
+# Worked examples H3, H4, H5, H6, E3, E7, E8 — openspec/changes/archive/2026-11-07-dashboard-widget-inline-settings/design.md#worked-examples
 # (the panel itself: features/core/dashboard_widget_inline_settings.feature)
 Feature: Widget settings in place — reloading only that widget
   After Save only the changed widget reloads, through the page's own address so its context (the fund, the

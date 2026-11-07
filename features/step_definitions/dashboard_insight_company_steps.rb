@@ -2,7 +2,7 @@
 # Ownership Trend (features/startup/dashboard_insight_company_widgets.feature), Peer KPI Comparison
 # (features/fund/dashboard_insight_peer_kpi.feature) and their isolation rows
 # (features/security/dashboard_insight_company_isolation.feature).
-# Worked examples: openspec/changes/dashboard-insight-widgets/business-rules.md §2, §3, §4 (H13, E31, E32, X8)
+# Worked examples: openspec/changes/archive/2026-11-07-dashboard-insight-widgets/business-rules.md §2, §3, §4 (H13, E31, E32, X8)
 #
 # Reused steps: 'today is {string}' (evergreen_order_steps.rb), 'the company dashboard has the widget {string} with
 # metadata {string}' (dashboard_widget_kpi_steps.rb), 'I open the company dashboard of {string}'

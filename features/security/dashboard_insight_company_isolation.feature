@@ -1,4 +1,4 @@
-# Worked examples X5, X6: openspec/changes/dashboard-insight-widgets/business-rules.md#2 and #3
+# Worked examples X5, X6: openspec/changes/archive/2026-11-07-dashboard-insight-widgets/business-rules.md#2 and #3
 @rack_test
 Feature: Company insight widgets show only what the viewer may see
   Another firm's agent reports and the holdings of funds an employee cannot access never appear.

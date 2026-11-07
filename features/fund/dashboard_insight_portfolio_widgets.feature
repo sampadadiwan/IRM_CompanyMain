@@ -1,4 +1,4 @@
-# Worked examples H9–H12, E20–E30, E64 (§4): openspec/changes/dashboard-insight-widgets/business-rules.md#4-fund-portfolio-widgets--phase-1-and-2
+# Worked examples H9–H12, E20–E30, E64 (§4): openspec/changes/archive/2026-11-07-dashboard-insight-widgets/business-rules.md#4-fund-portfolio-widgets--phase-1-and-2
 # (Peer KPI Comparison rows H13, E31, E32, X8 are in features/fund/dashboard_insight_peer_kpi.feature; X7 in
 # features/security/dashboard_insight_fund_isolation.feature)
 @rack_test

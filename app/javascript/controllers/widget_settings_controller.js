@@ -1,6 +1,6 @@
 import { Controller } from "@hotwired/stimulus"
 
-// Widget settings in place — openspec/changes/dashboard-widget-inline-settings (cards ②, ⑥, ⑦; D4, D5, D7).
+// Widget settings in place — openspec/changes/archive/2026-11-07-dashboard-widget-inline-settings (cards ②, ⑥, ⑦; D4, D5, D7).
 // Sits on a dashboard's widget row. The settings icon loads the form into the popup's frame; this controller
 // opens the panel when the form arrives, and when the save answers with the saved marker it closes the panel and
 // reloads only that widget (or the whole page after the dashboard's defaults were saved).
