@@ -48,9 +48,12 @@
     <div class="col-lg-7">
 
       <%# 1 · What it is %>
-      <div class="fcf-section">
-        <div class="fcf-section-title">1 · What it is</div>
-        <div class="fcf-section-sub">What people see on the form.</div>
+      <div class="card shadow-sm border-0 mb-3 fcf-section">
+        <div class="card-header border-bottom py-2">
+          <h6 class="mb-0 fw-bold"><i class="ti ti-id me-2 text-primary"></i>1 · What it is</h6>
+          <div class="small text-muted mt-1">What people see on the form.</div>
+        </div>
+        <div class="card-body">
         <div class="row g-2">
           <div class="form-group col-md-7">
             <%= f.label :label %>
@@ -88,13 +91,17 @@
             <% end %>
           </div>
         </div>
+        </div>
       </div>
 
       <%# 2 · Options — what depends on the type. meta_data means something different for every type, so the editor
           shows the matching widget (choices, number format, currency) and keeps the raw box for everything else %>
-      <div class="fcf-section" data-fcf-options>
-        <div class="fcf-section-title">2 · <span data-fcf-options-title>Options</span></div>
-        <div class="fcf-section-sub" data-fcf-options-sub></div>
+      <div class="card shadow-sm border-0 mb-3 fcf-section" data-fcf-options>
+        <div class="card-header border-bottom py-2">
+          <h6 class="mb-0 fw-bold"><i class="ti ti-adjustments me-2 text-primary"></i>2 · <span data-fcf-options-title>Options</span></h6>
+          <div class="small text-muted mt-1" data-fcf-options-sub></div>
+        </div>
+        <div class="card-body">
 
         <%# Choices for Select / Radio / DataList / MultiSelect, written to meta_data as "A,B,C" %>
         <div class="fcf-js d-none" data-fcf-widget="choices">
@@ -134,11 +141,16 @@
           <small class="form-text text-muted" data-fcf-meta-help>CSV for selects, checkboxes etc. For Number: "precision,separator" e.g. "2,comma" or "0,none". For Money: ISO currency code e.g. "USD" to override record's currency</small>
         </div>
         <a href="#" class="small fcf-js d-none" data-fcf-raw-toggle data-action="fcf-editor#toggleRaw:prevent">Edit as text</a>
+        </div>
       </div>
 
       <%# 3 · Rules %>
-      <div class="fcf-section">
-        <div class="fcf-section-title">3 · Rules</div>
+      <div class="card shadow-sm border-0 mb-3 fcf-section">
+        <div class="card-header border-bottom py-2">
+          <h6 class="mb-0 fw-bold"><i class="ti ti-shield-check me-2 text-primary"></i>3 · Rules</h6>
+          <div class="small text-muted mt-1">What must hold before a record can be saved.</div>
+        </div>
+        <div class="card-body">
         <div class="fcf-rule">
           <div><%= f.label :required %><div class="small text-muted">The record can't be saved without it.</div></div>
           <label class="ios-toggle mb-0">
@@ -230,12 +242,16 @@
             <%= f.text_field :vr_error_message, class: "form-control", placeholder: "Optional override error text" %>
           </div>
         </div>
+        </div>
       </div>
 
       <%# 4 · When it shows %>
-      <div class="fcf-section">
-        <div class="fcf-section-title">4 · When it shows</div>
-        <div class="fcf-section-sub">Leave as it is to show the field to everyone, always.</div>
+      <div class="card shadow-sm border-0 mb-3 fcf-section">
+        <div class="card-header border-bottom py-2">
+          <h6 class="mb-0 fw-bold"><i class="ti ti-eye me-2 text-primary"></i>4 · When it shows</h6>
+          <div class="small text-muted mt-1">Leave as it is to show the field to everyone, always.</div>
+        </div>
+        <div class="card-body">
 
         <div class="fcf-sentence">
           <%= f.label :step, "On" %>
@@ -273,10 +289,11 @@
           </span>
         </div>
         <div class="fcf-js d-none fcf-user-picker" data-fcf-user-picker></div>
+        </div>
       </div>
 
-      <%# More information (rich text) — rarely used, so folded away %>
-      <div class="fcf-section">
+      <%# More information (rich text) — rarely used, so folded away; a link under the cards %>
+      <div class="mb-3">
         <a href="#" class="small" data-action="fcf-editor#toggleInfo:prevent"><i class="ti ti-chevron-down"></i> More information about this field</a>
         <div class="form-group mt-2 fcf-info" data-fcf-info>
           <%= f.label :info, "Additional information" %>
@@ -292,9 +309,11 @@
 
       <%# CapHive support / debug only, exactly as before %>
       <% if params[:debug].present? %>
-        <div class="fcf-section border rounded p-2">
-          <div class="fcf-section-title"><i class="ti ti-lifebuoy me-1"></i>Support</div>
-          <div class="row g-2">
+        <div class="card shadow-sm border-0 mb-3 fcf-section">
+          <div class="card-header border-bottom py-2">
+            <h6 class="mb-0 fw-bold"><i class="ti ti-lifebuoy me-2 text-primary"></i>Support</h6>
+          </div>
+          <div class="card-body row g-2 mx-0">
             <div class="form-group col-md-6">
               <%= f.label :regulatory_env %>
               <%= f.text_field :reg_env, list: 'label-list', class: "form-control", maxlength: 50 %>

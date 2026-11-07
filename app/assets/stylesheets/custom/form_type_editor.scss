@@ -104,9 +104,9 @@
 
 .fcf-pane.fcf-removed .fcf-section { opacity: 0.45; }
 
-.fcf-section { margin-bottom: 1.5rem; }
-.fcf-section-title { font-weight: 600; margin-bottom: 0.15rem; }
-.fcf-section-sub { color: var(--bs-secondary-color); font-size: 0.8125rem; margin-bottom: 0.6rem; }
+// Each section is a card (the capital call show page's card look); its header carries the title and one-line meaning
+.fcf-section .card-header { background: var(--bs-tertiary-bg); }
+.fcf-section .card-body > .fcf-rule:first-child { padding-top: 0; }
 
 // Required / Read only / Show in filter: label and its one-line meaning, switch on the right
 .fcf-rule {
