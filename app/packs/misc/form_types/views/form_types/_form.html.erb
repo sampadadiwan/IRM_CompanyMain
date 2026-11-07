@@ -13,7 +13,14 @@
   <% end %>
 <% end %>
 
-<%= render FormCard.new(title: "Customize: #{@form_type.name.presence || 'New'}") do %>
+<%#
+  The custom form editor: the fields listed on the left (grouped by wizard step, drag to reorder), one field's settings
+  on the right, one Save for everything. Only the screen changed: every field is still a nested
+  form_custom_fields_attributes row with the inputs it always had (form_types/_form_custom_fields), so
+  FormTypesController#update and form_type_params receive exactly what they did before. With JavaScript off the list is
+  hidden and every field's settings show stacked, as the old page did.
+%>
+<%= render FormCard.new(title: "Customize: #{[@form_type.name.presence || 'New', @form_type.tag.presence].compact.join(' · ')}") do %>
 
   <%= form_with(model: form_type, validate: true) do |form| %>
     <% if form_type.errors.any? %>
@@ -34,54 +41,148 @@
 
       types += [form_type.name] unless form_type.name.blank? || types.include?(form_type.name)
 
+      # Fields shown in the editor, by wizard step then position, as the old page ordered them. Sorted in memory, not
+      # re-queried: after a failed save the loaded fields carry what was typed and their errors, which a fresh query
+      # (the old reorder) dropped
+      shown_fields = form_type.form_custom_fields.sort_by do |fcf|
+        [FormCustomField.steps[fcf.step] || FormCustomField.steps["end"], fcf.position || Float::INFINITY]
+      end
+      shown_fields = shown_fields.reject do |fcf|
+        # Calculation/GridColumns are always hidden from non-support users, regardless of debug params
+        (fcf.field_type.in?(FormCustomField::HIDDEN_FIELDS) && !current_user.support?) ||
+          # Other internal fields are hidden unless support/debug/internal params
+          (fcf.internal && !(current_user.support? || params[:debug].present? || params[:internal].present?))
+      end
     %>
 
     <%= form.hidden_field :entity_id %>
 
-    <%# If the Model for form type supports regulatory fields then shows that input  %>
-    <div class="form-group">
-      <%= form.label :name, "Form Name" %>
-      <%= form.select :name, types.sort, {include_blank: true}, class: "form-control" %>
-    </div>
+    <div class="fcf-editor" data-controller="fcf-editor"
+         data-fcf-editor-users-value="<%= fcf_user_options(form_type).to_json %>"
+         data-fcf-editor-steps-value="<%= fcf_step_options(form_type).to_json %>">
 
-    <div class="form-group">
-      <%= form.label :tag %>
-      <%= form.text_field :tag, class: "form-control" %>
-    </div>
+      <%# Header: which record type the form is for, and its tag %>
+      <div class="row g-2 align-items-end mb-3">
+        <div class="form-group col-md-4">
+          <%= form.label :name, "Form for" %>
+          <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip" title="The record type these fields are added to."></i>
+          <%= form.select :name, types.sort, {include_blank: true}, class: "form-select" %>
+        </div>
 
-    <%# Regulatory env input is only visible on debug %>
-    <% if params[:debug].present? %>
-      <div class="form-group">
-        <%= form.label :regulatory_env %>
-        <%= form.text_field :reg_env, list: 'label-list', class: "form-control", maxlength: 50 %>
-        <datalist id="label-list">
-          <% FormCustomField::REGULATORY_ENVS.each do |label| %>
-            <option value="<%= label %>"></option>
-          <% end %>
-        </datalist>
-      </div>
-    <% end %>
+        <div class="form-group col-md-3">
+          <%= form.label :tag %>
+          <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip" title="Keeps more than one form for the same record type apart, e.g. Default and Offshore."></i>
+          <%= form.text_field :tag, class: "form-control" %>
+        </div>
 
-      <h1>Custom Fields</h1>
-      <div id='form_custom_fields'>
-        <%# reorder replaces the default position-only scope so fields group by wizard step then position %>
-        <%= form.fields_for :form_custom_fields, form_type.form_custom_fields.reorder(:step, :position) do |field| %>
-          <%# Calculation/GridColumns are always hidden from non-support users, regardless of debug params %>
-          <% next if field.object.field_type.in?(FormCustomField::HIDDEN_FIELDS) && !current_user.support? %>
-          <%# Other internal fields are hidden unless support/debug/internal params %>
-          <% next if field.object.internal && !(current_user.support? || params[:debug].present? || params[:internal].present?) %>
-          <%= render 'form_custom_fields', f: field %>
+        <%# Regulatory env input is only visible on debug %>
+        <% if params[:debug].present? %>
+          <div class="form-group col-md-3">
+            <%= form.label :regulatory_env %>
+            <%= form.text_field :reg_env, list: 'label-list', class: "form-control", maxlength: 50 %>
+            <datalist id="label-list">
+              <% FormCustomField::REGULATORY_ENVS.each do |label| %>
+                <option value="<%= label %>"></option>
+              <% end %>
+            </datalist>
+          </div>
         <% end %>
+        <div class="col-12 text-muted small fcf-js" data-fcf-editor-target="summary"></div>
+      </div>
 
-        <div class='links'>
+      <%# Set to 1 by the editor once the list is dragged: positions then come from the list's order (controller) %>
+      <%= hidden_field_tag :reordered, "", data: { fcf_editor_target: "reordered" } %>
+      <%# Money fields: suggested currencies (any ISO code is accepted) %>
+      <datalist id="fcf_currency_list">
+        <% ((form_type.entity&.currency_list || []) + %w[INR USD EUR GBP SGD AED JPY]).compact.uniq.each do |code| %>
+          <option value="<%= code %>"></option>
+        <% end %>
+      </datalist>
+
+      <div class="row g-3">
+        <%# Left: the fields, grouped by step %>
+        <div class="col-xl-4 fcf-js">
+          <div class="fcf-list-card grid-columns-editor border rounded">
+            <div class="d-flex align-items-center gap-2 px-3 py-2 border-bottom">
+              <span class="fw-semibold"><i class="ti ti-list-details me-1 text-primary"></i>Fields</span>
+              <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip"
+                 title="In the order they appear on the form. Drag to reorder; drop on a step heading to move a field to that step."></i>
+              <span class="ms-auto small text-muted" data-fcf-editor-target="count"></span>
+            </div>
+            <div class="p-2 border-bottom">
+              <input type="search" class="form-control form-control-sm" placeholder="Search fields…" aria-label="Search fields"
+                     data-fcf-editor-target="search" data-action="input->fcf-editor#search">
+            </div>
+            <div class="fcf-list" data-fcf-editor-target="list"></div>
+            <div class="d-flex flex-wrap align-items-center gap-2 px-3 py-2 border-top">
+              <%= link_to_add_association '<i class="ti ti-plus"></i> Add Field'.html_safe, form, :form_custom_fields,
+                    class: "btn btn-outline-primary btn-sm",
+                    data: { association_insertion_node: "#form_custom_fields", association_insertion_method: "append" } %>
+              <% if form_type.persisted? %>
+                <%= link_to edit_step_labels_form_type_path(form_type), class: "btn btn-outline-secondary btn-sm" do %>
+                  <i class="ti ti-forms me-1"></i>Rename steps
+                <% end %>
+              <% end %>
+              <span class="small text-muted ms-auto fcf-legend">
+                <i class="ti ti-asterisk"></i> required · <i class="ti ti-lock"></i> read only · <i class="ti ti-filter"></i> filter ·
+                <i class="ti ti-git-branch"></i> conditional · <i class="ti ti-users"></i> some users
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <%# Right: one field's settings at a time %>
+        <div class="col-xl-8">
+          <div class="fcf-detail-card border rounded p-3">
+            <div class="text-muted text-center py-5 fcf-js d-none" data-fcf-editor-target="empty">
+              <i class="ti ti-forms fs-1 d-block mb-2"></i>
+              No custom fields yet. Press <b>Add Field</b> to add the first one.
+            </div>
+            <div id='form_custom_fields'>
+              <% shown_fields.each do |fcf| %>
+                <%= form.fields_for :form_custom_fields, fcf do |field| %>
+                  <%= render 'form_custom_fields', f: field, form_type: %>
+                <% end %>
+              <% end %>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div class="form-group">
-        <%= link_to_add_association '<i class="ti ti-plus"></i> Add Field'.html_safe, form, :form_custom_fields, class: "btn btn-outline-primary" %>
+      <%# One Save for every field; the editor counts what changed %>
+      <div class="fcf-save-bar d-flex align-items-center justify-content-end gap-2 mt-3">
+        <span class="small text-warning-emphasis me-auto fcf-js" data-fcf-editor-target="dirty"></span>
+        <%= link_to (form_type.persisted? ? edit_form_type_path(form_type, debug: params[:debug].presence) : form_types_path),
+              class: "btn btn-outline-secondary fcf-js", data: { fcf_editor_target: "discard", action: "fcf-editor#discard" } do %>
+          Discard changes
+        <% end %>
         <%= form.button type: 'submit', class: "btn btn-outline-primary" do %>
             <i class="ti ti-device-floppy"></i> <%= t_common(:save) %>
         <% end %>
+      </div>
+
+      <%# Leaving with unsaved changes — Stay, or leave and lose them %>
+      <div class="modal fade" tabindex="-1" aria-hidden="true" data-fcf-editor-target="leaveModal">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Leave without saving?</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <div class="card border mb-2"><div class="card-body py-2 small">
+                <i class="ti ti-alert-triangle text-danger me-1"></i><span data-fcf-editor-target="leaveCount"></span> lost.
+              </div></div>
+              <div class="card border mb-0"><div class="card-body py-2 small">
+                <i class="ti ti-device-floppy text-success me-1"></i>To keep your changes, stay on this page and press Save.
+              </div></div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Stay on this page</button>
+              <button type="button" class="btn btn-outline-danger" data-fcf-leave>Leave without saving</button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   <% end %>

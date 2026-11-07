@@ -1,0 +1,196 @@
+// ── The custom form editor (form_types/_form, fcf_editor_controller.js) ─────────────────────────────────────────────
+// Fields on the left (the side panel's .grid-columns-* rows, custom/grid_columns.scss), one field's settings on the
+// right. Theme variables only.
+
+// Before the editor runs (JavaScript off, or still loading): its widgets are hidden and every field shows, stacked.
+// Once it runs (.fcf-ready): the real inputs the widgets write into are hidden, and one field shows at a time.
+// Classes only — never the hidden attribute — so a non-JS test driver still sees and fills every real input.
+.fcf-editor:not(.fcf-ready) .fcf-js { display: none !important; }
+.fcf-editor.fcf-ready .fcf-nojs { display: none !important; }
+.fcf-editor.fcf-ready .fcf-pane:not(.active) { display: none; }
+.fcf-editor.fcf-ready .fcf-checks:not(.open),
+.fcf-editor.fcf-ready .fcf-info:not(.open) { display: none !important; }
+
+// Without the editor the panes stack: keep them apart
+.fcf-editor:not(.fcf-ready) .fcf-pane + .fcf-pane {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--bs-border-color);
+}
+
+// Left: the list scrolls on its own and stays in view while a long field is edited
+.fcf-list-card {
+  position: sticky;
+  top: 1rem;
+  background: var(--bs-body-bg);
+
+  .fcf-list {
+    max-height: calc(100vh - 16rem);
+    min-height: 12rem;
+    overflow-y: auto;
+  }
+
+  .grid-columns-list {
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .fcf-row {
+    cursor: pointer;
+
+    &.active {
+      background: var(--bs-primary-bg-subtle);
+      box-shadow: inset 3px 0 0 var(--bs-primary);
+    }
+  }
+
+  .fcf-row-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .fcf-flag {
+    font-size: 0.95rem;
+    color: var(--bs-secondary-color);
+  }
+
+  .fcf-chip-new {
+    background: var(--bs-success-bg-subtle);
+    color: var(--bs-success-text-emphasis);
+  }
+
+  .fcf-legend { font-size: 0.75rem; }
+}
+
+// A step's heading in the list — also a drop target (drop a field on it to move it to the top of that step)
+.fcf-step-head {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.35rem 0.75rem;
+  background: var(--bs-tertiary-bg);
+  border-bottom: 1px solid var(--bs-border-color-translucent);
+  color: var(--bs-secondary-color);
+  font-size: 0.8125rem;
+
+  &.drag-over { box-shadow: inset 0 -2px 0 var(--bs-primary); }
+}
+
+// Right: one field's settings
+.fcf-detail-card { background: var(--bs-body-bg); }
+
+.fcf-pane-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--bs-border-color-translucent);
+
+  h5 { display: inline; margin-right: 0.5rem; }
+
+  // The list's type chip (custom/grid_columns.scss styles it only inside the list)
+  .grid-columns-chip {
+    padding: 0.1rem 0.45rem;
+    border-radius: 1rem;
+    background: var(--bs-secondary-bg);
+    color: var(--bs-secondary-color);
+    font-size: 0.75rem;
+    white-space: nowrap;
+  }
+}
+
+.fcf-pane.fcf-removed .fcf-section { opacity: 0.45; }
+
+.fcf-section { margin-bottom: 1.5rem; }
+.fcf-section-title { font-weight: 600; margin-bottom: 0.15rem; }
+.fcf-section-sub { color: var(--bs-secondary-color); font-size: 0.8125rem; margin-bottom: 0.6rem; }
+
+// Required / Read only / Show in filter: label and its one-line meaning, switch on the right
+.fcf-rule {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--bs-border-color-translucent);
+
+  label { margin-bottom: 0; }
+  .form-check-input { cursor: pointer; }
+}
+
+// "On [step] of the form", "Only when [field] [is] [value]", "Visible to [Everyone]"
+.fcf-sentence {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+
+  > label { margin-bottom: 0; min-width: 5.5rem; font-size: 0.875rem; }
+  .fcf-condition-value { width: auto; flex: 1 1 8rem; }
+  .fcf-dim { opacity: 0.5; }
+}
+
+// Choices and picked users
+.fcf-chips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+
+.fcf-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.15rem 0.3rem 0.15rem 0.6rem;
+  border: 1px solid var(--bs-border-color);
+  border-radius: 1rem;
+  background: var(--bs-body-bg);
+  font-size: 0.8125rem;
+}
+
+.fcf-chip-x {
+  display: inline-flex;
+  padding: 0 0.15rem;
+  border: 0;
+  background: none;
+  color: var(--bs-secondary-color);
+
+  &:hover { color: var(--bs-danger); }
+}
+
+.fcf-chip-input { max-width: 16rem; }
+
+.fcf-user-picker {
+  margin-left: 6rem;
+  padding: 0.75rem;
+  border: 1px solid var(--bs-border-color-translucent);
+  border-radius: var(--bs-border-radius);
+
+  .fcf-user-list { max-height: 12rem; overflow-y: auto; }
+}
+
+// Live preview, kept in view beside the settings
+.fcf-preview-sticky { position: sticky; top: 1rem; }
+
+.fcf-preview {
+  padding: 1rem;
+  border: 1px dashed var(--bs-border-color);
+  border-radius: var(--bs-border-radius);
+  background: var(--bs-tertiary-bg);
+}
+
+// One Save for all fields, in view at the bottom of the screen
+.fcf-save-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  padding: 0.75rem 0;
+  background: var(--bs-body-bg);
+  border-top: 1px solid var(--bs-border-color-translucent);
+}
+
+// Show in filter on a type that cannot be filtered: the switch is disabled (ios-toggle has no disabled look of its own)
+.fcf-editor .ios-toggle-input:disabled + .ios-toggle-slider {
+  opacity: 0.45;
+  cursor: not-allowed;
+}

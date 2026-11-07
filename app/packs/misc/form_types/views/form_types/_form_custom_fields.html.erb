@@ -1,224 +1,323 @@
-<div class="divider"></div>
-<div class='nested-fields row' data-controller="fcf-setup">
-    <div class="row">
-    <div class="form-group col-md-1">
-        <%= f.label :position %>
-        <%= f.text_field :position, class: "form-control" %>
+<%#
+  One custom field's settings — a pane in the custom form editor (form_types/_form). The editor lists every pane on the
+  left and shows one at a time on the right; with JavaScript off every pane shows, stacked, and still saves.
+
+  Every input keeps the name and id the old stacked form used, so FormTypesController#update and form_type_params are
+  untouched. The editor's friendlier widgets (choice chips, number format, user picker) are marked .fcf-js and write
+  into the real inputs, which are marked .fcf-nojs and hidden once the editor is running.
+
+  Locals: f (the nested form builder), form_type
+%>
+<% fcf = f.object %>
+<% form_type ||= @form_type %>
+<% persisted = fcf.persisted? %>
+<div class="nested-fields fcf-pane" data-controller="fcf-setup" data-fcf-editor-target="pane"
+     data-fcf-key="<%= fcf.id %>" data-fcf-persisted="<%= persisted %>"
+     data-fcf-error="<%= fcf.errors.any? %>" data-fcf-internal="<%= fcf.internal %>">
+
+  <%# Pane header: the field's label and type (kept in step by the editor as they are typed), and Remove %>
+  <div class="fcf-pane-header">
+    <div class="min-w-0">
+      <%# human_label needs a name, which Add Field's blank template does not have yet %>
+      <h5 class="mb-0 text-truncate" data-fcf-title><%= (fcf.name.present? ? fcf.human_label : fcf.label).presence || "New field" %></h5>
+      <span class="grid-columns-chip" data-fcf-type-chip><%= fcf_type_label(fcf.field_type) %></span>
+      <% if fcf.internal %>
+        <span class="grid-columns-chip" title="Set up by CapHive (e.g. for regulatory reporting)"><i class="ti ti-eye-off"></i> Internal</span>
+      <% end %>
     </div>
+    <%# _destroy: set by the editor's Remove (persisted fields); a new field's pane is simply taken out %>
+    <%= f.hidden_field :_destroy, data: { fcf_destroy: true } %>
+    <button type="button" class="btn btn-outline-danger btn-sm fcf-js" data-action="fcf-editor#toggleRemove" data-fcf-remove>
+      <i class="ti ti-trash me-1"></i>Remove field
+    </button>
+  </div>
 
-    <div class="form-group col-md-2">
-        <%= f.label :name %>
-        <%= f.text_field :name, class: "form-control", disabled: (f.object.id.present? && params[:debug].blank?) %>
-        <small class="form-text text-muted">Name of the field.</small>
+  <%# Server-side errors for this field, shown in its own pane; the list marks the field with a red dot %>
+  <% if fcf.errors.any? %>
+    <div class="alert alert-danger py-2 small" data-fcf-errors>
+      <% fcf.errors.full_messages.each do |message| %><div><%= message %></div><% end %>
     </div>
+  <% end %>
 
-    <%
-        field_types =  %w[TextField NumberField DateField TextArea CheckBox Radio Select DataList MultiSelect Money File Header GridColumns]
-        field_types.concat(%w[Calculation]) if current_user.support? || Rails.env.local?
-    %>
-    <div class="form-group col-md-2">
-        <%= f.label :field_type %>
-        <%= f.select :field_type, field_types.sort, {},
-              class: "form-control",
-              data: { fcf_setup_target: "fieldType", action: "change->fcf-setup#fieldTypeChanged" } %>
-    </div>
+  <div class="alert alert-secondary py-2 small d-none" data-fcf-removed-note>
+    <i class="ti ti-trash me-1"></i>This field will be removed when you save. It disappears from forms and pages.
+    <a href="#" data-action="fcf-editor#toggleRemove:prevent">Undo</a>
+  </div>
 
-    <div class="form-group col-md-1">
-        <%= f.label :required %>
-        <%= f.check_box :required, class: "form-check-input mt-3" %>
-    </div>
+  <div class="row g-4">
+    <div class="col-lg-7">
 
-    <div class="form-group col-md-1">
-        <%= f.label :read_only %>
-        <%= f.check_box :read_only, class: "form-check-input mt-3" %>
-    </div>
-
-    <%# Disabled for field types that cannot be filtered (File, Header, GridColumns, Calculation) %>
-    <% unfilterable = FormCustomField::UNFILTERABLE_TYPES.include?(f.object.field_type) %>
-    <div class="form-group col-md-1"
-         data-bs-toggle="<%= unfilterable ? 'tooltip' : nil %>"
-         title="<%= unfilterable ? 'This field type cannot be used as a filter' : nil %>">
-        <%= f.label :filter_in_search, "Show in Filter" %>
-        <%= f.check_box :filter_in_search, class: "form-check-input mt-3", disabled: unfilterable %>
-    </div>
-
-    <div class="form-group col-md-2">
-        <%= f.label :meta_data %>
-        <%= f.text_field :meta_data, class: "form-control" %>
-        <small class="form-text text-muted">CSV for selects, checkboxes etc. For Number: "precision,separator" e.g. "2,comma" or "0,none". For Money: ISO currency code e.g. "USD" to override record's currency</small>
-    </div>
-
-    <div class="form-group col-md-1">
-        <%= f.label :show_user_ids, "Show only to" %>
-        <%= f.text_field :show_user_ids, class: "form-control", placeholder: "List of user ids to hide this field from" %>
-    </div>
-
-
-    </div>
-
-    <div class="row">
-
-        <div class="form-group col-md-3">
+      <%# 1 · What it is %>
+      <div class="fcf-section">
+        <div class="fcf-section-title">1 · What it is</div>
+        <div class="fcf-section-sub">What people see on the form.</div>
+        <div class="row g-2">
+          <div class="form-group col-md-7">
             <%= f.label :label %>
-            <%= f.text_field :label, class: "form-control" %>
-            <small class="form-text text-muted">Custom label for the field, can be blank</small>
-        </div>
-
-        <div class="form-group col-md-4">
-            <%= f.label :help_text %>
-            <%= f.text_field :help_text, class: "form-control" %>
-            <small class="form-text text-muted">This help text will be displayed below the field</small>
-        </div>
-
-        <div class="form-group col-md-1">
-            <%= f.label :step %>
-            <%# Map enum keys to human-readable labels; extra steps (4–9) appear as "Step N (Extra)" %>
-            <% step_options = {
-                 "one"   => "Step 1",
-                 "two"   => "Step 2",
-                 "three" => "Step 3",
-                 "end"   => "Step 3 (Default)",
-                 "four"  => "Step 4 (Extra)",
-                 "five"  => "Step 5 (Extra)",
-                 "six"   => "Step 6 (Extra)",
-                 "seven" => "Step 7 (Extra)",
-                 "eight" => "Step 8 (Extra)",
-                 "nine"  => "Step 9 (Extra)"
-               }.map { |k, label| [label, k] } %>
-            <%= f.select :step, step_options, {}, class: "form-control" %>
-        </div>
-
-        <% if params[:debug].present? %>
-
-            <% labels = FormCustomField::REGULATORY_ENVS %>
-            <div class="form-group col-md-1">
-                <%= f.label :regulatory_env %>
-                <%= f.text_field :reg_env, list: 'label-list', class: "form-control", maxlength: 50 %>
-                <datalist id="label-list">
-                    <% labels.each do |label| %>
-                    <option value="<%= label %>"></option>
-                    <% end %>
-                </datalist>
+            <%= f.text_field :label, class: "form-control", maxlength: 254, data: { fcf_label: true } %>
+          </div>
+          <div class="form-group col-md-5">
+            <%= f.label :field_type, "Type" %>
+            <%= f.select :field_type, fcf_type_options(fcf), { selected: fcf_type_value(fcf) },
+                  class: "form-select",
+                  data: { fcf_setup_target: "fieldType", fcf_type: true,
+                          action: "change->fcf-setup#fieldTypeChanged change->fcf-editor#typeChanged" } %>
+          </div>
+          <% if fcf.field_type.present? && fcf_type_value(fcf) != fcf.field_type %>
+            <div class="col-12 small text-muted" data-fcf-older-type>
+              <i class="ti ti-info-circle me-1"></i>Stored under the older type name <code><%= fcf.field_type %></code>; saving stores it as <%= fcf_type_label(fcf_type_value(fcf)) %>, the same kind of field.
             </div>
+          <% end %>
+          <div class="form-group col-12">
+            <%= f.label :help_text, "Help text" %> <span class="text-muted small">(optional, shown under the field)</span>
+            <%= f.text_field :help_text, class: "form-control", data: { fcf_help: true } %>
+          </div>
+          <div class="form-group col-12">
+            <% if persisted && params[:debug].blank? %>
+              <%# Saved field: the key is fixed — imports, templates, reports and conditions refer to it %>
+              <div class="small text-muted" data-fcf-name="<%= fcf.name %>">
+                <i class="ti ti-key me-1"></i>Stored as <code><%= fcf.name %></code>
+                <i class="ti ti-info-circle" data-bs-toggle="tooltip"
+                   title="The field's internal name. It is fixed once saved because imports, document templates, reports and conditions refer to it."></i>
+              </div>
+            <% else %>
+              <%= f.label :name, "Stored as" %>
+              <%= f.text_field :name, class: "form-control form-control-sm font-monospace", maxlength: 100,
+                    placeholder: "e.g. source_of_funds", data: { fcf_name_input: true } %>
+              <small class="form-text text-muted">The internal name. Filled in from the label; it can't change after saving.</small>
+            <% end %>
+          </div>
+        </div>
+      </div>
 
-        <% end %>
+      <%# 2 · Options — what depends on the type. meta_data means something different for every type, so the editor
+          shows the matching widget (choices, number format, currency) and keeps the raw box for everything else %>
+      <div class="fcf-section" data-fcf-options>
+        <div class="fcf-section-title">2 · <span data-fcf-options-title>Options</span></div>
+        <div class="fcf-section-sub" data-fcf-options-sub></div>
 
-        <div class="form-group col-md-2">
-            <%= f.label :none, "&nbsp;".html_safe %>
-            <span>
-                <%= link_to_remove_association "Delete" , f, class: "btn btn-outline-danger ti ti-trash mt-4" %>
-                <% collapse_id = f.object.id || rand(100**100) %>
-                <a class="btn btn-outline-primary mt-4" data-bs-toggle="collapse" href="#custom_condition_row_<%=collapse_id%>" >
-                <i class="ti ti-caret-down"></i>
-                </a>
-            </span>
+        <%# Choices for Select / Radio / DataList / MultiSelect, written to meta_data as "A,B,C" %>
+        <div class="fcf-js d-none" data-fcf-widget="choices">
+          <div class="fcf-chips" data-fcf-chips></div>
+          <input type="text" class="form-control form-control-sm mt-1 fcf-chip-input" placeholder="Add a choice, press Enter"
+                 data-action="keydown->fcf-editor#chipKeydown blur->fcf-editor#chipBlur" aria-label="Add a choice">
+          <%# Wrapped in its label: a pane added in the browser is a copy of one template, so ids would repeat %>
+          <label class="form-check mt-2 small">
+            <input class="form-check-input" type="checkbox" data-fcf-blank-first data-action="fcf-editor#choicesChanged">
+            <span class="form-check-label">Start with nothing picked</span>
+          </label>
         </div>
 
-        <% if params[:debug].present? %>
-        <div class="form-group col-md-1">
-            <%= f.label :internal %>
-            <%= f.check_box :internal, class: "form-check-input mt-3" %>
-        </div>
-        <% end %>
-
-    </div>
-
-    <div class="row collapse" id="custom_condition_row_<%=collapse_id%>">
-        <div class="form-group col-md-12">
-            <%= f.label :info %>
-            <%= f.rich_text_area :info, class: "form-control" %>
-            <small class="form-text text-muted">Additional information about the field</small>
-        </div>
-    </div>
-
-    <div class="row collapse" id="custom_condition_row_<%=collapse_id%>">
-
-        <div class="form-group col-md-2">
-            <%= f.label :condition_on %>
-            <%= f.text_field :condition_on, class: "form-control" %>
-            <small class="form-text text-muted">Field to check for condition</small>
+        <%# Number format, written to meta_data as "precision,separator" e.g. "2,comma" %>
+        <div class="fcf-js d-none row g-2" data-fcf-widget="number">
+          <div class="col-auto">
+            <label class="form-label small mb-1">Decimal places</label>
+            <select class="form-select form-select-sm" data-fcf-number-precision data-action="fcf-editor#numberChanged">
+              <option value="">As typed</option>
+              <% (0..6).each do |n| %><option value="<%= n %>"><%= n %></option><% end %>
+            </select>
+          </div>
+          <div class="col-auto">
+            <label class="form-label small mb-1">Thousands separator</label>
+            <select class="form-select form-select-sm" data-fcf-number-separator data-action="fcf-editor#numberChanged">
+              <option value="comma">1,234,567</option>
+              <option value="none">1234567</option>
+            </select>
+          </div>
         </div>
 
-        <div class="form-group col-md-2">
-            <%= f.label :condition_criteria, "Criteria" %>
-            <%= f.select :condition_criteria, [:eq, :not_eq, :contains, :lt, :lte, :gt, :gte], {}, class: "form-control" %>
-            <small class="form-text text-muted">Criteria to check for condition</small>
+        <%# The stored value itself. Money: an ISO currency (blank = the record's own). File / Calculation and any value
+            the widgets above cannot read: edited as typed %>
+        <div class="form-group" data-fcf-meta-raw>
+          <%= f.label :meta_data, "Meta data", data: { fcf_meta_label: true } %>
+          <%= f.text_field :meta_data, class: "form-control", data: { fcf_meta: true } %>
+          <small class="form-text text-muted" data-fcf-meta-help>CSV for selects, checkboxes etc. For Number: "precision,separator" e.g. "2,comma" or "0,none". For Money: ISO currency code e.g. "USD" to override record's currency</small>
         </div>
+        <a href="#" class="small fcf-js d-none" data-fcf-raw-toggle data-action="fcf-editor#toggleRaw:prevent">Edit as text</a>
+      </div>
 
-        <div class="form-group col-md-3">
-            <%= f.label :condition_params, "Match Value" %>
-            <%= f.text_field :condition_params, class: "form-control" %>
-            <small class="form-text text-muted">Value to check for the input field</small>
+      <%# 3 · Rules %>
+      <div class="fcf-section">
+        <div class="fcf-section-title">3 · Rules</div>
+        <div class="fcf-rule">
+          <div><%= f.label :required %><div class="small text-muted">The record can't be saved without it.</div></div>
+          <label class="ios-toggle mb-0">
+              <%= f.check_box :required, class: "ios-toggle-input", data: { fcf_flag: "required", action: "fcf-editor#flagChanged" } %>
+              <span class="ios-toggle-slider"></span>
+            </label>
         </div>
-
-        <div class="form-group col-md-2">
-            <%= f.label :condition_state, "State" %>
-            <%= f.select :condition_state, [:show], {}, class: "form-control" %>
-            <small class="form-text text-muted">If conditions match this field, will be shown</small>
+        <div class="fcf-rule">
+          <div><%= f.label :read_only, "Read only" %><div class="small text-muted">Shown on the form, but nobody can change it.</div></div>
+          <label class="ios-toggle mb-0">
+              <%= f.check_box :read_only, class: "ios-toggle-input", data: { fcf_flag: "read_only", action: "fcf-editor#flagChanged" } %>
+              <span class="ios-toggle-slider"></span>
+            </label>
         </div>
+        <% unfilterable = FormCustomField::UNFILTERABLE_TYPES.include?(fcf.field_type) %>
+        <div class="fcf-rule">
+          <div>
+            <%= f.label :filter_in_search, "Show in filter" %>
+            <div class="small text-muted" data-fcf-filter-help><%= unfilterable ? "This type can't be used as a filter." : "Appears in the list page's filter panel." %></div>
+          </div>
+          <label class="ios-toggle mb-0">
+              <%= f.check_box :filter_in_search, class: "ios-toggle-input", disabled: unfilterable,
+                  data: { fcf_flag: "filter", action: "fcf-editor#flagChanged" } %>
+              <span class="ios-toggle-slider"></span>
+            </label>
+        </div>
+        <div class="small text-muted fcf-js d-none" data-fcf-flag-note>A field can't be both required and read only, so the other switch was turned off.</div>
 
-    </div>
-
-    <div class="row collapse" id="custom_condition_row_<%=collapse_id%>">
-        <div class="col-12 mt-2 mb-1"><strong>Validation Rules</strong></div>
-
-        <%# Text / TextArea rules %>
-        <div class="form-group col-md-2 fcf-vr-textfield fcf-vr-textarea">
+        <a href="#" class="small d-inline-block mt-2" data-action="fcf-editor#toggleChecks:prevent" data-fcf-checks-toggle>
+          <i class="ti ti-chevron-down"></i> More checks (length, range, format, unique, error message)
+        </a>
+        <%# Validation rules — the inputs that fit the type are shown by fcf-setup, as before %>
+        <div class="row g-2 mt-1 fcf-checks" data-fcf-checks>
+          <div class="form-group col-md-4 fcf-vr-textfield fcf-vr-textarea">
             <%= f.label :vr_min_length, "Min Length" %>
             <%= f.number_field :vr_min_length, class: "form-control", min: 0 %>
-        </div>
-        <div class="form-group col-md-2 fcf-vr-textfield fcf-vr-textarea">
+          </div>
+          <div class="form-group col-md-4 fcf-vr-textfield fcf-vr-textarea">
             <%= f.label :vr_max_length, "Max Length" %>
             <%= f.number_field :vr_max_length, class: "form-control", min: 0 %>
-        </div>
-        <div class="form-group col-md-3 fcf-vr-textfield fcf-vr-textarea">
+          </div>
+          <div class="form-group col-md-4 fcf-vr-textfield fcf-vr-textarea">
+            <%= f.label :vr_format, "Format Shortcut" %>
+            <%= f.select :vr_format, [["", nil]] + FormCustomField::VALID_FORMATS, {}, class: "form-select" %>
+            <small class="form-text text-muted">email, pan, gstin, ifsc…</small>
+          </div>
+          <div class="form-group col-md-12 fcf-vr-textfield fcf-vr-textarea">
             <%= f.label :vr_pattern, "Pattern (regex)" %>
             <%= f.text_field :vr_pattern, class: "form-control", placeholder: "e.g. ^[A-Z]{5}[0-9]{4}[A-Z]$" %>
-        </div>
-        <div class="form-group col-md-2 fcf-vr-textfield fcf-vr-textarea">
-            <%= f.label :vr_format, "Format Shortcut" %>
-            <%= f.select :vr_format, [["", nil]] + FormCustomField::VALID_FORMATS, {}, class: "form-control" %>
-            <small class="form-text text-muted">email, pan, gstin, ifsc…</small>
-        </div>
+          </div>
 
-        <%# Number / Money rules %>
-        <div class="form-group col-md-2 fcf-vr-numberfield fcf-vr-money">
+          <div class="form-group col-md-4 fcf-vr-numberfield fcf-vr-money">
             <%= f.label :vr_min_value, "Min Value" %>
             <%= f.number_field :vr_min_value, class: "form-control", step: :any %>
-        </div>
-        <div class="form-group col-md-2 fcf-vr-numberfield fcf-vr-money">
+          </div>
+          <div class="form-group col-md-4 fcf-vr-numberfield fcf-vr-money">
             <%= f.label :vr_max_value, "Max Value" %>
             <%= f.number_field :vr_max_value, class: "form-control", step: :any %>
-        </div>
+          </div>
 
-        <%# Date rules %>
-        <div class="form-group col-md-2 fcf-vr-datefield">
+          <div class="form-group col-md-4 fcf-vr-datefield">
             <%= f.label :vr_min_date, "Min Date" %>
             <%= f.text_field :vr_min_date, class: "form-control", placeholder: "YYYY-MM-DD or 'today'" %>
-        </div>
-        <div class="form-group col-md-2 fcf-vr-datefield">
+          </div>
+          <div class="form-group col-md-4 fcf-vr-datefield">
             <%= f.label :vr_max_date, "Max Date" %>
             <%= f.text_field :vr_max_date, class: "form-control", placeholder: "YYYY-MM-DD or 'today'" %>
-        </div>
+          </div>
 
-        <%# MultiSelect / CheckBox rules %>
-        <div class="form-group col-md-2 fcf-vr-multiselect fcf-vr-checkbox">
+          <div class="form-group col-md-4 fcf-vr-multiselect fcf-vr-checkbox">
             <%= f.label :vr_min_selections, "Min Selections" %>
             <%= f.number_field :vr_min_selections, class: "form-control", min: 0 %>
-        </div>
-        <div class="form-group col-md-2 fcf-vr-multiselect fcf-vr-checkbox">
+          </div>
+          <div class="form-group col-md-4 fcf-vr-multiselect fcf-vr-checkbox">
             <%= f.label :vr_max_selections, "Max Selections" %>
             <%= f.number_field :vr_max_selections, class: "form-control", min: 0 %>
-        </div>
+          </div>
 
-        <%# Universal rules %>
-        <div class="form-group col-md-1">
+          <div class="form-group col-md-4">
             <%= f.label :vr_unique, "Unique" %>
-            <%= f.check_box :vr_unique, class: "form-check-input mt-3" %>
-        </div>
-        <div class="form-group col-md-3">
+            <label class="ios-toggle mb-0">
+              <%= f.check_box :vr_unique, class: "ios-toggle-input" %>
+              <span class="ios-toggle-slider"></span>
+            </label>
+            <small class="form-text text-muted">No two records can have the same value.</small>
+          </div>
+          <div class="form-group col-md-8">
             <%= f.label :vr_error_message, "Custom Error Message" %>
             <%= f.text_field :vr_error_message, class: "form-control", placeholder: "Optional override error text" %>
+          </div>
         </div>
+      </div>
+
+      <%# 4 · When it shows %>
+      <div class="fcf-section">
+        <div class="fcf-section-title">4 · When it shows</div>
+        <div class="fcf-section-sub">Leave as it is to show the field to everyone, always.</div>
+
+        <div class="fcf-sentence">
+          <%= f.label :step, "On" %>
+          <%= f.select :step, fcf_step_options(form_type), {}, class: "form-select form-select-sm w-auto",
+                data: { fcf_step: true, action: "fcf-editor#stepChanged" } %>
+          <span class="small">of the form</span>
+        </div>
+
+        <%# condition_on / condition_criteria / condition_params as one sentence. condition_state has a single value
+            ("show") so it is submitted but not shown %>
+        <div class="fcf-sentence">
+          <%= f.label :condition_on, "Only when" %>
+          <%= f.select :condition_on, fcf_condition_options(form_type, fcf), {}, class: "form-select form-select-sm w-auto",
+                data: { fcf_condition_on: true, action: "fcf-editor#conditionChanged" } %>
+          <%= f.select :condition_criteria, fcf_criteria_options, {},
+                class: "form-select form-select-sm w-auto", aria: { label: "Criteria" }, data: { fcf_condition_part: true } %>
+          <%= f.text_field :condition_params, class: "form-control form-control-sm fcf-condition-value", placeholder: "value",
+                aria: { label: "Match Value" }, data: { fcf_condition_part: true, fcf_condition_value: true } %>
+          <span class="d-none"><%= f.select :condition_state, FormCustomField::VALID_CONDITION_STATES, {}, aria: { label: "State" } %></span>
+        </div>
+
+        <div class="fcf-sentence">
+          <%= f.label :show_user_ids, "Visible to" %>
+          <%# The real value: comma-separated user ids (the column holds 50 characters) %>
+          <span class="fcf-nojs flex-grow-1">
+            <%= f.text_field :show_user_ids, class: "form-control form-control-sm", maxlength: 50,
+                  placeholder: "Comma-separated ids of the only users who see this field; blank = everyone",
+                  data: { fcf_user_ids: true } %>
+          </span>
+          <span class="fcf-js">
+            <select class="form-select form-select-sm w-auto" data-fcf-visible-mode data-action="fcf-editor#visibleModeChanged" aria-label="Visible to">
+              <option value="all">Everyone</option>
+              <option value="some">Only these users…</option>
+            </select>
+          </span>
+        </div>
+        <div class="fcf-js d-none fcf-user-picker" data-fcf-user-picker></div>
+      </div>
+
+      <%# More information (rich text) — rarely used, so folded away %>
+      <div class="fcf-section">
+        <a href="#" class="small" data-action="fcf-editor#toggleInfo:prevent"><i class="ti ti-chevron-down"></i> More information about this field</a>
+        <div class="form-group mt-2 fcf-info" data-fcf-info>
+          <%= f.label :info, "Additional information" %>
+          <%= f.rich_text_area :info, class: "form-control" %>
+        </div>
+      </div>
+
+      <%# Order: managed by dragging in the list once the editor runs; typed by hand without it %>
+      <div class="form-group fcf-nojs">
+        <%= f.label :position %>
+        <%= f.text_field :position, class: "form-control w-auto", data: { fcf_position: true } %>
+      </div>
+
+      <%# CapHive support / debug only, exactly as before %>
+      <% if params[:debug].present? %>
+        <div class="fcf-section border rounded p-2">
+          <div class="fcf-section-title"><i class="ti ti-lifebuoy me-1"></i>Support</div>
+          <div class="row g-2">
+            <div class="form-group col-md-6">
+              <%= f.label :regulatory_env %>
+              <%= f.text_field :reg_env, list: 'label-list', class: "form-control", maxlength: 50 %>
+            </div>
+            <div class="form-group col-md-6">
+              <%= f.label :internal %>
+              <label class="ios-toggle mb-0">
+              <%= f.check_box :internal, class: "ios-toggle-input" %>
+              <span class="ios-toggle-slider"></span>
+            </label>
+            </div>
+          </div>
+        </div>
+      <% end %>
     </div>
+
+    <%# Live preview — drawn in the browser from the inputs on the left %>
+    <div class="col-lg-5 fcf-js">
+      <div class="fcf-preview-sticky">
+        <div class="small text-muted mb-1"><i class="ti ti-eye me-1"></i>How it looks on the form</div>
+        <div class="fcf-preview" data-fcf-preview></div>
+        <div class="small text-muted mt-2"><i class="ti ti-bulb me-1"></i>Updates as you type. Nothing is saved until you press Save.</div>
+      </div>
+    </div>
+  </div>
 </div>

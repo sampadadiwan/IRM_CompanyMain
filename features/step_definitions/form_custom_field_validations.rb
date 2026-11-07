@@ -86,18 +86,19 @@ When('I visit the form type edit page for {string}') do |class_name|
   visit edit_form_type_path(@form_type)
 end
 
-# Expands the Bootstrap-collapsible Validation Rules section for the given FCF.
-# The template renders THREE divs that share the same id="custom_condition_row_<id>"
-# (conditions row 1, conditions row 2, and validation rules). We click the toggle
-# to expand all three, then store the last one — which is always the Validation Rules
-# panel — as @vr_panel for subsequent scoped assertions.
+# Opens the field's "More checks" (validation rules) in the custom form editor and keeps that block as @vr_panel for
+# the scoped assertions below. In a browser the editor shows one field at a time, so the field is first opened from
+# the list; rack_test runs no JavaScript, so every field's checks are already on the page.
 When('I expand the validation rules panel for the {string} custom field') do |name|
   fcf = @form_type.form_custom_fields.find_by!(name: FormCustomField.to_name(name))
-  # Click the collapse toggle (first matching anchor — same href for all three).
-  find("a[href='#custom_condition_row_#{fcf.id}']", match: :first).click
-  sleep(1) # allow Bootstrap collapse animation to finish
-  # The Validation Rules section is always the LAST of the three same-id divs.
-  @vr_panel = all("[id='custom_condition_row_#{fcf.id}']", visible: :all).last
+  pane = find(".fcf-pane[data-fcf-key='#{fcf.id}']", visible: :all)
+  unless Capybara.current_driver == :rack_test
+    find("[data-fcf-row][data-key='#{fcf.id}']").click
+    # The checks start open when the field already has a rule; only open them when closed
+    checks = pane.find("[data-fcf-checks]", visible: :all)
+    pane.find("[data-fcf-checks-toggle]").click unless checks[:class].to_s.split.include?("open")
+  end
+  @vr_panel = pane.find("[data-fcf-checks]", visible: :all)
 end
 
 # Visibility assertions driven by Stimulus fcf-setup controller.

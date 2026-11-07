@@ -158,11 +158,17 @@ Each record is assigned to one of the Form Types for its kind; the fields it sho
 Custom fields are added from the Form Type's edit screen.
 
 1. Go to [**Company menu → Customize Forms**](/form_types) and click the Form Type (for example **Investor**).
-2. Click **Edit**. The page is titled **Customize: Investor** and lists the existing fields under **Custom Fields**.
-3. Click **Add Field**. A new blank field row appears at the bottom.
-4. Fill in the settings described in [Custom Field Settings](#custom-field-settings). At minimum give the field a **Name** and choose a **Field type**.
-5. Repeat **Add Field** for as many fields as you need.
+2. Click **Edit**. The page is titled **Customize: Investor**. The fields are listed on the left, grouped by step; the field you click opens on the right.
+3. Click **Add Field** under the list. A new field is added at the end and opens on the right.
+4. Type its **Label** — the **Stored as** name fills itself in from it — and choose a **Type**. The other settings are described in [Custom Field Settings](#custom-field-settings).
+5. Repeat **Add Field** for as many fields as you need. The bar at the bottom counts the unsaved changes.
 6. Click **Save**.
+
+```mermaid
+flowchart LR
+    List["Left: Fields<br/>grouped by step<br/>search, drag to reorder"] -->|click a field| Pane["Right: one field<br/>1 What it is · 2 Options<br/>3 Rules · 4 When it shows<br/>+ live preview"]
+    Pane --> Save["Bottom bar<br/>N unsaved changes · Save"]
+```
 
 The new fields are now shown on every record of that kind — on the create/edit form, on the record's page, and (if *Show in Filter* is ticked) as a filter on the list page.
 
@@ -174,22 +180,25 @@ The new fields are now shown on every record of that kind — on the create/edit
 
 ## Custom Field Settings
 
-Each field row has these settings. Only **Name** and **Field type** are mandatory.
+Click a field in the list to open its settings on the right. They are in four sections, with a live preview of the field beside them. Only the **Stored as** name and the **Type** are mandatory.
 
-| Setting | What it does |
-|---------|--------------|
-| **Name** | The internal identifier and the column name used in imports and exports. Type it with spaces if you like — "Tax Registration Number" is stored as `tax_registration_number`. **Cannot be changed after saving** (see [Renaming a Field](#renaming-a-field)). |
-| **Label** | What users see on the form. Leave blank to derive it from the name ("Tax Registration Number"). |
-| **Field type** | The kind of input. See [Field Types](#field-types). |
-| **Position** | Order within the step. Lower numbers appear first; gaps are fine. |
-| **Step** | Which page of a multi-step form the field is on — Step 1, 2, 3, or Steps 4–9 (extra, KYC only). "Step 3 (Default)" puts it on the last fixed page. Single-page forms ignore this. |
-| **Required** | The form cannot be submitted until the field is filled. |
-| **Read only** | The field is shown but cannot be edited by investors. Cannot be combined with *Required*. |
-| **Show in Filter** | Adds the field as a filter on the record's list page. Not available for File, Header, Grid Columns or Calculation fields. |
-| **Meta data** | Type-specific configuration: the comma-separated **options** for Select, Radio, DataList and MultiSelect (required for those types); `precision,separator` for Number fields (e.g. `2,comma` or `0,none`); an ISO currency code for Money fields (e.g. `USD`) to override the record's own currency. |
-| **Help text** | A hint displayed below the field. |
-| **Show only to** | A list of user ids. When set, the field is visible only to those users. Leave blank to show it to everyone. |
-| **Show when field / Criteria / Match value / Then** | Conditional visibility. See [Conditional Visibility](#conditional-visibility). |
+| Section | Setting | What it does |
+|---------|---------|--------------|
+| 1 · What it is | **Label** | What users see on the form. Leave blank to derive it from the stored name ("Tax Registration Number"). |
+| | **Type** | The kind of input. See [Field Types](#field-types). |
+| | **Help text** | A hint displayed below the field. |
+| | **Stored as** | The internal name and the column name used in imports and exports. Filled in from the label for a new field — "Tax Registration Number" is stored as `tax_registration_number`. **Cannot be changed after saving** (see [Renaming a Field](#renaming-a-field)). |
+| 2 · Options | **Choices** | Select, Radio, DataList and MultiSelect: the options, added one at a time (type, then Enter) and removed with ×. Required for those types. *Start with nothing picked* leaves the dropdown empty until someone chooses. |
+| | **Number format** | Number fields: decimal places and thousands separator. *As typed* applies no formatting. |
+| | **Currency** | Money fields: an ISO code such as `USD`, to override the record's own currency. Blank uses the record's currency. |
+| | **Edit as text** | Shows the stored value as text (comma-separated choices, `2,comma`). A value the choices or number boxes can't show exactly always opens as text, so it is never rewritten. |
+| 3 · Rules | **Required** | The record can't be saved until the field is filled. |
+| | **Read only** | The field is shown but can't be changed. Turning it on turns *Required* off — a field can't be both. |
+| | **Show in filter** | Adds the field as a filter on the record's list page. Not available for File, Header, Grid Columns or Calculation fields. |
+| | **More checks** | Validation rules that fit the type: length, pattern and format for text; range for numbers, money and dates; number of picks for multi-select; *Unique*; a custom error message. |
+| 4 · When it shows | **On … of the form** | Which page of a multi-step form the field is on — Step 1, 2, 3, or Steps 4–9 (extra, KYC only). "Step 3 (Default)" puts it on the last fixed page. Single-page forms ignore this. |
+| | **Only when** | Conditional visibility as one sentence: *Only when [field] [is] [value]*. See [Conditional Visibility](#conditional-visibility). |
+| | **Visible to** | *Everyone*, or *Only these users…* picked from your company's users. See [Showing a Field to Specific Users](#showing-a-field-to-specific-users). |
 
 ---
 
@@ -216,7 +225,7 @@ Each field row has these settings. Only **Name** and **Field type** are mandator
 
 ## Ordering Fields
 
-Fields appear in their **Position** order within a step. Edit the position number on each field row (gaps don't matter), or use the inline **Edit** on the Form Type page to move one field. Use a **Header** field to put a titled divider between groups of fields. You can also drag fields into order in the side panel described next.
+Fields appear in the order of the list on the Form Type's edit page. Drag a field (by ⋮⋮) above or below another to move it; drop it on a step's heading to move it to the top of that step, which also changes its step. Fields the page doesn't show you (calculations, internal fields) keep their places. You can also use the inline **Edit** on the Form Type page to move one field. Use a **Header** field to put a titled divider between groups of fields. You can also drag fields into order in the side panel described next.
 
 ---
 
@@ -344,14 +353,15 @@ Buttons at the bottom of the page: **Edit** (the full editor, where you add fiel
 
 ## Conditional Visibility
 
-A field can appear only when another field has a particular value. On the field row, set:
+A field can appear only when another field has a particular value. Open the field and, under **4 · When it shows**, complete the sentence *Only when [field] [is] [value]*:
 
-| Setting | Meaning |
-|---------|---------|
-| **Show when field** | The **Name** of the controlling field — a standard field (such as investor `category` or KYC `type`) or another custom field in the same Form Type. |
-| **Criteria** | How to compare: `eq`, `not_eq`, `contains`, `lt`, `lte`, `gt`, `gte`. |
-| **Match value** | The value to compare against. |
-| **Then** | `show` — the field is shown when the condition holds and hidden otherwise. |
+| Part | Meaning |
+|------|---------|
+| **Only when** | The controlling field, picked from a list: a standard field (Investor *Category*, Investor KYC *KYC type*) or another custom field in the same Form Type. *— always —* means no condition. |
+| **is / is not / contains / is less than / is at most / is more than / is at least** | How to compare. |
+| **value** | The value to compare against. When the controlling field is a dropdown, its choices are suggested as you type. |
+
+The field is shown when the sentence holds and hidden otherwise.
 
 ```mermaid
 flowchart LR
@@ -382,7 +392,7 @@ These apply to Individual KYC, Non-Individual KYC and Investment Instrument Form
 
 ## Showing a Field to Specific Users
 
-A field can be restricted to named users with **Show only to** — useful for sensitive internal fields. Leave it blank to show the field to everyone.
+A field can be restricted to named users — useful for sensitive internal fields. Open the field and, under **4 · When it shows**, set **Visible to** to *Only these users…*, then tick the users (search by name or email). Leave it on *Everyone* to show the field to everyone. The setting holds about eight users; past that the editor says the limit is reached.
 
 ---
 
@@ -458,10 +468,10 @@ Company menu → [**Customize Forms**](/form_types) → open the Form Type for t
 On the [**Form Types**](/form_types) list click **New Form Type**, choose the **Form Name** (record kind), keep or change the **Tag** (it defaults to `Default`), optionally add fields with **Add Field**, and **Save**. See [Creating a Form Type](#creating-a-form-type).
 
 **How do I edit an existing custom field?**
-For one field, open the Form Type page and click the field row's **Edit** (pencil) action; for several, click **Edit** at the bottom of the page and change the rows in the full editor. The **Name** cannot be changed there. See [Custom Field Settings](#custom-field-settings).
+For one field, open the Form Type page and click the field row's **Edit** (pencil) action; for several, click **Edit** at the bottom of the page, click each field in the list and change it on the right, then **Save** once. The stored name cannot be changed there. See [Custom Field Settings](#custom-field-settings).
 
 **How do I delete a custom field?**
-Open the Form Type → **Edit**, click **Delete** on the field's row in the full editor and **Save**. The definition is deleted; values already stored on records stay in place but are no longer shown. See "What happens when I delete a custom field?" below.
+Open the Form Type → **Edit**, click the field in the list, click **Remove field** and **Save**. Until you save, **Undo** brings it back. The definition is deleted; values already stored on records stay in place but are no longer shown. See "What happens when I delete a custom field?" below.
 
 **How do I delete a whole Form Type?**
 Open it and click **Delete**, then confirm the prompt "Delete custom form? Note this will not delete the custom data in saved …". The Form Type and all its field definitions are removed permanently.
@@ -539,7 +549,7 @@ Only the record kinds listed in the **Form Name** dropdown. See [Which Records S
 Not from the normal screens: the **Name** is the key under which values are stored. CapHive support can rename a field and migrate its stored values; ask them, ideally outside peak hours. You can change the **Label** at any time. See [Renaming a Field](#renaming-a-field).
 
 **Can I make a single-select dropdown?**
-Yes — use the **Select** field type (or **Radio**) with the options in Meta data. **MultiSelect** allows several choices.
+Yes — use the **Dropdown** (Select) type, or **Radio buttons**, and add the options under **Choices**. **MultiSelect** allows several choices.
 
 **Can conditional fields chain together?**
 Up to two levels deep — a field can depend on another conditional field, but no further.
@@ -557,10 +567,10 @@ Yes — up to nine wizard pages. Assign fields to steps 4–9; each step with at
 Switch to **Tabs by Step** at the top of the page.
 
 **Saving a Form Type fails with "Duplicate names detected". Why?**
-Two field rows normalise to the same **Name** (for example "Tax ID" and "tax_id"). Field names must be unique within a Form Type; rename or remove one row and save again.
+Two fields normalise to the same stored name (for example "Tax ID" and "tax_id"). Stored names must be unique within a Form Type; change or remove one and save again. After a failed save your edits stay on the page, and the field that failed is opened and marked with a red dot in the list.
 
 **I get an error when saving a Select, Radio, DataList or MultiSelect field.**
-These types need their options in **Meta data**, comma-separated. A **Money** field's Meta data, if set, must be a valid ISO currency code such as `USD`.
+These types need at least one option under **Choices**. A **Money** field's Meta data, if set, must be a valid ISO currency code such as `USD`.
 
 **Why can't I tick both Required and Read only?**
 A field that investors cannot edit cannot also be mandatory for them, so the combination is rejected. Use one or the other.

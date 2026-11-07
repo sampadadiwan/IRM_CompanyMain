@@ -92,7 +92,7 @@ class FormTypesController < ApplicationController
         end
       end
 
-      saved = allowed ? @form_type.update(form_type_params) : false
+      saved = allowed ? update_form_type : false
     rescue ActiveRecord::RecordNotUnique
       @form_type.errors.add(:base, "Duplicate names detected. Please ensure all names are unique.")
       @form_type.dup_cf_names?
@@ -179,6 +179,15 @@ class FormTypesController < ApplicationController
   end
 
   private
+
+  # The custom form editor sends reordered=1 once its list was dragged: every field's position then comes from the
+  # list's order, already renumbered in the browser, and must be saved as sent. Left to acts_as_list, each field saved
+  # in turn would shift the others it passes and scramble the order. Any other save is unchanged.
+  def update_form_type
+    return @form_type.update(form_type_params) unless params[:reordered] == "1"
+
+    FormCustomField.acts_as_list_no_update { @form_type.update(form_type_params) }
+  end
 
   # Use callbacks to share common setup or constraints between actions.
   def set_form_type
