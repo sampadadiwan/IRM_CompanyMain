@@ -69,9 +69,9 @@ export default class extends Controller {
           // The first column (the record's name) keeps the same top priority, so on a narrow (mobile) screen the
           // name always stays and, being further left, outlasts the actions, which fold behind ▶. A leading
           // checkbox column is skipped for the next one. (openspec/changes/grid-columns-inline-settings — B16)
-          const headers = $(value).find('thead tr:last th')
-          const first = headers.filter((_, th) => !$(th).find('input[type=checkbox]').length).first()
-          if (first.length && !first.is('[data-priority]') && !first.hasClass('action-col')) first.attr('data-priority', 1)
+          const headers = $(value).find('thead tr:last th');
+          const first = headers.filter((_, th) => !$(th).find('input[type=checkbox]').length).first();
+          if (first.length && !first.is('[data-priority]') && !first.hasClass('action-col')) first.attr('data-priority', 1);
           table[key] = $(value).DataTable({
             order: [],
             stateSave: false,

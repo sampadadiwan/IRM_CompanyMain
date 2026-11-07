@@ -56,7 +56,7 @@ Feature: Hand-built lists get the columns button
 
   # E32 — Edge case: slightly too wide — the name and the buttons stay, middle columns fold
   Scenario: Slightly too wide keeps the name and the buttons
-    Given my firm's "Fund" columns are "name_link, category, tag_badges, committed_amount, collected_amount, distributed_amount_abs, call_amount"
+    Given my firm's "Fund" columns are "name, category, tag_badges, committed_amount, collected_amount, distributed_amount_abs, call_amount"
     And my browser is 1000 pixels wide
     When I open the "/funds" page
     Then the "funds" list should show its first column "Name"
