@@ -337,7 +337,11 @@ end
 
 Given('I upload investments file {string}') do |string|
   @import_file = string
-  first(:link_or_button, "Upload").click
+  # Upload Investments sits in the cap table header's Actions dropdown (hidden until opened) since 51d313bab6
+  within("#investment_header_actions") do
+    click_on("Actions")
+    click_on("Upload Investments")
+  end
   fill_in('import_upload_name', with: "Test Upload #{@import_file}")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
   wait_for_upload("./public/sample_uploads/#{@import_file}") # JS direct-upload to /upload; returns once it lands (was sleep 2)
