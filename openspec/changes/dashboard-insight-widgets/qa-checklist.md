@@ -89,6 +89,7 @@
 | ☐ | E23 | Exited holding is left out (Fund portfolio widgets) | Growth Fund I sold all of Kite | 1. Portfolio tab | Kite not listed | | |
 | ☐ | E24 | Limit caps the rows (Fund portfolio widgets) | 4 companies, `{limit: 2}` | 1. Portfolio tab | 2 stalest rows, "Showing 2 of 4" | | |
 | ☐ | E25 | Future-dated valuation is Current (Fund portfolio widgets) | Zeta valued 31 Dec 2026 | 1. Portfolio tab | Zeta Current, 0 days | | |
+| ☐ | E64 | Age reads in days, months, years (Fund portfolio widgets) | Zeta 29 days, Orbit 273 days, Kite 1,369 days | 1. Portfolio tab 2. Hover an age | "29 days", "9 months", "3 years 9 months"; hover shows exact days | | |
 | ☐ | E26 | Zero gain is in neither list (Fund portfolio widgets) | Kite gain 0 | 1. Portfolio tab | Kite absent | | |
 | ☐ | E27 | No losses (Fund portfolio widgets) | All gains positive | 1. Portfolio tab | Losses list says "No holding is below cost." | | |
 | ☐ | E28 | Gains summed across instruments (Fund portfolio widgets) | Zeta equity +30 L, Zeta CCPS +10 L | 1. Portfolio tab | Zeta +₹40,00,000 | | |

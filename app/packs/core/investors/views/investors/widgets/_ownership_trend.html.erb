@@ -14,12 +14,17 @@
       <%# E19 — nothing dated with a % to plot %>
       <%= insight_empty_state("No dated cap-table positions with a fully diluted % yet.") %>
     <% else %>
+      <%= insight_help_line("Who owns the company, fully diluted, on each approved cap-table date, by holder group.") %>
       <%= line_chart insight_ownership_series(trend), id: "insight_ownership_trend_#{widget.id || company.id}", height: "260px",
                      suffix: "%", library: { **chart_theme_color } %>
       <div class="table-responsive">
       <table class="table table-bordered dataTable mb-0">
         <thead>
-          <tr><th>Date</th><th>Holder group</th><th class="text-end">Fully diluted %</th></tr>
+          <tr>
+            <%= insight_th("Date", "The cap table's as-of date") %>
+            <%= insight_th("Holder group", "The group set on the cap-table upload: Founder, Self (your funds), Employee or Other") %>
+            <%= insight_th("Fully diluted %", "The group's total fully diluted holding on that date", right: true) %>
+          </tr>
         </thead>
         <tbody>
           <% trend.each do |(date, group), pct| %>

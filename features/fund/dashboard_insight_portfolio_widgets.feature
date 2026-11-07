@@ -1,4 +1,4 @@
-# Worked examples H9–H12, E20–E30 (§4): openspec/changes/dashboard-insight-widgets/business-rules.md#4-fund-portfolio-widgets--phase-1-and-2
+# Worked examples H9–H12, E20–E30, E64 (§4): openspec/changes/dashboard-insight-widgets/business-rules.md#4-fund-portfolio-widgets--phase-1-and-2
 # (Peer KPI Comparison rows H13, E31, E32, X8 are in features/fund/dashboard_insight_peer_kpi.feature; X7 in
 # features/security/dashboard_insight_fund_isolation.feature)
 @rack_test
@@ -41,6 +41,17 @@ Feature: Fund portfolio insight widgets
       | Kite Robotics | Never | — |
       | Orbit Pay     | Stale | 273 |
       | Zeta Foods    | Due   | 92 |
+
+  # E64 — Edge case: the Age column reads in days up to 30, then months, then years and months
+  Scenario: Valuation age reads in days, months and years
+    Given the insight company "Zeta Foods" was valued on "2026-09-01"
+    And the insight company "Orbit Pay" was valued on "2025-12-31"
+    And the insight company "Kite Robotics" was valued on "2022-12-31"
+    And the "Valuation Freshness" widget on the "Portfolio Dashboard" has settings ""
+    When I open the "Portfolio Dashboard" of fund "Growth Fund I"
+    Then the Valuation Freshness age of "Zeta Foods" should read "29 days"
+    And the Valuation Freshness age of "Orbit Pay" should read "9 months"
+    And the Valuation Freshness age of "Kite Robotics" should read "3 years 9 months"
 
   # E20 — Edge case: exactly 90 days old is still Current (2 Jul → 30 Sep = 90 days)
   Scenario: Exactly 90 days is Current

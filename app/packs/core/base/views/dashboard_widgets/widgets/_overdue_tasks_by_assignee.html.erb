@@ -14,11 +14,17 @@
       <%# E60 — nothing overdue %>
       <%= insight_empty_state("No overdue tasks.") %>
     <% else %>
+      <%= insight_help_line("Open tasks past their due date, per person, most first. People beyond the top #{top_n} are grouped as Others.") %>
       <%= bar_chart rows, id: "overdue_tasks_by_assignee_#{widget.id || widget.position}", height: "#{[rows.size * 36, 160].max}px",
                     library: { plotOptions: { bar: { dataLabels: { enabled: true } } }, **chart_theme_color } %>
       <div class="table-responsive">
       <table class="table table-bordered dataTable mb-0">
-        <thead><tr><th>Assignee</th><th class="text-end">Overdue tasks</th></tr></thead>
+        <thead>
+          <tr>
+            <%= insight_th("Assignee", "Who the task is assigned to; Unassigned when nobody is") %>
+            <%= insight_th("Overdue tasks", "Open tasks whose due date was before today", right: true) %>
+          </tr>
+        </thead>
         <tbody>
           <% rows.each do |label, count| %>
             <tr data-insight-row="<%= label %>">

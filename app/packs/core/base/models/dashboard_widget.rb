@@ -294,25 +294,41 @@ class DashboardWidget < ApplicationRecord
     "Sold %" => "Share of sale proceeds that came from each company",
     "Portfolio IRR" => "Annualised return (IRR) and multiple (MOIC) on each portfolio company",
     # Insight widgets — openspec/changes/dashboard-insight-widgets
-    "KPI Movers" => "The KPIs that changed most on the company's latest report, against the report before it",
-    "KPI Threshold Watch" => "KPIs on the latest report that are RAG red or amber, or whose change is outside the KPI mapping's thresholds",
-    "Monitoring Status" => "The portfolio company agent's latest check of this company's KPIs, documents and valuation",
-    "Investment Timeline" => "How much the funds bought and sold in this company each period, in the firm's currency",
-    "Ownership Trend" => "Fully diluted ownership by holder group on each cap-table date",
-    "Valuation Freshness" => "How old each held company's latest valuation is: Current, Due, Stale or Never valued",
-    "Winners & Losers" => "Companies with the largest unrealised gains and losses in this fund",
-    "Sector Exposure" => "The fund's holdings split by the portfolio company's sector",
-    "Peer KPI Comparison" => "One KPI's latest value and change across companies",
-    "Remittance Ageing" => "Unpaid call amounts grouped by days past the call's due date",
-    "NAV per Unit Trend" => "Approved NAV per unit for each unit class",
-    "Hedge Expiries" => "Open derivative contracts that expire soon or have expired",
+    "KPI Movers" => "The KPIs that moved most on the company's latest report against the previous report of the " \
+                    "same period. Set the report tag, period and rows in the widget settings.",
+    "KPI Threshold Watch" => "KPIs on the latest report rated red or amber, or whose change broke a threshold set in KPI " \
+                             "Mappings. Set thresholds there to get flags.",
+    "Monitoring Status" => "The portfolio company agent's latest check of this company: KPIs submitted, required documents " \
+                           "received and valuation up to date. All companies opens the full agent dashboard.",
+    "Investment Timeline" => "Purchases and sales in this company per quarter or year, in the firm's currency, across the " \
+                             "funds you can open.",
+    "Ownership Trend" => "Fully diluted ownership per holder group (Founder, Self, Employee, Other) on each approved " \
+                         "cap-table date.",
+    "Valuation Freshness" => "How long ago each company was last valued: Current, Due, Stale or Never, by the day limits in " \
+                             "the widget settings. Stalest first.",
+    "Winners & Losers" => "The companies furthest above and below cost in this fund: unrealised gain = fair value − cost " \
+                          "of the remaining holding.",
+    "Sector Exposure" => "The fund's holdings by the portfolio company's sector, by fair value or by cost (widget " \
+                         "settings).",
+    "Peer KPI Comparison" => "One KPI (set in the widget settings) across the companies on this page, from each company's " \
+                             "latest report, biggest change first.",
+    "Remittance Ageing" => "Money still owed on this fund's capital calls, grouped by days past the call's due date. View " \
+                           "open remittances lists the same rows.",
+    "NAV per Unit Trend" => "Approved NAV per unit for each unit class over the last months (widget settings). Evergreen " \
+                            "funds only.",
+    "Hedge Expiries" => "Open derivative contracts expiring within the window in the widget settings, and any past " \
+                        "expiry but still open.",
     "Investor Pending Actions" => "Everything still open with this investor, in four parts: unpaid capital calls, KYCs to verify or " \
                                   "refresh, approvals awaiting their reply and documents awaiting their signature. Each count " \
                                   "covers every matching record and opens the full list; each table shows the first 5.",
-    "Side-letter Obligations" => "Active side-letter obligations falling due soon or overdue",
-    "Needs Attention" => "Work that is stuck right now. Each card opens the list it counts",
-    "Overdue Tasks by Assignee" => "Open tasks past their due date, per person",
-    "Stuck Workflows" => "Journeys that have waited on the same step for too long"
+    "Side-letter Obligations" => "Approved, active side-letter obligations due within the window in the widget settings, and any " \
+                                 "overdue, earliest first.",
+    "Needs Attention" => "Work that is stuck right now: overdue tasks, KYCs to verify, overdue remittances and open " \
+                         "e-sign requests. Each card opens the list it counts.",
+    "Overdue Tasks by Assignee" => "Open tasks past their due date, per person, most first; the rest grouped as Others. View " \
+                                   "overdue tasks opens the same list.",
+    "Stuck Workflows" => "Active journeys waiting on the same step for at least the days in the widget settings, longest " \
+                         "wait first."
   }.freeze
 
   # Portfolio Dashboard widgets an LP keeps under an Allocated LP portfolio view: the holdings list, which the

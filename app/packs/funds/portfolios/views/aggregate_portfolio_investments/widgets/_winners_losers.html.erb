@@ -15,6 +15,7 @@
               ["Losses", lists[:losses], "text-danger", "No holding is below cost."]]
 %>
 <%= render(WidgetCardComponent.new(widget: widget, args: args, widget_size: widget.widget_size)) do %>
+  <%= insight_help_line("The holdings furthest above and below cost: unrealised gain = fair value − cost of what the fund still holds, per company across all its instruments.") %>
   <div class="row">
     <% sections.each do |title, rows, color, empty_message| %>
       <div class="col-md-6" data-winners-losers="<%= title %>">
@@ -27,7 +28,10 @@
           <div class="table-responsive">
           <table class="table table-bordered dataTable mb-0">
             <thead>
-              <tr><th>Company</th><th class="text-end">Unrealised gain (<%= fund.currency %>)</th></tr>
+              <tr>
+                <%= insight_th("Company", "Opens the company's dashboard") %>
+                <%= insight_th("Unrealised gain (#{fund.currency})", "Fair value − cost of the remaining holding, summed over the company's instruments in this fund", right: true) %>
+              </tr>
             </thead>
             <tbody>
               <% rows.each do |row| %>

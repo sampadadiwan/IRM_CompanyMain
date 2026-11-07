@@ -20,6 +20,7 @@
       <%# E32 — no company on this page has the KPI on a matching report %>
       <%= insight_empty_state("No company here has #{kpi_name} on its latest #{settings[:tag]} #{settings[:period]} KPI report.") %>
     <% else %>
+      <%= insight_help_line("One KPI side by side for the companies on this page, from each company's latest #{settings[:tag]} #{settings[:period]} report, biggest change first.") %>
       <div class="text-muted mb-1" data-bs-toggle="tooltip" title="Each company's latest <%= settings[:tag] %> <%= settings[:period] %> report; the KPI matches by its reported or standard name">
         <%= kpi_name %> — change against each company's previous <%= settings[:period] %> report
       </div>
@@ -31,7 +32,12 @@
       <div class="table-responsive">
       <table class="table table-bordered dataTable mb-0">
         <thead>
-          <tr><th>Company</th><th class="text-end"><%= kpi_name %></th><th class="text-end">Change</th><th class="text-end">Report date</th></tr>
+          <tr>
+            <%= insight_th("Company") %>
+            <%= insight_th(kpi_name, "The value on the company's latest report, in the KPI's own unit", right: true) %>
+            <%= insight_th("Change", "Against the same KPI on the company's previous #{settings[:period]} report", right: true) %>
+            <%= insight_th("Report date", "Companies report on different dates; compare with care when they differ", right: true) %>
+          </tr>
         </thead>
         <tbody>
           <% rows.each do |row| %>

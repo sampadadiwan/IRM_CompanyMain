@@ -160,9 +160,15 @@ end
 # Rows in order: | company | status | days |
 Then('the Valuation Freshness rows should be:') do |table|
   within(fiw_widget("Valuation Freshness")) do
-    actual = all("tbody tr").map { |tr| [tr["data-company"], tr["data-status"], tr.all("td")[2].text] }
+    # The exact day count (the rules' boundaries are in days); the cell itself shows a readable age (E64)
+    actual = all("tbody tr").map { |tr| [tr["data-company"], tr["data-status"], tr.all("td")[2]["data-days"].presence || "—"] }
     expect(actual).to eq(table.raw)
   end
+end
+
+# E64 — the Age cell as the user reads it
+Then('the Valuation Freshness age of {string} should read {string}') do |company, label|
+  within(fiw_widget("Valuation Freshness")) { expect(find("tr[data-company='#{company}'] td:nth-child(3)").text).to eq(label) }
 end
 
 Then('Valuation Freshness should say {string}') do |text|

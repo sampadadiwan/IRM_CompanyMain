@@ -25,12 +25,15 @@
   <% if rows.empty? %>
     <%= insight_empty_state(fund ? "This fund holds no portfolio companies." : "No portfolio companies match the filters.") %>
   <% else %>
+    <%= insight_help_line("How old each company's latest valuation is. Current: up to #{current_days} days. Due: up to #{[due_days, current_days].max} days. Stale: older. Never: no valuation recorded.") %>
     <%# Count cards: the stat card markup of tasks/_stats.html.erb, with the number written out (no counter animation) %>
     <div class="row">
       <% PortfolioInsightWidgetsHelper::FRESHNESS_STATUSES.each do |status| %>
         <% color = PortfolioInsightWidgetsHelper::FRESHNESS_COLORS[status] %>
         <div class="col">
-          <div class="card border-top stat-card-accent border-<%= color %> shadow-sm" data-freshness-card="<%= status %>">
+          <% card_tip = { "Current" => "Valued in the last #{current_days} days", "Due" => "Last valued #{current_days + 1}–#{[due_days, current_days].max} days ago: due for a fresh valuation",
+                          "Stale" => "Last valued more than #{[due_days, current_days].max} days ago", "Never" => "No valuation recorded for the company" }[status] %>
+          <div class="card border-top stat-card-accent border-<%= color %> shadow-sm" data-freshness-card="<%= status %>" data-bs-toggle="tooltip" title="<%= card_tip %>">
             <div class="card-body">
               <h3 class="fs-7" data-freshness-count><%= counts[status] %></h3>
               <h6 class="card-subtitle mb-1 text-<%= color %>"><%= status %></h6>
@@ -45,10 +48,10 @@
     <table class="table table-bordered dataTable mb-0" data-insight-table="valuation-freshness">
       <thead>
         <tr>
-          <th>Company</th>
-          <th>Last valuation</th>
-          <th class="text-end">Days since</th>
-          <th>Status</th>
+          <%= insight_th("Company", "Opens the company's dashboard") %>
+          <%= insight_th("Last valuation", "The date of the company's latest valuation recorded by your firm") %>
+          <%= insight_th("Age", "Time since that valuation: days up to 30, then months and years. Hover a value for the exact days", right: true) %>
+          <%= insight_th("Status", "Current, Due or Stale by the day limits in this widget's settings; Never when not valued") %>
         </tr>
       </thead>
       <tbody>
@@ -57,7 +60,8 @@
           <tr data-company="<%= row[:name] %>" data-status="<%= row[:status] %>">
             <td><%= link_to row[:name], dashboard_investor_path(id: row[:id]), target: "_top" %></td>
             <td><%= row[:last_date] ? l(row[:last_date]) : "—" %></td>
-            <td class="text-end"><%= row[:days] || "—" %></td>
+            <%# E64 — readable age; the exact day count stays in data-days and the tooltip %>
+            <td class="text-end" data-days="<%= row[:days] %>"<% if row[:days] %> data-bs-toggle="tooltip" title="<%= pluralize(row[:days], 'day') %>"<% end %>><%= freshness_age_label(row[:days]) %></td>
             <td><span class="badge bg-<%= color %>-subtle text-<%= color %>"><%= row[:status] %></span></td>
           </tr>
         <% end %>

@@ -17,6 +17,7 @@
     <%# E41 — a closed-end fund has no NAVs %>
     <%= insight_empty_state("This fund has no approved NAVs. NAV per unit is kept for evergreen funds.") %>
   <% else %>
+    <%= insight_help_line("Approved NAV per unit for each unit class over the last #{months} months; draft NAVs are left out.") %>
     <%# Line chart as on the evergreen LP card (evergreen/funds/_lp_card.html.erb) %>
     <%= line_chart series, height: "260px", id: "insight_nav_per_unit_#{fund.id}_#{widget.position}",
                    prefix: "#{fund.currency}:", library: { **chart_theme_color } %>
@@ -25,9 +26,9 @@
     <table class="table table-bordered dataTable mb-0" data-insight-table="nav-per-unit">
       <thead>
         <tr>
-          <th>Class</th>
-          <th>Latest NAV date</th>
-          <th class="text-end">NAV per unit (<%= fund.currency %>)</th>
+          <%= insight_th("Class", "The unit class the NAV is struck for") %>
+          <%= insight_th("Latest NAV date", "The most recent approved NAV for the class") %>
+          <%= insight_th("NAV per unit (#{fund.currency})", "Class NAV ÷ units outstanding, on that date", right: true) %>
         </tr>
       </thead>
       <tbody>

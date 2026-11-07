@@ -1,33 +1,26 @@
 import { Controller } from "@hotwired/stimulus"
 
 // Connects to data-controller="company-sector-toggle"
-// Makes the side by side company and sector others lists toggleable and maintains same size
+// Expands / collapses the "Other" row of the company and sector tables: the items folded into Other are
+// ordinary hidden rows right after it, each with data-role="<kind>-others-list-row".
 export default class extends Controller {
   connect() {
-    this.element.querySelectorAll('[data-role="company-others-toggle"]').forEach(btn => {
-      btn.onclick = () => {
-        const icon = btn.querySelector('[data-role="company-others-toggle-icon"]')
-        if (icon) icon.textContent = icon.textContent === "▸" ? "▾" : "▸"
+    ["company", "sector"].forEach(kind => {
+      this.element.querySelectorAll(`[data-role="${kind}-others-toggle"]`).forEach(btn => {
+        btn.onclick = () => {
+          // Flip the arrow
+          const icon = btn.querySelector(`[data-role="${kind}-others-toggle-icon"]`)
+          if (icon) icon.textContent = icon.textContent === "▸" ? "▾" : "▸"
+          btn.setAttribute("aria-expanded", btn.getAttribute("aria-expanded") === "true" ? "false" : "true")
 
-        const summaryRow = btn.closest('tr')
-        const listRow = summaryRow.nextElementSibling
-        if (listRow && listRow.dataset.role === "company-others-list-row") {
-          listRow.classList.toggle("d-none")
+          // Show / hide every list row that follows the Other row
+          let row = btn.closest("tr").nextElementSibling
+          while (row && row.dataset.role === `${kind}-others-list-row`) {
+            row.classList.toggle("d-none")
+            row = row.nextElementSibling
+          }
         }
-      }
-    })
-
-    this.element.querySelectorAll('[data-role="sector-others-toggle"]').forEach(btn => {
-      btn.onclick = () => {
-        const icon = btn.querySelector('[data-role="sector-others-toggle-icon"]')
-        if (icon) icon.textContent = icon.textContent === "▸" ? "▾" : "▸"
-
-        const summaryRow = btn.closest('tr')
-        const listRow = summaryRow.nextElementSibling
-        if (listRow && listRow.dataset.role === "sector-others-list-row") {
-          listRow.classList.toggle("d-none")
-        }
-      }
+      })
     })
   }
 }

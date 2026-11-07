@@ -46,54 +46,44 @@
                 <% table_data = process_table_data(grouped, limit: table_limit) %>
                 <% if table_data[:top].any? %>
 
-                  <div style="min-height: 280.5px; max-height: 500px; overflow-y: auto;">
-                    <table class="mt-2 mb-0 w-100">
+                  <div style="min-height: 280.5px;">
+                    <table class="table table-bordered dataTable mt-2 mb-0">
                       <thead>
                         <tr>
-                          <th class="p-1 pe-4 small">Sector</th>
-                          <th class="p-1 ps-4 small text-end"><%= attr_label %> (<%= entity_currency %>)</th>
-                          <th class="p-1 ps-4 small text-end">%</th>
+                          <th>Sector</th>
+                          <th class="text-end"><%= attr_label %> (<%= entity_currency %>)</th>
+                          <th class="text-end">%</th>
                         </tr>
                       </thead>
                       <tbody>
                         <% table_data[:top].each do |name, value| %>
                           <tr>
-                            <td class="p-1 pe-4 small"><%= name %></td>
-                            <td class="p-1 ps-4 small text-end"><%= number_to_currency(value, unit: "#{entity_currency} ", precision: 0) %></td>
-                            <td class="p-1 ps-4 small text-end"><%= number_to_percentage((value.to_f / table_data[:total]) * 100.0, precision: 1) %></td>
+                            <td><%= name %></td>
+                            <td class="text-end"><%= number_to_currency(value, unit: "#{entity_currency} ", precision: 0) %></td>
+                            <td class="text-end"><%= number_to_percentage((value.to_f / table_data[:total]) * 100.0, precision: 1) %></td>
                           </tr>
                         <% end %>
                         <% if table_data[:others].any? %>
                           <% other_sum = table_data[:others].sum { |_, v| v } %>
                           <tr data-role="sector-others-summary-row">
-                            <td class="p-1 pe-4 small">
+                            <td>
                               <button class="btn btn-link btn-sm p-0 me-2 align-baseline" type="button" data-role="sector-others-toggle" aria-expanded="false">
                                 <span data-role="sector-others-toggle-icon" aria-hidden="true">▸</span>
                                 <span class="visually-hidden">Toggle other sectors</span>
                               </button>
                               Other
                             </td>
-                            <td class="p-1 ps-4 small text-end"><%= number_to_currency(other_sum, unit: "#{entity_currency} ", precision: 0) %></td>
-                            <td class="p-1 ps-4 small text-end"><%= number_to_percentage((other_sum.to_f / table_data[:total]) * 100.0, precision: 1) %></td>
+                            <td class="text-end"><%= number_to_currency(other_sum, unit: "#{entity_currency} ", precision: 0) %></td>
+                            <td class="text-end"><%= number_to_percentage((other_sum.to_f / table_data[:total]) * 100.0, precision: 1) %></td>
                           </tr>
-                          <tr class="d-none" data-role="sector-others-list-row">
-                            <td colspan="3" class="p-0">
-                              <div class="border-top px-2 py-2 bg-body-tertiary">
-                                <div class="small fw-semibold text-muted mb-1">Other sectors</div>
-                                <ul class="list-unstyled small mb-0">
-                                  <% table_data[:others].each do |name, value| %>
-                                    <li class="d-flex justify-content-between align-items-center py-1 border-top">
-                                      <span class="text-truncate" title="<%= name %>"><%= name %></span>
-                                      <span class="fw-semibold">
-                                        <%= number_to_currency(value, unit: "#{entity_currency} ", precision: 0) %>
-                                        (<%= number_to_percentage((value.to_f / table_data[:total]) * 100.0, precision: 1) %>)
-                                      </span>
-                                    </li>
-                                  <% end %>
-                                </ul>
-                              </div>
-                            </td>
-                          </tr>
+                          <%# The companies / sectors folded into Other, one ordinary row each, shown when Other is expanded %>
+                          <% table_data[:others].each do |name, value| %>
+                            <tr class="d-none" data-role="sector-others-list-row">
+                              <td class="ps-5"><%= name %></td>
+                              <td class="text-end"><%= number_to_currency(value, unit: "#{entity_currency} ", precision: 0) %></td>
+                              <td class="text-end"><%= number_to_percentage((value.to_f / table_data[:total]) * 100.0, precision: 1) %></td>
+                            </tr>
+                          <% end %>
                         <% end %>
                       </tbody>
                     </table>
@@ -112,59 +102,49 @@
               <% table_data = process_table_data(grouped, limit: table_limit) %>
               <% if table_data[:top].any? %>
 
-                <div style="min-height: 280.5px; max-height: 500px; overflow-y: auto;">
-                  <table class="mt-2 mb-0 w-100">
+                <div style="min-height: 280.5px;">
+                  <table class="table table-bordered dataTable mt-2 mb-0">
                     <thead>
                       <tr>
-                        <th class="p-1 pe-4 small">Company</th>
-                        <th class="p-1 ps-4 small text-end"><%= attr_label %> (<%= entity_currency %>)</th>
-                        <th class="p-1 ps-4 small text-end">%</th>
+                        <th>Company</th>
+                        <th class="text-end"><%= attr_label %> (<%= entity_currency %>)</th>
+                        <th class="text-end">%</th>
                       </tr>
                     </thead>
                     <tbody>
                       <% table_data[:top].each do |name, value| %>
                         <tr>
-                          <td class="p-1 pe-4 small"><%= name %></td>
-                          <td class="p-1 ps-4 small text-end"><%= number_to_currency(value, unit: "#{entity_currency} ", precision: 0) %></td>
-                          <td class="p-1 ps-4 small text-end"><%= number_to_percentage((value.to_f / table_data[:total]) * 100.0, precision: 1) %></td>
+                          <td><%= name %></td>
+                          <td class="text-end"><%= number_to_currency(value, unit: "#{entity_currency} ", precision: 0) %></td>
+                          <td class="text-end"><%= number_to_percentage((value.to_f / table_data[:total]) * 100.0, precision: 1) %></td>
                         </tr>
                       <% end %>
 
                       <% if table_data[:others].any? %>
                         <% other_sum = table_data[:others].sum { |_, v| v } %>
                         <tr data-role="company-others-summary-row">
-                          <td class="p-1 pe-4 small align-middle">
+                          <td class="align-middle">
                             <button class="btn btn-link btn-sm p-0 me-2 align-baseline" type="button" data-role="company-others-toggle" aria-expanded="false">
                               <span data-role="company-others-toggle-icon" aria-hidden="true">▸</span>
                               <span class="visually-hidden">Toggle other companies</span>
                             </button>
                             Other
                           </td>
-                          <td class="p-1 ps-4 small text-end align-middle">
+                          <td class="text-end align-middle">
                             <%= number_to_currency(other_sum, unit: "#{entity_currency} ", precision: 0) %>
                           </td>
-                          <td class="p-1 ps-4 small text-end align-middle">
+                          <td class="text-end align-middle">
                             <%= number_to_percentage((other_sum.to_f / table_data[:total]) * 100.0, precision: 1) %>
                           </td>
                         </tr>
-                        <tr class="d-none" data-role="company-others-list-row">
-                          <td colspan="3" class="p-0">
-                            <div class="border-top px-2 py-2 bg-body-tertiary">
-                              <div class="small fw-semibold text-muted mb-1">Other companies</div>
-                              <ul class="list-unstyled small mb-0">
-                                <% table_data[:others].each do |name, value| %>
-                                  <li class="d-flex justify-content-between align-items-center py-1 border-top">
-                                    <span class="text-truncate" title="<%= name %>"><%= name %></span>
-                                    <span class="fw-semibold">
-                                      <%= number_to_currency(value, unit: "#{entity_currency} ", precision: 0) %>
-                                      (<%= number_to_percentage((value.to_f / table_data[:total]) * 100.0, precision: 1) %>)
-                                    </span>
-                                  </li>
-                                <% end %>
-                              </ul>
-                            </div>
-                          </td>
-                        </tr>
+                        <%# The companies / sectors folded into Other, one ordinary row each, shown when Other is expanded %>
+                        <% table_data[:others].each do |name, value| %>
+                          <tr class="d-none" data-role="company-others-list-row">
+                            <td class="ps-5"><%= name %></td>
+                            <td class="text-end"><%= number_to_currency(value, unit: "#{entity_currency} ", precision: 0) %></td>
+                            <td class="text-end"><%= number_to_percentage((value.to_f / table_data[:total]) * 100.0, precision: 1) %></td>
+                          </tr>
+                        <% end %>
                       <% end %>
                     </tbody>
                   </table>

@@ -19,6 +19,7 @@
     <%# E30 — nothing held at a value %>
     <%= insight_empty_state(measure == "cost" ? "No holding has a remaining cost yet." : "No holding has a fair value yet.") %>
   <% else %>
+    <%= insight_help_line("Where the fund's money sits by the portfolio company's sector, measured by #{measure_label.downcase}. Companies without a sector show as Unassigned.") %>
     <%# Donut as on the Portfolio Allocation widget (aggregate_portfolio_investment_dashboard_helper.rb) %>
     <%= pie_chart rows.to_h { |row| [row[:sector], (row[:cents] / 100).to_f] }, donut: true,
                   id: "insight_sector_exposure_#{fund.id}_#{widget.position}",
@@ -30,9 +31,9 @@
     <table class="table table-bordered dataTable mb-0" data-insight-table="sector-exposure">
       <thead>
         <tr>
-          <th>Sector</th>
-          <th class="text-end"><%= measure_label %> (<%= fund.currency %>)</th>
-          <th class="text-end">%</th>
+          <%= insight_th("Sector", "The sector set on the portfolio company") %>
+          <%= insight_th("#{measure_label} (#{fund.currency})", measure == "cost" ? "Cost of the holdings the fund still has" : "Current fair market value of the holdings", right: true) %>
+          <%= insight_th("%", "Share of the fund's total #{measure_label.downcase}", right: true) %>
         </tr>
       </thead>
       <tbody>

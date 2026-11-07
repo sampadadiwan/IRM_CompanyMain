@@ -17,6 +17,7 @@
     <%# E38 — nothing unpaid %>
     <%= insight_empty_state("No unpaid remittances in this fund.") %>
   <% else %>
+    <%= insight_help_line("Money still owed on this fund's capital calls (Pending or Overdue remittances), grouped by how long ago the call's due date passed.") %>
     <%# Chart styled as the Capital Call History widget (capital_call_dashboard_helper.rb) %>
     <%= column_chart buckets.transform_values { |bucket| (bucket[:cents] / 100).to_f }, height: "260px",
                      id: "insight_remittance_ageing_#{fund.id}_#{widget.position}", prefix: "#{fund.currency}:",
@@ -27,9 +28,9 @@
     <table class="table table-bordered dataTable mb-0" data-insight-table="remittance-ageing">
       <thead>
         <tr>
-          <th>Days past due date</th>
-          <th class="text-end">Remittances</th>
-          <th class="text-end">Due (<%= fund.currency %>)</th>
+          <%= insight_th("Days past due date", "Days from the capital call's due date to today; Not yet due when the date is still ahead") %>
+          <%= insight_th("Remittances", "Number of investor remittances in the bucket", right: true) %>
+          <%= insight_th("Due (#{fund.currency})", "Call amount + other fees − amount already collected", right: true) %>
         </tr>
       </thead>
       <tbody>

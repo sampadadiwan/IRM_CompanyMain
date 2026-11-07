@@ -11,8 +11,8 @@ module InvestorOpsInsightWidgetsHelper
   # One section of Investor Pending Actions: a title, a one-line explanation of what it counts, how many records,
   # the first few, a link to them all, and its table columns as [heading, tooltip or nil, right-aligned?]
   PendingSection = Struct.new(:key, :title, :icon, :help, :total, :rows, :path, :columns, keyword_init: true)
-  # One Needs Attention card
-  AttentionCard = Struct.new(:key, :subtitle, :total, :path, :color, :icon, keyword_init: true)
+  # One Needs Attention card; help is its tooltip: what it counts and what to do
+  AttentionCard = Struct.new(:key, :subtitle, :total, :path, :color, :icon, :help, keyword_init: true)
 
   # ── Investor Pending Actions ────────────────────────────────────────────────────────────────
 
@@ -115,6 +115,7 @@ module InvestorOpsInsightWidgetsHelper
   def overdue_tasks_card
     count = policy_scope(Task).where(completed: false).where(due_date: ...Time.zone.today).count
     AttentionCard.new(key: :tasks, subtitle: "Overdue tasks", total: count, color: "danger", icon: "ti ti-clock-stop",
+                      help: "Open tasks whose due date was before today. Click to see them and reassign or close them.",
                       path: tasks_path(q: ransack_query_params("due_date", :lt, Time.zone.today)))
   end
 
@@ -122,6 +123,7 @@ module InvestorOpsInsightWidgetsHelper
   def kycs_to_verify_card
     count = policy_scope(InvestorKyc).where(verified: false, submission_status: "completed").distinct.count(:id)
     AttentionCard.new(key: :kycs, subtitle: "KYCs to verify", total: count, color: "warning", icon: "ti ti-id-badge",
+                      help: "KYCs the investor has submitted that nobody has verified yet. Click to review and verify them.",
                       path: investor_kycs_path(verified: "false",
                                                q: ransack_query_params("submission_status", :eq, "completed")))
   end
@@ -130,6 +132,7 @@ module InvestorOpsInsightWidgetsHelper
   def overdue_remittances_card
     count = policy_scope(CapitalRemittance).where(status: "Overdue").count
     AttentionCard.new(key: :remittances, subtitle: "Overdue remittances", total: count, color: "danger", icon: "ti ti-cash",
+                      help: "Capital call remittances past their due date and not fully paid. Click to follow up with the investors.",
                       path: capital_remittances_path(status: "Overdue"))
   end
 
@@ -139,6 +142,7 @@ module InvestorOpsInsightWidgetsHelper
     # The documents list shows a non-admin only the documents they uploaded, so count the same way
     scope = scope.where(user_id: current_user.id) unless current_user.has_cached_role?(:company_admin)
     AttentionCard.new(key: :esign, subtitle: "Open e-sign requests", total: scope.count, color: "info",
+                      help: "Documents sent for e-signature (requested, sent or in progress) and not fully signed. Click to chase signers.",
                       icon: "ti ti-signature",
                       # entity_id: the e-signatures page builds its stats cards per fund / sale / entity and errors
                       # without one; the list itself is already limited to the user's entity by policy_scope

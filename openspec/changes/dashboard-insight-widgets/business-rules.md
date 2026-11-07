@@ -200,6 +200,7 @@ Portfolio Dashboard (owner: the fund) and Aggregated Portfolio Dashboard (all co
 | E23 | Exited holding is left out | Growth Fund I sold all of Kite | Portfolio tab | Kite not listed | same | same |
 | E24 | Limit caps the rows | 4 companies, `{limit: 2}` | Portfolio tab | 2 stalest rows, "Showing 2 of 4" | same | same |
 | E25 | Future-dated valuation is Current | Zeta valued 31 Dec 2026 | Portfolio tab | Zeta Current, 0 days | same | same |
+| E64 | Age reads in days, months, years | Zeta 29 days, Orbit 273 days, Kite 1,369 days | Portfolio tab | "29 days", "9 months", "3 years 9 months"; exact days on hover | same | same |
 | E26 | Zero gain is in neither list | Kite gain 0 | Portfolio tab | Kite absent | DIW: Winners & Losers ranks unrealised gains and losses | same |
 | E27 | No losses | All gains positive | Portfolio tab | Losses list says "No holding is below cost." | DIW: Empty widgets explain why | same |
 | E28 | Gains summed across instruments | Zeta equity +30 L, Zeta CCPS +10 L | Portfolio tab | Zeta +₹40,00,000 | DIW: Winners & Losers ranks unrealised gains and losses | same |

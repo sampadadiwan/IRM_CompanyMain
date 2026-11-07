@@ -17,13 +17,16 @@
     <% if rows.empty? %>
       <%= insight_empty_state("No side-letter obligation falls due in the next #{days} days.") %>
     <% else %>
+      <%= insight_help_line("Approved, active side-letter obligations#{" for #{investor.investor_name}" if investor} due in the next #{days} days, and any already overdue, earliest first.") %>
       <div class="table-responsive">
       <table class="table table-bordered dataTable mb-0">
         <thead>
           <tr>
-            <th>Obligation</th>
-            <% unless investor %><th>Investor</th><% end %>
-            <th>Fund</th><th>Owner</th><th class="text-end">Due</th>
+            <%= insight_th("Obligation", "What the side letter commits you to; opens the obligation") %>
+            <% unless investor %><%= insight_th("Investor", "The LP whose side letter it is") %><% end %>
+            <%= insight_th("Fund", "The fund of the commitment the side letter belongs to") %>
+            <%= insight_th("Owner", "The person responsible for meeting it") %>
+            <%= insight_th("Due", "The next date it must be met; Overdue when that date has passed", right: true) %>
           </tr>
         </thead>
         <tbody>

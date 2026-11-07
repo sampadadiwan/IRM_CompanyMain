@@ -53,6 +53,23 @@ module PortfolioInsightWidgetsHelper
     "Stale"
   end
 
+  # Average days in a month, for turning a day count into months
+  AVG_DAYS_PER_MONTH = 30.44
+
+  # E64 — the age a person reads: days up to 30, then months, then years and months (the exact days are in the
+  # cell's tooltip). 29 → "29 days", 92 → "3 months", 273 → "9 months", 1369 → "3 years 9 months"
+  def freshness_age_label(days)
+    return "—" if days.nil?
+    return pluralize(days, "day") if days <= 30
+
+    # Whole months to the nearest month, then split into years and the months left over
+    months = (days / AVG_DAYS_PER_MONTH).round
+    years, rest = months.divmod(12)
+    return pluralize(months, "month") if years.zero?
+
+    [pluralize(years, "year"), (pluralize(rest, "month") if rest.positive?)].compact.join(" ")
+  end
+
   # Count of companies per status, every status present (zero when none) — the cards above the table
   def freshness_counts(rows)
     FRESHNESS_STATUSES.index_with { |status| rows.count { |row| row[:status] == status } }

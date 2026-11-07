@@ -20,13 +20,19 @@
       <%# E11 — nothing outside its limits %>
       <%= insight_empty_state("No KPI is outside its limits on the #{l(report.as_of)} report.") %>
     <% else %>
+      <%= insight_help_line("KPIs to look at on the latest report: rated red or amber, or moved past the threshold set for them in KPI Mappings.") %>
       <div class="text-muted mb-1" data-bs-toggle="tooltip" title="Thresholds come from each KPI's mapping; RAG status from the KPI itself">
         <%= settings[:tag] %> <%= settings[:period] %> report of <span data-insight-report-date><%= l(report.as_of) %></span>
       </div>
       <div class="table-responsive">
       <table class="table table-bordered dataTable mb-0">
         <thead>
-          <tr><th>KPI</th><th class="text-end">Value</th><th class="text-end">Change</th><th>Why flagged</th></tr>
+          <tr>
+            <%= insight_th("KPI") %>
+            <%= insight_th("Value", "As reported on this report, in the KPI's own unit", right: true) %>
+            <%= insight_th("Change", "Against the same KPI on the previous report", right: true) %>
+            <%= insight_th("Why flagged", "Red / Amber: the KPI's RAG rating. Below / Above: the change broke the lower or upper threshold in KPI Mappings") %>
+          </tr>
         </thead>
         <tbody>
           <% flagged.each do |kpi, flags| %>

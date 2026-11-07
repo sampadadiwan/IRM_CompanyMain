@@ -21,13 +21,18 @@
       <%# E4 — the latest report has no KPI with a stored change %>
       <%= insight_empty_state("No KPI on the #{l(report.as_of)} report has a change against an earlier report yet.") %>
     <% else %>
+      <%= insight_help_line("The KPIs whose value moved most since the previous #{settings[:period]} report, up or down, biggest move first.") %>
       <div class="text-muted mb-1" data-bs-toggle="tooltip" title="Each change compares the KPI with the same KPI on the previous <%= settings[:period] %> report (a year earlier for YTD)">
         <%= settings[:tag] %> <%= settings[:period] %> report of <span data-insight-report-date><%= l(report.as_of) %></span>
       </div>
       <div class="table-responsive">
       <table class="table table-bordered dataTable mb-0">
         <thead>
-          <tr><th>KPI</th><th class="text-end">Value</th><th class="text-end">Change</th></tr>
+          <tr>
+            <%= insight_th("KPI") %>
+            <%= insight_th("Value", "As reported on this report, in the KPI's own unit", right: true) %>
+            <%= insight_th("Change", "Against the same KPI on the previous #{settings[:period]} report (a year earlier for YTD). Coloured by the thresholds set in KPI Mappings", right: true) %>
+          </tr>
         </thead>
         <tbody>
           <% movers.each do |kpi| %>

@@ -14,10 +14,16 @@
     <% if rows.empty? %>
       <%= insight_empty_state("No journey has waited #{days} days or more on a step.") %>
     <% else %>
+      <%= insight_help_line("Active journeys that have waited #{days} days or more on the same step, longest wait first. Open one to see who must act.") %>
       <div class="table-responsive">
       <table class="table table-bordered dataTable mb-0">
         <thead>
-          <tr><th>Record</th><th>Journey</th><th>Step</th><th class="text-end">Days on step</th></tr>
+          <tr>
+            <%= insight_th("Record", "The capital call, distribution or other record the journey runs on; opens the journey") %>
+            <%= insight_th("Journey", "The workflow template") %>
+            <%= insight_th("Step", "The step the journey is waiting on") %>
+            <%= insight_th("Days on step", "Days since the journey reached this step", right: true) %>
+          </tr>
         </thead>
         <tbody>
           <% rows.each do |instance| %>

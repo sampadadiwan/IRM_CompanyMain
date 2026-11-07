@@ -17,17 +17,18 @@
     <%# E44 — nothing expiring %>
     <%= insight_empty_state("No open contracts expire in the next #{days} days.") %>
   <% else %>
+    <%= insight_help_line("Open derivative contracts that expire in the next #{days} days, and any already past expiry but still open, soonest first.") %>
     <%# Table markup as the regular app tables (tasks/_index.html.erb) %>
     <div class="table-responsive">
     <table class="table table-bordered dataTable mb-0" data-insight-table="hedge-expiries">
       <thead>
         <tr>
-          <th>Contract</th>
-          <th>Type</th>
-          <th>Underlying</th>
-          <th class="text-end">Notional</th>
-          <th>Expiry</th>
-          <th class="text-end">Days left</th>
+          <%= insight_th("Contract", "Opens the contract") %>
+          <%= insight_th("Type", "The contract type: option, warrant, future, forward or a swap") %>
+          <%= insight_th("Underlying", "What the contract is written on") %>
+          <%= insight_th("Notional", "The contract's notional amount, in its own currency", right: true) %>
+          <%= insight_th("Expiry") %>
+          <%= insight_th("Days left", "Days to expiry; red when already past expiry and still open — close or roll it", right: true) %>
         </tr>
       </thead>
       <tbody>
