@@ -221,6 +221,159 @@ namespace :dr do
       check.call("S3 app bucket reachable", :ok, bucket)
     end
 
+    guarded.call("Drill marker") do
+      # Read from THIS server's own environment (.env loaded by the app): a
+      # drill's servers must be marked, a real recovery's must not be
+      drill = Dr::BackupSchedule.drill?
+      grade = DrillStack.grade_mark(expected_drill: drill)
+      check.call(drill ? "Drill stack marked (no pages)" : "Not marked as a drill (pages on)", grade.status, grade.detail)
+    end
+
+    if Dr::BackupSchedule.drill?
+      guarded.call("Drill cannot contact users") do
+        # Every outgoing channel must be shut on a drill copy: the interceptor and
+        # guard are switched on at boot by config/initializers/drill_stack.rb (this
+        # rake process boots the same way), timed jobs never registered, and the
+        # drill deploy cleared the cron
+        crontab = `crontab -l 2>/dev/null`
+        grade = DrillStack.grade_silence(
+          mail_intercepted: DrillStack.mail_intercepted?,
+          requests_guarded: Net::HTTP <= DrillStack::OutboundGuard,
+          timed_jobs: Sidekiq::Cron::Job.all.size,
+          crontab_installed: crontab.include?("Begin Whenever generated tasks"),
+          suppressed: DrillStack.suppressed_count
+        )
+        check.call("Drill cannot contact users", grade.status, grade.detail)
+      end
+    end
+
+    guarded.call("Search index populated") do
+      # elastic_check above only proves Elasticsearch ANSWERS — an empty index
+      # passes it. Search is not backed up, so prove every index the DR rebuilt
+      # holds its MySQL scope's records (within a small tolerance: traffic is
+      # back on, so a few writes may be in flight).
+      # A recent background rebuild (queued / running / finished) speaks for
+      # the indexes; it is reported, not waited for. Otherwise count each one.
+      rebuild = Dr::SearchIndexes.grade_rebuild(Dr::SearchIndexes.read_status)
+      next check.call("Search index populated", rebuild.status, rebuild.detail) if rebuild
+
+      grades = Dr::SearchIndexes.indexes.map do |index|
+        Dr::SearchIndexes.grade(index_name: index.name, es: Dr::SearchIndexes.es_count(index),
+                                db: Dr::SearchIndexes.db_count(index), exact: false,
+                                maintained: Dr::SearchIndexes.maintained?(index))
+      end
+      # Incomplete indexes WARN (listed in the report's Needs attention), never
+      # fail the recovery: the data is complete, only some search results are not
+      verdict = Dr::SearchIndexes.verdict(grades)
+      check.call("Search index populated", verdict.status, verdict.detail)
+    end
+
+    # --- 3b. What a USER does works (Dr::ServingChecks) ----------------------
+    # Everything above proves each part is up. These prove the things users do:
+    # open a document, have a job run, sign in, get a PDF. Each one is a way the
+    # stack could pass every check above and still be broken for users.
+
+    guarded.call("Document files present") do
+      # Files are NOT part of the database restore: they live in S3. A restored
+      # database pointing at files that are not there passes "S3 app bucket
+      # reachable" and still shows users broken documents. Look up a sample:
+      # the 20 newest stored documents, plus 10 spread across older ids.
+      # Only id + file_data are loaded (documents is a large table).
+      stored = Document.where.not(file_data: nil)
+      newest = stored.order(id: :desc).limit(20).pluck(:id, :file_data)
+      max_id = newest.first&.first.to_i
+      older = Dr::ServingChecks.spread_ids(max_id).filter_map do |target|
+        stored.where(id: ..target).order(id: :desc).pick(:id, :file_data)
+      end
+      sample = (newest + older).uniq(&:first)
+      # Only files promoted to permanent storage; a "cache" file is an upload in progress
+      stored_file = lambda do |data|
+        JSON.parse(data.to_s)["storage"] == "store"
+      rescue JSON::ParserError
+        false
+      end
+      sample = sample.select { |_, data| stored_file.call(data) }
+      missing = sample.reject { |_, data| FileUploader.uploaded_file(data).exists? }.map(&:first)
+      grade = Dr::ServingChecks.grade_documents(checked: sample.size, missing_ids: missing)
+      check.call("Document files present", grade.status, grade.detail)
+    end
+
+    guarded.call("Background job ran") do
+      # "Sidekiq workers registered" proves sidekiq is alive, not that it RUNS
+      # jobs (a wedged worker or wrong Redis still registers). Queue a job on the
+      # queue real work uses and wait for it to write its token. The job contacts
+      # nobody, so it is safe on drill copies too.
+      token = SecureRandom.hex(8)
+      started = Time.current
+      DrVerifyPingJob.perform_later(token)
+      seconds = nil
+      (Dr::ServingChecks::JOB_TIMEOUT_SECONDS / 3).times do
+        sleep 3
+        if Rails.cache.read(DrVerifyPingJob.cache_key(token))
+          seconds = Time.current - started
+          break
+        end
+      end
+      grade = Dr::ServingChecks.grade_job(seconds: seconds, queue: DrVerifyPingJob.queue_name)
+      check.call("Background job ran", grade.status, grade.detail)
+    end
+
+    guarded.call("Sign-in page") do
+      # The health endpoints are tiny JSON answers. The sign-in page is a real
+      # screen: layout, compiled assets, the session cookie and the CSRF token.
+      body = `curl -s --max-time 60 -H "Host: #{host_header}" http://localhost/users/sign_in`
+      code = http.call("/users/sign_in")
+      grade = Dr::ServingChecks.grade_sign_in(code: code, body: body)
+      check.call("Sign-in page", grade.status, grade.detail)
+    end
+
+    if Dr::BackupSchedule.drill?
+      guarded.call("Signed-in API read") do
+        # A request as a real user: token auth, the user's records, Pundit and
+        # JSON rendering. Drill copies only, because it writes a token: a
+        # 5-minute token for an active employee of the newest fund's firm,
+        # revoked straight after. The drill's database is thrown away anyway.
+        user = Fund.order(id: :desc).first&.entity&.employees&.where(active: true)&.order(:id)&.first
+        next check.call("Signed-in API read", :warn, "no active fund user in the restored data to sign in as") unless user
+
+        token = ActiveRecord::Base.connected_to(role: :writing) do
+          Devise::Api::Token.create!(resource_owner: user, access_token: Devise::Api::Token.generate_uniq_access_token(user),
+                                     refresh_token: Devise::Api::Token.generate_uniq_refresh_token(user), expires_in: 300)
+        end
+        begin
+          out = `curl -s --max-time 60 -w "\n%{http_code}" -H "Host: #{host_header}" -H "Authorization: Bearer #{token.access_token}" http://localhost/funds.json`
+          body, _, code = out.rpartition("\n")
+          grade = Dr::ServingChecks.grade_api_read(code: code, body: body, path: "/funds.json")
+          check.call("Signed-in API read", grade.status, grade.detail)
+        ensure
+          ActiveRecord::Base.connected_to(role: :writing) { token.update!(revoked_at: Time.current) }
+        end
+      end
+    end
+
+    guarded.call("PDF conversion") do
+      # Document generation turns Word templates into PDFs through LibreOffice
+      # (Libreconv, DocumentGeneratorBase). LibreOffice is installed outside the
+      # app, so a server built from an image without it serves every page and
+      # still fails every generated notice. Convert a Word file that ships with
+      # the app, in a temporary folder.
+      source = Rails.public_path.join("sample_uploads/portfolio_report_templates/word_placeholder_template.docx")
+      Dir.mktmpdir("dr_verify_pdf") do |dir|
+        docx = File.join(dir, "check.docx")
+        FileUtils.cp(source, docx)
+        started = Time.current
+        error = nil
+        begin
+          Timeout.timeout(120) { Libreconv.convert(docx, "#{docx}.pdf") }
+        rescue StandardError, Timeout::Error => e
+          error = "#{e.class}: #{e.message.to_s.lines.first.to_s.strip}"
+        end
+        head = File.exist?("#{docx}.pdf") ? File.binread("#{docx}.pdf", 8) : nil
+        grade = Dr::ServingChecks.grade_pdf(head: head, seconds: Time.current - started, error: error)
+        check.call("PDF conversion", grade.status, grade.detail)
+      end
+    end
+
     # --- 4. DB box checks (SSH — DB boxes accept SSH only from app servers,
     #         which is exactly why this task runs here and not on a laptop) ---
     db_host = Rails.application.credentials[:DB_HOST]
@@ -232,6 +385,15 @@ namespace :dr do
       # run_baked_restore; DB boxes get recreated with fresh host keys but
       # often reuse the same private IP.
       Net::SSH.start(host, "ubuntu", keys: [key_path], timeout: 15, verify_host_key: :never) { |ssh| ssh.exec!(cmd).to_s.strip }
+    end
+
+    # Old backup jobs in the box's ubuntu + root crontabs. DR boxes are cloned
+    # from a snapshot of the live box, whose ubuntu crontab still runs
+    # /home/ubuntu/backup_db.sh — a writer that ignores the armed marker. The
+    # restore strips them; this proves it did (Dr::BackupSchedule).
+    old_backup_jobs = lambda do |host|
+      # 2>&1: "no crontab for <user>" goes to stderr, and split_crontab drops it
+      Dr::BackupSchedule.old_jobs(on_db_box.call(host, "crontab -l 2>&1; sudo crontab -l -u root 2>&1"))
     end
 
     guarded.call("Primary DB box (#{db_host})") do
@@ -250,13 +412,27 @@ namespace :dr do
       # Backups must be ARMED on the primary — restore_primary creates the
       # marker; without it /etc/cron.d/irm-db-backup no-ops forever and the
       # freshly recovered env silently takes NO backups
-      armed = on_db_box.call(db_host, "test -f /etc/db_backup_enabled && echo yes")
-      check.call("Primary backup cron armed", armed == "yes" ? :ok : :fail,
-                 armed == "yes" ? "/etc/db_backup_enabled present" : "marker missing — no backups will be taken!")
+      armed = on_db_box.call(db_host, "test -f #{Dr::BackupSchedule::ARMED_MARKER} && echo yes")
+      # A DR drill must be the opposite: NOT armed, because the live box is
+      # still writing the same bucket (DR_DRILL=true, set by aws:dr_drill)
+      drill = Dr::BackupSchedule.drill?
+      grade = Dr::BackupSchedule.grade_armed(armed == "yes", drill: drill)
+      check.call(drill ? "Primary backup cron NOT armed (drill)" : "Primary backup cron armed", grade.status, grade.detail)
 
-      cron = on_db_box.call(db_host, "test -f /etc/cron.d/irm-db-backup && echo yes")
-      check.call("Primary backup cron installed", cron == "yes" ? :ok : :warn,
-                 cron == "yes" ? nil : "no /etc/cron.d/irm-db-backup — pre-bake AMI?")
+      # Something must actually RUN the script, and only one thing may: the
+      # baked schedule with no old job beside it. A missing schedule used to be
+      # a warning, so two drills passed with backups off (fix-dr-backup-cron-after-restore).
+      schedule = on_db_box.call(db_host, "test -f #{Dr::BackupSchedule::CRON_PATH} && echo yes") == "yes"
+      grade = Dr::BackupSchedule.grade_primary(schedule: schedule, old_jobs: old_backup_jobs.call(db_host))
+      check.call("Primary backup schedule (single writer)", grade.status, grade.detail)
+
+      # The first backup after a restore must base on the restored data, not on
+      # a checkpoint inherited from the cloned live box (stale-LSN fix)
+      stamps = on_db_box.call(db_host, "sudo cat #{Dr::BackupSchedule::RESTORED_AT_PATH} 2>/dev/null; echo '|'; " \
+                                       "sudo stat -c %Y #{Dr::BackupSchedule::CHECKPOINT_PATH} 2>/dev/null")
+      restored_at, checkpoint_at = stamps.split("|", 2).map { |v| v.to_s.strip.presence&.to_i }
+      grade = Dr::BackupSchedule.grade_checkpoint(restored_at: restored_at, checkpoint_at: checkpoint_at)
+      check.call("Backup checkpoint fresh", grade.status, grade.detail)
     end
 
     # --- 5. Replica + replication (only on stacks that HAVE a replica) -------
@@ -272,6 +448,10 @@ namespace :dr do
         armed = on_db_box.call(replica_host, "test -f /etc/db_backup_enabled && echo yes")
         check.call("Replica backup cron disarmed", armed == "yes" ? :fail : :ok,
                    armed == "yes" ? "ARMED — two writers will corrupt the backup chain!" : nil)
+
+        # Disarmed is not enough: an old cloned crontab job ignores the marker
+        grade = Dr::BackupSchedule.grade_replica(old_jobs: old_backup_jobs.call(replica_host))
+        check.call("Replica has no backup writer", grade.status, grade.detail)
       end
 
       guarded.call("Replication live round-trip") do

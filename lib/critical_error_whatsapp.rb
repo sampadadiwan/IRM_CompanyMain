@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'ops_whatsapp_alert'
+require_relative 'drill_stack'
 
 # WhatsApp page for infrastructure-class exceptions (database, Redis, disk). Design and
 # rationale: docs/operations/critical_error_whatsapp_alerts.md.
@@ -207,6 +208,10 @@ module CriticalErrorWhatsapp
     private
 
     def enabled?
+      # A DR drill stack never pages: it is a rehearsal, and its errors still arrive as
+      # "[DR DRILL <region>]"-tagged mail (lib/drill_stack.rb, openspec fix-dr-drill-hygiene)
+      return false if DrillStack.drill?
+
       @enabled.nil? ? Rails.env.production? : @enabled
     end
 

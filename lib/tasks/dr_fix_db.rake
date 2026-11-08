@@ -258,7 +258,7 @@ namespace :dr do
 
       puts "\n⚠️  What promotion costs, regardless of how well it goes:"
       puts "   • Sidekiq queues, retries and scheduled jobs die with the old box's Redis."
-      puts "   • Elasticsearch indexes are empty on the new box until rake chewy:reset."
+      puts "   • Elasticsearch indexes are empty on the new box until: bundle exec cap #{env[:cap_stage]} recovery:reindex_search"
       puts "   • Until you rebuild a replica, this environment runs on a SINGLE database."
       print "\nType 'promote' to proceed, anything else aborts: "
       abort "\n❌ Aborted — nothing changed." unless STDIN.gets.to_s.strip.casecmp("promote").zero?
@@ -320,7 +320,8 @@ namespace :dr do
       puts "=" * 78
       puts "\n📋 Required follow-ups, in order:"
       puts "   1. Rebuild the Elasticsearch indexes (they died with the old box):"
-      puts "      LB=true bundle exec cap #{env[:cap_stage]} deploy:chewy_reset   # or rake chewy:reset on a box"
+      # Not `rake chewy:reset`: it finds no indexes in this app (they live in app/packs, not app/chewy)
+      puts "      LB=true bundle exec cap #{env[:cap_stage]} recovery:reindex_search   # fails unless every index is complete"
       puts "   2. Rebuild a replica so this environment is not on a single database:"
       puts "      rake \"dr:fix:db_replica[#{env_name}]\"  (after terminating the dead box)"
       puts "   3. Sidekiq jobs queued at the moment of failure are GONE — re-drive anything critical."
@@ -422,7 +423,7 @@ namespace :dr do
       puts "#{verified && data_tier ? '🟢' : '🔴'} DB primary rebuild #{verified && data_tier ? 'complete and verified' : 'finished with FAILED checks — see above'}"
       puts "=" * 78
       puts "\n📋 Follow-ups:"
-      puts "   1. Rebuild the Elasticsearch indexes: rake chewy:reset (on an app server)"
+      puts "   1. Rebuild the Elasticsearch indexes: bundle exec cap #{env[:cap_stage]} recovery:reindex_search"
       puts "   2. Sidekiq jobs queued at the moment of failure are GONE."
       puts "   3. Confirm backups resumed: rake \"s3:check_backup_freshness[#{env_name}]\""
       puts "   4. Re-assess: rake \"dr:assess[#{env_name}]\""

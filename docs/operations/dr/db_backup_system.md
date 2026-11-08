@@ -171,6 +171,25 @@ detached role). Two independent checks:
   alert. Whatever the cause, staleness cannot stay silent for more than ~2
   hours. (Lesson learned: staging backups once died silently for a month.)
 
+- **The replicas cannot be deleted** (OpenSpec `fix-backups-deletable`): the
+  DR-region replica buckets carry S3 Object Lock, **COMPLIANCE mode, 30-day
+  default retention**. Every backup or document replicated there is
+  undeletable by anyone, AWS root included, for 30 days, even with a leaked
+  app key (the app's keys hold S3 full access, so a GOVERNANCE lock would not
+  stop them: G25). Primary buckets stay unlocked: the app manages them.
+
+```mermaid
+flowchart LR
+    P["Primary bucket<br/>unlocked, app manages it"] -->|"replication<br/>(role also reads lock settings)"| R["Replica bucket<br/>COMPLIANCE 30 days"]
+    K["Leaked app key"] -.->|"delete version + bypass header"| R
+    R -.->|AccessDenied| K
+```
+
+  Applied with `rake "aws:lock_replica_buckets[<env>]"` (dry run →
+  `EXECUTE=1` → `PROVE=1`); checked by `aws:dr_readiness` ("Replica backups
+  locked"). **Irreversible**: Object Lock cannot be turned off once enabled;
+  removing the default retention only stops locking *new* replicas.
+
 ## 7. Verification cookbook (run on any DB box)
 
 ```bash
@@ -205,8 +224,42 @@ staging box) don't have the baked script. For them,
 **substituted directly into the file** (from the same credentials source),
 which is uploaded to the box — the DR restore tasks do this automatically as
 a fallback. Functionally identical; the difference is embedded-at-generation
-vs resolved-at-runtime. Each weekly bake shrinks this category until it
-disappears.
+vs resolved-at-runtime.
+
+**This category does not shrink on its own.** The weekly DB AMI is a snapshot
+of the live box (`aws:create_and_copy_ami`), not a Packer build, so every DR
+server so far has been a pre-bake box. Found 2026-11-08 by a read-only probe of
+the live staging DB box:
+
+| On the live box | Present? |
+|---|---|
+| `/usr/local/bin/db_backup_xtra.sh` (baked script) | No |
+| `/etc/cron.d/irm-db-backup` (baked schedule) | No |
+| `/etc/db_backup_enabled` (armed marker) | No |
+| `ubuntu` crontab: `0 23 * * * /home/ubuntu/backup_db.sh full`, `0 0-22 * * * … incr` | **Yes — hourly, not every 30 min** |
+| Armed-marker check in `backup_db.sh` | **No** — it writes from any box it runs on |
+
+So the DR restore now does what the bake would have done, on any box that
+lacks it:
+
+```mermaid
+sequenceDiagram
+    participant App as App server (rake)
+    participant DB as DR DB box (clone)
+    App->>DB: strip old backup_db.sh jobs (ubuntu + root crontabs)
+    App->>DB: no baked script? install the generated one at /usr/local/bin (root 0700)
+    App->>DB: install /etc/cron.d/irm-db-backup + logrotate (primary: before restore)
+    App->>DB: restore_primary (arms, says "schedule live" only if the file exists)
+    App->>DB: replica only: disarm, THEN install the schedule
+```
+
+- A generated script left from an earlier restore is replaced on every
+  restore, so a rotated credential never lingers.
+- The schedule text lives in `Dr::BackupSchedule::CRON_LINES`
+  (`lib/dr/backup_schedule.rb`). `features/misc/dr_backup_schedule.feature`
+  fails if it drifts from the Packer recipe.
+- Note: the live staging box's RPO is **60 minutes** (hourly incrementals), not
+  the 30 the bake's schedule gives.
 
 ## 10. Why it's built this way (design rationale, one line each)
 
@@ -222,7 +275,20 @@ disappears.
   the true primary may write to a backup chain, and "truth" is established by
   the restore itself.
 
-## 11. Proposed enhancement: backup size sanity checks (not yet implemented)
+## 11. Backup size sanity checks (implemented 2026-11-08, OpenSpec `fix-backup-rpo-and-size-checks`)
+
+> **Status:** live in `DbBackupFreshnessJob#size_failures` (hourly, primary bucket only).
+> The newest full that is at least 2 h old (so an upload in progress is never judged) is
+> compared with the **median of the three fulls before it** (`Dr::BackupSchedule.grade_full_size`):
+> under **40%** → a failure that alerts like a stale backup; under **70%** → a logged warning
+> (the log-only rollout below). Incrementals are not size-checked in v1. First run against the
+> real buckets: staging 131.7 MB and prod IN 1,593 MB, both 100% of usual.
+>
+> Related: staging's live DB server moved from hourly to **30-minute** incrementals
+> (`rake "dr:set_backup_cadence[staging.in]"`, staging only), so it meets the 30-minute RPO
+> promise that production already met (audit 2026-11-08: prod IN and US 46 incrementals a day).
+
+### Original proposal
 
 `DbBackupFreshnessJob` (§6) only asks "did *something* land on schedule?" —
 it never opens a backup to see what's inside. That misses a distinct failure

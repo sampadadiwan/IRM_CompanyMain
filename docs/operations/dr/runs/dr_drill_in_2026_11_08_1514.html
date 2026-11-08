@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Recovery stopped at step 9 · Bring the site back and verify it</title>
+<style>
+  /* Light theme only. Bootstrap 5.3 values, so the report matches the app's palette. */
+  :root {
+    --bg: #f8f9fa;            /* --bs-tertiary-bg */
+    --surface: #ffffff;       /* --bs-body-bg */
+    --text: #212529;          /* --bs-body-color */
+    --muted: #6c757d;         /* --bs-secondary-color */
+    --border: #dee2e6;        /* --bs-border-color */
+    --success: #198754;  --success-bg: #d1e7dd;
+    --danger: #dc3545;   --danger-bg: #f8d7da;
+    --info: #087990;     --info-bg: #cff4fc;   /* --bs-info-text-emphasis / -bg-subtle */
+    --secondary: #6c757d; --secondary-bg: #e2e3e5;
+    --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.55 var(--font); }
+  .page { max-width: 1080px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 22px; margin: 0 0 4px; font-weight: 600; }
+  h2 { font-size: 17px; margin: 0; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  p { margin: 0 0 8px; }
+  .muted { color: var(--muted); }
+  code, .mono { font-family: var(--mono); font-size: 13px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; margin-top: 16px; }
+  .card > .head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 8px; }
+  .help { color: var(--muted); margin-bottom: 12px; }
+  svg.i { width: 16px; height: 16px; flex: none; vertical-align: -3px; }
+  .ok   { color: var(--success); } .warn { color: var(--info); } .fail { color: var(--danger); } .skip { color: var(--secondary); }
+  .badge { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px; font-weight: 600; }
+  .badge.ok { background: var(--success-bg); } .badge.fail { background: var(--danger-bg); } .badge.warn { background: var(--info-bg); }
+  .hero { display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: start; }
+  .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 16px; }
+  .tile { border: 1px solid var(--border); border-radius: 8px; padding: 12px; background: var(--surface); }
+  .tile .v { font-size: 20px; font-weight: 600; }
+  .tile .l { color: var(--muted); }
+  ul.plain { margin: 0; padding-left: 18px; }
+  ul.plain li { margin: 2px 0; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 8px 10px; border-top: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; border-top: 0; }
+  td.num { text-align: right; white-space: nowrap; }
+  .bar { height: 8px; border-radius: 4px; background: var(--success); min-width: 2px; }
+  .barwrap { background: var(--bg); border-radius: 4px; width: 160px; }
+  details { margin-top: 2px; }
+  details > summary { cursor: pointer; color: var(--muted); list-style: none; display: inline-flex; align-items: center; gap: 4px; }
+  details > summary::-webkit-details-marker { display: none; }
+  details[open] > summary { color: var(--text); }
+  .explain { background: var(--bg); border-radius: 6px; padding: 8px 12px; margin-top: 6px; }
+  .explain b { font-weight: 600; }
+  .group td { background: var(--bg); font-weight: 600; }
+  .attention { border-left: 4px solid var(--info); }
+  .attention.fail { border-left-color: var(--danger); }
+  .scope { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .scope > div { border: 1px solid var(--border); border-radius: 8px; padding: 12px; }
+  @media (max-width: 720px) { .tiles { grid-template-columns: 1fr 1fr; } .hero, .scope { grid-template-columns: 1fr; } .barwrap { width: 80px; } }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="i-ok" viewBox="0 0 16 16"><path fill="currentColor" d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0m-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/></symbol>
+  <symbol id="i-fail" viewBox="0 0 16 16"><path fill="currentColor" d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0M5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293z"/></symbol>
+  <symbol id="i-warn" viewBox="0 0 16 16"><path fill="currentColor" d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5m.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2"/></symbol>
+  <symbol id="i-help" viewBox="0 0 16 16"><path fill="currentColor" d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/><path fill="currentColor" d="M5.255 5.786a.237.237 0 0 0 .241.247h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286m1.557 5.763c0 .533.425.927 1.01.927.609 0 1.028-.394 1.028-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94"/></symbol>
+  <symbol id="i-info" viewBox="0 0 16 16"><path fill="currentColor" d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 16 16"><path fill="currentColor" d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71z"/><path fill="currentColor" d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0"/></symbol>
+  <symbol id="i-list" viewBox="0 0 16 16"><path fill="currentColor" d="M2 2.5a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5m0 4a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5m0 4a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5m0 4a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5"/></symbol>
+</svg>
+
+<div class="page">
+    <div class="card">
+    <div class="hero">
+      <div>
+        <h1>Recovery stopped at step 9 · Bring the site back and verify it</h1>
+        <p class="muted">DR drill · staging (in) → ap-south-2 · 8 Nov 2026, 09:44–09:57 UTC · run by thimmaiah@Inspiron</p>
+      </div>
+      <span class="badge fail"><svg class="i fail"><use href="#i-fail"/></svg> Failed</span>
+    </div>
+    <div class="tiles">
+      <div class="tile"><div class="v">13:22</div><div class="l">Recovery time (RTO): command start to verified · promised ~10 min</div></div>
+      <div class="tile"><div class="v">1:56</div><div class="l">Database restore (primary + replica together)</div></div>
+      <div class="tile"><div class="v">64 / 64</div><div class="l">Checks passed · 0 warnings · 0 failed</div></div>
+      <div class="tile"><div class="v">14 min</div><div class="l">Recovery point (RPO): data lost · restored to 09:30 UTC · promised 30 min</div></div>
+    </div>
+  </div>
+
+    <div class="card">
+    <div class="head"><h2><svg class="i"><use href="#i-info"/></svg> In plain words</h2></div>
+    <ul class="plain">
+      <li>The rebuild of staging in ap-south-2 stopped at step 9 (Bring the site back and verify it).</li>
+      <li>Some checks ran; the failed ones are listed below.</li>
+      <li>Search is being rebuilt in the background: the site works now, and search results fill in over the next few minutes.</li>
+      <li>The database was recovered as it was at 09:30 UTC (the newest backup), 14 minutes before the recovery started. That is the data a real recovery at this moment would have lost.</li>
+      <li>This was a drill: the live site was not touched and nothing was switched over. The rebuilt servers are still running until they are torn down.</li>
+    </ul>
+  </div>
+
+    <div class="card">
+    <div class="head"><h2><svg class="i"><use href="#i-clock"/></svg> Recovery point and time vs what we promise clients</h2><span class="muted">Promises: Security questionnaire H3/H4 (docs/gtm/prerequisites/E2_security_questionnaire.md)</span></div>
+    <table>
+      <tr><th></th><th>Objective</th><th>Promised to clients</th><th>This run</th></tr>
+      <tr><td><svg class="i ok"><use href="#i-ok"/></svg></td><td>Recovery point (RPO)<div class="muted">How much data a real recovery would lose</div></td><td>30 minutes, while backup-freshness alerts are green</td><td>restored to 8 Nov 09:30 UTC (backup 2026-11-08_093001-incr): 14 min of changes lost</td></tr>
+      <tr><td><svg class="i fail"><use href="#i-fail"/></svg></td><td>Recovery time (RTO)<div class="muted">How long until users are served again</div></td><td>about 10 minutes for a staging-sized dataset, scaling with database size</td><td>not reached: stopped at step 9 · Bring the site back and verify it</td></tr>
+    </table>
+    <p class="muted" style="margin-top:8px">The recovery time shown is the rebuild. A customer's full wait also includes noticing the outage, deciding to recover and switching DNS.</p>
+  </div>
+
+    <div class="card attention fail">
+    <div class="head"><h2><svg class="i fail"><use href="#i-fail"/></svg> Needs attention</h2><span class="muted">1 item</span></div>
+    <table>
+      <tr><th>Check</th><th>Seen on</th><th>What it means</th><th>What to do</th></tr>
+      <tr><td><svg class="i fail"><use href="#i-fail"/></svg> Step 9 · Bring the site back and verify it</td><td>—</td><td>The recovery stopped here.</td><td>The failed checks are listed under Needs attention, each with what to do. Full output: docs/operations/dr/runs/dr_drill_in_2026_11_08_1514.log</td></tr>
+    </table>
+  </div>
+
+    <div class="card">
+    <div class="head"><h2><svg class="i"><use href="#i-clock"/></svg> What the recovery did, step by step</h2><span class="muted">bars to scale of 13:22</span></div>
+    <p class="help">Every step a real recovery runs, in order. Open a step to see what it does and what to check if it fails.</p>
+    <table>
+      <tr><th></th><th>Step</th><th>Start</th><th class="num">Took</th><th></th></tr>
+      <tr><td><svg class="i ok"><use href="#i-ok"/></svg></td><td>1 · Prepare the infrastructure settings
+        <details><summary><svg class="i"><use href="#i-help"/></svg> What this does</summary><div class="explain">Points the DR stack at the newest server images and the DR region. <b>If it fails:</b> Run rake aws:dr_readiness — usually a missing server image or setting.</div></details>
+        </td><td class="mono">09:44:20</td><td class="num">0:03</td><td><div class="barwrap"><div class="bar" style="width:1%"></div></div></td></tr>
+      <tr><td><svg class="i ok"><use href="#i-ok"/></svg></td><td>2 · Create servers, network and load balancer
+        <details><summary><svg class="i"><use href="#i-help"/></svg> What this does</summary><div class="explain">Pulumi creates the app servers, the database primary and replica, the load balancer and its certificate. <b>If it fails:</b> The Pulumi error names the resource. &quot;Locked&quot; means another run is in progress.</div></details>
+        </td><td class="mono">09:44:23</td><td class="num">2:37</td><td><div class="barwrap"><div class="bar" style="width:23%"></div></div></td></tr>
+      <tr><td><svg class="i ok"><use href="#i-ok"/></svg></td><td>3 · Point the app at the new servers
+        <details><summary><svg class="i"><use href="#i-help"/></svg> What this does</summary><div class="explain">Writes the new database, Redis and search addresses into the app&#39;s settings and deploy file, waits for the servers to accept SSH, and removes old backup jobs copied from the live box. <b>If it fails:</b> A missing address means the Pulumi output is incomplete — re-run; an SSH timeout names the server.</div></details>
+        </td><td class="mono">09:47:00</td><td class="num">0:17</td><td><div class="barwrap"><div class="bar" style="width:3%"></div></div></td></tr>
+      <tr><td><svg class="i ok"><use href="#i-ok"/></svg></td><td>4 · Save those settings on a recovery branch
+        <details><summary><svg class="i"><use href="#i-help"/></svg> What this does</summary><div class="explain">Commits only those settings to the recovery branch and pushes it, so the servers deploy exactly this code. <b>If it fails:</b> Check git access to origin and that the working tree had no conflicting edits.</div></details>
+        </td><td class="mono">09:47:17</td><td class="num">0:03</td><td><div class="barwrap"><div class="bar" style="width:1%"></div></div></td></tr>
+      <tr><td><svg class="i ok"><use href="#i-ok"/></svg></td><td>5 · Install the app on both servers
+        <details><summary><svg class="i"><use href="#i-help"/></svg> What this does</summary><div class="explain">Installs Ruby, gems and the app on every app server. The longest step after the restore. <b>If it fails:</b> The Capistrano error names the server and the task that failed.</div></details>
+        </td><td class="mono">09:47:21</td><td class="num">5:59</td><td><div class="barwrap"><div class="bar" style="width:53%"></div></div></td></tr>
+      <tr><td><svg class="i ok"><use href="#i-ok"/></svg></td><td>6 · Take the site offline
+        <details><summary><svg class="i"><use href="#i-help"/></svg> What this does</summary><div class="explain">Maintenance page on; web and background workers stopped, so nothing writes while the database is restored. <b>If it fails:</b> Check nginx on the named server: sudo nginx -t.</div></details>
+        </td><td class="mono">09:53:20</td><td class="num">0:11</td><td><div class="barwrap"><div class="bar" style="width:2%"></div></div></td></tr>
+      <tr><td><svg class="i ok"><use href="#i-ok"/></svg></td><td>7 · Restore the database from backups
+        <details><summary><svg class="i"><use href="#i-help"/></svg> What this does</summary><div class="explain">Downloads the newest full backup and its incremental from S3 onto the primary and replica in parallel, then reconnects replication. <b>If it fails:</b> Look for the [primary] / [replica] lines in the transcript; the backup bucket and key are named there.</div></details>
+        </td><td class="mono">09:53:30</td><td class="num">1:56</td><td><div class="barwrap"><div class="bar" style="width:17%"></div></div></td></tr>
+      <tr><td><svg class="i ok"><use href="#i-ok"/></svg></td><td>8 · Start the search rebuild (background)
+        <details><summary><svg class="i"><use href="#i-help"/></svg> What this does</summary><div class="explain">Search is not backed up, so a background job is queued to rebuild every search index the live app maintains from the restored database. The site comes back without waiting; search results fill in as the job runs, and the checks below show its progress. <b>If it fails:</b> The transcript&#39;s table names the index and why; re-run one with ONLY=&lt;Index&gt; cap recovery:reindex_search.</div></details>
+        </td><td class="mono">09:55:26</td><td class="num">0:10</td><td><div class="barwrap"><div class="bar" style="width:1%"></div></div></td></tr>
+      <tr><td><svg class="i fail"><use href="#i-fail"/></svg></td><td>9 · Bring the site back and verify it
+        <details><summary><svg class="i"><use href="#i-help"/></svg> What this does</summary><div class="explain">Maintenance page off, then every check below runs on every app server. Any failed check fails the recovery. <b>If it fails:</b> The failed checks are listed under Needs attention, each with what to do.</div></details>
+        </td><td class="mono">09:55:36</td><td class="num">—</td><td><div class="barwrap"><div class="bar" style="width:0%"></div></div></td></tr>
+    </table>
+  </div>
+
+    <div class="card">
+    <div class="head"><h2><svg class="i"><use href="#i-list"/></svg> Verification: what was proven</h2><span class="muted">2 servers</span></div>
+    <p class="help">Each check exercises the real thing (an HTTP request through the web server to the app to the database, for example), not a status file. Open a check to see what it proves.</p>
+    <table>
+      <tr><th>Check</th><th>ip-10-0-1-28</th><th>ip-10-0-2-254</th></tr>
+      <tr class="group"><td colspan="3">App servers</td></tr>
+      <tr><td>Web server (nginx) running<details><summary><svg class="i"><use href="#i-help"/></svg> What it proves</summary><div class="explain">nginx is up and will hand requests to the app.</div></details></td><td><svg class="i ok"><use href="#i-ok"/></svg> active</td><td><svg class="i ok"><use href="#i-ok"/></svg> active</td></tr>
+      <tr><td>App processes (puma)<details><summary><svg class="i"><use href="#i-help"/></svg> What it proves</summary><div class="explain">The Rails app server is running and can take requests.</div></details></td><td><svg class="i ok"><use href="#i-ok"/></svg> 1 process(es)</td><td><svg class="i ok"><use href="#i-ok"/></svg> 5 process(es)</td></tr>
+      <tr><td>Background jobs (sidekiq)<details><summary><svg class="i"><use href="#i-help"/></svg> What it proves</summary><div class="explain">Sidekiq registered itself in Redis, so emails, documents and reports will be processed.</div></details></td><td><svg class="i ok"><use href="#i-ok"/></svg> 2 process(es)</td><td><svg class="i ok"><use href="#i-ok"/></svg> 2 process(es)</td></tr>
+      <tr><td>Monitoring exporter<details><summary><svg class="i"><use href="#i-help"/></svg> What it proves</summary><div class="explain">Metrics will reach Grafana once monitoring is pointed at these servers.</div></details></td><td><svg class="i ok"><use href="#i-ok"/></svg> 2 process(es)</td><td><svg class="i ok"><use href="#i-ok"/></svg> 2 process(es)</td></tr>
+      <tr><td>Drill servers marked<details><summary><svg class="i"><use href="#i-help"/></svg> What it proves</summary><div class="explain">The drill&#39;s servers carry DR_DRILL_STACK: their error mail is tagged and they never page WhatsApp.</div></details></td><td><svg class="i ok"><use href="#i-ok"/></svg> drill servers marked (ap-south-2): tagged mail, no WhatsApp pages</td><td><svg class="i ok"><use href="#i-ok"/></svg> drill servers marked (ap-south-2): tagged mail, no WhatsApp pages</td></tr>
+      <tr><td>Drill cannot contact users<details><summary><svg class="i"><use href="#i-help"/></svg> What it proves</summary><div class="explain">On this drill copy no email, WhatsApp, SMS or push can reach a user, and no timed job runs; the count shows what was held back.</div></details></td><td><svg class="i ok"><use href="#i-ok"/></svg> nothing can reach users: mail intercepted, messaging hosts guarded, no timed jobs (0 held back so far)</td><td><svg class="i ok"><use href="#i-ok"/></svg> nothing can reach users: mail intercepted, messaging hosts guarded, no timed jobs (0 held back so far)</td></tr>
+      <tr class="group"><td colspan="3">Requests through the app</td></tr>
+      <tr><td>Database<details><summary><svg class="i"><use href="#i-help"/></svg> What it proves</summary><div class="explain">A request went nginx → app → MySQL and back.</div></details></td><td><svg class="i ok"><use href="#i-ok"/></svg> HTTP 200</td><td><svg class="i ok"><use href="#i-ok"/></svg> HTTP 200</td></tr>
+      <tr><td>Cache<details><summary><svg class="i"><use href="#i-help"/></svg> What it proves</summary><div class="explain">The app&#39;s cache works. It lives in MySQL (solid_cache), so this does not test Redis; the sidekiq check does.</div></details></td><td><svg class="i ok"><use href="#i-ok"/></svg> HTTP 200</td><td><svg class="i ok"><use href="#i-ok"/></svg> HTTP 200</td></tr>
+      <tr><td>Search reachable<details><summary><svg class="i"><use href="#i-help"/></svg> What it proves</summary><div class="explain">Elasticsearch answered. It does not prove search has data; &quot;Search index populated&quot; does.</div></details></td><td><svg class="i ok"><use href="#i-ok"/></svg> HTTP 200</td><td><svg class="i ok"><use href="#i-ok"/></svg> HTTP 200</td></tr>
+      <tr><td>Disk space<details><summary><svg class="i"><use href="#i-help"/></svg> What it proves</summary><div class="explain">The root disk is under 95% full.</div></details></td><td><svg class="i ok"><use href="#i-ok"/></svg> HTTP 200</td><td><svg class="i ok"><use href="#i-ok"/></svg> HTTP 200</td></tr>
+      <tr><td>XIRR service<details><summary><svg class="i"><use href="#i-help"/></svg> What it proves</summary><div class="explain">The Python XIRR container that fund returns use is running.</div></details></td><td><svg class="i ok"><use href="#i-ok"/></svg> HTTP 200</td><td><svg class="i ok"><use href="#i-ok"/></svg> HTTP 200</td></tr>
+      <tr><td>Public website (altconnects.com)<details><summary><svg class="i"><use href="#i-help"/></svg> What it proves</summary><div class="explain">The public website is served.</div></details></td><td><svg class="i ok"><use href="#i-ok"/></svg> serving public/website</td><td><svg class="i ok"><use href="#i-ok"/></svg> serving public/website</td></tr>
+      <tr><td>Website alias redirect (www.altconnects.com)<details><summary><svg class="i"><use href="#i-help"/></svg> What it proves</summary><div class="explain">The www address redirects to the main website.</div></details></td><td><svg class="i ok"><use href="#i-ok"/></svg> redirects to altconnects.com</td><td><svg class="i ok"><use href="#i-ok"/></svg> redirects to altconnects.com</td></tr>
+      <tr class="group"><td colspan="3">What users do</td></tr>
+      <tr><td>Document files present<details><summary><svg class="i"><use href="#i-help"/></svg> What it proves</summary><div class="explain">The restored database&#39;s documents still have their files in S3 (the 20 newest and 10 older ones were looked up). Files are not part of the database restore.</div></details></td><td><svg class="i ok"><use href="#i-ok"/></svg> 30 of 30 files found in S3 (newest and older documents)</td><td><svg class="i ok"><use href="#i-ok"/></svg> 30 of 30 files found in S3 (newest and older documents)</td></tr>
+      <tr><td>Background job ran<details><summary><svg class="i"><use href="#i-help"/></svg> What it proves</summary><div class="explain">A job queued now was picked up and finished, so emails, documents and reports will be processed.</div></details></td><td><svg class="i ok"><use href="#i-ok"/></svg> a job queued on &#39;default&#39; ran in 3.0s</td><td><svg class="i ok"><use href="#i-ok"/></svg> a job queued on &#39;default&#39; ran in 3.0s</td></tr>
+      <tr><td>Sign-in page<details><summary><svg class="i"><use href="#i-help"/></svg> What it proves</summary><div class="explain">The sign-in screen renders with its form: layout, compiled assets and sessions work, not only the health endpoints.</div></details></td><td><svg class="i ok"><use href="#i-ok"/></svg> HTTP 200 with the sign-in form</td><td><svg class="i ok"><use href="#i-ok"/></svg> HTTP 200 with the sign-in form</td></tr>
+      <tr><td>Signed-in request<details><summary><svg class="i"><use href="#i-help"/></svg> What it proves</summary><div class="explain">A request as a real user (short-lived token, drill only) read their funds: authentication, permissions and JSON all work.</div></details></td><td><svg class="i ok"><use href="#i-ok"/></svg> GET /funds.json as a signed-in user: HTTP 200 with JSON</td><td><svg class="i ok"><use href="#i-ok"/></svg> GET /funds.json as a signed-in user: HTTP 200 with JSON</td></tr>
+      <tr><td>PDF generation<details><summary><svg class="i"><use href="#i-help"/></svg> What it proves</summary><div class="explain">LibreOffice turned a Word file into a PDF the way document generation does, so notices and statements can be generated.</div></details></td><td><svg class="i ok"><use href="#i-ok"/></svg> a Word file converted to PDF in 24.6s</td><td><svg class="i ok"><use href="#i-ok"/></svg> a Word file converted to PDF in 24.5s</td></tr>
+      <tr class="group"><td colspan="3">Data</td></tr>
+      <tr><td>Database schema up to date<details><summary><svg class="i"><use href="#i-help"/></svg> What it proves</summary><div class="explain">Every migration newer than the backup was applied.</div></details></td><td><svg class="i ok"><use href="#i-ok"/></svg> ok</td><td><svg class="i ok"><use href="#i-ok"/></svg> ok</td></tr>
+      <tr><td>Restored data age<details><summary><svg class="i"><use href="#i-help"/></svg> What it proves</summary><div class="explain">Age of the newest user/document row: the data a real recovery would have lost.</div></details></td><td><svg class="i ok"><use href="#i-ok"/></svg> newest users/documents row is 2.4h old</td><td><svg class="i ok"><use href="#i-ok"/></svg> newest users/documents row is 0.0h old</td></tr>
+      <tr><td>Search index populated<details><summary><svg class="i"><use href="#i-help"/></svg> What it proves</summary><div class="explain">Search holds the restored records: either the background rebuild&#39;s progress (queued, running, finished) or, with no recent rebuild, every index counted against the database. An incomplete index is a warning: the data is complete, only some search results are missing.</div></details></td><td><svg class="i ok"><use href="#i-ok"/></svg> search rebuilding in the background since 09:55 UTC — 5 of 29 indexes done; results fill in as it runs</td><td><svg class="i ok"><use href="#i-ok"/></svg> rebuilt in the background: 29/29 indexes hold their records</td></tr>
+      <tr><td>File storage (S3)<details><summary><svg class="i"><use href="#i-help"/></svg> What it proves</summary><div class="explain">The app&#39;s own credentials can reach its document bucket.</div></details></td><td><svg class="i ok"><use href="#i-ok"/></svg> docs.altx.com.staging</td><td><svg class="i ok"><use href="#i-ok"/></svg> docs.altx.com.staging</td></tr>
+      <tr class="group"><td colspan="3">Database servers</td></tr>
+      <tr><td>Primary MySQL (10.0.3.54)<details><summary><svg class="i"><use href="#i-help"/></svg> What it proves</summary><div class="explain">MySQL is running on the primary.</div></details></td><td><svg class="i ok"><use href="#i-ok"/></svg> active</td><td><svg class="i ok"><use href="#i-ok"/></svg> active</td></tr>
+      <tr><td>Search engine container<details><summary><svg class="i"><use href="#i-help"/></svg> What it proves</summary><div class="explain">The Elasticsearch container is running on the primary.</div></details></td><td><svg class="i ok"><use href="#i-ok"/></svg> running</td><td><svg class="i ok"><use href="#i-ok"/></svg> running</td></tr>
+      <tr><td>Redis container<details><summary><svg class="i"><use href="#i-help"/></svg> What it proves</summary><div class="explain">The Redis container (background job queue) is running on the primary.</div></details></td><td><svg class="i ok"><use href="#i-ok"/></svg> running</td><td><svg class="i ok"><use href="#i-ok"/></svg> running</td></tr>
+      <tr><td>Replica MySQL (10.0.4.243)<details><summary><svg class="i"><use href="#i-help"/></svg> What it proves</summary><div class="explain">MySQL is running on the replica.</div></details></td><td><svg class="i ok"><use href="#i-ok"/></svg> active</td><td><svg class="i ok"><use href="#i-ok"/></svg> active</td></tr>
+      <tr><td>Replication round trip<details><summary><svg class="i"><use href="#i-help"/></svg> What it proves</summary><div class="explain">A value written to the primary was read back from the replica seconds later.</div></details></td><td><svg class="i ok"><use href="#i-ok"/></svg> Ok</td><td><svg class="i ok"><use href="#i-ok"/></svg> Ok</td></tr>
+      <tr class="group"><td colspan="3">Backups</td></tr>
+      <tr><td>Primary not armed (drill)<details><summary><svg class="i"><use href="#i-help"/></svg> What it proves</summary><div class="explain">In a drill the rebuilt database must not write backups: the live box is still writing the same bucket. A real recovery arms it.</div></details></td><td><svg class="i ok"><use href="#i-ok"/></svg> drill: deliberately not armed — the live box still owns the backup chain</td><td><svg class="i ok"><use href="#i-ok"/></svg> drill: deliberately not armed — the live box still owns the backup chain</td></tr>
+      <tr><td>Primary backup schedule<details><summary><svg class="i"><use href="#i-help"/></svg> What it proves</summary><div class="explain">The timetable that runs backups exists, and no second, older backup job sits beside it.</div></details></td><td><svg class="i ok"><use href="#i-ok"/></svg> /etc/cron.d/irm-db-backup present, no old backup job</td><td><svg class="i ok"><use href="#i-ok"/></svg> /etc/cron.d/irm-db-backup present, no old backup job</td></tr>
+      <tr><td>Backup checkpoint fresh<details><summary><svg class="i"><use href="#i-help"/></svg> What it proves</summary><div class="explain">The first backup after the restore bases on the restored data, not on a checkpoint copied from the live box — so it can be restored.</div></details></td><td><svg class="i ok"><use href="#i-ok"/></svg> no checkpoint since the restore — the next backup bases on the newest full in S3</td><td><svg class="i ok"><use href="#i-ok"/></svg> no checkpoint since the restore — the next backup bases on the newest full in S3</td></tr>
+      <tr><td>Replica not armed<details><summary><svg class="i"><use href="#i-help"/></svg> What it proves</summary><div class="explain">The replica is not allowed to write backups (one writer per chain).</div></details></td><td><svg class="i ok"><use href="#i-ok"/></svg> ok</td><td><svg class="i ok"><use href="#i-ok"/></svg> ok</td></tr>
+      <tr><td>Replica has no backup writer<details><summary><svg class="i"><use href="#i-help"/></svg> What it proves</summary><div class="explain">No old backup job on the replica either — it can never write the backup chain.</div></details></td><td><svg class="i ok"><use href="#i-ok"/></svg> no backup job outside the marker-gated schedule</td><td><svg class="i ok"><use href="#i-ok"/></svg> no backup job outside the marker-gated schedule</td></tr>
+    </table>
+  </div>
+
+    <div class="card">
+    <div class="head"><h2><svg class="i"><use href="#i-clock"/></svg> What the rebuild time does and does not include</h2></div>
+    <div class="scope">
+      <div><b class="ok">Included</b><ul class="plain"><li>Creating the servers</li><li>Installing the app</li><li>Restoring the database</li><li>Rebuilding search</li><li>Every check above</li></ul></div>
+      <div><b class="skip">Not included</b><ul class="plain"><li>Noticing the outage</li><li>Deciding to recover</li><li>Switching the domain to the new servers (DNS) and the minutes it takes to spread</li></ul></div>
+    </div>
+    <p class="muted" style="margin-top:12px">So the time customers would actually wait is the rebuild time plus those three.</p>
+  </div>
+
+    <div class="card">
+    <div class="head"><h2><svg class="i"><use href="#i-list"/></svg> Proof you can check yourself</h2></div>
+    <p class="help">Each claim points at a record outside this repository.</p>
+    <table>
+      <tr><th>Claim</th><th>Evidence</th><th>How to check</th></tr>
+      <tr><td>Infrastructure provisioned in ap-south-2</td><td class="mono">Pulumi update #0 — succeeded, 2026-11-08T09:44:29.000Z → 2026-11-08T09:46:59.000Z</td><td>`pulumi stack history --stack staging-ap-south-2` (server-side record, Pulumi console)</td></tr>
+      <tr><td>Database instances launched in ap-south-2</td><td class="mono">i-015c31ccc8d53ab29 (10.0.4.243, launched 2026-11-08T09:44:50Z); i-02a68c62aba8caf8c (10.0.3.54, launched 2026-11-08T09:44:51Z)</td><td>CloudTrail `RunInstances` events in ap-south-2; `aws ec2 describe-instances --region ap-south-2`</td></tr>
+      <tr><td>Recovered stack endpoints</td><td class="mono">app servers 18.61.228.110, 18.61.201.28; DB primary 10.0.3.54, replica 10.0.4.243</td><td>`pulumi stack output --stack staging-ap-south-2`</td></tr>
+      <tr><td>Application code deployed</td><td class="mono">commit `8f4f8ee32f803073bc6056e3f4a5ef94ae44990d` on branch `dr_drill_in_2026_11_08_1514` (pushed to origin)</td><td>`git log -1 8f4f8ee32f`; GitHub branch push timestamp</td></tr>
+      <tr><td>Data restored from real backups</td><td class="mono">source bucket `docs.altx.com.staging-backup-xtra` (full + incremental chain; keys named in the transcript)</td><td>`aws s3 ls s3://docs.altx.com.staging-backup-xtra/` — compare object timestamps against the run window</td></tr>
+    </table>
+  </div>
+
+    <div class="card">
+    <div class="head"><h2><svg class="i"><use href="#i-help"/></svg> Words used in this report</h2></div>
+    <table>
+      <tr><td>Drill</td><td>A rehearsal: the same steps as a real recovery, in a separate copy, with the live site untouched.</td></tr>
+      <tr><td>Rebuild time</td><td>From starting the recovery command to every check passing.</td></tr>
+      <tr><td>Recovery point (RPO)</td><td>The moment the data was recovered to (the newest backup); the minutes between it and the start of the recovery are the data a real recovery would lose.</td></tr>
+      <tr><td>Recovery time (RTO)</td><td>How long until users are served again. The figure here is the rebuild, from the recovery command to a verified stack; noticing the outage, deciding to recover and the DNS switch come on top.</td></tr>
+      <tr><td>Armed</td><td>A database allowed to write backups. Exactly one may, and in a drill none.</td></tr>
+      <tr><td>Full transcript</td><td>docs/operations/dr/runs/dr_drill_in_2026_11_08_1514.log: every command and its output.</td></tr>
+    </table>
+  </div>
+  <p class="muted" style="margin-top:16px">Generated 8 Nov 2026 09:57 UTC by <code>rake aws:dr_drill</code></p>
+</div>
+</body>
+</html>

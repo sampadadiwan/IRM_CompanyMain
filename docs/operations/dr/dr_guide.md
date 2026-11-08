@@ -72,6 +72,19 @@ CONFIRM_PRODUCTION=true TEARDOWN=true \
   rake "aws:dr_drill[in, ap-south-2, production.in, production]"
 ```
 
+What a drill does differently from a real recovery (OpenSpec `fix-dr-drill-hygiene`, 2026-11):
+
+- **It refuses to collide, and a refusal is not logged as a drill.**
+  - A second drill from the same checkout is refused at once (a local run lock).
+  - Before `pulumi up` it reads the stack's Pulumi lock. If another run holds it, it names who and since when. If the lock is *stale* (the process is gone), it prints the exact `cd ../IRM-Infra && pulumi cancel --stack <stack> --yes`. It never cancels by itself.
+- **It never pages anyone.** The drill branch's `.env` gets `DR_DRILL_STACK=<region>`. Drill error mail is tagged `[Error][DR DRILL <region>]`, and critical WhatsApp alerts are off on drill servers. A real recovery sets none of this.
+- **It stops its own servers before teardown.** On PASSED with `TEARDOWN=true`, puma, sidekiq and cron on the drill servers are stopped first. This runs only while the deploy file still names exactly the drill's servers, before switching back to the original branch, where it would name the live ones. Then `pulumi destroy` runs.
+- **It never contacts users** (OpenSpec `fix-dr-drill-contacts-users`). On a drill server, and only there, email is intercepted, requests to WhatsApp (WATI), SMS (Twilio) and push (Expo) are answered locally, no timed jobs are registered, and the drill deploy clears the cron. Verify shows "Drill cannot contact users" with a count of what was held back. Every drill server logs `🛑 DRILL STACK (<region>): all outgoing contact suppressed` at boot.
+  - **The real app is never affected:** all of this keys on `DR_DRILL_STACK`, which only a drill branch's `.env` has. A test fails if any committed `.env` file carries it.
+  - **Side effect:** sign-in codes are suppressed too. To sign in to a drill copy by hand, use a user without a second login step.
+- **It never arms backups** (`DR_DRILL=true`); see §10.
+- **The end-of-run checks prove all of this.** Verify shows "Drill stack marked (no pages)" in a drill, and fails a *real* recovery that is marked as one (it would never page). It also shows "Backup checkpoint fresh": the first backup after the restore must base on the restored data. Teardown happens after the report is written, so its outcome (services stopped · N resources destroyed) goes into the drill's row in `dr_drills.md`.
+
 `docs/operations/dr/dr_drills.md` and the drill-recency check in `aws:dr_readiness` both key
 on `stack`, so a passed staging drill is never read as satisfying production's
 recency requirement (or vice versa).
@@ -113,6 +126,7 @@ quarterly at minimum, and always before a planned migration.
 | Check | Why it must be true | Remediation when ❌ |
 |---|---|---|
 | Backup freshness (primary and replica buckets) | Actual RPO equals the age of the newest backup — a restore recovers only what is in the bucket. The replica-bucket check proves backups survive a region loss. *Incident history: staging backups stopped silently on 2026-06-08 and a later drill restored 30-day-old data; this check exists to make that impossible to miss.* | Re-arm the backup cron on the DB primary. Backfill the replica bucket once: `aws s3 sync s3://<bucket>-backup-xtra s3://<bucket>-replica-backup-xtra` |
+| Replica backups locked | The DR-region replica buckets (backups + documents) carry S3 Object Lock in **COMPLIANCE mode, 30 days**: nothing replicated there can be deleted or have its lock shortened by any key, AWS root included, for 30 days. Without it, the app's own keys (S3 full access) could delete every backup version in both regions. Fails if the lock is off, in GOVERNANCE mode (the app keys can bypass it), or shorter than 30 days. | `rake "aws:lock_replica_buckets[<env>]"` (dry run), then `EXECUTE=1` (permanent: Object Lock cannot be turned off), then `PROVE=1`. Production needs `ALLOW_PRODUCTION=1` and a separate go-ahead |
 | Three AMIs present in the DR region (warns if older than 8 days) | Recovery launches instances from these images; stale images mean slow post-restore catch-up. | Confirm the weekly `aws:create_and_copy_ami` cron ran; bake manually if needed (`PACKER_AWS_REGION=<region> rake "packer:build_env[...]"`). |
 | SSM backup parameters in the DR region | The baked backup script reads its credentials and bucket from SSM **in the instance's own region**. | `rake "xtrabackup:seed_ssm_params[<env>, <region>]"` |
 | Pulumi stack configuration complete | `pulumi up` aborts on any missing key — better discovered now than mid-incident. | `rake "aws:setup_pulumi_config[...]"`; for a brand-new region also set `DOMAIN_NAME` and `AWS_KEY_NAME`. |
@@ -175,6 +189,7 @@ sequenceDiagram
     end
     App->>DB: reset replication (reads the restored primary's binlog — after both finish)
     Rake->>App: rake db:migrate (replays migrations newer than the backup)
+    Rake->>App: queue the search rebuild (background job, the run moves on)
     Rake->>App: nginx: traffic on (no users arrive until DNS is cut over — §8)
     Rake->>App: recovery:verify — the stack must PROVE it serves (§7) or the run fails
 ```
@@ -311,6 +326,35 @@ before first boot.
 - [ ] Monitoring repointed: `rake aws:generate_prometheus_yml`,
   `rake grafana:provision`
 
+### The run report
+
+Every run (drill or real) writes `docs/operations/dr/runs/<branch>.html` and
+`.md` (OpenSpec `dr-drill-report-redesign`). Both come from one model, so they
+always agree. The sections, in order:
+
+1. **The answer:** passed or failed (or the step it stopped at), plus four
+   figures: recovery time (RTO), database restore, checks passed, and recovery
+   point (RPO): the minutes of changes lost.
+1a. **Recovery point and time vs what we promise clients:** the backup the
+   database was restored to and the rebuild time, each compared with the
+   security-questionnaire promises (RPO 30 min, RTO about 10 min;
+   `Dr::ReportCatalog::PROMISES`) and marked met / not met / not reached. A
+   missed promise also appears under Needs attention.
+2. **In plain words:** what was rebuilt, what was proven, the data loss, and
+   whether it was a drill.
+3. **Needs attention:** the failed step, then failed checks, then warnings.
+   Each appears once, naming its servers, with "Should be / Found" and "What
+   to do".
+4. **Steps:** plain names, times, and "What this does / if it fails".
+5. **Verification:** checks grouped by layer, one column per server, each
+   with "What it proves".
+6. **Scope, evidence, glossary.**
+
+The explanations live in `Dr::ReportCatalog` (`lib/dr/report_catalog.rb`).
+A new `dr:verify` check or `setup_infra` step without an entry fails
+`features/misc/dr_drill_report.feature`; an unknown check is shown under
+"Other checks" rather than dropped. The HTML is light only and opens offline.
+
 ## 8. DNS Cutover
 
 The cutover is deliberately manual and runs last — going live is a human
@@ -350,10 +394,61 @@ In the first days after a recovery or migration:
 - **An environment built without a restore never arms backups.** Arming is a
   side effect of `restore_primary`. Empty-database setups must arm manually:
   `sudo touch /etc/db_backup_enabled` on the primary.
-- **Instances from pre-2026-07 AMIs lack the baked backup script.** The rake
-  restore tasks detect this and upload a generated script automatically, but
-  the manual on-box command will not exist at `/usr/local/bin` on such
-  instances, and the backup cron file will be absent (verification warns).
+- **DR database servers are clones of the live DB box, not Packer builds.**
+  The weekly `aws:create_and_copy_ami[DB-Redis-ES]` snapshots the running box.
+  That box predates the bake: it has no baked script or schedule, and it backs
+  up through an old `ubuntu` crontab job (`/home/ubuntu/backup_db.sh`) that has
+  the live bucket hard-coded and **ignores the armed marker**. Every DR clone,
+  primary and replica, boots with that job. Since 2026-11 (OpenSpec
+  `fix-dr-backup-cron-after-restore`) the recovery handles this itself:
+  - right after `pulumi up`, `setup_infra` strips the old job from both new DB
+    boxes (best effort, through an app server);
+  - every restore strips it again, installs the script at `/usr/local/bin` if
+    the box has no baked copy, and installs the baked schedule
+    (`/etc/cron.d/irm-db-backup`). The primary gets it before the restore, the
+    replica only after it is disarmed;
+  - `dr:verify` **fails** an armed primary with no schedule, a primary with two
+    writers, and a replica with any old job. A live box backed up only by the
+    old job gets a warning.
+  - every restore also clears the clone's stale LSN checkpoint
+    (`/var/lib/xtrabackup/lsndir`), so the first incremental bases on the
+    newest full in S3. Otherwise the chain written after a DR could not be
+    restored until the next 23:00 full;
+  - **drills never arm.** `aws:dr_drill` sets `DR_DRILL=true`: the drill
+    primary gets the schedule but no marker, because the live box is still
+    writing the same bucket. `dr:verify` expects "NOT armed (drill)". When
+    running verify by hand on drill boxes, prefix `DR_DRILL=true`.
+  - **Residual risk:** a clone can still fire one hourly `:00` job in the
+    ~2–3 minutes between boot and the early strip. Building the weekly DB AMI
+    from Packer closes it fully (follow-up).
+
+  ```mermaid
+  flowchart LR
+      Live["Live DB box<br/>old backup_db.sh job"] -->|weekly snapshot| AMI["DR AMI"]
+      AMI -->|pulumi up| Clone["DR primary + replica<br/>(old job aboard)"]
+      Clone -->|"setup_infra: early strip"| S1["old job removed"]
+      S1 -->|"restore: strip again,<br/>install script + schedule"| S2["one writer:<br/>armed primary"]
+      S2 -->|dr:verify| V["❌ if no schedule,<br/>two writers, or replica job"]
+  ```
+- **Search (Elasticsearch) is not backed up; the recovery rebuilds it in the background.**
+  Since 2026-11 (OpenSpec `fix-dr-search-index-after-restore`), phase 8 queues
+  `SearchReindexJob` (`cap <stage> recovery:reindex_search_later`) while the site
+  is in maintenance and the run moves on: users get the site at once and search
+  results fill in as the job runs. The job records its progress in the Rails
+  cache; `dr:verify`'s "Search index populated" reports it (queued / running,
+  x of N / finished) rather than waiting. An incomplete index is a **warning,
+  never a failure**. Search being *unreachable* still fails the run ("Search
+  reachable"). The run therefore does not prove the rebuild finished; re-run
+  `recovery:verify` later to see the final state.
+  - **Not rebuilt:** `AccountEntryIndex`. The live app does not maintain it
+    (its callback is commented out, "too much data"), and it is ~7.6M rows,
+    93% of all search documents.
+  - **Don't use `rake chewy:reset` here.** Chewy looks for indexes in
+    `app/chewy`, but this app keeps them in `app/packs/**/models`, so it
+    resets nothing and exits 0. Re-run one index with
+    `ONLY=FolderIndex bundle exec cap <stage> recovery:reindex_search`.
+  - The reindex adds its own time to the recovery; each drill report shows it
+    as a separate phase.
 - **SES in a never-used region starts in sandbox mode.** Leaving the sandbox
   requires an AWS support request that takes days; transactional email may
   need a temporary relay through another region.

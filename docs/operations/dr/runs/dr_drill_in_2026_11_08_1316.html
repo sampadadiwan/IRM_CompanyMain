@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Recovery stopped at step 5 · Install the app on both servers</title>
+<style>
+  /* Light theme only. Bootstrap 5.3 values, so the report matches the app's palette. */
+  :root {
+    --bg: #f8f9fa;            /* --bs-tertiary-bg */
+    --surface: #ffffff;       /* --bs-body-bg */
+    --text: #212529;          /* --bs-body-color */
+    --muted: #6c757d;         /* --bs-secondary-color */
+    --border: #dee2e6;        /* --bs-border-color */
+    --success: #198754;  --success-bg: #d1e7dd;
+    --danger: #dc3545;   --danger-bg: #f8d7da;
+    --info: #087990;     --info-bg: #cff4fc;   /* --bs-info-text-emphasis / -bg-subtle */
+    --secondary: #6c757d; --secondary-bg: #e2e3e5;
+    --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.55 var(--font); }
+  .page { max-width: 1080px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 22px; margin: 0 0 4px; font-weight: 600; }
+  h2 { font-size: 17px; margin: 0; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  p { margin: 0 0 8px; }
+  .muted { color: var(--muted); }
+  code, .mono { font-family: var(--mono); font-size: 13px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; margin-top: 16px; }
+  .card > .head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 8px; }
+  .help { color: var(--muted); margin-bottom: 12px; }
+  svg.i { width: 16px; height: 16px; flex: none; vertical-align: -3px; }
+  .ok   { color: var(--success); } .warn { color: var(--info); } .fail { color: var(--danger); } .skip { color: var(--secondary); }
+  .badge { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px; font-weight: 600; }
+  .badge.ok { background: var(--success-bg); } .badge.fail { background: var(--danger-bg); } .badge.warn { background: var(--info-bg); }
+  .hero { display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: start; }
+  .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 16px; }
+  .tile { border: 1px solid var(--border); border-radius: 8px; padding: 12px; background: var(--surface); }
+  .tile .v { font-size: 20px; font-weight: 600; }
+  .tile .l { color: var(--muted); }
+  ul.plain { margin: 0; padding-left: 18px; }
+  ul.plain li { margin: 2px 0; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 8px 10px; border-top: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; border-top: 0; }
+  td.num { text-align: right; white-space: nowrap; }
+  .bar { height: 8px; border-radius: 4px; background: var(--success); min-width: 2px; }
+  .barwrap { background: var(--bg); border-radius: 4px; width: 160px; }
+  details { margin-top: 2px; }
+  details > summary { cursor: pointer; color: var(--muted); list-style: none; display: inline-flex; align-items: center; gap: 4px; }
+  details > summary::-webkit-details-marker { display: none; }
+  details[open] > summary { color: var(--text); }
+  .explain { background: var(--bg); border-radius: 6px; padding: 8px 12px; margin-top: 6px; }
+  .explain b { font-weight: 600; }
+  .group td { background: var(--bg); font-weight: 600; }
+  .attention { border-left: 4px solid var(--info); }
+  .attention.fail { border-left-color: var(--danger); }
+  .scope { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .scope > div { border: 1px solid var(--border); border-radius: 8px; padding: 12px; }
+  @media (max-width: 720px) { .tiles { grid-template-columns: 1fr 1fr; } .hero, .scope { grid-template-columns: 1fr; } .barwrap { width: 80px; } }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="i-ok" viewBox="0 0 16 16"><path fill="currentColor" d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0m-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/></symbol>
+  <symbol id="i-fail" viewBox="0 0 16 16"><path fill="currentColor" d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0M5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293z"/></symbol>
+  <symbol id="i-warn" viewBox="0 0 16 16"><path fill="currentColor" d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5m.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2"/></symbol>
+  <symbol id="i-help" viewBox="0 0 16 16"><path fill="currentColor" d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/><path fill="currentColor" d="M5.255 5.786a.237.237 0 0 0 .241.247h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286m1.557 5.763c0 .533.425.927 1.01.927.609 0 1.028-.394 1.028-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94"/></symbol>
+  <symbol id="i-info" viewBox="0 0 16 16"><path fill="currentColor" d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 16 16"><path fill="currentColor" d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71z"/><path fill="currentColor" d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0"/></symbol>
+  <symbol id="i-list" viewBox="0 0 16 16"><path fill="currentColor" d="M2 2.5a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5m0 4a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5m0 4a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5m0 4a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5"/></symbol>
+</svg>
+
+<div class="page">
+    <div class="card">
+    <div class="hero">
+      <div>
+        <h1>Recovery stopped at step 5 · Install the app on both servers</h1>
+        <p class="muted">DR drill · staging (in) → ap-south-2 · 8 Nov 2026, 07:46–07:47 UTC · run by thimmaiah@Inspiron</p>
+      </div>
+      <span class="badge fail"><svg class="i fail"><use href="#i-fail"/></svg> Failed</span>
+    </div>
+    <div class="tiles">
+      <div class="tile"><div class="v">0:44</div><div class="l">Rebuild time: command start to verified</div></div>
+      <div class="tile"><div class="v">—</div><div class="l">Database restore (primary + replica together)</div></div>
+      <div class="tile"><div class="v">—</div><div class="l">Checks passed · 0 need attention · 0 failed</div></div>
+      <div class="tile"><div class="v">—</div><div class="l">Age of the newest restored record (actual data loss)</div></div>
+    </div>
+  </div>
+
+    <div class="card">
+    <div class="head"><h2><svg class="i"><use href="#i-info"/></svg> In plain words</h2></div>
+    <ul class="plain">
+      <li>The rebuild of staging in ap-south-2 stopped at step 5 (Install the app on both servers).</li>
+      <li>It stopped before verification, so no checks ran.</li>
+      <li>This was a drill: the live site was not touched and nothing was switched over. The rebuilt servers are still running until they are torn down.</li>
+    </ul>
+  </div>
+
+    <div class="card attention fail">
+    <div class="head"><h2><svg class="i fail"><use href="#i-fail"/></svg> Needs attention</h2><span class="muted">1 item</span></div>
+    <table>
+      <tr><th>Check</th><th>Seen on</th><th>What it means</th><th>What to do</th></tr>
+      <tr><td><svg class="i fail"><use href="#i-fail"/></svg> Step 5 · Install the app on both servers</td><td>—</td><td>The recovery stopped here.</td><td>The Capistrano error names the server and the task that failed. Full output: docs/operations/dr/runs/dr_drill_in_2026_11_08_1316.log</td></tr>
+    </table>
+  </div>
+
+    <div class="card">
+    <div class="head"><h2><svg class="i"><use href="#i-clock"/></svg> What the recovery did, step by step</h2><span class="muted">bars to scale of 0:44</span></div>
+    <p class="help">Every step a real recovery runs, in order. Open a step to see what it does and what to check if it fails.</p>
+    <table>
+      <tr><th></th><th>Step</th><th>Start</th><th class="num">Took</th><th></th></tr>
+      <tr><td><svg class="i ok"><use href="#i-ok"/></svg></td><td>1 · Prepare the infrastructure settings
+        <details><summary><svg class="i"><use href="#i-help"/></svg> What this does</summary><div class="explain">Points the DR stack at the newest server images and the DR region. <b>If it fails:</b> Run rake aws:dr_readiness — usually a missing server image or setting.</div></details>
+        </td><td class="mono">07:46:43</td><td class="num">0:03</td><td><div class="barwrap"><div class="bar" style="width:12%"></div></div></td></tr>
+      <tr><td><svg class="i ok"><use href="#i-ok"/></svg></td><td>2 · Create servers, network and load balancer
+        <details><summary><svg class="i"><use href="#i-help"/></svg> What this does</summary><div class="explain">Pulumi creates the app servers, the database primary and replica, the load balancer and its certificate. <b>If it fails:</b> The Pulumi error names the resource. &quot;Locked&quot; means another run is in progress.</div></details>
+        </td><td class="mono">07:46:46</td><td class="num">0:13</td><td><div class="barwrap"><div class="bar" style="width:54%"></div></div></td></tr>
+      <tr><td><svg class="i ok"><use href="#i-ok"/></svg></td><td>3 · Point the app at the new servers
+        <details><summary><svg class="i"><use href="#i-help"/></svg> What this does</summary><div class="explain">Writes the new database, Redis and search addresses into the app&#39;s settings and deploy file, waits for the servers to accept SSH, and removes old backup jobs copied from the live box. <b>If it fails:</b> A missing address means the Pulumi output is incomplete — re-run; an SSH timeout names the server.</div></details>
+        </td><td class="mono">07:46:59</td><td class="num">0:06</td><td><div class="barwrap"><div class="bar" style="width:25%"></div></div></td></tr>
+      <tr><td><svg class="i ok"><use href="#i-ok"/></svg></td><td>4 · Save those settings on a recovery branch
+        <details><summary><svg class="i"><use href="#i-help"/></svg> What this does</summary><div class="explain">Commits only those settings to the recovery branch and pushes it, so the servers deploy exactly this code. <b>If it fails:</b> Check git access to origin and that the working tree had no conflicting edits.</div></details>
+        </td><td class="mono">07:47:05</td><td class="num">0:02</td><td><div class="barwrap"><div class="bar" style="width:8%"></div></div></td></tr>
+      <tr><td><svg class="i fail"><use href="#i-fail"/></svg></td><td>5 · Install the app on both servers
+        <details><summary><svg class="i"><use href="#i-help"/></svg> What this does</summary><div class="explain">Installs Ruby, gems and the app on every app server. The longest step after the restore. <b>If it fails:</b> The Capistrano error names the server and the task that failed.</div></details>
+        </td><td class="mono">07:47:07</td><td class="num">—</td><td><div class="barwrap"><div class="bar" style="width:0%"></div></div></td></tr>
+    </table>
+  </div>
+
+    <div class="card">
+    <div class="head"><h2><svg class="i"><use href="#i-list"/></svg> Verification: what was proven</h2><span class="muted">0 servers</span></div>
+    <p>Not reached: the run stopped before verification, so no checks ran.</p>
+  </div>
+
+    <div class="card">
+    <div class="head"><h2><svg class="i"><use href="#i-clock"/></svg> What the rebuild time does and does not include</h2></div>
+    <div class="scope">
+      <div><b class="ok">Included</b><ul class="plain"><li>Creating the servers</li><li>Installing the app</li><li>Restoring the database</li><li>Rebuilding search</li><li>Every check above</li></ul></div>
+      <div><b class="skip">Not included</b><ul class="plain"><li>Noticing the outage</li><li>Deciding to recover</li><li>Switching the domain to the new servers (DNS) and the minutes it takes to spread</li></ul></div>
+    </div>
+    <p class="muted" style="margin-top:12px">So the time customers would actually wait is the rebuild time plus those three.</p>
+  </div>
+
+    <div class="card">
+    <div class="head"><h2><svg class="i"><use href="#i-list"/></svg> Proof you can check yourself</h2></div>
+    <p class="help">Each claim points at a record outside this repository.</p>
+    <table>
+      <tr><th>Claim</th><th>Evidence</th><th>How to check</th></tr>
+      <tr><td>Infrastructure provisioned in ap-south-2</td><td class="mono">Pulumi update #0 — succeeded, 2026-11-08T07:46:52.000Z → 2026-11-08T07:46:58.000Z</td><td>`pulumi stack history --stack staging-ap-south-2` (server-side record, Pulumi console)</td></tr>
+      <tr><td>Database instances launched in ap-south-2</td><td class="mono">i-04693368e51227a8a (10.0.4.192, launched 2026-11-08T07:32:09Z); i-0d8d57101cee4b59f (10.0.3.72, launched 2026-11-08T07:32:09Z)</td><td>CloudTrail `RunInstances` events in ap-south-2; `aws ec2 describe-instances --region ap-south-2`</td></tr>
+      <tr><td>Recovered stack endpoints</td><td class="mono">app servers 40.192.26.209, 16.112.197.43; DB primary 10.0.3.72, replica 10.0.4.192</td><td>`pulumi stack output --stack staging-ap-south-2`</td></tr>
+      <tr><td>Application code deployed</td><td class="mono">commit `a3b045a184bfd9ab40619ebd5f259904280e27e5` on branch `dr_drill_in_2026_11_08_1316` (pushed to origin)</td><td>`git log -1 a3b045a184`; GitHub branch push timestamp</td></tr>
+    </table>
+  </div>
+
+    <div class="card">
+    <div class="head"><h2><svg class="i"><use href="#i-help"/></svg> Words used in this report</h2></div>
+    <table>
+      <tr><td>Drill</td><td>A rehearsal: the same steps as a real recovery, in a separate copy, with the live site untouched.</td></tr>
+      <tr><td>Rebuild time</td><td>From starting the recovery command to every check passing.</td></tr>
+      <tr><td>Data loss (RPO)</td><td>How old the newest restored data is: what would be missing after a real recovery.</td></tr>
+      <tr><td>Armed</td><td>A database allowed to write backups. Exactly one may, and in a drill none.</td></tr>
+      <tr><td>Full transcript</td><td>docs/operations/dr/runs/dr_drill_in_2026_11_08_1316.log: every command and its output.</td></tr>
+    </table>
+  </div>
+  <p class="muted" style="margin-top:16px">Generated 8 Nov 2026 07:47 UTC by <code>rake aws:dr_drill</code></p>
+</div>
+</body>
+</html>

@@ -125,6 +125,18 @@ namespace :aws do
       check.("Backup freshness", :fail, "check errored: #{e.message}")
     end
 
+    # Replicas must be undeletable (openspec fix-backups-deletable): COMPLIANCE, 30 days
+    begin
+      replicas = replica_buckets_for_env
+      check.("Replica backups locked", :fail, "no replica buckets found from the primaries' replication rules") if replicas.empty?
+      replicas.each do |replica|
+        grade = Dr::BackupLock.grade(replica[:bucket], Dr::BackupLock.read_config(Aws::S3::Client.new(region: replica[:region]), replica[:bucket]))
+        check.("Replica backups locked", grade.status, grade.detail)
+      end
+    rescue StandardError => e
+      check.("Replica backups locked", :fail, "check errored: #{e.message}")
+    end
+
     # --- 2. AMIs present + recent in the DR region ---------------------------
     %w[AppServer DB-Redis-ES Observability].each do |name|
       ami = latest_ami(name, region)
@@ -372,6 +384,41 @@ namespace :aws do
     # dr_readiness scorecard which only reports. See aws_utils.rb.
     ensure_pulumi_backend!(env_name)
 
+    # --- Refuse a colliding run BEFORE anything is logged ---------------------
+    # A refusal here is not a drill: it writes no drill row and no report
+    # (three "FAILED 0.1 min" rows on 2026-11-08 were collisions, not drills).
+    #
+    # 1. One drill per stack from this checkout. flock is released by the OS
+    #    if this process dies, so it can never go stale itself.
+    run_lock_path = Rails.root.join("tmp", "dr_drill_#{stack}-#{region}.lock")
+    # rubocop:disable Style/FileOpen -- held open on purpose: closing it would release the lock
+    run_lock = File.open(run_lock_path, File::RDWR | File::CREAT, 0o644)
+    # rubocop:enable Style/FileOpen
+    unless run_lock.flock(File::LOCK_EX | File::LOCK_NB)
+      abort "❌ A DR drill for #{stack}-#{region} is already running from this checkout " \
+            "(pid #{File.read(run_lock_path).strip.presence || 'unknown'}). Wait for it to finish — not logged as a drill."
+    end
+    run_lock.truncate(0)
+    run_lock.write(Process.pid.to_s)
+    run_lock.flush
+
+    # 2. The Pulumi stack lock, which also catches runs from other machines
+    #    and locks left behind by killed runs. Never cancelled automatically.
+    # Signal 0 only asks "does this pid exist?": ESRCH = gone; EPERM = exists
+    # but belongs to another user (still alive)
+    pid_alive = lambda do |pid|
+      Process.kill(0, pid)
+      true
+    rescue Errno::ESRCH
+      false
+    rescue Errno::EPERM
+      true
+    end
+    lock = Dr::PulumiLock.classify(pulumi_stack_lock_files(env_name, "#{stack}-#{region}"),
+                                   stack: "#{stack}-#{region}", local_host: Socket.gethostname, alive: pid_alive)
+    abort "❌ #{lock.message} — not logged as a drill." unless lock.state == :free
+    puts "🔓 #{lock.message} (#{stack}-#{region})"
+
     original_branch = `git rev-parse --abbrev-ref HEAD`.strip
     branch_prefix = stack == 'staging' ? "dr_drill_#{env_variant}" : "dr_drill_#{stack}_#{env_variant}"
     drill_branch = "#{branch_prefix}_#{Time.now.strftime('%Y_%m_%d_%H%M')}"
@@ -390,9 +437,23 @@ namespace :aws do
       @dr_report_deferred = true
       # The full non-interactive DR sequence — the same code path a real
       # production DR uses, which is the point of the drill
+      # DR_DRILL=true: every cap/rake step below inherits it, so the drill
+      # restores and verifies the backup schedule but NEVER arms the drill
+      # primary — the live box is still writing the same bucket, and an armed
+      # drill box would be a second writer on the live chain.
+      ENV["DR_DRILL"] = "true"
       setup_infra(stack, "AppServer", "DB-Redis-ES", region, env_variant, drill_branch)
       result = "PASSED"
+    rescue StandardError => e
+      # Into the transcript, so the log and the report say WHY the run stopped. Without this the
+      # error reached only the terminal, after the transcript closed (2026-11-08 15:14 drill:
+      # "stopped at step 9" and no reason anywhere on disk). Re-raised: the drill still fails.
+      puts "\n#{Dr::ReportModel::STOP_MARK} #{e.class}: #{e.message.to_s.lines.first.to_s.strip}"
+      where = Array(e.backtrace).find { |line| line.include?("/lib/") || line.include?("/app/") }
+      puts "   at #{where}" if where
+      raise
     ensure
+      ENV.delete("DR_DRILL")
       duration_min = ((Time.now - started_at) / 60).round(1)
 
       # Evidence FIRST, housekeeping second. Anything that can raise in here
@@ -428,6 +489,34 @@ namespace :aws do
       puts "   NOTE: that figure excludes detection, disaster declaration, and DNS cutover/TTL —"
       puts "         it is rebuild time, not end-to-end RTO. See the report for the full scope."
 
+      # Stop the drill's own app services BEFORE teardown. Otherwise `pulumi
+      # destroy` removes the DB box (Redis) under running puma/sidekiq, and every
+      # reconnect error is mailed (2026-11-08, 10:51 IST). This must happen
+      # BEFORE the git checkout below: back on the original branch the deploy
+      # file names the LIVE servers. The guard proves it still names exactly the
+      # drill's app servers; anything else skips the stop. Warn-only — a stop
+      # failure never blocks the teardown.
+      teardown_stop = nil # recorded in the drill log's Teardown cell below
+      if result == "PASSED" && ENV["TEARDOWN"] == "true"
+        deploy_file = Rails.root.join("config", "deploy", "#{stack}_#{env_variant}.rb")
+        deploy_text = File.exist?(deploy_file) ? File.read(deploy_file) : ""
+        if Dr::DrillTeardown.targets_drill?(deploy_text, @dr_app_server_ips)
+          puts "🛑 Stopping app services on the drill servers (#{@dr_app_server_ips.join(', ')}) before teardown"
+          teardown_stop = :stopped
+          # maintenance mode stops sidekiq + puma; clearing cron stops scheduled rake runs
+          %w[nginx:switch_maintenance whenever:clear_crontab].each do |task|
+            run_cmd("branch=#{drill_branch} LB=true bundle exec cap #{stack}_#{env_variant} #{task}")
+          rescue StandardError => e
+            teardown_stop = :failed
+            puts "⚠️  #{task} on the drill servers failed (#{e.message.lines.first.to_s.strip}) — teardown continues"
+          end
+        else
+          teardown_stop = :skipped
+          puts "⚠️  Not stopping drill app services: #{deploy_file.basename} does not name exactly the drill " \
+               "servers (#{Array(@dr_app_server_ips).join(', ').presence || 'unknown'}) — teardown continues"
+        end
+      end
+
       # Return the operator's working tree to where it was.
       #
       # Runs AFTER the evidence is on disk, and never raises: a drill that dies
@@ -448,15 +537,37 @@ namespace :aws do
         end
       end
 
+      destroyed = nil
+      destroy_error = nil
       if result == "PASSED"
         if ENV["TEARDOWN"] == "true"
           puts "🧹 TEARDOWN=true — destroying drill infra..."
-          run_cmd("pulumi destroy --stack #{stack}-#{region} --yes --color=always", "../IRM-Infra")
+          begin
+            # pulumi prints "- 46 deleted" in its summary
+            out = run_cmd("pulumi destroy --stack #{stack}-#{region} --yes --color=always", "../IRM-Infra").to_s
+            destroyed = Dr::DrillTeardown.destroyed_count(out)
+          rescue StandardError => e
+            destroyed = :failed
+            destroy_error = e
+          end
         else
           puts "⚠️  Drill infra is still RUNNING (and costing money) in #{region}."
           puts "   Tear down with: cd ../IRM-Infra && pulumi destroy --stack #{stack}-#{region} --yes"
         end
       end
+
+      # What happened AFTER the report was written goes into this drill's row
+      # of the drill log (the report cannot say: it is written before teardown)
+      begin
+        cell = Dr::DrillTeardown.summary(passed: result == "PASSED", teardown: ENV["TEARDOWN"] == "true",
+                                         stop: teardown_stop, destroyed: destroyed)
+        drills_log = Rails.root.join("docs/operations/dr/dr_drills.md")
+        File.write(drills_log, Dr::DrillTeardown.add_teardown_cell(File.read(drills_log), drill_branch, cell))
+        puts "🧾 Teardown recorded in dr_drills.md: #{cell}"
+      rescue StandardError => e
+        puts "⚠️  Could not record the teardown in dr_drills.md: #{e.message}"
+      end
+      raise destroy_error if destroy_error
     end
     end
   end
@@ -549,37 +660,27 @@ namespace :aws do
   # servers; this is the only check that exercises the load balancer itself.
   #   rake "aws:dr_verify_edge[staging, ap-south-2]"
   desc "Curl the recovered stack's ALB directly (run before aws:dns_cutover)"
-  task :dr_verify_edge, [:stack, :region] do |t, args|
+  # ex: rake "aws:dr_verify_edge[production, ap-south-2, production.in]"
+  task :dr_verify_edge, [:stack, :region, :env_name] do |t, args|
     require 'yaml'
     require 'json'
     require 'open3'
 
     stack = args[:stack] or raise "stack required (production|staging)"
     region = args[:region] or raise "region required, e.g. ap-south-2"
+    # Standalone runs need the env's AWS keys (target health) and the Pulumi state passphrase
+    # (the load balancer's address); a recovery has loaded both already
+    if args[:env_name]
+      Rake::Task['aws:environment'].invoke(args[:env_name])
+      load_pulumi_passphrase!(args[:env_name], region)
+    end
 
-    # Same conventions as dns_cutover: domain from the target stack's Pulumi
-    # config, host record app.<domain> (production) / dev.<domain> (staging)
-    stack_file = "../IRM-Infra/Pulumi.#{stack}-#{region}.yaml"
-    raise "#{stack_file} not found" unless File.exist?(stack_file)
-
-    domain = YAML.load_file(stack_file).dig("config", "IRM-infra:domain_name") or
-      raise "domain_name missing in #{stack_file}"
-    host = "#{stack == 'production' ? 'app' : 'dev'}.#{domain.sub(/\A\*\./, '')}"
-
-    # ALB endpoint straight from the stack's own outputs (never a stale file)
-    alb = pulumi_stack_output("#{stack}-#{region}")["alb"] or
-      raise "Stack #{stack}-#{region} has no 'alb' output — run pulumi up on it first"
-
-    # -k: the ALB cert is issued for <host>, but we're dialing the raw ALB DNS
-    # name — SNI mismatch is expected pre-DNS and not a failure
-    url = "https://#{alb['dns_name']}/health_check/db_check.json"
-    puts "→ GET #{url} (Host: #{host})"
-    code = `curl -sk -o /dev/null -w "%{http_code}" --max-time 60 -H "Host: #{host}" #{url}`.strip
-    if code == "200"
-      puts "✅ Edge OK — ALB → app → DB round-trip returned 200. Safe to run aws:dns_cutover."
+    # The same checks a recovery ends with (aws_utils #dr_edge_checks): certificate valid for the
+    # app host, targets healthy, load balancer → app → database, sign-in page over HTTPS
+    if dr_edge_checks(stack, region).zero?
+      puts "✅ Edge OK — safe to run aws:dns_cutover."
     else
-      abort "❌ Edge check FAILED — HTTP #{code} from #{url}. " \
-            "Check ALB target-group health and run `cap <stage> recovery:verify` before any cutover."
+      abort "❌ Edge check FAILED — see above. Fix it (and run `cap <stage> recovery:verify`) before any cutover."
     end
   end
 
@@ -773,6 +874,14 @@ namespace :aws do
     ensure_bucket!(client: s3[:replica], bucket: replica_bucket, region: replica_region)
     ensure_bucket!(client: s3[:db_backup_xtra], bucket: db_backup_xtra_bucket, region: source_region)
     ensure_bucket!(client: s3[:replica_db_backup_xtra], bucket: replica_db_backup_xtra_bucket, region: replica_region)
+    # Replicas are locked (COMPLIANCE, 30 days) so no key can delete what was
+    # replicated (openspec fix-backups-deletable). Only with LOCK_REPLICAS=1:
+    # turning Object Lock on is permanent, so it is never a side effect.
+    if ENV["LOCK_REPLICAS"] == "1"
+      [[s3[:replica], replica_bucket], [s3[:replica_db_backup_xtra], replica_db_backup_xtra_bucket]].each do |client, bucket|
+        s3_ensure_object_lock!(client: client, bucket: bucket, execute: true) unless bucket == source_bucket || bucket == db_backup_xtra_bucket
+      end
+    end
 
     # --- Replication IAM role (idempotent) -----------------------------------
     # One role per env, allowed to read both source buckets and write both
@@ -798,7 +907,9 @@ namespace :aws do
             Action: ["s3:GetReplicationConfiguration", "s3:ListBucket"],
             Resource: source_buckets.map { |b| "arn:aws:s3:::#{b}" } },
           { Effect: "Allow",
-            Action: ["s3:GetObjectVersionForReplication", "s3:GetObjectVersionAcl", "s3:GetObjectVersionTagging"],
+            Action: ["s3:GetObjectVersionForReplication", "s3:GetObjectVersionAcl", "s3:GetObjectVersionTagging",
+                     # Needed to replicate into an Object Lock (replica) bucket - fix-backups-deletable
+                     *Dr::BackupLock::REPLICATION_ROLE_ACTIONS],
             Resource: source_buckets.map { |b| "arn:aws:s3:::#{b}/*" } },
           { Effect: "Allow",
             Action: ["s3:ReplicateObject", "s3:ReplicateDelete", "s3:ReplicateTags"],

@@ -1,3 +1,4 @@
+require Rails.root.join('lib/drill_stack')
 require 'sidekiq'
 require 'etc' # page size lookup for SidekiqJobMemoryMetrics RSS reads
 
@@ -115,7 +116,9 @@ Sidekiq.configure_server do |config|
   # India — same issue the maintenance window in schedule.rb had.
   in_region = ENV.fetch('AWS_REGION', '').start_with?('ap-south')
 
-  unless Rails.env.local?
+  # Not on a DR drill copy either: timed jobs there would remind or digest real users from the
+  # copy, and DbRestoreJob would launch a verifier server (openspec fix-dr-drill-contacts-users)
+  unless Rails.env.local? || !DrillStack.register_timed_jobs?
 
     # Daily off-peak maintenance block, LOCAL midnight-to-1:30am, staggered
     # 15 minutes apart so seven jobs don't all hit the DB in the same tick.

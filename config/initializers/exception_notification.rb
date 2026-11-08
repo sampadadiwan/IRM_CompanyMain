@@ -3,6 +3,8 @@ require 'exception_notification/rails'
 # below: the notifier runs at the worst possible moment and must not depend on a file
 # read from the release directory then.
 require Rails.root.join('lib/critical_error_whatsapp')
+# Same reason: tags a DR drill stack's mail (DR_DRILL_STACK) - see lib/drill_stack.rb.
+require Rails.root.join('lib/drill_stack')
 
 if ENV['VULN_SCAN'].blank?
   ExceptionNotification.configure do |config|
@@ -27,7 +29,8 @@ if ENV['VULN_SCAN'].blank?
     # Moved here from config/application.rb, where a second ExceptionNotification::Rack
     # carried them; these are the settings production emails have always used.
     config.add_notifier :email, {
-      email_prefix: "[Error] #{Rails.env}:(#{ENV.fetch('BASE_DOMAIN', nil)})",
+      # "[Error] staging:(altconnects.com)"; a DR drill stack adds "[DR DRILL <region>]"
+      email_prefix: DrillStack.email_prefix(rails_env: Rails.env, base_domain: ENV.fetch('BASE_DOMAIN', nil)),
       sender_address: ENV.fetch('SUPPORT_EMAIL_FROM', nil),
       exception_recipients: ENV.fetch('ERROR_EMAIL', '').split(','),
       # "report" first: data[:report], the who / where / which-entity block (ErrorReportContext),

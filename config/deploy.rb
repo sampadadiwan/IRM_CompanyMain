@@ -14,6 +14,14 @@ set :application, "IRM"
 set :repo_url, "git@github.com:ausangshukla/IRM.git"
 set :branch, ENV["branch"] || 'main'
 set :whenever_roles, :all
+# A DR DRILL copy must not run timed jobs (they would remind or digest real users
+# from the copy): the drill's deploy (DR_DRILL=true, set by aws:dr_drill) clears
+# the crontab instead of installing it. Every other deploy is unchanged.
+# (openspec fix-dr-drill-contacts-users)
+if ENV['DR_DRILL'] == 'true'
+  Rake::Task.define_task('whenever:update_crontab').clear_actions
+  Rake::Task.define_task('whenever:update_crontab') { invoke 'whenever:clear_crontab' }
+end
 # Pass env_variant (in/us) through to schedule.rb, alongside whenever's own
 # `environment` var, so region-specific timing (e.g. IST vs US local time)
 # can be computed there. Server clocks are always UTC regardless of region.
@@ -604,7 +612,36 @@ namespace :recovery do
         # longest DR phase), then resets replication once both are up —
         # output is [primary]/[replica]-prefixed. Single-box manual forms
         # remain: db:restore_primary_remote / db:restore_replica_remote.
-        execute :rake, "db:restore_all_remote RAILS_ENV=#{fetch(:stage)}"
+        # DR_DRILL=true (set by aws:dr_drill) reaches the remote rake as an
+        # env assignment: a drill restores but must never arm backups.
+        execute :rake, "db:restore_all_remote RAILS_ENV=#{fetch(:stage)}#{' DR_DRILL=true' if ENV['DR_DRILL'] == 'true'}"
+      end
+    end
+  end
+
+  # Rebuilds every search index the live app maintains from the restored
+  # MySQL; an incomplete index is a warning, never a failure. Elasticsearch is
+  # not backed up, so a recovered environment starts with empty search.
+  # aws:setup_infra runs it after the restore, before traffic is back on.
+  # ONLY=FolderIndex,... re-runs just the named indexes.
+  desc 'DR: rebuild the search indexes from MySQL; warns on any incomplete index'
+  task :reindex_search do
+    on roles(:primary) do
+      within release_path do
+        only = ENV.fetch('ONLY', '').empty? ? '' : " ONLY=#{ENV.fetch('ONLY')}"
+        execute :rake, "dr:reindex_search RAILS_ENV=#{fetch(:stage)}#{only}"
+      end
+    end
+  end
+
+  # Queues the search rebuild as a background job and returns at once ("enqueue
+  # and move on", 2026-11-08). aws:setup_infra runs it during maintenance; the
+  # job runs when Sidekiq starts with traffic back on.
+  desc 'DR: queue the search rebuild (SearchReindexJob) and return at once'
+  task :reindex_search_later do
+    on roles(:primary) do
+      within release_path do
+        execute :rake, "dr:reindex_search_later RAILS_ENV=#{fetch(:stage)}"
       end
     end
   end
@@ -649,7 +686,8 @@ namespace :recovery do
     on roles(:app), in: :sequence do
       within release_path do
         # dr:verify exits non-zero on any ❌, which makes execute raise here
-        execute :rake, "dr:verify RAILS_ENV=#{fetch(:stage)}"
+        # In a drill (DR_DRILL=true) verify expects the primary NOT armed
+        execute :rake, "dr:verify RAILS_ENV=#{fetch(:stage)}#{' DR_DRILL=true' if ENV['DR_DRILL'] == 'true'}"
       end
     end
   end

@@ -1,3 +1,7 @@
+# The Dr:: modules these tasks use, loaded explicitly: aws:setup_infra and aws:dr_drill run
+# without the Rails environment, so the autoloader cannot find them (see dr_requires.rb)
+require_relative 'dr_requires'
+
 module AwsUtils
   require 'mysql2'
   require 'json'
@@ -133,9 +137,15 @@ module AwsUtils
       #    that reads as a wall of errors misleads whoever reviews it.
       #    Whether the command actually failed is decided by its EXIT STATUS.
       lock = Mutex.new # serialise writes so two streams can't interleave mid-line
+      output = [] # also returned, for callers that read a result (e.g. pulumi destroy's count)
       [stdout, stderr].map do |io|
         Thread.new do
-          io.each_line { |line| lock.synchronize { puts line.chomp } }
+          io.each_line do |line|
+            lock.synchronize do
+              puts line.chomp
+              output << line
+            end
+          end
         end
       end.each(&:join)
 
@@ -143,6 +153,8 @@ module AwsUtils
       unless exit_status.success?
         raise "Command failed with status #{exit_status.exitstatus}: #{command}"
       end
+
+      output.join
     end
   end
 
@@ -777,374 +789,174 @@ module AwsUtils
     scorecard
   end
 
-  # Writes the per-run evidence document.
-  #
-  # Deliberately NOT a self-contained narrative: a markdown file a script writes
-  # about itself is a claim, not proof, and the first thing an auditor asks is
-  # what stopped someone editing it. So every factual claim is either (a) tied
-  # to a record held OUTSIDE this repo with the command that checks it, or
-  # (b) reproduced verbatim from the run's own transcript. What the report adds
-  # is legibility — an auditor should not have to read 40,000 lines of
-  # Capistrano output to see that 22 checks passed on two hosts.
-  # Stylesheet for the HTML evidence record. Kept as a constant so the builder
-  # below stays readable — it is a document, not a template engine.
-  # Light-first with a full dark-theme token set: an auditor may read this in
-  # either, and a report that renders unreadably undermines the thing it exists
-  # to prove.
-  DR_REPORT_CSS = <<~CSS
-    :root{--paper:#F6F7F9;--surface:#FFF;--surface-2:#EFF2F5;--ink:#111820;--ink-soft:#566274;--ink-faint:#8894A3;--rule:#DCE1E7;--rule-firm:#C3CBD4;--verified:#16694A;--verified-bg:#E4F0EA;--caution:#8A5C0D;--caution-bg:#F7EEDC;--accent:#0F4C5C;--accent-soft:#E2EDF0;--serif:"IBM Plex Serif",Georgia,serif;--sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;--mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace}
-    @media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--paper:#0C1116;--surface:#131A21;--surface-2:#1A222B;--ink:#E4EBF2;--ink-soft:#98A5B3;--ink-faint:#6B7885;--rule:#232D37;--rule-firm:#33404C;--verified:#46BC8B;--verified-bg:#12291F;--caution:#DCA646;--caution-bg:#2A2113;--accent:#58B3C7;--accent-soft:#122730}}
-    :root[data-theme="dark"]{--paper:#0C1116;--surface:#131A21;--surface-2:#1A222B;--ink:#E4EBF2;--ink-soft:#98A5B3;--ink-faint:#6B7885;--rule:#232D37;--rule-firm:#33404C;--verified:#46BC8B;--verified-bg:#12291F;--caution:#DCA646;--caution-bg:#2A2113;--accent:#58B3C7;--accent-soft:#122730}
-    *{box-sizing:border-box}
-    body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
-    .sheet{max-width:1080px;margin:0 auto;padding:48px 28px 96px;display:flex;flex-direction:column;gap:52px}
-    .masthead{border-top:3px solid var(--ink);border-bottom:1px solid var(--rule-firm);padding:22px 0 26px;display:flex;flex-direction:column;gap:20px}
-    .eyebrow{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);display:flex;flex-wrap:wrap;gap:8px 18px}
-    .masthead h1{font-family:var(--serif);font-weight:600;font-size:clamp(30px,5vw,44px);line-height:1.1;letter-spacing:-.015em;margin:0;text-wrap:balance}
-    .subject{font-family:var(--mono);font-size:15px;color:var(--ink-soft);display:flex;flex-wrap:wrap;align-items:center;gap:10px}
-    .subject strong{color:var(--ink);font-weight:600}.subject .arrow{color:var(--ink-faint)}
-    .verdict{display:inline-flex;align-items:center;gap:10px;align-self:flex-start;border-radius:2px;padding:7px 14px 7px 11px;font-family:var(--mono);font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase}
-    .verdict.pass{background:var(--verified-bg);color:var(--verified);border:1px solid color-mix(in srgb,var(--verified) 35%,transparent)}
-    .verdict.fail{background:var(--caution-bg);color:var(--caution);border:1px solid color-mix(in srgb,var(--caution) 45%,transparent)}
-    .verdict .tick{width:16px;height:16px;display:grid;place-items:center;border-radius:50%;font-size:10px;font-weight:700}
-    .verdict.pass .tick{background:var(--verified);color:var(--verified-bg)}.verdict.fail .tick{background:var(--caution);color:var(--caution-bg)}
-    .metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule);border-radius:3px;overflow:hidden}
-    .metric{background:var(--surface);padding:18px 20px 20px;display:flex;flex-direction:column;gap:6px}
-    .metric dt{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint)}
-    .metric dd{margin:0;font-family:var(--mono);font-size:28px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--ink)}
-    .metric .qualifier{font-family:var(--sans);font-size:12px;color:var(--ink-soft)}
-    section{display:flex;flex-direction:column;gap:18px}
-    h2{font-family:var(--serif);font-size:21px;font-weight:600;margin:0;letter-spacing:-.01em;display:flex;align-items:baseline;gap:12px}
-    h2::after{content:"";flex:1;height:1px;background:var(--rule)}
-    .lede{max-width:66ch;color:var(--ink-soft);margin:0;font-size:14.5px}
-    .scroll{overflow-x:auto;border:1px solid var(--rule);border-radius:3px;background:var(--surface)}
-    table{border-collapse:collapse;width:100%;font-size:13.5px}
-    th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--rule);vertical-align:top}
-    thead th{font-family:var(--mono);font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-faint);font-weight:500;background:var(--surface-2);border-bottom:1px solid var(--rule-firm);white-space:nowrap}
-    tbody tr:last-child td{border-bottom:none}
-    .num{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
-    .key{color:var(--ink-soft);width:190px}
-    .val{font-family:var(--mono);font-variant-numeric:tabular-nums}
-    code{font-family:var(--mono);font-size:.93em;background:var(--surface-2);border:1px solid var(--rule);border-radius:2px;padding:1px 5px;word-break:break-word}
-    .mark{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;font-family:var(--mono);font-size:10px;font-weight:700;line-height:1}
-    .mark.pass{background:var(--verified-bg);color:var(--verified);border:1px solid color-mix(in srgb,var(--verified) 40%,transparent)}
-    .mark.warn{background:var(--caution-bg);color:var(--caution);border:1px solid color-mix(in srgb,var(--caution) 40%,transparent)}
-    .mark.fail{background:var(--caution-bg);color:var(--caution);border:1px solid var(--caution)}
-    td.markcell{width:40px;text-align:center;padding-top:11px}
-    .phase-name{font-weight:500}
-    .bar{display:block;height:6px;border-radius:1px;background:var(--accent);min-width:2px;margin-top:7px;opacity:.85}
-    .bar.dominant{background:var(--verified)}
-    .barcell{width:34%;min-width:150px}
-    .seq{font-family:var(--mono);font-size:11px;color:var(--ink-faint);font-variant-numeric:tabular-nums}
-    .host{border:1px solid var(--rule);border-radius:3px;background:var(--surface);overflow:hidden}
-    .host-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:10px;padding:13px 16px;background:var(--surface-2);border-bottom:1px solid var(--rule-firm)}
-    .host-head .name{font-family:var(--mono);font-weight:600;font-size:13.5px}
-    .host-head .tally{font-family:var(--mono);font-size:12px;color:var(--ink-soft);font-variant-numeric:tabular-nums}
-    .host .scroll{border:none;border-radius:0}
-    .hosts{display:grid;gap:20px;grid-template-columns:repeat(auto-fit,minmax(430px,1fr))}
-    .scope{border:1px solid var(--rule-firm);border-radius:3px;background:var(--surface);overflow:hidden}
-    .scope-row{display:grid;grid-template-columns:132px 1fr;border-bottom:1px solid var(--rule)}
-    .scope-row:last-child{border-bottom:none}
-    .scope-label{padding:15px 16px;font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;background:var(--surface-2);border-right:1px solid var(--rule)}
-    .scope-label.in{color:var(--verified)}.scope-label.out{color:var(--caution)}
-    .scope-body{padding:15px 18px;font-size:14px}
-    .scope-note{margin:0;padding:14px 18px;background:var(--accent-soft);border-top:1px solid var(--rule);font-size:14px}
-    footer{border-top:1px solid var(--rule-firm);padding-top:18px;font-family:var(--mono);font-size:11.5px;color:var(--ink-faint);display:flex;flex-wrap:wrap;gap:6px 20px;justify-content:space-between}
-    a{color:var(--accent);text-underline-offset:2px}
-    a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-    @media(max-width:620px){.sheet{padding:32px 16px 64px;gap:40px}.key{width:auto}.scope-row{grid-template-columns:1fr}.scope-label{border-right:none;border-bottom:1px solid var(--rule)}}
-  CSS
+  # Why a run stopped: the error the drill printed into its transcript (last one wins), or nil
+  def parse_stop_reason(transcript_path)
+    return nil unless transcript_path && File.exist?(transcript_path)
 
-  def h(text) # minimal HTML escape — report data is our own output, not user input
-    text.to_s.gsub("&", "&amp;").gsub("<", "&lt;").gsub(">", "&gt;").gsub('"', "&quot;")
-  end
-
-  # Renders the same evidence as the markdown report as a self-contained HTML
-  # page, so it can be handed to an auditor (or printed to PDF) without them
-  # needing a markdown renderer or a checkout of this repository.
-  def write_dr_report_html(stack:, region:, env_variant:, branch:, result:, started_at:, finished:,
-                           scorecard:, drill:)
-    rebuild_secs = (finished - started_at).round
-    passed = result.to_s.match?(/PASSED|COMPLETE/)
-    all_checks = scorecard.values.flatten(1)
-    ok_count   = all_checks.count { |icon, _| icon == "✅" }
-    warn_count = all_checks.count { |icon, _| icon == "⚠️" }
-    fail_count = all_checks.count { |icon, _| icon == "❌" }
-    db_phase = DR_PHASES.find { |t, _, _| t.include?("Restore the database") }
-    db_secs  = db_phase && ((db_phase[2] || finished) - db_phase[1]).round
-    freshness = all_checks.find { |_, t| t.start_with?("Restored data freshness") }&.last.to_s[/is (.+?)$/, 1]
-    total = [rebuild_secs, 1].max
-
-    metric = lambda do |label, value, qualifier|
-      %(<div class="metric"><dt>#{h label}</dt><dd>#{value}</dd><span class="qualifier">#{h qualifier}</span></div>)
+    reason = nil
+    File.foreach(transcript_path) do |raw|
+      line = raw.gsub(/\e\[[0-9;]*m/, "").strip
+      reason = line.delete_prefix(Dr::ReportModel::STOP_MARK).strip if line.start_with?(Dr::ReportModel::STOP_MARK)
     end
-
-    phase_rows = DR_PHASES.map.with_index(1) do |(title, s, e), i|
-      secs  = ((e || finished) - s).round
-      share = (secs * 100.0 / total).round(1)
-      name  = title.sub(%r{\APhase \d+/\d+ · }, "")
-      <<~ROW
-        <tr><td class="markcell"><span class="mark #{e ? 'pass' : 'warn'}">#{e ? '&check;' : '!'}</span></td>
-        <td class="seq">#{i}</td><td class="phase-name">#{h name}</td>
-        <td class="num">#{s.utc.strftime('%H:%M:%S')}</td><td class="num">#{(e || finished).utc.strftime('%H:%M:%S')}</td>
-        <td class="num">#{hms(secs)}</td>
-        <td class="barcell"><span class="bar#{' dominant' if share > 40}" style="width:#{[share, 100].min}%"></span></td></tr>
-      ROW
-    end.join
-
-    host_blocks = if scorecard.empty?
-                    %(<p class="lede">No verification scorecard was captured — this run did not reach the verification stage.</p>)
-                  else
-                    scorecard.map do |host, checks|
-                      rows = checks.map do |icon, text|
-                        name, detail = text.split(" — ", 2)
-                        css = { "✅" => "pass", "⚠️" => "warn", "❌" => "fail" }[icon] || "warn"
-                        glyph = css == "pass" ? "&check;" : "!"
-                        %(<tr><td class="markcell"><span class="mark #{css}">#{glyph}</span></td><td>#{h name}</td><td class="val">#{h(detail || '—')}</td></tr>)
-                      end.join
-                      ok = checks.count { |i, _| i == "✅" }
-                      <<~HOST
-                        <div class="host"><div class="host-head">
-                        <span class="name">#{h host}</span>
-                        <span class="tally">#{ok} passed · #{checks.count { |i, _| i == '⚠️' }} warning · #{checks.count { |i, _| i == '❌' }} failed</span>
-                        </div><div class="scroll"><table><tbody>#{rows}</tbody></table></div></div>
-                      HOST
-                    end.join
-                  end
-
-    evidence_rows = DR_EVIDENCE.map do |claim, (ev, how)|
-      %(<tr><td>#{h claim}</td><td class="val">#{h ev}</td><td>#{h how}</td></tr>)
-    end.join
-
-    particulars = {
-      "Environment" => "#{stack} (#{env_variant})",
-      "Recovered into" => "#{region}#{drill ? ' — disaster-recovery region' : ''}",
-      "Started" => started_at.utc.strftime("%Y-%m-%d %H:%M:%S UTC"),
-      "Finished" => finished.utc.strftime("%Y-%m-%d %H:%M:%S UTC"),
-      "Rebuild time" => "#{hms(rebuild_secs)} (#{(rebuild_secs / 60.0).round(1)} minutes)",
-      "Code deployed" => branch,
-      "Executed by" => "#{ENV['USER'] || 'unknown'}@#{`hostname`.strip}"
-    }.map { |k, v| %(<tr><td class="key">#{h k}</td><td class="val">#{h v}</td></tr>) }.join
-
-    <<~HTML
-      <title>#{drill ? 'Recovery Drill Record' : 'Recovery Record'} — #{h stack}</title>
-      <link rel="preconnect" href="https://fonts.googleapis.com">
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@400;600&display=swap">
-      <style>#{DR_REPORT_CSS}</style>
-      <div class="sheet">
-        <header class="masthead">
-          <div class="eyebrow"><span>Disaster Recovery Record</span><span>Ref · #{h branch}</span><span>#{started_at.utc.strftime('%d %B %Y')}</span></div>
-          <h1>#{passed ? "#{h stack.capitalize} recovery rebuilt and verified in #{hms(rebuild_secs)}" : "#{h stack.capitalize} recovery did not complete"}</h1>
-          <div class="subject"><strong>#{h stack}</strong> <span>(#{h env_variant})</span> <span class="arrow">&rarr;</span> <strong>#{h region}</strong></div>
-          <span class="verdict #{passed ? 'pass' : 'fail'}"><span class="tick">#{passed ? '&check;' : '!'}</span> #{h result}</span>
-        </header>
-
-        <dl class="metrics">
-          #{metric.call('Rebuild time', hms(rebuild_secs), 'command start to verified')}
-          #{db_secs ? metric.call('Database restore', hms(db_secs), 'primary + replica, in parallel') : ''}
-          #{metric.call('Checks passed', %(#{ok_count}<span style="color:var(--ink-faint);font-weight:400">/#{all_checks.size}</span>), "#{warn_count} warning#{'s' if warn_count != 1}, #{fail_count} failure#{'s' if fail_count != 1}")}
-          #{freshness ? metric.call('Data currency', h(freshness.split.first), 'age of newest restored record') : ''}
-        </dl>
-
-        <section><h2>Run particulars</h2><div class="scroll"><table><tbody>#{particulars}</tbody></table></div>
-        #{drill ? %(<p class="lede">Scheduled drill against <strong>#{h stack}</strong> — not a response to a real incident. It exercised the identical code path a real recovery uses.</p>) : ''}
-        </section>
-
-        <section><h2>Recovery sequence</h2>
-        <p class="lede">Every phase in the order it executed, with wall-clock times. Bars are drawn to scale against the #{hms(rebuild_secs)} total.</p>
-        <div class="scroll"><table>
-        <thead><tr><th></th><th>#</th><th>Phase</th><th>Start</th><th>End</th><th>Duration</th><th class="barcell">Share of run</th></tr></thead>
-        <tbody>#{phase_rows}</tbody></table></div></section>
-
-        <section><h2>Verification scorecard</h2>
-        <p class="lede">The recovery is not reported as successful until every one of these checks passes on <em>every</em> application server. Each exercises the real serving path — an HTTP request through nginx to Puma to Rails to the dependency itself — rather than a mock or a status file. Reproduced verbatim from the run transcript.</p>
-        <div class="hosts">#{host_blocks}</div></section>
-
-        <section><h2>Independently verifiable evidence</h2>
-        <p class="lede">Each row names a record held <em>outside</em> the application repository, together with the command that checks it. Nothing in this document has to be taken on trust.</p>
-        <div class="scroll"><table><thead><tr><th>Claim</th><th>Evidence</th><th>How to verify independently</th></tr></thead>
-        <tbody>#{evidence_rows}</tbody></table></div></section>
-
-        <section><h2>What the measured time covers</h2>
-        <p class="lede">The headline figure is <strong>rebuild time</strong>, not end-to-end recovery time objective. It is measured from the start of the recovery command to the stack passing verification.</p>
-        <div class="scope">
-          <div class="scope-row"><div class="scope-label in">Included</div><div class="scope-body">Infrastructure provisioning · configuration rewrite · application deploy to every server · database restore from backups, primary and replica in parallel · replication re-pointing · migration replay · the full verification scorecard above.</div></div>
-          <div class="scope-row"><div class="scope-label out">Excluded</div><div class="scope-body">Incident detection · the human decision to declare a disaster · DNS cutover and its propagation delay. Cutover is deliberately a manual step and is never performed by the recovery sequence.</div></div>
-          <p class="scope-note">A true incident-to-service-restored figure is the time above <strong>plus</strong> those three components. Stated explicitly so the number is not read as more than it is.</p>
-        </div></section>
-
-        <section><h2>Source record</h2>
-        <p class="lede">Every command issued during this recovery and its complete output — including the raw verification scorecard reproduced above — was captured automatically to <code>docs/operations/dr/runs/#{h branch}.log</code>. This document states what is claimed and how to check it; the transcript records what happened, line by line.</p></section>
-
-        <footer><span>Disaster Recovery Record · #{h stack} (#{h env_variant}) &rarr; #{h region}</span><span>Generated #{finished.utc.iso8601}</span></footer>
-      </div>
-    HTML
+    reason
   end
 
+  # The point the database was recovered to: the backup chain the primary restore used, as the
+  # baked script prints it ("Found latest full backup: 2026-11-07_230001-full", then
+  # "INCREMENTAL     2026-11-08_070001-incr"). The newest key's timestamp is the recovery point.
+  # nil when the run never reached the restore.
+  def parse_recovery_point(transcript_path)
+    return nil unless transcript_path && File.exist?(transcript_path)
+
+    full = incr = nil
+    File.foreach(transcript_path) do |raw|
+      line = raw.gsub(/\e\[[0-9;]*m/, "")
+      next unless line.include?("[primary]")
+
+      full ||= line[/Found latest full backup: (\S+-full)/, 1]
+      incr ||= line[/INCREMENTAL\s+(\S+-incr)/, 1]
+      break if full && incr
+    end
+    key = incr || full
+    return nil unless key
+
+    # "2026-11-08_070001-incr" → 2026-11-08 07:00:01 UTC (the scripts name backups in UTC)
+    parts = key.match(/\A(\d{4})-(\d{2})-(\d{2})_(\d{2})(\d{2})(\d{2})/)&.captures
+    { full: full, incr: incr, at: parts && Time.utc(*parts.map(&:to_i)) }
+  end
+
+  # Writes the per-run evidence report, HTML and Markdown (openspec dr-drill-report-redesign).
+  #
+  # Every factual claim is either tied to a record held OUTSIDE this repo with
+  # the command that checks it (DR_EVIDENCE), or reproduced from the run's own
+  # transcript (the verify scorecard). What the report adds is legibility: the
+  # answer first, every problem with what to do, every step and check explained
+  # (Dr::ReportCatalog). Both files come from ONE model (Dr::ReportModel), so
+  # they cannot disagree. Never raises: a report must never fail a recovery.
   def write_dr_report(stack:, region:, env_variant:, branch:, result:, started_at:, drill: false)
     finished = Time.now
-    rebuild_secs = (finished - started_at).round
-    passed = result.to_s.match?(/PASSED|COMPLETE/)
     dir = Rails.root.join("docs", "operations", "dr", "runs")
     FileUtils.mkdir_p(dir)
+
+    # The verify scorecard comes from the run's own transcript
+    scorecard = parse_verify_scorecard(dir.join("#{branch}.log"))
+    model = Dr::ReportModel.build(
+      phases: DR_PHASES, scorecard: scorecard, evidence: DR_EVIDENCE, result: result,
+      recovery_point: parse_recovery_point(dir.join("#{branch}.log")),
+      stop_reason: parse_stop_reason(dir.join("#{branch}.log")),
+      stack: stack, region: region, env_variant: env_variant, branch: branch,
+      started_at: started_at, finished: finished, drill: drill,
+      # "deleted afterwards" is only said when this drill really tears down
+      teardown: ENV["TEARDOWN"] == "true",
+      executed_by: "#{ENV['USER'] || 'unknown'}@#{`hostname`.strip}"
+    )
+
+    # Markdown: reads in GitHub next to the drill log
     path = dir.join("#{branch}.md")
-    transcript = dir.join("#{branch}.log")
-
-    scorecard = parse_verify_scorecard(transcript)
-    all_checks = scorecard.values.flatten(1)
-    ok_count   = all_checks.count { |icon, _| icon == "✅" }
-    warn_count = all_checks.count { |icon, _| icon == "⚠️" }
-    fail_count = all_checks.count { |icon, _| icon == "❌" }
-
-    # Headline numbers an auditor looks for first
-    db_phase   = DR_PHASES.find { |t, _, _| t.include?("Restore the database") }
-    db_secs    = db_phase && ((db_phase[2] || finished) - db_phase[1]).round
-    freshness  = all_checks.find { |_, text| text.start_with?("Restored data freshness") }&.last.to_s[/is (.+?)$/, 1]
-
-    banner = passed ? "🟢  RECOVERY SUCCEEDED" : "🔴  RECOVERY FAILED"
-
-    phase_rows = DR_PHASES.map.with_index(1) do |(title, s, e), i|
-      done = !e.nil?
-      "| #{done ? '✅' : '⏹'} | #{i} | #{title.sub(%r{\APhase \d+/\d+ · }, '')} | #{s.utc.strftime('%H:%M:%S')} | #{(e || finished).utc.strftime('%H:%M:%S')} | **#{hms(((e || finished) - s).round)}** |"
-    end.join("\n")
-
-    scorecard_sections = if scorecard.empty?
-                           "_No verification scorecard was captured — the run did not reach `recovery:verify`._"
-                         else
-                           scorecard.map do |host, checks|
-                             rows = checks.map { |icon, text|
-                               name, detail = text.split(" — ", 2)
-                               "| #{icon} | #{name} | #{detail} |"
-                             }.join("\n")
-                             <<~HOST
-                               **Host `#{host}`** — #{checks.count} checks, #{checks.count { |i, _| i == '✅' }} passed
-
-                               | | Check | Result |
-                               |:-:|---|---|
-                               #{rows}
-                             HOST
-                           end.join("\n")
-                         end
-
-    evidence_rows = DR_EVIDENCE.map { |claim, (ev, how)| "| #{claim} | #{ev} | #{how} |" }.join("\n")
-
-    File.write(path, <<~MD)
-      <div align="center">
-
-      # #{banner}
-
-      ### Disaster Recovery #{drill ? 'Drill' : 'Run'} — `#{stack}` (#{env_variant}) → `#{region}`
-
-      **#{hms(rebuild_secs)}** rebuild&nbsp;&nbsp;·&nbsp;&nbsp;**#{ok_count}/#{all_checks.size}** checks passed&nbsp;&nbsp;·&nbsp;&nbsp;**#{DR_PHASES.size}** phases completed#{db_secs ? "&nbsp;&nbsp;·&nbsp;&nbsp;**#{hms(db_secs)}** to restore the database" : ''}
-
-      </div>
-
-      ---
-
-      ## At a glance
-
-      | | |
-      |---|---|
-      | **Result** | **#{result}** |
-      | Environment | `#{stack}` (#{env_variant}) |
-      | Recovered into | `#{region}`#{drill ? ' — disaster-recovery region' : ''} |
-      | Started | **#{started_at.utc.strftime('%Y-%m-%d %H:%M:%S UTC')}** |
-      | Finished | **#{finished.utc.strftime('%Y-%m-%d %H:%M:%S UTC')}** |
-      | Rebuild time | **#{hms(rebuild_secs)}** (#{(rebuild_secs / 60.0).round(1)} minutes) |
-      #{db_secs ? "| Database restore | **#{hms(db_secs)}** (primary + replica, in parallel) |\n" : ''}| Verification | **#{ok_count} passed**#{warn_count.positive? ? ", #{warn_count} warning#{'s' if warn_count != 1}" : ''}#{fail_count.positive? ? ", **#{fail_count} failed**" : ''} across #{scorecard.size} app server#{'s' if scorecard.size != 1} |
-      #{freshness ? "| Data currency | newest restored record is #{freshness} |\n" : ''}| Code deployed | `#{branch}` |
-      | Executed by | #{ENV['USER'] || 'unknown'}@#{`hostname`.strip} |
-      #{drill ? "\n> ℹ️ This was a **scheduled drill** against `#{stack}`, not a response to a real incident. It exercised the identical code path a real recovery uses.\n" : ''}
-      ---
-
-      ## Recovery timeline
-
-      Every phase of the recovery, in order, with wall-clock times.
-
-      | | # | Phase | Start (UTC) | End (UTC) | Duration |
-      |:-:|:-:|---|---|---|---|
-      #{phase_rows}
-
-      **Total: #{hms(rebuild_secs)}**
-
-      ---
-
-      ## Verification scorecard
-
-      The recovery is not reported as successful until every one of these
-      checks passes on **every** application server. Each exercises the real
-      serving path — HTTP through nginx to Puma to Rails to the dependency —
-      not a mock or a status file. Reproduced verbatim from the run transcript.
-
-      #{scorecard_sections}
-
-      ---
-
-      ## Independently verifiable evidence
-
-      Each row names a record held **outside this repository**. Nothing here
-      relies on trusting this document.
-
-      | Claim | Evidence | How to verify independently |
-      |---|---|---|
-      #{evidence_rows}
-
-      ---
-
-      ## What the measured time covers
-
-      The headline figure is **rebuild time**, not end-to-end RTO — measured
-      from the start of the recovery command to the stack passing verification.
-
-      | | |
-      |---|---|
-      | ✅ **Included** | Infrastructure provisioning, configuration rewrite, application deploy to every app server, database restore from S3 (primary and replica in parallel), replication re-pointing, migration replay, and the full verification scorecard above. |
-      | ❌ **Excluded** | Incident detection, the human decision to declare a disaster, and DNS cutover plus TTL propagation — cutover is deliberately manual and is never invoked by the recovery sequence. |
-
-      A true incident-to-service-restored RTO is the figure above **plus** those
-      three components. Stated explicitly so the number is not read as more than
-      it is.
-
-      ---
-
-      ## Full transcript
-
-      Every command and its complete output — including the raw verification
-      scorecard reproduced above — was captured automatically to
-      **`docs/operations/dr/runs/#{branch}.log`**. The report says what is claimed and how
-      to check it; the transcript says what happened, line by line.
-
-      Re-run verification against a still-running stack at any time:
-
-      ```bash
-      LB=true bundle exec cap #{stack}_#{env_variant} recovery:verify
-      ```
-
-      ---
-      <div align="center">
-      <sub>Generated #{finished.utc.iso8601} by <code>#{drill ? 'rake aws:dr_drill' : 'rake aws:setup_infra'}</code></sub>
-      </div>
-    MD
-
+    File.write(path, Dr::ReportRender.markdown(model))
     puts "🧾 Evidence report written to #{path.to_s.sub("#{Rails.root}/", '')}"
 
-    # HTML alongside the markdown: the auditor-facing copy. Self-contained
-    # (styles inline, fonts from Google Fonts, no build step), so it can be
-    # opened straight from a filesystem, emailed, or printed to PDF without a
-    # markdown renderer or a checkout of this repository.
+    # HTML: the reader-facing copy - light, self-contained, opens offline
     html_path = dir.join("#{branch}.html")
-    File.write(html_path, write_dr_report_html(
-                            stack: stack, region: region, env_variant: env_variant, branch: branch,
-                            result: result, started_at: started_at, finished: finished,
-                            scorecard: scorecard, drill: drill
-                          ))
+    File.write(html_path, Dr::ReportRender.html(model))
     puts "📄 Auditor report (HTML) written to #{html_path.to_s.sub("#{Rails.root}/", '')}"
 
     path
   rescue StandardError => e
     puts "⚠️  Could not write DR report: #{e.class}: #{e.message}"
     nil
+  end
+
+  # Every local key that might open a DR server: the DB key (KEYNAME) and the
+  # app servers' deploy key from config/deploy/<stack>_<variant>.rb.
+  def dr_ssh_keys(stack, env_variant)
+    deploy_file = Rails.root.join("config", "deploy", "#{stack}_#{env_variant}.rb")
+    deploy_keys = File.exist?(deploy_file) ? File.read(deploy_file).scan(/keys:\s*\[\s*'([^']+)'/).flatten : []
+    (["~/.ssh/#{ENV.fetch('KEYNAME', '')}.pem"] + deploy_keys).map { |k| File.expand_path(k) }.uniq.select { |k| File.file?(k) }
+  end
+
+  # How long setup_infra waits for freshly created app servers to accept SSH.
+  SSH_READY_DEADLINE_SECONDS = 300
+
+  # Waits until every new app server accepts SSH, so the first deploy step does
+  # not race the boot (2026-09-12 18:32: Net::SSH::ConnectionTimeout two seconds
+  # after pulumi up). Raises, naming the server, if one never answers.
+  def wait_for_ssh(stack, env_variant, app_ips)
+    require "net/ssh"
+    keys = dr_ssh_keys(stack, env_variant)
+    app_ips.each do |ip|
+      # Monotonic: a wall-clock jump must not stretch or cut the deadline
+      deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + SSH_READY_DEADLINE_SECONDS
+      begin
+        Net::SSH.start(ip, "ubuntu", keys: keys, keys_only: true, non_interactive: true, timeout: 10,
+                                     verify_host_key: :never) { |ssh| ssh.exec!("true") }
+        puts "🔌 #{ip} accepts SSH"
+      rescue StandardError => e
+        raise "App server #{ip} did not accept SSH within #{SSH_READY_DEADLINE_SECONDS / 60} min (#{e.class}: #{e.message})" \
+          if Process.clock_gettime(Process::CLOCK_MONOTONIC) >= deadline
+
+        sleep 10
+        retry
+      end
+    end
+  end
+
+  # Opens SSH to a DB server from the operator's machine, hopping through an app
+  # server (DB servers accept SSH only from there). The app server forwards the
+  # TCP stream (-W); the same keys are offered on both hops. Host keys change on
+  # every rebuild, so they are not pinned (matches run_baked_restore).
+  def dr_db_ssh(app_ip, db_host, keys, &)
+    require "net/ssh"
+    require "net/ssh/proxy/command"
+    require "shellwords"
+    key_opts = keys.map { |k| "-i #{Shellwords.escape(k)}" }.join(" ")
+    proxy_cmd = "ssh #{key_opts} -o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null " \
+                "-o ConnectTimeout=10 -W %h:%p ubuntu@#{app_ip}"
+    Net::SSH.start(db_host, "ubuntu", keys: keys, keys_only: true, non_interactive: true, timeout: 15,
+                                      verify_host_key: :never, proxy: Net::SSH::Proxy::Command.new(proxy_cmd), &)
+  end
+
+  # How long the early strip keeps retrying while freshly created boxes boot.
+  EARLY_STRIP_DEADLINE_SECONDS = 120
+
+  # Strips the old, marker-blind backup job (Dr::OldBackupJobs) from freshly
+  # created DR DB boxes as early as possible. The boxes are clones of the live
+  # DB box, so its hourly /home/ubuntu/backup_db.sh comes along and would write
+  # into the live backup chain from both the primary and the replica until the
+  # restore strips it. Doing it here, right after pulumi up, shrinks that window
+  # from ~9 minutes to ~2-3.
+  #
+  # Best effort by design — it runs before anything is deployed, from the
+  # operator's machine, hopping through an app server (DB boxes accept SSH only
+  # from there). Any failure is a warning; run_baked_restore strips again.
+  def strip_old_backup_jobs_early(stack, env_variant, app_ip, db_hosts)
+    require "net/ssh"
+    require "net/ssh/proxy/command"
+    require "shellwords"
+    puts "🧹 Stripping old backup jobs from the new DB boxes (best effort; the restore does it again)"
+
+    keys = dr_ssh_keys(stack, env_variant)
+    if app_ip.to_s.empty? || keys.empty?
+      puts "⚠️  Early strip skipped — no app server address or no local SSH key; the restore will strip instead"
+      return
+    end
+
+    db_hosts.compact.uniq.each do |db_host|
+      # Monotonic: a wall-clock jump (NTP) must not stretch or cut the deadline
+      deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + EARLY_STRIP_DEADLINE_SECONDS
+      begin
+        dr_db_ssh(app_ip, db_host, keys) { |ssh| Dr::OldBackupJobs.strip!(ssh, prefix: "  [#{db_host}] ") }
+      rescue StandardError => e
+        # Boxes created seconds ago may not accept SSH yet — retry until the deadline
+        if Process.clock_gettime(Process::CLOCK_MONOTONIC) < deadline
+          sleep 15
+          retry
+        end
+        puts "⚠️  Early strip on #{db_host} gave up (#{e.class}: #{e.message}) — the restore will strip instead"
+      end
+    end
+  rescue StandardError => e
+    puts "⚠️  Early strip skipped (#{e.class}: #{e.message}) — the restore will strip instead"
   end
 
   def setup_infra(stack, web_server_name, db_server_name, region, env_variant, branch_name = nil)
@@ -1160,10 +972,10 @@ module AwsUtils
     puts "  Operator: #{ENV['USER'] || 'unknown'}@#{`hostname`.strip}   ·   #{@dr_run_started_at.strftime('%Y-%m-%d %H:%M:%S %Z')}"
     puts "█" * 78
 
-    dr_phase "Phase 1/8 · Refresh Pulumi stack configuration"
+    dr_phase "Phase 1/9 · Refresh Pulumi stack configuration"
     setup_pulumi_config(stack, web_server_name, db_server_name, region, env_variant)
 
-    dr_phase "Phase 2/8 · Provision infrastructure (pulumi up)"
+    dr_phase "Phase 2/9 · Provision infrastructure (pulumi up)"
     puts "⬆️ Running pulumi up for stack: #{stack}. (This could take a long time, please be patient)"
     # Run pulumi to setup the aws infra
     run_cmd("pulumi up --stack #{stack}-#{region} --yes --color=always", "../IRM-Infra")
@@ -1175,7 +987,7 @@ module AwsUtils
     end
     # Get the pulumi output
 
-    dr_phase "Phase 3/8 · Rewrite config with the new host addresses"
+    dr_phase "Phase 3/9 · Rewrite config with the new host addresses"
     puts "📥 Getting pulumi output (authoritative, from the stack backend)"
     pulumi_output = pulumi_stack_output("#{stack}-#{region}")
 
@@ -1208,6 +1020,13 @@ module AwsUtils
     raise "Pulumi output missing public_ips.AppServers — check ../IRM-Infra/output.json" unless app_server_ips.is_a?(Array) && app_server_ips.any?
 
     replace_ip_addresses(Rails.root.join('config', 'deploy', "#{stack}_#{env_variant}.rb"), app_server_ips)
+    # aws:dr_drill's pre-teardown stop checks the deploy file against these
+    @dr_app_server_ips = app_server_ips
+
+    # A drill marks its own stack: tagged error mail, no WhatsApp pages
+    # (lib/drill_stack.rb). Committed only on the drill branch, with the other
+    # config above; a real recovery never sets it.
+    update_env_file(".env.#{stack}.#{env_variant}", "DR_DRILL_STACK", region) if Dr::BackupSchedule.drill?
 
     # Instance ids are the join key against CloudTrail — the authoritative
     # third-party record that these machines were created when we say they were.
@@ -1221,6 +1040,12 @@ module AwsUtils
     record_dr_evidence("Recovered stack endpoints",
                        "app servers #{app_server_ips.join(', ')}; DB primary #{db_hosts[0]}, replica #{db_hosts[1]}",
                        "`pulumi stack output --stack #{stack}-#{region}`")
+
+    # The new DB boxes are clones of the live box and carry its old,
+    # marker-blind backup job — strip it now rather than ~8 minutes from now
+    # at the restore. Best effort: never fails the DR (the restore strips again).
+    wait_for_ssh(stack, env_variant, app_server_ips)
+    strip_old_backup_jobs_early(stack, env_variant, app_server_ips.first, db_hosts)
 
     if branch_name.to_s.strip.empty?
       # ------------------- LEGACY INTERACTIVE MODE -------------------
@@ -1238,7 +1063,7 @@ module AwsUtils
       restore_tasks = ["recovery:restore_replica_db"] # primary was restored by hand above
     else
       # ------------------- NON-INTERACTIVE MODE -------------------
-      dr_phase "Phase 4/8 · Commit and push the DR branch (#{branch_name})"
+      dr_phase "Phase 4/9 · Commit and push the DR branch (#{branch_name})"
       commit_dr_changes(stack, env_variant, region, branch_name)
       # The pushed SHA proves WHICH code was recovered onto — and GitHub's own
       # push timestamp corroborates when, independently of this machine's clock.
@@ -1251,7 +1076,7 @@ module AwsUtils
       restore_tasks = ["recovery:load_db_from_backups", "recovery:migrate"]
     end
 
-    dr_phase "Phase 5/8 · Deploy the application to both app servers"
+    dr_phase "Phase 5/9 · Deploy the application to both app servers"
     # Deploy the app
     run_cmd("branch=#{branch_name} LB=true bundle exec cap #{stack}_#{env_variant} recovery:delete_old_assets")
     # SKIP_MIGRATE: deploy-time migrations are meaningless before the restore
@@ -1271,11 +1096,11 @@ module AwsUtils
     # prometheus_exporter) — idempotent no-op on already-running boxes
     run_cmd("branch=#{branch_name} LB=true bundle exec cap #{stack}_#{env_variant} IRM:start_boot_services")
 
-    dr_phase "Phase 6/8 · Take traffic offline (nginx maintenance mode)"
+    dr_phase "Phase 6/9 · Take traffic offline (nginx maintenance mode)"
     # Now stop sidekiq, puma and monitoring and switch to maintenance mode
     run_cmd("branch=#{branch_name} LB=true bundle exec cap #{stack}_#{env_variant} nginx:switch_maintenance")
 
-    dr_phase "Phase 7/8 · Restore the database from S3 backups"
+    dr_phase "Phase 7/9 · Restore the database from S3 backups"
     # Load the DB from backups (and replay migrations in non-interactive mode)
     restore_tasks.each do |task|
       run_cmd("branch=#{branch_name} bundle exec cap #{stack}_#{env_variant} #{task}")
@@ -1285,7 +1110,15 @@ module AwsUtils
                        "source bucket `#{backup_bucket}` (full + incremental chain; keys named in the transcript)",
                        "`aws s3 ls s3://#{backup_bucket}/` — compare object timestamps against the run window")
 
-    dr_phase "Phase 8/8 · Restore traffic and verify the recovered stack"
+    dr_phase "Phase 8/9 · Start the search rebuild (background)"
+    # Elasticsearch is not backed up: the new DB box's indexes are empty, so
+    # every search box would return nothing. Queue the rebuild now (Redis is up;
+    # the job waits for Sidekiq, which starts with traffic in the next phase):
+    # users get the site at once and search fills in ("enqueue and move on",
+    # 2026-11-08). dr:verify and the report show its progress.
+    run_cmd("branch=#{branch_name} LB=true bundle exec cap #{stack}_#{env_variant} recovery:reindex_search_later")
+
+    dr_phase "Phase 9/9 · Restore traffic and verify the recovered stack"
     # Switch back to the app and remove maintenance mode
     run_cmd("branch=#{branch_name} LB=true bundle exec cap #{stack}_#{env_variant} nginx:switch_app")
 
@@ -1297,6 +1130,11 @@ module AwsUtils
     run_cmd("branch=#{branch_name} LB=true bundle exec cap #{stack}_#{env_variant} recovery:verify")
     # run_cmd raises on a non-zero exit and dr:verify aborts non-zero on any
     # failed check, so reaching this line IS the proof the stack served.
+    # ...and through the load balancer users will hit: certificate, target health, a request to
+    # the database and the sign-in page over HTTPS. Raises like a failed verify.
+    edge_fails = dr_edge_checks(stack, region)
+    raise "Checks through the load balancer failed (#{edge_fails}) — see the load-balancer scorecard above" if edge_fails.positive?
+
     record_dr_evidence("Recovered stack verified serving",
                        "`recovery:verify` passed on every app server at #{Time.now.utc.iso8601} (per-check scorecard in the transcript)",
                        "re-run `LB=true bundle exec cap #{stack}_#{env_variant} recovery:verify`")
@@ -1529,7 +1367,9 @@ module AwsUtils
           Action: ["s3:GetReplicationConfiguration", "s3:ListBucket"],
           Resource: source_buckets.map { |b| "arn:aws:s3:::#{b}" } },
         { Effect: "Allow",
-          Action: ["s3:GetObjectVersionForReplication", "s3:GetObjectVersionAcl", "s3:GetObjectVersionTagging"],
+          Action: ["s3:GetObjectVersionForReplication", "s3:GetObjectVersionAcl", "s3:GetObjectVersionTagging",
+                   # Needed to replicate into an Object Lock (replica) bucket - fix-backups-deletable
+                   *Dr::BackupLock::REPLICATION_ROLE_ACTIONS],
           Resource: source_buckets.map { |b| "arn:aws:s3:::#{b}/*" } },
         { Effect: "Allow",
           Action: ["s3:ReplicateObject", "s3:ReplicateDelete", "s3:ReplicateTags"],
@@ -1538,6 +1378,134 @@ module AwsUtils
     }
     iam.put_role_policy(role_name: role_name, policy_name: "s3-replication", policy_document: permission_policy.to_json)
     iam.get_role(role_name: role_name).role.arn
+  end
+
+  # --- Checks through the load balancer (end of a recovery) --------------------
+
+  # The app host users type: app.<domain> on production, dev.<domain> on staging, from the
+  # target stack's Pulumi config (same convention as aws:dns_cutover)
+  def dr_app_host(stack, region)
+    require "yaml"
+    stack_file = "../IRM-Infra/Pulumi.#{stack}-#{region}.yaml"
+    raise "#{stack_file} not found" unless File.exist?(stack_file)
+
+    domain = YAML.load_file(stack_file).dig("config", "IRM-infra:domain_name") or
+      raise "domain_name missing in #{stack_file}"
+    "#{stack == 'production' ? 'app' : 'dev'}.#{domain.delete_prefix('*.')}"
+  end
+
+  # dr:verify runs ON the app servers, so it never touches what users actually hit: the load
+  # balancer, its certificate and its target groups. These run from here, against the new load
+  # balancer, BEFORE any DNS change: the app host is pinned to the load balancer's address
+  # (curl --resolve), so the certificate is checked for real (no -k) and nothing depends on DNS.
+  # Printed as a "dr:verify on load-balancer" scorecard so the run report shows them
+  # (parse_verify_scorecard). Returns the number of failed checks.
+  def dr_edge_checks(stack, region)
+    require "resolv"
+    require "aws-sdk-elasticloadbalancingv2"
+    host = dr_app_host(stack, region)
+    # The stack's outputs nest the load balancer under IPs → alb; pulumi_stack_output returns IPs.
+    # (The first version read a top-level "alb" and the 2026-11-08 15:14 drill failed on it.)
+    alb_dns = pulumi_stack_output("#{stack}-#{region}").dig("alb", "dns_name") or
+      raise "Stack #{stack}-#{region} has no IPs → alb → dns_name output"
+    ip = Resolv.getaddress(alb_dns)
+
+    results = []
+    check = lambda do |label, grade|
+      results << grade.status
+      icon = { ok: "✅", warn: "⚠️", fail: "❌" }[grade.status]
+      puts "#{icon} #{label} — #{grade.detail}"
+    end
+    # One HTTPS request to the app host, pinned to the load balancer. Retries: target
+    # registration can trail the app's own restart by a few seconds.
+    https = lambda do |path|
+      body = code = nil
+      exit_code = 0
+      6.times do |i|
+        o, _e, st = Open3.capture3("curl", "-s", "--max-time", "30", "--resolve", "#{host}:443:#{ip}",
+                                   "-w", "\n%{http_code}", "https://#{host}#{path}")
+        exit_code = st.exitstatus
+        body, _, code = o.rpartition("\n")
+        break if exit_code.zero? && code == "200"
+        break if [51, 60].include?(exit_code) # a certificate problem will not fix itself
+
+        sleep 5 if i < 5
+      end
+      [exit_code, code, body]
+    end
+
+    puts "🩺 dr:verify on #{Dr::ReportModel::LOAD_BALANCER} (#{alb_dns} → #{ip}, Host: #{host})"
+    # 1. Certificate + load balancer → app → database (one request proves both)
+    exit_code, code, = https.call("/health_check/db_check.json")
+    check.call("Load balancer certificate (#{host})", Dr::ServingChecks.grade_certificate(curl_exit: exit_code, host: host))
+    check.call("Load balancer → app → database",
+               Dr::ServingChecks.grade_edge_http(code: code, what: "a request reaches the app and the database"))
+    # 2. Every app server healthy in the load balancer's eyes
+    elb = Aws::ElasticLoadBalancingV2::Client.new(region: region)
+    lb = elb.describe_load_balancers.load_balancers.find { |l| l.dns_name.casecmp?(alb_dns) }
+    states = []
+    if lb
+      elb.describe_target_groups(load_balancer_arn: lb.load_balancer_arn).target_groups.each do |tg|
+        states.concat(elb.describe_target_health(target_group_arn: tg.target_group_arn)
+                         .target_health_descriptions.map { |d| d.target_health.state })
+      end
+    end
+    check.call("Load balancer targets healthy", Dr::ServingChecks.grade_targets(healthy: states.count("healthy"), total: states.size))
+    # 3. A real screen through the load balancer
+    _exit, code, body = https.call("/users/sign_in")
+    check.call("Load balancer sign-in page",
+               Dr::ServingChecks.grade_edge_http(code: code, body: body, marker: Dr::ServingChecks::SIGN_IN_MARKER,
+                                                 what: "the sign-in page loads over HTTPS"))
+
+    fails = results.count(:fail)
+    warns = results.count(:warn)
+    puts "\n#{fails.zero? ? '🟢' : '🔴'} dr:verify — #{results.size} checks: #{results.size - fails - warns} ok, #{warns} warnings, #{fails} failures"
+    fails
+  end
+
+  # --- Replica Object Lock (openspec fix-backups-deletable) ---------------------
+
+  # The env's replica buckets, read from where its primaries ACTUALLY replicate
+  # (backups "<AWS_S3_BUCKET>-backup-xtra" and documents "<AWS_S3_BUCKET>"), each
+  # with its region. Primaries are excluded by construction (Dr::BackupLock).
+  def replica_buckets_for_env
+    require "aws-sdk-s3"
+    primary_docs = ENV.fetch("AWS_S3_BUCKET")
+    primaries = ["#{primary_docs}-backup-xtra", primary_docs]
+    source = Aws::S3::Client.new(region: ENV.fetch("AWS_S3_REGION"))
+    destinations = primaries.flat_map do |bucket|
+      rules = source.get_bucket_replication(bucket: bucket).replication_configuration.rules
+      rules.select { |r| r.status == "Enabled" }.map { |r| r.destination.bucket.delete_prefix("arn:aws:s3:::") }
+    rescue Aws::S3::Errors::ReplicationConfigurationNotFoundError
+      []
+    end
+    Dr::BackupLock.replicas_to_lock(primaries: primaries, destinations: destinations).map do |bucket|
+      region = source.get_bucket_location(bucket: bucket).location_constraint.to_s
+      { bucket: bucket, region: region.empty? ? "us-east-1" : region }
+    end
+  end
+
+  # Enables Object Lock on an existing (versioned) replica bucket and sets the
+  # default COMPLIANCE retention, per Dr::BackupLock.plan. Idempotent. Turning
+  # Object Lock on is PERMANENT, and compliance-locked versions cannot be removed
+  # early by anyone - callers must have the user's go-ahead (execute: true).
+  def s3_ensure_object_lock!(client:, bucket:, days: Dr::BackupLock::DAYS, execute: false)
+    plan = Dr::BackupLock.plan(Dr::BackupLock.read_config(client, bucket), days: days)
+    puts "   #{bucket}: #{plan[:summary]}"
+    return plan if plan[:action] == :none || !execute
+
+    client.put_object_lock_configuration(
+      bucket: bucket,
+      object_lock_configuration: {
+        object_lock_enabled: "Enabled",
+        rule: { default_retention: { mode: Dr::BackupLock::MODE, days: days } }
+      }
+    )
+    after = Dr::BackupLock.read_config(client, bucket)
+    raise "#{bucket}: lock not in place after applying (#{after.inspect})" unless Dr::BackupLock.strong_enough?(after, days)
+
+    puts "   🔒 #{bucket}: #{Dr::BackupLock::MODE}, #{days} days — verified"
+    plan
   end
 
   # Configure source -> dest replication.
@@ -1640,6 +1608,22 @@ module AwsUtils
       primary: "irm-pulumi-state-#{account}-primary-#{primary_region}",
       replica: "irm-pulumi-state-#{account}-replica-#{dr_region}"
     }
+  end
+
+  # The lock files Pulumi currently holds for one stack in the S3 backend, as
+  # JSON strings (pid, username, hostname, timestamp). Pulumi writes one per
+  # running update under .pulumi/locks/<org>/<project>/<stack>/<id>.json and
+  # deletes it when the update ends — so a file left behind is a stale lock.
+  # Read-only. Used by aws:dr_drill to refuse BEFORE `pulumi up` (Dr::PulumiLock).
+  def pulumi_stack_lock_files(env_name, stack_name)
+    require "aws-sdk-s3" # explicit: aws:dr_drill runs without the Rails environment
+    buckets = pulumi_state_buckets(env_name)
+    s3 = Aws::S3::Client.new(region: buckets[:primary_region])
+    keys = []
+    s3.list_objects_v2(bucket: buckets[:primary], prefix: ".pulumi/locks/").each_page do |page|
+      keys.concat(page.contents.map(&:key).select { |k| k.include?("/#{stack_name}/") && k.end_with?(".json") })
+    end
+    keys.map { |key| s3.get_object(bucket: buckets[:primary], key: key).body.read }
   end
 
   # Current pulumi backend URL, or nil if it cannot be determined.
