@@ -30,7 +30,7 @@ require "active_support/core_ext/string/output_safety" # ERB::Util.html_escape (
 lib = File.expand_path("..", __dir__)
 # Order matters only where one module names another at load time: none do (lookups happen at
 # call time), but keep the dependency order readable.
-%w[dr/backup_schedule dr/backup_lock dr/old_backup_jobs dr/pulumi_lock dr/drill_teardown
+%w[dr/backup_schedule dr/backup_lock dr/serving_checks dr/old_backup_jobs dr/pulumi_lock dr/drill_teardown
    dr/report_catalog dr/report_model dr/report_render drill_stack].each do |file|
   require File.join(lib, file)
 end

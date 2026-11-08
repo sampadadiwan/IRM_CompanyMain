@@ -268,6 +268,112 @@ namespace :dr do
       check.call("Search index populated", verdict.status, verdict.detail)
     end
 
+    # --- 3b. What a USER does works (Dr::ServingChecks) ----------------------
+    # Everything above proves each part is up. These prove the things users do:
+    # open a document, have a job run, sign in, get a PDF. Each one is a way the
+    # stack could pass every check above and still be broken for users.
+
+    guarded.call("Document files present") do
+      # Files are NOT part of the database restore: they live in S3. A restored
+      # database pointing at files that are not there passes "S3 app bucket
+      # reachable" and still shows users broken documents. Look up a sample:
+      # the 20 newest stored documents, plus 10 spread across older ids.
+      # Only id + file_data are loaded (documents is a large table).
+      stored = Document.where.not(file_data: nil)
+      newest = stored.order(id: :desc).limit(20).pluck(:id, :file_data)
+      max_id = newest.first&.first.to_i
+      older = Dr::ServingChecks.spread_ids(max_id).filter_map do |target|
+        stored.where(id: ..target).order(id: :desc).pick(:id, :file_data)
+      end
+      sample = (newest + older).uniq(&:first)
+      # Only files promoted to permanent storage; a "cache" file is an upload in progress
+      stored_file = lambda do |data|
+        JSON.parse(data.to_s)["storage"] == "store"
+      rescue JSON::ParserError
+        false
+      end
+      sample = sample.select { |_, data| stored_file.call(data) }
+      missing = sample.reject { |_, data| FileUploader.uploaded_file(data).exists? }.map(&:first)
+      grade = Dr::ServingChecks.grade_documents(checked: sample.size, missing_ids: missing)
+      check.call("Document files present", grade.status, grade.detail)
+    end
+
+    guarded.call("Background job ran") do
+      # "Sidekiq workers registered" proves sidekiq is alive, not that it RUNS
+      # jobs (a wedged worker or wrong Redis still registers). Queue a job on the
+      # queue real work uses and wait for it to write its token. The job contacts
+      # nobody, so it is safe on drill copies too.
+      token = SecureRandom.hex(8)
+      started = Time.current
+      DrVerifyPingJob.perform_later(token)
+      seconds = nil
+      (Dr::ServingChecks::JOB_TIMEOUT_SECONDS / 3).times do
+        sleep 3
+        if Rails.cache.read(DrVerifyPingJob.cache_key(token))
+          seconds = Time.current - started
+          break
+        end
+      end
+      grade = Dr::ServingChecks.grade_job(seconds: seconds, queue: DrVerifyPingJob.queue_name)
+      check.call("Background job ran", grade.status, grade.detail)
+    end
+
+    guarded.call("Sign-in page") do
+      # The health endpoints are tiny JSON answers. The sign-in page is a real
+      # screen: layout, compiled assets, the session cookie and the CSRF token.
+      body = `curl -s --max-time 60 -H "Host: #{host_header}" http://localhost/users/sign_in`
+      code = http.call("/users/sign_in")
+      grade = Dr::ServingChecks.grade_sign_in(code: code, body: body)
+      check.call("Sign-in page", grade.status, grade.detail)
+    end
+
+    if Dr::BackupSchedule.drill?
+      guarded.call("Signed-in API read") do
+        # A request as a real user: token auth, the user's records, Pundit and
+        # JSON rendering. Drill copies only, because it writes a token: a
+        # 5-minute token for an active employee of the newest fund's firm,
+        # revoked straight after. The drill's database is thrown away anyway.
+        user = Fund.order(id: :desc).first&.entity&.employees&.where(active: true)&.order(:id)&.first
+        next check.call("Signed-in API read", :warn, "no active fund user in the restored data to sign in as") unless user
+
+        token = ActiveRecord::Base.connected_to(role: :writing) do
+          Devise::Api::Token.create!(resource_owner: user, access_token: Devise::Api::Token.generate_uniq_access_token(user),
+                                     refresh_token: Devise::Api::Token.generate_uniq_refresh_token(user), expires_in: 300)
+        end
+        begin
+          out = `curl -s --max-time 60 -w "\n%{http_code}" -H "Host: #{host_header}" -H "Authorization: Bearer #{token.access_token}" http://localhost/funds.json`
+          body, _, code = out.rpartition("\n")
+          grade = Dr::ServingChecks.grade_api_read(code: code, body: body, path: "/funds.json")
+          check.call("Signed-in API read", grade.status, grade.detail)
+        ensure
+          ActiveRecord::Base.connected_to(role: :writing) { token.update!(revoked_at: Time.current) }
+        end
+      end
+    end
+
+    guarded.call("PDF conversion") do
+      # Document generation turns Word templates into PDFs through LibreOffice
+      # (Libreconv, DocumentGeneratorBase). LibreOffice is installed outside the
+      # app, so a server built from an image without it serves every page and
+      # still fails every generated notice. Convert a Word file that ships with
+      # the app, in a temporary folder.
+      source = Rails.public_path.join("sample_uploads/portfolio_report_templates/word_placeholder_template.docx")
+      Dir.mktmpdir("dr_verify_pdf") do |dir|
+        docx = File.join(dir, "check.docx")
+        FileUtils.cp(source, docx)
+        started = Time.current
+        error = nil
+        begin
+          Timeout.timeout(120) { Libreconv.convert(docx, "#{docx}.pdf") }
+        rescue StandardError, Timeout::Error => e
+          error = "#{e.class}: #{e.message.to_s.lines.first.to_s.strip}"
+        end
+        head = File.exist?("#{docx}.pdf") ? File.binread("#{docx}.pdf", 8) : nil
+        grade = Dr::ServingChecks.grade_pdf(head: head, seconds: Time.current - started, error: error)
+        check.call("PDF conversion", grade.status, grade.detail)
+      end
+    end
+
     # --- 4. DB box checks (SSH — DB boxes accept SSH only from app servers,
     #         which is exactly why this task runs here and not on a laptop) ---
     db_host = Rails.application.credentials[:DB_HOST]

@@ -652,37 +652,27 @@ namespace :aws do
   # servers; this is the only check that exercises the load balancer itself.
   #   rake "aws:dr_verify_edge[staging, ap-south-2]"
   desc "Curl the recovered stack's ALB directly (run before aws:dns_cutover)"
-  task :dr_verify_edge, [:stack, :region] do |t, args|
+  # ex: rake "aws:dr_verify_edge[production, ap-south-2, production.in]"
+  task :dr_verify_edge, [:stack, :region, :env_name] do |t, args|
     require 'yaml'
     require 'json'
     require 'open3'
 
     stack = args[:stack] or raise "stack required (production|staging)"
     region = args[:region] or raise "region required, e.g. ap-south-2"
+    # Standalone runs need the env's AWS keys (target health) and the Pulumi state passphrase
+    # (the load balancer's address); a recovery has loaded both already
+    if args[:env_name]
+      Rake::Task['aws:environment'].invoke(args[:env_name])
+      load_pulumi_passphrase!(args[:env_name], region)
+    end
 
-    # Same conventions as dns_cutover: domain from the target stack's Pulumi
-    # config, host record app.<domain> (production) / dev.<domain> (staging)
-    stack_file = "../IRM-Infra/Pulumi.#{stack}-#{region}.yaml"
-    raise "#{stack_file} not found" unless File.exist?(stack_file)
-
-    domain = YAML.load_file(stack_file).dig("config", "IRM-infra:domain_name") or
-      raise "domain_name missing in #{stack_file}"
-    host = "#{stack == 'production' ? 'app' : 'dev'}.#{domain.sub(/\A\*\./, '')}"
-
-    # ALB endpoint straight from the stack's own outputs (never a stale file)
-    alb = pulumi_stack_output("#{stack}-#{region}")["alb"] or
-      raise "Stack #{stack}-#{region} has no 'alb' output — run pulumi up on it first"
-
-    # -k: the ALB cert is issued for <host>, but we're dialing the raw ALB DNS
-    # name — SNI mismatch is expected pre-DNS and not a failure
-    url = "https://#{alb['dns_name']}/health_check/db_check.json"
-    puts "→ GET #{url} (Host: #{host})"
-    code = `curl -sk -o /dev/null -w "%{http_code}" --max-time 60 -H "Host: #{host}" #{url}`.strip
-    if code == "200"
-      puts "✅ Edge OK — ALB → app → DB round-trip returned 200. Safe to run aws:dns_cutover."
+    # The same checks a recovery ends with (aws_utils #dr_edge_checks): certificate valid for the
+    # app host, targets healthy, load balancer → app → database, sign-in page over HTTPS
+    if dr_edge_checks(stack, region).zero?
+      puts "✅ Edge OK — safe to run aws:dns_cutover."
     else
-      abort "❌ Edge check FAILED — HTTP #{code} from #{url}. " \
-            "Check ALB target-group health and run `cap <stage> recovery:verify` before any cutover."
+      abort "❌ Edge check FAILED — see above. Fix it (and run `cap <stage> recovery:verify`) before any cutover."
     end
   end
 

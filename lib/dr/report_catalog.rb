@@ -23,7 +23,7 @@ module Dr
     }.freeze
 
     # Group order is the order the report shows them in
-    GROUPS = ["App servers", "Requests through the app", "Data", "Database servers", "Backups", "Other checks"].freeze
+    GROUPS = ["Through the load balancer", "App servers", "Requests through the app", "What users do", "Data", "Database servers", "Backups", "Other checks"].freeze
 
     # The steps of setup_infra, matched against its dr_phase titles
     STEPS = [
@@ -59,6 +59,26 @@ module Dr
     # Every check dr:verify can print. proves: what a pass means; if_fails: where to look.
     # keep_suffix: keep the label's "(…)" part (an IP or domain) in the shown name.
     CHECKS = [
+      # Through the load balancer (run from the operator's machine, before any DNS change)
+      { match: /\ALoad balancer certificate/, group: "Through the load balancer", name: "HTTPS certificate", keep_suffix: true,
+        proves: "The load balancer's certificate is valid for the address users type, so browsers will open the site without a warning.", if_fails: "Check the ACM certificate on the new load balancer and its DNS validation records." },
+      { match: /\ALoad balancer → app → database/, group: "Through the load balancer", name: "Request reaches the database",
+        proves: "A request sent the way users send it (HTTPS to the load balancer) reached the app and the database.", if_fails: "Check the load balancer's listener and target groups; then cap <stage> recovery:verify." },
+      { match: /\ALoad balancer targets healthy/, group: "Through the load balancer", name: "App servers healthy in the load balancer",
+        proves: "The load balancer considers every app server healthy, so it sends users to all of them.", if_fails: "Check the target group's health-check path and the security group between the load balancer and the app servers." },
+      { match: /\ALoad balancer sign-in page/, group: "Through the load balancer", name: "Sign-in page over HTTPS",
+        proves: "The sign-in screen loads over HTTPS through the load balancer, as a user would see it.", if_fails: "Compare with the Sign-in page check on each app server: if those pass, the problem is the load balancer." },
+      # What users do (each could fail while every part above is up)
+      { match: /\ADocument files present/, group: "What users do", name: "Document files present",
+        proves: "The restored database's documents still have their files in S3 (the 20 newest and 10 older ones were looked up). Files are not part of the database restore.", if_fails: "Compare the missing ids' file keys with the bucket; in a recovery from the replica, recent uploads may still be replicating." },
+      { match: /\ABackground job ran/, group: "What users do", name: "Background job ran",
+        proves: "A job queued now was picked up and finished, so emails, documents and reports will be processed.", if_fails: "Sidekiq log on the app servers; check REDIS_URL points at the new DB box." },
+      { match: /\ASign-in page/, group: "What users do", name: "Sign-in page",
+        proves: "The sign-in screen renders with its form: layout, compiled assets and sessions work, not only the health endpoints.", if_fails: "The puma log names the error; check the assets were precompiled in the deploy." },
+      { match: /\ASigned-in API read/, group: "What users do", name: "Signed-in request",
+        proves: "A request as a real user (short-lived token, drill only) read their funds: authentication, permissions and JSON all work.", if_fails: "The puma log for GET /funds.json names the error." },
+      { match: /\APDF conversion/, group: "What users do", name: "PDF generation",
+        proves: "LibreOffice turned a Word file into a PDF the way document generation does, so notices and statements can be generated.", if_fails: "which soffice on the app server; LibreOffice may be missing from the server image." },
       # App servers
       { match: /\ANginx active/, group: "App servers", name: "Web server (nginx) running",
         proves: "nginx is up and will hand requests to the app.", if_fails: "sudo nginx -t, then sudo systemctl status nginx." },

@@ -168,7 +168,9 @@ When("every check label in dr:verify and every step in setup_infra is looked up"
   labels = verify.scan(/(?:check|guarded)\.call\("([^"]+)"/).flatten +
            verify.scan(/drill \? "([^"]+)" : "([^"]+)"/).flatten +
            verify.scan(/=> "(HTTP [^"]+)"/).flatten +
-           verify.scan(/label = "([^"]+)"/).flatten
+           verify.scan(/label = "([^"]+)"/).flatten +
+           # The load-balancer checks run from the operator's machine (aws_utils #dr_edge_checks)
+           Rails.root.join("lib/tasks/aws_utils.rb").read.scan(/check\.call\("([^"]+)"/).flatten
   labels = labels.map { |l| l.gsub(/#\{[^}]*\}/, "x") }.uniq
   steps = Rails.root.join("lib/tasks/aws_utils.rb").read.scan(/dr_phase "([^"]+)"/).flatten
   @dr_uncovered = labels.select { |l| Dr::ReportCatalog.check(l).first[:group] == "Other checks" } +

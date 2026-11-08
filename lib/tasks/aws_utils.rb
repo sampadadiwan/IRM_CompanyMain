@@ -1117,6 +1117,11 @@ module AwsUtils
     run_cmd("branch=#{branch_name} LB=true bundle exec cap #{stack}_#{env_variant} recovery:verify")
     # run_cmd raises on a non-zero exit and dr:verify aborts non-zero on any
     # failed check, so reaching this line IS the proof the stack served.
+    # ...and through the load balancer users will hit: certificate, target health, a request to
+    # the database and the sign-in page over HTTPS. Raises like a failed verify.
+    edge_fails = dr_edge_checks(stack, region)
+    raise "Checks through the load balancer failed (#{edge_fails}) — see the load-balancer scorecard above" if edge_fails.positive?
+
     record_dr_evidence("Recovered stack verified serving",
                        "`recovery:verify` passed on every app server at #{Time.now.utc.iso8601} (per-check scorecard in the transcript)",
                        "re-run `LB=true bundle exec cap #{stack}_#{env_variant} recovery:verify`")
@@ -1360,6 +1365,89 @@ module AwsUtils
     }
     iam.put_role_policy(role_name: role_name, policy_name: "s3-replication", policy_document: permission_policy.to_json)
     iam.get_role(role_name: role_name).role.arn
+  end
+
+  # --- Checks through the load balancer (end of a recovery) --------------------
+
+  # The app host users type: app.<domain> on production, dev.<domain> on staging, from the
+  # target stack's Pulumi config (same convention as aws:dns_cutover)
+  def dr_app_host(stack, region)
+    require "yaml"
+    stack_file = "../IRM-Infra/Pulumi.#{stack}-#{region}.yaml"
+    raise "#{stack_file} not found" unless File.exist?(stack_file)
+
+    domain = YAML.load_file(stack_file).dig("config", "IRM-infra:domain_name") or
+      raise "domain_name missing in #{stack_file}"
+    "#{stack == 'production' ? 'app' : 'dev'}.#{domain.delete_prefix('*.')}"
+  end
+
+  # dr:verify runs ON the app servers, so it never touches what users actually hit: the load
+  # balancer, its certificate and its target groups. These run from here, against the new load
+  # balancer, BEFORE any DNS change: the app host is pinned to the load balancer's address
+  # (curl --resolve), so the certificate is checked for real (no -k) and nothing depends on DNS.
+  # Printed as a "dr:verify on load-balancer" scorecard so the run report shows them
+  # (parse_verify_scorecard). Returns the number of failed checks.
+  def dr_edge_checks(stack, region)
+    require "resolv"
+    require "aws-sdk-elasticloadbalancingv2"
+    host = dr_app_host(stack, region)
+    out, err, status = Open3.capture3("pulumi stack output --json --stack #{stack}-#{region}", chdir: "../IRM-Infra")
+    raise "pulumi stack output failed for #{stack}-#{region}: #{err.lines.last(2).join.strip}" unless status.success?
+
+    alb_dns = JSON.parse(out).dig("alb", "dns_name") or raise "Stack #{stack}-#{region} has no 'alb' output"
+    ip = Resolv.getaddress(alb_dns)
+
+    results = []
+    check = lambda do |label, grade|
+      results << grade.status
+      icon = { ok: "✅", warn: "⚠️", fail: "❌" }[grade.status]
+      puts "#{icon} #{label} — #{grade.detail}"
+    end
+    # One HTTPS request to the app host, pinned to the load balancer. Retries: target
+    # registration can trail the app's own restart by a few seconds.
+    https = lambda do |path|
+      body = code = nil
+      exit_code = 0
+      6.times do |i|
+        o, _e, st = Open3.capture3("curl", "-s", "--max-time", "30", "--resolve", "#{host}:443:#{ip}",
+                                   "-w", "\n%{http_code}", "https://#{host}#{path}")
+        exit_code = st.exitstatus
+        body, _, code = o.rpartition("\n")
+        break if exit_code.zero? && code == "200"
+        break if [51, 60].include?(exit_code) # a certificate problem will not fix itself
+
+        sleep 5 if i < 5
+      end
+      [exit_code, code, body]
+    end
+
+    puts "🩺 dr:verify on load-balancer (#{alb_dns} → #{ip}, Host: #{host})"
+    # 1. Certificate + load balancer → app → database (one request proves both)
+    exit_code, code, = https.call("/health_check/db_check.json")
+    check.call("Load balancer certificate (#{host})", Dr::ServingChecks.grade_certificate(curl_exit: exit_code, host: host))
+    check.call("Load balancer → app → database",
+               Dr::ServingChecks.grade_edge_http(code: code, what: "a request reaches the app and the database"))
+    # 2. Every app server healthy in the load balancer's eyes
+    elb = Aws::ElasticLoadBalancingV2::Client.new(region: region)
+    lb = elb.describe_load_balancers.load_balancers.find { |l| l.dns_name.casecmp?(alb_dns) }
+    states = []
+    if lb
+      elb.describe_target_groups(load_balancer_arn: lb.load_balancer_arn).target_groups.each do |tg|
+        states.concat(elb.describe_target_health(target_group_arn: tg.target_group_arn)
+                         .target_health_descriptions.map { |d| d.target_health.state })
+      end
+    end
+    check.call("Load balancer targets healthy", Dr::ServingChecks.grade_targets(healthy: states.count("healthy"), total: states.size))
+    # 3. A real screen through the load balancer
+    _exit, code, body = https.call("/users/sign_in")
+    check.call("Load balancer sign-in page",
+               Dr::ServingChecks.grade_edge_http(code: code, body: body, marker: Dr::ServingChecks::SIGN_IN_MARKER,
+                                                 what: "the sign-in page loads over HTTPS"))
+
+    fails = results.count(:fail)
+    warns = results.count(:warn)
+    puts "\n#{fails.zero? ? '🟢' : '🔴'} dr:verify — #{results.size} checks: #{results.size - fails - warns} ok, #{warns} warnings, #{fails} failures"
+    fails
   end
 
   # --- Replica Object Lock (openspec fix-backups-deletable) ---------------------
