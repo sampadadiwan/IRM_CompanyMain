@@ -273,3 +273,7 @@ end
 Then("the first attention item says {string}") do |text|
   expect(@dr_model.attention.first[:means]).to include(text)
 end
+
+Given("the load balancer reports {string}") do |line|
+  @dr_run[:scorecard][Dr::ReportModel::LOAD_BALANCER] = [["✅", line]]
+end

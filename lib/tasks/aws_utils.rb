@@ -1434,7 +1434,7 @@ module AwsUtils
       [exit_code, code, body]
     end
 
-    puts "🩺 dr:verify on load-balancer (#{alb_dns} → #{ip}, Host: #{host})"
+    puts "🩺 dr:verify on #{Dr::ReportModel::LOAD_BALANCER} (#{alb_dns} → #{ip}, Host: #{host})"
     # 1. Certificate + load balancer → app → database (one request proves both)
     exit_code, code, = https.call("/health_check/db_check.json")
     check.call("Load balancer certificate (#{host})", Dr::ServingChecks.grade_certificate(curl_exit: exit_code, host: host))

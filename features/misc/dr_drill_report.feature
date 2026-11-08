@@ -81,6 +81,15 @@ Feature: A DR run report explains itself
     And the first attention item is "Step 5 · Install the app on both servers"
     And the report says verification was not reached
 
+  # E5 — Edge case: the load balancer is a column in the checks, never counted as an app server
+  Scenario: The load-balancer checks are not counted as a server
+    Given the 2026-11-08 staging drill's run data
+    And every check passed
+    And the load balancer reports "Load balancer targets healthy — 2 of 2 app servers healthy"
+    When the report model is built
+    Then the plain words mention "Each of the 2 app servers was checked end to end"
+    And the plain words mention "HTTPS through the new load balancer"
+
   # X3 — Error case: the report says WHY a run stopped (2026-11-08 15:14 drill said only "stopped here")
   Scenario: A failed run shows the error that stopped it
     Given a staging drill that failed during step 5 before verification

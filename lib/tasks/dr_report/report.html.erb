@@ -146,7 +146,7 @@
 
   <%# 5. Checks: grouped by layer, one row per check, one column per server -%>
   <div class="card">
-    <div class="head"><h2><svg class="i"><use href="#i-list"/></svg> <%= h(sections[4]) %></h2><span class="muted"><%= m.hosts.size %> server<%= 's' unless m.hosts.size == 1 %></span></div>
+    <div class="head"><h2><svg class="i"><use href="#i-list"/></svg> <%= h(sections[4]) %></h2><% servers = (m.hosts - [Dr::ReportModel::LOAD_BALANCER]).size %><span class="muted"><%= servers %> server<%= 's' unless servers == 1 %><%= ' + load balancer' if m.hosts.include?(Dr::ReportModel::LOAD_BALANCER) %></span></div>
 <% if !m.verified -%>
     <p>Not reached: the run stopped before verification, so no checks ran.</p>
 <% else -%>

@@ -10,6 +10,9 @@ module Dr
   module ReportModel
     # The line a stopped drill prints into its transcript before the error (aws:dr_drill)
     STOP_MARK = "💥 Drill stopped by:"
+    # The pseudo-host the load-balancer checks report under (aws_utils #dr_edge_checks): a column
+    # in the checks table, but not an app server
+    LOAD_BALANCER = "load-balancer"
     Model = Data.define(:passed, :drill, :headline, :subline, :tiles, :plain_words, :objectives, :attention,
                         :steps, :hosts, :groups, :verified, :scope, :evidence, :glossary, :generated)
 
@@ -118,8 +121,9 @@ module Dr
       words = []
       if passed
         words << "The whole #{stack} environment was rebuilt from scratch in #{region}, the disaster-recovery region, from the same backups a real recovery would use."
-        servers = checks.pluck(:host).uniq.size
+        servers = (checks.pluck(:host).uniq - [LOAD_BALANCER]).size
         words << "Each of the #{servers} app servers was checked end to end: web, background jobs, database, search and file storage, all through the app."
+        words << "The site was also checked the way users reach it: HTTPS through the new load balancer, before any DNS change." if checks.any? { |c| c[:host] == LOAD_BALANCER }
         attention = checks.reject { |c| c[:status] == :ok }.pluck(:name).uniq.size
         words << (attention.zero? ? "Every check passed." : "#{attention} check#{'s' unless attention == 1} need#{'s' if attention == 1} attention — see below.")
       else
