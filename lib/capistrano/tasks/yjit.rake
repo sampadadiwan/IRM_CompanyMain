@@ -4,11 +4,11 @@ require 'shellwords'
 
 # YJIT + jemalloc rollout for an environment.
 #
-# Staging only for now — see YJIT_STAGES below.
+# Staging and production (IN and US) — see YJIT_STAGES below.
 #
-#   bundle exec cap staging_in yjit:check     # read-only report, changes nothing
-#   bundle exec cap staging_in yjit:enable    # build, preflight, switch, restart, verify
-#   bundle exec cap staging_in yjit:disable   # roll back to the plain Ruby
+#   bundle exec cap production_in yjit:check     # read-only report, changes nothing
+#   bundle exec cap production_in yjit:enable    # build, preflight, switch, restart, verify
+#   bundle exec cap production_in yjit:disable   # roll back to the plain Ruby
 #
 # Why a task: config.yjit (config/application.rb) is a silent no-op on a Ruby compiled without
 # rustc, which is how rvm built the existing boxes — and jemalloc needs libjemalloc2 on the box
@@ -32,15 +32,22 @@ def yjit_sh(cmd)
   [:bash, '-lc', Shellwords.escape("#{YJIT_RVM} #{cmd}")]
 end
 
-# Staging-only trial: yjit:enable refuses any other stage, matching config.yjit
-# (config/application.rb) and the jemalloc preload in the puma/sidekiq units, which are
-# also staging-only until the trial is done. Widen all three together.
-YJIT_STAGES = %w[staging].freeze
+# Stages that run on YJIT + jemalloc. One list for all three switches: yjit:enable refuses any
+# other stage, and the puma/sidekiq unit templates add the jemalloc LD_PRELOAD only when
+# yjit_stage? is true. config.yjit (config/application.rb) must agree — it is on for every
+# Rails env, so widen or narrow this list and that line together.
+# production_in and production_us both use stage :production, so this covers both regions.
+YJIT_STAGES = %w[staging production].freeze
+
+# True for a stage in YJIT_STAGES; also called from the systemd unit ERB templates.
+def yjit_stage?
+  YJIT_STAGES.include?(fetch(:stage).to_s)
+end
 
 def yjit_guard_stage!
-  return if YJIT_STAGES.include?(fetch(:stage).to_s)
+  return if yjit_stage?
 
-  raise "yjit:enable is limited to #{YJIT_STAGES.join(', ')} during the trial; " \
+  raise "yjit:enable is limited to #{YJIT_STAGES.join(', ')}; " \
         "#{fetch(:stage)} is not enabled (see YJIT_STAGES in lib/capistrano/tasks/yjit.rake)"
 end
 

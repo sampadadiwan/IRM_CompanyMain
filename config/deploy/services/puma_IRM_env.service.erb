@@ -11,8 +11,8 @@ Environment="RAILS-ENV=<%= fetch(:stage) %>"
 # jemalloc instead of glibc malloc: far less heap fragmentation, lower RSS (offsets YJIT's
 # code-cache memory). Bare soname so ld.so finds it on any arch; if libjemalloc2 is not
 # installed, ld.so prints a warning and Ruby runs on glibc malloc as before.
-<%# Staging-only trial. Widen to production once staging has run on jemalloc for a while. %>
-<% if fetch(:stage).to_s == "staging" %>
+<%# Same stages as yjit:enable — YJIT_STAGES / yjit_stage? in lib/capistrano/tasks/yjit.rake. %>
+<% if yjit_stage? %>
 Environment=LD_PRELOAD=libjemalloc.so.2
 <% end %>
 

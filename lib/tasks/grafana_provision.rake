@@ -565,8 +565,8 @@ class GrafanaProvisioner
     new_panels = [
       row_panel(id: max_id + 220, title: 'YJIT', y: 9998),
 
-      # expected comes from config.yjit, so this reads 0 everywhere while production runs without
-      # YJIT, and anything above 0 is a process that should be on YJIT but is not
+      # expected comes from config.yjit (on in staging and production), so anything above 0 is a
+      # process that should be on YJIT but is not
       ts_panel(id: max_id + 221, title: 'YJIT Expected but Off (processes)', x: 0,
         desc: 'Processes where config.yjit asks for YJIT but it is not running. 0 is healthy. ' \
               'Above 0: the process started on a Ruby built without YJIT — e.g. on staging, ' \

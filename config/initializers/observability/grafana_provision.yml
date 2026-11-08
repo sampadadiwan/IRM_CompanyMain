@@ -563,8 +563,8 @@ alert_rules:
       category: rails
 
   # YJIT — gauges from YjitMetrics (config/initializers/prometheus.rb), one series per puma worker
-  # and per sidekiq. ruby_yjit_expected mirrors config.yjit, so this stays silent while production
-  # runs without YJIT and starts guarding the day config.yjit is widened to production. It catches
+  # and per sidekiq. ruby_yjit_expected mirrors config.yjit, which is on in staging and production
+  # (IN and US), so this guards every server process. It catches
   # the silent fallback seen on staging 2026-11-05: sidekiq restarted on the plain Ruby (RVM's
   # .ruby-version cd hook) while puma ran YJIT, and nothing failed — it just ran slower.
   - title: "YJIT Not Running Where Expected"

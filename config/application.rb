@@ -15,10 +15,11 @@ module CapHive
     # YJIT: ~20-37% less controller time on the funds list views. Only takes effect if Ruby was
     # compiled with rustc available — bin/setup-yjit does that on a dev machine,
     # `cap <stage> yjit:enable` on a server; config/initializers/yjit_check.rb warns otherwise.
-    # On in dev and test (parity with staging, and long-lived cucumber workers benefit) and on
-    # staging; production stays off until the staging trial is done, then this becomes `true`.
+    # On in every env: dev and test (long-lived cucumber workers benefit), staging and production
+    # (IN and US). Keep in step with YJIT_STAGES in lib/capistrano/tasks/yjit.rake, which builds
+    # the YJIT Ruby and jemalloc preload on those servers.
     # YJIT=0 opts out, e.g. to bisect a suspected YJIT issue on plain Ruby.
-    config.yjit = ENV["YJIT"] != "0" && (Rails.env.local? || Rails.env.staging?)
+    config.yjit = ENV["YJIT"] != "0"
 
     config.active_support.key_generator_hash_digest_class = OpenSSL::Digest::SHA1
 

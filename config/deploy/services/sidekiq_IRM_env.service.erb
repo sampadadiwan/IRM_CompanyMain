@@ -64,8 +64,8 @@ Environment=RAILS_ENV=<%= fetch(:stage) %>
 Environment=MALLOC_ARENA_MAX=2
 # jemalloc (see puma unit): addresses the same fragmentation more thoroughly. MALLOC_ARENA_MAX
 # is kept as the fallback for hosts where libjemalloc2 is not installed yet.
-<%# Staging-only trial. Widen to production once staging has run on jemalloc for a while. %>
-<% if fetch(:stage).to_s == "staging" %>
+<%# Same stages as yjit:enable — YJIT_STAGES / yjit_stage? in lib/capistrano/tasks/yjit.rake. %>
+<% if yjit_stage? %>
 Environment=LD_PRELOAD=libjemalloc.so.2
 <% end %>
 
