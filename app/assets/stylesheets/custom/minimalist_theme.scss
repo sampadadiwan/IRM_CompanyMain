@@ -205,6 +205,41 @@
           vertical-align: middle;
         }
       }
+
+      // Trail and icons (favourite, event, guide, journey, workflow) on one line on phones.
+      // layouts/_breadcrumbs splits them col-sm-10 / col-sm-2, and below sm both columns are
+      // full width, so the icons dropped onto a line of their own under "Home • …". Here the
+      // trail takes whatever room is left (its items already truncate, above) and the icons
+      // only the width they need, side by side
+      .row {
+        @media (max-width: 767.98px) {
+          flex-wrap: nowrap;
+        }
+      }
+
+      .row > :first-child {
+        @media (max-width: 767.98px) {
+          flex: 1 1 0;
+          // A flex item will not shrink below its content without this, so a long trail
+          // would push the icons off the card instead of truncating
+          min-width: 0;
+        }
+      }
+
+      .row > :last-child {
+        @media (max-width: 767.98px) {
+          flex: 0 0 auto;
+          width: auto;
+          display: flex;
+          align-items: center;
+          gap: 4px;
+
+          // The icons' mb-1 lifted them off the trail's centre line once they sit beside it
+          .btn {
+            margin-bottom: 0 !important;
+          }
+        }
+      }
     }
   }
 }
