@@ -67,6 +67,11 @@ class Approval < ApplicationRecord
     self.response_status ||= "Approved,Pending,Rejected"
   end
 
+  # The answer options the firm offered, e.g. "Approved, Pending,Rejected" → ["Approved", "Pending", "Rejected"]
+  def offered_statuses
+    response_status.to_s.split(",").map(&:strip).compact_blank
+  end
+
   def folder_path
     "/Approvals/#{title.delete('/')}-#{id_or_random_int}"
   end

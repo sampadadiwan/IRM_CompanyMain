@@ -159,7 +159,15 @@ class DocumentsController < ApplicationController
                                 .query(simple_query_string: { fields: DocumentIndex::SEARCH_FIELDS,
                                                               query:, default_operator: 'and' })
 
-      @pagy, @documents = pagy(@documents.page(params[:page]).objects)
+      @pagy, hits = pagy(@documents.page(params[:page]).objects)
+      # Chewy gives nil for an indexed id whose row is gone
+      ids = hits.to_a.compact.map(&:id)
+      # Search narrows the Documents list, never shows more than it: a non-admin employee's list is
+      # only their own uploads, so the firm-wide hits are re-checked against that same rule. Support
+      # searching a client firm (S4) sees that firm's hits, as before.
+      scope = current_user.support? ? Document.where(entity_id: @entity.id) : own_uploads_unless_admin(policy_scope(Document))
+      # A relation (the index views join and page it), in the search's own order
+      @documents = scope.where(id: ids).in_order_of(:id, ids)
       # @no_folders = true
       render "index"
     else
@@ -604,7 +612,7 @@ class DocumentsController < ApplicationController
     # Filter by owner_tag
     @documents = filter_params(@documents, :entity_id, :owner_id, :owner_type, :import_upload_id, :owner_tag)
     # This is specifically for non company_admins
-    @documents = @documents.where(user_id: current_user.id) unless current_user.has_cached_role?(:company_admin)
+    @documents = own_uploads_unless_admin(@documents)
 
     # Documents page search box: narrow this same list by name/tag, so it spans every folder
     if params[:search].present?
@@ -617,6 +625,12 @@ class DocumentsController < ApplicationController
     # Newest docs first
     @documents = @documents.includes(:folder).order(id: :desc)
     @documents
+  end
+
+  # The Documents list's own visibility rule: a company admin sees every firm document, anyone else
+  # only the ones they uploaded. Shared by the list (fetch_rows) and the global search.
+  def own_uploads_unless_admin(documents)
+    current_user.has_cached_role?(:company_admin) ? documents : documents.where(user_id: current_user.id)
   end
 
   # Only allow a list of trusted parameters through.

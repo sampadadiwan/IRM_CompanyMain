@@ -191,7 +191,8 @@
   end
 
   Then('when the approval response is accepted') do
-    @approval.approval_responses.update(status: "Accepted")
+    # An answer must be one of the approval's offered options (ApprovalResponse#status_is_offered_option)
+    @approval.approval_responses.update(status: "Approved")
   end
 
   Then('the investor gets the accepted notification') do
@@ -299,7 +300,36 @@ When('I select {string} in the approval notification email') do |status|
   open_email(email)
   puts "clicking #{status} in current_email = to: #{current_email.to}, subj: #{current_email.subject}"
   current_email.click_link status
+  # The link only opens the confirm card; the answer is saved by its button
+  click_on "Confirm #{status}"
   ap @approval.approval_responses.last
+end
+
+# A mail scanner: fetches the emailed link (GET) and never presses Confirm
+When('the {string} link in the approval notification email is only opened') do |status|
+  open_email(@approval.approval_responses.last.investor.emails.last)
+  current_email.click_link status
+end
+
+# The emailed link, with its status swapped for one the approval does not offer
+When('I open the approval notification email link with the status changed to {string}') do |status|
+  open_email(@approval.approval_responses.last.investor.emails.last)
+  link = current_email.all("a").map { |a| a[:href] }.find { |href| href.include?("email_response") }
+  uri = URI.parse(link)
+  query = Rack::Utils.parse_query(uri.query).merge("status" => status)
+  visit "#{uri.path}?#{query.to_query}"
+end
+
+When('the approval due date passes') do
+  @approval.update_column(:due_date, Time.zone.yesterday)
+end
+
+Then('the approval response page says {string}') do |text|
+  expect(page).to have_content(text)
+end
+
+Then('the approval response is still {string}') do |status|
+  @approval.approval_responses.first.reload.status.should == status
 end
 
 When('the approval reminder is sent internally') do

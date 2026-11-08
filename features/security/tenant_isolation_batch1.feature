@@ -52,6 +52,31 @@ Feature: Tenant isolation - batch 1 of the 2026-10-17 advisor-role review
     When I search documents for "contract" passing the entity "Zeta Capital"
     Then the document search ran against my own entity
 
+  # S4-H — Happy path: a company admin's search finds every matching document of the firm
+  @security @rack_test
+  Scenario: S4-H A company admin's document search lists colleagues' documents
+    Given my entity has a document "My NDA agreement" I uploaded and "Side letter agreement" a colleague uploaded
+    When the document search for "agreement" finds both documents
+    Then the document search lists "My NDA agreement"
+    And the document search lists "Side letter agreement"
+
+  # S4-X1 — Error case: a non-admin's search shows only what their Documents list shows (own uploads)
+  @security @rack_test
+  Scenario: S4-X1 A non-admin employee's document search hides colleagues' documents
+    Given my entity has a document "My NDA agreement" I uploaded and "Side letter agreement" a colleague uploaded
+    And I am signed in as an employee who is not a company admin
+    When the document search for "agreement" finds both documents
+    Then the document search lists "My NDA agreement"
+    And the document search does not list "Side letter agreement"
+
+  # S4-X2 — Error case: the JSON search gives a non-admin no entry (and no download URL) for colleagues' documents
+  @security @rack_test
+  Scenario: S4-X2 A non-admin employee's JSON document search hides colleagues' documents
+    Given my entity has a document "My NDA agreement" I uploaded and "Side letter agreement" a colleague uploaded
+    And I am signed in as an employee who is not a company admin
+    When the JSON document search for "agreement" finds both documents
+    Then the JSON document search returns only "My NDA agreement"
+
   # S5 — Error case: an investor cannot edit or delete someone else's unverified offer
   @security @rack_test
   Scenario: S5 An investor cannot edit another seller's unverified offer

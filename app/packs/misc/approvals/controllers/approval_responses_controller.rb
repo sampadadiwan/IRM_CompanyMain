@@ -84,28 +84,28 @@ class ApprovalResponsesController < ApplicationController
     end
   end
 
+  # The investor's emailed answer links (approval_mailer/_response_link). Opening a link (GET) only
+  # shows a confirm card; the answer is saved by the POST from that card. Mail scanners (Safe Links,
+  # Mimecast, …) open every link in an email, so a GET that saved would register whichever option
+  # the scanner happened to fetch last, as the investor.
   def email_response
-    # The link is triggered by a GET request in the email to investor, but we need to update the response
-    ActiveRecord::Base.connected_to(role: :writing) do
-      if params[:signed_id] && params[:email]
-        @approval_response = ApprovalResponse.find_signed(params[:signed_id],
-                                                          purpose: "approval_response-#{params[:email]}")
+    # The signed link: bound to this response and the recipient's email, 7 days
+    @approval_response = email_link_response
+    # Stripped: links sent before this change carry " Rejected" for options typed "Approved, Rejected"
+    @status = params[:status].to_s.strip
+    approval = @approval_response&.approval
 
-        logger.debug "Approval response for email_response by #{params[:email]} #{@approval_response}"
-        @msg = if @approval_response && @approval_response.id == params[:id].to_i
-                 user = User.find_by(email: params[:email])
-                 if user && @approval_response.update(status: params[:status], response_user_id: user.id)
-                   "Successfully registered response: #{params[:status]}."
-                 else
-                   "Failed to register response: #{@approval_response.errors.full_messages.join(', ')}"
-                 end
-               else
-                 "Failed to register response: Invalid link."
-               end
-      else
-        @msg = "Failed to register response: Invalid link."
-      end
-    end
+    @msg = if @approval_response.nil?
+             "Failed to register response: Invalid link."
+           elsif approval.due_date < Time.zone.today
+             # Same rule as answering in the app (ApprovalResponsePolicy#approve?)
+             "This approval closed on #{l(approval.due_date)}."
+           elsif approval.offered_statuses.exclude?(@status) || @status == "Pending"
+             "Failed to register response: #{@status} is not a response option for this approval."
+           elsif request.post?
+             record_email_response
+           end
+    # @msg nil = GET of a valid link: the view shows the confirm card
   end
 
   # DELETE /approval_responses/1 or /approval_responses/1.json
@@ -119,6 +119,29 @@ class ApprovalResponsesController < ApplicationController
   end
 
   private
+
+  # The response an emailed answer link points at, or nil when the link is missing, tampered with,
+  # expired, or signed for another response.
+  def email_link_response
+    return nil if params[:signed_id].blank? || params[:email].blank?
+
+    response = ApprovalResponse.find_signed(params[:signed_id], purpose: "approval_response-#{params[:email]}")
+    response if response&.id == params[:id].to_i
+  end
+
+  # Saves the confirmed answer as the link's recipient; returns the message the card shows
+  def record_email_response
+    user = User.find_by(email: params[:email])
+    return "Failed to register response: Invalid link." unless user
+
+    ActiveRecord::Base.connected_to(role: :writing) do
+      if @approval_response.update(status: @status, response_user_id: user.id)
+        "Successfully registered response: #{@status}."
+      else
+        "Failed to register response: #{@approval_response.errors.full_messages.join(', ')}"
+      end
+    end
+  end
 
   # Use callbacks to share common setup or constraints between actions.
   def set_approval_response

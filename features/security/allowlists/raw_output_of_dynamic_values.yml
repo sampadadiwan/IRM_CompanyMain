@@ -141,8 +141,6 @@ app/packs/core/documents/views/documents/_index_cards.html.erb | raw(pagy_info(@
 ? 'app/packs/core/documents/views/documents/index.html.erb | raw(pagy_bootstrap_nav(@pagy, anchor_string: %(data-turbo-frame="#{documents_frame_id}" data-remote="true")))'
 : Pagy pagination HTML built by the gem from page numbers; no user text.
 app/packs/core/documents/views/documents/index.html.erb | raw(pagy_info(@pagy)): Pagy pagination HTML built by the gem from page numbers; no user text.
-? 'app/packs/core/documents/views/documents/show.html.erb | raw(@document.tag_list.split(",").collect{|tag| link_to(tag.strip, search_documents_path(query: tag.strip))}.join(", "))'
-: Each tag goes through link_to, which escapes it; only the ", " joiner is raw.
 app/packs/core/email_deliverability/views/email_bounce_events/index.html.erb | raw(pagy_bootstrap_nav(@pagy)): Pagy pagination HTML built by the gem from page numbers; no user text.
 app/packs/core/entities/views/entities/widgets/_funds.html.erb | raw(pagy_bootstrap_nav(@pagy)): Pagy pagination HTML built by the gem from page numbers; no user text.
 app/packs/core/entities/views/entities/widgets/_funds.html.erb | raw(pagy_info(@pagy)): Pagy pagination HTML built by the gem from page numbers; no user text.
