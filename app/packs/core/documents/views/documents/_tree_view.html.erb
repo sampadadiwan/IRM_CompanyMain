@@ -1,4 +1,7 @@
 <%  no_folders ||= false
+    # The folder page (folders/_folder_details): its header already names the folder, so no card
+    # header (Index / All Documents) and no path heading here
+    folder_page ||= false
     widget_id ||= nil
     tree_view_id = widget_id.present? ? "tree_view_#{widget_id}" : "tree_view"
     documents_frame_id = widget_id.present? ? "documents_frame_#{widget_id}" : "documents_frame"
@@ -45,7 +48,7 @@
 
     <div class="<%= doc_index_class %>">
         <div class="card shadow mb-4">
-            <% if show_action_buttons %>
+            <% if show_action_buttons && !folder_page %>
                 <div class="card-header">
                     <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center">
                         <span class="m-0 font-weight-bold text-primary"><i class="ti ti-files"></i> Documents</span>
@@ -105,7 +108,7 @@
                         @pagy, documents = pagy(documents) if params[:all].blank?
                     %>
 
-                    <%= render "documents/index", documents: documents, entity: entity, owner: @owner %>
+                    <%= render "documents/index", documents: documents, entity: entity, owner: @owner, folder_page: %>
                     <%= raw pagy_bootstrap_nav(@pagy, anchor_string: %(data-turbo-frame="#{documents_frame_id}" data-remote="true")) if @pagy %>
                 <% end %>
             </div>

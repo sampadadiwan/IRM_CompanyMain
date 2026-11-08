@@ -1,6 +1,8 @@
 <%
   @entity ||= nil
   # Tree-wide lists (search / LP latest) set their own title and show no single folder in it
+  # On the folder page the header above already shows the folder and its path (folders/show)
+  folder_page = local_assigns[:folder_page]
   # A caller's own label for this list (e.g. "Interest Documents" and "Transaction Documents" on one
   # page) - shown before the folder path so two lists on a page stay told apart
   custom_title = local_assigns[:title]
@@ -36,6 +38,9 @@
         Firm's own folder: every part opens that folder's page (where Access Rights lives); Folder#ancestors
         is one query (ancestry) and the firm's "/" folder shows the firm's name. An investor gets only the
         folder's name - the fund's folders above theirs are not theirs to see. %>
+    <% if folder_page %>
+    <p class="text-muted small mb-0" id="docs_folder_explainer"><i class="ti ti-info-circle"></i> The documents in this folder (not its sub-folders).</p>
+    <% else %>
     <h5 class="mb-0 d-none d-sm-block" id="docs_folder_path">
       <i class="ti ti-folders text-muted"></i>
       <% if custom_title.present? %><%= custom_title %>:<% end %>
@@ -49,6 +54,7 @@
         <%= @folder.name %>
       <% end %>
     </h5>
+    <% end %>
   <% else %>
     <div class="d-none d-sm-block">
       <h4 class="mb-0 text-gray-800">
