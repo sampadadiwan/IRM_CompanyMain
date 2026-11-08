@@ -372,6 +372,41 @@ namespace :aws do
     # dr_readiness scorecard which only reports. See aws_utils.rb.
     ensure_pulumi_backend!(env_name)
 
+    # --- Refuse a colliding run BEFORE anything is logged ---------------------
+    # A refusal here is not a drill: it writes no drill row and no report
+    # (three "FAILED 0.1 min" rows on 2026-11-08 were collisions, not drills).
+    #
+    # 1. One drill per stack from this checkout. flock is released by the OS
+    #    if this process dies, so it can never go stale itself.
+    run_lock_path = Rails.root.join("tmp", "dr_drill_#{stack}-#{region}.lock")
+    # rubocop:disable Style/FileOpen -- held open on purpose: closing it would release the lock
+    run_lock = File.open(run_lock_path, File::RDWR | File::CREAT, 0o644)
+    # rubocop:enable Style/FileOpen
+    unless run_lock.flock(File::LOCK_EX | File::LOCK_NB)
+      abort "❌ A DR drill for #{stack}-#{region} is already running from this checkout " \
+            "(pid #{File.read(run_lock_path).strip.presence || 'unknown'}). Wait for it to finish — not logged as a drill."
+    end
+    run_lock.truncate(0)
+    run_lock.write(Process.pid.to_s)
+    run_lock.flush
+
+    # 2. The Pulumi stack lock, which also catches runs from other machines
+    #    and locks left behind by killed runs. Never cancelled automatically.
+    # Signal 0 only asks "does this pid exist?": ESRCH = gone; EPERM = exists
+    # but belongs to another user (still alive)
+    pid_alive = lambda do |pid|
+      Process.kill(0, pid)
+      true
+    rescue Errno::ESRCH
+      false
+    rescue Errno::EPERM
+      true
+    end
+    lock = Dr::PulumiLock.classify(pulumi_stack_lock_files(env_name, "#{stack}-#{region}"),
+                                   stack: "#{stack}-#{region}", local_host: Socket.gethostname, alive: pid_alive)
+    abort "❌ #{lock.message} — not logged as a drill." unless lock.state == :free
+    puts "🔓 #{lock.message} (#{stack}-#{region})"
+
     original_branch = `git rev-parse --abbrev-ref HEAD`.strip
     branch_prefix = stack == 'staging' ? "dr_drill_#{env_variant}" : "dr_drill_#{stack}_#{env_variant}"
     drill_branch = "#{branch_prefix}_#{Time.now.strftime('%Y_%m_%d_%H%M')}"
@@ -433,6 +468,30 @@ namespace :aws do
       puts "\n#{result == 'PASSED' ? '✅' : '❌'} DR DRILL #{result} — measured rebuild time: #{duration_min} minutes (logged to docs/operations/dr/dr_drills.md)"
       puts "   NOTE: that figure excludes detection, disaster declaration, and DNS cutover/TTL —"
       puts "         it is rebuild time, not end-to-end RTO. See the report for the full scope."
+
+      # Stop the drill's own app services BEFORE teardown. Otherwise `pulumi
+      # destroy` removes the DB box (Redis) under running puma/sidekiq, and every
+      # reconnect error is mailed (2026-11-08, 10:51 IST). This must happen
+      # BEFORE the git checkout below: back on the original branch the deploy
+      # file names the LIVE servers. The guard proves it still names exactly the
+      # drill's app servers; anything else skips the stop. Warn-only — a stop
+      # failure never blocks the teardown.
+      if result == "PASSED" && ENV["TEARDOWN"] == "true"
+        deploy_file = Rails.root.join("config", "deploy", "#{stack}_#{env_variant}.rb")
+        deploy_text = File.exist?(deploy_file) ? File.read(deploy_file) : ""
+        if Dr::DrillTeardown.targets_drill?(deploy_text, @dr_app_server_ips)
+          puts "🛑 Stopping app services on the drill servers (#{@dr_app_server_ips.join(', ')}) before teardown"
+          # maintenance mode stops sidekiq + puma; clearing cron stops scheduled rake runs
+          %w[nginx:switch_maintenance whenever:clear_crontab].each do |task|
+            run_cmd("branch=#{drill_branch} LB=true bundle exec cap #{stack}_#{env_variant} #{task}")
+          rescue StandardError => e
+            puts "⚠️  #{task} on the drill servers failed (#{e.message.lines.first.to_s.strip}) — teardown continues"
+          end
+        else
+          puts "⚠️  Not stopping drill app services: #{deploy_file.basename} does not name exactly the drill " \
+               "servers (#{Array(@dr_app_server_ips).join(', ').presence || 'unknown'}) — teardown continues"
+        end
+      end
 
       # Return the operator's working tree to where it was.
       #

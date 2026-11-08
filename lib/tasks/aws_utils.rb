@@ -1147,6 +1147,40 @@ module AwsUtils
     nil
   end
 
+  # Every local key that might open a DR server: the DB key (KEYNAME) and the
+  # app servers' deploy key from config/deploy/<stack>_<variant>.rb.
+  def dr_ssh_keys(stack, env_variant)
+    deploy_file = Rails.root.join("config", "deploy", "#{stack}_#{env_variant}.rb")
+    deploy_keys = File.exist?(deploy_file) ? File.read(deploy_file).scan(/keys:\s*\[\s*'([^']+)'/).flatten : []
+    (["~/.ssh/#{ENV.fetch('KEYNAME', '')}.pem"] + deploy_keys).map { |k| File.expand_path(k) }.uniq.select { |k| File.file?(k) }
+  end
+
+  # How long setup_infra waits for freshly created app servers to accept SSH.
+  SSH_READY_DEADLINE_SECONDS = 300
+
+  # Waits until every new app server accepts SSH, so the first deploy step does
+  # not race the boot (2026-09-12 18:32: Net::SSH::ConnectionTimeout two seconds
+  # after pulumi up). Raises, naming the server, if one never answers.
+  def wait_for_ssh(stack, env_variant, app_ips)
+    require "net/ssh"
+    keys = dr_ssh_keys(stack, env_variant)
+    app_ips.each do |ip|
+      # Monotonic: a wall-clock jump must not stretch or cut the deadline
+      deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + SSH_READY_DEADLINE_SECONDS
+      begin
+        Net::SSH.start(ip, "ubuntu", keys: keys, keys_only: true, non_interactive: true, timeout: 10,
+                                     verify_host_key: :never) { |ssh| ssh.exec!("true") }
+        puts "🔌 #{ip} accepts SSH"
+      rescue StandardError => e
+        raise "App server #{ip} did not accept SSH within #{SSH_READY_DEADLINE_SECONDS / 60} min (#{e.class}: #{e.message})" \
+          if Process.clock_gettime(Process::CLOCK_MONOTONIC) >= deadline
+
+        sleep 10
+        retry
+      end
+    end
+  end
+
   # How long the early strip keeps retrying while freshly created boxes boot.
   EARLY_STRIP_DEADLINE_SECONDS = 120
 
@@ -1166,11 +1200,7 @@ module AwsUtils
     require "shellwords"
     puts "🧹 Stripping old backup jobs from the new DB boxes (best effort; the restore does it again)"
 
-    # Offer every key that might open either hop: the DB key (KEYNAME) and the
-    # app servers' deploy key from config/deploy/<stack>_<variant>.rb
-    deploy_file = Rails.root.join("config", "deploy", "#{stack}_#{env_variant}.rb")
-    deploy_keys = File.exist?(deploy_file) ? File.read(deploy_file).scan(/keys:\s*\[\s*'([^']+)'/).flatten : []
-    keys = (["~/.ssh/#{ENV.fetch('KEYNAME', '')}.pem"] + deploy_keys).map { |k| File.expand_path(k) }.uniq.select { |k| File.file?(k) }
+    keys = dr_ssh_keys(stack, env_variant)
     if app_ip.to_s.empty? || keys.empty?
       puts "⚠️  Early strip skipped — no app server address or no local SSH key; the restore will strip instead"
       return
@@ -1265,6 +1295,13 @@ module AwsUtils
     raise "Pulumi output missing public_ips.AppServers — check ../IRM-Infra/output.json" unless app_server_ips.is_a?(Array) && app_server_ips.any?
 
     replace_ip_addresses(Rails.root.join('config', 'deploy', "#{stack}_#{env_variant}.rb"), app_server_ips)
+    # aws:dr_drill's pre-teardown stop checks the deploy file against these
+    @dr_app_server_ips = app_server_ips
+
+    # A drill marks its own stack: tagged error mail, no WhatsApp pages
+    # (lib/drill_stack.rb). Committed only on the drill branch, with the other
+    # config above; a real recovery never sets it.
+    update_env_file(".env.#{stack}.#{env_variant}", "DR_DRILL_STACK", region) if Dr::BackupSchedule.drill?
 
     # Instance ids are the join key against CloudTrail — the authoritative
     # third-party record that these machines were created when we say they were.
@@ -1282,6 +1319,7 @@ module AwsUtils
     # The new DB boxes are clones of the live box and carry its old,
     # marker-blind backup job — strip it now rather than ~8 minutes from now
     # at the restore. Best effort: never fails the DR (the restore strips again).
+    wait_for_ssh(stack, env_variant, app_server_ips)
     strip_old_backup_jobs_early(stack, env_variant, app_server_ips.first, db_hosts)
 
     if branch_name.to_s.strip.empty?
@@ -1710,6 +1748,21 @@ module AwsUtils
       primary: "irm-pulumi-state-#{account}-primary-#{primary_region}",
       replica: "irm-pulumi-state-#{account}-replica-#{dr_region}"
     }
+  end
+
+  # The lock files Pulumi currently holds for one stack in the S3 backend, as
+  # JSON strings (pid, username, hostname, timestamp). Pulumi writes one per
+  # running update under .pulumi/locks/<org>/<project>/<stack>/<id>.json and
+  # deletes it when the update ends — so a file left behind is a stale lock.
+  # Read-only. Used by aws:dr_drill to refuse BEFORE `pulumi up` (Dr::PulumiLock).
+  def pulumi_stack_lock_files(env_name, stack_name)
+    buckets = pulumi_state_buckets(env_name)
+    s3 = Aws::S3::Client.new(region: buckets[:primary_region])
+    keys = []
+    s3.list_objects_v2(bucket: buckets[:primary], prefix: ".pulumi/locks/").each_page do |page|
+      keys.concat(page.contents.map(&:key).select { |k| k.include?("/#{stack_name}/") && k.end_with?(".json") })
+    end
+    keys.map { |key| s3.get_object(bucket: buckets[:primary], key: key).body.read }
   end
 
   # Current pulumi backend URL, or nil if it cannot be determined.

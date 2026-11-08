@@ -72,6 +72,15 @@ CONFIRM_PRODUCTION=true TEARDOWN=true \
   rake "aws:dr_drill[in, ap-south-2, production.in, production]"
 ```
 
+What a drill does differently from a real recovery (OpenSpec `fix-dr-drill-hygiene`, 2026-11):
+
+- **It refuses to collide, and a refusal is not logged as a drill.**
+  - A second drill from the same checkout is refused at once (a local run lock).
+  - Before `pulumi up` it reads the stack's Pulumi lock. If another run holds it, it names who and since when. If the lock is *stale* (the process is gone), it prints the exact `cd ../IRM-Infra && pulumi cancel --stack <stack> --yes`. It never cancels by itself.
+- **It never pages anyone.** The drill branch's `.env` gets `DR_DRILL_STACK=<region>`. Drill error mail is tagged `[Error][DR DRILL <region>]`, and critical WhatsApp alerts are off on drill servers. A real recovery sets none of this.
+- **It stops its own servers before teardown.** On PASSED with `TEARDOWN=true`, puma, sidekiq and cron on the drill servers are stopped first. This runs only while the deploy file still names exactly the drill's servers, before switching back to the original branch, where it would name the live ones. Then `pulumi destroy` runs.
+- **It never arms backups** (`DR_DRILL=true`); see §10.
+
 `docs/operations/dr/dr_drills.md` and the drill-recency check in `aws:dr_readiness` both key
 on `stack`, so a passed staging drill is never read as satisfying production's
 recency requirement (or vice versa).

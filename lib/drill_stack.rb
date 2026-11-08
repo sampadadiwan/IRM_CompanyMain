@@ -1,0 +1,32 @@
+# frozen_string_literal: true
+
+# Marks the processes of a DR DRILL stack (openspec fix-dr-drill-hygiene).
+#
+# aws:dr_drill writes DR_DRILL_STACK=<region> into the drill branch's .env, so every process on
+# the drill's servers knows it is a rehearsal:
+# - its error mail is tagged "[DR DRILL <region>]", so it is never mistaken for a live incident;
+# - it never sends a critical WhatsApp page (CriticalErrorWhatsapp.enabled?) - a drill must not
+#   wake anyone, and its errors still arrive as tagged mail.
+# A real recovery never sets it, so a recovered production still pages as before.
+#
+# Plain Ruby, required at boot by config/initializers/exception_notification.rb and
+# lib/critical_error_whatsapp.rb (the notifier must not autoload at the moment it fires).
+module DrillStack
+  module_function
+
+  # The drill's region ("ap-south-2"), or nil on every real environment
+  def region(env = ENV)
+    value = env["DR_DRILL_STACK"].to_s.strip
+    value.empty? ? nil : value
+  end
+
+  def drill?(env = ENV)
+    !region(env).nil?
+  end
+
+  # The error mail subject prefix: unchanged on a real environment, tagged on a drill stack
+  def email_prefix(rails_env:, base_domain:, env: ENV)
+    tag = drill?(env) ? "[DR DRILL #{region(env)}]" : ""
+    "[Error]#{tag} #{rails_env}:(#{base_domain})"
+  end
+end
