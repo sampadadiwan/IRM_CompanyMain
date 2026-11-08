@@ -184,6 +184,13 @@ So the time customers would actually wait is the rebuild time plus those three.
 
 | Claim | Evidence | How to check |
 |---|---|---|
+| Infrastructure provisioned in ap-south-2 | Pulumi update #0 — succeeded, 2026-11-08T09:44:29.000Z → 2026-11-08T09:46:59.000Z | `pulumi stack history --stack staging-ap-south-2` (server-side record, Pulumi console) |
+| Database instances launched in ap-south-2 | i-015c31ccc8d53ab29 (10.0.4.243, launched 2026-11-08T09:44:50Z); i-02a68c62aba8caf8c (10.0.3.54, launched 2026-11-08T09:44:51Z) | CloudTrail `RunInstances` events in ap-south-2; `aws ec2 describe-instances --region ap-south-2` |
+| Recovered stack endpoints | app servers 18.61.228.110, 18.61.201.28; DB primary 10.0.3.54, replica 10.0.4.243 | `pulumi stack output --stack staging-ap-south-2` |
+| Application code deployed | commit `8f4f8ee32f803073bc6056e3f4a5ef94ae44990d` on branch `dr_drill_in_2026_11_08_1514` (pushed to origin) | `git log -1 8f4f8ee32f`; GitHub branch push timestamp |
+| Data restored from real backups | source bucket `docs.altx.com.staging-backup-xtra` (full + incremental chain; keys named in the transcript) | `aws s3 ls s3://docs.altx.com.staging-backup-xtra/` — compare object timestamps against the run window |
+| Recovered stack verified serving (step 9, re-run) | `recovery:verify` passed 32/32 on each app server and 4/4 load-balancer checks, 2026-11-08T10:04:54Z → 2026-11-08T10:05:46Z, after fix a63e7b9660 | `git show a63e7b9660`; local transcript docs/operations/dr/runs/dr_drill_in_2026_11_08_1514_reverify.log |
+| Drill stack destroyed | `pulumi destroy` — 46 resources deleted, no errors, finished 2026-11-08T10:10:56Z | `pulumi stack history --stack staging-ap-south-2` |
 
 ## Words used in this report
 
@@ -197,4 +204,4 @@ So the time customers would actually wait is the rebuild time plus those three.
 | Full transcript | docs/operations/dr/runs/dr_drill_in_2026_11_08_1514_reverify.log: every command and its output. |
 
 ---
-<sub>Generated 8 Nov 2026 10:05 UTC by <code>rake aws:dr_drill</code></sub>
+<sub>Generated 8 Nov 2026 10:05 UTC by hand: steps 1–8 from <code>rake aws:dr_drill</code> (15:14 run), step 9 re-run after a63e7b9660</sub>
