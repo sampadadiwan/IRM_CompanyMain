@@ -292,6 +292,23 @@
   }
 }
 
+// A collapsible card's header buttons - its minimize toggle (ToggleCard, AuditTrail: .show_details_link) and the
+// custom fields button form_type_fields_controller puts beside it (and in a form card's header) - as one square
+// size. The theme's `.btn { padding: 10px 24px }` (minimalist_theme.scss, loaded after this file) overrode the
+// custom fields button's own padding above, so it came out ~24px wider than the toggle next to it. The
+// breadcrumb's round variant (btn-primary) is left alone. `.card` raises specificity over the theme's .btn rules
+.card .card-header .show_details_link,
+.card .card-header .form-type-fields-btn.btn-outline-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+}
+
 // The form card's header once it holds the custom fields button: title and button on one centred line, the
 // header's note (if any) on its own line below (user feedback 2026-11-07 — the floated button sat off the title)
 .form_card > .card-header.form-type-fields-header {
