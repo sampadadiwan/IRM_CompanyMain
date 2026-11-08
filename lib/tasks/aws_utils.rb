@@ -888,6 +888,21 @@ module AwsUtils
     end
   end
 
+  # Opens SSH to a DB server from the operator's machine, hopping through an app
+  # server (DB servers accept SSH only from there). The app server forwards the
+  # TCP stream (-W); the same keys are offered on both hops. Host keys change on
+  # every rebuild, so they are not pinned (matches run_baked_restore).
+  def dr_db_ssh(app_ip, db_host, keys, &)
+    require "net/ssh"
+    require "net/ssh/proxy/command"
+    require "shellwords"
+    key_opts = keys.map { |k| "-i #{Shellwords.escape(k)}" }.join(" ")
+    proxy_cmd = "ssh #{key_opts} -o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null " \
+                "-o ConnectTimeout=10 -W %h:%p ubuntu@#{app_ip}"
+    Net::SSH.start(db_host, "ubuntu", keys: keys, keys_only: true, non_interactive: true, timeout: 15,
+                                      verify_host_key: :never, proxy: Net::SSH::Proxy::Command.new(proxy_cmd), &)
+  end
+
   # How long the early strip keeps retrying while freshly created boxes boot.
   EARLY_STRIP_DEADLINE_SECONDS = 120
 
@@ -913,21 +928,11 @@ module AwsUtils
       return
     end
 
-    # The app server forwards the TCP stream (-W) — the same keys are offered on
-    # both hops. Host keys are new on every rebuild, so they are not pinned here
-    # (matches run_baked_restore's verify_host_key: :never).
-    key_opts = keys.map { |k| "-i #{Shellwords.escape(k)}" }.join(" ")
-    proxy_cmd = "ssh #{key_opts} -o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null " \
-                "-o ConnectTimeout=10 -W %h:%p ubuntu@#{app_ip}"
-
     db_hosts.compact.uniq.each do |db_host|
       # Monotonic: a wall-clock jump (NTP) must not stretch or cut the deadline
       deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + EARLY_STRIP_DEADLINE_SECONDS
       begin
-        Net::SSH.start(db_host, "ubuntu", keys: keys, keys_only: true, non_interactive: true, timeout: 15,
-                                          verify_host_key: :never, proxy: Net::SSH::Proxy::Command.new(proxy_cmd)) do |ssh|
-          Dr::OldBackupJobs.strip!(ssh, prefix: "  [#{db_host}] ")
-        end
+        dr_db_ssh(app_ip, db_host, keys) { |ssh| Dr::OldBackupJobs.strip!(ssh, prefix: "  [#{db_host}] ") }
       rescue StandardError => e
         # Boxes created seconds ago may not accept SSH yet — retry until the deadline
         if Process.clock_gettime(Process::CLOCK_MONOTONIC) < deadline

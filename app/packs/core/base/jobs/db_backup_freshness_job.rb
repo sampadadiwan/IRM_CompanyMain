@@ -41,6 +41,10 @@ class DbBackupFreshnessJob < ApplicationJob
   # at 60 the report would cry wolf every single morning.
   MAX_EXPECTED_GAP_MINUTES = 90
 
+  # A full is only judged once it is old enough to have finished uploading (the 23:00 full can
+  # take a while on production), so an upload in progress is never mistaken for a truncated one.
+  SIZE_CHECK_MIN_AGE = 2.hours
+
   # Matches the timestamp format the backup script bakes into prefix names.
   TIMESTAMP_FORMAT = "%Y-%m-%d_%H%M%S".freeze
   PREFIX_RE = /\A(\d{4}-\d{2}-\d{2}_\d{6})-(full|incr)\/\z/
@@ -141,7 +145,10 @@ class DbBackupFreshnessJob < ApplicationJob
 
     client = s3_client(region)
 
-    latest_full, latest_any = newest_backup_times(client, bucket)
+    # One listing serves both the age checks and the size check
+    backups = all_backups(client, bucket)
+    latest_full = backups.select { |_t, kind, _p| kind == "full" }.map(&:first).max
+    latest_any = backups.map(&:first).max
 
     # No parseable backup prefixes at all — brand-new bucket or wrong bucket
     # name; either way there is nothing to restore from.
@@ -160,6 +167,10 @@ class DbBackupFreshnessJob < ApplicationJob
     elsif latest_full < (FULL_MAX_AGE + grace).ago
       failures << "#{label}: newest FULL backup in s3://#{bucket} is #{time_ago(latest_full)} old (limit #{((FULL_MAX_AGE + grace) / 1.hour.to_f).round(1)}h)"
     end
+
+    # Size: a full can land on time and still be empty or truncated. Primary bucket only - the
+    # replica mirrors it, so checking both would double the cost and the alerts.
+    failures.concat(size_failures(client, bucket, backups)) if label == "primary"
 
     if failures.empty?
       log(:info, "  ✓ #{label}: newest backup #{time_ago(latest_any)} old, newest FULL #{time_ago(latest_full)} old")
@@ -251,6 +262,30 @@ class DbBackupFreshnessJob < ApplicationJob
   end
 
   # Total bytes across every object under one backup prefix.
+  # Size-checks the newest finished full against the median of the three before it
+  # (Dr::BackupSchedule.grade_full_size). A failure is returned for the hourly alert; a warning is
+  # logged only, as the rollout in docs/operations/dr/db_backup_system.md §11 prescribes.
+  def size_failures(client, bucket, backups)
+    fulls = backups.select { |time, kind, _p| kind == "full" && time < SIZE_CHECK_MIN_AGE.ago }
+                   .sort_by(&:first).last(4).reverse
+    return [] if fulls.empty?
+
+    latest_time, _kind, latest_prefix = fulls.first
+    grade = Dr::BackupSchedule.grade_full_size(
+      name: latest_prefix.delete_suffix("/"), latest: prefix_size(client, bucket, latest_prefix),
+      previous: fulls.drop(1).map { |_t, _k, prefix| prefix_size(client, bucket, prefix) }
+    )
+    case grade.status
+    when :fail then [grade.detail]
+    when :warn
+      log(:warn, "  ⚠ size: #{grade.detail}")
+      []
+    else
+      log(:info, "  ✓ size: #{grade.detail} (#{time_ago(latest_time)} old)")
+      []
+    end
+  end
+
   def prefix_size(client, bucket, prefix)
     bytes = 0
     continuation = nil

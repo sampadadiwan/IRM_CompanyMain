@@ -153,6 +153,65 @@ module Dr
                        "sudo rm -rf #{LSN_DIRS.join(' ')} on the primary")
     end
 
+    # --- Recovery-point cadence and backup size (openspec fix-backup-rpo-and-size-checks) ---------
+
+    # Environments whose LIVE backup schedule dr:set_backup_cadence may change. Staging only
+    # (decision 2026-11-08): production already runs every 30 minutes.
+    CADENCE_ENVS = ["staging.in"].freeze
+    # The legacy hourly incremental on the live staging box, and its 30-minute form
+    HOURLY_INCR_LINE = /\A(\s*)0 0-22 \* \* \*(\s+\S*backup_db[\w.]*\.sh incr\b.*)\z/
+    THIRTY_MINUTE_INCR_LINE = /\A\s*0,30 0-22 \* \* \*\s+\S*backup_db[\w.]*\.sh incr\b/
+
+    def cadence_env_allowed?(env_name)
+      CADENCE_ENVS.include?(env_name.to_s)
+    end
+
+    # Moves the legacy hourly incremental to :00 and :30 so the recovery point is at most ~30
+    # minutes (the promise). Changes ONLY that line; refuses anything it does not recognise.
+    # Returns { status: :changed / :unchanged / :refused, text:, before:, after:, reason: }.
+    def thirty_minute_cadence(crontab)
+      lines = crontab.to_s.lines.map(&:chomp)
+      hourly = lines.each_index.select { |i| active?(lines[i]) && lines[i].match?(HOURLY_INCR_LINE) }
+      already = lines.any? { |line| active?(line) && line.match?(THIRTY_MINUTE_INCR_LINE) }
+
+      # Run twice: the second run finds nothing to do
+      return { status: :unchanged, text: crontab, reason: "already every 30 minutes" } if hourly.empty? && already
+      # Never guess: exactly one hourly incremental line, or nothing is touched
+      unless hourly.size == 1
+        return { status: :refused, text: crontab,
+                 reason: "expected exactly one hourly backup_db.sh incr line, found #{hourly.size}" }
+      end
+
+      index = hourly.first
+      before = lines[index]
+      lines[index] = before.sub(HOURLY_INCR_LINE) { "#{::Regexp.last_match(1)}0,30 0-22 * * *#{::Regexp.last_match(2)}" }
+      { status: :changed, text: "#{lines.join("\n")}\n", before: before, after: lines[index] }
+    end
+
+    # Size thresholds for a nightly full against the median of the three before it. Daily fulls
+    # vary by about 1% (30 days of staging and prod, 2026-11-08), so these never fire on noise.
+    FULL_SIZE_WARN_RATIO = 0.70
+    FULL_SIZE_FAIL_RATIO = 0.40
+
+    # Is a nightly full the size it should be? An empty or truncated full lands on time and used
+    # to pass as healthy; this catches it. previous: the byte sizes of the fulls before it.
+    def grade_full_size(name:, latest:, previous:)
+      earlier = Array(previous).compact.select(&:positive?)
+      return Grade.new(:ok, "#{name}: not enough history to size-check (#{earlier.size} earlier fulls)") if earlier.size < 3
+
+      usual = earlier.sort[earlier.size / 2] # median: one odd night cannot skew it
+      percent = (latest.to_f / usual * 100).round
+      sizes = "#{mb(latest)} vs usual #{mb(usual)}"
+      return Grade.new(:fail, "#{name} is #{percent}% of the usual size (#{sizes}) — truncated or empty? It may not restore") if latest.zero? || latest < usual * FULL_SIZE_FAIL_RATIO
+      return Grade.new(:warn, "#{name} is #{percent}% of the usual size (#{sizes}) — check it is genuine (e.g. a large purge)") if latest < usual * FULL_SIZE_WARN_RATIO
+
+      Grade.new(:ok, "#{name}: #{mb(latest)} (#{percent}% of usual)")
+    end
+
+    def mb(bytes)
+      "#{(bytes / 1_048_576.0).round(1)} MB"
+    end
+
     # Is this script text (or its head) the baked, secret-free copy?
     def baked_script?(text)
       text.to_s.include?(BAKED_PLACEHOLDER)

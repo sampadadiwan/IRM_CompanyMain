@@ -256,7 +256,20 @@ sequenceDiagram
   the true primary may write to a backup chain, and "truth" is established by
   the restore itself.
 
-## 11. Proposed enhancement: backup size sanity checks (not yet implemented)
+## 11. Backup size sanity checks (implemented 2026-11-08, OpenSpec `fix-backup-rpo-and-size-checks`)
+
+> **Status:** live in `DbBackupFreshnessJob#size_failures` (hourly, primary bucket only).
+> The newest full that is at least 2 h old (so an upload in progress is never judged) is
+> compared with the **median of the three fulls before it** (`Dr::BackupSchedule.grade_full_size`):
+> under **40%** → a failure that alerts like a stale backup; under **70%** → a logged warning
+> (the log-only rollout below). Incrementals are not size-checked in v1. First run against the
+> real buckets: staging 131.7 MB and prod IN 1,593 MB, both 100% of usual.
+>
+> Related: staging's live DB server moved from hourly to **30-minute** incrementals
+> (`rake "dr:set_backup_cadence[staging.in]"`, staging only), so it meets the 30-minute RPO
+> promise that production already met (audit 2026-11-08: prod IN and US 46 incrementals a day).
+
+### Original proposal
 
 `DbBackupFreshnessJob` (§6) only asks "did *something* land on schedule?" —
 it never opens a backup to see what's inside. That misses a distinct failure
