@@ -52,5 +52,4 @@
 | 2026-09-12 16:41 | staging | in | ap-south-2 | FAILED | 13.6 | dr_drill_in_2026_09_12_1641 |
 | 2026-09-12 17:17 | staging | in | ap-south-2 | FAILED | 13.6 | dr_drill_in_2026_09_12_1717 |
 | 2026-09-12 18:32 | staging | in | ap-south-2 | FAILED | 5.0 | dr_drill_in_2026_09_12_1832 |
-| 2026-11-08 10:40 | staging | in | ap-south-2 | FAILED | 0.1 | dr_drill_in_2026_11_08_1040 |
-| 2026-11-08 10:40 | staging | in | ap-south-2 | FAILED | 0.1 | dr_drill_in_2026_11_08_1040 |
+| 2026-11-08 10:39 | staging | in | ap-south-2 | PASSED | 12.1 | dr_drill_in_2026_11_08_1039 |
