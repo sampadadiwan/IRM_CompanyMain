@@ -235,10 +235,9 @@ namespace :dr do
         # guard are switched on at boot by config/initializers/drill_stack.rb (this
         # rake process boots the same way), timed jobs never registered, and the
         # drill deploy cleared the cron
-        interceptors = Mail::Message.class_variable_get(:@@delivery_interceptors)
         crontab = `crontab -l 2>/dev/null`
         grade = DrillStack.grade_silence(
-          mail_intercepted: interceptors.include?(DrillStack::MailInterceptor),
+          mail_intercepted: DrillStack.mail_intercepted?,
           requests_guarded: Net::HTTP <= DrillStack::OutboundGuard,
           timed_jobs: Sidekiq::Cron::Job.all.size,
           crontab_installed: crontab.include?("Begin Whenever generated tasks"),

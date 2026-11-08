@@ -112,6 +112,14 @@ module DrillStack
       "and timed jobs are off. If this is NOT a DR drill server, remove DR_DRILL_STACK from .env and redeploy."
   end
 
+  # Is the drill mail interceptor registered? Reads the mail gem's PUBLIC registry
+  # (Mail.delivery_interceptors - ActionMailer's register_interceptor adds to it). The first
+  # version read @@delivery_interceptors off Mail::Message, which does not exist there, and
+  # the 2026-11-08 14:39 drill's check crashed with a NameError.
+  def mail_intercepted?
+    Mail.delivery_interceptors.include?(MailInterceptor)
+  end
+
   # dr:verify's "Drill cannot contact users": every channel must be shut on a drill copy
   def grade_silence(mail_intercepted:, requests_guarded:, timed_jobs:, crontab_installed:, suppressed:)
     grade = Dr::BackupSchedule::Grade

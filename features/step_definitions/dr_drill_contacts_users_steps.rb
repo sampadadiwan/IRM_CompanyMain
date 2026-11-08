@@ -116,3 +116,26 @@ Then("the block received the local 200") do
   expect(@dr_http.reached).to be_nil
   expect(@dr_block_response&.code).to eq("200")
 end
+
+# X3: the real registry lookup used by dr:verify (no stubbing)
+Given("the drill mail interceptor is not registered") do
+  ActionMailer::Base.unregister_interceptor(DrillStack::MailInterceptor)
+end
+
+When("the drill mail interceptor is registered with ActionMailer") do
+  ActionMailer::Base.register_interceptor(DrillStack::MailInterceptor)
+  # Never leak a mail-swallowing interceptor into later scenarios in this process
+  @dr_unregister_interceptor = true
+end
+
+Then("verification reports mail as not intercepted") do
+  expect(DrillStack.mail_intercepted?).to be(false)
+end
+
+Then("verification reports mail as intercepted") do
+  expect(DrillStack.mail_intercepted?).to be(true)
+end
+
+After do
+  ActionMailer::Base.unregister_interceptor(DrillStack::MailInterceptor) if @dr_unregister_interceptor
+end

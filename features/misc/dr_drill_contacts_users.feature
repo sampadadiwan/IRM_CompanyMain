@@ -84,3 +84,12 @@ Feature: A DR drill copy never contacts users, and the real app is untouched
     When a guarded block-form request is sent to "live-server-1234.wati.io"
     Then the block received the local 200
     And 1 outgoing message has been suppressed
+
+  # X3 — Error case: the verify check must read the REAL interceptor registry. The 14:39 drill's
+  # check crashed (NameError: @@delivery_interceptors in Mail::Message) because only the grading
+  # was tested, never the lookup.
+  Scenario: Verification sees the mail interceptor exactly when it is registered
+    Given the drill mail interceptor is not registered
+    Then verification reports mail as not intercepted
+    When the drill mail interceptor is registered with ActionMailer
+    Then verification reports mail as intercepted
