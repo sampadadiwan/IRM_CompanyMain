@@ -79,7 +79,7 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
     
   </dl>
 
-  <section><h2>Run particulars</h2><div class="scroll"><table><tbody><tr><td class="key">Environment</td><td class="val">staging (in)</td></tr><tr><td class="key">Recovered into</td><td class="val">ap-south-2 — disaster-recovery region</td></tr><tr><td class="key">Started</td><td class="val">2026-11-08 05:10:11 UTC</td></tr><tr><td class="key">Finished</td><td class="val">2026-11-08 05:10:14 UTC</td></tr><tr><td class="key">Rebuild time</td><td class="val">0:03 (0.1 minutes)</td></tr><tr><td class="key">Code deployed</td><td class="val">dr_drill_in_2026_11_08_1040</td></tr><tr><td class="key">Executed by</td><td class="val">thimmaiah@Inspiron</td></tr></tbody></table></div>
+  <section><h2>Run particulars</h2><div class="scroll"><table><tbody><tr><td class="key">Environment</td><td class="val">staging (in)</td></tr><tr><td class="key">Recovered into</td><td class="val">ap-south-2 — disaster-recovery region</td></tr><tr><td class="key">Started</td><td class="val">2026-11-08 05:10:47 UTC</td></tr><tr><td class="key">Finished</td><td class="val">2026-11-08 05:10:50 UTC</td></tr><tr><td class="key">Rebuild time</td><td class="val">0:03 (0.1 minutes)</td></tr><tr><td class="key">Code deployed</td><td class="val">dr_drill_in_2026_11_08_1040</td></tr><tr><td class="key">Executed by</td><td class="val">thimmaiah@Inspiron</td></tr></tbody></table></div>
   <p class="lede">Scheduled drill against <strong>staging</strong> — not a response to a real incident. It exercised the identical code path a real recovery uses.</p>
   </section>
 
@@ -89,12 +89,12 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
   <thead><tr><th></th><th>#</th><th>Phase</th><th>Start</th><th>End</th><th>Duration</th><th class="barcell">Share of run</th></tr></thead>
   <tbody><tr><td class="markcell"><span class="mark pass">&check;</span></td>
 <td class="seq">1</td><td class="phase-name">Refresh Pulumi stack configuration</td>
-<td class="num">05:10:11</td><td class="num">05:10:13</td>
+<td class="num">05:10:47</td><td class="num">05:10:50</td>
 <td class="num">0:03</td>
 <td class="barcell"><span class="bar dominant" style="width:100.0%"></span></td></tr>
 <tr><td class="markcell"><span class="mark warn">!</span></td>
 <td class="seq">2</td><td class="phase-name">Provision infrastructure (pulumi up)</td>
-<td class="num">05:10:13</td><td class="num">05:10:14</td>
+<td class="num">05:10:50</td><td class="num">05:10:50</td>
 <td class="num">0:01</td>
 <td class="barcell"><span class="bar" style="width:33.3%"></span></td></tr>
 </tbody></table></div></section>
@@ -119,5 +119,5 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
   <section><h2>Source record</h2>
   <p class="lede">Every command issued during this recovery and its complete output — including the raw verification scorecard reproduced above — was captured automatically to <code>docs/operations/dr/runs/dr_drill_in_2026_11_08_1040.log</code>. This document states what is claimed and how to check it; the transcript records what happened, line by line.</p></section>
 
-  <footer><span>Disaster Recovery Record · staging (in) &rarr; ap-south-2</span><span>Generated 2026-11-08T05:10:14Z</span></footer>
+  <footer><span>Disaster Recovery Record · staging (in) &rarr; ap-south-2</span><span>Generated 2026-11-08T05:10:50Z</span></footer>
 </div>
