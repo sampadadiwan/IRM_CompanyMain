@@ -69,3 +69,43 @@ Feature: A DR drill refuses to collide, never pages anyone, and only stops its o
     Given critical WhatsApp alerts are switched on
     When DR_DRILL_STACK is "ap-south-2"
     Then critical WhatsApp alerts are not enabled
+
+  # H4 — Happy path: a drill's servers carry the mark
+  Scenario: Verification passes when a drill's servers are marked
+    When a drill run is verified on servers with DR_DRILL_STACK "ap-south-2"
+    Then the drill mark grade is "ok" mentioning "no WhatsApp pages"
+
+  # X4 — Error case: an unmarked drill would page like a live outage
+  Scenario: Verification fails when a drill's servers are not marked
+    When a drill run is verified on servers with DR_DRILL_STACK ""
+    Then the drill mark grade is "fail" mentioning "would page WhatsApp"
+
+  # X5 — Error case: a recovered production marked as a drill would never page
+  Scenario: Verification fails when a real recovery is marked as a drill
+    When a real recovery is verified on servers with DR_DRILL_STACK "ap-south-2"
+    Then the drill mark grade is "fail" mentioning "NEVER page"
+
+  # E5 — Edge case: a real recovery, unmarked, pages as normal
+  Scenario: Verification passes when a real recovery is not marked
+    When a real recovery is verified on servers with DR_DRILL_STACK ""
+    Then the drill mark grade is "ok" mentioning "page as normal"
+
+  # H5 — Happy path: the teardown is recorded in the drill's own log row, adding the column once
+  Scenario: A torn-down drill's teardown is recorded in its drill log row
+    Given a drill log with a row for "dr_drill_in_2026_11_08_1039"
+    When the teardown "services stopped · 46 resources destroyed" is recorded for "dr_drill_in_2026_11_08_1039"
+    Then the drill log header ends with "| Branch | Teardown |"
+    And the row for "dr_drill_in_2026_11_08_1039" ends with "| services stopped · 46 resources destroyed |"
+
+  # E6 — Edge case: what the cell says when nothing was torn down
+  Scenario Outline: The teardown cell says what happened to the stack
+    When the teardown is summarised for a "<result>" run with teardown "<teardown>", stop "<stop>" and destroyed "<destroyed>"
+    Then the teardown cell reads "<cell>"
+
+    Examples:
+      | result | teardown | stop    | destroyed | cell                                                             |
+      | passed | yes      | stopped | 46        | services stopped · 46 resources destroyed                        |
+      | passed | yes      | skipped | 46        | service stop skipped (deploy file not the drill's) · 46 resources destroyed |
+      | passed | yes      | stopped | failed    | services stopped · destroy FAILED — stack still up               |
+      | passed | no       |         |           | kept running (TEARDOWN not set)                                  |
+      | failed | yes      |         |           | kept for diagnosis (failed run)                                  |

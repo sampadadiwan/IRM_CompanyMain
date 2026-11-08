@@ -171,6 +171,8 @@ sequenceDiagram
 | 2 | Two drills can start from one checkout | A local run lock (`flock` on `tmp/dr_drill_<stack>-<region>.lock`) held for the whole drill | `aws.rake` `dr_drill` |
 | 3 | Teardown destroys under running services | Before the git checkout, while the deploy file still names the drill servers (guard: it must list exactly the drill's app IPs): `cap nginx:switch_maintenance` (stops sidekiq + puma) and `whenever:clear_crontab`. Warn-only; never blocks teardown | `aws.rake` `dr_drill` ensure + `Dr::DrillTeardown` (guard) |
 | 4 | Drill mail = live mail; a **production** drill's teardown would page WhatsApp (`[IN] CRITICAL … Sidekiq cannot reach Redis`, enabled in production: `critical_error_whatsapp.rb:210`) | In drill mode, `setup_infra` writes `DR_DRILL_STACK=<region>` into the drill branch's `.env`. `DrillStack` (new, `lib/drill_stack.rb`) builds the mail prefix `[Error][DR DRILL <region>] …`, and `CriticalErrorWhatsapp.enabled?` is false on a drill stack: a drill never pages; its errors still arrive as tagged mail | `aws_utils.rb` `setup_infra`, `lib/drill_stack.rb`, `exception_notification.rb:30`, `critical_error_whatsapp.rb` |
+| 6 | Drill/real marking never verified | `dr:verify` adds **Drill stack marked (no pages)** in a drill (❌ if `DR_DRILL_STACK` missing) and **Not marked as a drill (pages on)** in a real recovery (❌ if it IS set: a recovered production that can't page) | `DrillStack.grade_mark`, `dr_verify.rake` |
+| 7 | Teardown outcome invisible (report written before it) | The drill adds a **Teardown** cell to its own row in `dr_drills.md`: services stopped / skipped / failed · N resources destroyed / destroy FAILED / kept running / kept for diagnosis; `run_cmd` now returns its output for the destroy count | `Dr::DrillTeardown.summary` / `.add_teardown_cell`, `aws.rake` |
 | 5 | Deploy races boot | Wait (up to 5 min) until every app server accepts SSH before phase 5; a clear error if one never does | `aws_utils.rb` `setup_infra` |
 
 - **Not in scope:** reading your inbox to check *which* errors arrive during the run itself, not just at teardown. The tag (row 4) makes every remaining drill mail identifiable, and the batch drill shows what's left.
@@ -195,6 +197,10 @@ sequenceDiagram
 |---|---|---|---|---|---|
 | E1 | Untagged mail unchanged | no tag | build prefix | exactly today's `[Error] staging:(…)` | dr_drill_hygiene.feature |
 | E2 | Stale lock on this host | lock host = this host, pid dead | classify | `:stale`, message has `pulumi cancel --stack staging-ap-south-2` | dr_drill_hygiene.feature |
+| E5 | Real recovery unmarked | real, no flag | grade mark | ✅ | dr_drill_hygiene.feature |
+| E6 | Teardown cell | passed/failed × teardown × stop × destroyed | summarise | e.g. "services stopped · 46 resources destroyed" | dr_drill_hygiene.feature |
+| H4 | Marked drill servers | drill, `DR_DRILL_STACK=ap-south-2` | grade mark | ✅ | dr_drill_hygiene.feature |
+| H5 | Teardown recorded in its row | drill log + branch | add cell | header gains Teardown; row ends with the cell | dr_drill_hygiene.feature |
 | E4 | A drill never pages | `DR_DRILL_STACK=ap-south-2`, WhatsApp otherwise enabled | ask whether alerts are enabled | not enabled | dr_drill_hygiene.feature |
 | E3 | Lock from another machine | lock host ≠ this host | classify | `:held_elsewhere`, message names host, user, age | dr_drill_hygiene.feature |
 
@@ -204,6 +210,8 @@ sequenceDiagram
 |---|---|---|---|---|---|
 | X1 | Live run on this host | lock host = this host, pid alive | classify | `:running_here` — refuse | dr_drill_hygiene.feature |
 | X2 | Teardown guard refuses live config | deploy file lists the live `52.66.163.132` | check | does NOT target the drill → stop skipped | dr_drill_hygiene.feature |
+| X4 | Unmarked drill servers | drill, no `DR_DRILL_STACK` | grade mark | ❌ "would page WhatsApp" | dr_drill_hygiene.feature |
+| X5 | Real recovery marked as drill | real, `DR_DRILL_STACK` set | grade mark | ❌ "NEVER page" | dr_drill_hygiene.feature |
 | X3 | Guard refuses a partial match | deploy file lists one drill IP + one other | check | does NOT target the drill | dr_drill_hygiene.feature |
 
 **Fails against current code:** every row (no `Dr::PulumiLock` or `Dr::DrillTeardown`, and the prefix has no tag). Behaviourally: H3, X1, X2.

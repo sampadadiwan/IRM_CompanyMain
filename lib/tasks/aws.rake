@@ -476,18 +476,22 @@ namespace :aws do
       # file names the LIVE servers. The guard proves it still names exactly the
       # drill's app servers; anything else skips the stop. Warn-only — a stop
       # failure never blocks the teardown.
+      teardown_stop = nil # recorded in the drill log's Teardown cell below
       if result == "PASSED" && ENV["TEARDOWN"] == "true"
         deploy_file = Rails.root.join("config", "deploy", "#{stack}_#{env_variant}.rb")
         deploy_text = File.exist?(deploy_file) ? File.read(deploy_file) : ""
         if Dr::DrillTeardown.targets_drill?(deploy_text, @dr_app_server_ips)
           puts "🛑 Stopping app services on the drill servers (#{@dr_app_server_ips.join(', ')}) before teardown"
+          teardown_stop = :stopped
           # maintenance mode stops sidekiq + puma; clearing cron stops scheduled rake runs
           %w[nginx:switch_maintenance whenever:clear_crontab].each do |task|
             run_cmd("branch=#{drill_branch} LB=true bundle exec cap #{stack}_#{env_variant} #{task}")
           rescue StandardError => e
+            teardown_stop = :failed
             puts "⚠️  #{task} on the drill servers failed (#{e.message.lines.first.to_s.strip}) — teardown continues"
           end
         else
+          teardown_stop = :skipped
           puts "⚠️  Not stopping drill app services: #{deploy_file.basename} does not name exactly the drill " \
                "servers (#{Array(@dr_app_server_ips).join(', ').presence || 'unknown'}) — teardown continues"
         end
@@ -513,15 +517,37 @@ namespace :aws do
         end
       end
 
+      destroyed = nil
+      destroy_error = nil
       if result == "PASSED"
         if ENV["TEARDOWN"] == "true"
           puts "🧹 TEARDOWN=true — destroying drill infra..."
-          run_cmd("pulumi destroy --stack #{stack}-#{region} --yes --color=always", "../IRM-Infra")
+          begin
+            # pulumi prints "- 46 deleted" in its summary
+            out = run_cmd("pulumi destroy --stack #{stack}-#{region} --yes --color=always", "../IRM-Infra").to_s
+            destroyed = out.gsub(/\e\[[0-9;]*m/, "")[/(\d+) deleted/, 1]&.to_i
+          rescue StandardError => e
+            destroyed = :failed
+            destroy_error = e
+          end
         else
           puts "⚠️  Drill infra is still RUNNING (and costing money) in #{region}."
           puts "   Tear down with: cd ../IRM-Infra && pulumi destroy --stack #{stack}-#{region} --yes"
         end
       end
+
+      # What happened AFTER the report was written goes into this drill's row
+      # of the drill log (the report cannot say: it is written before teardown)
+      begin
+        cell = Dr::DrillTeardown.summary(passed: result == "PASSED", teardown: ENV["TEARDOWN"] == "true",
+                                         stop: teardown_stop, destroyed: destroyed)
+        drills_log = Rails.root.join("docs/operations/dr/dr_drills.md")
+        File.write(drills_log, Dr::DrillTeardown.add_teardown_cell(File.read(drills_log), drill_branch, cell))
+        puts "🧾 Teardown recorded in dr_drills.md: #{cell}"
+      rescue StandardError => e
+        puts "⚠️  Could not record the teardown in dr_drills.md: #{e.message}"
+      end
+      raise destroy_error if destroy_error
     end
     end
   end

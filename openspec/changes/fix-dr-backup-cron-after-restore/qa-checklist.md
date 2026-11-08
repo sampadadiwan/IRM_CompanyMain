@@ -69,6 +69,7 @@
 
 | ☐ | ID | What to check | Preconditions | Steps | Expected result (message shown) | Pass / Fail | Notes |
 |---|---|---|---|---|---|---|---|
+| ☐ | X6 **(dev)** | Stale checkpoint → verify fails | Drill boxes up | 1. On the primary: `sudo mkdir -p /var/lib/xtrabackup/lsndir && sudo touch -d '2 days ago' /var/lib/xtrabackup/lsndir/xtrabackup_checkpoints`. 2. Drill-mode verify. 3. `sudo rm -rf /var/lib/xtrabackup/lsndir` | ❌ "checkpoint predates the restore" | | |
 | ☐ | X1 **(dev)** | No schedule → verify fails | Drill boxes up | 1. On the primary: `sudo mv /etc/cron.d/irm-db-backup /tmp/`. 2. `DR_DRILL=true LB=true bundle exec cap staging_in recovery:verify` (drill branch). 3. Move the file back | ❌ "no backups will run". Verify exits non-zero | | |
 | ☐ | X3 **(dev)** | Replica writer → verify fails | Same | 1. On the replica, add `0 * * * * /home/ubuntu/backup_db.sh incr` to `crontab -e`. 2. Run verify. 3. Remove the line | ❌ "replica must never write" | | |
 | ☐ | X2 **(dev)** | Two writers on the primary → verify fails | Same | Same as X3, but on the primary | ❌ "two writers" | | |

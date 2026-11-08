@@ -86,3 +86,51 @@ end
 Then("critical WhatsApp alerts are not enabled") do
   expect(@dr_whatsapp_enabled).to be(false)
 end
+
+When("a drill run is verified on servers with DR_DRILL_STACK {string}") do |region|
+  @dr_grade = DrillStack.grade_mark(expected_drill: true, env: region.empty? ? {} : { "DR_DRILL_STACK" => region })
+end
+
+When("a real recovery is verified on servers with DR_DRILL_STACK {string}") do |region|
+  @dr_grade = DrillStack.grade_mark(expected_drill: false, env: region.empty? ? {} : { "DR_DRILL_STACK" => region })
+end
+
+Then("the drill mark grade is {string} mentioning {string}") do |status, text|
+  expect(@dr_grade.status).to eq(status.to_sym)
+  expect(@dr_grade.detail).to include(text)
+end
+
+Given("a drill log with a row for {string}") do |branch|
+  @dr_log = <<~MD
+    # DR Drill Log
+
+    | Date | Stack | Variant | Region | Result | Rebuild (min) | Branch |
+    |---|---|---|---|---|---|---|
+    | 2026-09-12 18:32 | staging | in | ap-south-2 | FAILED | 5.0 | dr_drill_in_2026_09_12_1832 |
+    | 2026-11-08 10:39 | staging | in | ap-south-2 | PASSED | 12.1 | #{branch} |
+  MD
+end
+
+When("the teardown {string} is recorded for {string}") do |cell, branch|
+  @dr_log = Dr::DrillTeardown.add_teardown_cell(@dr_log, branch, cell)
+end
+
+Then("the drill log header ends with {string}") do |ending|
+  expect(@dr_log.lines.find { |l| l.start_with?("| Date |") }.rstrip).to end_with(ending)
+  # The separator row gains a column too, or the table breaks
+  expect(@dr_log.lines.find { |l| l.start_with?("|---") }.rstrip.count("|")).to eq(9)
+end
+
+Then("the row for {string} ends with {string}") do |branch, ending|
+  expect(@dr_log.lines.find { |l| l.include?("| #{branch} |") }.rstrip).to end_with(ending)
+end
+
+When("the teardown is summarised for a {string} run with teardown {string}, stop {string} and destroyed {string}") do |result, teardown, stop, destroyed|
+  destroyed_value = { "" => nil, "failed" => :failed }.fetch(destroyed) { destroyed.to_i }
+  @dr_cell = Dr::DrillTeardown.summary(passed: result == "passed", teardown: teardown == "yes",
+                                       stop: stop.empty? ? nil : stop.to_sym, destroyed: destroyed_value)
+end
+
+Then("the teardown cell reads {string}") do |cell|
+  expect(@dr_cell).to eq(cell)
+end

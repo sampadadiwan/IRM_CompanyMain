@@ -24,6 +24,25 @@ module DrillStack
     !region(env).nil?
   end
 
+  # dr:verify's check that a stack is marked correctly for its kind of run.
+  # expected_drill: this run is a drill (DR_DRILL=true, forwarded by cap).
+  # Returns a Dr::BackupSchedule::Grade (resolved at call time, after boot).
+  def grade_mark(expected_drill:, env: ENV)
+    grade = Dr::BackupSchedule::Grade
+    if expected_drill
+      # A drill server without the mark would page WhatsApp and send untagged mail
+      return grade.new(:ok, "drill servers marked (#{region(env)}): tagged mail, no WhatsApp pages") if drill?(env)
+
+      grade.new(:fail, "drill servers are NOT marked (no DR_DRILL_STACK in .env) — they would page WhatsApp like a live outage")
+    else
+      # A recovered production marked as a drill would never page anyone
+      return grade.new(:ok, "not marked as a drill — critical alerts page as normal") unless drill?(env)
+
+      grade.new(:fail, "this recovered stack is marked as a drill (DR_DRILL_STACK=#{region(env)}) — it will NEVER page; " \
+                       "remove DR_DRILL_STACK from .env and redeploy")
+    end
+  end
+
   # The error mail subject prefix: unchanged on a real environment, tagged on a drill stack
   def email_prefix(rails_env:, base_domain:, env: ENV)
     tag = drill?(env) ? "[DR DRILL #{region(env)}]" : ""

@@ -225,6 +225,7 @@ sequenceDiagram
 | 5 | Missing schedule = ⚠️; crontabs never checked | Primary: no schedule → ❌; schedule + old job → ❌ (two writers); old job only → ⚠️ (today's live boxes). Replica: any old job → ❌ | `dr_verify.rake` via `Dr::BackupSchedule` |
 | 6 | "schedule is now live" always printed | Printed only if the file exists, otherwise a loud WARNING | `db_backup_xtra.sh` restore branches |
 | 8 | Restore keeps the clone's LSN checkpoint | Both restore branches clear `LSNDIR`/`LSNDIR_INCR` before arming, so the first incremental bases on the newest full in S3 | `db_backup_xtra.sh` `reset_lsn_state` |
+| 10 | Stale-LSN fix not verified (only a log line) | After every restore `run_baked_restore` removes any surviving checkpoint (covers baked script copies older than `reset_lsn_state`) and writes `/var/lib/xtrabackup/restored_at`; `dr:verify` adds **Backup checkpoint fresh** — ❌ if the checkpoint predates the restore (added 2026-11-08 on review: "will each change show in the end-of-run checks?") | `backup_db.rake`, `Dr::BackupSchedule.grade_checkpoint`, `dr_verify.rake` |
 | 9 | Drill primary armed (writes the live chain once scheduled) | **Drill mode**: `aws:dr_drill` sets `DR_DRILL=true` → cap forwards it → the restore passes `DB_BACKUP_NO_ARM=1` and removes the marker as a backstop → `dr:verify` expects the drill primary **not** armed | `aws.rake`, `config/deploy.rb`, `backup_db.rake`, `db_backup_xtra.sh` `arm_backups`, `dr_verify.rake`, `Dr::BackupSchedule.grade_armed(drill:)` |
 | 7 | Guide says backups resume automatically | Document the clone/old-job behaviour and the new checks | `dr_guide.md` §10, `db_backup_system.md` §9 |
 
@@ -270,6 +271,9 @@ All rows land in `features/misc/dr_backup_schedule.feature`. Each exercises `Dr:
 | X2 | Two writers on primary | schedule file + old job | grade primary | ❌ "two writers" | dr_backup_schedule.feature |
 | X3 | Replica writes | replica with old job | grade replica | ❌ "replica must never write" | dr_backup_schedule.feature |
 | X4 | Not armed | primary, no marker | grade primary | ❌ "marker missing" | dr_backup_schedule.feature |
+| E9 | Checkpoint after restore | restore 1000, checkpoint 2000 | grade checkpoint | ✅ | dr_backup_schedule.feature |
+| E10 | Live box, never restored | no restore record | grade checkpoint | ✅ "this box's own" | dr_backup_schedule.feature |
+| X6 | Stale checkpoint survived | restore 1000, checkpoint 900 | grade checkpoint | ❌ "predates the restore" | dr_backup_schedule.feature |
 | X5 | Drill primary armed | drill, marker present | grade armed (drill) | ❌ "would write into the live backup chain" | dr_backup_schedule.feature |
 
 **Fails against current code:**

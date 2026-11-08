@@ -32,6 +32,7 @@
 - [x] 3.7 (found in review) `lib/tasks/db_backup_xtra.sh` `reset_lsn_state`: both restore branches clear `LSNDIR`/`LSNDIR_INCR` before arming (report Fix row 8). Verify: `bash -n`.
 - [x] 3.8 (found in review) Replica schedule install warns instead of failing the DR. Verify: `ruby -c lib/tasks/backup_db.rake`.
 - [x] 3.9 (found in review) Drill mode (report Fix row 9): `aws:dr_drill` sets/clears `DR_DRILL`; `config/deploy.rb` forwards it on `recovery:load_db_from_backups` and `recovery:verify`; `run_baked_restore` passes `DB_BACKUP_NO_ARM=1` and removes the marker on a drill primary; the script's `arm_backups` honours the flag; `dr:verify` grades with `grade_armed(drill:)`. Feature rows E7, E8, X5 added. Verify: `ruby -c` on all, `bash -n`.
+- [x] 3.10 (added on review) Checkpoint reset + `restored_at` after every restore; `Dr::BackupSchedule.grade_checkpoint`; `dr:verify` "Backup checkpoint fresh" (report Fix row 10). Feature rows H4b, E9, E10, X6.
 - [x] 3.6 Run `TEST_ENV_NUMBER=$RANDOM bundle exec cucumber features/misc/dr_backup_schedule.feature` and confirm all IDs are still green before starting phase 4.
 
 ## 4. Regression and cleanup

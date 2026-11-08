@@ -141,3 +141,23 @@ Feature: A recovered database keeps exactly one backup writer, on the baked sche
       | true  | yes   |
       | false | no    |
       |       | no    |
+
+  # H4b — Happy path: right after a restore the checkpoint is gone, so the first incremental bases on S3's newest full
+  Scenario: A restored primary with no checkpoint yet is safe
+    When the backup checkpoint is graded with a restore at 1000 and no checkpoint
+    Then the backup grade is "ok" mentioning "newest full in S3"
+
+  # E9 — Edge case: a backup taken after the restore wrote a fresh checkpoint
+  Scenario: A checkpoint written after the restore is safe
+    When the backup checkpoint is graded with a restore at 1000 and a checkpoint at 2000
+    Then the backup grade is "ok" mentioning "after the restore"
+
+  # E10 — Edge case: a live box the DR tooling never restored keeps its own checkpoint
+  Scenario: A box with no restore record keeps its own checkpoint
+    When the backup checkpoint is graded with no restore and a checkpoint at 2000
+    Then the backup grade is "ok" mentioning "this box's own"
+
+  # X6 — Error case: the cloned live box's checkpoint survived the restore
+  Scenario: A checkpoint older than the restore fails verification
+    When the backup checkpoint is graded with a restore at 1000 and a checkpoint at 900
+    Then the backup grade is "fail" mentioning "predates the restore"

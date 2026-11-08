@@ -54,6 +54,14 @@ module Dr
     # so every match in a crontab is an old, unguarded writer.
     OLD_JOB_PATTERN = /(?:\bbackup_db(?:\.[\w-]+)?\.sh|\bdb_backup_xtra[\w.-]*\.sh)\b/
 
+    # The local LSN checkpoints incrementals are taken against (db_backup_xtra.sh LSNDIR /
+    # LSNDIR_INCR). A DR box is a clone of the live box and inherits ITS checkpoint; an
+    # incremental against it does not match the newest full in S3 and cannot be restored.
+    LSN_DIRS = ["/var/lib/xtrabackup/lsndir", "/var/lib/xtrabackup/lsndir-incr"].freeze
+    CHECKPOINT_PATH = "/var/lib/xtrabackup/lsndir/xtrabackup_checkpoints"
+    # Epoch seconds of the last DR restore on this box, written by run_baked_restore
+    RESTORED_AT_PATH = "/var/lib/xtrabackup/restored_at"
+
     # A baked script resolves its config at run time and still carries its placeholders; a
     # generated one (xtrabackup:generate_backup_script) has them substituted with real values.
     BAKED_PLACEHOLDER = "__BUCKET__"
@@ -128,6 +136,21 @@ module Dr
     # cap recovery tasks forward it to the rake tasks they run on the app servers.
     def drill?(env = ENV)
       env["DR_DRILL"] == "true"
+    end
+
+    # Is the box's backup checkpoint safe to take the next incremental against?
+    # restored_at / checkpoint_at: epoch seconds, or nil when the file does not exist.
+    def grade_checkpoint(restored_at:, checkpoint_at:)
+      # A box the DR tooling never restored (a live box): its checkpoint is its own backups'
+      return Grade.new(:ok, "not restored by the DR tooling — the checkpoint is this box's own") if restored_at.nil?
+      # Cleared by the restore; the first incremental bases on the newest full in S3
+      return Grade.new(:ok, "no checkpoint since the restore — the next backup bases on the newest full in S3") if checkpoint_at.nil?
+      # Written by a backup taken after the restore
+      return Grade.new(:ok, "checkpoint written after the restore") if checkpoint_at >= restored_at
+
+      # The bug: a checkpoint from before the restore (the cloned live box's) survived
+      Grade.new(:fail, "checkpoint predates the restore — the next incremental could not be restored; " \
+                       "sudo rm -rf #{LSN_DIRS.join(' ')} on the primary")
     end
 
     # Is this script text (or its head) the baked, secret-free copy?

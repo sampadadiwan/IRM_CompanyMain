@@ -22,6 +22,7 @@
 - [x] 3.2 `aws.rake` `dr_drill` ensure: when PASSED and `TEARDOWN=true`, **before** `git checkout`: if `Dr::DrillTeardown.targets_drill?` holds, run `cap <stage> nginx:switch_maintenance` and `cap <stage> whenever:clear_crontab` (warn-only). Otherwise warn "stop skipped: deploy file does not name the drill servers". Record the drill app IPs in `setup_infra` for it. Verify: `ruby -c`.
 - [x] 3.3 `aws_utils.rb` `setup_infra`: in drill mode, write `DR_DRILL_STACK=<region>` to `.env.<stack>.<variant>` before the DR-branch commit; before phase 5, wait up to 5 min for SSH on every app server, then fail naming the server. Verify: `ruby -c`.
 - [x] 3.4 Docs: `dr_guide.md` §1 drills paragraph (lock refusal, stale-lock command, email tag, teardown order). `gap_review_2026_11.md` G20/G21 marked fixed in code.
+- [x] 3.6 (added on review) `DrillStack.grade_mark` + `dr:verify` drill-marker check; teardown summary recorded in the drill's `dr_drills.md` row (`Dr::DrillTeardown.summary` / `.add_teardown_cell`, `run_cmd` returns output) — report Fix rows 6, 7; feature rows H4, H5, E5, E6, X4, X5.
 - [x] 3.5 Run the feature; all IDs pass.
 
 ## 4. Regression and cleanup

@@ -35,6 +35,8 @@
 | ☐ | ID | What to check | Steps | Expected result | Pass / Fail | Notes |
 |---|---|---|---|---|---|---|
 | ☐ | B1 **(dev)** | A second drill is refused, not logged as failed | 1. Start the drill. 2. In a second terminal, start the same drill command | The second run stops at once: "a DR run is already in progress here (pid …)". **No** new row in `dr_drills.md`, no new run report | | |
+| ☐ | B3 **(dev)** | Teardown recorded | After a `TEARDOWN=true` drill, open `dr_drills.md` | The drill's row ends with e.g. "services stopped · 46 resources destroyed"; header has a Teardown column | | |
+| ☐ | B4 **(dev)** | Drill servers marked | Read the verify scorecard | "Drill stack marked (no pages)" ✅ on each server | | |
 | ☐ | B2 **(dev)** | Teardown sends no error flood | Run a drill with `TEARDOWN=true` to the end | No `CannotConnectError` mail during teardown. The log shows "stopping drill app services" before `git checkout` | | |
 
 ---

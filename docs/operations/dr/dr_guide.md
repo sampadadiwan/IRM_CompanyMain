@@ -80,6 +80,7 @@ What a drill does differently from a real recovery (OpenSpec `fix-dr-drill-hygie
 - **It never pages anyone.** The drill branch's `.env` gets `DR_DRILL_STACK=<region>`. Drill error mail is tagged `[Error][DR DRILL <region>]`, and critical WhatsApp alerts are off on drill servers. A real recovery sets none of this.
 - **It stops its own servers before teardown.** On PASSED with `TEARDOWN=true`, puma, sidekiq and cron on the drill servers are stopped first. This runs only while the deploy file still names exactly the drill's servers, before switching back to the original branch, where it would name the live ones. Then `pulumi destroy` runs.
 - **It never arms backups** (`DR_DRILL=true`); see §10.
+- **The end-of-run checks prove all of this.** Verify shows "Drill stack marked (no pages)" in a drill, and fails a *real* recovery that is marked as one (it would never page). It also shows "Backup checkpoint fresh": the first backup after the restore must base on the restored data. Teardown happens after the report is written, so its outcome (services stopped · N resources destroyed) goes into the drill's row in `dr_drills.md`.
 
 `docs/operations/dr/dr_drills.md` and the drill-recency check in `aws:dr_readiness` both key
 on `stack`, so a passed staging drill is never read as satisfying production's

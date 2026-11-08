@@ -160,6 +160,14 @@ namespace :db do
 
       raise "restore_primary exited with status #{exit_code} on #{host}" unless exit_code&.zero?
 
+      # Whatever script ran (a baked copy older than reset_lsn_state keeps the
+      # cloned live box's checkpoint), no pre-restore LSN checkpoint may survive:
+      # an incremental against it could not be restored. Record the restore
+      # time so dr:verify can prove it ("Backup checkpoint fresh").
+      reset = ssh.exec!("sudo rm -rf #{Dr::BackupSchedule::LSN_DIRS.join(' ')} && sudo mkdir -p /var/lib/xtrabackup && " \
+                        "date -u +%s | sudo tee #{Dr::BackupSchedule::RESTORED_AT_PATH} >/dev/null && echo OK").to_s
+      raise "could not reset the backup checkpoint on #{host}: #{reset.strip}" unless reset.include?("OK")
+
       if drill && !disarm_after
         # Backstop for baked script copies older than DB_BACKUP_NO_ARM: the
         # drill primary keeps its schedule but must not be armed

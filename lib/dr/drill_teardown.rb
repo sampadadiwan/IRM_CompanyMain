@@ -14,6 +14,38 @@ module Dr
 
     module_function
 
+    # The drill log's Teardown cell: what happened to the drill stack after the report was written
+    # (the report itself cannot say - it is written before teardown).
+    # stop: :stopped / :skipped / :failed / nil; destroyed: resources pulumi deleted, or :failed.
+    def summary(passed:, teardown:, stop: nil, destroyed: nil)
+      return "kept for diagnosis (failed run)" unless passed
+      return "kept running (TEARDOWN not set)" unless teardown
+
+      stopped = { stopped: "services stopped", skipped: "service stop skipped (deploy file not the drill's)",
+                  failed: "service stop failed" }.fetch(stop, "services not stopped")
+      gone = destroyed == :failed ? "destroy FAILED — stack still up" : "#{destroyed || '?'} resources destroyed"
+      "#{stopped} · #{gone}"
+    end
+
+    # Adds a Teardown cell to the drill's row in dr_drills.md, adding the column to the table
+    # header once. Older rows simply have an empty cell. Returns the new text; unchanged if the
+    # drill's row is not found.
+    def add_teardown_cell(log_text, branch, cell)
+      lines = log_text.lines
+      # The header and its separator, the first time this column is used
+      header = lines.index { |l| l.start_with?("| Date |") }
+      if header && lines[header].exclude?("Teardown")
+        lines[header] = lines[header].rstrip.sub(/\|\z/, "| Teardown |\n")
+        lines[header + 1] = lines[header + 1].rstrip.sub(/\|\z/, "|---|\n")
+      end
+      # The LAST row for this branch is this run's
+      row = lines.rindex { |l| l.rstrip.end_with?("| #{branch} |") }
+      return log_text unless row
+
+      lines[row] = "#{lines[row].rstrip} #{cell.tr('|', '/')} |\n"
+      lines.join
+    end
+
     # True only when the set of server addresses in the deploy file equals the drill's app server
     # addresses - no fewer (a partial match is not the drill), no more (a live server mixed in).
     def targets_drill?(deploy_file_text, drill_ips)

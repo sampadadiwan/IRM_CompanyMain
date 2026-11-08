@@ -133,9 +133,15 @@ module AwsUtils
       #    that reads as a wall of errors misleads whoever reviews it.
       #    Whether the command actually failed is decided by its EXIT STATUS.
       lock = Mutex.new # serialise writes so two streams can't interleave mid-line
+      output = [] # also returned, for callers that read a result (e.g. pulumi destroy's count)
       [stdout, stderr].map do |io|
         Thread.new do
-          io.each_line { |line| lock.synchronize { puts line.chomp } }
+          io.each_line do |line|
+            lock.synchronize do
+              puts line.chomp
+              output << line
+            end
+          end
         end
       end.each(&:join)
 
@@ -143,6 +149,8 @@ module AwsUtils
       unless exit_status.success?
         raise "Command failed with status #{exit_status.exitstatus}: #{command}"
       end
+
+      output.join
     end
   end
 

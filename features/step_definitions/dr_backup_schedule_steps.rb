@@ -87,3 +87,15 @@ end
 Then("the run is treated as a drill: {string}") do |drill|
   expect(@dr_drill).to eq(drill == "yes")
 end
+
+When("the backup checkpoint is graded with a restore at {int} and no checkpoint") do |restored|
+  @dr_grade = Dr::BackupSchedule.grade_checkpoint(restored_at: restored, checkpoint_at: nil)
+end
+
+When("the backup checkpoint is graded with a restore at {int} and a checkpoint at {int}") do |restored, checkpoint|
+  @dr_grade = Dr::BackupSchedule.grade_checkpoint(restored_at: restored, checkpoint_at: checkpoint)
+end
+
+When("the backup checkpoint is graded with no restore and a checkpoint at {int}") do |checkpoint|
+  @dr_grade = Dr::BackupSchedule.grade_checkpoint(restored_at: nil, checkpoint_at: checkpoint)
+end

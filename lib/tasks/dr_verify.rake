@@ -221,6 +221,14 @@ namespace :dr do
       check.call("S3 app bucket reachable", :ok, bucket)
     end
 
+    guarded.call("Drill marker") do
+      # Read from THIS server's own environment (.env loaded by the app): a
+      # drill's servers must be marked, a real recovery's must not be
+      drill = Dr::BackupSchedule.drill?
+      grade = DrillStack.grade_mark(expected_drill: drill)
+      check.call(drill ? "Drill stack marked (no pages)" : "Not marked as a drill (pages on)", grade.status, grade.detail)
+    end
+
     guarded.call("Search index populated") do
       # elastic_check above only proves Elasticsearch ANSWERS — an empty index
       # passes it. Search is not backed up, so prove every index the DR rebuilt
@@ -298,6 +306,14 @@ namespace :dr do
       schedule = on_db_box.call(db_host, "test -f #{Dr::BackupSchedule::CRON_PATH} && echo yes") == "yes"
       grade = Dr::BackupSchedule.grade_primary(schedule: schedule, old_jobs: old_backup_jobs.call(db_host))
       check.call("Primary backup schedule (single writer)", grade.status, grade.detail)
+
+      # The first backup after a restore must base on the restored data, not on
+      # a checkpoint inherited from the cloned live box (stale-LSN fix)
+      stamps = on_db_box.call(db_host, "sudo cat #{Dr::BackupSchedule::RESTORED_AT_PATH} 2>/dev/null; echo '|'; " \
+                                       "sudo stat -c %Y #{Dr::BackupSchedule::CHECKPOINT_PATH} 2>/dev/null")
+      restored_at, checkpoint_at = stamps.split("|", 2).map { |v| v.to_s.strip.presence&.to_i }
+      grade = Dr::BackupSchedule.grade_checkpoint(restored_at: restored_at, checkpoint_at: checkpoint_at)
+      check.call("Backup checkpoint fresh", grade.status, grade.detail)
     end
 
     # --- 5. Replica + replication (only on stacks that HAVE a replica) -------
