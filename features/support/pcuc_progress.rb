@@ -43,7 +43,35 @@ if PCUC_PROGRESS_DIR
     nil # progress is cosmetic, never fail a scenario on it
   end
 
+  # Failure detail for pcuc-status's end-of-run report, one line per failed scenario in failures_N:
+  # "<location>\t<name>\t<error>\t<failing feature step>\t<step definition>". Kept out of worker_N
+  # so every reader that counts worker_N lines (or `^failed`) is unaffected.
+  PCUC_FAILURES_FILE = File.join(PCUC_PROGRESS_DIR, "failures_#{ENV.fetch('TEST_ENV_NUMBER', '0')}")
+  PCUC_FAILURE_FIELDS = lambda do |scenario|
+    error = scenario.exception
+    # "Class: message" on one line, capped - a Capybara miss can quote the whole page text.
+    text = error ? "#{error.class}: #{error.message}" : 'failed'
+    text = text.to_s.scrub.gsub(/\s+/, ' ').strip
+    text = "#{text[0, 297]}..." if text.length > 300
+    # Backtrace paths relative to the repo, without the ":in `method'" tail.
+    trace = (error&.backtrace || []).map { |l| l.delete_prefix("#{Dir.pwd}/").sub(/:in .*/, '') }
+    # Cucumber appends the feature step's own line to the backtrace; the step definition is the
+    # first frame in step_definitions/.
+    step = trace.find { |l| l.include?('.feature:') }
+    step_def = trace.find { |l| l.include?('features/step_definitions/') }
+    "#{scenario.location}\t#{scenario.name.gsub(/\s+/, ' ')}\t#{text}\t#{step}\t#{step_def}"
+  end
+
   After do |scenario|
+    # Detail first, so a reader that sees the `failed` line in worker_N finds it already written.
+    # Its own rescue: a failure that cannot be described must still be counted below.
+    if scenario.failed?
+      begin
+        File.open(PCUC_FAILURES_FILE, 'a') { |f| f.puts(PCUC_FAILURE_FIELDS.call(scenario)) }
+      rescue StandardError
+        nil # progress is cosmetic
+      end
+    end
     # Open-append-close per scenario: the line is on disk the moment the ticker next reads it,
     # and a crash mid-run loses nothing already counted. The status word comes first, so a reader
     # that only counts lines or `^failed` needs nothing else; the epoch orders failures across

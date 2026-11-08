@@ -18,6 +18,9 @@ _cuc_with_progress() {
 
   # Progress dir: cucumber processes write worker_N files here, the dry run writes `total`.
   local progress_dir start=$SECONDS ticker
+  # Finished feeds are kept (see the `always` block) for pcuc-status's end-of-run report; drop
+  # those older than a day.
+  find "${TMPDIR:-/tmp}" -maxdepth 1 -name 'pcuc_progress.*.done' -mmin +1440 -exec rm -rf -- {} + 2>/dev/null
   progress_dir=$(mktemp -d "${TMPDIR:-/tmp}/pcuc_progress.XXXXXX")
   mkdir -p "$progress_dir/no_support"
 
@@ -46,11 +49,17 @@ _cuc_with_progress() {
   } always {
     kill $ticker 2>/dev/null
     _pcuc_report $label "$progress_dir" $start final
-    # Lets the calling script read the feed before it is deleted - pcuc records scenario timings
-    # from it (_pcuc_record_times). Runs on Ctrl-C too, so a stopped run still contributes.
+    # Lets the calling script read the feed before it is moved - pcuc records scenario timings
+    # from it (_pcuc_after_run). Runs on Ctrl-C too, so a stopped run still contributes.
     (( $+functions[_pcuc_after_run] )) && _pcuc_after_run "$progress_dir"
-    # Only ever a mktemp dir of ours: never rm with an empty or unexpected path.
-    [[ "$progress_dir" == */pcuc_progress.* && -d "$progress_dir" ]] && rm -rf -- "$progress_dir"
+    # Kept, not deleted: a `pcuc-status -w` watching this run waits for "<dir>.done" and prints
+    # the final report (stats, failures with their errors) from it. `ended` dates the finish.
+    # The rename also stops the ticker. Old .done dirs are cleared at the next run's start.
+    # Only ever a mktemp dir of ours: never touch an empty or unexpected path.
+    if [[ "$progress_dir" == */pcuc_progress.* && -d "$progress_dir" ]]; then
+      date +%s > "$progress_dir/ended"
+      mv -- "$progress_dir" "$progress_dir.done" 2>/dev/null || rm -rf -- "$progress_dir"
+    fi
   }
 }
 

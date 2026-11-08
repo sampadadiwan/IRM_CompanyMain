@@ -15,22 +15,183 @@
 #      is ignored and failures are unknown.
 #
 # Usage: pcuc-status [PID]          one report (PID: which run, when several are going)
-#        pcuc-status -w [N] [PID]   redraw every N seconds (default 15) until the run ends
+#        pcuc-status -w [N] [PID]   redraw every N seconds (default 15) until the run ends, then
+#                                   print the final report: stats, slowest scenarios, every
+#                                   failure with its error, and a rerun command
 set -uo pipefail
 
-# Watch mode: re-run ourselves on a timer, clearing the screen each time, and stop once no run
-# is left (the one-shot exits 1 when it finds none).
+# Terminal width for truncating long names. Watch mode passes COLUMNS in, because there our
+# output is captured by $(...) and tput would see no terminal.
+cols=${COLUMNS:-$(tput cols 2>/dev/null || echo 100)}
+(( cols < 40 )) && cols=40
+# Cut a string to $2 characters, marking the cut with an ellipsis.
+fit() { local s=$1 w=$2; (( w < 10 )) && w=10; (( ${#s} > w )) && s="${s:0:w-1}…"; printf '%s' "$s"; }
+# m:ss from seconds.
+mmss() { printf '%d:%02d' $(( $1 / 60 )) $(( $1 % 60 )); }
+
+# ---- Final report: pcuc-status --final <state file> ------------------------------------------
+# Called by watch mode once the run it was watching has gone. The state file is what the last
+# live report saw (pid, dir, feed dir, start, workers, selection - written by the one-shot below
+# when PCUC_STATUS_STATE is set); the feed itself is read from disk. Exits 1 when there is no
+# feed left to read (a run with no feed, or an old pcuc that deleted it).
+final_report() {
+  # shellcheck disable=SC1090
+  source "$1"
+  local fdir=$progress_dir
+  # A pcuc feed is renamed to "<dir>.done" once pcuc has finished with it (pcuc-lib.zsh). The
+  # workers are gone but pcuc may still be writing its own summary: wait for the rename (up to
+  # 10 s) rather than read a dir that is about to move. A run feed (tmp/pcuc_progress/<pid>) is
+  # never renamed - it is complete the moment the run is gone.
+  if [[ "$source" == "progress feed" ]]; then
+    for _ in {1..20}; do [[ -d "$fdir.done" ]] && break; sleep 0.5; done
+    [[ -d "$fdir.done" ]] && fdir="$fdir.done"
+  fi
+  [[ -n "$fdir" && -d "$fdir" ]] || return 1
+
+  shopt -s nullglob
+  local wfiles=("$fdir"/worker_[0-9]*) ffiles=("$fdir"/failures_[0-9]*)
+  local total done_n=0 failed_n=0 passed_n ended
+  total=$(cat "$fdir/total" 2>/dev/null)
+  if (( ${#wfiles[@]} )); then
+    done_n=$(cat "${wfiles[@]}" | wc -l)
+    failed_n=$(cat "${wfiles[@]}" | grep -c '^failed')
+  fi
+  passed_n=$(( done_n - failed_n ))
+  # End time: pcuc stamps it; a run feed has no stamp, so use the last scenario's finish.
+  ended=$(cat "$fdir/ended" 2>/dev/null)
+  [[ -n "$ended" ]] || ended=$( (( ${#wfiles[@]} )) && cut -s -f4 "${wfiles[@]}" | sort -n | tail -1)
+  [[ -n "$ended" ]] || ended=$(date +%s)
+  local took=$(( ended - start_epoch ))
+  (( took < 0 )) && took=0
+
+  # Headline: what ran, when, and how long it took.
+  printf 'pcuc run %s finished · %s · %s workers · %s → %s · %d:%02d:%02d\n' \
+    "$pid" "$(fit "$selection" $(( cols - 55 )))" "$workers" \
+    "$(date -d "@$start_epoch" +%H:%M)" "$(date -d "@$ended" +%H:%M)" \
+    $(( took / 3600 )) $(( took % 3600 / 60 )) $(( took % 60 ))
+  # Counts. Fewer finished than the dry run counted = stopped early (Ctrl-C) or a worker died.
+  printf '%s/%s scenarios · %s passed · %s failed%s\n' "$done_n" "${total:-?}" "$passed_n" "$failed_n" \
+    "$( (( failed_n == 0 )) && echo ' · all passed')"
+  if [[ -n "$total" ]] && (( done_n < total )); then
+    printf '⚠ %s scenario(s) never ran - the run was stopped or a worker died (check its terminal)\n' $(( total - done_n ))
+  fi
+
+  # Per worker: how many, how many failed, when it ran out of work. A worker finishing well
+  # before the others means the runtime split was off (pcuc rebalances from these times).
+  echo
+  echo "per worker:"
+  local n f c fc last
+  for f in "${wfiles[@]}"; do
+    n=${f##*_}
+    c=$(wc -l < "$f"); fc=$(grep -c '^failed' "$f")
+    last=$(cut -s -f4 "$f" | sort -n | tail -1)
+    if [[ -n "$last" ]]; then
+      printf '  w%-2s %4s done · %3s failed · out of work at %s (%s in)\n' "$n" "$c" "$fc" \
+        "$(date -d "@$last" +%H:%M)" "$(mmss $(( last - start_epoch )))"
+    else
+      printf '  w%-2s %4s done · %3s failed\n' "$n" "$c" "$fc"
+    fi
+  done | sort -V
+
+  # Slowest scenarios: a scenario's time is the gap since the previous line in the same worker
+  # file (the first line of each file includes Rails boot, so it is skipped) - as pcuc does.
+  # Header only when there is something under it: a worker's lone scenario has no measurable time.
+  local slowest=""
+  (( ${#wfiles[@]} )) && slowest=$(
+    awk -F'\t' 'FNR == 1 { prev = "" }
+                NF >= 4 { if (prev != "" && $4 >= prev) print ($4 - prev) "\t" $2 "\t" $3; prev = $4 }' "${wfiles[@]}" \
+      | sort -t$'\t' -k1,1nr | head -5 | while IFS=$'\t' read -r secs loc name; do
+          printf '  %6s  %-45s %s\n' "$(mmss "$secs")" "$loc" "$(fit "$name" $(( cols - 58 )))"
+        done
+  )
+  if [[ -n "$slowest" ]]; then
+    echo
+    echo "slowest:"
+    printf '%s\n' "$slowest"
+  fi
+
+  # Every failure, in the order they happened, with what broke and where. The detail comes from
+  # failures_N (features/support/pcuc_progress.rb); a run whose support code predates it has
+  # only the location and name.
+  if (( failed_n > 0 )); then
+    echo
+    echo "failures ($failed_n):"
+    local i=0 loc name err step stepdef
+    # \037 (unit separator), not tab: read treats tab as whitespace and would merge an empty
+    # middle field (no feature step) into the next, shifting the step definition into it.
+    while IFS=$'\037' read -r loc name err step stepdef; do
+      i=$(( i + 1 ))
+      printf '  %d) %s\n' "$i" "$loc"
+      printf '     %s\n' "$(fit "$name" $(( cols - 6 )))"
+      [[ -n "$err" ]] && printf '     %s\n' "$(fit "$err" $(( cols * 2 )))"
+      [[ -n "$step" || -n "$stepdef" ]] && printf '     at %s\n' "${step}${step:+${stepdef:+ · }}${stepdef}"
+    done < <(
+      {
+        # Detail lines first ("D"), then the failed feed lines ("F") in finishing order.
+        (( ${#ffiles[@]} )) && sed 's/^/D\t/' "${ffiles[@]}"
+        grep -h $'^failed\t' "${wfiles[@]}" | sort -t$'\t' -k4,4n | sed 's/^failed/F/'
+      } | awk -F'\t' -v OFS='\037' '
+        $1 == "D" { d[$2] = $4 OFS $5 OFS $6; next }
+        $1 == "F" { print $2, $3, ($2 in d ? d[$2] : "") }'
+    )
+
+    # One command re-running just the failures (pcuc caps workers itself for browser files).
+    # An outline row's location is "file:<row line>:<outline line>"; the row line alone selects
+    # that example, and pcuc only takes "file:<line>" as a path - it would hand the longer form to
+    # cucumber as an option and, with no file left, run the whole suite.
+    echo
+    echo "rerun the failures:"
+    printf '  pcuc %s\n' "$(grep -h $'^failed\t' "${wfiles[@]}" | cut -s -f2 \
+      | sed -E 's/^([^:]+:[0-9]+):.*/\1/' | sort -u | paste -sd' ')"
+  fi
+  echo
+  echo "feed: $fdir"
+}
+
+if [[ "${1:-}" == "--final" ]]; then
+  final_report "$2"
+  exit
+fi
+
+# Watch mode: re-run ourselves on a timer, clearing the screen each time. Once the run being
+# watched has gone (the one-shot exits 1), print its final report instead of just stopping.
 if [[ "${1:-}" == "-w" ]]; then
   interval=15
   [[ "${2:-}" =~ ^[0-9]+$ ]] && interval=$2
   want=${3:-}
+  # Each live report writes what it saw here; the final report starts from it.
+  state=$(mktemp "${TMPDIR:-/tmp}/pcuc_status_state.XXXXXX")
+  trap 'rm -f -- "$state"' EXIT
+  width=$(tput cols 2>/dev/null || echo 100)
+  out_prev=""
   while true; do
     # COLUMNS: our output is captured, so the child cannot ask the terminal its width itself.
-    out=$(COLUMNS=$(tput cols 2>/dev/null || echo 100) PCUC_STATUS_BAR=1 "$0" $want)
+    out=$(COLUMNS=$width PCUC_STATUS_BAR=1 PCUC_STATUS_STATE="$state" "$0" $want)
     status=$?
     clear
+    if (( status != 0 )); then
+      if [[ -s "$state" ]]; then
+        # The run we were watching has ended. Its last live view first, as context while the
+        # final report waits on pcuc to hand over the feed.
+        printf '%s\n\n(run ended - collecting results…)\n' "$out_prev"
+        final=$(COLUMNS=$width "$0" --final "$state")
+        fstatus=$?
+        clear
+        if (( fstatus == 0 )); then
+          printf '%s\n' "$final"
+        else
+          # No feed left to read: the last live view is the best there is.
+          printf '%s\n\n(run ended - no progress feed left for a final report; above is the last view)\n' "$out_prev"
+        fi
+      else
+        printf '%s\n' "$out"
+      fi
+      exit 0
+    fi
     printf '%s\n' "$out"
-    (( status != 0 )) && exit 0
+    out_prev=$out
+    # From here on follow this run only, so a new run starting as it ends is not mistaken for it.
+    [[ -z "$want" ]] && want=$(sed -n 's/^declare -- pid="\(.*\)"$/\1/p' "$state")
     printf '(every %ss · Ctrl-C to stop)\n' "$interval"
     sleep "$interval"
   done
@@ -175,15 +336,6 @@ if [[ -n "${total:-}" ]] && (( total > 0 )); then
   fi
 fi
 
-# Terminal width for truncating long names. Watch mode passes COLUMNS in, because there our
-# output is captured by $(...) and tput would see no terminal.
-cols=${COLUMNS:-$(tput cols 2>/dev/null || echo 100)}
-(( cols < 40 )) && cols=40
-# Cut a string to $2 characters, marking the cut with an ellipsis.
-fit() { local s=$1 w=$2; (( ${#s} > w )) && s="${s:0:w-1}…"; printf '%s' "$s"; }
-# m:ss from seconds.
-mmss() { printf '%d:%02d' $(( $1 / 60 )) $(( $1 % 60 )); }
-
 # What is being run, relative to the run's dir: the paths given, or "features" for the suite.
 selection=""
 for p in "${paths[@]}"; do selection+="${p#"$dir"/} "; done
@@ -191,6 +343,13 @@ selection=${selection% }
 (( ${#paths[@]} > 2 )) && selection="${paths[0]#"$dir"/} +$(( ${#paths[@]} - 1 )) more"
 grep -qE '(^| )(--tags|-t) ' <<< "${argv[*]}" && tagged=1 || tagged=0
 (( tagged )) && selection+=" (tag-filtered)"
+
+# Watch mode keeps what this report saw, so it can print the final report once the run is gone
+# and the process (with its environment and cwd) can no longer be asked.
+if [[ -n "${PCUC_STATUS_STATE:-}" ]]; then
+  start_epoch=$(( $(date +%s) - elapsed ))
+  declare -p pid dir progress_dir source workers selection start_epoch > "$PCUC_STATUS_STATE"
+fi
 
 printf 'pcuc run %s · %s · %s workers · started %s · %d:%02d elapsed\n' \
   "$pid" "$(fit "$selection" $(( cols - 50 )))" "$workers" "$(ps -o lstart= -p "$pid" | awk '{print $4}')" \
