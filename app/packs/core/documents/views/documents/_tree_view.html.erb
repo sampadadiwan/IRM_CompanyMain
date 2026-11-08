@@ -19,12 +19,19 @@
 
 <%# No "Step 1/2/3" strip here any more: it repeated the Actions menu and pushed the folders and
     documents down the page. Guidance now sits next to what it explains (tooltips + empty state). %>
+<%# With folders shown, the tree and the list are resizable: drag the divider between them (split_pane_controller,
+    custom/split_pane.scss). The width is remembered per browser; below lg the panes stack as before. %>
+<% if no_folders %>
 <div class="row">
+<% else %>
+<div class="row split-pane" data-controller="split-pane" data-split-pane-storage-key-value="documents-tree-width"
+     data-action="resize@window->split-pane#refit">
+<% end %>
     <!-- Show hide the folder view based on action -->
-    <% doc_index_class = (no_folders) ? "col-lg-12 mb-4" : "col-lg-8 mb-4" %>
+    <% doc_index_class = (no_folders) ? "col-lg-12 mb-4" : "col-lg-8 mb-4 split-pane-right" %>
 
     <% unless no_folders %>
-    <div class="col-lg-4 mb-4">
+    <div class="col-lg-4 mb-4 split-pane-left" data-split-pane-target="left">
         <div class="card shadow mb-4">
             <div class="card-header py-3">
                 <%# Where access rights live, since the old "Setup Access Rights" step no longer says it %>
@@ -44,6 +51,12 @@
             </div>
         </div>
     </div>
+
+    <%# Divider between the panes: drag, ←/→ when focused, double-click to reset. Hidden below lg. %>
+    <div class="split-pane-divider d-none d-lg-block" data-split-pane-target="divider"
+         role="separator" aria-orientation="vertical" aria-label="Resize the folders and documents panes" tabindex="0"
+         data-bs-title="Drag to resize the folders pane. Double-click to reset."
+         data-action="pointerdown->split-pane#startDrag keydown->split-pane#nudge dblclick->split-pane#reset"></div>
     <% end %>
 
     <div class="<%= doc_index_class %>">

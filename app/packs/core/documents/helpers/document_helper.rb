@@ -157,6 +157,37 @@ module DocumentHelper
     nil
   end
 
+  # Folder-tree icons for the well-known top-level folders (direct children of the firm's "/" folder).
+  # Picked by name because these folders are created by name and carry no type; icons match the sidebar
+  # where there is one (Funds, Stakeholders, Deals, Opportunities, Investments).
+  TOP_LEVEL_FOLDER_ICONS = {
+    "Funds" => "ti-currency-dollar",
+    "Investors" => "ti-users",
+    "Deals" => "ti-briefcase",
+    "InvestmentOpportunity" => "ti-presentation-analytics",
+    "AggregatePortfolioInvestment" => "ti-cash",
+    "KPIs" => "ti-chart-line",
+    "Approvals" => "ti-circle-check",
+    "Secondary Sales" => "ti-arrows-exchange",
+    "Portfolio Reports" => "ti-report-analytics",
+    "Notifications" => "ti-bell",
+    "Support Agents" => "ti-robot"
+  }.freeze
+
+  # "Data Room" also sits inside each fund/deal, so it gets its icon at any depth
+  DATA_ROOM_FOLDER_ICON = "ti-shield-lock".freeze
+
+  # @return [String] the Tabler icon class for one folder in the tree (folders/_tree_view)
+  def folder_tree_icon(folder, firm_root: false)
+    # The firm's own "/" folder, shown under the firm's name
+    return "ti-building" if firm_root
+    # A data room, wherever it is
+    return DATA_ROOM_FOLDER_ICON if folder.name == "Data Room"
+
+    # A well-known top-level folder, else the plain folder
+    folder.level == 1 ? TOP_LEVEL_FOLDER_ICONS.fetch(folder.name, "ti-folder") : "ti-folder"
+  end
+
   # This method returns all the folders to be displayed in the tree view
   def get_tree_view_folders(params, current_user, entity, documents)
     entity_id = params[:entity_id].present? ? params[:entity_id].to_i : current_user.entity_id

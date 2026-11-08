@@ -1,0 +1,81 @@
+// Resizable two-pane row (split_pane_controller.js), e.g. folder tree | document list.
+// Only from lg up: below it the columns keep Bootstrap's stacking and the divider is hidden (d-none d-lg-block).
+@media (min-width: 992px) {
+  .split-pane {
+    flex-wrap: nowrap;
+
+    // Left pane: the dragged width, or Bootstrap's col-lg-4 share until someone drags
+    > .split-pane-left {
+      width: var(--split-pane-left-width, 33.33333333%);
+      min-width: 0;
+
+      // Deep folder names scroll inside the card instead of pushing it wider
+      .card-body {
+        overflow-x: auto;
+      }
+    }
+
+    // Right pane: whatever is left
+    > .split-pane-right {
+      flex: 1 1 0;
+      width: auto;
+      min-width: 0;
+    }
+  }
+}
+
+// The folder tree scrolls inside its own card (at every width), so a long tree never pushes the
+// document list out of view: the card body is capped at the viewport height less the page chrome above
+// it (top bar, breadcrumb card, the Folders card header), but never below 20rem.
+.split-pane > .split-pane-left .card-body {
+  max-height: unquote("max(20rem, calc(100vh - 14rem))");   // unquote: libsass would read max() as its own function
+  overflow-y: auto;
+  overscroll-behavior: contain;   // reaching the end of the tree doesn't start scrolling the page
+}
+
+// The divider sits in the gutter between the two cards. 12px wide with -6px margins, so it adds no
+// width of its own; the visible part is a 2px line that only shows on hover, focus and drag,
+// always in neutral greys.
+.split-pane-divider {
+  position: relative;
+  flex: 0 0 12px;
+  margin: 0 -6px;
+  cursor: col-resize;
+  touch-action: none;   // let pointer events drive the drag on touch screens
+  z-index: 1;
+
+  &::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 1.5rem;     // stop where the cards' mb-4 starts
+    left: 5px;
+    width: 2px;
+    border-radius: 1px;
+    background-color: transparent;
+    transition: background-color 0.15s ease;
+  }
+
+  &:hover::after {
+    background-color: var(--bs-border-color);
+  }
+
+  // Keyboard focus: the darker neutral grey (no theme blue), so focus is still visible
+  &:focus-visible {
+    outline: none;
+
+    &::after {
+      background-color: var(--bs-secondary-color);
+    }
+  }
+}
+
+// While dragging: a slightly darker neutral line (not the theme blue), and no text selection in the panes
+.split-pane--dragging {
+  cursor: col-resize;
+  user-select: none;
+
+  .split-pane-divider::after {
+    background-color: var(--bs-secondary-color);
+  }
+}

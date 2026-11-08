@@ -22,16 +22,39 @@
       user-select: none; /* Prevent text selection */
     }
 
-    /* Create the caret/arrow with a unicode, and style it */
+    /* The caret is Tabler's chevron-right (same icon font as the rest of the app, loaded by the layout),
+       drawn in CSS so the Turbo-Stream re-render of a caret (folders/_tree_caret) gets it too */
     .caret::before {
-      content: "\25B6";
+      content: "\ea61";
+      font-family: "tabler-icons";
+      font-size: 0.875rem;
+      line-height: 1;
       display: inline-block;
+      width: 1rem;               /* fixed slot, so names line up whether or not a chevron shows */
       margin-right: 2px;
+      text-align: center;
+      vertical-align: -1px;
+      color: var(--bs-secondary-color);
+      transition: transform 0.15s ease;
+      -webkit-font-smoothing: antialiased;
     }
 
-    /* Rotate the caret/arrow icon when clicked on (using JavaScript) */
+    /* Open folder: rotate the chevron to point down (treeview_controller toggles .caret-down) */
     .caret-down::before {
       transform: rotate(90deg);
+    }
+
+    /* The folder's own icon (ti-folder, or Funds/Investors/Data Room... from folder_tree_icon): a touch
+       bigger than the name so the different icons are easy to tell apart */
+    .caret > i.ti:first-of-type {
+      font-size: 1.2em;
+      vertical-align: -0.15em;
+      margin-right: 3px;
+    }
+
+    /* A folder with no sub-folders has nothing to expand: keep the slot, hide the chevron */
+    li:not(:has(> ul)) > .caret::before {
+      visibility: hidden;
     }
 
     /* Hide the nested list */
