@@ -211,32 +211,39 @@
         <div class="card mb-3" id="esign_section">
           <div class="card-header"><%= section += 1 %>. eSignatures</div>
           <div class="card-body">
-            <div id="sign_display_on_page">
-              <div class='nested-fields row'>
-                <div class="form-group col">
-                  <%= form.label :esign_display_on_page %>
+            <%# Same grid as sections 2-3 (row g-3 + form-label), but col-lg-6 so the toggle cards go full width
+                on a narrow form instead of the switch overflowing a ~125px card. Not `.nested-fields .form-group`:
+                scaffolds.scss gives every label in there width: 100%, and the switch is itself a
+                <label class="ios-toggle">, so it stretched out of its toggle card. %>
+            <div id="sign_display_on_page" class="mb-3">
+              <div class="row g-3">
+                <%# Row 1: where signatures go + whether signers are sent the document in order %>
+                <div class="col-lg-6">
+                  <%= form.label :esign_display_on_page, class: "form-label" %>
                   <%= form.select :display_on_page, ["First", "Last", "All"], {}, class: "form-control" %>
                 </div>
 
-                <div class="form-group col">
+                <div class="col-lg-6">
                   <%= render "documents/form_toggle", form:, field: :force_esign_order, label: "eSign Order",
                              help: "Signers will be sent the Document in the order they are added" %>
                 </div>
 
+                <%# Row 2 (+3): expiry and reminders, only for eSign providers that support them %>
                 <% if document.entity.entity_setting.esign_supports?(:expiry_settings) %>
-                  <div class="form-group col">
-                    <%= form.label :esign_expiration_days, "eSign Expires In (days)" %>
+                  <div class="col-lg-6">
+                    <%= form.label :esign_expiration_days, "eSign Expires In (days)", class: "form-label" %>
                     <%= form.number_field :esign_expiration_days, in: 1..ZohoEsignHelper::MAX_EXPIRATION_DAYS, class: "form-control", placeholder: ZohoEsignHelper::DEFAULT_EXPIRATION_DAYS %>
                     <div class="form-text">Defaults to <%= ZohoEsignHelper::DEFAULT_EXPIRATION_DAYS %> days if left blank. Max <%= ZohoEsignHelper::MAX_EXPIRATION_DAYS %> days.</div>
                   </div>
 
-                  <div class="form-group col">
+                  <div class="col-lg-6">
                     <%= render "documents/form_toggle", form:, field: :esign_email_reminders, label: "Send Automatic Reminders",
                                help: "Periodically email signers who haven't signed yet, until the document expires or is signed", data: { action: "click->docform#toggleReminderPeriod" } %>
                   </div>
 
-                  <div class="form-group col" id="esign_reminder_period_div">
-                    <%= form.label :esign_reminder_period, "eSign Reminder Every (days)" %>
+                  <%# Hidden by docform#toggleReminderPeriod while "Send Automatic Reminders" is off %>
+                  <div class="col-lg-6" id="esign_reminder_period_div">
+                    <%= form.label :esign_reminder_period, "eSign Reminder Every (days)", class: "form-label" %>
                     <%= form.number_field :esign_reminder_period, in: 1..ZohoEsignHelper::MAX_REMINDER_PERIOD_DAYS, class: "form-control", placeholder: ZohoEsignHelper::DEFAULT_REMINDER_PERIOD_DAYS %>
                     <div class="form-text">Defaults to <%= ZohoEsignHelper::DEFAULT_REMINDER_PERIOD_DAYS %> days if left blank. Max <%= ZohoEsignHelper::MAX_REMINDER_PERIOD_DAYS %> days.</div>
                   </div>
@@ -263,7 +270,13 @@
             <hr>
               <% @tags = @document.entity.entity_setting.respond_to?(:stamp_paper_tags) ? @document.entity.entity_setting.stamp_paper_tags&.split(',') : "" %>
               <% if @tags.present? %>
-                <p>Available Stamp-Papers- <%= @tags.join(", ") %> </p>
+                <%# One neutral badge per configured stamp-paper tag (entity setting is a comma list: strip spaces, drop blanks and repeats) %>
+                <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                  <span class="form-label mb-0">Available Stamp Papers</span>
+                  <% @tags.map(&:strip).compact_blank.uniq.each do |tag| %>
+                    <span class="badge bg-secondary-subtle text-secondary"><%= tag %></span>
+                  <% end %>
+                </div>
               <% end %>
               <%= form.fields_for :stamp_papers do |f| %>
                 <%= render 'stamp_paper_fields', f: %>
