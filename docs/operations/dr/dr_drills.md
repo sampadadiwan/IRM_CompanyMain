@@ -58,3 +58,4 @@
 | 2026-11-08 13:17 | staging | in | ap-south-2 | PASSED | 8.6 | dr_drill_in_2026_11_08_1317 | services stopped · 46 resources destroyed |
 | 2026-11-08 14:39 | staging | in | ap-south-2 | FAILED | 12.8 | dr_drill_in_2026_11_08_1439 | kept for diagnosis (failed run) |
 | 2026-11-08 14:53 | staging | in | ap-south-2 | PASSED | 7.8 | dr_drill_in_2026_11_08_1453 | services stopped · destroy FAILED — stack still up |
+| 2026-11-08 15:14 | staging | in | ap-south-2 | FAILED | 13.4 | dr_drill_in_2026_11_08_1514 | kept for diagnosis (failed run) |

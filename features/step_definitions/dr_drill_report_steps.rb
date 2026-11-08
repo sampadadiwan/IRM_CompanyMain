@@ -85,7 +85,7 @@ When("the report model is built") do
     evidence: { "Infrastructure provisioned in ap-south-2" => ["Pulumi update #0", "pulumi stack history"] },
     stack: "staging", region: "ap-south-2", env_variant: "in", branch: "dr_drill_in_2026_11_08_1039",
     started_at: phases.first[1], finished: finished, drill: @dr_run[:drill], teardown: true, executed_by: "thimmaiah@Inspiron",
-    recovery_point: @dr_run[:recovery_point]
+    recovery_point: @dr_run[:recovery_point], stop_reason: @dr_run[:stop_reason]
   )
 end
 
@@ -264,4 +264,12 @@ end
 
 Given("the rebuild took {int} seconds") do |seconds|
   @dr_run[:rebuild_seconds] = seconds
+end
+
+Given("the run stopped with {string}") do |reason|
+  @dr_run[:stop_reason] = reason
+end
+
+Then("the first attention item says {string}") do |text|
+  expect(@dr_model.attention.first[:means]).to include(text)
 end

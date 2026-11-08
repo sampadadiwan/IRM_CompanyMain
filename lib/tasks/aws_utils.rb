@@ -789,6 +789,18 @@ module AwsUtils
     scorecard
   end
 
+  # Why a run stopped: the error the drill printed into its transcript (last one wins), or nil
+  def parse_stop_reason(transcript_path)
+    return nil unless transcript_path && File.exist?(transcript_path)
+
+    reason = nil
+    File.foreach(transcript_path) do |raw|
+      line = raw.gsub(/\e\[[0-9;]*m/, "").strip
+      reason = line.delete_prefix(Dr::ReportModel::STOP_MARK).strip if line.start_with?(Dr::ReportModel::STOP_MARK)
+    end
+    reason
+  end
+
   # The point the database was recovered to: the backup chain the primary restore used, as the
   # baked script prints it ("Found latest full backup: 2026-11-07_230001-full", then
   # "INCREMENTAL     2026-11-08_070001-incr"). The newest key's timestamp is the recovery point.
@@ -831,6 +843,7 @@ module AwsUtils
     model = Dr::ReportModel.build(
       phases: DR_PHASES, scorecard: scorecard, evidence: DR_EVIDENCE, result: result,
       recovery_point: parse_recovery_point(dir.join("#{branch}.log")),
+      stop_reason: parse_stop_reason(dir.join("#{branch}.log")),
       stack: stack, region: region, env_variant: env_variant, branch: branch,
       started_at: started_at, finished: finished, drill: drill,
       # "deleted afterwards" is only said when this drill really tears down
@@ -1391,10 +1404,10 @@ module AwsUtils
     require "resolv"
     require "aws-sdk-elasticloadbalancingv2"
     host = dr_app_host(stack, region)
-    out, err, status = Open3.capture3("pulumi stack output --json --stack #{stack}-#{region}", chdir: "../IRM-Infra")
-    raise "pulumi stack output failed for #{stack}-#{region}: #{err.lines.last(2).join.strip}" unless status.success?
-
-    alb_dns = JSON.parse(out).dig("alb", "dns_name") or raise "Stack #{stack}-#{region} has no 'alb' output"
+    # The stack's outputs nest the load balancer under IPs → alb; pulumi_stack_output returns IPs.
+    # (The first version read a top-level "alb" and the 2026-11-08 15:14 drill failed on it.)
+    alb_dns = pulumi_stack_output("#{stack}-#{region}").dig("alb", "dns_name") or
+      raise "Stack #{stack}-#{region} has no IPs → alb → dns_name output"
     ip = Resolv.getaddress(alb_dns)
 
     results = []

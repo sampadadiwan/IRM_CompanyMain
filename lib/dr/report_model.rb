@@ -8,6 +8,8 @@ module Dr
   # Pure: takes the run's phases, parsed verify scorecard and evidence as plain values. Never
   # reads files, ENV or globals - AwsUtils#write_dr_report gathers those and passes them in.
   module ReportModel
+    # The line a stopped drill prints into its transcript before the error (aws:dr_drill)
+    STOP_MARK = "💥 Drill stopped by:"
     Model = Data.define(:passed, :drill, :headline, :subline, :tiles, :plain_words, :objectives, :attention,
                         :steps, :hosts, :groups, :verified, :scope, :evidence, :glossary, :generated)
 
@@ -25,7 +27,7 @@ module Dr
     # evidence: {claim => [evidence, how_to_check]}
     # recovery_point: {full:, incr:, at:} - the backup chain the restore used (AwsUtils#parse_recovery_point)
     def build(phases:, scorecard:, evidence:, result:, stack:, region:, env_variant:, branch:,
-              started_at:, finished:, drill:, teardown:, executed_by:, recovery_point: nil)
+              started_at:, finished:, drill:, teardown:, executed_by:, recovery_point: nil, stop_reason: nil)
       passed = result.to_s.match?(/PASSED|COMPLETE/)
       checks = parse_checks(scorecard)
       steps = build_steps(phases, passed)
@@ -47,7 +49,8 @@ module Dr
                    missed_promises(passed, objectives),
         objectives: objectives,
         # On a failed run the failed step already says why; missed promises are listed for passed runs
-        attention: by_severity((passed ? objective_attention(objectives) : []) + attention(passed, steps, checks, scorecard.keys, branch)),
+        attention: by_severity((passed ? objective_attention(objectives) : []) +
+                               attention(passed, steps, checks, scorecard.keys, branch, stop_reason)),
         steps: steps, hosts: scorecard.keys,
         groups: groups(checks, scorecard.keys), verified: checks.any?,
         scope: SCOPE, evidence: evidence.map { |claim, (ev, how)| [claim, ev, how] },
@@ -196,11 +199,11 @@ module Dr
     end
 
     # Failed step first, then failed checks, then warnings; each check once, naming its servers
-    def attention(passed, steps, checks, hosts, branch)
+    def attention(passed, steps, checks, hosts, branch, stop_reason = nil)
       items = []
       if !passed && (stopped = steps.last)
         items << { status: :fail, name: "Step #{stopped[:n]} · #{stopped[:name]}", hosts: "—",
-                   means: "The recovery stopped here.",
+                   means: ["The recovery stopped here.", stop_reason && "Error: #{stop_reason}"].compact.join(" "),
                    todo: [stopped[:if_fails], "Full output: docs/operations/dr/runs/#{branch}.log"].compact.join(" ") }
       end
       %i[fail warn].each do |status|

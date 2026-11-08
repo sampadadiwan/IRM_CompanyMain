@@ -81,6 +81,13 @@ Feature: A DR run report explains itself
     And the first attention item is "Step 5 · Install the app on both servers"
     And the report says verification was not reached
 
+  # X3 — Error case: the report says WHY a run stopped (2026-11-08 15:14 drill said only "stopped here")
+  Scenario: A failed run shows the error that stopped it
+    Given a staging drill that failed during step 5 before verification
+    And the run stopped with "RuntimeError: Stack staging-ap-south-2 has no IPs → alb → dns_name output"
+    When the report model is built
+    Then the first attention item says "Error: RuntimeError: Stack staging-ap-south-2 has no IPs → alb → dns_name output"
+
   # X2 — Error case: failures come before warnings
   Scenario: A failed check is listed before a warning
     Given the 2026-11-08 staging drill's run data

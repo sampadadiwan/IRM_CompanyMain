@@ -444,6 +444,14 @@ namespace :aws do
       ENV["DR_DRILL"] = "true"
       setup_infra(stack, "AppServer", "DB-Redis-ES", region, env_variant, drill_branch)
       result = "PASSED"
+    rescue StandardError => e
+      # Into the transcript, so the log and the report say WHY the run stopped. Without this the
+      # error reached only the terminal, after the transcript closed (2026-11-08 15:14 drill:
+      # "stopped at step 9" and no reason anywhere on disk). Re-raised: the drill still fails.
+      puts "\n#{Dr::ReportModel::STOP_MARK} #{e.class}: #{e.message.to_s.lines.first.to_s.strip}"
+      where = Array(e.backtrace).find { |line| line.include?("/lib/") || line.include?("/app/") }
+      puts "   at #{where}" if where
+      raise
     ensure
       ENV.delete("DR_DRILL")
       duration_min = ((Time.now - started_at) / 60).round(1)
