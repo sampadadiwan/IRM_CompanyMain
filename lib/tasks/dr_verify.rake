@@ -234,6 +234,15 @@ namespace :dr do
       Net::SSH.start(host, "ubuntu", keys: [key_path], timeout: 15, verify_host_key: :never) { |ssh| ssh.exec!(cmd).to_s.strip }
     end
 
+    # Old backup jobs in the box's ubuntu + root crontabs. DR boxes are cloned
+    # from a snapshot of the live box, whose ubuntu crontab still runs
+    # /home/ubuntu/backup_db.sh — a writer that ignores the armed marker. The
+    # restore strips them; this proves it did (Dr::BackupSchedule).
+    old_backup_jobs = lambda do |host|
+      # 2>&1: "no crontab for <user>" goes to stderr, and split_crontab drops it
+      Dr::BackupSchedule.old_jobs(on_db_box.call(host, "crontab -l 2>&1; sudo crontab -l -u root 2>&1"))
+    end
+
     guarded.call("Primary DB box (#{db_host})") do
       state = on_db_box.call(db_host, "systemctl is-active mysql")
       check.call("Primary mysqld (#{db_host})", state == "active" ? :ok : :fail, state)
@@ -250,13 +259,19 @@ namespace :dr do
       # Backups must be ARMED on the primary — restore_primary creates the
       # marker; without it /etc/cron.d/irm-db-backup no-ops forever and the
       # freshly recovered env silently takes NO backups
-      armed = on_db_box.call(db_host, "test -f /etc/db_backup_enabled && echo yes")
-      check.call("Primary backup cron armed", armed == "yes" ? :ok : :fail,
-                 armed == "yes" ? "/etc/db_backup_enabled present" : "marker missing — no backups will be taken!")
+      armed = on_db_box.call(db_host, "test -f #{Dr::BackupSchedule::ARMED_MARKER} && echo yes")
+      # A DR drill must be the opposite: NOT armed, because the live box is
+      # still writing the same bucket (DR_DRILL=true, set by aws:dr_drill)
+      drill = Dr::BackupSchedule.drill?
+      grade = Dr::BackupSchedule.grade_armed(armed == "yes", drill: drill)
+      check.call(drill ? "Primary backup cron NOT armed (drill)" : "Primary backup cron armed", grade.status, grade.detail)
 
-      cron = on_db_box.call(db_host, "test -f /etc/cron.d/irm-db-backup && echo yes")
-      check.call("Primary backup cron installed", cron == "yes" ? :ok : :warn,
-                 cron == "yes" ? nil : "no /etc/cron.d/irm-db-backup — pre-bake AMI?")
+      # Something must actually RUN the script, and only one thing may: the
+      # baked schedule with no old job beside it. A missing schedule used to be
+      # a warning, so two drills passed with backups off (fix-dr-backup-cron-after-restore).
+      schedule = on_db_box.call(db_host, "test -f #{Dr::BackupSchedule::CRON_PATH} && echo yes") == "yes"
+      grade = Dr::BackupSchedule.grade_primary(schedule: schedule, old_jobs: old_backup_jobs.call(db_host))
+      check.call("Primary backup schedule (single writer)", grade.status, grade.detail)
     end
 
     # --- 5. Replica + replication (only on stacks that HAVE a replica) -------
@@ -272,6 +287,10 @@ namespace :dr do
         armed = on_db_box.call(replica_host, "test -f /etc/db_backup_enabled && echo yes")
         check.call("Replica backup cron disarmed", armed == "yes" ? :fail : :ok,
                    armed == "yes" ? "ARMED — two writers will corrupt the backup chain!" : nil)
+
+        # Disarmed is not enough: an old cloned crontab job ignores the marker
+        grade = Dr::BackupSchedule.grade_replica(old_jobs: old_backup_jobs.call(replica_host))
+        check.call("Replica has no backup writer", grade.status, grade.detail)
       end
 
       guarded.call("Replication live round-trip") do

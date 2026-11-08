@@ -17,6 +17,31 @@ namespace :db do
   # replica restores run in parallel (db:restore_all_remote).
   RESTORE_FALLBACK_MUTEX = Mutex.new
 
+  # Base64 is a bundled gem from Ruby 3.4 on — not loaded unless required
+  require "base64"
+
+  # Installs a root-owned file with the given content and mode, only when it
+  # differs from what is on the box. Raises on failure: a restore that cannot
+  # install the backup schedule must not report success.
+  def dr_install_root_file(ssh, path, content, mode, prefix = "")
+    return if ssh.exec!("sudo cat #{path} 2>/dev/null").to_s == content
+
+    staged = "/tmp/#{File.basename(path)}.#{Process.pid}"
+    result = ssh.exec!("echo #{Base64.strict_encode64(content)} | base64 -d > #{staged} && " \
+                       "sudo install -m #{mode} -o root -g root #{staged} #{path} && rm -f #{staged} && echo OK").to_s
+    raise "could not install #{path}: #{result.strip}" unless result.include?("OK")
+
+    puts "#{prefix}✓ Installed #{path}"
+  end
+
+  # The baked backup schedule + log rotation (identical to the Packer recipe —
+  # features/misc/dr_backup_schedule.feature H4 guards the two against drift).
+  # Without the schedule file nothing ever runs the backup script, armed or not.
+  def dr_install_backup_schedule(ssh, prefix = "")
+    dr_install_root_file(ssh, Dr::BackupSchedule::CRON_PATH, Dr::BackupSchedule::CRON_CONTENT, "0644", prefix)
+    dr_install_root_file(ssh, Dr::BackupSchedule::LOGROTATE_PATH, Dr::BackupSchedule::LOGROTATE_CONTENT, "0644", prefix)
+  end
+
   # Streams `sudo db_backup_xtra.sh restore_primary` on the given DB host.
   # disarm_after: the script ARMS the backup cron on whatever it restores —
   # correct for the primary, wrong for the replica (one writer per chain).
@@ -37,7 +62,7 @@ namespace :db do
     end
 
     key_path = File.expand_path("~/.ssh/#{ENV.fetch('KEYNAME')}.pem")
-    script = "/usr/local/bin/db_backup_xtra.sh"
+    script = Dr::BackupSchedule::SCRIPT_PATH
     puts "#{prefix}→ Restoring via baked script on #{host} (this can take a while)"
 
     exit_code = nil
@@ -66,15 +91,23 @@ namespace :db do
         ssh.exec!("sudo rm -rf /tmp/xb_*")
       end
 
+      # Old backup jobs cloned from the live box go FIRST, before anything
+      # else can run on this box (see Dr::OldBackupJobs).
+      Dr::OldBackupJobs.strip!(ssh, prefix: prefix)
+
       # Instances from pre-bake AMIs (no rebake since the backup tooling was
       # added to the Packer template) don't have the baked script — bridge by
-      # generating the env-specific script here and uploading it. Same script,
-      # same restore_primary entrypoint; only the delivery differs.
-      # `sudo test`: the baked script is root:root 0700, so a plain `test -x`
-      # as ubuntu is ALWAYS false — that silently sent every restore down the
-      # fallback path and the baked/SSM path never ran (found 2026-07-10).
-      unless ssh.exec!("sudo test -x #{script} && echo yes").to_s.strip == "yes"
-        puts "#{prefix}ℹ️ #{script} not on #{host} (pre-bake AMI) — uploading generated script instead."
+      # generating the env-specific script here and installing it where the
+      # baked one would be, so the baked schedule runs it. Same script, same
+      # restore_primary entrypoint; only the delivery differs.
+      # A script that no longer carries its placeholders is a GENERATED copy
+      # from an earlier restore: replace it every time, so a rotated credential
+      # never lingers. `sudo grep`: the script is root:root 0700, so a plain
+      # read as ubuntu always fails — that once silently sent every restore
+      # down the fallback path (found 2026-07-10).
+      baked = ssh.exec!("sudo grep -qF '#{Dr::BackupSchedule::BAKED_PLACEHOLDER}' #{script} 2>/dev/null && echo yes").to_s.strip == "yes"
+      unless baked
+        puts "#{prefix}ℹ️ No baked #{script} on #{host} (pre-bake AMI) — installing the generated script there instead."
         require 'net/scp'
         local_script = Rails.root.join("tmp", "db_backup_xtra_#{Rails.env}.sh")
         # Mutex: parallel restores must not both invoke the generator task
@@ -83,22 +116,35 @@ namespace :db do
             Rake::Task['xtrabackup:generate_backup_script'].invoke # substitutes secrets from credentials
           end
         end
-        script = "/home/ubuntu/db_backup_xtra.sh"
+        staged = "/home/ubuntu/db_backup_xtra.sh"
         Net::SCP.start(host, "ubuntu", keys: [key_path], timeout: 15, verify_host_key: :never) do |scp|
-          scp.upload!(local_script.to_s, script)
+          scp.upload!(local_script.to_s, staged)
         end
-        # Contains credentials — owner-only, executable
-        ssh.exec!("chmod 700 #{script}")
+        # Contains credentials — root-only, executable, at the baked path
+        installed = ssh.exec!("sudo install -m 0700 -o root -g root #{staged} #{script} && rm -f #{staged} && echo OK").to_s
+        raise "could not install the generated backup script at #{script} on #{host}: #{installed.strip}" unless installed.include?("OK")
       end
 
-      # Optional source-bucket override travels via `sudo env` (plain
-      # `sudo VAR=x` does not pass environment assignments through)
-      env_prefix = ""
+      # The primary gets its schedule BEFORE the restore: harmless until the
+      # restore arms the box, and it lets the script truthfully report the
+      # schedule live. The replica gets it only AFTER it is disarmed (below),
+      # so no cron tick can catch it in the moment between arm and disarm.
+      dr_install_backup_schedule(ssh, prefix) unless disarm_after
+
+      # Script environment travels via `sudo env` (plain `sudo VAR=x` does
+      # not pass environment assignments through)
+      script_env = []
+      # Optional source-bucket override
       if bucket
-        env_prefix = "env BUCKET_OVERRIDE=#{bucket} "
-        env_prefix += "AWS_REGION_OVERRIDE=#{bucket_region} " if bucket_region
+        script_env << "BUCKET_OVERRIDE=#{bucket}"
+        script_env << "AWS_REGION_OVERRIDE=#{bucket_region}" if bucket_region
         puts "#{prefix}→ Restoring from OVERRIDE bucket: #{bucket}#{" (#{bucket_region})" if bucket_region}"
       end
+      # A drill must never arm: the live box is alive and writes the same
+      # bucket, so an armed drill box would be a second writer on the live chain
+      drill = Dr::BackupSchedule.drill?
+      script_env << "DB_BACKUP_NO_ARM=1" if drill
+      env_prefix = script_env.empty? ? "" : "env #{script_env.join(' ')} "
 
       # Stream the restore live so the operator sees xtrabackup progress
       ssh.open_channel do |ch|
@@ -114,11 +160,26 @@ namespace :db do
 
       raise "restore_primary exited with status #{exit_code} on #{host}" unless exit_code&.zero?
 
+      if drill && !disarm_after
+        # Backstop for baked script copies older than DB_BACKUP_NO_ARM: the
+        # drill primary keeps its schedule but must not be armed
+        ssh.exec!("sudo rm -f #{Dr::BackupSchedule::ARMED_MARKER}")
+        puts "#{prefix}→ Drill: backups left DISARMED on #{host} (the live box still owns the backup chain)"
+      end
+
       if disarm_after
         # Replica must never write to the backup chain — remove the marker
         # restore_primary just created
-        ssh.exec!("sudo rm -f /etc/db_backup_enabled")
+        ssh.exec!("sudo rm -f #{Dr::BackupSchedule::ARMED_MARKER}")
         puts "#{prefix}→ Backup cron disarmed on #{host} (replica: single writer per chain)"
+        # Same schedule as the primary, so a later promotion only has to arm
+        # it; without the marker every run skips. A failure here must not fail
+        # the DR: the replica never writes, so the schedule is a convenience.
+        begin
+          dr_install_backup_schedule(ssh, prefix)
+        rescue StandardError => e
+          puts "#{prefix}⚠️  Backup schedule not installed on the replica (#{e.message}) — install it before promoting this box"
+        end
       end
     end
     puts "#{prefix}✅ Restore complete on #{host}"

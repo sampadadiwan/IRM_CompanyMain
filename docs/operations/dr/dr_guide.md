@@ -350,10 +350,42 @@ In the first days after a recovery or migration:
 - **An environment built without a restore never arms backups.** Arming is a
   side effect of `restore_primary`. Empty-database setups must arm manually:
   `sudo touch /etc/db_backup_enabled` on the primary.
-- **Instances from pre-2026-07 AMIs lack the baked backup script.** The rake
-  restore tasks detect this and upload a generated script automatically, but
-  the manual on-box command will not exist at `/usr/local/bin` on such
-  instances, and the backup cron file will be absent (verification warns).
+- **DR database servers are clones of the live DB box, not Packer builds.**
+  The weekly `aws:create_and_copy_ami[DB-Redis-ES]` snapshots the running box.
+  That box predates the bake: it has no baked script or schedule, and it backs
+  up through an old `ubuntu` crontab job (`/home/ubuntu/backup_db.sh`) that has
+  the live bucket hard-coded and **ignores the armed marker**. Every DR clone,
+  primary and replica, boots with that job. Since 2026-11 (OpenSpec
+  `fix-dr-backup-cron-after-restore`) the recovery handles this itself:
+  - right after `pulumi up`, `setup_infra` strips the old job from both new DB
+    boxes (best effort, through an app server);
+  - every restore strips it again, installs the script at `/usr/local/bin` if
+    the box has no baked copy, and installs the baked schedule
+    (`/etc/cron.d/irm-db-backup`). The primary gets it before the restore, the
+    replica only after it is disarmed;
+  - `dr:verify` **fails** an armed primary with no schedule, a primary with two
+    writers, and a replica with any old job. A live box backed up only by the
+    old job gets a warning.
+  - every restore also clears the clone's stale LSN checkpoint
+    (`/var/lib/xtrabackup/lsndir`), so the first incremental bases on the
+    newest full in S3. Otherwise the chain written after a DR could not be
+    restored until the next 23:00 full;
+  - **drills never arm.** `aws:dr_drill` sets `DR_DRILL=true`: the drill
+    primary gets the schedule but no marker, because the live box is still
+    writing the same bucket. `dr:verify` expects "NOT armed (drill)". When
+    running verify by hand on drill boxes, prefix `DR_DRILL=true`.
+  - **Residual risk:** a clone can still fire one hourly `:00` job in the
+    ~2–3 minutes between boot and the early strip. Building the weekly DB AMI
+    from Packer closes it fully (follow-up).
+
+  ```mermaid
+  flowchart LR
+      Live["Live DB box<br/>old backup_db.sh job"] -->|weekly snapshot| AMI["DR AMI"]
+      AMI -->|pulumi up| Clone["DR primary + replica<br/>(old job aboard)"]
+      Clone -->|"setup_infra: early strip"| S1["old job removed"]
+      S1 -->|"restore: strip again,<br/>install script + schedule"| S2["one writer:<br/>armed primary"]
+      S2 -->|dr:verify| V["❌ if no schedule,<br/>two writers, or replica job"]
+  ```
 - **SES in a never-used region starts in sandbox mode.** Leaving the sandbox
   requires an AWS support request that takes days; transactional email may
   need a temporary relay through another region.

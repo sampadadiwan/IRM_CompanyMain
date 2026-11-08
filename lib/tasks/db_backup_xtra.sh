@@ -102,6 +102,47 @@ export BUCKET AWS_REGION MYSQL_PASSWORD MYSQL_USER DATABASE_NAME
 # by a successful restore_primary (or manually: sudo touch). Replicas and the
 # DbCheckInstance are never armed, so only one writer feeds the backup chain.
 ARMED_MARKER="/etc/db_backup_enabled"
+# The schedule that actually runs this script (baked by Packer, or installed by
+# the DR restore). Arming without it means nothing will ever take a backup.
+BACKUP_SCHEDULE="/etc/cron.d/irm-db-backup"
+
+# Reports arming honestly: the marker only permits backups; the schedule is
+# what runs them. Never claim "live" unless the schedule file is there.
+# Forgets the local LSN checkpoints before a restore arms this host.
+# Incrementals are taken against $LSNDIR (the last FULL's to_lsn). A DR box is a
+# clone of the live box and inherits ITS checkpoint from snapshot time - up to a
+# week old - and an in-place restore leaves the pre-restore one. An incremental
+# against either does not match the newest full in S3, and xtrabackup refuses
+# that pair at the next restore. With no checkpoint, incr_backup falls back to
+# the newest full in S3 as its base (correct, slower) until the 23:00 full
+# writes a fresh one.
+reset_lsn_state() {
+  if sudo test -e "$LSNDIR" || sudo test -e "$LSNDIR_INCR"; then
+    sudo rm -rf "$LSNDIR" "$LSNDIR_INCR"
+    echo "✓ Cleared stale LSN checkpoints ($LSNDIR, $LSNDIR_INCR) — next incremental bases on the newest full in S3."
+  fi
+}
+
+# Arms this host as the backup writer - unless DB_BACKUP_NO_ARM=1, which a DR
+# DRILL passes: the live box is still alive and writes the same bucket, so an
+# armed drill box would be a second writer on the live chain.
+arm_backups() {
+  if [[ "${DB_BACKUP_NO_ARM:-}" == "1" ]]; then
+    sudo rm -f "$ARMED_MARKER"
+    echo "ℹ️  DB_BACKUP_NO_ARM=1 (DR drill) — NOT arming; $ARMED_MARKER absent, schedule will skip every run."
+    return
+  fi
+  sudo touch "$ARMED_MARKER"
+  report_armed
+}
+
+report_armed() {
+  if [[ -f "$BACKUP_SCHEDULE" ]]; then
+    echo "✓ Backups armed ($ARMED_MARKER created) — schedule $BACKUP_SCHEDULE is live."
+  else
+    echo "⚠️  WARNING: armed ($ARMED_MARKER created) but NO backup schedule at $BACKUP_SCHEDULE — nothing will run backups until it is installed."
+  fi
+}
 
 MYSQL_TMPDIR="${MYSQL_TMPDIR:-/tmp}"
 
@@ -691,8 +732,8 @@ main() {
       restore_primary_datadir
       # A successful primary restore means this host now holds the real dataset:
       # arm the baked cron so the full/incr schedule resumes automatically.
-      sudo touch "$ARMED_MARKER"
-      echo "✓ Backups armed ($ARMED_MARKER created) — cron schedule is now live."
+      reset_lsn_state
+      arm_backups
       echo "✅ Promote complete."
       ;;
     restore_from_test)
@@ -729,8 +770,8 @@ main() {
       prepare_restore_from_keys "$full_key" "$incr_key"
       restore_primary_datadir
       # Same as restore_primary: a promoted host is the real primary — arm it.
-      sudo touch "$ARMED_MARKER"
-      echo "✓ Backups armed ($ARMED_MARKER created) — cron schedule is now live."
+      reset_lsn_state
+      arm_backups
       echo "✅ Promote from specific backup complete."
       ;;
     *)

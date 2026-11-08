@@ -205,8 +205,42 @@ staging box) don't have the baked script. For them,
 **substituted directly into the file** (from the same credentials source),
 which is uploaded to the box — the DR restore tasks do this automatically as
 a fallback. Functionally identical; the difference is embedded-at-generation
-vs resolved-at-runtime. Each weekly bake shrinks this category until it
-disappears.
+vs resolved-at-runtime.
+
+**This category does not shrink on its own.** The weekly DB AMI is a snapshot
+of the live box (`aws:create_and_copy_ami`), not a Packer build, so every DR
+server so far has been a pre-bake box. Found 2026-11-08 by a read-only probe of
+the live staging DB box:
+
+| On the live box | Present? |
+|---|---|
+| `/usr/local/bin/db_backup_xtra.sh` (baked script) | No |
+| `/etc/cron.d/irm-db-backup` (baked schedule) | No |
+| `/etc/db_backup_enabled` (armed marker) | No |
+| `ubuntu` crontab: `0 23 * * * /home/ubuntu/backup_db.sh full`, `0 0-22 * * * … incr` | **Yes — hourly, not every 30 min** |
+| Armed-marker check in `backup_db.sh` | **No** — it writes from any box it runs on |
+
+So the DR restore now does what the bake would have done, on any box that
+lacks it:
+
+```mermaid
+sequenceDiagram
+    participant App as App server (rake)
+    participant DB as DR DB box (clone)
+    App->>DB: strip old backup_db.sh jobs (ubuntu + root crontabs)
+    App->>DB: no baked script? install the generated one at /usr/local/bin (root 0700)
+    App->>DB: install /etc/cron.d/irm-db-backup + logrotate (primary: before restore)
+    App->>DB: restore_primary (arms, says "schedule live" only if the file exists)
+    App->>DB: replica only: disarm, THEN install the schedule
+```
+
+- A generated script left from an earlier restore is replaced on every
+  restore, so a rotated credential never lingers.
+- The schedule text lives in `Dr::BackupSchedule::CRON_LINES`
+  (`lib/dr/backup_schedule.rb`). `features/misc/dr_backup_schedule.feature`
+  fails if it drifts from the Packer recipe.
+- Note: the live staging box's RPO is **60 minutes** (hourly incrementals), not
+  the 30 the bake's schedule gives.
 
 ## 10. Why it's built this way (design rationale, one line each)
 

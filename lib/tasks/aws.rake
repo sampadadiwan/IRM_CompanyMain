@@ -390,9 +390,15 @@ namespace :aws do
       @dr_report_deferred = true
       # The full non-interactive DR sequence — the same code path a real
       # production DR uses, which is the point of the drill
+      # DR_DRILL=true: every cap/rake step below inherits it, so the drill
+      # restores and verifies the backup schedule but NEVER arms the drill
+      # primary — the live box is still writing the same bucket, and an armed
+      # drill box would be a second writer on the live chain.
+      ENV["DR_DRILL"] = "true"
       setup_infra(stack, "AppServer", "DB-Redis-ES", region, env_variant, drill_branch)
       result = "PASSED"
     ensure
+      ENV.delete("DR_DRILL")
       duration_min = ((Time.now - started_at) / 60).round(1)
 
       # Evidence FIRST, housekeeping second. Anything that can raise in here

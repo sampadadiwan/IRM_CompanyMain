@@ -604,7 +604,9 @@ namespace :recovery do
         # longest DR phase), then resets replication once both are up —
         # output is [primary]/[replica]-prefixed. Single-box manual forms
         # remain: db:restore_primary_remote / db:restore_replica_remote.
-        execute :rake, "db:restore_all_remote RAILS_ENV=#{fetch(:stage)}"
+        # DR_DRILL=true (set by aws:dr_drill) reaches the remote rake as an
+        # env assignment: a drill restores but must never arm backups.
+        execute :rake, "db:restore_all_remote RAILS_ENV=#{fetch(:stage)}#{' DR_DRILL=true' if ENV['DR_DRILL'] == 'true'}"
       end
     end
   end
@@ -649,7 +651,8 @@ namespace :recovery do
     on roles(:app), in: :sequence do
       within release_path do
         # dr:verify exits non-zero on any ❌, which makes execute raise here
-        execute :rake, "dr:verify RAILS_ENV=#{fetch(:stage)}"
+        # In a drill (DR_DRILL=true) verify expects the primary NOT armed
+        execute :rake, "dr:verify RAILS_ENV=#{fetch(:stage)}#{' DR_DRILL=true' if ENV['DR_DRILL'] == 'true'}"
       end
     end
   end

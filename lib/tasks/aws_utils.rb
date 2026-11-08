@@ -1147,6 +1147,63 @@ module AwsUtils
     nil
   end
 
+  # How long the early strip keeps retrying while freshly created boxes boot.
+  EARLY_STRIP_DEADLINE_SECONDS = 120
+
+  # Strips the old, marker-blind backup job (Dr::OldBackupJobs) from freshly
+  # created DR DB boxes as early as possible. The boxes are clones of the live
+  # DB box, so its hourly /home/ubuntu/backup_db.sh comes along and would write
+  # into the live backup chain from both the primary and the replica until the
+  # restore strips it. Doing it here, right after pulumi up, shrinks that window
+  # from ~9 minutes to ~2-3.
+  #
+  # Best effort by design — it runs before anything is deployed, from the
+  # operator's machine, hopping through an app server (DB boxes accept SSH only
+  # from there). Any failure is a warning; run_baked_restore strips again.
+  def strip_old_backup_jobs_early(stack, env_variant, app_ip, db_hosts)
+    require "net/ssh"
+    require "net/ssh/proxy/command"
+    require "shellwords"
+    puts "🧹 Stripping old backup jobs from the new DB boxes (best effort; the restore does it again)"
+
+    # Offer every key that might open either hop: the DB key (KEYNAME) and the
+    # app servers' deploy key from config/deploy/<stack>_<variant>.rb
+    deploy_file = Rails.root.join("config", "deploy", "#{stack}_#{env_variant}.rb")
+    deploy_keys = File.exist?(deploy_file) ? File.read(deploy_file).scan(/keys:\s*\[\s*'([^']+)'/).flatten : []
+    keys = (["~/.ssh/#{ENV.fetch('KEYNAME', '')}.pem"] + deploy_keys).map { |k| File.expand_path(k) }.uniq.select { |k| File.file?(k) }
+    if app_ip.to_s.empty? || keys.empty?
+      puts "⚠️  Early strip skipped — no app server address or no local SSH key; the restore will strip instead"
+      return
+    end
+
+    # The app server forwards the TCP stream (-W) — the same keys are offered on
+    # both hops. Host keys are new on every rebuild, so they are not pinned here
+    # (matches run_baked_restore's verify_host_key: :never).
+    key_opts = keys.map { |k| "-i #{Shellwords.escape(k)}" }.join(" ")
+    proxy_cmd = "ssh #{key_opts} -o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null " \
+                "-o ConnectTimeout=10 -W %h:%p ubuntu@#{app_ip}"
+
+    db_hosts.compact.uniq.each do |db_host|
+      # Monotonic: a wall-clock jump (NTP) must not stretch or cut the deadline
+      deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + EARLY_STRIP_DEADLINE_SECONDS
+      begin
+        Net::SSH.start(db_host, "ubuntu", keys: keys, keys_only: true, non_interactive: true, timeout: 15,
+                                          verify_host_key: :never, proxy: Net::SSH::Proxy::Command.new(proxy_cmd)) do |ssh|
+          Dr::OldBackupJobs.strip!(ssh, prefix: "  [#{db_host}] ")
+        end
+      rescue StandardError => e
+        # Boxes created seconds ago may not accept SSH yet — retry until the deadline
+        if Process.clock_gettime(Process::CLOCK_MONOTONIC) < deadline
+          sleep 15
+          retry
+        end
+        puts "⚠️  Early strip on #{db_host} gave up (#{e.class}: #{e.message}) — the restore will strip instead"
+      end
+    end
+  rescue StandardError => e
+    puts "⚠️  Early strip skipped (#{e.class}: #{e.message}) — the restore will strip instead"
+  end
+
   def setup_infra(stack, web_server_name, db_server_name, region, env_variant, branch_name = nil)
     # Reset the transcript so a re-run in the same process starts clean
     DR_PHASES.clear
@@ -1221,6 +1278,11 @@ module AwsUtils
     record_dr_evidence("Recovered stack endpoints",
                        "app servers #{app_server_ips.join(', ')}; DB primary #{db_hosts[0]}, replica #{db_hosts[1]}",
                        "`pulumi stack output --stack #{stack}-#{region}`")
+
+    # The new DB boxes are clones of the live box and carry its old,
+    # marker-blind backup job — strip it now rather than ~8 minutes from now
+    # at the restore. Best effort: never fails the DR (the restore strips again).
+    strip_old_backup_jobs_early(stack, env_variant, app_server_ips.first, db_hosts)
 
     if branch_name.to_s.strip.empty?
       # ------------------- LEGACY INTERACTIVE MODE -------------------
