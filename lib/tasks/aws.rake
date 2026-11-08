@@ -125,6 +125,18 @@ namespace :aws do
       check.("Backup freshness", :fail, "check errored: #{e.message}")
     end
 
+    # Replicas must be undeletable (openspec fix-backups-deletable): COMPLIANCE, 30 days
+    begin
+      replicas = replica_buckets_for_env
+      check.("Replica backups locked", :fail, "no replica buckets found from the primaries' replication rules") if replicas.empty?
+      replicas.each do |replica|
+        grade = Dr::BackupLock.grade(replica[:bucket], Dr::BackupLock.read_config(Aws::S3::Client.new(region: replica[:region]), replica[:bucket]))
+        check.("Replica backups locked", grade.status, grade.detail)
+      end
+    rescue StandardError => e
+      check.("Replica backups locked", :fail, "check errored: #{e.message}")
+    end
+
     # --- 2. AMIs present + recent in the DR region ---------------------------
     %w[AppServer DB-Redis-ES Observability].each do |name|
       ami = latest_ami(name, region)
@@ -864,6 +876,14 @@ namespace :aws do
     ensure_bucket!(client: s3[:replica], bucket: replica_bucket, region: replica_region)
     ensure_bucket!(client: s3[:db_backup_xtra], bucket: db_backup_xtra_bucket, region: source_region)
     ensure_bucket!(client: s3[:replica_db_backup_xtra], bucket: replica_db_backup_xtra_bucket, region: replica_region)
+    # Replicas are locked (COMPLIANCE, 30 days) so no key can delete what was
+    # replicated (openspec fix-backups-deletable). Only with LOCK_REPLICAS=1:
+    # turning Object Lock on is permanent, so it is never a side effect.
+    if ENV["LOCK_REPLICAS"] == "1"
+      [[s3[:replica], replica_bucket], [s3[:replica_db_backup_xtra], replica_db_backup_xtra_bucket]].each do |client, bucket|
+        s3_ensure_object_lock!(client: client, bucket: bucket, execute: true) unless bucket == source_bucket || bucket == db_backup_xtra_bucket
+      end
+    end
 
     # --- Replication IAM role (idempotent) -----------------------------------
     # One role per env, allowed to read both source buckets and write both
@@ -889,7 +909,9 @@ namespace :aws do
             Action: ["s3:GetReplicationConfiguration", "s3:ListBucket"],
             Resource: source_buckets.map { |b| "arn:aws:s3:::#{b}" } },
           { Effect: "Allow",
-            Action: ["s3:GetObjectVersionForReplication", "s3:GetObjectVersionAcl", "s3:GetObjectVersionTagging"],
+            Action: ["s3:GetObjectVersionForReplication", "s3:GetObjectVersionAcl", "s3:GetObjectVersionTagging",
+                     # Needed to replicate into an Object Lock (replica) bucket - fix-backups-deletable
+                     *Dr::BackupLock::REPLICATION_ROLE_ACTIONS],
             Resource: source_buckets.map { |b| "arn:aws:s3:::#{b}/*" } },
           { Effect: "Allow",
             Action: ["s3:ReplicateObject", "s3:ReplicateDelete", "s3:ReplicateTags"],

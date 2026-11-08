@@ -171,6 +171,25 @@ detached role). Two independent checks:
   alert. Whatever the cause, staleness cannot stay silent for more than ~2
   hours. (Lesson learned: staging backups once died silently for a month.)
 
+- **The replicas cannot be deleted** (OpenSpec `fix-backups-deletable`): the
+  DR-region replica buckets carry S3 Object Lock, **COMPLIANCE mode, 30-day
+  default retention**. Every backup or document replicated there is
+  undeletable by anyone, AWS root included, for 30 days, even with a leaked
+  app key (the app's keys hold S3 full access, so a GOVERNANCE lock would not
+  stop them: G25). Primary buckets stay unlocked: the app manages them.
+
+```mermaid
+flowchart LR
+    P["Primary bucket<br/>unlocked, app manages it"] -->|"replication<br/>(role also reads lock settings)"| R["Replica bucket<br/>COMPLIANCE 30 days"]
+    K["Leaked app key"] -.->|"delete version + bypass header"| R
+    R -.->|AccessDenied| K
+```
+
+  Applied with `rake "aws:lock_replica_buckets[<env>]"` (dry run →
+  `EXECUTE=1` → `PROVE=1`); checked by `aws:dr_readiness` ("Replica backups
+  locked"). **Irreversible**: Object Lock cannot be turned off once enabled;
+  removing the default retention only stops locking *new* replicas.
+
 ## 7. Verification cookbook (run on any DB box)
 
 ```bash

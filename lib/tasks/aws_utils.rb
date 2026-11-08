@@ -1349,7 +1349,9 @@ module AwsUtils
           Action: ["s3:GetReplicationConfiguration", "s3:ListBucket"],
           Resource: source_buckets.map { |b| "arn:aws:s3:::#{b}" } },
         { Effect: "Allow",
-          Action: ["s3:GetObjectVersionForReplication", "s3:GetObjectVersionAcl", "s3:GetObjectVersionTagging"],
+          Action: ["s3:GetObjectVersionForReplication", "s3:GetObjectVersionAcl", "s3:GetObjectVersionTagging",
+                   # Needed to replicate into an Object Lock (replica) bucket - fix-backups-deletable
+                   *Dr::BackupLock::REPLICATION_ROLE_ACTIONS],
           Resource: source_buckets.map { |b| "arn:aws:s3:::#{b}/*" } },
         { Effect: "Allow",
           Action: ["s3:ReplicateObject", "s3:ReplicateDelete", "s3:ReplicateTags"],
@@ -1358,6 +1360,51 @@ module AwsUtils
     }
     iam.put_role_policy(role_name: role_name, policy_name: "s3-replication", policy_document: permission_policy.to_json)
     iam.get_role(role_name: role_name).role.arn
+  end
+
+  # --- Replica Object Lock (openspec fix-backups-deletable) ---------------------
+
+  # The env's replica buckets, read from where its primaries ACTUALLY replicate
+  # (backups "<AWS_S3_BUCKET>-backup-xtra" and documents "<AWS_S3_BUCKET>"), each
+  # with its region. Primaries are excluded by construction (Dr::BackupLock).
+  def replica_buckets_for_env
+    require "aws-sdk-s3"
+    primary_docs = ENV.fetch("AWS_S3_BUCKET")
+    primaries = ["#{primary_docs}-backup-xtra", primary_docs]
+    source = Aws::S3::Client.new(region: ENV.fetch("AWS_S3_REGION"))
+    destinations = primaries.flat_map do |bucket|
+      rules = source.get_bucket_replication(bucket: bucket).replication_configuration.rules
+      rules.select { |r| r.status == "Enabled" }.map { |r| r.destination.bucket.delete_prefix("arn:aws:s3:::") }
+    rescue Aws::S3::Errors::ReplicationConfigurationNotFoundError
+      []
+    end
+    Dr::BackupLock.replicas_to_lock(primaries: primaries, destinations: destinations).map do |bucket|
+      region = source.get_bucket_location(bucket: bucket).location_constraint.to_s
+      { bucket: bucket, region: region.empty? ? "us-east-1" : region }
+    end
+  end
+
+  # Enables Object Lock on an existing (versioned) replica bucket and sets the
+  # default COMPLIANCE retention, per Dr::BackupLock.plan. Idempotent. Turning
+  # Object Lock on is PERMANENT, and compliance-locked versions cannot be removed
+  # early by anyone - callers must have the user's go-ahead (execute: true).
+  def s3_ensure_object_lock!(client:, bucket:, days: Dr::BackupLock::DAYS, execute: false)
+    plan = Dr::BackupLock.plan(Dr::BackupLock.read_config(client, bucket), days: days)
+    puts "   #{bucket}: #{plan[:summary]}"
+    return plan if plan[:action] == :none || !execute
+
+    client.put_object_lock_configuration(
+      bucket: bucket,
+      object_lock_configuration: {
+        object_lock_enabled: "Enabled",
+        rule: { default_retention: { mode: Dr::BackupLock::MODE, days: days } }
+      }
+    )
+    after = Dr::BackupLock.read_config(client, bucket)
+    raise "#{bucket}: lock not in place after applying (#{after.inspect})" unless Dr::BackupLock.strong_enough?(after, days)
+
+    puts "   🔒 #{bucket}: #{Dr::BackupLock::MODE}, #{days} days — verified"
+    plan
   end
 
   # Configure source -> dest replication.
