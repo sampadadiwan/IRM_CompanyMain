@@ -98,6 +98,8 @@ module Dr
         proves: "The drill's servers carry DR_DRILL_STACK: their error mail is tagged and they never page WhatsApp.", if_fails: "Check DR_DRILL_STACK in the drill branch's .env, then redeploy." },
       { match: /\ANot marked as a drill/, group: "App servers", name: "Alerts page as normal",
         proves: "This recovered stack is not marked as a drill, so critical alerts page as normal.", if_fails: "Remove DR_DRILL_STACK from .env and redeploy — a recovered production must page." },
+      { match: /\ADrill cannot contact users/, group: "App servers", name: "Drill cannot contact users",
+        proves: "On this drill copy no email, WhatsApp, SMS or push can reach a user, and no timed job runs; the count shows what was held back.", if_fails: "Check DR_DRILL_STACK in the drill branch's .env and the boot log line \"DRILL STACK\"; redeploy." },
       { match: /\ADrill marker/, group: "App servers", name: "Drill marker",
         proves: "The drill/real marking of this stack could be read.", if_fails: "See the detail." },
       # Database servers

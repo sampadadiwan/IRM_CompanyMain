@@ -229,6 +229,25 @@ namespace :dr do
       check.call(drill ? "Drill stack marked (no pages)" : "Not marked as a drill (pages on)", grade.status, grade.detail)
     end
 
+    if Dr::BackupSchedule.drill?
+      guarded.call("Drill cannot contact users") do
+        # Every outgoing channel must be shut on a drill copy: the interceptor and
+        # guard are switched on at boot by config/initializers/drill_stack.rb (this
+        # rake process boots the same way), timed jobs never registered, and the
+        # drill deploy cleared the cron
+        interceptors = Mail::Message.class_variable_get(:@@delivery_interceptors)
+        crontab = `crontab -l 2>/dev/null`
+        grade = DrillStack.grade_silence(
+          mail_intercepted: interceptors.include?(DrillStack::MailInterceptor),
+          requests_guarded: Net::HTTP <= DrillStack::OutboundGuard,
+          timed_jobs: Sidekiq::Cron::Job.all.size,
+          crontab_installed: crontab.include?("Begin Whenever generated tasks"),
+          suppressed: DrillStack.suppressed_count
+        )
+        check.call("Drill cannot contact users", grade.status, grade.detail)
+      end
+    end
+
     guarded.call("Search index populated") do
       # elastic_check above only proves Elasticsearch ANSWERS — an empty index
       # passes it. Search is not backed up, so prove every index the DR rebuilt

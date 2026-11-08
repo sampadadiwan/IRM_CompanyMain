@@ -14,6 +14,14 @@ set :application, "IRM"
 set :repo_url, "git@github.com:ausangshukla/IRM.git"
 set :branch, ENV["branch"] || 'main'
 set :whenever_roles, :all
+# A DR DRILL copy must not run timed jobs (they would remind or digest real users
+# from the copy): the drill's deploy (DR_DRILL=true, set by aws:dr_drill) clears
+# the crontab instead of installing it. Every other deploy is unchanged.
+# (openspec fix-dr-drill-contacts-users)
+if ENV['DR_DRILL'] == 'true'
+  Rake::Task.define_task('whenever:update_crontab').clear_actions
+  Rake::Task.define_task('whenever:update_crontab') { invoke 'whenever:clear_crontab' }
+end
 # Pass env_variant (in/us) through to schedule.rb, alongside whenever's own
 # `environment` var, so region-specific timing (e.g. IST vs US local time)
 # can be computed there. Server clocks are always UTC regardless of region.
