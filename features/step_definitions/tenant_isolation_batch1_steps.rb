@@ -8,6 +8,15 @@ module TenantIsolationHelpers
     @tenants ||= {}
   end
 
+  # The test environment runs no Elasticsearch: stand in for DocumentIndex, returning these documents
+  # (plus a nil, as Chewy gives for an indexed id whose row is gone), so a search scenario asserts what
+  # the controller keeps of the hits.
+  def stub_document_index_hits(*docs)
+    search = double("DocumentIndex search")
+    allow(DocumentIndex).to receive(:filter).and_return(search)
+    allow(search).to receive_messages(query: search, page: search, objects: Kaminari.paginate_array([*docs, nil]))
+  end
+
   # An entity with the feature flags these screens need, so a refusal is the rule under test and
   # never a missing flag.
   def flagged_entity(name, entity_type)
@@ -159,6 +168,45 @@ end
 
 Then('the document search ran against my own entity') do
   expect(@searched_entity_ids).to eq([@entity.id])
+end
+
+# ---- S4-H / S4-X1 / S4-X2: search shows no more than the Documents list ----------------------
+
+Given('my entity has a document {string} I uploaded and {string} a colleague uploaded') do |mine, theirs|
+  colleague = FactoryBot.create(:user, entity: @entity)
+  folder = @entity.root_folder || Folder.find_by(entity_id: @entity.id)
+  @my_search_doc = FactoryBot.create(:document, name: mine, entity: @entity, folder:, user: @user)
+  @colleague_search_doc = FactoryBot.create(:document, name: theirs, entity: @entity, folder:, user: colleague)
+end
+
+Given('I am signed in as an employee who is not a company admin') do
+  @user.remove_role(:company_admin)
+  @user.save!
+  Warden.test_mode!
+  Object.new.extend(Warden::Test::Helpers).login_as(@user.reload, scope: :user)
+end
+
+When('the document search for {string} finds both documents') do |query|
+  stub_document_index_hits(@my_search_doc, @colleague_search_doc)
+  visit search_documents_path(query:)
+end
+
+When('the JSON document search for {string} finds both documents') do |query|
+  stub_document_index_hits(@my_search_doc, @colleague_search_doc)
+  visit search_documents_path(query:, format: :json)
+  @json_search = JSON.parse(page.body)
+end
+
+Then('the document search lists {string}') do |name|
+  expect(page).to have_content(name)
+end
+
+Then('the document search does not list {string}') do |name|
+  expect(page).to have_no_content(name)
+end
+
+Then('the JSON document search returns only {string}') do |name|
+  expect(@json_search.pluck("name")).to eq([name])
 end
 
 # ---- S5 -------------------------------------------------------------------------------------

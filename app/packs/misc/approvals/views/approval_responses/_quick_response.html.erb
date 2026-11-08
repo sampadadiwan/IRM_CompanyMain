@@ -6,7 +6,7 @@
     method: :patch) do |form| %>
       <div>
         <div class="form-group">
-          <%= form.select :status, approval_response.approval.response_status.split(","),
+          <%= form.select :status, approval_response.approval.offered_statuses,
                 {include_blank: false}, class: "form-control", name: "status" %>
         </div>
         <%= custom_form_fields(approval_response, form) %>

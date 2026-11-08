@@ -13,11 +13,22 @@
   <% end %>
 
   <div class="card-body">
-    <h3 class="card-title"><%= @msg %></h3>
-    <p class="card-text">
-      Thank You
-    </p>
-    <a href="/" class="btn btn-primary">Sign In</a>
+    <% if @msg.nil? %>
+      <%# A valid link opened (GET): nothing is saved until the investor confirms here %>
+      <h3 class="card-title">Confirm your response: <%= @status %></h3>
+      <p class="card-text">
+        Responses close on <%= l(@approval_response.approval.due_date) %>.
+      </p>
+      <%= button_to "Confirm #{@status}", email_response_approval_response_path(@approval_response),
+                    method: :post, class: "btn btn-primary",
+                    params: { status: @status, email: params[:email], signed_id: params[:signed_id] } %>
+    <% else %>
+      <h3 class="card-title"><%= @msg %></h3>
+      <p class="card-text">
+        Thank You
+      </p>
+      <a href="/" class="btn btn-primary">Sign In</a>
+    <% end %>
   </div>
 </div>
 

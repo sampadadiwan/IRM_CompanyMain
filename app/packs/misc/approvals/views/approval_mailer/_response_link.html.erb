@@ -1,7 +1,7 @@
 <% if @approval.response_enabled_email %>
 <% colors = ["success", "warning", "danger", "primary", "secondary", "info"].freeze %>
 <div>
-    <% responses = @approval_response.approval.response_status.split(',') - ["Pending"] %>
+    <% responses = @approval_response.approval.offered_statuses - ["Pending"] %>
     <% responses.each_with_index do |status, index| %>
         
         <% 

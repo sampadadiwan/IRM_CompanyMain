@@ -140,6 +140,43 @@ Scenario Outline: Provide approval response
   	|  	      |title=Test approval;response_enabled_email=true      |Approval was successfully created| Approved |
     |  	      |title=Merger Approval;response_enabled_email=true    |Approval was successfully created| Rejected |
 
+# Error case: a mail scanner opening the emailed link must not answer for the investor
+@rack_test
+Scenario: Opening an emailed approval link without confirming saves nothing
+  Given there is a user "" for an entity "entity_type=Company;sub_domain=test"
+  Given there is an existing investor "" with "1" users
+  Given there is an approval "title=Merger Approval;response_enabled_email=true" for the entity
+  Given the investors are added to the approval
+  When the approval is approved internally
+  When the "Approved" link in the approval notification email is only opened
+  Then the approval response page says "Confirm your response: Approved"
+  And the approval response is still "Pending"
+
+# Error case: the link's status swapped for one the approval does not offer is refused
+@rack_test
+Scenario: An emailed approval link with an option that is not offered is refused
+  Given there is a user "" for an entity "entity_type=Company;sub_domain=test"
+  Given there is an existing investor "" with "1" users
+  Given there is an approval "title=Merger Approval;response_enabled_email=true" for the entity
+  Given the investors are added to the approval
+  When the approval is approved internally
+  When I open the approval notification email link with the status changed to "Whatever"
+  Then the approval response page says "Whatever is not a response option for this approval"
+  And the approval response is still "Pending"
+
+# Error case: after the due date the emailed link no longer answers, as in the app
+@rack_test
+Scenario: An emailed approval link after the due date is refused
+  Given there is a user "" for an entity "entity_type=Company;sub_domain=test"
+  Given there is an existing investor "" with "1" users
+  Given there is an approval "title=Merger Approval;response_enabled_email=true" for the entity
+  Given the investors are added to the approval
+  When the approval is approved internally
+  And the approval due date passes
+  When the "Approved" link in the approval notification email is only opened
+  Then the approval response page says "This approval closed on"
+  And the approval response is still "Pending"
+
 
 # Edge case: partial approval — one investor approves, another rejects, counts must both be nonzero
 @rack_test

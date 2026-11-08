@@ -49,6 +49,19 @@ class ApprovalResponse < ApplicationRecord
     errors.add(:status, 'You need to select a response other than Pending') if status == "Pending"
   end
 
+  # An answer must be one of the options the firm offered (approvals.response_status), on every path:
+  # the app, the mobile app's approve.json and the emailed links. Pending, the starting state, is
+  # always allowed here (no_pending_response refuses it as an answer). Checked only when status
+  # changes, so a response whose option was later removed from the approval still saves.
+  # Options typed as "Approved, Rejected" reach us as " Rejected" from older links and forms
+  normalizes :status, with: ->(status) { status.strip }
+  validate :status_is_offered_option, if: :will_save_change_to_status?
+  def status_is_offered_option
+    return if status == "Pending" || approval.nil?
+
+    errors.add(:status, "#{status} is not a response option for this approval") if approval.offered_statuses.exclude?(status)
+  end
+
   def to_s
     "#{investor.investor_name} - #{status}"
   end

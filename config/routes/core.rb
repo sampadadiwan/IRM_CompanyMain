@@ -178,7 +178,9 @@ end
 
 resources :approval_responses do
   patch 'approve', on: :member
+  # GET shows the confirm card for an emailed answer link; only the POST from that card saves it
   get 'email_response', on: :member
+  post 'email_response', on: :member
   get 'preview', on: :member
 end
 resources :approvals do
