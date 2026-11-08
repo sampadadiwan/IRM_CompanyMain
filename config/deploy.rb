@@ -611,6 +611,21 @@ namespace :recovery do
     end
   end
 
+  # Rebuilds every search index the live app maintains from the restored
+  # MySQL, and fails on any import error or count mismatch. Elasticsearch is
+  # not backed up, so a recovered environment starts with empty search.
+  # aws:setup_infra runs it after the restore, before traffic is back on.
+  # ONLY=FolderIndex,... re-runs just the named indexes.
+  desc 'DR: rebuild the search indexes from MySQL; fails unless every index is complete'
+  task :reindex_search do
+    on roles(:primary) do
+      within release_path do
+        only = ENV.fetch('ONLY', '').empty? ? '' : " ONLY=#{ENV.fetch('ONLY')}"
+        execute :rake, "dr:reindex_search RAILS_ENV=#{fetch(:stage)}#{only}"
+      end
+    end
+  end
+
   task :restore_replica_db do
     on roles(:primary), in: :sequence, wait: 5 do
       within release_path do

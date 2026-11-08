@@ -1217,10 +1217,10 @@ module AwsUtils
     puts "  Operator: #{ENV['USER'] || 'unknown'}@#{`hostname`.strip}   ·   #{@dr_run_started_at.strftime('%Y-%m-%d %H:%M:%S %Z')}"
     puts "█" * 78
 
-    dr_phase "Phase 1/8 · Refresh Pulumi stack configuration"
+    dr_phase "Phase 1/9 · Refresh Pulumi stack configuration"
     setup_pulumi_config(stack, web_server_name, db_server_name, region, env_variant)
 
-    dr_phase "Phase 2/8 · Provision infrastructure (pulumi up)"
+    dr_phase "Phase 2/9 · Provision infrastructure (pulumi up)"
     puts "⬆️ Running pulumi up for stack: #{stack}. (This could take a long time, please be patient)"
     # Run pulumi to setup the aws infra
     run_cmd("pulumi up --stack #{stack}-#{region} --yes --color=always", "../IRM-Infra")
@@ -1232,7 +1232,7 @@ module AwsUtils
     end
     # Get the pulumi output
 
-    dr_phase "Phase 3/8 · Rewrite config with the new host addresses"
+    dr_phase "Phase 3/9 · Rewrite config with the new host addresses"
     puts "📥 Getting pulumi output (authoritative, from the stack backend)"
     pulumi_output = pulumi_stack_output("#{stack}-#{region}")
 
@@ -1300,7 +1300,7 @@ module AwsUtils
       restore_tasks = ["recovery:restore_replica_db"] # primary was restored by hand above
     else
       # ------------------- NON-INTERACTIVE MODE -------------------
-      dr_phase "Phase 4/8 · Commit and push the DR branch (#{branch_name})"
+      dr_phase "Phase 4/9 · Commit and push the DR branch (#{branch_name})"
       commit_dr_changes(stack, env_variant, region, branch_name)
       # The pushed SHA proves WHICH code was recovered onto — and GitHub's own
       # push timestamp corroborates when, independently of this machine's clock.
@@ -1313,7 +1313,7 @@ module AwsUtils
       restore_tasks = ["recovery:load_db_from_backups", "recovery:migrate"]
     end
 
-    dr_phase "Phase 5/8 · Deploy the application to both app servers"
+    dr_phase "Phase 5/9 · Deploy the application to both app servers"
     # Deploy the app
     run_cmd("branch=#{branch_name} LB=true bundle exec cap #{stack}_#{env_variant} recovery:delete_old_assets")
     # SKIP_MIGRATE: deploy-time migrations are meaningless before the restore
@@ -1333,11 +1333,11 @@ module AwsUtils
     # prometheus_exporter) — idempotent no-op on already-running boxes
     run_cmd("branch=#{branch_name} LB=true bundle exec cap #{stack}_#{env_variant} IRM:start_boot_services")
 
-    dr_phase "Phase 6/8 · Take traffic offline (nginx maintenance mode)"
+    dr_phase "Phase 6/9 · Take traffic offline (nginx maintenance mode)"
     # Now stop sidekiq, puma and monitoring and switch to maintenance mode
     run_cmd("branch=#{branch_name} LB=true bundle exec cap #{stack}_#{env_variant} nginx:switch_maintenance")
 
-    dr_phase "Phase 7/8 · Restore the database from S3 backups"
+    dr_phase "Phase 7/9 · Restore the database from S3 backups"
     # Load the DB from backups (and replay migrations in non-interactive mode)
     restore_tasks.each do |task|
       run_cmd("branch=#{branch_name} bundle exec cap #{stack}_#{env_variant} #{task}")
@@ -1347,7 +1347,15 @@ module AwsUtils
                        "source bucket `#{backup_bucket}` (full + incremental chain; keys named in the transcript)",
                        "`aws s3 ls s3://#{backup_bucket}/` — compare object timestamps against the run window")
 
-    dr_phase "Phase 8/8 · Restore traffic and verify the recovered stack"
+    dr_phase "Phase 8/9 · Rebuild the search index"
+    # Elasticsearch is not backed up: the new DB box's indexes are empty, so
+    # every search box would return nothing. Rebuild each index the live app
+    # maintains from the restored MySQL, BEFORE traffic is back on. It must
+    # finish clean — any import error or count mismatch fails the recovery
+    # (cap -> rake dr:reindex_search, which aborts non-zero).
+    run_cmd("branch=#{branch_name} LB=true bundle exec cap #{stack}_#{env_variant} recovery:reindex_search")
+
+    dr_phase "Phase 9/9 · Restore traffic and verify the recovered stack"
     # Switch back to the app and remove maintenance mode
     run_cmd("branch=#{branch_name} LB=true bundle exec cap #{stack}_#{env_variant} nginx:switch_app")
 

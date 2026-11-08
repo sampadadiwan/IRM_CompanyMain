@@ -175,6 +175,7 @@ sequenceDiagram
     end
     App->>DB: reset replication (reads the restored primary's binlog — after both finish)
     Rake->>App: rake db:migrate (replays migrations newer than the backup)
+    Rake->>App: rebuild the search indexes (29, each must match MySQL or the run fails)
     Rake->>App: nginx: traffic on (no users arrive until DNS is cut over — §8)
     Rake->>App: recovery:verify — the stack must PROVE it serves (§7) or the run fails
 ```
@@ -386,6 +387,21 @@ In the first days after a recovery or migration:
       S1 -->|"restore: strip again,<br/>install script + schedule"| S2["one writer:<br/>armed primary"]
       S2 -->|dr:verify| V["❌ if no schedule,<br/>two writers, or replica job"]
   ```
+- **Search (Elasticsearch) is not backed up; the recovery rebuilds it.**
+  Since 2026-11 (OpenSpec `fix-dr-search-index-after-restore`), phase 8
+  (`cap <stage> recovery:reindex_search` → `rake dr:reindex_search`) rebuilds
+  every index the live app maintains from the restored MySQL, *before* traffic
+  is back on, and fails the recovery on any import error or count mismatch.
+  `dr:verify` then checks "Search index populated" on every app server.
+  - **Not rebuilt:** `AccountEntryIndex`. The live app does not maintain it
+    (its callback is commented out, "too much data"), and it is ~7.6M rows,
+    93% of all search documents.
+  - **Don't use `rake chewy:reset` here.** Chewy looks for indexes in
+    `app/chewy`, but this app keeps them in `app/packs/**/models`, so it
+    resets nothing and exits 0. Re-run one index with
+    `ONLY=FolderIndex bundle exec cap <stage> recovery:reindex_search`.
+  - The reindex adds its own time to the recovery; each drill report shows it
+    as a separate phase.
 - **SES in a never-used region starts in sandbox mode.** Leaving the sandbox
   requires an AWS support request that takes days; transactional email may
   need a temporary relay through another region.

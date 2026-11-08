@@ -221,6 +221,32 @@ namespace :dr do
       check.call("S3 app bucket reachable", :ok, bucket)
     end
 
+    guarded.call("Search index populated") do
+      # elastic_check above only proves Elasticsearch ANSWERS — an empty index
+      # passes it. Search is not backed up, so prove every index the DR rebuilt
+      # holds its MySQL scope's records (within a small tolerance: traffic is
+      # back on, so a few writes may be in flight).
+      grades = Dr::SearchIndexes.indexes.map do |index|
+        Dr::SearchIndexes.grade(index_name: index.name, es: Dr::SearchIndexes.es_count(index),
+                                db: Dr::SearchIndexes.db_count(index), exact: false,
+                                maintained: Dr::SearchIndexes.maintained?(index))
+      end
+      # Worst verdict wins: any maintained index short → fail; only unmaintained drift → warn
+      failed = grades.select { |grade| grade.status == :fail }
+      warned = grades.select { |grade| grade.status == :warn }
+      status = if failed.any?
+                 :fail
+               elsif warned.any?
+                 :warn
+               else
+                 :ok
+               end
+      detail = if status == :ok then "#{grades.size}/#{grades.size} indexes hold their records"
+               else (failed + warned).map(&:detail).join("; ")
+               end
+      check.call("Search index populated", status, detail)
+    end
+
     # --- 4. DB box checks (SSH — DB boxes accept SSH only from app servers,
     #         which is exactly why this task runs here and not on a laptop) ---
     db_host = Rails.application.credentials[:DB_HOST]
