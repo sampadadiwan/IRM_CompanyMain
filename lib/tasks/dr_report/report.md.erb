@@ -1,0 +1,91 @@
+<%# Same sections, same order as report.html.erb (Dr::ReportModel::SECTIONS); help as bullets -%>
+# <%= m.passed ? '🟢' : '🔴' %> <%= m.headline %>
+
+**<%= m.passed ? 'Passed' : 'Failed' %>** · <%= m.subline %>
+
+| <%= m.tiles.map { |v, _| md(v) }.join(' | ') %> |
+|<%= m.tiles.map { ':-:' }.join('|') %>|
+| <%= m.tiles.map { |_, l| md(l) }.join(' | ') %> |
+
+## <%= sections[0] %>
+
+<% m.plain_words.each do |line| -%>
+- <%= line %>
+<% end -%>
+
+## <%= sections[1] %>
+
+<% if m.attention.empty? -%>
+Nothing needs attention.
+<% else -%>
+<%= attention_count %>
+
+| | Check | Seen on | What it means | What to do |
+|:-:|---|---|---|---|
+<% m.attention.each do |a| -%>
+| <%= emoji(a[:status]) %> | <%= md(a[:name]) %> | <%= md(a[:hosts]) %> | <%= md(a[:means]) %> | <%= md(a[:todo]) %> |
+<% end -%>
+<% end -%>
+
+## <%= sections[2] %>
+
+| | # | Step | Start (UTC) | Took |
+|:-:|:-:|---|---|---|
+<% m.steps.each do |s| -%>
+| <%= emoji(s[:ok] ? :ok : :fail) %> | <%= s[:n] %> | <%= md(s[:name]) %> | <%= s[:start] %> | **<%= s[:took] %>** |
+<% end -%>
+
+**What each step does**
+
+<% m.steps.each do |s| -%>
+<% next unless s[:does] -%>
+- **<%= s[:n] %> · <%= s[:name] %>**: <%= s[:does] %><% if s[:if_fails] %> *If it fails:* <%= s[:if_fails] %><% end %>
+<% end -%>
+
+## <%= sections[3] %>
+
+<% if !m.verified -%>
+Not reached: the run stopped before verification, so no checks ran.
+<% else -%>
+Each check exercises the real thing, not a status file.
+
+<% m.groups.each do |g| -%>
+### <%= g[:name] %>
+
+| Check | <%= m.hosts.map { |host| md(host) }.join(' | ') %> |
+|---|<%= m.hosts.map { '---' }.join('|') %>|
+<% g[:rows].each do |r| -%>
+| <%= md(r[:name]) %> | <%= m.hosts.map { |host| (c = r[:cells][host]) ? "#{emoji(c[0])} #{md(c[1].to_s.empty? ? status_word(c[0]) : c[1])}" : '—' }.join(' | ') %> |
+<% end -%>
+
+<% g[:rows].select { |r| r[:proves] }.each do |r| -%>
+- **<%= r[:name] %>**: <%= r[:proves] %>
+<% end -%>
+
+<% end -%>
+<% end -%>
+## <%= sections[4] %>
+
+- **Included:** <%= m.scope[:included].join(' · ') %>
+- **Not included:** <%= m.scope[:excluded].join(' · ') %>
+
+So the time customers would actually wait is the rebuild time plus those three.
+
+## <%= sections[5] %>
+
+| Claim | Evidence | How to check |
+|---|---|---|
+<% m.evidence.each do |claim, ev, how| -%>
+| <%= md(claim) %> | <%= md(ev) %> | <%= md(how) %> |
+<% end -%>
+
+## <%= sections[6] %>
+
+| | |
+|---|---|
+<% m.glossary.each do |word, meaning| -%>
+| <%= md(word) %> | <%= md(meaning) %> |
+<% end -%>
+
+---
+<sub>Generated <%= m.generated %> by <code><%= m.drill ? 'rake aws:dr_drill' : 'rake aws:setup_infra' %></code></sub>

@@ -321,6 +321,30 @@ before first boot.
 - [ ] Monitoring repointed: `rake aws:generate_prometheus_yml`,
   `rake grafana:provision`
 
+### The run report
+
+Every run (drill or real) writes `docs/operations/dr/runs/<branch>.html` and
+`.md` (OpenSpec `dr-drill-report-redesign`). Both come from one model, so they
+always agree. The sections, in order:
+
+1. **The answer:** passed or failed (or the step it stopped at), plus four
+   figures: rebuild time, database restore, checks passed, and data age (the
+   oldest "restored data" reading).
+2. **In plain words:** what was rebuilt, what was proven, the data loss, and
+   whether it was a drill.
+3. **Needs attention:** the failed step, then failed checks, then warnings.
+   Each appears once, naming its servers, with "Should be / Found" and "What
+   to do".
+4. **Steps:** plain names, times, and "What this does / if it fails".
+5. **Verification:** checks grouped by layer, one column per server, each
+   with "What it proves".
+6. **Scope, evidence, glossary.**
+
+The explanations live in `Dr::ReportCatalog` (`lib/dr/report_catalog.rb`).
+A new `dr:verify` check or `setup_infra` step without an entry fails
+`features/misc/dr_drill_report.feature`; an unknown check is shown under
+"Other checks" rather than dropped. The HTML is light only and opens offline.
+
 ## 8. DNS Cutover
 
 The cutover is deliberately manual and runs last — going live is a human

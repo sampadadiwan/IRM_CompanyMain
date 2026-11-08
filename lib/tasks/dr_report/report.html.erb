@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><%= h(m.headline) %></title>
+<%# Light theme only, Bootstrap 5.3 colours, inline CSS and icons: opens offline, prints and emails identically (openspec dr-drill-report-redesign) -%>
+<style>
+  /* Light theme only. Bootstrap 5.3 values, so the report matches the app's palette. */
+  :root {
+    --bg: #f8f9fa;            /* --bs-tertiary-bg */
+    --surface: #ffffff;       /* --bs-body-bg */
+    --text: #212529;          /* --bs-body-color */
+    --muted: #6c757d;         /* --bs-secondary-color */
+    --border: #dee2e6;        /* --bs-border-color */
+    --success: #198754;  --success-bg: #d1e7dd;
+    --danger: #dc3545;   --danger-bg: #f8d7da;
+    --info: #087990;     --info-bg: #cff4fc;   /* --bs-info-text-emphasis / -bg-subtle */
+    --secondary: #6c757d; --secondary-bg: #e2e3e5;
+    --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.55 var(--font); }
+  .page { max-width: 1080px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 22px; margin: 0 0 4px; font-weight: 600; }
+  h2 { font-size: 17px; margin: 0; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  p { margin: 0 0 8px; }
+  .muted { color: var(--muted); }
+  code, .mono { font-family: var(--mono); font-size: 13px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; margin-top: 16px; }
+  .card > .head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 8px; }
+  .help { color: var(--muted); margin-bottom: 12px; }
+  svg.i { width: 16px; height: 16px; flex: none; vertical-align: -3px; }
+  .ok   { color: var(--success); } .warn { color: var(--info); } .fail { color: var(--danger); } .skip { color: var(--secondary); }
+  .badge { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px; font-weight: 600; }
+  .badge.ok { background: var(--success-bg); } .badge.fail { background: var(--danger-bg); } .badge.warn { background: var(--info-bg); }
+  .hero { display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: start; }
+  .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 16px; }
+  .tile { border: 1px solid var(--border); border-radius: 8px; padding: 12px; background: var(--surface); }
+  .tile .v { font-size: 20px; font-weight: 600; }
+  .tile .l { color: var(--muted); }
+  ul.plain { margin: 0; padding-left: 18px; }
+  ul.plain li { margin: 2px 0; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 8px 10px; border-top: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; border-top: 0; }
+  td.num { text-align: right; white-space: nowrap; }
+  .bar { height: 8px; border-radius: 4px; background: var(--success); min-width: 2px; }
+  .barwrap { background: var(--bg); border-radius: 4px; width: 160px; }
+  details { margin-top: 2px; }
+  details > summary { cursor: pointer; color: var(--muted); list-style: none; display: inline-flex; align-items: center; gap: 4px; }
+  details > summary::-webkit-details-marker { display: none; }
+  details[open] > summary { color: var(--text); }
+  .explain { background: var(--bg); border-radius: 6px; padding: 8px 12px; margin-top: 6px; }
+  .explain b { font-weight: 600; }
+  .group td { background: var(--bg); font-weight: 600; }
+  .attention { border-left: 4px solid var(--info); }
+  .attention.fail { border-left-color: var(--danger); }
+  .scope { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .scope > div { border: 1px solid var(--border); border-radius: 8px; padding: 12px; }
+  @media (max-width: 720px) { .tiles { grid-template-columns: 1fr 1fr; } .hero, .scope { grid-template-columns: 1fr; } .barwrap { width: 80px; } }
+</style>
+</head>
+<body>
+<%# Icon set: Bootstrap Icons (MIT), inlined -%>
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="i-ok" viewBox="0 0 16 16"><path fill="currentColor" d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0m-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/></symbol>
+  <symbol id="i-fail" viewBox="0 0 16 16"><path fill="currentColor" d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0M5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293z"/></symbol>
+  <symbol id="i-warn" viewBox="0 0 16 16"><path fill="currentColor" d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5m.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2"/></symbol>
+  <symbol id="i-help" viewBox="0 0 16 16"><path fill="currentColor" d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/><path fill="currentColor" d="M5.255 5.786a.237.237 0 0 0 .241.247h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286m1.557 5.763c0 .533.425.927 1.01.927.609 0 1.028-.394 1.028-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94"/></symbol>
+  <symbol id="i-info" viewBox="0 0 16 16"><path fill="currentColor" d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 16 16"><path fill="currentColor" d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71z"/><path fill="currentColor" d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0"/></symbol>
+  <symbol id="i-list" viewBox="0 0 16 16"><path fill="currentColor" d="M2 2.5a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5m0 4a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5m0 4a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5m0 4a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5"/></symbol>
+</svg>
+
+<div class="page">
+  <%# 1. Answer first: headline, badge, four tiles -%>
+  <div class="card">
+    <div class="hero">
+      <div>
+        <h1><%= h(m.headline) %></h1>
+        <p class="muted"><%= h(m.subline) %></p>
+      </div>
+      <span class="badge <%= m.passed ? 'ok' : 'fail' %>"><%= icon(m.passed ? :ok : :fail) %> <%= m.passed ? 'Passed' : 'Failed' %></span>
+    </div>
+    <div class="tiles">
+<% m.tiles.each do |value, label| -%>
+      <div class="tile"><div class="v"><%= h(value) %></div><div class="l"><%= h(label) %></div></div>
+<% end -%>
+    </div>
+  </div>
+
+  <%# 2. In plain words -%>
+  <div class="card">
+    <div class="head"><h2><svg class="i"><use href="#i-info"/></svg> <%= h(sections[0]) %></h2></div>
+    <ul class="plain">
+<% m.plain_words.each do |line| -%>
+      <li><%= h(line) %></li>
+<% end -%>
+    </ul>
+  </div>
+
+  <%# 3. Needs attention: failures first, then warnings, each with what it means and what to do -%>
+  <div class="card<%= ' attention' if m.attention.any? %><%= ' fail' if m.attention.any? { |a| a[:status] == :fail } %>">
+    <div class="head"><h2><%= icon(m.attention.any? { |a| a[:status] == :fail } ? :fail : (m.attention.any? ? :warn : :ok)) %> <%= h(sections[1]) %></h2><span class="muted"><%= h(attention_count) %></span></div>
+<% if m.attention.empty? -%>
+    <p>Nothing needs attention.</p>
+<% else -%>
+    <table>
+      <tr><th>Check</th><th>Seen on</th><th>What it means</th><th>What to do</th></tr>
+<% m.attention.each do |a| -%>
+      <tr><td><%= icon(a[:status]) %> <%= h(a[:name]) %></td><td><%= h(a[:hosts]) %></td><td><%= h(a[:means]) %></td><td><%= h(a[:todo]) %></td></tr>
+<% end -%>
+    </table>
+<% end -%>
+  </div>
+
+  <%# 4. Steps, with a help line each -%>
+  <div class="card">
+    <div class="head"><h2><svg class="i"><use href="#i-clock"/></svg> <%= h(sections[2]) %></h2><span class="muted">bars to scale of <%= h(m.tiles[0][0]) %></span></div>
+    <p class="help">Every step a real recovery runs, in order. Open a step to see what it does and what to check if it fails.</p>
+    <table>
+      <tr><th></th><th>Step</th><th>Start</th><th class="num">Took</th><th></th></tr>
+<% m.steps.each do |s| -%>
+      <tr><td><%= icon(s[:ok] ? :ok : :fail) %></td><td><%= s[:n] %> · <%= h(s[:name]) %>
+<% if s[:does] -%>
+        <details><summary><svg class="i"><use href="#i-help"/></svg> What this does</summary><div class="explain"><%= h(s[:does]) %><% if s[:if_fails] %> <b>If it fails:</b> <%= h(s[:if_fails]) %><% end %></div></details>
+<% end -%>
+        </td><td class="mono"><%= h(s[:start]) %></td><td class="num"><%= h(s[:took]) %></td><td><div class="barwrap"><div class="bar" style="width:<%= s[:pct].to_i %>%"></div></div></td></tr>
+<% end -%>
+    </table>
+  </div>
+
+  <%# 5. Checks: grouped by layer, one row per check, one column per server -%>
+  <div class="card">
+    <div class="head"><h2><svg class="i"><use href="#i-list"/></svg> <%= h(sections[3]) %></h2><span class="muted"><%= m.hosts.size %> server<%= 's' unless m.hosts.size == 1 %></span></div>
+<% if !m.verified -%>
+    <p>Not reached: the run stopped before verification, so no checks ran.</p>
+<% else -%>
+    <p class="help">Each check exercises the real thing (an HTTP request through the web server to the app to the database, for example), not a status file. Open a check to see what it proves.</p>
+    <table>
+      <tr><th>Check</th><% m.hosts.each do |host| %><th><%= h(host) %></th><% end %></tr>
+<% m.groups.each do |g| -%>
+      <tr class="group"><td colspan="<%= m.hosts.size + 1 %>"><%= h(g[:name]) %></td></tr>
+<% g[:rows].each do |r| -%>
+      <tr><td><%= h(r[:name]) %><% if r[:proves] %><details><summary><svg class="i"><use href="#i-help"/></svg> What it proves</summary><div class="explain"><%= h(r[:proves]) %></div></details><% end %></td><% m.hosts.each do |host| %><td><% if (cell = r[:cells][host]) %><%= icon(cell[0]) %> <%= h(cell[1].to_s.empty? ? status_word(cell[0]) : cell[1]) %><% else %><span class="muted">—</span><% end %></td><% end %></tr>
+<% end -%>
+<% end -%>
+    </table>
+<% end -%>
+  </div>
+
+  <%# 6. Scope of the rebuild time -%>
+  <div class="card">
+    <div class="head"><h2><svg class="i"><use href="#i-clock"/></svg> <%= h(sections[4]) %></h2></div>
+    <div class="scope">
+      <div><b class="ok">Included</b><ul class="plain"><% m.scope[:included].each do |x| %><li><%= h(x) %></li><% end %></ul></div>
+      <div><b class="skip">Not included</b><ul class="plain"><% m.scope[:excluded].each do |x| %><li><%= h(x) %></li><% end %></ul></div>
+    </div>
+    <p class="muted" style="margin-top:12px">So the time customers would actually wait is the rebuild time plus those three.</p>
+  </div>
+
+  <%# 7. Evidence held outside this repository -%>
+  <div class="card">
+    <div class="head"><h2><svg class="i"><use href="#i-list"/></svg> <%= h(sections[5]) %></h2></div>
+    <p class="help">Each claim points at a record outside this repository.</p>
+    <table>
+      <tr><th>Claim</th><th>Evidence</th><th>How to check</th></tr>
+<% m.evidence.each do |claim, ev, how| -%>
+      <tr><td><%= h(claim) %></td><td class="mono"><%= h(ev) %></td><td><%= h(how) %></td></tr>
+<% end -%>
+    </table>
+  </div>
+
+  <%# 8. Words used -%>
+  <div class="card">
+    <div class="head"><h2><svg class="i"><use href="#i-help"/></svg> <%= h(sections[6]) %></h2></div>
+    <table>
+<% m.glossary.each do |word, meaning| -%>
+      <tr><td><%= h(word) %></td><td><%= h(meaning) %></td></tr>
+<% end -%>
+    </table>
+  </div>
+  <p class="muted" style="margin-top:16px">Generated <%= h(m.generated) %> by <code><%= m.drill ? 'rake aws:dr_drill' : 'rake aws:setup_infra' %></code></p>
+</div>
+</body>
+</html>
