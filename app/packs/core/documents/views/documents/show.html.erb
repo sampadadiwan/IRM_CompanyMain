@@ -8,11 +8,18 @@
    <%= render "documents/embedded_sign_banner", document: @document %>
 
    <%# Header: what this document is, its state, and everything you can do with it - above the viewer,
-       so the actions are not at the bottom of a long PDF %>
-   <div class="card shadow-sm border-0 mb-3" id="document_header">
-      <div class="card-body d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
-         <div>
-            <h5 class="mb-1 fw-bold"><%= document_file_icon(@document) %> <%= @document.name %></h5>
+       so the actions are not at the bottom of a long PDF.
+       position-relative z-2: the theme's container-type / hover transform on page-level cards makes
+       this card its own stacking context, so without a z-index the Send Document dropdown was
+       painted under the viewer and the Details / permissions cards that follow it %>
+   <div class="card shadow-sm border-0 mb-3 position-relative z-2" id="document_header">
+      <%# Title + badges on their own line, actions on a full-width line below: side by side, a long
+          document name squeezed the up-to-six buttons and Delete wrapped onto a second line %>
+      <div class="card-body d-flex flex-column gap-3">
+         <%# Status / Template badges sit to the right of the title, on the same line (wrapping under it only
+             when the name is too long) %>
+         <div class="d-flex flex-wrap align-items-center gap-2">
+            <h5 class="mb-0 fw-bold"><%= document_file_icon(@document) %> <%= @document.name %></h5>
             <%= document_status_badges(@document) %>
             <% if @document.template %>
                <span class="badge bg-info-subtle text-info" data-bs-title="Used to generate documents (e.g. notices) from your data">
@@ -206,10 +213,7 @@
                      <div class="fs-4 fw-medium"><%= @document.user.full_name %> | <%= @document.user.email %></div>
                   </div>
 
-                  <div class="col-md-6">
-                     <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Uploaded On</label>
-                     <div class="fs-4 fw-medium"><%= l @document.created_at %></div>
-                  </div>
+                  <%# Uploaded On is the record's Created time - shown once, in the side panel's History card %>
 
                   <% if @document.template && @document.pdf_conversion_engine != "libreoffice" %>
                      <div class="col-md-6">
@@ -229,10 +233,15 @@
                   <% end %>
                </div>
 
-               <%# Custom fields render as table rows (form_types/_display_custom_fields) %>
-               <% custom_rows = current_user ? display_custom_fields(@document) : nil %>
+               <%# Custom fields render as table rows (form_types/_display_custom_fields). Form Type, Created
+                   and Updated are left out here - they are in the side panel's History card %>
+               <% custom_rows = current_user ? display_custom_fields(@document, timestamps_and_snapshot: false) : nil %>
+               <%# With the timestamps gone, a document with no custom field values yields only the hidden
+                   edit-fields anchor row - hide the table then (an empty bordered table leaves a stray line),
+                   but keep it in the page so the anchor still places its icon %>
                <% if custom_rows.present? %>
-                  <table class="table table-bordered mt-4 mb-0">
+                  <% visible_rows = Nokogiri::HTML::DocumentFragment.parse("<table>#{custom_rows}</table>").css("tr:not(.d-none)").any? %>
+                  <table class="table table-bordered mt-4 mb-0 <%= "d-none" unless visible_rows %>">
                      <%= custom_rows %>
                   </table>
                <% end %>
@@ -278,6 +287,29 @@
                      <% end %>
                   </li>
                <% end %>
+            </ul>
+         </div>
+
+         <%# History: when the record was created (uploaded) and last changed, and the form type its custom fields come from %>
+         <div class="card shadow-sm border-0 mb-4" id="document_history_card">
+            <div class="card-header border-bottom py-3">
+               <h5 class="mb-0 fw-bold"><i class="ti ti-history me-2 text-primary"></i>History</h5>
+            </div>
+            <ul class="list-group list-group-flush">
+               <% if @document.form_type_id.present? %>
+                  <li class="list-group-item d-flex justify-content-between align-items-center px-4">
+                     <span class="text-muted">Form Type</span>
+                     <span><%= link_to @document.form_type.tag || @document.form_type_id, @document.form_type %></span>
+                  </li>
+               <% end %>
+               <li class="list-group-item d-flex justify-content-between align-items-center px-4">
+                  <span class="text-muted">Created <i class="ti ti-info-circle" data-bs-title="When the document was uploaded or generated"></i></span>
+                  <span><%= l @document.created_at %></span>
+               </li>
+               <li class="list-group-item d-flex justify-content-between align-items-center px-4">
+                  <span class="text-muted">Updated <i class="ti ti-info-circle" data-bs-title="When the document or its settings last changed"></i></span>
+                  <span><%= l @document.updated_at %></span>
+               </li>
             </ul>
          </div>
          <% end %>
