@@ -185,7 +185,7 @@ sequenceDiagram
     end
     App->>DB: reset replication (reads the restored primary's binlog — after both finish)
     Rake->>App: rake db:migrate (replays migrations newer than the backup)
-    Rake->>App: rebuild the search indexes (29, an incomplete one warns)
+    Rake->>App: queue the search rebuild (background job, the run moves on)
     Rake->>App: nginx: traffic on (no users arrive until DNS is cut over — §8)
     Rake->>App: recovery:verify — the stack must PROVE it serves (§7) or the run fails
 ```
@@ -329,8 +329,13 @@ Every run (drill or real) writes `docs/operations/dr/runs/<branch>.html` and
 always agree. The sections, in order:
 
 1. **The answer:** passed or failed (or the step it stopped at), plus four
-   figures: rebuild time, database restore, checks passed, and data age (the
-   oldest "restored data" reading).
+   figures: recovery time (RTO), database restore, checks passed, and recovery
+   point (RPO): the minutes of changes lost.
+1a. **Recovery point and time vs what we promise clients:** the backup the
+   database was restored to and the rebuild time, each compared with the
+   security-questionnaire promises (RPO 30 min, RTO about 10 min;
+   `Dr::ReportCatalog::PROMISES`) and marked met / not met / not reached. A
+   missed promise also appears under Needs attention.
 2. **In plain words:** what was rebuilt, what was proven, the data loss, and
    whether it was a drill.
 3. **Needs attention:** the failed step, then failed checks, then warnings.
@@ -421,16 +426,16 @@ In the first days after a recovery or migration:
       S1 -->|"restore: strip again,<br/>install script + schedule"| S2["one writer:<br/>armed primary"]
       S2 -->|dr:verify| V["❌ if no schedule,<br/>two writers, or replica job"]
   ```
-- **Search (Elasticsearch) is not backed up; the recovery rebuilds it.**
-  Since 2026-11 (OpenSpec `fix-dr-search-index-after-restore`), phase 8
-  (`cap <stage> recovery:reindex_search` → `rake dr:reindex_search`) rebuilds
-  every index the live app maintains from the restored MySQL, *before* traffic
-  is back on. An index with an import error or a count mismatch is a
-  **warning, not a failure** (decision 2026-11-08): the restored data is
-  complete; only some search results are missing until that index is re-run.
-  `dr:verify`'s "Search index populated" re-checks every index, and the report
-  lists the incomplete ones under Needs attention. Search being *unreachable*
-  still fails the run ("Search reachable").
+- **Search (Elasticsearch) is not backed up; the recovery rebuilds it in the background.**
+  Since 2026-11 (OpenSpec `fix-dr-search-index-after-restore`), phase 8 queues
+  `SearchReindexJob` (`cap <stage> recovery:reindex_search_later`) while the site
+  is in maintenance and the run moves on: users get the site at once and search
+  results fill in as the job runs. The job records its progress in the Rails
+  cache; `dr:verify`'s "Search index populated" reports it (queued / running,
+  x of N / finished) rather than waiting. An incomplete index is a **warning,
+  never a failure**. Search being *unreachable* still fails the run ("Search
+  reachable"). The run therefore does not prove the rebuild finished; re-run
+  `recovery:verify` later to see the final state.
   - **Not rebuilt:** `AccountEntryIndex`. The live app does not maintain it
     (its callback is commented out, "too much data"), and it is ~7.6M rows,
     93% of all search documents.

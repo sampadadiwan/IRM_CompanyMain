@@ -78,13 +78,14 @@ end
 When("the report model is built") do
   phases = @dr_run[:phases]
   finished = phases.last[2] || (phases.last[1] + 60)
-  # The 1039 run's rebuild time was 12:04 = 724 s from its first phase's start
-  finished = phases.first[1] + 724 if @dr_run[:result] == "PASSED"
+  # The 1039 run's rebuild time was 12:04 = 724 s from its first phase's start (13:17: 8:36)
+  finished = phases.first[1] + (@dr_run[:rebuild_seconds] || 724) if @dr_run[:result] == "PASSED"
   @dr_model = Dr::ReportModel.build(
     phases: phases, scorecard: @dr_run[:scorecard], result: @dr_run[:result],
     evidence: { "Infrastructure provisioned in ap-south-2" => ["Pulumi update #0", "pulumi stack history"] },
     stack: "staging", region: "ap-south-2", env_variant: "in", branch: "dr_drill_in_2026_11_08_1039",
-    started_at: phases.first[1], finished: finished, drill: @dr_run[:drill], teardown: true, executed_by: "thimmaiah@Inspiron"
+    started_at: phases.first[1], finished: finished, drill: @dr_run[:drill], teardown: true, executed_by: "thimmaiah@Inspiron",
+    recovery_point: @dr_run[:recovery_point]
   )
 end
 
@@ -207,4 +208,58 @@ end
 
 Then("the HTML contains no {string} tag") do |tag|
   expect(@dr_html).not_to include(tag)
+end
+
+Then("needs attention includes {string} seen on {string}") do |name, hosts|
+  expect(@dr_model.attention).to include(a_hash_including(name: name, hosts: hosts))
+end
+
+Given("the 2026-11-08 13:17 staging drill, recovered to backup {string} at {int}:{int}:{int} UTC") do |key, hh, mm, ss|
+  # 13:17 IST = 07:47:56 UTC; rebuild 8:36
+  start = Time.utc(2026, 11, 8, 7, 47, 56)
+  base = dr_phases.first[1]
+  phases = dr_phases.map { |title, s, e| [title, start + (s - base), start + (e - base)] }
+  @dr_run = { phases: phases, result: "PASSED", drill: true, rebuild_seconds: 516,
+              scorecard: { "ip-10-0-1-182" => dr_1039_checks("0.9"), "ip-10-0-2-46" => dr_1039_checks("0.9") },
+              recovery_point: { full: "2026-11-07_230001-full", incr: key, at: Time.utc(2026, 11, 8, hh, mm, ss) } }
+end
+
+Then("the recovery point is {string}: {string}") do |verdict, achieved|
+  rpo = @dr_model.objectives.find { |o| o[:name] == "Recovery point (RPO)" }
+  expect(rpo[:status]).to eq({ "met" => :ok, "not met" => :warn, "not reached" => :fail }.fetch(verdict))
+  expect(rpo[:achieved]).to eq(achieved)
+end
+
+Then("the recovery time is {string}: {string}") do |verdict, achieved|
+  rto = @dr_model.objectives.find { |o| o[:name] == "Recovery time (RTO)" }
+  expect(rto[:status]).to eq({ "met" => :ok, "not met" => :warn, "not reached" => :fail }.fetch(verdict))
+  expect(rto[:achieved]).to eq(achieved)
+end
+
+Given("a transcript where the primary restored {string} and {string}") do |full, incr|
+  @dr_transcript = Tempfile.new(["dr", ".log"])
+  @dr_transcript.write(<<~LOG)
+    01 [replica] Found latest full backup: 2026-11-01_230001-full
+    01 [primary] Found latest full backup: #{full}
+    01 [primary] Found latest incremental backup to apply:
+    01 [primary]   FULL            #{full}
+    01 [primary]   INCREMENTAL     #{incr}
+  LOG
+  @dr_transcript.flush
+end
+
+When("the recovery point is read from it") do
+  require Rails.root.join("lib/tasks/aws_utils").to_s
+  @dr_point = Object.new.extend(AwsUtils).parse_recovery_point(@dr_transcript.path)
+ensure
+  @dr_transcript&.close!
+end
+
+Then("the recovery point is {int}-{int}-{int} {int}:{int}:{int} UTC from {string}") do |y, mo, d, hh, mm, ss, key|
+  expect(@dr_point[:at]).to eq(Time.utc(y, mo, d, hh, mm, ss))
+  expect(@dr_point[:incr]).to eq(key)
+end
+
+Given("the rebuild took {int} seconds") do |seconds|
+  @dr_run[:rebuild_seconds] = seconds
 end

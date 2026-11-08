@@ -101,9 +101,21 @@
     </ul>
   </div>
 
+  <%# 2b. Recovery point and time against what CapHive promises clients -%>
+  <div class="card">
+    <div class="head"><h2><svg class="i"><use href="#i-clock"/></svg> <%= h(sections[1]) %></h2><span class="muted">Promises: <%= h(promises_source) %></span></div>
+    <table>
+      <tr><th></th><th>Objective</th><th>Promised to clients</th><th>This run</th></tr>
+<% m.objectives.each do |o| -%>
+      <tr><td><%= icon(o[:status]) %></td><td><%= h(o[:name]) %><div class="muted"><%= h(o[:meaning]) %></div></td><td><%= h(o[:promised]) %></td><td><%= h(o[:achieved]) %></td></tr>
+<% end -%>
+    </table>
+    <p class="muted" style="margin-top:8px">The recovery time shown is the rebuild. A customer's full wait also includes noticing the outage, deciding to recover and switching DNS.</p>
+  </div>
+
   <%# 3. Needs attention: failures first, then warnings, each with what it means and what to do -%>
   <div class="card<%= ' attention' if m.attention.any? %><%= ' fail' if m.attention.any? { |a| a[:status] == :fail } %>">
-    <div class="head"><h2><%= icon(m.attention.any? { |a| a[:status] == :fail } ? :fail : (m.attention.any? ? :warn : :ok)) %> <%= h(sections[1]) %></h2><span class="muted"><%= h(attention_count) %></span></div>
+    <div class="head"><h2><%= icon(m.attention.any? { |a| a[:status] == :fail } ? :fail : (m.attention.any? ? :warn : :ok)) %> <%= h(sections[2]) %></h2><span class="muted"><%= h(attention_count) %></span></div>
 <% if m.attention.empty? -%>
     <p>Nothing needs attention.</p>
 <% else -%>
@@ -118,7 +130,7 @@
 
   <%# 4. Steps, with a help line each -%>
   <div class="card">
-    <div class="head"><h2><svg class="i"><use href="#i-clock"/></svg> <%= h(sections[2]) %></h2><span class="muted">bars to scale of <%= h(m.tiles[0][0]) %></span></div>
+    <div class="head"><h2><svg class="i"><use href="#i-clock"/></svg> <%= h(sections[3]) %></h2><span class="muted">bars to scale of <%= h(m.tiles[0][0]) %></span></div>
     <p class="help">Every step a real recovery runs, in order. Open a step to see what it does and what to check if it fails.</p>
     <table>
       <tr><th></th><th>Step</th><th>Start</th><th class="num">Took</th><th></th></tr>
@@ -134,7 +146,7 @@
 
   <%# 5. Checks: grouped by layer, one row per check, one column per server -%>
   <div class="card">
-    <div class="head"><h2><svg class="i"><use href="#i-list"/></svg> <%= h(sections[3]) %></h2><span class="muted"><%= m.hosts.size %> server<%= 's' unless m.hosts.size == 1 %></span></div>
+    <div class="head"><h2><svg class="i"><use href="#i-list"/></svg> <%= h(sections[4]) %></h2><span class="muted"><%= m.hosts.size %> server<%= 's' unless m.hosts.size == 1 %></span></div>
 <% if !m.verified -%>
     <p>Not reached: the run stopped before verification, so no checks ran.</p>
 <% else -%>
@@ -153,7 +165,7 @@
 
   <%# 6. Scope of the rebuild time -%>
   <div class="card">
-    <div class="head"><h2><svg class="i"><use href="#i-clock"/></svg> <%= h(sections[4]) %></h2></div>
+    <div class="head"><h2><svg class="i"><use href="#i-clock"/></svg> <%= h(sections[5]) %></h2></div>
     <div class="scope">
       <div><b class="ok">Included</b><ul class="plain"><% m.scope[:included].each do |x| %><li><%= h(x) %></li><% end %></ul></div>
       <div><b class="skip">Not included</b><ul class="plain"><% m.scope[:excluded].each do |x| %><li><%= h(x) %></li><% end %></ul></div>
@@ -163,7 +175,7 @@
 
   <%# 7. Evidence held outside this repository -%>
   <div class="card">
-    <div class="head"><h2><svg class="i"><use href="#i-list"/></svg> <%= h(sections[5]) %></h2></div>
+    <div class="head"><h2><svg class="i"><use href="#i-list"/></svg> <%= h(sections[6]) %></h2></div>
     <p class="help">Each claim points at a record outside this repository.</p>
     <table>
       <tr><th>Claim</th><th>Evidence</th><th>How to check</th></tr>
@@ -175,7 +187,7 @@
 
   <%# 8. Words used -%>
   <div class="card">
-    <div class="head"><h2><svg class="i"><use href="#i-help"/></svg> <%= h(sections[6]) %></h2></div>
+    <div class="head"><h2><svg class="i"><use href="#i-help"/></svg> <%= h(sections[7]) %></h2></div>
     <table>
 <% m.glossary.each do |word, meaning| -%>
       <tr><td><%= h(word) %></td><td><%= h(meaning) %></td></tr>

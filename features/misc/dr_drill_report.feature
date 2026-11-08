@@ -13,8 +13,8 @@ Feature: A DR run report explains itself
     Given the 2026-11-08 staging drill's run data
     When the report model is built
     Then the headline is "Staging recovered in ap-south-2 and verified: 12:04"
-    And the tiles read "12:04", "1:59", "42 / 44" and "0.4 h"
-    And needs attention lists 1 item: "Primary backup schedule" seen on "both servers"
+    And the tiles read "12:04", "1:59", "42 / 44" and "24 min"
+    And needs attention includes "Primary backup schedule" seen on "both servers"
 
   # H2 — Happy path: checks shown once, grouped, one column per server
   Scenario: Checks are grouped by layer with one row per check
@@ -62,12 +62,13 @@ Feature: A DR run report explains itself
     Given the 2026-11-08 staging drill's run data
     And only the second server warns on "Primary backup cron installed"
     When the report model is built
-    Then needs attention lists 1 item: "Primary backup schedule" seen on "ip-10-0-2-46"
+    Then needs attention includes "Primary backup schedule" seen on "ip-10-0-2-46"
 
   # E6 — Edge case: a clean run says so
   Scenario: A run where every check passed needs no attention
     Given the 2026-11-08 staging drill's run data
     And every check passed
+    And the rebuild took 540 seconds
     When the report model is built
     Then needs attention is empty
     And the plain words mention "Every check passed."
@@ -86,7 +87,7 @@ Feature: A DR run report explains itself
     And the first server fails "Migrations current — 3 pending"
     When the report model is built
     Then the first attention item is "Database schema up to date"
-    And the tiles read "12:04", "1:59", "41 / 44" and "0.4 h"
+    And the tiles read "12:04", "1:59", "41 / 44" and "24 min"
 
   # X4 — Error case: the catalog must cover every check and step the run can print
   Scenario: Every check dr:verify prints and every step setup_infra runs has an explanation
@@ -116,3 +117,31 @@ Feature: A DR run report explains itself
     And the report is rendered
     Then the HTML shows "&lt;script&gt;alert(1)&lt;/script&gt;" as text
     And the HTML contains no "<script>" tag
+
+  # H6 — Happy path: the two objectives against what we promise clients (2026-11-08 13:17 run)
+  Scenario: The report measures the recovery point and time against the client promises
+    Given the 2026-11-08 13:17 staging drill, recovered to backup "2026-11-08_070001-incr" at 07:00:01 UTC
+    When the report model is built
+    Then the recovery point is "not met": "restored to 8 Nov 07:00 UTC (backup 2026-11-08_070001-incr): 48 min of changes lost"
+    And the recovery time is "met": "8:36 from the recovery command to a verified, serving stack"
+    And the first attention item is "Recovery point (RPO) not met"
+    And the tiles read "8:36", "1:59", "42 / 44" and "48 min"
+
+  # E7 — Edge case: a recent backup meets the 30-minute promise
+  Scenario: A recovery point within 30 minutes meets the promise
+    Given the 2026-11-08 13:17 staging drill, recovered to backup "2026-11-08_073001-incr" at 07:30:01 UTC
+    When the report model is built
+    Then the recovery point is "met": "restored to 8 Nov 07:30 UTC (backup 2026-11-08_073001-incr): 18 min of changes lost"
+
+  # X5 — Error case: a failed run says the time objective was not reached, and lists the step first
+  Scenario: A failed run reports the recovery time as not reached
+    Given a staging drill that failed during step 5 before verification
+    When the report model is built
+    Then the recovery time is "not reached": "not reached: stopped at step 5 · Install the app on both servers"
+    And the first attention item is "Step 5 · Install the app on both servers"
+
+  # E8 — Edge case: the recovery point comes from the restore's own output
+  Scenario: The recovery point is read from the backup chain the primary restore used
+    Given a transcript where the primary restored "2026-11-07_230001-full" and "2026-11-08_070001-incr"
+    When the recovery point is read from it
+    Then the recovery point is 2026-11-08 07:00:01 UTC from "2026-11-08_070001-incr"

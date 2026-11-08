@@ -789,6 +789,30 @@ module AwsUtils
     scorecard
   end
 
+  # The point the database was recovered to: the backup chain the primary restore used, as the
+  # baked script prints it ("Found latest full backup: 2026-11-07_230001-full", then
+  # "INCREMENTAL     2026-11-08_070001-incr"). The newest key's timestamp is the recovery point.
+  # nil when the run never reached the restore.
+  def parse_recovery_point(transcript_path)
+    return nil unless transcript_path && File.exist?(transcript_path)
+
+    full = incr = nil
+    File.foreach(transcript_path) do |raw|
+      line = raw.gsub(/\e\[[0-9;]*m/, "")
+      next unless line.include?("[primary]")
+
+      full ||= line[/Found latest full backup: (\S+-full)/, 1]
+      incr ||= line[/INCREMENTAL\s+(\S+-incr)/, 1]
+      break if full && incr
+    end
+    key = incr || full
+    return nil unless key
+
+    # "2026-11-08_070001-incr" → 2026-11-08 07:00:01 UTC (the scripts name backups in UTC)
+    parts = key.match(/\A(\d{4})-(\d{2})-(\d{2})_(\d{2})(\d{2})(\d{2})/)&.captures
+    { full: full, incr: incr, at: parts && Time.utc(*parts.map(&:to_i)) }
+  end
+
   # Writes the per-run evidence report, HTML and Markdown (openspec dr-drill-report-redesign).
   #
   # Every factual claim is either tied to a record held OUTSIDE this repo with
@@ -806,6 +830,7 @@ module AwsUtils
     scorecard = parse_verify_scorecard(dir.join("#{branch}.log"))
     model = Dr::ReportModel.build(
       phases: DR_PHASES, scorecard: scorecard, evidence: DR_EVIDENCE, result: result,
+      recovery_point: parse_recovery_point(dir.join("#{branch}.log")),
       stack: stack, region: region, env_variant: env_variant, branch: branch,
       started_at: started_at, finished: finished, drill: drill,
       # "deleted afterwards" is only said when this drill really tears down
@@ -1067,13 +1092,13 @@ module AwsUtils
                        "source bucket `#{backup_bucket}` (full + incremental chain; keys named in the transcript)",
                        "`aws s3 ls s3://#{backup_bucket}/` — compare object timestamps against the run window")
 
-    dr_phase "Phase 8/9 · Rebuild the search index"
+    dr_phase "Phase 8/9 · Start the search rebuild (background)"
     # Elasticsearch is not backed up: the new DB box's indexes are empty, so
-    # every search box would return nothing. Rebuild each index the live app
-    # maintains from the restored MySQL, BEFORE traffic is back on. An
-    # incomplete index WARNS and the run continues (decision 2026-11-08);
-    # dr:verify re-checks every index and the report lists the incomplete ones.
-    run_cmd("branch=#{branch_name} LB=true bundle exec cap #{stack}_#{env_variant} recovery:reindex_search")
+    # every search box would return nothing. Queue the rebuild now (Redis is up;
+    # the job waits for Sidekiq, which starts with traffic in the next phase):
+    # users get the site at once and search fills in ("enqueue and move on",
+    # 2026-11-08). dr:verify and the report show its progress.
+    run_cmd("branch=#{branch_name} LB=true bundle exec cap #{stack}_#{env_variant} recovery:reindex_search_later")
 
     dr_phase "Phase 9/9 · Restore traffic and verify the recovered stack"
     # Switch back to the app and remove maintenance mode

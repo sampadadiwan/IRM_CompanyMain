@@ -116,3 +116,9 @@ Feature: A DR drill refuses to collide, never pages anyone, and only stops its o
   Scenario: The drill's code works without the Rails environment
     When the DR drill code is exercised in a process that loads only the Rakefile
     Then that process succeeds without initializing Rails
+
+  # X7 — Error case (2026-11-08 13:17): a resource named "…subnet_1-0" was read as "0 deleted"
+  Scenario: The destroyed count is read from pulumi's summary line, not from resource names
+    Given pulumi destroy printed "aws:lb:TargetGroupAttachment tg-attachment-web-server-subnet_1-0 deleted (0.48s)" and a summary of 46 deleted
+    When the destroyed count is read
+    Then the destroyed count is 46

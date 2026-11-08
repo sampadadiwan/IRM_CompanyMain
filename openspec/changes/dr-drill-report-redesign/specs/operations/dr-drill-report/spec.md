@@ -15,6 +15,17 @@ The report SHALL open with the result (Passed or Failed), what was recovered whe
 - **WHEN** a run fails during step 5, "Install the app on both servers"
 - **THEN** the report shows "Failed" and names step 5 and its plain name as where the recovery stopped
 
+### Requirement: Recovery objectives against client promises
+The report SHALL state the recovery point achieved (the backup the database was restored to, and the minutes between it and the start of the recovery) and the recovery time achieved (from the recovery command to a verified stack), compare each with what CapHive promises clients, and mark each as met, not met or not reached. A missed promise SHALL appear under Needs attention.
+
+#### Scenario: Recovery point not met, recovery time met
+- **WHEN** a drill starting 07:47:56 UTC restores backup 2026-11-08_070001-incr and is verified 8:36 later, against promises of 30 minutes (RPO) and about 10 minutes (RTO)
+- **THEN** the report shows the recovery point as not met with "48 min of changes lost", the recovery time as met with "8:36", and lists "Recovery point (RPO) not met" under Needs attention
+
+#### Scenario: A failed run does not claim a recovery time
+- **WHEN** a run stops at step 5
+- **THEN** the recovery time is shown as not reached, naming step 5
+
 ### Requirement: Plain-words summary
 The report SHALL include an "In plain words" section that states, without technical terms, what was rebuilt, what was proven, how much data a real recovery would have lost, and whether the run was a drill (live site untouched) or a real recovery.
 

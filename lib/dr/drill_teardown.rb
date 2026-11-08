@@ -27,6 +27,13 @@ module Dr
       "#{stopped} · #{gone}"
     end
 
+    # Resources `pulumi destroy` deleted, from its summary ("Resources:\n    - 46 deleted").
+    # Anchored to that summary line: resource names end in "-0", "-1"..., so a loose
+    # /(\d+) deleted/ matched "…subnet_1-0 deleted (0.48s)" and recorded 0 (2026-11-08 13:17).
+    def destroyed_count(output)
+      output.to_s.gsub(/\e\[[0-9;]*m/, "").scan(/^\s*-\s*(\d+) deleted\s*$/).flatten.last&.to_i
+    end
+
     # Adds a Teardown cell to the drill's row in dr_drills.md, adding the column to the table
     # header once. Older rows simply have an empty cell. Returns the new text; unchanged if the
     # drill's row is not found.

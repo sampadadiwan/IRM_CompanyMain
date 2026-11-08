@@ -32,6 +32,8 @@
 
 - [x] 3.6 (after the first batch drill, 2026-11-08) `AmlReportIndex` built from `custom_name`; index problems WARN, never fail the run (`Dr::SearchIndexes.verdict` in the rebuild step and in verify); feature rows E8, H4, H5. See report "Changed during the build".
 
+- [x] 3.7 (2026-11-08) Background rebuild: `SearchReindexJob`, `Dr::SearchIndexes.rebuild!` / `enqueue_rebuild!` / `grade_rebuild`, `dr:reindex_search_later` + `cap recovery:reindex_search_later`, phase 8 "Start the search rebuild (background)", verify reads the progress record. Feature rows H6, E11–E13, X8 (report C4).
+
 ## 4. Regression and cleanup
 
 - [x] 4.1 Run `features/misc/dr_search_indexes.feature` and `features/misc/dr_backup_schedule.feature` together (both DR features) and confirm green.

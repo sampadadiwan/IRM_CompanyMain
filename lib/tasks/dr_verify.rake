@@ -234,6 +234,11 @@ namespace :dr do
       # passes it. Search is not backed up, so prove every index the DR rebuilt
       # holds its MySQL scope's records (within a small tolerance: traffic is
       # back on, so a few writes may be in flight).
+      # A recent background rebuild (queued / running / finished) speaks for
+      # the indexes; it is reported, not waited for. Otherwise count each one.
+      rebuild = Dr::SearchIndexes.grade_rebuild(Dr::SearchIndexes.read_status)
+      next check.call("Search index populated", rebuild.status, rebuild.detail) if rebuild
+
       grades = Dr::SearchIndexes.indexes.map do |index|
         Dr::SearchIndexes.grade(index_name: index.name, es: Dr::SearchIndexes.es_count(index),
                                 db: Dr::SearchIndexes.db_count(index), exact: false,

@@ -103,3 +103,31 @@ Feature: A recovered environment's search is rebuilt and proven full
   Scenario: AmlReportIndex takes its name from custom_name
     When the "name" field of "AmlReportIndex" is read for an AML report with custom name "Asha Rao"
     Then the indexed value is "Asha Rao"
+
+  # H6 — Happy path (decision 2026-11-08: "enqueue and move on"): the DR queues the rebuild and returns
+  Scenario: Queuing the rebuild runs the background job and records its progress
+    Given an in-memory cache for the search rebuild
+    And rebuilding any index succeeds
+    When the search rebuild is queued for "FundIndex,FolderIndex"
+    Then the search rebuild record is "finished" with 2 of 2 indexes done and no problems
+    And the search rebuild job runs on the "chewy" queue
+
+  # E11 — Edge case: verification while the rebuild is still queued reports it, does not wait
+  Scenario: A queued rebuild is reported as in progress
+    When a search rebuild record "queued" with 0 of 29 done, queued 2 minutes ago, is graded
+    Then the search grade is "ok" mentioning "queued in the background"
+
+  # E12 — Edge case
+  Scenario: A running rebuild reports its progress
+    When a search rebuild record "running" with 12 of 29 done, queued 3 minutes ago, is graded
+    Then the search grade is "ok" mentioning "12 of 29 indexes done"
+
+  # X8 — Error case: a finished rebuild with an incomplete index warns, naming it
+  Scenario: A finished rebuild with an incomplete index is a warning
+    When a finished search rebuild of 29 with problem "AmlReportIndex: search index empty (MySQL has 689)" is graded
+    Then the search grade is "warn" mentioning "1 of 29 incomplete"
+
+  # E13 — Edge case: an old record does not speak for the indexes - verification counts instead
+  Scenario: A rebuild record older than a day is ignored
+    When a search rebuild record "finished" with 29 of 29 done, queued 25 hours ago, is graded
+    Then there is no rebuild verdict, so each index is counted

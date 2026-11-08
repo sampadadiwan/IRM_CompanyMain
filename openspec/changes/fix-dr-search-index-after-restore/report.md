@@ -255,6 +255,7 @@ All rows land in `features/misc/dr_search_indexes.feature` and exercise `Dr::Sea
 |---|---|---|
 | C1 | Six indexes with no callback: drift in verify is ⚠️ | Live never updates them; a ❌ would block component repairs |
 | C2 | **Index problems warn, never fail the DR** (both the rebuild step and verify, through `Dr::SearchIndexes.verdict`) | User decision 2026-11-08, after the first batch drill stopped on one dead index: the data is complete, so an incomplete index must not abort a recovery; the report lists it under Needs attention. Unreachable search still fails ("Search reachable") |
+| C4 | **Rebuild moved to a background job** (`SearchReindexJob`, chewy queue): phase 8 queues it during maintenance (`cap recovery:reindex_search_later`) and the run moves on; the job grades with the verify tolerance (traffic is on) and records progress in `Rails.cache` (`dr:search_rebuild`, solid_cache = MySQL); `dr:verify` reports a recent rebuild's progress (queued / running x of N / finished, ⚠️ per incomplete index) instead of counting, and counts only when there is no rebuild from the last 24 h. The blocking `cap recovery:reindex_search` stays for operators | User decision 2026-11-08: "Enqueue and move on" — users first; the run does not prove the rebuild finished |
 | C3 | `AmlReportIndex` fixed: `field :name` → `value: custom_name` | The first batch drill showed it could never be built (`NoMethodError: undefined method 'name'`), because the column was renamed to `custom_name`. User chose to fix it rather than exclude it |
 
 ## Spec Impact

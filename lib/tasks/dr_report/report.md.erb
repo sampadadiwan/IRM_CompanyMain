@@ -15,6 +15,16 @@
 
 ## <%= sections[1] %>
 
+| | Objective | Promised to clients | This run |
+|:-:|---|---|---|
+<% m.objectives.each do |o| -%>
+| <%= emoji(o[:status]) %> | **<%= md(o[:name]) %>**: <%= md(o[:meaning]) %> | <%= md(o[:promised]) %> | <%= md(o[:achieved]) %> |
+<% end -%>
+
+The recovery time shown is the rebuild. A customer's full wait also includes noticing the outage, deciding to recover and switching DNS. Promises: <%= promises_source %>.
+
+## <%= sections[2] %>
+
 <% if m.attention.empty? -%>
 Nothing needs attention.
 <% else -%>
@@ -27,7 +37,7 @@ Nothing needs attention.
 <% end -%>
 <% end -%>
 
-## <%= sections[2] %>
+## <%= sections[3] %>
 
 | | # | Step | Start (UTC) | Took |
 |:-:|:-:|---|---|---|
@@ -42,7 +52,7 @@ Nothing needs attention.
 - **<%= s[:n] %> · <%= s[:name] %>**: <%= s[:does] %><% if s[:if_fails] %> *If it fails:* <%= s[:if_fails] %><% end %>
 <% end -%>
 
-## <%= sections[3] %>
+## <%= sections[4] %>
 
 <% if !m.verified -%>
 Not reached: the run stopped before verification, so no checks ran.
@@ -64,14 +74,14 @@ Each check exercises the real thing, not a status file.
 
 <% end -%>
 <% end -%>
-## <%= sections[4] %>
+## <%= sections[5] %>
 
 - **Included:** <%= m.scope[:included].join(' · ') %>
 - **Not included:** <%= m.scope[:excluded].join(' · ') %>
 
 So the time customers would actually wait is the rebuild time plus those three.
 
-## <%= sections[5] %>
+## <%= sections[6] %>
 
 | Claim | Evidence | How to check |
 |---|---|---|
@@ -79,7 +89,7 @@ So the time customers would actually wait is the rebuild time plus those three.
 | <%= md(claim) %> | <%= md(ev) %> | <%= md(how) %> |
 <% end -%>
 
-## <%= sections[6] %>
+## <%= sections[7] %>
 
 | | |
 |---|---|

@@ -165,3 +165,15 @@ Then("that process succeeds without initializing Rails") do
   expect(@dr_status.success?).to be(true), @dr_out.lines.last(15).join
   expect(@dr_out).to include("DR_CODE_OK")
 end
+
+Given("pulumi destroy printed {string} and a summary of {int} deleted") do |resource_line, count|
+  @dr_destroy_output = " -  #{resource_line} \n@ destroying....\nResources:\n    - #{count} deleted\n\nDuration: 2m57s\n"
+end
+
+When("the destroyed count is read") do
+  @dr_destroyed = Dr::DrillTeardown.destroyed_count(@dr_destroy_output)
+end
+
+Then("the destroyed count is {int}") do |count|
+  expect(@dr_destroyed).to eq(count)
+end

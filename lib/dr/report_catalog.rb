@@ -12,6 +12,16 @@ module Dr
   #
   # Pure constants and lookups: nothing here decides pass or fail - dr:verify does.
   module ReportCatalog
+    # What CapHive promises clients about recovery - every DR report is measured against these.
+    # Source of truth: the security questionnaire, H3 (RPO) and H4 (RTO). Change both together.
+    PROMISES = {
+      source: "Security questionnaire H3/H4 (docs/gtm/prerequisites/E2_security_questionnaire.md)",
+      rpo_minutes: 30,
+      rpo_text: "30 minutes, while backup-freshness alerts are green",
+      rto_minutes: 10,
+      rto_text: "about 10 minutes for a staging-sized dataset, scaling with database size"
+    }.freeze
+
     # Group order is the order the report shows them in
     GROUPS = ["App servers", "Requests through the app", "Data", "Database servers", "Backups", "Other checks"].freeze
 
@@ -38,8 +48,8 @@ module Dr
       { match: /Restore the database/, name: "Restore the database from backups",
         does: "Downloads the newest full backup and its incremental from S3 onto the primary and replica in parallel, then reconnects replication.",
         if_fails: "Look for the [primary] / [replica] lines in the transcript; the backup bucket and key are named there." },
-      { match: /Rebuild the search index/, name: "Rebuild the search index",
-        does: "Search is not backed up, so every search index the live app maintains is rebuilt from the restored database and its count compared. An incomplete index is a warning, not a failure: the recovery continues and Needs attention lists it.",
+      { match: /Start the search rebuild|Rebuild the search index/, name: "Start the search rebuild (background)",
+        does: "Search is not backed up, so a background job is queued to rebuild every search index the live app maintains from the restored database. The site comes back without waiting; search results fill in as the job runs, and the checks below show its progress.",
         if_fails: "The transcript's table names the index and why; re-run one with ONLY=<Index> cap recovery:reindex_search." },
       { match: /Restore traffic and verify/, name: "Bring the site back and verify it",
         does: "Maintenance page off, then every check below runs on every app server. Any failed check fails the recovery.",
@@ -81,7 +91,7 @@ module Dr
       { match: /\ARestored data freshness/, group: "Data", name: "Restored data age",
         proves: "Age of the newest user/document row: the data a real recovery would have lost.", if_fails: "Above ~1 hour, check backups were running before the run (rake s3:check_backup_freshness)." },
       { match: /\ASearch index populated/, group: "Data", name: "Search index populated",
-        proves: "Every search index the live app maintains holds as many records as the database. An incomplete one is a warning: the data is complete, only some search results are missing.", if_fails: "ONLY=<Index> bundle exec cap <stage> recovery:reindex_search." },
+        proves: "Search holds the restored records: either the background rebuild's progress (queued, running, finished) or, with no recent rebuild, every index counted against the database. An incomplete index is a warning: the data is complete, only some search results are missing.", if_fails: "ONLY=<Index> bundle exec cap <stage> recovery:reindex_search." },
       { match: /\AS3 app bucket reachable/, group: "Data", name: "File storage (S3)",
         proves: "The app's own credentials can reach its document bucket.", if_fails: "Check AWS_S3_BUCKET and the app's AWS keys." },
       { match: /\ADrill stack marked/, group: "App servers", name: "Drill servers marked",

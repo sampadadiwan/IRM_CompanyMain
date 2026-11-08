@@ -55,3 +55,4 @@
 | 2026-11-08 10:39 | staging | in | ap-south-2 | PASSED | 12.1 | dr_drill_in_2026_11_08_1039 |
 | 2026-11-08 13:01 | staging | in | ap-south-2 | FAILED | 12.6 | dr_drill_in_2026_11_08_1301 | kept for diagnosis (failed run) |
 | 2026-11-08 13:16 | staging | in | ap-south-2 | FAILED | 0.7 | dr_drill_in_2026_11_08_1316 | kept for diagnosis (failed run) |
+| 2026-11-08 13:17 | staging | in | ap-south-2 | PASSED | 8.6 | dr_drill_in_2026_11_08_1317 | services stopped · 46 resources destroyed |

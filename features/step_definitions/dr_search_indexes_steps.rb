@@ -116,3 +116,51 @@ end
 Then("the indexed value is {string}") do |value|
   expect(@dr_indexed).to eq(value)
 end
+
+Given("an in-memory cache for the search rebuild") do
+  # Tests run with :null_store; the rebuild record needs a cache that keeps what is written
+  @dr_saved_cache = Rails.cache
+  Rails.cache = ActiveSupport::Cache::MemoryStore.new
+end
+
+After do
+  Rails.cache = @dr_saved_cache if @dr_saved_cache
+end
+
+Given("rebuilding any index succeeds") do
+  # No Elasticsearch here: each index's rebuild is stubbed to a clean grade
+  allow(Dr::SearchIndexes).to receive(:reindex_one) { |index, **_opts| Dr::SearchIndexes::Grade.new(:ok, "#{index.name}: 1 of 1") }
+end
+
+When("the search rebuild is queued for {string}") do |only|
+  # ActiveJob runs inline in this suite, so the job runs as part of the enqueue
+  Dr::SearchIndexes.enqueue_rebuild!(only.split(","))
+end
+
+Then("the search rebuild record is {string} with {int} of {int} indexes done and no problems") do |state, done, total|
+  status = Dr::SearchIndexes.read_status
+  expect(status).to include(state: state, done: done, total: total, problems: [])
+end
+
+Then("the search rebuild job runs on the {string} queue") do |queue|
+  expect(SearchReindexJob.queue_name).to eq(queue)
+end
+
+When("a search rebuild record {string} with {int} of {int} done, queued {int} minutes ago, is graded") do |state, done, total, minutes|
+  now = Time.utc(2026, 11, 8, 8, 0, 0)
+  @dr_grade = Dr::SearchIndexes.grade_rebuild({ state: state, queued_at: (now - (minutes * 60)).iso8601, done: done, total: total, problems: [] }, now: now)
+end
+
+When("a search rebuild record {string} with {int} of {int} done, queued {int} hours ago, is graded") do |state, done, total, hours|
+  now = Time.utc(2026, 11, 8, 8, 0, 0)
+  @dr_grade = Dr::SearchIndexes.grade_rebuild({ state: state, queued_at: (now - (hours * 3600)).iso8601, done: done, total: total, problems: [] }, now: now)
+end
+
+When("a finished search rebuild of {int} with problem {string} is graded") do |total, problem|
+  now = Time.utc(2026, 11, 8, 8, 0, 0)
+  @dr_grade = Dr::SearchIndexes.grade_rebuild({ state: "finished", queued_at: (now - 600).iso8601, done: total, total: total, problems: [problem] }, now: now)
+end
+
+Then("there is no rebuild verdict, so each index is counted") do
+  expect(@dr_grade).to be_nil
+end

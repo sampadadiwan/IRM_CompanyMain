@@ -24,6 +24,13 @@ module Dr
                              "account_entry.rb, \"too much data\") - ~7.6M rows, 93% of all search documents"
     }.freeze
 
+    # Where the background rebuild records its progress: Rails.cache, which is solid_cache (MySQL)
+    # on deployed stacks, so every app server and the Sidekiq worker see the same record.
+    STATUS_KEY = "dr:search_rebuild"
+    STATUS_TTL = 7 * 24 * 3600
+    # A recorded rebuild speaks for the index only for a day; after that dr:verify counts instead
+    STATUS_FRESH_SECONDS = 24 * 3600
+
     # Verification runs after traffic is back on, so a few records may be in flight between MySQL
     # and Elasticsearch: allow 1% or 5 documents, whichever is larger.
     VERIFY_TOLERANCE_RATIO = 0.01
@@ -91,6 +98,87 @@ module Dr
       return verdict if verdict.status == :ok || exact || maintained
 
       Grade.new(:warn, "#{verdict.detail} (live does not keep #{index_name} current: no update_index on its model)")
+    end
+
+    # The indexes to rebuild: all the DR owns, or just the named ones (ONLY=FolderIndex,FundIndex).
+    def select(only = [])
+      names = Array(only).map { |name| name.to_s.strip }.reject(&:empty?)
+      return indexes if names.empty?
+
+      unknown = names - indexes.map(&:name)
+      raise ArgumentError, "Not a DR search index: #{unknown.join(', ')} (known: #{indexes.map(&:name).join(', ')})" if unknown.any?
+
+      indexes.select { |index| names.include?(index.name) }
+    end
+
+    # Rebuilds one index and grades it. reset! builds a fresh suffixed index, imports into it,
+    # then swaps the alias - readers never see a half-built index - and returns false (does not
+    # raise) when documents fail to import. exact: true when traffic is off (the blocking rake
+    # task); false in the background job, where users may be writing while it runs.
+    def reindex_one(index, exact:)
+      imported = index.reset!((Time.now.to_f * 1000).round, apply_journal: false)
+      grade(index_name: index.name, es: es_count(index), db: db_count(index), imported: imported,
+            exact: exact, maintained: maintained?(index))
+    rescue StandardError => e
+      # One broken index must not stop the others (AmlReportIndex, 2026-11-08)
+      Grade.new(:fail, "#{index.name}: #{e.class}: #{e.message.lines.first&.strip}")
+    end
+
+    # Rebuilds each index in turn. Returns [[name, grade, seconds]]; on_progress gets
+    # (number done, that row) after each one.
+    def rebuild!(indexes, exact:, on_progress: nil)
+      indexes.each_with_index.map do |index, i|
+        started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+        row = [index.name, reindex_one(index, exact: exact),
+               (Process.clock_gettime(Process::CLOCK_MONOTONIC) - started).round(1)]
+        on_progress&.call(i + 1, row)
+        row
+      end
+    end
+
+    # --- The background rebuild's progress record -----------------------------------------------
+
+    def read_status
+      Rails.cache.read(STATUS_KEY)
+    end
+
+    def write_status(status)
+      Rails.cache.write(STATUS_KEY, status, expires_in: STATUS_TTL)
+    end
+
+    # Queues the background rebuild (SearchReindexJob on the chewy queue) and records it as
+    # queued. Safe while Sidekiq is stopped: the job waits in Redis until Sidekiq starts.
+    def enqueue_rebuild!(only = [])
+      total = select(only).size
+      write_status({ state: "queued", queued_at: Time.now.utc.iso8601, total: total, done: 0, problems: [] })
+      SearchReindexJob.perform_later(Array(only).map(&:to_s))
+      total
+    end
+
+    # dr:verify's verdict from a recorded rebuild, or nil when there is no recent one (the caller
+    # then counts every index itself). A rebuild still queued or running is reported, not
+    # waited for (decision 2026-11-08: "enqueue and move on").
+    def grade_rebuild(status, now: Time.now.utc)
+      return nil unless status.is_a?(Hash) && status[:queued_at]
+
+      queued = Time.parse(status[:queued_at].to_s).utc
+      return nil if now - queued > STATUS_FRESH_SECONDS
+
+      progress = "#{status[:done]} of #{status[:total]} indexes done"
+      case status[:state]
+      when "queued"
+        Grade.new(:ok, "search rebuild queued in the background at #{queued.strftime('%H:%M')} UTC (#{progress}) — results fill in as it runs")
+      when "running"
+        Grade.new(:ok, "search rebuilding in the background since #{queued.strftime('%H:%M')} UTC — #{progress}; results fill in as it runs")
+      else
+        problems = Array(status[:problems])
+        return Grade.new(:ok, "rebuilt in the background: #{status[:total]}/#{status[:total]} indexes hold their records") if problems.empty?
+
+        Grade.new(:warn, "rebuilt in the background with #{problems.size} of #{status[:total]} incomplete — #{problems.join('; ')}. " \
+                         "Re-run: ONLY=<Index> bundle exec cap <stage> recovery:reindex_search")
+      end
+    rescue ArgumentError
+      nil
     end
 
     # The run-level verdict for a set of index grades. Search problems WARN and never fail the

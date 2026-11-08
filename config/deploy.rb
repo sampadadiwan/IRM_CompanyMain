@@ -626,6 +626,18 @@ namespace :recovery do
     end
   end
 
+  # Queues the search rebuild as a background job and returns at once ("enqueue
+  # and move on", 2026-11-08). aws:setup_infra runs it during maintenance; the
+  # job runs when Sidekiq starts with traffic back on.
+  desc 'DR: queue the search rebuild (SearchReindexJob) and return at once'
+  task :reindex_search_later do
+    on roles(:primary) do
+      within release_path do
+        execute :rake, "dr:reindex_search_later RAILS_ENV=#{fetch(:stage)}"
+      end
+    end
+  end
+
   task :restore_replica_db do
     on roles(:primary), in: :sequence, wait: 5 do
       within release_path do

@@ -50,6 +50,10 @@ module Dr
         text.to_s.gsub("|", "\\|").gsub(/\s*\n\s*/, " ")
       end
 
+      def promises_source
+        ReportCatalog::PROMISES[:source]
+      end
+
       # "1 check, seen on both servers" / "2 checks" / "1 step and 1 check"
       def attention_count
         n = m.attention.size

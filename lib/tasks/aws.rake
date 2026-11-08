@@ -525,7 +525,7 @@ namespace :aws do
           begin
             # pulumi prints "- 46 deleted" in its summary
             out = run_cmd("pulumi destroy --stack #{stack}-#{region} --yes --color=always", "../IRM-Infra").to_s
-            destroyed = out.gsub(/\e\[[0-9;]*m/, "")[/(\d+) deleted/, 1]&.to_i
+            destroyed = Dr::DrillTeardown.destroyed_count(out)
           rescue StandardError => e
             destroyed = :failed
             destroy_error = e

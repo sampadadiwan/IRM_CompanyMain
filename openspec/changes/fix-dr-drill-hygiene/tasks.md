@@ -27,6 +27,8 @@
 
 - [x] 3.7 (found when the batch drill was started, 2026-11-08) `aws:dr_drill` aborted with `uninitialized constant Dr`: `aws:setup_infra` and `aws:dr_drill` run WITHOUT the Rails environment, so the autoloader never resolves `lib/dr`, and every scenario so far had Rails booted. Fixed with `lib/tasks/dr_requires.rb` (explicit requires plus the ActiveSupport extensions used), required from `aws_utils.rb`; `Dr::PulumiLock` no longer uses `Time.zone` (nil outside Rails). Regression row X6 runs the drill's Dr code in a fresh process that loads only the Rakefile.
 
+- [x] 3.8 (2026-11-08 13:17 drill) The Teardown cell said "0 resources destroyed": the count matched "…subnet_1-0 deleted". `Dr::DrillTeardown.destroyed_count` now reads pulumi's summary line; feature row X7; the 13:17 row corrected to 46.
+
 ## 4. Regression and cleanup
 
 - [x] 4.1 Run all three DR features (`dr_backup_schedule`, `dr_search_indexes`, `dr_drill_hygiene`) together: green.

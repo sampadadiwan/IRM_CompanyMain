@@ -8,11 +8,11 @@ module Dr
   # Pure: takes the run's phases, parsed verify scorecard and evidence as plain values. Never
   # reads files, ENV or globals - AwsUtils#write_dr_report gathers those and passes them in.
   module ReportModel
-    Model = Data.define(:passed, :drill, :headline, :subline, :tiles, :plain_words, :attention,
+    Model = Data.define(:passed, :drill, :headline, :subline, :tiles, :plain_words, :objectives, :attention,
                         :steps, :hosts, :groups, :verified, :scope, :evidence, :glossary, :generated)
 
     # Section headings, in order: both renderers print exactly these (the feature compares them)
-    SECTIONS = ["In plain words", "Needs attention", "What the recovery did, step by step",
+    SECTIONS = ["In plain words", "Recovery point and time vs what we promise clients", "Needs attention", "What the recovery did, step by step",
                 "Verification: what was proven", "What the rebuild time does and does not include",
                 "Proof you can check yourself", "Words used in this report"].freeze
 
@@ -23,21 +23,31 @@ module Dr
 
     # phases: [[title, started, ended]]; scorecard: {host => [[icon, "label — detail"]]};
     # evidence: {claim => [evidence, how_to_check]}
+    # recovery_point: {full:, incr:, at:} - the backup chain the restore used (AwsUtils#parse_recovery_point)
     def build(phases:, scorecard:, evidence:, result:, stack:, region:, env_variant:, branch:,
-              started_at:, finished:, drill:, teardown:, executed_by:)
+              started_at:, finished:, drill:, teardown:, executed_by:, recovery_point: nil)
       passed = result.to_s.match?(/PASSED|COMPLETE/)
       checks = parse_checks(scorecard)
       steps = build_steps(phases, passed)
       data_age = data_age_hours(checks)
+      # RPO achieved: minutes between the recovery point and the start of the recovery (the
+      # "disaster"); without a known recovery point, the age of the newest restored record
+      rpo_minutes = if recovery_point&.dig(:at) then ((started_at - recovery_point[:at]) / 60).round
+                    elsif data_age then (data_age * 60).round
+                    end
+      objectives = objectives(passed, finished - started_at, rpo_minutes, recovery_point, steps)
 
       Model.new(
         passed: passed, drill: drill,
         headline: headline(passed, stack, region, finished - started_at, steps),
         subline: "#{drill ? 'DR drill' : 'Real recovery'} · #{stack} (#{env_variant}) → #{region} · " \
                  "#{started_at.utc.strftime('%-d %b %Y, %H:%M')}–#{finished.utc.strftime('%H:%M')} UTC · run by #{executed_by}",
-        tiles: tiles(finished - started_at, phases, checks, data_age),
-        plain_words: plain_words(passed, drill, teardown, stack, region, checks, data_age, steps),
-        attention: attention(passed, steps, checks, scorecard.keys, branch),
+        tiles: tiles(finished - started_at, phases, checks, rpo_minutes, recovery_point),
+        plain_words: plain_words(passed, drill, teardown, stack, region, checks, data_age, steps, rpo_minutes, recovery_point) +
+                   missed_promises(passed, objectives),
+        objectives: objectives,
+        # On a failed run the failed step already says why; missed promises are listed for passed runs
+        attention: by_severity((passed ? objective_attention(objectives) : []) + attention(passed, steps, checks, scorecard.keys, branch)),
         steps: steps, hosts: scorecard.keys,
         groups: groups(checks, scorecard.keys), verified: checks.any?,
         scope: SCOPE, evidence: evidence.map { |claim, (ev, how)| [claim, ev, how] },
@@ -79,16 +89,17 @@ module Dr
       stopped ? "Recovery stopped at step #{stopped[:n]} · #{stopped[:name]}" : "Recovery failed before its first step"
     end
 
-    def tiles(seconds, phases, checks, data_age)
+    def tiles(seconds, phases, checks, rpo_minutes, recovery_point)
       db = phases.find { |t, _, _| t.include?("Restore the database") }
       ok = checks.count { |c| c[:status] == :ok }
       failed = checks.count { |c| c[:status] == :fail }
-      attention = checks.size - ok
+      warned = checks.count { |c| c[:status] == :warn }
       [
-        [hms(seconds.round), "Rebuild time: command start to verified"],
+        [hms(seconds.round), "Recovery time (RTO): command start to verified · promised ~#{ReportCatalog::PROMISES[:rto_minutes]} min"],
         [db&.dig(2) ? hms((db[2] - db[1]).round) : "—", "Database restore (primary + replica together)"],
-        [checks.any? ? "#{ok} / #{checks.size}" : "—", "Checks passed · #{attention} need attention · #{failed} failed"],
-        [data_age ? "#{data_age} h" : "—", "Age of the newest restored record (actual data loss)"]
+        [checks.any? ? "#{ok} / #{checks.size}" : "—", "Checks passed · #{warned} warning#{'s' unless warned == 1} · #{failed} failed"],
+        [rpo_minutes ? "#{rpo_minutes} min" : "—",
+         "Recovery point (RPO): data lost#{" · restored to #{recovery_point[:at].strftime('%H:%M')} UTC" if recovery_point&.dig(:at)} · promised #{ReportCatalog::PROMISES[:rpo_minutes]} min"]
       ]
     end
 
@@ -100,7 +111,7 @@ module Dr
       ages.max
     end
 
-    def plain_words(passed, drill, teardown, stack, region, checks, data_age, steps)
+    def plain_words(passed, drill, teardown, stack, region, checks, data_age, steps, rpo_minutes, recovery_point)
       words = []
       if passed
         words << "The whole #{stack} environment was rebuilt from scratch in #{region}, the disaster-recovery region, from the same backups a real recovery would use."
@@ -113,7 +124,13 @@ module Dr
         words << "The rebuild of #{stack} in #{region} stopped at step #{stopped&.dig(:n)} (#{stopped&.dig(:name)})."
         words << (checks.any? ? "Some checks ran; the failed ones are listed below." : "It stopped before verification, so no checks ran.")
       end
-      words << "Data came back #{data_age} hours old. That is how much a real recovery at this moment would have lost." if data_age
+      # The search rebuild runs in the background and the run does not wait for it
+      words << "Search is being rebuilt in the background: the site works now, and search results fill in over the next few minutes." if checks.any? { |c| c[:name] == "Search index populated" && c[:detail].match?(/queued in the background|rebuilding in the background/) }
+      if recovery_point&.dig(:at) && rpo_minutes
+        words << "The database was recovered as it was at #{recovery_point[:at].strftime('%H:%M')} UTC (the newest backup), #{rpo_minutes} minutes before the recovery started. That is the data a real recovery at this moment would have lost."
+      elsif data_age
+        words << "Data came back #{data_age} hours old. That is how much a real recovery at this moment would have lost."
+      end
       words << if drill
                  ending = teardown && passed ? ", and the rebuilt servers were deleted afterwards." : ". The rebuilt servers are still running until they are torn down."
                  "This was a drill: the live site was not touched and nothing was switched over#{ending}"
@@ -121,6 +138,61 @@ module Dr
                  "This was a real recovery. Users reach it once DNS is switched to it (rake aws:dns_cutover)."
                end
       words
+    end
+
+    # The two recovery objectives against what CapHive promises clients (ReportCatalog::PROMISES)
+    def objectives(passed, seconds, rpo_minutes, recovery_point, steps)
+      promise = ReportCatalog::PROMISES
+      point = if recovery_point&.dig(:at)
+                "restored to #{recovery_point[:at].strftime('%-d %b %H:%M')} UTC (backup #{recovery_point[:incr] || recovery_point[:full]}): #{rpo_minutes} min of changes lost"
+              elsif rpo_minutes
+                "#{rpo_minutes} min (age of the newest restored record)"
+              end
+      rto = (seconds / 60.0).round(1)
+      [
+        { name: "Recovery point (RPO)", meaning: "How much data a real recovery would lose",
+          promised: promise[:rpo_text], achieved: point || "not reached: the run stopped before the restore",
+          status: if rpo_minutes.nil?
+                    :fail
+                  elsif rpo_minutes <= promise[:rpo_minutes]
+                    :ok
+                  else
+                    :warn
+                  end,
+          todo: "The recovery point is the newest backup: check the live box's backup cadence (the promise needs a backup at least every #{promise[:rpo_minutes]} min) and that the backup-freshness alert was green." },
+        { name: "Recovery time (RTO)", meaning: "How long until users are served again",
+          promised: promise[:rto_text],
+          achieved: passed ? "#{hms(seconds.round)} from the recovery command to a verified, serving stack" : "not reached: stopped at step #{steps.last&.dig(:n)} · #{steps.last&.dig(:name)}",
+          status: if !passed
+                    :fail
+                  elsif rto <= promise[:rto_minutes]
+                    :ok
+                  else
+                    :warn
+                  end,
+          todo: "See the slowest steps in the timeline below; the restore scales with database size." }
+      ]
+    end
+
+    # One plain sentence when a passed run missed a promise to clients
+    def missed_promises(passed, objectives)
+      missed = objectives.select { |o| o[:status] == :warn }.pluck(:name)
+      return [] if !passed || missed.empty?
+
+      ["It did not meet what we promise clients for the #{missed.join(' and the ')} — see below."]
+    end
+
+    # Failures before warnings, keeping each group's own order (the failed step stays first)
+    def by_severity(items)
+      items.each_with_index.sort_by { |item, i| [item[:status] == :fail ? 0 : 1, i] }.map(&:first)
+    end
+
+    # A missed promise, as a Needs attention item
+    def objective_attention(objectives)
+      objectives.reject { |o| o[:status] == :ok }.map do |o|
+        { status: o[:status], name: "#{o[:name]} #{o[:status] == :fail ? 'not reached' : 'not met'}", hosts: "—",
+          means: "Promised: #{o[:promised]}. This run: #{o[:achieved]}.", todo: o[:todo] }
+      end
     end
 
     # Failed step first, then failed checks, then warnings; each check once, naming its servers
@@ -177,7 +249,8 @@ module Dr
     def glossary(branch)
       [["Drill", "A rehearsal: the same steps as a real recovery, in a separate copy, with the live site untouched."],
        ["Rebuild time", "From starting the recovery command to every check passing."],
-       ["Data loss (RPO)", "How old the newest restored data is: what would be missing after a real recovery."],
+       ["Recovery point (RPO)", "The moment the data was recovered to (the newest backup); the minutes between it and the start of the recovery are the data a real recovery would lose."],
+       ["Recovery time (RTO)", "How long until users are served again. The figure here is the rebuild, from the recovery command to a verified stack; noticing the outage, deciding to recover and the DNS switch come on top."],
        ["Armed", "A database allowed to write backups. Exactly one may, and in a drill none."],
        ["Full transcript", "docs/operations/dr/runs/#{branch}.log: every command and its output."]]
     end

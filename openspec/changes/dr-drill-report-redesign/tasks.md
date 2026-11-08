@@ -17,6 +17,8 @@
 - [x] 2.3 UI review: screenshot the rendered HTML in dark-OS mode beside the mock; fix differences. N+1 check: not applicable — no queries.
 - [x] 2.4 Add H4, H5, X3 to `features/misc/dr_drill_report.feature` (HTML light, no external URLs; MD same section order; escaping) and run the whole feature green, together with the three other DR features.
 
+- [x] 2.5 (2026-11-08, user: "the report does not talk about RPO, RTO") Recovery point read from the restore's backup chain (`AwsUtils#parse_recovery_point`); `Dr::ReportCatalog::PROMISES` (security questionnaire H3/H4: RPO 30 min, RTO ~10 min); new section "Recovery point and time vs what we promise clients"; tiles labelled RTO / RPO; missed promises in Needs attention and plain words. Feature rows H6, E7, E8, X5.
+
 ## 3. Docs and cleanup
 
 - [x] 3.1 `dr_guide.md` §7 and `dr_drills.md` header: describe the report's sections; `gap_review_2026_11.md` G22 fixed in code. Verify: mermaid lint passes.

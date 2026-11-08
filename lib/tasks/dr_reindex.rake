@@ -1,64 +1,52 @@
 # frozen_string_literal: true
 
 # Rebuilds the Elasticsearch indexes after a disaster recovery (openspec
-# fix-dr-search-index-after-restore). An index that does not come back complete is a WARNING,
-# not a failure (decision 2026-11-08): the run continues and the report lists it.
+# fix-dr-search-index-after-restore). Elasticsearch is not backed up, so a recovered environment
+# starts with empty indexes and every search box returns nothing. An incomplete index is a
+# WARNING, never a failure (decision 2026-11-08): the data is complete, only some search results
+# are missing until it is re-run.
 #
-# Why it exists: Elasticsearch is not backed up, so a recovered environment starts with empty
-# indexes and every search box returns nothing. `rake chewy:reset` cannot fix that here - it finds
-# indexes via Chewy's indices_path (app/chewy), and this app keeps them in app/packs/**/models, so
-# it resets none - and it ignores import errors anyway.
+# Two ways in, sharing Dr::SearchIndexes.rebuild!:
+# - dr:reindex_search_later - what aws:setup_infra runs: queues SearchReindexJob and returns at
+#   once ("enqueue and move on", decision 2026-11-08). The job runs when Sidekiq starts.
+# - dr:reindex_search - blocking, for an operator re-running one index (ONLY=FolderIndex).
 #
-# Runs on an app server via `cap <stage> recovery:reindex_search`. aws:setup_infra calls it as its
-# own phase, AFTER the database restore and BEFORE traffic is switched back on - nothing writes
-# while it runs, so each index's count must match its MySQL scope exactly.
+# Why not `rake chewy:reset`: it finds indexes via Chewy's indices_path (app/chewy), and this app
+# keeps them in app/packs/**/models, so it resets none - and it ignores import errors anyway.
 namespace :dr do
-  desc "DR: rebuild every search index the live app maintains; warn (never fail) on any import error or count mismatch"
-  task reindex_search: :environment do
-    indexes = Dr::SearchIndexes.indexes
-    # ONLY=FolderIndex,FundIndex re-runs just the named indexes (e.g. the one that failed)
-    only = ENV["ONLY"].to_s.split(",").map(&:strip).reject(&:empty?)
-    if only.any?
-      unknown = only - indexes.map(&:name)
-      abort "❌ Not a DR search index: #{unknown.join(', ')} (known: #{indexes.map(&:name).join(', ')})" if unknown.any?
-      indexes = indexes.select { |index| only.include?(index.name) }
+  desc "DR: queue the search rebuild as a background job (SearchReindexJob) and return at once"
+  task reindex_search_later: :environment do
+    total = Dr::SearchIndexes.enqueue_rebuild!(ENV["ONLY"].to_s.split(","))
+    puts "🔎 Search rebuild queued in the background: #{total} indexes (SearchReindexJob, chewy queue). " \
+         "It runs when Sidekiq starts; dr:verify and the DR report show its progress."
+    Dr::SearchIndexes.excluded.each do |index|
+      puts "   ⏭  #{index.name} skipped — #{Dr::SearchIndexes::EXCLUDED[index.name]}"
     end
-    puts "🔎 Rebuilding #{indexes.size} search indexes from MySQL (traffic is off; counts must match exactly)"
+  rescue ArgumentError => e
+    abort "❌ #{e.message}"
+  end
+
+  desc "DR: rebuild search indexes now, blocking (ONLY=FolderIndex,... for some); warns, never fails"
+  task reindex_search: :environment do
+    indexes = Dr::SearchIndexes.select(ENV["ONLY"].to_s.split(","))
+    puts "🔎 Rebuilding #{indexes.size} search indexes from MySQL"
     Dr::SearchIndexes.excluded.each do |index|
       puts "   ⏭  #{index.name} skipped — #{Dr::SearchIndexes::EXCLUDED[index.name]}"
     end
 
-    started_all = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-    rows = indexes.map do |index|
-      started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      begin
-        # reset! builds a fresh suffixed index, imports into it, then swaps the alias - readers never
-        # see a half-built index. It returns false (does not raise) when documents fail to import.
-        imported = index.reset!((Time.now.to_f * 1000).round, apply_journal: false)
-        grade = Dr::SearchIndexes.grade(index_name: index.name, es: Dr::SearchIndexes.es_count(index),
-                                        db: Dr::SearchIndexes.db_count(index), imported: imported, exact: true)
-      rescue StandardError => e
-        # Keep going: one run should show every index that needs fixing, not just the first
-        grade = Dr::SearchIndexes::Grade.new(:fail, "#{index.name}: #{e.class}: #{e.message.lines.first&.strip}")
-      end
-      seconds = (Process.clock_gettime(Process::CLOCK_MONOTONIC) - started).round(1)
+    started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    # Exact counts only when the site is in maintenance (MAINTENANCE=true); otherwise users may be
+    # writing while it runs, so allow the small verification tolerance
+    rows = Dr::SearchIndexes.rebuild!(indexes, exact: ENV["MAINTENANCE"] == "true", on_progress: lambda { |_, (_, grade, seconds)|
       puts "   #{grade.status == :ok ? '✅' : '⚠️ '} #{grade.detail} (#{seconds}s)"
-      [index.name, grade, seconds]
-    end
+    })
 
-    # Summary: the slowest indexes first, so a long DR phase is explained at a glance
-    total = (Process.clock_gettime(Process::CLOCK_MONOTONIC) - started_all).round(1)
-    failed = rows.reject { |_, grade, _| grade.status == :ok }
+    # Summary: the slowest indexes first, so a long run is explained at a glance
+    total = (Process.clock_gettime(Process::CLOCK_MONOTONIC) - started).round(1)
     slowest = rows.max_by(3) { |_, _, seconds| seconds }.map { |name, _, seconds| "#{name} #{seconds}s" }
-    puts "\n#{failed.empty? ? '🟢' : '🟡'} Search reindex — #{rows.size - failed.size}/#{rows.size} indexes complete in #{total}s " \
-         "(slowest: #{slowest.join(', ')})"
-    next if failed.empty?
-
-    # Warn, don't fail (decision 2026-11-08): the recovery continues; dr:verify's
-    # "Search index populated" re-checks every index and the report lists the
-    # incomplete ones under Needs attention, with the re-run command.
-    failed.each { |_, grade, _| puts "   ⚠️  #{grade.detail}" }
-    puts "⚠️  #{failed.size} search index(es) incomplete — the recovery continues; search for them is incomplete until " \
-         "re-run: ONLY=<Index> bundle exec cap <stage> recovery:reindex_search"
+    verdict = Dr::SearchIndexes.verdict(rows.map { |_, grade, _| grade })
+    puts "\n#{verdict.status == :ok ? '🟢' : '🟡'} Search reindex — #{verdict.detail} in #{total}s (slowest: #{slowest.join(', ')})"
+  rescue ArgumentError => e
+    abort "❌ #{e.message}"
   end
 end
