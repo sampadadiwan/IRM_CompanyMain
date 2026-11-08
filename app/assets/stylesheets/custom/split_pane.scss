@@ -27,10 +27,17 @@
 // The folder tree scrolls inside its own card (at every width), so a long tree never pushes the
 // document list out of view: the card body is capped at the viewport height less the page chrome above
 // it (top bar, breadcrumb card, the Folders card header), but never below 20rem.
+// No CSS max()/min() here: production runs the compiled CSS through sassc again (the compressor), and
+// libsass reads an unquoted max(20rem, calc(...)) as its own function and fails the asset build.
+// So the 20rem floor is a media query instead: 100vh - 14rem drops under 20rem below a 34rem-tall viewport.
 .split-pane > .split-pane-left .card-body {
-  max-height: unquote("max(20rem, calc(100vh - 14rem))");   // unquote: libsass would read max() as its own function
+  max-height: calc(100vh - 14rem);
   overflow-y: auto;
   overscroll-behavior: contain;   // reaching the end of the tree doesn't start scrolling the page
+
+  @media (max-height: 34rem) {
+    max-height: 20rem;
+  }
 }
 
 // The divider sits in the gutter between the two cards. 12px wide with -6px margins, so it adds no
