@@ -183,6 +183,12 @@ class DocumentPolicy < ApplicationPolicy
     update?
   end
 
+  # The list row's Actions menu (DocumentsController#row_actions): opening it needs only show?;
+  # the items in it are each gated on their own rule (update?, destroy?)
+  def row_actions?
+    show?
+  end
+
   def show_email_list?
     update?
   end

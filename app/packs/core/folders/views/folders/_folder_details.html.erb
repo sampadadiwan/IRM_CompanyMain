@@ -27,7 +27,7 @@
           <div id="folders" class="associated_entity">
             <% params[:folder_id] = folder.id %>
             <%= render "documents/tree_view", documents: folder.documents.page().per(100),
-                        entity: folder.entity, show_steps: false, no_folders: true %>
+                        entity: folder.entity, no_folders: true %>
           </div>
         </div>
 

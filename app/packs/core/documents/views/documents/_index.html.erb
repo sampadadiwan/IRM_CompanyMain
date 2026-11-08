@@ -1,6 +1,9 @@
 <%
   @entity ||= nil
   # Tree-wide lists (search / LP latest) set their own title and show no single folder in it
+  # A caller's own label for this list (e.g. "Interest Documents" and "Transaction Documents" on one
+  # page) - shown before the folder path so two lists on a page stay told apart
+  custom_title = local_assigns[:title]
   title ||= @docs_title || "Documents"
 
   # sometimes we render the partial directly instead of going through the controller
@@ -27,12 +30,25 @@
     <%
         # Get the folder
         @folder = Folder.find(folder_id)
-        # link for users or just path for investors
-        link = (@folder.entity_id == current_user.entity_id) ? link_to(@folder.name, @folder) : @folder.name
-      %>
-    <h4 class="mb-0 text-gray-800 d-none d-sm-block">
-      <%= title %>: <%= link %>
-    </h4>
+        own_folder = @folder.entity_id == current_user.entity_id
+    %>
+    <%# The folder's path is the heading - no separate "Documents: <folder>" title above it.
+        Firm's own folder: every part opens that folder's page (where Access Rights lives); Folder#ancestors
+        is one query (ancestry) and the firm's "/" folder shows the firm's name. An investor gets only the
+        folder's name - the fund's folders above theirs are not theirs to see. %>
+    <h5 class="mb-0 d-none d-sm-block" id="docs_folder_path">
+      <i class="ti ti-folders text-muted"></i>
+      <% if custom_title.present? %><%= custom_title %>:<% end %>
+      <% if own_folder %>
+        <%# ancestors is not returned in path order - put it in ancestor_ids (root first) order %>
+        <% @folder.ancestors.index_by(&:id).values_at(*@folder.ancestor_ids).compact.each do |part| %>
+          <%= link_to (part.root? && part.name == "/" ? @folder.entity.name : part.name), part %> <span class="text-muted">&rsaquo;</span>
+        <% end %>
+        <%= link_to (@folder.root? && @folder.name == "/" ? @folder.entity.name : @folder.name), @folder %>
+      <% else %>
+        <%= @folder.name %>
+      <% end %>
+    </h5>
   <% else %>
     <div class="d-none d-sm-block">
       <h4 class="mb-0 text-gray-800">
@@ -64,13 +80,15 @@
             <% if folder_id.present? %>
               <% if policy(document).create? %>
                 <%= link_to new_document_path(document: doc_attributes, "document[folder_id]": folder_id, format: :html, turbo: false),
-                            class: "dropdown-item d-flex align-items-center" do %>
+                            class: "dropdown-item d-flex align-items-center",
+                            data: { bs_title: "Upload one document into #{@folder.name}", bs_placement: "left" } do %>
                   <i class="ti ti-file-plus"></i> New Document
                 <% end %>
               <% end %>
               <% if policy(@folder).create? %>
                 <%= link_to new_folder_path("folder[entity_id]": current_user.entity_id, "folder[parent_id]": @folder.id),
-                            class: "dropdown-item d-flex align-items-center" do %>
+                            class: "dropdown-item d-flex align-items-center",
+                            data: { bs_title: "Create a sub-folder inside #{@folder.name}", bs_placement: "left" } do %>
                   <i class="ti ti-folder-plus"></i> New Folder
                 <% end %>
               <% end %>
@@ -80,7 +98,8 @@
                               "import_upload[owner_type]": "Folder",
                               "import_upload[import_type]": "Documents",
                               "sample_upload": "DOCS_SAMPLE"),
-                            class: "dropdown-item d-flex align-items-center d-none d-sm-block" do %>
+                            class: "dropdown-item d-flex align-items-center d-none d-sm-block",
+                            data: { bs_title: "Upload many documents at once using the sample sheet", bs_placement: "left" } do %>
                   <i class="ti ti-upload"></i> Bulk Upload
                 <% end %>
               <% end %>
@@ -112,7 +131,8 @@
                 <%= render "documents/bulk_actions", folder_id: folder_id %>
               <% else %>
                 <%= link_to documents_path(folder_id: folder_id, filter: true, no_folders: true),
-                            class: "dropdown-item d-flex align-items-center" do %>
+                            class: "dropdown-item d-flex align-items-center",
+                            data: { bs_title: "Narrow this folder's documents by name, tag, date and more", bs_placement: "left" } do %>
                   <i class="ti ti-filter"></i> Filter Documents
                 <% end %>
               <% end %>
@@ -129,7 +149,8 @@
                   <%= button_to download_folder_path(id: folder_id, back_to: request.original_url),
                                 method: :get,
                                 class: "dropdown-item d-flex align-items-center d-none d-sm-block",
-                                data: { action: "click->confirm#popup", msg: "This will create a zipfile of the documents and email you a link to download the zipfile. This will take a few minutes, please be patient. Proceed?", method: :get } do %>
+                                data: { action: "click->confirm#popup", msg: "This will create a zipfile of the documents and email you a link to download the zipfile. This will take a few minutes, please be patient. Proceed?", method: :get,
+                                        bs_title: "Emails you a link to a ZIP of this folder's documents", bs_placement: "left" } do %>
                     <i class="ti ti-download"></i> <%= t_common(:download) %> Folder
                   <% end %>
                 <% end %>
@@ -214,12 +235,21 @@
             <th class="text-col">
               Tags
             </th>
+            <th class="text-col">
+              Status
+              <i class="ti ti-info-circle" tabindex="0" aria-label="About status"
+                 data-bs-title="Approval of documents generated from a template, and where any eSignature stands"></i>
+            </th>
           <% end %>
           <th class="date-col">
             Date
+            <%# _document shows as_of when set, else the upload time %>
+            <i class="ti ti-info-circle" tabindex="0" aria-label="About this date"
+               data-bs-title="The document's as-of date, or the date it was uploaded if none is set"></i>
           </th>
           <% unless lp_view %>
             <th class="action-col">
+              Actions
             </th>
           <% end %>
         </tr>
@@ -239,6 +269,14 @@
       </p>
     <% elsif params[:latest_first].present? %>
       <p class="text-muted text-center mb-0" id="documents_empty">No documents have been shared with you yet.</p>
+    <% elsif lp_view %>
+      <p class="text-muted text-center mb-0" id="documents_empty">No documents have been shared with you here yet.</p>
+    <% elsif show_action_buttons %>
+      <%# Fund-side user: point at the menu that adds documents %>
+      <p class="text-muted text-center mb-0" id="documents_empty">
+        <i class="ti ti-info-circle"></i>
+        No documents here yet. Use <strong>Actions &rarr; New Document</strong> to add one<%= folder_id.present? ? ", or Bulk Upload to add many" : "" %>.
+      </p>
     <% end %>
   <% end %>
 <% end %>

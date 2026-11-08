@@ -1,254 +1,340 @@
 <%= render FormCard.new(title: "Document : #{document.name.presence || 'New'}") do %>
     <%= form_with(model: document, validate: true, format: :html, html: { id: "document_form" }) do |form| %>
+      <%# Standard-size error summary (was an <h2>) %>
       <% if document.errors.any? %>
-        <div class="alert alert-danger">
-          <h2><%= pluralize(document.errors.count, "error") %> prohibited this document from being saved:</h2>
-
-          <ul>
-            <% document.errors.each do |error| %>
-              <li><%= error.full_message %></li>
-            <% end %>
-          </ul>
+        <div class="alert alert-danger d-flex align-items-start gap-2" role="alert">
+          <i class="ti ti-alert-circle fs-5 flex-shrink-0"></i>
+          <div>
+            <strong><%= pluralize(document.errors.count, "error") %> stopped this document being saved:</strong>
+            <ul class="mb-0">
+              <% document.errors.each do |error| %>
+                <li><%= error.full_message %></li>
+              <% end %>
+            </ul>
+          </div>
         </div>
       <% end %>
 
-      <div  data-controller="docform">
-        <div class="form-group">
-          <%= form.label :name %>
-          <% if document.name == nil && document.owner != nil && document.owner.respond_to?(:document_list) && document.owner.document_list.present? %>
-            <%= form.select :name, document.owner.document_list.map{|d| d.strip} ,{}, class: "form-control", id: "doc_name_select", "data-action": "change->docform#checkOtherName" %>
-            <%= form.text_field :name, class: "form-control", disabled: true, id: "other_name"  %>
-          <% else %>
-            <%= form.text_field :name, class: "form-control"  %>
-          <% end %>
+      <%
+        # Uploading for another firm's record (an LP's own upload) or a KYC: the investor settings
+        # and template options don't apply, so their sections are not shown (hidden defaults instead)
+        restricted = (document.owner && document.owner.entity_id != current_user.entity_id) || document.owner_type == "InvestorKyc"
+        # Section numbers run on, whichever sections this document gets
+        section = 0
+      %>
 
-          <%= form.text_field :owner_id, class: "form-control", hidden:true  %>
-          <%= form.text_field :owner_type, class: "form-control", hidden:true  %>
-          <%= form.text_field :entity_id, class: "form-control", hidden:true  %>
-        </div>
+      <div data-controller="docform">
 
-        <% if document.owner == nil ||  document.owner_type == "Deal" %>
+        <%# 1. What the document is and where it goes %>
+        <div class="card mb-3">
+          <div class="card-header"><%= section += 1 %>. Document</div>
+          <div class="card-body">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <%= form.label :name, class: "form-label" %>
+                <% if document.name == nil && document.owner != nil && document.owner.respond_to?(:document_list) && document.owner.document_list.present? %>
+                  <%= form.select :name, document.owner.document_list.map{|d| d.strip} ,{}, class: "form-control", id: "doc_name_select", "data-action": "change->docform#checkOtherName" %>
+                  <%= form.text_field :name, class: "form-control", disabled: true, id: "other_name"  %>
+                <% else %>
+                  <%= form.text_field :name, class: "form-control"  %>
+                <% end %>
 
-          <%
-            root = document.owner ? document.owner.data_room_folder : document.entity.root_folder
-            folders = ([[root.full_path, root.id]]  + root.descendants.map{|f| [f.full_path, f.id]})
-          %>
-          <div class="form-group">
-            <%= form.label :folder %>
-            <%= form.select :folder_id, folders,{}, class: "form-control select2"  %>
-            <small class="text-muted"><%= link_to "Create New Folder", new_folder_path("folder[entity_id]": current_user.entity_id) %></small>
+                <%= form.text_field :owner_id, class: "form-control", hidden:true  %>
+                <%= form.text_field :owner_type, class: "form-control", hidden:true  %>
+                <%= form.text_field :entity_id, class: "form-control", hidden:true  %>
+              </div>
+
+              <% if document.owner == nil ||  document.owner_type == "Deal" %>
+                <%
+                  root = document.owner ? document.owner.data_room_folder : document.entity.root_folder
+                  folders = ([[root.full_path, root.id]]  + root.descendants.map{|f| [f.full_path, f.id]})
+                %>
+                <div class="col-md-6">
+                  <%= form.label :folder, class: "form-label" %>
+                  <%= form.select :folder_id, folders,{}, class: "form-control select2"  %>
+                  <%# New folder in a popup, so what is typed here is not lost (it used to leave the form) %>
+                  <% if policy(Folder.new(entity_id: current_user.entity_id, parent: root)).create? %>
+                    <button type="button" class="btn btn-sm btn-outline-primary mt-2" id="new_folder_btn"
+                            data-bs-toggle="modal" data-bs-target="#newFolderModal">
+                      <i class="ti ti-folder-plus"></i> New folder
+                    </button>
+                    <div class="form-text">Creates it inside the folder picked above and selects it.</div>
+                  <% end %>
+                </div>
+
+              <% elsif document.owner && document.owner.respond_to?(:document_tags) && document.owner.document_tags.present?  %>
+                <div class="col-md-6">
+                  <%= form.label :owner_tag, "Document For", class: "form-label" %>
+                  <%= form.select :owner_tag, document.owner.document_tags , {include_blank: true}, class: "form-control"  %>
+                </div>
+              <% end %>
+
+              <div class="col-md-6" data-controller="tag-suggest">
+                <%= form.label :tags, class: "form-label" %>
+                <%= form.text_field :tag_list, class: "form-control", data: { tag_suggest_target: "input", action: "input->tag-suggest#sync" } %>
+                <div class="form-text">Comma separated list of tags to classify the document; used in search.</div>
+                <%# Tags already used in this folder and not on this document yet: click to add (the box stays a
+                    plain text field). tag-suggest hides a chip once its tag is in the box. %>
+                <% suggestions = document_tag_suggestions(document) %>
+                <% if suggestions.any? %>
+                  <div class="d-flex flex-wrap align-items-center gap-1 mt-1" id="tag_suggestions" data-tag-suggest-target="list">
+                    <small class="text-muted me-1">Used in this folder:</small>
+                    <% suggestions.each do |tag| %>
+                      <button type="button" class="badge bg-primary-subtle text-primary border-0"
+                              data-tag="<%= tag %>" data-tag-suggest-target="chip" data-action="tag-suggest#add"><i class="ti ti-plus"></i> <%= tag %></button>
+                    <% end %>
+                  </div>
+                <% end %>
+              </div>
+
+              <div class="col-md-6">
+                <%= form.label :as_of, "As Of Date", class: "form-label" %>
+                <%= form.date_field :as_of, class: "form-control" %>
+                <div class="form-text">Optional date the document applies to; shown in the document list instead of upload date</div>
+              </div>
+
+              <div class="col-12">
+                <% doc_file_required = document.persisted? ? false : true %>
+                <% label = document.file.blank? ? "Upload File" : link_to("Uploaded File: #{document.uploaded_file_name}", document.file.url(response_content_disposition: document.inline_disposition), target: "_blank") %>
+                <%= render "layouts/single_upload", form: form, field_label: label, required: doc_file_required,
+                                          for_model: "document", field_name: "file",
+                                          model: document %>
+              </div>
+            </div>
           </div>
-
-        <% elsif document.owner && document.owner.respond_to?(:document_tags) && document.owner.document_tags.present?  %>
-          <div class="form-group">
-            <%= form.label :owner_tag, "Document For" %>
-            <%= form.select :owner_tag, document.owner.document_tags , {include_blank: true}, class: "form-control"  %>
-          </div>
-        <% end %>
-
-        <div class="form-group">
-          <%= form.label :tags %>
-          <%= form.text_field :tag_list, class: "form-control"  %>
-          <small class="text-muted">Comma separated list of tags to classify the document</small>
         </div>
 
-        <div class="form-group">
-          <%= form.label :as_of, "As Of Date" %>
-          <%= form.date_field :as_of, class: "form-control" %>
-          <small class="text-muted">Optional date the document applies to; shown in the document list instead of upload date</small>
-        </div>
-
-        <% doc_file_required = document.persisted? ? false : true %>
-        <% label = document.file.blank? ? "Upload File" : link_to("Uploaded File: #{document.uploaded_file_name}", document.file.url(response_content_disposition: document.inline_disposition), target: "_blank") %>
-        <%= render "layouts/single_upload", form: form, field_label: label, required: doc_file_required,
-                                  for_model: "document", field_name: "file",
-                                  model: document %>
-
-
-        <% if (document.owner && document.owner.entity_id != current_user.entity_id) || document.owner_type == "InvestorKyc" %>
+        <% if restricted %>
           <%= form.text_field :orignal, class: "form-control", hidden:true, value: true  %>
           <%= form.text_field :send_email, class: "form-control", hidden:true, value: false  %>
 
         <% else %>
-          <div class="form-group nonpdf">
-            <%= form.label :orignal, "Allow Original Format Download" %>
-            <%= form.check_box :orignal, class: "form-check-input",
-                      data: {action: "click->docform#onOrignalChange"} %>
-            <small class="text-muted">Allow original format to be downloaded (No conversion or watermarking)</small>
-          </div>
+          <%# 2. Investor-facing settings, as switches with one help line each.
+              nonpdf / pdfopts: docform hides original+embed when download/print is on and vice versa %>
+          <div class="card mb-3">
+            <div class="card-header"><%= section += 1 %>. What users can do</div>
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col-md-6 nonpdf">
+                  <%= render "documents/form_toggle", form:, field: :orignal, label: "Allow Original Format Download",
+                             help: "Allow original format to be downloaded (No conversion or watermarking)", data: { action: "click->docform#onOrignalChange" } %>
+                </div>
 
+                <div class="col-md-6 nonpdf">
+                  <%= render "documents/form_toggle", form:, field: :embed, label: "Embed Document",
+                             help: "Allow embedded document viewer (Document will be sent externally to microsoft's embedded viewer)", data: { action: "click->docform#onOrignalChange" } %>
+                </div>
 
-          <div class="form-group nonpdf">
-            <%= form.label :orignal, "Embed Document" %>
-            <%= form.check_box :embed, class: "form-check-input",
-                      data: {action: "click->docform#onOrignalChange"} %>
-            <small class="text-muted">Allow embedded document viewer (Document will be sent externally to microsoft's embedded viewer)</small>
-          </div>
+                <div class="col-md-6 pdfopts">
+                  <%= render "documents/form_toggle", form:, field: :download, label: "Allow Download",
+                             help: "Enable users to download this document", data: { action: "click->docform#onPdfOptChange" } %>
+                </div>
 
-          <div class="form-group pdfopts">
-            <%= form.label :download, "Allow Download" %>
-            <%= form.check_box :download, class: "form-check-input",
-                    data: {action: "click->docform#onPdfOptChange"}  %>
-            <small class="text-muted">Enable users to download this document</small>
-          </div>
+                <div class="col-md-6 pdfopts">
+                  <%= render "documents/form_toggle", form:, field: :printing, label: "Allow Printing",
+                             help: "Enable users to print this document", data: { action: "click->docform#onPdfOptChange" } %>
+                </div>
 
-          <div class="form-group pdfopts">
-            <%= form.label :printing, "Allow Printing" %>
-            <%= form.check_box :printing, class: "form-check-input",
-                    data: {action: "click->docform#onPdfOptChange"} %>
-            <small class="text-muted">Enable users to print this document</small>
-          </div>
+                <div class="col-md-6">
+                  <%= render "documents/form_toggle", form:, field: :send_email, label: "Send email",
+                             help: "Send email notification to users who can view this document" %>
+                </div>
 
-          <%# SECURITY (finding H7): publishing a document is a company-admin-only action (see
-              DocumentPolicy#set_public_visibility?). Hide the toggle from other editors; the server
-              enforces it regardless. %>
-          <% if current_user&.has_cached_role?(:company_admin) %>
-            <div class="form-group">
-              <%= form.label :public_visibility, "Allow Public Visibility" %>
-              <%= form.check_box :public_visibility, class: "form-check-input" %>
-              <small class="text-muted">Enable any user to view this document</small>
+                <%# SECURITY (finding H7): publishing a document is a company-admin-only action (see
+                    DocumentPolicy#set_public_visibility?). Hide the toggle from other editors; the server
+                    enforces it regardless. %>
+                <% if current_user&.has_cached_role?(:company_admin) %>
+                  <div class="col-md-6">
+                    <%= render "documents/form_toggle", form:, field: :public_visibility, label: "Allow Public Visibility",
+                               help: "Anyone with the link can view this document - no access rights needed" %>
+                  </div>
+                <% end %>
+              </div>
             </div>
-          <% end %>
-
-          <div class="form-group">
-            <%= form.label :send_email %>
-            <%= form.check_box :send_email, class: "form-check-input" %>
-            <small class="text-muted">Send email notification to users who can view this document</small>
           </div>
 
-          <div class="form-group">
-            <%= form.label :template %>
-            <%= form.check_box :template, class: "form-check-input", "data-action":  "click->docform#showSignature" %>
-            <small class="text-muted">Mark this document as a template for document generation.</small>
-          </div>
+          <%# 3. Template: "Docs to append" and the eSignatures section only show once this is on (docform#showSignature) %>
+          <div class="card mb-3">
+            <div class="card-header"><%= section += 1 %>. Template</div>
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <%= render "documents/form_toggle", form:, field: :template, label: "Template",
+                             help: "Mark this document as a template for document generation.", data: { action: "click->docform#showSignature" } %>
+                </div>
 
+                <div class="col-md-6" id="template_docs_to_append_div">
+                  <%= form.label :template_docs_to_append, "Template: Docs to append", class: "form-label" %>
+                  <%= form.text_field :template_docs_to_append, class: "form-control"  %>
+                  <div class="form-text">Comma separated list of documents to append to generate document</div>
+                </div>
 
-          <div class="form-group" id="template_docs_to_append_div">
-            <%= form.label :template_docs_to_append, "Template: Docs to append" %>
-            <%= form.text_field :template_docs_to_append, class: "form-control"  %>
-            <small class="text-muted">Comma separated list of documents to append to generate document</small>
-          </div>
-
-          <%# Internal-only knob, not for general consumption: only ever shown to someone
-              debugging a specific template's PDF rendering, on a document that's actually
-              a template. Everyone else gets the (correct) default of "libreoffice" with no
-              way to change it from this form. %>
-          <% if document.template? && params[:debug].present? %>
-            <%# The gate above only sees params[:debug] on this GET request -- form_with's
-                default action URL (document_path(document)) carries no query string, so
-                without this hidden field the value picked here is silently dropped by
-                DocumentsController#apply_pdf_conversion_engine!'s matching server-side gate
-                on submit. Rails' params merges query-string and body params alike, so this
-                round-trips debug=1 through the POST/PATCH body instead. %>
-            <%= hidden_field_tag :debug, params[:debug] %>
-            <div class="form-group" id="pdf_conversion_engine_div">
-              <%= form.label :pdf_conversion_engine, "Template: PDF conversion engine" %>
-              <%= form.select :pdf_conversion_engine,
-                      [["LibreOffice (default)", "libreoffice"], ["Microsoft 365", "m365"], ["Google Docs", "google_docs"]],
-                      {}, class: "form-control" %>
-              <small class="text-muted">Which engine renders documents generated from this template to PDF. Leave as LibreOffice unless this template has a known rendering defect.</small>
+                <%# Internal-only knob, not for general consumption: only ever shown to someone
+                    debugging a specific template's PDF rendering, on a document that's actually
+                    a template. Everyone else gets the (correct) default of "libreoffice" with no
+                    way to change it from this form. %>
+                <% if document.template? && params[:debug].present? %>
+                  <%# The gate above only sees params[:debug] on this GET request -- form_with's
+                      default action URL (document_path(document)) carries no query string, so
+                      without this hidden field the value picked here is silently dropped by
+                      DocumentsController#apply_pdf_conversion_engine!'s matching server-side gate
+                      on submit. Rails' params merges query-string and body params alike, so this
+                      round-trips debug=1 through the POST/PATCH body instead. %>
+                  <%= hidden_field_tag :debug, params[:debug] %>
+                  <div class="col-md-6" id="pdf_conversion_engine_div">
+                    <%= form.label :pdf_conversion_engine, "Template: PDF conversion engine", class: "form-label" %>
+                    <%= form.select :pdf_conversion_engine,
+                            [["LibreOffice (default)", "libreoffice"], ["Microsoft 365", "m365"], ["Google Docs", "google_docs"]],
+                            {}, class: "form-control" %>
+                    <div class="form-text">Which engine renders documents generated from this template to PDF. Leave as LibreOffice unless this template has a known rendering defect.</div>
+                  </div>
+                <% end %>
+              </div>
             </div>
-          <% end %>
-
-
+          </div>
         <% end %>
 
-          <%= custom_form_fields(document, form) %>
+        <%# 4. Free text + the firm's own fields %>
+        <div class="card mb-3">
+          <div class="card-header"><%= section += 1 %>. Description &amp; custom fields</div>
+          <div class="card-body">
+            <%= custom_form_fields(document, form) %>
 
-          <div class="form-group">
-            <%= form.label :description %>
-            <%= form.rich_text_area :text, class: "form-control trix-content"  %>
+            <div class="form-group">
+              <%= form.label :description %>
+              <%= form.rich_text_area :text, class: "form-control trix-content"  %>
+            </div>
           </div>
+        </div>
 
-          <div id="sign_display_on_page">
-            <hr>
-
-            <h5> eSignatures </h5>
-
-            <div class='nested-fields row'>
-              <div class="form-group col">
-                <%= form.label :esign_display_on_page %>
-                <%= form.select :display_on_page, ["First", "Last", "All"], {}, class: "form-control" %>
-              </div>
-
-              <div class="form-group col">
-                <%= form.label :force_esign_order, "eSign Order" %>
-                <%= form.check_box :force_esign_order, class: "form-check-input" %>
-            <small class="text-muted">Signers will be sent the Document in the order they are added</small>
-              </div>
-
-              <% if document.entity.entity_setting.esign_supports?(:expiry_settings) %>
+        <%# 5. eSignatures - shown only while "Template" is on (docform#showSignature toggles #esign_section) %>
+        <div class="card mb-3" id="esign_section">
+          <div class="card-header"><%= section += 1 %>. eSignatures</div>
+          <div class="card-body">
+            <div id="sign_display_on_page">
+              <div class='nested-fields row'>
                 <div class="form-group col">
-                  <%= form.label :esign_expiration_days, "eSign Expires In (days)" %>
-                  <%= form.number_field :esign_expiration_days, in: 1..ZohoEsignHelper::MAX_EXPIRATION_DAYS, class: "form-control", placeholder: ZohoEsignHelper::DEFAULT_EXPIRATION_DAYS %>
-                  <small class="text-muted">Defaults to <%= ZohoEsignHelper::DEFAULT_EXPIRATION_DAYS %> days if left blank. Max <%= ZohoEsignHelper::MAX_EXPIRATION_DAYS %> days.</small>
+                  <%= form.label :esign_display_on_page %>
+                  <%= form.select :display_on_page, ["First", "Last", "All"], {}, class: "form-control" %>
                 </div>
 
                 <div class="form-group col">
-                  <%= form.label :esign_email_reminders, "Send Automatic Reminders" %>
-                  <%= form.check_box :esign_email_reminders, class: "form-check-input", "data-action": "click->docform#toggleReminderPeriod" %>
-                  <small class="text-muted">Periodically email signers who haven't signed yet, until the document expires or is signed</small>
+                  <%= render "documents/form_toggle", form:, field: :force_esign_order, label: "eSign Order",
+                             help: "Signers will be sent the Document in the order they are added" %>
                 </div>
 
-                <div class="form-group col" id="esign_reminder_period_div">
-                  <%= form.label :esign_reminder_period, "eSign Reminder Every (days)" %>
-                  <%= form.number_field :esign_reminder_period, in: 1..ZohoEsignHelper::MAX_REMINDER_PERIOD_DAYS, class: "form-control", placeholder: ZohoEsignHelper::DEFAULT_REMINDER_PERIOD_DAYS %>
-                  <small class="text-muted">Defaults to <%= ZohoEsignHelper::DEFAULT_REMINDER_PERIOD_DAYS %> days if left blank. Max <%= ZohoEsignHelper::MAX_REMINDER_PERIOD_DAYS %> days.</small>
-                </div>
+                <% if document.entity.entity_setting.esign_supports?(:expiry_settings) %>
+                  <div class="form-group col">
+                    <%= form.label :esign_expiration_days, "eSign Expires In (days)" %>
+                    <%= form.number_field :esign_expiration_days, in: 1..ZohoEsignHelper::MAX_EXPIRATION_DAYS, class: "form-control", placeholder: ZohoEsignHelper::DEFAULT_EXPIRATION_DAYS %>
+                    <div class="form-text">Defaults to <%= ZohoEsignHelper::DEFAULT_EXPIRATION_DAYS %> days if left blank. Max <%= ZohoEsignHelper::MAX_EXPIRATION_DAYS %> days.</div>
+                  </div>
+
+                  <div class="form-group col">
+                    <%= render "documents/form_toggle", form:, field: :esign_email_reminders, label: "Send Automatic Reminders",
+                               help: "Periodically email signers who haven't signed yet, until the document expires or is signed", data: { action: "click->docform#toggleReminderPeriod" } %>
+                  </div>
+
+                  <div class="form-group col" id="esign_reminder_period_div">
+                    <%= form.label :esign_reminder_period, "eSign Reminder Every (days)" %>
+                    <%= form.number_field :esign_reminder_period, in: 1..ZohoEsignHelper::MAX_REMINDER_PERIOD_DAYS, class: "form-control", placeholder: ZohoEsignHelper::DEFAULT_REMINDER_PERIOD_DAYS %>
+                    <div class="form-text">Defaults to <%= ZohoEsignHelper::DEFAULT_REMINDER_PERIOD_DAYS %> days if left blank. Max <%= ZohoEsignHelper::MAX_REMINDER_PERIOD_DAYS %> days.</div>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+
+            <div id='e_signatures'>
+              <%
+                @labels = @document.owner.respond_to?(:signature_labels) ? @document.owner.signature_labels : nil
+                @labels ||= ["Investor Signatories", "Other"] if @document.folder && @document.folder.name == "KYC Templates"
+                esign_provider_digio = @document.entity.entity_setting.esign_provider == "Digio"
+              %>
+              <% params[:esign_provider_digio] = esign_provider_digio %>
+              <%= form.fields_for :e_signatures do |f| %>
+                <%= render 'e_signature_fields', f: %>
               <% end %>
-
+              <div class='links'>
+              </div>
             </div>
-            <br>
-          </div>
 
-          <div id='e_signatures'>
-            <%
-              @labels = @document.owner.respond_to?(:signature_labels) ? @document.owner.signature_labels : nil
-              @labels ||= ["Investor Signatories", "Other"] if @document.folder && @document.folder.name == "KYC Templates"
-              esign_provider_digio = @document.entity.entity_setting.esign_provider == "Digio"
-            %>
-            <% params[:esign_provider_digio] = esign_provider_digio %>
-            <%= form.fields_for :e_signatures do |f| %>
-              <%= render 'e_signature_fields', f: %>
+            <% if esign_provider_digio %>
+            <div id='stamp_papers'>
+            <hr>
+              <% @tags = @document.entity.entity_setting.respond_to?(:stamp_paper_tags) ? @document.entity.entity_setting.stamp_paper_tags&.split(',') : "" %>
+              <% if @tags.present? %>
+                <p>Available Stamp-Papers- <%= @tags.join(", ") %> </p>
+              <% end %>
+              <%= form.fields_for :stamp_papers do |f| %>
+                <%= render 'stamp_paper_fields', f: %>
+              <% end %>
+            </div>
             <% end %>
-            <div class='links'>
+
+            <div class="d-flex flex-wrap gap-2 mt-2">
+              <%= link_to_add_association form, :e_signatures,
+                  data: {
+                    association: 'e_signatures',
+                    association_insertion_node: '#e_signatures',
+                    association_insertion_method: 'append'
+                  },
+                  class: 'btn btn-outline-success',
+                  id: "add_signature_btn" do %>
+                <i class="ti ti-plus"></i> Add Signature
+              <% end %>
+              <% if esign_provider_digio %>
+                <%= link_to_add_association form, :stamp_papers,
+                    data: {
+                      association: 'stamp_papers',
+                      association_insertion_node: '#stamp_papers',
+                      association_insertion_method: 'append'
+                    },
+                    class: 'btn btn-outline-success',
+                    id: "add_stamp_paper_btn" do %>
+                  <i class="ti ti-plus"></i> Add Stamp Paper
+                <% end %>
+              <% end %>
             </div>
           </div>
+        </div>
 
-          <% if esign_provider_digio %>
-          <div id='stamp_papers'>
-          <hr>
-            <% @tags = @document.entity.entity_setting.respond_to?(:stamp_paper_tags) ? @document.entity.entity_setting.stamp_paper_tags&.split(',') : "" %>
-            <% if @tags.present? %>
-              <p>Available Stamp-Papers- <%= @tags.join(", ") %> </p>
-            <% end %>
-            <%= form.fields_for :stamp_papers do |f| %>
-              <%= render 'stamp_paper_fields', f: %>
-            <% end %>
+        <div class="d-flex flex-wrap gap-2">
+          <%= form.submit t_common(:save), {class: "btn btn-outline-primary"}%>
+          <%= form.submit "Save & Upload More", {class: "btn btn-outline-primary"}%>
+        </div>
+
+        <%# New-folder popup. Inside the form but its inputs have no name, so they are never submitted with
+            the document; quick-folder posts them to folders#create as JSON and selects the new folder. %>
+        <% if document.owner == nil || document.owner_type == "Deal" %>
+          <div class="modal fade" id="newFolderModal" tabindex="-1" aria-labelledby="newFolderModalLabel" aria-hidden="true"
+               data-controller="quick-folder"
+               data-quick-folder-url-value="<%= folders_path(format: :json) %>"
+               data-quick-folder-select-value="#document_folder_id">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="newFolderModalLabel"><i class="ti ti-folder-plus"></i> New folder</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                  <label class="form-label" for="new_folder_name">Name</label>
+                  <input type="text" class="form-control" id="new_folder_name" autocomplete="off"
+                         data-quick-folder-target="name" data-action="keydown.enter->quick-folder#create:prevent">
+                  <div class="form-text">
+                    Created inside <strong data-quick-folder-target="parent"></strong>, then picked for this document.
+                  </div>
+                  <div class="alert alert-danger mt-3 mb-0 d-none" data-quick-folder-target="error" role="alert"></div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                  <button type="button" class="btn btn-outline-primary" id="new_folder_create_btn" data-action="quick-folder#create">
+                    <i class="ti ti-folder-plus"></i> Create folder
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
-          <% end %>
-
-          <div class="form-group">
-            <%= link_to_add_association 'Add Signature', form, :e_signatures,
-                data: {
-                  association: 'e_signatures',
-                  association_insertion_node: '#e_signatures',
-                  association_insertion_method: 'append'
-                },
-                class: 'btn btn-outline-success',
-                id: "add_signature_btn" %>
-            <%= link_to_add_association 'Add Stamp Paper', form, :stamp_papers,
-                data: {
-                  association: 'stamp_papers',
-                  association_insertion_node: '#stamp_papers',
-                  association_insertion_method: 'append'
-                },
-                class: 'btn btn-outline-success',
-                id: "add_stamp_paper_btn" if esign_provider_digio %>
-            <%= form.submit t_common(:save), {class: "btn btn-outline-primary"}%>
-            <%= form.submit "Save & Upload More", {class: "btn btn-outline-primary"}%>
-          </div>
-
+        <% end %>
       </div>
     <% end %>
 <% end %>

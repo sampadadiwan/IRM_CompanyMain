@@ -44,7 +44,12 @@
                     <%
                         folder_name = folder.name
                         folder_name = folder.entity.name if use_entity_name_for_root && folder.root?
+                        # The firm's own top folder is literally named "/" - show the firm instead. Only that
+                        # one: other top-level folders (root? too) keep their names.
+                        firm_root = folder.root? && folder.name == "/"
+                        folder_name = folder.entity.name if firm_root
                     %>
+                    <i class="ti <%= firm_root ? "ti-building" : "ti-folder" %> text-muted" aria-hidden="true"></i>
                     <%= link_to folder_name, send(folder_url_method, folder_id: folder.id, entity_id: params[:entity_id], parent_folder_id: params[:parent_folder_id], no_folders: true, widget_id: widget_id, documents_as_tags: documents_as_tags, show_action_buttons: show_action_buttons),
                           class: ["truncate", (folder.id.to_s == params[:folder_id].to_s ? "selected" : nil)].compact.join(" "),
                           data: { folder_id: folder.id } %>

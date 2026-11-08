@@ -1564,7 +1564,7 @@ When('I try to upload another template {string} of type {string} from {string} f
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{file}"), make_visible: true)
   page.execute_script('window.scrollTo(0, document.body.scrollHeight);')
   wait_for_upload("./public/sample_uploads/#{file}") # JS direct-upload to /upload; returns once it lands (was sleep 10)
-  check("document_template")
+  toggle_on('document_template')
   click_on("Save")
 end
 

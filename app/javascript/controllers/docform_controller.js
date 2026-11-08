@@ -61,6 +61,7 @@ export default class extends Controller {
     console.log("showSignature");
     console.log($("#document_template").val());
     if($("#document_template").is(':checked')) {
+      $("#esign_section").show();
       $("#add_signature_btn").show();
       $("#sign_display_on_page").show();
       $("#add_stamp_paper_btn").show();
@@ -68,6 +69,8 @@ export default class extends Controller {
       $("#e_signatures").show();
       $("#template_docs_to_append_div").show();
     } else {
+      // The whole eSignatures card, not just its fields, so no empty card header is left behind
+      $("#esign_section").hide();
       $("#add_signature_btn").hide();
       $("#sign_display_on_page").hide();
       $("#add_stamp_paper_btn").hide();

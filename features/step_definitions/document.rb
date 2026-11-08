@@ -75,9 +75,9 @@ When('I fill and submit the new document page') do
   fill_in("document_tag_list", with: @document.tag_list.join(",")) if @document.tag_list.present?
   attach_file('files[]', File.absolute_path('./public/sample_uploads/investor_access.xlsx'), make_visible: true)
   wait_for_upload('./public/sample_uploads/investor_access.xlsx') # JS direct-upload to /upload; returns once it lands (was sleep 3)
-  check('document_download') if @document.download
-  check('document_printing') if @document.printing
-  check('Send email', allow_label_click: true) if @document.send_email
+  toggle_on('document_download') if @document.download
+  toggle_on('document_printing') if @document.printing
+  toggle_on('document_send_email') if @document.send_email
 
   puts "Selecting #{@document.folder.name}" if @document.folder_id
   select(@document.folder.name, from: "document_folder_id") if @document.folder_id
@@ -260,7 +260,7 @@ Given('user goes to add a new template {string} for the fund') do |doc_name|
   attach_file('files[]', File.absolute_path('./public/sample_uploads/Investor Statement Template.docx'), make_visible: true)
   wait_for_upload('./public/sample_uploads/Investor Statement Template.docx') # JS direct-upload to /upload; returns once it lands (was sleep 2)
   # check checkbox id id="document_template"
-  check('document_template')
+  toggle_on('document_template')
 end
 
 Then('user should be able to add esignatures') do
@@ -316,7 +316,7 @@ Given('user goes to add a new document {string} for the fund') do |doc_name|
   attach_file('files[]', File.absolute_path('./public/sample_uploads/Investor Statement Template.docx'), make_visible: true)
   wait_for_upload('./public/sample_uploads/Investor Statement Template.docx') # JS direct-upload to /upload; returns once it lands (was sleep 2)
   # check checkbox id id="document_template"
-  check('document_template')
+  toggle_on('document_template')
 end
 
 Then('the template checkbox is not present') do
@@ -557,9 +557,9 @@ When('I create a new document {string} with no file') do |args|
   fill_in("document_tag_list", with: @temp_document.tag_list.join(",")) if @temp_document.tag_list.present?
   # attach_file('files[]', File.absolute_path('./public/sample_uploads/investor_access.xlsx'), make_visible: true)
   sleep(3)
-  check('document_download') if @temp_document.download
-  check('document_printing') if @temp_document.printing
-  check('Send email', allow_label_click: true) if @temp_document.send_email
+  toggle_on('document_download') if @temp_document.download
+  toggle_on('document_printing') if @temp_document.printing
+  toggle_on('document_send_email') if @temp_document.send_email
 
   puts "Selecting #{@temp_document.folder.name}" if @temp_document.folder_id
   select(@temp_document.folder.name, from: "document_folder_id") if @temp_document.folder_id
@@ -588,9 +588,9 @@ end
 Given('I fill the document form') do
   fill_in("document_name", with: @document.name)
   fill_in("document_tag_list", with: @document.tag_list.join(",")) if @document.tag_list.present?
-  check('document_download') if @document.download
-  check('document_printing') if @document.printing
-  check('Send email', allow_label_click: true) if @document.send_email
+  toggle_on('document_download') if @document.download
+  toggle_on('document_printing') if @document.printing
+  toggle_on('document_send_email') if @document.send_email
   select(@document.folder.name, from: "document_folder_id") if @document.folder_id
 end
 
@@ -666,8 +666,8 @@ When('I create a new document {string} with as_of {string}') do |args, as_of_dat
   fill_in("document_as_of", with: as_of_date)
   attach_file('files[]', File.absolute_path('./public/sample_uploads/investor_access.xlsx'), make_visible: true)
   wait_for_upload('./public/sample_uploads/investor_access.xlsx') # JS direct-upload to /upload; returns once it lands (was sleep 3)
-  check('document_download') if @document.download
-  check('document_printing') if @document.printing
+  toggle_on('document_download') if @document.download
+  toggle_on('document_printing') if @document.printing
   click_on("Save")
   expect(page).to have_text "Document was successfully saved."
   @document = Document.last
