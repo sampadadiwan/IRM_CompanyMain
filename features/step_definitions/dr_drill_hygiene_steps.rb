@@ -134,3 +134,34 @@ end
 Then("the teardown cell reads {string}") do |cell|
   expect(@dr_cell).to eq(cell)
 end
+
+When("the DR drill code is exercised in a process that loads only the Rakefile") do
+  # Exactly what `rake aws:dr_drill` has before it touches AWS: the Rakefile loaded, Rails
+  # defined but NOT initialized. Then every Dr:: path the drill reaches, with no network.
+  script = <<~RUBY
+    require "rake"
+    Rake.application.init("rake", [])
+    Rake.application.load_rakefile
+    abort "RAILS_INITIALIZED" if Rails.application.initialized?
+    Dr::PulumiLock.classify([], stack: "s", local_host: Socket.gethostname, alive: ->(_) { false })
+    Dr::BackupSchedule.drill?({ "DR_DRILL" => "true" })
+    Dr::DrillTeardown.add_teardown_cell("| Date | Branch |\\n|---|---|\\n| x | b |\\n", "b",
+                                        Dr::DrillTeardown.summary(passed: true, teardown: true, stop: :stopped, destroyed: 1))
+    DrillStack.grade_mark(expected_drill: true, env: { "DR_DRILL_STACK" => "r" })
+    t = Time.utc(2026, 11, 8)
+    m = Dr::ReportModel.build(phases: [["Phase 1/9 · Refresh Pulumi stack configuration", t, t + 3]],
+                              scorecard: { "h" => [["✅", "Nginx active — active"]] }, evidence: {}, result: "PASSED",
+                              stack: "staging", region: "r", env_variant: "in", branch: "b", started_at: t, finished: t + 9,
+                              drill: true, teardown: true, executed_by: "x")
+    Dr::ReportRender.html(m)
+    Dr::ReportRender.markdown(m)
+    puts "DR_CODE_OK"
+  RUBY
+  @dr_out, @dr_status = Open3.capture2e({ "RAILS_ENV" => "test" }, "bundle", "exec", "ruby", "-e", script, chdir: Rails.root.to_s)
+end
+
+Then("that process succeeds without initializing Rails") do
+  expect(@dr_out).not_to include("RAILS_INITIALIZED")
+  expect(@dr_status.success?).to be(true), @dr_out.lines.last(15).join
+  expect(@dr_out).to include("DR_CODE_OK")
+end

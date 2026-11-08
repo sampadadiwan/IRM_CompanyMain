@@ -109,3 +109,10 @@ Feature: A DR drill refuses to collide, never pages anyone, and only stops its o
       | passed | yes      | stopped | failed    | services stopped · destroy FAILED — stack still up               |
       | passed | no       |         |           | kept running (TEARDOWN not set)                                  |
       | failed | yes      |         |           | kept for diagnosis (failed run)                                  |
+
+  # X6 — Error case: the 2026-11-08 batch drill died with "uninitialized constant Dr" -
+  # aws:dr_drill and aws:setup_infra run WITHOUT the Rails environment, which every other
+  # scenario here has. This one loads the Rakefile in a fresh process, like `rake` does.
+  Scenario: The drill's code works without the Rails environment
+    When the DR drill code is exercised in a process that loads only the Rakefile
+    Then that process succeeds without initializing Rails

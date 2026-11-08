@@ -212,6 +212,7 @@ sequenceDiagram
 | X2 | Teardown guard refuses live config | deploy file lists the live `52.66.163.132` | check | does NOT target the drill → stop skipped | dr_drill_hygiene.feature |
 | X4 | Unmarked drill servers | drill, no `DR_DRILL_STACK` | grade mark | ❌ "would page WhatsApp" | dr_drill_hygiene.feature |
 | X5 | Real recovery marked as drill | real, `DR_DRILL_STACK` set | grade mark | ❌ "NEVER page" | dr_drill_hygiene.feature |
+| X6 | Drill code without Rails | a process that loads only the Rakefile (like `rake aws:dr_drill`) | exercise lock, teardown, marker, report | succeeds; Rails not initialized (the first batch drill died with `uninitialized constant Dr`) | dr_drill_hygiene.feature |
 | X3 | Guard refuses a partial match | deploy file lists one drill IP + one other | check | does NOT target the drill | dr_drill_hygiene.feature |
 
 **Fails against current code:** every row (no `Dr::PulumiLock` or `Dr::DrillTeardown`, and the prefix has no tag). Behaviourally: H3, X1, X2.

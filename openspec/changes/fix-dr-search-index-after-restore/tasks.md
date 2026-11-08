@@ -30,6 +30,8 @@
 - [x] 3.4 Docs: `dr_guide.md` §5 sequence diagram gains the reindex step; §10 adds what is and isn't rebuilt (AccountEntryIndex and why) and that `rake chewy:reset` finds no indexes here. Mermaid lint passes. Update `gap_review_2026_11.md` G4 (ES half: fixed in code).
 - [x] 3.5 Run `TEST_ENV_NUMBER=$RANDOM bundle exec cucumber features/misc/dr_search_indexes.feature` and confirm all IDs, X5 included, pass.
 
+- [x] 3.6 (after the first batch drill, 2026-11-08) `AmlReportIndex` built from `custom_name`; index problems WARN, never fail the run (`Dr::SearchIndexes.verdict` in the rebuild step and in verify); feature rows E8, H4, H5. See report "Changed during the build".
+
 ## 4. Regression and cleanup
 
 - [x] 4.1 Run `features/misc/dr_search_indexes.feature` and `features/misc/dr_backup_schedule.feature` together (both DR features) and confirm green.

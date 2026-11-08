@@ -612,11 +612,11 @@ namespace :recovery do
   end
 
   # Rebuilds every search index the live app maintains from the restored
-  # MySQL, and fails on any import error or count mismatch. Elasticsearch is
+  # MySQL; an incomplete index is a warning, never a failure. Elasticsearch is
   # not backed up, so a recovered environment starts with empty search.
   # aws:setup_infra runs it after the restore, before traffic is back on.
   # ONLY=FolderIndex,... re-runs just the named indexes.
-  desc 'DR: rebuild the search indexes from MySQL; fails unless every index is complete'
+  desc 'DR: rebuild the search indexes from MySQL; warns on any incomplete index'
   task :reindex_search do
     on roles(:primary) do
       within release_path do

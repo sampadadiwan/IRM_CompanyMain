@@ -95,3 +95,24 @@ end
 When("an unmaintained index is graded after reindex with Elasticsearch {int} and MySQL {int}") do |es, db|
   @dr_grade = Dr::SearchIndexes.grade(index_name: "CapitalCallIndex", es: es, db: db, exact: true, maintained: false)
 end
+
+When("the run's search verdict is taken over {int} complete indexes and {string}") do |ok, failure|
+  grades = Array.new(ok) { |i| Dr::SearchIndexes.grade(index_name: "Index#{i}", es: 1, db: 1, exact: true) }
+  grades << Dr::SearchIndexes::Grade.new(:fail, failure)
+  @dr_grade = Dr::SearchIndexes.verdict(grades)
+end
+
+When("the run's search verdict is taken over {int} complete indexes") do |ok|
+  @dr_grade = Dr::SearchIndexes.verdict(Array.new(ok) { |i| Dr::SearchIndexes.grade(index_name: "Index#{i}", es: 1, db: 1, exact: true) })
+end
+
+When("the {string} field of {string} is read for an AML report with custom name {string}") do |field, index_name, custom|
+  # The field's value proc, applied to an unsaved record - no Elasticsearch needed
+  report = AmlReport.new(custom_name: custom)
+  definition = index_name.constantize.root.children.find { |f| f.name.to_s == field }
+  @dr_indexed = definition.value.call(report)
+end
+
+Then("the indexed value is {string}") do |value|
+  expect(@dr_indexed).to eq(value)
+end

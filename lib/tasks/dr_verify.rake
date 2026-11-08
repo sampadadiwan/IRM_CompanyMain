@@ -239,20 +239,10 @@ namespace :dr do
                                 db: Dr::SearchIndexes.db_count(index), exact: false,
                                 maintained: Dr::SearchIndexes.maintained?(index))
       end
-      # Worst verdict wins: any maintained index short → fail; only unmaintained drift → warn
-      failed = grades.select { |grade| grade.status == :fail }
-      warned = grades.select { |grade| grade.status == :warn }
-      status = if failed.any?
-                 :fail
-               elsif warned.any?
-                 :warn
-               else
-                 :ok
-               end
-      detail = if status == :ok then "#{grades.size}/#{grades.size} indexes hold their records"
-               else (failed + warned).map(&:detail).join("; ")
-               end
-      check.call("Search index populated", status, detail)
+      # Incomplete indexes WARN (listed in the report's Needs attention), never
+      # fail the recovery: the data is complete, only some search results are not
+      verdict = Dr::SearchIndexes.verdict(grades)
+      check.call("Search index populated", verdict.status, verdict.detail)
     end
 
     # --- 4. DB box checks (SSH — DB boxes accept SSH only from app servers,

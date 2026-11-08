@@ -25,6 +25,8 @@
 - [x] 3.6 (added on review) `DrillStack.grade_mark` + `dr:verify` drill-marker check; teardown summary recorded in the drill's `dr_drills.md` row (`Dr::DrillTeardown.summary` / `.add_teardown_cell`, `run_cmd` returns output) — report Fix rows 6, 7; feature rows H4, H5, E5, E6, X4, X5.
 - [x] 3.5 Run the feature; all IDs pass.
 
+- [x] 3.7 (found when the batch drill was started, 2026-11-08) `aws:dr_drill` aborted with `uninitialized constant Dr`: `aws:setup_infra` and `aws:dr_drill` run WITHOUT the Rails environment, so the autoloader never resolves `lib/dr`, and every scenario so far had Rails booted. Fixed with `lib/tasks/dr_requires.rb` (explicit requires plus the ActiveSupport extensions used), required from `aws_utils.rb`; `Dr::PulumiLock` no longer uses `Time.zone` (nil outside Rails). Regression row X6 runs the drill's Dr code in a fresh process that loads only the Rakefile.
+
 ## 4. Regression and cleanup
 
 - [x] 4.1 Run all three DR features (`dr_backup_schedule`, `dr_search_indexes`, `dr_drill_hygiene`) together: green.

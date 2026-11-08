@@ -93,6 +93,18 @@ module Dr
       Grade.new(:warn, "#{verdict.detail} (live does not keep #{index_name} current: no update_index on its model)")
     end
 
+    # The run-level verdict for a set of index grades. Search problems WARN and never fail the
+    # recovery (decision 2026-11-08): the restored database is complete, and an incomplete index
+    # only means some search results are missing until it is rebuilt - the report lists which.
+    # Search being UNREACHABLE still fails the run, through dr:verify's elastic_check.
+    def verdict(grades)
+      problems = grades.reject { |grade| grade.status == :ok }
+      return Grade.new(:ok, "#{grades.size}/#{grades.size} indexes hold their records") if problems.empty?
+
+      Grade.new(:warn, "#{problems.size} of #{grades.size} incomplete — #{problems.map(&:detail).join('; ')}. " \
+                       "Re-run: ONLY=<Index> bundle exec cap <stage> recovery:reindex_search")
+    end
+
     def strict_grade(index_name:, es:, db:, exact:, imported:)
       # X1 — Chewy's import returns false instead of raising
       return Grade.new(:fail, "#{index_name}: import reported errors — see the Chewy output above") unless imported

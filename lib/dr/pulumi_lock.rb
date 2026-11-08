@@ -23,7 +23,7 @@ module Dr
     def parse(json)
       data = JSON.parse(json).transform_keys(&:downcase)
       Lock.new(pid: data["pid"].to_i, username: data["username"].to_s, hostname: data["hostname"].to_s,
-               timestamp: Time.zone.parse(data["timestamp"].to_s))
+               timestamp: parse_time(data["timestamp"]))
     end
 
     # locks: lock file contents (JSON strings) for this stack; alive: ->(pid) { true/false }
@@ -31,7 +31,7 @@ module Dr
       # H1 — nobody holds the stack
       return Result.new(:free, "Pulumi lock: free") if locks.empty?
 
-      lock = locks.map { |json| parse(json) }.min_by { |l| l.timestamp || Time.current }
+      lock = locks.map { |json| parse(json) }.min_by { |l| l.timestamp || Time.now.utc }
       who = "#{lock.username}@#{lock.hostname} (pid #{lock.pid}) since #{lock.timestamp&.utc&.iso8601} (#{age(lock.timestamp)} ago)"
       cancel = "cd ../IRM-Infra && pulumi cancel --stack #{stack} --yes"
 
@@ -48,11 +48,19 @@ module Dr
       Result.new(:held_elsewhere, "#{stack}: locked by #{who}. Wait, or ask them; if that run is dead: #{cancel}")
     end
 
+    # Plain Time, not Time.zone: aws:dr_drill runs without the Rails environment, where
+    # Time.zone is nil (dr_requires.rb). nil for a missing or unreadable timestamp.
+    def parse_time(value)
+      Time.parse(value.to_s).utc
+    rescue ArgumentError
+      nil
+    end
+
     # "5 min" / "2 h 10 min" - enough to judge whether a lock is plausibly still live
     def age(timestamp)
       return "unknown time" unless timestamp
 
-      minutes = ((Time.current - timestamp) / 60).floor
+      minutes = ((Time.now.utc - timestamp) / 60).floor
       minutes < 60 ? "#{minutes} min" : "#{minutes / 60} h #{minutes % 60} min"
     end
   end

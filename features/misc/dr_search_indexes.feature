@@ -87,3 +87,19 @@ Feature: A recovered environment's search is rebuilt and proven full
     Then they do not mention "deploy:chewy_reset"
     And they tell the operator to run "recovery:reindex_search"
     And the Capistrano recovery tasks define "reindex_search"
+
+  # E8 — Edge case (decision 2026-11-08): an incomplete index warns, it never fails the recovery
+  Scenario: One incomplete index makes the search verdict a warning, not a failure
+    When the run's search verdict is taken over 28 complete indexes and "AmlReportIndex: NoMethodError: undefined method 'name'"
+    Then the search grade is "warn" mentioning "1 of 29 incomplete"
+    And the search grade is "warn" mentioning "ONLY=<Index>"
+
+  # H4 — Happy path
+  Scenario: All indexes complete gives an ok verdict
+    When the run's search verdict is taken over 29 complete indexes
+    Then the search grade is "ok" mentioning "29/29"
+
+  # H5 — Happy path: the index the first batch drill tripped on now builds
+  Scenario: AmlReportIndex takes its name from custom_name
+    When the "name" field of "AmlReportIndex" is read for an AML report with custom name "Asha Rao"
+    Then the indexed value is "Asha Rao"

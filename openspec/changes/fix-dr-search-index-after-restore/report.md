@@ -249,6 +249,14 @@ All rows land in `features/misc/dr_search_indexes.feature` and exercise `Dr::Sea
 
 ---
 
+## Changed during the build
+
+| # | What changed | Why |
+|---|---|---|
+| C1 | Six indexes with no callback: drift in verify is ⚠️ | Live never updates them; a ❌ would block component repairs |
+| C2 | **Index problems warn, never fail the DR** (both the rebuild step and verify, through `Dr::SearchIndexes.verdict`) | User decision 2026-11-08, after the first batch drill stopped on one dead index: the data is complete, so an incomplete index must not abort a recovery; the report lists it under Needs attention. Unreachable search still fails ("Search reachable") |
+| C3 | `AmlReportIndex` fixed: `field :name` → `value: custom_name` | The first batch drill showed it could never be built (`NoMethodError: undefined method 'name'`), because the column was renamed to `custom_name`. User chose to fix it rather than exclude it |
+
 ## Spec Impact
 
 **None.** Search is meant to work, and the DR guide's verification promises "each request exercises nginx → puma → Rails → that dependency". The code did not deliver it.

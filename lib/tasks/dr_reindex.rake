@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
-# Rebuilds the Elasticsearch indexes after a disaster recovery, and fails unless every one comes
-# back complete (openspec fix-dr-search-index-after-restore).
+# Rebuilds the Elasticsearch indexes after a disaster recovery (openspec
+# fix-dr-search-index-after-restore). An index that does not come back complete is a WARNING,
+# not a failure (decision 2026-11-08): the run continues and the report lists it.
 #
 # Why it exists: Elasticsearch is not backed up, so a recovered environment starts with empty
 # indexes and every search box returns nothing. `rake chewy:reset` cannot fix that here - it finds
@@ -12,7 +13,7 @@
 # own phase, AFTER the database restore and BEFORE traffic is switched back on - nothing writes
 # while it runs, so each index's count must match its MySQL scope exactly.
 namespace :dr do
-  desc "DR: rebuild every search index the live app maintains; fail on any import error or count mismatch"
+  desc "DR: rebuild every search index the live app maintains; warn (never fail) on any import error or count mismatch"
   task reindex_search: :environment do
     indexes = Dr::SearchIndexes.indexes
     # ONLY=FolderIndex,FundIndex re-runs just the named indexes (e.g. the one that failed)
@@ -41,7 +42,7 @@ namespace :dr do
         grade = Dr::SearchIndexes::Grade.new(:fail, "#{index.name}: #{e.class}: #{e.message.lines.first&.strip}")
       end
       seconds = (Process.clock_gettime(Process::CLOCK_MONOTONIC) - started).round(1)
-      puts "   #{grade.status == :ok ? '✅' : '❌'} #{grade.detail} (#{seconds}s)"
+      puts "   #{grade.status == :ok ? '✅' : '⚠️ '} #{grade.detail} (#{seconds}s)"
       [index.name, grade, seconds]
     end
 
@@ -49,12 +50,15 @@ namespace :dr do
     total = (Process.clock_gettime(Process::CLOCK_MONOTONIC) - started_all).round(1)
     failed = rows.reject { |_, grade, _| grade.status == :ok }
     slowest = rows.max_by(3) { |_, _, seconds| seconds }.map { |name, _, seconds| "#{name} #{seconds}s" }
-    puts "\n#{failed.empty? ? '🟢' : '🔴'} Search reindex — #{rows.size - failed.size}/#{rows.size} indexes complete in #{total}s " \
+    puts "\n#{failed.empty? ? '🟢' : '🟡'} Search reindex — #{rows.size - failed.size}/#{rows.size} indexes complete in #{total}s " \
          "(slowest: #{slowest.join(', ')})"
     next if failed.empty?
 
-    failed.each { |_, grade, _| puts "   ❌ #{grade.detail}" }
-    abort "❌ Search reindex FAILED for #{failed.size} index(es) — search would be incomplete; fix and re-run " \
-          "`bundle exec cap <stage> recovery:reindex_search`"
+    # Warn, don't fail (decision 2026-11-08): the recovery continues; dr:verify's
+    # "Search index populated" re-checks every index and the report lists the
+    # incomplete ones under Needs attention, with the re-run command.
+    failed.each { |_, grade, _| puts "   ⚠️  #{grade.detail}" }
+    puts "⚠️  #{failed.size} search index(es) incomplete — the recovery continues; search for them is incomplete until " \
+         "re-run: ONLY=<Index> bundle exec cap <stage> recovery:reindex_search"
   end
 end

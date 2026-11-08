@@ -5,8 +5,8 @@
 > incident detection, the decision to declare a disaster, and DNS cutover plus
 > TTL propagation. Per-run evidence reports are in `docs/operations/dr/runs/`.
 
-| Date | Stack | Variant | Region | Result | Rebuild (min) | Branch |
-|---|---|---|---|---|---|---|
+| Date | Stack | Variant | Region | Result | Rebuild (min) | Branch | Teardown |
+|---|---|---|---|---|---|---|---|
 | 2026-07-08 19:24 | staging | in | ap-south-2 | FAILED | 1.2 | dr_drill_in_2026_07_08_1924 |
 | 2026-07-08 19:29 | staging | in | ap-south-2 | FAILED | 3.7 | dr_drill_in_2026_07_08_1929 |
 | 2026-07-08 19:36 | staging | in | ap-south-2 | FAILED | 1.3 | dr_drill_in_2026_07_08_1936 |
@@ -53,3 +53,5 @@
 | 2026-09-12 17:17 | staging | in | ap-south-2 | FAILED | 13.6 | dr_drill_in_2026_09_12_1717 |
 | 2026-09-12 18:32 | staging | in | ap-south-2 | FAILED | 5.0 | dr_drill_in_2026_09_12_1832 |
 | 2026-11-08 10:39 | staging | in | ap-south-2 | PASSED | 12.1 | dr_drill_in_2026_11_08_1039 |
+| 2026-11-08 13:01 | staging | in | ap-south-2 | FAILED | 12.6 | dr_drill_in_2026_11_08_1301 | kept for diagnosis (failed run) |
+| 2026-11-08 13:16 | staging | in | ap-south-2 | FAILED | 0.7 | dr_drill_in_2026_11_08_1316 | kept for diagnosis (failed run) |

@@ -185,7 +185,7 @@ sequenceDiagram
     end
     App->>DB: reset replication (reads the restored primary's binlog — after both finish)
     Rake->>App: rake db:migrate (replays migrations newer than the backup)
-    Rake->>App: rebuild the search indexes (29, each must match MySQL or the run fails)
+    Rake->>App: rebuild the search indexes (29, an incomplete one warns)
     Rake->>App: nginx: traffic on (no users arrive until DNS is cut over — §8)
     Rake->>App: recovery:verify — the stack must PROVE it serves (§7) or the run fails
 ```
@@ -425,8 +425,12 @@ In the first days after a recovery or migration:
   Since 2026-11 (OpenSpec `fix-dr-search-index-after-restore`), phase 8
   (`cap <stage> recovery:reindex_search` → `rake dr:reindex_search`) rebuilds
   every index the live app maintains from the restored MySQL, *before* traffic
-  is back on, and fails the recovery on any import error or count mismatch.
-  `dr:verify` then checks "Search index populated" on every app server.
+  is back on. An index with an import error or a count mismatch is a
+  **warning, not a failure** (decision 2026-11-08): the restored data is
+  complete; only some search results are missing until that index is re-run.
+  `dr:verify`'s "Search index populated" re-checks every index, and the report
+  lists the incomplete ones under Needs attention. Search being *unreachable*
+  still fails the run ("Search reachable").
   - **Not rebuilt:** `AccountEntryIndex`. The live app does not maintain it
     (its callback is commented out, "too much data"), and it is ~7.6M rows,
     93% of all search documents.

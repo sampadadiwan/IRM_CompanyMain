@@ -1,3 +1,7 @@
+# The Dr:: modules these tasks use, loaded explicitly: aws:setup_infra and aws:dr_drill run
+# without the Rails environment, so the autoloader cannot find them (see dr_requires.rb)
+require_relative 'dr_requires'
+
 module AwsUtils
   require 'mysql2'
   require 'json'
@@ -1066,9 +1070,9 @@ module AwsUtils
     dr_phase "Phase 8/9 · Rebuild the search index"
     # Elasticsearch is not backed up: the new DB box's indexes are empty, so
     # every search box would return nothing. Rebuild each index the live app
-    # maintains from the restored MySQL, BEFORE traffic is back on. It must
-    # finish clean — any import error or count mismatch fails the recovery
-    # (cap -> rake dr:reindex_search, which aborts non-zero).
+    # maintains from the restored MySQL, BEFORE traffic is back on. An
+    # incomplete index WARNS and the run continues (decision 2026-11-08);
+    # dr:verify re-checks every index and the report lists the incomplete ones.
     run_cmd("branch=#{branch_name} LB=true bundle exec cap #{stack}_#{env_variant} recovery:reindex_search")
 
     dr_phase "Phase 9/9 · Restore traffic and verify the recovered stack"
@@ -1434,6 +1438,7 @@ module AwsUtils
   # deletes it when the update ends — so a file left behind is a stale lock.
   # Read-only. Used by aws:dr_drill to refuse BEFORE `pulumi up` (Dr::PulumiLock).
   def pulumi_stack_lock_files(env_name, stack_name)
+    require "aws-sdk-s3" # explicit: aws:dr_drill runs without the Rails environment
     buckets = pulumi_state_buckets(env_name)
     s3 = Aws::S3::Client.new(region: buckets[:primary_region])
     keys = []
