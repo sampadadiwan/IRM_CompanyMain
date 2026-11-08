@@ -6,15 +6,17 @@
     <%# File-type icon first, outside the link: the name link stays the cell's first <a> %>
     <%= document_file_icon(document) %>
     <%= link_to document.name, document_path(document.id) %>
-    <%# Tree-wide lists (search / latest) mix folders, so say where each doc lives %>
-    <% if show_folder && document.folder %>
-      <small class="text-muted d-block"><i class="ti ti-folder"></i> <%= document.folder.name %></small>
-    <% end %>
+    <%# Download sits right after the name, on the same line - before the folder line, whose d-block
+        would otherwise push it onto a line of its own %>
     <% if !lp_view && document.orignal && policy(document).not_generated_or_approved %>
-      <%= link_to document.file_url(response_content_disposition: document.inline_disposition), class: "document_download_icon", target: "_blank",
+      <%= link_to document.file_url(response_content_disposition: document.inline_disposition), class: "document_download_icon ms-1", target: "_blank",
                   "aria-label": "Download the original file", data: { bs_title: "Download the original file" } do %>
         <i class="fas fa-download"></i>
       <% end %>
+    <% end %>
+    <%# Tree-wide lists (search / latest) mix folders, so say where each doc lives %>
+    <% if show_folder && document.folder %>
+      <small class="text-muted d-block"><i class="ti ti-folder"></i> <%= document.folder.name %></small>
     <% end %>
   </td>
   <% unless lp_view %>
