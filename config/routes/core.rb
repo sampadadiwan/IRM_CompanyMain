@@ -405,6 +405,7 @@ resources :documents do
   post 'share_by_email', on: :member # New route for sharing documents by email
   get 'show_file', on: :member
   get 'show_email_list', on: :member # New route for showing email list
+  get 'row_actions', on: :member # Edit/Delete items of a list row's Actions menu, loaded when it opens
   put 'restore_deleted', on: :member
   get 'show_deleted', on: :collection
   get 'verify_accessibility', on: :member # New route for verifying PDF accessibility

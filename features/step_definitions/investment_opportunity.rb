@@ -88,7 +88,7 @@ When('I upload a document for the investment_opportunity') do
   # select("Document", from: "document_tag_list")
   attach_file('files[]', File.absolute_path('./public/sample_uploads/investor_access.xlsx'), make_visible: true)
   wait_for_upload('./public/sample_uploads/investor_access.xlsx') # JS direct-upload to /upload; returns once it lands (was sleep 2)
-  check('Send email', allow_label_click: true)
+  toggle_on('document_send_email')
   click_on("Save")
   expect(page).to have_content("successfull")
   # #sleep(2)

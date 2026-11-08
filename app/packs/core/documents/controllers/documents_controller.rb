@@ -3,7 +3,7 @@ class DocumentsController < ApplicationController
   include DocumentHelper
 
   skip_before_action :verify_authenticity_token, :authenticate_user!, :set_current_entity, only: %i[signature_progress]
-  before_action :set_document, only: %w[show update destroy edit send_for_esign fetch_esign_updates force_send_for_esign cancel_esign extend_esign_expiry send_esign_reminder send_document_notification resend_for_esign show_email_list verify_accessibility run_fix]
+  before_action :set_document, only: %w[show row_actions update destroy edit send_for_esign fetch_esign_updates force_send_for_esign cancel_esign extend_esign_expiry send_esign_reminder send_document_notification resend_for_esign show_email_list verify_accessibility run_fix]
   # Changed: Added NDA gate for LP folder access.
   # Why: Module 2 — LPs must accept an NDA before viewing NDA-protected folder contents.
   before_action :ensure_nda_accepted, only: [:folder]
@@ -76,7 +76,6 @@ class DocumentsController < ApplicationController
     if params[:folder_id].present?
       @folder = Folder.find(params[:folder_id])
       @entity = @folder.entity
-      @show_steps = false
 
       @documents = if @folder.entity_id == current_user.entity_id
                      policy_scope(Document)
@@ -144,7 +143,7 @@ class DocumentsController < ApplicationController
     end
 
     @documents = @documents.order(id: :desc)
-    @show_steps, @no_folders = false
+    @no_folders = false
     render "index"
   end
 
@@ -302,6 +301,13 @@ class DocumentsController < ApplicationController
     @document.setup_folder_defaults
     setup_custom_fields(@document)
     authorize @document
+  end
+
+  # GET /documents/1/row_actions - the Edit / Delete items of a list row's Actions menu, loaded into the
+  # row's lazy turbo-frame when that menu is first opened. Asking update?/destroy? here, for one row,
+  # instead of while rendering the list keeps every row of the list free of permission queries.
+  def row_actions
+    render partial: "documents/row_actions", locals: { document: @document }
   end
 
   # GET /documents/1/edit
@@ -566,7 +572,6 @@ class DocumentsController < ApplicationController
       fund_side = current_user.entity_id == @entity.id || (current_user.entity_type == "Group Company" && current_user.entity.child_ids.include?(@entity.id))
       @documents = @documents.not_import_archive unless fund_side || current_user.support?
     end
-    @show_steps = false
   end
 
   # Used for bulk actions and index

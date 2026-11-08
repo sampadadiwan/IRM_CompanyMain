@@ -1,12 +1,12 @@
 <div class="associated_entity" data-controller="tabs">
     <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  role="tablist">
-      <a class="nav-link  active" data-bs-toggle="pill" data-bs-toggle="tab" href="#folders-tab">Documents</a>
+      <a class="nav-link  active" data-bs-toggle="pill" data-bs-toggle="tab" href="#folders-tab"><i class="ti ti-files me-1"></i>Documents</a>
       <% folder_with_access_rights = ["Deal Documents"] %>
       <% unless (["Fund", "Deal", "SecondarySale"].include?(folder.owner_type) && params[:debug].blank? && !folder_with_access_rights.include?(folder.name)) %>
-        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#access-rights-tab">Access Rights</a>
+        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#access-rights-tab"><i class="ti ti-lock-access me-1"></i>Access Rights</a>
       <% end %>
       <% if policy(folder).assign_workflow? %>
-        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#workflow-tab">Workflow</a>
+        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#workflow-tab"><i class="ti ti-route me-1"></i>Workflow</a>
       <% end %>
 
     </nav>
@@ -15,6 +15,7 @@
 
     <div class="tab-content" data-controller="datatable">
         <div id="access-rights-tab" class="tab-pane fade">
+          <p class="text-muted small mb-2"><i class="ti ti-info-circle"></i> Who can see this folder. Documents added to it later copy these rights.</p>
           <div id="access_rights" class="associated_entity">
 
               <%= turbo_frame_tag "access_rights_frame", target: "_top", loading: :lazy, src: access_rights_path(owner_id: folder.id, owner_type: "Folder", entity_id: folder.entity_id, form_type: "document_form", access_type: "Folder") do %>
@@ -26,14 +27,17 @@
         <div id="folders-tab" class="tab-pane fade in show active">
           <div id="folders" class="associated_entity">
             <% params[:folder_id] = folder.id %>
+            <%# folder_page: the header above already names the folder and its path, so the list drops its
+                own "Documents" card header and path heading %>
             <%= render "documents/tree_view", documents: folder.documents.page().per(100),
-                        entity: folder.entity, show_steps: false, no_folders: true %>
+                        entity: folder.entity, no_folders: true, folder_page: true %>
           </div>
         </div>
 
         <%# Workflow tab — company_admin only %>
         <% if policy(folder).assign_workflow? %>
           <div id="workflow-tab" class="tab-pane fade">
+            <p class="text-muted small mb-2"><i class="ti ti-info-circle"></i> The workflow (tasks and steps) attached to this folder.</p>
             <%= render "workflow_templates/workflow_tab", workflowable: folder %>
           </div>
         <% end %>

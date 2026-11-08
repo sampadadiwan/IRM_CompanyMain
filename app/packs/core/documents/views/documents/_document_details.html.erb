@@ -2,33 +2,33 @@
     <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  role="tablist">
 
       <% if document.entity_id == current_user&.entity_id %>
-        <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#access-rights-tab">Access Rights</a>
+        <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#access-rights-tab"><i class="ti ti-lock-access me-1"></i>Access Rights</a>
 
         <% esign_provider_digio = document.entity.entity_setting.esign_provider == "Digio" ? true : false %>
-        <% if document.e_signatures.present? %>
+        <% if document.e_signatures.exists? %>
         <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#signatures-tab">
-          Signatures
+          <i class="ti ti-signature me-1"></i>Signatures
         </a>
         <% end %>
 
-        <% if esign_provider_digio && document.stamp_papers.present? %>
+        <% if esign_provider_digio && document.stamp_papers.exists? %>
         <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#stamp-papers-tab">
-          Stamp Papers
+          <i class="ti ti-receipt me-1"></i>Stamp Papers
         </a>
         <% end %>
 
         <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#viewed-by-tab">
-          Viewed By
+          <i class="ti ti-eye me-1"></i>Viewed By
         </a>
 
         <% if document.entity.enable_data_rooms && current_user.has_cached_role?(:company_admin) %>
         <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#shares-tab">
-          Shares
+          <i class="ti ti-share me-1"></i>Shares
         </a>
         <% end %>
       <% end %>
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#tasks-tab">
-        Tasks
+        <i class="ti ti-checklist me-1"></i>Tasks
       </a>
 
 
@@ -40,6 +40,7 @@
 
         <% if policy(document).update? %>
           <div id="access-rights-tab" class="tab-pane fade show active">
+              <p class="text-muted small mb-2"><i class="ti ti-info-circle"></i> Which investors and users can see this document.</p>
               <div id="access_rights" class="associated_entity">
                 <%= turbo_frame_tag "access_rights_frame", target: "_top", src: access_rights_path(owner_id: document.id, owner_type: "Document", form_type: "document_form", entity_id: document.entity_id, access_type: "Document"), loading: :lazy do %>
                   <%= render "/layouts/loading" %>
@@ -48,12 +49,14 @@
           </div>
 
             <div id="signatures-tab" class="tab-pane fade">
+              <p class="text-muted small mb-2"><i class="ti ti-info-circle"></i> Who signs this document, and where each signer stands.</p>
               <div id="e_signatures" class="associated_entity">
                 <%= render "/e_signatures/index", e_signatures: policy_scope(document.e_signatures), owner: document, esign_provider_digio: esign_provider_digio %>
               </div>
             </div>
 
             <div id="stamp-papers-tab" class="tab-pane fade">
+              <p class="text-muted small mb-2"><i class="ti ti-info-circle"></i> Stamp papers attached to this document for Digio eSign.</p>
               <div id="stamp_papers" class="associated_entity">
                 <%= render "/stamp_papers/index", stamp_papers: policy_scope(document.stamp_papers), owner: document %>
               </div>
@@ -63,6 +66,7 @@
 
         <% if document.entity_id == current_user&.entity_id %>
           <div id="viewed-by-tab" class="tab-pane fade">
+            <p class="text-muted small mb-2"><i class="ti ti-info-circle"></i> Who has opened this document, and when.</p>
             <div id="viewed_by" class="associated_entity">
               <%= render "/viewed_bies/index", viewed_bies: policy_scope(document.viewed_bies) %>
             </div>
@@ -71,6 +75,7 @@
 
         <% if document.entity_id == current_user&.entity_id && current_user.has_cached_role?(:company_admin) && document.entity.enable_data_rooms %>
           <div id="shares-tab" class="tab-pane fade">
+            <p class="text-muted small mb-2"><i class="ti ti-info-circle"></i> People outside CapHive this document was emailed to with a view-only link.</p>
             <div id="doc_shares" class="associated_entity">
               <%= render "doc_shares/index", doc_shares: policy_scope(document.doc_shares), document:  %>
             </div>
@@ -78,6 +83,7 @@
         <% end %>
 
         <div id="tasks-tab" class="tab-pane fade">
+          <p class="text-muted small mb-2"><i class="ti ti-info-circle"></i> Tasks raised against this document.</p>
           <div id="tasks" class="associated_entity">
             <% investor = Investor.for(current_user, document.entity).first if !policy(document).update? %>
 

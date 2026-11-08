@@ -1,6 +1,8 @@
 <%# AI "Fix Me" button + modal + result panel for a template document. %>
-<%# Locals: document %>
+<%# Locals: document, show_button (default true - the document show page renders its own button in
+    its header's actions row and only wants the modal and result panel here) %>
 <%
+  show_button = true if local_assigns[:show_button].nil?
   template_fix_agent = SupportAgent.find_by(entity_id: document.entity_id, agent_type: "TemplateFixAgent")
   template_fix_report = template_fix_agent && SupportAgentReport.find_by(owner: document, support_agent: template_fix_agent, latest: true)
   grouped_models = LlmModels::PROVIDERS.filter_map do |_key, provider|
@@ -10,9 +12,11 @@
   end
 %>
 
+<% if show_button %>
 <button type="button" class="btn btn-outline-primary ti ti-wand" data-bs-toggle="modal" data-bs-target="#fixMeModal">
   Fix Me
 </button>
+<% end %>
 
 <% if template_fix_agent %>
   <%= render "support_agents/progress_panel", report: template_fix_report, support_agent: template_fix_agent, target: document, collapsed: !template_fix_report&.running? %>

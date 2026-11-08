@@ -28,7 +28,7 @@
             <%= turbo_frame_tag frame_id, target: "_top" do %>
                 <%# doc_search: the Documents page offers the name/tag search (not for an owner's docs or a dashboard widget) %>
                 <%= render "/documents/tree_view", documents: @documents, entity: @entity,
-                    folders: @folders, show_steps: @show_steps, owner: @owner, no_folders: @no_folders,
+                    folders: @folders, owner: @owner, no_folders: @no_folders,
                     widget_id: params[:widget_id],
                     doc_search: action_name == "index" && @owner.blank? && params[:widget_id].blank? %>
             <% end %>

@@ -793,7 +793,7 @@ Given('the fund has a template {string} of type {string}') do |name, owner_tag|
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{name}.docx"), make_visible: true)
   page.execute_script('window.scrollTo(0, document.body.scrollHeight);')
   wait_for_upload("./public/sample_uploads/#{name}.docx") # JS direct-upload to /upload; returns once it lands (was sleep 10)
-  check("document_template")
+  toggle_on('document_template')
   click_on("Save")
   expect(page).to have_content("successfully")
 end

@@ -810,7 +810,8 @@ Then('I should see the deal documents') do
   temp_url = current_url+"&&no_folders=true"
   visit(temp_url)
   sleep(1)
-  expect(page).to have_content("Documents: Deal Documents")
+  # The folder path is the list's heading (documents/_index #docs_folder_path); an investor sees just the folder name
+  expect(page).to have_css("#docs_folder_path", text: "Deal Documents")
   @deal.deal_documents_folder.documents.each do |doc|
     puts "Checking for #{doc.name}"
     puts doc.access_rights.map{|ar| ar.investor.investor_name}
@@ -821,7 +822,7 @@ end
 
 Then('I should not see the deal documents') do
   #sleep(1)
-  expect(page).not_to have_content("Documents: Deal Documents")
+  expect(page).not_to have_css("#docs_folder_path", text: "Deal Documents")
 end
 
 When('I click on deals document') do

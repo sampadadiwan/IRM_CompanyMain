@@ -1,0 +1,15 @@
+<%# One iOS-style toggle on the document form - the app's toggle-row / ios-toggle (custom/scaffolds.scss),
+    as on the user form and Report Builder: label + one help line on the left, the switch on the right.
+    The real checkbox keeps its id (document_<field>), so docform's jQuery and the Cucumber steps still find
+    it; clicking the label text or the switch both toggle it (and fire its click data-action). %>
+<% data ||= {} %>
+<div class="toggle-row h-100 mb-0">
+  <div>
+    <%= form.label field, label, class: "toggle-row-label" %>
+    <small class="form-text text-muted d-block"><%= help %></small>
+  </div>
+  <label class="ios-toggle" title="<%= label %>">
+    <%= form.check_box field, class: "ios-toggle-input", data: data %>
+    <span class="ios-toggle-slider"></span>
+  </label>
+</div>

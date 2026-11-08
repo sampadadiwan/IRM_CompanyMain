@@ -1,0 +1,29 @@
+<%# The permission-checked items of a document list row's Actions menu (documents/_document), answered by
+    DocumentsController#row_actions into the row's lazy turbo-frame when its menu is first opened - so
+    the list itself runs no update?/destroy? checks per row. target _top: Edit opens the full page. %>
+<%= turbo_frame_tag "document_#{document.id}_row_actions", target: "_top" do %>
+  <% can_edit = policy(document).update? %>
+  <% can_delete = policy(document).destroy? %>
+
+  <% if can_edit %>
+    <%= link_to edit_document_path(document), class: "dropdown-item d-flex align-items-center", data: { turbo: false } do %>
+      <i class="ti ti-edit"></i> <%= t_common(:edit) %>
+    <% end %>
+  <% end %>
+
+  <% if can_delete %>
+    <div class="dropdown-divider"></div>
+    <%# Same confirm popup and full-page submit as the show page's Delete %>
+    <%= button_to document, method: :delete, class: "dropdown-item d-flex align-items-center text-danger",
+                  form_class: "deleteButton", data: { action: "click->confirm#popup", turbo: false } do %>
+      <i class="ti ti-trash"></i> <%= t_common(:delete) %>
+    <% end %>
+  <% end %>
+
+  <%# Say so rather than leave the menu looking unfinished %>
+  <% unless can_edit || can_delete %>
+    <span class="dropdown-item-text text-muted small" id="document_<%= document.id %>_no_actions">
+      You can view this document but not change it.
+    </span>
+  <% end %>
+<% end %>

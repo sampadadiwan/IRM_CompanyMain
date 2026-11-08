@@ -1,4 +1,7 @@
-<%  no_folders ||= false; show_steps = true if show_steps.nil?
+<%  no_folders ||= false
+    # The folder page (folders/_folder_details): its header already names the folder, so no card
+    # header (Index / All Documents) and no path heading here
+    folder_page ||= false
     widget_id ||= nil
     tree_view_id = widget_id.present? ? "tree_view_#{widget_id}" : "tree_view"
     documents_frame_id = widget_id.present? ? "documents_frame_#{widget_id}" : "documents_frame"
@@ -14,8 +17,8 @@
     search_all_docs = action_name == "index"
 %>
 
-<%= render "/layouts/steps", steps: ["Create Folders", "Upload Docs", "Setup Access Rights"].freeze if show_steps %>
-
+<%# No "Step 1/2/3" strip here any more: it repeated the Actions menu and pushed the folders and
+    documents down the page. Guidance now sits next to what it explains (tooltips + empty state). %>
 <div class="row">
     <!-- Show hide the folder view based on action -->
     <% doc_index_class = (no_folders) ? "col-lg-12 mb-4" : "col-lg-8 mb-4" %>
@@ -24,7 +27,11 @@
     <div class="col-lg-4 mb-4">
         <div class="card shadow mb-4">
             <div class="card-header py-3">
-                <span class="m-0 font-weight-bold text-primary">Folders</span>
+                <%# Where access rights live, since the old "Setup Access Rights" step no longer says it %>
+                <span class="m-0 font-weight-bold text-primary"><i class="ti ti-folder"></i> Folders</span>
+                <i class="ti ti-info-circle text-muted ms-1" id="folders_help" tabindex="0"
+                   aria-label="About folders"
+                   data-bs-title="Click a folder to list its documents. To control who can see a folder, click its name in the folder path above the list and open the Access Rights tab."></i>
             </div>
             <div class="card-body">
                 <%# selected_folder_id highlights + expands a folder in the tree without scoping the tree to it %>
@@ -41,12 +48,13 @@
 
     <div class="<%= doc_index_class %>">
         <div class="card shadow mb-4">
-            <% if show_action_buttons %>
+            <% if show_action_buttons && !folder_page %>
                 <div class="card-header">
                     <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center">
-                        <span class="m-0 font-weight-bold text-primary">Documents</span>
+                        <span class="m-0 font-weight-bold text-primary"><i class="ti ti-files"></i> Documents</span>
                         <div class="d-flex flex-column flex-sm-row gap-2 mt-2 mt-sm-0">
-                            <%= link_to documents_path(entity_id: params[:entity_id], all: true, format: :xlsx), class: "btn btn-outline-primary" do %>
+                            <%= link_to documents_path(entity_id: params[:entity_id], all: true, format: :xlsx), class: "btn btn-outline-primary",
+                                        data: { bs_title: "Download an Excel list of all documents" } do %>
                                 <i class="ti ti-database-export"></i>Index
                             <% end %>
 
@@ -56,7 +64,7 @@
                                 small nested frame instead of navigating the full page. %>
                             <%= link_to documents_path(entity_id: params[:entity_id]),
                                         class: "btn btn-outline-primary",
-                                        data: { turbo_frame: "_top" } do %>
+                                        data: { turbo_frame: "_top", bs_title: "Clear the folder selection and list documents from every folder" } do %>
                                 <i class="ti ti-files"></i>All Documents
                             <% end %>
                         </div>
@@ -100,7 +108,7 @@
                         @pagy, documents = pagy(documents) if params[:all].blank?
                     %>
 
-                    <%= render "documents/index", documents: documents, entity: entity, owner: @owner %>
+                    <%= render "documents/index", documents: documents, entity: entity, owner: @owner, folder_page: %>
                     <%= raw pagy_bootstrap_nav(@pagy, anchor_string: %(data-turbo-frame="#{documents_frame_id}" data-remote="true")) if @pagy %>
                 <% end %>
             </div>

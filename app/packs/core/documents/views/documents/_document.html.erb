@@ -3,13 +3,16 @@
 <% display_date = document.as_of.presence || document.created_at %>
 <tr id="document_<%= document.id %>">
   <td class="text-col">
+    <%# File-type icon first, outside the link: the name link stays the cell's first <a> %>
+    <%= document_file_icon(document) %>
     <%= link_to document.name, document_path(document.id) %>
     <%# Tree-wide lists (search / latest) mix folders, so say where each doc lives %>
     <% if show_folder && document.folder %>
       <small class="text-muted d-block"><i class="ti ti-folder"></i> <%= document.folder.name %></small>
     <% end %>
     <% if !lp_view && document.orignal && policy(document).not_generated_or_approved %>
-      <%= link_to document.file_url(response_content_disposition: document.inline_disposition), class: "document_download_icon", target: "_blank" do %>
+      <%= link_to document.file_url(response_content_disposition: document.inline_disposition), class: "document_download_icon", target: "_blank",
+                  "aria-label": "Download the original file", data: { bs_title: "Download the original file" } do %>
         <i class="fas fa-download"></i>
       <% end %>
     <% end %>
@@ -18,30 +21,53 @@
     <td class="text-col">
       <%= document.tag_list %>
       <%= document.owner_tag %>
-      <% if document.subject_to_approval? %>
-        <% status = document.approved ? "Approved" : "Pending Approval" %>
-        <%= render DisplayBooleanComponent.new(bool: document.approved).
-          with_content(status)  %>
-      <% end %>
+    </td>
+    <%# Status: approval + eSign state, split out of Tags so each column holds one kind of thing %>
+    <td class="text-col">
+      <%= document_status_badges(document) %>
     </td>
   <% end %>
-  <td class="date-col" data-sort="<%= display_date.to_time.to_i %>">
-    <%= l display_date %>
+  <%# Date only - an upload with no as-of date would otherwise show the clock time; the full upload
+      time is in the tooltip. data-sort keeps sorting on the exact value. %>
+  <td class="date-col" data-sort="<%= display_date.to_time.to_i %>"
+      data-bs-title="Uploaded <%= l document.created_at %>">
+    <%= l display_date.to_date %>
   </td>
   <% unless lp_view %>
-    <td class="action-col">
-      <%= link_to  t_common(:show), document, class: "btn btn-outline-primary ti ti-eye" %>
-      <%# Per-document CP/CS Agent run — shown when the document belongs to a
-          PortfolioInvestment and the CP/CS agent is enabled. Runs the agent for
-          just this document's PI. The onclick sets the shared modal's target_id
-          to this document's PI owner before Bootstrap opens the modal. %>
-      <% if document.owner_type == "PortfolioInvestment" && current_user.entity&.support_agents&.set?(:cp_cs_extraction_agent) %>
-        <button type="button" class="btn btn-outline-secondary ti ti-robot ms-1"
-                title="Run CP/CS Agent on this document"
-                data-bs-toggle="modal" data-bs-target="#run-cp-cs-agent-from-docs-modal"
-                onclick="var f=document.querySelector('#run-cp-cs-agent-from-docs-modal input[name=target_id]');if(f)f.value='<%= document.owner_id %>'">
+    <td class="action-col text-nowrap">
+      <%# Every row action in one menu - the name link already opens the document, so a separate Show
+          button only repeated it. Show and the CP/CS run need no permission query, so they are here;
+          Edit / Delete (policy update? / destroy?) load into a lazy turbo-frame from
+          DocumentsController#row_actions the first time this menu opens, so rendering the list runs
+          no permission queries per row. strategy: fixed so .table-responsive doesn't clip the menu. %>
+      <% cp_cs_agent = document.owner_type == "PortfolioInvestment" && current_user.entity&.support_agents&.set?(:cp_cs_extraction_agent) %>
+      <div class="dropdown">
+        <button type="button" class="btn btn-outline-primary dropdown-toggle" id="document_<%= document.id %>_actions"
+                data-bs-toggle="dropdown" aria-expanded="false" data-bs-popper-config='{"strategy":"fixed"}'
+                aria-label="Actions for <%= document.name %>">
+          <i class="ti ti-dots"></i>
         </button>
-      <% end %>
+        <div class="dropdown-menu dropdown-menu-end" aria-labelledby="document_<%= document.id %>_actions">
+          <%= link_to document, class: "dropdown-item d-flex align-items-center" do %>
+            <i class="ti ti-eye"></i> <%= t_common(:show) %>
+          <% end %>
+          <%# Per-document CP/CS Agent run — shown when the document belongs to a
+              PortfolioInvestment and the CP/CS agent is enabled. Runs the agent for
+              just this document's PI. The onclick sets the shared modal's target_id
+              to this document's PI owner before Bootstrap opens the modal. %>
+          <% if cp_cs_agent %>
+            <button type="button" class="dropdown-item d-flex align-items-center"
+                    data-bs-toggle="modal" data-bs-target="#run-cp-cs-agent-from-docs-modal"
+                    onclick="var f=document.querySelector('#run-cp-cs-agent-from-docs-modal input[name=target_id]');if(f)f.value='<%= document.owner_id %>'">
+              <i class="ti ti-robot"></i> Run CP/CS Agent
+            </button>
+          <% end %>
+          <%# loading: :lazy - Turbo fetches it when the frame becomes visible, i.e. when the menu opens %>
+          <%= turbo_frame_tag "document_#{document.id}_row_actions", src: row_actions_document_path(document), loading: :lazy, target: "_top" do %>
+            <span class="dropdown-item-text text-muted small"><i class="ti ti-loader-2"></i> Loading…</span>
+          <% end %>
+        </div>
+      </div>
     </td>
   <% end %>
 </tr>
