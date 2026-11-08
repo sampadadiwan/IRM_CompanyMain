@@ -37,6 +37,23 @@ Feature: A DR drill refuses to collide, never pages anyone, and only stops its o
     And the lock message mentions "ops@build-box"
 
   # H2 — Happy path: the deploy file still names exactly the drill's app servers
+  # E6 — Edge case: after staging work, production keys cannot read the staging state bucket, so
+  # `pulumi whoami` fails; the CLI's local login record still says where it is logged in
+  Scenario: The current Pulumi backend is read from the local login record
+    When the Pulumi login record says current is "s3://irm-pulumi-state-staging-primary-ap-south-1?region=ap-south-1"
+    Then the current backend is "s3://irm-pulumi-state-staging-primary-ap-south-1?region=ap-south-1"
+
+  # X6 — Error case: no usable login record
+  Scenario Outline: An unusable login record gives no backend
+    When the Pulumi login record is '<record>'
+    Then the current backend is unknown
+
+    Examples:
+      | record             |
+      | {}                 |
+      | {"current": ""}    |
+      | not json           |
+
   Scenario: Teardown stops services when the deploy file names the drill servers
     Given a deploy file naming servers "40.192.121.217" and "16.113.90.67"
     When it is checked against the drill servers "40.192.121.217" and "16.113.90.67"

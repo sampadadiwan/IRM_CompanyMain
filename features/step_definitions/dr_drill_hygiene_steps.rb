@@ -177,3 +177,19 @@ end
 Then("the destroyed count is {int}") do |count|
   expect(@dr_destroyed).to eq(count)
 end
+
+When("the Pulumi login record says current is {string}") do |url|
+  @dr_backend = Dr::PulumiLock.backend_from_credentials({ current: url, accessTokens: {} }.to_json)
+end
+
+When("the Pulumi login record is {string}") do |record|
+  @dr_backend = Dr::PulumiLock.backend_from_credentials(record)
+end
+
+Then("the current backend is {string}") do |url|
+  expect(@dr_backend).to eq(url)
+end
+
+Then("the current backend is unknown") do
+  expect(@dr_backend).to be_nil
+end

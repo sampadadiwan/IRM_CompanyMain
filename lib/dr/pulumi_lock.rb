@@ -19,6 +19,18 @@ module Dr
 
     module_function
 
+    # The backend the Pulumi CLI is logged into, from ~/.pulumi/credentials.json ("current"): a local
+    # read, no network. Used when `pulumi whoami` cannot answer - it reads the CURRENT backend with
+    # the keys in the environment, so after staging drills (logged into the staging state bucket)
+    # with production keys loaded it fails with a cross-account 403, and the backend preflight
+    # gave up instead of switching (production readiness, 2026-11-08). nil if unknown.
+    def backend_from_credentials(json)
+      current = JSON.parse(json.to_s)["current"].to_s.strip
+      current.empty? ? nil : current
+    rescue JSON::ParserError
+      nil
+    end
+
     # Parses a lock file's JSON. Pulumi writes lowercase keys; accept either case to be safe.
     def parse(json)
       data = JSON.parse(json).transform_keys(&:downcase)

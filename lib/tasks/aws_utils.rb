@@ -1628,9 +1628,17 @@ module AwsUtils
 
   # Current pulumi backend URL, or nil if it cannot be determined.
   def pulumi_current_backend
+    # 1. Ask the CLI (authoritative when it can read its backend)
     out, = Open3.capture3("pulumi whoami --verbose", chdir: "../IRM-Infra")
     line = out.lines.grep(/Backend URL/i).first
-    line && line.split(/URL:?\s*/i).last.to_s.strip
+    from_cli = line && line.split(/URL:?\s*/i).last.to_s.strip
+    return from_cli if from_cli.present?
+
+    # 2. whoami fails when the keys loaded belong to ANOTHER account than the bucket it is
+    #    logged into (staging bucket + production keys: 403). The login itself is recorded
+    #    locally, so read it there; ensure_pulumi_backend! then switches as designed.
+    path = File.join(ENV.fetch("PULUMI_HOME", File.join(Dir.home, ".pulumi")), "credentials.json")
+    File.exist?(path) ? Dr::PulumiLock.backend_from_credentials(File.read(path)) : nil
   rescue StandardError
     nil
   end
