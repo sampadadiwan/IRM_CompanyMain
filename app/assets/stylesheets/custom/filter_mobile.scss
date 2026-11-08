@@ -1,0 +1,77 @@
+// ── Ransack filter conditions on phones ──────────────────────────────────────
+//
+// The generic filter (layouts/_filter, _condition_fields, _filter_ext) lays each
+// condition out as Bootstrap `.col`s on one line: field | predicate | value |
+// actions. At phone widths the row wrapped: the three inputs were squeezed to a
+// few characters each ("Commitments" → "Commitme") and the bin / plus dropped
+// onto a line of their own.
+//
+// Below md the conditions keep their desktop layout - one line each, same
+// controls in the same order. Field, predicate and value share the visible width
+// exactly, so a condition reads without scrolling; only the row actions (bin,
+// plus) sit past the right edge, and the whole filter form scrolls sideways as
+// one block to reach them - every condition moves together, columns lined up.
+//
+// Phones only: nothing here applies at md and up, so the desktop filter is
+// unchanged. (custom/filter_panel.scss has its own narrow-screen rules, but they
+// are scoped to subtle_ui's `.toggle-card` class, which this branch's ToggleCard
+// does not render - so they never apply here.)
+//
+// Scoped by `[data-controller~="filter"]`, the ToggleCard that holds a filter
+// form (layouts/_filter and layouts/_multi_portfolio_dashboard_filter).
+@media (max-width: 767.98px) {
+  // The form is the one scroller: every condition row and the action bar under
+  // them move together. overflow also makes the form contain its floated action
+  // bar (.action.float-end) rather than collapsing around it
+  [data-controller~="filter"] form {
+    overflow-x: auto;
+    // Makes the form a size container, so the columns below can be sized in cqw -
+    // fractions of the form's own visible width, whatever the phone's width
+    container-type: inline-size;
+    // Momentum scrolling on iOS
+    -webkit-overflow-scrolling: touch;
+  }
+
+  [data-controller~="filter"] .row.form-group {
+    // One line, as wide as its controls need: wider than the phone, so the form
+    // above scrolls rather than the row wrapping
+    flex-wrap: nowrap;
+    width: max-content;
+    min-width: 100%;
+    align-items: center;
+
+    // Every part of the condition keeps the width set below instead of shrinking
+    // to fit. scaffolds.scss's `.show_filter .form-control { min-width: 100px }`
+    // would make the predicate and value wider than their share on a narrow phone
+    // (and push the value past the edge), so it is lifted here
+    > * {
+      flex: 0 0 auto;
+    }
+
+    > .form-control,
+    .form-control {
+      min-width: 0;
+    }
+
+    // The three fields split the form's visible width (100cqw) 38 / 26 / 36:
+    // field and value carry the information, the predicate is one word ("equals",
+    // "contains"). The row starts flush with the form - scaffolds.scss's
+    // `form .form-group { margin: 15px 0 }` replaces .row's negative margins - and
+    // each column's gutter padding is inside its width, so the three end exactly
+    // at the form's right edge and the actions start just past it
+    > .attribute-select,
+    > .attribute-fixed {
+      width: calc(100cqw * 0.38);
+    }
+
+    > .predicate-select {
+      width: calc(100cqw * 0.26);
+    }
+
+    > .value-field-text,
+    > .value-field-date,
+    > select:not(.attribute-select):not(.predicate-select) {
+      width: calc(100cqw * 0.36);
+    }
+  }
+}
