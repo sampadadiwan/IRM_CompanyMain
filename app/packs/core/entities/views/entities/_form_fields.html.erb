@@ -134,6 +134,23 @@
         <small class="text-muted d-block">Each recipient sees only the tasks they can already open in the app.</small>
       </div>
 
+      <%# M13 (OWASP 2026-11) design card ① — the firm's maker–checker switch, modelled on the Weekly Task Digest block
+          above. Off for every firm until a company admin ticks it (D6). The ⓘ says who counts as a preparer; the help
+          line says what switching it off does (D13), so the control explains itself (task U.1). %>
+      <hr class="my-4">
+      <div id="approvals_settings" data-maker-checker="setting" data-controller="scoring-tooltips">
+        <h5>Approvals</h5>
+        <small class="text-muted d-block mb-3">Who may approve your capital calls and distributions. Approving unlocks sending call notices and completing payments, so it is the last check before investors are asked for, or paid, money.</small>
+
+        <div class="form-group">
+          <%= entity_setting_subform.label :approval_maker_checker, "Require a second person to approve capital calls and distributions" %>
+          <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip" data-bs-container="body"
+             title="Whoever created, imported or changed a call's or distribution's figures cannot approve it. Changing figures after approval withdraws the approval. Editing names, notes or custom fields, and recording payments, don't count."></i>
+          <%= entity_setting_subform.check_box :approval_maker_checker, class: "form-check-input" %>
+          <small class="text-muted d-block">Turn this on when at least two people have the Approver role and access to your funds; with one approver nobody could approve their own work. Switching this off alerts your other company admins and approvers.</small>
+        </div>
+      </div>
+
       <%# Open-ended fund wording (EvergreenLabels): blank keeps the default shown as the placeholder, which
           comes from the deployment's locale (APP_LOCALE). Worked examples E212–E214 %>
       <hr class="my-4">

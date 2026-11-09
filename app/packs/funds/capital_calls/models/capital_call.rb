@@ -17,6 +17,18 @@ class CapitalCall < ApplicationRecord
   include ForInvestor
   include BlocksDestroyWithFundUnits
 
+  # M13 (OWASP 2026-11) K4 — maker–checker: who prepared this call (③) and the change watcher (②) that records them and,
+  # with the firm's setting on, withdraws the approval when a person changes a figure after it.
+  # openspec/changes/capital-call-distribution-maker-checker/design.md cards ② ③
+  include WithApprovalMakers
+  include ApprovalFigureWatch
+
+  # The figures that decide what LPs pay. Roll-ups (call_amount, collected_amount, capital_fee, other_fee) move with the
+  # remittances, which are watched themselves, so they are not listed (they would double-count).
+  APPROVAL_FIGURES = %w[percentage_called amount_to_be_called_cents fund_closes close_percentages call_date call_basis
+                        fee_formula_ids unit_prices].freeze
+  watches_approval_figures APPROVAL_FIGURES
+
   # Evergreen settlement records (created by a dealing date) get no journey of their own — the dealing
   # date's journey replaces it. The flag covers the create callback, before the dealing date links it.
   # Backward compatibility B4 — openspec/changes/open-ended-funds/design.md#backward-compatibility

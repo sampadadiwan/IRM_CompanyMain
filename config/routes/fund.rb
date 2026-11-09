@@ -163,6 +163,8 @@ end
 
 resources :capital_distributions do
   post 'approve', on: :member
+  # M13 (OWASP 2026-11) K12 — maker–checker: a preparer asks the other approvers to approve it
+  post 'request_approval', on: :member
   # P12 (phase 10): approve / redeem units for many distributions in one request
   post 'bulk_actions', on: :collection
   # The journey panel alone, for real-time refreshes (capital-distribution-journey E16, E17)
@@ -195,6 +197,8 @@ resources :capital_calls do
   get 'search', on: :collection
   post 'reminder', on: :member
   post 'approve', on: :member
+  # M13 (OWASP 2026-11) K12 — maker–checker: a preparer asks the other approvers to approve it
+  post 'request_approval', on: :member
   patch 'unapprove', on: :member
   post 'notify', on: :member
   patch 'generate_docs', on: :member

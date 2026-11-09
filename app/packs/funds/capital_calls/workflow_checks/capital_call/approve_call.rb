@@ -16,7 +16,7 @@ module WorkflowChecks
 
       def call(call)
         unless call.approved
-          return fail_with(message: "The call is not approved yet", action_label: "Approve",
+          return fail_with(message: not_approved_message(call), action_label: "Approve",
                            action_path: call_path(call), action_target: APPROVE_BTN)
         end
 
@@ -24,6 +24,13 @@ module WorkflowChecks
       end
 
       private
+
+      # E24 / E25 (M13) — with maker–checker on, say that the approver must be someone who did not prepare it;
+      # off, today's words
+      def not_approved_message(call)
+        message = "The call is not approved yet"
+        call.maker_checker_on? ? "#{message} — it needs an approver who did not prepare it" : message
+      end
 
       # The latest audit that switched approved on (audits are indexed by auditable)
       def approved_at(call)

@@ -11,15 +11,25 @@ class CapitalCallsBulkActionJob < BulkActionJob
   end
 
   def record_includes
-    [:fund]
+    # M13 — the firm's maker–checker switch is read per call by approve?; loaded with the calls
+    [:fund, { entity: :entity_setting }]
   end
 
   def perform_action(capital_call, user_id, bulk_action, params: {})
     action = bulk_action.to_s.downcase.tr("_", " ")
     query = ACTIONS[action]
     return send_notification("Invalid bulk action", user_id, :error) unless query
+
+    # X7 (M13) — the batch's preparers in three queries, once per job, before the per-call checks
+    preload_approval_makers(capital_call) if action == "approve"
     # The same permission the single-call action checks (e.g. approvers only for approve)
-    return record_failure(capital_call, "Not authorized to #{action}") unless Pundit.policy!(@user, capital_call).public_send(query)
+    policy = Pundit.policy!(@user, capital_call)
+    unless policy.public_send(query)
+      # X7 (M13) — maker–checker on and this approver prepared the call: say so, instead of a bare refusal
+      return record_failure(capital_call, "You prepared #{capital_call.name} — another approver must approve it") if action == "approve" && policy.awaiting_second_approver?
+
+      return record_failure(capital_call, "Not authorized to #{action}")
+    end
 
     case action
     when "approve"
@@ -32,7 +42,18 @@ class CapitalCallsBulkActionJob < BulkActionJob
     end
   end
 
+  # The batch's record ids, for the one-off preparer preload below
+  def perform(record_ids, user_id, bulk_action, params: {})
+    @batch_ids = record_ids
+    super
+  end
+
   private
+
+  def preload_approval_makers(capital_call)
+    @approval_makers ||= CapitalCall.approval_maker_entries_for(@batch_ids || [capital_call.id])
+    capital_call.preload_preparer_entries(*@approval_makers.fetch(capital_call.id, [nil, [], false]))
+  end
 
   def record_failure(capital_call, message)
     @error_msg << { msg: message, capital_call: capital_call.name, capital_call_id: capital_call.id }

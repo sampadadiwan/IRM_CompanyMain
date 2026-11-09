@@ -4,6 +4,13 @@ class CallFee < ApplicationRecord
   attr_readonly :fund_id # never moves to another fund (funds_api_security_policy_plan.md, B)
   belongs_to :capital_call
   attr_readonly :capital_call_id # never moves to another call (funds_api_security_policy_plan.md, B)
+  # M13 (OWASP 2026-11) K8 — a fee line decides which account entries become fees, so changing, adding or deleting one
+  # is a figure change of the call (design card ②). notes holds the formula when formula is set (C-FEE in design
+  # "Changed during the build").
+  include ApprovalFigureWatch
+
+  APPROVAL_FIGURES = %w[name start_date end_date fee_type formula notes].freeze
+  watches_approval_figures APPROVAL_FIGURES, parent: :capital_call
   validates :name, :start_date, :end_date, :fee_type, presence: true
   validates :name, length: { maximum: 50 }
   validates :fee_type, length: { maximum: 20 }

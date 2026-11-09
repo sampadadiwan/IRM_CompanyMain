@@ -1,5 +1,7 @@
 class CapitalCallPolicy < FundBasePolicy
   include WorkflowablePolicyMethods # journey?, assign_workflow?
+  # M13 (OWASP 2026-11) K9 / K11 — maker–checker: maker_checker_allows?, awaiting_second_approver?, request_approval?
+  include MakerCheckerPolicyMethods
 
   # H18 — capital calls are staff-only records: no LP screen, mobile endpoint or MCP answer is meant to list
   # them. FundBasePolicy's investor branch would list every one in a fund the LP can see, so an investor
@@ -40,8 +42,10 @@ class CapitalCallPolicy < FundBasePolicy
     permissioned_employee?(:update)
   end
 
+  # H12 / X3 / X10 (M13) — with the firm's maker–checker setting on, a preparer of the call can't approve it; every
+  # path (button, URL, JSON API, bulk) asks this one method. Setting off (the default): exactly as before.
   def approve?
-    !record.approved && update? && user.has_cached_role?(:approver)
+    !record.approved && update? && user.has_cached_role?(:approver) && maker_checker_allows?
   end
 
   def unapprove?

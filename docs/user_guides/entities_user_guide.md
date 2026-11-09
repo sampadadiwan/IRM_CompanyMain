@@ -121,6 +121,7 @@ Each entity has one **Settings** record. Company admins change the everyday opti
 | **Sandbox / Sandbox Emails / cc / Sandbox Numbers** | When on, redirects email and WhatsApp notifications to the sandbox addresses and numbers (for testing). |
 | **Document Colors** | Brand colours for generated documents. |
 | **Send weekly task digest** | The weekly tasks summary email. |
+| **Approvals → Require a second person to approve capital calls and distributions** | Investment Fund entities only. When on (maker–checker), whoever created, imported or changed a call's or distribution's figures cannot approve it, and changing figures after approval withdraws the approval. Off by default. Switching it **off** emails and bell-alerts your other company admins and approvers. See the [Capital Calls guide](capital_calls_user_guide). |
 | **Open-ended fund wording** | Investment Fund entities only: whether investors hold **Units** or **Shares**, and your own word for terms such as Folio, Dealing date, Contract note or Exit load, used on your open-ended funds' screens, emails and confirmations. A blank field keeps the default shown in it. See the [Evergreen Funds guide](evergreen_funds_user_guide). |
 | **AI client integration** | Settings for connecting AI clients, where offered. |
 
@@ -241,6 +242,14 @@ Setting up a new VC fund that reports on a calendar year and signs documents via
 ---
 
 ## Frequently Asked Questions
+
+### Approvals (maker–checker)
+
+**Should we switch on "Require a second person to approve"?**
+Switch it on once at least two people have the Approver role and access to your funds. Then nobody can approve a capital call or distribution they prepared; with only one approver, nobody could approve their own work, so leave it off until a second approver exists.
+
+**Who is told when someone switches maker–checker off, and why?**
+Every other active company admin and approver gets an email and a bell alert naming who switched it off and when, so the control can't be removed quietly before a self-approval. Switching it on sends nothing. The change is also in the entity's audit trail.
 
 ### Navigation and getting there
 

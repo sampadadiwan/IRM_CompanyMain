@@ -227,6 +227,18 @@ additions, then `db:clean_schema`. Do not migrate the shared dev DB from a side 
 - `capital_distribution_create.rb:14`, `capital_distribution_destroy.rb:8` — portfolio investment links: not a figure ✓
 - `CapitalCallJob#create_remittances` (`capital_call_job.rb:79-104`) — `CapitalRemittanceCreate` per row: callbacks fire ✓
 
+**Re-grepped at implementation (2026-11-09, task 1.5)** — `update_columns|update_all|insert_all|upsert_all|update_column(` on
+the six tables. Writers not in the list above:
+
+| Writer | Columns | Figure? | Decision |
+|---|---|---|---|
+| `investor.rb:354-355`, `update_investor.rb:25-26,122-123`, `fund.rb:300-301` | `investor_name`, `investor_id` | No | ✓ |
+| `entity_merge.rb:104-110` | `entity_id` (firm merge, support only) | No | ✓ |
+| `capital_remittance.rb:228`, `capital_remittance_set_notification_sent.rb:20`, `capital_distribution_payment.rb:172`, `capital_remittance_payment.rb:72`, `capital_remittance_status_job.rb:9` | notification / status flags | No | ✓ |
+| `dealing_roll.rb:46` | remittance `capital_call_id` (evergreen roll) | — | Open-ended settlements are exempt (D14) ✓ |
+| `change_fund_currency_job.rb:364,391,421,468` | amounts re-priced when CapHive support changes a fund's currency | Yes (system re-pricing) | **Not watched**: a support-only conversion of every amount at one rate, not a person editing what one LP pays; recorded here as a known bypass (reviewer check) |
+| `fund_unit_transfer_service.rb:259,280,323,395` | remittances / payments copied to the transferee on a unit transfer | Moves amounts between folios, total unchanged | **Not watched**: a transfer, not a re-pricing; recorded as a known bypass (reviewer check) |
+
 **Reviewer checks**
 - [ ] Every query is scoped by `entity_id` or by the record's own id
 - [ ] No N+1 on list pages (no list page changes); show page ≤ +3 queries
@@ -386,4 +398,5 @@ N/A — no third-party calls (email goes through the existing mailer stack).
 
 | Reviewer | Date | Decision | Notes |
 |---|---|---|---|
+| Apply agent (implementation) | 2026-11-10 | Implemented — awaiting your review | Deviations in design.md "Changed during the build" C1–C21; bypass-writer list re-grepped (above) |
 | | | Approved / Changes requested | |

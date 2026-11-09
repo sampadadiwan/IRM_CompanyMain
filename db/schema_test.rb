@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_09_150000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_09_160100) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -694,6 +694,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_09_150000) do
     t.datetime "updated_at", null: false
     t.index ["devise_api_token_id"], name: "index_api_tokens_on_devise_api_token_id", unique: true
     t.index ["user_id", "revoked_at"], name: "index_api_tokens_on_user_id_and_revoked_at"
+  end
+
+  create_table "approval_makers", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.string "approvable_type", limit: 40, null: false
+    t.bigint "approvable_id", null: false
+    t.bigint "user_id", null: false
+    t.string "role", limit: 20, null: false
+    t.datetime "created_at", null: false
+    t.index ["approvable_type", "approvable_id", "user_id"], name: "index_approval_makers_on_approvable_and_user", unique: true
+    t.index ["entity_id"], name: "index_approval_makers_on_entity_id"
+    t.index ["user_id"], name: "index_approval_makers_on_user_id"
   end
 
   create_table "approval_responses", force: :cascade do |t|
@@ -2294,6 +2306,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_09_150000) do
     t.string "cs_judge_model"
     t.boolean "weekly_task_digest_enabled", default: false, null: false
     t.json "evergreen_labels"
+    t.boolean "approval_maker_checker", default: false, null: false
     t.index ["deleted_at"], name: "index_entity_settings_on_deleted_at"
     t.index ["entity_id"], name: "index_entity_settings_on_entity_id"
     t.index ["entity_id"], name: "index_entity_settings_on_entity_id_unique", unique: true
@@ -5765,6 +5778,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_09_150000) do
   add_foreign_key "aml_reports", "investors"
   add_foreign_key "api_tokens", "devise_api_tokens"
   add_foreign_key "api_tokens", "users"
+  add_foreign_key "approval_makers", "entities"
+  add_foreign_key "approval_makers", "users"
   add_foreign_key "approval_responses", "approvals"
   add_foreign_key "approval_responses", "entities"
   add_foreign_key "approval_responses", "entities", column: "response_entity_id"

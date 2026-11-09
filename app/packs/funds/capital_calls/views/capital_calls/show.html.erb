@@ -123,6 +123,35 @@
           </div>
 
           <div class="dropdown-divider"></div>
+        <% elsif policy(@capital_call).awaiting_second_approver? %>
+          <%# M13 (OWASP 2026-11) H13 — maker–checker on and this approver prepared the call: Approve is shown greyed
+              out with the reason rather than hidden, so they know why and what to do (task U.1). A disabled button
+              fires no events, so the tooltip sits on a wrapper (Bootstrap's own pattern); the server refuses a forced
+              request anyway (approve?, X3). %>
+          <span class="d-block" tabindex="0" id="capital_call_approve_disabled" data-maker-checker="approve-disabled"
+                data-bs-toggle="tooltip" data-bs-container="body"
+                title="<%= maker_checker_approve_disabled_reason(@capital_call) %>">
+            <button type="button" class="dropdown-item ti ti-check disabled" disabled aria-disabled="true" style="pointer-events: none;">
+              Approve
+            </button>
+          </span>
+
+          <div class="dropdown-divider"></div>
+        <% end %>
+
+        <% if policy(@capital_call).request_approval? %>
+          <%# M13 H18 — the preparer (or an editor who can't approve) tells every checker. The popup lists exactly who
+              will be emailed, or that nobody can approve yet, before anything is sent (E34). %>
+          <%= button_to request_approval_capital_call_path(@capital_call), id: "capital_call_request_approval_btn", method: :post,
+                class: "dropdown-item ti ti-mail-forward", form_class: "deleteButton",
+                data: { action: "click->confirm#popup", turbo: false, method: :post, title: "Request approval",
+                        msg: maker_checker_action_summary(@capital_call, MakerCheckerNotices.checkers(@capital_call), current_user),
+                        bs_toggle: "tooltip", bs_container: "body",
+                        bs_title: "Your firm requires a second person to approve calls. Ask the approvers who did not prepare this call to approve it — they get an email and a bell alert." } do %>
+            Request approval
+          <% end %>
+
+          <div class="dropdown-divider"></div>
         <% end %>
 
         <% if policy(@capital_call).unapprove? %>

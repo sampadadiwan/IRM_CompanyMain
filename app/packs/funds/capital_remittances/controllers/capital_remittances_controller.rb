@@ -110,7 +110,10 @@ class CapitalRemittancesController < ApplicationController
     @capital_remittance.assign_attributes(capital_remittance_params)
     respond_to do |format|
       if CapitalRemittanceUpdate.call(capital_remittance: @capital_remittance).success?
-        format.html { redirect_to capital_remittance_url(@capital_remittance), notice: "Capital remittance was successfully updated." }
+        notice = "Capital remittance was successfully updated."
+        # H22 (M13) — the change withdrew the call's approval (maker–checker on): say so
+        notice += " #{MakerCheckerNotices.withdrawn_sentence}" if @capital_remittance.capital_call.approval_withdrawn?
+        format.html { redirect_to capital_remittance_url(@capital_remittance), notice: }
         format.json { render :show, status: :ok, location: @capital_remittance }
       else
         format.html { render :edit, status: :unprocessable_entity }
@@ -143,7 +146,10 @@ class CapitalRemittancesController < ApplicationController
       # BlocksDestroyWithFundUnits still refuses when units exist that the payment check above misses
       respond_to do |format|
         if @capital_remittance.destroy
-          format.html { redirect_to capital_remittances_url, notice: "Capital remittance was successfully destroyed." }
+          notice = "Capital remittance was successfully destroyed."
+          # E48 (M13) — deleting it withdrew the call's approval (maker–checker on): say so
+          notice += " #{MakerCheckerNotices.withdrawn_sentence}" if @capital_remittance.capital_call.approval_withdrawn?
+          format.html { redirect_to capital_remittances_url, notice: }
           format.json { head :no_content }
         else
           format.html { redirect_to capital_remittance_url(@capital_remittance), alert: @capital_remittance.errors.full_messages.join(", ") }

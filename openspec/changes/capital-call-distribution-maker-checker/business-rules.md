@@ -314,7 +314,7 @@ Refusals by other firms, investors and read-only users: X13–X15 in [§5](#5-di
 
 | # | Scenario | Given | When | Then | Spec scenario | Feature |
 |---|---|---|---|---|---|---|
-| X16 | Withdrawal cannot save | ON; Q4 approved; Q4 fails an unrelated validation (e.g. duplicate name after a data fix) | Anil changes a remittance | Whole change rolled back; Anil sees the validation message; Q4 still approved with old figures | S6: Remittance edited after approval | F7 |
+| X16 | Unrelated validation problem on the call | ON; Q4 approved; Q4 fails an unrelated validation (e.g. a blank due date after a data fix) | Anil changes a remittance | **Changed during the build (design C3):** Anil's change saves and Q4's approval is still withdrawn (the withdrawal skips the call's own validations), so figures and approval never disagree and the unrelated problem doesn't block him. A database error still rolls the whole change back | S6: Remittance edited after approval | F7 |
 
 ---
 

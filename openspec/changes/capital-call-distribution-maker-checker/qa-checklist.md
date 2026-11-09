@@ -149,7 +149,7 @@ step (J2.3 = journey 2, step 3) · **R** = Role sweep · **C** = Cross-cutting c
 | ☐ | X13 | Other firm requests approval | — | 1. Kiran POSTs `request_approval` on Q4 | "Access Denied"; nothing sent | | |
 | ☐ | X14 | Investor requests approval | — | 1. Arun POSTs `request_approval` on Q4 | "Access Denied"; nothing sent | | |
 | ☐ | X15 | Read-only employee requests approval | — | 1. Vikram POSTs `request_approval` on Q4 | "Access Denied"; nothing sent | | |
-| ☐ | X16 | Withdrawal cannot save | ON; Q4 approved; Q4 fails an unrelated validation (e.g. duplicate name after a data fix) | 1. Anil changes a remittance | Whole change rolled back; Anil sees the validation message; Q4 still approved with old figures | | |
+| ☐ | X16 | Unrelated validation problem on the call (design C3) | ON; Q4 approved; Q4 fails an unrelated validation (e.g. a blank due date after a data fix — developer prepares) | 1. Anil changes a remittance | Anil's change saves; Q4 shows Approved: No (withdrawn); approvers are alerted | | |
 
 ---
 

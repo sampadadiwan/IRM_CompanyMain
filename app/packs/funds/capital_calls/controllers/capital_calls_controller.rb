@@ -3,7 +3,7 @@ class CapitalCallsController < ApplicationController
   include WithJourneyPanel # show's journey evaluation and the journey action
   include ActionView::Helpers::TextHelper # pluralize, for the bulk-confirm flash
 
-  before_action :set_capital_call, only: %i[show journey stats edit update destroy reminder approve unapprove notify generate_docs allocate_units recompute_fees
+  before_action :set_capital_call, only: %i[show journey stats edit update destroy reminder approve unapprove request_approval notify generate_docs allocate_units recompute_fees
                                             confirm_reconciliation_deposit reassign_reconciliation_deposit undo_reconciliation_deposit
                                             confirm_all_exact_reconciliation_deposits]
   before_action :set_workflowable, only: [:show] # runs after set_capital_call so @capital_call is available
@@ -106,7 +106,10 @@ class CapitalCallsController < ApplicationController
     @capital_call.assign_attributes(capital_call_params)
     respond_to do |format|
       if CapitalCallUpdate.call(capital_call: @capital_call, current_user:).success?
-        format.html { redirect_to capital_call_url(@capital_call), notice: "Capital call was successfully updated." }
+        notice = "Capital call was successfully updated."
+        # H21 (M13) — the change withdrew the call's approval (maker–checker on): say so, and what happens next
+        notice += " #{MakerCheckerNotices.withdrawn_sentence}" if @capital_call.approval_withdrawn?
+        format.html { redirect_to capital_call_url(@capital_call), notice: }
         format.json { render :show, status: :ok, location: @capital_call }
       else
         format.html { render :edit, status: :unprocessable_entity }
@@ -147,6 +150,26 @@ class CapitalCallsController < ApplicationController
       else
         format.html { redirect_to capital_call_url(@capital_call), alert: "Call not approved: #{result[:errors]}" }
         format.json { render json: @capital_call.errors, status: :unprocessable_entity }
+      end
+    end
+  end
+
+  # POST /capital_calls/:id/request_approval — M13 (OWASP 2026-11) design card ⑥ / ⑦. Authorized by
+  # set_capital_call (request_approval?: maker–checker on, unapproved, the user can edit it but can't approve it).
+  # Emails + bell-alerts every checker, at most once an hour; the flash says who was asked, or why nobody was.
+  # Worked examples H18, E34, E35 — openspec/changes/capital-call-distribution-maker-checker/business-rules.md
+  def request_approval
+    # The real person behind the request (CapHive support when acting as a user, D9)
+    result = MakerCheckerNotices.request(@capital_call, Current.user || current_user)
+    kind, message = MakerCheckerNotices.request_flash(result, @capital_call)
+    respond_to do |format|
+      format.html { redirect_to capital_call_url(@capital_call), kind => message }
+      format.json do
+        if result.sent?
+          render json: { status: "sent", recipients: result.recipients.map(&:id) }
+        else
+          render json: { error: message }, status: :unprocessable_entity
+        end
       end
     end
   end

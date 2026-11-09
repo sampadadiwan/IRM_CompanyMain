@@ -43,6 +43,10 @@ class EntitySetting < ApplicationRecord
   end
   before_validation :compact_evergreen_labels
   after_commit :clear_evergreen_labels_cache, if: -> { saved_change_to_evergreen_labels? }
+  # M13 (OWASP 2026-11) K3 / D13 — switching maker–checker OFF is announced to the firm's other company admins and
+  # approvers, so the control can't be removed quietly. Switching it on, or saving it unchanged, sends nothing (E54,
+  # E55). The change itself is in the entity's audit trail (Trackable above).
+  after_update_commit :announce_maker_checker_off, if: -> { saved_change_to_approval_maker_checker == [true, false] }
   # Add new flags to the end of this list
   flag :custom_flags, %i[no_password_login]
 
@@ -56,6 +60,12 @@ class EntitySetting < ApplicationRecord
   def evergreen_unit_label_allowed
     unit = evergreen_labels.to_h["unit"].presence
     errors.add(:evergreen_labels, "unit must be one of #{EvergreenLabels::UNIT_TERMS.join(', ')}") if unit && EvergreenLabels::UNIT_TERMS.exclude?(unit)
+  end
+
+  # H25 — after the save commits, with the person who switched it off (Current.user: the real person, support
+  # included); MakerCheckerNotices picks the recipients and sends email + bell
+  def announce_maker_checker_off
+    MakerCheckerNotices.switched_off(self, Current.user)
   end
 
   def clear_evergreen_labels_cache

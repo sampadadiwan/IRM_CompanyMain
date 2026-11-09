@@ -1233,15 +1233,15 @@ two builds at once would edit code while the other's tests run, and their test r
 ```mermaid
 flowchart LR
     M8["M8 · 2FA for support + super<br/>✅ built + committed"] --> M11["M11 · security event trail<br/>✅ built + committed"]
-    M11 --> M13["M13 · maker–checker<br/>⏳ queued"]
+    M11 --> M13["M13 · maker–checker<br/>✅ built, not committed"]
     M13 --> M14["M14 · bank-detail controls<br/>✅ design extended for SWIFT/IBAN<br/>(mark in validation_rules) · ⏳ queued"]
 ```
 
 | Order | # | Status | What's happening |
 |---|---|---|---|
 | 1 | M8 | ✅ **built and committed** (31 of 34 tasks; the other 3 are deploy, ops and QA steps) · review run 1,438 scenarios green | Built through OpenSpec's apply step. **Tests:** the 4 new features pass (78 scenarios); the full `features/security`, `features/login`, API, mobile and admin run passed 1,117 of 1,120. The 3 failures came from the Group A commit, not M8, and are fixed (see "Fixes to Group A found by the M8 run" below). **Help text and tooltips:** the banner (why, from which date, Set up now, ⓘ), the set-up screen, the Turn off popup (why password + code), the disabled Turn off for admins (tooltip: use Reset 2FA Method), the Login as refusal (why + Set up now), the emails. **Screenshots** compared with the reference screens. No migration |
-| 2 | M11 | ✅ **built and committed** (32 of 34 tasks; 3.9 done in the regression run, 4.4 is QA on staging) | Built through OpenSpec's apply step. Migration `20261109150000` adds `security_events` (dev migrated; schema files hand-edited to the new table only). **Tests:** 4 new features, 99 scenarios green; regression of 21 feature sets, 1,523/1,523. **Help text and tooltips:** the screen says why it exists and what to do, every card, column and filter field has an ⓘ, empty state and period notice; each email says why and what to do. **Screenshots** compared with capital_calls and the mock. **Your decisions during the build:** support sign-in as a user and firm switch → bell only, no email. Deviations: design "Changed during the build" C1–C19 |
-| 3 | M13 | ⏳ queued | Starts after M11. Adds the `approval_maker_checker` firm setting (off for every firm by default) |
+| 2 | M11 | ✅ **built and committed** (32 of 34 tasks; 3.9 done in the regression run, 4.4 is QA on staging) | Built through OpenSpec's apply step. Migration `20261109150000` adds `security_events` (dev migrated; schema files hand-edited to the new table only). **Tests:** 4 new features, 99 scenarios green; regression of 21 feature sets, 1,523/1,523. **Help text and tooltips:** the screen says why it exists and what to do, every card, column and filter field has an ⓘ, empty state and period notice; each email says why and what to do. **Screenshots** compared with capital_calls and the mock. **Your decisions during the build:** support sign-in as a user and firm switch → bell only, no email. Deviations: design "Changed during the build" C1–C21 |
+| 3 | M13 | ✅ **built, not committed** (33 of 34 tasks; 4.8 is QA on staging) | Built through OpenSpec's apply step on 2026-11-10, after your full-suite run finished (no code was edited while it ran). Migrations `20261109160000` (the `approval_maker_checker` switch, off for every firm) and `20261109160100` (`approval_makers`); dev migrated, schema files hand-edited to the new column and table only. **Tests:** 7 new features, 98 scenarios green (one per worked example H1–H25, E1–E56, X1–X16, plus the entity-form explanation); regression of 117 capital call, distribution, remittance, payment, commitment, approval, journey, bulk, evergreen, entity and API feature files (setting off everywhere, i.e. today's behaviour) 1,413 of 1,414; the one failure was a generated company name with an apostrophe in an unrelated notification email, and it passed on rerun. **Help text and tooltips:** the entity form's Approvals block (why, ⓘ who counts as a preparer, what switching off does), the greyed Approve with its reason and what to do, the Prepared by row and ⓘ, the "(also prepared it)" label and ⓘ, the Request approval popup (who is emailed, or that nobody can approve yet), the flashes, three emails that say why and what to do. **Screenshots** compared with today's call page and the mock. Deviations: design "Changed during the build" C1–C21 |
 | 4 | M14 | ✅ design extended (mark in `validation_rules`, no migration) · ⏳ queued | SWIFT/IBAN custom fields count as bank details (design card ⑨, worked examples H18–H21 / E63–E79 / X16–X20, tasks phase 6). The "payout field" mark is stored in the existing `validation_rules` JSON, not a new column (decided 2026-11-09). The design is updated and validates: the one change to existing code is allowing the `payout_field` key in `validation_rules_consistent` (key change K19) |
 | — | M4 | 🅿️ parked | Not built. P1 (scrub development copies) is built and committed; P2 and P3 are planned below |
 
@@ -1678,6 +1678,38 @@ The explanations below are kept for reference. All four use the same example fir
   - **Why:** document approval is shared by many document types (not only capital call notices), so changing it
     needs its own design.
   - Folding it in would make this change much bigger.
+
+**What was built (2026-11-10, not yet committed).**
+
+```mermaid
+flowchart LR
+    W["Change watcher<br/>(6 models' figures)"] -->|"who, same save"| L[("approval_makers")]
+    S["Firm switch<br/>entity_settings.approval_maker_checker"] --> R["approve? + maker_checker_allows?"]
+    L --> R
+    R --> P["Button · URL · API · bulk"]
+    R --> U["Greyed Approve + reason<br/>Request approval popup"]
+    U --> N["Email + bell<br/>to checkers"]
+    W -->|"approved + on"| X["Approval withdrawn<br/>in the same save"]
+    X --> N
+    S -->|"switched off"| N
+```
+
+- **Recording:** one append-only table, `approval_makers`, written by callbacks on the six figure-bearing models
+  (calls, distributions, remittances, distribution payments, call and distribution fee lines) with the person behind
+  the request or job (CapHive support when acting as a user). One row per person per record: generating 3,000
+  remittances writes one row. The record's creator from the audit trail always counts, so older records need no
+  backfill. Names, notes, custom fields, notification switches, payments received and verification never count.
+- **The rule:** `approve?` gains one clause; with the firm's switch off it is exactly as before. Bulk approve names the
+  reason ("You prepared Q4 2026 Drawdown — another approver must approve it").
+- **The pages:** a preparer sees Approve greyed out with the reason and **Request approval** (a popup lists who will
+  be emailed, or that nobody can approve yet). Every call and distribution shows **Prepared by**, and a
+  self-approval is labelled "(also prepared it)" even with the switch off.
+- **Withdrawal:** with the switch on, a person changing figures after approval un-approves it in the same save; the
+  editor's flash says so and approvers and preparers get an email + bell. Late-commitment remittances, open-ended
+  settlements and changes with nobody behind them keep the approval (the last is logged).
+- **Switching off** emails and bell-alerts every other company admin and approver.
+- **Deviations** are in the design's "Changed during the build" table (C1–C21), e.g. X16: an unrelated validation
+  problem on the call no longer blocks a remittance edit — the edit saves and the approval is still withdrawn.
 
 #### M13 summary
 
@@ -2163,14 +2195,15 @@ it means**, and **what to do next**. A disabled control says why it's disabled; 
 | **M6** API tokens page | While support is signed in as a client: the **New token** button is disabled, with a tooltip and a help line saying why (the token would keep acting in this user's name after the support session ends) and what to do (ask the user to create it) | ✅ built (scenario M6-2) |
 | **M3** admin page | The masked vendor keys get a 🔒 hint: "Stored encrypted. Only the last 3 characters are shown." (a new `EncryptedSecretField`, so investment quantities that also use the masked field don't get it) | ✅ built |
 | **M8** 2FA | "Set up now" and the "Required for your role" badge on the user's own page (the banner was dropped with the start date); a set-up help line; why "Turn off 2FA" asks for password and code; a disabled control with tooltip where admins can no longer switch someone's 2FA off; the "Login as" refusal says why; emails say why and what to do | ✅ built, with Cucumber checks on each text |
-| **M11 / M13 / M14** | Task **U.1** added to each design's `tasks.md`: every screen, control, status and email explains itself, with Cucumber checks on the key texts and screenshots compared with the reference screens | ⏳ part of each build |
+| **M13** maker–checker | Entity form Approvals block (why, ⓘ who counts, what switching off does); greyed Approve with the reason and what to do; Prepared by row + ⓘ; "(also prepared it)" label + ⓘ; Request approval popup cards (who is emailed, or that nobody can approve yet); flashes; three emails that say why and what to do | ✅ built, with Cucumber checks on each text |
+| **M14** | Task **U.1** in the design's `tasks.md`: every screen, control, status and email explains itself, with Cucumber checks on the key texts and screenshots compared with the reference screens | ⏳ part of the build |
 
 Changes with no on-screen effect (M9, M10, M12, M15, M16–M18, M19) need no new text.
 
 ### Still unproven
 
-- **Group B:** M8 is being built and tested. M11, M13 and M14 aren't built yet. Each design's tests include "still
-  works" cases, reported per design.
+- **Group B:** M8 and M11 are built and committed; M13 is built and not yet committed; M14 isn't built yet. Each
+  design's tests include "still works" cases, reported per design. M13's QA checklist (staging) is still to run.
 - **M7:** one real Outlook add-in sign-in after deploy.
 - **M19:** the first real SendGrid post to deal ingest.
 

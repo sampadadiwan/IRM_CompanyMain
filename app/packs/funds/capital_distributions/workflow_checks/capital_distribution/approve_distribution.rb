@@ -17,7 +17,7 @@ module WorkflowChecks
 
       def call(dist)
         unless dist.approved
-          return fail_with(message: "The distribution is not approved yet", action_label: "Approve",
+          return fail_with(message: not_approved_message(dist), action_label: "Approve",
                            action_path: distribution_path(dist), action_target: APPROVE_BTN)
         end
 
@@ -25,6 +25,13 @@ module WorkflowChecks
       end
 
       private
+
+      # E24 / E25 (M13) — with maker–checker on, say that the approver must be someone who did not prepare it;
+      # off, today's words
+      def not_approved_message(dist)
+        message = "The distribution is not approved yet"
+        dist.maker_checker_on? ? "#{message} — it needs an approver who did not prepare it" : message
+      end
 
       # The latest audit that switched approved on (audits are indexed by auditable)
       def approved_at(dist)

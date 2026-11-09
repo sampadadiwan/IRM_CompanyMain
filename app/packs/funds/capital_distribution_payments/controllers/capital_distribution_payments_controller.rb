@@ -69,7 +69,10 @@ class CapitalDistributionPaymentsController < ApplicationController
     respond_to do |format|
       if result.success?
         journey_undo(started_at, "Payment #{@capital_distribution_payment.folio_id} edited")
-        format.html { redirect_to capital_distribution_payment_url(@capital_distribution_payment), notice: "Capital distribution payment was successfully updated." }
+        notice = "Capital distribution payment was successfully updated."
+        # H23 (M13) — the change withdrew the distribution's approval (maker–checker on): say so
+        notice += " #{MakerCheckerNotices.withdrawn_sentence}" if @capital_distribution_payment.capital_distribution.approval_withdrawn?
+        format.html { redirect_to capital_distribution_payment_url(@capital_distribution_payment), notice: }
         format.json { render :show, status: :ok, location: @capital_distribution_payment }
       else
         format.html { render :edit, status: :unprocessable_entity }
