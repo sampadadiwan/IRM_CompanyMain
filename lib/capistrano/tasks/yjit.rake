@@ -80,13 +80,53 @@ def yjit_jemalloc_loaded?(pid)
   pid && test("sudo grep -qs libjemalloc /proc/#{pid}/maps")
 end
 
+# The systemd unit behind each process the report and the post-restart wait look at.
+def yjit_units
+  { puma: fetch(:puma_service_unit_name), sidekiq: fetch(:sidekiq_service_unit_name) }
+end
+
+# prometheus_exporter on the box (port 9394, started by IRM:start_boot_services / @reboot cron).
+# YjitMetrics (config/initializers/prometheus.rb) has every puma worker and sidekiq report
+# RubyVM::YJIT.enabled? there as ruby_yjit_enabled{type=...}; these are the type labels per process.
+YJIT_EXPORTER_URL = 'http://localhost:9394/metrics'
+YJIT_EXPORTER_TYPES = { puma: 'puma_worker', sidekiq: 'sidekiq' }.freeze
+
+# ruby_yjit_enabled values by type label, e.g. { "puma_worker" => [1.0, 1.0, 1.0, 1.0], "sidekiq" => [1.0] }.
+# Empty when the exporter is down or nothing has reported yet — callers then fall back to the
+# memory map.
+def yjit_exporter_gauges
+  # `|| true`: a down exporter (curl fails) or no matching line (grep exits 1) is not an error here
+  out = capture("curl -s --max-time 5 #{YJIT_EXPORTER_URL} 2>/dev/null | grep '^ruby_yjit_enabled{' || true")
+  # Each line looks like: ruby_yjit_enabled{type="puma_worker",worker="2"} 1
+  out.lines.each_with_object(Hash.new { |h, k| h[k] = [] }) do |line, gauges|
+    match = line.match(/type="([^"]+)"[^}]*\}\s+(\S+)/)
+    gauges[match[1]] << match[2].to_f if match
+  end
+end
+
 # YJIT reserves its code region the moment it is enabled, and Ruby names that mapping
-# [anon:Ruby:rb_jit_reserve_addr_space] — absent on plain Ruby or with YJIT off. (Named anonymous
-# mappings need CONFIG_ANON_VMA_NAME, which the Ubuntu 24.04 app boxes have.) Puma's
-# "* Ruby version: ... +YJIT" banner cannot tell: it is printed before Rails loads and runs
-# the :enable_yjit initializer, so it never shows +YJIT for a config.yjit-enabled app.
-def yjit_running?(pid)
+# [anon:Ruby:rb_jit_reserve_addr_space] — absent on plain Ruby or with YJIT off. Only a fallback:
+# the name needs both a kernel with CONFIG_ANON_VMA_NAME AND a Ruby compiled against headers that
+# define PR_SET_VMA. The Ubuntu 22.04 US app boxes run a 6.8 kernel with the option on, yet their
+# YJIT processes carry no such name (their Ruby was built against jammy's 5.15 headers), so on
+# them this reads "not running" for a process that is running YJIT (seen on 2026-11-09).
+# Puma's "* Ruby version: ... +YJIT" banner cannot tell either: it is printed before Rails loads
+# and runs the :enable_yjit initializer, so it never shows +YJIT for a config.yjit-enabled app.
+def yjit_running_by_maps?(pid)
   pid && test("sudo grep -qs jit_reserve_addr_space /proc/#{pid}/maps")
+end
+
+# [running?, how it was decided] for one process (:puma or :sidekiq).
+# Prefers the process's own word (the exporter gauge); the memory map only when there is none.
+# For puma that means the workers — the processes that serve requests — not the master.
+# A gauge holds its last value until overwritten, so straight after a restart it can still be the
+# old process's value; that can only make a re-run of enable pass early on a box already on YJIT.
+def yjit_status(name, pid, gauges)
+  values = gauges[YJIT_EXPORTER_TYPES.fetch(name)]
+  # Every worker must report 1: one worker without YJIT means the box is not fully on it
+  return [values.all?(1), 'exporter'] if values&.any?
+
+  [yjit_running_by_maps?(pid), 'memory map']
 end
 
 def yjit_report
@@ -94,12 +134,15 @@ def yjit_report
   info "#{host}: RVM default #{ruby} | YJIT compiled in: #{yjit_has_yjit?(ruby) ? 'yes' : 'NO'} | " \
        "libjemalloc2: #{test('dpkg -s libjemalloc2 >/dev/null 2>&1') ? 'installed' : 'missing'}"
 
+  # One exporter read per host, shared by puma and sidekiq
+  gauges = yjit_exporter_gauges
+
   # Per live process: which Ruby binary it runs, and whether YJIT and jemalloc are actually in it
-  { puma: fetch(:puma_service_unit_name), sidekiq: fetch(:sidekiq_service_unit_name) }.to_h do |name, unit|
+  yjit_units.to_h do |name, unit|
     pid = yjit_unit_pid(unit)
     exe = pid ? capture("sudo readlink /proc/#{pid}/exe").strip : '-'
-    running = yjit_running?(pid)
-    info "#{host}: #{name} pid #{pid || '-'} #{exe} | YJIT: #{running ? 'running' : 'NOT running'} | " \
+    running, source = yjit_status(name, pid, gauges)
+    info "#{host}: #{name} pid #{pid || '-'} #{exe} | YJIT: #{running ? 'running' : 'NOT running'} (#{source}) | " \
          "jemalloc: #{yjit_jemalloc_loaded?(pid) ? 'loaded' : 'not loaded'}"
     [name, running]
   end
@@ -165,9 +208,14 @@ namespace :yjit do
     on roles(:app) do
       next if yjit_dry_run?
 
-      # Rails enables YJIT while booting, so give a just-restarted process up to a minute to get there
-      units = [fetch(:puma_service_unit_name), fetch(:sidekiq_service_unit_name)]
-      12.times { units.all? { |unit| yjit_running?(yjit_unit_pid(unit)) } ? break : sleep(5) }
+      # Rails enables YJIT while booting, and YjitMetrics reports every 30 s, so give a
+      # just-restarted process up to a minute to show up as running
+      12.times do
+        gauges = yjit_exporter_gauges
+        break if yjit_units.all? { |name, unit| yjit_status(name, yjit_unit_pid(unit), gauges).first }
+
+        sleep 5
+      end
       off = yjit_report.reject { |_name, running| running }.keys
       raise "#{host}: YJIT is not running in #{off.join(' and ')} after restart (see the lines above)" if off.any?
 

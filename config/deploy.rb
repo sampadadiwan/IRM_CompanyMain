@@ -921,9 +921,22 @@ namespace :IRM do
 
   task :apt_update do
     on roles(:app) do
+      # Never prompt: `-y` only answers apt's own "continue?" question. A prompt
+      # from needrestart (its "Daemons using outdated libraries" whiptail
+      # checklist) or debconf, shown over SSH, blocks forever once the session
+      # drops — and apt keeps holding the dpkg lock while its post-invoke hooks
+      # wait, so the next apt run can never start.
+      # - DEBIAN_FRONTEND=noninteractive: debconf asks nothing and takes the defaults.
+      # - NEEDRESTART_SUSPEND=1: skip needrestart; the reboot below restarts every
+      #   service on the new libraries anyway.
+      # `sudo env …` because sudo's env_reset would otherwise drop the variables.
+      noninteractive = "env DEBIAN_FRONTEND=noninteractive NEEDRESTART_SUSPEND=1"
       # Same dpkg-lock wait as IRM:setup — never race unattended-upgrades
-      execute :sudo, "apt-get -o DPkg::Lock::Timeout=600 update"
-      execute :sudo, "apt-get -o DPkg::Lock::Timeout=600 upgrade -y"
+      execute :sudo, "#{noninteractive} apt-get -o DPkg::Lock::Timeout=600 update"
+      # A changed config file never prompts: keep the box's version if it was
+      # edited locally (confold), otherwise take the package default (confdef).
+      execute :sudo, "#{noninteractive} apt-get -o DPkg::Lock::Timeout=600 " \
+                     "-o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold upgrade -y"
       execute :sudo, "journalctl --vacuum-time=2d"
       execute :sudo, "reboot"
     end
