@@ -208,6 +208,8 @@ Rails.application.routes.draw do
   # Opened in an Office dialog (a top-level window, so the session cookie works there)
   # to mint the bearer token the task pane authenticates with.
   get 'outlook_addin/oauth_start', to: 'outlook_addin#oauth_start'
+  # M7 (OWASP 2026-11): the confirm page's button; only this issues the add-in token
+  post 'outlook_addin/oauth_start', to: 'outlook_addin#oauth_confirm', as: :outlook_addin_oauth_confirm
   # Same purpose for the Gmail add-on, which opens this in a browser tab and receives the
   # token back through Apps Script's usercallback.
   get 'gmail_addin/oauth_start', to: 'gmail_addin#oauth_start'

@@ -198,6 +198,30 @@ module DashboardWidgetsHelper
   # @return [Object, nil] the resolved value, or nil if any segment is unsafe/missing
   SAFE_METHOD_SEGMENT = /\A[a-zA-Z_]\w*[?!]?\z/
 
+  # M15 (OWASP 2026-11): the owner a dashboard is about, from uri_params. The generic dashboard page
+  # (dashboard_widgets/dashboard) takes uri_params from the web address, and the old lookup
+  # (`uri_params[:owner_type].constantize.find(uri_params[:owner_id])`) let anyone open another firm's fund
+  # figures by changing owner_id. Now: only the owner types dashboards use, found only among the records the user
+  # may see. Pages that already hold an authorized owner pass it as `owner:` and never reach this.
+  DASHBOARD_OWNER_TYPES = %w[Fund Investor].freeze
+
+  # @param uri_params [Hash, ActionController::Parameters] with owner_type / owner_id
+  # @return [ApplicationRecord, nil] nil when no owner is named
+  # @raise [ActiveRecord::RecordNotFound] for a type outside the list or a record outside the user's scope
+  def dashboard_owner(uri_params)
+    return nil if uri_params.blank?
+
+    type = uri_params[:owner_type] || uri_params["owner_type"]
+    id = uri_params[:owner_id] || uri_params["owner_id"]
+    return nil if type.blank? || id.blank?
+
+    klass = ApplicationRecord.model_class_from_param(type, allowed: DASHBOARD_OWNER_TYPES)
+    raise ActiveRecord::RecordNotFound, "Unknown dashboard owner type" unless klass
+
+    # policy_scope: the same records the user's own lists show
+    policy_scope(klass).find(id)
+  end
+
   def safe_field_value(object, key_path)
     key_path.split(".").inject(object) do |obj, segment|
       method_name = segment.strip

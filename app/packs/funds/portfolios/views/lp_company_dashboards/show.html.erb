@@ -54,6 +54,7 @@
       <%= render "/dashboard_widgets/dashboard",
                  dashboard_name: DashboardWidget::PORTFOLIO_COMPANY_DASHBOARD, name: @layout.name, entity_id: @company.entity_id,
                  uri_params: { owner_id: @company.id, owner_type: "Investor" },
+                 owner: @company,
                  lp_context: { company: @company, fund: @fund, visibility: @page.visibility } %>
     <% else %>
       <%# E54 — never the internal widget set %>

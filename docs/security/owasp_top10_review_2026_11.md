@@ -32,7 +32,7 @@
 | M2 | ✅ | Cookie/Authorization/session/`signed_id` filtered; no `session` section in error mail | Nothing in the app reads filtered params as data |
 | H2 | ⏳ ops | Set the four flags on IN and US boxes | — |
 | N1 | ✅ | See below: `import_uploads.support_user_id` + row guard in `ImportFormCustomField` | Unchanged Calculation rows in re-imported sheets still pass |
-| M3, M5–M7, M9, M10, M12, M15–M19 | ⏳ approved, next | Group A, code-only. Starts when the current test run finishes | Each checked against production data before it lands |
+| M3, M5–M7, M9, M10, M12, M15–M19 | ✅ built (+L16) | Group A, code-only; see `owasp_2026_11_changes.md` › Group A. M3 by migration `20261109130000` | 11 scenarios in `owasp_group_a_2026_11.feature` pass; focused run of 43 feature files green (400 scenarios; 1 parallel-load timeout passes on rerun) |
 | M11 | 📝 design, questions answered | `openspec/changes/security-event-trail`: weekly pack to support@caphive.com (per-region `SECURITY_EVENTS_WEEKLY_TO`), no LP sign-in email, 13 months' retention | Awaiting approval of key changes K1–K10 |
 | M8 | 📝 design, questions answered | `openspec/changes/require-2fa-privileged-roles`: 2FA required for **CapHive support and super users only** (11 people lack it today in IN; the super user also has the support role); company admins stay optional; 2FA can't be switched off without password + code for anyone; 14-day notice; no forced sign-out | All questions answered |
 | M14 | 📝 design, questions answered | `openspec/changes/bank-detail-change-controls`: SWIFT/IBAN included (design to extend); one-approver firms use the warned, recorded fallback | Awaiting design extension + approval |

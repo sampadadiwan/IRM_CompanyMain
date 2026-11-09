@@ -99,6 +99,8 @@ module WithAuthentication
 
   # Define the method to handle the error
   def deny_access(exception = nil)
+    # M12 (OWASP 2026-11): count every denial, so a sweep across other firms' record ids raises an alert
+    SecurityMetrics.event(:authorization_denied, reason: exception&.class&.name&.demodulize)
     if request.headers['Authorization'].present?
       render json: { error: "Access Denied" }, status: :forbidden
     elsif request.headers['Turbo-Frame'].present?

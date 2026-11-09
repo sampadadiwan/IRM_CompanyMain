@@ -52,13 +52,16 @@ class OutlookAddinController < ApplicationController
 
   # Opened in the Office dialog (a top-level window). authenticate_user! applies, so Devise
   # prompts here if there is no session — which is the one place a login form actually works.
+  #
+  # M7 (OWASP 2026-11): the HTML GET mints nothing. It used to hand a 30-day token straight to whichever add-in opened
+  # the dialog, so a third-party Outlook add-in listing our domain could collect it. Now it shows who is about to be
+  # connected and asks; only the POST from its button (oauth_confirm) issues the token. Same pattern as the Gmail
+  # add-in's H12 fix.
   def oauth_start
     skip_authorization
 
-    @token_payload = MailAddinToken.payload_for(current_user)
-
     respond_to do |format|
-      format.html { render :oauth_start, layout: false }
+      format.html { render :oauth_confirm_page, layout: false }
       # JSON is for the development simulator, which has no Office dialog channel to
       # receive the token over. Same-origin and session-authenticated exactly like the
       # HTML branch; restricted to non-production so the token cannot be lifted by a
@@ -66,9 +69,18 @@ class OutlookAddinController < ApplicationController
       format.json do
         return head :not_found unless simulator_enabled?
 
-        render json: @token_payload
+        render json: MailAddinToken.payload_for(current_user)
       end
     end
+  end
+
+  # M7 — POST from the confirm page's button. Rails' CSRF check applies, so only a form this server rendered in the
+  # user's own session reaches here. Mints the token and renders the page that hands it to the add-in.
+  def oauth_confirm
+    skip_authorization
+
+    @token_payload = MailAddinToken.payload_for(current_user)
+    render :oauth_start, layout: false
   end
 
   # Legacy endpoint for the pre-rewrite task pane: returns every investor in the entity

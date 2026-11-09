@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_09_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_09_130000) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -2257,7 +2257,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_09_120000) do
     t.json "whatsapp_templates"
     t.datetime "deleted_at"
     t.string "digio_client_id"
-    t.string "digio_client_secret"
+    t.text "digio_client_secret"
     t.datetime "digio_cutover_date"
     t.string "append_to_commitment_agreement"
     t.string "regulatory_env", limit: 20, default: "SEBI"
@@ -2273,11 +2273,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_09_120000) do
     t.string "portflio_expense_account_entry_filter"
     t.string "kyc_bank_account_types"
     t.integer "month_offset_for_fy"
-    t.string "openai_api_key"
-    t.string "gemini_api_key"
+    t.text "openai_api_key"
+    t.text "gemini_api_key"
     t.string "default_llm_model"
-    t.string "anthropic_api_key"
-    t.string "openrouter_api_key"
+    t.text "anthropic_api_key"
+    t.text "openrouter_api_key"
     t.boolean "db_dumps_enable", default: false
     t.integer "db_dumps_retention_period", default: 7
     t.boolean "db_dumps_email_enabled", default: false

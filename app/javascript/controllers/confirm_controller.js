@@ -1,4 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
+// M16 (OWASP 2026-11): data-msg is inserted as HTML (two KPI messages use <br>/<small> on purpose), and callers
+// interpolate user-typed names into it (KPI, template, folder names), so it is cleaned before insertion
+import DOMPurify from "dompurify"
 
 /**
  * ConfirmController manages the global confirmation modal used throughout the application.
@@ -72,7 +75,9 @@ export default class extends Controller {
         this.deleteForm = event.currentTarget.closest("form");
 
         // Update basic modal content
-        $('#confirmModal #msg').html(msg);
+        // M16: allowed formatting (<br>, <small>, <b> …) is kept; scripts, event handlers and javascript: links are
+        // removed. An undefined msg stays a no-op, as .html(undefined) was before
+        $('#confirmModal #msg').html(msg === undefined ? undefined : DOMPurify.sanitize(msg));
         $('#confirmModal #title').text(title);
         $('#confirmModal #method').val(method);
         $('#confirmModal #submitForm').val(submitForm);

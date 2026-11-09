@@ -6,7 +6,12 @@ Doorkeeper.configure do
   orm :active_record
 
   resource_owner_authenticator do
-    if current_user
+    if current_user && session[:support_user_id].present?
+      # M6 (OWASP 2026-11): no OAuth / MCP authorization while CapHive support is signed in as this user — the
+      # 30-day refreshable token would act in the client's name after the support session ends
+      redirect_to root_path, alert: "Apps can't be authorized while you are signed in as another user."
+      nil
+    elsif current_user
       current_user
     else
       cookies[:oauth_return_to] = { value: request.fullpath, httponly: true, secure: !Rails.env.development? }

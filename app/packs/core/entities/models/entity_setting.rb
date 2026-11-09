@@ -2,6 +2,15 @@
 # This enables us to make the Entity small as its used in every request,
 # while moving other attributes to EntitySetting
 class EntitySetting < ApplicationRecord
+  # M3 (OWASP 2026-11): each firm's own third-party credentials, encrypted at rest with the app's Active Record
+  # encryption keys (existing rows converted by migration 20261109130000). Read and written as plain strings through
+  # the model, so every caller (WhatsApp, Digio, the LLM clients) is unchanged.
+  encrypts :whatsapp_token, :digio_client_secret, :openai_api_key, :anthropic_api_key, :gemini_api_key, :openrouter_api_key
+  # A blank key is stored as NULL, not encrypted: Rails encrypts "" into a non-empty value, which SupportAgent's
+  # "key present" SQL (IS NOT NULL AND != '') would read as a key. Blank and NULL already meant "no key".
+  normalizes :whatsapp_token, :digio_client_secret, :openai_api_key, :anthropic_api_key, :gemini_api_key,
+             :openrouter_api_key, with: ->(value) { value.presence }
+
   include Trackable.new(associated_with: :entity)
 
   belongs_to :entity

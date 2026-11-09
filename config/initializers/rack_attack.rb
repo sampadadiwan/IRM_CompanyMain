@@ -173,6 +173,8 @@ module Rack
 
     Rack::Attack.throttled_responder = lambda do |req|
       Rails.logger.warn "⚠️ Throttled request from #{req.ip} on rule #{req.env['rack.attack.matched']}"
+      # M12 (OWASP 2026-11): the rule name is from the closed set below, so it is a safe metric label
+      SecurityMetrics.event(:throttled, reason: req.env['rack.attack.matched'])
       [429, { 'Content-Type' => 'text/plain' }, ["Rate limit exceeded. Try again later.\n"]]
     end
 

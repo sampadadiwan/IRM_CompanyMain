@@ -991,17 +991,98 @@ as each one lands.
 
 | # | In one line | Status |
 |---|---|---|
-| M3 | Encrypt each firm's stored third-party keys | ⏳ building |
-| M5 | Database-dump email link valid 1 hour, not 7 days | ⏳ building |
-| M6 | No tokens minted while support is signed in as a client | ⏳ building |
-| M7 | Outlook add-in asks "Allow?" before handing over a token | ⏳ building |
-| M9 | CDN scripts pinned to exact versions with integrity hashes | ⏳ building |
-| M10 | DOMPurify 3.4.17, Mermaid 11.16.1 | ⏳ building |
-| M12 | Alert counters for denied requests, throttles, failed sign-ins | ⏳ building |
-| M15 | Dashboard owner looked up only among records the user may see | ⏳ building |
-| M16, M17 | Names can't run scripts in the confirm popup or the deals grid | ⏳ building |
-| M18 | AI answers can't show images from outside sites | ⏳ building |
-| M19 | Deal-ingest emails accepted only if SPF or DKIM passes | ⏳ building |
+| M3 | Encrypt each firm's stored third-party keys | ✅ built: migration `20261109130000` |
+| M5 | Database-dump email link valid 1 hour, not 7 days | ✅ built |
+| M6 | No tokens minted while support is signed in as a client | ✅ built |
+| M7 | Outlook add-in asks "Allow?" before handing over a token | ✅ built · ⏳ try once in real Outlook |
+| M9 | CDN scripts pinned to exact versions with integrity hashes | ✅ built |
+| M10 | DOMPurify 3.4.17, Mermaid 11.16.1 | ✅ built: `importmap audit` is clean |
+| M12 | Alert counters for denied requests, throttles, failed sign-ins | ✅ built · ⏳ tune thresholds after a few weeks |
+| M15 | Dashboard owner looked up only among records the user may see | ✅ built |
+| M16, M17 | Names can't run scripts in the confirm popup or the deals grid | ✅ built (plus L16) |
+| M18 | AI answers can't show images from outside sites | ✅ built |
+| M19 | Deal-ingest emails accepted only if SPF or DKIM passes | ✅ built |
+
+**Tests.**
+- `features/security/owasp_group_a_2026_11.feature` has 11 scenarios: an attack and a "still works" case per fix,
+  plus drift guards for M9 and M10. All 11 pass.
+- A focused run of the 43 feature files that exercise the changed code (API tokens, OAuth/MCP, the mail add-ins,
+  dashboards, deal ingest, the database dump, AI answers): **400 scenarios, 399 passed.**
+  - The one failure (`entity_db_dump.feature:15`) was a Playwright timeout under parallel load. Run on its own it
+    passes, including the "Proceed" click on the confirm popup. That confirms the M16 change (DOMPurify in the confirm
+    controller) loads in the browser.
+
+### Group A — as built (what differs from, or adds to, the plan below)
+
+- **M3:**
+  - It's a **migration** (`20261109130000_encrypt_entity_setting_vendor_keys.rb`), not a rake task. It widens the
+    five string columns to `text` and encrypts the existing values in the same step, so there is no window where the
+    app finds a plain value it can't decrypt.
+  - Blank values become `NULL`. Rails encrypts `""` into a non-empty value, which the support agent's "key present"
+    SQL (`IS NOT NULL AND != ''`) would have read as a key. A model `normalizes` keeps blanks as `nil` from now on.
+  - The admin page shows the keys masked (`ObfuscatedField`, last 3 characters). The admin edit form is unchanged.
+  - Checked: migrate and roll back on the local dev database; a key reads back identical through the model.
+- **M5:** `DocumentMailer.download_link_ttl(document)` returns 1 hour for documents tagged "DB Dump" and 7 days
+  otherwise. The email text says which.
+- **M6:**
+  - `ApiTokenPolicy#create?` refuses while `support_user_id` is set.
+  - Doorkeeper's sign-in hook refuses the OAuth/MCP consent screen while `session[:support_user_id]` is set, with
+    the message "Apps can't be authorized while you are signed in as another user."
+- **M7:**
+  - The `GET /outlook_addin/oauth_start` page now asks "Connect CapHive Filing (Outlook)" and holds no token.
+  - The button's `POST` (CSRF-protected) mints the token and renders the existing hand-over page.
+  - That page calls `messageParent(…, { targetOrigin })` where Outlook supports DialogOrigin 1.1, and the plain call
+    otherwise.
+  - **Not testable here:** the Office dialog itself. Try one sign-in from the real Outlook add-in after deploy.
+- **M9:**
+  - 30 `<script>` tags in 6 views now carry `integrity` and `crossorigin="anonymous"`.
+  - `sortablejs`, `smartwizard` and `lucide` are pinned to the versions served today (1.15.7, 5.1.1, 1.70.0).
+  - `xlsxspread.min.js` is served from `public/vendor/sheetjs/`.
+  - The unused `investment_solutions` layout is deleted.
+  - Left as they were, on purpose: `office.js` (Microsoft updates it in place) and the Tailwind CDN (it sends no
+    CORS header, so integrity would block it).
+- **M12:**
+  - The counter is `caphive_security_events_total{event, reason}`. The events are `authorization_denied`,
+    `throttled`, `sign_in_failed` and `two_factor_failed`.
+  - Labels come only from closed sets (exception class, Rack::Attack rule, Devise failure message), never an email,
+    id or IP.
+  - Hooks:
+    - `deny_access`
+    - Rack::Attack's throttled responder
+    - `TwoFactorVerifier.record_failure`
+    - a Warden `before_failure` hook. It reads `opts[:attempted_path]`, because Warden has already rewritten the
+      path to `/unauthenticated` by then.
+  - Four Grafana rules (`grafana_provision.yml`, "Security — …"):
+
+    | Alert | Threshold |
+    |---|---|
+    | Failed sign-ins | more than 50 in 5 minutes |
+    | Wrong 2FA codes | more than 20 in 15 minutes |
+    | Authorization denials | more than 200 in 10 minutes |
+    | Throttled requests | more than 100 in 10 minutes |
+
+    These are starting points; tune them once real numbers exist.
+- **M15:**
+  - The fund, investor and LP-company dashboards now pass the owner they've already authorized (`owner:`), so they
+    look nothing up.
+  - The generic `dashboard_widgets/dashboard` page, whose owner comes from the web address, resolves it with
+    `dashboard_owner`: only `Fund` or `Investor`, through `policy_scope`.
+  - The five remittance widgets use the owner they're given.
+- **M16 / M17 / L16:**
+  - The confirm popup's message goes through DOMPurify. The two KPI messages keep their `<br>` and `<small>`.
+  - A shared `custom/escape_html.js` (`escapeHtml`, `safeUrl`) escapes names, tags, tooltips and logo URLs in the
+    deals grid, the KPI chart's saved settings and the command palette.
+- **M18:** applied in `markdown_to_html`, so it covers every AI-written page, not only chat answers. An `<img>`
+  survives only if its source is relative, `data:image/`, `blob:`, or our own host or base domain.
+- **M19:**
+  - A pass is recognised in every form SendGrid gives it:
+    - `Received-SPF: pass`
+    - `spf=pass` / `dkim=pass` in `Authentication-Results`
+    - the short `SPF: pass` / `DKIM: pass` form
+    - SendGrid's own `SPF` and `dkim` fields
+  - Every refusal is logged.
+  - The production copy has no deal-ingest emails at all yet, so nothing in use today is affected.
+
 
 ### M3 — Each firm's third-party keys are stored in plain text
 

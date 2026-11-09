@@ -1,5 +1,6 @@
 <%
-  owner = uri_params[:owner_type].constantize.find(uri_params[:owner_id])
+  # M15 (OWASP 2026-11): the owner the dashboard already resolved (authorized), never an unscoped lookup
+  owner = local_assigns[:owner] || dashboard_owner(uri_params)
   aggregate_by = params[:aggregate_by] || args[:aggregate_by] || args[:period] || "year"
   chart_type = params[:chart_type] || args[:chart_type] || "area"
 %>

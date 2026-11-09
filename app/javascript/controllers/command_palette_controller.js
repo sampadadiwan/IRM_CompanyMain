@@ -1,4 +1,6 @@
 import { Controller } from "@hotwired/stimulus"
+// L16 (OWASP 2026-11): names and labels typed by users go into innerHTML — escape them
+import { escapeHtml } from "custom/escape_html"
 
 export default class extends Controller {
   static targets = ["modal", "input", "results"]
@@ -76,8 +78,8 @@ export default class extends Controller {
       <div class="list-group-item list-group-item-action d-flex align-items-center justify-content-between cursor-pointer" 
            data-action="click->command-palette#execute" data-index="${i}">
         <div>
-          <span class="badge bg-light text-muted border me-2">${item.type}</span>
-          <span class="fw-bold">${item.label}</span>
+          <span class="badge bg-light text-muted border me-2">${escapeHtml(item.type)}</span>
+          <span class="fw-bold">${escapeHtml(item.label)}</span>
         </div>
         <i class="ti ti-chevron-right opacity-50"></i>
       </div>

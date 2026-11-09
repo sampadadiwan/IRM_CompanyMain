@@ -1,4 +1,6 @@
 import { Controller } from "@hotwired/stimulus"
+// L16 (OWASP 2026-11): names and labels typed by users go into innerHTML — escape them
+import { escapeHtml } from "custom/escape_html"
 
 console.log("KPI Chart Controller File Loaded")
 
@@ -178,11 +180,11 @@ export default class extends Controller {
         div.className = "px-3 py-1 dropdown-item-text"
         div.innerHTML = `
           <div class="form-check">
-            <input class="form-check-input" type="checkbox" value="${s.id}" id="setting_${s.id}"
+            <input class="form-check-input" type="checkbox" value="${escapeHtml(s.id)}" id="setting_${escapeHtml(s.id)}"
                    ${this.selectedSettingIds.includes(String(s.id)) ? 'checked' : ''}
                    data-action="change->kpi-chart#toggleSavedSetting click->kpi-chart#stopProp">
-            <label class="form-check-label small" for="setting_${s.id}" data-action="click->kpi-chart#stopProp">
-              ${s.name}
+            <label class="form-check-label small" for="setting_${escapeHtml(s.id)}" data-action="click->kpi-chart#stopProp">
+              ${escapeHtml(s.name)}
             </label>
           </div>
         `
