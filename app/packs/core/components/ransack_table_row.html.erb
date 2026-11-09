@@ -9,6 +9,9 @@
           <%= l(value) %>
         <% elsif value.is_a?(Money) %>
           <%= money_to_currency value, params %>
+        <%# Boolean columns (data_type "Boolean" in grid view preferences) show a Yes/No badge, not true/false %>
+        <% elsif value == true || value == false %>
+          <%= render DisplayBooleanComponent.new(bool: value) %>
         <% else %>
           <%= value %>
         <% end %>

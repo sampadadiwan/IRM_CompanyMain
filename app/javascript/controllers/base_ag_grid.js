@@ -435,6 +435,31 @@ export default class BaseAgGrid extends Controller {
           }
 
     }
+
+    // Boolean column: the same Yes/No badge as the Rails DisplayBooleanComponent (display_boolean helper)
+    booleanColumn(controller, field, headerName, enableRowGroup = true, enablePivot = true) {
+        return {
+            field: field, headerName: headerName, enableRowGroup: enableRowGroup, enablePivot: enablePivot,
+            filter: "agSetColumnFilter",
+            cellRenderer: function (params) {
+              // Group rows and missing values render blank rather than a misleading "No"
+              if (params.value === undefined || params.value === null || params.value === '') return '';
+              // Only real booleans and their string forms ("true"/"false") become a badge
+              const text = String(params.value).toLowerCase();
+              if (params.value === true || params.value === false || text === 'true' || text === 'false') {
+                const bool = params.value === true || text === 'true';
+                return `<span class="badge ${bool ? 'bg-success' : 'bg-warning'}">${bool ? 'Yes' : 'No'}</span>`;
+              }
+              // Anything else is already rendered by the JSON (e.g. interests' verified badge) — show it as-is
+              return controller.renderCell(params, field, field);
+            },
+            valueGetter: (params) => {
+              if (params.data !== undefined) {
+                return params.data[field]
+              }
+            }
+          }
+    }
     // Helper function to format numbers with commas and specified decimal places
     // The previous implementation was not working correctly with custom decimal places passed
     formatNumberWithCommas(value, decimals = 2) {

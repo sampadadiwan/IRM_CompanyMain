@@ -6,7 +6,8 @@ class GridColumnsSave
   LABEL_MAX = 100
   KEY_MAX = 255
   # D20 — the data types and alignments Configure Grids offered
-  DATA_TYPES = %w[String Number Decimal Date HTML].freeze
+  # Boolean renders as a Yes/No badge (display_boolean) in both the HTML grid and AG Grid
+  DATA_TYPES = %w[String Number Decimal Date Boolean HTML].freeze
   ALIGNMENTS = %w[text-start text-center text-end].freeze
 
   Result = Struct.new(:success, :errors, :owner) do

@@ -34,7 +34,10 @@ export default class extends BaseAgGrid {
       } else if (data_type === "Number" || data_type === "Decimal") {
         numericCols.push(key);
         columnDefs.push(numberFormatColumn(controller, key, label, formatNumberWithCommas));
-      } else if (data_type.toLowerCase() === "html" || data_type === "Boolean") {
+      } else if (data_type === "Boolean") {
+        // Yes/No badge instead of raw true/false
+        columnDefs.push(controller.booleanColumn(controller, key, label));
+      } else if (data_type.toLowerCase() === "html") {
         columnDefs.push(html_column(controller, key, label));
       } else {
         columnDefs.push(textColumn(controller, key, label));
