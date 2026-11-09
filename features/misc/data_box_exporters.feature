@@ -120,7 +120,8 @@ Feature: The data box's Elasticsearch, Redis and MySQL memory are monitored
       | redis://10.0.3.182:6379     | 10.0.3.182 |
       | redis://:secret@10.0.3.9:6379/0 | 10.0.3.9 |
 
-  # H6 — Happy path: the alerts read what the exporters report
+  # H6 — Happy path: the alerts read what the exporters report. The metric column holds quote-free
+  # parts of each expression: a " in an example value breaks the quoted {string} in the step.
   Scenario Outline: The data box services are alerted on
     When I read the provisioned Grafana alert rules
     Then there should be an alert rule titled "<title>"
@@ -131,9 +132,9 @@ Feature: The data box's Elasticsearch, Redis and MySQL memory are monitored
       | Redis Down                                  | redis_up                       |
       | Redis Memory Near Limit (>85% of maxmemory) | redis_memory_max_bytes > 0     |
       | Elasticsearch Down                          | elasticsearch_clusterinfo_up   |
-      | Elasticsearch Cluster Red                   | color="red"                    |
+      | Elasticsearch Cluster Red                   | elasticsearch_cluster_health_status |
       | Elasticsearch Heap High (>90%)              | elasticsearch_jvm_memory_max_bytes |
-      | Data Box Exporter Down                      | up{job=~"elasticsearch\|redis"} |
+      | Data Box Exporter Down                      | 1 - up{job=~                   |
 
   # E4 — Edge case: provisioning twice must not add a second row, and a re-run replaces the panels
   # an earlier version put there (three moved to the Elasticsearch / Redis dashboards, 2026-11-09)
