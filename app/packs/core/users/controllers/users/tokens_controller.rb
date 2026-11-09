@@ -17,7 +17,10 @@ module Users
       # Only after the password is proven, so the answer never reveals whether an account has
       # two-factor on; a wrong password still takes devise-api's normal path (and lockout count).
       # A locked account takes devise-api's normal path, so this never confirms a password for it
-      return render_two_factor_required if user&.two_factor_enabled? && !user.access_locked? && user.valid_password?(sign_in_params[:password].to_s)
+      # M8 — two_factor_applies?: a support / super user past the region's date is refused like a
+      # two-factor user (X3); before the date the token is issued as today (E20); a wrong password
+      # still falls through to devise-api's lockout count (X4)
+      return render_two_factor_required if user&.two_factor_applies? && !user.access_locked? && user.valid_password?(sign_in_params[:password].to_s)
 
       super
     end
@@ -49,7 +52,8 @@ module Users
     # from before this check, and the user must sign in again through a code.
     def refuse_unbound_two_factor_refresh
       token = current_devise_api_refresh_token
-      return if token.nil? || !token.resource_owner.try(:two_factor_enabled?)
+      # M8 — the same predicate as sign_in, so a required support / super user cannot refresh either
+      return if token.nil? || !token.resource_owner.try(:two_factor_applies?)
 
       render_two_factor_required
     end

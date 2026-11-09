@@ -169,8 +169,50 @@ module TwoFactorAuthenticatable
     false
   end
 
-  # Override devise-two-factor's method to also check our flag
+  # ── Required two-factor (support / super) ───────────────────────────────
+  #
+  # Three different questions, kept apart because mixing them is how the sign-in doors drifted
+  # (design card ①). Every door asks #two_factor_applies?; nothing else reads the env date or
+  # the role list (RequiredTwoFactor).
+
+  # Holds a role in RequiredTwoFactor::REQUIRED_2FA_ROLES, whatever the region's stage. Used by
+  # the banner and the report.
+  #
+  # has_cached_role?, never support?: support? is also true while a support user impersonates
+  # a client (support_user_id), and the rule is about the account's own roles (E12, E23).
+  #
+  # @return [Boolean]
+  def two_factor_required_role?
+    RequiredTwoFactor::REQUIRED_2FA_ROLES.any? { |role| has_cached_role?(role) }
+  end
+
+  # Must use two-factor now: the region's date is reached AND the user holds a required role.
+  # Re-read on every request, so a role granted after the date applies at the next sign-in (E5)
+  # and a role removed before set-up stops applying (E6).
+  #
+  # @return [Boolean]
+  def two_factor_required?
+    RequiredTwoFactor.enforced? && two_factor_required_role?
+  end
+
+  # Does two-factor apply to this sign-in? The user's own switch (voluntary 2FA, E13) OR the
+  # role rule (H1). The single predicate every sign-in door reads (design D2).
+  #
+  # @return [Boolean]
+  def two_factor_applies?
+    two_factor_enabled? || two_factor_required?
+  end
+
+  # Switched on AND a method has been confirmed with a code — what Login as (D7), the banner and
+  # Set up now look for.
+  #
+  # @return [Boolean]
+  def two_factor_verified?
+    two_factor_enabled? && two_factor_mode.present?
+  end
+
+  # Override devise-two-factor's method to also check our flag — and, since M8, the role rule
   def need_two_factor_authentication?(_request)
-    two_factor_enabled?
+    two_factor_applies?
   end
 end

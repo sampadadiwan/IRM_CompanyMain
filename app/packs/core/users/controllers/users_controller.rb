@@ -8,7 +8,11 @@ class UsersController < ApplicationController
   skip_before_action :verify_authenticity_token, :authenticate_user!, only: %i[signature_progress whatsapp_webhook]
   skip_before_action :set_current_entity, only: %i[whatsapp_webhook]
 
-  before_action :set_user, only: %w[show update destroy edit reset_two_factor]
+  before_action :set_user, only: %w[show update destroy edit reset_two_factor disable_two_factor send_two_factor_code
+                                    start_two_factor_setup]
+  # X21 / X23 — turning two-factor off is a website security action: a bearer token (API token,
+  # add-in, app) is refused before anything else, as Users::ApiTokensController does
+  before_action :refuse_bearer_tokens, only: %i[disable_two_factor send_two_factor_code]
   after_action :verify_authorized, except: %i[welcome index search reset_password accept_terms set_persona magic_link no_password_login whatsapp_webhook cross_site_login redirect_to_subdomain]
 
   def welcome; end
@@ -283,7 +287,19 @@ class UsersController < ApplicationController
   # serves the email self-login magic link (which is legitimately redeemed while logged out).
   def login_as
     @user = User.find(params[:id])
-    authorize @user, :login_as?
+    begin
+      authorize @user, :login_as?
+    rescue Pundit::NotAuthorizedError
+      # X6 / X7 — a refusal the support user can fix (no verified two-factor method once the date is
+      # reached) gets its own message; every other refusal goes to the usual deny_access
+      message = policy(@user).login_as_refusal_message
+      raise if message.blank?
+
+      # The alerts partial draws a "Set up now" button from this plain flag (the alert text stays escaped)
+      flash[:two_factor_setup] = true
+      redirect_to root_path, alert: message
+      return
+    end
 
     # Capture the acting (support) user's id BEFORE sign_in swaps current_user, so the audit
     # trail attributes the impersonated actions to the real actor.
@@ -336,6 +352,77 @@ class UsersController < ApplicationController
     else
       redirect_to user_path(@user), alert: result[:errors]
     end
+  end
+
+  # POST /users/1/disable_two_factor
+  #
+  # Turns the user's OWN two-factor off after re-proving their password and a current code
+  # (TwoFactorDisable; M8 design card ⑥). Every user who has it on — required roles are refused by
+  # the operation (X15) so the message can say why. The model refuses every other route.
+  def disable_two_factor
+    # Self, website session, not support acting as the user (X16, X17, X24)
+    authorize @user, :disable_two_factor?
+
+    # password / otp_code are read here, never mass-assigned; both are filtered from the logs
+    result = TwoFactorDisable.call(user: @user, actor: current_user,
+                                   password: params[:password], code: params[:otp_code])
+
+    if result.success?
+      # H9 / H10 / E30
+      redirect_to user_path(@user), notice: "Two-factor authentication is now off. You will sign in with just your password."
+    else
+      # X11–X15 — the step's own message; a lock (X14) is caught by Devise on the next request
+      redirect_to user_path(@user), alert: result[:errors]
+    end
+  end
+
+  # POST /users/1/send_two_factor_code
+  #
+  # Sends the current code to a WhatsApp / SMS user for the turn-off popup (they are signed in, so the
+  # pre-sign-in send_sms / send_whatsapp actions do not apply — design D6). The same delivery rules
+  # as sign-in (TwoFactorVerifier.start); a server-side cooldown, not the cookie, stops repeat sends.
+  def send_two_factor_code
+    # Same rule as the turn-off itself (X22)
+    authorize @user, :disable_two_factor?
+
+    # An authenticator user reads the code from the app; nothing to send
+    if @user.two_factor_mode.blank? || @user.authenticator_mode?
+      render json: { message: "Use the code shown in your authenticator app." }
+      return
+    end
+
+    # E37 — one send per window, held server side (WhatsApp 30 s, SMS the durable limiter's window)
+    window = @user.whatsapp_mode? ? 30.seconds : OtpSmsRateLimiter.min_number_window
+    unless Rails.cache.write("two_factor_disable_send:#{@user.id}", 1, expires_in: window, unless_exist: true)
+      render json: { error: "Please wait a moment before requesting another code." }, status: :too_many_requests
+      return
+    end
+
+    if TwoFactorVerifier.start(@user) == :undeliverable
+      # The number is gone or SMS is switched off — recovery is an administrator reset
+      render json: { error: "We can't send a verification code to your phone right now. Please contact your administrator." },
+             status: :unprocessable_entity
+    else
+      # Hedged, as on the sign-in screen: the send is asynchronous
+      render json: { message: "A new code is on its way. It can take a few seconds to arrive." }
+    end
+  end
+
+  # POST /users/1/start_two_factor_setup
+  #
+  # "Set up now" on the required-2FA banner / user page (M8, design card ⑤). Switches the user's own
+  # two-factor flag on and signs them out, so the very next sign-in — with a fresh password — goes
+  # through the existing choose-a-method set-up. Enrolment never happens inside the current session,
+  # so a stolen session cannot enrol an attacker's authenticator app (H5).
+  def start_two_factor_setup
+    # X8 someone else / X9 acting as a client / X10 not a required role → Access Denied
+    authorize @user, :start_two_factor_setup?
+
+    # Flag on (once), so the next sign-in routes to set-up even before the region's date
+    ActiveRecord::Base.connected_to(role: :writing) { @user.update!(two_factor_enabled: true) } unless @user.two_factor_enabled?
+    # Signed out now; the set-up happens after the next password entry
+    sign_out current_user
+    redirect_to new_user_session_path, notice: "Sign in again to set up two-factor authentication."
   end
 
   # GET /users/1 or /users/1.json
@@ -478,6 +565,15 @@ class UsersController < ApplicationController
     return nil unless value.start_with?("/") && !value.start_with?("//", "/\\")
 
     value
+  end
+
+  # X21 / X23 — copied from Users::ApiTokensController#refuse_bearer_tokens: a bearer-token request
+  # never reaches the two-factor turn-off actions
+  def refuse_bearer_tokens
+    return unless api_request?
+
+    skip_authorization
+    render json: { error: "Access Denied" }, status: :forbidden
   end
 
   # Use callbacks to share common setup or constraints between actions.

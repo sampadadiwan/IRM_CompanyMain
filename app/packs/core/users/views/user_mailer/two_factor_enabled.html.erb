@@ -1,0 +1,23 @@
+<%# Sent by Users::TwoFactorController#commit_method! once a method is confirmed with a code.
+    Bare l(...) — EmailDateLocalization renders "Dec 02, 2026" whatever the locale (E41). %>
+<h3>Dear <%= @user.full_name %></h3>
+
+<p>
+  Two-factor authentication was turned on for your account on <%= l(Time.zone.today) %>,
+  using <strong><%= @mode_label %></strong>.
+  From now on, signing in asks for your password and a verification code.
+</p>
+
+<p>
+  If you lose access to this method, ask your administrator to reset it. You will then choose
+  a new method at your next sign-in.
+</p>
+
+<p>
+  You are receiving this email because a sign-in setting on your own account changed — we always tell
+  you when two-factor authentication is switched on or off.
+  <strong>If you did not set this up</strong>, change your password and contact your administrator
+  straight away: someone else may know your password.
+</p>
+
+<p>Please do NOT share this email with others.</p>

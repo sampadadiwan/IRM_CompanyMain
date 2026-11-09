@@ -1,0 +1,26 @@
+<%# Sent to a firm's other company admins by TwoFactorDisable (event "disabled") and by
+    TwoFactorReset when an administrator reset a colleague's method (event "reset").
+    @user is the admin receiving it; @subject_user is the colleague. %>
+<h3>Dear <%= @user.full_name %></h3>
+
+<% if @event == "reset" %>
+  <p>
+    The two-factor method of <strong><%= @subject_user.full_name %></strong> (<%= @subject_user.email %>)
+    was reset on <%= l(Time.zone.today) %><% if @actor %> by <%= @actor.full_name %><% end %>.
+    Two-factor stays switched on: they will choose a new method at their next sign-in.
+  </p>
+<% else %>
+  <p>
+    <strong><%= @subject_user.full_name %></strong> (<%= @subject_user.email %>) turned two-factor
+    authentication off for their account on <%= l(Time.zone.today) %>, confirmed with their password
+    and a current code. Signing in to that account now needs only the password.
+  </p>
+<% end %>
+
+<p>
+  You are receiving this email because you are a company admin of the same firm, and changes to a
+  colleague's second factor are a common sign of an account takeover.
+  <strong>If this was not expected</strong>, check with <%= @subject_user.first_name %> directly (not by
+  replying to an email from their account). If they did not make the change, ask them to change their
+  password<% if @event == "reset" %> and set up a new method at their next sign-in<% else %> and switch two-factor back on from Edit profile<% end %>.
+</p>

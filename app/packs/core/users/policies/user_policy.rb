@@ -113,13 +113,57 @@ class UserPolicy < ApplicationPolicy
   # This is enforced server-side against the authenticated acting user, which is why the new
   # login_as flow cannot be redeemed by an anonymous party holding a leaked URL (unlike the old
   # signed-link flow — see UsersController#login_as and docs/security/security_review_2026_07.md H2).
+  #   3. (M8, require-2fa-privileged-roles D7) once the region's date is reached, they themselves
+  #      have a verified two-factor method — a support session that began before the date may be
+  #      password-only, and Login as skips the target's own code (H6; X6, X7 refused; E26 before
+  #      the date unchanged).
   def login_as?
     return false unless user.has_cached_role?(:support) || user.has_cached_role?(:super)
+    # D7 — the actor's own second factor, checked before the mapping lookup
+    return false if login_as_needs_two_factor?
 
     # R5: an advisor is mapped by their home company, not the client they are switched into, so
     # support for one client cannot impersonate the advisor and reach their other clients.
     mapped_entity_id = record.has_cached_role?(:investor_advisor) && record.advisor_entity_id.present? ? record.advisor_entity_id : record.entity_id
     mapping = SupportClientMapping.find_by(user_id: user.id, entity_id: mapped_entity_id, enabled: true)
     mapping&.allow_login_as(user.email) || false
+  end
+
+  # Why login_as? refused, when the reason is one the support user can fix themselves; nil for
+  # every other refusal (no mapping, not allowed), which keeps the generic "Access Denied".
+  # UsersController#login_as shows it as the alert (X6).
+  #
+  # @return [String, nil]
+  def login_as_refusal_message
+    # Only for a support / super actor: anyone else is refused for their role, not their 2FA
+    return nil unless user.has_cached_role?(:support) || user.has_cached_role?(:super)
+    return nil unless login_as_needs_two_factor?
+
+    "Set up two-factor authentication before using Login as. Login as opens a client's account, " \
+      "so support and super users need a second factor on their own account first."
+  end
+
+  # Turning two-factor OFF (TwoFactorDisable): only the user themselves, from a website session that
+  # is not support acting as them, and only while it is on. Every user, not just required roles —
+  # a stolen session must not remove anyone's 2FA (design D5, D12). No administrator may switch it
+  # off for someone else: the Reset 2FA Method covers recovery (X16, X17, X22, X24). Whether a
+  # required role may turn it off is the operation's rule (X15), so the refusal can say why.
+  def disable_two_factor?
+    user.id == record.id && user.support_user_id.blank? && record.two_factor_enabled?
+  end
+
+  # "Set up now" on the required-2FA banner and the user page (UsersController#start_two_factor_setup):
+  # the support / super user themselves, not while acting as a client, and only while they have no
+  # verified method (H5; X8 someone else, X9 acting as a client, X10 a company admin — refused).
+  def start_two_factor_setup?
+    user.id == record.id && user.support_user_id.blank? &&
+      record.two_factor_required_role? && !record.two_factor_verified?
+  end
+
+  private
+
+  # D7 — enforced region and the acting support / super user has no verified method
+  def login_as_needs_two_factor?
+    RequiredTwoFactor.enforced? && !user.two_factor_verified?
   end
 end

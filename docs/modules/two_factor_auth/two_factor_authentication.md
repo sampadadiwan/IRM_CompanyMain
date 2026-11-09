@@ -277,6 +277,72 @@ sequenceDiagram
 
 Feature coverage: `features/login/two_factor_method_reset.feature`.
 
+## Required two-factor for support and super users (OWASP 2026-11 M8)
+
+Design: `openspec/changes/require-2fa-privileged-roles` (design.md, lld.md, business-rules.md).
+
+- **Who:** `RequiredTwoFactor::REQUIRED_2FA_ROLES = %i[support super]` — the only place the rule's
+  roles are named. Company admins and everyone else keep optional 2FA.
+- **From when:** env `REQUIRED_2FA_ENFORCE_FROM=YYYY-MM-DD`, set on each region's box (the same date
+  in IN and US). Unset = off (also the rollback). Unparseable = enforced + one error log (fail closed).
+- **Nothing stored:** the rule is derived per request from the date and the user's cached roles.
+
+```mermaid
+flowchart TD
+    ENV["REQUIRED_2FA_ENFORCE_FROM"] --> STAGE{"RequiredTwoFactor.stage"}
+    STAGE -- "unset" --> OFF[":off"]
+    STAGE -- "date ahead" --> NOTICE[":notice<br/>amber banner"]
+    STAGE -- "date reached / unparseable" --> ENF[":enforced"]
+    ENF --> REQ["two_factor_required? =<br/>enforced && support/super"]
+    REQ --> APP["two_factor_applies? =<br/>two_factor_enabled? || required?"]
+    APP --> DOORS["TwoFactorDispatch, PasswordsController,<br/>TokensController, MobileSignIn"]
+```
+
+| Predicate (`TwoFactorAuthenticatable`) | Meaning | Read by |
+|---|---|---|
+| `two_factor_required_role?` | holds support / super (`has_cached_role?`, never `support?`) | banner, report |
+| `two_factor_required?` | stage enforced and a required role | set-up banner, turn-off refusal, badge |
+| `two_factor_applies?` | own switch on, or required | every sign-in door |
+| `two_factor_verified?` | on and a method confirmed | Login as, banner, Set up now |
+
+- A required user without a method takes the existing "enabled but no method" enrolment
+  (`:choose_method`). `Users::TwoFactorController#commit_method!` writes the mode and, for a
+  required user whose flag is still off, `two_factor_enabled: true` — then emails
+  `UserMailer#two_factor_enabled`.
+- `UserPolicy#login_as?` also needs the actor's verified method once enforced; the refusal shows a
+  **Set up now** button (`flash[:two_factor_setup]`, drawn by `layouts/_alerts`).
+- Layout banner `users/_two_factor_required_banner` (amber before, red after the date) with
+  **Set up now** → `UsersController#start_two_factor_setup` (flag on, sign out).
+- Ops: `bin/rails two_factor_required:report` (counts only) and
+  `two_factor_required:end_unverified_access` (dry run unless `EXECUTE=1`; refuses before the date;
+  `forget_me!` + revoke `ApiToken` and Doorkeeper tokens).
+
+### Turning two-factor off (every user)
+
+```mermaid
+sequenceDiagram
+    participant U as User (own page)
+    participant C as UsersController#disable_two_factor
+    participant O as TwoFactorDisable
+    participant M as User guard
+    U->>C: password + current code
+    C->>C: UserPolicy#disable_two_factor? (self, not impersonating); bearer refused
+    C->>O: call
+    O->>O: required role? → refuse
+    O->>O: password (counts toward Devise lock)
+    O->>O: code (3 misses / 10 min + hourly lock)
+    O->>M: disable_two_factor_verified!
+    O-->>U: emails: user + firm's other company admins
+```
+
+- `User#two_factor_disable_must_be_verified` refuses `two_factor_enabled` true → false on every other
+  path (Edit profile, JSON, admin console). Escapes are methods: `disable_two_factor_verified!`
+  (the op) and `skip_two_factor_disable_verification!` (cross-region sync).
+- `two_factor_enabled` is now in the user's audited fields.
+- `POST /users/:id/send_two_factor_code` sends the code to WhatsApp / SMS users (server cooldown).
+- An administrator's **Reset 2FA Method** also emails the firm's other company admins
+  (`UserMailer#two_factor_admin_notice`).
+
 ## Components
 
 ### Model Concern: `TwoFactorAuthenticatable`

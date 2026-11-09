@@ -78,6 +78,12 @@ Rails.application.routes.draw do
     # Clears the user's two-factor METHOD back to "none" (TwoFactorReset). Self-service and
     # administrator paths share this one action; the policy + operation tell them apart.
     post 'reset_two_factor', on: :member
+    # Required two-factor (M8): "Set up now" signs a support / super user out into the set-up flow;
+    # turning two-factor off needs the password and a current code (TwoFactorDisable), and
+    # send_two_factor_code sends that code to a WhatsApp / SMS user from their user page.
+    post 'start_two_factor_setup', on: :member
+    post 'disable_two_factor', on: :member
+    post 'send_two_factor_code', on: :member
     post 'magic_link', on: :collection
     post 'whatsapp_webhook', on: :collection
     get 'welcome', on: :collection

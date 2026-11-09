@@ -1,0 +1,150 @@
+<%#
+  "Turn Off Two-Factor Authentication" confirmation (OWASP 2026-11 M8, design card ⑥) — a copy of
+  users/_reset_two_factor_modal: "Immediate Actions" callout, tinted cards that spell out every
+  consequence, then what the action needs (password, and a current code when a method is set up),
+  an acknowledgement, then Cancel / Turn off 2FA.
+
+  Locals:
+    user – the signed-in user turning their OWN two-factor off (UserPolicy#disable_two_factor?)
+
+  The code field is left out when no method was ever set up (E30: password only). WhatsApp / SMS
+  users press Send code (UsersController#send_two_factor_code); authenticator users read the app.
+  The server re-checks everything (TwoFactorDisable); the Stimulus controller only keeps the button
+  disabled until every input is filled in.
+  Rendered OUTSIDE any card/table (Bootstrap modal rule); trigger button lives in the 2FA row of users/show.
+%>
+<%
+  mode = user.two_factor_mode.presence
+  mode_label = mode.to_s.titleize
+  mode_target = case mode
+                when "authenticator" then "Codes from your authenticator app"
+                when "whatsapp"      then "Codes sent to WhatsApp #{user.masked_phone_with_call_code}"
+                when "sms"           then "Codes texted to #{user.masked_phone_with_call_code}"
+                end
+  code_help = case mode
+              when "authenticator" then "The 6-digit code shown in your authenticator app."
+              when "whatsapp"      then "The 6-digit code from WhatsApp. Press Send code to receive one."
+              when "sms"           then "The 6-digit code from the text message. Press Send code to receive one."
+              end
+%>
+<div class="modal fade" id="disableTwoFactorModal" tabindex="-1" aria-labelledby="disableTwoFactorModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="disableTwoFactorModalLabel">
+          <i class="ti ti-shield-off me-1"></i>
+          Turn Off Two-Factor Authentication
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <%= form_with url: disable_two_factor_user_path(user), method: :post,
+                    data: { turbo: false, controller: "reset-two-factor",
+                            reset_two_factor_send_url_value: (send_two_factor_code_user_path(user) if %w[whatsapp sms].include?(mode)) } do |f| %>
+        <div class="modal-body">
+          <div class="action-summary__intro">
+            <div class="fw-bold text-dark">Immediate Actions</div>
+            <div class="text-muted">The following will happen immediately when you click <strong>Turn off 2FA</strong>:</div>
+          </div>
+
+          <div class="action-summary__list" id="disable_two_factor_effects">
+            <div class="action-summary__item action-summary__item--red">
+              <span class="action-summary__icon"><i class="ti ti-shield-off"></i></span>
+              <div>
+                <div class="action-summary__title">
+                  Two-factor switched off<% if mode %>: <span class="badge bg-secondary"><%= mode_label %></span><% end %>
+                </div>
+                <div class="action-summary__desc">
+                  <% if mode %>
+                    <%= mode_target %> will no longer be asked for at sign-in.
+                  <% else %>
+                    No method was set up yet, so nothing else stops working.
+                  <% end %>
+                </div>
+              </div>
+            </div>
+
+            <div class="action-summary__item action-summary__item--blue">
+              <span class="action-summary__icon"><i class="ti ti-key"></i></span>
+              <div>
+                <div class="action-summary__title">Sign-in will need only your password</div>
+                <div class="action-summary__desc">You can switch two-factor back on any time from Edit profile.</div>
+              </div>
+            </div>
+
+            <div class="action-summary__item action-summary__item--purple">
+              <span class="action-summary__icon"><i class="ti ti-mail"></i></span>
+              <div>
+                <div class="action-summary__title">Confirmation email sent</div>
+                <div class="action-summary__desc">
+                  An email goes to <strong><%= user.email %></strong>. Your firm's other company admins are told.
+                  This is recorded in the audit log.
+                </div>
+              </div>
+            </div>
+
+            <div class="action-summary__item action-summary__item--grey">
+              <span class="action-summary__icon"><i class="ti ti-info-circle"></i></span>
+              <div>
+                <div class="action-summary__title">Before you continue, have ready…</div>
+                <div class="action-summary__desc">
+                  Your password<% if mode %> and your <%= mode == "authenticator" ? "authenticator app" : "phone" %><% end %>.
+                  <% if %w[whatsapp sms].include?(mode) %>Press <strong>Send code</strong> to receive a <%= mode == "whatsapp" ? "WhatsApp" : "text message" %> code.<% end %>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <hr class="my-3">
+
+          <%# WHY both are asked — the step-up's whole point (design D5, X25) %>
+          <p class="text-muted mb-3" id="disable_two_factor_why">
+            <i class="ti ti-lock me-1"></i>
+            We ask for your password<%= " and a current code" if mode %> so that someone using your open session can't remove your second factor.
+          </p>
+
+          <div class="mb-3">
+            <%= f.label :password, "Confirm your password", class: "form-label fw-semibold", for: "disable_two_factor_password" %>
+            <small class="text-muted d-block mb-2">Required to make security changes to your account.</small>
+            <%= f.password_field :password, class: "form-control", required: true, autocomplete: "current-password",
+                  id: "disable_two_factor_password",
+                  data: { reset_two_factor_target: "password", action: "input->reset-two-factor#toggle" } %>
+          </div>
+
+          <% if mode %>
+            <div class="mb-3">
+              <%= f.label :otp_code, "Current code", class: "form-label fw-semibold", for: "disable_two_factor_code" %>
+              <small class="text-muted d-block mb-2"><%= code_help %></small>
+              <div class="input-group">
+                <%= f.text_field :otp_code, class: "form-control", required: true, inputmode: "numeric",
+                      autocomplete: "one-time-code", placeholder: "123 456", id: "disable_two_factor_code",
+                      data: { reset_two_factor_target: "code", action: "input->reset-two-factor#toggle" } %>
+                <% if %w[whatsapp sms].include?(mode) %>
+                  <button type="button" class="btn btn-outline-secondary" id="disable_two_factor_send_code"
+                          data-action="reset-two-factor#sendCode">
+                    <i class="ti <%= mode == 'whatsapp' ? 'ti-brand-whatsapp' : 'ti-message' %>"></i> Send code
+                  </button>
+                <% end %>
+              </div>
+              <div class="form-text" id="disable_two_factor_send_status" data-reset-two-factor-target="status"></div>
+            </div>
+          <% end %>
+
+          <div class="form-check">
+            <%= check_box_tag :acknowledge, "1", false, class: "form-check-input", id: "disable_two_factor_acknowledge",
+                  data: { reset_two_factor_target: "acknowledge", action: "change->reset-two-factor#toggle" } %>
+            <%= label_tag :disable_two_factor_acknowledge, "I understand sign-in will no longer ask for a code.", class: "form-check-label" %>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal"><%= t_common(:cancel) %></button>
+          <%= f.submit "Turn off 2FA", class: "btn btn-outline-success",
+                id: "disable_two_factor_submit",
+                disabled: true,
+                data: { reset_two_factor_target: "submit", disable_with: "Turning off..." } %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

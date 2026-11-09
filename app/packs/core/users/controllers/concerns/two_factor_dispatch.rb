@@ -39,7 +39,11 @@ module TwoFactorDispatch
   #   code box
   # @return [nil] when 2FA does not apply
   def two_factor_challenge_path_for(user)
-    return nil unless user.two_factor_enabled?
+    # M8 (design D2) — the user's own switch OR the support / super role rule once the region's
+    # date is reached. A required user with no method falls through to :choose_method below,
+    # i.e. the existing set-up screens (H1, E2, E5, E8); a company admin's answer is still just
+    # their own flag (E7, E13).
+    return nil unless user.two_factor_applies?
 
     # A fresh password login is a fresh challenge: no attempts used, no code in flight, no
     # channel hint. Leaving any of these from an earlier, abandoned challenge misroutes

@@ -23,6 +23,19 @@
         </div>
       <% end %>
 
+      <%# M8 — a support / super user sent here by the role rule (RequiredTwoFactor), not by their own
+          switch, is told why (H1, E8; label "Support" before "Super", E12). A company admin who switched
+          two-factor on themselves never sees it (E13). Same alert shape as the reset banner above. %>
+      <% if @user.two_factor_required? %>
+        <div class="alert alert-info" id="two_factor_required_banner">
+          <i class="fas fa-info-circle me-1"></i>
+          Two-factor authentication is required for your role (<%= RequiredTwoFactor.role_label(@user) %>).
+          Choose a method to finish signing in.
+          <%# Help line: the one method every user can pick, phone or not %>
+          The authenticator app works without a phone number.
+        </div>
+      <% end %>
+
       <%= form_tag select_mode_two_factor_path, method: :post, data: { turbo: false } do %>
         <div class="d-flex flex-column gap-3 mb-4">
 

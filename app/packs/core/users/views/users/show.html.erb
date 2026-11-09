@@ -132,6 +132,21 @@
               <% elsif @user.two_factor_enabled %>
                 <span class="badge bg-warning text-dark ms-1" id="two_factor_mode_badge">Method not chosen yet</span>
               <% end %>
+              <%# M8 — support / super once the region's date is reached: two-factor cannot be turned off
+                  (E35). The tooltip names the role, so the badge explains itself. %>
+              <% if @user.two_factor_required? %>
+                <span class="badge bg-info-subtle text-info-emphasis ms-1" id="two_factor_required_badge"
+                      data-bs-toggle="tooltip"
+                      title="<%= RequiredTwoFactor.role_label(@user) %> accounts must use two-factor authentication.">Required for your role</span>
+              <% end %>
+              <%# M8 — the banner's "Set up now", offered here too for the support / super user's own page
+                  while they have no verified method and the region has a date (H5) %>
+              <% if RequiredTwoFactor.stage != :off && policy(@user).start_two_factor_setup? %>
+                <%= button_to start_two_factor_setup_user_path(@user), class: "btn btn-sm btn-primary ms-2",
+                              form_class: "d-inline", id: "start_two_factor_setup_button", data: { turbo: false } do %>
+                  <i class="ti ti-shield-lock"></i> Set up now
+                <% end %>
+              <% end %>
               <%# Only the trigger lives here; the modal itself is rendered after the table
                   (Bootstrap modals must sit outside cards/tables). %>
               <% if policy(@user).reset_two_factor? %>
@@ -141,6 +156,26 @@
                   <i class="ti ti-shield-x"></i>
                   <%= @user == current_user ? "Change 2FA Method" : "Reset 2FA Method" %>
                 </button>
+              <% end %>
+              <%# M8 — the user's own page only (never an administrator's view, E38, nor support acting
+                  as the user, X24), and never for a role that must keep it (E35). Opens the popup below. %>
+              <% if policy(@user).disable_two_factor? && !@user.two_factor_required? %>
+                <button type="button" class="btn btn-sm btn-outline-danger ms-1"
+                        id="disable_two_factor_button"
+                        data-bs-toggle="modal" data-bs-target="#disableTwoFactorModal">
+                  <i class="ti ti-shield-off"></i> Turn off 2FA
+                </button>
+              <% elsif @user != current_user && current_user.support_user_id.blank? && @user.two_factor_enabled %>
+                <%# D12 — an administrator cannot switch someone else's 2FA off. Shown disabled with the reason
+                    rather than hidden, so the Reset path beside it is the obvious next step (E38). A disabled
+                    button fires no events, so the tooltip sits on a wrapper (Bootstrap's own pattern). %>
+                <span class="d-inline-block ms-1" tabindex="0" id="disable_two_factor_admin_hint"
+                      data-controller="scoring-tooltips" data-bs-toggle="tooltip"
+                      title="Only the user can turn off their own 2FA. Use Reset 2FA Method if they lost their phone.">
+                  <button type="button" class="btn btn-sm btn-outline-danger" disabled style="pointer-events: none;">
+                    <i class="ti ti-shield-off"></i> Turn off 2FA
+                  </button>
+                </span>
               <% end %>
             </td>
           </tr>
@@ -270,4 +305,8 @@
   <% end %>
   <% if policy(@user).reset_two_factor? %>
     <%= render "users/reset_two_factor_modal", user: @user, self_reset: (@user == current_user) %>
+  <% end %>
+  <%# Turn-off popup (password + current code) — trigger is the Turn off 2FA button in the row above %>
+  <% if policy(@user).disable_two_factor? && !@user.two_factor_required? %>
+    <%= render "users/disable_two_factor_modal", user: @user %>
   <% end %>

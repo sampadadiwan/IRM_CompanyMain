@@ -17,6 +17,13 @@
                         form: { class: "d-inline ms-2", data: { turbo: false } },
                         class: "btn btn-sm btn-light rounded-pill px-3" %>
         <% end %>
+        <%# M8 — Login as refused for a support / super user without a verified 2FA method
+            (UsersController#login_as): the alert offers the fix, the same "Set up now" as the banner. %>
+        <% if flash[:two_factor_setup] == true && current_user && current_user.two_factor_required_role? && !current_user.two_factor_verified? %>
+          <%= button_to "Set up now", start_two_factor_setup_user_path(current_user), method: :post,
+                        form: { class: "d-inline ms-2", data: { turbo: false } },
+                        class: "btn btn-sm btn-light rounded-pill px-3", id: "two_factor_setup_alert_button" %>
+        <% end %>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
       </div>
     <% end %>

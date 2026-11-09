@@ -23,6 +23,12 @@ def post_to_sendgrid(to:, from:, subject:, body:, message_id: nil, attachments: 
     "attachments" => attachments.size.to_s
   }
   payload.delete("headers") unless headers
+  # SendGrid's own sender checks, sent with every Inbound Parse post. Deal ingest accepts a sender only when SPF or
+  # DKIM passes (M19, OWASP review 2026-11), so a post without them is not what SendGrid sends for genuine mail.
+  if headers
+    payload["SPF"] = "pass"
+    payload["dkim"] = "{@#{from.to_s.split('@').last} : pass}"
+  end
 
   attachments.each do |key, file|
     payload[key] = file

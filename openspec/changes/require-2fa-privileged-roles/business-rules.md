@@ -183,7 +183,7 @@ Applies to **every** user who has 2FA on — voluntary or required.
 | E35 | Required user sees no turn-off | Anita, 2 Dec | opens her user page | badge "Required for your role"; no Turn off 2FA | TFA: Required user sees no turn-off | TO |
 | E36 | SMS user turns off | Tom (sms) | Send code → Twilio approves the code | off | TFA: Turn off with password and code | TO |
 | E37 | Send code cooldown | Priya pressed Send code | presses again within 60 s | "Please wait a moment before requesting another code."; one send only | TFA: Turn off with password and code | TO |
-| E38 | Admin sees only Reset | Neha on Dev's page | looks at the Two-Factor row | Reset 2FA Method shown; no Turn off 2FA | TFA: Another user cannot switch it off | TO |
+| E38 | Admin sees Reset; Turn off disabled with the reason | Neha on Dev's page | looks at the Two-Factor row | Reset 2FA Method shown; Turn off 2FA shown disabled with the tooltip "Only the user can turn off their own 2FA. Use Reset 2FA Method if they lost their phone." (changed 2026-11-09: every change explains itself) | TFA: Another user cannot switch it off | TO |
 | E39 | Self reset sends no admin notice | Dev › Change 2FA Method | confirms with password | only Dev emailed (existing) | TFA: Support resets a support user's lost method | TO |
 | E40 | No other company admins | Rahul and Sunita deactivated | Priya turns off | only Priya emailed | TFA: Switched off emails | TO |
 | E41 | Email date format under `ja` | Priya's turn-off processed under `ja` locale | email renders | date `Dec 08, 2026` (not kanji) | TFA: Switched on email | TO |

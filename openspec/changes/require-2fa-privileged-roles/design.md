@@ -1113,3 +1113,15 @@ The H/E/X tables pass 30 rows and span four feature files, so they live in **[bu
 | What breaks if the env is unset? | Nothing — stage off is today's sign-in; the step-up turn-off still applies (phase 3) |
 | Can the step-up ship before enforcement? | Yes — phase 3 does not depend on the date |
 | How is this rolled back? | Unset the env (enforcement off). Step-up turn-off stays; reverting it is a code revert |
+
+### Changed during the build
+
+| Date | What | Why / who |
+|---|---|---|
+| 2026-11-09 | Design approved, including all 16 [Key changes needing approval](#key-changes-needing-approval) and `mocks/screens.html` | User: "go ahead with Group B" (task 0.1) |
+| 2026-11-09 | Enrollment confirm (`verify_*`) redirects to `after_sign_in_path_for` instead of `root_path` | E15: a magic link's return-to page must survive a required set-up, as it does on the code path (`complete_login`) |
+| 2026-11-09 | The User guard's error is on `:base`, so JSON 422 is `{"base": [msg]}` (lld said `{two_factor_enabled: [msg]}`) | The form, the admin console and the JSON then all read the sentence exactly as written, without "Two factor enabled …" prefixed |
+| 2026-11-09 | Every user-facing change explains itself (user requirement, relayed mid-build): banner adds the *why* sentence, "Required since <date>" (red) and an ⓘ tooltip on how; set-up alert adds "The authenticator app works without a phone number."; turn-off popup says why password + code are asked; an administrator sees **Turn off 2FA** disabled with the tooltip "Only the user can turn off their own 2FA. Use Reset 2FA Method if they lost their phone." (E38 updated); the Login as refusal explains why and the alert carries a **Set up now** button (`flash[:two_factor_setup]`, drawn by `layouts/_alerts.html.erb` — a file outside the File Map); emails say why they were sent and what to do if it was not you | User, 2026-11-09 |
+| 2026-11-09 | Tooltips are bound with the existing `scoring-tooltips` Stimulus controller (Bootstrap tooltips are opt-in, no global initializer) | Reuse; no new JS |
+| 2026-11-09 | Edit profile row for a required user who has not set up yet shows the badge "Set up at next sign-in" (not "On") | The mock only covered a required user who had set up |
+| 2026-11-09 | Prosopite reports the per-admin `UserMailer#two_factor_admin_notice` lookups as N+1 | Test artefact: Cucumber runs `deliver_later` inline; in production each is its own mail job. One mail per admin is deliberate (sandbox-aware `setup_defaults` per recipient) |

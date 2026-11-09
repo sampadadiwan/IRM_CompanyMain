@@ -69,6 +69,55 @@ class UserMailer < ApplicationMailer
     mail(from: @from, to: @to, subject: "Your two-factor authentication method was reset")
   end
 
+  # Security notification: a two-factor method was just confirmed with a code, so sign-in now
+  # asks for one (Users::TwoFactorController#commit_method!). Sent for every confirmed method —
+  # a support / super user's required set-up (H2) and anyone's voluntary one alike — so the owner
+  # hears about an enrolment they did not make. Not a CustomNotification: it must always go out and
+  # must not be editable per firm (require-2fa-privileged-roles design D10).
+  #
+  # @param entity_id [Integer] / user_id [Integer] — ApplicationMailer#setup_defaults keys on these
+  # @param mode [String] "authenticator" / "whatsapp" / "sms"
+  def two_factor_enabled
+    # The label the user picked on the set-up screen, e.g. "Authenticator app"
+    @mode_label = TwoFactorAuthenticatable::MODE_LABELS.fetch(params[:mode].to_s, params[:mode].to_s.titleize)
+
+    mail(from: @from, to: @to, subject: "Two-factor authentication was turned on for your account")
+  end
+
+  # Security notification: the user turned two-factor OFF with their password and a current code
+  # (TwoFactorDisable, H9 / H10). Confirms the change, or warns them about one they never made.
+  #
+  # @param entity_id [Integer] / user_id [Integer] — ApplicationMailer#setup_defaults keys on these
+  # @param previous_mode [String, nil] the method that stopped being asked for (nil: none was set up, E30)
+  def two_factor_disabled
+    @previous_mode_label = previous_mode_label(params[:previous_mode])
+
+    mail(from: @from, to: @to, subject: "Two-factor authentication was turned off for your account")
+  end
+
+  # Tells one of the firm's OTHER company admins that a colleague's two-factor was turned off
+  # (TwoFactorDisable, event "disabled") or that an administrator reset a colleague's method
+  # (TwoFactorReset, event "reset"). One email per admin, so each goes through setup_defaults with
+  # their own user_id (sandbox-aware); the colleague is passed separately as subject_user_id.
+  #
+  # @param user_id [Integer] the admin receiving this email
+  # @param subject_user_id [Integer] the user whose two-factor changed
+  # @param actor_id [Integer] who made the change
+  # @param event [String] "disabled" or "reset"
+  def two_factor_admin_notice
+    # Who changed, and who changed it — reloaded from ids, never passed as objects
+    @subject_user = User.find(params[:subject_user_id])
+    @actor = User.find_by(id: params[:actor_id])
+    @event = params[:event].to_s
+
+    subject = if @event == "reset"
+                "Two-factor method reset for #{@subject_user.full_name}"
+              else
+                "Two-factor was turned off for #{@subject_user.full_name}"
+              end
+    mail(from: @from, to: @to, subject:)
+  end
+
   # The code that confirms a change to the user's existing mobile number. Sent only by
   # SendPhoneChangeCodeJob, with deliver_now inside the job, so the plain code never sits in a
   # job queue. The code is in the body only, never the subject (subjects show in lock-screen
@@ -97,5 +146,14 @@ class UserMailer < ApplicationMailer
     @previous_masked_phone = params[:previous_masked_phone]
 
     mail(from: @from, to: @to, subject: "Your mobile number was changed")
+  end
+
+  private
+
+  # "Authenticator app" for "authenticator"; nil when no method had been set up
+  def previous_mode_label(mode)
+    return nil if mode.blank?
+
+    TwoFactorAuthenticatable::MODE_LABELS.fetch(mode.to_s, mode.to_s.titleize)
   end
 end

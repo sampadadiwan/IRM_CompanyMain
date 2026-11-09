@@ -1232,14 +1232,14 @@ two builds at once would edit code while the other's tests run, and their test r
 
 ```mermaid
 flowchart LR
-    M8["M8 · 2FA for support + super<br/>🔨 building"] --> M11["M11 · security event trail<br/>⏳ queued"]
+    M8["M8 · 2FA for support + super<br/>✅ built + committed"] --> M11["M11 · security event trail<br/>⏳ next"]
     M11 --> M13["M13 · maker–checker<br/>⏳ queued"]
     M13 --> M14["M14 · bank-detail controls<br/>✅ design extended for SWIFT/IBAN<br/>(mark in validation_rules) · ⏳ queued"]
 ```
 
 | Order | # | Status | What's happening |
 |---|---|---|---|
-| 1 | M8 | 🔨 **building** | Implemented through OpenSpec's apply step, phase by phase from `tasks.md`. Each phase's Cucumber features plus the existing sign-in features (2FA, magic link, password reset, mobile, API tokens, "Login as", mail add-ins) must pass before the next phase. No schema change expected |
+| 1 | M8 | ✅ **built and committed** (31 of 34 tasks; the other 3 are deploy, ops and QA steps) · review run 1,438 scenarios green | Built through OpenSpec's apply step. **Tests:** the 4 new features pass (78 scenarios); the full `features/security`, `features/login`, API, mobile and admin run passed 1,117 of 1,120. The 3 failures came from the Group A commit, not M8, and are fixed (see "Fixes to Group A found by the M8 run" below). **Help text and tooltips:** the banner (why, from which date, Set up now, ⓘ), the set-up screen, the Turn off popup (why password + code), the disabled Turn off for admins (tooltip: use Reset 2FA Method), the Login as refusal (why + Set up now), the emails. **Screenshots** compared with the reference screens. No migration |
 | 2 | M11 | ⏳ queued | Starts after M8 is reviewed and committed. Adds the new `security_events` table (migration) |
 | 3 | M13 | ⏳ queued | Starts after M11. Adds the `approval_maker_checker` firm setting (off for every firm by default) |
 | 4 | M14 | ✅ design extended (mark in `validation_rules`, no migration) · ⏳ queued | SWIFT/IBAN custom fields count as bank details (design card ⑨, worked examples H18–H21 / E63–E79 / X16–X20, tasks phase 6). The "payout field" mark is stored in the existing `validation_rules` JSON, not a new column (decided 2026-11-09). The design is updated and validates: the one change to existing code is allowing the `payout_field` key in `validation_rules_consistent` (key change K19) |
@@ -1281,6 +1281,27 @@ column).** For example, `{"payout_field": "code"}`. Absent means "not a payout f
 | ❌ `meta_data` | It means something different per field type (choices, number format, currency, rows, Ruby). 7 KYC text fields in production already hold leftover choice lists there. And the editor shows it as a free text box, so anyone editing the form could clear the mark |
 
 `bank_detail_changes.changed_custom_fields` (json) stays: that table is new in this design anyway.
+
+#### Fixes to Group A found by the M8 run
+
+M8's full run covered security features that the Group A focused run hadn't. Three failures came from Group A, and all
+three were in tests, not app behaviour:
+
+| Scenario | Cause | Fix |
+|---|---|---|
+| **SG-4** (drift guard) | The reviewed list of always-true policy predicates still listed `ApiTokenPolicy#create?`. After M6 it isn't always true, so the entry was stale | Entry removed |
+| **H2-8** (SendGrid deal ingest) | The shared test helper `post_to_sendgrid` sent only `Content-Type` and `Message-ID`. Real SendGrid posts always include SendGrid's own `SPF` and `dkim` fields, which M19 now requires to pass | The helper sends `SPF: pass` and `dkim: {@domain : pass}`, as SendGrid does |
+| **F3-1** (CiProfile sanitising) | It rendered the `investment_solutions` layout that M9 deleted. Nothing in the app rendered that page, and `CiProfile` no longer exists | Scenario retired, with a comment. The sanitiser it exercised (`ci_widget_rich_text`) is still used by the live CI widgets and tested directly |
+
+#### M8 deploy steps (tasks 4.5–4.7)
+
+1. In IN and US, run `bin/rails two_factor_required:report` to see which support and super users have no 2FA.
+2. Set the **same** `REQUIRED_2FA_ENFORCE_FROM` (deploy date + 14 days) in `.env.production.in` and
+   `.env.production.us`, then restart.
+3. Message the 11 support and super users, and re-run the report until it shows 0.
+4. On the date, run `two_factor_required:end_unverified_access` as a dry run, then with `EXECUTE=1` if it names
+   anyone.
+5. QA works through `openspec/changes/require-2fa-privileged-roles/qa-checklist.md` on staging.
 
 **How each one finishes.**
 1. Its Cucumber features are green.
@@ -2022,9 +2043,9 @@ it means**, and **what to do next**. A disabled control says why it's disabled; 
 | **M5** dump email | The email says the link expires in "1 hour" and points to the in-app Download Link | ✅ built |
 | **M7** Outlook add-in | The confirm page says who is being connected, what the add-in can do (file emails as you, 30 days), and to close the window if you didn't press Sign in | ✅ built |
 | **M6** OAuth / MCP | The refusal says "Apps can't be authorized while you are signed in as another user." | ✅ built |
-| **M6** API tokens page | While support is signed in as a client: the **New token** button is disabled, with a tooltip and a help line saying why (the token would keep acting in this user's name after the support session ends) and what to do (ask the user to create it) | ⏳ after the M8 build (view edits wait for its tests) |
-| **M3** admin page | The masked vendor keys get a hint: "Stored encrypted; only the last 3 characters are shown" | ⏳ after the M8 build |
-| **M8** 2FA | The red banner (why, from which date, a "Set up now" button); a set-up help line; why "Turn off 2FA" asks for password and code; a disabled control with tooltip where admins can no longer switch someone's 2FA off; the "Login as" refusal says why; emails say why and what to do | 🔨 sent to the M8 build |
+| **M6** API tokens page | While support is signed in as a client: the **New token** button is disabled, with a tooltip and a help line saying why (the token would keep acting in this user's name after the support session ends) and what to do (ask the user to create it) | ✅ built (scenario M6-2) |
+| **M3** admin page | The masked vendor keys get a 🔒 hint: "Stored encrypted. Only the last 3 characters are shown." (a new `EncryptedSecretField`, so investment quantities that also use the masked field don't get it) | ✅ built |
+| **M8** 2FA | The red banner (why, from which date, a "Set up now" button); a set-up help line; why "Turn off 2FA" asks for password and code; a disabled control with tooltip where admins can no longer switch someone's 2FA off; the "Login as" refusal says why; emails say why and what to do | ✅ built, with Cucumber checks on each text |
 | **M11 / M13 / M14** | Task **U.1** added to each design's `tasks.md`: every screen, control, status and email explains itself, with Cucumber checks on the key texts and screenshots compared with the reference screens | ⏳ part of each build |
 
 Changes with no on-screen effect (M9, M10, M12, M15, M16–M18, M19) need no new text.

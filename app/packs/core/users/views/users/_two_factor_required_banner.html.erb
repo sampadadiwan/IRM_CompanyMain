@@ -1,0 +1,43 @@
+<%#
+  Required two-factor banner (OWASP 2026-11 M8) — copies users/_reset_password ("Please change your
+  password at the earliest") and is rendered beside it in the modernize, application and
+  admin/application layouts.
+
+  Shown only to a support / super user (RequiredTwoFactor::REQUIRED_2FA_ROLES) with no verified
+  method, while the region has a date, and never while they act as a client (E23). The caller passes
+  nothing: everything is read from current_user (roles cached per request, the date memoised per
+  process — no extra query on any page).
+    * notice  (date ahead)   → amber, with the date in the screen's own locale format (H4)
+    * enforced (date reached) → red, Login as unavailable (E21)
+  "Set up now" posts to UsersController#start_two_factor_setup, which signs out into the set-up
+  flow (H5).
+%>
+<% stage = RequiredTwoFactor.stage %>
+<% if current_user && stage != :off && current_user.support_user_id.blank? &&
+      current_user.two_factor_required_role? && !current_user.two_factor_verified? %>
+  <% date = RequiredTwoFactor.enforce_from %>
+  <%# Bootstrap tooltips are opt-in; the generic scoring-tooltips controller binds the one below %>
+  <div class="alert <%= stage == :enforced ? 'alert-danger' : 'alert-warning' %> d-flex flex-wrap flex-md-nowrap align-items-center gap-2 two_factor_required_prompt"
+       data-controller="scoring-tooltips">
+    <i class="ti <%= stage == :enforced ? 'ti-shield-x' : 'ti-shield-lock' %>"></i>
+    <%# Grows to fill the row so the icon and the button stay beside the text on desktop; wraps on phones %>
+    <span class="flex-grow-1">
+      <%# WHAT and WHEN (date in the screen's own locale format, H4 / E21) %>
+      <% if stage == :enforced %>
+        Two-factor authentication is now required for your role. Set it up to keep using CapHive.
+        Login as is unavailable until you do.
+        <% if date.is_a?(Date) %>Required since <strong><%= l(date) %></strong>.<% end %>
+      <% else %>
+        Two-factor authentication becomes required for your role (<%= RequiredTwoFactor.role_label(current_user) %>)
+        on <strong><%= l(date) %></strong>. Set it up now — it takes about a minute.
+      <% end %>
+      <%# WHY, in plain words %>
+      <span class="two_factor_required_why">CapHive support and super users can sign in as clients, so their accounts need a second factor.</span>
+      <%# HOW, the longer explanation on hover / focus %>
+      <i class="ti ti-info-circle" tabindex="0" id="two_factor_required_help" data-bs-toggle="tooltip"
+         title="Set up now signs you out. Sign in again and choose a method — an authenticator app works without a phone number. If you lose your phone later, another support user or a company admin can reset your method."></i>
+    </span>
+    <%= button_to "Set up now", start_two_factor_setup_user_path(current_user),
+                  class: "btn btn-sm btn-primary text-nowrap", form_class: "ms-auto", data: { turbo: false } %>
+  </div>
+<% end %>

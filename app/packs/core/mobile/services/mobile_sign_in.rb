@@ -39,8 +39,10 @@ class MobileSignIn
       # X4 — the app is for investors only
       return Result.new(kind: :not_investor) unless investor_persona?(user)
 
-      # H2 — no two-factor: the session is issued straight away
-      return session_for(user, device) unless user.two_factor_enabled?
+      # H2 — no two-factor: the session is issued straight away. M8: two_factor_applies? also
+      # covers a support user who is an LP too, once the date is reached (X5 → finish_2fa_setup;
+      # E18 a normal challenge after web set-up)
+      return session_for(user, device) unless user.two_factor_applies?
 
       case (outcome = TwoFactorVerifier.start(user))
       when :choose_method then Result.new(kind: :finish_2fa_setup) # E4

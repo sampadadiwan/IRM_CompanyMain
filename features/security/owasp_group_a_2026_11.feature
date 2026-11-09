@@ -31,6 +31,14 @@ Feature: OWASP review 2026-11 Group A - the code-only Medium fixes, without chan
     Then the user may create an API token in their own session
     And the user may not create an API token while support is signed in as them
 
+  # M6-2 — Edge case: support signed in as the user sees New token disabled, with the reason and what to do
+  @security
+  Scenario: M6-2 The token page explains why support can't create a token
+    Given there is a user "first_name=Ola" for an entity "name=Token Firm;entity_type=Investment Fund"
+    When a support user impersonates the user and requests "/users/api_tokens"
+    Then the impersonation should be active in the session
+    And the API token page shows New token disabled with the reason
+
   # M7-1 — Error case: opening the Outlook add-in sign-in page issues no token; confirming does
   @security
   Scenario: M7-1 The Outlook add-in sign-in asks before handing over a token

@@ -106,10 +106,11 @@ Then("I should not be on a two-factor page") do
   expect(page).not_to have_current_path(%r{\A/two_factor}, wait: 5)
 end
 
-# The profile toggle goes through the same update path; this exercises the model
-# callback (TwoFactorAuthenticatable#clear_two_factor_method_when_disabled) directly.
+# Exercises the model callback (TwoFactorAuthenticatable#clear_two_factor_method_when_disabled)
+# directly. Since M8 the only in-app writer of an OFF switch is TwoFactorDisable (password + code),
+# so the fixture goes through the same escape it uses (User#disable_two_factor_verified!).
 When("two-factor authentication is switched off for the user") do
-  @user.update!(two_factor_enabled: false)
+  @user.disable_two_factor_verified!(audit_comment: "Cucumber fixture: switched off")
 end
 
 When("two-factor authentication is switched on again for the user") do

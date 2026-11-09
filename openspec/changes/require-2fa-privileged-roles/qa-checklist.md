@@ -92,7 +92,7 @@
 | ☐ | E35 | Required user sees no turn-off | Anita, 2 Dec | 1. opens her user page | badge "Required for your role"; no Turn off 2FA | | |
 | ☐ | E36 | SMS user turns off | Tom (sms) | 1. Send code → Twilio approves the code | off | | |
 | ☐ | E37 | Send code cooldown | Priya pressed Send code | 1. presses again within 60 s | "Please wait a moment before requesting another code."; one send only | | |
-| ☐ | E38 | Admin sees only Reset | Neha on Dev's page | 1. looks at the Two-Factor row | Reset 2FA Method shown; no Turn off 2FA | | |
+| ☐ | E38 | Admin sees Reset; Turn off disabled with the reason | Neha on Dev's page | 1. looks at the Two-Factor row | Reset 2FA Method shown; Turn off 2FA disabled, tooltip "Only the user can turn off their own 2FA. Use Reset 2FA Method if they lost their phone." | | |
 | ☐ | E39 | Self reset sends no admin notice | Dev › Change 2FA Method | 1. confirms with password | only Dev emailed (existing) | | |
 | ☐ | E40 | No other company admins | Rahul and Sunita deactivated | 1. Priya turns off | only Priya emailed | | |
 | ☐ | E41 | Email date format under `ja` | Priya's turn-off processed under `ja` locale | 1. email renders | date `Dec 08, 2026` (not kanji) | | |

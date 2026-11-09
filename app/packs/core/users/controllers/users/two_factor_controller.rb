@@ -134,18 +134,14 @@ module Users
       @user = User.find(session[:otp_user_id])
 
       if @user.validate_and_consume_otp!(submitted_code)
-        ActiveRecord::Base.connected_to(role: :writing) do
-          # The mode is committed HERE, not at selection — see select_mode_post. Only the
-          # mode: two_factor_enabled is already true (that is how an otp session exists at
-          # all), and writing it again would silently undo an administrator who switched
-          # 2FA off for this user while they were mid-enrollment.
-          @user.update!(two_factor_mode: "authenticator")
-        end
+        # The mode is committed HERE, not at selection — see select_mode_post and commit_method!
+        commit_method!("authenticator")
         sign_in(@user)
         reset_otp_session
         # Same landing as the WhatsApp and SMS enrollments — there is no backup-codes
-        # screen to pass through any more.
-        redirect_to root_path, notice: "Two-factor authentication is now enabled."
+        # screen to pass through any more. after_sign_in_path_for, like complete_login: a
+        # magic link's return-to page survives a required set-up too (E15), else the dashboard.
+        redirect_to after_sign_in_path_for(@user), notice: "Two-factor authentication is now enabled."
       else
         # H13-X — enrollment codes count against the challenge like login codes; a re-render
         # needs the QR code again, so it is rebuilt only when the page is shown
@@ -183,12 +179,11 @@ module Users
       @user = User.find(session[:otp_user_id])
 
       if @user.validate_and_consume_otp!(submitted_code)
-        ActiveRecord::Base.connected_to(role: :writing) do
-          @user.update!(two_factor_mode: "whatsapp")
-        end
+        # Mode (and, for a required user, the flag) committed once the code verified
+        commit_method!("whatsapp")
         sign_in(@user)
         reset_otp_session
-        redirect_to root_path, notice: "Two-factor authentication via WhatsApp is now enabled."
+        redirect_to after_sign_in_path_for(@user), notice: "Two-factor authentication via WhatsApp is now enabled."
       else
         # H13-X — counted against the challenge like a login code
         handle_wrong_code(:enroll_whatsapp)
@@ -226,14 +221,13 @@ module Users
       # Verify, not validate_and_consume_otp! — in sms mode the code was minted by Twilio
       # and the user's otp_secret has nothing to do with it.
       if TwilioSmsVerification.approved?(user: @user, code: submitted_code)
-        ActiveRecord::Base.connected_to(role: :writing) do
-          @user.update!(two_factor_mode: "sms")
-        end
+        # Mode (and, for a required user, the flag) committed once Twilio approved the code (E17)
+        commit_method!("sms")
         sign_in(@user)
         reset_otp_session
         # A user who loses their number needs an administrator reset — the same as every
         # other mode.
-        redirect_to root_path, notice: "Two-factor authentication via text message is now enabled."
+        redirect_to after_sign_in_path_for(@user), notice: "Two-factor authentication via text message is now enabled."
       else
         # H13-X — counted against the challenge like a login code
         handle_wrong_code(:enroll_sms)
@@ -296,6 +290,30 @@ module Users
     end
 
     private
+
+    # Commits the method the user just proved with a code — the one place the enrollment
+    # actions write two_factor_mode (verify_enrollment, verify_whatsapp_enrollment,
+    # verify_sms_enrollment).
+    #
+    # two_factor_enabled is written too, but ONLY when it is false and the role rule requires
+    # two-factor (H2, E17 — a support / super user reached set-up through the rule, not their own
+    # switch). For anyone else the flag is left alone: it is already true (that is how an otp
+    # session exists at all), and writing it again would silently undo an administrator who
+    # switched 2FA off for this user while they were mid-enrollment (design D3). Abandoning
+    # set-up before this point stores nothing (E11, X1).
+    #
+    # @param mode [String] "authenticator", "whatsapp" or "sms"
+    def commit_method!(mode)
+      attrs = { two_factor_mode: mode }
+      # D3 — the role rule switches the flag on only at the moment a method is confirmed
+      attrs[:two_factor_enabled] = true if !@user.two_factor_enabled? && @user.two_factor_required?
+
+      ActiveRecord::Base.connected_to(role: :writing) { @user.update!(attrs) }
+
+      # H2 — "turned on" security email to the user, after the update! returned (never inside a
+      # transaction that could roll back). Every confirmed method gets it, voluntary or required.
+      UserMailer.with(entity_id: @user.entity_id, user_id: @user.id, mode:).two_factor_enabled.deliver_later
+    end
 
     # Records that the code the user is about to receive came from Twilio Verify.
     #

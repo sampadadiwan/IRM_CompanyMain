@@ -13,8 +13,9 @@ module Users
     # password login sends them through TwoFactorDispatch like any other sign-in.
     # Devise's after_resetting_password_path_for reads this same method, so the redirect follows.
     def sign_in_after_reset_password?
-      # Devise's own setting first, then the two-factor carve-out
-      super && !resource.two_factor_enabled?
+      # Devise's own setting first, then the two-factor carve-out — which, since M8, also covers a
+      # support / super user who must set two-factor up (E16)
+      super && !resource.two_factor_applies?
     end
 
     private

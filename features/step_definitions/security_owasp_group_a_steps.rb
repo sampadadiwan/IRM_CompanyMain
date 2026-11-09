@@ -47,6 +47,15 @@ Then("the user may not create an API token while support is signed in as them") 
   expect(ApiTokenPolicy.new(user, ApiToken).create?).to be(false)
 end
 
+Then("the API token page shows New token disabled with the reason") do
+  page_html = Nokogiri::HTML5(@docs_session.response.body)
+  expect(page_html.at_css("#create_api_token")).to be_nil
+  disabled = page_html.at_css("#create_api_token_disabled")
+  expect(disabled).not_to be_nil
+  expect(disabled["title"]).to include("can't be created while you are signed in as another user")
+  expect(page_html.at_css("#api_token_support_help").text.squish).to include("Ask the user to create the token")
+end
+
 # ── M7 — Outlook add-in confirm step ────────────────────────────────────────────────────────────────────────────
 
 def group_a_session

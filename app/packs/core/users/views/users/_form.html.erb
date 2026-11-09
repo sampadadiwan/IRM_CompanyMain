@@ -150,7 +150,30 @@
       </label>
     </div>
 
-    <% if user.id.present? && current_user == user %>
+    <%# M8 — the toggle only switches two-factor ON. Once it is on (or required for the role) the row
+        is read-only and points to the user page, where turning it off needs the password and a
+        current code (E31; the model refuses an unticked box anyway, X20). Read from the saved value,
+        so a refused submit re-renders the same row. %>
+    <% if user.id.present? && current_user == user && (user.two_factor_enabled_in_database || user.two_factor_required?) %>
+      <div class="toggle-row" id="two_factor_toggle_row">
+        <div>
+          <span class="toggle-row-label">Two-Factor Authentication</span>
+          <small class="form-text text-muted d-block">
+            <% if user.two_factor_required? %>
+              Required for your role (<%= RequiredTwoFactor.role_label(user) %>).
+            <% else %>
+              On — turn it off from <%= link_to "your user page", user_path(user) %>, with your password and a current code.
+            <% end %>
+          </small>
+        </div>
+        <% if user.two_factor_enabled_in_database %>
+          <span class="badge bg-success">On</span>
+        <% else %>
+          <%# Required but not set up yet: the next sign-in asks for a method %>
+          <span class="badge bg-warning text-dark">Set up at next sign-in</span>
+        <% end %>
+      </div>
+    <% elsif user.id.present? && current_user == user %>
       <div class="toggle-row">
         <div>
           <%= form.label :two_factor_enabled, "Enable Two-Factor Authentication", class: "toggle-row-label" %>

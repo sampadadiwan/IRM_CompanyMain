@@ -187,6 +187,9 @@ class UsersSyncController < ActionController::API
     # Same reasoning for a changed number: the origin region already required the emailed
     # code before its own user's phone changed. See User#existing_phone_change_must_be_verified.
     user.skip_phone_change_verification!
+    # Same for two-factor switched off at the origin: it already required the password and a current
+    # code there (require-2fa-privileged-roles E33). See User#two_factor_disable_must_be_verified.
+    user.skip_two_factor_disable_verification!
     # Permissions need to set in a special way
     user.permissions = attrs["permissions"].map!(&:to_sym) if attrs["permissions"].is_a?(Array)
     user[:permissions] = attrs["permissions"] if attrs["permissions"].is_a?(Integer) # allow DB-level setting
