@@ -452,6 +452,43 @@ sequenceDiagram
 - **Rollback:** the task prints one line per change (`systemctl disable --now …`, the backed-up
   mysqld_exporter unit, the backed-up Prometheus config).
 
+### Data box memory limits
+
+Prometheus on prod IN (2026-11-09, 43 days of uptime) showed Elasticsearch holding a 3.9 GB heap
+it had auto-sized to half the RAM, for **117.5 MB** of live data and **0** old-generation GCs, and
+Redis peaking at **4.2 MB** with no `maxmemory`. Both are now sized by one rule
+(`lib/data_box_limits.rb`):
+
+| | Measured peak | Rule `max(3 × peak, 512 MB)` | Applied |
+|---|---|---|---|
+| Elasticsearch heap | old generation since JVM start | 3 × 117.5 = 352 → **512 MB** | `-Xms512m -Xmx512m`, container cap `max(2 × heap, heap + 1 GB)` = **1536 MB** |
+| Redis | `used_memory_peak` since start | 3 × 4.2 = 13 → **512 MB** | `maxmemory 512mb`, `noeviction` (never drop Sidekiq jobs) |
+
+```bash
+rake "ops:data_box_limits[staging.in]"             # dry run: measures the box, prints the plan
+EXECUTE=1 rake "ops:data_box_limits[staging.in]"   # apply (then production.in, in a quiet window)
+```
+
+```mermaid
+flowchart LR
+    M["Measure on the box<br/>ES old-gen peak · Redis used_memory_peak"] --> S["Size<br/>max(3 × peak, 512 MB)"]
+    S --> F["/etc/default/irm-data-containers<br/>+ start_data_containers.sh"]
+    F --> C["crontab: @reboot start script<br/>(raw docker run lines removed)"]
+    S --> R["Redis CONFIG SET maxmemory<br/>live, no restart"]
+    F --> E["Elasticsearch re-created<br/>cap · heap · volume · unless-stopped"]
+    E --> X["reindex queued<br/>(old index was inside the container)"]
+```
+
+- **Redis is never restarted:** it has no volume, so a restart would lose Sidekiq's queues. The
+  limit is set live and also passed by the start script at the next boot.
+- **Elasticsearch is down ~1–2 minutes** while it is re-created; afterwards the index lives in the
+  `elasticsearch-data` volume, so later restarts keep it, and dockerd restarts it after a crash or
+  reboot. The first switch rebuilds the index with the existing `dr:reindex_search_later` job.
+- **Refusals before anything changes:** a live container on another image, or with a setting the
+  start script does not carry (it would be lost).
+- **Fresh AMI / DR boxes** get the rule's floor (512 MB heap, 1536 MB cap, 512 MB Redis) from the
+  start script's defaults.
+
 ### Data box alert rules
 
 All keep the default `no_data_state: OK`, so a region without the exporters stays silent.
