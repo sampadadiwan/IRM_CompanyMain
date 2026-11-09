@@ -87,8 +87,9 @@
                   metadata_form_target: "field"
                 } %>
           <% elsif choices %>
+            <%# The empty option reads "None" unless the hint names its meaning, e.g. "Default" for Units %>
             <%= select_tag "metadata_#{key}", options_for_select(choices, db_value),
-                include_blank: "None",
+                include_blank: field_hint[:blank] || "None",
                 class: "form-select",
                 data: {
                   metadata_key: key,

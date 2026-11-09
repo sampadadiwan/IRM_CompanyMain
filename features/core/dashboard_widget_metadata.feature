@@ -1,5 +1,6 @@
 # Worked examples (H3-H6, H8, E10-E11): openspec/changes/fix-portfolio-dashboard-widgets/design.md#worked-examples
 # Worked examples (H1-H3, H8, H9, E11-E13, E17, E18): openspec/changes/fix-portfolio-dashboard-widgets-2/design.md#worked-examples
+# U1-U3: the Units setting is a pick-list (DashboardWidget::UNITS_HINT, CURRENCY_UNITS)
 Feature: Dashboard Widget Metadata Configuration
   As an admin
   I want to configure dashboard widgets using dynamic fields
@@ -192,3 +193,38 @@ Feature: Dashboard Widget Metadata Configuration
     And I choose the dashboard "Portfolio Company Dashboard" and widget type "Portfolio Stats"
     And I pick "FMV" in the multi-select "fields"
     Then the "metadata" hidden field should contain "fields: 'FMV'"
+
+  # U1 — Happy path: every widget that scales amounts offers Units as Crores / Lakhs / Million, with Default for blank
+  Scenario Outline: Units is a pick-list
+    Given a dashboard widget "<widget>" exists for "<dashboard>"
+    When I go to the edit page for the "<widget>" widget
+    Then the field "<key>" should have the label "Units"
+    And the field "<key>" should offer "Crores, Lakhs, Million"
+    And the field "<key>" should have the empty option "Default"
+    And the field "<key>" should have helper text containing "Default keeps the widget's usual units"
+
+    Examples:
+      | widget                | dashboard                      | key         |
+      | Kpis                  | Portfolio Company Dashboard    | force_units |
+      | Kpis Budget vs Actual | Portfolio Company Dashboard    | units       |
+      | Portfolio Stats       | Portfolio Company Dashboard    | force_units |
+      | Portfolio Stats       | Portfolio Dashboard            | force_units |
+      | Fund Portfolio Stats  | Fund Dashboard                 | force_units |
+      | Stats                 | Aggregated Portfolio Dashboard | force_units |
+
+  # U2 — Happy path: a saved unit reopens selected, and a picked unit is saved
+  @javascript
+  Scenario: Picked units are saved
+    Given a dashboard widget "Kpis Budget vs Actual" exists for "Portfolio Company Dashboard" with metadata "{units: 'Lakhs'}"
+    When I go to the edit page for the "Kpis Budget vs Actual" widget
+    Then the field "units" should contain "Lakhs"
+    When I select "Million" from "metadata_units"
+    And I save the widget
+    Then the saved metadata of the "Kpis Budget vs Actual" widget should contain "units: 'Million'"
+
+  # U3 — Edge case: a saved unit outside the list (older "Millions") stays selected, so saving does not change it
+  Scenario: Saved unit outside the list is kept
+    Given a dashboard widget "Fund Portfolio Stats" exists for "Fund Dashboard" with metadata "{force_units: 'Millions'}"
+    When I go to the edit page for the "Fund Portfolio Stats" widget
+    Then the field "force_units" should contain "Millions"
+    And the field "force_units" should offer "Crores, Lakhs, Million, Millions"

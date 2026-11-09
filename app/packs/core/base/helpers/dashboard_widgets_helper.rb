@@ -161,10 +161,12 @@ module DashboardWidgetsHelper
 
   # Pick-list for a setting whose hint names a +choices+ source on the Widget Configuration form. Returns
   # [[label, key], ...]; empty for an unknown source. H14 — the group-by list is the grid's own columns plus Fund Name.
-  # H1 — the stats widgets' cards; E12 — the firm's currencies for the Default currency
+  # H1 — the stats widgets' cards; E12 — the firm's currencies for the Default currency;
+  # the amount units (Crores, Lakhs, Million) for every widget's Units setting
   def metadata_choices(source, entity)
     case source
     when :stats_fields then return PortfolioCompanyStats::FIELDS.map { |name| [name, name] }
+    when :currency_units then return DashboardWidget::CURRENCY_UNITS.map { |unit| [unit, unit] }
     when :entity_currencies then return (entity&.currency_list || []).map { |currency| [currency, currency] }
     end
     return [] unless source == :portfolio_investment_columns
