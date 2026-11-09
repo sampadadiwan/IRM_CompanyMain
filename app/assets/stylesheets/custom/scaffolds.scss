@@ -1469,6 +1469,15 @@ h6 {
   }
 }
 
+// The Event label in the Security Events grid filters by that kind: the theme's link colour, underlined on hover
+.security-event-kind-link {
+  text-decoration: none;
+  &:hover,
+  &:focus {
+    text-decoration: underline;
+  }
+}
+
 .search-container {
   max-width: 400px; /* Set a max-width if needed */
   flex-grow: 1; /* Allow the container to grow */

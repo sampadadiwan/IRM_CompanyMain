@@ -94,6 +94,8 @@ end
 
 resources :report_insights
 resources :audits
+# M11 (OWASP 2026-11) — the security event trail is read-only: index (html, xlsx) and nothing else (X11)
+resources :security_events, only: :index
 resources :email_bounce_events, only: [:index] do
   post :disable_recipient_email, on: :member
 end

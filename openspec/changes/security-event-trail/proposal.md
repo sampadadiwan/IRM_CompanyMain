@@ -248,7 +248,7 @@ flowchart TD
 | B2 | Rahul | Users › Rahul › Edit | Ticks *Approver*, Save | Records "Role granted — Approver" (Account: Rahul, Done by: Rahul) | "User was successfully updated." (unchanged) |
 | B3 | Meera, Rahul | Email + bell | — | Sends the admin alert to both admins | Email: "Approver role given to Rahul Mehta" |
 | B4 | Anil | Support › Golden Angels › Priya › Login as | Click | Records "Support signed in as user" (Account: Priya, Done by: Anil) | "Signed in as Priya Shah" (unchanged) |
-| B5 | Meera, Rahul | Email + bell | — | Sends the support-access alert | Email: "CapHive support (Anil Kumar) signed in as Priya Shah" |
+| B5 | Meera, Rahul | Bell | — | Sends the support-access alert — bell only, no email (decision 2026-11-09) | Bell: "CapHive support (Anil Kumar) signed in as Priya Shah" |
 | B6 | Anil | Top bar › Sign out | Sign out | Records "Support session ended" | Back to sign-in page |
 
 ### Part C — reviewing
@@ -347,7 +347,7 @@ Period: 10 Oct 2026 – 09 Nov 2026 (last 30 days) · Group: All
 **So that** support access is visible and accountable.
 
 **Acceptance criteria:**
-- Email + bell: "CapHive support (Anil Kumar) signed in as Priya Shah".
+- Bell (no email — decision 2026-11-09): "CapHive support (Anil Kumar) signed in as Priya Shah".
 - The list shows both the start and the end of the support session.
 - Anything Anil changes while signed in as Priya still shows "on behalf of" in the Audit Trail
   (unchanged behaviour).
@@ -462,7 +462,7 @@ If you did not expect this, review it in Security Events.
 | Wrong two-factor code | Same message as today; "Two-factor code wrong" row |
 | Admin grants *approver* | "User was successfully updated."; alert email "Approver role given to …" |
 | Admin grants *employee* | "User was successfully updated."; row only, no alert |
-| Support "Login as" | "Signed in as Priya Shah"; alert "CapHive support (Anil Kumar) signed in as Priya Shah" |
+| Support "Login as" | "Signed in as Priya Shah"; bell (no email) "CapHive support (Anil Kumar) signed in as Priya Shah" |
 | Recording fails | No visible change; event written to the server log |
 | Non-admin opens Security Events by URL | "You are not authorized to perform this action." |
 | Download | "Your request is being processed. You will receive an email shortly." |
@@ -474,7 +474,7 @@ If you did not expect this, review it in Security Events.
 | # | Decision | Resolution |
 |---|---|---|
 | 1 | New list or extend the Audit Trail? | New list. The Audit Trail is about record changes and has no firm column; events like failed sign-ins have no record |
-| 2 | Which kinds alert admins? | Only *company admin*/*approver* changes, support switch, support sign-in-as |
+| 2 | Which kinds alert admins? | Only *company admin*/*approver* changes, support switch, support sign-in-as (bell only, no email — decided 2026-11-09) |
 | 3 | How long kept? | 13 months |
 | 4 | Show unknown-email failures to firms? | No — CapHive only |
 | 5 | Can recording block a user? | Never |
@@ -500,7 +500,7 @@ If you did not expect this, review it in Security Events.
 - **Sign-in pages** (website, email link, WhatsApp link, two-factor, mobile app, API keys,
   connected apps, Outlook/Gmail add-ins, region switch): record an event; no visible change.
 - **User edit screen, user import, investor access, advisor setup**: role changes recorded.
-- **Login as / support firm switch**: recorded and alerted.
+- **Login as / support firm switch**: recorded and alerted in the bell only — never by email (decided 2026-11-09).
 - **Profile › API tokens, connected apps, mobile devices**: create/revoke recorded.
 - **Every spreadsheet download, folder download, audit download and data dump**: recorded.
 - **Settings menu**: new "Security Events" entry for company admins and CapHive.

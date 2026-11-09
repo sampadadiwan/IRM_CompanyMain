@@ -186,13 +186,13 @@ module TwoFactorAuthenticatable
     RequiredTwoFactor::REQUIRED_2FA_ROLES.any? { |role| has_cached_role?(role) }
   end
 
-  # Must use two-factor now: the region's date is reached AND the user holds a required role.
-  # Re-read on every request, so a role granted after the date applies at the next sign-in (E5)
-  # and a role removed before set-up stops applying (E6).
+  # Must use two-factor: the user holds a required role (support / super), from day one in every region.
+  # Re-read on every request, so a role granted later applies at the next sign-in (E5) and a role
+  # removed before set-up stops applying (E6).
   #
   # @return [Boolean]
   def two_factor_required?
-    RequiredTwoFactor.enforced? && two_factor_required_role?
+    two_factor_required_role?
   end
 
   # Does two-factor apply to this sign-in? The user's own switch (voluntary 2FA, E13) OR the

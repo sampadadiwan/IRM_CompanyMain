@@ -1,18 +1,17 @@
 @rack_test
-Feature: Two-factor is required for support and super users once the region's date is reached
-  OWASP 2026-11 finding M8. CapHive's own support and super users must use two-factor from the
-  region's enforcement date (env REQUIRED_2FA_ENFORCE_FROM, the same date in IN and US). A required
+Feature: Two-factor is required for support and super users
+  OWASP 2026-11 finding M8. CapHive's own support and super users must use two-factor from the day it
+  is deployed, in every region (user decision 2026-11-09: no enforcement date or notice period). A required
   user with no method is sent through the existing "choose a method" set-up inside sign-in; company
   admins, employees and investors keep today's optional two-factor.
-  Design: openspec/changes/require-2fa-privileged-roles (business-rules.md §1, H1–H3, E1–E20, X1–X2).
+  Design: openspec/changes/require-2fa-privileged-roles (business-rules.md §1, H1–H3, E5–E19, X1–X2; E1–E4 and E20 retired with the date).
 
   Background:
-    Given the required 2FA date is "2026-12-01"
-    And it is "2026-12-02 10:00" in India
+    Given it is "2026-12-02 10:00" in India
 
   # ── Happy path ────────────────────────────────────────────────────────────────
 
-  # H1 — Happy path: a support user without two-factor meets the set-up screen after the date
+  # H1 — Happy path: a support user without two-factor meets the set-up screen at sign-in
   Scenario: H1 Support user meets set-up
     When "Ravi" signs in with their password
     Then I see the required set-up screen for the role "Support"
@@ -38,36 +37,8 @@ Feature: Two-factor is required for support and super users once the region's da
 
   # ── Edge cases ────────────────────────────────────────────────────────────────
 
-  # E1 — Edge case: one minute before the date the support user still signs in with the password only
-  Scenario: E1 One minute before the date
-    Given it is "2026-11-30 23:59" in India
-    When "Ravi" signs in with their password
-    Then I am signed in with the password only
-
-  # E2 — Edge case: from 00:00 IST on the date the rule applies
-  Scenario: E2 Exactly on the date
-    Given it is "2026-12-01 00:00" in India
-    When "Ravi" signs in with their password
-    Then I see the required set-up screen for the role "Support"
-
-  # E3 — Edge case: no date configured — the rule is off
-  Scenario: E3 No date configured
-    Given the required 2FA date is not set
-    When "Ravi" signs in with their password
-    Then I am signed in with the password only
-    And I should not see "Two-factor authentication becomes required"
-
-  # E4 — Edge case: an unparseable date fails closed (enforced) and is logged
-  Scenario: E4 Unparseable date fails closed
-    Given the error log is watched
-    And the required 2FA date is "2026-13-01"
-    And it is "2026-11-20 10:00" in India
-    When "Ravi" signs in with their password
-    Then I see the required set-up screen for the role "Support"
-    And the error log says "REQUIRED_2FA_ENFORCE_FROM unparseable — enforcing"
-
-  # E5 — Edge case: a support role granted after the date applies at the next sign-in
-  Scenario: E5 Support role granted after the date
+  # E5 — Edge case: a support role granted later applies at the next sign-in
+  Scenario: E5 Support role granted later
     Given "Isha" is granted the "support" role
     When "Isha" signs in with their password
     Then I see the required set-up screen for the role "Support"
@@ -165,18 +136,11 @@ Feature: Two-factor is required for support and super users once the region's da
     When the phone "Vikram's iPhone" enters the current authenticator code for "vikram@caphive.test"
     Then the phone gets a session
 
-  # E19 — Edge case: an API token made on the website keeps working after the date
+  # E19 — Edge case: an API token made on the website keeps working (until ops ends unverified access)
   Scenario: E19 Website-made API token still works
     Given "Anita" has an API token "Anita reports"
     When the API token "Anita reports" reads "/funds.json"
     Then the API answers 200
-
-  # E20 — Edge case: before the date the password token endpoint still issues a token
-  Scenario: E20 Token endpoint before the date
-    Given it is "2026-11-20 10:00" in India
-    And I am "Ravi"
-    When a script asks for a token for the user with password "password"
-    Then the token API should answer 200 with a token
 
   # ── Error cases ───────────────────────────────────────────────────────────────
 

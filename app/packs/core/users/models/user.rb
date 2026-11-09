@@ -14,6 +14,9 @@ class User < ApplicationRecord
   # Kept separate from TwoFactorAuthenticatable because it is about the number, not
   # about codes. See docs/modules/two_factor_auth/twilio_sms_otp_design.md.
   include SmsDeliverable
+  # M11 (OWASP 2026-11) K2 — records password, phone, lock, active, support-switch and two-factor changes made by
+  # any route as security events (record_security_changes, after_update_commit)
+  include UserSecurityEvents
 
   # two_factor_enabled is audited too, so a turn-off (TwoFactorDisable) is recorded before → after (M8)
   include Trackable.new(on: %i[create update],
@@ -173,7 +176,9 @@ class User < ApplicationRecord
   # Make all models searchable
   update_index('user') { self if index_record? }
 
-  rolify before_add: :forbid_bad_role
+  # M11 (OWASP 2026-11) K1 — every add_role / remove_role, from any of the ~30 call sites, records role.granted /
+  # role.revoked in the security event trail (UserSecurityEvents#security_role_added / _removed)
+  rolify before_add: :forbid_bad_role, after_add: :security_role_added, after_remove: :security_role_removed
   accepts_nested_attributes_for :roles, allow_destroy: true
 
   # Include default devise modules. Others available are:
@@ -1032,7 +1037,12 @@ class User < ApplicationRecord
 
   # rubocop:disable Rails/SkipsModelValidations
   def self.disable_support_for_all
-    User.where(enable_support: true).update_all(enable_support: false)
+    count = User.where(enable_support: true).update_all(enable_support: false)
+    # M11 K3 / E27 — update_all skips record_security_changes, so the whole switch-off is one system event
+    # with no firm (it touches every firm), instead of one row per user
+    SecurityEvents.record("support_access.disabled", door: "system", actor: nil,
+                                                     details: { from: true, to: false, scope: "all" })
+    count
   end
   # rubocop:enable Rails/SkipsModelValidations
 

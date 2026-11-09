@@ -45,6 +45,7 @@
   - [Worked examples](#worked-examples)
   - [Testing](#testing)
   - [Risks and open questions](#risks-and-open-questions)
+  - [Changed during the build](#changed-during-the-build)
 
 ---
 
@@ -221,7 +222,7 @@ sequenceDiagram
     actor Me as Meera (admin)
     An->>App: Login as Priya (users_controller.rb:284)
     App->>App: record support.signed_in_as
-    App-->>Me: alert "CapHive support (Anil Kumar)<br/>signed in as Priya Shah"
+    App-->>Me: bell only, no email: "CapHive support (Anil Kumar)<br/>signed in as Priya Shah" (user decision 2026-11-09)
     An->>App: sign out (sessions_controller.rb:51)
     App->>App: record support.session_ended
 ```
@@ -282,7 +283,7 @@ timeline
 |---|---|---|---|---|
 | 6 | 10:22 | Rahul ticks Approver on himself | rolify `after_add` (②) → recorder (③) → writer (④) | ✓ `role.granted` approver, user = actor = Rahul |
 | 7 | 10:22 | — | Writer (④) sees an alert kind → admin alerts (⑦) | ✉ Rahul + Meera: "Approver role given to Rahul Mehta" |
-| 8 | 10:30 | Anil uses Login as on Priya | `login_as` hook after `session[:support_user_id]` (②) | ✓ `support.signed_in_as`, actor Anil, firm 18; ✉ admins |
+| 8 | 10:30 | Anil uses Login as on Priya | `login_as` hook after `session[:support_user_id]` (②) | ✓ `support.signed_in_as`, actor Anil, firm 18; 🔔 admins (bell only — never emailed, user decision 2026-11-09) |
 | 9 | 10:41 | Anil signs out | `SessionsController#destroy` hook before `reset_session` (②) | ✓ `support.session_ended` |
 | 10 | 11:02 | Meera unticks Approver for Rahul | rolify `after_remove` (②) | ✓ `role.revoked`; ✉ admins |
 
@@ -319,7 +320,7 @@ What to notice:
 | 2 | One recorder, never raises | Every hook is one line; failure handling lives once | [③](#③-recorder) |
 | 3 | Queue first, insert if the queue is down | Sign-in latency unchanged; events not lost | [④](#④-background-writer) |
 | 4 | Firm on every row | Tenant scoping is a plain `entity_id` filter | [⑤](#⑤-event-store), [⑥](#⑥-security-events-screen) |
-| 5 | Alerts only for power | Roles admin/approver, support switch, support access | [⑦](#⑦-admin-alerts) |
+| 5 | Alerts only for power | Roles admin/approver, support switch, support access (support visits: bell only, no email) | [⑦](#⑦-admin-alerts) |
 | 6 | Don't duplicate audits | Access rights, investor access, permissions stay in `audits` | [D3](#d3-flags-go-to-security-events-not-to-audits) |
 
 **FAQ**
@@ -419,7 +420,7 @@ dimension is `occurred_at` vs the 13-month cut-off ([card ⑧](#⑧-weekly-pack-
 |---|---|---|---|
 | Settings menu | Audit Trail | + Security Events | Company admins, support, super |
 | Settings › Security Events | — | Firm's events, filters, cards, Download | Same |
-| Email + bell | — | Admin alert (role admin/approver, support switch, support access) | Company admins of the firm |
+| Email + bell | — | Admin alert (role admin/approver, support switch); bell only for a support sign-in as a user or a support firm switch | Company admins of the firm |
 | Email (Monday) | — | Weekly pack xlsx | support@caphive.com (per-region `SECURITY_EVENTS_WEEKLY_TO`) |
 | Every sign-in, role save, Login as | — | Unchanged | Everyone |
 
@@ -468,7 +469,7 @@ dimension is `occurred_at` vs the 13-month cut-off ([card ⑧](#⑧-weekly-pack-
 | D5 | Queue first, direct insert fallback, log last; never raise | User asked for async; Redis MISCONF must not lose events or fail sign-in |
 | D6 | Request context from `Audited.store` | Audited::Sweeper already stores the controller, IP and request uuid per request |
 | D7 | Policy scope by `entity_id`; NULL-firm rows super-only | Plain tenant scoping; unknown emails belong to nobody |
-| D8 | Alerts only for admin/approver roles, support switch and support access | Power changes are rare; sign-ins would drown the signal |
+| D8 | Alerts only for admin/approver roles, support switch and support access; support visits (sign-in as a user, firm switch) are announced in the bell only, never by email (user decision 2026-11-09) | Power changes are rare; sign-ins would drown the signal; customers are not emailed about support visits |
 | D9 | 13-month retention, nightly purge | Methodology §6 asks ≥ 1 year |
 | D10 | Failed-sign-in email stored only as a digest | Users type passwords into the email box |
 | D11 | Weekly pack to support@caphive.com via per-region `SECURITY_EVENTS_WEEKLY_TO` | User's choice (2026-11-09); per-region setting keeps IN and US independent |
@@ -535,10 +536,14 @@ dimension is `occurred_at` vs the 13-month cut-off ([card ⑧](#⑧-weekly-pack-
 #### D8. Alerts only for power changes
 
 - **Problem:** which events email admins?
-- **Decision:** `role.granted/revoked` for `company_admin`/`approver` when the grantee lacks `:support`; `support_access.enabled/disabled`; `support.signed_in_as`; `support.firm_switched`.
+- **Decision:** `role.granted/revoked` for `company_admin`/`approver` when the grantee lacks `:support` (and, since
+  the build, `:investor_advisor`); `support_access.enabled/disabled`; `support.signed_in_as`; `support.firm_switched`.
+  `support.signed_in_as` and `support.firm_switched` go to the **bell only, never by email** — user decision
+  2026-11-09 ("no emails on sign in by support, other events can generate email"; firm switches the same).
 - **Why:** ~4 alerts/month/firm; a firm switch already adds `company_admin` to the support user (`support_client_mapping.rb:77`), so the support-role exclusion avoids two alerts for one act.
-- **Not chosen:** alert on failed sign-ins — that's M12's Grafana alert, aggregated.
-- **Where:** `SecurityEventAlert::ALERT_KINDS`.
+- **Not chosen:** alert on failed sign-ins — that's M12's Grafana alert, aggregated. Email for support visits —
+  the first version; dropped at the user's request.
+- **Where:** `SecurityEventAlert::ALWAYS`, `SecurityEventAlert::BELL_ONLY`, `SecurityEventNotifier` (email `if:`).
 
 #### D9. 13-month retention
 
@@ -866,9 +871,9 @@ flowchart TD
 |---|---|---|
 | `SecurityEventAlert`, `SecurityEventNotifier`, `SecurityEventsMailer#admin_alert` | a fresh event | email + bell per admin |
 
-- `ALERT_KINDS`: `role.granted`, `role.revoked` (only roles `company_admin`, `approver`, grantee without
-  `:support`), `support_access.enabled`, `support_access.disabled`, `support.signed_in_as`,
-  `support.firm_switched`.
+- Alert kinds: `role.granted`, `role.revoked` (only roles `company_admin`, `approver`, grantee without
+  `:support` / `:investor_advisor`), `support_access.enabled`, `support_access.disabled`, `support.signed_in_as`
+  and `support.firm_switched` (both **bell only, never email** — user decision 2026-11-09).
 - Recipients (one place): `User.company_admins.active.where(entity_id: event.entity_id)` — includes the actor.
 - No firm → no alert.
 - Email dates via `l(...)` → `Mon dd, yyyy` (`EmailDateLocalization`).
@@ -1067,7 +1072,8 @@ erDiagram
 |---|---|---|---|---|---|---|
 | Role change alert | `role.granted`/`revoked`, role `company_admin` or `approver`, grantee not `:support` | Active company admins of the event's firm (incl. actor) | Email + bell (`SecurityEventNotifier`) | No (internal security alert) | On, always | Only on fresh insert by `uid` |
 | Support switch alert | `support_access.enabled`/`disabled` | Same | Email + bell | No | On | Same |
-| Support access alert | `support.signed_in_as`, `support.firm_switched` | Same | Email + bell | No | On | Same |
+| Support sign-in alert | `support.signed_in_as` | Active company admins of the event's firm | **Bell only** — no email (user decision 2026-11-09) | No | On | Only on fresh insert by `uid` |
+| Support firm-switch alert | `support.firm_switched` | Same | **Bell only** — no email (user decision 2026-11-09) | No | On | Same |
 | Download ready | Download clicked | The requesting user | Email with xlsx | No | On | One per click (job) |
 | Weekly pack | Monday cron | support@caphive.com (`SECURITY_EVENTS_WEEKLY_TO`, per region) | Email with xlsx | No | On | sidekiq-cron one run/week; retry re-sends at most once more |
 | Investors | — | — | — | — | — | Considered: no investor email. LPs don't administer roles; Devise password/email-change mails stay off as today (`devise.rb:140,143`); adding them is a separate product decision |
@@ -1172,6 +1178,13 @@ the QA checklist and tasks reuse them.
 - Alert noise during bulk user import → only admin/approver alert; imports grant employee/investor.
 - `SECURITY_EVENTS_WEEKLY_TO` missing on a box → the job logs a warning and sends nothing; the deploy checklist
   sets it in both regions.
+- Role writes that bypass rolify's callbacks (task 2.1 grep, 2026-11-09): `InvestorAdvisor#switch` / `.revert`
+  (`investor_advisor.rb:140,156`) clear roles with `user.roles.delete_all`, so the removals are not recorded — the
+  roles they add back are (`role.granted`, no alert: holders of `investor_advisor` are excluded from role alerts).
+  `users_sync_controller.rb:236` uses `user.roles = []` (callbacks fire, recorded). No other direct `users_roles`
+  write exists in `app/` or `lib/`; the `:super` grant in Cucumber fixtures writes the join table on purpose.
+- Volume from persona switches: every advisor persona switch re-grants 2–3 roles, so it adds `role.granted` rows
+  (no alerts). Watch the first month's counts; if they dominate, record the switch as one event instead.
 
 | # | Open question | Current thinking | Status |
 |---|---|---|---|
@@ -1185,3 +1198,33 @@ the QA checklist and tasks reuse them.
 |---|---|
 | Where do I start reviewing? | [Key changes needing approval](#key-changes-needing-approval), then card ②'s catalogue. |
 | What ships first? | Phase 1: table, recorder, writer and sign-in/2FA/account hooks — evidence starts accruing before any UI. |
+
+### Changed during the build
+
+Recorded during apply (2026-11-09). None changes what a user sees; each keeps the approved Key changes K1–K10.
+
+| # | Design said | Built | Why |
+|---|---|---|---|
+| C1 | `SecurityEvents::Catalogue`, `SecurityEvents::Context` in `services/security_events/` | Top-level `SecurityEventCatalogue`, `SecurityEventContext` (`services/security_event_catalogue.rb`, `…_context.rb`) | Every `app/packs/**` folder is a Zeitwerk root (`config/application.rb:35`), so a nested namespace folder can't load |
+| C2 | New `config/initializers/security_event_warden.rb`, filtered on `env["PATH_INFO"] == "/users/sign_in"` | The record line sits in M12's existing `Warden::Manager.before_failure` block (`config/initializers/security_metrics.rb`), filtered on `opts[:attempted_path]` | One filter, so the M12 counter and the trail agree on what a failed sign-in is; Warden has already rewritten `PATH_INFO` to `/unauthenticated` when the hook runs, so the LLD's check would never match |
+| C3 | Reason = Warden's message (`:invalid`, `:locked`, `:inactive`) | Same, but `SecurityEvent.write!` stores `locked` when the resolved account is locked and Warden said `:invalid` (E3) | Devise is paranoid here: a locked account is reported as `:invalid` so the page doesn't reveal it. The trail isn't shown to the person signing in, so it names the real reason |
+| C4 | API sign-in success via devise-api `after_successful_sign_in` (`devise_api.rb`), failure in `tokens_controller.rb` | Both in `Users::TokensController#sign_in`, after the answer is rendered | The controller already overrides `sign_in` and sees the two-factor refusal (E10) and devise-api's errors; one place, one helper |
+| C5 | `User#record_security_changes` and rolify callbacks in `user.rb` | In a concern, `UserSecurityEvents` (`app/packs/core/security_events/models/concerns/`), included in `User`; `rolify after_add:/after_remove:` names its methods | Keeps `user.rb` to three lines. Adds `after_create_commit` for roles given while a user is created (an import that creates the user, E23) — `setup_defaults` adds them before the insert, when there is no user id |
+| C6 | `support.switched_back` at `support_client_mapping.rb:109` (`revert`) | In `perform_revert` | Also covers a mapping switched off while the support user is still inside (`disable` calls `perform_revert`) |
+| C7 | Firm = the account's, else the given `entity_id`, else the actor's | The given `entity_id` first | A firm dump (E31) and a firm deactivation (E22) name the firm acted on, not the acting user's |
+| C8 | Mobile wrong-code events read the user from `render_result` | `MobileSignIn::Result` gains an optional `user` on wrong-code results | The result had no user; additive, the JSON answer is unchanged |
+| C9 | `secondary_sales_controller.rb:130` explicit line | No line | That download renders xlsx, so the K6 `after_action` already records it; a second line would double it |
+| C10 | E19 "super unticks two-factor in the admin console" | E19 = the user turns it off with password + code | Since M8 the model guard refuses every other true → false write, so the console untick records nothing (nothing changes) |
+| C11 | E21 / E22 by super (Divya) | By CapHive support (Anil) | The admin console edit (`UserPolicy#update?`) and firm deactivation (`EntityPolicy#deactivate?`) are support actions |
+| C12 | X1 / X6 / X7 refusal text "You are not authorized to perform this action." | "Access Denied" | That is the app's existing refusal (`WithAuthentication#deny_access`); unchanged, as the "never affects the user" rule requires |
+| C13 | E1 / E46 text "Invalid Email or password." | "Invalid email or password." | The text as it is today |
+| C14 | List via `RansackTable`, filter via `layouts/filter` | A plain table with RansackTable's classes and pager; a fixed-field filter card as in the approved mock (dates, group, event, outcome, door, account, IP) | RansackTable brings the per-firm column chooser (form types, grid preferences), wrong for a fixed security log; the generic condition builder can't explain each field (U.1). Door added to the filter |
+| C15 | `index.xlsx.axlsx` for the download | `SecurityEventWorkbook`, shared by the download and the Monday pack | One place for the row layout and the formula escaping (E44) |
+| C16 | Role alerts skip grantees with `:support` | Also skip `:investor_advisor`; recipients exclude support users switched into the firm | An advisor persona switch re-grants roles every time; a switched-in support user holds `company_admin` for the visit and already gets nothing from its own visit (E42) |
+| C17 | `write!` checks the uid, then inserts | Insert only; the unique index is the duplicate check. `SecurityEventWriteJob#acting_user` returns nil | One query per event instead of three (Prosopite, phase 2) |
+| C19 | Admins alerted by email + bell on `support.signed_in_as` and `support.firm_switched` (D8, H33, E42) | Bell only (`SecurityEventAlert::BELL_ONLY`; `SecurityEventNotifier` skips the email delivery for these kinds). Still recorded, on the screen, the download and the weekly pack. Role and "Enable support" alerts unchanged (email + bell, E51) | User decisions 2026-11-09: "no emails on sign in by support, other events can generate email", then firm switches handled the same way |
+| C20 | Event column is plain text | The Event label links to the same list filtered by that kind (rest of the filter kept, page 1, in the frame); a "× <event>" chip beside Filter removes just that condition; unknown kinds / groups in the URL are dropped | User request 2026-11-09; new row E52 |
+| C21 | Help text as one paragraph under the title | **Superseded (user, 2026-11-09): no general help line.** Each row has a "What to do" bulb button in its own last column that opens a styled info popup (`_advice_modal`, the action-summary layout of the other explain popups): an intro (who, when, succeeded/failed, door, IP), then a blue "What happened" card (label + details), a green "When this is normal" card and an amber "If it wasn't expected" card, or a grey "No action needed" card. The wording is data in `SecurityEventCatalogue::ADVICE` (`normal:` / `act:` per kind, `:failure` where a failed row differs, a default). One popup per row of the page, rendered after the table and on the server, so Cucumber (rack_test) checks the text each row opens | User: "Instead of the general help text on top, add a tooltip per row, which suggests actions", then "Change the tooltip to a modal popup which is clearer to read, an info popup which is styled" (U.1, U.1b) |
+| C18 | — | New row E50: the weekly pack with `SECURITY_EVENTS_WEEKLY_TO` unset | The spec's "Setting missing" scenario had no H/E/X row |
+| C22 | `sign_out` recorded for every website sign-out (H10) | **Dropped (user, 2026-11-09).** A plain sign-out is not recorded; only `support.session_ended` is, when CapHive support signs out of a client's account (H20). The catalogue has 28 kinds | A sign-out proves no session ended (most end by timing out), needs no action, and was among the most frequent rows, burying the ones that matter |
+

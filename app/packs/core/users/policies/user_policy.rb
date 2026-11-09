@@ -162,8 +162,8 @@ class UserPolicy < ApplicationPolicy
 
   private
 
-  # D7 — enforced region and the acting support / super user has no verified method
+  # D7 — the acting support / super user has no verified method (required from day one)
   def login_as_needs_two_factor?
-    RequiredTwoFactor.enforced? && !user.two_factor_verified?
+    !user.two_factor_verified?
   end
 end

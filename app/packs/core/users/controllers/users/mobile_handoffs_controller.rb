@@ -26,7 +26,11 @@ module Users
         candidate
       end
 
-      return redirect_to(new_user_session_path, alert: "This link has expired. Please open it again from the app.") if user.nil?
+      if user.nil?
+        # M11 S1j — a reused, expired, tampered or unsafe hand-off link; the account can't be named from it
+        SecurityEvents.record("sign_in.failed", door: "mobile_handoff", outcome: :failure, actor: nil, details: { reason: "invalid_link" })
+        return redirect_to(new_user_session_path, alert: "This link has expired. Please open it again from the app.")
+      end
 
       # A GET runs on the reader, but sign_in writes (Devise's trackable / failed_attempts reset),
       # so it is pinned to the primary — as UsersController#cross_site_login does
@@ -36,6 +40,8 @@ module Users
         user.update(session_token: SecureRandom.hex(64))
       end
       cookies[:session_token] = { value: user.session_token, httponly: true, secure: !Rails.env.local? }
+      # M11 S1j / H8 — app → website hand-off
+      SecurityEvents.record("sign_in.succeeded", user:, door: "mobile_handoff")
       redirect_to path
     end
   end

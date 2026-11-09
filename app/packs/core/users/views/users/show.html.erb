@@ -139,9 +139,9 @@
                       data-bs-toggle="tooltip"
                       title="<%= RequiredTwoFactor.role_label(@user) %> accounts must use two-factor authentication.">Required for your role</span>
               <% end %>
-              <%# M8 — the banner's "Set up now", offered here too for the support / super user's own page
-                  while they have no verified method and the region has a date (H5) %>
-              <% if RequiredTwoFactor.stage != :off && policy(@user).start_two_factor_setup? %>
+              <%# M8 — "Set up now" on the support / super user's own page while they have no verified
+                  method (H5); their next sign-in requires set-up anyway %>
+              <% if policy(@user).start_two_factor_setup? %>
                 <%= button_to start_two_factor_setup_user_path(@user), class: "btn btn-sm btn-primary ms-2",
                               form_class: "d-inline", id: "start_two_factor_setup_button", data: { turbo: false } do %>
                   <i class="ti ti-shield-lock"></i> Set up now

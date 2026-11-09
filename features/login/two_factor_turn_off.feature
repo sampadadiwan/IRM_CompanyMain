@@ -3,13 +3,12 @@ Feature: Turning two-factor off needs the password and a current code — for ev
   anyone's second factor. Now two-factor goes off only from the user's own page, in a popup that asks
   for the password and a current code (TwoFactorDisable), for every user who has it on — a company
   admin's or an investor's voluntary two-factor as much as a support user's. Support and super users
-  cannot turn it off once the region's date is reached. The user and the firm's other company admins
+  cannot turn it off at all (required from the deploy). The user and the firm's other company admins
   are emailed; an administrator's reset of a colleague's method is told to them too.
-  Design: openspec/changes/require-2fa-privileged-roles (business-rules.md §3, H9–H11, E30–E42, X11–X14).
+  Design: openspec/changes/require-2fa-privileged-roles (business-rules.md §3, H9–H11, E30–E41, X11–X14; E42 retired with the date).
 
   Background:
-    Given the required 2FA date is "2026-12-01"
-    And it is "2026-12-08 10:00" in India
+    Given it is "2026-12-08 10:00" in India
 
   # ── Happy path ────────────────────────────────────────────────────────────────
 
@@ -114,7 +113,7 @@ Feature: Turning two-factor off needs the password and a current code — for ev
     When I submit the turn-off popup with password "password" and the current code
     Then I should see "Two-factor authentication is now off."
 
-  # E35 — Edge case: a support user after the date sees "Required for your role" (tooltip names the role) and no Turn off
+  # E35 — Edge case: a support user sees "Required for your role" (tooltip names the role) and no Turn off
   @rack_test
   Scenario: E35 Required user sees no turn-off
     Given "Anita" is signed in on the website with their code
@@ -187,16 +186,6 @@ Feature: Turning two-factor off needs the password and a current code — for ev
   Scenario: E41 Email date under the ja locale
     When "Priya" turns two-factor off while the app runs in Japanese
     Then "Priya" is emailed "Two-factor authentication was turned off for your account" dated "Dec 08, 2026"
-
-  # E42 — Edge case: before the date a support user may turn two-factor off; the notice banner then appears
-  @rack_test @two_factor_cache
-  Scenario: E42 Support user turns off before the date
-    Given it is "2026-11-20 10:00" in India
-    And "Anita" is signed in on the website with their code
-    And 1 minutes pass
-    When I submit the turn-off popup with password "password" and the current code
-    Then I should see "Two-factor authentication is now off."
-    And I see the amber required 2FA banner "Two-factor authentication becomes required for your role (Support) on 01/12/2026."
 
   # ── Error cases ───────────────────────────────────────────────────────────────
 

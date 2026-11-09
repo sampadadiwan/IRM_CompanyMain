@@ -1,15 +1,15 @@
 # Ops tasks for "two-factor required for support and super" (OWASP 2026-11 M8).
 # openspec/changes/require-2fa-privileged-roles — design card ⑧, lld.md "Configuration and Rollout".
 #
-# Run on EACH region's box (IN and US are independent servers with the same date):
+# Run on EACH region's box (IN and US are independent servers):
 #
 #   bin/rails two_factor_required:report                          # read-only, counts only
 #   bin/rails two_factor_required:end_unverified_access           # dry run: how many would be ended
-#   bin/rails two_factor_required:end_unverified_access EXECUTE=1 # on/after the date: end their access
+#   bin/rails two_factor_required:end_unverified_access EXECUTE=1 # end their remembered access
 #
-# Roll-out order: report → set REQUIRED_2FA_ENFORCE_FROM (deploy + 14 days, same date both regions)
-# and restart → tell the support / super users → report every few days until 0 → on the date
-# end_unverified_access (dry run, then EXECUTE=1 if it names anyone) → report.
+# The rule is on from the deploy (user decision 2026-11-09, no enforcement date). Roll-out order: tell the few
+# support / super users before the deploy → deploy → end_unverified_access (dry run, then EXECUTE=1 if it names
+# anyone) so a remembered session can't skip set-up → report until it shows 0.
 #
 # Both tasks print counts only — never names, emails or ids.
 namespace :two_factor_required do
@@ -18,15 +18,10 @@ namespace :two_factor_required do
     ["users.two_factor_enabled = ? OR users.two_factor_mode IS NULL OR users.two_factor_mode = ''", false]
   end
 
-  # Region, stage and date, first line of every run
+  # The region, first line of every run
   print_header = lambda do
-    date = RequiredTwoFactor.enforce_from
-    date_label = case date
-                 when nil then "not set"
-                 when :invalid then "unparseable (treated as enforced)"
-                 else date.iso8601
-                 end
-    puts "Region: #{SiteRegistry.current_code || 'unknown'} · Stage: #{RequiredTwoFactor.stage} · Enforcement date: #{date_label}"
+    puts "Region: #{SiteRegistry.current_code || 'unknown'} · two-factor required for: " \
+         "#{RequiredTwoFactor::REQUIRED_2FA_ROLES.join(', ')} (from the deploy)"
   end
 
   desc "Counts per required role of active users with / without a verified two-factor method (read-only)"
@@ -59,17 +54,10 @@ namespace :two_factor_required do
          "#{admins.where(two_factor_enabled: true).distinct.count('users.id')} with two-factor on)"
   end
 
-  desc "On/after the enforcement date: end remember-me cookies and website-made tokens of required users still unverified (dry run unless EXECUTE=1)"
+  desc "End remember-me cookies and website-made tokens of support / super users still without two-factor (dry run unless EXECUTE=1)"
   task end_unverified_access: :environment do
     execute = ENV["EXECUTE"] == "1"
     print_header.call
-
-    # E28 — before the date (or with no date) nothing is changed, even with EXECUTE=1
-    unless RequiredTwoFactor.enforced?
-      date = RequiredTwoFactor.enforce_from
-      puts(date.nil? ? "No enforcement date set — nothing changed" : "Enforcement date #{date.iso8601} not reached — nothing changed")
-      next
-    end
 
     # Required roles, active, without a verified method — selected in SQL, deduplicated in SQL
     ids = User.active.joins(:roles).where(roles: { name: RequiredTwoFactor::REQUIRED_2FA_ROLES.map(&:to_s) })

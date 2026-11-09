@@ -183,6 +183,8 @@ class ReportBuilderController < ApplicationController
     authorize @report, :show?
 
     ReportBuilderExportJob.perform_later(@report.id, current_user.id)
+    # M11 D4 — a report export
+    SecurityEvents.record("data.exported", user: current_user, details: { what: "report_builder#download", name: @report.name })
 
     respond_to do |format|
       # The Export button already reads "Preparing…" (set in the browser on click) and the

@@ -7,8 +7,7 @@ Feature: Required two-factor — refusals and direct requests (OWASP 2026-11 M8)
   Design: openspec/changes/require-2fa-privileged-roles (business-rules.md, X3–X10, X15–X25).
 
   Background:
-    Given the required 2FA date is "2026-12-01"
-    And it is "2026-12-02 10:00" in India
+    Given it is "2026-12-02 10:00" in India
 
   # ── Phase 1 — other doors ────────────────────────────────────────────────────
 
@@ -36,13 +35,11 @@ Feature: Required two-factor — refusals and direct requests (OWASP 2026-11 M8)
 
   # ── Phase 2 — Login as and Set up now ───────────────────────────────────────
 
-  # X6 — Error case: a support user without a method, signed in before the date, is refused Login as after it
+  # X6 — Error case: a support user without a method, still signed in from before the deploy, is refused Login as
   Scenario: X6 Unverified support refused Login as
-    Given it is "2026-11-30 23:40" in India
-    And "Ravi" may Login as users of "Sahyadri Capital"
+    Given "Ravi" may Login as users of "Sahyadri Capital"
     And the people "Dev" exist
-    And "Ravi" is signed in on the website
-    And it is "2026-12-01 00:20" in India
+    And "Ravi" still has a website session from before the deploy
     When I use Login as on "Dev"
     Then I should see "Set up two-factor authentication before using Login as. Login as opens a client's account, so support and super users need a second factor on their own account first."
     And the alert offers to set up two-factor
@@ -50,19 +47,16 @@ Feature: Required two-factor — refusals and direct requests (OWASP 2026-11 M8)
 
   # X7 — Error case: a hand-crafted Login as request from an unverified support user is refused; nothing is impersonated
   Scenario: X7 Direct Login as request refused
-    Given it is "2026-11-30 23:40" in India
-    And "Ravi" may Login as users of "Sahyadri Capital"
+    Given "Ravi" may Login as users of "Sahyadri Capital"
     And the people "Dev" exist
     And "Ravi" has a website session
-    And it is "2026-12-01 00:20" in India
     When "Ravi" posts Login as for "Dev"
     Then the direct request is refused with "Set up two-factor authentication before using Login as."
     And the session of "Ravi" is not acting as anyone
 
   # X8 — Error case: Set up now for someone else is refused; neither user changes
   Scenario: X8 Set up now for someone else
-    Given it is "2026-11-20 10:00" in India
-    And the people "Anita" exist
+    Given the people "Anita" exist
     And "Ravi" has a website session
     When "Ravi" posts to start two-factor set-up for "Anita"
     Then the direct request is refused with "Access Denied"
@@ -88,7 +82,7 @@ Feature: Required two-factor — refusals and direct requests (OWASP 2026-11 M8)
 
   # ── Phase 3 — turning two-factor off ────────────────────────────────────────
 
-  # X15 — Error case: a support user after the date cannot turn two-factor off, even with the right password and code
+  # X15 — Error case: a support user cannot turn two-factor off, even with the right password and code
   Scenario: X15 Required user's direct turn-off
     Given "Anita" has a website session
     When "Anita" posts to turn off two-factor for "Anita" with the right password and code

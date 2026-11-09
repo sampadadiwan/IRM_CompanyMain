@@ -29,6 +29,9 @@ class FoldersController < ApplicationController
 
   def download
     DocumentDownloadJob.perform_later(@folder.id, current_user.id)
+    # M11 D2 / H27 — a whole folder's documents
+    SecurityEvents.record("data.exported", user: current_user, entity_id: @folder.entity_id,
+                                           details: { what: "folders#download", name: @folder.name })
     UserAlert.new(
       user: current_user,
       message: "You will be sent a download link for the documents in a few minutes.",

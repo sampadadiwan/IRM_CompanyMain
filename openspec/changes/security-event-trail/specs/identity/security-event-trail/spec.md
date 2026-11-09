@@ -43,8 +43,8 @@ recorded as a success until the code is accepted.
 - **AND** a request with no token at all records nothing
 
 #### Scenario: Sign-out
-- **WHEN** a signed-in user signs out of the website
-- **THEN** a "sign-out" event is recorded
+- **WHEN** a signed-in user signs out of the website and no CapHive support user was signed in as them
+- **THEN** no security event is recorded (a plain sign-out is not recorded; only the end of a support visit is)
 
 ### Requirement: Two-factor events are recorded
 The system SHALL record a wrong two-factor code, two-factor being switched on or off, a two-factor method
@@ -105,12 +105,14 @@ notification to every active company admin of the firm, including the person who
 ### Requirement: CapHive support access is recorded and alerted
 The system SHALL record when a CapHive support user signs in as a client user, when that support session
 ends, and when a support user switches into or back out of a client firm, and SHALL alert the client
-firm's company admins when support signs in as one of its users or switches into the firm.
+firm's company admins when support signs in as one of its users or switches into the firm. These support visits
+SHALL be announced by in-app notification only, never by email.
 
 #### Scenario: Support signs in as a user
 - **WHEN** a support user uses Login as on a client user
 - **THEN** a "support signed in as user" event is recorded with the support user as Done by and the client's firm
-- **AND** the firm's company admins receive "CapHive support (<support name>) signed in as <user name>"
+- **AND** the firm's company admins receive the in-app notification "CapHive support (<support name>) signed in as <user name>"
+- **AND** no email is sent about it
 
 #### Scenario: Support session ends
 - **WHEN** the support user signs out while signed in as the client user

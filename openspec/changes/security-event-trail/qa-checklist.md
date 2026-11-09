@@ -52,7 +52,7 @@ step (J2.3 = journey 2, step 3) · **R** = Role sweep · **C** = Cross-cutting c
 | ☐ | H7 | Region switch (web) | Rahul with regions IN,US | 1. valid cross-site link 2. Open Settings › Security Events as Divya (super) and find the row | "Sign-in", door `cross_region` in the destination region | | |
 | ☐ | H8 | App → website hand-off | Priya on the app | 1. valid hand-off link 2. Open Settings › Security Events as Divya (super) and find the row | "Sign-in", door `mobile_handoff` | | |
 | ☐ | H9 | Outlook add-in | Rahul signed in | 1. connects the add-in 2. Open Settings › Security Events as Divya (super) and find the row | "Sign-in", door `mail_addin` | | |
-| ☐ | H10 | Sign-out | Karan signed in | 1. signs out 2. Open Settings › Security Events as Divya (super) and find the row | "Signed out" | | |
+| ☐ | H10 | Plain sign-out records nothing | Karan signed in | 1. he signs out 2. Open Settings › Security Events as Divya (super) and filter by Karan | No "Signed out" row (plain sign-outs are not recorded); his sign-in is there | |
 | ☐ | H11 | Wrong code | Priya at the code page | 1. wrong code 2. Open Settings › Security Events as Divya (super) and find the row | "Two-factor code wrong" attempt 1; message unchanged | | |
 | ☐ | H12 | Enrol authenticator | Karan with 2FA on, no method | 1. completes enrolment 2. Open Settings › Security Events as Divya (super) and find the row | "Two-factor method set" mode `authenticator` + "Sign-in" door `two_factor` | | |
 | ☐ | H13 | Admin resets method | Rahul on Priya's page | 1. Reset two-factor 2. Open Settings › Security Events as Divya (super) and find the row | "Two-factor method reset", actor Rahul, user Priya | | |
@@ -75,7 +75,7 @@ step (J2.3 = journey 2, step 3) · **R** = Role sweep · **C** = Cross-cutting c
 | ☐ | H30 | Filter by group | H29 | 1. Group = Access 2. Open Settings › Security Events as Divya (super) and find the row | role + support-switch rows only; cards recount | | |
 | ☐ | H31 | Download | H29 | 1. Download 2. Open Settings › Security Events as Divya (super) and find the row | flash "Your request is being processed. You will receive an email shortly."; email with xlsx of firm 18's filtered rows | | |
 | ☐ | H32 | Approver alert | H16 | 1. job runs 2. Open Settings › Security Events as Divya (super) and find the row | Rahul and Meera get "Approver role given to Rahul Mehta"; date `Nov 09, 2026` | | |
-| ☐ | H33 | Support access alert | H19 | 1. job runs 2. Open Settings › Security Events as Divya (super) and find the row | admins get "CapHive support (Anil Kumar) signed in as Priya Shah" | | |
+| ☐ | H33 | Support sign-in alert: bell only (changed 2026-11-09) | H19 | 1. job runs 2. Open Settings › Security Events as Meera and find the row 3. Check Meera's and Rahul's bell and inbox | the "Support signed in as" row is there; the bell shows "CapHive support (Anil Kumar) signed in as Priya Shah"; **no** email arrives | | |
 | ☐ | H34 | Weekly pack | events 02–08 Nov | 1. Ask a developer to run the weekly pack job now (or wait for Monday 07:00); open the email | support@caphive.com gets "[IN] Security events…" xlsx with 5 sheets; "Failed sign-ins by account" counts per account per day | | |
 | ☐ | H35 | Purge | events on 08 Oct 2025 and 10 Oct 2025 | 1. Ask a developer to create the two dated events and run the clean-up job now | the 08 Oct 2025 row removed; the 10 Oct 2025 row kept | | |
 
@@ -124,7 +124,9 @@ step (J2.3 = journey 2, step 3) · **R** = Role sweep · **C** = Cross-cutting c
 | ☐ | E39 | Period over 13 months | from 01 Jan 2025 | 1. apply 2. Open Settings › Security Events as Divya (super) and find the row | clamped to 13 months; flash says so | | |
 | ☐ | E40 | Cards = rows | 3 failed sign-ins, 2 role rows | 1. open 2. Open Settings › Security Events as Divya (super) and find the row | cards 3 and 2 equal the filtered rows | | |
 | ☐ | E41 | No alert for employee | E23 | 1. job runs 2. Open Settings › Security Events as Divya (super) and find the row | no email or bell | | |
-| ☐ | E42 | One alert for a firm switch | H21 | 1. job runs 2. Open Settings › Security Events as Divya (super) and find the row | one "support switched into" alert; the `company_admin` grant to Anil alerts nobody | | |
+| ☐ | E42 | Firm switch alert: bell only (changed 2026-11-09) | H21 | 1. job runs 2. Open Settings › Security Events as Divya (super) and find the row 3. Check the firm admins' bell and inbox | one bell "support switched into"; **no** email; the `company_admin` grant to Anil alerts nobody | | |
+| ☐ | E51 | "Enable support" switch still alerts | Rahul has support off | 1. Rahul ticks Enable support and saves 2. Check Rahul's and Meera's inbox and bell | both get "Security alert: CapHive support access switched on for Rahul Mehta" with why / what to do | | |
+| ☐ | E52 | Click an Event to filter | Meera filtered by account | 1. Click "Signed out" in the Event column 2. Check the Filter panel and the Download link 3. Click the "× Signed out" chip | only that kind's rows, other filters kept, Event selected; the chip shows every kind again; the ⓘ beside an event does not filter | | |
 | ☐ | E43 | Purge boundary | rows at exactly 13 months and 13 months + 1 s | 1. Ask a developer to create the two boundary events and run the clean-up job now | exactly-13-months row kept; older removed | | |
 | ☐ | E44 | Formula-looking value in xlsx | user agent `=HYPERLINK(...)` | 1. download 2. Open Settings › Security Events as Divya (super) and find the row | cell starts with `'` | | |
 | ☐ | E45 | Support and super scope | Anil mapped to A; Divya super | 1. each opens the list 2. Open Settings › Security Events as Divya (super) and find the row | Anil: firm 18 only; Divya: all firms + NULL-firm rows (E2) | | |

@@ -42,6 +42,9 @@ module Users
         resource.update(session_token: SecureRandom.hex(64))
         cookies[:session_token] = { value: resource.session_token, httponly: true, secure: !Rails.env.local? }
         set_flash_message!(:notice, :signed_in)
+        # M11 S1a / H1 — a password-only sign-in is complete here (a two-factor user is recorded only once
+        # the code passes, TwoFactorController — D4)
+        SecurityEvents.record("sign_in.succeeded", user: resource, door: "web_password")
         redirect_to after_sign_in_path_for(resource)
       end
     rescue ActiveRecord::RecordNotUnique
@@ -49,8 +52,21 @@ module Users
     end
 
     def destroy
+      # M11 S3 / P2 — recorded before reset_session, which wipes support_user_id (H20)
+      record_sign_out
       reset_session
       super
+    end
+
+    private
+
+    # H20 — when CapHive support was signed in as this user, the end of that visit is recorded
+    # (support.session_ended). H10 — a plain sign-out is NOT recorded (user decision 2026-11-09): it proves no
+    # session ended (most end by timing out), needs no action, and only buried the rows that matter.
+    def record_sign_out
+      return unless current_user && session[:support_user_id].present?
+
+      SecurityEvents.record("support.session_ended", user: current_user)
     end
   end
 end

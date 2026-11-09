@@ -20,12 +20,38 @@ module Users
       # M8 — two_factor_applies?: a support / super user past the region's date is refused like a
       # two-factor user (X3); before the date the token is issued as today (E20); a wrong password
       # still falls through to devise-api's lockout count (X4)
-      return render_two_factor_required if user&.two_factor_applies? && !user.access_locked? && user.valid_password?(sign_in_params[:password].to_s)
-
-      super
+      if user&.two_factor_applies? && !user.access_locked? && user.valid_password?(sign_in_params[:password].to_s)
+        render_two_factor_required
+      else
+        super
+      end
+      # M11 S1f / S1g / H6 / E10 — after the answer is decided, never changing it
+      record_token_sign_in(user)
     end
 
     private
+
+    # H6 — a token issued is a sign-in through the api door; E10 / S1g — a refusal is a failure, with devise-api's
+    # (or our) error code as the reason, e.g. "invalid_authentication", "two_factor_required"
+    def record_token_sign_in(user)
+      if response.status < 300
+        SecurityEvents.record("sign_in.succeeded", user:, door: "api")
+      else
+        email = user ? nil : sign_in_params[:email].to_s
+        SecurityEvents.record("sign_in.failed", user:, email:, door: "api", outcome: :failure, actor: nil,
+                                                details: { reason: token_error_code })
+      end
+    rescue StandardError => e
+      # The answer is already rendered; recording must not change it
+      Rails.logger.warn("[security_event] token_hook_failed #{e.class}")
+    end
+
+    # The JSON answer's "error" code (a closed set from devise-api and render_two_factor_required), else the status
+    def token_error_code
+      JSON.parse(response.body.to_s)["error"].to_s.first(40).presence || response.status.to_s
+    rescue JSON::ParserError
+      response.status.to_s
+    end
 
     # A phone's token is refreshed only by the app (POST /api/mobile/v1/session/refresh), which keeps
     # the device pointing at its current token. Refreshing it here would leave the phone holding a

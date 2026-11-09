@@ -118,8 +118,15 @@ module TwoFactorRequiredWorld
     @tfa_sessions[name] ||= begin
       user = tfa_user(name)
       session = ActionDispatch::Integration::Session.new(Rails.application)
-      session.post "/users/sign_in", params: { user: { email: user.email, password: "password" } }
-      session.post "/two_factor", params: { otp_code: user.reload.current_otp } if session.response.location.to_s.include?("/two_factor/new")
+      if user.two_factor_required? && !user.two_factor_verified?
+        # A required user with no method can't finish a sign-in any more (set-up comes first), so their
+        # session is one from before the deploy: made by Warden on the next request, without the form
+        login_as(user, scope: :user)
+        session.get "/users/#{user.id}"
+      else
+        session.post "/users/sign_in", params: { user: { email: user.email, password: "password" } }
+        session.post "/two_factor", params: { otp_code: user.reload.current_otp } if session.response.location.to_s.include?("/two_factor/new")
+      end
       session
     end
   end
@@ -127,20 +134,6 @@ end
 World(TwoFactorRequiredWorld)
 
 # ── Clock and region stage ────────────────────────────────────────────────────
-
-# Sets the region's enforcement date (ops' env var) and forgets the memoised value, so the next
-# request re-reads it. The After hook below puts the previous value back.
-Given("the required 2FA date is {string}") do |date|
-  @tfa_saved_env = ENV.fetch(RequiredTwoFactor::ENV_KEY, nil) unless defined?(@tfa_saved_env)
-  ENV[RequiredTwoFactor::ENV_KEY] = date
-  RequiredTwoFactor.reset!
-end
-
-Given("the required 2FA date is not set") do
-  @tfa_saved_env = ENV.fetch(RequiredTwoFactor::ENV_KEY, nil) unless defined?(@tfa_saved_env)
-  ENV.delete(RequiredTwoFactor::ENV_KEY)
-  RequiredTwoFactor.reset!
-end
 
 # E4 — watch the error log before the bad value is first read
 Given("the error log is watched") do
@@ -157,12 +150,7 @@ Given("it is {string} in India") do |time|
 end
 
 After do
-  # Restore the env date exactly as it was, and forget the memo, so nothing leaks to the next
-  # scenario in this worker (pcuc worker-only failures come from leaked globals)
-  if defined?(@tfa_saved_env)
-    @tfa_saved_env.nil? ? ENV.delete(RequiredTwoFactor::ENV_KEY) : ENV[RequiredTwoFactor::ENV_KEY] = @tfa_saved_env
-  end
-  RequiredTwoFactor.reset!
+  # Undo any clock travel so nothing leaks to the next scenario in this worker
   travel_back
 end
 
@@ -367,22 +355,16 @@ When("I open the dashboard") do
   visit root_path
 end
 
-Then("I see the amber required 2FA banner {string}") do |text|
-  expect(page).to have_css(".two_factor_required_prompt.alert-warning", text:)
-  within(".two_factor_required_prompt") { expect(page).to have_button("Set up now") }
+# H4 / H5 — a browser still signed in from before the deploy, when the rule did not exist: the session was
+# made without the set-up step, as a session from that day was (Warden, no sign-in form)
+Given("{string} still has a website session from before the deploy") do |name|
+  @user = tfa_user(name)
+  Capybara.reset_sessions!
+  login_as(@user, scope: :user)
 end
 
-Then("I see the red required 2FA banner {string}") do |text|
-  expect(page).to have_css(".two_factor_required_prompt.alert-danger", text:)
-  within(".two_factor_required_prompt") { expect(page).to have_button("Set up now") }
-end
-
-Then("I see no required 2FA banner") do
-  expect(page).to have_no_css(".two_factor_required_prompt")
-end
-
-When("I press {string} on the required 2FA banner") do |label|
-  within(".two_factor_required_prompt") { click_on(label) }
+When("I press {string} on my user page") do |label|
+  click_on(label)
 end
 
 # The admin console's "Click To Login" posts this same request; rack_test submits it directly
@@ -518,15 +500,6 @@ Then("the two-factor flag of {string} is {word}") do |name, value|
 end
 
 # ── Help text and tooltips (every user-facing change explains itself) ────────
-
-Then("the required 2FA banner explains why and how") do
-  within(".two_factor_required_prompt") do
-    expect(page).to have_css(".two_factor_required_why",
-                             text: "CapHive support and super users can sign in as clients, so their accounts need a second factor.")
-    help = find("#two_factor_required_help")
-    expect(help[:title]).to include("an authenticator app works without a phone number")
-  end
-end
 
 Then("the alert offers to set up two-factor") do
   expect(page).to have_css("#alert #two_factor_setup_alert_button")

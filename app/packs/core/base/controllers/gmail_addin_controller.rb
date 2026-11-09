@@ -85,6 +85,8 @@ class GmailAddinController < ApplicationController
 
     # H12-H — the user confirmed: mint the token and hand it to the add-on's callback
     payload = MailAddinToken.payload_for(current_user)
+    # M11 S1k — the add-on now holds a token for this user
+    SecurityEvents.record("sign_in.succeeded", user: current_user, door: "mail_addin")
     callback.query = [callback.query, {
       token: payload[:access_token],
       expires_at: payload[:expires_at],

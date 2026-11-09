@@ -1,0 +1,5 @@
+<%# Settings › Security Events (OWASP 2026-11 M11, design card ⑥). Same shape as capital_calls/index: the page is one
+    turbo frame, so the filter and the pager replace only the list. %>
+<%= turbo_frame_tag "security_events_frame" do %>
+  <%= render "security_events/index" %>
+<% end %>

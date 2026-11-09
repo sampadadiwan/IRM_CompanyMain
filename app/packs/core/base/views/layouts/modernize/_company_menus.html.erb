@@ -146,6 +146,19 @@
                 </div>
             </a>
 
+            <%# M11 (OWASP 2026-11) K10 — the security event trail: company admins, CapHive support and super users %>
+            <% if policy(SecurityEvent).index? %>
+            <a href="<%= security_events_path %>" class="py-8 px-7 d-flex align-items-center" id="security_events_menu">
+                <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6 text-primary">
+                <i class="ti ti-shield-lock"></i>
+                </span>
+                <div class="w-75 d-inline-block v-middle ps-3">
+                <h6 class="mb-1 fs-3 fw-semibold lh-base">Security Events</h6>
+                <span class="fs-2 d-block text-body-secondary">Sign-ins, role and support access, exports</span>
+                </div>
+            </a>
+            <% end %>
+
             <%# Fund compliance monitoring (rule packs, register, duties). viewer? already requires
                 enable_compliance and refuses anyone acting as an investor. The old AI Rules
                 "Compliance Rules" / "Compliance Checks" entries were removed at the user's request. %>

@@ -238,22 +238,23 @@ asks for your password only.
 ## Required for CapHive support and super users
 
 CapHive's own **support** and **super** users can sign in as clients (**Login as**), so their
-accounts must have a second factor. Each region (IN, US) has an **enforcement date**; company
-admins, employees, investors and advisors are **not** required — for them 2FA stays optional.
+accounts must have a second factor, from the day this was released, in every region. Company admins,
+employees, investors and advisors are **not** required: for them 2FA stays optional.
 
 ```mermaid
-timeline
-    title A support user's notice period
-    Before the date : amber banner with the date and Set up now
-    On the date : sign-in asks you to set up a method first : red banner for a session that began earlier : Login as refused until you set up
+flowchart LR
+    S["Support / super user<br/>without a method"] --> SI["Signs in"]
+    SI --> SU["Set Up Two-Factor Authentication<br/>(required for your role)"]
+    SU --> OK["Signed in · Login as available"]
+    OLD["Still signed in from<br/>before the release"] --> LA["Login as refused<br/>with Set up now"]
+    LA --> SU
 ```
 
-| When | What a support / super user without a method sees |
+| Situation | What a support / super user without a method sees |
 |---|---|
-| Before the date | An amber banner on every page: "Two-factor authentication becomes required for your role (Support) on 01/12/2026." with **Set up now** |
-| From the date | Sign-in shows **Set Up Two-Factor Authentication** with "required for your role" — you choose a method before you get in |
-| From the date, in a session that began earlier | A red banner, and **Login as** is refused with a **Set up now** button |
-| After setting up | No banner; **Required for your role** badge on your profile; no **Turn off 2FA** |
+| Signing in | **Set Up Two-Factor Authentication** with "required for your role": you choose a method before you get in |
+| Still signed in from before the release | **Login as** is refused with a **Set up now** button; **Set up now** is also on your profile |
+| After setting up | **Required for your role** badge on your profile; no **Turn off 2FA** |
 
 **Set up now** signs you out; sign in again and choose a method. The **authenticator app** works
 without a phone number. If you lose your phone later, another support user or a company admin
@@ -302,7 +303,7 @@ So that someone using your open session cannot remove your second factor. Both a
 Switching someone else's 2FA off is how accounts are taken over, so only you can do it. If you lost your phone, ask for **Reset 2FA Method**: it keeps 2FA on and you choose a new method at your next sign-in.
 
 **Why must CapHive support and super users use 2FA?**
-They can sign in as clients with **Login as**, so a stolen support password would reach many firms. From the region's enforcement date they set up a method at sign-in. See [Required for CapHive support and super users](#required-for-caphive-support-and-super-users).
+They can sign in as clients with **Login as**, so a stolen support password would reach many firms. They set up a method at their next sign-in. See [Required for CapHive support and super users](#required-for-caphive-support-and-super-users).
 
 **Why is there no Turn off 2FA button on my profile?**
 Either 2FA is off, you are a support or super user (the **Required for your role** badge says so), or support is viewing your account as you.
@@ -341,8 +342,8 @@ Your old method stops working and you receive an email saying the reset happened
 **What happens when I switch 2FA off?**
 Codes are no longer asked for from your next sign-in, your chosen method is forgotten, and you and your firm's other company admins are emailed. If you switch 2FA back on later you pick a method again, so delete the old CapHive entry from your authenticator app.
 
-**What happens when I press Set up now on the banner?**
-You are signed out with "Sign in again to set up two-factor authentication." Signing in then shows the method-selection screen; once you confirm a code the banner is gone and a "turned on" email is sent.
+**What happens when I press Set up now?**
+You are signed out with "Sign in again to set up two-factor authentication." Signing in then shows the method-selection screen; once you confirm a code, **Set up now** is gone from your profile and a "turned on" email is sent.
 
 **What happens if I enter the wrong code?**
 You see "Invalid code" with the number of attempts left. After 3 failed attempts CapHive shows "Too many failed attempts. Please sign in again." and you start again from the sign-in page.

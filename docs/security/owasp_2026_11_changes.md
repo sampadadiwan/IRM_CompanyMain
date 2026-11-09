@@ -1232,7 +1232,7 @@ two builds at once would edit code while the other's tests run, and their test r
 
 ```mermaid
 flowchart LR
-    M8["M8 · 2FA for support + super<br/>✅ built + committed"] --> M11["M11 · security event trail<br/>⏳ next"]
+    M8["M8 · 2FA for support + super<br/>✅ built + committed"] --> M11["M11 · security event trail<br/>✅ built + committed"]
     M11 --> M13["M13 · maker–checker<br/>⏳ queued"]
     M13 --> M14["M14 · bank-detail controls<br/>✅ design extended for SWIFT/IBAN<br/>(mark in validation_rules) · ⏳ queued"]
 ```
@@ -1240,7 +1240,7 @@ flowchart LR
 | Order | # | Status | What's happening |
 |---|---|---|---|
 | 1 | M8 | ✅ **built and committed** (31 of 34 tasks; the other 3 are deploy, ops and QA steps) · review run 1,438 scenarios green | Built through OpenSpec's apply step. **Tests:** the 4 new features pass (78 scenarios); the full `features/security`, `features/login`, API, mobile and admin run passed 1,117 of 1,120. The 3 failures came from the Group A commit, not M8, and are fixed (see "Fixes to Group A found by the M8 run" below). **Help text and tooltips:** the banner (why, from which date, Set up now, ⓘ), the set-up screen, the Turn off popup (why password + code), the disabled Turn off for admins (tooltip: use Reset 2FA Method), the Login as refusal (why + Set up now), the emails. **Screenshots** compared with the reference screens. No migration |
-| 2 | M11 | ⏳ queued | Starts after M8 is reviewed and committed. Adds the new `security_events` table (migration) |
+| 2 | M11 | ✅ **built and committed** (32 of 34 tasks; 3.9 done in the regression run, 4.4 is QA on staging) | Built through OpenSpec's apply step. Migration `20261109150000` adds `security_events` (dev migrated; schema files hand-edited to the new table only). **Tests:** 4 new features, 99 scenarios green; regression of 21 feature sets, 1,523/1,523. **Help text and tooltips:** the screen says why it exists and what to do, every card, column and filter field has an ⓘ, empty state and period notice; each email says why and what to do. **Screenshots** compared with capital_calls and the mock. **Your decisions during the build:** support sign-in as a user and firm switch → bell only, no email. Deviations: design "Changed during the build" C1–C19 |
 | 3 | M13 | ⏳ queued | Starts after M11. Adds the `approval_maker_checker` firm setting (off for every firm by default) |
 | 4 | M14 | ✅ design extended (mark in `validation_rules`, no migration) · ⏳ queued | SWIFT/IBAN custom fields count as bank details (design card ⑨, worked examples H18–H21 / E63–E79 / X16–X20, tasks phase 6). The "payout field" mark is stored in the existing `validation_rules` JSON, not a new column (decided 2026-11-09). The design is updated and validates: the one change to existing code is allowing the `payout_field` key in `validation_rules_consistent` (key change K19) |
 | — | M4 | 🅿️ parked | Not built. P1 (scrub development copies) is built and committed; P2 and P3 are planned below |
@@ -1295,12 +1295,15 @@ three were in tests, not app behaviour:
 
 #### M8 deploy steps (tasks 4.5–4.7)
 
-1. In IN and US, run `bin/rails two_factor_required:report` to see which support and super users have no 2FA.
-2. Set the **same** `REQUIRED_2FA_ENFORCE_FROM` (deploy date + 14 days) in `.env.production.in` and
-   `.env.production.us`, then restart.
-3. Message the 11 support and super users, and re-run the report until it shows 0.
-4. On the date, run `two_factor_required:end_unverified_access` as a dry run, then with `EXECUTE=1` if it names
-   anyone.
+The rule is on from the deploy itself: there is no start date, notice period or banner (your decision, 2026-11-09:
+"there are very few support users and we can force it on day one"). No setting to add.
+
+1. Before the deploy, tell the 11 support and super users: at their next sign-in they will set up 2FA (an
+   authenticator app works without a phone number).
+2. In IN and US, run `bin/rails two_factor_required:report` to see who has no 2FA yet.
+3. Right after the deploy, run `two_factor_required:end_unverified_access` as a dry run, then with `EXECUTE=1` if it
+   names anyone, so a remembered session can't skip set-up.
+4. Re-run the report until it shows 0.
 5. QA works through `openspec/changes/require-2fa-privileged-roles/qa-checklist.md` on staging.
 
 **How each one finishes.**
@@ -1324,7 +1327,7 @@ three were in tests, not app behaviour:
 
 **What the design adds.**
 - A new table, `security_events`, that rows are only ever added to. Each row records:
-  - what happened (29 kinds in 7 groups: sign-in, two-factor, account, access, support, credentials, data)
+  - what happened (28 kinds in 7 groups: sign-in, two-factor, account, access, support, credentials, data)
   - who did it, to whom, in which firm
   - from which IP and browser
   - the outcome
@@ -1340,7 +1343,8 @@ three were in tests, not app behaviour:
   - company admins see their own firm
   - super users see everything, including failures for unknown emails
 - **Emails to company admins** for the events that matter: an admin or approver role granted, "enable support"
-  switched on, and support signing in as a client.
+  switched on, and support signing in as a client or switching into the firm (since 2026-11-09: in the bell only,
+  not by email).
 - **Size:** about 2,500 events a month (about 12 MB a year), roughly 4% of the existing audit table's growth.
 
 **Your decisions (2026-11-09).**
@@ -1352,6 +1356,120 @@ three were in tests, not app behaviour:
 | How long are events kept? | **13 months** (a full year plus a month for year-on-year comparison) |
 
 ---
+
+**What was built (2026-11-09, not yet committed).**
+
+```mermaid
+flowchart LR
+    H["~25 one-line hooks<br/>(sign-in doors, rolify, User after-commit,<br/>support, keys, exports)"] --> R["SecurityEvents.record<br/>never raises"]
+    R -->|"queue"| J["SecurityEventWriteJob"]
+    R -.->|"queue down"| I["insert directly"]
+    I -.->|"both down"| L["[security_event] log line"]
+    J --> T[("security_events")]
+    I --> T
+    J --> A["admin alert<br/>email + bell"]
+    T --> S["Settings › Security Events"]
+    T --> P["Monday pack<br/>support@caphive.com"]
+    T --> X["nightly purge<br/>after 13 months"]
+```
+
+- **Recording:** one table, `security_events` (migration `20261109150000`), 28 kinds in 7 groups. Every hook is one
+  line; recording runs after the change commits, so a rolled-back role grant records nothing.
+- **Never breaks anything:** the queue first, a direct insert when Redis is down, a log line when both fail. No
+  message, redirect or status code changed; tests check the old texts word for word.
+- **Screen:** Settings › Security Events (company admins: own firm; support: supported firms; super: all, including
+  failed sign-ins on unknown emails). Cards count the filtered rows; filter by dates, group, event, outcome, door,
+  account (name or email) and IP; Download emails a spreadsheet. Every column, card and filter field has an ⓘ
+  explaining it; each row has a **What to do** bulb that opens a styled popup: what happened, when it is normal (green card) and what to do if it wasn't expected (amber card, or "No action needed"), and clicking an event's name filters the list to that kind.
+- **Alerts:** company admins get email + bell for "Approver role given to Rahul Mehta" (admin / approver roles),
+  and "CapHive support access switched on/off" — each email says why the reader got it and what to do if it wasn't
+  expected. **CapHive support signing in as a client, or switching into a firm, is announced in the bell only, never
+  by email** (your decisions, 2026-11-09: "no emails on sign in by support, other events can generate email", then
+  the same for firm switches).
+  support@caphive.com gets the Monday pack per region.
+- **Deviations from the design** are listed in the design's "Changed during the build" table (C1–C18), e.g. the
+  Warden hook shares M12's existing `before_failure` block instead of a new initializer.
+
+##### M11 — When an event is recorded, and who is told
+
+Every event below is **always recorded**: it shows on Settings › Security Events, in the Download spreadsheet and
+in the Monday pack (emailed to `support@caphive.com` only, never to customers). Recording is separate from
+telling anyone. This matrix shows both, including the emails that existed before M11 (Devise and M8), so you can
+see everything a person receives for one action.
+
+```mermaid
+flowchart LR
+    A["A user, an admin or support<br/>does something"] --> R["Security event recorded<br/>(every kind, always)"]
+    R --> S["Security Events screen<br/>+ Download + Monday pack"]
+    R --> Q{"Which kind?"}
+    Q -->|"company_admin / approver role<br/>granted or removed;<br/>Enable support switched"| BE["Firm's company admins:<br/>bell + email"]
+    Q -->|"support Login as;<br/>support switches into the firm"| B["Firm's company admins:<br/>bell only, no email"]
+    Q -->|"everything else"| N["No M11 alert<br/>(existing Devise / M8 emails still apply)"]
+```
+
+**Who gets an M11 alert:** the firm's active company admins, including whoever made the change, and never a
+CapHive support user.
+
+**Sign-in**
+
+| Event | Recorded when… | Firm admins (M11) | Other emails |
+|---|---|---|---|
+| `sign_in.succeeded` | Anyone signs in: web, sign-in link, mobile, API, add-in, region switch | — | Sign-in link users get their link email (that is how they sign in) |
+| `sign_in.failed` | Wrong password, unknown email, or a locked account tries | — | — |
+
+**Two-factor**
+
+| Event | Recorded when… | Firm admins (M11) | Other emails |
+|---|---|---|---|
+| `two_factor.code_failed` | A wrong 2FA code is entered | — | — |
+| `two_factor.enabled` / `two_factor.method_set` | A user sets up 2FA or picks a method | — | User: "2FA switched on" (M8) |
+| `two_factor.disabled` | A user turns 2FA off (password + code) | — | User: "2FA switched off"; the firm's other company admins: notice (M8) |
+| `two_factor.method_reset` | An admin or support resets someone's method | — | User: reset email; company admins: notice, unless the user reset their own (existing) |
+
+**Account**
+
+| Event | Recorded when… | Firm admins (M11) | Other emails |
+|---|---|---|---|
+| `password.reset_requested` | "Forgot password" is used | — | User: Devise reset instructions |
+| `password.changed` | A password is changed or reset | — | — (Devise's change notice is off) |
+| `phone.changed` | A phone number change is confirmed | — | User: "phone changed" (existing) |
+| `account.locked` | 6 wrong passwords in a row | — | User: Devise unlock instructions |
+| `account.unlocked` / `account.deactivated` / `account.reactivated` | Unlocked (by an admin or Devise); a user deactivated or reactivated | — | — |
+| `firm.deactivated` | A firm is switched off | — | — |
+
+**Access**
+
+| Event | Recorded when… | Firm admins (M11) | Other emails |
+|---|---|---|---|
+| `role.granted` / `role.revoked` | Any role added or removed | **Bell + email**, only for **company_admin** or **approver**, and never for the role swaps that support or advisor switches make | — |
+| `support_access.enabled` / `support_access.disabled` | The firm's own "Enable support" switch for a user | **Bell + email** | — |
+
+**Support**
+
+| Event | Recorded when… | Firm admins (M11) | Other emails |
+|---|---|---|---|
+| `support.signed_in_as` | Support uses **Login as** on a firm user | **Bell only, no email** (your decision, 2026-11-09) | — |
+| `support.firm_switched` | Support switches into the firm | **Bell only, no email** (your decision, 2026-11-09) | — |
+| `support.session_ended` | Support signs out while acting as the user (a plain sign-out is **not** recorded: it proves no session ended, since most end by timing out, and needs no action; your decision, 2026-11-09) | — | — |
+| `support.switched_back` | Support switches back to their own firm | — | — |
+
+**Credentials and data**
+
+| Event | Recorded when… | Firm admins (M11) | Other emails |
+|---|---|---|---|
+| `api_token.created` / `api_token.revoked` | A user creates or revokes an API key | — | — |
+| `mobile_device.revoked` | A phone is signed out of the app | — | — |
+| `connected_app.authorised` | A user authorises an OAuth / MCP app | — | — |
+| `data.exported` | An audit or data download is made | — | The requester gets the existing download-ready email |
+
+**Worked example (dev, 2026-11-09, Demo Fund).** Support user `admin@altx.com` signed in, used **Login as** on
+`fm10@demofund.com`, opened Funds, and signed out. Three events are recorded:
+
+1. `sign_in.succeeded` for the support user, under their own firm, so it is not in Demo Fund's list.
+2. `support.signed_in_as` for fm10, with the support user recorded as the impersonator. Demo Fund's company
+   admins see it in the bell, with no email.
+3. `support.session_ended` for fm10, with the support user recorded. (The dev run also recorded a plain
+   `sign_out`; since your decision that day, a plain sign-out is no longer recorded.)
 
 #### M8 — Two-factor sign-in required for CapHive support and super users (`require-2fa-privileged-roles`)
 
@@ -1369,14 +1487,13 @@ three were in tests, not app behaviour:
   below).
 
 **What the design changes.**
-- **2FA is required for CapHive support and super users**, from a start date set per region
-  (`REQUIRED_2FA_ENFORCE_FROM`, the same date in IN and US).
-  - No database change. Removing the setting rolls it back. A malformed date counts as "enforce", so a typo can't
-    switch the rule off.
+- **2FA is required for CapHive support and super users**, from the day it is deployed, in every region (changed
+  during the build: the first design had a start date and a notice banner; see the decisions below).
+  - No database change, and no setting.
   - Who is required is one list in the code (the `support` and `super` roles), so changing it later is a one-line
     change.
 - **Company admins and everyone else keep today's behaviour:** 2FA is optional, and they switch it on themselves.
-- On their next sign-in after the date, a support or super user without 2FA goes through the **existing** 2FA set-up screens.
+- On their next sign-in, a support or super user without 2FA goes through the **existing** 2FA set-up screens.
   The authenticator app is always offered, so nobody is locked out for lack of a phone.
 - **Turning 2FA off needs the password and a current code, for every user who has 2FA on**, not only support. Without
   this, a stolen session could quietly remove a company admin's own, voluntary 2FA. It happens in a popup copied from
@@ -1392,9 +1509,9 @@ three were in tests, not app behaviour:
 | Question | Decision |
 |---|---|
 | Who must have 2FA? | **CapHive support and super users only** (11 people). Company admins of GP firms and of LP firms are **not** required (changed from the first draft, which also covered company admins) |
-| Should the IN ↔ US switch ask for a code at the destination? | **No change.** Both regions get the same start date, so a support user is checked wherever they start |
-| Notice period? | **14 days.** With only 11 CapHive staff enrolling, this is an internal step that needs no client communication |
-| Force sign-out on the start date? | **No.** Un-enrolled support users see a red banner, "Login as" is refused for them, and remember-me sessions are ended by an ops task |
+| Should the IN ↔ US switch ask for a code at the destination? | **No change.** The rule is on in both regions, so a support user is checked wherever they start |
+| Notice period? | **None: forced on day one** (changed during the build, 2026-11-09: "there are very few support users and we can force it on day one"). The banner and the `REQUIRED_2FA_ENFORCE_FROM` date were removed |
+| Force sign-out at the deploy? | **No.** Un-enrolled support users still signed in have "Login as" refused (with Set up now), and remember-me sessions are ended by an ops task |
 | Should super users also be required? | **Yes.** Super users have the widest access in the app, so they must have 2FA like support |
 
 > The design folder is being updated to match. The agent that wrote it is reworking every artifact to "support and
@@ -2025,8 +2142,8 @@ scenarios; one parallel-load timeout passed on rerun).
 
 | Design | What changes for users | Built in so nobody is stuck |
 |---|---|---|
-| **M8** 2FA | **11 CapHive staff** (support and super) must set up 2FA. **Every user** with 2FA on must enter their password and a current code to switch it off. Admins can no longer switch someone else's 2FA off (they use the existing reset) | 14-day notice, no forced sign-out, and the authenticator app is always offered, so nobody is locked out for lack of a phone. Company admins and LPs are **not** required to enrol |
-| **M11** security events | Company admins get an email when an admin or approver role is granted in their firm, or support signs in as someone there. There's a new Security Events screen | Recording can never fail a sign-in or an action |
+| **M8** 2FA | **11 CapHive staff** (support and super) must set up 2FA. **Every user** with 2FA on must enter their password and a current code to switch it off. Admins can no longer switch someone else's 2FA off (they use the existing reset) | Forced on day one (very few support users), but no forced sign-out: their next sign-in walks them through set-up, and the authenticator app is always offered, so nobody is locked out for lack of a phone. Company admins and LPs are **not** required to enrol |
+| **M11** security events | Company admins get an email when an admin or approver role is granted or removed in their firm, or the "Enable support" switch changes. Support signing in as a client or switching into the firm shows in their bell, not by email (decision 2026-11-09). There's a new Security Events screen | Recording can never fail a sign-in or an action |
 | **M13** maker–checker | **Nothing, unless a firm switches it on.** Pages show "Prepared by" and label self-approvals | Off by default for every firm, new firms included |
 | **M14** bank details | Changing an LP's account number, IFSC or a marked SWIFT/IBAN field **clears "Bank Verified" and needs a second person to verify**. The LP is emailed. Only approvers can tick Bank Verified. Import rows that change an account end as "Success with warnings". About 3% of name matches would go to "needs review" | One-approver firms can verify their own change after a warning. Distributions are **flagged, not blocked**. Existing verified KYCs stay as they are until changed |
 
@@ -2045,7 +2162,7 @@ it means**, and **what to do next**. A disabled control says why it's disabled; 
 | **M6** OAuth / MCP | The refusal says "Apps can't be authorized while you are signed in as another user." | ✅ built |
 | **M6** API tokens page | While support is signed in as a client: the **New token** button is disabled, with a tooltip and a help line saying why (the token would keep acting in this user's name after the support session ends) and what to do (ask the user to create it) | ✅ built (scenario M6-2) |
 | **M3** admin page | The masked vendor keys get a 🔒 hint: "Stored encrypted. Only the last 3 characters are shown." (a new `EncryptedSecretField`, so investment quantities that also use the masked field don't get it) | ✅ built |
-| **M8** 2FA | The red banner (why, from which date, a "Set up now" button); a set-up help line; why "Turn off 2FA" asks for password and code; a disabled control with tooltip where admins can no longer switch someone's 2FA off; the "Login as" refusal says why; emails say why and what to do | ✅ built, with Cucumber checks on each text |
+| **M8** 2FA | "Set up now" and the "Required for your role" badge on the user's own page (the banner was dropped with the start date); a set-up help line; why "Turn off 2FA" asks for password and code; a disabled control with tooltip where admins can no longer switch someone's 2FA off; the "Login as" refusal says why; emails say why and what to do | ✅ built, with Cucumber checks on each text |
 | **M11 / M13 / M14** | Task **U.1** added to each design's `tasks.md`: every screen, control, status and email explains itself, with Cucumber checks on the key texts and screenshots compared with the reference screens | ⏳ part of each build |
 
 Changes with no on-screen effect (M9, M10, M12, M15, M16–M18, M19) need no new text.

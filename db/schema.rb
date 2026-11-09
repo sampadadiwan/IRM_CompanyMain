@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_09_130000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_09_150000) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -4894,6 +4894,32 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_09_130000) do
     t.index ["interest_form_type_id"], name: "index_secondary_sales_on_interest_form_type_id"
     t.index ["offer_form_type_id"], name: "index_secondary_sales_on_offer_form_type_id"
     t.index ["secondary_sale_form_type_id"], name: "index_secondary_sales_on_secondary_sale_form_type_id"
+  end
+
+  create_table "security_events", force: :cascade do |t|
+    t.string "uid", limit: 36, null: false
+    t.bigint "entity_id"
+    t.string "kind", limit: 40, null: false
+    t.string "category", limit: 20, null: false
+    t.string "outcome", limit: 10, default: "success", null: false
+    t.string "door", limit: 20, null: false
+    t.bigint "user_id"
+    t.bigint "actor_id"
+    t.bigint "impersonator_id"
+    t.string "identifier_digest", limit: 64
+    t.string "ip_address", limit: 45
+    t.string "user_agent"
+    t.string "request_id", limit: 36
+    t.string "region", limit: 5, null: false
+    t.json "details"
+    t.datetime "occurred_at", null: false
+    t.datetime "created_at", null: false
+    t.index ["entity_id", "occurred_at"], name: "index_security_events_on_entity_id_and_occurred_at"
+    t.index ["ip_address", "occurred_at"], name: "index_security_events_on_ip_address_and_occurred_at"
+    t.index ["kind", "occurred_at"], name: "index_security_events_on_kind_and_occurred_at"
+    t.index ["occurred_at"], name: "index_security_events_on_occurred_at"
+    t.index ["uid"], name: "index_security_events_on_uid", unique: true
+    t.index ["user_id", "occurred_at"], name: "index_security_events_on_user_id_and_occurred_at"
   end
 
   create_table "shareholder_positions", force: :cascade do |t|

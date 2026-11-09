@@ -80,6 +80,8 @@ class OutlookAddinController < ApplicationController
     skip_authorization
 
     @token_payload = MailAddinToken.payload_for(current_user)
+    # M11 S1k / H9 — the add-in now holds a token for this user
+    SecurityEvents.record("sign_in.succeeded", user: current_user, door: "mail_addin")
     render :oauth_start, layout: false
   end
 

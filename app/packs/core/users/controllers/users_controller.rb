@@ -191,6 +191,8 @@ class UsersController < ApplicationController
       Rails.logger.info("cross_region_handoff ok from=#{result.origin_code} " \
                         "to=#{SiteRegistry.current_code} email=#{user.email}")
       CrossSiteMetrics.handoff(result: :ok, region: SiteRegistry.current_code)
+      # M11 S1h / H7 — recorded in the destination region, naming where the user came from
+      SecurityEvents.record("sign_in.succeeded", user:, door: "cross_region", details: { origin: result.origin_code })
       nil
     end
 
@@ -207,6 +209,8 @@ class UsersController < ApplicationController
     support_user_id = support_user&.id
 
     unless params[:signed_id]
+      # M11 S2b / E7
+      record_magic_link_failure("invalid_link")
       redirect_to new_session_path(User), notice: "Invalid login link"
       return
     end
@@ -218,6 +222,8 @@ class UsersController < ApplicationController
     @user = User.find_signed(params[:signed_id], purpose: User::MAGIC_LINK_PURPOSE)
 
     if @user.blank?
+      # M11 S2b / E7 — a bad, expired or wrong-purpose link (no account can be named from it)
+      record_magic_link_failure("invalid_link")
       redirect_to new_session_path(User), notice: "Invalid login link"
       return
     end
@@ -235,6 +241,8 @@ class UsersController < ApplicationController
         enabled: true
       )
       unless mapping&.allow_login_as(support_user.email)
+        # M11 S2b / E8 — the support user is Done by; the client user is the account
+        record_magic_link_failure("delegation_refused", user: @user, actor: support_user)
         redirect_to root_path, alert: "Login delegation not permitted for this account."
         return
       end
@@ -269,6 +277,12 @@ class UsersController < ApplicationController
       # Set support_user_id in session so the audit trail records who actually made changes.
       # See ApplicationController#current_user_or_support_user and config/initializers/audited.rb
       session[:support_user_id] = support_user_id if support_user_id.present?
+      # M11 P1 / E29 — support signed in through a link is support access; S1c / H3 — else a link sign-in
+      if support_user
+        SecurityEvents.record("support.signed_in_as", user: @user, actor: support_user, door: "magic_link", details: { via: "magic_link" })
+      else
+        SecurityEvents.record("sign_in.succeeded", user: @user, door: "magic_link")
+      end
     end
 
     redirect_to(return_to || session[:user_return_to].presence || root_path,
@@ -304,6 +318,8 @@ class UsersController < ApplicationController
     # Capture the acting (support) user's id BEFORE sign_in swaps current_user, so the audit
     # trail attributes the impersonated actions to the real actor.
     support_user_id = current_user.id
+    # M11 — kept for the security event (Done by), captured before sign_in for the same reason
+    support_user = current_user
 
     ActiveRecord::Base.connected_to(role: :writing) do
       # NOTE: we intentionally do NOT trigger the target's 2FA here. A support agent does not
@@ -315,6 +331,8 @@ class UsersController < ApplicationController
       sign_in @user
       # Record the real actor for the audit trail (see ApplicationController#current_user_or_support_user).
       session[:support_user_id] = support_user_id
+      # M11 P1 / H19 — Done by the support user (current_user is already the client), firm = the client's
+      SecurityEvents.record("support.signed_in_as", user: @user, actor: support_user, details: { via: "login_as" })
     end
 
     redirect_to root_path, notice: "Signed in as #{@user.full_name}"
@@ -547,11 +565,19 @@ class UsersController < ApplicationController
   # region they came from - instead of the bare `render plain: "Invalid or expired link"` that
   # used to dead-end here with no log line and nothing to click.
   def reject_handoff(reason, email: nil)
+    # M11 S1i / E11 — the account is unknown here; a typed email (no_account) is kept as a digest only
+    SecurityEvents.record("sign_in.failed", door: "cross_region", outcome: :failure, actor: nil, email:,
+                                            details: { reason: })
     rejection = CrossSiteRejection.for(reason: reason, from: params[:from], email: email)
     Rails.logger.warn(rejection.to_log_line)
     CrossSiteMetrics.handoff(result: :rejected, reason: rejection.reason, region: rejection.region)
     flash[:cross_region] = rejection.flash_payload
     redirect_to new_session_path(User)
+  end
+
+  # M11 S2b — a refused email / WhatsApp sign-in link (E7) or support delegation (E8)
+  def record_magic_link_failure(reason, user: nil, actor: nil)
+    SecurityEvents.record("sign_in.failed", user:, actor:, door: "magic_link", outcome: :failure, details: { reason: })
   end
 
   # A caller-supplied destination is honoured only when it is a path on this host: it

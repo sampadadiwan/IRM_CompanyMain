@@ -512,6 +512,20 @@ Doorkeeper.configure do
   #   Rails.logger.info(context.issued_token)
   # end
 
+  # M11 (OWASP 2026-11) K3 / H25 — a person approving a connected app (an MCP client, …) on the consent screen is
+  # recorded as connected_app.authorised: the app's name and scopes, never a grant or a token. The same hook also
+  # fires on the machine-to-machine token exchange (Doorkeeper::TokensController), which is not recorded.
+  after_successful_authorization do |controller, _context|
+    next unless controller.is_a?(Doorkeeper::AuthorizationsController)
+
+    pre_auth = controller.send(:pre_auth)
+    SecurityEvents.record("connected_app.authorised", user: controller.send(:current_resource_owner), door: "oauth",
+                                                      details: { app: pre_auth.client&.application&.name, scopes: pre_auth.scopes.to_s })
+  rescue StandardError => e
+    # The consent answer is unchanged whatever happens here
+    Rails.logger.warn("[security_event] doorkeeper_hook_failed #{e.class}")
+  end
+
   # Under some circumstances you might want to have applications auto-approved,
   # so that the user skips the authorization step.
   # For example if dealing with a trusted application.

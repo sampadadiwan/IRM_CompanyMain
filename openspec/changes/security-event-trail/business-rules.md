@@ -92,7 +92,7 @@ flowchart LR
 | H7 | Region switch (web) | Rahul with regions IN,US | valid cross-site link | `sign_in.succeeded`, door `cross_region` in the destination region | ST: Mobile, API, link, region-switch and add-in sign-ins | SI |
 | H8 | App → website hand-off | Priya on the app | valid hand-off link | `sign_in.succeeded`, door `mobile_handoff` | ST: Mobile, API, link, region-switch and add-in sign-ins | SI |
 | H9 | Outlook add-in | Rahul signed in | connects the add-in | `sign_in.succeeded`, door `mail_addin` | ST: Mobile, API, link, region-switch and add-in sign-ins | SI |
-| H10 | Sign-out | Karan signed in | signs out | `sign_out` | ST: Sign-out | SI |
+| H10 | Plain sign-out | Karan signed in | signs out | nothing recorded (user decision 2026-11-09; only a support visit's end is, H20) | ST: Sign-out | SI |
 
 ### Edge cases
 
@@ -141,10 +141,10 @@ flowchart LR
 | E16 | 10 misses in an hour lock | Priya, 9 misses | 10th miss | `account.locked` reason `too_many_codes` | ST: Locked after too many codes | SI |
 | E17 | 6th wrong password locks | Karan, 5 failures | 6th | `sign_in.failed` + `account.locked` reason `too_many_passwords` | ST: Locked after too many passwords | SI |
 | E18 | Lock expires | Karan locked 6 min ago (`unlock_in` 5 min) | correct password | `account.unlocked` actor system + `sign_in.succeeded` | — (proves Req 3) | SI |
-| E19 | 2FA switched off in admin console | Priya | super unticks two-factor | `two_factor.disabled`, door `admin` | ST: Two-factor switched off | SI |
+| E19 | 2FA switched off | Priya | turns it off on her own page with password + code (since M8 the only route; the admin console untick is refused by the model guard) | `two_factor.disabled`, Done by Priya | ST: Two-factor switched off | SI |
 | E20 | Reset request, unknown email | ghost@example.com | Forgot password | `password.reset_requested`, no user, digest only; response unchanged | — (proves Req 3) | SI |
-| E21 | Deactivate one user | Karan | super sets inactive | `account.deactivated` | — (proves Req 3) | SI |
-| E22 | Deactivate a firm | firm B, 4 users | super deactivates firm | exactly one `firm.deactivated` for 31, no per-user rows | ST: Firm deactivated | SI |
+| E21 | Deactivate one user | Karan; Anil supports firm A | CapHive support (Anil) sets inactive in the admin console | `account.deactivated`, door `admin`, Done by Anil | — (proves Req 3) | SI |
+| E22 | Deactivate a firm | firm B | CapHive support (Anil) deactivates the firm | exactly one `firm.deactivated` for 31, no per-user rows | ST: Firm deactivated | SI |
 
 ### Error cases
 
@@ -183,7 +183,7 @@ flowchart LR
 
 | # | Scenario | Given | When | Then (what the user sees, who is alerted) | Spec scenario | Feature |
 |---|---|---|---|---|---|---|
-| X1 | Login as refused | Anil not allowed by `login_as?` | Login as Priya | "You are not authorized to perform this action."; no `support.signed_in_as` | — (proves Req 5) | AC |
+| X1 | Login as refused | Anil not allowed by `login_as?` | Login as Priya | "Access Denied" (the existing refusal, unchanged); no `support.signed_in_as` | — (proves Req 5) | AC |
 
 ---
 
@@ -254,7 +254,7 @@ flowchart LR
 | H30 | Filter by group | H29 | Group = Access | role + support-switch rows only; cards recount | — (proves Req 10) | SC |
 | H31 | Download | H29 | Download | flash "Your request is being processed. You will receive an email shortly."; email with xlsx of firm 18's filtered rows | ST: Download | SC |
 | H32 | Approver alert | H16 | job runs | Rahul and Meera get "Approver role given to Rahul Mehta"; date `Nov 09, 2026` | ST: Admin grants themselves approver | SC |
-| H33 | Support access alert | H19 | job runs | admins get "CapHive support (Anil Kumar) signed in as Priya Shah" | ST: Support signs in as a user | SC |
+| H33 | Support sign-in alert: bell only (changed 2026-11-09) | H19 | job runs | `support.signed_in_as` recorded; Rahul and Meera get the bell "CapHive support (Anil Kumar) signed in as Priya Shah"; **no** email (user decision: no emails on sign-in by support) | ST: Support signs in as a user | SC |
 | H34 | Weekly pack | events 02–08 Nov | Mon 09 Nov 07:00 | support@caphive.com gets "[IN] Security events 02 Nov – 08 Nov 2026" xlsx with 5 sheets; "Failed sign-ins by account" counts per account per day | ST: Monday pack | SC |
 | H35 | Purge | events on 08 Oct 2025 and 10 Oct 2025 | purge runs 09 Nov 2026 | the 08 Oct 2025 row removed; the 10 Oct 2025 row kept | ST: Retention | SC |
 
@@ -266,16 +266,19 @@ flowchart LR
 | E39 | Period over 13 months | from 01 Jan 2025 | apply | clamped to 13 months; flash says so | — (proves Req 10) | SC |
 | E40 | Cards = rows | 3 failed sign-ins, 2 role rows | open | cards 3 and 2 equal the filtered rows | — (proves Req 10) | SC |
 | E41 | No alert for employee | E23 | job runs | no email or bell | ST: Employee role granted by import | SC |
-| E42 | One alert for a firm switch | H21 | job runs | one "support switched into" alert; the `company_admin` grant to Anil alerts nobody | — (proves Req 5) | SC |
+| E42 | Firm switch alert: bell only (changed 2026-11-09) | H21 | job runs | `support.firm_switched` recorded; one bell "CapHive support (Anil Kumar) switched into Golden Angels Fund" per admin; **no** email; the `company_admin` grant to Anil alerts nobody | — (proves Req 5) | SC |
 | E43 | Purge boundary | rows at exactly 13 months and 13 months + 1 s | purge | exactly-13-months row kept; older removed | ST: Retention | SC |
 | E44 | Formula-looking value in xlsx | user agent `=HYPERLINK(...)` | download | cell starts with `'` | — (proves Req 10) | SC |
+| E51 | "Enable support" switch still alerts (added 2026-11-09 with the H33 change) | Rahul has support off | Rahul turns it on | `support_access.enabled` recorded; Rahul and Meera get "CapHive support access switched on for Rahul Mehta" (email + bell) | ST: Support switch turned on | SC |
+| E52 | Click an Event to filter (added 2026-11-09, user request) | Priya: a sign-in and a sign-out; Karan: a sign-out; Meera filtered by account Priya | clicks "Signed out" in the grid, then the "× Signed out" chip | only Priya's sign-out, the account filter kept and Event = Signed out in the panel (and in Download); the chip brings back both of Priya's events | — (proves Req 10) | SC |
+| E50 | Weekly pack with no recipient (added during apply) | `SECURITY_EVENTS_WEEKLY_TO` unset | Monday run | no email; `[security_event] weekly_pack_skipped` warning | ST: Setting missing | SC |
 | E45 | Support and super scope | Anil mapped to A; Divya super | each opens the list | Anil: firm 18 only; Divya: all firms + NULL-firm rows (E2) | — (proves Req 10) | TI |
 
 ### Error cases
 
 | # | Scenario | Given | When | Then (what the user sees, who is alerted) | Spec scenario | Feature |
 |---|---|---|---|---|---|---|
-| X6 | Employee refused | Karan | `GET /security_events` | "You are not authorized to perform this action." | ST: Employee refused | TI |
+| X6 | Employee refused | Karan | `GET /security_events` | "Access Denied" (the app's refusal) | ST: Employee refused | TI |
 | X7 | Investor refused | Priya | `GET /security_events` | same refusal | ST: Employee refused | TI |
 | X8 | Other firm by query | Sara (firm B) | `GET /security_events?q[entity_id_eq]=18` | only firm 31 rows (`entity_id` not ransackable) | ST: Company admin sees own firm only | TI |
 | X9 | Download re-scoped | Sara crafts download params for firm 18 | download | xlsx holds only firm 31 rows | ST: Download | TI |
@@ -297,7 +300,7 @@ flowchart LR
 
 | # | Scenario | Given | When | Then | Spec scenario | Feature |
 |---|---|---|---|---|---|---|
-| E46 | Sign-in messages unchanged | E1, E3 | as there | "Invalid Email or password." / locked message exactly as before | — (proves Req 8) | SI |
+| E46 | Sign-in messages unchanged | E1, E3 | as there | "Invalid email or password." for both (Devise is paranoid: a locked account is not revealed) exactly as before | — (proves Req 8) | SI |
 | E47 | Role save message unchanged | H16 | as there | "User was successfully updated." | — (proves Req 8) | AC |
 | E48 | Login as message unchanged | H19 | as there | "Signed in as Priya Shah" | — (proves Req 8) | AC |
 | E49 | Recorder raises in the Warden hook | recorder forced to raise | wrong password | same failure page and message | — (proves Req 8) | SI |
@@ -325,9 +328,9 @@ flowchart LR
 | 3 Access and support | 6 | 7 | 1 | 14 |
 | 4 Credentials and exports | 6 | 3 | 1 | 10 |
 | 5 Recorder and writer | 1 | 5 | 3 | 9 |
-| 6 Screen, alerts, pack | 7 | 8 | 7 | 22 |
+| 6 Screen, alerts, pack | 7 | 11 | 7 | 25 |
 | 7 Never affects the user | 0 | 4 | 0 | 4 |
-| **Total** | **35** | **49** | **12** | **96** |
+| **Total** | **35** | **52** | **12** | **99** |
 
 - `features/security/security_events_tenant_isolation.feature` gathers every refusal row (E45, X6–X11): other firm refused, owner allowed, direct request refused.
 - An edge case found during apply gets a new row here **and** a scenario, never a scenario alone.

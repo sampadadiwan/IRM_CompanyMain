@@ -26,6 +26,20 @@ class ApplicationController < ActionController::Base
 
   before_action :prepare_exception_notifier
   before_action :validate_page_limit
+  # M11 (OWASP 2026-11) K6 / D1 — every spreadsheet download, from any of the ~30 controllers that answer xlsx,
+  # is recorded as data.exported. An after_action does not run when the action raised, so a refused download
+  # (Pundit → deny_access) records nothing (E30).
+  after_action :record_security_export, if: -> { request.format.xlsx? }
+
+  # H26 / E32 — "capital_calls#index (xlsx)": what was exported, never the filters' values. Only a 2xx/3xx answer
+  # (a file, or the "you will receive an email" redirect).
+  def record_security_export
+    return unless response.status.between?(200, 399) && current_user
+
+    SecurityEvents.record("data.exported", user: current_user, details: { what: "#{controller_path}##{action_name} (xlsx)" })
+  end
+  # A callback, never an action
+  private :record_security_export
 
   def validate_page_limit
     return unless params.key?(:per_page)

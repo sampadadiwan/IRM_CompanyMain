@@ -1,0 +1,26 @@
+<%# Cards above the Security Events table (capital_calls/_grid_stats look). counts: the grouped count of the FILTERED
+    rows, {[category, kind, outcome] => n}, so each card equals the matching rows across all pages (E40). %>
+<%
+  total = ->(&rule) { counts.sum { |(category, kind, outcome), n| rule.call(category, kind, outcome) ? n : 0 } }
+  cards = [
+    { id: "failed_sign_ins", stat: total.call { |c, _k, o| c == "sign_in" && o == "failure" }, subtitle: "Failed sign-ins",
+      color: "danger", icon: "login",
+      tooltip: "Rows below in the Sign-in group that Failed: wrong passwords, refused links and refused tokens. Many from one IP can mean someone is guessing." },
+    { id: "role_changes", stat: total.call { |_c, k, _o| %w[role.granted role.revoked].include?(k) }, subtitle: "Role changes",
+      color: "info", icon: "key",
+      tooltip: "Rows below where a role was granted or removed, by any route (user page, import, investor access). Admin and approver changes also email your company admins." },
+    { id: "support_access", stat: total.call { |c, _k, _o| c == "support" }, subtitle: "Support access",
+      color: "secondary", icon: "headset",
+      tooltip: "Rows below where CapHive support signed in as one of your users, ended that session, or switched into your firm. Sign-ins and switches also show in your notifications bell." },
+    { id: "exports", stat: total.call { |_c, k, _o| k == "data.exported" }, subtitle: "Exports",
+      color: "success", icon: "download",
+      tooltip: "Rows below where data left CapHive: spreadsheet, folder, report and data-dump downloads." }
+  ]
+%>
+<div class="row mb-3" id="security_event_grid_stats">
+  <% cards.each do |card| %>
+    <%= render(NumberStatsComponent.new(path: nil, amount: card[:stat].to_s, subtitle: card[:subtitle],
+                                        progress_bar_color: card[:color], text_info: card[:icon],
+                                        tooltip: card[:tooltip], fs_size: 4, css_class: "col-sm-6 col-lg-3")) %>
+  <% end %>
+</div>

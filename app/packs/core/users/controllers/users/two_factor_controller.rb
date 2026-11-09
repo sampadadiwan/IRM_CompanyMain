@@ -141,6 +141,8 @@ module Users
         # Same landing as the WhatsApp and SMS enrollments — there is no backup-codes
         # screen to pass through any more. after_sign_in_path_for, like complete_login: a
         # magic link's return-to page survives a required set-up too (E15), else the dashboard.
+        # M11 S1b / H12 — enrolment ends in a completed two-factor sign-in
+        record_two_factor_sign_in
         redirect_to after_sign_in_path_for(@user), notice: "Two-factor authentication is now enabled."
       else
         # H13-X — enrollment codes count against the challenge like login codes; a re-render
@@ -183,6 +185,8 @@ module Users
         commit_method!("whatsapp")
         sign_in(@user)
         reset_otp_session
+        # M11 S1b / H12 — enrolment ends in a completed two-factor sign-in
+        record_two_factor_sign_in
         redirect_to after_sign_in_path_for(@user), notice: "Two-factor authentication via WhatsApp is now enabled."
       else
         # H13-X — counted against the challenge like a login code
@@ -227,6 +231,8 @@ module Users
         reset_otp_session
         # A user who loses their number needs an administrator reset — the same as every
         # other mode.
+        # M11 S1b / H12 — enrolment ends in a completed two-factor sign-in
+        record_two_factor_sign_in
         redirect_to after_sign_in_path_for(@user), notice: "Two-factor authentication via text message is now enabled."
       else
         # H13-X — counted against the challenge like a login code
@@ -366,7 +372,14 @@ module Users
     def complete_login
       sign_in(@user)
       reset_otp_session
+      # M11 S1b / H2 — the one success of a two-factor sign-in, after the code (D4)
+      record_two_factor_sign_in
       redirect_to after_sign_in_path_for(@user), notice: "Signed in successfully."
+    end
+
+    # M11 S1b — door two_factor, for the login code and the three enrolment confirmations
+    def record_two_factor_sign_in
+      SecurityEvents.record("sign_in.succeeded", user: @user, door: "two_factor")
     end
 
     def increment_failed_attempts
@@ -385,6 +398,11 @@ module Users
       # H13-1 — max(session, server): a replayed cookie resets only the session copy. Under the
       # test env's :null_store the server copy reads 0, so the session decides as it always did.
       attempts = [session[:otp_failed_attempts], failure.attempts].max
+      # M11 T1 / H11 / E15 — the attempt number and whether this miss ended the challenge (a lock is recorded
+      # separately, as account.locked, from the user's locked_at — E16)
+      SecurityEvents.record("two_factor.code_failed", user: @user, door: "two_factor", outcome: :failure,
+                                                      details: { attempt: attempts,
+                                                                 challenge_ended: failure.locked || attempts >= TwoFactorVerifier::MAX_ATTEMPTS })
 
       if failure.locked
         # H13-2 — this miss reached the hourly limit; the account is locked and the unlock email
