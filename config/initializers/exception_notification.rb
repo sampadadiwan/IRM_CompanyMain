@@ -40,7 +40,9 @@ if ENV['VULN_SCAN'].blank?
       # glance. "data" stays (overridden to omit the report): the gem appends it to request emails
       # itself, and in job emails it still carries the raw Sidekiq payload. An email with no
       # report simply has no Report section.
-      sections: %w[report request session environment backtrace],
+      # M2 (OWASP 2026-11): no "session" section. It dumped session.to_hash (warden key, support_user_id,
+      # 2FA state) unfiltered; the Report section already says who the user was.
+      sections: %w[report request environment backtrace],
       background_sections: %w[report backtrace data]
     }
   end

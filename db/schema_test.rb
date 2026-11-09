@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_06_150000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_09_120000) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -3195,6 +3195,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_06_150000) do
     t.text "import_results_data"
     t.text "custom_fields_created"
     t.json "row_errors"
+    t.bigint "support_user_id"
     t.index ["entity_id"], name: "index_import_uploads_on_entity_id"
     t.index ["owner_type", "owner_id"], name: "index_import_uploads_on_owner"
     t.index ["user_id"], name: "index_import_uploads_on_user_id"

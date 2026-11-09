@@ -40,6 +40,9 @@ class ImportUploadsController < ApplicationController
   def create
     @import_upload = ImportUpload.new(import_upload_params)
     @import_upload.user_id = current_user.id
+    # N1 (OWASP 2026-11): the CapHive support user acting as this client, if any (WithAuthentication sets it from
+    # the session). The import job runs after the request and needs it to allow support-only rows
+    @import_upload.support_user_id = current_user.support_user_id
     # R1: the import runs in its OWNER's entity - the same rule #new uses to fill the form. The policy
     # authorizes the owner, but the importers read import_upload.entity_id, so a posted entity_id
     # (a hidden form field) made an authorized owner run the import against another tenant.

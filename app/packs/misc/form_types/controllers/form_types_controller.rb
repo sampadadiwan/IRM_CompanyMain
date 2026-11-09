@@ -85,11 +85,14 @@ class FormTypesController < ApplicationController
       # Calculation fields hold Ruby; only CapHive support may change them (shared with the custom fields side
       # panel — FormType#calculation_change_allowed?, openspec/changes/grid-columns-inline-settings D14)
       fields = params.dig("form_type", "form_custom_fields_attributes")&.values || []
-      allowed = FormType.calculation_change_allowed?(current_user, fields)
+      # C2 (OWASP 2026-11) — pass the form type so ids of stored Calculation fields are refused too
+      allowed = FormType.calculation_change_allowed?(current_user, fields, @form_type)
       unless allowed
         fields.select { |fcf| fcf["field_type"] == "Calculation" }.each do |fcf|
           @form_type.errors.add(:position, "#{fcf['position']}, calculation cannot be updated by non support user.")
         end
+        # An existing Calculation field named only by id gets no per-field message above, so say it once
+        @form_type.errors.add(:base, "Calculation fields can only be changed by CapHive support.") if @form_type.errors.empty?
       end
 
       saved = allowed ? update_form_type : false

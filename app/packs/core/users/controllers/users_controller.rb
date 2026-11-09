@@ -152,7 +152,8 @@ class UsersController < ApplicationController
     return reject_handoff(:no_account, email: result.email) if user.nil?
 
     # The entity's sub_domain in THIS region, falling back to the region's default site.
-    sub = user.entity&.sub_domain.presence || "app"
+    # H3 (OWASP 2026-11): only a single DNS label; anything else falls back to the default site
+    sub = user.entity&.safe_sub_domain.presence || "app"
     host = request.host.sub(/\A[^.]+\./, "#{sub}.")
 
     redirect_to handoff_url("#{request.protocol}#{host}", "cross_site_login", params[:token], params[:from]),

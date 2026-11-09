@@ -1,4 +1,11 @@
 class ImportUpload < ApplicationRecord
+  # N1 (OWASP 2026-11): whether CapHive support made this upload — while signed in as the client
+  # (support_user_id, recorded by ImportUploadsController#create) or as a user with the support role.
+  # Import jobs use it for support-only rows, because User#support? only sees impersonation during the request.
+  def uploaded_by_support?
+    support_user_id.present? || user&.has_cached_role?(:support) || false
+  end
+
   SAMPLES = { "INVESTOR_ACCESS_SAMPLE" => "/sample_uploads/investor_access.xlsx",
               "INVESTORS_SAMPLE" => "/sample_uploads/investors.xlsx",
               "FUND_INVESTORS_SAMPLE" => "/sample_uploads/fund_investors.xlsx",

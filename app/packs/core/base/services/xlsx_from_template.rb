@@ -136,7 +136,9 @@ class XlsxFromTemplate
         else
           begin
             field = @column_data_mapping[c['name']]
-            val = field.to_s.split('.').inject(rec) { |o, m| o&.send(m) } if field.present?
+            # C4 (OWASP 2026-11): the mapping comes from the report's metadata, so read it as an attribute path,
+            # never send. A refused path raises and shows "Error" in the cell, like any other bad field below
+            val = SafeAttributePath.read!(rec, field.to_s) if field.present?
           rescue StandardError => e
             Rails.logger.error "XlsxFromTemplate: Error accessing field #{c['field']}: #{e.message}"
             val = "Error"

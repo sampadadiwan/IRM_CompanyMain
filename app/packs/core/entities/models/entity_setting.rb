@@ -152,8 +152,20 @@ class EntitySetting < ApplicationRecord
     Base64.strict_encode64("#{digio_client_id}:#{digio_client_secret}") if digio_client_id.present? && digio_client_secret.present?
   end
 
+  # Run after restoring a production dump for development (docs/operations/prod_restore.md, step 4): sandbox mode,
+  # 2FA and WhatsApp off, root passwords reset, and — P1, OWASP review 2026-11 — every investor's personal data
+  # (PAN, bank account, date of birth, KYC provider responses, identity custom fields, and the same values in
+  # history) replaced by DevPiiScrubber, so no restored copy keeps real values on a developer's machine.
+  #
+  # Runs under Chewy.strategy(:bypass): saving the root users below fires Chewy's search-index callbacks, and Chewy
+  # refuses with Chewy::UndefinedUpdateStrategy unless a strategy is declared. The Rails console declares one, a
+  # `rails runner` script doesn't (that is how the 2026-11-09 run on the 33066 copy failed). :bypass skips
+  # re-indexing, which is right for a restored copy: its Elasticsearch isn't production's and may not be running.
+  # The PII scrub is unaffected either way (raw SQL, no callbacks).
   def self.disable_all(reset: false)
-    if Rails.env.development?
+    return unless development_copy?
+
+    Chewy.strategy(:bypass) do
       EntitySetting.update_all(sandbox: true)
       # update_all skips TwoFactorAuthenticatable#clear_two_factor_method_when_disabled, so
       # forget the method explicitly or a dev user re-enabling 2FA lands on a code screen
@@ -177,7 +189,16 @@ class EntitySetting < ApplicationRecord
           u.save
         end
       end
+
+      # P1 — scrub investors' personal data in this restored copy (guards itself: local development DB only)
+      DevPiiScrubber.new.call
     end
+  end
+
+  # Whether this process runs against a development copy (disable_all acts only then). Its own method so tests can
+  # say "this is a development copy" without stubbing Rails.env for the whole scenario.
+  def self.development_copy?
+    Rails.env.development?
   end
 
   # --- MCP (AI Client Integration) Settings ---

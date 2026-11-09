@@ -368,9 +368,14 @@ class ApplicationMailer < ActionMailer::Base
   def password_protect_attachment(doc, model, custom_notification)
     doc.file.download do |source_file|
       dest_file = Rails.root.join("tmp/#{doc.id}.pdf").to_s
-      # Get the password from the model based on the method specfied
-      methods = custom_notification.attachment_password.split('.')
-      password = methods.inject(model, &:send)
+      # Get the password from the model based on the field path specified (e.g. "investor_kyc.PAN").
+      # C5 (OWASP 2026-11): read as an attribute path, never `inject(model, &:send)`: the path is stored by GP
+      # users, and "class.delete_all" used to run on the next notice. A refused path raises, so the email is not
+      # sent with an unprotected attachment
+      # A blank path kept its old result (the model itself, as the old empty inject returned): no production
+      # notification protects with a blank path (checked 2026-11-09), but one that does keeps sending
+      path = custom_notification.attachment_password
+      password = path.blank? ? model : SafeAttributePath.read!(model, path)
       # Execute the command - argv form avoids shell word-splitting on
       # passwords/paths containing spaces or shell metacharacters
       Rails.logger.info "Executing pdftk for document #{doc.id} with dest_file #{dest_file}"

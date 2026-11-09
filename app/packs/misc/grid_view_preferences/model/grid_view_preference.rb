@@ -7,6 +7,25 @@ class GridViewPreference < ApplicationRecord
 
   # Validations
   validates :key, presence: true
+  # C4 (OWASP 2026-11): a key is read on every row as an attribute path (RansackTableRow → SafeAttributePath),
+  # so refuse one the reader would refuse, at save time, on every write path (Edit form, columns side panel,
+  # Configure Grids). Only on a change: all 281 stored production keys pass, and an existing row always saves.
+  # The "; css" suffix and a "custom_fields." key (read from json_fields, never as methods) are allowed as before.
+  # Report builder position rows ("formula:<key>", "pivot:<relation>") are not attribute paths: the report builder
+  # turns them into its own formula / pivot columns (ReportBuilderQueryEngine#columns) and never calls a method by
+  # that name, so only their name part is checked (word characters and dots). Refusing them broke saving every
+  # report with a formula or pivot column (33 report_builder scenarios, caught by the 2026-11-09 run).
+  REPORT_POSITION_KEY = /\A(?:formula|pivot):[\w.]+\z/
+  validate :key_is_attribute_path, if: -> { key.present? && will_save_change_to_key? }
+  def key_is_attribute_path
+    clean = key.split(";").first.to_s.strip
+    # Report builder position rows: name part checked by the regexp, never resolved as methods
+    return if clean.match?(REPORT_POSITION_KEY)
+
+    SafeAttributePath.segments!(clean)
+  rescue SafeAttributePath::Refused => e
+    errors.add(:key, "must be a column or a field path such as investor.custom_fields.sector (#{e.message})")
+  end
   validates :alignment, length: { maximum: 12 }, allow_blank: true
 
   # Callbacks

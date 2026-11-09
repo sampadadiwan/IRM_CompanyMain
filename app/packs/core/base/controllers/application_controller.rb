@@ -12,6 +12,8 @@ class ApplicationController < ActionController::Base
   include WithTurboFlash
   include ApiPaging
   include UserGuideHelper
+  # H4 (OWASP 2026-11): PDF assets load only from our own hosts, never from X-Forwarded-Host
+  include WithTrustedPdfHost
 
   # tasks/_filter_bar (and the list partial around it) renders from several
   # controllers outside the tasks pack — a side letter, an obligation, an event —

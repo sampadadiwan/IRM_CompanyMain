@@ -25,9 +25,22 @@ class FormType < ApplicationRecord
   # Calculation fields keep Ruby in meta_data, so only CapHive support (or a local environment) may submit one.
   # Used by Form Types › Edit and the custom fields side panel (openspec/changes/grid-columns-inline-settings — D14,
   # X16). Same rule FormTypesController#update applied inline before.
+  # OWASP 2026-11 C2: the submitted field_type alone is not enough. A request that names an existing Calculation
+  # field by id and leaves field_type out would otherwise rewrite its meta_data (Ruby) unchecked. So the stored
+  # type of every submitted id counts too. The editor never renders Calculation fields for non-support users
+  # (form_types/_form.html.erb, HIDDEN_FIELDS), so a genuine non-support save never names one.
   # @param fields [Array<Hash>] the submitted form_custom_fields_attributes
-  def self.calculation_change_allowed?(user, fields)
-    user.support? || Rails.env.local? || fields.none? { |fcf| fcf["field_type"].to_s == "Calculation" }
+  # @param form_type [FormType, nil] the form type being edited, whose stored fields the ids refer to
+  def self.calculation_change_allowed?(user, fields, form_type = nil)
+    return true if user.support? || Rails.env.local?
+
+    # A new or retyped field submitted as Calculation
+    return false if fields.any? { |fcf| fcf["field_type"].to_s == "Calculation" }
+    return true if form_type.nil?
+
+    # C2 — an existing field that is stored as Calculation, whatever type the request claims
+    submitted_ids = fields.filter_map { |fcf| fcf["id"].presence&.to_i }
+    submitted_ids.empty? || !form_type.form_custom_fields.exists?(id: submitted_ids, field_type: "Calculation")
   end
 
   # Add the regulatory fields to the form type

@@ -20,6 +20,16 @@ class CustomNotification < ApplicationRecord
   validates :for_type, :email_method, length: { maximum: 100 }
   validates :tag, length: { maximum: 30 }, allow_blank: true
 
+  # C5 (OWASP 2026-11): the PDF password field is read as an attribute path (ApplicationMailer
+  # #password_protect_attachment), so refuse a path the reader would refuse, when it is saved rather than when
+  # the next notice fails. Only on a change, so an existing notification always saves.
+  validate :attachment_password_is_attribute_path, if: -> { attachment_password.present? && will_save_change_to_attachment_password? }
+  def attachment_password_is_attribute_path
+    SafeAttributePath.segments!(attachment_password)
+  rescue SafeAttributePath::Refused => e
+    errors.add(:attachment_password, "must be a field path such as investor_kyc.PAN (#{e.message})")
+  end
+
   # validates :email_method, uniqueness: { scope: %i[owner_id owner_type], message: ->(object, _data) { "#{object.email_method} already exists for #{object.owner}" } }
   after_create_commit :reset_latest
   def reset_latest

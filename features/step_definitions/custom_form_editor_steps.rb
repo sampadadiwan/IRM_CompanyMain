@@ -174,12 +174,26 @@ end
 # the screen: Playwright only scrolls it just into view, which can leave it under the sticky Save bar, and the drop
 # then lands on the bar instead of the row.
 When('I drag {string} below {string} in the form editor') do |dragged, target|
-  page.driver.with_playwright_page do |pw|
-    to = pw.locator("xpath=#{cfe_row_xpath(target)}")
-    to.evaluate("el => el.scrollIntoView({ block: 'center' })")
-    box = to.bounding_box
-    pw.locator("xpath=#{cfe_row_xpath(dragged)}").drag_to(to, targetPosition: { x: 40, y: box["height"] - 4 })
-  end
+  # The editor's own HTML5 drag events, fired on the two rows: dragstart on the dragged row, then dragover + drop on
+  # the lower part of the target row, which is what the drop handler reads ("after" = below the row's middle).
+  # Playwright's mouse drag_to used to do this, but the field list scrolls in its own container: when the target
+  # needed bringing into view, Playwright scrolled that container between mouse-down and mouse-move, Chromium never
+  # started a drag, and the step silently did nothing ("1 unsaved change" never appeared). Diagnosed 2026-11-09:
+  # mousedown/mouseup fired, dragstart never did. The editor's drop handling (move, renumber, unsaved count) runs
+  # exactly as for a real drag.
+  page.execute_script(<<~JS, cfe_row_xpath(dragged), cfe_row_xpath(target))
+    const [draggedXpath, targetXpath] = arguments
+    const row = (xpath) => document.evaluate(xpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue
+    const source = row(draggedXpath)
+    const goal = row(targetXpath)
+    goal.scrollIntoView({ block: "center", behavior: "instant" })
+    const box = goal.getBoundingClientRect()
+    const transfer = new DataTransfer()
+    const fire = (el, type, y) => el.dispatchEvent(new DragEvent(type, { bubbles: true, cancelable: true, dataTransfer: transfer, clientX: box.left + 40, clientY: y }))
+    fire(source, "dragstart", source.getBoundingClientRect().top + 5)
+    fire(goal, "dragover", box.bottom - 4)
+    fire(goal, "drop", box.bottom - 4)
+  JS
 end
 
 When('I drag {string} onto the {string} heading in the form editor') do |dragged, heading|

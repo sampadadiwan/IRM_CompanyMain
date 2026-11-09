@@ -79,7 +79,8 @@ class ImportFundDocs < ImportUtil
         folder = user_data["Folder"].presence
         folder = folder ? model.document_folder.children.where(name: folder, entity_id: model.entity_id).first_or_create : model.document_folder
 
-        raise "#{user_data['File Name']} does not exist. Check for missing file or extension" unless File.exist?(file_path)
+        # C3: nil when the name points outside the upload folder
+        raise "#{user_data['File Name']} does not exist. Check for missing file or extension" unless file_path && File.exist?(file_path)
 
         doc = Document.new(owner: model, entity_id: model.entity_id, folder: folder, name: doc_name, tag_list: user_data["Tags"], import_upload_id: import_upload.id, user_id: import_upload.user_id, send_email: send_email, orignal: orignal, as_of: as_of)
 

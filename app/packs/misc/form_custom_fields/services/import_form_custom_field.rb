@@ -28,6 +28,10 @@ class ImportFormCustomField < ImportUtil
       end
     end
 
+    # N1 (OWASP 2026-11): Calculation fields hold Ruby, so only CapHive support may add or change one, here as
+    # in the form editor (FormType.calculation_change_allowed?, C2) and FormCustomFieldPolicy
+    guard_calculation_change!(form_custom_field, row_data, import_upload)
+
     step_value = row_data["Step"].to_s.strip
 
     step =
@@ -61,5 +65,31 @@ class ImportFormCustomField < ImportUtil
 
     form_custom_field.form_type_id = import_upload.owner_id
     form_custom_field.save!
+  end
+
+  private
+
+  # N1 — refuses the row when a non-support upload would create a Calculation field, turn a field into one, or
+  # change a stored one (its type or its Ruby). The import records the reason against the row, as for any
+  # other row error.
+  # Allowed, so nothing that works today breaks:
+  #   - uploads by support, including support signed in as the client (ImportUpload#uploaded_by_support?)
+  #   - a stored Calculation field repeated unchanged: re-importing an exported sheet that lists it
+  #   - development and test, as the form editor allows (Rails.env.local?)
+  # @param field [FormCustomField] the row's field: new, or the stored one named by "Id"
+  def guard_calculation_change!(field, row_data, import_upload)
+    return if import_upload.uploaded_by_support? || Rails.env.local?
+
+    submitted_type = row_data["Field Type"].to_s.strip
+    stored_calculation = field.persisted? && field.field_type == "Calculation"
+    # Rows that neither are nor become a Calculation field: nothing to check
+    return unless submitted_type == "Calculation" || stored_calculation
+
+    # The same Calculation field with the same Ruby: unchanged, so allowed
+    unchanged = stored_calculation && submitted_type == "Calculation" &&
+                row_data["Metadata"].to_s.strip == field.meta_data.to_s.strip
+    return if unchanged
+
+    raise "Calculation fields can only be added or changed by CapHive support (#{row_data['Name'].to_s.strip})"
   end
 end

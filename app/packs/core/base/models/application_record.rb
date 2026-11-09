@@ -29,7 +29,18 @@ class ApplicationRecord < ActiveRecord::Base
     # --- metaprogramming ---
     constantize | const_get | define_method | method_missing |
     # --- filesystem / process / env access ---
-    \bfile\b | \bio\b | \bdir\b | \bkernel\b | \bprocess\b | \bthread\b | \benv\b | fileutils | \bmarshal\b | \bopen\b
+    \bfile\b | \bio\b | \bdir\b | \bkernel\b | \bprocess\b | \bthread\b | \benv\b | fileutils | \bmarshal\b | \bopen\b |
+    # --- OWASP 2026-11 C1: bypasses that got through the list above, closed until FORMULA_SANDBOX=enforce.
+    #     method(("sy"+"stem").to_sym).call — a Method object built from a runtime string
+    \bmethod\b | public_method | instance_method | singleton_method | singleton_class |
+    #     secrets: Rails.application.credentials / secret_key_base
+    credentials | secret_key_base | \bsecrets\b | rails\.application |
+    #     raw SQL that the select/insert/... words miss when built at runtime ("SEL"+"ECT")
+    \bconnection\b | \bexec_ | \bexecute\b |
+    #     escaping default scopes, reading private state, enumerating every live object
+    unscoped | instance_variable | objectspace | instance_exec | class_exec
+    # None of these words appears in any stored formula, fee note, Calculation field or KPI mapping
+    # in the production copy (6,571 texts checked 2026-11-09), so no working formula is refused.
   }x
 
   # Guard an expression at the eval CALL SITE and return it unchanged when safe, so callers can

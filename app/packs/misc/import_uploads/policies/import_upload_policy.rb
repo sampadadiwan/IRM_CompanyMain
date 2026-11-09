@@ -17,7 +17,22 @@ class ImportUploadPolicy < ApplicationPolicy
       )
   end
 
+  # H7 (OWASP 2026-11): import types whose rows hold Ruby that is evaluated (FundFormula → allocation runs). Only
+  # CapHive support may upload them, the same rule as FundFormulaPolicy#create? and the fund formulas page's
+  # Upload button (`if current_user.support?`, since 2024-06). User#support? is also true while support is signed
+  # in as a client, which is how every such upload in production was made.
+  SUPPORT_ONLY_TYPES = %w[FundFormula].freeze
+
   def create?
+    # H7 — checked here, in the request, because the import job cannot tell support from the client it acts as
+    return false if SUPPORT_ONLY_TYPES.include?(record.import_type.to_s) && !user.support?
+
+    upload_allowed?
+  end
+
+  # The rule create? had before H7. Editing, deleting and deleting the data of an existing upload keep it, so a
+  # firm's own users can still tidy up formula uploads support made for them.
+  def upload_allowed?
     user.enable_import_uploads &&
       (
         Pundit.policy(user, record.owner).permissioned_employee? ||
@@ -49,7 +64,7 @@ class ImportUploadPolicy < ApplicationPolicy
   end
 
   def update?
-    create?
+    upload_allowed?
   end
 
   def edit?
