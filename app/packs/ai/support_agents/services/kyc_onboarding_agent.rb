@@ -94,7 +94,7 @@ class KycOnboardingAgent < SupportAgentService
     # Include entity: :entity_setting to avoid N+1 queries when
     # trigger_aml_if_complete checks entity.entity_setting.aml_enabled
     # and entity.employees.active.first for each KYC record.
-    InvestorKyc.completed.where(entity_id: entity_id).includes(:documents, :investor, entity: :entity_setting)
+    InvestorKyc.where(entity_id: entity_id, submission_status: %w[completed verified]).includes(:documents, :investor, entity: :entity_setting)
   end
 
   # Human descriptions of the steps each json_fields toggle gates.
