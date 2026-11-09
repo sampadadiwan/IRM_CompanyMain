@@ -148,6 +148,11 @@ Then('the field {string} should offer {string}') do |key, names|
   expect(offered).to match_array(names.split(",").map(&:strip))
 end
 
+# U1 — the blank option of a pick-list reads what leaving it empty means ("Default" for Units)
+Then('the field {string} should have the empty option {string}') do |key, label|
+  expect(find_field("metadata_#{key}").first("option").text).to eq(label)
+end
+
 Then('the saved metadata of the {string} widget should not contain {string}') do |name, text|
   expect(DashboardWidget.find_by(widget_name: name).reload.metadata.to_s).not_to include(text)
 end
