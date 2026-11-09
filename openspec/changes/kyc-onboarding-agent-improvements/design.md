@@ -608,6 +608,25 @@ These are `type: :info, severity: :success` issues that appear as green "Passed"
 - `_kyc_onboarding_config.html.erb` — add `data-aml-enabled` attribute
 - `kyc_onboarding_config_controller.js` — add `connect()` logic to disable AML toggle
 
+### Product call (2026-11-09): Use submission_status for agent targets
+
+**Problem:** The agent's `targets` method uses `.completed` scope (`completed_by_investor = true`) to find KYCs to process. This is the old boolean flag. The new source of truth is `submission_status` enum — `"completed"` and `"verified"` are both submitted KYCs. The dashboard has already been updated to use `submission_status`. The agent should match.
+
+**Fix:** Change `KycOnboardingAgent#targets` from `InvestorKyc.completed.where(entity_id:)` to `InvestorKyc.where(entity_id:, submission_status: %w[completed verified])`.
+
+**Note:** A one-time backfill of `submission_status` for legacy KYCs (where `completed_by_investor = true` but `submission_status = "not_sent"`) is needed before production deploy.
+
+**Affected files:**
+- `kyc_onboarding_agent.rb` — `targets` method
+
+### Product call (2026-11-09): Add correspondence address to standard mappings
+
+**Problem:** The Document Verification Setup has standard mappings for PAN/Tax ID and Address Proof, but not for correspondence address. Product wants correspondence address added as a third standard row.
+
+**Prerequisite:** Confirm on console that `correspondence_address` is a standard mandatory field on InvestorKyc (not a FormCustomField). If it's a FormCustomField, it would appear in the custom section instead.
+
+**Status:** Pending confirmation.
+
 ### Risks and open questions
 
 - **Risk:** Old-format agents may have inconsistent FormCustomField records (orphaned, renamed) → Mitigation: the parser handles missing/blank gracefully (existing behavior).

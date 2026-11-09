@@ -140,6 +140,18 @@ Check `investor_kyc.entity&.entity_setting&.aml_enabled`. If falsy → `mark_ste
 - [ ] AML guard uses safe navigation (`&.`) on both `entity` and `entity_setting`
 - [ ] AML guard is placed before employee check (so entity without AML never queries employees)
 
+### `targets` (KycOnboardingAgent) — MODIFIED
+
+**Current:** `InvestorKyc.completed.where(entity_id:)` — uses `.completed` scope (`completed_by_investor = true`)
+
+**New:** `InvestorKyc.where(entity_id:, submission_status: %w[completed verified])` — uses `submission_status` enum as source of truth
+
+**Why:** `submission_status` is the new workflow-driven field (introduced PR #1447). `completed_by_investor` is the legacy boolean that doesn't get updated for KYCs going through the magic link submission flow. Dashboard already uses `submission_status`.
+
+**Reviewer checks:**
+- [ ] Both `"completed"` and `"verified"` included (verified KYCs should still be processed)
+- [ ] Backfill script run before production deploy for legacy KYCs
+
 ---
 
 ## Controllers, Params and Responses
