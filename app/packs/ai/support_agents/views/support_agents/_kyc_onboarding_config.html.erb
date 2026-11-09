@@ -24,7 +24,8 @@
   pan_label = sys_t('investor_kyc.tax_id')
   standard_mappings = [
     { doc_label: "Upload #{pan_label}", doc_display: pan_label, target_field: "PAN", target_display: pan_label },
-    { doc_label: "Upload Address Proof", doc_display: "Address Proof", target_field: "address", target_display: "Address" }
+    { doc_label: "Upload Address Proof", doc_display: "Address Proof", target_field: "address", target_display: "Address" },
+    { doc_label: "Upload Correspondence Address Proof", doc_display: "Correspondence Address Proof", target_field: "corr_address", target_display: "Correspondence Address" }
   ]
   standard_rules = verification_rules["standard"] || []
 %>
