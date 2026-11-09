@@ -162,12 +162,17 @@ class NdaExpiryCheckJob < ApplicationJob
   # @param expiry_date [Date] the computed expiry date
   # @param kind [String] "approaching" or "expired"
   # @return [void]
+  # Changed: Added sent_at to the create call.
+  # Why: The nda_expiry_reminders.sent_at column is NOT NULL in the DB. Without it,
+  #   create! raised ActiveRecord::NotNullViolation on every run, the dedup row was
+  #   never persisted, and the daily job re-sent expired/approaching emails indefinitely.
   def record_reminder(nda_config, investor, expiry_date, kind)
     NdaExpiryReminder.create!(
       nda_config: nda_config,
       investor: investor,
       expiry_date: expiry_date,
-      kind: kind
+      kind: kind,
+      sent_at: Time.current
     )
   rescue ActiveRecord::RecordNotUnique
     # Changed: Silently rescue duplicate index violation on concurrent race.
