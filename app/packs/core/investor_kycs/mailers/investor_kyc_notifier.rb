@@ -13,7 +13,9 @@ class InvestorKycNotifier < BaseNotifier
       entity_id: params[:entity_id],
       message: notification.message,
       msg: params[:msg],
-      investor_advisor_id: investor_advisor_id(record.investor.investor_entity_id, notification.recipient_id)
+      investor_advisor_id: investor_advisor_id(record.investor.investor_entity_id, notification.recipient_id),
+      # M14 ④ — the bank change the two bank-change emails describe
+      bank_detail_change_id: params[:bank_detail_change_id]
     }
   end
 

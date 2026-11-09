@@ -73,6 +73,8 @@
           <h5 class="mb-0 fw-bold "><i class="ti ti-building-bank me-2 text-info"></i>Contact & Banking</h5>
         </div>
         <div class="card-body">
+           <%# M14 ⑦ — the latest bank change, for fund users (E19: never investors) %>
+           <%= render "investor_kycs/bank_change_note", investor_kyc: investor_kyc %>
            <div class="row g-4">
                <div class="col-12">
                   <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Correspondence Address</label>

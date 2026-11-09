@@ -325,7 +325,7 @@ flowchart LR
 
 | # | Scenario | Given | When | Then (what the user sees, who is alerted) | Spec scenario | Feature |
 |---|---|---|---|---|---|---|
-| X15 | Bank check disabled in the agent | H5; agent `check_bank_details` = false | Run readiness | Bank step "Skipped via configuration" (as today); KYC step fails "KYC not verified" | BC: Readiness check flags it | features/funds/bank_detail_change_payout_flags.feature |
+| X15 | Bank check disabled in the agent | H5; agent `check_bank_details` = false, `check_kyc` on | Run readiness | KYC step fails "KYC not verified" for Anil; the run stops there, so the bank step is not run (design C5) | BC: Readiness check flags it | features/funds/bank_detail_change_payout_flags.feature |
 
 ---
 

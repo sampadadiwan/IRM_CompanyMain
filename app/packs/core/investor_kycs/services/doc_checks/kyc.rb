@@ -123,6 +123,9 @@ module DocChecks
         return false unless kyc.changed?
 
         kyc.audit_comment = "Document checks" if kyc.respond_to?(:audit_comment=)
+        # M14 E5, E73 — a bank value filled in from a document is recorded as made by Document Checks (the person
+        # who clicked "Use document value" is Current.user)
+        kyc.bank_change_source = "document_checks" if kyc.respond_to?(:bank_change_source=)
         kyc.save!(validate: false)
         true
       end

@@ -534,8 +534,22 @@ Bank verification runs automatically in the background whenever any of these fie
 
 ### Interpreting results
 
-- **Pass:** The beneficiary name at the bank matches. The account details are confirmed.
-- **Fail:** The name at the bank does not match the name on the KYC. Ask the investor to confirm whether the bank account is in their legal name, a joint name, or a company name.
+- **Pass (Bank Verified ✓):** the bank's own name match said yes, or every word of one name matches a word (or an initial) of the other, with at least one full word in common. Titles (Mr, Mrs, Shri, M/S …), punctuation and company suffixes (Private / Pvt, Limited / Ltd) are ignored, so "THIMMAIAH C" passes for "Thimmaiah Chengappa" and "ABC PVT LTD" for "ABC Private Limited".
+- **Name needs review:** the bank found the account but the name only partly matches — for example "R KUMAR" for "A Kumar", or "KUMAR" alone. Bank Verified stays off with the status "Name needs review: the bank has '<name>'". Check proof of the account (a cancelled cheque or bank letter); then a KYC approver who did not change the bank details ticks **Bank Verified** on the KYC's **Edit** page (bank step). No second paid check is run.
+- **Fail:** the bank could not find the account; the status shows the bank's message (for example "Invalid account"). Ask the investor to confirm the account number and IFSC.
+
+### When the bank details change
+
+A change to a KYC's **Bank Account Number** or **IFSC Code** — or to a custom field your firm marked as a **payout field**, such as SWIFT or IBAN (see [Custom Fields](custom_fields_user_guide#payout-fields-swift-iban)) — is a **bank change**. It does not matter how the change is made: the KYC form, the API, an import, **Compare CKYC/KRA**, Document Checks or AI extraction.
+
+- **In the same save,** **Bank Verified** goes off, and a verified KYC goes back to **Completed** (as **UnVerify** does). Its journey moves back with the note "Bank details changed".
+- **The change is recorded:** who made it (a firm user, the investor, or System for background work), how, the last 4 digits of the old and new account numbers and both IFSCs. Fund users see it as a note at the top of **Contact & Banking**; investors never see it. The full old values stay in the KYC's **Audit Trail**.
+- **Emails:** the investor's contacts who receive KYC emails, and existed before the change, get "Your bank details with <firm> were changed" (last 4 digits only). The firm's KYC approvers who can see the KYC, except the person who made the change, get "Bank details changed for <KYC> — a second approver must verify" and a bell notification.
+- **A second person verifies:** the person who made the change sees **Verify** greyed out. Any other KYC approver clicks **Verify**, reads the **Verify KYC — <name>** popup and clicks **Verify KYC**; the note then reads "Confirmed by <name> on <date>". A change made by the investor or by System can be confirmed by any KYC approver.
+- **Only one approver:** if nobody else at the firm is a KYC approver who can see the KYC, the person who made the change may verify after a warning card in the popup, recorded as "only approver".
+- **Payouts are flagged, not blocked:** the distribution journey panel, the distribution readiness check and the payments download (column **Unconfirmed Bank Change**) show KYCs whose change still waits for a second approver.
+
+The first time bank details are entered (they were blank) is not a change: Bank Verified stays off until checked, but nothing is recorded and nobody is emailed. Changing only the bank name, branch or account type is not a change either.
 
 ---
 
@@ -720,6 +734,8 @@ After the investor has submitted their KYC and all documents are in order, a com
    - **Verified** = true, status **Verified**
    - **Verified By** = the current user
 
+If the KYC's bank details changed and wait for a second person, **Verify** opens a **Verify KYC — <name>** popup that shows the new account, who made the change, whether the investor was emailed and any bank check that has not passed; the person who made the change sees **Verify** greyed out (see [When the bank details change](#when-the-bank-details-change)).
+
 Once verified, the KYC is considered compliant and active. A verified KYC cannot be edited, deleted or sent **Request Updates**; click **UnVerify** first, which sets the status back to **Completed**.
 
 > **If Verify, Edit, or another button is greyed out:** your organisation may have a review workflow assigned to this KYC record. If so, the button stays disabled until that workflow completes successfully. Check the record's Workflow tab to see the review's current status — see the [Workflow Templates guide](workflow_templates_user_guide.md) for details.
@@ -844,6 +860,8 @@ CapHive sends automated email notifications at key points in the KYC lifecycle:
 | **KYC Submitted** | Everyone who can see the KYC, including investor advisors | The KYC is submitted (status becomes **Completed**) |
 | **Updates Requested** | Investor | Admin clicks **Request Updates** and sends a correction request |
 | **Updates Requested** | Everyone who can see the KYC, including investor advisors | Investor clicks **Updates Required** on a submitted or verified KYC |
+| **Your bank details with <firm> were changed** | The investor's contacts who receive KYC emails and existed before the change (never an address typed into the KYC) | The account number, IFSC or a payout field changed from one value to another ([details](#when-the-bank-details-change)) |
+| **Bank details changed for <KYC> — a second approver must verify** | The firm's KYC approvers who can see the KYC, except the person who made the change (email and bell) | The same bank change |
 
 To use your own wording for any of these emails, create a **Custom KYC Notification** from **New KYC** (see [The New KYC dropdown](#the-new-kyc-dropdown) and [Custom Notifications](custom_notifications_user_guide)). Tagged reminder templates add their own **Send Reminder** items to **Bulk Actions** and **KYC Actions**.
 
@@ -1109,6 +1127,9 @@ When **Validate documents** is current, open the documents (the panel's **Open v
 
 ### Why use Investor KYC
 
+**Why does a bank detail change need a second person to verify the KYC?**
+So that one person cannot redirect an investor's distributions alone. When the account number, IFSC or a payout field such as SWIFT or IBAN changes, Bank Verified goes off at once, the investor is emailed, and a KYC approver other than the person who made the change must click **Verify**. Until then distributions to that KYC are flagged on the distribution page, the readiness check and the payments download.
+
 
 **Why do the KYC list, the KYC page and the KYC emails use one rule?**
 So they can never disagree. Before, someone could be emailed about a KYC and then get "access denied" when they clicked the link, or see a KYC on their list they could not open. Now the emails go to exactly the people who can open the KYC, and the list shows exactly the KYCs they can open.
@@ -1132,6 +1153,18 @@ Non-Individual KYCs carry the fields and document checklist for companies, LLPs,
 It shows at a glance which step each new KYC is on — form, documents, validation, AML, review, sign-off, verification — and what to do next, with a button that does it. Manual document checks and AML overrides are recorded against a person, and the page updates live when the investor submits or a job finishes.
 
 ### What happens when I …
+
+**What happens when I change a KYC's bank account number or IFSC?**
+In the same save **Bank Verified** goes off and, if the KYC was verified, it goes back to **Completed**. A note at the top of **Contact & Banking** says who changed it and when, with the last 4 digits only. The investor's KYC contacts and your other KYC approvers are emailed, and a different approver must **Verify** the KYC. Changing only the bank name, branch or account type changes none of this.
+
+**Who is emailed when bank details change on a KYC?**
+The investor's approved contacts who receive KYC emails (or all topics) and had access before the change get "Your bank details with <firm> were changed", showing last 4 digits only. Your firm's KYC approvers who can see the KYC, except the person who made the change, get "Bank details changed for <KYC> — a second approver must verify" and a bell notification. Addresses typed into the KYC itself are never used.
+
+**What happens when I click Verify on a KYC whose bank details changed?**
+A **Verify KYC — <name>** popup shows the new account (last 4 digits and IFSC), who made the change and when, whether the investor was emailed, and the bank check status if it has not passed. Click **Verify KYC** to verify; the change is recorded as confirmed by you and the note turns grey. Click **Cancel** to leave it unverified.
+
+**What happens when I import a KYC row that changes the bank details with Verified = Yes?**
+The row is saved but the KYC is left unverified, and the import results say **Success with warnings** with "Bank details changed — the KYC was left unverified for another approver to verify". Another KYC approver then verifies it on the page, in bulk or by importing the row again. The same warning appears when the person who made the change imports Verified = Yes again. New KYCs imported with Verified = Yes are verified as before.
 
 
 **What happens when I turn on Investor Kyc Read for an employee?**
@@ -1207,6 +1240,21 @@ If **Validate documents** was already done, it moves back with "Documents change
 Nothing changes until the investor submits: uploading documents first and letting the AI pre-fill the form does not complete **Submit KYC**, and pre-filling is not validation, so **Validate documents** is not ticked.
 
 ### Troubleshooting and edge cases
+
+**Why is the Verify button greyed out on a KYC I edited?**
+You changed this KYC's bank details (account number, IFSC or a payout field), so another KYC approver must verify it — hover over the button to see the reason. They were emailed about the change. You can still edit the KYC or **UnVerify** it. If your firm has no other KYC approver who can see the KYC, you can verify it yourself after a warning in the popup, and it is recorded as "only approver".
+
+**Why does my bulk Verify list a KYC as "Not verified — you changed the bank details; another approver must verify"?**
+You made a bank change on that KYC that still waits for a second person, so **Bulk Actions → Verify** skipped it and verified the others. Ask another KYC approver to verify it from its page or with their own bulk Verify.
+
+**What does "Name needs review" mean on Bank Verified?**
+The bank check found the account but the name the bank holds only partly matches the KYC name (for example "R KUMAR" for "A Kumar"). Bank Verified stays off. Check proof of the account, such as a cancelled cheque or bank letter; then a KYC approver who did not change the bank details ticks **Bank Verified** on the KYC's **Edit** page (bank step) and saves.
+
+**Why does the Bank Verified badge say "Not verified — bank details changed"?**
+The account changed after it was last checked, so the old tick no longer applies. With bank verification on, the bank check runs again within a few minutes. With it off, a KYC approver who did not make the change ticks **Bank Verified** on the **Edit** page after checking proof of the new account.
+
+**Why can't I tick Bank Verified on the KYC form?**
+The **Bank Verified** box is shown only to KYC approvers (the *Investor KYC Approve* permission or company admin) of the firm, and not to the person who made a bank change that still waits for a second person. A value sent by anyone else is ignored without failing the save.
 
 
 **Why did a colleague get a KYC email and I did not?**

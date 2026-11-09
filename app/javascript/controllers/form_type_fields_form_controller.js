@@ -40,6 +40,13 @@ export default class extends Controller {
     this.updateCount()
   }
 
+  // M14 ⑨ H18 — the payout field choice (in the row's details) lights the row's bank icon
+  payoutChanged(event) {
+    const row = event.currentTarget.closest("[data-form-type-fields-row]")
+    const flag = row.querySelector("[data-payout-flag]")
+    if (flag) flag.classList.toggle("on", event.currentTarget.value !== "")
+  }
+
   typeChanged() {
     this.optionsBoxTarget.classList.toggle("d-none", this.newTypeTarget.value !== "Select")
   }
@@ -65,6 +72,10 @@ export default class extends Controller {
         read_only: row.dataset.readOnly === "true",
         internal: row.dataset.internal === "true"
       }
+      // M14 ⑨ — a KYC text field's payout mark ("code" / "account" / "" for none); the server refuses an unmark
+      // unless the user is CapHive support
+      const payout = row.querySelector("[data-form-type-fields-payout]")
+      if (payout) data.payout_field = payout.value
       if (row.dataset.id) {
         data.id = row.dataset.id
         if (row.dataset.removed === "true") data._destroy = true

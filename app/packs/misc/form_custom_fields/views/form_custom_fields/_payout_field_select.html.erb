@@ -1,0 +1,19 @@
+<%# M14 ⑨ (bank-detail-change-controls H18, X16, X17; design "Screen standards") — the "Payout field" choice of a text
+    field on a KYC form, in the flags block (not among the Validation inputs: it is not a validation rule). Shown
+    only to those who may mark (company admin of the firm, CapHive support). Once marked, only support sees "No".
+    Locals: f (form builder for the field), fcf (the FormCustomField) %>
+<% kyc_text = fcf.field_type == "TextField" && FormCustomField::PAYOUT_FORM_TYPES.include?(fcf.form_type&.name) %>
+<% fcf_policy = policy(fcf) %>
+<% if (kyc_text || fcf.payout_field.present?) && fcf_policy.mark_payout_field? %>
+  <% choices = [["Bank code (shown in full)", "code"], ["Account identifier (last 4 only)", "account"]] %>
+  <% choices.unshift(["No", ""]) if fcf.payout_field.blank? || fcf_policy.unmark_payout_field? %>
+  <div class="fcf-rule" data-payout-field-choice data-controller="scoring-tooltips">
+    <div>
+      <%= f.label :payout_field, "Payout field" %>
+      <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip" data-bs-container="body"
+         title="Bank code: a SWIFT/BIC, routing or sort code — shown in full in emails, like the IFSC. Account identifier: an IBAN or account number — only its last 4 characters are shown. Marking changes no KYC; it applies to saves made after it.<%= ' Only CapHive support can unmark it.' if fcf.payout_field.present? && !fcf_policy.unmark_payout_field? %>"></i>
+      <div class="small text-muted">A change to this field is treated like a bank account change: a second approver must verify.</div>
+    </div>
+    <%= f.select :payout_field, choices, { selected: fcf.payout_field.to_s }, class: "form-select form-select-sm w-auto" %>
+  </div>
+<% end %>

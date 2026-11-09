@@ -72,6 +72,12 @@
       <%= form.check_box :filter_in_search, class: "form-check-input mt-3" %>
     </div>
 
+    <% if form.object.form_type %>
+      <div class="form-group col-md-4">
+        <%= render "form_custom_fields/payout_field_select", f: form, fcf: form.object %>
+      </div>
+    <% end %>
+
     <div class="form-group col-md-3">
       <%= form.label :meta_data %>
       <%= form.text_field :meta_data, class: "form-control" %>

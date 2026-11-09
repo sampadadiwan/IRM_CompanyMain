@@ -43,6 +43,25 @@ class FormType < ApplicationRecord
     submitted_ids.empty? || !form_type.form_custom_fields.exists?(id: submitted_ids, field_type: "Calculation")
   end
 
+  # M14 D18, X17, X18 — beside calculation_change_allowed?: a stored payout field (validation_rules["payout_field"]) may
+  # be unmarked — or removed with _destroy — only by CapHive support. Marking and switching kind are allowed (the
+  # model's payout_field_allowed checks where). One pluck of the submitted ids; the mark is found in Ruby.
+  # @param fields [Array<Hash>] the submitted form_custom_fields_attributes
+  def self.payout_field_change_allowed?(user, fields, form_type)
+    return true if user.support? || form_type.nil?
+
+    ids = fields.filter_map { |fcf| fcf["id"].presence&.to_i }
+    return true if ids.empty?
+
+    marked = form_type.form_custom_fields.where(id: ids).pluck(:id, :validation_rules)
+                      .select { |_id, rules| rules.is_a?(Hash) && rules["payout_field"].present? }.to_set(&:first)
+    fields.none? do |fcf|
+      next false unless marked.include?(fcf["id"].presence&.to_i)
+
+      (fcf.key?("payout_field") && fcf["payout_field"].blank?) || ActiveModel::Type::Boolean.new.cast(fcf["_destroy"])
+    end
+  end
+
   # Add the regulatory fields to the form type
   def add_regulatory_custom_fields
     # Skip if the form type is not one of the regulatory models

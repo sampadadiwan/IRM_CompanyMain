@@ -178,7 +178,7 @@ step (J2.3 = journey 2, step 3) · **R** = Role sweep · **C** = Cross-cutting c
 | ☐ | X18 | Admin can't delete a marked field | H18 | 1. Ravi looks for ✕ on SWIFT Code in the side panel 2. Developer sends the delete request as Ravi | No ✕ (lock chip "Support"); delete refused; field kept | | |
 | ☐ | X19 | Only text fields on KYC forms | H18 | 1. Developer sends a mark for "Foreign account?", for a multi-line text field on the KYC form and for an Investor-form text field as Ravi | "Only text fields on a KYC form can be payout fields"; nothing saved | | |
 | ☐ | X20 | Other firm | — | 1. Omar sends a side panel save / Form Types update for Horizon's KYC form | Refused / not found; nothing marked | | |
-| ☐ | X15 | Bank check disabled in the agent | H5; agent `check_bank_details` = false | 1. Run readiness | Bank step "Skipped via configuration" (as today); KYC step fails "KYC not verified" | | |
+| ☐ | X15 | Bank check disabled in the agent | H5; agent `check_bank_details` = false, `check_kyc` on | 1. Run readiness | KYC step fails "KYC not verified"; the run stops there and the bank step is not run (design C5) | | |
 
 ---
 

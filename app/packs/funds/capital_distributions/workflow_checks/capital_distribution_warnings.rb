@@ -14,7 +14,7 @@ module WorkflowChecks
     def to_a
       return [] if no_email_reason(@dist) || all_emailed?(@dist)
 
-      [skip_doc_gen_warning, subscriber_warning, bank_details_warning].compact
+      [skip_doc_gen_warning, subscriber_warning, bank_details_warning, bank_change_warning].compact
     end
 
     private
@@ -43,6 +43,16 @@ module WorkflowChecks
       return if count.zero?
 
       "#{count} #{'KYC'.pluralize(count)} #{count == 1 ? 'has' : 'have'} no bank account number"
+    end
+
+    # M14 ⑧ H15, E57–E59 — paid KYCs whose bank details changed and wait for a second approver (the same rule as the
+    # readiness check's bank step); one count over the payments' KYC ids
+    def bank_change_warning
+      kyc_ids = ::CapitalCommitment.where(id: payments(@dist).select(:capital_commitment_id)).select(:investor_kyc_id)
+      count = ::BankDetailChange.awaiting.where(investor_kyc_id: kyc_ids).distinct.count(:investor_kyc_id)
+      return if count.zero?
+
+      "#{count} #{'KYC'.pluralize(count)} #{count == 1 ? 'has' : 'have'} bank details changed and not yet confirmed by a second approver"
     end
   end
 end

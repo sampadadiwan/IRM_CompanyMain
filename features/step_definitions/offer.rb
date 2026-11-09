@@ -351,15 +351,8 @@ def pan_response
   :verified=>nil}
 end
 
-def bank_response
-  body = {"id"=> Faker::Alphanumeric.alphanumeric(number: 16),
-  "verified"=>"true",
-  "verified_at"=> Time.now.strftime('%Y-%m-%d %H:%M:%S') ,
-  "beneficiary_name_with_bank"=> Faker::Name.unique.name,
-  "fuzzy_match_result"=>"true",
-  "fuzzy_match_score"=>100}
-  OpenStruct.new(verified: true, body: body.to_json)
-end
+# bank_response: defined once, in kyc_verification.rb (called bare it is the answer this file used to define here;
+# M14 §6 added name / fuzzy parameters there, and a second copy here silently replaced it)
 
 
 Then('the offer investors must have access rights to the sale') do

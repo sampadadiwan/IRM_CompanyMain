@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_09_160100) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_10_090000) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -797,6 +797,35 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_09_160100) do
     t.index ["created_at"], name: "index_audits_on_created_at"
     t.index ["request_uuid"], name: "index_audits_on_request_uuid"
     t.index ["user_id", "user_type"], name: "user_index"
+  end
+
+  create_table "bank_detail_changes", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.bigint "investor_kyc_id", null: false
+    t.bigint "changed_by_id"
+    t.string "changed_by_side", limit: 10, null: false
+    t.string "source", limit: 20, default: "other", null: false
+    t.string "changed_fields", limit: 100, null: false
+    t.string "old_account_last4", limit: 4
+    t.string "new_account_last4", limit: 4
+    t.string "old_ifsc", limit: 20
+    t.string "new_ifsc", limit: 20
+    t.json "changed_custom_fields"
+    t.string "status", limit: 12, default: "awaiting", null: false
+    t.bigint "confirmed_by_id"
+    t.datetime "confirmed_at"
+    t.boolean "only_approver", default: false, null: false
+    t.datetime "investor_notified_at"
+    t.text "investor_recipient_ids"
+    t.datetime "approvers_notified_at"
+    t.datetime "deleted_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["changed_by_id"], name: "index_bank_detail_changes_on_changed_by_id"
+    t.index ["confirmed_by_id"], name: "index_bank_detail_changes_on_confirmed_by_id"
+    t.index ["deleted_at"], name: "index_bank_detail_changes_on_deleted_at"
+    t.index ["entity_id", "status"], name: "index_bank_detail_changes_on_entity_id_and_status"
+    t.index ["investor_kyc_id", "status"], name: "index_bank_detail_changes_on_investor_kyc_id_and_status"
   end
 
   create_table "blazer_audits", force: :cascade do |t|
@@ -5792,6 +5821,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_09_160100) do
   add_foreign_key "approvals", "folders", column: "document_folder_id"
   add_foreign_key "assistant_tasks", "entities"
   add_foreign_key "assistant_tasks", "users"
+  add_foreign_key "bank_detail_changes", "entities"
+  add_foreign_key "bank_detail_changes", "investor_kycs"
+  add_foreign_key "bank_detail_changes", "users", column: "changed_by_id"
+  add_foreign_key "bank_detail_changes", "users", column: "confirmed_by_id"
   add_foreign_key "call_fees", "capital_calls"
   add_foreign_key "call_fees", "entities"
   add_foreign_key "call_fees", "funds"

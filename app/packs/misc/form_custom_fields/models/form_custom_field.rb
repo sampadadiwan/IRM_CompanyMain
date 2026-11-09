@@ -25,6 +25,13 @@ class FormCustomField < ApplicationRecord
                             min_selections max_selections pattern format unique
                             error_message max_size_mb].freeze
 
+  # M14 ⑨ (OWASP 2026-11, bank-detail-change-controls D17–D19) — payout fields: a text field on a KYC form that the
+  # firm marked as bank details. "code" is shown in full (SWIFT/BIC, routing number), "account" as its last 4 only
+  # (IBAN). A change to a marked field follows the bank change rules (BankDetailChangeGuard).
+  PAYOUT_FIELD_KINDS = %w[code account].freeze
+  PAYOUT_FORM_TYPES = %w[IndividualKyc NonIndividualKyc InvestorKyc].freeze
+  PAYOUT_UNMARK_REFUSED = "Payout fields can only be unmarked by CapHive support.".freeze
+
   VALIDATION_RULE_KEYS.each do |key|
     define_method("vr_#{key}") { (validation_rules || {})[key] }
     define_method("vr_#{key}=") do |val|
@@ -35,6 +42,36 @@ class FormCustomField < ApplicationRecord
         cleaned = val.to_s.strip.presence
         cleaned ? validation_rules[key] = cleaned : validation_rules.delete(key)
       end
+    end
+  end
+
+  # M14 D17 — the payout mark is NOT a validation rule. It sits in validation_rules because that is the only
+  # structured, per-key JSON on a field definition (a new column was declined; meta_data is free text whose meaning
+  # varies by type). It is not in VALIDATION_RULE_KEYS, so no vr_ input or setter writes it: only these two methods.
+  # Never assign validation_rules wholesale — that would drop the mark (E80 guards it).
+  def payout_field
+    (validation_rules || {})["payout_field"].presence
+  end
+
+  # Sets or removes only the "payout_field" key (a new hash, so the json attribute is marked changed)
+  def payout_field=(kind)
+    kind = kind.to_s.strip.presence
+    rules = (validation_rules || {}).except("payout_field")
+    self.validation_rules = kind ? rules.merge("payout_field" => kind) : rules
+  end
+
+  # X19 — only a text field on a KYC form can be a payout field
+  def payout_markable?
+    field_type == "TextField" && PAYOUT_FORM_TYPES.include?(form_type&.name)
+  end
+
+  # ② The marked payout keys of these form types: { "swift_code" => { label: "SWIFT Code", kind: "code" } }. The text
+  # fields are loaded and filtered here, not in SQL: MySQL's JSON_EXTRACT returns "code" quoted and SQLite's does not.
+  def self.payout_keys_for(form_type_ids)
+    rows = where(form_type_id: form_type_ids, field_type: "TextField").pluck(:name, :label, :validation_rules)
+    rows.each_with_object({}) do |(name, label, rules), keys|
+      kind = rules.is_a?(Hash) ? rules["payout_field"] : nil
+      keys[name] = { label: label.presence || name.to_s.humanize, kind: } if PAYOUT_FIELD_KINDS.include?(kind)
     end
   end
 
@@ -176,8 +213,11 @@ class FormCustomField < ApplicationRecord
     selection_keys = %w[min_selections max_selections error_message]
     file_keys      = %w[allowed_extensions max_size_mb error_message]
 
+    # M14 K19 — a TextField may also carry the payout mark ("payout_field", not a validation rule — see #payout_field);
+    # a TextArea may not (the key there is one of the "invalid keys" below, X19)
     allowed_keys = case field_type
-                   when "TextField", "TextArea"   then text_keys
+                   when "TextField"               then text_keys + ["payout_field"]
+                   when "TextArea"                then text_keys
                    when "NumberField", "Money"    then numeric_keys
                    when "DateField"               then date_keys
                    when "MultiSelect", "CheckBox" then selection_keys
@@ -189,6 +229,9 @@ class FormCustomField < ApplicationRecord
 
     invalid_keys = rules.keys - allowed_keys
     errors.add(:validation_rules, "contains invalid keys for #{field_type}: #{invalid_keys.join(', ')}") if invalid_keys.any?
+
+    bad_kind = rules.key?("payout_field") && PAYOUT_FIELD_KINDS.exclude?(rules["payout_field"])
+    errors.add(:validation_rules, "payout field must be one of: #{PAYOUT_FIELD_KINDS.join(', ')}") if bad_kind
 
     case field_type
     when "TextField", "TextArea"
@@ -208,6 +251,13 @@ class FormCustomField < ApplicationRecord
     when "MultiSelect", "CheckBox"
       validate_min_max_rule(rules, "min_selections", "max_selections")
     end
+  end
+
+  # M14 X19 — the mark on anything but a text field of a KYC form (validation_rules_consistent returns early for
+  # types with no rule keys, such as Select, so this check stands on its own)
+  validate :payout_field_allowed, if: -> { payout_field.present? }
+  def payout_field_allowed
+    errors.add(:base, "Only text fields on a KYC form can be payout fields") unless payout_markable?
   end
 
   validate :read_only_and_required, if: -> { read_only && required }

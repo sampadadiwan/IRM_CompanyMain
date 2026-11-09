@@ -63,11 +63,35 @@
     <% label = @investor_kyc.verified ? "UnVerify" : "Verify" %>
     <% label_class = @investor_kyc.verified ? "btn btn-outline-warning" : "btn btn-outline-success" %>
     <% label_icon = @investor_kyc.verified ? "ti ti-user-x" : "ti ti-user-check" %>
-    <% if policy(@investor_kyc).toggle_verified? %>
-      <%= button_to toggle_verified_investor_kyc_path(@investor_kyc), id: "investor_kyc_toggle_verified_btn", method: :put, class: label_class, form_class: "deleteButton",
-          data: { workflow_gate_label: label } do %>
-        <i class="<%= label_icon %>"></i><%= label %>
+    <%# M14 ⑥⑦ (bank-detail-change-controls H9, H11, E32–E35) — with a bank change waiting for a second person, Verify
+        opens a popup that says what verifying does; the person who made the change sees it greyed out, with why and
+        what to do instead; otherwise Verify / UnVerify work as before. The id stays: the journey panel clicks it. %>
+    <% verify_policy = policy(@investor_kyc) %>
+    <% awaiting_change = @investor_kyc.awaiting_bank_change unless @investor_kyc.verified %>
+    <% if verify_policy.toggle_verified? %>
+      <% if awaiting_change %>
+        <button type="button" id="investor_kyc_toggle_verified_btn" class="<%= label_class %>" data-workflow-gate-label="<%= label %>"
+                data-bs-toggle="modal" data-bs-target="#verifyBankChangeModal">
+          <i class="<%= label_icon %>"></i><%= label %>
+        </button>
+        <%= render "investor_kycs/verify_bank_change_modal", investor_kyc: @investor_kyc, change: awaiting_change,
+                   only_approver: verify_policy.bank_change_only_approver? %>
+      <% else %>
+        <%= button_to toggle_verified_investor_kyc_path(@investor_kyc), id: "investor_kyc_toggle_verified_btn", method: :put, class: label_class, form_class: "deleteButton",
+            data: { workflow_gate_label: label } do %>
+          <i class="<%= label_icon %>"></i><%= label %>
+        <% end %>
       <% end %>
+    <% elsif !@investor_kyc.verified && verify_policy.kyc_approver? && verify_policy.bank_change_maker_blocked? %>
+      <%# E32 — a disabled button shows no tooltip itself, so the wrapper carries it %>
+      <span class="d-inline-block" tabindex="0" id="investor_kyc_verify_blocked" data-controller="scoring-tooltips">
+        <span class="d-inline-block" data-bs-toggle="tooltip" data-bs-container="body"
+              title="You changed this KYC's bank details. Another KYC approver must verify it. They have been emailed about the change; you can still edit the KYC meanwhile.">
+          <button type="button" class="<%= label_class %>" id="investor_kyc_toggle_verified_btn" disabled>
+            <i class="<%= label_icon %>"></i><%= label %>
+          </button>
+        </span>
+      </span>
     <% end %>
 
     <% if policy(@investor_kyc).request_updates? %>
@@ -105,7 +129,8 @@
               <% end %>
             <% end %>
 
-            <% if policy(@investor_kyc).toggle_verified? %>
+            <%# M14 D15 — any KYC approver, including the maker of a bank change (who cannot Verify) %>
+            <% if policy(@investor_kyc).kyc_approver? %>
               <%= link_to investor_kyc_path(@investor_kyc, audit_trail: true, tab: "audit-trail-tab"), id: "investor_kyc_audit_trail_btn", class: "dropdown-item" do %>
                 <i class="ti ti-history"></i>Audit Trail
               <% end %>

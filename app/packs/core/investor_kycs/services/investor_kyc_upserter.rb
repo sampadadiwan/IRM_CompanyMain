@@ -10,7 +10,8 @@ class InvestorKycUpserter
   # Entry point to the service
   # @param params [Hash] - the parameters for the KYC (may contain :id for update)
   # @param current_user [User] - the currently signed-in user
-  def self.call(params:, current_user:)
+  # @param bank_change_source [String] - how the save was made, for the M14 bank change guard ("screen")
+  def self.call(params:, current_user:, bank_change_source: "screen")
     if params[:id].present?
       # If ID is present, we are updating an existing KYC
       investor_kyc = InvestorKyc.find(params[:id])
@@ -21,6 +22,9 @@ class InvestorKycUpserter
 
       # Assign new attributes to the existing record
       investor_kyc.assign_attributes(params)
+      # M14 E9 — a verified KYC can change here (compare_kyc_datas? does not check verified): tag the save
+      investor_kyc.bank_change_actor = current_user
+      investor_kyc.bank_change_source = bank_change_source
 
       # Call update service with proper context
       result = InvestorKycUpdate.call(
@@ -33,6 +37,8 @@ class InvestorKycUpserter
     else
       # If ID is not present, we are creating a new KYC
       investor_kyc = InvestorKyc.new(params)
+      investor_kyc.bank_change_actor = current_user
+      investor_kyc.bank_change_source = bank_change_source
 
       # Determine whether validations can be skipped
       skip_validation = current_user.curr_role_investor? && investor_kyc.entity_id == current_user.entity_id

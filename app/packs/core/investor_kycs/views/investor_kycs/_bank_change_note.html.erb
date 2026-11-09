@@ -1,0 +1,42 @@
+<%# M14 ⑦ the bank change note in Contact & Banking (bank-detail-change-controls H5, E15, E16, E19, E22; mock
+    mocks/kyc_show_bank_change.html; task U.1). Fund users who can see the KYC only: never investors or a signed
+    magic link (E19 — they get the email instead, and the note names firm staff). Amber while the change waits for a
+    second person; one grey line after it is confirmed; nothing for a KYC that never had a bank change (E22). %>
+<% change = investor_kyc.latest_bank_change %>
+<% if change && current_user && !current_user.curr_role_investor? && current_user.entity_id == investor_kyc.entity_id %>
+  <% emails = change.investor_recipient_emails %>
+  <% summary = change.change_lines.join("; ") %>
+  <% if change.awaiting? %>
+    <div class="alert alert-warning d-flex align-items-start gap-2 mb-4" role="alert" id="bank_change_note"
+         data-bank-change-note="awaiting" data-controller="scoring-tooltips">
+      <i class="ti ti-alert-triangle fs-5"></i>
+      <div>
+        <div>
+          Bank details changed on <%= l(change.created_at.to_date) %> by <%= change.maker_name %> — <%= summary %>.
+          Waiting for a second approver to verify.
+          <i class="ti ti-info-circle" data-bs-toggle="tooltip" data-bs-container="body"
+             title="<%= change.changed_by_side == 'fund' ? "Payouts should wait until a KYC approver other than #{change.maker_name} verifies this KYC." : 'Payouts should wait until a KYC approver verifies this KYC.' %> Bank Verified was switched off in the same save because the new account has not been checked. To confirm: check the change with the investor and proof of the account, then click Verify."></i>
+        </div>
+        <div class="small text-muted mt-1">
+          <% if emails.any? %>
+            Investor contacts emailed: <%= emails.join(", ") %><% if change.investor_notified_at %> (<%= l(change.investor_notified_at.to_date) %>)<% end %>
+          <% elsif change.investor_notified_at %>
+            No investor contact could be emailed — confirm the change with the investor by phone.
+          <% else %>
+            Investor emailed: —
+          <% end %>
+          <% if policy(investor_kyc).kyc_approver? %>
+            · <%= link_to "Audit trail", investor_kyc_path(investor_kyc, audit_trail: true, tab: "audit-trail-tab"), class: "text-decoration-none" %>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  <% elsif change.confirmed? %>
+    <div class="small text-muted mb-4" id="bank_change_note" data-bank-change-note="confirmed" data-controller="scoring-tooltips">
+      <i class="ti ti-user-check me-1"></i>Bank details changed on <%= l(change.created_at.to_date) %> by <%= change.maker_name %> — <%= summary %>.
+      Confirmed by <%= change.confirmed_by&.full_name || "System" %> on <%= l(change.confirmed_at.to_date) %><%= " (only approver)" if change.only_approver %>.
+      <i class="ti ti-info-circle" data-bs-toggle="tooltip" data-bs-container="body"
+         title="<%= change.only_approver ? 'The firm had no other KYC approver who could see this KYC, so the person who made the change verified it; the investor was emailed about the change.' : 'A KYC approver other than the person who made the change verified the KYC after the change.' %>"></i>
+    </div>
+  <% end %>
+<% end %>

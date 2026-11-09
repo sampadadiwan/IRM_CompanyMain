@@ -270,9 +270,13 @@
 
           <%= custom_form_fields(investor_kyc, form, step: :two, required: is_investor) %>
 
-          <% if current_user&.entity_id == investor_kyc.entity_id  %>
-            <div class="form-group">
+          <%# M14 E11, E44 (design card ⑦) — the box only for those allowed to tick it: a KYC approver of this firm who
+              did not make an awaiting bank change. Anyone else's tick is dropped by the policy anyway. %>
+          <% if current_user&.entity_id == investor_kyc.entity_id && policy(investor_kyc).tick_bank_verified? %>
+            <div class="form-group" id="bank_verified_box" data-controller="scoring-tooltips">
               <%= form.label :bank_verified %>
+              <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip" data-bs-container="body"
+                 title="Tick only after checking proof of the current account (a cancelled cheque or bank letter). A change of account number or IFSC clears it in the same save."></i>
               <%= form.check_box :bank_verified, class: "form-check-input"  %>
             </div>
           <% end %>

@@ -1,0 +1,98 @@
+<%# M14 ⑦ the Verify popup when a bank change waits for a second person (bank-detail-change-controls H9, H11, E33,
+    E34; mock mocks/verify_bank_change_modal.html). Copies investor_kycs/_request_updates_modal: the "Immediate
+    Actions" callout and up to four action cards — the new account, who made the change (or the only-approver
+    warning), whether the investor was told, and the bank check when it has not passed. Theme colours only
+    (Bootstrap *-subtle backgrounds). Posts intent=verify, so a double click never turns into an UnVerify (X12). %>
+<% firm = investor_kyc.entity.name %>
+<% emails = change.investor_recipient_emails %>
+<% last4 = BankDetailChangeGuard.last4(investor_kyc.bank_account_number) %>
+<div class="modal fade" id="verifyBankChangeModal" tabindex="-1" aria-labelledby="verifyBankChangeModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="verifyBankChangeModalLabel">Verify KYC — <%= investor_kyc.full_name %></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <%= form_with url: toggle_verified_investor_kyc_path(investor_kyc), method: :put do |f| %>
+        <%= hidden_field_tag :intent, "verify" %>
+        <div class="modal-body">
+          <div class="border-start border-4 border-primary ps-3 py-1 mb-3">
+            <div class="fw-bold text-dark small">Immediate Actions</div>
+            <div class="text-muted small">The bank details of this KYC changed. The following will happen immediately when you click <strong>Verify KYC</strong>:</div>
+          </div>
+
+          <div class="d-flex flex-column gap-2 mb-3">
+            <div class="d-flex align-items-start gap-3 p-3 rounded-3 bg-success-subtle" data-verify-card="account">
+              <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 bg-white" style="width:36px;height:36px;">
+                <i class="ti ti-building-bank fs-5 text-success"></i>
+              </span>
+              <div>
+                <div class="fw-semibold text-dark lh-sm">New payout account confirmed</div>
+                <div class="text-muted small mt-1">
+                  Distributions go to <%= investor_kyc.bank_name.presence || "the bank" %> <%= last4 ? "••••#{last4}" : "(no account number)" %><% if investor_kyc.ifsc_code.present? %> (IFSC <%= investor_kyc.ifsc_code %>)<% end %><% if change.custom_field_new_values.any? %>, <%= change.custom_field_new_values.join(", ") %><% end %>.
+                  Check this with the investor before you confirm.
+                </div>
+              </div>
+            </div>
+
+            <% if only_approver %>
+              <div class="d-flex align-items-start gap-3 p-3 rounded-3 bg-warning-subtle" data-verify-card="only-approver">
+                <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 bg-white" style="width:36px;height:36px;">
+                  <i class="ti ti-alert-triangle fs-5 text-warning"></i>
+                </span>
+                <div>
+                  <div class="fw-semibold text-dark lh-sm">You are the only KYC approver</div>
+                  <div class="text-muted small mt-1">You are the only KYC approver at <%= firm %> — this is recorded as confirmed by the person who made the change. Add a second KYC approver so a colleague checks changes you make.</div>
+                </div>
+              </div>
+            <% else %>
+              <div class="d-flex align-items-start gap-3 p-3 rounded-3 bg-info-subtle" data-verify-card="second-person">
+                <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 bg-white" style="width:36px;height:36px;">
+                  <i class="ti ti-user-check fs-5 text-info"></i>
+                </span>
+                <div>
+                  <div class="fw-semibold text-dark lh-sm">You are the second person</div>
+                  <div class="text-muted small mt-1"><%= change.maker_name %><%= " (the investor)" if change.changed_by_side == "investor" %> made this change on <%= l(change.created_at.to_date) %>. Your name is recorded as the confirmer.</div>
+                </div>
+              </div>
+            <% end %>
+
+            <div class="d-flex align-items-start gap-3 p-3 rounded-3 bg-secondary-subtle" data-verify-card="investor">
+              <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 bg-white" style="width:36px;height:36px;">
+                <i class="ti ti-mail fs-5 text-secondary"></i>
+              </span>
+              <div>
+                <% if emails.any? %>
+                  <div class="fw-semibold text-dark lh-sm">Investor already told</div>
+                  <div class="text-muted small mt-1"><%= emails.to_sentence %> <%= emails.one? ? "was" : "were" %> emailed<% if change.investor_notified_at %> on <%= l(change.investor_notified_at.to_date) %><% end %>. No new email is sent.</div>
+                <% else %>
+                  <div class="fw-semibold text-dark lh-sm">Investor not told by email</div>
+                  <div class="text-muted small mt-1">No investor contact could be emailed — confirm the change with the investor by phone before you verify.</div>
+                <% end %>
+              </div>
+            </div>
+
+            <% if investor_kyc.bank_verification_status.present? && !investor_kyc.bank_verified %>
+              <% status = investor_kyc.bank_verification_status %>
+              <div class="d-flex align-items-start gap-3 p-3 rounded-3 bg-warning-subtle" data-verify-card="bank-check">
+                <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 bg-white" style="width:36px;height:36px;">
+                  <i class="ti ti-alert-triangle fs-5 text-warning"></i>
+                </span>
+                <div>
+                  <div class="fw-semibold text-dark lh-sm">Bank check: <%= status.split(":").first %></div>
+                  <div class="text-muted small mt-1"><%= status %>. Bank Verified stays off until an approver ticks it after checking proof of the account.</div>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal"><%= t_common(:cancel) %></button>
+          <%= button_tag type: "submit", class: "btn btn-outline-success", id: "verify_bank_change_submit" do %>
+            <i class="ti ti-user-check"></i> Verify KYC
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

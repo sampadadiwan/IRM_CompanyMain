@@ -479,6 +479,19 @@ side branch against the shared dev DB.
 
 ---
 
+## Built differently (apply, 2026-11-10)
+
+See design.md › "Changed during the build" for the full table. The ones that change a contract above:
+
+| Contract above | As built |
+|---|---|
+| Guard `before_save`: clears flag, status and response on any payout change | New KYCs keep a create-time tick (C1); a custom-field-only change keeps status / response (C2); a verify by the change's own maker without `bank_change_only_approver` stays unverified (C4) |
+| `toggle_verified` action-local rescue | Controller-level `rescue_from Pundit::NotAuthorizedError` → `deny_access_or_explain_bank_change`, falling back to `deny_access` (C3) |
+| `VerifyBankJob` `record.with_lock` + reload | Fresh row `find` + `with_lock` + compare (C7); a non-JSON answer stored as `{"unreadable_response" => …}` with a status (C6) |
+| `changed_fields` | + `custom_fields` token (C11) |
+| `InvestorKycMailer` placeholders | + `bank_change_summary`, `bank_change_maker` (C10) |
+| `FormCustomField` | + `payout_markable?`, `PAYOUT_UNMARK_REFUSED`; mark error added on `:base` |
+
 ## Sign-off
 
 | Reviewer | Date | Decision | Notes |

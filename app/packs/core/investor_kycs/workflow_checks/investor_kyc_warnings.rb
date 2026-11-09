@@ -11,7 +11,7 @@ module WorkflowChecks
     def to_a
       return [] if @kyc.submission_status == "verified"
 
-      [pan_warning, bank_warning, users_warning, expiry_warning].compact
+      [bank_change_warning, pan_warning, bank_warning, users_warning, expiry_warning].compact
     end
 
     private
@@ -23,6 +23,15 @@ module WorkflowChecks
 
     def bank_warning
       "Bank account verification failed" if @kyc.bank_verification_status.present? && !@kyc.bank_verified
+    end
+
+    # M14 ⑦ E61 — the bank details changed and wait for a second person (the memoised change the page already read)
+    def bank_change_warning
+      change = @kyc.awaiting_bank_change
+      return unless change
+
+      who = change.changed_by_side == "fund" ? "a different approver must verify" : "a KYC approver must verify"
+      "Bank details changed on #{I18n.l(change.created_at.to_date)} by #{change.maker_name} — #{who}"
     end
 
     def users_warning

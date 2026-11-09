@@ -1,0 +1,42 @@
+<%# M14 ④ the approver email (bank-detail-change-controls H8, X6; task U.1): which KYC, what changed (last 4 only),
+    who made it and how, whether the investor was told, why this approver got it and what to do next. Dates through
+    bare l(...) → "Nov 09, 2026" (EmailDateLocalization). %>
+<% change = @bank_detail_change %>
+<% firm = @investor_kyc.entity.name %>
+<p>Dear <%= @user&.full_name %>,</p>
+
+<p><strong>Bank details changed for <%= @investor_kyc.full_name %> — a second approver must verify.</strong></p>
+
+<% if change %>
+  <ul>
+    <li>KYC: <%= @investor_kyc.full_name %> (investor <%= @investor_kyc.investor&.investor_name %>)</li>
+    <li>Changed on <%= l(change.created_at.to_date) %> by <%= change.maker_name %><%= " #{change.source_label}" if change.source_label.present? %></li>
+    <% change.email_change_lines.each do |line| %>
+      <li><%= line.upcase_first %></li>
+    <% end %>
+    <li>
+      <% emails = change.investor_recipient_emails %>
+      <% if emails.any? %>
+        Investor told: <%= emails.to_sentence %><% if change.investor_notified_at %> (emailed on <%= l(change.investor_notified_at.to_date) %>)<% end %>
+      <% else %>
+        <strong>No investor contact could be emailed — confirm the change with the investor by phone.</strong>
+      <% end %>
+    </li>
+  </ul>
+<% end %>
+
+<p><strong>Why you got this:</strong> You are receiving this because you are a KYC approver at <%= firm %> who can see
+   this KYC. A change of a KYC's account number or bank code switches Bank Verified off and, on a verified KYC,
+   unverifies it, so payouts are not sent to an account nobody checked.
+   <% if change&.changed_by_side == "fund" %>
+     <%= change.maker_name %> made the change, so a different KYC approver must verify it.
+   <% else %>
+     The change was made by <%= change&.changed_by_side == "investor" ? "the investor (#{change.maker_name})" : "CapHive automatically (System)" %>, so any KYC approver may verify it.
+   <% end %></p>
+
+<p><strong>What to do:</strong> confirm the new account with the investor on a phone number you already hold, check
+   proof of it (a cancelled cheque or a bank letter), then open the KYC and click <strong>Verify</strong>. Hold any
+   payout to this investor until then. If the change looks wrong, do not verify: contact the investor and correct the
+   bank details.</p>
+
+<p class="btn btn-outline-primary"><%= link_to "View KYC", investor_kyc_url(@investor_kyc, subdomain: @investor_kyc.entity.sub_domain) %></p>

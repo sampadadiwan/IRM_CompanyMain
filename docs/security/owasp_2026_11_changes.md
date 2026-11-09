@@ -1233,16 +1233,16 @@ two builds at once would edit code while the other's tests run, and their test r
 ```mermaid
 flowchart LR
     M8["M8 · 2FA for support + super<br/>✅ built + committed"] --> M11["M11 · security event trail<br/>✅ built + committed"]
-    M11 --> M13["M13 · maker–checker<br/>✅ built, not committed"]
-    M13 --> M14["M14 · bank-detail controls<br/>✅ design extended for SWIFT/IBAN<br/>(mark in validation_rules) · ⏳ queued"]
+    M11 --> M13["M13 · maker–checker<br/>✅ built and committed"]
+    M13 --> M14["M14 · bank-detail controls<br/>✅ built and committed"]
 ```
 
 | Order | # | Status | What's happening |
 |---|---|---|---|
 | 1 | M8 | ✅ **built and committed** (31 of 34 tasks; the other 3 are deploy, ops and QA steps) · review run 1,438 scenarios green | Built through OpenSpec's apply step. **Tests:** the 4 new features pass (78 scenarios); the full `features/security`, `features/login`, API, mobile and admin run passed 1,117 of 1,120. The 3 failures came from the Group A commit, not M8, and are fixed (see "Fixes to Group A found by the M8 run" below). **Help text and tooltips:** the banner (why, from which date, Set up now, ⓘ), the set-up screen, the Turn off popup (why password + code), the disabled Turn off for admins (tooltip: use Reset 2FA Method), the Login as refusal (why + Set up now), the emails. **Screenshots** compared with the reference screens. No migration |
 | 2 | M11 | ✅ **built and committed** (32 of 34 tasks; 3.9 done in the regression run, 4.4 is QA on staging) | Built through OpenSpec's apply step. Migration `20261109150000` adds `security_events` (dev migrated; schema files hand-edited to the new table only). **Tests:** 4 new features, 99 scenarios green; regression of 21 feature sets, 1,523/1,523. **Help text and tooltips:** the screen says why it exists and what to do, every card, column and filter field has an ⓘ, empty state and period notice; each email says why and what to do. **Screenshots** compared with capital_calls and the mock. **Your decisions during the build:** support sign-in as a user and firm switch → bell only, no email. Deviations: design "Changed during the build" C1–C21 |
-| 3 | M13 | ✅ **built, not committed** (33 of 34 tasks; 4.8 is QA on staging) | Built through OpenSpec's apply step on 2026-11-10, after your full-suite run finished (no code was edited while it ran). Migrations `20261109160000` (the `approval_maker_checker` switch, off for every firm) and `20261109160100` (`approval_makers`); dev migrated, schema files hand-edited to the new column and table only. **Tests:** 7 new features, 98 scenarios green (one per worked example H1–H25, E1–E56, X1–X16, plus the entity-form explanation); regression of 117 capital call, distribution, remittance, payment, commitment, approval, journey, bulk, evergreen, entity and API feature files (setting off everywhere, i.e. today's behaviour) 1,413 of 1,414; the one failure was a generated company name with an apostrophe in an unrelated notification email, and it passed on rerun. **Help text and tooltips:** the entity form's Approvals block (why, ⓘ who counts as a preparer, what switching off does), the greyed Approve with its reason and what to do, the Prepared by row and ⓘ, the "(also prepared it)" label and ⓘ, the Request approval popup (who is emailed, or that nobody can approve yet), the flashes, three emails that say why and what to do. **Screenshots** compared with today's call page and the mock. Deviations: design "Changed during the build" C1–C21 |
-| 4 | M14 | ✅ design extended (mark in `validation_rules`, no migration) · ⏳ queued | SWIFT/IBAN custom fields count as bank details (design card ⑨, worked examples H18–H21 / E63–E79 / X16–X20, tasks phase 6). The "payout field" mark is stored in the existing `validation_rules` JSON, not a new column (decided 2026-11-09). The design is updated and validates: the one change to existing code is allowing the `payout_field` key in `validation_rules_consistent` (key change K19) |
+| 3 | M13 | ✅ **built and committed** (3d90121182; 33 of 34 tasks; 4.8 is QA on staging) | Built through OpenSpec's apply step on 2026-11-10, after your full-suite run finished (no code was edited while it ran). Migrations `20261109160000` (the `approval_maker_checker` switch, off for every firm) and `20261109160100` (`approval_makers`); dev migrated, schema files hand-edited to the new column and table only. **Tests:** 7 new features, 98 scenarios green (one per worked example H1–H25, E1–E56, X1–X16, plus the entity-form explanation); regression of 117 capital call, distribution, remittance, payment, commitment, approval, journey, bulk, evergreen, entity and API feature files (setting off everywhere, i.e. today's behaviour) 1,413 of 1,414; the one failure was a generated company name with an apostrophe in an unrelated notification email, and it passed on rerun. **Help text and tooltips:** the entity form's Approvals block (why, ⓘ who counts as a preparer, what switching off does), the greyed Approve with its reason and what to do, the Prepared by row and ⓘ, the "(also prepared it)" label and ⓘ, the Request approval popup (who is emailed, or that nobody can approve yet), the flashes, three emails that say why and what to do. **Screenshots** compared with today's call page and the mock. Deviations: design "Changed during the build" C1–C21 |
+| 4 | M14 | ✅ **built and committed** (63 of 65 tasks; 7.3 is the per-environment rollout and 7.4 QA on staging) | Built through OpenSpec's apply step on 2026-11-10. Migration `20261110090000` (`bank_detail_changes`); dev migrated, schema files hand-edited to the new table only. No migration for SWIFT/IBAN (the mark is a `validation_rules` key). **Tests:** 10 new features, 121 scenarios green (one per worked example H1–H21, E1–E80, X1–X20), also under `PROSOPITE=1` (no N+1 in this change's code); regression of 74 KYC, Document Checks, extractor, bank/PAN/AML, CKYC/KRA, custom field / form type / side panel, import, distribution and journey, API/mobile, bulk-authorization and user-guide-lint feature files 773 of 776, then all 3 fixed or green on serial rerun (one distribution flake; two `kyc.feature` examples broken by M11's "Security alert" email, test step fixed). **Two real bugs found and fixed:** an unreadable bank-check answer crashed the KYC check; the custom fields side panel failed on every KYC page. **Help text and tooltips:** Contact & Banking note and ⓘ, badge ⓘ, greyed Verify ⓘ, Verify popup cards, Bank Verified box ⓘ, payout field ⓘ and Support chip, refusal flashes, bulk and import messages, two emails that say why and what to do. **Screenshots** compared with today's KYC page and the Request Updates popup. Deviations: design "Changed during the build" C1–C20 |
 | — | M4 | 🅿️ parked | Not built. P1 (scrub development copies) is built and committed; P2 and P3 are planned below |
 
 #### M14 — the SWIFT/IBAN addition (design extended 2026-11-09)
@@ -1561,6 +1561,68 @@ CapHive support user.
 | May only approvers set the `verified` / `bank_verified` flags, on every path including the API? | **Yes, for everyone** |
 | Reset the 54 KYCs whose ✓ contradicts their own stored bank-check result? | **No.** Support sends each firm its list to review |
 | Should a change to just the bank name or branch email the investor? | **No.** Only account number and IFSC changes do |
+
+**What was built (2026-11-10, not yet committed).**
+
+```mermaid
+flowchart LR
+    S["Every save of a KYC<br/>form · API · import · Compare CKYC/KRA<br/>Document Checks · AI extraction"] --> G["Change guard<br/>(on the KYC model)"]
+    M["Payout field marks<br/>SWIFT / IBAN custom fields"] --> G
+    G -->|"same save"| F["Bank Verified off<br/>verified KYC → Completed"]
+    G -->|"old value not blank"| R[("bank_detail_changes<br/>awaiting")]
+    R -->|"after commit"| E["Emails: investor contacts<br/>(last 4 only) + other approvers"]
+    R --> V{"Verify"}
+    V -->|"the maker"| X["Greyed out / refused<br/>(unless only approver)"]
+    V -->|"anyone else"| C["Popup → confirmed by them"]
+    R --> P["Payout flags: distribution panel,<br/>readiness check, payments download"]
+```
+
+- **The guard:** one concern on the KYC model, so no write path can skip it. A change of account number, IFSC or a
+  marked payout field switches **Bank Verified** off in the same save, and a verified KYC goes back to **Completed**
+  (its journey says "Bank details changed"). A first fill (blank before) only clears the flag. Re-typing the same
+  value (spaces, case) is not a change.
+- **The record:** new table `bank_detail_changes` (one migration): who (firm user, investor or System), how, last 4
+  digits, both IFSCs, payout custom fields by kind (SWIFT in full, IBAN last 4), awaiting / confirmed / replaced, and
+  once-only email stamps. Full account numbers are never stored there; the KYC's audit trail keeps them.
+- **Who may set the flags:** only a KYC approver of the KYC's firm may send `verified` or `bank_verified` (form box,
+  API). The bank and PAN check results can no longer be sent by anyone — the forged-result hole is closed.
+- **Second person:** the maker's **Verify** is greyed out with the reason (page), refused with it (URL / API), skipped
+  with it (bulk) and left unverified with a warning (import). Anyone else verifies through a popup that shows the new
+  account, who changed it, who was emailed and any bank check that has not passed. A firm with no other approver who
+  can see the KYC lets the maker verify after a warning card, recorded "only approver".
+- **Name rule** (firms with bank checks on): the bank's own match, else every word or initial must match, else
+  "Name needs review: the bank has '…'" for a person. A late check result for an account the KYC no longer has is
+  dropped. Secondary-sale offers keep today's rule.
+- **Payout fields:** a company admin marks a KYC text field as **Bank code** or **Account identifier** (side panel,
+  Form Types › Edit, Form Custom Fields); only CapHive support unmarks or deletes a marked field. Marking changes no
+  KYC. A rake task proposes the existing SWIFT / IBAN fields (dry run, then `EXECUTE=1 FIRM_ID=`).
+- **Found and fixed on the way:** (1) a bank check answer that wasn't JSON (a gateway error page) made the KYC's
+  check fail with an error and save nothing; it is now kept and says what happened. (2) The custom fields side panel
+  failed with an SQL error on every Individual / Non-Individual KYC page (it looked for a table that doesn't exist);
+  it now opens.
+- **Deviations** are in the design's "Changed during the build" table (C1–C20); check C1, C2, C5, C6 and C20 first.
+
+**Worked example — before and after.**
+
+| Step | Before M14 | After M14 |
+|---|---|---|
+| Meera (approver) replaces Anil Kumar's HDFC ••••4821 with ICICI ••••7310 | Bank Verified ✓ stays; nobody is told | Bank Verified off in the same save; note "Bank details changed on 09/11/2026 by Meera Shah — account ending 4821 → 7310. Waiting for a second approver to verify."; Anil and Ravi emailed |
+| Meera clicks **Verify** | Verified | Greyed out: "You changed this KYC's bank details. Another KYC approver must verify it." |
+| Ops downloads the Q3 payments | Pays ••••7310, nothing flagged | Column **Unconfirmed Bank Change** = 09/11/2026 on Anil's row; panel and readiness check warn |
+| Ravi clicks **Verify** | — | Popup cards → **Verify KYC** → "Confirmed by Ravi Iyer on 10/11/2026"; flags clear |
+| An investor posts `bank_verification_status=Verified` | Saved | Ignored |
+
+**Deploy and ops steps.**
+1. Deploy runs migration `20261110090000_create_bank_detail_changes` (new table only; no backfill, no lock on an
+   existing table). Nothing changes for existing KYCs until one is saved with new bank details.
+2. On **production.in** and, separately, **production.us**: run the dry run
+   `bin/rails bank_detail_changes:propose_payout_fields` (counts only, never values) and send each listed firm's
+   company admin its list.
+3. Only after that admin agrees in the ticket: `EXECUTE=1 FIRM_ID=<id> bin/rails bank_detail_changes:propose_payout_fields`
+   for that firm (one firm at a time; marks only — no KYC is changed and no email is sent). The admin can equally
+   mark the fields in the side panel.
+4. Tell KYC teams (release note): a bank change now needs a second approver; one-approver firms get the warning card.
+5. QA: run `openspec/changes/bank-detail-change-controls/qa-checklist.md` on staging_in.
 
 ---
 
@@ -2196,14 +2258,14 @@ it means**, and **what to do next**. A disabled control says why it's disabled; 
 | **M3** admin page | The masked vendor keys get a 🔒 hint: "Stored encrypted. Only the last 3 characters are shown." (a new `EncryptedSecretField`, so investment quantities that also use the masked field don't get it) | ✅ built |
 | **M8** 2FA | "Set up now" and the "Required for your role" badge on the user's own page (the banner was dropped with the start date); a set-up help line; why "Turn off 2FA" asks for password and code; a disabled control with tooltip where admins can no longer switch someone's 2FA off; the "Login as" refusal says why; emails say why and what to do | ✅ built, with Cucumber checks on each text |
 | **M13** maker–checker | Entity form Approvals block (why, ⓘ who counts, what switching off does); greyed Approve with the reason and what to do; Prepared by row + ⓘ; "(also prepared it)" label + ⓘ; Request approval popup cards (who is emailed, or that nobody can approve yet); flashes; three emails that say why and what to do | ✅ built, with Cucumber checks on each text |
-| **M14** | Task **U.1** in the design's `tasks.md`: every screen, control, status and email explains itself, with Cucumber checks on the key texts and screenshots compared with the reference screens | ⏳ part of the build |
+| **M14** bank details | Contact & Banking note (amber while awaiting, grey once confirmed, ⓘ what it means and what to do); Bank Verified badge "Not verified — bank details changed" with ⓘ; greyed Verify with why and what to do; Verify popup cards (new account, second person or only approver, investor told, bank check); Bank Verified box ⓘ "Tick only after checking proof of the current account"; maker refusal flash / API error; bulk and import messages that name the next step; KYC and distribution journey warnings; side panel bank icon + ⓘ, Support chip; Form Types "Payout field" choice + ⓘ; two emails that say why the person got them and what to do if it wasn't them | ✅ built, with Cucumber checks on each text |
 
 Changes with no on-screen effect (M9, M10, M12, M15, M16–M18, M19) need no new text.
 
 ### Still unproven
 
-- **Group B:** M8 and M11 are built and committed; M13 is built and not yet committed; M14 isn't built yet. Each
-  design's tests include "still works" cases, reported per design. M13's QA checklist (staging) is still to run.
+- **Group B:** M8, M11, M13 and M14 are built and committed. Each
+  design's tests include "still works" cases, reported per design. The M13 and M14 QA checklists (staging) are still to run, and M14's per-environment payout-field rollout (dry run, then EXECUTE=1 FIRM_ID= per firm after its admin agrees).
 - **M7:** one real Outlook add-in sign-in after deploy.
 - **M19:** the first real SendGrid post to deal ingest.
 

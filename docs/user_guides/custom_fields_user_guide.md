@@ -38,12 +38,13 @@ Details for each step are below.
 16. [Required and Read-Only Fields](#required-and-read-only-fields)
 17. [Conditional Visibility](#conditional-visibility)
 18. [Regulatory Fields](#regulatory-fields)
-19. [Showing a Field to Specific Users](#showing-a-field-to-specific-users)
-20. [How the Data Is Stored](#how-the-data-is-stored)
-21. [Renaming a Field](#renaming-a-field)
-22. [Importing Custom Field Data](#importing-custom-field-data)
-23. [Worked Example](#worked-example)
-24. [Frequently Asked Questions](#frequently-asked-questions)
+19. [Payout Fields (SWIFT, IBAN)](#payout-fields-swift-iban)
+20. [Showing a Field to Specific Users](#showing-a-field-to-specific-users)
+21. [How the Data Is Stored](#how-the-data-is-stored)
+22. [Renaming a Field](#renaming-a-field)
+23. [Importing Custom Field Data](#importing-custom-field-data)
+24. [Worked Example](#worked-example)
+25. [Frequently Asked Questions](#frequently-asked-questions)
 
 ---
 
@@ -390,6 +391,23 @@ These apply to Individual KYC, Non-Individual KYC and Investment Instrument Form
 
 ---
 
+## Payout Fields (SWIFT, IBAN)
+
+Some firms keep payout details that are not in the KYC's own bank fields — a SWIFT/BIC code or an IBAN for a foreign account — in custom text fields. Marking such a field as a **payout field** makes a change to it count as a bank change, exactly like a change of the account number: **Bank Verified** goes off, a verified KYC is unverified, the change is recorded and emailed to the investor and the firm's approvers, and a different KYC approver must verify the KYC (see [Investor KYC](investor_kyc_user_guide#when-the-bank-details-change)).
+
+| Choice | Use it for | How a change is shown in emails and on the KYC page |
+|---|---|---|
+| **Bank code (shown in full)** | SWIFT/BIC, routing number, sort code | In full, like the IFSC: "SWIFT Code EBILAEADXXX → NBADAEAAXXX" |
+| **Account identifier (last 4 only)** | IBAN or another account number | Last 4 characters only: "IBAN ending 3456 → ending 8901" |
+
+- **Where:** the **Payout field** choice on a text field of an Individual or Non-Individual KYC form — in Form Types › **Edit** (under **3 · Rules**), on the field's own edit form, and in the custom fields side panel opened from a KYC page (the bank icon on the row; the choice is in the row's details).
+- **Who:** a company admin, or CapHive support. Only text fields on KYC forms can be marked.
+- **Unmarking:** removing the mark, or deleting a marked field, is done only by CapHive support — otherwise one person could unmark a SWIFT field, change it alone and mark it again. A company admin can still switch a marked field between the two kinds.
+- **Marking changes no KYC:** nobody is unverified and no email is sent when you mark a field. The rules apply to changes saved after the mark; edits made before it stay in the audit trail only.
+- A mark applies only to the form it was set on: mark the field on both the Individual and the Non-Individual form if both have it.
+
+---
+
 ## Showing a Field to Specific Users
 
 A field can be restricted to named users — useful for sensitive internal fields. Open the field and, under **4 · When it shows**, set **Visible to** to *Only these users…*, then tick the users (search by name or email). Leave it on *Everyone* to show the field to everyone. The setting holds about eight users; past that the editor says the limit is reached.
@@ -513,6 +531,9 @@ Records only have CapHive's standard fields. Anything extra has to live outside 
 
 ### What happens when I …
 
+**What happens when I mark a custom field as a payout field?**
+Nothing changes on existing KYCs: nobody is unverified and no email is sent. From then on, a change of that field from one value to another on a KYC of that form is a bank change: Bank Verified goes off, the change is recorded and emailed to the investor and your approvers, and a different KYC approver must verify the KYC. See [Payout Fields](#payout-fields-swift-iban).
+
 **What happens when I save a new Form Type?**
 The Form Type is created for your company, and every existing record of that kind that had no Form Type is linked to it straight away, so its fields appear on those records' forms and pages. A second Form Type for the same record kind is refused unless the kind allows several. No one is notified.
 
@@ -541,6 +562,15 @@ Any extra column in the import file is added to the record kind's Form Type as a
 Each spreadsheet row creates a new field or, if it carries an existing field's **Id**, updates that field in your Form Type. Rows that fail validation are reported in the import's results file. Existing record values are not changed.
 
 ### Troubleshooting and edge cases
+
+**Why can't I unmark a payout field or remove it in the side panel?**
+Removing the payout mark, or deleting a marked field, is done only by CapHive support, because after it one person could change the SWIFT or IBAN alone. The side panel shows a **Support** chip and no ✕ on a marked field, and saving "No" is refused with "Payout fields can only be unmarked by CapHive support." You can still switch it between **Bank code** and **Account identifier**.
+
+**Why is there no Payout field choice on my custom field?**
+The choice is shown only on text fields of an Individual or Non-Individual KYC form, and only to company admins and CapHive support. Check boxes, selects, text areas and fields on other forms can't be payout fields; sending a mark for one is refused with "Only text fields on a KYC form can be payout fields".
+
+**What is the difference between a bank code and an account identifier payout field?**
+A **bank code** (SWIFT/BIC, routing number) is shown in full in the change emails and on the KYC page, like the IFSC. An **account identifier** (IBAN) holds the account number itself, so only its last 4 characters are ever shown, like the bank account number.
 
 **Can I add custom fields to any record?**
 Only the record kinds listed in the **Form Name** dropdown. See [Which Records Support Custom Fields](#which-records-support-custom-fields).

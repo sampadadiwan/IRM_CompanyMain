@@ -178,6 +178,7 @@
             </label>
         </div>
         <div class="small text-muted fcf-js d-none" data-fcf-flag-note>A field can't be both required and read only, so the other switch was turned off.</div>
+        <%= render "form_custom_fields/payout_field_select", f:, fcf: %>
 
         <a href="#" class="small d-inline-block mt-2" data-action="fcf-editor#toggleChecks:prevent" data-fcf-checks-toggle>
           <i class="ti ti-chevron-down"></i> More checks (length, range, format, unique, error message)
