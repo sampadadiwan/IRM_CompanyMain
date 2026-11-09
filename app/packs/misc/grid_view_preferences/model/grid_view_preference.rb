@@ -20,6 +20,9 @@ class GridViewPreference < ApplicationRecord
   # Default data type if not inferred
   DEFAULT_DATA_TYPE = "String".freeze
 
+  # The css marker a Boolean column carries in the HTML grid (see key_with_alignment, RansackTableRow)
+  BOOLEAN_CSS = "boolean-col".freeze
+
   # Returns the human-readable name for a given key
   # Tries to lookup in the parent's STANDARD_COLUMNS, otherwise humanizes the key
   def self.get_column_name(parent, key)
@@ -98,11 +101,16 @@ class GridViewPreference < ApplicationRecord
   end
 
   def key_with_alignment
-    if alignment.present?
-      "#{clean_key}; #{alignment}"
-    else
-      key
-    end
+    base = if alignment.present?
+             "#{clean_key}; #{alignment}"
+           else
+             key
+           end
+    return base unless data_type == "Boolean"
+
+    # A Boolean column carries a boolean-col marker in its css part (like amount-col / num-col), so
+    # RansackTableRow shows a Yes/No badge even for custom fields stored as "Yes" / "1" / "0"
+    base.include?(";") ? "#{base} #{BOOLEAN_CSS}" : "#{base}; #{BOOLEAN_CSS}"
   end
 
   private

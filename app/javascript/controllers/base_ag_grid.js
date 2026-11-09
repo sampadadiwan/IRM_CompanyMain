@@ -444,19 +444,27 @@ export default class BaseAgGrid extends Controller {
             cellRenderer: function (params) {
               // Group rows and missing values render blank rather than a misleading "No"
               if (params.value === undefined || params.value === null || params.value === '') return '';
-              // Only real booleans and their string forms ("true"/"false") become a badge
-              const text = String(params.value).toLowerCase();
-              if (params.value === true || params.value === false || text === 'true' || text === 'false') {
-                const bool = params.value === true || text === 'true';
-                return `<span class="badge ${bool ? 'bg-success' : 'bg-warning'}">${bool ? 'Yes' : 'No'}</span>`;
+              // Same true / false forms as RansackTableRow (custom fields store "Yes" / "1" / "0")
+              const text = String(params.value).trim().toLowerCase();
+              const isTrue = ['true', 'yes', 'y', '1', 't', 'on'].includes(text);
+              const isFalse = ['false', 'no', 'n', '0', 'f', 'off'].includes(text);
+              if (isTrue || isFalse) {
+                return `<span class="badge ${isTrue ? 'bg-success' : 'bg-warning'}">${isTrue ? 'Yes' : 'No'}</span>`;
+              }
+              // A dotted path ("custom_fields.x") holds free text a user typed: escape it, never render it as HTML
+              if (params.data && !(field in params.data)) {
+                const span = document.createElement('span');
+                span.textContent = String(params.value);
+                return span.outerHTML;
               }
               // Anything else is already rendered by the JSON (e.g. interests' verified badge) — show it as-is
-              return controller.renderCell(params, field, field);
+              return params.value;
             },
             valueGetter: (params) => {
-              if (params.data !== undefined) {
-                return params.data[field]
-              }
+              if (params.data === undefined) return undefined;
+              // A flat key ("onboarding_completed") or, when absent, a dotted path ("custom_fields.verified")
+              if (field in params.data) return params.data[field];
+              return field.split('.').reduce((object, part) => (object == null ? undefined : object[part]), params.data);
             }
           }
     }

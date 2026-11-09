@@ -1,20 +1,25 @@
 <% @columns.each do |column_name, attribute| %>
     <% attribute, css_class = attribute.split(";").map(&:strip) %>
+    <%# A column whose data type is Boolean carries the boolean-col marker (GridViewPreference#key_with_alignment) %>
+    <% boolean_column = css_class.to_s.split.include?(GridViewPreference::BOOLEAN_CSS) %>
     <td class="<%= css_class %>">
-      <% if attribute.start_with?("custom_fields.") %>
-        <%= @model.json_fields[attribute.gsub("custom_fields.", "")] %>
+      <% value = if attribute.start_with?("custom_fields.")
+                   @model.json_fields[attribute.gsub("custom_fields.", "")]
+                 else
+                   attribute.split('.').inject(@model) { |object, method| object&.send(method) }
+                 end %>
+      <% bool = boolean_value(value) if boolean_column %>
+      <%# Boolean columns (marked Boolean, or real true/false values) show a Yes/No badge, not true/false %>
+      <% if !bool.nil? || value == true || value == false %>
+        <%= render DisplayBooleanComponent.new(bool: bool.nil? ? value : bool) %>
+      <% elsif attribute.start_with?("custom_fields.") %>
+        <%= value %>
+      <% elsif value.is_a?(Date) %>
+        <%= l(value) %>
+      <% elsif value.is_a?(Money) %>
+        <%= money_to_currency value, params %>
       <% else %>
-        <% value = attribute.split('.').inject(@model) { |object, method| object&.send(method) } %>
-        <% if  value.is_a?(Date) %>
-          <%= l(value) %>
-        <% elsif value.is_a?(Money) %>
-          <%= money_to_currency value, params %>
-        <%# Boolean columns (data_type "Boolean" in grid view preferences) show a Yes/No badge, not true/false %>
-        <% elsif value == true || value == false %>
-          <%= render DisplayBooleanComponent.new(bool: value) %>
-        <% else %>
-          <%= value %>
-        <% end %>
+        <%= value %>
       <% end %>
     </td>
 <% end %>
