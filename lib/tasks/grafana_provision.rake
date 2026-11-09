@@ -175,6 +175,23 @@ class GrafanaProvisioner
     'us' => { env_name: 'production.us', app_url: 'https://app.caphive.us' }
   }.freeze
 
+  # Every title the Data Box row has ever had on Rails Metrics. The patch strips them all and adds
+  # the current set back, so a re-run reconciles the live board (e.g. panels that moved to the
+  # Elasticsearch / Redis dashboards are removed, a fixed expression replaces the old one).
+  DATA_BOX_PANEL_TITLES = [
+    'Data Box', 'Data Box Memory by Service', 'MySQL Memory by Area (top 8)',
+    # moved to the Elasticsearch / Redis dashboards (2026-11-09)
+    'Elasticsearch Heap (used vs max)', 'Redis Memory (used vs maxmemory)', 'Elasticsearch Index Size (primary)',
+  ].freeze
+
+  # Dedicated dashboards for the data box's Elasticsearch and Redis, built from code like the
+  # CapHive Overview (so they exist in a fresh Grafana too). Metrics come from
+  # elasticsearch_exporter / redis_exporter (rake observability:data_box_exporters).
+  SERVICE_DASHBOARDS = {
+    'caphive-elasticsearch' => { title: 'Elasticsearch', file: 'elasticsearch.dashboard.json', build: :build_elasticsearch_dashboard },
+    'caphive-redis' => { title: 'Redis', file: 'redis.dashboard.json', build: :build_redis_dashboard },
+  }.freeze
+
   # Always derived from the Grafana being provisioned, never from ENV: the old YAML told
   # operators to `export GRAFANA_WEBHOOK_TOKEN`, and a token left in the shell from an IN
   # run would otherwise be pushed to the US Grafana (IN and US are independent).
@@ -276,6 +293,7 @@ class GrafanaProvisioner
         when 'add_rails_depth_panels'  then add_rails_depth_panels!(board)
         when 'add_mysql_depth_panels'  then add_mysql_depth_panels!(board)
         when 'add_yjit_panels'         then add_yjit_panels!(board)
+        when 'add_data_box_panels'     then add_data_box_panels!(board)
         end
       end
 
@@ -299,6 +317,9 @@ class GrafanaProvisioner
         puts "    ERROR: #{result.inspect}"
       end
     end
+
+    # The Elasticsearch / Redis dashboards are built, not patched, but ship with the same command
+    provision_service_dashboards
   end
 
   # Saves live dashboard JSON without modifying it — useful for initial snapshot
@@ -600,9 +621,222 @@ class GrafanaProvisioner
     puts "    add_yjit_panels: appended #{new_panels.size} panels (YJIT row: expected-but-off, memory, worker RSS, compile failures)"
   end
 
+  # label_replace tags each series with a readable name so one panel can overlay several metrics
+  def tag_series(expr, label, value)
+    %(label_replace(#{expr}, "#{label}", "#{value}", "", ""))
+  end
+
+  # Data Box row on Rails Metrics: the cross-service view - who holds the data box's memory - plus
+  # MySQL memory by area. Elasticsearch and Redis detail lives on their own dashboards
+  # (provision_service_dashboards). Panels read "No data" until rake
+  # observability:data_box_exporters has run in the region.
+  def add_data_box_panels!(board)
+    # 1. Strip any earlier version of the row, so this run's set replaces it
+    board['panels'] = (board['panels'] || []).reject { |p| DATA_BOX_PANEL_TITLES.include?(p['title']) }
+    panels = board['panels']
+    # Stable ids: computed after the strip, so the same board gets the same ids every run
+    max_id = panels.map { |p| p['id'].to_i }.max.to_i
+
+    new_panels = [
+      # Below the YJIT row (y 9998/9999) so the two rows never interleave
+      row_panel(id: max_id + 230, title: 'Data Box', y: 10_000),
+
+      # The question node_exporter cannot answer: which service holds the box's memory.
+      # Elasticsearch as committed JVM memory (heap + non-heap): it reports process RSS as 0 inside
+      # its container, and it pre-touches the whole heap, so committed is what it really holds.
+      ts_panel(id: max_id + 231, title: 'Data Box Memory by Service', x: 0, y: 10_001,
+        desc: 'Elasticsearch = committed JVM memory (heap + non-heap; the whole heap is held from start-up). ' \
+              'Redis = resident memory. MySQL = memory tracked by performance_schema (a little below mysqld RSS). ' \
+              'Detail: the Elasticsearch and Redis dashboards.',
+        expr: [tag_series('sum by(instance)(elasticsearch_jvm_memory_committed_bytes)', 'service', 'Elasticsearch'),
+               tag_series('max by(instance)(redis_memory_used_rss_bytes)', 'service', 'Redis'),
+               tag_series('sum by(instance)(mysql_perf_schema_memory_events_used_bytes)', 'service', 'MySQL (tracked)')].join(' or '),
+        legend: '{{service}} {{instance}}', unit: 'bytes'),
+
+      # Where MySQL's memory goes, by performance_schema event (memory/ prefix stripped by the exporter)
+      ts_panel(id: max_id + 232, title: 'MySQL Memory by Area (top 8)', x: 12, y: 10_001,
+        desc: 'Current memory per MySQL area, e.g. innodb/buf_buf_pool (the buffer pool), sql/TABLE (table cache), ' \
+              'performance_schema/*. Use it to size innodb_buffer_pool_size.',
+        expr: 'topk(8, max by(instance, event_name)(mysql_perf_schema_memory_events_used_bytes))',
+        legend: '{{instance}} {{event_name}}', unit: 'bytes'),
+    ]
+
+    board['panels'] += new_panels
+    puts "    add_data_box_panels: Data Box row set to #{new_panels.size} panels (memory by service, MySQL memory by area)"
+  end
+
+  # ── Elasticsearch + Redis dashboards ────────────────────────────────────────
+
+  def provision_service_dashboards
+    puts "\n=== Elasticsearch + Redis Dashboards ==="
+    ds_uid = datasource_uid
+    FileUtils.mkdir_p(dash_dir)
+    SERVICE_DASHBOARDS.each do |uid, spec|
+      board = send(spec[:build], ds_uid)
+      # overwrite: true replaces the whole board, so the code here is the single source of truth
+      result = post('/api/dashboards/db', { dashboard: board, folderId: 0, overwrite: true,
+                                            message: 'grafana:provision service dashboards' })
+      if result['status'] == 'success'
+        File.write(dash_dir.join(spec[:file]), JSON.pretty_generate(board))
+        puts "  Pushed OK — #{spec[:title]} (#{uid}, version #{result['version']}); saved #{spec[:file]}"
+      else
+        puts "  ERROR #{spec[:title]}: #{result.inspect}"
+      end
+    end
+  end
+
+  # Lays panels out top to bottom: a header row, then stat rows (h 4) and chart rows (h 8).
+  # Returns the panels; ids run from 1.
+  def service_board_panels(ds_uid)
+    ds_ref = { 'type' => 'prometheus', 'uid' => ds_uid }
+    panels = []
+    id = 0
+    y = 0
+    header = lambda do |title|
+      panels << row_panel(id: id += 1, title: title, y: y)
+      y += 1
+    end
+    stats = lambda do |list|
+      w = 24 / list.size
+      list.each_with_index { |s, i| panels << stat_panel(id: id += 1, ds_ref: ds_ref, x: i * w, y: y, w: w, legend: '', **s) }
+      y += 4
+    end
+    charts = lambda do |list|
+      w = 24 / list.size
+      list.each_with_index { |c, i| panels << ts_panel(id: id += 1, x: i * w, y: y, w: w, ds: ds_uid, **c) }
+      y += 8
+    end
+    yield header, stats, charts
+    panels
+  end
+
+  def service_board(uid, title, panels)
+    {
+      'uid' => uid, 'title' => title, 'tags' => %w[caphive data-box], 'timezone' => 'browser',
+      'schemaVersion' => 36, 'refresh' => '1m', 'time' => { 'from' => 'now-24h', 'to' => 'now' },
+      'panels' => panels,
+    }
+  end
+
+  # Elasticsearch: health, how much heap it holds vs what it needs, and what it is doing.
+  # NOTE: no "})/" anywhere - the WAF in front of Grafana blocks that sequence (see overview).
+  def build_elasticsearch_dashboard(ds_uid)
+    heap_max = 'max(elasticsearch_jvm_memory_max_bytes{area="heap"})'
+    panels = service_board_panels(ds_uid) do |header, stats, charts|
+      header.call('Status')
+      stats.call([
+        { title: 'Health (0 green · 1 yellow · 2 red)', unit: 'short', warn: 2, crit: 2,
+          expr: 'max(elasticsearch_cluster_health_status{color="red"}) * 2 + max(elasticsearch_cluster_health_status{color="yellow"})',
+          desc: 'Yellow is normal on a single node (replica shards have nowhere to go). Red = a primary shard is unassigned.' },
+        { title: 'Heap used %', unit: 'percent', warn: 75, crit: 90,
+          expr: "100 * max(elasticsearch_jvm_memory_used_bytes{area=\"heap\"}) / #{heap_max}",
+          desc: 'Includes garbage not yet collected, so it saw-tooths. Only a high level that stays is a problem.' },
+        { title: 'Live data % of heap', unit: 'percent', warn: 50, crit: 75,
+          expr: "100 * max(elasticsearch_jvm_memory_pool_used_bytes{pool=\"old\"}) / #{heap_max}",
+          desc: 'Old generation = data that survives garbage collection. Low here means the heap is bigger than needed.' },
+        { title: 'Heap size', unit: 'bytes', warn: nil, crit: nil, expr: heap_max,
+          desc: 'Heap Elasticsearch reserved (ES_JAVA_OPTS -Xmx, or ~50% of RAM when unset). It holds all of it from start-up.' },
+        { title: 'Index size (primary)', unit: 'bytes', warn: nil, crit: nil,
+          expr: 'sum(elasticsearch_indices_store_size_bytes_primary)' },
+        { title: 'Documents', unit: 'short', warn: nil, crit: nil, expr: 'sum(elasticsearch_indices_docs_primary)' },
+      ])
+
+      header.call('Memory')
+      charts.call([
+        { title: 'JVM Memory (used, committed, max)', unit: 'bytes', legend: '{{series}}',
+          desc: 'Committed is what the JVM holds from the OS. Used below committed is free heap Elasticsearch still keeps.',
+          expr: [tag_series('max(elasticsearch_jvm_memory_used_bytes{area="heap"})', 'series', 'heap used'),
+                 tag_series('max(elasticsearch_jvm_memory_committed_bytes{area="heap"})', 'series', 'heap committed'),
+                 tag_series(heap_max, 'series', 'heap max'),
+                 tag_series('max(elasticsearch_jvm_memory_committed_bytes{area="non-heap"})', 'series', 'non-heap committed')].join(' or ') },
+        { title: 'Live Data (old generation) vs Heap', unit: 'bytes', legend: '{{series}}',
+          desc: 'Size the heap from the live data: about 3x the old generation leaves room for indexing and searches.',
+          expr: [tag_series('max(elasticsearch_jvm_memory_pool_used_bytes{pool="old"})', 'series', 'old generation'),
+                 tag_series(heap_max, 'series', 'heap max')].join(' or ') },
+      ])
+
+      header.call('Activity')
+      charts.call([
+        { title: 'Search Queries / s', unit: 'reqps', legend: 'queries',
+          desc: 'Query rate across all indices.', expr: 'sum(rate(elasticsearch_indices_search_query_total[5m]))' },
+        { title: 'Search Latency (ms per query)', unit: 'ms', legend: 'avg',
+          desc: 'Average time per search query over 5 minutes.',
+          expr: '1000 * sum(rate(elasticsearch_indices_search_query_time_seconds[5m])) / sum(rate(elasticsearch_indices_search_query_total[5m]))' },
+        { title: 'Indexing Operations / s', unit: 'ops', legend: 'index ops',
+          desc: 'Documents written per second (reindexes show as spikes).', expr: 'sum(rate(elasticsearch_indices_indexing_index_total[5m]))' },
+      ])
+      charts.call([
+        { title: 'GC Time (s per s)', unit: 's', legend: '{{gc}}',
+          desc: 'Share of time spent in garbage collection. Rising old-generation GC means the heap is too small.',
+          expr: 'sum by(gc)(rate(elasticsearch_jvm_gc_collection_seconds_sum[5m]))' },
+        { title: 'Circuit Breaker Trips (per hour)', unit: 'short', legend: '{{breaker}}',
+          desc: 'Requests Elasticsearch refused to protect its heap. Any trip means a request failed.',
+          expr: 'sum by(breaker)(increase(elasticsearch_breakers_tripped[1h]))' },
+        { title: 'Index Size per Index (primary)', unit: 'bytes', legend: '{{index}}',
+          desc: 'On-disk size of each index.', expr: 'max by(index)(elasticsearch_indices_store_size_bytes_primary)' },
+      ])
+    end
+    service_board('caphive-elasticsearch', 'Elasticsearch', panels)
+  end
+
+  # Redis: it holds Sidekiq's queues, so up/down, memory against the limit and rejected work matter most.
+  def build_redis_dashboard(ds_uid)
+    panels = service_board_panels(ds_uid) do |header, stats, charts|
+      header.call('Status')
+      stats.call([
+        { title: 'Redis down (0 = up)', unit: 'short', warn: 1, crit: 1, expr: 'max(1 - redis_up)',
+          desc: 'Redis holds Sidekiq\'s queues: while it is down no background job is enqueued or run.' },
+        { title: 'Used memory', unit: 'bytes', warn: nil, crit: nil, expr: 'max(redis_memory_used_bytes)',
+          desc: 'Memory Redis uses for data.' },
+        { title: 'Used % of maxmemory', unit: 'percent', warn: 70, crit: 85,
+          expr: '100 * max(redis_memory_used_bytes) / max(redis_memory_max_bytes > 0)',
+          desc: 'Blank while maxmemory is unlimited. With noeviction, Redis rejects writes at 100%.' },
+        { title: 'Connected clients', unit: 'short', warn: nil, crit: nil, expr: 'sum(redis_connected_clients)' },
+        { title: 'Keys', unit: 'short', warn: nil, crit: nil, expr: 'sum(redis_db_keys)' },
+        { title: 'Commands / s', unit: 'ops', warn: nil, crit: nil, expr: 'sum(rate(redis_commands_processed_total[5m]))' },
+      ])
+
+      header.call('Memory')
+      charts.call([
+        { title: 'Memory (used, RSS, maxmemory)', unit: 'bytes', legend: '{{series}}',
+          desc: 'maxmemory 0 = unlimited. RSS well above used means fragmentation.',
+          expr: [tag_series('max(redis_memory_used_bytes)', 'series', 'used'),
+                 tag_series('max(redis_memory_used_rss_bytes)', 'series', 'RSS'),
+                 tag_series('max(redis_memory_max_bytes)', 'series', 'maxmemory')].join(' or ') },
+        { title: 'Fragmentation Ratio', unit: 'short', legend: 'RSS / used',
+          desc: 'Above ~1.5 on a busy instance, Redis holds noticeably more than its data. On a near-empty one it is naturally high.',
+          expr: 'max(redis_mem_fragmentation_ratio)' },
+      ])
+
+      header.call('Activity')
+      charts.call([
+        { title: 'Commands / s', unit: 'ops', legend: 'commands', expr: 'sum(rate(redis_commands_processed_total[5m]))',
+          desc: 'All commands, including Sidekiq polling.' },
+        { title: 'Clients (connected, blocked)', unit: 'short', legend: '{{series}}',
+          desc: 'Blocked clients are Sidekiq workers waiting on a queue (BRPOP) - normal.',
+          expr: [tag_series('sum(redis_connected_clients)', 'series', 'connected'),
+                 tag_series('sum(redis_blocked_clients)', 'series', 'blocked')].join(' or ') },
+        { title: 'Keys per Database', unit: 'short', legend: 'db {{db}}', expr: 'sum by(db)(redis_db_keys) > 0',
+          desc: 'Key count per Redis database (empty databases hidden).' },
+      ])
+      charts.call([
+        { title: 'Rejected Work (per s)', unit: 'short', legend: '{{series}}',
+          desc: 'Rejected connections (maxclients reached) and evicted keys. Both should stay at 0 - with noeviction, ' \
+                'a full Redis rejects writes instead of evicting.',
+          expr: [tag_series('sum(rate(redis_rejected_connections_total[5m]))', 'series', 'rejected connections'),
+                 tag_series('sum(rate(redis_evicted_keys_total[5m]))', 'series', 'evicted keys')].join(' or ') },
+        { title: 'Error Replies (per s)', unit: 'short', legend: 'errors',
+          desc: 'Commands Redis answered with an error (OOM at maxmemory shows here).',
+          expr: 'sum(rate(redis_total_error_replies[5m]))' },
+      ])
+    end
+    service_board('caphive-redis', 'Redis', panels)
+  end
+
   # Builds a Grafana timeseries panel hash. unit is a Grafana unit string (ms, percent, s, short).
-  def ts_panel(id:, title:, desc:, expr:, legend:, x:, unit: nil, w: 12, y: 9999)
-    ds_ref = { 'type' => 'prometheus', 'uid' => '${datasource}' }
+  # ds: the datasource uid; '${datasource}' on boards that have that template variable.
+  def ts_panel(id:, title:, desc:, expr:, legend:, x:, unit: nil, w: 12, y: 9999, ds: '${datasource}')
+    ds_ref = { 'type' => 'prometheus', 'uid' => ds }
     panel  = {
       'type'        => 'timeseries',
       'title'       => title,
@@ -854,6 +1088,7 @@ class GrafanaProvisioner
   # Builds a Grafana stat panel (single large number, background colour from thresholds).
   # unit is a Grafana unit string: percent, ms, s, short, bytes, etc.
   # desc is an optional hover tooltip shown in the panel header.
+  # warn / crit nil: no yellow / red band (a plain number, always green).
   def stat_panel(id:, title:, expr:, legend:, unit:, warn:, crit:, x:, y:, ds_ref:, w: 6, h: 4, desc: nil)
     {
       'type'        => 'stat',
@@ -878,9 +1113,9 @@ class GrafanaProvisioner
             'mode'  => 'absolute',
             'steps' => [
               { 'color' => 'green',  'value' => nil  },
-              { 'color' => 'yellow', 'value' => warn },
-              { 'color' => 'red',    'value' => crit },
-            ],
+              ({ 'color' => 'yellow', 'value' => warn } if warn),
+              ({ 'color' => 'red',    'value' => crit } if crit),
+            ].compact,
           },
           'mappings' => [],
         },

@@ -19,6 +19,8 @@ config/initializers/observability/
   grafana_provision.yml      ← Declarative config for Grafana alerts, contact points, policy
   mysqld_exporter/
     setup.sh                 ← installs node_exporter + mysqld_exporter on each DB server
+                               (Elasticsearch + Redis exporters: rake observability:data_box_exporters,
+                                see "Data box exporters" below)
     .my.cnf.template         ← credentials template (no real password committed)
   graphana/
     node.dashboard.json      ← Node Exporter Full dashboard (uid: rYdddlPWk)
@@ -367,6 +369,101 @@ curl -s -u admin:$GRAFANA_PASS \
 | MySQL Replication Lag Critical | seconds_behind_master | >30s | 5m |
 | MySQL Slow Queries High | rate(slow_queries[5m]) | >1/s | 10m |
 | MySQL Exporter Down | max(1 − up{job="mysqld"}) | >0 | 2m |
+
+---
+
+## Data box exporters (Elasticsearch, Redis, MySQL memory)
+
+The data box runs MySQL, Elasticsearch and Redis on one host (IN `10.0.3.182`, US `10.0.3.214`,
+staging `10.0.3.138`). Until November 2026 Prometheus scraped only `node_exporter` (whole box)
+and `mysqld_exporter` there, so when the box sat at ~85% memory Grafana could not say who held it.
+One rake task, for any environment, adds what was missing:
+
+| Adds | Port | Shows |
+|---|---|---|
+| `elasticsearch_exporter` 1.11.0 | 9114 | heap used / max, process RSS, index size + docs, cluster health |
+| `redis_exporter` 1.97.0 | 9121 | used memory vs `maxmemory`, RSS, clients, keys |
+| `mysqld_exporter --collect.perf_schema.memory_events` | 9104 (existing) | MySQL memory by area (buffer pool, connections, temp tables) |
+
+- **Ports:** 9114 and 9121 were already open from `observability-sg` in the DB security group
+  (`IRM-Infra/compute.py`), so no infra change is needed. A per-process exporter (:9256) is not
+  used because that port is not open; the two exporters report their own process RSS instead.
+- **Code:** what is installed, pinned versions and the pure decisions live in
+  `lib/data_box_exporters.rb`; the task is `lib/tasks/observability_exporters.rake`; the
+  scenarios are `features/misc/data_box_exporters.feature`.
+
+```mermaid
+graph LR
+    subgraph Data box
+        ES["Elasticsearch :9200<br/>(docker)"]
+        Redis["Redis :6379<br/>(docker)"]
+        MySQL["MySQL"]
+        ESX["elasticsearch_exporter :9114"]
+        RX["redis_exporter :9121"]
+        MX["mysqld_exporter :9104<br/>+ memory_events"]
+        ESX -->|_nodes / _cluster stats| ES
+        RX -->|INFO| Redis
+        MX -->|performance_schema| MySQL
+    end
+    Prom["Prometheus<br/>(observability box)"] -->|scrape jobs elasticsearch, redis, mysqld| ESX
+    Prom --> RX
+    Prom --> MX
+    Grafana -->|Data Box row + 6 alerts| Prom
+```
+
+### Running it
+
+```bash
+rake "observability:data_box_exporters[production.in]"             # dry run: report + plan, changes nothing
+EXECUTE=1 rake "observability:data_box_exporters[production.in]"   # install, verify, push Prometheus config
+GRAFANA_URL=https://graphana.caphive.com bundle exec rake grafana:provision:alert_rules grafana:provision:dashboards
+```
+
+```mermaid
+sequenceDiagram
+    participant Op as Operator (rake)
+    participant App as App server (hop)
+    participant DB as Data box
+    participant Obs as Observability box
+    Op->>Op: AWS account guard (dr_account_guard!)
+    Op->>App: SSH (stage file key)
+    App->>DB: report: memory, containers, ports, collector
+    App->>Obs: read /etc/prometheus/prometheus.yml
+    Op->>Op: plan (dry run stops here)
+    App->>DB: install exporters (sha256-checked) + systemd, prove /metrics
+    App->>DB: add memory collector, restart mysqld_exporter (old unit restored on failure)
+    App->>Obs: push repo prometheus.prod.<region>.yml only if live = repo minus new jobs
+    Obs-->>Op: up{job=~"elasticsearch|redis"} per target
+```
+
+- **Dashboards:** `rake grafana:provision:dashboards` also builds two dashboards from code,
+  **Elasticsearch** (`caphive-elasticsearch`: health, heap used / committed / live data, index
+  sizes, search and indexing rates, GC, breaker trips) and **Redis** (`caphive-redis`: up, memory vs
+  `maxmemory`, clients, keys, commands, rejected work, error replies). The Rails Metrics **Data
+  Box** row keeps the cross-service view: memory by service (Elasticsearch as committed JVM
+  memory, since it reports RSS as 0 in its container) and MySQL memory by area.
+- **Staging** has no Prometheus scraping it, so the task installs the exporters there and skips
+  the Prometheus step.
+- **Prometheus push guard:** the live config is replaced only when it matches the repo copy
+  apart from the `elasticsearch` / `redis` jobs. Any other difference (a live edit nobody
+  committed) refuses the push and names the job, so commit the live change first.
+  `aws:generate_prometheus_yml` is NOT used: its job names (`db_server`) and target list differ
+  from what the live Prometheus and the alert rules use (`mysqld`, replica included).
+- **Rollback:** the task prints one line per change (`systemctl disable --now …`, the backed-up
+  mysqld_exporter unit, the backed-up Prometheus config).
+
+### Data box alert rules
+
+All keep the default `no_data_state: OK`, so a region without the exporters stays silent.
+
+| Alert | Query | Threshold | For | Severity |
+|---|---|---|---|---|
+| Data Box Exporter Down | 1 − up{job=~"elasticsearch\|redis"} | >0 | 10m | warning |
+| Redis Down | 1 − redis_up | >0 | 2m | critical — Sidekiq cannot enqueue or run jobs |
+| Redis Memory Near Limit | redis_memory_used_bytes / (redis_memory_max_bytes > 0) | >85% | 10m | warning — silent while maxmemory is unlimited |
+| Elasticsearch Down | 1 − elasticsearch_clusterinfo_up | >0 | 5m | critical |
+| Elasticsearch Cluster Red | elasticsearch_cluster_health_status{color="red"} | >0 | 5m | critical — yellow is normal on one node |
+| Elasticsearch Heap High | heap used / heap max | >90% | 30m | warning |
 
 ---
 

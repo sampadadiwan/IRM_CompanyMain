@@ -157,7 +157,7 @@ chown mysqld_exporter:mysqld_exporter "${CNF_FILE}"
 echo "  credentials written to ${CNF_FILE} (mode 600, owner mysqld_exporter)"
 
 # Build ExecStart into a variable so the heredoc below has no shell variables to expand
-EXEC_START="${INSTALL_DIR}/mysqld_exporter --config.my-cnf=${CNF_FILE} --collect.global_status --collect.global_variables --collect.slave_status --collect.info_schema.innodb_metrics --collect.info_schema.processlist --collect.info_schema.tables --collect.perf_schema.file_events --web.listen-address=:9104"
+EXEC_START="${INSTALL_DIR}/mysqld_exporter --config.my-cnf=${CNF_FILE} --collect.global_status --collect.global_variables --collect.slave_status --collect.info_schema.innodb_metrics --collect.info_schema.processlist --collect.info_schema.tables --collect.perf_schema.file_events --collect.perf_schema.memory_events --web.listen-address=:9104"
 
 cat > "${MYSQLD_SERVICE_FILE}" <<UNIT
 [Unit]

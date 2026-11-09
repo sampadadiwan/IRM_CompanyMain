@@ -166,6 +166,82 @@ alert_rules:
       severity: warning
       category: database
 
+  # ── Data box services: Elasticsearch + Redis ───────────────────────────────
+  # From elasticsearch_exporter (:9114) and redis_exporter (:9121), installed by
+  # rake "observability:data_box_exporters[<env>]" (lib/data_box_exporters.rb). Every rule keeps
+  # the default no_data_state OK, so a region without the exporters yet stays silent; once
+  # Prometheus scrapes them, "Data Box Exporter Down" covers a scrape that stops.
+
+  # An exporter Prometheus is configured to scrape but cannot reach: the rules below go blind
+  - title: "Data Box Exporter Down"
+    group: database
+    expr: 'max by(job, instance)(1 - up{job=~"elasticsearch|redis"})'
+    threshold_gt: 0
+    for: 10m
+    summary: "elasticsearch_exporter or redis_exporter is unreachable — Elasticsearch/Redis metrics are blind. Check: systemctl status elasticsearch_exporter redis_exporter on the data box"
+    labels:
+      severity: warning
+      category: database
+
+  # Redis holds Sidekiq's queues: with it down no background job is enqueued or run
+  - title: "Redis Down"
+    group: database
+    expr: 'max by(instance)(1 - redis_up)'
+    threshold_gt: 0
+    for: 2m
+    summary: "Redis is not answering redis_exporter — Sidekiq cannot enqueue or run jobs. Check the redis-stack-server container on the data box"
+    labels:
+      severity: critical
+      category: database
+
+  # Only fires once a maxmemory is set (redis_memory_max_bytes is 0 while unlimited, and the
+  # `> 0` filter drops that series). Redis runs noeviction for Sidekiq, so AT the limit new
+  # writes are rejected — Sidekiq pushes fail — rather than anything being evicted.
+  - title: "Redis Memory Near Limit (>85% of maxmemory)"
+    group: database
+    expr: 'max by(instance)(redis_memory_used_bytes / (redis_memory_max_bytes > 0)) * 100'
+    threshold_gt: 85
+    for: 10m
+    summary: "Redis memory is above 85% of maxmemory — at 100% it rejects writes and Sidekiq cannot enqueue jobs. Check queue sizes, then raise the limit"
+    labels:
+      severity: warning
+      category: database
+
+  # clusterinfo_up is 0 when the exporter runs but Elasticsearch does not answer: search is down
+  - title: "Elasticsearch Down"
+    group: database
+    expr: 'max by(instance)(1 - elasticsearch_clusterinfo_up)'
+    threshold_gt: 0
+    for: 5m
+    summary: "Elasticsearch is not answering elasticsearch_exporter — every search box returns errors or nothing. Check the elasticsearch container on the data box"
+    labels:
+      severity: critical
+      category: database
+
+  # Red = a primary shard is unassigned, so some index cannot be searched. Yellow is NOT alerted:
+  # on a single node, any index with replicas configured is permanently yellow.
+  - title: "Elasticsearch Cluster Red"
+    group: database
+    expr: 'max by(instance)(elasticsearch_cluster_health_status{color="red"})'
+    threshold_gt: 0
+    for: 5m
+    summary: "Elasticsearch cluster health is RED — a primary shard is unassigned and searches on that index fail or are incomplete"
+    labels:
+      severity: critical
+      category: database
+
+  # The JVM heap saw-tooths between collections, so only a sustained high level counts: it means
+  # garbage collection no longer frees enough, and OutOfMemoryError / circuit breakers follow
+  - title: "Elasticsearch Heap High (>90%)"
+    group: database
+    expr: 'max by(instance)(elasticsearch_jvm_memory_used_bytes{area="heap"} / elasticsearch_jvm_memory_max_bytes{area="heap"}) * 100'
+    threshold_gt: 90
+    for: 30m
+    summary: "Elasticsearch heap has stayed above 90% for 30 minutes — garbage collection is not keeping up; raise the heap (ES_JAVA_OPTS) or check for a heavy query"
+    labels:
+      severity: warning
+      category: database
+
   # ── MySQL / Database ───────────────────────────────────────────────────────
 
   # Fires when connections are within 20% of max_connections — at limit, new connections fail
@@ -660,6 +736,7 @@ dashboards:
       - add_rails_depth_panels   # P99 latency, Puma thread saturation, Sidekiq depth/latency
       - add_mysql_depth_panels   # InnoDB miss rate, deadlocks, aborted connections
       - add_yjit_panels          # YJIT row: expected-but-off, YJIT memory, per-worker RSS, compile failures
+      - add_data_box_panels      # Data Box row: memory by service, ES heap, Redis vs maxmemory, MySQL memory by area, index sizes
 
   - uid: caphive-sidekiq
     name: "Sidekiq Memory & Jobs Dashboard"

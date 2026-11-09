@@ -28,3 +28,16 @@ scrape_configs:
       - targets:
           - '10.0.3.182:9104'   # primary DB server
           - '10.0.4.78:9104'    # replica DB server
+
+  # elasticsearch_exporter (port 9114) — the data box only (ELASTIC_SEARCH_URL in .env.production.in).
+  # Installed by rake "observability:data_box_exporters[production.in]" (lib/data_box_exporters.rb).
+  - job_name: elasticsearch
+    static_configs:
+      - targets:
+          - '10.0.3.182:9114'   # data box: MySQL primary + Elasticsearch + Redis
+
+  # redis_exporter (port 9121) — the data box only (REDIS_URL in .env.production.in)
+  - job_name: redis
+    static_configs:
+      - targets:
+          - '10.0.3.182:9121'   # data box: MySQL primary + Elasticsearch + Redis

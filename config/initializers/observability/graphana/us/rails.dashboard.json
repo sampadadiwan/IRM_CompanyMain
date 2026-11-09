@@ -3305,6 +3305,230 @@
       ],
       "title": "MySQL Aborted Connections (/min)",
       "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 9998
+      },
+      "id": 690,
+      "panels": [],
+      "title": "YJIT",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "description": "Processes where config.yjit asks for YJIT but it is not running. 0 is healthy. Above 0: the process started on a Ruby built without YJIT — e.g. on staging, sidekiq once restarted on the plain Ruby. Check with: cap <stage> yjit:check.",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 9999
+      },
+      "id": 691,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "sum by(instance)(ruby_yjit_expected - ruby_yjit_enabled)",
+          "legendFormat": "{{instance}}",
+          "refId": "A"
+        }
+      ],
+      "title": "YJIT Expected but Off (processes)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "description": "Generated machine code + YJIT bookkeeping, per process. YJIT stops compiling at 128 MB (Ruby default --yjit-mem-size) and new code then runs interpreted.",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "decmbytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 9999
+      },
+      "id": 692,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "max by(instance, type, worker)(ruby_yjit_code_region_bytes + ruby_yjit_alloc_bytes) / 1048576",
+          "legendFormat": "{{instance}} {{type}} {{worker}}",
+          "refId": "A"
+        }
+      ],
+      "title": "YJIT Memory per Process (MB, limit 128)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "description": "Resident memory of each Puma worker (not the master). YJIT typically adds 15-20%; compare the days before and after it is switched on.",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "decmbytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 9999
+      },
+      "id": 693,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "max by(instance, worker)(ruby_rss{type=\"puma_worker\"}) / 1048576",
+          "legendFormat": "{{instance}} worker {{worker}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Puma Worker Memory (MB)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "description": "Compilations YJIT gave up on. Rises once a process reaches the 128 MB YJIT limit; sustained growth means the limit is too small for the app.",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 9999
+      },
+      "id": 694,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "max by(instance, type, worker)(delta(ruby_yjit_compilation_failure[15m]))",
+          "legendFormat": "{{instance}} {{type}} {{worker}}",
+          "refId": "A"
+        }
+      ],
+      "title": "YJIT Compile Failures (per 15 min)",
+      "type": "timeseries"
+    },
+    {
+      "type": "row",
+      "title": "Data Box",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 10000
+      },
+      "id": 924,
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "Data Box Memory by Service",
+      "description": "Elasticsearch = committed JVM memory (heap + non-heap; the whole heap is held from start-up). Redis = resident memory. MySQL = memory tracked by performance_schema (a little below mysqld RSS). Detail: the Elasticsearch and Redis dashboards.",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 10001
+      },
+      "id": 925,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "label_replace(sum by(instance)(elasticsearch_jvm_memory_committed_bytes), \"service\", \"Elasticsearch\", \"\", \"\") or label_replace(max by(instance)(redis_memory_used_rss_bytes), \"service\", \"Redis\", \"\", \"\") or label_replace(sum by(instance)(mysql_perf_schema_memory_events_used_bytes), \"service\", \"MySQL (tracked)\", \"\", \"\")",
+          "legendFormat": "{{service}} {{instance}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes"
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "MySQL Memory by Area (top 8)",
+      "description": "Current memory per MySQL area, e.g. innodb/buf_buf_pool (the buffer pool), sql/TABLE (table cache), performance_schema/*. Use it to size innodb_buffer_pool_size.",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 10001
+      },
+      "id": 926,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "topk(8, max by(instance, event_name)(mysql_perf_schema_memory_events_used_bytes))",
+          "legendFormat": "{{instance}} {{event_name}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes"
+        },
+        "overrides": []
+      }
     }
   ],
   "refresh": false,
@@ -3500,6 +3724,6 @@
   "timezone": "",
   "title": "Rails Metrics",
   "uid": "L-0CZ_WVk",
-  "version": 3,
+  "version": 5,
   "weekStart": ""
 }
