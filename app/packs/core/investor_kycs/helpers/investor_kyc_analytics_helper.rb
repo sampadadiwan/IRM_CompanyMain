@@ -32,15 +32,32 @@ module InvestorKycAnalyticsHelper
     }
   end
 
-  # Renders an area chart showing the timeline of KYC registrations.
+  # Renders a staircase of the running total of KYCs created over time.
+  # A per-day count would be 1 on almost every day (KYCs arrive a few at a time), and an area chart
+  # joins those points into a flat band at 1 — so plot the cumulative total, stepped, instead.
   # Uses direct SQL to bypass Groupdate's UTC requirement.
   def kyc_onboarding_timeline_chart(records)
-    # Group by date using MySQL DATE function and pluck to avoid Groupdate interception
-    # Qualifying created_at to avoid ambiguity in joined queries
-    data = records.group(Arel.sql("DATE(investor_kycs.created_at)")).pluck(Arel.sql("DATE(investor_kycs.created_at), count(*)"))
+    # Count KYCs per creation day in SQL (DATE() works on MySQL and SQLite).
+    # - unscope(:order): the list's sort column is not in the GROUP BY (MySQL rejects it)
+    # - COUNT(DISTINCT id): the list's policy scope can join duplicate rows; its .distinct does not dedupe a grouped count
+    # - created_at is qualified to avoid ambiguity in joined queries
+    day_sql = "DATE(investor_kycs.created_at)"
+    per_day = records.unscope(:order)
+                     .group(Arel.sql(day_sql))
+                     .order(Arel.sql(day_sql))
+                     .pluck(Arel.sql("#{day_sql}, COUNT(DISTINCT investor_kycs.id)"))
 
-    area_chart data, title: "KYC Onboarding Timeline", id: "kyc_onboarding_timeline_chart", library: {
-      **chart_theme_color
+    # Turn per-day counts into a running total, e.g. [[Jun 3, 1], [Nov 6, 1]] -> {Jun 3 => 1, Nov 6 => 2}.
+    # MySQL returns Date objects, SQLite returns "YYYY-MM-DD" strings; normalise both to Date.
+    total = 0
+    data = per_day.to_h { |day, count| [day.to_date, total += count] }
+    # Carry the latest total to today so the last step does not end at the last KYC's date.
+    data[Time.zone.today] = total if data.any? && data.keys.max < Time.zone.today
+
+    area_chart data, title: "KYC Onboarding Timeline", ytitle: "Total KYCs", id: "kyc_onboarding_timeline_chart", library: {
+      **chart_theme_color,
+      # step: hold each total flat until the next KYC, instead of sloping between creation dates
+      plotOptions: { area: { step: "left" } }
     }
   end
 
