@@ -8,8 +8,8 @@
 > this change's code; (c) run the phase's Cucumber features green. Do not start the next phase
 > until all three pass — fix the phase you're on rather than coming back later.
 
-> **Before starting:** the "Key changes needing approval" table (design.md K1–K18) and open questions 1–5 must be
-> answered by the user. Test runs: `TEST_ENV_NUMBER=$RANDOM`, Redis on 6379, wait on the run's PID (never a pgrep
+> **Before starting:** the "Key changes needing approval" table (design.md K1–K26 — K19 lets the existing
+> `FormCustomField#validation_rules_consistent` accept a `payout_field` key; no new column) must be approved by the user; open questions 1–5 are decided (2026-11-09). Test runs: `TEST_ENV_NUMBER=$RANDOM`, Redis on 6379, wait on the run's PID (never a pgrep
 > loop), no app-code edits while a run is in progress. Every scenario has `# <ID> — <path>` above it; code comments
 > name the IDs of the branches they implement.
 
@@ -26,9 +26,20 @@
 - [ ] 1.9 N+1 check: `PROSOPITE=1 TEST_ENV_NUMBER=$RANDOM bundle exec cucumber features/core/bank_detail_change_reset.feature features/security/bank_detail_change_fields.feature`; read `log/prosopite.log` (truncate first, never commit); fix N+1s in this change's code.
 - [ ] 1.10 Run `TEST_ENV_NUMBER=$RANDOM bundle exec cucumber features/core/bank_detail_change_reset.feature features/security/bank_detail_change_fields.feature` plus `bundle exec rubocop` and Brakeman on changed files; green before phase 2.
 
+
+## UI explanations (added 2026-11-09 at the user's request — applies to every phase that adds or changes a screen)
+
+- [ ] U.1 Every screen, control, status and message this change adds or changes explains itself to the person using it:
+  help text saying **why** (in plain words), **what it means** and **what to do next**; an info tooltip
+  (`ti ti-info-circle` with a Bootstrap tooltip) for longer explanations; disabled controls carry a tooltip saying why
+  they are disabled and what to do instead (never a bare refusal); emails say why the person got them and what to do if
+  it wasn't them. Follow the house UI rules (reference screens, theme colours only, one type scale, buttons not links,
+  existing Bootstrap confirm modals). Verify: Cucumber assertions on the key help texts / tooltips, and screenshots of
+  each changed screen compared with its reference.
+
 ## 2. Change record, KYC page note and change emails
 
-- [ ] 2.1 Migration `create_bank_detail_changes` per LLD › Schema Detail; migrate the test DB only; update `db/schema.rb` and `db/schema_test.rb` by hand (do not migrate the shared dev DB from a side branch). Verify: `bin/rails db:schema:load` in test succeeds.
+- [ ] 2.1 Migration `create_bank_detail_changes` per LLD › Schema Detail (including the nullable `changed_custom_fields` json, written from Phase 6); migrate the test DB only; update `db/schema.rb` and `db/schema_test.rb` by hand (do not migrate the shared dev DB from a side branch). Verify: `bin/rails db:schema:load` in test succeeds.
 - [ ] 2.2 `BankDetailChange` model (Trackable, `entity_id` attr_readonly, inclusion validations, `awaiting`, `confirm!`, `replace!`, display helpers, `maker_name`) and `InvestorKyc` `has_many`, `latest_bank_change`, `awaiting_bank_change` (memoised) (LLD › Method Contracts). Comment H5, E15, E16, E23.
 - [ ] 2.3 Guard `after_save :record_bank_change` (replace + create) and `after_commit :notify_bank_change` with rescue + `notify_exception` (LLD › Transactions). Comment H5, H6, E14–E18, X5. Verify: failed save leaves no row (X5) in a runner check on the test DB.
 - [ ] 2.4 `BankDetailChangeNotifyJob` with the two claims, investor recipients (`notification_users(kyc, with_tag: "KYC")` ∩ accesses created before the change), approver recipients (as `notify_kyc`, filtered by `show?` and `kyc_approver?`, minus maker), `investor_recipient_ids` (LLD › Background Jobs, Queries). Comment H7, H8, E24–E28, E30, X6.
@@ -73,6 +84,27 @@
 - [ ] 5.7 UI review: distribution journey panel and KYC journey panel warnings beside `workflow_instances/_journey_panel` today.
 - [ ] 5.8 N+1 check under `PROSOPITE=1` (payments download with many rows); fix N+1s in this change's code.
 - [ ] 5.9 Run `features/funds/bank_detail_change_payout_flags.feature` plus the existing capital distribution journey features green (E62 regression).
-- [ ] 5.10 Coverage: list every H/E/X ID in business-rules.md and every `# <ID> —` comment in `features/`; confirm the sets are equal (94 IDs); any new edge case gets a business-rules row and a scenario.
-- [ ] 5.11 Run all eight new feature files together with `pcuc -n 4` (check no other pcuc run first) and confirm green.
-- [ ] 5.12 QA (not the apply agent): run qa-checklist.md on staging_in and record the sign-off.
+
+## 6. Payout custom fields (SWIFT / IBAN)
+
+- [ ] 6.1 No migration: the mark is the key `payout_field` in the existing `form_custom_fields.validation_rules` json (design D17). Confirm `db/schema.rb` is untouched by this phase.
+- [ ] 6.2 `FormCustomField`: `PAYOUT_FIELD_KINDS`, `PAYOUT_FORM_TYPES`; virtual attribute `payout_field` / `payout_field=` that sets or removes only that key; `validation_rules_consistent` allows `payout_field` for TextField only (TextArea split out) with values code/account, plus a code comment that it is not a validation rule (design D17); validation `payout_field_allowed` ("Only text fields on a KYC form can be payout fields"); `self.payout_keys_for(form_type_ids)` loading TextFields and filtering in Ruby — no SQL comparison of the JSON value (MySQL quotes it, SQLite doesn't) (LLD › Schema Detail, Queries). Comment X19, E80. Verify: existing Form Types / custom field validation features still green.
+- [ ] 6.3 `FormCustomFieldPolicy#mark_payout_field?` / `#unmark_payout_field?`, conditional `:payout_field` in `permitted_attributes`, `destroy?` lock; `FormCustomFieldsController` refuses an unmark by non-support (LLD › Method Contracts › FormCustomFieldPolicy, design D18). Comment X16, X18, E77.
+- [ ] 6.4 `FormType.payout_field_change_allowed?` beside `calculation_change_allowed?`; `FormTypesController#update` permits `payout_field` in nested attributes and adds the base error "Payout fields can only be unmarked by CapHive support." (LLD › Controllers). Comment X17, X20. Verify: existing Form Types features (`form_types*.feature`) still green.
+- [ ] 6.5 Side panel: `FormTypeFieldsSave` reads `payout_field` for KYC text fields and locks marked fields (no unmark, no `_destroy`) unless support; `form_type_fields_helper` row keys; `_row.html.erb` 🏦 flag (`ti-building-bank`, "Payout field: a change needs a second approver") + kind select in details + locked chip "Support"; `form_type_fields_form_controller.js` serialises it (design card ⑨). Comment H18, X17, X18. Verify: grid-columns-inline-settings features still green.
+- [ ] 6.6 Form Types › Edit and Form Custom Fields forms: a dedicated "Payout field" select (in the flags block, not among the `vr_*` Validation inputs) (No / Bank code — shown in full / Account identifier — last 4 only) on KYC text fields when `mark_payout_field?`, with the muted explanation line (design › Screen standards). Comment H18.
+- [ ] 6.7 Guard: `marked_payout_keys` (one pluck over old/new form type ids, only when `json_fields` changed), `changed_payout_custom_fields` (diff `attribute_in_database(:json_fields)` vs `json_fields`, normalised, masked by kind); include them in the flag-clear, unverify, bank-change and record logic; `ImportInvestorKyc` memoises marked keys per form type (LLD › Method Contracts › BankDetailChangeGuard). Comment H19, E63, E64, E67–E74.
+- [ ] 6.8 `BankDetailChange#custom_field_lines`; render them in `_bank_change_note`, `_verify_bank_change_modal` (account card), both mailer views and the journey warning, after the account/IFSC lines (design D19, card ④). Comment H20, H21, E69, E71.
+- [ ] 6.9 Rake `bank_detail_changes:propose_payout_fields` in `lib/tasks/bank_detail_changes.rake`: dry run by default (firm › form type › field, proposed kind, filled-value counts only), `EXECUTE=1` requires `FIRM_ID`, saves through the model (LLD › Method Contracts › Rake). Comment E78, E79. Verify: dry run on the test DB prints and saves nothing.
+- [ ] 6.10 Update the investor KYC user guide FAQ (user-guide-faqs skill) and the Form Types guide: what a payout field is, the two kinds, who can unmark, that marking changes no KYC; lint with UserGuideLint.
+- [ ] 6.11 Write `features/core/bank_detail_payout_fields.feature` (H18–H21, E63–E80) and `features/security/bank_detail_payout_fields.feature` (X16–X20), header linking business-rules.md §8.
+- [ ] 6.12 UI review: side panel rows (marked, unmarked, locked for Ravi, unlocked for Sam) beside today's `form_type_fields/_row.html.erb`; Form Types › Edit field card beside today's flag block; KYC note, popup and emails showing a SWIFT line and a masked IBAN line.
+- [ ] 6.13 N+1 check: `PROSOPITE=1 TEST_ENV_NUMBER=$RANDOM bundle exec cucumber features/core/bank_detail_payout_fields.feature features/security/bank_detail_payout_fields.feature` (import with many rows especially); fix N+1s in this change's code.
+- [ ] 6.14 Run both features green (`TEST_ENV_NUMBER=$RANDOM bundle exec cucumber …`), plus the phase 1–3 and 5 features as regression, before the whole-change checks.
+
+## 7. Whole-change checks
+
+- [ ] 7.1 Coverage: list every H/E/X ID in business-rules.md and every `# <ID> —` comment in `features/`; confirm the sets are equal (121 IDs); any new edge case gets a business-rules row and a scenario.
+- [ ] 7.2 Run all ten new feature files together with `pcuc -n 4` (check no other pcuc run first) and confirm green.
+- [ ] 7.3 Rollout (support, after deploy, per environment): run `bank_detail_changes:propose_payout_fields` dry run on production.in and production.us separately; send each listed firm's admin the list; mark with `EXECUTE=1 FIRM_ID=` only after the admin agrees (design D20).
+- [ ] 7.4 QA (not the apply agent): run qa-checklist.md on staging_in and record the sign-off.

@@ -41,6 +41,17 @@
 - [ ] 1.9 Run `TEST_ENV_NUMBER=$RANDOM bundle exec cucumber features/funds/maker_checker/maker_checker_setting.feature features/funds/maker_checker/preparers.feature`
       and confirm green before starting phase 2.
 
+
+## UI explanations (added 2026-11-09 at the user's request — applies to every phase that adds or changes a screen)
+
+- [ ] U.1 Every screen, control, status and message this change adds or changes explains itself to the person using it:
+  help text saying **why** (in plain words), **what it means** and **what to do next**; an info tooltip
+  (`ti ti-info-circle` with a Bootstrap tooltip) for longer explanations; disabled controls carry a tooltip saying why
+  they are disabled and what to do instead (never a bare refusal); emails say why the person got them and what to do if
+  it wasn't them. Follow the house UI rules (reference screens, theme colours only, one type scale, buttons not links,
+  existing Bootstrap confirm modals). Verify: Cucumber assertions on the key help texts / tooltips, and screenshots of
+  each changed screen compared with its reference.
+
 ## 2. The approval rule and the pages
 
 - [ ] 2.1 Create `MakerCheckerPolicyMethods` (`maker_checker_allows?`, `awaiting_second_approver?`,

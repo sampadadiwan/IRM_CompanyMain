@@ -38,7 +38,9 @@ step (J2.3 = journey 2, step 3) · **R** = Role sweep · **C** = Cross-cutting c
 | Bank verification setting | Horizon and Solo: **off**. Kestrel: **on** (CapHive support sets Entity settings › Bank verification) |
 | Bank check responses | Rows H12–H14, E47–E56, X13–X14 need the bank's reply controlled ("R KUMAR", "THIMMAIAH C", …). Ask a developer how staging's Digio access is set up; if replies can't be controlled, check only that a real account shows Verified and mark the rest "covered by automated scenario" |
 | Background work | Emails and the bank check run in the background within ~2 minutes. If nothing arrives after 3 minutes, ask a developer to check the Sidekiq default queue. The distribution readiness check runs from Support agents › Distribution readiness › Run |
-| Email inbox | Staging mail catcher (letter_opener / mail sink) for anil.kumar@example.in, ravi, meera |
+| Email inbox | Staging mail catcher (letter_opener / mail sink) for anil.kumar@example.in, farah.ali@example.ae, ravi, meera |
+| Payout custom fields (rows H18–H21, E63–E79, X16–X20) | Horizon Individual KYC form: text fields SWIFT Code, IBAN, Intermediary Bank Name and check box Foreign account? — none marked at the start; Non-Individual form: SWIFT Code (never marked). Investor Farah Ali (contact farah.ali@example.ae), KYC verified, SWIFT `EBILAEADXXX`, IBAN `AE070331234567890123456`, in Q3 2026 Distribution. Gulf Ventures LLC (Non-Individual) with a SWIFT. Kestrel and Solo Advisors KYC forms have SWIFT Code marked as a bank code. Sam Joseph = CapHive support login. Priya given Form Types access for X16 |
+| Rollout task (E78, E79) | Ask a developer to run `bin/rails bank_detail_changes:propose_payout_fields FIRM_ID=<Horizon id>` on staging (dry run, then with `EXECUTE=1`) and paste the output in Notes |
 
 ---
 
@@ -63,6 +65,10 @@ step (J2.3 = journey 2, step 3) · **R** = Role sweep · **C** = Cross-cutting c
 | ☐ | H15 | Distribution panel warning | H5 (Anil awaiting); Q3 2026 Distribution with journey, not emailed | 1. Ravi opens the distribution | Panel warns "1 KYC has bank details changed and not yet confirmed by a second approver" | | |
 | ☐ | H16 | Readiness check flags | H5; readiness agent on the distribution | 1. Meera runs it | Bank Details step fails: "1 investor(s) have bank details changed and not yet confirmed. Ask a second approver to verify the KYC before releasing payment." | | |
 | ☐ | H17 | Payments download column | H5 | 1. Meera downloads the distribution's payments | Last column "Unconfirmed Bank Change": Anil 09/11/2026, Bina blank | | |
+| ☐ | H18 | Admin marks SWIFT and IBAN | Horizon Individual KYC form, nothing marked | 1. Ravi opens Farah's KYC 2. Clicks the custom fields icon 3. On SWIFT Code clicks the bank icon and picks "Bank code" 4. On IBAN picks "Account identifier" 5. Save | "Individual KYC fields saved"; bank icon on both rows; Form Types › Edit shows the same; Farah's KYC unchanged; no email | | |
+| ☐ | H19 | SWIFT change follows the bank-change rules | H18; Farah's KYC unverified by Meera | 1. Meera edits Farah's KYC 2. SWIFT Code → NBADAEAAXXX 3. Save | Bank Verified off; note "Bank details changed on 09/11/2026 by Meera Shah — SWIFT Code EBILAEADXXX → NBADAEAAXXX. Waiting for a second approver to verify." | | |
+| ☐ | H20 | Emails name the field; IBAN masked | H18; Farah's KYC unverified | 1. Meera changes IBAN to AE460260001015333438901, Save 2. Wait ≤ 3 min | farah.ali@example.ae: "Your bank details with Horizon Capital were changed" with "IBAN ending 3456 → ending 8901", no full IBAN; Ravi gets the approver email; Meera nothing | | |
+| ☐ | H21 | Second approver confirms a SWIFT change | H19 | 1. Meera hovers Verify 2. Ravi clicks Verify, reads cards, clicks Verify KYC | Meera: greyed, "You changed this KYC's bank details. Another KYC approver must verify it."; Ravi's popup card "New payout account confirmed — SWIFT Code NBADAEAAXXX"; then "Confirmed by Ravi Iyer on 10/11/2026" | | |
 
 ## Edge Cases
 
@@ -129,6 +135,24 @@ step (J2.3 = journey 2, step 3) · **R** = Role sweep · **C** = Cross-cutting c
 | ☐ | E59 | Existing warnings still shown | H5 + one commitment with Skip Doc Gen | 1. Ravi opens the distribution | Both "1 commitment has Skip Doc Gen set and will not be emailed" and the bank-change warning | | |
 | ☐ | E60 | Download columns keep their order | Any distribution | 1. Download | Every existing column in its existing position; new column last | | |
 | ☐ | E61 | KYC journey warning | H5; Anil's KYC has a journey | 1. Ravi opens the KYC | Panel warns "Bank details changed on 09/11/2026 by Meera Shah — a different approver must verify" | | |
+| ☐ | E63 | SWIFT change on a verified KYC by import | H18; Farah verified | 1. Meera imports an Update Only row: SWIFT Code NBADAEAAXXX, Verified = Yes | "Success with warnings" — "Bank details changed — the KYC was left unverified for another approver to verify"; KYC unverified; emails sent | | |
+| ☐ | E64 | Unmarked custom field ignored | H18; Farah unverified, Bank Verified ✓ | 1. Meera changes Intermediary Bank Name, Save | Bank Verified ✓; no note; no email; Audit Trail lists the edit | | |
+| ☐ | E65 | Marking doesn't retro-unverify | SWIFT unmarked; Farah verified, Bank Verified ✓ | 1. Ravi marks SWIFT (as H18) 2. Opens Farah's KYC | Still verified, Bank Verified ✓; no note; no email | | |
+| ☐ | E66 | A change before marking is not recorded later | SWIFT unmarked; Meera changed Farah's SWIFT the day before | 1. Ravi marks SWIFT 2. Opens Farah's KYC | No note; Audit Trail shows the earlier edit | | |
+| ☐ | E67 | A mark applies to its own form only | H18 | 1. Meera changes Gulf Ventures LLC's SWIFT | No note; no email | | |
+| ☐ | E68 | First fill of a marked field | H18; Farah's IBAN blank, Bank Verified ✓ | 1. Farah fills IBAN via her link, submits | No note, no email; Bank Verified off | | |
+| ☐ | E69 | Marked value cleared | H18 | 1. Meera blanks IBAN, Save | Note "… IBAN ending 3456 → none …"; both emails | | |
+| ☐ | E70 | Same SWIFT re-typed | H18 | 1. Meera saves SWIFT "ebilaead xxx" | No note; Bank Verified ✓ | | |
+| ☐ | E71 | Account and SWIFT in one save | H18; Farah unverified | 1. Meera changes account and SWIFT, Save | One note listing both; one investor email; one approver email | | |
+| ☐ | E72 | AI extraction writes a marked field | H18; extractor rule on SWIFT Code, "always overwrite" | 1. Ask a developer to run the extraction for Farah | Note source shows AI extraction; Bank Verified off | | |
+| ☐ | E73 | Document Checks writes a marked field | H18; a check reads the IBAN from a bank letter | 1. Meera clicks "Use document value" | Note appears; Bank Verified off | | |
+| ☐ | E74 | Checks on: no bank check after a SWIFT-only change | Kestrel; "A Kumar" unverified, Bank Verified ✓ | 1. Dev changes only SWIFT 2. Wait 3 min 3. Asha ticks Bank Verified | Off after save and still off after 3 min; Asha's tick works; Dev has no box | | |
+| ☐ | E75 | Only approver, SWIFT change | Solo Advisors | 1. Kiran UnVerifies Leela, changes SWIFT 2. Clicks Verify | Only-approver card; confirm → verified, "Only approver" | | |
+| ☐ | E76 | Payout flags see a SWIFT change | H19; Q3 2026 Distribution pays Farah | 1. Ravi opens the distribution 2. Meera downloads payments | Panel "1 KYC has bank details changed and not yet confirmed by a second approver"; Farah's row 09/11/2026 under "Unconfirmed Bank Change" | | |
+| ☐ | E77 | Support unmarks | H18 | 1. Sam sets IBAN → No, Save 2. Meera changes IBAN | Unmarked; no note after Meera's change | | |
+| ☐ | E78 | Rollout proposal — dry run | Setup row "Rollout task" | 1. Developer runs the dry run | Lists SWIFT Code → bank code, IBAN → account identifier with counts; check box not listed; nothing marked | | |
+| ☐ | E79 | Rollout proposal — EXECUTE=1 | E78 | 1. Developer runs it with EXECUTE=1 | Fields marked; no KYC changed; no email | | |
+| ☐ | E80 | Editing a marked field's rules keeps the mark | H18 | 1. Ravi sets SWIFT Code's max length to 11 in Form Types › Edit, Save 2. Meera changes Farah's SWIFT | SWIFT Code still shows "Payout field: Bank code"; Meera's change shows the note | | |
 | ☐ | E62 | Other distribution panels unchanged | No awaiting changes | 1. Open the distribution | Panel and existing journey scenarios unchanged (Panel while notices are partly approved, Panel button runs the real control, Notices not used re-run) | | |
 
 ## Error Cases
@@ -149,6 +173,11 @@ step (J2.3 = journey 2, step 3) · **R** = Role sweep · **C** = Cross-cutting c
 | ☐ | X12 | Double click Verify | H5 | 1. Ravi submits the popup twice | Verified once; one confirmation; second request finds no awaiting change and makes no new record | | |
 | ☐ | X13 | Account not found | Stub: `verified: false`, error "Invalid account" | 1. Dev changes "A Kumar"'s account | Off; status "Invalid account" (as today) | | |
 | ☐ | X14 | Unreadable provider body | Stub returns non-JSON | 1. Dev changes the account | Off; raw body kept as today; no error page | | |
+| ☐ | X16 | Non-admin can't mark | Priya with Form Types access | 1. Priya opens Form Custom Fields › Edit for SWIFT Code 2. Ask a developer to send `payout_field=code` | No "Payout field" control; field stays unmarked | | |
+| ☐ | X17 | Admin can't unmark | H18 | 1. Ravi sets IBAN → No in the side panel, Save 2. Same in Form Types › Edit | Both: "Payout fields can only be unmarked by CapHive support."; IBAN stays marked | | |
+| ☐ | X18 | Admin can't delete a marked field | H18 | 1. Ravi looks for ✕ on SWIFT Code in the side panel 2. Developer sends the delete request as Ravi | No ✕ (lock chip "Support"); delete refused; field kept | | |
+| ☐ | X19 | Only text fields on KYC forms | H18 | 1. Developer sends a mark for "Foreign account?", for a multi-line text field on the KYC form and for an Investor-form text field as Ravi | "Only text fields on a KYC form can be payout fields"; nothing saved | | |
+| ☐ | X20 | Other firm | — | 1. Omar sends a side panel save / Form Types update for Horizon's KYC form | Refused / not found; nothing marked | | |
 | ☐ | X15 | Bank check disabled in the agent | H5; agent `check_bank_details` = false | 1. Run readiness | Bank step "Skipped via configuration" (as today); KYC step fails "KYC not verified" | | |
 
 ---
@@ -169,6 +198,11 @@ step (J2.3 = journey 2, step 3) · **R** = Role sweep · **C** = Cross-cutting c
 | ☐ | J5.1 | KYC list › Bulk actions › Verify (Meera) | Select Anil, Bina, Chetan; run Verify | Bina and Chetan verified; error list shows Anil "Not verified — you changed the bank details; another approver must verify" | | |
 | ☐ | J6.1 | Distribution page — Q3 2026 Distribution | Open | Journey panel warning "1 KYC has bank details changed and not yet confirmed by a second approver" | | |
 | ☐ | J6.2 | Distribution › Payments › Download | Download | Last column "Unconfirmed Bank Change": Anil 09/11/2026, Bina blank | | |
+| ☐ | J7.1 | Farah's KYC page (Ravi) › custom fields icon | Open the side panel | Text fields show a bank icon with tooltip "Payout field: a change needs a second approver"; the check box row has none | | |
+| ☐ | J7.2 | Side panel | Mark SWIFT Code "Bank code", IBAN "Account identifier", Save | "Individual KYC fields saved"; icons on | | |
+| ☐ | J7.3 | Side panel (Ravi), reopened | Look at the marked rows | No ✕; turning the icon off shows "Payout fields are unmarked by CapHive support" | | |
+| ☐ | J7.4 | Form Types › Edit › Individual KYC (Ravi) | Open SWIFT Code's card | "Payout field" select = Bank code; muted line "A change to this field is treated like a bank account change: a second approver must verify." | | |
+| ☐ | J7.5 | Farah's KYC page after Meera's SWIFT change (Ravi) | Open; click Verify | Note with the SWIFT line; popup account card lists "SWIFT Code NBADAEAAXXX" | | |
 
 ---
 
@@ -189,6 +223,8 @@ step (J2.3 = journey 2, step 3) · **R** = Role sweep · **C** = Cross-cutting c
 | R9 | Receive the approver email | ✓ | ✗ (maker) | ✓ | ✗ | ✗ | ✗ |
 | R10 | Receive the investor email | ✗ | ✗ | ✗ | ✗ | ✓ | ✗ |
 | R11 | Kiran (Solo Advisors, only approver) verifies own change | — | — | — | — | — | — (Kiran: ✓ with only-approver card) |
+| R12 | Mark a KYC text field as a payout field | ✓ | ✗ (no Form Types access) | ✗ | ✗ (control hidden even with Form Types access) | ✗ | ✗ |
+| R13 | Unmark / delete a marked field | ✗ "Payout fields can only be unmarked by CapHive support." | ✗ | ✗ | ✗ | ✗ | ✗ (Sam, support: ✓) |
 
 ---
 
@@ -206,7 +242,8 @@ step (J2.3 = journey 2, step 3) · **R** = Role sweep · **C** = Cross-cutting c
 | ☐ | C8 | No full page reloads for small actions | N/A — Verify is a full-page action today and stays one | | |
 | ☐ | C9 | Explains itself | Greyed Verify, badge and Bank Verified box each have a tooltip; popup cards say what will happen | | |
 | ☐ | C10 | Speed on a large entity | KYC page and payments download on the largest staging firm open in under ~2 s / the usual download time | | |
-| ☐ | C11 | Existing data untouched after deploy | Before any edit, a sample of verified KYCs keep Verified and Bank Verified; no emails were sent at deploy | | |
+| ☐ | C11 | Existing data untouched after deploy | Before any edit, a sample of verified KYCs keep Verified and Bank Verified; no emails were sent at deploy; no custom field is marked as a payout field until someone marks it | | |
+| ☐ | C12 | Payout values masked by kind | In every email, note and popup: IBAN (account identifier) shows only "ending ####"; SWIFT (bank code) shows in full; no full IBAN anywhere | | |
 
 ---
 

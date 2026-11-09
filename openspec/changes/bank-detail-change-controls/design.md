@@ -22,7 +22,14 @@
 > `distribution_readiness_agent.rb:112-135,273-300`, `capital_distribution_warnings.rb:14-46`,
 > `capital_distribution_payments/index.xlsx.axlsx:8-33`, `application_job.rb:9-37`, `import_util.rb:154-166,235-252`,
 > `investor_kycs/_show.html.erb:68-115`, `_bank_verification.html.erb`, `_form.html.erb:237-277`,
-> `show.html.erb:62-80`, `_request_updates_modal.html.erb`.
+> `show.html.erb:62-80`, `_request_updates_modal.html.erb`; for payout custom fields (2026-11-09):
+> `form_custom_field.rb` (columns, scopes, validations), `form_custom_field_policy.rb`, `form_type_policy.rb:57-62`,
+> `form_types_controller.rb:83-100,207-210`, `form_type.rb:34-44` (`calculation_change_allowed?`),
+> `form_custom_field.rb:28-36` (`vr_*` per-key setters) and `:170-191` (`validation_rules_consistent`),
+> `with_custom_field.rb:326-347` (rule readers),
+> `form_type_fields_save.rb` (FLAGS, Calculation lock), `form_type_fields/_row.html.erb`,
+> `form_types/_form_custom_fields.html.erb:150-180`, `with_custom_field.rb:52-56`, `kyc_doc_extractor_agent.rb:172-180`,
+> `doc_checks/kyc.rb:96-106`.
 
 ---
 
@@ -51,6 +58,7 @@
   - [⑥ Verify gate](#⑥-verify-gate)
   - [⑦ KYC page](#⑦-kyc-page)
   - [⑧ Payout flags](#⑧-payout-flags)
+  - [⑨ Payout field marks](#⑨-payout-field-marks)
 - [4. Reference](#4-reference)
   - [Class diagram](#class-diagram)
   - [Data model and schema changes](#data-model-and-schema-changes)
@@ -72,6 +80,9 @@
   path, clears Bank Verified (and unverifies a verified KYC) in that same save, and writes a **change record**.
 - The record drives everything else: two emails (investor + approvers), a **second-person** rule on the
   existing Verify action, a note on the KYC page, and flags where distributions are paid.
+- **Payout custom fields (SWIFT / IBAN):** a firm marks text custom fields on its KYC forms as payout fields
+  (config as data, ⑨). The guard treats a marked field exactly like the account number — same reset, record,
+  emails, second person and payout flags.
 - Patterns followed: model concern + `after_commit` job (as `InvestorKyc#notify_kyc`), Pundit predicates on
   `InvestorKycPolicy`, `InvestorKycNotifier` emails, Request Updates "Immediate Actions" popup, journey
   readiness warnings (`WorkflowChecks::InvestorKycWarnings`).
@@ -88,6 +99,8 @@ flowchart LR
     V["⑥ Verify gate<br/>a second person<br/>confirms"]
     K["⑦ KYC page<br/>note, badge, popup"]
     P["⑧ Payout flags<br/>panel, readiness,<br/>download"]
+    M["⑨ Payout field marks<br/>firm ticks SWIFT / IBAN<br/>custom fields"]
+    M -- "which custom fields<br/>count as bank details" --> G
     S -- "every save" --> G
     G -- "bank change" --> R
     G -- "account changed" --> B
@@ -136,9 +149,11 @@ flowchart TB
 
 | Concept | What it is, in one line | Example | Stored in |
 |---|---|---|---|
-| Bank details | The two fields a payout is routed by | 50100012344821 / HDFC0001234 | `investor_kycs.bank_account_number`, `.ifsc_code` |
+| Bank details | The fields a payout is routed by: account no. + IFSC, plus the firm's marked payout custom fields | 50100012344821 / HDFC0001234 / SWIFT EBILAEADXXX | `investor_kycs.bank_account_number`, `.ifsc_code`, `.json_fields[<marked key>]` |
+| Payout field | A text custom field on a KYC form that the firm marked as bank details | Horizon's "SWIFT Code", "IBAN" | `form_custom_fields.validation_rules["payout_field"]` (existing json column) |
+| Bank code / account identifier | The two kinds of payout field: shown in full (like IFSC) vs last 4 only (like the account no.) | SWIFT = bank code; IBAN = account identifier | `{"payout_field": "code"}` / `{"payout_field": "account"}` |
 | Descriptive bank fields | Bank name, branch, account type — not used to route money | HDFC Bank / MG Road / Savings | `investor_kycs.bank_name`, `.bank_branch`, `.bank_account_type` |
-| Bank change | A save of an existing KYC changing account no. or IFSC from non-blank to a different value (spaces, case ignored) | 4821 → 7310 | Row in `bank_detail_changes` |
+| Bank change | A save of an existing KYC changing account no., IFSC or a payout field from non-blank to a different value (spaces, case ignored) | 4821 → 7310; SWIFT EBILAEADXXX → NBADAEAAXXX | Row in `bank_detail_changes` |
 | First fill | Bank details entered where they were blank | Chetan's first submission | Not stored |
 | Bank Verified | Flag: the *current* account passed the bank check or a person's review | ✓ | `investor_kycs.bank_verified` |
 | KYC Verified | The KYC as a whole signed off by an approver | Verified by Ravi | `investor_kycs.verified`, `submission_status = "verified"` |
@@ -169,9 +184,12 @@ flowchart TB
 | …and KYC was verified | Also: KYC unverified (`submission_status` → `completed`) | Import on a verified KYC |
 | First fill | Only Bank Verified off (it already is) | Chetan |
 | Descriptive fields / full name only | Nothing new (audit trail as today) | Branch "MG Road" → "Indiranagar" |
+| A **marked** payout custom field changes | Same as account no. / IFSC above (every row) | Farah's SWIFT EBILAEADXXX → NBADAEAAXXX |
+| An **unmarked** custom field changes | Nothing new (audit trail as today) | Intermediary Bank Name edited |
 
-**What it does NOT cover:** custom fields holding bank data (SWIFT, IBAN), the cancelled-cheque document,
-secondary-sale offers/interests, `update_columns` writes (none touch bank fields today).
+**What it does NOT cover:** unmarked custom fields (even ones named SWIFT), File custom fields (cancelled cheque),
+secondary-sale offers/interests, `update_columns` writes (none touch bank fields today; `FormCustomField#change_name`
+moves a `json_fields` key with `update_column` but never changes a value).
 
 ```mermaid
 sequenceDiagram
@@ -324,6 +342,7 @@ KYCs › Anil Kumar › Anil Kumar
 | 4 | Tell the owner | Investor emailed at pre-existing contacts, last 4 only | [④](#④-change-emails) |
 | 5 | Review, don't reject | Partial name match → a person decides | [⑤](#⑤-bank-check) |
 | 6 | Flag where money moves | Panel, readiness and download show awaiting changes | [⑧](#⑧-payout-flags) |
+| 7 | The firm says which custom fields route money | A mark on the field definition pulls SWIFT / IBAN under ②–⑧ | [⑨](#⑨-payout-field-marks) |
 
 **FAQ**
 
@@ -333,7 +352,7 @@ KYCs › Anil Kumar › Anil Kumar
 | Why also unverify a verified KYC? | Import and the Compare CKYC/KRA save change a verified KYC without UnVerify (`investor_kyc_policy.rb:177-179` doesn't check `verified`); the readiness check keys on `verified` |
 | Does anything block users? | Only the maker's Verify / Bank Verified tick. Everyone else works as today |
 | Why not reset on full-name changes? | Name changes don't move money; with checks on, `validate_bank` already re-runs the check on a name change (`investor_kyc_concern.rb:17`) |
-| Is there a setup step? | No. All firms get it at release; no backfill |
+| Is there a setup step? | Only for firms that keep SWIFT / IBAN in custom fields: those fields are marked once (⑨) — by the firm's admin, or by support with the firm's agreement. Everything else needs no setup; no backfill |
 
 ---
 
@@ -354,6 +373,8 @@ flowchart LR
     V["⑥ InvestorKycPolicy · InvestorKycsController.toggle_verified<br/>InvestorKycsBulkActionJob · ImportInvestorKyc<br/><i>maker may not verify</i>"]:::mod
     K["⑦ investor_kycs/show · _show · _bank_change_note<br/>_verify_bank_change_modal · _bank_verification · _form<br/>WorkflowChecks::InvestorKycWarnings<br/><i>note, badge, popup, warning</i>"]:::mod
     P["⑧ DistributionReadinessAgent · CapitalDistributionWarnings<br/>capital_distribution_payments/index.xlsx<br/><i>flags awaiting changes</i>"]:::mod
+    M["⑨ FormCustomField validation_rules.payout_field · FormCustomFieldPolicy<br/>FormTypeFieldsSave · FormTypesController<br/>rake bank_detail_changes:propose_payout_fields<br/><i>which custom fields are bank details</i>"]:::mod
+    M -- "marked keys<br/>(one pluck)" --> G
     S -- "save with<br/>actor + source" --> G
     G -- "INSERT awaiting,<br/>UPDATE → replaced" --> R
     G -- "validate_bank<br/>(unchanged step)" --> B
@@ -371,6 +392,7 @@ flowchart LR
     click V "#⑥-verify-gate" "Open card ⑥"
     click K "#⑦-kyc-page" "Open card ⑦"
     click P "#⑧-payout-flags" "Open card ⑧"
+    click M "#⑨-payout-field-marks" "Open card ⑨"
 ```
 
 Colour = footprint: **green** new, **amber** modified, **grey** reused unchanged. Exact files are in
@@ -381,13 +403,14 @@ Colour = footprint: **green** new, **amber** modified, **grey** reused unchanged
 | # | Box | Real parts | What it does | When it runs | What it decides | Details |
 |---|---|---|---|---|---|---|
 | ① | Ways a KYC is saved | `InvestorKycsController`, `InvestorKycUpdate/Create`, `InvestorKycUpserter`, `ImportInvestorKyc`, `DocChecks::Kyc.save_details!`, `KycDocExtractorAgent` | Tag the save with actor + source | Request / import job / agent job | Nothing new | [card ① →](#①-ways-a-kyc-is-saved) |
-| ② | Change guard | `BankDetailChangeGuard` (`before_save`, `after_save`, `after_commit`) | Clear flag, unverify, write record, queue emails | Inside every `InvestorKyc` save | Is this a bank change? | [card ② →](#②-change-guard) |
+| ② | Change guard | `BankDetailChangeGuard` (`before_save`, `after_save`, `after_commit`) | Clear flag, unverify, write record, queue emails | Inside every `InvestorKyc` save | Is this a bank change (account, IFSC or a marked custom field)? | [card ② →](#②-change-guard) |
 | ③ | Change record | `BankDetailChange`, `bank_detail_changes` | Holds maker, masked digits, state, email stamps | Written by ②, confirmed by ⑥ | Awaiting / confirmed / replaced | [card ③ →](#③-change-record) |
 | ④ | Change emails | `BankDetailChangeNotifyJob`, `InvestorKycMailer#notify_bank_details_changed/#notify_bank_change_review`, `InvestorKycNotifier` | Email investor contacts + approvers, once | Job after commit | Who receives | [card ④ →](#④-change-emails) |
 | ⑤ | Bank check | `VerifyBankJob`, `BankNameMatch`, `KycVerify#verify_bank`, `InvestorKycConcern#validate_bank` | Penny drop, name rule, discard stale result | Job ≤ 120 s after save (checks on) | Pass / review / fail | [card ⑤ →](#⑤-bank-check) |
 | ⑥ | Verify gate | `InvestorKycPolicy#kyc_approver?/#toggle_verified?/#confirm_bank_details?/#bank_change_maker_blocked?/#permitted_attributes`, controller, bulk job, import | Refuse maker; confirm on Verify | Each Verify / save | Who may verify / tick | [card ⑥ →](#⑥-verify-gate) |
 | ⑦ | KYC page | `show.html.erb`, `_show`, new `_bank_change_note`, new `_verify_bank_change_modal`, `_bank_verification`, `_form`, `InvestorKycWarnings` | Show note, badge, popup, journey warning | Page render | What each user sees | [card ⑦ →](#⑦-kyc-page) |
 | ⑧ | Payout flags | `DistributionReadinessAgent#verify_bank_details`, `CapitalDistributionWarnings#bank_change_warning`, payments `index.xlsx.axlsx` | Flag awaiting changes on paid KYCs | Agent run / panel render / download | Flag or not | [card ⑧ →](#⑧-payout-flags) |
+| ⑨ | Payout field marks | `form_custom_fields.validation_rules["payout_field"]` (existing json), `FormCustomField#payout_field` + validation, `FormCustomFieldPolicy#mark_payout_field?/#unmark_payout_field?`, `FormTypeFieldsSave`, `FormTypesController#update`, `FormCustomFieldsController`, rake task | Store which KYC custom fields are payout fields, and of which kind | Admin saves the side panel / Form Types › Edit; support runs the rake | Who may mark / unmark; is the field markable | [card ⑨ →](#⑨-payout-field-marks) |
 
 ### One run, end to end
 
@@ -472,6 +495,8 @@ stateDiagram-v2
 | Import results | Success | "Success with warnings" for bank-change rows | Importer |
 | Emails | none | Investor + approver emails | Investor contacts, approvers |
 | Distribution panel / readiness / download | Missing-account checks | + unconfirmed change flags | Firm users |
+| Custom fields side panel (record page) | Required / Read only / Internal flags | + payout icon per text field on KYC forms; "Payout field" select in the row's details; marked rows locked for non-support | Company admins, support |
+| Form Types › Edit (KYC forms) | Required / Read only / Show in Filter switches | + "Payout field" select (No / Bank code / Account identifier) on text fields | Company admins, support |
 
 **Main everyday journey — Ravi confirms a change**
 
@@ -512,6 +537,8 @@ Mocks (hand-made, copying the real markup): [mocks/kyc_show_bank_change.html](mo
 | KYC edit, bank step | form (changed) | `investor_kycs/_form` step 2 (unchanged layout) | Unchanged | n/a | Unchanged | n/a | n/a | Unchanged | Bank Verified box gets a field tooltip "Tick only after checking proof of the current account" | Unchanged |
 | KYC journey panel | panel (changed) | `workflow_instances/_journey_panel` warnings list | n/a | n/a | Existing live updates | n/a | n/a | n/a | Warning text names maker and date | n/a |
 | Distribution journey panel | panel (changed) | `workflow_instances/_journey_panel` warnings | n/a | n/a | Existing | n/a | n/a | n/a | Warning text | n/a |
+| Custom fields side panel (KYC forms) | panel (changed) | `form_type_fields/_row.html.erb` flag buttons + details row; locked chip as for Calculation | n/a | n/a | Existing panel save (`FormTypeFieldsController#save` → saved marker) | n/a | n/a | n/a | Flag tooltip "Payout field: a change needs a second approver"; locked chip tooltip "Payout fields are unmarked by CapHive support" | n/a |
+| Form Types › Edit field card | form (changed) | `form_types/_form_custom_fields.html.erb:150-180` flag block (ios-toggle rows with a muted one-line explanation) | Unchanged | n/a | Unchanged (full form save) | n/a | n/a | Unchanged | Muted line "A change to this field is treated like a bank account change: a second approver must verify." | Unchanged |
 
 - Verify is a full-page action today (`button_to … toggle_verified`, `show.html.erb:66-71`); it stays a redirect.
 - Help text is a tooltip; the amber note is a coloured box only because something needs attention.
@@ -541,7 +568,15 @@ Every change to an existing model, column, permission, export or behaviour. Noth
 | K15 | `DistributionReadinessAgent#verify_bank_details` | Also fails for KYCs with an awaiting change | Payout flag | Ops running the agent |
 | K16 | `capital_distribution_payments/index.xlsx.axlsx` | New last column "Unconfirmed Bank Change" | Payout flag | Anyone with macros reading by position past the last column (none expected) |
 | K17 | Views `_show`, `_bank_verification`, `_form` | Note partial, badge text, Bank Verified box condition | UI | Firm users |
-| K18 | New table `bank_detail_changes` | Additive | History, maker, email stamps | — |
+| K18 | New table `bank_detail_changes` | Additive; includes `changed_custom_fields` (json) for payout custom fields | History, maker, email stamps | — |
+| K19 | **`FormCustomField#validation_rules_consistent` (existing model validation)** | **Allow the key `payout_field` in `validation_rules` for `TextField` only, values `"code"` / `"account"`**; add virtual attribute `payout_field` reading/writing that key. No column, no migration | The firm's mark lives in the existing json (D17) — `payout_field` is not a validation rule; the code comment says so | Nobody until a field is marked; a TextArea or other type sending the key gets the existing "contains invalid keys" error |
+| K20 | `FormCustomField` model | Validation `payout_field_allowed`: the mark only on `TextField`s of KYC form types (`IndividualKyc`, `NonIndividualKyc`, `InvestorKyc`) — needed because `validation_rules_consistent` returns early for types with no rule keys (Select, Radio…); class method `payout_keys_for(form_type_ids)` (Ruby filter) | Keeps marks meaningful | Admins sending a bad mark |
+| K21 | `FormCustomFieldPolicy` | New `mark_payout_field?` (parent `FormTypePolicy#update?` — company admin — or support), `unmark_payout_field?` (support only); `permitted_attributes` adds `payout_field` only when `mark_payout_field?`; `destroy?` refuses a marked field unless support | Who may mark (D18) | Company admins (cannot unmark), `enable_form_types` users (cannot mark) |
+| K22 | `FormTypesController#update` + `form_type_params`, `FormType` | Permit `payout_field` in nested attributes; new `FormType.payout_field_change_allowed?(user, fields, form_type)` beside `calculation_change_allowed?` — refuses an unmark or `_destroy` of a stored marked field unless support | Same guard shape as C2 | Company admins |
+| K23 | `FormTypeFieldsSave` + `form_type_fields/_row.html.erb` | `payout_field` joins the panel's flags (KYC forms, text fields); a marked field is locked (no unmark, no remove) for non-support, like Calculation (X16 there) | Side panel is where admins edit fields | Company admins |
+| K24 | `form_types/_form_custom_fields.html.erb`, `form_custom_fields/_form.html.erb` | Dedicated "Payout field" select on KYC text fields (not among the `vr_*` rule inputs), shown only when `mark_payout_field?` | UI for the mark | Company admins |
+| K25 | `BankDetailChangeGuard` (new, K1) reads `json_fields` | Compares `attribute_in_database(:json_fields)` vs `json_fields` for the marked keys of the KYC's form type | One rule location | Nobody directly |
+| K26 | New rake `bank_detail_changes:propose_payout_fields` | Dry run lists candidate SWIFT/BIC/IBAN/routing/sort code/ABA text fields per firm; `EXECUTE=1 FIRM_ID=` marks them | Rollout for 10 firms (Production sizing) | Support |
 
 ### Design decisions
 
@@ -565,11 +600,16 @@ Every change to an existing model, column, permission, export or behaviour. Noth
 | D14 | Flag at payout, never block | Payment release stays human; existing data unaffected |
 | D15 | New `kyc_approver?`; `toggle_verified?` direction-aware | Don't hide AML / audit trail from makers |
 | D16 | No backfill at release | Existing verified KYCs stay as they are |
+| D17 | Payout custom fields = key `payout_field` in the existing `validation_rules` JSON (two kinds) | Config as data without changing an existing table; per-key writes never wipe it |
+| D18 | Mark = company admin or support; unmark / delete a marked field = support only | Unmarking is the loosening direction; same lock as Calculation fields |
+| D19 | Change record keeps custom values by kind: bank code in full, account identifier last 4 | Matches IFSC (full) / account (last 4); SWIFT last 4 is meaningless ("DXXX") |
+| D20 | Rollout: a dry-run rake proposes the 16 existing fields; support marks with the firm's consent; nothing retroactive | Firms already holding SWIFT/IBAN are covered from day one without a data change |
 
 #### D1. Bank details = account number + IFSC
 
 - **Problem:** "bank details" could mean five columns plus custom fields; emailing for a branch-name typo is noise.
-- **Decision:** `BankDetailChangeGuard::PAYOUT_FIELDS = %w[bank_account_number ifsc_code]`.
+- **Decision:** `BankDetailChangeGuard::PAYOUT_FIELDS = %w[bank_account_number ifsc_code]`, **plus** the KYC form's
+  custom fields marked as payout fields (D17, decided by the user 2026-11-09 — open question 1).
 - **Why:**
   - The payments download sends exactly these (`index.xlsx.axlsx:28`) and the readiness check tests only the account (`distribution_readiness_agent.rb:286`).
   - Name/branch/type changes can't redirect money; the audit trail keeps them.
@@ -702,6 +742,92 @@ Every change to an existing model, column, permission, export or behaviour. Noth
 - **Not chosen:** a one-off reset task — see [open question 4](#risks-and-open-questions).
 - **Where:** release notes only.
 
+#### D17. Payout custom fields = a key in the field's existing `validation_rules` JSON
+
+- **Problem:** 10 firms keep SWIFT (2 also IBAN) in KYC custom fields (`json_fields`); a change there redirects a
+  foreign payout exactly like an account change, yet the guard only knew two columns. Field names differ per firm
+  (`swift_code`, `beneficiary_swift_code`, `investor_fund_bank_account_swift_code`), so a hard-coded key list fails.
+- **Decision (user, 2026-11-09):** store the mark in the **existing** json column `form_custom_fields.validation_rules`
+  as `{"payout_field": "code"}` (bank code, shown in full) or `{"payout_field": "account"}` (account identifier,
+  last 4 only); key absent = not a payout field. `FormCustomField` gets a virtual attribute `payout_field` /
+  `payout_field=` that reads and writes only that key. **No new column, no migration.**
+- **Why `validation_rules`:**
+  - Structured JSON, written **per key** by the `vr_*` setters (`form_custom_field.rb:28-36`) — saving a field's
+    min length, pattern or format never wipes the payout key, and no other code assigns the whole hash (only
+    `lp_crm_custom_fields.rake`, which creates new fields).
+  - No free-text box: the editors only expose the `vr_*` inputs; `payout_field` is not in `VALIDATION_RULE_KEYS`,
+    so no `vr_payout_field` input exists and only the dedicated control (card ⑨) writes it.
+  - Every reader asks for named keys (`with_custom_field.rb:333-347`, `_text_field.html.erb:16`), so an extra key
+    changes no validation or rendering.
+  - Production: the 16 candidate fields have **no** rules today (0 of 16), so marking them merges into an empty hash.
+- **The one code change on an existing model:** `FormCustomField#validation_rules_consistent`
+  (`form_custom_field.rb:170-191`) rejects keys not allowed for the field type. It must allow `payout_field` for
+  **TextField only** (TextArea keeps `text_keys`), with value `"code"` or `"account"`.
+  - Honest note: `payout_field` is **not** a validation rule. It sits in `validation_rules` because that is the only
+    structured, per-key JSON on a field definition. The planned code comment says so and points here.
+  - Not to be confused with the separate *Validation Rules engine* (`app/packs/core/validation_rules`) — unrelated.
+- **Not chosen:**
+  - A new column `form_custom_fields.payout_field` — declined by the user: it changes an existing table.
+  - `meta_data` — means something different per field type (options, currency, number format, Calculation Ruby,
+    "skill: true" tags); **7 KYC TextFields in production already hold leftover choice lists there**; and Form Types
+    › Edit exposes it as a free "Meta data" text box anyone editing the form could clear, silently unmarking.
+  - `validation_rules["format"]` (`ifsc` exists) — couples routing to input format; a firm may not set a format.
+  - Name matching (`/swift|iban/`) at runtime — misses `beneficiary_account_no`, catches the check box
+    `swift_code_in_case_of_foreign_bank_account`; used only to *propose* marks (D20).
+  - One kind only — SWIFT's last 4 is usually "DXXX"/"AXXX" (useless to an investor) while IBAN embeds the account
+    number and must stay masked.
+- **Reading marks:** the guard loads the KYC form type's `TextField`s (`pluck(:name, :label, :validation_rules)`,
+  at most a few hundred rows) and filters in Ruby. SQL on the key is avoided: MySQL `JSON_EXTRACT` returns a
+  JSON-quoted `"code"` (needs `->>`/`JSON_UNQUOTE`) while the SQLite test schema's `json_extract` returns plain
+  `code`. Where SQL is unavoidable (the rake proposal), only `json_extract(validation_rules, '$.payout_field') IS
+  NULL / IS NOT NULL` is used — it behaves the same on both.
+- **Where:** `FormCustomField#payout_field`, `#validation_rules_consistent`, `#payout_field_allowed`,
+  `BankDetailChangeGuard#marked_payout_keys`, card ⑨.
+
+#### D18. Who may mark and unmark
+
+- **Problem:** after an unmark, a firm admin who is also a KYC approver could change the SWIFT alone; deleting the
+  field definition has the same effect.
+- **Decision:** `FormCustomFieldPolicy#mark_payout_field?` = `new_policy(record.form_type).update?` (company admin
+  of the form type's firm) or support; `#unmark_payout_field?` = `support?`; `#destroy?` refuses a marked field
+  unless support. The three writers ask the policy: Form Types › Edit (via `FormType.payout_field_change_allowed?`,
+  same shape as `calculation_change_allowed?`), the side panel (`FormTypeFieldsSave`, same lock as Calculation),
+  Form Custom Fields new/edit (`permitted_attributes`).
+- **Why:**
+  - Marking only tightens → anyone who may edit the form type may do it.
+  - Unmarking loosens → the existing "CapHive support only" lock used for Calculation fields (C2, X16 there).
+  - Custom field import (`ImportFormCustomField`, `FormType.save_cf_from_import`) never writes `validation_rules` —
+    imported fields start unmarked. Form type *clone* (support-only, M25) copies the hash, mark included.
+- **Not chosen:** emailing approvers on unmark — one more notification for a rare event; letting company admins
+  unmark — reopens the one-person path.
+- **Where:** `FormCustomFieldPolicy`, `FormType.payout_field_change_allowed?`, `FormTypeFieldsSave#existing_attrs`.
+
+#### D19. Custom values in the change record by kind
+
+- **Problem:** the record must show what changed without becoming a second store of payout identifiers (E23).
+- **Decision:** `bank_detail_changes.changed_custom_fields` (json array): one entry per changed marked key —
+  `key`, `label` (at change time), `kind`, `old`, `new`; `old`/`new` are the full value for `code`, `last 4` for
+  `account`, `nil` for blank. Emails, note and popup render these strings only.
+- **Why:** same split as the columns (`old_ifsc` full, `old_account_last4`); the label is frozen so a later rename
+  doesn't rewrite history; the full old value still lives in the KYC's audit trail (`json_fields` is audited).
+- **Not chosen:** full old/new values for every kind — IBANs are account numbers (PII); a child table — one save
+  changes ≤ 3 marked fields today.
+- **Where:** `BankDetailChange`, `BankDetailChangeGuard#record_bank_change`.
+
+#### D20. Rollout of existing SWIFT / IBAN fields
+
+- **Problem:** 16 text fields in 10 firms already hold 165 SWIFT/IBAN values; unmarked, they stay outside the rules.
+- **Decision:** `bin/rails bank_detail_changes:propose_payout_fields` — dry run by default: per firm, each KYC text
+  field whose name or label matches `swift|bic|iban|routing|sort code|aba` (word match), the proposed kind
+  (IBAN → account, others → code) and the filled-value count (a count, never values). `EXECUTE=1 FIRM_ID=<id>`
+  marks the listed fields through the model (validations run). Support runs it after the firm's company admin
+  agrees in the ticket; the admin can equally tick them in the side panel.
+- **Why:** firms keep control of their configuration (a mark changes who may verify); no KYC row is touched, so
+  nothing is retro-unverified and no email is sent (E65, E79).
+- **Not chosen:** auto-marking in a migration — changes firm configuration without consent; marking at runtime by
+  name — D17.
+- **Where:** `lib/tasks/bank_detail_changes.rake`.
+
 **FAQ**
 
 | Question | Answer |
@@ -710,6 +836,8 @@ Every change to an existing model, column, permission, export or behaviour. Noth
 | What if Verify and a bank change arrive in one save? | Guard forces unverified (D3) — a change can never be self-confirmed in its own save |
 | Why record `only_approver`? | Auditors can list self-confirmed changes; support can nudge firms to add an approver |
 | Could the maker remove the other approver to get the fallback? | Yes, but user permission edits are audited (`User` Trackable `extended_permissions`), the investor is still emailed, and the record says only approver |
+| Could an admin unmark SWIFT, change it alone, and mark it again? | No — unmarking (or deleting the marked field) is CapHive support only (D18) |
+| Why not run the penny drop after a SWIFT change? | The bank check proves the Indian account + IFSC only; it would re-tick Bank Verified for an unchecked SWIFT (E74). A second approver ticks it after checking proof |
 
 ---
 
@@ -761,11 +889,14 @@ applies D1–D4.
 
 | Owns | Reads / receives | Produces |
 |---|---|---|
-| The bank-change rule, flag clear, unverify, confirm-on-verify | Dirty values of `bank_account_number`, `ifsc_code`, `bank_verified`, `submission_status`; actor/source | `investor_kycs` writes; `bank_detail_changes` rows; enqueued job |
+| The bank-change rule, flag clear, unverify, confirm-on-verify | Dirty values of `bank_account_number`, `ifsc_code`, marked keys of `json_fields`, `bank_verified`, `submission_status`; actor/source; marked keys from ⑨ | `investor_kycs` writes; `bank_detail_changes` rows; enqueued job |
 
 ```mermaid
 flowchart TD
-    S["before_save"] --> P{"account or IFSC<br/>changed (normalised)?"}
+    S["before_save"] --> J{"json_fields<br/>changed?"}
+    J -- "yes" --> K["pluck marked keys of the<br/>KYC's form type (⑨)"]
+    J -- "no" --> P
+    K --> P{"account, IFSC or a<br/>marked key changed<br/>(normalised)?"}
     P -- "no" --> V{"verified false → true<br/>this save?"}
     P -- "yes" --> C["bank_verified=false<br/>status, response = nil"]
     C --> NB{"persisted and an old<br/>value non-blank?"}
@@ -787,13 +918,15 @@ flowchart TD
 | Confirm on verify | Same transaction | Only rows with `status = awaiting`; second request finds none (X12) |
 | Enqueue emails | `after_commit` | Job claims stamps (card ④) |
 
-**Worked examples:** H1–H3, E1–E10, X1, H5, E14–E16, X5, X12 ([§ 1](business-rules.md#1-clear-on-change--phase-1), [§ 3](business-rules.md#3-change-record-and-kyc-page--phase-2), [§ 5](business-rules.md#5-second-person--phase-3)).
+**Worked examples:** H1–H3, E1–E10, X1, H5, E14–E16, X5, X12, H19, E64–E74 ([§ 8](business-rules.md#8-payout-custom-fields-swift--iban--phase-6), [§ 1](business-rules.md#1-clear-on-change--phase-1), [§ 3](business-rules.md#3-change-record-and-kyc-page--phase-2), [§ 5](business-rules.md#5-second-person--phase-3)).
 
 **FAQ**
 
 | Question | Answer |
 |---|---|
-| Why normalise (strip, upcase) before comparing? | E3: re-typed IFSC must not email the investor |
+| Why normalise (strip, upcase) before comparing? | E3: re-typed IFSC must not email the investor (E70: same for SWIFT) |
+| How is a custom field change seen? | `attribute_in_database(:json_fields)` (re-parsed from the stored JSON) vs `json_fields`, for the marked keys only — works for whole-hash assignment (form, import, Document Checks) and in-place writes (AI extraction `json_fields[k] = v` + `json_fields_will_change!`) |
+| Which form's marks count? | The KYC's `form_type_id` before and after the save (usually one id) — one `pluck(:name, :label, :validation_rules)` of its TextFields, filtered in Ruby |
 | Does the guard decide who may verify? | No — the policy (⑥) does; the guard only records who did |
 | What about `full_name` changes? | Not a payout field (D1); `validate_bank` still re-runs the check when checks are on |
 
@@ -809,6 +942,9 @@ forward. Schema: [Part 4](#data-model-and-schema-changes).
 - `Trackable` (audited) on the model, so every status move has who/when.
 - `entity_id` copied from the KYC, `attr_readonly`.
 - Display helpers return "ending 4821" / "none"; full numbers never stored (E23).
+- `changed_custom_fields` (D19): `[{key: "swift_code", label: "SWIFT Code", kind: "code", old: "EBILAEADXXX", new: "NBADAEAAXXX"}]`
+  or `{… kind: "account", old: "3456", new: "8901"}`; `custom_field_lines` renders "SWIFT Code EBILAEADXXX → NBADAEAAXXX"
+  / "IBAN ending 3456 → ending 8901".
 
 **Worked examples:** H5, H6, E14–E23, X5 ([§ 3](business-rules.md#3-change-record-and-kyc-page--phase-2)).
 
@@ -852,6 +988,7 @@ sequenceDiagram
 - Investor email always sent when contacts exist — including a replaced change's own email if it ran before replacement.
 - `InvestorKycMailer#set_kyc` gains no magic link for these methods (link goes to the KYC page; signed-in view).
 - Email shows `l(change.created_at)` → `Nov 09, 2026` (EmailDateLocalization).
+- Both emails list one line per changed item: account, IFSC, then each `changed_custom_fields` entry by label (H20).
 
 **Worked examples:** H7, H8, E24–E31, X6 ([§ 4](business-rules.md#4-change-emails--phase-2)).
 
@@ -1008,6 +1145,94 @@ flowchart TD
 | Why not block the "Mark payments completed" action? | D14 — flags only; ops may have already paid offline |
 | Why keep the warning rule "until emailed"? | It is the existing spec rule; the readiness check and download cover later moments |
 
+### ⑨ Payout field marks
+
+Which KYC custom fields count as bank details. Config as data on the field definition; read by the guard (②).
+
+| Owns | Reads / receives | Produces |
+|---|---|---|
+| `validation_rules["payout_field"]` on the field definition, the mark/unmark rule, the rollout rake | Side panel / Form Types saves, the acting user, support's rake run | Marked keys for ② |
+
+**Flow — Ravi marks SWIFT, Meera changes it, Ravi confirms**
+
+```mermaid
+sequenceDiagram
+    actor R as Ravi (company admin)
+    participant SP as Side panel<br/>FormTypeFieldsSave
+    participant FCF as FormCustomField
+    actor M as Meera (approver)
+    participant K as InvestorKyc + Guard ②
+    participant BDC as BankDetailChange ③
+    participant J as NotifyJob ④
+    actor F as Farah Ali (investor)
+    R->>SP: SWIFT Code → Bank code, IBAN → Account identifier
+    SP->>SP: FormCustomFieldPolicy#mark_payout_field? (company admin)
+    SP->>FCF: validation_rules["payout_field"] = "code" / "account"<br/>(other rule keys untouched; KYC text field only)
+    Note over FCF,K: No KYC touched, no email (E65)
+    M->>K: SWIFT EBILAEADXXX → NBADAEAAXXX, Save
+    K->>FCF: pluck marked keys of Farah's form type
+    K->>K: bank_verified = false (verified KYC → completed)
+    K->>BDC: INSERT awaiting, changed_custom_fields [SWIFT Code full]
+    K->>J: after_commit perform_later
+    J-->>F: "Your bank details … were changed" (SWIFT Code line)
+    J-->>R: approver email
+    M->>K: Verify → refused (maker, ⑥)
+    R->>K: Verify via popup → confirmed by Ravi
+```
+
+**Mark lifecycle** (stored, `form_custom_fields.validation_rules["payout_field"]`; `none` = key absent)
+
+```mermaid
+stateDiagram-v2
+    [*] --> none
+    none --> code: admin or support marks<br/>(bank code)
+    none --> account: admin or support marks<br/>(account identifier)
+    code --> account: admin or support
+    account --> code: admin or support
+    code --> none: support only
+    account --> none: support only
+```
+
+- Switching between the two kinds keeps the field marked, so a company admin may do it (it changes display only).
+
+**Who may do what**
+
+| Action | Company admin (Ravi) | `enable_form_types` user, not admin (Priya) | KYC approver only (Meera) | CapHive support (Sam) | Other firm (Omar) |
+|---|---|---|---|---|---|
+| See the mark | ✓ | ✓ (Form Custom Fields show) | ✗ (no Form Types access) | ✓ | ✗ |
+| Mark (none → code/account) | ✓ | ✗ (param dropped) | ✗ | ✓ | ✗ |
+| Switch kind | ✓ | ✗ | ✗ | ✓ | ✗ |
+| Unmark / delete a marked field | ✗ "Payout fields can only be unmarked by CapHive support." | ✗ | ✗ | ✓ | ✗ |
+
+**Where it is edited**
+
+| Screen (reference) | Control | Shown when | Refusal |
+|---|---|---|---|
+| Record page › custom fields icon › side panel (`form_type_fields/_row.html.erb`) | Flag button `ti-building-bank` "Payout field: a change needs a second approver"; kind select in the row's details | KYC form type, `TextField`, `mark_payout_field?` | Marked row for non-support: flag on + locked chip "Support", no ✕ |
+| Form Types › Edit field card (`form_types/_form_custom_fields.html.erb:150-180`) | Dedicated select "Payout field": No / Bank code (shown in full) / Account identifier (last 4 only) — in the flags block, **not** among the Validation inputs | Same | Base error "Payout fields can only be unmarked by CapHive support." |
+| Form Custom Fields › New / Edit (`form_custom_fields/_form.html.erb`) | Same select | Same | Param dropped (not permitted) |
+| Custom field import | — (column not in the template) | — | Imported fields start unmarked |
+
+**Worked example — the rollout at one firm (counts from the production copy, entity 3103)**
+
+- Rake dry run lists 2 fields on its Non-Individual form: `swift_code` → code (8 filled), `iban_code` → account (6 filled);
+  `swift_code_in_case_of_foreign_bank_account` on its `InvestorKyc` form is a **CheckBox** → not listed.
+- Support posts the list in the ticket; the firm's admin agrees; support re-runs with `EXECUTE=1 FIRM_ID=3103`.
+- Result: 2 fields marked; 0 KYCs changed; 0 emails. The next edit of any of those 14 values follows §1–§5.
+
+**Worked examples:** H18, E65–E67, E77–E80, X16–X20 ([§ 8](business-rules.md#8-payout-custom-fields-swift--iban--phase-6)).
+
+**FAQ**
+
+| Question | Answer |
+|---|---|
+| Why does a non-validation flag live in `validation_rules`? | It is the only structured, per-key JSON on a field; a column was declined and `meta_data` is a free text box with per-type meaning (D17) |
+| Why only text fields? | All 16 real SWIFT/IBAN fields are `TextField`; a check box or select can't hold a payout identifier; numbers lose leading zeros |
+| Why only KYC forms? | The guard lives on `InvestorKyc`; a mark on an Investor or Offer form would promise a control that doesn't exist |
+| Does marking re-check or unverify anyone? | No (E65). Rules apply to saves after the mark |
+| What if the firm renames the field's label? | The key is unchanged, so it stays marked; past records keep the label they were saved with |
+| Is the mark per firm or per form? | Per form type: firm 841 has SWIFT on both its Individual and Non-Individual forms — both are proposed, each marked (E67) |
+
 ---
 
 ## 4. Reference
@@ -1083,6 +1308,24 @@ classDiagram
             +notify_bank_change_review()
         }
     }
+    namespace form_custom_fields {
+        class FormCustomField {
+            <<Model>>
+            +validation_rules
+            +payout_field()
+            +payout_keys_for(form_type_ids)$
+        }
+        class FormCustomFieldPolicy {
+            <<Policy>>
+            +mark_payout_field?()
+            +unmark_payout_field?()
+            +permitted_attributes()
+        }
+        class FormTypeFieldsSave {
+            <<Service>>
+            +call()
+        }
+    }
     namespace funds_payout {
         class DistributionReadinessAgent {
             <<Service>>
@@ -1103,6 +1346,9 @@ classDiagram
     InvestorKycsBulkActionJob --> InvestorKycPolicy
     DistributionReadinessAgent --> BankDetailChange : awaiting
     CapitalDistributionWarnings --> BankDetailChange : awaiting
+    BankDetailChangeGuard --> FormCustomField : marked keys
+    FormTypeFieldsSave --> FormCustomFieldPolicy
+    FormCustomFieldPolicy --> FormCustomField
 ```
 
 ### Data model and schema changes
@@ -1112,6 +1358,15 @@ erDiagram
     entities ||--o{ bank_detail_changes : "owns"
     investor_kycs ||--o{ bank_detail_changes : "has"
     users ||--o{ bank_detail_changes : "made / confirmed"
+    form_types ||--o{ form_custom_fields : "has"
+    form_types ||--o{ investor_kycs : "form of"
+    form_custom_fields {
+        bigint id PK
+        bigint form_type_id FK
+        string name "json_fields key"
+        string field_type "TextField only for marks"
+        json validation_rules "existing; NEW key payout_field: code | account"
+    }
     bank_detail_changes {
         bigint id PK
         bigint entity_id FK
@@ -1124,6 +1379,7 @@ erDiagram
         string new_account_last4
         string old_ifsc
         string new_ifsc
+        json changed_custom_fields "key, label, kind, old, new"
         string status "awaiting | confirmed | replaced"
         bigint confirmed_by_id FK
         datetime confirmed_at
@@ -1142,6 +1398,7 @@ erDiagram
         string ifsc_code "read"
         boolean bank_verified "semantics changed"
         string submission_status "read/written"
+        json json_fields "marked keys read"
     }
 ```
 
@@ -1162,6 +1419,7 @@ second-person state and the once-only email stamps live in one append-mostly pla
 | `changed_fields` | Added, string(100) | Account, IFSC or both — drives the email wording |
 | `old_account_last4` / `new_account_last4` | Added, string(4), null | Masked display; null = blank |
 | `old_ifsc` / `new_ifsc` | Added, string(20), null | Shown in full (public code); matches `investor_kycs.ifsc_code` limit |
+| `changed_custom_fields` | Added, json, null (created in Phase 2, written from Phase 6) | Changed payout custom fields: key, label, kind, old/new (full for code, last 4 for account) — D19 |
 | `status` | Added, string(12), not null, default "awaiting" | Lifecycle |
 | `confirmed_by_id` / `confirmed_at` | Added, bigint FK / datetime, null | Who confirmed, when |
 | `only_approver` | Added, boolean, not null, default false | Marks self-confirmed changes |
@@ -1172,8 +1430,15 @@ second-person state and the once-only email stamps live in one append-mostly pla
 | `[investor_kyc_id, status]` | New index | "awaiting change for this KYC" on every KYC page and policy check |
 | `[entity_id, status]` | New index | Payout flag lookups per firm |
 
-**Changes to existing models:** see [Key changes needing approval](#key-changes-needing-approval) — no column on
-an existing table changes; K2/K3 change the *meaning* of `bank_verified` and when `submission_status` moves.
+**`form_custom_fields`** (existing): **no schema change.** The mark is a new key in the existing json column.
+
+| Column / key | What changed | Why it's needed |
+|---|---|---|
+| `validation_rules["payout_field"]` | New key allowed (TextField only): `"code"` / `"account"`; absent = not a payout field | The firm's mark (D17). Allowing it is a change to an existing model's validation (K19) |
+
+**Changes to existing models:** see [Key changes needing approval](#key-changes-needing-approval) — no column on an
+existing table changes; K19 lets `FormCustomField#validation_rules_consistent` accept the `payout_field` key; K2/K3
+change the *meaning* of `bank_verified` and when `submission_status` moves.
 
 ### Component contracts
 
@@ -1188,6 +1453,7 @@ an existing table changes; K2/K3 change the *meaning* of `bank_verified` and whe
 | ⑤ → ⑦ | `bank_verified`, `bank_verification_status` columns | Status text is the display contract ("Name needs review: …") |
 | ③ → ⑦ | `kyc.latest_bank_change` (includes users) | One query per page |
 | ③ → ⑧ | `BankDetailChange.awaiting.where(investor_kyc_id: ids).group(:investor_kyc_id).maximum(:created_at)` | One grouped query per reader |
+| ⑨ → ② | `FormCustomField.payout_keys_for(form_type_ids)` → `where(form_type_id:, field_type: "TextField").pluck(:name, :label, :validation_rules)`, filtered in Ruby | Guard reads marks; never writes them. Only when `json_fields` changed |
 
 ### Notifications
 
@@ -1199,7 +1465,8 @@ an existing table changes; K2/K3 change the *meaning* of `bank_verified` and whe
 | Request updates (existing) | Unchanged | Unchanged | — | — | — | — |
 | Suppressed | none | — | — | — | — | — |
 
-- First fill, descriptive-field edits and confirmations send nothing new.
+- First fill, descriptive-field edits, unmarked custom field edits, marking a field and confirmations send nothing new.
+- A payout custom field change uses the same two emails; its lines read "SWIFT Code EBILAEADXXX → NBADAEAAXXX" / "IBAN ending 3456 → ending 8901".
 - The investor email to an investor-made change reads "If you asked for this, no action is needed."
 
 ### Cross-cutting concerns
@@ -1226,8 +1493,8 @@ an existing table changes; K2/K3 change the *meaning* of `bank_verified` and whe
 | 1 | Pack boundaries | All new code in `app/packs/core/investor_kycs`; funds pack reads `BankDetailChange` via a scope (public model) | `funds` already reads `InvestorKyc` | ②③④⑤⑥ in core/investor_kycs; ⑧ in funds/ai |
 | 2 | Thin controllers, skinny models | Controller only sets actor/source and renders; rule in a concern; emails in a job | `InvestorKycAction` steps | ①② |
 | 3 | Single responsibility | Guard (detect), record (store), job (tell), `BankNameMatch` (compare), policy (allow) | — | ②–⑥ |
-| 4 | Reuse before you add | `Trackable`, `InvestorKycNotifier`, `notification_users`, `warn_row`, Request Updates modal, journey warnings, `ApplicationJob` actor | Listed | all |
-| 5 | Configuration as data | Not needed — no per-firm knob (D7); CustomNotification for wording | `CustomNotification` | ④ |
+| 4 | Reuse before you add | `Trackable`, `InvestorKycNotifier`, `notification_users`, `warn_row`, Request Updates modal, journey warnings, `ApplicationJob` actor, side panel flags + Calculation lock, `calculation_change_allowed?` shape | Listed | all |
+| 5 | Configuration as data | The payout mark (`validation_rules["payout_field"]`) decides which custom fields are bank details (D17); no per-firm on/off knob (D7); CustomNotification for wording | `FormCustomField` flags (`required`, `internal`, `filter_in_search`), `CustomNotification` | ④⑨ |
 | 6 | Explicit state machines | `status` awaiting → confirmed/replaced only via `confirm!`/`replace!` | `submission_status` enum | ③ |
 | 7 | Append-only audit records | Rows never deleted or re-pointed; only forward status moves, audited | `Trackable` | ③ |
 | 8 | Background work | Emails in `BankDetailChangeNotifyJob` (idempotent claims); penny drop stays a job | `NotifyKycJob` | ④⑤ |
@@ -1241,7 +1508,8 @@ an existing table changes; K2/K3 change the *meaning* of `bank_verified` and whe
 #### Performance
 
 - Volume: ~7 bank changes / month (80 in the last 12 months); 6,940 live KYCs; 5,363 unpaid payments.
-- Guard: in-memory dirty checks; one INSERT (+ one UPDATE when replacing) only on a bank change.
+- Guard: in-memory dirty checks; one INSERT (+ one UPDATE when replacing) only on a bank change; +1 `pluck` of
+  marked keys only in saves where `json_fields` changed (and only when the KYC has a form type).
 - No large-table work (`account_entries`, `audits` untouched beyond normal `audited` writes).
 
 **Query budget**
@@ -1255,7 +1523,8 @@ an existing table changes; K2/K3 change the *meaning* of `bank_verified` and whe
 | Payments download | up to ~5k rows | +1 | grouped `maximum(:created_at)` hash | Hash lookup per row |
 | Readiness agent bank step | N payments | +1 | awaiting KYC id set | Set lookup |
 | Distribution warning | — | +1 count | subquery on payments' KYC ids | — |
-| Import row | 1 | +1 (awaiting change) | — | — |
+| Import row | 1 | +1 (awaiting change); +1 marked-keys pluck when the row writes custom fields | Memoise marked keys per form type for the import run | Per-row pluck avoided by the memo |
+| Side panel / Form Types save | ≤ 200 fields | +1 (`exists?` stored marked ids for the unmark check) | — | — |
 
 - Each phase gate runs its features with `PROSOPITE=1` and fixes N+1s in this change's code.
 
@@ -1274,12 +1543,14 @@ an existing table changes; K2/K3 change the *meaning* of `bank_verified` and whe
 | 9 | Webhooks, tokens, links | Emails link to the KYC page (sign-in), no magic link | ④ | H7 |
 | 10 | Rate limiting and cost | No new paid calls; review does not re-run the penny drop | ⑤ | E56 |
 | 11 | Audit and logging | `Trackable` on `BankDetailChange`; KYC audits keep old values; last 4 only in emails/logs; `filter_parameter_logging` already filters account numbers | ③④ | E21, E23 |
-| 12 | Verification | Brakeman + bundler-audit in each gate; refusal scenarios in `features/security/bank_detail_change_*.feature` | all | X2–X4, X7–X12 |
+| 12 | Verification | Brakeman + bundler-audit in each gate; refusal scenarios in `features/security/bank_detail_change_*.feature` and `bank_detail_payout_fields.feature` | all | X2–X4, X7–X12, X16–X20 |
+| 13 | Payout marks (authorization) | Mark = `FormCustomFieldPolicy#mark_payout_field?` (parent form type `update?`); unmark/delete = support; every writer asks the policy; not a `vr_*` input, not in the custom-field import template | ⑨ | X16–X18, X20 |
+| 14 | Custom-field PII | Change record stores account-kind values as last 4; logs never print custom values; full old value only in the existing KYC audit | ③④ | H20, E69 |
 
 ### Worked examples
 
 Every H/E/X row — shared setup, happy path, edge and error cases, with their spec scenario and feature — lives in
-[business-rules.md](business-rules.md) (H1–H17, E1–E62, X1–X15; 94 rows across 8 feature files). The cards above
+[business-rules.md](business-rules.md) (H1–H21, E1–E80, X1–X20; 121 rows across 10 feature files). The cards above
 cite the IDs; the QA checklist and tasks reuse them.
 
 ### Testing
@@ -1306,7 +1577,13 @@ Read-only aggregates on the production copy (`IRM_development` @ 33066, latest a
 | Distribution payments last 12 months | 12,146 in 11 firms, to 1,314 KYCs (1,015 verified but not Bank Verified) |
 | Unpaid payments now | 5,363 |
 | Name rule on 607 historic penny-drop passes | 579 provider match · 9 strict words · **19 (3.1%) → review** · 0 rejected |
-| Custom fields that look like bank data | SWIFT (8 firms), IBAN (2), cancelled cheque upload (29) |
+| Custom fields that look like bank data | SWIFT (8 firms with values), IBAN (2), cancelled cheque upload (29) |
+| KYC custom field definitions matching `swift\|iban\|bic\|routing\|sort code\|aba` (2026-11-09) | 17: **14 SWIFT text + 2 IBAN text** (proposed) + 1 SWIFT *check box* (not proposed); none for BIC, routing, sort code, ABA |
+| …firms / form types | 10 firms (entity ids 19, 69, 451, 841, 844, 3103, 5632, 6301, 7366, 7643) · 14 KYC form types (11 Non-Individual, 2 Individual — firms 19 and 841 mark both — and 1 legacy `InvestorKyc`) |
+| …KYCs with a value filled | SWIFT 158 · IBAN 7 (165 values; 8 firms have ≥ 1, entities 7366 / 7643 have none yet) |
+| …changes from a non-blank value (KYC audits) | 2024: 9 (2 firms) · 2025: 1 · 2026: 3 · last 12 months: **4 in 2 firms** |
+| Where the mark is stored | Existing `validation_rules` json — the 16 candidates hold **no** rules today (0 of 16); `meta_data` rejected partly because **7** KYC TextFields already carry leftover choice lists there (D17) |
+| Who marks at rollout | Rake dry run → support ticket → firm admin agrees → `EXECUTE=1 FIRM_ID=` (D20) |
 | Secondaries using bank check | 65 offers / 3 interests with responses; 1 offer ✓ |
 
 ### Risks and open questions
@@ -1317,10 +1594,17 @@ Read-only aggregates on the production copy (`IRM_development` @ 33066, latest a
 - Approvers who can't see a KYC don't count → the maker may get the only-approver path in firms with fund-restricted approvers (E39); recorded.
 - 19 historic partial matches would now need a person → ~3% of checks, only in 2 firms.
 - Import users relying on Verified = Yes with bank edits → "Success with warnings" text names the next step.
+- A firm never marks its SWIFT field → SWIFT edits stay audit-only; mitigated by the rollout proposal (D20) and the
+  release note to the 10 firms' admins.
+- Bulk "Bank verification" re-run after a SWIFT-only change re-ticks Bank Verified from the Indian account check →
+  KYC Verified still needs the second person (the payout flags key on the awaiting record, not on the ✓).
+- A firm keeps a payout identifier in a non-text field → not markable (validation); support converts the field.
+- Future code that assigns `validation_rules` wholesale would drop the mark → today only per-key `vr_*` setters
+  write it; the D17 code comment warns, and E80 (editing a marked field's rules keeps the mark) guards it in Cucumber.
 
 | # | Open question | Current thinking (recommended) | Status |
 |---|---|---|---|
-| 1 | Should SWIFT / IBAN custom fields (8 / 2 firms) count as bank details? | **Yes — in this change** (user, 2026-11-09). Design to be extended: a firm marks custom fields as payout fields (config as data); a change to a marked field follows the same reset / second-person / email rules | Decided — design update pending |
+| 1 | Should SWIFT / IBAN custom fields (8 / 2 firms) count as bank details? | **Yes — in this change** (user, 2026-11-09). A firm marks custom fields as payout fields (config as data, D17–D20, card ⑨); a change to a marked field follows the same reset / second-person / email rules | Decided — design extended 2026-11-09 |
 | 2 | One-approver firms: automatic fallback (D7) or a support-only entity setting (as M13 may adopt)? | **A — automatic fallback** (D7): the only approver may verify after a warning card; recorded as "Confirmed by …, only approver"; the investor is always emailed | Decided by user 2026-11-09 |
 | 3 | Restrict `verified`/`bank_verified` params to approvers for everyone (D12), or only block the maker? | **Restrict for everyone** (D12) | Decided by user 2026-11-09 |
 | 4 | Reset the 54 KYCs whose ✓ contradicts the stored provider response? | **No** (D16); support sends each firm its list | Decided by user 2026-11-09 |

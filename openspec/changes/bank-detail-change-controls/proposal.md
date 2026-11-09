@@ -24,6 +24,8 @@
 - **The investor is never told.** No email goes to the investor when their payout account changes.
 - **The name check is too loose.** The bank check accepts an account if *any one word* of the name matches
   ("R KUMAR" passes for investor "A Kumar").
+- **SWIFT / IBAN in custom fields are outside every control.** 10 firms keep foreign payout codes (SWIFT, IBAN)
+  in KYC custom fields — 165 values today. Editing one is not even seen as a bank change.
 - **Why now:** distributions paid 12,146 payments to 1,314 KYCs in the last 12 months; 80 account/IFSC
   changes happened on existing KYCs in that time, across 10 firms. Any one of them could have been a
   redirected payout with no trace in front of the investor.
@@ -54,6 +56,11 @@ flowchart LR
   word for word (initials allowed). Anything less becomes "Name needs review" for a person — not a rejection.
 - **Payouts see unconfirmed changes:** the distribution payments download, the distribution readiness check
   and the distribution's journey panel all flag a bank change nobody has confirmed yet.
+- **SWIFT / IBAN count when the firm marks them.** A company admin marks a KYC custom field as a *payout field*
+  (a bank code like SWIFT, or an account identifier like IBAN). A change to a marked field follows every rule
+  above: ✓ cleared, unverified, recorded, emailed, second person, flagged at payout. Unmarked fields are ignored.
+- **Only CapHive support can unmark** a payout field (or delete one) — otherwise one person could unmark, edit and
+  re-mark.
 - **Investors can no longer send the verification result fields** (bank/PAN verification status and
   response) — only the background check writes them.
 - **BREAKING (fund users):** the person who changed a KYC's bank details can no longer verify it. Firms
@@ -91,6 +98,8 @@ flowchart TB
 | **Bank check (penny drop)** | The paid check that sends ₹1 to the account and reads back the name the bank holds | Bank returns "ANIL KUMAR" |
 | **Name needs review** | The bank's name was close but not an exact word match, so a person decides | Bank "R KUMAR" vs "A Kumar" |
 | **Change email** | The email telling the investor (and the firm's approvers) about a bank change | "Your bank details … were changed" |
+| **Payout field** | A KYC custom field the firm marked as bank details | Horizon's "SWIFT Code", "IBAN" |
+| **Bank code / account identifier** | The two kinds of payout field: shown in full in emails (like IFSC) / last 4 only (like the account no.) | SWIFT `NBADAEAAXXX` / IBAN ending 8901 |
 
 #### Second person (maker–checker)
 
@@ -101,6 +110,16 @@ flowchart TB
 - **Example:** Meera changes Anil Kumar's account → Verify is greyed out for Meera → Ravi clicks Verify.
 - **Exception:** a firm with no other KYC approver — the maker may verify after a warning; it is recorded
   as "Only approver".
+
+#### Payout field (SWIFT / IBAN)
+
+- **What:** a mark a firm puts on one of its KYC text custom fields, saying "money is routed by this".
+- **Why:** each firm names these fields differently (`swift_code`, `beneficiary_swift_code`, …); the firm knows
+  which ones matter.
+- **Does NOT cover:** unmarked fields, check boxes / selects / files, fields on non-KYC forms.
+- **Example:** Ravi marks "SWIFT Code" (bank code) and "IBAN" (account identifier) → Meera changes Farah Ali's SWIFT
+  → same as an account change: ✓ off, Farah and Ravi emailed, Meera can't verify, Ravi does.
+- **Marking changes nothing by itself:** no KYC is unverified, nobody is emailed; the rules apply to the next edit.
 
 #### Name needs review
 
@@ -164,7 +183,31 @@ flowchart LR
     class B,M,D new
 ```
 
-**3. The bank check reads back the name**
+**3. A SWIFT stored in a custom field changes**
+
+Before:
+
+```mermaid
+flowchart LR
+    A["Meera edits Farah's<br/>SWIFT Code custom field"] --> B["Saved — audit trail only"] --> C["Paid to the new SWIFT;<br/>nobody told"]
+    classDef bad fill:#fdecea,stroke:#c62828,color:#000
+    class B,C bad
+```
+
+After:
+
+```mermaid
+flowchart LR
+    R["Ravi marked SWIFT Code<br/>as a payout field (once)"] --> A["Meera edits Farah's SWIFT"]
+    A --> B["✓ cleared, change recorded<br/>(SWIFT shown in full)"]
+    B --> M["Farah + approvers emailed"]
+    B --> D["Ravi verifies<br/>(Meera can't)"]
+    U["Unmarked field edited"] --> I["Audit trail only, as today"]
+    classDef new fill:#d4edda,stroke:#2e7d32,color:#000
+    class R,B,M,D new
+```
+
+**4. The bank check reads back the name**
 
 Before:
 
@@ -202,6 +245,8 @@ flowchart LR
 | Ravi Iyer | Horizon Capital compliance head, KYC approver | Verifies as the second person |
 | Priya Nair | Horizon Capital ops, Investor KYC Update only (not Approve) | Edits KYCs; can no longer tick Bank Verified |
 | Kiran Rao | Only KYC approver at Solo Advisors | The "only approver" exception |
+| Farah Ali | Investor at Horizon with a Dubai account, contact farah.ali@example.ae | Her SWIFT / IBAN live in custom fields |
+| Sam Joseph | CapHive support | Runs the rollout proposal; the only one who can unmark |
 
 ### The journey on one page
 
@@ -209,6 +254,9 @@ flowchart LR
 flowchart TD
     subgraph P0["Before you start (exists today)"]
         Z1["Anil's KYC verified<br/>HDFC ••••4821"]
+    end
+    subgraph PA["Part A — once, firms with SWIFT / IBAN fields"]
+        A1["A1 Support proposes fields"] --> A2["A2 Admin marks SWIFT /<br/>IBAN as payout fields"]
     end
     subgraph PB["Part B — every bank change"]
         B1["B1 UnVerify (if verified)"] --> B2["B2 Edit account / IFSC, Save"]
@@ -234,6 +282,7 @@ flowchart TD
         E1["E1 Distribution panel /<br/>readiness / download<br/>flag unconfirmed changes"]
     end
     Z1 --> B1
+    A2 -. "marked fields join<br/>Part B rules" .-> B2
     B3 --> C1
     B8 --> E1
     D3 --> E1
@@ -243,9 +292,12 @@ flowchart TD
     class B1,B2,B3,B4,B5,B6,B7,B8 every
     class C1,C2,C3,C4,C5 chk
     class D1,D2,D3,E1 lp
+    classDef setup fill:#eceff1,stroke:#90a4ae,color:#000
+    class A1,A2 setup
 ```
 
-- There is no Part A: nothing to switch on. The rules apply to every firm from release.
+- Part A is only for firms that keep SWIFT / IBAN in custom fields (10 firms today). Everything else applies to
+  every firm from release, with nothing to switch on.
 
 ### Before you start
 
@@ -254,6 +306,17 @@ flowchart TD
 | Two KYC approvers | So someone other than the maker can verify | Users › edit user › Investor KYC Approve (or company admin) |
 | Investor contacts with KYC emails | Who the change email goes to | Investor › Users (approved, KYC tag or no tags) |
 | Bank verification setting (optional) | Decides whether the bank check runs | Entity settings › Bank verification (CapHive support) |
+
+### Part A — mark SWIFT / IBAN custom fields (once, only firms that have them)
+
+| Step | Who | Where | Action | What the system does | What you see |
+|---|---|---|---|---|---|
+| A1 | Sam (support) | Support ticket | Runs the proposal for Horizon (dry run) | Lists text fields named like SWIFT / IBAN, with how many KYCs have a value; changes nothing | "SWIFT Code → bank code (2 KYCs filled) · IBAN → account identifier (1 filled)" |
+| A2 | Ravi (company admin) | Farah's KYC page › custom fields icon (side panel) — or Form Types › Edit | Sets SWIFT Code → "Bank code", IBAN → "Account identifier", Save (or tells Sam to run it with EXECUTE=1) | Stores the mark on the field; touches no KYC; sends no email | "Individual KYC fields saved"; bank icon on both rows |
+| A3 | Ravi | Side panel | Tries to unmark IBAN | Refused | "Payout fields can only be unmarked by CapHive support." |
+
+- From A2 on, every Part B step applies to SWIFT / IBAN edits too; the note reads "Bank details changed on
+  09/11/2026 by Meera Shah — SWIFT Code EBILAEADXXX → NBADAEAAXXX. Waiting for a second approver to verify."
 
 ### Part B — every bank change (fund user)
 
@@ -358,6 +421,9 @@ If you did not, contact Horizon Capital immediately — before the next payout.
 - **Solo Advisors has only Kiran.** Kiran's Verify is not greyed out; the popup adds an amber card "You are
   the only KYC approver at Solo Advisors — this is recorded as confirmed by the person who made the
   change." **Fix:** none needed; the investor email is the check. Adding a second approver removes it.
+- **Ravi marked the wrong field.** He can switch its kind himself but cannot unmark it. **Fix:** ask CapHive support.
+- **A firm keeps SWIFT in a check box or drop-down.** It can't be marked ("Only text fields on a KYC form can be
+  payout fields"). **Fix:** support changes it to a text field.
 - **The investor has no contact to email.** The approvers' email says "No investor contact could be
   emailed — confirm the change with the investor by phone." **Fix:** add an investor user, then verify.
 
@@ -367,7 +433,8 @@ If you did not, contact Horizon Capital immediately — before the next payout.
 |---|---|---|---|
 | 1 | Change bank details (as today) | Maker (fund user or investor) | Each change |
 | 2 | Verify the KYC | A second KYC approver | Each change (≈ 7 a month across all firms today) |
-| 3 | Tick Bank Verified after checking proof | A second KYC approver | Only for "Name needs review" (≈ 3% of checks) |
+| 3 | Tick Bank Verified after checking proof | A second KYC approver | Only for "Name needs review" (≈ 3% of checks), and after a SWIFT / IBAN-only change |
+| 4 | Mark SWIFT / IBAN fields | Company admin (or support with consent) | Once per firm (10 firms today) |
 
 ---
 
@@ -438,6 +505,18 @@ pay, **so that** I hold those payments.
 - Distribution journey panel warning, readiness check failure and payments download column, as in Part E.
 - Existing payments, verified KYCs and distributions without changes look exactly as today.
 
+### US-8: SWIFT / IBAN changes get the same controls
+
+**As a** compliance head at a firm paying foreign investors, **I want** to mark our SWIFT and IBAN custom fields as
+payout fields, **so that** changing them needs a second approver and tells the investor, like an account change.
+
+**Acceptance criteria:**
+- A company admin can mark a KYC text field as a bank code or an account identifier in the side panel or Form
+  Types › Edit; only CapHive support can unmark or delete it.
+- A change to a marked field: ✓ cleared, verified KYC unverified, recorded, emails (IBAN last 4 only, SWIFT in
+  full), maker can't verify, payout flags — on every path (form, API, import, Document Checks, AI extraction).
+- An unmarked field change does nothing new. Marking changes no KYC and sends no email.
+
 ### US-7: Verification fields can't be forged
 
 **As a** security reviewer, **I want** verification status/response fields written only by the check,
@@ -476,6 +555,21 @@ pay, **so that** I hold those payments.
 
 - "Bank Verified" checkbox shown only to users allowed to tick it (KYC approvers who are not the maker).
 
+### Custom fields side panel / Form Types › Edit (KYC forms)
+
+```
+┌ Individual KYC fields ─────────────────────────────────────────────── ✕ ┐
+│ ⠿ SWIFT Code        swift_code      TextField  [*] [🔒] [👁] [🏦 on] ⌄  │
+│     Payout field: (Bank code — shown in full ▾)                          │
+│ ⠿ IBAN              iban_code       TextField  [*] [🔒] [👁] [🏦 on] ⌄  │
+│ ⠿ Intermediary Bank intermediary_…  TextField  [*] [🔒] [👁] [🏦]    ⌄ ✕│
+│ ⠿ Foreign account?  foreign_account CheckBox   [*] [🔒] [👁]          ⌄ ✕│
+└──────────────────────────────────────────────────────────────────────────┘
+```
+
+- 🏦 = "Payout field: a change needs a second approver"; shown only on text fields of KYC forms.
+- A marked row has no ✕ for company admins; its 🏦 shows a "Support" lock when they try to turn it off.
+
 ### Bulk actions — KYC list
 
 - Bulk Verify skips the maker's KYCs and lists them: "Not verified — you changed the bank details; another
@@ -487,7 +581,8 @@ pay, **so that** I hold those payments.
 
 | Excluded | Covered In |
 |---|---|
-| Bank fields held in custom fields (SWIFT in 8 firms, IBAN in 2) | Open question 1 |
+| Custom fields the firm has **not** marked as payout fields | Audit trail only |
+| Payout marks on non-KYC forms or non-text fields | Not markable |
 | Bank name / branch / account type edits | Audit trail only (they don't route money) |
 | Secondary-sale seller/buyer bank details (offers, interests) | Follow-up change |
 | Import Verified = Yes by users without Approve, when bank details didn't change | Follow-up (M14 scope is bank changes) |
@@ -502,6 +597,9 @@ pay, **so that** I hold those payments.
 | Field | Rule | Default |
 |---|---|---|
 | Account number, IFSC | A change from non-blank → different value is a bank change (spaces and letter case ignored) | — |
+| Marked payout custom field | Same rule as account number | — |
+| Payout field mark | Only on text fields of KYC forms: "Only text fields on a KYC form can be payout fields" | Not marked |
+| Payout field unmark / delete | CapHive support only: "Payout fields can only be unmarked by CapHive support." | — |
 | Bank Verified | Forced off in the save that changes account/IFSC, whatever was sent | off after change |
 | Bank Verified (tick) | Accepted only from a KYC approver who is not the maker of an awaiting change | ignored otherwise |
 | Verified | Accepted only from a KYC approver; refused for the maker of an awaiting change | ignored / refused |
@@ -524,6 +622,10 @@ pay, **so that** I hold those payments.
 | Distribution panel | "1 KYC has bank details changed and not yet confirmed by a second approver" |
 | Readiness check | "1 investor(s) have bank details changed and not yet confirmed. Ask a second approver to verify the KYC before releasing payment." |
 | Payments download | Last column "Unconfirmed Bank Change": change date or blank |
+| KYC note after a SWIFT change | "Bank details changed on 09/11/2026 by Meera Shah — SWIFT Code EBILAEADXXX → NBADAEAAXXX. Waiting for a second approver to verify." |
+| Investor email after an IBAN change | "IBAN ending 3456 → ending 8901" |
+| Admin unmarks a payout field | "Payout fields can only be unmarked by CapHive support." |
+| Mark sent for a check box | "Only text fields on a KYC form can be payout fields" |
 
 ---
 
@@ -539,6 +641,8 @@ pay, **so that** I hold those payments.
 | 6 | Who gets the investor email? | Approved KYC contacts who had access before the change; never addresses in the KYC itself |
 | 7 | Block payouts automatically? | No — flag in the panel, readiness check and download |
 | 8 | Existing data | Untouched; no backfill. Rules apply to changes after release |
+| 9 | SWIFT / IBAN custom fields | In scope (user, 2026-11-09): the firm marks them as payout fields; marked fields follow every rule; only support unmarks |
+| 10 | Rollout of existing SWIFT / IBAN fields | Support proposes (dry run), the firm's admin agrees, then they're marked; no KYC touched |
 
 ---
 
@@ -547,7 +651,8 @@ pay, **so that** I hold those payments.
 ### New Capabilities
 
 - `kyc/bank-detail-change-controls`: clearing Bank Verified on change, the change record, second-person
-  verification, change emails, the name check, protected verification fields, and payout flags.
+  verification, change emails, the name check, protected verification fields, payout flags, and payout custom
+  fields (SWIFT / IBAN) marked by the firm.
 
 ### Modified Capabilities
 
@@ -564,6 +669,10 @@ pay, **so that** I hold those payments.
 - Distribution page journey panel, Distribution readiness support agent, distribution payments download.
 - KYC API (fields it accepts).
 - A new history table for bank changes (see design).
+- Custom fields side panel and Form Types › Edit (KYC forms): a "Payout field" mark. **No new column:** the mark is
+  stored in the field's existing rules data (`validation_rules`); allowing it there is a change to an existing
+  model's check — needs approval (design K19).
+- A one-off support task that proposes the existing SWIFT / IBAN fields (10 firms).
 
 ---
 
@@ -574,6 +683,7 @@ pay, **so that** I hold those payments.
 3. "Bank Verified" means the *current* account was checked — never a stale ✓.
 4. Genuine investors with partial name matches go to a person instead of being rejected.
 5. Ops sees unconfirmed changes where they pay.
+6. Foreign payout details (SWIFT / IBAN) get the same protection, chosen field by field by the firm.
 
 ---
 
@@ -588,7 +698,11 @@ pay, **so that** I hold those payments.
 | Is a payment ever blocked? | Not automatically. The readiness check reports "blocked" and the panel warns; releasing payment stays a person's call |
 | Does the email show the full account number? | No — last 4 digits only |
 | Can the firm turn the investor email off? | No. They can reword it (custom notification), not disable it |
-| Does fixing a typo in the branch name email the investor? | No — only account number or IFSC changes |
+| Does fixing a typo in the branch name email the investor? | No — only account number, IFSC or a marked payout field |
+| Do SWIFT / IBAN changes count? | Yes, once the firm marks those custom fields as payout fields. Unmarked fields are audit-only |
+| Does marking a field unverify our KYCs? | No. Marking changes no KYC and sends no email; the next edit of that field follows the rules |
+| Why can't our admin unmark a field? | Unmarking lets one person change the SWIFT alone; CapHive support does it on request |
+| Why is SWIFT shown in full but IBAN only as last 4? | SWIFT is a public bank code (like IFSC); an IBAN contains the account number |
 | What does a "Name needs review" cost? | Nothing extra: no second bank check is run; a person decides |
 | Does this affect imports for new KYCs? | No. Only "Update Only" rows that change an existing account |
 | How is it tested? | Cucumber features per phase — see [business-rules.md](business-rules.md) |

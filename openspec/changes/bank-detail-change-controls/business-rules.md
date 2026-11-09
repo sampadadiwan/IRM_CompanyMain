@@ -19,6 +19,7 @@
 - [5. Second person — Phase 3](#5-second-person--phase-3)
 - [6. Bank check name rule — Phase 4](#6-bank-check-name-rule--phase-4)
 - [7. Payout flags and journey warnings — Phase 5](#7-payout-flags-and-journey-warnings--phase-5)
+- [8. Payout custom fields (SWIFT / IBAN) — Phase 6](#8-payout-custom-fields-swift--iban--phase-6)
 - [Coverage](#coverage)
 
 ---
@@ -44,6 +45,9 @@ flowchart LR
     subgraph P5["Phase 5"]
         G7["7 Payout flags"]
     end
+    subgraph P6["Phase 6"]
+        G8["8 Payout custom fields"]
+    end
     G1 --> BC["BC: kyc/bank-detail-<br/>change-controls"]
     G2 --> BC
     G3 --> BC
@@ -52,6 +56,7 @@ flowchart LR
     G6 --> BC
     G7 --> BC
     G7 --> DJ["DJ: funds/capital-<br/>distribution-journey"]
+    G8 --> BC
 ```
 
 - **ID legend:** **H** = happy path · **E** = edge case · **X** = error (exception) case. IDs run across the
@@ -85,6 +90,12 @@ flowchart LR
 | KYCs at Kestrel | A Kumar · Thimmaiah Chengappa · ABC Private Limited · Anil Sharma | Verified; each with an account and IFSC |
 | Firm (one approver) | Solo Advisors | Only KYC approver: Kiran Rao (company admin); KYC Leela Menon, verified |
 | Other tenant | Northwind Partners | Company admin Omar Sheikh |
+| User (Phase 6) | Sam Joseph | CapHive support |
+| Custom fields (Phase 6) | Horizon **Individual** KYC form | Text: SWIFT Code (`swift_code`), IBAN (`iban_code`), Intermediary Bank Name (`intermediary_bank_name`); check box: Foreign account? (`foreign_account`). **None marked** at the start |
+| Custom fields (Phase 6) | Horizon **Non-Individual** KYC form | Text: SWIFT Code (`swift_code`) — never marked in these rows |
+| Investor + KYC (Phase 6) | Farah Ali (Individual), Horizon | Contact farah.ali@example.ae (approved, no tags, created 01/10/2026); KYC verified by Ravi 01/10/2026; account 50100099001122 / HDFC0001234; SWIFT `EBILAEADXXX`; IBAN `AE070331234567890123456` (ending 3456); Bank Verified ✓; in Q3 2026 Distribution (₹5,00,000) |
+| KYC (Phase 6) | Gulf Ventures LLC (Non-Individual), Horizon | Verified; SWIFT `NBADAEAAXXX` |
+| Custom fields (Phase 6) | Kestrel and Solo Advisors KYC forms | SWIFT Code marked as a bank code (Kestrel "A Kumar" and Solo "Leela Menon" each hold a SWIFT) |
 
 ---
 
@@ -318,11 +329,84 @@ flowchart LR
 
 ---
 
+## 8. Payout custom fields (SWIFT / IBAN) — Phase 6
+
+> Decided by the user on 2026-11-09 (design open question 1): a firm marks custom fields as payout fields; a
+> change to a marked field follows **every** rule of §1–§5 and §7. Marks: **bank code** (shown in full, like
+> IFSC) or **account identifier** (last 4 only, like the account number). The mark is stored as the key
+> `payout_field` in the field's existing `validation_rules` JSON (user decision 2026-11-09 — no new column).
+> "Today" is 09/11/2026.
+
+```mermaid
+flowchart LR
+    R["Ravi marks SWIFT Code<br/>(bank code) and IBAN<br/>(account identifier)"] --> M["Meera changes<br/>Farah's SWIFT"]
+    M --> G["Same save: Bank Verified off,<br/>record awaiting, emails"]
+    G --> V{"Who verifies?"}
+    V -- "Meera" --> N["Refused (greyed)"]
+    V -- "Ravi" --> C["Confirmed"]
+    U["Intermediary Bank Name<br/>(unmarked) edited"] --> I["Ignored: audit trail only"]
+```
+
+### Happy path
+
+| # | Scenario | Given | When | Then | Spec scenario | Feature |
+|---|---|---|---|---|---|---|
+| H18 | Admin marks SWIFT and IBAN | Horizon Individual KYC form, nothing marked | Ravi opens Farah's KYC › custom fields icon (side panel), sets SWIFT Code → "Bank code" and IBAN → "Account identifier", Save | "Individual KYC fields saved"; both rows show the payout icon; Form Types › Edit shows the same; Farah's KYC unchanged; no email | BC: Firm marks a payout field | features/core/bank_detail_payout_fields.feature |
+| H19 | SWIFT change follows the bank-change rules | H18; Farah's KYC unverified by Meera | Meera changes SWIFT Code `EBILAEADXXX` → `NBADAEAAXXX`, Save | Bank Verified off; record awaiting, maker Meera, source screen, "SWIFT Code EBILAEADXXX → NBADAEAAXXX"; note "Bank details changed on 09/11/2026 by Meera Shah — SWIFT Code EBILAEADXXX → NBADAEAAXXX. Waiting for a second approver to verify." | BC: Marked field change is a bank change | features/core/bank_detail_payout_fields.feature |
+| H20 | Emails name the field; IBAN masked | H18; Farah's KYC unverified | Meera changes IBAN to `AE460260001015333438901` | farah.ali@example.ae gets "Your bank details with Horizon Capital were changed" with "IBAN ending 3456 → ending 8901", no full IBAN; Ravi gets the approver email; Meera nothing | BC: Marked field shown masked in emails | features/core/bank_detail_payout_fields.feature |
+| H21 | Second approver confirms a SWIFT change | H19 | Meera hovers Verify; Ravi clicks Verify and confirms | Meera: greyed, "You changed this KYC's bank details. Another KYC approver must verify it."; Ravi's popup card "New payout account confirmed — SWIFT Code NBADAEAAXXX"; verified; "Confirmed by Ravi Iyer on 10/11/2026" | BC: Second approver verifies | features/core/bank_detail_payout_fields.feature |
+
+### Edge cases
+
+| # | Scenario | Given | When | Then | Spec scenario | Feature |
+|---|---|---|---|---|---|---|
+| E63 | SWIFT change on a **verified** KYC by import | H18; Farah verified | Meera imports an Update Only row: SWIFT Code `NBADAEAAXXX`, Verified = Yes | "Success with warnings" — "Bank details changed — the KYC was left unverified for another approver to verify"; KYC unverified; record source import, awaiting; emails | BC: Marked SWIFT change on a verified KYC | features/core/bank_detail_payout_fields.feature |
+| E64 | Unmarked custom field ignored | H18; Farah unverified, Bank Verified ✓ | Meera changes Intermediary Bank Name | Bank Verified ✓ unchanged; no record; no email; Audit Trail lists the edit as today | BC: Unmarked custom field change ignored | features/core/bank_detail_payout_fields.feature |
+| E65 | Marking doesn't retro-unverify | SWIFT unmarked; Farah verified, Bank Verified ✓ | Ravi marks SWIFT (as H18) | Farah still verified, Bank Verified ✓; no record; no email | BC: Marking does not change existing KYCs | features/core/bank_detail_payout_fields.feature |
+| E66 | A change made before marking is not recorded later | SWIFT unmarked; Meera changed Farah's SWIFT on 08/11/2026 | Ravi marks SWIFT on 09/11/2026, then opens Farah's KYC | No note, no record for the 08/11 edit; Audit Trail shows it | BC: Marking does not change existing KYCs | features/core/bank_detail_payout_fields.feature |
+| E67 | A mark applies to its own form only | H18 (Individual form only) | Meera changes Gulf Ventures LLC's (Non-Individual) SWIFT | No record; no email | BC: Unmarked custom field change ignored | features/core/bank_detail_payout_fields.feature |
+| E68 | First fill of a marked field | H18; Farah's IBAN blank, Bank Verified ✓ | Farah (magic link) fills IBAN, submits | No record, no email (first fill); Bank Verified **off** — any change of a payout value clears it, as for account/IFSC (§1) | BC: First fill is not a change | features/core/bank_detail_payout_fields.feature |
+| E69 | Marked value cleared | H18 | Meera blanks IBAN | Record "IBAN ending 3456 → none"; both emails | BC: Marked field change is a bank change | features/core/bank_detail_payout_fields.feature |
+| E70 | Same SWIFT re-typed | H18 | Meera saves SWIFT "ebilaead xxx" | No record; Bank Verified ✓ unchanged | BC: Same value re-typed | features/core/bank_detail_payout_fields.feature |
+| E71 | Account and SWIFT in one save | H18; Farah unverified | Meera changes account to …7788 and SWIFT, Save | **One** record listing both; one investor email, one approver email | BC: Marked field change is a bank change | features/core/bank_detail_payout_fields.feature |
+| E72 | AI extraction writes a marked field | H18; extractor rule targets `swift_code`, "always overwrite" | Extraction job writes `NBADAEAAXXX` | Record source ai_extraction; Bank Verified off | BC: Marked field change is a bank change | features/core/bank_detail_payout_fields.feature |
+| E73 | Document Checks writes a marked field | H18; a check reads the IBAN from a bank letter | Meera clicks "Use document value" | Record source document_checks; Bank Verified off | BC: Marked field change is a bank change | features/core/bank_detail_payout_fields.feature |
+| E74 | Checks on: no bank check for a SWIFT-only change | Kestrel (checks on); "A Kumar" unverified, Bank Verified ✓ | Dev changes only SWIFT | Bank Verified off; **no** bank check runs (it checks account/IFSC only); Asha ticks Bank Verified after proof; Dev cannot | BC: Marked field change is a bank change | features/core/bank_detail_payout_fields.feature |
+| E75 | Only approver, SWIFT change | Solo Advisors; Kiran changes Leela's SWIFT after UnVerify | Kiran clicks Verify | Only-approver card; confirm → verified, recorded "Only approver"; Leela's contact was emailed | BC: One-approver firm | features/core/bank_detail_payout_fields.feature |
+| E76 | Payout flags see a SWIFT change | H19; Q3 2026 Distribution pays Farah, not emailed | Ravi opens the distribution; Meera downloads payments | Panel "1 KYC has bank details changed and not yet confirmed by a second approver"; "Unconfirmed Bank Change" 09/11/2026 on Farah's row | BC: Download column | features/core/bank_detail_payout_fields.feature |
+| E77 | Support unmarks | H18 | Sam (support) sets IBAN → "No", Save | Unmarked; a later IBAN change makes no record | BC: Only support unmarks a payout field | features/core/bank_detail_payout_fields.feature |
+| E78 | Rollout proposal — dry run | Firm with `swift_code`, `iban_code` text fields and a `swift_code_in_case_of_foreign_bank_account` check box | Support runs `bin/rails bank_detail_changes:propose_payout_fields FIRM_ID=<id>` | Lists SWIFT Code → bank code, IBAN → account identifier, with filled-value counts; check box not listed; nothing saved | BC: Rollout proposal marks nothing without EXECUTE | features/core/bank_detail_payout_fields.feature |
+| E79 | Rollout proposal — EXECUTE=1 | E78; firm admin agreed in the support ticket | Same command with `EXECUTE=1` | Listed fields marked; no KYC changed; no email | BC: Rollout proposal marks nothing without EXECUTE | features/core/bank_detail_payout_fields.feature |
+| E80 | Editing a marked field's rules keeps the mark | H18 | Ravi sets SWIFT Code's max length to 11 in Form Types › Edit, Save; then Meera changes Farah's SWIFT | SWIFT Code still marked "Bank code" (mark and max-length rule sit side by side in `validation_rules`); Meera's change is recorded | BC: Firm marks a payout field | features/core/bank_detail_payout_fields.feature |
+
+### Error cases
+
+| # | Scenario | Given | When | Then (what the user sees, who is alerted) | Spec scenario | Feature |
+|---|---|---|---|---|---|---|
+| X16 | Non-admin can't mark | Priya given Form Types access (`enable_form_types`), not company admin | Priya opens Form Custom Fields › Edit for SWIFT Code; then sends `payout_field=code` | No "Payout field" control; field stays unmarked | BC: Firm marks a payout field | features/security/bank_detail_payout_fields.feature |
+| X17 | Admin can't unmark | H18 | Ravi sets IBAN → "No" in the side panel, and again in Form Types › Edit | Both refused: "Payout fields can only be unmarked by CapHive support."; IBAN stays marked | BC: Only support unmarks a payout field | features/security/bank_detail_payout_fields.feature |
+| X18 | Admin can't delete a marked field | H18 | Ravi looks for ✕ on SWIFT Code in the side panel; sends Form Custom Fields DELETE | No ✕ shown (locked chip "Support"); DELETE refused with the same message; field kept | BC: Only support unmarks a payout field | features/security/bank_detail_payout_fields.feature |
+| X19 | Only text fields on KYC forms | H18 | Ravi sends a mark for "Foreign account?" (check box), for a TextArea on the KYC form and for a text field on the Investor form | All refused: "Only text fields on a KYC form can be payout fields"; nothing saved | BC: Only text fields on KYC forms can be marked | features/security/bank_detail_payout_fields.feature |
+| X20 | Other firm | — | Omar (Northwind) sends the side panel save and a Form Types update for Horizon's KYC form type | Not found / refused; nothing marked | BC: Other firm refused | features/security/bank_detail_payout_fields.feature |
+
+**Why these rows**
+- **H19 vs E64:** the same kind of edit (a custom text field) is a bank change only when the field is marked — the
+  mark is the whole switch.
+- **E65/E66:** marking is a configuration change, never a data change: no KYC is touched, nothing back-dated.
+- **E68:** first fill clears Bank Verified for the same reason as a first account fill — the payout details now hold
+  something nobody checked — but it is not a *change*, so no record and no email.
+- **E74:** the penny drop proves the Indian account + IFSC only; it must not re-tick Bank Verified after a SWIFT edit.
+- **E80:** the mark shares `validation_rules` with real rules; the per-key `vr_*` setters must leave it alone.
+- **X17/X18:** unmarking is the loosening direction (after it, one person could change the SWIFT alone), so it is
+  CapHive-support-only — the same lock Calculation fields already use.
+
+---
+
 ## Coverage
 
 ```mermaid
 flowchart LR
-    S["42 spec scenarios<br/>(BC 41 + DJ new 1)"] --> R["Every scenario named in<br/>≥ 1 Spec scenario cell"]
+    S["51 spec scenarios<br/>(BC 50 + DJ new 1)"] --> R["Every scenario named in<br/>≥ 1 Spec scenario cell"]
     R --> F["Every row → 1 Cucumber scenario<br/>with an ID — path comment"]
 ```
 
@@ -335,10 +419,11 @@ flowchart LR
 | 5 Second person | 3 | 15 | 6 | 24 |
 | 6 Name rule | 3 | 10 | 2 | 15 |
 | 7 Payout flags | 3 | 6 | 1 | 10 |
-| **Total** | **17** | **62** | **15** | **94** |
+| 8 Payout custom fields | 4 | 18 | 5 | 27 |
+| **Total** | **21** | **80** | **20** | **121** |
 
-- `features/security/bank_detail_change_fields.feature` and `features/security/bank_detail_change_second_person.feature`
-  gather every refusal row (forged fields, maker, non-approver, other firm, direct requests).
+- `features/security/bank_detail_change_fields.feature`, `features/security/bank_detail_change_second_person.feature`
+  and `features/security/bank_detail_payout_fields.feature` gather every refusal row (forged fields, maker, non-approver, other firm, direct requests).
 - The four unchanged DJ scenarios are proved by the existing distribution-journey features, re-run in the
   phase 5 gate (E62).
 - An edge case found during apply gets a new row here **and** a scenario, never a scenario alone.

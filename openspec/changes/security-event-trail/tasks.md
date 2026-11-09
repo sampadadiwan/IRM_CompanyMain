@@ -29,6 +29,17 @@
 - [ ] 1.10 N+1 check: `PROSOPITE=1 TEST_ENV_NUMBER=$RANDOM bundle exec cucumber features/security/security_events_sign_in.feature`, then read `log/prosopite.log` (truncate first; never commit) and fix every N+1 in this change's code.
 - [ ] 1.11 Run `TEST_ENV_NUMBER=$RANDOM bundle exec cucumber features/security/security_events_sign_in.feature` (wait on the run's PID) until green, before starting phase 2.
 
+
+## UI explanations (added 2026-11-09 at the user's request — applies to every phase that adds or changes a screen)
+
+- [ ] U.1 Every screen, control, status and message this change adds or changes explains itself to the person using it:
+  help text saying **why** (in plain words), **what it means** and **what to do next**; an info tooltip
+  (`ti ti-info-circle` with a Bootstrap tooltip) for longer explanations; disabled controls carry a tooltip saying why
+  they are disabled and what to do instead (never a bare refusal); emails say why the person got them and what to do if
+  it wasn't them. Follow the house UI rules (reference screens, theme colours only, one type scale, buttons not links,
+  existing Bootstrap confirm modals). Verify: Cucumber assertions on the key help texts / tooltips, and screenshots of
+  each changed screen compared with its reference.
+
 ## 2. Access, support, credential and export hooks (Phase 2)
 
 - [ ] 2.1 Rolify `after_add`/`after_remove` on `User` (K1, `user.rb:173`) recording `role.granted`/`role.revoked`; grep `app lib` for any direct `users_roles` / `roles.delete_all` writes and list them in design *Risks*. Verify: H17 and E25 pass in a scratch scenario before continuing.

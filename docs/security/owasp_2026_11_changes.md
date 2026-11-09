@@ -40,7 +40,8 @@
 - [What you or ops still need to do](#what-you-or-ops-still-need-to-do)
 - [What comes next](#what-comes-next)
 - [Group A — twelve code-only Medium fixes](#group-a--twelve-code-only-medium-fixes-approved-2026-11-09-being-built)
-- [Group B — five designs for approval](#group-b--five-designs-written-and-validated-for-your-approval-before-any-code)
+- [Group B — five designs, now being built](#group-b--five-designs-written-and-validated-now-being-built)
+- [What changes for users (Group A and Group B)](#what-changes-for-users-group-a-and-group-b)
 - [Every file touched](#every-file-touched)
 - [FAQ](#faq)
 
@@ -1197,7 +1198,7 @@ as each one lands.
   Mail from Google and Microsoft passes DKIM, so this should be rare, and the log will show it if it happens.
 
 
-## Group B — five designs, written and validated, for your approval before any code
+## Group B — five designs, written and validated, now being built
 
 These five findings change how people work (who may approve, how they sign in, what is recorded), or change
 existing database columns. So each one got a full OpenSpec design first, under `openspec/changes/<name>/`. Every
@@ -1222,6 +1223,71 @@ command-line tool couldn't be downloaded in this environment.
 | M14 | `bank-detail-change-controls` | 5 | ✅ all answered (one adds scope: SWIFT/IBAN) |
 | M13 | `capital-call-distribution-maker-checker` | 4 | ✅ all answered |
 | M4 | `encrypt-investor-pii-at-rest` | 9 | 🅿️ **parked** (2026-11-09): replaced for now by the three cheaper measures below |
+
+### Build progress (started 2026-11-09)
+
+On 2026-11-09 the user said "go ahead with Group B", which approves each design's "Key changes needing approval"
+list. The designs are built **one at a time**, in this order. All four share this checkout and the test databases:
+two builds at once would edit code while the other's tests run, and their test runs would corrupt each other.
+
+```mermaid
+flowchart LR
+    M8["M8 · 2FA for support + super<br/>🔨 building"] --> M11["M11 · security event trail<br/>⏳ queued"]
+    M11 --> M13["M13 · maker–checker<br/>⏳ queued"]
+    M13 --> M14["M14 · bank-detail controls<br/>✅ design extended for SWIFT/IBAN<br/>(mark in validation_rules) · ⏳ queued"]
+```
+
+| Order | # | Status | What's happening |
+|---|---|---|---|
+| 1 | M8 | 🔨 **building** | Implemented through OpenSpec's apply step, phase by phase from `tasks.md`. Each phase's Cucumber features plus the existing sign-in features (2FA, magic link, password reset, mobile, API tokens, "Login as", mail add-ins) must pass before the next phase. No schema change expected |
+| 2 | M11 | ⏳ queued | Starts after M8 is reviewed and committed. Adds the new `security_events` table (migration) |
+| 3 | M13 | ⏳ queued | Starts after M11. Adds the `approval_maker_checker` firm setting (off for every firm by default) |
+| 4 | M14 | ✅ design extended (mark in `validation_rules`, no migration) · ⏳ queued | SWIFT/IBAN custom fields count as bank details (design card ⑨, worked examples H18–H21 / E63–E79 / X16–X20, tasks phase 6). The "payout field" mark is stored in the existing `validation_rules` JSON, not a new column (decided 2026-11-09). The design is updated and validates: the one change to existing code is allowing the `payout_field` key in `validation_rules_consistent` (key change K19) |
+| — | M4 | 🅿️ parked | Not built. P1 (scrub development copies) is built and committed; P2 and P3 are planned below |
+
+#### M14 — the SWIFT/IBAN addition (design extended 2026-11-09)
+
+**Why it was needed.** You decided SWIFT/IBAN custom fields count as bank details. They aren't real columns: each
+firm creates them as custom fields on its KYC form, so the app can't know which custom fields hold payout details
+unless the firm says so.
+
+**What production shows (counts only).**
+- 16 KYC text fields hold such codes, in 10 firms: 14 SWIFT and 2 IBAN. One SWIFT checkbox won't be proposed. There
+  are no BIC, routing, sort-code or ABA fields.
+- 165 KYCs have a value filled in (158 SWIFT, 7 IBAN), in 8 firms.
+- Real changes from one value to another: 9 in 2024, 1 in 2025, 3 in 2026. That's 4 in the last 12 months, in 2
+  firms. Rare, but each one is a possible payout redirect.
+
+**How it works.**
+- **Marking a field.** A firm marks a custom field as a **payout field** where custom fields are edited today.
+  - Who: a company admin, or CapHive support with the firm's agreement.
+  - Only support can unmark or delete a marked field, so it can't be quietly unmarked to slip a change through.
+- **Two kinds of payout field:**
+  - **code**: a bank code (SWIFT), shown in full
+  - **account**: an account identifier (IBAN), shown as the last 4 characters only in emails and history
+- **The same rules as an account-number change:** changing a marked field on a verified KYC clears the tick, needs a
+  second person to verify (with the only-approver fallback), is recorded in `bank_detail_changes`, and emails the
+  investor and the firm's approvers. This applies through every path: form, API, import, AI extraction.
+- **Marking a field never unverifies existing KYCs.** Only a later change does.
+- **Rollout:** a support rake task proposes the 16 known fields (dry run), and `EXECUTE=1` marks them.
+
+**Where the mark is stored: a key in the existing `validation_rules` JSON column (decided 2026-11-09, no new
+column).** For example, `{"payout_field": "code"}`. Absent means "not a payout field".
+
+| Option | Why it was or wasn't chosen |
+|---|---|
+| ✅ **`validation_rules` key** | Structured JSON. The editor writes each rule through its own setter, so other edits never wipe this key. There's no free-text box for it. One small change: the model's allowed-keys check must accept `payout_field` (it isn't really a validation rule, and the code will say so) |
+| ❌ New column `payout_field` | Cleanest meaning, but it changes an existing table, which you preferred to avoid |
+| ❌ `meta_data` | It means something different per field type (choices, number format, currency, rows, Ruby). 7 KYC text fields in production already hold leftover choice lists there. And the editor shows it as a free text box, so anyone editing the form could clear the mark |
+
+`bank_detail_changes.changed_custom_fields` (json) stays: that table is new in this design anyway.
+
+**How each one finishes.**
+1. Its Cucumber features are green.
+2. New screens are compared against their reference screens (screenshots), and N+1 queries are checked where the
+   tasks ask.
+3. The diff is reviewed.
+4. It's committed on `fix/owasp-top10-2026-11`, and this table is updated.
 
 ---
 
@@ -1903,6 +1969,72 @@ If, after P1–P3, you still want field encryption somewhere, the best value is 
 
 So most of M4's costs disappear: PAN search, filters and matching all stay as today. The M4 design already covers
 this column, and could be cut down to it.
+
+---
+
+## What changes for users (Group A and Group B)
+
+**Short answer: not 100% unchanged, and deliberately so.**
+- **Group A** leaves normal use unchanged apart from a few small, deliberate differences.
+- **Group B** is *meant* to change some workflows. Those are the security controls approved on 2026-11-09, each
+  designed so it blocks nobody's existing work overnight.
+
+### Group A: normal use is unchanged, with these small, deliberate differences
+
+| Fix | What users could notice | Who | How we know the normal case still works |
+|---|---|---|---|
+| **M5** dump link | The direct link in the daily database-dump email stops working after **1 hour** (was 7 days). The same email's in-app "Download Link" still works after sign-in | Firms that opted into dumps | Scenario M5-1; other zip downloads keep 7 days |
+| **M7** Outlook add-in | One extra **"Connect"** click when signing in to the Outlook add-in | Outlook add-in users | Scenario M7-1. ⚠️ *The real Office dialog can't be tested here; try one sign-in from Outlook after deploy* |
+| **M6** tokens | CapHive support can't create API tokens or approve OAuth/MCP apps **while signed in as a client** | CapHive support only | Scenario M6-1; clients' own token creation unchanged |
+| **M16 / M17 / L16** names | A name containing HTML (e.g. a KPI called `<b>Revenue</b>`) now shows the tags as text instead of bold. The confirm popups' intended `<br>` / `<small>` formatting is kept | Rare; no normal names change | Focused run, plus the confirm-popup scenario passing on its own |
+| **M19** deal ingest | An email from a domain where neither SPF nor DKIM passes is refused (and logged) | Deal-ingest senders | ⚠️ *Production has no deal-ingest emails yet, so no current user is affected. A future sender from a badly configured domain would be refused* |
+| **M3** vendor keys | Keys are masked on the admin page. A blank key now means "no key", so the platform key is used, where before a blank `""` was passed on and calls failed | Super admins | Production has **0** blank keys; scenarios M3-1 / M3-2; migration tested both ways |
+
+**No difference at all for users:**
+- **M9** (pinned scripts): the same files, byte for byte.
+- **M10:** patch upgrades of DOMPurify and Mermaid.
+- **M12:** counters only.
+- **M15:** every dashboard a user can open today still opens; only another firm's records are refused.
+- **M18:** nothing in the app puts outside images in AI answers.
+
+**Evidence:** the 11 Group A scenarios pass, and the focused run of the 43 features touching this code passed (400
+scenarios; one parallel-load timeout passed on rerun).
+
+### Group B: intended changes (approved), designed not to block anyone
+
+| Design | What changes for users | Built in so nobody is stuck |
+|---|---|---|
+| **M8** 2FA | **11 CapHive staff** (support and super) must set up 2FA. **Every user** with 2FA on must enter their password and a current code to switch it off. Admins can no longer switch someone else's 2FA off (they use the existing reset) | 14-day notice, no forced sign-out, and the authenticator app is always offered, so nobody is locked out for lack of a phone. Company admins and LPs are **not** required to enrol |
+| **M11** security events | Company admins get an email when an admin or approver role is granted in their firm, or support signs in as someone there. There's a new Security Events screen | Recording can never fail a sign-in or an action |
+| **M13** maker–checker | **Nothing, unless a firm switches it on.** Pages show "Prepared by" and label self-approvals | Off by default for every firm, new firms included |
+| **M14** bank details | Changing an LP's account number, IFSC or a marked SWIFT/IBAN field **clears "Bank Verified" and needs a second person to verify**. The LP is emailed. Only approvers can tick Bank Verified. Import rows that change an account end as "Success with warnings". About 3% of name matches would go to "needs review" | One-approver firms can verify their own change after a warning. Distributions are **flagged, not blocked**. Existing verified KYCs stay as they are until changed |
+
+M14 is the one that most changes day-to-day work for KYC teams. That's the point of it: today the same person can change
+and re-verify an LP's payout account silently.
+
+### On-screen explanations (requested 2026-11-09)
+
+Every change users can see must explain itself on the page, with tooltips and help text: **why** it happens, **what
+it means**, and **what to do next**. A disabled control says why it's disabled; an email says why the person got it.
+
+| Where | Explanation | Status |
+|---|---|---|
+| **M5** dump email | The email says the link expires in "1 hour" and points to the in-app Download Link | ✅ built |
+| **M7** Outlook add-in | The confirm page says who is being connected, what the add-in can do (file emails as you, 30 days), and to close the window if you didn't press Sign in | ✅ built |
+| **M6** OAuth / MCP | The refusal says "Apps can't be authorized while you are signed in as another user." | ✅ built |
+| **M6** API tokens page | While support is signed in as a client: the **New token** button is disabled, with a tooltip and a help line saying why (the token would keep acting in this user's name after the support session ends) and what to do (ask the user to create it) | ⏳ after the M8 build (view edits wait for its tests) |
+| **M3** admin page | The masked vendor keys get a hint: "Stored encrypted; only the last 3 characters are shown" | ⏳ after the M8 build |
+| **M8** 2FA | The red banner (why, from which date, a "Set up now" button); a set-up help line; why "Turn off 2FA" asks for password and code; a disabled control with tooltip where admins can no longer switch someone's 2FA off; the "Login as" refusal says why; emails say why and what to do | 🔨 sent to the M8 build |
+| **M11 / M13 / M14** | Task **U.1** added to each design's `tasks.md`: every screen, control, status and email explains itself, with Cucumber checks on the key texts and screenshots compared with the reference screens | ⏳ part of each build |
+
+Changes with no on-screen effect (M9, M10, M12, M15, M16–M18, M19) need no new text.
+
+### Still unproven
+
+- **Group B:** M8 is being built and tested. M11, M13 and M14 aren't built yet. Each design's tests include "still
+  works" cases, reported per design.
+- **M7:** one real Outlook add-in sign-in after deploy.
+- **M19:** the first real SendGrid post to deal ingest.
 
 ---
 

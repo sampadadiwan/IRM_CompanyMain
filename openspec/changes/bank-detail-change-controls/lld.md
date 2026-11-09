@@ -46,6 +46,9 @@
   `create` (class record) the approver test is user-level ([Controllers](#controllers-params-and-responses)).
 - **Stale penny-drop result:** `with_lock` + reload + compare after the HTTP call
   ([Transactions](#transactions-locking-and-concurrency)).
+- **Payout custom fields (Phase 6):** the guard reads marked keys from the key `payout_field` in the existing json
+  `form_custom_fields.validation_rules` (no new column; K19 only widens `validation_rules_consistent`) and diffs `attribute_in_database(:json_fields)` vs `json_fields`; marks are written through
+  three existing screens that all ask `FormCustomFieldPolicy` ([design D17–D20](design.md#d17-payout-custom-fields--a-mark-on-the-field-definition)).
 - **Popup idempotency:** popup posts `intent=verify`; a second submit on an already verified KYC is a no-op instead of
   an UnVerify (X12).
 
@@ -83,6 +86,20 @@
 | ⑧ | `app/packs/ai/support_agents/services/distribution_readiness_agent.rb` | Modified | `verify_bank_details` fails for awaiting changes |
 | ⑧ | `app/packs/funds/capital_distributions/workflow_checks/capital_distribution_warnings.rb` | Modified | `bank_change_warning` |
 | ⑧ | `app/packs/funds/capital_distribution_payments/views/capital_distribution_payments/index.xlsx.axlsx` | Modified | Last column "Unconfirmed Bank Change" |
+| ⑨ | `app/packs/misc/form_custom_fields/models/form_custom_field.rb` | Modified | `PAYOUT_FIELD_KINDS = %w[code account]`; `PAYOUT_FORM_TYPES = %w[IndividualKyc NonIndividualKyc InvestorKyc]`; virtual attribute `payout_field` / `payout_field=` over `validation_rules["payout_field"]`; `validation_rules_consistent` allows `payout_field` for TextField only (code comment: "not a validation rule — the bank-details mark, see bank-detail-change-controls D17"); validation `payout_field_allowed`; `self.payout_keys_for(form_type_ids)` (Ruby filter) |
+| ⑨ | `app/packs/misc/form_custom_fields/policies/form_custom_field_policy.rb` | Modified | `mark_payout_field?`, `unmark_payout_field?`; `permitted_attributes` adds `:payout_field` conditionally; `destroy?` lock |
+| ⑨ | `app/packs/misc/form_custom_fields/controllers/form_custom_fields_controller.rb` | Modified | Refuse an unmark (stored `validation_rules["payout_field"]` → blank) for non-support before `update` |
+| ⑨ | `app/packs/misc/form_types/models/form_type.rb` | Modified | `self.payout_field_change_allowed?(user, fields, form_type)` beside `calculation_change_allowed?` |
+| ⑨ | `app/packs/misc/form_types/controllers/form_types_controller.rb` | Modified | Permit `payout_field` in nested attrs; call the check in `update` (base error) |
+| ⑨ | `app/packs/misc/form_types/services/form_type_fields_save.rb` | Modified | `payout_field` value read for KYC text fields; marked fields locked (no unmark, no `_destroy`) unless support |
+| ⑨ | `app/packs/misc/form_types/helpers/form_type_fields_helper.rb` | Modified | Row hash gains `payout_field`, `payout_markable`, `payout_locked` |
+| ⑨ | `app/packs/misc/form_types/views/form_type_fields/_row.html.erb` | Modified | 🏦 flag + kind select in details; locked chip |
+| ⑨ | `app/javascript/controllers/form_type_fields_form_controller.js` (existing panel controller) | Modified | Serialise `payout_field` with the row (no new controller) |
+| ⑨ | `app/packs/misc/form_types/views/form_types/_form_custom_fields.html.erb` | Modified | "Payout field" select in the flags block |
+| ⑨ | `app/packs/misc/form_custom_fields/views/form_custom_fields/_form.html.erb` | Modified | Same select |
+| ⑨ | `lib/tasks/bank_detail_changes.rake` | New | `propose_payout_fields` (dry run; `EXECUTE=1 FIRM_ID=`) |
+| ② | `bank_detail_change_guard.rb` (Phase 6 additions) | Modified | `marked_payout_keys`, `changed_payout_custom_fields`; include them in the change test and the record |
+| ③④⑦ | `bank_detail_change.rb`, mailer views, `_bank_change_note`, `_verify_bank_change_modal` | Modified | `custom_field_lines` rendered after account/IFSC lines |
 | Docs | `docs/user_guides/…investor_kyc…` (existing KYC guide) | Modified | FAQ: bank changes, second approver, emails (user-guide-faqs skill) |
 | Tests | `features/core/bank_detail_change_*.feature`, `features/core/bank_detail_name_match.feature`, `features/funds/bank_detail_change_payout_flags.feature`, `features/security/bank_detail_change_*.feature`, `features/step_definitions/bank_detail_change_steps.rb` | New | See [Test Plumbing](#test-plumbing) |
 
@@ -118,6 +135,26 @@
 | `approvers_notified_at` | Added | datetime | — | yes | nil | — | Claim for approver email |
 | `deleted_at` | Added | datetime | — | yes | nil | index | `Trackable` → `acts_as_paranoid` |
 | `created_at` / `updated_at` | Added | datetime | — | no | — | — | Change time = `created_at` (recipient cut-off) |
+| `changed_custom_fields` | Added (in the Phase 2 `create_table`; written from Phase 6) | json | — | yes | nil | — | `[{key, label, kind, old, new}]`; `old`/`new` full for `code`, last 4 for `account`, nil for blank (design D19) |
+
+**`form_custom_fields.validation_rules["payout_field"]`** (existing json column — **no schema change**; design K19)
+
+| Key | Change | Type | Values | Absent means | Written by | Why it's needed |
+|---|---|---|---|---|---|---|
+| `payout_field` | New key allowed | JSON string | `"code"` / `"account"` | not a payout field | `FormCustomField#payout_field=` only (sets or deletes the key; never touches other keys) | The firm's mark (design D17) |
+
+- `payout_field=`: `self.validation_rules = (validation_rules || {}).merge("payout_field" => kind)` for a kind, or
+  `.except("payout_field")` for blank — a new hash, so the json attribute is marked dirty; other keys kept as stored.
+- `payout_field` is **not** in `VALIDATION_RULE_KEYS` → no `vr_payout_field` input and no generic setter writes it.
+- `validation_rules_consistent`: split the `"TextField", "TextArea"` branch so `allowed_keys` for TextField =
+  `text_keys + ["payout_field"]`; TextArea keeps `text_keys` (key there → existing "contains invalid keys" error);
+  value check `PAYOUT_FIELD_KINDS.include?(rules["payout_field"])` when present.
+- `payout_field_allowed` (separate, because `validation_rules_consistent` returns early for types with no rule keys —
+  Select, Radio, CheckBox's selection keys aside): key present → `field_type == "TextField"` **and**
+  `form_type.name` in `PAYOUT_FORM_TYPES`, else "Only text fields on a KYC form can be payout fields".
+- Production check (2026-11-09, counts): the 16 candidate fields have 0 existing rules and 0 `meta_data`.
+
+**`bank_detail_changes` migration is the only migration in this change** (Phase 2).
 
 **Migration safety:** new table, no backfill, no lock on existing tables; reversible (`create_table`). Update
 `db/schema.rb` and `db/schema_test.rb` by hand after migrating (local dev DB drift); never run migrations from a
@@ -144,6 +181,14 @@ side branch against the shared dev DB.
 | `bank_change_maker` | — | `User` or nil | — | Reads `bank_change_actor` → `Current.user` | Yes |
 | `normalised(value)` | String/nil | String | — | `value.to_s.gsub(/\s+/, "").upcase` | Yes |
 
+| `marked_payout_keys` | — | `{ "swift_code" => {label:, kind:} }` | — | 0 queries unless `json_fields` changed and a form type is set; then 1 `FormCustomField.payout_keys_for([form_type_id_in_database, form_type_id].compact.uniq)`; memoised per save | Yes |
+| `changed_payout_custom_fields` | — | Array of `{key, label, kind, old, new}` (already masked) | — | Compares `normalised(attribute_in_database(:json_fields)[k])` vs `normalised(json_fields[k])` per marked key | Yes |
+
+- Phase 6 rule: "a payout value changed" = an account/IFSC change **or** `changed_payout_custom_fields.any?`; "bank
+  change" additionally needs the old value non-blank **for that item** (first fill of IBAN alone → flag clear only).
+- `attribute_in_database(:json_fields)` re-parses the stored JSON, so an in-place write (`json_fields[k] = v`,
+  `kyc_doc_extractor_agent.rb:177-179`) is still diffed against the stored value; `json_fields_was` would return the
+  mutated hash in that path — do not use it.
 - Callback order: the guard's `after_save` is declared **after** `sync_boolean_fields_from_status` is irrelevant —
   the guard sets `verified` itself in `before_save`, so `sync_boolean_fields_from_status` finds nothing to change.
 - `only_approver` flag: `InvestorKycsController#toggle_verified` (and import/bulk) set
@@ -158,6 +203,7 @@ side branch against the shared dev DB.
 | `replace!` | — | self | — | status | Only from `awaiting` |
 | `old_account_display` / `new_account_display` | — | "ending 4821" / "none" | — | — | Yes |
 | `maker_name` | — | "Meera Shah" / "System" | — | — | Yes |
+| `custom_field_lines` | — | `["SWIFT Code EBILAEADXXX → NBADAEAAXXX", "IBAN ending 3456 → ending 8901"]` | — | — | Yes |
 
 **`BankNameMatch`** (Service)
 
@@ -183,6 +229,30 @@ side branch against the shared dev DB.
 | `other_kyc_approver?` | — | Boolean | — | ≤ 1 + n queries, memoised per policy instance | Yes |
 | `permitted_attributes` | — | Array | — | Removes 4 result fields; adds `verified` if `toggle_verified?`, `bank_verified` if `confirm_bank_details?` (class record → user-level approve flag) | Yes |
 
+**`FormCustomFieldPolicy`** (Policy, Phase 6)
+
+| Method | Arguments | Returns | Raises | Side effects | Idempotent? |
+|---|---|---|---|---|---|
+| `mark_payout_field?` | — | `support? \|\| new_policy(record.form_type).update?` (company admin of the form type's firm) | — | 0 queries (cached roles) | Yes |
+| `unmark_payout_field?` | — | `support?` | — | — | Yes |
+| `permitted_attributes` | — | + `:payout_field` only if `mark_payout_field?` | — | — | Yes |
+| `destroy?` | — | `show? && (record.payout_field.blank? \|\| support?)` | — | — | Yes |
+
+**`FormType.payout_field_change_allowed?(user, fields, form_type)`** (class method, beside `calculation_change_allowed?`)
+
+| Input | Returns false when | Query |
+|---|---|---|
+| Submitted nested `fields` (id, `payout_field`, `_destroy`) | user not support **and** a submitted id is stored marked **and** (its `payout_field` is submitted blank **or** `_destroy` is truthy) | 1: `form_type.form_custom_fields.where(id: ids).pluck(:id, :validation_rules)`, marked ids found in Ruby |
+
+**Rake `bank_detail_changes:propose_payout_fields`**
+
+| Env | Meaning | Default |
+|---|---|---|
+| `FIRM_ID` | Limit to one entity (required with `EXECUTE=1`) | all firms (dry run only) |
+| `EXECUTE` | `1` = save the marks via `update!` (validations run) | dry run |
+| Output | Per firm › form type › field: name, label, proposed kind, filled-value **count** (`json_extract … IS NOT NULL` count), never values | — |
+| Match | Word match on name or label: `swift`, `bic`, `iban`, `routing`, `sort code`, `aba`; `TextField` only; kind `account` for `iban`, else `code`; already-marked fields skipped | — |
+
 **Reviewer checks**
 - [ ] Every raised error is handled by a caller or listed in Error Mapping
 - [ ] Anything a retry can repeat is idempotent
@@ -198,6 +268,10 @@ side branch against the shared dev DB.
 | `#compare_kyc_datas` | Same filter | `compare_kyc_datas?` (unchanged) | As today | As today |
 | `#toggle_verified` | `intent` (`verify` from popup) | `toggle_verified?` | Redirect, "Investor kyc was successfully verified." | `Pundit::NotAuthorizedError` → for a blocked maker, flash "You changed this KYC's bank details, so another KYC approver must verify it." + redirect to KYC (HTML) / 403 JSON `{error: …}` |
 | Bulk "verify" | — | `toggle_verified?` per KYC | Count | Error row "Not verified — you changed the bank details; another approver must verify" |
+| `FormTypesController#update` (Phase 6) | nested `payout_field` | `update?` (company admin) + `FormType.payout_field_change_allowed?` | As today | Base error "Payout fields can only be unmarked by CapHive support."; validation "Only text fields on a KYC form can be payout fields" (422, form re-rendered) |
+| `FormTypeFieldsController#save` (side panel) | `fields` JSON item key `payout_field` | `inline_fields?` (unchanged) + `FormTypeFieldsSave` lock | Saved marker | 422 panel with "Payout fields can only be unmarked by CapHive support." |
+| `FormCustomFieldsController#create/update` | `payout_field` only if `mark_payout_field?` | `create?` / `update?` | As today | Unmark by non-support: base error, 422 |
+| `FormCustomFieldsController#destroy` | — | `destroy?` (marked → support only) | As today | `Pundit::NotAuthorizedError` → existing handler |
 
 - Blocked-maker message: rescue `Pundit::NotAuthorizedError` in `toggle_verified` only when
   `policy(@investor_kyc).bank_change_maker_blocked?` (no global rescue change).
@@ -225,11 +299,15 @@ side branch against the shared dev DB.
 | Readiness agent | same, `.distinct.pluck(:investor_kyc_id)` (unscope order first) | same | ≤ 5k | Set |
 | Distribution warning | same, `.distinct.count(:investor_kyc_id)` | same | — | — |
 | KYC journey warning | `kyc.awaiting_bank_change` | memo | 1 | — |
+| Guard marked keys (Phase 6) | `FormCustomField.where(form_type_id: ids, field_type: "TextField").pluck(:name, :label, :validation_rules)` → keep rows whose hash has `payout_field` (Ruby) | `form_type_id` | ≤ a few hundred loaded, 0–3 kept | Only when `json_fields` changed; ImportInvestorKyc memoises per form type id for the run |
+| Payout unmark check | `form_type.form_custom_fields.where(id: ids).pluck(:id, :validation_rules)` → ids whose hash has `payout_field` (Ruby) | PK + `form_type_id` | ≤ 200 | once per save |
+| Rake proposal | `FormCustomField.joins(:form_type).where(form_types: {name: PAYOUT_FORM_TYPES}, field_type: "TextField")`, already-marked rows dropped in Ruby (or SQL `json_extract(validation_rules, '$.payout_field') IS NULL`) + Ruby regex on name/label; filled count per field: `InvestorKyc.where(form_type_id:).where("json_extract(json_fields, ?) IS NOT NULL", "$.#{name}").count` | `form_type_id` on both | ~20 fields, ~165 values | one count per candidate |
 
 **Reviewer checks**
 - [ ] Every query is scoped by `entity_id` or by a KYC id already authorized
 - [ ] No N+1 on list pages; no unbounded loads
 - [ ] Every page / frame / job in design.md's **Query budget** has its preloads and grouped queries named here
+- [ ] No SQL compares the *value* of `validation_rules->payout_field`: MySQL `JSON_EXTRACT` returns `"code"` (quoted) and SQLite `json_extract` returns `code`; only `IS NULL` / `IS NOT NULL` is portable — otherwise filter in Ruby
 - [ ] `distinct.pluck` calls `unscope(:order)` first and are run once on dev MySQL (SQLite hides DISTINCT/ORDER errors)
 - [ ] The phase's features run clean under Prosopite (`PROSOPITE=1 … cucumber`)
 
@@ -316,9 +394,10 @@ side branch against the shared dev DB.
 | Item | Value / location |
 |---|---|
 | Credentials / env vars | None new (Digio unchanged; IN and US independent as today) |
-| Feature flag | None — applies to all firms ([design D7, D16](design.md#design-decisions)) |
+| Feature flag | None — applies to all firms ([design D7, D16](design.md#design-decisions)); payout custom fields act only once a field is marked |
+| Rollout task | `bin/rails bank_detail_changes:propose_payout_fields` (dry run) → support ticket with the firm's admin → `EXECUTE=1 FIRM_ID=<id>`; run on production.in and production.us separately (independent envs) |
 | Cron / schedules | None |
-| Deploy order | Phase 1 code (no migration) → Phase 2 migration + code → Phases 3–5 code |
+| Deploy order | Phase 1 code (no migration) → Phase 2 migration + code → Phases 3–5 code → Phase 6 code (no migration: the mark is a `validation_rules` key) → rollout task |
 | Rollback | Revert code; `bank_detail_changes` can stay (additive). Flags cleared by the guard are not restored (audit trail holds old values) |
 
 **Reviewer checks**
@@ -338,6 +417,8 @@ side branch against the shared dev DB.
 | `features/security/bank_detail_change_second_person.feature` (Phase 3) | — | Northwind entity | direct PUT/PATCH steps (reuse `tenant_isolation_batch1.feature` style) |
 | `features/core/bank_detail_name_match.feature` (Phase 4) | stub responses per row | Kestrel entity (checks on) | `Given the bank check returns "R KUMAR" without a provider match` |
 | `features/funds/bank_detail_change_payout_flags.feature` (Phase 5) | readiness agent setup (existing steps) | distribution with payments | xlsx column steps (reuse payments download steps) |
+| `features/core/bank_detail_payout_fields.feature` (Phase 6) | extractor + doc check setup (existing steps); rake via `Rake::Task` invoke | `:form_custom_field` with `validation_rules: {"payout_field" => "code"}` | `Given "SWIFT Code" is marked as a bank code on the Individual KYC form`, side panel steps (reuse grid-columns-inline-settings steps) |
+| `features/security/bank_detail_payout_fields.feature` (Phase 6) | — | Northwind, support user | direct PATCH/DELETE steps for form types / custom fields |
 
 - Every run: `TEST_ENV_NUMBER=$RANDOM`; Redis up on 6379.
 
@@ -353,6 +434,13 @@ side branch against the shared dev DB.
 | `BankDetailChangeNotifyJob` | Job | core/investor_kycs | `perform(change_id)` | `NotifyKycJob` |
 | `InvestorKycPolicy` additions | Policy | core/investor_kycs | predicates | existing `toggle_verified?` |
 | Mailer methods | Mailer + Noticed notifier | core/investor_kycs | `notify_bank_details_changed`, `notify_bank_change_review` | `notify_updates_requested` |
+| `FormCustomField#payout_field` | Config as data (key in existing json + validation) | misc/form_custom_fields | `payout_field`, `payout_keys_for` | `vr_*` per-key accessors on `validation_rules` |
+| `FormCustomFieldPolicy#mark_/unmark_payout_field?` | Policy, parent delegation | misc/form_custom_fields | predicates | `create?` → `parent_in_users_firms?`, `calculation_allowed?` |
+| `FormType.payout_field_change_allowed?` | Model class guard | misc/form_types | class method | `calculation_change_allowed?` |
+| `bank_detail_changes:propose_payout_fields` | Rake (dry run + EXECUTE=1) | lib/tasks | task | ops rake convention |
+
+- Packwerk: `core/investor_kycs` (guard) reads `FormCustomField` through its public class method `payout_keys_for` — the
+  pack already depends on `misc/form_custom_fields` via `WithCustomField`.
 
 - No class mixes roles: the controller sets accessors and renders; the guard holds the rule; the job holds recipients.
 
@@ -367,6 +455,10 @@ side branch against the shared dev DB.
 | Import Update Only | `ImportUploadPolicy#create?` (existing) + `bank_change_maker_blocked?` per row | `import_upload.entity` KYCs (`import_investor_kyc.rb:26-30`) | — | entity-scoped lookup | E40, E41 |
 | `BankDetailChangeNotifyJob` | n/a (job) | `BankDetailChange.find` → `investor_kyc` (same entity) | — | recipients filtered by `show?` | E28, E30 |
 | `VerifyBankJob` | n/a | `find_by(id:)` (existing) | — | — | E53 |
+| Side panel save with `payout_field` | `FormTypePolicy#inline_fields?` + `FormCustomFieldPolicy#mark_/unmark_payout_field?` | `policy_scope(FormType)` / record scope (existing) | `fields` JSON; `payout_field` read only for KYC text fields | form type in user's firm | X16–X18, X20 |
+| Form Types › Edit nested `payout_field` | `FormTypePolicy#update?` + `FormType.payout_field_change_allowed?` | `set_form_type` (existing) | `form_type_params` + `payout_field` | `belongs_to_entity?` | X17, X19, X20 |
+| Form Custom Fields new/edit/destroy | `FormCustomFieldPolicy` (`permitted_attributes`, `destroy?`) | existing scope (`form_types.entity_id`) | `payout_field` conditional | existing | X16, X18 |
+| Rake `propose_payout_fields` | n/a (console, support) | all firms read; writes only with `EXECUTE=1 FIRM_ID` | — | `FIRM_ID` required to write | E78, E79 |
 
 ## Project Rules Checklist
 
@@ -378,7 +470,8 @@ side branch against the shared dev DB.
 | Screen dates via `l(...)`; emails render `Mon dd, yyyy` via `EmailDateLocalization`; no human-format `strftime` | Applies | Note/warnings `l(date)`; emails bare `l(change.created_at)` |
 | Date inputs use `f.date_field` / `date_field_tag`; JS dates via `locale_date_format.js` | N/A | No date inputs or JS dates |
 | Every query entity-scoped; Pundit `authorize`/`policy_scope` on every action | Applies | No new actions; see Security Detail |
-| MCP tool surfaces changed only via the ontology YAML (run the ontology drift feature) | N/A | No MCP change |
+| MCP tool surfaces changed only via the ontology YAML (run the ontology drift feature) | N/A | No MCP change (`form_custom_fields` has no MCP tool) |
+| Ops work as rake tasks: dry run + `EXECUTE=1` | Applies | `propose_payout_fields`; no bash script; per-env run |
 | Cucumber only (no RSpec); `TEST_ENV_NUMBER=$RANDOM` on every run | Applies | Test Plumbing |
 | `bundle exec rubocop` clean, including the `IRM/RelationBlankPresent` cop | Applies | Gate per phase |
 | No query inside a row loop …; the phase's features clean under `PROSOPITE=1` | Applies | Grouped lookups (Queries) |

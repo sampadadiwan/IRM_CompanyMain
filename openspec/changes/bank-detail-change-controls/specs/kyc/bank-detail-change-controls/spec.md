@@ -2,16 +2,17 @@
 
 ## Purpose
 
-Protects an investor's payout account: a change to a KYC's account number or IFSC clears its bank
-verification at once, is recorded, is emailed to the investor and the firm's approvers, and must be verified
+Protects an investor's payout account: a change to a KYC's account number, IFSC or a custom field its firm
+has marked as a payout field (such as SWIFT or IBAN) clears its bank verification at once, is recorded, is emailed to the investor and the firm's approvers, and must be verified
 by a second person before it counts as confirmed.
 
 ## ADDED Requirements
 
 ### Requirement: What counts as a bank change
-The KYC's account number and IFSC (routing code) SHALL be its bank details. A save of an existing KYC SHALL
-be a bank change when either field changes from a non-blank value to a different value, comparing values
-with spaces removed and letters upper-cased. Entering bank details where none existed (first fill) SHALL NOT
+The KYC's account number and IFSC (routing code), together with every custom field its firm has marked as a
+payout field on that KYC's form, SHALL be its bank details. A save of an existing KYC SHALL be a bank change
+when any of them changes from a non-blank value to a different value, comparing values with spaces removed
+and letters upper-cased. Entering bank details where none existed (first fill) SHALL NOT
 be a bank change. Changing only the bank name, branch or account type SHALL NOT be a bank change.
 
 #### Scenario: Account number changed
@@ -30,8 +31,66 @@ be a bank change. Changing only the bank name, branch or account type SHALL NOT 
 - **WHEN** a user changes only the branch name from "MG Road" to "Indiranagar"
 - **THEN** no bank change is recorded and Bank Verified is unchanged
 
+### Requirement: Payout custom fields
+A firm SHALL be able to mark a text custom field on its KYC forms as a payout field, as either a bank code
+(shown in full, like the IFSC — for example SWIFT/BIC, ABA routing number, sort code) or an account identifier
+(shown as its last 4 characters only, like the account number — for example IBAN). The mark SHALL be stored on
+the field's definition and be set where custom fields are edited today: the custom fields side panel on a
+record page and Form Types › Edit, and editing the field's other settings (label, help text, input rules) SHALL
+keep it. A change to a marked field SHALL follow every rule a change to the account
+number follows: Bank Verified clears, a verified KYC is unverified, the change is recorded, the investor and
+the approvers are emailed, a second person verifies (with the only-approver exception), imports leave the KYC
+unverified with a warning, and payouts flag it. A change to an unmarked custom field SHALL NOT be a bank
+change. A mark SHALL apply only to the form it was set on. Marking a field SHALL NOT change any existing KYC,
+send any email or record any earlier change; the rules apply to saves made after the mark.
+
+#### Scenario: Firm marks a payout field
+- **WHEN** Ravi Iyer (company admin) marks "SWIFT Code" as a bank code and "IBAN" as an account identifier on Horizon Capital's Individual KYC form
+- **THEN** both fields show as payout fields in the side panel and in Form Types › Edit, and no KYC changes
+
+#### Scenario: Marked field change is a bank change
+- **WHEN** Meera Shah changes Farah Ali's SWIFT Code from EBILAEADXXX to NBADAEAAXXX after "SWIFT Code" was marked
+- **THEN** Bank Verified is off and the KYC page shows "Bank details changed on 09/11/2026 by Meera Shah — SWIFT Code EBILAEADXXX → NBADAEAAXXX. Waiting for a second approver to verify."
+
+#### Scenario: Marked SWIFT change on a verified KYC
+- **WHEN** an "Update Only" import row with Verified = Yes changes the marked SWIFT Code of a verified KYC
+- **THEN** the row reports "Bank details changed — the KYC was left unverified for another approver to verify" and the KYC awaits a second person
+
+#### Scenario: Marked field shown masked in emails
+- **WHEN** Meera Shah changes Farah Ali's marked IBAN from one ending 3456 to one ending 8901
+- **THEN** farah.ali@example.ae receives "Your bank details with Horizon Capital were changed" showing "IBAN ending 3456 → ending 8901" and no full IBAN
+
+#### Scenario: Unmarked custom field change ignored
+- **WHEN** Meera Shah changes the unmarked "Intermediary Bank Name" field
+- **THEN** Bank Verified is unchanged, no bank change is recorded and no change email is sent
+
+#### Scenario: Marking does not change existing KYCs
+- **WHEN** Ravi Iyer marks "SWIFT Code" on a form whose KYCs are already verified with Bank Verified on
+- **THEN** every KYC keeps its Verified and Bank Verified values and no email is sent
+
+### Requirement: Who may mark payout fields
+Marking a field as a payout field SHALL be allowed to whoever may edit the firm's form types (a company admin
+of the firm) and to CapHive support. Removing the mark, or deleting a marked field, SHALL be allowed only to
+CapHive support, and anyone else's attempt SHALL be refused with "Payout fields can only be unmarked by
+CapHive support." Only text fields on KYC forms SHALL be markable; any other field SHALL be refused with "Only
+text fields on a KYC form can be payout fields". A support rollout task SHALL propose the existing SWIFT, BIC,
+IBAN, routing, sort code and ABA text fields of a firm without changing anything unless it is run with
+EXECUTE=1.
+
+#### Scenario: Only support unmarks a payout field
+- **WHEN** Ravi Iyer (company admin) removes the payout mark from "IBAN"
+- **THEN** the save is refused with "Payout fields can only be unmarked by CapHive support." and "IBAN" stays marked
+
+#### Scenario: Only text fields on KYC forms can be marked
+- **WHEN** a payout mark is sent for the check box "Foreign account?"
+- **THEN** it is refused with "Only text fields on a KYC form can be payout fields"
+
+#### Scenario: Rollout proposal marks nothing without EXECUTE
+- **WHEN** CapHive support runs the payout field proposal for a firm without EXECUTE=1
+- **THEN** it lists the firm's SWIFT and IBAN text fields with the proposed kind and changes nothing
+
 ### Requirement: Bank Verified clears in the same save
-A save that changes the account number or IFSC (bank change or not) SHALL set Bank Verified off and clear the
+A save that changes the account number, the IFSC or a marked payout field (bank change or not) SHALL set Bank Verified off and clear the
 stored bank check status and response in that same save, whatever value of Bank Verified was sent with it,
 on every way a KYC is saved: the KYC form, the JSON API, imports, Document Checks and AI document
 extraction. The previous values SHALL remain in the KYC's audit trail. When the firm has bank verification
@@ -60,7 +119,9 @@ exactly as UnVerify does, and its journey SHALL move back with the note "Bank de
 ### Requirement: Bank change record
 Every bank change SHALL be kept as a record showing who made it (a firm user, an investor, or "System" for
 background work with no user), how it was made (screen or API, import, Document Checks, AI extraction), when,
-the last 4 digits of the old and new account numbers, the old and new IFSC, and its state: awaiting a second
+the last 4 digits of the old and new account numbers, the old and new IFSC, each changed payout custom field
+by its label (in full when the firm marked it as a bank code, last 4 characters only when marked as an
+account identifier), and its state: awaiting a second
 person, confirmed (by whom, when, and whether as the only approver), or replaced by a later change. Full
 account numbers SHALL NOT be stored in it. Fund users who can see the KYC SHALL see the latest record on the
 KYC page; investors SHALL NOT see it.
@@ -142,7 +203,7 @@ the change.", and the change SHALL be recorded as confirmed by the only approver
 Each bank change SHALL email, once, the investor's approved contacts subscribed to KYC emails (or to all
 topics) whose access existed before the change, subject "Your bank details with <firm> were changed", showing
 who made the change, the date as `Nov 09, 2026`, the last 4 digits of the old and new accounts and both
-IFSCs, and a link to the KYC. It SHALL NOT be sent to any address held in the KYC itself or to a contact added
+IFSCs, each changed payout custom field shown the same way as on the change record, and a link to the KYC. It SHALL NOT be sent to any address held in the KYC itself or to a contact added
 after the change. A firm SHALL be able to reword it with a custom notification but SHALL NOT be able to turn
 it off. It SHALL be sent when the investor made the change too.
 
