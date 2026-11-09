@@ -5,7 +5,17 @@
       <button type="button" class="btn-close" data-bs-toggle="collapse" data-bs-target="#investorKycAnalytics" aria-label="Close"></button>
     </div>
     <div class="card-body">
-      <%= turbo_frame_tag "investor_kyc_analytics_frame", src: analytics_investor_kycs_path(params.to_unsafe_h.slice("json_keys", "chart_type")), loading: "lazy" do %>
+      <%
+        # Carry the table's filters into the charts, so Analytics covers the same KYCs the table shows
+        # (e.g. one investor's KYCs on the investor page). These are the params InvestorKycList,
+        # its has_scopes and KycSearch filter on; json_keys/chart_type only pick which charts to draw.
+        analytics_params = params.to_unsafe_h.slice(
+          "json_keys", "chart_type",
+          "q", "investor_id", "form_type_id", "import_upload_id", "verified", "expired", "kyc_type",
+          "uncalled", "unverified", "agreement_uncalled", "agreement_overcalled"
+        )
+      %>
+      <%= turbo_frame_tag "investor_kyc_analytics_frame", src: analytics_investor_kycs_path(analytics_params), loading: "lazy" do %>
         <div class="d-flex justify-content-center p-5">
           <div class="spinner-border text-primary" role="status">
             <span class="visually-hidden">Loading...</span>
