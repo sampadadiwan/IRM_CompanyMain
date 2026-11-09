@@ -1272,6 +1272,18 @@ module AwsUtils
     puts 'Starting replica'
     destination_client.query('START REPLICA')
 
+    # A replica must refuse writes from every client (root included — the app logs in as root), or a
+    # stray write makes it drift from the primary. super_read_only does not stop the replication
+    # threads. PERSIST so a restart keeps it; dr:fix:promote_replica turns it off again. Skipped when
+    # the "replica" is the primary itself (staging), which must stay writable.
+    if destination_host == source_host
+      puts 'Replica is the primary itself — leaving it writable'
+    else
+      puts 'Making the replica read-only (read_only + super_read_only, persisted)'
+      destination_client.query('SET PERSIST read_only = ON')
+      destination_client.query('SET PERSIST super_read_only = ON')
+    end
+
     status = destination_client.query('SHOW REPLICA STATUS')
     puts status.first.inspect
   end

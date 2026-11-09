@@ -269,9 +269,23 @@ namespace :dr do
 
       # --- promote ---------------------------------------------------------
       puts "\n⬆️  Promoting #{replica}..."
+      # A replica runs with super_read_only = ON (ops:replica_read_only, AwsUtils#reset_replication),
+      # persisted. A primary must accept writes, so turn both flags OFF — persisted too, or a restart
+      # of the promoted box would bring the read-only back. super_read_only first: it depends on
+      # read_only.
       dr_assess_ssh_via_app(app_host, cap_key, replica, env[:db_keyname],
-                            "sudo mysql -e 'STOP REPLICA; RESET REPLICA ALL;'")
+                            "sudo mysql -e 'STOP REPLICA; RESET REPLICA ALL; " \
+                            "SET PERSIST super_read_only = OFF; SET PERSIST read_only = OFF;'")
+      writable = dr_assess_ssh_via_app(app_host, cap_key, replica, env[:db_keyname],
+                                       "sudo mysql -NBe 'SELECT @@read_only + @@super_read_only'").to_s.strip
       puts "   ✅ replication stopped and cleared — this box is now a standalone primary"
+      # Loud, not fatal: aborting mid-promotion would leave things worse; the fix is one statement
+      if writable == "0"
+        puts "   ✅ read_only and super_read_only are OFF — the promoted box accepts writes"
+      else
+        puts "   ❌ the promoted box is still READ-ONLY (read_only + super_read_only = #{writable.inspect}) — the app cannot write. " \
+             "Run on #{replica}: sudo mysql -e 'SET PERSIST super_read_only = OFF; SET PERSIST read_only = OFF;'"
+      end
 
       # Arming is normally a side effect of restore_primary. A promoted box never
       # ran a restore, so without this it would silently take NO backups.
