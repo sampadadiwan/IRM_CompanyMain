@@ -60,7 +60,8 @@ end
 
 def group_a_session
   @group_a_session ||= ActionDispatch::Integration::Session.new(Rails.application).tap do |session|
-    session.post "/users/sign_in", params: { user: { email: @user.email, password: "password" } }
+    # M8 — a support / super user answers the two-factor code step (RequiredTwoFactorSignIn)
+    integration_sign_in(session, @user)
   end
 end
 

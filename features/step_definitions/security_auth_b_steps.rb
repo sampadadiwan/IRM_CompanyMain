@@ -29,7 +29,8 @@ module SecurityAuthBHelpers
 
     session = ActionDispatch::Integration::Session.new(Rails.application)
     session.host = host if host
-    session.post "/users/sign_in", params: { user: { email: support_user.email, password: "password" } }
+    # M8 — support answers the two-factor code step, and Login as needs their verified method
+    integration_sign_in(session, support_user)
     session.post "/users/#{user.id}/login_as"
     expect(session.session[:support_user_id]).to eq(support_user.id), "impersonation did not start"
     session

@@ -111,7 +111,7 @@ When('a support user impersonates {string} and opens the agreement') do |email|
   FactoryBot.create(:support_client_mapping, user: support_user, entity: target.entity, enabled: true, enable_user_login: true)
 
   @esign_session = ActionDispatch::Integration::Session.new(Rails.application)
-  @esign_session.post "/users/sign_in", params: { user: { email: support_user.email, password: "password" } }
+  integration_sign_in(@esign_session, support_user) # M8 — support answers the two-factor code step
   @esign_session.post "/users/#{target.id}/login_as"
   expect(@esign_session.session[:support_user_id]).to be_present, "impersonation did not start"
   @esign_session.get document_path(@document)
@@ -223,7 +223,7 @@ When('a support user impersonates {string} and requests the signing page') do |e
   FactoryBot.create(:support_client_mapping, user: support_user, entity: target.entity, enabled: true, enable_user_login: true)
 
   @esign_session = ActionDispatch::Integration::Session.new(Rails.application)
-  @esign_session.post "/users/sign_in", params: { user: { email: support_user.email, password: "password" } }
+  integration_sign_in(@esign_session, support_user) # M8 — support answers the two-factor code step
   @esign_session.post "/users/#{target.id}/login_as"
   expect(@esign_session.session[:support_user_id]).to be_present, "impersonation did not start"
   @esign_session.get sign_e_signature_path(signature)

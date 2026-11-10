@@ -55,7 +55,8 @@ When("I fill the new dashboard widget form with data 1") do
   fill_in "metadata_title", with: "Stats"
   fill_in "metadata_currency", with: "INR"
   fill_in "metadata_decimals", with: 2
-  fill_in "metadata_force_units", with: "crores"
+  # Units is a Crores / Lakhs / Million pick-list (DashboardWidget::CURRENCY_UNITS), not free text
+  select "Crores", from: "metadata_force_units"
   check "dashboard_widget_enabled"
   check "dashboard_widget_show_menu"
   click_button "Save"

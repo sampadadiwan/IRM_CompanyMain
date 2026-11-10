@@ -410,8 +410,12 @@ end
 
 Then('the user {string} receives no email') do |first_name|
   user = User.find_by!(first_name: first_name)
-  open_email(user.email)
-  expect(current_email).to be_nil
+  # No KPI reminder. Since M11 (security event trail) a firm's admins may also get a "Security alert: …" email when
+  # the scenario's set-up grants a role — that is not a KPI email, so it is allowed here and nothing else is
+  mails = ActionMailer::Base.deliveries.select { |mail| Array(mail.to).include?(user.email) }
+  # (plain Ruby: in a step, `all` is Capybara's finder, not the RSpec matcher)
+  others = mails.map(&:subject).reject { |subject| subject.to_s.start_with?("Security alert:") }
+  expect(others).to be_empty, "expected no email other than security alerts, got: #{others.inspect}"
 end
 
 # ─────────────────────────────────────────────────────────────────────────────
