@@ -48,6 +48,14 @@ Feature: The MySQL replica refuses writes, and a promoted replica accepts them a
     When the replica status text is "*************************** 1. row ***************************\n  Source_Host: 10.0.3.214\n  Replica_IO_Running: Yes\nread_only: 0"
     Then the parsed Source_Host is "10.0.3.214" and there is no "read_only" field
 
+  # X5 — Error case (prod US primary, found 2026-11-10): with both credentials naming the primary,
+  #      reset_replication used to point the primary at itself (I/O thread error 13117, a red
+  #      "IO Thread Running" tile) and switch its server_id. Now it clears replication and stops
+  #      before any step that sets up a source.
+  Scenario: A primary that is its own "replica" is never pointed at itself
+    Then reset_replication clears replication on a one-box setup with "STOP REPLICA" and "RESET REPLICA ALL"
+    And it returns before it sets "SET GLOBAL server_id", "CHANGE REPLICATION SOURCE TO" or "START REPLICA"
+
   # H3 — Happy path: the DR paths keep the setting consistent
   Scenario: Replication setup turns read-only on and promotion turns it off
     Then reset_replication sets "SET PERSIST super_read_only = ON" unless the replica is the primary

@@ -45,3 +45,28 @@ end
 Then("promote_replica runs {string}") do |statements|
   expect(Rails.root.join("lib/tasks/dr_fix_db.rake").read).to include(statements)
 end
+
+# The one-box guard inside reset_replication: from its `if` to the matching `end` (4-space indent)
+def rro_one_box_guard
+  method = Rails.root.join("lib/tasks/aws_utils.rb").read[/def reset_replication.*?\n  end\n/m]
+  guard_start = method.index("if destination_host == source_host")
+  [method, guard_start, method.index("\n    end\n", guard_start)]
+end
+
+Then("reset_replication clears replication on a one-box setup with {string} and {string}") do |stop, reset|
+  method, guard_start, guard_end = rro_one_box_guard
+  expect(guard_start).to be_present, "no one-box guard in reset_replication"
+  guard = method[guard_start..guard_end]
+  expect(guard).to include("query('#{stop}')")
+  expect(guard).to include("query('#{reset}')")
+  expect(guard).to match(/^\s+return$/)
+end
+
+Then("it returns before it sets {string}, {string} or {string}") do |*statements|
+  method, _guard_start, guard_end = rro_one_box_guard
+  statements.each do |statement|
+    position = method.index(statement)
+    expect(position).to be_present, "#{statement} not found in reset_replication"
+    expect(position).to be > guard_end, "#{statement} runs before the one-box guard returns"
+  end
+end

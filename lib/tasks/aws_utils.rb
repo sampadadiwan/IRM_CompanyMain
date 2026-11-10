@@ -1215,6 +1215,22 @@ module AwsUtils
       port: destination_port
     )
 
+    # One box: the "replica" is the primary itself (staging always; any environment whose
+    # credentials name the primary twice, as dr:fix:promote_replica leaves them on purpose). There
+    # is no replica, so there is no replication to set up: clear whatever replication settings the
+    # box has, leave it writable, and stop — BEFORE the server_id and CHANGE REPLICATION SOURCE
+    # steps below. Running them here pointed the primary at itself: prod US 10.0.3.214 (found
+    # 2026-11-10) had an I/O thread that can never connect (error 13117, equal server ids), shown as
+    # a red "IO Thread Running" tile on MySQL Overview, and each run also switched the primary's
+    # server_id to the replica's. STOP + RESET REPLICA ALL is harmless on a box with nothing set up.
+    if destination_host == source_host
+      puts "Replica is the primary itself (#{source_host}) — no replication to set up; " \
+           'clearing any replication settings on it and leaving it writable'
+      destination_client.query('STOP REPLICA')
+      destination_client.query('RESET REPLICA ALL')
+      return
+    end
+
     # MySQL 8.4 renamed SHOW MASTER STATUS -> SHOW BINARY LOG STATUS, and the
     # old spelling was REMOVED rather than kept as an alias. The fleet runs both
     # versions today — staging is on 8.4.7, production on 8.0.46 — so neither
@@ -1274,15 +1290,11 @@ module AwsUtils
 
     # A replica must refuse writes from every client (root included — the app logs in as root), or a
     # stray write makes it drift from the primary. super_read_only does not stop the replication
-    # threads. PERSIST so a restart keeps it; dr:fix:promote_replica turns it off again. Skipped when
-    # the "replica" is the primary itself (staging), which must stay writable.
-    if destination_host == source_host
-      puts 'Replica is the primary itself — leaving it writable'
-    else
-      puts 'Making the replica read-only (read_only + super_read_only, persisted)'
-      destination_client.query('SET PERSIST read_only = ON')
-      destination_client.query('SET PERSIST super_read_only = ON')
-    end
+    # threads. PERSIST so a restart keeps it; dr:fix:promote_replica turns it off again. Only ever a
+    # separate box here: the primary-is-the-replica case returned above and stays writable.
+    puts 'Making the replica read-only (read_only + super_read_only, persisted)'
+    destination_client.query('SET PERSIST read_only = ON')
+    destination_client.query('SET PERSIST super_read_only = ON')
 
     status = destination_client.query('SHOW REPLICA STATUS')
     puts status.first.inspect
