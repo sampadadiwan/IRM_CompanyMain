@@ -144,12 +144,12 @@ Check `investor_kyc.entity&.entity_setting&.aml_enabled`. If falsy → `mark_ste
 
 **Current:** `InvestorKyc.completed.where(entity_id:)` — uses `.completed` scope (`completed_by_investor = true`)
 
-**New:** `InvestorKyc.where(entity_id:, submission_status: %w[completed verified])` — uses `submission_status` enum as source of truth
+**New:** `InvestorKyc.where(entity_id:, submission_status: "completed")` — uses `submission_status` enum, completed only
 
-**Why:** `submission_status` is the new workflow-driven field (introduced PR #1447). `completed_by_investor` is the legacy boolean that doesn't get updated for KYCs going through the magic link submission flow. Dashboard already uses `submission_status`.
+**Why:** `submission_status` is the new workflow-driven field (introduced PR #1447). `completed_by_investor` is the legacy boolean that doesn't get updated for KYCs going through the magic link submission flow. Only `"completed"` KYCs are included — `"verified"` KYCs have already been reviewed and marked verified, so running the agent on them again is unnecessary. The dashboard Row 1 "Verified" card already shows verified count.
 
 **Reviewer checks:**
-- [ ] Both `"completed"` and `"verified"` included (verified KYCs should still be processed)
+- [ ] Only `"completed"` included (verified KYCs are excluded — already reviewed)
 - [ ] Backfill script run before production deploy for legacy KYCs
 
 ---

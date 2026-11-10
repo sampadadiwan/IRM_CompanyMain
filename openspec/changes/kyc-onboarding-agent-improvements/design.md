@@ -610,9 +610,9 @@ These are `type: :info, severity: :success` issues that appear as green "Passed"
 
 ### Product call (2026-11-09): Use submission_status for agent targets
 
-**Problem:** The agent's `targets` method uses `.completed` scope (`completed_by_investor = true`) to find KYCs to process. This is the old boolean flag. The new source of truth is `submission_status` enum — `"completed"` and `"verified"` are both submitted KYCs. The dashboard has already been updated to use `submission_status`. The agent should match.
+**Problem:** The agent's `targets` method uses `.completed` scope (`completed_by_investor = true`) to find KYCs to process. This is the old boolean flag. The new source of truth is `submission_status` enum. Only `"completed"` KYCs should be included — `"verified"` ones have already been reviewed and marked verified, so running the agent on them again is unnecessary.
 
-**Fix:** Change `KycOnboardingAgent#targets` from `InvestorKyc.completed.where(entity_id:)` to `InvestorKyc.where(entity_id:, submission_status: %w[completed verified])`.
+**Fix:** Change `KycOnboardingAgent#targets` from `InvestorKyc.completed.where(entity_id:)` to `InvestorKyc.where(entity_id:, submission_status: "completed")`.
 
 **Note:** A one-time backfill of `submission_status` for legacy KYCs (where `completed_by_investor = true` but `submission_status = "not_sent"`) is needed before production deploy.
 
