@@ -25,7 +25,16 @@
     Office.onReady(function () {
       var payload = document.getElementById('token-payload').textContent;
       try {
-        Office.context.ui.messageParent(payload);
+        // M7 (OWASP 2026-11): where Outlook supports it (DialogOrigin 1.1), the token goes only to our own origin —
+        // the task pane is served from this host — so an add-in from another origin can't receive it. Older
+        // Outlook clients fall back to the plain call (they already passed the Allow step).
+        var ownOrigin = false;
+        try { ownOrigin = Office.context.requirements.isSetSupported('DialogOrigin', '1.1'); } catch (_e) { ownOrigin = false; }
+        if (ownOrigin) {
+          Office.context.ui.messageParent(payload, { targetOrigin: window.location.origin });
+        } else {
+          Office.context.ui.messageParent(payload);
+        }
       } catch (e) {
         var err = document.getElementById('dialog-error');
         err.textContent = 'Could not return the sign-in result to Outlook. Please close this window and try again.';

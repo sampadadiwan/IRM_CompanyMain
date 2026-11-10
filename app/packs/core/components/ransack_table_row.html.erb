@@ -6,7 +6,8 @@
       <% value = if attribute.start_with?("custom_fields.")
                    @model.json_fields[attribute.gsub("custom_fields.", "")]
                  else
-                   attribute.split('.').inject(@model) { |object, method| object&.send(method) }
+                   # C4 (OWASP 2026-11): the key is stored by users, so read it as an attribute path, never send
+                   SafeAttributePath.read(@model, attribute, context: "grid column")
                  end %>
       <% bool = boolean_value(value) if boolean_column %>
       <%# Boolean columns (marked Boolean, or real true/false values) show a Yes/No badge, not true/false %>

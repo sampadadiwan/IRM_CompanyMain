@@ -278,6 +278,16 @@ Approving needs the **Approver** role as well as update access on the fund, as f
 
 Investors can only be emailed **after** the distribution is approved. Approval does not control what investors can see: an investor with access to the fund sees their payment as soon as it is generated.
 
+### Maker–checker: a second person approves
+
+If your company has switched on **Require a second person to approve capital calls and distributions** (entity settings → **Approvals**; off by default), whoever prepared a distribution cannot approve it. The distribution page shows **Prepared by** with an ⓘ explaining who counts.
+
+- **Preparers:** whoever created or imported the distribution, changed its figures (income, face value for redemption, reinvestment, distribution date, distribution basis, unit prices), changed a payment's income or amounts, or changed a distribution fee line. Editing the title or notes, or marking payments completed, does not count.
+- **A preparer** sees **Approve** greyed out with the reason *"You prepared this distribution, so another approver must approve it (maker–checker is on)."* and uses **Actions → Request approval** to email and bell-alert every approver with access to the fund who did not prepare it (once an hour at most).
+- **Changing figures after approval** withdraws the approval in the same save; the person who changed them is told on screen and the approvers and preparers are alerted. **Mark Payments Completed** and **Send Payment Notification** then wait for a new approval.
+- **Not affected:** imported distributions (they complete without approval, as today), and open-ended redemption settlements (approved by the system).
+- **With it off**, a preparer approves as before and the page labels it *"(also prepared it)"*. See the [Capital Calls guide](capital_calls_user_guide) for the full rules, which are the same for calls.
+
 ---
 
 ## Understanding a Distribution Payment
@@ -495,6 +505,14 @@ You can bulk-load from spreadsheets, mainly for historical data.
 ---
 
 ## Frequently Asked Questions
+
+### Maker–checker
+
+**Why is Approve greyed out on my distribution?**
+Your company has maker–checker switched on and you prepared this distribution: you created or imported it, or changed its figures or a payment's income. Use **Actions → Request approval** to email the approvers who did not prepare it. See [Maker–checker: a second person approves](#maker-checker-a-second-person-approves).
+
+**Why was my distribution's approval withdrawn?**
+With maker–checker on, changing a figure of an approved distribution (income, dates, a payment's amounts or a fee line) withdraws the approval in the same save, so approval always covers what investors receive. An approver who did not change them must approve it again.
 
 ### Navigation and getting there
 

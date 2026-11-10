@@ -1,5 +1,7 @@
 class CapitalDistributionPolicy < FundBasePolicy
   include WorkflowablePolicyMethods # journey?, assign_workflow?
+  # M13 (OWASP 2026-11) K10 / K11 — maker–checker: maker_checker_allows?, awaiting_second_approver?, request_approval?
+  include MakerCheckerPolicyMethods
 
   # H18 — capital distributions are staff-only records: no LP screen, mobile endpoint or MCP answer is meant to list
   # them. FundBasePolicy's investor branch would list every one in a fund the LP can see, so an investor
@@ -59,8 +61,9 @@ class CapitalDistributionPolicy < FundBasePolicy
 
   # Approving a payout needs the Approver role, as approving a capital call does
   # Worked examples X1, H5 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples
+  # M13 H16 / X5 — with the firm's maker–checker setting on, a preparer of the distribution can't approve it
   def approve?
-    !record.approved && update? && user.has_cached_role?(:approver)
+    !record.approved && update? && user.has_cached_role?(:approver) && maker_checker_allows?
   end
 
   def redeem_units?

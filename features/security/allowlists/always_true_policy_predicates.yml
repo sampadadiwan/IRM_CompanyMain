@@ -18,7 +18,6 @@ ActivitiesPolicy#index?: index? only opens the list page; the rows come from the
 AgentChartPolicy#index?: index? only opens the list page; the rows come from the policy Scope.
 AggregatePortfolioInvestmentPolicy#index?: index? only opens the list page; the rows come from the policy Scope.
 AiPortfolioReportPolicy#index?: index? only opens the list page; the rows come from the policy Scope.
-ApiTokenPolicy#create?: 'Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
 ApiTokenPolicy#index?: index? only opens the list page; the rows come from the policy Scope.
 AssistantPolicy#show?: 'Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
 AssistantTaskPolicy#index?: index? only opens the list page; the rows come from the policy Scope.

@@ -25,9 +25,41 @@ class FormType < ApplicationRecord
   # Calculation fields keep Ruby in meta_data, so only CapHive support (or a local environment) may submit one.
   # Used by Form Types › Edit and the custom fields side panel (openspec/changes/grid-columns-inline-settings — D14,
   # X16). Same rule FormTypesController#update applied inline before.
+  # OWASP 2026-11 C2: the submitted field_type alone is not enough. A request that names an existing Calculation
+  # field by id and leaves field_type out would otherwise rewrite its meta_data (Ruby) unchecked. So the stored
+  # type of every submitted id counts too. The editor never renders Calculation fields for non-support users
+  # (form_types/_form.html.erb, HIDDEN_FIELDS), so a genuine non-support save never names one.
   # @param fields [Array<Hash>] the submitted form_custom_fields_attributes
-  def self.calculation_change_allowed?(user, fields)
-    user.support? || Rails.env.local? || fields.none? { |fcf| fcf["field_type"].to_s == "Calculation" }
+  # @param form_type [FormType, nil] the form type being edited, whose stored fields the ids refer to
+  def self.calculation_change_allowed?(user, fields, form_type = nil)
+    return true if user.support? || Rails.env.local?
+
+    # A new or retyped field submitted as Calculation
+    return false if fields.any? { |fcf| fcf["field_type"].to_s == "Calculation" }
+    return true if form_type.nil?
+
+    # C2 — an existing field that is stored as Calculation, whatever type the request claims
+    submitted_ids = fields.filter_map { |fcf| fcf["id"].presence&.to_i }
+    submitted_ids.empty? || !form_type.form_custom_fields.exists?(id: submitted_ids, field_type: "Calculation")
+  end
+
+  # M14 D18, X17, X18 — beside calculation_change_allowed?: a stored payout field (validation_rules["payout_field"]) may
+  # be unmarked — or removed with _destroy — only by CapHive support. Marking and switching kind are allowed (the
+  # model's payout_field_allowed checks where). One pluck of the submitted ids; the mark is found in Ruby.
+  # @param fields [Array<Hash>] the submitted form_custom_fields_attributes
+  def self.payout_field_change_allowed?(user, fields, form_type)
+    return true if user.support? || form_type.nil?
+
+    ids = fields.filter_map { |fcf| fcf["id"].presence&.to_i }
+    return true if ids.empty?
+
+    marked = form_type.form_custom_fields.where(id: ids).pluck(:id, :validation_rules)
+                      .select { |_id, rules| rules.is_a?(Hash) && rules["payout_field"].present? }.to_set(&:first)
+    fields.none? do |fcf|
+      next false unless marked.include?(fcf["id"].presence&.to_i)
+
+      (fcf.key?("payout_field") && fcf["payout_field"].blank?) || ActiveModel::Type::Boolean.new.cast(fcf["_destroy"])
+    end
   end
 
   # Add the regulatory fields to the form type

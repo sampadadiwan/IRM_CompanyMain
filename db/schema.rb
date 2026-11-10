@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_06_150000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_10_090000) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -697,6 +697,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_06_150000) do
     t.index ["user_id", "revoked_at"], name: "index_api_tokens_on_user_id_and_revoked_at"
   end
 
+  create_table "approval_makers", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.string "approvable_type", limit: 40, null: false
+    t.bigint "approvable_id", null: false
+    t.bigint "user_id", null: false
+    t.string "role", limit: 20, null: false
+    t.datetime "created_at", null: false
+    t.index ["approvable_type", "approvable_id", "user_id"], name: "index_approval_makers_on_approvable_and_user", unique: true
+    t.index ["entity_id"], name: "index_approval_makers_on_entity_id"
+    t.index ["user_id"], name: "index_approval_makers_on_user_id"
+  end
+
   create_table "approval_responses", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.bigint "response_entity_id", null: false
@@ -785,6 +797,35 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_06_150000) do
     t.index ["created_at"], name: "index_audits_on_created_at"
     t.index ["request_uuid"], name: "index_audits_on_request_uuid"
     t.index ["user_id", "user_type"], name: "user_index"
+  end
+
+  create_table "bank_detail_changes", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.bigint "investor_kyc_id", null: false
+    t.bigint "changed_by_id"
+    t.string "changed_by_side", limit: 10, null: false
+    t.string "source", limit: 20, default: "other", null: false
+    t.string "changed_fields", limit: 100, null: false
+    t.string "old_account_last4", limit: 4
+    t.string "new_account_last4", limit: 4
+    t.string "old_ifsc", limit: 20
+    t.string "new_ifsc", limit: 20
+    t.json "changed_custom_fields"
+    t.string "status", limit: 12, default: "awaiting", null: false
+    t.bigint "confirmed_by_id"
+    t.datetime "confirmed_at"
+    t.boolean "only_approver", default: false, null: false
+    t.datetime "investor_notified_at"
+    t.text "investor_recipient_ids"
+    t.datetime "approvers_notified_at"
+    t.datetime "deleted_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["changed_by_id"], name: "index_bank_detail_changes_on_changed_by_id"
+    t.index ["confirmed_by_id"], name: "index_bank_detail_changes_on_confirmed_by_id"
+    t.index ["deleted_at"], name: "index_bank_detail_changes_on_deleted_at"
+    t.index ["entity_id", "status"], name: "index_bank_detail_changes_on_entity_id_and_status"
+    t.index ["investor_kyc_id", "status"], name: "index_bank_detail_changes_on_investor_kyc_id_and_status"
   end
 
   create_table "blazer_audits", force: :cascade do |t|
@@ -2257,7 +2298,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_06_150000) do
     t.json "whatsapp_templates"
     t.datetime "deleted_at"
     t.string "digio_client_id"
-    t.string "digio_client_secret"
+    t.text "digio_client_secret"
     t.datetime "digio_cutover_date"
     t.string "append_to_commitment_agreement"
     t.string "regulatory_env", limit: 20, default: "SEBI"
@@ -2273,11 +2314,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_06_150000) do
     t.string "portflio_expense_account_entry_filter"
     t.string "kyc_bank_account_types"
     t.integer "month_offset_for_fy"
-    t.string "openai_api_key"
-    t.string "gemini_api_key"
+    t.text "openai_api_key"
+    t.text "gemini_api_key"
     t.string "default_llm_model"
-    t.string "anthropic_api_key"
-    t.string "openrouter_api_key"
+    t.text "anthropic_api_key"
+    t.text "openrouter_api_key"
     t.boolean "db_dumps_enable", default: false
     t.integer "db_dumps_retention_period", default: 7
     t.boolean "db_dumps_email_enabled", default: false
@@ -2295,6 +2336,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_06_150000) do
     t.string "cs_judge_model"
     t.boolean "weekly_task_digest_enabled", default: false, null: false
     t.json "evergreen_labels"
+    t.boolean "approval_maker_checker", default: false, null: false
     t.index ["deleted_at"], name: "index_entity_settings_on_deleted_at"
     t.index ["entity_id"], name: "index_entity_settings_on_entity_id"
     t.index ["entity_id"], name: "index_entity_settings_on_entity_id_unique", unique: true
@@ -3196,6 +3238,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_06_150000) do
     t.text "import_results_data"
     t.text "custom_fields_created"
     t.json "row_errors"
+    t.bigint "support_user_id"
     t.index ["entity_id"], name: "index_import_uploads_on_entity_id"
     t.index ["owner_type", "owner_id"], name: "index_import_uploads_on_owner"
     t.index ["user_id"], name: "index_import_uploads_on_user_id"
@@ -4895,6 +4938,32 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_06_150000) do
     t.index ["secondary_sale_form_type_id"], name: "index_secondary_sales_on_secondary_sale_form_type_id"
   end
 
+  create_table "security_events", force: :cascade do |t|
+    t.string "uid", limit: 36, null: false
+    t.bigint "entity_id"
+    t.string "kind", limit: 40, null: false
+    t.string "category", limit: 20, null: false
+    t.string "outcome", limit: 10, default: "success", null: false
+    t.string "door", limit: 20, null: false
+    t.bigint "user_id"
+    t.bigint "actor_id"
+    t.bigint "impersonator_id"
+    t.string "identifier_digest", limit: 64
+    t.string "ip_address", limit: 45
+    t.string "user_agent"
+    t.string "request_id", limit: 36
+    t.string "region", limit: 5, null: false
+    t.json "details"
+    t.datetime "occurred_at", null: false
+    t.datetime "created_at", null: false
+    t.index ["entity_id", "occurred_at"], name: "index_security_events_on_entity_id_and_occurred_at"
+    t.index ["ip_address", "occurred_at"], name: "index_security_events_on_ip_address_and_occurred_at"
+    t.index ["kind", "occurred_at"], name: "index_security_events_on_kind_and_occurred_at"
+    t.index ["occurred_at"], name: "index_security_events_on_occurred_at"
+    t.index ["uid"], name: "index_security_events_on_uid", unique: true
+    t.index ["user_id", "occurred_at"], name: "index_security_events_on_user_id_and_occurred_at"
+  end
+
   create_table "shareholder_positions", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.bigint "investor_id", null: false
@@ -5739,6 +5808,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_06_150000) do
   add_foreign_key "aml_reports", "investors"
   add_foreign_key "api_tokens", "devise_api_tokens"
   add_foreign_key "api_tokens", "users"
+  add_foreign_key "approval_makers", "entities"
+  add_foreign_key "approval_makers", "users"
   add_foreign_key "approval_responses", "approvals"
   add_foreign_key "approval_responses", "entities"
   add_foreign_key "approval_responses", "entities", column: "response_entity_id"
@@ -5750,6 +5821,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_06_150000) do
   add_foreign_key "approvals", "folders", column: "document_folder_id"
   add_foreign_key "assistant_tasks", "entities"
   add_foreign_key "assistant_tasks", "users"
+  add_foreign_key "bank_detail_changes", "entities"
+  add_foreign_key "bank_detail_changes", "investor_kycs"
+  add_foreign_key "bank_detail_changes", "users", column: "changed_by_id"
+  add_foreign_key "bank_detail_changes", "users", column: "confirmed_by_id"
   add_foreign_key "call_fees", "capital_calls"
   add_foreign_key "call_fees", "entities"
   add_foreign_key "call_fees", "funds"

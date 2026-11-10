@@ -2,6 +2,8 @@ import BaseAgGrid from "controllers/base_ag_grid"
 import { localeDateGridOptions } from "custom/ag_locale_date_filter"
 import { whenControllerConnected } from "custom/controller_ready"
 import * as bootstrap from "bootstrap"
+// M17 (OWASP 2026-11): investor names, initials, tags and logo URLs come from users; escape them into the cell HTML
+import { escapeHtml, safeUrl } from "custom/escape_html"
 
 // Row-menu actions that open the offcanvas on a specific tab with that tab's
 // "new" form already popped. panePrefix/frameId mirror the ids rendered by
@@ -172,13 +174,13 @@ export default class extends BaseAgGrid {
             const tags = params.data.tags || '';
 
             const avatarHtml = logoUrl
-              ? `<img src="${logoUrl}" class="rounded-circle" alt="user" width="50" height="50">`
-              : `<div class="rounded-circle bg-light d-flex align-items-center justify-content-center text-muted fw-bold" style="width: 50px; height: 50px;">${initials}</div>`;
+              ? `<img src="${safeUrl(logoUrl)}" class="rounded-circle" alt="user" width="50" height="50">`
+              : `<div class="rounded-circle bg-light d-flex align-items-center justify-content-center text-muted fw-bold" style="width: 50px; height: 50px;">${escapeHtml(initials)}</div>`;
 
             const tagsHtml = tags.split(',').map(tag => tag.trim()).filter(tag => tag !== '').map(tag => {
               const url = new URL(window.location.href);
               url.searchParams.set('q[tags_cont]', tag);
-              return `<a href="${url.toString()}" class="badge rounded-pill bg-info-subtle text-primary border-info-subtle me-1 mb-1" style="font-weight: 500; text-decoration: none; font-size: 0.75rem !important; padding: 0.2rem 0.5rem !important;">${tag}</a>`;
+              return `<a href="${escapeHtml(url.toString())}" class="badge rounded-pill bg-info-subtle text-primary border-info-subtle me-1 mb-1" style="font-weight: 500; text-decoration: none; font-size: 0.75rem !important; padding: 0.2rem 0.5rem !important;">${escapeHtml(tag)}</a>`;
             }).join('');
 
             // dont need to shoe remarks tooltip anymore
@@ -193,7 +195,7 @@ export default class extends BaseAgGrid {
                 <div class="comment-text w-100 d-flex flex-column justify-content-center">
                   <div class="d-flex align-items-center mb-1">
                     <h6 class="fw-medium mb-0 me-2">
-                      <a href="#" data-action="click->deals-list-ag-grid#openSidepanel" data-id="${params.data.id}" class="text-dark">${params.value}</a>
+                      <a href="#" data-action="click->deals-list-ag-grid#openSidepanel" data-id="${escapeHtml(params.data.id)}" class="text-dark">${escapeHtml(params.value)}</a>
                     </h6>
                   </div>
 
@@ -209,8 +211,8 @@ export default class extends BaseAgGrid {
                 <div class="flex-shrink-0 d-flex align-items-center ms-auto">
                   <a href="#"
                      class="btn btn-outline-primary deals-row-actions"
-                     data-id="${params.data.id}"
-                     data-can-update="${params.data.can_update}"
+                     data-id="${escapeHtml(params.data.id)}"
+                     data-can-update="${escapeHtml(params.data.can_update)}"
                      aria-label="Row actions"
                      title="Actions">
                     <i class="fa-solid fa-caret-down" aria-hidden="true"></i>
@@ -248,7 +250,7 @@ export default class extends BaseAgGrid {
           else if (score > 30) color = '#ffa000'; // Amber
 
           return `
-            <div style="width: 100%; height: 100%; display: flex; align-items: center; gap: 8px;" data-bs-toggle="tooltip" title="${tooltip}">
+            <div style="width: 100%; height: 100%; display: flex; align-items: center; gap: 8px;" data-bs-toggle="tooltip" title="${escapeHtml(tooltip)}">
               <div style="flex-grow: 1; height: 10px; background: #eee; border-radius: 5px; overflow: hidden; position: relative; min-width: 50px;">
                 <div style="width: ${score}%; height: 100%; background-color: ${color} !important; border-radius: 5px;"></div>
               </div>
@@ -273,7 +275,7 @@ export default class extends BaseAgGrid {
           if (params.value === 'Active' || params.value === 'Committed' || params.value === 'Complete') badgeClass = 'bg-success-light';
           if (params.value === 'Pending' || params.value === 'Interested' || params.value === 'In Progress') badgeClass = 'bg-warning-light';
           if (params.value === 'Declined') badgeClass = 'bg-danger-light';
-          return `<span class="badge ${badgeClass}">${params.value}</span>`;
+          return `<span class="badge ${badgeClass}">${escapeHtml(params.value)}</span>`;
         }
       },
       {
@@ -286,7 +288,7 @@ export default class extends BaseAgGrid {
         cellRenderer: (params) => {
           if (params.value === 'Stagnant') {
             const reason = params.data.stagnant_reason || 'No activity for more than 7 days';
-            return `<span class="badge bg-danger-light" data-bs-toggle="tooltip" title="${reason}">Stagnant</span>`;
+            return `<span class="badge bg-danger-light" data-bs-toggle="tooltip" title="${escapeHtml(reason)}">Stagnant</span>`;
           }
           return '';
         }
@@ -305,7 +307,7 @@ export default class extends BaseAgGrid {
           else if (val === 'Tier 2' || val === '2') badgeClass = 'bg-success-light';
           else if (val === 'Tier 3' || val === '3') badgeClass = 'bg-warning-light';
           else if (val === 'Tier 4' || val === '4') badgeClass = 'bg-danger-light';
-          return `<span class="badge ${badgeClass}">${params.value}</span>`;
+          return `<span class="badge ${badgeClass}">${escapeHtml(params.value)}</span>`;
         }
       }
     ];
@@ -326,7 +328,7 @@ export default class extends BaseAgGrid {
               if (s === 'Complete') bc = 'bg-success-light';
               if (s === 'Incomplete') bc = 'bg-danger-light';
               if (s === 'Skip') bc = 'bg-warning-light';
-              return `<span class="badge ${bc}" style="font-size:0.85rem;">${s}</span>`;
+              return `<span class="badge ${bc}" style="font-size:0.85rem;">${escapeHtml(s)}</span>`;
             }
 
             if (!params.data || !params.data.activities) return '-';
@@ -353,12 +355,12 @@ export default class extends BaseAgGrid {
             return `<span class="badge ${badgeClass} activity-badge"
                           style="cursor:pointer; font-size:0.85rem;"
                           data-activity-id="${id}"
-                          data-activity-status="${status}"
+                          data-activity-status="${escapeHtml(status)}"
                           data-entity-id="${entityId}"
                           data-deal-investor-id="${dealInvestorId}"
                           data-activity-name="${activityName}"
                           data-can-update="${canUpdate}">
-                      ${status} ${chevron}
+                      ${escapeHtml(status)} ${chevron}
                     </span>`;
           },
           valueGetter: (params) => {

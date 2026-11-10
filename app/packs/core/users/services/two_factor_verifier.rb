@@ -136,6 +136,8 @@ class TwoFactorVerifier
     # @param challenge_id [String, nil] session[:otp_challenge_id], set by TwoFactorDispatch
     # @return [Failure]
     def record_failure(user, challenge_id:)
+      # M12 (OWASP 2026-11): wrong 2FA codes are counted, so guessing raises an alert
+      SecurityMetrics.event(:two_factor_failed, reason: "code")
       # The challenge's own count; nil from a store that keeps nothing reads as 0
       attempts = if challenge_id.present?
                    Rails.cache.increment(web_challenge_key(challenge_id), 1, expires_in: WEB_CHALLENGE_TTL).to_i

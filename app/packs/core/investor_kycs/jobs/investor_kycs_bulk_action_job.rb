@@ -17,8 +17,15 @@ class InvestorKycsBulkActionJob < BulkActionJob
     # does; a KYC the user may not act on is left as it was and listed as "Not authorized". Test H6-5 —
     # features/security/bulk_actions_authorization.feature
     query = ACTIONS[bulk_action.to_s.downcase]
-    if query && !InvestorKycPolicy.new(@user, investor_kyc).public_send(query)
-      @error_msg << { msg: "Not authorized to #{bulk_action.to_s.downcase}", id: investor_kyc.id, Kyc: investor_kyc }
+    policy = InvestorKycPolicy.new(@user, investor_kyc)
+    if query && !policy.public_send(query)
+      # M14 E37 — the maker of the KYC's awaiting bank change: say why, and who must verify instead
+      msg = if bulk_action.to_s.casecmp?("verify") && policy.bank_change_maker_blocked?
+              "Not verified — you changed the bank details; another approver must verify"
+            else
+              "Not authorized to #{bulk_action.to_s.downcase}"
+            end
+      @error_msg << { msg:, id: investor_kyc.id, Kyc: investor_kyc }
       return
     end
 
@@ -27,6 +34,9 @@ class InvestorKycsBulkActionJob < BulkActionJob
     when "verify"
       investor_kyc.verified = true
       investor_kyc.submission_status = "verified"
+      # M14 — the verifier confirms an awaiting bank change (guard ②); H11 — recorded as only approver when so
+      investor_kyc.bank_change_actor = @user
+      investor_kyc.bank_change_only_approver = policy.bank_change_only_approver?
       InvestorKycUpdate.call(investor_kyc:, investor_user: false)
     when "bankverification"
       VerifyBankJob.set(wait: rand(DELAY_SECONDS).seconds).perform_later(obj_class: investor_kyc.class.to_s, obj_id: investor_kyc.id)

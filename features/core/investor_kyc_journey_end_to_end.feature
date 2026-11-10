@@ -88,6 +88,9 @@ Feature: Investor KYC journey — end to end, fund user and investor
     And I open the KYC page
     Then the panel action "Verify" should click "investor_kyc_toggle_verified_btn"
     When I click the KYC panel action
+    # M14 (bank-detail-change-controls H9/H10): the investor changed the bank details the fund entered, so Verify
+    # first shows the second-person popup, which says what verifying does
+    And I confirm the bank change Verify popup
     Then the KYC should be verified
     And the KYC's journey should be complete
     And the KYC's journey should show:

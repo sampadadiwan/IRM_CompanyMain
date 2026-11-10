@@ -488,10 +488,34 @@ class ImportUtil < Trailblazer::Operation
 
     # Try to find a case-insensitive match in the given directory
     matched_entry = Dir.children(dir).find { |f| f.casecmp?(target_file_name) }
-    return File.join(dir, matched_entry) if matched_entry
+    # C3: a matched entry is checked too. It may be a symlink leading outside the folder
+    return import_file_path(dir, matched_entry) if matched_entry
 
-    # Fallback: return path assuming exact name (may not exist)
-    File.join(dir, target_file_name)
+    # Fallback: the exact name, which may sit in a sub-folder of the zip ("statements/q1.pdf") or not exist at
+    # all. C3: only while it stays inside the upload folder
+    import_file_path(dir, target_file_name)
+  end
+
+  # OWASP 2026-11 C3 — the path of a file named in an import sheet's "File Name" cell, or nil when that name
+  # points outside the unzipped upload folder. Without this, "../../../.env.production.in" or an absolute path
+  # read any file on the app server and attached it as a Document the importer could download.
+  # Sub-folders inside the zip keep working; a symlink is followed only if its target is inside the folder too.
+  # @param dir [String] the unzipped upload folder
+  # @param file_name [String] the name from the sheet
+  # @return [String, nil]
+  def import_file_path(dir, file_name)
+    return nil if dir.blank? || file_name.blank?
+
+    # Join first, then expand: expand_path resolves "..". Joining keeps an absolute name under dir (as the old
+    # "#{dir}/#{name}" did) and stops a leading "~" (Office's "~$report.docx") being read as a home directory
+    path = File.expand_path(File.join(dir, file_name.to_s))
+    # realpath also resolves symlinks, so a link pointing outside is judged by where it really points
+    resolved = File.exist?(path) ? File.realpath(path) : path
+    base = File.realpath(dir)
+    return path if resolved.start_with?(base + File::SEPARATOR)
+
+    Rails.logger.warn("[import] refused file name outside the upload folder: #{file_name.to_s.truncate(200)}")
+    nil
   end
 
   # Given a row we are importing ie user_data, find the form type for the row

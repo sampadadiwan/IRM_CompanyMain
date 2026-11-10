@@ -372,7 +372,10 @@ class DocumentsController < ApplicationController
 
   def download
     rows = fetch_rows
-    DocumentDownloadJob.perform_later(params[:folder_id], current_user.id, document_ids: rows.pluck(:id))
+    document_ids = rows.pluck(:id)
+    DocumentDownloadJob.perform_later(params[:folder_id], current_user.id, document_ids:)
+    # M11 D2 — a bulk document download (the count, not the names)
+    SecurityEvents.record("data.exported", user: current_user, details: { what: "documents#download", name: "#{document_ids.size} documents" })
     redirect_to params[:back_to], notice: "You will be sent a download link for the documents in a few minutes."
   end
 

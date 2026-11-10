@@ -1,7 +1,7 @@
 class CapitalDistributionsController < ApplicationController
   include WithJourneyPanel # show's journey evaluation and the journey action
 
-  before_action :set_capital_distribution, only: %i[show journey edit update destroy approve redeem_units payments_completed generate_docs send_payment_notifications recompute_fees]
+  before_action :set_capital_distribution, only: %i[show journey edit update destroy approve request_approval redeem_units payments_completed generate_docs send_payment_notifications recompute_fees]
 
   # GET /capital_distributions or /capital_distributions.json
   def index
@@ -95,7 +95,10 @@ class CapitalDistributionsController < ApplicationController
         # Editing distribution_date after payments already exist re-dates every capital_distribution_payment
         # to match (see docs/modules/funds/call_and_distribution_date_cascade_plan.md) and triggers a fee recompute.
         CapitalDistributionDateChangeJob.perform_later(@capital_distribution.id, current_user.id) if @capital_distribution.saved_change_to_distribution_date?
-        format.html { redirect_to capital_distribution_url(@capital_distribution), notice: "Capital distribution was successfully updated." }
+        notice = "Capital distribution was successfully updated."
+        # E53 (M13) — the change withdrew the distribution's approval (maker–checker on): say so
+        notice += " #{MakerCheckerNotices.withdrawn_sentence}" if @capital_distribution.approval_withdrawn?
+        format.html { redirect_to capital_distribution_url(@capital_distribution), notice: }
         format.json { render :show, status: :ok, location: @capital_distribution }
       else
         format.html { render :edit, status: :unprocessable_entity }
@@ -142,6 +145,25 @@ class CapitalDistributionsController < ApplicationController
       else
         format.html { render :new, status: :unprocessable_entity }
         format.json { render json: @capital_distribution.errors, status: :unprocessable_entity }
+      end
+    end
+  end
+
+  # POST /capital_distributions/:id/request_approval — M13 (OWASP 2026-11) design card ⑥ / ⑦, as for capital calls.
+  # Authorized by set_capital_distribution (request_approval?). Worked examples H20 —
+  # openspec/changes/capital-call-distribution-maker-checker/business-rules.md
+  def request_approval
+    # The real person behind the request (CapHive support when acting as a user, D9)
+    result = MakerCheckerNotices.request(@capital_distribution, Current.user || current_user)
+    kind, message = MakerCheckerNotices.request_flash(result, @capital_distribution)
+    respond_to do |format|
+      format.html { redirect_to capital_distribution_url(@capital_distribution), kind => message }
+      format.json do
+        if result.sent?
+          render json: { status: "sent", recipients: result.recipients.map(&:id) }
+        else
+          render json: { error: message }, status: :unprocessable_entity
+        end
       end
     end
   end

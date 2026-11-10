@@ -94,18 +94,26 @@ class InvestorKycPolicy < ApplicationPolicy
     end
   end
 
-  # E: the fields this user may send. Verifying a KYC is the fund's job, so verified / pan_verified /
-  # bank_verified are accepted only from fund-side users (curr_role employee, which includes company admins)
-  # and support: not from investors, advisors or holding users, nor through a signed magic link
-  # M28 (Test M28-7): user_id and kyc_data_id are not KYC columns (sending them only raised a 500); kyc_data_id is
-  # read directly by investor_kycs#assign_kyc_data. investor_id is create-only (attr_readonly + same firm).
+  # E: the fields this user may send. M28 (Test M28-7): user_id and kyc_data_id are not KYC columns (sending them
+  # only raised a 500); kyc_data_id is read directly by investor_kycs#assign_kyc_data. investor_id is create-only
+  # (attr_readonly + same firm).
+  # M14 (bank-detail-change-controls D12, D13):
+  #   - X2–X4 — the bank / PAN check results (bank_verification_status/response, pan_verification_status/response) are
+  #     written only by VerifyBankJob / VerifyPanJob, never accepted from anyone (an investor could make a bad account
+  #     look checked);
+  #   - E11, E12 — verified and bank_verified are accepted only from a KYC approver of this KYC (Verify / Bank
+  #     Verified tick); anyone else's value is dropped and the rest of the save goes through. pan_verified keeps
+  #     today's rule (fund side or support, never a magic link).
   def permitted_attributes
     fields = %i[id investor_id entity_id kyc_type full_name birth_date PAN pan_card signature
                 address corr_address bank_account_number ifsc_code bank_branch bank_account_type bank_name type
-                bank_verification_response expiry_date esign_emails bank_verification_status pan_verification_response
-                pan_verification_status comments completed_by_investor phone form_type_id send_kyc_form_to_user
+                expiry_date esign_emails comments completed_by_investor phone form_type_id send_kyc_form_to_user
                 agreement_unit_type agreement_committed_amount]
-    fields += %i[verified pan_verified bank_verified] if (user.curr_role == "employee" || support?) && !signed_id_access?
+    fields << :pan_verified if (user.curr_role == "employee" || support?) && !signed_id_access?
+    # E12 — Verify by a KYC save only for whoever may press Verify on this KYC
+    fields << :verified if may_send_verification_flag?(:toggle_verified?)
+    # E11 — the Bank Verified tick only for whoever may tick it (confirm_bank_details?)
+    fields << :bank_verified if may_send_verification_flag?(:confirm_bank_details?)
     fields + [{ documents_attributes: Document::NESTED_ATTRIBUTES, properties: {} }]
   end
 
@@ -138,8 +146,55 @@ class InvestorKycPolicy < ApplicationPolicy
     create?
   end
 
-  def toggle_verified?
+  # M14 D15 — today's approver test: an employee of the KYC's firm with Investor KYC Approve (or a company admin) who
+  # can see the KYC. AML buttons and the Audit Trail menu ask this, so a maker of a bank change keeps them.
+  def kyc_approver?
     permissioned_employee?(:investor_kyc_approve)
+  end
+
+  # Verify / UnVerify (page button, bulk, import, JSON). M14 D15 — direction-aware: UnVerify (the KYC is verified) is
+  # open to every KYC approver (E36); Verify is refused to the maker of an awaiting bank change while another KYC
+  # approver who can see the KYC exists (E32, X7), and allowed to the only approver (H11).
+  def toggle_verified?
+    kyc_approver? && (record.verified || !bank_change_maker_blocked?)
+  end
+
+  # M14 — may tick Bank Verified (KYC form box, JSON bank_verified): any KYC approver (H4) except a blocked maker of
+  # an awaiting bank change (E44, X9)
+  def confirm_bank_details?
+    kyc_approver? && !bank_change_maker_blocked?
+  end
+
+  # E32, X7 — this user made the KYC's awaiting bank change and another KYC approver can verify it instead
+  def bank_change_maker_blocked?
+    made_awaiting_bank_change? && other_kyc_approver?
+  end
+
+  # H11, E39 — this user made the awaiting change, and nobody else at the firm could verify it: Verify is allowed
+  # after the popup's warning card and recorded as "only approver"
+  def bank_change_only_approver?
+    made_awaiting_bank_change? && !other_kyc_approver?
+  end
+
+  # E38, E39 — another active user of the KYC's firm who is a KYC approver and can see this KYC (an approver with no
+  # access to the KYC can't open it, so would strand the maker). Memoised; stops at the first one found.
+  def other_kyc_approver?
+    return @other_kyc_approver if defined?(@other_kyc_approver)
+
+    candidates = record.entity.employees.active.where.not(id: user.id).includes(:roles)
+    @other_kyc_approver = candidates.find_each.any? do |candidate|
+      # Company admins approve by role; employees need the Investor KYC Approve permission
+      next false unless candidate.has_cached_role?(:company_admin) || candidate.extended_permissions.set?(:investor_kyc_approve)
+
+      other = InvestorKycPolicy.new(candidate, record)
+      other.kyc_approver? && other.show?
+    end
+  end
+
+  # The KYC form's Bank Verified box (E11, E44): shown exactly when the tick would be accepted — on a new KYC by the
+  # user-level approve flag, on a saved one by confirm_bank_details?
+  def tick_bank_verified?
+    may_send_verification_flag?(:confirm_bank_details?)
   end
 
   def send_kyc_reminder?
@@ -162,12 +217,13 @@ class InvestorKycPolicy < ApplicationPolicy
     record.entity.ckyc_or_kra_enabled?
   end
 
+  # D15 — kyc_approver?, not toggle_verified?: a maker blocked from Verify keeps the AML buttons
   def generate_new_aml_report?
-    toggle_verified? && user.entity.entity_setting.aml_enabled
+    kyc_approver? && user.entity.entity_setting.aml_enabled
   end
 
   def override_aml_status?
-    toggle_verified? && user.entity.entity_setting.aml_enabled
+    kyc_approver? && user.entity.entity_setting.aml_enabled
   end
 
   def assign_kyc_data?
@@ -263,6 +319,26 @@ class InvestorKycPolicy < ApplicationPolicy
   end
 
   private
+
+  # Did this user make the KYC's awaiting bank change? (System- and investor-made changes are nobody's here: any
+  # approver may confirm them, H10, E45)
+  def made_awaiting_bank_change?
+    return false unless record.respond_to?(:awaiting_bank_change)
+
+    change = record.awaiting_bank_change
+    change.present? && change.changed_by_id.present? && change.changed_by_id == user.id
+  end
+
+  # E11, E12 — may this user send verified / bank_verified? On a KYC: the record-level predicate. On the class (a
+  # create, or InvestorKycsController before a record is loaded): the user-level approve flag — a fund-side user of
+  # the current firm who is a company admin or holds Investor KYC Approve — never through a magic link.
+  def may_send_verification_flag?(record_predicate)
+    return false if signed_id_access?
+    return public_send(record_predicate) if record.is_a?(InvestorKyc) && record.persisted?
+
+    user.curr_role == "employee" &&
+      (user.has_cached_role?(:company_admin) || user.get_extended_permissions.set?(:investor_kyc_approve))
+  end
 
   # show? path 1: a user currently in the KYC's entity (or its Group Company parent).
   def entity_staff_can_see?

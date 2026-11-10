@@ -61,9 +61,22 @@ class DocumentMailer < ApplicationMailer
     send_mail(subject:)
   end
 
+  # M5 (OWASP 2026-11): a firm's database dump (owner_tag "DB Dump", EntityDbDumpJob) holds every LP's PAN and bank
+  # account, and this link opens it without signing in. A forwarded or intercepted email exposed the whole firm for
+  # 7 days. Dumps now get a 1-hour link; the email's in-app "Download Link" (sign-in required) works after that.
+  # Other zip downloads keep the week.
+  DB_DUMP_LINK_TTL = 1.hour
+  DOWNLOAD_LINK_TTL = 7.days
+
+  # @param document [Document]
+  # @return [ActiveSupport::Duration] how long the email's direct download link works
+  def self.download_link_ttl(document)
+    document.owner_tag == "DB Dump" ? DB_DUMP_LINK_TTL : DOWNLOAD_LINK_TTL
+  end
+
   def email_link
-    # Link will expire in 1 week
-    @link = @document.file.url(expires_in: (60 * 60 * 24 * 7), response_content_disposition: @document.inline_disposition)
+    @link_ttl = self.class.download_link_ttl(@document)
+    @link = @document.file.url(expires_in: @link_ttl.to_i, response_content_disposition: @document.inline_disposition)
     @msg = params[:msg]
     subject = "Download link"
     send_mail(subject:)

@@ -199,7 +199,27 @@ class DealIngestAuthenticator
       return Result.new(success: false, reason: "email_auth_failed")
     end
 
+    # M19 (OWASP 2026-11): no explicit "fail" is not enough. softfail / neutral / none / temperror used to pass, so a
+    # forged From of a GP admin (from a domain with "~all" and no DMARC) could file notes and tasks on a deal. A
+    # sender is accepted only when SPF or DKIM positively passes. Any refusal is logged with what was seen, so a
+    # genuine sender turned away shows up (none expected: Google and Microsoft mail passes DKIM).
+    unless email_auth_passed?
+      Rails.logger.warn("[deal_ingest] refused: neither SPF nor DKIM passed (from #{@from.to_s.truncate(80)})")
+      return Result.new(success: false, reason: "email_auth_not_passed")
+    end
+
     Result.new(success: true)
+  end
+
+  # M19 — a positive SPF or DKIM pass, in any form SendGrid gives it:
+  #   raw header lines ("Received-SPF: pass", "Authentication-Results: …; spf=pass; dkim=pass"),
+  #   the short "SPF: pass" / "DKIM: pass" form, or SendGrid's own SPF / dkim fields ("pass", "{@x.com : pass}")
+  # @return [Boolean]
+  def email_auth_passed?
+    headers_pass = @headers.match?(/Received-SPF:\s*pass\b/i) || @headers.match?(/\b(?:spf|dkim)\s*[=:]\s*pass\b/i)
+    sendgrid_spf = @params[:SPF].to_s.strip.casecmp?("pass")
+    sendgrid_dkim = @params[:dkim].to_s.match?(/:\s*pass\b/i)
+    headers_pass || sendgrid_spf || sendgrid_dkim
   end
 
   # Whether a post must carry the email auth headers to pass (H2-8): production only.

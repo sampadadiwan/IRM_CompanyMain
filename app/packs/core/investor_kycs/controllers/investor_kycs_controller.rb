@@ -18,6 +18,10 @@ class InvestorKycsController < ApplicationController
   before_action :set_workflowable, only: [:show] # runs after set_investor_kyc so @investor_kyc is available
   after_action :verify_authorized, except: %i[index search generate_all_docs edit_my_kyc investor_pending]
 
+  # M14 X7 — the maker of an awaiting bank change who asks to Verify is told why, instead of a bare Access Denied;
+  # every other refusal goes to the app-wide handler unchanged (WithAuthentication#deny_access)
+  rescue_from Pundit::NotAuthorizedError, with: :deny_access_or_explain_bank_change
+
   has_scope :uncalled, type: :boolean
   has_scope :unverified, type: :boolean
   has_scope :agreement_uncalled, type: :boolean
@@ -240,6 +244,8 @@ class InvestorKycsController < ApplicationController
   def create
     @investor_kyc = InvestorKyc.new(investor_kyc_params)
     authorize(@investor_kyc)
+    # M14 card ① — who saves this KYC and how, for the bank change guard
+    tag_bank_change(@investor_kyc)
     investor_user = current_user.curr_role_investor?
     # We get this param validate to decide whether to validate or not, if the investor is doing an interim save validate is false, and he will complete the form later.
     validate = params[:validate].present? ? params[:validate] != "false" : investor_user
@@ -327,7 +333,9 @@ class InvestorKycsController < ApplicationController
     authorize(@investor_kyc)
 
     # Run service object to upsert (create or update) the InvestorKyc
-    result = InvestorKycUpserter.call(params: investor_kyc_params, current_user: current_user)
+    # M14 E9 — the upserter saves the KYC it loads: tell it who and how, for the bank change guard
+    result = InvestorKycUpserter.call(params: investor_kyc_params, current_user: current_user,
+                                      bank_change_source: bank_change_source_for_request)
     @investor_kyc = result.investor_kyc
 
     # Broadcast an informational alert to the user
@@ -440,6 +448,8 @@ class InvestorKycsController < ApplicationController
   def create_and_send_kyc_to_investor
     @investor_kyc = InvestorKyc.new(investor_kyc_params)
     authorize(@investor_kyc)
+    # M14 card ① — who saves this KYC and how, for the bank change guard
+    tag_bank_change(@investor_kyc)
 
     # Check if the current role is an investor (affects KYC assignment)
     investor_user = current_user.curr_role_investor?
@@ -474,6 +484,8 @@ class InvestorKycsController < ApplicationController
       @kyc_data = @investor_kyc.kyc_datas.find(kyc_data_id)
       @investor_kyc.assign_kyc_data(@kyc_data, current_user)
     end
+    # M14 card ① — CKYC/KRA data writes name and address only, but the save is tagged like any other
+    tag_bank_change(@investor_kyc)
 
     # Determine if validation is required
     # If user is investor and entity matches, we skip validations
@@ -513,6 +525,9 @@ class InvestorKycsController < ApplicationController
     submitted = status_attrs[:submission_status] == "completed" && !was_already_completed
 
     @investor_kyc.assign_attributes(investor_kyc_params.merge(status_attrs))
+    # M14 card ①, D5 — the maker of a bank change: the signed-in user, or the investor behind a magic link (who has
+    # no current_user); "api" for a bearer-token / JSON call, else "screen"
+    tag_bank_change(@investor_kyc, actor: acting_user)
     existing_docs = @investor_kyc.documents.select(&:persisted?)
     if existing_docs.any?
       ActiveRecord::Associations::Preloader.new(
@@ -607,6 +622,14 @@ class InvestorKycsController < ApplicationController
   end
 
   def toggle_verified
+    # X12 — the popup posts intent=verify: a second click on an already verified KYC changes nothing (no UnVerify)
+    if params[:intent] == "verify" && @investor_kyc.verified
+      return respond_to do |format|
+        format.html { redirect_to investor_kyc_url(@investor_kyc), notice: "Investor kyc was successfully verified." }
+        format.json { render :show, status: :ok, location: @investor_kyc }
+      end
+    end
+
     investor_user = current_user.curr_role_investor?
     new_verified = !@investor_kyc.verified
     new_status   = new_verified ? "verified" : "completed"
@@ -616,6 +639,10 @@ class InvestorKycsController < ApplicationController
       submission_status: new_status
     )
     status = new_verified ? "verified" : "unverified"
+    # M14 — the verifier is the one who confirms an awaiting bank change (guard ②); H11 — the only approver verifying
+    # their own change is recorded as such
+    tag_bank_change(@investor_kyc)
+    @investor_kyc.bank_change_only_approver = new_verified && policy(@investor_kyc).bank_change_only_approver?
 
     respond_to do |format|
       if InvestorKycUpdate.call(investor_kyc: @investor_kyc, investor_user:).success?
@@ -813,8 +840,33 @@ class InvestorKycsController < ApplicationController
 
     return ActionController::Parameters.new.permit! if params[param_name].blank?
 
-    # E: the policy lists the fields this user may send (the verification flags: fund side only)
-    params.require(param_name).permit(policy(InvestorKyc).permitted_attributes)
+    # E: the policy lists the fields this user may send. M14 K6 — the record's policy once the KYC is loaded, so
+    # verified / bank_verified follow this user's rights on THIS KYC (E11, E12); the class before that (create)
+    params.require(param_name).permit(policy(@investor_kyc || InvestorKyc).permitted_attributes)
+  end
+
+  # M14 X7 — a blocked maker's Verify (page, URL or JSON) gets the reason; anything else: the app-wide denial
+  def deny_access_or_explain_bank_change(exception)
+    if action_name == "toggle_verified" && @investor_kyc && current_user && policy(@investor_kyc).bank_change_maker_blocked?
+      message = "You changed this KYC's bank details, so another KYC approver must verify it."
+      Rails.logger.info { "Verify refused (bank change maker): investor_kyc #{@investor_kyc.id}, user #{current_user.id}" }
+      return render(json: { error: message }, status: :forbidden) if api_request? || request.format.json?
+
+      return redirect_to(investor_kyc_url(@investor_kyc), alert: message)
+    end
+    deny_access(exception)
+  end
+
+  # M14 card ①, D5 — tag a KYC about to be saved with who is saving it and how (attr_accessors read by
+  # BankDetailChangeGuard; never request params)
+  def tag_bank_change(investor_kyc, actor: current_user || @signed_id_user)
+    investor_kyc.bank_change_actor = actor
+    investor_kyc.bank_change_source = bank_change_source_for_request
+  end
+
+  # "api" for a bearer-token or .json call (the LP mobile app, integrations), "screen" for the website
+  def bank_change_source_for_request
+    api_request? || request.format.json? ? "api" : "screen"
   end
 
   def commit_param

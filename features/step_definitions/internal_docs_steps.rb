@@ -49,7 +49,8 @@ When('a support user impersonates the user and requests {string}') do |path|
                     enabled: true, enable_user_login: true)
 
   @docs_session = ActionDispatch::Integration::Session.new(Rails.application)
-  @docs_session.post "/users/sign_in", params: { user: { email: support_user.email, password: "password" } }
+  # M8 — support must answer the two-factor code step (RequiredTwoFactorSignIn)
+  integration_sign_in(@docs_session, support_user)
   @docs_session.post "/users/#{@user.id}/login_as"
   @docs_session.get path
 end
@@ -63,7 +64,8 @@ end
 
 When('the user requests {string}') do |path|
   @docs_session = ActionDispatch::Integration::Session.new(Rails.application)
-  @docs_session.post "/users/sign_in", params: { user: { email: @user.email, password: "password" } }
+  # M8 — a support / super user answers the two-factor code step (RequiredTwoFactorSignIn)
+  integration_sign_in(@docs_session, @user)
   @docs_session.get path
 end
 

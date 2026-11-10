@@ -4,6 +4,13 @@ class DistributionFee < ApplicationRecord
   attr_readonly :fund_id # never moves to another fund (funds_api_security_policy_plan.md, B)
   belongs_to :capital_distribution
   attr_readonly :capital_distribution_id # never moves to another distribution (funds_api_security_policy_plan.md, B)
+  # M13 (OWASP 2026-11) K8 — a fee line decides which account entries are deducted from or added to payments, so
+  # changing, adding or deleting one is a figure change of the distribution (design card ②; columns confirmed from
+  # db/schema.rb — notes is no longer evaluated, so it is not a figure)
+  include ApprovalFigureWatch
+
+  APPROVAL_FIGURES = %w[name start_date end_date fee_type formula cumulative entry_type parent_type parent_ids audit_name].freeze
+  watches_approval_figures APPROVAL_FIGURES, parent: :capital_distribution
   validates :start_date, :end_date, presence: true
   # if name is blank we need entry type to filter
   # we need either name or audit name to create audit

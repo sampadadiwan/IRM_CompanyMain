@@ -183,6 +183,12 @@ Sidekiq.configure_server do |config|
     Sidekiq::Cron::Job.create(name: 'ReportBuilderSchedulerJob', cron: 'every 1 hour', class: 'ReportBuilderSchedulerJob')
     # "Describe it" drafts left unsaved for 7 days (report-builder-assistant E10); 02:30 UTC, off-peak
     Sidekiq::Cron::Job.create(name: 'ReportDraftCleanupJob', cron: '30 2 * * *', class: 'ReportDraftCleanupJob')
+    # M11 (OWASP 2026-11) security event trail (design card ⑧). The Monday review pack at 07:00 LOCAL:
+    # in -> 01:30 UTC Monday; us -> 12:00 UTC Monday (splits EDT/EST, as above). It mails the region's
+    # SECURITY_EVENTS_WEEKLY_TO and sends nothing when that is unset.
+    Sidekiq::Cron::Job.create(name: 'SecurityEventWeeklyPackJob', cron: in_region ? '30 1 * * 1' : '0 12 * * 1', class: 'SecurityEventWeeklyPackJob')
+    # Nightly retention purge (13 months), off-peak LOCAL: in -> 21:15 UTC (02:45 IST); us -> 07:15 UTC
+    Sidekiq::Cron::Job.create(name: 'SecurityEventPurgeJob', cron: in_region ? '15 21 * * *' : '15 7 * * *', class: 'SecurityEventPurgeJob')
 
     Sidekiq::Cron::Job.create(name: 'RecurringTaskGeneratorJob', cron: recurring_task_cron, class: 'RecurringTaskGeneratorJob')
     # Weekly task digest — Friday (docs/modules/tasks/weekly_task_digest_prd.md). Server

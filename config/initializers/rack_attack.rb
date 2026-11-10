@@ -173,6 +173,8 @@ module Rack
 
     Rack::Attack.throttled_responder = lambda do |req|
       Rails.logger.warn "⚠️ Throttled request from #{req.ip} on rule #{req.env['rack.attack.matched']}"
+      # M12 (OWASP 2026-11): the rule name is from the closed set below, so it is a safe metric label
+      SecurityMetrics.event(:throttled, reason: req.env['rack.attack.matched'])
       [429, { 'Content-Type' => 'text/plain' }, ["Rate limit exceeded. Try again later.\n"]]
     end
 
@@ -303,6 +305,23 @@ module Rack
     throttle('two_factor_code/ip', limit: 10, period: 60.seconds) do |req|
       # A ".json"-style format suffix reaches the same action, so it must reach the same bucket
       client_ip(req) if req.post? && TWO_FACTOR_CODE_PATHS.include?(req.path.sub(/\.\w+\z/, ''))
+    end
+
+    # M8 (require-2fa-privileged-roles) — the signed-in step-up POSTs that turn two-factor off and
+    # send its code. TwoFactorDisable already caps wrong codes (3 per 10 minutes) and counts wrong
+    # passwords toward the Devise lock; these cap raw request volume per IP and per signed-in user.
+    TWO_FACTOR_STEP_UP_PATH = %r{\A/users/\d+/(?:disable_two_factor|send_two_factor_code)(?:\.\w+)?\z}
+
+    throttle('two_factor_step_up/ip', limit: 10, period: 60.seconds) do |req|
+      client_ip(req) if req.post? && TWO_FACTOR_STEP_UP_PATH.match?(req.path)
+    end
+
+    throttle('two_factor_step_up/user', limit: 5, period: 60.seconds) do |req|
+      next unless req.post? && TWO_FACTOR_STEP_UP_PATH.match?(req.path)
+
+      # Devise's warden key holds [[user_id], salt]; the path's own id is the fallback (self-only actions)
+      session_user_id = req.env['rack.session']&.[]('warden.user.user.key')&.first&.first
+      (session_user_id || req.path[%r{\A/users/(\d+)/}, 1]).to_s
     end
 
     # Throttle the public demo-form endpoint by IP.

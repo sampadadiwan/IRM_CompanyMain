@@ -1,0 +1,54 @@
+<%# M13 maker–checker notice (design card ⑦): what happened, why this person got it, what to do (task U.1).
+    Dates through bare l(...) → "Mon dd, yyyy" (EmailDateLocalization). %>
+<% noun = @record.is_a?(CapitalDistribution) ? "distribution" : "call" %>
+<p>Dear <%= @user.full_name %>,</p>
+
+<p><strong><%= @message %></strong></p>
+
+<% if @record %>
+  <%# E39 — what is waiting: the record, its fund, its amount and date, and who prepared it %>
+  <ul>
+    <li><%= noun.capitalize %>: <%= @record %></li>
+    <li>Fund: <%= @record.fund.name %></li>
+    <% if @record.is_a?(CapitalCall) %>
+      <li>Call amount: <%= money_to_currency(@record.call_amount, {}) %></li>
+      <li>Due date: <%= l(@record.due_date) if @record.due_date %></li>
+    <% else %>
+      <li>Income: <%= money_to_currency(@record.income, {}) %></li>
+      <li>Distribution date: <%= l(@record.distribution_date) if @record.distribution_date %></li>
+    <% end %>
+    <li>Prepared by: <%= @record.preparers.map(&:full_name).to_sentence.presence || "not recorded" %></li>
+  </ul>
+<% end %>
+
+<% case @kind %>
+<% when "approval_request" %>
+  <p><strong>Why you got this:</strong> <%= @actor&.full_name || "A colleague" %> asked for this <%= noun %> to be approved.
+  Your firm requires a second person to approve capital calls and distributions (maker–checker), so the people who
+  prepared it can't approve it themselves. You have the Approver role and access to this fund, and you did not
+  prepare it.</p>
+  <p><strong>What to do:</strong> open the <%= noun %>, check its figures and click <strong>Approve</strong> in the
+  Actions menu. Approving sends nothing to investors; notices go out only when someone clicks Send Notification.
+  If you have any doubt about the figures, reply to <%= @actor&.full_name || "the person who asked" %> instead.</p>
+<% when "approval_withdrawn" %>
+  <p><strong>Why you got this:</strong> your firm requires a second person to approve capital calls and distributions
+  (maker–checker). The figures changed after approval, so the approval no longer covers them and was withdrawn
+  automatically. You are an approver or a preparer of this <%= noun %>.</p>
+  <p><strong>What to do:</strong> an approver who did not change the figures should open the <%= noun %>, check the new
+  figures and approve it again. If the change was not expected, ask <%= @actor&.full_name || "the person who made it" %>
+  about it before approving.</p>
+<% when "maker_checker_off" %>
+  <p><strong>Why you got this:</strong> you are a company admin or an approver of <%= @entity.name %>. CapHive tells
+  every admin and approver when the "second person approves" rule is switched off, so the control can't be removed
+  quietly. While it is off, the person who prepared a capital call or distribution can approve it themselves.</p>
+  <p><strong>If you expected this,</strong> there is nothing to do.<br>
+  <strong>If you did not,</strong> a company admin can switch it back on in Settings › Entity › Edit › Approvals; the
+  change is also recorded in the entity's audit trail.</p>
+<% end %>
+
+<% if @record %>
+  <% path_url = @record.is_a?(CapitalCall) ? capital_call_url(@record, subdomain: @entity.sub_domain) : capital_distribution_url(@record, subdomain: @entity.sub_domain) %>
+  <p><%= link_to "Open #{noun}", path_url, class: "btn btn-outline-primary" %></p>
+<% end %>
+
+<p>Thank you,<br><%= @entity.name %> System</p>

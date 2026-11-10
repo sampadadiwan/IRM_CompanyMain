@@ -13,6 +13,9 @@ module Users
       @mobile_device = policy_scope(MobileDevice).find(params[:id])
       authorize @mobile_device
       @mobile_device.revoke!(reason: "website_sign_out")
+      # M11 K2 / H24 — a lost phone signed out from the website
+      SecurityEvents.record("mobile_device.revoked", user: @mobile_device.user,
+                                                     details: { name: @mobile_device.name, reason: "website_sign_out" })
       redirect_to users_mobile_devices_path, notice: "#{@mobile_device.name.presence || 'The phone'} has been signed out."
     end
   end

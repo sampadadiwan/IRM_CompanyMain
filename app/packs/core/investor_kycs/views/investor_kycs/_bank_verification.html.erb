@@ -4,6 +4,13 @@
                     data-bs-toggle="collapse" data-bs-target=".bank_verification_response">
                 Verified
               </span>
+            <% elsif model.is_a?(InvestorKyc) && model.bank_verification_status.blank? && model.awaiting_bank_change %>
+              <%# M14 ⑦ E20 — the account changed and nothing has checked the new one yet: say so, and what happens next %>
+              <% checks_on = model.entity.entity_setting.bank_verification %>
+              <span data-controller="scoring-tooltips"><span class="badge bg-danger" data-bank-verified-badge="changed" data-bs-toggle="tooltip" data-bs-container="body"
+                    title="<%= checks_on ? 'The account changed after it was last checked. The bank check runs again within a few minutes; if the name only partly matches, an approver ticks Bank Verified after checking proof.' : 'The account changed after it was last checked. Bank verification is off for this firm: a KYC approver who did not make the change ticks Bank Verified (Edit › bank step) after checking proof of the new account.' %>">
+                Not verified — bank details changed
+              </span></span>
             <% else %>
               <span class="badge bg-danger" type="button"
                     data-bs-toggle="collapse" data-bs-target=".bank_verification_response">

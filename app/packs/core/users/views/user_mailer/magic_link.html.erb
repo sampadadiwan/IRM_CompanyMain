@@ -15,7 +15,9 @@
     #      sent" but received nothing, effectively denying magic-link authentication.
     #   2. Logged entity ID and subdomain to stdout on every magic link request in production.
     # Fixed by using safe navigation (.present?) and removing the debug puts entirely.
-    subdomain = @current_entity.present? && !Rails.env.test? ? @current_entity.sub_domain : nil
+    # H3 (OWASP 2026-11): safe_sub_domain, never the raw value. current_entity_id comes from the request, so
+    # this could be any firm's entity, and a crafted sub_domain moved the token to another host
+    subdomain = @current_entity.present? && !Rails.env.test? ? @current_entity.safe_sub_domain : nil
 
     # Security fix (Finding 6 — expiry mismatch): token TTL now driven by the same constant
     # as the subject line (UserMailer::MAGIC_LINK_TTL = 10 minutes). Previously the subject

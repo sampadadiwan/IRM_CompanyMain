@@ -20,7 +20,8 @@ end
 
 def iau_session_for(user)
   session = ActionDispatch::Integration::Session.new(Rails.application)
-  session.post "/users/sign_in", params: { user: { email: user.email, password: "password" } }
+  # M8 — a support user answers the two-factor code step (RequiredTwoFactorSignIn)
+  integration_sign_in(session, user)
   session
 end
 

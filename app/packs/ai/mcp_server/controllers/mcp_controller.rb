@@ -95,6 +95,10 @@ class McpController < ActionController::API
     # docs/security/security_review_2026_10.md "H12 — Gmail add-in sign-in", fix 3.
     raise McpAuthService::AuthenticationError, "Mail add-in tokens cannot be used for MCP. Authorise an MCP client instead." if MailAddinToken.issued?(@mcp_token)
   rescue McpAuthService::AuthenticationError => e
+    # M11 S1m / E12 — invalid, expired, deactivated, another firm's or a mail add-in token; a request with no
+    # token at all is a client that has not signed in yet and records nothing (E13)
+    reason = SecurityEvents.bearer_failure_reason(e.message)
+    SecurityEvents.record("sign_in.failed", user: @mcp_user, actor: nil, door: "oauth", outcome: :failure, request:, details: { reason: }) if reason
     # Include resource_metadata so MCP clients (Claude.ai etc.) can discover the OAuth server via RFC 9728
     resource_metadata_url = "#{request.base_url}/.well-known/oauth-protected-resource"
     response.set_header('WWW-Authenticate', %(Bearer realm="#{request.base_url}", resource_metadata="#{resource_metadata_url}"))

@@ -11,8 +11,11 @@ class ApiTokenPolicy < ApplicationPolicy
     true
   end
 
+  # M6 (OWASP 2026-11): not while CapHive support is signed in as this user ("Login as"). A token made then would
+  # outlive the support access (90 days), act in the client's name with no "impersonated by" trail, and survive the
+  # support mapping being switched off. UsersController#cross_site_link already refuses this case (M5-1).
   def create?
-    true
+    user.support_user_id.blank?
   end
 
   def destroy?

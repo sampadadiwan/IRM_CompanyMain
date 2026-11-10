@@ -37,7 +37,10 @@ class FormTypeFieldsController < ApplicationController
     raise ActiveRecord::RecordNotFound, "Unknown record type" unless klass&.include?(WithCustomField)
 
     @model_class = klass
-    @record = policy_scope(klass).find(save_params[:record_id])
+    # Scoped from the base class: for an STI subclass (an IndividualKyc's page posts record_type=IndividualKyc) some
+    # scopes build their table name from the class ("individual_kycs.entity_id"), a table that does not exist —
+    # found by M14 (bank-detail-change-controls, design C21); the record itself is still the subclass
+    @record = policy_scope(klass.base_class).find(save_params[:record_id])
     authorize @record, :show?
     @form_type = FormTypeFieldsSave.form_type_for(@record)
     authorize @form_type, :inline_fields?

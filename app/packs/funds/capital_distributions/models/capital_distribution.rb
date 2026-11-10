@@ -19,6 +19,17 @@ class CapitalDistribution < ApplicationRecord
   include CapitalDistributionShared
   include BlocksDestroyWithFundUnits
 
+  # M13 (OWASP 2026-11) K5 — maker–checker: who prepared this distribution (③) and the change watcher (②).
+  # openspec/changes/capital-call-distribution-maker-checker/design.md cards ② ③
+  include WithApprovalMakers
+  include ApprovalFigureWatch
+
+  # The figures that decide what LPs receive; roll-ups (gross / distribution / completed amounts, fee) move with the
+  # payments, which are watched themselves
+  APPROVAL_FIGURES = %w[income_cents cost_of_investment_cents reinvestment_cents distribution_date distribution_on
+                        unit_prices].freeze
+  watches_approval_figures APPROVAL_FIGURES
+
   # Evergreen settlement records (created by a dealing date) get no journey of their own — the dealing
   # date's journey replaces it. The flag covers the create callback, before the dealing date links it.
   # Backward compatibility B4 — openspec/changes/open-ended-funds/design.md#backward-compatibility

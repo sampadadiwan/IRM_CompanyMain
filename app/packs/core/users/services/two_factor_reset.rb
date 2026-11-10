@@ -107,6 +107,10 @@ class TwoFactorReset < Trailblazer::Operation
       previous_mode: ctx[:previous_mode],
       message: ctx[:message].to_s.strip.presence
     ).two_factor_reset.deliver_later
+    # M8 (design D9) — an administrator's reset is also told to the firm's OTHER company admins, so a
+    # helpdesk reset obtained by social engineering does not go unnoticed (H11). A self reset is the
+    # user's own business and tells nobody else (E39).
+    TwoFactorDisable.notify_company_admins(user:, actor:, event: "reset") unless self_reset?(user, actor)
     true
   end
 

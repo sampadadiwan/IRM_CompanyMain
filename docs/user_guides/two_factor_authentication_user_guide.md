@@ -2,7 +2,7 @@
 
 **Two-Factor Authentication (2FA)** adds an extra layer of security to your account. After entering your password, you will be asked for a one-time code before you are signed in. This guide covers enabling 2FA, choosing your delivery method, and logging in.
 
-> **Where to find it:** Top-right **Profile menu** (your avatar) → **My Profile** → **Edit** → **Enable Two-Factor Authentication**; you then pick and confirm a method at your next sign-in. Anyone can do this for their own account; resetting another user's method needs the **company_admin** role (**Reset 2FA Method** on their profile).
+> **Where to find it:** Top-right **Profile menu** (your avatar) → **My Profile** → **Edit** → **Enable Two-Factor Authentication**; you then pick and confirm a method at your next sign-in. Anyone can do this for their own account. Turning it **off** is on **My Profile** → **Turn off 2FA** (password + current code). Resetting another user's method needs the **company_admin** role (**Reset 2FA Method** on their profile). CapHive **support** and **super** users must use 2FA from their region's enforcement date — see [Required for CapHive support and super users](#required-for-caphive-support-and-super-users).
 
 ---
 
@@ -16,8 +16,9 @@
 6. [Logging In with 2FA](#logging-in-with-2fa)
 7. [Changing Your Verification Method](#changing-your-verification-method)
 8. [Disabling 2FA](#disabling-2fa)
-9. [Frequently Asked Questions](#frequently-asked-questions)
-10. [Related Guides](#related-guides)
+9. [Required for CapHive support and super users](#required-for-caphive-support-and-super-users)
+10. [Frequently Asked Questions](#frequently-asked-questions)
+11. [Related Guides](#related-guides)
 
 ---
 
@@ -195,19 +196,69 @@ administrator immediately.** Your next sign-in then asks you to choose a new met
 
 ## Disabling 2FA
 
-1. Go to your **Profile** page
-2. Click **Edit**
-3. Switch off **Enable Two-Factor Authentication**
-4. Click **Save**
+Turning 2FA off needs your **password and a current code**, for every user. This is so that
+someone using your open session (a laptop left unlocked, a stolen browser) cannot remove your
+second factor. **Edit profile** no longer has an off switch — once 2FA is on it shows
+"On — turn it off from your user page".
 
-2FA is immediately disabled. You will no longer be asked for a code at login. Your chosen
-method is forgotten at the same time, so if you switch 2FA back on later you will choose a
-method again at your next login — delete the old CapHive entry from your authenticator app
-if you had one.
+1. Go to your **Profile** page (**Profile menu → My Profile**).
+2. Next to **Two-Factor Authentication** click **Turn off 2FA**.
+3. Read the popup — it lists what happens: codes stop being asked for, sign-in needs only your
+   password, and you and your firm's other company admins are emailed.
+4. Type your **password**.
+5. Type the **current code**: from your authenticator app, or press **Send code** first for
+   WhatsApp or text message (one code per 30–60 seconds).
+6. Tick **I understand sign-in will no longer ask for a code.** and click **Turn off 2FA**.
+
+```mermaid
+flowchart LR
+    A["Turn off 2FA"] --> B{"Password right?"}
+    B -- "no" --> X1["Refused<br/>(counts toward the lock)"]
+    B -- "yes" --> C{"Code right?"}
+    C -- "no" --> X2["Refused<br/>(3 tries per 10 minutes)"]
+    C -- "yes" --> D["2FA off<br/>+ emails"]
+```
+
+2FA is then off. Your chosen method is forgotten at the same time, so if you switch 2FA back
+on later you will choose a method again at your next login — delete the old CapHive entry from
+your authenticator app if you had one. If 2FA was on but you never chose a method, the popup
+asks for your password only.
+
+- A **wrong password** counts toward the account lock, exactly like a wrong sign-in (6 in a row
+  lock the account).
+- A **wrong code** shows how many attempts are left; after 3 wrong codes in 10 minutes you must
+  wait 10 minutes.
+- An **administrator cannot turn your 2FA off**. On someone else's page **Turn off 2FA** is shown
+  greyed out with the reason; they use **Reset 2FA Method** instead, which keeps 2FA on.
 
 > If you cannot log in because you have lost access to your code (no WhatsApp, no text messages, no app, no phone), contact your administrator to reset your 2FA method.
 
 ---
+
+## Required for CapHive support and super users
+
+CapHive's own **support** and **super** users can sign in as clients (**Login as**), so their
+accounts must have a second factor, from the day this was released, in every region. Company admins,
+employees, investors and advisors are **not** required: for them 2FA stays optional.
+
+```mermaid
+flowchart LR
+    S["Support / super user<br/>without a method"] --> SI["Signs in"]
+    SI --> SU["Set Up Two-Factor Authentication<br/>(required for your role)"]
+    SU --> OK["Signed in · Login as available"]
+    OLD["Still signed in from<br/>before the release"] --> LA["Login as refused<br/>with Set up now"]
+    LA --> SU
+```
+
+| Situation | What a support / super user without a method sees |
+|---|---|
+| Signing in | **Set Up Two-Factor Authentication** with "required for your role": you choose a method before you get in |
+| Still signed in from before the release | **Login as** is refused with a **Set up now** button; **Set up now** is also on your profile |
+| After setting up | **Required for your role** badge on your profile; no **Turn off 2FA** |
+
+**Set up now** signs you out; sign in again and choose a method. The **authenticator app** works
+without a phone number. If you lose your phone later, another support user or a company admin
+can **Reset 2FA Method** for you.
 
 ## Frequently Asked Questions
 
@@ -243,7 +294,19 @@ Choose **Authenticator App** at sign-in, scan the QR code with Google Authentica
 On **My Profile** click **Change 2FA Method**, enter your password, tick the acknowledgement box and click **Reset 2FA Method**. Sign in again and choose a new method. See [Changing Your Verification Method](#changing-your-verification-method).
 
 **How do I turn 2FA off?**
-Go to **My Profile** → **Edit**, switch off **Enable Two-Factor Authentication** and save. See [Disabling 2FA](#disabling-2fa).
+On **My Profile** click **Turn off 2FA**, type your password and a current code, tick the box and click **Turn off 2FA**. See [Disabling 2FA](#disabling-2fa).
+
+**Why does turning 2FA off need my password and a code?**
+So that someone using your open session cannot remove your second factor. Both are checked in the same step, a wrong password counts toward the account lock, and you and your firm's other company admins are emailed.
+
+**Why can't my administrator turn my 2FA off?**
+Switching someone else's 2FA off is how accounts are taken over, so only you can do it. If you lost your phone, ask for **Reset 2FA Method**: it keeps 2FA on and you choose a new method at your next sign-in.
+
+**Why must CapHive support and super users use 2FA?**
+They can sign in as clients with **Login as**, so a stolen support password would reach many firms. They set up a method at their next sign-in. See [Required for CapHive support and super users](#required-for-caphive-support-and-super-users).
+
+**Why is there no Turn off 2FA button on my profile?**
+Either 2FA is off, you are a support or super user (the **Required for your role** badge says so), or support is viewing your account as you.
 
 **How do I make the WhatsApp option available?**
 Add your mobile number in **Mobile Phone** on your profile's **Edit** page and switch on **Whatsapp enabled**, which you should only do if that number uses WhatsApp. You can do this yourself or ask a company admin.
@@ -277,7 +340,10 @@ Your current method stops working immediately, you are signed out, and a confirm
 Your old method stops working and you receive an email saying the reset happened and who did it. You stay signed in on any current session, and your next sign-in asks you to choose a new method; if you did not ask for the reset, contact your administrator at once.
 
 **What happens when I switch 2FA off?**
-Codes are no longer asked for from your next sign-in, and your chosen method is forgotten. If you switch 2FA back on later you pick a method again, so delete the old CapHive entry from your authenticator app.
+Codes are no longer asked for from your next sign-in, your chosen method is forgotten, and you and your firm's other company admins are emailed. If you switch 2FA back on later you pick a method again, so delete the old CapHive entry from your authenticator app.
+
+**What happens when I press Set up now?**
+You are signed out with "Sign in again to set up two-factor authentication." Signing in then shows the method-selection screen; once you confirm a code, **Set up now** is gone from your profile and a "turned on" email is sent.
 
 **What happens if I enter the wrong code?**
 You see "Invalid code" with the number of attempts left. After 3 failed attempts CapHive shows "Too many failed attempts. Please sign in again." and you start again from the sign-in page.

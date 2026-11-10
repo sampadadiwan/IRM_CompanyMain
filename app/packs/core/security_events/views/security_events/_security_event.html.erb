@@ -1,0 +1,59 @@
+<%# One event row. Links to a user page only for people in a firm the viewer may see (@linkable_entity_ids, nil =
+    every firm) — worked out once in the controller, never per row. %>
+<%
+  person_cell = lambda do |user|
+    next "" if user.nil?
+    linkable = @linkable_entity_ids.nil? || @linkable_entity_ids.include?(user.entity_id)
+    linkable ? link_to(user.full_name, user_path(user), data: { turbo_frame: "_top" }) : user.full_name
+  end
+  label = event.display_label
+  icon = SecurityEventCatalogue::CATEGORIES.dig(event.category, :icon)
+  # The Event label filters the list to that kind, keeping the rest of the current filter (dates, account, IP…),
+  # back to page 1, inside the frame like the Filter form and the pager
+  kind_path = security_events_path(@filter.with_kind(event.kind))
+%>
+<tr id="<%= dom_id(event) %>">
+  <td class="text-nowrap"><%= l(event.occurred_at) %></td>
+  <% if @multi_firm %><td><%= event.entity&.name || "CapHive only" %></td><% end %>
+  <td class="text-nowrap">
+    <i class="ti <%= icon %> text-muted"></i>
+    <%= link_to label, kind_path, class: "security-event-kind-link",
+                data: { turbo_frame: "security_events_frame", turbo_action: "advance", bs_toggle: "tooltip" },
+                title: "Show only “#{event.label}” events" %>
+    <%# The details ⓘ is its own element: hovering it explains, it never filters %>
+    <% if event.details_text.present? %>
+      <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip" title="<%= event.details_text %>"></i>
+    <% end %>
+  </td>
+  <td>
+    <% if event.failure? %>
+      <span class="badge bg-danger-subtle text-danger">Failed</span>
+    <% else %>
+      <span class="badge bg-success-subtle text-success">Succeeded</span>
+    <% end %>
+  </td>
+  <td><%= person_cell.call(event.user) %></td>
+  <td>
+    <% if event.actor %>
+      <%= person_cell.call(event.actor) %>
+      <% if event.impersonator_id.present? && event.impersonator_id == event.actor_id %>
+        <span class="text-muted">(CapHive support)</span>
+      <% elsif event.impersonator %>
+        <div class="text-muted small">signed in by CapHive support <%= event.impersonator.full_name %></div>
+      <% end %>
+    <% else %>
+      <span class="text-muted">System</span>
+    <% end %>
+  </td>
+  <td><%= event.door_label %></td>
+  <td><%= event.ip_address %></td>
+  <td><%= event.region %></td>
+  <%# What to do — opens this row's styled popup (_advice_modal, rendered after the table) %>
+  <td class="text-center">
+    <button type="button" class="btn btn-sm btn-outline-info security-event-advice"
+            data-bs-toggle="modal" data-bs-target="#security_event_advice_<%= event.id %>"
+            aria-label="What to do: <%= label %>">
+      <i class="ti ti-bulb"></i>
+    </button>
+  </td>
+</tr>

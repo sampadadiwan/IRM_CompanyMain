@@ -34,10 +34,30 @@
         <%= f.text_field :name, class: "form-control", maxlength: 100, required: true, placeholder: "e.g. Quarterly script", id: "api_token_name" %>
       </div>
       <div class="col-sm-auto">
-        <%= f.button class: "btn btn-outline-primary", id: "create_api_token" do %>
-          <i class="ti ti-plus"></i> New token
+        <% if policy(ApiToken).create? %>
+          <%= f.button class: "btn btn-outline-primary", id: "create_api_token" do %>
+            <i class="ti ti-plus"></i> New token
+          <% end %>
+        <% else %>
+          <%# M6 (OWASP 2026-11): CapHive support signed in as this user can't mint tokens (ApiTokenPolicy#create?).
+              Shown disabled with the reason rather than hidden or refused after the click; the tooltip sits on a
+              wrapper because a disabled button fires no events (same pattern as the 2FA "Turn off" control). %>
+          <span class="d-inline-block" tabindex="0" id="create_api_token_disabled" data-controller="scoring-tooltips"
+                data-bs-toggle="tooltip"
+                title="Tokens can't be created while you are signed in as another user. A token made now would keep acting in their name after your support session ends.">
+            <button type="button" class="btn btn-outline-primary" disabled style="pointer-events: none;">
+              <i class="ti ti-plus"></i> New token
+            </button>
+          </span>
         <% end %>
       </div>
+    <% end %>
+    <% unless policy(ApiToken).create? %>
+      <p class="small text-muted mt-n2 mb-4" id="api_token_support_help">
+        <i class="ti ti-info-circle"></i>
+        You are signed in as this user through CapHive support, so new tokens are turned off. Ask the user to create
+        the token from their own account.
+      </p>
     <% end %>
 
     <% if @api_tokens.empty? %>

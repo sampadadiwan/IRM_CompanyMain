@@ -139,6 +139,9 @@ class EntitiesController < ApplicationController
     # "FI code is required to enable CKYC" rule) must not block off-boarding the very clients
     # this button exists for. after_commit — and so the cascade — still fires.
     if @entity.update_attribute(:active, false)
+      # M11 A6 / E22 — one event for the firm: EntityDeactivationJob flips the users with update_all, so no
+      # per-user account.deactivated rows follow
+      SecurityEvents.record("firm.deactivated", entity_id: @entity.id, details: { name: @entity.name })
       redirect_to entity_path(@entity), status: :see_other,
                                         notice: "#{@entity.name} has been deactivated. Employee logins and investor access are being revoked."
     else
@@ -151,6 +154,8 @@ class EntitiesController < ApplicationController
     # Trigger an adhoc DB dump. The job will still respect frequency settings
     # (e.g., skip if a daily dump was already taken) unless forced otherwise.
     EntityDbDumpJob.perform_later(entity_id: @entity.id, user_id: current_user.id, adhoc: true)
+    # M11 D3 / E31 — a whole-firm data dump is an export of that firm's data
+    SecurityEvents.record("data.exported", entity_id: @entity.id, details: { what: "entity_db_dump", name: @entity.name })
     redirect_to entity_path(@entity), notice: "Database dump generation started. You will be notified when it is ready."
   end
 

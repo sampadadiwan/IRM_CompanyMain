@@ -7,7 +7,9 @@
 
     admin_settings = JSON.parse(cookies[:adminSettings]) rescue {}
     theme = admin_settings["Theme"] == "dark" ? "bg-dark" : "bg-light"
-    owner ||= uri_params[:owner_type].constantize.find(uri_params[:owner_id]) if uri_params[:owner_id].present? && uri_params[:owner_type].present?
+    # M15 (OWASP 2026-11): pages that hold an authorized owner pass `owner:`; otherwise (the generic dashboard page,
+    # whose uri_params come from the web address) it is looked up within the user's scope, from allowed types only
+    owner ||= dashboard_owner(uri_params)
     logo ||= nil
     title ||= nil
     header_label ||= nil

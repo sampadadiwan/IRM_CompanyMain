@@ -41,8 +41,17 @@ window.handleChartClick = function(param, value, frameId) {
   // Ignore clicks on aggregated "Others" slices
   if (value === "Others") return;
 
-  const url = new URL(window.location.href);
-  
+  const frame = document.getElementById(frameId);
+
+  // Filter the list the frame shows, not the page around it. A frame embedded in another page
+  // (e.g. the KYC table on /investors/169, src=/investor_kycs?investor_id=169) has its own URL;
+  // building on window.location would load the whole investor page into the frame and drop investor_id.
+  // A frame rendered inline by its own index page has no src (or, after one click, a src on the page's own
+  // path), so the page URL is the list URL there — compare paths, not just "has a src".
+  const frameUrl = frame && frame.src ? new URL(frame.src, window.location.href) : null;
+  const embedded = !!frameUrl && frameUrl.pathname !== window.location.pathname;
+  const url = embedded ? frameUrl : new URL(window.location.href);
+
   // Map human-readable chart labels to database-friendly boolean strings
   let filterValue = value;
   if (value === "Verified" || value === "Completed") filterValue = "true";
@@ -50,13 +59,13 @@ window.handleChartClick = function(param, value, frameId) {
 
   // Append or update the Ransack filter in the URL
   url.searchParams.set(param, filterValue);
-  
+
   // Update the target Turbo Frame to reflect the new filters
-  const frame = document.getElementById(frameId);
   if (frame) {
     frame.src = url.toString();
-    // Update browser history so filters persist on page refresh
-    window.history.pushState({}, "", url.toString());
+    // Update browser history so filters persist on page refresh — only when the frame's URL is the page's own;
+    // pushing an embedded frame's URL would turn the address bar into the list page (refresh leaves the investor)
+    if (!embedded) window.history.pushState({}, "", url.toString());
   } else {
     // Fallback to full page visit if frame is not found
     window.Turbo.visit(url.toString());

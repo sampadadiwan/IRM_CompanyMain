@@ -134,18 +134,16 @@ module Users
       @user = User.find(session[:otp_user_id])
 
       if @user.validate_and_consume_otp!(submitted_code)
-        ActiveRecord::Base.connected_to(role: :writing) do
-          # The mode is committed HERE, not at selection — see select_mode_post. Only the
-          # mode: two_factor_enabled is already true (that is how an otp session exists at
-          # all), and writing it again would silently undo an administrator who switched
-          # 2FA off for this user while they were mid-enrollment.
-          @user.update!(two_factor_mode: "authenticator")
-        end
+        # The mode is committed HERE, not at selection — see select_mode_post and commit_method!
+        commit_method!("authenticator")
         sign_in(@user)
         reset_otp_session
         # Same landing as the WhatsApp and SMS enrollments — there is no backup-codes
-        # screen to pass through any more.
-        redirect_to root_path, notice: "Two-factor authentication is now enabled."
+        # screen to pass through any more. after_sign_in_path_for, like complete_login: a
+        # magic link's return-to page survives a required set-up too (E15), else the dashboard.
+        # M11 S1b / H12 — enrolment ends in a completed two-factor sign-in
+        record_two_factor_sign_in
+        redirect_to after_sign_in_path_for(@user), notice: "Two-factor authentication is now enabled."
       else
         # H13-X — enrollment codes count against the challenge like login codes; a re-render
         # needs the QR code again, so it is rebuilt only when the page is shown
@@ -183,12 +181,13 @@ module Users
       @user = User.find(session[:otp_user_id])
 
       if @user.validate_and_consume_otp!(submitted_code)
-        ActiveRecord::Base.connected_to(role: :writing) do
-          @user.update!(two_factor_mode: "whatsapp")
-        end
+        # Mode (and, for a required user, the flag) committed once the code verified
+        commit_method!("whatsapp")
         sign_in(@user)
         reset_otp_session
-        redirect_to root_path, notice: "Two-factor authentication via WhatsApp is now enabled."
+        # M11 S1b / H12 — enrolment ends in a completed two-factor sign-in
+        record_two_factor_sign_in
+        redirect_to after_sign_in_path_for(@user), notice: "Two-factor authentication via WhatsApp is now enabled."
       else
         # H13-X — counted against the challenge like a login code
         handle_wrong_code(:enroll_whatsapp)
@@ -226,14 +225,15 @@ module Users
       # Verify, not validate_and_consume_otp! — in sms mode the code was minted by Twilio
       # and the user's otp_secret has nothing to do with it.
       if TwilioSmsVerification.approved?(user: @user, code: submitted_code)
-        ActiveRecord::Base.connected_to(role: :writing) do
-          @user.update!(two_factor_mode: "sms")
-        end
+        # Mode (and, for a required user, the flag) committed once Twilio approved the code (E17)
+        commit_method!("sms")
         sign_in(@user)
         reset_otp_session
         # A user who loses their number needs an administrator reset — the same as every
         # other mode.
-        redirect_to root_path, notice: "Two-factor authentication via text message is now enabled."
+        # M11 S1b / H12 — enrolment ends in a completed two-factor sign-in
+        record_two_factor_sign_in
+        redirect_to after_sign_in_path_for(@user), notice: "Two-factor authentication via text message is now enabled."
       else
         # H13-X — counted against the challenge like a login code
         handle_wrong_code(:enroll_sms)
@@ -297,6 +297,30 @@ module Users
 
     private
 
+    # Commits the method the user just proved with a code — the one place the enrollment
+    # actions write two_factor_mode (verify_enrollment, verify_whatsapp_enrollment,
+    # verify_sms_enrollment).
+    #
+    # two_factor_enabled is written too, but ONLY when it is false and the role rule requires
+    # two-factor (H2, E17 — a support / super user reached set-up through the rule, not their own
+    # switch). For anyone else the flag is left alone: it is already true (that is how an otp
+    # session exists at all), and writing it again would silently undo an administrator who
+    # switched 2FA off for this user while they were mid-enrollment (design D3). Abandoning
+    # set-up before this point stores nothing (E11, X1).
+    #
+    # @param mode [String] "authenticator", "whatsapp" or "sms"
+    def commit_method!(mode)
+      attrs = { two_factor_mode: mode }
+      # D3 — the role rule switches the flag on only at the moment a method is confirmed
+      attrs[:two_factor_enabled] = true if !@user.two_factor_enabled? && @user.two_factor_required?
+
+      ActiveRecord::Base.connected_to(role: :writing) { @user.update!(attrs) }
+
+      # H2 — "turned on" security email to the user, after the update! returned (never inside a
+      # transaction that could roll back). Every confirmed method gets it, voluntary or required.
+      UserMailer.with(entity_id: @user.entity_id, user_id: @user.id, mode:).two_factor_enabled.deliver_later
+    end
+
     # Records that the code the user is about to receive came from Twilio Verify.
     #
     # A hint, not the source of truth — see TwoFactorVerifier.verify_code_pending? for why.
@@ -348,7 +372,14 @@ module Users
     def complete_login
       sign_in(@user)
       reset_otp_session
+      # M11 S1b / H2 — the one success of a two-factor sign-in, after the code (D4)
+      record_two_factor_sign_in
       redirect_to after_sign_in_path_for(@user), notice: "Signed in successfully."
+    end
+
+    # M11 S1b — door two_factor, for the login code and the three enrolment confirmations
+    def record_two_factor_sign_in
+      SecurityEvents.record("sign_in.succeeded", user: @user, door: "two_factor")
     end
 
     def increment_failed_attempts
@@ -367,6 +398,11 @@ module Users
       # H13-1 — max(session, server): a replayed cookie resets only the session copy. Under the
       # test env's :null_store the server copy reads 0, so the session decides as it always did.
       attempts = [session[:otp_failed_attempts], failure.attempts].max
+      # M11 T1 / H11 / E15 — the attempt number and whether this miss ended the challenge (a lock is recorded
+      # separately, as account.locked, from the user's locked_at — E16)
+      SecurityEvents.record("two_factor.code_failed", user: @user, door: "two_factor", outcome: :failure,
+                                                      details: { attempt: attempts,
+                                                                 challenge_ended: failure.locked || attempts >= TwoFactorVerifier::MAX_ATTEMPTS })
 
       if failure.locked
         # H13-2 — this miss reached the hourly limit; the account is locked and the unlock email

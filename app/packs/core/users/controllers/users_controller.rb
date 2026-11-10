@@ -8,7 +8,11 @@ class UsersController < ApplicationController
   skip_before_action :verify_authenticity_token, :authenticate_user!, only: %i[signature_progress whatsapp_webhook]
   skip_before_action :set_current_entity, only: %i[whatsapp_webhook]
 
-  before_action :set_user, only: %w[show update destroy edit reset_two_factor]
+  before_action :set_user, only: %w[show update destroy edit reset_two_factor disable_two_factor send_two_factor_code
+                                    start_two_factor_setup]
+  # X21 / X23 — turning two-factor off is a website security action: a bearer token (API token,
+  # add-in, app) is refused before anything else, as Users::ApiTokensController does
+  before_action :refuse_bearer_tokens, only: %i[disable_two_factor send_two_factor_code]
   after_action :verify_authorized, except: %i[welcome index search reset_password accept_terms set_persona magic_link no_password_login whatsapp_webhook cross_site_login redirect_to_subdomain]
 
   def welcome; end
@@ -152,7 +156,8 @@ class UsersController < ApplicationController
     return reject_handoff(:no_account, email: result.email) if user.nil?
 
     # The entity's sub_domain in THIS region, falling back to the region's default site.
-    sub = user.entity&.sub_domain.presence || "app"
+    # H3 (OWASP 2026-11): only a single DNS label; anything else falls back to the default site
+    sub = user.entity&.safe_sub_domain.presence || "app"
     host = request.host.sub(/\A[^.]+\./, "#{sub}.")
 
     redirect_to handoff_url("#{request.protocol}#{host}", "cross_site_login", params[:token], params[:from]),
@@ -186,6 +191,8 @@ class UsersController < ApplicationController
       Rails.logger.info("cross_region_handoff ok from=#{result.origin_code} " \
                         "to=#{SiteRegistry.current_code} email=#{user.email}")
       CrossSiteMetrics.handoff(result: :ok, region: SiteRegistry.current_code)
+      # M11 S1h / H7 — recorded in the destination region, naming where the user came from
+      SecurityEvents.record("sign_in.succeeded", user:, door: "cross_region", details: { origin: result.origin_code })
       nil
     end
 
@@ -202,6 +209,8 @@ class UsersController < ApplicationController
     support_user_id = support_user&.id
 
     unless params[:signed_id]
+      # M11 S2b / E7
+      record_magic_link_failure("invalid_link")
       redirect_to new_session_path(User), notice: "Invalid login link"
       return
     end
@@ -213,6 +222,8 @@ class UsersController < ApplicationController
     @user = User.find_signed(params[:signed_id], purpose: User::MAGIC_LINK_PURPOSE)
 
     if @user.blank?
+      # M11 S2b / E7 — a bad, expired or wrong-purpose link (no account can be named from it)
+      record_magic_link_failure("invalid_link")
       redirect_to new_session_path(User), notice: "Invalid login link"
       return
     end
@@ -230,6 +241,8 @@ class UsersController < ApplicationController
         enabled: true
       )
       unless mapping&.allow_login_as(support_user.email)
+        # M11 S2b / E8 — the support user is Done by; the client user is the account
+        record_magic_link_failure("delegation_refused", user: @user, actor: support_user)
         redirect_to root_path, alert: "Login delegation not permitted for this account."
         return
       end
@@ -264,6 +277,12 @@ class UsersController < ApplicationController
       # Set support_user_id in session so the audit trail records who actually made changes.
       # See ApplicationController#current_user_or_support_user and config/initializers/audited.rb
       session[:support_user_id] = support_user_id if support_user_id.present?
+      # M11 P1 / E29 — support signed in through a link is support access; S1c / H3 — else a link sign-in
+      if support_user
+        SecurityEvents.record("support.signed_in_as", user: @user, actor: support_user, door: "magic_link", details: { via: "magic_link" })
+      else
+        SecurityEvents.record("sign_in.succeeded", user: @user, door: "magic_link")
+      end
     end
 
     redirect_to(return_to || session[:user_return_to].presence || root_path,
@@ -282,11 +301,25 @@ class UsersController < ApplicationController
   # serves the email self-login magic link (which is legitimately redeemed while logged out).
   def login_as
     @user = User.find(params[:id])
-    authorize @user, :login_as?
+    begin
+      authorize @user, :login_as?
+    rescue Pundit::NotAuthorizedError
+      # X6 / X7 — a refusal the support user can fix (no verified two-factor method once the date is
+      # reached) gets its own message; every other refusal goes to the usual deny_access
+      message = policy(@user).login_as_refusal_message
+      raise if message.blank?
+
+      # The alerts partial draws a "Set up now" button from this plain flag (the alert text stays escaped)
+      flash[:two_factor_setup] = true
+      redirect_to root_path, alert: message
+      return
+    end
 
     # Capture the acting (support) user's id BEFORE sign_in swaps current_user, so the audit
     # trail attributes the impersonated actions to the real actor.
     support_user_id = current_user.id
+    # M11 — kept for the security event (Done by), captured before sign_in for the same reason
+    support_user = current_user
 
     ActiveRecord::Base.connected_to(role: :writing) do
       # NOTE: we intentionally do NOT trigger the target's 2FA here. A support agent does not
@@ -298,6 +331,8 @@ class UsersController < ApplicationController
       sign_in @user
       # Record the real actor for the audit trail (see ApplicationController#current_user_or_support_user).
       session[:support_user_id] = support_user_id
+      # M11 P1 / H19 — Done by the support user (current_user is already the client), firm = the client's
+      SecurityEvents.record("support.signed_in_as", user: @user, actor: support_user, details: { via: "login_as" })
     end
 
     redirect_to root_path, notice: "Signed in as #{@user.full_name}"
@@ -335,6 +370,77 @@ class UsersController < ApplicationController
     else
       redirect_to user_path(@user), alert: result[:errors]
     end
+  end
+
+  # POST /users/1/disable_two_factor
+  #
+  # Turns the user's OWN two-factor off after re-proving their password and a current code
+  # (TwoFactorDisable; M8 design card ⑥). Every user who has it on — required roles are refused by
+  # the operation (X15) so the message can say why. The model refuses every other route.
+  def disable_two_factor
+    # Self, website session, not support acting as the user (X16, X17, X24)
+    authorize @user, :disable_two_factor?
+
+    # password / otp_code are read here, never mass-assigned; both are filtered from the logs
+    result = TwoFactorDisable.call(user: @user, actor: current_user,
+                                   password: params[:password], code: params[:otp_code])
+
+    if result.success?
+      # H9 / H10 / E30
+      redirect_to user_path(@user), notice: "Two-factor authentication is now off. You will sign in with just your password."
+    else
+      # X11–X15 — the step's own message; a lock (X14) is caught by Devise on the next request
+      redirect_to user_path(@user), alert: result[:errors]
+    end
+  end
+
+  # POST /users/1/send_two_factor_code
+  #
+  # Sends the current code to a WhatsApp / SMS user for the turn-off popup (they are signed in, so the
+  # pre-sign-in send_sms / send_whatsapp actions do not apply — design D6). The same delivery rules
+  # as sign-in (TwoFactorVerifier.start); a server-side cooldown, not the cookie, stops repeat sends.
+  def send_two_factor_code
+    # Same rule as the turn-off itself (X22)
+    authorize @user, :disable_two_factor?
+
+    # An authenticator user reads the code from the app; nothing to send
+    if @user.two_factor_mode.blank? || @user.authenticator_mode?
+      render json: { message: "Use the code shown in your authenticator app." }
+      return
+    end
+
+    # E37 — one send per window, held server side (WhatsApp 30 s, SMS the durable limiter's window)
+    window = @user.whatsapp_mode? ? 30.seconds : OtpSmsRateLimiter.min_number_window
+    unless Rails.cache.write("two_factor_disable_send:#{@user.id}", 1, expires_in: window, unless_exist: true)
+      render json: { error: "Please wait a moment before requesting another code." }, status: :too_many_requests
+      return
+    end
+
+    if TwoFactorVerifier.start(@user) == :undeliverable
+      # The number is gone or SMS is switched off — recovery is an administrator reset
+      render json: { error: "We can't send a verification code to your phone right now. Please contact your administrator." },
+             status: :unprocessable_entity
+    else
+      # Hedged, as on the sign-in screen: the send is asynchronous
+      render json: { message: "A new code is on its way. It can take a few seconds to arrive." }
+    end
+  end
+
+  # POST /users/1/start_two_factor_setup
+  #
+  # "Set up now" on the required-2FA banner / user page (M8, design card ⑤). Switches the user's own
+  # two-factor flag on and signs them out, so the very next sign-in — with a fresh password — goes
+  # through the existing choose-a-method set-up. Enrolment never happens inside the current session,
+  # so a stolen session cannot enrol an attacker's authenticator app (H5).
+  def start_two_factor_setup
+    # X8 someone else / X9 acting as a client / X10 not a required role → Access Denied
+    authorize @user, :start_two_factor_setup?
+
+    # Flag on (once), so the next sign-in routes to set-up even before the region's date
+    ActiveRecord::Base.connected_to(role: :writing) { @user.update!(two_factor_enabled: true) } unless @user.two_factor_enabled?
+    # Signed out now; the set-up happens after the next password entry
+    sign_out current_user
+    redirect_to new_user_session_path, notice: "Sign in again to set up two-factor authentication."
   end
 
   # GET /users/1 or /users/1.json
@@ -459,11 +565,19 @@ class UsersController < ApplicationController
   # region they came from - instead of the bare `render plain: "Invalid or expired link"` that
   # used to dead-end here with no log line and nothing to click.
   def reject_handoff(reason, email: nil)
+    # M11 S1i / E11 — the account is unknown here; a typed email (no_account) is kept as a digest only
+    SecurityEvents.record("sign_in.failed", door: "cross_region", outcome: :failure, actor: nil, email:,
+                                            details: { reason: })
     rejection = CrossSiteRejection.for(reason: reason, from: params[:from], email: email)
     Rails.logger.warn(rejection.to_log_line)
     CrossSiteMetrics.handoff(result: :rejected, reason: rejection.reason, region: rejection.region)
     flash[:cross_region] = rejection.flash_payload
     redirect_to new_session_path(User)
+  end
+
+  # M11 S2b — a refused email / WhatsApp sign-in link (E7) or support delegation (E8)
+  def record_magic_link_failure(reason, user: nil, actor: nil)
+    SecurityEvents.record("sign_in.failed", user:, actor:, door: "magic_link", outcome: :failure, details: { reason: })
   end
 
   # A caller-supplied destination is honoured only when it is a path on this host: it
@@ -477,6 +591,15 @@ class UsersController < ApplicationController
     return nil unless value.start_with?("/") && !value.start_with?("//", "/\\")
 
     value
+  end
+
+  # X21 / X23 — copied from Users::ApiTokensController#refuse_bearer_tokens: a bearer-token request
+  # never reaches the two-factor turn-off actions
+  def refuse_bearer_tokens
+    return unless api_request?
+
+    skip_authorization
+    render json: { error: "Access Denied" }, status: :forbidden
   end
 
   # Use callbacks to share common setup or constraints between actions.

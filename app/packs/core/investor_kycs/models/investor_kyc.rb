@@ -77,6 +77,9 @@ class InvestorKyc < ApplicationRecord
   include WithIncomingEmail
   include InvestorKycConcern
   include WithSupportAgent
+  # M14 — a change of account number / IFSC clears Bank Verified, unverifies, is recorded and needs a second
+  # person (openspec/changes/bank-detail-change-controls, design card ②)
+  include BankDetailChangeGuard
 
   belongs_to :investor
   # M28 — a KYC never moves to another investor (merges use update_all), and the investor it is
@@ -108,6 +111,8 @@ class InvestorKyc < ApplicationRecord
   has_many :noticed_events, as: :record, dependent: :destroy, class_name: "Noticed::Event"
 
   has_many :aml_reports, dependent: :destroy
+  # M14 ③ — the KYC's bank changes (awaiting / confirmed / replaced), written only by BankDetailChangeGuard
+  has_many :bank_detail_changes, dependent: :destroy
   has_many :kyc_datas, dependent: :destroy
   # Document Checks runs of this KYC (results go with them)
   has_many :doc_check_runs, as: :record, dependent: :destroy

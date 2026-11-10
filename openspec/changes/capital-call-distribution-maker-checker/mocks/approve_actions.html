@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maker–checker mock</title>
+<!-- Hand-made mock (not rendered from code). Markup copied from:
+     capital_calls/show.html.erb (actions row + Actions dropdown), capital_calls/_show.html.erb (Attributes card),
+     investor_kycs/_request_updates_modal.html.erb + custom/action_summary_modal.scss (Immediate Actions popup),
+     entities/_form_fields.html.erb (Weekly Task Digest block). Changes are outlined in dashed green with a NEW tag. -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css">
+<style>
+  body { background: #f5f7fb; }
+  .mock-new { outline: 2px dashed #2e7d32; outline-offset: 3px; position: relative; }
+  .mock-tag { position: absolute; top: -10px; right: -6px; font-size: .65rem; }
+  .mock-note { font-size: .8rem; }
+  .tooltip-static { background: #212529; color: #fff; font-size: .78rem; border-radius: .375rem; padding: .35rem .6rem; max-width: 300px; }
+  /* action_summary_modal.scss, copied */
+  .action-summary__intro { border-left: 4px solid #2563eb; padding: .25rem 0 .25rem 1rem; margin-bottom: 1rem; }
+  .action-summary__list { display: flex; flex-direction: column; gap: .5rem; margin-bottom: 1rem; }
+  .action-summary__item { display: flex; align-items: flex-start; gap: 1rem; padding: 1rem; border-radius: .75rem; }
+  .action-summary__icon { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 1.25rem; }
+  .action-summary__item--blue { background: #eff6ff; } .action-summary__item--blue .action-summary__icon { background: #dbeafe; color: #2563eb; }
+  .action-summary__item--amber { background: #fffbeb; } .action-summary__item--amber .action-summary__icon { background: #fef3c7; color: #d97706; }
+  .action-summary__item--green { background: #f0fdf4; } .action-summary__item--green .action-summary__icon { background: #dcfce7; color: #16a34a; }
+  .action-summary__title { font-weight: 600; line-height: 1.25; }
+  .action-summary__desc { color: #6c757d; margin-top: .25rem; }
+</style>
+</head>
+<body>
+<div class="container-fluid mw-100 p-3">
+
+  <div class="alert alert-info mock-note">
+    <i class="ti ti-info-circle"></i> Mock for <strong>capital-call-distribution-maker-checker</strong>. Firm: Nilgiri Capital (maker–checker ON).
+    Call: <strong>Q4 2026 Drawdown</strong>, Nilgiri Growth Fund I — 10% × (₹20 Cr + ₹18 Cr + ₹12 Cr) = ₹5,00,00,000; Anil then changed one
+    remittance ₹1.2 Cr → ₹1.25 Cr, so Call Amount = ₹5,05,00,000. Distributions use the same items with "distribution" in the text.
+  </div>
+
+  <!-- ============ State A: Meera (preparer) ============ -->
+  <h5 class="mt-4">A. Meera Shah — Approver who prepared the call</h5>
+  <div class="row">
+    <div class="col-lg-8">
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header border-bottom py-3">
+          <h5 class="mb-0 fw-bold"><i class="ti ti-bell-ringing me-2 text-primary"></i>Call: Q4 2026 Drawdown</h5>
+        </div>
+        <div class="card-body">
+          <div class="row g-4">
+            <div class="col-md-6"><label class="text-muted text-uppercase fw-bold small mb-1">Fund</label><div class="fs-5 fw-bold text-primary">Nilgiri Growth Fund I</div></div>
+            <div class="col-md-6"><label class="text-muted text-uppercase fw-bold small mb-1">Due Date</label><div class="fs-5">15/12/2026</div></div>
+            <div class="col-md-6"><label class="text-muted text-uppercase fw-bold small mb-1">Call Amount</label><div class="fs-5">₹5,05,00,000</div></div>
+            <div class="col-md-6"><label class="text-muted text-uppercase fw-bold small mb-1">Percentage Called</label><div class="fs-5">10.0%</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header border-bottom py-3 px-4">
+          <h6 class="mb-0 fw-bold d-flex align-items-center"><i class="ti ti-list me-2 text-warning"></i>Attributes</h6>
+        </div>
+        <ul class="list-group list-group-flush">
+          <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+            <span class="text-muted">Approved</span><span class="fw-bold"><span class="badge bg-danger-subtle text-danger">No</span></span>
+          </li>
+          <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4 mock-new">
+            <span class="badge bg-success mock-tag">NEW</span>
+            <span class="text-muted">Prepared by <i class="ti ti-info-circle" title="Created, imported or changed this call's figures"></i></span>
+            <span class="fw-bold">Meera Shah, Anil Rao</span>
+          </li>
+          <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+            <span class="text-muted">Send Call Notice</span><span class="fw-bold"><span class="badge bg-success-subtle text-success">Yes</span></span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="d-flex flex-wrap gap-2 align-items-start">
+    <a class="btn btn-outline-primary"><i class="ti ti-edit"></i> Edit</a>
+    <button class="btn btn-outline-danger"><i class="ti ti-trash"></i> Delete</button>
+    <div class="btn-group">
+      <div class="dropdown">
+        <button class="btn btn-outline-success dropdown-toggle" type="button"><i class="ti ti-settings"></i> Actions</button>
+        <div class="dropdown-menu show position-static mt-1" style="min-width: 300px">
+          <button class="dropdown-item ti ti-file-plus" type="button"> Generate Documents</button>
+          <div class="dropdown-divider"></div>
+          <div class="mock-new p-1">
+            <span class="badge bg-success mock-tag">CHANGED</span>
+            <span class="d-inline-block w-100" tabindex="0">
+              <button class="dropdown-item ti ti-check disabled" type="button" aria-disabled="true"> Approve</button>
+            </span>
+            <div class="tooltip-static ms-3 mb-2">You prepared this call, so another approver must approve it (maker–checker is on).</div>
+          </div>
+          <div class="mock-new p-1 mt-2">
+            <span class="badge bg-success mock-tag">NEW</span>
+            <button class="dropdown-item ti ti-mail-forward" type="button"> Request approval</button>
+          </div>
+          <div class="dropdown-divider"></div>
+          <a class="dropdown-item ti ti-search"> View Generated Documents</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ State B: Request approval popup ============ -->
+  <h5 class="mt-5">B. Meera clicks Request approval</h5>
+  <div class="modal position-static d-block" tabindex="-1">
+    <div class="modal-dialog m-0">
+      <div class="modal-content mock-new">
+        <span class="badge bg-success mock-tag">NEW</span>
+        <div class="modal-header">
+          <h5 class="modal-title">Request approval</h5>
+          <button type="button" class="btn-close" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="action-summary__intro">
+            <div class="fw-bold text-dark">Immediate Actions</div>
+            <div class="text-muted">The following will happen when you click <strong>Send request</strong>:</div>
+          </div>
+          <div class="action-summary__list">
+            <div class="action-summary__item action-summary__item--blue">
+              <span class="action-summary__icon"><i class="ti ti-mail"></i></span>
+              <div><div class="action-summary__title">Ravi Iyer and Priya Nair are emailed</div>
+                <div class="action-summary__desc">A bell alert and an email link them to this call.</div></div>
+            </div>
+            <div class="action-summary__item action-summary__item--amber">
+              <span class="action-summary__icon"><i class="ti ti-user-exclamation"></i></span>
+              <div><div class="action-summary__title">You can't approve it yourself</div>
+                <div class="action-summary__desc">You prepared it: Meera Shah, Anil Rao.</div></div>
+            </div>
+            <div class="action-summary__item action-summary__item--green">
+              <span class="action-summary__icon"><i class="ti ti-circle-check"></i></span>
+              <div><div class="action-summary__title">Nothing else changes</div>
+                <div class="action-summary__desc">The call stays unapproved; no investor is emailed.</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-danger">Cancel</button>
+          <button type="button" class="btn btn-outline-success">Send request</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="alert alert-success mt-3 mock-note" style="max-width: 640px">Approval requested from Ravi Iyer and Priya Nair.</div>
+  <div class="alert alert-danger mt-2 mock-note" style="max-width: 640px">No one else can approve this call. Ask a company admin to give the Approver role to a colleague with access to this fund, or turn off maker–checker in Settings.</div>
+  <div class="alert alert-danger mt-2 mock-note" style="max-width: 640px">Approvers were already asked at 10:42. You can ask again after 11:42.</div>
+
+  <!-- ============ State C: Ravi (checker) ============ -->
+  <h5 class="mt-5">C. Ravi Iyer — Approver who did not prepare it</h5>
+  <div class="dropdown">
+    <button class="btn btn-outline-success dropdown-toggle" type="button"><i class="ti ti-settings"></i> Actions</button>
+    <div class="dropdown-menu show position-static mt-1" style="min-width: 300px">
+      <button class="dropdown-item ti ti-file-plus" type="button"> Generate Documents</button>
+      <div class="dropdown-divider"></div>
+      <button class="dropdown-item ti ti-check" type="button"> Approve</button>
+      <div class="dropdown-divider"></div>
+      <a class="dropdown-item ti ti-search"> View Generated Documents</a>
+    </div>
+  </div>
+  <p class="text-muted mock-note mt-2">Unchanged from today. No "Request approval" for a checker.</p>
+
+  <!-- ============ State D: Solo Ventures, setting off ============ -->
+  <h5 class="mt-5">D. Sam Mehta — Solo Ventures, maker–checker OFF, self-approved</h5>
+  <div class="card shadow-sm border-0 mb-4" style="max-width: 480px">
+    <div class="card-header border-bottom py-3 px-4"><h6 class="mb-0 fw-bold"><i class="ti ti-list me-2 text-warning"></i>Attributes</h6></div>
+    <ul class="list-group list-group-flush">
+      <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4 mock-new">
+        <span class="badge bg-success mock-tag">CHANGED</span>
+        <span class="text-muted">Approved</span>
+        <span class="fw-bold"><span class="badge bg-success-subtle text-success">Yes</span> · by Sam Mehta <span class="text-muted fw-normal">(also prepared it)</span></span>
+      </li>
+      <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+        <span class="text-muted">Prepared by</span><span class="fw-bold">Sam Mehta</span>
+      </li>
+    </ul>
+  </div>
+
+  <!-- ============ State E: Entity form ============ -->
+  <h5 class="mt-5">E. Ravi — Settings › Entity › Edit</h5>
+  <div class="card shadow-sm border-0 mb-4 p-4 mock-new" style="max-width: 720px">
+    <span class="badge bg-success mock-tag">NEW</span>
+    <hr class="my-2">
+    <h5>Approvals</h5>
+    <div class="form-group">
+      <input class="form-check-input" type="checkbox" id="mc" checked>
+      <label for="mc">Require a second person to approve capital calls and distributions</label>
+      <i class="ti ti-info-circle text-muted" title="Whoever created, imported or changed a call's or distribution's figures cannot approve it. Changing figures after approval withdraws the approval."></i>
+      <small class="text-muted d-block">Switching this off alerts your other company admins and approvers.</small>
+    </div>
+  </div>
+
+  <!-- ============ State F: journey panel ============ -->
+  <h5 class="mt-5">F. Journey panel at "Approve call" (setting ON)</h5>
+  <div class="card shadow-sm border-0 mb-4 p-3 mock-new" style="max-width: 720px">
+    <span class="badge bg-success mock-tag">CHANGED TEXT</span>
+    <div class="fw-bold"><i class="ti ti-player-play text-primary me-1"></i>What's needed now: Approve call</div>
+    <div class="text-muted">The call is not approved yet — it needs an approver who did not prepare it</div>
+  </div>
+
+</div>
+</body>
+</html>

@@ -12,7 +12,8 @@ class MobileSignIn
   CHALLENGE_TTL = 10.minutes
   CACHE_PREFIX = "mobile_2fa"
 
-  Result = Struct.new(:kind, :device, :token, :challenge, :two_factor_method, :attempts_left, keyword_init: true) do
+  # user: set on a wrong-code result, so the controller can name the account in the security event trail (M11 T1)
+  Result = Struct.new(:kind, :device, :token, :challenge, :two_factor_method, :attempts_left, :user, keyword_init: true) do
     def session? = kind == :session
   end
 
@@ -39,8 +40,10 @@ class MobileSignIn
       # X4 — the app is for investors only
       return Result.new(kind: :not_investor) unless investor_persona?(user)
 
-      # H2 — no two-factor: the session is issued straight away
-      return session_for(user, device) unless user.two_factor_enabled?
+      # H2 — no two-factor: the session is issued straight away. M8: two_factor_applies? also
+      # covers a support user who is an LP too, once the date is reached (X5 → finish_2fa_setup;
+      # E18 a normal challenge after web set-up)
+      return session_for(user, device) unless user.two_factor_applies?
 
       case (outcome = TwoFactorVerifier.start(user))
       when :choose_method then Result.new(kind: :finish_2fa_setup) # E4
@@ -84,14 +87,14 @@ class MobileSignIn
       # this challenge, so the app shows the same "locked" answer a locked password login gets
       if TwoFactorVerifier.record_user_miss(user)
         claim(nonce)
-        return Result.new(kind: :locked)
+        return Result.new(kind: :locked, user:, attempts_left: 0)
       end
 
       if attempts >= TwoFactorVerifier::MAX_ATTEMPTS
         claim(nonce)
-        Result.new(kind: :too_many_attempts)
+        Result.new(kind: :too_many_attempts, user:, attempts_left: 0)
       else
-        Result.new(kind: :invalid_code, attempts_left: TwoFactorVerifier::MAX_ATTEMPTS - attempts)
+        Result.new(kind: :invalid_code, attempts_left: TwoFactorVerifier::MAX_ATTEMPTS - attempts, user:)
       end
     end
 

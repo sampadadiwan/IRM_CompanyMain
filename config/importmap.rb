@@ -41,9 +41,9 @@ pin "highcharts/modules/accessibility", to: "highcharts-accessibility.js"
 pin "chart.js", preload: true # @4.5.1
 pin "xlsx", to: "xlsx.js" # @0.20.3 (SheetJS CDN build; npm is stuck at 0.18.5)
 pin "pptxgenjs" # @4.0.1
-pin "dompurify" # @3.4.12
+pin "dompurify" # @3.4.17
 pin "marked" # @18.0.7
-pin "mermaid", to: "https://cdn.jsdelivr.net/npm/mermaid@11.16.0/dist/mermaid.esm.min.mjs"
+pin "mermaid", to: "https://cdn.jsdelivr.net/npm/mermaid@11.16.1/dist/mermaid.esm.min.mjs" # M10 (OWASP 2026-11): 11.16.1 fixes prototype pollution / CSS injection / DoS advisories
 pin "node:fs" # @2.1.0
 pin "node:https" # @2.1.0
 pin "chartjs-plugin-datalabels" # @2.2.0

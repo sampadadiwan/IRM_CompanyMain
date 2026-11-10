@@ -4,7 +4,7 @@ Dear User
     <%= render "/custom_notifications/mail" %>
 <% else %>
     <p>
-        The zipfile of the documents you requested is available at the link below. Note this link will expire in 7 days.
+        The zipfile of the documents you requested is available at the link below. Note this link will expire in <%= @link_ttl == 1.hour ? "1 hour" : "7 days" %>.
     </p>
 <% end %>
 

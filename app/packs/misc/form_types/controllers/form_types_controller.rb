@@ -85,11 +85,20 @@ class FormTypesController < ApplicationController
       # Calculation fields hold Ruby; only CapHive support may change them (shared with the custom fields side
       # panel — FormType#calculation_change_allowed?, openspec/changes/grid-columns-inline-settings D14)
       fields = params.dig("form_type", "form_custom_fields_attributes")&.values || []
-      allowed = FormType.calculation_change_allowed?(current_user, fields)
+      # C2 (OWASP 2026-11) — pass the form type so ids of stored Calculation fields are refused too
+      allowed = FormType.calculation_change_allowed?(current_user, fields, @form_type)
       unless allowed
         fields.select { |fcf| fcf["field_type"] == "Calculation" }.each do |fcf|
           @form_type.errors.add(:position, "#{fcf['position']}, calculation cannot be updated by non support user.")
         end
+        # An existing Calculation field named only by id gets no per-field message above, so say it once
+        @form_type.errors.add(:base, "Calculation fields can only be changed by CapHive support.") if @form_type.errors.empty?
+      end
+
+      # M14 X17 — a stored payout field is unmarked (or removed) only by CapHive support
+      unless FormType.payout_field_change_allowed?(current_user, fields, @form_type)
+        allowed = false
+        @form_type.errors.add(:base, FormCustomField::PAYOUT_UNMARK_REFUSED)
       end
 
       saved = allowed ? update_form_type : false
@@ -203,6 +212,6 @@ class FormTypesController < ApplicationController
   # Only allow a list of trusted parameters through.
   def form_type_params
     vr_keys = FormCustomField::VALIDATION_RULE_KEYS.map { |k| :"vr_#{k}" }
-    params.require(:form_type).permit(:name, :tag, :entity_id, :reg_env, step_labels: {}, form_custom_fields_attributes: %i[id name position help_text field_type meta_data required read_only has_attachment show_user_ids step label _destroy condition_on condition_criteria condition_params condition_state internal info reg_env filter_in_search] + vr_keys)
+    params.require(:form_type).permit(:name, :tag, :entity_id, :reg_env, step_labels: {}, form_custom_fields_attributes: %i[id name position help_text field_type meta_data required read_only has_attachment show_user_ids step label _destroy condition_on condition_criteria condition_params condition_state internal info reg_env filter_in_search payout_field] + vr_keys)
   end
 end

@@ -151,9 +151,28 @@
             </div>
             <ul class="list-group list-group-flush">
                 <% if current_user %>
-                    <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4"
+                        data-maker-checker="approved" data-controller="scoring-tooltips">
                         <span class="text-muted">Approved</span>
-                        <span class="fw-bold "><%= display_boolean capital_call.approved %></span>
+                        <span class="fw-bold text-end"><%= display_boolean capital_call.approved %>
+                          <%# M13 (OWASP 2026-11) H14 / D12 — a self-approval is labelled, so auditors can see it even
+                              when the firm keeps maker–checker off. Derived from the preparer log, never stored. %>
+                          <% if capital_call.approved_by_preparer? %>
+                            · by <%= capital_call.approved_by_user&.full_name %> <span class="text-muted fw-normal">(also prepared it)</span>
+                            <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip" data-bs-container="body"
+                               title="<%= maker_checker_self_approval_tooltip(capital_call) %>"></i>
+                          <% end %>
+                        </span>
+                    </li>
+                    <%# M13 H15 — who prepared the call (created, imported or changed its figures), with what that
+                        means for approving it. Shown whatever the firm's setting, so self-approvals are visible. %>
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4"
+                        id="capital_call_prepared_by" data-maker-checker="prepared-by" data-controller="scoring-tooltips">
+                        <span class="text-muted text-nowrap me-3">Prepared by
+                          <i class="ti ti-info-circle" data-bs-toggle="tooltip" data-bs-container="body"
+                             title="<%= maker_checker_prepared_by_tooltip(capital_call) %>"></i>
+                        </span>
+                        <span class="fw-bold text-end"><%= capital_call.preparers.map(&:full_name).join(", ").presence || "Not recorded" %></span>
                     </li>
                 <% end %>
                 <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">

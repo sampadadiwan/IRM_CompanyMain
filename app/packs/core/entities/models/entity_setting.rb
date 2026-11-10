@@ -2,6 +2,15 @@
 # This enables us to make the Entity small as its used in every request,
 # while moving other attributes to EntitySetting
 class EntitySetting < ApplicationRecord
+  # M3 (OWASP 2026-11): each firm's own third-party credentials, encrypted at rest with the app's Active Record
+  # encryption keys (existing rows converted by migration 20261109130000). Read and written as plain strings through
+  # the model, so every caller (WhatsApp, Digio, the LLM clients) is unchanged.
+  encrypts :whatsapp_token, :digio_client_secret, :openai_api_key, :anthropic_api_key, :gemini_api_key, :openrouter_api_key
+  # A blank key is stored as NULL, not encrypted: Rails encrypts "" into a non-empty value, which SupportAgent's
+  # "key present" SQL (IS NOT NULL AND != '') would read as a key. Blank and NULL already meant "no key".
+  normalizes :whatsapp_token, :digio_client_secret, :openai_api_key, :anthropic_api_key, :gemini_api_key,
+             :openrouter_api_key, with: ->(value) { value.presence }
+
   include Trackable.new(associated_with: :entity)
 
   belongs_to :entity
@@ -34,6 +43,10 @@ class EntitySetting < ApplicationRecord
   end
   before_validation :compact_evergreen_labels
   after_commit :clear_evergreen_labels_cache, if: -> { saved_change_to_evergreen_labels? }
+  # M13 (OWASP 2026-11) K3 / D13 — switching maker–checker OFF is announced to the firm's other company admins and
+  # approvers, so the control can't be removed quietly. Switching it on, or saving it unchanged, sends nothing (E54,
+  # E55). The change itself is in the entity's audit trail (Trackable above).
+  after_update_commit :announce_maker_checker_off, if: -> { saved_change_to_approval_maker_checker == [true, false] }
   # Add new flags to the end of this list
   flag :custom_flags, %i[no_password_login]
 
@@ -47,6 +60,12 @@ class EntitySetting < ApplicationRecord
   def evergreen_unit_label_allowed
     unit = evergreen_labels.to_h["unit"].presence
     errors.add(:evergreen_labels, "unit must be one of #{EvergreenLabels::UNIT_TERMS.join(', ')}") if unit && EvergreenLabels::UNIT_TERMS.exclude?(unit)
+  end
+
+  # H25 — after the save commits, with the person who switched it off (Current.user: the real person, support
+  # included); MakerCheckerNotices picks the recipients and sends email + bell
+  def announce_maker_checker_off
+    MakerCheckerNotices.switched_off(self, Current.user)
   end
 
   def clear_evergreen_labels_cache
@@ -152,8 +171,20 @@ class EntitySetting < ApplicationRecord
     Base64.strict_encode64("#{digio_client_id}:#{digio_client_secret}") if digio_client_id.present? && digio_client_secret.present?
   end
 
+  # Run after restoring a production dump for development (docs/operations/prod_restore.md, step 4): sandbox mode,
+  # 2FA and WhatsApp off, root passwords reset, and — P1, OWASP review 2026-11 — every investor's personal data
+  # (PAN, bank account, date of birth, KYC provider responses, identity custom fields, and the same values in
+  # history) replaced by DevPiiScrubber, so no restored copy keeps real values on a developer's machine.
+  #
+  # Runs under Chewy.strategy(:bypass): saving the root users below fires Chewy's search-index callbacks, and Chewy
+  # refuses with Chewy::UndefinedUpdateStrategy unless a strategy is declared. The Rails console declares one, a
+  # `rails runner` script doesn't (that is how the 2026-11-09 run on the 33066 copy failed). :bypass skips
+  # re-indexing, which is right for a restored copy: its Elasticsearch isn't production's and may not be running.
+  # The PII scrub is unaffected either way (raw SQL, no callbacks).
   def self.disable_all(reset: false)
-    if Rails.env.development?
+    return unless development_copy?
+
+    Chewy.strategy(:bypass) do
       EntitySetting.update_all(sandbox: true)
       # update_all skips TwoFactorAuthenticatable#clear_two_factor_method_when_disabled, so
       # forget the method explicitly or a dev user re-enabling 2FA lands on a code screen
@@ -177,7 +208,16 @@ class EntitySetting < ApplicationRecord
           u.save
         end
       end
+
+      # P1 — scrub investors' personal data in this restored copy (guards itself: local development DB only)
+      DevPiiScrubber.new.call
     end
+  end
+
+  # Whether this process runs against a development copy (disable_all acts only then). Its own method so tests can
+  # say "this is a development copy" without stubbing Rails.env for the whole scenario.
+  def self.development_copy?
+    Rails.env.development?
   end
 
   # --- MCP (AI Client Integration) Settings ---

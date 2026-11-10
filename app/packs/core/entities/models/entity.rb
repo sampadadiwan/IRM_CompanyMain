@@ -10,6 +10,27 @@ class Entity < ApplicationRecord
 
   validates :name, :entity_type, presence: true
   validates_uniqueness_of :sub_domain, scope: :parent_entity_id, allow_blank: true, allow_nil: true
+
+  # H3 (OWASP 2026-11): one DNS label. sub_domain is put in front of our domain in sign-in links, so a company
+  # admin who typed "evil.example?" sent the magic-link token to evil.example
+  # ("https://evil.example?.caphive.com/users/no_password_login?signed_id=…").
+  # Underscore kept: two production sub_domains use one and browsers accept it; it cannot change the host
+  SAFE_SUB_DOMAIN = /\A[a-z0-9_-]{1,63}\z/i
+  # Only when a person changes it: thousands of stored values (generated from names before this rule, e.g.
+  # "a.a.films-pvt-ltd466") don't match, and those entities must keep saving. Generated values are set in
+  # before_save (scrub_defaults), after validation, so they never meet this rule.
+  validate :sub_domain_is_hostname_label, if: -> { sub_domain.present? && will_save_change_to_sub_domain? }
+  def sub_domain_is_hostname_label
+    errors.add(:sub_domain, "may only contain letters, digits, hyphens and underscores (up to 63)") unless sub_domain.match?(SAFE_SUB_DOMAIN)
+  end
+
+  # H3 — the sub_domain only when it is a single DNS label, else nil (callers then use the main site). Every
+  # link built from a sub_domain in a sign-in flow goes through this. A stored value that is not one label
+  # already made a link to a host our certificate does not cover, so the main site is no worse for it.
+  # @return [String, nil]
+  def safe_sub_domain
+    sub_domain if sub_domain.to_s.match?(SAFE_SUB_DOMAIN)
+  end
   validates_uniqueness_of :pan, allow_blank: true, allow_nil: true
 
   validates :primary_email, presence: true, if: proc { |e| e.new_record? }

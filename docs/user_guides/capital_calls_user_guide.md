@@ -354,6 +354,35 @@ below.
 
 If a notice needs correcting after approval, an approver can choose **Actions → Unapprove** (so **Generate Documents** is available again), regenerate and re-approve the notices, and approve the call again. Unapproving undoes nothing else, and investors who were already sent the original notice keep it.
 
+### Maker–checker: a second person approves
+
+Your company can require that **the person who prepared a call cannot approve it** — a second approver must. A company admin switches this on in the entity settings (**Approvals → Require a second person to approve capital calls and distributions**). It is **off** for every company until switched on, so nothing changes until you choose it.
+
+**Who counts as a preparer** (shown on the call page as **Prepared by**, with an ⓘ that explains it):
+
+| Action | Makes you a preparer? |
+|---|---|
+| Creating the call (form, API) or importing it | Yes |
+| Changing a figure: percentage called, amount, closes, call date, call basis, fee formulas, unit prices | Yes |
+| Changing a remittance's call amount or fees, deleting a remittance, or changing a fee line | Yes |
+| Clicking **Recompute Call** when the fees actually change | Yes |
+| Editing the name, notes, custom fields or notification switches | No |
+| Recording a payment or verifying a remittance | No |
+| CapHive support acting as one of your users | The support person is recorded, not your user |
+
+**With maker–checker on:**
+
+1. A preparer opens **Actions** and sees **Approve** greyed out. Hovering over it says *"You prepared this call, so another approver must approve it (maker–checker is on)."*
+2. They choose **Actions → Request approval**. A popup lists who will be emailed (every approver with access to the fund who did not prepare the call), reminds them they can't approve it themselves, and confirms that nothing else changes. **Proceed** sends an email and a bell alert to each of those approvers.
+3. One of them opens the call (the email has an **Open call** button) and approves it as usual. The usual checks still apply: notices must be approved and validation rules must pass.
+4. If someone changes the call's figures **after** it was approved, the approval is **withdrawn** in the same save. The person who made the change sees *"Its approval was withdrawn because the figures changed — another approver must approve it again."*, and the approvers and preparers are told. Notices already emailed to investors are not recalled.
+
+**Not affected:** Unapprove (any approver may still unapprove), generating and approving notices, Send Notification, recording payments, verifying remittances, a new commitment's remittance added to an already-approved call, and open-ended fund settlements (approved by the system).
+
+**With maker–checker off** (the default), a preparer may approve their own call exactly as before; the page then labels it *"Yes · by Sam Mehta (also prepared it)"* so a self-approval is visible in review.
+
+**Switching maker–checker off is announced:** every other company admin and approver of the company gets an email and a bell alert saying who switched it off and when, so the control can't be removed quietly.
+
 ---
 
 ## Sending the Call Notice
@@ -741,6 +770,21 @@ Fund-, call-, and commitment-level totals (called and collected) are kept in ste
 ---
 
 ## Frequently Asked Questions
+
+**Why is Approve greyed out on my capital call?**
+Your company has maker–checker switched on and you prepared this call: you created or imported it, or changed its figures or a remittance's amount. Hover over Approve to see the reason, then use **Actions → Request approval** so an approver who did not prepare it is emailed. See [Maker–checker: a second person approves](#maker-checker-a-second-person-approves).
+
+**Who gets the Request approval email, and what happens if there is nobody?**
+Every active user with the Approver role and edit access to the fund who did not prepare the call. If nobody qualifies, nothing is sent and the message says to give a colleague the Approver role and fund access, or to switch maker–checker off. You can ask again after an hour.
+
+**Why was my call's approval withdrawn?**
+With maker–checker on, changing a figure of an approved call (percentage, amount, closes, call date, fees, a remittance's amount, or a fee line) withdraws the approval in the same save, so the approval always covers the figures investors receive. An approver who did not change them must approve it again.
+
+**Does editing the call name or recording a payment withdraw the approval?**
+No. Names, notes, custom fields, notification switches, recording payments, verifying remittances and a late commitment's new remittance never withdraw an approval or make you a preparer.
+
+**What does "(also prepared it)" next to Approved mean?**
+The approver was also one of the call's preparers — a self-approval. It is allowed while maker–checker is off and is shown so reviewers and auditors can see it.
 
 **What is the step bar at the top of a capital call?**
 It lists every task the call goes through and marks each one: ✓ done, ● the task the call is waiting on now, ○ later, ↺ done before but undone, n/a not needed for this call. CapHive works it out from the call's data, so it moves on as notices are approved, payments recorded and remittances verified. See [Tracking a Call: the Journey Step Bar](#tracking-a-call-the-journey-step-bar).

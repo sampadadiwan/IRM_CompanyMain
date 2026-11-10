@@ -133,8 +133,31 @@ class FormTypeFieldsSave
     attrs[:label] = label if label.present?
     FLAGS.each { |flag| attrs[flag.to_sym] = truthy?(item[flag]) if item.key?(flag) }
     attrs[:help_text] = item["help_text"].to_s if item.key?("help_text")
-    # H14 — removing deletes the definition; values stored on records stay
-    attrs[:_destroy] = true if truthy?(item["_destroy"])
+    payout_attrs(field, item, attrs)
+    # H14 — removing deletes the definition; values stored on records stay. M14 X18 — a marked payout field is
+    # removed only by CapHive support (removing it is an unmark)
+    if truthy?(item["_destroy"])
+      return refuse_payout_unmark(attrs) if field.payout_field.present? && !@user.support?
+
+      attrs[:_destroy] = true
+    end
+    attrs
+  end
+
+  # M14 ⑨ H18, X17 — the payout mark of a KYC text field: set or switched by whoever may mark it; cleared only by
+  # CapHive support. Other fields ignore the key (the model refuses a mark on them anyway, X19).
+  def payout_attrs(field, item, attrs)
+    return unless item.key?("payout_field") && (field.payout_markable? || field.payout_field.present?)
+
+    requested = item["payout_field"].to_s.presence
+    return if requested == field.payout_field
+    return refuse_payout_unmark(attrs) if requested.nil? && !@user.support?
+
+    attrs[:payout_field] = requested if FormCustomFieldPolicy.new(@user, field).mark_payout_field?
+  end
+
+  def refuse_payout_unmark(attrs)
+    @errors << FormCustomField::PAYOUT_UNMARK_REFUSED unless @errors.include?(FormCustomField::PAYOUT_UNMARK_REFUSED)
     attrs
   end
 

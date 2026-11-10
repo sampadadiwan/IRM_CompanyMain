@@ -25,7 +25,10 @@ EXPECTED_ATTACHMENT_SITES = {
   # bounces a single email back to the person who asked for it rather than fanning out to
   # an investor list. Guarding them needs a different mechanism and is tracked separately.
   "app/packs/core/base/mailers/report_mailer.rb" => 1,   # scheduled_report
-  "app/packs/core/users/mailers/user_mailer.rb" => 2     # audit_download, model_download
+  "app/packs/core/users/mailers/user_mailer.rb" => 2,    # audit_download, model_download
+  # OWASP 2026-11 M11 — the security events spreadsheet: download (to the person who asked) and the Monday pack
+  # (to the region's security mailbox, support@caphive.com). Generated XLSX, built in memory, one recipient each
+  "app/packs/core/security_events/mailers/security_events_mailer.rb" => 2
 }.freeze
 
 # Matches an assignment only — a line that merely mentions attachments[...] in a comment

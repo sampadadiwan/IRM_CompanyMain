@@ -14,8 +14,14 @@ class User < ApplicationRecord
   # Kept separate from TwoFactorAuthenticatable because it is about the number, not
   # about codes. See docs/modules/two_factor_auth/twilio_sms_otp_design.md.
   include SmsDeliverable
+  # M11 (OWASP 2026-11) K2 — records password, phone, lock, active, support-switch and two-factor changes made by
+  # any route as security events (record_security_changes, after_update_commit)
+  include UserSecurityEvents
 
-  include Trackable.new(on: %i[create update], audit_fields: %i[first_name last_name email phone permissions extended_permissions two_factor_mode])
+  # two_factor_enabled is audited too, so a turn-off (TwoFactorDisable) is recorded before → after (M8)
+  include Trackable.new(on: %i[create update],
+                        audit_fields: %i[first_name last_name email phone permissions extended_permissions
+                                         two_factor_mode two_factor_enabled])
 
   # SECURITY (finding M1): purpose scope shared by every passwordless-login signed_id — the email
   # magic link, the WhatsApp login link, and the no_password_login verification. Minting and
@@ -170,7 +176,9 @@ class User < ApplicationRecord
   # Make all models searchable
   update_index('user') { self if index_record? }
 
-  rolify before_add: :forbid_bad_role
+  # M11 (OWASP 2026-11) K1 — every add_role / remove_role, from any of the ~30 call sites, records role.granted /
+  # role.revoked in the security event trail (UserSecurityEvents#security_role_added / _removed)
+  rolify before_add: :forbid_bad_role, after_add: :security_role_added, after_remove: :security_role_removed
   accepts_nested_attributes_for :roles, allow_destroy: true
 
   # Include default devise modules. Others available are:
@@ -262,6 +270,18 @@ class User < ApplicationRecord
   # (UsersSyncController — the origin region already ran this check for its own users).
   validate :existing_phone_change_must_be_verified, on: :update,
                                                     unless: -> { @phone_change_verified || @skip_phone_change_verification }
+
+  # Two-factor is switched OFF only through TwoFactorDisable, after the user re-proves their
+  # password and a current code — for every user, not only the roles that must use it (OWASP 2026-11
+  # M8, design D5). Otherwise the Edit profile form, the JSON update, the admin console or a stolen
+  # session could remove anyone's second factor with one unticked box (X18–X20, X25).
+  #
+  # Same shape as the phone guard above: the two ways past it are methods, not attributes, so no
+  # params hash can reach them — #disable_two_factor_verified! (TwoFactorDisable) and
+  # #skip_two_factor_disable_verification! (UsersSyncController: the origin region already ran this
+  # check for its own user, E33). Switching two-factor ON is not affected (E32).
+  validate :two_factor_disable_must_be_verified, on: :update,
+                                                 unless: -> { @two_factor_disable_verified || @skip_two_factor_disable_verification }
 
   validates :curr_role, :dept, length: { maximum: 20 }
   validates :entity_type, length: { maximum: 25 }
@@ -422,6 +442,39 @@ class User < ApplicationRecord
   # not a person at a form and cannot type an emailed code.
   def skip_phone_change_verification!
     @skip_phone_change_verification = true
+  end
+
+  # Switches two-factor off for a user who has just re-proven their password and a current code.
+  # Only TwoFactorDisable calls this; it is the one in-app writer the guard below lets through.
+  #
+  # @param audit_comment [String] recorded with the two_factor_enabled change in the audit log
+  def disable_two_factor_verified!(audit_comment:)
+    @two_factor_disable_verified = true
+    update!(two_factor_enabled: false, audit_comment:)
+  ensure
+    # Scoped to this one save, so a later save on the same object is checked again
+    @two_factor_disable_verified = false
+  end
+
+  # The cross-region sync applies the origin's own turn-off (E33): that region already required the
+  # password and code from its user.
+  def skip_two_factor_disable_verification!
+    @skip_two_factor_disable_verification = true
+  end
+
+  # Message shown wherever an unticked two-factor box is refused (form, JSON, admin console)
+  TWO_FACTOR_DISABLE_MESSAGE = "Two-factor authentication can only be turned off from your user page, " \
+                               "with your password and a current code.".freeze
+
+  # Refuses true → false on two_factor_enabled unless one of the two escapes above was used
+  def two_factor_disable_must_be_verified
+    # Only switching OFF something that was ON; turning it on, or saving it unchanged, is free
+    return unless two_factor_enabled_changed? && two_factor_enabled_in_database && !two_factor_enabled?
+
+    # X18 / X19 / X20 / X25 — logged without anything about the request (no codes, no params)
+    Rails.logger.warn("[two_factor] blocked off-switch user_id=#{id} via=update")
+    # On :base so the full message reads as written on the form, the JSON and the admin console
+    errors.add(:base, TWO_FACTOR_DISABLE_MESSAGE)
   end
 
   # Whether this save changes a number the user already had — the case that needs a code.
@@ -984,7 +1037,12 @@ class User < ApplicationRecord
 
   # rubocop:disable Rails/SkipsModelValidations
   def self.disable_support_for_all
-    User.where(enable_support: true).update_all(enable_support: false)
+    count = User.where(enable_support: true).update_all(enable_support: false)
+    # M11 K3 / E27 — update_all skips record_security_changes, so the whole switch-off is one system event
+    # with no firm (it touches every firm), instead of one row per user
+    SecurityEvents.record("support_access.disabled", door: "system", actor: nil,
+                                                     details: { from: true, to: false, scope: "all" })
+    count
   end
   # rubocop:enable Rails/SkipsModelValidations
 

@@ -16,14 +16,17 @@ Feature: C2 - stored formulas are evaluated only after an allowlist check of the
     When I save a "GenerateAccountEntry" fund formula "AccountEntry.where(fund_id: 999).sum(:amount_cents)"
     Then the fund formula is refused by the formula sandbox with "constant call AccountEntry.where (not pinned to fund_id)"
 
-  # C2-2 — Error case: a call-fee formula written past validation (update_column) is refused when it is evaluated
+  # C2-2 — Error case: a call-fee formula written past validation (update_column) is refused when it is evaluated.
+  # instance_values, not instance_variable_get: the OWASP 2026-11 C1 denylist now stops instance_variable_get
+  # before the sandbox sees it (owasp_review_2026_11.feature C1-1), and this scenario is about the sandbox
+  # ("method instance_values": not on the profile's allowlist; "denied method" is for its explicit denylist)
   @security @rack_test
   Scenario: C2-2 A stored call-fee formula using reflection is refused at evaluation
     Given the formula sandbox mode is "enforce"
     And a commitment "id=511;investor_name=Investor A;folio_id=F-511;unit_type=" with no fund unit settings
-    And a call fee "Setup Fees" saved without validation with formula "capital_commitment.instance_variable_get(:@attributes)"
+    And a call fee "Setup Fees" saved without validation with formula "capital_commitment.instance_values"
     When the call fee formula is calculated for a remittance with call amount 1000000 cents
-    Then the call fee formula is refused by the formula sandbox with "denied method instance_variable_get"
+    Then the call fee formula is refused by the formula sandbox with "method instance_values"
 
   # C2-3 — Error case: dynamic dispatch through try is refused even though the denylist lets it through
   @security @rack_test
@@ -34,13 +37,14 @@ Feature: C2 - stored formulas are evaluated only after an allowlist check of the
     When the call fee formula is calculated for a remittance with call amount 1000000 cents
     Then the call fee formula is refused by the formula sandbox with "denied method try"
 
-  # C2-4 — Error case: a Calculation custom field reaching a process-wide constant is refused on save and at evaluation
+  # C2-4 — Error case: a Calculation custom field reaching a process-wide constant is refused on save and at evaluation.
+  # GC, not ObjectSpace: the OWASP 2026-11 C1 denylist now stops ObjectSpace before the sandbox sees it
   @security @rack_test
-  Scenario: C2-4 A Calculation custom field calling ObjectSpace is refused on save and at evaluation
+  Scenario: C2-4 A Calculation custom field calling a process-wide constant is refused on save and at evaluation
     Given the formula sandbox mode is "enforce"
-    When I validate a Calculation custom field with meta_data "ObjectSpace.count_objects.size"
-    Then the custom field is refused by the formula sandbox with "constant call ObjectSpace.count_objects"
-    When the Calculation "ObjectSpace.count_objects.size" is evaluated on a commitment of "committed_amount_cents=1000000"
+    When I validate a Calculation custom field with meta_data "GC.stat.size"
+    Then the custom field is refused by the formula sandbox with "constant call GC.stat"
+    When the Calculation "GC.stat.size" is evaluated on a commitment of "committed_amount_cents=1000000"
     Then the custom field evaluation is refused by the formula sandbox
 
   # C2-5 — Error case: a run check reading a global variable is refused at evaluation
@@ -55,9 +59,9 @@ Feature: C2 - stored formulas are evaluated only after an allowlist check of the
   Scenario: C2-6 A formula that only looks safe without its binding's locals is refused
     Given the formula sandbox mode is "enforce"
     And a commitment "id=513;investor_name=Investor C;folio_id=F-513;unit_type=" with no fund unit settings
-    And a call fee "Setup Fees" saved without validation with formula "capital_remittance /2; capital_commitment.instance_variable_get(:@attributes) #/"
+    And a call fee "Setup Fees" saved without validation with formula "capital_remittance /2; capital_commitment.instance_values #/"
     When the call fee formula is calculated for a remittance with call amount 1000000 cents
-    Then the call fee formula is refused by the formula sandbox with "denied method instance_variable_get"
+    Then the call fee formula is refused by the formula sandbox with "method instance_values"
 
   # C2-7 — Happy path: the audit reports offenders per entity, site and rule, and writes nothing without EXECUTE=1
   @security @rack_test

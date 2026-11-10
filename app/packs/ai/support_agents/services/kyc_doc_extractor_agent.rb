@@ -146,8 +146,12 @@ class KycDocExtractorAgent < SupportAgentService
       end
     end
 
-    # Persist all extracted values in one save
-    investor_kyc.save(validate: false) if ctx[:results].any? { |r| r[:status] == :extracted }
+    # Persist all extracted values in one save. M14 E6, E18, E72 — a bank value written here is recorded as made by
+    # AI extraction (the maker is Current.user, or System for a job with nobody behind it)
+    if ctx[:results].any? { |r| r[:status] == :extracted }
+      investor_kyc.bank_change_source = "ai_extraction"
+      investor_kyc.save(validate: false)
+    end
     true
   end
 

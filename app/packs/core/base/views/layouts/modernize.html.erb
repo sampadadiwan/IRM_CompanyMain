@@ -36,21 +36,21 @@
 
     <script src="/modernize/libs/jquery/dist/jquery.min.js"></script>
 
-    <script src="https://code.jquery.com/ui/1.14.2/jquery-ui.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.14.2/jquery-ui.min.js" integrity="sha384-tBcEcHGtNy7/Mx08+YxuvQ6v6s0N2jgehtFiT+bLtGwTj/txXtB/L5GqXfggm5sS" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.14.2/themes/base/jquery-ui.css">
 
     <!-- For playing videos in docs -->
     <link href="https://vjs.zencdn.net/7.17.0/video-js.css" rel="stylesheet" />
 
     <!-- Datatables -->
-    <script type="text/javascript" src="https://cdn.datatables.net/2.0.2/js/dataTables.min.js"></script>
-    <script type="text/javascript" src="https://cdn.datatables.net/2.0.2/js/dataTables.bootstrap5.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/2.0.2/js/dataTables.min.js" integrity="sha384-A0y8TjgNQF/hT5LZnO7Nj/yjeiCAvMxCuPkPeQIEPz+Fu2Zv0lvusugdMUB/OJ9w" crossorigin="anonymous"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/2.0.2/js/dataTables.bootstrap5.min.js" integrity="sha384-T9HUgnI3kVztnb7aunhe+/yYerXqJuXA0D8m1XOKGW32fUfy4cKFy43DgpPdiHm7" crossorigin="anonymous"></script>
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/2.0.2/css/dataTables.bootstrap5.min.css">
-    <script type="text/javascript" src="https://cdn.datatables.net/plug-ins/2.0.2/sorting/formatted-numbers.js"></script>
-    <script type="text/javascript" src="https://cdn.datatables.net/responsive/3.0.0/js/dataTables.responsive.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/plug-ins/2.0.2/sorting/formatted-numbers.js" integrity="sha384-D6a/twmKwcHEmPpFzpRXRTLcJROiYRxkZBVj1OfurGyPdTeEMC/7/YnJ2wsm/FKO" crossorigin="anonymous"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/responsive/3.0.0/js/dataTables.responsive.min.js" integrity="sha384-3QJ3oFKjwRGe43JjxPcveBt9DFAHQzlmLNT9weJqvssSjIUWJ8CTdsqXPLS70wpH" crossorigin="anonymous"></script>
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/3.0.0/css/responsive.dataTables.min.css">
 
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/js/select2.min.js" integrity="sha384-O/ymMhrYXP5tgvTj27eAjKZODlpm7nIVeAkhRL7i9mdenmlJGAjstxMy/bKdklFZ" crossorigin="anonymous"></script>
     <%# Chart.js and chartjs-plugin-datalabels are loaded once via the importmap (4.5.1 / 2.2.0);
         charts_handler.js exposes window.Chart and window.ChartDataLabels for inline view scripts %>
 
@@ -67,14 +67,14 @@
     <link rel="stylesheet" href="https://unpkg.com/x-data-spreadsheet@1.1.9/dist/xspreadsheet.css" />
 
     <!-- x-spreadsheet JS -->
-    <script src="https://unpkg.com/x-data-spreadsheet@1.1.9/dist/xspreadsheet.js"></script>
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/shim.min.js"></script>
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
-    <script src="https://cdn.sheetjs.com/xspreadsheet/xlsxspread.min.js"></script>
+    <script src="https://unpkg.com/x-data-spreadsheet@1.1.9/dist/xspreadsheet.js" integrity="sha384-JCkvYwhpxJNPUlVfdLGiX2ukj3j3jsQUSmzb1LihEGHGA1weF6xaDc43WLXavjWD" crossorigin="anonymous"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/shim.min.js" integrity="sha384-tIsPSMlIpUI7LPMRgRBXh/b/qbUWyK7nMWHqGiu9gwZP9fPDTNhXwRtGOmTJSLMK" crossorigin="anonymous"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" integrity="sha384-EnyY0/GSHQGSxSgMwaIPzSESbqoOLSexfnSMN2AP+39Ckmn92stwABZynq1JyzdT" crossorigin="anonymous"></script>
+    <script src="/vendor/sheetjs/xlsxspread.min.js"></script>
 
 
      <!-- Include the JS for AG Grid -->
-    <script src="https://cdn.jsdelivr.net/npm/ag-grid-enterprise@30.2.1/dist/ag-grid-enterprise.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ag-grid-enterprise@30.2.1/dist/ag-grid-enterprise.min.js" integrity="sha384-k75LVrr0bZJipEZUFDoFGdK1Kwwl8pWSlkbh1lPAXzZom4nM4Qvl2ZxF7NNhYUKj" crossorigin="anonymous"></script>
 
     <!-- Include the core CSS, this is needed by the grid.
          CSS is pinned to 32.3.9, NOT 30.2.1: ag-theme-quartz.css does not exist in v30 (404) and
@@ -90,7 +90,7 @@
     <link rel="stylesheet" type="text/css" href="https://unpkg.com/trix@2.1.19/dist/trix.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" type="text/css">
 
-    <script src="https://cdn.jsdelivr.net/npm/command-pal@0.2.11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/command-pal@0.2.11" integrity="sha384-cQE6pCyPxbm5psju9y4xlDGbhevcJ5EDwrgkB1KXSAfjweWj4f/Rj8tBOmRYglHA" crossorigin="anonymous"></script>
 
   <title>CapHive</title>
 </head>

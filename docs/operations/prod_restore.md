@@ -41,6 +41,16 @@ This will:
 - Put everything in **sandbox** mode.
 - Disable **WA** (WhatsApp/WebAuthn) for all users.
 - Reset the admin password to `password`.
+- **Scrub investors' personal data** (`DevPiiScrubber`, P1 of the OWASP review 2026-11): PANs, bank account
+  numbers, dates of birth, CKYC/KRA/AML/e-sign provider responses, PAN-card and address-proof data, identity
+  custom fields (PAN, Aadhaar, passport) and the same values in history (`audits`) are replaced with fakes. The
+  same real PAN becomes the same fake everywhere, so duplicates and import matching still behave as in
+  production. IFSC codes and names are kept. It refuses any database that isn't a local `*_development` one.
+  It prints one line per table with the number of rows changed; expect a few minutes on a full copy (history is
+  the largest part).
+
+**Never skip this step** — without it the copy on your machine holds every LP's real PAN and bank account.
+See `docs/security/owasp_2026_11_changes.md` › "P1".
 
 ### 5. Apply Pending Migrations
 Run the following command to apply any pending migrations to the new database:

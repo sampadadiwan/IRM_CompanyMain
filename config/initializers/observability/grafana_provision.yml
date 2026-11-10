@@ -328,6 +328,49 @@ alert_rules:
       severity: warning
       category: rails
 
+  # M12 (OWASP 2026-11) — security events (SecurityMetrics, caphive_security_events_total). Counts over a window,
+  # not rates, so the summaries read as plain numbers. Thresholds are starting points: production had no such
+  # counter before, so tune them after the first weeks (watch the reason label for which rule or failure fired).
+  - title: "Security — Failed Sign-ins Spike"
+    group: rails
+    expr: 'sum(increase(caphive_security_events_total{event="sign_in_failed"}[5m]))'
+    threshold_gt: 50
+    for: 5m
+    summary: "{{ printf \"%.0f\" $values.A.Value }} failed sign-ins in 5 minutes - possible password guessing"
+    labels:
+      severity: warning
+      category: rails
+
+  - title: "Security — 2FA Code Failures Spike"
+    group: rails
+    expr: 'sum(increase(caphive_security_events_total{event="two_factor_failed"}[15m]))'
+    threshold_gt: 20
+    for: 5m
+    summary: "{{ printf \"%.0f\" $values.A.Value }} wrong 2FA codes in 15 minutes - possible code guessing"
+    labels:
+      severity: warning
+      category: rails
+
+  - title: "Security — Authorization Denials Spike"
+    group: rails
+    expr: 'sum(increase(caphive_security_events_total{event="authorization_denied"}[10m]))'
+    threshold_gt: 200
+    for: 10m
+    summary: "{{ printf \"%.0f\" $values.A.Value }} denied requests in 10 minutes - possible id sweep across other firms' records"
+    labels:
+      severity: warning
+      category: rails
+
+  - title: "Security — Rate Limiting Active"
+    group: rails
+    expr: 'sum(increase(caphive_security_events_total{event="throttled"}[10m]))'
+    threshold_gt: 100
+    for: 10m
+    summary: "{{ printf \"%.0f\" $values.A.Value }} throttled requests in 10 minutes (see the reason label for the rule)"
+    labels:
+      severity: warning
+      category: rails
+
   # Slow queries sustained above 1/s indicate missing indexes or expensive queries
   - title: "MySQL Slow Queries High (>1/s)"
     group: database

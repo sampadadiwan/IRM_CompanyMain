@@ -1,0 +1,12 @@
+<%# M11 Download (design card ⑥) %>
+<p>Dear <%= @user.full_name %>,</p>
+
+<p>The spreadsheet of security events you asked for is attached<% if @period_from && @period_to %>, for <%= l(@period_from) %> to <%= l(@period_to) %><% end %>.
+It holds every event the Security Events page showed with your filter, across all pages.</p>
+
+<p><strong>Why you got this:</strong> you pressed Download on the Security Events page. If you didn't, write to
+support@caphive.com — someone may be using your account.</p>
+
+<p>The spreadsheet holds sign-in addresses and names: keep it inside your firm, and delete it once your review is done.</p>
+
+<p>Thank you,<br><%= @entity.name %> System</p>

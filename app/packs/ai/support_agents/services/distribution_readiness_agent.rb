@@ -281,17 +281,24 @@ class DistributionReadinessAgent < SupportAgentService
 
     mark_step_running(report, :verify_bank_details)
     payments = distribution_payments(target)
-    failed_records = payments.filter_map do |payment|
+    missing = payments.filter_map do |payment|
       kyc = payment.investor_kyc
       next if kyc&.bank_account_number.present?
 
       { "name" => payment.investor_name, "reason" => "Bank account number missing on KYC record" }
     end
+    # M14 ⑧ H16, E57 — KYCs whose bank details changed and wait for a second approver (one grouped lookup)
+    changed = unconfirmed_bank_changes(target, payments)
+    failed_records = missing + changed
 
     if failed_records.any?
-      mark_step_failed(report, :verify_bank_details,
-                       message: "#{failed_records.size} investor(s) missing bank details. Update KYC records before releasing payment.",
-                       count: failed_records.size, failed_records: failed_records)
+      messages = []
+      messages << "#{missing.size} investor(s) missing bank details. Update KYC records before releasing payment." if missing.any?
+      changed_message = "#{changed.size} investor(s) have bank details changed and not yet confirmed. " \
+                        "Ask a second approver to verify the KYC before releasing payment."
+      messages << changed_message if changed.any?
+      mark_step_failed(report, :verify_bank_details, message: messages.join(" "),
+                                                     count: failed_records.size, failed_records: failed_records)
       ctx[:issues][:bank_issues] = failed_records
       finalize_report(report, status: "blocked", failed_step: 6)
       false
@@ -324,6 +331,19 @@ class DistributionReadinessAgent < SupportAgentService
     mark_step_success(report, :generate_progress_reports, message: "Report saved")
     finalize_report(report, status: final_status, failed_step: failed_step_num)
     true
+  end
+
+  # M14 H16 — one row per paid KYC with an awaiting bank change (one DISTINCT query on the payments' KYC ids)
+  def unconfirmed_bank_changes(distribution, payments)
+    kyc_ids = CapitalCommitment.where(id: distribution.capital_distribution_payments.select(:capital_commitment_id))
+                               .select(:investor_kyc_id)
+    awaiting = BankDetailChange.awaiting.where(investor_kyc_id: kyc_ids).unscope(:order)
+                               .distinct.pluck(:investor_kyc_id).to_set
+    return [] if awaiting.empty?
+
+    payments.filter_map { |payment| payment.investor_kyc if awaiting.include?(payment.investor_kyc&.id) }.uniq(&:id).map do |kyc|
+      { "name" => kyc.full_name, "reason" => "Bank details changed and not yet confirmed by a second approver" }
+    end
   end
 
   def distribution_payments(distribution)

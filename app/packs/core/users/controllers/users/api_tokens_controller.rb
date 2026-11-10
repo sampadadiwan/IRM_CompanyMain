@@ -16,6 +16,8 @@ module Users
     def create
       authorize ApiToken
       @api_token, @access_token = ApiToken.mint!(user: current_user, name: params.dig(:api_token, :name).to_s.strip)
+      # M11 K1 / H22 — the name only; the token string is never passed to the trail (X5)
+      SecurityEvents.record("api_token.created", user: current_user, details: { name: @api_token.name })
       # The token is a secret: keep the page that shows it out of every cache
       response.headers["Cache-Control"] = "no-store"
       @api_tokens = policy_scope(ApiToken).order(Arel.sql("revoked_at IS NULL DESC"), created_at: :desc)
@@ -30,6 +32,8 @@ module Users
       @api_token = policy_scope(ApiToken).find(params[:id])
       authorize @api_token
       @api_token.revoke!
+      # M11 K1 / H23
+      SecurityEvents.record("api_token.revoked", user: @api_token.user, details: { name: @api_token.name })
       redirect_to users_api_tokens_path, notice: "\"#{@api_token.name}\" has been revoked."
     end
 

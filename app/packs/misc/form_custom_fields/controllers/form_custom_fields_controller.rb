@@ -43,6 +43,14 @@ class FormCustomFieldsController < ApplicationController
   # PATCH/PUT /form_custom_fields/1 or /form_custom_fields/1.json
   def update
     authorize @form_custom_field
+    # M14 X17 — a marked payout field is unmarked only by CapHive support
+    if unmarking_payout_field? && !policy(@form_custom_field).unmark_payout_field?
+      @form_custom_field.errors.add(:base, FormCustomField::PAYOUT_UNMARK_REFUSED)
+      return respond_to do |format|
+        format.html { render :edit, status: :unprocessable_entity }
+        format.json { render json: @form_custom_field.errors, status: :unprocessable_entity }
+      end
+    end
 
     respond_to do |format|
       if @form_custom_field.update(form_custom_field_params)
@@ -80,6 +88,12 @@ class FormCustomFieldsController < ApplicationController
   end
 
   # Only allow a list of trusted parameters through.
+  # The request clears the stored payout mark
+  def unmarking_payout_field?
+    @form_custom_field.payout_field.present? && params[:form_custom_field]&.key?(:payout_field) &&
+      params.dig(:form_custom_field, :payout_field).blank?
+  end
+
   def form_custom_field_params
     # E: the policy lists the fields this user may send (an existing field's type: support only)
     params.require(:form_custom_field).permit(policy(@form_custom_field || FormCustomField).permitted_attributes)

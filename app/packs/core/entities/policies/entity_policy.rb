@@ -75,6 +75,8 @@ class EntityPolicy < ApplicationPolicy
                                :db_dumps_enable, :db_dumps_retention_period, :db_dumps_email_enabled, :db_dumps_frequency,
                                :db_dumps_interval, :db_dumps_custom_days, :document_colors, :mcp_enabled, :mcp_allowed_roles,
                                :mcp_allowed_clients, :cs_judge_enabled, :cs_judge_model, :weekly_task_digest_enabled,
+                               # M13 (OWASP 2026-11) K2 — the firm's maker–checker switch: company admins (update?) only
+                               :approval_maker_checker,
                                { evergreen_labels: ["unit", *EvergreenLabels::OVERRIDABLE] },
                                { custom_flags: [], kpi_doc_list: [], mcp_allowed_roles_list: [], mcp_allowed_clients_list: [] }].freeze
 

@@ -23,10 +23,24 @@ Rails.application.config.filter_parameters += [:grant_code]
 #   \Aifsc         — ifsc_code (and ifsc), not unrelated keys that merely contain the letters
 #   \Abirth_date\z — the date of birth, not e.g. birth_date_verified flags
 # The remaining keys are distinctive enough to match as substrings (aadhaar_number, passport_no, ...).
+# M1 (OWASP 2026-11): case-insensitive. The column is "PAN" on investor_kycs, offers, interests, kyc_data and
+# aml_reports, and "IFSC_code" too; a Regexp filter matches case-sensitively, so the L8 filters left both in
+# every KYC submit's log line and in exception emails.
 Rails.application.config.filter_parameters += [
-  /\Apan\z/, /\Aifsc/, /\Abirth_date\z/,
+  /\Apan\z/i, /\Aifsc/i, /\Abirth_date\z/,
   :bank_account_number, :aadhaar, :pan_card_data, :address_proof_data, :bank_routing_info,
   :virtual_bank_account, :passport
+]
+
+# M2 (OWASP 2026-11): request credentials in exception emails. The email's Environment section prints
+# request.filtered_env, which these filters apply to, and none of them matched the cookie or bearer token, so a
+# reader of the error inbox could take over the session (or 30-day API token) of whoever hit the error.
+#   HTTP_COOKIE / HTTP_AUTHORIZATION — the raw headers
+#   rack.request.cookie_* / action_dispatch.cookies / rack.session — the same values, parsed
+#   signed_id — magic-link and shared-link tokens in params (also hidden from request logs)
+Rails.application.config.filter_parameters += [
+  /\AHTTP_COOKIE\z/, /\AHTTP_AUTHORIZATION\z/, /\Arack\.request\.cookie_(hash|string)\z/,
+  /\Aaction_dispatch\.cookies\z/, /\Arack\.session\z/, :signed_id
 ]
 
 # L8-H — the list above reaches ActiveRecord #inspect only through Rails' "set_filter_attributes"

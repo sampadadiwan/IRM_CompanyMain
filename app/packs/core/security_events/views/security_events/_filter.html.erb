@@ -1,0 +1,61 @@
+<%# The Security Events filter (mock: mocks/security_events_index.html). Fixed fields, each explained: the period,
+    the group and kind of event, the outcome, an account and an IP. Open when a filter is applied, so the person
+    sees why the list is short. Submits into the frame; the same values drive the cards, the pager and Download. %>
+<%
+  categories = SecurityEventCatalogue::CATEGORIES.map { |key, spec| [spec[:label], key] }
+  kinds = SecurityEventCatalogue::KINDS.map { |key, spec| [spec[:label], key] }.sort
+  doors = SecurityEventCatalogue::DOORS.map { |key, label| [label, key] }
+  conditions = @filter.conditions
+%>
+<div class="collapse mb-3 <%= 'show' if @filter.narrowed? %>" id="security_events_filters">
+  <div class="card card-body shadow-sm border-0">
+    <%= form_with url: security_events_path, method: :get, data: { turbo_frame: "security_events_frame", turbo_action: "advance" },
+                  id: "security_events_filter_form" do %>
+      <div class="row g-2">
+        <div class="col-md-2">
+          <label class="form-label" for="from">From
+            <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip" title="First day of the period. The list starts at the last 30 days; the longest period is 13 months, which is all the trail keeps."></i>
+          </label>
+          <%= date_field_tag :from, @filter.from %>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" for="to">To</label>
+          <%= date_field_tag :to, @filter.to %>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" for="q_category_eq">Group</label>
+          <%= select_tag "q[category_eq]", options_for_select(categories, conditions["category_eq"]), include_blank: "All", class: "form-select", id: "q_category_eq" %>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" for="q_kind_eq">Event</label>
+          <%= select_tag "q[kind_eq]", options_for_select(kinds, conditions["kind_eq"]), include_blank: "All", class: "form-select", id: "q_kind_eq" %>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" for="q_outcome_eq">Outcome</label>
+          <%= select_tag "q[outcome_eq]", options_for_select([%w[Succeeded success], %w[Failed failure]], conditions["outcome_eq"]), include_blank: "All", class: "form-select", id: "q_outcome_eq" %>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" for="q_door_eq">Door</label>
+          <%= select_tag "q[door_eq]", options_for_select(doors, conditions["door_eq"]), include_blank: "All", class: "form-select", id: "q_door_eq" %>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="account">Account
+            <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip" title="A name or an email. A full email also finds refused sign-ins on that address when no account has it — the address itself is never stored, only a one-way fingerprint."></i>
+          </label>
+          <%= text_field_tag :account, @filter.account, class: "form-control", placeholder: "Name or email" %>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="q_ip_address_eq">IP
+            <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip" title="An exact internet address, e.g. 49.36.12.8 — to see every account tried from one place."></i>
+          </label>
+          <%= text_field_tag "q[ip_address_eq]", conditions["ip_address_eq"], class: "form-control", id: "q_ip_address_eq", placeholder: "49.36.12.8" %>
+        </div>
+      </div>
+      <div class="mt-3 d-flex gap-2">
+        <button type="submit" class="btn btn-primary" id="security_events_apply">Apply</button>
+        <%= link_to "Clear", security_events_path, class: "btn btn-outline-secondary", id: "security_events_clear",
+                                                   data: { turbo_frame: "security_events_frame", turbo_action: "advance" } %>
+      </div>
+    <% end %>
+  </div>
+</div>

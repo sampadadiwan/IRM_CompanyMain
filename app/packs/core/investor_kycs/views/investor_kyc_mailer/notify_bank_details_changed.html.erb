@@ -1,0 +1,40 @@
+<%# M14 ④ the investor email (bank-detail-change-controls H7, E27, E29; task U.1): what changed (account numbers as
+    their last 4 digits only), who changed it and when, why this person got it and what to do if they did not ask
+    for it. Dates through bare l(...) → "Nov 09, 2026" (EmailDateLocalization). No magic link: "View KYC" opens the
+    KYC page after sign-in. A firm's own wording (custom notification) replaces the body; the safety lines stay. %>
+<% change = @bank_detail_change %>
+<% firm = @investor_kyc.entity.name %>
+<% if @custom_notification %>
+
+    <%= render "/custom_notifications/mail" %>
+
+<% else %>
+
+    <p>Dear <%= @user&.full_name.presence || "Investor" %>,</p>
+
+    <p>The bank details on the KYC of <strong><%= @investor_kyc.full_name %></strong> with <%= firm %> were changed<% if change %>
+       on <%= l(change.created_at.to_date) %> by <%= change.maker_name %><% end %>.</p>
+
+    <% if change %>
+      <ul>
+        <% change.email_change_lines.each do |line| %>
+          <li><%= line.upcase_first %></li>
+        <% end %>
+      </ul>
+      <p><small>For your security only the last 4 digits of an account number are shown.</small></p>
+    <% end %>
+
+<% end %>
+
+<p><strong>If you asked for this, no action is needed.</strong> Distributions are paid to the new account once an
+   approver at <%= firm %> has verified it.</p>
+
+<p><strong>If you did not ask for this change, contact <%= firm %> straight away</strong> on a phone number you
+   already have for them (not one given in an email), so they can stop any payment to the new account. Do not reply
+   to this email with your bank details.</p>
+
+<p><small>You are receiving this because you are a contact for the KYC of <%= @investor_kyc.full_name %> with
+   <%= firm %>. CapHive emails every change of a KYC's account number or bank code to the investor's contacts, so a
+   change nobody asked for cannot go unnoticed.</small></p>
+
+<p class="btn btn-outline-primary"><%= link_to "View KYC", investor_kyc_url(@investor_kyc, subdomain: @investor_kyc.entity.sub_domain) %></p>

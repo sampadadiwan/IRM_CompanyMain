@@ -46,7 +46,8 @@ class ImportOfferDocs < ImportUtil
 
     send_email = user_data["Send Email"] == "Yes"
     orignal = user_data["Orignal Format"] == "Yes"
-    file_name = "#{context[:unzip_dir]}/#{user_data['File Name']}"
+    # C3 (OWASP 2026-11): nil when the name points outside the upload folder
+    file_name = import_file_path(context[:unzip_dir], user_data["File Name"])
 
     if offer
       # Create the doc and attach it to the commitment
@@ -63,7 +64,7 @@ class ImportOfferDocs < ImportUtil
                            name: user_data["Document Name"], tag_list: user_data["Tags"],
                            user_id: import_upload.user_id, send_email:)
 
-        raise "#{file_name} does not exist. Check for missing file or extension" unless File.exist?(file_name)
+        raise "#{user_data['File Name']} does not exist. Check for missing file or extension" unless file_name && File.exist?(file_name)
 
         doc.file = File.open(file_name, "rb")
         doc.save ? [true, "Success"] : [false, doc.errors.full_messages.join(", ")]

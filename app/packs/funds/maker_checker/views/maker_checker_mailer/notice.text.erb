@@ -1,0 +1,9 @@
+Dear <%= @user.full_name %>,
+
+<%= @message %>
+<% if @record %>
+<%= @record.is_a?(CapitalDistribution) ? "Distribution" : "Call" %>: <%= @record %>
+Fund: <%= @record.fund.name %>
+Prepared by: <%= @record.preparers.map(&:full_name).to_sentence.presence || "not recorded" %>
+<% end %>
+Your firm requires a second person to approve capital calls and distributions (maker-checker).

@@ -102,6 +102,19 @@ class ImportInvestorKyc < ImportUtil
     # Form Tag is optional, so we remove it from the custom_field_headers, so it does not get saved as a custom field
     custom_field_headers.delete("Form Tag")
     setup_custom_fields(user_data, investor_kyc, custom_field_headers, form_type:)
+    # M14 E8, E17 — the importing user is the maker (Current.user, restored by ApplicationJob); source "import"
+    investor_kyc.bank_change_actor = import_upload.user
+    investor_kyc.bank_change_source = "import"
+    # Phase 6 — the marked payout keys, read once per form type for the whole import (not once per row)
+    investor_kyc.bank_change_payout_keys_cache = (@payout_keys_cache ||= {})
+    # M14 E41 — Verified = Yes from the maker of this KYC's awaiting bank change verifies nothing while another
+    # approver could (the same rule as the Verify button); H11 — the only approver's row is recorded as such
+    if verified && investor_kyc.persisted?
+      policy = InvestorKycPolicy.new(import_upload.user, investor_kyc)
+      blocked = policy.bank_change_maker_blocked?
+      investor_kyc.assign_attributes(verified: false, submission_status: investor_kyc.submission_status_in_database) if blocked
+      investor_kyc.bank_change_only_approver = policy.bank_change_only_approver?
+    end
 
     result = if investor_kyc.new_record?
                InvestorKycCreate.call(investor_kyc:, investor_user: false)
@@ -110,6 +123,10 @@ class ImportInvestorKyc < ImportUtil
              end
 
     raise result[:errors] unless result.success?
+
+    # M14 E40, E41, E63 — the row asked to verify, but a bank change in it (or an earlier one by this importer) left
+    # the KYC unverified: the row is saved and says what to do next
+    warn_row("Bank details changed — the KYC was left unverified for another approver to verify") if verified && !investor_kyc.verified
 
     result.success?
   end

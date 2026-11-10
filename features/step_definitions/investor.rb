@@ -1655,7 +1655,12 @@ Then('notification should be sent {string} to the employee for kyc update') do |
   if sent == "true"
     expect(current_email.subject).to include "KYC updated for #{@investor_kyc.full_name}"
   else
-    current_email.should be_nil
+    # No "KYC updated" email. Other mail may reach the admin: since M11 (security event trail), giving the scenario's
+    # user company admin emails the firm's other admins a "Security alert: Company admin role given …"
+    kyc_updates = ActionMailer::Base.deliveries.select do |mail|
+      Array(mail.to).include?(user.email) && mail.subject.to_s.include?("KYC updated for")
+    end
+    expect(kyc_updates).to be_empty
   end
 end
 

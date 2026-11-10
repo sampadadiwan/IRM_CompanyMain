@@ -78,6 +78,12 @@ Rails.application.routes.draw do
     # Clears the user's two-factor METHOD back to "none" (TwoFactorReset). Self-service and
     # administrator paths share this one action; the policy + operation tell them apart.
     post 'reset_two_factor', on: :member
+    # Required two-factor (M8): "Set up now" signs a support / super user out into the set-up flow;
+    # turning two-factor off needs the password and a current code (TwoFactorDisable), and
+    # send_two_factor_code sends that code to a WhatsApp / SMS user from their user page.
+    post 'start_two_factor_setup', on: :member
+    post 'disable_two_factor', on: :member
+    post 'send_two_factor_code', on: :member
     post 'magic_link', on: :collection
     post 'whatsapp_webhook', on: :collection
     get 'welcome', on: :collection
@@ -208,6 +214,8 @@ Rails.application.routes.draw do
   # Opened in an Office dialog (a top-level window, so the session cookie works there)
   # to mint the bearer token the task pane authenticates with.
   get 'outlook_addin/oauth_start', to: 'outlook_addin#oauth_start'
+  # M7 (OWASP 2026-11): the confirm page's button; only this issues the add-in token
+  post 'outlook_addin/oauth_start', to: 'outlook_addin#oauth_confirm', as: :outlook_addin_oauth_confirm
   # Same purpose for the Gmail add-on, which opens this in a browser tab and receives the
   # token back through Apps Script's usercallback.
   get 'gmail_addin/oauth_start', to: 'gmail_addin#oauth_start'

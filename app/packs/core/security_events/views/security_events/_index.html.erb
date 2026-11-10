@@ -1,0 +1,86 @@
+<%# The Security Events list: header (capital_calls/_index), help line, filter, cards (= the filtered rows, E40),
+    table and pager. Tooltips are bound by scoring-tooltips, which re-binds after the frame reloads. %>
+<div data-controller="scoring-tooltips" id="security_events_page">
+  <div class="d-sm-flex align-items-center justify-content-between mb-2">
+    <h1 class="h3 mb-0 text-gray-800">Security Events
+      <i class="ti ti-info-circle text-muted fs-5" data-bs-toggle="tooltip" id="security_events_title_info"
+         title="Every sign-in and refused sign-in, two-factor and password change, role and support-access change, API key, phone, connected app and download in your firm. Events are kept for 13 months and nobody can edit or delete them."></i>
+    </h1>
+    <div class="d-flex flex-wrap align-items-center gap-2">
+      <button class="btn btn-outline-primary d-inline-flex align-items-center" type="button" id="security_events_filter_button"
+              data-bs-toggle="collapse" data-bs-target="#security_events_filters"
+              aria-expanded="<%= @filter.narrowed? %>" aria-controls="security_events_filters">
+        <i class="ti ti-filter"></i>&nbsp;Filter
+      </button>
+      <% if (kind = @filter.conditions["kind_eq"]) %>
+        <%# A kind chosen by clicking an Event: one click back to every kind, the rest of the filter kept %>
+        <%= link_to security_events_path(@filter.with_kind(nil)), id: "security_events_kind_chip",
+                    class: "btn btn-outline-secondary d-inline-flex align-items-center",
+                    data: { turbo_frame: "security_events_frame", turbo_action: "advance", bs_toggle: "tooltip" },
+                    title: "Showing only “#{SecurityEventCatalogue.label(kind)}” events. Click to show every event again (the dates and other filters stay)." do %>
+          <i class="ti ti-x"></i>&nbsp;<%= SecurityEventCatalogue.label(kind) %>
+        <% end %>
+      <% end %>
+      <span class="d-inline-block" tabindex="0" data-bs-toggle="tooltip" id="security_events_download_info"
+            title="Emails you a spreadsheet of every event the current filter shows (all pages, not only this one).">
+        <%= link_to security_events_path(@filter.to_params.merge(format: :xlsx)),
+                    class: "btn btn-outline-success d-inline-flex align-items-center", id: "security_events_download",
+                    data: { turbo: false } do %>
+          <i class="ti ti-download"></i>&nbsp;Download
+        <% end %>
+      </span>
+    </div>
+  </div>
+
+  <%# U.1 — what to do is suggested per row (the "What to do" bulb), not in a general help line here (user, 2026-11-09);
+      the title's ⓘ says what the page is %>
+  <% if @filter.clamped? %>
+    <%# E39 — said inside the frame, where it is seen after a filter reload %>
+    <div class="alert alert-info py-2" id="security_events_clamped">
+      <i class="ti ti-info-circle"></i> The period was shortened to the last 13 months — the trail keeps nothing older.
+    </div>
+  <% end %>
+
+  <%= render "security_events/filter" %>
+  <%= render "security_events/grid_stats", counts: @card_counts %>
+
+  <% if @security_events.empty? %>
+    <%# E38 — what the empty list means and what to try %>
+    <div class="card shadow-sm border-0" id="security_events_empty">
+      <div class="card-body text-center text-muted py-5">
+        <i class="ti ti-shield-check fs-8 d-block mb-2"></i>
+        No security events in this period. Widen the dates or clear the filter.
+      </div>
+    </div>
+  <% else %>
+    <div class="table-responsive">
+      <table id="security_events" class="table table-bordered dataTable action_table hover">
+        <thead>
+          <tr>
+            <th>When</th>
+            <% if @multi_firm %><th>Firm</th><% end %>
+            <th>Event <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip" title="What happened. Hover the ⓘ beside an event for its details: the role, why a sign-in was refused, the key's name."></i></th>
+            <th>Outcome <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip" title="Succeeded, or Failed: a refused sign-in, a wrong two-factor code, a refused key or link."></i></th>
+            <th>Account <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip" title="The person the event is about. Blank when a sign-in named an email with no account (only CapHive sees those)."></i></th>
+            <th>Done by <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip" title="Who did it. CapHive support is marked as such. System means an automatic job, or nobody signed in yet (a refused sign-in)."></i></th>
+            <th>Door <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip" title="How the person reached CapHive: the website, the website plus a code, a sign-in link, the mobile app, the API, a region switch, a mail add-in or a connected app."></i></th>
+            <th>IP <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip" title="The internet address the request came from. Filter by it to see every account tried from one place."></i></th>
+            <th>Region</th>
+            <th class="text-center text-nowrap">What to do <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip" title="Click the bulb for this event: what happened, when it is normal, and what to do if it wasn't expected."></i></th>
+          </tr>
+        </thead>
+        <tbody>
+          <%= render partial: "security_events/security_event", collection: @security_events, as: :event %>
+        </tbody>
+      </table>
+      <div class="d-flex justify-content-between align-items-center">
+        <%= raw pagy_info(@pagy) %>
+        <%= raw pagy_bootstrap_nav(@pagy, anchor_string: %(data-turbo-frame="security_events_frame")) %>
+      </div>
+    </div>
+    <%# The rows' "What to do" popups — outside the table (Bootstrap modal rule), one per row of this page %>
+    <% @security_events.each do |event| %>
+      <%= render "security_events/advice_modal", event:, label: event.display_label %>
+    <% end %>
+  <% end %>
+</div>

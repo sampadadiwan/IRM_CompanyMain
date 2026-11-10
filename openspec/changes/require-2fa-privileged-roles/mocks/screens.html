@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2FA Screen Mocks</title>
+<!-- Hand-made mocks for openspec/changes/require-2fa-privileged-roles.
+     Markup is copied from the real screens named above each mock; only the CSS those
+     partials depend on is inlined (action_summary_modal.scss, login_modern.scss .mfa-option). -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css" rel="stylesheet">
+<style>
+  body { background: #f4f6f9; padding: 16px; }
+  .mock { background: #fff; border-radius: 8px; padding: 20px; margin-bottom: 28px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .mock-label { font-size: .85rem; color: #6c757d; margin-bottom: 8px; }
+  .mock-label code { font-size: .8rem; }
+  /* action_summary_modal.scss (copied) */
+  .action-summary__intro { border-left: 4px solid var(--bs-primary, #2563eb); padding: .25rem 0 .25rem 1rem; margin-bottom: 1rem; }
+  .action-summary__list { display: flex; flex-direction: column; gap: .5rem; margin-bottom: 1rem; }
+  .action-summary__item { display: flex; align-items: flex-start; gap: 1rem; padding: 1rem; border-radius: .75rem; }
+  .action-summary__icon { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 1.25rem; }
+  .action-summary__title { font-weight: 600; line-height: 1.25; }
+  .action-summary__desc { color: var(--bs-secondary-color, #6c757d); margin-top: .25rem; }
+  .action-summary__item--blue { background: #eff6ff; } .action-summary__item--blue .action-summary__icon { background: #dbeafe; color: #2563eb; }
+  .action-summary__item--red { background: #fef2f2; } .action-summary__item--red .action-summary__icon { background: #fee2e2; color: #dc2626; }
+  .action-summary__item--purple { background: #fdf4ff; } .action-summary__item--purple .action-summary__icon { background: #f3e8ff; color: #9333ea; }
+  .action-summary__item--grey { background: #f8fafc; } .action-summary__item--grey .action-summary__icon { background: #e2e8f0; color: #475569; }
+  /* login_modern.scss .mfa-option (copied, light theme only) */
+  .login-container { max-width: 520px; margin: 0 auto; }
+  .mfa-option { display: flex; align-items: flex-start; gap: 14px; padding: 16px; border: 2px solid #e2e8f0; border-radius: 14px; background: #fff; }
+  .mfa-option:has(input:checked) { border-color: #4299e1; background: #f7fbff; }
+  .mfa-option__title { font-weight: 600; }
+  .mfa-option__desc { color: #6c757d; font-size: .9rem; }
+  /* modal shown inline for the mock */
+  .modal.mock-inline { position: static; display: block; }
+  .modal.mock-inline .modal-dialog { margin: 0 auto; }
+  @media (max-width: 576px) { body { padding: 8px; } .mock { padding: 12px; } }
+</style>
+</head>
+<body>
+<div class="container-fluid mw-100">
+
+<h4 class="mb-3">Require 2FA for support and super — screen mocks</h4>
+<p class="text-muted small">Banner and set-up alert: support / super users only. User-page row, turn-off popup and Edit profile row: every user with 2FA on.</p>
+
+<!-- ───────────────────────── Mock 1: banner ───────────────────────── -->
+<div class="mock">
+  <div class="mock-label">① Layout banner — copies <code>users/_reset_password.html.erb</code> (rendered in <code>layouts/modernize.html.erb:120</code>). Notice period (amber), then after the date (red).</div>
+  <div class="alert alert-warning d-flex flex-wrap align-items-center gap-2 two_factor_required_prompt">
+    <i class="ti ti-shield-lock"></i>
+    <span>Two-factor authentication becomes required for your role (Support) on <strong>01/12/2026</strong>. Set it up now — it takes about a minute.</span>
+    <button class="btn btn-sm btn-primary ms-auto">Set up now</button>
+  </div>
+  <div class="alert alert-danger d-flex flex-wrap align-items-center gap-2 two_factor_required_prompt">
+    <i class="ti ti-shield-x"></i>
+    <span>Two-factor authentication is now required for your role. Set it up to keep using CapHive. Login as is unavailable until you do.</span>
+    <button class="btn btn-sm btn-primary ms-auto">Set up now</button>
+  </div>
+</div>
+
+<!-- ───────────────────────── Mock 2: select_mode banner ───────────────────────── -->
+<div class="mock">
+  <div class="mock-label">② Set-up screen — copies <code>users/two_factor/select_mode.html.erb</code>; new alert sits where <code>#two_factor_reset_banner</code> sits (<code>:17-24</code>).</div>
+  <div class="login-container">
+    <div class="login-header text-center">
+      <h2 class="h3 mb-2 fw-normal">Set Up Two-Factor Authentication</h2>
+      <p class="text-muted">Choose how you'd like to receive your verification codes</p>
+    </div>
+    <div class="login-body">
+      <div class="alert alert-info" id="two_factor_required_banner">
+        <i class="ti ti-info-circle me-1"></i>
+        Two-factor authentication is required for your role (Support). Choose a method to finish signing in.
+      </div>
+      <div class="d-flex flex-column gap-3 mb-4">
+        <label class="mfa-option">
+          <input type="radio" name="m" checked>
+          <div class="mfa-option__body">
+            <div class="mfa-option__title"><i class="ti ti-device-mobile text-primary"></i> Authenticator app</div>
+            <div class="mfa-option__desc">Use Google Authenticator, Microsoft Authenticator or Authy. Works without mobile signal.</div>
+          </div>
+        </label>
+      </div>
+      <button class="btn btn-primary w-100">Continue</button>
+    </div>
+  </div>
+</div>
+
+<!-- ───────────────────────── Mock 3: user page row ───────────────────────── -->
+<div class="mock">
+  <div class="mock-label">③ User page Two-Factor row — copies <code>users/show.html.erb:111-147</code>. Three users shown.</div>
+  <table class="table table-bordered align-middle mb-0">
+    <tbody>
+      <tr>
+        <td style="width: 30%">Two-Factor Authentication <span class="btn btn-info p-0 rounded-circle d-inline-flex align-items-center justify-content-center" style="width:35px;height:35px"><i class="ti ti-info-circle fs-5"></i></span><div class="small text-muted">Neha (company admin, voluntary 2FA), own page</div></td>
+        <td>
+          <span class="text-success">✔</span>
+          <span class="badge bg-secondary ms-1">Authenticator</span>
+          <button class="btn btn-sm btn-outline-warning ms-2"><i class="ti ti-shield-x"></i> Change 2FA Method</button>
+          <button class="btn btn-sm btn-outline-danger ms-1" id="disable_two_factor_button"><i class="ti ti-shield-off"></i> Turn off 2FA</button>
+        </td>
+      </tr>
+      <tr>
+        <td>Two-Factor Authentication<div class="small text-muted">Anita (support), own page, after the date</div></td>
+        <td>
+          <span class="text-success">✔</span>
+          <span class="badge bg-secondary ms-1">Authenticator</span>
+          <span class="badge bg-info-subtle text-info-emphasis ms-1" data-bs-toggle="tooltip" title="Support accounts must use two-factor authentication.">Required for your role</span>
+          <button class="btn btn-sm btn-outline-warning ms-2"><i class="ti ti-shield-x"></i> Change 2FA Method</button>
+        </td>
+      </tr>
+      <tr>
+        <td>Two-Factor Authentication<div class="small text-muted">Ravi (support), own page, not set up</div></td>
+        <td>
+          <span class="text-danger">✘</span>
+          <span class="badge bg-info-subtle text-info-emphasis ms-1" title="Support accounts must use two-factor authentication.">Required for your role</span>
+          <button class="btn btn-sm btn-primary ms-2"><i class="ti ti-shield-lock"></i> Set up now</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ───────────────────────── Mock 4: turn-off modal (Priya, investor, WhatsApp) ───────────────────────── -->
+<div class="mock">
+  <div class="mock-label">④ Turn-off popup — copies <code>users/_reset_two_factor_modal.html.erb</code> (same header, Immediate Actions cards, password field, acknowledge box, footer).</div>
+  <div class="modal mock-inline" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="ti ti-shield-off me-1"></i> Turn Off Two-Factor Authentication</h5>
+          <button type="button" class="btn-close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="action-summary__intro">
+            <div class="fw-bold text-dark">Immediate Actions</div>
+            <div class="text-muted">The following will happen immediately when you click <strong>Turn off 2FA</strong>:</div>
+          </div>
+          <div class="action-summary__list">
+            <div class="action-summary__item action-summary__item--red">
+              <span class="action-summary__icon"><i class="ti ti-shield-off"></i></span>
+              <div><div class="action-summary__title">Two-factor switched off: <span class="badge bg-secondary">Whatsapp</span></div>
+              <div class="action-summary__desc">Codes sent to WhatsApp +91 xxxxxxx805 will no longer be asked for at sign-in.</div></div>
+            </div>
+            <div class="action-summary__item action-summary__item--blue">
+              <span class="action-summary__icon"><i class="ti ti-key"></i></span>
+              <div><div class="action-summary__title">Sign-in will need only your password</div>
+              <div class="action-summary__desc">You can switch two-factor back on any time from Edit profile.</div></div>
+            </div>
+            <div class="action-summary__item action-summary__item--purple">
+              <span class="action-summary__icon"><i class="ti ti-mail"></i></span>
+              <div><div class="action-summary__title">Confirmation email sent</div>
+              <div class="action-summary__desc">An email goes to <strong>priya@example.com</strong>. Your firm's other company admins are told. This is recorded in the audit log.</div></div>
+            </div>
+            <div class="action-summary__item action-summary__item--grey">
+              <span class="action-summary__icon"><i class="ti ti-info-circle"></i></span>
+              <div><div class="action-summary__title">Before you continue, have ready…</div>
+              <div class="action-summary__desc">Your password and your phone. Press <strong>Send code</strong> to receive a WhatsApp code.</div></div>
+            </div>
+          </div>
+          <hr class="my-3">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Confirm your password</label>
+            <small class="text-muted d-block mb-2">Required to make security changes to your account.</small>
+            <input type="password" class="form-control" value="••••••••••">
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Current code</label>
+            <small class="text-muted d-block mb-2">The 6-digit code from WhatsApp.</small>
+            <div class="input-group">
+              <input type="text" class="form-control" inputmode="numeric" autocomplete="one-time-code" placeholder="123 456">
+              <button class="btn btn-outline-secondary" type="button"><i class="ti ti-brand-whatsapp"></i> Send code</button>
+            </div>
+            <div class="form-text text-success">A new code is on its way. It can take a few seconds to arrive.</div>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="ack">
+            <label class="form-check-label" for="ack">I understand sign-in will no longer ask for a code.</label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-danger">Cancel</button>
+          <button type="button" class="btn btn-outline-success" disabled>Turn off 2FA</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ───────────────────────── Mock 5: edit profile row ───────────────────────── -->
+<div class="mock">
+  <div class="mock-label">⑤ Edit profile — copies the <code>.toggle-row</code> in <code>users/_form.html.erb:153-167</code>. 2FA on (no checkbox), and required.</div>
+  <div class="toggle-row d-flex justify-content-between align-items-center border-bottom py-2">
+    <div>
+      <label class="toggle-row-label fw-semibold">Two-Factor Authentication</label>
+      <small class="form-text text-muted d-block">On — turn it off from <a href="#">your user page</a>, with your password and a current code.</small>
+    </div>
+    <span class="badge bg-success">On</span>
+  </div>
+  <div class="toggle-row d-flex justify-content-between align-items-center py-2">
+    <div>
+      <label class="toggle-row-label fw-semibold">Two-Factor Authentication</label>
+      <small class="form-text text-muted d-block">Required for your role (Support).</small>
+    </div>
+    <span class="badge bg-success">On</span>
+  </div>
+</div>
+
+</div>
+</body>
+</html>

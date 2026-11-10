@@ -167,12 +167,22 @@ def pan_response
   :verified=>nil}
 end
 
-def bank_response
-  body = {"id"=> Faker::Alphanumeric.alphanumeric(number: 16),
-  "verified"=>"true",
-  "verified_at"=> Time.now.strftime('%Y-%m-%d %H:%M:%S') ,
-  "beneficiary_name_with_bank"=> Faker::Name.unique.name,
-  "fuzzy_match_result"=>"true",
-  "fuzzy_match_score"=>100}
-  OpenStruct.new(verified: true, body: body.to_json)
+# The Digio bank-account check's answer. Called bare, it is the answer the KYC verification scenarios have always used
+# (a random beneficiary name, readable only from the body). M14 §6 (bank-detail-change-controls, LLD "Test
+# Plumbing"): name: sets the name the bank holds, fuzzy: Digio's own name match (true / false), verified: false with
+# error_msg: an account the bank could not find, body: a raw unreadable body (X14). With any of them the answer also
+# answers response["…"] the way HTTParty does for a JSON body.
+def bank_response(name: nil, fuzzy: nil, verified: true, error_msg: nil, body: nil)
+  return OpenStruct.new(verified: false, body:) if body
+
+  data = { "id" => Faker::Alphanumeric.alphanumeric(number: 16),
+           "verified" => verified ? "true" : false,
+           "verified_at" => Time.zone.now.strftime('%Y-%m-%d %H:%M:%S'),
+           "beneficiary_name_with_bank" => name || Faker::Name.unique.name,
+           "fuzzy_match_result" => fuzzy.nil? ? "true" : fuzzy,
+           "fuzzy_match_score" => fuzzy == false ? 30 : 100 }
+  data["error_msg"] = error_msg if error_msg
+  return OpenStruct.new(verified: true, body: data.to_json) if name.nil? && fuzzy.nil? && verified && error_msg.nil?
+
+  OpenStruct.new(data.merge("verified" => verified, "body" => data.to_json))
 end

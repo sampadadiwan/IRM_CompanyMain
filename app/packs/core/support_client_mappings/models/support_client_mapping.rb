@@ -97,6 +97,9 @@ class SupportClientMapping < ApplicationRecord
       # revert() re-adds :support so the switch/revert lifecycle stays symmetric.
       # user.remove_role(:support)
       user.add_role(:company_admin)
+      # M11 K4 / P3 / H21 — update_columns skips the user's after-commit, so the switch is recorded here, in the
+      # client's firm (its admins are alerted; the company_admin grant above alerts nobody, E42)
+      SecurityEvents.record("support.firm_switched", user:, entity_id: entity_id, details: { mapping_id: id })
     else
       raise 'Cannot switch a disabled mapping'
     end
@@ -161,6 +164,9 @@ class SupportClientMapping < ApplicationRecord
     # Clear the switch cache so a second revert cannot replay stale entity/role data.
     user.json_fields = (user.json_fields || {}).except('orig_entity_id', 'orig_roles')
     user.update_column(:json_fields, user.json_fields)
+    # M11 K4 / P3 / H21 — recorded for the client's firm, whether the support user reverted or the mapping
+    # was switched off while they were still inside (disable)
+    SecurityEvents.record("support.switched_back", user:, entity_id: entity_id, details: { mapping_id: id })
 
     true
   end

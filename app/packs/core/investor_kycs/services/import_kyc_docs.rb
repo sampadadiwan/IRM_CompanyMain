@@ -46,7 +46,8 @@ class ImportKycDocs < ImportUtil
     send_email = user_data["Send Email"] == "Yes"
     file_path = find_case_insensitive_file(dir, user_data["File Name"])
 
-    if owner && File.exist?(file_path)
+    # C3: file_path is nil when the name points outside the upload folder; it then reads as "not found in zip"
+    if owner && file_path && File.exist?(file_path)
       if Document.exists?(owner: owner, entity_id: owner.entity_id, name: name)
         [false, "#{name} already present"]
       else

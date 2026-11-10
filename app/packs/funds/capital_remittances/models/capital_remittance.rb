@@ -17,6 +17,12 @@ class CapitalRemittance < ApplicationRecord
   include CapitalRemittanceCallBasis
   include CapitalRemittanceShared
   include BlocksDestroyWithFundUnits
+  # M13 (OWASP 2026-11) K6 — a person changing these makes them a preparer of the call and, with maker–checker on,
+  # withdraws an approved call's approval (design card ②). Collected amounts are payments, not figures (E6, E41).
+  include ApprovalFigureWatch
+
+  APPROVAL_FIGURES = %w[call_amount_cents folio_call_amount_cents capital_fee_cents other_fee_cents investment_amount_cents].freeze
+  watches_approval_figures APPROVAL_FIGURES, parent: :capital_call, creates_are_catch_up: true
   include RansackerAmounts.new(fields: %w[call_amount collected_amount capital_fee other_fee arrear_amount])
 
   STANDARD_COLUMNS = {

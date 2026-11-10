@@ -1,0 +1,22 @@
+<%# M11 admin alert (design card ⑦): what changed, why this admin is told, what to do if it wasn't expected %>
+<p>Dear <%= @user.full_name %>,</p>
+
+<p><strong><%= @headline %></strong> in <strong><%= @entity.name %></strong> on <%= l(@event.occurred_at) %>.</p>
+
+<ul>
+  <li>Done by: <%= @event.actor&.full_name || "an automatic job" %><%= " (signed in by CapHive support #{@event.impersonator.full_name})" if @event.impersonator && @event.impersonator_id != @event.actor_id %></li>
+  <% if @event.ip_address.present? %><li>From the internet address: <%= @event.ip_address %></li><% end %>
+</ul>
+
+<p><strong>Why you got this:</strong> you are a company admin of <%= @entity.name %>. CapHive tells every company
+admin when someone is given or loses the admin or approver role, when CapHive support access is switched on or off,
+so a change nobody asked for is seen at once. (CapHive support signing in as one of your users, or switching into
+your firm, shows in your notifications bell, not by email.) Every company admin gets this email, including the person who made the change.</p>
+
+<p><strong>If you expected this,</strong> there is nothing to do.<br>
+<strong>If you did not,</strong> open the person's user page and remove the role or switch support access off, then
+write to support@caphive.com. The full history is on the Security Events page.</p>
+
+<p><%= link_to "Open Security Events", security_events_url(host: "#{@entity.sub_domain}.#{ENV.fetch('DOMAIN', 'localhost')}"), class: "btn btn-outline-primary" %></p>
+
+<p>Thank you,<br><%= @entity.name %> System</p>

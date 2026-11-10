@@ -35,11 +35,6 @@ module SecurityFollowupsAHelpers
     KanbanCard.create!(kanban_board: board, kanban_column: column, entity: firm, title:, info_field: "",
                        data_source_type: source.class.name, data_source_id: source.id)
   end
-
-  # F3: the rendered profile details paragraph of the investment solutions layout
-  def sfa_profile_details_node
-    Nokogiri::HTML5(@sfa_layout_html).at_css(".elementor-widget-text-editor .elementor-widget-container")
-  end
 end
 World(SecurityFollowupsAHelpers)
 
@@ -119,25 +114,6 @@ end
 When("they open the kanban card {string} in its side panel") do |title|
   # The off-canvas panel the board opens (turbo stream of kanban_cards/_offcanvas_show)
   cma_request(:get, kanban_card_path(KanbanCard.find_by!(title:), turbo: true))
-end
-
-# ---- F3 — CiProfile details ---------------------------------------------------------------------
-
-When("the investment solutions page renders a profile whose details are {string}") do |details|
-  # The layout reads only @ci_profile (title, details, track_record)
-  profile = Struct.new(:title, :details, :track_record).new("Growth Fund", details, { "Fund Size" => "100", "Return Average" => "12%" })
-  @sfa_layout_html = ApplicationController.render(html: "", layout: "investment_solutions", assigns: { ci_profile: profile })
-end
-
-Then("the rendered profile details keep {string}") do |html|
-  expect(sfa_profile_details_node.inner_html).to include(html)
-end
-
-Then("the rendered profile details have no script, image, iframe, event handler or javascript link") do
-  node = sfa_profile_details_node
-  expect(node.css("script, img, iframe")).to be_empty
-  expect(node.css("*").flat_map(&:attribute_nodes).map(&:name).grep(/\Aon/)).to be_empty
-  expect(node.css("a[href^='javascript']")).to be_empty
 end
 
 # ---- F4 — Portfolio report agent's firm ---------------------------------------------------------

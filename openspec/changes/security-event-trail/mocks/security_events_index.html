@@ -1,0 +1,78 @@
+<!doctype html>
+<!-- Hand-made mock of Settings › Security Events (design.md card ⑥).
+     Markup copied from app/packs/funds/capital_calls/views/capital_calls/_index.html.erb (h1.h3 header,
+     outline ti buttons) and _grid_stats.html.erb (NumberStatsComponent cards, row mb-3), inside the
+     modernize layout's container-fluid mw-100. Data = business-rules.md shared setup, 09 Nov 2026. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Security Events (mock)</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+  <style>body{background:#f6f9fc}</style>
+</head>
+<body>
+<div class="container-fluid mw-100 p-3">
+  <nav aria-label="breadcrumb"><ol class="breadcrumb mb-2"><li class="breadcrumb-item">Settings</li><li class="breadcrumb-item active">Security Events</li></ol></nav>
+
+  <turbo-frame id="security_events_frame">
+  <!-- capital_calls/_index header -->
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Security Events
+      <i class="ti ti-info-circle text-muted fs-5" title="Sign-ins, two-factor, role and support-access changes, keys and exports in your firm. Kept for 13 months."></i>
+    </h1>
+    <div class="d-flex flex-wrap align-items-center gap-2">
+      <button class="btn btn-outline-primary d-inline-flex align-items-center" data-bs-toggle="collapse" data-bs-target="#filters"><i class="ti ti-filter"></i>&nbsp;Filter</button>
+      <a href="#" class="btn btn-outline-success d-inline-flex align-items-center" title="Emails you a spreadsheet of the filtered events"><i class="ti ti-download"></i>&nbsp;Download</a>
+    </div>
+  </div>
+
+  <!-- layouts/filter (collapsed by default) -->
+  <div class="collapse mb-3" id="filters">
+    <div class="card card-body shadow-sm border-0">
+      <div class="row g-2">
+        <div class="col-md-2"><label class="form-label">From</label><input class="form-control" value="10/10/2026"></div>
+        <div class="col-md-2"><label class="form-label">To</label><input class="form-control" value="09/11/2026"></div>
+        <div class="col-md-2"><label class="form-label">Group</label><select class="form-select"><option>All</option><option>Sign-in</option><option>Two-factor</option><option>Account</option><option>Access</option><option>Support access</option><option>Keys and apps</option><option>Data</option></select></div>
+        <div class="col-md-2"><label class="form-label">Outcome</label><select class="form-select"><option>All</option><option>Succeeded</option><option>Failed</option></select></div>
+        <div class="col-md-2"><label class="form-label">Account</label><input class="form-control" placeholder="Name or email"></div>
+        <div class="col-md-2"><label class="form-label">IP</label><input class="form-control" placeholder="49.36.12.8"></div>
+      </div>
+      <div class="mt-2"><button class="btn btn-primary">Apply</button> <button class="btn btn-outline-secondary">Clear</button></div>
+    </div>
+  </div>
+
+  <!-- capital_calls/_grid_stats: NumberStatsComponent cards = counts of the filtered rows -->
+  <div class="row mb-3">
+    <div class="col-sm-6 col-lg-3 mb-2"><div class="card shadow-sm border-0"><div class="card-body d-flex align-items-center gap-3" title="Rows below with Outcome = Failed in the Sign-in group"><i class="ti ti-login fs-6 text-danger"></i><div><div class="fs-4 fw-semibold">3</div><div class="text-muted">Failed sign-ins</div></div></div></div></div>
+    <div class="col-sm-6 col-lg-3 mb-2"><div class="card shadow-sm border-0"><div class="card-body d-flex align-items-center gap-3" title="Role granted + Role revoked rows"><i class="ti ti-key fs-6 text-info"></i><div><div class="fs-4 fw-semibold">2</div><div class="text-muted">Role changes</div></div></div></div></div>
+    <div class="col-sm-6 col-lg-3 mb-2"><div class="card shadow-sm border-0"><div class="card-body d-flex align-items-center gap-3" title="CapHive support signed in as a user, or switched into your firm"><i class="ti ti-headset fs-6 text-secondary"></i><div><div class="fs-4 fw-semibold">1</div><div class="text-muted">Support access</div></div></div></div></div>
+    <div class="col-sm-6 col-lg-3 mb-2"><div class="card shadow-sm border-0"><div class="card-body d-flex align-items-center gap-3" title="Spreadsheet, folder, report and data-dump downloads"><i class="ti ti-download fs-6 text-success"></i><div><div class="fs-4 fw-semibold">0</div><div class="text-muted">Exports</div></div></div></div></div>
+  </div>
+
+  <!-- RansackTable -->
+  <div class="card shadow-sm border-0">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead><tr><th>When</th><th>Event</th><th>Outcome</th><th>Account</th><th>Done by</th><th>Door <i class="ti ti-info-circle text-muted" title="How the person reached CapHive"></i></th><th>IP</th><th>Region</th></tr></thead>
+        <tbody>
+          <tr><td>09/11/2026 11:02</td><td><i class="ti ti-key"></i> Role revoked: Approver <i class="ti ti-info-circle text-muted" title="Role: approver"></i></td><td><span class="badge bg-success-subtle text-success">Succeeded</span></td><td><a href="#">Rahul Mehta</a></td><td><a href="#">Meera Iyer</a></td><td>Website</td><td>103.21.4.9</td><td>IN</td></tr>
+          <tr><td>09/11/2026 10:41</td><td><i class="ti ti-headset"></i> Support session ended</td><td><span class="badge bg-success-subtle text-success">Succeeded</span></td><td><a href="#">Priya Shah</a></td><td>Anil Kumar (CapHive support)</td><td>Website</td><td>52.66.10.3</td><td>IN</td></tr>
+          <tr><td>09/11/2026 10:30</td><td><i class="ti ti-headset"></i> Support signed in as user</td><td><span class="badge bg-success-subtle text-success">Succeeded</span></td><td><a href="#">Priya Shah</a></td><td>Anil Kumar (CapHive support)</td><td>Website</td><td>52.66.10.3</td><td>IN</td></tr>
+          <tr><td>09/11/2026 10:22</td><td><i class="ti ti-key"></i> Role granted: Approver <i class="ti ti-info-circle text-muted" title="Role: approver"></i></td><td><span class="badge bg-success-subtle text-success">Succeeded</span></td><td><a href="#">Rahul Mehta</a></td><td><a href="#">Rahul Mehta</a></td><td>Website</td><td>103.21.4.7</td><td>IN</td></tr>
+          <tr><td>09/11/2026 10:15</td><td><i class="ti ti-login"></i> Sign-in</td><td><span class="badge bg-success-subtle text-success">Succeeded</span></td><td><a href="#">Priya Shah</a></td><td><a href="#">Priya Shah</a></td><td>Two-factor</td><td>49.36.12.8</td><td>IN</td></tr>
+          <tr><td>09/11/2026 10:15</td><td><i class="ti ti-shield-lock"></i> Two-factor code wrong <i class="ti ti-info-circle text-muted" title="Attempt 1 of 3"></i></td><td><span class="badge bg-danger-subtle text-danger">Failed</span></td><td><a href="#">Priya Shah</a></td><td>—</td><td>Two-factor</td><td>49.36.12.8</td><td>IN</td></tr>
+          <tr><td>09/11/2026 10:14</td><td><i class="ti ti-login"></i> Sign-in failed <i class="ti ti-info-circle text-muted" title="Reason: wrong password"></i></td><td><span class="badge bg-danger-subtle text-danger">Failed</span></td><td><a href="#">Priya Shah</a></td><td>—</td><td>Website password</td><td>49.36.12.8</td><td>IN</td></tr>
+          <tr><td>09/11/2026 10:14</td><td><i class="ti ti-login"></i> Sign-in failed <i class="ti ti-info-circle text-muted" title="Reason: wrong password"></i></td><td><span class="badge bg-danger-subtle text-danger">Failed</span></td><td><a href="#">Priya Shah</a></td><td>—</td><td>Website password</td><td>49.36.12.8</td><td>IN</td></tr>
+          <tr><td>09/11/2026 10:13</td><td><i class="ti ti-login"></i> Sign-in failed <i class="ti ti-info-circle text-muted" title="Reason: wrong password"></i></td><td><span class="badge bg-danger-subtle text-danger">Failed</span></td><td><a href="#">Priya Shah</a></td><td>—</td><td>Website password</td><td>49.36.12.8</td><td>IN</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <!-- pagy -->
+    <div class="card-footer bg-white d-flex justify-content-between"><span class="text-muted">9 events</span><nav><ul class="pagination pagination-sm mb-0"><li class="page-item active"><a class="page-link" href="#">1</a></li></ul></nav></div>
+  </div>
+  </turbo-frame>
+</div>
+</body>
+</html>

@@ -6,7 +6,12 @@ Doorkeeper.configure do
   orm :active_record
 
   resource_owner_authenticator do
-    if current_user
+    if current_user && session[:support_user_id].present?
+      # M6 (OWASP 2026-11): no OAuth / MCP authorization while CapHive support is signed in as this user — the
+      # 30-day refreshable token would act in the client's name after the support session ends
+      redirect_to root_path, alert: "Apps can't be authorized while you are signed in as another user."
+      nil
+    elsif current_user
       current_user
     else
       cookies[:oauth_return_to] = { value: request.fullpath, httponly: true, secure: !Rails.env.development? }
@@ -506,6 +511,20 @@ Doorkeeper.configure do
   #   Rails.logger.info(context.auth.inspect)
   #   Rails.logger.info(context.issued_token)
   # end
+
+  # M11 (OWASP 2026-11) K3 / H25 — a person approving a connected app (an MCP client, …) on the consent screen is
+  # recorded as connected_app.authorised: the app's name and scopes, never a grant or a token. The same hook also
+  # fires on the machine-to-machine token exchange (Doorkeeper::TokensController), which is not recorded.
+  after_successful_authorization do |controller, _context|
+    next unless controller.is_a?(Doorkeeper::AuthorizationsController)
+
+    pre_auth = controller.send(:pre_auth)
+    SecurityEvents.record("connected_app.authorised", user: controller.send(:current_resource_owner), door: "oauth",
+                                                      details: { app: pre_auth.client&.application&.name, scopes: pre_auth.scopes.to_s })
+  rescue StandardError => e
+    # The consent answer is unchanged whatever happens here
+    Rails.logger.warn("[security_event] doorkeeper_hook_failed #{e.class}")
+  end
 
   # Under some circumstances you might want to have applications auto-approved,
   # so that the user skips the authorization step.

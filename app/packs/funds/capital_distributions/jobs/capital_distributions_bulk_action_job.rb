@@ -11,14 +11,30 @@ class CapitalDistributionsBulkActionJob < BulkActionJob
   end
 
   def record_includes
-    [:fund]
+    # M13 — the firm's maker–checker switch is read per distribution by approve?; loaded with the distributions
+    [:fund, { entity: :entity_setting }]
+  end
+
+  # The batch's record ids, for the one-off preparer preload below
+  def perform(record_ids, user_id, bulk_action, params: {})
+    @batch_ids = record_ids
+    super
   end
 
   def perform_action(capital_distribution, user_id, bulk_action, params: {})
     action = bulk_action.to_s.downcase.tr("_", " ")
     query = ACTIONS[action]
     return send_notification("Invalid bulk action", user_id, :error) unless query
-    return record_failure(capital_distribution, "Not authorized to #{action}") unless Pundit.policy!(@user, capital_distribution).public_send(query)
+
+    # X8 (M13) — the batch's preparers in three queries, once per job, before the per-distribution checks
+    preload_approval_makers(capital_distribution) if action == "approve"
+    policy = Pundit.policy!(@user, capital_distribution)
+    unless policy.public_send(query)
+      # X8 (M13) — maker–checker on and this approver prepared it: say so, instead of a bare refusal
+      return record_failure(capital_distribution, "You prepared #{capital_distribution.title} — another approver must approve it") if action == "approve" && policy.awaiting_second_approver?
+
+      return record_failure(capital_distribution, "Not authorized to #{action}")
+    end
 
     case action
     when "approve"
@@ -37,6 +53,11 @@ class CapitalDistributionsBulkActionJob < BulkActionJob
   end
 
   private
+
+  def preload_approval_makers(capital_distribution)
+    @approval_makers ||= CapitalDistribution.approval_maker_entries_for(@batch_ids || [capital_distribution.id])
+    capital_distribution.preload_preparer_entries(*@approval_makers.fetch(capital_distribution.id, [nil, [], false]))
+  end
 
   def record_failure(capital_distribution, message)
     @error_msg << { msg: message, capital_distribution: capital_distribution.title, capital_distribution_id: capital_distribution.id }

@@ -100,7 +100,12 @@ class Kpi < ApplicationRecord
       sanitized_name = name.downcase.strip
       field = kpi_report.form_type.form_custom_fields.where(name: sanitized_name).first
       if field.nil?
-        kpi_report.form_type.form_custom_fields.where("meta_data like '%#{sanitized_name}%'").find_each do |fcf|
+        # H5 (OWASP 2026-11): a bound value, never interpolated. The KPI name is typed by users (and can come from
+        # AI extraction of uploaded documents), so "x%' and sleep(5) and '%'='" was blind SQL injection.
+        # sanitize_sql_like escapes % and _ in the name, so they match literally; the exact split check below
+        # makes the final decision either way, as before
+        like = "%#{ActiveRecord::Base.sanitize_sql_like(sanitized_name)}%"
+        kpi_report.form_type.form_custom_fields.where("meta_data LIKE ?", like).find_each do |fcf|
           field = fcf if fcf.meta_data.downcase.split(",").include?(sanitized_name)
         end
       end

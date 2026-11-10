@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css" rel="stylesheet">
+<style>body{background:#f6f8fb;font-size:14px}.mock-note{font-size:12px}.fs-1{font-size:.7rem!important}</style>
+<title>Mock — KYC page with an awaiting bank change</title></head><body>
+<div class="container-fluid p-3">
+  <p class="mock-note text-muted"><i class="ti ti-info-circle"></i> Static mock (bank-detail-change-controls, Phase 2–3).
+    Markup copied from <code>investor_kycs/_show.html.erb</code> (Contact &amp; Banking card, lines 68–115) and
+    <code>investor_kycs/show.html.erb</code> (header buttons, lines 44–80). New: the amber note
+    (<code>_bank_change_note</code>), the badge text, and the greyed Verify for the maker. Data: Horizon Capital,
+    Anil Kumar, change by Meera Shah on 09/11/2026. Viewer: <b>Meera (maker)</b>.</p>
+
+  <div class="card mb-3"><div class="card-body py-2 small">KYCs &bull; Anil Kumar &bull; <b>Anil Kumar</b></div></div>
+
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <!-- Bank & Address Card (copied from _show.html.erb) -->
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header border-bottom py-3">
+          <h5 class="mb-0 fw-bold"><i class="ti ti-building-bank me-2 text-info"></i>Contact &amp; Banking</h5>
+        </div>
+        <div class="card-body">
+          <!-- NEW: _bank_change_note (awaiting) -->
+          <div class="alert alert-warning d-flex align-items-start gap-2 mb-4" role="alert">
+            <i class="ti ti-alert-triangle fs-5"></i>
+            <div>
+              <div>Bank details changed on 09/11/2026 by Meera Shah — account ending 4821 → 7310.
+                Waiting for a second approver to verify.</div>
+              <div class="small text-muted mt-1">Investor contacts emailed: anil.kumar@example.in (09/11/2026) ·
+                <a href="#" class="text-decoration-none">Audit trail</a></div>
+            </div>
+          </div>
+
+          <div class="row g-4">
+            <div class="col-12">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Correspondence Address</label>
+              <div class="fs-4 fw-medium">14 Residency Road, Bengaluru 560025</div>
+            </div>
+            <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Bank Name</label>
+              <div class="fs-4 fw-medium">ICICI Bank</div>
+            </div>
+            <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Branch Name</label>
+              <div class="fs-4 fw-medium">Indiranagar</div>
+            </div>
+            <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Account Type</label>
+              <div class="fs-4 fw-medium">Savings Account</div>
+            </div>
+            <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Account Number</label>
+              <div class="fs-4 fw-medium">50100273107310</div>
+            </div>
+            <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">IFSC Code</label>
+              <div class="fs-4 fw-medium">ICIC0004567</div>
+            </div>
+            <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Bank Verified</label>
+              <div class="fs-4">
+                <!-- CHANGED: _bank_verification.html.erb badge text -->
+                <span class="badge bg-danger" data-bs-toggle="tooltip"
+                      title="The account changed after it was last checked. Bank verification is off for this firm: an approver ticks Bank Verified after checking proof.">
+                  Not verified — bank details changed</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- After confirmation the note becomes one grey line: -->
+      <p class="mock-note text-muted mb-1">After Ravi verifies, the note is replaced by:</p>
+      <div class="card shadow-sm border-0 mb-4"><div class="card-body py-2">
+        <div class="small text-muted"><i class="ti ti-user-check me-1"></i>Bank details changed on 09/11/2026 by Meera Shah —
+          confirmed by Ravi Iyer on 10/11/2026.</div>
+      </div></div>
+    </div>
+  </div>
+
+  <!-- Header buttons row (copied from show.html.erb) -->
+  <div class="d-flex flex-wrap gap-2">
+    <a class="btn btn-outline-primary" href="#"><i class="ti ti-edit"></i> Edit</a>
+    <button class="btn btn-outline-danger"><i class="ti ti-trash"></i> Delete</button>
+    <!-- CHANGED: maker sees Verify greyed with a tooltip -->
+    <span class="d-inline-block" tabindex="0" data-bs-toggle="tooltip"
+          title="You changed this KYC's bank details. Another KYC approver must verify it.">
+      <button class="btn btn-outline-success" disabled><i class="ti ti-user-check"></i>Verify</button>
+    </span>
+    <button class="btn btn-outline-warning"><i class="ti ti-refresh"></i> Request Updates</button>
+    <div class="dropdown">
+      <button class="btn btn-outline-success dropdown-toggle" type="button" data-bs-toggle="dropdown"><i class="ti ti-settings"></i>KYC Actions</button>
+      <div class="dropdown-menu"><a class="dropdown-item" href="#"><i class="ti ti-history"></i> Audit Trail</a></div>
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(e => new bootstrap.Tooltip(e));</script>
+</body></html>

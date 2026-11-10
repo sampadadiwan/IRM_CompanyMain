@@ -176,11 +176,10 @@ Feature: Security review 2026-10 follow-ups
 
   # ---- F3 CiProfile rich text ----------------------------------------------------------------
 
-  # F3-1 — Edge case: script, event handlers, iframes and javascript: links in CiProfile details are dropped; the formatting is kept (F3-H)
-  Scenario: F3-1 CiProfile details are sanitized in the investment solutions layout
-    When the investment solutions page renders a profile whose details are "<strong>Growth</strong> fund<script>alert(1)</script><img src=x onerror=alert(2)><iframe src='https://evil.example'></iframe><a href='javascript:alert(3)'>Deck</a>"
-    Then the rendered profile details keep "<strong>Growth</strong> fund"
-    And the rendered profile details have no script, image, iframe, event handler or javascript link
+  # F3-1 retired 2026-11-09 (OWASP review 2026-11, M9): it rendered layouts/investment_solutions, an unused copy of a
+  # third-party WordPress page (no controller rendered it; CiProfile no longer exists) that loaded another site's
+  # scripts and trackers, and was deleted. The sanitiser it exercised, ci_widget_rich_text, is still used by the live
+  # CI widget views and is tested directly in security_funds_medium_steps.rb.
 
   # ---- F4 Portfolio report agent's firm ------------------------------------------------------
 

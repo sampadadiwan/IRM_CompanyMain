@@ -47,7 +47,9 @@ class InvestorKycAction < Trailblazer::Operation
     actor = journey_actor
     started_at = ctx[:journey_started_at] || Time.current
     if from_status == "verified"
-      investor_kyc.journey_undo_evaluate(note: "Unverified", started_at:, actor:)
+      # E10 — a bank change unverified the KYC in this save (BankDetailChangeGuard): say why the journey moved back
+      note = investor_kyc.bank_change_in_last_save? ? "Bank details changed" : "Unverified"
+      investor_kyc.journey_undo_evaluate(note:, started_at:, actor:)
     elsif %w[completed verified].include?(from_status) && %w[draft_saved link_sent not_sent].include?(to_status)
       investor_kyc.journey_undo_evaluate(note: "Marked incomplete", started_at:, actor:)
     elsif (changes.keys - JOURNEY_BOOKKEEPING_COLUMNS).any? && !investor_kyc.previously_new_record?

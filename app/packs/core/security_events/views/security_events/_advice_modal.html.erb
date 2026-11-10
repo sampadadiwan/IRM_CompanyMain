@@ -1,0 +1,83 @@
+<%#
+  "What to do" popup for one security event (user request 2026-11-09: an info popup, styled and easier to read
+  than a tooltip). Same layout as the other explain popups (investor_kycs/_request_updates_modal,
+  users/_reset_two_factor_modal): an intro bar, then tinted action-summary cards — what happened, when it is
+  normal, what to do if it wasn't expected. Rendered after the table (Bootstrap modals never sit inside a table),
+  one per row of the page; the wording comes from SecurityEventCatalogue::ADVICE.
+
+  Locals:
+    event – the SecurityEvent
+    label – the row's Event label (with the role, as the row shows it)
+%>
+<%
+  advice = event.advice
+  modal_id = "security_event_advice_#{event.id}"
+%>
+<div class="modal fade security-event-advice-modal" id="<%= modal_id %>" tabindex="-1"
+     aria-labelledby="<%= modal_id %>_label" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="<%= modal_id %>_label">
+          <i class="ti ti-bulb me-1"></i> What to do: <%= label %>
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <div class="modal-body">
+        <%# Which event this is: who, when, how %>
+        <div class="action-summary__intro">
+          <div class="fw-bold text-dark"><%= event.user&.full_name || "No account" %> · <%= l(event.occurred_at) %></div>
+          <div class="text-muted">
+            <%= event.failure? ? "Failed" : "Succeeded" %> through <%= event.door_label %><%= " from #{event.ip_address}" if event.ip_address.present? %>
+          </div>
+        </div>
+
+        <div class="action-summary__list">
+          <%# 1 — what happened, with the stored details (role, reason, key name…) %>
+          <div class="action-summary__item action-summary__item--blue">
+            <span class="action-summary__icon"><i class="ti ti-info-circle"></i></span>
+            <div>
+              <div class="action-summary__title">What happened</div>
+              <div class="action-summary__desc">
+                <%= label %><%= " — #{event.details_text}" if event.details_text.present? %>
+              </div>
+            </div>
+          </div>
+
+          <%# 2 — when this is normal %>
+          <div class="action-summary__item action-summary__item--green">
+            <span class="action-summary__icon"><i class="ti ti-circle-check"></i></span>
+            <div>
+              <div class="action-summary__title">When this is normal</div>
+              <div class="action-summary__desc"><%= advice[:normal] %></div>
+            </div>
+          </div>
+
+          <%# 3 — what to do if it wasn't expected, or that nothing is needed %>
+          <% if advice[:act].present? %>
+            <div class="action-summary__item action-summary__item--amber">
+              <span class="action-summary__icon"><i class="ti ti-alert-triangle"></i></span>
+              <div>
+                <div class="action-summary__title">If it wasn't expected</div>
+                <div class="action-summary__desc"><%= advice[:act] %></div>
+              </div>
+            </div>
+          <% else %>
+            <div class="action-summary__item action-summary__item--grey">
+              <span class="action-summary__icon"><i class="ti ti-check"></i></span>
+              <div>
+                <div class="action-summary__title">No action needed</div>
+                <div class="action-summary__desc">Nothing to check for this kind of event.</div>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>

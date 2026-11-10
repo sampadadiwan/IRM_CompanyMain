@@ -59,7 +59,7 @@ class ImportSecondarySaleDocs < ImportUtil
                            user_id: import_upload.user_id, send_email:, orignal:)
 
         # Save the document
-        raise "#{user_data['File Name']} does not exist. Check for missing file or extension" unless File.exist?(file_name)
+        raise "#{user_data['File Name']} does not exist. Check for missing file or extension" unless file_name && File.exist?(file_name)
 
         doc.file = File.open(file_name, "rb")
         doc.save ? [true, "Success"] : [false, doc.errors.full_messages.join(", ")]
@@ -85,7 +85,8 @@ class ImportSecondarySaleDocs < ImportUtil
     id_no = user_data["Id No"].presence
     send_email = user_data["Send Email"] == "Yes"
     orignal = user_data["Orignal Format"] == "Yes"
-    file_name = "#{context[:unzip_dir]}/#{user_data['File Name']}"
+    # C3 (OWASP 2026-11): nil when the name points outside the upload folder
+    file_name = import_file_path(context[:unzip_dir], user_data["File Name"])
 
     [secondary_sale, investor, id_no, send_email, orignal, file_name]
   end

@@ -1,0 +1,22 @@
+<%# M11 Monday pack (design card ⑧, D11) — for CapHive's weekly SOC 2 review %>
+<p>Hello,</p>
+
+<p>Attached are the <%= @region %> region's security events for <%= l(@period_from) %> to <%= l(@period_to) %>, across all firms:</p>
+
+<ul>
+  <li>Events: <%= @counts["all"].to_i %></li>
+  <li>Failed sign-ins: <%= @counts["failed_sign_ins"].to_i %></li>
+  <li>Role and support-access changes: <%= @counts["access"].to_i %></li>
+  <li>CapHive support sessions and firm switches: <%= @counts["support"].to_i %></li>
+  <li>Exports: <%= @counts["exports"].to_i %></li>
+</ul>
+
+<p><strong>Why you got this:</strong> this mailbox is the region's SECURITY_EVENTS_WEEKLY_TO, the weekly security
+review pack (docs/security/security_event_review_methodology.md). Sheets: All, Failed sign-ins by account, Access,
+Support, Exports.</p>
+
+<p><strong>What to do:</strong> check the "Failed sign-ins by account" sheet for one account or address tried many
+times, the Access sheet for admin or approver roles nobody asked for, and the Support sheet for sessions no ticket
+explains. Record the review as the methodology describes.</p>
+
+<p>CapHive System</p>

@@ -99,6 +99,8 @@ module WithAuthentication
 
   # Define the method to handle the error
   def deny_access(exception = nil)
+    # M12 (OWASP 2026-11): count every denial, so a sweep across other firms' record ids raises an alert
+    SecurityMetrics.event(:authorization_denied, reason: exception&.class&.name&.demodulize)
     if request.headers['Authorization'].present?
       render json: { error: "Access Denied" }, status: :forbidden
     elsif request.headers['Turbo-Frame'].present?
@@ -239,9 +241,10 @@ module WithAuthentication
     end
 
     # Check if we are on our domain and  current entity exists and we have a valid tenant_sub_domain, the redirect to the microsite of the tenant accordingly
-    if our_domain && @current_entity.present? && @current_entity.sub_domain.present? && request.subdomain.blank?
+    # L21 (OWASP 2026-11): only a single-label sub_domain is redirected to (allow_other_host below)
+    if our_domain && @current_entity.present? && @current_entity.safe_sub_domain.present? && request.subdomain.blank?
       # Redirect to the path with tenant_sub_domain in the parameter
-      redirect_to "#{request.protocol}#{@current_entity.sub_domain}.#{ENV.fetch('BASE_DOMAIN', nil)}#{request.path}?#{request.query_string}", allow_other_host: true
+      redirect_to "#{request.protocol}#{@current_entity.safe_sub_domain}.#{ENV.fetch('BASE_DOMAIN', nil)}#{request.path}?#{request.query_string}", allow_other_host: true
     end
   end
 

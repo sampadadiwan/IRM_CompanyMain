@@ -1,4 +1,5 @@
-<% owner = uri_params[:owner_type].constantize.find(uri_params[:owner_id]) %>
+<%# M15 (OWASP 2026-11): the owner the dashboard already resolved (authorized), never an unscoped lookup %>
+<% owner = local_assigns[:owner] || dashboard_owner(uri_params) %>
 <%= render(
       WidgetCardComponent.new(
         widget: widget,

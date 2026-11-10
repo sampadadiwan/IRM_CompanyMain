@@ -29,7 +29,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     snapshot_frequency_months: Field::Number,
     email_delay_seconds: Field::Number,
     whatsapp_templates: JsonField,
-    whatsapp_token: Field::String,
+    whatsapp_token: EncryptedSecretField, # M3 (OWASP 2026-11): masked, with an "encrypted" hint
     whatsapp_endpoint: Field::String,
     notification_retention_months: Field::Number,
     trial: Field::BooleanEmoji,
@@ -37,7 +37,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     call_basis: Field::String,
     esign_provider: Field::String,
     digio_client_id: Field::String,
-    digio_client_secret: Field::String,
+    digio_client_secret: EncryptedSecretField, # M3 (OWASP 2026-11): masked, with an "encrypted" hint
     digio_cutover_date: Field::DateTime,
     created_at: Field::DateTime,
     updated_at: Field::DateTime,
@@ -49,10 +49,10 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     portflio_expense_account_entry_filter: Field::String,
     kyc_bank_account_types: Field::String,
     kyc_doc_first_wizard: Field::BooleanEmoji,
-    openai_api_key: Field::String,
-    gemini_api_key: Field::String,
-    anthropic_api_key: Field::String,
-    openrouter_api_key: Field::String,
+    openai_api_key: EncryptedSecretField, # M3 (OWASP 2026-11): masked, with an "encrypted" hint
+    gemini_api_key: EncryptedSecretField, # M3 (OWASP 2026-11): masked, with an "encrypted" hint
+    anthropic_api_key: EncryptedSecretField, # M3 (OWASP 2026-11): masked, with an "encrypted" hint
+    openrouter_api_key: EncryptedSecretField, # M3 (OWASP 2026-11): masked, with an "encrypted" hint
     default_llm_model: Field::String,
     month_offset_for_fy: Field::Number,
     weekly_task_digest_enabled: Field::BooleanEmoji,

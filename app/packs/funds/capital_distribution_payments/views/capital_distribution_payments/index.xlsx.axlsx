@@ -17,6 +17,13 @@ wb.add_worksheet(name: "CapitalDistrbutionPayment") do |sheet|
     end
   end
 
+  # M14 ⑧ H17, E60 — the last column: when a paid KYC's bank details changed and still wait for a second approver
+  # (blank when none). One grouped lookup, kept last so every existing column keeps its position.
+  headers += ["Unconfirmed Bank Change"]
+  kyc_ids = CapitalCommitment.where(id: @capital_distribution_payments.unscope(:order, :includes).select(:capital_commitment_id))
+                             .select(:investor_kyc_id)
+  unconfirmed_changes = BankDetailChange.awaiting.where(investor_kyc_id: kyc_ids).group(:investor_kyc_id).maximum(:created_at)
+
   sheet.add_row(headers)
 
   # Create entries for each item
@@ -29,6 +36,7 @@ wb.add_worksheet(name: "CapitalDistrbutionPayment") do |sheet|
 
     # Tracking currency columns are only present when the fund has a tracking currency
     values += [cc.tracking_net_payable.to_d, cc.tracking_gross_payable.to_d, cc.tracking_reinvestment_with_fees.to_d, cc.tracking_income_with_fees.to_d, cc.tracking_expense_with_fees.to_d, cc.tracking_tax_with_fees.to_d, cc.tracking_display_only_with_fees.to_d] if has_tracking_currency
+    values << unconfirmed_changes[cc.capital_commitment&.investor_kyc_id]&.to_date
 
     sheet.add_row values
   end

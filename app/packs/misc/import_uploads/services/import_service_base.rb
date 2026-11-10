@@ -56,8 +56,33 @@ class ImportServiceBase < Trailblazer::Operation
     # Array form bypasses the shell so paths cannot be interpreted as shell syntax.
     # nil means the binary is missing - fail loudly (into the rescue below) like the old backticks did
     raise Errno::ENOENT, "unzip" if system("unzip", "-o", file.path, "-d", unzip_dir).nil?
+
+    # H8 (OWASP 2026-11) — Info-ZIP unzip restores symlinks stored in the zip, and the doc imports open every
+    # file they find. A link to /…/.env.production.in would be imported as a Document. Remove links that lead
+    # outside the folder (or nowhere); links inside it are harmless and stay.
+    remove_escaping_symlinks(unzip_dir)
   rescue StandardError => e
     Rails.logger.debug e.message
     raise e
+  end
+
+  # H8 — delete every symlink under dir whose target is missing or outside dir
+  # @param dir [String] the unzipped upload folder
+  def remove_escaping_symlinks(dir)
+    base = File.realpath(dir)
+    # FNM_DOTMATCH: hidden entries too. Ruby's ** does not descend into symlinked folders, but lists the link itself
+    Dir.glob(File.join(dir, "**", "*"), File::FNM_DOTMATCH).each do |entry|
+      next unless File.symlink?(entry)
+
+      target = begin
+        File.realpath(entry)
+      rescue Errno::ENOENT, Errno::ELOOP
+        nil # dangling or looping: nothing legitimate to import
+      end
+      next if target&.start_with?(base + File::SEPARATOR)
+
+      Rails.logger.warn("[import] removed symlink leading outside the upload folder: #{entry.delete_prefix("#{dir}/")}")
+      File.delete(entry)
+    end
   end
 end

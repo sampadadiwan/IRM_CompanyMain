@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Connect CapHive (Outlook)</title>
+  <%= stylesheet_link_tag "mail_addin" %>
+</head>
+<%# M7 (OWASP 2026-11) — confirm step of the Outlook add-in sign-in, opened in the Office dialog. This GET mints
+    nothing; only the button's POST (OutlookAddinController#oauth_confirm) issues a token, so an add-in that opens
+    this page cannot collect a token without the user agreeing. Same pattern as gmail_addin/oauth_start. %>
+<body class="mail-addin mail-addin--dialog">
+  <div class="mail-addin__dialog-body" id="outlook_addin_confirm_page">
+    <h1 class="h5 mb-2">Connect CapHive Filing (Outlook)</h1>
+    <p class="mail-addin__muted">
+      Connecting as <strong><%= current_user.full_name %></strong> (<%= current_user.email %>)<% if current_user.entity %>
+      for <strong><%= current_user.entity.name %></strong><% end %>.
+    </p>
+    <p class="mail-addin__muted">
+      The add-in can then match senders and file emails as you for 30 days.
+      If you did not just press <strong>Sign in</strong> in the CapHive Outlook add-in, close this window.
+    </p>
+    <%= form_tag outlook_addin_oauth_confirm_path, data: { turbo: false } do %>
+      <button type="submit" id="outlook_addin_confirm" class="btn btn-primary w-100">Connect</button>
+    <% end %>
+  </div>
+</body>
+</html>

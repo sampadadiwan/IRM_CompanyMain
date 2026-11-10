@@ -241,13 +241,13 @@ end
 
 When('the signed-in user requests the website leads index') do
   @lead_session = ActionDispatch::Integration::Session.new(Rails.application)
-  @lead_session.post "/users/sign_in", params: { user: { email: @user.email, password: "password" } }
+  integration_sign_in(@lead_session, @user) # M8 — support answers the two-factor code step
   @lead_session.get "/website_leads"
 end
 
 When('the signed-in user requests that website lead') do
   @lead_session = ActionDispatch::Integration::Session.new(Rails.application)
-  @lead_session.post "/users/sign_in", params: { user: { email: @user.email, password: "password" } }
+  integration_sign_in(@lead_session, @user) # M8 — support answers the two-factor code step
   @lead_session.get "/website_leads/#{@website_lead.id}"
 end
 

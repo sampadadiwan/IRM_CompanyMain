@@ -163,6 +163,9 @@ app/packs/core/investors/views/shareholder_positions/_list.html.erb | raw(pagy_b
 app/packs/core/notes/views/notes/_index.html.erb | raw(pagy_info(@pagy)): Pagy pagination HTML built by the gem from page numbers; no user text.
 app/packs/core/notifications/views/custom_notifications/index.html.erb | raw(pagy_bootstrap_nav(@pagy)): Pagy pagination HTML built by the gem from page numbers; no user text.
 'app/packs/core/notifications/views/notifications/index.html.erb | raw(pagy_bootstrap_nav(@pagy, aria_label: "Pagination"))': Pagy pagination HTML built by the gem from page numbers; no user text.
+? 'app/packs/core/security_events/views/security_events/_index.html.erb | raw(pagy_bootstrap_nav(@pagy, anchor_string: %(data-turbo-frame="security_events_frame")))'
+: Pagy pagination HTML built by the gem from page numbers; the anchor string is a literal frame name; no user text.
+app/packs/core/security_events/views/security_events/_index.html.erb | raw(pagy_info(@pagy)): Pagy pagination HTML built by the gem from page numbers; no user text.
 app/packs/core/tasks/views/task_digest_mailer/_section.html.erb | "#{pluralize(more_count, 'more task')} not shown".html_safe: 'Email view: mail clients do not run scripts; emails were out of scope on 2026-11-05. Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'
 ? 'app/packs/core/tasks/views/task_digest_mailer/weekly_digest.html.erb | "Week of #{l(week.first)} &ndash; #{l(week.last)} &middot; #{h @entity.name}".html_safe'
 : 'Email view: mail clients do not run scripts; emails were out of scope on 2026-11-05. Baseline 2026-11-05: present when this guard was added; not individually re-reviewed.'

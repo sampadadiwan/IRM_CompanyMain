@@ -42,6 +42,12 @@ class CapitalDistributionPayment < ApplicationRecord
   include EvergreenSettlementHooks
   include CapitalDistributionPaymentShared
   include BlocksDestroyWithFundUnits
+  # M13 (OWASP 2026-11) K7 — a person changing these makes them a preparer of the distribution and, with maker–checker
+  # on, withdraws an approved distribution's approval (design card ②)
+  include ApprovalFigureWatch
+
+  APPROVAL_FIGURES = %w[income_cents cost_of_investment_cents reinvestment_cents net_payable_cents gross_payable_cents].freeze
+  watches_approval_figures APPROVAL_FIGURES, parent: :capital_distribution, creates_are_catch_up: true
 
   update_index('capital_distribution_payment') { self if index_record? }
 

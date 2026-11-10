@@ -1,0 +1,6 @@
+<%# M3 (OWASP 2026-11): masked, with the reason in a tooltip %>
+<% if field.masked.present? %>
+  <%= field.masked %>
+  <i class="ti ti-lock ms-1" tabindex="0" data-controller="scoring-tooltips" data-bs-toggle="tooltip"
+     title="Stored encrypted. Only the last 3 characters are shown."></i>
+<% end %>

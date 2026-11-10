@@ -69,7 +69,11 @@ module Api
           #
           # MailAddinToken.issued? is a pure read: it must never try to register the client
           # here, because GET requests on this API run against the replica.
-          return render_error("This token is not valid for the mail add-in API.", status: :forbidden) unless MailAddinToken.issued?(result.doorkeeper_token)
+          unless MailAddinToken.issued?(result.doorkeeper_token)
+            # M11 S1l — another integration's token (e.g. MCP) presented to the add-in API
+            record_addin_failure("wrong_token_type")
+            return render_error("This token is not valid for the mail add-in API.", status: :forbidden)
+          end
 
           # Every query below scopes on current_user.entity_id, so a token minted for a
           # different entity than the user is currently in would read and write the wrong
@@ -77,10 +81,21 @@ module Api
           # add-in re-authenticates and gets a token for the right entity.
           return if @current_entity.nil? || @current_entity.id == @current_user.entity_id
 
+          # M11 S1l / E14 — a token minted for another firm than the user is in now
+          record_addin_failure("entity_mismatch")
           render_error("This token was issued for a different organisation. Please sign in again.", status: :forbidden)
         rescue OauthBearerAuthenticator::AuthenticationError => e
+          # M11 S1l — invalid, expired, revoked or deactivated; a missing token records nothing (E13)
+          reason = SecurityEvents.bearer_failure_reason(e.message)
+          record_addin_failure(reason) if reason
           response.set_header('WWW-Authenticate', %(Bearer realm="#{request.base_url}"))
           render json: { error: e.message }, status: :unauthorized
+        end
+
+        # M11 S1l — the account when the token named one; door mail_addin
+        def record_addin_failure(reason)
+          SecurityEvents.record("sign_in.failed", user: @current_user, actor: nil, door: "mail_addin", outcome: :failure,
+                                                  request:, details: { reason: })
         end
 
         attr_reader :current_user, :current_entity
