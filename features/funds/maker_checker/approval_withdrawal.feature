@@ -5,7 +5,7 @@ Feature: Figure changes after approval withdraw it (OWASP review 2026-11 M13 —
   goes back to Approve with a note, and the approvers and preparers are told. Non-figure edits, payments received,
   verification, late commitments, jobs with nobody behind them and open-ended settlements keep the approval.
   Worked examples H21–H24, E40–E53, X16:
-  openspec/changes/capital-call-distribution-maker-checker/business-rules.md#7-withdrawal-on-figure-change--phase-3
+  openspec/changes/archive/2026-11-10-capital-call-distribution-maker-checker/business-rules.md#7-withdrawal-on-figure-change--phase-3
 
   Background:
     Given the firm "Nilgiri Capital" has maker-checker on

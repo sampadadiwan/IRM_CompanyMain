@@ -157,7 +157,7 @@ class CapitalCallsController < ApplicationController
   # POST /capital_calls/:id/request_approval — M13 (OWASP 2026-11) design card ⑥ / ⑦. Authorized by
   # set_capital_call (request_approval?: maker–checker on, unapproved, the user can edit it but can't approve it).
   # Emails + bell-alerts every checker, at most once an hour; the flash says who was asked, or why nobody was.
-  # Worked examples H18, E34, E35 — openspec/changes/capital-call-distribution-maker-checker/business-rules.md
+  # Worked examples H18, E34, E35 — openspec/changes/archive/2026-11-10-capital-call-distribution-maker-checker/business-rules.md
   def request_approval
     # The real person behind the request (CapHive support when acting as a user, D9)
     result = MakerCheckerNotices.request(@capital_call, Current.user || current_user)

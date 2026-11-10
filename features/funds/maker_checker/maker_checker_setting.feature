@@ -4,7 +4,7 @@ Feature: Maker–checker firm setting (OWASP review 2026-11 M13 — F1)
   every firm, existing and new, so nothing changes until a firm turns it on; only the firm's company admins can
   change it, and every change is in the entity's audit trail.
   Worked examples H1, E1–E3, X1–X2:
-  openspec/changes/capital-call-distribution-maker-checker/business-rules.md#1-firm-setting--phase-1
+  openspec/changes/archive/2026-11-10-capital-call-distribution-maker-checker/business-rules.md#1-firm-setting--phase-1
 
   # H1 — Happy path: Ravi (company admin) ticks the switch and saves; the audit trail names him, false → true
   Scenario: H1 A company admin switches maker-checker on

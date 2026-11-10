@@ -1,4 +1,4 @@
-# OWASP review 2026-11 M13 (openspec/changes/capital-call-distribution-maker-checker, design card ③, D2, LLD
+# OWASP review 2026-11 M13 (openspec/changes/archive/2026-11-10-capital-call-distribution-maker-checker, design card ③, D2, LLD
 # "Schema Detail").
 #
 # The preparer log: who created, imported or changed the figures of each capital call / distribution. Append-only

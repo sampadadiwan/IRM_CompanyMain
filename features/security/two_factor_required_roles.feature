@@ -4,7 +4,7 @@ Feature: Required two-factor — refusals and direct requests (OWASP 2026-11 M8)
   even when the request is hand-crafted: the password token endpoint and the LP app for a required
   user without a method, Login as and Set up now for the wrong actor, and every route that would
   switch someone's two-factor off without their password and a current code.
-  Design: openspec/changes/require-2fa-privileged-roles (business-rules.md, X3–X10, X15–X25).
+  Design: openspec/changes/archive/2026-11-10-require-2fa-privileged-roles (business-rules.md, X3–X10, X15–X25).
 
   Background:
     Given it is "2026-12-02 10:00" in India

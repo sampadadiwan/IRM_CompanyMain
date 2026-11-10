@@ -20,7 +20,7 @@ class CapitalDistribution < ApplicationRecord
   include BlocksDestroyWithFundUnits
 
   # M13 (OWASP 2026-11) K5 — maker–checker: who prepared this distribution (③) and the change watcher (②).
-  # openspec/changes/capital-call-distribution-maker-checker/design.md cards ② ③
+  # openspec/changes/archive/2026-11-10-capital-call-distribution-maker-checker/design.md cards ② ③
   include WithApprovalMakers
   include ApprovalFigureWatch
 

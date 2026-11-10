@@ -5,7 +5,7 @@ Feature: Security Events — who may see which firm's events (OWASP 2026-11 M11)
   emails with no account. Everyone else is refused, a crafted filter or download can't reach another firm, and
   there is no route that edits or deletes an event. Same style as tenant_isolation_batch1.feature: the owner is
   allowed, the other firm is refused, the direct request is refused.
-  Design: openspec/changes/security-event-trail (business-rules.md §6 — E45, X6–X11).
+  Design: openspec/changes/archive/2026-11-10-security-event-trail (business-rules.md §6 — E45, X6–X11).
 
   Background:
     Given today is "2026-11-09 12:00" for the security trail

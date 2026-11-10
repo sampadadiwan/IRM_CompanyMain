@@ -151,7 +151,7 @@ class CapitalDistributionsController < ApplicationController
 
   # POST /capital_distributions/:id/request_approval — M13 (OWASP 2026-11) design card ⑥ / ⑦, as for capital calls.
   # Authorized by set_capital_distribution (request_approval?). Worked examples H20 —
-  # openspec/changes/capital-call-distribution-maker-checker/business-rules.md
+  # openspec/changes/archive/2026-11-10-capital-call-distribution-maker-checker/business-rules.md
   def request_approval
     # The real person behind the request (CapHive support when acting as a user, D9)
     result = MakerCheckerNotices.request(@capital_distribution, Current.user || current_user)

@@ -4,7 +4,7 @@ Feature: Only the right people mark and unmark payout fields (OWASP review 2026-
   unmarking or deleting a marked field loosens them, so only CapHive support may. Only text fields on KYC forms can
   be marked. Another firm reaches nothing.
   Worked examples X16–X20:
-  openspec/changes/bank-detail-change-controls/business-rules.md#8-payout-custom-fields-swift--iban--phase-6
+  openspec/changes/archive/2026-11-10-bank-detail-change-controls/business-rules.md#8-payout-custom-fields-swift--iban--phase-6
 
   Background:
     Given Horizon Capital's KYC forms have the SWIFT and IBAN custom fields

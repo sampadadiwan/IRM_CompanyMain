@@ -6,7 +6,7 @@ Feature: Every bank change is recorded and shown on the KYC page (OWASP review 2
   or replaced. Fund users see the latest one as a note in Contact & Banking; investors never see it. Full account
   numbers are never stored in the record.
   Worked examples H5, H6, E14–E23, X5:
-  openspec/changes/bank-detail-change-controls/business-rules.md#3-change-record-and-kyc-page--phase-2
+  openspec/changes/archive/2026-11-10-bank-detail-change-controls/business-rules.md#3-change-record-and-kyc-page--phase-2
 
   # H5 — Happy path: Meera changes account + IFSC → record (Meera, fund, screen, 4821 → 7310, both IFSCs, awaiting)
   # and the amber note in Contact & Banking

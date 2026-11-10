@@ -1,5 +1,5 @@
 # Proposes payout custom fields for the bank change controls (OWASP review 2026-11 M14,
-# openspec/changes/bank-detail-change-controls, design D20; LLD "Method Contracts › Rake").
+# openspec/changes/archive/2026-11-10-bank-detail-change-controls, design D20; LLD "Method Contracts › Rake").
 #
 # Firms that keep SWIFT / IBAN in KYC custom fields are covered only once those fields are marked as payout fields.
 # This lists, per firm › KYC form type › field, every unmarked TEXT field whose name or label is a SWIFT, BIC, IBAN,
@@ -14,7 +14,7 @@
 #
 # Marking changes no KYC and sends no email (E65, E79): the rules apply to saves made after it.
 # production.in and production.us are independent: run it on each, separately.
-# Worked examples E78, E79 — openspec/changes/bank-detail-change-controls/business-rules.md#8
+# Worked examples E78, E79 — openspec/changes/archive/2026-11-10-bank-detail-change-controls/business-rules.md#8
 namespace :bank_detail_changes do
   desc "Propose (or with EXECUTE=1 FIRM_ID=<id>, mark) KYC SWIFT/IBAN text fields as payout fields"
   task propose_payout_fields: :environment do

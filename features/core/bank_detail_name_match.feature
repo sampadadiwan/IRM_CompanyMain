@@ -7,7 +7,7 @@ Feature: The bank check's name rule for KYCs (OWASP review 2026-11 M14 — §6)
   if the account and IFSC are still the ones it checked. Secondary-sale offers keep today's rule.
   Kestrel Capital has bank verification on; Dev Menon makes the changes.
   Worked examples H12–H14, E47–E56, X13–X14:
-  openspec/changes/bank-detail-change-controls/business-rules.md#6-bank-check-name-rule--phase-4
+  openspec/changes/archive/2026-11-10-bank-detail-change-controls/business-rules.md#6-bank-check-name-rule--phase-4
 
   # H12 — Happy path: the bank says "ANIL SHARMA" with the provider's own match → Bank Verified ✓
   Scenario: H12 The provider's match is accepted

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# ⑤ The bank check's name rule for KYCs (OWASP review 2026-11 M14, openspec/changes/bank-detail-change-controls,
+# ⑤ The bank check's name rule for KYCs (OWASP review 2026-11 M14, openspec/changes/archive/2026-11-10-bank-detail-change-controls,
 # design card ⑤, D10; spec "Bank check name rule").
 #
 # The penny drop returns the name the bank holds for the account. Today any one shared word passed it, so "R KUMAR"

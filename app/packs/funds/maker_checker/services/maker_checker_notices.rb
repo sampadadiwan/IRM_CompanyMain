@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # ⑦ The one place that decides who is told what about maker–checker (OWASP review 2026-11 M13,
-# openspec/changes/capital-call-distribution-maker-checker, design card ⑦, "Notifications", D11, D13; LLD "Method
+# openspec/changes/archive/2026-11-10-capital-call-distribution-maker-checker, design card ⑦, "Notifications", D11, D13; LLD "Method
 # Contracts", "Queries and Indexes"). Modelled on ComplianceNotices.
 #
 # Recipients are always people of the record's own firm — never investors, advisors, another firm or CapHive support

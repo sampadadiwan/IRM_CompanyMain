@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# ⑧ Withdrawal (OWASP review 2026-11 M13, openspec/changes/capital-call-distribution-maker-checker, design card ⑧,
+# ⑧ Withdrawal (OWASP review 2026-11 M13, openspec/changes/archive/2026-11-10-capital-call-distribution-maker-checker, design card ⑧,
 # D8; LLD "Transactions, Locking and Concurrency").
 #
 # With the firm's maker–checker setting on, a person who changes the figures of an approved capital call or

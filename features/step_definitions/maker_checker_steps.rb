@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Steps for capital call & distribution maker–checker (OWASP review 2026-11 M13,
-# openspec/changes/capital-call-distribution-maker-checker — business-rules.md has every H/E/X row):
+# openspec/changes/archive/2026-11-10-capital-call-distribution-maker-checker — business-rules.md has every H/E/X row):
 #   features/funds/maker_checker/maker_checker_setting.feature        F1 (§1)
 #   features/funds/maker_checker/preparers.feature                    F2 (§2)
 #   features/funds/maker_checker/capital_call_approval.feature        F3 (§3)

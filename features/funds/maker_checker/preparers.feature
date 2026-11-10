@@ -5,7 +5,7 @@ Feature: Who is a preparer (OWASP review 2026-11 M13 — F2)
   notification switches, payments received and verification don't count. The person behind a change is the real
   human: CapHive support when acting as a user. A record's creator from the audit trail always counts.
   Worked examples H2–H11, E4–E14:
-  openspec/changes/capital-call-distribution-maker-checker/business-rules.md#2-who-is-a-preparer--phase-1
+  openspec/changes/archive/2026-11-10-capital-call-distribution-maker-checker/business-rules.md#2-who-is-a-preparer--phase-1
 
   Background:
     Given the firm "Nilgiri Capital" has maker-checker on

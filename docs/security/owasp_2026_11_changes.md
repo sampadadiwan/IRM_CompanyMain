@@ -1304,7 +1304,7 @@ The rule is on from the deploy itself: there is no start date, notice period or 
 3. Right after the deploy, run `two_factor_required:end_unverified_access` as a dry run, then with `EXECUTE=1` if it
    names anyone, so a remembered session can't skip set-up.
 4. Re-run the report until it shows 0.
-5. QA works through `openspec/changes/require-2fa-privileged-roles/qa-checklist.md` on staging.
+5. QA works through `openspec/changes/archive/2026-11-10-require-2fa-privileged-roles/qa-checklist.md` on staging.
 
 **How each one finishes.**
 1. Its Cucumber features are green.
@@ -1622,7 +1622,7 @@ flowchart LR
    for that firm (one firm at a time; marks only — no KYC is changed and no email is sent). The admin can equally
    mark the fields in the side panel.
 4. Tell KYC teams (release note): a bank change now needs a second approver; one-approver firms get the warning card.
-5. QA: run `openspec/changes/bank-detail-change-controls/qa-checklist.md` on staging_in.
+5. QA: run `openspec/changes/archive/2026-11-10-bank-detail-change-controls/qa-checklist.md` on staging_in.
 
 ---
 

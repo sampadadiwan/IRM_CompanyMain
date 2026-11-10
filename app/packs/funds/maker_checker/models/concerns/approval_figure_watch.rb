@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# ② The change watcher (OWASP review 2026-11 M13, openspec/changes/capital-call-distribution-maker-checker, design
+# ② The change watcher (OWASP review 2026-11 M13, openspec/changes/archive/2026-11-10-capital-call-distribution-maker-checker, design
 # card ②, D3, D8, D14; LLD "Method Contracts", "Transactions").
 #
 # Included in the six models whose figures decide what LPs pay or receive: CapitalCall and CapitalDistribution (the

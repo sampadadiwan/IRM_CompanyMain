@@ -6,7 +6,7 @@ Feature: Payouts flag bank changes still waiting for a second approver (OWASP re
   warns on its own panel too. Existing columns, warnings and panels are unchanged.
   Horizon Fund I's Q3 2026 Distribution pays Anil Kumar and Bina Shah.
   Worked examples H15–H17, E57–E62, X15:
-  openspec/changes/bank-detail-change-controls/business-rules.md#7-payout-flags-and-journey-warnings--phase-5
+  openspec/changes/archive/2026-11-10-bank-detail-change-controls/business-rules.md#7-payout-flags-and-journey-warnings--phase-5
 
   Background:
     Given Horizon Capital's "Q3 2026 Distribution" of "Horizon Fund I" pays "Anil Kumar" and "Bina Shah"

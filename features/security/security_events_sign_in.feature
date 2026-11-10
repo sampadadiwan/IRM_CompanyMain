@@ -4,7 +4,7 @@ Feature: Security event trail — sign-in, two-factor, account changes and the r
   append-only security events — who, which firm, which door, from which IP — so a firm and CapHive can see who got
   in. Recording never changes what the person sees, and never fails the sign-in: the event is queued, written
   directly when the queue is down, and only logged when both fail.
-  Design: openspec/changes/security-event-trail (business-rules.md §1, §2, §5, §7 — H1–H15, H28, E1–E22,
+  Design: openspec/changes/archive/2026-11-10-security-event-trail (business-rules.md §1, §2, §5, §7 — H1–H15, H28, E1–E22,
   E33–E37, E46, E49, X3–X5).
 
   Background:

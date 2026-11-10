@@ -5,7 +5,7 @@ Feature: Bank and verification fields only the right people can set (OWASP revie
   it. The bank and PAN check results (status and response) are written only by the checks themselves — never
   accepted from a user, an investor, a magic link or the API.
   Worked examples H4, E11–E13, X2–X4:
-  openspec/changes/bank-detail-change-controls/business-rules.md#2-protected-fields--phase-1
+  openspec/changes/archive/2026-11-10-bank-detail-change-controls/business-rules.md#2-protected-fields--phase-1
 
   # H4 — Happy path: no awaiting change, Bank Verified off; Ravi ticks Bank Verified and saves → ✓
   Scenario: H4 An approver ticks Bank Verified

@@ -5,7 +5,7 @@ Feature: A bank change emails the investor and the firm's approvers, once (OWASP
   emails and bell-alerts the firm's KYC approvers who can see the KYC, except the person who made the change. Each
   email says why the person got it and what to do if the change was not expected.
   Worked examples H7, H8, E24–E31, X6:
-  openspec/changes/bank-detail-change-controls/business-rules.md#4-change-emails--phase-2
+  openspec/changes/archive/2026-11-10-bank-detail-change-controls/business-rules.md#4-change-emails--phase-2
 
   # H7 — Happy path: Meera changes account + IFSC → anil.kumar@example.in gets the masked email with "View KYC"
   Scenario: H7 The investor is emailed, masked

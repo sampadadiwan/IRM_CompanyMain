@@ -61,6 +61,6 @@ branches they implement (e.g. `# X15 required refuses; E30 no method → passwor
 - [x] 4.2 Coverage: list every H/E/X ID in business-rules.md and every `# ID —` comment in `features/`; confirm both sets equal the same 78 IDs
 - [x] 4.3 `bundle exec rubocop` (incl. `IRM/RelationBlankPresent`), `bin/brakeman`, `bundle exec packwerk check` clean for the change; run the rake `distinct` query once on dev MySQL
 - [x] 4.4 Full `features/security/` and `features/login/` run (pcuc `-n 4`, random `TEST_ENV_NUMBER`, check no other pcuc run first) green
-- [ ] 4.5 (Ops, IN and US) `report` → set the same `REQUIRED_2FA_ENFORCE_FROM` (deploy + 14 days) on both boxes + restart → message the 11 support / super users → `report` every few days until 0 in both regions; record counts in design.md "Changed during the build"
-- [ ] 4.6 (Ops, on the date, each region) `end_unverified_access` dry run, then `EXECUTE=1` if it names anyone; `report` once more
+- [ ] 4.5 (Ops, IN and US) Day one, no enforcement date (user decision 2026-11-09, design "Changed during the build"): message the 11 support / super users that their next sign-in sets up two-factor → run `report` in each region
+- [ ] 4.6 (Ops, straight after the deploy, each region) `end_unverified_access` dry run, then `EXECUTE=1`; `report` every few days until 0 without a verified method in both regions
 - [ ] 4.7 (QA) Run [qa-checklist.md](qa-checklist.md) on the staging build and record the sign-off

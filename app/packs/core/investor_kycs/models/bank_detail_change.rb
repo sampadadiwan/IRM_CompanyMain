@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# ③ The change record (OWASP review 2026-11 M14, openspec/changes/bank-detail-change-controls, design card ③, D6,
+# ③ The change record (OWASP review 2026-11 M14, openspec/changes/archive/2026-11-10-bank-detail-change-controls, design card ③, D6,
 # D19; LLD "Schema Detail", "Method Contracts › BankDetailChange").
 #
 # One row per bank change of a KYC: who made it (a firm user, an investor, or nil = System), how, the last 4 digits

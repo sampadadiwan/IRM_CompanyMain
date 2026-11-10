@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# ③ Preparer log (OWASP review 2026-11 M13, openspec/changes/capital-call-distribution-maker-checker, D2).
+# ③ Preparer log (OWASP review 2026-11 M13, openspec/changes/archive/2026-11-10-capital-call-distribution-maker-checker, D2).
 #
 # One row per person who prepared a capital call or distribution: created it, imported it, or changed its figures
 # (or the figures of its remittances / payments / fee lines). With the firm's maker–checker setting on, none of these

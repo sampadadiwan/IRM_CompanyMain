@@ -4,7 +4,7 @@ Feature: Approving a capital call with maker–checker (OWASP review 2026-11 M13
   reason and offers Request approval instead. An approver who did not prepare it approves exactly as today. With the
   setting off nothing changes, except that a self-approval is labelled "also prepared it".
   Worked examples H12–H15, E15–E27:
-  openspec/changes/capital-call-distribution-maker-checker/business-rules.md#3-approving-a-capital-call--phase-2
+  openspec/changes/archive/2026-11-10-capital-call-distribution-maker-checker/business-rules.md#3-approving-a-capital-call--phase-2
 
   # H12 — Happy path: Ravi (not a preparer) approves Meera's call → approved by Ravi
   Scenario: H12 A checker approves the call

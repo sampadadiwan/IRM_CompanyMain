@@ -3,7 +3,7 @@ Feature: Approving a capital distribution with maker–checker (OWASP review 202
   Distributions follow the same rule as calls: with the setting on, whoever prepared one cannot approve it.
   Imported distributions and open-ended redemption settlements keep working exactly as today.
   Worked examples H16–H17, E28–E31:
-  openspec/changes/capital-call-distribution-maker-checker/business-rules.md#4-approving-a-distribution--phase-2
+  openspec/changes/archive/2026-11-10-capital-call-distribution-maker-checker/business-rules.md#4-approving-a-distribution--phase-2
 
   # H16 — Happy path: Ravi approves Meera's distribution → approved by Ravi; Mark Payments Completed offered
   Scenario: H16 A checker approves the distribution
