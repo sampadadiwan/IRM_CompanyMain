@@ -8,7 +8,9 @@ Given("a DB box with {int} MB RAM, {int} MB reserved for other services and mysq
 end
 
 Given("its buffer pool is {int} MB in {int} MB units with a {int} MB dataset") do |pool, unit, dataset|
-  @mbp_box.merge!(current_pool_bytes: pool * MysqlBufferPool::MB, unit_bytes: unit * MysqlBufferPool::MB,
+  # A full pool unless a scenario says how much of it is in use
+  @mbp_box.merge!(current_pool_bytes: pool * MysqlBufferPool::MB, pool_in_use_bytes: pool * MysqlBufferPool::MB,
+                  unit_bytes: unit * MysqlBufferPool::MB,
                   dataset_bytes: dataset * MysqlBufferPool::MB)
 end
 
@@ -69,4 +71,21 @@ end
 
 Then("the buffer pool task is {string}") do |verdict|
   expect(@mbp_allowed).to eq(verdict == "allowed")
+end
+
+When("the plan is capped at a primary pool of {int} MB") do |primary|
+  @mbp_plan = MysqlBufferPool.cap_to_primary(@mbp_plan, primary_pool_bytes: primary * MysqlBufferPool::MB,
+                                                        current_pool_bytes: @mbp_box[:current_pool_bytes])
+end
+
+Given("only {int} MB of the pool is in use") do |in_use|
+  @mbp_box[:pool_in_use_bytes] = in_use * MysqlBufferPool::MB
+end
+
+When("the pool in use is worked out from {string} pages in total, {string} free and a {string} byte page") do |total, free, size|
+  @mbp_in_use = MysqlBufferPool.pool_in_use_bytes(pages_total: total, pages_free: free, page_size: size)
+end
+
+Then("{int} MB of the pool is in use") do |mb|
+  expect(@mbp_in_use).to eq(mb * MysqlBufferPool::MB)
 end

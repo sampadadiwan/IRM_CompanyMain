@@ -40,6 +40,8 @@ module DataBoxLimits
   ES_VOLUME = "elasticsearch-data"
   ES_DATA_DIR = "/usr/share/elasticsearch/data"
   REDIS_CONTAINER = "redis-stack-server"
+  # The data containers the task sizes — always together, as the start script starts them
+  DATA_CONTAINERS = [ES_CONTAINER, REDIS_CONTAINER].freeze
   # Environment the start script gives Elasticsearch; any OTHER setting on the live container would
   # be lost by recreating it, so the task refuses until the script carries it too
   ES_SCRIPT_ENV_KEYS = %w[ES_JAVA_OPTS discovery.type xpack.security.enabled].freeze
@@ -57,6 +59,47 @@ module DataBoxLimits
 
   def env_allowed?(env_name)
     ENVS.include?(env_name.to_s)
+  end
+
+  # --- Which boxes -------------------------------------------------------------------------------
+
+  # The boxes the task works on, data box first. Each entry is { host:, role:, status:, reason: }
+  # with role :data_box / :replica and status :apply / :skip / :refuse.
+  #
+  # - The data box (where ELASTIC_SEARCH_URL / REDIS_URL point) is always worked on.
+  # - The MySQL replica too, when it runs its own Elasticsearch and Redis: on prod IN (2026-11-10)
+  #   it does — they are the DR standby that dr:fix_db repoints the app to — and left uncapped they
+  #   blocked ops:mysql_buffer_pool on that box ("Redis has no maxmemory").
+  # - A replica running MySQL only (prod US) is skipped: nothing to cap.
+  # - A replica running just one of the two is refused: the start script starts both, so
+  #   installing it there would add a container nobody asked for.
+  # replica_containers: the names `docker ps` lists on the replica.
+  def target_boxes(data_box:, replica:, replica_containers:)
+    # H — the data box: always
+    boxes = [{ host: data_box, role: :data_box, status: :apply }]
+    # E — no replica, or staging's "replica" is the data box itself
+    return boxes if replica.to_s.empty? || replica == data_box
+
+    running = Array(replica_containers) & DATA_CONTAINERS
+    boxes << if running.empty?
+               # E — prod US: MySQL only
+               { host: replica, role: :replica, status: :skip, reason: "runs no Elasticsearch or Redis (MySQL only) - nothing to cap" }
+             elsif running.size < DATA_CONTAINERS.size
+               # X — half a standby: not ours to complete
+               { host: replica, role: :replica, status: :refuse,
+                 reason: "runs only #{running.join(', ')} - the start script starts both; cap it by hand or remove it" }
+             else
+               # H — prod IN: the DR standby
+               { host: replica, role: :replica, status: :apply }
+             end
+    boxes
+  end
+
+  # Queue the search reindex after re-creating Elasticsearch? Only on the data box, and only when
+  # the old index lived inside the container (so it is gone). The replica's Elasticsearch is a
+  # standby the app does not read; a failover rebuilds the indexes anyway (dr:fix_db step list).
+  def reindex_needed?(role:, drift:, volume:)
+    role == :data_box && drift.any? && volume != ES_VOLUME
   end
 
   # --- Sizing ----------------------------------------------------------------------------------

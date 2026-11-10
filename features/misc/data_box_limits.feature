@@ -93,6 +93,34 @@ Feature: The data box's Elasticsearch and Redis get memory limits sized from the
     And the data box start script starts Redis with "--maxmemory $REDIS_MAXMEMORY --maxmemory-policy noeviction"
     And the start script's floor values are the rule's floor
 
+  # H5 — Happy path (prod IN, 2026-11-10): the replica runs the DR standby Elasticsearch + Redis
+  # E4 — Edge case (prod US): a MySQL-only replica is skipped, nothing to cap
+  # E5 — Edge case (staging): the "replica" is the data box itself, so one box
+  # X6 — Error case: a replica with only one of the two is refused, not half-completed
+  Scenario Outline: The replica is worked on only when it runs both data containers
+    When the boxes are chosen for data box "10.0.3.182", replica "<replica>" running "<containers>"
+    Then the chosen boxes are "<boxes>"
+
+    Examples:
+      | replica    | containers                       | boxes                                       |
+      | 10.0.4.78  | elasticsearch,redis-stack-server | 10.0.3.182 apply, 10.0.4.78 apply           |
+      | 10.0.4.28  |                                  | 10.0.3.182 apply, 10.0.4.28 skip            |
+      | 10.0.3.182 | elasticsearch,redis-stack-server | 10.0.3.182 apply                            |
+      |            |                                  | 10.0.3.182 apply                            |
+      | 10.0.4.78  | redis-stack-server               | 10.0.3.182 apply, 10.0.4.78 refuse          |
+
+  # E6 — Edge case: only the data box's lost index is rebuilt; the standby's Elasticsearch is not read
+  Scenario Outline: The search reindex is queued only for the data box
+    When the reindex is weighed for the "<role>" with drift "<drift>" and data volume "<volume>"
+    Then the reindex is "<verdict>"
+
+    Examples:
+      | role     | drift        | volume             | verdict    |
+      | data box | memory cap   |                    | needed     |
+      | data box | memory cap   | elasticsearch-data | not needed |
+      | data box |              |                    | not needed |
+      | replica  | memory cap   |                    | not needed |
+
   # X4 — Error case (decision 2026-11-09): only the data box environments
   Scenario Outline: Only known environments may be changed
     When the data box limits task is asked for "<env>"

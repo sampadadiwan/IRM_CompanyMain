@@ -14,6 +14,7 @@
 #          - 1.25 x what mysqld holds OUTSIDE the pool (connections, performance_schema, ...)
 #          - 1.5 GB for the OS, backups (xtrabackup) and page cache
 #   pool = min(room, 1.25 x the InnoDB dataset), in whole resize units (chunk x instances)
+#   A replica's pool is also capped at the primary's (cap_to_primary, 2026-11-10).
 #   Never shrinks. Refused on a box with a service whose memory is not capped (no budget).
 #
 # Pure: no SSH, no MySQL. The rake task fetches the numbers and acts on the answers.
@@ -58,10 +59,17 @@ module MysqlBufferPool
 
   # The target pool and the working behind it.
   # unit_bytes: innodb_buffer_pool_chunk_size x innodb_buffer_pool_instances (MySQL rounds to it).
+  # pool_in_use_bytes: the part of the pool that holds pages ((pages_total - pages_free) x page size).
   # Returns { status: :grow / :unchanged / :refused, target:, room:, dataset_cap:, non_pool:, reason: }.
-  def plan(total_bytes:, reserved_bytes:, mysqld_rss_bytes:, current_pool_bytes:, dataset_bytes:, unit_bytes:)
-    # What mysqld holds besides the pool (never negative: RSS can trail a just-grown pool)
-    non_pool = [mysqld_rss_bytes - current_pool_bytes, 0].max
+  def plan(total_bytes:, reserved_bytes:, mysqld_rss_bytes:, current_pool_bytes:, pool_in_use_bytes:, dataset_bytes:, unit_bytes:)
+    # What mysqld holds besides the pool = resident memory - the part of the pool actually in use.
+    # NOT rss - the configured pool: a just-grown pool's free pages were never touched, so they are
+    # not resident. Prod IN, 2026-11-10: re-run a few minutes after 128 -> 2432 MB, with 136 MB of the
+    # pool in use and rss below 2432 MB, rss - pool came out negative, was floored to 0 instead of
+    # ~1436 MB, and the pool was grown again to 4224 MB. Free pages that WERE touched (after
+    # evictions) stay resident and count as non-pool here — an over-estimate, the safe side.
+    # Never negative (a probe that could not read the pool's pages gives in-use 0 -> all of rss).
+    non_pool = [mysqld_rss_bytes - pool_in_use_bytes, 0].max
     room = total_bytes - reserved_bytes - (NON_POOL_FACTOR * non_pool).ceil - OS_RESERVE_BYTES
     room_units = room.positive? ? (room / unit_bytes) * unit_bytes : 0
     dataset_cap = ((DATASET_FACTOR * dataset_bytes) / unit_bytes).ceil * unit_bytes
@@ -75,6 +83,37 @@ module MysqlBufferPool
     return base.merge(status: :unchanged, reason: "pool already #{mb(current_pool_bytes)} (target #{mb(target)})") if target <= current_pool_bytes
 
     base.merge(status: :grow)
+  end
+
+  # A replica never gets a bigger pool than the primary's (decision 2026-11-10).
+  #
+  # Why: its own room is measured while it idles. After a failover it carries the primary's load,
+  # and mysqld's memory outside the pool grows with it — prod IN, 2026-11-10: 1436 MB on the primary
+  # vs 730 MB on the replica. Its own plan (3328 MB) plus the primary's non-pool memory would have
+  # needed 8348 MB on a 7840 MB box, and the OOM killer picks mysqld. The primary's pool is sized
+  # for exactly that load, so it is the safe ceiling.
+  #
+  # plan: the replica's MysqlBufferPool.plan; primary_pool_bytes: the primary's pool after this run
+  # (its target when it grows, else its current pool). Returns the plan, capped when it has to be.
+  def cap_to_primary(plan, primary_pool_bytes:, current_pool_bytes:)
+    # E — refused / unchanged, or already within the primary's pool: nothing to cap
+    return plan unless plan[:status] == :grow && plan[:target] > primary_pool_bytes
+
+    capped = { capped_by_primary: true, own_target: plan[:target] }
+    # E — the primary's pool is no bigger than the replica's today: leave it (never shrink)
+    if primary_pool_bytes <= current_pool_bytes
+      return plan.merge(capped, status: :unchanged, target: current_pool_bytes,
+                                reason: "pool already #{mb(current_pool_bytes)}; capped at the primary's #{mb(primary_pool_bytes)}")
+    end
+
+    # H — prod IN: 3328 MB of room, capped to the primary's 2432 MB
+    plan.merge(capped, target: primary_pool_bytes)
+  end
+
+  # The part of the pool holding pages, from the probe's Innodb_buffer_pool_pages_total / _free and
+  # innodb_page_size. Unreadable values give 0, which counts all of mysqld's memory as non-pool.
+  def pool_in_use_bytes(pages_total:, pages_free:, page_size:)
+    [(pages_total.to_i - pages_free.to_i) * page_size.to_i, 0].max
   end
 
   # The read-miss rate: buffer pool reads that went to disk, as a % of all logical reads

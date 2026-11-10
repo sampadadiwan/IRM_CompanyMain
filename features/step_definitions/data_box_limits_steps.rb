@@ -154,3 +154,22 @@ end
 Then("the data box limits task is {string}") do |verdict|
   expect(@data_box_env_allowed).to eq(verdict == "allowed")
 end
+
+# --- Which boxes -----------------------------------------------------------------------------
+
+When("the boxes are chosen for data box {string}, replica {string} running {string}") do |data_box, replica, containers|
+  @data_box_targets = DataBoxLimits.target_boxes(data_box: data_box, replica: replica, replica_containers: containers.split(","))
+end
+
+Then("the chosen boxes are {string}") do |expected|
+  expect(@data_box_targets.map { |t| "#{t[:host]} #{t[:status]}" }.join(", ")).to eq(expected)
+end
+
+When("the reindex is weighed for the {string} with drift {string} and data volume {string}") do |role_name, drift, volume|
+  role = role_name == "data box" ? :data_box : :replica
+  @data_box_reindex = DataBoxLimits.reindex_needed?(role: role, drift: drift.empty? ? [] : [drift], volume: volume.presence)
+end
+
+Then("the reindex is {string}") do |verdict|
+  expect(@data_box_reindex).to eq(verdict == "needed")
+end

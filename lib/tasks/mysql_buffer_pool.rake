@@ -77,6 +77,10 @@ MBP_PROBE = <<~'BASH'
   echo "reads: $(m "SELECT VARIABLE_VALUE FROM performance_schema.global_status WHERE VARIABLE_NAME = 'Innodb_buffer_pool_reads'")"
   echo "requests: $(m "SELECT VARIABLE_VALUE FROM performance_schema.global_status WHERE VARIABLE_NAME = 'Innodb_buffer_pool_read_requests'")"
   echo "persisted: $(m "SELECT VARIABLE_VALUE FROM performance_schema.persisted_variables WHERE VARIABLE_NAME = 'innodb_buffer_pool_size'")"
+  # How much of the pool holds pages: only that part is resident (MysqlBufferPool.plan)
+  echo "pages_total: $(m "SELECT VARIABLE_VALUE FROM performance_schema.global_status WHERE VARIABLE_NAME = 'Innodb_buffer_pool_pages_total'")"
+  echo "pages_free: $(m "SELECT VARIABLE_VALUE FROM performance_schema.global_status WHERE VARIABLE_NAME = 'Innodb_buffer_pool_pages_free'")"
+  echo "page_size: $(m 'SELECT @@innodb_page_size')"
   pid=$(pidof mysqld | awk '{print $1}')
   echo "rss: $(( $(awk '/^VmRSS/ {print $2}' /proc/$pid/status) * 1024 ))"
   echo "total: $(( $(awk '/^MemTotal/ {print $2}' /proc/meminfo) * 1024 ))"
@@ -105,7 +109,9 @@ namespace :ops do
     primary = creds[:DB_HOST].to_s
     replica = creds[:DB_HOST_REPLICA].to_s
     abort "❌ DB_HOST missing in the #{env_name} credentials. Nothing touched." if primary.empty?
-    hosts = [replica, primary].reject(&:empty?).uniq
+    # Probed primary first: the replica's pool is capped at the primary's (cap_to_primary), so the
+    # primary's plan must be known before the replica's. Resized replica first (step 5).
+    hosts = [primary, replica].reject(&:empty?).uniq
 
     # 3. The route in: first app server in the stage file that answers SSH
     cap_key = dr_assess_cap_key(env[:deploy_file])
@@ -117,11 +123,15 @@ namespace :ops do
     preamble = ->(host) { mbp_mysql_preamble(MysqlBufferPool.client_cnf(user: creds[:DB_USER], password: creds[:DB_PASS], host: host)) }
     puts "🔌 via app server #{app_host}"
 
-    # 4. Measure and plan each box (read-only)
+    # 4. Measure and plan each box (read-only), primary first
+    # The primary's pool once this run is done — the replica's ceiling. Set when the primary is probed.
+    primary_pool = nil
     plans = hosts.map do |host|
       role = host == primary ? "primary" : "replica"
       probe = MysqlBufferPool.parse_probe(mbp_remote(ctx, host, preamble.call(host) + MBP_PROBE))
       puts "\n📋 #{host} (#{role}#{' + data box' if probe['containers'].to_s.strip.present?})"
+      # Until the primary's plan says otherwise, its ceiling is the pool it has today
+      primary_pool = probe["pool"].to_i if role == "primary"
 
       version = probe["version"].to_s
       unless version.match?(/\A(8|9)\./)
@@ -133,8 +143,9 @@ namespace :ops do
       reserve = MysqlBufferPool.reserved(containers: containers, es_cap_bytes: probe["es_cap"].to_i,
                                          redis_maxmemory_bytes: probe["redis_max"].to_i)
       unit = probe["chunk"].to_i * [probe["instances"].to_i, 1].max
+      in_use = MysqlBufferPool.pool_in_use_bytes(pages_total: probe["pages_total"], pages_free: probe["pages_free"], page_size: probe["page_size"])
       puts "   MySQL #{version}: pool #{mbp_mb(probe['pool'])} (#{probe['persisted'].present? ? "persisted #{mbp_mb(probe['persisted'])}" : 'not persisted'}), " \
-           "resize unit #{mbp_mb(unit)}, mysqld resident #{mbp_mb(probe['rss'])}"
+           "#{mbp_mb(in_use)} of it in use, resize unit #{mbp_mb(unit)}, mysqld resident #{mbp_mb(probe['rss'])}"
       puts "   dataset #{mbp_mb(probe['dataset'])}; reads from disk #{MysqlBufferPool.miss_percent(reads: probe['reads'], requests: probe['requests'])}% since start"
       puts "   box #{mbp_mb(probe['total'])}, #{mbp_mb(probe['available'])} available; containers: #{containers.join(', ').presence || 'none'}"
 
@@ -144,12 +155,20 @@ namespace :ops do
       end
 
       plan = MysqlBufferPool.plan(total_bytes: probe["total"].to_i, reserved_bytes: reserve[:bytes],
-                                  mysqld_rss_bytes: probe["rss"].to_i, current_pool_bytes: probe["pool"].to_i,
+                                  mysqld_rss_bytes: probe["rss"].to_i, current_pool_bytes: probe["pool"].to_i, pool_in_use_bytes: in_use,
                                   dataset_bytes: probe["dataset"].to_i, unit_bytes: unit)
       # The working, so the number can be checked by hand
       puts "   room = #{mbp_mb(probe['total'])} RAM - #{mbp_mb(reserve[:bytes])} (ES cap + Redis maxmemory) - " \
-           "1.25 x #{mbp_mb(plan[:non_pool])} (mysqld outside the pool) - 1536 MB (OS) = #{mbp_mb(plan[:room])}"
+           "1.25 x #{mbp_mb(plan[:non_pool])} (mysqld outside the pool = resident - pool in use) - 1536 MB (OS) = #{mbp_mb(plan[:room])}"
       puts "   cap  = 1.25 x #{mbp_mb(probe['dataset'])} dataset = #{mbp_mb(plan[:dataset_cap])}"
+      if role == "primary"
+        # The replica may not outgrow this
+        primary_pool = plan[:target] if plan[:status] == :grow
+      elsif primary_pool
+        # The replica takes the primary's load after a failover: never a bigger pool than the primary's
+        plan = MysqlBufferPool.cap_to_primary(plan, primary_pool_bytes: primary_pool, current_pool_bytes: probe["pool"].to_i)
+        puts "   failover cap = the primary's pool #{mbp_mb(primary_pool)} (own room would give #{mbp_mb(plan[:own_target])})" if plan[:capped_by_primary]
+      end
       verdict = case plan[:status]
                 when :grow then "→ grow #{mbp_mb(probe['pool'])} → #{mbp_mb(plan[:target])}"
                 when :unchanged then "→ unchanged: #{plan[:reason]}"
@@ -166,7 +185,7 @@ namespace :ops do
     failures = plans.select { |p| p[:status] == :refused }.map { |p| "#{p[:role]} #{p[:host]}: #{p[:reason]}" }
 
     # 5. Resize, replica first. A failed box stops the run before the next one is touched.
-    plans.select { |p| p[:status] == :grow }.each do |p|
+    plans.select { |p| p[:status] == :grow }.sort_by { |p| p[:role] == "replica" ? 0 : 1 }.each do |p|
       puts "\n🔧 #{p[:role]} #{p[:host]}: SET PERSIST innodb_buffer_pool_size = #{p[:target]} (#{mbp_mb(p[:target])})"
       out = mbp_remote(ctx, p[:host], preamble.call(p[:host]) + <<~BASH, timeout: 30)
         # Any error from the statement itself is echoed, so a refusal (privileges, ...) is visible

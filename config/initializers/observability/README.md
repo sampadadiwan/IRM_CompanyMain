@@ -486,6 +486,13 @@ flowchart LR
   reboot. The first switch rebuilds the index with the existing `dr:reindex_search_later` job.
 - **Refusals before anything changes:** a live container on another image, or with a setting the
   start script does not carry (it would be lost).
+- **The replica too, when it runs the containers:** prod IN's MySQL replica runs its own
+  Elasticsearch + Redis (the DR standby `dr:fix_db` repoints the app to). The task works on it after
+  the data box, with limits measured on that box, and never queues a reindex for it (the app does
+  not read it). A MySQL-only replica (prod US) is skipped; one running only one of the two is refused.
+- **Replica buffer pool ≤ primary's:** `ops:mysql_buffer_pool` caps the replica's pool at the
+  primary's, because after a failover it carries the primary's load (prod IN 2026-11-10: the idle
+  replica's own room gave 3328 MB, which would overcommit the box once promoted).
 - **Fresh AMI / DR boxes** get the rule's floor (512 MB heap, 1536 MB cap, 512 MB Redis) from the
   start script's defaults.
 
