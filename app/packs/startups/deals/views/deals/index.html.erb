@@ -1,6 +1,20 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Deals</h1>
   <div class="d-flex align-items-center gap-2">
+    <%# Cards / grid toggle (DealsController#assign_deals_view remembers the choice). Keeps the current filter,
+        tag, archived flag and units, so both views list the same deals. %>
+    <div class="btn-group" role="group" aria-label="Choose how deals are shown">
+      <% { "cards" => ["ti-layout-grid", "Card view"], "grid" => ["ti-table", "Grid view (choose your columns)"] }.each do |view, (icon, label)| %>
+        <%= link_to "#{request.path}?#{request.query_parameters.merge('view' => view).to_query}",
+                    class: "btn btn-outline-secondary d-inline-flex align-items-center #{'active' if @view == view}",
+                    id: "deals_#{view}_view",
+                    title: label,
+                    aria: { label: label, pressed: @view == view },
+                    data: { bs_toggle: "tooltip", bs_title: label } do %>
+          <i class="ti <%= icon %>"></i>
+        <% end %>
+      <% end %>
+    </div>
     <button class="btn btn-outline-info d-inline-flex align-items-center" type="button"
             data-bs-toggle="collapse" data-bs-target="#dealsAnalytics"
             aria-expanded="false" aria-controls="dealsAnalytics">
@@ -20,5 +34,19 @@
   <%= render "/layouts/steps", steps: ["Setup Deal Details", "Upload Deal Docs", "Add Investments",
               "Customize Deal Steps", "Setup Access Rights", "Start Deal"].freeze unless @deals.present? %>
   <% units ||= params[:units].presence || (cookies && cookies[:currency_units]) %>
-  <%= render "/deals/index_cards", deals: @deals, units: units %>
+  <% if @view == "grid" %>
+    <%# The firm's chosen columns (or Deal::LIST_COLUMNS), sorted, searched and paged in the page by jQuery
+        DataTables (sortable: false, pagy: nil) - the same rows as the cards, like the Distributions list %>
+    <% deals_table = RansackTable.new(Deal, q: @q, default_columns_map: Deal::LIST_COLUMNS,
+                                      entity: current_user.entity, current_user: current_user, records: @deals,
+                                      report_id: params["report_id"], turbo_frame: "deals_frame",
+                                      referrer: request.referrer, pagy: nil, table_css_class: "jqDataTable",
+                                      sortable: false) %>
+    <div data-controller="datatable tooltip" data-datatable-responsive-details-value=true
+         data-datatable-money-columns-value="<%= deals_table.money_column_indexes %>">
+      <%= render deals_table %>
+    </div>
+  <% else %>
+    <%= render "/deals/index_cards", deals: @deals, units: units %>
+  <% end %>
 <% end %>

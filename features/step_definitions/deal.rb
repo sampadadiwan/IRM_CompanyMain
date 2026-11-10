@@ -1051,3 +1051,29 @@ end
 Then('the documents frame should target top') do
   expect(page).to have_css('turbo-frame#documents_frame[target="_top"]', visible: :all, wait: 10)
 end
+
+# --- Deals index: cards / grid toggle (deals/index, DealsController#assign_deals_view) ---------------------------
+
+When('I switch the deals index to the {string} view') do |view|
+  # The toggle buttons are #deals_cards_view / #deals_grid_view in the page heading
+  find("#deals_#{view}_view").click
+  expect(page).to have_css("#deals_#{view}_view.active", wait: 20)
+end
+
+Then('the deals index should show the {string} view') do |view|
+  expect(page).to have_css("#deals_#{view}_view.active", wait: 20)
+  if view == "grid"
+    # The grid is the shared RansackTable, with its columns icon
+    expect(page).to have_css("table#deals", wait: 20)
+    expect(page).to have_css(".grid-columns-btn", visible: :all)
+  else
+    # The cards: no table, each deal as a card with its View Deal button
+    expect(page).to have_no_css("table#deals")
+    expect(page).to have_css(".investment-opportunity-card", text: @deal.name)
+  end
+end
+
+Then('the deal {string} should show a {string} status badge {string}') do |name, css, status|
+  row = find("table#deals tbody tr", text: name)
+  expect(row).to have_css("span.badge.#{css}", text: status)
+end

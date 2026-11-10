@@ -12,6 +12,25 @@ class Deal < ApplicationRecord
 
   monetize :amount_cents, with_model_currency: :currency
 
+  # The Deals index grid view's columns (deals/index, view=grid). A firm changes them with the columns icon on
+  # the table; these are what it shows until a firm saves its own.
+  STANDARD_COLUMNS = {
+    "Name; text-col" => "name; text-col",
+    "Amount; num-col" => "amount; num-col",
+    "Status; text-col" => "status; text-col",
+    "Start Date; date-col" => "start_date; date-col",
+    "End Date; date-col" => "end_date; date-col",
+    "Tags; text-col" => "tags; text-col"
+  }.freeze
+  # The grid itself links the name and badges the status (DealDecorator#name_link / #status_badge)
+  LIST_COLUMNS = STANDARD_COLUMNS.merge("Name; text-col" => "name_link; text-col",
+                                        "Status; text-col" => "status_badge; text-col").freeze
+  # List-only cells the columns editor offers (never the report builder)
+  GRID_COLUMNS = {
+    "Name (link); text-col" => "name_link; text-col",
+    "Status (with archived); text-col" => "status_badge; text-col"
+  }.freeze
+
   # Make all models searchable
   update_index('deal') { self if index_record? }
 

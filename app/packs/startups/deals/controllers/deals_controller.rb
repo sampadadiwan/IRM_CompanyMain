@@ -10,6 +10,9 @@ class DealsController < ApplicationController
   before_action :set_deal, only: %w[show update destroy edit overview consolidated_access_rights agent_settings update_agent_settings run_now weekly_summary update_ingest_address]
   after_action :verify_authorized, except: %i[index search investor_deals]
 
+  # The Deals index's two views (assign_deals_view)
+  DEALS_VIEWS = %w[cards grid].freeze
+
   # GET /deals/analytics
   def analytics
     @deals = policy_scope(Deal)
@@ -27,6 +30,7 @@ class DealsController < ApplicationController
     @deals = @deals.where("tags like ?", "%#{ActiveRecord::Base.sanitize_sql_like(params[:tag])}%") if params[:tag].present?
     @deals = @deals.where("deals.archived=?", false) if params[:include_archived].blank?
     @units = params[:units]
+    assign_deals_view
   end
 
   def search
@@ -42,12 +46,14 @@ class DealsController < ApplicationController
       redirect_to deals_path
     end
 
+    assign_deals_view
     render "index"
   end
 
   def investor_deals
     @deals = Deal.for_investor(current_user)
     @pagy, @deals = pagy(@deals)
+    assign_deals_view
     render "index"
   end
 
@@ -354,6 +360,19 @@ class DealsController < ApplicationController
   end
 
   private
+
+  # The Deals index's cards / grid toggle. An explicit ?view= wins and is remembered in a cookie (like the
+  # currency units), so the next visit opens the same view; otherwise the last choice, else the cards.
+  def assign_deals_view
+    if DEALS_VIEWS.include?(params[:view])
+      # Remember the chosen view for later visits
+      cookies[:deals_view] = { value: params[:view], expires: 1.year.from_now }
+      @view = params[:view]
+    else
+      # No (or an unknown) choice on the URL: fall back to the remembered one, then the cards
+      @view = DEALS_VIEWS.include?(cookies[:deals_view]) ? cookies[:deals_view] : "cards"
+    end
+  end
 
   # Lazy-generate the single ingest address for this deal.
   # Uses the writing connection to avoid read-replica errors.
