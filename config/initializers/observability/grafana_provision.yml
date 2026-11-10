@@ -784,3 +784,8 @@ dashboards:
   - uid: caphive-sidekiq
     name: "Sidekiq Memory & Jobs Dashboard"
     patches: []
+
+  - uid: mysql-overview
+    name: "MySQL Overview"
+    patches:
+      - fix_mysql_overview_replication  # replication panels query both namings (IN *_master/slave_*, US *_source/replica_*)

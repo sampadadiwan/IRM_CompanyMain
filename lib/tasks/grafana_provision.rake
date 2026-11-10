@@ -55,6 +55,35 @@ class GrafanaProvisioner
     'rYdddlPWk'      => 'node.dashboard.json',
     'L-0CZ_WVk'      => 'rails.dashboard.json',
     'caphive-sidekiq' => 'sidekiq.dashboard.json',
+    'mysql-overview'  => 'mysql.dashboard.json',
+  }.freeze
+
+  # MySQL Overview's replication queries, by panel title then target refId.
+  # mysqld_exporter names the replica metrics after SHOW REPLICA STATUS columns, and the naming
+  # depends on the exporter: IN emits the old *_master / slave_* names, US the *_source / replica_*
+  # names. The board was hand-made per region and drifted - IN's "Binlog Accumulation" queried
+  # mysql_slave_status_master_log_pos, which neither region emits, so it read "No data" (2026-11-10).
+  # Every query here is "new name or old name": one board, right in both regions, and still right
+  # after an exporter upgrade - the same approach as the "MySQL Replication Lag Critical" alert rule.
+  MYSQL_REPLICA_SELECTOR = '{instance=~"$instance"}'.freeze
+  # One replica metric under either naming, e.g. seconds_behind_source / seconds_behind_master
+  MYSQL_REPLICA_METRIC = lambda do |source_name, master_name|
+    "mysql_slave_status_#{source_name}#{MYSQL_REPLICA_SELECTOR} or mysql_slave_status_#{master_name}#{MYSQL_REPLICA_SELECTOR}"
+  end
+  MYSQL_LAG = MYSQL_REPLICA_METRIC.call('seconds_behind_source', 'seconds_behind_master')
+  MYSQL_IO_RUNNING = MYSQL_REPLICA_METRIC.call('replica_io_running', 'slave_io_running')
+  MYSQL_SQL_RUNNING = MYSQL_REPLICA_METRIC.call('replica_sql_running', 'slave_sql_running')
+  # Relay-log bytes received but not yet applied: read position - executed position
+  MYSQL_BINLOG_GAP =
+    "(mysql_slave_status_read_source_log_pos#{MYSQL_REPLICA_SELECTOR} - mysql_slave_status_exec_source_log_pos#{MYSQL_REPLICA_SELECTOR}) or " \
+    "(mysql_slave_status_read_master_log_pos#{MYSQL_REPLICA_SELECTOR} - mysql_slave_status_exec_master_log_pos#{MYSQL_REPLICA_SELECTOR})".freeze
+  MYSQL_OVERVIEW_REPLICATION = {
+    'Replication Lag' => { 'A' => "max(#{MYSQL_LAG})" },
+    'Replication Lag (Seconds Behind Master)' => { 'A' => MYSQL_LAG },
+    'IO Thread Running' => { 'A' => MYSQL_IO_RUNNING },
+    'SQL Thread Running' => { 'A' => MYSQL_SQL_RUNNING },
+    'Replication I/O & SQL Thread Status' => { 'A' => MYSQL_IO_RUNNING, 'B' => MYSQL_SQL_RUNNING },
+    'Binlog Accumulation (Primary → Replica gap)' => { 'A' => MYSQL_BINLOG_GAP }
   }.freeze
 
   # graphana.caphive.com and graphana.caphive.us are two SEPARATE Grafana instances (IN and US
@@ -294,6 +323,7 @@ class GrafanaProvisioner
         when 'add_mysql_depth_panels'  then add_mysql_depth_panels!(board)
         when 'add_yjit_panels'         then add_yjit_panels!(board)
         when 'add_data_box_panels'     then add_data_box_panels!(board)
+        when 'fix_mysql_overview_replication' then fix_mysql_overview_replication!(board)
         end
       end
 
@@ -533,6 +563,26 @@ class GrafanaProvisioner
 
     board['panels'] += new_panels
     puts "    add_rails_depth_panels: appended #{new_panels.size} panels (P95, Puma, Sidekiq depth/latency)"
+  end
+
+  # Sets every replication panel on MySQL Overview to the query that works under both metric
+  # namings (MYSQL_OVERVIEW_REPLICATION). Matched by title, so re-running only re-sets the same
+  # queries; a title not found is reported, so a renamed panel is noticed rather than skipped.
+  def fix_mysql_overview_replication!(board)
+    panels = board['panels'] || []
+    MYSQL_OVERVIEW_REPLICATION.each do |title, queries|
+      panel = panels.find { |p| p['title'] == title }
+      # A panel renamed or removed by hand on the live board
+      next puts("    fix_mysql_overview_replication: WARNING no #{title.inspect} panel") unless panel
+
+      queries.each do |ref_id, expr|
+        target = Array(panel['targets']).find { |t| t['refId'] == ref_id }
+        next puts("    fix_mysql_overview_replication: WARNING #{title.inspect} has no target #{ref_id}") unless target
+
+        target['expr'] = expr
+      end
+    end
+    puts "    fix_mysql_overview_replication: #{MYSQL_OVERVIEW_REPLICATION.size} replication panels set to source-or-master queries"
   end
 
   # Appends InnoDB buffer pool miss rate, deadlocks, and aborted connection panels.
