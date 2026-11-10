@@ -78,6 +78,16 @@ Feature: Allocation Run Templates and Groups
     When I try to start the group "Quarterly close" from "2024-01-01" to "2024-03-31"
     Then no group run should have been recorded
 
+  # One run per fund at a time (one_allocation_run_per_fund.feature): a manual run still going on a
+  # fund would make the group's run there be refused part-way, so the group is stopped up front
+  Scenario: A fund with an unfinished allocation run blocks the group
+    Given there is an allocation run template "name=Master — quarterly" on the first fund
+    And there is an allocation run group "Quarterly close" with templates "Master — quarterly"
+    And there is a past allocation run "start_date=2024-04-01;end_date=2024-06-30;status=Pending" on the first fund
+    When I run the pre-flight check for "Quarterly close" from "2024-01-01" to "2024-03-31"
+    Then the pre-flight should not be startable
+    And the pre-flight check for "Master — quarterly" should be "blocked" with a message containing "has not finished yet"
+
   Scenario: A formula tag that no longer exists in entity settings blocks the template
     Given the entity formula tag list is "quarterly,annual"
     And there is an allocation run template "name=Old tags;tag_list=quarterly,retired" on the first fund

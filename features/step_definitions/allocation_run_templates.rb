@@ -97,8 +97,9 @@ def art_stub_engine(outcomes = {})
     outcome = @engine_outcomes.fetch(template.name, :success)
     case outcome
     when :success
-      # The engine writes Success only when formulas ran; a statements-only run leaves it blank.
-      allocation_run.update_column(:status, template.run_allocations? ? "Success" : nil)
+      # The engine writes Success for every run that finished cleanly, statements-only ones included
+      # (a blank status would read as still running and block the fund).
+      allocation_run.update_column(:status, "Success")
       art_engine_result(false)
     when :pending
       allocation_run.update_column(:status, "Pending")

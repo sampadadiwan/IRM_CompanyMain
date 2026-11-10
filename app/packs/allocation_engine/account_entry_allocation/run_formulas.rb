@@ -63,7 +63,13 @@ module AccountEntryAllocation
       # in production) would otherwise share one scratch file and clobber each other.
       # In development the scratch copy is kept and reused across runs (see reuse_scratch_db?),
       # so it gets a stable name instead of a per-process one.
-      scratch_key = reuse_scratch_db? ? "#{fund_ids.join('_')}_dev" : "#{fund_ids.join('_')}_#{Process.pid}"
+      #
+      # The process id alone was not enough either: Sidekiq runs several jobs per process on threads,
+      # so two runs of one fund in one process shared a file -- the second run's load rebuilt it under
+      # the first, and the first's cleanup deleted it under the second (runs 3499/3500, fund 316,
+      # 2026-11-10). The run id makes each run's file its own; the pid stays because parallel cucumber
+      # workers each have their own database, so run ids repeat across them.
+      scratch_key = reuse_scratch_db? ? "#{fund_ids.join('_')}_dev" : self.class.scratch_key(fund_ids, ctx[:allocation_run_id])
 
       # The scratch files run to several GB for a real fund, so they have to sit on real
       # disk. /tmp is a tmpfs on most dev machines: a tmpfs is backed by RAM+swap rather
@@ -243,6 +249,13 @@ module AccountEntryAllocation
       end
 
       true
+    end
+
+    # The scratch file's name for one run: unique per run (allocation_run_id), per process (pid), and --
+    # for a console run with no AllocationRun -- per call (random suffix)
+    def self.scratch_key(fund_ids, allocation_run_id)
+      run_part = allocation_run_id.present? ? "run#{allocation_run_id}" : SecureRandom.hex(4)
+      "#{fund_ids.join('_')}_#{run_part}_#{Process.pid}"
     end
 
     # Development only: keep the scratch SQLite copy between runs instead of re-exporting it

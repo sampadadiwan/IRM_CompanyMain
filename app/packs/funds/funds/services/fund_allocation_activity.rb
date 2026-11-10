@@ -11,9 +11,6 @@
 #   FundAllocationActivity.new(fund).reason(except: op)     # ignoring the operation asking
 #   FundAllocationActivity.formula_operation_applying?(fund) # what allocation runs refuse on
 class FundAllocationActivity
-  # AllocationRun#status is blank until the job starts and "Pending" while it runs
-  UNFINISHED_RUN_STATUSES = [nil, "", "Pending"].freeze
-
   def self.busy?(fund) = new(fund).reason.present?
 
   # An operation that is writing formulas, starting values and the incremental flag. A run starting
@@ -30,16 +27,13 @@ class FundAllocationActivity
   # @return [String, nil]
   def reason(except: nil)
     return "An allocation run group is currently running on this fund. Wait for it to finish." if AllocationGroupRun.fund_busy?(@fund.id)
-    return "An allocation run on this fund has not finished yet. Wait for it to finish." if unfinished_run?
+
+    # Names the run and, when it has crashed, says how to free the fund (AllocationRun#busy_message)
+    running = AllocationRun.unfinished_on(@fund.id)
+    return running.busy_message if running
     return "The fund's tracking currency is being changed. Wait for it to finish." if @fund.tracking_currency_change_pending?
 
     operation = FundFormulaOperation.live.where(fund_id: @fund.id).where.not(id: except&.id).first
     "#{operation} is still #{operation.status} on this fund. Wait for it to finish." if operation
-  end
-
-  private
-
-  def unfinished_run?
-    AllocationRun.exists?(fund_id: @fund.id, status: UNFINISHED_RUN_STATUSES, created_at: FundFormulaOperation::STALE_AFTER.ago..)
   end
 end

@@ -364,8 +364,10 @@ Given('a locked successful accounting run from {string} to {string}') do |from, 
 end
 
 Given('an allocation run is in progress on the fund') do
-  AllocationRun.create!(entity_id: @fund.entity_id, fund: @fund, user: @meera, start_date: Date.new(2026, 4, 1), end_date: Date.new(2026, 6, 30),
-                        run_allocations: true, status: "Pending")
+  # A run that is already executing: saved without validation, since the one-run-per-fund check would
+  # (rightly) refuse to create it beside a statements run an earlier step left unfinished
+  AllocationRun.new(entity_id: @fund.entity_id, fund: @fund, user: @meera, start_date: Date.new(2026, 4, 1), end_date: Date.new(2026, 6, 30),
+                    run_allocations: true, status: "Pending").save!(validate: false)
 end
 
 Given('the statement formula is disabled') do

@@ -113,6 +113,7 @@ class AllocationGroupRunPreflight < Trailblazer::Operation
 
     check_permission(check, user, fund)
     check_formula_operation(check, fund)
+    check_unfinished_run(check, fund)
     check_template_integrity(check, template, fund)
     check_locked_period(check, template, fund, start_date, end_date)
     check_validation_rules(check, template, fund, start_date, end_date)
@@ -146,6 +147,15 @@ class AllocationGroupRunPreflight < Trailblazer::Operation
     return unless FundAllocationActivity.formula_operation_applying?(fund)
 
     check.messages << Message.new(severity: "blocker", text: "#{fund.name}'s formulas are being changed (Actions > Incremental allocation). Wait for that to finish.")
+  end
+
+  # One run per fund at a time: a manual run still going (or crashed and not yet marked) would make the
+  # group's run on this fund be refused part-way, so say so before the group starts
+  def check_unfinished_run(check, fund)
+    running = AllocationRun.unfinished_on(fund.id)
+    return unless running
+
+    check.messages << Message.new(severity: "blocker", text: "#{fund.name}: #{running.busy_message}")
   end
 
   # Decisions 15 and 16: a vanished statement document or an unknown formula tag is a wrong

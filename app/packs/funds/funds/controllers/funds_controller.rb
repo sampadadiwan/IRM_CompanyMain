@@ -328,6 +328,13 @@ class FundsController < ApplicationController
         flash[:alert] = "An allocation run group is currently running on this fund. Wait for it to finish before starting a manual run."
         redirect_back_or_to(root_path) and return
       end
+      # One run per fund at a time: two runs over the same period delete each other's entries and both
+      # insert theirs (runs 3499/3500). Checked here, before the run is created, so the user gets the
+      # message naming the unfinished run -- and, if it crashed, how to free the fund.
+      if (running = AllocationRun.unfinished_on(@fund.id))
+        flash[:alert] = running.busy_message
+        redirect_back_or_to(allocate_form_fund_path(@fund)) and return
+      end
       # A run starting while formulas are being switched could load formulas from before the write and
       # the incremental flag from after it (FundFormulaOperation).
       if FundAllocationActivity.formula_operation_applying?(@fund)
@@ -359,6 +366,11 @@ class FundsController < ApplicationController
       allocation_run = WithValidationRules.skip do
         AllocationRun.create!(entity_id: @fund.entity_id, fund_id: @fund.id, start_date:, end_date:, run_allocations:, generate_soa:, statement_for:, template_name:, fund_ratios:, user_id: current_user.id, rule_for:, tag_list:)
       end
+    rescue ActiveRecord::RecordInvalid => e
+      # A model check refused the run (another run started in between, a run group, a currency
+      # change): say which, rather than the date message below
+      redirect_back_or_to(allocate_form_fund_path(@fund), alert: e.record.errors.full_messages.to_sentence)
+      return
     rescue StandardError => e
       Rails.logger.debug { "allocate: Errors #{e.message}" }
       Rails.logger.debug "allocate: Dates not sent properly"

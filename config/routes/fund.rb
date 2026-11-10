@@ -300,6 +300,8 @@ end
 resources :allocation_runs do
   patch 'lock', on: :member
   patch 'unlock', on: :member
+  # Frees the fund after a run's process died, without waiting for it to go stale (AllocationRun#mark_crashed!)
+  patch 'mark_crashed', on: :member
   patch 'unlock_all', on: :collection
 end
 
