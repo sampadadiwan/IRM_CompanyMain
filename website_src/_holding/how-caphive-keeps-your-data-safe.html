@@ -59,9 +59,8 @@ body_extra: |
           <span class="chip-label">Security</span>
           <h1 style="margin-top:22px">How <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> keeps <em>your fund's data safe.</em></h1>
           <p class="lede">
-            You trust us with capital accounts, investor bank details, identity documents and
-            valuations that have not been published yet. Here is how we protect them, in plain
-            terms, and the controls you can use yourself.
+            The questions your investors and diligence teams ask about your data on CapHive,
+            answered in plain terms, with the safeguards you can see and switch on yourself.
           </p>
           <div class="article-meta">
             <time datetime="2026-11-10">Nov 10, 2026</time>
@@ -82,11 +81,17 @@ body_extra: |
         <div class="article-measure">
           <div class="prose">
 
-        <h2 id="layers">Several layers, not one wall</h2>
         <p>
-          No single control should be all that stands between someone and your data. So we build
-          in layers. Each one works on its own, and if one of them ever had a problem, the
-          others would still be in the way.
+          Your fund runs on <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span>: capital accounts, investor bank details, KYC documents,
+          valuations you haven't published yet. Your investors and your diligence teams will ask
+          how that is protected. These are the questions we hear most, answered in plain terms,
+          with what you can see and switch on yourself.
+        </p>
+
+        <h2 id="layers">The short version</h2>
+        <p>
+          No single safeguard stands alone. Every request has to get past several checks, each
+          working on its own, so a problem in one is still stopped by the next.
         </p>
         <figure class="dgm">
           <div>
@@ -167,129 +172,126 @@ body_extra: |
 <text class="d-tag" x="732" y="312" text-anchor="middle">Data stays in its region</text>
 </svg>
           </div>
-          <figcaption>Four layers sit between any request and your fund's data. Your admins set the roles and approvers; we run the rest. Second-person approval on capital calls and distributions is optional.</figcaption>
+          <figcaption>Four checks stand between any request and your fund's data. You choose who holds which role and who approves; we run the rest.</figcaption>
         </figure>
 
-        <h2 id="reviews">We review ourselves regularly, and keep the fixes fixed</h2>
+        <h2 id="who-sees">Who can see our fund's data?</h2>
         <ul>
-          <li><strong>Regular security reviews.</strong> We review the platform against the
-            <strong>OWASP Top 10</strong>, the industry's standard list of the most common
-            ways web applications are attacked, looking at it the way an attacker would.</li>
-          <li><strong>Fixed by severity.</strong> Findings are ranked, and the most serious are
-            fixed first. Every fix is re-tested before it ships.</li>
-          <li><strong>Two automated tests per fix.</strong> One tries the problem again and must
-            be refused. The other proves your normal work still runs exactly as before.</li>
-          <li><strong>They stay in our test suite.</strong> A later change that brought a problem
-            back would fail them.</li>
+          <li><strong>Only your firm.</strong> Many firms use <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span>, and each one sees only its own
+            data, on every screen, report, export, dashboard, the API and AI connections.</li>
+          <li><strong>Within your firm, only the people you choose.</strong> Your admins decide
+            who sees which funds, investors and documents, and who can approve.</li>
+          <li><strong>Your investors see only their own accounts:</strong> their commitments,
+            notices and documents, nothing about anyone else.</li>
+          <li><strong>We test it the way someone would try to break it.</strong> Our automated
+            tests sign in as one firm and try to open another firm's records. They must be
+            refused, every time.</li>
         </ul>
 
-        <h2 id="separation">Your firm's data is only ever your firm's</h2>
-        <p>
-          Many firms use <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span>, but
-          each one sees only its own data. This is the rule we guard most closely.
-        </p>
+        <h2 id="our-access">Can CapHive's own staff see our data?</h2>
         <ul>
-          <li><strong>Every record belongs to one firm.</strong> Screens, reports, exports,
-            dashboards, the API and AI connections all check that before showing anything.</li>
-          <li><strong>LPs see only their own accounts.</strong> An investor signing in sees
-            their own commitments, notices and documents, nothing else.</li>
-          <li><strong>Checked automatically.</strong> Our tests sign in as one firm and try to
-            open another firm's records. They must be refused, every time.</li>
+          <li><strong>Only when you let us.</strong> Our support team can reach your firm's data
+            only while support access is switched on by your team (the <strong>Enable
+            support</strong> switch), and you can switch it off at any time.</li>
+          <li><strong>You'll see when we do.</strong> When support signs in to help, it shows in
+            your admins' notification bell and on your Security Events screen. Your admins are
+            also emailed whenever support access is switched on or off.</li>
+          <li><strong>Every member of our team who can access client accounts uses two-factor
+            sign-in,</strong> and each person has only the access their job needs.</li>
         </ul>
-        <div class="pull"><p>The most important thing a shared platform does is keep each firm's data apart. So we test it the way someone would try to break it.</p></div>
 
-        <h2 id="money">Changes that move money need a second person</h2>
+        <h2 id="money">Could someone redirect an investor's money?</h2>
         <p>
-          When someone changes where an investor's money goes, another approver in your firm
-          confirms it, and the investor hears about it.
+          Changing where an investor is paid needs two people, and the investor is told.
         </p>
-        <p><strong>Example.</strong> Meera updates an investor's bank account from …4821 to …7310.</p>
+        <p><strong>For example,</strong> Meera, on your team, updates an investor's bank account from
+          …4821 to …7310:</p>
         <ol>
-          <li>The <strong>Bank Verified</strong> tick is cleared straight away.</li>
-          <li>The investor gets an email saying their bank details changed, and what to do if
+          <li>The account's <strong>Bank Verified</strong> tick is cleared at once.</li>
+          <li>The investor gets an email that their bank details changed, and what to do if
             they didn't ask for it.</li>
-          <li>Your other KYC approvers get a "please review" email.</li>
-          <li>Meera's own <strong>Verify</strong> button is greyed out, with a tooltip saying why.</li>
-          <li>Ravi, another approver, checks the new account and verifies it.</li>
+          <li>Your other KYC approvers are asked to review it.</li>
+          <li>Meera can't verify her own change. Ravi, another approver, checks the new account
+            and verifies it.</li>
+          <li>Until then, any distribution to that investor is flagged, so your team sees it
+            before money goes out.</li>
         </ol>
         <p>
-          This covers the account number, the IFSC code, and any SWIFT or IBAN field marked as a
-          payout field on your forms. Distributions flag any bank change that hasn't been
-          confirmed yet, so your team sees it before money goes out. If your firm has only one
-          approver, they can confirm their own change after an extra warning, and that is
-          recorded.
+          This covers the account number and IFSC code, and SWIFT or IBAN fields you mark as
+          payout details. A firm with a single approver can still confirm a change, after a
+          clear warning, and it is recorded as such. We recommend naming a second approver.
         </p>
-        <p><strong>Maker–checker on capital calls and distributions</strong> is there when your firm wants it:</p>
+
+        <h2 id="approvals">Can one person push a capital call or distribution through alone?</h2>
+        <p>Not if you switch on <strong>maker–checker</strong>, which we recommend for any firm with
+          two or more approvers:</p>
         <ul>
-          <li>Whoever prepared a call or distribution can't also approve it.</li>
-          <li>They press <strong>Request approval</strong> to email your other approvers.</li>
-          <li>If the figures change after approval, the approval is withdrawn.</li>
-          <li>Every approved call or distribution shows who prepared it.</li>
+          <li>Whoever prepared a call or distribution can't also approve it; they ask another
+            approver with one click.</li>
+          <li>If the figures change after approval, the approval is withdrawn and has to be
+            given again.</li>
+          <li>Every approved call or distribution shows who prepared it and who approved it.</li>
         </ul>
 
-        <h2 id="our-access">Our own access to your account</h2>
-        <ul>
-          <li><strong>Two-factor for our staff.</strong> Everyone on our team who can sign in to
-            client accounts must use two-factor authentication.</li>
-          <li><strong>Only the access each person needs.</strong> Our staff are given the
-            narrowest access their job requires, and no more.</li>
-          <li><strong>You decide.</strong> Our support team can sign in to help a user only while
-            that user's <strong>Enable support</strong> switch is on. You can turn it off at any time.</li>
-          <li><strong>You can see it.</strong> When support signs in to help, it appears in your
-            admins' notification bell and on the Security Events screen. Your admins are emailed whenever
-            the Enable support switch changes.</li>
-        </ul>
-
-        <h2 id="security-events">See it for yourself: Security Events</h2>
+        <h2 id="security-events">How would we know if something unusual happened?</h2>
         <p>
-          Company admins have a <strong>Security Events</strong> screen, under Settings. It lists
-          sign-ins, failed sign-ins, role changes, two-factor changes, API tokens, support access
-          and more, for your firm only.
+          Your company admins have a <strong>Security Events</strong> screen, under Settings. It
+          shows your firm's sign-ins, failed sign-ins, role changes, two-factor changes, API
+          keys, support access and more.
         </p>
         <ul>
-          <li><strong>Every row explains itself.</strong> A "What to do" button says when the
-            event is normal and what to do if it isn't.</li>
-          <li><strong>Alerts for the changes that matter.</strong> Your admins are emailed when
-            someone is given or loses an admin or approver role, for example
-            "Approver role given to Rahul Mehta".</li>
+          <li><strong>Every entry explains itself:</strong> when it's normal, and what to do if
+            it isn't.</li>
+          <li><strong>The important changes come to you.</strong> Your admins are emailed when
+            someone is given or loses an admin or approver role, for example "Approver role
+            given to Rahul Mehta".</li>
           <li><strong>Kept for over a year,</strong> so you can look back across a full audit cycle.</li>
-          <li><strong>Reviewed by us too.</strong> Our own team reviews a weekly summary of security events.</li>
+          <li><strong>We watch too.</strong> Our systems alert our team to unusual activity, and
+            we review a weekly summary of security events.</li>
         </ul>
 
-        <h2 id="personal-data">Personal data, handled with care</h2>
+        <h2 id="personal-data">How is our investors' personal data protected?</h2>
         <ul>
-          <li><strong>Kept out of logs and error reports.</strong> Tax IDs, bank details and sign-in
-            information are filtered out before anything is written to a log or an error report.</li>
-          <li><strong>Secrets encrypted.</strong> Keys your firm stores for connected services are
-            kept encrypted.</li>
-          <li><strong>No real client data in development.</strong> When data is copied for building
-            and testing the product, real personal details such as tax IDs and bank accounts are
-            removed from the copy.</li>
-          <li><strong>Your region, your data.</strong> India and US clients run on separate
-            regional environments, and data stays in its own region.</li>
-          <li><strong>Monitored.</strong> Our systems watch for unusual activity and alert our
-            team when they see it.</li>
+          <li><strong>Kept out of logs and error reports.</strong> Tax IDs, bank details and
+            sign-in details are removed before anything is written to a log or an error report.</li>
+          <li><strong>Keys stored encrypted.</strong> Keys your firm saves for connected services
+            are encrypted, and only their last few characters are ever shown.</li>
+          <li><strong>Your data stays in your region.</strong> India and US clients run on
+            separate regional environments.</li>
         </ul>
 
-        <h2 id="what-you-can-do">What you can do</h2>
+        <h2 id="over-time">How do you keep it secure over time?</h2>
+        <ul>
+          <li><strong>Regular security reviews</strong> against the OWASP Top 10, the
+            industry's standard list of the ways web applications are attacked.</li>
+          <li><strong>The most serious findings are fixed first,</strong> and every fix is
+            re-tested before it ships.</li>
+          <li><strong>Fixes stay fixed.</strong> Each one gets automated tests that try the
+            problem again and confirm your normal work is unaffected; they run on every future
+            change.</li>
+          <li><strong>Security is part of every new feature,</strong> checked against the same
+            list before it's built, not added afterwards.</li>
+        </ul>
+
+        <h2 id="what-you-can-do">What you can do today</h2>
         <div class="callout"><ol>
-          <li><strong>Turn on two-factor authentication</strong> for every user, starting with
-            your admins and approvers. Switching it off later needs the password and a current code.</li>
-          <li><strong>Look at Security Events now and then.</strong> A role change or sign-in you
-            don't recognise is worth a question.</li>
-          <li><strong>Use maker–checker</strong> on capital calls and distributions if you have two
-            or more approvers. Ask us and we will switch it on for your firm.</li>
+          <li><strong>Turn on two-factor sign-in</strong> for every user, starting with your
+            admins and approvers.</li>
+          <li><strong>Name at least two approvers,</strong> and switch on maker–checker for
+            capital calls and distributions. Ask us and we'll set it up.</li>
           <li><strong>Keep admin and approver roles tight.</strong> Give them to the people who
             need them, and remove them when someone changes role or leaves.</li>
-          <li><strong>Switch Enable support on only when you need help,</strong> and off again afterwards.</li>
+          <li><strong>Switch support access on only when you need our help,</strong> and off
+            again afterwards.</li>
+          <li><strong>Glance at Security Events now and then.</strong> A sign-in or role change
+            you don't recognise is worth a question.</li>
           <li><strong>Tell us about anything odd</strong> at
-            <a href="mailto:support@caphive.com">support@caphive.com</a>. We would much rather
-            hear about something harmless than miss something real.</li>
+            <a href="mailto:support@caphive.com">support@caphive.com</a>. We'd much rather hear
+            about something harmless than miss something real.</li>
         </ol></div>
         <p>
-          Security is never finished, and we don't claim any system is beyond attack. What we
-          can promise is that we keep checking, keep fixing, and keep you able to see what is
-          happening in your own account.
+          No one can honestly promise a system is beyond attack. What we promise is that we keep
+          checking, keep fixing, and keep you able to see what is happening in your own account.
         </p>
           </div>
         </div>
