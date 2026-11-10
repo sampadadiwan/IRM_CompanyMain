@@ -165,6 +165,10 @@ namespace :deploy do
   before 'deploy:updated', 'IRM:set_rails_master_key'
   # before "deploy:updated", :ensure_rails_credentials
   after  'deploy:finished', :ensure_permissions
+  # The last thing every deploy does: the post-deploy steps checklist (post_deploy_steps/README.md,
+  # lib/capistrano/tasks/post_deploy.rake). After ensure_permissions, so a checklist that is stopped, or fails for
+  # want of a terminal, never skips the permissions fix or the deploy notice.
+  after 'deploy:ensure_permissions', 'post_deploy:checklist'
 end
 
 # User guide FAQs. The Markdown under docs/user_guides ships with the release, but the guide

@@ -118,6 +118,9 @@ This is the change client KYC teams will notice most.
 
 ## Part 2: for ops
 
+These steps are also in `post_deploy_steps/owasp-top10-2026-11.md`. Every deploy now lists the open ones for
+that environment and asks the deployer to answer each (`done` or `skip <reason>`); see `post_deploy_steps/README.md`.
+
 Do each step on **production.in and production.us separately**. They are independent environments: never copy
 URLs, tokens or settings between them.
 

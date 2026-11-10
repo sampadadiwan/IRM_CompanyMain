@@ -33,3 +33,15 @@
 
 <!-- Add further numbered phases as needed, each ending with the same gate — feature file, UI review
      (or "no screens changed"), N+1 check under Prosopite, green run — before the next phase starts. -->
+
+## N. Whole-change checks
+
+- [ ] N.1 Coverage: every H/E/X ID in design.md (or business-rules.md) has exactly one `# <ID> —` scenario
+      in features/, and every such comment has an ID row.
+- [ ] N.2 Security checklist: each of the 24 rows in design.md's Security table is implemented as written
+      and its test is green (or its `N/A — <reason>` still holds); Brakeman and bundler-audit clean for the
+      change (docs/security/feature_security_checklist.md).
+- [ ] N.3 Post-deploy steps: write `post_deploy_steps/<change-name>.md` from design.md's *Post-deploy steps*
+      (steps per environment with exact commands, or `None — <reason>`); run `bin/rails post_deploy:lint`
+      and `TEST_ENV_NUMBER=$RANDOM bundle exec cucumber features/core/post_deploy_steps.feature` green.
+- [ ] N.4 (QA, not the apply agent) Run qa-checklist.md on a deployed staging build and record the sign-off.

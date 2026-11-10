@@ -45,3 +45,14 @@
     3. Copy the AWS LB public DNS name (E.x appLb-production-82f2e1d-1367284319.ap-south-1.elb.amazonaws.com) and make the changes for the CNAME for
         a. caphive.com or (*.altconnects.com)
         b. *.caphive.com
+# After every deploy: post-deploy steps
+
+The last thing `cap <env> deploy` does is `post_deploy:checklist`. It lists the deployed release's
+manual steps that this environment hasn't logged as done (`post_deploy_steps/*.md`), and asks you
+to answer each one: `done`, or `skip <reason>`. Answers are logged on the env's primary server
+(`shared/post_deploy_log.jsonl`); skipped steps are asked again on the next deploy.
+
+- See what's open without answering: `bundle exec cap <env> post_deploy:status`
+- Answer later (e.g. after a CI deploy, which has no terminal and fails the checklist):
+  `bundle exec cap <env> post_deploy:checklist`
+- Format and rules: `post_deploy_steps/README.md`

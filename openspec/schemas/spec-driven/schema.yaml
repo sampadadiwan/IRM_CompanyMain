@@ -372,10 +372,14 @@ artifacts:
           13. **Rollout** — per-entity enablement, phased delivery, each phase shippable alone.
           14. **YAGNI / DRY** — no abstraction without two real callers; no duplicated rules between
               proposal, spec and design.
-        - **Security** (CORE — never omitted, never "N/A"): a table with one row per item below —
-          Item | How this design meets it | Where (box / class / policy) | Test (H/E/X or
-          features/security/ scenario). Every new controller action, job, policy, upload, AI call
-          and token must appear somewhere in the table. Items:
+        - **Security** (CORE — never omitted, never "N/A"): a table with one row per item below (all
+          24) — Item | How this design meets it | Where (box / class / policy) | Test (H/E/X or
+          features/security/ scenario). An item that genuinely does not apply says why in one line
+          (`N/A — no uploads`), never blank. Every new controller action, job, policy, upload,
+          import, AI call, token, email, webhook, stored path, PII column and privileged action must
+          appear somewhere in the table. The items, with a bad → good example and the check for each,
+          are in docs/security/feature_security_checklist.md (keep that file and this list in step).
+          Items:
           1. **Authorization (Pundit)** — every action calls `authorize`; records are loaded through
              `policy_scope(...)` then authorized, never a bare `Model.find(params[:id])` (root cause 1
              of docs/security/security_review_2026_10.md). No new exclusion from `verify_authorized` /
@@ -416,6 +420,46 @@ artifacts:
               `features/security/` scenario per new controller/action in the style of
               `tenant_isolation_batch1.feature` (other firm's user refused, owner allowed, direct
               request bypassing the UI refused).
+          13. **Stored paths and merge fields** — dotted paths a user saved (grid column keys, report
+              fields, PDF password fields) are read with `SafeAttributePath.read` / `read!`, never
+              `send`, and validated when saved; template merge fields can't reach a class or drop a
+              relation's scope (OWASP 2026-11 C4, C5, H6).
+          14. **File names from data** — a "File Name" column or zip entry is resolved with
+              `ImportUtil#import_file_path` (nothing outside the upload folder) and escaping symlinks
+              are removed after unzip (C3, H8).
+          15. **Hosts and URLs** — links built from stored values use safe readers
+              (`Entity#safe_sub_domain`); server-side fetches only use our own hosts
+              (`WithTrustedPdfHost`); the request Host never decides where the server fetches; a new
+              rule on a stored value applies when it is changed, so legacy rows keep saving (H3, H4).
+          16. **Enforce at the endpoint, not the button** — a control hidden for a role is refused by
+              the same policy rule at the controller action, the import type and any job behind it;
+              uploads record who made them (and the support person behind them) (H7, C2, N1).
+          17. **Impersonation** — while support is signed in as a client: no long-lived credentials
+              (API tokens, OAuth/MCP approvals), password resets or region switches; the real person
+              (`support_user_id`) is recorded; staff roles that can impersonate need two-factor
+              (`RequiredTwoFactor::REQUIRED_2FA_ROLES`) (M5, M6, L3, M8).
+          18. **Second person on money** — whoever prepares money figures or payout details can't
+              approve or verify them; a change after approval withdraws it; a one-approver fallback is
+              explicit, warned and recorded; payouts are flagged, not silently blocked (M13, M14).
+          19. **Verification flags** — `verified` / `approved` / `bank_verified`-style fields are in
+              `permitted_attributes` only when the policy method behind that button holds for the
+              record; results written by background checks are never accepted from a request (M14).
+          20. **Security events** — role grants/removals, credential and 2FA changes, support access,
+              data exports and deactivations call `SecurityEvents.record` with a kind in
+              `SecurityEventCatalogue` (label + "when normal / what to do"); say who is alerted (admin
+              email, bell, none); recording never fails the action (M11, M12).
+          21. **PII and secrets** — a new PII or secret column is in `filter_parameters`
+              case-insensitively, never in error emails, encrypted (`encrypts`) and masked when it is a
+              secret, and covered by `DevPiiScrubber` for restored development copies (M1, M2, M3, P1).
+          22. **Emails that carry access** — links that open data expire quickly and need sign-in for
+              sensitive pages; attachments go through `attach_doc` / `pw_protect_attach_file` (size
+              guard) or join the known-exempt list with a reason (M5).
+          23. **Front end** — no unescaped names in `innerHTML` (`textContent` or DOMPurify); CDN
+              scripts pinned with integrity hashes; AI/markdown output can't load outside images
+              (M9, M16–M18).
+          24. **Inbound and switch-on** — inbound email needs SPF or DKIM, webhooks a signature or
+              token; a protection shipped behind a log-only or off flag gets a post-deploy step that
+              switches it on per region (M19, H2).
 
         - **Worked examples** (CORE): Happy Path (H1..), Edge Cases (E1..), Error Cases (X1..)
           tables with columns # | Scenario | Given | When | Then | Spec scenario | Feature, using
@@ -443,6 +487,15 @@ artifacts:
           code comments name the IDs of the paths they implement (see the tasks rules).
         - **Risks and open questions** (CORE): risk → mitigation bullets; open questions only if
           genuinely deferrable, otherwise resolve them with the user now.
+        - **Post-deploy steps** (CORE — never omitted): every manual thing someone must do after the
+          release reaches an environment, per environment (`all`, `production` = both regions,
+          `staging_in`, `production_in`, `production_us`; IN and US never share values): env flags
+          to switch on, rake tasks to run (dry run, then `EXECUTE=1`), users or firms to message,
+          per-firm switches for CS, QA checklists to run, checks that can only be done later. Table:
+          Step id | Environment | What to do (exact command) | Why | Done when. A change with
+          nothing to do says `None — <reason>`. The tasks' last phase writes these into
+          `post_deploy_steps/<change-name>.md` (format: post_deploy_steps/README.md), which every
+          deploy then asks the deployer to answer step by step.
         - **FAQ**.
     requires:
       - proposal
@@ -482,7 +535,10 @@ artifacts:
       - Every section ends with a **Reviewer checks** list of `- [ ]` items the developer ticks
         during review. These are concrete, falsifiable checks, not "looks good".
       - The LLD carries a CORE **Security detail** section: per new action/job/AI call, the exact
-        policy method, scope used to load, permitted params, and the security scenario that covers it.
+        policy method, scope used to load, permitted params, and the security scenario that covers it;
+        plus, for each design Security item 13–24 that applies, the exact helper used
+        (`SafeAttributePath`, `import_file_path`, `safe_sub_domain`, the `SecurityEvents.record` kind,
+        the `filter_parameters` entry, …) — docs/security/feature_security_checklist.md.
       - The closing **Project rules checklist** is CORE. It carries this repo's standing rules
         (large-table hygiene, date formatting, tenant scoping, MCP ontology, IRM cops) marked
         Applies / N/A, and it is how the reviewer confirms the CLAUDE.md rules were considered.
@@ -518,7 +574,11 @@ artifacts:
         or "ask a developer to run the job").
       - Cross-cutting checks are CORE: emails/alerts received and dated in the email format;
         screen dates in the locale format; narrow/mobile width; tenant isolation (a second
-        entity's user cannot see the data); a regression spot-check of every modified screen.
+        entity's user cannot see the data); a regression spot-check of every modified screen;
+        security checks for each design Security item that applies, in plain words (a user without
+        the role is refused even by a direct link; support signed in as a client can't do the
+        privileged thing; a maker can't approve their own change; the security event appears on the
+        Security Events screen; a name with HTML shows as text).
       - A **Contents** TOC at the top, the ID legend (H/E/X/J/R/C), and a Sign-off table at the
         end (tester, build/commit, environment, date, result, open defects).
     requires:
@@ -620,6 +680,15 @@ artifacts:
         refusal, skip, rounding, fallback) has a comment naming the IDs whose path runs through it,
         e.g. `# X14 hard lock-up refuses; E16 soft lock-up records the fee`, so a reader can go
         code → ID → scenario and back.
+      - The last phase includes a **security checklist task**: for every one of the 24 items in
+        design.md's Security table, confirm it is implemented as written and its test is green (or
+        its `N/A — <reason>` still holds); tick it only when Brakeman and bundler-audit are clean for
+        the change. Items are in docs/security/feature_security_checklist.md.
+      - The last phase includes a **post-deploy steps task**: write
+        `post_deploy_steps/<change-name>.md` from design.md's Post-deploy steps section (steps per
+        environment with exact commands, or `None — <reason>`), run `bin/rails post_deploy:lint`, and
+        run `features/core/post_deploy_steps.feature` green (PD1 checks the format; PD2 fails once the
+        change is archived without its file). Never rename a step id after it has been deployed.
       - The last phase includes a coverage task: list every H/E/X ID in design.md (or business-rules.md) and every ID
         comment in features/ and confirm the two sets are equal (no ID without a scenario, no
         scenario without an ID); an edge case found during apply gets a new ID row in design.md (or business-rules.md)
@@ -636,4 +705,6 @@ apply:
   instruction: |
     Read context files, work through pending tasks phase by phase. Do not start a phase's
     implementation tasks until the previous phase's Cucumber feature is green. Pause if you hit
-    blockers or need clarification.
+    blockers or need clarification. Keep design.md's Security table and Post-deploy steps section
+    true to what was built (a flag, rake task or manual switch added during the build is a new
+    post-deploy step), and finish with post_deploy_steps/<change-name>.md written and linted.

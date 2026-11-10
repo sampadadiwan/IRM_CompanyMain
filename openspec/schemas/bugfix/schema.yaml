@@ -87,9 +87,19 @@ artifacts:
         that has not considered how it fails.
         **At least one row must fail against the CURRENT code** - name which in a line under the
         table. A bug fix whose tests all pass before the fix has not reproduced the bug.
+      - **Security** (CORE): a short table of the items from docs/security/feature_security_checklist.md
+        that this bug broke or this fix touches — usually 1–4 of the 24, not all of them — with
+        columns # | Item | How the fix meets it | Test (H/E/X). For a security bug, add one line on
+        whether the same mistake exists elsewhere (the grep you ran, or the drift guard you added).
+        A fix that touches none says `None — <reason>`.
       - **Risks and Rollout** (CORE): risk → mitigation bullets. Say whether the fix is safe to
         deploy alone, whether it needs a data backfill, whether two environments must ship
         together, and how to roll back.
+      - **Post-deploy steps** (CORE): every manual thing to do after deploy, per environment (`all`,
+        `production`, `staging_in`, `production_in`, `production_us`) with the exact command — a
+        flag to switch on, a backfill rake task (dry run, then `EXECUTE=1`), people to tell — or
+        `None — <reason>`. The tasks' last phase writes them to `post_deploy_steps/<change-name>.md`
+        (post_deploy_steps/README.md), which every deploy asks the deployer to answer.
       - **Spec Impact** (CORE): one of exactly two answers.
         - *"None"* - the specs already describe the correct behaviour and the code simply did
           not match them. This is the normal case for a bug fix. Then set `skip_specs: true` in
@@ -183,6 +193,10 @@ artifacts:
         Verification table
       - The final phase MUST include: a regression run over the feature directory the fix
         touches, and `bundle exec rubocop` on the changed files
+      - The final phase MUST include a security task (each item in the report's Security table is
+        met and its test green, Brakeman clean for the changed files) and a post-deploy steps task
+        (write `post_deploy_steps/<change-name>.md` from the report — steps or `None — <reason>` —
+        run `bin/rails post_deploy:lint` and `features/core/post_deploy_steps.feature` green)
       - If the report's Blast Radius lists other callers, the final phase MUST include a task
         that runs their features too
       - The final phase MUST also include an N+1 check under Prosopite (`PROSOPITE=1`) when the
@@ -221,4 +235,5 @@ apply:
     with a failing Cucumber scenario - do not skip it, and do not start the fix until you have
     seen it fail. Do not start a later phase until the previous phase's feature is green. Pause
     if the root cause in the report turns out to be wrong: say so and correct the report rather
-    than quietly fixing something else.
+    than quietly fixing something else. Finish with post_deploy_steps/<change-name>.md written
+    and linted (a backfill or flag added during the fix is a new post-deploy step).
