@@ -144,6 +144,19 @@ Feature: Post-deploy steps — every deploy asks each environment's open steps
       """
     Then the open post-deploy steps for "production_us" are "alpha#a-step, gamma#g-step"
 
+  # E4 — Edge case: text read from the server over SSH arrives as BINARY; it still parses (staging deploy 2026-11-10
+  # failed with "incompatible encoding regexp match" before this)
+  Scenario: E4 A file read as binary still parses
+    Given a post-deploy steps file "alpha" read as binary with:
+      """
+      # Post-deploy steps — alpha
+
+      ## staging_in
+      ### qa — Run the QA checklist
+      """
+    Then the post-deploy steps files are well-formed
+    And the open post-deploy steps for "staging_in" are "alpha#qa"
+
   # ── Error cases ───────────────────────────────────────────────────────────────
 
   # X1 — Error case: format mistakes are reported, so a typo can't silently drop a step

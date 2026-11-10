@@ -47,6 +47,12 @@ module PostDeploySteps
 
   module_function
 
+  # Text read over SSH (SSHKit capture) arrives as BINARY (ASCII-8BIT); the UTF-8 patterns here (the "—" in step
+  # headings) refuse to match it. Treat every input as UTF-8, replacing any invalid byte, so a file always parses.
+  def utf8(text)
+    text.to_s.dup.force_encoding(Encoding::UTF_8).scrub
+  end
+
   # Parses one file's text. `name` is the file name without ".md" (the change name).
   # @return [Parsed]
   def parse(name, text)
@@ -57,7 +63,7 @@ module PostDeploySteps
     current = nil
     title_seen = false
 
-    text.each_line do |raw|
+    utf8(text).each_line do |raw|
       line = raw.chomp
       case line
       when /\A# (?!#)/
@@ -115,7 +121,7 @@ module PostDeploySteps
 
   # The log's lines (JSON, one per answer) as hashes; a malformed line is ignored rather than stopping a deploy
   def parse_log(text)
-    text.to_s.each_line.filter_map do |line|
+    utf8(text).each_line.filter_map do |line|
       JSON.parse(line)
     rescue JSON::ParserError
       nil

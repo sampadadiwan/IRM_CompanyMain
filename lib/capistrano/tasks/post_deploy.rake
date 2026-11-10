@@ -38,10 +38,11 @@ namespace :post_deploy do
         capture(:ls, "-1", dir).to_s.split("\n").each do |name|
           next unless name.end_with?(".md")
 
-          files[name] = capture(:cat, dir.join(name)).to_s
+          # capture returns BINARY strings; the files are UTF-8 (step headings use "—")
+          files[name] = PostDeploySteps.utf8(capture(:cat, dir.join(name)))
         end
       end
-      log = capture(:cat, post_deploy_log_path).to_s if test("[ -f #{post_deploy_log_path} ]")
+      log = PostDeploySteps.utf8(capture(:cat, post_deploy_log_path)) if test("[ -f #{post_deploy_log_path} ]")
       revision = capture(:cat, current_path.join("REVISION")).to_s.strip if test("[ -f #{current_path.join('REVISION')} ]")
     end
     [files, log, revision]

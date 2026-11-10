@@ -22,6 +22,11 @@ Given("a post-deploy steps file {string} with:") do |name, text|
   pds_files["#{name}.md"] = text.gsub("\\n", "\n")
 end
 
+# E4 — as SSHKit's capture returns it
+Given("a post-deploy steps file {string} read as binary with:") do |name, text|
+  pds_files["#{name}.md"] = text.dup.force_encoding(Encoding::BINARY)
+end
+
 Then("the open post-deploy steps for {string} are {string}") do |env, keys|
   expected = keys.split(",").map(&:strip).reject(&:empty?)
   expect(PostDeploySteps.pending(pds_files, env, pds_log).map(&:key)).to eq(expected)
